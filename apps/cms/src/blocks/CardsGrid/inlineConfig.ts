@@ -6,8 +6,8 @@ export const CardsGridInlineBlock: Block = {
   fields: cardsGridFields,
   interfaceName: "CardsGridInlineBlock",
   labels: {
-    plural: { en: "Cards Grids", es: "Cuadrículas de Tarjetas" },
-    singular: { en: "Cards Grid", es: "Cuadrícula de Tarjetas" },
+    plural: "Cards Grids",
+    singular: "Cards Grid",
   },
   slug: "cardsGridInline",
 };

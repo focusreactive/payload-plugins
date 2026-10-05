@@ -44,10 +44,7 @@ export const Media: CollectionConfig<"media"> = {
   },
   fields: [
     {
-      label: {
-        en: "Alt",
-        es: "Alt",
-      },
+      label: "Alt",
       localized: true,
       name: "alt",
       required: true,
@@ -55,29 +52,20 @@ export const Media: CollectionConfig<"media"> = {
     },
     {
       editor: generateRichText(),
-      label: {
-        en: "Caption",
-        es: "Descripción",
-      },
+      label: "Caption",
       localized: true,
       name: "caption",
       type: "richText",
     },
     {
       admin: {
-        description: {
-          en: "Use this file as default when no image is selected.",
-          es: "Usar este archivo por defecto cuando no se seleccione ninguna imagen.",
-        },
+        description: "Use this file as default when no image is selected.",
       },
       hasMany: true,
       name: "defaultFor",
       options: [
         {
-          label: {
-            en: "Default image for the platform (logo, blocks, sections)",
-            es: "Imagen por defecto de la plataforma (logo, bloques, secciones)",
-          },
+          label: "Default image for the platform (logo, blocks, sections)",
           value: "platform_default",
         },
       ],
@@ -127,14 +115,8 @@ export const Media: CollectionConfig<"media"> = {
     ],
   },
   labels: {
-    plural: {
-      en: "Media",
-      es: "Medios",
-    },
-    singular: {
-      en: "Media",
-      es: "Medio",
-    },
+    plural: "Media",
+    singular: "Media",
   },
   slug: "media",
   upload: {

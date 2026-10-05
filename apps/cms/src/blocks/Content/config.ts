@@ -14,24 +14,15 @@ const fields: Field[] = [
   ...sectionHeaderFields({ headingDefault: DEFAULT_VALUES.blocks.content.heading }),
   {
     defaultValue: "image-text",
-    label: {
-      en: "Layout",
-      es: "Diseño",
-    },
+    label: "Layout",
     name: "layout",
     options: [
       {
-        label: {
-          en: "50/50 Image + Text",
-          es: "50/50 Imagen + Texto",
-        },
+        label: "50/50 Image + Text",
         value: "image-text",
       },
       {
-        label: {
-          en: "50/50 Text + Image",
-          es: "50/50 Texto + Imagen",
-        },
+        label: "50/50 Text + Image",
         value: "text-image",
       },
     ],
@@ -40,15 +31,10 @@ const fields: Field[] = [
   },
   {
     defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
-    label: {
-      en: "Image",
-      es: "Imagen",
-    },
+    label: "Image",
     admin: {
-      description: {
-        en: "Optional. Without an image the section is a single prose column with the heading in a side rail.",
-        es: "Opcional. Sin imagen la sección es una columna de texto con el encabezado al lado.",
-      },
+      description:
+        "Optional. Without an image the section is a single prose column with the heading in a side rail.",
     },
     name: "image",
     relationTo: "media",
@@ -57,10 +43,7 @@ const fields: Field[] = [
   {
     defaultValue: createLocalizedRichText(DEFAULT_VALUES.richText.content),
     editor: generateRichText(),
-    label: {
-      en: "Content",
-      es: "Contenido",
-    },
+    label: "Content",
     localized: true,
     name: "content",
     required: true,
@@ -72,7 +55,7 @@ const fields: Field[] = [
       initCollapsed: true,
     },
     fields: (link() as GroupField).fields,
-    label: { en: "Actions", es: "Acciones" },
+    label: "Actions",
     localized: true,
     maxRows: 2,
     name: "actions",
@@ -85,14 +68,8 @@ export const ContentBlock: Block = injectSection({
   interfaceName: "ContentBlock",
   ...getBlockPreviewImage("Content Section"),
   labels: {
-    plural: {
-      en: "Content Sections",
-      es: "Secciones de Contenido",
-    },
-    singular: {
-      en: "Content Section",
-      es: "Sección de Contenido",
-    },
+    plural: "Content Sections",
+    singular: "Content Section",
   },
   fields,
 });

@@ -23,33 +23,24 @@ export const Authors: CollectionConfig<"authors"> = {
   fields: [
     {
       admin: {
-        description: {
-          en: "The name of the author",
-          es: "El nombre del autor",
-        },
+        description: "The name of the author",
       },
-      label: {
-        en: "Name",
-        es: "Nombre",
-      },
+      label: "Name",
       name: "name",
       required: true,
       type: "text",
     },
     {
-      label: { en: "Avatar", es: "Avatar" },
+      label: "Avatar",
       name: "avatar",
       relationTo: "media",
       type: "upload",
     },
     {
       admin: {
-        description: {
-          en: "One or two sentences shown on the author page",
-          es: "Una o dos frases mostradas en la página del autor",
-        },
+        description: "One or two sentences shown on the author page",
       },
-      label: { en: "Bio", es: "Biografía" },
+      label: "Bio",
       localized: true,
       name: "bio",
       type: "textarea",
@@ -59,14 +50,8 @@ export const Authors: CollectionConfig<"authors"> = {
     slugField({ required: false, useAsSlug: "name" }),
   ],
   labels: {
-    plural: {
-      en: "Authors",
-      es: "Autores",
-    },
-    singular: {
-      en: "Author",
-      es: "Autor",
-    },
+    plural: "Authors",
+    singular: "Author",
   },
   slug: "authors",
 };

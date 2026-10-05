@@ -9,7 +9,7 @@ Production-ready, open-source headless CMS built on [Payload CMS 3](https://payl
 - **Comments** — inline collaboration for content teams and developers, directly on the field.
 - **Multi-Language + AI Translation** — one-click AI translations on top of Payload's localization plugin.
 - **Scheduled Publishing on Serverless** — works on Vercel and other serverless platforms where Payload's native scheduling can't run.
-- **Locale-Scoped Semantic Search** — pgvector search that respects the visitor's active locale.
+- **Site Search** — plain-text Postgres search over page and post titles and post excerpts, scoped to the active locale.
 - **SSO** — OIDC support for Auth0, Keycloak, Okta, and any OIDC-compliant identity provider.
 - **Modular Page Builder** — composable, localizable blocks with preset and A/B-experiment hooks.
 - **AI Development Ready** — `CLAUDE.md`, `AGENTS.md`, `.claude/`, and `.cursor/rules` ship in-repo so Claude Code, Cursor, and other agents are productive on day one.
@@ -52,7 +52,7 @@ Ideal CMS ships a curated set of [Claude Code skills](https://docs.claude.com/en
 Highlights:
 
 - **`payload`** — design Payload schemas the right way: collections, fields, hooks, access control, validation, drafts/versioning, virtual fields, and Local API patterns. Triggers on anything touching `payload.config.ts`, collections, fields, or hooks.
-- **`payload-block-extractor`** — when you add a new page block, this skill wires it into the semantic search pipeline (text extraction + indexing) so search stays accurate without manual plumbing.
+- **`payload-block-extractor`** — when you add a new page block, this skill wires its text extraction so SEO analysis and the MCP tools see the block content.
 - **`vercel-react-best-practices`** — Vercel Engineering's 45-rule playbook for React and Next.js performance. Use it to audit pages, refactor components, and tune data fetching.
 - **`cache-components`** — proactive guidance for Next.js Cache Components and Partial Prerendering — `'use cache'`, `cacheLife`, `cacheTag`, `updateTag`.
 - **`upload-local-image`** — fallback flow for staging local images into Payload's media library through Vercel Blob when the agent can't reach the local filesystem directly.
@@ -137,7 +137,7 @@ cp .env.example .env
 | `NEXT_PUBLIC_SERVER_URL`         | Yes        | Public-facing URL of the application                           |
 | `PREVIEW_SECRET`                 | No         | Secret for validating live preview requests                    |
 | `BLOB_READ_WRITE_TOKEN`          | Production | Vercel Blob storage token for media uploads                    |
-| `OPENAI_API_KEY`                 | No         | Enables AI translations and semantic search embeddings         |
+| `OPENAI_API_KEY`                 | No         | Enables AI translations                                        |
 | `OIDC_ISSUER`                    | No         | OIDC provider URL for SSO                                      |
 | `OIDC_CLIENT_ID`                 | No         | OIDC client ID                                                 |
 | `OIDC_CLIENT_SECRET`             | No         | OIDC client secret                                             |
@@ -160,7 +160,7 @@ pnpm dev
 
 ### 5. Open the admin
 
-Visit [`http://localhost:3333/admin`](http://localhost:3333/admin) and create your first admin user. The frontend uses locale-prefixed routes — `/en/...`, `/es/...`.
+Visit [`http://localhost:3333/admin`](http://localhost:3333/admin) and create your first admin user. The frontend uses locale-prefixed routes — `/...` for English, `/de/...`, `/ja/...`.
 
 ## License
 

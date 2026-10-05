@@ -1,6 +1,6 @@
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import type { Locale } from "@/lib/types";
-import { getBlogPageSettings, getPayloadClient, getPosts, searchPosts } from "@/dal";
+import { getBlogPageSettings, getPayloadClient, getPosts } from "@/dal";
 import { redirect } from "@/lib/i18n/navigation";
 import { BlogPageContent } from "./BlogPageContent";
 
@@ -25,18 +25,12 @@ export async function BlogPageDynamic({ searchParams, locale }: BlogPageDynamicP
 
   const payload = await getPayloadClient();
 
-  const postsPromise = searchQuery
-    ? searchPosts({
-        category: activeCategory,
-        locale,
-        page: pageNumber,
-        query: searchQuery,
-      })
-    : getPosts(payload, {
-        category: activeCategory,
-        locale,
-        page: pageNumber,
-      });
+  const postsPromise = getPosts(payload, {
+    category: activeCategory,
+    locale,
+    page: pageNumber,
+    query: searchQuery,
+  });
 
   const [posts, blogSettings, allCategories] = await Promise.all([
     postsPromise,

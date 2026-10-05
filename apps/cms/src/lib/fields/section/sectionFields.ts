@@ -7,24 +7,24 @@ export const sectionFields: GroupField = {
       fields: [
         {
           admin: { width: "50%" },
-          label: { en: "Theme", es: "Tema" },
+          label: "Theme",
           name: "theme",
           options: [
-            { label: { en: "Light", es: "Claro" }, value: "light" },
-            { label: { en: "Dark", es: "Oscuro" }, value: "dark" },
-            { label: { en: "Light Gray", es: "Gris Claro" }, value: "light-gray" },
-            { label: { en: "Dark Gray", es: "Gris Oscuro" }, value: "dark-gray" },
+            { label: "Light", value: "light" },
+            { label: "Dark", value: "dark" },
+            { label: "Light Gray", value: "light-gray" },
+            { label: "Dark Gray", value: "dark-gray" },
           ],
           type: "select",
         },
         {
           admin: { width: "50%" },
           defaultValue: "base",
-          label: { en: "Max Width", es: "Ancho Máximo" },
+          label: "Max Width",
           name: "maxWidth",
           options: [
-            { label: { en: "None", es: "Ninguno" }, value: "none" },
-            { label: { en: "Base", es: "Base" }, value: "base" },
+            { label: "None", value: "none" },
+            { label: "Base", value: "base" },
           ],
           type: "select",
         },
@@ -36,23 +36,23 @@ export const sectionFields: GroupField = {
         {
           admin: { width: "50%" },
           defaultValue: "base",
-          label: { en: "Padding Y", es: "Relleno Vertical" },
+          label: "Padding Y",
           name: "paddingY",
           options: [
-            { label: { en: "None", es: "Ninguno" }, value: "none" },
-            { label: { en: "Base", es: "Base" }, value: "base" },
-            { label: { en: "Large", es: "Grande" }, value: "large" },
+            { label: "None", value: "none" },
+            { label: "Base", value: "base" },
+            { label: "Large", value: "large" },
           ],
           type: "select",
         },
         {
           admin: { width: "50%" },
           defaultValue: "base",
-          label: { en: "Padding X", es: "Relleno Horizontal" },
+          label: "Padding X",
           name: "paddingX",
           options: [
-            { label: { en: "None", es: "Ninguno" }, value: "none" },
-            { label: { en: "Base", es: "Base" }, value: "base" },
+            { label: "None", value: "none" },
+            { label: "Base", value: "base" },
           ],
           type: "select",
         },
@@ -62,20 +62,14 @@ export const sectionFields: GroupField = {
       fields: [
         {
           admin: {
-            description: {
-              en: 'Upload an image or video. Use the "Background" folder.',
-              es: 'Sube una imagen o video. Usa la carpeta "Background".',
-            },
+            description: 'Upload an image or video. Use the "Background" folder.',
           },
           filterOptions: () => ({
             "folder.name": {
               equals: "Background",
             },
           }),
-          label: {
-            en: "Background (Image or Video)",
-            es: "Fondo (Imagen o Video)",
-          },
+          label: "Background (Image or Video)",
           name: "media",
           relationTo: "media",
           type: "upload",
@@ -86,10 +80,10 @@ export const sectionFields: GroupField = {
               name: "overlay",
               type: "select",
               dbName: "sec_bg_ovrly",
-              label: { en: "Overlay Color", es: "Color de Capa" },
+              label: "Overlay Color",
               options: [
-                { label: { en: "Black", es: "Negro" }, value: "black" },
-                { label: { en: "White", es: "Blanco" }, value: "white" },
+                { label: "Black", value: "black" },
+                { label: "White", value: "white" },
               ],
               admin: {
                 width: "50%",
@@ -99,24 +93,21 @@ export const sectionFields: GroupField = {
             {
               name: "opacity",
               type: "number",
-              label: { en: "Overlay Opacity (%)", es: "Opacidad de Capa (%)" },
+              label: "Overlay Opacity (%)",
               min: 0,
               max: 100,
               defaultValue: 35,
               admin: {
                 width: "50%",
                 condition: (_, siblingData) => !!siblingData?.overlay,
-                description: {
-                  en: "0 = transparent, 100 = fully opaque",
-                  es: "0 = transparente, 100 = completamente opaco",
-                },
+                description: "0 = transparent, 100 = fully opaque",
               },
             },
           ],
           type: "row",
         },
       ],
-      label: { en: "Background", es: "Fondo" },
+      label: "Background",
       name: "background",
       type: "group",
     },

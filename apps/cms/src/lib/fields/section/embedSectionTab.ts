@@ -8,17 +8,11 @@ export function embedSectionTab(contentFields: Field[]): Field[] {
       tabs: [
         {
           fields: contentFields,
-          label: {
-            en: "Content",
-            es: "Contenido",
-          },
+          label: "Content",
         },
         {
           fields: [sectionFields],
-          label: {
-            en: "Section",
-            es: "Sección",
-          },
+          label: "Section",
         },
       ],
       type: "tabs",

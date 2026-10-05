@@ -6,8 +6,8 @@ export const VideoEmbedInlineBlock: Block = {
   fields: videoEmbedFields,
   interfaceName: "VideoEmbedInline",
   labels: {
-    plural: { en: "Videos", es: "Vídeos" },
-    singular: { en: "Video", es: "Vídeo" },
+    plural: "Videos",
+    singular: "Video",
   },
   slug: "videoEmbedInline",
 };

@@ -10,7 +10,7 @@ const fields: Field[] = [
   ...sectionHeaderFields(),
   {
     defaultValue: "slide",
-    label: { en: "Effect", es: "Efecto" },
+    label: "Effect",
     name: "effect",
     options: [
       { label: "Slide", value: "slide" },
@@ -28,13 +28,13 @@ const fields: Field[] = [
       imageField("image", { withAspectRatio: false }),
       {
         editor: generateRichText(),
-        label: { en: "Slide Text", es: "Texto de la diapositiva" },
+        label: "Slide Text",
         localized: true,
         name: "text",
         type: "richText",
       },
     ],
-    label: { en: "Slides", es: "Diapositivas" },
+    label: "Slides",
     localized: true,
     minRows: 1,
     name: "slides",
@@ -48,8 +48,8 @@ export const CarouselBlock: Block = injectSection({
   interfaceName: "CarouselBlock",
   ...getBlockPreviewImage("Carousel"),
   labels: {
-    plural: { en: "Carousels", es: "Carruseles" },
-    singular: { en: "Carousel", es: "Carrusel" },
+    plural: "Carousels",
+    singular: "Carousel",
   },
   fields,
 });

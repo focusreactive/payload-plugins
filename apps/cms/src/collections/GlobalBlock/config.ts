@@ -24,12 +24,9 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
   fields: [
     {
       admin: {
-        description: {
-          en: "Internal name to identify this global block in the picker.",
-          es: "Nombre interno para identificar este bloque global en el selector.",
-        },
+        description: "Internal name to identify this global block in the picker.",
       },
-      defaultValue: createLocalizedDefault({ en: "Global Block", es: "Bloque Global" }),
+      defaultValue: createLocalizedDefault({ en: "Global Block" }),
       localized: true,
       name: "title",
       required: true,
@@ -40,10 +37,7 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
         components: {
           Cell: "/components/admin/BlockNameCell#BlockNameCell",
         },
-        description: {
-          en: "The single block this global represents. Edit once, reuse on any page.",
-          es: "El único bloque que representa este global. Edítalo una vez y reutilízalo en cualquier página.",
-        },
+        description: "The single block this global represents. Edit once, reuse on any page.",
         initCollapsed: true,
       },
       blocks: contentBlocks,
@@ -60,8 +54,8 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
     beforeDelete: [preventDeleteIfReferenced],
   },
   labels: {
-    plural: { en: "Global Blocks", es: "Bloques Globales" },
-    singular: { en: "Global Block", es: "Bloque Global" },
+    plural: "Global Blocks",
+    singular: "Global Block",
   },
   slug: "globalBlock",
   versions: {

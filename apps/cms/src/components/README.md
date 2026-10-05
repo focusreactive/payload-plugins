@@ -14,7 +14,7 @@ components/
                #   Switch, HorizontalSelect, image, link, richText, Card, Accordion, Pagination,
                #   FaqSection, CtaBandSection, AuthorAvatar, PageRange, ErrorBoundary, EmptyState,
                #   SkeletonFallback, EmptyBlock, blog, newsletter, ctaBand, cookieBanner, copy, linksList,
-               #   Testimonials, RelatedPosts, BlogPostsGrid, ThemeSelector, LocaleSelector,
+               #   RelatedPosts, BlogPostsGrid, ThemeSelector, LocaleSelector,
                #   LivePreviewListener, PayloadRedirects   (← former entities/ + features/)
   utils.ts     # the one canonical cn / cva / resolveBackdropTone — import from "@/components/utils"
 ```

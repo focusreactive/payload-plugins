@@ -69,16 +69,10 @@ export const Users: CollectionConfig<"users"> = {
   fields: [
     {
       admin: {
-        description: {
-          en: "The name of the user",
-          es: "El nombre del usuario",
-        },
+        description: "The name of the user",
       },
       defaultValue: "",
-      label: {
-        en: "Name",
-        es: "Nombre",
-      },
+      label: "Name",
       name: "name",
       required: true,
       type: "text",
@@ -103,40 +97,25 @@ export const Users: CollectionConfig<"users"> = {
         },
       },
       admin: {
-        description: {
-          en: "The role of the user",
-          es: "El rol del usuario",
-        },
+        description: "The role of the user",
         position: "sidebar",
       },
       // Least privilege (§5.7); the first account is promoted by `firstUserIsAdmin`.
       defaultValue: "author",
-      label: {
-        en: "Role",
-        es: "Rol",
-      },
+      label: "Role",
       name: "role",
       options: [
         {
-          label: {
-            en: "Admin",
-            es: "Admin",
-          },
+          label: "Admin",
           value: "admin",
         },
         {
-          label: {
-            en: "Author",
-            es: "Autor",
-          },
+          label: "Author",
           value: "author",
         },
         {
           // Value kept as `user` (access helpers and existing data); shown as Editor.
-          label: {
-            en: "Editor",
-            es: "Editor",
-          },
+          label: "Editor",
           value: "user",
         },
       ],
@@ -146,14 +125,8 @@ export const Users: CollectionConfig<"users"> = {
     },
   ],
   labels: {
-    plural: {
-      en: "Users",
-      es: "Usuarios",
-    },
-    singular: {
-      en: "User",
-      es: "Usuario",
-    },
+    plural: "Users",
+    singular: "User",
   },
   slug: "users",
 };

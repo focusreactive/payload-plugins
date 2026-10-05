@@ -6,8 +6,8 @@ export const LogosInlineBlock: Block = {
   fields: logosFields,
   interfaceName: "LogosInlineBlock",
   labels: {
-    plural: { en: "Logos", es: "Logos" },
-    singular: { en: "Logos", es: "Logos" },
+    plural: "Logos",
+    singular: "Logos",
   },
   slug: "logosInline",
 };

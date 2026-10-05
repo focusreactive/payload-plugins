@@ -50,7 +50,7 @@ src/
 │   ├── plugins/               #   plugin wiring (index.ts, seoPlugin, mcp) + per-plugin app glue (ab/, analytics/)
 │   ├── dal/                   #   Domain Access Layer — import root @/dal — see lib/dal/README.md
 │   ├── database/              #   Postgres adapter + migrations
-│   ├── search/                #   pgvector semantic search
+│   ├── search/                #   plain-text site search (Postgres)
 │   ├── config/                #   i18n, blog, customPages
 │   ├── constants/             #   default values, media defaults
 │   ├── i18n/                  #   next-intl integration
@@ -119,7 +119,7 @@ A plugin's **app-side wiring** (config, adapters, provider components) lives und
 
 ### Localization
 
-Locales live in `src/lib/config/i18n.ts` (`en`, `es`). URLs always include the locale prefix (`/en/`, `/es/`). Mark fields `localized: true` and use `createLocalizedDefault({ en: '…', es: '…' })` for defaults.
+Locales live in `src/lib/config/i18n.ts` (`en`, `de`, `ja`). English has no URL prefix; other locales use `/de/`, `/ja/`. The admin UI is English only. Mark fields `localized: true` and use `createLocalizedDefault({ en: '…' })` for defaults.
 
 ### Blocks & Presets
 

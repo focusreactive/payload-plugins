@@ -7,13 +7,13 @@ everything the seed derives from it that names the client (`public/ct/`,
 
 ## Prerequisites
 
-- Postgres 16 with pgvector (`create extension vector` once per database), `DATABASE_URL` set.
+- Postgres 16 with pgvector (`create extension vector` once per database; early migrations still
+  use it), `DATABASE_URL` set.
   Environment variables win over `apps/cms/.env`.
 - `bun install` at the repo root, `bun run payload migrate` in `apps/cms`.
 - `MEDIA_STORAGE=local` to keep uploads in `public/media` (otherwise Vercel Blob when
   `BLOB_READ_WRITE_TOKEN` is set).
-- Optional: `SEED_DEMO_PASSWORD` (default `ct-demo`), `OPENAI_API_KEY` (search embeddings and
-  the translator plugin; without it the seed logs `AI_LoadAPIKeyError` per document and carries on).
+- Optional: `SEED_DEMO_PASSWORD` (default `ct-demo`), `OPENAI_API_KEY` (the translator plugin).
 
 ## Inputs (`apps/cms/.local/ct/`)
 

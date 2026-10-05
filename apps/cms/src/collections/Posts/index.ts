@@ -23,14 +23,16 @@ import { createSharedSlugField } from "@/lib/fields/slugField";
 import { extractLexicalText } from "@/lib/utils/text";
 import type { Post } from "@/payload-types";
 
-import { convertMarkdownEndpoint } from "./endpoints/convertMarkdown";
 import { computeReadingTime } from "./hooks/computeReadingTime";
-import { indexPostEmbedding, deletePostEmbedding } from "./hooks/indexEmbedding";
 import { revalidateDelete, revalidatePost } from "./hooks/revalidatePost";
 import { denyPublishForAuthors } from "@/lib/hooks/denyPublishForAuthors";
 
 function hasLexicalText(value: unknown): boolean {
   return Boolean(value) && extractLexicalText(value as Post["content"]).trim().length > 0;
+}
+
+function hasMarkdown(value: unknown): boolean {
+  return typeof value === "string" && value.trim().length > 0;
 }
 
 export const Posts: CollectionConfig<"posts"> = {
@@ -84,7 +86,6 @@ export const Posts: CollectionConfig<"posts"> = {
   defaultPopulate: {
     authors: true,
     categories: true,
-    contentFormat: true,
     excerpt: true,
     heroImage: true,
     publishedAt: true,
@@ -92,7 +93,6 @@ export const Posts: CollectionConfig<"posts"> = {
     slug: true,
     title: true,
   },
-  endpoints: [convertMarkdownEndpoint],
   fields: [
     {
       tabs: [
@@ -100,10 +100,7 @@ export const Posts: CollectionConfig<"posts"> = {
           fields: [
             {
               defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.posts.title),
-              label: {
-                en: "Title",
-                es: "Título",
-              },
+              label: "Title",
               localized: true,
               name: "title",
               required: true,
@@ -111,10 +108,7 @@ export const Posts: CollectionConfig<"posts"> = {
             },
             {
               defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.posts.excerpt),
-              label: {
-                en: "Excerpt",
-                es: "Extracto",
-              },
+              label: "Excerpt",
               localized: true,
               name: "excerpt",
               required: true,
@@ -122,10 +116,7 @@ export const Posts: CollectionConfig<"posts"> = {
             },
             {
               defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
-              label: {
-                en: "Hero Image",
-                es: "Imagen de la cabecera",
-              },
+              label: "Hero Image",
               name: "heroImage",
               relationTo: "media",
               required: true,
@@ -142,51 +133,34 @@ export const Posts: CollectionConfig<"posts"> = {
                   VideoEmbedInlineBlock,
                 ],
               }),
-              label: {
-                en: "Content",
-                es: "Contenido",
-              },
+              label: "Content",
               localized: true,
               name: "content",
-              admin: {
-                condition: (data) => data?.contentFormat !== "markdown",
-              },
-              // Required only for rich-text posts; Markdown posts keep their body in `markdown`.
+              // A migrated post may carry its whole body in `markdown` until an editor reworks it.
               validate: (value: unknown, { siblingData }: { siblingData: Partial<Post> }) =>
-                siblingData?.contentFormat === "markdown" || hasLexicalText(value)
+                hasLexicalText(value) || hasMarkdown(siblingData?.markdown)
                   ? true
-                  : "Content is required for rich-text posts",
+                  : "Add content, or migrated Markdown below",
               type: "richText",
             },
             {
               admin: {
-                condition: (data) => data?.contentFormat === "markdown",
-                description: {
-                  en: "Imported articles keep their Markdown. Use “Convert to rich text” in the sidebar to switch.",
-                  es: "Los artículos importados conservan su Markdown. Use “Convertir a texto enriquecido” para cambiar.",
-                },
+                description:
+                  "Body of a post migrated from the old site. Rendered after the rich text. Move it into Content when you rework the post.",
                 language: "markdown",
               },
-              label: { en: "Content (Markdown)", es: "Contenido (Markdown)" },
+              label: "Migrated content (Markdown)",
               localized: true,
               name: "markdown",
-              validate: (value: unknown, { siblingData }: { siblingData: Partial<Post> }) =>
-                siblingData?.contentFormat !== "markdown" ||
-                (typeof value === "string" && value.trim().length > 0)
-                  ? true
-                  : "Markdown content is required for Markdown posts",
               type: "code",
             },
             {
               admin: {
-                description: {
-                  en: "Optional FAQ shown after the article body.",
-                  es: "FAQ opcional mostrado tras el cuerpo del artículo.",
-                },
+                description: "Optional FAQ shown after the article body.",
               },
               fields: [
                 {
-                  label: { en: "Heading", es: "Encabezado" },
+                  label: "Heading",
                   localized: true,
                   name: "heading",
                   type: "text",
@@ -195,7 +169,7 @@ export const Posts: CollectionConfig<"posts"> = {
                   admin: { initCollapsed: true },
                   fields: [
                     {
-                      label: { en: "Question", es: "Pregunta" },
+                      label: "Question",
                       localized: true,
                       name: "question",
                       required: true,
@@ -203,7 +177,7 @@ export const Posts: CollectionConfig<"posts"> = {
                     },
                     {
                       editor: generateRichText(),
-                      label: { en: "Answer", es: "Respuesta" },
+                      label: "Answer",
                       localized: true,
                       name: "answer",
                       required: true,
@@ -215,16 +189,14 @@ export const Posts: CollectionConfig<"posts"> = {
                   type: "array",
                 },
               ],
-              label: { en: "FAQ", es: "FAQ" },
+              label: "FAQ",
               name: "faq",
               type: "group",
             },
             {
               admin: {
-                description: {
-                  en: "Optional CTA band shown at the end of the post. Hidden when the heading is empty.",
-                  es: "Banda CTA opcional al final de la publicación. Oculta si el encabezado está vacío.",
-                },
+                description:
+                  "Optional CTA band shown at the end of the post. Hidden when the heading is empty.",
               },
               fields: [
                 {
@@ -232,14 +204,14 @@ export const Posts: CollectionConfig<"posts"> = {
                   fields: [
                     {
                       admin: { width: "40%" },
-                      label: { en: "Eyebrow", es: "Antetítulo" },
+                      label: "Eyebrow",
                       localized: true,
                       name: "eyebrow",
                       type: "text",
                     },
                     {
                       admin: { width: "60%" },
-                      label: { en: "Heading", es: "Encabezado" },
+                      label: "Heading",
                       localized: true,
                       name: "heading",
                       type: "text",
@@ -247,7 +219,7 @@ export const Posts: CollectionConfig<"posts"> = {
                   ],
                 },
                 {
-                  label: { en: "Description", es: "Descripción" },
+                  label: "Description",
                   localized: true,
                   name: "description",
                   type: "textarea",
@@ -255,32 +227,26 @@ export const Posts: CollectionConfig<"posts"> = {
                 {
                   admin: { initCollapsed: true },
                   fields: (link() as GroupField).fields,
-                  label: { en: "Actions", es: "Acciones" },
+                  label: "Actions",
                   localized: true,
                   maxRows: 2,
                   name: "actions",
                   type: "array",
                 },
               ],
-              label: { en: "CTA", es: "CTA" },
+              label: "CTA",
               name: "cta",
               type: "group",
             },
           ],
-          label: {
-            en: "Content",
-            es: "Contenido",
-          },
+          label: "Content",
         },
         {
           fields: generateSeoFields({
             generation: true,
             robotsDefault: "noindex",
           }),
-          label: {
-            en: "SEO",
-            es: "SEO",
-          },
+          label: "SEO",
           localized: true,
           name: "meta",
         },
@@ -291,40 +257,10 @@ export const Posts: CollectionConfig<"posts"> = {
     {
       admin: {
         position: "sidebar",
-        description: {
-          en: "Markdown: imported articles, edited as Markdown. Rich text: the block editor.",
-          es: "Markdown: artículos importados. Texto enriquecido: el editor de bloques.",
-        },
-      },
-      defaultValue: "richText",
-      label: { en: "Content format", es: "Formato del contenido" },
-      name: "contentFormat",
-      options: [
-        { label: { en: "Rich text", es: "Texto enriquecido" }, value: "richText" },
-        { label: "Markdown", value: "markdown" },
-      ],
-      required: true,
-      type: "select",
-    },
-    {
-      admin: {
-        components: { Field: "/components/admin/ConvertToRichText#ConvertToRichText" },
-        condition: (data) => data?.contentFormat === "markdown",
-        position: "sidebar",
-      },
-      name: "convertToRichText",
-      type: "ui",
-    },
-    {
-      admin: {
-        position: "sidebar",
         readOnly: true,
-        description: {
-          en: "Where this article lived on the old site",
-          es: "Dónde estaba este artículo en el sitio anterior",
-        },
+        description: "Where this article lived on the old site",
       },
-      label: { en: "Source URL", es: "URL de origen" },
+      label: "Source URL",
       name: "sourceUrl",
       type: "text",
     },
@@ -351,10 +287,7 @@ export const Posts: CollectionConfig<"posts"> = {
         ],
       },
       index: true,
-      label: {
-        en: "Published At",
-        es: "Publicado el",
-      },
+      label: "Published At",
       name: "publishedAt",
       type: "date",
     },
@@ -362,15 +295,9 @@ export const Posts: CollectionConfig<"posts"> = {
       admin: {
         position: "sidebar",
         readOnly: true,
-        description: {
-          en: "Estimated reading time in minutes. Auto-calculated from the content on save.",
-          es: "Tiempo de lectura estimado en minutos. Se calcula automáticamente al guardar.",
-        },
+        description: "Estimated reading time in minutes. Auto-calculated from the content on save.",
       },
-      label: {
-        en: "Reading Time (min)",
-        es: "Tiempo de lectura (min)",
-      },
+      label: "Reading Time (min)",
       localized: true,
       name: "readingTime",
       type: "number",
@@ -380,10 +307,7 @@ export const Posts: CollectionConfig<"posts"> = {
         position: "sidebar",
       },
       hasMany: true,
-      label: {
-        en: "Categories",
-        es: "Categorías",
-      },
+      label: "Categories",
       name: "categories",
       relationTo: "categories",
       required: true,
@@ -394,10 +318,7 @@ export const Posts: CollectionConfig<"posts"> = {
         position: "sidebar",
       },
       hasMany: true,
-      label: {
-        en: "Authors",
-        es: "Autores",
-      },
+      label: "Authors",
       name: "authors",
       relationTo: "authors",
       required: true,
@@ -405,10 +326,8 @@ export const Posts: CollectionConfig<"posts"> = {
     },
     {
       admin: {
-        description: {
-          en: "Select up to 3 related posts. If fewer than 3 are selected, additional posts from the same categories will be shown automatically based on publish date.",
-          es: "Selecciona hasta 3 publicaciones relacionadas. Si se seleccionan menos de 3, se mostrarán automáticamente publicaciones adicionales de las mismas categorías según la fecha de publicación.",
-        },
+        description:
+          "Select up to 3 related posts. If fewer than 3 are selected, additional posts from the same categories will be shown automatically based on publish date.",
         position: "sidebar",
       },
       filterOptions: ({ id }) => ({
@@ -417,10 +336,7 @@ export const Posts: CollectionConfig<"posts"> = {
         },
       }),
       hasMany: true,
-      label: {
-        en: "Related Posts",
-        es: "Publicaciones relacionadas",
-      },
+      label: "Related Posts",
       name: "relatedPosts",
       relationTo: BLOG_CONFIG.collection,
       type: "relationship",
@@ -428,18 +344,12 @@ export const Posts: CollectionConfig<"posts"> = {
   ],
   hooks: {
     beforeChange: [denyPublishForAuthors, computeReadingTime],
-    afterChange: [revalidatePost, indexPostEmbedding],
-    afterDelete: [revalidateDelete, deletePostEmbedding],
+    afterChange: [revalidatePost],
+    afterDelete: [revalidateDelete],
   },
   labels: {
-    plural: {
-      en: "Posts",
-      es: "Publicaciones",
-    },
-    singular: {
-      en: "Post",
-      es: "Publicación",
-    },
+    plural: "Posts",
+    singular: "Post",
   },
   slug: BLOG_CONFIG.collection,
   versions: {

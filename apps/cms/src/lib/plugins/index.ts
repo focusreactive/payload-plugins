@@ -23,7 +23,6 @@ import { Page as PageCollection } from "@/collections/Page/Page";
 import serverExtractPageContent from "@/collections/Page/serverExtractPageContent";
 import { Posts } from "@/collections/Posts";
 import serverExtractPostContent from "@/collections/Posts/serverExtractPostContent";
-import { Testimonials } from "@/collections/Testimonials";
 import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
 import { getMediaStoragePrefix } from "@/lib/storage/mediaStoragePrefix";
 import { I18N_CONFIG } from "@/lib/config/i18n";
@@ -55,10 +54,7 @@ const withBlockNameCell = (field: Field): Field => {
         Cell: "/components/admin/BlockNameCell#BlockNameCell",
       },
     },
-    label: {
-      en: "Block",
-      es: "Bloque",
-    },
+    label: "Block",
   };
 };
 
@@ -142,16 +138,10 @@ export const plugins: Plugin[] = [
         const customFields: Field[] = [
           {
             admin: {
-              description: {
-                en: "Whether the redirect is active.",
-                es: "Si la redirección está activa.",
-              },
+              description: "Whether the redirect is active.",
             },
             defaultValue: true,
-            label: {
-              en: "Active",
-              es: "Activo",
-            },
+            label: "Active",
             localized: true,
             name: "isActive",
             required: true,
@@ -164,10 +154,8 @@ export const plugins: Plugin[] = [
             return {
               ...field,
               admin: {
-                description: {
-                  en: "Latin letters, numbers, / - _ . ~ only. No spaces. Stored as lowercase with leading slash.",
-                  es: "Solo letras latinas, números, / - _ . ~. Sin espacios. Se guarda en minúsculas con barra inicial.",
-                },
+                description:
+                  "Latin letters, numbers, / - _ . ~ only. No spaces. Stored as lowercase with leading slash.",
               },
               unique: false,
               validate: validateRedirectPath,
@@ -221,16 +209,10 @@ export const plugins: Plugin[] = [
     },
     redirectTypeFieldOverride: {
       admin: {
-        description: {
-          en: "Choose the redirect type. 307 - temporary, 308 - permanent.",
-          es: "Elige el tipo de redirección. 307 - temporal, 308 - permanente.",
-        },
+        description: "Choose the redirect type. 307 - temporary, 308 - permanent.",
       },
       defaultValue: "307",
-      label: {
-        en: "Redirect type",
-        es: "Tipo de redirección",
-      },
+      label: "Redirect type",
       required: true,
     },
     redirectTypes: ["307", "308"],
@@ -273,8 +255,8 @@ export const plugins: Plugin[] = [
 
   presetsPlugin({
     labels: {
-      plural: { en: "Presets", es: "Presets" },
-      singular: { en: "Preset", es: "Preset" },
+      plural: "Presets",
+      singular: "Preset",
     },
     overrides: {
       access: {
@@ -298,38 +280,11 @@ export const plugins: Plugin[] = [
       { slug: "posts", titleField: "title" },
       { slug: "categories", titleField: "title" },
       { slug: "authors", titleField: "name" },
-      { slug: "testimonials", titleField: "author" },
       { slug: "header", titleField: "name" },
       { slug: "footer", titleField: "name" },
     ],
 
-    translations: {
-      es: {
-        add: "Añadir comentario",
-        cancel: "Cancelar",
-        close: "Cerrar",
-        comment: "Comentario",
-        delete: "Eliminar",
-        deletedUser: "Usuario eliminado",
-        failedToAdd: "Error al añadir el comentario",
-        failedToDelete: "Error al eliminar el comentario",
-        failedToPost: "Error al publicar el comentario",
-        failedToUpdate: "Error al actualizar el comentario",
-        general: "General",
-        label: "Comentarios",
-        loadingComments: "Cargando comentarios...",
-        noMentionMatches: "Sin coincidencias",
-        openCommentsAria: "Abrir comentarios",
-        openComments_one: "{{count}} comentario abierto",
-        openComments_other: "{{count}} comentarios abiertos",
-        posting: "Publicando…",
-        reopen: "Reabrir",
-        resolve: "Resolver",
-        syncingComments: "Sincronizando comentarios",
-        unknownAuthor: "Desconocido",
-        writeComment: "Escribe un comentario",
-      },
-    },
+    translations: {},
 
     usernameFieldPath: "name",
   }),
@@ -344,8 +299,8 @@ export const plugins: Plugin[] = [
   }),
 
   translatorPlugin({
-    collections: [PageCollection, Posts, Categories, Authors, Testimonials, Header, Footer].map(
-      (col) => JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
+    collections: [PageCollection, Posts, Categories, Authors, Header, Footer].map((col) =>
+      JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
     ),
     access: { check: ({ req }) => Boolean(req.user) },
     runner: createSyncRunner(),
@@ -410,10 +365,8 @@ export const plugins: Plugin[] = [
       "media",
       "categories",
       "authors",
-      "testimonials",
       "header",
       "footer",
-      "document-embeddings",
       "redirects",
       "presets",
       "comments",

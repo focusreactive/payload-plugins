@@ -2,23 +2,19 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { SectionContainer } from "@/components/shared";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
+import { getMauticForm } from "@/lib/mautic";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { FormBlock } from "@/payload-types";
 
-import { DEFAULT_MAUTIC_ACTION } from "./config";
 import { Form } from "./ui";
 import type { FormFieldProps } from "./ui";
-
-export const FORM_SUBMIT_PATH = "/api/forms/submit";
 
 export async function FormBlockComponent({
   eyebrow,
   heading,
   description,
-  mode,
-  formName,
   mauticFormId,
-  mauticActionUrl,
+  mauticFormName,
   fields,
   submitLabel,
   consentText,
@@ -29,8 +25,8 @@ export async function FormBlockComponent({
 }: FormBlock) {
   const locale = await resolveLocale();
   const header = prepareSectionHeaderProps({ description, eyebrow, heading });
-  const isMautic = mode === "mautic";
-  const blockId = id ?? formName;
+  const blockId = id ?? mauticFormName;
+  const mautic = await getMauticForm(mauticFormId, mauticFormName);
   const success = successLink ? prepareLinkProps(successLink, locale) : null;
 
   const formFields: FormFieldProps[] = (fields ?? []).map((field) => ({
@@ -52,15 +48,7 @@ export async function FormBlockComponent({
         <div>{header && <SectionHeader {...header} />}</div>
         <Form
           domId={`form-${blockId}`}
-          mode={isMautic ? "mautic" : "internal"}
-          action={
-            isMautic
-              ? `${mauticActionUrl || DEFAULT_MAUTIC_ACTION}${mauticFormId ?? ""}`
-              : FORM_SUBMIT_PATH
-          }
-          formId={blockId}
-          formName={formName}
-          mauticFormId={mauticFormId}
+          mautic={mautic}
           fields={formFields}
           submitLabel={submitLabel || "Submit"}
           consentText={consentText}

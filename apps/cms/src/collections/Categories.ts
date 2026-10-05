@@ -21,10 +21,7 @@ export const Categories: CollectionConfig<"categories"> = {
   fields: [
     {
       defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.categories.title),
-      label: {
-        en: "Title",
-        es: "Título",
-      },
+      label: "Title",
       localized: true,
       name: "title",
       required: true,
@@ -43,14 +40,8 @@ export const Categories: CollectionConfig<"categories"> = {
     }),
   ],
   labels: {
-    plural: {
-      en: "Categories",
-      es: "Categorías",
-    },
-    singular: {
-      en: "Category",
-      es: "Categoría",
-    },
+    plural: "Categories",
+    singular: "Category",
   },
   slug: "categories",
 };

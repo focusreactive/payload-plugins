@@ -25,22 +25,16 @@ export const Header: CollectionConfig<"header"> = {
   fields: [
     {
       admin: {
-        description: {
-          en: "The name of the header",
-          es: "El nombre del header",
-        },
+        description: "The name of the header",
       },
-      defaultValue: createLocalizedDefault({ en: "Header", es: "Header" }),
+      defaultValue: createLocalizedDefault({ en: "Header" }),
       localized: true,
       name: "name",
       type: "text",
     },
     {
       admin: {
-        description: {
-          en: "The logo to display in the header",
-          es: "El logo a mostrar en el header",
-        },
+        description: "The logo to display in the header",
       },
       defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
       name: "logo",
@@ -60,10 +54,6 @@ export const Header: CollectionConfig<"header"> = {
           { type: "link", link: { label: "Blog", newTab: false, type: "custom", url: "/blog" } },
           { type: "link", link: { label: "Pricing", newTab: false, type: "custom", url: "#" } },
         ],
-        es: [
-          { type: "link", link: { label: "Blog", newTab: false, type: "custom", url: "/blog" } },
-          { type: "link", link: { label: "Pricing", newTab: false, type: "custom", url: "#" } },
-        ],
       }),
       fields: [
         {
@@ -71,7 +61,7 @@ export const Header: CollectionConfig<"header"> = {
           fields: [
             {
               admin: { width: "60%" },
-              label: { en: "Label", es: "Etiqueta" },
+              label: "Label",
               localized: true,
               name: "label",
               required: true,
@@ -80,11 +70,11 @@ export const Header: CollectionConfig<"header"> = {
             {
               admin: { width: "40%" },
               defaultValue: "link",
-              label: { en: "Type", es: "Tipo" },
+              label: "Type",
               name: "type",
               options: [
-                { label: { en: "Link", es: "Enlace" }, value: "link" },
-                { label: { en: "Dropdown", es: "Desplegable" }, value: "dropdown" },
+                { label: "Link", value: "link" },
+                { label: "Dropdown", value: "dropdown" },
               ],
               required: true,
               type: "select",
@@ -105,7 +95,7 @@ export const Header: CollectionConfig<"header"> = {
               fields: [
                 {
                   defaultValue: false,
-                  label: { en: "Enabled", es: "Habilitado" },
+                  label: "Enabled",
                   name: "enabled",
                   type: "checkbox",
                 },
@@ -115,14 +105,14 @@ export const Header: CollectionConfig<"header"> = {
                   fields: [
                     {
                       admin: { width: "40%" },
-                      label: { en: "Eyebrow", es: "Antetítulo" },
+                      label: "Eyebrow",
                       localized: true,
                       name: "eyebrow",
                       type: "text",
                     },
                     {
                       admin: { width: "60%" },
-                      label: { en: "Title", es: "Título" },
+                      label: "Title",
                       localized: true,
                       name: "title",
                       type: "text",
@@ -131,7 +121,7 @@ export const Header: CollectionConfig<"header"> = {
                 },
                 {
                   admin: { condition: (_, siblingData) => !!siblingData?.enabled },
-                  label: { en: "Description", es: "Descripción" },
+                  label: "Description",
                   localized: true,
                   name: "description",
                   type: "textarea",
@@ -145,7 +135,7 @@ export const Header: CollectionConfig<"header"> = {
                   },
                 }),
               ],
-              label: { en: "Featured card", es: "Tarjeta destacada" },
+              label: "Featured card",
               name: "featured",
               type: "group",
             },
@@ -157,7 +147,7 @@ export const Header: CollectionConfig<"header"> = {
                   fields: [
                     {
                       admin: { width: "50%" },
-                      label: { en: "Title", es: "Título" },
+                      label: "Title",
                       localized: true,
                       name: "title",
                       required: true,
@@ -165,7 +155,7 @@ export const Header: CollectionConfig<"header"> = {
                     },
                     {
                       admin: { width: "50%" },
-                      label: { en: "Description", es: "Descripción" },
+                      label: "Description",
                       localized: true,
                       name: "description",
                       type: "text",
@@ -178,13 +168,13 @@ export const Header: CollectionConfig<"header"> = {
                   disableLabel: true,
                 }),
               ],
-              label: { en: "Menu links", es: "Enlaces del menú" },
+              label: "Menu links",
               minRows: 1,
               name: "links",
               type: "array",
             },
           ],
-          label: { en: "Dropdown", es: "Desplegable" },
+          label: "Dropdown",
           name: "dropdown",
           type: "group",
         },
@@ -197,7 +187,7 @@ export const Header: CollectionConfig<"header"> = {
     {
       admin: { initCollapsed: true },
       fields: (link() as GroupField).fields,
-      label: { en: "Actions", es: "Acciones" },
+      label: "Actions",
       localized: true,
       maxRows: 2,
       name: "actions",
@@ -209,14 +199,8 @@ export const Header: CollectionConfig<"header"> = {
     beforeChange: [denyPublishForAuthors],
   },
   labels: {
-    plural: {
-      en: "Headers",
-      es: "Headers",
-    },
-    singular: {
-      en: "Header",
-      es: "Header",
-    },
+    plural: "Headers",
+    singular: "Header",
   },
   slug: "header",
   versions: {

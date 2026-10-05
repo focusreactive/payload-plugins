@@ -98,28 +98,6 @@ export function extractPageBlockContent(
           linkToContentNode(c.link, ctx),
         ]),
       ]);
-    case "testimonialsList": {
-      type Testimonial = { author?: string; company?: string; position?: string; content?: string };
-      const resolveTestimonial = (val: unknown): Testimonial | undefined => {
-        if (typeof val === "object" && val !== null) return val as Testimonial;
-        if (typeof val === "number" || typeof val === "string") {
-          return docs.get("testimonials", val) as Testimonial | undefined;
-        }
-        return undefined;
-      };
-      return helpers.compact([
-        paragraph(b.eyebrow as string),
-        heading(2, b.heading as string),
-        paragraph(b.description as string),
-        ...asArray<{ testimonial?: Testimonial | number | string }>(b.testimonialItems).flatMap(
-          (t) => {
-            const ref = resolveTestimonial(t.testimonial);
-            const role = [ref?.position, ref?.company].filter(Boolean).join(", ");
-            return [paragraph(ref?.content), paragraph(ref?.author), paragraph(role)];
-          }
-        ),
-      ]);
-    }
     case "chart":
       return helpers.compact([
         paragraph(b.eyebrow as string),

@@ -14,12 +14,6 @@ const fields: Field[] = [
         { label: "faster sprint planning", value: "2.5×" },
         { label: "teams shipping in rhythm", value: "4,000+" },
       ],
-      es: [
-        { label: "menos reuniones de estado", value: "70%" },
-        { label: "herramientas consolidadas en una", value: "4→1" },
-        { label: "planificación de sprints más rápida", value: "2.5×" },
-        { label: "equipos publicando con ritmo", value: "4,000+" },
-      ],
     }),
     fields: [
       {
@@ -27,7 +21,7 @@ const fields: Field[] = [
         fields: [
           {
             admin: { width: "50%" },
-            label: { en: "Value", es: "Valor" },
+            label: "Value",
             localized: true,
             name: "value",
             required: true,
@@ -35,7 +29,7 @@ const fields: Field[] = [
           },
           {
             admin: { width: "50%" },
-            label: { en: "Label", es: "Etiqueta" },
+            label: "Label",
             localized: true,
             name: "label",
             required: true,
@@ -58,8 +52,8 @@ export const StatsBlock: Block = injectSection({
   interfaceName: "StatsBlock",
   ...getBlockPreviewImage("Stats"),
   labels: {
-    plural: { en: "Stats", es: "Estadísticas" },
-    singular: { en: "Stats", es: "Estadísticas" },
+    plural: "Stats",
+    singular: "Stats",
   },
   fields,
 });

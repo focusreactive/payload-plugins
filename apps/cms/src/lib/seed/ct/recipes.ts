@@ -206,6 +206,9 @@ function newsletter(theme: Theme = "light"): Block {
   };
 }
 
+// Placeholder until the client shares its Mautic form ids.
+export const DEMO_MAUTIC_FORM_ID = "1";
+
 function form(opts: {
   heading: string;
   description?: string;
@@ -227,9 +230,9 @@ function form(opts: {
     blockType: "form",
     description: opts.description,
     fields: opts.fields,
-    formName: opts.formName,
     heading: opts.heading,
-    mode: "internal",
+    mauticFormId: DEMO_MAUTIC_FORM_ID,
+    mauticFormName: opts.formName,
     submitLabel: opts.submitLabel ?? "Submit",
     successLink: opts.successLink ?? { type: "custom", url: "", label: "" },
     successMessage: opts.successMessage ?? "Thank you — we will be in touch shortly.",

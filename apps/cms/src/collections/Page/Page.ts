@@ -11,7 +11,6 @@ import type { Page as PageType } from "@/payload-types";
 
 import { createBasePageFields } from "./basePageFields";
 import { fixBreadcrumbDocIds } from "./hooks/fixBreadcrumbDocIds";
-import { indexPageEmbedding, deletePageEmbedding } from "./hooks/indexEmbedding";
 import { revalidateDelete, revalidatePage } from "./hooks/revalidatePage";
 import { validateReservedSlug, validateReservedPath } from "./hooks/validateReservedSlug";
 import { denyPublishForAuthors } from "@/lib/hooks/denyPublishForAuthors";
@@ -69,10 +68,7 @@ export const Page: CollectionConfig<"page"> = {
   fields: [
     {
       admin: {
-        description: {
-          en: "The title of the page",
-          es: 'El título de la página (por defecto: "Page")',
-        },
+        description: "The title of the page",
       },
       defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.page.title),
       localized: true,
@@ -95,16 +91,13 @@ export const Page: CollectionConfig<"page"> = {
       admin: {
         position: "sidebar",
       },
-      label: {
-        en: "Page Breadcrumbs",
-        es: "Breadcrumbs de la página",
-      },
+      label: "Page Breadcrumbs",
     }),
   ],
   folders: true,
   hooks: {
-    afterChange: [revalidatePage, indexPageEmbedding],
-    afterDelete: [revalidateDelete, deletePageEmbedding],
+    afterChange: [revalidatePage],
+    afterDelete: [revalidateDelete],
     beforeChange: [
       denyPublishForAuthors,
       fixBreadcrumbDocIds,
@@ -113,14 +106,8 @@ export const Page: CollectionConfig<"page"> = {
     ],
   },
   labels: {
-    plural: {
-      en: "Pages",
-      es: "Páginas",
-    },
-    singular: {
-      en: "Page",
-      es: "Página",
-    },
+    plural: "Pages",
+    singular: "Page",
   },
   slug: "page",
   versions: {

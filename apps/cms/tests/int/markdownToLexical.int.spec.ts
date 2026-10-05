@@ -19,7 +19,7 @@ function walk(node: Node, visit: (n: Node) => void) {
   }
 }
 
-describe("markdownToLexical (Convert to rich text)", () => {
+describe("markdownToLexical", () => {
   const markdown = [
     "## Heading two",
     "",

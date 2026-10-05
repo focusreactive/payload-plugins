@@ -34,7 +34,6 @@ src/lib/dal/                  (import root: @/dal)
 ├── getGlobals.ts · getSiteSettings.ts · getBlogPageSettings.ts   ← globals
 ├── getDocument.ts · getAllDocuments.ts                   ← generic find / findByID
 ├── getRedirects.ts · getAlternateLocales.ts · getDefaultMediaId.ts
-├── searchPosts.ts · runPostSemanticSearch.ts             ← search-backed reads
 └── staticParams/             ← generateStaticParams helpers (pages, posts)
 ```
 

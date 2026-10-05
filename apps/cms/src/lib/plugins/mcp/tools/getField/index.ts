@@ -122,7 +122,7 @@ export function createGetFieldTool(
       locale: z
         .string()
         .optional()
-        .describe('Locale code, e.g. "en" or "es". Omit to use the default locale.'),
+        .describe('Locale code, e.g. "en" or "de". Omit to use the default locale.'),
       raw: z
         .boolean()
         .optional()

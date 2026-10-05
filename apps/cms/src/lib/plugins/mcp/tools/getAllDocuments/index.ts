@@ -92,7 +92,7 @@ export function createGetAllDocumentsTool(
       locale: z
         .string()
         .optional()
-        .describe('Locale code, e.g. "en" or "es". Omit to use the default locale.'),
+        .describe('Locale code, e.g. "en" or "de". Omit to use the default locale.'),
       page: z.number().optional().describe("Page number for pagination"),
       where: z
         .string()

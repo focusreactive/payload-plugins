@@ -4,7 +4,7 @@ import type { Post } from "@/payload-types";
 
 export function extractPostText(
   post: Pick<Post, "title" | "excerpt" | "content" | "faq" | "cta"> &
-    Partial<Pick<Post, "contentFormat" | "markdown">>
+    Partial<Pick<Post, "markdown">>
 ): string {
   const faqItemsText = (post.faq?.items ?? []).flatMap((item) => [
     item.question,
@@ -14,9 +14,8 @@ export function extractPostText(
   return joinText([
     post.title,
     post.excerpt,
-    post.contentFormat === "markdown"
-      ? markdownToPlainText(post.markdown)
-      : extractLexicalText(post.content),
+    extractLexicalText(post.content),
+    markdownToPlainText(post.markdown),
     post.faq?.heading,
     ...faqItemsText,
     post.cta?.eyebrow,

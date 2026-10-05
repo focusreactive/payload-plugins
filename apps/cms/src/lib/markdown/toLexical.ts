@@ -6,7 +6,7 @@ import { generateRichText } from "@/lib/utils/generateRichText";
 
 /**
  * Markdown → Lexical with Payload's own converter and the posts editor configuration (headings,
- * lists, links, quotes, tables, inline code). Used by "Convert to rich text" (§5.2).
+ * lists, links, quotes, tables, inline code). Used by the seed to build rich-text block content.
  */
 export async function markdownToLexical(
   markdown: string,

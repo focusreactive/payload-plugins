@@ -285,13 +285,12 @@ html:lang(ja) {
     accent-color: var(--color-ct-racing-green);
   }
 
-  /* No-JS success: the submit route redirects to #<form>-ok; :target reveals it. */
+  /* Mautic returns to #<form>-ok; :target reveals the success state. */
   .ct-form-success {
     display: none;
   }
 
-  .ct-form-success:target,
-  [data-visible] > .ct-form-success {
+  .ct-form-success:target {
     display: block;
   }
 

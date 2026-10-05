@@ -12,8 +12,8 @@ import type { Locale } from "@/lib/types";
 import { injectSection } from "@/lib/fields/section/injectSection";
 import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
 
-// Defaults exist for en/es; other locales fall back to them via createLocalizedDefault.
-function buildFaqItems(locale: Extract<Locale, "en" | "es">) {
+// Defaults exist for en; other locales fall back to them via createLocalizedDefault.
+function buildFaqItems(locale: Extract<Locale, "en">) {
   const { question, answer } = DEFAULT_VALUES.blocks.faq;
   return Array.from({ length: 3 }, () => ({
     answer: createRichTextState(answer[locale].heading, answer[locale].paragraph),
@@ -27,11 +27,10 @@ const fields: Field[] = [
     admin: { initCollapsed: true },
     defaultValue: createLocalizedDefault({
       en: buildFaqItems("en"),
-      es: buildFaqItems("es"),
     }),
     fields: [
       {
-        label: { en: "Question", es: "Pregunta" },
+        label: "Question",
         localized: true,
         name: "question",
         required: true,
@@ -40,7 +39,7 @@ const fields: Field[] = [
       {
         defaultValue: createLocalizedRichText(DEFAULT_VALUES.blocks.faq.answer),
         editor: generateRichText(),
-        label: { en: "Answer", es: "Respuesta" },
+        label: "Answer",
         localized: true,
         name: "answer",
         required: true,
@@ -60,8 +59,8 @@ export const FaqBlock: Block = injectSection({
   interfaceName: "FaqBlock",
   ...getBlockPreviewImage("FAQ Section"),
   labels: {
-    plural: { en: "FAQ Sections", es: "Secciones de FAQ" },
-    singular: { en: "FAQ Section", es: "Sección de FAQ" },
+    plural: "FAQ Sections",
+    singular: "FAQ Section",
   },
   fields,
 });

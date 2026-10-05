@@ -74,12 +74,9 @@ export interface Config {
     categories: Category;
     authors: Author;
     posts: Post;
-    testimonials: Testimonial;
     header: Header;
     footer: Footer;
     globalBlock: GlobalBlock;
-    'document-embeddings': DocumentEmbedding;
-    'form-submissions': FormSubmission;
     redirects: Redirect;
     presets: Preset;
     comments: Comment;
@@ -105,12 +102,9 @@ export interface Config {
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     authors: AuthorsSelect<false> | AuthorsSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
-    testimonials: TestimonialsSelect<false> | TestimonialsSelect<true>;
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
     globalBlock: GlobalBlockSelect<false> | GlobalBlockSelect<true>;
-    'document-embeddings': DocumentEmbeddingsSelect<false> | DocumentEmbeddingsSelect<true>;
-    'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     presets: PresetsSelect<false> | PresetsSelect<true>;
     comments: CommentsSelect<false> | CommentsSelect<true>;
@@ -127,12 +121,7 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  fallbackLocale:
-    | ('false' | 'none' | 'null')
-    | false
-    | null
-    | ('en' | 'es' | 'de' | 'ja')
-    | ('en' | 'es' | 'de' | 'ja')[];
+  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('en' | 'de' | 'ja') | ('en' | 'de' | 'ja')[];
   globals: {
     'site-settings': SiteSetting;
     _abManifest: _AbManifest;
@@ -141,7 +130,7 @@ export interface Config {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     _abManifest: _AbManifestSelect<false> | _AbManifestSelect<true>;
   };
-  locale: 'en' | 'es' | 'de' | 'ja';
+  locale: 'en' | 'de' | 'ja';
   widgets: {
     collections: CollectionsWidget;
   };
@@ -375,7 +364,6 @@ export interface Page {
     | HeroBlock
     | ContentBlock
     | FaqBlock
-    | TestimonialsListBlock
     | CardsGridBlock
     | CarouselBlock
     | LogosBlock
@@ -572,7 +560,7 @@ export interface Post {
     [k: string]: unknown;
   } | null;
   /**
-   * Imported articles keep their Markdown. Use “Convert to rich text” in the sidebar to switch.
+   * Body of a post migrated from the old site. Rendered after the rich text. Move it into Content when you rework the post.
    */
   markdown?: string | null;
   /**
@@ -650,10 +638,6 @@ export interface Post {
    */
   generateSlug?: boolean | null;
   slug: string;
-  /**
-   * Markdown: imported articles, edited as Markdown. Rich text: the block editor.
-   */
-  contentFormat: 'richText' | 'markdown';
   /**
    * Where this article lived on the old site
    */
@@ -911,66 +895,6 @@ export interface FaqBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'faq';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TestimonialsListBlock".
- */
-export interface TestimonialsListBlock {
-  eyebrow?: string | null;
-  /**
-   * Wrap a word in *asterisks* to accent it in the brand colour.
-   */
-  heading?: string | null;
-  description?: string | null;
-  testimonialItems?:
-    | {
-        testimonial: number | Testimonial;
-        id?: string | null;
-      }[]
-    | null;
-  showRating?: boolean | null;
-  showAvatar?: boolean | null;
-  /**
-   * The duration of the animation in seconds. Default is 60 seconds.
-   */
-  duration?: number | null;
-  section?: {
-    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
-    maxWidth?: ('none' | 'base') | null;
-    paddingY?: ('none' | 'base' | 'large') | null;
-    paddingX?: ('none' | 'base') | null;
-    background?: {
-      /**
-       * Upload an image or video. Use the "Background" folder.
-       */
-      media?: (number | null) | Media;
-      overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
-      opacity?: number | null;
-    };
-  };
-  _hidden?: boolean | null;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'testimonialsList';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "testimonials".
- */
-export interface Testimonial {
-  id: number;
-  author: string;
-  company?: string | null;
-  position?: string | null;
-  rating?: number | null;
-  avatar?: (number | null) | Media;
-  content: string;
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1458,21 +1382,16 @@ export interface FormBlock {
   heading?: string | null;
   description?: string | null;
   /**
-   * Internal: leads land in “Leads”. Mautic: plain HTML posted to your Mautic.
+   * The numeric id of the form in Mautic
    */
-  mode: 'internal' | 'mautic';
+  mauticFormId: string;
   /**
-   * Identifier shown with each submission, e.g. contact, whitepaper-tsf
+   * The form alias in Mautic, e.g. contactus
    */
-  formName: string;
-  mauticFormId?: string | null;
-  /**
-   * The form id is appended to this URL
-   */
-  mauticActionUrl?: string | null;
+  mauticFormName: string;
   fields: {
     /**
-     * lowercase, a–z 0–9 _
+     * The field alias in Mautic
      */
     name: string;
     label: string;
@@ -1639,7 +1558,6 @@ export interface GlobalBlock {
     | HeroBlock
     | ContentBlock
     | FaqBlock
-    | TestimonialsListBlock
     | CardsGridBlock
     | CarouselBlock
     | LogosBlock
@@ -1745,47 +1663,6 @@ export interface Footer {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "document-embeddings".
- */
-export interface DocumentEmbedding {
-  id: number;
-  documentId: string;
-  collection: 'page' | 'post';
-  locale: string;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "form-submissions".
- */
-export interface FormSubmission {
-  id: number;
-  formName: string;
-  email?: string | null;
-  page?: string | null;
-  referrer?: string | null;
-  utm?: {
-    source?: string | null;
-    medium?: string | null;
-    campaign?: string | null;
-    term?: string | null;
-    content?: string | null;
-  };
-  data?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2022,47 +1899,6 @@ export interface Preset {
         id?: string | null;
         blockName?: string | null;
         blockType: 'faq';
-      }
-    | {
-        eyebrow?: string | null;
-        /**
-         * Wrap a word in *asterisks* to accent it in the brand colour.
-         */
-        heading?: string | null;
-        description?: string | null;
-        testimonialItems?:
-          | {
-              testimonial: number | Testimonial;
-              id?: string | null;
-            }[]
-          | null;
-        showRating?: boolean | null;
-        showAvatar?: boolean | null;
-        /**
-         * The duration of the animation in seconds. Default is 60 seconds.
-         */
-        duration?: number | null;
-        section?: {
-          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
-          maxWidth?: ('none' | 'base') | null;
-          paddingY?: ('none' | 'base' | 'large') | null;
-          paddingX?: ('none' | 'base') | null;
-          background?: {
-            /**
-             * Upload an image or video. Use the "Background" folder.
-             */
-            media?: (number | null) | Media;
-            overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
-            opacity?: number | null;
-          };
-        };
-        _hidden?: boolean | null;
-        id?: string | null;
-        blockName?: string | null;
-        blockType: 'testimonialsList';
       }
     | {
         eyebrow?: string | null;
@@ -2510,21 +2346,16 @@ export interface Preset {
         heading?: string | null;
         description?: string | null;
         /**
-         * Internal: leads land in “Leads”. Mautic: plain HTML posted to your Mautic.
+         * The numeric id of the form in Mautic
          */
-        mode: 'internal' | 'mautic';
+        mauticFormId: string;
         /**
-         * Identifier shown with each submission, e.g. contact, whitepaper-tsf
+         * The form alias in Mautic, e.g. contactus
          */
-        formName: string;
-        mauticFormId?: string | null;
-        /**
-         * The form id is appended to this URL
-         */
-        mauticActionUrl?: string | null;
+        mauticFormName: string;
         fields: {
           /**
-           * lowercase, a–z 0–9 _
+           * The field alias in Mautic
            */
           name: string;
           label: string;
@@ -2864,20 +2695,6 @@ export interface PayloadMcpApiKey {
      */
     delete?: boolean | null;
   };
-  testimonials?: {
-    /**
-     * Allow clients to create testimonials.
-     */
-    create?: boolean | null;
-    /**
-     * Allow clients to update testimonials.
-     */
-    update?: boolean | null;
-    /**
-     * Allow clients to delete testimonials.
-     */
-    delete?: boolean | null;
-  };
   users?: {
     /**
      * Allow clients to create users.
@@ -2900,11 +2717,11 @@ export interface PayloadMcpApiKey {
   };
   'payload-mcp-tool'?: {
     /**
-     * Fetch a collection document by ID. Specify collectionSlug (one of: authors, categories, footer, header, media, page, posts, testimonials, users). Returns all top-level fields as a structured overview — complex fields (arrays, blocks, relations, rich text) are summarized with their type and item count. Use getAllDocuments to list documents first, then this tool by ID. Use getField to drill into specific fields. Do NOT pass full: true unless the user explicitly asks to extract the entire content. Pass raw: true to get the full raw JSON — use this when you need structured data for analysis or to construct an update payload. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
+     * Fetch a collection document by ID. Specify collectionSlug (one of: authors, categories, footer, header, media, page, posts, users). Returns all top-level fields as a structured overview — complex fields (arrays, blocks, relations, rich text) are summarized with their type and item count. Use getAllDocuments to list documents first, then this tool by ID. Use getField to drill into specific fields. Do NOT pass full: true unless the user explicitly asks to extract the entire content. Pass raw: true to get the full raw JSON — use this when you need structured data for analysis or to construct an update payload. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
      */
     getDocument?: boolean | null;
     /**
-     * List collection documents as a formatted summary. Specify collectionSlug (one of: authors, categories, footer, header, media, page, posts, testimonials, users). Returns only scalar summary fields plus admin URL and public URL (where applicable). Objects, relations, arrays, and rich text are omitted from the list output. To get full details for a document, call getDocument with its ID. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
+     * List collection documents as a formatted summary. Specify collectionSlug (one of: authors, categories, footer, header, media, page, posts, users). Returns only scalar summary fields plus admin URL and public URL (where applicable). Objects, relations, arrays, and rich text are omitted from the list output. To get full details for a document, call getDocument with its ID. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
      */
     getAllDocuments?: boolean | null;
     /**
@@ -2912,7 +2729,7 @@ export interface PayloadMcpApiKey {
      */
     getGlobalDocument?: boolean | null;
     /**
-     * Fetch the full content of a specific field from a collection document or global. slug accepts a collection (authors, categories, footer, header, media, page, posts, testimonials, users) or a global (site-settings). For collections, id is required. For globals, id is ignored. Use dot-notation for nested paths (e.g. "content", "blocks.0", "meta.description"). Rich text fields are returned as Markdown by default. IMPORTANT: You MUST call this with raw: true before any create/update action targeting this field — the raw JSON (block IDs, Lexical nodes, existing array items) is required to construct a valid update payload. Never attempt an update without first reading the field with raw: true.
+     * Fetch the full content of a specific field from a collection document or global. slug accepts a collection (authors, categories, footer, header, media, page, posts, users) or a global (site-settings). For collections, id is required. For globals, id is ignored. Use dot-notation for nested paths (e.g. "content", "blocks.0", "meta.description"). Rich text fields are returned as Markdown by default. IMPORTANT: You MUST call this with raw: true before any create/update action targeting this field — the raw JSON (block IDs, Lexical nodes, existing array items) is required to construct a valid update payload. Never attempt an update without first reading the field with raw: true.
      */
     getField?: boolean | null;
     /**
@@ -3069,10 +2886,6 @@ export interface PayloadLockedDocument {
         value: number | Post;
       } | null)
     | ({
-        relationTo: 'testimonials';
-        value: number | Testimonial;
-      } | null)
-    | ({
         relationTo: 'header';
         value: number | Header;
       } | null)
@@ -3083,14 +2896,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'globalBlock';
         value: number | GlobalBlock;
-      } | null)
-    | ({
-        relationTo: 'document-embeddings';
-        value: number | DocumentEmbedding;
-      } | null)
-    | ({
-        relationTo: 'form-submissions';
-        value: number | FormSubmission;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -3308,7 +3113,6 @@ export interface PageSelect<T extends boolean = true> {
         hero?: T | HeroBlockSelect<T>;
         content?: T | ContentBlockSelect<T>;
         faq?: T | FaqBlockSelect<T>;
-        testimonialsList?: T | TestimonialsListBlockSelect<T>;
         cardsGrid?: T | CardsGridBlockSelect<T>;
         carousel?: T | CarouselBlockSelect<T>;
         logos?: T | LogosBlockSelect<T>;
@@ -3453,42 +3257,6 @@ export interface FaqBlockSelect<T extends boolean = true> {
         answer?: T;
         id?: T;
       };
-  section?:
-    | T
-    | {
-        theme?: T;
-        maxWidth?: T;
-        paddingY?: T;
-        paddingX?: T;
-        background?:
-          | T
-          | {
-              media?: T;
-              overlay?: T;
-              opacity?: T;
-            };
-      };
-  _hidden?: T;
-  id?: T;
-  blockName?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TestimonialsListBlock_select".
- */
-export interface TestimonialsListBlockSelect<T extends boolean = true> {
-  eyebrow?: T;
-  heading?: T;
-  description?: T;
-  testimonialItems?:
-    | T
-    | {
-        testimonial?: T;
-        id?: T;
-      };
-  showRating?: T;
-  showAvatar?: T;
-  duration?: T;
   section?:
     | T
     | {
@@ -3880,10 +3648,8 @@ export interface FormBlockSelect<T extends boolean = true> {
   eyebrow?: T;
   heading?: T;
   description?: T;
-  mode?: T;
-  formName?: T;
   mauticFormId?: T;
-  mauticActionUrl?: T;
+  mauticFormName?: T;
   fields?:
     | T
     | {
@@ -4070,7 +3836,6 @@ export interface PostsSelect<T extends boolean = true> {
       };
   generateSlug?: T;
   slug?: T;
-  contentFormat?: T;
   sourceUrl?: T;
   legacyPath?: T;
   publishedAt?: T;
@@ -4081,20 +3846,6 @@ export interface PostsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "testimonials_select".
- */
-export interface TestimonialsSelect<T extends boolean = true> {
-  author?: T;
-  company?: T;
-  position?: T;
-  rating?: T;
-  avatar?: T;
-  content?: T;
-  updatedAt?: T;
-  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -4248,7 +3999,6 @@ export interface GlobalBlockSelect<T extends boolean = true> {
         hero?: T | HeroBlockSelect<T>;
         content?: T | ContentBlockSelect<T>;
         faq?: T | FaqBlockSelect<T>;
-        testimonialsList?: T | TestimonialsListBlockSelect<T>;
         cardsGrid?: T | CardsGridBlockSelect<T>;
         carousel?: T | CarouselBlockSelect<T>;
         logos?: T | LogosBlockSelect<T>;
@@ -4265,39 +4015,6 @@ export interface GlobalBlockSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "document-embeddings_select".
- */
-export interface DocumentEmbeddingsSelect<T extends boolean = true> {
-  documentId?: T;
-  collection?: T;
-  locale?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "form-submissions_select".
- */
-export interface FormSubmissionsSelect<T extends boolean = true> {
-  formName?: T;
-  email?: T;
-  page?: T;
-  referrer?: T;
-  utm?:
-    | T
-    | {
-        source?: T;
-        medium?: T;
-        campaign?: T;
-        term?: T;
-        content?: T;
-      };
-  data?: T;
-  updatedAt?: T;
-  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -4424,40 +4141,6 @@ export interface PresetsSelect<T extends boolean = true> {
                     answer?: T;
                     id?: T;
                   };
-              section?:
-                | T
-                | {
-                    theme?: T;
-                    maxWidth?: T;
-                    paddingY?: T;
-                    paddingX?: T;
-                    background?:
-                      | T
-                      | {
-                          media?: T;
-                          overlay?: T;
-                          opacity?: T;
-                        };
-                  };
-              _hidden?: T;
-              id?: T;
-              blockName?: T;
-            };
-        testimonialsList?:
-          | T
-          | {
-              eyebrow?: T;
-              heading?: T;
-              description?: T;
-              testimonialItems?:
-                | T
-                | {
-                    testimonial?: T;
-                    id?: T;
-                  };
-              showRating?: T;
-              showAvatar?: T;
-              duration?: T;
               section?:
                 | T
                 | {
@@ -4829,10 +4512,8 @@ export interface PresetsSelect<T extends boolean = true> {
               eyebrow?: T;
               heading?: T;
               description?: T;
-              mode?: T;
-              formName?: T;
               mauticFormId?: T;
-              mauticActionUrl?: T;
+              mauticFormName?: T;
               fields?:
                 | T
                 | {
@@ -5049,13 +4730,6 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
         update?: T;
         delete?: T;
       };
-  testimonials?:
-    | T
-    | {
-        create?: T;
-        update?: T;
-        delete?: T;
-      };
   users?:
     | T
     | {
@@ -5263,6 +4937,25 @@ export interface SiteSetting {
       robots?: ('index' | 'noindex') | null;
     };
   };
+  integrations?: {
+    /**
+     * Base URL of your Mautic instance, e.g. https://mautic.example.com. Form and newsletter blocks submit there.
+     */
+    mauticUrl?: string | null;
+    /**
+     * The Mautic form behind every newsletter band (blocks, blog, author pages)
+     */
+    newsletterForm?: {
+      /**
+       * The numeric id of the form in Mautic
+       */
+      mauticFormId?: string | null;
+      /**
+       * The form alias in Mautic, e.g. contactus
+       */
+      mauticFormName?: string | null;
+    };
+  };
   _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -5352,6 +5045,17 @@ export interface SiteSettingsSelect<T extends boolean = true> {
               image?: T;
               description?: T;
               robots?: T;
+            };
+      };
+  integrations?:
+    | T
+    | {
+        mauticUrl?: T;
+        newsletterForm?:
+          | T
+          | {
+              mauticFormId?: T;
+              mauticFormName?: T;
             };
       };
   _status?: T;

@@ -3,21 +3,17 @@ import { fileURLToPath } from "node:url";
 
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { en } from "@payloadcms/translations/languages/en";
-import { es } from "@payloadcms/translations/languages/es";
 import { buildConfig } from "payload";
 import sharp from "sharp";
 
 import { Authors } from "@/collections/Authors";
 import { Categories } from "@/collections/Categories";
-import { DocumentEmbeddings } from "@/collections/DocumentEmbeddings";
 import { Footer } from "@/collections/Footer/config";
-import { FormSubmissions } from "@/collections/FormSubmissions";
 import { GlobalBlock } from "@/collections/GlobalBlock/config";
 import { Header } from "@/collections/Header/config";
 import { Media } from "@/collections/Media";
 import { Page } from "@/collections/Page/Page";
 import { Posts } from "@/collections/Posts";
-import { Testimonials } from "@/collections/Testimonials";
 import { Users } from "@/collections/Users";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { MAX_UPLOAD_BYTES } from "@/lib/constants/uploadLimits";
@@ -64,20 +60,7 @@ export default buildConfig({
     },
     user: Users.slug,
   },
-  collections: [
-    Users,
-    Media,
-    Page,
-    Categories,
-    Authors,
-    Posts,
-    Testimonials,
-    Header,
-    Footer,
-    GlobalBlock,
-    DocumentEmbeddings,
-    FormSubmissions,
-  ],
+  collections: [Users, Media, Page, Categories, Authors, Posts, Header, Footer, GlobalBlock],
   db: createDatabaseAdapter({
     connectionString: process.env.DATABASE_URL,
   }),
@@ -88,18 +71,12 @@ export default buildConfig({
   },
   i18n: {
     fallbackLanguage: "en",
-    supportedLanguages: { en, es },
+    supportedLanguages: { en },
     translations: {
       en: {
         sso: {
           dividerLabel: "SSO",
           signInWith: "Sign in with {{provider}}",
-        },
-      },
-      es: {
-        sso: {
-          dividerLabel: "SSO",
-          signInWith: "Iniciar sesión con {{provider}}",
         },
       },
     },

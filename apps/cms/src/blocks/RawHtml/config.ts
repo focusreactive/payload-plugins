@@ -16,16 +16,12 @@ const fields: Field[] = [
   },
   {
     admin: {
-      description: {
-        en: "Raw HTML rendered as-is on the page. Use for embeds and one-off markup.",
-        es: "HTML sin procesar que se renderiza tal cual en la página. Úsalo para embeds y marcado puntual.",
-      },
+      description: "Raw HTML rendered as-is on the page. Use for embeds and one-off markup.",
     },
     defaultValue: createLocalizedDefault({
       en: "<p>Hello from Raw HTML</p>",
-      es: "<p>Hola desde HTML sin procesar</p>",
     }),
-    label: { en: "HTML", es: "HTML" },
+    label: "HTML",
     localized: true,
     name: "html",
     required: true,
@@ -38,8 +34,8 @@ export const RawHtmlBlock: Block = injectSection({
   interfaceName: "RawHtmlBlock",
   ...getBlockPreviewImage("Raw HTML"),
   labels: {
-    plural: { en: "Raw HTML", es: "HTML sin procesar" },
-    singular: { en: "Raw HTML", es: "HTML sin procesar" },
+    plural: "Raw HTML",
+    singular: "Raw HTML",
   },
   fields,
 });

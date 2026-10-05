@@ -2,21 +2,13 @@ import { cn } from "@/components/utils";
 
 import type { FormFieldProps } from "./types";
 
-function fieldName(name: string, mautic: boolean) {
-  return mautic ? `mauticform[${name}]` : name;
+function fieldName(name: string) {
+  return `mauticform[${name}]`;
 }
 
-export function FormField({
-  field,
-  domId,
-  mautic,
-}: {
-  field: FormFieldProps;
-  domId: string;
-  mautic: boolean;
-}) {
+export function FormField({ field, domId }: { field: FormFieldProps; domId: string }) {
   const id = `${domId}-${field.name}`;
-  const name = fieldName(field.name, mautic);
+  const name = fieldName(field.name);
   const required = Boolean(field.required);
   const span = field.width === "half" ? "md:col-span-1" : "md:col-span-2";
 

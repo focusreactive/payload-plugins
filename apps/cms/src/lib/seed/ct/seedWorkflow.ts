@@ -173,7 +173,6 @@ async function seedScheduledPost(
         authors: author.docs[0] ? [author.docs[0].id] : [],
         categories: news.docs[0] ? [news.docs[0].id] : [],
         content: null,
-        contentFormat: "markdown",
         excerpt: SCHEDULED_POST.excerpt,
         generateSlug: false,
         heroImage: typeof cover?.heroImage === "number" ? cover.heroImage : undefined,

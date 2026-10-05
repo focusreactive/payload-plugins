@@ -61,9 +61,8 @@ const extractPostContent: ContentExtractor = async (values, ctx, { resolveDocs, 
     ...authorNodes,
     paragraph(post.excerpt),
     uploadImage(post.heroImage as Upload, docs),
-    ...(post.contentFormat === "markdown"
-      ? markdownToContent(post.markdown)
-      : richTextToContent(post.content, linkCtx)),
+    ...richTextToContent(post.content, linkCtx),
+    ...markdownToContent(post.markdown),
     heading(2, faq?.heading),
     ...asArray<{ question?: string | null; answer?: unknown }>(faq?.items).flatMap((i) => [
       heading(3, i.question),

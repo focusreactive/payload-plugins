@@ -14,14 +14,12 @@ import { NewsletterBlock } from "./Newsletter/config";
 import { PostsListBlock } from "./PostsList/config";
 import { RawHtmlBlock } from "./RawHtml/config";
 import { StatsBlock } from "./Stats/config";
-import { TestimonialsListBlock } from "./TestimonialsList/config";
 import { VideoEmbedBlock } from "./VideoEmbed/config";
 
 export const contentBlocks: Block[] = [
   HeroBlock,
   ContentBlock,
   FaqBlock,
-  TestimonialsListBlock,
   CardsGridBlock,
   CarouselBlock,
   LogosBlock,

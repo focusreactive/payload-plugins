@@ -7,8 +7,8 @@ import { link } from "@/lib/fields/link";
 
 const fields: Field[] = [
   ...sectionHeaderFields({
-    eyebrowDefault: { en: "Get started", es: "Empieza ahora" },
-    headingDefault: { en: "Start shipping in rhythm.", es: "Empieza a publicar con ritmo." },
+    eyebrowDefault: { en: "Get started" },
+    headingDefault: { en: "Start shipping in rhythm." },
   }),
   {
     admin: {
@@ -16,7 +16,7 @@ const fields: Field[] = [
       initCollapsed: true,
     },
     fields: (link() as GroupField).fields,
-    label: { en: "Actions", es: "Acciones" },
+    label: "Actions",
     localized: true,
     maxRows: 2,
     minRows: 1,
@@ -31,8 +31,8 @@ export const CtaBandBlock: Block = injectSection({
   interfaceName: "CtaBandBlock",
   ...getBlockPreviewImage("CTA Band"),
   labels: {
-    plural: { en: "CTA Bands", es: "Bandas CTA" },
-    singular: { en: "CTA Band", es: "Banda CTA" },
+    plural: "CTA Bands",
+    singular: "CTA Band",
   },
   fields,
 });

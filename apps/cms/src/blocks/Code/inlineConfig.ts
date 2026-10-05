@@ -6,24 +6,21 @@ export const CodeInlineBlock: Block = {
       name: "language",
       type: "text",
       admin: {
-        description: {
-          en: "Language hint (e.g. typescript, bash). Used for the syntax class.",
-          es: "Pista de lenguaje (p. ej. typescript, bash). Se usa para la clase de sintaxis.",
-        },
+        description: "Language hint (e.g. typescript, bash). Used for the syntax class.",
       },
-      label: { en: "Language", es: "Lenguaje" },
+      label: "Language",
     },
     {
       name: "code",
       type: "code",
-      label: { en: "Code", es: "Código" },
+      label: "Code",
       required: true,
     },
   ],
   interfaceName: "CodeInlineBlock",
   labels: {
-    plural: { en: "Code Blocks", es: "Bloques de código" },
-    singular: { en: "Code", es: "Código" },
+    plural: "Code Blocks",
+    singular: "Code",
   },
   slug: "codeInline",
 };

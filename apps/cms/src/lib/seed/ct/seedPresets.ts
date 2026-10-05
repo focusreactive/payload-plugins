@@ -4,7 +4,7 @@ import { CASE_STUDY_ITEMS } from "./caseStudies";
 import { emptyResult } from "./context";
 import type { SeedStep } from "./context";
 import { pageLink } from "./links";
-import { GATED_FIELDS } from "./recipes";
+import { DEMO_MAUTIC_FORM_ID, GATED_FIELDS } from "./recipes";
 
 /**
  * Presets that make "no developer per page" concrete (plan §5.1). The presets plugin stores one
@@ -67,9 +67,9 @@ export const seedPresets: SeedStep = async (ctx) => {
         blockType: "form",
         description: "Leave your details and the download link appears straight away.",
         fields: GATED_FIELDS,
-        formName: "whitepaper",
         heading: "Download the white paper",
-        mode: "internal",
+        mauticFormId: DEMO_MAUTIC_FORM_ID,
+        mauticFormName: "whitepaper",
         section: { theme: "light-gray" },
         submitLabel: "Get the download",
         successLink: await pageLink(ctx, "/resources/reports", "Download the sample report"),
@@ -103,9 +103,9 @@ export const seedPresets: SeedStep = async (ctx) => {
             type: "checkbox",
           },
         ],
-        formName: "contact",
         heading: "Send an enquiry",
-        mode: "internal",
+        mauticFormId: DEMO_MAUTIC_FORM_ID,
+        mauticFormName: "contact",
         section: { theme: "light" },
         submitLabel: "Send",
       },

@@ -12,9 +12,8 @@ const fields: Field[] = [
         admin: { width: "40%" },
         defaultValue: createLocalizedDefault({
           en: "The Journal, monthly",
-          es: "The Journal, mensual",
         }),
-        label: { en: "Eyebrow", es: "Antetítulo" },
+        label: "Eyebrow",
         localized: true,
         name: "eyebrow",
         type: "text",
@@ -23,9 +22,8 @@ const fields: Field[] = [
         admin: { width: "60%" },
         defaultValue: createLocalizedDefault({
           en: "One thoughtful email a month. No noise.",
-          es: "Un correo cuidado al mes. Sin ruido.",
         }),
-        label: { en: "Heading", es: "Encabezado" },
+        label: "Heading",
         localized: true,
         name: "heading",
         required: true,
@@ -38,8 +36,8 @@ const fields: Field[] = [
     fields: [
       {
         admin: { width: "50%" },
-        defaultValue: createLocalizedDefault({ en: "you@team.com", es: "tu@equipo.com" }),
-        label: { en: "Input placeholder", es: "Marcador del campo" },
+        defaultValue: createLocalizedDefault({ en: "you@team.com" }),
+        label: "Input placeholder",
         localized: true,
         name: "inputPlaceholder",
         required: true,
@@ -47,8 +45,8 @@ const fields: Field[] = [
       },
       {
         admin: { width: "50%" },
-        defaultValue: createLocalizedDefault({ en: "Subscribe", es: "Suscribirse" }),
-        label: { en: "Button label", es: "Etiqueta del botón" },
+        defaultValue: createLocalizedDefault({ en: "Subscribe" }),
+        label: "Button label",
         localized: true,
         name: "buttonLabel",
         required: true,
@@ -59,9 +57,8 @@ const fields: Field[] = [
   {
     defaultValue: createLocalizedDefault({
       en: "No spam. Unsubscribe anytime.",
-      es: "Sin spam. Cancela cuando quieras.",
     }),
-    label: { en: "Disclaimer", es: "Aviso" },
+    label: "Disclaimer",
     localized: true,
     name: "disclaimer",
     type: "text",
@@ -73,8 +70,8 @@ export const NewsletterBlock: Block = injectSection({
   interfaceName: "NewsletterBlock",
   ...getBlockPreviewImage("Newsletter"),
   labels: {
-    plural: { en: "Newsletters", es: "Boletines" },
-    singular: { en: "Newsletter", es: "Boletín" },
+    plural: "Newsletters",
+    singular: "Newsletter",
   },
   fields,
 });

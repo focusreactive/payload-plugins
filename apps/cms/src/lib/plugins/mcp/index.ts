@@ -95,11 +95,6 @@ const registry: McpToolsRegistry = {
       tableFields: ["slug", "_status", "publishedAt", "excerpt"],
       titleField: "title",
     },
-    testimonials: {
-      skipKeys: ["id"],
-      tableFields: ["company", "rating"],
-      titleField: "author",
-    },
     users: {
       skipKeys: ["id"],
       tableFields: ["name", "role", "email"],
@@ -127,7 +122,7 @@ export const mcpPluginConfig = mcpPlugin({
     },
     categories: {
       description:
-        "Blog categories. Each category has a localized title and URL slug. Supports localization (en/es). Use this collection to read, create, update or delete blog categories.",
+        "Blog categories. Each category has a localized title and URL slug. Supports localization (en/de/ja). Use this collection to read, create, update or delete blog categories.",
       enabled: {
         create: true,
         delete: true,
@@ -137,7 +132,7 @@ export const mcpPluginConfig = mcpPlugin({
     },
     footer: {
       description:
-        "Site footer configurations. Each footer has a name, logo, navigation links (up to 10), body text, and copyright text. Supports draft/publish versioning and localization (en/es). Use this collection to read, create, update or delete site footers.",
+        "Site footer configurations. Each footer has a name, logo, navigation links (up to 10), body text, and copyright text. Supports draft/publish versioning and localization (en/de/ja). Use this collection to read, create, update or delete site footers.",
       enabled: {
         create: true,
         delete: true,
@@ -147,7 +142,7 @@ export const mcpPluginConfig = mcpPlugin({
     },
     header: {
       description:
-        "Site header configurations. Each header has a name, logo, and navigation items (up to 6 links). Supports draft/publish versioning and localization (en/es). Use this collection to read, create, update or delete site headers.",
+        "Site header configurations. Each header has a name, logo, and navigation items (up to 6 links). Supports draft/publish versioning and localization (en/de/ja). Use this collection to read, create, update or delete site headers.",
       enabled: {
         create: true,
         delete: true,
@@ -167,7 +162,7 @@ export const mcpPluginConfig = mcpPlugin({
     },
     page: {
       description:
-        "Website pages built with a block-based layout system. Each page has a title, URL slug, nested hierarchy (parent/breadcrumbs), and a flexible block editor for composing content sections such as Hero, Content, FAQ, and more. Supports draft/publish versioning and localization (en/es). Use this collection to read, create, update or delete site pages.",
+        "Website pages built with a block-based layout system. Each page has a title, URL slug, nested hierarchy (parent/breadcrumbs), and a flexible block editor for composing content sections such as Hero, Content, FAQ, and more. Supports draft/publish versioning and localization (en/de/ja). Use this collection to read, create, update or delete site pages.",
       enabled: {
         create: true,
         delete: true,
@@ -177,17 +172,7 @@ export const mcpPluginConfig = mcpPlugin({
     },
     posts: {
       description:
-        "Blog posts. Each post has a title, excerpt, hero image, rich-text body, SEO metadata, categories, authors, and related posts. Supports draft/publish versioning and localization (en/es). Use this collection to read, create, update or delete blog articles.",
-      enabled: {
-        create: true,
-        delete: true,
-        find: false,
-        update: true,
-      },
-    },
-    testimonials: {
-      description:
-        "Customer testimonials. Each testimonial has an author, company, position, avatar, localized review content, and a 1–5 rating. Supports localization (en/es). Use this collection to read, create, update or delete testimonials.",
+        "Blog posts. Each post has a title, excerpt, hero image, rich-text body, SEO metadata, categories, authors, and related posts. Supports draft/publish versioning and localization (en/de/ja). Use this collection to read, create, update or delete blog articles.",
       enabled: {
         create: true,
         delete: true,
@@ -209,7 +194,7 @@ export const mcpPluginConfig = mcpPlugin({
   globals: {
     "site-settings": {
       description:
-        "Global site settings singleton: site name, header/footer references, admin panel branding, SEO defaults, 404 page content, and blog listing configuration. Supports draft/publish versioning and localization (en/es). Use to read or update site-wide settings.",
+        "Global site settings singleton: site name, header/footer references, admin panel branding, SEO defaults, 404 page content, and blog listing configuration. Supports draft/publish versioning and localization (en/de/ja). Use to read or update site-wide settings.",
       enabled: {
         find: false,
         update: true,
@@ -244,7 +229,6 @@ export const mcpPluginConfig = mcpPlugin({
       },
       posts: { create: true, delete: true, find: false, update: true },
       siteSettings: { find: false, update: true },
-      testimonials: { create: true, delete: true, find: false, update: true },
       users: { create: true, delete: true, find: false, update: true },
       user: LOCAL_DEV_MCP_USER,
     };

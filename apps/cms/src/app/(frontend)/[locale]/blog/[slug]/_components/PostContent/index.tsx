@@ -32,11 +32,8 @@ export const PostContent: React.FC<PostContentProps> = async ({
       <section className="py-sectionBase">
         <div className="mx-auto w-full max-w-containerMaxW px-containerBase">
           <div className="mx-auto max-w-[720px]">
-            {post.contentFormat === "markdown" ? (
-              <MarkdownBody markdown={post.markdown ?? ""} />
-            ) : (
-              post.content && <RichText content={post.content} variant="copy" />
-            )}
+            {post.content && <RichText content={post.content} variant="copy" />}
+            {post.markdown?.trim() && <MarkdownBody markdown={post.markdown} />}
           </div>
         </div>
       </section>

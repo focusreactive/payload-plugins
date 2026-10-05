@@ -5,14 +5,14 @@ import { injectSection } from "@/lib/fields/section/injectSection";
 import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
 
 export const CASE_STUDY_SECTORS: Option[] = [
-  { label: { en: "Automotive", es: "Automoción" }, value: "automotive" },
+  { label: "Automotive", value: "automotive" },
   {
-    label: { en: "Heavy equipment & agritech", es: "Maquinaria y agrotecnología" },
+    label: "Heavy equipment & agritech",
     value: "agritech",
   },
-  { label: { en: "Financial services", es: "Servicios financieros" }, value: "finance" },
-  { label: { en: "Medical devices", es: "Dispositivos médicos" }, value: "medical" },
-  { label: { en: "Other", es: "Otro" }, value: "other" },
+  { label: "Financial services", value: "finance" },
+  { label: "Medical devices", value: "medical" },
+  { label: "Other", value: "other" },
 ];
 
 export const CaseStudiesBlock: Block = injectSection({
@@ -20,22 +20,19 @@ export const CaseStudiesBlock: Block = injectSection({
   interfaceName: "CaseStudiesBlock",
   ...getBlockPreviewImage("Case Studies"),
   labels: {
-    plural: { en: "Case Studies", es: "Casos de estudio" },
-    singular: { en: "Case Studies", es: "Casos de estudio" },
+    plural: "Case Studies",
+    singular: "Case Studies",
   },
   fields: [
     ...sectionHeaderFields(),
     {
       admin: {
-        description: {
-          en: "Show only the case studies of one sector (sector pages)",
-          es: "Muestra solo los casos de un sector (páginas de sector)",
-        },
+        description: "Show only the case studies of one sector (sector pages)",
       },
       defaultValue: "all",
-      label: { en: "Filter by sector", es: "Filtrar por sector" },
+      label: "Filter by sector",
       name: "filterSector",
-      options: [{ label: { en: "All sectors", es: "Todos" }, value: "all" }, ...CASE_STUDY_SECTORS],
+      options: [{ label: "All sectors", value: "all" }, ...CASE_STUDY_SECTORS],
       type: "select",
     },
     {
@@ -46,7 +43,7 @@ export const CaseStudiesBlock: Block = injectSection({
           fields: [
             {
               admin: { width: "60%" },
-              label: { en: "Title", es: "Título" },
+              label: "Title",
               localized: true,
               name: "title",
               required: true,
@@ -54,7 +51,7 @@ export const CaseStudiesBlock: Block = injectSection({
             },
             {
               admin: { width: "40%" },
-              label: { en: "Sector", es: "Sector" },
+              label: "Sector",
               name: "sector",
               options: CASE_STUDY_SECTORS,
               required: true,
@@ -64,35 +61,32 @@ export const CaseStudiesBlock: Block = injectSection({
         },
         {
           admin: {
-            description: {
-              en: "Comma-separated, e.g. Linux, Yocto, ROS 2",
-              es: "Separadas por comas",
-            },
+            description: "Comma-separated, e.g. Linux, Yocto, ROS 2",
           },
-          label: { en: "Technologies", es: "Tecnologías" },
+          label: "Technologies",
           name: "technologies",
           type: "text",
         },
         {
-          label: { en: "The problem", es: "El problema" },
+          label: "The problem",
           localized: true,
           name: "problem",
           type: "textarea",
         },
         {
-          label: { en: "Our solution", es: "Nuestra solución" },
+          label: "Our solution",
           localized: true,
           name: "solution",
           type: "textarea",
         },
         {
-          label: { en: "Business result", es: "Resultado" },
+          label: "Business result",
           localized: true,
           name: "result",
           type: "textarea",
         },
       ],
-      label: { en: "Case studies", es: "Casos" },
+      label: "Case studies",
       minRows: 1,
       name: "items",
       required: true,

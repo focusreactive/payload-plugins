@@ -1,19 +1,19 @@
 import type { CollectionBeforeChangeHook } from "payload";
 
-import { readingTimeFromText, readingTimeMinutes } from "@/lib/utils/readingTime";
+import { readingTimeFromText } from "@/lib/utils/readingTime";
 import { markdownToPlainText } from "@/lib/markdown/plainText";
+import { extractLexicalText } from "@/lib/utils/text";
 import type { Post } from "@/payload-types";
 
 export const computeReadingTime: CollectionBeforeChangeHook<Post> = ({ data }) => {
-  if (data.contentFormat === "markdown" && typeof data.markdown === "string") {
-    data.readingTime = readingTimeFromText(markdownToPlainText(data.markdown));
-    return data;
-  }
+  const content =
+    data.content && typeof data.content === "object" && "root" in data.content
+      ? (data.content as Post["content"])
+      : null;
+  const text = [extractLexicalText(content), markdownToPlainText(data.markdown)].join(" ").trim();
 
-  const content = data.content;
-
-  if (content && typeof content === "object" && "root" in content) {
-    data.readingTime = readingTimeMinutes(content as Post["content"]);
+  if (text) {
+    data.readingTime = readingTimeFromText(text);
   }
 
   return data;

@@ -10,38 +10,23 @@ export type LinkAppearances = "default" | "outline" | "accent" | "ghost" | "link
 
 export const appearanceOptions: Record<LinkAppearances, Option> = {
   default: {
-    label: {
-      en: "Primary (solid)",
-      es: "Primario (sólido)",
-    },
+    label: "Primary (solid)",
     value: "default",
   },
   outline: {
-    label: {
-      en: "Secondary (outline)",
-      es: "Secundario (contorno)",
-    },
+    label: "Secondary (outline)",
     value: "outline",
   },
   accent: {
-    label: {
-      en: "Accent (lime)",
-      es: "Acento (lima)",
-    },
+    label: "Accent (lime)",
     value: "accent",
   },
   ghost: {
-    label: {
-      en: "Ghost",
-      es: "Fantasma",
-    },
+    label: "Ghost",
     value: "ghost",
   },
   link: {
-    label: {
-      en: "Text link",
-      es: "Enlace de texto",
-    },
+    label: "Text link",
     value: "link",
   },
 };
@@ -77,24 +62,15 @@ export const link: LinkType = ({
             name: "type",
             options: [
               {
-                label: {
-                  en: "Internal link",
-                  es: "Enlace interno",
-                },
+                label: "Internal link",
                 value: "reference",
               },
               {
-                label: {
-                  en: "Custom URL",
-                  es: "URL personalizada",
-                },
+                label: "Custom URL",
                 value: "custom",
               },
               {
-                label: {
-                  en: "Custom Page",
-                  es: "Página personalizada",
-                },
+                label: "Custom Page",
                 value: "customPage",
               },
             ],
@@ -107,10 +83,7 @@ export const link: LinkType = ({
               },
               width: "50%",
             },
-            label: {
-              en: "Open in new tab",
-              es: "Abrir en una nueva pestaña",
-            },
+            label: "Open in new tab",
             name: "newTab",
             type: "checkbox",
           },
@@ -127,10 +100,7 @@ export const link: LinkType = ({
       admin: {
         condition: (_, siblingData) => siblingData?.type === "reference",
       },
-      label: {
-        en: "Document to link to",
-        es: "Documento al que enlazar",
-      },
+      label: "Document to link to",
       name: "reference",
       relationTo: ["page", BLOG_CONFIG.collection],
       required,
@@ -140,10 +110,7 @@ export const link: LinkType = ({
       admin: {
         condition: (_, siblingData) => siblingData?.type === "custom",
       },
-      label: {
-        en: "Custom URL",
-        es: "URL personalizada",
-      },
+      label: "Custom URL",
       name: "url",
       required,
       type: "text",
@@ -153,10 +120,7 @@ export const link: LinkType = ({
         condition: (_, siblingData) => siblingData?.type === "customPage",
       },
       ...(customPageDbName ? { dbName: customPageDbName } : {}),
-      label: {
-        en: "Custom Page",
-        es: "Página personalizada",
-      },
+      label: "Custom Page",
       name: "customPage",
       options: Object.entries(CUSTOM_PAGES_CONFIG).map(([key, entry]) => ({
         label: entry.label,
@@ -183,10 +147,7 @@ export const link: LinkType = ({
           admin: {
             width: "50%",
           },
-          label: {
-            en: "Label",
-            es: "Etiqueta",
-          },
+          label: "Label",
           localized: true,
           name: "label",
           required,
@@ -214,10 +175,7 @@ export const link: LinkType = ({
 
     linkResult.fields.push({
       admin: {
-        description: {
-          en: "Choose how the link should be rendered.",
-          es: "Elige cómo se debe renderizar el enlace.",
-        },
+        description: "Choose how the link should be rendered.",
       },
       defaultValue: "default",
       name: "appearance",

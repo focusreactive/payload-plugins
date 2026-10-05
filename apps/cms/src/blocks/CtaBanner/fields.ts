@@ -8,39 +8,36 @@ export const ctaBannerFields: Field[] = [
     fields: [
       {
         admin: { width: "50%" },
-        label: { en: "Eyebrow", es: "Antetítulo" },
+        label: "Eyebrow",
         localized: true,
         name: "eyebrow",
         type: "text",
       },
       {
         admin: {
-          description: {
-            en: "Visual emphasis of the banner.",
-            es: "Énfasis visual del banner.",
-          },
+          description: "Visual emphasis of the banner.",
           width: "50%",
         },
         defaultValue: "default",
-        label: { en: "Variant", es: "Variante" },
+        label: "Variant",
         name: "variant",
         options: [
-          { label: { en: "Default", es: "Predeterminado" }, value: "default" },
-          { label: { en: "Accent (lime)", es: "Acento (lima)" }, value: "accent" },
-          { label: { en: "Dark", es: "Oscuro" }, value: "dark" },
+          { label: "Default", value: "default" },
+          { label: "Accent (lime)", value: "accent" },
+          { label: "Dark", value: "dark" },
         ],
         type: "select",
       },
     ],
   },
   {
-    label: { en: "Heading", es: "Encabezado" },
+    label: "Heading",
     localized: true,
     name: "heading",
     type: "text",
   },
   {
-    label: { en: "Description", es: "Descripción" },
+    label: "Description",
     localized: true,
     name: "description",
     type: "textarea",
@@ -48,7 +45,7 @@ export const ctaBannerFields: Field[] = [
   {
     admin: { initCollapsed: true },
     fields: (link() as GroupField).fields,
-    label: { en: "Actions", es: "Acciones" },
+    label: "Actions",
     localized: true,
     minRows: 1,
     name: "actions",

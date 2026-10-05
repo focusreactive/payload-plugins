@@ -10,8 +10,8 @@ export const LogosBlock: Block = injectSection({
   interfaceName: "LogosBlock",
   ...getBlockPreviewImage("Logos"),
   labels: {
-    plural: { en: "Logos", es: "Logos" },
-    singular: { en: "Logos", es: "Logos" },
+    plural: "Logos",
+    singular: "Logos",
   },
   fields: logosFields,
 });

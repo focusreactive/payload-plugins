@@ -24,11 +24,11 @@ export const heroFields: Field[] = [
       {
         admin: { width: "50%" },
         defaultValue: "showcase",
-        label: { en: "Variant", es: "Variante" },
+        label: "Variant",
         name: "variant",
         options: [
-          { label: { en: "Showcase window", es: "Ventana de producto" }, value: "showcase" },
-          { label: { en: "Centered", es: "Centrado" }, value: "centered" },
+          { label: "Showcase window", value: "showcase" },
+          { label: "Centered", value: "centered" },
         ],
         required: true,
         type: "select",
@@ -37,9 +37,8 @@ export const heroFields: Field[] = [
         admin: { width: "50%" },
         defaultValue: createLocalizedDefault({
           en: "New · Cadence 3.0",
-          es: "Nuevo · Cadence 3.0",
         }),
-        label: { en: "Eyebrow", es: "Antetítulo" },
+        label: "Eyebrow",
         localized: true,
         name: "eyebrow",
         type: "text",
@@ -48,7 +47,7 @@ export const heroFields: Field[] = [
   },
   {
     defaultValue: createLocalizedDefault(DEFAULT_VALUES.blocks.hero.title),
-    label: { en: "Title", es: "Título" },
+    label: "Title",
     localized: true,
     name: "title",
     type: "text",
@@ -56,7 +55,7 @@ export const heroFields: Field[] = [
   {
     defaultValue: createLocalizedRichText(DEFAULT_VALUES.richText.text),
     editor: generateRichText("hero"),
-    label: { en: "Rich Text", es: "Texto enriquecido" },
+    label: "Rich Text",
     localized: true,
     name: "richText",
     type: "richText",
@@ -73,13 +72,9 @@ export const heroFields: Field[] = [
         { ...defaultHeroLinkItem("Start free"), appearance: "accent" as const },
         { ...defaultHeroLinkItem("Watch the tour"), appearance: "outline" as const },
       ],
-      es: [
-        { ...defaultHeroLinkItem("Comenzar gratis"), appearance: "accent" as const },
-        { ...defaultHeroLinkItem("Ver el tour"), appearance: "outline" as const },
-      ],
     }),
     fields: (link() as GroupField).fields,
-    label: { en: "Actions", es: "Acciones" },
+    label: "Actions",
     localized: true,
     maxRows: 2,
     name: "actions",

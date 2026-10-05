@@ -25,14 +25,10 @@ export const Footer: CollectionConfig<"footer"> = {
   fields: [
     {
       admin: {
-        description: {
-          en: "The name of the footer",
-          es: "El nombre del footer",
-        },
+        description: "The name of the footer",
       },
       defaultValue: createLocalizedDefault({
         en: "Footer",
-        es: "Pie de página",
       }),
       name: "name",
       required: true,
@@ -40,10 +36,7 @@ export const Footer: CollectionConfig<"footer"> = {
     },
     {
       admin: {
-        description: {
-          en: "The logo to display in the footer",
-          es: "El logo a mostrar en el footer",
-        },
+        description: "The logo to display in the footer",
       },
       defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
       name: "logo",
@@ -52,7 +45,7 @@ export const Footer: CollectionConfig<"footer"> = {
       type: "upload",
     },
     {
-      label: { en: "Description", es: "Descripción" },
+      label: "Description",
       localized: true,
       name: "description",
       type: "text",
@@ -92,39 +85,10 @@ export const Footer: CollectionConfig<"footer"> = {
             ],
           },
         ],
-        es: [
-          {
-            label: "Producto",
-            links: [
-              { link: { label: "Funciones", newTab: false, type: "custom", url: "#" } },
-              { link: { label: "Precios", newTab: false, type: "custom", url: "#" } },
-              { link: { label: "Novedades", newTab: false, type: "custom", url: "#" } },
-              { link: { label: "Integraciones", newTab: false, type: "custom", url: "#" } },
-            ],
-          },
-          {
-            label: "Empresa",
-            links: [
-              { link: { label: "Acerca de", newTab: false, type: "custom", url: "#" } },
-              { link: { label: "Blog", newTab: false, type: "custom", url: "/blog" } },
-              { link: { label: "Empleo", newTab: false, type: "custom", url: "#" } },
-              { link: { label: "Contacto", newTab: false, type: "custom", url: "#" } },
-            ],
-          },
-          {
-            label: "Recursos",
-            links: [
-              { link: { label: "Documentación", newTab: false, type: "custom", url: "#" } },
-              { link: { label: "Comunidad", newTab: false, type: "custom", url: "#" } },
-              { link: { label: "Estado", newTab: false, type: "custom", url: "#" } },
-              { link: { label: "Seguridad", newTab: false, type: "custom", url: "#" } },
-            ],
-          },
-        ],
       }),
       fields: [
         {
-          label: { en: "Group label", es: "Etiqueta del grupo" },
+          label: "Group label",
           localized: true,
           name: "label",
           required: true,
@@ -147,7 +111,7 @@ export const Footer: CollectionConfig<"footer"> = {
     {
       admin: { initCollapsed: true },
       fields: [link({ appearances: false })],
-      label: { en: "Legal links", es: "Enlaces legales" },
+      label: "Legal links",
       localized: true,
       maxRows: 4,
       name: "legalLinks",
@@ -155,10 +119,7 @@ export const Footer: CollectionConfig<"footer"> = {
     },
     {
       admin: {
-        description: {
-          en: "Social profiles shown as icons in the footer",
-          es: "Perfiles sociales mostrados como iconos en el pie",
-        },
+        description: "Social profiles shown as icons in the footer",
         initCollapsed: true,
       },
       fields: [
@@ -167,7 +128,7 @@ export const Footer: CollectionConfig<"footer"> = {
           fields: [
             {
               admin: { width: "35%" },
-              label: { en: "Platform", es: "Plataforma" },
+              label: "Platform",
               name: "platform",
               options: [
                 { label: "LinkedIn", value: "linkedin" },
@@ -180,7 +141,7 @@ export const Footer: CollectionConfig<"footer"> = {
             },
             {
               admin: { width: "65%" },
-              label: { en: "URL", es: "URL" },
+              label: "URL",
               name: "url",
               required: true,
               type: "text",
@@ -188,17 +149,14 @@ export const Footer: CollectionConfig<"footer"> = {
           ],
         },
       ],
-      label: { en: "Social links", es: "Redes sociales" },
+      label: "Social links",
       maxRows: 6,
       name: "socialLinks",
       type: "array",
     },
     {
       admin: {
-        description: {
-          en: "Certification chips, e.g. ISO 9001 with its certificate number",
-          es: "Certificaciones, p. ej. ISO 9001 con su número de certificado",
-        },
+        description: "Certification chips, e.g. ISO 9001 with its certificate number",
         initCollapsed: true,
       },
       fields: [
@@ -207,35 +165,31 @@ export const Footer: CollectionConfig<"footer"> = {
           fields: [
             {
               admin: { width: "40%" },
-              label: { en: "Label", es: "Etiqueta" },
+              label: "Label",
               name: "label",
               required: true,
               type: "text",
             },
             {
               admin: { width: "60%" },
-              label: { en: "Certificate number", es: "Número de certificado" },
+              label: "Certificate number",
               name: "certificate",
               type: "text",
             },
           ],
         },
       ],
-      label: { en: "Certifications", es: "Certificaciones" },
+      label: "Certifications",
       maxRows: 4,
       name: "isoBadges",
       type: "array",
     },
     {
       admin: {
-        description: {
-          en: "Copyright text shown at the bottom",
-          es: "Texto de copyright al pie",
-        },
+        description: "Copyright text shown at the bottom",
       },
       defaultValue: createLocalizedDefault({
         en: "© 2026 Cadence Labs, Inc.",
-        es: "© 2026 Cadence Labs, Inc.",
       }),
       localized: true,
       name: "copyrightText",
@@ -247,14 +201,8 @@ export const Footer: CollectionConfig<"footer"> = {
     beforeChange: [denyPublishForAuthors],
   },
   labels: {
-    plural: {
-      en: "Footers",
-      es: "Pie de página",
-    },
-    singular: {
-      en: "Footer",
-      es: "Pie de página",
-    },
+    plural: "Footers",
+    singular: "Footer",
   },
   slug: "footer",
   versions: {

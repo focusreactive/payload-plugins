@@ -8,18 +8,15 @@ export const generateSeoFields = ({
   seoTextField({
     name: "title",
     kind: "title",
-    label: { en: "Meta title", es: "Meta título" },
+    label: "Meta title",
     showButton: generation,
     generateOnPublish: generation,
   }),
   {
     admin: {
-      description: {
-        en: "Image used when sharing this page on social media.",
-        es: "Imagen utilizada al compartir esta página en redes sociales.",
-      },
+      description: "Image used when sharing this page on social media.",
     },
-    label: { en: "Meta image", es: "Imagen meta" },
+    label: "Meta image",
     name: "image",
     relationTo: "media",
     type: "upload",
@@ -27,23 +24,20 @@ export const generateSeoFields = ({
   seoTextField({
     name: "description",
     kind: "description",
-    label: { en: "Meta description", es: "Meta descripción" },
+    label: "Meta description",
     showButton: generation,
     generateOnPublish: generation,
   }),
   {
     admin: {
-      description: {
-        en: "Allow search engines to index this page",
-        es: "Permite a los motores de búsqueda indexar esta página",
-      },
+      description: "Allow search engines to index this page",
     },
     defaultValue: robotsDefault,
-    label: { en: "Robots", es: "Robots" },
+    label: "Robots",
     name: "robots",
     options: [
-      { label: { en: "Index", es: "Index" }, value: "index" },
-      { label: { en: "No Index", es: "No Index" }, value: "noindex" },
+      { label: "Index", value: "index" },
+      { label: "No Index", value: "noindex" },
     ],
     type: "select",
   },

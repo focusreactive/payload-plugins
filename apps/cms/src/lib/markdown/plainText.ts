@@ -1,5 +1,5 @@
 /**
- * Markdown → plain text for search, embeddings, reading time and SEO analysis. Strips syntax,
+ * Markdown → plain text for search, reading time and SEO analysis. Strips syntax,
  * keeps words (link text, image alt, table cells, code).
  */
 export function markdownToPlainText(markdown: string | null | undefined): string {

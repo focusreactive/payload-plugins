@@ -135,15 +135,6 @@ export function buildRefQueries(values: unknown): DocQuery[] {
     });
   }
 
-  const testimonials = collectRelationIds(values, "testimonial");
-  if (testimonials.length > 0) {
-    queries.push({
-      collection: "testimonials",
-      ids: testimonials,
-      select: ["author", "company", "position", "content"],
-    });
-  }
-
   const authors = collectRelationIds(values, "authors");
   if (authors.length > 0) {
     queries.push({ collection: "authors", ids: authors, select: ["name"] });

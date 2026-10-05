@@ -152,7 +152,6 @@ export const seedPosts: SeedStep = async (ctx) => {
       authors: [authorId],
       categories: categoryIds,
       content: null,
-      contentFormat: "markdown" as const,
       excerpt,
       generateSlug: false,
       heroImage: coverId,

@@ -14,7 +14,6 @@ const PREVIEW_IMAGES: Record<string, string> = {
   Hero: "/block-preview-images/preview-hero.png",
   Logos: "/block-preview-images/preview-logos.png",
   "Posts List": "/block-preview-images/preview-posts-list.png",
-  Testimonials: "/block-preview-images/preview-testimonials.png",
   Newsletter: "/block-preview-images/preview-newsletter.png",
   Stats: "/block-preview-images/preview-stats.png",
   Video: "/block-preview-images/preview-video.png",

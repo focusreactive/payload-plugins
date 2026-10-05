@@ -16,10 +16,6 @@ export const I18N_CONFIG: {
       label: "English",
     },
     {
-      code: "es",
-      label: "Spanish",
-    },
-    {
       code: "de",
       label: "Deutsch",
     },
@@ -30,7 +26,6 @@ export const I18N_CONFIG: {
   ],
   openGraphLocales: {
     en: "en_US",
-    es: "es_ES",
     de: "de_DE",
     ja: "ja_JP",
   },

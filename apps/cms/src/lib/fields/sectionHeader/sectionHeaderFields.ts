@@ -21,7 +21,7 @@ export function sectionHeaderFields(options: SectionHeaderFieldsOptions = {}): F
             ? { defaultValue: createLocalizedDefault(options.eyebrowDefault) }
             : {}),
           admin: { width: "40%" },
-          label: { en: "Eyebrow", es: "Antetítulo" },
+          label: "Eyebrow",
           localized: true,
           name: "eyebrow",
           type: "text",
@@ -32,12 +32,9 @@ export function sectionHeaderFields(options: SectionHeaderFieldsOptions = {}): F
             : {}),
           admin: {
             width: "60%",
-            description: {
-              en: "Wrap a word in *asterisks* to accent it in the brand colour.",
-              es: "Envuelve una palabra en *asteriscos* para resaltarla con el color de marca.",
-            },
+            description: "Wrap a word in *asterisks* to accent it in the brand colour.",
           },
-          label: { en: "Heading", es: "Encabezado" },
+          label: "Heading",
           localized: true,
           name: "heading",
           type: "text",
@@ -48,7 +45,7 @@ export function sectionHeaderFields(options: SectionHeaderFieldsOptions = {}): F
       ...(options.descriptionDefault
         ? { defaultValue: createLocalizedDefault(options.descriptionDefault) }
         : {}),
-      label: { en: "Description", es: "Descripción" },
+      label: "Description",
       localized: true,
       name: "description",
       type: "textarea",

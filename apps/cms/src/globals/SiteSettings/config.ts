@@ -4,6 +4,7 @@ import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
 import { anyone, or, user, superAdmin } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { generateSeoFields } from "@/lib/utils/seoFields";
+import { mauticFormFields } from "@/lib/fields/mauticFormFields";
 
 import { revalidateSiteSettings } from "./hooks/revalidateSiteSettings";
 
@@ -27,18 +28,12 @@ export const SiteSettings: GlobalConfig = {
                 DEFAULT_VALUES.collections.siteSettings.siteName
               ),
               admin: {
-                description: {
-                  en: "The name of your website",
-                  es: "El nombre de tu sitio web",
-                },
+                description: "The name of your website",
               },
               localized: true,
             },
           ],
-          label: {
-            en: "General",
-            es: "General",
-          },
+          label: "General",
           name: "general",
         },
         {
@@ -50,51 +45,35 @@ export const SiteSettings: GlobalConfig = {
                   name: "logo",
                   type: "upload",
                   relationTo: "media",
-                  label: {
-                    en: "Admin Panel Logo",
-                    es: "Logo del panel de administración",
-                  },
+                  label: "Admin Panel Logo",
                   admin: {
                     width: "50%",
-                    description: {
-                      en: "Logo displayed in the admin panel sidebar (recommended: SVG or PNG, ~150x40px)",
-                      es: "Logo mostrado en la barra lateral del panel de administración (recomendado: SVG o PNG, ~150x40px)",
-                    },
+                    description:
+                      "Logo displayed in the admin panel sidebar (recommended: SVG or PNG, ~150x40px)",
                   },
                 },
                 {
                   name: "icon",
                   type: "upload",
                   relationTo: "media",
-                  label: {
-                    en: "Admin Panel Icon",
-                    es: "Icono del panel de administración",
-                  },
+                  label: "Admin Panel Icon",
                   admin: {
                     width: "50%",
-                    description: {
-                      en: "Icon displayed when sidebar is collapsed (recommended: SVG or PNG, 32x32px)",
-                      es: "Icono mostrado cuando la barra lateral está colapsada (recomendado: SVG o PNG, 32x32px)",
-                    },
+                    description:
+                      "Icon displayed when sidebar is collapsed (recommended: SVG or PNG, 32x32px)",
                   },
                 },
               ],
             },
           ],
-          label: {
-            en: "Admin Panel",
-            es: "Panel de administración",
-          },
+          label: "Admin Panel",
           name: "adminPanel",
         },
         {
           fields: [
             {
               type: "group",
-              label: {
-                en: "Title & Description",
-                es: "Título y descripción",
-              },
+              label: "Title & Description",
               fields: [
                 {
                   type: "row",
@@ -102,41 +81,26 @@ export const SiteSettings: GlobalConfig = {
                     {
                       name: "titleSeparator",
                       type: "select",
-                      label: {
-                        en: "Title Separator",
-                        es: "Separador de título",
-                      },
+                      label: "Title Separator",
                       defaultValue: "|",
                       options: [
-                        { label: { en: "| (pipe)", es: "| (pipe)" }, value: "|" },
-                        { label: { en: "- (dash)", es: "- (dash)" }, value: "-" },
-                        { label: { en: "• (bullet)", es: "• (bullet)" }, value: "•" },
+                        { label: "| (pipe)", value: "|" },
+                        { label: "- (dash)", value: "-" },
+                        { label: "• (bullet)", value: "•" },
                       ],
                       admin: {
                         width: "50%",
-                        description: {
-                          en: "Character used to separate page title from site name",
-                          es: "Carácter usado para separar el título de la página del nombre del sitio",
-                        },
+                        description: "Character used to separate page title from site name",
                       },
                     },
                     {
                       name: "titleSuffix",
                       type: "text",
-                      label: {
-                        en: "Title Suffix",
-                        es: "Sufijo de título",
-                      },
+                      label: "Title Suffix",
                       admin: {
                         width: "50%",
-                        description: {
-                          en: "Text added after separator (defaults to Site Name if empty)",
-                          es: "Texto agregado después del separador (por defecto el nombre del sitio si está vacío)",
-                        },
-                        placeholder: {
-                          en: "Leave empty to use Site Name",
-                          es: "Dejar vacío para usar el nombre del sitio",
-                        },
+                        description: "Text added after separator (defaults to Site Name if empty)",
+                        placeholder: "Leave empty to use Site Name",
                       },
                       localized: true,
                       defaultValue: createLocalizedDefault(
@@ -148,15 +112,9 @@ export const SiteSettings: GlobalConfig = {
                 {
                   name: "defaultDescription",
                   type: "textarea",
-                  label: {
-                    en: "Default Meta Description",
-                    es: "Descripción de meta de respaldo",
-                  },
+                  label: "Default Meta Description",
                   admin: {
-                    description: {
-                      en: "Fallback description when page has no description",
-                      es: "Descripción de respaldo cuando la página no tiene descripción",
-                    },
+                    description: "Fallback description when page has no description",
                   },
                   defaultValue: createLocalizedDefault(
                     DEFAULT_VALUES.collections.siteSettings.defaultDescription
@@ -168,10 +126,7 @@ export const SiteSettings: GlobalConfig = {
             {
               name: "og",
               type: "group",
-              label: {
-                en: "Open Graph",
-                es: "Open Graph",
-              },
+              label: "Open Graph",
               fields: [
                 {
                   type: "row",
@@ -179,36 +134,21 @@ export const SiteSettings: GlobalConfig = {
                     {
                       name: "title",
                       type: "text",
-                      label: {
-                        en: "Default OG Title",
-                        es: "Título de respaldo de Open Graph",
-                      },
+                      label: "Default OG Title",
                       admin: {
                         width: "50%",
-                        description: {
-                          en: "Fallback title for Open Graph when page has no title",
-                          es: "Título de respaldo para Open Graph cuando la página no tiene título",
-                        },
+                        description: "Fallback title for Open Graph when page has no title",
                       },
                       localized: true,
                     },
                     {
                       name: "siteName",
                       type: "text",
-                      label: {
-                        en: "OG Site Name",
-                        es: "Nombre del sitio de Open Graph",
-                      },
+                      label: "OG Site Name",
                       admin: {
                         width: "50%",
-                        description: {
-                          en: "Site name for Open Graph. Defaults to Site Name if empty",
-                          es: "Nombre del sitio para Open Graph. Por defecto el nombre del sitio si está vacío",
-                        },
-                        placeholder: {
-                          en: "Leave empty to use Site Name",
-                          es: "Dejar vacío para usar el nombre del sitio",
-                        },
+                        description: "Site name for Open Graph. Defaults to Site Name if empty",
+                        placeholder: "Leave empty to use Site Name",
                       },
                       localized: true,
                     },
@@ -217,15 +157,10 @@ export const SiteSettings: GlobalConfig = {
                 {
                   name: "description",
                   type: "textarea",
-                  label: {
-                    en: "Default OG Description",
-                    es: "Descripción de respaldo de Open Graph",
-                  },
+                  label: "Default OG Description",
                   admin: {
-                    description: {
-                      en: "Fallback description for Open Graph (uses Meta Description if empty)",
-                      es: "Descripción de respaldo para Open Graph (usa la descripción meta si está vacía)",
-                    },
+                    description:
+                      "Fallback description for Open Graph (uses Meta Description if empty)",
                   },
                   localized: true,
                   defaultValue: createLocalizedDefault(
@@ -236,15 +171,9 @@ export const SiteSettings: GlobalConfig = {
                   name: "image",
                   type: "upload",
                   relationTo: "media",
-                  label: {
-                    en: "Default OG Image",
-                    es: "Imagen de respaldo de Open Graph",
-                  },
+                  label: "Default OG Image",
                   admin: {
-                    description: {
-                      en: "Fallback image for social media sharing",
-                      es: "Imagen de respaldo para compartir en redes sociales",
-                    },
+                    description: "Fallback image for social media sharing",
                   },
                 },
               ],
@@ -252,10 +181,7 @@ export const SiteSettings: GlobalConfig = {
             {
               name: "x",
               type: "group",
-              label: {
-                en: "X (Twitter)",
-                es: "X (Twitter)",
-              },
+              label: "X (Twitter)",
               fields: [
                 {
                   type: "row",
@@ -263,70 +189,44 @@ export const SiteSettings: GlobalConfig = {
                     {
                       name: "site",
                       type: "text",
-                      label: {
-                        en: "Twitter Site Handle",
-                        es: "Handle de Twitter",
-                      },
+                      label: "Twitter Site Handle",
                       admin: {
                         width: "33%",
-                        description: {
-                          en: "Twitter/X username for the website (e.g., @yoursite)",
-                          es: "Nombre de usuario de Twitter/X para el sitio web (ej., @yoursite)",
-                        },
-                        placeholder: {
-                          en: "@yoursite",
-                          es: "@yoursite",
-                        },
+                        description: "Twitter/X username for the website (e.g., @yoursite)",
+                        placeholder: "@yoursite",
                       },
                       localized: true,
                     },
                     {
                       name: "creator",
                       type: "text",
-                      label: {
-                        en: "Default Twitter Creator Handle",
-                        es: "Handle de Twitter de respaldo",
-                      },
+                      label: "Default Twitter Creator Handle",
                       admin: {
                         width: "33%",
-                        description: {
-                          en: "Default Twitter/X username for content creator (e.g., @author)",
-                          es: "Nombre de usuario de Twitter/X de respaldo para el creador de contenido (ej., @author)",
-                        },
-                        placeholder: {
-                          en: "@author",
-                          es: "@author",
-                        },
+                        description:
+                          "Default Twitter/X username for content creator (e.g., @author)",
+                        placeholder: "@author",
                       },
                       localized: true,
                     },
                     {
                       name: "card",
                       type: "select",
-                      label: {
-                        en: "Default Twitter Card Type",
-                        es: "Tipo de tarjeta de Twitter de respaldo",
-                      },
+                      label: "Default Twitter Card Type",
                       defaultValue: "summary_large_image",
                       options: [
                         {
-                          label: {
-                            en: "Summary Card with Large Image",
-                            es: "Tarjeta de resumen con imagen grande",
-                          },
+                          label: "Summary Card with Large Image",
                           value: "summary_large_image",
                         },
                         {
-                          label: { en: "Summary Card", es: "Tarjeta de resumen" },
+                          label: "Summary Card",
                           value: "summary",
                         },
                       ],
                       admin: {
                         width: "34%",
-                        description: {
-                          en: "Type of Twitter Card to display",
-                          es: "Tipo de tarjeta de Twitter a mostrar",
-                        },
+                        description: "Type of Twitter Card to display",
                       },
                     },
                   ],
@@ -334,10 +234,7 @@ export const SiteSettings: GlobalConfig = {
               ],
             },
           ],
-          label: {
-            en: "SEO Defaults",
-            es: "Valores por defecto de SEO",
-          },
+          label: "SEO Defaults",
           name: "seo",
         },
         {
@@ -350,10 +247,7 @@ export const SiteSettings: GlobalConfig = {
             {
               name: "title",
               type: "text",
-              label: {
-                en: "404 Title",
-                es: "Título de la página 404",
-              },
+              label: "404 Title",
               localized: true,
               defaultValue: createLocalizedDefault(
                 DEFAULT_VALUES.collections.siteSettings.notFoundTitle
@@ -362,10 +256,7 @@ export const SiteSettings: GlobalConfig = {
             {
               name: "description",
               type: "textarea",
-              label: {
-                en: "404 Description",
-                es: "Descripción de la página 404",
-              },
+              label: "404 Description",
               defaultValue: createLocalizedDefault(
                 DEFAULT_VALUES.collections.siteSettings.notFoundDescription
               ),
@@ -377,10 +268,7 @@ export const SiteSettings: GlobalConfig = {
               relationTo: "footer",
             },
           ],
-          label: {
-            en: "404 Page",
-            es: "Página 404",
-          },
+          label: "404 Page",
           name: "notFound",
         },
         {
@@ -389,7 +277,7 @@ export const SiteSettings: GlobalConfig = {
               type: "tabs",
               tabs: [
                 {
-                  label: { en: "Content", es: "Contenido" },
+                  label: "Content",
                   fields: [
                     {
                       name: "header",
@@ -403,9 +291,8 @@ export const SiteSettings: GlobalConfig = {
                           admin: { width: "40%" },
                           defaultValue: createLocalizedDefault({
                             en: "The Journal",
-                            es: "The Journal",
                           }),
-                          label: { en: "Eyebrow", es: "Antetítulo" },
+                          label: "Eyebrow",
                           localized: true,
                           name: "eyebrow",
                           type: "text",
@@ -419,10 +306,7 @@ export const SiteSettings: GlobalConfig = {
                             DEFAULT_VALUES.collections.siteSettings.blog.blogTitle
                           ),
                           localized: true,
-                          label: {
-                            en: "Blog Page Title",
-                            es: "Título de la página de blog",
-                          },
+                          label: "Blog Page Title",
                         },
                       ],
                     },
@@ -431,10 +315,7 @@ export const SiteSettings: GlobalConfig = {
                       type: "textarea",
                       required: true,
                       localized: true,
-                      label: {
-                        en: "Blog Page Description",
-                        es: "Descripción de la página de blog",
-                      },
+                      label: "Blog Page Description",
                       defaultValue: createLocalizedDefault(
                         DEFAULT_VALUES.collections.siteSettings.blog.blogDescription
                       ),
@@ -446,9 +327,8 @@ export const SiteSettings: GlobalConfig = {
                           admin: { width: "50%" },
                           defaultValue: createLocalizedDefault({
                             en: "Search articles…",
-                            es: "Buscar artículos…",
                           }),
-                          label: { en: "Search placeholder", es: "Marcador de búsqueda" },
+                          label: "Search placeholder",
                           localized: true,
                           name: "searchPlaceholder",
                           type: "text",
@@ -458,10 +338,7 @@ export const SiteSettings: GlobalConfig = {
                           name: "readMoreLabel",
                           type: "text",
                           required: true,
-                          label: {
-                            en: "Read More Button Label",
-                            es: "Etiqueta del botón Leer más",
-                          },
+                          label: "Read More Button Label",
                           localized: true,
                           defaultValue: createLocalizedDefault(
                             DEFAULT_VALUES.collections.siteSettings.blog.readMoreLabel
@@ -473,10 +350,7 @@ export const SiteSettings: GlobalConfig = {
                       name: "relatedPostsLabel",
                       type: "text",
                       required: true,
-                      label: {
-                        en: "Related Posts Label",
-                        es: "Etiqueta de publicaciones relacionadas",
-                      },
+                      label: "Related Posts Label",
                       localized: true,
                       defaultValue: createLocalizedDefault(
                         DEFAULT_VALUES.collections.siteSettings.blog.relatedPostsLabel
@@ -490,7 +364,7 @@ export const SiteSettings: GlobalConfig = {
                   ],
                 },
                 {
-                  label: { en: "SEO", es: "SEO" },
+                  label: "SEO",
                   fields: [
                     {
                       name: "meta",
@@ -504,11 +378,37 @@ export const SiteSettings: GlobalConfig = {
               ],
             },
           ],
-          label: {
-            en: "Blog",
-            es: "Blog",
-          },
+          label: "Blog",
           name: "blog",
+        },
+        {
+          fields: [
+            {
+              admin: {
+                description:
+                  "Base URL of your Mautic instance, e.g. https://mautic.example.com. Form and newsletter blocks submit there.",
+              },
+              label: "Mautic URL",
+              name: "mauticUrl",
+              type: "text",
+              validate: (value: unknown) =>
+                !value || (typeof value === "string" && /^https:\/\/[^\s/]+/u.test(value))
+                  ? true
+                  : "Use an https:// URL",
+            },
+            {
+              admin: {
+                description:
+                  "The Mautic form behind every newsletter band (blocks, blog, author pages)",
+              },
+              fields: [mauticFormFields({ required: false })],
+              label: "Newsletter form",
+              name: "newsletterForm",
+              type: "group",
+            },
+          ],
+          label: "Integrations",
+          name: "integrations",
         },
       ],
       type: "tabs",
@@ -517,10 +417,7 @@ export const SiteSettings: GlobalConfig = {
   hooks: {
     afterChange: [revalidateSiteSettings],
   },
-  label: {
-    en: "Site Settings",
-    es: "Configuración del sitio",
-  },
+  label: "Site Settings",
   slug: "site-settings",
   versions: {
     drafts: true,

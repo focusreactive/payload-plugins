@@ -11,7 +11,6 @@ import { extractStatsText } from "@/blocks/Stats/extractText";
 import { extractFaqText } from "@/blocks/Faq/extractText";
 import { extractHeroText } from "@/blocks/Hero/extractText";
 import { extractLogosText } from "@/blocks/Logos/extractText";
-import { extractTestimonialsText } from "@/blocks/TestimonialsList/extractText";
 import { extractLexicalText, joinText } from "@/lib/utils/text";
 import type { Page } from "@/payload-types";
 
@@ -36,9 +35,6 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
     }
     case "faq": {
       return extractFaqText(block);
-    }
-    case "testimonialsList": {
-      return extractTestimonialsText(block);
     }
     case "cardsGrid": {
       return extractCardsGridText(block);

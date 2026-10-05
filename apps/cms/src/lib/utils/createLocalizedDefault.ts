@@ -79,7 +79,7 @@ export function createRichTextState(heading: string, paragraph: string): RichTex
  * Creates localized defaultValue function for simple fields (text, number, etc.)
  *
  * @example
- * defaultValue: createLocalizedDefault({ en: 'Hello', es: 'Hola' })
+ * defaultValue: createLocalizedDefault({ en: 'Hello', de: 'Hallo' })
  */
 export function createLocalizedDefault<T>(
   // Only `en` is mandatory: locales without a translation fall back to the default locale.
@@ -100,7 +100,7 @@ export function createLocalizedDefault<T>(
  * @example
  * defaultValue: createLocalizedRichText({
  *   en: { heading: 'Title', paragraph: 'Content' },
- *   es: { heading: 'Título', paragraph: 'Contenido' }
+ *   de: { heading: 'Titel', paragraph: 'Inhalt' }
  * })
  */
 export function createLocalizedRichText(

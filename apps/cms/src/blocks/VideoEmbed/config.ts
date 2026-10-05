@@ -11,8 +11,8 @@ export const VideoEmbedBlock: Block = injectSection({
   interfaceName: "VideoEmbedBlock",
   ...getBlockPreviewImage("Video"),
   labels: {
-    plural: { en: "Videos", es: "Vídeos" },
-    singular: { en: "Video", es: "Vídeo" },
+    plural: "Videos",
+    singular: "Video",
   },
   fields: [...sectionHeaderFields(), ...videoEmbedFields],
 });

@@ -5,8 +5,7 @@ import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { injectSection } from "@/lib/fields/section/injectSection";
 import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
 import { link } from "@/lib/fields/link";
-
-export const DEFAULT_MAUTIC_ACTION = "https://mautic.example.com/form/submit?formId=";
+import { mauticFormFields } from "@/lib/fields/mauticFormFields";
 
 const SLUG_SAFE = /^[a-z][a-z0-9_]*$/u;
 
@@ -15,72 +14,12 @@ export const FormBlock: Block = injectSection({
   interfaceName: "FormBlock",
   ...getBlockPreviewImage("Form"),
   labels: {
-    plural: { en: "Forms", es: "Formularios" },
-    singular: { en: "Form", es: "Formulario" },
+    plural: "Forms",
+    singular: "Form",
   },
   fields: [
     ...sectionHeaderFields(),
-    {
-      type: "row",
-      fields: [
-        {
-          admin: {
-            width: "34%",
-            description: {
-              en: "Internal: leads land in “Leads”. Mautic: plain HTML posted to your Mautic.",
-              es: "Interno: los envíos van a “Leads”. Mautic: HTML enviado a su Mautic.",
-            },
-          },
-          defaultValue: "internal",
-          label: { en: "Mode", es: "Modo" },
-          name: "mode",
-          options: [
-            { label: { en: "Internal (CMS)", es: "Interno (CMS)" }, value: "internal" },
-            { label: "Mautic", value: "mautic" },
-          ],
-          required: true,
-          type: "select",
-        },
-        {
-          admin: {
-            width: "66%",
-            description: {
-              en: "Identifier shown with each submission, e.g. contact, whitepaper-tsf",
-              es: "Identificador mostrado con cada envío",
-            },
-          },
-          label: { en: "Form name", es: "Nombre del formulario" },
-          name: "formName",
-          required: true,
-          type: "text",
-        },
-      ],
-    },
-    {
-      type: "row",
-      admin: { condition: (_, siblingData) => siblingData?.mode === "mautic" },
-      fields: [
-        {
-          admin: { width: "30%" },
-          label: { en: "Mautic form id", es: "Id del formulario Mautic" },
-          name: "mauticFormId",
-          type: "text",
-        },
-        {
-          admin: {
-            width: "70%",
-            description: {
-              en: "The form id is appended to this URL",
-              es: "El id del formulario se añade a esta URL",
-            },
-          },
-          defaultValue: DEFAULT_MAUTIC_ACTION,
-          label: { en: "Mautic action URL", es: "URL de acción de Mautic" },
-          name: "mauticActionUrl",
-          type: "text",
-        },
-      ],
-    },
+    mauticFormFields(),
     {
       admin: { initCollapsed: true },
       fields: [
@@ -90,9 +29,9 @@ export const FormBlock: Block = injectSection({
             {
               admin: {
                 width: "30%",
-                description: { en: "lowercase, a–z 0–9 _", es: "minúsculas" },
+                description: "The field alias in Mautic",
               },
-              label: { en: "Name", es: "Nombre" },
+              label: "Name",
               name: "name",
               required: true,
               type: "text",
@@ -103,7 +42,7 @@ export const FormBlock: Block = injectSection({
             },
             {
               admin: { width: "45%" },
-              label: { en: "Label", es: "Etiqueta" },
+              label: "Label",
               localized: true,
               name: "label",
               required: true,
@@ -112,15 +51,15 @@ export const FormBlock: Block = injectSection({
             {
               admin: { width: "25%" },
               defaultValue: "text",
-              label: { en: "Type", es: "Tipo" },
+              label: "Type",
               name: "type",
               options: [
                 { label: "Text", value: "text" },
                 { label: "Email", value: "email" },
-                { label: { en: "Phone", es: "Teléfono" }, value: "tel" },
-                { label: { en: "Long text", es: "Texto largo" }, value: "textarea" },
-                { label: { en: "Dropdown", es: "Desplegable" }, value: "select" },
-                { label: { en: "Checkbox", es: "Casilla" }, value: "checkbox" },
+                { label: "Phone", value: "tel" },
+                { label: "Long text", value: "textarea" },
+                { label: "Dropdown", value: "select" },
+                { label: "Checkbox", value: "checkbox" },
               ],
               required: true,
               type: "select",
@@ -132,7 +71,7 @@ export const FormBlock: Block = injectSection({
           fields: [
             {
               admin: { width: "40%" },
-              label: { en: "Placeholder", es: "Marcador" },
+              label: "Placeholder",
               localized: true,
               name: "placeholder",
               type: "text",
@@ -141,33 +80,33 @@ export const FormBlock: Block = injectSection({
               admin: {
                 condition: (_, siblingData) => siblingData?.type === "select",
                 width: "30%",
-                description: { en: "Comma-separated", es: "Separadas por comas" },
+                description: "Comma-separated",
               },
-              label: { en: "Options", es: "Opciones" },
+              label: "Options",
               name: "options",
               type: "text",
             },
             {
               admin: { width: "15%" },
               defaultValue: "full",
-              label: { en: "Width", es: "Ancho" },
+              label: "Width",
               name: "width",
               options: [
-                { label: { en: "Full", es: "Completo" }, value: "full" },
-                { label: { en: "Half", es: "Mitad" }, value: "half" },
+                { label: "Full", value: "full" },
+                { label: "Half", value: "half" },
               ],
               type: "select",
             },
             {
               admin: { style: { alignSelf: "flex-end" }, width: "15%" },
-              label: { en: "Required", es: "Obligatorio" },
+              label: "Required",
               name: "required",
               type: "checkbox",
             },
           ],
         },
       ],
-      label: { en: "Fields", es: "Campos" },
+      label: "Fields",
       maxRows: 12,
       minRows: 1,
       name: "fields",
@@ -179,8 +118,8 @@ export const FormBlock: Block = injectSection({
       fields: [
         {
           admin: { width: "40%" },
-          defaultValue: createLocalizedDefault({ en: "Submit", es: "Enviar" }),
-          label: { en: "Submit label", es: "Texto del botón" },
+          defaultValue: createLocalizedDefault({ en: "Submit" }),
+          label: "Submit label",
           localized: true,
           name: "submitLabel",
           type: "text",
@@ -189,9 +128,8 @@ export const FormBlock: Block = injectSection({
           admin: { width: "60%" },
           defaultValue: createLocalizedDefault({
             en: "Thank you — we will be in touch shortly.",
-            es: "Gracias, nos pondremos en contacto en breve.",
           }),
-          label: { en: "Success message", es: "Mensaje de éxito" },
+          label: "Success message",
           localized: true,
           name: "successMessage",
           type: "text",
@@ -201,9 +139,8 @@ export const FormBlock: Block = injectSection({
     {
       defaultValue: createLocalizedDefault({
         en: "By clicking submit, you agree that we may process your information in accordance with our Privacy Policy.",
-        es: "Al enviar, acepta que tratemos su información de acuerdo con nuestra Política de privacidad.",
       }),
-      label: { en: "Consent text", es: "Texto de consentimiento" },
+      label: "Consent text",
       localized: true,
       name: "consentText",
       type: "textarea",
@@ -213,12 +150,9 @@ export const FormBlock: Block = injectSection({
       required: false,
       overrides: {
         admin: {
-          description: {
-            en: "Optional: shown after a successful submit (gated downloads)",
-            es: "Opcional: se muestra tras el envío (descargas protegidas)",
-          },
+          description: "Optional: shown after a successful submit (gated downloads)",
         },
-        label: { en: "Success link", es: "Enlace tras el envío" },
+        label: "Success link",
         name: "successLink",
       },
     }),

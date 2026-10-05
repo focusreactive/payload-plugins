@@ -89,8 +89,8 @@ describe("linkToContentNode", () => {
   });
   it("resolves a customPage via the locale-aware resolver", () => {
     const link: LinkValue = { type: "customPage", customPage: "search", label: "Find" };
-    const node = linkToContentNode(link, ctx([], "es"));
-    expect(node).toEqual({ type: "link", href: "/es/search", text: "Find" });
+    const node = linkToContentNode(link, ctx([], "de"));
+    expect(node).toEqual({ type: "link", href: "/de/search", text: "Find" });
   });
   it("resolves a page reference from the fetched docs map (relative, locale-prefixed)", () => {
     const link: LinkValue = {
@@ -105,11 +105,11 @@ describe("linkToContentNode", () => {
           { slug: "about", breadcrumbs: [{ url: "/about" }] },
         ],
       ],
-      "es"
+      "de"
     );
     expect(linkToContentNode(link, docs)).toEqual({
       type: "link",
-      href: "/es/about",
+      href: "/de/about",
       text: "About",
     });
   });
@@ -173,10 +173,9 @@ describe("collectRelationIds", () => {
       )
     ).toEqual([3, 4]);
     expect(
-      collectRelationIds(
-        { blocks: [{ testimonialItems: [{ testimonial: 1 }, { testimonial: { id: 2 } }] }] },
-        "testimonial"
-      ).sort((a, b) => Number(a) - Number(b))
+      collectRelationIds({ blocks: [{ categories: [1, { id: 2 }] }] }, "categories").sort(
+        (a, b) => Number(a) - Number(b)
+      )
     ).toEqual([1, 2]);
     expect(collectRelationIds({}, "authors")).toEqual([]);
   });
@@ -209,7 +208,7 @@ describe("buildRefQueries", () => {
     expect(byCol.posts?.ids).toContain(99);
   });
 
-  it("emits projected parallel queries for links, media, testimonials, authors, categories", () => {
+  it("emits projected parallel queries for links, media, authors, categories", () => {
     const queries = buildRefQueries({
       authors: [3],
       categories: [5],
@@ -218,7 +217,6 @@ describe("buildRefQueries", () => {
         {
           actions: [{ type: "reference", reference: { relationTo: "page", value: 1 }, label: "a" }],
         },
-        { testimonialItems: [{ testimonial: 2 }] },
       ],
     });
     const byCol = Object.fromEntries(queries.map((q) => [q.collection, q]));
@@ -226,10 +224,6 @@ describe("buildRefQueries", () => {
     // `filename` is REQUIRED: Payload's upload `url` is virtual (computed from filename);
     // selecting url without filename returns url: null.
     expect(byCol.media).toMatchObject({ ids: [8], select: ["url", "filename", "mimeType", "alt"] });
-    expect(byCol.testimonials).toMatchObject({
-      ids: [2],
-      select: ["author", "company", "position", "content"],
-    });
     expect(byCol.authors).toMatchObject({ ids: [3], select: ["name"] });
     expect(byCol.categories).toMatchObject({ ids: [5], select: ["title"] });
   });
@@ -281,25 +275,5 @@ describe("empty array fields leaked from form state as a row-count number", () =
         helpers
       )
     ).not.toThrow();
-  });
-});
-
-describe("testimonialsList resolves relation data via DocStore", () => {
-  it("reads testimonial content/author/role from the fetched doc when the value is an id", () => {
-    const store = {
-      get: (collection: string, id: string | number) =>
-        collection === "testimonials" && id === 9
-          ? { content: "Great product", author: "Jane Roe", position: "CEO", company: "Acme" }
-          : undefined,
-    };
-    const nodes = extractPageBlockContent(
-      { blockType: "testimonialsList", testimonialItems: [{ testimonial: 9 }] } as never,
-      { docs: store, locale: "en" } as never,
-      store as never,
-      { compact: (n: (unknown | null | undefined)[]) => n.filter(Boolean) } as never
-    );
-    expect(nodes).toContainEqual({ type: "paragraph", text: "Great product" });
-    expect(nodes).toContainEqual({ type: "paragraph", text: "Jane Roe" });
-    expect(nodes).toContainEqual({ type: "paragraph", text: "CEO, Acme" });
   });
 });

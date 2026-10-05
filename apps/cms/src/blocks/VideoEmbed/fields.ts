@@ -8,7 +8,7 @@ export const videoEmbedFields: Field[] = [
       {
         admin: { width: "30%" },
         defaultValue: "youtube",
-        label: { en: "Provider", es: "Proveedor" },
+        label: "Provider",
         name: "provider",
         options: [{ label: "YouTube", value: "youtube" }],
         required: true,
@@ -17,12 +17,9 @@ export const videoEmbedFields: Field[] = [
       {
         admin: {
           width: "70%",
-          description: {
-            en: "The id from the video URL, e.g. dQw4w9WgXcQ",
-            es: "El id de la URL del vídeo, p. ej. dQw4w9WgXcQ",
-          },
+          description: "The id from the video URL, e.g. dQw4w9WgXcQ",
         },
-        label: { en: "Video id", es: "Id del vídeo" },
+        label: "Video id",
         name: "videoId",
         type: "text",
       },
@@ -30,12 +27,9 @@ export const videoEmbedFields: Field[] = [
   },
   {
     admin: {
-      description: {
-        en: "Shown on the poster and used as the player's accessible name",
-        es: "Se muestra en la portada y es el nombre accesible del reproductor",
-      },
+      description: "Shown on the poster and used as the player's accessible name",
     },
-    label: { en: "Title", es: "Título" },
+    label: "Title",
     localized: true,
     name: "title",
     required: true,
@@ -47,12 +41,10 @@ export const videoEmbedFields: Field[] = [
       {
         admin: {
           width: "60%",
-          description: {
-            en: "Optional. Without it a branded poster is generated — nothing loads from YouTube before play.",
-            es: "Opcional. Sin ella se genera una portada de marca; nada se carga de YouTube antes de reproducir.",
-          },
+          description:
+            "Optional. Without it a branded poster is generated — nothing loads from YouTube before play.",
         },
-        label: { en: "Poster", es: "Portada" },
+        label: "Poster",
         name: "poster",
         relationTo: "media",
         type: "upload",
@@ -60,7 +52,7 @@ export const videoEmbedFields: Field[] = [
       {
         admin: { width: "40%" },
         defaultValue: "16/9",
-        label: { en: "Aspect ratio", es: "Proporción" },
+        label: "Aspect ratio",
         name: "aspect",
         options: [
           { label: "16:9", value: "16/9" },
