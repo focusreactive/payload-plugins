@@ -10,7 +10,8 @@ import { assignTags, TAGS } from "./data/tags";
 import { renderCover } from "./imagery";
 import { log } from "./log";
 import { insertImages } from "./markdownImages";
-import { isNewsEntry } from "./parseDump";
+import { isNewsEntry, slugFromUrl } from "./parseDump";
+import { restoreCodeAndTables } from "./restoreCode";
 import type { ImageInsert } from "./markdownImages";
 import { upsertMedia } from "./mediaStore";
 import { firstParagraph, londonMorning, slugify } from "./text";
@@ -91,6 +92,19 @@ async function generatedCover(
   return id;
 }
 
+/** Code listings and tables come back from the scraped article HTML when it is on disk. */
+async function withRestoredCode(ctx: SeedContext, post: ParsedPost): Promise<string> {
+  const file = path.join(ctx.flags.localDir, "html", `${slugFromUrl(post.url)}.html`);
+  if (!existsSync(file)) {
+    return post.markdown;
+  }
+  const { markdown, restored } = restoreCodeAndTables(post.markdown, await readFile(file, "utf-8"));
+  if (restored > 0) {
+    log.info(`${post.slug}: ${restored} code blocks / tables restored from HTML`);
+  }
+  return markdown;
+}
+
 /** A press release keeps its old address: /news/<name>.html → News slug "<name>.html". */
 async function upsertNews(ctx: SeedContext, post: ParsedPost, result: StepResult) {
   const slug = post.legacyPath.split("/").pop() || `${post.slug}.html`;
@@ -153,7 +167,7 @@ export const seedPosts: SeedStep = async (ctx) => {
     // Images from images-map.json (scraped from the live article).
     // By source URL: the post slug may have been renamed (avoidPageSlugs), the scraper's was not.
     const entry = mapped.find((item) => sameUrl(item.sourceUrl, post.url) && item.status === "ok");
-    let markdown = post.markdown;
+    let markdown = await withRestoredCode(ctx, post);
     let coverId: number | null = null;
     if (entry) {
       const inserts: ImageInsert[] = [];
