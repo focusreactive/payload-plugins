@@ -27,6 +27,7 @@ export function createResolveAbRewrite<TVariantData extends object>(
     getExpCookieName = defaultGetExpCookieName,
     visitorIdMaxAge = DEFAULT_VISITOR_MAX_AGE,
     expCookieMaxAge = DEFAULT_EXP_MAX_AGE,
+    bucketCookieMaxAge = expCookieMaxAge,
   } = cookieConfig;
 
   return async function resolveAbRewrite(
@@ -56,60 +57,47 @@ export function createResolveAbRewrite<TVariantData extends object>(
 
     const expCookieName = getExpCookieName(manifestKey);
 
-    let bucket = existingBucket;
-    if (!bucket) {
-      bucket = getPassPercentage
+    const isLiveBucket = (value: string | undefined): value is string =>
+      value === "original" || variants.some((v) => getBucket(v) === value);
+
+    const savedBucket = [existingBucket, request.cookies.get(expCookieName)?.value].find(
+      isLiveBucket
+    );
+    const bucket =
+      savedBucket ??
+      (getPassPercentage
         ? pickWeightedBucket(variants, getBucket, getPassPercentage)
-        : pickUniformBucket(variants, getBucket);
-    }
+        : pickUniformBucket(variants, getBucket));
 
-    const setAbCookies = (res: NextResponse, assignedBucket: string, isNewAssignment: boolean) => {
-      if (!existingVisitorId) {
-        res.cookies.set(visitorIdCookieName, visitorId, {
-          path: "/",
-          sameSite: "lax",
-          maxAge: visitorIdMaxAge,
-        });
-      }
-
-      if (isNewAssignment) {
-        res.cookies.set(expCookieName, assignedBucket, {
-          path: "/",
-          sameSite: "lax",
-          maxAge: expCookieMaxAge,
-        });
-      }
-    };
-
-    if (bucket === "original") {
-      if (!existingBucket) {
-        const url = request.nextUrl.clone();
-
-        url.pathname = originalRewritePath;
-
-        const res = NextResponse.rewrite(url);
-
-        res.cookies.set(bucketCookieName, "original", { path: "/", sameSite: "lax" });
-        setAbCookies(res, "original", true);
-
-        return res;
-      }
-
-      return null;
-    }
+    if (bucket === "original" && existingBucket === "original") return null;
 
     const match = variants.find((v) => getBucket(v) === bucket);
-    if (!match) return null;
-
     const url = request.nextUrl.clone();
-    url.pathname = getRewritePath(match);
+    url.pathname = match ? getRewritePath(match) : originalRewritePath;
     const res = NextResponse.rewrite(url);
 
-    if (!existingBucket) {
-      res.cookies.set(bucketCookieName, bucket, { path: "/", sameSite: "lax" });
-      setAbCookies(res, bucket, true);
-    } else {
-      setAbCookies(res, bucket, false);
+    if (existingBucket !== bucket) {
+      res.cookies.set(bucketCookieName, bucket, {
+        path: "/",
+        sameSite: "lax",
+        maxAge: bucketCookieMaxAge,
+      });
+    }
+
+    if (!existingVisitorId) {
+      res.cookies.set(visitorIdCookieName, visitorId, {
+        path: "/",
+        sameSite: "lax",
+        maxAge: visitorIdMaxAge,
+      });
+    }
+
+    if (!savedBucket) {
+      res.cookies.set(expCookieName, bucket, {
+        path: "/",
+        sameSite: "lax",
+        maxAge: expCookieMaxAge,
+      });
     }
 
     return res;

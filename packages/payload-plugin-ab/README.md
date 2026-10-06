@@ -369,17 +369,17 @@ await resolveAbRewrite(request, pathname, internalPath, internalPath);
 
 **Routing:** When `getPassPercentage` is provided, each variant receives its percentage of traffic; the remainder goes to the original. The plugin validates on save that the sum never exceeds 100%. When `getPassPercentage` is omitted, all variants and the original share equal probability.
 
-**Sticky sessions:** Bucket assignment is stored in a per-path cookie so returning users always see the same variant.
+**Sticky assignment:** Bucket assignment is stored in a per-path cookie that outlives the browser session, so returning users always see the same variant. If the bucket cookie is gone, the middleware restores the assignment from the experiment cookie; a bucket whose variant no longer exists is drawn again.
 
 ### Cookie System
 
 | Cookie     | Default name               | Lifetime | Purpose                                             |
 | ---------- | -------------------------- | -------- | --------------------------------------------------- |
-| Bucket     | `payload_ab_bucket_{path}` | Session  | Which bucket this user is in                        |
+| Bucket     | `payload_ab_bucket_{path}` | 90 days  | Which bucket this user is in                        |
 | Visitor ID | `ab_visitor_id`            | 365 days | Persistent visitor identifier for analytics         |
 | Experiment | `exp_{path}`               | 90 days  | Bucket name readable client-side by analytics hooks |
 
-Override names by passing a `cookies` config to `createResolveAbRewrite`:
+Override names and lifetimes (`visitorIdMaxAge`, `expCookieMaxAge`, `bucketCookieMaxAge`, in seconds) by passing a `cookies` config to `createResolveAbRewrite`:
 
 ```ts
 import type { AbCookieConfig } from "@focus-reactive/payload-plugin-ab/middleware";
