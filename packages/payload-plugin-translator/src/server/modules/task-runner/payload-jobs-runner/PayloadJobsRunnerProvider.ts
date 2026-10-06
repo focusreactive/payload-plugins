@@ -10,7 +10,11 @@ import type {
 } from "./types.js";
 import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner.js";
 import { readCollectionRef } from "./readCollectionRef.js";
-import type { TaskRunnerContext, TaskRunnerProvider } from "../TaskRunnerProvider.interface.js";
+import type {
+  TaskHandlerInput,
+  TaskRunnerContext,
+  TaskRunnerProvider,
+} from "../TaskRunnerProvider.interface.js";
 import type { Requester } from "../../../shared/payload/RequestScope.shapes.js";
 import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
 import type { TranslationStrategyName } from "../../../../core/translation-pipeline/strategies/index.js";
@@ -49,6 +53,46 @@ export function requesterOf(input: {
   requester_collection?: string | null;
 }): Requester | null {
   return asRequester(input.requester_id, input.requester_collection);
+}
+
+type RunningJob = {
+  id?: unknown;
+  workflowSlug?: unknown;
+  taskStatus?: Record<string, Record<string, { totalTried?: unknown } | undefined> | undefined>;
+};
+
+/** Payload runs a job that is the task itself under this id, where a workflow passes the locale. */
+const SOLE_TASK_ID = "1";
+
+/**
+ * Which attempt of this locale the handler is running right now.
+ *
+ * One job covers every locale of a document, so the row's own `totalTried` counts the job's passes,
+ * not the locale's; and Payload writes each counter only after a run finishes, hence the `+ 1`.
+ */
+export function attemptOf(
+  job: RunningJob | undefined,
+  taskSlug: string,
+  targetLng: string
+): number | undefined {
+  if (!job) return undefined;
+  const taskId = job.workflowSlug ? targetLng : SOLE_TASK_ID;
+  const tried = job.taskStatus?.[taskSlug]?.[taskId]?.totalTried;
+  if (tried === undefined) return 1;
+  return typeof tried === "number" ? tried + 1 : undefined;
+}
+
+function runIdentity(
+  job: RunningJob | undefined,
+  taskSlug: string,
+  targetLng: string
+): Partial<Pick<TaskHandlerInput, "jobId" | "attempt">> {
+  const attempt = attemptOf(job, taskSlug, targetLng);
+  const id = job?.id;
+  return {
+    ...(typeof id === "string" || typeof id === "number" ? { jobId: String(id) } : {}),
+    ...(attempt === undefined ? {} : { attempt }),
+  };
 }
 
 export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
@@ -148,6 +192,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
         retries,
         handler: async (args: {
           req: { payload: Payload };
+          job?: RunningJob;
           input: {
             collection_slug?: string;
             collection_id?: string;
@@ -170,6 +215,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
               targetLng: args.input.target_lng,
               strategy: args.input.strategy,
               publishOnTranslation: args.input.publish_on_translation ?? false,
+              ...runIdentity(args.job, taskName, args.input.target_lng),
             },
             { requester: requesterOf(args.input) }
           );

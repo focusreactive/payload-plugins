@@ -38,12 +38,57 @@ describe("taskFromHandlerInput", () => {
       strategy: "overwrite",
       publishOnTranslation: false,
     };
+    expect(
+      taskFromHandlerInput(input),
+      "a runner that cannot name a job leaves the descriptor exactly as it was"
+    ).toEqual({
+      collection: "pages",
+      id: "doc-2",
+      sourceLng: "en",
+      targetLng: "fr",
+      strategy: "overwrite",
+    });
+  });
+
+  it("carries the job and the attempt when the runner knows them", () => {
+    const input: TaskHandlerInput = {
+      collection: "pages",
+      collectionId: "doc-2",
+      sourceLng: "en",
+      targetLng: "fr",
+      strategy: "overwrite",
+      publishOnTranslation: false,
+      jobId: "job-7",
+      attempt: 2,
+    };
     expect(taskFromHandlerInput(input)).toEqual({
       collection: "pages",
       id: "doc-2",
       sourceLng: "en",
       targetLng: "fr",
       strategy: "overwrite",
+      jobId: "job-7",
+      attempt: 2,
+    });
+  });
+
+  it("omits each field independently, so a runner with ids but no retries still reports the job", () => {
+    const input: TaskHandlerInput = {
+      collection: "pages",
+      collectionId: "doc-2",
+      sourceLng: "en",
+      targetLng: "fr",
+      strategy: "overwrite",
+      publishOnTranslation: false,
+      jobId: "job-7",
+    };
+    expect(taskFromHandlerInput(input)).toEqual({
+      collection: "pages",
+      id: "doc-2",
+      sourceLng: "en",
+      targetLng: "fr",
+      strategy: "overwrite",
+      jobId: "job-7",
     });
   });
 });

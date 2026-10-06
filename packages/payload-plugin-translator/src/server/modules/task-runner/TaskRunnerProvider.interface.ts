@@ -14,6 +14,20 @@ export type TaskHandlerInput = {
   targetLng: string;
   strategy: TranslationStrategyName;
   publishOnTranslation: boolean;
+  /**
+   * The job this run belongs to, as `enqueue` reported it. Absent when the runner answers `enqueue`
+   * with nothing (docs/DEPRECATIONS.md#enqueue-void-return); both bundled runners name one.
+   *
+   * @since 0.16.0
+   */
+  jobId?: string;
+  /**
+   * Which attempt at this locale the job is on, counting from 1 — the same counting as the
+   * `attempt` a lifecycle callback receives. Absent when the runner does not retry or cannot say.
+   *
+   * @since 0.16.0
+   */
+  attempt?: number;
 };
 
 /**

@@ -81,9 +81,9 @@ export type TranslatorPluginConfig = {
         slug?: string;
       };
   /**
-   * Optional server-side lifecycle callbacks fired around each translation task
-   * (`onQueued` / `onCompleted` / `onFailed`). Always available — no schema, no migration, not gated
-   * by `provenance`. A throwing callback is caught and logged, never failing the translation.
+   * Optional server-side lifecycle callbacks fired around each translation task. Always available —
+   * no schema, no migration, not gated by `provenance`. A throwing callback is caught and logged,
+   * never failing the translation.
    * @since 0.7.0
    */
   lifecycle?: TranslationLifecycleCallbacks;

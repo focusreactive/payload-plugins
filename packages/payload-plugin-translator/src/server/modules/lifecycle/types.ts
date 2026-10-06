@@ -17,6 +17,23 @@ export type TranslationTask = {
    * public type; host callbacks should treat unknown values gracefully.
    */
   strategy: string;
+  /**
+   * The job that will run this locale. Absent when the runner answers `enqueue` with nothing (see
+   * docs/DEPRECATIONS.md#enqueue-void-return), and always absent on `onQueued` — the job does not
+   * exist yet when that fires.
+   *
+   * @since 0.16.0
+   */
+  jobId?: string;
+  /**
+   * Which attempt at this locale the job is on, counting from 1 — the only field that differs
+   * between the callbacks of a retried task. It counts the job's attempts at the locale, not the
+   * caller's: a request that joins a job which already failed this locale sees the job's next
+   * number, not 1. Absent when the runner does not retry or cannot say.
+   *
+   * @since 0.16.0
+   */
+  attempt?: number;
 };
 
 /**
@@ -43,4 +60,12 @@ export type TranslationLifecycleCallbacks = {
   onCompleted?: (task: TranslationTask) => void | Promise<void>;
   /** Fired when a task's translation throws, with the error. @since 0.7.0 */
   onFailed?: (task: TranslationTask, error: unknown) => void | Promise<void>;
+  /**
+   * A queued translation was cancelled: once per target locale the cancelled job covered, fired
+   * before the row is deleted. A job that finishes between the read and the delete still reports as
+   * cancelled. Never fires for a runner whose `TaskRunner` cannot resolve job ids by id.
+   *
+   * @since 0.16.0
+   */
+  onCancelled?: (task: TranslationTask) => void | Promise<void>;
 };

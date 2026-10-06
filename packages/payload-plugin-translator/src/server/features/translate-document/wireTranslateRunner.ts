@@ -7,6 +7,7 @@ import type { ProvenanceServiceFactory } from "../../modules/provenance/index.js
 import {
   LifecycleNotifier,
   taskFromHandlerInput,
+  needsDecoration,
   withQueuedNotification,
 } from "../../modules/lifecycle/index.js";
 import type { TranslationLifecycleCallbacks } from "../../modules/lifecycle/index.js";
@@ -31,7 +32,7 @@ type WireTranslateRunnerParams = {
 /**
  * Assemble the document-translation task pipeline: the {@link TranslateDocumentHandler}, the runner
  * context that wraps each task with lifecycle notifications, the runner's config modifier, and the
- * per-request {@link TaskRunnerFactory} (decorated with `onQueued` notification when configured).
+ * per-request {@link TaskRunnerFactory}.
  *
  * Extracted from the plugin's `init()` so the composition root stays a flat list — `plugin.ts` calls
  * this once and registers the returned `configModifier` through the shared builder.
@@ -84,7 +85,7 @@ export function wireTranslateRunner({
   const taskRunnerFactory: TaskRunnerFactory = {
     create: (payload) => {
       const taskRunner = runner.create(payload, runnerContext.handler);
-      if (!lifecycle.onQueued) return taskRunner;
+      if (!needsDecoration(lifecycle)) return taskRunner;
       return withQueuedNotification(taskRunner, new LifecycleNotifier(lifecycle, payload.logger));
     },
   };

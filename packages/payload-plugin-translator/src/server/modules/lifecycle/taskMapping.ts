@@ -1,4 +1,4 @@
-import type { TaskInput } from "../task-runner/types.js";
+import type { Task, TaskInput } from "../task-runner/types.js";
 import type { TaskHandlerInput } from "../task-runner/TaskRunnerProvider.interface.js";
 import type { TranslationTask } from "./types.js";
 
@@ -11,6 +11,15 @@ export const taskFromInput = (task: TaskInput): TranslationTask => ({
   strategy: task.strategy,
 });
 
+export const taskFromStored = (task: Task): TranslationTask => ({
+  collection: task.input.collectionSlug,
+  id: task.input.collectionId,
+  sourceLng: task.input.sourceLng,
+  targetLng: task.input.targetLng,
+  strategy: task.input.strategy,
+  jobId: task.id,
+});
+
 /** Map an execution-side {@link TaskHandlerInput} to the public {@link TranslationTask}. */
 export const taskFromHandlerInput = (input: TaskHandlerInput): TranslationTask => ({
   collection: input.collection,
@@ -18,4 +27,6 @@ export const taskFromHandlerInput = (input: TaskHandlerInput): TranslationTask =
   sourceLng: input.sourceLng,
   targetLng: input.targetLng,
   strategy: input.strategy,
+  ...(input.jobId === undefined ? {} : { jobId: input.jobId }),
+  ...(input.attempt === undefined ? {} : { attempt: input.attempt }),
 });

@@ -3,7 +3,6 @@ export { translatorPlugin } from "./plugin.js";
 export type { TranslatorPluginConfig } from "./plugin.js";
 export type { TargetSelectionMode } from "./types/TargetSelection.js";
 
-// Lifecycle callbacks — the task descriptor passed to onQueued/onCompleted/onFailed
 export type {
   TranslationTask,
   TranslationLifecycleCallbacks,
@@ -57,6 +56,13 @@ export type {
   PayloadJobsRunnerOptions,
   TaskFilter,
 } from "./server/modules/task-runner/index.js";
+/**
+ * The contract a third-party `TaskRunnerProvider.create` must return, and what its `enqueue` may
+ * answer with.
+ *
+ * @since 0.16.0
+ */
+export type { EnqueueResult, TaskRunner } from "./server/modules/task-runner/index.js";
 /**
  * A third-party `TaskRunnerProvider` has always had to accept a `RequestScope` — it is the second
  * parameter of `TaskRunner.enqueue` and of the `TaskHandler` it is handed — but could not name the
