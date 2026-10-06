@@ -1,7 +1,5 @@
 import type { NodeType } from "./typedJson.js";
 
-// Keyed by kind, so a kind added to the vocabulary cannot be left out of the palette. `group` only
-// sorts it; `glyph` is the tile it is drawn with.
 type Kind = { draws: string; glyph: string; group: "Text" | "Values" | "Media" | "Structure" };
 
 export const KINDS: Record<NodeType, Kind> = {

@@ -1,5 +1,3 @@
-// Pure functions, no React and no Payload runtime: a site bridge or a migration script can import
-// these without pulling the admin in.
 export { flatten, isTyped } from "./field/typedJson.js";
 export type {
   ArrayNode,

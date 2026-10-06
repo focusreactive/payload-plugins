@@ -6,8 +6,6 @@ import type { ClientTab } from "payload";
 import { JsonFields, labelOf } from "./JsonNode.js";
 import type { Container, TypedNode } from "../field/typedJson.js";
 
-// Payload's tabs bleed into the edit view's gutters, so they take the `--within-collapsible`
-// modifier: these sit inside the section's accordion, and must bleed into its padding, not past it.
 export const JsonTabs = ({
   faults,
   node,

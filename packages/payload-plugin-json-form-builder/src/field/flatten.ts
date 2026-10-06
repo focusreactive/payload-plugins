@@ -1,7 +1,13 @@
 import type { FieldHook } from "payload";
 import { CONFIG_KEY } from "../config.js";
 import type { JsonFormClientConfig } from "../config.js";
+import { follows, reconcile } from "../library/reconcileSection.js";
 import { flatten, uploadUrls } from "./typedJson.js";
+
+type Req = Parameters<FieldHook>[0]["req"];
+
+const ownConfig = (req: Req) =>
+  req.payload?.config?.admin?.custom?.[CONFIG_KEY] as JsonFormClientConfig | undefined;
 
 // A url can hold a stray `%`, which `decodeURIComponent` throws on.
 const fileOf = (url: string) => {
@@ -13,16 +19,8 @@ const fileOf = (url: string) => {
   }
 };
 
-// The upload kind stores a url and nothing else, so on its own it hands a template a string — no
-// alt, no size, nothing the file knows about itself. Here it is looked up the way the admin's own
-// input does it, by filename, and comes back as the document, the way a real upload field reads.
-// One query per document, whatever the json holds; a url that matches no file stays a string, which
-// is what a url pasted from somewhere else is.
-const resolver = async (urls: string[], req: Parameters<FieldHook>[0]["req"]) => {
-  const custom = req.payload?.config?.admin?.custom?.[CONFIG_KEY] as
-    | JsonFormClientConfig
-    | undefined;
-  const collection = custom?.uploads;
+const resolver = async (urls: string[], req: Req) => {
+  const collection = ownConfig(req)?.uploads;
   if (!collection || urls.length === 0) return undefined;
 
   const names = [...new Set(urls.map(fileOf).filter(Boolean))];
@@ -41,12 +39,28 @@ const resolver = async (urls: string[], req: Parameters<FieldHook>[0]["req"]) =>
   return (url: string) => byName.get(fileOf(url)) ?? url;
 };
 
-// Everything outside the app reads plain values, so a site reads `settings.hero.title` by key in
-// any language. Everything inside keeps the typed shape, and that is not a preference: the admin
-// draws the form from the types, and a script that read flat values and wrote the document back
-// would erase the shape. A session is what tells them apart — the admin always has one, a build or
-// a frontend arriving over HTTP does not.
+const LIBRARY = Symbol.for("jsonFormBuilder.library");
+
+const library = async (req: Req) => {
+  const at = ownConfig(req)?.library;
+  if (!at) return undefined;
+
+  const held = req as unknown as Record<symbol, unknown>;
+  if (LIBRARY in held) return held[LIBRARY];
+
+  const doc = (await req.payload.findGlobal({ slug: at.global, depth: 0, req })) as Record<
+    string,
+    unknown
+  >;
+  held[LIBRARY] = doc?.[at.field] ?? null;
+  return held[LIBRARY];
+};
+
+// Typed inside the app, plain values outside: the admin draws the form from the types, and a
+// script that read flat values and wrote the document back would erase the shape. A session is
+// what tells them apart.
 export const flattenTypedJson: FieldHook = async ({ req, value }) => {
-  if (req.payloadAPI === "local" || req.user) return value;
-  return flatten(value, await resolver(uploadUrls(value), req));
+  const own = follows(value) ? reconcile(value, await library(req)) : value;
+  if (req.payloadAPI === "local" || req.user) return own;
+  return flatten(own, await resolver(uploadUrls(own), req));
 };

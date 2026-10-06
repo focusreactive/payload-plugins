@@ -1,12 +1,3 @@
-// HTML → Lexical for the simple rich text editor: <p>, <ul>/<ol>, <strong>/<em>, the styled spans
-// Payload writes for underline and strikethrough, <a>, <br>, and the sprite <svg> an icon block
-// serializes to. Plain JS with no node imports, so the migration scripts and the admin's json form
-// share it.
-//
-// This is one half of a round trip — Payload's own converter writes the html, this reads it back,
-// and the json field keeps nothing else. So a tag written here and not read there is not a gap in a
-// parser: it is content that disappears the next time an editor opens the field.
-
 export const decode = (value: string) =>
   value
     .replace(/&#x26;|&amp;/g, "&")
@@ -61,9 +52,6 @@ const attribute = (attrs = "", name: string) =>
   attrs.match(new RegExp(`\\b${name}\\s*=\\s*"([^"]*)"`))?.[1];
 const href = (attrs = "") => attribute(attrs, "href") || "";
 
-// Read, never guessed: Payload writes `target` exactly when the link opens in a new tab and leaves
-// it off otherwise, so its absence is an answer. Html from somewhere else may mean nothing by it —
-// that is for whoever knows where the html came from, not for a parser.
 const opensNewTab = (attrs?: string) => attribute(attrs, "target") === "_blank";
 
 const FORMAT: Record<string, number> = {
@@ -78,9 +66,6 @@ const FORMAT: Record<string, number> = {
   code: 16,
 };
 
-// Payload writes underline and strikethrough as a styled span rather than as a tag — see
-// `TextHTMLConverter` in @payloadcms/richtext-lexical. Html out of Hygraph uses the tags in the
-// table above, and the two have to read back the same.
 const styleFormat = (attrs?: string) => {
   const style = attribute(attrs, "style") || "";
   return (style.includes("underline") ? 8 : 0) | (style.includes("line-through") ? 4 : 0);
@@ -89,8 +74,6 @@ const styleFormat = (attrs?: string) => {
 const hex = (bytes: number) =>
   Array.from({ length: bytes * 2 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
 
-// Lexical names a block it inserts itself. The name is not in the html, so it is made again on
-// every read — nothing downstream keeps it.
 export const inlineBlock = (blockType: string) => ({
   type: "inlineBlock",
   fields: { id: hex(12), blockType },
@@ -132,11 +115,6 @@ const element = (type: string, children: any[], rest: Record<string, unknown> = 
 });
 const paragraph = (children: any[]) => element("paragraph", children, { textFormat: 0 });
 
-// Which block nodes the editor on the far side can hold. Everything, by default — that is what
-// Payload's own converters write, and reading back less than was written loses content. A field
-// built on `simpleRichTextEditor` has none of these three, and cannot be handed a node it has no
-// feature for, so there a heading reads as a bold paragraph, a quote as a plain one and a rule not
-// at all.
 export type Holds = { headings?: boolean; quotes?: boolean; rules?: boolean };
 export const SIMPLE: Holds = { headings: false, quotes: false, rules: false };
 
@@ -154,7 +132,6 @@ export const listItem = (children: any[], value: number) => ({
 const NESTED = (node: Node) => node.tag === "ul" || node.tag === "ol";
 const fills = (node: Node) => Boolean(node.tag || (node.text || "").trim());
 
-// Hygraph nests a <ul> in a <li> in every faq answer and the editor has no nesting: lift the inner items, keep the item's own text.
 const listItems = (nodes: Node[]): Node[] =>
   nodes.flatMap((node) => {
     if (node.tag !== "li") return [];
@@ -204,7 +181,6 @@ const HEADING = /^h[1-6]$/;
 const blank = (node: any) =>
   node.type === "linebreak" || (node.type === "text" && !node.text.trim());
 
-// A paragraph neither starts nor ends on a line break or on the whitespace between tags.
 const trimmed = (children: any[]) => {
   const items = [...children];
   while (items.length && blank(items[0])) items.shift();
@@ -216,16 +192,12 @@ const trimmed = (children: any[]) => {
   return items;
 };
 
-// Loose text and inline tags between blocks (`a<br/>b`, `text <a>link</a>`) make one paragraph,
-// a <br> a line break inside it; only a block tag starts a node of its own.
 const blocks = (nodes: Node[], holds: Holds): any[] => {
   const out: any[] = [];
   let run: Node[] = [];
   const push = (children: any[], keepEmpty = false) => {
     const content = trimmed(children);
     if (content.length) out.push(paragraph(content));
-    // `<p><br /></p>` is how an empty paragraph is written — the blank line an author left between
-    // two others. Dropped, the gap closes the next time the field is opened.
     else if (keepEmpty) out.push(paragraph([]));
   };
   const flush = () => {
@@ -249,8 +221,6 @@ const blocks = (nodes: Node[], holds: Holds): any[] => {
       out.push(element("quote", trimmed(held)));
     else if (HEADING.test(tag) && holds.headings !== false)
       out.push(element("heading", trimmed(held), { tag }));
-    // Narrowed to what the editor holds: a heading is still the loudest line on the page, so it is
-    // read as a bold paragraph, and a quote as a plain one.
     else if (HEADING.test(tag)) push(inline(node.children || [], 1));
     else push(held, tag === "p" && held.some((child) => child.type === "linebreak"));
   }
@@ -262,7 +232,6 @@ export const root = (children: any[]) => ({
   root: { type: "root", direction: "ltr", format: "", indent: 0, version: 1, children },
 });
 
-// Null when empty — an empty root makes the admin show a document that was never authored.
 export const htmlToLexical = (html?: string | null, holds: Holds = {}): any => {
   const children = blocks(parseHtml(html || ""), holds);
   return children.length ? root(children) : null;

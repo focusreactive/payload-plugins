@@ -32,9 +32,8 @@ const rowValue = (row: TypedNode[]) =>
     .map((field) => ("value" in field && field.type === "text" ? String(field.value ?? "") : ""))
     .find(Boolean);
 
-// An array laid out as Payload's array field. Each row gets an id that travels with it: an id per
-// position would make a dropped row animate twice.
 export const JsonArray = ({
+  badge,
   faults,
   drag,
   node,
@@ -46,6 +45,7 @@ export const JsonArray = ({
   hidden,
   readOnly,
 }: {
+  badge?: string;
   faults?: boolean;
   drag?: Drag;
   node: ArrayNode;
@@ -63,16 +63,10 @@ export const JsonArray = ({
   if (rowIds.length !== rows.length) setIds(rows.map(newId));
   const [open, setOpen] = useState<string[]>([]);
   const singular = formatLabels(node.name ?? label).singular || t("general:row");
-  // What Payload's own array field does with the two: the button goes at the ceiling, and the last
-  // rows down to the floor cannot be taken away.
   const atMax = Boolean(node.maxRows && rows.length >= node.maxRows);
   const atMin = Boolean(node.minRows && rows.length <= node.minRows);
-  // A list nobody has put fields into yet: a row of it would be an accordion with nothing in it, so
-  // there is nothing to add until the shape exists.
   const shapeless = !(node.rows?.[0] ?? node.fields ?? []).length;
 
-  // `fields` only exists while the list is empty: it is the shape of the row that left, and the
-  // next row to arrive takes it away again.
   const update = (nextIds: string[], nextRows: TypedNode[][]) => {
     setIds(nextIds);
     const { fields: _dropped, ...rest } = node;
@@ -97,9 +91,7 @@ export const JsonArray = ({
   const setRow = (index: number, row: TypedNode[]) =>
     onChange({ ...node, rows: rows.map((entry, i) => (i === index ? row : entry)) });
 
-  // Payload's own row actions, minus the clipboard ones, which need the form state.
   const rowMenu = (index: number, row: TypedNode[]): MenuItem[] => [
-    // A row of one unnamed field is a plain value; a switch inside it would turn it into an object.
     ...(row.length === 1 && !row[0].name
       ? []
       : [
@@ -230,8 +222,6 @@ export const JsonArray = ({
   const header = (!top || rows.length > 0) && (
     <header className="array-field__header">
       <div className="array-field__header-wrap">
-        {/* Inside a section the accordion above already carries the name, so the heading names
-				    what is below it instead — and the wrap is `space-between`, so it cannot be dropped. */}
         <div className="array-field__header-content">
           <h3 className="array-field__title">{top ? "Items" : label}</h3>
         </div>
@@ -301,7 +291,16 @@ export const JsonArray = ({
       actions={menu && <JsonRowMenu items={menu} />}
       className={cn(hidden && "json-form__hidden")}
       dragHandleProps={drag}
-      header={label}
+      header={
+        badge ? (
+          <>
+            {label}
+            <span className="json-form__badge json-form__badge--shared">{badge}</span>
+          </>
+        ) : (
+          label
+        )
+      }
     >
       <div className="field-type array-field">{body}</div>
     </JsonFolded>

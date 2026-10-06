@@ -5,10 +5,6 @@ import type { ChangeEvent } from "react";
 import { DatePicker, FieldLabel, TextInput } from "@payloadcms/ui";
 import { numberOf } from "../field/typedJson.js";
 
-// Payload ships a field component for all three, but each of them reads the form state and a typed
-// json value lives in ours. `TextInput` is the one that does not, so the other two are Payload's
-// markup around a plain input — and the three answer in one place, told which kind they are.
-// A blank label leaves the box without one: a row's own header already carries the name.
 export const JsonInput = ({
   fault,
   id,
@@ -33,10 +29,6 @@ export const JsonInput = ({
   value: unknown;
 }) => {
   if (kind === "number") {
-    // A number written as text is shown rather than blanked — the box holds it, the checks read it
-    // the same way, and the first edit writes it back as a number. Only a value no reading makes a
-    // number stays out, and then it is said: an empty box over a value nobody can see is the worse
-    // of the two.
     const held = numberOf(value);
     const shown = Number.isFinite(held) ? held : "";
     const unread =

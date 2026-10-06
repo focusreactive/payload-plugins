@@ -5,8 +5,6 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 
-// Portalled to the body: Payload's `Tooltip` sits inside what it describes, and any ancestor with
-// `overflow` — a scrolling column, the join table — clips it there.
 export const Tip = ({
   children,
   label,
@@ -20,7 +18,6 @@ export const Tip = ({
   const show = (event: { currentTarget: HTMLElement }) =>
     setAnchor(event.currentTarget.getBoundingClientRect());
   const hide = () => setAnchor(null);
-  // Payload's caret is built to point down, so beside the anchor it is drawn by `--left` instead.
   const classes = cn(
     "tooltip",
     "tooltip--show",
@@ -42,8 +39,6 @@ export const Tip = ({
         createPortal(
           <aside
             className={classes}
-            // `--z-popup` is the one above `--z-modal`: portalled to the body, this is a sibling of
-            // an open drawer, and the tooltip's own z-index of 3 would leave it underneath.
             style={
               side === "top"
                 ? {

@@ -6,11 +6,6 @@ import { MoreIcon, Popup, PopupList } from "@payloadcms/ui";
 
 export type MenuItem = { label: string; onClick: () => void; icon?: ReactNode; className?: string };
 
-// Payload's `ArrayAction` menu, rebuilt because the package does not export it. The button that
-// opens it keeps a class of our own: the presets plugin watches clicks on every
-// `array-actions__button` and would put "Save as Preset" into this menu too. The entries are safe —
-// nothing listens on `array-actions__action` — so they wear Payload's class for its styling and ours
-// beside it, which stays ours whatever Payload renames.
 export const JsonRowMenu = ({ items }: { items: MenuItem[] }) => (
   <Popup
     button={<MoreIcon />}

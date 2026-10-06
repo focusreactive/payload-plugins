@@ -4,12 +4,16 @@ import { allows } from "../field/index.js";
 import type { BuildGate } from "../field/index.js";
 import { JsonFormClient } from "./JsonFormClient.js";
 
-type Props = ComponentProps<JSONFieldServerComponent> & { build?: BuildGate };
+type Props = ComponentProps<JSONFieldServerComponent> & {
+  build?: BuildGate;
+  library?: boolean;
+  shares?: boolean;
+};
 
-// A server component for one reason: the gate is answered where the user is. A predicate cannot
-// cross to the browser, so it is read here and only its answer travels.
 export const JsonFormField = ({
   build,
+  library,
+  shares,
   clientField,
   path,
   permissions,
@@ -19,7 +23,9 @@ export const JsonFormField = ({
 }: Props) => (
   <JsonFormClient
     field={clientField}
+    library={Boolean(library)}
     mayBuild={allows(build, req.user)}
+    shares={Boolean(shares)}
     path={path}
     permissions={permissions}
     readOnly={readOnly}

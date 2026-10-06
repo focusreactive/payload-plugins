@@ -1,7 +1,9 @@
 import type { Config, Field, GlobalConfig, JSONField, Plugin, RichTextField } from "payload";
 import { anchorField } from "./field/anchorField.js";
+import { jsonLibraryField } from "./library/jsonLibraryField.js";
+import type { JsonLibraryOptions } from "./library/jsonLibraryField.js";
 import { MARKER } from "./field/index.js";
-import type { BuildGate } from "./field/index.js";
+import type { BuildGate, Mark } from "./field/index.js";
 import type { Holds } from "./field/htmlToLexical.js";
 import { CONFIG_KEY } from "./config.js";
 import type { JsonFormClientConfig } from "./config.js";
@@ -10,56 +12,28 @@ const FIELD = "@focus-reactive/payload-plugin-json-form-builder/rsc#JsonFormFiel
 const ANCHOR_NAME = "jsonFormAnchor";
 const GLOBAL_SLUG = "json-form";
 
-/**
- * The global the plugin adds to the config itself. It is the plugin's own place in the schema —
- * the rich text anchor lives there instead of being pushed into a document somebody else owns —
- * and it doubles as the one global a project can fill with json forms of its own.
- */
 export type JsonFormGlobalConfig = {
   slug?: string;
   label?: GlobalConfig["label"];
   access?: GlobalConfig["access"];
   admin?: GlobalConfig["admin"];
   hooks?: GlobalConfig["hooks"];
-  /**
-   * Fields of your own — json forms, blocks, anything. Empty by default, and an empty global is
-   * hidden from the admin, since the anchor beside them is never drawn.
-   */
   fields?: Field[];
 };
 
 export type JsonFormPluginConfig = {
-  /**
-   * Who may open the builder and write json by hand. Everyone by default: the field already sits
-   * behind the document's own update access.
-   */
   build?: BuildGate;
-  /**
-   * The plugin's own global. `false` leaves the config without it — and without rich text, which
-   * has nowhere left to anchor.
-   */
   global?: false | JsonFormGlobalConfig;
-  /**
-   * `false` turns rich text off — the kind leaves the palette and no anchor is added.
-   */
+  library?: boolean | JsonLibraryOptions;
   richText?:
     | false
     | {
-        /** The lexical editor a rich text node is edited with. */
         editor: RichTextField["editor"];
-        /**
-         * Which block nodes that editor can hold. Everything by default, which is what Payload's
-         * own converters write. Narrow it for a reduced editor: a heading handed to an editor with
-         * no heading feature is a node it cannot draw.
-         */
         holds?: Holds;
       };
-  /** The collection the upload kind picks files from. `false` removes the kind. */
   uploads?: false | string;
 };
 
-// Every field, however deeply it is nested — a json field can sit inside a group, a row, a tab, or a
-// block, and the plugin has to find it wherever the consumer put it.
 const walk = (fields: Field[] | undefined, visit: (field: Field) => void) => {
   for (const field of fields ?? []) {
     visit(field);
@@ -73,7 +47,7 @@ const walk = (fields: Field[] | undefined, visit: (field: Field) => void) => {
 };
 
 const marked = (field: Field) =>
-  field.type === "json" ? ((field.custom?.[MARKER] ?? null) as { build?: BuildGate } | null) : null;
+  field.type === "json" ? ((field.custom?.[MARKER] ?? null) as Mark | null) : null;
 
 const freeName = (fields: Field[]) => {
   const taken = new Set(fields.map((field) => ("name" in field ? field.name : "")));
@@ -85,19 +59,47 @@ const freeName = (fields: Field[]) => {
 export const jsonFormPlugin =
   (options: JsonFormPluginConfig = {}): Plugin =>
   (incoming: Config): Config => {
-    const { build = true, global = {}, richText = false, uploads = "media" } = options;
+    const {
+      build = true,
+      global = {},
+      library: wanted = false,
+      richText = false,
+      uploads = "media",
+    } = options;
     const config: Config = { ...incoming };
 
-    const attach = (fields: Field[]) => {
+    let library: JsonFormClientConfig["library"] = null;
+
+    const attach = (fields: Field[], global = "") => {
       walk(fields, (field) => {
         const own = marked(field);
         if (!own) return;
+        if (own.library && "name" in field) {
+          if (library) {
+            console.warn(
+              `[json-form-builder] the library field is mounted more than once; keeping global.${library.global}.${library.field}`
+            );
+          } else if (global) {
+            library = { global, field: field.name };
+          } else {
+            console.warn(
+              "[json-form-builder] the library field belongs in a global; this one is ignored"
+            );
+          }
+        }
         const json = field as JSONField;
         json.admin = {
           ...json.admin,
           components: {
             ...json.admin?.components,
-            Field: { path: FIELD, serverProps: { build: own.build ?? build } },
+            Field: {
+              path: FIELD,
+              serverProps: {
+                build: own.build ?? build,
+                library: Boolean(own.library),
+                shares: Boolean(own.shares),
+              },
+            },
           },
         };
       });
@@ -108,34 +110,40 @@ export const jsonFormPlugin =
       return collection;
     });
     config.globals = incoming.globals?.map((entry) => {
-      attach(entry.fields);
+      attach(entry.fields, entry.slug);
       return entry;
     });
 
-    // The plugin's own global, added the way the presets plugin adds its collection — the consumer
-    // declares nothing. It carries the anchor, and whatever json forms the project wants in a global
-    // of its own go in beside it rather than into a second global somebody has to write.
     let anchor = "";
     if (global !== false) {
-      const { slug = GLOBAL_SLUG, label = "JSON form", fields = [], admin, ...rest } = global;
-      attach(fields);
+      const {
+        slug = GLOBAL_SLUG,
+        label = "JSON form",
+        fields: declared = [],
+        admin,
+        ...rest
+      } = global;
+      const fields = wanted
+        ? [...declared, jsonLibraryField(wanted === true ? {} : wanted)]
+        : declared;
+      attach(fields, slug);
       const name = richText ? freeName(fields) : "";
-      const own: GlobalConfig = {
+      const mine: GlobalConfig = {
         ...rest,
         slug,
         label,
         admin: { hidden: fields.length === 0, ...admin },
         fields: richText && name ? [...fields, anchorField(name, richText.editor)] : fields,
       };
-      config.globals = [...(config.globals ?? []), own];
-      // `global.` is not decoration: Payload reads a schema path as exactly three parts —
-      // `[entityType, entitySlug, ...fieldPath]`, so the field is never found without it.
+      config.globals = [...(config.globals ?? []), mine];
+      // Payload reads a schema path as exactly three parts: `[entityType, entitySlug, ...field]`.
       if (name) anchor = `global.${slug}.${name}`;
     }
 
     const client: JsonFormClientConfig = {
       anchor,
       holds: richText ? (richText.holds ?? {}) : {},
+      library,
       uploads,
     };
     config.admin = { ...config.admin, custom: { ...config.admin?.custom, [CONFIG_KEY]: client } };

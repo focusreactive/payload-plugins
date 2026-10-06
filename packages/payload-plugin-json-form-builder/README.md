@@ -1,6 +1,10 @@
 # @focus-reactive/payload-plugin-json-form-builder
 
-Turn a Payload CMS v3 `json` field into real admin fields — text, number, date, select, checkbox, upload, rich text, lists, groups and tabs — and let an admin build that form from inside the admin panel, in a drawer, without touching code.
+**A `json` field becomes real admin fields — and an admin can add new ones without a deploy.**
+
+Text, number, date, select, checkbox, upload, rich text, lists, groups and tabs: the editor fills in a form, not a textarea. And when a field is missing, nobody writes a migration — it is added from inside the admin panel, in a builder, and it is there on the next save.
+
+![The form a json field becomes](https://raw.githubusercontent.com/focusreactive/payload-plugins/main/packages/payload-plugin-json-form-builder/docs/form.png)
 
 The unusual part: **there is no schema in your repository.** The shape lives inside the value itself. Every node says what it is, so the form can be drawn from the data alone, and changing the shape is a content edit rather than a deploy. Your frontend never sees that bookkeeping: everything outside the app reads plain values by key.
 
@@ -27,12 +31,23 @@ Libraries like `rjsf` and `jsonforms` render a form **from a schema you write in
 
 ## What you get
 
-- **A form instead of a textarea.** Thirteen kinds, nested as deep as you like.
-- **A builder.** A drawer behind the gear: pick a kind from the palette, name the key, set it required, give it a minimum. One level at a time.
-- **A JSON view, always.** The same value as code, for reading, diffing and the occasional hand fix. Editable by whoever may build.
-- **Validation that behaves like Payload's.** `required`, `min`/`max`, `minRows`/`maxRows` are judged on the server, the save is refused, the field is marked, and the message names the path.
-- **Rich text that round-trips.** Stored as html, written by Payload's own converters and read back by a parser kept in step with them.
-- **Plain values for the site.** No tree-walking in your templates.
+**A form instead of a textarea.** Thirteen kinds, nested as deep as you like, drawn with Payload's own inputs — the upload field picks from your Media collection, rich text is the lexical editor your project configured, a list is a list of cards you drag.
+
+**A builder, in the admin.** Behind the gear: a sidebar of sections, a canvas of the one you are on, and a palette of kinds on the right. Pick a kind, name the key, set it required, give it a minimum. A new field reaches every row of a list that already has rows, and no deploy is involved.
+
+![The builder](https://raw.githubusercontent.com/focusreactive/payload-plugins/main/packages/payload-plugin-json-form-builder/docs/builder.png)
+
+**Sections of your own.** A section is a named group at the root of the value, and it is what a template reads: `settings.hero.title`. Add one, drag it, hide it from the site without deleting it.
+
+**Shared sections.** Build a section once and point many documents at it. Each keeps its own values; the shape stays in one place and every document follows it — add a field there and it appears in all of them. See [`library`](#library).
+
+**A JSON view, always.** The same value as code, for reading, diffing and the occasional hand fix. Editable by whoever may build.
+
+**Validation that behaves like Payload's.** `required`, `min`/`max`, `minRows`/`maxRows` are judged on the server, the save is refused, the field is marked, and the message names the path.
+
+**Rich text that round-trips.** Stored as html, written by Payload's own converters and read back by a parser kept in step with them.
+
+**Plain values for the site.** No tree-walking in your templates.
 
 ## Requirements
 
@@ -103,10 +118,13 @@ That is all. Styles travel with the components; there is nothing to import.
 jsonFormPlugin({
   build: true,
   global: { slug: 'json-form', fields: [] },
+  library: true,
   richText: { editor: lexicalEditor(), holds: { headings: true, quotes: true, rules: true } },
   uploads: 'media',
 })
 ```
+
+Most projects set two of these: `richText`, because a rich text node needs an editor to be drawn with, and `library`, when sections are worth sharing. The rest have defaults that fit.
 
 ### `build`
 
@@ -135,6 +153,36 @@ global: false                                               // no global — and
 ```
 
 An empty global is `admin.hidden`, since the only field in it is one nobody can see. Put fields in it and it appears; `admin`, `access`, `label` and `hooks` are passed straight through if you want to say otherwise. `false` leaves the config without the global, which also leaves rich text nowhere to anchor.
+
+### `library`
+
+Shared sections: one json field holding sections that documents elsewhere follow.
+
+```ts
+library: false   // the default: no shared sections
+library: true    // the field goes into the plugin's own global
+library: { name: 'blocks', label: 'Blocks', description: 'Built once, used everywhere' }
+```
+
+Or mount it yourself, wherever it belongs — beside the field it shares with, in a global of your own:
+
+```ts
+import { jsonLibraryField } from '@focus-reactive/payload-plugin-json-form-builder'
+
+fields: [
+  { type: 'group', label: 'Components', fields: [jsonField({ name: 'components' })] },
+  { type: 'group', label: 'Shared sections', fields: [jsonLibraryField()] },
+]
+```
+
+A field offers the library when it asks to: `jsonField({ shares: true })`. Open its builder and the sidebar grows two groups under *Add section* — **Attached sections**, each with a `×` that detaches it, and **Shared sections**, each with a `+` that attaches it. In the form, an attached section carries a `global` chip.
+
+- **values are the document's.** Changing them in the library later changes nothing anywhere;
+- **the shape is the library's.** A field added there appears in every document that follows the section, one removed disappears, one retyped is retyped — read on the way out, so nothing is stale;
+- **keys are frozen.** Once a section exists in the library, its keys and its fields' keys cannot be renamed, only added to or removed. Renaming would leave every document that followed it pointing at nothing;
+- **removing a section from the library takes nothing away.** Every document keeps it, with its content, and simply stops following: the chip goes and the shape is theirs to edit again.
+
+One caveat worth knowing: a document stores its own copy of the shape and rewrites it when it is saved. So after changing a shape in the library, save the documents that follow it — until they are saved, their copy is the one from last time, and that is the shape they fall back to if they ever stop following.
 
 ### `richText`
 
