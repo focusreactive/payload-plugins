@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { CollectionSlug } from "payload";
 
+import type { EnqueueResult } from "../../modules/task-runner/index.js";
+
 /**
  * Input validation schema
  */
@@ -22,3 +24,26 @@ export const EnqueueInputSchema = z.object({
 export type EnqueueConfig = {
   availableCollections: Set<CollectionSlug>;
 };
+
+/**
+ * One queued locale, in the snake_case the other translation endpoints answer in.
+ *
+ * Absent when the runner predates returning ids (docs/DEPRECATIONS.md#enqueue-void-return); empty
+ * means the runner answered and could name nothing. `queued` counts what was accepted either way.
+ *
+ * @since 0.16.0
+ */
+export type QueuedJob = {
+  collection_slug: string;
+  collection_id: string;
+  target_lng: string;
+  job_id: string;
+};
+
+export const toQueuedJobs = (queued: EnqueueResult): QueuedJob[] =>
+  queued.map((entry) => ({
+    collection_slug: entry.collectionSlug,
+    collection_id: entry.collectionId,
+    target_lng: entry.targetLng,
+    job_id: entry.jobId,
+  }));

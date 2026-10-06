@@ -1,6 +1,6 @@
 import type { Payload, CollectionSlug } from "payload";
 
-import type { TaskFilter, TaskRunner } from "../TaskRunner.interface.js";
+import type { EnqueueResult, TaskFilter, TaskRunner } from "../TaskRunner.interface.js";
 import { toTaskFilter } from "../toTaskFilter.js";
 import type { TaskHandler } from "../TaskRunnerProvider.interface.js";
 import type { Task, TaskInput, RunResult, ID } from "../types.js";
@@ -20,7 +20,9 @@ export class SyncTaskRunner implements TaskRunner {
     this.tasks = tasks;
   }
 
-  async enqueue(inputs: TaskInput[], scope: RequestScope = {}): Promise<void> {
+  async enqueue(inputs: TaskInput[], scope: RequestScope = {}): Promise<EnqueueResult> {
+    const queued: EnqueueResult = [];
+
     for (const input of inputs) {
       const key = this.getKey(input.collectionSlug, input.collectionId, input.targetLng);
       const now = new Date().toISOString();
@@ -35,6 +37,12 @@ export class SyncTaskRunner implements TaskRunner {
       };
 
       this.tasks.set(key, task);
+      queued.push({
+        collectionSlug: input.collectionSlug,
+        collectionId: input.collectionId,
+        targetLng: input.targetLng,
+        jobId: task.id,
+      });
 
       const markEvictable = (status: "completed" | "failed", error?: Task["error"]) => {
         const at = new Date().toISOString();
@@ -56,6 +64,7 @@ export class SyncTaskRunner implements TaskRunner {
               targetLng: input.targetLng,
               strategy: input.strategy,
               publishOnTranslation: input.publishOnTranslation,
+              jobId: task.id,
             },
             scope
           );
@@ -67,10 +76,13 @@ export class SyncTaskRunner implements TaskRunner {
           })
       );
     }
+
+    return queued;
   }
 
+  /** No-op: a synchronous task has already run by the time anyone could cancel it. */
   async cancel(_taskIds: string[]): Promise<void> {
-    // No-op: synchronous tasks execute immediately and cannot be cancelled
+    return undefined;
   }
 
   async run(_taskId: string): Promise<RunResult> {

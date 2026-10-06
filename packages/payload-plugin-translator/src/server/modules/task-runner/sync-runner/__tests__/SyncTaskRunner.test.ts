@@ -36,7 +36,7 @@ describe("SyncTaskRunner", () => {
   describe("enqueue", () => {
     it("executes handler immediately", async () => {
       const input = createInput();
-      await runner.enqueue([input]);
+      const result = await runner.enqueue([input]);
 
       expect(mockHandler).toHaveBeenCalledWith(
         mockPayload,
@@ -47,6 +47,7 @@ describe("SyncTaskRunner", () => {
           targetLng: "de",
           strategy: "overwrite",
           publishOnTranslation: false,
+          jobId: result?.[0]?.jobId,
         },
         {}
       );
@@ -113,11 +114,15 @@ describe("SyncTaskRunner", () => {
       mockHandler = vi.fn().mockRejectedValueOnce(fromPayload).mockResolvedValueOnce(undefined);
       runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
 
-      await expect(
-        runner.enqueue([createInput({ targetLng: "de" }), createInput({ targetLng: "fr" })]),
-        "nothing of this caller's was rolled back, so one refused locale must not cancel the rest"
-      ).resolves.toBeUndefined();
+      const queued = await runner.enqueue([
+        createInput({ targetLng: "de" }),
+        createInput({ targetLng: "fr" }),
+      ]);
 
+      expect(
+        queued?.map((entry) => entry.targetLng),
+        "nothing of this caller's was rolled back, so one refused locale must not cancel the rest"
+      ).toEqual(["de", "fr"]);
       expect(mockHandler).toHaveBeenCalledTimes(2);
       expect(tasks.get("posts:doc-123:de")?.status).toBe("failed");
       expect(tasks.get("posts:doc-123:fr")?.status).toBe("completed");
@@ -130,7 +135,7 @@ describe("SyncTaskRunner", () => {
       await expect(
         runner.enqueue([createInput()], { transactionID: "tx-1" }),
         "a provider failure ran no Payload operation, so the editor's save is still intact"
-      ).resolves.toBeUndefined();
+      ).resolves.toBeDefined();
 
       expect(tasks.get("posts:doc-123:de")?.status).toBe("failed");
     });

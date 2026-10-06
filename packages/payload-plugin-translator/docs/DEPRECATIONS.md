@@ -100,6 +100,30 @@ the single source of truth — code annotations link here by anchor instead of d
   - `src/server/modules/task-runner/sync-runner/SyncTaskRunner.ts`
   - `src/server/features/get-document-status/handler.ts` (a remaining array-form caller)
 
+### enqueue-void-return
+
+- **What:** a `TaskRunner.enqueue` implementation that returns `Promise<void>` instead of an
+  `EnqueueResult`.
+- **Status:** live
+- **Deprecated:** 2026-10-05 / PR #TBD
+- **Replacement:** return one `{ collectionSlug, collectionId, targetLng, jobId }` entry per requested
+  target locale.
+- **Remove in:** next major
+- **Why:** the ids exist at enqueue — Payload's `jobs.queue` hands back the row it created, and the
+  sync runner mints its own — and were discarded at the point of creation. Without them a host cannot
+  connect its own record to the work: it cannot store anything to cancel later, and it cannot match a
+  lifecycle callback to the request that caused it. The return widened rather than changed so that an
+  implementation written against the old signature keeps compiling.
+- **Migration:** the return is a union, so both forms satisfy the interface. A runner that still
+  answers `void` queues exactly as before; the plugin degrades to reporting no ids — the enqueue
+  response omits them and the lifecycle callbacks carry none. Adopting it is a matter of returning
+  what the runner already has in hand.
+- **Code refs:**
+  - `src/server/modules/task-runner/TaskRunner.interface.ts` (the union, `EnqueueResult`)
+  - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsTaskRunner.ts`
+  - `src/server/modules/task-runner/sync-runner/SyncTaskRunner.ts`
+  - `src/server/features/enqueue-translation/handler.ts` (the caller that reports them)
+
 ### cancel-by-collection-route
 
 - **What:** `POST {basePath}/cancel-by-collection` endpoint.

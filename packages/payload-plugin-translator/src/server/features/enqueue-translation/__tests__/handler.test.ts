@@ -156,7 +156,35 @@ describe("EnqueueTranslationHandler", () => {
 
       expect(response.status).toBe(200);
       const body = await response.json();
-      expect(body.data).toEqual({ success: true, queued: 2 });
+      expect(
+        body.data,
+        "a runner that answers with nothing leaves the response exactly as it was"
+      ).toEqual({ success: true, queued: 2 });
+    });
+
+    it("names the job behind each queued locale when the runner says which", async () => {
+      (mockTaskRunner.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue([
+        { collectionSlug: "posts", collectionId: "doc-1", targetLng: "fr", jobId: "job-7" },
+        { collectionSlug: "posts", collectionId: "doc-2", targetLng: "fr", jobId: "job-7" },
+      ]);
+      const req = createLocalizedRequest({
+        source_lng: "en",
+        target_lng: "fr",
+        collection_slug: "posts",
+        collection_id: ["doc-1", "doc-2"],
+        strategy: "overwrite",
+      });
+
+      const body = await (await handler.handle(req)).json();
+
+      expect(body.data).toEqual({
+        success: true,
+        queued: 2,
+        jobs: [
+          { collection_slug: "posts", collection_id: "doc-1", target_lng: "fr", job_id: "job-7" },
+          { collection_slug: "posts", collection_id: "doc-2", target_lng: "fr", job_id: "job-7" },
+        ],
+      });
     });
 
     it("calls runner.enqueue with correct tasks", async () => {

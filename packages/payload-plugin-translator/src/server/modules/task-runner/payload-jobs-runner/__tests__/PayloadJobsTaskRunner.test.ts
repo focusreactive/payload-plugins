@@ -92,11 +92,14 @@ describe("PayloadJobsTaskRunner", () => {
     });
 
   describe("enqueue", () => {
-    it("reads only unfinished jobs when planning an enqueue", async () => {
+    it("reads only jobs that can still run when planning an enqueue", async () => {
       await runner.enqueue([createInput()]);
 
       const whereArg = mockPayload.find.mock.calls[0][0].where;
-      expect(whereArg).toEqual({
+      expect(
+        whereArg,
+        "a row that ran out of retries is unfinished forever, so asking for it loads rows no plan can use"
+      ).toEqual({
         and: [
           {
             or: [
@@ -104,7 +107,9 @@ describe("PayloadJobsTaskRunner", () => {
               { taskSlug: { equals: "translate_document" } },
             ],
           },
-          { completedAt: { exists: false } },
+          {
+            and: [{ completedAt: { exists: false } }, { hasError: { not_equals: true } }],
+          },
         ],
       });
     });

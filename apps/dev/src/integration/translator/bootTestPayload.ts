@@ -14,6 +14,7 @@ import {
 } from "@focus-reactive/payload-plugin-translator";
 import type {
   TaskRunnerProvider,
+  TranslationLifecycleCallbacks,
   TranslationProvider,
 } from "@focus-reactive/payload-plugin-translator";
 import { buildConfig } from "payload";
@@ -97,6 +98,8 @@ export async function bootTestPayload(opts?: {
   fake?: FakeTranslationOptions;
   /** Also register the synchronous per-field surface, `POST {basePath}/field`. */
   fieldSurface?: boolean;
+  /** Omitted by default, so a boot without it leaves the runner undecorated. */
+  lifecycle?: TranslationLifecycleCallbacks;
 }): Promise<TestPayload> {
   const dir = mkdtempSync(join(tmpdir(), "translator-int-"));
   const { db, drop } = createTestDatabase(join(dir, "test.db"));
@@ -161,6 +164,7 @@ export async function bootTestPayload(opts?: {
         runner: opts?.runner ?? createSyncRunner(),
         levels: opts?.fieldSurface ? [documentLevel(), fieldLevel()] : [documentLevel()],
         provenance: true,
+        ...(opts?.lifecycle ? { lifecycle: opts.lifecycle } : {}),
         ...(opts?.inlineMarks ? { experimental: { inlineMarks: true } } : {}),
       }),
     ],
