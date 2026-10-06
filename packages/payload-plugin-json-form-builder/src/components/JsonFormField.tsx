@@ -4,10 +4,14 @@ import { allows } from "../field/index.js";
 import type { BuildGate } from "../field/index.js";
 import { JsonFormClient } from "./JsonFormClient.js";
 
-type Props = ComponentProps<JSONFieldServerComponent> & { build?: BuildGate };
+type Props = ComponentProps<JSONFieldServerComponent> & {
+  build?: BuildGate;
+  library?: boolean;
+};
 
 export const JsonFormField = ({
   build,
+  library,
   clientField,
   path,
   permissions,
@@ -17,6 +21,7 @@ export const JsonFormField = ({
 }: Props) => (
   <JsonFormClient
     field={clientField}
+    library={Boolean(library)}
     mayBuild={allows(build, req.user)}
     path={path}
     permissions={permissions}

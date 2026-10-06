@@ -10,6 +10,7 @@ export type LeafType =
 export type Condition = { field: string } & ({ equals: unknown } | { notEquals: unknown });
 type Base = {
   name?: string;
+  source?: string;
   label?: string;
   required?: boolean;
   readOnly?: boolean;

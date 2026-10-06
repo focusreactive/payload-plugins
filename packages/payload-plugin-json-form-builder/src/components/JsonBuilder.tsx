@@ -18,6 +18,7 @@ import {
 } from "@payloadcms/ui";
 import { IconButton } from "./IconButton.js";
 import { JsonBuilderLevel } from "./JsonBuilderLevel.js";
+import { followed } from "../library/reconcileSection.js";
 import { JsonBuilderSettings } from "./JsonBuilderSettings.js";
 import { labelOf } from "./JsonNode.js";
 import { schemaErrors } from "../field/checks.js";
@@ -44,11 +45,13 @@ const holds = (node: TypedNode | undefined, missing: readonly NodeType[]): reado
 
 export const JsonBuilder = ({
   adding,
+  library,
   root,
   onChange,
   slug,
 }: {
   adding?: boolean;
+  library?: boolean;
   root: TypedRoot;
   onChange: (root: TypedRoot) => void;
   slug: string;
@@ -201,6 +204,7 @@ export const JsonBuilder = ({
           <h5 className="json-builder__group">Sections</h5>
           {sections.map((held, index) => {
             const entry = held.name || `#${index + 1}`;
+            if (followed(held)) return null;
             return (
               <Pill
                 className="json-builder__section"
@@ -345,6 +349,7 @@ export const JsonBuilder = ({
               label="Key"
               onChange={(event: ChangeEvent<HTMLInputElement>) => setKey(event.target.value)}
               path="builder-key"
+              readOnly={Boolean(library) && !making}
               required
               value={key}
             />

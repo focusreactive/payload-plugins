@@ -2,15 +2,10 @@ import { dressed, shapeOf } from "../field/edits.js";
 import { isTyped } from "../field/typedJson.js";
 import type { ArrayNode, Container, TypedNode, TypedRoot } from "../field/typedJson.js";
 
-export const SOURCE = "source";
-
-const sourceOf = (node: TypedNode) => {
-  const named = (node as Record<string, unknown>)[SOURCE];
-  return typeof named === "string" ? named : "";
-};
+const sourceOf = (node: TypedNode) => node.source ?? "";
 
 const reshape = (own: TypedNode, source: TypedNode): TypedNode => {
-  const head = { ...source, name: own.name, hidden: own.hidden, [SOURCE]: sourceOf(own) };
+  const head = { ...source, name: own.name, hidden: own.hidden, source: own.source };
 
   if (source.type === "array") {
     const { fields: _shape, ...rest } = head as ArrayNode;
@@ -41,6 +36,10 @@ export const reconcile = (value: unknown, library: unknown): unknown => {
     return source ? reshape(node, source) : node;
   });
 };
+
+export const followed = (node: TypedNode): boolean => sourceOf(node) !== "";
+
+export const following = (node: TypedNode, name: string): TypedNode => ({ ...node, source: name });
 
 export const follows = (value: unknown): boolean =>
   isTyped(value) && (value as TypedRoot).some((node) => sourceOf(node) !== "");

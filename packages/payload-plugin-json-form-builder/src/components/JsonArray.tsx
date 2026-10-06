@@ -33,6 +33,7 @@ const rowValue = (row: TypedNode[]) =>
     .find(Boolean);
 
 export const JsonArray = ({
+  badge,
   faults,
   drag,
   node,
@@ -44,6 +45,7 @@ export const JsonArray = ({
   hidden,
   readOnly,
 }: {
+  badge?: string;
   faults?: boolean;
   drag?: Drag;
   node: ArrayNode;
@@ -289,7 +291,16 @@ export const JsonArray = ({
       actions={menu && <JsonRowMenu items={menu} />}
       className={cn(hidden && "json-form__hidden")}
       dragHandleProps={drag}
-      header={label}
+      header={
+        badge ? (
+          <>
+            {label}
+            <span className="json-form__badge json-form__badge--shared">{badge}</span>
+          </>
+        ) : (
+          label
+        )
+      }
     >
       <div className="field-type array-field">{body}</div>
     </JsonFolded>

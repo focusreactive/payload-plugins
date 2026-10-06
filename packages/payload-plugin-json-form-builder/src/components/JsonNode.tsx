@@ -26,6 +26,7 @@ import type { TypedNode } from "../field/typedJson.js";
 export type Drag = ComponentProps<typeof Collapsible>["dragHandleProps"];
 type Fold = Pick<ComponentProps<typeof Collapsible>, "isCollapsed" | "onToggle">;
 export type NodeProps = Fold & {
+  badge?: string;
   node: TypedNode;
   id: string;
   label: string;
@@ -91,6 +92,7 @@ export const JsonFields = ({
 );
 
 export const JsonNode = ({
+  badge,
   node,
   id,
   label,
@@ -109,10 +111,19 @@ export const JsonNode = ({
   const Fold = top ? JsonFolded : Collapsible;
 
   const fault = faults ? nodeFault(node) : "";
+  const head = badge ? (
+    <>
+      {label}
+      <span className="json-form__badge json-form__badge--shared">{badge}</span>
+    </>
+  ) : (
+    label
+  );
 
   if (node.type === "array")
     return (
       <JsonArray
+        badge={badge}
         drag={drag}
         faults={faults}
         hidden={hidden}
@@ -167,7 +178,7 @@ export const JsonNode = ({
           actions={actions}
           className={cn("collapsible-field__collapsible", hidden && "json-form__hidden")}
           dragHandleProps={drag}
-          header={label}
+          header={head}
           initCollapsed
         >
           <FieldDescription description={node.description} path={id} />

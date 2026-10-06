@@ -24,13 +24,19 @@ import { IconButton } from "./IconButton.js";
 import { JsonBuilder } from "./JsonBuilder.js";
 import { JsonCode } from "./JsonCode.js";
 import { hideItem, JsonNode, labelOf } from "./JsonNode.js";
+import { followed } from "../library/reconcileSection.js";
+import { LibraryPicker } from "./LibraryPicker.js";
+import { useJsonFormConfig } from "../useJsonFormConfig.js";
 import { faults, jsonErrors, schemaErrors } from "../field/checks.js";
 import { isObject, isTyped, visible } from "../field/typedJson.js";
 import type { TypedNode, TypedRoot } from "../field/typedJson.js";
 
-type Props = ComponentProps<JSONFieldClientComponent> & { mayBuild: boolean };
+type Props = ComponentProps<JSONFieldClientComponent> & {
+  library?: boolean;
+  mayBuild: boolean;
+};
 
-export const JsonFormClient = ({ mayBuild, ...props }: Props) => {
+export const JsonFormClient = ({ library, mayBuild, ...props }: Props) => {
   const { path, field } = props;
   const validate = useCallback(
     (next: unknown, options: { required?: boolean }) => jsonErrors(next, options?.required),
@@ -40,6 +46,7 @@ export const JsonFormClient = ({ mayBuild, ...props }: Props) => {
   const { openModal } = useModal();
   const builderSlug = useDrawerSlug("json-builder");
   const dropSlug = useDrawerSlug("json-form-drop");
+  const librarySlug = useDrawerSlug("json-form-library");
   const [dropping, setDropping] = useState("");
   const [adding, setAdding] = useState(false);
   const build = (fresh: boolean) => {
@@ -52,6 +59,7 @@ export const JsonFormClient = ({ mayBuild, ...props }: Props) => {
   const broken = schemaErrors(root).length > 0;
   const asCode = code || broken;
   const locked = props.readOnly || !mayBuild;
+  const shares = Boolean(useJsonFormConfig().library) && !library;
   const set = (name: string, node: TypedNode) =>
     setValue(root.map((entry) => (entry.name === name ? node : entry)));
   const drop = (name: string) => setValue(root.filter((entry) => entry.name !== name));
@@ -180,6 +188,7 @@ export const JsonFormClient = ({ mayBuild, ...props }: Props) => {
                           style={{ transform, transition, zIndex: isDragging ? 1 : undefined }}
                         >
                           <JsonNode
+                            badge={followed(node) ? "global" : undefined}
                             drag={props.readOnly ? undefined : { id: key, attributes, listeners }}
                             faults={showError}
                             hidden={node.hidden}
@@ -219,16 +228,30 @@ export const JsonFormClient = ({ mayBuild, ...props }: Props) => {
               </p>
             )}
             {mayBuild && !untyped && (
-              <Button
-                buttonStyle="icon-label"
-                className="array-field__add-row json-form__add-row"
-                icon="plus"
-                iconPosition="left"
-                iconStyle="with-border"
-                onClick={() => build(true)}
-              >
-                Add section
-              </Button>
+              <div className="json-form__adders">
+                <Button
+                  buttonStyle="icon-label"
+                  className="array-field__add-row json-form__add-row"
+                  icon="plus"
+                  iconPosition="left"
+                  iconStyle="with-border"
+                  onClick={() => build(true)}
+                >
+                  Add section
+                </Button>
+                {shares && (
+                  <Button
+                    buttonStyle="icon-label"
+                    className="array-field__add-row json-form__add-row"
+                    icon="plus"
+                    iconPosition="left"
+                    iconStyle="with-border"
+                    onClick={() => openModal(librarySlug)}
+                  >
+                    From library
+                  </Button>
+                )}
+              </div>
             )}
           </>
         )}
@@ -251,8 +274,21 @@ export const JsonFormClient = ({ mayBuild, ...props }: Props) => {
           <span className="json-form__note">read only — the gear builds the sections</span>
         ) : null}
       </footer>
+      {mayBuild && shares && (
+        <LibraryPicker
+          onAdd={(nodes) => setValue([...root, ...nodes])}
+          root={root}
+          slug={librarySlug}
+        />
+      )}
       {mayBuild && (
-        <JsonBuilder adding={adding} onChange={setValue} root={root} slug={builderSlug} />
+        <JsonBuilder
+          adding={adding}
+          library={library}
+          onChange={setValue}
+          root={root}
+          slug={builderSlug}
+        />
       )}
       <ConfirmationModal
         body={`This will delete "${labelOf(
