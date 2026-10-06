@@ -133,7 +133,6 @@
         "@focus-reactive/payload-plugin-ab": "workspace:*",
         "@focus-reactive/payload-plugin-analytics": "workspace:*",
         "@focus-reactive/payload-plugin-comments": "workspace:*",
-        "@focus-reactive/payload-plugin-json-form-builder": "workspace:*",
         "@focus-reactive/payload-plugin-presets": "workspace:*",
         "@focus-reactive/payload-plugin-scheduling": "workspace:*",
         "@focus-reactive/payload-plugin-seo": "workspace:*",
@@ -195,7 +194,7 @@
     },
     "packages/create-ideal-cms": {
       "name": "create-ideal-cms",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "bin": {
         "create-ideal-cms": "./dist/index.js",
       },
@@ -352,7 +351,7 @@
     },
     "packages/payload-plugin-json-form-builder": {
       "name": "@focus-reactive/payload-plugin-json-form-builder",
-      "version": "1.0.0",
+      "version": "1.1.1",
       "dependencies": {
         "clsx": "2.1.1",
       },
@@ -483,7 +482,7 @@
     },
     "packages/payload-plugin-translator": {
       "name": "@focus-reactive/payload-plugin-translator",
-      "version": "0.14.0",
+      "version": "0.15.0",
       "dependencies": {
         "@hookform/resolvers": "^3.9.0",
         "@radix-ui/react-popover": "^1.1.0",
@@ -519,7 +518,7 @@
     },
     "packages/payload-plugin-visual-editing": {
       "name": "@focus-reactive/payload-plugin-visual-editing",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "dependencies": {
         "@vercel/stega": "^1.1.0",
       },
