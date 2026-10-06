@@ -1,3 +1,12 @@
+# @focus-reactive/payload-plugin-json-form-builder [1.3.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.2.0...@focus-reactive/payload-plugin-json-form-builder@1.3.0) (2026-10-06)
+
+
+### Features
+
+* attach a shared section from the builder's sidebar ([7d560da](https://github.com/focusreactive/payload-plugins/commit/7d560dabde4064d7da1b55343e2982963649b70f))
+* follow a shared section's shape from the library ([e08481b](https://github.com/focusreactive/payload-plugins/commit/e08481b4d2b735646fd147cecc5727ef788c6463))
+* pick a shared section in the form and lock its shape ([ae7da5c](https://github.com/focusreactive/payload-plugins/commit/ae7da5c999daa05179f0ee2587e2ad339f34e6ea))
+
 # @focus-reactive/payload-plugin-json-form-builder [1.2.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.1.1...@focus-reactive/payload-plugin-json-form-builder@1.2.0) (2026-10-05)
 
 
