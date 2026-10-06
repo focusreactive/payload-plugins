@@ -1,7 +1,9 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { markCommentRead } from "../../services/markCommentRead";
+import type { MarkCommentReadArgs } from "../../services/markCommentRead";
+import { useCommentsRequest } from "../useCommentsRequest";
+import { COMMENTS_ENDPOINT_PATHS } from "../../constants";
 import { useCommentsQueryClient } from "../../providers/CommentsQueryClientProvider";
 import { useUnreadMentions } from "../../providers/UnreadMentionsProvider";
 
@@ -17,11 +19,15 @@ const UNREAD_COUNT_KEY_PREFIX = ["unread-mentions-count"] as const;
 
 export function useMarkCommentReadMutation() {
   const queryClient = useCommentsQueryClient();
+  const request = useCommentsRequest();
   const { rememberRead } = useUnreadMentions();
 
   return useMutation(
     {
-      mutationFn: ({ commentId }: Variables) => markCommentRead({ commentId }),
+      mutationFn: ({ commentId }: Variables) =>
+        request<MarkCommentReadArgs, { alreadyRead: boolean }>(COMMENTS_ENDPOINT_PATHS.markRead, {
+          commentId,
+        }),
       onMutate: async ({ commentId }) => {
         rememberRead(commentId);
 

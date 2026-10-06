@@ -4,13 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useConfig } from "@payloadcms/ui";
 import { useLocale } from "@payloadcms/ui";
 import { getDocumentTitlesKey } from "../queryKeys";
-import { getDocumentTitles } from "../../services/getDocumentTitles";
+import type { GetDocumentTitlesArgs } from "../../services/getDocumentTitles";
+import { useCommentsRequest } from "../useCommentsRequest";
 import { useCommentsDrawer } from "../../providers/CommentsDrawerProvider";
 import { useCommentsQueryClient } from "../../providers/CommentsQueryClientProvider";
 import { useCommentsQuery } from "./useCommentsQuery";
-import type { QueryContext } from "../../types";
+import type { DocumentTitles, QueryContext } from "../../types";
 import type { CommentsPluginConfigStorage } from "../../types";
-import { REFETCH_INTERVAL } from "../../constants";
+import { COMMENTS_ENDPOINT_PATHS, REFETCH_INTERVAL } from "../../constants";
 
 export function useDocumentTitlesQuery(ctx: QueryContext) {
   const queryClient = useCommentsQueryClient();
@@ -18,6 +19,7 @@ export function useDocumentTitlesQuery(ctx: QueryContext) {
   const { data: comments } = useCommentsQuery(ctx);
   const { code: locale } = useLocale();
   const { config } = useConfig();
+  const request = useCommentsRequest();
 
   const pluginConfig = config.admin?.custom?.commentsPlugin as
     | CommentsPluginConfigStorage
@@ -27,10 +29,13 @@ export function useDocumentTitlesQuery(ctx: QueryContext) {
     {
       queryKey: getDocumentTitlesKey(ctx),
       queryFn: async () => {
-        const res = await getDocumentTitles(
-          comments ?? [],
-          pluginConfig?.documentTitleFields ?? {},
-          { locale }
+        const res = await request<GetDocumentTitlesArgs, DocumentTitles>(
+          COMMENTS_ENDPOINT_PATHS.documentTitles,
+          {
+            comments: comments ?? [],
+            documentTitleFields: pluginConfig?.documentTitleFields ?? {},
+            locale,
+          }
         );
 
         if (!res.success) throw new Error(res.error);

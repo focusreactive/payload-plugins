@@ -21,3 +21,15 @@ export const UNREAD_COUNT_REFETCH_INTERVAL = 30000;
 export const READ_DWELL_MS = 600;
 export const READ_OBSERVER_THRESHOLD = 0.5;
 export const UNREAD_BADGE_CAP = 9;
+
+export const COMMENTS_ENDPOINT_PATHS = {
+  list: "/comments-plugin/list",
+  create: "/comments-plugin/create",
+  delete: "/comments-plugin/delete",
+  resolve: "/comments-plugin/resolve",
+  markRead: "/comments-plugin/mark-read",
+  unreadMentionsCount: "/comments-plugin/unread-mentions-count",
+  mentionableUsers: "/comments-plugin/mentionable-users",
+  documentTitles: "/comments-plugin/document-titles",
+  fieldLabels: "/comments-plugin/field-labels",
+} as const;
