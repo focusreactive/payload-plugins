@@ -36,34 +36,54 @@ const plan = (live: PayloadJob[], requested: string[], exclusiveQueue = false) =
 
 describe("planEnqueue", () => {
   it("queues everything when the document has no live job", () => {
-    expect(plan([], ["de", "fr"])).toEqual({ host: null, append: [], queue: ["de", "fr"] });
+    expect(plan([], ["de", "fr"])).toEqual({
+      host: null,
+      extend: false,
+      append: [],
+      queue: ["de", "fr"],
+    });
   });
 
   it("adds locales the live job does not carry yet", () => {
     const live = job();
-    expect(plan([live], ["fr", "es"])).toEqual({ host: live, append: ["fr", "es"], queue: [] });
+    expect(plan([live], ["fr", "es"])).toEqual({
+      host: live,
+      extend: true,
+      append: ["fr", "es"],
+      queue: [],
+    });
   });
 
   it("does nothing for a locale the live job already owes", () => {
     const live = job();
-    expect(plan([live], ["de"])).toEqual({ host: live, append: [], queue: [] });
+    expect(plan([live], ["de"])).toEqual({ host: live, extend: true, append: [], queue: [] });
   });
 
   it("gives a locale the live job has already translated a job of its own", () => {
     const live = job({
       log: [{ state: "succeeded", input: { target_lng: "de" } }],
     });
-    expect(plan([live], ["de"])).toEqual({ host: live, append: [], queue: ["de"] });
+    expect(plan([live], ["de"])).toEqual({ host: live, extend: true, append: [], queue: ["de"] });
   });
 
   it("splits a request across both when it mixes the two", () => {
     const live = job({ log: [{ state: "succeeded", input: { target_lng: "de" } }] });
-    expect(plan([live], ["de", "fr"])).toEqual({ host: live, append: ["fr"], queue: ["de"] });
+    expect(plan([live], ["de", "fr"])).toEqual({
+      host: live,
+      extend: true,
+      append: ["fr"],
+      queue: ["de"],
+    });
   });
 
   it("ignores duplicates in the request", () => {
     const live = job();
-    expect(plan([live], ["fr", "fr"])).toEqual({ host: live, append: ["fr"], queue: [] });
+    expect(plan([live], ["fr", "fr"])).toEqual({
+      host: live,
+      extend: true,
+      append: ["fr"],
+      queue: [],
+    });
   });
 
   it.each([
@@ -96,18 +116,41 @@ describe("planEnqueue", () => {
     const legacy = job({
       input: { ...storedInput, target_lngs: undefined, target_lng: "de" },
     });
-    expect(plan([legacy], ["fr"])).toEqual({ host: null, append: [], queue: ["fr"] });
+    expect(plan([legacy], ["fr"])).toEqual({
+      host: null,
+      extend: false,
+      append: [],
+      queue: ["fr"],
+    });
   });
 
   it("does not extend a cancelled job", () => {
     const cancelled = job({ error: { cancelled: true } });
-    expect(plan([cancelled], ["fr"])).toEqual({ host: null, append: [], queue: ["fr"] });
+    expect(plan([cancelled], ["fr"])).toEqual({
+      host: null,
+      extend: false,
+      append: [],
+      queue: ["fr"],
+    });
+  });
+
+  it("does not extend a job that ran out of retries", () => {
+    const exhausted = job({ hasError: true, error: { message: "provider down" } });
+    expect(
+      plan([exhausted], ["fr"]),
+      "Payload's picker skips a row with hasError, so extending it would queue work nothing runs"
+    ).toEqual({ host: null, extend: false, append: [], queue: ["fr"] });
   });
 
   describe("when the host enabled Payload's concurrency control", () => {
     it("queues alongside a running job instead of extending it", () => {
       const running = job({ processing: true });
-      expect(plan([running], ["fr"], true)).toEqual({ host: null, append: [], queue: ["fr"] });
+      expect(plan([running], ["fr"], true)).toEqual({
+        host: running,
+        extend: false,
+        append: [],
+        queue: ["fr"],
+      });
     });
 
     it("merges an already-translated locale into the alongside job too", () => {
@@ -116,7 +159,8 @@ describe("planEnqueue", () => {
         log: [{ state: "succeeded", input: { target_lng: "de" } }],
       });
       expect(plan([running], ["de", "fr"], true)).toEqual({
-        host: null,
+        host: running,
+        extend: false,
         append: [],
         queue: ["fr", "de"],
       });
@@ -124,13 +168,23 @@ describe("planEnqueue", () => {
 
     it("still extends a job that has not started", () => {
       const pending = job({ processing: false });
-      expect(plan([pending], ["fr"], true)).toEqual({ host: pending, append: ["fr"], queue: [] });
+      expect(plan([pending], ["fr"], true)).toEqual({
+        host: pending,
+        extend: true,
+        append: ["fr"],
+        queue: [],
+      });
     });
   });
 
   it("extends a running job when the host has NOT enabled concurrency control", () => {
     const running = job({ processing: true });
-    expect(plan([running], ["fr"])).toEqual({ host: running, append: ["fr"], queue: [] });
+    expect(plan([running], ["fr"])).toEqual({
+      host: running,
+      extend: true,
+      append: ["fr"],
+      queue: [],
+    });
   });
 
   describe("a job can only take locales from a request it matches", () => {
@@ -140,7 +194,12 @@ describe("planEnqueue", () => {
       ["a different publish flag", { publish_on_translation: true }],
     ])("starts its own job for %s", (_label, storedOverride) => {
       const live = job({ input: { ...storedInput, ...storedOverride } });
-      expect(plan([live], ["fr"])).toEqual({ host: null, append: [], queue: ["fr"] });
+      expect(plan([live], ["fr"])).toEqual({
+        host: null,
+        extend: false,
+        append: [],
+        queue: ["fr"],
+      });
     });
   });
 });

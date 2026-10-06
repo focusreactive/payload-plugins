@@ -45,11 +45,14 @@ export type PayloadJobsRunnerConfig = {
 
 export type PayloadJob = {
   log?: JobLogEntry[];
-  id: string;
+  /** Whatever the host's primary key is — a uuid on some databases, an autoincrement number on others. */
+  id: string | number;
   completedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   error?: unknown;
+  /** Set by Payload when a task runs out of retries. Its picker skips such a row for good. */
+  hasError?: boolean | null;
   processing?: boolean | null;
   waitUntil?: string | null;
   input?: {

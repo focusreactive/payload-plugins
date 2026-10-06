@@ -31,11 +31,22 @@ export function isCancelled(error: unknown): boolean {
   );
 }
 
+/**
+ * Whether this row can ever run again: no completion date, no `hasError` (a row that ran out of
+ * retries keeps it for good), not cancelled.
+ *
+ * Narrower than Payload's picker on purpose — `processing` and a future `waitUntil` only mean "not
+ * right now", and a job mid-run or debouncing is exactly the one a new request may join.
+ */
+export function canStillRun(job: PayloadJob): boolean {
+  return !job.completedAt && job.hasError !== true && !isCancelled(job.error);
+}
+
 export function normalizeJob(job: PayloadJob): Task {
   const { collectionSlug, collectionId } = readCollectionRef(job.input);
 
   return {
-    id: job.id,
+    id: String(job.id),
     status: getJobStatus(job),
     input: {
       collectionSlug,

@@ -1,6 +1,6 @@
 import type { CollectionSlug } from "payload";
 
-import { isCancelled, latestLogByLocale } from "./normalizeJob.js";
+import { canStillRun, latestLogByLocale } from "./normalizeJob.js";
 import type { PayloadJob } from "./types.js";
 
 export type RequestShape = {
@@ -19,6 +19,11 @@ export type RequestShape = {
  */
 export type EnqueuePlan = {
   host: PayloadJob | null;
+  /**
+   * False when {@link host} runs under an exclusive queue: the host still runs the locales it
+   * already lists — so its id is still owed to the caller — it just cannot be given new ones.
+   */
+  extend: boolean;
   append: string[];
   queue: string[];
 };
@@ -38,7 +43,7 @@ export function planEnqueue(args: {
 }): EnqueuePlan {
   const requested = [...new Set(args.requested)];
   const host = pickHost(args.live, args.request);
-  if (!host) return { host: null, append: [], queue: requested };
+  if (!host) return { host: null, extend: false, append: [], queue: requested };
 
   // Already-succeeded locales need a fresh job: the workflow passes the locale as the task id, so
   // Payload's restoration would skip them (see the workflow handler in PayloadJobsRunnerProvider).
@@ -48,9 +53,9 @@ export function planEnqueue(args: {
   const missing = requested.filter((locale) => !listed.has(locale));
 
   if (args.exclusiveQueue && host.processing) {
-    return { host: null, append: [], queue: [...missing, ...done] };
+    return { host, extend: false, append: [], queue: [...missing, ...done] };
   }
-  return { host, append: missing, queue: done };
+  return { host, extend: true, append: missing, queue: done };
 }
 
 /**
@@ -61,7 +66,7 @@ function pickHost(live: PayloadJob[], request: RequestShape): PayloadJob | null 
   const usable = live.filter(
     (job) =>
       Array.isArray(job.input?.target_lngs) &&
-      !isCancelled(job.error) &&
+      canStillRun(job) &&
       job.input?.source_lng === request.sourceLng &&
       job.input?.strategy === request.strategy &&
       (job.input?.publish_on_translation ?? false) === request.publishOnTranslation &&
