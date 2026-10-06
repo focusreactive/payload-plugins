@@ -94,7 +94,11 @@ export const jsonFormPlugin =
             ...json.admin?.components,
             Field: {
               path: FIELD,
-              serverProps: { build: own.build ?? build, library: Boolean(own.library) },
+              serverProps: {
+                build: own.build ?? build,
+                library: Boolean(own.library),
+                shares: Boolean(own.shares),
+              },
             },
           },
         };

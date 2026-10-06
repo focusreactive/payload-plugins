@@ -39,7 +39,7 @@ Libraries like `rjsf` and `jsonforms` render a form **from a schema you write in
 
 **Sections of your own.** A section is a named group at the root of the value, and it is what a template reads: `settings.hero.title`. Add one, drag it, hide it from the site without deleting it.
 
-**Shared sections.** Build a section once, in the plugin's own global, and point many documents at it. Each keeps its own values; the shape stays in one place and every document follows it. Switched on by one option — see [`library`](#library).
+**Shared sections.** Build a section once and point many documents at it. Each keeps its own values; the shape stays in one place and every document follows it — add a field there and it appears in all of them. See [`library`](#library).
 
 **A JSON view, always.** The same value as code, for reading, diffing and the occasional hand fix. Editable by whoever may build.
 
@@ -156,23 +156,33 @@ An empty global is `admin.hidden`, since the only field in it is one nobody can 
 
 ### `library`
 
-Shared sections: one field in the plugin's own [`global`](#global) holding sections that documents follow.
+Shared sections: one json field holding sections that documents elsewhere follow.
 
 ```ts
-library: false                                  // the default: no shared sections
-library: true                                   // a `shared` field, labelled "Shared sections"
+library: false   // the default: no shared sections
+library: true    // the field goes into the plugin's own global
 library: { name: 'blocks', label: 'Blocks', description: 'Built once, used everywhere' }
 ```
 
-A section built there is attached to a document from **From library**, next to *Add section*. The document gets its own copy of the values and a note of where the shape came from, so:
+Or mount it yourself, wherever it belongs — beside the field it shares with, in a global of your own:
+
+```ts
+import { jsonLibraryField } from '@focus-reactive/payload-plugin-json-form-builder'
+
+fields: [
+  { type: 'group', label: 'Components', fields: [jsonField({ name: 'components' })] },
+  { type: 'group', label: 'Shared sections', fields: [jsonLibraryField()] },
+]
+```
+
+A field offers the library when it asks to: `jsonField({ shares: true })`. Open its builder and the sidebar grows two groups under *Add section* — **Attached sections**, each with a `×` that detaches it, and **Shared sections**, each with a `+` that attaches it. In the form, an attached section carries a `global` chip.
 
 - **values are the document's.** Changing them in the library later changes nothing anywhere;
-- **the shape is the library's.** A field added there appears in every document that follows the section, one removed disappears, one retyped is retyped. It is read on the way out, so a document is never stale;
-- **keys are frozen.** Once a section exists in the library, its keys and its fields' keys cannot be renamed — only added to or removed. Renaming would leave every document that followed it pointing at nothing;
-- **a section that follows one is not editable in the builder.** It is left out of the builder's sidebar and carries a `global` chip in the form, because its shape is not this document's to change;
-- **removing it from the library is safe.** The documents keep what they have; those sections simply become their own again.
+- **the shape is the library's.** A field added there appears in every document that follows the section, one removed disappears, one retyped is retyped — read on the way out, so nothing is stale;
+- **keys are frozen.** Once a section exists in the library, its keys and its fields' keys cannot be renamed, only added to or removed. Renaming would leave every document that followed it pointing at nothing;
+- **removing a section from the library takes nothing away.** Every document keeps it, with its content, and simply stops following: the chip goes and the shape is theirs to edit again.
 
-A document may not follow two sections with the same key, so one whose key is already taken is offered but not selectable.
+One caveat worth knowing: a document stores its own copy of the shape and rewrites it when it is saved. So after changing a shape in the library, save the documents that follow it — until they are saved, their copy is the one from last time, and that is the shape they fall back to if they ever stop following.
 
 ### `richText`
 

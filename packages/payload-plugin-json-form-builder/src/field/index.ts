@@ -9,12 +9,14 @@ export const MARKER = "jsonFormBuilder";
 
 export type JsonFieldOptions = {
   build?: BuildGate;
+  shares?: boolean;
 };
 
-export type Mark = { build?: BuildGate; library?: boolean };
+export type Mark = { build?: BuildGate; library?: boolean; shares?: boolean };
 
 export const jsonField = ({
   build,
+  shares,
   ...overrides
 }: JsonFieldOptions & Partial<JSONField> = {}): JSONField =>
   deepMerge<JSONField>(
@@ -25,7 +27,7 @@ export const jsonField = ({
       // Replaces Payload's own, so `jsonError` — its report for json that does not parse — is kept.
       validate: (value, { jsonError, required }) => jsonError || jsonErrors(value, required),
       admin: { editorOptions: { insertSpaces: true, tabSize: 3 }, maxHeight: 600 },
-      custom: { [MARKER]: { build } },
+      custom: { [MARKER]: { build, shares } },
     },
     overrides
   );

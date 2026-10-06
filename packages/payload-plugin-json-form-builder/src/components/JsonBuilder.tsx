@@ -9,16 +9,17 @@ import {
   ConfirmationModal,
   Drawer,
   EditIcon,
-  Pill,
   TextInput,
   Tooltip,
   useDrawerSlug,
+  useConfig,
   useModal,
   XIcon,
 } from "@payloadcms/ui";
 import { IconButton } from "./IconButton.js";
 import { JsonBuilderLevel } from "./JsonBuilderLevel.js";
-import { followed } from "../library/reconcileSection.js";
+import { followed, following } from "../library/reconcileSection.js";
+import { isTyped } from "../field/typedJson.js";
 import { JsonBuilderSettings } from "./JsonBuilderSettings.js";
 import { labelOf } from "./JsonNode.js";
 import { schemaErrors } from "../field/checks.js";
@@ -44,16 +45,16 @@ const holds = (node: TypedNode | undefined, missing: readonly NodeType[]): reado
     : TYPES.filter((type) => type !== "tab" && !missing.includes(type));
 
 export const JsonBuilder = ({
-  adding,
   library,
   root,
   onChange,
+  shares,
   slug,
 }: {
-  adding?: boolean;
   library?: boolean;
   root: TypedRoot;
   onChange: (root: TypedRoot) => void;
+  shares?: boolean;
   slug: string;
 }) => {
   const [draft, setDraft] = useState<TypedRoot>(root);
@@ -64,7 +65,7 @@ export const JsonBuilder = ({
   const [key, setKey] = useState("");
   const [hovered, setHovered] = useState("");
   const [making, setMaking] = useState<"field" | "section" | null>(null);
-  const { anchor: richTextAnchor, uploads } = useJsonFormConfig();
+  const { anchor: richTextAnchor, library: held, uploads } = useJsonFormConfig();
   const missing: NodeType[] = [
     ...(uploads ? [] : ["upload" as NodeType]),
     ...(richTextAnchor ? [] : ["richText" as NodeType]),
@@ -86,11 +87,44 @@ export const JsonBuilder = ({
   useEffect(() => {
     if (!showing) return;
     setDraft(root);
-    if (adding) start("section", "collapsible");
     // biome-ignore lint/correctness/useExhaustiveDependencies: the stored value is read on opening only
   }, [showing]);
 
   const sections = draft;
+  const [shared, setShared] = useState<TypedRoot>([]);
+  const { config } = useConfig();
+
+  useEffect(() => {
+    if (!(showing && shares && held)) return;
+    const request = new AbortController();
+    fetch(`${config.routes.api}/globals/${held.global}?depth=0`, {
+      credentials: "include",
+      signal: request.signal,
+    })
+      .then((answer) => answer.json())
+      .then((doc) => {
+        const value = (doc as Record<string, unknown>)?.[held.field];
+        setShared(isTyped(value) ? (value as TypedRoot) : []);
+      })
+      .catch(() => setShared([]));
+    return () => request.abort();
+  }, [held, config.routes.api, shares, showing]);
+
+  const take = (node: TypedNode) => setDraft([...draft, following(node, node.name ?? "")]);
+
+  const dropSection = (spot: Spot) => {
+    remove(spot);
+    setCurrent("");
+    setAt([]);
+  };
+
+  const drop = (entry: string) => {
+    setDraft(draft.filter((node) => (node.name || "") !== entry));
+    if (current === entry) setCurrent("");
+  };
+
+  const free = shared.filter((node) => !draft.some((own) => own.name === node.name));
+  const kept = draft.filter(followed);
   const faults = schemaErrors(draft);
   const section = draft.find((node) => node.name === current);
   const here: Spot = { section: current, at };
@@ -206,15 +240,18 @@ export const JsonBuilder = ({
             const entry = held.name || `#${index + 1}`;
             if (followed(held)) return null;
             return (
-              <Pill
-                className="json-builder__section"
+              <button
+                className={cn(
+                  "json-builder__row",
+                  "json-builder__row--act",
+                  entry === current && "json-builder__row--held"
+                )}
                 key={entry}
                 onClick={() => walk(entry)}
-                pillStyle={entry === current ? "dark" : "light"}
+                type="button"
               >
                 <span className="json-builder__section-name">{held.label || entry}</span>
-                <span className="json-builder__section-count">{shapeOf(held).length}</span>
-              </Pill>
+              </button>
             );
           })}
           <Button
@@ -224,6 +261,50 @@ export const JsonBuilder = ({
           >
             Add section
           </Button>
+
+          {shares && kept.length > 0 && (
+            <>
+              <h5 className="json-builder__group json-builder__group--shared">Attached sections</h5>
+              {kept.map((node, index) => {
+                const entry = node.name || `#${index + 1}`;
+                return (
+                  <div className="json-builder__row json-builder__row--held" key={entry}>
+                    <span className="json-builder__section-name">{node.label || entry}</span>
+                    <button
+                      aria-label={`Detach ${entry}`}
+                      className="json-builder__mark"
+                      onClick={() => drop(entry)}
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
+            </>
+          )}
+
+          {shares && free.length > 0 && (
+            <>
+              <h5 className="json-builder__group json-builder__group--shared">Shared sections</h5>
+              {free.map((node, index) => {
+                const entry = node.name || `#${index + 1}`;
+                return (
+                  <div className="json-builder__row" key={entry}>
+                    <span className="json-builder__section-name">{node.label || entry}</span>
+                    <button
+                      aria-label={`Attach ${entry}`}
+                      className="json-builder__mark"
+                      onClick={() => take(node)}
+                      type="button"
+                    >
+                      +
+                    </button>
+                  </div>
+                );
+              })}
+            </>
+          )}
         </aside>
 
         <section className="json-builder__canvas">
@@ -257,9 +338,9 @@ export const JsonBuilder = ({
                     className="json-builder__drop"
                     label={at.length ? "Remove this field" : "Remove this section"}
                     onClick={() => {
+                      if (!at.length) return dropSection(here);
                       remove(here);
-                      if (at.length) setAt(at.slice(0, -1));
-                      else setCurrent("");
+                      setAt(at.slice(0, -1));
                     }}
                   >
                     <XIcon />
@@ -374,6 +455,10 @@ export const JsonBuilder = ({
                   buttonStyle="none"
                   className="json-builder__quiet"
                   onClick={() => {
+                    if (picked && isSection) {
+                      shut();
+                      return dropSection(picked);
+                    }
                     if (picked) remove(picked);
                     if (picked?.at.length && picked.at.length <= at.length)
                       setAt(picked.at.slice(0, -1));

@@ -33,7 +33,9 @@ export const reconcile = (value: unknown, library: unknown): unknown => {
     const key = sourceOf(node);
     if (!key) return node;
     const source = shared.find((entry) => entry.name === key);
-    return source ? reshape(node, source) : node;
+    if (source) return reshape(node, source);
+    const { source: _gone, ...own } = node;
+    return own as TypedNode;
   });
 };
 

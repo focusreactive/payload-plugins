@@ -11,7 +11,7 @@ export type JsonLibraryOptions = {
 export const jsonLibraryField = ({
   name = "shared",
   label = "Shared sections",
-  description = "Sections built once and followed by many. A document gets its own copy of the values; the shape stays here.",
+  description = "Reusable sections. Build one here and any document can attach it, fill in its own values and follow this shape — the form is written once, the content stays theirs. Removing one here leaves it in the documents that had it, no longer following.",
 }: JsonLibraryOptions = {}): JSONField =>
   deepMerge<JSONField>(jsonField({ name, label }), {
     admin: { description },

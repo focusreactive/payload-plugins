@@ -7,11 +7,13 @@ import { JsonFormClient } from "./JsonFormClient.js";
 type Props = ComponentProps<JSONFieldServerComponent> & {
   build?: BuildGate;
   library?: boolean;
+  shares?: boolean;
 };
 
 export const JsonFormField = ({
   build,
   library,
+  shares,
   clientField,
   path,
   permissions,
@@ -23,6 +25,7 @@ export const JsonFormField = ({
     field={clientField}
     library={Boolean(library)}
     mayBuild={allows(build, req.user)}
+    shares={Boolean(shares)}
     path={path}
     permissions={permissions}
     readOnly={readOnly}

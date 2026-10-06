@@ -408,9 +408,7 @@ body.json-builder-open {
   white-space: nowrap;
 }
 
-.json-builder__section-count {
-  opacity: 0.6;
-}
+
 
 .json-builder__cards {
   display: grid;
@@ -730,60 +728,75 @@ body.json-builder-open {
   border-color: var(--theme-warning-250);
   color: var(--theme-warning-650);
   font-family: var(--font-body);
-  margin-inline-start: var(--base-025);
-  text-transform: uppercase;
+  margin-inline-start: 10px;
 }
 
-.json-form__adders {
-  display: flex;
-  gap: var(--base-050);
+
+
+
+
+
+
+
+
+.json-form__said {
+  margin-block-end: calc(var(--base) * 0.6);
 }
 
-.json-library__bar {
+.json-builder__row {
   align-items: center;
-  display: flex;
-  gap: var(--base-050);
-
-  .drawer__header__title {
-    flex: 1;
-  }
-}
-
-.json-library__list {
-  display: grid;
-  gap: var(--base-050);
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  padding: var(--base);
-}
-
-.json-library__card {
   background: var(--theme-elevation-50);
-  border: 1px solid var(--theme-elevation-100);
   border-radius: var(--style-radius-m);
-  cursor: pointer;
   display: flex;
-  flex-direction: column;
-  gap: var(--base-025);
-  padding: var(--base-050) var(--base-075);
+  font-size: 1.05rem;
+  gap: calc(var(--base) * 0.3);
+  justify-content: space-between;
+  padding: calc(var(--base) * 0.4) calc(var(--base) * 0.6);
+}
+
+.json-builder__row--act {
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  inline-size: 100%;
   text-align: start;
 
-  &--picked {
-    border-color: var(--theme-success-400);
-    box-shadow: inset 0 0 0 1px var(--theme-success-400);
-  }
-
-  &--used {
-    cursor: not-allowed;
-    opacity: 0.5;
+  &:hover {
+    background: var(--theme-elevation-100);
   }
 }
 
-.json-library__name {
-  color: var(--theme-elevation-1000);
+.json-builder__row--held {
+  background: var(--theme-elevation-1000);
+  color: var(--theme-elevation-0);
+
+  .json-builder__mark {
+    color: var(--theme-elevation-200);
+
+    &:hover {
+      color: var(--theme-elevation-0);
+    }
+  }
 }
 
-.json-library__key {
+.json-builder__mark {
+  background: none;
+  border: 0;
   color: var(--theme-elevation-500);
-  font-family: var(--font-mono);
-  font-size: 12px;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  min-inline-size: 20px;
+  padding: 0;
+  text-align: end;
+
+  &:hover {
+    color: var(--theme-elevation-800);
+  }
+}
+
+.json-builder__group--shared {
+  border-top: 1px solid var(--theme-elevation-100);
+  margin-block-start: 32px;
+  padding-block-start: 32px;
 }
