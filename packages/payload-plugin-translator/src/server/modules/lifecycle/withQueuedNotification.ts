@@ -2,7 +2,7 @@ import type { TaskRunner } from "../task-runner/TaskRunner.interface.js";
 import { toTaskFilter } from "../task-runner/toTaskFilter.js";
 import type { LifecycleNotifier } from "./LifecycleNotifier.js";
 import { taskFromInput, taskFromStored } from "./taskMapping.js";
-import type { TranslationLifecycleCallbacks } from "./types.js";
+import type { TranslationLifecycleCallbacks, TranslationTask } from "./types.js";
 
 /**
  * Whether a host's callbacks need the runner wrapped at all — only the two the decorator itself
@@ -12,26 +12,14 @@ export const needsDecoration = (callbacks: TranslationLifecycleCallbacks): boole
   Boolean(callbacks.onQueued ?? callbacks.onCancelled);
 
 /**
- * Say what is about to stop, while the rows still exist to say it from: the cancel route is handed
- * ids and nothing else. A failed read is logged rather than thrown — silence would otherwise be
- * indistinguishable from an id that was not ours. A locale whose last attempt failed is announced
- * too: from the row alone, "failed with retries left" and "gave up" read the same.
+ * What cancelling these ids is about to stop — the cancel route is handed ids and nothing else, so
+ * it can only come from a read. A locale whose last attempt failed is included: from the row alone,
+ * "failed with retries left" and "gave up" read the same.
  */
-async function announceCancellation(
-  runner: TaskRunner,
-  notifier: LifecycleNotifier,
-  taskIds: string[]
-): Promise<void> {
-  if (!runner.findByIds || taskIds.length === 0) return;
-  try {
-    const stopping = await runner.findByIds(taskIds);
-    for (const task of stopping) {
-      if (task.status === "completed") continue;
-      await notifier.cancelled(taskFromStored(task));
-    }
-  } catch (error) {
-    notifier.announcementFailed(error);
-  }
+async function stopping(runner: TaskRunner, taskIds: string[]): Promise<TranslationTask[]> {
+  if (!runner.findByIds || taskIds.length === 0) return [];
+  const rows = await runner.findByIds(taskIds);
+  return rows.filter((task) => task.status !== "completed").map(taskFromStored);
 }
 
 /**
@@ -53,7 +41,7 @@ export function withQueuedNotification(
       return runner.enqueue(tasks, scope);
     },
     async cancel(taskIds) {
-      await announceCancellation(runner, notifier, taskIds);
+      await notifier.cancelling(() => stopping(runner, taskIds));
       return runner.cancel(taskIds);
     },
     run: (taskId) => runner.run(taskId),

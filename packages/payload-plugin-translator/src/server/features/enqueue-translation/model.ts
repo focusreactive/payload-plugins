@@ -30,8 +30,6 @@ export type EnqueueConfig = {
  *
  * Absent when the runner predates returning ids (docs/DEPRECATIONS.md#enqueue-void-return); empty
  * means the runner answered and could name nothing. `queued` counts what was accepted either way.
- *
- * @since 0.16.0
  */
 export type QueuedJob = {
   collection_slug: string;
