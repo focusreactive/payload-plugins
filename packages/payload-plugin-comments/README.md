@@ -485,13 +485,13 @@ RESEND_FROM_EMAIL=comments@yourdomain.com
 2. It creates a `comments` collection (hidden from the admin sidebar by default).
 3. It patches **every collection** to inject `FieldCommentLabel` into each field's admin label and registers an `afterDelete` hook that cascade-deletes comments when a document is removed.
 4. It patches **every global** to inject `FieldCommentLabel` into each field's admin label.
-5. It registers two admin providers (`CommentsProviderWrapper`, `GlobalCommentsLoader`) and one admin action (`CommentsHeaderButton`).
+5. It registers an admin provider (`CommentsProviderWrapper`) and one admin action (`CommentsHeaderButton`).
+6. It registers REST endpoints under `/api/comments-plugin/*` (list, create, delete, resolve, mark-read, unread-mentions-count, mentionable-users, document-titles, field-labels). Each one requires an authenticated user and uses the Payload instance from the request, so it works on a freshly started serverless instance.
 
-**Data loading** (`GlobalCommentsLoader`):
+**Data loading** (`src/api`):
 
-- This server component runs on every admin page load.
-- It fetches all comments, document titles, mentionable users, field labels, collection labels, and global labels in parallel.
-- Results are passed to `GlobalCommentsHydrator` (a client component) which hydrates the `CommentsContext`.
+- The admin UI fetches comments, document titles, mentionable users, field labels, and unread mention counts with TanStack Query from the plugin's endpoints.
+- Mutations (add, delete, resolve, mark as read) call the same endpoints and update the query cache optimistically.
 
 **State management** (`CommentsProvider`):
 
@@ -526,10 +526,10 @@ RESEND_FROM_EMAIL=comments@yourdomain.com
 
 ## Exports Reference
 
-| Import path                                          | Exports                                                                                            |
-| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `@focus-reactive/payload-plugin-comments`            | `commentsPlugin`, `CommentsPluginConfig` (type), `CommentsTranslations` (type), `setPayloadConfig` |
-| `@focus-reactive/payload-plugin-comments/styles.css` | Plugin stylesheet (Tailwind-compiled CSS)                                                          |
+| Import path                                          | Exports                                                                                                               |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `@focus-reactive/payload-plugin-comments`            | `commentsPlugin`, `CommentsPluginConfig` (type), `CommentsTranslations` (type), `setPayloadConfig` (deprecated no-op) |
+| `@focus-reactive/payload-plugin-comments/styles.css` | Plugin stylesheet (Tailwind-compiled CSS)                                                                             |
 
 ---
 

@@ -1,34 +1,29 @@
-"use server";
-
-import { headers } from "next/headers";
-import type { TypedUser, Where } from "payload";
-import { extractPayload } from "../utils/payload/extractPayload";
+import type { Where } from "payload";
 import { COMMENT_READS_COLLECTION_SLUG, DEFAULT_COLLECTION_SLUG } from "../constants";
 import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
-import type { Response, Comment, BaseServiceOptions } from "../types";
+import type { Response, Comment, ServiceContext } from "../types";
 import { getCurrentTenantId } from "./getCurrentTenantId";
 
-interface Props {
+export interface FindAllCommentsArgs {
   enabledCollections?: string[];
   enabledGlobals?: string[];
-  user?: TypedUser | null;
-  options?: BaseServiceOptions;
   docId?: string | number;
   filterCollectionSlug?: string;
   filterGlobalSlug?: string;
 }
 
-export async function findAllComments({
-  enabledCollections,
-  enabledGlobals,
-  options,
-  docId,
-  filterCollectionSlug,
-  filterGlobalSlug,
-}: Props = {}): Promise<Response<Comment[]>> {
+export async function findAllComments(
+  { payload, user, headers }: ServiceContext,
+  {
+    enabledCollections,
+    enabledGlobals,
+    docId,
+    filterCollectionSlug,
+    filterGlobalSlug,
+  }: FindAllCommentsArgs
+): Promise<Response<Comment[]>> {
   try {
-    const payload = await extractPayload(options?.payload);
-    const tenantId = await getCurrentTenantId(payload);
+    const tenantId = getCurrentTenantId(payload, headers);
 
     const where: Where = {};
 
@@ -80,11 +75,9 @@ export async function findAllComments({
       overrideAccess: true,
     });
 
-    const { user } = await payload.auth({ headers: await headers() });
-
     let readSet: Set<number> | null = null;
 
-    if (user && comments.length > 0) {
+    if (comments.length > 0) {
       const commentIds = comments.map((c) => c.id as number);
 
       const { docs: reads } = await payload.find({

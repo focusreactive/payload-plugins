@@ -1,11 +1,8 @@
-"use server";
-
 import type { Payload } from "payload";
-import { headers as getHeaders } from "next/headers";
 import { getTenantFromCookie } from "@payloadcms/plugin-multi-tenant/utilities";
 import type { CommentsPluginConfigStorage } from "../types";
 
-export async function getCurrentTenantId(payload: Payload) {
+export function getCurrentTenantId(payload: Payload, headers: Headers) {
   const pluginConfig = payload.config.admin?.custom?.commentsPlugin as
     | CommentsPluginConfigStorage
     | undefined;
@@ -14,5 +11,5 @@ export async function getCurrentTenantId(payload: Payload) {
 
   if (!tenantConfig?.enabled) return null;
 
-  return getTenantFromCookie(await getHeaders(), payload.db.defaultIDType);
+  return getTenantFromCookie(headers, payload.db.defaultIDType);
 }

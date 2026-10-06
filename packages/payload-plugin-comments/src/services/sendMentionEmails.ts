@@ -1,12 +1,13 @@
 import { Resend } from "resend";
 import { getServerSideURL } from "../utils/general/getURL";
-import type { BaseServiceOptions, CommentsPluginConfigStorage, User } from "../types";
-import { extractPayload } from "../utils/payload/extractPayload";
+import type { Payload } from "payload";
+import type { CommentsPluginConfigStorage, User } from "../types";
 import { FALLBACK_USERNAME, PLUGIN_NAME, USERNAME_DEFAULT_FIELD_PATH } from "../constants";
 
 const PREFIX = `[${PLUGIN_NAME}]`;
 
-interface SendMentionEmailsProps extends BaseServiceOptions {
+interface SendMentionEmailsProps {
+  payload: Payload;
   mentionIds: number[];
   authorName: string;
   commentText: string;
@@ -20,10 +21,8 @@ export async function sendMentionEmails({
   commentText,
   collectionSlug,
   documentId,
-  payload: payloadProp,
+  payload,
 }: SendMentionEmailsProps) {
-  const payload = await extractPayload(payloadProp);
-
   const pluginConfig = payload.config.admin?.custom?.commentsPlugin as
     | CommentsPluginConfigStorage
     | undefined;

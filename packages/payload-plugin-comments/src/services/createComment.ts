@@ -1,42 +1,31 @@
-"use server";
-
-import { headers } from "next/headers";
 import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
-import type { Response, Comment, BaseServiceOptions } from "../types";
+import type { Response, Comment, ServiceContext } from "../types";
 import { DEFAULT_COLLECTION_SLUG, FALLBACK_USERNAME } from "../constants";
 import { sendMentionEmails } from "./sendMentionEmails";
-import { extractPayload } from "../utils/payload/extractPayload";
 
-interface Props extends BaseServiceOptions {
+export interface CreateCommentArgs {
   documentId?: number | null;
   collectionSlug?: string | null;
   globalSlug?: string | null;
   text: string;
   fieldPath?: string | null;
   mentionIds?: number[];
+  locale?: string | null;
 }
 
-export async function createComment({
-  documentId,
-  collectionSlug,
-  globalSlug,
-  text,
-  fieldPath = null,
-  mentionIds = [],
-  locale = null,
-  payload: payloadProp,
-}: Props): Promise<Response<Comment>> {
+export async function createComment(
+  { payload, user }: ServiceContext,
+  {
+    documentId,
+    collectionSlug,
+    globalSlug,
+    text,
+    fieldPath = null,
+    mentionIds = [],
+    locale = null,
+  }: CreateCommentArgs
+): Promise<Response<Comment>> {
   try {
-    const payload = await extractPayload(payloadProp);
-    const { user } = await payload.auth({ headers: await headers() });
-
-    if (!user) {
-      return {
-        success: false,
-        error: "Unauthorized",
-      };
-    }
-
     if (!globalSlug && (!documentId || !collectionSlug)) {
       return {
         success: false,

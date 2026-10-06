@@ -2,7 +2,9 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { getCommentsKey } from "../queryKeys";
-import { resolveComment } from "../../services/resolveComment";
+import type { ResolveCommentArgs } from "../../services/resolveComment";
+import { useCommentsRequest } from "../useCommentsRequest";
+import { COMMENTS_ENDPOINT_PATHS } from "../../constants";
 import { useCommentsQueryClient } from "../../providers/CommentsQueryClientProvider";
 import type { Comment, QueryContext } from "../../types";
 
@@ -15,11 +17,15 @@ interface ResolveCommentVariables {
 
 export function useResolveCommentMutation() {
   const queryClient = useCommentsQueryClient();
+  const request = useCommentsRequest();
 
   return useMutation(
     {
       mutationFn: ({ commentId, resolved }: ResolveCommentVariables) =>
-        resolveComment(commentId, resolved),
+        request<ResolveCommentArgs, Comment>(COMMENTS_ENDPOINT_PATHS.resolve, {
+          id: commentId,
+          resolved,
+        }),
       onMutate: async (variables) => {
         const { ctx, commentId, resolved, currentUser } = variables;
         const key = getCommentsKey(ctx);

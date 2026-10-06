@@ -2,7 +2,9 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { getCommentsKey, getFieldLabelsKey, getDocumentTitlesKey, QUERY_KEYS } from "../queryKeys";
-import { createComment } from "../../services/createComment";
+import type { CreateCommentArgs } from "../../services/createComment";
+import { useCommentsRequest } from "../useCommentsRequest";
+import { COMMENTS_ENDPOINT_PATHS } from "../../constants";
 import { useCommentsQueryClient } from "../../providers/CommentsQueryClientProvider";
 import type { Comment, User, QueryContext } from "../../types";
 
@@ -20,12 +22,13 @@ interface AddCommentVariables {
 
 export function useAddCommentMutation() {
   const queryClient = useCommentsQueryClient();
+  const request = useCommentsRequest();
 
   return useMutation(
     {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       mutationFn: ({ ctx: _ctx, currentUser: _user, ...data }: AddCommentVariables) =>
-        createComment(data),
+        request<CreateCommentArgs, Comment>(COMMENTS_ENDPOINT_PATHS.create, data),
       onMutate: async (variables) => {
         const {
           ctx,
