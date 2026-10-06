@@ -1,3 +1,11 @@
+## @focus-reactive/payload-plugin-comments [1.11.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.11.1...@focus-reactive/payload-plugin-comments@1.11.2) (2026-10-06)
+
+
+### Bug Fixes
+
+* **comments:** serve plugin data through Payload endpoints instead of server actions ([79dd826](https://github.com/focusreactive/payload-plugins/commit/79dd8263178a765f249d29a991102519afe13ec5))
+* **comments:** serve plugin data through Payload endpoints instead of server actions ([a6df029](https://github.com/focusreactive/payload-plugins/commit/a6df029e8a4c2fee12298d7f4fbdbc1ef406b244))
+
 ## @focus-reactive/payload-plugin-comments [1.11.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.11.0...@focus-reactive/payload-plugin-comments@1.11.1) (2026-07-04)
 
 
