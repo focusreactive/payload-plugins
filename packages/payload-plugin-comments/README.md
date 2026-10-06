@@ -526,10 +526,10 @@ RESEND_FROM_EMAIL=comments@yourdomain.com
 
 ## Exports Reference
 
-| Import path                                          | Exports                                                                                                               |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `@focus-reactive/payload-plugin-comments`            | `commentsPlugin`, `CommentsPluginConfig` (type), `CommentsTranslations` (type), `setPayloadConfig` (deprecated no-op) |
-| `@focus-reactive/payload-plugin-comments/styles.css` | Plugin stylesheet (Tailwind-compiled CSS)                                                                             |
+| Import path                                          | Exports                                                                         |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `@focus-reactive/payload-plugin-comments`            | `commentsPlugin`, `CommentsPluginConfig` (type), `CommentsTranslations` (type) |
+| `@focus-reactive/payload-plugin-comments/styles.css` | Plugin stylesheet (Tailwind-compiled CSS)                                       |
 
 ---
 
