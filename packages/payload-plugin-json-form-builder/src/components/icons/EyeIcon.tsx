@@ -1,5 +1,3 @@
-// Drawn on a 16×12 grid, then set into the 20×20 box every Payload icon uses, so it comes out the
-// size of the ones beside it in a menu.
 export const EyeIcon = ({ open }: { open: boolean }) => (
   <svg
     className="icon icon--eye"

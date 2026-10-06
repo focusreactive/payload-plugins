@@ -37,11 +37,6 @@ import { useJsonFormConfig } from "../useJsonFormConfig.js";
 import { blankNode, TYPES } from "../field/typedJson.js";
 import type { NodeType, TypedNode, TypedRoot } from "../field/typedJson.js";
 
-// A strip of tabs holds tabs and nothing else, and a tab is worth nothing anywhere else — so it is
-// offered where it belongs and nowhere besides.
-// A strip of tabs holds tabs and nothing else; everywhere else a tab is not a thing to add. And a
-// kind this installation has no home for — an upload with no collection, rich text with no editor —
-// is not offered, rather than offered and then unable to draw itself.
 const holds = (node: TypedNode | undefined, missing: readonly NodeType[]): readonly NodeType[] =>
   node?.type === "tabs"
     ? ["tab"]
@@ -58,21 +53,13 @@ export const JsonBuilder = ({
   onChange: (root: TypedRoot) => void;
   slug: string;
 }) => {
-  // Everything here edits a copy. The field's own value travels through the form's state, which
-  // answers a render late, and every edit read back from it arrived behind the one before it.
   const [draft, setDraft] = useState<TypedRoot>(root);
   const [current, setCurrent] = useState("");
-  // Where the canvas stands. What it shows is what this spot holds, one level at a time.
   const [at, setAt] = useState<number[]>([]);
-  // Where the node being edited sits, or nothing at all for one that does not exist yet.
   const [picked, setPicked] = useState<Spot | null>(null);
-  // The drawer works on a copy and writes it back on the button. Editing the tree as it is typed
-  // renames and re-seats the very node the form is standing on, which takes the cursor with it.
   const [edited, setEdited] = useState<TypedNode | null>(null);
   const [key, setKey] = useState("");
   const [hovered, setHovered] = useState("");
-  // What the drawer is making, if it is making anything. A kind is answered once, here: changing it
-  // later moves the values into a shape that cannot hold them.
   const [making, setMaking] = useState<"field" | "section" | null>(null);
   const { anchor: richTextAnchor, uploads } = useJsonFormConfig();
   const missing: NodeType[] = [
@@ -83,31 +70,23 @@ export const JsonBuilder = ({
   const leaveSlug = useDrawerSlug("json-builder-leave");
   const { closeModal, isModalOpen, openModal } = useModal();
 
-  // `body-scroll-lock` restores the page the moment any one modal gives up its lock, with no regard
-  // for the modals still open, so closing the settings drawer frees the page behind the builder.
-  // This holds it for as long as the builder itself is open.
   const showing = isModalOpen(slug);
+  // `body-scroll-lock` frees the page as soon as any one modal gives up its lock, with no regard
+  // for the modals still open; this class holds it while the builder is.
   useEffect(() => {
     if (!showing) return;
     document.body.classList.add("json-builder-open");
     return () => document.body.classList.remove("json-builder-open");
   }, [showing]);
 
-  // A copy, taken fresh every time the drawer opens. Keeping an unsaved one across a closing would
-  // mean telling "built here and not saved" apart from "filled in over there", and both read the
-  // same: the copy differs from the field. So a closing drops the structure, which is at least
-  // seen at once — where a kept copy quietly wrote its own stale values back on the next save.
   const dirty = JSON.stringify(draft) !== JSON.stringify(root);
   useEffect(() => {
     if (!showing) return;
     setDraft(root);
-    // Opened from "Add section": the form a new section is answered in, rather than the canvas of
-    // one that already exists.
     if (adding) start("section", "collapsible");
     // biome-ignore lint/correctness/useExhaustiveDependencies: the stored value is read on opening only
   }, [showing]);
 
-  // Already in order: the root is a list, and a list is kept the way it is written.
   const sections = draft;
   const faults = schemaErrors(draft);
   const section = draft.find((node) => node.name === current);
@@ -118,11 +97,7 @@ export const JsonBuilder = ({
 
   const isSection = making === "section" || Boolean(picked && !picked.at.length);
 
-  // Who else stands at this level, which is what the key has to be free of.
   const neighbours = () => {
-    // Sections are a list, so their names are read off the nodes. A section being renamed does not
-    // count its own name as taken; one being created counts every name there is, including the one
-    // standing selected behind the drawer.
     if (isSection) {
       const taken = draft.map((node) => node.name ?? "");
       return making ? taken : taken.filter((name) => name !== current);
@@ -132,7 +107,6 @@ export const JsonBuilder = ({
   };
   const fault = edited ? keyFault(key, neighbours()) : "";
 
-  // The way back, one step for every door walked through.
   const trail = at.map((index, depth) => ({
     at: at.slice(0, depth + 1),
     name:
@@ -164,8 +138,6 @@ export const JsonBuilder = ({
     setEdited(null);
   };
 
-  // One write for the whole drawer. A section is named by its key in the root, so renaming it moves
-  // it there rather than giving it a `name` of its own.
   const save = () => {
     if (!edited) return shut();
     if (making === "section") {
@@ -181,7 +153,6 @@ export const JsonBuilder = ({
     shut();
   };
 
-  // `fields` is an array, so the order it sits in is the order that is stored and drawn.
   const reorder = (next: TypedNode[]) =>
     setDraft(editAt(draft, here, (node) => withShape(node, next)));
 
@@ -252,8 +223,6 @@ export const JsonBuilder = ({
         </aside>
 
         <section className="json-builder__canvas">
-          {/* Nothing here writes a fault, so one came in by hand or from a script — and the shape
-					    on screen is not to be trusted until it is gone. */}
           {faults.length ? <Banner type="error">{faults.join("; ")}</Banner> : null}
           {section ? (
             <>
@@ -273,7 +242,6 @@ export const JsonBuilder = ({
                     </button>
                   </span>
                 ))}
-                {/* They act on where you stand, which is the section itself until you walk into it. */}
                 <span className="json-builder__trail-actions">
                   <IconButton
                     label={at.length ? "Edit this field" : "Edit this section"}
@@ -286,7 +254,6 @@ export const JsonBuilder = ({
                     label={at.length ? "Remove this field" : "Remove this section"}
                     onClick={() => {
                       remove(here);
-                      // Standing in what was just removed is standing nowhere.
                       if (at.length) setAt(at.slice(0, -1));
                       else setCurrent("");
                     }}
@@ -374,7 +341,6 @@ export const JsonBuilder = ({
       >
         {edited ? (
           <div className="json-builder__form">
-            {/* Written on the button: a section is its key, so renaming one moves it in the root. */}
             <TextInput
               label="Key"
               onChange={(event: ChangeEvent<HTMLInputElement>) => setKey(event.target.value)}
@@ -404,7 +370,6 @@ export const JsonBuilder = ({
                   className="json-builder__quiet"
                   onClick={() => {
                     if (picked) remove(picked);
-                    // Standing inside what was just removed is standing nowhere.
                     if (picked?.at.length && picked.at.length <= at.length)
                       setAt(picked.at.slice(0, -1));
                     shut();

@@ -6,8 +6,6 @@ import { JsonFormClient } from "./JsonFormClient.js";
 
 type Props = ComponentProps<JSONFieldServerComponent> & { build?: BuildGate };
 
-// A server component for one reason: the gate is answered where the user is. A predicate cannot
-// cross to the browser, so it is read here and only its answer travels.
 export const JsonFormField = ({
   build,
   clientField,

@@ -1,16 +1,13 @@
 import { CONTAINER_TYPES, HOLDER_TYPES, isKnown, isTyped, numberOf, TYPES } from "./typedJson.js";
 import type { ArrayNode, Container, Leaf, NodeType, TypedNode, TypedRoot } from "./typedJson.js";
 
-// `named` only turns on past a row of one unnamed field, which is a plain value, not a field.
 const each = (
   root: TypedRoot,
   visit: (node: TypedNode, where: string, named: boolean) => false | void
 ) => {
   const go = (node: TypedNode, path: string[], named: boolean) => {
-    // A nameless node contributes nothing to the path rather than an empty step in it.
     if (visit(node, path.filter(Boolean).join(" → "), named) === false) return;
     const rows = (node as ArrayNode).rows;
-    // A field with no name is pointed at by its position, or two of them would read the same.
     if (Array.isArray(rows)) {
       return rows.forEach((row, index) =>
         row.forEach((field, at) =>
@@ -26,16 +23,11 @@ const each = (
     if (Array.isArray(fields))
       fields.forEach((field, at) => go(field, [...path, field.name ?? `#${at + 1}`], true));
   };
-  // A section carries its own name now, so it is judged like every other named node.
   root.forEach((node, at) => go(node, [node.name ?? `#${at + 1}`], true));
 };
 
 const LEAVES = TYPES.filter((type) => !HOLDER_TYPES.includes(type));
 
-// What is wrong with this one node, in the words that go under it. `problems()` is the same thing
-// read over the whole tree, so the line under a field and the message the save is refused with can
-// never say different things. A hidden node is skipped: it is not on the site, so an empty one is
-// no mistake.
 export const nodeFault = (node: TypedNode): string => {
   if (node.hidden) return "";
   if (node.type === "array") {
@@ -59,7 +51,6 @@ export const nodeFault = (node: TypedNode): string => {
   return "";
 };
 
-// The same faults with the path kept apart, for a breadcrumb rather than a sentence.
 export type Fault = { message: string; path: string[] };
 
 export const faults = (root: TypedRoot): Fault[] => {
@@ -75,15 +66,11 @@ export const faults = (root: TypedRoot): Fault[] => {
 export const problems = (root: TypedRoot): string[] =>
   faults(root).map((fault) => `${fault.path.join(" → ")}: ${fault.message}`);
 
-// Not `!value`: a number field holding 0 is filled in.
 const empty = (node: Leaf) =>
   node.type === "checkbox"
     ? node.value !== true
     : node.value === undefined || node.value === null || node.value === "";
 
-// Two nodes under one parent with the same name flatten into one, and the later silently wins — the
-// form cannot show the loss and the site never learns of it. An object could not hold two such keys
-// either: `JSON.parse` keeps the last and says nothing. So it is named here, at every level.
 const sameNames = (fields: TypedNode[], path: string[], found: string[]) => {
   const seen = new Set<string>();
   for (const field of fields) {
@@ -101,22 +88,19 @@ const sameNames = (fields: TypedNode[], path: string[], found: string[]) => {
   }
 };
 
+// Two nodes under one parent with the same name flatten into one and the later silently wins, so
+// duplicates are named at every level.
 export const schemaErrors = (root: TypedRoot): string[] => {
   const found: string[] = [];
   sameNames(root, [], found);
   each(root, (node, where, named) => {
     const faults = nodeErrors(node, where, named);
     found.push(...faults);
-    // What is under a broken node waits: half of it is usually the same mistake read twice, and
-    // what survives the fix comes up on the next pass.
     if (faults.length) return false;
   });
   return found;
 };
 
-// Every key a node may carry; one outside this table is a typo, which otherwise does nothing at all.
-// `only` is where a key may appear, `needed` where it must: a list keeps `fields` as the shape of
-// the row that left, but lives without it while it has rows.
 type Rule = {
   kind: "any" | "array" | "boolean" | "number" | "object" | "string";
   needed?: readonly NodeType[];
@@ -155,7 +139,6 @@ const nodeErrors = (node: TypedNode, where: string, named: boolean): string[] =>
   for (const key of Object.keys(node)) if (!KEYS[key]) say(`${where}: unknown key “${key}”`);
   if (named && !node.name) say(`${where}: no name`);
 
-  // Without a kind there is nothing left to judge the node against.
   if (!("type" in node)) {
     say(`${where}: no “type”`);
     return here;
@@ -191,14 +174,7 @@ const nodeErrors = (node: TypedNode, where: string, named: boolean): string[] =>
   return here;
 };
 
-// What the field refuses a save over: json that is not json, and whatever the editor has not filled
-// in. The second half lives inside the value, so only the server can judge it — which is how every
-// other field in the admin behaves too, Payload's own `required` included: the save is refused, the
-// field is marked, the form stays modified, and you fix it and press Save again.
 export const jsonErrors = (value: unknown, required?: boolean): string | true => {
-  // A plain object is not refused: that is what a value looks like before it was given field types,
-  // and the form says so under it rather than holding the whole document hostage. Only a value that
-  // is neither a list nor an object has no reading at all.
   if (value != null && typeof value !== "object") return "This is not valid json.";
   if (required && !isTyped(value)) return "This field is required.";
   if (!isTyped(value)) return true;

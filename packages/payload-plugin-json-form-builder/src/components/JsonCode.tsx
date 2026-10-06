@@ -5,10 +5,6 @@ import { CodeEditor } from "@payloadcms/ui";
 
 const written = (value: unknown) => (value == null ? "" : JSON.stringify(value, null, 2));
 
-// Payload's own json field keeps the raw text as the value while it does not parse, and that string
-// then travels: the form holds it, the server is asked to store it, and a jsonb column is handed a
-// sentence. Here the text stays here. The field keeps the last value that parsed, so nothing
-// downstream ever sees anything but json — no refused save, and no form left looking saved.
 export const JsonCode = ({
   maxHeight,
   onChange,
@@ -22,8 +18,6 @@ export const JsonCode = ({
 }) => {
   const [text, setText] = useState(() => written(value));
   const [fault, setFault] = useState("");
-  // What was last sent up, so a value changed elsewhere — the builder, a section deleted — redraws
-  // the editor, while our own writes do not fight the caret.
   const sent = useRef(text);
 
   if (!readOnly) {

@@ -17,7 +17,6 @@ import { KINDS } from "../field/kinds.js";
 import { holdsFields } from "../field/typedJson.js";
 import type { NodeType, TypedNode } from "../field/typedJson.js";
 
-// What the node was told to do. Not what kind it is — the tile already says that.
 const marks = (node: TypedNode) =>
   [
     node.required && "required",
@@ -34,10 +33,7 @@ type Hands = {
   onOrder: (fields: TypedNode[]) => void;
 };
 
-// One level at a time: a field that holds fields is a door, not a drawer within a drawer.
 export const JsonBuilderLevel = ({ fields, hands }: { fields: TypedNode[]; hands: Hands }) => {
-  // `fields` is an array, so its order is the stored order — and a name is unique within a level,
-  // which makes it an id without a second list to keep in step.
   const ids = fields.map((node, index) => node.name || `#${index + 1}`);
 
   return (
@@ -102,7 +98,6 @@ export const JsonBuilderLevel = ({ fields, hands }: { fields: TypedNode[]; hands
                   >
                     <XIcon />
                   </IconButton>
-                  {/* A mark, not a control: the door is the whole row. */}
                   {holds ? (
                     <span className="json-builder__door">
                       <ChevronIcon direction="right" />

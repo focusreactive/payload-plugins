@@ -18,8 +18,6 @@ const without = (node: TypedNode, key: string) => {
 const put = (node: TypedNode, key: string, value: unknown) =>
   ({ ...node, [key]: value }) as TypedNode;
 
-// The date a field starts on, which is simply the date it holds until someone picks another. A date
-// is the one kind nobody can type a sensible value into, so it is the one worth answering here.
 const Starts = ({ node, onChange }: Settings) => (
   <JsonInput
     id="builder-value"
@@ -30,8 +28,6 @@ const Starts = ({ node, onChange }: Settings) => (
   />
 );
 
-// An emptied box takes the key away rather than storing a blank one: no `min` at all is what a
-// field with no floor says.
 const Limit = ({ node, onChange, name }: Settings & { name: string }) => (
   <JsonInput
     id={`builder-${name}`}
@@ -44,8 +40,6 @@ const Limit = ({ node, onChange, name }: Settings & { name: string }) => (
   />
 );
 
-// What a select offers is its schema, so it is written here and the form only picks from it. A
-// select with nothing to offer is a broken one, which is why the last row cannot be taken away.
 const Options = ({ node, onChange }: Settings) => {
   const options = ("options" in node && node.options) || [];
   const write = (next: string[]) => onChange(put(node, "options", next));
@@ -76,12 +70,10 @@ const Options = ({ node, onChange }: Settings) => {
 };
 
 export const JsonBuilderSettings = ({ node, onChange }: Settings) => {
-  // Filling in is a thing a field does, so a group, a tab or a list is asked neither.
   const fills = !holdsFields(node);
 
   return (
     <>
-      {/* A container wears its name as a heading, so it is worth spelling out in words. */}
       {fills ? null : (
         <TextInput
           label="Title"
@@ -132,7 +124,6 @@ export const JsonBuilderSettings = ({ node, onChange }: Settings) => {
               onChange(node.required ? without(node, "required") : put(node, "required", true))
             }
           />
-          {/* Not for an upload or a rich text: their editors are not asked to be read-only here. */}
           {node.type === "upload" || node.type === "richText" ? null : (
             <CheckboxInput
               checked={node.readOnly === true}

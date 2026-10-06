@@ -1,4 +1,3 @@
-// Drawn in the 20×20 box every Payload icon uses, so it sits at the weight of the ones beside it.
 export const BracesIcon = () => (
   <svg
     className="icon icon--braces"

@@ -1,5 +1,3 @@
-// The stored shape, which the site never sees: docs/typed-json.md is the reference.
-
 export type LeafType =
   | "text"
   | "textarea"
@@ -10,7 +8,6 @@ export type LeafType =
   | "checkbox"
   | "select";
 export type Condition = { field: string } & ({ equals: unknown } | { notEquals: unknown });
-// `name` is the key a template reads, `label` the words a person reads.
 type Base = {
   name?: string;
   label?: string;
@@ -39,8 +36,6 @@ export type ArrayNode = Base & {
   maxRows?: number;
 };
 export type TypedNode = Leaf | Container | ArrayNode;
-// Sections are a list, like every other level: an array keeps the order it is written in, where an
-// object would not — jsonb does not preserve key order, and a key cannot be dragged.
 export type TypedRoot = TypedNode[];
 
 export const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -64,7 +59,6 @@ export const TYPES = [
 export type NodeType = (typeof TYPES)[number];
 export const isKnown = (node: TypedNode) => (TYPES as readonly string[]).includes(node.type);
 
-// The one field a row carries about itself: a row has no name to hang the switch on.
 export const HIDDEN = "hidden";
 
 // A value where nothing is a known kind is content, not a schema: `{ type: 'primary' }` is a button.
@@ -74,8 +68,6 @@ export const isTyped = (value: unknown): value is TypedRoot =>
   value.every((node) => isObject(node) && typeof node.type === "string") &&
   value.some((node) => isKnown(node as TypedNode));
 
-// What an `upload` value becomes. The default — no resolver — is the url it stores, which is all
-// the value holds; the hook passes one that hands back the Media document instead.
 export type ResolveUpload = (url: string) => unknown;
 
 const fieldsOf = (fields: TypedNode[], resolve?: ResolveUpload) =>
@@ -87,7 +79,6 @@ const fieldsOf = (fields: TypedNode[], resolve?: ResolveUpload) =>
 
 const flattenNode = (node: TypedNode, resolve?: ResolveUpload): unknown => {
   if (node.type === "array") {
-    // A row of one unnamed field is a plain value, not an object of one key.
     return (node.rows ?? [])
       .filter(
         (row) =>
@@ -98,7 +89,6 @@ const flattenNode = (node: TypedNode, resolve?: ResolveUpload): unknown => {
       );
   }
   if ("fields" in node) return fieldsOf(node.fields, resolve);
-  // An unknown kind is handed over untouched: it may be content this version cannot read.
   if (!isKnown(node)) return node;
   const value = node.value ?? blankValue(node.type);
   if (node.type === "upload" && resolve && typeof value === "string" && value)
@@ -106,8 +96,6 @@ const flattenNode = (node: TypedNode, resolve?: ResolveUpload): unknown => {
   return value;
 };
 
-// Every url an `upload` node holds, wherever it sits. The hook reads them before flattening, so one
-// query answers a whole document.
 export const uploadUrls = (value: unknown): string[] => {
   const found: string[] = [];
   const walk = (nodes: TypedNode[]) => {
@@ -125,8 +113,6 @@ export const uploadUrls = (value: unknown): string[] => {
 const blankValue = (type: LeafType | string) =>
   type === "checkbox" ? false : type === "number" || type === "date" ? null : "";
 
-// The root is a list of named nodes, which is what `fieldsOf` already turns into an object by name —
-// so a section and a field come out the same way, and the site reads both by key.
 export const flatten = (value: unknown, resolve?: ResolveUpload) =>
   isTyped(value) ? fieldsOf(value, resolve) : value;
 
@@ -140,12 +126,7 @@ const blankRow = (shape: TypedNode[]): TypedNode[] =>
   );
 
 export const CONTAINER_TYPES: Container["type"][] = ["group", "collapsible", "tabs", "tab"];
-// A list holds fields too — as the shape of a row rather than under a heading.
 export const HOLDER_TYPES: NodeType[] = ["array", ...CONTAINER_TYPES];
-// One reading of a number for the box that shows it and the check that judges it, so the two can
-// never disagree about whether a value is one. A number written as text counts — the conversion to
-// typed json never produced the `number` kind, so that is what old content looks like. Empty does
-// not count: an unfilled field is `required`'s business, not min and max's.
 export const numberOf = (value: unknown): number =>
   typeof value === "number"
     ? value
@@ -157,12 +138,10 @@ export const isContainer = (node: TypedNode): node is Container =>
   CONTAINER_TYPES.includes(node.type as Container["type"]);
 export const holdsFields = (node: TypedNode) => HOLDER_TYPES.includes(node.type);
 
-// A node of the asked-for kind holding nothing yet, which is what the builder adds.
 export const blankNode = (type: NodeType): TypedNode => {
   if (type === "array") return { name: "", type, rows: [], fields: [] };
   if (CONTAINER_TYPES.includes(type as Container["type"]))
     return { name: "", type, fields: [] } as Container;
-  // A select with no options is a broken one, so a new one is born with something to offer.
   return {
     name: "",
     type,
@@ -178,5 +157,4 @@ export const visible = (node: TypedNode, siblings: TypedNode[]): boolean => {
   return "equals" in node.showIf ? value === node.showIf.equals : value !== node.showIf.notEquals;
 };
 
-// Only an emptied list has no row to copy, which is the one case that keeps a `fields`.
 export const rowShape = (node: ArrayNode) => blankRow(node.rows?.[0] ?? node.fields ?? []);

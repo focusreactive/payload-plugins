@@ -38,7 +38,6 @@ export type NodeProps = Fold & {
   faults?: boolean;
 };
 
-// A written `label` wins; otherwise the name is read as words, and a section falls back to its key.
 export const labelOf = (node?: TypedNode, key = "") => node?.label || toWords(node?.name || key);
 
 export const isRowHidden = (row: TypedNode[]) =>
@@ -48,8 +47,6 @@ export const toggleRowHidden = (row: TypedNode[]): TypedNode[] =>
     ? row.filter((field) => field.name !== HIDDEN)
     : [...row, { name: HIDDEN, type: "checkbox", value: true }];
 
-// `flatten` leaves a hidden node out of what the site gets, so the switch lives on the node itself
-// and the name — the key a template reads — is never touched by hiding.
 export const hideItem = (node: TypedNode, onChange: (node: TypedNode) => void): MenuItem => ({
   icon: <EyeIcon open />,
   label: node.hidden ? "Show" : "Hide",
@@ -75,8 +72,6 @@ export const JsonFields = ({
     {fields.map((field, index) => {
       const set = (next: TypedNode) =>
         onChange(fields.map((entry, i) => (i === index ? next : entry)));
-      // A row's own switch, which its card's menu owns: it is not a field to fill in. Elsewhere a
-      // field of that name is an ordinary one and is drawn.
       if (row && field.name === HIDDEN) return null;
       if (!visible(field, fields)) return null;
       return (
@@ -95,7 +90,6 @@ export const JsonFields = ({
   </div>
 );
 
-// One typed value as an admin field, drawn from its `type` alone.
 export const JsonNode = ({
   node,
   id,
@@ -110,14 +104,10 @@ export const JsonNode = ({
   faults,
   readOnly: parentReadOnly,
 }: NodeProps) => {
-  // A section set read-only takes everything under it with it.
   const readOnly = parentReadOnly || node.readOnly;
   const actions = menu && !readOnly && <JsonRowMenu items={menu} />;
-  // Only a section waits to be opened; below it accordions mount with it.
   const Fold = top ? JsonFolded : Collapsible;
 
-  // Said under the field it is about, and only once a save has been turned down — before that an
-  // unfilled field is simply one nobody has got to yet.
   const fault = faults ? nodeFault(node) : "";
 
   if (node.type === "array")
@@ -163,8 +153,6 @@ export const JsonNode = ({
         </div>
       );
     }
-    // A strip of tabs already says what it holds, so it is drawn bare. A section and a row's own
-    // field keep the fold: that is where their header and their menu live.
     if (node.type === "tabs" && !drag && !top) {
       return (
         <div className={cn("field-type", hidden && "json-form__hidden")}>

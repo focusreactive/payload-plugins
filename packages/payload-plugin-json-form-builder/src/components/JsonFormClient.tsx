@@ -30,14 +30,8 @@ import type { TypedNode, TypedRoot } from "../field/typedJson.js";
 
 type Props = ComponentProps<JSONFieldClientComponent> & { mayBuild: boolean };
 
-// A typed json value (src/fields/jsonField/typedJson.ts) laid out as admin fields. The builder owns
-// the shape and Code only shows it — except while the json is broken, which is the one thing the
-// builder cannot mend. Both gates are decided on the server, in JsonFormField.
 export const JsonFormClient = ({ mayBuild, ...props }: Props) => {
   const { path, field } = props;
-  // The same rule the field's own `validate` runs on the server. It cannot stop a submit — the edit
-  // view turns client validation off there (`disableValidationOnSubmit`) — but it is what marks the
-  // field invalid as the value changes, which is what the message below is read from.
   const validate = useCallback(
     (next: unknown, options: { required?: boolean }) => jsonErrors(next, options?.required),
     []
@@ -46,41 +40,25 @@ export const JsonFormClient = ({ mayBuild, ...props }: Props) => {
   const { openModal } = useModal();
   const builderSlug = useDrawerSlug("json-builder");
   const dropSlug = useDrawerSlug("json-form-drop");
-  // Which section the confirmation is about. One modal serves them all.
   const [dropping, setDropping] = useState("");
-  // Whether the builder opens on its canvas or straight on the form a new section is answered in.
   const [adding, setAdding] = useState(false);
   const build = (fresh: boolean) => {
     setAdding(fresh);
     openModal(builderSlug);
   };
-  // Anything that is not a list of sections opens in Code, to be mended by hand.
   const valid = value == null || Array.isArray(value);
   const [code, setCode] = useState(!valid);
   const root: TypedRoot = isTyped(value) ? value : [];
   const broken = schemaErrors(root).length > 0;
   const asCode = code || broken;
-  // Code is open to whoever may build, and read-only to everyone else: it is the same value the form
-  // shows, and the one way to mend json the form cannot draw.
   const locked = props.readOnly || !mayBuild;
   const set = (name: string, node: TypedNode) =>
     setValue(root.map((entry) => (entry.name === name ? node : entry)));
-  // Deleting a section is the editor's to make: it is the one piece of the shape that is also a
-  // piece of the page, and an edition that does not run it has no use for its fields either.
   const drop = (name: string) => setValue(root.filter((entry) => entry.name !== name));
-  // Content that was never converted: it has keys but no kinds, so the form cannot draw it and the
-  // builder would have nothing to open.
   const untyped = Boolean(value) && !isTyped(value) && Object.keys(value as object).length > 0;
-  // A list keeps the order it is written in, so a section sits where it was put.
   const sections = root.filter((node) => visible(node, root));
-  // Nothing built yet: both controls in the strip act on sections, and there are none — so the only
-  // thing offered is the button that makes the first one.
   const bare = !sections.length && !untyped && !asCode;
-  // After a refused save: Payload's own pill is pinned to the top right of the field, which is where
-  // this one keeps its controls, so the one line naming what is missing is unreadable there. Said
-  // again here, under the sections it is about, and only once a save has actually been turned down.
   const unfilled = showError ? faults(root) : [];
-  // Sections are the keys a template reads, which is the one count worth carrying in the foot.
   const kept = root.length;
 
   return (
@@ -100,8 +78,6 @@ export const JsonFormClient = ({ mayBuild, ...props }: Props) => {
               <span className="json-form__split" />
             </>
           )}
-          {/* Two named ways of looking at one value, so which one is open is readable at a glance —
-					    an icon that toggles only says so once you have guessed what it does. */}
           {mayBuild && !bare && (
             <div className="json-form__views">
               <button
@@ -126,8 +102,6 @@ export const JsonFormClient = ({ mayBuild, ...props }: Props) => {
           )}
         </div>
       </div>
-      {/* Directly under the header, so what is wrong is read before the thing it is wrong in. All of
-			    them, numbered: a count alone sends the editor hunting. A row opens the json. */}
       {unfilled.length > 0 ? (
         <ol className="json-form__alarm">
           {unfilled.map((fault, at) => (
@@ -156,7 +130,6 @@ export const JsonFormClient = ({ mayBuild, ...props }: Props) => {
           ))}
         </ol>
       ) : null}
-      {/* The editor fills the card itself; only the form needs room around it. */}
       <div className={cn("json-form__body", asCode && "json-form__body--code")}>
         {asCode ? (
           <>
@@ -177,9 +150,6 @@ export const JsonFormClient = ({ mayBuild, ...props }: Props) => {
           </>
         ) : (
           <>
-            {/* Dragged where they are read, not behind the gear: moving a section is the editor's
-                work, not a change to the shape. The move is made on the stored list by name rather
-                than by the seat on screen — a section hidden by a condition is still in the list. */}
             {sections.length > 0 && (
               <DraggableSortable
                 className="json-form__fields"
@@ -248,8 +218,6 @@ export const JsonFormClient = ({ mayBuild, ...props }: Props) => {
                 No fields yet — someone with the builder adds them.
               </p>
             )}
-            {/* What a list and a blocks field offer under their rows, so adding a section is where
-						    the hand already goes looking. */}
             {mayBuild && !untyped && (
               <Button
                 buttonStyle="icon-label"
