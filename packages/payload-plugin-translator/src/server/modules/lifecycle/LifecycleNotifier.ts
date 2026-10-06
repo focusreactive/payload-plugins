@@ -28,6 +28,11 @@ export class LifecycleNotifier {
     return this.safe("lifecycle.onCompleted", callback && (() => callback(task)));
   }
 
+  cancelled(task: TranslationTask): Promise<void> {
+    const callback = this.callbacks.onCancelled;
+    return this.safe("lifecycle.onCancelled", callback && (() => callback(task)));
+  }
+
   async failed(task: TranslationTask, error: unknown): Promise<void> {
     const callback = this.callbacks.onFailed;
     if (!callback) {
@@ -41,6 +46,17 @@ export class LifecycleNotifier {
       return;
     }
     await this.safe("lifecycle.onFailed", () => callback(task, error));
+  }
+
+  /**
+   * The cancel happened; only the announcement failed. This log is the sole trace that a host's
+   * `onCancelled` was owed and not fired.
+   */
+  announcementFailed(error: unknown): void {
+    this.logger.error({
+      err: error,
+      msg: "translator: could not read what a cancellation is stopping",
+    });
   }
 
   private async safe(name: string, thunk?: () => void | Promise<void>): Promise<void> {

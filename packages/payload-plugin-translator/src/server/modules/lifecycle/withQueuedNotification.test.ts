@@ -38,6 +38,19 @@ describe("withQueuedNotification", () => {
     expect(runner.enqueue).toHaveBeenCalledWith([input("1"), input("2")], undefined);
   });
 
+  it("hands back whatever the runner answered, so decorating does not cost the caller the ids", async () => {
+    const answered = [
+      { collectionSlug: "posts", collectionId: "1", targetLng: "de", jobId: "job-7" },
+    ];
+    const runner = makeRunner();
+    runner.enqueue = vi.fn().mockResolvedValue(answered);
+    const notifier = new LifecycleNotifier({ onQueued: vi.fn() }, { error: vi.fn() });
+
+    const decorated = withQueuedNotification(runner, notifier);
+
+    expect(await decorated.enqueue([input("1")])).toBe(answered);
+  });
+
   it("fires queued BEFORE delegating to the runner (ordering vs a synchronous runner)", async () => {
     const calls: string[] = [];
     const runner = makeRunner();
