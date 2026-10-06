@@ -134,10 +134,26 @@ describe("GetCollectionStatusHandler", () => {
       expect(response.status).toBe(200);
       const body = await response.json();
       expect(body.data.docs).toEqual([
-        { id: "task-1", status: "completed" },
-        { id: "task-2", status: "pending" },
-        { id: "task-3", status: "running" },
+        { id: "task-1", status: "completed", collection_id: "doc-123", target_lng: "de" },
+        { id: "task-2", status: "pending", collection_id: "doc-123", target_lng: "de" },
+        { id: "task-3", status: "running", collection_id: "doc-123", target_lng: "de" },
       ]);
+    });
+
+    it("tells two locales of the same job apart", async () => {
+      (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue([
+        createMockTask({ id: "job-77", input: { ...createMockTask().input, targetLng: "de" } }),
+        createMockTask({ id: "job-77", input: { ...createMockTask().input, targetLng: "fr" } }),
+      ]);
+
+      const body = await (
+        await handler.handle(createMockRequest({ collection_slug: "posts" }))
+      ).json();
+
+      expect(
+        body.data.docs.map((doc: { target_lng: string }) => doc.target_lng),
+        "the job id repeats, so without the locale these two rows are indistinguishable"
+      ).toEqual(["de", "fr"]);
     });
 
     it("calls findByCollection with correct collection slug", async () => {

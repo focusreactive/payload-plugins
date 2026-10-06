@@ -4,7 +4,7 @@ import { ServerResponse } from "../../shared/index.js";
 import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 import { isCollectionAvailable, visibleIds } from "../_lib/collection-utils.js";
 
-import { GetCollectionStatusInputSchema } from "./model.js";
+import { GetCollectionStatusInputSchema, toCollectionStatusItem } from "./model.js";
 import type { GetCollectionStatusConfig } from "./model.js";
 
 /**
@@ -39,7 +39,7 @@ export class GetCollectionStatusHandler {
     return ServerResponse.success({
       docs: tasks
         .filter((task) => visible.has(String(task.input.collectionId)))
-        .map((task) => ({ id: task.id, status: task.status })),
+        .map(toCollectionStatusItem),
     });
   }
 }
