@@ -15,6 +15,7 @@ export const JsonInput = ({
   onChange,
   readOnly,
   required,
+  time,
   value,
 }: {
   fault?: string;
@@ -26,6 +27,7 @@ export const JsonInput = ({
   onChange: (value: string | number | null) => void;
   readOnly?: boolean;
   required?: boolean;
+  time?: boolean;
   value: unknown;
 }) => {
   if (kind === "number") {
@@ -62,9 +64,12 @@ export const JsonInput = ({
     return (
       <div className={cn("field-type date-time-field", fault && "error")}>
         {label ? <FieldLabel label={label} path={id} required={required} /> : null}
+        {/* Payload's "default" appearance overwrites whatever time was picked with noon, so a date
+            node holds a time only while the picker is told to show one. */}
         <DatePicker
           id={id}
           onChange={(next) => onChange(next ? next.toISOString() : null)}
+          pickerAppearance={time ? "dayAndTime" : "default"}
           readOnly={readOnly}
           value={value ? String(value) : undefined}
         />

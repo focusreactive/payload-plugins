@@ -229,6 +229,7 @@ export const JsonNode = ({
         onChange={set}
         readOnly={readOnly}
         required={node.required}
+        time={node.time}
         value={value}
       />
     ) : node.type === "checkbox" ? (

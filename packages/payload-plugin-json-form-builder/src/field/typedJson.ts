@@ -24,6 +24,7 @@ export type Leaf = Base & {
   options?: string[];
   min?: number;
   max?: number;
+  time?: boolean;
 };
 export type Container = Base & {
   type: "group" | "collapsible" | "tabs" | "tab";
