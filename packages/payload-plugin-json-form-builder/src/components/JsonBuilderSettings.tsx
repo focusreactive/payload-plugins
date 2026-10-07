@@ -6,7 +6,7 @@ import { toWords } from "payload/shared";
 import { IconButton } from "./IconButton.js";
 import { JsonInput } from "./JsonInput.js";
 import { holdsFields } from "../field/typedJson.js";
-import type { TypedNode } from "../field/typedJson.js";
+import type { Leaf, TypedNode } from "../field/typedJson.js";
 
 type Settings = { node: TypedNode; onChange: (node: TypedNode) => void };
 
@@ -19,13 +19,25 @@ const put = (node: TypedNode, key: string, value: unknown) =>
   ({ ...node, [key]: value }) as TypedNode;
 
 const Starts = ({ node, onChange }: Settings) => (
-  <JsonInput
-    id="builder-value"
-    kind="date"
-    label="Default value"
-    onChange={(next) => onChange(put(node, "value", next))}
-    value={"value" in node ? node.value : undefined}
-  />
+  <>
+    <CheckboxInput
+      checked={(node as Leaf).time === true}
+      id="builder-time"
+      label="Pick a time as well"
+      name="builder-time"
+      onToggle={() =>
+        onChange((node as Leaf).time ? without(node, "time") : put(node, "time", true))
+      }
+    />
+    <JsonInput
+      id="builder-value"
+      kind="date"
+      label="Default value"
+      onChange={(next) => onChange(put(node, "value", next))}
+      time={(node as Leaf).time}
+      value={"value" in node ? node.value : undefined}
+    />
+  </>
 );
 
 const Limit = ({ node, onChange, name }: Settings & { name: string }) => (

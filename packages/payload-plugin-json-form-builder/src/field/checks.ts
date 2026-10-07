@@ -123,6 +123,7 @@ const KEYS: Record<string, Rule> = {
   rows: { kind: "array", needed: ["array"], only: ["array"] },
   showIf: { kind: "object" },
   source: { kind: "string" },
+  time: { kind: "boolean", only: ["date"] },
   type: { kind: "string" },
   value: { kind: "any", needed: LEAVES, only: LEAVES, reads: "a field, not a group or a list" },
 };
