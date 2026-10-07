@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-json-form-builder [1.3.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.3.1...@focus-reactive/payload-plugin-json-form-builder@1.3.2) (2026-10-07)
+
+
+### Bug Fixes
+
+* keep an edition's own values in every row of a shared section ([8a3ad0a](https://github.com/focusreactive/payload-plugins/commit/8a3ad0acb712165e759ab5a885859374fa5fddcc))
+
 ## @focus-reactive/payload-plugin-json-form-builder [1.3.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.3.0...@focus-reactive/payload-plugin-json-form-builder@1.3.1) (2026-10-06)
 
 # @focus-reactive/payload-plugin-json-form-builder [1.3.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.2.0...@focus-reactive/payload-plugin-json-form-builder@1.3.0) (2026-10-06)
