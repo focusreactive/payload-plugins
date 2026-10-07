@@ -1,5 +1,5 @@
-import { holdsFields } from "./typedJson.js";
-import type { ArrayNode, Container, TypedNode, TypedRoot } from "./typedJson.js";
+import { HIDDEN, holdsFields } from "./typedJson.js";
+import type { ArrayNode, Container, Leaf, TypedNode, TypedRoot } from "./typedJson.js";
 
 export type Spot = { section: string; at: number[] };
 
@@ -7,6 +7,49 @@ export const shapeOf = (node: TypedNode): TypedNode[] =>
   node.type === "array"
     ? ((node as ArrayNode).rows?.[0] ?? (node as ArrayNode).fields ?? [])
     : ((node as Container).fields ?? []);
+
+// A hidden row is marked by a field the schema does not have, so it belongs to the row rather than
+// to the shape: taken from the row being dressed, never from the one the shape was read off.
+export const dressed = (shape: TypedNode[], row: TypedNode[]): TypedNode[] => {
+  const worn = shape
+    .filter((field) => field.name !== HIDDEN)
+    .map((field) =>
+      valued(field, field.name ? row.find((entry) => entry.name === field.name) : undefined)
+    );
+  const mark = row.find((field) => field.name === HIDDEN);
+  return mark ? [...worn, mark] : worn;
+};
+
+// A shape worn by values that are someone else's: the shape says which fields there are and how
+// they are drawn, the value says what they hold, and every row keeps what it holds. `withShape` is
+// the other half of the pair — there row one *is* the shape, because it is the edit it came from.
+export const valued = (shape: TypedNode, own: TypedNode | undefined): TypedNode => {
+  if (!own) return shape;
+  const head = { ...shape, hidden: own.hidden };
+
+  // A list carries rows, a container carries fields and a leaf carries a value, so a kind that
+  // turned into another kind has nothing to hand over — except between the containers, which hold
+  // the same thing and are told apart only by how the admin draws them.
+  if (shape.type === "array") {
+    if (own.type !== "array") return shape;
+    const { fields: _shape, ...rest } = head as ArrayNode;
+    return {
+      ...rest,
+      rows: ((own as ArrayNode).rows ?? []).map((row) => dressed(shapeOf(shape), row)),
+    } as TypedNode;
+  }
+
+  if (holdsFields(shape)) {
+    if (!holdsFields(own)) return shape;
+    return {
+      ...head,
+      fields: dressed(shapeOf(shape), (own as Container).fields ?? []),
+    } as TypedNode;
+  }
+
+  if (own.type !== shape.type) return shape;
+  return { ...head, value: (own as Leaf).value } as TypedNode;
+};
 
 // Row one is the shape itself — it is where the edit came from — and the rest are re-dressed in it.
 export const withShape = (node: TypedNode, shape: TypedNode[]): TypedNode => {
@@ -19,17 +62,6 @@ export const withShape = (node: TypedNode, shape: TypedNode[]): TypedNode => {
     rows: rows.map((row, index) => (index ? dressed(shape, row) : shape)),
   } as TypedNode;
 };
-
-export const dressed = (shape: TypedNode[], row: TypedNode[]): TypedNode[] =>
-  shape.map((field) => {
-    const had = field.name ? row.find((entry) => entry.name === field.name) : undefined;
-    if (!had || had.type !== field.type) return field;
-    const kids = childrenOf(field);
-    if (!kids) return had;
-    return field.type === "array"
-      ? withShape(had, shapeOf(field))
-      : ({ ...field, fields: dressed(kids, childrenOf(had) ?? []) } as TypedNode);
-  });
 
 const childrenOf = (node: TypedNode) => (holdsFields(node) ? shapeOf(node) : undefined);
 
