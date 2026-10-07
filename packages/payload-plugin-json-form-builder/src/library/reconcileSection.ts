@@ -1,29 +1,14 @@
-import { dressed, shapeOf } from "../field/edits.js";
+import { valued } from "../field/edits.js";
 import { isTyped } from "../field/typedJson.js";
-import type { ArrayNode, Container, TypedNode, TypedRoot } from "../field/typedJson.js";
+import type { TypedNode, TypedRoot } from "../field/typedJson.js";
 
 const sourceOf = (node: TypedNode) => node.source ?? "";
 
-const reshape = (own: TypedNode, source: TypedNode): TypedNode => {
-  const head = { ...source, name: own.name, hidden: own.hidden, source: own.source };
-
-  if (source.type === "array") {
-    const { fields: _shape, ...rest } = head as ArrayNode;
-    return {
-      ...rest,
-      rows: ((own as ArrayNode).rows ?? []).map((row) => dressed(shapeOf(source), row)),
-    } as TypedNode;
-  }
-
-  if ("fields" in source) {
-    return {
-      ...head,
-      fields: dressed(shapeOf(source), (own as Container).fields ?? []),
-    } as TypedNode;
-  }
-
-  return { ...head, value: (own as { value?: unknown }).value } as TypedNode;
-};
+// The library owns the shape and the edition owns what is written into it — which is `valued`, the
+// same pairing every row of every list below here goes through. Only the three that say *which*
+// section this is are the edition's: what it is called, whether it runs, and what it follows.
+const reshape = (own: TypedNode, source: TypedNode): TypedNode =>
+  ({ ...valued(source, own), name: own.name, hidden: own.hidden, source: own.source }) as TypedNode;
 
 export const reconcile = (value: unknown, library: unknown): unknown => {
   if (!isTyped(value)) return value;
