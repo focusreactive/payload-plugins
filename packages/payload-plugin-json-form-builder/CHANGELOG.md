@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-json-form-builder [1.4.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.3.2...@focus-reactive/payload-plugin-json-form-builder@1.4.0) (2026-10-07)
+
+
+### Features
+
+* let a date node pick a time ([87a6e6e](https://github.com/focusreactive/payload-plugins/commit/87a6e6e7659dad6db2af064d3742b29992237aef))
+
 ## @focus-reactive/payload-plugin-json-form-builder [1.3.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.3.1...@focus-reactive/payload-plugin-json-form-builder@1.3.2) (2026-10-07)
 
 
