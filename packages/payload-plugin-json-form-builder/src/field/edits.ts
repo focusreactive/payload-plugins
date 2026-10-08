@@ -124,6 +124,9 @@ export const addAt = (root: TypedRoot, spot: Spot, node: TypedNode): TypedRoot =
     ]);
   });
 
+export const addManyAt = (root: TypedRoot, spot: Spot, nodes: TypedNode[]): TypedRoot =>
+  editAt(root, spot, (parent) => withShape(parent, [...shapeOf(parent), ...nodes]));
+
 export const addSection = (root: TypedRoot, key: string, node: TypedNode): TypedRoot => [
   ...root,
   { ...node, name: key } as TypedNode,

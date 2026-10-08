@@ -6,7 +6,8 @@ import { MARKER } from "./field/index.js";
 import type { BuildGate, Mark } from "./field/index.js";
 import type { Holds } from "./field/htmlToLexical.js";
 import { CONFIG_KEY } from "./config.js";
-import type { JsonFormClientConfig, JsonFormShape } from "./config.js";
+import type { JsonFormClientConfig } from "./config.js";
+import type { TypedNode } from "./field/typedJson.js";
 
 const FIELD = "@focus-reactive/payload-plugin-json-form-builder/rsc#JsonFormField";
 const ANCHOR_NAME = "jsonFormAnchor";
@@ -32,7 +33,7 @@ export type JsonFormPluginConfig = {
         holds?: Holds;
       };
   uploads?: false | string;
-  shapes?: JsonFormShape[];
+  shapes?: Record<string, TypedNode[]>;
 };
 
 const walk = (fields: Field[] | undefined, visit: (field: Field) => void) => {
@@ -65,7 +66,7 @@ export const jsonFormPlugin =
       global = {},
       library: wanted = false,
       richText = false,
-      shapes = [],
+      shapes = {},
       uploads = "media",
     } = options;
     const config: Config = { ...incoming };

@@ -424,6 +424,52 @@ body.json-builder-open {
   margin: 0;
 }
 
+.json-builder__shape {
+  border: 1px solid var(--theme-elevation-100);
+  border-radius: var(--style-radius-m);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--base) * 0.4);
+  padding: calc(var(--base) * 0.55);
+}
+
+.json-builder__shape .json-builder__card-open {
+  padding-left: calc(var(--base) * 1.65 - 7px);
+}
+
+.json-builder__shape .json-builder__card:hover {
+  background: var(--theme-elevation-0);
+  border-color: var(--theme-elevation-100);
+}
+
+.json-builder__shape .json-builder__card-open {
+  cursor: default;
+}
+
+.json-builder__shape-head {
+  align-items: center;
+  display: flex;
+  gap: calc(var(--base) * 0.4);
+  padding-bottom: calc(var(--base) * 0.15);
+}
+
+.json-builder__shape-name {
+  margin-right: auto;
+}
+
+.json-builder__shape-head .json-builder__grip {
+  height: auto;
+  margin-right: 0;
+  padding-left: 0;
+}
+
+.json-builder__shape-name {
+  color: var(--theme-elevation-500);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .json-builder__card:hover {
   background: var(--theme-elevation-50);
   border-color: var(--theme-elevation-200);

@@ -25,6 +25,7 @@ import { labelOf } from "./JsonNode.js";
 import { schemaErrors } from "../field/checks.js";
 import {
   addAt,
+  addManyAt,
   addSection,
   editAt,
   keyFault,
@@ -35,7 +36,6 @@ import {
 } from "../field/edits.js";
 import type { Spot } from "../field/edits.js";
 import { GROUPS, KINDS } from "../field/kinds.js";
-import type { JsonFormShape } from "../config.js";
 import { useJsonFormConfig } from "../useJsonFormConfig.js";
 import { blankNode, TYPES } from "../field/typedJson.js";
 import type { NodeType, TypedNode, TypedRoot } from "../field/typedJson.js";
@@ -160,15 +160,14 @@ export const JsonBuilder = ({
     openModal(formSlug);
   };
 
-  // A shape lands through the same form as a kind, already holding its fields, so the editor only
-  // answers the name — and renames it or takes it apart afterwards like anything else.
-  const startShape = (shape: JsonFormShape) => {
-    setPicked(null);
-    setMaking("field");
-    setEdited({ type: "group", fields: shape.fields } as TypedNode);
-    setKey(shape.name);
-    openModal(formSlug);
-  };
+  const addShape = (shape: string, fields: TypedNode[]) =>
+    setDraft(
+      addManyAt(
+        draft,
+        here,
+        fields.map((field) => ({ ...field, shape }))
+      )
+    );
 
   const edit = (spot: Spot) => {
     const node = nodeAt(draft, spot);
@@ -365,6 +364,12 @@ export const JsonBuilder = ({
                   onOrder: reorder,
                   onOpen: (index) => setAt([...at, index]),
                   onRemove: (index) => remove({ section: current, at: [...at, index] }),
+                  onRemoveShape: (from, upto) =>
+                    setDraft(
+                      editAt(draft, here, (node) =>
+                        withShape(node, shapeOf(node).toSpliced(from, upto - from))
+                      )
+                    ),
                 }}
               />
             </>
@@ -384,27 +389,18 @@ export const JsonBuilder = ({
                 ? "A strip of tabs holds tabs only."
                 : "It lands where you are standing."}
           </p>
-          {section && shapes.length > 0 && holder?.type !== "tabs" && (
+          {section && Object.keys(shapes).length > 0 && holder?.type !== "tabs" && (
             <div className="json-builder__palette">
               <h5 className="json-builder__group">Custom</h5>
-              {shapes.map((shape) => (
+              {Object.entries(shapes).map(([name, fields]) => (
                 <button
                   className="json-builder__kind-card"
-                  key={shape.name}
-                  onBlur={() => setHovered("")}
-                  onClick={() => startShape(shape)}
-                  onFocus={() => setHovered(shape.name)}
-                  onMouseEnter={() => setHovered(shape.name)}
-                  onMouseLeave={() => setHovered("")}
+                  key={name}
+                  onClick={() => addShape(name, fields)}
                   type="button"
                 >
-                  <Tooltip delay={0} show={hovered === shape.name}>
-                    {shape.draws ?? "A ready-made set of fields."}
-                  </Tooltip>
-                  <span className="json-builder__tile json-builder__tile--custom">
-                    {shape.glyph ?? "\u25C6"}
-                  </span>
-                  <span className="json-builder__kind-name">{shape.name}</span>
+                  <span className="json-builder__tile json-builder__tile--custom">◆</span>
+                  <span className="json-builder__kind-name">{name}</span>
                 </button>
               ))}
             </div>

@@ -1,4 +1,3 @@
-export type { JsonFormShape } from "./config.js";
 export { jsonFormPlugin } from "./plugin.js";
 export type { JsonFormGlobalConfig, JsonFormPluginConfig } from "./plugin.js";
 export { jsonField } from "./field/index.js";

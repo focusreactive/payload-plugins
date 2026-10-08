@@ -121,6 +121,7 @@ const KEYS: Record<string, Rule> = {
   readOnly: { kind: "boolean" },
   required: { kind: "boolean" },
   rows: { kind: "array", needed: ["array"], only: ["array"] },
+  shape: { kind: "string" },
   showIf: { kind: "object" },
   source: { kind: "string" },
   time: { kind: "boolean", only: ["date"] },

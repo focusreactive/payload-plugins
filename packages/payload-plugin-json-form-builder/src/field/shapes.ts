@@ -1,8 +1,5 @@
 import type { ArrayNode, Container, Leaf, TypedNode } from "./typedJson.js";
 
-// Builders for the `shapes` the palette offers. They write the same nodes the builder writes, so a
-// shape is ordinary content the moment it lands — these only save spelling `type` and a blank value.
-
 type Over<T> = Partial<Omit<T, "type" | "name">>;
 
 const leaf =

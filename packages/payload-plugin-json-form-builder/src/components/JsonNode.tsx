@@ -262,25 +262,32 @@ export const JsonNode = ({
         {fault ? <p className="json-form__fault">{fault}</p> : null}
       </div>
     ) : node.type === "radio" ? (
-      <div className={cn("field-type radio-group", fault && "error")}>
+      <div
+        className={cn("field-type radio-group radio-group--layout-horizontal", fault && "error")}
+      >
         {own ? <FieldLabel label={own} path={id} required={node.required} /> : null}
-        <ul className="radio-group--layout-horizontal">
-          {(node.options ?? []).map((option) => (
-            <li key={option}>
-              <label className="radio-input">
-                <input
-                  checked={String(value) === option}
-                  disabled={readOnly}
-                  name={id}
-                  onChange={() => set(option)}
-                  type="radio"
-                  value={option}
-                />
-                <span className="radio-input__styled-radio" />
-                <span className="radio-input__label">{option}</span>
-              </label>
-            </li>
-          ))}
+        <ul>
+          {(node.options ?? []).map((option) => {
+            const chosen = String(value) === option;
+            return (
+              <li key={option}>
+                <label htmlFor={`${id}-${option}`}>
+                  <div className={cn("radio-input", chosen && "radio-input--is-selected")}>
+                    <input
+                      checked={chosen}
+                      disabled={readOnly}
+                      id={`${id}-${option}`}
+                      name={id}
+                      onChange={() => set(option)}
+                      type="radio"
+                    />
+                    <span className="radio-input__styled-radio" />
+                    <span className="radio-input__label">{option}</span>
+                  </div>
+                </label>
+              </li>
+            );
+          })}
         </ul>
         {fault ? <p className="json-form__fault">{fault}</p> : null}
       </div>
