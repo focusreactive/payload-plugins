@@ -1,4 +1,4 @@
-import type { TaskInput } from "../task-runner/types.js";
+import type { Task, TaskInput } from "../task-runner/types.js";
 import type { TaskHandlerInput } from "../task-runner/TaskRunnerProvider.interface.js";
 import type { TranslationTask } from "./types.js";
 
@@ -18,4 +18,14 @@ export const taskFromHandlerInput = (input: TaskHandlerInput): TranslationTask =
   sourceLng: input.sourceLng,
   targetLng: input.targetLng,
   strategy: input.strategy,
+  ...(input.handle === undefined ? {} : { handle: input.handle }),
+});
+
+export const taskFromStored = (task: Task): TranslationTask => ({
+  collection: task.input.collectionSlug,
+  id: task.input.collectionId,
+  sourceLng: task.input.sourceLng,
+  targetLng: task.input.targetLng,
+  strategy: task.input.strategy,
+  handle: task.id,
 });

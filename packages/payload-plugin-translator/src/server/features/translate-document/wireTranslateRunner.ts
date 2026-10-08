@@ -7,7 +7,9 @@ import type { ProvenanceServiceFactory } from "../../modules/provenance/index.js
 import {
   LifecycleNotifier,
   taskFromHandlerInput,
+  taskFromStored,
   withQueuedNotification,
+  needsDecoration,
 } from "../../modules/lifecycle/index.js";
 import type { TranslationLifecycleCallbacks } from "../../modules/lifecycle/index.js";
 import type {
@@ -73,18 +75,22 @@ export function wireTranslateRunner({
           scope
         );
       } catch (error) {
-        await notifier.failed(task, error);
+        if (!runner.reportsFinalFailure) await notifier.failed(task, error);
         throw error; // rethrow so the runner marks the job failed
       }
       await notifier.completed(task);
     },
     collections,
+    reportFinalFailure: async (payload, owed, error) => {
+      const notifier = new LifecycleNotifier(lifecycle, payload.logger);
+      for (const stopped of owed) await notifier.failed(taskFromStored(stopped), error);
+    },
   };
 
   const taskRunnerFactory: TaskRunnerFactory = {
     create: (payload) => {
       const taskRunner = runner.create(payload, runnerContext.handler);
-      if (!lifecycle.onQueued) return taskRunner;
+      if (!needsDecoration(lifecycle)) return taskRunner;
       return withQueuedNotification(taskRunner, new LifecycleNotifier(lifecycle, payload.logger));
     },
   };

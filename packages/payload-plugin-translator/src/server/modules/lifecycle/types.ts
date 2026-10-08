@@ -17,6 +17,14 @@ export type TranslationTask = {
    * public type; host callbacks should treat unknown values gracefully.
    */
   strategy: string;
+  /**
+   * The run translating this locale, as the enqueue answer named it.
+   *
+   * Absent on `onQueued`, which fires before the run exists — take it from the enqueue answer there.
+   *
+   * @since 0.16.0
+   */
+  handle?: string;
 };
 
 /**
@@ -25,9 +33,9 @@ export type TranslationTask = {
  * of the `provenance` opt-in. A throwing callback never fails the translation — it is caught and
  * logged (see {@link LifecycleNotifier}).
  *
- * `onCompleted` / `onFailed` fire per **execution attempt**: the Payload Jobs runner may retry a
- * failed task, so a task that fails then succeeds fires `onFailed` on each failed attempt and
- * `onCompleted` on the one that succeeds. `onQueued` fires once, when the task is enqueued.
+ * Each fires once per target locale, never per attempt — a runner's retries are not reported.
+ *
+ * @since 0.16.0 `onFailed` reports a final outcome; it previously fired on every failed attempt.
  *
  * @since 0.7.0
  */
@@ -41,6 +49,20 @@ export type TranslationLifecycleCallbacks = {
   onQueued?: (task: TranslationTask) => void | Promise<void>;
   /** Fired after a task completes without error. @since 0.7.0 */
   onCompleted?: (task: TranslationTask) => void | Promise<void>;
-  /** Fired when a task's translation throws, with the error. @since 0.7.0 */
+  /**
+   * Fired once when a locale will not be translated, with the failure that ended the run — which for
+   * a locale that never started is not its own, because nothing ran for it to throw.
+   *
+   * @since 0.7.0
+   */
   onFailed?: (task: TranslationTask, error: unknown) => void | Promise<void>;
+  /**
+   * Once per target locale the run still owed, fired before the run's record is deleted, so a host
+   * can still read it. A locale already in flight is announced and may then still complete.
+   *
+   * Never fires for a runner without `findByIds`.
+   *
+   * @since 0.16.0
+   */
+  onCancelled?: (task: TranslationTask) => void | Promise<void>;
 };

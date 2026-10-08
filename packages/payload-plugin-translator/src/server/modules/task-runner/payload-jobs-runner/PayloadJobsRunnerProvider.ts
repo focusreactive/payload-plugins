@@ -9,7 +9,11 @@ import type {
   StoredWorkflowInput,
 } from "./types.js";
 import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner.js";
+import { handleOf } from "./handleOf.js";
 import { readCollectionRef } from "./readCollectionRef.js";
+import { owedIfGaveUp } from "./owedIfGaveUp.js";
+import { retryLimitOf } from "./retryLimitOf.js";
+import { recallThrown, rememberThrown, theHandlerThrew } from "./thrownByTheHandler.js";
 import type { TaskRunnerContext, TaskRunnerProvider } from "../TaskRunnerProvider.interface.js";
 import type { Requester } from "../../../shared/payload/RequestScope.shapes.js";
 import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
@@ -84,9 +88,12 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
     return new PayloadJobsTaskRunner(payload, this.config);
   }
 
+  readonly reportsFinalFailure = true;
+
   configure(context: TaskRunnerContext): (config: Config) => Config {
     const { taskName, workflowName, queueName, retries, autoRun } = this.config;
-    const { handler, collections } = context;
+    const retryLimit = retryLimitOf(retries);
+    const { handler, collections, reportFinalFailure } = context;
 
     return (config) => {
       const inputSchema: Field[] = [
@@ -148,6 +155,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
         retries,
         handler: async (args: {
           req: { payload: Payload };
+          job?: { id?: unknown };
           input: {
             collection_slug?: string;
             collection_id?: string;
@@ -161,18 +169,25 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
           };
         }) => {
           const { collectionSlug, collectionId } = readCollectionRef(args.input);
-          await handler(
-            args.req.payload,
-            {
-              collection: collectionSlug,
-              collectionId,
-              sourceLng: args.input.source_lng,
-              targetLng: args.input.target_lng,
-              strategy: args.input.strategy,
-              publishOnTranslation: args.input.publish_on_translation ?? false,
-            },
-            { requester: requesterOf(args.input) }
-          );
+          const handle = handleOf(args.job);
+          try {
+            await handler(
+              args.req.payload,
+              {
+                collection: collectionSlug,
+                collectionId,
+                sourceLng: args.input.source_lng,
+                targetLng: args.input.target_lng,
+                strategy: args.input.strategy,
+                publishOnTranslation: args.input.publish_on_translation ?? false,
+                ...(handle === null ? {} : { handle }),
+              },
+              { requester: requesterOf(args.input) }
+            );
+          } catch (error) {
+            if (args.job) rememberThrown(args.job, error);
+            throw error;
+          }
           return { output: {} };
         },
       };
@@ -189,13 +204,26 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
               },
             }
           : {}),
-        handler: async ({ job, tasks }) => {
+        handler: async ({ job, req, tasks }) => {
           const runLocale = (tasks as Record<string, RunLocaleTask>)[taskName];
           for (let i = 0; ; i++) {
             const { target_lngs: targets, ...shared } = job.input;
             const target = targets?.[i];
             if (target === undefined) return;
-            await runLocale(target, { input: { ...shared, target_lng: target } });
+            try {
+              await runLocale(target, { input: { ...shared, target_lng: target } });
+            } catch (error) {
+              // A cancellation deletes the run's row under it, so Payload's own machinery throws —
+              // that is not a locale giving up.
+              const owed =
+                reportFinalFailure && theHandlerThrew(job)
+                  ? owedIfGaveUp(job, taskName, target, retryLimit)
+                  : [];
+              if (owed.length > 0) {
+                await reportFinalFailure?.(req.payload, owed, recallThrown(job, error));
+              }
+              throw error;
+            }
           }
         },
       };
