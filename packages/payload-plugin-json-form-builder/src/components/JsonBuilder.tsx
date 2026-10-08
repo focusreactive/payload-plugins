@@ -35,6 +35,7 @@ import {
 } from "../field/edits.js";
 import type { Spot } from "../field/edits.js";
 import { GROUPS, KINDS } from "../field/kinds.js";
+import type { JsonFormShape } from "../config.js";
 import { useJsonFormConfig } from "../useJsonFormConfig.js";
 import { blankNode, TYPES } from "../field/typedJson.js";
 import type { NodeType, TypedNode, TypedRoot } from "../field/typedJson.js";
@@ -65,7 +66,7 @@ export const JsonBuilder = ({
   const [key, setKey] = useState("");
   const [hovered, setHovered] = useState("");
   const [making, setMaking] = useState<"field" | "section" | null>(null);
-  const { anchor: richTextAnchor, library: held, uploads } = useJsonFormConfig();
+  const { anchor: richTextAnchor, library: held, shapes, uploads } = useJsonFormConfig();
   const missing: NodeType[] = [
     ...(uploads ? [] : ["upload" as NodeType]),
     ...(richTextAnchor ? [] : ["richText" as NodeType]),
@@ -156,6 +157,16 @@ export const JsonBuilder = ({
     setMaking(what);
     setEdited(blankNode(type));
     setKey("");
+    openModal(formSlug);
+  };
+
+  // A shape lands through the same form as a kind, already holding its fields, so the editor only
+  // answers the name — and renames it or takes it apart afterwards like anything else.
+  const startShape = (shape: JsonFormShape) => {
+    setPicked(null);
+    setMaking("field");
+    setEdited({ type: "group", fields: shape.fields } as TypedNode);
+    setKey(shape.name);
     openModal(formSlug);
   };
 
@@ -373,6 +384,31 @@ export const JsonBuilder = ({
                 ? "A strip of tabs holds tabs only."
                 : "It lands where you are standing."}
           </p>
+          {section && shapes.length > 0 && holder?.type !== "tabs" && (
+            <div className="json-builder__palette">
+              <h5 className="json-builder__group">Custom</h5>
+              {shapes.map((shape) => (
+                <button
+                  className="json-builder__kind-card"
+                  key={shape.name}
+                  onBlur={() => setHovered("")}
+                  onClick={() => startShape(shape)}
+                  onFocus={() => setHovered(shape.name)}
+                  onMouseEnter={() => setHovered(shape.name)}
+                  onMouseLeave={() => setHovered("")}
+                  type="button"
+                >
+                  <Tooltip delay={0} show={hovered === shape.name}>
+                    {shape.draws ?? "A ready-made set of fields."}
+                  </Tooltip>
+                  <span className="json-builder__tile json-builder__tile--custom">
+                    {shape.glyph ?? "\u25C6"}
+                  </span>
+                  <span className="json-builder__kind-name">{shape.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
           {section &&
             GROUPS.map((group) => {
               const inGroup = offered.filter((type) => KINDS[type].group === group);
