@@ -26,6 +26,10 @@ const nextConfig = {
   transpilePackages: ["@yoast/search-metadata-previews", "@yoast/components"],
   experimental: {
     inlineCss: true,
+    // Next.js 16.4: drop unreachable work from Turbopack's memory + disk cache in long dev sessions.
+    turbopackGc: true,
+    // Next.js 16.4: compile client `import()` targets (heavy in the Payload admin) only when first requested in dev.
+    turbopackLazyDynamicImports: true,
   },
   images: {
     localPatterns: [{ pathname: "**", search: "" }, { pathname: "/api/media/**" }],

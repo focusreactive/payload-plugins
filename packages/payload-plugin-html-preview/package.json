@@ -65,12 +65,12 @@
     "access": "public"
   },
   "devDependencies": {
-    "@payloadcms/ui": "3.90.1",
+    "@payloadcms/ui": "3.90.2",
     "@swc/cli": "0.4.0",
     "@swc/core": "1.7.0",
-    "@types/react": "19.2.9",
-    "payload": "3.90.1",
-    "react": "19.2.1",
+    "@types/react": "19.3.0",
+    "payload": "3.90.2",
+    "react": "19.3.0",
     "typescript": "5.9.2"
   }
 }
