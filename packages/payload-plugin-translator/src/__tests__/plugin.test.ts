@@ -453,7 +453,10 @@ describe("translatorPlugin — lifecycle callbacks", () => {
     expect(taskRunner.enqueue).toHaveBeenCalled();
   });
 
-  it("does not wrap the runner in withQueuedNotification when lifecycle.onQueued is absent", async () => {
+  it.each([
+    ["only the callbacks the task handler fires", { onCompleted: vi.fn() }],
+    ["nothing at all", {}],
+  ])("wraps the runner when the host registered %s", async (_label, lifecycle) => {
     vi.mocked(withQueuedNotification).mockClear();
     const taskRunner = {
       enqueue: vi.fn().mockResolvedValue(undefined),
@@ -467,7 +470,7 @@ describe("translatorPlugin — lifecycle callbacks", () => {
     };
     const { result } = await build({
       runner,
-      lifecycle: { onCompleted: vi.fn() },
+      lifecycle,
     } as unknown as Partial<TranslatorPluginConfig>);
 
     const enqueue = result.endpoints?.find((e) => e.path === "/translate/enqueue");
@@ -485,7 +488,10 @@ describe("translatorPlugin — lifecycle callbacks", () => {
     };
     await enqueue?.handler?.(req as never);
 
-    expect(withQueuedNotification).not.toHaveBeenCalled();
+    expect(
+      withQueuedNotification,
+      "every host gets the same runner — what it reports is the notifier's business, not the runner's"
+    ).toHaveBeenCalled();
     expect(taskRunner.enqueue).toHaveBeenCalled();
   });
 

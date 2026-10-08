@@ -9,7 +9,6 @@ import {
   taskFromHandlerInput,
   taskFromStored,
   withQueuedNotification,
-  needsDecoration,
 } from "../../modules/lifecycle/index.js";
 import type { TranslationLifecycleCallbacks } from "../../modules/lifecycle/index.js";
 import type {
@@ -90,7 +89,6 @@ export function wireTranslateRunner({
   const taskRunnerFactory: TaskRunnerFactory = {
     create: (payload) => {
       const taskRunner = runner.create(payload, runnerContext.handler);
-      if (!needsDecoration(lifecycle)) return taskRunner;
       return withQueuedNotification(taskRunner, new LifecycleNotifier(lifecycle, payload.logger));
     },
   };
