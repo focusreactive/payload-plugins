@@ -5,6 +5,14 @@ import { readFailureReason } from "../../../core/domain/translation-providers/fa
 const REASON_TEXT: Record<UserFacingFailureReason, string> = {
   "model-unavailable":
     "The configured translation model is not available to this API key. Set `model` in the provider configuration to one your key can use.",
+  "permission-denied":
+    "This translation was not written: the access rules of the target collection refuse it for the user who requested it.",
+  "requester-missing":
+    "This translation was not written: the user who requested it no longer exists, so there are no permissions to check it against.",
+  "source-unreadable":
+    "This translation did not run: the source document is not readable by the user who requested it, under the access rules of its own collection.",
+  "permission-check-failed":
+    "This translation was not written: the target collection's access rules could not be evaluated. If a save triggered it, that save was rolled back — check the server logs and the collection's `access` functions.",
 };
 
 /** Call this on any message before it reaches a user — see {@link REASON_TEXT}. */
@@ -16,8 +24,6 @@ export function failureReasonText(message?: string): string | null {
 /** Shown to the browser instead of a raw provider/runtime error outside development. */
 export const GENERIC_TRANSLATION_ERROR = "Translation failed. See the server logs for details.";
 
-// Only these environments get the raw message as a debug aid. Anything else — production, an unset
-// or misconfigured NODE_ENV — is treated as "not debug", so the default is the safe, generic text.
 const DEBUG_ENVS = new Set(["development", "test"]);
 
 /**
@@ -37,7 +43,7 @@ export function toClientErrorMessage(message?: string): string {
   const reasonText = failureReasonText(message);
   if (reasonText !== null) return reasonText;
 
-  if (DEBUG_ENVS.has(process.env.NODE_ENV ?? "")) {
+  if (DEBUG_ENVS.has(process.env.NODE_ENV)) {
     return message?.trim() || GENERIC_TRANSLATION_ERROR;
   }
   return GENERIC_TRANSLATION_ERROR;

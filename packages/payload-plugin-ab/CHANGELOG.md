@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-ab [2.10.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.10.0...@focus-reactive/payload-plugin-ab@2.10.1) (2026-10-06)
+
+
+### Bug Fixes
+
+* **ab:** keep the A/B variant across browser sessions ([12221ce](https://github.com/focusreactive/payload-plugins/commit/12221ce3fd3c5471a45b02f077fe693de18b3b1a))
+
 # @focus-reactive/payload-plugin-ab [2.10.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.9.0...@focus-reactive/payload-plugin-ab@2.10.0) (2026-08-12)
 
 

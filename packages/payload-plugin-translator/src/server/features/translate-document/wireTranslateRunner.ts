@@ -81,9 +81,6 @@ export function wireTranslateRunner({
     collections,
   };
 
-  // Bind the context once so routes receive a self-sufficient factory: the runner needs no mutable
-  // per-instance handler state, and create() has no "configure() must run first" ordering coupling.
-  // When an `onQueued` callback is set, decorate the runner so `enqueue` fires it.
   const taskRunnerFactory: TaskRunnerFactory = {
     create: (payload) => {
       const taskRunner = runner.create(payload, runnerContext.handler);

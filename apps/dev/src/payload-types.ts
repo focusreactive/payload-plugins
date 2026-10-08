@@ -1522,6 +1522,8 @@ export interface WorkflowTranslateDocumentLocales {
       | number
       | boolean
       | null;
+    requester_id?: string | null;
+    requester_collection?: string | null;
   };
 }
 /**

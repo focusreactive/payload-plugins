@@ -1,4 +1,4 @@
-export type { BaseServiceOptions, BaseDocument } from "./base";
+export type { ServiceContext, BaseDocument } from "./base";
 export type { CommentMention, Comment } from "./comment";
 export type { CommentRead } from "./commentRead";
 export type {

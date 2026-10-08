@@ -1,3 +1,10 @@
+# create-ideal-cms [1.3.0](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.2.1...create-ideal-cms@1.3.0) (2026-10-05)
+
+
+### Features
+
+* **create-ideal-cms:** ship visual editing as a regular public plugin ([0771af9](https://github.com/focusreactive/payload-plugins/commit/0771af90642ede8e3deae0147c0b8538b208f2c1))
+
 ## create-ideal-cms [1.2.1](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.2.0...create-ideal-cms@1.2.1) (2026-10-01)
 
 

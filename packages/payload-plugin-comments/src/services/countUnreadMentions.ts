@@ -1,14 +1,10 @@
-"use server";
-
-import { headers } from "next/headers";
 import type { Where } from "payload";
 import { COMMENT_READS_COLLECTION_SLUG, DEFAULT_COLLECTION_SLUG } from "../constants";
-import { extractPayload } from "../utils/payload/extractPayload";
 import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
 import { getCurrentTenantId } from "./getCurrentTenantId";
-import type { BaseServiceOptions, CommentsPluginConfigStorage, Mode, Response } from "../types";
+import type { CommentsPluginConfigStorage, Mode, Response, ServiceContext } from "../types";
 
-interface Props extends BaseServiceOptions {
+export interface CountUnreadMentionsArgs {
   enabledCollections?: string[];
   enabledGlobals?: string[];
   mode: Mode;
@@ -22,29 +18,26 @@ interface WhereWithRequiredAnd extends Where {
   and: Where[];
 }
 
-export async function countUnreadMentions({
-  enabledCollections,
-  enabledGlobals,
-  payload: payloadProp,
-  mode,
-  collectionSlug,
-  documentId,
-  globalSlug,
-  locale,
-}: Props): Promise<Response<{ count: number }>> {
+export async function countUnreadMentions(
+  { payload, user, headers }: ServiceContext,
+  {
+    enabledCollections,
+    enabledGlobals,
+    mode,
+    collectionSlug,
+    documentId,
+    globalSlug,
+    locale,
+  }: CountUnreadMentionsArgs
+): Promise<Response<{ count: number }>> {
   try {
-    const payload = await extractPayload(payloadProp);
-    const { user } = await payload.auth({ headers: await headers() });
-
-    if (!user) return { success: true, data: { count: 0 } };
-
     const pluginConfig = payload.config.admin?.custom?.commentsPlugin as
       | CommentsPluginConfigStorage
       | undefined;
     const collections = enabledCollections ?? pluginConfig?.collections ?? [];
     const globals = enabledGlobals ?? pluginConfig?.globals ?? [];
 
-    const tenantId = await getCurrentTenantId(payload);
+    const tenantId = getCurrentTenantId(payload, headers);
 
     const where: WhereWithRequiredAnd = {
       and: [

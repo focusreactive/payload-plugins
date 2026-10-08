@@ -1,18 +1,12 @@
+import type { IdPath } from "../../domain/content-projection/idPath.js";
 import type { LeafFieldLike } from "../../kernel/field-traversal/types.js";
 
-/**
- * Represents a field-level chunk containing schema metadata.
- * Used in stages 1-3 where schema awareness is needed.
- *
- * Contains a reference to the parent data object for later mutation.
- */
 export type FieldChunk = {
   /** The leaf field schema (only `type`/`name` are read downstream). */
   schema: LeafFieldLike;
   /** Reference to the parent data object (for mutation) */
   dataRef: Record<string, unknown>;
-  /** The key in the dataRef object */
   key: string;
-  /** Full path from root for strategy lookup in targetData */
-  path: string[];
+  /** The leaf's {@link IdPath} — the same address a provenance receipt is keyed on. */
+  idPath: IdPath;
 };

@@ -18,7 +18,7 @@ describe("FieldChunkCollector", () => {
 
       expect(chunks).toHaveLength(1);
       expect(chunks[0].key).toBe("title");
-      expect(chunks[0].path).toEqual(["title"]);
+      expect(chunks[0].idPath).toBe("title");
       expect(chunks[0].dataRef).toBe(data);
       expect(chunks[0].schema.type).toBe("text");
     });
@@ -95,7 +95,7 @@ describe("FieldChunkCollector", () => {
 
       expect(chunks).toHaveLength(1);
       expect(chunks[0].key).toBe("title");
-      expect(chunks[0].path).toEqual(["meta", "title"]);
+      expect(chunks[0].idPath).toBe("meta.title");
       expect(chunks[0].dataRef).toBe(data.meta);
     });
 
@@ -119,7 +119,7 @@ describe("FieldChunkCollector", () => {
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
-      expect(chunks[0].path).toEqual(["level1", "level2", "title"]);
+      expect(chunks[0].idPath).toBe("level1.level2.title");
       expect(chunks[0].dataRef).toBe(data.level1.level2);
     });
   });
@@ -144,8 +144,8 @@ describe("FieldChunkCollector", () => {
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(2);
-      expect(chunks[0].path).toEqual(["items", "0", "label"]);
-      expect(chunks[1].path).toEqual(["items", "1", "label"]);
+      expect(chunks[0].idPath).toBe("items.1.label");
+      expect(chunks[1].idPath).toBe("items.2.label");
       expect(chunks[0].dataRef).toBe(data.items[0]);
       expect(chunks[1].dataRef).toBe(data.items[1]);
     });
@@ -163,7 +163,7 @@ describe("FieldChunkCollector", () => {
       const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
       const chunks = collector.collect();
 
-      expect(chunks[0].path).toEqual(["items", "0", "text"]);
+      expect(chunks[0].idPath).toBe("items.1.text");
     });
   });
 
@@ -189,7 +189,7 @@ describe("FieldChunkCollector", () => {
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
-      expect(chunks[0].path).toEqual(["layout", "0", "content"]);
+      expect(chunks[0].idPath).toBe("layout.1:text.content");
       expect(chunks[0].dataRef).toBe(data.layout[0]);
     });
 
@@ -268,7 +268,7 @@ describe("FieldChunkCollector", () => {
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
-      expect(chunks[0].path).toEqual(["title"]);
+      expect(chunks[0].idPath).toBe("title");
     });
 
     it("collects fields from row", () => {
@@ -284,7 +284,7 @@ describe("FieldChunkCollector", () => {
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
-      expect(chunks[0].path).toEqual(["title"]);
+      expect(chunks[0].idPath).toBe("title");
     });
 
     it("collects fields from unnamed group (no name property)", () => {
@@ -303,8 +303,8 @@ describe("FieldChunkCollector", () => {
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(2);
-      expect(chunks[0].path).toEqual(["title"]);
-      expect(chunks[1].path).toEqual(["description"]);
+      expect(chunks[0].idPath).toBe("title");
+      expect(chunks[1].idPath).toBe("description");
       expect(chunks[0].dataRef).toBe(data);
     });
   });
@@ -331,7 +331,7 @@ describe("FieldChunkCollector", () => {
 
       expect(chunks).toHaveLength(1);
       expect(chunks[0].key).toBe("label");
-      expect(chunks[0].path).toEqual(["section", "items", "0", "label"]);
+      expect(chunks[0].idPath).toBe("section.items.1.label");
       expect(chunks[0].dataRef).toBe(data.section.items[0]);
     });
 
@@ -356,7 +356,7 @@ describe("FieldChunkCollector", () => {
 
       expect(chunks).toHaveLength(1);
       expect(chunks[0].key).toBe("title");
-      expect(chunks[0].path).toEqual(["items", "0", "meta", "title"]);
+      expect(chunks[0].idPath).toBe("items.1.meta.title");
       expect(chunks[0].dataRef).toBe(data.items[0].meta);
     });
 
@@ -386,7 +386,7 @@ describe("FieldChunkCollector", () => {
 
       expect(chunks).toHaveLength(1);
       expect(chunks[0].key).toBe("body");
-      expect(chunks[0].path).toEqual(["hero", "content", "0", "body"]);
+      expect(chunks[0].idPath).toBe("hero.content.1:text.body");
       expect(chunks[0].dataRef).toBe(data.hero.content[0]);
     });
 
@@ -416,7 +416,7 @@ describe("FieldChunkCollector", () => {
 
       expect(chunks).toHaveLength(1);
       expect(chunks[0].key).toBe("title");
-      expect(chunks[0].path).toEqual(["layout", "0", "meta", "title"]);
+      expect(chunks[0].idPath).toBe("layout.1:card.meta.title");
       expect(chunks[0].dataRef).toBe(data.layout[0].meta);
     });
 
@@ -448,7 +448,7 @@ describe("FieldChunkCollector", () => {
 
       expect(chunks).toHaveLength(1);
       expect(chunks[0].key).toBe("content");
-      expect(chunks[0].path).toEqual(["sections", "0", "blocks", "0", "content"]);
+      expect(chunks[0].idPath).toBe("sections.1.blocks.b1:text.content");
       expect(chunks[0].dataRef).toBe(data.sections[0].blocks[0]);
     });
 
@@ -471,7 +471,7 @@ describe("FieldChunkCollector", () => {
 
       expect(chunks).toHaveLength(1);
       expect(chunks[0].key).toBe("title");
-      expect(chunks[0].path).toEqual(["seo", "title"]);
+      expect(chunks[0].idPath).toBe("seo.title");
       expect(chunks[0].dataRef).toBe(data.seo);
     });
 
@@ -490,7 +490,7 @@ describe("FieldChunkCollector", () => {
 
       expect(chunks).toHaveLength(1);
       expect(chunks[0].key).toBe("meta");
-      expect(chunks[0].path).toEqual(["meta"]);
+      expect(chunks[0].idPath).toBe("meta");
     });
 
     it("collects 4-level nested structure (tabs > group > array > blocks)", () => {
@@ -541,7 +541,7 @@ describe("FieldChunkCollector", () => {
 
       expect(chunks).toHaveLength(1);
       expect(chunks[0].key).toBe("body");
-      expect(chunks[0].path).toEqual(["content", "sections", "items", "0", "blocks", "0", "body"]);
+      expect(chunks[0].idPath).toBe("content.sections.items.1.blocks.b1:text.body");
       expect(chunks[0].dataRef).toBe(data.content.sections.items[0].blocks[0]);
     });
 
@@ -594,12 +594,12 @@ describe("FieldChunkCollector", () => {
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(5);
-      expect(chunks.map((c) => c.path)).toEqual([
-        ["page", "title"],
-        ["page", "sections", "0", "heading"],
-        ["page", "sections", "0", "content", "0", "text"],
-        ["page", "sections", "1", "heading"],
-        ["page", "sections", "1", "content", "0", "text"],
+      expect(chunks.map((c) => c.idPath)).toEqual([
+        "page.title",
+        "page.sections.1.heading",
+        "page.sections.1.content.b1:paragraph.text",
+        "page.sections.2.heading",
+        "page.sections.2.content.b2:paragraph.text",
       ]);
     });
   });
@@ -753,7 +753,7 @@ describe("FieldChunkCollector", () => {
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
-      expect(chunks[0].path).toEqual(["items", "1", "label"]);
+      expect(chunks[0].idPath).toBe("items.2.label");
     });
 
     it("applies SkipExisting to nested group fields", () => {
@@ -781,7 +781,7 @@ describe("FieldChunkCollector", () => {
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
-      expect(chunks[0].path).toEqual(["meta", "description"]);
+      expect(chunks[0].idPath).toBe("meta.description");
     });
 
     it("applies SkipExisting to blocks fields", () => {
@@ -826,7 +826,7 @@ describe("FieldChunkCollector", () => {
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
-      expect(chunks[0].path).toEqual(["layout", "1", "content"]);
+      expect(chunks[0].idPath).toBe("layout.2:text.content");
     });
 
     it("pairs the target by id, not position, for reordered localized blocks (SkipExisting)", () => {
@@ -870,10 +870,10 @@ describe("FieldChunkCollector", () => {
       );
       const chunks = collector.collect();
 
-      // Only id-2's content (source index 1) is collected; id-1 is skipped (its target is non-empty).
-      // Positional pairing would have collected index 0 and skipped index 1 — both wrong.
       expect(chunks).toHaveLength(1);
-      expect(chunks[0].path).toEqual(["layout", "1", "content"]);
+      expect(chunks[0].idPath, "positional pairing would have taken index 0").toBe(
+        "layout.2:text.content"
+      );
       expect(chunks[0].dataRef.content).toBe("World");
     });
   });
@@ -979,7 +979,7 @@ describe("FieldChunkCollector", () => {
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
-      expect(chunks[0].path).toEqual(["items", "0", "label"]);
+      expect(chunks[0].idPath).toBe("items.1.label");
     });
 
     it("falls back to empty source/target per item when the target array is shorter (SkipExisting)", () => {
@@ -1007,9 +1007,8 @@ describe("FieldChunkCollector", () => {
       );
       const chunks = collector.collect();
 
-      // item 0 has an existing target → skipped; item 1's target falls back to {} → collected
       expect(chunks).toHaveLength(1);
-      expect(chunks[0].path).toEqual(["items", "1", "label"]);
+      expect(chunks[0].idPath).toBe("items.2.label");
     });
   });
 
@@ -1031,6 +1030,63 @@ describe("FieldChunkCollector", () => {
 
       expect(chunks).toHaveLength(1);
       expect(chunks[0].key).toBe("subtitle"); // title excluded via translateKit.exclude
+    });
+  });
+
+  describe("what the strategy is told about a leaf's source", () => {
+    const schema: Field[] = [
+      { name: "title", type: "text", localized: true },
+      {
+        name: "items",
+        type: "array",
+        fields: [{ name: "label", type: "text", localized: true }],
+      },
+    ];
+    const data = { title: "Hello", items: [{ id: "a1", label: "First" }] };
+
+    it("reads the map by the leaf's address and hands the answer to the strategy", () => {
+      const asked: (boolean | undefined)[] = [];
+      const spy = {
+        shouldTranslate: (ctx: { sourceChanged?: boolean }) => {
+          asked.push(ctx.sourceChanged);
+          return true;
+        },
+      };
+
+      new FieldChunkCollector(schema, data, data, {}, spy, {
+        title: true,
+        "items.a1.label": false,
+      }).collect();
+
+      expect(asked).toEqual([true, false]);
+    });
+
+    it("tells the strategy nothing about a leaf the map has no entry for", () => {
+      const asked: (boolean | undefined)[] = [];
+      const spy = {
+        shouldTranslate: (ctx: { sourceChanged?: boolean }) => {
+          asked.push(ctx.sourceChanged);
+          return true;
+        },
+      };
+
+      new FieldChunkCollector(schema, data, data, {}, spy, { title: true }).collect();
+
+      expect(asked).toEqual([true, undefined]);
+    });
+
+    it("tells the strategy nothing when no map was supplied", () => {
+      const asked: (boolean | undefined)[] = [];
+      const spy = {
+        shouldTranslate: (ctx: { sourceChanged?: boolean }) => {
+          asked.push(ctx.sourceChanged);
+          return true;
+        },
+      };
+
+      new FieldChunkCollector(schema, data, data, {}, spy).collect();
+
+      expect(asked).toEqual([undefined, undefined]);
     });
   });
 });

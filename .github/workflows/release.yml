@@ -13,6 +13,10 @@ permissions:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # Git hooks are a developer's convenience, and this job does not install the apps, so the pre-push
+  # hook's repo-wide check-types cannot pass here. It would run on the commit semantic-release pushes
+  # back and take the release down with it. CI runs its own checks in their own steps.
+  LEFTHOOK: "0"
 
 jobs:
   release:
@@ -43,10 +47,14 @@ jobs:
             "url.https://x-access-token:${PRIVATE_REPO_TOKEN}@github.com/.insteadOf" \
             "https://www.github.com/"
 
+      # Everything but the apps. One of them pulls a private repository over git, which made every
+      # release depend on a token the release has no use for. Said as an exclusion rather than as
+      # `--filter './packages/*'`: that form leaves out the root workspace, and the release tools
+      # themselves live there.
       - name: Install dependencies
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile --filter '!./apps/*'
 
       - name: Build
         run: bunx turbo run build --filter='./packages/*'

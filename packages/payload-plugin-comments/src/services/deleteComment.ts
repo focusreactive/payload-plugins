@@ -1,23 +1,16 @@
-"use server";
-
-import { headers } from "next/headers";
 import { DEFAULT_COLLECTION_SLUG } from "../constants";
 import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
-import type { BaseServiceOptions, Response, Comment } from "../types";
-import { extractPayload } from "../utils/payload/extractPayload";
+import type { Response, Comment, ServiceContext } from "../types";
+
+export interface DeleteCommentArgs {
+  id: number | string;
+}
 
 export async function deleteComment(
-  id: number | string,
-  options?: BaseServiceOptions
+  { payload, user }: ServiceContext,
+  { id }: DeleteCommentArgs
 ): Promise<Response<Comment>> {
   try {
-    const payload = await extractPayload(options?.payload);
-    const { user } = await payload.auth({ headers: await headers() });
-
-    if (!user) {
-      return { success: false, error: "Unauthorized" };
-    }
-
     const data = (await payload.delete({
       collection: DEFAULT_COLLECTION_SLUG,
       id,

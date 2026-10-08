@@ -1,7 +1,9 @@
 import type { CollectionAfterChangeHook } from "payload";
 import { hasDraftsEnabled } from "payload/shared";
 
-import { killedTheCallersTransaction } from "../../shared/payload/TransactionScope.shapes.js";
+import { authCollectionsOf, identityOf } from "../../shared/payload/identityOf.js";
+import { swallowOrThrow } from "../../shared/payload/swallowOrThrow.js";
+import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 
 import { hasSourceContentChanged } from "../../../core/domain/auto-translate/index.js";
 import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../core/domain/auto-translate/index.js";
@@ -16,11 +18,7 @@ import type {
 import { buildAutoTranslateTasks, passesPublishGate } from "./AutoTranslate.policy.js";
 import type { AutoTranslateManagedConfig } from "./AutoTranslate.shapes.js";
 
-/**
- * Marks the plugin's own auto-translate hook so a repeated `init()` recognises an already-injected hook
- * and stays idempotent (same idea as the provenance cleanup hook's marker). A bare function has no
- * `custom` bag, so the marker lives as a property on the function itself.
- */
+/** A hook is a bare function with no `custom` bag, so the idempotency marker lives on the function itself. */
 type MarkedHook = CollectionAfterChangeHook & { __translatorAutoTranslate?: boolean };
 
 type AutoTranslateHookDeps = {
@@ -29,77 +27,69 @@ type AutoTranslateHookDeps = {
   taskRunnerFactory: TaskRunnerFactory;
 };
 
-/**
- * Build the `afterChange` hook that auto-enqueues translations when a document's source-locale content
- * changes. Thin orchestration only — every decision lives in `AutoTranslate.policy.ts` or the core
- * drift predicate. Best-effort by contract: any failure is logged and swallowed, never failing the
- * editor's save.
- *
- * Order (cheap guards first): (1) skip the translator's own writes via the `req.context` flag;
- * (2) resolve the policy — off ⇒ skip; (3) resolve the source locale (per-collection override else
- * `localization.defaultLocale`) — unresolved ⇒ log + skip; (4) skip non-source-locale writes (the
- * pipeline's target writes never match); (5) publish-gate (D8); (6) drift-gate (D3); then enqueue one
- * job per target locale.
- */
+/** `afterChange` hook that enqueues translations when a document's source-locale content changes. */
 export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAfterChangeHook {
   const { resolvePolicy, schemaMap, taskRunnerFactory } = deps;
 
   const hook: MarkedHook = async ({ doc, previousDoc, req, collection }) => {
-    // Declared outside the `try` so the catch can tell a failure that reached a Payload operation
-    // from one raised before the id was settled — only the former can have killed the transaction.
-    let transactionID: string | number | undefined;
-    try {
-      if (req.context?.[AUTO_TRANSLATE_SKIP_CONTEXT_KEY]) return doc;
+    const transactionID = await req.transactionID;
+    const scope: RequestScope = transactionID == null ? {} : { transactionID };
 
-      const policy = resolvePolicy(collection.slug, doc);
-      if (!policy) return doc;
+    await swallowOrThrow(
+      scope,
+      async () => {
+        const skipAutoTranslate = req.context?.[AUTO_TRANSLATE_SKIP_CONTEXT_KEY];
+        const localization = req.payload.config.localization;
 
-      const localization = req.payload.config.localization;
-      const sourceLocale =
-        policy.sourceLocale ?? (localization ? localization.defaultLocale : undefined);
-      if (!sourceLocale) {
-        req.payload.logger.warn({
+        if (skipAutoTranslate) return;
+
+        const policy = resolvePolicy(collection.slug, doc);
+        if (!policy) return;
+
+        const sourceLocale =
+          policy.sourceLocale ?? (localization ? localization.defaultLocale : undefined);
+        if (!sourceLocale) {
+          req.payload.logger.warn({
+            collection: collection.slug,
+            documentId: String(doc.id),
+            msg: "translator: auto-translate skipped — no source locale resolvable (set localization.defaultLocale or a per-collection sourceLocale)",
+          });
+          return;
+        }
+
+        if (req.locale !== sourceLocale) return;
+
+        const hasDrafts = hasDraftsEnabled(collection);
+        if (!passesPublishGate(doc, hasDrafts)) return;
+
+        const schema = schemaMap.get(collection.slug);
+        if (schema && !hasSourceContentChanged(previousDoc, doc, schema)) return;
+
+        const tasks = buildAutoTranslateTasks({
+          policy,
+          collectionSlug: collection.slug,
+          documentId: String(doc.id),
+          sourceLocale,
+          doc,
+          hasDrafts,
+          now: Date.now(),
+        });
+        if (tasks.length === 0) return;
+
+        await taskRunnerFactory.create(req.payload).enqueue(tasks, {
+          ...scope,
+          ...identityOf(req, authCollectionsOf(req.payload), req.payload.logger),
+        });
+      },
+      (error) =>
+        req.payload.logger.error({
+          err: error,
           collection: collection.slug,
           documentId: String(doc.id),
-          msg: "translator: auto-translate skipped — no source locale resolvable (set localization.defaultLocale or a per-collection sourceLocale)",
-        });
-        return doc;
-      }
+          msg: "translator: auto-translate hook failed",
+        })
+    );
 
-      if (req.locale !== sourceLocale) return doc;
-
-      const hasDrafts = hasDraftsEnabled(collection);
-      if (!passesPublishGate(doc, hasDrafts)) return doc;
-
-      const schema = schemaMap.get(collection.slug);
-      if (schema && !hasSourceContentChanged(previousDoc, doc, schema)) return doc;
-
-      const tasks = buildAutoTranslateTasks({
-        policy,
-        collectionSlug: collection.slug,
-        documentId: String(doc.id),
-        sourceLocale,
-        doc,
-        hasDrafts,
-        now: Date.now(),
-      });
-      if (tasks.length === 0) return doc;
-
-      // Settled first: Payload parks a promise in this field while the transaction opens, and a
-      // promise reaching the adapter as a transaction key is silently wrong.
-      transactionID = await req.transactionID;
-      await taskRunnerFactory
-        .create(req.payload)
-        .enqueue(tasks, transactionID == null ? {} : { transactionID });
-    } catch (error) {
-      req.payload.logger.error({
-        err: error,
-        collection: collection.slug,
-        documentId: String(doc.id),
-        msg: "translator: auto-translate hook failed",
-      });
-      if (killedTheCallersTransaction({ transactionID }, error)) throw error;
-    }
     return doc;
   };
 
@@ -107,11 +97,6 @@ export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAf
   return hook;
 }
 
-/**
- * Attach the auto-translate hook to every enabled collection on `config`, appending to any
- * consumer-supplied `afterChange` array. Idempotent: a collection that already carries the marked hook
- * is skipped, so a repeated `init()` never stacks duplicates.
- */
 export function injectAutoTranslateHook(
   config: AutoTranslateManagedConfig,
   enabledSlugs: Set<string>,
@@ -129,12 +114,9 @@ export function injectAutoTranslateHook(
 }
 
 /**
- * Propagate each enabled collection's resolved policy onto the REGISTERED collection's `custom` bag, so
- * the admin UI can read the opt-in back via `getAutoTranslateConfig`. This is required because
- * `withAutoTranslate` stamps `custom` on the object passed to the plugin's `collections` param, which
- * can be a DIFFERENT object than the one registered in `buildConfig.collections` (the reader would
- * otherwise see no config and the indicator would disagree with the behaviour). Idempotent + additive:
- * re-stamping the same value is a no-op and the behaviour wiring still reads from the plugin param.
+ * `withAutoTranslate` stamps `custom` on the object handed to the plugin's `collections` param, which
+ * may not be the object Payload registered — so the resolved policy is re-stamped on the registered
+ * one, where `getAutoTranslateConfig` reads it.
  */
 export function propagateAutoTranslateCustom(
   config: AutoTranslateManagedConfig,

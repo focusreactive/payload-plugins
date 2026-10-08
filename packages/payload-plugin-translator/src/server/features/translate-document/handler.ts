@@ -1,3 +1,5 @@
+import { asTranslatorError } from "../../../translation-providers/shared/errors/index.js";
+import { TranslatorConfigError } from "../../../core/errors/index.js";
 import type { Payload } from "payload";
 import { APIError } from "payload";
 
@@ -6,23 +8,35 @@ import type { TranslationProvider } from "../../../core/domain/translation-provi
 import { translateContent } from "../../../core/translation-pipeline/index.js";
 import type { ProvenanceServiceFactory } from "../../modules/provenance/index.js";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
-import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes.js";
-import { freshReq } from "../../shared/payload/TransactionScope.shapes.js";
+import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
+import { freshReq } from "../../shared/payload/RequestScope.shapes.js";
+import { enforcedAtTheRead } from "../../shared/payload/enforcedAtTheRead.js";
+import { checkTranslationPermission, mayWrite, rebuildRequester } from "./translationPermission.js";
+import { SourceUnreadable } from "./SourceUnreadable.js";
+import type { RebuiltRequester } from "./translationPermission.js";
+import { TranslationRefused } from "./TranslationRefused.js";
 
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext.js";
 import type { TranslateDocumentInput, TranslateDocumentOutput } from "./model.js";
 import { resolveTargetLayer } from "./targetLayer.js";
 import type { PublishScope, TargetLayer } from "./targetLayer.js";
+import { changedLeaves } from "../../../core/domain/provenance/index.js";
 
-/** Loop guard: the auto-translate afterChange hook (#51) skips writes carrying this key. */
 const translatorWriteContext = () => ({ [AUTO_TRANSLATE_SKIP_CONTEXT_KEY]: true });
 
 /**
- * Translates a single document from source language to target language. Provenance is delegated to
- * {@link ProvenanceService}: this handler only decides *when* to capture the source fingerprint
- * (before the pipeline mutates the source in place) and *when* to record it (after the save).
+ * Payload applies the collection's field rules to this write itself, deleting a field the requester
+ * may not write (`fields/hooks/beforeValidate/promise.js`) — it does not throw, so this is safe even
+ * inside the editor's transaction. An unattributed write keeps the behaviour it always had.
  */
+function enforcedAtTheWrite(
+  requester: RebuiltRequester | null
+): { overrideAccess: false; user: RebuiltRequester } | Record<string, never> {
+  if (!requester) return {};
+  return { overrideAccess: false, user: requester };
+}
+
 export class TranslateDocumentHandler implements Handler<
   TranslateDocumentInput,
   TranslateDocumentOutput
@@ -47,24 +61,32 @@ export class TranslateDocumentHandler implements Handler<
   async handle(
     payload: Payload,
     input: TranslateDocumentInput,
-    scope: TransactionScope = {}
+    scope: RequestScope = {}
   ): Promise<TranslateDocumentOutput> {
     const { collection, collectionId, sourceLng, targetLng, strategy, publishOnTranslation } =
       input;
 
     const schema = this.schemaMap.get(collection);
-    if (!schema) throw new APIError(`Collection "${collection}" not found in schemaMap`, 400);
+    if (!schema) {
+      throw new TranslatorConfigError(`Collection "${collection}" not found in schemaMap`);
+    }
 
     const layer = resolveTargetLayer({
       versions: payload.collections[collection].config.versions,
       targetLng,
     });
 
-    // `draft: true` is unconditional: on a collection without drafts Payload has no version to
-    // substitute, so it returns the only row. The write cannot be as relaxed — the `no-drafts`
-    // layer omits `draft` entirely.
+    const requester = await rebuildRequester(payload, scope);
+
     const [sourceData, currentTargetVersion] = await Promise.all([
-      fetchSourceDocument(payload, collection, collectionId, sourceLng, scope),
+      fetchSourceDocument({
+        payload,
+        collection,
+        id: String(collectionId),
+        locale: sourceLng,
+        user: requester,
+        scope,
+      }),
       payload.findByID({
         req: freshReq(scope),
         collection,
@@ -72,14 +94,34 @@ export class TranslateDocumentHandler implements Handler<
         locale: targetLng,
         fallbackLocale: false,
         depth: 0,
+        ...enforcedAtTheRead(requester),
         draft: true,
       }),
     ]);
+    if (!sourceData) throw new SourceUnreadable(collection, sourceLng);
+    if (!currentTargetVersion) throw new SourceUnreadable(collection, targetLng);
+
+    const allowed = await checkTranslationPermission({
+      payload,
+      collection,
+      id: String(collectionId),
+      data: sourceData,
+      targetLocale: targetLng,
+      scope,
+      user: requester,
+    });
+    if (!allowed) throw new TranslationRefused(collection, targetLng);
 
     const provenance = this.provenanceServiceFactory?.(payload, scope);
-    const sourceFingerprint = provenance?.captureFingerprint(collection, sourceData) ?? null;
+    const provenanceKey = {
+      collectionSlug: collection,
+      documentId: String(collectionId),
+      targetLocale: targetLng,
+    };
+    const currentFields = provenance?.captureFingerprint(collection, sourceData) ?? null;
+    const previous = provenance ? await provenance.lastTranslatedFrom(provenanceKey) : null;
 
-    const translatedData = await translateContent({
+    const translated = await this.translateOrWrap({
       schema,
       sourceData,
       targetData: currentTargetVersion,
@@ -88,29 +130,81 @@ export class TranslateDocumentHandler implements Handler<
       translationProvider: this.translationProvider,
       strategy,
       inlineMarks: this.inlineMarks,
+      sourceChangedByLeaf: currentFields ? changedLeaves(previous, currentFields) : undefined,
     });
 
-    if (translatedData) {
-      await this.saveTranslatedDocument(payload, input, translatedData, layer.write, scope);
+    if (translated?.translatedData) {
+      const { translatedData, translatedPaths } = translated;
+      await this.refuseUnlessAllowed(payload, input, translatedData, scope, requester);
+      await this.saveTranslatedDocument(
+        payload,
+        input,
+        translatedData,
+        layer.write,
+        scope,
+        requester
+      );
 
-      if (provenance && sourceFingerprint !== null) {
+      if (provenance && currentFields !== null) {
         await provenance.record(
-          {
-            collectionSlug: collection,
-            documentId: String(collectionId),
-            targetLocale: targetLng,
-            sourceLocale: sourceLng,
-          },
-          sourceFingerprint
+          { ...provenanceKey, sourceLocale: sourceLng },
+          currentFields,
+          translatedPaths
         );
       }
     }
 
     if (publishOnTranslation && layer.kind === "drafts") {
-      await this.publishTargetLocale(payload, input, layer.publish, scope);
+      const status = { _status: layer.publish.status };
+      await this.refuseUnlessAllowed(payload, input, status, scope, requester);
+      await this.publishTargetLocale(payload, input, layer.publish, scope, requester);
     }
 
     return { success: true };
+  }
+
+  /**
+   * The check before the provider call was asked about the source document; Payload will ask the same
+   * rule about the payload below. A rule that reads `data` answers differently to the two, and at the
+   * write a refusal is a `Forbidden` — inside the editor's transaction, that is their save. So ask
+   * once more with exactly what is about to be sent, while a refusal still costs only the translation.
+   */
+  private async refuseUnlessAllowed(
+    payload: Payload,
+    input: TranslateDocumentInput,
+    data: Record<string, unknown>,
+    scope: RequestScope,
+    requester: RebuiltRequester | null
+  ): Promise<void> {
+    if (!requester) return;
+    const allowed = await mayWrite({
+      payload,
+      collection: input.collection,
+      id: String(input.collectionId),
+      data,
+      targetLocale: input.targetLng,
+      scope,
+      user: requester,
+    });
+    if (!allowed) throw new TranslationRefused(input.collection, input.targetLng);
+  }
+
+  /**
+   * A `TranslationProvider` is a host extension point, so whatever it throws is outside this
+   * plugin's control, and an unrecognised error otherwise reads as "a Payload operation failed" —
+   * which would surface a provider outage as a lost save. An `APIError` is the exception: a provider
+   * is free to query Payload itself, and if it did, that operation has already rolled the caller's
+   * transaction back. Only a failure carrying no such evidence is safe to adopt as ours.
+   */
+  private async translateOrWrap(
+    args: Parameters<typeof translateContent>[0]
+  ): Promise<Awaited<ReturnType<typeof translateContent>>> {
+    try {
+      return await translateContent(args);
+    } catch (error) {
+      if (error instanceof APIError) throw error;
+      throw asTranslatorError(error);
+    }
   }
 
   private async saveTranslatedDocument(
@@ -118,10 +212,12 @@ export class TranslateDocumentHandler implements Handler<
     input: TranslateDocumentInput,
     translatedData: Record<string, unknown>,
     write: TargetLayer["write"],
-    scope: TransactionScope
+    scope: RequestScope,
+    requester: RebuiltRequester | null
   ): Promise<void> {
     await payload.update({
       req: freshReq(scope),
+      ...enforcedAtTheWrite(requester),
       collection: input.collection,
       id: input.collectionId,
       data: translatedData,
@@ -136,10 +232,12 @@ export class TranslateDocumentHandler implements Handler<
     payload: Payload,
     input: TranslateDocumentInput,
     publish: PublishScope,
-    scope: TransactionScope
+    scope: RequestScope,
+    requester: RebuiltRequester | null
   ): Promise<void> {
     await payload.update({
       req: freshReq(scope),
+      ...enforcedAtTheWrite(requester),
       collection: input.collection,
       id: input.collectionId,
       data: { _status: publish.status },

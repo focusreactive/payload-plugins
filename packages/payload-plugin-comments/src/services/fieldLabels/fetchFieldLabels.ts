@@ -1,8 +1,5 @@
-"use server";
-
 import type { CollectionSlug, Field } from "payload";
-import type { BaseServiceOptions, Comment, GlobalFieldLabelRegistry } from "../../types";
-import { extractPayload } from "../../utils/payload/extractPayload";
+import type { Comment, GlobalFieldLabelRegistry, Response, ServiceContext } from "../../types";
 import { groupFieldPathsByDocument } from "./utils/groupFieldPathsByDocument";
 import { needsDocumentFetch } from "./utils/schemaUtils";
 import { resolveFieldPath } from "./utils/resolveFieldPath";
@@ -20,13 +17,15 @@ type BaseGlobals = Record<string, { config: { fields: Field[] } }>;
 
 type BaseDocumentData = Record<string, unknown>;
 
-export async function fetchFieldLabels(
-  comments: Comment[],
-  options?: BaseServiceOptions
-): Promise<GlobalFieldLabelRegistry> {
-  const registry: GlobalFieldLabelRegistry = {};
+export interface FetchFieldLabelsArgs {
+  comments: Comment[];
+}
 
-  const payload = await extractPayload(options?.payload);
+export async function fetchFieldLabels(
+  { payload }: ServiceContext,
+  { comments }: FetchFieldLabelsArgs
+): Promise<Response<GlobalFieldLabelRegistry>> {
+  const registry: GlobalFieldLabelRegistry = {};
 
   // --- Collections branch ---
   const fieldPathsMap = groupFieldPathsByDocument(comments);
@@ -110,5 +109,5 @@ export async function fetchFieldLabels(
     }
   }
 
-  return registry;
+  return { success: true, data: registry };
 }

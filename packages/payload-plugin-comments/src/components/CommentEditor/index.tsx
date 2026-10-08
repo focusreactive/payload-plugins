@@ -2,7 +2,7 @@
 
 import { useState, useRef, useImperativeHandle, startTransition } from "react";
 import type { RefObject } from "react";
-import { useAuth, useLocale, useTranslation } from "@payloadcms/ui";
+import { toast, useAuth, useLocale, useTranslation } from "@payloadcms/ui";
 import { useComments } from "../../providers/CommentsProvider";
 import { useMentionableUsersQuery } from "../../api/queries/useMentionableUsersQuery";
 import { MentionDropdown } from "../MentionDropdown";
@@ -211,6 +211,13 @@ export function CommentEditor({
     }
   };
 
+  const restoreEditor = (html: string) => {
+    if (!editorRef.current) return;
+
+    editorRef.current.innerHTML = html;
+    updateEmptyClass();
+  };
+
   const focusEditor = () => {
     editorRef.current?.focus();
   };
@@ -227,6 +234,8 @@ export function CommentEditor({
     const serialized = getEditorValue();
     if (!serialized) return;
 
+    const draft = editorRef.current?.innerHTML ?? "";
+
     clearEditor();
 
     startTransition(async () => {
@@ -241,7 +250,12 @@ export function CommentEditor({
 
       if (res.success) {
         onSuccessAddComment?.();
+
+        return;
       }
+
+      restoreEditor(draft);
+      toast.error(t("comments:failedToAdd" as never) ?? "Failed to add comment");
     });
   };
 

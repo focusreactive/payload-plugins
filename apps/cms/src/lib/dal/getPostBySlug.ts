@@ -18,6 +18,7 @@ async function getPostBySlugQuery(
 
   const result = await payload.find({
     collection: BLOG_CONFIG.collection,
+    context: { visualEditing: draft },
     draft,
     limit: 1,
     locale: resolvedLocale,

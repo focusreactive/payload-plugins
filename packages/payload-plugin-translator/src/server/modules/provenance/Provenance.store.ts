@@ -1,18 +1,19 @@
 import type { CollectionSlug, Payload, Where } from "payload";
 
-import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes.js";
-import { freshReq } from "../../shared/payload/TransactionScope.shapes.js";
+import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
+import { freshReq } from "../../shared/payload/RequestScope.shapes.js";
 import type {
   ProvenanceKey,
   ProvenanceStore,
-  TranslationProvenanceRecord,
+  SourceFingerprint,
+  ProvenanceReceipt,
+} from "../../../core/domain/provenance/index.js";
+import {
+  parseSourceFingerprint,
+  serializeSourceFingerprint,
 } from "../../../core/domain/provenance/index.js";
 
-/** Builds a provenance store bound to a Payload instance; absent when provenance is disabled. */
-export type ProvenanceStoreFactory = (
-  payload: Payload,
-  scope?: TransactionScope
-) => ProvenanceStore;
+export type ProvenanceStoreFactory = (payload: Payload, scope?: RequestScope) => ProvenanceStore;
 
 interface ProvenanceDoc extends Record<string, unknown> {
   id: string | number;
@@ -34,18 +35,33 @@ function keyWhere(key: ProvenanceKey): Where {
   };
 }
 
-function toRecord(doc: ProvenanceDoc): TranslationProvenanceRecord {
+const readFingerprint = (stored: unknown): SourceFingerprint | null =>
+  parseSourceFingerprint(stored == null ? null : String(stored));
+
+/** The only place stored text becomes a {@link SourceFingerprint}. */
+function toRecord(doc: ProvenanceDoc): ProvenanceReceipt {
   return {
     collectionSlug: String(doc.collectionSlug),
     documentId: String(doc.documentId),
     targetLocale: String(doc.targetLocale),
     sourceLocale: String(doc.sourceLocale),
-    sourceFingerprint: String(doc.sourceFingerprint),
-    // `translatedAt` is backed by a `date` field, which Payload may hand back as a Date; normalize to
-    // ISO-8601 so the stored contract holds and #50's fingerprint comparison stays format-stable.
+    sourceFingerprint: readFingerprint(doc.sourceFingerprint),
     translatedAt: new Date(doc.translatedAt as string | number | Date).toISOString(),
+    dismissedFingerprint: readFingerprint(doc.dismissedFingerprint),
+  };
+}
+
+function toStoredData(record: ProvenanceReceipt): Record<string, unknown> {
+  return {
+    ...record,
+    sourceFingerprint:
+      record.sourceFingerprint === null
+        ? null
+        : serializeSourceFingerprint(record.sourceFingerprint),
     dismissedFingerprint:
-      doc.dismissedFingerprint == null ? null : String(doc.dismissedFingerprint),
+      record.dismissedFingerprint === null
+        ? null
+        : serializeSourceFingerprint(record.dismissedFingerprint),
   };
 }
 
@@ -60,23 +76,24 @@ function toRecord(doc: ProvenanceDoc): TranslationProvenanceRecord {
 export class PayloadProvenanceStore implements ProvenanceStore {
   private readonly payload: Payload;
   private readonly collection: CollectionSlug;
-  private readonly scope: TransactionScope;
+  private readonly scope: RequestScope;
 
-  constructor(payload: Payload, slug: string, scope: TransactionScope = {}) {
+  constructor(payload: Payload, slug: string, scope: RequestScope = {}) {
     this.payload = payload;
     this.collection = slug as CollectionSlug;
     this.scope = scope;
   }
 
-  private req(): TransactionScope {
+  private req(): { transactionID?: string | number } {
     return freshReq(this.scope);
   }
 
-  async upsert(record: TranslationProvenanceRecord): Promise<void> {
+  async upsert(record: ProvenanceReceipt): Promise<void> {
+    const data = toStoredData(record);
     const existing = await this.findDoc(record);
     if (existing === null) {
       try {
-        await this.payload.create({ req: this.req(), collection: this.collection, data: record });
+        await this.payload.create({ req: this.req(), collection: this.collection, data });
       } catch (error) {
         const raceWinner = await this.findDoc(record);
         if (raceWinner === null) throw error;
@@ -84,7 +101,7 @@ export class PayloadProvenanceStore implements ProvenanceStore {
           req: this.req(),
           collection: this.collection,
           id: raceWinner.id,
-          data: record,
+          data,
         });
       }
     } else {
@@ -92,20 +109,17 @@ export class PayloadProvenanceStore implements ProvenanceStore {
         req: this.req(),
         collection: this.collection,
         id: existing.id,
-        data: record,
+        data,
       });
     }
   }
 
-  async find(key: ProvenanceKey): Promise<TranslationProvenanceRecord | null> {
+  async find(key: ProvenanceKey): Promise<ProvenanceReceipt | null> {
     const doc = await this.findDoc(key);
     return doc === null ? null : toRecord(doc);
   }
 
-  async findByDocument(
-    collectionSlug: string,
-    documentId: string
-  ): Promise<TranslationProvenanceRecord[]> {
+  async findByDocument(collectionSlug: string, documentId: string): Promise<ProvenanceReceipt[]> {
     const result = await this.payload.find({
       req: this.req(),
       collection: this.collection,
@@ -116,14 +130,14 @@ export class PayloadProvenanceStore implements ProvenanceStore {
     return (result.docs as ProvenanceDoc[]).map(toRecord);
   }
 
-  async dismiss(key: ProvenanceKey, dismissedFingerprint: string): Promise<void> {
+  async dismiss(key: ProvenanceKey, dismissedFingerprint: SourceFingerprint): Promise<void> {
     const existing = await this.findDoc(key);
     if (existing === null) return;
     await this.payload.update({
       req: this.req(),
       collection: this.collection,
       id: existing.id,
-      data: { dismissedFingerprint },
+      data: { dismissedFingerprint: serializeSourceFingerprint(dismissedFingerprint) },
     });
   }
 

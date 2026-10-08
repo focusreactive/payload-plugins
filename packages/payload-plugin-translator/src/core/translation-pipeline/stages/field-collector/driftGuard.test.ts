@@ -69,9 +69,34 @@ const doc = {
   ],
 };
 
-/** Reconstruct the pipeline's per-field source text from the collector + expanders. */
+/**
+ * What the collector is really handed: `DataReconciler` strips a per-locale row's `id` before the
+ * collect walk ever runs. Feeding it the untouched document hides the one failure this guard exists
+ * to catch — a collector that names leaves from the walked data instead of from the source.
+ */
+const asReconciled = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(asReconciled);
+  if (value === null || typeof value !== "object") return value;
+  const { id: _strippedByTheReconciler, ...rest } = value as Record<string, unknown>;
+  return Object.fromEntries(Object.entries(rest).map(([k, v]) => [k, asReconciled(v)]));
+};
+
+const filtered = () => asReconciled(structuredClone(doc)) as Record<string, unknown>;
+
+const pipelineAddresses = (): string[] =>
+  new FieldChunkCollector(
+    schema as unknown as Field[],
+    filtered(),
+    structuredClone(doc),
+    {},
+    new OverwriteStrategy()
+  )
+    .collect()
+    .map((chunk) => chunk.idPath)
+    .sort();
+
 const pipelineFieldTexts = (): string[] => {
-  const filteredData = structuredClone(doc);
+  const filteredData = filtered();
   const source = structuredClone(doc);
   const chunks: FieldChunk[] = new FieldChunkCollector(
     schema as unknown as Field[],
@@ -107,6 +132,16 @@ describe("projection / translation drift guard", () => {
 
   it("both select the same number of translatable leaves", () => {
     expect(pipelineFieldTexts()).toHaveLength(projectTranslatableContent(doc, schema).length);
+  });
+
+  // If the two sides name a leaf differently, every per-leaf fingerprint lookup misses and nothing
+  // ever reads as current.
+  it("both give a leaf the same address, not merely the same text", () => {
+    const projectionAddresses = projectTranslatableContent(doc, schema)
+      .map((entry) => String(entry.idPath))
+      .sort();
+
+    expect(pipelineAddresses()).toEqual(projectionAddresses);
   });
 
   it("excludes the same non-translatable content from both", () => {

@@ -8,7 +8,7 @@ import { normalizeCollections } from "./utils/config/normalizeCollections";
 import { mergeTranslations } from "./utils/config/mergeTranslations";
 import { overrideCollections } from "./utils/config/overrideCollections";
 import { overrideGlobals } from "./utils/config/overrideGlobals";
-import { setPayloadConfig } from "./config";
+import { commentsEndpoints } from "./endpoints";
 
 export const commentsPlugin =
   (config: CommentsPluginConfig = {}): Plugin =>
@@ -67,11 +67,7 @@ export const commentsPlugin =
           },
         },
       },
-      onInit: async (payload) => {
-        setPayloadConfig(payload.config);
-
-        await incomingConfig.onInit?.(payload);
-      },
+      endpoints: [...(incomingConfig.endpoints ?? []), ...commentsEndpoints],
       collections: [
         ...overrideCollections(incomingConfig.collections),
         finalCollection,

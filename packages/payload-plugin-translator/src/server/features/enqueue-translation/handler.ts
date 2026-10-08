@@ -1,6 +1,7 @@
 import type { PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared/index.js";
+import { authCollectionsOf, identityOf } from "../../shared/payload/identityOf.js";
 import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 import { extractLocaleCodes } from "../../modules/auto-translate/index.js";
 import type { LocalizationLike } from "../../modules/auto-translate/index.js";
@@ -11,9 +12,6 @@ import { Locales } from "../../../core/domain/locales/index.js";
 import { EnqueueInputSchema } from "./model.js";
 import type { EnqueueConfig } from "./model.js";
 
-/**
- * Enqueues translation tasks for documents
- */
 export class EnqueueTranslationHandler {
   constructor(
     private readonly config: EnqueueConfig,
@@ -36,25 +34,27 @@ export class EnqueueTranslationHandler {
     } = validationResult.data;
 
     const collectionSlug = isCollectionAvailable(collection_slug, this.config.availableCollections);
-    if (!collectionSlug)
+    if (!collectionSlug) {
       return ServerResponse.badRequest(
         "Content of this collection is not available for translation"
       );
+    }
 
-    // A localization-less config has no valid target locale: a phantom locale would burn a provider
-    // call and corrupt data — orphaned rows on Mongo/SQLite, a locale-enum error on Postgres, or (with
-    // no localization at all) overwrite the single unlocalized field and wipe the source. Reject before
-    // anything is enqueued.
     const knownLocales = extractLocaleCodes(
       req.payload.config?.localization as LocalizationLike | undefined
     );
-    if (!knownLocales)
+    if (!knownLocales) {
       return ServerResponse.badRequest(
         "Localization is not enabled in this Payload config; there are no target locales to translate into"
       );
+    }
 
-    // Normalize the scalar-or-array target into the concrete locales to fan out to: de-dup, exclude the
-    // source, and drop locales that are not configured.
+    if (!knownLocales.has(source_lng)) {
+      return ServerResponse.badRequest(
+        `source_lng "${source_lng}" is not one of this project's configured locales`
+      );
+    }
+
     const { targets, droppedUnknown } = Locales.resolveTargets({
       target_lng,
       source_lng,
@@ -67,13 +67,15 @@ export class EnqueueTranslationHandler {
         )} (configured locales: ${[...knownLocales].join(", ")}).`
       );
     }
-    if (targets.length === 0)
+
+    if (targets.length === 0) {
       return ServerResponse.badRequest(
         "No valid target locales to translate into (all requested locales were the source or unknown)"
       );
+    }
 
     const collectionIds = select_all
-      ? await getAllCollectionIds(req.payload, collectionSlug)
+      ? await getAllCollectionIds(req.payload, collectionSlug, req.user)
       : collection_id;
 
     const runner = this.taskRunnerFactory.create(req.payload);
@@ -88,7 +90,10 @@ export class EnqueueTranslationHandler {
       }))
     );
 
-    await runner.enqueue(tasks);
+    await runner.enqueue(
+      tasks,
+      identityOf(req, authCollectionsOf(req.payload), req.payload.logger)
+    );
 
     return ServerResponse.success({ success: true, queued: tasks.length });
   }

@@ -23,11 +23,14 @@ export class DismissStalenessHandler {
     }
 
     const service = this.config.provenanceServiceFactory?.(req.payload);
-    await service?.dismiss({
-      collectionSlug: collectionSlug,
-      documentId: collection_id,
-      targetLocale: target_lng,
-    });
+    await service?.dismiss(
+      {
+        collectionSlug: collectionSlug,
+        documentId: collection_id,
+        targetLocale: target_lng,
+      },
+      req.user
+    );
     return ServerResponse.success({ success: true });
   }
 }

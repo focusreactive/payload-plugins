@@ -1,3 +1,4 @@
+import { TranslatorBug } from "../../../errors/index.js";
 import { parseInlineMarks } from "../../../kernel/lexical/inlineMarks.js";
 import type { PipelineContext, PipelineStage } from "../../types/index.js";
 import { isRichContainerChunk } from "../../types/index.js";
@@ -36,7 +37,7 @@ export class TranslationStage implements PipelineStage {
       : await this.provider.translate(ctx.textMap, ctx.sourceLng, ctx.targetLng);
 
     if (!translations) {
-      throw new Error("Translation provider returned null");
+      throw new TranslatorBug("Translation provider returned null");
     }
 
     parseContainerReplies(ctx, translations);

@@ -1,0 +1,19 @@
+   × computeFieldFingerprints > emits one entry per translatable leaf, keyed by its id-based address 3ms
+   × computeFieldFingerprints > leaves out what the projection leaves out 0ms
+   × computeFieldFingerprints > gives a leaf the same hash for the same text, and a different one when the text changes 0ms
+   × computeFieldFingerprints > does not move a sibling's hash when an element is inserted ahead of it 0ms
+   × computeFieldFingerprints > drops the address of a leaf that is no longer in the document 0ms
+   × computeFieldFingerprints > returns an empty map for a document with nothing translatable 0ms
+ Test Files  1 failed (1)
+      Tests  6 failed (6)
+ Test Files  1 failed (1)
+      Tests  23 failed (23)
+      Tests  17 failed (17)
+      Tests  8 failed | 11 passed (19)
+      Tests  7 failed | 8 passed (15)
+      Tests  1 failed | 3 passed (4)
+      Tests  1 failed | 15 passed (16)
+      Tests  3 failed | 23 passed (26)
+      Tests  4 failed | 24 passed (28)
+      Tests  1 failed | 14 passed (15)
+      Tests  1 failed | 5 passed (6)
