@@ -25,18 +25,18 @@ export type EnqueueConfig = {
   availableCollections: Set<CollectionSlug>;
 };
 
-/** One queued locale; `job_id` is what `/translate/cancel` takes back — opaque, never parsed. */
-export type QueuedJob = {
+/** One enqueued locale, in the snake_case this surface answers in. */
+export type EnqueueAssignmentOutput = {
   collection_slug: string;
   collection_id: string;
   target_lng: string;
-  job_id: string;
+  handle: string;
 };
 
-export const toQueuedJobs = (assigned: EnqueueAssignment[]): QueuedJob[] =>
+export const toAssignmentOutputs = (assigned: EnqueueAssignment[]): EnqueueAssignmentOutput[] =>
   assigned.map((entry) => ({
     collection_slug: entry.collectionSlug,
     collection_id: entry.collectionId,
     target_lng: entry.targetLng,
-    job_id: entry.handle,
+    handle: entry.handle,
   }));

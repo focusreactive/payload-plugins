@@ -6,7 +6,7 @@ import type { TestPayload } from "./bootTestPayload";
 import { callEndpoint } from "./callEndpoint";
 
 type Seen = { targetLng: string; handle?: string };
-type Job = { target_lng: string; job_id: string };
+type Assignment = { target_lng: string; handle: string };
 
 const ATTEMPTS_SO_THE_RUN_STILL_HAS_A_TRY_LEFT = 3;
 
@@ -58,7 +58,8 @@ describe("cancelling announces what it stopped, to a host that registered nothin
         publish_on_translation: false,
       },
     });
-    const handle = ((res.data as { data: { jobs?: Job[] } }).data.jobs ?? [])[0]?.job_id;
+    const handle = ((res.data as { data: { assignments?: Assignment[] } }).data.assignments ??
+      [])[0]?.handle;
     await ctx.payload.jobs.run({ queue: "translations" });
 
     await callEndpoint(ctx.payload, "delete", "/translate/cancel", { body: { ids: [handle] } });

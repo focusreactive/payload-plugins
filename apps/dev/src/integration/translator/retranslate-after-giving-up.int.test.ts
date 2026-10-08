@@ -8,12 +8,12 @@ import { callEndpoint } from "./callEndpoint";
 const RETRIES = 1;
 const PASSES_UNTIL_THE_RUN_GIVES_UP = RETRIES + 1;
 
-type Job = { target_lng: string; job_id: string };
+type Assignment = { target_lng: string; handle: string };
 
 let ctx: TestPayload;
 let providerIsDown = true;
 
-const enqueue = async (id: string, locales: string[]): Promise<Job[]> => {
+const enqueue = async (id: string, locales: string[]): Promise<Assignment[]> => {
   const res = await callEndpoint(ctx.payload, "post", "/translate/enqueue", {
     body: {
       source_lng: "en",
@@ -24,7 +24,7 @@ const enqueue = async (id: string, locales: string[]): Promise<Job[]> => {
       publish_on_translation: false,
     },
   });
-  return (res.data as { data: { jobs?: Job[] } }).data.jobs ?? [];
+  return (res.data as { data: { assignments?: Assignment[] } }).data.assignments ?? [];
 };
 
 describe("asking again after a run has given up", () => {
@@ -61,9 +61,9 @@ describe("asking again after a run has given up", () => {
     await ctx.payload.jobs.run({ queue: "translations" });
 
     expect(
-      second[0]?.job_id,
+      second[0]?.handle,
       "the first run is spent — Payload will never pick it up again, so naming it promises nothing"
-    ).not.toBe(first[0]?.job_id);
+    ).not.toBe(first[0]?.handle);
     const translated = await ctx.payload.findByID({ collection: "docs", id, locale: "de" });
     expect(translated.title, "and the locale is actually translated").not.toBe("Asked again");
   });

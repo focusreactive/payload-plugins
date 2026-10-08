@@ -4,7 +4,6 @@ import type { TaskRunner } from "../TaskRunner.interface.js";
 import type { EnqueueAssignment, TaskInput } from "../types.js";
 
 const SLUG = "posts";
-const UNKNOWN_HANDLE = "no-runner-ever-issued-this-handle";
 
 const input = (collectionId: string, targetLng: string): TaskInput => ({
   collectionSlug: SLUG,
@@ -195,31 +194,56 @@ export function assertTaskRunnerContract(
       });
     });
 
-    describe("an unknown handle is an answer, not a failure", () => {
-      it("answers run on an unknown handle with not_found", async () => {
-        expect(await runner.run(UNKNOWN_HANDLE)).toEqual({ success: false, error: "not_found" });
+    describe("a handle that no longer names anything is an answer, not a failure", () => {
+      /**
+       * A handle this runner issued and then had cancelled. Unknown now, and shaped the way this
+       * runner shapes handles — which is as far as the obligations reach: a store may reject a
+       * value it could never have produced, and on SQL a non-numeric handle does exactly that.
+       */
+      const spent = async (): Promise<string | undefined> => {
+        const answer = await enqueued([input(documentForThisCheck(9), "de")]);
+        const handle = answer?.[0]?.handle;
+        if (handle) await runner.cancel([handle]);
+        return handle;
+      };
+
+      it("answers run on a spent handle with not_found", async (ctx) => {
+        const handle = await spent();
+        if (!handle) {
+          ctx.skip();
+          return;
+        }
+
+        expect(await runner.run(handle)).toEqual({ success: false, error: "not_found" });
       });
 
-      it("resolves cancel on an unknown handle", async () => {
+      it("resolves cancel on a spent handle", async (ctx) => {
+        const handle = await spent();
+        if (!handle) {
+          ctx.skip();
+          return;
+        }
+
         expect(
-          await settle(runner.cancel([UNKNOWN_HANDLE])),
-          "cancel on an unknown handle resolves rather than rejecting"
+          await settle(runner.cancel([handle])),
+          "cancel on a spent handle resolves rather than rejecting"
         ).toBe("resolved");
       });
 
-      it("cancels nothing when the handle is unknown", async (ctx) => {
+      it("cancels nothing when the handle is spent", async (ctx) => {
         const findByIds = runner.findByIds?.bind(runner);
+        const stale = await spent();
         const answer = await enqueued([input(documentForThisCheck(1), "de")]);
-        if (!findByIds || !answer) {
+        if (!findByIds || !answer || !stale) {
           ctx.skip();
           return;
         }
         const handles = [...new Set(answer.map((assignment) => assignment.handle))];
 
-        await runner.cancel([UNKNOWN_HANDLE]);
+        await runner.cancel([stale]);
         const cancelled = (await findByIds(handles)).filter((task) => task.cancelled);
 
-        expect(cancelled, "cancel on an unknown handle changes nothing").toEqual([]);
+        expect(cancelled, "cancel on a spent handle changes nothing").toEqual([]);
       });
     });
 

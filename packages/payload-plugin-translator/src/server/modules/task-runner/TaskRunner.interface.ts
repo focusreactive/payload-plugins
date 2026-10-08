@@ -17,6 +17,11 @@ import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
  * Two it cannot assert, because they bind the caller rather than the runner:
  * - **A handle is never parsed.** Callers compare it, store it and hand it back.
  * - **Nothing promises an order.** Callers that need one sort.
+ *
+ * And one limit: the obligations reach handles **this runner issued**. A store may reject a value
+ * it could never have produced — on SQL the job id is an integer, so a non-numeric handle fails
+ * inside the query rather than finding nothing. `DELETE /translate/cancel` passes such a value
+ * straight through, and answers with a server error.
  */
 export interface TaskRunner {
   /**

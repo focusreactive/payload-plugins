@@ -41,7 +41,7 @@ locale. `JobIdSchema` already demands only "non-empty string or finite number", 
 plugin assumes a shape today — this records the rule rather than introducing it.
 
 **D3 — the enqueue response is a flat list, one entry per requested locale:**
-`{ collection_id, target_lng, job_id }[]`. Rejected: a nested map mirroring the request — reads well
+`{ collection_id, target_lng, handle }[]`. Rejected: a nested map mirroring the request — reads well
 for one document, badly for `select_all`, and the flat list is what a host writing one row per
 (document, locale) consumes. It also accepts any handle granularity, per D2.
 

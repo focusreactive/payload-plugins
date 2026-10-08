@@ -6,7 +6,7 @@ import type { TestPayload } from "./bootTestPayload";
 import { callEndpoint } from "./callEndpoint";
 
 type Seen = { targetLng: string; handle?: string };
-type Job = { target_lng: string; job_id: string };
+type Assignment = { target_lng: string; handle: string };
 
 const onCompleted = vi.fn<(task: Seen) => void>();
 
@@ -39,7 +39,7 @@ describe("the handle the enqueue answer named is the handle onCompleted carries"
         publish_on_translation: false,
       },
     });
-    const promised = (res.data as { data: { jobs?: Job[] } }).data.jobs ?? [];
+    const promised = (res.data as { data: { assignments?: Assignment[] } }).data.assignments ?? [];
 
     await ctx.payload.jobs.run({ queue: "translations" });
 
@@ -49,7 +49,7 @@ describe("the handle the enqueue answer named is the handle onCompleted carries"
       expect(
         task.handle,
         `the caller was told ${task.targetLng} would run as a named job; it has to be that job`
-      ).toBe(promised.find((j) => j.target_lng === task.targetLng)?.job_id);
+      ).toBe(promised.find((j) => j.target_lng === task.targetLng)?.handle);
     }
   });
 });

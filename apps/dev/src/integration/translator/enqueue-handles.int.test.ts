@@ -7,7 +7,12 @@ import { callEndpoint } from "./callEndpoint";
 
 let ctx: TestPayload;
 
-type Job = { collection_slug: string; collection_id: string; target_lng: string; job_id: string };
+type Assignment = {
+  collection_slug: string;
+  collection_id: string;
+  target_lng: string;
+  handle: string;
+};
 
 const create = async (title: string): Promise<string> => {
   const made = await ctx.payload.create({
@@ -18,7 +23,7 @@ const create = async (title: string): Promise<string> => {
   return String(made.id);
 };
 
-const enqueue = async (ids: string[], locales: string[]): Promise<Job[]> => {
+const enqueue = async (ids: string[], locales: string[]): Promise<Assignment[]> => {
   const res = await callEndpoint(ctx.payload, "post", "/translate/enqueue", {
     body: {
       source_lng: "en",
@@ -29,7 +34,7 @@ const enqueue = async (ids: string[], locales: string[]): Promise<Job[]> => {
       publish_on_translation: false,
     },
   });
-  return (res.data as { data: { jobs?: Job[] } }).data.jobs ?? [];
+  return (res.data as { data: { assignments?: Assignment[] } }).data.assignments ?? [];
 };
 
 describe("the enqueue answer names the run that will translate each locale", () => {
@@ -43,26 +48,26 @@ describe("the enqueue answer names the run that will translate each locale", () 
   it("answers once per requested locale, naming a run that really exists", async () => {
     const id = await create("One document");
 
-    const jobs = await enqueue([id], ["de", "fr"]);
+    const assignments = await enqueue([id], ["de", "fr"]);
 
-    expect(jobs.map((j) => j.target_lng).sort()).toEqual(["de", "fr"]);
+    expect(assignments.map((j) => j.target_lng).sort()).toEqual(["de", "fr"]);
     const rows = await ctx.payload.find({
       collection: "payload-jobs" as "docs",
       pagination: false,
-      where: { id: { in: jobs.map((j) => j.job_id) } } as never,
+      where: { id: { in: assignments.map((j) => j.handle) } } as never,
     });
     expect(rows.docs, "every handle answered names a row that is actually there").toHaveLength(
-      new Set(jobs.map((j) => j.job_id)).size
+      new Set(assignments.map((j) => j.handle)).size
     );
   });
 
   it("gives two locales of one document the same run", async () => {
     const id = await create("Shared run");
 
-    const jobs = await enqueue([id], ["de", "fr"]);
+    const assignments = await enqueue([id], ["de", "fr"]);
 
     expect(
-      new Set(jobs.map((j) => j.job_id)),
+      new Set(assignments.map((j) => j.handle)),
       "one run covers a document's locale list"
     ).toHaveLength(1);
   });
@@ -71,12 +76,12 @@ describe("the enqueue answer names the run that will translate each locale", () 
     const first = await create("First");
     const second = await create("Second");
 
-    const jobs = await enqueue([first, second], ["de", "fr"]);
+    const assignments = await enqueue([first, second], ["de", "fr"]);
 
-    expect(jobs, "two documents, two locales each").toHaveLength(4);
-    expect(new Set(jobs.map((j) => j.job_id))).toHaveLength(2);
+    expect(assignments, "two documents, two locales each").toHaveLength(4);
+    expect(new Set(assignments.map((j) => j.handle))).toHaveLength(2);
     expect(
-      new Set(jobs.filter((j) => j.collection_id === first).map((j) => j.job_id))
+      new Set(assignments.filter((j) => j.collection_id === first).map((j) => j.handle))
     ).toHaveLength(1);
   });
 
@@ -91,8 +96,8 @@ describe("the enqueue answer names the run that will translate each locale", () 
       "de needed no write, but it is being translated — leaving it out would report nothing for it"
     ).toEqual(["de", "fr"]);
     expect(
-      second.find((j) => j.target_lng === "de")?.job_id,
+      second.find((j) => j.target_lng === "de")?.handle,
       "and it is the run that already had it"
-    ).toBe(first[0]?.job_id);
+    ).toBe(first[0]?.handle);
   });
 });

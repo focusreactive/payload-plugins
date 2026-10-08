@@ -9,7 +9,7 @@ import { isCollectionAvailable, getAllCollectionIds } from "../_lib/collection-u
 
 import { Locales } from "../../../core/domain/locales/index.js";
 
-import { EnqueueInputSchema, toQueuedJobs } from "./model.js";
+import { EnqueueInputSchema, toAssignmentOutputs } from "./model.js";
 import type { EnqueueConfig } from "./model.js";
 
 export class EnqueueTranslationHandler {
@@ -98,7 +98,7 @@ export class EnqueueTranslationHandler {
     return ServerResponse.success({
       success: true,
       queued: tasks.length,
-      ...(assigned ? { jobs: toQueuedJobs(assigned) } : {}),
+      ...(assigned ? { assignments: toAssignmentOutputs(assigned) } : {}),
     });
   }
 }

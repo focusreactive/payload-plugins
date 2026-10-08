@@ -5,7 +5,7 @@ import { bootTestPayload } from "./bootTestPayload";
 import type { TestPayload } from "./bootTestPayload";
 import { callEndpoint } from "./callEndpoint";
 
-type Job = { target_lng: string; job_id: string };
+type Assignment = { target_lng: string; handle: string };
 
 // SQLite only. Cancelling from inside the running job deletes a row that job's own transaction
 // holds, which on a real transactional adapter blocks until the suite's teardown times out. What is
@@ -58,7 +58,8 @@ describe.skipIf(!SQLITE)("cancelling a run that is already translating", () => {
         publish_on_translation: false,
       },
     });
-    handle = ((res.data as { data: { jobs?: Job[] } }).data.jobs ?? [])[0]?.job_id;
+    handle = ((res.data as { data: { assignments?: Assignment[] } }).data.assignments ?? [])[0]
+      ?.handle;
 
     // Payload's own update throws when the row it is writing was deleted under it.
     await ctx.payload.jobs.run({ queue: "translations" }).catch(() => undefined);
