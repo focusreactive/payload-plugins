@@ -13,11 +13,14 @@ export const GetCollectionStatusInputSchema = z.object({
 export type GetCollectionStatusInput = z.infer<typeof GetCollectionStatusInputSchema>;
 
 /**
- * Summary item for a single document
+ * One translation in flight. `id` is the run's handle and a run covers a document's whole locale
+ * list, so it repeats — the document and locale are what tell two entries apart.
  */
 export type CollectionStatusItem = {
   id: string;
   status: TaskStatus;
+  collection_id: string;
+  target_lng: string;
 };
 
 /**

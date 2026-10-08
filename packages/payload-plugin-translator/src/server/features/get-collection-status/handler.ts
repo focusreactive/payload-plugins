@@ -39,7 +39,12 @@ export class GetCollectionStatusHandler {
     return ServerResponse.success({
       docs: tasks
         .filter((task) => visible.has(String(task.input.collectionId)))
-        .map((task) => ({ id: task.id, status: task.status })),
+        .map((task) => ({
+          id: task.id,
+          status: task.status,
+          collection_id: String(task.input.collectionId),
+          target_lng: task.input.targetLng,
+        })),
     });
   }
 }
