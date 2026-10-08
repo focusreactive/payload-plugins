@@ -117,7 +117,7 @@ const KEYS: Record<string, Rule> = {
   min: { kind: "number", only: ["number"] },
   minRows: { kind: "number", only: ["array"] },
   name: { kind: "string" },
-  options: { kind: "array", needed: ["select"], only: ["select"] },
+  options: { kind: "array", needed: ["select", "radio"], only: ["select", "radio"] },
   readOnly: { kind: "boolean" },
   required: { kind: "boolean" },
   rows: { kind: "array", needed: ["array"], only: ["array"] },
@@ -162,7 +162,11 @@ const nodeErrors = (node: TypedNode, where: string, named: boolean): string[] =>
 
   const fields = (node as Container).fields;
   const options = (node as Leaf).options;
-  if (node.type === "select" && Array.isArray(options) && !options.length)
+  if (
+    (node.type === "select" || node.type === "radio") &&
+    Array.isArray(options) &&
+    !options.length
+  )
     say(`${where}: “options” is empty`);
   if (node.type === "tabs" && Array.isArray(fields) && fields.some((field) => field.type !== "tab"))
     say(`${where}: “fields” may hold tabs only`);

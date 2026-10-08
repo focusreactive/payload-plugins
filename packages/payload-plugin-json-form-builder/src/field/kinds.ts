@@ -10,6 +10,7 @@ export const KINDS: Record<NodeType, Kind> = {
   date: { draws: "A date from the calendar.", glyph: "31", group: "Values" },
   checkbox: { draws: "True or false.", glyph: "✓", group: "Values" },
   select: { draws: "One of a list of options.", glyph: "▼", group: "Values" },
+  radio: { draws: "The same, drawn as buttons in a row.", glyph: "◉", group: "Values" },
   upload: { draws: "A file from the Media collection.", glyph: "↑", group: "Media" },
   group: { draws: "Fields under a heading.", glyph: "{ }", group: "Structure" },
   collapsible: { draws: "The same, drawn as an accordion.", glyph: "Ξ", group: "Structure" },

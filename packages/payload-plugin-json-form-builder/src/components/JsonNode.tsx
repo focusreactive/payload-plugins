@@ -6,6 +6,7 @@ import {
   CheckboxInput,
   Collapsible,
   FieldDescription,
+  FieldLabel,
   SelectInput,
   TextareaInput,
 } from "@payloadcms/ui";
@@ -258,6 +259,29 @@ export const JsonNode = ({
     ) : node.type === "richText" ? (
       <div className={cn(fault && "json-form__faulty")}>
         <JsonRichText html={String(value)} id={id} label={own} onChange={set} readOnly={readOnly} />
+        {fault ? <p className="json-form__fault">{fault}</p> : null}
+      </div>
+    ) : node.type === "radio" ? (
+      <div className={cn("field-type radio-group", fault && "error")}>
+        {own ? <FieldLabel label={own} path={id} required={node.required} /> : null}
+        <ul className="radio-group--layout-horizontal">
+          {(node.options ?? []).map((option) => (
+            <li key={option}>
+              <label className="radio-input">
+                <input
+                  checked={String(value) === option}
+                  disabled={readOnly}
+                  name={id}
+                  onChange={() => set(option)}
+                  type="radio"
+                  value={option}
+                />
+                <span className="radio-input__styled-radio" />
+                <span className="radio-input__label">{option}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
         {fault ? <p className="json-form__fault">{fault}</p> : null}
       </div>
     ) : node.type === "select" ? (
