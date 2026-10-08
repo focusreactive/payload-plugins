@@ -17,14 +17,16 @@ const fakeProvider: TranslationProvider = {
   },
 };
 
-const run = (schema: Field[], sourceData: Record<string, unknown>) =>
-  translateContent({
-    schema,
-    sourceData,
-    sourceLng: "en",
-    targetLng: "de",
-    translationProvider: fakeProvider,
-  });
+const run = async (schema: Field[], sourceData: Record<string, unknown>) =>
+  (
+    await translateContent({
+      schema,
+      sourceData,
+      sourceLng: "en",
+      targetLng: "de",
+      translationProvider: fakeProvider,
+    })
+  )?.translatedData ?? null;
 
 const richTextNode = (value: string) => ({
   type: "text",
@@ -144,7 +146,8 @@ describe("translateContent", () => {
       translationProvider: fakeProvider,
       strategy: "skip_existing",
     });
-    expect(result).toEqual({ title: "T:hello" });
+    expect(result?.translatedData).toEqual({ title: "T:hello" });
+    expect(result?.translatedPaths).toEqual(["title"]);
   });
 
   describe("the caller's source document", () => {

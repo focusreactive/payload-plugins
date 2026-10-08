@@ -1,9 +1,12 @@
-"use server";
-
 import type { CollectionSlug } from "payload";
-import { extractPayload } from "../utils/payload/extractPayload";
 import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
-import type { Response, Comment, BaseDocument, DocumentTitles, BaseServiceOptions } from "../types";
+import type { Response, Comment, BaseDocument, DocumentTitles, ServiceContext } from "../types";
+
+export interface GetDocumentTitlesArgs {
+  comments: Comment[];
+  documentTitleFields: Record<string, string>;
+  locale?: string | null;
+}
 
 function buildDocumentTitlesFromDocs(
   docs: BaseDocument[],
@@ -21,13 +24,10 @@ function buildDocumentTitlesFromDocs(
 }
 
 export async function getDocumentTitles(
-  comments: Comment[],
-  documentTitleFields: Record<string, string>,
-  options?: BaseServiceOptions
+  { payload }: ServiceContext,
+  { comments, documentTitleFields, locale }: GetDocumentTitlesArgs
 ): Promise<Response<DocumentTitles>> {
   try {
-    const payload = await extractPayload(options?.payload);
-
     const documentIdsMap = new Map<string, Set<number>>();
 
     for (const { collectionSlug, documentId } of comments) {
@@ -57,7 +57,7 @@ export async function getDocumentTitles(
             limit: ids.size,
             depth: 0,
             overrideAccess: true,
-            locale: options?.locale,
+            locale,
           });
 
           documentTitles[slug] = buildDocumentTitlesFromDocs(

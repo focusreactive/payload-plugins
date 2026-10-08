@@ -5,5 +5,5 @@ export { UnparseableReplyError } from "./UnparseableReplyError.js";
 export { KeySetMismatchError } from "./KeySetMismatchError.js";
 export { TransportError } from "./TransportError.js";
 export { ProviderConfigurationError } from "./ProviderConfigurationError.js";
-export { wrapTransportError } from "./wrapTransportError.js";
+export { asTranslatorError } from "./asTranslatorError.js";
 export { errorMessageLower } from "./errorMessageLower.js";

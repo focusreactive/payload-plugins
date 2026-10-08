@@ -9,12 +9,11 @@ export type {
   TranslationLifecycleCallbacks,
 } from "./server/modules/lifecycle/index.js";
 
-// Provenance — the durable per-locale record shape (opt-in `provenance` sidecar). The store/key and
-// the Payload-backed impl stay internal; consumers only read the sidecar collection.
 export type { TranslationProvenanceRecord } from "./core/index.js";
 
 // Access control
 export type { AccessGuard, AccessGuardRequest } from "./types/AccessGuard.js";
+export { AnyAccessGuard } from "./server/shared/access/AnyAccessGuard.js";
 
 // Translation provider port (from the dependency-free core)
 export type { TranslationProvider, TranslationInput, TranslationOutput } from "./core/index.js";
@@ -58,6 +57,14 @@ export type {
   PayloadJobsRunnerOptions,
   TaskFilter,
 } from "./server/modules/task-runner/index.js";
+/**
+ * A third-party `TaskRunnerProvider` has always had to accept a `RequestScope` — it is the second
+ * parameter of `TaskRunner.enqueue` and of the `TaskHandler` it is handed — but could not name the
+ * type. Exported so an implementation outside this package can.
+ *
+ * @since 0.14.0
+ */
+export type { RequestScope, Requester } from "./server/shared/payload/RequestScope.shapes.js";
 
 // Translation levels
 export { documentLevel, collectionLevel, fieldLevel } from "./composition/levels/index.js";

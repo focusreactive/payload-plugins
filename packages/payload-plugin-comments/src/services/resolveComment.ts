@@ -1,27 +1,17 @@
-"use server";
-
-import type { Response, Comment, BaseServiceOptions } from "../types";
-import { headers } from "next/headers";
+import type { Response, Comment, ServiceContext } from "../types";
 import { DEFAULT_COLLECTION_SLUG } from "../constants";
 import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
-import { extractPayload } from "../utils/payload/extractPayload";
+
+export interface ResolveCommentArgs {
+  id: number | string;
+  resolved: boolean;
+}
 
 export async function resolveComment(
-  id: number | string,
-  resolved: boolean,
-  options?: BaseServiceOptions
+  { payload, user }: ServiceContext,
+  { id, resolved }: ResolveCommentArgs
 ): Promise<Response<Comment>> {
   try {
-    const payload = await extractPayload(options?.payload);
-    const { user } = await payload.auth({ headers: await headers() });
-
-    if (!user) {
-      return {
-        success: false,
-        error: "Unauthorized",
-      };
-    }
-
     const res = await payload.update({
       collection: DEFAULT_COLLECTION_SLUG,
       id,

@@ -6,7 +6,7 @@ import {
   ListJSXConverter,
   RichText as RichTextReact,
 } from "@payloadcms/richtext-lexical/react";
-import { withVisualEditingPath } from "@fr-private/payload-plugin-visual-editing/client";
+import { withVisualEditingPath } from "@focus-reactive/payload-plugin-visual-editing/client";
 import { Check } from "lucide-react";
 import { Media } from "@/components/media";
 

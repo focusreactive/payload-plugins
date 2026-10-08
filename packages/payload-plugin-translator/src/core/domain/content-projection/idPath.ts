@@ -1,3 +1,5 @@
+import { TranslatorBug } from "../../errors/index.js";
+
 /**
  * `IdPath` — the stable, location-based identity of a translatable leaf (slice 6 design,
  * `docs/plans/2026-06-30-slice6-contentprojector-idpath-design.md`).
@@ -43,7 +45,7 @@ const renderSegment = (segment: PathSegment): string => {
       return `#${segment.index}`;
     default: {
       const exhaustive: never = segment;
-      throw new Error(`unhandled path segment: ${String(exhaustive)}`);
+      throw new TranslatorBug(`unhandled path segment: ${String(exhaustive)}`);
     }
   }
 };

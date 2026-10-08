@@ -1,7 +1,7 @@
 import type { CollectionSlug } from "payload";
 
 import type { Task, TaskInput, RunResult } from "./types.js";
-import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes.js";
+import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 
 /**
  * Interface for task execution backends.
@@ -19,7 +19,7 @@ export interface TaskRunner {
    * `scope` joins the reads and writes this makes to the caller's transaction; omit it outside one —
    * an HTTP route — and each operation opens its own.
    */
-  enqueue(tasks: TaskInput[], scope?: TransactionScope): Promise<void>;
+  enqueue(tasks: TaskInput[], scope?: RequestScope): Promise<void>;
 
   /**
    * Cancel tasks by IDs.
@@ -45,7 +45,7 @@ export interface TaskRunner {
 }
 
 /**
- * How a {@link TaskRunner.findByCollection} call is narrowed. Each field says whether it reaches the
+ * How a {@link TaskRunner["findByCollection"]} call is narrowed. Each field says whether it reaches the
  * database or is applied in memory over everything the database returned.
  *
  * @since 0.11.2

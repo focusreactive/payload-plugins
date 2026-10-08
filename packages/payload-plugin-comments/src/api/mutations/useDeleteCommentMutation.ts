@@ -2,7 +2,9 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { getCommentsKey } from "../queryKeys";
-import { deleteComment } from "../../services/deleteComment";
+import type { DeleteCommentArgs } from "../../services/deleteComment";
+import { useCommentsRequest } from "../useCommentsRequest";
+import { COMMENTS_ENDPOINT_PATHS } from "../../constants";
 import { useCommentsQueryClient } from "../../providers/CommentsQueryClientProvider";
 import type { Comment, QueryContext } from "../../types";
 
@@ -13,10 +15,12 @@ interface DeleteCommentVariables {
 
 export function useDeleteCommentMutation() {
   const queryClient = useCommentsQueryClient();
+  const request = useCommentsRequest();
 
   return useMutation(
     {
-      mutationFn: ({ commentId }: DeleteCommentVariables) => deleteComment(commentId),
+      mutationFn: ({ commentId }: DeleteCommentVariables) =>
+        request<DeleteCommentArgs, Comment>(COMMENTS_ENDPOINT_PATHS.delete, { id: commentId }),
       onMutate: async (variables) => {
         const { ctx, commentId } = variables;
         const key = getCommentsKey(ctx);

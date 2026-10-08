@@ -1,8 +1,9 @@
-import type { Payload } from "payload";
+import type { Payload, TypedUser } from "payload";
 
-export interface BaseServiceOptions {
-  payload?: Payload;
-  locale?: string | null;
+export interface ServiceContext {
+  payload: Payload;
+  user: TypedUser;
+  headers: Headers;
 }
 
 export interface BaseDocument {

@@ -4,6 +4,11 @@ import { GetCollectionStatusHandler } from "./handler.js";
 import type { GetCollectionStatusConfig } from "./model.js";
 import type { TaskRunnerFactory, TaskRunner, Task } from "../../modules/task-runner/index.js";
 
+const everyDocumentIsVisible = () =>
+  vi.fn(async (args: { where?: { id?: { in?: string[] } } }) => ({
+    docs: (args.where?.id?.in ?? []).map((id) => ({ id })),
+  }));
+
 describe("GetCollectionStatusHandler", () => {
   let handler: GetCollectionStatusHandler;
   let mockTaskRunner: TaskRunner;
@@ -30,7 +35,7 @@ describe("GetCollectionStatusHandler", () => {
 
   const createMockRequest = (params: Record<string, string> = {}): PayloadRequest =>
     ({
-      payload: {} as Payload,
+      payload: { find: everyDocumentIsVisible() } as unknown as Payload,
       routeParams: params,
     }) as unknown as PayloadRequest;
 
@@ -97,6 +102,24 @@ describe("GetCollectionStatusHandler", () => {
       expect(body.data).toEqual({ docs: [] });
     });
 
+    it("asks which documents are visible once, not once per row", async () => {
+      const find = everyDocumentIsVisible();
+      const req = createMockRequest({ collection_slug: "posts" });
+      (req as unknown as { payload: unknown }).payload = { find };
+      (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue([
+        createMockTask({ id: "t1" }),
+        createMockTask({ id: "t2" }),
+        createMockTask({ id: "t3" }),
+      ]);
+
+      await handler.handle(req);
+
+      expect(
+        find,
+        "Payload folds a read rule into the query, so three rows cost one question, not three"
+      ).toHaveBeenCalledTimes(1);
+    });
+
     it("returns task statuses for all documents in collection", async () => {
       const tasks = [
         createMockTask({ id: "task-1", status: "completed" }),
@@ -126,7 +149,10 @@ describe("GetCollectionStatusHandler", () => {
     });
 
     it("creates task runner with request payload", async () => {
-      const mockPayload = { collections: {} } as Payload;
+      const mockPayload = {
+        collections: {},
+        find: everyDocumentIsVisible(),
+      } as unknown as Payload;
       const req = createMockRequest({ collection_slug: "posts" });
       (req as any).payload = mockPayload;
 

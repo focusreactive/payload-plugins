@@ -68,8 +68,8 @@ export function TranslationStatusList({ rows, collection, id }: TranslationStatu
     });
   };
 
-  // Re-translate one locale in place: a fresh source→target job (overwrite). Reuses the same queue
-  // endpoint as the form; onSuccess invalidation refreshes this list.
+  // `skip_existing`, not `overwrite`: this button sits under the "out of date" badge, so switching it
+  // back would silently discard a reviewer's edit to a leaf whose source never moved.
   const reTranslate = (row: TranslationStatusRow) =>
     withToast(
       () =>
@@ -78,7 +78,7 @@ export function TranslationStatusList({ rows, collection, id }: TranslationStatu
           target_lng: row.targetLocale,
           collection_slug: collection,
           collection_id: [id],
-          strategy: "overwrite",
+          strategy: "skip_existing",
         }),
       "Failed to queue translation"
     );

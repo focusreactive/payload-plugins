@@ -100,4 +100,31 @@ describe("SkipExistingStrategy", () => {
       });
     });
   });
+
+  describe("a target that is already filled in, and what the receipt says about its source", () => {
+    const filled = { sourceValue: "Hello", targetValue: "Hallo" };
+
+    it("refreshes it once the receipt shows the source moved", () => {
+      expect(strategy.shouldTranslate({ ...filled, sourceChanged: true })).toBe(true);
+    });
+
+    it("leaves it alone while the receipt shows the source is unchanged", () => {
+      expect(strategy.shouldTranslate({ ...filled, sourceChanged: false })).toBe(false);
+    });
+
+    it("leaves it alone when nothing is known about its source", () => {
+      expect(strategy.shouldTranslate({ ...filled, sourceChanged: undefined })).toBe(false);
+      expect(strategy.shouldTranslate(filled)).toBe(false);
+    });
+
+    it("still refuses an empty source, whatever the receipt says", () => {
+      expect(
+        strategy.shouldTranslate({ sourceValue: "", targetValue: "Hallo", sourceChanged: true })
+      ).toBe(false);
+    });
+
+    it("still fills an empty target without needing a receipt", () => {
+      expect(strategy.shouldTranslate({ sourceValue: "Hello", targetValue: "" })).toBe(true);
+    });
+  });
 });

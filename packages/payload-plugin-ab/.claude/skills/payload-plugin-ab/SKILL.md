@@ -316,11 +316,11 @@ A: Yes. No migration is needed for MongoDB. SQL adapters (Postgres, SQLite) requ
 **Q: How are variants created?**
 A: Via the Variants panel in the sidebar of any original document. Clicking "Add Variant" calls the `POST /_ab/duplicate` endpoint, which duplicates the document with a new slug (`original--xxxx`) and sets initial traffic to 1%.
 
-**Q: How does sticky session routing work?**
-A: On first visit, the middleware assigns a bucket (variant or original) based on weighted random selection and writes a session cookie (`payload_ab_bucket_{path}`). On subsequent visits, the middleware reads that cookie and routes to the same variant every time.
+**Q: How does sticky variant routing work?**
+A: On first visit, the middleware assigns a bucket (variant or original) based on weighted random selection and writes a 90-day cookie (`payload_ab_bucket_{path}`, lifetime set by `bucketCookieMaxAge`, defaulting to `expCookieMaxAge`). On subsequent visits, the middleware reads that cookie and routes to the same variant every time. If that cookie is missing, it restores the bucket from `exp_{path}`; a bucket whose variant no longer exists is drawn again.
 
 **Q: What cookies does the plugin set?**
-A: Three cookies: `payload_ab_bucket_{path}` (session, bucket assignment), `ab_visitor_id` (365-day, persistent visitor ID for analytics), `exp_{path}` (90-day, client-readable for analytics adapters).
+A: Three cookies: `payload_ab_bucket_{path}` (90-day, bucket assignment), `ab_visitor_id` (365-day, persistent visitor ID for analytics), `exp_{path}` (90-day, client-readable for analytics adapters).
 
 **Q: How does analytics attribution work?**
 A: Mount `<ExperimentTracker>` on each variant-served page. It stamps three GA4 event-scoped custom dimensions (`fr_ab_experiment`, `fr_ab_variant`, `fr_ab_visitor_id`) on every subsequent event. Register those dimensions in your GA4 property, then use `@focus-reactive/payload-plugin-analytics` to view exposure and conversion-rate results per experiment.

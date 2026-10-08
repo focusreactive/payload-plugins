@@ -12,6 +12,8 @@ export interface ResolveAbRewriteCookieConfig extends AbCookieConfig {
   visitorIdMaxAge?: number;
   /** Max age for the experiment bucket cookie in seconds. Default: 7_776_000 (90 days). */
   expCookieMaxAge?: number;
+  /** Max age for the bucket-assignment cookie in seconds. Default: `expCookieMaxAge`. */
+  bucketCookieMaxAge?: number;
 }
 
 export interface ResolveAbRewriteConfig<TVariantData extends object = object> {

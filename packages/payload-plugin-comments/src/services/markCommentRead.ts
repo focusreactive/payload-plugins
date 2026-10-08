@@ -1,13 +1,9 @@
-"use server";
-
-import { headers } from "next/headers";
 import { COMMENT_READS_COLLECTION_SLUG, DEFAULT_COLLECTION_SLUG } from "../constants";
-import { extractPayload } from "../utils/payload/extractPayload";
 import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
 import { getCurrentTenantId } from "./getCurrentTenantId";
-import type { BaseServiceOptions, Comment, CommentMention, Response } from "../types";
+import type { Comment, CommentMention, Response, ServiceContext } from "../types";
 
-interface Props extends BaseServiceOptions {
+export interface MarkCommentReadArgs {
   commentId: number;
 }
 
@@ -17,16 +13,11 @@ function extractRelationId(value: number | { id: number } | null | undefined): n
   return null;
 }
 
-export async function markCommentRead({
-  commentId,
-  payload: payloadProp,
-}: Props): Promise<Response<{ alreadyRead: boolean }>> {
+export async function markCommentRead(
+  { payload, user, headers }: ServiceContext,
+  { commentId }: MarkCommentReadArgs
+): Promise<Response<{ alreadyRead: boolean }>> {
   try {
-    const payload = await extractPayload(payloadProp);
-    const { user } = await payload.auth({ headers: await headers() });
-
-    if (!user) return { success: false, error: "Unauthorized" };
-
     const comment = (await payload.findByID({
       collection: DEFAULT_COLLECTION_SLUG,
       id: commentId,
@@ -41,7 +32,7 @@ export async function markCommentRead({
       };
     }
 
-    const tenantId = await getCurrentTenantId(payload);
+    const tenantId = getCurrentTenantId(payload, headers);
     if (
       tenantId &&
       extractRelationId(comment.tenant as number | { id: number } | null) !== tenantId

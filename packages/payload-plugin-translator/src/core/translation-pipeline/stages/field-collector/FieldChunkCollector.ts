@@ -1,3 +1,5 @@
+import { elementSegment, makeIdPath } from "../../../domain/content-projection/idPath.js";
+import type { PathSegment } from "../../../domain/content-projection/idPath.js";
 import { isTranslatableLeaf } from "../../../domain/content-projection/translatableLeaf.js";
 import type { ChildCursor, FieldLike, FieldWalker } from "../../../kernel/field-traversal/index.js";
 import {
@@ -6,6 +8,7 @@ import {
   walkFields,
 } from "../../../kernel/field-traversal/index.js";
 import { isObject } from "../../../kernel/utils/isObject.js";
+import type { ChangedLeaves } from "../../../domain/provenance/staleness.js";
 import type { TranslationStrategy } from "../../strategies/index.js";
 import type { FieldChunk } from "../../types/index.js";
 
@@ -14,7 +17,7 @@ type Cursor = {
   data: Record<string, unknown>;
   source: Record<string, unknown>;
   target: Record<string, unknown>;
-  path: string[];
+  segments: PathSegment[];
 };
 
 const asObject = (value: unknown): Record<string, unknown> => (isObject(value) ? value : {});
@@ -40,26 +43,28 @@ export class FieldChunkCollector {
   private readonly sourceData: Record<string, unknown>;
   private readonly targetData: Record<string, unknown>;
   private readonly strategy: TranslationStrategy;
+  private readonly sourceChangedByLeaf?: ChangedLeaves;
 
   constructor(
     schema: FieldLike[],
     filteredData: Record<string, unknown>,
     sourceData: Record<string, unknown>,
     targetData: Record<string, unknown>,
-    strategy: TranslationStrategy
+    strategy: TranslationStrategy,
+    sourceChangedByLeaf?: ChangedLeaves
   ) {
     this.schema = schema;
     this.filteredData = filteredData;
     this.sourceData = sourceData;
     this.targetData = targetData;
     this.strategy = strategy;
+    this.sourceChangedByLeaf = sourceChangedByLeaf;
   }
 
-  /** Collects translatable field chunks that need translation. */
   collect(): FieldChunk[] {
     const selected: { dataRef: Record<string, unknown>; key: string; sourceValue: unknown }[] = [];
     const chunks: FieldChunk[] = [];
-    const { strategy } = this;
+    const { strategy, sourceChangedByLeaf } = this;
 
     const walker: FieldWalker<Cursor, unknown> = {
       enterObject(field, cursor) {
@@ -69,7 +74,7 @@ export class FieldChunkCollector {
           data: value,
           source: asObject(cursor.source[field.name]),
           target: asObject(cursor.target[field.name]),
-          path: [...cursor.path, field.name],
+          segments: [...cursor.segments, { kind: "key", name: field.name }],
         };
       },
 
@@ -95,7 +100,11 @@ export class FieldChunkCollector {
               data: item,
               source: sourceItem,
               target: matchElementById(targetArr, sourceItem, isBlocks),
-              path: [...cursor.path, field.name, String(index)],
+              segments: [
+                ...cursor.segments,
+                { kind: "key", name: field.name },
+                elementSegment(sourceItem, isBlocks, index),
+              ],
             },
             fields,
             key: index,
@@ -110,13 +119,21 @@ export class FieldChunkCollector {
 
         const sourceValue = cursor.source[field.name];
         const targetValue = cursor.target[field.name];
-        if (isTranslatableLeaf(field) && strategy.shouldTranslate({ sourceValue, targetValue })) {
+        const idPath = makeIdPath([...cursor.segments, { kind: "key", name: field.name }]);
+        if (
+          isTranslatableLeaf(field) &&
+          strategy.shouldTranslate({
+            sourceValue,
+            targetValue,
+            sourceChanged: sourceChangedByLeaf?.[idPath],
+          })
+        ) {
           selected.push({ dataRef: cursor.data, key: field.name, sourceValue });
           chunks.push({
             schema: field,
             dataRef: cursor.data,
             key: field.name,
-            path: [...cursor.path, field.name],
+            idPath,
           });
         }
         return undefined;
@@ -129,7 +146,7 @@ export class FieldChunkCollector {
 
     walkFields(
       this.schema,
-      { data: this.filteredData, source: this.sourceData, target: this.targetData, path: [] },
+      { data: this.filteredData, source: this.sourceData, target: this.targetData, segments: [] },
       walker
     );
 

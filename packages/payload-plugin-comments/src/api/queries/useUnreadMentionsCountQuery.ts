@@ -2,9 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { QUERY_KEYS } from "../queryKeys";
-import { countUnreadMentions } from "../../services/countUnreadMentions";
+import type { CountUnreadMentionsArgs } from "../../services/countUnreadMentions";
+import { useCommentsRequest } from "../useCommentsRequest";
 import { useCommentsQueryClient } from "../../providers/CommentsQueryClientProvider";
-import { UNREAD_COUNT_REFETCH_INTERVAL } from "../../constants";
+import { COMMENTS_ENDPOINT_PATHS, UNREAD_COUNT_REFETCH_INTERVAL } from "../../constants";
 import type { Mode } from "../../types";
 
 interface Props {
@@ -23,6 +24,7 @@ export function useUnreadMentionsCountQuery({
   locale,
 }: Props) {
   const queryClient = useCommentsQueryClient();
+  const request = useCommentsRequest();
 
   return useQuery(
     {
@@ -34,13 +36,16 @@ export function useUnreadMentionsCountQuery({
         locale
       ),
       queryFn: async () => {
-        const res = await countUnreadMentions({
-          mode,
-          collectionSlug,
-          documentId,
-          globalSlug,
-          locale,
-        });
+        const res = await request<CountUnreadMentionsArgs, { count: number }>(
+          COMMENTS_ENDPOINT_PATHS.unreadMentionsCount,
+          {
+            mode,
+            collectionSlug,
+            documentId,
+            globalSlug,
+            locale,
+          }
+        );
 
         if (!res.success) throw new Error(res.error);
 

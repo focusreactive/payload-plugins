@@ -1,12 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Field, Payload, PayloadRequest } from "payload";
 
-import { computeSourceFingerprint } from "../../../core/domain/content-projection/computeSourceFingerprint.js";
-import type {
-  ProvenanceStore,
-  TranslationProvenanceRecord,
-} from "../../../core/domain/provenance/index.js";
-import { ProvenanceService } from "../../modules/provenance/index.js";
+import { computeFieldFingerprints } from "../../../core/domain/content-projection/computeFieldFingerprints.js";
+import type { ProvenanceStore, ProvenanceReceipt } from "../../../core/domain/provenance/index.js";
+import { ProvenanceService, provenanceIo } from "../../modules/provenance/index.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 
 import { GetDocumentStalenessHandler } from "./getDocumentStaleness.handler.js";
@@ -16,12 +13,10 @@ import type { StalenessConfig } from "./model.js";
 const COLLECTION = "posts";
 const schema: Field[] = [{ name: "title", type: "text", localized: true }];
 const sourceDoc = { id: "1", title: "Hello" };
-// The fingerprint recorded at translation time — recomputed identically by the service.
-const recordedFingerprint = computeSourceFingerprint(sourceDoc, schema);
+const recordedFields = computeFieldFingerprints(sourceDoc, schema);
+const recordedFingerprint = { kind: "fields", hashes: recordedFields } as const;
 
-function makeRecord(
-  overrides: Partial<TranslationProvenanceRecord> = {}
-): TranslationProvenanceRecord {
+function makeRecord(overrides: Partial<ProvenanceReceipt> = {}): ProvenanceReceipt {
   return {
     collectionSlug: COLLECTION,
     documentId: "1",
@@ -61,9 +56,9 @@ const schemaMap = new Map([["posts", schema]]) as CollectionSchemaMap;
 function makeConfig(store: ProvenanceStore | null): StalenessConfig {
   return {
     availableCollections: new Set(["posts"]) as StalenessConfig["availableCollections"],
-    // The fingerprint policy lives in ProvenanceService now; the handlers only delegate. Wrapping the
-    // mock store in a real service keeps this suite exercising the full fetch+fingerprint+compare path.
-    provenanceServiceFactory: store ? (p) => new ProvenanceService(p, store, schemaMap) : undefined,
+    provenanceServiceFactory: store
+      ? (p) => new ProvenanceService(store, schemaMap, {}, provenanceIo(p))
+      : undefined,
   };
 }
 
@@ -102,7 +97,11 @@ describe("GetDocumentStalenessHandler", () => {
 
   it("reports is_stale=true when the source drifted", async () => {
     const store = makeStore({
-      findByDocument: vi.fn().mockResolvedValue([makeRecord({ sourceFingerprint: "fp-old" })]),
+      findByDocument: vi
+        .fn()
+        .mockResolvedValue([
+          makeRecord({ sourceFingerprint: { kind: "fields", hashes: { title: "fp-old" } } }),
+        ]),
     });
     const res = await new GetDocumentStalenessHandler(makeConfig(store)).handle(readReq());
     expect((await bodyOf(res)).locales[0].is_stale).toBe(true);

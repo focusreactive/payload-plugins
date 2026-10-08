@@ -1,3 +1,4 @@
+import { TranslatorBug } from "../../../errors/index.js";
 import type { PipelineContext, PipelineStage } from "../../types/index.js";
 import type { TextExpander } from "./TextExpander.interface.js";
 import { TextChunkExpander } from "./TextChunkExpander.js";
@@ -14,7 +15,7 @@ export class TextChunkExpanderStage implements PipelineStage {
 
   execute(ctx: PipelineContext): PipelineContext {
     if (!ctx.fieldChunks) {
-      throw new Error("TextChunkExpanderStage requires fieldChunks from previous stage");
+      throw new TranslatorBug("TextChunkExpanderStage requires fieldChunks from previous stage");
     }
 
     const expander = new TextChunkExpander(this.expanders);

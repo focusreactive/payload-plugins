@@ -1,0 +1,159 @@
+Suite audit — does anything hold the behaviour after the request-scope unbundle?
+================================================================================
+Target: the uncommitted unbundle (`git diff ed3460cc`, 26 files, +303/-182). The slice was split
+into three files, two single-consumer files moved to their consumer, and the half-identity
+(`userId?` + `userCollection?`) collapsed into one `requester?: Requester | null`.
+
+Method: audit mode. A red config aliased each of the three units to a throwing stub — whatever stays
+green on a stub is proven worthless. Then four mutations against the real code. Every integration
+mutation rebuilt `dist` first, because apps/dev resolves the plugin from there.
+
+
+Part 1 — the stub run
+---------------------
+    the three units' own files    19 failed / 19    0 passed    0 resolution errors
+    all 19 failures read "not implemented — red run"
+
+No tautologies at the strongest available bar: not one check passes with no implementation.
+
+    whole suite on the same stubs    22 failed / 131 files
+
+The three units are load-bearing — 19 other test files depend on them, so a regression in any of
+them surfaces well beyond their own file.
+
+
+Part 2 — four mutations
+-----------------------
+1. requesterOf:  `id == null || collection == null`  ->  `!id || !collection`
+       unit          1583 passed / 1583      NOTHING RED
+       integration    155 passed / 155       NOTHING RED   (PostgreSQL, rebuilt dist)
+
+   *** A HOLE, AND A NEW ONE. ***
+   `requesterOf` is the single place that turns the two stored columns back into an identity, and
+   it decides whether a queued translation is attributed at all. Its zero-id handling is guarded by
+   nothing in 1738 checks. The function is new in this change, and it is private to
+   PayloadJobsRunnerProvider.ts, so no test can reach it without a seam.
+
+2. identityOf:  `user.id == null`  ->  `!user.id`
+       identityOf.test.ts    1 failed / 11   -> "keeps a zero id", and only it
+
+   The zero-id risk IS still held here. The claim in the contract's review log is correct about the
+   deleted block — but see the finding below, because it is not the whole story.
+
+3. killedTheCallersTransaction:  `!= null`  ->  `Boolean(...)`
+       killedTheCallersTransaction.test.ts    1 failed / 5
+       -> "treats the MongoDB adapter's zero transaction id as a transaction", and only it
+
+   The five checks that moved verbatim into the new file genuinely bite at the new location. They
+   are not merely green.
+
+4. the unattributed bypass:  `if (!requester) return ALLOW_ALL`  ->  never taken
+       unit    3 files failed / 131
+
+   "A scope naming nobody skips the permission check" — the security-relevant behaviour the deleted
+   `isAttributed` block touched — is held by three files. It did not leave with the block.
+
+
+Finding: the deletion was sound, the refactor added the gap
+-----------------------------------------------------------
+The contract argued that removing `describe("isAttributed")` (6 checks) lost nothing, because five
+of its cases became unrepresentable and the sixth (zero id) lives on in identityOf.test.ts.
+Mutations 2 and 4 confirm that argument.
+
+But D5 created a SECOND place that makes the same decision from the same raw material — a possibly
+zero id and a possibly empty collection — and only the first one is guarded. The old code decided
+"is this an identity?" once, in `isAttributed`, and that one predicate was tested. The new code
+decides it in `identityOf` (tested) and again in `requesterOf` (untested). Collapsing the type
+removed the need for a guard at every *reader*; it did not remove the need for one at every
+*producer*, and the audit found the producer nobody checks.
+
+
+Also found
+----------
+`server/shared/payload/index.ts` is imported by nobody — 0 hits across the package and apps/dev.
+Every other `shared/*` subdirectory's barrel is re-exported from `server/shared/index.ts`; this one
+is not. As it stands it is a file that exists to look tidy.
+
+
+Cost, counted rather than predicted
+-----------------------------------
+    identityOf.test.ts                    1 double,  80 lines, 11 checks
+    RequestScope.shapes.test.ts           0 doubles, 22 lines,  3 checks
+    killedTheCallersTransaction.test.ts   0 doubles, 30 lines,  5 checks
+
+Well inside normal territory for this package; none is a candidate for a cheaper seam.
+
+
+After the audit: unit 1583 in 131 files, check-types clean, dist rebuilt from restored source.
+Scaffolding (3 stubs + the red config) deleted; `git status` shows the same count of uncommitted
+files as before the audit, and none of them the audit's own.
+
+
+================================================================================
+Second pass — 2026-09-30, over the ten files changed after the first audit
+================================================================================
+The first audit above covered the unbundle up to `asRequester`. Three further rounds of work
+followed, none of which it had seen: the round-trip export (the deep review's finding 3), the public
+type export (its finding 2), and three "contract instead of comment" rewrites. This pass audits only
+those.
+
+Why it was needed, stated plainly: the three rewrites were shipped on a green suite and reported as
+done. When the owner asked whether anything actually tested them, two of the three turned out to be
+guarded by nothing — mutating them left all 132 files green. The tests below were written after that
+question, and this pass re-proves them rather than trusting the author's own run.
+
+
+Mutations — every one restored from a copy and re-verified
+-----------------------------------------------------------
+1. requesterOf -> return null                             1 file red   (requesterRoundTrip)
+2. write side: requester_id/_collection -> null           1 file red   (PayloadJobsTaskRunner)
+3. write side: userId and userCollection SWAPPED          1 file red   (PayloadJobsTaskRunner)
+4. markEvictable: stop writing updatedAt                  1 file red   (2 checks, both clocks)
+5. markEvictable: stop writing completedAt                1 file red   (2 pre-existing checks)
+6. dropLocalesTheProjectDoesNotHave disabled              1 file red   (3 of 4 checks)
+7. CURRENT_VERSION_OF_THIS_LOCALE_ONLY: drop draft        2 files red
+8. CURRENT_VERSION_OF_THIS_LOCALE_ONLY: drop fallback     2 files red
+
+Mutation 3 answers a specific doubt about `expect.objectContaining`: it asserts the values, not the
+presence of the keys, so swapping the two fields reddens it. The assertion is not too loose for what
+it guards.
+
+
+Finding — the public export is held by nothing
+-----------------------------------------------
+    removing `export type { RequestScope, Requester }` from src/index.ts
+        unit          1605 passed / 1605     NOTHING RED
+        check-types   clean                  NOTHING RED
+
+This export exists precisely because a third-party `TaskRunnerProvider` must name the type it is
+handed. Nothing states that, so it can be deleted silently by anyone tidying the barrel — and the
+consumer it exists for lives outside this repository, where the breakage surfaces.
+
+The package has no public-surface test of any kind, so this is a convention that does not exist yet
+rather than one that was skipped.
+
+
+Finding — the package's own `@since` rule is half-applied
+----------------------------------------------------------
+`packages/payload-plugin-translator/CLAUDE.md` requires two things for anything re-exported from
+`src/index.ts`: `@since x.y.z` in the JSDoc, *and* a `Since vX.Y.Z` note in README.md beside the
+feature. The JSDoc carries `@since 0.14.0`; README.md does not mention 0.14.0 at all.
+
+
+Correction to the record — one justification in this work was false
+--------------------------------------------------------------------
+The `SyncTaskRunner` rewrite replaced a comment claiming "`finally`, not after the `try`: the rethrow
+must still leave a timestamp, or `LazyMap` never evicts the failed task." That is wrong. `LazyMap`
+evicts on `isRemovable`, which reads `status`; `updatedAt` only orders the queue, so a stale stamp
+would evict *sooner*, never "not at all".
+
+Checked again this pass, and the second story needed narrowing too: `updatedAt` does break a tie in
+`get-document-status/model.ts:62-65`, but that tie is unreachable for the sync runner, whose map key
+already includes the locale — one task per locale, nothing to tie-break. What is real and reachable
+is that `updatedAt` is returned to the panel as `updated_at`, so a settled task reporting its start
+time is wrong information on screen. The checks assert that, and mutation 4 proves they do.
+
+
+After this pass: unit 1605 in 133 files, check-types clean, lint at the 58 baseline. No scaffolding
+was created — audit mode needs none, the mutations are the instrument. Files restored from copies,
+never `git checkout --`, because the tree carries other sessions' uncommitted work.
