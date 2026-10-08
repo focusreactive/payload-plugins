@@ -13,7 +13,6 @@ import { handleOf } from "./handleOf.js";
 import { readCollectionRef } from "./readCollectionRef.js";
 import { owedIfGaveUp } from "./owedIfGaveUp.js";
 import { retryLimitOf } from "./retryLimitOf.js";
-import { recallThrown, rememberThrown, theHandlerThrew } from "./thrownByTheHandler.js";
 import type { TaskRunnerContext, TaskRunnerProvider } from "../TaskRunnerProvider.interface.js";
 import type { Requester } from "../../../shared/payload/RequestScope.shapes.js";
 import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
@@ -94,6 +93,15 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
     const { taskName, workflowName, queueName, retries, autoRun } = this.config;
     const retryLimit = retryLimitOf(retries);
     const { handler, collections, reportFinalFailure } = context;
+    /**
+     * What the plugin's own handler threw, kept until the run's loop can report it.
+     *
+     * Payload reads `message` off a task's error and throws a `TaskError` of its own
+     * (`getRunTaskFunction.js:83`), so the plugin's error — and the exported error classes a host
+     * matches on — is gone by the time the loop catches anything. Keyed by the job row, which
+     * Payload passes by reference to both handlers registered below.
+     */
+    const thrown = new WeakMap<object, unknown>();
 
     return (config) => {
       const inputSchema: Field[] = [
@@ -185,7 +193,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
               { requester: requesterOf(args.input) }
             );
           } catch (error) {
-            if (args.job) rememberThrown(args.job, error);
+            if (args.job) thrown.set(args.job, error);
             throw error;
           }
           return { output: {} };
@@ -216,11 +224,11 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
               // A cancellation deletes the run's row under it, so Payload's own machinery throws —
               // that is not a locale giving up.
               const owed =
-                reportFinalFailure && theHandlerThrew(job)
+                reportFinalFailure && thrown.has(job)
                   ? owedIfGaveUp(job, taskName, target, retryLimit)
                   : [];
               if (owed.length > 0) {
-                await reportFinalFailure?.(req.payload, owed, recallThrown(job, error));
+                await reportFinalFailure?.(req.payload, owed, thrown.get(job));
               }
               throw error;
             }

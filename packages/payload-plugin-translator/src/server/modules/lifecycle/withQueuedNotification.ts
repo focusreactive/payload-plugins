@@ -24,6 +24,10 @@ export function withQueuedNotification(
   runner: TaskRunner,
   notifier: LifecycleNotifier
 ): TaskRunner {
+  // Bound, not just read: a class implementation needs its own receiver, and binding is what lets
+  // the narrowing survive into the spread below.
+  const findByIds = runner.findByIds?.bind(runner);
+
   return {
     async enqueue(tasks, scope) {
       await Promise.all(tasks.map((task) => notifier.queued(taskFromInput(task))));
@@ -38,6 +42,6 @@ export function withQueuedNotification(
     // pair, so it cannot pass the deprecated array form straight through.
     findByCollection: (collectionSlug, filter) =>
       runner.findByCollection(collectionSlug, toTaskFilter(filter)),
-    ...(runner.findByIds ? { findByIds: (ids: string[]) => runner.findByIds!(ids) } : {}),
+    ...(findByIds ? { findByIds } : {}),
   };
 }
