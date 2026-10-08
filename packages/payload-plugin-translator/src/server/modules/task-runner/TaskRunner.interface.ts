@@ -1,6 +1,6 @@
 import type { CollectionSlug } from "payload";
 
-import type { Task, TaskInput, RunResult } from "./types.js";
+import type { EnqueueAssignment, Task, TaskInput, RunResult } from "./types.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 
 /**
@@ -10,21 +10,44 @@ import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
  * and execution of translation tasks. All business logic
  * (like cancelling existing tasks before enqueue) is encapsulated
  * within the implementation.
+ *
+ * **Obligations every implementation holds, whatever it queues onto.** `__tests__/TaskRunner.invariants.ts`
+ * asserts them; a new runner calls that suite once, and the suite's `describe` names are the list.
+ *
+ * Two it cannot assert, because they bind the caller rather than the runner:
+ * - **A handle is never parsed.** Callers compare it, store it and hand it back.
+ * - **Nothing promises an order.** Callers that need one sort.
  */
 export interface TaskRunner {
   /**
    * Queue translation tasks for execution.
-   * Implementation handles cancellation of existing tasks for the same documents.
    *
    * `scope` joins the reads and writes this makes to the caller's transaction; omit it outside one —
    * an HTTP route — and each operation opens its own.
+   *
+   * Answering with nothing still queues and still satisfies this contract — deprecated,
+   * docs/DEPRECATIONS.md#enqueue-void-return.
+   *
+   * @since 0.16.0 the return type widened.
    */
-  enqueue(tasks: TaskInput[], scope?: RequestScope): Promise<void>;
+  enqueue(tasks: TaskInput[], scope?: RequestScope): Promise<EnqueueAssignment[] | void>;
 
   /**
-   * Cancel tasks by IDs.
+   * Stop the work these handles stand for, as far as this runner can.
+   *
+   * Best effort: a runner that translates inline inside `enqueue` has nothing left to stop.
+   * "Cancelled" is not "did not happen" — only {@link TaskRunner.findByIds} says what was still owed.
    */
   cancel(taskIds: string[]): Promise<void>;
+
+  /**
+   * One {@link Task} per handle **and target locale**, not one per handle.
+   *
+   * Optional: a runner that omits it works unchanged, and `onCancelled` never fires for it.
+   *
+   * @since 0.16.0
+   */
+  findByIds?(taskIds: string[]): Promise<Task[]>;
 
   /**
    * Execute a task immediately.

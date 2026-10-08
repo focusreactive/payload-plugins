@@ -36,7 +36,7 @@ describe("SyncTaskRunner", () => {
   describe("enqueue", () => {
     it("executes handler immediately", async () => {
       const input = createInput();
-      await runner.enqueue([input]);
+      const assigned = await runner.enqueue([input]);
 
       expect(mockHandler).toHaveBeenCalledWith(
         mockPayload,
@@ -47,6 +47,7 @@ describe("SyncTaskRunner", () => {
           targetLng: "de",
           strategy: "overwrite",
           publishOnTranslation: false,
+          handle: assigned[0]?.handle,
         },
         {}
       );
@@ -116,7 +117,7 @@ describe("SyncTaskRunner", () => {
       await expect(
         runner.enqueue([createInput({ targetLng: "de" }), createInput({ targetLng: "fr" })]),
         "nothing of this caller's was rolled back, so one refused locale must not cancel the rest"
-      ).resolves.toBeUndefined();
+      ).resolves.toHaveLength(2);
 
       expect(mockHandler).toHaveBeenCalledTimes(2);
       expect(tasks.get("posts:doc-123:de")?.status).toBe("failed");
@@ -130,7 +131,7 @@ describe("SyncTaskRunner", () => {
       await expect(
         runner.enqueue([createInput()], { transactionID: "tx-1" }),
         "a provider failure ran no Payload operation, so the editor's save is still intact"
-      ).resolves.toBeUndefined();
+      ).resolves.toHaveLength(1);
 
       expect(tasks.get("posts:doc-123:de")?.status).toBe("failed");
     });

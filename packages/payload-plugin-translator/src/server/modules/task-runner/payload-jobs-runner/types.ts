@@ -43,9 +43,19 @@ export type PayloadJobsRunnerConfig = {
   retries?: PayloadJobsRunnerOptions["retries"];
 };
 
+/** Payload keys a run's per-task state by the task's slug, and each task by the id it ran under —
+ * which for this plugin's runs is the target locale. */
+type TaskSlug = string;
+type TaskId = string;
+
 export type PayloadJob = {
+  /** Payload sets this once a run's retries are spent, and never clears it. */
+  hasError?: boolean;
   log?: JobLogEntry[];
-  id: string;
+  /** How many times the whole run has been executed — Payload's second give-up counter. */
+  totalTried?: unknown;
+  taskStatus?: Record<TaskSlug, Record<TaskId, { totalTried?: unknown }>>;
+  id: string | number;
   completedAt?: string | null;
   createdAt: string;
   updatedAt: string;

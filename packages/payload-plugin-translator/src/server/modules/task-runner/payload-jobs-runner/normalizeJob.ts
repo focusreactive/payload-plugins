@@ -35,7 +35,7 @@ export function normalizeJob(job: PayloadJob): Task {
   const { collectionSlug, collectionId } = readCollectionRef(job.input);
 
   return {
-    id: job.id,
+    id: String(job.id),
     status: getJobStatus(job),
     input: {
       collectionSlug,

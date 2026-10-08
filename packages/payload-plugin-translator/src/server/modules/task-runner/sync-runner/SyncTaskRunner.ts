@@ -3,7 +3,7 @@ import type { Payload, CollectionSlug } from "payload";
 import type { TaskFilter, TaskRunner } from "../TaskRunner.interface.js";
 import { toTaskFilter } from "../toTaskFilter.js";
 import type { TaskHandler } from "../TaskRunnerProvider.interface.js";
-import type { Task, TaskInput, RunResult, ID } from "../types.js";
+import type { EnqueueAssignment, Task, TaskInput, RunResult, ID } from "../types.js";
 import type { LazyMap } from "../../../shared/utils/index.js";
 import type { RequestScope } from "../../../shared/payload/RequestScope.shapes.js";
 import { swallowOrThrow } from "../../../shared/payload/swallowOrThrow.js";
@@ -20,9 +20,13 @@ export class SyncTaskRunner implements TaskRunner {
     this.tasks = tasks;
   }
 
-  async enqueue(inputs: TaskInput[], scope: RequestScope = {}): Promise<void> {
+  async enqueue(inputs: TaskInput[], scope: RequestScope = {}): Promise<EnqueueAssignment[]> {
+    const assigned: EnqueueAssignment[] = [];
+    const served = new Set<string>();
     for (const input of inputs) {
       const key = this.getKey(input.collectionSlug, input.collectionId, input.targetLng);
+      if (served.has(key)) continue;
+      served.add(key);
       const now = new Date().toISOString();
 
       const task: Task = {
@@ -35,6 +39,12 @@ export class SyncTaskRunner implements TaskRunner {
       };
 
       this.tasks.set(key, task);
+      assigned.push({
+        collectionSlug: input.collectionSlug,
+        collectionId: input.collectionId,
+        targetLng: input.targetLng,
+        handle: task.id,
+      });
 
       const markEvictable = (status: "completed" | "failed", error?: Task["error"]) => {
         const at = new Date().toISOString();
@@ -56,6 +66,7 @@ export class SyncTaskRunner implements TaskRunner {
               targetLng: input.targetLng,
               strategy: input.strategy,
               publishOnTranslation: input.publishOnTranslation,
+              handle: task.id,
             },
             scope
           );
@@ -67,10 +78,12 @@ export class SyncTaskRunner implements TaskRunner {
           })
       );
     }
+    return assigned;
   }
 
-  async cancel(_taskIds: string[]): Promise<void> {
-    // No-op: synchronous tasks execute immediately and cannot be cancelled
+  /** `findByIds` is deliberately absent: announcing a cancellation would report work that completed. */
+  cancel(_taskIds: string[]): Promise<void> {
+    return Promise.resolve();
   }
 
   async run(_taskId: string): Promise<RunResult> {

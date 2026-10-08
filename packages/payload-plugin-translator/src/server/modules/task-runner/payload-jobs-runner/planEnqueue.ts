@@ -1,6 +1,7 @@
 import type { CollectionSlug } from "payload";
 
-import { isCancelled, latestLogByLocale } from "./normalizeJob.js";
+import { alreadyCovered } from "./alreadyCovered.js";
+import { isCancelled } from "./normalizeJob.js";
 import type { PayloadJob } from "./types.js";
 
 export type RequestShape = {
@@ -14,13 +15,19 @@ export type RequestShape = {
 };
 
 /**
- * `append` and `queue` are independent: a request can both extend a live job and need a job of its
- * own, when a locale it asks for has already been translated by that job.
+ * What to do about each locale a request asked for. **Every requested locale appears in exactly one
+ * of `append`, `queue` and `covered`** — one in none of them is work the caller cannot report.
+ *
+ * `queue` is for a locale the live run has already translated: it will not translate it again.
+ * `covered` needs nothing done, and `coveredBy` names the run doing it — kept apart from `host`,
+ * which is null when the run may not be written to although it is still translating.
  */
 export type EnqueuePlan = {
   host: PayloadJob | null;
   append: string[];
   queue: string[];
+  covered: string[];
+  coveredBy: PayloadJob | null;
 };
 
 /**
@@ -38,19 +45,31 @@ export function planEnqueue(args: {
 }): EnqueuePlan {
   const requested = [...new Set(args.requested)];
   const host = pickHost(args.live, args.request);
-  if (!host) return { host: null, append: [], queue: requested };
+  if (!host) return { host: null, append: [], queue: requested, covered: [], coveredBy: null };
 
-  // Already-succeeded locales need a fresh job: the workflow passes the locale as the task id, so
-  // Payload's restoration would skip them (see the workflow handler in PayloadJobsRunnerProvider).
-  const settled = latestLogByLocale(host);
-  const done = requested.filter((locale) => settled.get(locale)?.state === "succeeded");
   const listed = new Set(host.input?.target_lngs);
   const missing = requested.filter((locale) => !listed.has(locale));
+  const covered = alreadyCovered(host, requested);
+  const alreadyTranslated = requested.filter(
+    (locale) => listed.has(locale) && !covered.includes(locale)
+  );
 
   if (args.exclusiveQueue && host.processing) {
-    return { host: null, append: [], queue: [...missing, ...done] };
+    return {
+      host: null,
+      append: [],
+      queue: [...missing, ...alreadyTranslated],
+      covered,
+      coveredBy: host,
+    };
   }
-  return { host, append: missing, queue: done };
+  return {
+    host,
+    append: missing,
+    queue: alreadyTranslated,
+    covered,
+    coveredBy: covered.length ? host : null,
+  };
 }
 
 /**
@@ -62,6 +81,7 @@ function pickHost(live: PayloadJob[], request: RequestShape): PayloadJob | null 
     (job) =>
       Array.isArray(job.input?.target_lngs) &&
       !isCancelled(job.error) &&
+      job.hasError !== true &&
       job.input?.source_lng === request.sourceLng &&
       job.input?.strategy === request.strategy &&
       (job.input?.publish_on_translation ?? false) === request.publishOnTranslation &&

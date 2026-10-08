@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { CollectionSlug } from "payload";
 
+import type { EnqueueAssignment } from "../../modules/task-runner/types.js";
+
 /**
  * Input validation schema
  */
@@ -22,3 +24,19 @@ export const EnqueueInputSchema = z.object({
 export type EnqueueConfig = {
   availableCollections: Set<CollectionSlug>;
 };
+
+/** One queued locale; `job_id` is what `/translate/cancel` takes back — opaque, never parsed. */
+export type QueuedJob = {
+  collection_slug: string;
+  collection_id: string;
+  target_lng: string;
+  job_id: string;
+};
+
+export const toQueuedJobs = (assigned: EnqueueAssignment[]): QueuedJob[] =>
+  assigned.map((entry) => ({
+    collection_slug: entry.collectionSlug,
+    collection_id: entry.collectionId,
+    target_lng: entry.targetLng,
+    job_id: entry.handle,
+  }));

@@ -39,6 +39,8 @@ export type TaskInput = {
  * Normalized task representation
  */
 export type Task = {
+  /** The run's handle. One run covers a document's whole locale list, so every task of that run
+   * carries the same id. */
   id: string;
   status: TaskStatus;
   input: TaskInput;
@@ -47,6 +49,22 @@ export type Task = {
   completedAt?: string;
   error?: { message: string };
   cancelled: boolean;
+};
+
+/**
+ * One entry per requested target locale — including a locale an existing run already covers, which
+ * is being translated and so is owed that run's handle.
+ *
+ * `handle` is the runner's own name for the work: hand it back to `TaskRunner.cancel` unchanged,
+ * never parse it.
+ *
+ * @since 0.16.0
+ */
+export type EnqueueAssignment = {
+  collectionSlug: CollectionSlug;
+  collectionId: ID;
+  targetLng: string;
+  handle: string;
 };
 
 /**

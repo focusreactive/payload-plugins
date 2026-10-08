@@ -2,8 +2,9 @@ import type { Payload, Where, CollectionSlug } from "payload";
 
 import type { TaskFilter, TaskRunner } from "../TaskRunner.interface.js";
 import { toTaskFilter } from "../toTaskFilter.js";
-import type { Task, TaskInput, RunResult } from "../types.js";
+import type { EnqueueAssignment, Task, TaskInput, RunResult } from "../types.js";
 import type { PayloadJobsRunnerConfig, PayloadJob, StoredWorkflowInput } from "./types.js";
+import { handleOf } from "./handleOf.js";
 import { normalizeJobLocales } from "./normalizeJob.js";
 import { planEnqueue } from "./planEnqueue.js";
 import type { RequestShape } from "./planEnqueue.js";
@@ -20,7 +21,15 @@ type QueueWorkflow = (args: {
   waitUntil?: Date;
   input: StoredWorkflowInput;
   req?: { transactionID?: string | number };
-}) => Promise<unknown>;
+}) => Promise<{ id?: unknown } | undefined>;
+
+const assign = (request: RequestShape, targetLngs: string[], handle: string): EnqueueAssignment[] =>
+  targetLngs.map((targetLng) => ({
+    collectionSlug: request.collectionSlug as CollectionSlug,
+    collectionId: request.collectionId,
+    targetLng,
+    handle,
+  }));
 
 function requestShape(task: TaskInput, scope: RequestScope): RequestShape {
   return {
@@ -48,7 +57,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     private readonly config: PayloadJobsRunnerConfig
   ) {}
 
-  async enqueue(tasks: TaskInput[], scope: RequestScope = {}): Promise<void> {
+  async enqueue(tasks: TaskInput[], scope: RequestScope = {}): Promise<EnqueueAssignment[]> {
     const byRequest = new Map<string, TaskInput[]>();
     for (const task of tasks) {
       const key = requestKey(task, scope);
@@ -67,13 +76,16 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     const exclusiveQueue = Boolean(this.payload.config.jobs?.enableConcurrencyControl);
 
     const groups = [...byRequest.values()];
+    const assigned: EnqueueAssignment[] = [];
     for (let i = 0; i < groups.length; i += ENQUEUE_CONCURRENCY) {
-      await Promise.all(
+      const served = await Promise.all(
         groups
           .slice(i, i + ENQUEUE_CONCURRENCY)
           .map((group) => this.serve(group, liveByDocument, exclusiveQueue, scope))
       );
+      for (const entries of served) assigned.push(...entries);
     }
+    return assigned;
   }
 
   private async serve(
@@ -81,7 +93,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     liveByDocument: Map<string, PayloadJob[]>,
     exclusiveQueue: boolean,
     scope: RequestScope
-  ): Promise<void> {
+  ): Promise<EnqueueAssignment[]> {
     const [first] = group;
     const request = requestShape(first, scope);
     const plan = planEnqueue({
@@ -95,7 +107,18 @@ export class PayloadJobsTaskRunner implements TaskRunner {
       ? await this.extendJob(plan.host, plan.append, first.waitUntil, scope)
       : [];
     const queue = [...plan.queue, ...undelivered];
-    if (queue.length > 0) await this.queueWorkflow(request, queue, first.waitUntil, scope);
+    const delivered = plan.append.filter((locale) => !undelivered.includes(locale));
+
+    const onTheHost = plan.host ? assign(request, delivered, String(plan.host.id)) : [];
+    const onTheCovering = plan.coveredBy
+      ? assign(request, plan.covered, String(plan.coveredBy.id))
+      : [];
+    if (queue.length === 0) return [...onTheHost, ...onTheCovering];
+
+    const handle = await this.queueWorkflow(request, queue, first.waitUntil, scope);
+    return handle === null
+      ? [...onTheHost, ...onTheCovering]
+      : [...onTheHost, ...onTheCovering, ...assign(request, queue, handle)];
   }
 
   private async extendJob(
@@ -123,7 +146,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
         returning: false,
       });
 
-      const reread = await this.findJobById(job.id, scope);
+      const reread = await this.findJobById(String(job.id), scope);
       if (!reread || reread.completedAt) return locales;
       current = reread;
 
@@ -139,7 +162,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     targetLngs: string[],
     waitUntil: Date | undefined,
     scope: RequestScope
-  ): Promise<void> {
+  ): Promise<string | null> {
     const input: StoredWorkflowInput = {
       collection_slug: request.collectionSlug,
       collection_id: request.collectionId,
@@ -152,13 +175,21 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     };
 
     const queueJob = this.payload.jobs.queue as unknown as QueueWorkflow;
-    await queueJob({
-      workflow: this.config.workflowName,
-      queue: this.config.queueName,
-      waitUntil,
-      input,
-      req: freshReq(scope),
-    });
+    return handleOf(
+      await queueJob({
+        workflow: this.config.workflowName,
+        queue: this.config.queueName,
+        waitUntil,
+        input,
+        req: freshReq(scope),
+      })
+    );
+  }
+
+  async findByIds(taskIds: string[]): Promise<Task[]> {
+    if (taskIds.length === 0) return [];
+    const jobs = await this.findRawJobs({ id: { in: taskIds } });
+    return jobs.flatMap(normalizeJobLocales);
   }
 
   async cancel(taskIds: string[]): Promise<void> {

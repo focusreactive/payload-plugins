@@ -1,0 +1,133 @@
+
+ RUN  v3.2.4 /Users/FocusReactive/Documents/Projects/payload-plugins/packages/payload-plugin-translator
+
+ ❯ src/server/modules/lifecycle/stillOwed.test.ts (8 tests | 8 failed) 6ms
+   × stillOwed > owes nothing when every locale was delivered 3ms
+     → not implemented — red run
+   × stillOwed > owes a locale that was attempted and failed 0ms
+     → not implemented — red run
+   × stillOwed > owes a locale the run never reached 0ms
+     → not implemented — red run
+   × stillOwed > does not announce a delivered locale, even though the run ended badly 0ms
+     → not implemented — red run
+   × stillOwed > owes each locale separately, although the run's locales share one id 0ms
+     → not implemented — red run
+   × stillOwed > orders the owed locales the way the run would have translated them 0ms
+     → not implemented — red run
+   × stillOwed > hands back the task itself, not a locale name or a runner's row 0ms
+     → not implemented — red run
+   × stillOwed > owes nothing for a run that covered nothing 0ms
+     → not implemented — red run
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/server/modules/lifecycle/stillOwed.test.ts > stillOwed > owes nothing when every locale was delivered
+Error: not implemented — red run
+ ❯ stillOwed src/server/modules/lifecycle/stillOwed.ts:31:9
+     29| 
+     30| export const stillOwed: StillOwed = () => {
+     31|   throw new Error("not implemented — red run");
+       |         ^
+     32| };
+     33| 
+ ❯ src/server/modules/lifecycle/stillOwed.test.ts:47:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  src/server/modules/lifecycle/stillOwed.test.ts > stillOwed > owes a locale that was attempted and failed
+Error: not implemented — red run
+ ❯ stillOwed src/server/modules/lifecycle/stillOwed.ts:31:9
+     29| 
+     30| export const stillOwed: StillOwed = () => {
+     31|   throw new Error("not implemented — red run");
+       |         ^
+     32| };
+     33| 
+ ❯ src/server/modules/lifecycle/stillOwed.test.ts:53:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  src/server/modules/lifecycle/stillOwed.test.ts > stillOwed > owes a locale the run never reached
+Error: not implemented — red run
+ ❯ stillOwed src/server/modules/lifecycle/stillOwed.ts:31:9
+     29| 
+     30| export const stillOwed: StillOwed = () => {
+     31|   throw new Error("not implemented — red run");
+       |         ^
+     32| };
+     33| 
+ ❯ src/server/modules/lifecycle/stillOwed.test.ts:59:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  src/server/modules/lifecycle/stillOwed.test.ts > stillOwed > does not announce a delivered locale, even though the run ended badly
+Error: not implemented — red run
+ ❯ stillOwed src/server/modules/lifecycle/stillOwed.ts:31:9
+     29| 
+     30| export const stillOwed: StillOwed = () => {
+     31|   throw new Error("not implemented — red run");
+       |         ^
+     32| };
+     33| 
+ ❯ src/server/modules/lifecycle/stillOwed.test.ts:68:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  src/server/modules/lifecycle/stillOwed.test.ts > stillOwed > owes each locale separately, although the run's locales share one id
+Error: not implemented — red run
+ ❯ stillOwed src/server/modules/lifecycle/stillOwed.ts:31:9
+     29| 
+     30| export const stillOwed: StillOwed = () => {
+     31|   throw new Error("not implemented — red run");
+       |         ^
+     32| };
+     33| 
+ ❯ src/server/modules/lifecycle/stillOwed.test.ts:73:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  src/server/modules/lifecycle/stillOwed.test.ts > stillOwed > orders the owed locales the way the run would have translated them
+Error: not implemented — red run
+ ❯ stillOwed src/server/modules/lifecycle/stillOwed.ts:31:9
+     29| 
+     30| export const stillOwed: StillOwed = () => {
+     31|   throw new Error("not implemented — red run");
+       |         ^
+     32| };
+     33| 
+ ❯ src/server/modules/lifecycle/stillOwed.test.ts:77:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  src/server/modules/lifecycle/stillOwed.test.ts > stillOwed > hands back the task itself, not a locale name or a runner's row
+Error: not implemented — red run
+ ❯ stillOwed src/server/modules/lifecycle/stillOwed.ts:31:9
+     29| 
+     30| export const stillOwed: StillOwed = () => {
+     31|   throw new Error("not implemented — red run");
+       |         ^
+     32| };
+     33| 
+ ❯ src/server/modules/lifecycle/stillOwed.test.ts:85:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  src/server/modules/lifecycle/stillOwed.test.ts > stillOwed > owes nothing for a run that covered nothing
+Error: not implemented — red run
+ ❯ stillOwed src/server/modules/lifecycle/stillOwed.ts:31:9
+     29| 
+     30| export const stillOwed: StillOwed = () => {
+     31|   throw new Error("not implemented — red run");
+       |         ^
+     32| };
+     33| 
+ ❯ src/server/modules/lifecycle/stillOwed.test.ts:89:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  8 failed (8)
+   Start at  18:58:26
+   Duration  326ms (transform 34ms, setup 0ms, collect 29ms, tests 6ms, environment 0ms, prepare 60ms)
+

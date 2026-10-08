@@ -9,7 +9,7 @@ import { isCollectionAvailable, getAllCollectionIds } from "../_lib/collection-u
 
 import { Locales } from "../../../core/domain/locales/index.js";
 
-import { EnqueueInputSchema } from "./model.js";
+import { EnqueueInputSchema, toQueuedJobs } from "./model.js";
 import type { EnqueueConfig } from "./model.js";
 
 export class EnqueueTranslationHandler {
@@ -90,11 +90,15 @@ export class EnqueueTranslationHandler {
       }))
     );
 
-    await runner.enqueue(
+    const assigned = await runner.enqueue(
       tasks,
       identityOf(req, authCollectionsOf(req.payload), req.payload.logger)
     );
 
-    return ServerResponse.success({ success: true, queued: tasks.length });
+    return ServerResponse.success({
+      success: true,
+      queued: tasks.length,
+      ...(assigned ? { jobs: toQueuedJobs(assigned) } : {}),
+    });
   }
 }
