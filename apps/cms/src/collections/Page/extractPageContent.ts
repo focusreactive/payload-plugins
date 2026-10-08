@@ -19,10 +19,25 @@ import {
   uploadImage,
 } from "@/lib/contentExtraction";
 import type { ImageGroup, LinkResolveCtx, LinkValue, Upload } from "@/lib/contentExtraction";
-import type { GlobalBlock, Page, SectionHeadingFields } from "@/payload-types";
+import type { GlobalBlock, HeroBlock, Page, SectionHeadingFields } from "@/payload-types";
 
 type Block = Page["blocks"][number];
 type GlobalBlockContent = NonNullable<GlobalBlock["block"]>[number];
+
+function extractHeroContent(
+  hero: HeroBlock,
+  ctx: LinkResolveCtx,
+  docs: DocStore,
+  helpers: { compact: (n: (ContentNode | null | undefined)[]) => ContentNode[] }
+): ContentNode[] {
+  return [
+    ...helpers.compact([
+      ...sectionHeadingContent(hero.heading, 1),
+      groupImage(hero.image as ImageGroup, docs),
+    ]),
+    ...actionLinks(hero.actions as LinkValue[], ctx),
+  ];
+}
 
 export function extractPageBlockContent(
   block: Block,
@@ -32,14 +47,6 @@ export function extractPageBlockContent(
 ): ContentNode[] {
   const b = block as Record<string, unknown> & Block;
   switch (block.blockType) {
-    case "hero":
-      return [
-        ...helpers.compact([
-          ...sectionHeadingContent(b.heading as SectionHeadingFields, 1),
-          groupImage(b.image as ImageGroup, docs),
-        ]),
-        ...actionLinks(b.actions as LinkValue[], ctx),
-      ];
     case "content":
       return [
         ...helpers.compact([
@@ -172,6 +179,7 @@ function mergeStores(...stores: (DocStore | null)[]): DocStore {
 }
 
 const extractPageContent: ContentExtractor = async (values, ctx, { resolveDocs, helpers }) => {
+  const hero = asArray<HeroBlock>((values as { hero?: unknown }).hero);
   const blocks = asArray<Block>((values as { blocks?: unknown }).blocks);
   const locale = ctx.locale ?? I18N_CONFIG.defaultLocale;
 
@@ -197,7 +205,10 @@ const extractPageContent: ContentExtractor = async (values, ctx, { resolveDocs, 
   const docs = mergeStores(docs1, docs2);
   const linkCtx: LinkResolveCtx = { docs, locale };
 
-  return blocks.flatMap((block) => extractPageBlockContent(block, linkCtx, docs, helpers));
+  return [
+    ...hero.flatMap((heroBlock) => extractHeroContent(heroBlock, linkCtx, docs, helpers)),
+    ...blocks.flatMap((block) => extractPageBlockContent(block, linkCtx, docs, helpers)),
+  ];
 };
 
 export default extractPageContent;
