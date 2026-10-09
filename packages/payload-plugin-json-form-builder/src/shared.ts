@@ -18,5 +18,19 @@ export {
   SIMPLE,
 } from "./field/htmlToLexical.js";
 export type { Holds } from "./field/htmlToLexical.js";
+export {
+  array,
+  checkbox,
+  collapsible,
+  date,
+  group,
+  number,
+  radio,
+  richText,
+  select,
+  text,
+  textarea,
+  upload,
+} from "./field/shapes.js";
 export { jsonErrors, problems, faults, schemaErrors } from "./field/checks.js";
 export type { Fault } from "./field/checks.js";

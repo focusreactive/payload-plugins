@@ -99,7 +99,9 @@ export const JsonBuilderSettings = ({ node, onChange }: Settings) => {
           value={node.label ?? ""}
         />
       )}
-      {node.type === "select" && <Options node={node} onChange={onChange} />}
+      {(node.type === "select" || node.type === "radio") && (
+        <Options node={node} onChange={onChange} />
+      )}
       {node.type === "number" && (
         <>
           <Limit name="min" node={node} onChange={onChange} />

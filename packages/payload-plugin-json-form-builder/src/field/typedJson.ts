@@ -6,10 +6,12 @@ export type LeafType =
   | "richText"
   | "upload"
   | "checkbox"
-  | "select";
+  | "select"
+  | "radio";
 export type Condition = { field: string } & ({ equals: unknown } | { notEquals: unknown });
 type Base = {
   name?: string;
+  shape?: string;
   source?: string;
   label?: string;
   required?: boolean;
@@ -52,6 +54,7 @@ export const TYPES = [
   "upload",
   "checkbox",
   "select",
+  "radio",
   "array",
   "group",
   "collapsible",
@@ -148,7 +151,7 @@ export const blankNode = (type: NodeType): TypedNode => {
     name: "",
     type,
     value: blankValue(type),
-    ...(type === "select" ? { options: ["option"] } : {}),
+    ...(type === "select" || type === "radio" ? { options: ["option"] } : {}),
   } as Leaf;
 };
 

@@ -25,6 +25,7 @@ import { labelOf } from "./JsonNode.js";
 import { schemaErrors } from "../field/checks.js";
 import {
   addAt,
+  addManyAt,
   addSection,
   editAt,
   keyFault,
@@ -65,7 +66,7 @@ export const JsonBuilder = ({
   const [key, setKey] = useState("");
   const [hovered, setHovered] = useState("");
   const [making, setMaking] = useState<"field" | "section" | null>(null);
-  const { anchor: richTextAnchor, library: held, uploads } = useJsonFormConfig();
+  const { anchor: richTextAnchor, library: held, shapes, uploads } = useJsonFormConfig();
   const missing: NodeType[] = [
     ...(uploads ? [] : ["upload" as NodeType]),
     ...(richTextAnchor ? [] : ["richText" as NodeType]),
@@ -158,6 +159,15 @@ export const JsonBuilder = ({
     setKey("");
     openModal(formSlug);
   };
+
+  const addShape = (shape: string, fields: TypedNode[]) =>
+    setDraft(
+      addManyAt(
+        draft,
+        here,
+        fields.map((field) => ({ ...field, shape }))
+      )
+    );
 
   const edit = (spot: Spot) => {
     const node = nodeAt(draft, spot);
@@ -354,6 +364,12 @@ export const JsonBuilder = ({
                   onOrder: reorder,
                   onOpen: (index) => setAt([...at, index]),
                   onRemove: (index) => remove({ section: current, at: [...at, index] }),
+                  onRemoveShape: (from, upto) =>
+                    setDraft(
+                      editAt(draft, here, (node) =>
+                        withShape(node, shapeOf(node).toSpliced(from, upto - from))
+                      )
+                    ),
                 }}
               />
             </>
@@ -373,6 +389,22 @@ export const JsonBuilder = ({
                 ? "A strip of tabs holds tabs only."
                 : "It lands where you are standing."}
           </p>
+          {section && Object.keys(shapes).length > 0 && holder?.type !== "tabs" && (
+            <div className="json-builder__palette">
+              <h5 className="json-builder__group">Custom</h5>
+              {Object.entries(shapes).map(([name, fields]) => (
+                <button
+                  className="json-builder__kind-card"
+                  key={name}
+                  onClick={() => addShape(name, fields)}
+                  type="button"
+                >
+                  <span className="json-builder__tile json-builder__tile--custom">◆</span>
+                  <span className="json-builder__kind-name">{name}</span>
+                </button>
+              ))}
+            </div>
+          )}
           {section &&
             GROUPS.map((group) => {
               const inGroup = offered.filter((type) => KINDS[type].group === group);
