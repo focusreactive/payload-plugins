@@ -1,3 +1,12 @@
+# @focus-reactive/payload-plugin-json-form-builder [1.5.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.4.0...@focus-reactive/payload-plugin-json-form-builder@1.5.0) (2026-10-09)
+
+
+### Features
+
+* a radio kind, drawn as buttons in a row ([4814de7](https://github.com/focusreactive/payload-plugins/commit/4814de7c7b919cdcd1c48cd4738a087a9689c1c9))
+* a shape follows the schema it was declared from ([a01a877](https://github.com/focusreactive/payload-plugins/commit/a01a8770e492cc1062736ea060745d9204e78bf9))
+* shapes offer ready-made field sets in the palette ([3f9ccbf](https://github.com/focusreactive/payload-plugins/commit/3f9ccbfa914393ec54261f3f4bba972bad433203))
+
 # @focus-reactive/payload-plugin-json-form-builder [1.4.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.3.2...@focus-reactive/payload-plugin-json-form-builder@1.4.0) (2026-10-07)
 
 
