@@ -58,13 +58,6 @@ export type {
   TaskFilter,
 } from "./server/modules/task-runner/index.js";
 /**
- * The names a third-party runner answers with: `EnqueueAssignment` from `enqueue`, `Task` from
- * `findByIds`.
- *
- * @since 0.16.0
- */
-export type { EnqueueAssignment, Task } from "./server/modules/task-runner/index.js";
-/**
  * A third-party `TaskRunnerProvider` has always had to accept a `RequestScope` — it is the second
  * parameter of `TaskRunner.enqueue` and of the `TaskHandler` it is handed — but could not name the
  * type. Exported so an implementation outside this package can.

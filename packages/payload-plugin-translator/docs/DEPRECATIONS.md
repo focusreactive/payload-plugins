@@ -256,7 +256,8 @@ the single source of truth — code annotations link here by anchor instead of d
 - **What:** `TaskRunner.enqueue` resolving with nothing.
 - **Status:** live
 - **Deprecated:** 2026-10-07 / PR pending (issues #107, #110)
-- **Replacement:** resolve with one `EnqueueAssignment` per requested locale.
+- **Replacement:** resolve with one assignment per requested locale — the shape `TaskRunnerProvider`
+  infers for `enqueue`; an implementation returns it as an object literal and needs no import.
 - **Remove in:** next major
 - **Why:** the handle is what every later message about the work is keyed by — `onCompleted`,
   `onFailed`, `onCancelled`, the enqueue answer and the cancel route all name it. A runner that

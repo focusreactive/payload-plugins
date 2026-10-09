@@ -3,6 +3,17 @@
 Package-specific conventions for `@focus-reactive/payload-plugin-translator`.
 Complements the root [CLAUDE.md](../../CLAUDE.md) — it does not replace it.
 
+## What goes into `src/index.ts`
+
+**Only what a consumer outside the package cannot do their job without naming.** Before
+adding a re-export, write the consumer in a scratch file and type-check it: contextual
+typing from an already-exported interface covers object literals, callbacks and return
+positions, so a type the contract merely *mentions* usually needs no export at all. A test
+or fixture in this repository is not a consumer — it has internal import paths.
+
+See [ADR-0002](../../docs/adr/0002-publish-only-what-a-consumer-must-name.md) for the three
+questions and the case that produced them.
+
 ## Documenting feature versions
 
 Annotate every new piece of **public API** (anything re-exported from
