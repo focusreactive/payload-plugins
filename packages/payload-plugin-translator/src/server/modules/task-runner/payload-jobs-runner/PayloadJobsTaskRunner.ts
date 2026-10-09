@@ -4,14 +4,11 @@ import type { TaskFilter, TaskRunner } from "../TaskRunner.interface.js";
 import type { TaskRunnerContext } from "../TaskRunnerProvider.interface.js";
 import { toTaskFilter } from "../toTaskFilter.js";
 import type { EnqueueAssignment, Task, TaskInput, RunResult } from "../types.js";
-import type { PayloadJobsRunnerConfig, PayloadJob, StoredWorkflowInput } from "./types.js";
-import { assignmentOf } from "./assignmentOf.js";
-import { handleOf } from "./handleOf.js";
-import { normalizeJobLocales } from "./normalizeJob.js";
-import { owedOnCancel } from "./owedOnCancel.js";
-import { planEnqueue } from "./planEnqueue.js";
-import type { RequestShape } from "./planEnqueue.js";
-import { readCollectionRef } from "./readCollectionRef.js";
+import type { PayloadJobsRunnerConfig } from "./config.js";
+import type { PayloadJob, StoredWorkflowInput } from "./store/index.js";
+import { assignmentOf, handleOf, normalizeJobLocales, readCollectionRef } from "./store/index.js";
+import { owedOnCancel, planEnqueue } from "./model/index.js";
+import type { RequestShape } from "./model/index.js";
 import type { RequestScope } from "../../../shared/payload/RequestScope.shapes.js";
 import { freshReq } from "../../../shared/payload/RequestScope.shapes.js";
 
@@ -202,7 +199,6 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   async cancel(taskIds: string[]): Promise<void> {
     if (taskIds.length === 0) return;
 
-    // Read before writing: once the rows are deleted there is nothing left to say what was owed.
     for (const job of await this.findRawJobs({ id: { in: taskIds } })) {
       for (const task of owedOnCancel(job)) {
         const assignment = assignmentOf(job, task.input.targetLng);

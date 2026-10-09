@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload } from "payload";
 
 import { PayloadJobsTaskRunner } from "../PayloadJobsTaskRunner.js";
-import type { PayloadJobsRunnerConfig } from "../types.js";
+import type { PayloadJobsRunnerConfig } from "../config.js";
 
 const testContext = {
   handler: vi.fn().mockResolvedValue(undefined),

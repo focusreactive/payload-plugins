@@ -1,8 +1,8 @@
 import { stillOwed } from "./stillOwed.js";
-import type { Task } from "../types.js";
+import type { Task } from "../../types.js";
 import { isLastAttempt } from "./isLastAttempt.js";
-import { normalizeJobLocales } from "./normalizeJob.js";
-import type { PayloadJob } from "./types.js";
+import { normalizeJobLocales } from "../store/index.js";
+import type { PayloadJob } from "../store/index.js";
 
 /**
  * Which locales a run will never deliver, given that `target` has just thrown — nothing while the

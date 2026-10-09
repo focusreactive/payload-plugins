@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import type { PayloadJob } from "../types.js";
-import { owedIfGaveUp } from "../owedIfGaveUp.js";
+import type { PayloadJob } from "../store/types.js";
+import { owedIfGaveUp } from "../model/owedIfGaveUp.js";
 
 const TASK = "translate-locale";
 

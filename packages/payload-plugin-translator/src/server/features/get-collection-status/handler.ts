@@ -11,10 +11,13 @@ import type { GetCollectionStatusConfig } from "./model.js";
  * Gets translation status for all documents in a collection
  */
 export class GetCollectionStatusHandler {
-  constructor(
-    private readonly config: GetCollectionStatusConfig,
-    private readonly taskRunnerFactory: TaskRunnerFactory
-  ) {}
+  private readonly config: GetCollectionStatusConfig;
+  private readonly taskRunnerFactory: TaskRunnerFactory;
+
+  constructor(config: GetCollectionStatusConfig, taskRunnerFactory: TaskRunnerFactory) {
+    this.config = config;
+    this.taskRunnerFactory = taskRunnerFactory;
+  }
 
   async handle(req: PayloadRequest): Promise<Response> {
     const validationResult = GetCollectionStatusInputSchema.safeParse(req.routeParams);

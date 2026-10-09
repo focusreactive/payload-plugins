@@ -1,4 +1,4 @@
-import type { PayloadJobsRunnerOptions } from "./types.js";
+import type { PayloadJobsRunnerOptions } from "../config.js";
 
 /**
  * How many retries the plugin configured, in the one form {@link isLastAttempt} compares against.

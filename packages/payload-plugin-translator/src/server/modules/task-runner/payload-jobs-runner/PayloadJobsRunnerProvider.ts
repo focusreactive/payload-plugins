@@ -1,33 +1,40 @@
 import { TranslatorConfigError } from "../../../../core/errors/index.js";
-import type { Config, Field, Payload, WorkflowConfig } from "payload";
+import type { Config, Payload, WorkflowConfig } from "payload";
 
 import type { TaskRunner } from "../TaskRunner.interface.js";
-import type {
-  PayloadJob,
-  PayloadJobsRunnerOptions,
-  PayloadJobsRunnerConfig,
-  AutoRunConfig,
-  StoredWorkflowInput,
-} from "./types.js";
+import type { PayloadJobsRunnerOptions, PayloadJobsRunnerConfig, AutoRunConfig } from "./config.js";
+import type { StoredTaskInput, StoredWorkflowInput } from "./store/index.js";
+import type { TranslationStrategyName } from "../../../../core/translation-pipeline/strategies/index.js";
 import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner.js";
-import { assignmentOf } from "./assignmentOf.js";
-import { readCollectionRef } from "./readCollectionRef.js";
-import { latestLogByLocale } from "./normalizeJob.js";
-import { owedIfGaveUp } from "./owedIfGaveUp.js";
-import { retryLimitOf } from "./retryLimitOf.js";
+import { chain, contribute } from "../../../shared/payload/contribute.js";
+import {
+  assignmentOf,
+  readCollectionRef,
+  TaskInputSchema,
+  toPayloadFields,
+  withLegacyCollection,
+  WorkflowInputSchema,
+} from "./store/index.js";
+import { deliveredLocales, localesAsTheyStand, owedIfGaveUp, retryLimitOf } from "./model/index.js";
 import type { TaskRunnerContext, TaskRunnerProvider } from "../TaskRunnerProvider.interface.js";
 import type { TaskEvent } from "../types.js";
 import type { Requester } from "../../../shared/payload/RequestScope.shapes.js";
 import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
-import type { TranslationStrategyName } from "../../../../core/translation-pipeline/strategies/index.js";
 
 const defaultAutoRun: Required<AutoRunConfig> = {
   cron: "* * * * *",
   limit: 50,
 };
 
+function resolveAutoRun(
+  option: PayloadJobsRunnerOptions["autoRun"]
+): PayloadJobsRunnerConfig["autoRun"] {
+  if (option === false) return false;
+  if (!option) return defaultAutoRun;
+  return { ...defaultAutoRun, ...option };
+}
+
 type StoredJobInput = Partial<StoredWorkflowInput> & Record<string, unknown>;
-type RunLocaleTask = (taskID: string, args: { input: Record<string, unknown> }) => Promise<unknown>;
 
 const DEFAULT_STALE_JOB_TIMEOUT_MS = 5 * 60 * 1000;
 
@@ -47,6 +54,20 @@ const defaultValues = {
 };
 
 /**
+ * What Payload hands this plugin's registered task: the request it runs under, the row it belongs to
+ * — carried only so a throw can be stored against it — and the locale's stored input.
+ *
+ * `strategy` is narrowed here and nowhere else. The column holds any bounded string, because a row
+ * written by an older version may name a strategy this one dropped; this handler is the one place
+ * that hands the value to something which only accepts the names this version has.
+ */
+type TranslateLocaleTask = {
+  req: { payload: Payload };
+  job?: { id?: unknown };
+  input: StoredTaskInput & { strategy: TranslationStrategyName };
+};
+
+/**
  * Rows queued before the scope carried one `requester` object are already on disk as two nullable
  * columns, so both must be present before they read back as an identity.
  */
@@ -61,12 +82,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
   private readonly config: PayloadJobsRunnerConfig;
 
   constructor(options?: PayloadJobsRunnerOptions) {
-    const autoRun =
-      options?.autoRun === false
-        ? false
-        : options?.autoRun
-          ? { ...defaultAutoRun, ...options.autoRun }
-          : defaultAutoRun;
+    const autoRun = resolveAutoRun(options?.autoRun);
 
     const staleJobTimeoutMs = options?.staleJobTimeoutMs ?? defaultValues.staleJobTimeoutMs;
     if (!Number.isFinite(staleJobTimeoutMs) || staleJobTimeoutMs <= 0) {
@@ -94,89 +110,20 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
     const { taskName, workflowName, queueName, retries, autoRun } = this.config;
     const retryLimit = retryLimitOf(retries);
     const { handler, collections, report } = context;
-    /**
-     * What the plugin's own handler threw, kept until the run's loop can report it.
-     *
-     * Payload reads `message` off a task's error and throws a `TaskError` of its own
-     * (`getRunTaskFunction.js:83`), so the plugin's error — and the exported error classes a host
-     * matches on — is gone by the time the loop catches anything. Keyed by the job row, which
-     * Payload passes by reference to both handlers registered below.
-     */
     const thrown = new WeakMap<object, unknown>();
 
     return (config) => {
-      const inputSchema: Field[] = [
-        {
-          type: "text",
-          name: "collection_slug",
-          required: true,
-        },
-        {
-          type: "text",
-          name: "collection_id",
-          required: true,
-        },
-        {
-          type: "relationship",
-          name: "collection",
-          relationTo: collections,
-          required: false,
-          admin: {
-            readOnly: true,
-            description: "Deprecated. See docs/DEPRECATIONS.md#jobs-input-collection-field",
-          },
-        },
-        {
-          type: "text",
-          maxLength: 256,
-          name: "source_lng",
-          required: true,
-        },
-        {
-          type: "text",
-          maxLength: 256,
-          name: "target_lng",
-          required: true,
-        },
-        {
-          type: "text",
-          maxLength: 256,
-          name: "strategy",
-          required: true,
-        },
-        {
-          type: "checkbox",
-          name: "publish_on_translation",
-          defaultValue: false,
-        },
-      ];
-
-      const workflowInputSchema: Field[] = [
-        ...inputSchema.filter((f) => "name" in f && f.name !== "target_lng"),
-        { type: "json", name: "target_lngs", required: true },
-        { type: "text", name: "requester_id" },
-        { type: "text", name: "requester_collection" },
-      ];
+      const inputSchema = withLegacyCollection(toPayloadFields(TaskInputSchema), collections);
+      const workflowInputSchema = withLegacyCollection(
+        toPayloadFields(WorkflowInputSchema),
+        collections
+      );
 
       const task = {
         slug: taskName,
         inputSchema,
         retries,
-        handler: async (args: {
-          req: { payload: Payload };
-          job?: { id?: unknown };
-          input: {
-            collection_slug?: string;
-            collection_id?: string;
-            collection?: { relationTo: string; value: string | number };
-            source_lng: string;
-            target_lng: string;
-            strategy: TranslationStrategyName;
-            publish_on_translation?: boolean;
-            requester_id?: string | number | null;
-            requester_collection?: string | null;
-          };
-        }) => {
+        handler: async (args: TranslateLocaleTask) => {
           const { collectionSlug, collectionId } = readCollectionRef(args.input);
           try {
             await handler(
@@ -212,26 +159,18 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
             }
           : {}),
         handler: async ({ job, req, tasks }) => {
-          const runLocale = (tasks as Record<string, RunLocaleTask>)[taskName];
-          const storedJob = job as unknown as PayloadJob;
+          const runLocale = tasks[taskName];
           const reportFor = async (locale: string, event: TaskEvent) => {
-            const assignment = assignmentOf(storedJob, locale);
+            const assignment = assignmentOf(job, locale);
             if (assignment) await report(req.payload, assignment, event);
           };
-          for (let i = 0; ; i++) {
-            const { target_lngs: targets, ...shared } = job.input;
-            const target = targets?.[i];
-            if (target === undefined) return;
-            // Payload hands back a completed task's stored output instead of re-running it, so a
-            // later pass through this loop would report `delivered` twice — read the log first.
-            const deliveredEarlier =
-              latestLogByLocale(storedJob).get(target)?.state === "succeeded";
+          const deliveredBefore = deliveredLocales(job);
+
+          for (const { target, input } of localesAsTheyStand(job)) {
             try {
-              await runLocale(target, { input: { ...shared, target_lng: target } });
-              if (!deliveredEarlier) await reportFor(target, { state: "delivered" });
+              await runLocale(target, { input });
+              if (!deliveredBefore.has(target)) await reportFor(target, { state: "delivered" });
             } catch (error) {
-              // A cancellation deletes the run's row under it, so Payload's own machinery throws —
-              // that is not a locale giving up.
               const owed = thrown.has(job) ? owedIfGaveUp(job, taskName, target, retryLimit) : [];
               for (const dead of owed) {
                 await reportFor(dead.input.targetLng, { state: "failed", error: thrown.get(job) });
@@ -242,35 +181,18 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
         },
       };
 
-      if (!config.jobs) config.jobs = {};
-      if (!config.jobs.tasks) config.jobs.tasks = [];
-      config.jobs.tasks.push(task);
-      if (!config.jobs.workflows) config.jobs.workflows = [];
-      config.jobs.workflows.push(workflow);
-
+      const jobs = (config.jobs ??= {});
+      jobs.tasks = contribute(jobs.tasks, [task], (registered) => registered.slug);
+      jobs.workflows = contribute(jobs.workflows, [workflow], (registered) => registered.slug);
       if (autoRun) {
-        const autoRunConfig = {
-          queue: queueName,
-          cron: autoRun.cron,
-          limit: autoRun.limit,
-        };
-
-        const existingAutoRun = config.jobs.autoRun;
-        if (Array.isArray(existingAutoRun)) {
-          existingAutoRun.push(autoRunConfig);
-        } else if (typeof existingAutoRun === "function") {
-          config.jobs.autoRun = async (payload: Payload) => [
-            ...(await existingAutoRun(payload)),
-            autoRunConfig,
-          ];
-        } else {
-          config.jobs.autoRun = [autoRunConfig];
-        }
+        jobs.autoRun = contribute(
+          jobs.autoRun,
+          [{ queue: queueName, cron: autoRun.cron, limit: autoRun.limit }],
+          (schedule) => `${schedule.queue}@${schedule.cron}`
+        );
       }
 
-      const existingOnInit = config.onInit;
-      config.onInit = async (payload) => {
-        if (existingOnInit) await existingOnInit(payload);
+      config.onInit = chain(config.onInit, async (payload) => {
         try {
           await new PayloadJobsTaskRunner(payload, this.config, context).reclaimStaleJobs();
         } catch (err) {
@@ -279,7 +201,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
             msg: "[translator] failed to reclaim stale translation jobs",
           });
         }
-      };
+      });
 
       return config;
     };

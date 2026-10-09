@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isLastAttempt } from "../isLastAttempt.js";
+import { isLastAttempt } from "../model/isLastAttempt.js";
 
 describe("isLastAttempt", () => {
   it.each([

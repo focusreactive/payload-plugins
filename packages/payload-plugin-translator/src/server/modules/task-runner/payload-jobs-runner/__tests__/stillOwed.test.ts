@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { Task, TaskInput } from "../../types.js";
-import { stillOwed } from "../stillOwed.js";
+import { stillOwed } from "../model/stillOwed.js";
 
 const RUN_ID = "run-1";
 

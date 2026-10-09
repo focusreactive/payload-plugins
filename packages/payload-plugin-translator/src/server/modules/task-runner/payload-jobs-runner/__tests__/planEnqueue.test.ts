@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { planEnqueue } from "../planEnqueue.js";
-import type { EnqueuePlan } from "../planEnqueue.js";
-import type { RequestShape } from "../planEnqueue.js";
-import type { PayloadJob } from "../types.js";
+import { planEnqueue } from "../model/planEnqueue.js";
+import type { EnqueuePlan } from "../model/planEnqueue.js";
+import type { RequestShape } from "../model/planEnqueue.js";
+import type { PayloadJob } from "../store/types.js";
 
 const request: RequestShape = {
   collectionSlug: "posts",

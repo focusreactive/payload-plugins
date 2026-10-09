@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 import { PayloadJobsTaskRunner } from "../PayloadJobsTaskRunner.js";
-import type { PayloadJobsRunnerConfig, PayloadJob } from "../types.js";
+import type { PayloadJobsRunnerConfig } from "../config.js";
+import type { PayloadJob } from "../store/types.js";
 import type { TaskInput } from "../../types.js";
 import { asRequester } from "../../../../shared/payload/RequestScope.shapes.js";
 

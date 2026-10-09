@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { retryLimitOf } from "../retryLimitOf.js";
+import { retryLimitOf } from "../model/retryLimitOf.js";
 
 describe("retryLimitOf", () => {
   it.each([

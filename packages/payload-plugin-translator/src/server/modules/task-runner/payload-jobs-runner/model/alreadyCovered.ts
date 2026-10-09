@@ -1,4 +1,4 @@
-import type { PayloadJob } from "./types.js";
+import type { PayloadJob } from "../store/index.js";
 
 /**
  * Which requested locales the live run will translate without being touched.

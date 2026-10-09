@@ -13,10 +13,13 @@ import { EnqueueInputSchema, toAssignmentOutputs } from "./model.js";
 import type { EnqueueConfig } from "./model.js";
 
 export class EnqueueTranslationHandler {
-  constructor(
-    private readonly config: EnqueueConfig,
-    private readonly taskRunnerFactory: TaskRunnerFactory
-  ) {}
+  private readonly config: EnqueueConfig;
+  private readonly taskRunnerFactory: TaskRunnerFactory;
+
+  constructor(config: EnqueueConfig, taskRunnerFactory: TaskRunnerFactory) {
+    this.config = config;
+    this.taskRunnerFactory = taskRunnerFactory;
+  }
 
   async handle(req: PayloadRequest): Promise<Response> {
     const validationResult = EnqueueInputSchema.safeParse(await req.json?.());

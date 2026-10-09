@@ -1,7 +1,7 @@
-import type { Task } from "../types.js";
-import { normalizeJobLocales } from "./normalizeJob.js";
+import type { Task } from "../../types.js";
+import { normalizeJobLocales } from "../store/index.js";
 import { stillOwed } from "./stillOwed.js";
-import type { PayloadJob } from "./types.js";
+import type { PayloadJob } from "../store/index.js";
 
 /**
  * Which of a run's locales stopping it still owes an answer about.

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
-import { owedOnCancel } from "../owedOnCancel.js";
-import type { PayloadJob } from "../types.js";
+import { owedOnCancel } from "../model/owedOnCancel.js";
+import type { PayloadJob } from "../store/types.js";
 
 const run = (overrides: Partial<PayloadJob> = {}): PayloadJob => ({
   id: 7,

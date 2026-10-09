@@ -54,8 +54,8 @@ the single source of truth — code annotations link here by anchor instead of d
 - **Code refs:**
   - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsRunnerProvider.ts` (inputSchema, handler input type/unpacking)
   - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsTaskRunner.ts` (enqueue write, `findByCollection` / `findRawJobs` query + in-memory filter)
-  - `src/server/modules/task-runner/payload-jobs-runner/normalizeJob.ts` (read fallback)
-  - `src/server/modules/task-runner/payload-jobs-runner/types.ts` (`PayloadJob.input` shape)
+  - `src/server/modules/task-runner/payload-jobs-runner/store/normalizeJob.ts` (read fallback)
+  - `src/server/modules/task-runner/payload-jobs-runner/store/types.ts` (`PayloadJob.input` shape)
 
 ### jobs-per-locale-task-shape
 
@@ -74,8 +74,8 @@ the single source of truth — code annotations link here by anchor instead of d
   strands those rows: cancel, stale-lock reclaim and the status panels stop finding them, silently.
 - **Code refs:**
   - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsTaskRunner.ts` (`ownJobs()`)
-  - `src/server/modules/task-runner/payload-jobs-runner/planEnqueue.ts` (`pickHost` skips it)
-  - `src/server/modules/task-runner/payload-jobs-runner/normalizeJob.ts` (`normalizeJobLocales`
+  - `src/server/modules/task-runner/payload-jobs-runner/model/planEnqueue.ts` (`pickHost` skips it)
+  - `src/server/modules/task-runner/payload-jobs-runner/store/normalizeJob.ts` (`normalizeJobLocales`
     expands it to itself)
 
 ### find-by-collection-document-ids-array
@@ -291,5 +291,5 @@ the single source of truth — code annotations link here by anchor instead of d
   that ended the run rather than one of its own — nothing ran for it to throw.
 - **Code refs:**
   - `src/server/features/translate-document/wireTranslateRunner.ts` (turns a reported event into a callback)
-  - `src/server/modules/task-runner/payload-jobs-runner/owedIfGaveUp.ts` (when a run has stopped for good)
+  - `src/server/modules/task-runner/payload-jobs-runner/model/owedIfGaveUp.ts` (when a run has stopped for good)
   - `src/server/modules/lifecycle/types.ts` (`TranslationLifecycleCallbacks`)

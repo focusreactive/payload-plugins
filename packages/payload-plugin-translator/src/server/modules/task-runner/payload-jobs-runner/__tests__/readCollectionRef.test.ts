@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { CollectionSlug } from "payload";
-import { readCollectionRef } from "../readCollectionRef.js";
-import type { PayloadJob } from "../types.js";
+import { readCollectionRef } from "../store/readCollectionRef.js";
+import type { PayloadJob } from "../store/types.js";
 
 describe("readCollectionRef", () => {
   describe("new flat-text shape", () => {
@@ -28,6 +28,25 @@ describe("readCollectionRef", () => {
       const ref = readCollectionRef(input);
       expect(ref.collectionSlug).toBe("posts");
       expect(ref.collectionId).toBe("5");
+    });
+  });
+
+  describe("flat fields cleared to null, legacy still populated", () => {
+    it("falls back to the legacy reference, as an absent field does", () => {
+      const input = {
+        collection_slug: null,
+        collection_id: null,
+        collection: { relationTo: "posts" as CollectionSlug, value: "42" },
+        source_lng: "en",
+        target_lng: "de",
+      } as unknown as PayloadJob["input"];
+
+      const ref = readCollectionRef(input);
+
+      expect(ref.collectionSlug, "a cleared text field reads back as null, not undefined").toBe(
+        "posts"
+      );
+      expect(ref.collectionId).toBe("42");
     });
   });
 

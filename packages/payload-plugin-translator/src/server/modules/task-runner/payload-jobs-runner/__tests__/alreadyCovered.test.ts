@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { alreadyCovered } from "../alreadyCovered.js";
-import type { JobLogEntry, PayloadJob } from "../types.js";
+import { alreadyCovered } from "../model/alreadyCovered.js";
+import type { JobLogEntry, PayloadJob } from "../store/types.js";
 
 const translated = (targetLng: string, completedAt = "2024-01-01T00:01:00Z"): JobLogEntry => ({
   state: "succeeded",

@@ -1,6 +1,6 @@
 import type { CollectionSlug } from "payload";
 
-import type { EnqueueAssignment } from "../types.js";
+import type { EnqueueAssignment } from "../../types.js";
 import { handleOf } from "./handleOf.js";
 import { readCollectionRef } from "./readCollectionRef.js";
 import type { PayloadJob } from "./types.js";

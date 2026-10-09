@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { handleOf } from "../handleOf.js";
+import { handleOf } from "../store/handleOf.js";
 
 describe("handleOf", () => {
   it("passes a textual id through", () => {
