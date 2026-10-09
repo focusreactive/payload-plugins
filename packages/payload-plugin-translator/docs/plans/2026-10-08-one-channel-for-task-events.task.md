@@ -72,9 +72,14 @@ and `configure` already hands over a context object. One object beats a growing 
 announcement, which no longer exists: the runner knows what it still owed and reports `cancelled`
 itself. **Owner's choice, taken at the Phase 2 gate.**
 
-**D6 — `report` is required, not optional.** A runner that silently fails to implement it would
-leave its host hearing nothing, and no compiler would say so. Required means a third-party runner
-fails to build until it reports, which is the loudest available signal.
+**D6 — `report` is required on the context, not optional.** Optional would mean the plugin could
+ship a context without it and leave every host silent, with no compiler complaint. Required makes
+that a build error in every file that supplies or reads a context.
+
+What it does **not** do is oblige a runner to call it: no type can require that a function be
+called, and the `silent` fixture in `TaskRunner.conformance.types.ts` compiles while never reporting
+anything. The obligation to report lives in the contract prose and in the invariant suite, which is
+where a runner's behaviour can actually be held to it.
 
 **D7 — five sentences the first draft left out, added before any implementation.** A blind author
 writing the invariants against the contract alone found them, each as a question it could not answer
@@ -108,7 +113,7 @@ the handle is the identity, and promising more would be promising what nothing n
 | 3 | `TaskRunner` has no `findByIds` | grep the interface | no hits |
 | 4 | `taskMapping.ts` exports exactly one mapper | grep count | 1 |
 | 5 | `EnqueueAssignment` carries `sourceLng` and `strategy` | type check of the fixture | compiles |
-| 6 | A runner that does not implement `report` fails to build | compile-only fixture under `check-types` | removing `report` breaks the build |
+| 6 | Nothing can build a `TaskRunnerContext` without `report` | compile-only fixture + mutation under `check-types` | removing `report` from the context breaks the build wherever one is supplied or read |
 | 7 | A host registering `onQueued` hears it once per requested locale, before any terminal event for that locale | integration, real database, both runners | order asserted |
 | 8 | A locale that fails twice then succeeds fires `onFailed` zero times and `onCompleted` once | integration, failing provider | counts |
 | 9 | A locale whose run gives up fires `onFailed` exactly once | integration | one call |
@@ -155,3 +160,51 @@ than pretending otherwise. Closing it means changing what cancellation does, whi
 ## Review log
 
 _(appended by each review pass)_
+
+### 2026-10-09 · phase 5 verification
+
+- **Checks:** unit `bunx vitest run` 2017/143 files · `turbo run check-types --force` 9/9 ·
+  `bunx oxlint` 0 errors · `turbo run build --filter='./packages/*'` green, including the real
+  `tsc` declaration build · integration six combinations, three adapters x Payload's exclusive queue on and off:
+  SQLite 224/7 skipped, PostgreSQL 229/2, MongoDB 222/9 (231 each), no failures
+- **Gates:** `sp-diff-checks` clean over 67 files (+4020/−463), five checks, no findings;
+  `sp-lint-delta --base main` (mode=two-run) nothing introduced — one warning it did find, an unused
+  `assigned` binding in `SyncTaskRunner.test.ts`, was removed. oxlint's default output is not
+  parseable by the delta script; the gate was re-run with `--format=unix` to get a real subtraction.
+- **Reviewers:** correctness · regression · intent (three, as High risk requires; the catalog has no
+  `tests` vector, so its question — would these checks fail if the code were wrong — was folded into
+  the correctness brief). Five findings raised, five acted on.
+  1. *correctness* — `cancel` re-announced a locale the run had already reported `failed`.
+     `stillOwed` keeps every locale that is not `completed`, and a run that gives up keeps
+     `hasError` with no `completedAt`, so its settled locales still read as owed. Reproduced on
+     SQLite before any edit. Fixed by `owedOnCancel`, which answers the cancel path's own question:
+     a spent run owes nothing, a run waiting to retry owes its undelivered locales.
+     **Not taken: the reviewer's one-line fix** (`status !== "failed"`), which would have silenced
+     the legitimate case — a job between attempts logs every locale as failed and those locales are
+     genuinely still owed. `owedOnCancel.test.ts` pins both directions.
+     **Not changed: `cancel-by-collection/handler.ts`**, named as a sibling. Its filter is right;
+     whether a run has given up is the runner's knowledge, so the guard belongs where it now is. The
+     integration suite exercises that endpoint too.
+  2. *intent* — criterion 7 had no check at all: no integration file registered `onQueued`.
+     Written now, one per runner (`queued-before-any-ending.int.test.ts`,
+     `queued-before-any-ending-on-jobs.int.test.ts`), each mutation-proved.
+  3. *regression* — `TranslationTask.handle` documented itself as absent on `onQueued`. False since
+     the runner became what reports `queued`: every callback carries the handle. Rewritten.
+  4. *regression* — `wireTranslateRunner`'s docblock still described the deleted decoration.
+  5. *regression* — `DEPRECATIONS.md` pointed a reader at the removed `reportsFinalFailure`; it now
+     points at `report`'s `failed` event. One stale code-ref line beside it was corrected too.
+  Considered and not acted on: a cron racing the end-of-`enqueue` `queued` loop. The contract
+  promises `queued` before `enqueue` resolves, not before anything external can run, and the new
+  jobs-runner check pins exactly that promise.
+- **Mutations:** removing `report` from `TaskRunnerContext` → build fails in 9 files · narrowing
+  `enqueue` to require assignments → the conformance fixture alone fails · reporting `queued` after
+  the work in `SyncTaskRunner` → "de ended before the host was told it had started" · deleting the
+  jobs runner's `queued` loop → both new jobs checks red · `owedOnCancel` without the give-up guard
+  → the cancel-after-give-up checks red. Every mutation restored and the restore verified.
+- **Criteria:** 13 met · 1 restated. Criterion 6 as written ("a runner that does not implement
+  `report` fails to build") is false and the repository holds its counter-example: the `silent`
+  fixture never calls `report` and compiles, because no type can require that a function be called.
+  The criterion and D6 now claim what the type actually enforces — that nothing can build a context
+  without `report` — and the fixture's docblock says the same.
+- **Left open:** `README.md`'s lifecycle section still describes the per-attempt behaviour; it is the
+  owner's to edit. The handle-reuse limit on SQLite stays named in the contract rather than fixed.

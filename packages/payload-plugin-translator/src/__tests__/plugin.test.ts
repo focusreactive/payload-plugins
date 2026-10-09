@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import type { Config, Payload, CollectionSlug } from "payload";
 import type { TaskRunnerContext } from "../server/modules/task-runner/index.js";
+import type { TaskEvent } from "../server/modules/task-runner/types.js";
+import type { TranslationLifecycleCallbacks } from "../server/modules/lifecycle/types.js";
 
 import { translatorPlugin } from "../plugin.js";
 import { AnyAccessGuard } from "../server/shared/access/AnyAccessGuard.js";
@@ -416,16 +418,18 @@ describe("translatorPlugin — lifecycle callbacks", () => {
 
     const payload = { logger: { error: vi.fn() } } as unknown as Payload;
 
-    it.each([
+    const mappings: Array<[string, keyof TranslationLifecycleCallbacks, TaskEvent]> = [
       ["queued", "onQueued", { state: "queued" }],
       ["delivered", "onCompleted", { state: "delivered" }],
       ["failed", "onFailed", { state: "failed", error: new Error("provider down") }],
       ["cancelled", "onCancelled", { state: "cancelled" }],
-    ])("turns %s into %s", async (_label, callbackName, event) => {
+    ];
+
+    it.each(mappings)("turns %s into %s", async (_label, callbackName, event) => {
       const callback = vi.fn();
       const context = await contextHandedToTheRunner({ [callbackName]: callback });
 
-      await context.report(payload, assignment, event as never);
+      await context.report(payload, assignment, event);
 
       expect(callback, `${String(event)} must reach ${callbackName}`).toHaveBeenCalledWith(
         expect.objectContaining({ collection: "posts", id: "doc-1", targetLng: "de" }),

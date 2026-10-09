@@ -6,8 +6,10 @@ import type { TaskRunnerProvider } from "../../../../index.js";
  * A compile-only fixture, enforced by `check-types` rather than by a running test.
  *
  * It imports one name from the published barrel, which is all a third-party runner can reach.
- * Narrowing `enqueue` to require assignments must make this file fail to compile, and so must
- * dropping `report` from a provider.
+ *
+ * Two mutations must break it: narrowing `enqueue` to require assignments, and dropping `report`
+ * from `TaskRunnerContext`. Neither obliges a runner to *call* `report` — `silent` below never does
+ * and compiles, because no type can require that a function be called.
  */
 
 const configure = () => (config: Config) => config;

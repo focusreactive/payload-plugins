@@ -26,8 +26,8 @@ type WireTranslateRunnerParams = {
 
 /**
  * Assemble the document-translation task pipeline: the {@link TranslateDocumentHandler}, the runner
- * context that wraps each task with lifecycle notifications, the runner's config modifier, and the
- * per-request {@link TaskRunnerFactory} (decorated with `onQueued` notification when configured).
+ * context that turns what the runner reports into the host's callbacks, the runner's config
+ * modifier, and the per-request {@link TaskRunnerFactory}.
  *
  * Extracted from the plugin's `init()` so the composition root stays a flat list — `plugin.ts` calls
  * this once and registers the returned `configModifier` through the shared builder.

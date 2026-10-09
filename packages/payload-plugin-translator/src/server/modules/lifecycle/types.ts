@@ -18,9 +18,10 @@ export type TranslationTask = {
    */
   strategy: string;
   /**
-   * The run translating this locale, as the enqueue answer named it.
+   * The run translating this locale, as the enqueue answer named it. Every callback carries it,
+   * `onQueued` included: the runner names the run before it says it took the work.
    *
-   * Absent on `onQueued`, which fires before the run exists — take it from the enqueue answer there.
+   * Optional because a runner written outside this package may answer an enqueue with nothing.
    *
    * @since 0.16.0
    */
@@ -41,8 +42,11 @@ export type TranslationTask = {
  */
 export type TranslationLifecycleCallbacks = {
   /**
-   * Fired for each task as it is queued. Best-effort: emitted just before the task is handed to the
-   * runner, so if enqueueing then throws it may fire for a task that never actually queued.
+   * Fired once per target locale the runner accepted, before any of the three endings for that
+   * locale, and before `enqueue` answers.
+   *
+   * @since 0.16.0 fires for work the runner has taken, so it no longer fires for a locale that
+   * failed to queue.
    *
    * @since 0.7.0
    */

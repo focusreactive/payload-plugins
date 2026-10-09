@@ -281,8 +281,8 @@ the single source of truth — code annotations link here by anchor instead of d
 - **Status:** removed (behaviour change, not an annotated symbol)
 - **Changed:** 2026-10-07 / PR pending (issue #110)
 - **Replacement:** `onFailed` fires once per target locale, and only when that locale will not be
-  translated. A runner that retries decides when that is and reports it itself; see
-  `TaskRunnerProvider.reportsFinalFailure`.
+  translated. A runner that retries decides when that is and says so itself, by reporting the
+  `failed` event of `TaskRunnerContext.report`.
 - **Why this is listed although nothing was renamed:** a host counting `onFailed` calls, or treating
   one as "this translation is dead", was reading a signal that did not mean that. Silently making it
   mean that is the fix, but an install that disabled retries *because* of the old behaviour should
@@ -290,6 +290,6 @@ the single source of truth — code annotations link here by anchor instead of d
 - **What else moved with it:** a locale the run never reached is now reported too, with the error
   that ended the run rather than one of its own — nothing ran for it to throw.
 - **Code refs:**
-  - `src/server/features/translate-document/wireTranslateRunner.ts` (reports only when the runner does not)
+  - `src/server/features/translate-document/wireTranslateRunner.ts` (turns a reported event into a callback)
   - `src/server/modules/task-runner/payload-jobs-runner/owedIfGaveUp.ts` (when a run has stopped for good)
   - `src/server/modules/lifecycle/types.ts` (`TranslationLifecycleCallbacks`)

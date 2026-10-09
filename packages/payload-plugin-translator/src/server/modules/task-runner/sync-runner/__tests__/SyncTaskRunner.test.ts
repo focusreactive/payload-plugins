@@ -42,7 +42,7 @@ describe("SyncTaskRunner", () => {
   describe("enqueue", () => {
     it("executes handler immediately", async () => {
       const input = createInput();
-      const assigned = await runner.enqueue([input]);
+      await runner.enqueue([input]);
 
       expect(mockHandler).toHaveBeenCalledWith(
         mockPayload,

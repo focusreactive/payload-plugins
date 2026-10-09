@@ -8,7 +8,7 @@ import type { PayloadJobsRunnerConfig, PayloadJob, StoredWorkflowInput } from ".
 import { assignmentOf } from "./assignmentOf.js";
 import { handleOf } from "./handleOf.js";
 import { normalizeJobLocales } from "./normalizeJob.js";
-import { stillOwed } from "./stillOwed.js";
+import { owedOnCancel } from "./owedOnCancel.js";
 import { planEnqueue } from "./planEnqueue.js";
 import type { RequestShape } from "./planEnqueue.js";
 import { readCollectionRef } from "./readCollectionRef.js";
@@ -204,7 +204,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
 
     // Read before writing: once the rows are deleted there is nothing left to say what was owed.
     for (const job of await this.findRawJobs({ id: { in: taskIds } })) {
-      for (const task of stillOwed(normalizeJobLocales(job))) {
+      for (const task of owedOnCancel(job)) {
         const assignment = assignmentOf(job, task.input.targetLng);
         if (assignment) {
           await this.context.report(this.payload, assignment, { state: "cancelled" });
