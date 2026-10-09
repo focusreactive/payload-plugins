@@ -43,18 +43,9 @@ export class LifecycleNotifier {
     await this.safe("lifecycle.onFailed", () => callback(task, error));
   }
 
-  async cancelling(read: () => Promise<TranslationTask[]>): Promise<void> {
+  cancelled(task: TranslationTask): Promise<void> {
     const callback = this.callbacks.onCancelled;
-    try {
-      for (const task of await read()) {
-        await this.safe("lifecycle.onCancelled", callback && (() => callback(task)));
-      }
-    } catch (error) {
-      this.logger.error({
-        err: error,
-        msg: "translator: could not read what a cancellation is stopping",
-      });
-    }
+    return this.safe("lifecycle.onCancelled", callback && (() => callback(task)));
   }
 
   private async safe(name: string, thunk?: () => void | Promise<void>): Promise<void> {

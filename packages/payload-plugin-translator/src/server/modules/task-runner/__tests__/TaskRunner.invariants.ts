@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import type { TaskRunner } from "../TaskRunner.interface.js";
-import type { EnqueueAssignment, TaskInput } from "../types.js";
+import type { TaskRunnerContext } from "../TaskRunnerProvider.interface.js";
+import type { EnqueueAssignment, TaskEvent, TaskInput } from "../types.js";
 
 const SLUG = "posts";
 
@@ -19,40 +20,100 @@ type Addressed = { collectionSlug: string; collectionId: string; targetLng: stri
 const addressOf = (target: Addressed): string =>
   `${target.collectionSlug}/${target.collectionId}/${target.targetLng}`;
 
-const localeOf = (handle: string, targetLng: string): string => `${handle}/${targetLng}`;
+const assignmentKey = (assignment: EnqueueAssignment): string =>
+  `${assignment.handle}@${addressOf(assignment)}`;
+
+type ReportState = TaskEvent["state"];
+
+const isTerminal = (event: TaskEvent): boolean => event.state !== "queued";
+
+const cancelledAndStillDelivered = (states: ReportState[]): boolean =>
+  states.length === 2 && states.includes("cancelled") && states.includes("delivered");
 
 const settle = (promise: Promise<unknown>): Promise<"resolved" | "rejected"> =>
   promise.then(() => "resolved" as const).catch(() => "rejected" as const);
 
+type Reported = { assignment: EnqueueAssignment; event: TaskEvent };
+
+const handlesOf = (answer: EnqueueAssignment[]): string[] => [
+  ...new Set(answer.map((assignment) => assignment.handle)),
+];
+
+export type MakeTaskRunner = (
+  report: TaskRunnerContext["report"]
+) => TaskRunner | Promise<TaskRunner>;
+
 /**
  * The obligations `TaskRunner` owes its callers, asserted against one implementation.
  *
- * Every check traces to a sentence of `TaskRunner.interface.ts` or `types.ts`; the nested
- * `describe` names quote the obligation they belong to. Checks that need the optional
- * `findByIds`, or a handle from a runner that answers `enqueue` with nothing, skip themselves
- * instead of failing.
+ * Every check traces to a sentence of `TaskRunner.interface.ts`, `TaskRunnerProvider.interface.ts`
+ * or `types.ts`; the nested `describe` names quote the obligation they belong to. Checks that need
+ * a handle from a runner that answers `enqueue` with nothing skip themselves instead of failing.
+ *
+ * Nothing here waits for work to finish: a runner whose terminal events land after the call under
+ * test resolves passes these checks vacuously.
  *
  * @param name - how the implementation under test is reported
- * @param make - builds a ready-to-use runner; called fresh for every check
+ * @param make - called fresh for every check
  */
-export function assertTaskRunnerContract(
-  name: string,
-  make: () => TaskRunner | Promise<TaskRunner>
-): void {
+export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): void {
   describe(name, () => {
     let runner: TaskRunner;
+    let reported: Reported[] = [];
     // A real database keeps what earlier checks queued.
     let checkNumber = 0;
     const documentForThisCheck = (n: number): string => `doc-${checkNumber}-${n}`;
 
+    const record: TaskRunnerContext["report"] = (_payload, assignment, event) => {
+      reported.push({ assignment, event });
+      return Promise.resolve();
+    };
+
     beforeEach(async () => {
       checkNumber += 1;
-      runner = await make();
+      reported = [];
+      runner = await make(record);
     });
 
     const enqueued = async (tasks: TaskInput[]): Promise<EnqueueAssignment[] | undefined> => {
       const answer = await runner.enqueue(tasks);
       return Array.isArray(answer) ? answer : undefined;
+    };
+
+    const twoLocales = (): TaskInput[] => [
+      input(documentForThisCheck(1), "de"),
+      input(documentForThisCheck(1), "fr"),
+    ];
+
+    const threeLocales = (): TaskInput[] => [
+      input(documentForThisCheck(1), "de"),
+      input(documentForThisCheck(1), "fr"),
+      input(documentForThisCheck(2), "de"),
+    ];
+
+    const addressesReported = (state: ReportState): string[] =>
+      reported
+        .filter((entry) => entry.event.state === state)
+        .map((entry) => addressOf(entry.assignment));
+
+    const timesQueued = (address: string): number =>
+      addressesReported("queued").filter((queued) => queued === address).length;
+
+    const wasReported = (assignment: EnqueueAssignment, state: ReportState): boolean =>
+      reported.some(
+        (entry) =>
+          entry.event.state === state &&
+          assignmentKey(entry.assignment) === assignmentKey(assignment)
+      );
+
+    const terminalsPerAssignment = (): Array<[string, ReportState[]]> => {
+      const collected = new Map<string, ReportState[]>();
+      for (const { assignment, event } of reported) {
+        if (!isTerminal(event)) continue;
+        const key = assignmentKey(assignment);
+        collected.set(key, [...(collected.get(key) ?? []), event.state]);
+      }
+      return [...collected];
     };
 
     describe("an empty request is answered, not refused", () => {
@@ -68,16 +129,16 @@ export function assertTaskRunnerContract(
         expect(answer ?? [], "cancel([]) answers [] or undefined").toEqual([]);
       });
 
-      it("answers an empty findByIds", async (ctx) => {
-        const findByIds = runner.findByIds?.bind(runner);
-        if (!findByIds) {
-          ctx.skip();
-          return;
-        }
+      it("reports nothing about an empty enqueue", async () => {
+        await runner.enqueue([]);
 
-        const answer: unknown = await findByIds([]);
+        expect(reported, "an empty request accepts no assignment to report").toEqual([]);
+      });
 
-        expect(answer ?? [], "findByIds([]) answers [] or undefined").toEqual([]);
+      it("reports nothing about an empty cancel", async () => {
+        await runner.cancel([]);
+
+        expect(reported, "no handle names work to stop, so nothing settled").toEqual([]);
       });
 
       it("answers about no documents, not about all of them", async () => {
@@ -87,10 +148,7 @@ export function assertTaskRunnerContract(
 
     describe("a handle is a non-empty string", () => {
       it("names each assignment with a non-empty handle", async (ctx) => {
-        const answer = await enqueued([
-          input(documentForThisCheck(1), "de"),
-          input(documentForThisCheck(1), "fr"),
-        ]);
+        const answer = await enqueued(twoLocales());
         if (!answer) {
           ctx.skip();
           return;
@@ -107,23 +165,17 @@ export function assertTaskRunnerContract(
           ctx.skip();
           return;
         }
-        const handles = [...new Set(answer.map((assignment) => assignment.handle))];
 
         expect(
-          await settle(runner.cancel(handles)),
+          await settle(runner.cancel(handlesOf(answer))),
           "cancel takes the runner's own handle back unchanged"
         ).toBe("resolved");
       });
     });
 
     describe("only what was asked for is answered", () => {
-      const request = [
-        input(documentForThisCheck(1), "de"),
-        input(documentForThisCheck(1), "fr"),
-        input(documentForThisCheck(2), "de"),
-      ];
-
       it("answers only locales the request listed", async (ctx) => {
+        const request = threeLocales();
         const answer = await enqueued(request);
         if (!answer) {
           ctx.skip();
@@ -137,7 +189,7 @@ export function assertTaskRunnerContract(
       });
 
       it("answers a locale at most once per document", async (ctx) => {
-        const answer = await enqueued(request);
+        const answer = await enqueued(threeLocales());
         if (!answer) {
           ctx.skip();
           return;
@@ -164,6 +216,7 @@ export function assertTaskRunnerContract(
       });
 
       it("answers an assignment per requested locale", async (ctx) => {
+        const request = threeLocales();
         const answer = await enqueued(request);
         if (!answer) {
           ctx.skip();
@@ -191,6 +244,158 @@ export function assertTaskRunnerContract(
           again.map(addressOf),
           "a locale an existing run covers is owed that run's handle"
         ).toContain(addressOf(covered));
+      });
+    });
+
+    describe("what became of every accepted assignment reaches the plugin", () => {
+      it("reports queued for every requested locale", async () => {
+        const request = twoLocales();
+
+        await runner.enqueue(request);
+
+        const silent = [...new Set(request.map(addressOf))].filter(
+          (address) => timesQueued(address) === 0
+        );
+        expect(silent, "queued is sent for every locale the runner accepted").toEqual([]);
+      });
+
+      it("reports queued at most once per requested locale", async () => {
+        const request = twoLocales();
+
+        await runner.enqueue(request);
+
+        const repeated = [...new Set(request.map(addressOf))].filter(
+          (address) => timesQueued(address) > 1
+        );
+        expect(repeated, "one queued per requested locale, not several").toEqual([]);
+      });
+
+      it("reports queued once although the request listed a locale twice", async () => {
+        const twice = [input(documentForThisCheck(1), "de"), input(documentForThisCheck(1), "de")];
+
+        await runner.enqueue(twice);
+
+        expect(
+          timesQueued(addressOf(twice[0])),
+          "a locale listed twice is one piece of accepted work"
+        ).toBeLessThanOrEqual(1);
+      });
+
+      it("reports only about locales the request listed", async () => {
+        const request = twoLocales();
+        const asked = new Set(request.map(addressOf));
+
+        await runner.enqueue(request);
+
+        const unasked = reported
+          .map((entry) => addressOf(entry.assignment))
+          .filter((address) => !asked.has(address));
+        expect(unasked, "every report names a locale the request listed").toEqual([]);
+      });
+
+      it("reports no terminal event for a locale before its queued", async () => {
+        await runner.enqueue(twoLocales());
+
+        const premature = reported
+          .filter(
+            (entry, index) =>
+              isTerminal(entry.event) &&
+              !reported
+                .slice(0, index)
+                .some(
+                  (earlier) =>
+                    earlier.event.state === "queued" &&
+                    addressOf(earlier.assignment) === addressOf(entry.assignment)
+                )
+          )
+          .map((entry) => `${addressOf(entry.assignment)}:${entry.event.state}`);
+
+        expect(premature, "queued comes before any terminal event for that locale").toEqual([]);
+      });
+
+      it("reports at most one terminal event per assignment", async () => {
+        await runner.enqueue(twoLocales());
+
+        const several = terminalsPerAssignment().filter(([, states]) => states.length > 1);
+
+        expect(several, "one assignment settles once").toEqual([]);
+      });
+    });
+
+    describe("cancelling reports what the run still owed", () => {
+      it("reports cancelled for every locale the run still owed", async (ctx) => {
+        const answer = await enqueued(twoLocales());
+        if (!answer) {
+          ctx.skip();
+          return;
+        }
+        const owed = answer.filter(
+          (assignment) =>
+            !reported.some(
+              (entry) =>
+                isTerminal(entry.event) &&
+                assignmentKey(entry.assignment) === assignmentKey(assignment)
+            )
+        );
+
+        await runner.cancel(handlesOf(answer));
+
+        const unheard = owed.filter((assignment) => !wasReported(assignment, "cancelled"));
+        expect(unheard.map(addressOf), "cancelled for each locale the run still owed").toEqual([]);
+      });
+
+      it("reports cancelled for no locale the run had delivered", async (ctx) => {
+        const answer = await enqueued(twoLocales());
+        if (!answer) {
+          ctx.skip();
+          return;
+        }
+        const delivered = answer.filter((assignment) => wasReported(assignment, "delivered"));
+
+        await runner.cancel(handlesOf(answer));
+
+        const revoked = delivered.filter((assignment) => wasReported(assignment, "cancelled"));
+        expect(revoked.map(addressOf), "a delivered locale is not reported cancelled").toEqual([]);
+      });
+
+      it("reports at most one terminal event per cancelled assignment", async (ctx) => {
+        const answer = await enqueued(twoLocales());
+        if (!answer) {
+          ctx.skip();
+          return;
+        }
+
+        await runner.cancel(handlesOf(answer));
+
+        const several = terminalsPerAssignment().filter(
+          ([, states]) => states.length > 1 && !cancelledAndStillDelivered(states)
+        );
+        expect(
+          several,
+          "one assignment settles once, bar a locale already executing when cancelled"
+        ).toEqual([]);
+      });
+
+      it("reports nothing cancelled about a run whose handle it was not given", async (ctx) => {
+        const spared = await enqueued([input(documentForThisCheck(1), "de")]);
+        const cancelled = await enqueued([input(documentForThisCheck(2), "de")]);
+        if (!spared || !cancelled) {
+          ctx.skip();
+          return;
+        }
+        const given = new Set(handlesOf(cancelled));
+        const untouched = new Set(spared.filter((a) => !given.has(a.handle)).map(assignmentKey));
+
+        await runner.cancel([...given]);
+
+        const strays = reported.filter(
+          (entry) =>
+            entry.event.state === "cancelled" && untouched.has(assignmentKey(entry.assignment))
+        );
+        expect(
+          strays.map((entry) => addressOf(entry.assignment)),
+          "cancel stops the work these handles stand for, not another run's"
+        ).toEqual([]);
       });
     });
 
@@ -229,78 +434,6 @@ export function assertTaskRunnerContract(
           "cancel on a spent handle resolves rather than rejecting"
         ).toBe("resolved");
       });
-
-      it("cancels nothing when the handle is spent", async (ctx) => {
-        const findByIds = runner.findByIds?.bind(runner);
-        const stale = await spent();
-        const answer = await enqueued([input(documentForThisCheck(1), "de")]);
-        if (!findByIds || !answer || !stale) {
-          ctx.skip();
-          return;
-        }
-        const handles = [...new Set(answer.map((assignment) => assignment.handle))];
-
-        await runner.cancel([stale]);
-        const cancelled = (await findByIds(handles)).filter((task) => task.cancelled);
-
-        expect(cancelled, "cancel on a spent handle changes nothing").toEqual([]);
-      });
-    });
-
-    describe("findByIds resolves handles to the tasks they stand for", () => {
-      it("answers only tasks for the handles asked about", async (ctx) => {
-        const findByIds = runner.findByIds?.bind(runner);
-        const answer = await enqueued([input(documentForThisCheck(1), "de")]);
-        if (!findByIds || !answer) {
-          ctx.skip();
-          return;
-        }
-        const handles = new Set(answer.map((assignment) => assignment.handle));
-
-        const foreign = (await findByIds([...handles])).filter((task) => !handles.has(task.id));
-
-        expect(foreign, "every task stands for one of the handles asked about").toEqual([]);
-      });
-
-      it("announces each target locale of a handle separately", async (ctx) => {
-        const findByIds = runner.findByIds?.bind(runner);
-        const answer = await enqueued([
-          input(documentForThisCheck(1), "de"),
-          input(documentForThisCheck(1), "fr"),
-        ]);
-        if (!findByIds || !answer) {
-          ctx.skip();
-          return;
-        }
-        const handles = [...new Set(answer.map((assignment) => assignment.handle))];
-        const tasks = await findByIds(handles);
-        const announced = new Set(tasks.map((task) => localeOf(task.id, task.input.targetLng)));
-
-        const missing = answer
-          .map((assignment) => localeOf(assignment.handle, assignment.targetLng))
-          .filter((locale) => !announced.has(locale));
-
-        expect(missing, "one Task per handle and target locale").toEqual([]);
-      });
-
-      it("announces a target locale once per handle", async (ctx) => {
-        const findByIds = runner.findByIds?.bind(runner);
-        const answer = await enqueued([
-          input(documentForThisCheck(1), "de"),
-          input(documentForThisCheck(1), "fr"),
-        ]);
-        if (!findByIds || !answer) {
-          ctx.skip();
-          return;
-        }
-        const handles = [...new Set(answer.map((assignment) => assignment.handle))];
-
-        const tasks = await findByIds(handles);
-        const locales = tasks.map((task) => localeOf(task.id, task.input.targetLng));
-        const announcedOnce = new Set(locales).size;
-
-        expect(announcedOnce, "one Task per handle and target locale").toBe(locales.length);
-      });
     });
 
     describe("findByCollection finds tasks for a collection", () => {
@@ -316,29 +449,25 @@ export function assertTaskRunnerContract(
       });
 
       it("keeps only the documents the filter names", async () => {
-        await runner.enqueue([
-          input(documentForThisCheck(1), "de"),
-          input(documentForThisCheck(2), "de"),
-        ]);
+        const kept = documentForThisCheck(1);
+        await runner.enqueue([input(kept, "de"), input(documentForThisCheck(2), "de")]);
 
-        const tasks = await runner.findByCollection(SLUG, { documentIds: ["doc-1"] });
+        const tasks = await runner.findByCollection(SLUG, { documentIds: [kept] });
 
         expect(
-          tasks.filter((task) => task.input.collectionId !== "doc-1"),
+          tasks.filter((task) => task.input.collectionId !== kept),
           "documentIds keeps only tasks for these documents"
         ).toEqual([]);
       });
 
       it("keeps only the documents the deprecated array names", async () => {
-        await runner.enqueue([
-          input(documentForThisCheck(1), "de"),
-          input(documentForThisCheck(2), "de"),
-        ]);
+        const kept = documentForThisCheck(1);
+        await runner.enqueue([input(kept, "de"), input(documentForThisCheck(2), "de")]);
 
-        const tasks = await runner.findByCollection(SLUG, ["doc-1"]);
+        const tasks = await runner.findByCollection(SLUG, [kept]);
 
         expect(
-          tasks.filter((task) => task.input.collectionId !== "doc-1"),
+          tasks.filter((task) => task.input.collectionId !== kept),
           "the array means what { documentIds } means"
         ).toEqual([]);
       });

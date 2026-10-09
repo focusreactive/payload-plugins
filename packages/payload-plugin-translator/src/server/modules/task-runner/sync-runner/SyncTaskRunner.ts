@@ -2,7 +2,7 @@ import type { Payload, CollectionSlug } from "payload";
 
 import type { TaskFilter, TaskRunner } from "../TaskRunner.interface.js";
 import { toTaskFilter } from "../toTaskFilter.js";
-import type { TaskHandler } from "../TaskRunnerProvider.interface.js";
+import type { TaskRunnerContext } from "../TaskRunnerProvider.interface.js";
 import type { EnqueueAssignment, Task, TaskInput, RunResult, ID } from "../types.js";
 import type { LazyMap } from "../../../shared/utils/index.js";
 import type { RequestScope } from "../../../shared/payload/RequestScope.shapes.js";
@@ -11,12 +11,12 @@ import { swallowOrThrow } from "../../../shared/payload/swallowOrThrow.js";
 /** Runs each task inline on enqueue; results live only in memory, so status queries see nothing from a previous process. */
 export class SyncTaskRunner implements TaskRunner {
   private readonly payload: Payload;
-  private readonly handler: TaskHandler;
+  private readonly context: TaskRunnerContext;
   private readonly tasks: LazyMap<string, Task>;
 
-  constructor(payload: Payload, handler: TaskHandler, tasks: LazyMap<string, Task>) {
+  constructor(payload: Payload, context: TaskRunnerContext, tasks: LazyMap<string, Task>) {
     this.payload = payload;
-    this.handler = handler;
+    this.context = context;
     this.tasks = tasks;
   }
 
@@ -39,12 +39,16 @@ export class SyncTaskRunner implements TaskRunner {
       };
 
       this.tasks.set(key, task);
-      assigned.push({
+      const assignment: EnqueueAssignment = {
         collectionSlug: input.collectionSlug,
         collectionId: input.collectionId,
+        sourceLng: input.sourceLng,
         targetLng: input.targetLng,
+        strategy: input.strategy,
         handle: task.id,
-      });
+      };
+      assigned.push(assignment);
+      await this.context.report(this.payload, assignment, { state: "queued" });
 
       const markEvictable = (status: "completed" | "failed", error?: Task["error"]) => {
         const at = new Date().toISOString();
@@ -57,7 +61,7 @@ export class SyncTaskRunner implements TaskRunner {
       await swallowOrThrow(
         scope,
         async () => {
-          await this.handler(
+          await this.context.handler(
             this.payload,
             {
               collection: input.collectionSlug,
@@ -66,22 +70,24 @@ export class SyncTaskRunner implements TaskRunner {
               targetLng: input.targetLng,
               strategy: input.strategy,
               publishOnTranslation: input.publishOnTranslation,
-              handle: task.id,
             },
             scope
           );
           markEvictable("completed");
+          await this.context.report(this.payload, assignment, { state: "delivered" });
         },
-        (error) =>
+        async (error) => {
           markEvictable("failed", {
             message: error instanceof Error ? error.message : "Unknown error",
-          })
+          });
+          await this.context.report(this.payload, assignment, { state: "failed", error });
+        }
       );
     }
     return assigned;
   }
 
-  /** `findByIds` is deliberately absent: announcing a cancellation would report work that completed. */
+  /** No-op, and reports nothing: every assignment settled inside `enqueue`, so none is still owed. */
   cancel(_taskIds: string[]): Promise<void> {
     return Promise.resolve();
   }

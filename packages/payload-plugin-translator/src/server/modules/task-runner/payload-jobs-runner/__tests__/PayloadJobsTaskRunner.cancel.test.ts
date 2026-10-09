@@ -4,6 +4,12 @@ import type { Payload } from "payload";
 import { PayloadJobsTaskRunner } from "../PayloadJobsTaskRunner.js";
 import type { PayloadJobsRunnerConfig } from "../types.js";
 
+const testContext = {
+  handler: vi.fn().mockResolvedValue(undefined),
+  collections: [],
+  report: vi.fn().mockResolvedValue(undefined),
+};
+
 describe("PayloadJobsTaskRunner — cancel reaches only the plugin's own jobs", () => {
   let payload: Payload & { jobs: { cancel: ReturnType<typeof vi.fn> } };
   let runner: PayloadJobsTaskRunner;
@@ -23,7 +29,7 @@ describe("PayloadJobsTaskRunner — cancel reaches only the plugin's own jobs", 
       staleJobTimeoutMs: 60_000,
     } as PayloadJobsRunnerConfig;
 
-    runner = new PayloadJobsTaskRunner(payload, config);
+    runner = new PayloadJobsTaskRunner(payload, config, testContext);
   });
 
   // The delete that follows is already scoped by `ownJobs()`. The cancel is not — it narrows by id

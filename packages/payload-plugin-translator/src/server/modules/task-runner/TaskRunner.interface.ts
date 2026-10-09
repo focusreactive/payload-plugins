@@ -18,10 +18,13 @@ import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
  * - **A handle is never parsed.** Callers compare it, store it and hand it back.
  * - **Nothing promises an order.** Callers that need one sort.
  *
- * And one limit: the obligations reach handles **this runner issued**. A store may reject a value
- * it could never have produced — on SQL the job id is an integer, so a non-numeric handle fails
- * inside the query rather than finding nothing. `DELETE /translate/cancel` passes such a value
- * straight through, and answers with a server error.
+ * Two limits. The obligations reach handles **this runner issued**, and only while the work they
+ * name exists: SQLite reuses a deleted row's id, so a handle kept across a cancellation can later
+ * name another run — drop a handle once you are told the work settled.
+ *
+ * And a store may reject a value it could never have produced: on SQL the job id is an integer, so
+ * a non-numeric handle fails inside the query rather than finding nothing. `DELETE /translate/cancel`
+ * passes such a value straight through and answers with a server error.
  */
 export interface TaskRunner {
   /**
@@ -41,18 +44,9 @@ export interface TaskRunner {
    * Stop the work these handles stand for, as far as this runner can.
    *
    * Best effort: a runner that translates inline inside `enqueue` has nothing left to stop.
-   * "Cancelled" is not "did not happen" — only {@link TaskRunner.findByIds} says what was still owed.
+   * Report `cancelled` for each locale the run still owed, and for none it had delivered.
    */
   cancel(taskIds: string[]): Promise<void>;
-
-  /**
-   * One {@link Task} per handle **and target locale**, not one per handle.
-   *
-   * Optional: a runner that omits it works unchanged, and `onCancelled` never fires for it.
-   *
-   * @since 0.16.0
-   */
-  findByIds?(taskIds: string[]): Promise<Task[]>;
 
   /**
    * Execute a task immediately.

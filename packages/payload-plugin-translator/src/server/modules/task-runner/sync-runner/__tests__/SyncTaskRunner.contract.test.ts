@@ -8,10 +8,10 @@ import { SyncTaskRunner } from "../SyncTaskRunner.js";
 
 assertTaskRunnerContract(
   "SyncTaskRunner",
-  () =>
+  (report) =>
     new SyncTaskRunner(
       {} as Payload,
-      vi.fn().mockResolvedValue(undefined),
+      { handler: vi.fn().mockResolvedValue(undefined), collections: [], report },
       new LazyMap<string, Task>({ isRemovable: () => false, getTimestamp: () => 0 })
     )
 );

@@ -1,4 +1,4 @@
-import { stillOwed } from "../../lifecycle/stillOwed.js";
+import { stillOwed } from "./stillOwed.js";
 import type { Task } from "../types.js";
 import { isLastAttempt } from "./isLastAttempt.js";
 import { normalizeJobLocales } from "./normalizeJob.js";

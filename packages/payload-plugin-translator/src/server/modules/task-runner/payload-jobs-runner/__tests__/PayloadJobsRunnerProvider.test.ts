@@ -5,6 +5,7 @@ import type { TaskRunnerContext } from "../../TaskRunnerProvider.interface.js";
 
 const minimalContext: TaskRunnerContext = {
   handler: vi.fn(),
+  report: vi.fn().mockResolvedValue(undefined),
   collections: ["pages"],
 };
 

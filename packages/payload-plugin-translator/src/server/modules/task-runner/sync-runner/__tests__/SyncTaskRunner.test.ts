@@ -7,6 +7,12 @@ import type { TaskHandler } from "../../TaskRunnerProvider.interface.js";
 import type { TaskInput, Task } from "../../types.js";
 import { LazyMap } from "../../../../shared/utils/index.js";
 
+const contextOf = (handler: TaskHandler = vi.fn().mockResolvedValue(undefined)) => ({
+  handler,
+  collections: [],
+  report: vi.fn().mockResolvedValue(undefined),
+});
+
 describe("SyncTaskRunner", () => {
   let mockPayload: Payload;
   let mockHandler: TaskHandler;
@@ -20,7 +26,7 @@ describe("SyncTaskRunner", () => {
       isRemovable: (task) => task.status === "completed" || task.status === "failed",
       getTimestamp: (task) => new Date(task.updatedAt).getTime(),
     });
-    runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
+    runner = new SyncTaskRunner(mockPayload, contextOf(mockHandler), tasks);
   });
 
   const createInput = (overrides: Partial<TaskInput> = {}): TaskInput => ({
@@ -47,7 +53,6 @@ describe("SyncTaskRunner", () => {
           targetLng: "de",
           strategy: "overwrite",
           publishOnTranslation: false,
-          handle: assigned[0]?.handle,
         },
         {}
       );
@@ -74,7 +79,7 @@ describe("SyncTaskRunner", () => {
 
     it("stores a failed task when the handler throws one of ours", async () => {
       mockHandler = vi.fn().mockRejectedValue(new TransportError("Translation failed"));
-      runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
+      runner = new SyncTaskRunner(mockPayload, contextOf(mockHandler), tasks);
 
       const input = createInput();
       await runner.enqueue([input]);
@@ -95,7 +100,7 @@ describe("SyncTaskRunner", () => {
           vi.setSystemTime(new Date("2026-01-01T00:05:00.000Z"));
           if (rejection) throw rejection;
         });
-        runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
+        runner = new SyncTaskRunner(mockPayload, contextOf(mockHandler), tasks);
 
         await runner.enqueue([createInput()]);
 
@@ -112,7 +117,7 @@ describe("SyncTaskRunner", () => {
     it("finishes the batch for a caller with no transaction to lose", async () => {
       const fromPayload = new APIError("Validation failed", 400);
       mockHandler = vi.fn().mockRejectedValueOnce(fromPayload).mockResolvedValueOnce(undefined);
-      runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
+      runner = new SyncTaskRunner(mockPayload, contextOf(mockHandler), tasks);
 
       await expect(
         runner.enqueue([createInput({ targetLng: "de" }), createInput({ targetLng: "fr" })]),
@@ -126,7 +131,7 @@ describe("SyncTaskRunner", () => {
 
     it("swallows one of ours even inside the caller's transaction", async () => {
       mockHandler = vi.fn().mockRejectedValue(new TransportError("provider down"));
-      runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
+      runner = new SyncTaskRunner(mockPayload, contextOf(mockHandler), tasks);
 
       await expect(
         runner.enqueue([createInput()], { transactionID: "tx-1" }),
@@ -139,7 +144,7 @@ describe("SyncTaskRunner", () => {
     it("lets a failure that did not come from the translator out", async () => {
       const fromPayload = new APIError("Validation failed", 400);
       mockHandler = vi.fn().mockRejectedValue(fromPayload);
-      runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
+      runner = new SyncTaskRunner(mockPayload, contextOf(mockHandler), tasks);
 
       await expect(
         runner.enqueue([createInput()], { transactionID: "tx-1" }),
@@ -149,7 +154,7 @@ describe("SyncTaskRunner", () => {
 
     it("records a non-Error throw and still lets it out", async () => {
       mockHandler = vi.fn().mockRejectedValue("string error");
-      runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
+      runner = new SyncTaskRunner(mockPayload, contextOf(mockHandler), tasks);
 
       const input = createInput();
       await expect(runner.enqueue([input], { transactionID: "tx-1" })).rejects.toBe("string error");

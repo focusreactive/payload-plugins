@@ -60,8 +60,6 @@ export type TranslationLifecycleCallbacks = {
    * Once per target locale the run still owed, fired before the run's record is deleted, so a host
    * can still read it. A locale already in flight is announced and may then still complete.
    *
-   * Never fires for a runner without `findByIds`.
-   *
    * @since 0.16.0
    */
   onCancelled?: (task: TranslationTask) => void | Promise<void>;

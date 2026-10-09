@@ -1,43 +1,44 @@
 import type { Config } from "payload";
 
-import type { EnqueueAssignment, Task, TaskRunnerProvider } from "../../../../index.js";
+import type { TaskRunnerProvider } from "../../../../index.js";
 
 /**
  * A compile-only fixture, enforced by `check-types` rather than by a running test.
  *
- * A runner is implemented outside this package, so it is written against the published root barrel —
- * which is what this file imports, rather than the internal paths no installer can reach. Widening
- * `enqueue` must not break an implementation written before the widening: both generations below
- * must keep satisfying the contract, and narrowing `enqueue` to require assignments makes this file
- * fail to compile, which is the point of it existing.
+ * It imports one name from the published barrel, which is all a third-party runner can reach.
+ * Narrowing `enqueue` to require assignments must make this file fail to compile, and so must
+ * dropping `report` from a provider.
  */
-
-const unqueues = {
-  cancel: async (): Promise<void> => undefined,
-  run: async () => ({ success: false, error: "not_found" }) as const,
-  findByCollection: async (): Promise<Task[]> => [],
-};
 
 const configure = () => (config: Config) => config;
 
-/** Pre-0.16.0: answers with nothing, and has no by-handle read. */
 export const silent: TaskRunnerProvider = {
-  create: () => ({ ...unqueues, enqueue: async () => undefined }),
+  create: () => ({
+    enqueue: async () => undefined,
+    cancel: async (): Promise<void> => undefined,
+    run: async () => ({ success: false, error: "not_found" }) as const,
+    findByCollection: async () => [],
+  }),
   configure,
 };
 
-/** Post-0.16.0: one assignment per requested locale, and resolves handles. */
 export const answering: TaskRunnerProvider = {
-  create: () => ({
-    ...unqueues,
-    enqueue: async (tasks): Promise<EnqueueAssignment[]> =>
-      tasks.map((task) => ({
+  create: (payload, context) => ({
+    enqueue: async (tasks) => {
+      const assigned = tasks.map((task) => ({
         collectionSlug: task.collectionSlug,
         collectionId: task.collectionId,
+        sourceLng: task.sourceLng,
         targetLng: task.targetLng,
+        strategy: task.strategy,
         handle: "run-1",
-      })),
-    findByIds: async (): Promise<Task[]> => [],
+      }));
+      for (const a of assigned) await context.report(payload, a, { state: "queued" });
+      return assigned;
+    },
+    cancel: async (): Promise<void> => undefined,
+    run: async () => ({ success: false, error: "not_found" }) as const,
+    findByCollection: async () => [],
   }),
   configure,
 };

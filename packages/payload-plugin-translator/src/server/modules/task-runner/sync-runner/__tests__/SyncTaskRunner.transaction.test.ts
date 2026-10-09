@@ -20,7 +20,14 @@ function makeRunner() {
     isRemovable: (t) => t.status === "completed" || t.status === "failed",
     getTimestamp: (t) => new Date(t.updatedAt).getTime(),
   });
-  return { handler, runner: new SyncTaskRunner({} as Payload, handler, tasks) };
+  return {
+    handler,
+    runner: new SyncTaskRunner(
+      {} as Payload,
+      { handler, collections: [], report: vi.fn().mockResolvedValue(undefined) },
+      tasks
+    ),
+  };
 }
 
 describe("SyncTaskRunner — the caller's transaction", () => {

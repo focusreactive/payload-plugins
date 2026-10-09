@@ -1,7 +1,7 @@
 import type { Config, Payload } from "payload";
 
 import type { TaskRunner } from "../TaskRunner.interface.js";
-import type { TaskRunnerProvider, TaskHandler } from "../TaskRunnerProvider.interface.js";
+import type { TaskRunnerContext, TaskRunnerProvider } from "../TaskRunnerProvider.interface.js";
 import type { Task } from "../types.js";
 import type { SyncRunnerOptions } from "./types.js";
 import { SyncTaskRunner } from "./SyncTaskRunner.js";
@@ -31,8 +31,8 @@ export class SyncRunnerProvider implements TaskRunnerProvider {
     });
   }
 
-  create(payload: Payload, handler: TaskHandler): TaskRunner {
-    return new SyncTaskRunner(payload, handler, this.tasks);
+  create(payload: Payload, context: TaskRunnerContext): TaskRunner {
+    return new SyncTaskRunner(payload, context, this.tasks);
   }
 
   configure(): (config: Config) => Config {

@@ -1,11 +1,14 @@
 import type { Payload, Where, CollectionSlug } from "payload";
 
 import type { TaskFilter, TaskRunner } from "../TaskRunner.interface.js";
+import type { TaskRunnerContext } from "../TaskRunnerProvider.interface.js";
 import { toTaskFilter } from "../toTaskFilter.js";
 import type { EnqueueAssignment, Task, TaskInput, RunResult } from "../types.js";
 import type { PayloadJobsRunnerConfig, PayloadJob, StoredWorkflowInput } from "./types.js";
+import { assignmentOf } from "./assignmentOf.js";
 import { handleOf } from "./handleOf.js";
 import { normalizeJobLocales } from "./normalizeJob.js";
+import { stillOwed } from "./stillOwed.js";
 import { planEnqueue } from "./planEnqueue.js";
 import type { RequestShape } from "./planEnqueue.js";
 import { readCollectionRef } from "./readCollectionRef.js";
@@ -27,7 +30,9 @@ const assign = (request: RequestShape, targetLngs: string[], handle: string): En
   targetLngs.map((targetLng) => ({
     collectionSlug: request.collectionSlug as CollectionSlug,
     collectionId: request.collectionId,
+    sourceLng: request.sourceLng,
     targetLng,
+    strategy: request.strategy,
     handle,
   }));
 
@@ -52,10 +57,15 @@ function documentKey(collectionSlug: string, collectionId: string): string {
 }
 
 export class PayloadJobsTaskRunner implements TaskRunner {
-  constructor(
-    private readonly payload: Payload,
-    private readonly config: PayloadJobsRunnerConfig
-  ) {}
+  private readonly payload: Payload;
+  private readonly config: PayloadJobsRunnerConfig;
+  private readonly context: TaskRunnerContext;
+
+  constructor(payload: Payload, config: PayloadJobsRunnerConfig, context: TaskRunnerContext) {
+    this.payload = payload;
+    this.config = config;
+    this.context = context;
+  }
 
   async enqueue(tasks: TaskInput[], scope: RequestScope = {}): Promise<EnqueueAssignment[]> {
     const byRequest = new Map<string, TaskInput[]>();
@@ -84,6 +94,9 @@ export class PayloadJobsTaskRunner implements TaskRunner {
           .map((group) => this.serve(group, liveByDocument, exclusiveQueue, scope))
       );
       for (const entries of served) assigned.push(...entries);
+    }
+    for (const assignment of assigned) {
+      await this.context.report(this.payload, assignment, { state: "queued" });
     }
     return assigned;
   }
@@ -186,14 +199,18 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     );
   }
 
-  async findByIds(taskIds: string[]): Promise<Task[]> {
-    if (taskIds.length === 0) return [];
-    const jobs = await this.findRawJobs({ id: { in: taskIds } });
-    return jobs.flatMap(normalizeJobLocales);
-  }
-
   async cancel(taskIds: string[]): Promise<void> {
     if (taskIds.length === 0) return;
+
+    // Read before writing: once the rows are deleted there is nothing left to say what was owed.
+    for (const job of await this.findRawJobs({ id: { in: taskIds } })) {
+      for (const task of stillOwed(normalizeJobLocales(job))) {
+        const assignment = assignmentOf(job, task.input.targetLng);
+        if (assignment) {
+          await this.context.report(this.payload, assignment, { state: "cancelled" });
+        }
+      }
+    }
 
     await this.payload.jobs.cancel({
       where: { and: [this.ownJobs(), { id: { in: taskIds } }] },

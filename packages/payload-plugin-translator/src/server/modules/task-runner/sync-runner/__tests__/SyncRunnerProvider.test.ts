@@ -9,6 +9,7 @@ const fakePayload = {} as Payload;
 
 const makeContext = (handler: TaskRunnerContext["handler"]): TaskRunnerContext => ({
   handler,
+  report: vi.fn().mockResolvedValue(undefined),
   collections: ["pages" as CollectionSlug],
 });
 
@@ -27,14 +28,14 @@ describe("SyncRunnerProvider", () => {
   // configure() call mutating instance state.
   it("create() works without a prior configure() call", () => {
     const runner = createSyncRunner();
-    expect(() => runner.create(fakePayload, vi.fn())).not.toThrow();
+    expect(() => runner.create(fakePayload, makeContext(vi.fn()))).not.toThrow();
   });
 
   it("runs translations through the supplied handler on enqueue", async () => {
     const handler = vi.fn().mockResolvedValue(undefined);
     const runner = createSyncRunner();
 
-    const taskRunner = runner.create(fakePayload, handler);
+    const taskRunner = runner.create(fakePayload, makeContext(handler));
     await taskRunner.enqueue([sampleInput]);
 
     expect(handler).toHaveBeenCalledTimes(1);

@@ -5,6 +5,12 @@ import type { PayloadJobsRunnerConfig, PayloadJob } from "../types.js";
 import type { TaskInput } from "../../types.js";
 import { asRequester } from "../../../../shared/payload/RequestScope.shapes.js";
 
+const testContext = {
+  handler: vi.fn().mockResolvedValue(undefined),
+  collections: [],
+  report: vi.fn().mockResolvedValue(undefined),
+};
+
 describe("PayloadJobsTaskRunner", () => {
   let mockPayload: {
     find: ReturnType<typeof vi.fn>;
@@ -51,7 +57,7 @@ describe("PayloadJobsTaskRunner", () => {
       },
       staleJobTimeoutMs: 300_000,
     };
-    runner = new PayloadJobsTaskRunner(mockPayload as unknown as Payload, config);
+    runner = new PayloadJobsTaskRunner(mockPayload as unknown as Payload, config, testContext);
   });
 
   const createInput = (overrides: Partial<TaskInput> = {}): TaskInput => ({

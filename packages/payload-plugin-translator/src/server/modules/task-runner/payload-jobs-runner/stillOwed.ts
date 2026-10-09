@@ -1,4 +1,4 @@
-import type { Task } from "../task-runner/types.js";
+import type { Task } from "../types.js";
 
 /**
  * Which of a run's locales it has not delivered; a locale it never reached is owed too.
