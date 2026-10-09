@@ -14,6 +14,7 @@ import {
 } from "@focus-reactive/payload-plugin-translator";
 import type {
   TaskRunnerProvider,
+  TranslationLifecycleCallbacks,
   TranslationProvider,
 } from "@focus-reactive/payload-plugin-translator";
 import { buildConfig } from "payload";
@@ -86,6 +87,7 @@ export async function bootTestPayload(opts?: {
   failFor?: string[];
   onTranslate?: (targetLng: string) => Promise<void> | void;
   runner?: TaskRunnerProvider;
+  lifecycle?: TranslationLifecycleCallbacks;
   /** Turn on container-granular rich-text translation, and declare the provider able to keep marks. */
   inlineMarks?: boolean;
   /**
@@ -161,6 +163,7 @@ export async function bootTestPayload(opts?: {
         runner: opts?.runner ?? createSyncRunner(),
         levels: opts?.fieldSurface ? [documentLevel(), fieldLevel()] : [documentLevel()],
         provenance: true,
+        ...(opts?.lifecycle ? { lifecycle: opts.lifecycle } : {}),
         ...(opts?.inlineMarks ? { experimental: { inlineMarks: true } } : {}),
       }),
     ],

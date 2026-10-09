@@ -1,2 +1,2 @@
 export { createPayloadJobsRunner } from "./PayloadJobsRunnerProvider.js";
-export type { PayloadJobsRunnerOptions } from "./types.js";
+export type { PayloadJobsRunnerOptions } from "./config.js";

@@ -1,6 +1,6 @@
 import type { CollectionSlug, Config, Payload } from "payload";
 import type { TaskRunner } from "./TaskRunner.interface.js";
-import type { ID } from "./types.js";
+import type { EnqueueAssignment, ID, TaskEvent } from "./types.js";
 import type { TranslationStrategyName } from "../../../core/translation-pipeline/strategies/index.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 
@@ -31,6 +31,21 @@ export type TaskHandler = (
 export type TaskRunnerContext = {
   handler: TaskHandler;
   collections: CollectionSlug[];
+  /**
+   * Tell the plugin what became of one assignment — the only road to the host; a runner that never
+   * calls this leaves its host hearing nothing.
+   *
+   * - `queued` when the work is accepted, then at most one terminal event per assignment.
+   * - Every `queued` is sent before `enqueue` resolves, every `cancelled` before `cancel` resolves.
+   * - The assignment carries the handle the enqueue answer gave for that locale.
+   * - One `queued` per assignment the enqueue answered, **including a locale an existing run already
+   *   covers**; terminal events are counted per assignment identity.
+   * - `cancelled` only ever follows a `cancel`; a locale already reported `failed` is settled and is
+   *   not owed.
+   *
+   * @since 0.16.0
+   */
+  report: (payload: Payload, assignment: EnqueueAssignment, event: TaskEvent) => Promise<void>;
 };
 
 /**
@@ -64,7 +79,7 @@ export interface TaskRunnerProvider {
    * `PayloadJobsRunner` ignores it (the handler is baked into the registered
    * task at configure time); `SyncRunner` uses it to run translations inline.
    */
-  create(payload: Payload, handler: TaskHandler): TaskRunner;
+  create(payload: Payload, context: TaskRunnerContext): TaskRunner;
 
   /**
    * Configures the runner and returns a Payload config modifier.

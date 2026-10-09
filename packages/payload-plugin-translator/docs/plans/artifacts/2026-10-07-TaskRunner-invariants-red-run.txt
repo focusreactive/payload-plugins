@@ -1,0 +1,339 @@
+
+ RUN  v3.2.4 /Users/FocusReactive/Documents/Projects/payload-plugins/packages/payload-plugin-translator
+
+ ❯ src/server/modules/task-runner/__stubs__/red-run.test.ts (21 tests | 21 failed) 10ms
+   × stub — red run > an empty request is answered, not refused > answers an empty enqueue 4ms
+     → not implemented — red run
+   × stub — red run > an empty request is answered, not refused > answers an empty cancel 0ms
+     → not implemented — red run
+   × stub — red run > an empty request is answered, not refused > answers an empty findByIds 0ms
+     → not implemented — red run
+   × stub — red run > an empty request is answered, not refused > answers about no documents, not about all of them 0ms
+     → not implemented — red run
+   × stub — red run > a handle is a non-empty string > names each assignment with a non-empty handle 0ms
+     → not implemented — red run
+   × stub — red run > a handle is a non-empty string > takes its own handles back 0ms
+     → not implemented — red run
+   × stub — red run > only what was asked for is answered > answers only locales the request listed 0ms
+     → not implemented — red run
+   × stub — red run > only what was asked for is answered > answers a locale at most once per document 0ms
+     → not implemented — red run
+   × stub — red run > only what was asked for is answered > answers once although the request listed a locale twice 0ms
+     → not implemented — red run
+   × stub — red run > only what was asked for is answered > answers an assignment per requested locale 1ms
+     → not implemented — red run
+   × stub — red run > only what was asked for is answered > answers a locale an existing run already covers 0ms
+     → not implemented — red run
+   × stub — red run > an unknown handle is an answer, not a failure > answers run on an unknown handle with not_found 0ms
+     → not implemented — red run
+   × stub — red run > an unknown handle is an answer, not a failure > resolves cancel on an unknown handle 0ms
+     → not implemented — red run
+   × stub — red run > an unknown handle is an answer, not a failure > cancels nothing when the handle is unknown 0ms
+     → not implemented — red run
+   × stub — red run > findByIds resolves handles to the tasks they stand for > answers only tasks for the handles asked about 0ms
+     → not implemented — red run
+   × stub — red run > findByIds resolves handles to the tasks they stand for > announces each target locale of a handle separately 0ms
+     → not implemented — red run
+   × stub — red run > findByIds resolves handles to the tasks they stand for > announces a target locale once per handle 0ms
+     → not implemented — red run
+   × stub — red run > findByCollection finds tasks for a collection > answers only tasks of the collection asked about 0ms
+     → not implemented — red run
+   × stub — red run > findByCollection finds tasks for a collection > keeps only the documents the filter names 0ms
+     → not implemented — red run
+   × stub — red run > findByCollection finds tasks for a collection > keeps only the documents the deprecated array names 0ms
+     → not implemented — red run
+   × stub — red run > findByCollection finds tasks for a collection > drops tasks that have finished 0ms
+     → not implemented — red run
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 21 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > an empty request is answered, not refused > answers an empty enqueue
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:57:46
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > an empty request is answered, not refused > answers an empty cancel
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:63:46
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > an empty request is answered, not refused > answers an empty findByIds
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:75:39
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > an empty request is answered, not refused > answers about no documents, not about all of them
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:81:29
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > a handle is a non-empty string > names each assignment with a non-empty handle
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ enqueued src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:51:35
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:87:30
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > a handle is a non-empty string > takes its own handles back
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ enqueued src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:51:35
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:99:30
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > only what was asked for is answered > answers only locales the request listed
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ enqueued src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:51:35
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:117:30
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > only what was asked for is answered > answers a locale at most once per document
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ enqueued src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:51:35
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:130:30
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > only what was asked for is answered > answers once although the request listed a locale twice
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ enqueued src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:51:35
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:144:30
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > only what was asked for is answered > answers an assignment per requested locale
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ enqueued src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:51:35
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:157:30
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > only what was asked for is answered > answers a locale an existing run already covers
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ enqueued src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:51:35
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:173:29
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > an unknown handle is an answer, not a failure > answers run on an unknown handle with not_found
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:189:29
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > an unknown handle is an answer, not a failure > resolves cancel on an unknown handle
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:194:31
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > an unknown handle is an answer, not a failure > cancels nothing when the handle is unknown
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ enqueued src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:51:35
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:201:30
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > findByIds resolves handles to the tasks they stand for > answers only tasks for the handles asked about
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ enqueued src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:51:35
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:218:30
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > findByIds resolves handles to the tasks they stand for > announces each target locale of a handle separately
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ enqueued src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:51:35
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:232:30
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > findByIds resolves handles to the tasks they stand for > announces a target locale once per handle
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ enqueued src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:51:35
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:250:30
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > findByCollection finds tasks for a collection > answers only tasks of the collection asked about
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:267:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > findByCollection finds tasks for a collection > keeps only the documents the filter names
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:278:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > findByCollection finds tasks for a collection > keeps only the documents the deprecated array names
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:289:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/21]⎯
+
+ FAIL  src/server/modules/task-runner/__stubs__/red-run.test.ts > stub — red run > findByCollection finds tasks for a collection > drops tasks that have finished
+Error: not implemented — red run
+ ❯ Object.notImplemented src/server/modules/task-runner/__stubs__/TaskRunner.stub.ts:4:9
+      2| 
+      3| const notImplemented = (): never => {
+      4|   throw new Error("not implemented — red run");
+       |         ^
+      5| };
+      6| 
+ ❯ src/server/modules/task-runner/__tests__/TaskRunner.invariants.ts:300:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/21]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  21 failed (21)
+   Start at  19:43:58
+   Duration  332ms (transform 47ms, setup 0ms, collect 37ms, tests 10ms, environment 0ms, prepare 59ms)
+

@@ -1,49 +1,26 @@
 import { describe, it, expect } from "vitest";
-import type { TaskInput } from "../task-runner/types.js";
-import type { TaskHandlerInput } from "../task-runner/TaskRunnerProvider.interface.js";
-import { taskFromInput, taskFromHandlerInput } from "./taskMapping.js";
 
-// Both mappers project an internal task shape onto the public `TranslationTask`. The two fragile
-// properties are the full field set (incl. `strategy`) and the deliberate omission of
-// `publishOnTranslation` (an internal write concern). `toEqual` (exact match) locks both in — a
-// leaked field or a dropped `strategy` fails here rather than slipping through `objectContaining`.
+import type { EnqueueAssignment } from "../task-runner/types.js";
+import { taskFromAssignment } from "./taskMapping.js";
 
-describe("taskFromInput", () => {
-  it("maps every public field and omits publishOnTranslation", () => {
-    const input: TaskInput = {
+describe("taskFromAssignment", () => {
+  it("maps every field the host is shown, and adds none", () => {
+    const assignment: EnqueueAssignment = {
       collectionSlug: "posts",
       collectionId: "doc-1",
       sourceLng: "en",
       targetLng: "de",
       strategy: "skip_existing",
-      publishOnTranslation: true,
+      handle: "run-9",
     };
-    expect(taskFromInput(input)).toEqual({
+
+    expect(taskFromAssignment(assignment)).toEqual({
       collection: "posts",
       id: "doc-1",
       sourceLng: "en",
       targetLng: "de",
       strategy: "skip_existing",
-    });
-  });
-});
-
-describe("taskFromHandlerInput", () => {
-  it("maps every public field and omits publishOnTranslation", () => {
-    const input: TaskHandlerInput = {
-      collection: "pages",
-      collectionId: "doc-2",
-      sourceLng: "en",
-      targetLng: "fr",
-      strategy: "overwrite",
-      publishOnTranslation: false,
-    };
-    expect(taskFromHandlerInput(input)).toEqual({
-      collection: "pages",
-      id: "doc-2",
-      sourceLng: "en",
-      targetLng: "fr",
-      strategy: "overwrite",
+      handle: "run-9",
     });
   });
 });

@@ -4,11 +4,7 @@ import type { TranslationProvider } from "../../../core/domain/translation-provi
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
 import type { ProvenanceServiceFactory } from "../../modules/provenance/index.js";
-import {
-  LifecycleNotifier,
-  taskFromHandlerInput,
-  withQueuedNotification,
-} from "../../modules/lifecycle/index.js";
+import { LifecycleNotifier, taskFromAssignment } from "../../modules/lifecycle/index.js";
 import type { TranslationLifecycleCallbacks } from "../../modules/lifecycle/index.js";
 import type {
   TaskRunnerContext,
@@ -30,8 +26,8 @@ type WireTranslateRunnerParams = {
 
 /**
  * Assemble the document-translation task pipeline: the {@link TranslateDocumentHandler}, the runner
- * context that wraps each task with lifecycle notifications, the runner's config modifier, and the
- * per-request {@link TaskRunnerFactory} (decorated with `onQueued` notification when configured).
+ * context that turns what the runner reports into the host's callbacks, the runner's config
+ * modifier, and the per-request {@link TaskRunnerFactory}.
  *
  * Extracted from the plugin's `init()` so the composition root stays a flat list — `plugin.ts` calls
  * this once and registers the returned `configModifier` through the shared builder.
@@ -57,36 +53,38 @@ export function wireTranslateRunner({
 
   const runnerContext: TaskRunnerContext = {
     handler: async (payload, input, scope) => {
-      const notifier = new LifecycleNotifier(lifecycle, payload.logger);
-      const task = taskFromHandlerInput(input);
-      try {
-        await translateHandler.handle(
-          payload,
-          {
-            collection: input.collection,
-            collectionId: input.collectionId,
-            sourceLng: input.sourceLng,
-            targetLng: input.targetLng,
-            strategy: input.strategy,
-            publishOnTranslation: input.publishOnTranslation,
-          },
-          scope
-        );
-      } catch (error) {
-        await notifier.failed(task, error);
-        throw error; // rethrow so the runner marks the job failed
-      }
-      await notifier.completed(task);
+      await translateHandler.handle(
+        payload,
+        {
+          collection: input.collection,
+          collectionId: input.collectionId,
+          sourceLng: input.sourceLng,
+          targetLng: input.targetLng,
+          strategy: input.strategy,
+          publishOnTranslation: input.publishOnTranslation,
+        },
+        scope
+      );
     },
     collections,
+    report: (payload, assignment, event) => {
+      const notifier = new LifecycleNotifier(lifecycle, payload.logger);
+      const task = taskFromAssignment(assignment);
+      switch (event.state) {
+        case "queued":
+          return notifier.queued(task);
+        case "delivered":
+          return notifier.completed(task);
+        case "failed":
+          return notifier.failed(task, event.error);
+        case "cancelled":
+          return notifier.cancelled(task);
+      }
+    },
   };
 
   const taskRunnerFactory: TaskRunnerFactory = {
-    create: (payload) => {
-      const taskRunner = runner.create(payload, runnerContext.handler);
-      if (!lifecycle.onQueued) return taskRunner;
-      return withQueuedNotification(taskRunner, new LifecycleNotifier(lifecycle, payload.logger));
-    },
+    create: (payload) => runner.create(payload, runnerContext),
   };
 
   return { taskRunnerFactory, configModifier: runner.configure(runnerContext) };

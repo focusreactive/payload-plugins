@@ -1,0 +1,193 @@
+
+ RUN  v3.2.4 /Users/FocusReactive/Documents/Projects/payload-plugins/packages/payload-plugin-translator
+
+ ❯ src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts (12 tests | 12 failed) 7ms
+   × alreadyCovered > a locale the run lists and has not translated > covers it when it has not been attempted, while another locale of the same run is translated 3ms
+     → not implemented — red run
+   × alreadyCovered > a locale the run lists and has not translated > covers it when its attempt failed, because the run will come back to it 0ms
+     → not implemented — red run
+   × alreadyCovered > a locale the run lists and has translated > does not cover it, while the run still has an unreached locale 0ms
+     → not implemented — red run
+   × alreadyCovered > several records for one locale > does not cover a locale that failed and was then translated 0ms
+     → not implemented — red run
+   × alreadyCovered > several records for one locale > does not cover a locale that was translated and has a later failure 0ms
+     → not implemented — red run
+   × alreadyCovered > a record that names no locale > ignores it, so the locale it cannot identify stays covered 0ms
+     → not implemented — red run
+   × alreadyCovered > a locale the run does not list > does not cover it, though the run has locales it has not reached 0ms
+     → not implemented — red run
+   × alreadyCovered > a locale asked for twice > answers it once 0ms
+     → not implemented — red run
+   × alreadyCovered > locales the request did not ask for > leaves out a locale the run carries and has not reached but nobody requested 0ms
+     → not implemented — red run
+   × alreadyCovered > order > follows the request, not the order the run lists its locales in 0ms
+     → not implemented — red run
+   × alreadyCovered > empty request > yields nothing, though the run carries locales it has not reached 0ms
+     → not implemented — red run
+   × alreadyCovered > a run carrying no locales > yields nothing 0ms
+     → not implemented — red run
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 12 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts > alreadyCovered > a locale the run lists and has not translated > covers it when it has not been attempted, while another locale of the same run is translated
+Error: not implemented — red run
+ ❯ alreadyCovered src/server/modules/task-runner/payload-jobs-runner/alreadyCovered.ts:43:9
+     41| 
+     42| export const alreadyCovered: AlreadyCovered = () => {
+     43|   throw new Error("not implemented — red run");
+       |         ^
+     44| };
+     45| 
+ ❯ src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts:36:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/12]⎯
+
+ FAIL  src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts > alreadyCovered > a locale the run lists and has not translated > covers it when its attempt failed, because the run will come back to it
+Error: not implemented — red run
+ ❯ alreadyCovered src/server/modules/task-runner/payload-jobs-runner/alreadyCovered.ts:43:9
+     41| 
+     42| export const alreadyCovered: AlreadyCovered = () => {
+     43|   throw new Error("not implemented — red run");
+       |         ^
+     44| };
+     45| 
+ ❯ src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts:41:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/12]⎯
+
+ FAIL  src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts > alreadyCovered > a locale the run lists and has translated > does not cover it, while the run still has an unreached locale
+Error: not implemented — red run
+ ❯ alreadyCovered src/server/modules/task-runner/payload-jobs-runner/alreadyCovered.ts:43:9
+     41| 
+     42| export const alreadyCovered: AlreadyCovered = () => {
+     43|   throw new Error("not implemented — red run");
+       |         ^
+     44| };
+     45| 
+ ❯ src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts:48:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/12]⎯
+
+ FAIL  src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts > alreadyCovered > several records for one locale > does not cover a locale that failed and was then translated
+Error: not implemented — red run
+ ❯ alreadyCovered src/server/modules/task-runner/payload-jobs-runner/alreadyCovered.ts:43:9
+     41| 
+     42| export const alreadyCovered: AlreadyCovered = () => {
+     43|   throw new Error("not implemented — red run");
+       |         ^
+     44| };
+     45| 
+ ❯ src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts:58:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/12]⎯
+
+ FAIL  src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts > alreadyCovered > several records for one locale > does not cover a locale that was translated and has a later failure
+Error: not implemented — red run
+ ❯ alreadyCovered src/server/modules/task-runner/payload-jobs-runner/alreadyCovered.ts:43:9
+     41| 
+     42| export const alreadyCovered: AlreadyCovered = () => {
+     43|   throw new Error("not implemented — red run");
+       |         ^
+     44| };
+     45| 
+ ❯ src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts:66:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/12]⎯
+
+ FAIL  src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts > alreadyCovered > a record that names no locale > ignores it, so the locale it cannot identify stays covered
+Error: not implemented — red run
+ ❯ alreadyCovered src/server/modules/task-runner/payload-jobs-runner/alreadyCovered.ts:43:9
+     41| 
+     42| export const alreadyCovered: AlreadyCovered = () => {
+     43|   throw new Error("not implemented — red run");
+       |         ^
+     44| };
+     45| 
+ ❯ src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts:79:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/12]⎯
+
+ FAIL  src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts > alreadyCovered > a locale the run does not list > does not cover it, though the run has locales it has not reached
+Error: not implemented — red run
+ ❯ alreadyCovered src/server/modules/task-runner/payload-jobs-runner/alreadyCovered.ts:43:9
+     41| 
+     42| export const alreadyCovered: AlreadyCovered = () => {
+     43|   throw new Error("not implemented — red run");
+       |         ^
+     44| };
+     45| 
+ ❯ src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts:86:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/12]⎯
+
+ FAIL  src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts > alreadyCovered > a locale asked for twice > answers it once
+Error: not implemented — red run
+ ❯ alreadyCovered src/server/modules/task-runner/payload-jobs-runner/alreadyCovered.ts:43:9
+     41| 
+     42| export const alreadyCovered: AlreadyCovered = () => {
+     43|   throw new Error("not implemented — red run");
+       |         ^
+     44| };
+     45| 
+ ❯ src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts:93:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/12]⎯
+
+ FAIL  src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts > alreadyCovered > locales the request did not ask for > leaves out a locale the run carries and has not reached but nobody requested
+Error: not implemented — red run
+ ❯ alreadyCovered src/server/modules/task-runner/payload-jobs-runner/alreadyCovered.ts:43:9
+     41| 
+     42| export const alreadyCovered: AlreadyCovered = () => {
+     43|   throw new Error("not implemented — red run");
+       |         ^
+     44| };
+     45| 
+ ❯ src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts:100:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/12]⎯
+
+ FAIL  src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts > alreadyCovered > order > follows the request, not the order the run lists its locales in
+Error: not implemented — red run
+ ❯ alreadyCovered src/server/modules/task-runner/payload-jobs-runner/alreadyCovered.ts:43:9
+     41| 
+     42| export const alreadyCovered: AlreadyCovered = () => {
+     43|   throw new Error("not implemented — red run");
+       |         ^
+     44| };
+     45| 
+ ❯ src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts:107:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/12]⎯
+
+ FAIL  src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts > alreadyCovered > empty request > yields nothing, though the run carries locales it has not reached
+Error: not implemented — red run
+ ❯ alreadyCovered src/server/modules/task-runner/payload-jobs-runner/alreadyCovered.ts:43:9
+     41| 
+     42| export const alreadyCovered: AlreadyCovered = () => {
+     43|   throw new Error("not implemented — red run");
+       |         ^
+     44| };
+     45| 
+ ❯ src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts:114:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/12]⎯
+
+ FAIL  src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts > alreadyCovered > a run carrying no locales > yields nothing
+Error: not implemented — red run
+ ❯ alreadyCovered src/server/modules/task-runner/payload-jobs-runner/alreadyCovered.ts:43:9
+     41| 
+     42| export const alreadyCovered: AlreadyCovered = () => {
+     43|   throw new Error("not implemented — red run");
+       |         ^
+     44| };
+     45| 
+ ❯ src/server/modules/task-runner/payload-jobs-runner/__tests__/alreadyCovered.test.ts:121:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/12]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  12 failed (12)
+   Start at  19:38:37
+   Duration  396ms (transform 45ms, setup 0ms, collect 30ms, tests 7ms, environment 0ms, prepare 65ms)
+

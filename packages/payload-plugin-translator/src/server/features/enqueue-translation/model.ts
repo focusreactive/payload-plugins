@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { CollectionSlug } from "payload";
 
+import type { EnqueueAssignment } from "../../modules/task-runner/types.js";
+
 /**
  * Input validation schema
  */
@@ -22,3 +24,19 @@ export const EnqueueInputSchema = z.object({
 export type EnqueueConfig = {
   availableCollections: Set<CollectionSlug>;
 };
+
+/** One enqueued locale, in the snake_case this surface answers in. */
+export type EnqueueAssignmentOutput = {
+  collection_slug: string;
+  collection_id: string;
+  target_lng: string;
+  handle: string;
+};
+
+export const toAssignmentOutputs = (assigned: EnqueueAssignment[]): EnqueueAssignmentOutput[] =>
+  assigned.map((entry) => ({
+    collection_slug: entry.collectionSlug,
+    collection_id: entry.collectionId,
+    target_lng: entry.targetLng,
+    handle: entry.handle,
+  }));

@@ -14,7 +14,7 @@ import type { Payload, PayloadRequest } from "payload";
  */
 export async function callEndpoint(
   payload: Payload,
-  method: "get" | "post",
+  method: "get" | "post" | "delete",
   path: string,
   opts?: {
     routeParams?: Record<string, unknown>;

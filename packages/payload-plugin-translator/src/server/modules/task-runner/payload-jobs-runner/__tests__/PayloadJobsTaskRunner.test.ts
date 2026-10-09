@@ -1,9 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 import { PayloadJobsTaskRunner } from "../PayloadJobsTaskRunner.js";
-import type { PayloadJobsRunnerConfig, PayloadJob } from "../types.js";
+import type { PayloadJobsRunnerConfig } from "../config.js";
+import type { PayloadJob } from "../store/types.js";
 import type { TaskInput } from "../../types.js";
 import { asRequester } from "../../../../shared/payload/RequestScope.shapes.js";
+
+const testContext = {
+  handler: vi.fn().mockResolvedValue(undefined),
+  collections: [],
+  report: vi.fn().mockResolvedValue(undefined),
+};
 
 describe("PayloadJobsTaskRunner", () => {
   let mockPayload: {
@@ -51,7 +58,7 @@ describe("PayloadJobsTaskRunner", () => {
       },
       staleJobTimeoutMs: 300_000,
     };
-    runner = new PayloadJobsTaskRunner(mockPayload as unknown as Payload, config);
+    runner = new PayloadJobsTaskRunner(mockPayload as unknown as Payload, config, testContext);
   });
 
   const createInput = (overrides: Partial<TaskInput> = {}): TaskInput => ({

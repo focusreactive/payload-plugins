@@ -15,14 +15,18 @@ describe("GetCollectionStatusHandler", () => {
   let mockTaskRunnerFactory: TaskRunnerFactory;
   let config: GetCollectionStatusConfig;
 
-  const createMockTask = (overrides: Partial<Task> = {}): Task => ({
+  const createMockTask = ({
+    targetLng = "de",
+    collectionId = "doc-123",
+    ...overrides
+  }: Partial<Task> & { targetLng?: string; collectionId?: string } = {}): Task => ({
     id: "task-123",
     status: "completed",
     input: {
       collectionSlug: "posts" as CollectionSlug,
-      collectionId: "doc-123",
+      collectionId,
       sourceLng: "en",
-      targetLng: "de",
+      targetLng,
       strategy: "overwrite",
       publishOnTranslation: false,
     },
@@ -122,9 +126,9 @@ describe("GetCollectionStatusHandler", () => {
 
     it("returns task statuses for all documents in collection", async () => {
       const tasks = [
-        createMockTask({ id: "task-1", status: "completed" }),
-        createMockTask({ id: "task-2", status: "pending" }),
-        createMockTask({ id: "task-3", status: "running" }),
+        createMockTask({ id: "run-1", status: "completed", targetLng: "de" }),
+        createMockTask({ id: "run-1", status: "pending", targetLng: "fr" }),
+        createMockTask({ id: "run-2", status: "running", targetLng: "de", collectionId: "doc-9" }),
       ];
       (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue(tasks);
 
@@ -133,10 +137,13 @@ describe("GetCollectionStatusHandler", () => {
 
       expect(response.status).toBe(200);
       const body = await response.json();
-      expect(body.data.docs).toEqual([
-        { id: "task-1", status: "completed" },
-        { id: "task-2", status: "pending" },
-        { id: "task-3", status: "running" },
+      expect(
+        body.data.docs,
+        "two of these share a run, so the handle alone cannot tell them apart"
+      ).toEqual([
+        { id: "run-1", status: "completed", collection_id: "doc-123", target_lng: "de" },
+        { id: "run-1", status: "pending", collection_id: "doc-123", target_lng: "fr" },
+        { id: "run-2", status: "running", collection_id: "doc-9", target_lng: "de" },
       ]);
     });
 

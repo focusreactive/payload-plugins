@@ -1,5 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
-import type { Config, Payload } from "payload";
+import type { Config, Payload, CollectionSlug } from "payload";
+import type { TaskRunnerContext } from "../server/modules/task-runner/index.js";
+import type { TaskEvent } from "../server/modules/task-runner/types.js";
+import type { TranslationLifecycleCallbacks } from "../server/modules/lifecycle/types.js";
 
 import { translatorPlugin } from "../plugin.js";
 import { AnyAccessGuard } from "../server/shared/access/AnyAccessGuard.js";
@@ -8,7 +11,6 @@ import { withAutoTranslate } from "../auto-translate-config.js";
 import { documentLevel, fieldLevel } from "../composition/levels/index.js";
 import { TranslateDocumentExport } from "../client/widgets/translate-document/index.js";
 import { BulkDocumentTranslationDashboard } from "../client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.export.js";
-import { withQueuedNotification } from "../server/modules/lifecycle/index.js";
 
 // Isolate the lifecycle-wiring tests from the real pipeline: a mocked translateContent that returns
 // null makes the handler finish cleanly (nothing to translate) so we can assert `completed` fires
@@ -17,16 +19,6 @@ import { withQueuedNotification } from "../server/modules/lifecycle/index.js";
 vi.mock("../core/translation-pipeline/index.js", () => ({
   translateContent: vi.fn().mockResolvedValue(null),
 }));
-
-// Spy on withQueuedNotification while keeping its real behaviour, so a test can assert the runner
-// was (or wasn't) wrapped for the `lifecycle.onQueued` absent/present branch in plugin.ts.
-vi.mock("../server/modules/lifecycle/index.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../server/modules/lifecycle/index.js")>();
-  return {
-    ...actual,
-    withQueuedNotification: vi.fn(actual.withQueuedNotification),
-  };
-});
 
 // End-to-end behaviour guard for the levels refactor: the default levels must
 // reproduce today's wiring (6-route bundle, cache provider, doc popup + bulk
@@ -355,56 +347,6 @@ describe("translatorPlugin — lifecycle callbacks", () => {
       collections: { posts: { config: { versions: undefined } } },
     }) as unknown as Payload;
 
-  it("fires lifecycle.onCompleted after a successful task", async () => {
-    const onCompleted = vi.fn();
-    const { runner } = await build({
-      lifecycle: { onCompleted },
-    } as Partial<TranslatorPluginConfig>);
-
-    await capturedHandler(runner)(mockPayload(), handlerInput());
-
-    expect(onCompleted).toHaveBeenCalledWith(
-      expect.objectContaining({
-        collection: "posts",
-        id: "doc-1",
-        sourceLng: "en",
-        targetLng: "de",
-      })
-    );
-  });
-
-  it("fires lifecycle.onFailed with the error and rethrows so the runner marks it failed", async () => {
-    const onFailed = vi.fn();
-    const { runner } = await build({ lifecycle: { onFailed } } as Partial<TranslatorPluginConfig>);
-
-    // an unknown collection makes the handler throw before translating
-    let rejectedError: unknown;
-    try {
-      await capturedHandler(runner)(mockPayload(), handlerInput({ collection: "unknown" }));
-    } catch (error) {
-      rejectedError = error;
-    }
-
-    expect(rejectedError).toBeInstanceOf(Error);
-    expect(onFailed).toHaveBeenCalledWith(
-      expect.objectContaining({ collection: "unknown" }),
-      rejectedError
-    );
-    // the rejected error and the error handed to onFailed must be the identical object
-    expect(onFailed.mock.calls[0][1]).toBe(rejectedError);
-  });
-
-  it("rethrows the original translation error even when onFailed itself throws", async () => {
-    const onFailed = vi.fn(() => {
-      throw new Error("callback boom");
-    });
-    const { runner } = await build({ lifecycle: { onFailed } } as Partial<TranslatorPluginConfig>);
-
-    await expect(
-      capturedHandler(runner)(mockPayload(), handlerInput({ collection: "unknown" }))
-    ).rejects.toThrow(/not found in schemaMap/u);
-  });
-
   it("does not fail the task when a lifecycle callback throws (swallow + log)", async () => {
     const onCompleted = vi.fn(() => {
       throw new Error("callback boom");
@@ -416,104 +358,92 @@ describe("translatorPlugin — lifecycle callbacks", () => {
     await expect(capturedHandler(runner)(mockPayload(), handlerInput())).resolves.toBeUndefined();
   });
 
-  it("fires lifecycle.onQueued for each task when enqueuing", async () => {
-    const onQueued = vi.fn();
-    const taskRunner = {
-      enqueue: vi.fn().mockResolvedValue(undefined),
-      cancel: vi.fn(),
-      run: vi.fn(),
-      findByCollection: vi.fn(),
-    };
-    const runner = {
-      create: vi.fn().mockReturnValue(taskRunner),
-      configure: vi.fn().mockReturnValue((c: Config) => c),
-    };
-    const { result } = await build({
-      runner,
-      lifecycle: { onQueued },
-    } as unknown as Partial<TranslatorPluginConfig>);
+  describe("the handler translates and reports nothing", () => {
+    it("lets a translation failure out, so the runner can see it", async () => {
+      const { runner } = await build({ lifecycle: {} } as Partial<TranslatorPluginConfig>);
 
-    const enqueue = result.endpoints?.find((e) => e.path === "/translate/enqueue");
-    const req = {
-      json: async () => ({
-        source_lng: "en",
-        target_lng: "de",
-        collection_slug: "posts",
-        collection_id: ["1", "2"],
-      }),
-      payload: {
-        config: { localization: { locales: ["en", "de", "fr"] } },
-        logger: { error: vi.fn() },
-      },
-    };
-    await enqueue?.handler?.(req as never);
+      await expect(
+        capturedHandler(runner)(mockPayload(), handlerInput({ collection: "unknown" })),
+        "the runner decides what a throw means — it cannot if the handler swallows it"
+      ).rejects.toBeDefined();
+    });
 
-    expect(onQueued).toHaveBeenCalledTimes(2);
-    expect(onQueued).toHaveBeenCalledWith(expect.objectContaining({ id: "1" }));
-    expect(taskRunner.enqueue).toHaveBeenCalled();
+    it.each([
+      ["onCompleted", "posts"],
+      ["onFailed", "unknown"],
+    ])("does not call %s itself", async (callbackName, collection) => {
+      const callback = vi.fn();
+      const { runner } = await build({
+        lifecycle: { [callbackName]: callback },
+      } as Partial<TranslatorPluginConfig>);
+
+      await capturedHandler(runner)(mockPayload(), handlerInput({ collection })).catch(
+        () => undefined
+      );
+
+      expect(
+        callback,
+        "reporting is the runner's through `report`; a second road would double every event"
+      ).not.toHaveBeenCalled();
+    });
   });
 
-  it("does not wrap the runner in withQueuedNotification when lifecycle.onQueued is absent", async () => {
-    vi.mocked(withQueuedNotification).mockClear();
-    const taskRunner = {
-      enqueue: vi.fn().mockResolvedValue(undefined),
-      cancel: vi.fn(),
-      run: vi.fn(),
-      findByCollection: vi.fn(),
+  describe("the report channel is the only road to the host", () => {
+    const assignment = {
+      collectionSlug: "posts" as CollectionSlug,
+      collectionId: "doc-1",
+      sourceLng: "en",
+      targetLng: "de",
+      strategy: "overwrite",
+      handle: "run-1",
     };
-    const runner = {
-      create: vi.fn().mockReturnValue(taskRunner),
-      configure: vi.fn().mockReturnValue((c: Config) => c),
+
+    const contextHandedToTheRunner = async (lifecycle: Record<string, unknown>) => {
+      let captured: TaskRunnerContext | undefined;
+      const runner = {
+        create: vi.fn().mockReturnValue({
+          enqueue: vi.fn().mockResolvedValue(undefined),
+          cancel: vi.fn(),
+          run: vi.fn(),
+          findByCollection: vi.fn(),
+        }),
+        configure: vi.fn((context: TaskRunnerContext) => {
+          captured = context;
+          return (c: Config) => c;
+        }),
+      };
+      await build({ runner, lifecycle } as unknown as Partial<TranslatorPluginConfig>);
+      return captured as TaskRunnerContext;
     };
-    const { result } = await build({
-      runner,
-      lifecycle: { onCompleted: vi.fn() },
-    } as unknown as Partial<TranslatorPluginConfig>);
 
-    const enqueue = result.endpoints?.find((e) => e.path === "/translate/enqueue");
-    const req = {
-      json: async () => ({
-        source_lng: "en",
-        target_lng: "de",
-        collection_slug: "posts",
-        collection_id: ["1", "2"],
-      }),
-      payload: {
-        config: { localization: { locales: ["en", "de", "fr"] } },
-        logger: { error: vi.fn() },
-      },
-    };
-    await enqueue?.handler?.(req as never);
+    const payload = { logger: { error: vi.fn() } } as unknown as Payload;
 
-    expect(withQueuedNotification).not.toHaveBeenCalled();
-    expect(taskRunner.enqueue).toHaveBeenCalled();
-  });
+    const mappings: Array<[string, keyof TranslationLifecycleCallbacks, TaskEvent]> = [
+      ["queued", "onQueued", { state: "queued" }],
+      ["delivered", "onCompleted", { state: "delivered" }],
+      ["failed", "onFailed", { state: "failed", error: new Error("provider down") }],
+      ["cancelled", "onCancelled", { state: "cancelled" }],
+    ];
 
-  it("does not fire onFailed on the success path when both onCompleted and onFailed are registered", async () => {
-    const onCompleted = vi.fn();
-    const onFailed = vi.fn();
-    const { runner } = await build({
-      lifecycle: { onCompleted, onFailed },
-    } as Partial<TranslatorPluginConfig>);
+    it.each(mappings)("turns %s into %s", async (_label, callbackName, event) => {
+      const callback = vi.fn();
+      const context = await contextHandedToTheRunner({ [callbackName]: callback });
 
-    await capturedHandler(runner)(mockPayload(), handlerInput());
+      await context.report(payload, assignment, event);
 
-    expect(onCompleted).toHaveBeenCalledTimes(1);
-    expect(onFailed).not.toHaveBeenCalled();
-  });
+      expect(callback, `${String(event)} must reach ${callbackName}`).toHaveBeenCalledWith(
+        expect.objectContaining({ collection: "posts", id: "doc-1", targetLng: "de" }),
+        ...(callbackName === "onFailed" ? [expect.any(Error)] : [])
+      );
+    });
 
-  it("does not fire onCompleted on the failure path when both onCompleted and onFailed are registered", async () => {
-    const onCompleted = vi.fn();
-    const onFailed = vi.fn();
-    const { runner } = await build({
-      lifecycle: { onCompleted, onFailed },
-    } as Partial<TranslatorPluginConfig>);
+    it("tells a host nothing it did not register for", async () => {
+      const onCompleted = vi.fn();
+      const context = await contextHandedToTheRunner({ onCompleted });
 
-    await expect(
-      capturedHandler(runner)(mockPayload(), handlerInput({ collection: "unknown" }))
-    ).rejects.toThrow();
+      await context.report(payload, assignment, { state: "cancelled" });
 
-    expect(onFailed).toHaveBeenCalledTimes(1);
-    expect(onCompleted).not.toHaveBeenCalled();
+      expect(onCompleted, "a cancellation is not a completion").not.toHaveBeenCalled();
+    });
   });
 });

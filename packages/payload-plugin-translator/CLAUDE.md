@@ -3,6 +3,17 @@
 Package-specific conventions for `@focus-reactive/payload-plugin-translator`.
 Complements the root [CLAUDE.md](../../CLAUDE.md) — it does not replace it.
 
+## What goes into `src/index.ts`
+
+**Only what a consumer outside the package cannot do their job without naming.** Before
+adding a re-export, write the consumer in a scratch file and type-check it: contextual
+typing from an already-exported interface covers object literals, callbacks and return
+positions, so a type the contract merely *mentions* usually needs no export at all. A test
+or fixture in this repository is not a consumer — it has internal import paths.
+
+See [ADR-0002](../../docs/adr/0002-publish-only-what-a-consumer-must-name.md) for the three
+questions and the case that produced them.
+
 ## Documenting feature versions
 
 Annotate every new piece of **public API** (anything re-exported from
@@ -32,6 +43,29 @@ Scope:
 Non-trivial work is designed in a committed doc under [docs/plans/](docs/plans)
 before implementation. Deprecations are tracked in
 [docs/DEPRECATIONS.md](docs/DEPRECATIONS.md) (keyed by date + PR, removal = next major).
+
+## Grouping files inside a module
+
+A module that outgrows a flat listing is split into **folders named by role**, the same vocabulary
+the client half already uses (`client/entities/translation/{api,model,ui}`), not by domain concept.
+A folder called `owed/` or `job-row/` has to be opened before it tells you anything; `model/` and
+`store/` do not.
+
+The roles that apply on the server:
+
+| Folder | Holds | Test |
+| ------ | ----- | ---- |
+| `store/` | the shape of what a framework or database stores, and the readers that turn it into ours | would it change if Payload changed its storage format? |
+| `model/` | the rules that decide — budgets, plans, what is still owed | does it decide something, reading shapes it does not define? |
+| `config.ts` | the module's options and the config resolved from them | — |
+
+**The dependency runs one way: `model/` → `store/`, never back.** That is what makes the split worth
+having rather than two arbitrary piles, and it is checkable with one grep.
+
+Each folder carries an `index.ts`; cross-folder imports go through it, imports inside a folder and
+from a test to the unit it tests go direct. `server/modules/task-runner/payload-jobs-runner/` is the
+worked example. A module small enough to read at a glance stays flat — `sync-runner/` has four files
+and needs none of this.
 
 ## File naming — role tags
 

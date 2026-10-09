@@ -9,14 +9,17 @@ import { isCollectionAvailable, getAllCollectionIds } from "../_lib/collection-u
 
 import { Locales } from "../../../core/domain/locales/index.js";
 
-import { EnqueueInputSchema } from "./model.js";
+import { EnqueueInputSchema, toAssignmentOutputs } from "./model.js";
 import type { EnqueueConfig } from "./model.js";
 
 export class EnqueueTranslationHandler {
-  constructor(
-    private readonly config: EnqueueConfig,
-    private readonly taskRunnerFactory: TaskRunnerFactory
-  ) {}
+  private readonly config: EnqueueConfig;
+  private readonly taskRunnerFactory: TaskRunnerFactory;
+
+  constructor(config: EnqueueConfig, taskRunnerFactory: TaskRunnerFactory) {
+    this.config = config;
+    this.taskRunnerFactory = taskRunnerFactory;
+  }
 
   async handle(req: PayloadRequest): Promise<Response> {
     const validationResult = EnqueueInputSchema.safeParse(await req.json?.());
@@ -90,11 +93,15 @@ export class EnqueueTranslationHandler {
       }))
     );
 
-    await runner.enqueue(
+    const assigned = await runner.enqueue(
       tasks,
       identityOf(req, authCollectionsOf(req.payload), req.payload.logger)
     );
 
-    return ServerResponse.success({ success: true, queued: tasks.length });
+    return ServerResponse.success({
+      success: true,
+      queued: tasks.length,
+      ...(assigned ? { assignments: toAssignmentOutputs(assigned) } : {}),
+    });
   }
 }

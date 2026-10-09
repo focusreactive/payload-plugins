@@ -1,4 +1,6 @@
-import type { Task, TaskStatus } from "../types.js";
+import { z } from "zod";
+
+import type { Task, TaskStatus } from "../../types.js";
 import type { JobLogEntry, PayloadJob } from "./types.js";
 import { readCollectionRef } from "./readCollectionRef.js";
 
@@ -9,33 +11,23 @@ function getJobStatus(job: PayloadJob): TaskStatus {
   return "pending";
 }
 
+/** Payload keeps a job's error as whatever was thrown, so both of these are read out of `unknown`. */
+const ErrorWithMessage = z.object({ message: z.string() });
+const CancelledError = z.object({ cancelled: z.literal(true) });
+
 function extractErrorMessage(error: unknown): string {
-  if (
-    error &&
-    typeof error === "object" &&
-    "message" in error &&
-    typeof error.message === "string"
-  ) {
-    return error.message;
-  }
-  return "Unknown error";
+  return ErrorWithMessage.safeParse(error).data?.message ?? "Unknown error";
 }
 
 export function isCancelled(error: unknown): boolean {
-  return (
-    error !== null &&
-    typeof error === "object" &&
-    "cancelled" in error &&
-    typeof error.cancelled === "boolean" &&
-    error.cancelled
-  );
+  return CancelledError.safeParse(error).success;
 }
 
 export function normalizeJob(job: PayloadJob): Task {
   const { collectionSlug, collectionId } = readCollectionRef(job.input);
 
   return {
-    id: job.id,
+    id: String(job.id),
     status: getJobStatus(job),
     input: {
       collectionSlug,
@@ -51,6 +43,19 @@ export function normalizeJob(job: PayloadJob): Task {
     error: job.error ? { message: extractErrorMessage(job.error) } : undefined,
     cancelled: isCancelled(job.error),
   };
+}
+
+/**
+ * Each locale's most recent log entry: Payload appends to `log` chronologically, so last-write-wins
+ * leaves the latest attempt.
+ */
+export function latestLogByLocale(job: PayloadJob): Map<string, JobLogEntry> {
+  const byLocale = new Map<string, JobLogEntry>();
+  for (const entry of job.log ?? []) {
+    const lng = entry?.input?.target_lng;
+    if (typeof lng === "string") byLocale.set(lng, entry);
+  }
+  return byLocale;
 }
 
 /**
@@ -77,17 +82,4 @@ export function normalizeJobLocales(job: PayloadJob): Task[] {
       input: { ...base.input, targetLng },
     };
   });
-}
-
-/**
- * Each locale's most recent log entry: Payload appends to `log` chronologically, so last-write-wins
- * leaves the latest attempt.
- */
-export function latestLogByLocale(job: PayloadJob): Map<string, JobLogEntry> {
-  const byLocale = new Map<string, JobLogEntry>();
-  for (const entry of job.log ?? []) {
-    const lng = entry?.input?.target_lng;
-    if (typeof lng === "string") byLocale.set(lng, entry);
-  }
-  return byLocale;
 }

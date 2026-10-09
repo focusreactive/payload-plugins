@@ -1,6 +1,6 @@
 import type { CollectionSlug } from "payload";
 
-import type { Task, TaskInput, RunResult } from "./types.js";
+import type { EnqueueAssignment, Task, TaskInput, RunResult } from "./types.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 
 /**
@@ -10,19 +10,41 @@ import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
  * and execution of translation tasks. All business logic
  * (like cancelling existing tasks before enqueue) is encapsulated
  * within the implementation.
+ *
+ * **Obligations every implementation holds, whatever it queues onto.** `__tests__/TaskRunner.invariants.ts`
+ * asserts them; a new runner calls that suite once, and the suite's `describe` names are the list.
+ *
+ * Two it cannot assert, because they bind the caller rather than the runner:
+ * - **A handle is never parsed.** Callers compare it, store it and hand it back.
+ * - **Nothing promises an order.** Callers that need one sort.
+ *
+ * Two limits. The obligations reach handles **this runner issued**, and only while the work they
+ * name exists: SQLite reuses a deleted row's id, so a handle kept across a cancellation can later
+ * name another run — drop a handle once you are told the work settled.
+ *
+ * And a store may reject a value it could never have produced: on SQL the job id is an integer, so
+ * a non-numeric handle fails inside the query rather than finding nothing. `DELETE /translate/cancel`
+ * passes such a value straight through and answers with a server error.
  */
 export interface TaskRunner {
   /**
    * Queue translation tasks for execution.
-   * Implementation handles cancellation of existing tasks for the same documents.
    *
    * `scope` joins the reads and writes this makes to the caller's transaction; omit it outside one —
    * an HTTP route — and each operation opens its own.
+   *
+   * Answering with nothing still queues and still satisfies this contract — deprecated,
+   * docs/DEPRECATIONS.md#enqueue-void-return.
+   *
+   * @since 0.16.0 the return type widened.
    */
-  enqueue(tasks: TaskInput[], scope?: RequestScope): Promise<void>;
+  enqueue(tasks: TaskInput[], scope?: RequestScope): Promise<EnqueueAssignment[] | void>;
 
   /**
-   * Cancel tasks by IDs.
+   * Stop the work these handles stand for, as far as this runner can.
+   *
+   * Best effort: a runner that translates inline inside `enqueue` has nothing left to stop.
+   * Report `cancelled` for each locale the run still owed, and for none it had delivered.
    */
   cancel(taskIds: string[]): Promise<void>;
 

@@ -43,6 +43,11 @@ export class LifecycleNotifier {
     await this.safe("lifecycle.onFailed", () => callback(task, error));
   }
 
+  cancelled(task: TranslationTask): Promise<void> {
+    const callback = this.callbacks.onCancelled;
+    return this.safe("lifecycle.onCancelled", callback && (() => callback(task)));
+  }
+
   private async safe(name: string, thunk?: () => void | Promise<void>): Promise<void> {
     if (!thunk) return;
     try {
