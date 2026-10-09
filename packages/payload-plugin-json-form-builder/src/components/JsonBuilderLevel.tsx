@@ -19,6 +19,7 @@ import type { NodeType, TypedNode } from "../field/typedJson.js";
 
 const marks = (node: TypedNode) =>
   [
+    node.type,
     node.required && "required",
     node.readOnly && "read only",
     node.hidden && "hidden",

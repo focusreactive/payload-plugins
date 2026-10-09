@@ -2,6 +2,7 @@ import type { FieldHook } from "payload";
 import { CONFIG_KEY } from "../config.js";
 import type { JsonFormClientConfig } from "../config.js";
 import { follows, reconcile } from "../library/reconcileSection.js";
+import { isShaped, shaped } from "./shaped.js";
 import { flatten, uploadUrls } from "./typedJson.js";
 
 type Req = Parameters<FieldHook>[0]["req"];
@@ -60,7 +61,8 @@ const library = async (req: Req) => {
 // script that read flat values and wrote the document back would erase the shape. A session is
 // what tells them apart.
 export const flattenTypedJson: FieldHook = async ({ req, value }) => {
-  const own = follows(value) ? reconcile(value, await library(req)) : value;
+  const held = follows(value) ? reconcile(value, await library(req)) : value;
+  const own = isShaped(held) ? shaped(held, ownConfig(req)?.shapes ?? {}) : held;
   if (req.payloadAPI === "local" || req.user) return own;
   return flatten(own, await resolver(uploadUrls(own), req));
 };

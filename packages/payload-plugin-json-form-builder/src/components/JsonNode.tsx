@@ -2,24 +2,14 @@
 
 import { clsx as cn } from "clsx";
 import type { ComponentProps } from "react";
-import {
-  CheckboxInput,
-  Collapsible,
-  FieldDescription,
-  FieldLabel,
-  SelectInput,
-  TextareaInput,
-} from "@payloadcms/ui";
+import { Collapsible, FieldDescription } from "@payloadcms/ui";
 import { toWords } from "payload/shared";
 import { EyeIcon } from "./icons/EyeIcon.js";
 import { JsonArray } from "./JsonArray.js";
-import { JsonFolded } from "./JsonFolded.js";
-import { JsonInput } from "./JsonInput.js";
-import { JsonMediaInput } from "./JsonMediaInput.js";
-import { JsonRichText } from "./JsonRichText.js";
+import { JsonHolder } from "./JsonHolder.js";
+import { JsonLeaf } from "./JsonLeaf.js";
 import { JsonRowMenu } from "./JsonRowMenu.js";
 import type { MenuItem } from "./JsonRowMenu.js";
-import { JsonTabs } from "./JsonTabs.js";
 import { nodeFault } from "../field/checks.js";
 import { HIDDEN, visible } from "../field/typedJson.js";
 import type { TypedNode } from "../field/typedJson.js";
@@ -109,7 +99,6 @@ export const JsonNode = ({
 }: NodeProps) => {
   const readOnly = parentReadOnly || node.readOnly;
   const actions = menu && !readOnly && <JsonRowMenu items={menu} />;
-  const Fold = top ? JsonFolded : Collapsible;
 
   const fault = faults ? nodeFault(node) : "";
   const head = badge ? (
@@ -138,185 +127,35 @@ export const JsonNode = ({
       />
     );
 
-  if ("fields" in node) {
-    const fields = (
-      <JsonFields
+  if ("fields" in node)
+    return (
+      <JsonHolder
+        actions={actions}
+        drag={drag}
         faults={faults}
-        fields={node.fields}
+        head={head}
+        hidden={hidden}
         id={id}
-        onChange={(next) => onChange({ ...node, fields: next })}
+        label={label}
+        node={node}
+        onChange={onChange}
         readOnly={readOnly}
+        top={top}
       />
     );
-    if (node.type === "group" && !drag) {
-      return (
-        <div
-          className={cn(
-            "field-type group-field group-field--within-collapsible",
-            hidden && "json-form__hidden"
-          )}
-        >
-          <div className="group-field__header">
-            <h3 className="group-field__title">{label}</h3>
-            {actions}
-          </div>
-          <FieldDescription description={node.description} path={id} />
-          {fields}
-        </div>
-      );
-    }
-    if (node.type === "tabs" && !drag && !top) {
-      return (
-        <div className={cn("field-type", hidden && "json-form__hidden")}>
-          <FieldDescription description={node.description} path={id} />
-          <JsonTabs faults={faults} id={id} node={node} onChange={onChange} />
-        </div>
-      );
-    }
-    return (
-      <div className="field-type collapsible-field">
-        <Fold
-          actions={actions}
-          className={cn("collapsible-field__collapsible", hidden && "json-form__hidden")}
-          dragHandleProps={drag}
-          header={head}
-          initCollapsed
-        >
-          <FieldDescription description={node.description} path={id} />
-          {node.type === "tabs" ? (
-            <JsonTabs faults={faults} id={id} node={node} onChange={onChange} />
-          ) : (
-            fields
-          )}
-        </Fold>
-      </div>
-    );
-  }
 
   const own = drag || actions ? "" : label;
-  const value = node.value ?? "";
-  const set = (next: unknown) => onChange({ ...node, value: next });
-  const field =
-    node.type === "textarea" ? (
-      <TextareaInput
-        AfterInput={fault ? <p className="json-form__fault">{fault}</p> : undefined}
-        label={own}
-        onChange={(event) => set(event.target.value)}
-        path={id}
-        readOnly={readOnly}
-        required={node.required}
-        showError={Boolean(fault)}
-        value={String(value)}
-      />
-    ) : node.type === "number" ? (
-      <JsonInput
-        fault={fault}
-        id={id}
-        kind="number"
-        label={own}
-        max={node.max}
-        min={node.min}
-        onChange={set}
-        readOnly={readOnly}
-        required={node.required}
-        value={node.value}
-      />
-    ) : node.type === "date" ? (
-      <JsonInput
-        fault={fault}
-        id={id}
-        kind="date"
-        label={own}
-        onChange={set}
-        readOnly={readOnly}
-        required={node.required}
-        time={node.time}
-        value={value}
-      />
-    ) : node.type === "checkbox" ? (
-      <div className={cn("field-type checkbox", fault && "error")}>
-        <CheckboxInput
-          checked={Boolean(value)}
-          id={id}
-          label={label}
-          name={id}
-          onToggle={() => !readOnly && set(!value)}
-          readOnly={readOnly}
-          required={node.required}
-        />
-        {fault ? <p className="json-form__fault">{fault}</p> : null}
-      </div>
-    ) : node.type === "upload" ? (
-      <JsonMediaInput
-        fault={fault}
-        id={id}
-        label={own}
-        onChange={set}
-        readOnly={readOnly}
-        required={node.required}
-        url={String(value)}
-      />
-    ) : node.type === "richText" ? (
-      <div className={cn(fault && "json-form__faulty")}>
-        <JsonRichText html={String(value)} id={id} label={own} onChange={set} readOnly={readOnly} />
-        {fault ? <p className="json-form__fault">{fault}</p> : null}
-      </div>
-    ) : node.type === "radio" ? (
-      <div
-        className={cn("field-type radio-group radio-group--layout-horizontal", fault && "error")}
-      >
-        {own ? <FieldLabel label={own} path={id} required={node.required} /> : null}
-        <ul>
-          {(node.options ?? []).map((option) => {
-            const chosen = String(value) === option;
-            return (
-              <li key={option}>
-                <label htmlFor={`${id}-${option}`}>
-                  <div className={cn("radio-input", chosen && "radio-input--is-selected")}>
-                    <input
-                      checked={chosen}
-                      disabled={readOnly}
-                      id={`${id}-${option}`}
-                      name={id}
-                      onChange={() => set(option)}
-                      type="radio"
-                    />
-                    <span className="radio-input__styled-radio" />
-                    <span className="radio-input__label">{option}</span>
-                  </div>
-                </label>
-              </li>
-            );
-          })}
-        </ul>
-        {fault ? <p className="json-form__fault">{fault}</p> : null}
-      </div>
-    ) : node.type === "select" ? (
-      <div className={cn("field-type select", fault && "error")}>
-        <SelectInput
-          label={own}
-          name={id}
-          onChange={(option) => set(option && !Array.isArray(option) ? option.value : "")}
-          options={(node.options ?? []).map((option) => ({ label: option, value: option }))}
-          path={id}
-          readOnly={readOnly}
-          required={node.required}
-          value={String(value)}
-        />
-        {fault ? <p className="json-form__fault">{fault}</p> : null}
-      </div>
-    ) : (
-      <JsonInput
-        fault={fault}
-        id={id}
-        kind="text"
-        label={own}
-        onChange={set}
-        readOnly={readOnly}
-        required={node.required}
-        value={value}
-      />
-    );
+  const field = (
+    <JsonLeaf
+      fault={fault}
+      id={id}
+      label={label}
+      node={node}
+      onChange={onChange}
+      own={own}
+      readOnly={readOnly}
+    />
+  );
   const described = node.description ? (
     <>
       {field}
