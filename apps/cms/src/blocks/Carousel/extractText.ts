@@ -1,11 +1,9 @@
-import { extractLexicalText, joinText } from "@/lib/utils/text";
+import { extractLexicalText, joinText, sectionHeadingText } from "@/lib/utils/text";
 import type { CarouselBlock } from "@/payload-types";
 
 export function extractCarouselText(block: CarouselBlock): string {
   return joinText([
-    block.eyebrow,
-    block.heading,
-    block.description,
+    ...sectionHeadingText(block.heading),
     ...(block.slides ?? []).map((slide) => extractLexicalText(slide.text)),
   ]);
 }

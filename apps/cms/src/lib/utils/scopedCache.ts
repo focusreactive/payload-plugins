@@ -1,5 +1,7 @@
 import { revalidateTag, unstable_cache } from "next/cache";
 
+import { migrations } from "@/lib/database/migrations";
+
 /**
  * Vercel's data cache is shared by every preview deployment of a project and outlives each
  * deployment, while `unstable_cache` builds its key from the callback's source and the key parts
@@ -7,7 +9,9 @@ import { revalidateTag, unstable_cache } from "next/cache";
  * branch's preview served another branch's site settings (2026-09-23). The branch URL is unique
  * per project and branch; the deployment URL covers a CLI deployment that has no branch.
  */
-const CACHE_SCOPE = process.env.VERCEL_BRANCH_URL ?? process.env.VERCEL_URL ?? "local";
+const DEPLOYMENT_SCOPE = process.env.VERCEL_BRANCH_URL ?? process.env.VERCEL_URL ?? "local";
+const DATABASE_SCHEMA_VERSION = migrations.at(-1)?.name ?? "initial";
+const CACHE_SCOPE = `${DEPLOYMENT_SCOPE}:${DATABASE_SCHEMA_VERSION}`;
 
 type CacheOptions = NonNullable<Parameters<typeof unstable_cache>[2]>;
 type RevalidateProfile = Parameters<typeof revalidateTag>[1];

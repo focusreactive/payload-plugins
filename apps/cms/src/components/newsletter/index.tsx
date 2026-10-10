@@ -5,11 +5,11 @@ import { useState } from "react";
 import { cn, resolveBackdropTone } from "@/components/utils";
 import { AbstractBackdrop } from "@/components/AbstractBackdrop";
 import { GridLines } from "@/components/GridLines";
-import type { SectionHeaderProps } from "@/components/SectionHeader";
-import { SectionHeader } from "@/components/SectionHeader";
+import type { SectionHeadingContent } from "@/components/SectionHeading";
+import { SectionHeading } from "@/components/SectionHeading";
 
 interface NewsletterSectionProps {
-  header?: SectionHeaderProps | null;
+  heading?: SectionHeadingContent | null;
   inputPlaceholder: string;
   buttonLabel: string;
   disclaimer?: string | null;
@@ -17,7 +17,7 @@ interface NewsletterSectionProps {
 }
 
 export function NewsletterSection({
-  header,
+  heading,
   inputPlaceholder,
   buttonLabel,
   disclaimer,
@@ -36,7 +36,7 @@ export function NewsletterSection({
       <AbstractBackdrop variant="orbs" tone={backdropTone} intensity="subtle" />
       <GridLines tone={backdropTone} />
       <div className="relative z-10 flex flex-col items-center gap-[26px] py-[clamp(56px,8vw,104px)] text-center">
-        {header && <SectionHeader {...header} align="center" className="max-w-[760px]" />}
+        <SectionHeading {...heading} align="center" className="max-w-[760px]" />
 
         <div aria-live="polite" className="flex flex-col items-center gap-4">
           {submitted ? (

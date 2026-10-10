@@ -1,5 +1,7 @@
-import { image } from "@focus-reactive/payload-plugin-seo/content";
+import { heading, image, paragraph } from "@focus-reactive/payload-plugin-seo/content";
 import type { ContentNode, DocQuery, DocStore } from "@focus-reactive/payload-plugin-seo/content";
+
+import type { SectionHeadingFields } from "@/payload-types";
 
 import { collectLinkRefs, linkToContentNode } from "./links";
 import type { LinkResolveCtx, LinkValue } from "./links";
@@ -97,6 +99,13 @@ export function actionLinks(
   return asArray<LinkValue>(actions)
     .map((a) => linkToContentNode(a, ctx))
     .filter((n): n is ContentNode => n !== null);
+}
+
+export function sectionHeadingContent(
+  value: SectionHeadingFields | null | undefined,
+  level: 1 | 2
+): (ContentNode | null)[] {
+  return [paragraph(value?.eyebrow), heading(level, value?.title), paragraph(value?.description)];
 }
 
 export function groupImage(group: ImageGroup, docs: DocStore): ContentNode | null {

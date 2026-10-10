@@ -1,6 +1,6 @@
 import type { CtaBandBlock } from "@/payload-types";
-import { joinText } from "@/lib/utils/text";
+import { joinText, sectionHeadingText } from "@/lib/utils/text";
 
 export function extractCtaBandText(block: CtaBandBlock): string {
-  return joinText([block.eyebrow, block.heading, block.description]);
+  return joinText(sectionHeadingText(block.heading));
 }

@@ -1,6 +1,6 @@
 import type { PreparedMedia } from "@/components/media";
 import type { LinkProps } from "@/components/link/types";
-import type { IRichTextProps } from "@/components/richText/types";
+import type { SectionHeadingContent } from "@/components/SectionHeading";
 
 export type HeroVariant = "showcase" | "centered";
 
@@ -9,9 +9,7 @@ export type HeroTheme = "dark" | "dark-gray" | "light" | "light-gray" | null;
 export interface IHeroProps {
   variant: HeroVariant;
   theme?: HeroTheme;
-  badge?: string | null;
-  title: string;
-  text: IRichTextProps;
+  heading?: SectionHeadingContent | null;
   image: PreparedMedia;
   links: LinkProps[];
 }
