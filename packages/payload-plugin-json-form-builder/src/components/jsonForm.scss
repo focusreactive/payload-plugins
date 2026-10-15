@@ -30,14 +30,13 @@
   stroke: currentColor;
   stroke-width: 1.2px;
 }
+// The frame is Payload's own: the field wears `group-field`, so its lines, gutters and the way it
+// meets a neighbouring group are the admin's to keep. Only what is ours lives below.
 .json-form {
   --json-form-alarm-bg: var(--theme-error-100);
   --json-form-alarm-ring: var(--theme-error-250);
   --json-form-good: #15803d;
   --json-form-good-dot: #16a34a;
-  border: 1px solid var(--theme-elevation-100);
-  border-radius: 4px;
-  overflow: hidden;
 }
 
 html[data-theme="dark"] .json-form {
@@ -49,13 +48,9 @@ html[data-theme="dark"] .json-form {
 
 .json-form__bar {
   align-items: center;
-  height: calc(var(--base) * 2.2);
-  background: color-mix(in srgb, var(--theme-elevation-50), black 8%);
-  border-bottom: 1px solid var(--theme-elevation-100);
   display: flex;
   gap: calc(var(--base) / 2);
   justify-content: space-between;
-  padding: 0 calc(var(--base) * 0.5) 0 var(--base);
 }
 
 .json-form__tools {
@@ -71,8 +66,7 @@ html[data-theme="dark"] .json-form {
 }
 
 .json-form__title {
-  font-size: 1.05rem;
-  margin: 0;
+  font-weight: 600;
 }
 .json-form__tools .icon-button {
   background: var(--theme-elevation-0);
@@ -101,16 +95,21 @@ html[data-theme="dark"] .json-form {
 .json-form__tools .icon-button svg .stroke {
   stroke-width: 1.8px;
 }
+.json-form__actions {
+  align-items: center;
+  display: flex;
+  gap: var(--base);
+  justify-content: space-between;
+}
+
 .json-form__foot {
   align-items: center;
-  border-top: 1px solid var(--theme-elevation-100);
   color: var(--theme-elevation-500);
   display: flex;
   font-family: var(--font-mono);
   font-size: 12px;
   gap: calc(var(--base) * 0.7);
-  height: calc(var(--base) * 1.7);
-  padding: 0 var(--base);
+  margin-left: auto;
 }
 .json-form__note {
   margin-left: auto;
@@ -224,6 +223,12 @@ html[data-theme="dark"] .json-form {
   padding: calc(var(--base) * 0.2) calc(var(--base) * 0.45);
 }
 
+.json-form__view:not(:disabled):not(.json-form__view--on):hover,
+.json-form__view:not(:disabled):not(.json-form__view--on):focus-visible {
+  background: var(--theme-elevation-50);
+  color: var(--theme-elevation-800);
+}
+
 .json-form__view:disabled {
   cursor: not-allowed;
   opacity: 0.4;
@@ -243,7 +248,7 @@ html[data-theme="dark"] .json-form {
 }
 
 .json-form__body {
-  padding: var(--base);
+  padding: 0;
 }
 .json-form__body--code {
   padding: 0;
@@ -294,7 +299,7 @@ html[data-theme="dark"] .json-form {
   flex-direction: column;
   gap: var(--spacing-field, var(--base));
 }
-.json-form__body > .json-form__add-row.btn:not(:only-child) {
+.json-form__body > .json-form__actions:not(:only-child) {
   margin-top: var(--spacing-field, var(--base));
 }
 .json-form__menu {
@@ -791,7 +796,7 @@ body.json-builder-open {
 
 
 .json-form__said {
-  margin-block-end: calc(var(--base) * 0.6);
+  margin-block-start: calc(var(--base) * 0.6);
 }
 
 .json-builder__row {
