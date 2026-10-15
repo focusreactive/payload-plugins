@@ -86,6 +86,8 @@ export async function bootTestPayload(opts?: {
   exclusiveQueue?: boolean;
   failFor?: string[];
   onTranslate?: (targetLng: string) => Promise<void> | void;
+  /** Sees the fourth argument the plugin hands the provider, request by request. */
+  onRequest?: (options?: { document?: { collection: string; id: string } }) => void;
   runner?: TaskRunnerProvider;
   lifecycle?: TranslationLifecycleCallbacks;
   failedWindowMs?: number;
@@ -124,6 +126,7 @@ export async function bootTestPayload(opts?: {
     ...(declaresMarks ? { capabilities: { inlineMarks: true } } : {}),
     translate: async (input, sourceLng, targetLng, options) => {
       translateCalls += 1;
+      opts?.onRequest?.(options);
       await opts?.onTranslate?.(targetLng);
       if (failFor.has(targetLng)) throw new Error(`provider unavailable for ${targetLng}`);
       return await baseProvider.translate(input, sourceLng, targetLng, options);

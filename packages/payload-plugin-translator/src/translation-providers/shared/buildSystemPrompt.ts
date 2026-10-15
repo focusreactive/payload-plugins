@@ -1,3 +1,5 @@
+import type { DocumentRef } from "../../core/domain/translation-providers/index.js";
+
 /**
  * Wording validated against 396 live translations (French, German, Japanese × four models) before
  * it shipped: the fallback rate was ~1% on gpt-4o and zero on newer models. Reword it only with
@@ -22,14 +24,22 @@ export type SystemPromptContext = {
   sourceLang: string;
   targetLang: string;
   defaultPrompt: string;
+  /**
+   * Which document is being translated. Absent only when the provider was called without one —
+   * both translation surfaces name it.
+   *
+   * @since 0.18.0
+   */
+  document?: DocumentRef;
 };
 
 /**
  * Builds a custom system prompt for translation.
  *
  * @since 0.11.0
+ * @since 0.18.0 may answer with a promise, so a builder can read from the CMS before it answers.
  */
-export type SystemPromptBuilder = (context: SystemPromptContext) => string;
+export type SystemPromptBuilder = (context: SystemPromptContext) => string | Promise<string>;
 
 /**
  * Produces the system prompt sent with a translation request.
@@ -37,18 +47,19 @@ export type SystemPromptBuilder = (context: SystemPromptContext) => string;
  * The default wording is handed to `systemPrompt` builders as `defaultPrompt`, so consumers extend
  * this exact string — changing it changes every custom prompt built on it.
  */
-export function buildSystemPrompt(args: {
+export async function buildSystemPrompt(args: {
   sourceLng: string;
   targetLng: string;
   override?: SystemPromptBuilder;
+  document?: DocumentRef;
   /**
    * Whether the values being sent carry inline marks. Appended **after** whatever `override`
    * returns: a builder is free to ignore `defaultPrompt`, and the format must not depend on it
    * remembering to include this rule.
    */
   hasInlineMarks?: boolean;
-}): string {
-  const { sourceLng, targetLng, override, hasInlineMarks } = args;
+}): Promise<string> {
+  const { sourceLng, targetLng, override, hasInlineMarks, document } = args;
 
   const defaultPrompt = `Translate the values from the JSON that the user will send you${
     sourceLng ? ` from ${sourceLng}` : ""
@@ -57,7 +68,12 @@ The response should be a valid JSON object with the same structure and keys as t
 Maintain any special formatting, placeholders, or variables within the values if they exist.`;
 
   const prompt = override
-    ? override({ sourceLang: sourceLng, targetLang: targetLng, defaultPrompt })
+    ? await override({
+        sourceLang: sourceLng,
+        targetLang: targetLng,
+        defaultPrompt,
+        document,
+      })
     : defaultPrompt;
 
   return hasInlineMarks ? `${prompt}\n\n${INLINE_MARKS_INSTRUCTION}` : prompt;

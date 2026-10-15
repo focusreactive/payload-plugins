@@ -78,6 +78,7 @@ describe("container mode", () => {
       };
 
       const result = await translateContent({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData: source,
         sourceLng: "en",
@@ -113,6 +114,7 @@ describe("container mode", () => {
       };
 
       await translateContent({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData: source,
         sourceLng: "en",
@@ -134,6 +136,7 @@ describe("container mode", () => {
       };
 
       const result = await translateContent({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData: source,
         sourceLng: "en",
@@ -157,6 +160,7 @@ describe("container mode", () => {
       } as TranslationProvider;
 
       const result = await translateContent({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData: { body: richText([paragraph(nodes)]) },
         sourceLng: "en",
@@ -185,6 +189,7 @@ describe("container mode", () => {
       } as TranslationProvider;
 
       const result = await translateContent({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData: {
           body: richText([paragraph([text("Read the "), link("/docs", [text("docs")])])]),
@@ -210,6 +215,7 @@ describe("container mode", () => {
       } as TranslationProvider;
 
       const result = await translateContent({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData: { body: richText([paragraph([text("a "), text("red", 1), text(" car")])]) },
         sourceLng: "en",
@@ -233,6 +239,7 @@ describe("container mode", () => {
       };
 
       await translateContent({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData: source,
         sourceLng: "en",
@@ -259,6 +266,7 @@ describe("container mode", () => {
       };
 
       await translateContent({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData: source,
         sourceLng: "en",
@@ -282,6 +290,7 @@ describe("container mode", () => {
       } as TranslationProvider;
 
       const result = await translateContent({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData: {
           body: richText([paragraph([text("Buy"), text(" "), text("our product", 1)])]),
@@ -305,6 +314,7 @@ describe("container mode", () => {
       };
 
       await translateContent({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData: source,
         sourceLng: "en",
@@ -320,6 +330,7 @@ describe("container mode", () => {
       const { provider, sent } = bracketProvider({ capabilities: { inlineMarks: true } });
 
       await translateContent({
+        document: { collection: "docs", id: "1" },
         schema: mixedSchema,
         sourceData: {
           body: richText([paragraph([text("a "), text("red", 1), text(" car")])]),
@@ -345,6 +356,7 @@ describe("container mode", () => {
       } as TranslationProvider;
 
       const result = await translateContent({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData: { body: richText([paragraph([text("a "), text("red", 1), text(" car")])]) },
         sourceLng: "en",
@@ -369,6 +381,7 @@ describe("container mode", () => {
 
       for (const each of [silent, declaring]) {
         await translateContent({
+          document: { collection: "docs", id: "1" },
           schema,
           sourceData: body(),
           sourceLng: "en",

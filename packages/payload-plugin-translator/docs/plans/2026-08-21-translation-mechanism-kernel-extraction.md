@@ -897,6 +897,32 @@ to anyone else before phase 6 lands.
    this also decides question 2.
 4. **Release verification.** Confirm the cross-package bump flow with a dry run before the split lands
    (§7), and confirm npm Trusted Publishing is configured for the new name.
+5. **Does building the system prompt stay inside the provider?** Raised 2026-10-15 while implementing
+   #109, which made the prompt builder awaitable and told it which document is being translated.
+
+   The shape that question exposed: `document` now travels `TranslationStage` → `provider.translate`
+   → `buildSystemPrompt`, and **none of those three reads it**. The only reader is the `systemPrompt`
+   function a consumer writes in their own `payload.config.ts`. The carriers look like couriers.
+
+   Moving prompt assembly up into the plugin was considered and rejected on the spot, for a reason
+   worth keeping: `systemPrompt` belongs to a provider driven by a language model, not to the plugin.
+   A GoogleTranslate or DeepL provider has no system prompt at all — you hand it text and a target
+   language, and there is nowhere for an instruction to go. Lifting the option to `translatorPlugin({})`
+   would put an LLM-only concept in the one place that must hold for every provider. The default
+   prompt text would have to follow, and it describes `CompletionProvider`'s own wire format ("I will
+   send JSON, return JSON with the same keys"), which is a consequence of that provider serialising
+   through `JSON.stringify` and attaching a response schema.
+
+   So the carrying is not an accident — it delivers to where the reader lives. What is genuinely wrong
+   is the **shape** of the delivery: a fourth positional argument that mixes *what is being translated*
+   with *how to translate it*, already scheduled as `translate-positional-languages` in
+   `docs/DEPRECATIONS.md`.
+
+   The question this phase has to settle is narrower than "move it": once the provider port is being
+   reshaped anyway, is `buildSystemPrompt` part of the provider, or a separate unit a provider
+   *declares it accepts* — the same way `capabilities.inlineMarks` already declares what a provider can
+   be asked to preserve? The second answer would let a non-LLM provider say nothing and never be handed
+   a prompt, instead of being handed one it cannot use.
 
 ## 10. Compatibility and limitations
 

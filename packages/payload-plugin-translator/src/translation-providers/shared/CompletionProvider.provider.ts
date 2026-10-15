@@ -144,8 +144,6 @@ export function createTranslationProvider(config: TranslationProviderConfig): Tr
       targetLng: string,
       options?: TranslationRequestOptions
     ): Promise<TranslationOutput> {
-      // A strict response schema with no properties is rejected by the service, so an empty
-      // document must not reach the transport at all.
       if (Object.keys(input).length === 0) return {};
 
       const systemPromptText = await asConfigurationFailure("systemPrompt builder", () =>
@@ -154,6 +152,7 @@ export function createTranslationProvider(config: TranslationProviderConfig): Tr
           targetLng,
           override: systemPrompt,
           hasInlineMarks: options?.inlineMarks === true,
+          document: options?.document,
         })
       );
 
