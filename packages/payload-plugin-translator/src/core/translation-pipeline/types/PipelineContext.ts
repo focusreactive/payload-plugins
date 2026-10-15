@@ -1,4 +1,5 @@
 import type { ChangedLeaves } from "../../domain/provenance/staleness.js";
+import type { DocumentRef } from "../../domain/translation-providers/index.js";
 import type { FieldLike } from "../../kernel/field-traversal/index.js";
 import type { FieldChunk } from "./FieldChunk.js";
 import type { TextChunk } from "./TextChunk.js";
@@ -13,6 +14,7 @@ export type PipelineContext = {
   readonly targetData: Record<string, unknown>;
   readonly sourceLng: string;
   readonly targetLng: string;
+  readonly document: DocumentRef;
   readonly sourceChangedByLeaf?: ChangedLeaves;
 
   /** Full document shape with reconciled source/target values */
