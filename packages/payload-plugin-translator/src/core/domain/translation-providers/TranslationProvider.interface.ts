@@ -95,8 +95,8 @@ export interface TranslationProvider {
      * keeping every number exactly once and moving them where the target language needs them.
      *
      * Declare it only for a language model that was instructed accordingly. A machine-translation
-     * API would translate or strip the marks, so without this declaration the core keeps
-     * translating rich text node by node whatever the plugin config says.
+     * API would translate or strip the marks, so without this declaration the core translates rich
+     * text node by node.
      */
     inlineMarks?: boolean;
   };

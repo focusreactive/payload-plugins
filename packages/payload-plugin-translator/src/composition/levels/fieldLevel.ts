@@ -35,7 +35,6 @@ export function fieldLevel(): TranslationLevel {
           translationProvider: ctx.translationProvider,
           access: ctx.access,
           basePath: ctx.settings.basePath,
-          inlineMarks: ctx.settings.inlineMarks,
         }),
       ]);
     },

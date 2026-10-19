@@ -90,7 +90,6 @@ beforeEach(() => {
   const config: FieldTranslationConfig = {
     schemaMap,
     translationProvider: provider,
-    inlineMarks: false,
   };
   handler = new TranslateFieldHandler(config);
 });

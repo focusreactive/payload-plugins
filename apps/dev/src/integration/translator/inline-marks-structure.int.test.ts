@@ -58,7 +58,10 @@ describe("every Lexical container shape, translated independently", () => {
   let de: Record<string, unknown>;
 
   beforeAll(async () => {
-    ctx = await bootTestPayload({ inlineMarks: true, collections: buildNestedCollections() });
+    ctx = await bootTestPayload({
+      declaresInlineMarks: true,
+      collections: buildNestedCollections(),
+    });
 
     const body = root([
       node("heading", [text("chapter "), text("one", 1)], { tag: "h2" }),

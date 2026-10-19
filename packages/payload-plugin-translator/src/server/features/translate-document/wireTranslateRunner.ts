@@ -21,16 +21,12 @@ type WireTranslateRunnerParams = {
   runner: TaskRunnerProvider;
   lifecycle: TranslationLifecycleCallbacks;
   collections: CollectionSlug[];
-  inlineMarks?: boolean;
 };
 
 /**
  * Assemble the document-translation task pipeline: the {@link TranslateDocumentHandler}, the runner
  * context that turns what the runner reports into the host's callbacks, the runner's config
  * modifier, and the per-request {@link TaskRunnerFactory}.
- *
- * Extracted from the plugin's `init()` so the composition root stays a flat list — `plugin.ts` calls
- * this once and registers the returned `configModifier` through the shared builder.
  */
 export function wireTranslateRunner({
   translationProvider,
@@ -39,7 +35,6 @@ export function wireTranslateRunner({
   runner,
   lifecycle,
   collections,
-  inlineMarks = false,
 }: WireTranslateRunnerParams): {
   taskRunnerFactory: TaskRunnerFactory;
   configModifier: ConfigModifier;
@@ -47,8 +42,7 @@ export function wireTranslateRunner({
   const translateHandler = new TranslateDocumentHandler(
     translationProvider,
     schemaMap,
-    provenanceServiceFactory,
-    inlineMarks
+    provenanceServiceFactory
   );
 
   const runnerContext: TaskRunnerContext = {

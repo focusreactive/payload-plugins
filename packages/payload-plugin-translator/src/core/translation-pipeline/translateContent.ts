@@ -27,13 +27,6 @@ export type TranslateContentArgs = {
   /** @default 'overwrite' */
   strategy?: TranslationStrategyName;
   sourceChangedByLeaf?: ChangedLeaves;
-  /**
-   * Translate each rich-text container as one marked string instead of node by node, so the model
-   * may reorder its pieces. Silently ignored unless the provider declares `capabilities.inlineMarks`.
-   *
-   * @default false
-   */
-  inlineMarks?: boolean;
 };
 
 export type TranslatedContent = PipelineResult;
@@ -53,10 +46,9 @@ export async function translateContent({
   document,
   translationProvider,
   strategy = "overwrite",
-  inlineMarks = false,
   sourceChangedByLeaf,
 }: TranslateContentArgs): Promise<TranslatedContent | null> {
-  const marksUsable = inlineMarks && translationProvider.capabilities?.inlineMarks === true;
+  const marksUsable = translationProvider.capabilities?.inlineMarks === true;
 
   const pipeline = new TranslationPipeline({
     translationProvider,

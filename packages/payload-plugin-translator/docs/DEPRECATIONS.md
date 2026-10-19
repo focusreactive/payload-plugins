@@ -265,25 +265,36 @@ the single source of truth — code annotations link here by anchor instead of d
 ### experimental-inline-marks
 
 - **What:** `translatorPlugin({ experimental: { inlineMarks } })`.
-- **Status:** live (`@deprecated` in code from the day it shipped)
+- **Status:** removed
 - **Deprecated:** 2026-09-11 / PR #139 (issue #134)
-- **Replacement:** none — the behaviour becomes the only mode, so the switch simply goes away.
-- **Scope:** this entry only. The `experimental` option itself is permanent — it is where the
-  next transitional switch will live, so removing `inlineMarks` does not remove the object.
-- **Remove in:** next major
+- **Removed:** 2026-10-19 / PR #186
+- **Replacement:** none for the host. What used to be two conditions is now one: a provider that
+  declares `capabilities.inlineMarks` gets container-granular rich text, and one that does not keeps
+  translating node by node. Nothing is configured.
+- **Scope, revised when it was removed.** This entry said the `experimental` option itself was
+  permanent, being where the next transitional switch would live. That was reversed by the owner on
+  2026-10-19: `inlineMarks` was its only entry, so keeping it would have published an option that
+  accepts nothing for the whole of 1.x — and adding an option back is additive and ships in a minor,
+  while removing one is breaking and can only ship in a major. The object went with its entry.
+- **Who this changes, and how to keep the old behaviour.** Every host whose provider declares
+  `capabilities.inlineMarks` **and** that had the flag off or never set it. That is not a corner: the
+  bundled OpenAI provider declares it (`OpenAITranslation.provider.ts:134`), so an install that never
+  opted in moves from node-by-node to container-at-a-time rich text on upgrade — which may reorder
+  the pieces of a paragraph and changes the shape that gets saved. There is no flag to pin the old
+  behaviour any more; the only way back is a provider that does not declare the capability, which a
+  host can arrange by wrapping theirs. Ships in a major, by itself.
 - **Why:** a transitional switch, not a supported choice. Translating rich text node by node pins
   every word to its source position, which is a defect, not a preference — so there is nothing to
   keep choosing between. The flag exists only so an install can adopt the change on its own
-  schedule and step back if its provider misbehaves. The next major removes **the flag**, not the
+  schedule and step back if its provider misbehaved. This major removed **the flag**, not the
   per-node code: that stays as the internal fallback for a mark-shaped source, a single-fragment
-  container, and a corrupt reply.
+  container, and a corrupt reply — and it is what a provider silent about marks still gets.
 - **After removal, a provider still decides:** `capabilities.inlineMarks` is core logic, not part of
   the flag, and survives it. A third-party `TranslationProvider` that never declares the capability
   therefore keeps translating node by node indefinitely — the mode this entry calls a defect — with
   no warning surface. Provider authors need telling, separately from this flag's own removal.
 - **Code refs:**
-  - `src/plugin.ts` (the option)
-  - `src/core/translation-pipeline/translateContent.ts` (the single switch between the two paths)
+  - `src/core/translation-pipeline/translateContent.ts` (the one condition that now decides)
   - `src/core/translation-pipeline/stages/text-expander/RichContainerExpander.ts`
   - `docs/plans/2026-09-08-richtext-container-granularity-design.md` (D8, D8a)
 

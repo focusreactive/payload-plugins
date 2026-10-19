@@ -32,32 +32,6 @@ export type TranslatorSettingsOptions = {
    * @since 0.10.0
    */
   targetSelection?: TargetSelectionMode;
-  /**
-   * Where switches for behaviour on its way to becoming the default live. The option itself is
-   * permanent; each **entry** is deprecated the day it ships, because it exists only so you can
-   * adopt a change early and the next major removes the switch, not the behaviour.
-   *
-   * @since 0.13.0
-   */
-  experimental?: {
-    /**
-     * Translate each rich-text container (paragraph, heading, list item) as one string with
-     * numbered inline marks, instead of node by node.
-     *
-     * Requires a provider declaring `capabilities.inlineMarks`; without one the plugin keeps
-     * translating node by node. A container whose reply comes back with damaged marks is left in
-     * its source language rather than half-written.
-     *
-     * Turning it back off stops future translations from splitting wrappers; documents already
-     * translated under it stay split. And the next major removes the flag itself, so it is a
-     * schedule, not a permanent safety valve.
-     *
-     * @default false
-     * @deprecated Transitional. Removed in the next major, when this becomes the only mode.
-     * @see docs/DEPRECATIONS.md#experimental-inline-marks — why this exists and when it goes
-     */
-    inlineMarks?: boolean;
-  };
 };
 
 /**
@@ -69,7 +43,6 @@ export type TranslatorSettings = {
   basePath: string;
   failedWindowMs: number;
   targetSelection: TargetSelectionMode;
-  inlineMarks: boolean;
 };
 
 export const DEFAULT_BASE_PATH = "/translate";
@@ -90,5 +63,4 @@ export const resolveSettings = (options: TranslatorSettingsOptions): TranslatorS
   basePath: normalizePath(options.basePath ?? DEFAULT_BASE_PATH),
   failedWindowMs: failedWindowOf(options.failedWindowMs),
   targetSelection: options.targetSelection ?? DEFAULT_TARGET_SELECTION,
-  inlineMarks: options.experimental?.inlineMarks === true,
 });

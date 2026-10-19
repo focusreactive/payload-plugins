@@ -50,14 +50,13 @@ const textsOf = (value: unknown): (string | undefined)[] =>
       []) as Child[]
   ).map((c) => c.text);
 
-describe("the flag on, the provider silent about marks", () => {
+describe("a provider silent about marks", () => {
   let ctx: TestPayload;
   let de: Record<string, unknown>;
 
   beforeAll(async () => {
     ctx = await bootTestPayload({
-      inlineMarks: true,
-      declareCapability: false,
+      declaresInlineMarks: false,
       collections: buildNestedCollections(),
     });
 
