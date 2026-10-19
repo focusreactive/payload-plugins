@@ -226,7 +226,6 @@ describe("translateContent", () => {
         sourceLng: "en",
         targetLng: "de",
         translationProvider: marksProvider,
-        inlineMarks: true,
       });
 
       expect(sourceData).toEqual(before);

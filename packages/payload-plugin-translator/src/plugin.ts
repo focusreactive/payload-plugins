@@ -128,7 +128,6 @@ export function translatorPlugin(
     const provenanceModule = configureProvenance(provenance, schemaMap);
 
     const { taskRunnerFactory, configModifier: runnerConfigModifier } = wireTranslateRunner({
-      inlineMarks: settings.inlineMarks,
       translationProvider,
       schemaMap,
       provenanceServiceFactory: provenanceModule.serviceFactory,

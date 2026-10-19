@@ -44,18 +44,15 @@ export class TranslateDocumentHandler implements Handler<
   private readonly translationProvider: TranslationProvider;
   private readonly schemaMap: CollectionSchemaMap;
   private readonly provenanceServiceFactory?: ProvenanceServiceFactory;
-  private readonly inlineMarks: boolean;
 
   constructor(
     translationProvider: TranslationProvider,
     schemaMap: CollectionSchemaMap,
-    provenanceServiceFactory?: ProvenanceServiceFactory,
-    inlineMarks = false
+    provenanceServiceFactory?: ProvenanceServiceFactory
   ) {
     this.translationProvider = translationProvider;
     this.schemaMap = schemaMap;
     this.provenanceServiceFactory = provenanceServiceFactory;
-    this.inlineMarks = inlineMarks;
   }
 
   async handle(
@@ -130,7 +127,6 @@ export class TranslateDocumentHandler implements Handler<
       document: { collection, id: collectionId },
       translationProvider: this.translationProvider,
       strategy,
-      inlineMarks: this.inlineMarks,
       sourceChangedByLeaf: currentFields ? changedLeaves(previous, currentFields) : undefined,
     });
 

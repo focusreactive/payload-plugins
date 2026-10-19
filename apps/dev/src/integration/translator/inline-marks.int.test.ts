@@ -63,7 +63,7 @@ describe("container-granular rich text, saved and read back", () => {
   let ctx: TestPayload;
 
   beforeAll(async () => {
-    ctx = await bootTestPayload({ inlineMarks: true });
+    ctx = await bootTestPayload({ declaresInlineMarks: true });
   });
 
   afterAll(async () => {

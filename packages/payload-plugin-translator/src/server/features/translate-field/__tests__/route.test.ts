@@ -20,7 +20,6 @@ describe("createFieldRoute (contract)", () => {
     const endpoint = createFieldRoute({
       schemaMap,
       translationProvider: provider,
-      inlineMarks: false,
     });
     expect(endpoint.path).toBe("/translate/field");
     expect(endpoint.method).toBe("post");
@@ -30,7 +29,6 @@ describe("createFieldRoute (contract)", () => {
     const endpoint = createFieldRoute({
       schemaMap,
       translationProvider: provider,
-      inlineMarks: false,
       basePath: "/i18n",
     });
     expect(endpoint.path).toBe("/i18n/field");
@@ -40,7 +38,6 @@ describe("createFieldRoute (contract)", () => {
     const endpoint = createFieldRoute({
       schemaMap,
       translationProvider: provider,
-      inlineMarks: false,
       access: denyAccess,
     });
 
