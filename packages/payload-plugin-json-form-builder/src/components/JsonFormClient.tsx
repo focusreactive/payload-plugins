@@ -14,6 +14,7 @@ import {
   FieldLabel,
   GearIcon,
   ListViewIcon,
+  useCollapsible,
   useDrawerSlug,
   useField,
   useModal,
@@ -46,6 +47,7 @@ export const JsonFormClient = ({ library, mayBuild, shares: offered, ...props }:
   const { setValue, showError, value } = useField<unknown>({ path, validate });
   const { openModal } = useModal();
   const builderSlug = useDrawerSlug("json-builder");
+  const { isWithinCollapsible } = useCollapsible();
   const dropSlug = useDrawerSlug("json-form-drop");
   const [dropping, setDropping] = useState("");
   const build = () => openModal(builderSlug);
@@ -67,27 +69,20 @@ export const JsonFormClient = ({ library, mayBuild, shares: offered, ...props }:
 
   return (
     <>
-      {field.admin?.description ? (
-        <div className="json-form__said">
-          <FieldDescription description={field.admin.description} path={path} />
-        </div>
-      ) : null}
-      <div className={cn("field-type json-form", unfilled.length > 0 && "json-form--alarmed")}>
-        <div className="json-form__bar">
-          <h4 className="json-form__title">
+      <div
+        className={cn(
+          "field-type group-field json-form",
+          isWithinCollapsible ? "group-field--within-collapsible" : "group-field--top-level",
+          unfilled.length > 0 && "json-form--alarmed"
+        )}
+      >
+        <div className="group-field__header json-form__bar">
+          <h3 className="group-field__title json-form__title">
             <FieldLabel as="span" label={field.label} path={path} />
-          </h4>
+          </h3>
           <span className="json-form__badge">json</span>
 
           <div className="json-form__tools">
-            {mayBuild && !bare && (
-              <>
-                <IconButton label="Section settings" onClick={build}>
-                  <GearIcon />
-                </IconButton>
-                <span className="json-form__split" />
-              </>
-            )}
             {mayBuild && !bare && (
               <div className="json-form__views">
                 <button
@@ -109,6 +104,14 @@ export const JsonFormClient = ({ library, mayBuild, shares: offered, ...props }:
                   JSON
                 </button>
               </div>
+            )}
+            {mayBuild && !bare && (
+              <>
+                <span className="json-form__split" />
+                <IconButton label="Field settings" onClick={build}>
+                  <GearIcon />
+                </IconButton>
+              </>
             )}
           </div>
         </div>
@@ -190,7 +193,7 @@ export const JsonFormClient = ({ library, mayBuild, shares: offered, ...props }:
                             style={{ transform, transition, zIndex: isDragging ? 1 : undefined }}
                           >
                             <JsonNode
-                              badge={followed(node) ? "global" : undefined}
+                              badge={library || followed(node) ? "global" : undefined}
                               drag={props.readOnly ? undefined : { id: key, attributes, listeners }}
                               faults={showError}
                               hidden={node.hidden}
@@ -229,39 +232,48 @@ export const JsonFormClient = ({ library, mayBuild, shares: offered, ...props }:
                   No fields yet — someone with the builder adds them.
                 </p>
               )}
-              {mayBuild && !untyped && (
-                <Button
-                  buttonStyle="icon-label"
-                  className="array-field__add-row json-form__add-row"
-                  icon="plus"
-                  iconPosition="left"
-                  iconStyle="with-border"
-                  onClick={build}
-                >
-                  Add section
-                </Button>
-              )}
+              <div className="json-form__actions">
+                {mayBuild && !untyped && (
+                  <Button
+                    buttonStyle="icon-label"
+                    className="array-field__add-row json-form__add-row"
+                    icon="plus"
+                    iconPosition="left"
+                    iconStyle="with-border"
+                    onClick={build}
+                  >
+                    Add field
+                  </Button>
+                )}
+                <footer className="json-form__foot">
+                  <span
+                    className={cn(
+                      "json-form__state",
+                      unfilled.length || broken ? "json-form__state--off" : "json-form__state--on"
+                    )}
+                  >
+                    {broken
+                      ? "invalid"
+                      : unfilled.length
+                        ? `${unfilled.length} ${unfilled.length === 1 ? "error" : "errors"}`
+                        : "valid"}
+                  </span>
+                  <span className="json-form__meta">{`${kept} ${kept === 1 ? "field" : "fields"}`}</span>
+                  {asCode && locked ? (
+                    <span className="json-form__note">
+                      read only — the gear builds the sections
+                    </span>
+                  ) : null}
+                </footer>
+              </div>
             </>
           )}
         </div>
-        <footer className="json-form__foot">
-          <span
-            className={cn(
-              "json-form__state",
-              unfilled.length || broken ? "json-form__state--off" : "json-form__state--on"
-            )}
-          >
-            {broken
-              ? "invalid"
-              : unfilled.length
-                ? `${unfilled.length} ${unfilled.length === 1 ? "error" : "errors"}`
-                : "valid"}
-          </span>
-          <span className="json-form__meta">{`${kept} ${kept === 1 ? "section" : "sections"}`}</span>
-          {asCode && locked ? (
-            <span className="json-form__note">read only — the gear builds the sections</span>
-          ) : null}
-        </footer>
+        {field.admin?.description ? (
+          <div className="json-form__said">
+            <FieldDescription description={field.admin.description} path={path} />
+          </div>
+        ) : null}
         {mayBuild && (
           <JsonBuilder
             library={library}

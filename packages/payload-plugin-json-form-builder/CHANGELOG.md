@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-json-form-builder [1.6.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.5.0...@focus-reactive/payload-plugin-json-form-builder@1.6.0) (2026-10-15)
+
+
+### Features
+
+* the json form wears Payload's own group frame ([#179](https://github.com/focusreactive/payload-plugins/issues/179)) ([478b6c3](https://github.com/focusreactive/payload-plugins/commit/478b6c3e408d75ecb052b3e23c632d52a3cb1d78))
+
 # @focus-reactive/payload-plugin-json-form-builder [1.5.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.4.0...@focus-reactive/payload-plugin-json-form-builder@1.5.0) (2026-10-09)
 
 
