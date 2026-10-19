@@ -237,9 +237,18 @@ staleness marker needs a provenance route — and O5's check cannot see any of t
 inside a component rather than being declared.
 
 **D22 — a module contributes instruction lines to the system prompt.** `BeforeTranslate` gains
-`instructions: string[]`. A module appends to it; the plugin joins what every module left and the
-joined text becomes part of the prompt sent with the request. The field exists at the first position
-only — once the model has answered, an instruction means nothing.
+`instructions: string[]`. A module appends to it. The field exists at the first position only — once
+the model has answered, an instruction means nothing.
+
+*Where the lines are joined, measured rather than assumed.* The plugin cannot join them into the
+prompt: the prompt is built inside the provider, by `buildSystemPrompt`, called from
+`createTranslationProvider.translate` (`CompletionProvider.provider.ts:148`). So the lines travel the
+**port**, as part of the description P1 makes the second argument, and `buildSystemPrompt` appends
+them exactly where it already appends the inline-marks rule. A provider that is not built on that
+factory is free to ignore the field, and that is the provider's defect, not a hole in the contract —
+the plugin's own behaviour does not depend on the answer, which is what separates this from
+`capabilities.inlineMarks` (P8), where the core must switch to node-by-node rich text if the provider
+cannot preserve marks.
 
 *Why — found by modelling issue #142, translation style controls.* Three of that epic's capabilities
 — a preferred translation for a term, a forbidden one, and tone — cannot be enforced by substitution.
@@ -500,11 +509,11 @@ it — and so do the two language codes. Carrying what the implementation needs 
 shape of the delivery was the defect, and P1 fixes it.
 
 *Amended by D22.* The question this decision closed — whether a provider should *declare* that it
-accepts prompt assembly — stays closed. What changes is who writes the prompt: the plugin assembles
-it from the host's builder (or the default wording), the lines modules contributed, and the
-inline-marks rule. `systemPrompt` remains an option of each provider's own factory, and the port
-still knows nothing about prompts, because the lines reach the provider already joined into the
-prompt text. P1 is untouched.
+accepts prompt assembly — stays closed, and prompt assembly stays inside the provider. What changes
+is that one of its inputs now comes from the plugin: `buildSystemPrompt` joins the default wording or
+the host's builder, the instruction lines the module chain contributed, and the inline-marks rule.
+`systemPrompt` remains an option of each provider's own factory. The port carries the lines as data,
+beside `document` and the languages, so P1's shape is unchanged.
 
 **P6 — three fixes fall out one layer down.** The prompt context documents the same empty-string
 sentinel P2 removes; `document` can become required once the port demands it; and the port says
@@ -628,17 +637,93 @@ Two gaps with no decision yet: removing the exported `TranslationLevel` type nee
 
 ## 9. Order of work
 
-1. **Correct the kernel plan's four broken citations** and mark what §7 supersedes. No code.
-2. **Remove what is already deprecated** — sixteen entries in `DEPRECATIONS.md`. Doing this first
-   means less code to redesign afterwards.
-3. **Kernel phases 0–3**, internal. F1 lands naturally in phase 1, where the write-back path is
-   rewritten anyway.
-4. **Module extraction, internally** — provenance's four lines move into the three positions;
-   nothing is exported. Then prove nothing moved: staleness reports the same answers, and
-   `skip_existing` still refreshes a leaf whose source drifted.
-5. **Kernel phases 4–6** — package split, language registry, vocabulary generalisation.
-6. **Open the seam** — export the module type and `provenance()`, accept host modules, and settle
-   O1–O5 as part of that change.
+Nine steps. Steps 1–2 are already settled work; 3–9 are the design above, sequenced by what each one
+cannot be done without. **The three groups that the first draft of this section left unplaced — the
+runner port, what a run translates, and the provider port — are steps 5, 6 and 8**, and the reason
+each sits where it does is given, because every one of them could plausibly have gone earlier.
 
-Stopping after step 4 is a complete outcome: the inside is clean and nothing has been promised to
-anyone outside.
+| # | Step | Decisions | Cannot start before |
+|---|---|---|---|
+| 1 | Correct the kernel plan's citations, mark what §7 supersedes | — | **done** |
+| 2 | Remove the sixteen deprecated entries | — | — |
+| 3 | Kernel phases 0–3, internal | F1 | 2 |
+| 4 | Module extraction, internal | D1–D18, D21, D22 | 3 |
+| 5 | Strategy out, selection in | S1–S6 | 4 |
+| 6 | Runner port | R1–R7, D20, D23 | 4 |
+| 7 | Kernel phases 4–6 | — | 5 |
+| 8 | Provider port | P1–P8 | 4, 7 |
+| 9 | Open the seam to hosts | D6, O1–O5 | 7, 8 |
+
+**2 — remove what is already deprecated.** Sixteen entries, every one marked *remove in the next
+major*. First, because each one is code the later steps would otherwise redesign before deleting. One
+of them earns its place twice: `provider-dry-run` deletes a branch in the provider factory that
+returns a provider with no capabilities and no prompt, which step 8 would otherwise have to keep
+working.
+
+**3 — kernel phases 0–3.** Internal, no change to the package entry. **F1 lands in phase 1**, where
+the write-back path is rewritten anyway, and it has to land here at the latest: the field it corrects
+becomes published vocabulary in step 4, and a contract that says *collected* when it means *returned*
+cannot be fixed afterwards without breaking it.
+
+**4 — module extraction, internal.** Provenance's four lines become the three positions; the recorder
+and the shortener split (D21); nothing is exported. The proof that nothing moved: staleness reports
+the same answers, and a leaf whose source drifted is still refreshed while its untouched sibling is
+left alone.
+*Three loose ends are settled here, because this is the step that creates them:* the
+`DEPRECATIONS.md` entry for the exported `TranslationLevel` type (levels dissolve, D12), the name of
+the components option (D7 separates that axis here), and whether the ability set is threaded into
+`ModuleSetupContext` as D23 requires.
+
+**5 — strategy out, selection in.** The pipeline takes a set of leaf addresses; `TranslationStrategy`
+and both implementations go; the stored run carries `targets: [{ lng, selection? }]` and a run kind;
+`pickHost` loses a condition. Forty-two files outside the tests.
+*Why after 4 and not before.* Deleting the strategy port removes the only thing that currently
+decides *translate this leaf because its source drifted*. That decision has to already exist
+elsewhere — as the shortening module in the chain — or the behaviour simply disappears for
+auto-translate and the refresh button. Step 4 is what creates the chain.
+*Why before 7.* The package split has to give every file in `src/core` a home. A port that is being
+deleted is not worth placing, and placing it means moving it twice.
+
+**6 — runner port.** The mandatory core narrows to `enqueue`; `cancel`, `run` and `findByCollection`
+become declared capabilities; each route declares what it requires and the plugin filters; abilities
+are computed from the routes that registered and shipped both to the browser (D20) and into `setup`
+(D23).
+*Why after 4.* "A route declares what it requires" is a property of a route declaration, and routes
+only become declarations in step 4. Before that, the nine routes are hand-assembled in nine places
+and there is nothing to filter.
+*Independent of 5, and may run in parallel with it* — except that both touch the stored job input, so
+whichever lands second rebases onto the other. If they must be ordered, 5 first: it removes a field,
+6 adds two.
+
+**7 — kernel phases 4–6.** Package split, language registry, vocabulary generalisation. Phase 6
+deliberately breaks the core package's API, which is why nothing is promised to hosts before step 9.
+
+**8 — provider port.** Two arguments, an optional source language, exceptions instead of `null`,
+required capabilities, and the instruction lines D22 puts on the port.
+*Why after 4:* the name the new description wants, `TranslationContext`, is held by the config-time
+bundle that becomes `ModuleSetupContext` only when levels dissolve (P4).
+*Why after 7:* the port lives in `src/core`, which phase 6 renames its way through. Reshaping it
+first means reshaping it twice.
+*What it owes step 4:* `buildSystemPrompt` gains the instruction lines as an input. Until step 8 the
+lines exist in the chain and reach nothing, so step 4's glossary story is incomplete on purpose.
+
+**9 — open the seam to hosts.** Export the module type and `provenance()`, accept host modules,
+settle O1–O5. After 7 because D6 forbids giving provenance a private interface, so the field tree and
+leaf addresses in the module contract must be the generalised vocabulary, not the one phase 6
+replaces.
+
+### Stopping points
+
+Two of these are complete outcomes rather than half-finished work:
+
+- **after 4** — the inside is clean, provenance is an ordinary tenant, and nothing has been promised
+  to anyone outside;
+- **after 6** — every breaking change a host notices has landed, and the remaining steps are the core
+  package and the seam.
+
+### Verification between steps
+
+Steps 2, 5, 6 and 8 each change the public surface. Each publishes a prerelease under the `next`
+dist-tag and is exercised in `apps/cms` — which consumes the plugin as a workspace dependency and
+owns real Postgres migrations — before the next step starts. A step whose prerelease has not been run
+against a real database is not finished, because the stored job input changes in two of the four.
