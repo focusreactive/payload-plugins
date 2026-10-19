@@ -18,13 +18,21 @@ the single source of truth — code annotations link here by anchor instead of d
    */
   ```
 
-- **Removal policy.** Deprecations ship as `feat:` (minor). All removals land together in a single
-  `feat!:` (major) release — no drip-feed of breaking changes.
+- **Removal policy.** Deprecations ship as `feat:` (minor). Removals land in the next major, grouped
+  rather than drip-fed — each one in the step of the major that rewrites its area.
+- **How a removal is committed.** An ordinary `feat(scope): …` header plus a `BREAKING CHANGE:`
+  footer in the body. **Never a `!` in the header.** `.releaserc.json` sets no `preset`, so the
+  `angular` one is used, and its header pattern has no place for `!` — such a header fails to parse
+  and the commit may not be read as a release at all. The footer is what the preset's
+  `noteKeywords` reads, and it is the only thing that produces a major. Same reasoning as
+  [runner-create-takes-the-context](#runner-create-takes-the-context).
 
 ## Status legend
 
 - `live` — annotated and in use as a fallback / alias; safe to remove in the next major.
 - `planned` — agreed to deprecate, not yet annotated in code.
+- `removed` — gone from the code. The entry stays, because it is what tells an upgrading host
+  what used to be there and what replaced it; the `Removed:` line says when.
 
 ---
 
@@ -137,39 +145,45 @@ the single source of truth — code annotations link here by anchor instead of d
 
 ### translate-collection-plugin-class
 
-- **What:** `TranslateCollectionPlugin` class.
-- **Status:** live (already `@deprecated` in code)
+- **What:** `TranslateCollectionPlugin` class, and the `TranslateCollectionPluginConfig` type
+  alias beside it.
+- **Status:** removed
 - **Deprecated:** pre-ledger (annotated before this registry existed)
-- **Replacement:** `translatorPlugin()` function.
-- **Remove in:** next major
-- **Code refs:** `src/plugin.ts`
+- **Removed:** 2026-10-19 / PR #184
+- **Replacement:** `translatorPlugin()` function, and `TranslatorPluginConfig`.
+- **What moved with it:** the class held the whole plugin body and `translatorPlugin` only
+  constructed it. The body now lives in the function, which is where a host's configuration
+  file expects it — Payload's own config API is functions and plain objects, and this class
+  was the only `new` a host had to write.
+- **Code refs:** `src/plugin.ts` (`translatorPlugin`)
 
 ### create-translate-plugin
 
 - **What:** `createTranslatePlugin` alias.
-- **Status:** live (already `@deprecated` in code)
+- **Status:** removed
 - **Deprecated:** pre-ledger
+- **Removed:** 2026-10-19 / PR #184
 - **Replacement:** `translatorPlugin()`.
-- **Remove in:** next major
 - **Code refs:** `src/plugin.ts`
 
 ### translate-kit-field
 
 - **What:** `translateKitField` alias.
-- **Status:** live (already `@deprecated` in code)
+- **Status:** removed
 - **Deprecated:** pre-ledger
+- **Removed:** 2026-10-19 / PR #184
 - **Replacement:** `withFieldTranslation()`.
-- **Remove in:** next major
 - **Code refs:** `src/field-config.ts`
 
 ### translate-kit-field-config-type
 
-- **What:** `TranslateKitFieldConfig` type alias.
-- **Status:** live (already `@deprecated` in code)
+- **What:** `TranslateKitFieldConfig` type alias, both the public one and the internal copy in
+  `core/domain/field-config/`, along with the `getTranslateKitFieldConfig` alias that read it.
+- **Status:** removed
 - **Deprecated:** pre-ledger
-- **Replacement:** `FieldTranslationConfig`.
-- **Remove in:** next major
-- **Code refs:** `src/field-config.ts`
+- **Removed:** 2026-10-19 / PR #184
+- **Replacement:** `FieldTranslationConfig`, and `getFieldTranslationConfig` internally.
+- **Code refs:** `src/field-config.ts`, `src/core/domain/field-config/`
 
 ### openai-translation-provider-class
 

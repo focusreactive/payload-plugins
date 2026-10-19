@@ -82,70 +82,6 @@ export type TranslatorPluginConfig = TranslatorSettingsOptions & {
   lifecycle?: TranslationLifecycleCallbacks;
 };
 
-/** @deprecated Use `TranslatorPluginConfig` instead */
-export type TranslateCollectionPluginConfig = TranslatorPluginConfig;
-
-/** @deprecated Use `translatorPlugin` function instead */
-export class TranslateCollectionPlugin {
-  private readonly pluginConfig: TranslatorPluginConfig;
-
-  constructor(pluginConfig: TranslatorPluginConfig) {
-    this.pluginConfig = pluginConfig;
-  }
-
-  init(): (config: Config) => Promise<Config> {
-    return async (config) => {
-      const { access, translationProvider, runner, collections, levels, provenance, lifecycle } =
-        this.pluginConfig;
-      const settings = resolveSettings(this.pluginConfig);
-
-      if (!access) {
-        throw new Error(
-          "payload-plugin-translator: `access` is required. Pass an access guard, or " +
-            "`new AnyAccessGuard()` to leave the translation endpoints open on purpose."
-        );
-      }
-
-      const schemaMap: CollectionSchemaMap = new Map(
-        collections.map((col) => [col.slug, projectFieldsToFieldLike(col.fields)])
-      );
-      const collectionSlugs = new Set(schemaMap.keys());
-
-      const provenanceModule = configureProvenance(provenance, schemaMap);
-
-      const { taskRunnerFactory, configModifier: runnerConfigModifier } = wireTranslateRunner({
-        inlineMarks: settings.inlineMarks,
-        translationProvider,
-        schemaMap,
-        provenanceServiceFactory: provenanceModule.serviceFactory,
-        runner,
-        lifecycle: lifecycle ?? {},
-        collections: Array.from(collectionSlugs),
-      });
-      const autoTranslateModule = configureAutoTranslate(collections, schemaMap, taskRunnerFactory);
-
-      const activeLevels = levels ?? [documentLevel(), collectionLevel()];
-      const builder = new PluginConfigBuilder({
-        collections,
-        settings,
-        access,
-        taskRunnerFactory,
-        schemaMap,
-        translationProvider,
-        provenanceServiceFactory: provenanceModule.serviceFactory,
-      });
-      for (const level of activeLevels) level.extend(builder);
-
-      builder.addConfigModifier(runnerConfigModifier);
-      builder.addConfigModifier(provenanceModule.configure(collectionSlugs));
-      builder.addConfigModifier(autoTranslateModule.configure(collectionSlugs));
-      builder.addAdminProvider(new CacheProviderExport(settings.basePath));
-
-      return builder.applyTo(config);
-    };
-  }
-}
-
 /**
  * Creates a translation plugin for Payload CMS collections.
  *
@@ -155,7 +91,12 @@ export class TranslateCollectionPlugin {
  *   plugins: [
  *     translatorPlugin({
  *       collections: [Posts, Pages],
- *       translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
+ *       translationProvider: createTranslationProvider({
+ *         complete: openAIComplete({
+ *           client: new OpenAI({ apiKey: process.env.OPENAI_API_KEY }),
+ *           model: 'gpt-5.4-mini',
+ *         }),
+ *       }),
  *       runner: createPayloadJobsRunner(),
  *       access: { check: ({ req }) => Boolean(req.user) },
  *     }),
@@ -164,10 +105,56 @@ export class TranslateCollectionPlugin {
  * ```
  */
 export function translatorPlugin(
-  config: TranslatorPluginConfig
+  pluginConfig: TranslatorPluginConfig
 ): (config: Config) => Promise<Config> {
-  return new TranslateCollectionPlugin(config).init();
-}
+  return async (payloadConfig) => {
+    const { access, translationProvider, runner, collections, levels, provenance, lifecycle } =
+      pluginConfig;
+    const settings = resolveSettings(pluginConfig);
 
-/** @deprecated Use `translatorPlugin` instead */
-export const createTranslatePlugin = translatorPlugin;
+    // Required by the type, so only a plain-JavaScript caller reaches this.
+    if (!access) {
+      throw new Error(
+        "payload-plugin-translator: `access` is required. Pass an access guard, or " +
+          "`new AnyAccessGuard()` to leave the translation endpoints open on purpose."
+      );
+    }
+
+    const schemaMap: CollectionSchemaMap = new Map(
+      collections.map((col) => [col.slug, projectFieldsToFieldLike(col.fields)])
+    );
+    const collectionSlugs = new Set(schemaMap.keys());
+
+    const provenanceModule = configureProvenance(provenance, schemaMap);
+
+    const { taskRunnerFactory, configModifier: runnerConfigModifier } = wireTranslateRunner({
+      inlineMarks: settings.inlineMarks,
+      translationProvider,
+      schemaMap,
+      provenanceServiceFactory: provenanceModule.serviceFactory,
+      runner,
+      lifecycle: lifecycle ?? {},
+      collections: Array.from(collectionSlugs),
+    });
+    const autoTranslateModule = configureAutoTranslate(collections, schemaMap, taskRunnerFactory);
+
+    const activeLevels = levels ?? [documentLevel(), collectionLevel()];
+    const builder = new PluginConfigBuilder({
+      collections,
+      settings,
+      access,
+      taskRunnerFactory,
+      schemaMap,
+      translationProvider,
+      provenanceServiceFactory: provenanceModule.serviceFactory,
+    });
+    for (const level of activeLevels) level.extend(builder);
+
+    builder.addConfigModifier(runnerConfigModifier);
+    builder.addConfigModifier(provenanceModule.configure(collectionSlugs));
+    builder.addConfigModifier(autoTranslateModule.configure(collectionSlugs));
+    builder.addAdminProvider(new CacheProviderExport(settings.basePath));
+
+    return builder.applyTo(payloadConfig);
+  };
+}

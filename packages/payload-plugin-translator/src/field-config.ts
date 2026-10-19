@@ -8,11 +8,7 @@ import { beforeInputPositioner } from "./field-actions.js";
 
 export type { FieldTranslationConfig };
 
-/**
- * Field types eligible for the per-field translate control — the same text-bearing
- * leaves the server's `TranslatableField` handles. `richText` writes back by re-mounting
- * the Lexical editor (see the control); `text` / `textarea` write straight to form state.
- */
+/** The text-bearing leaves the server's `TranslatableField` accepts — keep the two in step. */
 type FieldControlCandidate = TextField | TextareaField | RichTextField;
 
 /**
@@ -22,11 +18,6 @@ type FieldControlCandidate = TextField | TextareaField | RichTextField;
  * @see FieldControlPositioner
  */
 const activeFieldControlPositioner: FieldControlPositioner = beforeInputPositioner;
-
-/**
- * @deprecated Use `FieldTranslationConfig` instead
- */
-export type { FieldTranslationConfig as TranslateKitFieldConfig };
 
 /**
  * Configure a Payload field for translation.
@@ -74,8 +65,3 @@ export function withFieldTranslation(field: Field, config?: { exclude?: boolean 
     ? configured
     : activeFieldControlPositioner(configured, new TranslateFieldControlExport());
 }
-
-/**
- * @deprecated Use `withFieldTranslation` instead
- */
-export const translateKitField = withFieldTranslation;

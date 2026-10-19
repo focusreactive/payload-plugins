@@ -80,10 +80,5 @@ export type { FieldTranslationConfig } from "./field-config.js";
 export { withAutoTranslate } from "./auto-translate-config.js";
 export type { AutoTranslateConfig, AutoTranslateStrategy } from "./auto-translate-config.js";
 
-// Deprecated exports (for backwards compatibility)
-export { createTranslatePlugin, TranslateCollectionPlugin } from "./plugin.js";
-export type { TranslateCollectionPluginConfig } from "./plugin.js";
 export { createOpenAIProvider, OpenAITranslationProvider } from "./translation-providers/index.js";
 export type { OpenAIProviderConfig } from "./translation-providers/index.js";
-export { translateKitField } from "./field-config.js";
-export type { TranslateKitFieldConfig } from "./field-config.js";
