@@ -5,13 +5,6 @@
 
 * **translator:** tell the systemPrompt builder what it is translating ([7848a58](https://github.com/focusreactive/payload-plugins/commit/7848a589a6879b3ac8c5c4a4ed34cdfeb0f39657)), closes [#109](https://github.com/focusreactive/payload-plugins/issues/109) [#109](https://github.com/focusreactive/payload-plugins/issues/109)
 
-# @focus-reactive/payload-plugin-translator [0.18.0-next.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.17.0...@focus-reactive/payload-plugin-translator@0.18.0-next.1) (2026-10-19)
-
-
-### Features
-
-* **translator:** tell the systemPrompt builder what it is translating ([7848a58](https://github.com/focusreactive/payload-plugins/commit/7848a589a6879b3ac8c5c4a4ed34cdfeb0f39657)), closes [#109](https://github.com/focusreactive/payload-plugins/issues/109) [#109](https://github.com/focusreactive/payload-plugins/issues/109)
-
 # @focus-reactive/payload-plugin-translator [0.17.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.16.0...@focus-reactive/payload-plugin-translator@0.17.0) (2026-10-15)
 
 
