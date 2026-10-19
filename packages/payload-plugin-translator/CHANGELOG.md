@@ -1,3 +1,18 @@
+# @focus-reactive/payload-plugin-translator [1.0.0-next.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.18.0-next.1...@focus-reactive/payload-plugin-translator@1.0.0-next.1) (2026-10-19)
+
+
+### Features
+
+* **translator:** remove the names nothing calls ([6db3ca6](https://github.com/focusreactive/payload-plugins/commit/6db3ca6e771b7269f62da07c66de9ae5141a8f46))
+
+
+### BREAKING CHANGES
+
+* **translator:** `TranslateCollectionPlugin`, `TranslateCollectionPluginConfig`,
+`createTranslatePlugin`, `translateKitField` and `TranslateKitFieldConfig` are
+removed. Use `translatorPlugin`, `TranslatorPluginConfig`,
+`withFieldTranslation` and `FieldTranslationConfig` instead.
+
 # @focus-reactive/payload-plugin-translator [0.18.0-next.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.17.0...@focus-reactive/payload-plugin-translator@0.18.0-next.1) (2026-10-19)
 
 
