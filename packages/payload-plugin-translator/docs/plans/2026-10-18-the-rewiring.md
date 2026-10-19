@@ -357,9 +357,11 @@ and answers both panels in one call.
 *Still bounded:* the list is the plugin's configured collections, never "everything the queue holds".
 *Found by modelling issue #49.*
 
-Four smaller removals ride along, all already in `DEPRECATIONS.md`: the positional document-id array
-on `findByCollection`, `enqueue` resolving with nothing, the old two-argument `create`, and
-`onFailed` firing once per attempt.
+Deprecated things in this area are removed here rather than earlier. Four entries belong to this
+step: the positional document-id array on `findByCollection`, `enqueue` resolving with nothing, the
+`cancel-by-collection` route, and the `collection` relationship field in the stored job input. Two
+more that sit in this area — the old two-argument `create` and `onFailed` firing once per attempt —
+are already out of the code, so only their ledger entries are open, and §9 closes those in step 2.
 
 ---
 
@@ -645,7 +647,7 @@ each sits where it does is given, because every one of them could plausibly have
 | # | Step | Decisions | Cannot start before |
 |---|---|---|---|
 | 1 | Correct the kernel plan's citations, mark what §7 supersedes | — | **done** |
-| 2 | Remove the sixteen deprecated entries | — | — |
+| 2 | Remove the seven deprecations no step owns, plus the inline-marks flag | — | — |
 | 3 | Kernel phases 0–3, internal | F1 | 2 |
 | 4 | Module extraction, internal | D1–D18, D21, D22 | 3 |
 | 5 | Strategy out, selection in | S1–S6 | 4 |
@@ -654,11 +656,30 @@ each sits where it does is given, because every one of them could plausibly have
 | 8 | Provider port | P1–P8 | 4, 7 |
 | 9 | Open the seam to hosts | D6, O1–O5 | 7, 8 |
 
-**2 — remove what is already deprecated.** Sixteen entries, every one marked *remove in the next
-major*. First, because each one is code the later steps would otherwise redesign before deleting. One
-of them earns its place twice: `provider-dry-run` deletes a branch in the provider factory that
-returns a provider with no capabilities and no prompt, which step 8 would otherwise have to keep
-working.
+**2 — remove the deprecations that belong to no later step.** `DEPRECATIONS.md` holds sixteen
+entries, every one marked *remove in the next major*. An earlier draft of this section removed all
+sixteen here, which contradicted §3 of this same document: four of them are already listed there as
+riding along with the runner port. Taking an entry out early means editing the file that a later step
+rewrites, and then rewriting it — so each entry is removed **inside the step that rewrites its area**,
+first thing in that step.
+
+| Entries | Removed in |
+|---|---|
+| `translate-collection-plugin-class`, `create-translate-plugin`, `translate-kit-field`, `translate-kit-field-config-type`, `openai-translation-provider-class` | **step 2** — renamed symbols kept as aliases; a deletion and an export line each |
+| `on-failed-per-attempt`, `runner-create-takes-the-context` | **step 2** — the code change already shipped; only the ledger entry is open |
+| `experimental-inline-marks` | **step 2** — see below |
+| `find-by-collection-document-ids-array`, `enqueue-void-return`, `cancel-by-collection-route`, `jobs-input-collection-field` | **step 6**, the runner port |
+| `jobs-per-locale-task-shape` | **step 5**, where the stored run changes shape anyway |
+| `translate-positional-languages`, `provider-dry-run`, `openai-client-construction` | **step 8**, the provider port |
+
+*Why the inline-marks flag is the one exception that pays to remove early.* Dropping it makes marked
+rich text the only mode, and the branch it switches sits in exactly the files kernel phase 1 rewrites
+— the text-chunk union, the applier, the rich-text expander. Removed before phase 1, that phase
+rewrites one path; removed after, it rewrites two and one is then deleted.
+
+*One entry to remove deliberately rather than incidentally:* `provider-dry-run` deletes a branch in
+the provider factory that returns a provider with no capabilities and no prompt. P8 makes capabilities
+required, so step 8 removes the branch before it reshapes anything.
 
 **3 — kernel phases 0–3.** Internal, no change to the package entry. **F1 lands in phase 1**, where
 the write-back path is rewritten anyway, and it has to land here at the latest: the field it corrects
