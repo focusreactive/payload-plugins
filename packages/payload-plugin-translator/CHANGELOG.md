@@ -1,3 +1,21 @@
+# @focus-reactive/payload-plugin-translator [1.0.0-next.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.1...@focus-reactive/payload-plugin-translator@1.0.0-next.2) (2026-10-19)
+
+
+### Features
+
+* **translator:** let the provider decide how rich text is translated ([4733046](https://github.com/focusreactive/payload-plugins/commit/47330467ecf0601a1c8666880f87ac820688d99d))
+
+
+### BREAKING CHANGES
+
+* **translator:** `translatorPlugin({ experimental: { inlineMarks } })` is
+removed, and `experimental` with it. Container-granular rich text is now
+selected by a provider declaring `capabilities.inlineMarks` — which the bundled
+OpenAI provider does. An install that left the setting off or unset while using
+such a provider will translate rich text one container at a time after this
+upgrade, which can reorder the pieces of a paragraph. To keep the per-node
+behaviour, use a provider that does not declare the capability.
+
 # @focus-reactive/payload-plugin-translator [1.0.0-next.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.18.0-next.1...@focus-reactive/payload-plugin-translator@1.0.0-next.1) (2026-10-19)
 
 
