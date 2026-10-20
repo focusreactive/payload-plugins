@@ -647,14 +647,33 @@ each sits where it does is given, because every one of them could plausibly have
 | # | Step | Decisions | Cannot start before |
 |---|---|---|---|
 | 1 | Correct the kernel plan's citations, mark what §7 supersedes | — | **done** |
-| 2 | Remove the seven deprecations no step owns, plus the inline-marks flag | — | — |
-| 3 | Kernel phases 0–3, internal | F1 | 2 |
-| 4 | Module extraction, internal | D1–D18, D21, D22 | 3 |
+| 2 | Remove the seven deprecations no step owns, plus the inline-marks flag | — | **done** — PRs #184, #186 |
+| ~~3~~ | ~~Kernel phases 0–3, internal~~ — **superseded, see K below** | F1 | — |
+| 4 | Module extraction, internal | D1–D18, D21, D22 | K |
 | 5 | Strategy out, selection in | S1–S6 | 4 |
 | 6 | Runner port | R1–R7, D20, D23 | 4 |
-| 7 | Kernel phases 4–6 | — | 5 |
-| 8 | Provider port | P1–P8 | 4, 7 |
-| 9 | Open the seam to hosts | D6, O1–O5 | 7, 8 |
+| ~~7~~ | ~~Kernel phases 4–6~~ — **superseded, see K below** | — | — |
+| 8 | Provider port | P1–P8 | 4, K |
+| 9 | Open the seam to hosts | D6, O1–O5 | K, 8 |
+| **K** | **The traversal kernel, built standalone** | E1–E7 | 2 |
+| **S** | **The swap — the plugin's pipeline moves onto the kernel** | — | K, 4 |
+
+**K and S replace steps 3 and 7.** Those two reached the kernel by generalising the live pipeline
+in place: phases 0–3 rewrite it while it still speaks Payload, and phase 6 strips that vocabulary
+out again — the same files written twice. It also worked against ADR-11 of the kernel plan, which
+says the kernel ships **zero** languages: a kernel grown out of Payload code keeps reaching for
+Payload notions because they are already in scope, and then nobody outside can write a second
+language.
+
+Instead the kernel is built fresh as its own private package, additive, with nothing wired in
+(**K**, contract in [2026-10-20-the-traversal-kernel.task.md](./2026-10-20-the-traversal-kernel.task.md)),
+and the plugin moves onto it afterwards in a step of its own (**S**), which is where the
+behavioural risk sits — selection, write-back and fingerprint values — and which keeps today's
+suite as its oracle.
+
+**F1 is unaffected and still owed.** A run reporting the leaves it *attempted* rather than the ones
+that *came back* is a defect in the translation stage, not in traversal, so K does not touch it. It
+still has to land before step 4 publishes that field's meaning at the module seam.
 
 **2 — remove the deprecations that belong to no later step.** `DEPRECATIONS.md` holds sixteen
 entries, every one marked *remove in the next major*. An earlier draft of this section removed all

@@ -159,8 +159,232 @@ and removes none.
 
 ## Decisions taken during execution
 
-*(filled during the work)*
+**E1 — the implementation sketch hard-codes the language it returns to, and D7 forbids it.**
+§4.7's rich-text language ends `boundary` with `return { language: "payload", ... }`, and builds a
+Payload-shaped context around `fields`. Both halves are wrong for the same reason: a language that
+names its successor, or assembles that successor's context, can serve exactly one host.
+*Taken:* the host hands the rich text **one function** — given an embed's name and data, return the
+whole `Crossing`. The rich text names nothing and assembles nothing; it passes through what it was
+given. Found while writing the second schema language, which needs a differently-shaped context
+(its field list comes from a name the data carries, not from a list handed in).
+
+**E2 — `Language<never, never>[]` does not compile.** §4.2 types the registry's input that way. A
+concrete `Language<FieldLike, SchemaCursor>` is not assignable to it: method parameters relate
+bivariantly, but `enter`'s return type is covariant and `readonly FieldLike[]` is not a
+`readonly never[]`. Verified with a compiler probe before writing anything.
+*Taken:* `RegisteredLanguage = Language<unknown, unknown>`, which a concrete language is assignable
+to. The kernel only ever hands a language back the nodes and cursor that language itself produced,
+so nothing it does depends on what they are.
+
+**E3 — a node contributes a *sequence* of address tokens, not one segment.** §4.2 gives each child
+and each value a single `segment`. A keyed collection contributes two at once — its own name and
+the identity of the element — so `sections.a.heading` was coming out as `a.heading`.
+*Taken:* `segments: PathSegments` (possibly empty) in place of `segment: PathSegment | null`. The
+`null` case disappears with it: contributing nothing is an empty sequence. **Found by a test, not
+by reading** — the first address assertion written is the one that failed.
+
+**E4 — "zero claimants is a reported error" cannot be read literally.** ADR-8's fallback rule says
+exactly one language must claim a value. But `claims` is consulted on every leaf the current
+language left as a value, and nothing else says such a value is a boundary at all, so zero
+claimants is the ordinary case for every plain string.
+*Taken:* zero claimants means an ordinary leaf; two or more raise `AmbiguousClaimError`, at walk
+time rather than registration time, since a claim depends on the value. A claimed crossing carries
+an empty context, which is the honest consequence: a host that cannot declare a boundary also
+cannot hand over a resolver.
+
+**E5 — the depth cap counts crossings, and five levels of rich text is ten of them.** With
+`DEFAULT_MAX_DEPTH` at the 8 the design's wiring example uses, the deep fixture trips the cap.
+*Taken:* the default stays 8 and the deep fixture passes its own `maxDepth`. How deep is worth
+walking is the host's knob, and a fixture deeper than any real document should have to say so.
+
+**E6 — one error class per file.** `max-classes-per-file` is an error in this repository's lint
+configuration, and the plugin already keeps its error family one-per-file under `errors/` with a
+barrel. Followed, rather than suppressed.
+
+**E7 — AC13's "build exits 0" was unmeetable, and the pre-flight missed it.** `bunx turbo run
+build` fails on `major/translator` **before this change**: `apps/dev` has two committed type errors
+(`src/payload.config.ts:161`, `SeoFieldPaths` has no `content`; and `vitest.integration.config.ts:21`).
+Proven by removing this package from the tree, restoring the lockfile, reinstalling and reproducing
+both errors unchanged.
+*Taken:* AC13 is met as "no worse than the baseline" — 15 of 17 tasks succeed, the same two fail for
+the same two reasons, and `bunx turbo run build --filter='./packages/*'` is green for all 13
+packages. The pre-flight should have run the repo build on the untouched tree and did not; that is
+the defect in the contract, not in the change.
+
+**E8 — a boundary must apply its own language's selection rule, because the crossing is decided
+before `selects`.** The collector asks for a crossing first and only then asks whether the leaf is
+selected, so a rich-text field its host never marked for translation was crossed into anyway, and
+the guest — which selects everything, there being nothing to select on inside prose — collected the
+whole field.
+*Taken:* the fix belongs in the language, not the kernel. Checking `selects` before `boundary` would
+mean rich text is **never** crossed, because a rich-text field is deliberately not in the
+translatable set: the boundary is what handles it. So `boundary` returns null for a field its host
+did not mark. Two checks pin it, one for unmarked and one for excluded.
+*Found by review, not by the suite:* every fixture happened to mark its rich-text fields, so nothing
+distinguished the two.
+
+**E9 — a claim may not overrule a language that declares boundaries.** ADR-8's fallback is "for a
+host that cannot declare". Consulting `claims` whenever `boundary` merely *returned null* is a
+different rule, and a damaging one: it was the reason E8's fix did not take at first. The Lexical
+fixture claims any tree with a `root`, so a field the Payload language had just declined was
+immediately claimed and crossed anyway.
+*Taken:* `claims` is consulted only for a language that declares **no** `boundary` at all. A
+language that declared none *here* has said no, and that answer stands. The contract says so on
+`claims`, together with the two consequences a claimed crossing carries: it is walked and written in
+place, and it gets no context, so it cannot reach what is embedded. A host that needs either must
+declare.
+
+**E10 — the crossing cap does not catch a cycle, and a cycle is reachable.** A value that
+contains itself loops inside **one** language: no crossing happens, the counter never moves, and
+the walk runs until the stack gives out. Found by reading a second, independent implementation of
+this contract, which had a guard for it where this one did not.
+*Taken:* the engine carries the nodes already stepped on the way to a position and refuses to enter
+one twice. **The pair is compared, not the node** — a language whose schema lives beside the data
+walks the same schema node once per element, and a node-only guard calls that a cycle. A field whose
+own field list contains itself, walked over data that nests twice, is the case that tells the two
+apart; it is a check, and a mutation that drops the cursor from the comparison turns it red.
+
+**E11 — one level of nesting proves nothing about the second.** The embedded-block fixture reached
+a block inside rich text and stopped at its plain fields, so address assembly *after* a crossing and
+*into a container* was never exercised. An array inside the embedded block now carries it:
+`["content", 1, "actions", "a1", "label"]`.
+
+**E12 — test files are split by the question they answer, and live apart from the kernel.** Three
+files holding thirty-six checks became fifteen named after their angle — `crossing.depthCap`,
+`walk.cycleGuard`, `applyTranslations.twoDocuments`, `crossing.twoHosts` — so a red run names its
+own subject before the file is opened. All of it, suite and fixtures alike, sits under
+`src/__tests__/`, which the build and the type-check exclude as one path: *owner's call*, and the
+reason is that fifteen test files beside five shipped ones turns a directory listing into noise.
+The shared walks live in `src/__tests__/fixtures/harness.ts`, so each file shows its own case.
+
+**E13 — a negative assertion needs a positive anchor in the same check.** Twenty-one of the
+thirty-six checks were written after the code worked, so a suite audit stubbed the collector with an
+**empty** implementation — one that returns no targets and writes nothing — and ran everything
+against it. **Eight checks stayed green**, every one of them an assertion that something was
+*absent*: `toEqual([])` for a rich text the host never marked, `not.toContain` for a field the
+language declines, an unchanged document after a refused reply, a callback that was not called.
+Absence is what an empty implementation produces for free.
+*Taken:* each of the eight now also asserts what the walk **did** collect — a marked sibling field,
+the siblings of the empty leaf, the length of the target list before a reply is refused. The point
+of each check is unchanged; what changed is that it can now fail. On the second audit run all
+thirty-six go red.
+
+**E14 — the engine comes out of the public surface, overturning D6.** D6 exported `walkLanguages`
+and its three types on the grounds that the fingerprint projection would be a second consumer. That
+consumer lives in the plugin, which this step does not touch, so by the repository's own rule —
+a future caller counts only when it traces to a requirement in scope — the export was speculative.
+Two consumers were written against the barrel and type-checked (a language author with its helpers
+extracted, and a host running one translation with a named handler and error handling); between
+them they name twelve of the twenty-three exports.
+*Taken:* the engine (`walkLanguages`, `DEFAULT_MAX_CROSSINGS`, `LeafVisit`, `Visitor`,
+`WalkOptions`), the shape internals reachable through `Step` (`StepChild`, `PathSegments`) and
+`CollectOptions` come out. Fifteen names remain. The direction is deliberate for a package that is
+about to be published: **adding an export later is not a breaking change, removing one is**, so the
+strict choice now is the cheap one. If the projection needs the engine at the swap, it is one line.
+
+**E15 — the published contract is documented to the property, and that is not a reversal of the
+comment audit.** The audit cut forty blocks from this same file. It was right, and so is this: the
+reader changed. A maintainer has the code, the suite and the design docs; a consumer of an npm
+package has a hover tooltip and nothing else. What survives from the audit is the standard, not the
+verdict — every line still has to say something the signature cannot. So the docs carry what a
+type cannot: that `IdPath` is **not unique** when a leaf yields several units; that `boundary` is
+consulted before selection, which is why a language that translates only part of its content must
+apply that rule there too; that a short answer list is an ordinary outcome rather than an error;
+that `claims` is only for a language declaring no boundary at all, and that a claimed value is
+written in place. Tag names follow what this repository's linter accepts — `@default` rather than
+`@defaultValue`, `@template` rather than `@typeParam`, no `@packageDocumentation`.
+*Not documented, deliberately:* `enter`'s inline parameter object and its return shape, which are
+covered by `@param args.*` and `@returns` on the method — the standard form, and what an editor
+shows.
 
 ## Review log
 
-*(filled during the work)*
+### 2026-10-20 — comment audit
+
+56 comment blocks judged, every one of them: 40 deleted, 6 shortened, 10 answered by changing the
+code, 0 kept, 3 missing ones added. 137 comment lines became 14.
+
+Three of the deletions were not verbosity but **false statements**: `step` was described as the only
+place content is read (five other members read it); the schema cursor promised pairing by identity
+alone (the code falls back to position); and the crossing cap's example was off by one
+(`schema → rich text → schema` is two crossings, not three).
+
+What the code now says instead of prose: `maxDepth` → `maxCrossings` with
+`DEFAULT_MAX_CROSSINGS` and `TooManyCrossingsError`; `select` → `filter`, which can only narrow;
+`onUnhandled` → `onSelectedWithoutText`; `claimants` → `otherClaimants`;
+`crossingAt` split so `declaredCrossing(visit) ?? claimedCrossing(visit)` carries the precedence;
+`MarkMode "per-node" | "inline"` → `UnitCut "per-text-node" | "whole-container"`; and a named
+`hasStrayText` with the check it needed. The duplicated mark codec in both rich-text fixtures became
+one shared helper.
+
+### 2026-10-20 — fresh eyes on the code, one reviewer (low risk)
+
+Five findings. Three accepted (E8, E9, and the stray-text check below), one refused, one left open.
+
+**Refused — "`applyTranslations` should throw when the counts differ."** A short reply is a
+*designed-for* case, not an error: F1 in [the rewiring](./2026-10-18-the-rewiring.md) exists because
+a model may answer with fewer values than it was sent, and the applier leaving those targets alone
+is what makes that survivable. A throw would turn the ordinary case into a failure. A reply *longer*
+than the target list is a caller defect, but guarding it is speculative until a caller exists.
+
+**Left open — the context a language is entered with is `unknown`, and every fixture casts it.** A
+wrong-shaped context produces a `TypeError` inside `step` rather than a named error. Whether the
+contract should offer a way to reject a context is a design question wider than this step; it is
+recorded here rather than answered.
+
+### 2026-10-20 — mutation runs
+
+Three rounds. The first broke twelve behaviours one at a time; eleven turned exactly the expected
+checks red and one — removing the `isEmpty` guard — **turned nothing red**, so `isEmpty` was part of
+the published contract with nothing proving it was honoured. A check was added and the mutation
+re-run.
+
+The second round, after the comment audit's code changes, broke fifteen; fourteen discriminated.
+The one that did not was the stray-text check added minutes earlier: a second check, on the number of
+pieces, was masking it. The reply in that case was rewritten to carry the right number of marks and a
+stray tail, so only the rule under test can refuse it.
+
+The third round, over the finished code, broke sixteen, including the two guards E8 and E9 added.
+**All sixteen discriminate.** The most load-bearing: hard-coding the host's id inside the Lexical
+fixture turns exactly one check red — the one where one unchanged rich-text language is entered from
+two different schema hosts.
+
+### 2026-10-20 — adopted from a second implementation of the same contract
+
+The same contract was built independently by another agent runner, and the two were compared
+afterwards. Its suite was measured the same way as this one: thirteen mutations over its code, all
+thirteen discriminating. Three things came back from it, recorded above as E10, E11 and E12; the
+first is a defect it did not have and this one did.
+
+Two of its choices were examined and **not** taken. Its `TextUnit.write` is optional, and that
+optionality is why its container-mode rich text can send a marked string but never write the reply
+back — the shape permitted the gap and nothing noticed. Its leaf address is a joined string rather
+than a sequence, which reads better in a test and is worse for provenance, which has to compare
+addresses rather than print them.
+
+A fourth thing it did — omitting the claim fallback entirely — is the open question E9 touches and
+is left with the owner.
+
+### 2026-10-20 — suite audit against an empty implementation
+
+Fifteen of the thirty-six checks had been red against stubs when the kernel did not yet exist. The
+other twenty-one were written afterwards and had only mutation evidence, which answers a different
+question: a mutation proves a check can tell one defect from its absence, an empty implementation
+proves the check has a subject at all.
+
+One stub, one alternate runner config, two runs. First run: 28 red, **8 green** — listed in E13 and
+all of them negative assertions. After anchoring: 36 red, 0 green. The seventeen mutations were then
+re-run over the anchored suite and all seventeen still discriminate.
+
+Cost, counted rather than estimated, since the tests already existed: **2 doubles in the whole
+suite** — both `vi.fn()` standing in for a callback the contract declares — **0 assertions reaching
+a private name**, 0 type escapes, median file 41 lines. Nothing here is near the territory where a
+suite becomes the expensive part.
+
+Scaffolding (`__stubs__/`, `vitest.red.config.ts`) removed and confirmed gone from `git status`.
+
+### Gates
+
+- `sp-plan-check task` — clean.
+- `sp-diff-checks --mode working` — clean, 5 checks, no findings.
+- `sp-lint-delta` — no findings introduced.

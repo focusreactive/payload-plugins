@@ -1,0 +1,40 @@
+{
+  "name": "@repo/translator-core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Traversal kernel: drives recursion over nested content through pluggable traversal languages. Ships no language and depends on nothing.",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.test.*",
+    "!dist/**/*.map"
+  ],
+  "scripts": {
+    "build": "bun run clean && bun run build:swc && bun run build:types",
+    "build:swc": "swc ./src -d ./dist --config-file .swcrc --strip-leading-paths --ignore '**/__tests__/**'",
+    "build:types": "tsc --emitDeclarationOnly --declaration --outDir dist",
+    "clean": "rm -rf dist",
+    "lint": "ultracite check",
+    "lint:fix": "ultracite fix",
+    "format": "ultracite fix",
+    "format:check": "ultracite check",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check-types": "tsgo --noEmit -p tsconfig.check.json"
+  },
+  "devDependencies": {
+    "@swc/cli": "0.4.0",
+    "@swc/core": "1.7.0",
+    "typescript": "5.5.2",
+    "vitest": "3.2.4"
+  }
+}
