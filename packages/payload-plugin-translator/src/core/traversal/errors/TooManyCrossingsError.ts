@@ -1,3 +1,4 @@
+import { TraversalError } from "./TraversalError.js";
 import type { IdPath } from "../contract.js";
 import { renderIdPath } from "./renderIdPath.js";
 
@@ -10,7 +11,7 @@ import { renderIdPath } from "./renderIdPath.js";
  *
  * @public
  */
-export class TooManyCrossingsError extends Error {
+export class TooManyCrossingsError extends TraversalError {
   /** The position the walk had reached when it stopped. */
   readonly idPath: IdPath;
   /** The cap that was in force. */

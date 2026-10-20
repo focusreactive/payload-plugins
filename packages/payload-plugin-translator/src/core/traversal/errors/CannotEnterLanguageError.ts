@@ -1,3 +1,4 @@
+import { TraversalError } from "./TraversalError.js";
 import type { IdPath } from "../contract.js";
 import { renderIdPath } from "./renderIdPath.js";
 
@@ -8,7 +9,7 @@ import { renderIdPath } from "./renderIdPath.js";
  *
  * @public
  */
-export class CannotEnterLanguageError extends Error {
+export class CannotEnterLanguageError extends TraversalError {
   /** The language that refused the context or broke on it. */
   readonly languageId: string;
   /** Where the crossing was made; empty when it was the walk's own entry. */

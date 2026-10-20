@@ -1,3 +1,4 @@
+import { TraversalError } from "./TraversalError.js";
 /**
  * A crossing named a language the walk was not given.
  *
@@ -7,7 +8,7 @@
  *
  * @public
  */
-export class UnknownLanguageError extends Error {
+export class UnknownLanguageError extends TraversalError {
   /** The id that was asked for. */
   readonly languageId: string;
   /** Every id the walk does hold, in registration order. */

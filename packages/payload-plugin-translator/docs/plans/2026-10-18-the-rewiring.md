@@ -665,7 +665,9 @@ says the kernel ships **zero** languages: a kernel grown out of Payload code kee
 Payload notions because they are already in scope, and then nobody outside can write a second
 language.
 
-Instead the kernel is built fresh as its own private package, additive, with nothing wired in
+Instead the kernel is built fresh and additive, with nothing wired in — first as its own private
+package, then moved to `src/core/traversal/` inside the plugin while it is still being changed
+(see K's contract); it goes back out to a package of its own once it settles
 (**K**, contract in [2026-10-20-the-traversal-kernel.task.md](./2026-10-20-the-traversal-kernel.task.md)),
 and the plugin moves onto it afterwards in a step of its own (**S**), which is where the
 behavioural risk sits — selection, write-back and fingerprint values — and which keeps today's
