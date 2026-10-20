@@ -1,0 +1,12 @@
+{
+  // Type-checking config for `check-types`. Unlike tsconfig.json it INCLUDES `src/__tests__`,
+  // which holds the suite and the fixture languages — the package's proof that the contract can
+  // be implemented. vitest runs them through esbuild, which strips types without checking them.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["vitest/globals"]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
