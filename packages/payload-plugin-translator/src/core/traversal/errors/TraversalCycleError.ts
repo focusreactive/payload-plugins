@@ -1,3 +1,4 @@
+import { TraversalError } from "./TraversalError.js";
 import type { IdPath } from "../contract.js";
 import { renderIdPath } from "./renderIdPath.js";
 
@@ -10,7 +11,7 @@ import { renderIdPath } from "./renderIdPath.js";
  *
  * @public
  */
-export class TraversalCycleError extends Error {
+export class TraversalCycleError extends TraversalError {
   /** The position the repeat was found at. */
   readonly idPath: IdPath;
 

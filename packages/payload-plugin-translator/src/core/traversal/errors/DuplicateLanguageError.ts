@@ -1,3 +1,4 @@
+import { TraversalError } from "./TraversalError.js";
 /**
  * Two languages registered under one id.
  *
@@ -6,7 +7,7 @@
  *
  * @public
  */
-export class DuplicateLanguageError extends Error {
+export class DuplicateLanguageError extends TraversalError {
   /** The id that appeared more than once. */
   readonly languageId: string;
 

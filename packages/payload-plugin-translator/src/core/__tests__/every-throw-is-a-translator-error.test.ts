@@ -6,8 +6,13 @@ import { describe, expect, it } from "vitest";
 const SRC = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const ROOTS = ["server", "core"];
 
+/**
+ * Three roots, not one: the traversal kernel keeps its own because it depends on nothing, and an
+ * error family of its reaching into this package is the first thing that would have to be unpicked
+ * to move the kernel out of it.
+ */
 const DECLARES =
-  /class ([A-Za-z_][A-Za-z0-9_]*) extends (TranslatorError|TranslationProviderError)\b/gu;
+  /class ([A-Za-z_][A-Za-z0-9_]*) extends (TranslatorError|TranslationProviderError|TraversalError)\b/gu;
 
 /** Matches literal `throw new X(...)` only. A thrown variable or a rethrow is out of reach here. */
 const THROW = /throw new ([A-Za-z_][A-Za-z0-9_]*)\(/gu;

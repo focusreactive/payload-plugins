@@ -46,6 +46,8 @@ language.
 coexist until the swap, and the swap is a step of its own.
 
 **D2 — its own package, marked private.** `packages/translator-core`, `"private": true`.
+**Reversed on 2026-10-21 — see E16.** The reasoning below still holds; what changed is that the
+plugin had to start importing the kernel, and a published package cannot depend on a private one.
 Private does two jobs: `multi-semantic-release --ignore-private-packages` skips it, so no
 publishing plumbing is needed before we want it; and "no imports at all" becomes a package
 boundary rather than a hand-maintained lint zone (today's zone is `oxlint.config.ts:32-71`
@@ -98,7 +100,8 @@ languages in two different runs. AC6 is the only check that can fail on a hard-c
 
 ## Acceptance Criteria
 
-All commands run from `packages/translator-core` unless stated.
+All commands ran from `packages/translator-core`, which was the kernel's home when this
+contract was written; it now lives at `packages/payload-plugin-translator/src/core/traversal` (E16).
 
 | AC | Criterion | How it is checked | Passes when |
 |---|---|---|---|
@@ -155,7 +158,8 @@ and removes none.
   2026-10-20.
 - Four languages rather than two, with combination runs and the nested
   `Payload → Lexical → Payload` case — owner, 2026-10-20.
-- A private package rather than a folder inside the plugin — owner, 2026-10-20.
+- A private package rather than a folder inside the plugin — owner, 2026-10-20; **reversed
+  2026-10-21**, the kernel lives at `src/core/traversal/` inside the plugin until it settles.
 
 ## Decisions taken during execution
 
@@ -296,6 +300,28 @@ written in place. Tag names follow what this repository's linter accepts — `@d
 *Not documented, deliberately:* `enter`'s inline parameter object and its return shape, which are
 covered by `@param args.*` and `@returns` on the method — the standard form, and what an editor
 shows.
+
+**E16 — the kernel moved into the plugin, reversing D2, and the guard it loses is replaced.**
+The plugin is published and `major/translator` ships a prerelease on every merge. The moment the
+plugin imports the kernel — which it must, since a language implements the kernel's own type — a
+published package would depend on a private one, and that prerelease would be uninstallable.
+*Considered:* publishing the kernel first. It is roughly an hour of work, most of it the owner's —
+a name, five package fields, and npm trusted publishing, which cannot be configured for a package
+that does not yet exist and so needs one manual first publish. Declined for now: **the kernel is
+still being changed**, and a published package changed weekly is worse than a folder.
+*Taken:* the source moved to `src/core/traversal/`, inside the plugin's existing framework-free
+zone, which the root lint config already guards against Payload, React, Next and downward edges
+into the adapter. Moving it back out later is the same folder move plus those five fields.
+*What the move loses, and its replacement:* the package boundary was what made "depends on
+nothing" true — the lint zone is weaker, banning three frameworks rather than all imports. A scan
+beside the kernel now reads every shipped file and fails on any specifier that is not relative.
+Proved by mutation: adding an import turns exactly that check red.
+*What the move surfaced:* the plugin requires every literal `throw new` under `src/core` to
+construct one of its own error families, and the kernel's five errors extended `Error` directly.
+Rather than exempt the folder or tie the kernel to the plugin's error root, the kernel was given
+its own — `TraversalError` — and the plugin's rule now knows three families. The kernel stays
+liftable, the rule stays enforced, and a consumer gains one class that catches every failure the
+walk raises.
 
 ## Review log
 

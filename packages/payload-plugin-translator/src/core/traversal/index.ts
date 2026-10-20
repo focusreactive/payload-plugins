@@ -16,6 +16,7 @@ export {
   CannotEnterLanguageError,
   DuplicateLanguageError,
   TooManyCrossingsError,
+  TraversalError,
   TraversalCycleError,
   UnknownLanguageError,
 } from "./errors/index.js";
