@@ -21,6 +21,8 @@ vi.mock("../../../../core/translation-pipeline/index.js", () => ({
 
 vi.mock("../../../../core/domain/content-projection/computeFieldFingerprints.js", () => ({
   computeFieldFingerprints: vi.fn(() => ({ title: "fp-fixed" })),
+  HASH_LENGTH: 16,
+  SOURCE_HASH_PATTERN: /^[0-9a-f]{16}$/u,
 }));
 vi.mock("../../../../core/domain/content-projection/computeSourceFingerprint.js", () => ({
   computeSourceFingerprint: vi.fn(() => "fp-fixed"),
@@ -227,7 +229,7 @@ describe("TranslateDocumentHandler", () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         translatedData: { title: "Übersetzter Titel" },
-        translatedPaths: ["title"],
+        leaves: [{ idPath: "title", answeredInFull: true }],
       });
 
       const input = createInput();
@@ -242,7 +244,7 @@ describe("TranslateDocumentHandler", () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         translatedData: { title: "Translated" },
-        translatedPaths: ["title"],
+        leaves: [{ idPath: "title", answeredInFull: true }],
       });
     });
 
@@ -424,11 +426,15 @@ describe("TranslateDocumentHandler", () => {
       );
     });
 
-    const withTranslatedData = async (translatedPaths: string[] = ["title"]) => {
+    const withTranslatedData = async (
+      leaves: { idPath: string; answeredInFull: boolean }[] = [
+        { idPath: "title", answeredInFull: true },
+      ]
+    ) => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         translatedData: { title: "Hallo" },
-        translatedPaths,
+        leaves,
       });
     };
 
@@ -494,7 +500,7 @@ describe("TranslateDocumentHandler", () => {
           sourceData.title = "TRANSLATED (pipeline mutation)";
           return {
             translatedData: { title: "TRANSLATED (pipeline mutation)" },
-            translatedPaths: ["title"],
+            leaves: [{ idPath: "title", answeredInFull: true }],
           };
         }
       );
@@ -582,7 +588,7 @@ describe("TranslateDocumentHandler", () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         translatedData: { title: "Hallo" },
-        translatedPaths: ["title"],
+        leaves: [{ idPath: "title", answeredInFull: true }],
       });
       (mockPayload.findByID as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: "doc-123",
@@ -635,7 +641,7 @@ describe("TranslateDocumentHandler", () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         translatedData: { title: "Hallo" },
-        translatedPaths: ["title"],
+        leaves: [{ idPath: "title", answeredInFull: true }],
       });
       (mockPayload.findByID as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: "doc-123",
@@ -676,7 +682,7 @@ describe("TranslateDocumentHandler", () => {
     const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
     (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
       translatedData: { title: "Hallo" },
-      translatedPaths: ["title"],
+      leaves: [{ idPath: "title", answeredInFull: true }],
     });
     (mockPayload.findByID as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: "doc-123",

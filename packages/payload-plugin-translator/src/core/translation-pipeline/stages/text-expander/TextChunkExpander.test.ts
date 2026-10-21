@@ -61,6 +61,7 @@ describe("PlainTextExpander", () => {
       expect(result.chunks[0]).toEqual({
         type: "plain",
         index: 0,
+        idPath: chunk.idPath,
         text: "Hello",
         dataRef: data,
         key: "title",

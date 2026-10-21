@@ -186,7 +186,7 @@ describe("translateContent", () => {
       strategy: "skip_existing",
     });
     expect(result?.translatedData).toEqual({ title: "T:hello" });
-    expect(result?.translatedPaths).toEqual(["title"]);
+    expect(result?.leaves).toEqual([{ idPath: "title", answeredInFull: true }]);
   });
 
   describe("the caller's source document", () => {

@@ -1,9 +1,21 @@
-import type { FieldFingerprints } from "../content-projection/computeFieldFingerprints.js";
+import type {
+  FieldFingerprints,
+  SourceHash,
+} from "../content-projection/computeFieldFingerprints.js";
 
 import type { ProvenanceReceipt } from "./ProvenanceStore.interface.js";
-import type { RecordedFingerprints, SourceFingerprint } from "./SourceFingerprint.js";
 
-/** Per-leaf drift. An absent address means nothing could be determined — never "unchanged" ({@link leafSourceChanged}). */
+import type {
+  RecordedClaim,
+  RecordedFingerprints,
+  SourceFingerprint,
+} from "./SourceFingerprint.js";
+import { DECLINED, UNANSWERED } from "./SourceFingerprint.js";
+
+/**
+ * Per leaf: `true` when its source drifted or the last run never answered it. An absent address means
+ * nothing could be determined, never "unchanged" ({@link leafSourceChanged}).
+ */
 export type ChangedLeaves = Readonly<Record<string, boolean>>;
 
 export type CurrentFingerprint = {
@@ -11,20 +23,30 @@ export type CurrentFingerprint = {
   fields: FieldFingerprints;
 };
 
-/** The hash a receipt entry claims, or `undefined` when it claims none. Positive test on purpose: a stored value neither reader understands must claim nothing, never drift. */
-const claimedHash = (recorded: string | null | undefined): string | undefined =>
-  typeof recorded === "string" ? recorded : undefined;
+/**
+ * Compare through this, not the raw claim: `===` accepts any claim, but `.hash` exists only once the
+ * other states are ruled out.
+ */
+type Claim = { kind: "hash"; hash: SourceHash } | { kind: "unanswered" } | { kind: "none" };
+
+const claimOf = (recorded: RecordedClaim | undefined): Claim => {
+  if (recorded === UNANSWERED) return { kind: "unanswered" };
+  if (recorded === DECLINED || recorded === undefined) return { kind: "none" };
+  return { kind: "hash", hash: recorded };
+};
 
 const sameAddresses = (stored: RecordedFingerprints, current: FieldFingerprints): boolean =>
   Object.keys(stored).length === Object.keys(current).length &&
   Object.keys(stored).every((address) => address in current);
 
 const matchesClaim = (
-  recorded: string | null | undefined,
-  current: string | undefined
+  recorded: RecordedClaim | undefined,
+  current: SourceHash | undefined
 ): boolean => {
-  const claimed = claimedHash(recorded);
-  return claimed === undefined || claimed === current;
+  const claim = claimOf(recorded);
+  if (claim.kind === "unanswered") return false;
+  if (claim.kind === "none") return true;
+  return claim.hash === current;
 };
 
 const sameFields = (stored: RecordedFingerprints, current: FieldFingerprints): boolean =>
@@ -64,9 +86,10 @@ export function leafSourceChanged(
   currentFields: FieldFingerprints,
   address: string
 ): boolean | undefined {
-  const translatedFrom = claimedHash(recorded[address]);
-  if (translatedFrom === undefined) return undefined;
-  return translatedFrom !== currentFields[address];
+  const claim = claimOf(recorded[address]);
+  if (claim.kind === "unanswered") return true;
+  if (claim.kind === "none") return undefined;
+  return claim.hash !== currentFields[address];
 }
 
 export function changedLeaves(

@@ -6,9 +6,10 @@ export type {
 } from "./ProvenanceStore.interface.js";
 export type { CurrentFingerprint } from "./staleness.js";
 export { changedLeaves, isRecordStale, recordsEachLeaf } from "./staleness.js";
-export type { SourceFingerprint } from "./SourceFingerprint.js";
+export type { RecordedClaim, SourceFingerprint } from "./SourceFingerprint.js";
 export {
   DECLINED,
+  UNANSWERED,
   parseSourceFingerprint,
   serializeSourceFingerprint,
 } from "./SourceFingerprint.js";

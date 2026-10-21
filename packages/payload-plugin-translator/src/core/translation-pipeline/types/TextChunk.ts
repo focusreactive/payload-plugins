@@ -1,3 +1,4 @@
+import type { IdPath } from "../../domain/content-projection/idPath.js";
 import type { InlineFragment } from "../../kernel/lexical/collectInlineFragments.js";
 import type { ParsedMark } from "../../kernel/lexical/inlineMarks.js";
 import type { SerializedLexicalNode, SerializedTextNode } from "../../kernel/lexical/index.js";
@@ -10,6 +11,7 @@ export type PlainTextChunk = {
   type: "plain";
   /** Unique index for translation mapping */
   index: number;
+  idPath: IdPath;
   /** Original text value */
   text: string;
   /** Reference to parent data object */
@@ -26,6 +28,7 @@ export type RichTextChunk = {
   type: "richText";
   /** Unique index for translation mapping */
   index: number;
+  idPath: IdPath;
   /** Original text value */
   text: string;
   /** Direct reference to SerializedTextNode for mutation */
@@ -41,6 +44,7 @@ export type RichTextChunk = {
 export type RichContainerChunk = {
   type: "richContainer";
   index: number;
+  idPath: IdPath;
   /** The container whose `children` are rebuilt when the reply reorders marks */
   containerRef: SerializedLexicalNode;
   /** Fragments in document order, as collected */
@@ -54,8 +58,7 @@ export type RichContainerChunk = {
 };
 
 /**
- * Union type for all text chunks.
- * Schema-independent - contains only data references for mutation.
+ * Schema-independent: data references for mutation. Several chunks may share one leaf's `idPath`.
  */
 export type TextChunk = PlainTextChunk | RichTextChunk | RichContainerChunk;
 

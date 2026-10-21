@@ -14,8 +14,8 @@ import { isPlainTextChunk, isRichContainerChunk, isRichTextChunk } from "../../t
  * glued into a neighbour's text — is likewise absent from the rebuilt array, which is what stops
  * its space being rendered twice.
  */
-function applyContainer(chunk: RichContainerChunk, parsed: ParsedMark[]): void {
-  if (!hasChildren(chunk.containerRef)) return;
+function tryApplyContainer(chunk: RichContainerChunk, parsed: ParsedMark[]): boolean {
+  if (!hasChildren(chunk.containerRef)) return false;
 
   const byMarkId = new Map(chunk.fragments.map((fragment) => [fragment.markId, fragment]));
   const children: SerializedLexicalNode[] = [];
@@ -30,6 +30,7 @@ function applyContainer(chunk: RichContainerChunk, parsed: ParsedMark[]): void {
   }
 
   chunk.containerRef.children = children;
+  return true;
 }
 
 /**
@@ -44,12 +45,14 @@ export class TranslationMutator {
    *
    * @param textChunks - TextChunks with references to data
    * @param translations - Map of index -> translated text
-   * @returns Mutation result with count of translated chunks
+   * @returns the chunks it wrote; a chunk left holding source text is not among them.
    */
-  apply(textChunks: TextChunk[], translations: Record<number, string>): void {
+  apply(textChunks: TextChunk[], translations: Record<number, string>): TextChunk[] {
+    const written: TextChunk[] = [];
+
     for (const chunk of textChunks) {
       if (isRichContainerChunk(chunk)) {
-        if (chunk.reply) applyContainer(chunk, chunk.reply);
+        if (chunk.reply && tryApplyContainer(chunk, chunk.reply)) written.push(chunk);
         continue;
       }
 
@@ -64,6 +67,10 @@ export class TranslationMutator {
         const exhaustive: never = chunk;
         throw new TranslatorBug(`unhandled text chunk: ${String(exhaustive)}`);
       }
+
+      written.push(chunk);
     }
+
+    return written;
   }
 }

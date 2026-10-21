@@ -131,7 +131,7 @@ export class TranslateDocumentHandler implements Handler<
     });
 
     if (translated?.translatedData) {
-      const { translatedData, translatedPaths } = translated;
+      const { translatedData, leaves } = translated;
       await this.refuseUnlessAllowed(payload, input, translatedData, scope, requester);
       await this.saveTranslatedDocument(
         payload,
@@ -146,7 +146,7 @@ export class TranslateDocumentHandler implements Handler<
         await provenance.record(
           { ...provenanceKey, sourceLocale: sourceLng },
           currentFields,
-          translatedPaths
+          leaves
         );
       }
     }
