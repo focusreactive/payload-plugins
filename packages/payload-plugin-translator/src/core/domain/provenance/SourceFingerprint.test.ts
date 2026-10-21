@@ -1,3 +1,7 @@
+import type { SourceFingerprint } from "./SourceFingerprint.js";
+import { asHash } from "./__tests__/fixtures/claims.js";
+import { SOURCE_HASH_PATTERN } from "../content-projection/computeFieldFingerprints.js";
+import { UNANSWERED } from "./SourceFingerprint.js";
 import { describe, expect, it } from "vitest";
 
 import { parseSourceFingerprint, serializeSourceFingerprint } from "./SourceFingerprint.js";
@@ -11,16 +15,18 @@ describe("parseSourceFingerprint", () => {
   });
 
   it("reads a JSON object of addresses as the per-field shape", () => {
-    expect(parseSourceFingerprint('{"title":"3a7f","items.a1.label":"91ce"}')).toEqual({
+    expect(
+      parseSourceFingerprint('{"title":"3a7f000000000000","items.a1.label":"91ce000000000000"}')
+    ).toEqual({
       kind: "fields",
-      hashes: { title: "3a7f", "items.a1.label": "91ce" },
+      hashes: { title: asHash("3a7f"), "items.a1.label": asHash("91ce") },
     });
   });
 
   it("reads a leaf recorded as seen-but-not-ours", () => {
-    expect(parseSourceFingerprint('{"title":null,"note":"91ce"}')).toEqual({
+    expect(parseSourceFingerprint('{"title":null,"note":"91ce000000000000"}')).toEqual({
       kind: "fields",
-      hashes: { title: null, note: "91ce" },
+      hashes: { title: null, note: asHash("91ce") },
     });
   });
 
@@ -69,8 +75,8 @@ describe("serializeSourceFingerprint", () => {
   });
 
   it("renders the per-field shape as a JSON object", () => {
-    expect(serializeSourceFingerprint({ kind: "fields", hashes: { title: "3a7f" } })).toBe(
-      '{"title":"3a7f"}'
+    expect(serializeSourceFingerprint({ kind: "fields", hashes: { title: asHash("3a7f") } })).toBe(
+      '{"title":"3a7f000000000000"}'
     );
   });
 
@@ -78,22 +84,55 @@ describe("serializeSourceFingerprint", () => {
     ["the document shape", { kind: "document", hash: LEGACY } as const],
     [
       "the per-field shape",
-      { kind: "fields", hashes: { title: "3a7f", "i.a1.l": "91ce" } } as const,
+      { kind: "fields", hashes: { title: asHash("3a7f"), "i.a1.l": asHash("91ce") } },
     ],
     [
       "a map carrying the seen-but-not-ours marker",
-      { kind: "fields", hashes: { title: null, note: "91ce" } } as const,
+      { kind: "fields", hashes: { title: null, note: asHash("91ce") } },
     ],
-    ["an empty per-field map", { kind: "fields", hashes: {} } as const],
-  ])("round-trips %s through the column", (_label, fingerprint) => {
-    expect(parseSourceFingerprint(serializeSourceFingerprint(fingerprint))).toEqual(fingerprint);
-  });
+    ["an empty per-field map", { kind: "fields", hashes: {} }],
+  ] as [string, SourceFingerprint][])(
+    "round-trips %s through the column",
+    (_label, fingerprint) => {
+      expect(parseSourceFingerprint(serializeSourceFingerprint(fingerprint))).toEqual(fingerprint);
+    }
+  );
 
   it("round-trips an address holding the characters the path grammar escapes", () => {
-    const hashes = { "items.a1\\.weird:block.label": "91ce" };
+    const hashes = { "items.a1\\.weird:block.label": asHash("91ce") };
     expect(parseSourceFingerprint(serializeSourceFingerprint({ kind: "fields", hashes }))).toEqual({
       kind: "fields",
       hashes,
+    });
+  });
+});
+
+describe("what the schema accepts, since the column cannot", () => {
+  it("refuses an unrecognised value, so the map is not read per-leaf at all", () => {
+    expect(parseSourceFingerprint('{"title":"not-a-hash"}')).toEqual({
+      kind: "document",
+      hash: '{"title":"not-a-hash"}',
+    });
+  });
+
+  it("refuses a value that is not sixteen hex characters", () => {
+    expect(parseSourceFingerprint('{"title":"3a7f"}')?.kind).toBe("document");
+    expect(parseSourceFingerprint('{"title":"3a7f00000000000000"}')?.kind).toBe("document");
+    expect(parseSourceFingerprint('{"title":"3A7F000000000000"}')?.kind).toBe("document");
+  });
+
+  it("still reads a legacy document-wide digest, which this check never applies to", () => {
+    expect(parseSourceFingerprint(LEGACY)).toEqual({ kind: "document", hash: LEGACY });
+  });
+
+  it("never mistakes the unanswered marker for a hash", () => {
+    expect(SOURCE_HASH_PATTERN.test(UNANSWERED)).toBe(false);
+  });
+
+  it("accepts the unanswered marker beside a hash and a decline", () => {
+    expect(parseSourceFingerprint('{"a":"3a7f000000000000","b":"!unanswered","c":null}')).toEqual({
+      kind: "fields",
+      hashes: { a: asHash("3a7f"), b: UNANSWERED, c: null },
     });
   });
 });

@@ -13,11 +13,13 @@ export type PipelineConfig = {
   sourceChangedByLeaf?: ChangedLeaves;
 };
 
+export type LeafOutcome = {
+  idPath: IdPath;
+  answeredInFull: boolean;
+};
+
 export type PipelineResult = {
   translatedData: Record<string, unknown>;
-  /**
-   * The leaves actually sent for translation, by the same address a provenance receipt is keyed on.
-   * A caller writing a receipt may only claim these — see `ProvenanceService.record`.
-   */
-  translatedPaths: IdPath[];
+  /** One entry per leaf that yielded a chunk; a leaf absent here was never sent. */
+  leaves: readonly LeafOutcome[];
 };

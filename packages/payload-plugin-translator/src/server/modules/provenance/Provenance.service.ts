@@ -2,16 +2,21 @@ import type { CollectionSlug } from "payload";
 
 import { computeSourceFingerprint } from "../../../core/domain/content-projection/computeSourceFingerprint.js";
 import { computeFieldFingerprints } from "../../../core/domain/content-projection/computeFieldFingerprints.js";
-import type { FieldFingerprints } from "../../../core/domain/content-projection/computeFieldFingerprints.js";
+import type {
+  FieldFingerprints,
+  SourceHash,
+} from "../../../core/domain/content-projection/computeFieldFingerprints.js";
 import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { isRecordStale } from "../../../core/domain/provenance/index.js";
 import type {
   CurrentFingerprint,
   ProvenanceKey,
   ProvenanceStore,
+  RecordedClaim,
   SourceFingerprint,
 } from "../../../core/domain/provenance/index.js";
-import { DECLINED, recordsEachLeaf } from "../../../core/domain/provenance/index.js";
+import { DECLINED, recordsEachLeaf, UNANSWERED } from "../../../core/domain/provenance/index.js";
+import type { LeafOutcome } from "../../../core/translation-pipeline/types/index.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import { swallowOrThrow } from "../../shared/payload/swallowOrThrow.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
@@ -25,12 +30,17 @@ export type StalenessLocale = {
   translated_at: string;
 };
 
-function previousClaim(
-  previous: SourceFingerprint | null,
-  address: string
-): string | typeof DECLINED {
+function previousClaim(previous: SourceFingerprint | null, address: string): RecordedClaim {
   if (!recordsEachLeaf(previous)) return DECLINED;
   return previous.hashes[address] ?? DECLINED;
+}
+
+/**
+ * A leaf sent but not answered overwrites any earlier claim: the run seated source text in its
+ * target, so an earlier hash would describe a translation that is no longer there.
+ */
+function claimFor(answeredInFull: boolean, hash: SourceHash): RecordedClaim {
+  return answeredInFull ? hash : UNANSWERED;
 }
 
 /**
@@ -90,21 +100,24 @@ export class ProvenanceService {
    * marked seen-but-not-ours. An address the document no longer has is dropped, retiring the field.
    *
    * @param currentFields - Every translatable leaf of the source as it stands now.
-   * @param translatedAddresses - The leaves this run actually sent for translation.
    */
   async record(
     key: ProvenanceKey & { sourceLocale: string },
     currentFields: FieldFingerprints,
-    translatedAddresses: readonly string[]
+    leaves: readonly LeafOutcome[]
   ): Promise<void> {
     await swallowOrThrow(
       this.scope,
       async () => {
         const previous = await this.readFingerprintOrThrow(key);
-        const translated = new Set(translatedAddresses);
-        const hashes: Record<string, string | typeof DECLINED> = {};
+        const sent = new Map(leaves.map((leaf) => [String(leaf.idPath), leaf.answeredInFull]));
+        const hashes: Record<string, RecordedClaim> = {};
         for (const [address, hash] of Object.entries(currentFields)) {
-          hashes[address] = translated.has(address) ? hash : previousClaim(previous, address);
+          const answeredInFull = sent.get(address);
+          hashes[address] =
+            answeredInFull === undefined
+              ? previousClaim(previous, address)
+              : claimFor(answeredInFull, hash);
         }
 
         await this.store.upsert({

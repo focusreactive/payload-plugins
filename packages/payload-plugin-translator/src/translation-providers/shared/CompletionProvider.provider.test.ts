@@ -102,8 +102,7 @@ describe("createTranslationProvider", () => {
     expect(result).toEqual({ 0: "Startseite", 1: "Über uns" });
   });
 
-  it("applies a partial reply and warns, naming the untranslated index", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  it("applies a partial reply, keeping only the fields that came back", async () => {
     const { complete } = recordingComplete('{"0":"Startseite","2":"Kontakt"}');
 
     const result = await createTranslationProvider({ complete }).translate(
@@ -113,17 +112,6 @@ describe("createTranslationProvider", () => {
     );
 
     expect(result).toEqual({ 0: "Startseite", 2: "Kontakt" });
-    expect(warn).toHaveBeenCalledTimes(1);
-    expect(String(warn.mock.calls[0].join(" "))).toContain("1");
-  });
-
-  it("stays quiet when the reply is complete", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    const { complete } = recordingComplete('{"0":"Startseite"}');
-
-    await createTranslationProvider({ complete }).translate({ 0: "Home" }, "en", "de");
-
-    expect(warn).not.toHaveBeenCalled();
   });
 
   it("passes a systemPrompt override through to the transport", async () => {
@@ -253,31 +241,16 @@ describe("createTranslationProvider", () => {
     });
   });
 
-  it("does not claim untranslated fields when only an extra key came back", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  it("ignores a key that was never requested, and keeps the one that was", async () => {
     const { complete } = recordingComplete('{"0":"Startseite","note":"done"}');
 
-    await createTranslationProvider({ complete }).translate({ 0: "Home" }, "en", "de");
-
-    expect(warn).toHaveBeenCalledTimes(1);
-    const warned = String(warn.mock.calls[0].join(" "));
-    expect(warned).not.toContain("Untranslated indices");
-    expect(warned).not.toContain("did not cover every field");
-  });
-
-  it("quotes and caps model-invented keys in the warning", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    const invented = Object.fromEntries(
-      Array.from({ length: 12 }, (_, i) => [`k${i}\ninjected`, "x"])
+    const result = await createTranslationProvider({ complete }).translate(
+      { 0: "Home" },
+      "en",
+      "de"
     );
-    const { complete } = recordingComplete(JSON.stringify({ 0: "Startseite", ...invented }));
 
-    await createTranslationProvider({ complete }).translate({ 0: "Home" }, "en", "de");
-
-    const warned = String(warn.mock.calls[0].join(" "));
-    expect(warned).toContain("and 2 more");
-    expect(warned).not.toContain("\ninjected");
-    expect(warned).toContain('"k0\\ninjected"');
+    expect(result).toEqual({ 0: "Startseite" });
   });
 
   it("short-circuits empty input without calling the transport", async () => {

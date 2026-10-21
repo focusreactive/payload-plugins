@@ -1,3 +1,4 @@
+import { asHash } from "../../../core/domain/provenance/__tests__/fixtures/claims.js";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Field, Payload, PayloadRequest } from "payload";
 
@@ -100,7 +101,7 @@ describe("GetDocumentStalenessHandler", () => {
       findByDocument: vi
         .fn()
         .mockResolvedValue([
-          makeRecord({ sourceFingerprint: { kind: "fields", hashes: { title: "fp-old" } } }),
+          makeRecord({ sourceFingerprint: { kind: "fields", hashes: { title: asHash("fa0d") } } }),
         ]),
     });
     const res = await new GetDocumentStalenessHandler(makeConfig(store)).handle(readReq());

@@ -115,7 +115,7 @@ describe("TranslateFieldHandler", () => {
   it("reads the source-locale value from the saved doc and translates a localized leaf", async () => {
     (await importTranslateContent()).mockResolvedValue({
       translatedData: { title: "Hallo" },
-      translatedPaths: ["title"],
+      leaves: [{ idPath: "title", answeredInFull: true }],
     });
     const findByID = vi.fn().mockResolvedValue({ id: "p1", title: "Hello" });
 
@@ -168,7 +168,7 @@ describe("TranslateFieldHandler", () => {
     const translateContent = await importTranslateContent();
     (translateContent as ReturnType<typeof vi.fn>).mockResolvedValue({
       translatedData: { headline: "Hallo" },
-      translatedPaths: ["headline"],
+      leaves: [{ idPath: "headline", answeredInFull: true }],
     });
 
     const res = await handler.handle(
@@ -318,7 +318,7 @@ describe("TranslateFieldHandler", () => {
     const translateContent = await importTranslateContent();
     (translateContent as ReturnType<typeof vi.fn>).mockResolvedValue({
       translatedData: { title: "Hallo" },
-      translatedPaths: ["title"],
+      leaves: [{ idPath: "title", answeredInFull: true }],
     });
 
     await handler.handle(reqWithDoc({ id: "p1", title: "Hello" }));

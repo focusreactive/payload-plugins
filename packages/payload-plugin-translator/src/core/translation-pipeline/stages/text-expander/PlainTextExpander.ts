@@ -15,6 +15,7 @@ export class PlainTextExpander implements TextExpander {
     const textChunk: PlainTextChunk = {
       type: "plain",
       index: startIndex,
+      idPath: chunk.idPath,
       text,
       dataRef: chunk.dataRef,
       key: chunk.key,

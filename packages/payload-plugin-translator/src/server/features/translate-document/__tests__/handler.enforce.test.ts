@@ -10,7 +10,10 @@ import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
 vi.mock("../../../../core/translation-pipeline/index.js", () => ({
   translateContent: vi
     .fn()
-    .mockResolvedValue({ translatedData: { title: "Titel" }, translatedPaths: ["title"] }),
+    .mockResolvedValue({
+      translatedData: { title: "Titel" },
+      leaves: [{ idPath: "title", answeredInFull: true }],
+    }),
 }));
 
 vi.mock("../translationPermission.js", () => ({
