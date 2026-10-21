@@ -686,12 +686,12 @@ first thing in that step.
 
 | Entries | Removed in |
 |---|---|
-| `translate-collection-plugin-class`, `create-translate-plugin`, `translate-kit-field`, `translate-kit-field-config-type`, `openai-translation-provider-class` | **step 2** — renamed symbols kept as aliases; a deletion and an export line each |
+| `translate-collection-plugin-class`, `create-translate-plugin`, `translate-kit-field`, `translate-kit-field-config-type` | **step 2** — renamed symbols kept as aliases; a deletion and an export line each |
 | `on-failed-per-attempt`, `runner-create-takes-the-context` | **step 2** — the code change already shipped; only the ledger entry is open |
 | `experimental-inline-marks` | **step 2** — see below |
 | `find-by-collection-document-ids-array`, `enqueue-void-return`, `cancel-by-collection-route`, `jobs-input-collection-field` | **step 6**, the runner port |
 | `jobs-per-locale-task-shape` | **step 5**, where the stored run changes shape anyway |
-| `translate-positional-languages`, `provider-dry-run`, `openai-client-construction` | **step 8**, the provider port |
+| `translate-positional-languages`, `provider-dry-run`, `openai-client-construction`, `openai-translation-provider-class` | **step 8**, the provider port — the class was reassigned here from step 2 while that step ran, because `openai-client-construction` removes the client-building layer it wraps, and splitting one removal across two breaking releases makes a host rewrite twice for nothing |
 
 *Why the inline-marks flag is the one exception that pays to remove early.* Dropping it makes marked
 rich text the only mode, and the branch it switches sits in exactly the files kernel phase 1 rewrites
