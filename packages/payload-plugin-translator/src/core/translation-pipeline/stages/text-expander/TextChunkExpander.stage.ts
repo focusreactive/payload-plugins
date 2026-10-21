@@ -5,13 +5,16 @@ import { TextChunkExpander } from "./TextChunkExpander.js";
 import { RichTextExpander } from "./RichTextExpander.js";
 import { PlainTextExpander } from "./PlainTextExpander.js";
 
-const defaultExpanders: TextExpander[] = [new RichTextExpander(), new PlainTextExpander()];
+export const defaultExpanders: TextExpander[] = [new RichTextExpander(), new PlainTextExpander()];
 
 /**
  * Expands FieldChunks to TextChunks (schema-free).
  */
 export class TextChunkExpanderStage implements PipelineStage {
-  constructor(private readonly expanders: TextExpander[] = defaultExpanders) {}
+  private readonly expanders: TextExpander[];
+  constructor(expanders: TextExpander[] = defaultExpanders) {
+    this.expanders = expanders;
+  }
 
   execute(ctx: PipelineContext): PipelineContext {
     if (!ctx.fieldChunks) {

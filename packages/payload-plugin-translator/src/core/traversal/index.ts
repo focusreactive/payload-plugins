@@ -5,6 +5,7 @@ export type {
   PathSegment,
   RegisteredLanguage,
   Step,
+  StepChild,
   TextLeaf,
   TextUnit,
   TranslationTarget,
