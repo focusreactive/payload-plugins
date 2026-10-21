@@ -14,6 +14,31 @@ or fixture in this repository is not a consumer — it has internal import paths
 See [ADR-0002](../../docs/adr/0002-publish-only-what-a-consumer-must-name.md) for the three
 questions and the case that produced them.
 
+## What goes into any other `index.ts`
+
+The same test, one level down: **a barrel re-exports only what is used outside its own
+module.** Everything else stays inside, and siblings import each other by path.
+
+- *Outside* means a file that is not under the barrel's own directory. A sibling importing a
+  sibling does not go through the barrel, and a test under the module's own `__tests__/` is
+  inside it.
+- A name may be listed for a consumer that does not exist yet **only** when that consumer is
+  a designed, documented next step that names it. "Someone might" is not one — it waits.
+- Adding a name later is not a breaking change; removing one is. The cheap direction is to
+  start narrow.
+
+The check is mechanical, so run it rather than reasoning about it: find every file that
+imports *from the barrel's path*, collect the names those imports take, and subtract. What is
+left is surplus. Counting references to a name across `src/` does **not** answer this — it
+matches the defining file, the barrel itself, and every sibling that imports by path.
+
+Why it matters beyond tidiness: a barrel that re-exports everything turns every internal name
+into a commitment, so a rename inside the module becomes a cross-module change, and a reader
+can no longer tell the module's face from its insides.
+
+`src/index.ts` is this same rule at its strictest, because there the outside is every
+consumer of the published package; it has its own section above.
+
 ## Documenting feature versions
 
 Annotate every new piece of **public API** (anything re-exported from
