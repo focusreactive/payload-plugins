@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-translator [1.0.0-next.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.2...@focus-reactive/payload-plugin-translator@1.0.0-next.3) (2026-10-21)
+
+
+### Bug Fixes
+
+* **translator:** record the leaf a run sent and never got back ([69f1bda](https://github.com/focusreactive/payload-plugins/commit/69f1bda205165fa75552e0b8db3306d7c2f96739)), closes [#197](https://github.com/focusreactive/payload-plugins/issues/197)
+
 # @focus-reactive/payload-plugin-translator [1.0.0-next.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.1...@focus-reactive/payload-plugin-translator@1.0.0-next.2) (2026-10-19)
 
 
