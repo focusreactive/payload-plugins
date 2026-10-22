@@ -2,7 +2,10 @@ import { TranslatorBug } from "../../../errors/index.js";
 import { parseInlineMarks } from "../../../kernel/lexical/inlineMarks.js";
 import type { PipelineContext, PipelineStage } from "../../types/index.js";
 import { isRichContainerChunk } from "../../types/index.js";
-import type { TranslationProvider } from "../../../domain/translation-providers/index.js";
+import type {
+  TranslationProvider,
+  TranslationRequestOptions,
+} from "../../../domain/translation-providers/index.js";
 
 /** Writes onto chunks the expander created, rather than returning — see `RichContainerChunk.reply`. */
 function parseContainerReplies(ctx: PipelineContext, translations: Record<number, string>): void {
@@ -15,26 +18,34 @@ function parseContainerReplies(ctx: PipelineContext, translations: Record<number
   }
 }
 
+function requestOptions(ctx: PipelineContext): TranslationRequestOptions {
+  const options: TranslationRequestOptions = { document: ctx.document };
+
+  if ((ctx.textChunks ?? []).some(isRichContainerChunk)) options.inlineMarks = true;
+
+  return options;
+}
+
 /**
  * Calls translation provider to translate text.
  */
 export class TranslationStage implements PipelineStage {
-  constructor(private readonly provider: TranslationProvider) {}
+  private readonly provider: TranslationProvider;
+  constructor(provider: TranslationProvider) {
+    this.provider = provider;
+  }
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
     if (!ctx.textMap || Object.keys(ctx.textMap).length === 0) {
       return ctx;
     }
 
-    const inlineMarks = (ctx.textChunks ?? []).some(isRichContainerChunk);
-
-    // Called with three arguments when no marks were sent, so a provider (or a test) that
-    // inspects the call sees exactly what it saw before this feature existed.
-    const translations = inlineMarks
-      ? await this.provider.translate(ctx.textMap, ctx.sourceLng, ctx.targetLng, {
-          inlineMarks: true,
-        })
-      : await this.provider.translate(ctx.textMap, ctx.sourceLng, ctx.targetLng);
+    const translations = await this.provider.translate(
+      ctx.textMap,
+      ctx.sourceLng,
+      ctx.targetLng,
+      requestOptions(ctx)
+    );
 
     if (!translations) {
       throw new TranslatorBug("Translation provider returned null");

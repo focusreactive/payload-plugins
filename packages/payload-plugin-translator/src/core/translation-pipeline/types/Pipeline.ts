@@ -1,6 +1,7 @@
 import type { IdPath } from "../../domain/content-projection/idPath.js";
 import type { FieldLike } from "../../kernel/field-traversal/index.js";
 import type { ChangedLeaves } from "../../domain/provenance/staleness.js";
+import type { DocumentRef } from "../../domain/translation-providers/index.js";
 
 export type PipelineConfig = {
   schema: FieldLike[];
@@ -8,6 +9,7 @@ export type PipelineConfig = {
   targetData: Record<string, unknown>;
   sourceLng: string;
   targetLng: string;
+  document: DocumentRef;
   sourceChangedByLeaf?: ChangedLeaves;
 };
 
