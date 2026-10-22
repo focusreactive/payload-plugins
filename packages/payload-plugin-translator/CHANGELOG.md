@@ -47,6 +47,8 @@ removed. Use `translatorPlugin`, `TranslatorPluginConfig`,
 
 # @focus-reactive/payload-plugin-translator [0.18.0-next.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.17.0...@focus-reactive/payload-plugin-translator@0.18.0-next.1) (2026-10-19)
 
+# @focus-reactive/payload-plugin-translator [0.18.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.17.0...@focus-reactive/payload-plugin-translator@0.18.0) (2026-10-22)
+
 
 ### Features
 
