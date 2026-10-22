@@ -15,7 +15,7 @@ import type {
   RecordedClaim,
   SourceFingerprint,
 } from "../../../core/domain/provenance/index.js";
-import { DECLINED, recordsEachLeaf, UNANSWERED } from "../../../core/domain/provenance/index.js";
+import { recordsEachLeaf, UNANSWERED } from "../../../core/domain/provenance/index.js";
 import type { LeafOutcome } from "../../../core/translation-pipeline/types/index.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import { swallowOrThrow } from "../../shared/payload/swallowOrThrow.js";
@@ -30,14 +30,22 @@ export type StalenessLocale = {
   translated_at: string;
 };
 
-function previousClaim(previous: SourceFingerprint | null, address: string): RecordedClaim {
-  if (!recordsEachLeaf(previous)) return DECLINED;
-  return previous.hashes[address] ?? DECLINED;
+/**
+ * An earlier `UNANSWERED` survives: re-basing it onto the current hash would mark a leaf no run has
+ * answered as current, and `skip_existing` would never select it again.
+ */
+function claimForUnsent(
+  previous: SourceFingerprint | null,
+  address: string,
+  currentHash: SourceHash
+): RecordedClaim {
+  if (recordsEachLeaf(previous) && previous.hashes[address] === UNANSWERED) return UNANSWERED;
+  return currentHash;
 }
 
 /**
- * A leaf sent but not answered overwrites any earlier claim: the run seated source text in its
- * target, so an earlier hash would describe a translation that is no longer there.
+ * A half-answered leaf has source text seated in its target, so no hash can describe it:
+ * `UNANSWERED` is what brings it back on the next run.
  */
 function claimFor(answeredInFull: boolean, hash: SourceHash): RecordedClaim {
   return answeredInFull ? hash : UNANSWERED;
@@ -96,10 +104,8 @@ export class ProvenanceService {
   /**
    * Write the receipt for a finished translation.
    *
-   * The map is **merged**, not replaced: a skipped leaf keeps the previous receipt's claim, or is
-   * marked seen-but-not-ours. An address the document no longer has is dropped, retiring the field.
-   *
-   * @param currentFields - Every translatable leaf of the source as it stands now.
+   * @param currentFields - Every translatable leaf of the source as it stands now, not only the
+   *   translated ones; the receipt is rebuilt from this map, so an omitted address retires the field.
    */
   async record(
     key: ProvenanceKey & { sourceLocale: string },
@@ -116,7 +122,7 @@ export class ProvenanceService {
           const answeredInFull = sent.get(address);
           hashes[address] =
             answeredInFull === undefined
-              ? previousClaim(previous, address)
+              ? claimForUnsent(previous, address, hash)
               : claimFor(answeredInFull, hash);
         }
 
@@ -159,6 +165,10 @@ export class ProvenanceService {
     return read ?? null;
   }
 
+  /**
+   * Throws rather than reporting "no receipt": a swallowed read would re-base an earlier
+   * `UNANSWERED` onto the current hash, and that leaf would never be selected again.
+   */
   private async readFingerprintOrThrow(key: ProvenanceKey): Promise<SourceFingerprint | null> {
     const existing = await this.store.find(key);
     return existing?.sourceFingerprint ?? null;

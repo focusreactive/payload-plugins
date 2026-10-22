@@ -4,7 +4,7 @@ import type { ProvenanceReceipt } from "./ProvenanceStore.interface.js";
 import type { RecordedFingerprints } from "./SourceFingerprint.js";
 import type { CurrentFingerprint } from "./staleness.js";
 import { asHash } from "./__tests__/fixtures/claims.js";
-import { changedLeaves, isRecordStale, recordsEachLeaf, leafSourceChanged } from "./staleness.js";
+import { changedLeaves, isRecordStale, recordsEachLeaf } from "./staleness.js";
 import { UNANSWERED } from "./SourceFingerprint.js";
 
 const SHA256_HEX_LENGTH = 64;
@@ -24,12 +24,10 @@ const record = (over: Partial<ProvenanceReceipt> = {}): ProvenanceReceipt => ({
 });
 
 const storedFields = (
-  hashes: Record<string, string | null>
+  hashes: Record<string, string>
 ): { kind: "fields"; hashes: RecordedFingerprints } => ({
   kind: "fields",
-  hashes: Object.fromEntries(
-    Object.entries(hashes).map(([address, seed]) => [address, seed === null ? null : asHash(seed)])
-  ),
+  hashes: Object.fromEntries(Object.entries(hashes).map(([a, seed]) => [a, asHash(seed)])),
 });
 
 const hashed = (fields: Record<string, string>) =>
@@ -105,24 +103,11 @@ describe("isRecordStale — a receipt holding per-field fingerprints", () => {
     expect(isRecordStale(dismissed, current(HASH_B, drifted))).toBe(false);
   });
 
-  // The defect this marker exists to fix: a run that translated some leaves and deliberately skipped
-  // others used to write a SHORTER map, which read as "the document changed" forever — and the skipped
-  // leaf could never be added, because adding it required translating it.
-  it("is not stale when a leaf it deliberately skipped is recorded as not ours", () => {
-    const withMarker = storedFields({ title: null, body: "2222" });
-    expect(
-      isRecordStale(
-        record({ sourceFingerprint: withMarker }),
-        current(HASH_B, { title: "1111", body: "2222" })
-      )
-    ).toBe(false);
-  });
-
   it("is still stale when a leaf appeared that the receipt never saw at all", () => {
-    const withMarker = storedFields({ title: null, body: "2222" });
+    const seen = storedFields({ title: "1111", body: "2222" });
     expect(
       isRecordStale(
-        record({ sourceFingerprint: withMarker }),
+        record({ sourceFingerprint: seen }),
         current(HASH_B, { title: "1111", body: "2222", sub: "3333" })
       )
     ).toBe(true);
@@ -142,33 +127,25 @@ describe("isRecordStale — a receipt that cannot be read", () => {
   });
 });
 
-describe("leafSourceChanged", () => {
-  const recorded = storedFields({ title: "1111", body: "2222", seen: null }).hashes;
+describe("changedLeaves — the per-leaf answer", () => {
+  const stored = storedFields({ title: "1111", body: "2222" });
 
   it("says a leaf changed when its stored hash differs from now", () => {
-    expect(leafSourceChanged(recorded, hashed({ title: "1111", body: "9999" }), "body")).toBe(true);
+    expect(changedLeaves(stored, hashed({ title: "1111", body: "9999" })).body).toBe(true);
   });
 
   it("says a leaf did not change when its stored hash still matches", () => {
-    expect(leafSourceChanged(recorded, hashed({ title: "1111", body: "2222" }), "body")).toBe(
-      false
-    );
-  });
-
-  it("knows nothing about a leaf the receipt never recorded", () => {
-    expect(
-      leafSourceChanged(recorded, hashed({ title: "1111", sub: "3333" }), "sub")
-    ).toBeUndefined();
-  });
-
-  it("knows nothing about a leaf recorded as seen-but-not-ours", () => {
-    expect(
-      leafSourceChanged(recorded, hashed({ title: "1111", seen: "3333" }), "seen")
-    ).toBeUndefined();
+    expect(changedLeaves(stored, hashed({ title: "1111", body: "2222" })).body).toBe(false);
   });
 
   it("says a leaf changed when it is recorded but absent from the document now", () => {
-    expect(leafSourceChanged(recorded, hashed({ title: "1111" }), "body")).toBe(true);
+    expect(changedLeaves(stored, hashed({ title: "1111" })).body).toBe(true);
+  });
+
+  it("says nothing at all about a leaf the receipt never recorded", () => {
+    const answers = changedLeaves(stored, hashed({ title: "1111", body: "2222", sub: "3333" }));
+
+    expect(answers, "an absent address is cannot-tell, never unchanged").not.toHaveProperty("sub");
   });
 });
 
@@ -186,7 +163,7 @@ describe("recordsEachLeaf", () => {
 });
 
 describe("changedLeaves", () => {
-  const stored = storedFields({ title: "1111", body: "2222", seen: null });
+  const stored = storedFields({ title: "1111", body: "2222" });
 
   it("answers only for the leaves it can answer for", () => {
     expect(
@@ -210,14 +187,6 @@ describe("changedLeaves", () => {
       body: true,
     });
   });
-
-  it("agrees with leafSourceChanged leaf for leaf", () => {
-    const now = hashed({ title: "1111", body: "9999", seen: "3333", fresh: "4444" });
-    const map = changedLeaves(stored, now);
-    for (const address of ["title", "body", "seen", "fresh"]) {
-      expect(map[address], address).toBe(leafSourceChanged(stored.hashes, now, address));
-    }
-  });
 });
 
 describe("a leaf recorded as unanswered", () => {
@@ -233,17 +202,6 @@ describe("a leaf recorded as unanswered", () => {
   });
 
   it("is reported as changed, so the next run selects the leaf again", () => {
-    expect(leafSourceChanged(stored.hashes, hashed({ title: "1111", body: "2222" }), "body")).toBe(
-      true
-    );
     expect(changedLeaves(stored, hashed({ title: "1111", body: "2222" })).body).toBe(true);
-  });
-
-  it("is not confused with a decline, which still claims nothing", () => {
-    const declined = { kind: "fields", hashes: { title: asHash("1111"), body: null } } as const;
-
-    expect(
-      leafSourceChanged(declined.hashes, hashed({ title: "1111", body: "2222" }), "body")
-    ).toBeUndefined();
   });
 });

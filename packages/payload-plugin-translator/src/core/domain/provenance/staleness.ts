@@ -10,12 +10,8 @@ import type {
   RecordedFingerprints,
   SourceFingerprint,
 } from "./SourceFingerprint.js";
-import { DECLINED, UNANSWERED } from "./SourceFingerprint.js";
 
-/**
- * Per leaf: `true` when its source drifted or the last run never answered it. An absent address means
- * nothing could be determined, never "unchanged" ({@link leafSourceChanged}).
- */
+/** One entry per address the receipt recorded, and no others. An address it never saw has no entry. */
 export type ChangedLeaves = Readonly<Record<string, boolean>>;
 
 export type CurrentFingerprint = {
@@ -23,35 +19,18 @@ export type CurrentFingerprint = {
   fields: FieldFingerprints;
 };
 
-/**
- * Compare through this, not the raw claim: `===` accepts any claim, but `.hash` exists only once the
- * other states are ruled out.
- */
-type Claim = { kind: "hash"; hash: SourceHash } | { kind: "unanswered" } | { kind: "none" };
-
-const claimOf = (recorded: RecordedClaim | undefined): Claim => {
-  if (recorded === UNANSWERED) return { kind: "unanswered" };
-  if (recorded === DECLINED || recorded === undefined) return { kind: "none" };
-  return { kind: "hash", hash: recorded };
+/** `UNANSWERED` can never equal a hash, so one comparison answers for both kinds of claim. */
+const leafChanged = (recorded: RecordedClaim, current: SourceHash | undefined): boolean => {
+  return recorded !== current;
 };
 
-const sameAddresses = (stored: RecordedFingerprints, current: FieldFingerprints): boolean =>
-  Object.keys(stored).length === Object.keys(current).length &&
-  Object.keys(stored).every((address) => address in current);
-
-const matchesClaim = (
-  recorded: RecordedClaim | undefined,
-  current: SourceHash | undefined
-): boolean => {
-  const claim = claimOf(recorded);
-  if (claim.kind === "unanswered") return false;
-  if (claim.kind === "none") return true;
-  return claim.hash === current;
+const sameFields = (stored: RecordedFingerprints, current: FieldFingerprints): boolean => {
+  const addresses = Object.keys(stored);
+  return (
+    addresses.length === Object.keys(current).length &&
+    addresses.every((address) => !leafChanged(stored[address], current[address]))
+  );
 };
-
-const sameFields = (stored: RecordedFingerprints, current: FieldFingerprints): boolean =>
-  sameAddresses(stored, current) &&
-  Object.entries(stored).every(([address, recorded]) => matchesClaim(recorded, current[address]));
 
 const describesCurrentSource = (
   fingerprint: SourceFingerprint | null,
@@ -63,11 +42,7 @@ const describesCurrentSource = (
     : sameFields(fingerprint.hashes, current.fields);
 };
 
-/**
- * The #50 staleness rule in one place: out of date unless the receipt — or the editor's dismissal —
- * describes the source as it stands now. Dismissing stores the current fingerprint, so the flag
- * returns only when the source moves again.
- */
+/** Out of date unless the receipt — or the editor's dismissal — describes the source as it stands now. */
 export function isRecordStale(record: ProvenanceReceipt, current: CurrentFingerprint): boolean {
   return (
     !describesCurrentSource(record.sourceFingerprint, current) &&
@@ -77,20 +52,9 @@ export function isRecordStale(record: ProvenanceReceipt, current: CurrentFingerp
 
 export const recordsEachLeaf = (
   fingerprint: SourceFingerprint | null
-): fingerprint is { kind: "fields"; hashes: RecordedFingerprints } =>
-  fingerprint?.kind === "fields";
-
-/** `undefined` means *cannot tell* — callers must claim nothing; answering `true` on a guess overwrites a translation. */
-export function leafSourceChanged(
-  recorded: RecordedFingerprints,
-  currentFields: FieldFingerprints,
-  address: string
-): boolean | undefined {
-  const claim = claimOf(recorded[address]);
-  if (claim.kind === "unanswered") return true;
-  if (claim.kind === "none") return undefined;
-  return claim.hash !== currentFields[address];
-}
+): fingerprint is { kind: "fields"; hashes: RecordedFingerprints } => {
+  return fingerprint?.kind === "fields";
+};
 
 export function changedLeaves(
   stored: SourceFingerprint | null,
@@ -98,11 +62,9 @@ export function changedLeaves(
 ): ChangedLeaves {
   if (!recordsEachLeaf(stored)) return {};
 
-  const addressesTheReceiptSaw = Object.keys(stored.hashes);
   const answers: Record<string, boolean> = {};
-  for (const address of addressesTheReceiptSaw) {
-    const changed = leafSourceChanged(stored.hashes, currentFields, address);
-    if (changed !== undefined) answers[address] = changed;
+  for (const [address, recorded] of Object.entries(stored.hashes)) {
+    answers[address] = leafChanged(recorded, currentFields[address]);
   }
   return answers;
 }

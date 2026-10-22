@@ -16,7 +16,7 @@ const STRATEGY_TOOLTIP = (
   <>
     <strong>Overwrite</strong> — translate all fields, replacing existing values
     <br />
-    <strong>Skip existing</strong> — only translate empty fields, keep existing values
+    <strong>Skip existing</strong> — translate empty fields, and refresh those whose source changed
   </>
 );
 

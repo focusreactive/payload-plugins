@@ -23,10 +23,10 @@ describe("parseSourceFingerprint", () => {
     });
   });
 
-  it("reads a leaf recorded as seen-but-not-ours", () => {
+  it("reads a leaf an older version declined as one to revisit", () => {
     expect(parseSourceFingerprint('{"title":null,"note":"91ce000000000000"}')).toEqual({
       kind: "fields",
-      hashes: { title: null, note: asHash("91ce") },
+      hashes: { title: UNANSWERED, note: asHash("91ce") },
     });
   });
 
@@ -87,8 +87,8 @@ describe("serializeSourceFingerprint", () => {
       { kind: "fields", hashes: { title: asHash("3a7f"), "i.a1.l": asHash("91ce") } },
     ],
     [
-      "a map carrying the seen-but-not-ours marker",
-      { kind: "fields", hashes: { title: null, note: asHash("91ce") } },
+      "a map carrying the unanswered marker",
+      { kind: "fields", hashes: { title: UNANSWERED, note: asHash("91ce") } },
     ],
     ["an empty per-field map", { kind: "fields", hashes: {} }],
   ] as [string, SourceFingerprint][])(
@@ -129,10 +129,10 @@ describe("what the schema accepts, since the column cannot", () => {
     expect(SOURCE_HASH_PATTERN.test(UNANSWERED)).toBe(false);
   });
 
-  it("accepts the unanswered marker beside a hash and a decline", () => {
+  it("accepts the unanswered marker beside a hash, and turns an older decline into one", () => {
     expect(parseSourceFingerprint('{"a":"3a7f000000000000","b":"!unanswered","c":null}')).toEqual({
       kind: "fields",
-      hashes: { a: asHash("3a7f"), b: UNANSWERED, c: null },
+      hashes: { a: asHash("3a7f"), b: UNANSWERED, c: UNANSWERED },
     });
   });
 });

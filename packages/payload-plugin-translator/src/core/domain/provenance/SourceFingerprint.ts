@@ -5,17 +5,18 @@ import { z } from "zod";
 import type { SourceHash } from "../content-projection/computeFieldFingerprints.js";
 import { SOURCE_HASH_PATTERN } from "../content-projection/computeFieldFingerprints.js";
 
-/** A leaf the run saw and declined to translate: the target text is not ours to describe. */
-export const DECLINED = null;
-
 /**
- * A leaf the run sent and never got back: it reads as changed, so the next run selects it again.
+ * A leaf no run has answered — sent and never got back, or declined by an older version. It reads
+ * as changed, so the next run selects it again.
  */
 export const UNANSWERED = "!unanswered" as const;
 
-export type RecordedClaim = SourceHash | typeof UNANSWERED | typeof DECLINED;
+export type RecordedClaim = SourceHash | typeof UNANSWERED;
 
-/** Keyed by address. An absent address is a leaf that appeared after the translation. */
+/**
+ * Keyed by leaf address, holding every leaf the run saw — sent or not. An absent address is a leaf
+ * that appeared after the translation.
+ */
 export type RecordedFingerprints = Readonly<Record<string, RecordedClaim>>;
 
 /**
@@ -32,7 +33,13 @@ const storedHash = z
   .regex(SOURCE_HASH_PATTERN)
   .transform((hash) => hash as SourceHash);
 
-const recordedMap = z.record(z.union([storedHash, z.literal(UNANSWERED), z.null()]));
+/**
+ * `null` is what 1.0.0-next.3 and earlier wrote for a leaf a run skipped. Read, not refused: one
+ * value outside the schema degrades the whole map ({@link parseSourceFingerprint}).
+ */
+const legacyDecline = z.null().transform(() => UNANSWERED);
+
+const recordedMap = z.record(z.union([storedHash, z.literal(UNANSWERED), legacyDecline]));
 
 const asFieldMap = (stored: string): RecordedFingerprints | null => {
   try {
