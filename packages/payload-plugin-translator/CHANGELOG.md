@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-translator [1.0.0-next.4](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.3...@focus-reactive/payload-plugin-translator@1.0.0-next.4) (2026-10-22)
+
+
+### Bug Fixes
+
+* **translator:** the receipt stops guessing who wrote the target text ([d0bc719](https://github.com/focusreactive/payload-plugins/commit/d0bc719b6c6f36d412b88727a0b84e2d585b3ba0)), closes [#198](https://github.com/focusreactive/payload-plugins/issues/198)
+
 # @focus-reactive/payload-plugin-translator [1.0.0-next.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.2...@focus-reactive/payload-plugin-translator@1.0.0-next.3) (2026-10-21)
 
 
