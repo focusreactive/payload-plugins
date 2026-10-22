@@ -13,8 +13,8 @@ export type TranslateContentArgs = {
   /** Source values, rooted to match `schema` (e.g. `{ [fieldName]: value }`). */
   sourceData: Record<string, unknown>;
   /**
-   * Existing target-locale values to reconcile against (target wins when
-   * non-empty under `skip_existing`). Defaults to `{}` — i.e. translate the
+   * Existing target-locale values to reconcile against (under `skip_existing` a non-empty target
+   * wins unless `sourceChangedByLeaf` marks its leaf). Defaults to `{}` — i.e. translate the
    * source in place (`overwrite`).
    */
   targetData?: Record<string, unknown>;

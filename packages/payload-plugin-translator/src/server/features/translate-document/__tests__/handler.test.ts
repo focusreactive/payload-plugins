@@ -559,9 +559,7 @@ describe("TranslateDocumentHandler", () => {
   });
 
   describe("what the handler tells provenance about the run", () => {
-    it("claims the leaf the pipeline sent and marks the one it did not", async () => {
-      // The module mock returns a fixed map, so it has to name BOTH leaves — otherwise `tagline`
-      // could never reach the receipt whatever the merge rule did, and this would pass on the mock.
+    it("claims the leaf the pipeline sent and watermarks the one it did not", async () => {
       const { computeFieldFingerprints } =
         await import("../../../../core/domain/content-projection/computeFieldFingerprints.js");
       (computeFieldFingerprints as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
@@ -609,7 +607,7 @@ describe("TranslateDocumentHandler", () => {
       };
       expect(written.sourceFingerprint).toEqual({
         kind: "fields",
-        hashes: { title: "fp-title", tagline: null },
+        hashes: { title: "fp-title", tagline: "fp-tagline" },
       });
     });
 

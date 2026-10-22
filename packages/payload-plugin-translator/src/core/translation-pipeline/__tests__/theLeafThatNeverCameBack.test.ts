@@ -30,24 +30,22 @@ const schema: Field[] = [
 
 const sourceHashes = { title: asHash("aaaa"), summary: asHash("bbbb") };
 
-type Recorded = Record<string, string | null>;
+type Recorded = Record<string, string>;
 
 const storeHolding = (
   previous: SourceFingerprint | null
 ): ProvenanceStore & { upsert: ReturnType<typeof vi.fn> } => ({
   upsert: vi.fn().mockResolvedValue(undefined),
-  find: vi
-    .fn()
-    .mockResolvedValue(
-      previous === null
-        ? null
-        : {
-            ...KEY,
-            sourceFingerprint: previous,
-            translatedAt: "2026-01-01T00:00:00.000Z",
-            dismissedFingerprint: null,
-          }
-    ),
+  find: vi.fn().mockResolvedValue(
+    previous === null
+      ? null
+      : {
+          ...KEY,
+          sourceFingerprint: previous,
+          translatedAt: "2026-01-01T00:00:00.000Z",
+          dismissedFingerprint: null,
+        }
+  ),
   findByDocument: vi.fn().mockResolvedValue([]),
   dismiss: vi.fn().mockResolvedValue(undefined),
   deleteByDocument: vi.fn().mockResolvedValue(undefined),
@@ -92,13 +90,13 @@ describe("a leaf the run sent and never got back", () => {
     expect(hashes.summary).toBe(UNANSWERED);
   });
 
-  it("leaves alone a leaf the run never sent, whatever an earlier receipt claimed", async () => {
+  it("re-bases a leaf the run never sent onto where its source stands now", async () => {
     const hashes = await storedClaims({
       previous: { kind: "fields", hashes: { title: asHash("0d"), summary: asHash("0dbb") } },
       leaves: [sent("title", true)],
     });
 
-    expect(hashes.summary).toBe(asHash("0dbb"));
+    expect(hashes.summary).toBe(sourceHashes.summary);
   });
 
   it("stays unanswered across a second run that also fails to translate it", async () => {
@@ -130,23 +128,5 @@ describe("what the unanswered leaf does on the second run", () => {
         sourceChanged: changed.summary,
       })
     ).toBe(true);
-  });
-
-  it("leaves a declined leaf alone, which is what declined has always meant", () => {
-    const stored: SourceFingerprint = {
-      kind: "fields",
-      hashes: { title: sourceHashes.title, summary: null },
-    };
-
-    const changed = changedLeaves(stored, sourceHashes);
-
-    expect(changed.summary).toBeUndefined();
-    expect(
-      strategy.shouldTranslate({
-        sourceValue: "World",
-        targetValue: "World",
-        sourceChanged: changed.summary,
-      })
-    ).toBe(false);
   });
 });

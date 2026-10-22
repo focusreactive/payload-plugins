@@ -367,3 +367,28 @@ the single source of truth — code annotations link here by anchor instead of d
     runner, compiled against the published barrel)
   - `src/server/features/translate-document/wireTranslateRunner.ts` (the one place that builds a
     context)
+
+## 2026-10-22 — `skip_existing` refreshes on drift, whoever wrote the target
+
+**Status:** live · **Removal target:** next major (this one)
+
+A run used to record `null` against every leaf it saw and did not send, and both readers took that
+as *claim nothing*. The leaf then never read as out of date and `skip_existing` never selected it
+again, however far its source drifted. The receipt now records where each leaf's source stood when
+the run ended, whether the run translated that leaf or left it alone.
+
+**What changes for a host.** `skip_existing` re-translates a non-empty target once its own source
+text moves — including text a person typed or corrected. It never asked who wrote the target; it
+simply had no way to tell a leaf it had skipped from one it had never seen.
+
+**Why this is listed although nothing was renamed.** `README.md` promised "Protect hand-written
+copy — the `skip_existing` strategy fills only empty target fields", and a host reading that was
+relying on a guarantee the plugin no longer makes. Same precedent as `on-failed-per-attempt`.
+
+**What to do instead.** `withFieldTranslation(field, { exclude: true })` keeps a field out of every
+run. Per-document, per-field control arrives with the field picker (#48).
+
+**Stored receipts** written before this date are read leaf by leaf as before; a `null` in one is
+taken as *revisit this leaf*, and the first run that translates that leaf records a hash in its
+place. A leaf whose source is empty is never sent, so its `null` is carried forward and the locale
+keeps flagging until the source has text again.

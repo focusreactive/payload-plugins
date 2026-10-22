@@ -101,7 +101,7 @@ Open a `posts` document. A Translate control now sits beside the document contro
 - **Translate into several locales at once** — `targetSelection: 'multi'` turns the target field on both the document and the collection surfaces into a multi-select, and every selected document is translated into every locale you picked. The default is one locale per run.
 - **Translate a single field** — a control on the field itself, answering in place without queueing anything. Needs both `fieldLevel()` in `levels` and `withFieldTranslation` on the field.
 - **Auto-translate on save** — wrap a collection in `withAutoTranslate(collection, { targets })` and editing the source locale queues its own translations, with no one pressing anything. On a collection with drafts enabled it waits until the document is published; without drafts it fires on every save. Rapid edits are coalesced into one run.
-- **Protect hand-written copy** — the `skip_existing` strategy fills only empty target fields, and `withFieldTranslation(field, { exclude: true })` keeps a field out of translation entirely.
+- **Keep a field out of translation** — `withFieldTranslation(field, { exclude: true })` is the one way to say a field is never sent to the provider. `skip_existing` is about emptiness and drift, not authorship: it fills an empty target, and — with `provenance` on, for a locale the plugin has translated at least once — refreshes a target whose source has moved since that run, whoever wrote the text that is there.
 - **Steer how it translates** — `systemPrompt` replaces the instruction sent with every request, so tone, register, a glossary, or brand names that must stay untranslated are yours to set.
 - **Bring any translation service** — an OpenAI-compatible adapter ships in the box; anything else is a single function you write, which receives the text and returns the reply. You do not parse it or check it back — that is the plugin's job.
 - **Run it in the background or inline** — Payload Jobs by default, so an editor is not left waiting and a run can be cancelled or retried. `createSyncRunner()` translates inline instead, for tests and scripts.
@@ -236,7 +236,7 @@ translatorPlugin({
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
 | `targets` | `string[]` | — | **Required.** Locales to translate into. The source locale is always excluded. |
-| `strategy` | `'overwrite' \| 'skip_existing'` | `'overwrite'` | Replace every target field, or only fill empty ones. |
+| `strategy` | `'overwrite' \| 'skip_existing'` | `'overwrite'` | Replace every target field, or fill the empty ones — and, with `provenance` on, refresh those whose source moved. |
 | `debounceMs` | `number` | `0` | Delay before the queued job runs, coalescing rapid edits. |
 | `sourceLocale` | `string` | `localization.defaultLocale` | Source locale override for this collection. |
 
@@ -261,7 +261,7 @@ The source is the source locale's **own current content** — the newer draft wh
 Two consequences worth knowing before relying on it:
 
 - **Publishing publishes the current draft, whatever is in it.** That includes pending edits nobody made for the translation's sake, and non-localized fields, which Payload stores once per document and cannot scope to a locale. Worth remembering before running translate-and-publish over a long list: every unpublished draft among them goes live.
-- **`skip_existing` counts anything non-empty as translated.** A translation waiting unpublished in a draft counts, so a reviewer's corrected text is published as it stands rather than re-translated. It has no notion of *reviewed*, and a locale the admin flags as out of date is still skipped ([#118](https://github.com/focusreactive/payload-plugins/issues/118)).
+- **`skip_existing` refreshes on drift, and does not ask who wrote the target.** With `provenance` on and a receipt already written for that locale, it leaves a non-empty target alone while its own source text is unchanged, and re-translates it once that source moves — including text a person typed or corrected. Without `provenance`, or before the plugin has translated the locale once, it has nothing to compare against and fills only empty targets. It has no notion of *reviewed*; `withFieldTranslation(field, { exclude: true })` is what keeps a field out of a run altogether.
 
 ## Translation providers
 
@@ -433,6 +433,8 @@ Set `provenance: true` and the plugin adds a collection that records, for each d
 > On a SQL database this adds a table. Generate and run a migration (`payload migrate:create`, then `payload migrate`; dev push works in development). MongoDB infers it with no migration. Leaving `provenance` off means no collection, no migration and no behaviour change.
 
 > [!NOTE]
+> **Upgrading to 1.0.** A locale whose receipt was written before 1.0 flags as out of date once, with nothing actually changed: receipts written earlier recorded nothing for a leaf the run had skipped, and that leaf is now read as one to revisit. The next run settles it. Dismissing the flag hides it, but does not stop that run from re-translating the leaf.
+
 > **Upgrading from below 0.11.1.** A locale can read as out of date once after the upgrade with nothing actually needing re-translation. Dismissing the flag or re-translating settles it.
 
 ## HTTP endpoints you can call

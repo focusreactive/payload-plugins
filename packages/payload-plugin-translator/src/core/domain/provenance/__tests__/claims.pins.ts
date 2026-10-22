@@ -1,18 +1,15 @@
-/**
- * Assertions the type-checker makes and the suite cannot. Nothing here runs: `check-types` fails if
- * any `@ts-expect-error` below stops being an error, which is what pins these guarantees.
- */
+/** Never imported and never run: `check-types` fails if any `@ts-expect-error` below stops being an error. */
 
 import type { SourceHash } from "../../content-projection/computeFieldFingerprints.js";
 import type { RecordedClaim } from "../SourceFingerprint.js";
-import { DECLINED, UNANSWERED } from "../SourceFingerprint.js";
+import { UNANSWERED } from "../SourceFingerprint.js";
 
-declare const undeclined: Exclude<RecordedClaim, typeof DECLINED>;
+declare const recorded: RecordedClaim;
 
 // @ts-expect-error a bare string is not a SourceHash
 const _bareString: SourceHash = "aaaaaaaaaaaaaaaa";
 
 // @ts-expect-error a claim is not a hash until the marker is ruled out
-const _unnarrowedClaim: SourceHash = undeclined;
+const _unnarrowedClaim: SourceHash = recorded;
 
-const _nonHashClaims: RecordedClaim[] = [UNANSWERED, DECLINED];
+const _nonHashClaim: RecordedClaim = UNANSWERED;

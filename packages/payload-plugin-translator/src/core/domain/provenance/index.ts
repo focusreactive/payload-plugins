@@ -8,7 +8,6 @@ export type { CurrentFingerprint } from "./staleness.js";
 export { changedLeaves, isRecordStale, recordsEachLeaf } from "./staleness.js";
 export type { RecordedClaim, SourceFingerprint } from "./SourceFingerprint.js";
 export {
-  DECLINED,
   UNANSWERED,
   parseSourceFingerprint,
   serializeSourceFingerprint,
