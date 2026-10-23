@@ -6,7 +6,9 @@ import type { TaskRunnerFactory } from "../../../modules/task-runner/index.js";
 
 import { createEnqueueRoute } from "../route.js";
 import type { EnqueueConfig } from "../model.js";
+import { AnyAccessGuard } from "../../../shared/access/AnyAccessGuard.js";
 
+const OPEN_ON_PURPOSE = new AnyAccessGuard();
 // Route-contract tests: pin path + method + access-guard wiring so the Phase 1
 // relocation of route registration stays behaviour-preserving. The handler
 // logic and the shared wrappers (withAccessCheck / withErrorHandler) are
@@ -16,13 +18,13 @@ const denyAccess: AccessGuard = { check: vi.fn().mockReturnValue(false) };
 
 describe("createEnqueueRoute (contract)", () => {
   it("registers POST at {basePath}/enqueue with the default basePath", () => {
-    const endpoint = createEnqueueRoute({ create: vi.fn() }, config);
+    const endpoint = createEnqueueRoute({ create: vi.fn() }, config, OPEN_ON_PURPOSE);
     expect(endpoint.path).toBe("/translate/enqueue");
     expect(endpoint.method).toBe("post");
   });
 
   it("honors a custom basePath", () => {
-    const endpoint = createEnqueueRoute({ create: vi.fn() }, config, undefined, "/i18n");
+    const endpoint = createEnqueueRoute({ create: vi.fn() }, config, OPEN_ON_PURPOSE, "/i18n");
     expect(endpoint.path).toBe("/i18n/enqueue");
   });
 

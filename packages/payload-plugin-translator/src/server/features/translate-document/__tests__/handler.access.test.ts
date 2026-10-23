@@ -44,6 +44,7 @@ describe("TranslateDocumentHandler — it asks before it writes", () => {
     targetLng: "de",
     strategy: "overwrite",
     publishOnTranslation: false,
+    previousAttempts: 0,
     ...over,
   });
 

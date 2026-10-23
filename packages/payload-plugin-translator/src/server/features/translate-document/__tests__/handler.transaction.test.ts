@@ -6,14 +6,13 @@ import type { TranslationProvider } from "../../../../core/domain/translation-pr
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 import type { TranslateDocumentInput } from "../model.js";
 import type { ProvenanceServiceFactory } from "../../../modules/provenance/index.js";
+import { provenanceInAChain } from "../../../modules/provenance/__tests__/fixtures/inAChain.js";
 
 vi.mock("../../../../core/translation-pipeline/index.js", () => ({
-  translateContent: vi
-    .fn()
-    .mockResolvedValue({
-      translatedData: { title: "Titel" },
-      leaves: [{ idPath: "title", answeredInFull: true }],
-    }),
+  translateContent: vi.fn().mockResolvedValue({
+    translatedData: { title: "Titel" },
+    leaves: [{ idPath: "title", answeredInFull: true }],
+  }),
 }));
 
 const TX = "tx-42";
@@ -29,6 +28,7 @@ describe("TranslateDocumentHandler — the caller's transaction", () => {
     targetLng: "de",
     strategy: "overwrite",
     publishOnTranslation: false,
+    previousAttempts: 0,
     ...over,
   });
 
@@ -98,7 +98,7 @@ describe("TranslateDocumentHandler — the caller's transaction", () => {
       new Map([
         ["posts" as CollectionSlug, [{ name: "title", type: "text", localized: true }]],
       ]) as CollectionSchemaMap,
-      serviceFactory as unknown as ProvenanceServiceFactory
+      provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory)
     );
 
     await provenanceHandler.handle(payload, input(), { transactionID: TX });

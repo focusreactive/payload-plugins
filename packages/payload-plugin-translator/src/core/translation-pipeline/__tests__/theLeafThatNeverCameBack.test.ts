@@ -118,7 +118,7 @@ describe("what the unanswered leaf does on the second run", () => {
       hashes: { title: sourceHashes.title, summary: UNANSWERED },
     };
 
-    const changed = changedLeaves(stored, sourceHashes);
+    const changed = changedLeaves(stored.hashes, sourceHashes);
 
     expect(changed.summary).toBe(true);
     expect(

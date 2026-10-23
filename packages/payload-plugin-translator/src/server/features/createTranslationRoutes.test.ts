@@ -3,7 +3,9 @@ import { describe, it, expect, vi } from "vitest";
 import { resolveSettings } from "../../settings.js";
 import { createTranslationRoutes } from "./createTranslationRoutes.js";
 import type { TranslationRoutesDeps } from "./createTranslationRoutes.js";
+import { AnyAccessGuard } from "../shared/access/AnyAccessGuard.js";
 
+const OPEN_ON_PURPOSE = new AnyAccessGuard();
 // Bundle-contract test: pins that the shared route bundle stays complete and
 // ordered, and threads basePath into every endpoint. The bundle registers via
 // the doc + collection levels (deduped), so "all endpoints, right paths/methods"
@@ -11,6 +13,7 @@ import type { TranslationRoutesDeps } from "./createTranslationRoutes.js";
 const deps = (basePath?: string): TranslationRoutesDeps => ({
   taskRunnerFactory: { create: vi.fn() },
   collectionConfig: { availableCollections: new Set() },
+  access: OPEN_ON_PURPOSE,
   settings: resolveSettings({ basePath }),
 });
 
@@ -25,8 +28,6 @@ describe("createTranslationRoutes (bundle contract)", () => {
       "delete /translate/cancel-by-collection/:collection_slug",
       "get /translate/document/:collection_slug/:collection_id",
       "get /translate/collection/:collection_slug",
-      "get /translate/stale/:collection_slug/:collection_id",
-      "post /translate/stale/dismiss",
     ]);
   });
 

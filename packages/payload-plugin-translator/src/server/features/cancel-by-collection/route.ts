@@ -13,7 +13,7 @@ import { CancelByCollectionHandler } from "./handler.js";
 export function createCancelByCollectionRoute(
   config: CancelConfig,
   taskRunnerFactory: TaskRunnerFactory,
-  access?: AccessGuard,
+  access: AccessGuard,
   basePath = "/translate"
 ): Endpoint {
   const handler = new CancelByCollectionHandler(config, taskRunnerFactory);

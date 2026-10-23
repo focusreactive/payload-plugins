@@ -7,8 +7,9 @@ import {
   AnyAccessGuard,
   createTranslationProvider,
   createSyncRunner,
-  documentLevel,
-  fieldLevel,
+  documentTranslation,
+  fieldTranslation,
+  translateDocumentControl,
   translatorPlugin,
   withAutoTranslate,
 } from "@focus-reactive/payload-plugin-translator";
@@ -157,7 +158,10 @@ export async function bootTestPayload(opts?: {
         access: new AnyAccessGuard(),
         translationProvider: countingProvider,
         runner: opts?.runner ?? createSyncRunner(),
-        levels: opts?.fieldSurface ? [documentLevel(), fieldLevel()] : [documentLevel()],
+        modules: opts?.fieldSurface
+          ? [documentTranslation(), fieldTranslation()]
+          : [documentTranslation()],
+        components: [translateDocumentControl()],
         provenance: true,
         ...(opts?.lifecycle ? { lifecycle: opts.lifecycle } : {}),
         ...(opts?.failedWindowMs === undefined ? {} : { failedWindowMs: opts.failedWindowMs }),

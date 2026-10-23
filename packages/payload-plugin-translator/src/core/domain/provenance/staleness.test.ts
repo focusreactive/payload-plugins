@@ -131,21 +131,24 @@ describe("changedLeaves — the per-leaf answer", () => {
   const stored = storedFields({ title: "1111", body: "2222" });
 
   it("says a leaf changed when its stored hash differs from now", () => {
-    expect(changedLeaves(stored, hashed({ title: "1111", body: "9999" })).body).toBe(true);
+    expect(changedLeaves(stored.hashes, hashed({ title: "1111", body: "9999" })).body).toBe(true);
   });
 
   it("says a leaf did not change when its stored hash still matches", () => {
-    expect(changedLeaves(stored, hashed({ title: "1111", body: "2222" })).body).toBe(false);
+    expect(changedLeaves(stored.hashes, hashed({ title: "1111", body: "2222" })).body).toBe(false);
   });
 
-  it("says a leaf changed when it is recorded but absent from the document now", () => {
-    expect(changedLeaves(stored, hashed({ title: "1111" })).body).toBe(true);
+  it("says nothing about a leaf the document no longer has", () => {
+    expect(changedLeaves(stored.hashes, hashed({ title: "1111" }))).not.toHaveProperty("body");
   });
 
-  it("says nothing at all about a leaf the receipt never recorded", () => {
-    const answers = changedLeaves(stored, hashed({ title: "1111", body: "2222", sub: "3333" }));
+  it("says a leaf the receipt never recorded changed, so the next run takes it", () => {
+    const answers = changedLeaves(
+      stored.hashes,
+      hashed({ title: "1111", body: "2222", sub: "3333" })
+    );
 
-    expect(answers, "an absent address is cannot-tell, never unchanged").not.toHaveProperty("sub");
+    expect(answers.sub, "nothing was recorded for it, so it is owed a translation").toBe(true);
   });
 });
 
@@ -165,27 +168,17 @@ describe("recordsEachLeaf", () => {
 describe("changedLeaves", () => {
   const stored = storedFields({ title: "1111", body: "2222" });
 
-  it("answers only for the leaves it can answer for", () => {
+  it("answers for every leaf the source has now", () => {
     expect(
-      changedLeaves(stored, hashed({ title: "1111", body: "9999", seen: "3333", fresh: "4444" }))
-    ).toStrictEqual({ title: false, body: true });
+      changedLeaves(
+        stored.hashes,
+        hashed({ title: "1111", body: "9999", seen: "3333", fresh: "4444" })
+      )
+    ).toStrictEqual({ title: false, body: true, seen: true, fresh: true });
   });
 
-  it("is empty when there is no receipt", () => {
-    expect(changedLeaves(null, hashed({ title: "1111" }))).toStrictEqual({});
-  });
-
-  it("is empty for a receipt written before per-field fingerprints", () => {
-    expect(
-      changedLeaves({ kind: "document", hash: HASH_A }, hashed({ title: "1111" }))
-    ).toStrictEqual({});
-  });
-
-  it("says a recorded leaf changed when the document no longer has it", () => {
-    expect(changedLeaves(stored, hashed({ title: "1111" }))).toStrictEqual({
-      title: false,
-      body: true,
-    });
+  it("drops a recorded leaf the document no longer has", () => {
+    expect(changedLeaves(stored.hashes, hashed({ title: "1111" }))).toStrictEqual({ title: false });
   });
 });
 
@@ -202,6 +195,6 @@ describe("a leaf recorded as unanswered", () => {
   });
 
   it("is reported as changed, so the next run selects the leaf again", () => {
-    expect(changedLeaves(stored, hashed({ title: "1111", body: "2222" })).body).toBe(true);
+    expect(changedLeaves(stored.hashes, hashed({ title: "1111", body: "2222" })).body).toBe(true);
   });
 });

@@ -6,7 +6,9 @@ import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 
 import { createGetCollectionStatusRoute } from "./route.js";
 import type { GetCollectionStatusConfig } from "./model.js";
+import { AnyAccessGuard } from "../../shared/access/AnyAccessGuard.js";
 
+const OPEN_ON_PURPOSE = new AnyAccessGuard();
 // Route-contract test: pin path + method + access-guard wiring so the Phase 1
 // relocation of route registration stays behaviour-preserving. Handler logic
 // and the shared wrappers have their own unit tests.
@@ -15,9 +17,7 @@ const denyAccess: AccessGuard = { check: vi.fn().mockReturnValue(false) };
 
 describe("createGetCollectionStatusRoute (contract)", () => {
   it("registers GET at {basePath}/collection/:collection_slug with the default basePath", () => {
-    const endpoint = createGetCollectionStatusRoute(config, {
-      create: vi.fn(),
-    });
+    const endpoint = createGetCollectionStatusRoute(config, { create: vi.fn() }, OPEN_ON_PURPOSE);
     expect(endpoint.path).toBe("/translate/collection/:collection_slug");
     expect(endpoint.method).toBe("get");
   });
@@ -26,7 +26,7 @@ describe("createGetCollectionStatusRoute (contract)", () => {
     const endpoint = createGetCollectionStatusRoute(
       config,
       { create: vi.fn() },
-      undefined,
+      OPEN_ON_PURPOSE,
       "/i18n"
     );
     expect(endpoint.path).toBe("/i18n/collection/:collection_slug");

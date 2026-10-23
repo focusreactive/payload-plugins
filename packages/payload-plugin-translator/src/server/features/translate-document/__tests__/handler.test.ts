@@ -14,6 +14,7 @@ import type { ProvenanceStore } from "../../../../core/domain/provenance/index.j
 import { ProvenanceService, provenanceIo } from "../../../modules/provenance/index.js";
 import type { ProvenanceServiceFactory } from "../../../modules/provenance/index.js";
 import type { TranslateDocumentInput } from "../model.js";
+import { provenanceInAChain } from "../../../modules/provenance/__tests__/fixtures/inAChain.js";
 
 vi.mock("../../../../core/translation-pipeline/index.js", () => ({
   translateContent: vi.fn().mockResolvedValue(null),
@@ -45,6 +46,7 @@ describe("TranslateDocumentHandler", () => {
     targetLng: TARGET_LNG,
     strategy: "overwrite",
     publishOnTranslation: false,
+    previousAttempts: 0,
     ...overrides,
   });
 
@@ -402,7 +404,7 @@ describe("TranslateDocumentHandler", () => {
       new TranslateDocumentHandler(
         mockTranslationProvider,
         mockSchemaMap,
-        serviceFactory as unknown as ProvenanceServiceFactory
+        provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory)
       );
 
     beforeEach(() => {
@@ -597,7 +599,7 @@ describe("TranslateDocumentHandler", () => {
       const underTest = new TranslateDocumentHandler(
         mockTranslationProvider,
         mockSchemaMap,
-        serviceFactory as unknown as ProvenanceServiceFactory
+        provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory)
       );
       await underTest.handle(mockPayload, createInput({}));
 
@@ -611,7 +613,7 @@ describe("TranslateDocumentHandler", () => {
       });
     });
 
-    it("hands the pipeline the leaves the receipt can answer for, and no others", async () => {
+    it("hands the pipeline every leaf the source has now, marking an unrecorded one changed", async () => {
       const store = {
         upsert: vi.fn(),
         find: vi.fn().mockResolvedValue({
@@ -649,14 +651,14 @@ describe("TranslateDocumentHandler", () => {
       const underTest = new TranslateDocumentHandler(
         mockTranslationProvider,
         mockSchemaMap,
-        serviceFactory as unknown as ProvenanceServiceFactory
+        provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory)
       );
       await underTest.handle(mockPayload, createInput({}));
 
       const passed = (translateContent as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0] as {
         sourceChangedByLeaf?: Record<string, boolean>;
       };
-      expect(passed.sourceChangedByLeaf).toEqual({ title: true });
+      expect(passed.sourceChangedByLeaf).toEqual({ title: true, tagline: true });
     });
   });
 
@@ -690,7 +692,7 @@ describe("TranslateDocumentHandler", () => {
     const underTest = new TranslateDocumentHandler(
       mockTranslationProvider,
       mockSchemaMap,
-      serviceFactory as unknown as ProvenanceServiceFactory
+      provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory)
     );
 
     await expect(underTest.handle(mockPayload, createInput({}))).resolves.toEqual({

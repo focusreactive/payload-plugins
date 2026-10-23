@@ -392,3 +392,51 @@ run. Per-document, per-field control arrives with the field picker (#48).
 taken as *revisit this leaf*, and the first run that translates that leaf records a hash in its
 place. A leaf whose source is empty is never sent, so its `null` is carried forward and the locale
 keeps flagging until the source has text again.
+
+### levels-become-modules-and-components
+
+- **What:** the `levels` plugin option and the four names it needed — `documentLevel()`,
+  `collectionLevel()`, `fieldLevel()` and the `TranslationLevel` type.
+- **Status:** removed
+- **Changed:** 2026-10-22 / #198
+- **Replacement:** two required lists, `modules` and `components`. Either may be `[]`.
+
+  | Was | Becomes |
+  | --- | --- |
+  | `levels: [documentLevel()]` | `modules: [documentTranslation()]` · `components: [translateDocumentControl()]` |
+  | `levels: [collectionLevel()]` | `modules: [documentTranslation()]` · `components: [bulkTranslationDashboard()]` |
+  | `levels: [fieldLevel()]` | `modules: [fieldTranslation()]` |
+  | omitted (the old default) | `modules: [documentTranslation()]` · `components: [translateDocumentControl(), bulkTranslationDashboard()]` |
+
+- **Why:** a level was a server surface and an admin control welded together, and the two have
+  nothing to do with each other — a control runs in the browser and is loaded by path, while the
+  routes behind it are server wiring. Separating them is what lets provenance, which contributes
+  routes and a collection but no control, be listed the same way everything else is. The document
+  and collection levels registered the *same* route bundle, which is the only reason endpoints are
+  deduplicated at all; once the controls moved out, the two were indistinguishable and collapsed
+  into one module.
+- **No default:** an omitted option used to mean two surfaces, silently. Both lists are now
+  required, and omitting either fails at boot with the table above in the message. `[]` is a real
+  answer: auto-translate runs from a save hook and needs no route.
+- **Who this breaks:** every host. A plugin config that sets `levels`, or relies on its default,
+  does not compile and does not boot.
+- **Code refs:**
+  - `src/plugin.ts` (`modules`, `components`, and the refusal)
+  - `src/composition/modules/`, `src/composition/components/`
+  - `src/server/modules/plugin-config/types.ts` (`TranslationModule`, `TranslationComponent`)
+
+### runner-context-carries-the-attempt-count
+
+- **What:** `TaskHandlerInput` gains a required `previousAttempts: number`.
+- **Status:** removed (the old shape)
+- **Changed:** 2026-10-22 / #198
+- **Replacement:** a runner supplies the number of times this locale was tried before the attempt
+  now running — zero on the first, and zero always for a runner that never retries.
+- **Why:** a module joining a translation run may need to behave differently on a replay, and the
+  count already exists on the job row. Reading it in the runner, where it lives, is cheaper and
+  more honest than every module guessing.
+- **Who this breaks:** only a `TaskRunnerProvider` implemented outside this package. The built-in
+  runners both supply it; a host that merely configures the plugin sees no change.
+- **Code refs:**
+  - `src/server/modules/task-runner/TaskRunnerProvider.interface.ts`
+  - `src/server/modules/task-runner/payload-jobs-runner/model/attemptsBefore.ts`

@@ -1,4 +1,10 @@
-export type { PayloadJob, StoredWorkflowInput, StoredTaskInput, JobLogEntry } from "./types.js";
+export type {
+  PayloadJob,
+  StoredWorkflowInput,
+  StoredTaskInput,
+  JobLogEntry,
+  TaskStatusByLocale,
+} from "./types.js";
 export { TaskInputSchema, WorkflowInputSchema } from "./jobInput.schema.js";
 export { toPayloadFields, withLegacyCollection } from "./toPayloadFields.js";
 export { handleOf } from "./handleOf.js";

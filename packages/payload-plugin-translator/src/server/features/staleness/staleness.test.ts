@@ -54,12 +54,10 @@ beforeEach(() => {
 
 const schemaMap = new Map([["posts", schema]]) as CollectionSchemaMap;
 
-function makeConfig(store: ProvenanceStore | null): StalenessConfig {
+function makeConfig(store: ProvenanceStore): StalenessConfig {
   return {
     availableCollections: new Set(["posts"]) as StalenessConfig["availableCollections"],
-    provenanceServiceFactory: store
-      ? (p) => new ProvenanceService(store, schemaMap, {}, provenanceIo(p))
-      : undefined,
+    provenanceServiceFactory: (p) => new ProvenanceService(store, schemaMap, {}, provenanceIo(p)),
   };
 }
 
@@ -111,11 +109,6 @@ describe("GetDocumentStalenessHandler", () => {
   it("omits locales with no provenance record (absent, not stale)", async () => {
     const store = makeStore({ findByDocument: vi.fn().mockResolvedValue([]) });
     const res = await new GetDocumentStalenessHandler(makeConfig(store)).handle(readReq());
-    expect((await bodyOf(res)).locales).toEqual([]);
-  });
-
-  it("returns empty when provenance is disabled", async () => {
-    const res = await new GetDocumentStalenessHandler(makeConfig(null)).handle(readReq());
     expect((await bodyOf(res)).locales).toEqual([]);
   });
 

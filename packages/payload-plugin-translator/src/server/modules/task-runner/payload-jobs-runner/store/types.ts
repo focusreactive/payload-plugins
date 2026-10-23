@@ -7,13 +7,15 @@ import type { StoredInputSchema, WorkflowInputSchema } from "./jobInput.schema.j
 type TaskSlug = string;
 type TaskId = string;
 
+export type TaskStatusByLocale = Record<TaskSlug, Record<TaskId, { totalTried?: unknown }>>;
+
 export type PayloadJob = {
   /** Payload sets this once a run's retries are spent, and never clears it. */
   hasError?: boolean;
   log?: JobLogEntry[];
   /** How many times the whole run has been executed — Payload's second give-up counter. */
   totalTried?: unknown;
-  taskStatus?: Record<TaskSlug, Record<TaskId, { totalTried?: unknown }>>;
+  taskStatus?: TaskStatusByLocale;
   id: string | number;
   completedAt?: string | null;
   createdAt: string;

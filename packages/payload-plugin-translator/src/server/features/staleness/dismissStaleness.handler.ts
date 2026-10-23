@@ -22,8 +22,8 @@ export class DismissStalenessHandler {
       return ServerResponse.badRequest("Collection not available for translation");
     }
 
-    const service = this.config.provenanceServiceFactory?.(req.payload);
-    await service?.dismiss(
+    const service = this.config.provenanceServiceFactory(req.payload);
+    await service.dismiss(
       {
         collectionSlug: collectionSlug,
         documentId: collection_id,
