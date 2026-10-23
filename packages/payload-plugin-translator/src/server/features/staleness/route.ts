@@ -10,7 +10,7 @@ import { DismissStalenessHandler } from "./dismissStaleness.handler.js";
 /** GET per-locale staleness for one document. */
 export function createGetDocumentStalenessRoute(
   config: StalenessConfig,
-  access?: AccessGuard,
+  access: AccessGuard,
   basePath = "/translate"
 ): Endpoint {
   const handler = new GetDocumentStalenessHandler(config);
@@ -25,7 +25,7 @@ export function createGetDocumentStalenessRoute(
 /** POST to dismiss (acknowledge) staleness of one target locale. */
 export function createDismissStalenessRoute(
   config: StalenessConfig,
-  access?: AccessGuard,
+  access: AccessGuard,
   basePath = "/translate"
 ): Endpoint {
   const handler = new DismissStalenessHandler(config);

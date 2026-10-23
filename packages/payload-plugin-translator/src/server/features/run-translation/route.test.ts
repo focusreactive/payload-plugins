@@ -5,7 +5,9 @@ import type { AccessGuard } from "../../shared/index.js";
 import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 
 import { createRunRoute } from "./route.js";
+import { AnyAccessGuard } from "../../shared/access/AnyAccessGuard.js";
 
+const OPEN_ON_PURPOSE = new AnyAccessGuard();
 // Route-contract test: pin path + method + access-guard wiring so the Phase 1
 // relocation of route registration stays behaviour-preserving. Handler logic
 // and the shared wrappers have their own unit tests.
@@ -13,13 +15,13 @@ const denyAccess: AccessGuard = { check: vi.fn().mockReturnValue(false) };
 
 describe("createRunRoute (contract)", () => {
   it("registers POST at {basePath}/run/:id with the default basePath", () => {
-    const endpoint = createRunRoute({ create: vi.fn() });
+    const endpoint = createRunRoute({ create: vi.fn() }, OPEN_ON_PURPOSE);
     expect(endpoint.path).toBe("/translate/run/:id");
     expect(endpoint.method).toBe("post");
   });
 
   it("honors a custom basePath", () => {
-    const endpoint = createRunRoute({ create: vi.fn() }, undefined, "/i18n");
+    const endpoint = createRunRoute({ create: vi.fn() }, OPEN_ON_PURPOSE, "/i18n");
     expect(endpoint.path).toBe("/i18n/run/:id");
   });
 

@@ -6,26 +6,25 @@ import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js"
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
 import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
 import type { TaskRunnerFactory } from "../task-runner/index.js";
-import type { ProvenanceServiceFactory } from "../provenance/index.js";
 import type { TranslatorSettings } from "../../../settings.js";
 
-import type { CollectionAdminSlot, LevelContext, TranslationContext } from "./types.js";
+import type {
+  CollectionAdminSlot,
+  ComponentContext,
+  ModuleContext,
+  ConfigTimeContext,
+} from "./types.js";
 
 type CollectionComponent = {
   slot: CollectionAdminSlot;
   make: (collection: CollectionConfig) => RawPayloadComponentExport;
 };
 
-/** The builder's construction deps are exactly the shared {@link TranslationContext}. */
-export type PluginConfigBuilderDeps = TranslationContext;
+export type PluginConfigBuilderDeps = ConfigTimeContext;
 
 const endpointKey = (endpoint: Endpoint): string => `${endpoint.method} ${endpoint.path}`;
 
-/**
- * Identity of a collection admin component for dedup: its slot plus its module path (+ export name).
- * `serverProps` (per-collection data) are excluded, so the same control registered by a level declared
- * twice collapses to one — while genuinely different controls (distinct path or slot) do not.
- */
+/** `serverProps` is left out, so the same control registered twice collapses to one. */
 const componentKey = (slot: CollectionAdminSlot, component: RawPayloadComponentExport): string =>
   `${slot} ${component.path}#${component.exportName ?? ""}`;
 
@@ -51,29 +50,17 @@ function attachToSlot(
     return;
   }
 
-  // Exhaustiveness: a new CollectionAdminSlot must be handled above, not fall through.
   slot satisfies never;
 }
 
-/**
- * The single place that mutates the Payload `config`. Levels (through the narrow
- * {@link LevelContext}) and the plugin (through `addAdminProvider` /
- * `addConfigModifier`) only *describe* their contributions; `applyTo(config)` is
- * the one sink that writes them in. This keeps Payload's in-place-mutation style
- * — including the lazy nested-config init — confined here, so `plugin.ts` and the
- * levels stay free of direct config mutation.
- *
- * It implements {@link LevelContext}, so the same instance is what levels receive
- * as their context (they see only `addEndpoints` / `addCollectionComponent`).
- */
-export class PluginConfigBuilder implements LevelContext {
+/** The only place that mutates the Payload `config`; modules and components merely describe contributions. */
+export class PluginConfigBuilder implements ComponentContext, ModuleContext {
   readonly collections: CollectionConfig[];
   readonly settings: TranslatorSettings;
-  readonly access?: AccessGuard;
+  readonly access: AccessGuard;
   readonly taskRunnerFactory: TaskRunnerFactory;
   readonly schemaMap: CollectionSchemaMap;
   readonly translationProvider: TranslationProvider;
-  readonly provenanceServiceFactory?: ProvenanceServiceFactory;
 
   private readonly endpoints: Endpoint[] = [];
   private readonly collectionComponents: CollectionComponent[] = [];
@@ -87,7 +74,6 @@ export class PluginConfigBuilder implements LevelContext {
     this.taskRunnerFactory = deps.taskRunnerFactory;
     this.schemaMap = deps.schemaMap;
     this.translationProvider = deps.translationProvider;
-    this.provenanceServiceFactory = deps.provenanceServiceFactory;
   }
 
   addEndpoints(endpoints: Endpoint[]): void {
@@ -135,12 +121,12 @@ export class PluginConfigBuilder implements LevelContext {
     const managed = new Set(this.collections.map((collection) => collection.slug));
     config.collections?.forEach((collection) => {
       if (!managed.has(collection.slug)) return;
-      const seen = new Set<string>();
+      const seenOnThisCollection = new Set<string>();
       for (const { slot, make } of this.collectionComponents) {
         const component = make(collection);
         const key = componentKey(slot, component);
-        if (seen.has(key)) continue;
-        seen.add(key);
+        if (seenOnThisCollection.has(key)) continue;
+        seenOnThisCollection.add(key);
         attachToSlot(collection, slot, component);
       }
     });

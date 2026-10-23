@@ -65,5 +65,10 @@ export function parseSourceFingerprint(
 }
 
 export function serializeSourceFingerprint(fingerprint: SourceFingerprint): string {
-  return fingerprint.kind === "document" ? fingerprint.hash : JSON.stringify(fingerprint.hashes);
+  switch (fingerprint.kind) {
+    case "document":
+      return fingerprint.hash;
+    case "fields":
+      return JSON.stringify(fingerprint.hashes);
+  }
 }

@@ -14,6 +14,8 @@ export type TaskHandlerInput = {
   targetLng: string;
   strategy: TranslationStrategyName;
   publishOnTranslation: boolean;
+  /** Zero on the first attempt, and on any runner that does not retry. */
+  previousAttempts: number;
 };
 
 /**

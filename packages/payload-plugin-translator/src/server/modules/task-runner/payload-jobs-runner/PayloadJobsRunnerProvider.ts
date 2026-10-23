@@ -15,7 +15,14 @@ import {
   withLegacyCollection,
   WorkflowInputSchema,
 } from "./store/index.js";
-import { deliveredLocales, localesAsTheyStand, owedIfGaveUp, retryLimitOf } from "./model/index.js";
+import type { TaskStatusByLocale } from "./store/index.js";
+import {
+  attemptsBefore,
+  deliveredLocales,
+  localesAsTheyStand,
+  owedIfGaveUp,
+  retryLimitOf,
+} from "./model/index.js";
 import type { TaskRunnerContext, TaskRunnerProvider } from "../TaskRunnerProvider.interface.js";
 import type { TaskEvent } from "../types.js";
 import type { Requester } from "../../../shared/payload/RequestScope.shapes.js";
@@ -63,7 +70,7 @@ const defaultValues = {
  */
 type TranslateLocaleTask = {
   req: { payload: Payload };
-  job?: { id?: unknown };
+  job?: { id?: unknown; taskStatus?: TaskStatusByLocale };
   input: StoredTaskInput & { strategy: TranslationStrategyName };
 };
 
@@ -135,6 +142,9 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
                 targetLng: args.input.target_lng,
                 strategy: args.input.strategy,
                 publishOnTranslation: args.input.publish_on_translation ?? false,
+                previousAttempts: attemptsBefore(
+                  args.job?.taskStatus?.[taskName]?.[args.input.target_lng]
+                ),
               },
               { requester: requesterOf(args.input) }
             );

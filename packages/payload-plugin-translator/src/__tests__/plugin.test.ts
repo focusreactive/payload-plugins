@@ -8,7 +8,12 @@ import { translatorPlugin } from "../plugin.js";
 import { AnyAccessGuard } from "../server/shared/access/AnyAccessGuard.js";
 import type { TranslatorPluginConfig } from "../plugin.js";
 import { withAutoTranslate } from "../auto-translate-config.js";
-import { documentLevel, fieldLevel } from "../composition/levels/index.js";
+import { documentTranslation, fieldTranslation } from "../composition/modules/index.js";
+import { PROVENANCE_MODULE } from "../server/modules/provenance/index.js";
+import {
+  bulkTranslationDashboard,
+  translateDocumentControl,
+} from "../composition/components/index.js";
 import { TranslateDocumentExport } from "../client/widgets/translate-document/index.js";
 import { BulkDocumentTranslationDashboard } from "../client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.export.js";
 
@@ -20,10 +25,8 @@ vi.mock("../core/translation-pipeline/index.js", () => ({
   translateContent: vi.fn().mockResolvedValue(null),
 }));
 
-// End-to-end behaviour guard for the levels refactor: the default levels must
-// reproduce today's wiring (6-route bundle, cache provider, doc popup + bulk
-// dashboard on managed collections, runner configured once), and an explicit
-// `levels` list must scope the surfaces accordingly.
+const STALENESS_PATH = "/translate/stale/:collection_slug/:collection_id";
+const DISMISS_PATH = "/translate/stale/dismiss";
 
 const makeCollection = () => ({
   slug: "posts",
@@ -44,6 +47,8 @@ async function build(overrides: Partial<TranslatorPluginConfig> = {}) {
     // The plugin refuses to start without an access decision; these fixtures make the open one.
     access: new AnyAccessGuard(),
     runner,
+    modules: [documentTranslation()],
+    components: [translateDocumentControl(), bulkTranslationDashboard()],
     ...overrides,
   } as unknown as TranslatorPluginConfig;
 
@@ -55,11 +60,60 @@ async function build(overrides: Partial<TranslatorPluginConfig> = {}) {
   };
 }
 
-describe("translatorPlugin — default levels (behaviour-preserving)", () => {
-  it("registers the shared route bundle once (document + collection share it)", async () => {
+describe("translatorPlugin — the listed surfaces", () => {
+  it("registers the job-API bundle, and no staleness routes without provenance", async () => {
     const { result } = await build();
-    expect(result.endpoints).toHaveLength(8); // not 16 — deduped across the two doc levels
-    expect(result.endpoints?.map((e) => e.path)).toContain("/translate/enqueue");
+    const paths = result.endpoints?.map((endpoint) => endpoint.path);
+
+    expect(paths).toContain("/translate/enqueue");
+    expect(paths).not.toContain(STALENESS_PATH);
+    expect(paths).not.toContain(DISMISS_PATH);
+    expect(result.endpoints).toHaveLength(6);
+  });
+
+  it("registers the staleness routes once provenance is switched on", async () => {
+    const { result } = await build({ provenance: true });
+    const paths = result.endpoints?.map((endpoint) => endpoint.path);
+
+    expect(paths).toContain(STALENESS_PATH);
+    expect(paths).toContain(DISMISS_PATH);
+    expect(result.endpoints).toHaveLength(8);
+  });
+
+  it("refuses to start when the surfaces are not listed at all", async () => {
+    await expect(build({ modules: undefined, components: undefined })).rejects.toThrow(
+      /`modules` and `components` are both required/u
+    );
+  });
+
+  it("refuses two modules that share a name", async () => {
+    const twice = [documentTranslation(), documentTranslation()];
+
+    await expect(build({ modules: twice })).rejects.toThrow(/two modules are named/u);
+  });
+
+  it("names the module that was declared twice", async () => {
+    const twice = [documentTranslation(), documentTranslation()];
+
+    await expect(build({ modules: twice })).rejects.toThrow(/"document-translation"/u);
+  });
+
+  it("refuses a module that takes the name of a built-in one", async () => {
+    const collides = [documentTranslation(), { name: PROVENANCE_MODULE }];
+
+    await expect(build({ provenance: true, modules: collides })).rejects.toThrow(/"provenance"/u);
+  });
+
+  it("boots a chain whose modules all differ", async () => {
+    const { result } = await build({ modules: [documentTranslation(), fieldTranslation()] });
+
+    expect(result.endpoints).toHaveLength(7);
+  });
+
+  it("names the replacement for each level it removed", async () => {
+    await expect(build({ modules: undefined, components: undefined })).rejects.toThrow(
+      /documentTranslation\(\)/u
+    );
   });
 
   it("does not duplicate endpoints when the same config is run through the plugin twice", async () => {
@@ -70,6 +124,8 @@ describe("translatorPlugin — default levels (behaviour-preserving)", () => {
       // The plugin refuses to start without an access decision; these fixtures make the open one.
       access: new AnyAccessGuard(),
       runner: makeRunner(),
+      modules: [documentTranslation()],
+      components: [translateDocumentControl(), bulkTranslationDashboard()],
     } as unknown as TranslatorPluginConfig;
 
     const once = await translatorPlugin(pluginConfig)({
@@ -77,9 +133,7 @@ describe("translatorPlugin — default levels (behaviour-preserving)", () => {
     } as unknown as Config);
     const twice = await translatorPlugin(pluginConfig)(once);
 
-    // Endpoint seeding dedups against routes already on the config, so a second
-    // registration on the same config doesn't double the 6-route bundle.
-    expect(twice.endpoints).toHaveLength(8);
+    expect(twice.endpoints).toHaveLength(6);
   });
 
   it("adds the cache provider and configures the runner once", async () => {
@@ -106,24 +160,27 @@ describe("translatorPlugin — default levels (behaviour-preserving)", () => {
   });
 });
 
-describe("translatorPlugin — explicit levels", () => {
-  it("documentLevel only → bundle present, doc popup yes, bulk dashboard no", async () => {
-    const { result, posts } = await build({ levels: [documentLevel()] });
-    expect(result.endpoints).toHaveLength(8);
+describe("translatorPlugin — listing the surfaces one at a time", () => {
+  it("one control only → bundle present, doc popup yes, bulk dashboard no", async () => {
+    const { result, posts } = await build({
+      modules: [documentTranslation()],
+      components: [translateDocumentControl()],
+    });
+    expect(result.endpoints).toHaveLength(6);
     expect(posts.admin.components.edit.beforeDocumentControls).toHaveLength(1);
     expect(posts.admin.components.beforeListTable).toBeUndefined();
   });
 
-  it("fieldLevel only → one /field endpoint, no doc routes, no collection components", async () => {
-    const { result, posts } = await build({ levels: [fieldLevel()] });
+  it("the field module only → one /field endpoint, no doc routes, no collection components", async () => {
+    const { result, posts } = await build({ modules: [fieldTranslation()], components: [] });
     expect(result.endpoints).toHaveLength(1);
     expect(result.endpoints?.[0].path).toBe("/translate/field");
     expect(result.endpoints?.[0].method).toBe("post");
     expect(posts.admin).toBeUndefined();
   });
 
-  it("empty levels → no endpoints/components, but cache provider + runner config still happen", async () => {
-    const { result, runner } = await build({ levels: [] });
+  it("nothing listed → no endpoints/components, but cache provider + runner config still happen", async () => {
+    const { result, runner } = await build({ modules: [], components: [] });
     expect(result.endpoints ?? []).toHaveLength(0);
     expect(result.collections?.[0] as Record<string, any>).not.toHaveProperty("admin");
     expect(result.admin?.components?.providers).toHaveLength(1);
@@ -190,6 +247,8 @@ describe("translatorPlugin — provenance (opt-in)", () => {
       // The plugin refuses to start without an access decision; these fixtures make the open one.
       access: new AnyAccessGuard(),
       runner: { create: vi.fn(), configure: vi.fn().mockReturnValue((c: Config) => c) },
+      modules: [documentTranslation()],
+      components: [translateDocumentControl(), bulkTranslationDashboard()],
       provenance: {},
     } as unknown as TranslatorPluginConfig;
 
@@ -213,6 +272,8 @@ describe("translatorPlugin — provenance (opt-in)", () => {
         // The plugin refuses to start without an access decision; these fixtures make the open one.
         access: new AnyAccessGuard(),
         runner: { create: vi.fn(), configure: vi.fn().mockReturnValue((c: Config) => c) },
+        modules: [documentTranslation()],
+        components: [translateDocumentControl(), bulkTranslationDashboard()],
         provenance: { slug },
       }) as unknown as TranslatorPluginConfig;
 
@@ -251,6 +312,8 @@ describe("translatorPlugin — provenance (opt-in)", () => {
       // The plugin refuses to start without an access decision; these fixtures make the open one.
       access: new AnyAccessGuard(),
       runner: { create: vi.fn(), configure: vi.fn().mockReturnValue((c: Config) => c) },
+      modules: [documentTranslation()],
+      components: [translateDocumentControl(), bulkTranslationDashboard()],
       provenance: {},
     } as unknown as TranslatorPluginConfig;
 
@@ -279,6 +342,8 @@ describe("translatorPlugin — auto-translate (opt-in wiring)", () => {
       // The plugin refuses to start without an access decision; these fixtures make the open one.
       access: new AnyAccessGuard(),
       runner: makeRunner(),
+      modules: [documentTranslation()],
+      components: [translateDocumentControl(), bulkTranslationDashboard()],
     } as unknown as TranslatorPluginConfig;
     return translatorPlugin(pluginConfig)({ collections } as unknown as Config);
   };
@@ -311,6 +376,8 @@ describe("translatorPlugin — auto-translate (opt-in wiring)", () => {
       // The plugin refuses to start without an access decision; these fixtures make the open one.
       access: new AnyAccessGuard(),
       runner: makeRunner(),
+      modules: [documentTranslation()],
+      components: [translateDocumentControl(), bulkTranslationDashboard()],
     } as unknown as TranslatorPluginConfig;
     const once = await translatorPlugin(pluginConfig)({
       collections: [posts],

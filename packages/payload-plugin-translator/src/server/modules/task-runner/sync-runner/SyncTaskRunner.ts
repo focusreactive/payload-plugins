@@ -8,6 +8,8 @@ import type { LazyMap } from "../../../shared/utils/index.js";
 import type { RequestScope } from "../../../shared/payload/RequestScope.shapes.js";
 import { swallowOrThrow } from "../../../shared/payload/swallowOrThrow.js";
 
+const NEVER_RETRIED = 0;
+
 /** Runs each task inline on enqueue; results live only in memory, so status queries see nothing from a previous process. */
 export class SyncTaskRunner implements TaskRunner {
   private readonly payload: Payload;
@@ -70,6 +72,7 @@ export class SyncTaskRunner implements TaskRunner {
               targetLng: input.targetLng,
               strategy: input.strategy,
               publishOnTranslation: input.publishOnTranslation,
+              previousAttempts: NEVER_RETRIED,
             },
             scope
           );

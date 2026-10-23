@@ -24,7 +24,7 @@ const activeFieldControlPositioner: FieldControlPositioner = beforeInputPosition
  *
  * - **Add a translate control** — wrap a `text` / `textarea` field with no second
  *   argument. A per-field Translate control is positioned on the field (today, just
- *   above the input). Requires `fieldLevel()` in the plugin's `levels` to register the
+ *   above the input). Requires `fieldTranslation()` in the plugin's `modules` to register the
  *   endpoint. Control-injection behavior is `@since 0.6.0`; field exclusion predates it.
  * - **Exclude from translation** — pass `{ exclude: true }` (any field type). The field
  *   value is never sent to the translation provider and no control is added.

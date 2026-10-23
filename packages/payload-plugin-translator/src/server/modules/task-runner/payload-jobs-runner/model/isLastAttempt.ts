@@ -1,3 +1,5 @@
+import { attemptsBefore } from "./attemptsBefore.js";
+
 /**
  * Whether the attempt that just threw was the run's last for this locale.
  *
@@ -7,6 +9,5 @@
 export type IsLastAttempt = (tried: { totalTried?: unknown } | undefined, limit: number) => boolean;
 
 export const isLastAttempt: IsLastAttempt = (tried, limit) => {
-  const before = typeof tried?.totalTried === "number" ? tried.totalTried : 0;
-  return before >= limit;
+  return attemptsBefore(tried) >= limit;
 };

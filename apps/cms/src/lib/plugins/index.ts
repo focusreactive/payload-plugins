@@ -6,6 +6,9 @@ import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-schedu
 import { seoPlugin as seoAnalysisPlugin } from "@focus-reactive/payload-plugin-seo";
 import {
   translatorPlugin,
+  documentTranslation,
+  translateDocumentControl,
+  bulkTranslationDashboard,
   createOpenAIProvider,
   createSyncRunner,
 } from "@focus-reactive/payload-plugin-translator";
@@ -347,6 +350,8 @@ export const plugins: Plugin[] = [
     ),
     access: { check: ({ req }) => Boolean(req.user) },
     runner: createSyncRunner(),
+    modules: [documentTranslation()],
+    components: [translateDocumentControl(), bulkTranslationDashboard()],
     translationProvider: createOpenAIProvider({
       apiKey: process.env.OPENAI_API_KEY!,
       dryRun: false,

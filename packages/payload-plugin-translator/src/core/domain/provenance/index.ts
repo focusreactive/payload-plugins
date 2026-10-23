@@ -4,7 +4,7 @@ export type {
   ProvenanceStore,
   TranslationProvenanceRecord,
 } from "./ProvenanceStore.interface.js";
-export type { CurrentFingerprint } from "./staleness.js";
+export type { ChangedLeaves, CurrentFingerprint } from "./staleness.js";
 export { changedLeaves, isRecordStale, recordsEachLeaf } from "./staleness.js";
 export type { RecordedClaim, SourceFingerprint } from "./SourceFingerprint.js";
 export {

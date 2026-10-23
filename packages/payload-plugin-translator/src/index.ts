@@ -66,9 +66,11 @@ export type {
  */
 export type { RequestScope, Requester } from "./server/shared/payload/RequestScope.shapes.js";
 
-// Translation levels
-export { documentLevel, collectionLevel, fieldLevel } from "./composition/levels/index.js";
-export type { TranslationLevel } from "./server/modules/translation-levels/index.js";
+export { documentTranslation, fieldTranslation } from "./composition/modules/index.js";
+export {
+  bulkTranslationDashboard,
+  translateDocumentControl,
+} from "./composition/components/index.js";
 
 // Field config
 export { withFieldTranslation } from "./field-config.js";

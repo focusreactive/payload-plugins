@@ -1,17 +1,10 @@
-import type {
-  FieldFingerprints,
-  SourceHash,
-} from "../content-projection/computeFieldFingerprints.js";
+import type { FieldFingerprints } from "../content-projection/computeFieldFingerprints.js";
 
 import type { ProvenanceReceipt } from "./ProvenanceStore.interface.js";
 
-import type {
-  RecordedClaim,
-  RecordedFingerprints,
-  SourceFingerprint,
-} from "./SourceFingerprint.js";
+import type { RecordedFingerprints, SourceFingerprint } from "./SourceFingerprint.js";
 
-/** One entry per address the receipt recorded, and no others. An address it never saw has no entry. */
+/** One entry per translatable leaf the source has now. */
 export type ChangedLeaves = Readonly<Record<string, boolean>>;
 
 export type CurrentFingerprint = {
@@ -19,16 +12,11 @@ export type CurrentFingerprint = {
   fields: FieldFingerprints;
 };
 
-/** `UNANSWERED` can never equal a hash, so one comparison answers for both kinds of claim. */
-const leafChanged = (recorded: RecordedClaim, current: SourceHash | undefined): boolean => {
-  return recorded !== current;
-};
-
 const sameFields = (stored: RecordedFingerprints, current: FieldFingerprints): boolean => {
   const addresses = Object.keys(stored);
   return (
     addresses.length === Object.keys(current).length &&
-    addresses.every((address) => !leafChanged(stored[address], current[address]))
+    addresses.every((address) => stored[address] === current[address])
   );
 };
 
@@ -37,9 +25,13 @@ const describesCurrentSource = (
   current: CurrentFingerprint
 ): boolean => {
   if (fingerprint === null) return false;
-  return fingerprint.kind === "document"
-    ? fingerprint.hash === current.document
-    : sameFields(fingerprint.hashes, current.fields);
+
+  switch (fingerprint.kind) {
+    case "document":
+      return fingerprint.hash === current.document;
+    case "fields":
+      return sameFields(fingerprint.hashes, current.fields);
+  }
 };
 
 /** Out of date unless the receipt — or the editor's dismissal — describes the source as it stands now. */
@@ -56,15 +48,19 @@ export const recordsEachLeaf = (
   return fingerprint?.kind === "fields";
 };
 
+/**
+ * A leaf the receipt never recorded counts as changed: a leaf empty at the last run was not
+ * recorded, and would otherwise never be translated again.
+ */
 export function changedLeaves(
-  stored: SourceFingerprint | null,
+  recorded: RecordedFingerprints,
   currentFields: FieldFingerprints
 ): ChangedLeaves {
-  if (!recordsEachLeaf(stored)) return {};
+  const claims = new Map(Object.entries(recorded));
 
   const answers: Record<string, boolean> = {};
-  for (const [address, recorded] of Object.entries(stored.hashes)) {
-    answers[address] = leafChanged(recorded, currentFields[address]);
+  for (const [address, current] of Object.entries(currentFields)) {
+    answers[address] = claims.get(address) !== current;
   }
   return answers;
 }

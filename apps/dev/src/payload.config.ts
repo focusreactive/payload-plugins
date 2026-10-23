@@ -7,9 +7,10 @@ import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
 import {
   translatorPlugin,
-  documentLevel,
-  collectionLevel,
-  fieldLevel,
+  documentTranslation,
+  fieldTranslation,
+  translateDocumentControl,
+  bulkTranslationDashboard,
   withAutoTranslate,
 } from "@focus-reactive/payload-plugin-translator";
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
@@ -100,7 +101,8 @@ export default buildConfig({
       access: { check: ({ req }) => Boolean(req.user) },
       runner: resolveTranslatorRunner(),
       translationProvider: resolveTranslationProvider(),
-      levels: [documentLevel(), collectionLevel(), fieldLevel()],
+      modules: [documentTranslation(), fieldTranslation()],
+      components: [translateDocumentControl(), bulkTranslationDashboard()],
       provenance: true,
       lifecycle: loggingLifecycle,
     }),

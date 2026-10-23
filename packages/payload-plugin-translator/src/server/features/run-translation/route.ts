@@ -11,7 +11,7 @@ import { RunTranslationHandler } from "./handler.js";
  */
 export function createRunRoute(
   taskRunnerFactory: TaskRunnerFactory,
-  access?: AccessGuard,
+  access: AccessGuard,
   basePath = "/translate"
 ): Endpoint {
   const handler = new RunTranslationHandler(taskRunnerFactory);

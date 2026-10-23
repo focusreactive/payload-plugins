@@ -10,9 +10,11 @@ import type { TranslationProvider } from "./core/domain/translation-providers/in
 import type { TaskRunnerProvider } from "./server/modules/task-runner/index.js";
 import { wireTranslateRunner } from "./server/features/translate-document/index.js";
 import type { TranslationLifecycleCallbacks } from "./server/modules/lifecycle/index.js";
-import { documentLevel, collectionLevel } from "./composition/levels/index.js";
-import type { TranslationLevel } from "./server/modules/translation-levels/index.js";
-import { PluginConfigBuilder } from "./server/modules/translation-levels/PluginConfigBuilder.js";
+import type {
+  TranslationComponent,
+  TranslationModule,
+} from "./server/modules/plugin-config/index.js";
+import { PluginConfigBuilder } from "./server/modules/plugin-config/PluginConfigBuilder.js";
 import { resolveSettings } from "./settings.js";
 import type { TranslatorSettingsOptions } from "./settings.js";
 
@@ -44,15 +46,21 @@ export type TranslatorPluginConfig = TranslatorSettingsOptions & {
    */
   access: AccessGuard;
   /**
-   * Which translation surfaces to enable, as level factories — `documentLevel()`,
-   * `collectionLevel()`, `fieldLevel()`. Omit for the
-   * default `[documentLevel(), collectionLevel()]`, which is exactly today's behaviour.
-   * Each level should appear at most once: endpoints are deduplicated, but admin
-   * components are not, so a duplicated level renders a duplicated control.
-   * @default [documentLevel(), collectionLevel()]
-   * @since 0.5.0
+   * Which server modules to enable, as factories — `documentTranslation()`, `fieldTranslation()`.
+   * Required, and `[]` is a real answer: auto-translate needs no route at all.
+   *
+   * @since 1.0.0 — replaces `levels`.
    */
-  levels?: TranslationLevel[];
+  modules: TranslationModule[];
+  /**
+   * Which admin controls to attach, as factories — `translateDocumentControl()`,
+   * `bulkTranslationDashboard()`. Required, and `[]` is a real answer for a headless setup.
+   *
+   * A control calls its module's routes, so list that module in `modules` too.
+   *
+   * @since 1.0.0 — split out of `levels`.
+   */
+  components: TranslationComponent[];
   /**
    * Opt-in translation provenance — a durable, per-locale record of what source state each
    * translation was derived from, stored in a plugin-managed sidecar collection. Set `true` (or `{}`)
@@ -83,6 +91,23 @@ export type TranslatorPluginConfig = TranslatorSettingsOptions & {
 };
 
 /**
+ * A module's name keys its slot in the run's `moduleState`, so two modules sharing one would share
+ * the slot: the second overwrites, and the first reads back a value that is not its own.
+ */
+function refuseDuplicateNames(chain: readonly TranslationModule[]): void {
+  const seen = new Set<string>();
+  for (const member of chain) {
+    if (seen.has(member.name)) {
+      throw new Error(
+        `payload-plugin-translator: two modules are named "${member.name}". ` +
+          "Module names must differ — each one keys its own state for the duration of a run."
+      );
+    }
+    seen.add(member.name);
+  }
+}
+
+/**
  * Creates a translation plugin for Payload CMS collections.
  *
  * @example
@@ -108,8 +133,9 @@ export function translatorPlugin(
   pluginConfig: TranslatorPluginConfig
 ): (config: Config) => Promise<Config> {
   return async (payloadConfig) => {
-    const { access, translationProvider, runner, collections, levels, provenance, lifecycle } =
+    const { access, translationProvider, runner, collections, provenance, lifecycle } =
       pluginConfig;
+    const { modules, components } = pluginConfig;
     const settings = resolveSettings(pluginConfig);
 
     // Required by the type, so only a plain-JavaScript caller reaches this.
@@ -120,6 +146,17 @@ export function translatorPlugin(
       );
     }
 
+    if (!modules || !components) {
+      throw new Error(
+        "payload-plugin-translator: `modules` and `components` are both required, and `[]` is a " +
+          "valid answer for either. `levels` is gone: `documentLevel()` becomes " +
+          "`modules: [documentTranslation()]` plus `components: [translateDocumentControl()]`, " +
+          "`collectionLevel()` becomes the same module plus " +
+          "`components: [bulkTranslationDashboard()]`, and `fieldLevel()` becomes " +
+          "`modules: [fieldTranslation()]`."
+      );
+    }
+
     const schemaMap: CollectionSchemaMap = new Map(
       collections.map((col) => [col.slug, projectFieldsToFieldLike(col.fields)])
     );
@@ -127,17 +164,21 @@ export function translatorPlugin(
 
     const provenanceModule = configureProvenance(provenance, schemaMap);
 
+    // Provenance goes first: the staleness route re-hashes the stored source, so a fingerprint
+    // taken after another module replaced `sourceData` would never match.
+    const chain: TranslationModule[] = provenanceModule ? [provenanceModule, ...modules] : modules;
+    refuseDuplicateNames(chain);
+
     const { taskRunnerFactory, configModifier: runnerConfigModifier } = wireTranslateRunner({
       translationProvider,
       schemaMap,
-      provenanceServiceFactory: provenanceModule.serviceFactory,
+      modules: chain,
       runner,
       lifecycle: lifecycle ?? {},
       collections: Array.from(collectionSlugs),
     });
     const autoTranslateModule = configureAutoTranslate(collections, schemaMap, taskRunnerFactory);
 
-    const activeLevels = levels ?? [documentLevel(), collectionLevel()];
     const builder = new PluginConfigBuilder({
       collections,
       settings,
@@ -145,12 +186,11 @@ export function translatorPlugin(
       taskRunnerFactory,
       schemaMap,
       translationProvider,
-      provenanceServiceFactory: provenanceModule.serviceFactory,
     });
-    for (const level of activeLevels) level.extend(builder);
+    for (const member of chain) member.setup?.(builder);
+    for (const component of components) component.attach(builder);
 
     builder.addConfigModifier(runnerConfigModifier);
-    builder.addConfigModifier(provenanceModule.configure(collectionSlugs));
     builder.addConfigModifier(autoTranslateModule.configure(collectionSlugs));
     builder.addAdminProvider(new CacheProviderExport(settings.basePath));
 

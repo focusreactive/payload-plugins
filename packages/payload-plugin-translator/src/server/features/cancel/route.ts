@@ -11,7 +11,7 @@ import { CancelHandler } from "./handler.js";
  */
 export function createCancelRoute(
   taskRunnerFactory: TaskRunnerFactory,
-  access?: AccessGuard,
+  access: AccessGuard,
   basePath = "/translate"
 ): Endpoint {
   const handler = new CancelHandler(taskRunnerFactory);

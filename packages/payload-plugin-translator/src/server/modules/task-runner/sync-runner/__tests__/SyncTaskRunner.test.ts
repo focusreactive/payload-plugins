@@ -84,6 +84,7 @@ describe("SyncTaskRunner", () => {
           targetLng: "de",
           strategy: "overwrite",
           publishOnTranslation: false,
+          previousAttempts: 0,
         },
         {}
       );

@@ -6,7 +6,7 @@ import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.
 import { makeIdPath } from "../../content-projection/idPath.js";
 import { SkipExistingStrategy } from "../../../translation-pipeline/strategies/index.js";
 import type { CurrentFingerprint } from "../staleness.js";
-import { changedLeaves, isRecordStale } from "../staleness.js";
+import { changedLeaves, isRecordStale, recordsEachLeaf } from "../staleness.js";
 import {
   parseSourceFingerprint,
   serializeSourceFingerprint,
@@ -45,7 +45,9 @@ describe("a leaf the last run saw and skipped", () => {
   } as const;
 
   it("is reported as changed once its source moves", () => {
-    expect(changedLeaves(watermarked, sourceNow({ title: "ace", body: "cafe" }).fields)).toEqual({
+    expect(
+      changedLeaves(watermarked.hashes, sourceNow({ title: "ace", body: "cafe" }).fields)
+    ).toEqual({
       title: false,
       body: true,
     });
@@ -61,7 +63,10 @@ describe("a leaf the last run saw and skipped", () => {
   });
 
   it("is selected by skip_existing although its target is not empty", () => {
-    const changed = changedLeaves(watermarked, sourceNow({ title: "ace", body: "cafe" }).fields);
+    const changed = changedLeaves(
+      watermarked.hashes,
+      sourceNow({ title: "ace", body: "cafe" }).fields
+    );
 
     expect(
       new SkipExistingStrategy().shouldTranslate({
@@ -73,7 +78,10 @@ describe("a leaf the last run saw and skipped", () => {
   });
 
   it("is left alone while its source stands still", () => {
-    const changed = changedLeaves(watermarked, sourceNow({ title: "ace", body: "beef" }).fields);
+    const changed = changedLeaves(
+      watermarked.hashes,
+      sourceNow({ title: "ace", body: "beef" }).fields
+    );
 
     expect(
       new SkipExistingStrategy().shouldTranslate({
@@ -94,13 +102,19 @@ describe("a receipt written before the watermark", () => {
 
   it("revisits the leaf an old run declined, instead of protecting it for ever", () => {
     const stored = parseSourceFingerprint(legacy);
+    if (!recordsEachLeaf(stored))
+      throw new Error("the legacy record must still parse leaf by leaf");
 
-    expect(changedLeaves(stored, sourceNow({ title: "ace", body: "beef" }).fields).body).toBe(true);
+    expect(
+      changedLeaves(stored.hashes, sourceNow({ title: "ace", body: "beef" }).fields).body
+    ).toBe(true);
   });
 
   it("makes that leaf selected by skip_existing over a target it did not write", () => {
     const stored = parseSourceFingerprint(legacy);
-    const changed = changedLeaves(stored, sourceNow({ title: "ace", body: "beef" }).fields);
+    if (!recordsEachLeaf(stored))
+      throw new Error("the legacy record must still parse leaf by leaf");
+    const changed = changedLeaves(stored.hashes, sourceNow({ title: "ace", body: "beef" }).fields);
 
     expect(
       new SkipExistingStrategy().shouldTranslate({
@@ -181,12 +195,10 @@ describe("the receipt a run leaves behind", () => {
   it("brings that leaf back on the next run once its source moves", async () => {
     const stored = await storedAfterRun(null);
 
-    expect(
-      changedLeaves(
-        { kind: "fields", hashes: stored },
-        sourceNow({ title: "ace", body: "cafe" }).fields
-      )
-    ).toEqual({ title: false, body: true });
+    expect(changedLeaves(stored, sourceNow({ title: "ace", body: "cafe" }).fields)).toEqual({
+      title: false,
+      body: true,
+    });
   });
 
   it("keeps an older decline marked for revisiting until a run answers it", async () => {

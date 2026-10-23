@@ -5,10 +5,12 @@ import type { RawPayloadComponentExport } from "../../../types/PayloadComponentE
 
 import { resolveSettings } from "../../../settings.js";
 import { PluginConfigBuilder } from "./PluginConfigBuilder.js";
+import { AnyAccessGuard } from "../../shared/access/AnyAccessGuard.js";
 
 const deps = (collections: Array<{ slug: string }> = []) => ({
   collections: collections as unknown as CollectionConfig[],
   settings: resolveSettings({}),
+  access: new AnyAccessGuard(),
   taskRunnerFactory: { create: vi.fn() },
   schemaMap: new Map(),
   translationProvider: { translate: vi.fn() },
@@ -63,9 +65,8 @@ describe("PluginConfigBuilder", () => {
     expect(other.admin).toBeUndefined(); // unmanaged collection untouched
   });
 
-  it("deduplicates a collection component declared twice for the same slot + path (duplicate level)", () => {
+  it("deduplicates a collection component declared twice for the same slot + path", () => {
     const builder = new PluginConfigBuilder(deps([{ slug: "posts" }]));
-    // Two documentLevel()-style registrations: distinct `make` closures, same slot + component path.
     builder.addCollectionComponent("beforeDocumentControls", () => component("doc"));
     builder.addCollectionComponent("beforeDocumentControls", () => component("doc"));
 

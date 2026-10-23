@@ -13,7 +13,7 @@ import { GetCollectionStatusHandler } from "./handler.js";
 export function createGetCollectionStatusRoute(
   config: GetCollectionStatusConfig,
   taskRunnerFactory: TaskRunnerFactory,
-  access?: AccessGuard,
+  access: AccessGuard,
   basePath = "/translate"
 ): Endpoint {
   const handler = new GetCollectionStatusHandler(config, taskRunnerFactory);

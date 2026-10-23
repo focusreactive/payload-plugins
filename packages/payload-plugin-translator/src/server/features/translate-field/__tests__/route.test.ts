@@ -6,7 +6,9 @@ import type { TranslationProvider } from "../../../../core/domain/translation-pr
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 
 import { createFieldRoute } from "../route.js";
+import { AnyAccessGuard } from "../../../shared/access/AnyAccessGuard.js";
 
+const OPEN_ON_PURPOSE = new AnyAccessGuard();
 // Route-contract tests: pin path + method + access-guard wiring. Handler logic
 // and the shared wrappers are covered by their own unit tests.
 const schemaMap = new Map([
@@ -20,6 +22,7 @@ describe("createFieldRoute (contract)", () => {
     const endpoint = createFieldRoute({
       schemaMap,
       translationProvider: provider,
+      access: OPEN_ON_PURPOSE,
     });
     expect(endpoint.path).toBe("/translate/field");
     expect(endpoint.method).toBe("post");
@@ -29,6 +32,7 @@ describe("createFieldRoute (contract)", () => {
     const endpoint = createFieldRoute({
       schemaMap,
       translationProvider: provider,
+      access: OPEN_ON_PURPOSE,
       basePath: "/i18n",
     });
     expect(endpoint.path).toBe("/i18n/field");
