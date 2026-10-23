@@ -130,7 +130,7 @@ export function SeoField(props: SeoFieldProps) {
   };
 
   return (
-    <div className={cn("seo-generated-field", showError && "error")}>
+    <div className={cn("seo-generated-field mb-[20px] last:mb-0", showError && "error")}>
       {kind === "description" ? (
         <TextareaInput
           {...commonInputProps}
