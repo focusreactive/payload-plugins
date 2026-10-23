@@ -1,8 +1,8 @@
 "use client";
 
+import { cva } from "class-variance-authority";
 import type { Measurement } from "../../measure/measure";
 import { Pill } from "../../ui/Pill";
-import { cn } from "../../utils/style";
 
 const STATUS_TO_VARIANT = {
   good: "good",
@@ -14,11 +14,15 @@ const STATUS_LABEL = {
   short: "Too short",
   long: "Too long",
 } as const;
-const FILL_CLASS = {
-  good: "bg-seo-good",
-  short: "bg-seo-warn",
-  long: "bg-seo-bad",
-} as const;
+const fillVariants = cva("absolute inset-y-0 left-0 rounded-full", {
+  variants: {
+    status: {
+      good: "bg-seo-good",
+      short: "bg-seo-warn",
+      long: "bg-seo-bad",
+    },
+  },
+});
 
 interface MeterProps {
   measurement: Measurement;
@@ -46,10 +50,7 @@ export function Meter({ measurement, hasText, loading, kindLabel }: MeterProps) 
         />
 
         {hasText && !loading && (
-          <span
-            className={cn("absolute inset-y-0 left-0 rounded-full", FILL_CLASS[status])}
-            style={{ width: pct(value) }}
-          />
+          <span className={fillVariants({ status })} style={{ width: pct(value) }} />
         )}
 
         {loading && <span className="absolute inset-0 animate-pulse bg-neutral-200" />}
