@@ -1,3 +1,21 @@
+# @focus-reactive/payload-plugin-translator [1.0.0-next.5](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.4...@focus-reactive/payload-plugin-translator@1.0.0-next.5) (2026-10-23)
+
+
+* feat!: provenance becomes an ordinary module on a run seam ([17f9c16](https://github.com/focusreactive/payload-plugins/commit/17f9c1623953abbe05d0a9acdb0c224c6dc1d30e)), closes [#198](https://github.com/focusreactive/payload-plugins/issues/198)
+
+
+### BREAKING CHANGES
+
+* the `levels` plugin option is removed, along with
+`documentLevel()`, `collectionLevel()`, `fieldLevel()` and the
+`TranslationLevel` type. Replace `levels: [documentLevel(), collectionLevel()]`
+with `modules: [documentTranslation()]` and
+`components: [translateDocumentControl(), bulkTranslationDashboard()]`;
+`levels: [fieldLevel()]` becomes `modules: [fieldTranslation()]`. Both lists are
+required and either may be empty — an omitted option used to mean two surfaces
+silently, and now fails at boot with the replacement in the message.
+See docs/DEPRECATIONS.md for the full table.
+
 # @focus-reactive/payload-plugin-translator [1.0.0-next.4](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.3...@focus-reactive/payload-plugin-translator@1.0.0-next.4) (2026-10-22)
 
 
