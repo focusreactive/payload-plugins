@@ -1,3 +1,11 @@
+## @focus-reactive/payload-plugin-seo [1.10.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.10.1...@focus-reactive/payload-plugin-seo@1.10.2) (2026-10-23)
+
+
+### Bug Fixes
+
+* **seo:** add bottom spacing between generated seo fields ([13c100c](https://github.com/focusreactive/payload-plugins/commit/13c100c5f3d51f20109c67d54b747e86bf5d44d0))
+* **seo:** define meter fill colors as cva variants ([57b8391](https://github.com/focusreactive/payload-plugins/commit/57b839159225b96fd8e867ab7db3f749bcf6213e))
+
 ## @focus-reactive/payload-plugin-seo [1.10.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.10.0...@focus-reactive/payload-plugin-seo@1.10.1) (2026-07-04)
 
 
