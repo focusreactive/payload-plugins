@@ -80,7 +80,10 @@ describe("container mode reaches rich text at every nesting depth", () => {
   let en: Doc;
 
   beforeAll(async () => {
-    ctx = await bootTestPayload({ inlineMarks: true, collections: buildNestedCollections() });
+    ctx = await bootTestPayload({
+      declaresInlineMarks: true,
+      collections: buildNestedCollections(),
+    });
 
     const created = await ctx.payload.create({
       collection: "nested" as "pages",

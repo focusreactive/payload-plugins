@@ -1,3 +1,4 @@
+import { asHash } from "../../../../core/domain/provenance/__tests__/fixtures/claims.js";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload } from "payload";
 import type { ProvenanceReceipt } from "../../../../core/domain/provenance/index.js";
@@ -5,9 +6,9 @@ import { PayloadProvenanceStore } from "../Provenance.store.js";
 
 const SLUG = "translator-provenance";
 
-const HASHES = { title: "3a7f1c", body: "91ce04" };
+const HASHES = { title: asHash("3a7f1c"), body: asHash("91ce04") };
 const SERIALIZED = JSON.stringify(HASHES);
-const DISMISSED_HASHES = { title: "3a7f1c", body: "ffffff" };
+const DISMISSED_HASHES = { title: asHash("3a7f1c"), body: asHash("ffffff") };
 const SERIALIZED_DISMISSED = JSON.stringify(DISMISSED_HASHES);
 const SHA256_HEX_LENGTH = 64;
 const LEGACY = "a".repeat(SHA256_HEX_LENGTH);

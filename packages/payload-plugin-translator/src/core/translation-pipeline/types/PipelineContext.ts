@@ -23,6 +23,7 @@ export type PipelineContext = {
   textChunks?: TextChunk[];
   textMap?: Record<number, string>;
   translations?: Record<number, string>;
+  writtenChunks?: TextChunk[];
 };
 
 /**

@@ -3,11 +3,11 @@ import { bootTestPayload } from "./bootTestPayload";
 import { BOLD, translateField, UNFORMATTED } from "./fieldSurfaceFixture";
 import type { TestPayload } from "./bootTestPayload";
 
-describe("per-field translation, the mode on", () => {
+describe("per-field translation, a provider that declares marks", () => {
   let ctx: TestPayload;
 
   beforeAll(async () => {
-    ctx = await bootTestPayload({ inlineMarks: true, fieldSurface: true });
+    ctx = await bootTestPayload({ declaresInlineMarks: true, fieldSurface: true });
   });
 
   afterAll(async () => {

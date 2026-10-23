@@ -44,6 +44,7 @@ describe("TranslateDocumentHandler — it asks before it writes", () => {
     targetLng: "de",
     strategy: "overwrite",
     publishOnTranslation: false,
+    previousAttempts: 0,
     ...over,
   });
 
@@ -51,7 +52,10 @@ describe("TranslateDocumentHandler — it asks before it writes", () => {
     vi.clearAllMocks();
     (await pipeline()).mockResolvedValue({
       translatedData: { title: "Titel", body: "Text" },
-      translatedPaths: ["title", "body"],
+      leaves: [
+        { idPath: "title", answeredInFull: true },
+        { idPath: "body", answeredInFull: true },
+      ],
     });
     provider = { translate: vi.fn().mockResolvedValue({}) };
     const schemaMap = new Map([

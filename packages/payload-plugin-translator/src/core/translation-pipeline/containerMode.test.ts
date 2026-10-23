@@ -66,9 +66,8 @@ const paragraphsOf = (result: { translatedData: Record<string, unknown> } | null
 };
 
 describe("container mode", () => {
-  describe("flag off", () => {
-    // Baseline captured from the untouched tree on 2026-09-09 (see the task contract).
-    it("translates per node, byte-identical to the recorded baseline", async () => {
+  describe("a provider that cannot keep marks", () => {
+    it("translates per node, byte-identical to the output recorded before container mode existed", async () => {
       const { provider } = bracketProvider();
       const source = {
         body: richText([
@@ -104,9 +103,26 @@ describe("container mode", () => {
         expect.objectContaining({ type: "text", text: "[ first]" }),
       ]);
     });
+
+    it("stays per-node for a provider that declares the capability false", async () => {
+      const { provider, sent } = bracketProvider({ capabilities: { inlineMarks: false } });
+
+      await translateContent({
+        document: { collection: "docs", id: "1" },
+        schema,
+        sourceData: {
+          body: richText([paragraph([text("a "), text("red", 1), text(" car")])]),
+        },
+        sourceLng: "en",
+        targetLng: "fr",
+        translationProvider: provider,
+      });
+
+      expect(Object.values(sent[0] ?? {})).toEqual(["a ", "red", " car"]);
+    });
   });
 
-  describe("flag on", () => {
+  describe("a provider that declares the capability", () => {
     it("sends a formatted paragraph as one marked string", async () => {
       const { provider, sent } = bracketProvider({ capabilities: { inlineMarks: true } });
       const source = {
@@ -120,7 +136,6 @@ describe("container mode", () => {
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       expect(Object.values(sent[0] ?? {})).toEqual(["<1>a </1><2>red</2><3> car</3>"]);
@@ -142,7 +157,6 @@ describe("container mode", () => {
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
@@ -166,11 +180,8 @@ describe("container mode", () => {
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
-      // Both halves matter: the text alone passes on code that mutates the caller's tree, and the
-      // untouched source alone passes on code that translated nothing.
       expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
         "une ",
         "rouge",
@@ -197,7 +208,6 @@ describe("container mode", () => {
         sourceLng: "en",
         targetLng: "de",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       const children = paragraphsOf(result ?? null)[0]?.children;
@@ -221,7 +231,6 @@ describe("container mode", () => {
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
@@ -245,7 +254,6 @@ describe("container mode", () => {
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       expect(Object.values(sent[0] ?? {})).toEqual([
@@ -272,7 +280,6 @@ describe("container mode", () => {
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       expect(Object.values(sent[0] ?? {})).toEqual([
@@ -298,7 +305,6 @@ describe("container mode", () => {
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
@@ -320,7 +326,6 @@ describe("container mode", () => {
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       expect(Object.values(sent[0] ?? {})).toEqual(["Sign up now", "No card needed"]);
@@ -339,7 +344,6 @@ describe("container mode", () => {
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       expect(Object.values(sent[0] ?? {})).toEqual([
@@ -362,7 +366,6 @@ describe("container mode", () => {
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
@@ -387,7 +390,6 @@ describe("container mode", () => {
           sourceLng: "en",
           targetLng: "fr",
           translationProvider: each.provider,
-          inlineMarks: true,
         });
       }
 

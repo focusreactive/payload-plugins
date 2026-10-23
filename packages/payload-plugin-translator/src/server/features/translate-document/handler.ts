@@ -6,7 +6,8 @@ import { APIError } from "payload";
 import type { Handler } from "../../shared/index.js";
 import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
 import { translateContent } from "../../../core/translation-pipeline/index.js";
-import type { ProvenanceServiceFactory } from "../../modules/provenance/index.js";
+import type { ChainMember } from "../../modules/translation-run/index.js";
+import { runAfterSave, runBeforeTranslation } from "../../modules/translation-run/index.js";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import { freshReq } from "../../shared/payload/RequestScope.shapes.js";
@@ -21,7 +22,6 @@ import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateCon
 import type { TranslateDocumentInput, TranslateDocumentOutput } from "./model.js";
 import { resolveTargetLayer } from "./targetLayer.js";
 import type { PublishScope, TargetLayer } from "./targetLayer.js";
-import { changedLeaves } from "../../../core/domain/provenance/index.js";
 
 const translatorWriteContext = () => ({ [AUTO_TRANSLATE_SKIP_CONTEXT_KEY]: true });
 
@@ -43,19 +43,16 @@ export class TranslateDocumentHandler implements Handler<
 > {
   private readonly translationProvider: TranslationProvider;
   private readonly schemaMap: CollectionSchemaMap;
-  private readonly provenanceServiceFactory?: ProvenanceServiceFactory;
-  private readonly inlineMarks: boolean;
+  private readonly modules: readonly ChainMember[];
 
   constructor(
     translationProvider: TranslationProvider,
     schemaMap: CollectionSchemaMap,
-    provenanceServiceFactory?: ProvenanceServiceFactory,
-    inlineMarks = false
+    modules: readonly ChainMember[] = []
   ) {
     this.translationProvider = translationProvider;
     this.schemaMap = schemaMap;
-    this.provenanceServiceFactory = provenanceServiceFactory;
-    this.inlineMarks = inlineMarks;
+    this.modules = modules;
   }
 
   async handle(
@@ -63,19 +60,23 @@ export class TranslateDocumentHandler implements Handler<
     input: TranslateDocumentInput,
     scope: RequestScope = {}
   ): Promise<TranslateDocumentOutput> {
-    const { collection, collectionId, sourceLng, targetLng, strategy, publishOnTranslation } =
-      input;
+    const {
+      collection,
+      collectionId,
+      sourceLng,
+      targetLng,
+      strategy,
+      publishOnTranslation,
+      previousAttempts,
+    } = input;
 
     const schema = this.schemaMap.get(collection);
     if (!schema) {
       throw new TranslatorConfigError(`Collection "${collection}" not found in schemaMap`);
     }
 
-    const layer = resolveTargetLayer({
-      versions: payload.collections[collection].config.versions,
-      targetLng,
-    });
-
+    const versions = payload.collections[collection].config.versions;
+    const layer = resolveTargetLayer({ versions, targetLng });
     const requester = await rebuildRequester(payload, scope);
 
     const [sourceData, currentTargetVersion] = await Promise.all([
@@ -112,14 +113,17 @@ export class TranslateDocumentHandler implements Handler<
     });
     if (!allowed) throw new TranslationRefused(collection, targetLng);
 
-    const provenance = this.provenanceServiceFactory?.(payload, scope);
-    const provenanceKey = {
-      collectionSlug: collection,
-      documentId: String(collectionId),
+    const target = {
+      collection,
+      documentId: collectionId,
+      sourceLocale: sourceLng,
       targetLocale: targetLng,
     };
-    const currentFields = provenance?.captureFingerprint(collection, sourceData) ?? null;
-    const previous = provenance ? await provenance.lastTranslatedFrom(provenanceKey) : null;
+    const joined = await runBeforeTranslation(
+      this.modules,
+      { payload, target, scope, sourceData, previousAttempts, moduleState: {} },
+      payload.logger
+    );
 
     const translated = await this.translateOrWrap({
       schema,
@@ -130,12 +134,11 @@ export class TranslateDocumentHandler implements Handler<
       document: { collection, id: collectionId },
       translationProvider: this.translationProvider,
       strategy,
-      inlineMarks: this.inlineMarks,
-      sourceChangedByLeaf: currentFields ? changedLeaves(previous, currentFields) : undefined,
+      sourceChangedByLeaf: joined.sourceChangedByLeaf,
     });
 
     if (translated?.translatedData) {
-      const { translatedData, translatedPaths } = translated;
+      const { translatedData, leaves } = translated;
       await this.refuseUnlessAllowed(payload, input, translatedData, scope, requester);
       await this.saveTranslatedDocument(
         payload,
@@ -146,13 +149,11 @@ export class TranslateDocumentHandler implements Handler<
         requester
       );
 
-      if (provenance && currentFields !== null) {
-        await provenance.record(
-          { ...provenanceKey, sourceLocale: sourceLng },
-          currentFields,
-          translatedPaths
-        );
-      }
+      await runAfterSave(
+        this.modules,
+        { payload, target, scope, moduleState: joined.moduleState, leaves },
+        payload.logger
+      );
     }
 
     if (publishOnTranslation && layer.kind === "drafts") {

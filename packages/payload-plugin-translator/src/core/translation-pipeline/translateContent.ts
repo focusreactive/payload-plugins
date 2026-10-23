@@ -13,8 +13,8 @@ export type TranslateContentArgs = {
   /** Source values, rooted to match `schema` (e.g. `{ [fieldName]: value }`). */
   sourceData: Record<string, unknown>;
   /**
-   * Existing target-locale values to reconcile against (target wins when
-   * non-empty under `skip_existing`). Defaults to `{}` — i.e. translate the
+   * Existing target-locale values to reconcile against (under `skip_existing` a non-empty target
+   * wins unless `sourceChangedByLeaf` marks its leaf). Defaults to `{}` — i.e. translate the
    * source in place (`overwrite`).
    */
   targetData?: Record<string, unknown>;
@@ -27,13 +27,6 @@ export type TranslateContentArgs = {
   /** @default 'overwrite' */
   strategy?: TranslationStrategyName;
   sourceChangedByLeaf?: ChangedLeaves;
-  /**
-   * Translate each rich-text container as one marked string instead of node by node, so the model
-   * may reorder its pieces. Silently ignored unless the provider declares `capabilities.inlineMarks`.
-   *
-   * @default false
-   */
-  inlineMarks?: boolean;
 };
 
 export type TranslatedContent = PipelineResult;
@@ -53,10 +46,9 @@ export async function translateContent({
   document,
   translationProvider,
   strategy = "overwrite",
-  inlineMarks = false,
   sourceChangedByLeaf,
 }: TranslateContentArgs): Promise<TranslatedContent | null> {
-  const marksUsable = inlineMarks && translationProvider.capabilities?.inlineMarks === true;
+  const marksUsable = translationProvider.capabilities?.inlineMarks === true;
 
   const pipeline = new TranslationPipeline({
     translationProvider,

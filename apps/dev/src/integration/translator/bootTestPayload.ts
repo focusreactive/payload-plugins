@@ -7,8 +7,9 @@ import {
   AnyAccessGuard,
   createTranslationProvider,
   createSyncRunner,
-  documentLevel,
-  fieldLevel,
+  documentTranslation,
+  fieldTranslation,
+  translateDocumentControl,
   translatorPlugin,
   withAutoTranslate,
 } from "@focus-reactive/payload-plugin-translator";
@@ -91,14 +92,7 @@ export async function bootTestPayload(opts?: {
   runner?: TaskRunnerProvider;
   lifecycle?: TranslationLifecycleCallbacks;
   failedWindowMs?: number;
-  /** Turn on container-granular rich-text translation, and declare the provider able to keep marks. */
-  inlineMarks?: boolean;
-  /**
-   * Whether the provider declares `capabilities.inlineMarks`. Defaults to `inlineMarks`; set it to
-   * `false` with the flag on to stand in for a third-party provider that cannot keep marks.
-   */
-  declareCapability?: boolean;
-  /** How the fake answers a marked value — reorder by default, keep order, or corrupt it. */
+  declaresInlineMarks?: boolean;
   fake?: FakeTranslationOptions;
   /** Also register the synchronous per-field surface, `POST {basePath}/field`. */
   fieldSurface?: boolean;
@@ -115,15 +109,14 @@ export async function bootTestPayload(opts?: {
     ? collections.map((c) => (c.slug === "docs" ? withAutoTranslate(c, autoTranslate) : c))
     : collections;
 
-  const declaresMarks = opts?.declareCapability ?? opts?.inlineMarks ?? false;
   const baseProvider = createTranslationProvider({
     complete: fakeComplete(opts?.fake),
-    ...(declaresMarks ? { capabilities: { inlineMarks: true } } : {}),
+    ...(opts?.declaresInlineMarks ? { capabilities: { inlineMarks: true } } : {}),
   });
   const failFor = new Set(opts?.failFor);
   let translateCalls = 0;
   const countingProvider: TranslationProvider = {
-    ...(declaresMarks ? { capabilities: { inlineMarks: true } } : {}),
+    ...(opts?.declaresInlineMarks ? { capabilities: { inlineMarks: true } } : {}),
     translate: async (input, sourceLng, targetLng, options) => {
       translateCalls += 1;
       opts?.onRequest?.(options);
@@ -165,11 +158,13 @@ export async function bootTestPayload(opts?: {
         access: new AnyAccessGuard(),
         translationProvider: countingProvider,
         runner: opts?.runner ?? createSyncRunner(),
-        levels: opts?.fieldSurface ? [documentLevel(), fieldLevel()] : [documentLevel()],
+        modules: opts?.fieldSurface
+          ? [documentTranslation(), fieldTranslation()]
+          : [documentTranslation()],
+        components: [translateDocumentControl()],
         provenance: true,
         ...(opts?.lifecycle ? { lifecycle: opts.lifecycle } : {}),
         ...(opts?.failedWindowMs === undefined ? {} : { failedWindowMs: opts.failedWindowMs }),
-        ...(opts?.inlineMarks ? { experimental: { inlineMarks: true } } : {}),
       }),
     ],
   });

@@ -8,7 +8,6 @@ describe("resolveSettings", () => {
       basePath: "/translate",
       failedWindowMs: DEFAULT_FAILED_WINDOW_MS,
       targetSelection: "single",
-      inlineMarks: false,
     });
   });
 
@@ -21,15 +20,6 @@ describe("resolveSettings", () => {
       resolveSettings({ failedWindowMs: 0 }).failedWindowMs,
       "zero means report no failures at all — a real choice, not an omission"
     ).toBe(0);
-  });
-
-  it.each([
-    [undefined, false],
-    [{}, false],
-    [{ inlineMarks: false }, false],
-    [{ inlineMarks: true }, true],
-  ])("reads experimental %j as inlineMarks=%s", (experimental, expected) => {
-    expect(resolveSettings({ experimental }).inlineMarks).toBe(expected);
   });
 
   it.each([Number.NaN, Number.POSITIVE_INFINITY, -1])(

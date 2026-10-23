@@ -68,9 +68,7 @@ export function TranslationStatusList({ rows, collection, id }: TranslationStatu
     });
   };
 
-  // `skip_existing`, not `overwrite`: this button sits under the "out of date" badge, so switching it
-  // back would silently discard a reviewer's edit to a leaf whose source never moved.
-  const reTranslate = (row: TranslationStatusRow) =>
+  const refreshChangedLeaves = (row: TranslationStatusRow) =>
     withToast(
       () =>
         queueApi.mutateAsync({
@@ -137,12 +135,12 @@ export function TranslationStatusList({ rows, collection, id }: TranslationStatu
             <ActionButton
               icon={<ReloadIcon />}
               title={`Re-translate from ${row.sourceLocale}`}
-              onClick={() => reTranslate(row)}
+              onClick={() => refreshChangedLeaves(row)}
               loading={queueApi.isPending}
             />
             <ActionButton
               icon={<CheckIcon />}
-              title="Keep as is — hide until the source changes again"
+              title="Hide this notice until the source changes again"
               onClick={() => dismiss(row.targetLocale)}
               disabled={dismissing.has(row.targetLocale)}
               loading={dismissing.has(row.targetLocale)}

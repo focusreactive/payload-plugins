@@ -13,7 +13,7 @@ import { GetDocumentStatusHandler } from "./handler.js";
 export function createGetDocumentStatusRoute(
   config: GetDocumentStatusConfig,
   taskRunnerFactory: TaskRunnerFactory,
-  access?: AccessGuard,
+  access: AccessGuard,
   basePath = "/translate"
 ): Endpoint {
   const handler = new GetDocumentStatusHandler(config, taskRunnerFactory);

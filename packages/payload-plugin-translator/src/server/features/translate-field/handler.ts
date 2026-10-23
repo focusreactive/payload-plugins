@@ -137,7 +137,6 @@ export class TranslateFieldHandler {
       targetLng: target_lng,
       document: { collection: collection_slug, id: doc_id },
       translationProvider: this.config.translationProvider,
-      inlineMarks: this.config.inlineMarks,
     });
 
     if (!translated) {

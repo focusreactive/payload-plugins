@@ -1,3 +1,4 @@
+import { asHash } from "../../../core/domain/provenance/__tests__/fixtures/claims.js";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Field, Payload, PayloadRequest } from "payload";
 
@@ -53,12 +54,10 @@ beforeEach(() => {
 
 const schemaMap = new Map([["posts", schema]]) as CollectionSchemaMap;
 
-function makeConfig(store: ProvenanceStore | null): StalenessConfig {
+function makeConfig(store: ProvenanceStore): StalenessConfig {
   return {
     availableCollections: new Set(["posts"]) as StalenessConfig["availableCollections"],
-    provenanceServiceFactory: store
-      ? (p) => new ProvenanceService(store, schemaMap, {}, provenanceIo(p))
-      : undefined,
+    provenanceServiceFactory: (p) => new ProvenanceService(store, schemaMap, {}, provenanceIo(p)),
   };
 }
 
@@ -100,7 +99,7 @@ describe("GetDocumentStalenessHandler", () => {
       findByDocument: vi
         .fn()
         .mockResolvedValue([
-          makeRecord({ sourceFingerprint: { kind: "fields", hashes: { title: "fp-old" } } }),
+          makeRecord({ sourceFingerprint: { kind: "fields", hashes: { title: asHash("fa0d") } } }),
         ]),
     });
     const res = await new GetDocumentStalenessHandler(makeConfig(store)).handle(readReq());
@@ -110,11 +109,6 @@ describe("GetDocumentStalenessHandler", () => {
   it("omits locales with no provenance record (absent, not stale)", async () => {
     const store = makeStore({ findByDocument: vi.fn().mockResolvedValue([]) });
     const res = await new GetDocumentStalenessHandler(makeConfig(store)).handle(readReq());
-    expect((await bodyOf(res)).locales).toEqual([]);
-  });
-
-  it("returns empty when provenance is disabled", async () => {
-    const res = await new GetDocumentStalenessHandler(makeConfig(null)).handle(readReq());
     expect((await bodyOf(res)).locales).toEqual([]);
   });
 

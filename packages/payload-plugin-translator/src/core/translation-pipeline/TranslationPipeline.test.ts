@@ -879,7 +879,7 @@ describe("TranslationPipeline", () => {
         targetLng: "de",
       });
 
-      expect([...(result?.translatedPaths ?? [])].sort()).toEqual([
+      expect((result?.leaves ?? []).map((leaf) => String(leaf.idPath)).sort()).toEqual([
         "body",
         "items.a1.label",
         "title",
@@ -901,7 +901,10 @@ describe("TranslationPipeline", () => {
         targetLng: "de",
       });
 
-      expect([...(result?.translatedPaths ?? [])].sort()).toEqual(["items.a1.label", "title"]);
+      expect((result?.leaves ?? []).map((leaf) => String(leaf.idPath)).sort()).toEqual([
+        "items.a1.label",
+        "title",
+      ]);
     });
 
     it("passes the per-leaf answer from the config down to the strategy", async () => {
@@ -920,7 +923,7 @@ describe("TranslationPipeline", () => {
         sourceChangedByLeaf: { title: true },
       });
 
-      expect([...(result?.translatedPaths ?? [])]).toEqual(["title"]);
+      expect(result?.leaves).toEqual([{ idPath: "title", answeredInFull: true }]);
     });
   });
 });

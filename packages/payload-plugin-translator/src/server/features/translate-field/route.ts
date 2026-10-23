@@ -7,7 +7,7 @@ import type { FieldTranslationConfig } from "./model.js";
 import { TranslateFieldHandler } from "./handler.js";
 
 export type CreateFieldRouteArgs = FieldTranslationConfig & {
-  access?: AccessGuard;
+  access: AccessGuard;
   basePath?: string;
 };
 

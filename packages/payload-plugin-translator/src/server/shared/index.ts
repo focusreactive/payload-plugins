@@ -28,11 +28,7 @@ export { isTranslatableField, isLocalizedField, isRelationshipField } from "./gu
 export { isTabsField, isBlockItem, hasFields } from "../../core/kernel/field-traversal/index.js";
 
 // Field config
-export {
-  isFieldExcludedFromTranslation,
-  getTranslateKitFieldConfig,
-} from "../../core/domain/field-config/index.js";
-export type { TranslateKitFieldConfig } from "../../core/domain/field-config/index.js";
+export { isFieldExcludedFromTranslation } from "../../core/domain/field-config/index.js";
 
 // Lexical utilities
 export {

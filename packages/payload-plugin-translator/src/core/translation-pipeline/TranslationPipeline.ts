@@ -1,4 +1,6 @@
+import type { IdPath } from "../domain/content-projection/idPath.js";
 import type { TranslationProvider } from "../domain/translation-providers/index.js";
+import type { LeafOutcome, TextChunk } from "./types/index.js";
 import type {
   PipelineConfig,
   PipelineResult,
@@ -14,6 +16,23 @@ import {
   TextChunkExpanderStage,
   TranslationMutatorStage,
 } from "./stages/index.js";
+
+function leafOutcomes(sent: TextChunk[], written: TextChunk[]): LeafOutcome[] {
+  const applied = new Set(written);
+  const tally = new Map<IdPath, { sent: number; written: number }>();
+
+  for (const chunk of sent) {
+    const counts = tally.get(chunk.idPath) ?? { sent: 0, written: 0 };
+    counts.sent += 1;
+    if (applied.has(chunk)) counts.written += 1;
+    tally.set(chunk.idPath, counts);
+  }
+
+  return [...tally].map(([idPath, counts]) => ({
+    idPath,
+    answeredInFull: counts.written === counts.sent,
+  }));
+}
 
 /**
  * Options for TranslationPipeline.
@@ -82,7 +101,7 @@ export class TranslationPipeline {
 
     return {
       translatedData: ctx.filteredData,
-      translatedPaths: (ctx.fieldChunks ?? []).map((chunk) => chunk.idPath),
+      leaves: leafOutcomes(ctx.textChunks ?? [], ctx.writtenChunks ?? []),
     };
   }
 }

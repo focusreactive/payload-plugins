@@ -11,6 +11,15 @@ traversal vocabulary is to be **generalized off Payload's semantics** regardless
 CMS product ever appears. What remains rejected from that verdict is the L3 work (lifting the locale
 storage model / `sharedRow`) — see §3. The internal drivers for L2 are now concrete: a real package
 boundary and the `Payload → Lexical → Payload` nesting (§4.5, §5.3).
+**Re-verified 2026-10-18** against the code, after 87 commits landed with none of this implemented.
+Corrections are marked **[2026-10-18]** inline. Everything this document said about **strategies**,
+and its **open question 5**, are superseded by
+[2026-10-18-the-rewiring.md](./2026-10-18-the-rewiring.md) §7 — strategies are deleted rather than
+relocated, and the pipeline takes a selection of leaf addresses instead. That document also fixes
+the phase order: **the module seam opens to hosts only after phase 6**, because phase 6 breaks the
+package API and the module contract is built on core vocabulary. Method:
+[2026-10-18-kernel-plan-verification.md](./2026-10-18-kernel-plan-verification.md).
+
 **Follows:** [2026-07-31-core-agnosticism-options-and-value.md](./2026-07-31-core-agnosticism-options-and-value.md)
 · [2026-07-31-core-portability-storyblok-research.md](./2026-07-31-core-portability-storyblok-research.md)
 · [2026-07-17-core-layering-redesign.md](./2026-07-17-core-layering-redesign.md)
@@ -43,14 +52,22 @@ Measured, not estimated. Six links, with very different coupling:
 | 2 | Leaf selection | `domain/content-projection/translatableLeaf.ts:17,28-31` | Type names `text`/`textarea`/`richText`, the plugin's own target marker (spelled `localized` on `FieldLike` by name coincidence — see ADR-5), exclusion via `custom.translateKit`. One 4-line predicate |
 | 3 | Flatten + index correlation | `translation-pipeline/stages/text-expander/TextChunkExpander.ts:24-44` | Nothing meaningful. An index counter over an injectable `TextExpander[]` — **already a port** (`TranslationPipelineOptions.textExpanders`) |
 | 4 | Rich-text descent | `kernel/lexical/collectTextNodes.ts` via `RichTextExpander.ts` | Lexical — but already behind the link-3 port |
-| 5 | **Write-back by mutation** | `types/TextChunk.ts:1,23-40` + `stages/translation-applicator/TranslationMutator.ts:18-27` | **The real coupling.** See §2 |
+| 5 | **Write-back by mutation** | `types/TextChunk.ts:1,9-60` + `stages/translation-applicator/TranslationMutator.ts:49-63` | **The real coupling.** See §2 |
 | 6 | Making the copy | `stages/data-reconciler/DataReconciler.ts` | Payload's *storage model*: `sharedRow`, `id` keep/strip (`:107,:112`), `blockType`, element pairing by `id` (`kernel.ts:161-175`) |
 
-The provider boundary (`stages/translation/Translation.stage.ts`) is already neutral: `Record<number,
-string>` in, `Record<number, string>` out, no knowledge of Payload or of any format.
+**[2026-10-18 — this was true when written and is no longer.]** The provider boundary
+(`stages/translation/Translation.stage.ts`) *was* neutral: `Record<number, string>` in,
+`Record<number, string>` out. Two things have crossed it since. `requestOptions` (`:21-28`) now
+builds a fourth argument carrying `document: DocumentRef` — a `{ collection, id }` pair, which is
+Payload vocabulary — and `inlineMarks`, which the stage derives by testing
+`ctx.textChunks.some(isRichContainerChunk)`. Format knowledge now lives inside the stage this
+section calls format-free. Reshaping that argument is scheduled as `translate-positional-languages`
+in `docs/DEPRECATIONS.md`; whether the boundary is *restored* or the design accepts the two
+passengers is an open question.
 
-So the method is already ~4/5 extracted. What blocks calling it a primitive is link 5, and what
-must be kept *out* of it is link 6.
+So the method is ~4/5 extracted. What blocks calling it a primitive is link 5, and what must be kept
+*out* of it is link 6. **[2026-10-18]** The fraction was measured before link 5 grew a third member
+and before the boundary above stopped being neutral; treat it as an order of magnitude, not a count.
 
 ### 1.1 Where the rich-text format is distinguished today
 
@@ -63,7 +80,7 @@ worth noting — the two walks make it at *different times*:
 | `domain/content-projection/translatableLeaf.ts:18` | inside both walks | set membership (`text` / `textarea` / `richText`), not a branch |
 | `domain/content-projection/translatableLeaf.ts:42` (`leafSourceText`) | **inside** the fingerprint walk | branches on `field.type === "richText"` and joins Lexical text nodes |
 | `strategies/SkipExisting.strategy.ts:19-21` | **inside** the collect walk, via the strategy port | sniffs a Lexical root **by value shape** and calls `isEmptyRichText` |
-| `stages/text-expander/RichTextExpander.ts:14` + `types/TextChunk.ts:24,50` | **after** the collect walk (stage 3) | the actual plain-vs-rich split, on `chunk.schema.type` |
+| `stages/text-expander/RichTextExpander.ts:14` + `types/TextChunk.ts:25,41` | **after** the collect walk (stage 3) | the actual plain-vs-rich split, on `chunk.schema.type` |
 
 Two consequences the design has to answer. First, the selection predicate is already shared
 (`isTranslatableLeaf` is called by both walks) but the **text extraction is not**: the pipeline goes
@@ -74,28 +91,41 @@ the format port, and it duck-types the value instead of reading the schema — s
 
 ## 2. The one real coupling: write-back is a closed union
 
-"Where the translation goes" is expressed as a two-member discriminated union, with a Lexical type
-baked into the pipeline's own contract:
+"Where the translation goes" is expressed as a discriminated union, with Lexical types baked into
+the pipeline's own contract. **[2026-10-18 — it had two members when this was written; it now has
+three.]**
 
 ```ts
-// types/TextChunk.ts
-import type { SerializedTextNode } from "../../kernel/lexical";   // format leaks into the contract
+// types/TextChunk.ts — as of 2026-10-18
+import type { InlineFragment } from "../../kernel/lexical/collectInlineFragments.js";
+import type { ParsedMark } from "../../kernel/lexical/inlineMarks.js";
+import type { SerializedLexicalNode, SerializedTextNode } from "../../kernel/lexical/index.js";
 
-type PlainTextChunk    = { type: "plain";    index; text; dataRef; key };
-type RichTextChunk     = { type: "richText"; index; text; nodeRef: SerializedTextNode };
-export type TextChunk  = PlainTextChunk | RichTextChunk;
+type PlainTextChunk     = { type: "plain";         index; text; dataRef; key };
+type RichTextChunk      = { type: "richText";      index; text; nodeRef: SerializedTextNode };
+type RichContainerChunk = { type: "richContainer"; index; containerRef: SerializedLexicalNode;
+                            fragments: InlineFragment[]; reply?: ParsedMark[] };
+export type TextChunk   = PlainTextChunk | RichTextChunk | RichContainerChunk;
 ```
 
-and `TranslationMutator` re-derives the branch by hand:
+and `TranslationMutator` re-derives the branch by hand (`:49-63`):
 
 ```ts
-if (isPlainTextChunk(chunk))      chunk.dataRef[chunk.key] = translation;
-else if (isRichTextChunk(chunk))  chunk.nodeRef.text = translation;
+if (isRichContainerChunk(chunk)) { if (chunk.reply) applyContainer(chunk, chunk.reply); continue; }
+if (isPlainTextChunk(chunk))          chunk.dataRef[chunk.key] = translation;
+else if (isRichTextChunk(chunk))      chunk.nodeRef.text = translation;
 ```
 
 The asymmetry is the defect: **extraction is open** (an injectable expander array) while
 **write-back is closed**. Every new format needs a new union member *and* a new branch in the mutator,
 in a file that has no business knowing about formats.
+
+**[2026-10-18 — the prediction came true, which is the strongest evidence this section has.]**
+Container-mode rich text arrived between writing and re-verification, and it cost exactly a new
+union member plus a new branch — plus a whole `applyContainer` function in the mutator, because the
+third member does not write a string at all: it rebuilds the container's `children` array. Note what
+that does to §4.1: `RichContainerChunk` carries no `text`, so it does not fit a
+`TranslationTarget { text, write }` without a decision this document has not taken. See §6, phase 1.
 
 Consequence beyond tidiness: three parallel structures (`index`, `textMap: Record<number,string>`,
 `translations: Record<number,string>`) exist only to re-associate what a closure would have kept
@@ -117,7 +147,7 @@ associated.
   must run on the **pristine source before anything is written**: the pipeline mutates in place and
   shares object-valued leaves (rich-text nodes) with `sourceData` by reference, so hashing after
   translation would hash the translation and make every fresh translation look instantly stale — which
-  is why `translate-document/handler.ts:52` captures the fingerprint before `translateContent` runs,
+  is why `translate-document/handler.ts:121` captures the fingerprint before `translateContent` runs,
   and why `ProvenanceService.captureFingerprint` documents the ordering. Sharing the *extractors* is
   the goal; sharing one traversal pass is explicitly not, because a single pass over already-mutated
   targets would violate that ordering silently.
@@ -265,7 +295,7 @@ Why the projection keeps its own walk rather than being ported onto the primitiv
   risk in the wrong place.
 
 The pipeline's "seed the copy with the source value before translating"
-(`FieldChunkCollector.ts:137-139`) stays a separate explicit pass in the domain-level wrapper — it is
+(`FieldChunkCollector.ts:131`) stays a separate explicit pass in the domain-level wrapper — it is
 strategy semantics, not mechanism.
 
 ### 4.4 ADRs
@@ -284,9 +314,13 @@ support open on both ends.
 path. Mitigated by ADR-3.
 
 **ADR-3 — every target carries its `idPath`, including in the pipeline.**
-Today the pipeline's chunks have no location; only the projector computes `idPath`. Carrying it on
-every target restores the debuggability the closure costs, and gives logging and provenance a location
-for free.
+Carrying it on every target restores the debuggability the closure costs, and gives logging and
+provenance a location for free.
+**[2026-10-18 — half of this landed on its own.]** When written, only the projector computed
+`idPath`. The per-leaf fingerprint work since gave `FieldChunk` an `idPath`, computed in
+`FieldChunkCollector.ts:122` and used both for the strategy lookup and to build
+`PipelineResult.translatedPaths`. What still has no location is the **text** chunk — the unit this
+ADR is actually about. The decision stands; its cost has halved.
 
 **ADR-4 — an unmatched selected leaf is reported, not skipped.**
 `onUnhandled` closes defect §4.1 of the 2026-07-31 report (unrecognized rich-text format silently
@@ -526,9 +560,9 @@ import **fails to resolve** instead of failing a lint rule.
 
 | Moves to the package | Stays in the plugin (the adapter) |
 | --- | --- |
-| `src/core/kernel/**` (traversal engine, generic kinds, language registry, crossing protocol) | `src/server/**`, `src/client/**`, `src/composition/**` |
+| `src/core/kernel/**` **except `kernel/lexical/`** (traversal engine, generic kinds, language registry, crossing protocol) | `src/server/**`, `src/client/**`, `src/composition/**` |
 | `src/core/domain/**` (selection, projection, provenance + provider ports, locales) | `src/translation-providers/**` (the OpenAI implementation) |
-| `src/core/translation-pipeline/**` (primitive, stages, strategies) | `DataReconciler` **stays** — it is Payload storage policy (§3) |
+| `src/core/translation-pipeline/**` **except `stages/data-reconciler/`** (primitive, stages) | `DataReconciler` **stays** — it is Payload storage policy (§3) |
 | — | **The Payload language** and **the Payload-flavoured rich-text language**, both registered at wiring time (ADR-11). `core/kernel/lexical` moves *out* of the kernel with them |
 | | The block-definition resolver built from `field.editor` → `BlocksFeature` |
 
@@ -795,7 +829,7 @@ Each phase is one PR, green on its own: `bun run build`, core tests, `no-payload
 | # | Phase | Size | Behavior |
 | --- | --- | --- | --- |
 | 0 | Parity test tying `isTranslatableFieldType` (`translatableLeaf.ts:17`) to `isTranslatableField` (`server/shared/guards/field-guards.ts:12`) | XS | none |
-| 1 | `TextChunk` union → `TranslationTarget` with `write()`; `TranslationMutator` collapses; Lexical import leaves the pipeline contract | S | none |
+| 1 | `TextChunk` union → `TranslationTarget` with `write()`; `TranslationMutator` collapses; Lexical import leaves the pipeline contract. **[2026-10-18 — re-sized from S.** Two members that both assign a string collapse easily; the third, `RichContainerChunk`, carries no `text` and writes by rebuilding the container's `children`, so phase 1 must first decide whether it becomes one target whose `write` rebuilds the array or several targets, one per fragment.**]** | S→M | none |
 | 2 | Introduce `collectTranslationTargets` in `core/kernel/translation-targets/`; port the pipeline's collector onto it; `matchElementById` moves out of `kernel/` toward the Payload language | M | none |
 | 3 | Point `leafSourceText` at the same text-extraction code the pipeline uses (joining a leaf's units); the projection keeps its own walk; add `onUnhandled` reporting (ADR-4); **complete the public barrel** and kill the deep imports (§5.3) | S–M | unhandled structure now reported instead of silent; **fingerprint values unchanged** |
 | 4 | **Package split** — `src/core` → `packages/translator-core`, publishing plumbing, plugin becomes a consumer of the published package (§4.6) | M | none — pure move + wiring |
@@ -897,7 +931,13 @@ to anyone else before phase 6 lands.
    this also decides question 2.
 4. **Release verification.** Confirm the cross-package bump flow with a dry run before the split lands
    (§7), and confirm npm Trusted Publishing is configured for the new name.
-5. **Does building the system prompt stay inside the provider?** Raised 2026-10-15 while implementing
+5. **~~Does building the system prompt stay inside the provider?~~ — CLOSED 2026-10-18.** It stays,
+   and nothing changes. The port never carried prompt assembly: it lives in the adapter layer, and
+   `systemPrompt` is an option on each provider's own factory, so a provider that cannot use a
+   prompt simply has no such option — which is the "declares it accepts" arrangement this question
+   asked for. See [2026-10-18-the-rewiring.md](./2026-10-18-the-rewiring.md) P5. Original text:
+
+   Raised 2026-10-15 while implementing
    #109, which made the prompt builder awaitable and told it which document is being translated.
 
    The shape that question exposed: `document` now travels `TranslationStage` → `provider.translate`

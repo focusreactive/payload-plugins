@@ -3,7 +3,7 @@ import { bootTestPayload } from "./bootTestPayload";
 import { SOURCE_ORDER, translateField } from "./fieldSurfaceFixture";
 import type { TestPayload } from "./bootTestPayload";
 
-describe("per-field translation, the mode off", () => {
+describe("per-field translation, a provider silent about marks", () => {
   let ctx: TestPayload;
 
   beforeAll(async () => {

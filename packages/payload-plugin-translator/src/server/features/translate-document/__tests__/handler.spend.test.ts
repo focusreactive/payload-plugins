@@ -7,9 +7,10 @@ import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.
 import type { TranslateDocumentInput } from "../model.js";
 
 vi.mock("../../../../core/translation-pipeline/index.js", () => ({
-  translateContent: vi
-    .fn()
-    .mockResolvedValue({ translatedData: { title: "Titel" }, translatedPaths: ["title"] }),
+  translateContent: vi.fn().mockResolvedValue({
+    translatedData: { title: "Titel" },
+    leaves: [{ idPath: "title", answeredInFull: true }],
+  }),
 }));
 
 vi.mock("../translationPermission.js", () => ({
@@ -39,6 +40,7 @@ describe("TranslateDocumentHandler — a refusal costs nothing at the provider",
     targetLng: "de",
     strategy: "overwrite",
     publishOnTranslation: false,
+    previousAttempts: 0,
   });
 
   beforeEach(async () => {

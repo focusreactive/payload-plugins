@@ -5,7 +5,9 @@ import type { AccessGuard } from "../../shared/index.js";
 
 import { createGetDocumentStalenessRoute, createDismissStalenessRoute } from "./route.js";
 import type { StalenessConfig } from "./model.js";
+import { AnyAccessGuard } from "../../shared/access/AnyAccessGuard.js";
 
+const OPEN_ON_PURPOSE = new AnyAccessGuard();
 // Route-contract test: pin path + method + access-guard wiring so the Phase 1
 // relocation of route registration stays behaviour-preserving. Handler logic
 // and the shared wrappers have their own unit tests.
@@ -20,13 +22,13 @@ const makeConfig = (): StalenessConfig & {
 
 describe("createGetDocumentStalenessRoute (contract)", () => {
   it("registers GET at {basePath}/stale/:collection_slug/:collection_id with the default basePath", () => {
-    const endpoint = createGetDocumentStalenessRoute(makeConfig());
+    const endpoint = createGetDocumentStalenessRoute(makeConfig(), OPEN_ON_PURPOSE);
     expect(endpoint.path).toBe("/translate/stale/:collection_slug/:collection_id");
     expect(endpoint.method).toBe("get");
   });
 
   it("honors a custom basePath", () => {
-    const endpoint = createGetDocumentStalenessRoute(makeConfig(), undefined, "/i18n");
+    const endpoint = createGetDocumentStalenessRoute(makeConfig(), OPEN_ON_PURPOSE, "/i18n");
     expect(endpoint.path).toBe("/i18n/stale/:collection_slug/:collection_id");
   });
 
@@ -44,13 +46,13 @@ describe("createGetDocumentStalenessRoute (contract)", () => {
 
 describe("createDismissStalenessRoute (contract)", () => {
   it("registers POST at {basePath}/stale/dismiss with the default basePath", () => {
-    const endpoint = createDismissStalenessRoute(makeConfig());
+    const endpoint = createDismissStalenessRoute(makeConfig(), OPEN_ON_PURPOSE);
     expect(endpoint.path).toBe("/translate/stale/dismiss");
     expect(endpoint.method).toBe("post");
   });
 
   it("honors a custom basePath", () => {
-    const endpoint = createDismissStalenessRoute(makeConfig(), undefined, "/i18n");
+    const endpoint = createDismissStalenessRoute(makeConfig(), OPEN_ON_PURPOSE, "/i18n");
     expect(endpoint.path).toBe("/i18n/stale/dismiss");
   });
 

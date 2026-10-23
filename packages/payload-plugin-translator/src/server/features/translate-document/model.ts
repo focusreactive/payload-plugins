@@ -12,6 +12,7 @@ export type TranslateDocumentInput = {
   targetLng: string;
   strategy: TranslationStrategyName;
   publishOnTranslation: boolean;
+  previousAttempts: number;
 };
 
 /**

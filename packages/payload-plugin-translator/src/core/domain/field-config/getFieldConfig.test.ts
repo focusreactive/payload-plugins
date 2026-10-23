@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
 import type { Field } from "payload";
 
-import { getTranslateKitFieldConfig, isFieldExcludedFromTranslation } from "./getFieldConfig.js";
+import { getFieldTranslationConfig, isFieldExcludedFromTranslation } from "./getFieldConfig.js";
 
-describe("getTranslateKitFieldConfig", () => {
+describe("getFieldTranslationConfig", () => {
   it("returns empty object when field has no custom property", () => {
     const field: Field = { name: "title", type: "text" };
-    expect(getTranslateKitFieldConfig(field)).toEqual({});
+    expect(getFieldTranslationConfig(field)).toEqual({});
   });
 
   it("returns empty object when custom is not an object", () => {
@@ -15,17 +15,17 @@ describe("getTranslateKitFieldConfig", () => {
       type: "text",
       custom: "string" as unknown as Record<string, unknown>,
     };
-    expect(getTranslateKitFieldConfig(field)).toEqual({});
+    expect(getFieldTranslationConfig(field)).toEqual({});
   });
 
   it("returns empty object when translateKit key is missing", () => {
     const field: Field = { name: "title", type: "text", custom: { other: true } };
-    expect(getTranslateKitFieldConfig(field)).toEqual({});
+    expect(getFieldTranslationConfig(field)).toEqual({});
   });
 
   it("returns empty object when translateKit is not an object", () => {
     const field: Field = { name: "title", type: "text", custom: { translateKit: "string" } };
-    expect(getTranslateKitFieldConfig(field)).toEqual({});
+    expect(getFieldTranslationConfig(field)).toEqual({});
   });
 
   it("returns config when translateKit is defined", () => {
@@ -34,7 +34,7 @@ describe("getTranslateKitFieldConfig", () => {
       type: "text",
       custom: { translateKit: { exclude: true } },
     };
-    expect(getTranslateKitFieldConfig(field)).toEqual({ exclude: true });
+    expect(getFieldTranslationConfig(field)).toEqual({ exclude: true });
   });
 
   it("returns config with exclude: false", () => {
@@ -43,7 +43,7 @@ describe("getTranslateKitFieldConfig", () => {
       type: "text",
       custom: { translateKit: { exclude: false } },
     };
-    expect(getTranslateKitFieldConfig(field)).toEqual({ exclude: false });
+    expect(getFieldTranslationConfig(field)).toEqual({ exclude: false });
   });
 });
 

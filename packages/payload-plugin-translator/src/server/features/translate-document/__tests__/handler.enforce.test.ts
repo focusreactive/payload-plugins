@@ -8,9 +8,10 @@ import type { TranslateDocumentInput } from "../model.js";
 import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
 
 vi.mock("../../../../core/translation-pipeline/index.js", () => ({
-  translateContent: vi
-    .fn()
-    .mockResolvedValue({ translatedData: { title: "Titel" }, translatedPaths: ["title"] }),
+  translateContent: vi.fn().mockResolvedValue({
+    translatedData: { title: "Titel" },
+    leaves: [{ idPath: "title", answeredInFull: true }],
+  }),
 }));
 
 vi.mock("../translationPermission.js", () => ({
@@ -44,6 +45,7 @@ describe("TranslateDocumentHandler — where Payload's own enforcement is afford
     targetLng: "de",
     strategy: "overwrite",
     publishOnTranslation: false,
+    previousAttempts: 0,
   });
 
   const writeArgs = () =>

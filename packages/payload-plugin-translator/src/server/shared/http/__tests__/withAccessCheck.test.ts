@@ -14,14 +14,6 @@ describe("withAccessCheck", () => {
     check: vi.fn().mockResolvedValue(allowed),
   });
 
-  it("returns original handler when no access guard provided", async () => {
-    const handler = vi.fn().mockResolvedValue(ServerResponse.success());
-
-    const wrappedHandler = withAccessCheck(handler);
-
-    expect(wrappedHandler).toBe(handler);
-  });
-
   it("calls handler when access is allowed", async () => {
     const expectedResponse = ServerResponse.success({ data: "test" });
     const handler = vi.fn().mockResolvedValue(expectedResponse);

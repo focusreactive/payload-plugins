@@ -3,7 +3,7 @@ import type { CollectionSlug } from "payload";
 import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
-import type { ProvenanceServiceFactory } from "../../modules/provenance/index.js";
+import type { ChainMember } from "../../modules/translation-run/index.js";
 import { LifecycleNotifier, taskFromAssignment } from "../../modules/lifecycle/index.js";
 import type { TranslationLifecycleCallbacks } from "../../modules/lifecycle/index.js";
 import type {
@@ -17,39 +17,29 @@ import { TranslateDocumentHandler } from "./handler.js";
 type WireTranslateRunnerParams = {
   translationProvider: TranslationProvider;
   schemaMap: CollectionSchemaMap;
-  provenanceServiceFactory?: ProvenanceServiceFactory;
+  modules: readonly ChainMember[];
   runner: TaskRunnerProvider;
   lifecycle: TranslationLifecycleCallbacks;
   collections: CollectionSlug[];
-  inlineMarks?: boolean;
 };
 
 /**
  * Assemble the document-translation task pipeline: the {@link TranslateDocumentHandler}, the runner
  * context that turns what the runner reports into the host's callbacks, the runner's config
  * modifier, and the per-request {@link TaskRunnerFactory}.
- *
- * Extracted from the plugin's `init()` so the composition root stays a flat list — `plugin.ts` calls
- * this once and registers the returned `configModifier` through the shared builder.
  */
 export function wireTranslateRunner({
   translationProvider,
   schemaMap,
-  provenanceServiceFactory,
+  modules,
   runner,
   lifecycle,
   collections,
-  inlineMarks = false,
 }: WireTranslateRunnerParams): {
   taskRunnerFactory: TaskRunnerFactory;
   configModifier: ConfigModifier;
 } {
-  const translateHandler = new TranslateDocumentHandler(
-    translationProvider,
-    schemaMap,
-    provenanceServiceFactory,
-    inlineMarks
-  );
+  const translateHandler = new TranslateDocumentHandler(translationProvider, schemaMap, modules);
 
   const runnerContext: TaskRunnerContext = {
     handler: async (payload, input, scope) => {
@@ -62,6 +52,7 @@ export function wireTranslateRunner({
           targetLng: input.targetLng,
           strategy: input.strategy,
           publishOnTranslation: input.publishOnTranslation,
+          previousAttempts: input.previousAttempts,
         },
         scope
       );

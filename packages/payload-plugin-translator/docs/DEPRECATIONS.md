@@ -18,13 +18,21 @@ the single source of truth — code annotations link here by anchor instead of d
    */
   ```
 
-- **Removal policy.** Deprecations ship as `feat:` (minor). All removals land together in a single
-  `feat!:` (major) release — no drip-feed of breaking changes.
+- **Removal policy.** Deprecations ship as `feat:` (minor). Removals land in the next major, grouped
+  rather than drip-fed — each one in the step of the major that rewrites its area.
+- **How a removal is committed.** An ordinary `feat(scope): …` header plus a `BREAKING CHANGE:`
+  footer in the body. **Never a `!` in the header.** `.releaserc.json` sets no `preset`, so the
+  `angular` one is used, and its header pattern has no place for `!` — such a header fails to parse
+  and the commit may not be read as a release at all. The footer is what the preset's
+  `noteKeywords` reads, and it is the only thing that produces a major. Same reasoning as
+  [runner-create-takes-the-context](#runner-create-takes-the-context).
 
 ## Status legend
 
 - `live` — annotated and in use as a fallback / alias; safe to remove in the next major.
 - `planned` — agreed to deprecate, not yet annotated in code.
+- `removed` — gone from the code. The entry stays, because it is what tells an upgrading host
+  what used to be there and what replaced it; the `Removed:` line says when.
 
 ---
 
@@ -137,39 +145,45 @@ the single source of truth — code annotations link here by anchor instead of d
 
 ### translate-collection-plugin-class
 
-- **What:** `TranslateCollectionPlugin` class.
-- **Status:** live (already `@deprecated` in code)
+- **What:** `TranslateCollectionPlugin` class, and the `TranslateCollectionPluginConfig` type
+  alias beside it.
+- **Status:** removed
 - **Deprecated:** pre-ledger (annotated before this registry existed)
-- **Replacement:** `translatorPlugin()` function.
-- **Remove in:** next major
-- **Code refs:** `src/plugin.ts`
+- **Removed:** 2026-10-19 / PR #184
+- **Replacement:** `translatorPlugin()` function, and `TranslatorPluginConfig`.
+- **What moved with it:** the class held the whole plugin body and `translatorPlugin` only
+  constructed it. The body now lives in the function, which is where a host's configuration
+  file expects it — Payload's own config API is functions and plain objects, and this class
+  was the only `new` a host had to write.
+- **Code refs:** `src/plugin.ts` (`translatorPlugin`)
 
 ### create-translate-plugin
 
 - **What:** `createTranslatePlugin` alias.
-- **Status:** live (already `@deprecated` in code)
+- **Status:** removed
 - **Deprecated:** pre-ledger
+- **Removed:** 2026-10-19 / PR #184
 - **Replacement:** `translatorPlugin()`.
-- **Remove in:** next major
 - **Code refs:** `src/plugin.ts`
 
 ### translate-kit-field
 
 - **What:** `translateKitField` alias.
-- **Status:** live (already `@deprecated` in code)
+- **Status:** removed
 - **Deprecated:** pre-ledger
+- **Removed:** 2026-10-19 / PR #184
 - **Replacement:** `withFieldTranslation()`.
-- **Remove in:** next major
 - **Code refs:** `src/field-config.ts`
 
 ### translate-kit-field-config-type
 
-- **What:** `TranslateKitFieldConfig` type alias.
-- **Status:** live (already `@deprecated` in code)
+- **What:** `TranslateKitFieldConfig` type alias, both the public one and the internal copy in
+  `core/domain/field-config/`, along with the `getTranslateKitFieldConfig` alias that read it.
+- **Status:** removed
 - **Deprecated:** pre-ledger
-- **Replacement:** `FieldTranslationConfig`.
-- **Remove in:** next major
-- **Code refs:** `src/field-config.ts`
+- **Removed:** 2026-10-19 / PR #184
+- **Replacement:** `FieldTranslationConfig`, and `getFieldTranslationConfig` internally.
+- **Code refs:** `src/field-config.ts`, `src/core/domain/field-config/`
 
 ### openai-translation-provider-class
 
@@ -251,25 +265,36 @@ the single source of truth — code annotations link here by anchor instead of d
 ### experimental-inline-marks
 
 - **What:** `translatorPlugin({ experimental: { inlineMarks } })`.
-- **Status:** live (`@deprecated` in code from the day it shipped)
+- **Status:** removed
 - **Deprecated:** 2026-09-11 / PR #139 (issue #134)
-- **Replacement:** none — the behaviour becomes the only mode, so the switch simply goes away.
-- **Scope:** this entry only. The `experimental` option itself is permanent — it is where the
-  next transitional switch will live, so removing `inlineMarks` does not remove the object.
-- **Remove in:** next major
+- **Removed:** 2026-10-19 / PR #186
+- **Replacement:** none for the host. What used to be two conditions is now one: a provider that
+  declares `capabilities.inlineMarks` gets container-granular rich text, and one that does not keeps
+  translating node by node. Nothing is configured.
+- **Scope, revised when it was removed.** This entry said the `experimental` option itself was
+  permanent, being where the next transitional switch would live. That was reversed by the owner on
+  2026-10-19: `inlineMarks` was its only entry, so keeping it would have published an option that
+  accepts nothing for the whole of 1.x — and adding an option back is additive and ships in a minor,
+  while removing one is breaking and can only ship in a major. The object went with its entry.
+- **Who this changes, and how to keep the old behaviour.** Every host whose provider declares
+  `capabilities.inlineMarks` **and** that had the flag off or never set it. That is not a corner: the
+  bundled OpenAI provider declares it (`OpenAITranslation.provider.ts:134`), so an install that never
+  opted in moves from node-by-node to container-at-a-time rich text on upgrade — which may reorder
+  the pieces of a paragraph and changes the shape that gets saved. There is no flag to pin the old
+  behaviour any more; the only way back is a provider that does not declare the capability, which a
+  host can arrange by wrapping theirs. Ships in a major, by itself.
 - **Why:** a transitional switch, not a supported choice. Translating rich text node by node pins
   every word to its source position, which is a defect, not a preference — so there is nothing to
   keep choosing between. The flag exists only so an install can adopt the change on its own
-  schedule and step back if its provider misbehaves. The next major removes **the flag**, not the
+  schedule and step back if its provider misbehaved. This major removed **the flag**, not the
   per-node code: that stays as the internal fallback for a mark-shaped source, a single-fragment
-  container, and a corrupt reply.
+  container, and a corrupt reply — and it is what a provider silent about marks still gets.
 - **After removal, a provider still decides:** `capabilities.inlineMarks` is core logic, not part of
   the flag, and survives it. A third-party `TranslationProvider` that never declares the capability
   therefore keeps translating node by node indefinitely — the mode this entry calls a defect — with
   no warning surface. Provider authors need telling, separately from this flag's own removal.
 - **Code refs:**
-  - `src/plugin.ts` (the option)
-  - `src/core/translation-pipeline/translateContent.ts` (the single switch between the two paths)
+  - `src/core/translation-pipeline/translateContent.ts` (the one condition that now decides)
   - `src/core/translation-pipeline/stages/text-expander/RichContainerExpander.ts`
   - `docs/plans/2026-09-08-richtext-container-granularity-design.md` (D8, D8a)
 
@@ -342,3 +367,76 @@ the single source of truth — code annotations link here by anchor instead of d
     runner, compiled against the published barrel)
   - `src/server/features/translate-document/wireTranslateRunner.ts` (the one place that builds a
     context)
+
+## 2026-10-22 — `skip_existing` refreshes on drift, whoever wrote the target
+
+**Status:** live · **Removal target:** next major (this one)
+
+A run used to record `null` against every leaf it saw and did not send, and both readers took that
+as *claim nothing*. The leaf then never read as out of date and `skip_existing` never selected it
+again, however far its source drifted. The receipt now records where each leaf's source stood when
+the run ended, whether the run translated that leaf or left it alone.
+
+**What changes for a host.** `skip_existing` re-translates a non-empty target once its own source
+text moves — including text a person typed or corrected. It never asked who wrote the target; it
+simply had no way to tell a leaf it had skipped from one it had never seen.
+
+**Why this is listed although nothing was renamed.** `README.md` promised "Protect hand-written
+copy — the `skip_existing` strategy fills only empty target fields", and a host reading that was
+relying on a guarantee the plugin no longer makes. Same precedent as `on-failed-per-attempt`.
+
+**What to do instead.** `withFieldTranslation(field, { exclude: true })` keeps a field out of every
+run. Per-document, per-field control arrives with the field picker (#48).
+
+**Stored receipts** written before this date are read leaf by leaf as before; a `null` in one is
+taken as *revisit this leaf*, and the first run that translates that leaf records a hash in its
+place. A leaf whose source is empty is never sent, so its `null` is carried forward and the locale
+keeps flagging until the source has text again.
+
+### levels-become-modules-and-components
+
+- **What:** the `levels` plugin option and the four names it needed — `documentLevel()`,
+  `collectionLevel()`, `fieldLevel()` and the `TranslationLevel` type.
+- **Status:** removed
+- **Changed:** 2026-10-22 / #198
+- **Replacement:** two required lists, `modules` and `components`. Either may be `[]`.
+
+  | Was | Becomes |
+  | --- | --- |
+  | `levels: [documentLevel()]` | `modules: [documentTranslation()]` · `components: [translateDocumentControl()]` |
+  | `levels: [collectionLevel()]` | `modules: [documentTranslation()]` · `components: [bulkTranslationDashboard()]` |
+  | `levels: [fieldLevel()]` | `modules: [fieldTranslation()]` |
+  | omitted (the old default) | `modules: [documentTranslation()]` · `components: [translateDocumentControl(), bulkTranslationDashboard()]` |
+
+- **Why:** a level was a server surface and an admin control welded together, and the two have
+  nothing to do with each other — a control runs in the browser and is loaded by path, while the
+  routes behind it are server wiring. Separating them is what lets provenance, which contributes
+  routes and a collection but no control, be listed the same way everything else is. The document
+  and collection levels registered the *same* route bundle, which is the only reason endpoints are
+  deduplicated at all; once the controls moved out, the two were indistinguishable and collapsed
+  into one module.
+- **No default:** an omitted option used to mean two surfaces, silently. Both lists are now
+  required, and omitting either fails at boot with the table above in the message. `[]` is a real
+  answer: auto-translate runs from a save hook and needs no route.
+- **Who this breaks:** every host. A plugin config that sets `levels`, or relies on its default,
+  does not compile and does not boot.
+- **Code refs:**
+  - `src/plugin.ts` (`modules`, `components`, and the refusal)
+  - `src/composition/modules/`, `src/composition/components/`
+  - `src/server/modules/plugin-config/types.ts` (`TranslationModule`, `TranslationComponent`)
+
+### runner-context-carries-the-attempt-count
+
+- **What:** `TaskHandlerInput` gains a required `previousAttempts: number`.
+- **Status:** removed (the old shape)
+- **Changed:** 2026-10-22 / #198
+- **Replacement:** a runner supplies the number of times this locale was tried before the attempt
+  now running — zero on the first, and zero always for a runner that never retries.
+- **Why:** a module joining a translation run may need to behave differently on a replay, and the
+  count already exists on the job row. Reading it in the runner, where it lives, is cheaper and
+  more honest than every module guessing.
+- **Who this breaks:** only a `TaskRunnerProvider` implemented outside this package. The built-in
+  runners both supply it; a host that merely configures the plugin sees no change.
+- **Code refs:**
+  - `src/server/modules/task-runner/TaskRunnerProvider.interface.ts`
+  - `src/server/modules/task-runner/payload-jobs-runner/model/attemptsBefore.ts`

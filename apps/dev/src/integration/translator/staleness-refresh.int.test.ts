@@ -109,8 +109,31 @@ describe("a translation refreshes the leaf whose source moved, and only that one
     await translate(id, "skip_existing");
 
     const de = await german(id);
-    expect(de.title, "no evidence its source moved, so the old promise holds").toBe("HAND-WRITTEN");
+    expect(de.title, "no receipt says nothing moved, so skip_existing keeps its promise").toBe(
+      "HAND-WRITTEN"
+    );
     expect(de.note, "empty, so it is filled in as it always was").toBe(tr("de", "No receipt note"));
+  });
+
+  it("refreshes a hand-written target once its own source moves", async () => {
+    const id = await create({ title: "Watermark", note: "Watermark note" });
+    await ctx.payload.update({
+      collection: "docs",
+      id,
+      locale: "de",
+      data: { _status: "published", title: "VON HAND" },
+    });
+
+    await translate(id, "skip_existing");
+    expect(
+      (await german(id)).title,
+      "first run: no receipt yet, so the filled target is kept"
+    ).toBe("VON HAND");
+
+    await editSource(id, { title: "Watermark, edited", note: "Watermark note" });
+    await translate(id, "skip_existing");
+
+    expect((await german(id)).title).toBe(tr("de", "Watermark, edited"));
   });
 
   it("translates only the inserted element when one is added at the head of an array", async () => {
@@ -180,7 +203,7 @@ describe("a translation refreshes the leaf whose source moved, and only that one
     ]);
   });
 
-  it("leaves a filled-in target alone when a receipt exists but has no entry for that leaf", async () => {
+  it("translates a leaf the receipt has no entry for", async () => {
     const id = await create({ title: "Partial receipt", note: "" });
     await translate(id, "overwrite");
 
@@ -195,9 +218,23 @@ describe("a translation refreshes the leaf whose source moved, and only that one
     await translate(id, "skip_existing");
 
     const de = await german(id);
-    expect(de.note, "the receipt says nothing about this leaf, so nothing is claimed").toBe(
-      "HAND-WRITTEN NOTE"
+    expect(de.note, "the receipt never saw this leaf, so it is owed a translation").toBe(
+      tr("de", "A note exists now")
     );
+  });
+
+  it("translates a leaf again after its source was emptied and later refilled", async () => {
+    const id = await create({ title: "Refilled", note: "The first note" });
+    await translate(id, "overwrite");
+    expect((await german(id)).note).toBe(tr("de", "The first note"));
+
+    await editSource(id, { title: "Refilled", note: "" });
+    await translate(id, "overwrite");
+
+    await editSource(id, { title: "Refilled", note: "The note is back" });
+    await translate(id, "skip_existing");
+
+    expect((await german(id)).note).toBe(tr("de", "The note is back"));
   });
 
   // Fingerprinting the target instead would tell a human's text from ours, but a Payload round-trip

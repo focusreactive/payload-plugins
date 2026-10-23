@@ -10,6 +10,16 @@ import type {
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 
 import { ProvenanceService } from "../Provenance.service.js";
+import { asHash } from "../../../../core/domain/provenance/__tests__/fixtures/claims.js";
+import { makeIdPath } from "../../../../core/domain/content-projection/idPath.js";
+
+const answered = (name: string) => ({
+  idPath: makeIdPath([{ kind: "key", name }]),
+  answeredInFull: true,
+});
+
+const hashed = (fields: Record<string, string>) =>
+  Object.fromEntries(Object.entries(fields).map(([address, seed]) => [address, asHash(seed)]));
 
 const COLLECTION = "posts";
 const schema: Field[] = [{ name: "title", type: "text", localized: true }];
@@ -39,7 +49,7 @@ const record = (over: Partial<ProvenanceReceipt> = {}): ProvenanceReceipt => ({
   documentId: "1",
   targetLocale: "de",
   sourceLocale: "en",
-  sourceFingerprint: { kind: "fields", hashes: { title: "x" } },
+  sourceFingerprint: { kind: "fields", hashes: hashed({ title: "ace" }) },
   translatedAt: "2026-07-15T00:00:00.000Z",
   dismissedFingerprint: null,
   ...over,
@@ -156,8 +166,8 @@ describe("ProvenanceService", () => {
     await expect(
       service.record(
         { collectionSlug: COLLECTION, documentId: "1", targetLocale: "de", sourceLocale: "en" },
-        { title: "fp" },
-        ["title"]
+        hashed({ title: "face" }),
+        [answered("title")]
       )
     ).resolves.toBeUndefined();
     expect(io.logger.error as ReturnType<typeof vi.fn>).toHaveBeenCalled();
@@ -171,8 +181,8 @@ describe("ProvenanceService", () => {
     await expect(
       service.record(
         { collectionSlug: COLLECTION, documentId: "1", targetLocale: "de", sourceLocale: "en" },
-        { title: "fp" },
-        ["title"]
+        hashed({ title: "face" }),
+        [answered("title")]
       ),
       "no transaction carried the caller's work, so a lost receipt must not cost them anything"
     ).resolves.toBeUndefined();
@@ -187,8 +197,8 @@ describe("ProvenanceService", () => {
     await expect(
       service.record(
         { collectionSlug: COLLECTION, documentId: "1", targetLocale: "de", sourceLocale: "en" },
-        { title: "fp" },
-        ["title"]
+        hashed({ title: "face" }),
+        [answered("title")]
       )
     ).rejects.toThrow(APIError);
   });
@@ -201,8 +211,8 @@ describe("ProvenanceService", () => {
     await expect(
       service.record(
         { collectionSlug: COLLECTION, documentId: "1", targetLocale: "de", sourceLocale: "en" },
-        { title: "fp" },
-        ["title"]
+        hashed({ title: "face" }),
+        [answered("title")]
       )
     ).resolves.toBeUndefined();
   });
@@ -237,12 +247,16 @@ describe("ProvenanceService", () => {
     };
     const storedWith = (hashes: Record<string, string>) =>
       makeStore({
-        find: vi.fn().mockResolvedValue(record({ sourceFingerprint: { kind: "fields", hashes } })),
+        find: vi
+          .fn()
+          .mockResolvedValue(
+            record({ sourceFingerprint: { kind: "fields", hashes: hashed(hashes) } })
+          ),
         upsert: vi.fn().mockResolvedValue(undefined),
       });
 
     it("takes the current hash for a leaf it translated", async () => {
-      const store = storedWith({ title: "old", body: "old-body" });
+      const store = storedWith({ title: "dad", body: "dadbed" });
       const service = new ProvenanceService(
         store,
         schemaMap,
@@ -250,17 +264,17 @@ describe("ProvenanceService", () => {
         makeIo(async () => sourceDoc)
       );
 
-      await service.record(key, { title: "new", body: "old-body" }, ["title"]);
+      await service.record(key, hashed({ title: "feed", body: "dadbed" }), [answered("title")]);
 
       expect(store.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          sourceFingerprint: { kind: "fields", hashes: { title: "new", body: "old-body" } },
+          sourceFingerprint: { kind: "fields", hashes: hashed({ title: "feed", body: "dadbed" }) },
         })
       );
     });
 
-    it("keeps the stored hash for a leaf it skipped, even though the source moved", async () => {
-      const store = storedWith({ title: "old", body: "old-body" });
+    it("re-bases a leaf it skipped onto where its source stands now", async () => {
+      const store = storedWith({ title: "dad", body: "dadbed" });
       const service = new ProvenanceService(
         store,
         schemaMap,
@@ -268,17 +282,17 @@ describe("ProvenanceService", () => {
         makeIo(async () => sourceDoc)
       );
 
-      await service.record(key, { title: "new", body: "moved" }, ["title"]);
+      await service.record(key, hashed({ title: "feed", body: "deed" }), [answered("title")]);
 
       expect(store.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          sourceFingerprint: { kind: "fields", hashes: { title: "new", body: "old-body" } },
+          sourceFingerprint: { kind: "fields", hashes: hashed({ title: "feed", body: "deed" }) },
         })
       );
     });
 
     it("drops an address the document no longer has", async () => {
-      const store = storedWith({ title: "old", gone: "stale" });
+      const store = storedWith({ title: "dad", gone: "fade" });
       const service = new ProvenanceService(
         store,
         schemaMap,
@@ -286,14 +300,16 @@ describe("ProvenanceService", () => {
         makeIo(async () => sourceDoc)
       );
 
-      await service.record(key, { title: "new" }, ["title"]);
+      await service.record(key, hashed({ title: "feed" }), [answered("title")]);
 
       expect(store.upsert).toHaveBeenCalledWith(
-        expect.objectContaining({ sourceFingerprint: { kind: "fields", hashes: { title: "new" } } })
+        expect.objectContaining({
+          sourceFingerprint: { kind: "fields", hashes: hashed({ title: "feed" }) },
+        })
       );
     });
 
-    it("records only what it translated when the receipt predates per-field fingerprints", async () => {
+    it("watermarks every leaf when the receipt predates per-field fingerprints", async () => {
       const store = makeStore({
         find: vi
           .fn()
@@ -309,17 +325,15 @@ describe("ProvenanceService", () => {
         makeIo(async () => sourceDoc)
       );
 
-      await service.record(key, { title: "new", body: "untouched" }, ["title"]);
+      await service.record(key, hashed({ title: "feed", body: "cafe" }), [answered("title")]);
 
       expect(store.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          sourceFingerprint: { kind: "fields", hashes: { title: "new", body: null } },
+          sourceFingerprint: { kind: "fields", hashes: hashed({ title: "feed", body: "cafe" }) },
         })
       );
     });
 
-    // Treating a read failure as "no receipt" would mark every leaf this run did not translate as
-    // not-ours, erasing what earlier runs recorded.
     it("writes nothing when it cannot read the receipt it must merge into", async () => {
       const upsert = vi.fn().mockResolvedValue(undefined);
       const store = makeStore({
@@ -330,7 +344,7 @@ describe("ProvenanceService", () => {
       const service = new ProvenanceService(store, schemaMap, {}, io);
 
       await expect(
-        service.record(key, { title: "new", body: "old" }, ["title"])
+        service.record(key, hashed({ title: "feed", body: "dad" }), [answered("title")])
       ).resolves.toBeUndefined();
 
       expect(
@@ -352,10 +366,12 @@ describe("ProvenanceService", () => {
         makeIo(async () => sourceDoc)
       );
 
-      await expect(service.record(key, { title: "new" }, ["title"])).rejects.toThrow(APIError);
+      await expect(
+        service.record(key, hashed({ title: "feed" }), [answered("title")])
+      ).rejects.toThrow(APIError);
     });
 
-    it("marks a leaf it saw and did not translate, rather than leaving it out", async () => {
+    it("watermarks a leaf it saw and did not translate, rather than leaving it out", async () => {
       const store = makeStore({
         find: vi.fn().mockResolvedValue(null),
         upsert: vi.fn().mockResolvedValue(undefined),
@@ -367,16 +383,16 @@ describe("ProvenanceService", () => {
         makeIo(async () => sourceDoc)
       );
 
-      await service.record(key, { title: "new", body: "untouched" }, ["title"]);
+      await service.record(key, hashed({ title: "feed", body: "cafe" }), [answered("title")]);
 
       expect(store.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          sourceFingerprint: { kind: "fields", hashes: { title: "new", body: null } },
+          sourceFingerprint: { kind: "fields", hashes: hashed({ title: "feed", body: "cafe" }) },
         })
       );
     });
 
-    it("records only what it translated when there is no receipt at all", async () => {
+    it("watermarks every leaf when there is no receipt at all", async () => {
       const store = makeStore({
         find: vi.fn().mockResolvedValue(null),
         upsert: vi.fn().mockResolvedValue(undefined),
@@ -388,11 +404,11 @@ describe("ProvenanceService", () => {
         makeIo(async () => sourceDoc)
       );
 
-      await service.record(key, { title: "new", body: "untouched" }, ["title"]);
+      await service.record(key, hashed({ title: "feed", body: "cafe" }), [answered("title")]);
 
       expect(store.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          sourceFingerprint: { kind: "fields", hashes: { title: "new", body: null } },
+          sourceFingerprint: { kind: "fields", hashes: hashed({ title: "feed", body: "cafe" }) },
         })
       );
     });
@@ -400,7 +416,7 @@ describe("ProvenanceService", () => {
 
   describe("lastTranslatedFrom — the receipt, read best-effort", () => {
     const key = { collectionSlug: COLLECTION, documentId: "1", targetLocale: "de" };
-    const stored = { kind: "fields", hashes: { title: "abc" } } as const;
+    const stored = { kind: "fields", hashes: hashed({ title: "abc" }) } as const;
 
     it("hands back the receipt when it can be read", async () => {
       const store = makeStore({

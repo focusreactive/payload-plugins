@@ -13,7 +13,7 @@ import { EnqueueTranslationHandler } from "./handler.js";
 export function createEnqueueRoute(
   taskRunnerFactory: TaskRunnerFactory,
   config: EnqueueConfig,
-  access?: AccessGuard,
+  access: AccessGuard,
   basePath = "/translate"
 ): Endpoint {
   const handler = new EnqueueTranslationHandler(config, taskRunnerFactory);

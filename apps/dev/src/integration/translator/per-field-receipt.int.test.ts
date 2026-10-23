@@ -182,7 +182,9 @@ describe("the stored receipt", () => {
       "note",
       "title",
     ]);
-    expect(stored.title, "seen and declined, so nothing is claimed about it").toBeNull();
+    expect(stored.title, "seen but not sent: recorded at its current source hash").toMatch(
+      /^[0-9a-f]{16}$/
+    );
     expect(stored.note).toEqual(expect.any(String));
 
     const res = await callEndpoint(

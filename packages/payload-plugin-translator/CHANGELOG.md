@@ -1,3 +1,70 @@
+# @focus-reactive/payload-plugin-translator [1.0.0-next.5](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.4...@focus-reactive/payload-plugin-translator@1.0.0-next.5) (2026-10-23)
+
+
+* feat!: provenance becomes an ordinary module on a run seam ([17f9c16](https://github.com/focusreactive/payload-plugins/commit/17f9c1623953abbe05d0a9acdb0c224c6dc1d30e)), closes [#198](https://github.com/focusreactive/payload-plugins/issues/198)
+
+
+### BREAKING CHANGES
+
+* the `levels` plugin option is removed, along with
+`documentLevel()`, `collectionLevel()`, `fieldLevel()` and the
+`TranslationLevel` type. Replace `levels: [documentLevel(), collectionLevel()]`
+with `modules: [documentTranslation()]` and
+`components: [translateDocumentControl(), bulkTranslationDashboard()]`;
+`levels: [fieldLevel()]` becomes `modules: [fieldTranslation()]`. Both lists are
+required and either may be empty — an omitted option used to mean two surfaces
+silently, and now fails at boot with the replacement in the message.
+See docs/DEPRECATIONS.md for the full table.
+
+# @focus-reactive/payload-plugin-translator [1.0.0-next.4](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.3...@focus-reactive/payload-plugin-translator@1.0.0-next.4) (2026-10-22)
+
+
+### Bug Fixes
+
+* **translator:** the receipt stops guessing who wrote the target text ([d0bc719](https://github.com/focusreactive/payload-plugins/commit/d0bc719b6c6f36d412b88727a0b84e2d585b3ba0)), closes [#198](https://github.com/focusreactive/payload-plugins/issues/198)
+
+# @focus-reactive/payload-plugin-translator [1.0.0-next.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.2...@focus-reactive/payload-plugin-translator@1.0.0-next.3) (2026-10-21)
+
+
+### Bug Fixes
+
+* **translator:** record the leaf a run sent and never got back ([69f1bda](https://github.com/focusreactive/payload-plugins/commit/69f1bda205165fa75552e0b8db3306d7c2f96739)), closes [#197](https://github.com/focusreactive/payload-plugins/issues/197)
+
+# @focus-reactive/payload-plugin-translator [1.0.0-next.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.1...@focus-reactive/payload-plugin-translator@1.0.0-next.2) (2026-10-19)
+
+
+### Features
+
+* **translator:** let the provider decide how rich text is translated ([4733046](https://github.com/focusreactive/payload-plugins/commit/47330467ecf0601a1c8666880f87ac820688d99d))
+
+
+### BREAKING CHANGES
+
+* **translator:** `translatorPlugin({ experimental: { inlineMarks } })` is
+removed, and `experimental` with it. Container-granular rich text is now
+selected by a provider declaring `capabilities.inlineMarks` — which the bundled
+OpenAI provider does. An install that left the setting off or unset while using
+such a provider will translate rich text one container at a time after this
+upgrade, which can reorder the pieces of a paragraph. To keep the per-node
+behaviour, use a provider that does not declare the capability.
+
+# @focus-reactive/payload-plugin-translator [1.0.0-next.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.18.0-next.1...@focus-reactive/payload-plugin-translator@1.0.0-next.1) (2026-10-19)
+
+
+### Features
+
+* **translator:** remove the names nothing calls ([6db3ca6](https://github.com/focusreactive/payload-plugins/commit/6db3ca6e771b7269f62da07c66de9ae5141a8f46))
+
+
+### BREAKING CHANGES
+
+* **translator:** `TranslateCollectionPlugin`, `TranslateCollectionPluginConfig`,
+`createTranslatePlugin`, `translateKitField` and `TranslateKitFieldConfig` are
+removed. Use `translatorPlugin`, `TranslatorPluginConfig`,
+`withFieldTranslation` and `FieldTranslationConfig` instead.
+
+# @focus-reactive/payload-plugin-translator [0.18.0-next.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.17.0...@focus-reactive/payload-plugin-translator@0.18.0-next.1) (2026-10-19)
+
 # @focus-reactive/payload-plugin-translator [0.18.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.17.0...@focus-reactive/payload-plugin-translator@0.18.0) (2026-10-22)
 
 
