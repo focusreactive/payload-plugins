@@ -26,6 +26,10 @@ export function createFieldRoute({
   return {
     path: `${basePath}/field`,
     method: "post",
-    handler: withAccessCheck(withErrorHandler(handler.handle.bind(handler)), access),
+    handler: withAccessCheck(
+      withErrorHandler(handler.handle.bind(handler)),
+      access,
+      "translate-field"
+    ),
   };
 }

@@ -17,7 +17,11 @@ export function createGetDocumentStalenessRoute(
   return {
     path: `${basePath}/stale/:collection_slug/:collection_id`,
     method: "get",
-    handler: withAccessCheck(withErrorHandler(handler.handle.bind(handler)), access),
+    handler: withAccessCheck(
+      withErrorHandler(handler.handle.bind(handler)),
+      access,
+      "document-staleness"
+    ),
   };
 }
 
@@ -31,6 +35,10 @@ export function createDismissStalenessRoute(
   return {
     path: `${basePath}/stale/dismiss`,
     method: "post",
-    handler: withAccessCheck(withErrorHandler(handler.handle.bind(handler)), access),
+    handler: withAccessCheck(
+      withErrorHandler(handler.handle.bind(handler)),
+      access,
+      "dismiss-staleness"
+    ),
   };
 }

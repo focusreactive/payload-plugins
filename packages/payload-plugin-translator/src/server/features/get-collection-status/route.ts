@@ -21,6 +21,10 @@ export function createGetCollectionStatusRoute(
   return {
     path: `${basePath}/collection/:collection_slug`,
     method: "get",
-    handler: withAccessCheck(withErrorHandler(handler.handle.bind(handler)), access),
+    handler: withAccessCheck(
+      withErrorHandler(handler.handle.bind(handler)),
+      access,
+      "collection-status"
+    ),
   };
 }

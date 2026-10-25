@@ -2,6 +2,7 @@ import { headers as getHeaders } from "next/headers";
 import type { BeforeListTableServerProps } from "payload";
 
 import type { AccessGuard } from "../../../../types/AccessGuard.js";
+import { askTheGuard } from "../../../../server/shared/access/askTheGuard.js";
 import type { TargetSelectionMode } from "../../../../types/TargetSelection.js";
 import { hasDraftsEnabled } from "payload/shared";
 import { resolveAutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary.js";
@@ -15,11 +16,13 @@ type BulkTranslationDashboardServerProps = BeforeListTableServerProps & {
 
 const BulkTranslationDashboardServer = async (props: BulkTranslationDashboardServerProps) => {
   const headers = await getHeaders();
-  const hasAccess = await props.access.check({
-    req: { user: props.user, headers, payload: props.payload },
-  });
+  const mayEnqueue = await askTheGuard(
+    props.access,
+    { user: props.user, headers, payload: props.payload },
+    "enqueue"
+  );
 
-  if (!hasAccess) return null;
+  if (!mayEnqueue) return null;
   if (!props.collectionSlug) return null;
 
   const collection = props.payload.collections[props.collectionSlug]?.config;

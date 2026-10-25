@@ -21,6 +21,10 @@ export function createGetDocumentStatusRoute(
   return {
     path: `${basePath}/document/:collection_slug/:collection_id`,
     method: "get",
-    handler: withAccessCheck(withErrorHandler(handler.handle.bind(handler)), access),
+    handler: withAccessCheck(
+      withErrorHandler(handler.handle.bind(handler)),
+      access,
+      "document-status"
+    ),
   };
 }

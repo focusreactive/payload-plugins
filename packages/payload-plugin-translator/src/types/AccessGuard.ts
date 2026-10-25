@@ -1,5 +1,7 @@
 import type { BasePayload, TypedUser } from "payload";
 
+import type { TranslatorAction } from "./TranslatorAction.js";
+
 /**
  * The request context an {@link AccessGuard} receives when deciding whether to
  * allow a translation API call.
@@ -14,7 +16,7 @@ export type AccessGuardRequest = {
 };
 
 /**
- * Gate for the translation API endpoints. Required: `translatorPlugin({ access })` throws at config
+ * Gate for the translation API endpoints and the admin widgets. Required: `translatorPlugin({ access })` throws at config
  * time without one, because neither "closed" nor "open" is a default the plugin should pick on your
  * behalf. To leave them open on purpose, pass `new AnyAccessGuard()` — a decision, written down.
  *
@@ -30,8 +32,14 @@ export type AccessGuardRequest = {
  */
 export interface AccessGuard {
   /**
-   * Return `true` to allow the request, `false` to reject it with `403 Forbidden`.
-   * May be async (e.g. to query permissions).
+   * Only `true` allows. Any other answer, or a throw, refuses: `403` from the endpoints, the widget
+   * hidden in the admin.
    */
-  check<R extends AccessGuardRequest>({ req }: { req: R }): Promise<boolean> | boolean;
+  check<R extends AccessGuardRequest>({
+    req,
+    action,
+  }: {
+    req: R;
+    action: TranslatorAction;
+  }): Promise<boolean> | boolean;
 }

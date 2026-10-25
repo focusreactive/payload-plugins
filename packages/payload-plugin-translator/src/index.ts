@@ -13,6 +13,7 @@ export type { TranslationProvenanceRecord } from "./core/index.js";
 
 // Access control
 export type { AccessGuard, AccessGuardRequest } from "./types/AccessGuard.js";
+export type { TranslatorAction } from "./types/TranslatorAction.js";
 export { AnyAccessGuard } from "./server/shared/access/AnyAccessGuard.js";
 
 // Translation provider port (from the dependency-free core)

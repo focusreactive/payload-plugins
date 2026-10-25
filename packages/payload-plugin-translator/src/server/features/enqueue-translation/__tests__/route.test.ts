@@ -37,7 +37,9 @@ describe("createEnqueueRoute (contract)", () => {
     const response = await endpoint.handler({} as PayloadRequest);
 
     expect(response.status).toBe(403);
-    expect(denyAccess.check).toHaveBeenCalled();
+    expect(denyAccess.check).toHaveBeenLastCalledWith(
+      expect.objectContaining({ action: "enqueue" })
+    );
     expect(taskRunnerFactory.create).not.toHaveBeenCalled();
   });
 });
