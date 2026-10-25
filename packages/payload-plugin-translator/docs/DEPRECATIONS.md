@@ -575,3 +575,114 @@ keeps flagging until the source has text again.
   keep marks their editors had hidden. Copy only values that are JSON maps: a mark hidden before
   0.15.0 stored a bare sha256 there, and copying one now writes a value that reads as no receipt, so
   that mark comes back anyway. Those locales need the hide button pressed again.
+
+## 2026-10-25 — one permission decision point
+
+**Status:** live · **Removal target:** n/a — this is behaviour, nothing is named for removal
+
+The plugin stopped deciding who has access. It now asks twice, and never answers itself: the host's
+`AccessGuard` is asked whether this **kind** of request is allowed at all, and Payload's own
+`access.update` rule on the collection is asked about **each document**. Nine routes, the queue, the
+admin widgets and the translation chain are all behind one or both of those asks.
+
+What follows is every place a host can notice it.
+
+### The guard is asked about an action, and only `true` allows
+
+`AccessGuard.check` receives `{ req, action }` where it used to receive `{ req }`. `action` is a
+`TranslatorAction` — one of `enqueue`, `run`, `cancel`, `cancel-by-collection`, `document-status`,
+`collection-status`, `document-staleness`, `dismiss-staleness`, `translate-field`. The name is the
+action, not the route, so moving an endpoint does not change it.
+
+- **A guard returning a truthy non-boolean now refuses where it allowed.** The old code tested
+  `if (!hasAccess)`, so a guard answering with a user object, a non-empty string or `1` let the
+  request through. Only `true` allows now.
+- **A guard that throws now refuses.** The throw used to escape into the error envelope, which
+  answered `500` — a failure a host could mistake for a bug in the plugin. It is now a `403`, and
+  the error is logged. One exception, so that a guard may still redirect from an admin widget: an
+  error carrying a `digest` property — what `redirect()` and `notFound()` throw — is re-thrown
+  untouched.
+- **The guard is asked more than once for one thing a person does.** Each admin widget asks at
+  render to decide whether to offer the action; the endpoint asks again when the button is pressed.
+  A guard that counts, bills or rate-limits on being asked was always wrong and is now visibly so.
+- **A deep import stops resolving.** `@focus-reactive/payload-plugin-translator/client/shared/types/AccessGuard`
+  was undocumented but reachable through the `./client/*` export. It is gone; `AccessGuard`,
+  `AccessGuardRequest` and `TranslatorAction` come from the package root.
+- **Implementing `AccessGuard` does not break.** A `check` that destructures only `req` still
+  satisfies the interface, and so does one whose parameter type names only `req`.
+
+### Enqueue drops the documents the caller may not change
+
+`POST {basePath}/enqueue` asks the collection's `access.update` rule about every id in
+`collection_id`, as the caller, and queues only the ones it allows. Ids it refuses are reported back
+under `refused`, which is present **only when it is non-empty** — an answer with no `refused` key
+means nothing was dropped. A request whose ids are **all** refused still answers `200` with
+`success: true`; what says so is `queued: 0` and every id listed under `refused`. The refusal is in
+the body, not the status.
+
+`select_all` is unchanged: it already listed only what the caller may read, and that filter stays
+the one that decides.
+
+`collection_id` now rejects an empty array and an empty-string id, which used to be accepted and
+then either queued nothing or queued a job naming no document.
+
+### A job is resolved to its document before anyone may touch it
+
+`POST {basePath}/run/:id`, `DELETE {basePath}/cancel` and
+`DELETE {basePath}/cancel-by-collection/:collection_slug` used to act on a handle without ever
+asking what document was behind it.
+
+- **`DELETE /cancel` can now answer `200`.** It still answers `204` when every handle was cancelled.
+  When some were refused it answers `200` with `{ refused: [...] }` naming them. A client that treats
+  any 2xx as success needs no change; one that asserts `204` does.
+- **`POST /run/:id` answers `403` for a job whose row recorded no requester.** Letting the queue
+  drain such a job is unchanged — it was always going to run. Asking for it to run **now** is a
+  second person's request, and the row names nobody to check it against.
+- **A handle the runner cannot place** is a `404` on run, and is left alone by cancel rather than
+  cancelled unasked.
+- **A custom `TaskRunner` without `assignmentsOf`** makes run and cancel answer `403`. The method is
+  optional so that an existing runner still compiles; a runner that cannot say which document a
+  handle belongs to cannot be asked about it, and the routes refuse rather than proceed.
+  `cancel-by-collection` does not need it — it already knows the collection it was called for.
+
+### The queue takes only work the rules were asked about
+
+`TaskRunner.enqueue`, `cancel` and `run` no longer accept plain tasks and handles. Their parameters
+carry a type-level brand that only the plugin's own handlers can produce, so work that reached the
+queue without an ask does not compile.
+
+- **A host that implements `TaskRunner` is unaffected** — a method declared with the wider parameter
+  type still satisfies the narrowed one.
+- **A host that calls a runner directly**, rather than going through the endpoints, no longer
+  compiles. The brands are deliberately not exported: an exported minter would be a way to put
+  unasked work on the queue, which is the thing being prevented. Go through the endpoints.
+
+### An actor we cannot name stops being read as no actor
+
+A request whose user carries no `collection` — which only a custom auth strategy or a hand-made
+local-API user produces, since Payload's own JWT strategy always stamps it — used to be read as *no
+user*, and a write with no user runs with Payload's access checks off.
+
+- The endpoints answer `403` for such a request.
+- Auto-translate skips the document and logs a warning, rather than queueing an unchecked run. It
+  skips rather than throws because the hook runs inside the editor's save transaction, where a throw
+  would roll the editor's save back.
+- **A request with no user at all is unchanged** and still trusted. That is a deliberate, pinned
+  decision: in-process callers — a seed script, a local-API call, a webhook handler — have always
+  been trusted, and making them fail closed would strand them.
+
+### A chain module can no longer write the document being translated
+
+A member of the translation chain used to receive the whole `payload` and could write the very
+document the run was translating, past every ask above. It now receives a guarded view: `create`,
+`update`, `delete`, `duplicate` and `restoreVersion` **on the run's own collection** throw. Every
+other collection, and every read including of the document under translation, is untouched.
+
+- **This is a runtime refusal, not a compile-time one.** The view's type is still `Payload`. The
+  run's collection is a value, not a literal, so there is no type that admits every collection but
+  that one.
+- **It does not cover `payload.db`**, nor a method reached through the prototype rather than off the
+  object. A module determined to write anyway can still do so; the guard stops the accident, not the
+  intent.
+- **A host whose chain module writes the translated collection starts failing.** The error
+  propagates rather than being swallowed, so the run fails loudly instead of half-writing.

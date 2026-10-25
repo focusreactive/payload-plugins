@@ -34,12 +34,16 @@ export interface AccessGuard {
   /**
    * Only `true` allows. Any other answer, or a throw, refuses: `403` from the endpoints, the widget
    * hidden in the admin.
+   *
+   * Called often and with nobody acting: the admin asks `"enqueue"` on every document and list
+   * render, and the status actions on every poll. A call is a question — keep it free of side effects.
    */
   check<R extends AccessGuardRequest>({
     req,
     action,
   }: {
     req: R;
+    /** @since 1.0.0 */
     action: TranslatorAction;
   }): Promise<boolean> | boolean;
 }

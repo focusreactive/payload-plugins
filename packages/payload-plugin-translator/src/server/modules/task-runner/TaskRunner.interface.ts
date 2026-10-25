@@ -58,6 +58,8 @@ export interface TaskRunner {
   /**
    * The document and recorded requester behind each handle; a handle this runner cannot place is
    * omitted, never guessed. Optional, but without it the run and cancel routes answer `403`.
+   *
+   * @since 1.0.0
    */
   assignmentsOf?(handles: string[]): Promise<JobAssignment[]>;
 
