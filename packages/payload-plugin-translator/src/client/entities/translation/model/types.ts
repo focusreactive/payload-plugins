@@ -77,6 +77,7 @@ export type StalenessLocale = {
   source_lng: string;
   is_stale: boolean;
   translated_at: string;
+  changed_leaves?: string[];
 };
 
 /** Per-locale staleness for a single document. */

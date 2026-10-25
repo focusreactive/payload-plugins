@@ -11,7 +11,6 @@ export const validationSchema = z.object({
     .refine((value) => value.length > 0, { message: "Select at least one language" }),
   [FORM_FIELDS.HIDDEN_COLLECTION_ID]: z.string().nonempty(),
   [FORM_FIELDS.HIDDEN_COLLECTION_SLUG]: z.string().nonempty(),
-  [FORM_FIELDS.STRATEGY]: z.enum(["overwrite", "skip_existing"]).default("overwrite"),
   [FORM_FIELDS.PUBLISH_ON_TRANSLATION]: z.boolean().default(false),
 });
 

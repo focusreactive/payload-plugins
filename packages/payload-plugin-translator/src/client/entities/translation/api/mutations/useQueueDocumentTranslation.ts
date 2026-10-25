@@ -5,16 +5,12 @@ import { useTranslateKitConfig } from "../../../../app/config/index.js";
 import { handleNextApiError } from "../../../../shared/lib/errors/handleApiError.js";
 import { DOCUMENT_STALENESS_QUERY_KEY } from "../queries/useDocumentStaleness.js";
 
-type TranslationStrategy = "overwrite" | "skip_existing";
-
 type Variables = {
   source_lng: string;
-  // string (single mode) or string[] (multi mode) — the /enqueue endpoint accepts both and fans out.
   target_lng: string | string[];
   collection_slug: string;
   collection_id: Array<string | number>;
   select_all?: boolean;
-  strategy?: TranslationStrategy;
   publish_on_translation?: boolean;
 };
 
