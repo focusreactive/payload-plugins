@@ -1,6 +1,7 @@
 import type { PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared/index.js";
+import { mayInitiate } from "../../shared/access/permission.js";
 import { isCollectionAvailable } from "../_lib/collection-utils.js";
 
 import { DismissStalenessInputSchema } from "./model.js";
@@ -20,6 +21,15 @@ export class DismissStalenessHandler {
     if (!collectionSlug) {
       return ServerResponse.badRequest("Collection not available for translation");
     }
+
+    const mayDismiss = await mayInitiate({
+      payload: req.payload,
+      collection: collectionSlug,
+      id: collection_id,
+      targetLocale: target_lng,
+      user: req.user,
+    });
+    if (!mayDismiss) return ServerResponse.forbidden();
 
     const service = this.config.provenanceServiceFactory(req.payload);
     await service.dismiss(

@@ -1,7 +1,7 @@
 import { PermissionCheckFailed } from "./PermissionCheckFailed.js";
 import { RequesterMissing } from "./RequesterMissing.js";
 import type { CollectionSlug, Payload } from "payload";
-import { createLocalReq, docAccessOperation } from "payload";
+import { createLocalReq, docAccessOperation, NotFound } from "payload";
 
 import type { RequestScope, Requester } from "../payload/RequestScope.shapes.js";
 import { freshReq } from "../payload/RequestScope.shapes.js";
@@ -152,4 +152,27 @@ export async function checkTranslationPermission(
   if (!user) return true;
 
   return await mayWrite({ payload, collection, id, data, targetLocale, scope, user });
+}
+
+/**
+ * Empty `data` makes Payload's evaluator load the document itself, so a document that is not there
+ * fails the ask instead of answering it. Absence is not a refusal, and the caller's own read reports
+ * it — so the ask stands aside and leaves that answer to the read.
+ */
+function absenceIsNotARefusal(error: unknown): boolean {
+  if (error instanceof PermissionCheckFailed && error.cause instanceof NotFound) return true;
+  throw error;
+}
+
+/**
+ * Could this person save this document at all — asked with empty `data`, so a host rule that branches
+ * on the payload answers a different question here than it will at the write. Never authorise a write
+ * with it: the write asks again, with the data it is about to send.
+ *
+ * A `null` user answers `true`, like every other permission path in this plugin.
+ */
+export async function mayInitiate(
+  query: Omit<PermissionQuery, "data" | "scope"> & { user: RebuiltRequester | null }
+): Promise<boolean> {
+  return checkTranslationPermission({ ...query, data: {}, scope: {} }).catch(absenceIsNotARefusal);
 }

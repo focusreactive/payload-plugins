@@ -14,6 +14,7 @@ import { FieldTranslationInputSchema, MAX_FIELD_VALUE_BYTES } from "./model.js";
 import type { FieldTranslationConfig } from "./model.js";
 import { resolveFieldSubtree } from "./resolveFieldSubtree.js";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
+import { mayInitiate } from "../../shared/access/permission.js";
 
 const byteLength = (value: unknown): number =>
   new TextEncoder().encode(JSON.stringify(value) ?? "").length;
@@ -30,8 +31,9 @@ const noop = (
 /**
  * `POST {basePath}/field`. Translates the **saved** value at `doc_id` in `source_lng` — the request
  * carries no value, so unsaved form edits are invisible — and writes nothing; the caller persists.
- * "Cannot translate" answers `200` with `status: "noop"` and a `reason`; HTTP status is reserved for
- * a bad request.
+ * "Cannot translate" answers `200` with `status: "noop"` and a `reason`; a non-2xx status means the
+ * request was not run at all — malformed, refused (`403`, which only a named caller can be), or
+ * the document is gone.
  */
 export type FieldTranslation = (req: PayloadRequest) => Promise<Response>;
 
@@ -72,6 +74,15 @@ export class TranslateFieldHandler {
         );
       }
     }
+
+    const mayTranslate = await mayInitiate({
+      payload: req.payload,
+      collection: collection_slug,
+      id: doc_id,
+      targetLocale: target_lng,
+      user: req.user,
+    });
+    if (!mayTranslate) return ServerResponse.forbidden();
 
     const sourceDoc = await fetchSourceDocument({
       payload: req.payload,
