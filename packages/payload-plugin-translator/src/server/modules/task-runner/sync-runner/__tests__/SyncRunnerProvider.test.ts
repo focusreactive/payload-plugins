@@ -4,6 +4,7 @@ import type { Payload, CollectionSlug } from "payload";
 import { createSyncRunner } from "../SyncRunnerProvider.js";
 import type { TaskRunnerContext } from "../../TaskRunnerProvider.interface.js";
 import type { TaskInput } from "../../types.js";
+import type { AuthorisedWork } from "../../../../shared/access/authorised.js";
 
 const fakePayload = {} as Payload;
 
@@ -35,7 +36,7 @@ describe("SyncRunnerProvider", () => {
     const runner = createSyncRunner();
 
     const taskRunner = runner.create(fakePayload, makeContext(handler));
-    await taskRunner.enqueue([sampleInput]);
+    await taskRunner.enqueue([sampleInput as AuthorisedWork]);
 
     expect(handler).toHaveBeenCalledTimes(1);
     expect(handler).toHaveBeenCalledWith(

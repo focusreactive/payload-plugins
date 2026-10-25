@@ -3,16 +3,21 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { TaskRunner } from "../TaskRunner.interface.js";
 import type { TaskRunnerContext } from "../TaskRunnerProvider.interface.js";
 import type { EnqueueAssignment, TaskEvent, TaskInput } from "../types.js";
+import type { AuthorisedHandle, AuthorisedWork } from "../../../shared/access/authorised.js";
 
 const SLUG = "posts";
 
-const input = (collectionId: string, targetLng: string): TaskInput => ({
-  collectionSlug: SLUG,
-  collectionId,
-  sourceLng: "en",
-  targetLng,
-  publishOnTranslation: false,
-});
+const asWork = (task: TaskInput): AuthorisedWork => task as AuthorisedWork;
+const asHandle = (handle: string): AuthorisedHandle => handle as AuthorisedHandle;
+
+const input = (collectionId: string, targetLng: string): AuthorisedWork =>
+  asWork({
+    collectionSlug: SLUG,
+    collectionId,
+    sourceLng: "en",
+    targetLng,
+    publishOnTranslation: false,
+  });
 
 type Addressed = { collectionSlug: string; collectionId: string; targetLng: string };
 
@@ -34,9 +39,8 @@ const settle = (promise: Promise<unknown>): Promise<"resolved" | "rejected"> =>
 
 type Reported = { assignment: EnqueueAssignment; event: TaskEvent };
 
-const handlesOf = (answer: EnqueueAssignment[]): string[] => [
-  ...new Set(answer.map((assignment) => assignment.handle)),
-];
+const handlesOf = (answer: EnqueueAssignment[]): AuthorisedHandle[] =>
+  [...new Set(answer.map((assignment) => assignment.handle))].map(asHandle);
 
 export type MakeTaskRunner = (
   report: TaskRunnerContext["report"]
@@ -74,17 +78,17 @@ export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): vo
       runner = await make(record);
     });
 
-    const enqueued = async (tasks: TaskInput[]): Promise<EnqueueAssignment[] | undefined> => {
+    const enqueued = async (tasks: AuthorisedWork[]): Promise<EnqueueAssignment[] | undefined> => {
       const answer = await runner.enqueue(tasks);
       return Array.isArray(answer) ? answer : undefined;
     };
 
-    const twoLocales = (): TaskInput[] => [
+    const twoLocales = (): AuthorisedWork[] => [
       input(documentForThisCheck(1), "de"),
       input(documentForThisCheck(1), "fr"),
     ];
 
-    const threeLocales = (): TaskInput[] => [
+    const threeLocales = (): AuthorisedWork[] => [
       input(documentForThisCheck(1), "de"),
       input(documentForThisCheck(1), "fr"),
       input(documentForThisCheck(2), "de"),
@@ -379,7 +383,9 @@ export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): vo
           return;
         }
         const given = new Set(handlesOf(cancelled));
-        const untouched = new Set(spared.filter((a) => !given.has(a.handle)).map(assignmentKey));
+        const untouched = new Set(
+          spared.filter((a) => !given.has(asHandle(a.handle))).map(assignmentKey)
+        );
 
         await runner.cancel([...given]);
 
@@ -403,7 +409,7 @@ export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): vo
       const spent = async (): Promise<string | undefined> => {
         const answer = await enqueued([input(documentForThisCheck(9), "de")]);
         const handle = answer?.[0]?.handle;
-        if (handle) await runner.cancel([handle]);
+        if (handle) await runner.cancel([asHandle(handle)]);
         return handle;
       };
 
@@ -414,7 +420,7 @@ export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): vo
           return;
         }
 
-        expect(await runner.run(handle)).toEqual({ success: false, error: "not_found" });
+        expect(await runner.run(asHandle(handle))).toEqual({ success: false, error: "not_found" });
       });
 
       it("resolves cancel on a spent handle", async (ctx) => {
@@ -425,7 +431,7 @@ export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): vo
         }
 
         expect(
-          await settle(runner.cancel([handle])),
+          await settle(runner.cancel([asHandle(handle)])),
           "cancel on a spent handle resolves rather than rejecting"
         ).toBe("resolved");
       });

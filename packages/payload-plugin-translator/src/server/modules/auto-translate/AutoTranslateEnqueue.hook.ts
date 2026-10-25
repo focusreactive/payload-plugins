@@ -2,6 +2,7 @@ import type { CollectionAfterChangeHook } from "payload";
 import { hasDraftsEnabled } from "payload/shared";
 
 import { authCollectionsOf, identityOf } from "../../shared/payload/identityOf.js";
+import { authorisedByTheSave } from "../../shared/access/authorised.js";
 import { swallowOrThrow } from "../../shared/payload/swallowOrThrow.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 
@@ -76,7 +77,7 @@ export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAf
         });
         if (tasks.length === 0) return;
 
-        await taskRunnerFactory.create(req.payload).enqueue(tasks, {
+        await taskRunnerFactory.create(req.payload).enqueue(authorisedByTheSave(tasks), {
           ...scope,
           ...identityOf(req, authCollectionsOf(req.payload), req.payload.logger),
         });

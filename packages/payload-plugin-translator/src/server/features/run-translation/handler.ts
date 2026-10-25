@@ -1,7 +1,7 @@
 import type { PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared/index.js";
-import { refusedTargets } from "../../shared/access/refusedTargets.js";
+import { authorisedHandles } from "../../shared/access/authorised.js";
 import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 
 import { RunInputSchema } from "./model.js";
@@ -28,15 +28,15 @@ export class RunTranslationHandler {
     // No recorded requester means the worker writes with access off (`enforcedAtTheWrite`).
     if (!job.startedBy) return ServerResponse.forbidden();
 
-    const refused = await refusedTargets({
+    const { authorised } = await authorisedHandles({
       payload: req.payload,
-      collection: job.collectionSlug,
-      ids: [String(job.collectionId)],
       user: req.user,
+      jobs: [job],
     });
-    if (refused.size > 0) return ServerResponse.forbidden();
+    const [thisJob] = authorised;
+    if (!thisJob) return ServerResponse.forbidden();
 
-    const result = await runner.run(id);
+    const result = await runner.run(thisJob);
 
     if (!result.success) {
       if (result.error === "not_found" || result.error === "already_completed") {

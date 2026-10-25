@@ -1,7 +1,8 @@
 import type { CollectionSlug } from "payload";
 
-import type { EnqueueAssignment, JobAssignment, Task, TaskInput, RunResult } from "./types.js";
+import type { EnqueueAssignment, JobAssignment, Task, RunResult } from "./types.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
+import type { AuthorisedHandle, AuthorisedWork } from "../../shared/access/authorised.js";
 
 /**
  * Interface for task execution backends.
@@ -38,7 +39,7 @@ export interface TaskRunner {
    *
    * @since 0.16.0 the return type widened.
    */
-  enqueue(tasks: TaskInput[], scope?: RequestScope): Promise<EnqueueAssignment[] | void>;
+  enqueue(tasks: AuthorisedWork[], scope?: RequestScope): Promise<EnqueueAssignment[] | void>;
 
   /**
    * Stop the work these handles stand for, as far as this runner can.
@@ -46,13 +47,13 @@ export interface TaskRunner {
    * Best effort: a runner that translates inline inside `enqueue` has nothing left to stop.
    * Report `cancelled` for each locale the run still owed, and for none it had delivered.
    */
-  cancel(taskIds: string[]): Promise<void>;
+  cancel(taskIds: AuthorisedHandle[]): Promise<void>;
 
   /**
    * Execute a task immediately.
    * Returns error status if task not found, already running, or completed.
    */
-  run(taskId: string): Promise<RunResult>;
+  run(taskId: AuthorisedHandle): Promise<RunResult>;
 
   /**
    * The document and recorded requester behind each handle; a handle this runner cannot place is
