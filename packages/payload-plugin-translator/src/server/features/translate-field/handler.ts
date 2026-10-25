@@ -2,8 +2,8 @@ import type { PayloadRequest } from "payload";
 
 import { getByPath, ServerResponse } from "../../shared/index.js";
 import { translateContent } from "../../../core/translation-pipeline/index.js";
-import { extractLocaleCodes } from "../../modules/auto-translate/index.js";
-import type { LocalizationLike } from "../../modules/auto-translate/index.js";
+import { everyTranslatableLeaf } from "../../../core/domain/content-projection/contentProjector.js";
+import { Locales } from "../../../core/domain/locales/index.js";
 
 import type {
   FieldTranslationNotice,
@@ -55,9 +55,7 @@ export class TranslateFieldHandler {
       );
     }
 
-    const known = extractLocaleCodes(
-      req.payload?.config?.localization as LocalizationLike | undefined
-    );
+    const known = Locales.knownCodes(req.payload?.config?.localization);
     if (!known) {
       return ServerResponse.badRequest(
         "Localization is not enabled in this Payload config; there is nothing to translate between"
@@ -133,6 +131,7 @@ export class TranslateFieldHandler {
     const translated = await translateContent({
       schema: resolution.schema,
       sourceData: resolution.sourceData,
+      selection: everyTranslatableLeaf(resolution.sourceData, resolution.schema),
       sourceLng: source_lng,
       targetLng: target_lng,
       document: { collection: collection_slug, id: doc_id },

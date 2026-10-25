@@ -162,17 +162,18 @@ export function translatorPlugin(
     );
     const collectionSlugs = new Set(schemaMap.keys());
 
-    const provenanceModule = configureProvenance(provenance, schemaMap);
+    const provenanceParts = configureProvenance(provenance, schemaMap);
 
-    // Provenance goes first: the staleness route re-hashes the stored source, so a fingerprint
-    // taken after another module replaced `sourceData` would never match.
-    const chain: TranslationModule[] = provenanceModule ? [provenanceModule, ...modules] : modules;
+    const chain: TranslationModule[] = provenanceParts
+      ? [provenanceParts.module, ...modules]
+      : modules;
     refuseDuplicateNames(chain);
 
     const { taskRunnerFactory, configModifier: runnerConfigModifier } = wireTranslateRunner({
       translationProvider,
       schemaMap,
       modules: chain,
+      criteria: provenanceParts?.criteria,
       runner,
       lifecycle: lifecycle ?? {},
       collections: Array.from(collectionSlugs),

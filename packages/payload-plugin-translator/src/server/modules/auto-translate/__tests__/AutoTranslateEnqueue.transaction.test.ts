@@ -12,7 +12,6 @@ const schemaMap: CollectionSchemaMap = new Map([
 ]);
 const policy: NormalizedAutoTranslatePolicy = {
   targets: ["de"],
-  strategy: "overwrite",
   debounceMs: 0,
 };
 

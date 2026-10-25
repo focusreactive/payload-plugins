@@ -12,7 +12,6 @@ const schemaMap: CollectionSchemaMap = new Map([
 ]);
 const policy: NormalizedAutoTranslatePolicy = {
   targets: ["de"],
-  strategy: "overwrite",
   debounceMs: 0,
 };
 const logger = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() };

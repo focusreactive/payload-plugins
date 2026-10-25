@@ -80,7 +80,7 @@ export type { FieldTranslationConfig } from "./field-config.js";
 // collection with `withAutoTranslate`; requires a working job runner/autorun to execute (see the
 // JSDoc for the Vercel/serverless caveat). Since v0.9.0.
 export { withAutoTranslate } from "./auto-translate-config.js";
-export type { AutoTranslateConfig, AutoTranslateStrategy } from "./auto-translate-config.js";
+export type { AutoTranslateConfig } from "./auto-translate-config.js";
 
 export { createOpenAIProvider, OpenAITranslationProvider } from "./translation-providers/index.js";
 export type { OpenAIProviderConfig } from "./translation-providers/index.js";
