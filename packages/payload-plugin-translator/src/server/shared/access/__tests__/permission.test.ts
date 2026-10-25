@@ -20,8 +20,7 @@ const requestBuilder = async () =>
 
 const A_REAL_REQUEST = { headers: new Headers(), i18n: {}, t: () => "", context: {} };
 
-const { checkTranslationPermission, rebuildRequester } =
-  await import("../translationPermission.js");
+const { checkTranslationPermission, rebuildRequester } = await import("../permission.js");
 
 const ANNA = { requester: asRequester("anna", "users") };
 

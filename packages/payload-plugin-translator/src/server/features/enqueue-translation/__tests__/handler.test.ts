@@ -4,11 +4,13 @@ import { EnqueueTranslationHandler } from "../handler.js";
 import type { EnqueueConfig } from "../model.js";
 import type { TaskRunnerFactory, TaskRunner } from "../../../modules/task-runner/index.js";
 
-// Mock collection-utils
 vi.mock("../../_lib/collection-utils.js", () => ({
   isCollectionAvailable: vi.fn((slug: string, available: Set<string>) =>
     available.has(slug) ? slug : null
   ),
+}));
+
+vi.mock("../../../shared/payload/collections.js", () => ({
   getAllCollectionIds: vi.fn().mockResolvedValue(["doc-1", "doc-2", "doc-3"]),
 }));
 

@@ -15,19 +15,21 @@ vi.mock("../../../../core/translation-pipeline/index.js", () => ({
   }),
 }));
 
-vi.mock("../translationPermission.js", () => ({
+vi.mock("../../../shared/access/permission.js", () => ({
   rebuildRequester: vi.fn().mockResolvedValue(null),
   checkTranslationPermission: vi.fn(),
   mayWrite: vi.fn().mockResolvedValue(true),
 }));
 
 const permission = async () =>
-  (await import("../translationPermission.js")).checkTranslationPermission as ReturnType<
+  (await import("../../../shared/access/permission.js")).checkTranslationPermission as ReturnType<
     typeof vi.fn
   >;
 
 const rebuilt = async () =>
-  (await import("../translationPermission.js")).rebuildRequester as ReturnType<typeof vi.fn>;
+  (await import("../../../shared/access/permission.js")).rebuildRequester as ReturnType<
+    typeof vi.fn
+  >;
 
 const ANNA = { id: "anna", collection: "users" };
 

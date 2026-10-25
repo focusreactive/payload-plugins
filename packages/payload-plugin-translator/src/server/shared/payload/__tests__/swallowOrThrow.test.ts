@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { TransportError } from "../../../../translation-providers/shared/errors/index.js";
-import { PermissionCheckFailed } from "../../../features/translate-document/PermissionCheckFailed.js";
+import { PermissionCheckFailed } from "../../access/PermissionCheckFailed.js";
 import { swallowOrThrow } from "../swallowOrThrow.js";
 
 const IN_A_TRANSACTION = { transactionID: "tx-1" };

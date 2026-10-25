@@ -3,7 +3,8 @@ import type { PayloadRequest } from "payload";
 import { ServerResponse } from "../../shared/index.js";
 import { authCollectionsOf, identityOf } from "../../shared/payload/identityOf.js";
 import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
-import { isCollectionAvailable, getAllCollectionIds } from "../_lib/collection-utils.js";
+import { isCollectionAvailable } from "../_lib/collection-utils.js";
+import { getAllCollectionIds } from "../../shared/payload/collections.js";
 
 import { Locales } from "../../../core/domain/locales/index.js";
 

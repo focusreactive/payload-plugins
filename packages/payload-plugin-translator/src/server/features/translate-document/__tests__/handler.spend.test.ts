@@ -14,7 +14,7 @@ vi.mock("../../../../core/translation-pipeline/index.js", () => ({
   }),
 }));
 
-vi.mock("../translationPermission.js", () => ({
+vi.mock("../../../shared/access/permission.js", () => ({
   rebuildRequester: vi.fn().mockResolvedValue(null),
   checkTranslationPermission: vi.fn(),
   mayWrite: vi.fn().mockResolvedValue(true),
@@ -23,7 +23,7 @@ vi.mock("../translationPermission.js", () => ({
 const mocks = async () => ({
   translate: (await import("../../../../core/translation-pipeline/index.js"))
     .translateContent as ReturnType<typeof vi.fn>,
-  permission: (await import("../translationPermission.js"))
+  permission: (await import("../../../shared/access/permission.js"))
     .checkTranslationPermission as ReturnType<typeof vi.fn>,
 });
 

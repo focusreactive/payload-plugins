@@ -2,7 +2,8 @@ import type { PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared/index.js";
 import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
-import { isCollectionAvailable, visibleIds } from "../_lib/collection-utils.js";
+import { isCollectionAvailable } from "../_lib/collection-utils.js";
+import { visibleIds } from "../../shared/payload/collections.js";
 
 import {
   GetDocumentStatusInputSchema,

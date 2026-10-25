@@ -8,8 +8,12 @@ import { enforcedAtTheRead } from "../../shared/payload/enforcedAtTheRead.js";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
 import { SourceUnreadable } from "./SourceUnreadable.js";
 import { TranslationRefused } from "./TranslationRefused.js";
-import { checkTranslationPermission, mayWrite, rebuildRequester } from "./translationPermission.js";
-import type { RebuiltRequester } from "./translationPermission.js";
+import {
+  checkTranslationPermission,
+  mayWrite,
+  rebuildRequester,
+} from "../../shared/access/permission.js";
+import type { RebuiltRequester } from "../../shared/access/permission.js";
 import type { PublishScope, WriteLayer } from "./targetLayer.js";
 
 const approvedSource: unique symbol = Symbol("approvedSource");

@@ -3,8 +3,8 @@ import { RequesterMissing } from "./RequesterMissing.js";
 import type { CollectionSlug, Payload } from "payload";
 import { createLocalReq, docAccessOperation } from "payload";
 
-import type { RequestScope, Requester } from "../../shared/payload/RequestScope.shapes.js";
-import { freshReq } from "../../shared/payload/RequestScope.shapes.js";
+import type { RequestScope, Requester } from "../payload/RequestScope.shapes.js";
+import { freshReq } from "../payload/RequestScope.shapes.js";
 
 /**
  * A refusal is an **absent key** — Payload's sanitizer deletes what it set to `false` — so
