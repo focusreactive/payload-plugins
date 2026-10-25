@@ -1,7 +1,7 @@
 import type { PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared/index.js";
-import { authCollectionsOf, identityOf } from "../../shared/payload/identityOf.js";
+import { authCollectionsOf, identityOf, scopeOf } from "../../shared/payload/identityOf.js";
 import type { TaskInput, TaskRunnerFactory } from "../../modules/task-runner/index.js";
 import { isCollectionAvailable } from "../_lib/collection-utils.js";
 import { getAllCollectionIds } from "../../shared/payload/collections.js";
@@ -102,11 +102,11 @@ export class EnqueueTranslationHandler {
           tasks: workFor(collection_id),
         });
 
+    const identity = identityOf(req, authCollectionsOf(req.payload), req.payload.logger);
+    if (identity.kind === "unnameable") return ServerResponse.forbidden();
+
     const runner = this.taskRunnerFactory.create(req.payload);
-    const assigned = await runner.enqueue(
-      authorised,
-      identityOf(req, authCollectionsOf(req.payload), req.payload.logger)
-    );
+    const assigned = await runner.enqueue(authorised, scopeOf(identity));
 
     return ServerResponse.success({
       success: true,

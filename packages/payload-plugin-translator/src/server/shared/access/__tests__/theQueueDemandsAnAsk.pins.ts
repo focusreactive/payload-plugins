@@ -3,6 +3,8 @@
 import type { TaskRunner } from "../../../modules/task-runner/TaskRunner.interface.js";
 import type { TaskInput } from "../../../modules/task-runner/types.js";
 import type { AuthorisedHandle, AuthorisedWork } from "../authorised.js";
+import { scopeOf } from "../../payload/identityOf.js";
+import type { Identity } from "../../payload/identityOf.js";
 
 declare const runner: TaskRunner;
 declare const work: TaskInput[];
@@ -16,6 +18,15 @@ runner.cancel([handle]);
 
 // @ts-expect-error and run, likewise
 runner.run(handle);
+
+declare const unnameable: { kind: "unnameable" };
+declare const identity: Identity;
+
+// @ts-expect-error an actor this project cannot name has no scope to act in
+scopeOf(unnameable);
+
+// @ts-expect-error nor can one be built before the unnameable case is ruled out
+scopeOf(identity);
 
 declare const asked: AuthorisedWork[];
 declare const askedHandle: AuthorisedHandle;

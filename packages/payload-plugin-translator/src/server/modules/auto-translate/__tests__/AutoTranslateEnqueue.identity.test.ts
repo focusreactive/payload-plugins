@@ -70,6 +70,55 @@ describe("auto-translate hook — whose identity reaches the runner", () => {
     expect(scope?.requester ?? null).toBeNull();
   });
 
+  it("queues nothing for a saving user this project cannot name", async () => {
+    const { hook, enqueue } = setup();
+
+    await hook(
+      hookArgs({
+        user: { id: "anna" },
+        payload: {
+          logger,
+          config: {
+            localization: { defaultLocale: "en", locales: ["en", "de"] },
+            collections: [
+              { slug: "admins", auth: {} },
+              { slug: "editors", auth: {} },
+            ],
+          },
+        },
+      })
+    );
+
+    expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  it("says why it skipped, rather than failing the editor's save", async () => {
+    const { hook } = setup();
+
+    await expect(
+      hook(
+        hookArgs({
+          user: { id: "anna" },
+          payload: {
+            logger,
+            config: {
+              localization: { defaultLocale: "en", locales: ["en", "de"] },
+              collections: [
+                { slug: "admins", auth: {} },
+                { slug: "editors", auth: {} },
+              ],
+            },
+          },
+        })
+      )
+    ).resolves.toBeDefined();
+
+    // `identityOf` warns too, so this must name the hook's own line or it proves nothing.
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ msg: expect.stringContaining("cannot name") })
+    );
+  });
+
   it("does not mutate the request a bulk update shares across every document", async () => {
     const { hook } = setup();
     const args = hookArgs({ user: { id: "anna", collection: "users" } });

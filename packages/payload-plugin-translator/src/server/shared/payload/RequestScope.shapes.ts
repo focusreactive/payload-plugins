@@ -25,6 +25,11 @@ export type Requester = { userId: string | number; userCollection: string } & {
  * (an empty collection) is kept rather than dropped, so it fails the requester lookup loudly instead
  * of silently becoming an unattributed write.
  */
+export function asRequester(userId: string | number, userCollection: string): Requester;
+export function asRequester(
+  userId: string | number | null | undefined,
+  userCollection: string | null | undefined
+): Requester | null;
 export function asRequester(
   userId: string | number | null | undefined,
   userCollection: string | null | undefined
