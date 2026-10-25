@@ -3,7 +3,7 @@ import type { CollectionSlug } from "payload";
 import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
-import type { ChainMember } from "../../modules/translation-run/index.js";
+import type { ChainMember, Criteria } from "../../modules/translation-run/index.js";
 import { LifecycleNotifier, taskFromAssignment } from "../../modules/lifecycle/index.js";
 import type { TranslationLifecycleCallbacks } from "../../modules/lifecycle/index.js";
 import type {
@@ -18,6 +18,7 @@ type WireTranslateRunnerParams = {
   translationProvider: TranslationProvider;
   schemaMap: CollectionSchemaMap;
   modules: readonly ChainMember[];
+  criteria?: Criteria;
   runner: TaskRunnerProvider;
   lifecycle: TranslationLifecycleCallbacks;
   collections: CollectionSlug[];
@@ -32,6 +33,7 @@ export function wireTranslateRunner({
   translationProvider,
   schemaMap,
   modules,
+  criteria,
   runner,
   lifecycle,
   collections,
@@ -39,7 +41,12 @@ export function wireTranslateRunner({
   taskRunnerFactory: TaskRunnerFactory;
   configModifier: ConfigModifier;
 } {
-  const translateHandler = new TranslateDocumentHandler(translationProvider, schemaMap, modules);
+  const translateHandler = new TranslateDocumentHandler({
+    translationProvider,
+    schemaMap,
+    modules,
+    criteria,
+  });
 
   const runnerContext: TaskRunnerContext = {
     handler: async (payload, input, scope) => {
@@ -50,7 +57,7 @@ export function wireTranslateRunner({
           collectionId: input.collectionId,
           sourceLng: input.sourceLng,
           targetLng: input.targetLng,
-          strategy: input.strategy,
+          filters: input.filters,
           publishOnTranslation: input.publishOnTranslation,
           previousAttempts: input.previousAttempts,
         },

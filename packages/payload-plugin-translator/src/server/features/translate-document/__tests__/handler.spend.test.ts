@@ -38,7 +38,6 @@ describe("TranslateDocumentHandler — a refusal costs nothing at the provider",
     collectionId: "doc-123",
     sourceLng: "en",
     targetLng: "de",
-    strategy: "overwrite",
     publishOnTranslation: false,
     previousAttempts: 0,
   });
@@ -57,7 +56,7 @@ describe("TranslateDocumentHandler — a refusal costs nothing at the provider",
       collections: { posts: { config: { versions: { drafts: true } } } },
     } as unknown as Payload;
 
-    handler = new TranslateDocumentHandler(provider, schemaMap);
+    handler = new TranslateDocumentHandler({ translationProvider: provider, schemaMap });
     const { translate } = await mocks();
     translate.mockResolvedValue({ title: "Titel" });
   });

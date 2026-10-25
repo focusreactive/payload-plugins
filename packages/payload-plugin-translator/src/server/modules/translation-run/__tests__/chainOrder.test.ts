@@ -14,22 +14,6 @@ describe("the chain before the translation", () => {
     expect(await runBeforeTranslation([], state, silent)).toEqual(state);
   });
 
-  it("keeps the leaf-change map when a later module contributes only its own note", async () => {
-    const changed = { title: true };
-    const mapper: ChainMember = {
-      name: "mapper",
-      beforeTranslation: async () => ({ sourceChangedByLeaf: changed }),
-    };
-    const noteOnly: ChainMember = {
-      name: "note-only",
-      beforeTranslation: async () => ({ moduleState: { noteOnly: 1 } }),
-    };
-
-    const joined = await runBeforeTranslation([mapper, noteOnly], beforeTranslation(), silent);
-
-    expect(joined.sourceChangedByLeaf).toEqual(changed);
-  });
-
   it("keeps a sibling's note when a module contributes only its own", async () => {
     const first: ChainMember = {
       name: "first",

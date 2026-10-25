@@ -31,7 +31,6 @@ const withContribution = (
 ): BeforeTranslation => ({
   ...state,
   moduleState: { ...state.moduleState, ...contribution.moduleState },
-  sourceChangedByLeaf: contribution.sourceChangedByLeaf ?? state.sourceChangedByLeaf,
 });
 
 /**

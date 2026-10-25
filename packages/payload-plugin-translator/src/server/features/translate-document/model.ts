@@ -1,23 +1,15 @@
 import type { CollectionSlug } from "payload";
-import type { ID } from "../../modules/task-runner/types.js";
-import type { TranslationStrategyName } from "../../../core/translation-pipeline/strategies/index.js";
+import type { ID, RunAsk } from "../../modules/task-runner/types.js";
 
-/**
- * Input for the translate document handler
- */
-export type TranslateDocumentInput = {
+export type TranslateDocumentInput = RunAsk & {
   collection: CollectionSlug;
   collectionId: ID;
   sourceLng: string;
   targetLng: string;
-  strategy: TranslationStrategyName;
   publishOnTranslation: boolean;
   previousAttempts: number;
 };
 
-/**
- * Output of the translate document handler
- */
 export type TranslateDocumentOutput = {
   success: true;
 };

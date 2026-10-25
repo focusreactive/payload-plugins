@@ -42,7 +42,6 @@ describe("TranslateDocumentHandler — it asks before it writes", () => {
     collectionId: "doc-123",
     sourceLng: "en",
     targetLng: "de",
-    strategy: "overwrite",
     publishOnTranslation: false,
     previousAttempts: 0,
     ...over,
@@ -69,7 +68,7 @@ describe("TranslateDocumentHandler — it asks before it writes", () => {
       collections: { posts: { config: { versions: { drafts: true } } } },
     } as unknown as Payload;
 
-    handler = new TranslateDocumentHandler(provider, schemaMap);
+    handler = new TranslateDocumentHandler({ translationProvider: provider, schemaMap });
     (await permission()).mockResolvedValue(true);
   });
 

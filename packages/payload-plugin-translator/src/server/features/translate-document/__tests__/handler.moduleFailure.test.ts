@@ -22,7 +22,6 @@ const input = (): TranslateDocumentInput => ({
   collectionId: "doc-123",
   sourceLng: "en",
   targetLng: "de",
-  strategy: "overwrite",
   publishOnTranslation: false,
   previousAttempts: 0,
 });
@@ -54,7 +53,7 @@ describe("a module that fails while the editor's save is still open", () => {
   });
 
   const handlerWith = (member: ChainMember) =>
-    new TranslateDocumentHandler(provider, schemaMap, [member]);
+    new TranslateDocumentHandler({ translationProvider: provider, schemaMap, modules: [member] });
 
   it("lets the failure out rather than reporting success over a transaction it may have taken", async () => {
     const underTest = handlerWith(failingAt("beforeTranslation", new Error("boom")));

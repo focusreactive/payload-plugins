@@ -26,7 +26,6 @@ describe("TranslateDocumentHandler — the caller's transaction", () => {
     collectionId: "doc-123",
     sourceLng: "en",
     targetLng: "de",
-    strategy: "overwrite",
     publishOnTranslation: false,
     previousAttempts: 0,
     ...over,
@@ -48,7 +47,7 @@ describe("TranslateDocumentHandler — the caller's transaction", () => {
       },
     } as unknown as Payload;
 
-    handler = new TranslateDocumentHandler(provider, schemaMap);
+    handler = new TranslateDocumentHandler({ translationProvider: provider, schemaMap });
   });
 
   it("joins the source read to it", async () => {
@@ -93,13 +92,13 @@ describe("TranslateDocumentHandler — the caller's transaction", () => {
       lastTranslatedFrom: vi.fn().mockResolvedValue(null),
       record: vi.fn(),
     });
-    const provenanceHandler = new TranslateDocumentHandler(
-      { translate: vi.fn().mockResolvedValue({}) },
-      new Map([
+    const provenanceHandler = new TranslateDocumentHandler({
+      translationProvider: { translate: vi.fn().mockResolvedValue({}) },
+      schemaMap: new Map([
         ["posts" as CollectionSlug, [{ name: "title", type: "text", localized: true }]],
       ]) as CollectionSchemaMap,
-      provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory)
-    );
+      modules: provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory),
+    });
 
     await provenanceHandler.handle(payload, input(), { transactionID: TX });
 
