@@ -1,6 +1,6 @@
 import type { CollectionSlug } from "payload";
 
-import type { EnqueueAssignment, Task, TaskInput, RunResult } from "./types.js";
+import type { EnqueueAssignment, JobAssignment, Task, TaskInput, RunResult } from "./types.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 
 /**
@@ -53,6 +53,12 @@ export interface TaskRunner {
    * Returns error status if task not found, already running, or completed.
    */
   run(taskId: string): Promise<RunResult>;
+
+  /**
+   * The document and recorded requester behind each handle; a handle this runner cannot place is
+   * omitted, never guessed. Optional, but without it the run and cancel routes answer `403`.
+   */
+  assignmentsOf?(handles: string[]): Promise<JobAssignment[]>;
 
   /**
    * @deprecated Pass `{ documentIds }` instead. Removed in the next major.

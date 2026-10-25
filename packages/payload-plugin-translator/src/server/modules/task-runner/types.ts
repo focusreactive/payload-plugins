@@ -77,6 +77,15 @@ export type EnqueueAssignment = {
   handle: string;
 };
 
+/** What a handle stands for: the document the job translates, and who asked for it. */
+export type JobAssignment = {
+  handle: string;
+  collectionSlug: CollectionSlug;
+  collectionId: ID;
+  /** `null` when nobody was recorded: a runner that keeps no requester, or work started without one. */
+  startedBy: { id: string; collection: string } | null;
+};
+
 /**
  * What became of one {@link EnqueueAssignment}.
  *

@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, PayloadRequest } from "payload";
-import { CancelHandler } from "./handler.js";
+
 import type { TaskRunner, TaskRunnerFactory } from "../../modules/task-runner/index.js";
 
+vi.mock("../../shared/access/refusedTargets.js", () => ({
+  refusedTargets: vi.fn().mockResolvedValue(new Set<string>()),
+}));
+
+const { CancelHandler } = await import("./handler.js");
+
 describe("CancelHandler", () => {
-  let handler: CancelHandler;
+  let handler: InstanceType<typeof CancelHandler>;
   let mockTaskRunner: TaskRunner;
   let mockTaskRunnerFactory: TaskRunnerFactory;
 
@@ -20,6 +26,16 @@ describe("CancelHandler", () => {
       cancel: vi.fn().mockResolvedValue(undefined),
       run: vi.fn(),
       findByCollection: vi.fn(),
+      assignmentsOf: vi.fn().mockImplementation((handles: string[]) =>
+        Promise.resolve(
+          handles.map((handle) => ({
+            handle,
+            collectionSlug: "posts",
+            collectionId: "d1",
+            startedBy: { id: "anna", collection: "users" },
+          }))
+        )
+      ),
     };
 
     mockTaskRunnerFactory = {

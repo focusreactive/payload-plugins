@@ -3,7 +3,7 @@ import type { Payload, Where, CollectionSlug } from "payload";
 import type { TaskFilter, TaskRunner } from "../TaskRunner.interface.js";
 import type { TaskRunnerContext } from "../TaskRunnerProvider.interface.js";
 import { toTaskFilter } from "../toTaskFilter.js";
-import type { EnqueueAssignment, Task, TaskInput, RunResult } from "../types.js";
+import type { EnqueueAssignment, JobAssignment, Task, TaskInput, RunResult } from "../types.js";
 import type { PayloadJobsRunnerConfig } from "./config.js";
 import type { PayloadJob, StoredRunTarget, StoredWorkflowInput } from "./store/index.js";
 import { runLocales, runTargets } from "./store/index.js";
@@ -14,6 +14,7 @@ import {
   ofCollection,
   ofDocuments,
   readCollectionRef,
+  readRequester,
 } from "./store/index.js";
 import { owedOnCancel, planEnqueue } from "./model/index.js";
 import type { RequestShape } from "./model/index.js";
@@ -218,6 +219,20 @@ export class PayloadJobsTaskRunner implements TaskRunner {
         req: freshReq(scope),
       })
     );
+  }
+
+  async assignmentsOf(handles: string[]): Promise<JobAssignment[]> {
+    if (handles.length === 0) return [];
+
+    return (await this.findRawJobs({ id: { in: handles } })).map((job) => {
+      const { collectionSlug, collectionId } = readCollectionRef(job.input);
+      return {
+        handle: String(job.id),
+        collectionSlug,
+        collectionId,
+        startedBy: readRequester(job.input),
+      };
+    });
   }
 
   async cancel(taskIds: string[]): Promise<void> {

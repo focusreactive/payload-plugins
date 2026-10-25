@@ -32,7 +32,18 @@ describe("when one locale's provider fails", () => {
     });
     const id = String(doc.id);
 
+    // The run endpoint refuses a job nobody is recorded as having asked for, because running one
+    // writes with the host's rules off. Attribute this job so the retry under test is reachable.
+    const editor = {
+      ...(await failing.payload.create({
+        collection: "users",
+        data: { email: "retry@test.dev", password: "pw123456" } as never,
+      })),
+      collection: "users",
+    };
+
     const res = await callEndpoint(failing.payload, "post", "/translate/enqueue", {
+      user: editor as never,
       body: {
         source_lng: "en",
         target_lng: ["de", "fr", "es"],
@@ -100,6 +111,7 @@ describe("when one locale's provider fails", () => {
     // retry has to go through it.
     const before = failing.translateCount();
     const retry = await callEndpoint(failing.payload, "post", "/translate/run/:id", {
+      user: editor as never,
       routeParams: { id: String((docs[0] as { id: string | number }).id) },
     });
     expect(retry.status, "the retry endpoint did not accept the job").toBe(204);
