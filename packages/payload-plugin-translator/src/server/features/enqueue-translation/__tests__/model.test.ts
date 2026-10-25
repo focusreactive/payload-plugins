@@ -53,4 +53,17 @@ describe("EnqueueInputSchema — members that narrowed a run and no longer exist
   it("accepts the shape that replaced them", () => {
     expect(asked({ filters: [{ kind: "leaves", addresses: ["title"] }] }).success).toBe(true);
   });
+
+  it("refuses a document id that names nothing", () => {
+    // Payload skips the document load for an empty id, so the update rule would be asked about
+    // nothing and a role-based rule would grant it.
+    const parsed = EnqueueInputSchema.safeParse({
+      source_lng: "en",
+      target_lng: ["de"],
+      collection_slug: "posts",
+      collection_id: [""],
+    });
+
+    expect(parsed.success).toBe(false);
+  });
 });

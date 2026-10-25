@@ -1,15 +1,42 @@
-import type { PayloadRequest } from "payload";
+import type { CollectionSlug, Payload, PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared/index.js";
 import { authCollectionsOf, identityOf } from "../../shared/payload/identityOf.js";
 import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 import { isCollectionAvailable } from "../_lib/collection-utils.js";
 import { getAllCollectionIds } from "../../shared/payload/collections.js";
+import { refusedTargets } from "../../shared/access/refusedTargets.js";
 
 import { Locales } from "../../../core/domain/locales/index.js";
 
 import { EnqueueInputSchema, toAssignmentOutputs } from "./model.js";
 import type { EnqueueConfig } from "./model.js";
+
+type Selection = { collectionIds: readonly string[]; refused: Set<string> };
+
+/**
+ * Payload narrows a `select_all` read to what this caller may see inside its own query; a named list
+ * arrives unexamined, so each id is asked about before any of them is queued.
+ */
+async function documentsToQueue(query: {
+  payload: Payload;
+  collection: CollectionSlug;
+  named: readonly string[];
+  selectAll: boolean | undefined;
+  user: PayloadRequest["user"];
+}): Promise<Selection> {
+  const { payload, collection, named, selectAll, user } = query;
+
+  if (selectAll) {
+    return {
+      collectionIds: await getAllCollectionIds(payload, collection, user),
+      refused: new Set<string>(),
+    };
+  }
+
+  const refused = await refusedTargets({ payload, collection, ids: named, user });
+  return { collectionIds: named.filter((id) => !refused.has(id)), refused };
+}
 
 export class EnqueueTranslationHandler {
   private readonly config: EnqueueConfig;
@@ -76,9 +103,13 @@ export class EnqueueTranslationHandler {
       );
     }
 
-    const collectionIds = select_all
-      ? await getAllCollectionIds(req.payload, collectionSlug, req.user)
-      : collection_id;
+    const { collectionIds, refused } = await documentsToQueue({
+      payload: req.payload,
+      collection: collectionSlug,
+      named: collection_id,
+      selectAll: select_all,
+      user: req.user,
+    });
 
     const runner = this.taskRunnerFactory.create(req.payload);
     const tasks = collectionIds.flatMap((id) =>
@@ -100,6 +131,7 @@ export class EnqueueTranslationHandler {
     return ServerResponse.success({
       success: true,
       queued: tasks.length,
+      ...(refused.size > 0 ? { refused: [...refused] } : {}),
       ...(assigned ? { assignments: toAssignmentOutputs(assigned) } : {}),
     });
   }

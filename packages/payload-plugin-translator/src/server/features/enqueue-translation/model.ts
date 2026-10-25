@@ -18,7 +18,7 @@ export const EnqueueInputSchema = z.object({
   source_lng: z.string().nonempty(),
   target_lng: z.union([z.string().nonempty(), z.array(z.string().nonempty()).min(1)]),
   collection_slug: z.string().nonempty(),
-  collection_id: z.array(z.coerce.string()).nonempty(),
+  collection_id: z.array(z.coerce.string().nonempty()).nonempty(),
   select_all: z.boolean().optional(),
   filters: z.array(TranslationFilterSchema).optional(),
   publish_on_translation: z.boolean().optional().default(false),
