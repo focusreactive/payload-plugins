@@ -440,3 +440,138 @@ keeps flagging until the source has text again.
 - **Code refs:**
   - `src/server/modules/task-runner/TaskRunnerProvider.interface.ts`
   - `src/server/modules/task-runner/payload-jobs-runner/model/attemptsBefore.ts`
+
+### the-strategy-leaves-the-run
+
+- **What:** the translation strategy, everywhere it appeared — the `strategy` field of `POST /enqueue`,
+  the stored run row, the host-facing lifecycle task, the status response, the `TaskHandlerInput` a
+  third-party runner implements, `AutoTranslateConfig.strategy`, the exported `AutoTranslateStrategy`
+  type, the `TranslationStrategy` port and both its implementations, and the "Update mode" select in
+  both admin forms.
+- **Status:** removed
+- **Changed:** 2026-10-23 / #208
+- **Replacement:** a run carries, per target locale, a list of **filters**. A filter is either the
+  leaf addresses themselves or the name of a rule that produces them, and the run translates the
+  intersection of every filter's answer.
+
+  | Was | Becomes |
+  | --- | --- |
+  | `strategy: "overwrite"` (the default) | `filters: []` — a run with no filters translates every translatable leaf |
+  | `strategy: "skip_existing"` | `filters: [{ kind: "rule", name: "stale" }]`, which keeps the leaves whose source has moved |
+  | a selection of fields | `filters: [{ kind: "leaves", addresses: ["title", "layout.b1:text.content"] }]` |
+
+- **Why:** the strategy answered "what do we translate" with a rule, because nobody had asked. Two of
+  its clauses guessed at state the caller never stated — whether the target was empty, and whether the
+  source had moved — and `skip_existing` meant something different again when `provenance` was off.
+  A run now carries the answer rather than a rule for inferring it.
+- **Who this breaks:** every host. A plugin config setting `AutoTranslateConfig.strategy`, a caller
+  posting `strategy` to `/enqueue`, a lifecycle callback reading `task.strategy`, and a third-party
+  `TaskRunnerProvider` typed against `TaskHandlerInput` all change.
+- **Neither removal is silent.** `POST /enqueue` refuses a body still carrying `strategy` with a 400
+  naming the replacement, and the plugin warns at boot for each collection whose auto-translate
+  config still carries one. A removed option that had been protecting something must not become a
+  no-op that quietly overwrites it.
+- **Auto-translate loses the choice, for now.** It names no filters, so an automatic run covers the
+  whole document. A host that set `"skip_existing"` was getting only the drifted fields and now gets
+  all of them, at the provider's price and over reviewed text. External control over what an
+  automatic run covers is the next piece of work on that module.
+- **Code refs:**
+  - `src/server/features/enqueue-translation/model.ts` (`filters` and the refusals)
+  - `src/core/domain/selection/TranslationFilter.ts`
+  - `src/server/modules/translation-run/Criterion.interface.ts`
+  - `src/core/domain/selection/narrowSelection.ts`
+  - `src/server/modules/provenance/Provenance.criterion.ts`
+
+### the-strategy-leaves-the-stored-run
+
+- **What:** reading `target_lngs` and `strategy` off a run row written before 1.0.
+- **Status:** read-only shim, written nowhere
+- **Changed:** 2026-10-23 / #208
+- **Replacement:** `targets: [{ lng, filters }]`. A legacy row is read as one target per listed
+  locale, and a row that named `skip_existing` is read as carrying one `rule` filter named `stale`.
+- **That is the nearest meaning, not the same one.** `skip_existing` promised two things and `stale`
+  keeps one. A queued row therefore behaves differently in three cases, all of them confined to the
+  rows already in flight when this ships:
+
+  | The queued row | What it did | What it does now |
+  | --- | --- | --- |
+  | with `provenance` on and a per-leaf receipt | filled empty targets, refreshed what drifted | refreshes what drifted; an empty target whose source stands still is left empty |
+  | with `provenance` on and no per-leaf receipt for that locale | left a filled target alone | translates every leaf, reviewed text included |
+  | with `provenance` **off** | filled empty targets only | **fails**: nothing answers `stale`, so the run throws and spends its retries |
+
+  The last one is deliberate. Translating the whole document instead would overwrite text the row
+  was queued to protect, and a run that fails loudly can be queued again.
+- **Removal condition, not a version:** drop the legacy branch of `store/runTargets.ts` once no row
+  written before 1.0 can still be in flight. That is the queue's drain time — hours — not a release
+  cycle, so it does not need to wait for the next major.
+
+## 2026-10-24 — hiding the out-of-date mark writes the receipt
+
+### the-dismissed-fingerprint-leaves-the-receipt
+
+- **What:** the `dismissedFingerprint` column of the provenance sidecar, the field of the same name
+  on `ProvenanceReceipt`, and `ProvenanceStore.dismiss`.
+- **Status:** removed
+- **Changed:** 2026-10-24
+- **Replacement:** none — hiding the mark now writes `sourceFingerprint` through
+  `ProvenanceStore.rebaseSourceFingerprint`, so a receipt names one source: the one this translation
+  is considered current against.
+- **Why:** a receipt held two fingerprints and three readers asked whether a locale was out of date.
+  Only the admin panel consulted both, so hiding the mark quieted the lamp and nothing else: the
+  staleness response still named the field as moved, and a run narrowing by `stale` still
+  re-translated it over the text the editor had chosen to keep.
+- **Every mark an editor hid before this ships comes back once.** Those rows carry a non-null
+  `dismissedFingerprint` and nothing reads it any more, so each of those locales reads as out of date
+  again and a run narrowing by `stale` selects its fields again. A host that wants to keep them
+  copies `dismissedFingerprint` into `sourceFingerprint` wherever the first is not null, once, before
+  upgrading; a host that does not care lets the editors press the button again.
+- **An existing database keeps the column.** Nothing reads or writes it; the plugin no longer
+  declares it. A consumer on Postgres or SQLite with migrations drops it in a migration of their own,
+  at whatever moment suits them.
+- **On schema push the drop is an interactive prompt.** It appears whenever the table holds **any**
+  row, even though every value in the column may be null, and it blocks when standard input is not a
+  terminal — a process manager or CI will appear to hang rather than fail. Declining is safe: the
+  column is nullable and the plugin ignores it.
+- **Who this breaks:** nobody outside the package in TypeScript terms — `ProvenanceStore`,
+  `ProvenanceReceipt` and `ProvenanceKey` are internal, and `TranslationProvenanceRecord`, the only
+  provenance type the package exports, never carried a fingerprint.
+- **What a person will notice.** Hiding the mark used to quiet the panel alone. It now also keeps
+  those fields out of the next run that narrows by `stale`. **A field no run ever translated is
+  re-based too** — the button speaks for the whole document and locale — so such a field is treated
+  as current until its source moves again.
+- **Code refs:**
+  - `src/core/domain/provenance/ProvenanceStore.interface.ts`
+  - `src/core/domain/provenance/staleness.ts` (`isRecordStale`)
+  - `src/server/modules/provenance/Provenance.service.ts` (`dismiss`)
+  - `src/server/modules/provenance/Provenance.collection.ts`
+
+## 2026-10-25 — the receipt holds one shape
+
+### the-document-wide-digest-stops-being-read
+
+- **What:** the `document` member of `SourceFingerprint` — the single sha256 the plugin wrote into
+  the sidecar's `sourceFingerprint` column until per-leaf fingerprints shipped on 2026-10-05. The
+  union is gone with it; a receipt now holds a map of leaf address to hash, or nothing.
+- **Status:** removed
+- **Changed:** 2026-10-25
+- **Replacement:** none. A stored value that is not a per-leaf map now reads as *no receipt* —
+  exactly what an empty column has always read as.
+- **Why:** nothing had written that shape for twenty days, and keeping its reader cost a second hash
+  of the whole source document on every staleness read, since the whole-document hash existed only
+  to compare against it.
+- **What a host sees.** A target locale whose receipt was written before 0.15.0, and whose source
+  has not moved since, flips from up to date to **out of date**. It clears when that locale is
+  translated **in full**, or when an editor hides the mark. A narrowed run does not clear it: the row
+  carries no earlier claims to keep, so every leaf the run did not send is recorded as unanswered and
+  keeps reading as moved. A
+  locale whose source *had* moved already read as out of date and is unaffected, as is every locale
+  translated by 0.15.0 or later. The direction is a false alarm, never a false all-clear: nothing
+  reads as current that is not.
+- **Nothing to migrate.** The column keeps whatever it holds; the plugin overwrites it on the next
+  write to that row. A host that wants the marks gone without re-translating can press the hide
+  button on each affected locale.
+- **This narrows the workaround in #the-dismissed-fingerprint-leaves-the-receipt.** That entry tells
+  a host to copy `dismissedFingerprint` into `sourceFingerprint` wherever the first is not null, to
+  keep marks their editors had hidden. Copy only values that are JSON maps: a mark hidden before
+  0.15.0 stored a bare sha256 there, and copying one now writes a value that reads as no receipt, so
+  that mark comes back anyway. Those locales need the hide button pressed again.
