@@ -460,7 +460,15 @@ describe("translateDocument", () => {
       expect(computeFieldFingerprints).toHaveBeenCalledWith({ id: "doc-123", title: "Source" }, [
         { name: "title", type: "text", localized: true },
       ]);
-      expect(serviceFactory).toHaveBeenCalledWith(mockPayload, {});
+      const [given, scope] = (serviceFactory as ReturnType<typeof vi.fn>).mock.calls[0] as [
+        object,
+        object,
+      ];
+      expect(scope).toEqual({});
+      expect(
+        Object.getPrototypeOf(given),
+        "a module is handed a guarded view of the run's payload, not the payload itself"
+      ).toBe(mockPayload);
       expect(store.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
           collectionSlug: "posts",

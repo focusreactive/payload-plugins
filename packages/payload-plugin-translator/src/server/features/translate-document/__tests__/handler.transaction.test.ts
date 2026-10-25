@@ -105,7 +105,15 @@ describe("translateDocument — the caller's transaction", () => {
 
     await translateDocument(provenanceDeps, payload, input(), { transactionID: TX });
 
-    expect(serviceFactory).toHaveBeenCalledWith(payload, { transactionID: TX });
+    const [given, scope] = (serviceFactory as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      object,
+      object,
+    ];
+    expect(scope).toEqual({ transactionID: TX });
+    expect(
+      Object.getPrototypeOf(given),
+      "a module is handed a guarded view of the run's payload, not the payload itself"
+    ).toBe(payload);
   });
 
   it("sends no transactionID when the caller has none", async () => {

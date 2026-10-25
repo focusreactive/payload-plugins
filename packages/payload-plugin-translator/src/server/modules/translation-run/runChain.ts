@@ -1,12 +1,17 @@
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import { swallowOrThrow } from "../../shared/payload/swallowOrThrow.js";
 
+import { payloadForModules } from "./payloadForModules.js";
+
+import type { Payload } from "payload";
+
 import type {
   AfterSave,
   BeforeTranslation,
   ChainMember,
   RunContribution,
   RunLogger,
+  RunTarget,
 } from "./TranslationRun.interface.js";
 
 /**
@@ -33,6 +38,10 @@ const withContribution = (
   moduleState: { ...state.moduleState, ...contribution.moduleState },
 });
 
+const forTheModule = <State extends { payload: Payload; target: RunTarget }>(
+  state: State
+): State => ({ ...state, payload: payloadForModules(state.payload, state.target) });
+
 /**
  * Each module in list order, owed two things the signature cannot state: `moduleState` merges by
  * key, so a module cannot drop a slot it does not own; and a failed module contributes nothing —
@@ -49,7 +58,12 @@ export async function runBeforeTranslation(
   for (const member of modules) {
     const join = member.beforeTranslation?.bind(member);
     if (!join) continue;
-    const contribution = await callModule(member.name, scope, () => join(carried), log);
+    const contribution = await callModule(
+      member.name,
+      scope,
+      () => join(forTheModule(carried)),
+      log
+    );
     carried = contribution ? withContribution(carried, contribution) : carried;
   }
   return carried;
@@ -63,6 +77,6 @@ export async function runAfterSave(
   for (const member of modules) {
     const join = member.afterSave?.bind(member);
     if (!join) continue;
-    await callModule(member.name, state.scope, () => join(state), log);
+    await callModule(member.name, state.scope, () => join(forTheModule(state)), log);
   }
 }
