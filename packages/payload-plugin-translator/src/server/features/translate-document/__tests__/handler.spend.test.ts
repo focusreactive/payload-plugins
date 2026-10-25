@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 
-import { TranslateDocumentHandler } from "../handler.js";
+import { translateDocument } from "../translateDocument.js";
+import type { TranslateDocumentDeps } from "../translateDocument.js";
 import type { TranslationProvider } from "../../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
-import type { TranslateDocumentInput } from "../model.js";
+import type { TaskHandlerInput } from "../../../modules/task-runner/index.js";
 
 vi.mock("../../../../core/translation-pipeline/index.js", () => ({
   translateContent: vi.fn().mockResolvedValue({
@@ -29,11 +30,11 @@ const mocks = async () => ({
 // Payload decides retries from the job's attempt count; there is no per-error "final" flag. So the
 // answer to "three retries against a rule that will not change" is not to suppress the retries but to
 // ask before paying: a refusal then costs three cheap checks instead of three translations.
-describe("TranslateDocumentHandler — a refusal costs nothing at the provider", () => {
-  let handler: TranslateDocumentHandler;
+describe("translateDocument — a refusal costs nothing at the provider", () => {
+  let deps: TranslateDocumentDeps;
   let payload: Payload;
 
-  const input = (): TranslateDocumentInput => ({
+  const input = (): TaskHandlerInput => ({
     collection: "posts" as CollectionSlug,
     collectionId: "doc-123",
     sourceLng: "en",
@@ -56,7 +57,7 @@ describe("TranslateDocumentHandler — a refusal costs nothing at the provider",
       collections: { posts: { config: { versions: { drafts: true } } } },
     } as unknown as Payload;
 
-    handler = new TranslateDocumentHandler({ translationProvider: provider, schemaMap });
+    deps = { translationProvider: provider, schemaMap };
     const { translate } = await mocks();
     translate.mockResolvedValue({ title: "Titel" });
   });
@@ -65,7 +66,7 @@ describe("TranslateDocumentHandler — a refusal costs nothing at the provider",
     const { translate, permission } = await mocks();
     permission.mockResolvedValue(false);
 
-    await handler.handle(payload, input(), {}).catch(() => undefined);
+    await translateDocument(deps, payload, input(), {}).catch(() => undefined);
 
     expect(translate).not.toHaveBeenCalled();
   });
@@ -74,7 +75,7 @@ describe("TranslateDocumentHandler — a refusal costs nothing at the provider",
     const { translate, permission } = await mocks();
     permission.mockResolvedValue(true);
 
-    await handler.handle(payload, input(), {});
+    await translateDocument(deps, payload, input(), {});
 
     expect(translate).toHaveBeenCalled();
   });
@@ -91,7 +92,7 @@ describe("TranslateDocumentHandler — a refusal costs nothing at the provider",
       return { title: "Titel" };
     });
 
-    await handler.handle(payload, input(), {});
+    await translateDocument(deps, payload, input(), {});
 
     expect(order).toEqual(["ask", "translate"]);
   });

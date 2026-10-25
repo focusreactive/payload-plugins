@@ -12,9 +12,16 @@ import { checkTranslationPermission, mayWrite, rebuildRequester } from "./transl
 import type { RebuiltRequester } from "./translationPermission.js";
 import type { PublishScope, WriteLayer } from "./targetLayer.js";
 
-export type BothLocales = {
+const approvedSource: unique symbol = Symbol("approvedSource");
+
+/**
+ * Both locales, past the gate: the collection's `update` rule was asked with this `sourceData`, or
+ * nothing was asked when there is no requester. Only `readSourceIfAllowed` mints one.
+ */
+export type ApprovedSource = {
   readonly sourceData: Record<string, unknown>;
   readonly currentTarget: Record<string, unknown>;
+  readonly [approvedSource]: true;
 };
 
 declare const asked: unique symbol;
@@ -58,8 +65,7 @@ function enforcedAtTheWrite(
  * all, when the request named nobody.
  */
 export type TargetDocument = {
-  readBothLocales(): Promise<BothLocales>;
-  refuseUnlessTranslationAllowed(sourceData: Record<string, unknown>): Promise<void>;
+  readSourceIfAllowed(): Promise<ApprovedSource>;
   saveTranslation(data: Record<string, unknown>, write: WriteLayer): Promise<void>;
   publish(scope: PublishScope): Promise<void>;
 };
@@ -108,7 +114,7 @@ export async function openTargetDocument(args: {
     });
 
   return {
-    async readBothLocales() {
+    async readSourceIfAllowed(): Promise<ApprovedSource> {
       const [sourceData, currentTarget] = await Promise.all([
         fetchSourceDocument({
           payload,
@@ -132,12 +138,10 @@ export async function openTargetDocument(args: {
       if (!sourceData) throw new SourceUnreadable(collection, sourceLocale);
       if (!currentTarget) throw new SourceUnreadable(collection, targetLocale);
 
-      return { sourceData, currentTarget };
-    },
-
-    async refuseUnlessTranslationAllowed(sourceData) {
       const allowed = await checkTranslationPermission(permissionQuery(sourceData));
       if (!allowed) throw new TranslationRefused(collection, targetLocale);
+
+      return { sourceData, currentTarget, [approvedSource]: true };
     },
 
     async saveTranslation(data, write) {

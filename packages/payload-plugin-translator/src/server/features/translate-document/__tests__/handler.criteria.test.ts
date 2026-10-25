@@ -6,8 +6,8 @@ import type { TranslationProvider } from "../../../../core/domain/translation-pr
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 import type { Criteria } from "../../../modules/translation-run/index.js";
 import type { TranslationFilter } from "../../../../core/domain/selection/index.js";
-import { TranslateDocumentHandler } from "../handler.js";
-import type { TranslateDocumentInput } from "../model.js";
+import { translateDocument } from "../translateDocument.js";
+import type { TaskHandlerInput } from "../../../modules/task-runner/index.js";
 
 const leaves = (...addresses: string[]): TranslationFilter => ({ kind: "leaves", addresses });
 const rule = (name: string): TranslationFilter => ({ kind: "rule", name });
@@ -29,7 +29,7 @@ describe("what a run translates", () => {
   let schemaMap: CollectionSchemaMap;
   let payload: Payload;
 
-  const input = (overrides: Partial<TranslateDocumentInput> = {}): TranslateDocumentInput => ({
+  const input = (overrides: Partial<TaskHandlerInput> = {}): TaskHandlerInput => ({
     collection: "posts" as CollectionSlug,
     collectionId: "doc-1",
     sourceLng: "en",
@@ -45,12 +45,17 @@ describe("what a run translates", () => {
     return (call?.[0] as { selection?: readonly string[] })?.selection;
   };
 
-  const run = async (over: Partial<TranslateDocumentInput>, criteria: Criteria = {}) =>
-    await new TranslateDocumentHandler({
-      translationProvider: provider,
-      schemaMap,
-      criteria,
-    }).handle(payload, input(over));
+  const run = async (over: Partial<TaskHandlerInput>, criteria: Criteria = {}) =>
+    await translateDocument(
+      {
+        translationProvider: provider,
+        schemaMap,
+        criteria,
+      },
+      payload,
+      input(over),
+      {}
+    );
 
   beforeEach(() => {
     vi.clearAllMocks();

@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 
-import { TranslateDocumentHandler } from "../handler.js";
+import { translateDocument } from "../translateDocument.js";
+import type { TranslateDocumentDeps } from "../translateDocument.js";
 import type { TranslationProvider } from "../../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
-import type { TranslateDocumentInput } from "../model.js";
+import type { TaskHandlerInput } from "../../../modules/task-runner/index.js";
 import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
 
 vi.mock("../../../../core/translation-pipeline/index.js", () => ({
@@ -32,12 +33,12 @@ const rebuilt = async () =>
 
 const ANNA = { id: "anna", collection: "users" };
 
-describe("TranslateDocumentHandler — it asks before it writes", () => {
-  let handler: TranslateDocumentHandler;
+describe("translateDocument — it asks before it writes", () => {
+  let deps: TranslateDocumentDeps;
   let payload: Payload;
   let provider: TranslationProvider;
 
-  const input = (over: Partial<TranslateDocumentInput> = {}): TranslateDocumentInput => ({
+  const input = (over: Partial<TaskHandlerInput> = {}): TaskHandlerInput => ({
     collection: "posts" as CollectionSlug,
     collectionId: "doc-123",
     sourceLng: "en",
@@ -68,7 +69,7 @@ describe("TranslateDocumentHandler — it asks before it writes", () => {
       collections: { posts: { config: { versions: { drafts: true } } } },
     } as unknown as Payload;
 
-    handler = new TranslateDocumentHandler({ translationProvider: provider, schemaMap });
+    deps = { translationProvider: provider, schemaMap };
     (await permission()).mockResolvedValue(true);
   });
 
@@ -77,7 +78,7 @@ describe("TranslateDocumentHandler — it asks before it writes", () => {
   it("does not write when the permission check refuses", async () => {
     (await permission()).mockResolvedValue(false);
 
-    await handler.handle(payload, input(), {}).catch(() => undefined);
+    await translateDocument(deps, payload, input(), {}).catch(() => undefined);
 
     expect(payload.update).not.toHaveBeenCalled();
   });
@@ -85,20 +86,20 @@ describe("TranslateDocumentHandler — it asks before it writes", () => {
   it("fails with a reason a reader can act on, not a bare failure", async () => {
     (await permission()).mockResolvedValue(false);
 
-    const error = await handler.handle(payload, input(), {}).catch((e: Error) => e);
+    const error = await translateDocument(deps, payload, input(), {}).catch((e: Error) => e);
 
     expect(error).toBeInstanceOf(Error);
     expect((error as Error).message).toMatch(/permission|not allowed|access/iu);
   });
 
   it("writes when the permission check allows", async () => {
-    await handler.handle(payload, input(), {});
+    await translateDocument(deps, payload, input(), {});
 
     expect(payload.update).toHaveBeenCalled();
   });
 
   it("asks about the document it is about to write, with the caller's identity", async () => {
-    await handler.handle(payload, input(), { requester: asRequester("anna", "users") });
+    await translateDocument(deps, payload, input(), { requester: asRequester("anna", "users") });
 
     expect(await permission()).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -113,7 +114,7 @@ describe("TranslateDocumentHandler — it asks before it writes", () => {
     const { mayWrite } = await import("../translationPermission.js");
     (await rebuilt()).mockResolvedValue(ANNA);
 
-    await handler.handle(payload, input(), { requester: asRequester("anna", "users") });
+    await translateDocument(deps, payload, input(), { requester: asRequester("anna", "users") });
 
     expect(
       mayWrite,
@@ -127,7 +128,7 @@ describe("TranslateDocumentHandler — it asks before it writes", () => {
   it("still publishes a locale the pipeline left alone", async () => {
     (await pipeline()).mockResolvedValue(null);
 
-    await handler.handle(payload, input({ publishOnTranslation: true }), {});
+    await translateDocument(deps, payload, input({ publishOnTranslation: true }), {});
 
     const [args] = (payload.update as ReturnType<typeof vi.fn>).mock.calls[0] as [
       { data: Record<string, unknown> },
@@ -139,7 +140,9 @@ describe("TranslateDocumentHandler — it asks before it writes", () => {
     (await pipeline()).mockResolvedValue(null);
     (await permission()).mockResolvedValue(false);
 
-    await handler.handle(payload, input({ publishOnTranslation: true }), {}).catch(() => undefined);
+    await translateDocument(deps, payload, input({ publishOnTranslation: true }), {}).catch(
+      () => undefined
+    );
 
     expect(payload.update).not.toHaveBeenCalled();
   });

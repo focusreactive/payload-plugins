@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 
-import { TranslateDocumentHandler } from "../handler.js";
+import { translateDocument } from "../translateDocument.js";
+import type { TranslateDocumentDeps } from "../translateDocument.js";
 import type { TranslationProvider } from "../../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
-import type { TranslateDocumentInput } from "../model.js";
+import type { TaskHandlerInput } from "../../../modules/task-runner/index.js";
 import type { ProvenanceServiceFactory } from "../../../modules/provenance/index.js";
 import { provenanceInAChain } from "../../../modules/provenance/__tests__/fixtures/inAChain.js";
 
@@ -17,11 +18,11 @@ vi.mock("../../../../core/translation-pipeline/index.js", () => ({
 
 const TX = "tx-42";
 
-describe("TranslateDocumentHandler — the caller's transaction", () => {
-  let handler: TranslateDocumentHandler;
+describe("translateDocument — the caller's transaction", () => {
+  let deps: TranslateDocumentDeps;
   let payload: Payload;
 
-  const input = (over: Partial<TranslateDocumentInput> = {}): TranslateDocumentInput => ({
+  const input = (over: Partial<TaskHandlerInput> = {}): TaskHandlerInput => ({
     collection: "posts" as CollectionSlug,
     collectionId: "doc-123",
     sourceLng: "en",
@@ -47,11 +48,11 @@ describe("TranslateDocumentHandler — the caller's transaction", () => {
       },
     } as unknown as Payload;
 
-    handler = new TranslateDocumentHandler({ translationProvider: provider, schemaMap });
+    deps = { translationProvider: provider, schemaMap };
   });
 
   it("joins the source read to it", async () => {
-    await handler.handle(payload, input(), { transactionID: TX });
+    await translateDocument(deps, payload, input(), { transactionID: TX });
 
     expect(payload.findByID).toHaveBeenCalledWith(
       expect.objectContaining({ locale: "en", req: { transactionID: TX } })
@@ -59,7 +60,7 @@ describe("TranslateDocumentHandler — the caller's transaction", () => {
   });
 
   it("joins the target read to it", async () => {
-    await handler.handle(payload, input(), { transactionID: TX });
+    await translateDocument(deps, payload, input(), { transactionID: TX });
 
     expect(payload.findByID).toHaveBeenCalledWith(
       expect.objectContaining({ locale: "de", req: { transactionID: TX } })
@@ -69,7 +70,7 @@ describe("TranslateDocumentHandler — the caller's transaction", () => {
   // The write has to join it too: it targets the very document the caller has not committed yet, so
   // from outside the transaction there is nothing to update.
   it("joins the translation write to it", async () => {
-    await handler.handle(payload, input(), { transactionID: TX });
+    await translateDocument(deps, payload, input(), { transactionID: TX });
 
     expect(payload.update).toHaveBeenCalledWith(
       expect.objectContaining({ req: { transactionID: TX } })
@@ -77,7 +78,9 @@ describe("TranslateDocumentHandler — the caller's transaction", () => {
   });
 
   it("joins the publish write to it", async () => {
-    await handler.handle(payload, input({ publishOnTranslation: true }), { transactionID: TX });
+    await translateDocument(deps, payload, input({ publishOnTranslation: true }), {
+      transactionID: TX,
+    });
 
     const publishCall = (payload.update as ReturnType<typeof vi.fn>).mock.calls.find(
       ([args]) => (args as { publishSpecificLocale?: string }).publishSpecificLocale === "de"
@@ -92,21 +95,21 @@ describe("TranslateDocumentHandler — the caller's transaction", () => {
       lastTranslatedFrom: vi.fn().mockResolvedValue(null),
       record: vi.fn(),
     });
-    const provenanceHandler = new TranslateDocumentHandler({
+    const provenanceDeps: TranslateDocumentDeps = {
       translationProvider: { translate: vi.fn().mockResolvedValue({}) },
       schemaMap: new Map([
         ["posts" as CollectionSlug, [{ name: "title", type: "text", localized: true }]],
       ]) as CollectionSchemaMap,
       modules: provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory),
-    });
+    };
 
-    await provenanceHandler.handle(payload, input(), { transactionID: TX });
+    await translateDocument(provenanceDeps, payload, input(), { transactionID: TX });
 
     expect(serviceFactory).toHaveBeenCalledWith(payload, { transactionID: TX });
   });
 
   it("sends no transactionID when the caller has none", async () => {
-    await handler.handle(payload, input(), {});
+    await translateDocument(deps, payload, input(), {});
 
     for (const [args] of (payload.findByID as ReturnType<typeof vi.fn>).mock.calls) {
       expect((args as { req: object }).req).toEqual({});

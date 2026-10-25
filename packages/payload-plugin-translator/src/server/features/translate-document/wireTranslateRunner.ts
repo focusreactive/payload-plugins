@@ -12,7 +12,7 @@ import type {
   TaskRunnerProvider,
 } from "../../modules/task-runner/index.js";
 
-import { TranslateDocumentHandler } from "./handler.js";
+import { translateDocument } from "./translateDocument.js";
 
 type WireTranslateRunnerParams = {
   translationProvider: TranslationProvider;
@@ -25,9 +25,9 @@ type WireTranslateRunnerParams = {
 };
 
 /**
- * Assemble the document-translation task pipeline: the {@link TranslateDocumentHandler}, the runner
- * context that turns what the runner reports into the host's callbacks, the runner's config
- * modifier, and the per-request {@link TaskRunnerFactory}.
+ * Assemble the document-translation task pipeline: the runner context that hands each job to
+ * {@link translateDocument} and turns what the runner reports into the host's callbacks, the
+ * runner's config modifier, and the per-request {@link TaskRunnerFactory}.
  */
 export function wireTranslateRunner({
   translationProvider,
@@ -41,29 +41,10 @@ export function wireTranslateRunner({
   taskRunnerFactory: TaskRunnerFactory;
   configModifier: ConfigModifier;
 } {
-  const translateHandler = new TranslateDocumentHandler({
-    translationProvider,
-    schemaMap,
-    modules,
-    criteria,
-  });
+  const deps = { translationProvider, schemaMap, modules, criteria };
 
   const runnerContext: TaskRunnerContext = {
-    handler: async (payload, input, scope) => {
-      await translateHandler.handle(
-        payload,
-        {
-          collection: input.collection,
-          collectionId: input.collectionId,
-          sourceLng: input.sourceLng,
-          targetLng: input.targetLng,
-          filters: input.filters,
-          publishOnTranslation: input.publishOnTranslation,
-          previousAttempts: input.previousAttempts,
-        },
-        scope
-      );
-    },
+    handler: (payload, input, scope) => translateDocument(deps, payload, input, scope ?? {}),
     collections,
     report: (payload, assignment, event) => {
       const notifier = new LifecycleNotifier(lifecycle, payload.logger);

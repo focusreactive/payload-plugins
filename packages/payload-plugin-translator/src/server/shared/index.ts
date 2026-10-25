@@ -9,7 +9,7 @@ export {
 
 // Access control
 export { AnyAccessGuard } from "./access/index.js";
-export type { AccessGuard, AccessGuardRequest, Handler } from "./access/index.js";
+export type { AccessGuard, AccessGuardRequest } from "./access/index.js";
 
 // General utilities
 export {

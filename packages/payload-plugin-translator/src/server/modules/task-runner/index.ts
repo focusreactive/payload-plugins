@@ -1,4 +1,6 @@
 export type {
+  TaskHandler,
+  TaskHandlerInput,
   TaskRunnerProvider,
   TaskRunnerFactory,
   TaskRunnerContext,
