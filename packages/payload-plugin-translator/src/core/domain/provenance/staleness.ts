@@ -1,16 +1,12 @@
 import type { FieldFingerprints } from "../content-projection/computeFieldFingerprints.js";
+import type { LeafAddress } from "../content-projection/idPath.js";
 
 import type { ProvenanceReceipt } from "./ProvenanceStore.interface.js";
 
-import type { RecordedFingerprints, SourceFingerprint } from "./SourceFingerprint.js";
+import type { RecordedFingerprints } from "./SourceFingerprint.js";
 
 /** One entry per translatable leaf the source has now. */
-export type ChangedLeaves = Readonly<Record<string, boolean>>;
-
-export type CurrentFingerprint = {
-  document: string;
-  fields: FieldFingerprints;
-};
+export type ChangedLeaves = Readonly<Record<LeafAddress, boolean>>;
 
 const sameFields = (stored: RecordedFingerprints, current: FieldFingerprints): boolean => {
   const addresses = Object.keys(stored);
@@ -20,33 +16,13 @@ const sameFields = (stored: RecordedFingerprints, current: FieldFingerprints): b
   );
 };
 
-const describesCurrentSource = (
-  fingerprint: SourceFingerprint | null,
-  current: CurrentFingerprint
-): boolean => {
-  if (fingerprint === null) return false;
-
-  switch (fingerprint.kind) {
-    case "document":
-      return fingerprint.hash === current.document;
-    case "fields":
-      return sameFields(fingerprint.hashes, current.fields);
-  }
-};
-
-/** Out of date unless the receipt — or the editor's dismissal — describes the source as it stands now. */
-export function isRecordStale(record: ProvenanceReceipt, current: CurrentFingerprint): boolean {
-  return (
-    !describesCurrentSource(record.sourceFingerprint, current) &&
-    !describesCurrentSource(record.dismissedFingerprint, current)
-  );
+export function isRecordStale(
+  record: ProvenanceReceipt,
+  currentFields: FieldFingerprints
+): boolean {
+  const recorded = record.sourceFingerprint;
+  return recorded === null || !sameFields(recorded, currentFields);
 }
-
-export const recordsEachLeaf = (
-  fingerprint: SourceFingerprint | null
-): fingerprint is { kind: "fields"; hashes: RecordedFingerprints } => {
-  return fingerprint?.kind === "fields";
-};
 
 /**
  * A leaf the receipt never recorded counts as changed: a leaf empty at the last run was not
@@ -63,4 +39,12 @@ export function changedLeaves(
     answers[address] = claims.get(address) !== current;
   }
   return answers;
+}
+
+export function driftedAddresses(
+  recorded: RecordedFingerprints,
+  currentFields: FieldFingerprints
+): LeafAddress[] {
+  const moved = changedLeaves(recorded, currentFields);
+  return Object.keys(moved).filter((address) => moved[address]);
 }

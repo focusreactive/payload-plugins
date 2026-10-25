@@ -4,6 +4,14 @@ import type { Field } from "payload";
 import type { TranslationProvider } from "../domain/translation-providers/index.js";
 import { computeSourceFingerprint } from "../domain/content-projection/computeSourceFingerprint.js";
 import { translateContent } from "./translateContent.js";
+import type { TranslateContentArgs } from "./translateContent.js";
+import { everyTranslatableLeaf } from "../domain/content-projection/contentProjector.js";
+
+const translateAll = (args: Omit<TranslateContentArgs, "selection">) =>
+  translateContent({
+    ...args,
+    selection: everyTranslatableLeaf(args.sourceData, args.schema),
+  });
 
 // Deterministic fake provider: prefixes each collected text chunk with "T:".
 // Preserves the numeric keys, as the contract requires.
@@ -40,7 +48,7 @@ describe("what the provider is told about the request", () => {
   it("names the document when the caller has one", async () => {
     const { provider, seen } = recordingProvider();
 
-    await translateContent({
+    await translateAll({
       document: { collection: "machines", id: "7" },
       schema,
       sourceData: { title: "Home" },
@@ -55,7 +63,7 @@ describe("what the provider is told about the request", () => {
 
 const run = async (schema: Field[], sourceData: Record<string, unknown>) =>
   (
-    await translateContent({
+    await translateAll({
       document: { collection: "docs", id: "1" },
       schema,
       sourceData,
@@ -160,7 +168,7 @@ describe("translateContent", () => {
     expect(result).toBeNull();
   });
 
-  it("respects skip_existing: keeps a non-empty target value", async () => {
+  it("sends nothing when the selection is empty, whatever the target holds", async () => {
     const result = await translateContent({
       document: { collection: "docs", id: "1" },
       schema: [{ name: "title", type: "text", localized: true }],
@@ -169,21 +177,21 @@ describe("translateContent", () => {
       sourceLng: "en",
       targetLng: "de",
       translationProvider: fakeProvider,
-      strategy: "skip_existing",
+      selection: [],
     });
-    expect(result).toBeNull(); // nothing to translate — target already filled
+    expect(result).toBeNull();
   });
 
-  it("respects skip_existing: translates when target is empty", async () => {
+  it("translates a named leaf over a target that already holds text", async () => {
     const result = await translateContent({
       document: { collection: "docs", id: "1" },
       schema: [{ name: "title", type: "text", localized: true }],
       sourceData: { title: "hello" },
-      targetData: {},
+      targetData: { title: "bereits übersetzt" },
       sourceLng: "en",
       targetLng: "de",
       translationProvider: fakeProvider,
-      strategy: "skip_existing",
+      selection: ["title"],
     });
     expect(result?.translatedData).toEqual({ title: "T:hello" });
     expect(result?.leaves).toEqual([{ idPath: "title", answeredInFull: true }]);
@@ -219,7 +227,7 @@ describe("translateContent", () => {
         translate: async () => ({ 0: "<2>Welt</2><1>Hallo </1>" }),
       } as TranslationProvider;
 
-      const result = await translateContent({
+      const result = await translateAll({
         document: { collection: "docs", id: "1" },
         schema: richSchema,
         sourceData,

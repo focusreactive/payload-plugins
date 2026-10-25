@@ -22,6 +22,13 @@ import { TranslatorBug } from "../../errors/index.js";
 export type IdPath = string & { readonly __brand: "IdPath" };
 
 /**
+ * A leaf's address in the {@link IdPath} grammar, as a value that reached us unbranded — read from a
+ * request, a stored row or a receipt. Nothing turns one back into an `IdPath`: re-entering the
+ * grammar would need a parser this module does not have.
+ */
+export type LeafAddress = string;
+
+/**
  * One structural step of an {@link IdPath}. Callers push these while walking; only
  * {@link makeIdPath} renders them to a string, keeping the grammar in one place.
  */
@@ -62,19 +69,15 @@ const render = (segment: PathSegment): string => {
   }
 };
 
-/** One segment, rendered, for a caller that holds them one at a time. */
 export const renderSegment = (segment: PathSegment): RenderedSegment => {
   return render(segment) as RenderedSegment;
 };
 
-/** The other half of the grammar: what already-rendered segments are joined with. */
 export function joinRendered(tokens: readonly RenderedSegment[]): IdPath {
   return tokens.join(SEP) as IdPath;
 }
 
-/**
- * The sole constructor of an {@link IdPath}. Renders structural segments to the branded string.
- */
+/** Renders structural segments through the grammar; {@link joinRendered} is the half that brands. */
 export function makeIdPath(segments: PathSegment[]): IdPath {
   return joinRendered(segments.map(renderSegment));
 }

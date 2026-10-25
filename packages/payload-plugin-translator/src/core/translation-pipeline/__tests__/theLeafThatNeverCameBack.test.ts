@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Field } from "payload";
 
-import type { ProvenanceStore, SourceFingerprint } from "../../domain/provenance/index.js";
+import type { ProvenanceStore, RecordedFingerprints } from "../../domain/provenance/index.js";
 import { changedLeaves, UNANSWERED } from "../../domain/provenance/index.js";
 import { asHash } from "../../domain/provenance/__tests__/fixtures/claims.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import { ProvenanceService } from "../../../server/modules/provenance/Provenance.service.js";
-import { SkipExistingStrategy } from "../strategies/index.js";
 import { makeIdPath } from "../../domain/content-projection/idPath.js";
 import type { LeafOutcome } from "../types/index.js";
+import { storeDouble } from "../../domain/provenance/__tests__/fixtures/provenanceStore.js";
 
 const sent = (name: string, answeredInFull: boolean) => ({
   idPath: makeIdPath([{ kind: "key", name }]),
@@ -33,26 +33,22 @@ const sourceHashes = { title: asHash("aaaa"), summary: asHash("bbbb") };
 type Recorded = Record<string, string>;
 
 const storeHolding = (
-  previous: SourceFingerprint | null
-): ProvenanceStore & { upsert: ReturnType<typeof vi.fn> } => ({
-  upsert: vi.fn().mockResolvedValue(undefined),
-  find: vi.fn().mockResolvedValue(
-    previous === null
-      ? null
-      : {
-          ...KEY,
-          sourceFingerprint: previous,
-          translatedAt: "2026-01-01T00:00:00.000Z",
-          dismissedFingerprint: null,
-        }
-  ),
-  findByDocument: vi.fn().mockResolvedValue([]),
-  dismiss: vi.fn().mockResolvedValue(undefined),
-  deleteByDocument: vi.fn().mockResolvedValue(undefined),
-});
+  previous: RecordedFingerprints | null
+): ProvenanceStore & { upsert: ReturnType<typeof vi.fn> } =>
+  storeDouble({
+    find: vi.fn().mockResolvedValue(
+      previous === null
+        ? null
+        : {
+            ...KEY,
+            sourceFingerprint: previous,
+            translatedAt: "2026-01-01T00:00:00.000Z",
+          }
+    ),
+  });
 
 const storedClaims = async (args: {
-  previous: SourceFingerprint | null;
+  previous: RecordedFingerprints | null;
   leaves: LeafOutcome[];
 }): Promise<Recorded> => {
   const store = storeHolding(args.previous);
@@ -65,10 +61,8 @@ const storedClaims = async (args: {
 
   await service.record(KEY, sourceHashes, args.leaves);
 
-  const written = store.upsert.mock.calls[0]?.[0] as {
-    sourceFingerprint: { hashes: Recorded };
-  };
-  return written.sourceFingerprint.hashes;
+  const written = store.upsert.mock.calls[0]?.[0] as { sourceFingerprint: Recorded };
+  return written.sourceFingerprint;
 };
 
 describe("a leaf the run sent and never got back", () => {
@@ -83,25 +77,25 @@ describe("a leaf the run sent and never got back", () => {
 
   it("overwrites an earlier claim, because the target now holds source text rather than that translation", async () => {
     const hashes = await storedClaims({
-      previous: { kind: "fields", hashes: { title: asHash("0d"), summary: asHash("0dbb") } },
+      previous: { title: asHash("0d"), summary: asHash("0dbb") },
       leaves: [sent("title", true), sent("summary", false)],
     });
 
     expect(hashes.summary).toBe(UNANSWERED);
   });
 
-  it("re-bases a leaf the run never sent onto where its source stands now", async () => {
+  it("keeps the claim an earlier run made for a leaf this one never sent", async () => {
     const hashes = await storedClaims({
-      previous: { kind: "fields", hashes: { title: asHash("0d"), summary: asHash("0dbb") } },
+      previous: { title: asHash("0d"), summary: asHash("0dbb") },
       leaves: [sent("title", true)],
     });
 
-    expect(hashes.summary).toBe(sourceHashes.summary);
+    expect(hashes.summary).toBe(asHash("0dbb"));
   });
 
   it("stays unanswered across a second run that also fails to translate it", async () => {
     const hashes = await storedClaims({
-      previous: { kind: "fields", hashes: { title: asHash("aaaa"), summary: UNANSWERED } },
+      previous: { title: asHash("aaaa"), summary: UNANSWERED },
       leaves: [sent("title", true)],
     });
 
@@ -110,23 +104,9 @@ describe("a leaf the run sent and never got back", () => {
 });
 
 describe("what the unanswered leaf does on the second run", () => {
-  const strategy = new SkipExistingStrategy();
+  it("is reported as drifted, so a run asking for what moved takes it again", () => {
+    const stored: RecordedFingerprints = { title: sourceHashes.title, summary: UNANSWERED };
 
-  it("is reported as drifted, so a second run selects it again", () => {
-    const stored: SourceFingerprint = {
-      kind: "fields",
-      hashes: { title: sourceHashes.title, summary: UNANSWERED },
-    };
-
-    const changed = changedLeaves(stored.hashes, sourceHashes);
-
-    expect(changed.summary).toBe(true);
-    expect(
-      strategy.shouldTranslate({
-        sourceValue: "World",
-        targetValue: "World",
-        sourceChanged: changed.summary,
-      })
-    ).toBe(true);
+    expect(changedLeaves(stored, sourceHashes)).toEqual({ title: false, summary: true });
   });
 });

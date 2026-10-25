@@ -12,9 +12,10 @@ import {
   RichContainerExpander,
   RichTextExpander,
 } from "../stages/text-expander/index.js";
-import { OverwriteStrategy } from "../strategies/index.js";
+import { projectTranslatableContent } from "../../domain/content-projection/contentProjector.js";
 import { TranslationPipeline } from "../TranslationPipeline.js";
 import type { TextExpander } from "../stages/index.js";
+import { storeDouble } from "../../domain/provenance/__tests__/fixtures/provenanceStore.js";
 
 const hashed = (fields: Record<string, string>) =>
   Object.fromEntries(Object.entries(fields).map(([address, seed]) => [address, asHash(seed)]));
@@ -56,7 +57,6 @@ const run = async (args: {
 }) =>
   new TranslationPipeline({
     translationProvider: provider(args.answer),
-    translationStrategy: new OverwriteStrategy(),
     textExpanders: args.expanders,
   }).execute({
     document: { collection: "posts", id: "1" },
@@ -65,6 +65,9 @@ const run = async (args: {
     targetData: {},
     sourceLng: "en",
     targetLng: "de",
+    selection: projectTranslatableContent(args.source, args.schema).map((entry) =>
+      String(entry.idPath)
+    ),
   });
 
 const claimable = (result: Awaited<ReturnType<typeof run>>): string[] =>
@@ -204,13 +207,8 @@ describe("a run reports the leaves that came back", () => {
 describe("what the run reports is what the receipt claims", () => {
   const store = (
     previous: unknown = null
-  ): ProvenanceStore & { upsert: ReturnType<typeof vi.fn> } => ({
-    upsert: vi.fn().mockResolvedValue(undefined),
-    find: vi.fn().mockResolvedValue(previous),
-    findByDocument: vi.fn().mockResolvedValue([]),
-    dismiss: vi.fn().mockResolvedValue(undefined),
-    deleteByDocument: vi.fn().mockResolvedValue(undefined),
-  });
+  ): ProvenanceStore & { upsert: ReturnType<typeof vi.fn> } =>
+    storeDouble({ find: vi.fn().mockResolvedValue(previous) });
 
   it("declines the unanswered leaf rather than sealing its current source hash", async () => {
     const result = await run({
@@ -237,7 +235,7 @@ describe("what the run reports is what the receipt claims", () => {
       sourceFingerprint: { hashes: Record<string, string | null> };
     };
 
-    expect(stored.sourceFingerprint.hashes).toEqual({
+    expect(stored.sourceFingerprint).toEqual({
       title: asHash("aaaa"),
       summary: UNANSWERED,
     });
@@ -255,9 +253,8 @@ describe("what the run reports is what the receipt claims", () => {
       documentId: "1",
       targetLocale: "de",
       sourceLocale: "en",
-      sourceFingerprint: { kind: "fields", hashes: hashed({ title: "0d", summary: "0dbb" }) },
+      sourceFingerprint: hashed({ title: "0d", summary: "0dbb" }),
       translatedAt: "2026-01-01T00:00:00.000Z",
-      dismissedFingerprint: null,
     });
     const service = new ProvenanceService(
       written,
@@ -276,7 +273,7 @@ describe("what the run reports is what the receipt claims", () => {
       sourceFingerprint: { hashes: Record<string, string | null> };
     };
 
-    expect(stored.sourceFingerprint.hashes).toEqual({
+    expect(stored.sourceFingerprint).toEqual({
       title: asHash("aaaa"),
       summary: UNANSWERED,
     });

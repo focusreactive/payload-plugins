@@ -5,18 +5,11 @@ import { isObject } from "../../kernel/utils/isObject.js";
 import type { AutoTranslateConfig } from "./types.js";
 import { AUTO_TRANSLATE_CUSTOM_KEY } from "./types.js";
 
-/**
- * Structural guard: is `value` a well-formed auto-translate config? Validates the one crash-critical
- * invariant — `targets` is an array of strings — so a foreign value that a consumer happened to store
- * under {@link AUTO_TRANSLATE_CUSTOM_KEY} (the key is a shared `custom` namespace, so a collision, while
- * unlikely, is possible) is treated as "not opted in" rather than crashing the readers that dereference
- * `targets`.
- */
 // TODO(core-deps): zod in `core` relaxes its dependency-free rule — see the task contract,
 // "Deferred — validation in core". Revisit if `@repo/translator-core` is ever extracted.
 const autoTranslateConfig = z.object({ targets: z.array(z.string()) });
 
-/** The schema is deliberately partial — `.parse` here would strip `strategy`, `debounceMs`, `sourceLocale`. */
+/** A guard only: the schema is partial, so `.parse` would strip every member it does not list. */
 function isAutoTranslateConfig(value: unknown): value is AutoTranslateConfig {
   return autoTranslateConfig.safeParse(value).success;
 }
