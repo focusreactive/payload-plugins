@@ -6,7 +6,6 @@ import { isCollectionAvailable } from "../_lib/collection-utils.js";
 import { DismissStalenessInputSchema } from "./model.js";
 import type { StalenessConfig } from "./model.js";
 
-/** Dismisses (acknowledges) staleness of one target locale for a document. */
 export class DismissStalenessHandler {
   constructor(private readonly config: StalenessConfig) {}
 

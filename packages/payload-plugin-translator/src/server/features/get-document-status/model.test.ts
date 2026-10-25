@@ -13,7 +13,6 @@ const task = (over: Partial<Task> & { targetLng: string; id: string }): Task => 
     collectionId: "doc-1",
     sourceLng: "en",
     targetLng: over.targetLng,
-    strategy: "overwrite",
     publishOnTranslation: false,
   },
   createdAt: over.createdAt ?? "2024-01-01T00:00:00Z",

@@ -1,18 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import type { CollectionAfterDeleteHook, Payload } from "payload";
 
-import type { ProvenanceStore } from "../../../../core/domain/provenance/index.js";
 import type { ManagedCollectionsConfig } from "../Provenance.shapes.js";
 import { injectProvenanceCleanup, makeProvenanceCleanupHook } from "../ProvenanceCleanup.hook.js";
+import { storeDouble } from "../../../../core/domain/provenance/__tests__/fixtures/provenanceStore.js";
 
-const makeStore = () =>
-  ({
-    upsert: vi.fn().mockResolvedValue(undefined),
-    find: vi.fn().mockResolvedValue(null),
-    findByDocument: vi.fn().mockResolvedValue([]),
-    dismiss: vi.fn().mockResolvedValue(undefined),
-    deleteByDocument: vi.fn().mockResolvedValue(undefined),
-  }) satisfies ProvenanceStore;
+const makeStore = () => storeDouble();
 
 const makePayload = () => ({ logger: { error: vi.fn() } }) as unknown as Payload;
 

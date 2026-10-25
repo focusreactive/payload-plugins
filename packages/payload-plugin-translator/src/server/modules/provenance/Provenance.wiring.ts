@@ -1,4 +1,6 @@
 import type { Payload } from "payload";
+import type { Criteria } from "../translation-run/index.js";
+import { DRIFT_CRITERION, driftedLeaves } from "./Provenance.criterion.js";
 
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
@@ -35,7 +37,6 @@ function resolveProvenanceSlug(option: ProvenanceOption): string | null {
 
 const OUTSIDE_THE_CALLERS_TRANSACTION = undefined;
 
-/** The two things {@link ProvenanceService} needs from Payload, bound to one instance. */
 export const provenanceIo = (payload: Payload) => ({
   logger: payload.logger,
   readSource: ({ collection, id, locale, user }: Parameters<SourceDocumentReader>[0]) =>
@@ -54,10 +55,15 @@ export type ProvenanceServiceFactory = (
   scope?: RequestScope
 ) => ProvenanceService;
 
+export type ProvenanceContribution = {
+  module: TranslationModule;
+  criteria: Criteria;
+};
+
 export function configureProvenance(
   option: ProvenanceOption,
   schemaMap: CollectionSchemaMap
-): TranslationModule | undefined {
+): ProvenanceContribution | undefined {
   const slug = resolveProvenanceSlug(option);
   if (!slug) return undefined;
 
@@ -91,10 +97,13 @@ export function configureProvenance(
       return config;
     };
 
-  return provenanceModule({
-    serviceFactory,
-    refuseACollidingSlug,
-    addTheCollection,
-    cleanUpOnDelete,
-  });
+  return {
+    module: provenanceModule({
+      serviceFactory,
+      refuseACollidingSlug,
+      addTheCollection,
+      cleanUpOnDelete,
+    }),
+    criteria: { [DRIFT_CRITERION]: driftedLeaves(serviceFactory) },
+  };
 }

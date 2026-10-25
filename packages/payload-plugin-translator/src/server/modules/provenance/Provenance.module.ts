@@ -1,5 +1,4 @@
 import type { FieldFingerprints } from "../../../core/domain/content-projection/computeFieldFingerprints.js";
-import { changedLeaves, recordsEachLeaf } from "../../../core/domain/provenance/index.js";
 import type { ProvenanceKey } from "../../../core/domain/provenance/index.js";
 import {
   createDismissStalenessRoute,
@@ -65,14 +64,7 @@ export function provenanceModule({
       const currentFields = service.captureFingerprint(state.target.collection, state.sourceData);
       if (currentFields === null) return {};
 
-      const fingerprints = { moduleState: { [PROVENANCE_MODULE]: currentFields } };
-      const previous = await service.lastTranslatedFrom(receiptKey(state.target));
-      if (!recordsEachLeaf(previous)) return fingerprints;
-
-      return {
-        ...fingerprints,
-        sourceChangedByLeaf: changedLeaves(previous.hashes, currentFields),
-      };
+      return { moduleState: { [PROVENANCE_MODULE]: currentFields } };
     },
 
     async afterSave(state) {
