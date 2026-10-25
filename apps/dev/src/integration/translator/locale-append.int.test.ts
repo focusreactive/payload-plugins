@@ -12,7 +12,7 @@ import { callEndpoint } from "./callEndpoint";
 type Job = {
   id: string | number;
   completedAt?: string | null;
-  input?: { target_lngs?: string[] };
+  input?: { targets?: { lng: string }[] };
   log?: Array<{ state: string; input?: { target_lng?: string } }>;
 };
 
@@ -69,7 +69,7 @@ describe("adding a locale to a running job", () => {
         target_lng: ["de", "fr"],
         collection_slug: "docs",
         collection_id: [id],
-        strategy: "overwrite",
+
         publish_on_translation: false,
       },
     });
@@ -90,7 +90,7 @@ describe("adding a locale to a running job", () => {
         target_lng: ["es"],
         collection_slug: "docs",
         collection_id: [id],
-        strategy: "overwrite",
+
         publish_on_translation: false,
       },
     });

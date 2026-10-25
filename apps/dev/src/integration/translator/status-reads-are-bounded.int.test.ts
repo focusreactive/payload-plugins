@@ -54,7 +54,7 @@ const enqueue = async (ids: string[], locales: string[]): Promise<void> => {
       target_lng: locales,
       collection_slug: "docs",
       collection_id: ids,
-      strategy: "overwrite",
+
       publish_on_translation: false,
     },
   });
@@ -77,8 +77,7 @@ const seedLegacyRow = async (
   const input = {
     collection: { relationTo: collectionSlug, value: documentId },
     source_lng: "en",
-    target_lngs: [targetLng],
-    strategy: "overwrite",
+    targets: [{ lng: targetLng }],
   };
   const row = await ctx.payload.create({
     collection: JOBS,
@@ -103,8 +102,7 @@ const seedForeignRow = async (collectionSlug: string): Promise<void> => {
         collection_slug: collectionSlug,
         collection_id: "999",
         source_lng: "en",
-        target_lngs: ["de"],
-        strategy: "overwrite",
+        targets: [{ lng: "de" }],
       },
     },
   } as never);

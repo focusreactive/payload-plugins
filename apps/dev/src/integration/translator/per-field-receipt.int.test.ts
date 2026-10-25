@@ -18,14 +18,16 @@ const receipt = async (documentId: string) => {
   return docs[0] as unknown as { id: string | number; sourceFingerprint: string } | undefined;
 };
 
-const translate = (id: string, strategy: "overwrite" | "skip_existing" = "overwrite") =>
+const ruleFilters = (rules?: string[]) => rules?.map((name) => ({ kind: "rule", name }));
+
+const translate = (id: string, rules?: string[]) =>
   callEndpoint(ctx.payload, "post", "/translate/enqueue", {
     body: {
       source_lng: "en",
       target_lng: "de",
       collection_slug: "docs",
       collection_id: [id],
-      strategy,
+      filters: ruleFilters(rules),
       publish_on_translation: true,
     },
   });
@@ -81,7 +83,7 @@ describe("the stored receipt", () => {
     expect(Object.keys(parsed)).toHaveLength(LEAVES + 1); // the 500 labels plus `title`
   });
 
-  it("reads a receipt written before per-field fingerprints, and upgrades it on the next run", async () => {
+  it("takes every leaf against a receipt written before per-field fingerprints, and upgrades it", async () => {
     const id = await create({ title: "Legacy", note: "Legacy note" });
     await translate(id);
 
@@ -107,22 +109,14 @@ describe("the stored receipt", () => {
       data: { _status: "published", title: "Legacy, edited", note: "Legacy note" },
     });
 
-    await translate(id, "skip_existing");
+    await translate(id, ["stale"]);
 
     const de = (await ctx.payload.findByID({ collection: "docs", id, locale: "de" })) as Record<
       string,
       unknown
     >;
-    expect(de.title, "nothing proved this leaf moved, so today's behaviour holds").toBe(
-      "KORRIGIERT"
-    );
+    expect(de.title).toBe("de:Legacy, edited");
 
-    expect(
-      (await receipt(id))?.sourceFingerprint,
-      "nothing was translated, so nothing new is claimed"
-    ).toBe(legacyDocumentWideSha256);
-
-    await translate(id, "overwrite");
     const upgraded = (await receipt(id))?.sourceFingerprint ?? "";
     expect(upgraded.startsWith("{")).toBe(true);
     expect(Object.keys(JSON.parse(upgraded) as Record<string, string>).sort()).toEqual([
@@ -172,7 +166,7 @@ describe("the stored receipt", () => {
       data: { _status: "published", title: "VON HAND" },
     });
 
-    await translate(id, "skip_existing");
+    await translate(id, ["stale"]);
 
     const stored = JSON.parse((await receipt(id))?.sourceFingerprint ?? "") as Record<
       string,
@@ -202,7 +196,7 @@ describe("the stored receipt", () => {
 
   it("still lights the indicator when a leaf genuinely appears after the translation", async () => {
     const id = await create({ title: "Grows later" });
-    await translate(id, "overwrite");
+    await translate(id);
 
     await ctx.payload.update({
       collection: "docs",

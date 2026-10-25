@@ -83,7 +83,7 @@ describe("container-granular rich text, saved and read back", () => {
         target_lng: "de",
         collection_slug: "docs",
         collection_id: [id],
-        strategy: "overwrite",
+
         publish_on_translation: true,
       },
     });

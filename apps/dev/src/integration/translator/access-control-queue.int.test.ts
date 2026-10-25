@@ -46,7 +46,7 @@ const enqueueAs = async (id: string, user: { id: string; collection: string } | 
       target_lng: ["de"],
       collection_slug: "docs",
       collection_id: [id],
-      strategy: "overwrite",
+
       publish_on_translation: false,
     },
   });

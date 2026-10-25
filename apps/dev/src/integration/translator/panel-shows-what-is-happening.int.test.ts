@@ -31,7 +31,7 @@ const enqueue = async (ids: string[], locales: string[]): Promise<void> => {
       target_lng: locales,
       collection_slug: "docs",
       collection_id: ids,
-      strategy: "overwrite",
+
       publish_on_translation: false,
     },
   });
@@ -78,8 +78,7 @@ const seedRun = async (
         collection_slug: "docs",
         collection_id: documentId,
         source_lng: "en",
-        target_lngs: [targetLng],
-        strategy: "overwrite",
+        targets: [{ lng: targetLng }],
       },
       ...(state.failure === undefined ? {} : failureShape(state.failure)),
       ...(state.completedAt === undefined ? {} : { completedAt: state.completedAt }),

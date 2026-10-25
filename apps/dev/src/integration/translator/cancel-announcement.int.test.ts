@@ -54,7 +54,7 @@ describe("cancelling announces what it stopped, to a host that registered nothin
         target_lng: ["de", "fr", "es"],
         collection_slug: "docs",
         collection_id: [String(made.id)],
-        strategy: "overwrite",
+
         publish_on_translation: false,
       },
     });

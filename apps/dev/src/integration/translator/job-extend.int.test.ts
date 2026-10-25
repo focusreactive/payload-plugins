@@ -9,7 +9,7 @@ type Job = {
   id: string | number;
   completedAt?: string | null;
   processing?: boolean;
-  input?: { collection_id?: string; target_lngs?: string[] };
+  input?: { collection_id?: string; targets?: { lng: string }[] };
 };
 
 let ctx: TestPayload;
@@ -21,7 +21,7 @@ const enqueue = async (id: string, targets: string[] = ["de"]) => {
       target_lng: targets,
       collection_slug: "docs",
       collection_id: [id],
-      strategy: "overwrite",
+
       publish_on_translation: false,
     },
   });
@@ -70,11 +70,10 @@ describe("a second request extends the live job rather than replacing it", () =>
 
     const live = await jobs(id);
     expect(live.length, "the second request queued a job of its own").toBe(1);
-    expect(live[0].input?.target_lngs, "the locales already owed were dropped").toEqual([
-      "de",
-      "fr",
-      "es",
-    ]);
+    expect(
+      live[0].input?.targets?.map((t) => t.lng),
+      "the locales already owed were dropped"
+    ).toEqual(["de", "fr", "es"]);
   });
 
   it("translates every locale the extended job accumulated", async () => {
@@ -103,7 +102,10 @@ describe("a second request extends the live job rather than replacing it", () =>
 
     const live = await jobs(id);
     expect(live.length).toBe(1);
-    expect(live[0].input?.target_lngs, "the locale was queued a second time").toEqual(["de"]);
+    expect(
+      live[0].input?.targets?.map((t) => t.lng),
+      "the locale was queued a second time"
+    ).toEqual(["de"]);
   });
 
   it("leaves a finished job alone and gives the new request its own", async () => {

@@ -11,7 +11,7 @@ type RunResult = { jobStatus?: Record<string, unknown> };
 
 type Job = {
   processing?: boolean;
-  input?: { collection_id?: string; target_lngs?: string[] };
+  input?: { collection_id?: string; targets?: { lng: string }[] };
 };
 
 let ctx: TestPayload;
@@ -60,7 +60,7 @@ const enqueue = (id: string, targets: string[]) =>
       target_lng: targets,
       collection_slug: "docs",
       collection_id: [id],
-      strategy: "overwrite",
+
       publish_on_translation: false,
     },
   });
@@ -104,7 +104,7 @@ describe("with the host's concurrency control on", () => {
     const queued = await jobsFor(id);
     expect(queued.length, "the request did not get a job of its own").toBe(2);
     expect(
-      queued.find((job) => !job.processing)?.input?.target_lngs,
+      queued.find((job) => !job.processing)?.input?.targets?.map((t) => t.lng),
       "the second job should carry only the locale that was asked for"
     ).toEqual(["fr"]);
 

@@ -40,7 +40,7 @@ describe("what the provider is told about a document run", () => {
         target_lng: "de",
         collection_slug: "docs",
         collection_id: [id],
-        strategy: "overwrite",
+
         publish_on_translation: true,
       },
     });

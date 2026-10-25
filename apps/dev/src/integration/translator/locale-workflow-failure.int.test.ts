@@ -38,7 +38,7 @@ describe("when one locale's provider fails", () => {
         target_lng: ["de", "fr", "es"],
         collection_slug: "docs",
         collection_id: [id],
-        strategy: "overwrite",
+
         publish_on_translation: false,
       },
     });
