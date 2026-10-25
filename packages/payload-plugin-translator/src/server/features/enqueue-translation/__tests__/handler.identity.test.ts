@@ -10,7 +10,6 @@ const body = {
   target_lng: ["de"],
   collection_slug: "posts",
   collection_id: ["doc-1"],
-  strategy: "overwrite",
   publish_on_translation: false,
 };
 

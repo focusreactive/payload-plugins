@@ -11,8 +11,10 @@ const run = (overrides: Partial<PayloadJob> = {}): PayloadJob => ({
     collection_slug: "posts",
     collection_id: "doc-1",
     source_lng: "en",
-    target_lngs: ["de", "fr"],
-    strategy: "overwrite",
+    targets: [
+      { lng: "de", filters: [] },
+      { lng: "fr", filters: [] },
+    ],
     publish_on_translation: false,
   },
   ...overrides,

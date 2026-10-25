@@ -46,7 +46,6 @@ export class SyncTaskRunner implements TaskRunner {
         collectionId: input.collectionId,
         sourceLng: input.sourceLng,
         targetLng: input.targetLng,
-        strategy: input.strategy,
         handle: task.id,
       };
       assigned.push(assignment);
@@ -70,7 +69,7 @@ export class SyncTaskRunner implements TaskRunner {
               collectionId: input.collectionId,
               sourceLng: input.sourceLng,
               targetLng: input.targetLng,
-              strategy: input.strategy,
+              filters: input.filters,
               publishOnTranslation: input.publishOnTranslation,
               previousAttempts: NEVER_RETRIED,
             },

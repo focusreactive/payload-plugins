@@ -32,7 +32,6 @@ export const answering: TaskRunnerProvider = {
         collectionId: task.collectionId,
         sourceLng: task.sourceLng,
         targetLng: task.targetLng,
-        strategy: task.strategy,
         handle: "run-1",
       }));
       for (const a of assigned) await context.report(payload, a, { state: "queued" });

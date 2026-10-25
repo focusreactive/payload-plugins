@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { CollectionSlug } from "payload";
 import { normalizeJob, normalizeJobLocales } from "../store/normalizeJob.js";
+import { runTargets } from "../store/runTargets.js";
 import type { PayloadJob } from "../store/types.js";
 
 describe("normalizeJob", () => {
@@ -15,7 +16,6 @@ describe("normalizeJob", () => {
       },
       source_lng: "en",
       target_lng: "de",
-      strategy: "overwrite",
     },
   };
 
@@ -32,7 +32,6 @@ describe("normalizeJob", () => {
         collectionId: "doc-456",
         sourceLng: "en",
         targetLng: "de",
-        strategy: "overwrite",
         publishOnTranslation: false,
       });
     });
@@ -215,7 +214,6 @@ describe("normalizeJob", () => {
         collectionId: "",
         sourceLng: "",
         targetLng: "",
-        strategy: "overwrite",
         publishOnTranslation: false,
       });
     });
@@ -230,22 +228,29 @@ describe("normalizeJob", () => {
       expect(task.input.collectionId).toBe("");
     });
 
-    it("handles missing strategy with default", () => {
+    it("reads a run written before 1.0 as one target per listed locale", () => {
       const job: PayloadJob = {
         ...baseJob,
-        input: { ...baseJob.input, strategy: undefined },
+        input: { ...baseJob.input, targets: undefined, target_lngs: ["de", "fr"] },
       };
-      const task = normalizeJob(job);
-      expect(task.input.strategy).toBe("overwrite");
+
+      expect(normalizeJobLocales(job).map((task) => task.input.targetLng)).toEqual(["de", "fr"]);
     });
 
-    it("handles skip_existing strategy", () => {
+    it("carries a pre-1.0 skip_existing run's intent over as the drift criterion", () => {
       const job: PayloadJob = {
         ...baseJob,
-        input: { ...baseJob.input, strategy: "skip_existing" },
+        input: {
+          ...baseJob.input,
+          targets: undefined,
+          target_lngs: ["de"],
+          strategy: "skip_existing",
+        },
       };
-      const task = normalizeJob(job);
-      expect(task.input.strategy).toBe("skip_existing");
+
+      expect(runTargets(job.input)).toEqual([
+        { lng: "de", filters: [{ kind: "rule", name: "stale" }] },
+      ]);
     });
   });
 
@@ -276,8 +281,11 @@ describe("normalizeJobLocales", () => {
       collection_slug: "posts",
       collection_id: "doc-456",
       source_lng: "en",
-      target_lngs: ["de", "fr", "es"],
-      strategy: "overwrite",
+      targets: [
+        { lng: "de", filters: [] },
+        { lng: "fr", filters: [] },
+        { lng: "es", filters: [] },
+      ],
     },
   };
 
@@ -300,7 +308,7 @@ describe("normalizeJobLocales", () => {
   it("does not call a locale failed while its run is still retrying", () => {
     const [de] = normalizeJobLocales({
       ...workflowJob,
-      input: { ...workflowJob.input, target_lngs: ["de"] },
+      input: { ...workflowJob.input, targets: [{ lng: "de", filters: [] }] },
       log: [{ state: "failed", input: { target_lng: "de" } }],
     } as PayloadJob);
 
@@ -313,7 +321,7 @@ describe("normalizeJobLocales", () => {
   it("calls a locale failed once its run has given up", () => {
     const [de] = normalizeJobLocales({
       ...workflowJob,
-      input: { ...workflowJob.input, target_lngs: ["de"] },
+      input: { ...workflowJob.input, targets: [{ lng: "de", filters: [] }] },
       error: { message: "boom" },
       hasError: true,
       log: [{ state: "failed", input: { target_lng: "de" } }],
@@ -386,7 +394,7 @@ describe("normalizeJobLocales", () => {
   it("takes a retried locale's most recent log entry", () => {
     const rows = normalizeJobLocales({
       ...workflowJob,
-      input: { ...workflowJob.input, target_lngs: ["de"] },
+      input: { ...workflowJob.input, targets: [{ lng: "de", filters: [] }] },
       log: [
         { state: "failed", completedAt: "2024-01-01T00:01:00Z", input: { target_lng: "de" } },
         { state: "succeeded", completedAt: "2024-01-01T00:03:00Z", input: { target_lng: "de" } },

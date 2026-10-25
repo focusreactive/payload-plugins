@@ -5,7 +5,8 @@ import type { TaskRunnerContext } from "../TaskRunnerProvider.interface.js";
 import { toTaskFilter } from "../toTaskFilter.js";
 import type { EnqueueAssignment, Task, TaskInput, RunResult } from "../types.js";
 import type { PayloadJobsRunnerConfig } from "./config.js";
-import type { PayloadJob, StoredWorkflowInput } from "./store/index.js";
+import type { PayloadJob, StoredRunTarget, StoredWorkflowInput } from "./store/index.js";
+import { runLocales, runTargets } from "./store/index.js";
 import {
   assignmentOf,
   handleOf,
@@ -36,7 +37,6 @@ const assign = (request: RequestShape, targetLngs: string[], handle: string): En
     collectionId: request.collectionId,
     sourceLng: request.sourceLng,
     targetLng,
-    strategy: request.strategy,
     handle,
   }));
 
@@ -45,7 +45,6 @@ function requestShape(task: TaskInput, scope: RequestScope): RequestShape {
     collectionSlug: task.collectionSlug,
     collectionId: String(task.collectionId),
     sourceLng: task.sourceLng,
-    strategy: task.strategy,
     publishOnTranslation: task.publishOnTranslation,
     requesterId: scope.requester?.userId ?? null,
     requesterCollection: scope.requester?.userCollection ?? null,
@@ -62,6 +61,11 @@ const settledSince = (moment: Date): Where => ({
 
 function documentKey(collectionSlug: string, collectionId: string): string {
   return `${collectionSlug}\u0000${collectionId}`;
+}
+
+function storedTargets(group: TaskInput[], locales: string[]): StoredRunTarget[] {
+  const asked = new Map(group.map((task) => [task.targetLng, task]));
+  return locales.map((lng) => ({ lng, filters: [...(asked.get(lng)?.filters ?? [])] }));
 }
 
 export class PayloadJobsTaskRunner implements TaskRunner {
@@ -120,12 +124,15 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     const plan = planEnqueue({
       live: liveByDocument.get(documentKey(request.collectionSlug, request.collectionId)) ?? [],
       request,
-      requested: group.map((t) => t.targetLng),
+      requested: storedTargets(
+        group,
+        group.map((t) => t.targetLng)
+      ),
       exclusiveQueue,
     });
 
     const undelivered = plan.host
-      ? await this.extendJob(plan.host, plan.append, first.waitUntil, scope)
+      ? await this.extendJob(plan.host, storedTargets(group, plan.append), first.waitUntil, scope)
       : [];
     const queue = [...plan.queue, ...undelivered];
     const delivered = plan.append.filter((locale) => !undelivered.includes(locale));
@@ -136,7 +143,12 @@ export class PayloadJobsTaskRunner implements TaskRunner {
       : [];
     if (queue.length === 0) return [...onTheHost, ...onTheCovering];
 
-    const handle = await this.queueWorkflow(request, queue, first.waitUntil, scope);
+    const handle = await this.queueWorkflow(
+      request,
+      storedTargets(group, queue),
+      first.waitUntil,
+      scope
+    );
     return handle === null
       ? [...onTheHost, ...onTheCovering]
       : [...onTheHost, ...onTheCovering, ...assign(request, queue, handle)];
@@ -144,15 +156,17 @@ export class PayloadJobsTaskRunner implements TaskRunner {
 
   private async extendJob(
     job: PayloadJob,
-    locales: string[],
+    appending: StoredRunTarget[],
     waitUntil: Date | undefined,
     scope: RequestScope
   ): Promise<string[]> {
+    const locales = appending.map((target) => target.lng);
     let current = job;
     let undelivered = locales;
     for (let attempt = 0; attempt < APPEND_ATTEMPTS; attempt++) {
-      const listed = current.input?.target_lngs ?? [];
-      const missing = locales.filter((locale) => !listed.includes(locale));
+      const listed = runTargets(current.input);
+      const already = new Set(listed.map((target) => target.lng));
+      const missing = appending.filter((target) => !already.has(target.lng));
       const debounce = waitUntil && !current.processing ? waitUntil.toISOString() : undefined;
       if (missing.length === 0 && !debounce) return [];
 
@@ -161,7 +175,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
         collection: this.config.jobsCollection,
         id: job.id,
         data: {
-          input: { ...current.input, target_lngs: [...listed, ...missing] },
+          input: { ...current.input, targets: [...listed, ...missing] },
           ...(debounce ? { waitUntil: debounce } : {}),
         },
         returning: false,
@@ -171,7 +185,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
       if (!reread || reread.completedAt) return locales;
       current = reread;
 
-      const stored = new Set(current.input?.target_lngs);
+      const stored = new Set(runLocales(current.input));
       undelivered = locales.filter((locale) => !stored.has(locale));
       if (undelivered.length === 0) return [];
     }
@@ -180,7 +194,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
 
   private async queueWorkflow(
     request: RequestShape,
-    targetLngs: string[],
+    targets: StoredRunTarget[],
     waitUntil: Date | undefined,
     scope: RequestScope
   ): Promise<string | null> {
@@ -188,8 +202,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
       collection_slug: request.collectionSlug,
       collection_id: request.collectionId,
       source_lng: request.sourceLng,
-      target_lngs: targetLngs,
-      strategy: request.strategy,
+      targets,
       publish_on_translation: request.publishOnTranslation,
       requester_id: scope.requester?.userId ?? null,
       requester_collection: scope.requester?.userCollection ?? null,

@@ -4,7 +4,6 @@ import type { Config, Payload, WorkflowConfig } from "payload";
 import type { TaskRunner } from "../TaskRunner.interface.js";
 import type { PayloadJobsRunnerOptions, PayloadJobsRunnerConfig, AutoRunConfig } from "./config.js";
 import type { StoredTaskInput, StoredWorkflowInput } from "./store/index.js";
-import type { TranslationStrategyName } from "../../../../core/translation-pipeline/strategies/index.js";
 import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner.js";
 import { chain, contribute } from "../../../shared/payload/contribute.js";
 import {
@@ -61,23 +60,15 @@ const defaultValues = {
 };
 
 /**
- * What Payload hands this plugin's registered task: the request it runs under, the row it belongs to
- * — carried only so a throw can be stored against it — and the locale's stored input.
- *
- * `strategy` is narrowed here and nowhere else. The column holds any bounded string, because a row
- * written by an older version may name a strategy this one dropped; this handler is the one place
- * that hands the value to something which only accepts the names this version has.
+ * What Payload hands the registered task. `job` is carried only so a throw can be stored against it
+ * for the workflow to read back.
  */
 type TranslateLocaleTask = {
   req: { payload: Payload };
   job?: { id?: unknown; taskStatus?: TaskStatusByLocale };
-  input: StoredTaskInput & { strategy: TranslationStrategyName };
+  input: StoredTaskInput;
 };
 
-/**
- * Rows queued before the scope carried one `requester` object are already on disk as two nullable
- * columns, so both must be present before they read back as an identity.
- */
 export function requesterOf(input: {
   requester_id?: string | number | null;
   requester_collection?: string | null;
@@ -140,7 +131,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
                 collectionId,
                 sourceLng: args.input.source_lng,
                 targetLng: args.input.target_lng,
-                strategy: args.input.strategy,
+                filters: args.input.filters,
                 publishOnTranslation: args.input.publish_on_translation ?? false,
                 previousAttempts: attemptsBefore(
                   args.job?.taskStatus?.[taskName]?.[args.input.target_lng]

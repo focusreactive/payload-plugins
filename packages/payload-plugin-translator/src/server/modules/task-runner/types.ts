@@ -1,5 +1,7 @@
 import type { CollectionSlug } from "payload";
 
+import type { TranslationFilter } from "../../../core/domain/selection/index.js";
+
 /**
  * Document identifier.
  *
@@ -17,14 +19,21 @@ export type ID = string;
 export type TaskStatus = "pending" | "running" | "completed" | "failed";
 
 /**
+ * What a request asked a run to translate, for one target locale: the filters it carries, whose
+ * answers the run intersects. **No filters means every translatable leaf of the document.**
+ */
+export type RunAsk = {
+  filters?: readonly TranslationFilter[];
+};
+
+/**
  * Input for creating a new translation task
  */
-export type TaskInput = {
+export type TaskInput = RunAsk & {
   collectionSlug: CollectionSlug;
   collectionId: ID;
   sourceLng: string;
   targetLng: string;
-  strategy: "overwrite" | "skip_existing";
   publishOnTranslation: boolean;
   /**
    * Optional scheduled-run time (debounce). When set, the job runs no earlier than this instant;
@@ -65,7 +74,6 @@ export type EnqueueAssignment = {
   collectionId: ID;
   sourceLng: string;
   targetLng: string;
-  strategy: string;
   handle: string;
 };
 

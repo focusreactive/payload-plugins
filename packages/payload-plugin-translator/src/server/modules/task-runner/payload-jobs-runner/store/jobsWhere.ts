@@ -2,11 +2,9 @@ import type { CollectionSlug, Where } from "payload";
 
 /**
  * Conditions over a job row's document reference, which Payload stores in a `json` column and this
- * plugin has written in two shapes. Each is an `or` whose second branch is the deprecated one, so
- * deleting that branch is the whole change when the legacy reference goes —
- * docs/DEPRECATIONS.md#jobs-input-collection-field
+ * plugin has written in two shapes. The second `or` branch — and the numeric id {@link asStored}
+ * offers for it — is the deprecated one: docs/DEPRECATIONS.md#jobs-input-collection-field
  */
-
 export const ofCollection = (collectionSlug: CollectionSlug): Where => ({
   or: [
     { "input.collection_slug": { equals: collectionSlug } },

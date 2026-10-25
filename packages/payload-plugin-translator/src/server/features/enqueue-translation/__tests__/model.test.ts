@@ -34,3 +34,23 @@ describe("EnqueueInputSchema.target_lng", () => {
     expect(r.success).toBe(false);
   });
 });
+
+describe("EnqueueInputSchema — members that narrowed a run and no longer exist", () => {
+  const asked = (body: Record<string, unknown>) =>
+    EnqueueInputSchema.safeParse({ ...base, target_lng: "de", ...body });
+
+  it.each([
+    ["strategy", { strategy: "skip_existing" }],
+    ["selection", { selection: ["title"] }],
+    ["criteria", { criteria: ["stale"] }],
+  ])("refuses `%s` rather than translating the whole document", (_name, body) => {
+    const result = asked(body);
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toContain("filters");
+  });
+
+  it("accepts the shape that replaced them", () => {
+    expect(asked({ filters: [{ kind: "leaves", addresses: ["title"] }] }).success).toBe(true);
+  });
+});

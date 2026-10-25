@@ -13,7 +13,9 @@ const OPEN_ON_PURPOSE = new AnyAccessGuard();
 // relocation of route registration stays behaviour-preserving. The handler
 // logic and the shared wrappers (withAccessCheck / withErrorHandler) are
 // covered by their own unit tests; here we only assert the route is wired.
-const config: EnqueueConfig = { availableCollections: new Set() };
+const config: EnqueueConfig = {
+  availableCollections: new Set(),
+};
 const denyAccess: AccessGuard = { check: vi.fn().mockReturnValue(false) };
 
 describe("createEnqueueRoute (contract)", () => {

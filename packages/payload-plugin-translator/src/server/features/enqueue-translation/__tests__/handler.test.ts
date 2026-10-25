@@ -12,6 +12,8 @@ vi.mock("../../_lib/collection-utils.js", () => ({
   getAllCollectionIds: vi.fn().mockResolvedValue(["doc-1", "doc-2", "doc-3"]),
 }));
 
+const leaves = (...addresses: string[]) => [{ kind: "leaves", addresses }];
+
 describe("EnqueueTranslationHandler", () => {
   let handler: EnqueueTranslationHandler;
   let mockTaskRunner: TaskRunner;
@@ -110,7 +112,6 @@ describe("EnqueueTranslationHandler", () => {
         target_lng: "de",
         collection_slug: "users",
         collection_id: ["doc-1"],
-        strategy: "overwrite",
       });
 
       const response = await handler.handle(req);
@@ -130,7 +131,6 @@ describe("EnqueueTranslationHandler", () => {
         target_lng: "de",
         collection_slug: "posts",
         collection_id: ["doc-1"],
-        strategy: "overwrite",
       });
 
       const response = await handler.handle(req);
@@ -149,7 +149,6 @@ describe("EnqueueTranslationHandler", () => {
         target_lng: "de",
         collection_slug: "posts",
         collection_id: ["doc-1", "doc-2"],
-        strategy: "overwrite",
       });
 
       const response = await handler.handle(req);
@@ -165,7 +164,6 @@ describe("EnqueueTranslationHandler", () => {
         target_lng: "fr",
         collection_slug: "posts",
         collection_id: ["doc-123"],
-        strategy: "skip_existing",
       });
 
       await handler.handle(req);
@@ -177,7 +175,7 @@ describe("EnqueueTranslationHandler", () => {
             collectionId: "doc-123",
             sourceLng: "en",
             targetLng: "fr",
-            strategy: "skip_existing",
+            filters: [],
             publishOnTranslation: false,
           },
         ],
@@ -199,7 +197,6 @@ describe("EnqueueTranslationHandler", () => {
         target_lng: "de",
         collection_slug: "posts",
         collection_id: ["doc-1"],
-        strategy: "overwrite",
       });
       (req as any).payload = mockPayload;
 
@@ -304,10 +301,89 @@ describe("EnqueueTranslationHandler", () => {
           collectionId: "doc-1",
           sourceLng: "en",
           targetLng: "de",
-          strategy: "overwrite",
+          filters: [],
           publishOnTranslation: false,
         },
       ]);
+    });
+  });
+
+  describe("filters", () => {
+    const asked = (body: Record<string, unknown>) =>
+      handler.handle(
+        createLocalizedRequest({
+          source_lng: "en",
+          target_lng: "de",
+          collection_slug: "posts",
+          collection_id: ["doc-1"],
+          ...body,
+        })
+      );
+
+    it("carries the addresses through to every task it queues", async () => {
+      const response = await asked({
+        collection_id: ["doc-1", "doc-2"],
+        filters: leaves("title", "content.#0.heading"),
+      });
+
+      const asksFor = leaves("title", "content.#0.heading");
+      expect(response.status).toBe(200);
+      expect(mockTaskRunner.enqueue).toHaveBeenCalledWith(
+        [
+          expect.objectContaining({ collectionId: "doc-1", filters: asksFor }),
+          expect.objectContaining({ collectionId: "doc-2", filters: asksFor }),
+        ],
+        expect.anything()
+      );
+    });
+
+    it("carries them through select_all too", async () => {
+      const response = await asked({ select_all: true, filters: leaves("title") });
+
+      expect(response.status).toBe(200);
+    });
+
+    it("refuses an empty leaves filter rather than reading it as nothing", async () => {
+      const response = await asked({ filters: [{ kind: "leaves", addresses: [] }] });
+
+      expect(response.status).toBe(400);
+    });
+
+    it("accepts an empty filter list, which asks for every translatable leaf", async () => {
+      const response = await asked({ filters: [] });
+
+      expect(response.status).toBe(200);
+      expect(mockTaskRunner.enqueue).toHaveBeenCalledWith(
+        [expect.objectContaining({ filters: [] })],
+        expect.anything()
+      );
+    });
+  });
+
+  describe("a rule name", () => {
+    const asked = (names: string[]) =>
+      handler.handle(
+        createLocalizedRequest({
+          source_lng: "en",
+          target_lng: "de",
+          collection_slug: "posts",
+          collection_id: ["doc-1"],
+          filters: names.map((name) => ({ kind: "rule", name })),
+        })
+      );
+
+    /**
+     * Whether anything answers to the name is settled where the run is narrowed, against the
+     * criteria as they stand when it runs — see `translate-document/__tests__/handler.criteria`.
+     */
+    it("is queued without the route asking what answers to it", async () => {
+      const response = await asked(["nobody-answers"]);
+
+      expect(response.status).toBe(200);
+      expect(mockTaskRunner.enqueue).toHaveBeenCalledWith(
+        [expect.objectContaining({ filters: [{ kind: "rule", name: "nobody-answers" }] })],
+        expect.anything()
+      );
     });
   });
 });

@@ -10,7 +10,6 @@ const task: TaskInput = {
   collectionId: "doc-1",
   sourceLng: "en",
   targetLng: "de",
-  strategy: "overwrite",
   publishOnTranslation: false,
 };
 

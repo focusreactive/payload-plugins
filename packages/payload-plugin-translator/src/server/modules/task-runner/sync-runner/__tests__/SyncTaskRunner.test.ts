@@ -34,7 +34,6 @@ describe("SyncTaskRunner", () => {
     collectionId: "doc-123",
     sourceLng: "en",
     targetLng: "de",
-    strategy: "overwrite",
     publishOnTranslation: false,
     ...overrides,
   });
@@ -82,7 +81,6 @@ describe("SyncTaskRunner", () => {
           collectionId: "doc-123",
           sourceLng: "en",
           targetLng: "de",
-          strategy: "overwrite",
           publishOnTranslation: false,
           previousAttempts: 0,
         },

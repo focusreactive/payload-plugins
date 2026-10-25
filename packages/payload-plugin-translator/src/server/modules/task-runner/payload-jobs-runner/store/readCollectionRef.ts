@@ -6,19 +6,11 @@ import type { ID } from "../../types.js";
 import { StoredInputSchema } from "./jobInput.schema.js";
 import type { StoredCollectionFields } from "./types.js";
 
-/**
- * Normalized, ID-agnostic document reference parsed out of a stored job input.
- */
 export type CollectionRef = {
   collectionSlug: CollectionSlug;
   collectionId: ID;
 };
 
-/**
- * The single storage-read boundary for a job's collection reference, and the one place allowed to
- * read the legacy relationship a row carried before those references became ID-agnostic.
- * See docs/DEPRECATIONS.md#jobs-input-collection-field
- */
 /**
  * A text field cleared through Payload's admin reads back as `null`, not as missing. For this row
  * the two mean the same thing — there is no reference here, look at the legacy one.
@@ -46,6 +38,11 @@ const CollectionRefSchema = z.preprocess(
 
 const NOTHING: CollectionRef = { collectionSlug: "" as CollectionSlug, collectionId: "" };
 
+/**
+ * The single storage-read boundary for a job's collection reference, and the one place allowed to
+ * read the legacy relationship a row carried before those references became ID-agnostic.
+ * See docs/DEPRECATIONS.md#jobs-input-collection-field
+ */
 export function readCollectionRef(input: StoredCollectionFields | undefined): CollectionRef {
   const read = CollectionRefSchema.safeParse(input ?? {});
   return read.success ? read.data : NOTHING;

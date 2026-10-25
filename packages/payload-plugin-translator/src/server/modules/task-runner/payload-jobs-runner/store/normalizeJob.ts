@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { runLocales } from "./runTargets.js";
 
 import type { Task, TaskStatus } from "../../types.js";
 import type { JobLogEntry, PayloadJob } from "./types.js";
@@ -11,7 +12,6 @@ function getJobStatus(job: PayloadJob): TaskStatus {
   return "pending";
 }
 
-/** Payload keeps a job's error as whatever was thrown, so both of these are read out of `unknown`. */
 const ErrorWithMessage = z.object({ message: z.string() });
 const CancelledError = z.object({ cancelled: z.literal(true) });
 
@@ -34,7 +34,6 @@ export function normalizeJob(job: PayloadJob): Task {
       collectionId,
       sourceLng: job.input?.source_lng ?? "",
       targetLng: job.input?.target_lng ?? "",
-      strategy: (job.input?.strategy as "overwrite" | "skip_existing") ?? "overwrite",
       publishOnTranslation: job.input?.publish_on_translation ?? false,
     },
     createdAt: job.createdAt,
@@ -59,15 +58,15 @@ export function latestLogByLocale(job: PayloadJob): Map<string, JobLogEntry> {
 }
 
 /**
- * One {@link Task} per entry of the run's `target_lngs`; a job without a list expands to itself.
+ * One {@link Task} per target locale of the run; a job that lists none expands to itself.
  *
  * A locale is `completed` only on its own succeeded log entry; every other locale takes the run's
  * status, because Payload appends a `failed` entry on every attempt and marks the job only once it
  * gives up (`queues/errors/handleTaskError.js`).
  */
 export function normalizeJobLocales(job: PayloadJob): Task[] {
-  const targets = job.input?.target_lngs;
-  if (!Array.isArray(targets) || targets.length === 0) return [normalizeJob(job)];
+  const targets = runLocales(job.input);
+  if (targets.length === 0) return [normalizeJob(job)];
 
   const base = normalizeJob(job);
   const latestByLocale = latestLogByLocale(job);

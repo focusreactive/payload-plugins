@@ -1,18 +1,16 @@
 import type { CollectionSlug, Config, Payload } from "payload";
 import type { TaskRunner } from "./TaskRunner.interface.js";
-import type { EnqueueAssignment, ID, TaskEvent } from "./types.js";
-import type { TranslationStrategyName } from "../../../core/translation-pipeline/strategies/index.js";
+import type { EnqueueAssignment, ID, RunAsk, TaskEvent } from "./types.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 
 /**
  * Input for task handler callback
  */
-export type TaskHandlerInput = {
+export type TaskHandlerInput = RunAsk & {
   collection: CollectionSlug;
   collectionId: ID;
   sourceLng: string;
   targetLng: string;
-  strategy: TranslationStrategyName;
   publishOnTranslation: boolean;
   /** Zero on the first attempt, and on any runner that does not retry. */
   previousAttempts: number;

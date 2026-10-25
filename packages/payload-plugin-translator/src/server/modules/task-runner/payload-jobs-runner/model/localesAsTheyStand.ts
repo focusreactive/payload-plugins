@@ -1,10 +1,17 @@
-/** Only what this reads: the run's locale list, and the rest of the input each task is handed. */
-type RunInput = { target_lngs?: string[] } & Record<string, unknown>;
+import type { StoredInput } from "../store/index.js";
+import { runTargets } from "../store/index.js";
 
 export type LocaleRun = {
   target: string;
   input: Record<string, unknown>;
 };
+
+const inputSharedByEveryLocale = ({
+  targets: _perLocale,
+  target_lngs: _legacyLocales,
+  strategy: _legacyStrategy,
+  ...shared
+}: StoredInput): Record<string, unknown> => shared;
 
 /**
  * The run's locales, one at a time, **re-reading the list on every step**.
@@ -18,14 +25,21 @@ export type LocaleRun = {
  *
  * @yields one locale of the run, with the input its task is handed
  */
-export function* localesAsTheyStand(job: { input: RunInput }): Generator<LocaleRun> {
+export function* localesAsTheyStand(job: { input: StoredInput }): Generator<LocaleRun> {
   const walked = new Set<string>();
   for (let index = 0; ; index++) {
-    const { target_lngs: targets, ...shared } = job.input;
-    const target = targets?.[index];
-    if (target === undefined) return;
-    if (walked.has(target)) continue;
-    walked.add(target);
-    yield { target, input: { ...shared, target_lng: target } };
+    const shared = inputSharedByEveryLocale(job.input);
+    const entry = runTargets(job.input)[index];
+    if (entry === undefined) return;
+    if (walked.has(entry.lng)) continue;
+    walked.add(entry.lng);
+    yield {
+      target: entry.lng,
+      input: {
+        ...shared,
+        target_lng: entry.lng,
+        filters: entry.filters,
+      },
+    };
   }
 }

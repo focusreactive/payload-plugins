@@ -18,7 +18,6 @@ const sampleInput: TaskInput = {
   collectionId: "1",
   sourceLng: "en",
   targetLng: "de",
-  strategy: "overwrite",
   publishOnTranslation: false,
 };
 
@@ -46,7 +45,6 @@ describe("SyncRunnerProvider", () => {
         collectionId: "1",
         sourceLng: "en",
         targetLng: "de",
-        strategy: "overwrite",
         publishOnTranslation: false,
       }),
       {}

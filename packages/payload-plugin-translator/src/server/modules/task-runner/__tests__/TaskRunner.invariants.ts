@@ -11,7 +11,6 @@ const input = (collectionId: string, targetLng: string): TaskInput => ({
   collectionId,
   sourceLng: "en",
   targetLng,
-  strategy: "overwrite",
   publishOnTranslation: false,
 });
 
