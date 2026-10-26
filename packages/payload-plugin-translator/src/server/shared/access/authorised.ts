@@ -8,12 +8,12 @@ declare const workWasAskedAbout: unique symbol;
 declare const jobWasAskedAbout: unique symbol;
 
 /**
- * What `TaskRunner.enqueue` accepts; the paths below are how to obtain one. A cast still forges
- * one, so this guards against forgetting to ask, not against intent.
+ * A `TaskInput` something asked about. A cast still forges one, so this catches a forgotten ask,
+ * not a deliberate bypass.
  */
 export type AuthorisedWork = TaskInput & { readonly [workWasAskedAbout]: true };
 
-/** The same, for {@link TaskRunner.cancel} and {@link TaskRunner.run}, which name jobs. */
+/** A `JobHandle` something asked about. */
 export type AuthorisedHandle = JobHandle & { readonly [jobWasAskedAbout]: true };
 
 const asWork = (tasks: readonly TaskInput[]): AuthorisedWork[] => tasks as AuthorisedWork[];
@@ -24,7 +24,7 @@ type Split<Authorised, Refused> = { authorised: Authorised[]; refused: Refused[]
 
 type OnADocument = { collectionSlug: CollectionSlug; collectionId: string | number };
 
-/** `distinct` is the point: a run fans out to a task per locale, and they name the same document. */
+/** `distinct` is the point: several entries can name one document, so a verdict is asked for once. */
 function distinctDocumentsByCollection(
   items: readonly OnADocument[]
 ): Map<CollectionSlug, string[]> {
@@ -37,7 +37,6 @@ function distinctDocumentsByCollection(
   return new Map([...grouped].map(([collection, ids]) => [collection, [...ids]]));
 }
 
-/** A verdict is reachable only through its collection, so two collections cannot share one. */
 async function refusedPerCollection(
   payload: PayloadRequest["payload"],
   user: PayloadRequest["user"],
@@ -50,7 +49,7 @@ async function refusedPerCollection(
   return (item) => refused.get(item.collectionSlug)?.has(String(item.collectionId)) ?? false;
 }
 
-/** Splits work by whether the caller may update each task's document; `refused` lists document ids, once each. */
+/** Splits work by whether the caller may update each task's document; `refused` lists document ids, once each — `authorised` counts tasks. */
 export async function authorisedWork(query: {
   payload: PayloadRequest["payload"];
   user: PayloadRequest["user"];
@@ -66,7 +65,7 @@ export async function authorisedWork(query: {
   };
 }
 
-/** Splits jobs by whether the caller may update each job's document; `refused` lists handles. */
+/** Splits jobs by whether the caller may update each job's document. */
 export async function authorisedHandles(query: {
   payload: PayloadRequest["payload"];
   user: PayloadRequest["user"];
@@ -93,9 +92,9 @@ export function authorisedByTheSave(tasks: readonly TaskInput[]): AuthorisedWork
 }
 
 /**
- * Work over a whole collection, authorised by the host's own `read` rule: Payload folded it into the
- * query that produced these documents, so the caller never saw the rest. Asking the `update` rule
- * here would cost one evaluation per document in the collection.
+ * Work over a whole collection, standing on the host's `read` rule instead of an ask: the caller
+ * must have obtained these ids through a read that named the reader, which nothing here can check.
+ * Asking the `update` rule would cost one evaluation per document in the collection.
  */
 export function authorisedByTheReadFilter(tasks: readonly TaskInput[]): AuthorisedWork[] {
   return asWork(tasks);

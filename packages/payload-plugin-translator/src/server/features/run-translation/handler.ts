@@ -23,7 +23,8 @@ export class RunTranslationHandler {
     const [job] = await runner.assignmentsOf([id]);
     if (!job) return ServerResponse.notFound("Queued task not found");
 
-    // No recorded requester means the worker writes with access off (`enforcedAtTheWrite`).
+    // `enforcedAtTheWrite` turns a null requester into an unchecked write, so the ask below is not
+    // enough on its own.
     if (!job.startedBy) return ServerResponse.forbidden();
 
     const { authorised } = await authorisedHandles({

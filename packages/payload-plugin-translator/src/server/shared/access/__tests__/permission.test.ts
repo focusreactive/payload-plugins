@@ -43,7 +43,8 @@ const ask = async (data: Record<string, unknown>, scope = ANNA) =>
     user: await rebuildRequester(payload, scope),
   });
 
-// Every fixture shape below was measured against Payload 3.84.1's sanitizer, not invented.
+// Payload's sanitizer deletes the permission keys it set to `false` (`utilities/sanitizePermissions.js`,
+// 3.90.1), so an absent key in the fixtures below is a refusal, not an omission.
 describe("checkTranslationPermission — reading Payload's permission shape", () => {
   beforeEach(async () => {
     vi.clearAllMocks();

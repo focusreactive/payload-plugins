@@ -5,7 +5,6 @@ import type { TranslatorAction } from "../../../types/TranslatorAction.js";
 import type { AccessGuard } from "../access/types.js";
 import { ServerResponse } from "./ServerResponse.js";
 
-/** Every route is guarded; pass `AnyAccessGuard` to open one on purpose. */
 export function withAccessCheck(
   handler: (req: PayloadRequest) => Promise<Response>,
   access: AccessGuard,

@@ -375,11 +375,7 @@ describe("EnqueueTranslationHandler", () => {
         })
       );
 
-    /**
-     * Whether anything answers to the name is settled where the run is narrowed, against the
-     * criteria as they stand when it runs — see `translate-document/__tests__/handler.criteria`.
-     */
-    it("is queued without the route asking what answers to it", async () => {
+    it("queues an unknown rule name as given; the run resolves it against the criteria it has then", async () => {
       const response = await asked(["nobody-answers"]);
 
       expect(response.status).toBe(200);

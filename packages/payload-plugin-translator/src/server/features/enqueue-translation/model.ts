@@ -22,7 +22,7 @@ export const EnqueueInputSchema = z.object({
   select_all: z.boolean().optional(),
   filters: z.array(TranslationFilterSchema).optional(),
   publish_on_translation: z.boolean().optional().default(false),
-  /** Removed in 1.0 — see docs/DEPRECATIONS.md#the-strategy-leaves-the-run. */
+  /** See docs/DEPRECATIONS.md#the-strategy-leaves-the-run. */
   strategy: refused(`\`strategy\` was removed. ${SAY_IT_IN_FILTERS}`),
   selection: refused(`\`selection\` was merged into \`filters\`. ${SAY_IT_IN_FILTERS}`),
   criteria: refused(`\`criteria\` was merged into \`filters\`. ${SAY_IT_IN_FILTERS}`),

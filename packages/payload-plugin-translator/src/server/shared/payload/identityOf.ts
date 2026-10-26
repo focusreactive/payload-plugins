@@ -2,8 +2,8 @@ import type { RequestScope, Requester } from "./RequestScope.shapes.js";
 import { asRequester } from "./RequestScope.shapes.js";
 
 /**
- * Who a request is acting as: `nobody` when it carried no user, `unnameable` when it carried one
- * that cannot be placed in an auth collection.
+ * Who a request is acting as. `unnameable`: it carried a user that cannot be placed in an auth
+ * collection, so it has no scope and may not act.
  */
 export type Identity =
   | { readonly kind: "named"; readonly requester: Requester }
@@ -52,7 +52,7 @@ export function identityOf(
   return { kind: "unnameable" };
 }
 
-/** The scope an identity acts in. An `unnameable` one has none, so rule it out before calling. */
+/** The scope an identity acts in. */
 export function scopeOf(identity: PlaceableIdentity): RequestScope {
   return { requester: identity.kind === "named" ? identity.requester : null };
 }

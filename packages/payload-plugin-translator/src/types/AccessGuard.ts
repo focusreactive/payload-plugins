@@ -3,8 +3,8 @@ import type { BasePayload, TypedUser } from "payload";
 import type { TranslatorAction } from "./TranslatorAction.js";
 
 /**
- * The request context an {@link AccessGuard} receives when deciding whether to
- * allow a translation API call.
+ * The request context an {@link AccessGuard} receives when deciding whether to allow an action —
+ * an API call or an admin widget render.
  */
 export type AccessGuardRequest = {
   /** Incoming request headers (e.g. for token/cookie checks). */
@@ -16,16 +16,16 @@ export type AccessGuardRequest = {
 };
 
 /**
- * Gate for the translation API endpoints and the admin widgets. Required: `translatorPlugin({ access })` throws at config
- * time without one, because neither "closed" nor "open" is a default the plugin should pick on your
- * behalf. To leave them open on purpose, pass `new AnyAccessGuard()` — a decision, written down.
+ * Gate for the translation API endpoints and the admin widgets. Required:
+ * `translatorPlugin({ access })` throws at config time without one. To leave them open on purpose,
+ * pass `new AnyAccessGuard()`.
  *
  * @since 0.14.0 required; it was optional before, and omitting it left the endpoints open.
  *
  * @example
  * ```ts
  * const adminsOnly: AccessGuard = {
- *   check: ({ req }) => req.user?.role === 'admin',
+ *   check: ({ req, action }) => req.user?.role === 'admin' || action === 'document-status',
  * }
  * translatorPlugin({ collections, translationProvider, runner, access: adminsOnly })
  * ```
@@ -42,6 +42,7 @@ export interface AccessGuard {
     req,
     action,
   }: {
+    /** Generic, so a guard keeps the request type it was handed rather than this narrowed slice. */
     req: R;
     /** @since 1.0.0 */
     action: TranslatorAction;

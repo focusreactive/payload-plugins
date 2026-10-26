@@ -35,8 +35,6 @@ describe("askTheGuard", () => {
   });
 
   it("lets a framework navigation signal through instead of reading it as an answer", async () => {
-    // `redirect()` and `notFound()` in a server component throw an error Next marks with a digest;
-    // it is a non-local return, not a refusal, and swallowing it strands the navigation.
     const navigating = Object.assign(new Error("NEXT_REDIRECT"), {
       digest: "NEXT_REDIRECT;push;/login;307;",
     });

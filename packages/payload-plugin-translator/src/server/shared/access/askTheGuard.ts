@@ -10,10 +10,7 @@ function isNavigationSignal(error: unknown): boolean {
   return typeof error === "object" && error !== null && "digest" in error;
 }
 
-/**
- * The only place a host guard's answer is read; call `check` through here, never directly.
- * Only a literal `true` allows; a guard that throws is logged and refuses.
- */
+/** The only place a host guard's answer is read — call `check` through here, never directly. */
 export async function askTheGuard(
   access: AccessGuard,
   req: AccessGuardRequest,

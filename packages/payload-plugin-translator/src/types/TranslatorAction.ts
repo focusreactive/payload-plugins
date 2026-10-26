@@ -1,7 +1,6 @@
 /**
- * What a request asks the translator to do, as passed to `AccessGuard.check`. Named for the action,
- * not the route, so moving an endpoint does not change it. New members arrive in minor releases;
- * an action a guard does not answer `true` to is refused.
+ * What a request asks the translator to do, as passed to `AccessGuard.check`. Members are added in
+ * minor releases; an action a guard does not answer `true` to is refused.
  *
  * @since 1.0.0
  */

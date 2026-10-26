@@ -21,7 +21,7 @@ export const DismissStalenessInputSchema = z.object({
   target_lng: z.string().nonempty(),
 });
 
-/** One locale's staleness on the wire — snake_case, like every other translation endpoint. */
+/** One locale's staleness on the wire. `changed_leaves` is absent, not empty, when nothing is known about which leaves moved. */
 export type StalenessLocaleBody = {
   target_lng: string;
   source_lng: string;

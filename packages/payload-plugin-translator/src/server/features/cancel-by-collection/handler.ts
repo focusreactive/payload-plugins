@@ -8,7 +8,11 @@ import { authorisedHandles } from "../../shared/access/authorised.js";
 import { CancelByCollectionInputSchema } from "./model.js";
 import type { CancelConfig } from "./model.js";
 
-/** Cancels every queued job for a collection; jobs in flight are left alone. */
+/**
+ * Cancels every queued job for a collection; jobs in flight are left alone. Answers 204 whether or
+ * not some were refused — unlike `/cancel`, which names them, because the caller here named no
+ * handles to be told about.
+ */
 export class CancelByCollectionHandler {
   constructor(
     private readonly config: CancelConfig,
