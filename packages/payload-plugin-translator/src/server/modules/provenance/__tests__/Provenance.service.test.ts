@@ -17,6 +17,13 @@ const answered = (name: string) => ({
   answeredInFull: true,
 });
 
+/* `TranslationPipeline` sets `answeredInFull: counts.written === counts.sent`, so a rich-text leaf
+ * cut into paragraphs is answered in part whenever the provider returns fewer than it was sent. */
+const answeredInPart = (name: string) => ({
+  idPath: makeIdPath([{ kind: "key", name }]),
+  answeredInFull: false,
+});
+
 const hashed = (fields: Record<string, string>) =>
   Object.fromEntries(Object.entries(fields).map(([address, seed]) => [address, asHash(seed)]));
 
@@ -294,6 +301,22 @@ describe("ProvenanceService", () => {
         expect.objectContaining({
           sourceFingerprint: hashed({ title: "feed", body: "dadbed" }),
         })
+      );
+    });
+
+    it("does not claim a leaf the provider answered only in part", async () => {
+      const store = storedWith({ title: "dad" });
+      const service = new ProvenanceService(
+        store,
+        schemaMap,
+        {},
+        makeIo(async () => sourceDoc)
+      );
+
+      await service.record(key, hashed({ title: "feed" }), [answeredInPart("title")]);
+
+      expect(store.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ sourceFingerprint: { title: UNANSWERED } })
       );
     });
 

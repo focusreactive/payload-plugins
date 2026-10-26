@@ -16,7 +16,7 @@ runner.enqueue(work);
 // @ts-expect-error a job is cancelled only once the rules have been asked about its document
 runner.cancel([handle]);
 
-// @ts-expect-error and run, likewise
+// @ts-expect-error a job is run only once the rules have been asked about its document
 runner.run(handle);
 
 declare const unnameable: { kind: "unnameable" };
@@ -31,10 +31,11 @@ scopeOf(identity);
 declare const asked: AuthorisedWork[];
 declare const askedHandle: AuthorisedHandle;
 
-// the positive control: what the ask produced is what the queue takes
-runner.enqueue(asked);
-runner.cancel([askedHandle]);
-runner.run(askedHandle);
+export const theQueueTakesWhatTheAskProduced = async (): Promise<void> => {
+  await runner.enqueue(asked);
+  await runner.cancel([askedHandle]);
+  await runner.run(askedHandle);
+};
 
 /**
  * A runner written before the brand existed still satisfies the interface: TypeScript compares

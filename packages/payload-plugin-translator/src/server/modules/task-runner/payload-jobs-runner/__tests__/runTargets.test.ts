@@ -77,3 +77,27 @@ describe("a run row written before 1.0", () => {
     expect(target?.filters).toEqual([{ kind: "rule", name: DRIFT_CRITERION }]);
   });
 });
+
+/*
+ * Appending a locale to a pre-1.0 run writes `targets` beside the `target_lngs` the row already had
+ * (`PayloadJobsTaskRunner.extendJob`), so a row carrying both is a shape production reaches rather
+ * than one nothing writes.
+ */
+describe("a row carrying both shapes", () => {
+  const extended = {
+    target_lngs: ["de"],
+    strategy: "skip_existing",
+    targets: [
+      { lng: "de", filters: [{ kind: "rule", name: "stale" }] },
+      { lng: "fr", filters: [] },
+    ],
+  };
+
+  it("answers from the current shape, so the appended locale is not lost", () => {
+    expect(runTargets(extended).map((target) => target.lng)).toEqual(["de", "fr"]);
+  });
+
+  it("keeps the filters the current shape carries, not the ones the old strategy implied", () => {
+    expect(runTargets(extended)[1]?.filters).toEqual([]);
+  });
+});

@@ -27,5 +27,4 @@ withAccessCheck(handler, guard);
 // @ts-expect-error the action is a closed union, not any string
 withAccessCheck(handler, guard, "whatever-the-caller-felt-like");
 
-// the positive control: with a guard and an action, the same call compiles
-withAccessCheck(handler, guard, "enqueue");
+export const aGuardedRouteCompiles = () => withAccessCheck(handler, guard, "enqueue");

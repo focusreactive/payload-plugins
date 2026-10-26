@@ -962,3 +962,44 @@ describe("FieldChunkCollector", () => {
     });
   });
 });
+
+/*
+ * A selection arrives from a request, which names addresses as free strings — nothing upstream
+ * checks them against the collection's schema. `isTranslatableLeaf` is the only thing standing
+ * between a named address and a write into a field the host never offered for translation.
+ */
+describe("a selection naming a leaf the schema does not offer", () => {
+  const collected = (schema: Field[], data: Record<string, unknown>, selection: string[]) =>
+    new FieldChunkCollector(schema, data, data, selection).collect();
+
+  it("sends nothing for a field that is not localized", () => {
+    const schema: Field[] = [{ name: "slug", type: "text" }];
+
+    expect(collected(schema, { slug: "hello-world" }, ["slug"])).toEqual([]);
+  });
+
+  it("sends nothing for a field the host excluded from translation", () => {
+    const schema: Field[] = [
+      { name: "title", type: "text", localized: true, custom: { translateKit: { exclude: true } } },
+    ];
+
+    expect(collected(schema, { title: "Hello" }, ["title"])).toEqual([]);
+  });
+
+  it("sends nothing for a field type this package does not translate", () => {
+    const schema: Field[] = [{ name: "count", type: "number", localized: true }];
+
+    expect(collected(schema, { count: 7 }, ["count"])).toEqual([]);
+  });
+
+  it("still sends the sibling the schema does offer", () => {
+    const schema: Field[] = [
+      { name: "slug", type: "text" },
+      { name: "title", type: "text", localized: true },
+    ];
+
+    const chunks = collected(schema, { slug: "hello", title: "Hello" }, ["slug", "title"]);
+
+    expect(chunks.map((chunk) => chunk.idPath)).toEqual(["title"]);
+  });
+});

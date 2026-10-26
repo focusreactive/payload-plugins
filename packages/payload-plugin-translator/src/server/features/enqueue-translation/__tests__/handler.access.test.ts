@@ -33,7 +33,7 @@ describe("enqueue asks about every document it was named", () => {
   const request = (body: unknown): PayloadRequest =>
     ({
       payload: {
-        config: { localization: { locales: ["en", "de"] } },
+        config: { localization: { locales: ["en", "de", "fr"] } },
         logger: { warn: vi.fn() },
       } as unknown as Payload,
       user: ANNA,
@@ -46,6 +46,8 @@ describe("enqueue asks about every document it was named", () => {
     collection_slug: "posts",
     collection_id: ["mine", "theirs"],
   };
+
+  const twoDocumentsTwoLocales = { ...twoDocuments, target_lng: ["de", "fr"] };
 
   const queuedIds = () =>
     ((runner.enqueue as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] ?? []).map(
@@ -91,6 +93,22 @@ describe("enqueue asks about every document it was named", () => {
     const body = await (await handler.handle(request(twoDocuments))).json();
 
     expect(body).toMatchObject({ data: { refused: ["theirs"], queued: 1 } });
+  });
+
+  it("names a refused document once however many locales asked for it", async () => {
+    refusing("theirs");
+
+    const body = await (await handler.handle(request(twoDocumentsTwoLocales))).json();
+
+    expect(body.data.refused).toEqual(["theirs"]);
+  });
+
+  it("counts the queued tasks, not the queued documents", async () => {
+    refusing("theirs");
+
+    const body = await (await handler.handle(request(twoDocumentsTwoLocales))).json();
+
+    expect(body.data.queued).toBe(2);
   });
 
   it("asks about the ids the caller named, for this collection and this user", async () => {
