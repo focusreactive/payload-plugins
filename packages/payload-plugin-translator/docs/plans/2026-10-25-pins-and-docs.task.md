@@ -183,3 +183,25 @@ The docblock now says the measured thing. The criterion's own wording was the in
   contract's AC1–AC3 before the code they guard was touched, then proven by three mutations (a route
   literal, the asker asking twice, a tenth union member) and, for the integration case, by deleting
   the refusal from the run handler and rebuilding.
+
+## Corrected 2026-10-26 — the `@since` on `assignmentsOf` rested on a measurement error
+
+The table above reads `@since` on `assignmentsOf` → **build**, three rows above
+`@since` on `JobAssignment` → **drop — not published**. Both sit on `TaskRunner`, so only one of
+them can be right.
+
+The verdicts were split because I grepped `\bTaskRunner\b` in `src/index.ts`, found a match, and
+read it as an export. **It is a line of prose inside a comment.** `src/index.ts` re-exports
+`TaskRunnerProvider`; `TaskRunner` is reachable only structurally, as the return type of
+`create(payload, context)`, and the package's `exports` map carries only `.` and `./client/*`. So
+the package rule — `@since` on *"anything re-exported from `src/index.ts`"* — never applied to a
+member of `TaskRunner`, and the "not published" reasoning recorded for `JobAssignment` was the
+correct reading for both.
+
+**The tag is dropped.** `assignmentsOf` carries no `@since`. What a host actually needs to know — it
+is now a **required** member, so an existing runner stops compiling — is a release-note fact and
+lives in `DEPRECATIONS.md`, under *one permission decision point*. AC4 above is amended to cover
+`TranslatorAction` and the guard's `action` field only.
+
+Nothing else in this step moves: the eight `@since 1.0.0` tags on genuinely published API stand, and
+the reason given for the version — eight tags already on this branch — is unaffected.

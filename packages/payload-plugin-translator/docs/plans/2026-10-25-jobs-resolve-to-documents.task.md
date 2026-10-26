@@ -254,3 +254,45 @@ introduced nothing.
 `@since` on `assignmentsOf` and `JobAssignment` (the package requires it on published API; the
 version depends on the release) · an integration pin for the unattributed-job refusal · release-note
 lines for the `204` → `200` change on `DELETE /cancel` and for the refusal itself.
+
+## Amended 2026-10-26 — `assignmentsOf` is required, and its parameter is named
+
+Two decisions of this contract were overturned in review, after the whole sequence was read end to
+end. The reasoning above is kept as written; what follows says what replaced it.
+
+**The method is no longer optional.** This contract chose optional so that a host's existing runner
+would still compile, and accepted that run and cancel would answer `403` until the host added it.
+The branch already carries two breaking commits (`a13052d8`, `1fa6e5d2`), so the major release that
+optionality was protecting against is happening regardless — and with the compatibility gone,
+optionality only buys a worse failure: the project builds and two routes stop working, discovered
+from a `403` rather than from the compiler, which names neither the method nor the file.
+
+**AC8 is superseded.** It read *"A runner that omits `assignmentsOf` still satisfies `TaskRunner`"*,
+pinned by a runner compiling without it. The opposite is now pinned: `cannotPlaceItsHandles` in
+`TaskRunner.conformance.types.ts` is a `@ts-expect-error` over a provider that omits the member, so
+restoring the `?` fails `check-types` with `TS2578`. Proven by that mutation.
+
+**One case was traded for another.** `cancel/__tests__/handler.access.test.ts` held *"refuses when
+the runner cannot say what a handle stands for"*, which forged a method-less runner through
+`as unknown as TaskRunner` to reach a branch the type system now forbids; the branch and the case
+are both gone. What it also guaranteed at runtime — that `cancel` is not reached when the handles
+cannot be resolved — was left holding on argument evaluation order alone, so a case replaces it:
+*"cancels nothing when the runner cannot answer what the handles stand for"*, proven by mutating the
+lookup to swallow its failure. The suite stays at 2599 checks.
+
+**The parameter is named.** `assignmentsOf(handles: string[])` was a bare primitive against the
+house rule, while `refusedTargets.ts` already named the same shape `DocumentIds` and `cancel`/`run`
+took a branded `AuthorisedHandle`. `JobHandle` is now declared in `task-runner/types.ts` and used in the
+handle-bearing types and in the access layer: `Task.id`, `EnqueueAssignment.handle`,
+`JobAssignment.handle`, this parameter, and the four positions in `shared/access/authorised.ts`
+where a handle was indistinguishable from a document id — `authorisedWork` returns
+`Split<AuthorisedWork, ID>` and `authorisedHandles` returns `Split<AuthorisedHandle, JobHandle>`.
+`AuthorisedHandle` is minted over it rather than over `string`. It is an alias of `string`, so
+nothing about assignability or runtime behaviour changed.
+
+**Not everywhere, and the gap is named rather than claimed closed.** A handle still travels as a
+bare `string` through its own mint point (`payload-jobs-runner/store/handleOf.ts`), through
+`queueWorkflow`, through `JobIdSchema` at the HTTP boundary, and through `cancel`/`run` as both
+runners declare them — the brand ends at the interface, which method bivariance has always allowed.
+Those are a separate pass, and branding the schema (zod's own `.brand()`, no cast) is where it would
+start.

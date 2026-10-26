@@ -1,6 +1,6 @@
 import type { CollectionSlug, PayloadRequest } from "payload";
 
-import type { TaskInput } from "../../modules/task-runner/types.js";
+import type { ID, JobHandle, TaskInput } from "../../modules/task-runner/types.js";
 
 import { refusedTargets } from "./refusedTargets.js";
 
@@ -14,10 +14,11 @@ declare const jobWasAskedAbout: unique symbol;
 export type AuthorisedWork = TaskInput & { readonly [workWasAskedAbout]: true };
 
 /** The same, for {@link TaskRunner.cancel} and {@link TaskRunner.run}, which name jobs. */
-export type AuthorisedHandle = string & { readonly [jobWasAskedAbout]: true };
+export type AuthorisedHandle = JobHandle & { readonly [jobWasAskedAbout]: true };
 
 const asWork = (tasks: readonly TaskInput[]): AuthorisedWork[] => tasks as AuthorisedWork[];
-const asHandles = (handles: readonly string[]): AuthorisedHandle[] => handles as AuthorisedHandle[];
+const asHandles = (handles: readonly JobHandle[]): AuthorisedHandle[] =>
+  handles as AuthorisedHandle[];
 
 type Split<Authorised, Refused> = { authorised: Authorised[]; refused: Refused[] };
 
@@ -54,7 +55,7 @@ export async function authorisedWork(query: {
   payload: PayloadRequest["payload"];
   user: PayloadRequest["user"];
   tasks: readonly TaskInput[];
-}): Promise<Split<AuthorisedWork, string>> {
+}): Promise<Split<AuthorisedWork, ID>> {
   const { payload, user, tasks } = query;
   const isRefused = await refusedPerCollection(payload, user, tasks);
 
@@ -69,13 +70,13 @@ export async function authorisedWork(query: {
 export async function authorisedHandles(query: {
   payload: PayloadRequest["payload"];
   user: PayloadRequest["user"];
-  jobs: readonly (OnADocument & { handle: string })[];
-}): Promise<Split<AuthorisedHandle, string>> {
+  jobs: readonly (OnADocument & { handle: JobHandle })[];
+}): Promise<Split<AuthorisedHandle, JobHandle>> {
   const { payload, user, jobs } = query;
   const isRefused = await refusedPerCollection(payload, user, jobs);
 
-  const authorised: string[] = [];
-  const refused: string[] = [];
+  const authorised: JobHandle[] = [];
+  const refused: JobHandle[] = [];
   for (const job of jobs) {
     (isRefused(job) ? refused : authorised).push(job.handle);
   }

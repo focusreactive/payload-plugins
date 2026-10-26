@@ -7,9 +7,13 @@ import type { TaskRunnerProvider } from "../../../../index.js";
  *
  * It imports one name from the published barrel, which is all a third-party runner can reach.
  *
- * Two mutations must break it: narrowing `enqueue` to require assignments, and dropping `report`
- * from `TaskRunnerContext`. Neither obliges a runner to *call* `report` — `silent` below never does
- * and compiles, because no type can require that a function be called.
+ * Two mutations must break this file, one runner each: narrowing `enqueue` to require assignments
+ * breaks `silent`, and dropping `report` from `TaskRunnerContext` breaks `answering`. Neither
+ * obliges a runner to *call* `report` — `silent` never does and compiles, because no type can
+ * require that a function be called.
+ *
+ * `cannotPlaceItsHandles` pins the other direction, which providing a member cannot: making
+ * `assignmentsOf` optional again.
  */
 
 const configure = () => (config: Config) => config;
@@ -19,6 +23,7 @@ export const silent: TaskRunnerProvider = {
     enqueue: async () => undefined,
     cancel: async (): Promise<void> => undefined,
     run: async () => ({ success: false, error: "not_found" }) as const,
+    assignmentsOf: async () => [],
     findByCollection: async () => [],
   }),
   configure,
@@ -37,6 +42,19 @@ export const answering: TaskRunnerProvider = {
       for (const a of assigned) await context.report(payload, a, { state: "queued" });
       return assigned;
     },
+    cancel: async (): Promise<void> => undefined,
+    run: async () => ({ success: false, error: "not_found" }) as const,
+    assignmentsOf: async () => [],
+    findByCollection: async () => [],
+  }),
+  configure,
+};
+
+/** A runner that cannot say which document a handle names is not one the routes can ask about. */
+export const cannotPlaceItsHandles: TaskRunnerProvider = {
+  // @ts-expect-error `assignmentsOf` is required; this omits it
+  create: () => ({
+    enqueue: async () => undefined,
     cancel: async (): Promise<void> => undefined,
     run: async () => ({ success: false, error: "not_found" }) as const,
     findByCollection: async () => [],

@@ -20,8 +20,6 @@ export class RunTranslationHandler {
     const { id } = validationResult.data;
     const runner = this.taskRunnerFactory.create(req.payload);
 
-    if (!runner.assignmentsOf) return ServerResponse.forbidden();
-
     const [job] = await runner.assignmentsOf([id]);
     if (!job) return ServerResponse.notFound("Queued task not found");
 

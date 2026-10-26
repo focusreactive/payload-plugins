@@ -74,6 +74,16 @@ describe("DELETE /cancel asks about the documents behind the handles", () => {
     expect(runner.cancel).toHaveBeenCalledWith(["mine"]);
   });
 
+  it("cancels nothing when the runner cannot answer what the handles stand for", async () => {
+    (runner.assignmentsOf as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("store is down")
+    );
+
+    await expect(handler.handle(request(["mine", "theirs"]))).rejects.toThrow("store is down");
+
+    expect(runner.cancel).not.toHaveBeenCalled();
+  });
+
   it("keeps two collections apart when they hold the same document id", async () => {
     (runner.assignmentsOf as ReturnType<typeof vi.fn>).mockResolvedValue([
       { ...job("in-posts", "shared"), collectionSlug: "posts" as never },
@@ -87,20 +97,5 @@ describe("DELETE /cancel asks about the documents behind the handles", () => {
     await handler.handle(request(["in-posts", "in-pages"]));
 
     expect(runner.cancel).toHaveBeenCalledWith(["in-posts"]);
-  });
-
-  it("refuses when the runner cannot say what a handle stands for", async () => {
-    runner = {
-      enqueue: vi.fn(),
-      cancel: vi.fn(),
-      run: vi.fn(),
-      findByCollection: vi.fn(),
-    } as unknown as TaskRunner;
-    handler = new CancelHandler({ create: vi.fn().mockReturnValue(runner) });
-
-    const response = await handler.handle(request(["mine"]));
-
-    expect(response.status).toBe(403);
-    expect(runner.cancel).not.toHaveBeenCalled();
   });
 });

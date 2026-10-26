@@ -59,6 +59,7 @@ describe("enqueue asks about every document it was named", () => {
       enqueue: vi.fn().mockResolvedValue(undefined),
       cancel: vi.fn(),
       run: vi.fn(),
+      assignmentsOf: vi.fn().mockResolvedValue([]),
       findByCollection: vi.fn(),
     };
     factory = { create: vi.fn().mockReturnValue(runner) };

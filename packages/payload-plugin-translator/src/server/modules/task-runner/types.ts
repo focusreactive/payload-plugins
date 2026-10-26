@@ -14,6 +14,12 @@ import type { TranslationFilter } from "../../../core/domain/selection/index.js"
 export type ID = string;
 
 /**
+ * The runner's own name for a queued run: compared, stored and handed back unparsed. Not a document
+ * id — one handle covers a document's whole locale list.
+ */
+export type JobHandle = string;
+
+/**
  * Status of a translation task
  */
 export type TaskStatus = "pending" | "running" | "completed" | "failed";
@@ -50,7 +56,7 @@ export type TaskInput = RunAsk & {
 export type Task = {
   /** The run's handle. One run covers a document's whole locale list, so every task of that run
    * carries the same id. */
-  id: string;
+  id: JobHandle;
   status: TaskStatus;
   input: TaskInput;
   createdAt: string;
@@ -74,12 +80,12 @@ export type EnqueueAssignment = {
   collectionId: ID;
   sourceLng: string;
   targetLng: string;
-  handle: string;
+  handle: JobHandle;
 };
 
 /** What a handle stands for: the document the job translates, and who asked for it. */
 export type JobAssignment = {
-  handle: string;
+  handle: JobHandle;
   collectionSlug: CollectionSlug;
   collectionId: ID;
   /** `null` when nobody was recorded: a runner that keeps no requester, or work started without one. */

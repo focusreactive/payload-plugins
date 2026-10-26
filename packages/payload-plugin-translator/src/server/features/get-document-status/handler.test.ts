@@ -44,6 +44,7 @@ describe("GetDocumentStatusHandler", () => {
       enqueue: vi.fn(),
       cancel: vi.fn(),
       run: vi.fn(),
+      assignmentsOf: vi.fn().mockResolvedValue([]),
       findByCollection: vi.fn().mockResolvedValue([]),
     };
 

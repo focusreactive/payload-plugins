@@ -578,7 +578,8 @@ keeps flagging until the source has text again.
 
 ## 2026-10-25 — one permission decision point
 
-**Status:** live · **Removal target:** n/a — this is behaviour, nothing is named for removal
+**Status:** live · **Removal target:** n/a — nothing is named for removal, but one name is newly
+**required**: `TaskRunner.assignmentsOf`, below.
 
 The plugin stopped deciding who has access. It now asks twice, and never answers itself: the host's
 `AccessGuard` is asked whether this **kind** of request is allowed at all, and Payload's own
@@ -640,10 +641,21 @@ asking what document was behind it.
   second person's request, and the row names nobody to check it against.
 - **A handle the runner cannot place** is a `404` on run, and is left alone by cancel rather than
   cancelled unasked.
-- **A custom `TaskRunner` without `assignmentsOf`** makes run and cancel answer `403`. The method is
-  optional so that an existing runner still compiles; a runner that cannot say which document a
-  handle belongs to cannot be asked about it, and the routes refuse rather than proceed.
+- **Cancel reports a handle it could not place as neither cancelled nor refused.** It is dropped,
+  and a request whose handles were *all* unplaceable answers `204` — "nothing left to cancel" —
+  rather than naming them. Pre-existing behaviour, now reachable by one more route: a runner whose
+  `assignmentsOf` answers `[]` for everything satisfies the contract and makes every cancel a silent
+  success. Known, and left as it is: saying so would need a third category beside cancelled and
+  refused, which is an endpoint-contract change rather than part of this one. Omitting is for a
+  handle the runner does not have; a lookup it cannot perform **at all** is a failure and should be
+  thrown, not answered as `[]`.
+- **A custom `TaskRunner` must implement `assignmentsOf`.** It is a required member, so an existing
+  runner stops compiling until it is added. That is the point: a runner that cannot say which
+  document a handle names cannot be asked about it, and an optional member would have moved the
+  failure from the compiler to a `403` in production, where nothing names the cause.
   `cancel-by-collection` does not need it — it already knows the collection it was called for.
+  The method takes `readonly JobHandle[]` and answers a `JobAssignment` per handle it can place,
+  omitting the rest; neither type is published, and neither needs naming to implement the method.
 
 ### The queue takes only work the rules were asked about
 

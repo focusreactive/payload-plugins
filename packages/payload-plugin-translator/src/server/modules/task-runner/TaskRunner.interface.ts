@@ -1,6 +1,6 @@
 import type { CollectionSlug } from "payload";
 
-import type { EnqueueAssignment, JobAssignment, Task, RunResult } from "./types.js";
+import type { EnqueueAssignment, JobAssignment, JobHandle, Task, RunResult } from "./types.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import type { AuthorisedHandle, AuthorisedWork } from "../../shared/access/authorised.js";
 
@@ -57,11 +57,13 @@ export interface TaskRunner {
 
   /**
    * The document and recorded requester behind each handle; a handle this runner cannot place is
-   * omitted, never guessed. Optional, but without it the run and cancel routes answer `403`.
+   * omitted, never guessed. Omitting covers a handle this runner does not have — a lookup it cannot
+   * perform at all throws, because an empty answer reads as "nothing left to cancel".
    *
-   * @since 1.0.0
+   * Required: the run and cancel routes have no other way to reach the document, and Payload's own
+   * rule is asked about a document, never about a handle.
    */
-  assignmentsOf?(handles: string[]): Promise<JobAssignment[]>;
+  assignmentsOf(handles: readonly JobHandle[]): Promise<JobAssignment[]>;
 
   /**
    * @deprecated Pass `{ documentIds }` instead. Removed in the next major.

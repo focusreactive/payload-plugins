@@ -52,6 +52,7 @@ describe("EnqueueTranslationHandler", () => {
       enqueue: vi.fn().mockResolvedValue(undefined),
       cancel: vi.fn(),
       run: vi.fn(),
+      assignmentsOf: vi.fn().mockResolvedValue([]),
       findByCollection: vi.fn(),
     };
 

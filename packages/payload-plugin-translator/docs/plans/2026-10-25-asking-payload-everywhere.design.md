@@ -243,7 +243,12 @@ called twice per user action, and that idempotency obligation becomes documented
   spend, and it adds no round trip. The hook asks nothing: a host callback that throws there destroys
   the editor's save, and a refusal would only pre-empt a job the worker refuses anyway before paying.
   `run/:id` additionally refuses a job whose `startedBy` is null.
-- **Consequences:** `TaskRunner` gains an optional method, fail-closed for runners that omit it.
+- **Superseded 2026-10-26 — `assignmentsOf` is required, not optional.** Optionality was chosen to
+  keep step 6 non-breaking; the branch acquired two breaking commits regardless, so it bought only a
+  worse failure — a project that builds while run and cancel answer `403`. See
+  `2026-10-25-jobs-resolve-to-documents.task.md`, *Amended 2026-10-26*. Read every "optional
+  `assignmentsOf`" in this document, and in the build sequence below, as "required".
+- **Consequences:** `TaskRunner` gains a required method; a runner that omits it does not compile.
   **SC6 residue, named:** a run triggered by A on B's job is still attributed to B; closing that
   properly means a stored-row change, which is out of scope. An interim log line names both.
 

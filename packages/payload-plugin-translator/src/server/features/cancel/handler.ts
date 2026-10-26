@@ -21,8 +21,6 @@ export class CancelHandler {
     const { ids } = validationResult.data;
     const runner = this.taskRunnerFactory.create(req.payload);
 
-    if (!runner.assignmentsOf) return ServerResponse.forbidden();
-
     const { authorised, refused } = await authorisedHandles({
       payload: req.payload,
       user: req.user,
