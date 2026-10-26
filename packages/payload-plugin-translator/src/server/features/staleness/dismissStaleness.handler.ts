@@ -26,7 +26,6 @@ export class DismissStalenessHandler {
       payload: req.payload,
       collection: collectionSlug,
       id: collection_id,
-      targetLocale: target_lng,
       user: req.user,
     });
     if (!mayDismiss) return ServerResponse.forbidden();

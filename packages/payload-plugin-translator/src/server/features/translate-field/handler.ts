@@ -79,7 +79,6 @@ export class TranslateFieldHandler {
       payload: req.payload,
       collection: collection_slug,
       id: doc_id,
-      targetLocale: target_lng,
       user: req.user,
     });
     if (!mayTranslate) return ServerResponse.forbidden();

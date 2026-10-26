@@ -7,19 +7,17 @@ import type { RequestScope, Requester } from "../payload/RequestScope.shapes.js"
 import { freshReq } from "../payload/RequestScope.shapes.js";
 
 /**
- * A refusal is an **absent key** — Payload's sanitizer deletes what it set to `false` — so
- * `update: false` is a value it cannot emit and a refused collection arrives as nothing at all. A
- * grant is the literal `true`, or `{ permission: true, where }` when the rule returned a query, which
- * has already been run against this document.
+ * Payload's sanitizer deletes the keys it set to `false` (`utilities/sanitizePermissions.js`, 3.90.1),
+ * so a refusal arrives as an absent key and `update: false` is never emitted. `{ permission: true }`
+ * carries a `where` already run against this document.
  */
 type Grant = boolean | { permission?: boolean };
 
 type DocPermissions = { update?: Grant };
 
 /**
- * A requester read back from storage and stamped with the collection they authenticate against.
- * Payload resolves a user's own auth collection from that key, so a rebuilt requester without it is
- * one `docAccessOperation` cannot evaluate.
+ * A user read back from storage. `collection` is required because Payload resolves the auth
+ * collection from it, and `docAccessOperation` cannot evaluate a requester without one.
  */
 export type RebuiltRequester = Record<string, unknown> & { collection: string };
 
@@ -51,6 +49,7 @@ type BuildLocalRequest = (
 ) => Promise<LocalRequest>;
 
 const evaluateDocAccess = docAccessOperation as unknown as EvaluateDocAccess;
+/** Same constraint as above: `createLocalReq` is generic over the host's own slugs. */
 const buildLocalRequest = createLocalReq as unknown as BuildLocalRequest;
 
 type PermissionQuery = {
@@ -86,6 +85,8 @@ async function findRequester(
   const user = await payload.findByID({
     collection,
     id: requester.userId,
+    // The depth Payload itself authenticates at: a rule reading a populated relationship off the
+    // user must see the same shape here as it will at the write.
     depth: payload.collections[collection]?.config?.auth?.depth,
     overrideAccess: true,
   });
@@ -93,13 +94,11 @@ async function findRequester(
 }
 
 /**
- * Whether the collection's rules allow this exact payload to be written, asked of an already-rebuilt
- * requester so a caller with several writes pays for one lookup.
+ * Whether the collection's rules allow this exact payload to be written.
  *
- * `data` must be the payload that write will send. Payload evaluates the same rule with the same
- * argument (`updateByID`: `executeAccess({ id, data, req })`), so a rule reading `data` gives one
- * answer here and a different one at the write if it is asked about anything else — and at the write
- * a refusal is a `Forbidden` inside the caller's transaction.
+ * `data` must be the payload the write will send: Payload asks the same rule with the same argument
+ * (`updateByID` → `executeAccess({ id, data, req })`), so asking with anything else can answer
+ * differently from the write — where a refusal is a `Forbidden` inside the caller's transaction.
  */
 export async function mayWrite(query: {
   payload: Payload;
@@ -141,9 +140,9 @@ export async function rebuildRequester(
 }
 
 /**
- * Asks Payload's own evaluator (`docAccessOperation`, the one behind `/api/<slug>/access`) instead of
- * attempting the write and catching `Forbidden`: by the time a refusal is caught, Payload has rolled
- * the caller's transaction back from its own catch, and the editor's save is gone with it.
+ * Asks Payload's evaluator rather than attempting the write and catching `Forbidden` — see
+ * {@link PermissionCheckFailed} for why a caught refusal is already too late. A `null` user
+ * answers `true`.
  */
 export async function checkTranslationPermission(
   query: PermissionQuery & { user: RebuiltRequester | null }
@@ -155,24 +154,36 @@ export async function checkTranslationPermission(
 }
 
 /**
- * Empty `data` makes Payload's evaluator load the document itself, so a document that is not there
- * fails the ask instead of answering it. Absence is not a refusal, and the caller's own read reports
- * it — so the ask stands aside and leaves that answer to the read.
+ * With empty `data` Payload's evaluator loads the document itself, so a missing document throws
+ * `NotFound` out of the ask rather than refusing.
  */
 function absenceIsNotARefusal(error: unknown): boolean {
   if (error instanceof PermissionCheckFailed && error.cause instanceof NotFound) return true;
   throw error;
 }
 
+/** `createLocalReq` wants a locale; a project without localization has none to give. */
+const NOT_LOCALISED = "";
+
 /**
- * Could this person save this document at all — asked with empty `data`, so a host rule that branches
- * on the payload answers a different question here than it will at the write. Never authorise a write
- * with it: the write asks again, with the data it is about to send.
+ * Could this person save this document at all. Asked with empty `data`, so a host rule that reads
+ * the payload answers a different question here than at the write — never authorise a write with
+ * this; use {@link mayWrite}. A `null` user answers `true`.
  *
- * A `null` user answers `true`, like every other permission path in this plugin.
+ * The locale is this function's to pick, not a caller's: rights in Payload have no language, but
+ * empty `data` makes Payload load the document to answer, and a rule reading the document would
+ * then answer per locale. Asked once, in the project's default locale, so every route agrees.
  */
 export async function mayInitiate(
-  query: Omit<PermissionQuery, "data" | "scope"> & { user: RebuiltRequester | null }
+  query: Omit<PermissionQuery, "data" | "scope" | "targetLocale"> & {
+    user: RebuiltRequester | null;
+  }
 ): Promise<boolean> {
-  return checkTranslationPermission({ ...query, data: {}, scope: {} }).catch(absenceIsNotARefusal);
+  const targetLocale = query.payload.config?.localization
+    ? query.payload.config.localization.defaultLocale
+    : NOT_LOCALISED;
+
+  return checkTranslationPermission({ ...query, data: {}, scope: {}, targetLocale }).catch(
+    absenceIsNotARefusal
+  );
 }

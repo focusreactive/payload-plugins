@@ -1,9 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Payload } from "payload";
 
-// Payload's own evaluator runs for real here: the behaviour under test is what it does when the
-// document it loads to answer a `Where` rule is not there. Only the request builder is replaced,
-// because a real one wants a whole sanitized config.
+// `createLocalReq` is the only stub: a real one wants a whole sanitized config. Payload's evaluator runs for real.
 vi.mock("payload", async (importOriginal) => ({
   ...(await importOriginal<typeof import("payload")>()),
   createLocalReq: vi.fn(),
@@ -38,7 +36,6 @@ async function askAbout(findByID: ReturnType<typeof vi.fn>): Promise<boolean> {
     payload,
     collection: "posts" as never,
     id: "d1",
-    targetLocale: "de",
     user: ANNA,
   });
 }
