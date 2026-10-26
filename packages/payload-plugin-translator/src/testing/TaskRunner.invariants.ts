@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import type { TaskRunner } from "../TaskRunner.interface.js";
-import type { TaskRunnerContext } from "../TaskRunnerProvider.interface.js";
-import type { EnqueueAssignment, TaskEvent, TaskInput } from "../types.js";
-import type { AuthorisedHandle, AuthorisedWork } from "../../../shared/access/authorised.js";
+import type { TaskRunner } from "../server/modules/task-runner/TaskRunner.interface.js";
+import type { TaskRunnerContext } from "../server/modules/task-runner/TaskRunnerProvider.interface.js";
+import type {
+  EnqueueAssignment,
+  TaskEvent,
+  TaskInput,
+} from "../server/modules/task-runner/types.js";
+import type { AuthorisedHandle, AuthorisedWork } from "../server/shared/access/authorised.js";
 
 const SLUG = "posts";
 
@@ -34,8 +38,14 @@ const isTerminal = (event: TaskEvent): boolean => event.state !== "queued";
 const cancelledAndStillDelivered = (states: ReportState[]): boolean =>
   states.length === 2 && states.includes("cancelled") && states.includes("delivered");
 
-const settle = (promise: Promise<unknown>): Promise<"resolved" | "rejected"> =>
-  promise.then(() => "resolved" as const).catch(() => "rejected" as const);
+const settle = async (promise: Promise<unknown>): Promise<"resolved" | "rejected"> => {
+  try {
+    await promise;
+    return "resolved";
+  } catch {
+    return "rejected";
+  }
+};
 
 type Reported = { assignment: EnqueueAssignment; event: TaskEvent };
 
@@ -56,8 +66,12 @@ export type MakeTaskRunner = (
  * Nothing here waits for work to finish: a runner whose terminal events land after the call under
  * test resolves passes these checks vacuously.
  *
+ * Importing this module loads `vitest`, so it belongs in a test file; a non-test module that
+ * imports it fails at load, not at the call.
+ *
  * @param name - how the implementation under test is reported
  * @param make - called fresh for every check
+ * @since 1.0.0
  */
 export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): void {
   describe(name, () => {

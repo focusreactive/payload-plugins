@@ -217,3 +217,36 @@ hand-written checks rather than accumulating on top of them.
 
 `@since` on `AuthorisedWork`, `AuthorisedHandle` and the three narrowed methods · a release-note line
 for callers of the runner (implementers are unaffected) and for the brand types not being published.
+
+## Amended 2026-10-26 — the brand split `dist` from `src`, and one consumer was mixing them
+
+The brand is a `unique symbol`, so the built copy of `AuthorisedWork` and the source copy are
+unrelated types. That is the mechanism working as designed — but it means any file importing the
+package by name *and* by a path into `src/` holds two mutually unassignable `TaskRunner`s.
+
+One file did: `apps/dev/src/integration/translator/task-runner-contract.int.test.ts` took
+`createPayloadJobsRunner` from the published name and `assertTaskRunnerContract` from a deep path
+into `src/server/modules/task-runner/__tests__/`. Repo-wide `check-types` has been failing on it
+since this step landed, and nothing caught it: the per-step verification ran the **package's**
+`check-types`, which does not see `apps/dev`.
+
+**Fixed by publishing the suite rather than by weakening the brand.** `TaskRunner.invariants.ts`
+moves from `__tests__/` to `src/testing/` and ships from a new `./testing` entry point, so both
+imports resolve to one copy. The brand is untouched, and no minter is exported: `asWork` and
+`asHandle` stay private to the module, and the brand types appear nowhere in the emitted
+declarations — `grep Authorised dist/testing/*.d.ts` is empty. The suite does hand branded work to
+the runner under test, as any caller of `enqueue` must; what it does not hand out is a way to mint
+one.
+
+**It also makes a promise true that could not be kept.** `TaskRunner.interface.ts` told a runner
+author to call that suite once, while the suite lived in a directory the build excludes. The
+docblock now names the published path.
+
+`vitest` is declared an optional peer dependency. The suite imports it at module level, so it is
+needed at **import** time: a non-test module importing the entry point fails at load, not when the
+function is called.
+
+**The verification step of every contract on this branch was too narrow.** It ran the package's own
+`check-types`, its suite, its lint and the real build, plus the integration suites — but never
+`turbo run check-types` across the repo, which is the only thing that type-checks `apps/dev`
+against the built package. It is green now, 9 of 9.

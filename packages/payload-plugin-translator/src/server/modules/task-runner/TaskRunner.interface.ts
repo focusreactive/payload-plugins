@@ -12,8 +12,9 @@ import type { AuthorisedHandle, AuthorisedWork } from "../../shared/access/autho
  * (like cancelling existing tasks before enqueue) is encapsulated
  * within the implementation.
  *
- * **Obligations every implementation holds, whatever it queues onto.** `__tests__/TaskRunner.invariants.ts`
- * asserts them; a new runner calls that suite once, and the suite's `describe` names are the list.
+ * **Obligations every implementation holds, whatever it queues onto.** `assertTaskRunnerContract`,
+ * published from `@focus-reactive/payload-plugin-translator/testing`, asserts them; a new runner
+ * calls that suite once, and the suite's `describe` names are the list.
  *
  * Two it cannot assert, because they bind the caller rather than the runner:
  * - **A handle is never parsed.** Callers compare it, store it and hand it back.
