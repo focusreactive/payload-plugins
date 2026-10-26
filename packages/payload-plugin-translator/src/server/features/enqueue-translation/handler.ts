@@ -89,6 +89,11 @@ export class EnqueueTranslationHandler {
         }))
       );
 
+    // Before the ask, not after: Payload fills a missing `user.collection` with the admin one
+    // (`createLocalReq`), so asking first evaluates the host's rule as whoever shares that id there.
+    const identity = identityOf(req, authCollectionsOf(req.payload), req.payload.logger);
+    if (identity.kind === "unnameable") return ServerResponse.forbidden();
+
     const { authorised, refused } = select_all
       ? {
           authorised: authorisedByTheReadFilter(
@@ -101,9 +106,6 @@ export class EnqueueTranslationHandler {
           user: req.user,
           tasks: workFor(collection_id),
         });
-
-    const identity = identityOf(req, authCollectionsOf(req.payload), req.payload.logger);
-    if (identity.kind === "unnameable") return ServerResponse.forbidden();
 
     const runner = this.taskRunnerFactory.create(req.payload);
     const assigned = await runner.enqueue(authorised, scopeOf(identity));
