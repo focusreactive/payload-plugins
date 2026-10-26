@@ -2,13 +2,11 @@ import type { CollectionSlug, Payload } from "payload";
 
 import { enforcedAtTheRead } from "./enforcedAtTheRead.js";
 
-/**
- * Gets all document IDs from a collection (for select_all option)
- */
+/** The ids of every document in `collection` that `user` may read; with no `user` the read is unchecked. */
 export async function getAllCollectionIds(
   payload: Payload,
   collectionSlug: CollectionSlug,
-  user: Record<string, unknown> | null = null
+  user: Record<string, unknown> | null
 ): Promise<string[]> {
   const result = await payload.find({
     collection: collectionSlug,
@@ -21,8 +19,8 @@ export async function getAllCollectionIds(
 }
 
 /**
- * One query however many ids: Payload folds a read rule into the query rather than answering per
- * document (`collections/operations/find.js`).
+ * Which of `ids` the reader may see: Payload folds the host's `read` rule into the query rather than
+ * answering per document (`collections/operations/find.js`), so one `find` answers for all of them.
  */
 export async function visibleIds(
   payload: Payload,

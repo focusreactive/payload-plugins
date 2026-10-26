@@ -1,8 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { APIError } from "payload";
 import { markFailureReason } from "../../../../core/domain/translation-providers/failureReason.js";
+import type { PayloadRequest } from "payload";
+
 import { withErrorHandler } from "../withErrorHandler.js";
 import { ServerResponse } from "../ServerResponse.js";
+
+const req = { headers: new Headers() } as unknown as PayloadRequest;
 
 describe("withErrorHandler", () => {
   beforeEach(() => {
@@ -14,18 +18,17 @@ describe("withErrorHandler", () => {
     const handler = vi.fn().mockResolvedValue(expectedResponse);
 
     const wrappedHandler = withErrorHandler(handler);
-    const result = await wrappedHandler();
+    const result = await wrappedHandler(req);
 
     expect(result).toBe(expectedResponse);
   });
 
-  it("passes arguments to handler", async () => {
+  it("hands the handler the request it was called with", async () => {
     const handler = vi.fn().mockResolvedValue(ServerResponse.success());
 
-    const wrappedHandler = withErrorHandler(handler);
-    await wrappedHandler("arg1", "arg2", { option: true });
+    await withErrorHandler(handler)(req);
 
-    expect(handler).toHaveBeenCalledWith("arg1", "arg2", { option: true });
+    expect(handler).toHaveBeenCalledWith(req);
   });
 
   it("handles APIError with custom status", async () => {
@@ -33,7 +36,7 @@ describe("withErrorHandler", () => {
     const handler = vi.fn().mockRejectedValue(apiError);
 
     const wrappedHandler = withErrorHandler(handler);
-    const result = await wrappedHandler();
+    const result = await wrappedHandler(req);
 
     expect(result.status).toBe(404);
     expect(await result.json()).toEqual({ message: "Not found" });
@@ -44,7 +47,7 @@ describe("withErrorHandler", () => {
     const handler = vi.fn().mockRejectedValue(badRequestError);
 
     const wrappedHandler = withErrorHandler(handler);
-    const result = await wrappedHandler();
+    const result = await wrappedHandler(req);
 
     expect(result.status).toBe(400);
     expect(await result.json()).toEqual({ message: "Bad request data" });
@@ -55,7 +58,7 @@ describe("withErrorHandler", () => {
     const handler = vi.fn().mockRejectedValue(error);
 
     const wrappedHandler = withErrorHandler(handler);
-    const result = await wrappedHandler();
+    const result = await wrappedHandler(req);
 
     expect(result.status).toBe(500);
     expect(await result.json()).toEqual({ message: "Something went wrong" });
@@ -65,7 +68,7 @@ describe("withErrorHandler", () => {
     const handler = vi.fn().mockRejectedValue("string error");
 
     const wrappedHandler = withErrorHandler(handler);
-    const result = await wrappedHandler();
+    const result = await wrappedHandler(req);
 
     expect(result.status).toBe(500);
     expect(await result.json()).toEqual({ message: "Internal server error" });
@@ -76,21 +79,18 @@ describe("withErrorHandler", () => {
     const handler = vi.fn().mockRejectedValue(error);
 
     const wrappedHandler = withErrorHandler(handler);
-    await wrappedHandler();
+    await wrappedHandler(req);
 
     expect(console.error).toHaveBeenCalledWith("[TranslateKit] Handler error:", error);
   });
 
-  it("preserves handler type signature", async () => {
-    const typedHandler = async (id: string, options: { force: boolean }): Promise<Response> => {
-      return ServerResponse.success({ id, options });
-    };
+  it("hands back the handler's own response, not a copy", async () => {
+    const answer = ServerResponse.success({ id: "test-id" });
+    const handler = async (_req: PayloadRequest): Promise<Response> => answer;
 
-    const wrappedHandler = withErrorHandler(typedHandler);
+    const result = await withErrorHandler(handler)(req);
 
-    // TypeScript should allow these calls
-    const result = await wrappedHandler("test-id", { force: true });
-    expect(result.status).toBe(200);
+    expect(result).toBe(answer);
   });
 
   it("renders a marked failure reason as its own copy, not the raw message", async () => {
@@ -100,7 +100,7 @@ describe("withErrorHandler", () => {
     );
     const handler = vi.fn().mockRejectedValue(new Error(marked));
 
-    const result = await withErrorHandler(handler)();
+    const result = await withErrorHandler(handler)(req);
     const { message } = (await result.json()) as { message: string };
 
     expect(message).not.toContain("gpt-5.4-mini");
