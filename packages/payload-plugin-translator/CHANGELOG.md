@@ -1,3 +1,56 @@
+# @focus-reactive/payload-plugin-translator [1.0.0-next.6](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.5...@focus-reactive/payload-plugin-translator@1.0.0-next.6) (2026-10-26)
+
+
+* feat!: a request names the fields to translate, not a strategy ([a13052d](https://github.com/focusreactive/payload-plugins/commit/a13052d8a5a5cbc91baaed1458b891ac7678b360))
+* feat!: a runner must be able to place its own handles ([93dfeb8](https://github.com/focusreactive/payload-plugins/commit/93dfeb882e51f32a8f375827d0b505c7384f130b))
+* feat!: auto-translate loses the strategy option ([1fa6e5d](https://github.com/focusreactive/payload-plugins/commit/1fa6e5d2d61a992101b10010c747588db6f1b2fa))
+* feat!: the queue takes only work the rules were asked about ([8d6b18b](https://github.com/focusreactive/payload-plugins/commit/8d6b18bdc50b2973e247240d3a14509ec74ecc82))
+
+
+### Bug Fixes
+
+* a read that names no reader no longer compiles, and the error wrapper drops its cast ([2baa4e4](https://github.com/focusreactive/payload-plugins/commit/2baa4e4c8bfc16ecf6e4242319f21a2c3c6a7d5f))
+* an actor the project cannot name is refused before anything is asked ([40bd9ce](https://github.com/focusreactive/payload-plugins/commit/40bd9ce589a4ca117a9c80e46b5f696e4014f77b))
+* the rules are asked about a document, not about one of its languages ([4b00f6e](https://github.com/focusreactive/payload-plugins/commit/4b00f6e7f76384c4838917b1709ca47075c9fca7))
+
+
+### Features
+
+* a chain module can no longer write the document being translated ([ab0cf12](https://github.com/focusreactive/payload-plugins/commit/ab0cf1256618b7351c7de6dab52314543adca6e0))
+* a job is resolved to its document before anyone may touch it ([d15b0d5](https://github.com/focusreactive/payload-plugins/commit/d15b0d5ea47b187c330e52bdb7142a06a2fb7ad5))
+* an actor we cannot name stops being read as no actor ([53d3d08](https://github.com/focusreactive/payload-plugins/commit/53d3d08148da04e819131f98c880d091dea31114))
+* enqueue asks whether the caller may change each document ([442d480](https://github.com/focusreactive/payload-plugins/commit/442d4802bd86cf129e2cb1fac7254f239568347a))
+* provenance answers the drift rule and keeps unsent claims ([7195218](https://github.com/focusreactive/payload-plugins/commit/7195218ac60b8e4b273e86ed1c398330453529ed))
+* the admin forms stop asking for a strategy ([1fc96d4](https://github.com/focusreactive/payload-plugins/commit/1fc96d42eed57cc3eddc9afb6713cd5fcc1054cf))
+* the conformance suite ships, so a runner author can run it ([7904a46](https://github.com/focusreactive/payload-plugins/commit/7904a46d0105d81ccdbac6b570ed7a917b3fd6f3))
+* the guard is asked what the caller wants to do ([1d9fd55](https://github.com/focusreactive/payload-plugins/commit/1d9fd556e76d4e7bf6e445fb9cd38d18ee189089))
+* the pipeline is handed the leaves to translate ([1a143e7](https://github.com/focusreactive/payload-plugins/commit/1a143e71cc6327459d005156bef91feaf2f28aa2))
+* the run carries one list of filters and one context ([a8cbfdf](https://github.com/focusreactive/payload-plugins/commit/a8cbfdfa43579658919c418239596b379b45dea5))
+* two routes ask before they read or spend ([7773aa3](https://github.com/focusreactive/payload-plugins/commit/7773aa3806a2590263ef90618e1745407eea636f))
+
+
+### BREAKING CHANGES
+
+* `TaskRunner.assignmentsOf` is required. A custom runner
+stops compiling until it is added. Its parameter is `readonly JobHandle[]`,
+an alias of `string`, so nothing about assignability moves. The `@since`
+tag is dropped — `TaskRunner` is not re-exported from `src/index.ts`, only
+`TaskRunnerProvider` is. See docs/DEPRECATIONS.md, "one permission
+decision point".
+* code that calls TaskRunner.enqueue, cancel or run
+directly must obtain its argument from one of those paths. Implementing
+TaskRunner is unaffected: TypeScript compares method parameters
+bivariantly, so a runner declaring the wider types still satisfies the
+interface.
+* `AutoTranslateStrategy` is no longer exported and
+`AutoTranslateConfig.strategy` is removed. A host that set `skip_existing` had
+automatic runs that left translated fields alone; those runs now re-translate
+whole documents, at full provider cost, over reviewed text. The option is refused
+rather than ignored. See docs/DEPRECATIONS.md#the-strategy-leaves-the-run.
+* `POST /enqueue` refuses a body still carrying `strategy`,
+`selection` or `criteria` with a 400 that names what to send instead. See
+docs/DEPRECATIONS.md#the-strategy-leaves-the-run.
+
 # @focus-reactive/payload-plugin-translator [1.0.0-next.5](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.4...@focus-reactive/payload-plugin-translator@1.0.0-next.5) (2026-10-23)
 
 
