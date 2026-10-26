@@ -9,7 +9,6 @@ const request: RequestShape = {
   collectionSlug: "posts",
   collectionId: "doc-1",
   sourceLng: "en",
-  strategy: "overwrite",
   publishOnTranslation: false,
   requesterId: null,
   requesterCollection: null,
@@ -19,9 +18,8 @@ const storedInput = {
   collection_slug: "posts",
   collection_id: "doc-1",
   source_lng: "en",
-  strategy: "overwrite",
   publish_on_translation: false,
-  target_lngs: ["de"],
+  targets: [{ lng: "de", filters: [] }],
 };
 
 const job = (overrides: Partial<PayloadJob> = {}): PayloadJob => ({
@@ -32,8 +30,14 @@ const job = (overrides: Partial<PayloadJob> = {}): PayloadJob => ({
   ...overrides,
 });
 
-const plan = (live: PayloadJob[], requested: string[], exclusiveQueue = false) =>
-  planEnqueue({ live, request, requested, exclusiveQueue });
+/** The cases below are about which bucket a locale lands in, so they ask for whole documents. */
+const plan = (live: PayloadJob[], locales: string[], exclusiveQueue = false) =>
+  planEnqueue({
+    live,
+    request,
+    requested: locales.map((lng) => ({ lng, filters: [] })),
+    exclusiveQueue,
+  });
 
 const planOf = (over: Partial<EnqueuePlan> = {}): EnqueuePlan => ({
   host: null,
@@ -130,7 +134,7 @@ describe("planEnqueue", () => {
 
   it("does not extend a job in the pre-workflow shape", () => {
     const legacy = job({
-      input: { ...storedInput, target_lngs: undefined, target_lng: "de" },
+      input: { ...storedInput, targets: undefined, target_lng: "de" },
     });
     expect(plan([legacy], ["fr"])).toEqual(planOf({ queue: ["fr"] }));
   });
@@ -170,7 +174,13 @@ describe("planEnqueue", () => {
   describe("every requested locale is accounted for", () => {
     const partlyTranslated = () =>
       job({
-        input: { ...storedInput, target_lngs: ["de", "fr"] },
+        input: {
+          ...storedInput,
+          targets: [
+            { lng: "de", filters: [] },
+            { lng: "fr", filters: [] },
+          ],
+        },
         log: [{ state: "succeeded", input: { target_lng: "de" } }],
       });
 
@@ -217,12 +227,22 @@ describe("planEnqueue", () => {
 
   describe("a job can only take locales from a request it matches", () => {
     it.each([
-      ["a different strategy", { strategy: "skip_existing" }],
       ["a different source locale", { source_lng: "fr" }],
       ["a different publish flag", { publish_on_translation: true }],
     ])("starts its own job for %s", (_label, storedOverride) => {
       const live = job({ input: { ...storedInput, ...storedOverride } });
       expect(plan([live], ["fr"])).toEqual(planOf({ queue: ["fr"] }));
+    });
+
+    it("takes a locale from a request that names different fields", () => {
+      const live = job({
+        input: {
+          ...storedInput,
+          targets: [{ lng: "de", filters: [{ kind: "leaves", addresses: ["title"] }] }],
+        },
+      });
+
+      expect(plan([live], ["fr"])).toEqual(planOf({ host: live, append: ["fr"] }));
     });
   });
 });

@@ -1,5 +1,24 @@
-import type { Requester } from "./RequestScope.shapes.js";
+import type { RequestScope, Requester } from "./RequestScope.shapes.js";
 import { asRequester } from "./RequestScope.shapes.js";
+
+/**
+ * Who a request is acting as. `unnameable`: it carried a user that cannot be placed in an auth
+ * collection, so it has no scope and may not act.
+ */
+export type Identity =
+  | { readonly kind: "named"; readonly requester: Requester }
+  | { readonly kind: "nobody" }
+  | { readonly kind: "unnameable" };
+
+/**
+ * An identity a scope can be built from, named rather than subtracted: a kind added later is not
+ * placeable until someone says it is.
+ */
+export type PlaceableIdentity = Extract<Identity, { kind: "named" | "nobody" }>;
+
+function named(userId: string | number, collection: string): Extract<Identity, { kind: "named" }> {
+  return { kind: "named", requester: asRequester(userId, collection) };
+}
 
 /**
  * Guessing the collection is only safe when one auth-enabled collection exists: with two,
@@ -9,20 +28,33 @@ export function identityOf(
   req: { user?: { id?: string | number; collection?: string } | null },
   authCollections: readonly string[],
   logger?: { warn: (obj: unknown) => void }
-): { requester: Requester | null } {
+): Identity {
   const user = req.user;
-  if (!user || user.id == null) return { requester: null };
-  if (user.collection) return { requester: asRequester(user.id, user.collection) };
+  if (!user) return { kind: "nobody" };
+
+  if (user.id == null) {
+    logger?.warn({
+      msg: "translator: the request carries a user with no `id`, so the translation cannot be attributed and will not be started.",
+    });
+    return { kind: "unnameable" };
+  }
+
+  if (user.collection) return named(user.id, user.collection);
 
   const only = authCollections.length === 1 ? authCollections[0] : undefined;
-  if (only !== undefined) return { requester: asRequester(user.id, only) };
+  if (only !== undefined) return named(user.id, only);
 
   logger?.warn({
     userId: String(user.id),
     authCollections: [...authCollections],
-    msg: "translator: the request carries a user with no `collection`, and this project has more than one auth-enabled collection, so the translation cannot be attributed. It will be written without a permission check, as an unattributed one is. Set `collection` on the user you pass.",
+    msg: "translator: the request carries a user with no `collection`, and this project has more than one auth-enabled collection, so the translation cannot be attributed and will not be started. Set `collection` on the user you pass.",
   });
-  return { requester: null };
+  return { kind: "unnameable" };
+}
+
+/** The scope an identity acts in. */
+export function scopeOf(identity: PlaceableIdentity): RequestScope {
+  return { requester: identity.kind === "named" ? identity.requester : null };
 }
 
 export function authCollectionsOf(payload: {

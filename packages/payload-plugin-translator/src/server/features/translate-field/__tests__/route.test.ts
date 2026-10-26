@@ -48,7 +48,9 @@ describe("createFieldRoute (contract)", () => {
     const response = await endpoint.handler({} as PayloadRequest);
 
     expect(response.status).toBe(403);
-    expect(denyAccess.check).toHaveBeenCalled();
+    expect(denyAccess.check).toHaveBeenLastCalledWith(
+      expect.objectContaining({ action: "translate-field" })
+    );
     expect(provider.translate).not.toHaveBeenCalled();
   });
 });

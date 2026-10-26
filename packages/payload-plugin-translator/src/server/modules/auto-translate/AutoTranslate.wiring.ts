@@ -1,32 +1,32 @@
-import { getAutoTranslateConfig } from "../../../core/domain/auto-translate/index.js";
+import {
+  AUTO_TRANSLATE_CUSTOM_KEY,
+  getAutoTranslateConfig,
+} from "../../../core/domain/auto-translate/index.js";
+import { Locales } from "../../../core/domain/locales/index.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
 import type { TaskRunnerFactory } from "../task-runner/index.js";
 
 import {
-  extractLocaleCodes,
   filterPolicyToKnownLocales,
   makeCollectionPolicyResolver,
   normalizeAutoTranslateConfig,
 } from "./AutoTranslate.policy.js";
-import type { LocalizationLike, NormalizedAutoTranslatePolicy } from "./AutoTranslate.policy.js";
+import type { NormalizedAutoTranslatePolicy } from "./AutoTranslate.policy.js";
 import {
   injectAutoTranslateHook,
   makeAutoTranslateHook,
   propagateAutoTranslateCustom,
 } from "./AutoTranslateEnqueue.hook.js";
 
-/** A collection as the plugin receives it — only `slug` + `custom` are read to resolve the opt-in. */
 type ConfigurableCollection = { slug: string; custom?: Record<string, unknown> };
 
-/** Everything the auto-translate module contributes at config time (mirrors `ProvenanceModule`). */
 export type AutoTranslateModule = {
   configure(managedSlugs: Set<string>): ConfigModifier;
 };
 
 const NOOP: ConfigModifier = (config) => config;
 
-/** Emit one clear config-time warning per collection whose auto-translate config named unknown locales. */
 function warnDroppedLocales(
   slug: string,
   filtered: ReturnType<typeof filterPolicyToKnownLocales>,
@@ -51,11 +51,11 @@ function warnDroppedLocales(
  * translations under a locale the project cannot serve.
  */
 function dropLocalesTheProjectDoesNotHave(
-  config: { localization?: LocalizationLike },
+  config: { localization?: Locales.LocalizationLike },
   slugs: Set<string>,
   policies: Map<string, NormalizedAutoTranslatePolicy>
 ): void {
-  const knownLocales = extractLocaleCodes(config.localization);
+  const knownLocales = Locales.knownCodes(config.localization);
   if (!knownLocales) {
     if (slugs.size > 0) {
       console.warn(
@@ -74,6 +74,24 @@ function dropLocalesTheProjectDoesNotHave(
 }
 
 /**
+ * A removed option must not become a silent no-op: `strategy: "skip_existing"` kept an automatic run
+ * to the drifted leaves, and a run now covers the whole document — so a host that believes the
+ * option still holds overwrites reviewed text on every source save.
+ * See docs/DEPRECATIONS.md#the-strategy-leaves-the-run
+ */
+function warnAboutTheRemovedStrategy(collections: ConfigurableCollection[]): void {
+  for (const collection of collections) {
+    const raw = collection.custom?.[AUTO_TRANSLATE_CUSTOM_KEY];
+    if (typeof raw !== "object" || raw === null) continue;
+    if (!("strategy" in raw)) continue;
+
+    console.warn(
+      `[payload-plugin-translator] auto-translate on "${collection.slug}": \`strategy\` was removed and is ignored. An automatic run now translates the whole document — see docs/DEPRECATIONS.md#the-strategy-leaves-the-run.`
+    );
+  }
+}
+
+/**
  * Turn the opt-in `withAutoTranslate` config (read from each collection's `custom`) into a
  * self-contained {@link AutoTranslateModule} — mirrors `configureProvenance`. Builds the per-collection
  * policy map + resolver once, then returns a `configure(managedSlugs) → ConfigModifier` that injects a
@@ -85,6 +103,8 @@ export function configureAutoTranslate(
   schemaMap: CollectionSchemaMap,
   taskRunnerFactory: TaskRunnerFactory
 ): AutoTranslateModule {
+  warnAboutTheRemovedStrategy(collections);
+
   const policies = new Map<string, NormalizedAutoTranslatePolicy>();
   for (const collection of collections) {
     const config = getAutoTranslateConfig(collection);

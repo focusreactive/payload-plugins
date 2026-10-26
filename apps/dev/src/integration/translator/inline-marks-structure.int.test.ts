@@ -90,7 +90,7 @@ describe("every Lexical container shape, translated independently", () => {
         target_lng: "de",
         collection_slug: "nested",
         collection_id: [id],
-        strategy: "overwrite",
+
         publish_on_translation: true,
       },
     });

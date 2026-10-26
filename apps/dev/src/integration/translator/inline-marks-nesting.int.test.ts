@@ -119,7 +119,7 @@ describe("container mode reaches rich text at every nesting depth", () => {
         target_lng: "de",
         collection_slug: "nested",
         collection_id: [id],
-        strategy: "overwrite",
+
         publish_on_translation: true,
       },
     });

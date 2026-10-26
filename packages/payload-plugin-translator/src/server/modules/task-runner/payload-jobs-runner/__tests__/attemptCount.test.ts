@@ -32,7 +32,6 @@ const runTheTask = async (job: unknown): Promise<TaskHandlerInput> => {
       collection_id: "doc-1",
       source_lng: "en",
       target_lng: "de",
-      strategy: "overwrite",
       publish_on_translation: false,
     },
   });

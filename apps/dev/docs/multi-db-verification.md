@@ -23,7 +23,7 @@ bun run verify:provenance:postgres
 ```
 
 `scripts/verify-provenance.ts` boots Payload against the active adapter and asserts, via the local API
-(no OpenAI call): the sidecar collection exists, `dismissedFingerprint: null` round-trips, the composite
+(no OpenAI call): the sidecar collection exists, a receipt round-trips, the composite
 key `(collectionSlug, documentId, targetLocale)` is unique, and `deleteByDocument` (the query the
 `afterDelete` hook runs) clears a document's rows across all locales. The SQLite run uses a throwaway
 `.verify-sqlite.db` (push-created, gitignored) so it never touches your working `dev.db`.

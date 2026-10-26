@@ -28,14 +28,16 @@ const editSource = (id: string, data: Record<string, unknown>) =>
     data: { _status: "published", ...data },
   });
 
-const translate = (id: string, strategy: "overwrite" | "skip_existing") =>
+const ruleFilters = (rules?: string[]) => rules?.map((name) => ({ kind: "rule", name }));
+
+const translate = (id: string, rules?: string[]) =>
   callEndpoint(ctx.payload, "post", "/translate/enqueue", {
     body: {
       source_lng: "en",
       target_lng: "de",
       collection_slug: "docs",
       collection_id: [id],
-      strategy,
+      filters: ruleFilters(rules),
       publish_on_translation: true,
     },
   });
@@ -61,9 +63,9 @@ describe("a translation refreshes the leaf whose source moved, and only that one
     await ctx?.cleanup();
   });
 
-  it("refreshes a stale leaf that skip_existing used to skip (#118)", async () => {
+  it("refreshes the leaf whose source moved, and only that one (#118)", async () => {
     const id = await create({ title: "Original title", note: "Original note" });
-    await translate(id, "overwrite");
+    await translate(id);
 
     await ctx.payload.update({
       collection: "docs",
@@ -73,7 +75,7 @@ describe("a translation refreshes the leaf whose source moved, and only that one
     });
     await editSource(id, { title: "Original title", note: "Note, rewritten" });
 
-    await translate(id, "skip_existing");
+    await translate(id, ["stale"]);
 
     const de = await german(id);
     expect(de.note, "its source moved, so it is refreshed — this is what #118 asks for").toBe(
@@ -84,12 +86,12 @@ describe("a translation refreshes the leaf whose source moved, and only that one
 
   it("sends only the changed leaf to the provider", async () => {
     const id = await create({ title: "Only one moves", note: "Steady" });
-    await translate(id, "overwrite");
+    await translate(id);
 
     await editSource(id, { title: "Only one moves, edited", note: "Steady" });
 
     const before = ctx.translateCount();
-    await translate(id, "skip_existing");
+    await translate(id, ["stale"]);
     expect(ctx.translateCount() - before, "one provider call for the one run").toBe(1);
 
     const de = await german(id);
@@ -97,7 +99,7 @@ describe("a translation refreshes the leaf whose source moved, and only that one
     expect(de.note).toBe(tr("de", "Steady"));
   });
 
-  it("leaves a filled-in target alone when NO receipt exists at all", async () => {
+  it("translates everything, hand-written target and all, when NO receipt exists at all", async () => {
     const id = await create({ title: "No receipt", note: "No receipt note" });
     await ctx.payload.update({
       collection: "docs",
@@ -106,13 +108,11 @@ describe("a translation refreshes the leaf whose source moved, and only that one
       data: { _status: "published", title: "HAND-WRITTEN" },
     });
 
-    await translate(id, "skip_existing");
+    await translate(id, ["stale"]);
 
     const de = await german(id);
-    expect(de.title, "no receipt says nothing moved, so skip_existing keeps its promise").toBe(
-      "HAND-WRITTEN"
-    );
-    expect(de.note, "empty, so it is filled in as it always was").toBe(tr("de", "No receipt note"));
+    expect(de.title).toBe(tr("de", "No receipt"));
+    expect(de.note).toBe(tr("de", "No receipt note"));
   });
 
   it("refreshes a hand-written target once its own source moves", async () => {
@@ -124,14 +124,14 @@ describe("a translation refreshes the leaf whose source moved, and only that one
       data: { _status: "published", title: "VON HAND" },
     });
 
-    await translate(id, "skip_existing");
+    await translate(id, ["stale"]);
     expect(
       (await german(id)).title,
-      "first run: no receipt yet, so the filled target is kept"
-    ).toBe("VON HAND");
+      "first run: no receipt yet, so nothing is known to stand still"
+    ).toBe(tr("de", "Watermark"));
 
     await editSource(id, { title: "Watermark, edited", note: "Watermark note" });
-    await translate(id, "skip_existing");
+    await translate(id, ["stale"]);
 
     expect((await german(id)).title).toBe(tr("de", "Watermark, edited"));
   });
@@ -141,7 +141,7 @@ describe("a translation refreshes the leaf whose source moved, and only that one
       title: "Array head",
       items: [{ label: "First" }, { label: "Second" }],
     });
-    await translate(id, "overwrite");
+    await translate(id);
 
     const de = await german(id);
     const germanItems = de.items as { id: string; label: string }[];
@@ -162,7 +162,7 @@ describe("a translation refreshes the leaf whose source moved, and only that one
       items: [{ label: "Inserted" }, ...keepingRowIds(en.items)],
     });
 
-    await translate(id, "skip_existing");
+    await translate(id, ["stale"]);
 
     const after = (await german(id)) as { items: { label: string }[] };
     const labels = after.items.map((item) => item.label);
@@ -177,7 +177,7 @@ describe("a translation refreshes the leaf whose source moved, and only that one
       title: "Array staleness",
       items: [{ label: "Alpha" }, { label: "Beta" }],
     });
-    await translate(id, "overwrite");
+    await translate(id);
 
     const en = (await english(id)) as { items: { id: string; label: string }[] };
     await editSource(id, {
@@ -194,7 +194,7 @@ describe("a translation refreshes the leaf whose source moved, and only that one
       "still the old translation, or the case below passes for reasons unrelated to the receipt"
     ).toEqual([tr("de", "Alpha"), tr("de", "Beta")]);
 
-    await translate(id, "skip_existing");
+    await translate(id, ["stale"]);
 
     const after = (await german(id)) as { items: { label: string }[] };
     expect(after.items.map((item) => item.label)).toEqual([
@@ -205,7 +205,7 @@ describe("a translation refreshes the leaf whose source moved, and only that one
 
   it("translates a leaf the receipt has no entry for", async () => {
     const id = await create({ title: "Partial receipt", note: "" });
-    await translate(id, "overwrite");
+    await translate(id);
 
     await ctx.payload.update({
       collection: "docs",
@@ -215,7 +215,7 @@ describe("a translation refreshes the leaf whose source moved, and only that one
     });
     await editSource(id, { title: "Partial receipt", note: "A note exists now" });
 
-    await translate(id, "skip_existing");
+    await translate(id, ["stale"]);
 
     const de = await german(id);
     expect(de.note, "the receipt never saw this leaf, so it is owed a translation").toBe(
@@ -225,14 +225,14 @@ describe("a translation refreshes the leaf whose source moved, and only that one
 
   it("translates a leaf again after its source was emptied and later refilled", async () => {
     const id = await create({ title: "Refilled", note: "The first note" });
-    await translate(id, "overwrite");
+    await translate(id);
     expect((await german(id)).note).toBe(tr("de", "The first note"));
 
     await editSource(id, { title: "Refilled", note: "" });
-    await translate(id, "overwrite");
+    await translate(id);
 
     await editSource(id, { title: "Refilled", note: "The note is back" });
-    await translate(id, "skip_existing");
+    await translate(id, ["stale"]);
 
     expect((await german(id)).note).toBe(tr("de", "The note is back"));
   });
@@ -242,7 +242,7 @@ describe("a translation refreshes the leaf whose source moved, and only that one
   // silently.
   it("overwrites a hand-rewritten target once its own source moves — the trade this change makes", async () => {
     const id = await create({ title: "Owned by a human", note: "Steady note" });
-    await translate(id, "overwrite");
+    await translate(id);
 
     await ctx.payload.update({
       collection: "docs",
@@ -252,7 +252,7 @@ describe("a translation refreshes the leaf whose source moved, and only that one
     });
     await editSource(id, { title: "Owned by a human, edited", note: "Steady note" });
 
-    await translate(id, "skip_existing");
+    await translate(id, ["stale"]);
 
     const de = await german(id);
     expect(de.title, "the receipt cannot tell a human's text from ours, so the refresh wins").toBe(

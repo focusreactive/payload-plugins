@@ -21,5 +21,10 @@ createEnqueueRoute(runner, { availableCollections: new Set<string>() }, undefine
 // @ts-expect-error the shared context carries a guard, never the absence of one
 const _contextWithoutAGuard: ConfigTimeContext["access"] = undefined;
 
-// the positive control: with a guard, the same call compiles
+// @ts-expect-error a guarded route must also say which action it is guarding
 withAccessCheck(handler, guard);
+
+// @ts-expect-error the action is a closed union, not any string
+withAccessCheck(handler, guard, "whatever-the-caller-felt-like");
+
+export const aGuardedRouteCompiles = () => withAccessCheck(handler, guard, "enqueue");

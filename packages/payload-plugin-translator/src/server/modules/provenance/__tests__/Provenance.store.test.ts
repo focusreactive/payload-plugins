@@ -8,8 +8,7 @@ const SLUG = "translator-provenance";
 
 const HASHES = { title: asHash("3a7f1c"), body: asHash("91ce04") };
 const SERIALIZED = JSON.stringify(HASHES);
-const DISMISSED_HASHES = { title: asHash("3a7f1c"), body: asHash("ffffff") };
-const SERIALIZED_DISMISSED = JSON.stringify(DISMISSED_HASHES);
+const ACCEPTED_HASHES = { title: asHash("beef"), body: asHash("cafe") };
 const SHA256_HEX_LENGTH = 64;
 const LEGACY = "a".repeat(SHA256_HEX_LENGTH);
 
@@ -18,15 +17,13 @@ const record: ProvenanceReceipt = {
   documentId: "doc-1",
   targetLocale: "de",
   sourceLocale: "en",
-  sourceFingerprint: { kind: "fields", hashes: HASHES },
+  sourceFingerprint: HASHES,
   translatedAt: "2026-07-02T00:00:00.000Z",
-  dismissedFingerprint: null,
 };
 
 const row = {
   ...record,
   sourceFingerprint: SERIALIZED,
-  dismissedFingerprint: null as string | null,
 };
 
 describe("PayloadProvenanceStore", () => {
@@ -62,12 +59,14 @@ describe("PayloadProvenanceStore", () => {
 
     it("updates the existing record in place, never duplicating", async () => {
       setFound([{ id: 7, ...row }]);
-      await store.upsert({ ...record, sourceFingerprint: { kind: "document", hash: LEGACY } });
+      await store.upsert({ ...record, sourceFingerprint: ACCEPTED_HASHES });
       expect(payload.update).toHaveBeenCalledWith(
         expect.objectContaining({
           collection: SLUG,
           id: 7,
-          data: expect.objectContaining({ sourceFingerprint: LEGACY }),
+          data: expect.objectContaining({
+            sourceFingerprint: JSON.stringify(ACCEPTED_HASHES),
+          }),
         })
       );
       expect(payload.create).not.toHaveBeenCalled();
@@ -154,37 +153,64 @@ describe("PayloadProvenanceStore", () => {
       expect(result?.translatedAt).toBe("2026-07-02T00:00:00.000Z");
     });
 
-    it("parses a non-null dismissedFingerprint into the union", async () => {
-      setFound([{ id: 7, ...row, dismissedFingerprint: SERIALIZED_DISMISSED }]);
+    it.each([
+      ["a receipt written before per-field fingerprints", LEGACY],
+      ["a value it cannot make sense of", "not a fingerprint"],
+    ])("reads %s as a receipt claiming nothing, without throwing", async (_label, stored) => {
+      setFound([{ id: 7, ...row, sourceFingerprint: stored }]);
       const result = await store.find({
         collectionSlug: "posts",
         documentId: "doc-1",
         targetLocale: "de",
       });
-      expect(result?.dismissedFingerprint).toEqual({ kind: "fields", hashes: DISMISSED_HASHES });
+      expect(result?.translatedAt, "the row is still read").toBe("2026-07-02T00:00:00.000Z");
+      expect(result?.sourceFingerprint).toBeNull();
+    });
+  });
+
+  describe("rebaseSourceFingerprint", () => {
+    const key = { collectionSlug: "posts", documentId: "doc-1", targetLocale: "de" };
+    const accepted = ACCEPTED_HASHES;
+
+    it("writes the fingerprint and nothing else", async () => {
+      setFound([{ id: 7, ...row }]);
+      await store.rebaseSourceFingerprint(key, accepted);
+      expect(
+        payload.update,
+        "a run finishing mid-dismissal keeps its own translatedAt and its own claims"
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          collection: SLUG,
+          id: 7,
+          data: { sourceFingerprint: JSON.stringify(ACCEPTED_HASHES) },
+        })
+      );
     });
 
-    it("parses a receipt written before per-field fingerprints as the document shape", async () => {
-      setFound([{ id: 7, ...row, sourceFingerprint: LEGACY }]);
-      const result = await store.find({
-        collectionSlug: "posts",
-        documentId: "doc-1",
-        targetLocale: "de",
-      });
-      expect(result?.sourceFingerprint).toEqual({ kind: "document", hash: LEGACY });
+    it("matches the record by the composite key", async () => {
+      setFound([{ id: 7, ...row }]);
+      await store.rebaseSourceFingerprint(key, accepted);
+      expect(payload.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            and: [
+              { collectionSlug: { equals: "posts" } },
+              { documentId: { equals: "doc-1" } },
+              { targetLocale: { equals: "de" } },
+            ],
+          },
+        })
+      );
     });
 
-    it("reads a value it cannot make sense of as the old shape, without throwing", async () => {
-      setFound([{ id: 7, ...row, sourceFingerprint: "not a fingerprint" }]);
-      const result = await store.find({
-        collectionSlug: "posts",
-        documentId: "doc-1",
-        targetLocale: "de",
-      });
-      expect(result?.sourceFingerprint).toEqual({
-        kind: "document",
-        hash: "not a fingerprint",
-      });
+    it("creates nothing when no record exists for the key", async () => {
+      setFound([]);
+      await store.rebaseSourceFingerprint(key, accepted);
+      expect(payload.update).not.toHaveBeenCalled();
+      expect(
+        payload.create,
+        "a dismissal must not resurrect a deleted document's receipt"
+      ).not.toHaveBeenCalled();
     });
   });
 
@@ -234,7 +260,6 @@ describe("PayloadProvenanceStore", () => {
           ...row,
           targetLocale: "fr",
           translatedAt: new Date("2026-07-02T00:00:00.000Z"),
-          dismissedFingerprint: SERIALIZED_DISMISSED,
         },
       ]);
       const result = await store.findByDocument("posts", "doc-1");
@@ -244,7 +269,6 @@ describe("PayloadProvenanceStore", () => {
           ...record,
           targetLocale: "fr",
           translatedAt: "2026-07-02T00:00:00.000Z",
-          dismissedFingerprint: { kind: "fields", hashes: DISMISSED_HASHES },
         },
       ]);
     });
@@ -252,44 +276,6 @@ describe("PayloadProvenanceStore", () => {
     it("returns an empty array when the document has no records", async () => {
       setFound([]);
       expect(await store.findByDocument("posts", "missing")).toEqual([]);
-    });
-  });
-
-  describe("dismiss", () => {
-    const key = { collectionSlug: "posts", documentId: "doc-1", targetLocale: "de" };
-
-    it("updates dismissedFingerprint on the matched record", async () => {
-      setFound([{ id: 7, ...row }]);
-      await store.dismiss(key, { kind: "fields", hashes: DISMISSED_HASHES });
-      expect(payload.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          collection: SLUG,
-          id: 7,
-          data: { dismissedFingerprint: SERIALIZED_DISMISSED },
-        })
-      );
-    });
-
-    it("matches the record by the composite key", async () => {
-      setFound([{ id: 7, ...row }]);
-      await store.dismiss(key, { kind: "fields", hashes: DISMISSED_HASHES });
-      expect(payload.find).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: {
-            and: [
-              { collectionSlug: { equals: "posts" } },
-              { documentId: { equals: "doc-1" } },
-              { targetLocale: { equals: "de" } },
-            ],
-          },
-        })
-      );
-    });
-
-    it("is a no-op when no record exists for the key", async () => {
-      setFound([]);
-      await store.dismiss(key, { kind: "fields", hashes: DISMISSED_HASHES });
-      expect(payload.update).not.toHaveBeenCalled();
     });
   });
 });

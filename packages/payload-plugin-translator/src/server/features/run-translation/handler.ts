@@ -1,6 +1,7 @@
 import type { PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared/index.js";
+import { authorisedHandles } from "../../shared/access/authorised.js";
 import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 
 import { RunInputSchema } from "./model.js";
@@ -18,7 +19,23 @@ export class RunTranslationHandler {
 
     const { id } = validationResult.data;
     const runner = this.taskRunnerFactory.create(req.payload);
-    const result = await runner.run(id);
+
+    const [job] = await runner.assignmentsOf([id]);
+    if (!job) return ServerResponse.notFound("Queued task not found");
+
+    // `enforcedAtTheWrite` turns a null requester into an unchecked write, so the ask below is not
+    // enough on its own.
+    if (!job.startedBy) return ServerResponse.forbidden();
+
+    const { authorised } = await authorisedHandles({
+      payload: req.payload,
+      user: req.user,
+      jobs: [job],
+    });
+    const [thisJob] = authorised;
+    if (!thisJob) return ServerResponse.forbidden();
+
+    const result = await runner.run(thisJob);
 
     if (!result.success) {
       if (result.error === "not_found" || result.error === "already_completed") {

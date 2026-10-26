@@ -1,5 +1,7 @@
 import type { CollectionSlug } from "payload";
 
+import type { TranslationFilter } from "../../../core/domain/selection/index.js";
+
 /**
  * Document identifier.
  *
@@ -12,19 +14,32 @@ import type { CollectionSlug } from "payload";
 export type ID = string;
 
 /**
+ * The runner's own name for a queued run: compared, stored and handed back unparsed. Not a document
+ * id — one handle covers a document's whole locale list.
+ */
+export type JobHandle = string;
+
+/**
  * Status of a translation task
  */
 export type TaskStatus = "pending" | "running" | "completed" | "failed";
 
 /**
+ * What a request asked a run to translate, for one target locale: the filters it carries, whose
+ * answers the run intersects. **No filters means every translatable leaf of the document.**
+ */
+export type RunAsk = {
+  filters?: readonly TranslationFilter[];
+};
+
+/**
  * Input for creating a new translation task
  */
-export type TaskInput = {
+export type TaskInput = RunAsk & {
   collectionSlug: CollectionSlug;
   collectionId: ID;
   sourceLng: string;
   targetLng: string;
-  strategy: "overwrite" | "skip_existing";
   publishOnTranslation: boolean;
   /**
    * Optional scheduled-run time (debounce). When set, the job runs no earlier than this instant;
@@ -41,7 +56,7 @@ export type TaskInput = {
 export type Task = {
   /** The run's handle. One run covers a document's whole locale list, so every task of that run
    * carries the same id. */
-  id: string;
+  id: JobHandle;
   status: TaskStatus;
   input: TaskInput;
   createdAt: string;
@@ -65,8 +80,16 @@ export type EnqueueAssignment = {
   collectionId: ID;
   sourceLng: string;
   targetLng: string;
-  strategy: string;
-  handle: string;
+  handle: JobHandle;
+};
+
+/** What a handle stands for: the document the job translates, and who asked for it. */
+export type JobAssignment = {
+  handle: JobHandle;
+  collectionSlug: CollectionSlug;
+  collectionId: ID;
+  /** `null` when nobody was recorded: a runner that keeps no requester, or work started without one. */
+  startedBy: { id: string; collection: string } | null;
 };
 
 /**

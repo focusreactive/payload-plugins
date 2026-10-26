@@ -1,7 +1,7 @@
 import type { Payload } from "payload";
 import { vi } from "vitest";
 
-import { assertTaskRunnerContract } from "../../__tests__/TaskRunner.invariants.js";
+import { assertTaskRunnerContract } from "../../../../../testing/index.js";
 import type { Task } from "../../types.js";
 import { LazyMap } from "../../../../shared/utils/index.js";
 import { SyncTaskRunner } from "../SyncTaskRunner.js";

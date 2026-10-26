@@ -9,7 +9,6 @@ const localeOf = (targetLng: string): TaskInput => ({
   collectionId: "doc-1",
   sourceLng: "en",
   targetLng,
-  strategy: "overwrite",
   publishOnTranslation: false,
 });
 

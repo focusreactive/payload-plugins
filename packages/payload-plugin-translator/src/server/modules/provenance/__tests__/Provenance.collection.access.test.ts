@@ -2,11 +2,9 @@ import { describe, it, expect } from "vitest";
 
 import { makeProvenanceCollection } from "../Provenance.collection.js";
 
-// A collection that declares no `access` inherits Payload's default, which is "any signed-in user"
-// — measured: a signed-in caller can read every row, overwrite `dismissedFingerprint` to suppress the
-// out-of-date indicator, and delete history outright. Nothing legitimate reaches these rows through
-// the collection's REST surface: the panel reads staleness through the plugin's own endpoint, and the
-// plugin itself goes through the Local API, which bypasses access rules.
+// With no `access`, Payload defaults to "any signed-in user" — enough to rewrite
+// `sourceFingerprint` and hide the out-of-date mark. Nothing legitimate needs REST here: the panel
+// reads the plugin's endpoint and the plugin uses the Local API, which bypasses access rules.
 describe("the provenance collection is closed to the outside", () => {
   const collection = makeProvenanceCollection();
 

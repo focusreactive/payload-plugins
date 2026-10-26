@@ -5,7 +5,6 @@ import { applyTranslations, collectTranslationTargets } from "../../core/travers
 import { addressesOf } from "./addresses.js";
 import type { FieldLike } from "../../core/kernel/field-traversal/index.js";
 import { FieldChunkCollector } from "../../core/translation-pipeline/stages/field-collector/index.js";
-import { OverwriteStrategy } from "../../core/translation-pipeline/strategies/index.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
 
 const schema: FieldLike[] = [{ type: "text", name: "tags", localized: true }];
@@ -14,13 +13,7 @@ const source = { tags: ["one", "two"] };
 describe("a selected leaf whose stored value is not a string", () => {
   it("the collector hands it over as a chunk, text and all", () => {
     const working = structuredClone(source);
-    const chunks = new FieldChunkCollector(
-      schema,
-      working,
-      source,
-      {},
-      new OverwriteStrategy()
-    ).collect();
+    const chunks = new FieldChunkCollector(schema, working, source, ["tags"]).collect();
 
     expect(chunks).toHaveLength(1);
     expect(chunks[0]?.dataRef[chunks[0].key]).toEqual(["one", "two"]);

@@ -19,6 +19,6 @@ export function createRunRoute(
   return {
     path: `${basePath}/run/:id`,
     method: "post",
-    handler: withAccessCheck(withErrorHandler(handler.handle.bind(handler)), access),
+    handler: withAccessCheck(withErrorHandler(handler.handle.bind(handler)), access, "run"),
   };
 }

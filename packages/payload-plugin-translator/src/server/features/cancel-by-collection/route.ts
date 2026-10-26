@@ -21,6 +21,10 @@ export function createCancelByCollectionRoute(
   return {
     path: `${basePath}/cancel-by-collection/:collection_slug`,
     method: "delete",
-    handler: withAccessCheck(withErrorHandler(handler.handle.bind(handler)), access),
+    handler: withAccessCheck(
+      withErrorHandler(handler.handle.bind(handler)),
+      access,
+      "cancel-by-collection"
+    ),
   };
 }

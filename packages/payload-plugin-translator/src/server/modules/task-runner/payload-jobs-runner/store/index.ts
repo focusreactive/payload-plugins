@@ -1,5 +1,8 @@
+export { runLocales, runTargets } from "./runTargets.js";
 export type {
   PayloadJob,
+  StoredInput,
+  StoredRunTarget,
   StoredWorkflowInput,
   StoredTaskInput,
   JobLogEntry,
@@ -9,6 +12,7 @@ export { TaskInputSchema, WorkflowInputSchema } from "./jobInput.schema.js";
 export { toPayloadFields, withLegacyCollection } from "./toPayloadFields.js";
 export { handleOf } from "./handleOf.js";
 export { readCollectionRef } from "./readCollectionRef.js";
+export { readRequester } from "./readRequester.js";
 export { ofCollection, ofDocuments } from "./jobsWhere.js";
 export { normalizeJobLocales, latestLogByLocale, isCancelled } from "./normalizeJob.js";
 export { assignmentOf } from "./assignmentOf.js";

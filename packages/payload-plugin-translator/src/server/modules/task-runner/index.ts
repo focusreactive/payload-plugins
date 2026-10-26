@@ -1,9 +1,11 @@
 export type {
+  TaskHandler,
+  TaskHandlerInput,
   TaskRunnerProvider,
   TaskRunnerFactory,
   TaskRunnerContext,
 } from "./TaskRunnerProvider.interface.js";
-export type { EnqueueAssignment, Task, TaskStatus } from "./types.js";
+export type { EnqueueAssignment, JobAssignment, Task, TaskInput, TaskStatus } from "./types.js";
 export { createPayloadJobsRunner } from "./payload-jobs-runner/index.js";
 export type { PayloadJobsRunnerOptions } from "./payload-jobs-runner/index.js";
 export { createSyncRunner } from "./sync-runner/index.js";

@@ -22,7 +22,6 @@ const schema: Field[] = [{ name: "title", type: "text", localized: true }];
 const schemaMap: CollectionSchemaMap = new Map([["posts" as CollectionSlug, schema]]);
 const policy: NormalizedAutoTranslatePolicy = {
   targets: ["de", "fr"],
-  strategy: "overwrite",
   debounceMs: 0,
 };
 

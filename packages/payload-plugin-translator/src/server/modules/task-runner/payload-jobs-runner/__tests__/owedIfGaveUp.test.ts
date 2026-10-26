@@ -14,8 +14,11 @@ const run = (parts: Partial<PayloadJob> = {}): PayloadJob =>
       collection_slug: "docs",
       collection_id: "doc-1",
       source_lng: "en",
-      target_lngs: ["de", "fr", "es"],
-      strategy: "overwrite",
+      targets: [
+        { lng: "de", filters: [] },
+        { lng: "fr", filters: [] },
+        { lng: "es", filters: [] },
+      ],
     },
     ...parts,
   }) as PayloadJob;

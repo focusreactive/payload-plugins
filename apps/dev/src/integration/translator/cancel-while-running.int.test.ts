@@ -54,7 +54,7 @@ describe.skipIf(!SQLITE)("cancelling a run that is already translating", () => {
         target_lng: ["de", "fr"],
         collection_slug: "docs",
         collection_id: [String(made.id)],
-        strategy: "overwrite",
+
         publish_on_translation: false,
       },
     });

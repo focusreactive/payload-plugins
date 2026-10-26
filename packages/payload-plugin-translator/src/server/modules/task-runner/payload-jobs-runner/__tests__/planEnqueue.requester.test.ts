@@ -8,7 +8,6 @@ const anna: RequestShape = {
   collectionSlug: "posts",
   collectionId: "doc-1",
   sourceLng: "en",
-  strategy: "overwrite",
   publishOnTranslation: false,
   requesterId: "anna",
   requesterCollection: "users",
@@ -25,9 +24,8 @@ const jobQueuedBy = (
     collection_slug: "posts",
     collection_id: "doc-1",
     source_lng: "en",
-    strategy: "overwrite",
     publish_on_translation: false,
-    target_lngs: ["de"],
+    targets: [{ lng: "de", filters: [] }],
     requester_id: requesterId,
     requester_collection: requesterCollection,
   },
@@ -41,7 +39,7 @@ describe("planEnqueue — whose job may host a request", () => {
     const plan = planEnqueue({
       live: [jobQueuedBy("boris")],
       request: anna,
-      requested: ["fr"],
+      requested: [{ lng: "fr", filters: [] }],
       exclusiveQueue: false,
     });
 
@@ -53,7 +51,7 @@ describe("planEnqueue — whose job may host a request", () => {
     const plan = planEnqueue({
       live: [jobQueuedBy("anna")],
       request: anna,
-      requested: ["fr"],
+      requested: [{ lng: "fr", filters: [] }],
       exclusiveQueue: false,
     });
 
@@ -66,7 +64,7 @@ describe("planEnqueue — whose job may host a request", () => {
     const plan = planEnqueue({
       live: [jobQueuedBy(null)],
       request: anna,
-      requested: ["fr"],
+      requested: [{ lng: "fr", filters: [] }],
       exclusiveQueue: false,
     });
 
@@ -78,7 +76,7 @@ describe("planEnqueue — whose job may host a request", () => {
     const plan = planEnqueue({
       live: [jobQueuedBy(null)],
       request: { ...anna, requesterId: null, requesterCollection: null },
-      requested: ["fr"],
+      requested: [{ lng: "fr", filters: [] }],
       exclusiveQueue: false,
     });
 
@@ -92,7 +90,7 @@ describe("planEnqueue — whose job may host a request", () => {
     const plan = planEnqueue({
       live: [jobQueuedBy("anna", "admins")],
       request: anna,
-      requested: ["fr"],
+      requested: [{ lng: "fr", filters: [] }],
       exclusiveQueue: false,
     });
 

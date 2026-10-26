@@ -7,7 +7,6 @@ import type {
   PipelineContext,
   PipelineStage,
 } from "./types/index.js";
-import type { TranslationStrategy } from "./strategies/index.js";
 import type { TextExpander } from "./stages/index.js";
 import {
   DataReconcilerStage,
@@ -39,7 +38,6 @@ function leafOutcomes(sent: TextChunk[], written: TextChunk[]): LeafOutcome[] {
  */
 export type TranslationPipelineOptions = {
   translationProvider: TranslationProvider;
-  translationStrategy: TranslationStrategy;
   textExpanders?: TextExpander[];
 };
 
@@ -62,7 +60,7 @@ export class TranslationPipeline {
   constructor(options: TranslationPipelineOptions) {
     this.stages = [
       new DataReconcilerStage(),
-      new FieldChunkCollectorStage(options.translationStrategy),
+      new FieldChunkCollectorStage(),
       new TextChunkExpanderStage(options.textExpanders),
       new TranslationStage(options.translationProvider),
       new TranslationMutatorStage(),
@@ -81,7 +79,7 @@ export class TranslationPipeline {
       sourceLng: config.sourceLng,
       targetLng: config.targetLng,
       document: config.document,
-      sourceChangedByLeaf: config.sourceChangedByLeaf,
+      selection: config.selection,
     };
 
     for (const stage of this.stages) {
@@ -95,12 +93,12 @@ export class TranslationPipeline {
       }
     }
 
-    if (!ctx.filteredData) {
+    if (!ctx.reconciledData) {
       return null;
     }
 
     return {
-      translatedData: ctx.filteredData,
+      translatedData: ctx.reconciledData,
       leaves: leafOutcomes(ctx.textChunks ?? [], ctx.writtenChunks ?? []),
     };
   }

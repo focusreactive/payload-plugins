@@ -402,7 +402,6 @@ describe("translatorPlugin — lifecycle callbacks", () => {
     collectionId: "doc-1",
     sourceLng: "en",
     targetLng: "de",
-    strategy: "overwrite",
     publishOnTranslation: false,
     ...overrides,
   });
@@ -410,7 +409,7 @@ describe("translatorPlugin — lifecycle callbacks", () => {
   const mockPayload = () =>
     ({
       findByID: vi.fn().mockResolvedValue({ id: "doc-1" }),
-      logger: { error: vi.fn() },
+      logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
       collections: { posts: { config: { versions: undefined } } },
     }) as unknown as Payload;
 
@@ -461,7 +460,6 @@ describe("translatorPlugin — lifecycle callbacks", () => {
       collectionId: "doc-1",
       sourceLng: "en",
       targetLng: "de",
-      strategy: "overwrite",
       handle: "run-1",
     };
 
@@ -483,7 +481,9 @@ describe("translatorPlugin — lifecycle callbacks", () => {
       return captured as TaskRunnerContext;
     };
 
-    const payload = { logger: { error: vi.fn() } } as unknown as Payload;
+    const payload = {
+      logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
+    } as unknown as Payload;
 
     const mappings: Array<[string, keyof TranslationLifecycleCallbacks, TaskEvent]> = [
       ["queued", "onQueued", { state: "queued" }],

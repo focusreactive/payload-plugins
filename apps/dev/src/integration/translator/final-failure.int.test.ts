@@ -51,7 +51,7 @@ describe("onFailed reports a final outcome, not an attempt", () => {
         target_lng: locales,
         collection_slug: "docs",
         collection_id: [String(made.id)],
-        strategy: "overwrite",
+
         publish_on_translation: false,
       },
     });
@@ -75,7 +75,7 @@ describe("onFailed reports a final outcome, not an attempt", () => {
         target_lng: ["de"],
         collection_slug: "docs",
         collection_id: [String(made.id)],
-        strategy: "overwrite",
+
         publish_on_translation: false,
       },
     });

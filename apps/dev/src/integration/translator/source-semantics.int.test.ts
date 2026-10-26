@@ -70,7 +70,7 @@ const translate = async (id: string, sourceLng: Locale, targetLng: Locale) => {
       target_lng: targetLng,
       collection_slug: "docs",
       collection_id: [id],
-      strategy: "overwrite",
+
       publish_on_translation: false,
     },
   });

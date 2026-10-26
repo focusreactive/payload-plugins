@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CollectionSlug, PayloadRequest } from "payload";
 
-import { EnqueueTranslationHandler } from "../handler.js";
+vi.mock("../../../shared/access/refusedTargets.js", () => ({
+  refusedTargets: vi.fn().mockResolvedValue(new Set<string>()),
+}));
+
+const { EnqueueTranslationHandler } = await import("../handler.js");
 
 const LOCALIZATION = { defaultLocale: "en", locales: ["en", "de"] };
 
@@ -10,7 +14,6 @@ const body = {
   target_lng: ["de"],
   collection_slug: "posts",
   collection_id: ["doc-1"],
-  strategy: "overwrite",
   publish_on_translation: false,
 };
 

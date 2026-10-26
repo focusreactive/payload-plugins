@@ -1,5 +1,10 @@
 import type { Field, RichTextField, TextareaField, TextField } from "payload";
 
+import {
+  isLocalizedFieldLike,
+  isTranslatableFieldType,
+} from "../../../core/domain/content-projection/translatableLeaf.js";
+
 /** Translatable field types that contain text content */
 export type TranslatableField = RichTextField | TextareaField | TextField;
 
@@ -9,7 +14,7 @@ export type TranslatableField = RichTextField | TextareaField | TextField;
  * union.
  */
 export function isTranslatableField(field: { type: string }): field is TranslatableField {
-  return field.type === "text" || field.type === "textarea" || field.type === "richText";
+  return isTranslatableFieldType(field);
 }
 
 /**
@@ -18,7 +23,7 @@ export function isTranslatableField(field: { type: string }): field is Translata
 export function isLocalizedField<T extends { localized?: boolean }>(
   field: T
 ): field is T & { localized: true } {
-  return "localized" in field && field.localized === true;
+  return isLocalizedFieldLike(field);
 }
 
 /**

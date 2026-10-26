@@ -1,11 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { Field } from "payload";
 import { FieldChunkCollector } from "./FieldChunkCollector.js";
-import { OverwriteStrategy } from "../../strategies/Overwrite.strategy.js";
-import { SkipExistingStrategy } from "../../strategies/SkipExisting.strategy.js";
-
-const strategy = new OverwriteStrategy();
-const skipExistingStrategy = new SkipExistingStrategy();
+import { everyTranslatableLeaf } from "../../../domain/content-projection/contentProjector.js";
 
 describe("FieldChunkCollector", () => {
   describe("simple fields", () => {
@@ -13,7 +9,12 @@ describe("FieldChunkCollector", () => {
       const schema: Field[] = [{ name: "title", type: "text", localized: true }];
       const data = { title: "Hello" };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -30,7 +31,12 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { title: "Hello", description: "World" };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(2);
@@ -44,7 +50,12 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { title: "Hello", slug: "hello" };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -58,7 +69,12 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { title: "Hello", author: "123" };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -72,7 +88,12 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { title: null, subtitle: undefined };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(0);
@@ -90,7 +111,12 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { meta: { title: "Hello" } };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -115,7 +141,12 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { level1: { level2: { title: "Deep" } } };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -140,7 +171,12 @@ describe("FieldChunkCollector", () => {
         ],
       };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(2);
@@ -160,7 +196,12 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { items: [{ id: "1", text: "Hello" }] };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks[0].idPath).toBe("items.1.text");
@@ -185,7 +226,12 @@ describe("FieldChunkCollector", () => {
         layout: [{ id: "1", blockType: "text", content: "Hello" }],
       };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -217,7 +263,12 @@ describe("FieldChunkCollector", () => {
         ],
       };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(2);
@@ -242,7 +293,12 @@ describe("FieldChunkCollector", () => {
         layout: [{ id: "1", blockType: "unknown", content: "Hello" }],
       };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(0);
@@ -264,7 +320,12 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { title: "Hello" };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -280,7 +341,12 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { title: "Hello" };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -299,7 +365,12 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { title: "Hello", description: "World" };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(2);
@@ -326,7 +397,12 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { section: { items: [{ id: "1", label: "Hello" }] } };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -351,7 +427,12 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { items: [{ id: "1", meta: { title: "Hello" } }] };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -381,7 +462,12 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { hero: { content: [{ id: "1", blockType: "text", body: "Hello" }] } };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -411,7 +497,12 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { layout: [{ id: "1", blockType: "card", meta: { title: "Hello" } }] };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -443,7 +534,12 @@ describe("FieldChunkCollector", () => {
         sections: [{ id: "1", blocks: [{ id: "b1", blockType: "text", content: "Hello" }] }],
       };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -466,7 +562,12 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { seo: { title: "SEO Title" } };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -485,7 +586,12 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { meta: "Value" };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -536,7 +642,12 @@ describe("FieldChunkCollector", () => {
         },
       };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -590,7 +701,12 @@ describe("FieldChunkCollector", () => {
         },
       };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(5);
@@ -609,7 +725,12 @@ describe("FieldChunkCollector", () => {
       const schema: Field[] = [{ name: "title", type: "text", localized: true }];
       const data = { title: "Hello" };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       // Mutate through dataRef
@@ -628,7 +749,12 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { items: [{ id: "1", label: "Original" }] };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       // Mutate through dataRef
@@ -638,281 +764,89 @@ describe("FieldChunkCollector", () => {
     });
   });
 
-  describe("strategy filtering", () => {
-    it("skips fields with existing target values (SkipExisting)", () => {
+  describe("what the selection decides", () => {
+    const addressed: Field[] = [
+      { name: "title", type: "text", localized: true },
+      { name: "meta", type: "group", fields: [{ name: "title", type: "text", localized: true }] },
+      { name: "items", type: "array", fields: [{ name: "label", type: "text", localized: true }] },
+      {
+        name: "layout",
+        type: "blocks",
+        blocks: [{ slug: "text", fields: [{ name: "content", type: "text", localized: true }] }],
+      },
+    ];
+    const addressedData = {
+      title: "Hello",
+      meta: { title: "Meta" },
+      items: [
+        { id: "a1", label: "First" },
+        { id: "a2", label: "Second" },
+      ],
+      layout: [
+        { id: "b1", blockType: "text", content: "One" },
+        { id: "b2", blockType: "text", content: "Two" },
+      ],
+    };
+    const collect = (selection: string[]) =>
+      new FieldChunkCollector(addressed, addressedData, addressedData, selection)
+        .collect()
+        .map((chunk) => String(chunk.idPath));
+
+    it("collects a leaf the selection names", () => {
+      expect(collect(["title"])).toEqual(["title"]);
+    });
+
+    it("leaves out a leaf the selection does not name", () => {
+      expect(collect(["title"])).not.toContain("meta.title");
+    });
+
+    it("collects nothing when the selection names nothing", () => {
+      expect(collect([])).toEqual([]);
+    });
+
+    it("reads the selection by the leaf's address, not by its field name", () => {
+      expect(collect(["meta.title"])).toEqual(["meta.title"]);
+    });
+
+    it("collects one array element's leaf and leaves its sibling alone", () => {
+      expect(collect(["items.a2.label"])).toEqual(["items.a2.label"]);
+    });
+
+    it("collects one block's leaf and leaves its sibling alone", () => {
+      expect(collect(["layout.b1:text.content"])).toEqual(["layout.b1:text.content"]);
+    });
+
+    it("leaves out a named leaf whose source is empty", () => {
       const schema: Field[] = [{ name: "title", type: "text", localized: true }];
-      const filteredData = { title: "Existing" };
-      const sourceData = { title: "Hello" };
-      const targetData = { title: "Existing" };
+      const data = { title: "   " };
 
-      const collector = new FieldChunkCollector(
-        schema,
-        filteredData,
-        sourceData,
-        targetData,
-        skipExistingStrategy
-      );
-      const chunks = collector.collect();
+      const chunks = new FieldChunkCollector(schema, data, data, ["title"]).collect();
 
-      expect(chunks).toHaveLength(0);
-    });
-
-    it("collects fields with empty target values (SkipExisting)", () => {
-      const schema: Field[] = [{ name: "title", type: "text", localized: true }];
-      const filteredData = { title: "Hello" };
-      const sourceData = { title: "Hello" };
-      const targetData = { title: "" };
-
-      const collector = new FieldChunkCollector(
-        schema,
-        filteredData,
-        sourceData,
-        targetData,
-        skipExistingStrategy
-      );
-      const chunks = collector.collect();
-
-      expect(chunks).toHaveLength(1);
-      expect(chunks[0].key).toBe("title");
-    });
-
-    it("handles mixed fields with SkipExisting", () => {
-      const schema: Field[] = [
-        { name: "title", type: "text", localized: true },
-        { name: "description", type: "text", localized: true },
-      ];
-      const filteredData = { title: "Existing", description: "World" };
-      const sourceData = { title: "Hello", description: "World" };
-      const targetData = { title: "Existing", description: "" };
-
-      const collector = new FieldChunkCollector(
-        schema,
-        filteredData,
-        sourceData,
-        targetData,
-        skipExistingStrategy
-      );
-      const chunks = collector.collect();
-
-      expect(chunks).toHaveLength(1);
-      expect(chunks[0].key).toBe("description");
-    });
-
-    it("collects all fields with OverwriteStrategy even when target exists", () => {
-      const schema: Field[] = [{ name: "title", type: "text", localized: true }];
-      const filteredData = { title: "Existing" };
-      const sourceData = { title: "Hello" };
-      const targetData = { title: "Existing" };
-
-      const collector = new FieldChunkCollector(
-        schema,
-        filteredData,
-        sourceData,
-        targetData,
-        strategy
-      );
-      const chunks = collector.collect();
-
-      expect(chunks).toHaveLength(1);
-    });
-
-    it("applies SkipExisting to nested array fields", () => {
-      const schema: Field[] = [
-        {
-          name: "items",
-          type: "array",
-          fields: [{ name: "label", type: "text", localized: true }],
-        },
-      ];
-      const filteredData = {
-        items: [
-          { id: "1", label: "Translated" },
-          { id: "2", label: "Second" },
-        ],
-      };
-      const sourceData = {
-        items: [
-          { id: "1", label: "First" },
-          { id: "2", label: "Second" },
-        ],
-      };
-      const targetData = {
-        items: [
-          { id: "1", label: "Translated" },
-          { id: "2", label: "" },
-        ],
-      };
-
-      const collector = new FieldChunkCollector(
-        schema,
-        filteredData,
-        sourceData,
-        targetData,
-        skipExistingStrategy
-      );
-      const chunks = collector.collect();
-
-      expect(chunks).toHaveLength(1);
-      expect(chunks[0].idPath).toBe("items.2.label");
-    });
-
-    it("applies SkipExisting to nested group fields", () => {
-      const schema: Field[] = [
-        {
-          name: "meta",
-          type: "group",
-          fields: [
-            { name: "title", type: "text", localized: true },
-            { name: "description", type: "text", localized: true },
-          ],
-        },
-      ];
-      const filteredData = { meta: { title: "Translated", description: "World" } };
-      const sourceData = { meta: { title: "Hello", description: "World" } };
-      const targetData = { meta: { title: "Translated", description: "" } };
-
-      const collector = new FieldChunkCollector(
-        schema,
-        filteredData,
-        sourceData,
-        targetData,
-        skipExistingStrategy
-      );
-      const chunks = collector.collect();
-
-      expect(chunks).toHaveLength(1);
-      expect(chunks[0].idPath).toBe("meta.description");
-    });
-
-    it("applies SkipExisting to blocks fields", () => {
-      const schema: Field[] = [
-        {
-          name: "layout",
-          type: "blocks",
-          blocks: [
-            {
-              slug: "text",
-              fields: [{ name: "content", type: "text", localized: true }],
-            },
-          ],
-        },
-      ];
-      const filteredData = {
-        layout: [
-          { id: "1", blockType: "text", content: "Translated" },
-          { id: "2", blockType: "text", content: "World" },
-        ],
-      };
-      const sourceData = {
-        layout: [
-          { id: "1", blockType: "text", content: "Hello" },
-          { id: "2", blockType: "text", content: "World" },
-        ],
-      };
-      const targetData = {
-        layout: [
-          { id: "1", blockType: "text", content: "Translated" },
-          { id: "2", blockType: "text", content: "" },
-        ],
-      };
-
-      const collector = new FieldChunkCollector(
-        schema,
-        filteredData,
-        sourceData,
-        targetData,
-        skipExistingStrategy
-      );
-      const chunks = collector.collect();
-
-      expect(chunks).toHaveLength(1);
-      expect(chunks[0].idPath).toBe("layout.2:text.content");
-    });
-
-    it("pairs the target by id, not position, for reordered localized blocks (SkipExisting)", () => {
-      // Regression: the target locale orders its blocks differently from source. Pairing target by
-      // position would feed shouldTranslate the WRONG block's value — skipping a block that needs
-      // translation and re-translating one that doesn't.
-      const schema: Field[] = [
-        {
-          name: "layout",
-          type: "blocks",
-          blocks: [{ slug: "text", fields: [{ name: "content", type: "text", localized: true }] }],
-        },
-      ];
-      // filteredData is post-reconcile: source order, id stripped, blockType kept.
-      const filteredData = {
-        layout: [
-          { blockType: "text", content: "Hello" },
-          { blockType: "text", content: "World" },
-        ],
-      };
-      const sourceData = {
-        layout: [
-          { id: "1", blockType: "text", content: "Hello" },
-          { id: "2", blockType: "text", content: "World" },
-        ],
-      };
-      // Reordered target: id 2 first (empty → needs translation), id 1 second (already translated).
-      const targetData = {
-        layout: [
-          { id: "2", blockType: "text", content: "" },
-          { id: "1", blockType: "text", content: "Hallo" },
-        ],
-      };
-
-      const collector = new FieldChunkCollector(
-        schema,
-        filteredData,
-        sourceData,
-        targetData,
-        skipExistingStrategy
-      );
-      const chunks = collector.collect();
-
-      expect(chunks).toHaveLength(1);
-      expect(chunks[0].idPath, "positional pairing would have taken index 0").toBe(
-        "layout.2:text.content"
-      );
-      expect(chunks[0].dataRef.content).toBe("World");
+      expect(chunks).toEqual([]);
     });
   });
 
   describe("sourceValue mutation", () => {
-    it("writes sourceValue to filteredData when shouldTranslate is true", () => {
+    it("writes the source value into reconciledData for a selected leaf", () => {
       const schema: Field[] = [{ name: "title", type: "text", localized: true }];
-      const filteredData = { title: "Target value" };
+      const reconciledData = { title: "Target value" };
       const sourceData = { title: "Source value" };
-      const targetData = { title: "Target value" };
 
-      const collector = new FieldChunkCollector(
-        schema,
-        filteredData,
-        sourceData,
-        targetData,
-        strategy
-      );
+      const collector = new FieldChunkCollector(schema, reconciledData, sourceData, ["title"]);
       collector.collect();
 
-      expect(filteredData.title).toBe("Source value");
+      expect(reconciledData.title).toBe("Source value");
     });
 
-    it("does not modify filteredData when shouldTranslate is false", () => {
+    it("leaves reconciledData alone for a leaf the selection left out", () => {
       const schema: Field[] = [{ name: "title", type: "text", localized: true }];
-      const filteredData = { title: "Existing" };
+      const reconciledData = { title: "Existing" };
       const sourceData = { title: "Hello" };
-      const targetData = { title: "Existing" };
 
-      const collector = new FieldChunkCollector(
-        schema,
-        filteredData,
-        sourceData,
-        targetData,
-        skipExistingStrategy
-      );
+      const collector = new FieldChunkCollector(schema, reconciledData, sourceData, []);
       collector.collect();
 
-      expect(filteredData.title).toBe("Existing");
+      expect(reconciledData.title).toBe("Existing");
     });
 
     it("writes sourceValue in nested structures", () => {
@@ -923,20 +857,13 @@ describe("FieldChunkCollector", () => {
           fields: [{ name: "title", type: "text", localized: true }],
         },
       ];
-      const filteredData = { meta: { title: "Target" } };
+      const reconciledData = { meta: { title: "Target" } };
       const sourceData = { meta: { title: "Source" } };
-      const targetData = { meta: { title: "Target" } };
 
-      const collector = new FieldChunkCollector(
-        schema,
-        filteredData,
-        sourceData,
-        targetData,
-        strategy
-      );
+      const collector = new FieldChunkCollector(schema, reconciledData, sourceData, ["meta.title"]);
       collector.collect();
 
-      expect(filteredData.meta.title).toBe("Source");
+      expect(reconciledData.meta.title).toBe("Source");
     });
 
     it("writes sourceValue in array items", () => {
@@ -947,20 +874,15 @@ describe("FieldChunkCollector", () => {
           fields: [{ name: "label", type: "text", localized: true }],
         },
       ];
-      const filteredData = { items: [{ id: "1", label: "Target" }] };
+      const reconciledData = { items: [{ id: "1", label: "Target" }] };
       const sourceData = { items: [{ id: "1", label: "Source" }] };
-      const targetData = { items: [{ id: "1", label: "Target" }] };
 
-      const collector = new FieldChunkCollector(
-        schema,
-        filteredData,
-        sourceData,
-        targetData,
-        strategy
-      );
+      const collector = new FieldChunkCollector(schema, reconciledData, sourceData, [
+        "items.1.label",
+      ]);
       collector.collect();
 
-      expect(filteredData.items[0].label).toBe("Source");
+      expect(reconciledData.items[0].label).toBe("Source");
     });
   });
 
@@ -975,14 +897,19 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { items: [{ id: "1", label: "A" }, "garbage", null] };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
       expect(chunks[0].idPath).toBe("items.1.label");
     });
 
-    it("falls back to empty source/target per item when the target array is shorter (SkipExisting)", () => {
+    it("collects nothing for an element the source array does not reach", () => {
       const schema: Field[] = [
         {
           name: "items",
@@ -990,25 +917,22 @@ describe("FieldChunkCollector", () => {
           fields: [{ name: "label", type: "text", localized: true }],
         },
       ];
-      const filteredData = {
+      const reconciledData = {
         items: [
           { id: "1", label: "A" },
           { id: "2", label: "B" },
         ],
       };
-      const targetData = { items: [{ id: "1", label: "T" }] };
+      const sourceData = { items: [{ id: "1", label: "A" }] };
 
-      const collector = new FieldChunkCollector(
-        schema,
-        filteredData,
-        filteredData,
-        targetData,
-        skipExistingStrategy
-      );
+      const collector = new FieldChunkCollector(schema, reconciledData, sourceData, [
+        "items.1.label",
+        "items.2.label",
+      ]);
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
-      expect(chunks[0].idPath).toBe("items.2.label");
+      expect(chunks[0].idPath).toBe("items.1.label");
     });
   });
 
@@ -1025,68 +949,57 @@ describe("FieldChunkCollector", () => {
       ];
       const data = { title: "Hello", subtitle: "World" };
 
-      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        data,
+        data,
+        everyTranslatableLeaf(data, schema)
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
       expect(chunks[0].key).toBe("subtitle"); // title excluded via translateKit.exclude
     });
   });
+});
 
-  describe("what the strategy is told about a leaf's source", () => {
+/*
+ * A selection arrives from a request, which names addresses as free strings — nothing upstream
+ * checks them against the collection's schema. `isTranslatableLeaf` is the only thing standing
+ * between a named address and a write into a field the host never offered for translation.
+ */
+describe("a selection naming a leaf the schema does not offer", () => {
+  const collected = (schema: Field[], data: Record<string, unknown>, selection: string[]) =>
+    new FieldChunkCollector(schema, data, data, selection).collect();
+
+  it("sends nothing for a field that is not localized", () => {
+    const schema: Field[] = [{ name: "slug", type: "text" }];
+
+    expect(collected(schema, { slug: "hello-world" }, ["slug"])).toEqual([]);
+  });
+
+  it("sends nothing for a field the host excluded from translation", () => {
     const schema: Field[] = [
-      { name: "title", type: "text", localized: true },
-      {
-        name: "items",
-        type: "array",
-        fields: [{ name: "label", type: "text", localized: true }],
-      },
+      { name: "title", type: "text", localized: true, custom: { translateKit: { exclude: true } } },
     ];
-    const data = { title: "Hello", items: [{ id: "a1", label: "First" }] };
 
-    it("reads the map by the leaf's address and hands the answer to the strategy", () => {
-      const asked: (boolean | undefined)[] = [];
-      const spy = {
-        shouldTranslate: (ctx: { sourceChanged?: boolean }) => {
-          asked.push(ctx.sourceChanged);
-          return true;
-        },
-      };
+    expect(collected(schema, { title: "Hello" }, ["title"])).toEqual([]);
+  });
 
-      new FieldChunkCollector(schema, data, data, {}, spy, {
-        title: true,
-        "items.a1.label": false,
-      }).collect();
+  it("sends nothing for a field type this package does not translate", () => {
+    const schema: Field[] = [{ name: "count", type: "number", localized: true }];
 
-      expect(asked).toEqual([true, false]);
-    });
+    expect(collected(schema, { count: 7 }, ["count"])).toEqual([]);
+  });
 
-    it("tells the strategy nothing about a leaf the map has no entry for", () => {
-      const asked: (boolean | undefined)[] = [];
-      const spy = {
-        shouldTranslate: (ctx: { sourceChanged?: boolean }) => {
-          asked.push(ctx.sourceChanged);
-          return true;
-        },
-      };
+  it("still sends the sibling the schema does offer", () => {
+    const schema: Field[] = [
+      { name: "slug", type: "text" },
+      { name: "title", type: "text", localized: true },
+    ];
 
-      new FieldChunkCollector(schema, data, data, {}, spy, { title: true }).collect();
+    const chunks = collected(schema, { slug: "hello", title: "Hello" }, ["slug", "title"]);
 
-      expect(asked).toEqual([true, undefined]);
-    });
-
-    it("tells the strategy nothing when no map was supplied", () => {
-      const asked: (boolean | undefined)[] = [];
-      const spy = {
-        shouldTranslate: (ctx: { sourceChanged?: boolean }) => {
-          asked.push(ctx.sourceChanged);
-          return true;
-        },
-      };
-
-      new FieldChunkCollector(schema, data, data, {}, spy).collect();
-
-      expect(asked).toEqual([undefined, undefined]);
-    });
+    expect(chunks.map((chunk) => chunk.idPath)).toEqual(["title"]);
   });
 });

@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import type { FieldLike } from "../../kernel/field-traversal/types.js";
 
 import { projectTranslatableContent } from "./contentProjector.js";
+import type { LeafAddress } from "./idPath.js";
 
 /**
  * A leaf's source hash. Branded so a recorded claim cannot be assigned where a hash is required
@@ -11,7 +12,7 @@ import { projectTranslatableContent } from "./contentProjector.js";
 export type SourceHash = string & { readonly __brand: "SourceHash" };
 
 /** Hash of each translatable leaf's source text, keyed by the leaf's `IdPath`. */
-export type FieldFingerprints = Readonly<Record<string, SourceHash>>;
+export type FieldFingerprints = Readonly<Record<LeafAddress, SourceHash>>;
 
 /**
  * Truncated sha256: a change detector, never a security token. Stored receipts are parsed against

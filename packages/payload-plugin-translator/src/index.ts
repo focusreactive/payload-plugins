@@ -13,6 +13,7 @@ export type { TranslationProvenanceRecord } from "./core/index.js";
 
 // Access control
 export type { AccessGuard, AccessGuardRequest } from "./types/AccessGuard.js";
+export type { TranslatorAction } from "./types/TranslatorAction.js";
 export { AnyAccessGuard } from "./server/shared/access/AnyAccessGuard.js";
 
 // Translation provider port (from the dependency-free core)
@@ -80,7 +81,7 @@ export type { FieldTranslationConfig } from "./field-config.js";
 // collection with `withAutoTranslate`; requires a working job runner/autorun to execute (see the
 // JSDoc for the Vercel/serverless caveat). Since v0.9.0.
 export { withAutoTranslate } from "./auto-translate-config.js";
-export type { AutoTranslateConfig, AutoTranslateStrategy } from "./auto-translate-config.js";
+export type { AutoTranslateConfig } from "./auto-translate-config.js";
 
 export { createOpenAIProvider, OpenAITranslationProvider } from "./translation-providers/index.js";
 export type { OpenAIProviderConfig } from "./translation-providers/index.js";

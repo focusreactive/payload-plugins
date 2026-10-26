@@ -66,7 +66,6 @@ describe("PayloadJobsTaskRunner", () => {
     collectionId: "doc-123",
     sourceLng: "en",
     targetLng: "de",
-    strategy: "overwrite",
     publishOnTranslation: false,
     ...overrides,
   });
@@ -79,7 +78,6 @@ describe("PayloadJobsTaskRunner", () => {
       collection: { relationTo: "posts" as CollectionSlug, value: "doc-123" },
       source_lng: "en",
       target_lng: "de",
-      strategy: "overwrite",
     },
     ...overrides,
   });
@@ -91,9 +89,8 @@ describe("PayloadJobsTaskRunner", () => {
         collection_slug: "posts",
         collection_id: "doc-123",
         source_lng: "en",
-        strategy: "overwrite",
         publish_on_translation: false,
-        target_lngs: ["de"],
+        targets: [{ lng: "de", filters: [] }],
       },
       ...overrides,
     });
@@ -128,8 +125,10 @@ describe("PayloadJobsTaskRunner", () => {
           collection_slug: "posts",
           collection_id: "doc-123",
           source_lng: "en",
-          target_lngs: ["de", "fr"],
-          strategy: "overwrite",
+          targets: [
+            { lng: "de", filters: [] },
+            { lng: "fr", filters: [] },
+          ],
           publish_on_translation: false,
           requester_id: null,
           requester_collection: null,
@@ -197,7 +196,18 @@ describe("PayloadJobsTaskRunner", () => {
       const live = createLiveJob({ id: "live-job" });
       // First `find` builds the plan, the second verifies the write.
       mockPayload.find.mockResolvedValueOnce({ docs: [live] }).mockResolvedValueOnce({
-        docs: [{ ...live, input: { ...live.input, target_lngs: ["de", "fr"] } }],
+        docs: [
+          {
+            ...live,
+            input: {
+              ...live.input,
+              targets: [
+                { lng: "de", filters: [] },
+                { lng: "fr", filters: [] },
+              ],
+            },
+          },
+        ],
       });
 
       await runner.enqueue([createInput({ targetLng: "fr" })]);
@@ -209,9 +219,11 @@ describe("PayloadJobsTaskRunner", () => {
         collection_slug: "posts",
         collection_id: "doc-123",
         source_lng: "en",
-        strategy: "overwrite",
         publish_on_translation: false,
-        target_lngs: ["de", "fr"],
+        targets: [
+          { lng: "de", filters: [] },
+          { lng: "fr", filters: [] },
+        ],
       });
       expect(mockPayload.jobs.queue).not.toHaveBeenCalled();
     });
@@ -225,8 +237,7 @@ describe("PayloadJobsTaskRunner", () => {
               collection_slug: "posts",
               collection_id: "doc-999",
               source_lng: "en",
-              strategy: "overwrite",
-              target_lngs: ["de"],
+              targets: [{ lng: "de", filters: [] }],
             },
           }),
         ],
@@ -243,7 +254,18 @@ describe("PayloadJobsTaskRunner", () => {
         id: "live-job",
       });
       mockPayload.find.mockResolvedValueOnce({ docs: [live] }).mockResolvedValueOnce({
-        docs: [{ ...live, input: { ...live.input, target_lngs: ["de", "fr"] } }],
+        docs: [
+          {
+            ...live,
+            input: {
+              ...live.input,
+              targets: [
+                { lng: "de", filters: [] },
+                { lng: "fr", filters: [] },
+              ],
+            },
+          },
+        ],
       });
 
       await runner.enqueue([createInput({ targetLng: "fr" })]);
@@ -259,7 +281,13 @@ describe("PayloadJobsTaskRunner", () => {
           {
             ...live,
             completedAt: "2026-01-01T00:00:01Z",
-            input: { ...live.input, target_lngs: ["de", "fr"] },
+            input: {
+              ...live.input,
+              targets: [
+                { lng: "de", filters: [] },
+                { lng: "fr", filters: [] },
+              ],
+            },
           },
         ],
       });
@@ -269,19 +297,40 @@ describe("PayloadJobsTaskRunner", () => {
       expect(mockPayload.jobs.queue).toHaveBeenCalledTimes(1);
       expect(mockPayload.jobs.queue).toHaveBeenCalledWith(
         expect.objectContaining({
-          input: expect.objectContaining({ target_lngs: ["fr"] }),
+          input: expect.objectContaining({ targets: [{ lng: "fr", filters: [] }] }),
         })
       );
     });
 
     it("retries the write once when a concurrent append replaced the list", async () => {
       const live = createLiveJob({ id: "live-job" });
-      const clobbered = { ...live, input: { ...live.input, target_lngs: ["de", "es"] } };
+      const clobbered = {
+        ...live,
+        input: {
+          ...live.input,
+          targets: [
+            { lng: "de", filters: [] },
+            { lng: "es", filters: [] },
+          ],
+        },
+      };
       mockPayload.find
         .mockResolvedValueOnce({ docs: [live] })
         .mockResolvedValueOnce({ docs: [clobbered] })
         .mockResolvedValueOnce({
-          docs: [{ ...live, input: { ...live.input, target_lngs: ["de", "es", "fr"] } }],
+          docs: [
+            {
+              ...live,
+              input: {
+                ...live.input,
+                targets: [
+                  { lng: "de", filters: [] },
+                  { lng: "es", filters: [] },
+                  { lng: "fr", filters: [] },
+                ],
+              },
+            },
+          ],
         });
 
       await runner.enqueue([createInput({ targetLng: "fr" })]);
@@ -292,7 +341,16 @@ describe("PayloadJobsTaskRunner", () => {
 
     it("gives the locale its own job when even the retry does not land it", async () => {
       const live = createLiveJob({ id: "live-job" });
-      const withoutIt = { ...live, input: { ...live.input, target_lngs: ["de", "es"] } };
+      const withoutIt = {
+        ...live,
+        input: {
+          ...live.input,
+          targets: [
+            { lng: "de", filters: [] },
+            { lng: "es", filters: [] },
+          ],
+        },
+      };
       mockPayload.find
         .mockResolvedValueOnce({ docs: [live] })
         .mockResolvedValueOnce({ docs: [withoutIt] })
@@ -302,7 +360,7 @@ describe("PayloadJobsTaskRunner", () => {
 
       expect(mockPayload.jobs.queue).toHaveBeenCalledWith(
         expect.objectContaining({
-          input: expect.objectContaining({ target_lngs: ["fr"] }),
+          input: expect.objectContaining({ targets: [{ lng: "fr", filters: [] }] }),
         })
       );
     });
@@ -477,8 +535,10 @@ describe("PayloadJobsTaskRunner", () => {
           collection_slug: "posts",
           collection_id: "doc-123",
           source_lng: "en",
-          target_lngs: ["de", "fr"],
-          strategy: "overwrite",
+          targets: [
+            { lng: "de", filters: [] },
+            { lng: "fr", filters: [] },
+          ],
         },
         log: [
           { state: "succeeded", completedAt: "2024-01-01T00:01:00Z", input: { target_lng: "de" } },

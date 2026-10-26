@@ -7,7 +7,6 @@ const runOf = (targets: string[]) => ({
     collection_slug: "docs",
     collection_id: "1",
     source_lng: "en",
-    strategy: "overwrite",
     target_lngs: targets,
   },
 });
@@ -51,8 +50,8 @@ describe("localesAsTheyStand", () => {
       collection_slug: "docs",
       collection_id: "1",
       source_lng: "en",
-      strategy: "overwrite",
       target_lng: "de",
+      filters: [],
     });
   });
 

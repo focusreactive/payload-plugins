@@ -716,7 +716,7 @@ export interface Comment {
         id?: string | null;
       }[]
     | null;
-  author: number | User;
+  author?: (number | null) | User;
   isResolved?: boolean | null;
   resolvedBy?: (number | null) | User;
   resolvedAt?: string | null;
@@ -747,7 +747,6 @@ export interface TranslatorProvenance {
   sourceLocale: string;
   sourceFingerprint: string;
   translatedAt: string;
-  dismissedFingerprint?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1298,7 +1297,6 @@ export interface TranslatorProvenanceSelect<T extends boolean = true> {
   sourceLocale?: T;
   sourceFingerprint?: T;
   translatedAt?: T;
-  dismissedFingerprint?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1461,7 +1459,15 @@ export interface TaskTranslateDocument {
         } | null);
     source_lng: string;
     target_lng: string;
-    strategy: string;
+    filters?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
     publish_on_translation?: boolean | null;
   };
   output?: unknown;
@@ -1516,9 +1522,8 @@ export interface WorkflowTranslateDocumentLocales {
           value: number | Playground;
         } | null);
     source_lng: string;
-    strategy: string;
     publish_on_translation?: boolean | null;
-    target_lngs:
+    targets:
       | {
           [k: string]: unknown;
         }

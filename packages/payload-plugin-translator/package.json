@@ -34,6 +34,10 @@
     "./client/*": {
       "import": "./dist/client/*.js",
       "types": "./dist/client/*.d.ts"
+    },
+    "./testing": {
+      "import": "./dist/testing/index.js",
+      "types": "./dist/testing/index.d.ts"
     }
   },
   "files": [
@@ -63,7 +67,8 @@
     "@payloadcms/richtext-lexical": "^3.76.0",
     "@payloadcms/ui": "^3.76.0",
     "payload": "^3.76.0",
-    "react": "^18.0.0 || ^19.0.0"
+    "react": "^18.0.0 || ^19.0.0",
+    "vitest": "^3.0.0"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -93,5 +98,10 @@
     "react": "19.0.0",
     "typescript": "5.5.2",
     "vitest": "3.2.4"
+  },
+  "peerDependenciesMeta": {
+    "vitest": {
+      "optional": true
+    }
   }
 }

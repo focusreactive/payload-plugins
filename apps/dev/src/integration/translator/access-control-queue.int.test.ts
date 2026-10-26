@@ -38,7 +38,12 @@ const jobsFor = async (documentId: string) => {
   );
 };
 
-const enqueueAs = async (id: string, user: { id: string; collection: string } | null) => {
+type Assignment = { handle: string };
+
+const enqueueAs = async (
+  id: string,
+  user: { id: string; collection: string } | null
+): Promise<Assignment[]> => {
   const res = await callEndpoint(ctx.payload, "post", "/translate/enqueue", {
     user,
     body: {
@@ -46,11 +51,12 @@ const enqueueAs = async (id: string, user: { id: string; collection: string } | 
       target_lng: ["de"],
       collection_slug: "docs",
       collection_id: [id],
-      strategy: "overwrite",
+
       publish_on_translation: false,
     },
   });
   expect(res.status).toBe(200);
+  return (res.data as { data: { assignments?: Assignment[] } }).data.assignments ?? [];
 };
 
 const seed = async (title: string, tagline: string) => {
@@ -128,5 +134,18 @@ describe("a queued translation is decided by whoever asked for it", () => {
     expect(de.title, "an unattributed write is not checked, so the rule does not apply").toBe(
       "de:Legacy"
     );
+  });
+
+  it("will not run on demand a row that recorded nobody — its write would skip every field rule", async () => {
+    const id = await seed("Orphan", "Orphan line");
+    const [assignment] = await enqueueAs(id, null);
+    expect(assignment, "nothing was queued, so the run route was never reached").toBeDefined();
+
+    const res = await callEndpoint(ctx.payload, "post", "/translate/run/:id", {
+      user: editor,
+      routeParams: { id: String(assignment?.handle) },
+    });
+
+    expect(res.status).toBe(403);
   });
 });

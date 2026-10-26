@@ -10,7 +10,6 @@ describe("taskFromAssignment", () => {
       collectionId: "doc-1",
       sourceLng: "en",
       targetLng: "de",
-      strategy: "skip_existing",
       handle: "run-9",
     };
 
@@ -19,7 +18,6 @@ describe("taskFromAssignment", () => {
       id: "doc-1",
       sourceLng: "en",
       targetLng: "de",
-      strategy: "skip_existing",
       handle: "run-9",
     });
   });

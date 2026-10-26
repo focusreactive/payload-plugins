@@ -4,8 +4,8 @@ import { applyTranslations, collectTranslationTargets } from "../../core/travers
 import type { FieldLike } from "../../core/kernel/field-traversal/index.js";
 import { addressesOf } from "./addresses.js";
 import { FieldChunkCollector } from "../../core/translation-pipeline/stages/field-collector/index.js";
+import { projectTranslatableContent } from "../../core/domain/content-projection/contentProjector.js";
 import { DataReconciler } from "../../core/translation-pipeline/stages/data-reconciler/index.js";
-import { OverwriteStrategy } from "../../core/translation-pipeline/strategies/index.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
 
 type Doc = Record<string, unknown>;
@@ -13,14 +13,13 @@ type Walked = { texts: unknown[]; addresses: string[]; document: Doc };
 
 const translated = (text: unknown): string => `[de] ${String(text)}`;
 
-const viaCollector = (schema: FieldLike[], document: Doc, data?: Doc, target: Doc = {}): Walked => {
+const viaCollector = (schema: FieldLike[], document: Doc, data?: Doc): Walked => {
   const working = data ?? structuredClone(document);
   const chunks = new FieldChunkCollector(
     schema,
     working,
     document,
-    target,
-    new OverwriteStrategy()
+    projectTranslatableContent(document, schema).map((entry) => String(entry.idPath))
   ).collect();
 
   const texts = chunks.map((chunk) => chunk.dataRef[chunk.key]);
@@ -326,36 +325,21 @@ describe("the same agreement, on the shape the pipeline actually produces", () =
     new DataReconciler(testCase.schema).reconcile(testCase.source, testCase.target);
 
   it.each(RECONCILED.map((c) => [c.name, c] as const))("%s — same text", (_n, testCase) => {
-    const old = viaCollector(
-      testCase.schema,
-      testCase.source,
-      reconciled(testCase),
-      testCase.target
-    );
+    const old = viaCollector(testCase.schema, testCase.source, reconciled(testCase));
     const next = viaLanguage(testCase.schema, testCase.source, reconciled(testCase));
 
     expect(next.texts).toEqual(old.texts);
   });
 
   it.each(RECONCILED.map((c) => [c.name, c] as const))("%s — same addresses", (_n, testCase) => {
-    const old = viaCollector(
-      testCase.schema,
-      testCase.source,
-      reconciled(testCase),
-      testCase.target
-    );
+    const old = viaCollector(testCase.schema, testCase.source, reconciled(testCase));
     const next = viaLanguage(testCase.schema, testCase.source, reconciled(testCase));
 
     expect(next.addresses).toEqual(old.addresses);
   });
 
   it.each(RECONCILED.map((c) => [c.name, c] as const))("%s — same document", (_n, testCase) => {
-    const old = viaCollector(
-      testCase.schema,
-      testCase.source,
-      reconciled(testCase),
-      testCase.target
-    );
+    const old = viaCollector(testCase.schema, testCase.source, reconciled(testCase));
     const next = viaLanguage(testCase.schema, testCase.source, reconciled(testCase));
 
     expect(next.document).toEqual(old.document);

@@ -18,7 +18,6 @@ describe("CancelByCollectionHandler", () => {
       collectionId: "doc-123",
       sourceLng: "en",
       targetLng: "de",
-      strategy: "overwrite",
       publishOnTranslation: false,
     },
     createdAt: "2024-01-01T00:00:00Z",
@@ -38,6 +37,7 @@ describe("CancelByCollectionHandler", () => {
       enqueue: vi.fn(),
       cancel: vi.fn().mockResolvedValue(undefined),
       run: vi.fn(),
+      assignmentsOf: vi.fn().mockResolvedValue([]),
       findByCollection: vi.fn().mockResolvedValue([]),
     };
 

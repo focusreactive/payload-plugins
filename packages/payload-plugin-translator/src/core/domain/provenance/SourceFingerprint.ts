@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import type { SourceHash } from "../content-projection/computeFieldFingerprints.js";
 import { SOURCE_HASH_PATTERN } from "../content-projection/computeFieldFingerprints.js";
+import type { LeafAddress } from "../content-projection/idPath.js";
 
 /**
  * A leaf no run has answered — sent and never got back, or declined by an older version. It reads
@@ -17,16 +18,7 @@ export type RecordedClaim = SourceHash | typeof UNANSWERED;
  * Keyed by leaf address, holding every leaf the run saw — sent or not. An absent address is a leaf
  * that appeared after the translation.
  */
-export type RecordedFingerprints = Readonly<Record<string, RecordedClaim>>;
-
-/**
- * What a receipt stores about its source. `document` is the sha256 written before per-leaf
- * fingerprints, or any stored value that does not parse as a per-leaf map: it says the document
- * moved without saying where.
- */
-export type SourceFingerprint =
-  | { kind: "document"; hash: string }
-  | { kind: "fields"; hashes: RecordedFingerprints };
+export type RecordedFingerprints = Readonly<Record<LeafAddress, RecordedClaim>>;
 
 const storedHash = z
   .string()
@@ -38,7 +30,6 @@ const storedHash = z
  * value outside the schema degrades the whole map ({@link parseSourceFingerprint}).
  */
 const legacyDecline = z.null().transform(() => UNANSWERED);
-
 const recordedMap = z.record(z.union([storedHash, z.literal(UNANSWERED), legacyDecline]));
 
 const asFieldMap = (stored: string): RecordedFingerprints | null => {
@@ -51,24 +42,17 @@ const asFieldMap = (stored: string): RecordedFingerprints | null => {
 };
 
 /**
- * Anything that is not a per-field map — including a map with one value outside the schema — reads
- * as the legacy digest: deliberately not an error, it never matches and answers no leaf. The column
- * is plain text, so this parse is its only check. `null` only for an empty column.
+ * `null` when the column claims nothing about any leaf: empty, not a per-leaf map (a pre-0.15.0
+ * document digest included — docs/DEPRECATIONS.md#the-document-wide-digest-stops-being-read), or a
+ * map with any value outside the schema, which fails whole rather than per leaf.
  */
 export function parseSourceFingerprint(
   stored: string | null | undefined
-): SourceFingerprint | null {
+): RecordedFingerprints | null {
   if (typeof stored !== "string" || stored.length === 0) return null;
-
-  const hashes = asFieldMap(stored);
-  return hashes === null ? { kind: "document", hash: stored } : { kind: "fields", hashes };
+  return asFieldMap(stored);
 }
 
-export function serializeSourceFingerprint(fingerprint: SourceFingerprint): string {
-  switch (fingerprint.kind) {
-    case "document":
-      return fingerprint.hash;
-    case "fields":
-      return JSON.stringify(fingerprint.hashes);
-  }
+export function serializeSourceFingerprint(fingerprint: RecordedFingerprints): string {
+  return JSON.stringify(fingerprint);
 }

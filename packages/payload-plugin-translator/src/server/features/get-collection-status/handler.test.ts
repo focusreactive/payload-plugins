@@ -27,7 +27,6 @@ describe("GetCollectionStatusHandler", () => {
       collectionId,
       sourceLng: "en",
       targetLng,
-      strategy: "overwrite",
       publishOnTranslation: false,
     },
     createdAt: "2024-01-01T00:00:00Z",
@@ -48,6 +47,7 @@ describe("GetCollectionStatusHandler", () => {
       enqueue: vi.fn(),
       cancel: vi.fn(),
       run: vi.fn(),
+      assignmentsOf: vi.fn().mockResolvedValue([]),
       findByCollection: vi.fn().mockResolvedValue([]),
     };
 

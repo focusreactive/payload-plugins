@@ -21,6 +21,6 @@ export function createEnqueueRoute(
   return {
     path: `${basePath}/enqueue`,
     method: "post",
-    handler: withAccessCheck(withErrorHandler(handler.handle.bind(handler)), access),
+    handler: withAccessCheck(withErrorHandler(handler.handle.bind(handler)), access, "enqueue"),
   };
 }

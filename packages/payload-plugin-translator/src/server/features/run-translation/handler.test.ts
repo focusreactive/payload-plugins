@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, PayloadRequest } from "payload";
-import { RunTranslationHandler } from "./handler.js";
+
 import type { TaskRunnerFactory, TaskRunner } from "../../modules/task-runner/index.js";
 
+vi.mock("../../shared/access/refusedTargets.js", () => ({
+  refusedTargets: vi.fn().mockResolvedValue(new Set<string>()),
+}));
+
+const { RunTranslationHandler } = await import("./handler.js");
+
 describe("RunTranslationHandler", () => {
-  let handler: RunTranslationHandler;
+  let handler: InstanceType<typeof RunTranslationHandler>;
   let mockTaskRunner: TaskRunner;
   let mockTaskRunnerFactory: TaskRunnerFactory;
 
@@ -20,6 +26,14 @@ describe("RunTranslationHandler", () => {
       cancel: vi.fn(),
       run: vi.fn().mockResolvedValue({ success: true }),
       findByCollection: vi.fn(),
+      assignmentsOf: vi.fn().mockResolvedValue([
+        {
+          handle: "task-456",
+          collectionSlug: "posts",
+          collectionId: "d1",
+          startedBy: { id: "anna", collection: "users" },
+        },
+      ]),
     };
 
     mockTaskRunnerFactory = {

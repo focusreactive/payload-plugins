@@ -9,7 +9,6 @@ const inputOf = (locales: Partial<StoredInput>): StoredInput => ({
   collection_slug: "posts",
   collection_id: "doc-1",
   source_lng: "en",
-  strategy: "overwrite",
   publish_on_translation: false,
   ...locales,
 });
@@ -18,13 +17,21 @@ const run = (overrides: Partial<PayloadJob> = {}): PayloadJob => ({
   id: 7,
   createdAt: "2026-10-09T10:00:00Z",
   updatedAt: "2026-10-09T10:01:00Z",
-  input: inputOf({ target_lngs: ["de"] }),
+  input: inputOf({ targets: [{ lng: "de", filters: [] }] }),
   ...overrides,
 });
 
 describe("normalizeJobLocales", () => {
   it("gives a run one row per entry of its locale list, in that order", () => {
-    const threeLocales = run({ input: inputOf({ target_lngs: ["de", "fr", "es"] }) });
+    const threeLocales = run({
+      input: inputOf({
+        targets: [
+          { lng: "de", filters: [] },
+          { lng: "fr", filters: [] },
+          { lng: "es", filters: [] },
+        ],
+      }),
+    });
 
     expect(normalizeJobLocales(threeLocales).map((task) => task.input.targetLng)).toEqual([
       "de",
@@ -34,7 +41,15 @@ describe("normalizeJobLocales", () => {
   });
 
   it("reproduces a repeated locale as two rows", () => {
-    const repeated = run({ input: inputOf({ target_lngs: ["de", "fr", "de"] }) });
+    const repeated = run({
+      input: inputOf({
+        targets: [
+          { lng: "de", filters: [] },
+          { lng: "fr", filters: [] },
+          { lng: "de", filters: [] },
+        ],
+      }),
+    });
 
     expect(
       normalizeJobLocales(repeated).map((task) => task.input.targetLng),
@@ -49,7 +64,7 @@ describe("normalizeJobLocales", () => {
   });
 
   it("gives a job with an empty locale list one row for the single locale it carries", () => {
-    const emptyList = run({ input: inputOf({ target_lngs: [], target_lng: "de" }) });
+    const emptyList = run({ input: inputOf({ targets: [], target_lng: "de" }) });
 
     expect(normalizeJobLocales(emptyList).map((task) => task.input.targetLng)).toEqual(["de"]);
   });
@@ -156,7 +171,15 @@ describe("normalizeJobLocales", () => {
   });
 
   it("gives every row of one run the same id", () => {
-    const threeLocales = run({ input: inputOf({ target_lngs: ["de", "fr", "es"] }) });
+    const threeLocales = run({
+      input: inputOf({
+        targets: [
+          { lng: "de", filters: [] },
+          { lng: "fr", filters: [] },
+          { lng: "es", filters: [] },
+        ],
+      }),
+    });
     const ids = normalizeJobLocales(threeLocales).map((task) => task.id);
 
     expect(new Set(ids).size).toBe(1);

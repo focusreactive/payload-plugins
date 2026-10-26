@@ -3,7 +3,15 @@ import type { Payload, CollectionSlug } from "payload";
 import type { TaskFilter, TaskRunner } from "../TaskRunner.interface.js";
 import { toTaskFilter } from "../toTaskFilter.js";
 import type { TaskRunnerContext } from "../TaskRunnerProvider.interface.js";
-import type { EnqueueAssignment, Task, TaskInput, RunResult, ID } from "../types.js";
+import type {
+  EnqueueAssignment,
+  JobAssignment,
+  JobHandle,
+  Task,
+  TaskInput,
+  RunResult,
+  ID,
+} from "../types.js";
 import type { LazyMap } from "../../../shared/utils/index.js";
 import type { RequestScope } from "../../../shared/payload/RequestScope.shapes.js";
 import { swallowOrThrow } from "../../../shared/payload/swallowOrThrow.js";
@@ -46,7 +54,6 @@ export class SyncTaskRunner implements TaskRunner {
         collectionId: input.collectionId,
         sourceLng: input.sourceLng,
         targetLng: input.targetLng,
-        strategy: input.strategy,
         handle: task.id,
       };
       assigned.push(assignment);
@@ -70,7 +77,7 @@ export class SyncTaskRunner implements TaskRunner {
               collectionId: input.collectionId,
               sourceLng: input.sourceLng,
               targetLng: input.targetLng,
-              strategy: input.strategy,
+              filters: input.filters,
               publishOnTranslation: input.publishOnTranslation,
               previousAttempts: NEVER_RETRIED,
             },
@@ -93,6 +100,23 @@ export class SyncTaskRunner implements TaskRunner {
   /** No-op, and reports nothing: every assignment settled inside `enqueue`, so none is still owed. */
   cancel(_taskIds: string[]): Promise<void> {
     return Promise.resolve();
+  }
+
+  async assignmentsOf(handles: readonly JobHandle[]): Promise<JobAssignment[]> {
+    const wanted = new Set(handles);
+    const found: JobAssignment[] = [];
+
+    for (const [, task] of this.tasks) {
+      if (!wanted.has(task.id)) continue;
+      found.push({
+        handle: task.id,
+        collectionSlug: task.input.collectionSlug,
+        collectionId: task.input.collectionId,
+        startedBy: null,
+      });
+    }
+
+    return found;
   }
 
   async run(_taskId: string): Promise<RunResult> {

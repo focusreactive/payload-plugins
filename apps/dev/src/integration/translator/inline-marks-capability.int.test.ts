@@ -73,7 +73,7 @@ describe("a provider silent about marks", () => {
         target_lng: "de",
         collection_slug: "nested",
         collection_id: [id],
-        strategy: "overwrite",
+
         publish_on_translation: true,
       },
     });

@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 
 import { projectTranslatableContent } from "../../../domain/content-projection/contentProjector.js";
 import type { FieldLike } from "../../../kernel/field-traversal/types.js";
-import { OverwriteStrategy } from "../../strategies/index.js";
 import type { FieldChunk } from "../../types/index.js";
 import { PlainTextExpander } from "../text-expander/PlainTextExpander.js";
 import { RichTextExpander } from "../text-expander/RichTextExpander.js";
@@ -83,27 +82,30 @@ const asReconciled = (value: unknown): unknown => {
 
 const filtered = () => asReconciled(structuredClone(doc)) as Record<string, unknown>;
 
+// Fed back as the selection: a leaf the collector addresses differently matches nothing and goes
+// missing below, so the guard still fails on drift.
+const asTheProjectionNamesThem = (): string[] =>
+  projectTranslatableContent(doc, schema).map((entry) => String(entry.idPath));
+
 const pipelineAddresses = (): string[] =>
   new FieldChunkCollector(
     schema as unknown as Field[],
     filtered(),
     structuredClone(doc),
-    {},
-    new OverwriteStrategy()
+    asTheProjectionNamesThem()
   )
     .collect()
     .map((chunk) => chunk.idPath)
     .sort();
 
 const pipelineFieldTexts = (): string[] => {
-  const filteredData = filtered();
+  const reconciledData = filtered();
   const source = structuredClone(doc);
   const chunks: FieldChunk[] = new FieldChunkCollector(
     schema as unknown as Field[],
-    filteredData,
+    reconciledData,
     source,
-    {}, // empty target → Overwrite translates every present source value
-    new OverwriteStrategy()
+    asTheProjectionNamesThem()
   ).collect();
 
   // Per-node expanders only, deliberately: a container expander sends marked strings

@@ -3,7 +3,7 @@ import type { CollectionSlug } from "payload";
 import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
-import type { ChainMember } from "../../modules/translation-run/index.js";
+import type { ChainMember, Criteria } from "../../modules/translation-run/index.js";
 import { LifecycleNotifier, taskFromAssignment } from "../../modules/lifecycle/index.js";
 import type { TranslationLifecycleCallbacks } from "../../modules/lifecycle/index.js";
 import type {
@@ -12,26 +12,28 @@ import type {
   TaskRunnerProvider,
 } from "../../modules/task-runner/index.js";
 
-import { TranslateDocumentHandler } from "./handler.js";
+import { translateDocument } from "./translateDocument.js";
 
 type WireTranslateRunnerParams = {
   translationProvider: TranslationProvider;
   schemaMap: CollectionSchemaMap;
   modules: readonly ChainMember[];
+  criteria?: Criteria;
   runner: TaskRunnerProvider;
   lifecycle: TranslationLifecycleCallbacks;
   collections: CollectionSlug[];
 };
 
 /**
- * Assemble the document-translation task pipeline: the {@link TranslateDocumentHandler}, the runner
- * context that turns what the runner reports into the host's callbacks, the runner's config
- * modifier, and the per-request {@link TaskRunnerFactory}.
+ * Assemble the document-translation task pipeline: the runner context that hands each job to
+ * {@link translateDocument} and turns what the runner reports into the host's callbacks, the
+ * runner's config modifier, and the per-request {@link TaskRunnerFactory}.
  */
 export function wireTranslateRunner({
   translationProvider,
   schemaMap,
   modules,
+  criteria,
   runner,
   lifecycle,
   collections,
@@ -39,24 +41,10 @@ export function wireTranslateRunner({
   taskRunnerFactory: TaskRunnerFactory;
   configModifier: ConfigModifier;
 } {
-  const translateHandler = new TranslateDocumentHandler(translationProvider, schemaMap, modules);
+  const deps = { translationProvider, schemaMap, modules, criteria };
 
   const runnerContext: TaskRunnerContext = {
-    handler: async (payload, input, scope) => {
-      await translateHandler.handle(
-        payload,
-        {
-          collection: input.collection,
-          collectionId: input.collectionId,
-          sourceLng: input.sourceLng,
-          targetLng: input.targetLng,
-          strategy: input.strategy,
-          publishOnTranslation: input.publishOnTranslation,
-          previousAttempts: input.previousAttempts,
-        },
-        scope
-      );
-    },
+    handler: (payload, input, scope) => translateDocument(deps, payload, input, scope ?? {}),
     collections,
     report: (payload, assignment, event) => {
       const notifier = new LifecycleNotifier(lifecycle, payload.logger);

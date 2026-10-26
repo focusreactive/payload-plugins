@@ -1,6 +1,5 @@
 import type { CollectionSlug, Payload } from "payload";
 
-import type { ChangedLeaves } from "../../../core/domain/provenance/index.js";
 import type { LeafOutcome } from "../../../core/translation-pipeline/types/index.js";
 import type { ID } from "../task-runner/types.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
@@ -26,7 +25,6 @@ export type BeforeTranslation = {
   readonly sourceData: Record<string, unknown>;
   readonly previousAttempts: number;
   readonly moduleState: ModuleState;
-  readonly sourceChangedByLeaf?: ChangedLeaves;
 };
 
 export type AfterSave = {
@@ -41,7 +39,6 @@ export type AfterSave = {
 /** What a module adds to the run; the chain reads nothing else back from it. */
 export type RunContribution = {
   readonly moduleState?: ModuleState;
-  readonly sourceChangedByLeaf?: ChangedLeaves;
 };
 
 /** A module must survive a replay: a retried job runs `beforeTranslation` again. */

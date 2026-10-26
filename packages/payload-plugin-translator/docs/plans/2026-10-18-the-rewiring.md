@@ -766,6 +766,11 @@ Two of these are complete outcomes rather than half-finished work:
 ### Verification between steps
 
 Steps 2, 5, 6 and 8 each change the public surface. Each publishes a prerelease under the `next`
-dist-tag and is exercised in `apps/cms` — which consumes the plugin as a workspace dependency and
-owns real Postgres migrations — before the next step starts. A step whose prerelease has not been run
-against a real database is not finished, because the stored job input changes in two of the four.
+dist-tag and is exercised before the next step starts.
+
+**Corrected 2026-10-23 (step 5).** This paragraph named `apps/cms` as where that happens, "because the
+stored job input changes in two of the four". `apps/cms` wires `createSyncRunner()`, which holds its
+tasks in memory and writes no job row, so the stored input is never exercised there — and its
+migrations carry no task slug of this plugin's. The stored shape is exercised by the integration
+suites in `apps/dev`, which run the real queue runner. `apps/cms` remains the check that the plugin
+still configures and builds inside a full app.

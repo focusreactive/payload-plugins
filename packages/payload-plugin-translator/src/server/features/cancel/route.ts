@@ -19,6 +19,6 @@ export function createCancelRoute(
   return {
     path: `${basePath}/cancel`,
     method: "delete",
-    handler: withAccessCheck(withErrorHandler(handler.handle.bind(handler)), access),
+    handler: withAccessCheck(withErrorHandler(handler.handle.bind(handler)), access, "cancel"),
   };
 }

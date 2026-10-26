@@ -2,6 +2,14 @@ import type { Field } from "payload";
 import { describe, expect, it, vi } from "vitest";
 import type { TranslationProvider } from "../domain/translation-providers/index.js";
 import { translateContent } from "./translateContent.js";
+import type { TranslateContentArgs } from "./translateContent.js";
+import { everyTranslatableLeaf } from "../domain/content-projection/contentProjector.js";
+
+const translateAll = (args: Omit<TranslateContentArgs, "selection">) =>
+  translateContent({
+    ...args,
+    selection: everyTranslatableLeaf(args.sourceData, args.schema),
+  });
 
 const text = (value: string, format = 0) => ({
   type: "text",
@@ -76,7 +84,7 @@ describe("container mode", () => {
         ]),
       };
 
-      const result = await translateContent({
+      const result = await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: source,
@@ -107,7 +115,7 @@ describe("container mode", () => {
     it("stays per-node for a provider that declares the capability false", async () => {
       const { provider, sent } = bracketProvider({ capabilities: { inlineMarks: false } });
 
-      await translateContent({
+      await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: {
@@ -129,7 +137,7 @@ describe("container mode", () => {
         body: richText([paragraph([text("a "), text("red", 1), text(" car")])]),
       };
 
-      await translateContent({
+      await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: source,
@@ -150,7 +158,7 @@ describe("container mode", () => {
         body: richText([paragraph([text("a "), text("red", 1), text(" car")])]),
       };
 
-      const result = await translateContent({
+      const result = await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: source,
@@ -173,7 +181,7 @@ describe("container mode", () => {
         translate: vi.fn(async () => ({ 0: "<1>une </1><2>rouge</2><3> voiture</3>" })),
       } as TranslationProvider;
 
-      const result = await translateContent({
+      const result = await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: { body: richText([paragraph(nodes)]) },
@@ -199,7 +207,7 @@ describe("container mode", () => {
         translate: vi.fn(async () => ({ 0: "<2>Dokumentation</2><1> lesen</1>" })),
       } as TranslationProvider;
 
-      const result = await translateContent({
+      const result = await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: {
@@ -224,7 +232,7 @@ describe("container mode", () => {
         translate: vi.fn(async () => ({ 0: "<1>une voiture rouge</1><2></2><3></3>" })),
       } as TranslationProvider;
 
-      const result = await translateContent({
+      const result = await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: { body: richText([paragraph([text("a "), text("red", 1), text(" car")])]) },
@@ -247,7 +255,7 @@ describe("container mode", () => {
         ]),
       };
 
-      await translateContent({
+      await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: source,
@@ -273,7 +281,7 @@ describe("container mode", () => {
         ]),
       };
 
-      await translateContent({
+      await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: source,
@@ -296,7 +304,7 @@ describe("container mode", () => {
         translate: vi.fn(async () => ({ 0: "<1>Achetez </1><2>notre produit</2>" })),
       } as TranslationProvider;
 
-      const result = await translateContent({
+      const result = await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: {
@@ -319,7 +327,7 @@ describe("container mode", () => {
         body: richText([paragraph([text("Sign up now")]), paragraph([text("No card needed")])]),
       };
 
-      await translateContent({
+      await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: source,
@@ -334,7 +342,7 @@ describe("container mode", () => {
     it("leaves a plain text field to the plain expander", async () => {
       const { provider, sent } = bracketProvider({ capabilities: { inlineMarks: true } });
 
-      await translateContent({
+      await translateAll({
         document: { collection: "docs", id: "1" },
         schema: mixedSchema,
         sourceData: {
@@ -359,7 +367,7 @@ describe("container mode", () => {
         translate: vi.fn(async () => ({ 0: "<1>une </1><2>rouge</2>" })),
       } as TranslationProvider;
 
-      const result = await translateContent({
+      const result = await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: { body: richText([paragraph([text("a "), text("red", 1), text(" car")])]) },
@@ -383,7 +391,7 @@ describe("container mode", () => {
       const declaring = bracketProvider({ capabilities: { inlineMarks: true } });
 
       for (const each of [silent, declaring]) {
-        await translateContent({
+        await translateAll({
           document: { collection: "docs", id: "1" },
           schema,
           sourceData: body(),

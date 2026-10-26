@@ -12,12 +12,6 @@ export type TranslationTask = {
   sourceLng: string;
   targetLng: string;
   /**
-   * The resolution strategy for the task. Deliberately widened to `string` (not the internal
-   * `"overwrite" | "skip_existing"` union) so adding a strategy is not a breaking change to this
-   * public type; host callbacks should treat unknown values gracefully.
-   */
-  strategy: string;
-  /**
    * The run translating this locale, as the enqueue answer named it. Every callback carries it,
    * `onQueued` included: the runner names the run before it says it took the work.
    *
@@ -51,7 +45,7 @@ export type TranslationLifecycleCallbacks = {
    * @since 0.7.0
    */
   onQueued?: (task: TranslationTask) => void | Promise<void>;
-  /** Fired after a task completes without error. @since 0.7.0 */
+  /** @since 0.7.0 */
   onCompleted?: (task: TranslationTask) => void | Promise<void>;
   /**
    * Fired once when a locale will not be translated, with the failure that ended the run — which for

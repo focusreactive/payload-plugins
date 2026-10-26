@@ -1,7 +1,8 @@
 import type { CollectionSlug } from "payload";
 
-import type { EnqueueAssignment, Task, TaskInput, RunResult } from "./types.js";
+import type { EnqueueAssignment, JobAssignment, JobHandle, Task, RunResult } from "./types.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
+import type { AuthorisedHandle, AuthorisedWork } from "../../shared/access/authorised.js";
 
 /**
  * Interface for task execution backends.
@@ -11,8 +12,9 @@ import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
  * (like cancelling existing tasks before enqueue) is encapsulated
  * within the implementation.
  *
- * **Obligations every implementation holds, whatever it queues onto.** `__tests__/TaskRunner.invariants.ts`
- * asserts them; a new runner calls that suite once, and the suite's `describe` names are the list.
+ * **Obligations every implementation holds, whatever it queues onto.** `assertTaskRunnerContract`,
+ * published from `@focus-reactive/payload-plugin-translator/testing`, asserts them; a new runner
+ * calls that suite once, and the suite's `describe` names are the list.
  *
  * Two it cannot assert, because they bind the caller rather than the runner:
  * - **A handle is never parsed.** Callers compare it, store it and hand it back.
@@ -38,7 +40,7 @@ export interface TaskRunner {
    *
    * @since 0.16.0 the return type widened.
    */
-  enqueue(tasks: TaskInput[], scope?: RequestScope): Promise<EnqueueAssignment[] | void>;
+  enqueue(tasks: AuthorisedWork[], scope?: RequestScope): Promise<EnqueueAssignment[] | void>;
 
   /**
    * Stop the work these handles stand for, as far as this runner can.
@@ -46,13 +48,23 @@ export interface TaskRunner {
    * Best effort: a runner that translates inline inside `enqueue` has nothing left to stop.
    * Report `cancelled` for each locale the run still owed, and for none it had delivered.
    */
-  cancel(taskIds: string[]): Promise<void>;
+  cancel(taskIds: AuthorisedHandle[]): Promise<void>;
 
   /**
    * Execute a task immediately.
    * Returns error status if task not found, already running, or completed.
    */
-  run(taskId: string): Promise<RunResult>;
+  run(taskId: AuthorisedHandle): Promise<RunResult>;
+
+  /**
+   * The document and recorded requester behind each handle; a handle this runner cannot place is
+   * omitted, never guessed. Omitting covers a handle this runner does not have — a lookup it cannot
+   * perform at all throws, because an empty answer reads as "nothing left to cancel".
+   *
+   * Required: the run and cancel routes have no other way to reach the document, and Payload's own
+   * rule is asked about a document, never about a handle.
+   */
+  assignmentsOf(handles: readonly JobHandle[]): Promise<JobAssignment[]>;
 
   /**
    * @deprecated Pass `{ documentIds }` instead. Removed in the next major.

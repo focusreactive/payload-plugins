@@ -129,3 +129,17 @@ describe("Locales.resolveTargets (composed manual-enqueue resolution)", () => {
     expect(r.droppedUnknown).toEqual(["xx"]);
   });
 });
+
+describe("Locales.knownCodes", () => {
+  it("answers nothing when localization is off or absent", () => {
+    expect(Locales.knownCodes(false)).toBeNull();
+    expect(Locales.knownCodes(undefined)).toBeNull();
+  });
+
+  it("reads codes from both the string and object locale forms", () => {
+    expect(Locales.knownCodes({ locales: ["en", "de"] })).toEqual(new Set(["en", "de"]));
+    expect(Locales.knownCodes({ locales: [{ code: "en" }, { code: "fr" }] })).toEqual(
+      new Set(["en", "fr"])
+    );
+  });
+});

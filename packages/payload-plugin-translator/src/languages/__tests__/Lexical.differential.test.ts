@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest";
 import { applyTranslations } from "../../core/traversal/index.js";
 import type { BlockLike, FieldLike } from "../../core/kernel/field-traversal/index.js";
 import { FieldChunkCollector } from "../../core/translation-pipeline/stages/field-collector/index.js";
+import { projectTranslatableContent } from "../../core/domain/content-projection/contentProjector.js";
 import { defaultExpanders } from "../../core/translation-pipeline/stages/text-expander/index.js";
 import { TranslationMutator } from "../../core/translation-pipeline/stages/translation-applicator/index.js";
-import { OverwriteStrategy } from "../../core/translation-pipeline/strategies/index.js";
 import type { TextChunk } from "../../core/translation-pipeline/types/index.js";
 import { addressesOf } from "./addresses.js";
 import type { Doc } from "./fixtures/lexical.js";
@@ -37,8 +37,7 @@ const viaPipeline = (schema: FieldLike[], source: Doc): Compared => {
     schema,
     working,
     source,
-    {},
-    new OverwriteStrategy()
+    projectTranslatableContent(source, schema).map((entry) => String(entry.idPath))
   ).collect();
 
   const textChunks: TextChunk[] = [];

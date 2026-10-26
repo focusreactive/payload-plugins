@@ -6,7 +6,7 @@ import type { TranslationLifecycleCallbacks } from "@focus-reactive/payload-plug
 export const loggingLifecycle: TranslationLifecycleCallbacks = {
   onQueued: (task) =>
     console.info(
-      `[lifecycle] queued    ${task.collection}#${task.id} ${task.sourceLng}→${task.targetLng} (${task.strategy})`
+      `[lifecycle] queued    ${task.collection}#${task.id} ${task.sourceLng}→${task.targetLng}`
     ),
   onCompleted: (task) =>
     console.info(

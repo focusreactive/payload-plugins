@@ -33,7 +33,6 @@ export type JobInputOutput = {
   };
   source_lng: string;
   target_lng: string;
-  strategy?: string;
 };
 
 /**
@@ -97,7 +96,6 @@ export function taskToJobStatusOutput(task: Task): JobStatusOutput {
       },
       source_lng: task.input.sourceLng,
       target_lng: task.input.targetLng,
-      strategy: task.input.strategy,
     },
     error: task.error ? { message: toClientErrorMessage(task.error.message) } : undefined,
     cancelled: task.cancelled,

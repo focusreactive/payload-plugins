@@ -38,12 +38,21 @@ describe("the field lists handed to Payload", () => {
     expect(registered().workflow).toEqual(baseline.workflow);
   });
 
-  it("names the run's locale list only on the workflow, and one locale only on the task", () => {
+  it("names the run's target list only on the workflow, and one locale only on the task", () => {
     const { task, workflow } = registered();
 
     expect(names(task)).toContain("target_lng");
-    expect(names(task)).not.toContain("target_lngs");
-    expect(names(workflow)).toContain("target_lngs");
+    expect(names(task)).not.toContain("targets");
+    expect(names(workflow)).toContain("targets");
     expect(names(workflow)).not.toContain("target_lng");
+  });
+
+  it("carries neither a strategy nor the two members filters replaced", () => {
+    const { task, workflow } = registered();
+
+    expect(names(task)).not.toContain("strategy");
+    expect(names(workflow)).not.toContain("strategy");
+    expect(names(task)).not.toContain("selection");
+    expect(names(task)).not.toContain("criteria");
   });
 });

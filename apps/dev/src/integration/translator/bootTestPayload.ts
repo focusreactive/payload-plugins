@@ -81,7 +81,7 @@ export type TestPayload = {
  *   empty, not as the default locale's text. Localization-level, so it applies to the whole boot.
  */
 export async function bootTestPayload(opts?: {
-  autoTranslate?: { targets: string[]; strategy?: "overwrite" | "skip_existing" };
+  autoTranslate?: { targets: string[] };
   collections?: CollectionConfig[];
   fallback?: boolean;
   exclusiveQueue?: boolean;

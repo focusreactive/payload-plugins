@@ -1,6 +1,7 @@
 import type { PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared/index.js";
+import { authorisedHandles } from "../../shared/access/authorised.js";
 import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 
 import { CancelInputSchema } from "./model.js";
@@ -19,8 +20,16 @@ export class CancelHandler {
 
     const { ids } = validationResult.data;
     const runner = this.taskRunnerFactory.create(req.payload);
-    await runner.cancel(ids);
 
-    return ServerResponse.noContent();
+    const { authorised, refused } = await authorisedHandles({
+      payload: req.payload,
+      user: req.user,
+      jobs: await runner.assignmentsOf(ids),
+    });
+
+    await runner.cancel(authorised);
+
+    if (refused.length === 0) return ServerResponse.noContent();
+    return ServerResponse.success({ refused });
   }
 }

@@ -440,3 +440,261 @@ keeps flagging until the source has text again.
 - **Code refs:**
   - `src/server/modules/task-runner/TaskRunnerProvider.interface.ts`
   - `src/server/modules/task-runner/payload-jobs-runner/model/attemptsBefore.ts`
+
+### the-strategy-leaves-the-run
+
+- **What:** the translation strategy, everywhere it appeared — the `strategy` field of `POST /enqueue`,
+  the stored run row, the host-facing lifecycle task, the status response, the `TaskHandlerInput` a
+  third-party runner implements, `AutoTranslateConfig.strategy`, the exported `AutoTranslateStrategy`
+  type, the `TranslationStrategy` port and both its implementations, and the "Update mode" select in
+  both admin forms.
+- **Status:** removed
+- **Changed:** 2026-10-23 / #208
+- **Replacement:** a run carries, per target locale, a list of **filters**. A filter is either the
+  leaf addresses themselves or the name of a rule that produces them, and the run translates the
+  intersection of every filter's answer.
+
+  | Was | Becomes |
+  | --- | --- |
+  | `strategy: "overwrite"` (the default) | `filters: []` — a run with no filters translates every translatable leaf |
+  | `strategy: "skip_existing"` | `filters: [{ kind: "rule", name: "stale" }]`, which keeps the leaves whose source has moved |
+  | a selection of fields | `filters: [{ kind: "leaves", addresses: ["title", "layout.b1:text.content"] }]` |
+
+- **Why:** the strategy answered "what do we translate" with a rule, because nobody had asked. Two of
+  its clauses guessed at state the caller never stated — whether the target was empty, and whether the
+  source had moved — and `skip_existing` meant something different again when `provenance` was off.
+  A run now carries the answer rather than a rule for inferring it.
+- **Who this breaks:** every host. A plugin config setting `AutoTranslateConfig.strategy`, a caller
+  posting `strategy` to `/enqueue`, a lifecycle callback reading `task.strategy`, and a third-party
+  `TaskRunnerProvider` typed against `TaskHandlerInput` all change.
+- **Neither removal is silent.** `POST /enqueue` refuses a body still carrying `strategy` with a 400
+  naming the replacement, and the plugin warns at boot for each collection whose auto-translate
+  config still carries one. A removed option that had been protecting something must not become a
+  no-op that quietly overwrites it.
+- **Auto-translate loses the choice, for now.** It names no filters, so an automatic run covers the
+  whole document. A host that set `"skip_existing"` was getting only the drifted fields and now gets
+  all of them, at the provider's price and over reviewed text. External control over what an
+  automatic run covers is the next piece of work on that module.
+- **Code refs:**
+  - `src/server/features/enqueue-translation/model.ts` (`filters` and the refusals)
+  - `src/core/domain/selection/TranslationFilter.ts`
+  - `src/server/modules/translation-run/Criterion.interface.ts`
+  - `src/core/domain/selection/narrowSelection.ts`
+  - `src/server/modules/provenance/Provenance.criterion.ts`
+
+### the-strategy-leaves-the-stored-run
+
+- **What:** reading `target_lngs` and `strategy` off a run row written before 1.0.
+- **Status:** read-only shim, written nowhere
+- **Changed:** 2026-10-23 / #208
+- **Replacement:** `targets: [{ lng, filters }]`. A legacy row is read as one target per listed
+  locale, and a row that named `skip_existing` is read as carrying one `rule` filter named `stale`.
+- **That is the nearest meaning, not the same one.** `skip_existing` promised two things and `stale`
+  keeps one. A queued row therefore behaves differently in three cases, all of them confined to the
+  rows already in flight when this ships:
+
+  | The queued row | What it did | What it does now |
+  | --- | --- | --- |
+  | with `provenance` on and a per-leaf receipt | filled empty targets, refreshed what drifted | refreshes what drifted; an empty target whose source stands still is left empty |
+  | with `provenance` on and no per-leaf receipt for that locale | left a filled target alone | translates every leaf, reviewed text included |
+  | with `provenance` **off** | filled empty targets only | **fails**: nothing answers `stale`, so the run throws and spends its retries |
+
+  The last one is deliberate. Translating the whole document instead would overwrite text the row
+  was queued to protect, and a run that fails loudly can be queued again.
+- **Removal condition, not a version:** drop the legacy branch of `store/runTargets.ts` once no row
+  written before 1.0 can still be in flight. That is the queue's drain time — hours — not a release
+  cycle, so it does not need to wait for the next major.
+
+## 2026-10-24 — hiding the out-of-date mark writes the receipt
+
+### the-dismissed-fingerprint-leaves-the-receipt
+
+- **What:** the `dismissedFingerprint` column of the provenance sidecar, the field of the same name
+  on `ProvenanceReceipt`, and `ProvenanceStore.dismiss`.
+- **Status:** removed
+- **Changed:** 2026-10-24
+- **Replacement:** none — hiding the mark now writes `sourceFingerprint` through
+  `ProvenanceStore.rebaseSourceFingerprint`, so a receipt names one source: the one this translation
+  is considered current against.
+- **Why:** a receipt held two fingerprints and three readers asked whether a locale was out of date.
+  Only the admin panel consulted both, so hiding the mark quieted the lamp and nothing else: the
+  staleness response still named the field as moved, and a run narrowing by `stale` still
+  re-translated it over the text the editor had chosen to keep.
+- **Every mark an editor hid before this ships comes back once.** Those rows carry a non-null
+  `dismissedFingerprint` and nothing reads it any more, so each of those locales reads as out of date
+  again and a run narrowing by `stale` selects its fields again. A host that wants to keep them
+  copies `dismissedFingerprint` into `sourceFingerprint` wherever the first is not null, once, before
+  upgrading; a host that does not care lets the editors press the button again.
+- **An existing database keeps the column.** Nothing reads or writes it; the plugin no longer
+  declares it. A consumer on Postgres or SQLite with migrations drops it in a migration of their own,
+  at whatever moment suits them.
+- **On schema push the drop is an interactive prompt.** It appears whenever the table holds **any**
+  row, even though every value in the column may be null, and it blocks when standard input is not a
+  terminal — a process manager or CI will appear to hang rather than fail. Declining is safe: the
+  column is nullable and the plugin ignores it.
+- **Who this breaks:** nobody outside the package in TypeScript terms — `ProvenanceStore`,
+  `ProvenanceReceipt` and `ProvenanceKey` are internal, and `TranslationProvenanceRecord`, the only
+  provenance type the package exports, never carried a fingerprint.
+- **What a person will notice.** Hiding the mark used to quiet the panel alone. It now also keeps
+  those fields out of the next run that narrows by `stale`. **A field no run ever translated is
+  re-based too** — the button speaks for the whole document and locale — so such a field is treated
+  as current until its source moves again.
+- **Code refs:**
+  - `src/core/domain/provenance/ProvenanceStore.interface.ts`
+  - `src/core/domain/provenance/staleness.ts` (`isRecordStale`)
+  - `src/server/modules/provenance/Provenance.service.ts` (`dismiss`)
+  - `src/server/modules/provenance/Provenance.collection.ts`
+
+## 2026-10-25 — the receipt holds one shape
+
+### the-document-wide-digest-stops-being-read
+
+- **What:** the `document` member of `SourceFingerprint` — the single sha256 the plugin wrote into
+  the sidecar's `sourceFingerprint` column until per-leaf fingerprints shipped on 2026-10-05. The
+  union is gone with it; a receipt now holds a map of leaf address to hash, or nothing.
+- **Status:** removed
+- **Changed:** 2026-10-25
+- **Replacement:** none. A stored value that is not a per-leaf map now reads as *no receipt* —
+  exactly what an empty column has always read as.
+- **Why:** nothing had written that shape for twenty days, and keeping its reader cost a second hash
+  of the whole source document on every staleness read, since the whole-document hash existed only
+  to compare against it.
+- **What a host sees.** A target locale whose receipt was written before 0.15.0, and whose source
+  has not moved since, flips from up to date to **out of date**. It clears when that locale is
+  translated **in full**, or when an editor hides the mark. A narrowed run does not clear it: the row
+  carries no earlier claims to keep, so every leaf the run did not send is recorded as unanswered and
+  keeps reading as moved. A
+  locale whose source *had* moved already read as out of date and is unaffected, as is every locale
+  translated by 0.15.0 or later. The direction is a false alarm, never a false all-clear: nothing
+  reads as current that is not.
+- **Nothing to migrate.** The column keeps whatever it holds; the plugin overwrites it on the next
+  write to that row. A host that wants the marks gone without re-translating can press the hide
+  button on each affected locale.
+- **This narrows the workaround in #the-dismissed-fingerprint-leaves-the-receipt.** That entry tells
+  a host to copy `dismissedFingerprint` into `sourceFingerprint` wherever the first is not null, to
+  keep marks their editors had hidden. Copy only values that are JSON maps: a mark hidden before
+  0.15.0 stored a bare sha256 there, and copying one now writes a value that reads as no receipt, so
+  that mark comes back anyway. Those locales need the hide button pressed again.
+
+## 2026-10-25 — one permission decision point
+
+**Status:** live · **Removal target:** n/a — nothing is named for removal, but one name is newly
+**required**: `TaskRunner.assignmentsOf`, below.
+
+The plugin stopped deciding who has access. It now asks twice, and never answers itself: the host's
+`AccessGuard` is asked whether this **kind** of request is allowed at all, and Payload's own
+`access.update` rule on the collection is asked about **each document**. Nine routes, the queue, the
+admin widgets and the translation chain are all behind one or both of those asks.
+
+What follows is every place a host can notice it.
+
+### The guard is asked about an action, and only `true` allows
+
+`AccessGuard.check` receives `{ req, action }` where it used to receive `{ req }`. `action` is a
+`TranslatorAction` — one of `enqueue`, `run`, `cancel`, `cancel-by-collection`, `document-status`,
+`collection-status`, `document-staleness`, `dismiss-staleness`, `translate-field`. The name is the
+action, not the route, so moving an endpoint does not change it.
+
+- **A guard returning a truthy non-boolean now refuses where it allowed.** The old code tested
+  `if (!hasAccess)`, so a guard answering with a user object, a non-empty string or `1` let the
+  request through. Only `true` allows now.
+- **A guard that throws now refuses.** The throw used to escape into the error envelope, which
+  answered `500` — a failure a host could mistake for a bug in the plugin. It is now a `403`, and
+  the error is logged. One exception, so that a guard may still redirect from an admin widget: an
+  error carrying a `digest` property — what `redirect()` and `notFound()` throw — is re-thrown
+  untouched.
+- **The guard is asked more than once for one thing a person does.** Each admin widget asks at
+  render to decide whether to offer the action; the endpoint asks again when the button is pressed.
+  A guard that counts, bills or rate-limits on being asked was always wrong and is now visibly so.
+- **A deep import stops resolving.** `@focus-reactive/payload-plugin-translator/client/shared/types/AccessGuard`
+  was undocumented but reachable through the `./client/*` export. It is gone; `AccessGuard`,
+  `AccessGuardRequest` and `TranslatorAction` come from the package root.
+- **Implementing `AccessGuard` does not break.** A `check` that destructures only `req` still
+  satisfies the interface, and so does one whose parameter type names only `req`.
+
+### Enqueue drops the documents the caller may not change
+
+`POST {basePath}/enqueue` asks the collection's `access.update` rule about every id in
+`collection_id`, as the caller, and queues only the ones it allows. Ids it refuses are reported back
+under `refused`, which is present **only when it is non-empty** — an answer with no `refused` key
+means nothing was dropped. A request whose ids are **all** refused still answers `200` with
+`success: true`; what says so is `queued: 0` and every id listed under `refused`. The refusal is in
+the body, not the status.
+
+`select_all` is unchanged: it already listed only what the caller may read, and that filter stays
+the one that decides.
+
+`collection_id` now rejects an empty array and an empty-string id, which used to be accepted and
+then either queued nothing or queued a job naming no document.
+
+### A job is resolved to its document before anyone may touch it
+
+`POST {basePath}/run/:id`, `DELETE {basePath}/cancel` and
+`DELETE {basePath}/cancel-by-collection/:collection_slug` used to act on a handle without ever
+asking what document was behind it.
+
+- **`DELETE /cancel` can now answer `200`.** It still answers `204` when every handle was cancelled.
+  When some were refused it answers `200` with `{ refused: [...] }` naming them. A client that treats
+  any 2xx as success needs no change; one that asserts `204` does.
+- **`POST /run/:id` answers `403` for a job whose row recorded no requester.** Letting the queue
+  drain such a job is unchanged — it was always going to run. Asking for it to run **now** is a
+  second person's request, and the row names nobody to check it against.
+- **A handle the runner cannot place** is a `404` on run, and is left alone by cancel rather than
+  cancelled unasked.
+- **Cancel reports a handle it could not place as neither cancelled nor refused.** It is dropped,
+  and a request whose handles were *all* unplaceable answers `204` — "nothing left to cancel" —
+  rather than naming them. Pre-existing behaviour, now reachable by one more route: a runner whose
+  `assignmentsOf` answers `[]` for everything satisfies the contract and makes every cancel a silent
+  success. Known, and left as it is: saying so would need a third category beside cancelled and
+  refused, which is an endpoint-contract change rather than part of this one. Omitting is for a
+  handle the runner does not have; a lookup it cannot perform **at all** is a failure and should be
+  thrown, not answered as `[]`.
+- **A custom `TaskRunner` must implement `assignmentsOf`.** It is a required member, so an existing
+  runner stops compiling until it is added. That is the point: a runner that cannot say which
+  document a handle names cannot be asked about it, and an optional member would have moved the
+  failure from the compiler to a `403` in production, where nothing names the cause.
+  `cancel-by-collection` does not need it — it already knows the collection it was called for.
+  The method takes `readonly JobHandle[]` and answers a `JobAssignment` per handle it can place,
+  omitting the rest; neither type is published, and neither needs naming to implement the method.
+
+### The queue takes only work the rules were asked about
+
+`TaskRunner.enqueue`, `cancel` and `run` no longer accept plain tasks and handles. Their parameters
+carry a type-level brand that only the plugin's own handlers can produce, so work that reached the
+queue without an ask does not compile.
+
+- **A host that implements `TaskRunner` is unaffected** — a method declared with the wider parameter
+  type still satisfies the narrowed one.
+- **A host that calls a runner directly**, rather than going through the endpoints, no longer
+  compiles. The brands are deliberately not exported: an exported minter would be a way to put
+  unasked work on the queue, which is the thing being prevented. Go through the endpoints.
+
+### An actor we cannot name stops being read as no actor
+
+A request whose user carries no `collection` — which only a custom auth strategy or a hand-made
+local-API user produces, since Payload's own JWT strategy always stamps it — used to be read as *no
+user*, and a write with no user runs with Payload's access checks off.
+
+- The endpoints answer `403` for such a request.
+- Auto-translate skips the document and logs a warning, rather than queueing an unchecked run. It
+  skips rather than throws because the hook runs inside the editor's save transaction, where a throw
+  would roll the editor's save back.
+- **A request with no user at all is unchanged** and still trusted. That is a deliberate, pinned
+  decision: in-process callers — a seed script, a local-API call, a webhook handler — have always
+  been trusted, and making them fail closed would strand them.
+
+### A chain module can no longer write the document being translated
+
+A member of the translation chain used to receive the whole `payload` and could write the very
+document the run was translating, past every ask above. It now receives a guarded view: `create`,
+`update`, `delete`, `duplicate` and `restoreVersion` **on the run's own collection** throw. Every
+other collection, and every read including of the document under translation, is untouched.
+
+- **This is a runtime refusal, not a compile-time one.** The view's type is still `Payload`. The
+  run's collection is a value, not a literal, so there is no type that admits every collection but
+  that one.
+- **It does not cover `payload.db`**, nor a method reached through the prototype rather than off the
+  object. A module determined to write anyway can still do so; the guard stops the accident, not the
+  intent.
+- **A host whose chain module writes the translated collection starts failing.** The error
+  propagates rather than being swallowed, so the run fails loudly instead of half-writing.

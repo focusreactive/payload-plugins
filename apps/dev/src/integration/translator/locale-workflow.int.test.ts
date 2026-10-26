@@ -35,7 +35,7 @@ const enqueue = async (id: string, targets: string[]) => {
       target_lng: targets,
       collection_slug: "docs",
       collection_id: [id],
-      strategy: "overwrite",
+
       publish_on_translation: false,
     },
   });

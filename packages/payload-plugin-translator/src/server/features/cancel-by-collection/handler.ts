@@ -3,11 +3,16 @@ import type { PayloadRequest } from "payload";
 import { ServerResponse } from "../../shared/index.js";
 import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 import { isCollectionAvailable } from "../_lib/collection-utils.js";
+import { authorisedHandles } from "../../shared/access/authorised.js";
 
 import { CancelByCollectionInputSchema } from "./model.js";
 import type { CancelConfig } from "./model.js";
 
-/** Cancels every queued job for a collection; jobs in flight are left alone. */
+/**
+ * Cancels every queued job for a collection; jobs in flight are left alone. Answers 204 whether or
+ * not some were refused — unlike `/cancel`, which names them, because the caller here named no
+ * handles to be told about.
+ */
 export class CancelByCollectionHandler {
   constructor(
     private readonly config: CancelConfig,
@@ -33,10 +38,24 @@ export class CancelByCollectionHandler {
     // A job is cancellable only while none of its locales is in flight, so this excludes rather
     // than selects: one running locale protects the whole job.
     const running = new Set(rows.filter((row) => row.status === "running").map((row) => row.id));
-    const queuedJobIds = [...new Set(rows.map((row) => row.id))].filter((id) => !running.has(id));
-    if (queuedJobIds.length === 0) return ServerResponse.noContent();
+    const queued = new Map(
+      rows
+        .filter((row) => !running.has(row.id))
+        .map((row) => [
+          row.id,
+          { handle: row.id, collectionSlug, collectionId: row.input.collectionId },
+        ])
+    );
+    if (queued.size === 0) return ServerResponse.noContent();
 
-    await runner.cancel(queuedJobIds);
+    const { authorised } = await authorisedHandles({
+      payload: req.payload,
+      user: req.user,
+      jobs: [...queued.values()],
+    });
+    if (authorised.length === 0) return ServerResponse.noContent();
+
+    await runner.cancel(authorised);
 
     return ServerResponse.noContent();
   }
