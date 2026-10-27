@@ -54,7 +54,15 @@ async function reindexPageInEveryLocale({ id, req }: { id: number; req: PayloadR
   }
 }
 
-export const indexPageEmbedding: CollectionAfterChangeHook<Page> = async ({ doc, req }) => {
+export const indexPageEmbedding: CollectionAfterChangeHook<Page> = async ({
+  doc,
+  operation,
+  req,
+}) => {
+  // nested-docs re-saves every new page as an update (resaveSelfAfterCreate), and that update indexes it.
+  if (operation === "create") {
+    return doc;
+  }
   if (doc._status !== "published") {
     return doc;
   }
