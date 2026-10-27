@@ -1,12 +1,9 @@
 import type { PayloadRequest } from "payload";
 
+import { collectGlobalBlockIds, isPublishedGlobalBlock } from "@/collections/GlobalBlock/slots";
+import { relationId } from "@/lib/contentExtraction";
 import type { Locale } from "@/lib/types";
 import type { Page } from "@/payload-types";
-
-type Slot = Extract<Page["blocks"][number], { blockType: "globalSectionSlot" }>;
-
-const slotId = (slot: Slot) =>
-  typeof slot.reference === "object" ? slot.reference.id : slot.reference;
 
 export async function resolveGlobalBlocks<T extends Pick<Page, "blocks">>({
   depth = 0,
@@ -22,7 +19,7 @@ export async function resolveGlobalBlocks<T extends Pick<Page, "blocks">>({
   req: PayloadRequest;
 }): Promise<T> {
   const blocks = page.blocks ?? [];
-  const ids = blocks.flatMap((b) => (b.blockType === "globalSectionSlot" ? [slotId(b)] : []));
+  const ids = collectGlobalBlockIds(blocks);
 
   if (ids.length === 0) {
     return page;
@@ -35,16 +32,21 @@ export async function resolveGlobalBlocks<T extends Pick<Page, "blocks">>({
     overrideAccess: true,
     pagination: false,
     req,
-    where: { _status: { equals: "published" }, id: { in: ids } },
+    where: { id: { in: ids } },
   });
-  const published = new Map(docs.map((d) => [d.id, d]));
+  const publishedById = new Map(
+    docs.filter(isPublishedGlobalBlock).map((doc) => [String(doc.id), doc])
+  );
 
   return {
     ...page,
-    blocks: blocks.map((b) =>
-      b.blockType === "globalSectionSlot"
-        ? { ...b, reference: published.get(slotId(b)) ?? slotId(b) }
-        : b
-    ),
+    blocks: blocks.map((block) => {
+      if (block.blockType !== "globalSectionSlot") return block;
+
+      const id = relationId(block.reference);
+      const published = id == null ? undefined : publishedById.get(String(id));
+
+      return published ? { ...block, reference: published } : block;
+    }),
   };
 }

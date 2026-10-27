@@ -6,6 +6,7 @@ import type {
   DocStore,
 } from "@focus-reactive/payload-plugin-seo/content";
 
+import { collectGlobalBlockIds, isPublishedGlobalBlock } from "@/collections/GlobalBlock/slots";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import {
   actionLinks,
@@ -21,7 +22,6 @@ import type { ImageGroup, LinkResolveCtx, LinkValue, Upload } from "@/lib/conten
 import type { GlobalBlock, Page } from "@/payload-types";
 
 type Block = Page["blocks"][number];
-type GlobalBlockContent = NonNullable<GlobalBlock["block"]>[number];
 
 export function extractPageBlockContent(
   block: Block,
@@ -153,28 +153,15 @@ export function extractPageBlockContent(
       const gid = relationId(b.reference);
       const resolved =
         gid != null
-          ? (docs.get("globalBlock", gid) as { block?: GlobalBlockContent[] } | undefined)
+          ? (docs.get("globalBlock", gid) as Pick<GlobalBlock, "_status" | "block"> | undefined)
           : undefined;
-      const inner = resolved?.block?.[0];
+      const inner = isPublishedGlobalBlock(resolved) ? resolved?.block?.[0] : undefined;
 
       return inner ? extractPageBlockContent(inner as unknown as Block, ctx, docs, helpers) : [];
     }
     default:
       return [];
   }
-}
-
-function collectGlobalBlockIds(blocks: Block[]): (string | number)[] {
-  const ids = new Set<string | number>();
-
-  for (const block of blocks) {
-    if (block.blockType === "globalSectionSlot") {
-      const id = relationId((block as { reference?: unknown }).reference);
-      if (id != null) ids.add(id);
-    }
-  }
-
-  return [...ids];
 }
 
 function mergeStores(...stores: (DocStore | null)[]): DocStore {
@@ -199,16 +186,15 @@ const extractPageContent: ContentExtractor = async (values, ctx, { resolveDocs, 
     phase1Queries.push({
       collection: "globalBlock",
       ids: globalIds,
-      select: ["block"],
+      select: ["block", "_status"],
       depth: 0,
     });
   }
   const docs1: DocStore = await resolveDocs(phase1Queries);
 
-  const globalDocs = globalIds.map((id) => docs1.get("globalBlock", id)).filter(Boolean) as Record<
-    string,
-    unknown
-  >[];
+  const globalDocs = globalIds
+    .map((id) => docs1.get("globalBlock", id) as Pick<GlobalBlock, "_status"> | undefined)
+    .filter(isPublishedGlobalBlock) as Record<string, unknown>[];
   const phase2Queries: DocQuery[] = globalDocs.flatMap((doc) => buildRefQueries(doc));
   const docs2: DocStore | null = phase2Queries.length > 0 ? await resolveDocs(phase2Queries) : null;
 

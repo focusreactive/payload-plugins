@@ -1,6 +1,7 @@
 import { draftMode } from "next/headers";
 
 import { renderContentBlock } from "@/blocks/contentBlockComponents";
+import { isPublishedGlobalBlock } from "@/collections/GlobalBlock/slots";
 import { getPayloadClient, PAGE_RENDER_DEPTH } from "@/dal";
 import { filterHiddenBlocks } from "@/lib/fields/section/filterHiddenBlocks";
 import type { Locale } from "@/lib/types";
@@ -33,7 +34,7 @@ export const GlobalBlockRenderer = async ({
     .catch(() => null);
 
   if (!globalBlock) return null;
-  if (!draft && globalBlock._status !== "published") return null;
+  if (!draft && !isPublishedGlobalBlock(globalBlock)) return null;
 
   const [inner] = filterHiddenBlocks(globalBlock.block);
   if (!inner) return null;

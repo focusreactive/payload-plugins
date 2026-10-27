@@ -9,6 +9,7 @@ import { extractFaqText } from "@/blocks/Faq/extractText";
 import { extractHeroText } from "@/blocks/Hero/extractText";
 import { extractLogosText } from "@/blocks/Logos/extractText";
 import { extractTestimonialsText } from "@/blocks/TestimonialsList/extractText";
+import { isPublishedGlobalBlock } from "@/collections/GlobalBlock/slots";
 import { filterHiddenBlocks } from "@/lib/fields/section/filterHiddenBlocks";
 import { extractLexicalText, joinText } from "@/lib/utils/text";
 import type { Page } from "@/payload-types";
@@ -57,9 +58,9 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
       return extractRawHtmlText(block);
     }
     case "globalSectionSlot": {
-      // Match the renderer: it shows the first visible inner block, so index that one, not a hidden one.
-      const [inner] =
-        typeof block.reference === "object" ? filterHiddenBlocks(block.reference.block) : [];
+      // Match the renderer: index the published block's first visible inner block, not a hidden one.
+      const reference = typeof block.reference === "object" ? block.reference : null;
+      const [inner] = isPublishedGlobalBlock(reference) ? filterHiddenBlocks(reference?.block) : [];
       return inner ? extractPageBlockText(inner) : "";
     }
     default: {
