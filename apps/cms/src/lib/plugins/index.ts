@@ -18,6 +18,7 @@ import type { Field, PayloadRequest, Plugin } from "payload";
 import { Authors } from "@/collections/Authors";
 import { Categories } from "@/collections/Categories";
 import { Footer } from "@/collections/Footer/config";
+import { GlobalBlock } from "@/collections/GlobalBlock/config";
 import { Header } from "@/collections/Header/config";
 import { Page as PageCollection } from "@/collections/Page/Page";
 import serverExtractPageContent from "@/collections/Page/serverExtractPageContent";
@@ -299,6 +300,7 @@ export const plugins: Plugin[] = [
       { slug: "testimonials", titleField: "author" },
       { slug: "header", titleField: "name" },
       { slug: "footer", titleField: "name" },
+      { slug: "globalBlock", titleField: "title" },
     ],
 
     translations: {
@@ -333,7 +335,7 @@ export const plugins: Plugin[] = [
   }),
 
   schedulePublicationPlugin({
-    collections: ["page", "posts"],
+    collections: ["page", "posts", "globalBlock"],
     globals: ["site-settings"],
     schedulePublish: {
       timeIntervals: 60,
@@ -342,8 +344,17 @@ export const plugins: Plugin[] = [
   }),
 
   translatorPlugin({
-    collections: [PageCollection, Posts, Categories, Authors, Testimonials, Header, Footer].map(
-      (col) => JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
+    collections: [
+      PageCollection,
+      Posts,
+      Categories,
+      Authors,
+      Testimonials,
+      Header,
+      Footer,
+      GlobalBlock,
+    ].map((col) =>
+      JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
     ),
     access: { check: ({ req }) => Boolean(req.user) },
     runner: createSyncRunner(),

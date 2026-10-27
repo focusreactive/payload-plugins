@@ -3,11 +3,17 @@ import type { Pool } from "pg";
 
 import { extractPageText } from "@/collections/Page/extractPageText";
 import { resolveGlobalBlocks } from "@/collections/Page/resolveGlobalBlocks";
-import { getLocaleFromRequest } from "@/lib/utils/getLocaleFromRequest";
+import { I18N_CONFIG } from "@/lib/config/i18n";
 import type { Locale } from "@/lib/types";
 import type { Page } from "@/payload-types";
 import { upsertEmbedding, deleteEmbedding } from "@/lib/search/dbOperations";
 import { generateEmbedding } from "@/lib/search/generateEmbedding";
+
+// Depth to load a page at before extracting its search text. Some block extractors read a relationship
+// (e.g. TestimonialsList reads the related testimonial's text), so the page must be populated past
+// depth 0. Every path that re-indexes a page must use this same depth, or one path would overwrite the
+// embedding another path wrote with more (or less) text.
+export const PAGE_EMBEDDING_DEPTH = 2;
 
 export async function upsertPageEmbedding({
   locale,
@@ -19,7 +25,9 @@ export async function upsertPageEmbedding({
   req: PayloadRequest;
 }): Promise<void> {
   try {
-    const text = extractPageText(await resolveGlobalBlocks({ locale, page, req }));
+    const text = extractPageText(
+      await resolveGlobalBlocks({ depth: PAGE_EMBEDDING_DEPTH, locale, page, req })
+    );
     const embedding = await generateEmbedding(text);
     const { pool } = req.payload.db as unknown as { pool: Pool };
 
@@ -35,6 +43,35 @@ export async function upsertPageEmbedding({
   }
 }
 
+// Locale fallback means a page can render different text per locale (its own content, or a fallback
+// to another locale), so an edit in one locale must refresh every locale's embedding — not only the
+// edited one. The same holds for global block edits (see revalidatePagesUsingGlobalBlock).
+export async function reindexPageForAllLocales({
+  pageId,
+  req,
+}: {
+  pageId: number | string;
+  req: PayloadRequest;
+}): Promise<void> {
+  for (const { code } of I18N_CONFIG.locales) {
+    const locale = code as Locale;
+    const page = await req.payload
+      .findByID({
+        collection: "page",
+        depth: PAGE_EMBEDDING_DEPTH,
+        id: pageId,
+        locale,
+        overrideAccess: true,
+        req,
+      })
+      .catch(() => null);
+
+    if (page?._status === "published") {
+      await upsertPageEmbedding({ locale, page, req });
+    }
+  }
+}
+
 export const indexPageEmbedding: CollectionAfterChangeHook<Page> = async ({ doc, req }) => {
   if (doc._status !== "published") {
     return doc;
@@ -43,7 +80,7 @@ export const indexPageEmbedding: CollectionAfterChangeHook<Page> = async ({ doc,
     return doc;
   }
 
-  await upsertPageEmbedding({ locale: getLocaleFromRequest(req), page: doc, req });
+  await reindexPageForAllLocales({ pageId: doc.id, req });
 
   return doc;
 };

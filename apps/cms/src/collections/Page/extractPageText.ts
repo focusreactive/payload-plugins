@@ -3,11 +3,13 @@ import { extractCarouselText } from "@/blocks/Carousel/extractText";
 import { extractChartText } from "@/blocks/Chart/extractText";
 import { extractCtaBandText } from "@/blocks/CtaBand/extractText";
 import { extractNewsletterText } from "@/blocks/Newsletter/extractText";
+import { extractRawHtmlText } from "@/blocks/RawHtml/extractText";
 import { extractStatsText } from "@/blocks/Stats/extractText";
 import { extractFaqText } from "@/blocks/Faq/extractText";
 import { extractHeroText } from "@/blocks/Hero/extractText";
 import { extractLogosText } from "@/blocks/Logos/extractText";
 import { extractTestimonialsText } from "@/blocks/TestimonialsList/extractText";
+import { filterHiddenBlocks } from "@/lib/fields/section/filterHiddenBlocks";
 import { extractLexicalText, joinText } from "@/lib/utils/text";
 import type { Page } from "@/payload-types";
 
@@ -51,8 +53,13 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
     case "stats": {
       return extractStatsText(block);
     }
+    case "rawHtml": {
+      return extractRawHtmlText(block);
+    }
     case "globalSectionSlot": {
-      const inner = typeof block.reference === "object" ? block.reference.block?.[0] : undefined;
+      // Match the renderer: it shows the first visible inner block, so index that one, not a hidden one.
+      const [inner] =
+        typeof block.reference === "object" ? filterHiddenBlocks(block.reference.block) : [];
       return inner ? extractPageBlockText(inner) : "";
     }
     default: {

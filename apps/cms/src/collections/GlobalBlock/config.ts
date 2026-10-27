@@ -3,9 +3,24 @@ import type { CollectionConfig } from "payload";
 import { contentBlocks } from "@/blocks/contentBlocks";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
+import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
+import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 
 import { preventDeleteIfReferenced } from "./hooks/preventDeleteIfReferenced";
 import { revalidatePagesUsingGlobalBlock } from "./hooks/revalidatePagesUsingGlobalBlock";
+
+// A global block is rendered standalone (no page URL of its own) at this route, so editors can
+// preview it before publishing — publishing affects every page that embeds it. The locale prefix is
+// added only when the routing config needs it (the default locale is unprefixed under `as-needed`).
+const globalBlockPreviewPath = (id: unknown, locale: string): string => {
+  const prefix = shouldIncludeLocalePrefix(locale) ? `/${locale}` : "";
+
+  return generatePreviewPath({
+    collection: "globalBlock",
+    path: `${prefix}/preview/global-block/${id}`,
+    slug: String(id ?? ""),
+  });
+};
 
 export const GlobalBlock: CollectionConfig<"globalBlock"> = {
   access: {
@@ -17,6 +32,11 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
   admin: {
     defaultColumns: ["title", "block", "updatedAt"],
     group: "Global Components",
+    livePreview: {
+      url: ({ data, locale }) =>
+        globalBlockPreviewPath(data?.id, locale.code ?? locale.fallbackLocale),
+    },
+    preview: (data, { locale }) => globalBlockPreviewPath(data?.id, locale),
     useAsTitle: "title",
   },
   dbName: "gsec",

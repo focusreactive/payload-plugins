@@ -1,8 +1,7 @@
 import type { CollectionAfterChangeHook } from "payload";
 
-import { upsertPageEmbedding } from "@/collections/Page/hooks/indexEmbedding";
+import { PAGE_EMBEDDING_DEPTH, upsertPageEmbedding } from "@/collections/Page/hooks/indexEmbedding";
 import { I18N_CONFIG } from "@/lib/config/i18n";
-import { getLocaleFromRequest } from "@/lib/utils/getLocaleFromRequest";
 import { revalidatePageCache } from "@/lib/utils/revalidatePageCache";
 import type { GlobalBlock } from "@/payload-types";
 
@@ -25,13 +24,12 @@ export const revalidatePagesUsingGlobalBlock: CollectionAfterChangeHook<GlobalBl
     return doc;
   }
 
-  const editedLocale = getLocaleFromRequest(req);
-
-  // Every locale is revalidated because locale fallback can render this block on pages of other locales.
+  // Every locale is revalidated and re-indexed because locale fallback can render this block — and
+  // its edited text — on pages of other locales, not just the one that was edited.
   for (const { code: locale } of I18N_CONFIG.locales) {
     const { docs: pages } = await payload.find({
       collection: "page",
-      depth: 0,
+      depth: PAGE_EMBEDDING_DEPTH,
       locale,
       overrideAccess: true,
       pagination: false,
@@ -42,7 +40,7 @@ export const revalidatePagesUsingGlobalBlock: CollectionAfterChangeHook<GlobalBl
     for (const page of pages) {
       revalidatePageCache({ doc: page, locale, payload });
 
-      if (locale === editedLocale && !context.skipEmbedding) {
+      if (!context.skipEmbedding) {
         await upsertPageEmbedding({ locale, page, req });
       }
     }
