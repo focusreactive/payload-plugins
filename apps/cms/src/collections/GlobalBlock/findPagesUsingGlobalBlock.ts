@@ -7,7 +7,6 @@ export interface PageUsingGlobalBlock {
   title: string;
 }
 
-// `blocks` is localized and drafts live in the versions table, so each locale and the latest draft must be checked.
 export async function findPagesUsingGlobalBlock({
   id,
   includeDrafts = false,
