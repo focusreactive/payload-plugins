@@ -6,12 +6,14 @@ import type { RawPayloadComponentExport } from "../../../types/PayloadComponentE
 import { resolveSettings } from "../../../settings.js";
 import { PluginConfigBuilder } from "./PluginConfigBuilder.js";
 import { AnyAccessGuard } from "../../shared/access/AnyAccessGuard.js";
+import { storeDouble } from "../runs/__tests__/fixtures/runRecordStore.js";
 
 const deps = (collections: Array<{ slug: string }> = []) => ({
   collections: collections as unknown as CollectionConfig[],
   settings: resolveSettings({}),
   access: new AnyAccessGuard(),
-  taskRunnerFactory: { create: vi.fn() },
+  taskRunnerFactory: { create: vi.fn(), capabilities: { stop: true, run: true } },
+  runRecordStoreFactory: () => storeDouble(),
   schemaMap: new Map(),
   translationProvider: { translate: vi.fn() },
 });

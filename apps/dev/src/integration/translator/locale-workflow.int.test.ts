@@ -28,6 +28,8 @@ const createDoc = async (title: string) => {
   return String(doc.id);
 };
 
+const handleFor = new Map<string, string>();
+
 const enqueue = async (id: string, targets: string[]) => {
   const res = await callEndpoint(ctx.payload, "post", "/translate/enqueue", {
     body: {
@@ -40,6 +42,9 @@ const enqueue = async (id: string, targets: string[]) => {
     },
   });
   expect(res.status, "the enqueue endpoint rejected the request").toBe(200);
+  const assignments =
+    (res.data as { data: { assignments?: Array<{ handle: string }> } }).data.assignments ?? [];
+  if (assignments[0]) handleFor.set(id, assignments[0].handle);
 };
 
 const runQueue = () => ctx.payload.jobs.run({ queue: "translations", limit: CRON_BATCH_LIMIT });
@@ -64,10 +69,10 @@ const workflowJob = async (id: string) => {
   return (
     docs as Array<{
       completedAt?: string | null;
-      input?: { collection_id?: string };
+      input?: { handle?: string };
       log?: Array<Record<string, unknown>>;
     }>
-  ).find((j) => j.input?.collection_id === id);
+  ).find((j) => j.input?.handle === handleFor.get(id));
 };
 
 describe("translating one document into several locales", () => {

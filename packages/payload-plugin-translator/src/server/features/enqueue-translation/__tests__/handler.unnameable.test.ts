@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CollectionSlug, Payload, PayloadRequest } from "payload";
 
 import type { TaskRunner, TaskRunnerFactory } from "../../../modules/task-runner/index.js";
+import { storeDouble } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
 
 vi.mock("../../_lib/collection-utils.js", () => ({
   isCollectionAvailable: vi.fn((slug: string, available: Set<string>) =>
@@ -50,14 +51,14 @@ describe("POST /enqueue and an actor the project cannot name", () => {
     vi.clearAllMocks();
     runner = {
       enqueue: vi.fn().mockResolvedValue(undefined),
-      cancel: vi.fn(),
+      stop: vi.fn(),
       run: vi.fn(),
-      findByCollection: vi.fn(),
     } as unknown as TaskRunner;
-    factory = { create: vi.fn().mockReturnValue(runner) };
+    factory = { create: vi.fn().mockReturnValue(runner), capabilities: { stop: true, run: true } };
     handler = new EnqueueTranslationHandler(
       { availableCollections: new Set(["posts"] as CollectionSlug[]) },
-      factory
+      factory,
+      () => storeDouble()
     );
   });
 

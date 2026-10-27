@@ -70,11 +70,14 @@ export type TestPayload = {
  *   publish; the enqueue route still works.
  * @param opts.collections - replaces the shared fixture set entirely (not merged). The set must
  *   still contain a `docs` collection when `autoTranslate` is passed.
+ * @param opts.unmanagedCollections - registered with Payload, but not handed to the plugin.
  * @param opts.failFor - target locales the fake provider should throw for, so a spec can exercise a
  *   partial failure. Every other locale translates normally.
  * @param opts.runner - defaults to the sync runner. `createPayloadJobsRunner({ autoRun: false })`
  *   leaves queued jobs unprocessed in `payload-jobs`, so a spec can read the rows.
  * @param opts.onTranslate - awaited before each provider call, so a spec can hold a locale mid-run.
+ * @param opts.deleteJobOnComplete - Payload's own option; Payload defaults it to `true`, this boot
+ *   to `false` so the status panels have rows to read.
  * @param opts.exclusiveQueue - Payload's `enableConcurrencyControl` for this boot; defaults to
  *   `EXCLUSIVE_QUEUE=1`.
  * @param opts.fallback - localization fallback, off by default: an unwritten locale reads as
@@ -83,7 +86,9 @@ export type TestPayload = {
 export async function bootTestPayload(opts?: {
   autoTranslate?: { targets: string[] };
   collections?: CollectionConfig[];
+  unmanagedCollections?: CollectionConfig[];
   fallback?: boolean;
+  deleteJobOnComplete?: boolean;
   exclusiveQueue?: boolean;
   failFor?: string[];
   onTranslate?: (targetLng: string) => Promise<void> | void;
@@ -146,10 +151,10 @@ export async function bootTestPayload(opts?: {
         { code: "es", label: "Español" },
       ],
     },
-    collections,
+    collections: [...collections, ...(opts?.unmanagedCollections ?? [])],
     jobs: {
       // Payload deletes completed jobs by default, leaving the status panels nothing to read.
-      deleteJobOnComplete: false,
+      deleteJobOnComplete: opts?.deleteJobOnComplete ?? false,
       enableConcurrencyControl: opts?.exclusiveQueue ?? process.env.EXCLUSIVE_QUEUE === "1",
     },
     plugins: [

@@ -7,7 +7,7 @@ import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.
 import type { ChainMember } from "../../../modules/translation-run/index.js";
 import { translateDocument } from "../translateDocument.js";
 import type { TranslateDocumentDeps } from "../translateDocument.js";
-import type { TaskHandlerInput } from "../../../modules/task-runner/index.js";
+import type { TranslateDocumentInput } from "../translateDocument.js";
 
 vi.mock("../../../../core/translation-pipeline/index.js", () => ({
   translateContent: vi.fn().mockResolvedValue({
@@ -18,7 +18,7 @@ vi.mock("../../../../core/translation-pipeline/index.js", () => ({
 
 const INSIDE_THE_EDITORS_SAVE = { transactionID: "tx-42" };
 
-const input = (): TaskHandlerInput => ({
+const input = (): TranslateDocumentInput => ({
   collection: "posts" as CollectionSlug,
   collectionId: "doc-123",
   sourceLng: "en",

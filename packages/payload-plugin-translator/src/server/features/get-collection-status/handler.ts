@@ -1,7 +1,8 @@
 import type { PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared/index.js";
-import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
+import type { RunRecordStoreFactory } from "../../modules/runs/index.js";
+import { reportedRuns } from "../../modules/runs/index.js";
 import { isCollectionAvailable } from "../_lib/collection-utils.js";
 import { visibleIds } from "../../shared/payload/collections.js";
 
@@ -11,11 +12,11 @@ import type { GetCollectionStatusConfig } from "./model.js";
 /** What a collection is doing: runs in flight, plus failures inside the configured window. */
 export class GetCollectionStatusHandler {
   private readonly config: GetCollectionStatusConfig;
-  private readonly taskRunnerFactory: TaskRunnerFactory;
+  private readonly runRecordStoreFactory: RunRecordStoreFactory;
 
-  constructor(config: GetCollectionStatusConfig, taskRunnerFactory: TaskRunnerFactory) {
+  constructor(config: GetCollectionStatusConfig, runRecordStoreFactory: RunRecordStoreFactory) {
     this.config = config;
-    this.taskRunnerFactory = taskRunnerFactory;
+    this.runRecordStoreFactory = runRecordStoreFactory;
   }
 
   async handle(req: PayloadRequest): Promise<Response> {
@@ -34,23 +35,29 @@ export class GetCollectionStatusHandler {
     }
 
     const { failedWindowMs } = this.config;
-    const runner = this.taskRunnerFactory.create(req.payload);
-    const tasks = await runner.findByCollection(collectionSlug, {
-      excludeCompleted: true,
-      excludeGivenUpBefore: new Date(Date.now() - failedWindowMs),
-    });
-    const ids = tasks.map((task) => String(task.input.collectionId));
-    const visible = await visibleIds(req.payload, collectionSlug, ids, req.user);
+    const store = this.runRecordStoreFactory(req.payload);
+    const [live, failed] = await Promise.all([
+      store.findLiveInCollection(collectionSlug),
+      store.findRecentlyFailedInCollection(collectionSlug, new Date(Date.now() - failedWindowMs)),
+    ]);
+    const shown = reportedRuns([...live, ...failed]);
+
+    const visible = await visibleIds(
+      req.payload,
+      collectionSlug,
+      shown.map(({ row }) => row.collectionId),
+      req.user
+    );
 
     return ServerResponse.success({
       failed_window_ms: failedWindowMs,
-      docs: tasks
-        .filter((task) => visible.has(String(task.input.collectionId)))
-        .map((task) => ({
-          id: task.id,
-          status: task.status,
-          collection_id: String(task.input.collectionId),
-          target_lng: task.input.targetLng,
+      docs: shown
+        .filter(({ row }) => visible.has(row.collectionId))
+        .map(({ row, status }) => ({
+          id: row.handle,
+          status,
+          collection_id: row.collectionId,
+          target_lng: row.targetLng,
         })),
     });
   }

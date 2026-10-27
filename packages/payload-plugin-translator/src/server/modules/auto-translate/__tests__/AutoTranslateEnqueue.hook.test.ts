@@ -17,6 +17,7 @@ import {
   makeAutoTranslateHook,
   propagateAutoTranslateCustom,
 } from "../AutoTranslateEnqueue.hook.js";
+import { storeDouble } from "../../runs/__tests__/fixtures/runRecordStore.js";
 
 const schema: Field[] = [{ name: "title", type: "text", localized: true }];
 const schemaMap: CollectionSchemaMap = new Map([["posts" as CollectionSlug, schema]]);
@@ -31,17 +32,22 @@ function setup(
   opts: {
     policies?: Map<string, NormalizedAutoTranslatePolicy>;
     enqueue?: ReturnType<typeof vi.fn>;
+    inFlight?: unknown[];
   } = {}
 ) {
   const enqueue = opts.enqueue ?? vi.fn().mockResolvedValue(undefined);
   const taskRunnerFactory = { create: vi.fn().mockReturnValue({ enqueue }) };
   const resolvePolicy = makeCollectionPolicyResolver(opts.policies ?? new Map([["posts", policy]]));
+  const runs = storeDouble({
+    findLiveForDocuments: vi.fn().mockResolvedValue(opts.inFlight ?? []),
+  });
   const hook = makeAutoTranslateHook({
     resolvePolicy,
     schemaMap,
     taskRunnerFactory: taskRunnerFactory as never,
+    runRecordStoreFactory: () => runs,
   });
-  return { hook, enqueue };
+  return { hook, enqueue, runs };
 }
 
 // A CollectionAfterChangeHook args object with sensible defaults (published source-locale update).
@@ -226,5 +232,47 @@ describe("propagateAutoTranslateCustom", () => {
     const config: TestConfig = { collections: [{ slug: "pages" }] };
     propagateAutoTranslateCustom(config, new Set(["posts"]), policies);
     expect(getAutoTranslateConfig(config.collections[0])).toBeNull();
+  });
+
+  describe("a document already being translated", () => {
+    it("queues nothing, because a second run would put the first run's locales back", async () => {
+      const { hook, enqueue } = setup({
+        inFlight: [{ collectionSlug: "posts", collectionId: "1" }],
+      });
+
+      await hook(hookArgs());
+
+      expect(enqueue).not.toHaveBeenCalled();
+    });
+
+    it("leaves the editor's save alone, even inside their transaction, and says why in the log", async () => {
+      const { hook } = setup({ inFlight: [{ collectionSlug: "posts", collectionId: "1" }] });
+
+      const answer = await hook(hookArgs({ transactionID: "tx-1" }));
+
+      expect(answer, "the hook answers with the document, so the save goes through").toMatchObject({
+        id: "1",
+      });
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({ documentId: "1", collection: "posts" })
+      );
+      expect(logger.error, "nothing failed; it was simply not queued").not.toHaveBeenCalled();
+    });
+
+    it("asks only about the document that was saved", async () => {
+      const { hook, runs } = setup({ inFlight: [] });
+
+      await hook(hookArgs());
+
+      expect(runs.findLiveForDocuments).toHaveBeenCalledWith("posts", ["1"]);
+    });
+
+    it("queues as usual once nothing is under way", async () => {
+      const { hook, enqueue } = setup({ inFlight: [] });
+
+      await hook(hookArgs());
+
+      expect(enqueue).toHaveBeenCalledTimes(1);
+    });
   });
 });

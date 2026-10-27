@@ -28,12 +28,14 @@ type BulkTranslationDashboardProps = {
   hasDrafts: boolean;
   autoTranslate: AutoTranslateSummary | null;
   targetSelection: TargetSelectionMode;
+  canStop: boolean;
 };
 
 export default function BulkTranslationDashboard({
   hasDrafts,
   autoTranslate,
   targetSelection,
+  canStop,
 }: BulkTranslationDashboardProps) {
   const locale = useLocale();
   const { collection } = useCollectionDashboardUrlParams();
@@ -117,6 +119,7 @@ export default function BulkTranslationDashboard({
             collection={collection}
             data={collectionTranslationApi.data}
             isPending={collectionTranslationApi.isPending}
+            canStop={canStop}
           />
         </section>
       )}

@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, PayloadRequest } from "payload";
 
-import type { JobAssignment, TaskRunner } from "../../../modules/task-runner/index.js";
+import type { CollectionSlug } from "payload";
+
+import type { TaskRunner } from "../../../modules/task-runner/index.js";
+import type { RunRecord } from "../../../modules/runs/index.js";
+import { runRow, storeDouble } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
+import type { RunRecordStoreDouble } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
 
 vi.mock("../../../shared/access/refusedTargets.js", () => ({
   refusedTargets: vi.fn().mockResolvedValue(new Set<string>()),
@@ -12,15 +17,18 @@ const { refusedTargets } = await import("../../../shared/access/refusedTargets.j
 
 const ANNA = { id: "anna", collection: "users" };
 
-const job = (handle: string, collectionId: string): JobAssignment => ({
-  handle,
-  collectionSlug: "posts" as never,
-  collectionId,
-  startedBy: { id: "anna", collection: "users" },
-});
+const rowFor = (handle: string, collectionId: string): RunRecord =>
+  runRow({
+    handle,
+    collectionSlug: "posts" as CollectionSlug,
+    collectionId,
+    requesterId: "anna",
+    requesterCollection: "users",
+  });
 
 describe("DELETE /cancel asks about the documents behind the handles", () => {
   let runner: TaskRunner;
+  let runs: RunRecordStoreDouble;
   let handler: InstanceType<typeof CancelHandler>;
 
   const request = (ids: string[]): PayloadRequest =>
@@ -35,12 +43,16 @@ describe("DELETE /cancel asks about the documents behind the handles", () => {
     (refusedTargets as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(new Set<string>());
     runner = {
       enqueue: vi.fn(),
-      cancel: vi.fn().mockResolvedValue(undefined),
+      stop: vi.fn().mockResolvedValue(undefined),
       run: vi.fn(),
-      findByCollection: vi.fn(),
-      assignmentsOf: vi.fn().mockResolvedValue([job("mine", "d1"), job("theirs", "d2")]),
     } as unknown as TaskRunner;
-    handler = new CancelHandler({ create: vi.fn().mockReturnValue(runner) });
+    runs = storeDouble({
+      findByHandles: vi.fn().mockResolvedValue([rowFor("mine", "d1"), rowFor("theirs", "d2")]),
+    });
+    handler = new CancelHandler(
+      { create: vi.fn().mockReturnValue(runner), capabilities: { stop: true, run: true } },
+      () => runs
+    );
   });
 
   it("cancels only the handles whose document the caller may change", async () => {
@@ -48,7 +60,7 @@ describe("DELETE /cancel asks about the documents behind the handles", () => {
 
     await handler.handle(request(["mine", "theirs"]));
 
-    expect(runner.cancel).toHaveBeenCalledWith(["mine"]);
+    expect(runner.stop).toHaveBeenCalledWith(["mine"]);
   });
 
   it("names the refused handles", async () => {
@@ -63,31 +75,29 @@ describe("DELETE /cancel asks about the documents behind the handles", () => {
     const response = await handler.handle(request(["mine", "theirs"]));
 
     expect(response.status).toBe(204);
-    expect(runner.cancel).toHaveBeenCalledWith(["mine", "theirs"]);
+    expect(runner.stop).toHaveBeenCalledWith(["mine", "theirs"]);
   });
 
-  it("never cancels a handle the runner could not place", async () => {
-    (runner.assignmentsOf as ReturnType<typeof vi.fn>).mockResolvedValue([job("mine", "d1")]);
+  it("never cancels a handle the record could not place", async () => {
+    runs.findByHandles.mockResolvedValue([rowFor("mine", "d1")]);
 
     await handler.handle(request(["mine", "unplaceable"]));
 
-    expect(runner.cancel).toHaveBeenCalledWith(["mine"]);
+    expect(runner.stop).toHaveBeenCalledWith(["mine"]);
   });
 
-  it("cancels nothing when the runner cannot answer what the handles stand for", async () => {
-    (runner.assignmentsOf as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error("store is down")
-    );
+  it("cancels nothing when the record cannot answer what the handles stand for", async () => {
+    runs.findByHandles.mockRejectedValue(new Error("store is down"));
 
     await expect(handler.handle(request(["mine", "theirs"]))).rejects.toThrow("store is down");
 
-    expect(runner.cancel).not.toHaveBeenCalled();
+    expect(runner.stop).not.toHaveBeenCalled();
   });
 
   it("keeps two collections apart when they hold the same document id", async () => {
-    (runner.assignmentsOf as ReturnType<typeof vi.fn>).mockResolvedValue([
-      { ...job("in-posts", "shared"), collectionSlug: "posts" as never },
-      { ...job("in-pages", "shared"), collectionSlug: "pages" as never },
+    runs.findByHandles.mockResolvedValue([
+      rowFor("in-posts", "shared"),
+      { ...rowFor("in-pages", "shared"), collectionSlug: "pages" as CollectionSlug },
     ]);
     (refusedTargets as unknown as ReturnType<typeof vi.fn>).mockImplementation(
       ({ collection }: { collection: string }) =>
@@ -96,6 +106,6 @@ describe("DELETE /cancel asks about the documents behind the handles", () => {
 
     await handler.handle(request(["in-posts", "in-pages"]));
 
-    expect(runner.cancel).toHaveBeenCalledWith(["in-posts"]);
+    expect(runner.stop).toHaveBeenCalledWith(["in-posts"]);
   });
 });

@@ -6,6 +6,7 @@ import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js"
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
 import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
 import type { TaskRunnerFactory } from "../task-runner/index.js";
+import type { RunRecordStoreFactory } from "../runs/index.js";
 import type { TranslatorSettings } from "../../../settings.js";
 
 import type {
@@ -59,6 +60,7 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
   readonly settings: TranslatorSettings;
   readonly access: AccessGuard;
   readonly taskRunnerFactory: TaskRunnerFactory;
+  readonly runRecordStoreFactory: RunRecordStoreFactory;
   readonly schemaMap: CollectionSchemaMap;
   readonly translationProvider: TranslationProvider;
 
@@ -72,6 +74,7 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
     this.settings = deps.settings;
     this.access = deps.access;
     this.taskRunnerFactory = deps.taskRunnerFactory;
+    this.runRecordStoreFactory = deps.runRecordStoreFactory;
     this.schemaMap = deps.schemaMap;
     this.translationProvider = deps.translationProvider;
   }

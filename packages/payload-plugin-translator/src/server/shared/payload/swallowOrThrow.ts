@@ -8,19 +8,20 @@ import type { RequestScope } from "./RequestScope.shapes.js";
  * caller's own transaction with it: both that the caller is inside one, and that the error does not
  * declare itself harmless.
  *
- * `scope` is read before `work` runs; mutating it during the work has no effect.
+ * `scope` is read before `work` runs; mutating it during the work has no effect. `onFailure` is
+ * awaited, so a handler that writes somewhere finishes before the decision below is taken.
  */
 export async function swallowOrThrow<T>(
   scope: RequestScope,
   work: () => Promise<T>,
-  onFailure: (error: unknown) => void
+  onFailure: (error: unknown) => void | Promise<void>
 ): Promise<T | undefined> {
   const callerHasWorkToLose = scope.transactionID != null;
 
   try {
     return await work();
   } catch (error) {
-    onFailure(error);
+    await onFailure(error);
     if (callerHasWorkToLose && mustPropagate(error)) throw error;
     return undefined;
   }

@@ -13,6 +13,7 @@ export function documentTranslation(): TranslationModule {
       ctx.addEndpoints(
         createTranslationRoutes({
           taskRunnerFactory: ctx.taskRunnerFactory,
+          runRecordStoreFactory: ctx.runRecordStoreFactory,
           collectionConfig: {
             availableCollections: new Set(ctx.collections.map((collection) => collection.slug)),
           },

@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, PayloadRequest } from "payload";
 
-import type { JobAssignment, TaskRunner } from "../../../modules/task-runner/index.js";
+import type { CollectionSlug } from "payload";
+
+import type { TaskRunner } from "../../../modules/task-runner/index.js";
+import type { RunRecord } from "../../../modules/runs/index.js";
+import { runRow, storeDouble } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
 
 vi.mock("../../../shared/access/refusedTargets.js", () => ({
   refusedTargets: vi.fn().mockResolvedValue(new Set<string>()),
@@ -11,12 +15,13 @@ const { RunTranslationHandler } = await import("../handler.js");
 const { refusedTargets } = await import("../../../shared/access/refusedTargets.js");
 
 const ANNA = { id: "anna", collection: "users" };
-const MINE: JobAssignment = {
+const MINE: RunRecord = runRow({
   handle: "job-1",
-  collectionSlug: "posts" as never,
+  collectionSlug: "posts" as CollectionSlug,
   collectionId: "d1",
-  startedBy: { id: "anna", collection: "users" },
-};
+  requesterId: "anna",
+  requesterCollection: "users",
+});
 
 describe("POST /run/:id asks about the document behind the job", () => {
   let runner: TaskRunner;
@@ -29,15 +34,17 @@ describe("POST /run/:id asks about the document behind the job", () => {
       routeParams: { id: "job-1" },
     }) as unknown as PayloadRequest;
 
-  const answering = (assignments: JobAssignment[]) => {
+  const answering = (rows: RunRecord[]) => {
     runner = {
       enqueue: vi.fn(),
-      cancel: vi.fn(),
+      stop: vi.fn(),
       run: vi.fn().mockResolvedValue({ success: true }),
-      findByCollection: vi.fn(),
-      assignmentsOf: vi.fn().mockResolvedValue(assignments),
     } as unknown as TaskRunner;
-    handler = new RunTranslationHandler({ create: vi.fn().mockReturnValue(runner) });
+    const runs = storeDouble({ findByHandles: vi.fn().mockResolvedValue(rows) });
+    handler = new RunTranslationHandler(
+      { create: vi.fn().mockReturnValue(runner), capabilities: { stop: true, run: true } },
+      () => runs
+    );
   };
 
   beforeEach(() => {
@@ -56,7 +63,7 @@ describe("POST /run/:id asks about the document behind the job", () => {
   });
 
   it("refuses a job nobody is recorded as having started", async () => {
-    answering([{ ...MINE, startedBy: null }]);
+    answering([{ ...MINE, requesterId: null, requesterCollection: null }]);
 
     const response = await handler.handle(request());
 

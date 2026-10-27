@@ -2,10 +2,12 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import type { TaskRunner } from "../server/modules/task-runner/TaskRunner.interface.js";
 import type { TaskRunnerContext } from "../server/modules/task-runner/TaskRunnerProvider.interface.js";
+import type { RunnerCapabilities } from "../server/modules/task-runner/RunnerCapabilities.js";
 import type {
   EnqueueAssignment,
   TaskEvent,
   TaskInput,
+  RunRef,
 } from "../server/modules/task-runner/types.js";
 import type { AuthorisedHandle, AuthorisedWork } from "../server/shared/access/authorised.js";
 
@@ -28,8 +30,12 @@ type Addressed = { collectionSlug: string; collectionId: string; targetLng: stri
 const addressOf = (target: Addressed): string =>
   `${target.collectionSlug}/${target.collectionId}/${target.targetLng}`;
 
-const assignmentKey = (assignment: EnqueueAssignment): string =>
-  `${assignment.handle}@${addressOf(assignment)}`;
+const runKey = (run: RunRef): string => `${run.handle}@${run.targetLng}`;
+
+const refOf = (assignment: EnqueueAssignment): RunRef => ({
+  handle: assignment.handle,
+  targetLng: assignment.targetLng,
+});
 
 type ReportState = TaskEvent["state"];
 
@@ -47,7 +53,7 @@ const settle = async (promise: Promise<unknown>): Promise<"resolved" | "rejected
   }
 };
 
-type Reported = { assignment: EnqueueAssignment; event: TaskEvent };
+type Reported = { run: RunRef; event: TaskEvent };
 
 const handlesOf = (answer: EnqueueAssignment[]): AuthorisedHandle[] =>
   [...new Set(answer.map((assignment) => assignment.handle))].map(asHandle);
@@ -69,11 +75,18 @@ export type MakeTaskRunner = (
  * Importing this module loads `vitest`, so it belongs in a test file; a non-test module that
  * imports it fails at load, not at the call.
  *
+ * The checks for `stop` and `run` are registered only when the provider declares those
+ * capabilities, and the suite first asserts that what it declares, the runner implements.
+ *
  * @param name - how the implementation under test is reported
  * @param make - called fresh for every check
  * @since 1.0.0
  */
-export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): void {
+export function assertTaskRunnerContract(
+  name: string,
+  make: MakeTaskRunner,
+  capabilities: RunnerCapabilities
+): void {
   describe(name, () => {
     let runner: TaskRunner;
     let reported: Reported[] = [];
@@ -81,8 +94,8 @@ export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): vo
     let checkNumber = 0;
     const documentForThisCheck = (n: number): string => `doc-${checkNumber}-${n}`;
 
-    const record: TaskRunnerContext["report"] = (_payload, assignment, event) => {
-      reported.push({ assignment, event });
+    const record: TaskRunnerContext["report"] = (_payload, run, event) => {
+      reported.push({ run, event });
       return Promise.resolve();
     };
 
@@ -108,30 +121,47 @@ export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): vo
       input(documentForThisCheck(2), "de"),
     ];
 
-    const addressesReported = (state: ReportState): string[] =>
-      reported
-        .filter((entry) => entry.event.state === state)
-        .map((entry) => addressOf(entry.assignment));
-
-    const timesQueued = (address: string): number =>
-      addressesReported("queued").filter((queued) => queued === address).length;
+    const timesReported = (run: RunRef, state: ReportState): number =>
+      reported.filter((entry) => entry.event.state === state && runKey(entry.run) === runKey(run))
+        .length;
 
     const wasReported = (assignment: EnqueueAssignment, state: ReportState): boolean =>
-      reported.some(
-        (entry) =>
-          entry.event.state === state &&
-          assignmentKey(entry.assignment) === assignmentKey(assignment)
-      );
+      timesReported(refOf(assignment), state) > 0;
 
     const terminalsPerAssignment = (): Array<[string, ReportState[]]> => {
       const collected = new Map<string, ReportState[]>();
-      for (const { assignment, event } of reported) {
+      for (const { run, event } of reported) {
         if (!isTerminal(event)) continue;
-        const key = assignmentKey(assignment);
+        const key = runKey(run);
         collected.set(key, [...(collected.get(key) ?? []), event.state]);
       }
       return [...collected];
     };
+
+    describe("a runner does what its provider says it does", () => {
+      it("implements every capability the provider declares, and nothing it denies", () => {
+        expect(
+          { stop: typeof runner.stop === "function", run: typeof runner.run === "function" },
+          "a declared capability decides whether a route exists, so it cannot be a wish"
+        ).toEqual({ stop: capabilities.stop, run: capabilities.run });
+      });
+    });
+
+    describe("the plugin's record of the run is load-bearing", () => {
+      it("lets a failing queued report out of enqueue", async () => {
+        // Only `queued` refuses: a runner whose terminal reports also failed would reject for that
+        // reason instead, and the check would pass over a runner that swallows this one.
+        const strict = await make((_payload, _assignment, event) =>
+          event.state === "queued"
+            ? Promise.reject(new Error("the run was not recorded"))
+            : Promise.resolve()
+        );
+
+        const outcome = await settle(Promise.resolve(strict.enqueue(twoLocales())));
+
+        expect(outcome, "a run nothing recorded must not answer as queued").toBe("rejected");
+      });
+    });
 
     describe("an empty request is answered, not refused", () => {
       it("answers an empty enqueue", async () => {
@@ -140,22 +170,10 @@ export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): vo
         expect(answer ?? [], "enqueue([]) answers [] or nothing").toEqual([]);
       });
 
-      it("answers an empty cancel", async () => {
-        const answer: unknown = await runner.cancel([]);
-
-        expect(answer ?? [], "cancel([]) answers [] or undefined").toEqual([]);
-      });
-
       it("reports nothing about an empty enqueue", async () => {
         await runner.enqueue([]);
 
         expect(reported, "an empty request accepts no assignment to report").toEqual([]);
-      });
-
-      it("reports nothing about an empty cancel", async () => {
-        await runner.cancel([]);
-
-        expect(reported, "no handle names work to stop, so nothing settled").toEqual([]);
       });
     });
 
@@ -170,19 +188,6 @@ export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): vo
         const unusable = answer.filter((assignment) => assignment.handle.length === 0);
 
         expect(unusable, "a handle callers can store and hand back").toEqual([]);
-      });
-
-      it("takes its own handles back", async (ctx) => {
-        const answer = await enqueued([input(documentForThisCheck(1), "de")]);
-        if (!answer) {
-          ctx.skip();
-          return;
-        }
-
-        expect(
-          await settle(runner.cancel(handlesOf(answer))),
-          "cancel takes the runner's own handle back unchanged"
-        ).toBe("resolved");
       });
     });
 
@@ -261,48 +266,54 @@ export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): vo
     });
 
     describe("what became of every accepted assignment reaches the plugin", () => {
-      it("reports queued for every requested locale", async () => {
-        const request = twoLocales();
+      it("reports queued for every locale it accepted", async (ctx) => {
+        const answer = await enqueued(twoLocales());
+        if (!answer) {
+          ctx.skip();
+          return;
+        }
 
-        await runner.enqueue(request);
-
-        const silent = [...new Set(request.map(addressOf))].filter(
-          (address) => timesQueued(address) === 0
-        );
-        expect(silent, "queued is sent for every locale the runner accepted").toEqual([]);
+        const silent = answer.filter((entry) => timesReported(refOf(entry), "queued") === 0);
+        expect(
+          silent.map(addressOf),
+          "queued is sent for every locale the runner accepted"
+        ).toEqual([]);
       });
 
-      it("reports queued at most once per requested locale", async () => {
-        const request = twoLocales();
+      it("reports queued at most once per accepted locale", async (ctx) => {
+        const answer = await enqueued(twoLocales());
+        if (!answer) {
+          ctx.skip();
+          return;
+        }
 
-        await runner.enqueue(request);
-
-        const repeated = [...new Set(request.map(addressOf))].filter(
-          (address) => timesQueued(address) > 1
-        );
-        expect(repeated, "one queued per requested locale, not several").toEqual([]);
+        const repeated = answer.filter((entry) => timesReported(refOf(entry), "queued") > 1);
+        expect(repeated.map(addressOf), "one queued per locale, not several").toEqual([]);
       });
 
-      it("reports queued once although the request listed a locale twice", async () => {
+      it("reports queued once although the request listed a locale twice", async (ctx) => {
         const twice = [input(documentForThisCheck(1), "de"), input(documentForThisCheck(1), "de")];
-
-        await runner.enqueue(twice);
+        const answer = await enqueued(twice);
+        if (!answer || answer.length === 0) {
+          ctx.skip();
+          return;
+        }
 
         expect(
-          timesQueued(addressOf(twice[0])),
+          timesReported(refOf(answer[0]), "queued"),
           "a locale listed twice is one piece of accepted work"
         ).toBeLessThanOrEqual(1);
       });
 
       it("reports only about locales the request listed", async () => {
         const request = twoLocales();
-        const asked = new Set(request.map(addressOf));
+        const asked = new Set(request.map((task) => task.targetLng));
 
         await runner.enqueue(request);
 
         const unasked = reported
-          .map((entry) => addressOf(entry.assignment))
-          .filter((address) => !asked.has(address));
+          .map((entry) => entry.run.targetLng)
+          .filter((targetLng) => !asked.has(targetLng));
         expect(unasked, "every report names a locale the request listed").toEqual([]);
       });
 
@@ -317,11 +328,10 @@ export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): vo
                 .slice(0, index)
                 .some(
                   (earlier) =>
-                    earlier.event.state === "queued" &&
-                    addressOf(earlier.assignment) === addressOf(entry.assignment)
+                    earlier.event.state === "queued" && runKey(earlier.run) === runKey(entry.run)
                 )
           )
-          .map((entry) => `${addressOf(entry.assignment)}:${entry.event.state}`);
+          .map((entry) => `${runKey(entry.run)}:${entry.event.state}`);
 
         expect(premature, "queued comes before any terminal event for that locale").toEqual([]);
       });
@@ -335,7 +345,38 @@ export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): vo
       });
     });
 
-    describe("cancelling reports what the run still owed", () => {
+    const stopping = capabilities.stop
+      ? (handles: AuthorisedHandle[]) => (runner.stop as NonNullable<TaskRunner["stop"]>)(handles)
+      : undefined;
+
+    describe.runIf(capabilities.stop)("stopping is answered, not refused", () => {
+      it("answers an empty stop", async () => {
+        const answer: unknown = await stopping?.([]);
+
+        expect(answer ?? [], "stop([]) answers [] or undefined").toEqual([]);
+      });
+
+      it("reports nothing about an empty stop", async () => {
+        await stopping?.([]);
+
+        expect(reported, "no handle names work to stop, so nothing settled").toEqual([]);
+      });
+
+      it("takes its own handles back", async (ctx) => {
+        const answer = await enqueued([input(documentForThisCheck(1), "de")]);
+        if (!answer) {
+          ctx.skip();
+          return;
+        }
+
+        expect(
+          await settle(Promise.resolve(stopping?.(handlesOf(answer)))),
+          "stop takes the runner's own handle back unchanged"
+        ).toBe("resolved");
+      });
+    });
+
+    describe.runIf(capabilities.stop)("stopping reports what the run still owed", () => {
       it("reports cancelled for every locale the run still owed", async (ctx) => {
         const answer = await enqueued(twoLocales());
         if (!answer) {
@@ -345,13 +386,11 @@ export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): vo
         const owed = answer.filter(
           (assignment) =>
             !reported.some(
-              (entry) =>
-                isTerminal(entry.event) &&
-                assignmentKey(entry.assignment) === assignmentKey(assignment)
+              (entry) => isTerminal(entry.event) && runKey(entry.run) === runKey(refOf(assignment))
             )
         );
 
-        await runner.cancel(handlesOf(answer));
+        await stopping?.(handlesOf(answer));
 
         const unheard = owed.filter((assignment) => !wasReported(assignment, "cancelled"));
         expect(unheard.map(addressOf), "cancelled for each locale the run still owed").toEqual([]);
@@ -365,7 +404,7 @@ export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): vo
         }
         const delivered = answer.filter((assignment) => wasReported(assignment, "delivered"));
 
-        await runner.cancel(handlesOf(answer));
+        await stopping?.(handlesOf(answer));
 
         const revoked = delivered.filter((assignment) => wasReported(assignment, "cancelled"));
         expect(revoked.map(addressOf), "a delivered locale is not reported cancelled").toEqual([]);
@@ -378,7 +417,7 @@ export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): vo
           return;
         }
 
-        await runner.cancel(handlesOf(answer));
+        await stopping?.(handlesOf(answer));
 
         const several = terminalsPerAssignment().filter(
           ([, states]) => states.length > 1 && !cancelledAndStillDelivered(states)
@@ -398,126 +437,61 @@ export function assertTaskRunnerContract(name: string, make: MakeTaskRunner): vo
         }
         const given = new Set(handlesOf(cancelled));
         const untouched = new Set(
-          spared.filter((a) => !given.has(asHandle(a.handle))).map(assignmentKey)
+          spared.filter((a) => !given.has(asHandle(a.handle))).map((a) => runKey(refOf(a)))
         );
 
-        await runner.cancel([...given]);
+        await stopping?.([...given]);
 
         const strays = reported.filter(
-          (entry) =>
-            entry.event.state === "cancelled" && untouched.has(assignmentKey(entry.assignment))
+          (entry) => entry.event.state === "cancelled" && untouched.has(runKey(entry.run))
         );
         expect(
-          strays.map((entry) => addressOf(entry.assignment)),
+          strays.map((entry) => runKey(entry.run)),
           "cancel stops the work these handles stand for, not another run's"
         ).toEqual([]);
       });
     });
 
-    describe("a handle that no longer names anything is an answer, not a failure", () => {
-      /**
-       * A handle this runner issued and then had cancelled. Unknown now, and shaped the way this
-       * runner shapes handles — which is as far as the obligations reach: a store may reject a
-       * value it could never have produced, and on SQL a non-numeric handle does exactly that.
-       */
-      const spent = async (): Promise<string | undefined> => {
-        const answer = await enqueued([input(documentForThisCheck(9), "de")]);
-        const handle = answer?.[0]?.handle;
-        if (handle) await runner.cancel([asHandle(handle)]);
-        return handle;
-      };
+    describe.runIf(capabilities.stop && capabilities.run)(
+      "a handle that no longer names anything is an answer, not a failure",
+      () => {
+        /**
+         * A handle this runner issued and then had cancelled — a made-up one would be rejected by
+         * the store rather than answered `not_found` (see `TaskRunner.interface.ts`).
+         */
+        const spent = async (): Promise<string | undefined> => {
+          const answer = await enqueued([input(documentForThisCheck(1), "de")]);
+          const handle = answer?.[0]?.handle;
+          if (handle) await stopping?.([asHandle(handle)]);
+          return handle;
+        };
 
-      it("answers run on a spent handle with not_found", async (ctx) => {
-        const handle = await spent();
-        if (!handle) {
-          ctx.skip();
-          return;
-        }
+        it("answers run on a spent handle with not_found", async (ctx) => {
+          const handle = await spent();
+          if (!handle) {
+            ctx.skip();
+            return;
+          }
 
-        expect(await runner.run(asHandle(handle))).toEqual({ success: false, error: "not_found" });
-      });
+          expect(await runner.run?.(asHandle(handle))).toEqual({
+            success: false,
+            error: "not_found",
+          });
+        });
 
-      it("resolves cancel on a spent handle", async (ctx) => {
-        const handle = await spent();
-        if (!handle) {
-          ctx.skip();
-          return;
-        }
+        it("resolves stop on a spent handle", async (ctx) => {
+          const handle = await spent();
+          if (!handle) {
+            ctx.skip();
+            return;
+          }
 
-        expect(
-          await settle(runner.cancel([asHandle(handle)])),
-          "cancel on a spent handle resolves rather than rejecting"
-        ).toBe("resolved");
-      });
-    });
-
-    describe("findByCollection finds tasks for a collection", () => {
-      it("answers only tasks of the collection asked about", async () => {
-        await runner.enqueue([input(documentForThisCheck(1), "de")]);
-
-        const tasks = await runner.findByCollection(SLUG);
-
-        expect(
-          tasks.filter((task) => task.input.collectionSlug !== SLUG),
-          "every task belongs to the collection asked about"
-        ).toEqual([]);
-      });
-
-      it("keeps only the documents the filter names", async () => {
-        const kept = documentForThisCheck(1);
-        await runner.enqueue([input(kept, "de"), input(documentForThisCheck(2), "de")]);
-
-        const tasks = await runner.findByCollection(SLUG, { documentIds: [kept] });
-
-        expect(
-          tasks.filter((task) => task.input.collectionId !== kept),
-          "documentIds keeps only tasks for these documents"
-        ).toEqual([]);
-      });
-
-      it("keeps only the documents the deprecated array names", async () => {
-        const kept = documentForThisCheck(1);
-        await runner.enqueue([input(kept, "de"), input(documentForThisCheck(2), "de")]);
-
-        const tasks = await runner.findByCollection(SLUG, [kept]);
-
-        expect(
-          tasks.filter((task) => task.input.collectionId !== kept),
-          "the array means what { documentIds } means"
-        ).toEqual([]);
-      });
-
-      it("answers about no documents, not about all of them", async () => {
-        await runner.enqueue([input(documentForThisCheck(1), "de")]);
-
-        expect(
-          await runner.findByCollection(SLUG, []),
-          "an empty list names no document, so it cannot mean every document"
-        ).toEqual([]);
-      });
-
-      it("rejects nothing but a run that gave up, whatever the cutoff", async () => {
-        const live = documentForThisCheck(1);
-        await runner.enqueue([input(live, "de")]);
-
-        const tasks = await runner.findByCollection(SLUG, { excludeGivenUpBefore: new Date() });
-
-        expect(
-          tasks.map((task) => task.input.collectionId),
-          "a cutoff on give-up is not a cutoff on age"
-        ).toContain(live);
-      });
-
-      it("drops tasks that have finished", async () => {
-        await runner.enqueue([input(documentForThisCheck(1), "de")]);
-
-        const tasks = await runner.findByCollection(SLUG, { excludeCompleted: true });
-
-        expect(
-          tasks.filter((task) => task.status === "completed"),
-          "excludeCompleted drops tasks that have finished"
-        ).toEqual([]);
-      });
-    });
+          expect(
+            await settle(Promise.resolve(stopping?.([asHandle(handle)]))),
+            "stop on a spent handle resolves rather than rejecting"
+          ).toBe("resolved");
+        });
+      }
+    );
   });
 }

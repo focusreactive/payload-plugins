@@ -48,15 +48,11 @@ export {
 export type { TranslationFailureCode } from "./translation-providers/index.js";
 
 // Task runners
-export {
-  createPayloadJobsRunner,
-  createSyncRunner,
-  toTaskFilter,
-} from "./server/modules/task-runner/index.js";
+export { createPayloadJobsRunner, createSyncRunner } from "./server/modules/task-runner/index.js";
 export type {
   TaskRunnerProvider,
   PayloadJobsRunnerOptions,
-  TaskFilter,
+  RunnerCapabilities,
 } from "./server/modules/task-runner/index.js";
 /**
  * A third-party `TaskRunnerProvider` has always had to accept a `RequestScope` — it is the second

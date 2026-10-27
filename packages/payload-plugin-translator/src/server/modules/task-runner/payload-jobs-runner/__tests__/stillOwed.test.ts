@@ -1,95 +1,50 @@
 import { describe, it, expect } from "vitest";
-import type { Task, TaskInput } from "../../types.js";
+
+import type { PayloadJob } from "../store/types.js";
 import { stillOwed } from "../model/stillOwed.js";
 
-const RUN_ID = "run-1";
+const LOCALES = ["de", "fr"];
 
-const localeOf = (targetLng: string): TaskInput => ({
-  collectionSlug: "posts",
-  collectionId: "doc-1",
-  sourceLng: "en",
-  targetLng,
-  publishOnTranslation: false,
-});
-
-const delivered = (targetLng: string): Task => ({
-  id: RUN_ID,
-  status: "completed",
-  input: localeOf(targetLng),
+const run = (log: PayloadJob["log"] = []): PayloadJob => ({
+  id: 7,
   createdAt: "2026-10-06T10:00:00Z",
   updatedAt: "2026-10-06T10:01:00Z",
+  input: { handle: "run-1", locales: LOCALES },
+  log,
+});
+
+const delivered = (targetLng: string) => ({
+  state: "succeeded",
   completedAt: "2026-10-06T10:01:00Z",
-  cancelled: false,
+  input: { target_lng: targetLng },
 });
 
-const attemptedAndFailed = (targetLng: string): Task => ({
-  id: RUN_ID,
-  status: "failed",
-  input: localeOf(targetLng),
-  createdAt: "2026-10-06T10:00:00Z",
-  updatedAt: "2026-10-06T10:02:00Z",
-  error: { message: "provider unreachable" },
-  cancelled: false,
+const attemptedAndFailed = (targetLng: string) => ({
+  state: "failed",
+  input: { target_lng: targetLng },
 });
 
-const neverStarted = (targetLng: string): Task => ({
-  id: RUN_ID,
-  status: "pending",
-  input: localeOf(targetLng),
-  createdAt: "2026-10-06T10:00:00Z",
-  updatedAt: "2026-10-06T10:00:00Z",
-  cancelled: false,
-});
-
-describe("stillOwed", () => {
-  it("owes nothing when every locale was delivered", () => {
-    expect(stillOwed([delivered("de"), delivered("fr")])).toEqual([]);
+describe("which locales of a run are still owed", () => {
+  it("owes every locale of a run that has run nothing", () => {
+    expect(stillOwed(run(), LOCALES)).toEqual(["de", "fr"]);
   });
 
-  it("owes a locale that was attempted and failed", () => {
-    const failedFr = attemptedAndFailed("fr");
-
-    expect(stillOwed([delivered("de"), failedFr])).toContainEqual(failedFr);
+  it("stops owing a locale the run delivered", () => {
+    expect(stillOwed(run([delivered("de")]), LOCALES)).toEqual(["fr"]);
   });
 
-  it("owes a locale the run was translating when it stopped", () => {
-    const owed = stillOwed([{ ...neverStarted("de"), status: "running" }]);
-    expect(owed.map((task) => task.input.targetLng)).toEqual(["de"]);
-  });
-
-  it("owes a locale the run never reached", () => {
-    const pendingEs = neverStarted("es");
-
-    expect(stillOwed([delivered("de"), attemptedAndFailed("fr"), pendingEs])).toContainEqual(
-      pendingEs
-    );
-  });
-
-  it("does not announce a delivered locale, even though the run ended badly", () => {
-    const deliveredDe = delivered("de");
-
+  it("still owes a locale whose attempt failed, because a retry may yet deliver it", () => {
     expect(
-      stillOwed([deliveredDe, attemptedAndFailed("fr"), neverStarted("es")])
-    ).not.toContainEqual(deliveredDe);
+      stillOwed(run([attemptedAndFailed("de")]), LOCALES),
+      "Payload logs a failure on every attempt and gives up only on the last"
+    ).toEqual(["de", "fr"]);
   });
 
-  it("owes each locale separately, although the run's locales share one id", () => {
-    expect(stillOwed([attemptedAndFailed("fr"), attemptedAndFailed("es")])).toHaveLength(2);
+  it("reads the last word about a locale, not the first", () => {
+    expect(stillOwed(run([attemptedAndFailed("de"), delivered("de")]), LOCALES)).toEqual(["fr"]);
   });
 
-  it("orders the owed locales the way the run would have translated them", () => {
-    const owed = stillOwed([neverStarted("es"), delivered("de"), attemptedAndFailed("fr")]);
-
-    expect(owed.map((task) => task.input.targetLng)).toEqual(["es", "fr"]);
-  });
-
-  it("hands back the task itself, not a locale name or a runner's row", () => {
-    const failedFr = attemptedAndFailed("fr");
-
-    expect(stillOwed([failedFr])).toEqual([failedFr]);
-  });
-
-  it("owes nothing for a run that covered nothing", () => {
-    expect(stillOwed([])).toEqual([]);
+  it("owes nothing once every locale is delivered", () => {
+    expect(stillOwed(run([delivered("de"), delivered("fr")]), LOCALES)).toEqual([]);
   });
 });

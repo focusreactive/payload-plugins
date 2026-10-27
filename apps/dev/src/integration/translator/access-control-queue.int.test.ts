@@ -27,15 +27,13 @@ const withFieldRule = (collections: CollectionConfig[]): CollectionConfig[] =>
     } as CollectionConfig;
   });
 
-const jobsFor = async (documentId: string) => {
+const runsFor = async (documentId: string) => {
   const { docs } = await ctx.payload.find({
-    collection: "payload-jobs" as "pages",
+    collection: "translator-runs" as "pages",
     pagination: false,
-    where: { workflowSlug: { equals: "translate_document_locales" } } as never,
+    where: { collectionId: { equals: documentId } } as never,
   });
-  return (docs as Array<{ input?: Record<string, unknown> }>).filter(
-    (j) => j.input?.collection_id === documentId
-  );
+  return docs as Array<{ requesterId?: string | null; requesterCollection?: string | null }>;
 };
 
 type Assignment = { handle: string };
@@ -100,14 +98,14 @@ describe("a queued translation is decided by whoever asked for it", () => {
     await ctx?.cleanup();
   });
 
-  it("records the requester on the job row", async () => {
+  it("records the requester on the run, which is what survives until it runs", async () => {
     const id = await seed("Queued", "Queued line");
 
     await enqueueAs(id, editor);
 
-    const [job] = await jobsFor(id);
-    expect(String(job?.input?.requester_id)).toBe(editor.id);
-    expect(job?.input?.requester_collection).toBe("users");
+    const [run] = await runsFor(id);
+    expect(run?.requesterId).toBe(editor.id);
+    expect(run?.requesterCollection).toBe("users");
   });
 
   // The request that queued this is long gone by the time it runs, so rebuilding from the row is the

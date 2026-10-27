@@ -13,11 +13,11 @@ declare const handle: string;
 // @ts-expect-error work reaches the queue only once the rules have been asked about its document
 runner.enqueue(work);
 
-// @ts-expect-error a job is cancelled only once the rules have been asked about its document
-runner.cancel([handle]);
+// @ts-expect-error work is stopped only once the rules have been asked about its document
+runner.stop?.([handle]);
 
 // @ts-expect-error a job is run only once the rules have been asked about its document
-runner.run(handle);
+runner.run?.(handle);
 
 declare const unnameable: { kind: "unnameable" };
 declare const identity: Identity;
@@ -33,19 +33,20 @@ declare const askedHandle: AuthorisedHandle;
 
 export const theQueueTakesWhatTheAskProduced = async (): Promise<void> => {
   await runner.enqueue(asked);
-  await runner.cancel([askedHandle]);
-  await runner.run(askedHandle);
+  await runner.stop?.([askedHandle]);
+  await runner.run?.(askedHandle);
 };
 
 /**
  * A runner written before the brand existed still satisfies the interface: TypeScript compares
  * method parameters bivariantly, so declaring the wider type is not a break for an implementer.
  */
-export const aRunnerFromBefore: Pick<TaskRunner, "enqueue" | "cancel" | "run"> = {
+export const aRunnerFromBefore: Pick<TaskRunner, "enqueue" | "stop" | "run"> = {
   enqueue: async (tasks: TaskInput[]) => {
     void tasks;
+    return [];
   },
-  cancel: async (ids: string[]) => {
+  stop: async (ids: string[]) => {
     void ids;
   },
   run: async (id: string) => {

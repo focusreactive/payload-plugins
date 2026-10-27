@@ -33,6 +33,7 @@ const makeCollection = () => ({
   fields: [{ name: "title", type: "text", localized: true }],
 });
 const makeRunner = () => ({
+  capabilities: { stop: true, run: true },
   create: vi.fn(),
   configure: vi.fn().mockReturnValue((c: Config) => c),
 });
@@ -161,6 +162,26 @@ describe("translatorPlugin — the listed surfaces", () => {
 });
 
 describe("translatorPlugin — listing the surfaces one at a time", () => {
+  it.each([
+    ["can stop work", { stop: true, run: true }, true],
+    ["cannot", { stop: false, run: false }, false],
+  ])(
+    "tells the bulk dashboard whether the runner %s, so it draws no control for a route that is not there",
+    async (_label, capabilities, expected) => {
+      const { posts } = await build({
+        runner: {
+          capabilities,
+          create: vi.fn(),
+          configure: vi.fn().mockReturnValue((c: Config) => c),
+        } as unknown as TranslatorPluginConfig["runner"],
+      });
+
+      expect(posts.admin.components.beforeListTable[0].serverProps).toMatchObject({
+        canStop: expected,
+      });
+    }
+  );
+
   it("one control only → bundle present, doc popup yes, bulk dashboard no", async () => {
     const { result, posts } = await build({
       modules: [documentTranslation()],
@@ -187,6 +208,12 @@ describe("translatorPlugin — listing the surfaces one at a time", () => {
     expect(runner.configure).toHaveBeenCalledTimes(1);
   });
 });
+
+const markedProvenanceCleanup = (col: Record<string, any> | undefined) =>
+  (col?.hooks?.afterDelete ?? []).filter(
+    (h: { __translatorProvenanceCleanup?: string }) =>
+      typeof h.__translatorProvenanceCleanup === "string"
+  );
 
 const provenanceOf = (result: Config, slug = "translator-provenance") =>
   result.collections?.find((c) => c.slug === slug) as Record<string, any> | undefined;
@@ -246,7 +273,11 @@ describe("translatorPlugin — provenance (opt-in)", () => {
       translationProvider: { translate: vi.fn() },
       // The plugin refuses to start without an access decision; these fixtures make the open one.
       access: new AnyAccessGuard(),
-      runner: { create: vi.fn(), configure: vi.fn().mockReturnValue((c: Config) => c) },
+      runner: {
+        create: vi.fn(),
+        configure: vi.fn().mockReturnValue((c: Config) => c),
+        capabilities: { stop: true, run: true },
+      },
       modules: [documentTranslation()],
       components: [translateDocumentControl(), bulkTranslationDashboard()],
       provenance: {},
@@ -271,7 +302,11 @@ describe("translatorPlugin — provenance (opt-in)", () => {
         translationProvider: { translate: vi.fn() },
         // The plugin refuses to start without an access decision; these fixtures make the open one.
         access: new AnyAccessGuard(),
-        runner: { create: vi.fn(), configure: vi.fn().mockReturnValue((c: Config) => c) },
+        runner: {
+          create: vi.fn(),
+          configure: vi.fn().mockReturnValue((c: Config) => c),
+          capabilities: { stop: true, run: true },
+        },
         modules: [documentTranslation()],
         components: [translateDocumentControl(), bulkTranslationDashboard()],
         provenance: { slug },
@@ -288,12 +323,12 @@ describe("translatorPlugin — provenance (opt-in)", () => {
 
   it("attaches a delete-cleanup afterDelete hook to translatable collections when enabled", async () => {
     const { posts } = await build({ provenance: {} } as Partial<TranslatorPluginConfig>);
-    expect(posts.hooks?.afterDelete).toHaveLength(1);
+    expect(markedProvenanceCleanup(posts)).toHaveLength(1);
   });
 
   it("does not attach a cleanup hook when provenance is disabled", async () => {
     const { posts } = await build();
-    expect(posts.hooks?.afterDelete ?? []).toHaveLength(0);
+    expect(markedProvenanceCleanup(posts)).toHaveLength(0);
   });
 
   it("does not attach the cleanup hook to the sidecar collection itself", async () => {
@@ -311,7 +346,11 @@ describe("translatorPlugin — provenance (opt-in)", () => {
       translationProvider: { translate: vi.fn() },
       // The plugin refuses to start without an access decision; these fixtures make the open one.
       access: new AnyAccessGuard(),
-      runner: { create: vi.fn(), configure: vi.fn().mockReturnValue((c: Config) => c) },
+      runner: {
+        create: vi.fn(),
+        configure: vi.fn().mockReturnValue((c: Config) => c),
+        capabilities: { stop: true, run: true },
+      },
       modules: [documentTranslation()],
       components: [translateDocumentControl(), bulkTranslationDashboard()],
       provenance: {},
@@ -323,7 +362,7 @@ describe("translatorPlugin — provenance (opt-in)", () => {
     const twice = await translatorPlugin(pluginConfig)(once);
 
     const posts = twice.collections?.find((c) => c.slug === "posts") as Record<string, any>;
-    expect(posts.hooks?.afterDelete).toHaveLength(1);
+    expect(markedProvenanceCleanup(posts)).toHaveLength(1);
   });
 });
 
@@ -398,17 +437,28 @@ describe("translatorPlugin — lifecycle callbacks", () => {
     ) => Promise<void>;
 
   const handlerInput = (overrides: Record<string, unknown> = {}) => ({
-    collection: "posts",
+    handle: "run-1",
+    targetLng: "de",
+    previousAttempts: 0,
+    ...overrides,
+  });
+
+  const theRecordedRun = {
+    id: "row-1",
+    handle: "run-1",
+    collectionSlug: "posts",
     collectionId: "doc-1",
     sourceLng: "en",
     targetLng: "de",
     publishOnTranslation: false,
-    ...overrides,
-  });
+    queuedAt: "2026-10-27T10:00:00.000Z",
+  };
 
-  const mockPayload = () =>
+  const mockPayload = (collectionSlug = "posts") =>
     ({
       findByID: vi.fn().mockResolvedValue({ id: "doc-1" }),
+      find: vi.fn().mockResolvedValue({ docs: [{ ...theRecordedRun, collectionSlug }] }),
+      update: vi.fn().mockResolvedValue({ docs: [] }),
       logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
       collections: { posts: { config: { versions: undefined } } },
     }) as unknown as Payload;
@@ -429,7 +479,7 @@ describe("translatorPlugin — lifecycle callbacks", () => {
       const { runner } = await build({ lifecycle: {} } as Partial<TranslatorPluginConfig>);
 
       await expect(
-        capturedHandler(runner)(mockPayload(), handlerInput({ collection: "unknown" })),
+        capturedHandler(runner)(mockPayload("unknown"), handlerInput()),
         "the runner decides what a throw means — it cannot if the handler swallows it"
       ).rejects.toBeDefined();
     });
@@ -437,13 +487,13 @@ describe("translatorPlugin — lifecycle callbacks", () => {
     it.each([
       ["onCompleted", "posts"],
       ["onFailed", "unknown"],
-    ])("does not call %s itself", async (callbackName, collection) => {
+    ])("does not call %s itself", async (callbackName, collectionSlug) => {
       const callback = vi.fn();
       const { runner } = await build({
         lifecycle: { [callbackName]: callback },
       } as Partial<TranslatorPluginConfig>);
 
-      await capturedHandler(runner)(mockPayload(), handlerInput({ collection })).catch(
+      await capturedHandler(runner)(mockPayload(collectionSlug), handlerInput()).catch(
         () => undefined
       );
 
@@ -466,11 +516,11 @@ describe("translatorPlugin — lifecycle callbacks", () => {
     const contextHandedToTheRunner = async (lifecycle: Record<string, unknown>) => {
       let captured: TaskRunnerContext | undefined;
       const runner = {
+        capabilities: { stop: true, run: true },
         create: vi.fn().mockReturnValue({
-          enqueue: vi.fn().mockResolvedValue(undefined),
-          cancel: vi.fn(),
+          enqueue: vi.fn().mockResolvedValue([]),
+          stop: vi.fn(),
           run: vi.fn(),
-          findByCollection: vi.fn(),
         }),
         configure: vi.fn((context: TaskRunnerContext) => {
           captured = context;
@@ -483,10 +533,38 @@ describe("translatorPlugin — lifecycle callbacks", () => {
 
     const payload = {
       logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
+      find: vi.fn().mockResolvedValue({
+        docs: [
+          {
+            id: "row-1",
+            handle: "run-1",
+            collectionSlug: "posts",
+            collectionId: "doc-1",
+            sourceLng: "en",
+            targetLng: "de",
+            publishOnTranslation: false,
+            queuedAt: "2026-10-27T10:00:00.000Z",
+          },
+        ],
+      }),
+      create: vi.fn().mockResolvedValue({ id: "row-1" }),
+      update: vi.fn().mockResolvedValue({ docs: [] }),
     } as unknown as Payload;
 
     const mappings: Array<[string, keyof TranslationLifecycleCallbacks, TaskEvent]> = [
-      ["queued", "onQueued", { state: "queued" }],
+      [
+        "queued",
+        "onQueued",
+        {
+          state: "queued",
+          work: {
+            collectionSlug: "posts" as CollectionSlug,
+            collectionId: "doc-1",
+            sourceLng: "en",
+            publishOnTranslation: false,
+          },
+        },
+      ],
       ["delivered", "onCompleted", { state: "delivered" }],
       ["failed", "onFailed", { state: "failed", error: new Error("provider down") }],
       ["cancelled", "onCancelled", { state: "cancelled" }],
@@ -496,7 +574,7 @@ describe("translatorPlugin — lifecycle callbacks", () => {
       const callback = vi.fn();
       const context = await contextHandedToTheRunner({ [callbackName]: callback });
 
-      await context.report(payload, assignment, event);
+      await context.report(payload, { handle: "run-1", targetLng: "de" }, event);
 
       expect(callback, `${String(event)} must reach ${callbackName}`).toHaveBeenCalledWith(
         expect.objectContaining({ collection: "posts", id: "doc-1", targetLng: "de" }),

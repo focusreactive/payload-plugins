@@ -12,6 +12,7 @@ import BulkTranslationDashboard from "./BulkTranslationDashboard.js";
 type BulkTranslationDashboardServerProps = BeforeListTableServerProps & {
   access: AccessGuard;
   targetSelection: TargetSelectionMode;
+  canStop: boolean;
 };
 
 const BulkTranslationDashboardServer = async (props: BulkTranslationDashboardServerProps) => {
@@ -37,6 +38,7 @@ const BulkTranslationDashboardServer = async (props: BulkTranslationDashboardSer
       hasDrafts={hasDrafts}
       autoTranslate={autoTranslate}
       targetSelection={props.targetSelection}
+      canStop={props.canStop}
     />
   );
 };

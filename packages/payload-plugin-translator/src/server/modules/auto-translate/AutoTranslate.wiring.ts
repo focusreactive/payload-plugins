@@ -6,6 +6,7 @@ import { Locales } from "../../../core/domain/locales/index.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
 import type { TaskRunnerFactory } from "../task-runner/index.js";
+import type { RunRecordStoreFactory } from "../runs/index.js";
 
 import {
   filterPolicyToKnownLocales,
@@ -101,7 +102,8 @@ function warnAboutTheRemovedStrategy(collections: ConfigurableCollection[]): voi
 export function configureAutoTranslate(
   collections: ConfigurableCollection[],
   schemaMap: CollectionSchemaMap,
-  taskRunnerFactory: TaskRunnerFactory
+  taskRunnerFactory: TaskRunnerFactory,
+  runRecordStoreFactory: RunRecordStoreFactory
 ): AutoTranslateModule {
   warnAboutTheRemovedStrategy(collections);
 
@@ -114,7 +116,12 @@ export function configureAutoTranslate(
 
   const enabledSlugs = new Set(policies.keys());
   const resolvePolicy = makeCollectionPolicyResolver(policies);
-  const hook = makeAutoTranslateHook({ resolvePolicy, schemaMap, taskRunnerFactory });
+  const hook = makeAutoTranslateHook({
+    resolvePolicy,
+    schemaMap,
+    taskRunnerFactory,
+    runRecordStoreFactory,
+  });
 
   return {
     configure:

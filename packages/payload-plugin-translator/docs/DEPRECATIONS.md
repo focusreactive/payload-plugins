@@ -59,11 +59,16 @@ the single source of truth — code annotations link here by anchor instead of d
 - **Migration:** expand/contract. New jobs write text fields; the relationship field stays as a
   read-only fallback (`required: false`, `admin.readOnly: true`) so jobs queued before the change
   remain readable. Removed (along with the fallback read path) in the next major.
+- **Where the fallback lives now:** one folder —
+  `src/server/modules/task-runner/payload-jobs-runner/legacy/` — reached from two call sites, the
+  boot backfill and the workflow handler. A job carrying any pre-1.0 shape is **adopted** on first
+  encounter: its rows are written into `translator-runs` from what the old row said, its input is
+  replaced by the pointer a job carries now, and nothing downstream learns the old shape existed.
+  Deleting that folder, its two call sites and the `withoutAHandle()` query drops the compatibility
+  outright — the cost is that a job queued before the upgrade and never adopted stops running.
 - **Code refs:**
-  - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsRunnerProvider.ts` (inputSchema, handler input type/unpacking)
-  - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsTaskRunner.ts` (enqueue write, `findByCollection` / `findRawJobs` query + in-memory filter)
-  - `src/server/modules/task-runner/payload-jobs-runner/store/normalizeJob.ts` (read fallback)
-  - `src/server/modules/task-runner/payload-jobs-runner/store/types.ts` (`PayloadJob.input` shape)
+  - `src/server/modules/task-runner/payload-jobs-runner/legacy/legacyInput.ts` (the only reader)
+  - `src/server/modules/task-runner/payload-jobs-runner/legacy/adoptLegacyJob.ts`
 
 ### jobs-per-locale-task-shape
 
@@ -77,14 +82,49 @@ the single source of truth — code annotations link here by anchor instead of d
 - **Why:** a job per locale meant Payload ran a document's locales through `Promise.all`, and every
   write it makes is a whole-document version snapshot — so the second locale's snapshot dropped the
   first's work. See [locale workflow](./plans/2026-09-04-locale-workflow.task.md).
-- **Migration:** expand/contract. Nothing writes the task shape any more, but rows queued before the
-  upgrade are still in `payload-jobs`, so every read keeps a fallback for them. Removing the fallback
-  strands those rows: cancel, stale-lock reclaim and the status panels stop finding them, silently.
+- **Migration:** expand/contract. Nothing writes the task shape any more, and a row queued before the
+  upgrade is adopted rather than read in parallel — see the entry above for where that lives.
+- **Where the fallback lives now:** one folder —
+  `src/server/modules/task-runner/payload-jobs-runner/legacy/` — reached from two call sites, the
+  boot backfill and the workflow handler. A job carrying any pre-1.0 shape is **adopted** on first
+  encounter: its rows are written into `translator-runs` from what the old row said, its input is
+  replaced by the pointer a job carries now, and nothing downstream learns the old shape existed.
+  Deleting that folder, its two call sites and the `withoutAHandle()` query drops the compatibility
+  outright — the cost is that a job queued before the upgrade and never adopted stops running.
 - **Code refs:**
   - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsTaskRunner.ts` (`ownJobs()`)
-  - `src/server/modules/task-runner/payload-jobs-runner/model/planEnqueue.ts` (`pickHost` skips it)
-  - `src/server/modules/task-runner/payload-jobs-runner/store/normalizeJob.ts` (`normalizeJobLocales`
-    expands it to itself)
+  - `src/server/modules/task-runner/payload-jobs-runner/legacy/legacyInput.ts`
+
+### the-runner-only-accepts-work
+
+- **What:** `TaskRunner.assignmentsOf` and `TaskRunner.findByCollection`, with `TaskFilter` and
+  `toTaskFilter`; `TaskRunner.cancel` and `TaskRunner.run` as required members;
+  `createSyncRunner`'s `maxSize` / `ttlMs` options and the `SyncRunnerOptions` type.
+- **Status:** removed
+- **Deprecated:** not annotated — agreed and removed in one step, because the replacement had to
+  exist first.
+- **Removed:** 2026-10-27
+- **Replacement:** nothing on the runner. The plugin keeps its own record of every run
+  (`translator-runs`) and answers from it: which runs a document has, which document a handle names,
+  and what each locale is doing. `cancel` becomes the optional `stop`; `run` becomes optional; a
+  provider declares which of the two it has through the required `capabilities: RunnerCapabilities`.
+- **Why:** every fact the plugin needed about a run lived in the runner, so each new need became a
+  new port member and a new demand on every runner author — `assignmentsOf` arrived that way. Status
+  also could not survive Payload's own `deleteJobOnComplete: true`, because the job row was the
+  record. See [the plugin keeps its own record](./plans/2026-10-26-the-plugin-keeps-its-own-record.design.md).
+- **Migration:** implement `enqueue` and declare `capabilities`. A runner that can stop work renames
+  `cancel` to `stop` and declares `stop: true`; one that can process a queued job on demand keeps
+  `run` and declares `run: true`. Delete `assignmentsOf` and `findByCollection` — nothing calls
+  them. `assertTaskRunnerContract` now takes the declared capabilities as its third argument and
+  asserts that what a provider declares, its runner implements.
+- **What removal takes with it:** a route whose capability is absent is **not registered**, so a
+  host's own client calling `/translate/cancel` against an enqueue-only runner gets a 404 rather
+  than a 501. The plugin's own admin draws no control for it.
+- **Code refs:**
+  - `src/server/modules/task-runner/TaskRunner.interface.ts`
+  - `src/server/modules/task-runner/RunnerCapabilities.ts`
+  - `src/server/features/createTranslationRoutes.ts` (registration by capability)
+  - `src/testing/TaskRunner.invariants.ts`
 
 ### translate-positional-languages
 
@@ -112,9 +152,11 @@ the single source of truth — code annotations link here by anchor instead of d
 
 - **What:** passing a bare `Array<string | number>` of document ids as the second argument to
   `TaskRunner.findByCollection`.
-- **Status:** live
+- **Status:** removed
 - **Deprecated:** 2026-09-04 / PR #126
-- **Replacement:** `TaskFilter` — `findByCollection(slug, { documentIds })`.
+- **Removed:** 2026-10-27 — with `findByCollection` itself; see
+  [the-runner-only-accepts-work](#the-runner-only-accepts-work).
+- **Replacement:** nothing on the runner. The plugin answers about a collection from its own record.
 - **Remove in:** next major
 - **Why:** a positional argument cannot grow. The second filter this method needed —
   `excludeCompleted`, which bounds the read on the enqueue path (#108) — had nowhere to go without
@@ -301,8 +343,11 @@ the single source of truth — code annotations link here by anchor instead of d
 ### enqueue-void-return
 
 - **What:** `TaskRunner.enqueue` resolving with nothing.
-- **Status:** live
+- **Status:** removed
 - **Deprecated:** 2026-10-07 / PR pending (issues #107, #110)
+- **Removed:** 2026-10-27 — `enqueue` now answers `EnqueueAssignment[]`, and the plugin writes a
+  row of its own against each handle, so a runner that answered with nothing would leave work it
+  accepted unrecorded.
 - **Replacement:** resolve with one assignment per requested locale — the shape `TaskRunnerProvider`
   infers for `enqueue`; an implementation returns it as an object literal and needs no import.
 - **Remove in:** next major
@@ -485,7 +530,9 @@ keeps flagging until the source has text again.
 ### the-strategy-leaves-the-stored-run
 
 - **What:** reading `target_lngs` and `strategy` off a run row written before 1.0.
-- **Status:** read-only shim, written nowhere
+- **Status:** read-only shim, written nowhere, and since 2026-10-27 confined to
+  `payload-jobs-runner/legacy/` — a row carrying this shape is adopted on first encounter and is a
+  pointer from that moment on.
 - **Changed:** 2026-10-23 / #208
 - **Replacement:** `targets: [{ lng, filters }]`. A legacy row is read as one target per listed
   locale, and a row that named `skip_existing` is read as carrying one `rule` filter named `stale`.

@@ -54,9 +54,9 @@ describe("the enqueue answer names the run that will translate each locale", () 
     const rows = await ctx.payload.find({
       collection: "payload-jobs" as "docs",
       pagination: false,
-      where: { id: { in: assignments.map((j) => j.handle) } } as never,
+      where: { "input.handle": { in: assignments.map((j) => j.handle) } } as never,
     });
-    expect(rows.docs, "every handle answered names a row that is actually there").toHaveLength(
+    expect(rows.docs, "every handle answered names a job that is actually there").toHaveLength(
       new Set(assignments.map((j) => j.handle)).size
     );
   });
@@ -85,19 +85,16 @@ describe("the enqueue answer names the run that will translate each locale", () 
     ).toHaveLength(1);
   });
 
-  it("still names the run for a locale a live run already covers", async () => {
+  it("names no run for a document it is already translating", async () => {
     const id = await create("Asked twice");
 
     const first = await enqueue([id], ["de"]);
     const second = await enqueue([id], ["de", "fr"]);
 
+    expect(first.map((j) => j.target_lng)).toEqual(["de"]);
     expect(
-      second.map((j) => j.target_lng).sort(),
-      "de needed no write, but it is being translated — leaving it out would report nothing for it"
-    ).toEqual(["de", "fr"]);
-    expect(
-      second.find((j) => j.target_lng === "de")?.handle,
-      "and it is the run that already had it"
-    ).toBe(first[0]?.handle);
+      second,
+      "a second run over this document would put the first run's locales back as they were"
+    ).toEqual([]);
   });
 });

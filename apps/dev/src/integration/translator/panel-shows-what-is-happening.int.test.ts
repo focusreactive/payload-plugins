@@ -7,9 +7,7 @@ import { callEndpoint } from "./callEndpoint";
 
 let ctx: TestPayload;
 
-const JOBS = "payload-jobs" as "docs";
-const WORKFLOW = "translate_document_locales";
-const QUEUE = "translations";
+const RUNS = "translator-runs" as "docs";
 const WINDOW_DAYS = 3;
 const WINDOW_MS = WINDOW_DAYS * 24 * 60 * 60 * 1000;
 
@@ -47,51 +45,36 @@ const panel = async (): Promise<{ docs: Entry[]; failed_window_ms: number }> => 
 const daysAgo = (days: number): string =>
   new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-const ERROR = { name: "Error", message: "boom", cancelled: false, stack: "" };
-
 /**
- * `gave-up` and `retrying` are the only two failure shapes Payload writes: `handleWorkflowError.js`
- * stores `error` on every attempt and sets `hasError` only once it stops retrying.
+ * A locale the runner has picked up and not answered for. The record is told a locale failed only
+ * once the run gives up, so between attempts there is a start and no settlement.
  */
-const failureShape = (failure: "gave-up" | "retrying"): Record<string, unknown> => {
-  if (failure === "gave-up") return { error: ERROR, hasError: true };
-  return { error: ERROR };
-};
+const seedRunBetweenAttempts = (id: string, targetLng: string, lastAttemptAt: string) =>
+  seedRun(id, targetLng, { startedAt: lastAttemptAt });
 
-/** `payload.update` rewrites `updatedAt` with now, so a backdated run goes through `payload.db.updateOne`. */
+/** Seeded rather than translated, so a case can place a failure days in the past. */
 const seedRun = async (
   documentId: string,
   targetLng: string,
-  state: {
-    failure?: "gave-up" | "retrying";
-    completedAt?: string;
-    updatedAt?: string;
-    log?: Array<Record<string, unknown>>;
+  progress: {
+    startedAt?: string;
+    settledAt?: string;
+    outcome?: "delivered" | "failed" | "cancelled";
+    error?: string;
   }
 ): Promise<void> => {
-  const row = await ctx.payload.create({
-    collection: JOBS,
+  await ctx.payload.create({
+    collection: RUNS,
     data: {
-      workflowSlug: WORKFLOW,
-      queue: QUEUE,
-      input: {
-        collection_slug: "docs",
-        collection_id: documentId,
-        source_lng: "en",
-        targets: [{ lng: targetLng }],
-      },
-      ...(state.failure === undefined ? {} : failureShape(state.failure)),
-      ...(state.completedAt === undefined ? {} : { completedAt: state.completedAt }),
-      ...(state.log === undefined ? {} : { log: state.log }),
+      handle: `seeded-${documentId}-${targetLng}`,
+      collectionSlug: "docs",
+      collectionId: documentId,
+      sourceLng: "en",
+      targetLng,
+      publishOnTranslation: false,
+      queuedAt: progress.startedAt ?? new Date().toISOString(),
+      ...progress,
     },
-  } as never);
-
-  if (state.updatedAt === undefined) return;
-  await ctx.payload.db.updateOne({
-    collection: JOBS,
-    id: (row as { id: unknown }).id,
-    data: { updatedAt: state.updatedAt },
-    returning: false,
   } as never);
 };
 
@@ -117,7 +100,11 @@ describe("the collection panel reports what is happening", () => {
 
   it("says nothing about a run that completed", async () => {
     const id = await create("Completed");
-    await seedRun(id, "it", { completedAt: new Date().toISOString() });
+    await seedRun(id, "it", {
+      startedAt: daysAgo(0),
+      settledAt: new Date().toISOString(),
+      outcome: "delivered",
+    });
 
     const entries = (await panel()).docs.filter((entry) => entry.collection_id === id);
     expect(
@@ -128,7 +115,12 @@ describe("the collection panel reports what is happening", () => {
 
   it("names a run that failed inside the window", async () => {
     const id = await create("Failed recently");
-    await seedRun(id, "es", { failure: "gave-up", updatedAt: daysAgo(1) });
+    await seedRun(id, "es", {
+      startedAt: daysAgo(1),
+      settledAt: daysAgo(1),
+      outcome: "failed",
+      error: "it broke",
+    });
 
     const entries = (await panel()).docs.filter((entry) => entry.collection_id === id);
     expect(localesIn(entries), "a recent failure is a call to action").toEqual(["es"]);
@@ -140,7 +132,12 @@ describe("the collection panel reports what is happening", () => {
 
   it("says nothing about a run that failed before the window", async () => {
     const id = await create("Failed long ago");
-    await seedRun(id, "pt", { failure: "gave-up", updatedAt: daysAgo(WINDOW_DAYS + 1) });
+    await seedRun(id, "pt", {
+      startedAt: daysAgo(WINDOW_DAYS + 1),
+      settledAt: daysAgo(WINDOW_DAYS + 1),
+      outcome: "failed",
+      error: "it broke",
+    });
 
     const entries = (await panel()).docs.filter((entry) => entry.collection_id === id);
     expect(entries, "a failure from months ago is not an action").toEqual([]);
@@ -148,31 +145,17 @@ describe("the collection panel reports what is happening", () => {
 
   it("treats a run that is still retrying as in flight, not as failed", async () => {
     const id = await create("Retrying");
-    await seedRun(id, "nl", {
-      failure: "retrying",
-      updatedAt: daysAgo(WINDOW_DAYS + 1),
-      log: [
-        {
-          taskSlug: "translate_document",
-          taskID: "nl",
-          state: "failed",
-          executedAt: daysAgo(WINDOW_DAYS + 1),
-          completedAt: daysAgo(WINDOW_DAYS + 1),
-          error: { message: "boom" },
-          input: { target_lng: "nl" },
-        },
-      ],
-    });
+    await seedRunBetweenAttempts(id, "nl", daysAgo(WINDOW_DAYS + 1));
 
     const entries = (await panel()).docs.filter((entry) => entry.collection_id === id);
     expect(
       localesIn(entries),
-      "hasError is set only on final give-up, so a retrying run is still work in flight"
+      "a run between attempts is still work in flight, however old its last attempt"
     ).toEqual(["nl"]);
     expect(
       entries.map((entry) => entry.status),
       "telling someone to open a document over a run that is still retrying is a false alarm"
-    ).toEqual(["pending"]);
+    ).toEqual(["running"]);
   });
 
   it("reports the window it counted failures over", async () => {

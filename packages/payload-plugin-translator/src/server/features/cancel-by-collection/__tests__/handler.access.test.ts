@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CollectionSlug, Payload, PayloadRequest } from "payload";
 
-import type { Task, TaskRunner } from "../../../modules/task-runner/index.js";
+import type { TaskRunner } from "../../../modules/task-runner/index.js";
+import type { RunRecord } from "../../../modules/runs/index.js";
+import { runRow, storeDouble } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
+import type { RunRecordStoreDouble } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
 
 vi.mock("../../_lib/collection-utils.js", () => ({
   isCollectionAvailable: vi.fn((slug: string, available: Set<string>) =>
@@ -18,18 +21,12 @@ const { refusedTargets } = await import("../../../shared/access/refusedTargets.j
 
 const ANNA = { id: "anna", collection: "users" };
 
-const queued = (handle: string, collectionId: string): Task =>
-  ({
-    id: handle,
-    status: "pending",
-    input: { collectionSlug: "posts", collectionId },
-    createdAt: "",
-    updatedAt: "",
-    cancelled: false,
-  }) as unknown as Task;
+const queued = (handle: string, collectionId: string): RunRecord =>
+  runRow({ handle, collectionSlug: "posts" as CollectionSlug, collectionId });
 
 describe("DELETE /cancel-by-collection asks about each document it would cancel", () => {
   let runner: TaskRunner;
+  let runs: RunRecordStoreDouble;
   let handler: InstanceType<typeof CancelByCollectionHandler>;
 
   const request = (): PayloadRequest =>
@@ -44,13 +41,18 @@ describe("DELETE /cancel-by-collection asks about each document it would cancel"
     (refusedTargets as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(new Set<string>());
     runner = {
       enqueue: vi.fn(),
-      cancel: vi.fn().mockResolvedValue(undefined),
+      stop: vi.fn().mockResolvedValue(undefined),
       run: vi.fn(),
-      findByCollection: vi.fn().mockResolvedValue([queued("mine", "d1"), queued("theirs", "d2")]),
     } as unknown as TaskRunner;
+    runs = storeDouble({
+      findLiveInCollection: vi
+        .fn()
+        .mockResolvedValue([queued("mine", "d1"), queued("theirs", "d2")]),
+    });
     handler = new CancelByCollectionHandler(
       { availableCollections: new Set(["posts"] as CollectionSlug[]) },
-      { create: vi.fn().mockReturnValue(runner) }
+      { create: vi.fn().mockReturnValue(runner), capabilities: { stop: true, run: true } },
+      () => runs
     );
   });
 
@@ -59,7 +61,7 @@ describe("DELETE /cancel-by-collection asks about each document it would cancel"
 
     await handler.handle(request());
 
-    expect(runner.cancel).toHaveBeenCalledWith(["mine"]);
+    expect(runner.stop).toHaveBeenCalledWith(["mine"]);
   });
 
   it("asks about the documents the rows name, for this caller", async () => {
@@ -77,13 +79,13 @@ describe("DELETE /cancel-by-collection asks about each document it would cancel"
 
     const response = await handler.handle(request());
 
-    expect(runner.cancel).not.toHaveBeenCalled();
+    expect(runner.stop).not.toHaveBeenCalled();
     expect(response.status).toBe(204);
   });
 
   it("still cancels everything for a caller the rule allows", async () => {
     await handler.handle(request());
 
-    expect(runner.cancel).toHaveBeenCalledWith(["mine", "theirs"]);
+    expect(runner.stop).toHaveBeenCalledWith(["mine", "theirs"]);
   });
 });

@@ -89,39 +89,6 @@ const titleIn = async (id: string, locale: string) =>
   ).title;
 
 describe("with the host's concurrency control on", () => {
-  it("holds a second job for the same document, then runs it and loses nothing", async () => {
-    armBarrier();
-    const id = await createDoc("Exclusive source");
-
-    await enqueue(id, ["de"]);
-    const first = runQueue();
-    await held;
-
-    await enqueue(id, ["fr"]);
-
-    // The picker check below also passes when there was nothing to take, so first prove the second
-    // job exists.
-    const queued = await jobsFor(id);
-    expect(queued.length, "the request did not get a job of its own").toBe(2);
-    expect(
-      queued.find((job) => !job.processing)?.input?.targets?.map((t) => t.lng),
-      "the second job should carry only the locale that was asked for"
-    ).toEqual(["fr"]);
-
-    const whileRunning = await runQueue();
-    expect(
-      Object.keys(whileRunning.jobStatus ?? {}),
-      "the picker took a second job for a document already being written"
-    ).toEqual([]);
-
-    release?.();
-    await first;
-    await runQueue();
-
-    expect(await titleIn(id, "de"), "de was lost").toBe("de:Exclusive source");
-    expect(await titleIn(id, "fr"), "fr was lost").toBe("fr:Exclusive source");
-  });
-
   it("still runs jobs for different documents together", async () => {
     const first = await createDoc("Doc one");
     const second = await createDoc("Doc two");

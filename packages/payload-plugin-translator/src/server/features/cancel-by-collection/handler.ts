@@ -2,22 +2,39 @@ import type { PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared/index.js";
 import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
+import { assignmentsFromRows } from "../../modules/runs/index.js";
+import type { RunRecord, RunRecordStoreFactory } from "../../modules/runs/index.js";
 import { isCollectionAvailable } from "../_lib/collection-utils.js";
 import { authorisedHandles } from "../../shared/access/authorised.js";
 
 import { CancelByCollectionInputSchema } from "./model.js";
 import type { CancelConfig } from "./model.js";
 
+const hasStarted = (row: RunRecord): boolean => row.startedAt !== null;
+
+const runsWithNoLocaleInFlight = (rows: readonly RunRecord[]): RunRecord[] => {
+  const inFlight = new Set(rows.filter(hasStarted).map((row) => row.handle));
+  return rows.filter((row) => !inFlight.has(row.handle));
+};
+
 /**
- * Cancels every queued job for a collection; jobs in flight are left alone. Answers 204 whether or
- * not some were refused — unlike `/cancel`, which names them, because the caller here named no
- * handles to be told about.
+ * Cancels every queued run for a collection. Answers 204 whether or not some were refused — unlike
+ * `/cancel`, which names them: the caller here named no handles to be told about.
  */
 export class CancelByCollectionHandler {
+  private readonly config: CancelConfig;
+  private readonly taskRunnerFactory: TaskRunnerFactory;
+  private readonly runRecordStoreFactory: RunRecordStoreFactory;
+
   constructor(
-    private readonly config: CancelConfig,
-    private readonly taskRunnerFactory: TaskRunnerFactory
-  ) {}
+    config: CancelConfig,
+    taskRunnerFactory: TaskRunnerFactory,
+    runRecordStoreFactory: RunRecordStoreFactory
+  ) {
+    this.config = config;
+    this.taskRunnerFactory = taskRunnerFactory;
+    this.runRecordStoreFactory = runRecordStoreFactory;
+  }
 
   async handle(req: PayloadRequest): Promise<Response> {
     const validationResult = CancelByCollectionInputSchema.safeParse(req.routeParams);
@@ -32,30 +49,22 @@ export class CancelByCollectionHandler {
       return ServerResponse.badRequest("Collection not available for translation");
 
     const runner = this.taskRunnerFactory.create(req.payload);
-    const rows = await runner.findByCollection(collectionSlug, { excludeCompleted: true });
-    if (rows.length === 0) return ServerResponse.noContent();
+    if (!runner.stop) return ServerResponse.notImplemented("This runner cannot stop work.");
 
-    // A job is cancellable only while none of its locales is in flight, so this excludes rather
-    // than selects: one running locale protects the whole job.
-    const running = new Set(rows.filter((row) => row.status === "running").map((row) => row.id));
-    const queued = new Map(
-      rows
-        .filter((row) => !running.has(row.id))
-        .map((row) => [
-          row.id,
-          { handle: row.id, collectionSlug, collectionId: row.input.collectionId },
-        ])
-    );
-    if (queued.size === 0) return ServerResponse.noContent();
+    const live = await this.runRecordStoreFactory(req.payload).findLiveInCollection(collectionSlug);
+    if (live.length === 0) return ServerResponse.noContent();
+
+    const queued = assignmentsFromRows(runsWithNoLocaleInFlight(live));
+    if (queued.length === 0) return ServerResponse.noContent();
 
     const { authorised } = await authorisedHandles({
       payload: req.payload,
       user: req.user,
-      jobs: [...queued.values()],
+      jobs: queued,
     });
     if (authorised.length === 0) return ServerResponse.noContent();
 
-    await runner.cancel(authorised);
+    await runner.stop(authorised);
 
     return ServerResponse.noContent();
   }

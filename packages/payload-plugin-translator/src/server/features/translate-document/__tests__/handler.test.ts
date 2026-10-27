@@ -14,7 +14,7 @@ import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.
 import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../../types/AutoTranslateContext.js";
 import { ProvenanceService, provenanceIo } from "../../../modules/provenance/index.js";
 import type { ProvenanceServiceFactory } from "../../../modules/provenance/index.js";
-import type { TaskHandlerInput } from "../../../modules/task-runner/index.js";
+import type { TranslateDocumentInput } from "../translateDocument.js";
 import { provenanceInAChain } from "../../../modules/provenance/__tests__/fixtures/inAChain.js";
 import { storeDouble } from "../../../../core/domain/provenance/__tests__/fixtures/provenanceStore.js";
 import type { ProvenanceStore } from "../../../../core/domain/provenance/index.js";
@@ -40,7 +40,9 @@ describe("translateDocument", () => {
 
   const TARGET_LNG = "de";
 
-  const createInput = (overrides: Partial<TaskHandlerInput> = {}): TaskHandlerInput => ({
+  const createInput = (
+    overrides: Partial<TranslateDocumentInput> = {}
+  ): TranslateDocumentInput => ({
     collection: "posts" as CollectionSlug,
     collectionId: "doc-123",
     sourceLng: "en",

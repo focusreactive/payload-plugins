@@ -11,7 +11,7 @@ import { createGetCollectionStatusRoute } from "./get-collection-status/index.js
 
 export type TranslationRoutesDeps = Pick<
   ConfigTimeContext,
-  "taskRunnerFactory" | "access" | "settings"
+  "taskRunnerFactory" | "runRecordStoreFactory" | "access" | "settings"
 > & {
   /** Collections the plugin manages — gates which slugs the routes accept. */
   collectionConfig: { availableCollections: Set<CollectionSlug> };
@@ -19,20 +19,41 @@ export type TranslationRoutesDeps = Pick<
 
 export function createTranslationRoutes({
   taskRunnerFactory,
+  runRecordStoreFactory,
   collectionConfig,
   access,
   settings,
 }: TranslationRoutesDeps): Endpoint[] {
   const { basePath, failedWindowMs } = settings;
+  const { stop, run } = taskRunnerFactory.capabilities;
+
   return [
-    createEnqueueRoute(taskRunnerFactory, collectionConfig, access, basePath),
-    createRunRoute(taskRunnerFactory, access, basePath),
-    createCancelRoute(taskRunnerFactory, access, basePath),
-    createCancelByCollectionRoute(collectionConfig, taskRunnerFactory, access, basePath),
-    createGetDocumentStatusRoute(collectionConfig, taskRunnerFactory, access, basePath),
+    createEnqueueRoute(
+      taskRunnerFactory,
+      runRecordStoreFactory,
+      collectionConfig,
+      access,
+      basePath
+    ),
+    ...(run ? [createRunRoute(taskRunnerFactory, runRecordStoreFactory, access, basePath)] : []),
+    ...(stop
+      ? [createCancelRoute(taskRunnerFactory, runRecordStoreFactory, access, basePath)]
+      : []),
+    ...(stop
+      ? [
+          createCancelByCollectionRoute(
+            collectionConfig,
+            taskRunnerFactory,
+            runRecordStoreFactory,
+            access,
+            basePath
+          ),
+        ]
+      : []),
+    createGetDocumentStatusRoute(collectionConfig, runRecordStoreFactory, access, basePath),
     createGetCollectionStatusRoute(
       { ...collectionConfig, failedWindowMs },
-      taskRunnerFactory,
+      runRecordStoreFactory,
       access,
       basePath
     ),

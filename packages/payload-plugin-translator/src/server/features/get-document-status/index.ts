@@ -1,2 +1,2 @@
 export { createGetDocumentStatusRoute } from "./route.js";
-export { taskToJobStatusOutput } from "./model.js";
+export { runToJobStatus } from "./model.js";

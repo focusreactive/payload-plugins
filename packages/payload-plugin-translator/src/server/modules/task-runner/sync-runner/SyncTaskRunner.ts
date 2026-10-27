@@ -1,150 +1,76 @@
-import type { Payload, CollectionSlug } from "payload";
+import type { Payload } from "payload";
 
-import type { TaskFilter, TaskRunner } from "../TaskRunner.interface.js";
-import { toTaskFilter } from "../toTaskFilter.js";
+import type { TaskRunner } from "../TaskRunner.interface.js";
 import type { TaskRunnerContext } from "../TaskRunnerProvider.interface.js";
-import type {
-  EnqueueAssignment,
-  JobAssignment,
-  JobHandle,
-  Task,
-  TaskInput,
-  RunResult,
-  ID,
-} from "../types.js";
-import type { LazyMap } from "../../../shared/utils/index.js";
+import type { EnqueueAssignment, TaskInput } from "../types.js";
 import type { RequestScope } from "../../../shared/payload/RequestScope.shapes.js";
 import { swallowOrThrow } from "../../../shared/payload/swallowOrThrow.js";
 
 const NEVER_RETRIED = 0;
 
-/** Runs each task inline on enqueue; results live only in memory, so status queries see nothing from a previous process. */
+/**
+ * Runs each task inline on `enqueue`, so a translation is finished by the time the call resolves.
+ */
 export class SyncTaskRunner implements TaskRunner {
   private readonly payload: Payload;
   private readonly context: TaskRunnerContext;
-  private readonly tasks: LazyMap<string, Task>;
 
-  constructor(payload: Payload, context: TaskRunnerContext, tasks: LazyMap<string, Task>) {
+  constructor(payload: Payload, context: TaskRunnerContext) {
     this.payload = payload;
     this.context = context;
-    this.tasks = tasks;
   }
 
   async enqueue(inputs: TaskInput[], scope: RequestScope = {}): Promise<EnqueueAssignment[]> {
     const assigned: EnqueueAssignment[] = [];
     const served = new Set<string>();
+
     for (const input of inputs) {
-      const key = this.getKey(input.collectionSlug, input.collectionId, input.targetLng);
+      const key = `${input.collectionSlug}:${input.collectionId}:${input.targetLng}`;
       if (served.has(key)) continue;
       served.add(key);
-      const now = new Date().toISOString();
 
-      const task: Task = {
-        id: crypto.randomUUID(),
-        status: "running",
-        input,
-        createdAt: now,
-        updatedAt: now,
-        cancelled: false,
-      };
-
-      this.tasks.set(key, task);
+      const handle = crypto.randomUUID();
       const assignment: EnqueueAssignment = {
         collectionSlug: input.collectionSlug,
         collectionId: input.collectionId,
         sourceLng: input.sourceLng,
         targetLng: input.targetLng,
-        handle: task.id,
+        handle,
       };
       assigned.push(assignment);
-      await this.context.report(this.payload, assignment, { state: "queued" });
-
-      const markEvictable = (status: "completed" | "failed", error?: Task["error"]) => {
-        const at = new Date().toISOString();
-        task.status = status;
-        task.updatedAt = at;
-        if (status === "completed") task.completedAt = at;
-        if (error) task.error = error;
-      };
+      const run = { handle, targetLng: input.targetLng };
+      await this.context.report(
+        this.payload,
+        run,
+        {
+          state: "queued",
+          work: {
+            collectionSlug: input.collectionSlug,
+            collectionId: input.collectionId,
+            sourceLng: input.sourceLng,
+            filters: input.filters,
+            publishOnTranslation: input.publishOnTranslation,
+          },
+        },
+        scope
+      );
 
       await swallowOrThrow(
         scope,
         async () => {
           await this.context.handler(
             this.payload,
-            {
-              collection: input.collectionSlug,
-              collectionId: input.collectionId,
-              sourceLng: input.sourceLng,
-              targetLng: input.targetLng,
-              filters: input.filters,
-              publishOnTranslation: input.publishOnTranslation,
-              previousAttempts: NEVER_RETRIED,
-            },
+            { handle, targetLng: input.targetLng, previousAttempts: NEVER_RETRIED },
             scope
           );
-          markEvictable("completed");
-          await this.context.report(this.payload, assignment, { state: "delivered" });
+          await this.context.report(this.payload, run, { state: "delivered" }, scope);
         },
         async (error) => {
-          markEvictable("failed", {
-            message: error instanceof Error ? error.message : "Unknown error",
-          });
-          await this.context.report(this.payload, assignment, { state: "failed", error });
+          await this.context.report(this.payload, run, { state: "failed", error }, scope);
         }
       );
     }
+
     return assigned;
-  }
-
-  /** No-op, and reports nothing: every assignment settled inside `enqueue`, so none is still owed. */
-  cancel(_taskIds: string[]): Promise<void> {
-    return Promise.resolve();
-  }
-
-  async assignmentsOf(handles: readonly JobHandle[]): Promise<JobAssignment[]> {
-    const wanted = new Set(handles);
-    const found: JobAssignment[] = [];
-
-    for (const [, task] of this.tasks) {
-      if (!wanted.has(task.id)) continue;
-      found.push({
-        handle: task.id,
-        collectionSlug: task.input.collectionSlug,
-        collectionId: task.input.collectionId,
-        startedBy: null,
-      });
-    }
-
-    return found;
-  }
-
-  async run(_taskId: string): Promise<RunResult> {
-    return { success: false, error: "not_found" };
-  }
-
-  async findByCollection(
-    collectionSlug: CollectionSlug,
-    filter?: Array<string | number> | TaskFilter
-  ): Promise<Task[]> {
-    const { documentIds, excludeCompleted, excludeGivenUpBefore } = toTaskFilter(filter);
-    const results: Task[] = [];
-    const wanted = documentIds ? new Set(documentIds.map(String)) : undefined;
-
-    for (const [, task] of this.tasks) {
-      if (task.input.collectionSlug !== collectionSlug) continue;
-      if (wanted && !wanted.has(task.input.collectionId)) continue;
-      if (excludeCompleted && task.completedAt) continue;
-      if (excludeGivenUpBefore && task.status === "failed") {
-        if (Date.parse(task.updatedAt) < excludeGivenUpBefore.getTime()) continue;
-      }
-      results.push(task);
-    }
-
-    return results;
-  }
-
-  private getKey(collectionSlug: CollectionSlug, collectionId: ID, targetLng: string): string {
-    return `${collectionSlug}:${collectionId}:${targetLng}`;
   }
 }
