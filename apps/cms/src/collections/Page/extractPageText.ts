@@ -51,6 +51,10 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
     case "stats": {
       return extractStatsText(block);
     }
+    case "globalSectionSlot": {
+      const inner = typeof block.reference === "object" ? block.reference.block?.[0] : undefined;
+      return inner ? extractPageBlockText(inner) : "";
+    }
     default: {
       return "";
     }

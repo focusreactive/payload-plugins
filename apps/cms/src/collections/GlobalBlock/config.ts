@@ -5,6 +5,7 @@ import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 
 import { preventDeleteIfReferenced } from "./hooks/preventDeleteIfReferenced";
+import { revalidatePagesUsingGlobalBlock } from "./hooks/revalidatePagesUsingGlobalBlock";
 
 export const GlobalBlock: CollectionConfig<"globalBlock"> = {
   access: {
@@ -54,6 +55,7 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
     },
   ],
   hooks: {
+    afterChange: [revalidatePagesUsingGlobalBlock],
     beforeDelete: [preventDeleteIfReferenced],
   },
   labels: {
