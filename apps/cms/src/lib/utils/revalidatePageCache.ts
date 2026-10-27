@@ -7,7 +7,11 @@ import { getPathFromBreadcrumbs } from "../utils/path/getPathFromBreadcrumbs";
 import { cacheTag } from "./cacheTags";
 import { revalidateScopedTag } from "./scopedCache";
 
-export function revalidatePageCache(params: { doc: Page; locale: Locale; payload: Payload }): void {
+export function revalidatePageCache(params: {
+  doc: Pick<Page, "breadcrumbs" | "slug">;
+  locale: Locale;
+  payload: Payload;
+}): void {
   const path = getPathFromBreadcrumbs(params.doc.breadcrumbs) ?? "home";
   params.payload.logger?.info?.(`Revalidating page with slug: ${params.doc.slug}`);
   revalidateScopedTag(cacheTag({ locale: params.locale, path, type: "page" }), "max");

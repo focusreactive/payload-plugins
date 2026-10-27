@@ -8,7 +8,6 @@ import { extractFaqText } from "@/blocks/Faq/extractText";
 import { extractHeroText } from "@/blocks/Hero/extractText";
 import { extractLogosText } from "@/blocks/Logos/extractText";
 import { extractTestimonialsText } from "@/blocks/TestimonialsList/extractText";
-import { isPublishedGlobalBlock } from "@/collections/GlobalBlock/slots";
 import { extractLexicalText, joinText } from "@/lib/utils/text";
 import type { Page } from "@/payload-types";
 
@@ -53,9 +52,8 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
       return extractStatsText(block);
     }
     case "globalSectionSlot": {
-      const reference = typeof block.reference === "object" ? block.reference : null;
-      const inner = isPublishedGlobalBlock(reference) ? reference?.block?.[0] : undefined;
-      return inner ? extractPageBlockText(inner) : "";
+      // Shared text stays out of page vectors, so one global block edit does not re-embed every page using it.
+      return "";
     }
     default: {
       return "";

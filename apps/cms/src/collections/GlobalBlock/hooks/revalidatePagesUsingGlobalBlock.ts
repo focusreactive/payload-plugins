@@ -1,6 +1,5 @@
 import type { CollectionAfterChangeHook, PayloadRequest } from "payload";
 
-import { upsertPageEmbedding } from "@/collections/Page/hooks/indexEmbedding";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { revalidatePageCache } from "@/lib/utils/revalidatePageCache";
 import type { GlobalBlock } from "@/payload-types";
@@ -56,15 +55,12 @@ export const revalidatePagesUsingGlobalBlock: CollectionAfterChangeHook<GlobalBl
       overrideAccess: true,
       pagination: false,
       req,
+      select: { breadcrumbs: true, slug: true },
       where: { _status: { equals: "published" }, id: { in: pageIds } },
     });
 
     for (const page of publishedPages) {
       revalidatePageCache({ doc: page, locale, payload });
-
-      if (!context.skipEmbedding) {
-        await upsertPageEmbedding({ locale, page, req });
-      }
     }
   }
 
