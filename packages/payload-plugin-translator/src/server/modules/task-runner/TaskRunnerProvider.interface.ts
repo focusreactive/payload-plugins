@@ -1,17 +1,20 @@
-import type { CollectionSlug, Config, Payload } from "payload";
+import type { Config, Payload } from "payload";
 import type { TaskRunner } from "./TaskRunner.interface.js";
-import type { EnqueueAssignment, ID, RunAsk, TaskEvent } from "./types.js";
+import type { RunnerCapabilities } from "./RunnerCapabilities.js";
+import type { JobHandle, RunRef, TaskEvent } from "./types.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 
 /**
  * Input for task handler callback
  */
-export type TaskHandlerInput = RunAsk & {
-  collection: CollectionSlug;
-  collectionId: ID;
-  sourceLng: string;
+/**
+ * What a runner hands back about one piece of work it has tried.
+ *
+ * @since 1.0.0
+ */
+export type TaskHandlerInput = {
+  handle: JobHandle;
   targetLng: string;
-  publishOnTranslation: boolean;
   /** Zero on the first attempt, and on any runner that does not retry. */
   previousAttempts: number;
 };
@@ -30,22 +33,25 @@ export type TaskHandler = (
  */
 export type TaskRunnerContext = {
   handler: TaskHandler;
-  collections: CollectionSlug[];
   /**
    * Tell the plugin what became of one assignment — the only road to the host; a runner that never
    * calls this leaves its host hearing nothing.
    *
    * - `queued` when the work is accepted, then at most one terminal event per assignment.
    * - Every `queued` is sent before `enqueue` resolves, every `cancelled` before `cancel` resolves.
-   * - The assignment carries the handle the enqueue answer gave for that locale.
-   * - One `queued` per assignment the enqueue answered, **including a locale an existing run already
-   *   covers**; terminal events are counted per assignment identity.
+   * - The reference carries the handle the enqueue answer gave for that locale.
+   * - One `queued` per locale the enqueue answered; terminal events are counted per locale.
    * - `cancelled` only ever follows a `cancel`; a locale already reported `failed` is settled and is
    *   not owed.
    *
+   * A failing `queued` report leaves the run unrecorded: let it out of `enqueue` rather than
+   * logging it — `assertTaskRunnerContract` asserts this.
+   *
+   * `scope` joins the write to the caller's transaction; pass the one `enqueue` or `cancel` was given.
    * @since 0.16.0
+   * @since 1.0.0
    */
-  report: (payload: Payload, assignment: EnqueueAssignment, event: TaskEvent) => Promise<void>;
+  report: (payload: Payload, run: RunRef, event: TaskEvent, scope?: RequestScope) => Promise<void>;
 };
 
 /**
@@ -57,6 +63,7 @@ export type TaskRunnerContext = {
  */
 export type TaskRunnerFactory = {
   create(payload: Payload): TaskRunner;
+  capabilities: RunnerCapabilities;
 };
 
 /**
@@ -69,6 +76,13 @@ export type TaskRunnerFactory = {
  * Future implementations: createInngestRunner, createQStashRunner
  */
 export interface TaskRunnerProvider {
+  /**
+   * What `create` returns can do beyond accepting work — see {@link RunnerCapabilities}.
+   *
+   * @since 1.0.0
+   */
+  capabilities: RunnerCapabilities;
+
   /**
    * Creates a TaskRunner instance for runtime operations (enqueue, cancel, find).
    *

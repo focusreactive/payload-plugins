@@ -10,23 +10,16 @@ const run = (parts: Partial<PayloadJob> = {}): PayloadJob =>
     id: 7,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
-    input: {
-      collection_slug: "docs",
-      collection_id: "doc-1",
-      source_lng: "en",
-      targets: [
-        { lng: "de", filters: [] },
-        { lng: "fr", filters: [] },
-        { lng: "es", filters: [] },
-      ],
-    },
+    input: { handle: "run-1", locales: ["de", "fr", "es"] },
     ...parts,
   }) as PayloadJob;
 
 const tried = (locale: string, totalTried: number) => ({ [TASK]: { [locale]: { totalTried } } });
 
+const RUN_LOCALES = ["de", "fr", "es"];
+
 const locales = (job: PayloadJob, target: string, limit: number) =>
-  owedIfGaveUp(job, TASK, target, limit).map((task) => task.input.targetLng);
+  owedIfGaveUp(job, TASK, target, limit, RUN_LOCALES);
 
 describe("owedIfGaveUp", () => {
   it("says nothing while the run still has an attempt left for the locale", () => {

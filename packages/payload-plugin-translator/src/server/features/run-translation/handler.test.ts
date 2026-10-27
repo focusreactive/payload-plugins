@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, PayloadRequest } from "payload";
 
 import type { TaskRunnerFactory, TaskRunner } from "../../modules/task-runner/index.js";
+import { runRow, storeDouble } from "../../modules/runs/__tests__/fixtures/runRecordStore.js";
+import type { RunRecordStoreDouble } from "../../modules/runs/__tests__/fixtures/runRecordStore.js";
 
 vi.mock("../../shared/access/refusedTargets.js", () => ({
   refusedTargets: vi.fn().mockResolvedValue(new Set<string>()),
@@ -13,6 +15,7 @@ describe("RunTranslationHandler", () => {
   let handler: InstanceType<typeof RunTranslationHandler>;
   let mockTaskRunner: TaskRunner;
   let mockTaskRunnerFactory: TaskRunnerFactory;
+  let runs: RunRecordStoreDouble;
 
   const createMockRequest = (params: Record<string, string> = {}): PayloadRequest =>
     ({
@@ -23,24 +26,24 @@ describe("RunTranslationHandler", () => {
   beforeEach(() => {
     mockTaskRunner = {
       enqueue: vi.fn(),
-      cancel: vi.fn(),
+      stop: vi.fn(),
       run: vi.fn().mockResolvedValue({ success: true }),
-      findByCollection: vi.fn(),
-      assignmentsOf: vi.fn().mockResolvedValue([
-        {
-          handle: "task-456",
-          collectionSlug: "posts",
-          collectionId: "d1",
-          startedBy: { id: "anna", collection: "users" },
-        },
-      ]),
     };
 
     mockTaskRunnerFactory = {
       create: vi.fn().mockReturnValue(mockTaskRunner),
+      capabilities: { stop: true, run: true },
     };
 
-    handler = new RunTranslationHandler(mockTaskRunnerFactory);
+    runs = storeDouble({
+      findByHandles: vi
+        .fn()
+        .mockResolvedValue([
+          runRow({ handle: "task-456", requesterId: "anna", requesterCollection: "users" }),
+        ]),
+    });
+
+    handler = new RunTranslationHandler(mockTaskRunnerFactory, () => runs);
   });
 
   describe("validation", () => {
@@ -136,6 +139,19 @@ describe("RunTranslationHandler", () => {
       expect(response.status).toBe(429);
       const body = await response.json();
       expect(body.message).toBe("Translation task is already in progress");
+    });
+  });
+  describe("a runner that cannot run a job on demand", () => {
+    it("is answered rather than called, although this route is not registered for one", async () => {
+      const cannotRun = { enqueue: vi.fn() } as unknown as TaskRunner;
+      const handler = new RunTranslationHandler(
+        { create: vi.fn().mockReturnValue(cannotRun), capabilities: { stop: false, run: false } },
+        () => runs
+      );
+
+      const response = await handler.handle(createMockRequest({ id: "task-456" }));
+
+      expect(response.status).toBe(501);
     });
   });
 });

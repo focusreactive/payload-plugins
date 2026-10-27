@@ -1,8 +1,10 @@
 import { z } from "zod";
 import type { CollectionSlug } from "payload";
 
-import { JobIdSchema, toClientErrorMessage } from "../../shared/index.js";
-import type { Task, TaskStatus } from "../../modules/task-runner/index.js";
+import { JobIdSchema } from "../../shared/index.js";
+import type { TaskStatus } from "../../modules/task-runner/index.js";
+import { lastTouched } from "../../modules/runs/index.js";
+import type { ReportedRun } from "../../modules/runs/index.js";
 
 /**
  * Input validation schema.
@@ -56,48 +58,45 @@ export type GetDocumentStatusConfig = {
   availableCollections: Set<CollectionSlug>;
 };
 
-const isNewerTask = (candidate: Task, current: Task): boolean =>
-  candidate.createdAt !== current.createdAt
-    ? candidate.createdAt > current.createdAt
-    : candidate.updatedAt > current.updatedAt;
+const isNewer = (candidate: ReportedRun, current: ReportedRun): boolean =>
+  candidate.row.queuedAt !== current.row.queuedAt
+    ? candidate.row.queuedAt > current.row.queuedAt
+    : lastTouched(candidate.row) > lastTouched(current.row);
 
 /**
- * Reduce a document's jobs to the latest one per target locale.
+ * One row per locale, out of the row-per-locale-per-run a document accumulates.
  *
- * `findByCollection` returns every job for the document across all target locales (plus any superseded
- * jobs not yet cancelled). The status panel shows one row per target locale, so we keep — per
- * `targetLng` — the most recently created job (tie-break: most recently updated). Without this the
- * caller sees a single arbitrary job and every other in-flight locale looks idle, which is the
- * concurrent re-translate bug (a second re-translate appearing to overwrite the first's status).
+ * The input is already filtered to runs the panel has a word for, so a locale whose newest run was
+ * cancelled falls back to what it last actually did.
  */
-export function latestTaskPerTargetLocale(tasks: Task[]): Task[] {
-  const byLocale = new Map<string, Task>();
-  for (const task of tasks) {
-    const current = byLocale.get(task.input.targetLng);
-    if (!current || isNewerTask(task, current)) byLocale.set(task.input.targetLng, task);
+export function latestPerTargetLocale(runs: readonly ReportedRun[]): ReportedRun[] {
+  const byLocale = new Map<string, ReportedRun>();
+  for (const run of runs) {
+    const current = byLocale.get(run.row.targetLng);
+    if (!current || isNewer(run, current)) byLocale.set(run.row.targetLng, run);
   }
   return [...byLocale.values()];
 }
 
 /**
- * Transforms a Task to API output format (snake_case for client compatibility)
+ * One run of one locale, in the shape the admin has always read.
+ *
+ * `error` is passed through rather than sanitised: the text is cleaned before it is stored, and a
+ * second pass would collapse a named reason's own copy to the generic line.
  */
-export function taskToJobStatusOutput(task: Task): JobStatusOutput {
+export function runToJobStatus({ row, status }: ReportedRun): JobStatusOutput {
   return {
-    id: task.id,
-    status: task.status,
-    created_at: task.createdAt,
-    updated_at: task.updatedAt,
-    completed_at: task.completedAt,
+    id: row.handle,
+    status,
+    created_at: row.queuedAt,
+    updated_at: lastTouched(row),
+    completed_at: row.outcome === "delivered" ? (row.settledAt ?? undefined) : undefined,
     input: {
-      collection: {
-        relationTo: task.input.collectionSlug,
-        value: task.input.collectionId,
-      },
-      source_lng: task.input.sourceLng,
-      target_lng: task.input.targetLng,
+      collection: { relationTo: row.collectionSlug, value: row.collectionId },
+      source_lng: row.sourceLng,
+      target_lng: row.targetLng,
     },
-    error: task.error ? { message: toClientErrorMessage(task.error.message) } : undefined,
-    cancelled: task.cancelled,
+    error: row.error === null ? undefined : { message: row.error },
+    cancelled: false,
   };
 }

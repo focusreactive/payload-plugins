@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, PayloadRequest, CollectionSlug } from "payload";
+import { storeDouble } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
 
 /*
  * `handler.unnameable.test.ts` mocks `authorisedWork` away, so it cannot see *when* the refusal
@@ -52,7 +53,11 @@ describe("POST /enqueue refuses an unnameable actor before asking about anything
     askedAbout.length = 0;
     handler = new EnqueueTranslationHandler(
       { availableCollections: new Set(["posts"] as CollectionSlug[]) },
-      { create: vi.fn().mockReturnValue({ enqueue: vi.fn().mockResolvedValue(undefined) }) }
+      {
+        create: vi.fn().mockReturnValue({ enqueue: vi.fn().mockResolvedValue([]) }),
+        capabilities: { stop: true, run: true },
+      },
+      () => storeDouble()
     );
   });
 

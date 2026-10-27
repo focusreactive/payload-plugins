@@ -80,10 +80,12 @@ describe("a run carries the fields it was asked for, through the stored job row"
     expect(de.note).toBe(tr("de", "This too"));
   });
 
-  it("keeps one locale's leaf list out of a second request for another locale", async () => {
+  it("keeps one locale's leaf list out of a later request for another locale", async () => {
     const id = await create({ title: "Shared run", note: "Only in French" });
 
+    // The first run must settle before the second is accepted: one run at a time per document.
     await enqueue({ id, target_lng: "de", filters: leaves("title") });
+    await work();
     await enqueue({ id, target_lng: "fr" });
     await work();
 

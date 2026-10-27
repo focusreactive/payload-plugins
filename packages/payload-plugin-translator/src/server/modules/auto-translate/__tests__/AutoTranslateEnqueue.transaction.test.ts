@@ -6,6 +6,7 @@ import type { TaskRunnerFactory } from "../../task-runner/TaskRunnerProvider.int
 import { makeCollectionPolicyResolver } from "../AutoTranslate.policy.js";
 import type { NormalizedAutoTranslatePolicy } from "../AutoTranslate.policy.js";
 import { makeAutoTranslateHook } from "../AutoTranslateEnqueue.hook.js";
+import { storeDouble } from "../../runs/__tests__/fixtures/runRecordStore.js";
 
 const schemaMap: CollectionSchemaMap = new Map([
   ["posts" as CollectionSlug, [{ name: "title", type: "text", localized: true }] as Field[]],
@@ -26,6 +27,7 @@ function setup() {
     resolvePolicy: makeCollectionPolicyResolver(new Map([["posts", policy]])),
     schemaMap,
     taskRunnerFactory,
+    runRecordStoreFactory: () => storeDouble(),
   });
   return { hook, enqueue };
 }

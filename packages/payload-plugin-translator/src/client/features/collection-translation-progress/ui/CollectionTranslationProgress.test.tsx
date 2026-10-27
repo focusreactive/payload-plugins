@@ -30,10 +30,15 @@ const panelWithWindow = (ms: number): CollectionTranslationPanel => ({
   failedWindowMs: ms,
 });
 
-const show = (data: CollectionTranslationPanel) =>
+const show = (data: CollectionTranslationPanel, canStop = true) =>
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <CollectionTranslationProgress collection="docs" data={data} isPending={false} />
+      <CollectionTranslationProgress
+        collection="docs"
+        data={data}
+        isPending={false}
+        canStop={canStop}
+      />
     </QueryClientProvider>
   );
 
@@ -72,5 +77,24 @@ describe("the collection progress panel", () => {
     show(panelWithWindow(ms));
 
     expect(screen.queryByText(phrase), why).not.toBeNull();
+  });
+  describe("the control for stopping queued work", () => {
+    it("is offered when the runner can stop work", () => {
+      show(panel({ [DocumentTranslationStatus.PENDING]: 3 }));
+
+      expect(screen.getByLabelText("Cancel translations")).toBeDefined();
+    });
+
+    it("is not drawn when the runner cannot, because no route is there to answer it", () => {
+      show(panel({ [DocumentTranslationStatus.PENDING]: 3 }), false);
+
+      expect(screen.queryByLabelText("Cancel translations")).toBeNull();
+    });
+
+    it("still shows how much is queued when the runner cannot stop it", () => {
+      show(panel({ [DocumentTranslationStatus.PENDING]: 3 }), false);
+
+      expect(screen.getByText("3")).toBeDefined();
+    });
   });
 });

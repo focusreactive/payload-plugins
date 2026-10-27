@@ -1,34 +1,15 @@
-import type { Payload, Where, CollectionSlug } from "payload";
+import type { Payload, Where } from "payload";
 
-import type { TaskFilter, TaskRunner } from "../TaskRunner.interface.js";
+import type { TaskRunner } from "../TaskRunner.interface.js";
 import type { TaskRunnerContext } from "../TaskRunnerProvider.interface.js";
-import { toTaskFilter } from "../toTaskFilter.js";
-import type {
-  EnqueueAssignment,
-  JobAssignment,
-  JobHandle,
-  Task,
-  TaskInput,
-  RunResult,
-} from "../types.js";
+import type { EnqueueAssignment, TaskInput, RunResult } from "../types.js";
 import type { PayloadJobsRunnerConfig } from "./config.js";
-import type { PayloadJob, StoredRunTarget, StoredWorkflowInput } from "./store/index.js";
-import { runLocales, runTargets } from "./store/index.js";
-import {
-  assignmentOf,
-  handleOf,
-  normalizeJobLocales,
-  ofCollection,
-  ofDocuments,
-  readCollectionRef,
-  readRequester,
-} from "./store/index.js";
-import { owedOnCancel, planEnqueue } from "./model/index.js";
-import type { RequestShape } from "./model/index.js";
+import type { PayloadJob, StoredWorkflowInput } from "./store/index.js";
+import { ofHandles, pointerOf } from "./store/index.js";
+import { owedOnCancel } from "./model/index.js";
 import type { RequestScope } from "../../../shared/payload/RequestScope.shapes.js";
 import { freshReq } from "../../../shared/payload/RequestScope.shapes.js";
 
-const APPEND_ATTEMPTS = 2;
 const ENQUEUE_CONCURRENCY = 10;
 
 type QueueWorkflow = (args: {
@@ -39,16 +20,21 @@ type QueueWorkflow = (args: {
   req?: { transactionID?: string | number };
 }) => Promise<{ id?: unknown } | undefined>;
 
-const assign = (request: RequestShape, targetLngs: string[], handle: string): EnqueueAssignment[] =>
-  targetLngs.map((targetLng) => ({
-    collectionSlug: request.collectionSlug as CollectionSlug,
-    collectionId: request.collectionId,
-    sourceLng: request.sourceLng,
-    targetLng,
-    handle,
-  }));
+/**
+ * What a run stores once for all of its locales. Two requests that differ in any of it cannot share
+ * a run, which is why they are grouped by it before anything is queued — and none of it reaches the
+ * job row, which carries a pointer.
+ */
+type RunGroup = {
+  collectionSlug: string;
+  collectionId: string;
+  sourceLng: string;
+  publishOnTranslation: boolean;
+  requesterId: string | number | null;
+  requesterCollection: string | null;
+};
 
-function requestShape(task: TaskInput, scope: RequestScope): RequestShape {
+function runGroupOf(task: TaskInput, scope: RequestScope): RunGroup {
   return {
     collectionSlug: task.collectionSlug,
     collectionId: String(task.collectionId),
@@ -59,21 +45,8 @@ function requestShape(task: TaskInput, scope: RequestScope): RequestShape {
   };
 }
 
-function requestKey(task: TaskInput, scope: RequestScope): string {
-  return JSON.stringify(requestShape(task, scope));
-}
-
-const settledSince = (moment: Date): Where => ({
-  or: [{ hasError: { not_equals: true } }, { updatedAt: { greater_than: moment.toISOString() } }],
-});
-
-function documentKey(collectionSlug: string, collectionId: string): string {
-  return `${collectionSlug}\u0000${collectionId}`;
-}
-
-function storedTargets(group: TaskInput[], locales: string[]): StoredRunTarget[] {
-  const asked = new Map(group.map((task) => [task.targetLng, task]));
-  return locales.map((lng) => ({ lng, filters: [...(asked.get(lng)?.filters ?? [])] }));
+function runGroupKey(task: TaskInput, scope: RequestScope): string {
+  return JSON.stringify(runGroupOf(task, scope));
 }
 
 export class PayloadJobsTaskRunner implements TaskRunner {
@@ -88,185 +61,116 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   }
 
   async enqueue(tasks: TaskInput[], scope: RequestScope = {}): Promise<EnqueueAssignment[]> {
-    const byRequest = new Map<string, TaskInput[]>();
+    const byRunGroup = new Map<string, TaskInput[]>();
     for (const task of tasks) {
-      const key = requestKey(task, scope);
-      const group = byRequest.get(key) ?? [];
+      const key = runGroupKey(task, scope);
+      const group = byRunGroup.get(key) ?? [];
       group.push(task);
-      byRequest.set(key, group);
+      byRunGroup.set(key, group);
     }
 
-    const live = await this.findRawJobs({ completedAt: { exists: false } }, scope);
-    const liveByDocument = new Map<string, PayloadJob[]>();
-    for (const job of live) {
-      const { collectionSlug, collectionId } = readCollectionRef(job.input);
-      const key = documentKey(collectionSlug, collectionId);
-      liveByDocument.set(key, [...(liveByDocument.get(key) ?? []), job]);
-    }
-    const exclusiveQueue = Boolean(this.payload.config.jobs?.enableConcurrencyControl);
-
-    const groups = [...byRequest.values()];
+    const groups = [...byRunGroup.values()];
     const assigned: EnqueueAssignment[] = [];
     for (let i = 0; i < groups.length; i += ENQUEUE_CONCURRENCY) {
       const served = await Promise.all(
-        groups
-          .slice(i, i + ENQUEUE_CONCURRENCY)
-          .map((group) => this.serve(group, liveByDocument, exclusiveQueue, scope))
+        groups.slice(i, i + ENQUEUE_CONCURRENCY).map((group) => this.serve(group, scope))
       );
       for (const entries of served) assigned.push(...entries);
-    }
-    for (const assignment of assigned) {
-      await this.context.report(this.payload, assignment, { state: "queued" });
     }
     return assigned;
   }
 
-  private async serve(
-    group: TaskInput[],
-    liveByDocument: Map<string, PayloadJob[]>,
-    exclusiveQueue: boolean,
-    scope: RequestScope
-  ): Promise<EnqueueAssignment[]> {
+  /**
+   * One run per request group, named by this plugin rather than by the queue.
+   *
+   * The `queued` reports must land before the job is queued: a cron that picks the job up first
+   * finds no record, translates nothing, and leaves a row that is never settled — which blocks the
+   * document for good.
+   */
+  private async serve(group: TaskInput[], scope: RequestScope): Promise<EnqueueAssignment[]> {
     const [first] = group;
-    const request = requestShape(first, scope);
-    const plan = planEnqueue({
-      live: liveByDocument.get(documentKey(request.collectionSlug, request.collectionId)) ?? [],
-      request,
-      requested: storedTargets(
-        group,
-        group.map((t) => t.targetLng)
-      ),
-      exclusiveQueue,
-    });
+    const request = runGroupOf(first, scope);
+    const locales = [...new Set(group.map((task) => task.targetLng))];
+    const asked = new Map(group.map((task) => [task.targetLng, task]));
+    const handle = crypto.randomUUID();
 
-    const undelivered = plan.host
-      ? await this.extendJob(plan.host, storedTargets(group, plan.append), first.waitUntil, scope)
-      : [];
-    const queue = [...plan.queue, ...undelivered];
-    const delivered = plan.append.filter((locale) => !undelivered.includes(locale));
-
-    const onTheHost = plan.host ? assign(request, delivered, String(plan.host.id)) : [];
-    const onTheCovering = plan.coveredBy
-      ? assign(request, plan.covered, String(plan.coveredBy.id))
-      : [];
-    if (queue.length === 0) return [...onTheHost, ...onTheCovering];
-
-    const handle = await this.queueWorkflow(
-      request,
-      storedTargets(group, queue),
-      first.waitUntil,
-      scope
-    );
-    return handle === null
-      ? [...onTheHost, ...onTheCovering]
-      : [...onTheHost, ...onTheCovering, ...assign(request, queue, handle)];
-  }
-
-  private async extendJob(
-    job: PayloadJob,
-    appending: StoredRunTarget[],
-    waitUntil: Date | undefined,
-    scope: RequestScope
-  ): Promise<string[]> {
-    const locales = appending.map((target) => target.lng);
-    let current = job;
-    let undelivered = locales;
-    for (let attempt = 0; attempt < APPEND_ATTEMPTS; attempt++) {
-      const listed = runTargets(current.input);
-      const already = new Set(listed.map((target) => target.lng));
-      const missing = appending.filter((target) => !already.has(target.lng));
-      const debounce = waitUntil && !current.processing ? waitUntil.toISOString() : undefined;
-      if (missing.length === 0 && !debounce) return [];
-
-      await this.payload.db.updateOne({
-        req: freshReq(scope),
-        collection: this.config.jobsCollection,
-        id: job.id,
-        data: {
-          input: { ...current.input, targets: [...listed, ...missing] },
-          ...(debounce ? { waitUntil: debounce } : {}),
+    for (const targetLng of locales) {
+      await this.context.report(
+        this.payload,
+        { handle, targetLng },
+        {
+          state: "queued",
+          work: {
+            collectionSlug: first.collectionSlug,
+            collectionId: request.collectionId,
+            sourceLng: request.sourceLng,
+            filters: asked.get(targetLng)?.filters,
+            publishOnTranslation: request.publishOnTranslation,
+          },
         },
-        returning: false,
-      });
-
-      const reread = await this.findJobById(String(job.id), scope);
-      if (!reread || reread.completedAt) return locales;
-      current = reread;
-
-      const stored = new Set(runLocales(current.input));
-      undelivered = locales.filter((locale) => !stored.has(locale));
-      if (undelivered.length === 0) return [];
+        scope
+      );
     }
-    return undelivered;
+
+    await this.queueWorkflow(handle, locales, first.waitUntil, scope);
+
+    return locales.map((targetLng) => ({
+      collectionSlug: first.collectionSlug,
+      collectionId: request.collectionId,
+      sourceLng: request.sourceLng,
+      targetLng,
+      handle,
+    }));
   }
 
   private async queueWorkflow(
-    request: RequestShape,
-    targets: StoredRunTarget[],
+    handle: string,
+    locales: string[],
     waitUntil: Date | undefined,
     scope: RequestScope
-  ): Promise<string | null> {
-    const input: StoredWorkflowInput = {
-      collection_slug: request.collectionSlug,
-      collection_id: request.collectionId,
-      source_lng: request.sourceLng,
-      targets,
-      publish_on_translation: request.publishOnTranslation,
-      requester_id: scope.requester?.userId ?? null,
-      requester_collection: scope.requester?.userCollection ?? null,
-    };
-
+  ): Promise<void> {
     const queueJob = this.payload.jobs.queue as unknown as QueueWorkflow;
-    return handleOf(
-      await queueJob({
-        workflow: this.config.workflowName,
-        queue: this.config.queueName,
-        waitUntil,
-        input,
-        req: freshReq(scope),
-      })
-    );
-  }
-
-  async assignmentsOf(handles: readonly JobHandle[]): Promise<JobAssignment[]> {
-    if (handles.length === 0) return [];
-
-    return (await this.findRawJobs({ id: { in: handles } })).map((job) => {
-      const { collectionSlug, collectionId } = readCollectionRef(job.input);
-      return {
-        handle: String(job.id),
-        collectionSlug,
-        collectionId,
-        startedBy: readRequester(job.input),
-      };
+    await queueJob({
+      workflow: this.config.workflowName,
+      queue: this.config.queueName,
+      waitUntil,
+      input: { handle, locales },
+      req: freshReq(scope),
     });
   }
 
-  async cancel(taskIds: string[]): Promise<void> {
-    if (taskIds.length === 0) return;
+  async stop(handles: string[]): Promise<void> {
+    if (handles.length === 0) return;
 
-    for (const job of await this.findRawJobs({ id: { in: taskIds } })) {
-      for (const task of owedOnCancel(job)) {
-        const assignment = assignmentOf(job, task.input.targetLng);
-        if (assignment) {
-          await this.context.report(this.payload, assignment, { state: "cancelled" });
-        }
+    const jobs = await this.findRawJobs(ofHandles(handles));
+    for (const job of jobs) {
+      const pointer = pointerOf(job);
+      if (!pointer) continue;
+      for (const targetLng of owedOnCancel(job, pointer.locales)) {
+        await this.context.report(
+          this.payload,
+          { handle: pointer.handle, targetLng },
+          { state: "cancelled" }
+        );
       }
     }
 
+    const ids = jobs.map((job) => job.id);
+    if (ids.length === 0) return;
+
     await this.payload.jobs.cancel({
-      where: { and: [this.ownJobs(), { id: { in: taskIds } }] },
+      where: { and: [this.ownJobs(), { id: { in: ids } }] },
       queue: this.config.queueName,
     });
 
     await this.payload.delete({
       collection: this.config.jobsCollection,
-      where: { and: [this.ownJobs(), { id: { in: taskIds } }] },
+      where: { and: [this.ownJobs(), { id: { in: ids } }] },
     });
   }
 
-  async run(taskId: string): Promise<RunResult> {
-    const job = await this.findJobById(taskId);
+  async run(handle: string): Promise<RunResult> {
+    const job = await this.findJobByHandle(handle);
     if (!job) {
       return { success: false, error: "not_found" };
     }
@@ -276,11 +180,11 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     if (job.processing && !this.isStale(job.updatedAt)) {
       return { success: false, error: "already_running" };
     }
-    await this.clearPickerBlockers(taskId);
+    await this.clearPickerBlockers(job.id);
 
     const result = await this.payload.jobs.run({
       queue: this.config.queueName,
-      where: { id: { equals: taskId } },
+      where: { id: { equals: job.id } },
       limit: 1,
     });
 
@@ -309,11 +213,11 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     return result.docs.length;
   }
 
-  private async clearPickerBlockers(taskId: string): Promise<void> {
+  private async clearPickerBlockers(id: string | number): Promise<void> {
     await this.payload.update({
       collection: this.config.jobsCollection,
       depth: 0,
-      where: { id: { equals: taskId } },
+      where: { id: { equals: id } },
       data: { processing: false, hasError: false, error: null, waitUntil: null },
     });
   }
@@ -322,28 +226,6 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     const parsed = Date.parse(updatedAt);
     if (Number.isNaN(parsed)) return true;
     return Date.now() - parsed > this.config.staleJobTimeoutMs;
-  }
-
-  async findByCollection(
-    collectionSlug: CollectionSlug,
-    filter?: Array<string | number> | TaskFilter
-  ): Promise<Task[]> {
-    const { documentIds, excludeCompleted, excludeGivenUpBefore } = toTaskFilter(filter);
-    const wanted = documentIds ? new Set(documentIds.map(String)) : undefined;
-    if (wanted?.size === 0) return [];
-
-    const narrowed: Where[] = [ofCollection(collectionSlug)];
-    if (excludeCompleted) narrowed.push({ completedAt: { exists: false } });
-    if (excludeGivenUpBefore) narrowed.push(settledSince(excludeGivenUpBefore));
-    if (wanted) narrowed.push(ofDocuments([...wanted]));
-
-    const jobs = await this.findRawJobs({ and: narrowed });
-    return jobs
-      .filter((job) => {
-        const ref = readCollectionRef(job.input);
-        return ref.collectionSlug === collectionSlug && (!wanted || wanted.has(ref.collectionId));
-      })
-      .flatMap(normalizeJobLocales);
   }
 
   private ownJobs(): Where {
@@ -355,8 +237,8 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     };
   }
 
-  private async findJobById(id: string, scope: RequestScope = {}): Promise<PayloadJob | undefined> {
-    const [job] = await this.findRawJobs({ id: { equals: id } }, scope);
+  private async findJobByHandle(handle: string): Promise<PayloadJob | undefined> {
+    const [job] = await this.findRawJobs(ofHandles([handle]));
     return job;
   }
 

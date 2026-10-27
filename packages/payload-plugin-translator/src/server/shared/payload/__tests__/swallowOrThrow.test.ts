@@ -92,4 +92,26 @@ describe("swallowOrThrow", () => {
       "read at the catch instead of at entry, the rollback would hide that there was a transaction"
     ).rejects.toBe(foreign);
   });
+
+  it("awaits an onFailure that does work of its own before deciding what to do", async () => {
+    const order: string[] = [];
+    // A timer, not a resolved promise: unwinding the awaits on the way out of `swallowOrThrow`
+    // would outrun a microtask, and the check would pass without the await it exists to guard.
+    const slowCleanup = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      order.push("cleanup finished");
+    };
+
+    await swallowOrThrow(
+      NO_TRANSACTION,
+      () => Promise.reject(new Error("the work failed")),
+      slowCleanup
+    );
+    order.push("swallowOrThrow returned");
+
+    expect(order, "a cleanup that writes must land before the caller carries on").toEqual([
+      "cleanup finished",
+      "swallowOrThrow returned",
+    ]);
+  });
 });

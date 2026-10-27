@@ -5,7 +5,7 @@ import { translateDocument } from "../translateDocument.js";
 import type { TranslateDocumentDeps } from "../translateDocument.js";
 import type { TranslationProvider } from "../../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
-import type { TaskHandlerInput } from "../../../modules/task-runner/index.js";
+import type { TranslateDocumentInput } from "../translateDocument.js";
 import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
 
 vi.mock("../../../../core/translation-pipeline/index.js", () => ({
@@ -40,7 +40,7 @@ describe("translateDocument — it asks before it writes", () => {
   let payload: Payload;
   let provider: TranslationProvider;
 
-  const input = (over: Partial<TaskHandlerInput> = {}): TaskHandlerInput => ({
+  const input = (over: Partial<TranslateDocumentInput> = {}): TranslateDocumentInput => ({
     collection: "posts" as CollectionSlug,
     collectionId: "doc-123",
     sourceLng: "en",

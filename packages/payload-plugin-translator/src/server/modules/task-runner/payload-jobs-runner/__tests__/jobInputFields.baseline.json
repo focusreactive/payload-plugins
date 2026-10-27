@@ -2,30 +2,7 @@
   "task": [
     {
       "type": "text",
-      "name": "collection_slug",
-      "required": true
-    },
-    {
-      "type": "text",
-      "name": "collection_id",
-      "required": true
-    },
-    {
-      "type": "relationship",
-      "name": "collection",
-      "relationTo": [
-        "posts",
-        "docs"
-      ],
-      "required": false,
-      "admin": {
-        "readOnly": true,
-        "description": "Deprecated. See docs/DEPRECATIONS.md#jobs-input-collection-field"
-      }
-    },
-    {
-      "type": "text",
-      "name": "source_lng",
+      "name": "handle",
       "maxLength": 256,
       "required": true
     },
@@ -34,65 +11,19 @@
       "name": "target_lng",
       "maxLength": 256,
       "required": true
-    },
-    {
-      "type": "json",
-      "name": "filters",
-      "defaultValue": []
-    },
-    {
-      "type": "checkbox",
-      "name": "publish_on_translation",
-      "defaultValue": false
     }
   ],
   "workflow": [
     {
       "type": "text",
-      "name": "collection_slug",
-      "required": true
-    },
-    {
-      "type": "text",
-      "name": "collection_id",
-      "required": true
-    },
-    {
-      "type": "relationship",
-      "name": "collection",
-      "relationTo": [
-        "posts",
-        "docs"
-      ],
-      "required": false,
-      "admin": {
-        "readOnly": true,
-        "description": "Deprecated. See docs/DEPRECATIONS.md#jobs-input-collection-field"
-      }
-    },
-    {
-      "type": "text",
-      "name": "source_lng",
+      "name": "handle",
       "maxLength": 256,
       "required": true
     },
     {
-      "type": "checkbox",
-      "name": "publish_on_translation",
-      "defaultValue": false
-    },
-    {
       "type": "json",
-      "name": "targets",
+      "name": "locales",
       "required": true
-    },
-    {
-      "type": "text",
-      "name": "requester_id"
-    },
-    {
-      "type": "text",
-      "name": "requester_collection"
     }
   ]
 }

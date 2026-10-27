@@ -6,6 +6,7 @@ import type { RawPayloadComponentExport } from "../../../types/PayloadComponentE
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
 import type { TaskRunnerFactory } from "../task-runner/index.js";
+import type { RunRecordStoreFactory } from "../runs/index.js";
 import type { ChainMember } from "../translation-run/index.js";
 import type { TranslatorSettings } from "../../../settings.js";
 
@@ -16,6 +17,7 @@ export type ConfigTimeContext = {
   readonly settings: TranslatorSettings;
   readonly access: AccessGuard;
   readonly taskRunnerFactory: TaskRunnerFactory;
+  readonly runRecordStoreFactory: RunRecordStoreFactory;
   readonly schemaMap: CollectionSchemaMap;
   readonly translationProvider: TranslationProvider;
 };

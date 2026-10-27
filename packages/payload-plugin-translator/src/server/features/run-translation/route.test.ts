@@ -6,6 +6,7 @@ import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 
 import { createRunRoute } from "./route.js";
 import { AnyAccessGuard } from "../../shared/access/AnyAccessGuard.js";
+import { storeDouble } from "../../modules/runs/__tests__/fixtures/runRecordStore.js";
 
 const OPEN_ON_PURPOSE = new AnyAccessGuard();
 // Route-contract test: pin path + method + access-guard wiring so the Phase 1
@@ -13,21 +14,35 @@ const OPEN_ON_PURPOSE = new AnyAccessGuard();
 // and the shared wrappers have their own unit tests.
 const denyAccess: AccessGuard = { check: vi.fn().mockReturnValue(false) };
 
+const noRuns = () => storeDouble();
+
 describe("createRunRoute (contract)", () => {
   it("registers POST at {basePath}/run/:id with the default basePath", () => {
-    const endpoint = createRunRoute({ create: vi.fn() }, OPEN_ON_PURPOSE);
+    const endpoint = createRunRoute(
+      { create: vi.fn(), capabilities: { stop: true, run: true } },
+      noRuns,
+      OPEN_ON_PURPOSE
+    );
     expect(endpoint.path).toBe("/translate/run/:id");
     expect(endpoint.method).toBe("post");
   });
 
   it("honors a custom basePath", () => {
-    const endpoint = createRunRoute({ create: vi.fn() }, OPEN_ON_PURPOSE, "/i18n");
+    const endpoint = createRunRoute(
+      { create: vi.fn(), capabilities: { stop: true, run: true } },
+      noRuns,
+      OPEN_ON_PURPOSE,
+      "/i18n"
+    );
     expect(endpoint.path).toBe("/i18n/run/:id");
   });
 
   it("applies the access guard — a denied request gets 403 and never reaches the handler", async () => {
-    const taskRunnerFactory: TaskRunnerFactory = { create: vi.fn() };
-    const endpoint = createRunRoute(taskRunnerFactory, denyAccess);
+    const taskRunnerFactory: TaskRunnerFactory = {
+      create: vi.fn(),
+      capabilities: { stop: true, run: true },
+    };
+    const endpoint = createRunRoute(taskRunnerFactory, noRuns, denyAccess);
 
     const response = await endpoint.handler({} as PayloadRequest);
 

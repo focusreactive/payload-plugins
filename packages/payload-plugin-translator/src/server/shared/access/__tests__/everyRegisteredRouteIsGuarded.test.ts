@@ -8,6 +8,7 @@ import type { CollectionConfig, Config, Endpoint, PayloadRequest } from "payload
 import { translatorPlugin } from "../../../../plugin.js";
 import type { TranslatorPluginConfig } from "../../../../plugin.js";
 import { createSyncRunner } from "../../../modules/task-runner/sync-runner/index.js";
+import type { TaskRunnerProvider } from "../../../modules/task-runner/index.js";
 import type { TranslationProvider } from "../../../../core/domain/translation-providers/index.js";
 import type { AccessGuard } from "../types.js";
 import { documentTranslation, fieldTranslation } from "../../../../composition/modules/index.js";
@@ -21,11 +22,24 @@ const posts: CollectionConfig = {
 
 const refusing = { check: vi.fn().mockReturnValue(false) };
 
-const registeredRoutes = async (access: AccessGuard = refusing): Promise<Endpoint[]> => {
+const canDoEverything: TaskRunnerProvider = {
+  capabilities: { stop: true, run: true },
+  create: () => ({
+    enqueue: async () => [],
+    stop: async (): Promise<void> => undefined,
+    run: async () => ({ success: false, error: "not_found" }) as const,
+  }),
+  configure: () => (config) => config,
+};
+
+const registeredRoutes = async (
+  access: AccessGuard = refusing,
+  runner: TaskRunnerProvider = canDoEverything
+): Promise<Endpoint[]> => {
   const options: TranslatorPluginConfig = {
     collections: [posts],
     translationProvider: provider,
-    runner: createSyncRunner(),
+    runner,
     access,
     provenance: true,
     modules: [documentTranslation(), fieldTranslation()],
@@ -62,6 +76,29 @@ describe("every route the plugin registers is behind the guard", () => {
       "/translate/stale/:collection_slug/:collection_id",
       "/translate/stale/dismiss",
     ]);
+  });
+
+  it("leaves out the routes a runner that only accepts work cannot serve", async () => {
+    const paths = (await registeredRoutes(refusing, createSyncRunner())).map((e) => e.path).sort();
+
+    expect(
+      paths,
+      "a route with nothing behind it would answer 404 from the control that called it"
+    ).toEqual([
+      "/translate/collection/:collection_slug",
+      "/translate/document/:collection_slug/:collection_id",
+      "/translate/enqueue",
+      "/translate/field",
+      "/translate/stale/:collection_slug/:collection_id",
+      "/translate/stale/dismiss",
+    ]);
+  });
+
+  it("keeps the status routes, which rest on the plugin's own record rather than the runner", async () => {
+    const paths = (await registeredRoutes(refusing, createSyncRunner())).map((e) => e.path);
+
+    expect(paths).toContain("/translate/document/:collection_slug/:collection_id");
+    expect(paths).toContain("/translate/collection/:collection_slug");
   });
 
   it("refuses every one of them when the guard says no", async () => {

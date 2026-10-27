@@ -17,7 +17,7 @@ const runStillOnRecordWhenAnnounced: boolean[] = [];
 const onCancelled = vi.fn(async (task: Seen) => {
   const row = await ctx.payload.find({
     collection: "payload-jobs" as "docs",
-    where: { id: { equals: task.handle } } as never,
+    where: { "input.handle": { equals: task.handle } } as never,
   });
   runStillOnRecordWhenAnnounced.push(row.docs.length === 1);
 });

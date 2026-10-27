@@ -7,29 +7,21 @@ import type { TaskRunnerProvider } from "../../../../index.js";
  *
  * It imports one name from the published barrel, which is all a third-party runner can reach.
  *
- * Two mutations must break this file, one runner each: narrowing `enqueue` to require assignments
- * breaks `silent`, and dropping `report` from `TaskRunnerContext` breaks `answering`. Neither
- * obliges a runner to *call* `report` — `silent` never does and compiles, because no type can
+ * `acceptsWorkAlone` compiles without ever calling `report`: no type can require that a function be
+ * called, so the obligation to report is the conformance suite's to assert, not this file's.
  * require that a function be called.
- *
- * `cannotPlaceItsHandles` pins the other direction, which providing a member cannot: making
- * `assignmentsOf` optional again.
  */
 
 const configure = () => (config: Config) => config;
 
-export const silent: TaskRunnerProvider = {
-  create: () => ({
-    enqueue: async () => undefined,
-    cancel: async (): Promise<void> => undefined,
-    run: async () => ({ success: false, error: "not_found" }) as const,
-    assignmentsOf: async () => [],
-    findByCollection: async () => [],
-  }),
+export const acceptsWorkAlone: TaskRunnerProvider = {
+  capabilities: { stop: false, run: false },
+  create: () => ({ enqueue: async () => [] }),
   configure,
 };
 
-export const answering: TaskRunnerProvider = {
+export const reports: TaskRunnerProvider = {
+  capabilities: { stop: true, run: true },
   create: (payload, context) => ({
     enqueue: async (tasks) => {
       const assigned = tasks.map((task) => ({
@@ -39,25 +31,32 @@ export const answering: TaskRunnerProvider = {
         targetLng: task.targetLng,
         handle: "run-1",
       }));
-      for (const a of assigned) await context.report(payload, a, { state: "queued" });
+      for (const a of assigned) {
+        await context.report(
+          payload,
+          { handle: a.handle, targetLng: a.targetLng },
+          {
+            state: "queued",
+            work: {
+              collectionSlug: a.collectionSlug,
+              collectionId: a.collectionId,
+              sourceLng: a.sourceLng,
+              publishOnTranslation: false,
+            },
+          }
+        );
+      }
       return assigned;
     },
-    cancel: async (): Promise<void> => undefined,
+    stop: async (): Promise<void> => undefined,
     run: async () => ({ success: false, error: "not_found" }) as const,
-    assignmentsOf: async () => [],
-    findByCollection: async () => [],
   }),
   configure,
 };
 
-/** A runner that cannot say which document a handle names is not one the routes can ask about. */
-export const cannotPlaceItsHandles: TaskRunnerProvider = {
-  // @ts-expect-error `assignmentsOf` is required; this omits it
-  create: () => ({
-    enqueue: async () => undefined,
-    cancel: async (): Promise<void> => undefined,
-    run: async () => ({ success: false, error: "not_found" }) as const,
-    findByCollection: async () => [],
-  }),
+/** A runner that does not say what it can do cannot have its routes registered. */
+// @ts-expect-error `capabilities` is required; this omits it
+export const saysNothingAboutItself: TaskRunnerProvider = {
+  create: () => ({ enqueue: async () => [] }),
   configure,
 };

@@ -48,27 +48,3 @@ const fieldFor = (name: string, schema: ZodTypeAny): Field => {
  */
 export const toPayloadFields = (schema: ZodObject<ZodRawShape>): Field[] =>
   Object.entries(schema.shape).map(([name, member]) => fieldFor(name, member as ZodTypeAny));
-
-/**
- * Splice the deprecated relationship back in where it has always sat — directly after the flat pair
- * that replaced it.
- *
- * It is written by hand rather than generated because it is the one field with no counterpart in
- * the plugin's own types: nothing writes it, one reader falls back to it, and it leaves with the
- * next major. See docs/DEPRECATIONS.md#jobs-input-collection-field
- */
-export const withLegacyCollection = (fields: Field[], relationTo: string[]): Field[] => {
-  const legacy = {
-    type: "relationship",
-    name: "collection",
-    relationTo,
-    required: false,
-    admin: {
-      readOnly: true,
-      description: "Deprecated. See docs/DEPRECATIONS.md#jobs-input-collection-field",
-    },
-  } as unknown as Field;
-
-  const after = fields.findIndex((field) => "name" in field && field.name === "collection_id");
-  return [...fields.slice(0, after + 1), legacy, ...fields.slice(after + 1)];
-};

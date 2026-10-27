@@ -6,7 +6,6 @@ import type { TaskRunnerContext } from "../../TaskRunnerProvider.interface.js";
 const minimalContext: TaskRunnerContext = {
   handler: vi.fn(),
   report: vi.fn().mockResolvedValue(undefined),
-  collections: ["pages"],
 };
 
 // The config modifier only reads/writes `jobs` and `onInit`; build a minimal
@@ -107,7 +106,7 @@ describe("PayloadJobsRunnerProvider", () => {
       expect(config.jobs?.enableConcurrencyControl).toBeUndefined();
     });
 
-    it("keys on the document when the host has enabled it", () => {
+    it("keys on the run when the host has enabled it", () => {
       const config = createPayloadJobsRunner().configure(minimalContext)(
         makeConfig({ jobs: { enableConcurrencyControl: true } })
       );
@@ -115,8 +114,50 @@ describe("PayloadJobsRunnerProvider", () => {
       const concurrency = workflowOf(config).concurrency;
       expect(concurrency?.exclusive).toBe(true);
       expect(
-        concurrency?.key({ input: { collection_slug: "posts", collection_id: "7" } } as never)
-      ).toBe("posts:7");
+        concurrency?.key({ input: { handle: "run-1" } } as never),
+        "one run per document is the plugin's rule now, so the queue only has to serialise a run"
+      ).toBe("run-1");
+    });
+  });
+
+  describe("the pointer the registered task hands on", () => {
+    const runTask = (handler: TaskRunnerContext["handler"], input: unknown) => {
+      const config = createPayloadJobsRunner().configure({ ...minimalContext, handler })(
+        makeConfig()
+      );
+      const task = (config.jobs?.tasks ?? []).find(
+        (candidate) => candidate.slug === "translate_document"
+      );
+      if (!task) throw new Error("the translate task was not registered");
+      return (task.handler as unknown as (args: unknown) => Promise<unknown>)({
+        req: { payload: {} },
+        job: { id: 42 },
+        input,
+      });
+    };
+
+    it("hands on the handle and the locale the job row names, and nothing else", async () => {
+      const handler = vi.fn().mockResolvedValue(undefined);
+
+      await runTask(handler, { handle: "run-1", target_lng: "de" });
+
+      expect(handler.mock.calls[0][1]).toEqual({
+        handle: "run-1",
+        targetLng: "de",
+        previousAttempts: 0,
+      });
+    });
+
+    it("names no document, because the record is where the run's facts live", async () => {
+      const handler = vi.fn().mockResolvedValue(undefined);
+
+      await runTask(handler, { handle: "run-1", target_lng: "de" });
+
+      expect(Object.keys(handler.mock.calls[0][1]).sort()).toEqual([
+        "handle",
+        "previousAttempts",
+        "targetLng",
+      ]);
     });
   });
 });

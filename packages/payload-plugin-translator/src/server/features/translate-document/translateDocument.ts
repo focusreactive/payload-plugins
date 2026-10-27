@@ -1,8 +1,9 @@
-import type { Payload } from "payload";
+import type { CollectionSlug, Payload } from "payload";
 
 import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
-import type { TaskHandlerInput } from "../../modules/task-runner/index.js";
+import type { ID } from "../../modules/task-runner/index.js";
+import type { TranslationFilter } from "../../../core/domain/selection/index.js";
 import type { ChainMember, Criteria } from "../../modules/translation-run/index.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import { reportNothingSent } from "./reportNothingSent.js";
@@ -11,6 +12,20 @@ import type { Run } from "./run.js";
 import { runModulesAfter, runModulesBefore } from "./runModules.js";
 import { selectLeaves } from "./selectLeaves.js";
 import { translateOrWrap } from "./translateOrWrap.js";
+
+/**
+ * What translating one locale needs to know. Assembled by the caller from the run's own record —
+ * the runner knows only which run and which locale, so none of this reaches it.
+ */
+export type TranslateDocumentInput = {
+  collection: CollectionSlug;
+  collectionId: ID;
+  sourceLng: string;
+  targetLng: string;
+  filters?: readonly TranslationFilter[];
+  publishOnTranslation: boolean;
+  previousAttempts: number;
+};
 
 export type TranslateDocumentDeps = {
   readonly translationProvider: TranslationProvider;
@@ -31,7 +46,7 @@ async function publishIfAsked(run: Run, asked: boolean): Promise<void> {
 export async function translateDocument(
   deps: TranslateDocumentDeps,
   payload: Payload,
-  input: TaskHandlerInput,
+  input: TranslateDocumentInput,
   scope: RequestScope
 ): Promise<void> {
   const modules = deps.modules ?? [];

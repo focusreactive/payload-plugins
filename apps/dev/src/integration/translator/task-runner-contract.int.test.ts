@@ -13,10 +13,14 @@ afterAll(async () => {
   await ctx?.cleanup();
 });
 
-assertTaskRunnerContract("PayloadJobsTaskRunner", (report) =>
-  createPayloadJobsRunner({ autoRun: false }).create(ctx.payload, {
-    handler: vi.fn().mockResolvedValue(undefined),
-    collections: [],
-    report,
-  })
+const provider = createPayloadJobsRunner({ autoRun: false });
+
+assertTaskRunnerContract(
+  "PayloadJobsTaskRunner",
+  (report) =>
+    provider.create(ctx.payload, {
+      handler: vi.fn().mockResolvedValue(undefined),
+      report,
+    }),
+  provider.capabilities
 );

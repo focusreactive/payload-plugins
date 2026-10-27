@@ -15,7 +15,6 @@ import baseline from "./jobInputFields.baseline.json";
 const context: TaskRunnerContext = {
   handler: vi.fn(),
   report: vi.fn().mockResolvedValue(undefined),
-  collections: ["posts", "docs"],
 };
 
 const names = (fields: unknown) => (fields as Array<{ name?: string }>).map((field) => field.name);
@@ -38,21 +37,40 @@ describe("the field lists handed to Payload", () => {
     expect(registered().workflow).toEqual(baseline.workflow);
   });
 
-  it("names the run's target list only on the workflow, and one locale only on the task", () => {
+  it("names the run's locale list only on the workflow, and one locale only on the task", () => {
     const { task, workflow } = registered();
 
     expect(names(task)).toContain("target_lng");
-    expect(names(task)).not.toContain("targets");
-    expect(names(workflow)).toContain("targets");
+    expect(names(task)).not.toContain("locales");
+    expect(names(workflow)).toContain("locales");
     expect(names(workflow)).not.toContain("target_lng");
   });
 
-  it("carries neither a strategy nor the two members filters replaced", () => {
+  it("carries the handle on both, because that is what every row is read by", () => {
     const { task, workflow } = registered();
 
-    expect(names(task)).not.toContain("strategy");
-    expect(names(workflow)).not.toContain("strategy");
-    expect(names(task)).not.toContain("selection");
-    expect(names(task)).not.toContain("criteria");
+    expect(names(task)).toContain("handle");
+    expect(names(workflow)).toContain("handle");
+  });
+
+  it("states no fact about the run that the record is the source of truth for", () => {
+    const stored = [...names(registered().task), ...names(registered().workflow)];
+
+    for (const fact of [
+      "collection_slug",
+      "collection_id",
+      "collection",
+      "source_lng",
+      "filters",
+      "targets",
+      "publish_on_translation",
+      "requester_id",
+      "requester_collection",
+      "strategy",
+      "selection",
+      "criteria",
+    ]) {
+      expect(stored, `a job row that states "${fact}" states it twice`).not.toContain(fact);
+    }
   });
 });

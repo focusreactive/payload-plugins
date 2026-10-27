@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, PayloadRequest, CollectionSlug } from "payload";
 
 import type { TaskRunnerFactory, TaskRunner } from "../../../modules/task-runner/index.js";
+import { storeDouble } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
 
 vi.mock("../../_lib/collection-utils.js", () => ({
   isCollectionAvailable: vi.fn((slug: string, available: Set<string>) =>
@@ -59,15 +60,14 @@ describe("enqueue asks about every document it was named", () => {
     (refusedTargets as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(new Set<string>());
     runner = {
       enqueue: vi.fn().mockResolvedValue(undefined),
-      cancel: vi.fn(),
+      stop: vi.fn(),
       run: vi.fn(),
-      assignmentsOf: vi.fn().mockResolvedValue([]),
-      findByCollection: vi.fn(),
     };
-    factory = { create: vi.fn().mockReturnValue(runner) };
+    factory = { create: vi.fn().mockReturnValue(runner), capabilities: { stop: true, run: true } };
     handler = new EnqueueTranslationHandler(
       { availableCollections: new Set(["posts"] as CollectionSlug[]) },
-      factory
+      factory,
+      () => storeDouble()
     );
   });
 

@@ -3,6 +3,7 @@ import type { CollectionConfig, Config } from "payload";
 import { CacheProviderExport } from "./client/app/cache/CacheProvider.export.js";
 import { configureAutoTranslate } from "./server/modules/auto-translate/index.js";
 import { configureProvenance } from "./server/modules/provenance/index.js";
+import { configureRunRecord } from "./server/modules/runs/index.js";
 import type { AccessGuard } from "./types/AccessGuard.js";
 import type { CollectionSchemaMap } from "./types/CollectionSchemaMap.js";
 import { projectFieldsToFieldLike } from "./core/kernel/field-traversal/index.js";
@@ -82,6 +83,20 @@ export type TranslatorPluginConfig = TranslatorSettingsOptions & {
         slug?: string;
       };
   /**
+   * Names the plugin's own record of translation runs. The collection is always added — the status,
+   * cancel and run-now routes read it — so `{ slug }` only resolves a collision with a collection you
+   * already own. **On SQL this adds a table**: `payload migrate:create` + `payload migrate` (dev push
+   * in development; MongoDB needs no migration).
+   * @since 1.0.0
+   */
+  runs?: {
+    /**
+     * Slug for the run record collection.
+     * @default 'translator-runs'
+     */
+    slug?: string;
+  };
+  /**
    * Optional server-side lifecycle callbacks fired around each translation task
    * (`onQueued` / `onCompleted` / `onFailed`). Always available — no schema, no migration, not gated
    * by `provenance`. A throwing callback is caught and logged, never failing the translation.
@@ -89,6 +104,27 @@ export type TranslatorPluginConfig = TranslatorSettingsOptions & {
    */
   lifecycle?: TranslationLifecycleCallbacks;
 };
+
+/** Each field is required by the type, so only a plain-JavaScript caller reaches these. */
+function refuseAnUnusableConfig(pluginConfig: TranslatorPluginConfig): void {
+  if (!pluginConfig.access) {
+    throw new Error(
+      "payload-plugin-translator: `access` is required. Pass an access guard, or " +
+        "`new AnyAccessGuard()` to leave the translation endpoints open on purpose."
+    );
+  }
+
+  if (!pluginConfig.modules || !pluginConfig.components) {
+    throw new Error(
+      "payload-plugin-translator: `modules` and `components` are both required, and `[]` is a " +
+        "valid answer for either. `levels` is gone: `documentLevel()` becomes " +
+        "`modules: [documentTranslation()]` plus `components: [translateDocumentControl()]`, " +
+        "`collectionLevel()` becomes the same module plus " +
+        "`components: [bulkTranslationDashboard()]`, and `fieldLevel()` becomes " +
+        "`modules: [fieldTranslation()]`."
+    );
+  }
+}
 
 /**
  * A module's name keys its slot in the run's `moduleState`, so two modules sharing one would share
@@ -133,29 +169,12 @@ export function translatorPlugin(
   pluginConfig: TranslatorPluginConfig
 ): (config: Config) => Promise<Config> {
   return async (payloadConfig) => {
-    const { access, translationProvider, runner, collections, provenance, lifecycle } =
+    const { access, translationProvider, runner, collections, provenance, lifecycle, runs } =
       pluginConfig;
     const { modules, components } = pluginConfig;
     const settings = resolveSettings(pluginConfig);
 
-    // Required by the type, so only a plain-JavaScript caller reaches this.
-    if (!access) {
-      throw new Error(
-        "payload-plugin-translator: `access` is required. Pass an access guard, or " +
-          "`new AnyAccessGuard()` to leave the translation endpoints open on purpose."
-      );
-    }
-
-    if (!modules || !components) {
-      throw new Error(
-        "payload-plugin-translator: `modules` and `components` are both required, and `[]` is a " +
-          "valid answer for either. `levels` is gone: `documentLevel()` becomes " +
-          "`modules: [documentTranslation()]` plus `components: [translateDocumentControl()]`, " +
-          "`collectionLevel()` becomes the same module plus " +
-          "`components: [bulkTranslationDashboard()]`, and `fieldLevel()` becomes " +
-          "`modules: [fieldTranslation()]`."
-      );
-    }
+    refuseAnUnusableConfig(pluginConfig);
 
     const schemaMap: CollectionSchemaMap = new Map(
       collections.map((col) => [col.slug, projectFieldsToFieldLike(col.fields)])
@@ -163,6 +182,7 @@ export function translatorPlugin(
     const collectionSlugs = new Set(schemaMap.keys());
 
     const provenanceParts = configureProvenance(provenance, schemaMap);
+    const runRecord = configureRunRecord(runs);
 
     const chain: TranslationModule[] = provenanceParts
       ? [provenanceParts.module, ...modules]
@@ -170,21 +190,29 @@ export function translatorPlugin(
     refuseDuplicateNames(chain);
 
     const { taskRunnerFactory, configModifier: runnerConfigModifier } = wireTranslateRunner({
-      translationProvider,
-      schemaMap,
-      modules: chain,
-      criteria: provenanceParts?.criteria,
+      translation: {
+        translationProvider,
+        schemaMap,
+        modules: chain,
+        criteria: provenanceParts?.criteria,
+      },
       runner,
       lifecycle: lifecycle ?? {},
-      collections: Array.from(collectionSlugs),
+      storeFactory: runRecord.storeFactory,
     });
-    const autoTranslateModule = configureAutoTranslate(collections, schemaMap, taskRunnerFactory);
+    const autoTranslateModule = configureAutoTranslate(
+      collections,
+      schemaMap,
+      taskRunnerFactory,
+      runRecord.storeFactory
+    );
 
     const builder = new PluginConfigBuilder({
       collections,
       settings,
       access,
       taskRunnerFactory,
+      runRecordStoreFactory: runRecord.storeFactory,
       schemaMap,
       translationProvider,
     });
@@ -193,6 +221,9 @@ export function translatorPlugin(
 
     builder.addConfigModifier(runnerConfigModifier);
     builder.addConfigModifier(autoTranslateModule.configure(collectionSlugs));
+    builder.addConfigModifier(runRecord.refuseACollidingSlug);
+    builder.addConfigModifier(runRecord.addTheCollection);
+    builder.addConfigModifier(runRecord.cleanUpOnDelete(collectionSlugs));
     builder.addAdminProvider(new CacheProviderExport(settings.basePath));
 
     return builder.applyTo(payloadConfig);

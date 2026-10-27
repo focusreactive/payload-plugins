@@ -7,7 +7,7 @@ import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.
 import type { Criteria } from "../../../modules/translation-run/index.js";
 import type { TranslationFilter } from "../../../../core/domain/selection/index.js";
 import { translateDocument } from "../translateDocument.js";
-import type { TaskHandlerInput } from "../../../modules/task-runner/index.js";
+import type { TranslateDocumentInput } from "../translateDocument.js";
 
 const leaves = (...addresses: string[]): TranslationFilter => ({ kind: "leaves", addresses });
 const rule = (name: string): TranslationFilter => ({ kind: "rule", name });
@@ -29,7 +29,7 @@ describe("what a run translates", () => {
   let schemaMap: CollectionSchemaMap;
   let payload: Payload;
 
-  const input = (overrides: Partial<TaskHandlerInput> = {}): TaskHandlerInput => ({
+  const input = (overrides: Partial<TranslateDocumentInput> = {}): TranslateDocumentInput => ({
     collection: "posts" as CollectionSlug,
     collectionId: "doc-1",
     sourceLng: "en",
@@ -45,7 +45,7 @@ describe("what a run translates", () => {
     return (call?.[0] as { selection?: readonly string[] })?.selection;
   };
 
-  const run = async (over: Partial<TaskHandlerInput>, criteria: Criteria = {}) =>
+  const run = async (over: Partial<TranslateDocumentInput>, criteria: Criteria = {}) =>
     await translateDocument(
       {
         translationProvider: provider,

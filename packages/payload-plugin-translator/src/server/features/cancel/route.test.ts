@@ -6,6 +6,7 @@ import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 
 import { createCancelRoute } from "./route.js";
 import { AnyAccessGuard } from "../../shared/access/AnyAccessGuard.js";
+import { storeDouble } from "../../modules/runs/__tests__/fixtures/runRecordStore.js";
 
 const OPEN_ON_PURPOSE = new AnyAccessGuard();
 // Route-contract test: pin path + method + access-guard wiring so the Phase 1
@@ -13,21 +14,35 @@ const OPEN_ON_PURPOSE = new AnyAccessGuard();
 // and the shared wrappers have their own unit tests.
 const denyAccess: AccessGuard = { check: vi.fn().mockReturnValue(false) };
 
+const noRuns = () => storeDouble();
+
 describe("createCancelRoute (contract)", () => {
   it("registers DELETE at {basePath}/cancel with the default basePath", () => {
-    const endpoint = createCancelRoute({ create: vi.fn() }, OPEN_ON_PURPOSE);
+    const endpoint = createCancelRoute(
+      { create: vi.fn(), capabilities: { stop: true, run: true } },
+      noRuns,
+      OPEN_ON_PURPOSE
+    );
     expect(endpoint.path).toBe("/translate/cancel");
     expect(endpoint.method).toBe("delete");
   });
 
   it("honors a custom basePath", () => {
-    const endpoint = createCancelRoute({ create: vi.fn() }, OPEN_ON_PURPOSE, "/i18n");
+    const endpoint = createCancelRoute(
+      { create: vi.fn(), capabilities: { stop: true, run: true } },
+      noRuns,
+      OPEN_ON_PURPOSE,
+      "/i18n"
+    );
     expect(endpoint.path).toBe("/i18n/cancel");
   });
 
   it("applies the access guard — a denied request gets 403 and never reaches the handler", async () => {
-    const taskRunnerFactory: TaskRunnerFactory = { create: vi.fn() };
-    const endpoint = createCancelRoute(taskRunnerFactory, denyAccess);
+    const taskRunnerFactory: TaskRunnerFactory = {
+      create: vi.fn(),
+      capabilities: { stop: true, run: true },
+    };
+    const endpoint = createCancelRoute(taskRunnerFactory, noRuns, denyAccess);
 
     const response = await endpoint.handler({} as PayloadRequest);
 

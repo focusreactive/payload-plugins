@@ -4,7 +4,7 @@ import { TranslatorConfigError } from "../../../core/errors/index.js";
 import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { RunTarget } from "../../modules/translation-run/index.js";
-import type { TaskHandlerInput } from "../../modules/task-runner/index.js";
+import type { TranslateDocumentInput } from "./translateDocument.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import { openTargetDocument } from "./targetDocument.js";
 import type { TargetDocument } from "./targetDocument.js";
@@ -22,7 +22,10 @@ export type Run = {
 
 export async function openRun(args: {
   payload: Payload;
-  taskInput: Pick<TaskHandlerInput, "collection" | "collectionId" | "sourceLng" | "targetLng">;
+  taskInput: Pick<
+    TranslateDocumentInput,
+    "collection" | "collectionId" | "sourceLng" | "targetLng"
+  >;
   scope: RequestScope;
   schemaMap: CollectionSchemaMap;
 }): Promise<Run> {

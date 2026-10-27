@@ -12,7 +12,6 @@ const registeredTask = (handler: TaskRunnerContext["handler"]) => {
   const context: TaskRunnerContext = {
     handler,
     report: vi.fn().mockResolvedValue(undefined),
-    collections: ["posts"],
   };
   createPayloadJobsRunner().configure(context)(config);
   const task = config.jobs?.tasks?.find((candidate) => candidate.slug === TASK_SLUG);
@@ -41,21 +40,21 @@ const runTheTask = async (job: unknown): Promise<TaskHandlerInput> => {
 
 describe("what a run is told about the attempt it is on", () => {
   it("says zero on a first run, where Payload has recorded nothing yet", async () => {
-    expect((await runTheTask(undefined)).previousAttempts).toBe(0);
+    expect((await runTheTask({ id: "job-1" })).previousAttempts).toBe(0);
   });
 
   it("says zero when the row exists but this locale has not been tried", async () => {
-    expect((await runTheTask({ taskStatus: {} })).previousAttempts).toBe(0);
+    expect((await runTheTask({ id: "job-1", taskStatus: {} })).previousAttempts).toBe(0);
   });
 
   it("says one on the first retry of that locale", async () => {
-    const job = { taskStatus: { [TASK_SLUG]: { de: { totalTried: 1 } } } };
+    const job = { id: "job-1", taskStatus: { [TASK_SLUG]: { de: { totalTried: 1 } } } };
 
     expect((await runTheTask(job)).previousAttempts).toBe(1);
   });
 
   it("counts the locale that is running, not a sibling locale of the same run", async () => {
-    const job = { taskStatus: { [TASK_SLUG]: { fr: { totalTried: 3 } } } };
+    const job = { id: "job-1", taskStatus: { [TASK_SLUG]: { fr: { totalTried: 3 } } } };
 
     expect((await runTheTask(job)).previousAttempts).toBe(0);
   });

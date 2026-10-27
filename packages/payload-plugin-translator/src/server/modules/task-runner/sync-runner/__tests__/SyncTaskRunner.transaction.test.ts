@@ -2,8 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 
 import { SyncTaskRunner } from "../SyncTaskRunner.js";
-import type { Task, TaskInput } from "../../types.js";
-import { LazyMap } from "../../../../shared/utils/index.js";
+import type { TaskInput } from "../../types.js";
 
 const task: TaskInput = {
   collectionSlug: "posts" as CollectionSlug,
@@ -15,17 +14,12 @@ const task: TaskInput = {
 
 function makeRunner() {
   const handler = vi.fn().mockResolvedValue(undefined);
-  const tasks = new LazyMap<string, Task>({
-    isRemovable: (t) => t.status === "completed" || t.status === "failed",
-    getTimestamp: (t) => new Date(t.updatedAt).getTime(),
-  });
   return {
     handler,
-    runner: new SyncTaskRunner(
-      {} as Payload,
-      { handler, collections: [], report: vi.fn().mockResolvedValue(undefined) },
-      tasks
-    ),
+    runner: new SyncTaskRunner({} as Payload, {
+      handler,
+      report: vi.fn().mockResolvedValue(undefined),
+    }),
   };
 }
 

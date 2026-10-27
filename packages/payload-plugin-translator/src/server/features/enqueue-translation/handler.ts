@@ -3,22 +3,35 @@ import type { PayloadRequest } from "payload";
 import { ServerResponse } from "../../shared/index.js";
 import { authCollectionsOf, identityOf, scopeOf } from "../../shared/payload/identityOf.js";
 import type { TaskInput, TaskRunnerFactory } from "../../modules/task-runner/index.js";
+import type { RunRecordStoreFactory } from "../../modules/runs/index.js";
+import { admitWork } from "../../../core/domain/runs/index.js";
 import { isCollectionAvailable } from "../_lib/collection-utils.js";
 import { getAllCollectionIds } from "../../shared/payload/collections.js";
 import { authorisedByTheReadFilter, authorisedWork } from "../../shared/access/authorised.js";
+import type { AuthorisedWork } from "../../shared/access/authorised.js";
 
 import { Locales } from "../../../core/domain/locales/index.js";
 
 import { EnqueueInputSchema, toAssignmentOutputs } from "./model.js";
 import type { EnqueueConfig } from "./model.js";
 
+const documentsIn = (work: readonly AuthorisedWork[]): string[] => [
+  ...new Set(work.map((item) => item.collectionId)),
+];
+
 export class EnqueueTranslationHandler {
   private readonly config: EnqueueConfig;
   private readonly taskRunnerFactory: TaskRunnerFactory;
+  private readonly runRecordStoreFactory: RunRecordStoreFactory;
 
-  constructor(config: EnqueueConfig, taskRunnerFactory: TaskRunnerFactory) {
+  constructor(
+    config: EnqueueConfig,
+    taskRunnerFactory: TaskRunnerFactory,
+    runRecordStoreFactory: RunRecordStoreFactory
+  ) {
     this.config = config;
     this.taskRunnerFactory = taskRunnerFactory;
+    this.runRecordStoreFactory = runRecordStoreFactory;
   }
 
   async handle(req: PayloadRequest): Promise<Response> {
@@ -89,11 +102,10 @@ export class EnqueueTranslationHandler {
         }))
       );
 
-    // Before the ask, not after: Payload fills a missing `user.collection` with the admin one
-    // (`createLocalReq`), so asking first evaluates the host's rule as whoever shares that id there.
     const identity = identityOf(req, authCollectionsOf(req.payload), req.payload.logger);
     if (identity.kind === "unnameable") return ServerResponse.forbidden();
 
+    const runs = this.runRecordStoreFactory(req.payload);
     const { authorised, refused } = select_all
       ? {
           authorised: authorisedByTheReadFilter(
@@ -107,13 +119,19 @@ export class EnqueueTranslationHandler {
           tasks: workFor(collection_id),
         });
 
+    const inFlight = select_all
+      ? await runs.findLiveInCollection(collectionSlug)
+      : await runs.findLiveForDocuments(collectionSlug, documentsIn(authorised));
+    const { admitted, busyDocumentIds: busy } = admitWork({ work: authorised, inFlight });
+
     const runner = this.taskRunnerFactory.create(req.payload);
-    const assigned = await runner.enqueue(authorised, scopeOf(identity));
+    const assigned = await runner.enqueue(admitted, scopeOf(identity));
 
     return ServerResponse.success({
       success: true,
-      queued: authorised.length,
+      queued: admitted.length,
       ...(refused.length > 0 ? { refused } : {}),
+      ...(busy.length > 0 ? { busy } : {}),
       ...(assigned ? { assignments: toAssignmentOutputs(assigned) } : {}),
     });
   }

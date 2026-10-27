@@ -18,16 +18,21 @@ import type { TranslationProvider } from "../../../../core/domain/translation-pr
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 import type { TranslatorAction } from "../../../../types/TranslatorAction.js";
 import type { AccessGuard } from "../types.js";
+import { storeDouble } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
 
 const unreachable = (): never => {
   throw new Error("the guard refuses first, so nothing behind it may run");
 };
 
 const availableCollections = new Set<CollectionSlug>();
-const taskRunnerFactory: TaskRunnerFactory = { create: unreachable };
+const taskRunnerFactory: TaskRunnerFactory = {
+  create: unreachable,
+  capabilities: { stop: true, run: true },
+};
 const provenanceServiceFactory: ProvenanceServiceFactory = unreachable;
 const translationProvider: TranslationProvider = { translate: unreachable };
 const schemaMap: CollectionSchemaMap = new Map();
+const runRecordStoreFactory = () => storeDouble();
 
 type RouteUnderTest = {
   readonly factory: string;
@@ -37,32 +42,43 @@ type RouteUnderTest = {
 const routeForEveryAction: Record<TranslatorAction, RouteUnderTest> = {
   enqueue: {
     factory: "createEnqueueRoute",
-    build: (access) => createEnqueueRoute(taskRunnerFactory, { availableCollections }, access),
+    build: (access) =>
+      createEnqueueRoute(
+        taskRunnerFactory,
+        runRecordStoreFactory,
+        { availableCollections },
+        access
+      ),
   },
   run: {
     factory: "createRunRoute",
-    build: (access) => createRunRoute(taskRunnerFactory, access),
+    build: (access) => createRunRoute(taskRunnerFactory, runRecordStoreFactory, access),
   },
   cancel: {
     factory: "createCancelRoute",
-    build: (access) => createCancelRoute(taskRunnerFactory, access),
+    build: (access) => createCancelRoute(taskRunnerFactory, runRecordStoreFactory, access),
   },
   "cancel-by-collection": {
     factory: "createCancelByCollectionRoute",
     build: (access) =>
-      createCancelByCollectionRoute({ availableCollections }, taskRunnerFactory, access),
+      createCancelByCollectionRoute(
+        { availableCollections },
+        taskRunnerFactory,
+        runRecordStoreFactory,
+        access
+      ),
   },
   "document-status": {
     factory: "createGetDocumentStatusRoute",
     build: (access) =>
-      createGetDocumentStatusRoute({ availableCollections }, taskRunnerFactory, access),
+      createGetDocumentStatusRoute({ availableCollections }, runRecordStoreFactory, access),
   },
   "collection-status": {
     factory: "createGetCollectionStatusRoute",
     build: (access) =>
       createGetCollectionStatusRoute(
         { availableCollections, failedWindowMs: 0 },
-        taskRunnerFactory,
+        runRecordStoreFactory,
         access
       ),
   },

@@ -11,7 +11,6 @@ const fakePayload = {} as Payload;
 const makeContext = (handler: TaskRunnerContext["handler"]): TaskRunnerContext => ({
   handler,
   report: vi.fn().mockResolvedValue(undefined),
-  collections: ["pages" as CollectionSlug],
 });
 
 const sampleInput: TaskInput = {
@@ -41,13 +40,7 @@ describe("SyncRunnerProvider", () => {
     expect(handler).toHaveBeenCalledTimes(1);
     expect(handler).toHaveBeenCalledWith(
       fakePayload,
-      expect.objectContaining({
-        collection: "pages",
-        collectionId: "1",
-        sourceLng: "en",
-        targetLng: "de",
-        publishOnTranslation: false,
-      }),
+      { handle: expect.any(String), targetLng: "de", previousAttempts: 0 },
       {}
     );
   });

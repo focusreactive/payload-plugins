@@ -93,6 +93,28 @@ export type JobAssignment = {
 };
 
 /**
+ * Which locale of which run a report is about.
+ *
+ * @since 1.0.0
+ */
+export type RunRef = {
+  handle: JobHandle;
+  targetLng: string;
+};
+
+/**
+ * What one queued locale was asked to do.
+ *
+ * @since 1.0.0
+ */
+export type QueuedWork = RunAsk & {
+  collectionSlug: CollectionSlug;
+  collectionId: ID;
+  sourceLng: string;
+  publishOnTranslation: boolean;
+};
+
+/**
  * What became of one {@link EnqueueAssignment}.
  *
  * One terminal event per assignment, except a locale already being translated when its run is
@@ -103,7 +125,7 @@ export type JobAssignment = {
  * own — nothing ran for it to throw.
  */
 export type TaskEvent =
-  | { state: "queued" }
+  | { state: "queued"; work: QueuedWork }
   | { state: "delivered" }
   | { state: "failed"; error: unknown }
   | { state: "cancelled" };

@@ -5,7 +5,7 @@ import { translateDocument } from "../translateDocument.js";
 import type { TranslateDocumentDeps } from "../translateDocument.js";
 import type { TranslationProvider } from "../../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
-import type { TaskHandlerInput } from "../../../modules/task-runner/index.js";
+import type { TranslateDocumentInput } from "../translateDocument.js";
 import type { ProvenanceServiceFactory } from "../../../modules/provenance/index.js";
 import { provenanceInAChain } from "../../../modules/provenance/__tests__/fixtures/inAChain.js";
 
@@ -22,7 +22,7 @@ describe("translateDocument — the caller's transaction", () => {
   let deps: TranslateDocumentDeps;
   let payload: Payload;
 
-  const input = (over: Partial<TaskHandlerInput> = {}): TaskHandlerInput => ({
+  const input = (over: Partial<TranslateDocumentInput> = {}): TranslateDocumentInput => ({
     collection: "posts" as CollectionSlug,
     collectionId: "doc-123",
     sourceLng: "en",

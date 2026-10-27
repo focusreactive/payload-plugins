@@ -3,6 +3,7 @@ import type { Payload, PayloadRequest, CollectionSlug } from "payload";
 import { EnqueueTranslationHandler } from "../handler.js";
 import type { EnqueueConfig } from "../model.js";
 import type { TaskRunnerFactory, TaskRunner } from "../../../modules/task-runner/index.js";
+import { storeDouble } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
 
 vi.mock("../../_lib/collection-utils.js", () => ({
   isCollectionAvailable: vi.fn((slug: string, available: Set<string>) =>
@@ -50,21 +51,20 @@ describe("EnqueueTranslationHandler", () => {
 
     mockTaskRunner = {
       enqueue: vi.fn().mockResolvedValue(undefined),
-      cancel: vi.fn(),
+      stop: vi.fn(),
       run: vi.fn(),
-      assignmentsOf: vi.fn().mockResolvedValue([]),
-      findByCollection: vi.fn(),
     };
 
     mockTaskRunnerFactory = {
       create: vi.fn().mockReturnValue(mockTaskRunner),
+      capabilities: { stop: true, run: true },
     };
 
     config = {
       availableCollections: new Set(["posts", "pages"] as CollectionSlug[]),
     };
 
-    handler = new EnqueueTranslationHandler(config, mockTaskRunnerFactory);
+    handler = new EnqueueTranslationHandler(config, mockTaskRunnerFactory, () => storeDouble());
   });
 
   describe("locale validation", () => {
