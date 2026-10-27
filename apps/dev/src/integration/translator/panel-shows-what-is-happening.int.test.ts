@@ -45,13 +45,6 @@ const panel = async (): Promise<{ docs: Entry[]; failed_window_ms: number }> => 
 const daysAgo = (days: number): string =>
   new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-/**
- * A locale the runner has picked up and not answered for. The record is told a locale failed only
- * once the run gives up, so between attempts there is a start and no settlement.
- */
-const seedRunBetweenAttempts = (id: string, targetLng: string, lastAttemptAt: string) =>
-  seedRun(id, targetLng, { startedAt: lastAttemptAt });
-
 /** Seeded rather than translated, so a case can place a failure days in the past. */
 const seedRun = async (
   documentId: string,
@@ -77,6 +70,13 @@ const seedRun = async (
     },
   } as never);
 };
+
+/**
+ * A locale the runner has picked up and not answered for. The record is told a locale failed only
+ * once the run gives up, so between attempts there is a start and no settlement.
+ */
+const seedRunBetweenAttempts = (id: string, targetLng: string, lastAttemptAt: string) =>
+  seedRun(id, targetLng, { startedAt: lastAttemptAt });
 
 const localesIn = (entries: Entry[]): string[] => entries.map((entry) => entry.target_lng).sort();
 
