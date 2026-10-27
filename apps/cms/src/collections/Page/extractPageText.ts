@@ -3,6 +3,7 @@ import { extractCarouselText } from "@/blocks/Carousel/extractText";
 import { extractChartText } from "@/blocks/Chart/extractText";
 import { extractCtaBandText } from "@/blocks/CtaBand/extractText";
 import { extractNewsletterText } from "@/blocks/Newsletter/extractText";
+import { extractRawHtmlText } from "@/blocks/RawHtml/extractText";
 import { extractStatsText } from "@/blocks/Stats/extractText";
 import { extractFaqText } from "@/blocks/Faq/extractText";
 import { extractHeroText } from "@/blocks/Hero/extractText";
@@ -50,6 +51,9 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
     }
     case "stats": {
       return extractStatsText(block);
+    }
+    case "rawHtml": {
+      return extractRawHtmlText(block);
     }
     case "globalSectionSlot": {
       // Shared text stays out of page vectors, so one global block edit does not re-embed every page using it.

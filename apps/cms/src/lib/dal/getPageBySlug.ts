@@ -10,6 +10,8 @@ import { getPayloadClient } from "@/dal/payload-client";
 
 import { getAllDocuments } from "./getAllDocuments";
 
+export const PAGE_RENDER_DEPTH = 3;
+
 export async function getPageBySlugQuery(
   payload: Payload,
   pathSegmentsNorm: string[],
@@ -20,7 +22,7 @@ export async function getPageBySlugQuery(
   const lastSegment = pathSegmentsNorm.at(-1)!;
 
   const docs = await getAllDocuments(payload, "page", {
-    depth: 3,
+    depth: PAGE_RENDER_DEPTH,
     draft,
     locale: resolvedLocale,
     overrideAccess: true,
