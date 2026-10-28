@@ -66,6 +66,13 @@ describe("dev app smoke", () => {
           overrideAccess: true,
           req: request,
         });
+        const { totalDocs: countInsideTransaction } = await payload.count({
+          collection: "pages",
+          overrideAccess: true,
+          req: request,
+          where: { title: { equals: rollbackMarker } },
+        });
+        expect(countInsideTransaction).toBe(1);
         throw new Error("fail after the write");
       })()
     ).rejects.toThrow("fail after the write");
@@ -77,5 +84,34 @@ describe("dev app smoke", () => {
       where: { title: { equals: rollbackMarker } },
     });
     expect(totalDocs).toBe(0);
+  });
+
+  it("two getTestPayload calls give independent instances", async () => {
+    const first = await getTestPayload();
+    await first.payload.create({
+      collection: "pages",
+      data: { slug: "only-in-first", title: "Only in first" },
+      overrideAccess: true,
+    });
+    await first.destroy();
+
+    const second = await getTestPayload();
+    try {
+      expect(second.payload).not.toBe(first.payload);
+      const { totalDocs } = await second.payload.count({
+        collection: "pages",
+        overrideAccess: true,
+      });
+      expect(totalDocs).toBe(0);
+
+      const page = await second.payload.create({
+        collection: "pages",
+        data: { slug: "in-second", title: "In second" },
+        overrideAccess: true,
+      });
+      expect(page.title).toBe("In second");
+    } finally {
+      await second.destroy();
+    }
   });
 });

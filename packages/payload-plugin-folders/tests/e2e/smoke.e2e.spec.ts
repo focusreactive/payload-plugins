@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 // From P-33 on this test must also assert the folders tree view: open the folders collection and
-// expect the tree (rows for the seeded folders), not the stock list view.
+// expect the tree (rows for the seeded folders), not the stock list view. P-05 adds the folders
+// collection, so it should also add /admin/collections/folders to this test.
 test("admin opens without a login and the pages collection loads", async ({ page }) => {
   const consoleErrors: string[] = [];
   page.on("console", (message) => {

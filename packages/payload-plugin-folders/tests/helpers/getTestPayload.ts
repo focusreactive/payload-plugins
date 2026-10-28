@@ -8,8 +8,13 @@ import { Pool } from "pg";
 import { getPayload } from "payload";
 import type { Config, Payload, SanitizedConfig } from "payload";
 
-import { buildDevConfig } from "../../dev/payload.config.js";
+import { buildDevConfig } from "../../dev/buildDevConfig.js";
+import type { DevConfigOptions } from "../../dev/buildDevConfig.js";
 import { postgresConnectionEnvironmentKey } from "./postgresGlobalSetup.js";
+
+// Payload remembers the last schema it pushed per process and skips the push for an identical one,
+// so a second instance in the same file would get an empty database without this.
+process.env.PAYLOAD_FORCE_DRIZZLE_PUSH = "true";
 
 export type TestDatabaseKind = "postgres" | "sqlite";
 
@@ -50,7 +55,12 @@ const createPostgresDatabase = async (): Promise<TestDatabase> => {
   // A fresh schema per test file keeps files independent on one shared cluster.
   const schemaName = `test_${randomUUID().replaceAll("-", "")}`;
   const adminPool = new Pool({ connectionString, max: 1 });
-  await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
+  try {
+    await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
+  } catch (error) {
+    await adminPool.end();
+    throw error;
+  }
 
   return {
     adapter: postgresAdapter({ pool: { connectionString }, schemaName }),
@@ -61,22 +71,33 @@ const createPostgresDatabase = async (): Promise<TestDatabase> => {
   };
 };
 
-export const getTestPayload = async (): Promise<TestPayload> => {
+export type GetTestPayloadOptions = Pick<DevConfigOptions, "foldersOptions">;
+
+export const getTestPayload = async ({
+  foldersOptions,
+}: GetTestPayloadOptions = {}): Promise<TestPayload> => {
   const databaseKind: TestDatabaseKind = process.env.TEST_DB === "postgres" ? "postgres" : "sqlite";
   const database =
     databaseKind === "postgres" ? await createPostgresDatabase() : await createSqliteDatabase();
 
-  // Auto-login is for browsers; the tests authenticate explicitly through callEndpoint.
-  const config = await buildDevConfig({ autoLogin: false, db: database.adapter });
-  const payload = await getPayload({ config });
+  try {
+    // Auto-login is for browsers; the tests authenticate explicitly through callEndpoint.
+    const config = await buildDevConfig({ autoLogin: false, db: database.adapter, foldersOptions });
+    // getPayload caches instances by key and destroy() does not clear the cache, so a shared
+    // key would hand a second call in the same file the destroyed first instance.
+    const payload = await getPayload({ config, key: randomUUID() });
 
-  return {
-    config,
-    databaseKind,
-    destroy: async () => {
-      await payload.destroy();
-      await database.cleanup();
-    },
-    payload,
-  };
+    return {
+      config,
+      databaseKind,
+      destroy: async () => {
+        await payload.destroy();
+        await database.cleanup();
+      },
+      payload,
+    };
+  } catch (error) {
+    await database.cleanup();
+    throw error;
+  }
 };

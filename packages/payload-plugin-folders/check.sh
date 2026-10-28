@@ -23,10 +23,17 @@ npm run test:unit
 step "integration tests (SQLite)"
 npm run test:int
 
+step "integration tests (Postgres)"
+npm run test:int:postgres
+
 step "build"
 npm run build
 
 step "browser smoke test"
+if lsof -nP -iTCP:4078 -sTCP:LISTEN >/dev/null 2>&1; then
+  echo "Something is listening on port 4078: stop the dev server on 4078 first" >&2
+  exit 1
+fi
 npx playwright test tests/e2e/smoke.e2e.spec.ts
 
 printf '\ncheck.sh passed\n'

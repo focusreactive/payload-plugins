@@ -3,7 +3,10 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "paths": {
-      "@payload-config": ["./payload.config.ts"]
+      "@payload-config": ["./payload.config.ts"],
+      "@focus-reactive/payload-plugin-folders": ["../src/index.ts"],
+      "@focus-reactive/payload-plugin-folders/client": ["../src/exports/client.ts"],
+      "@focus-reactive/payload-plugin-folders/rsc": ["../src/exports/rsc.ts"]
     }
   },
   "include": [

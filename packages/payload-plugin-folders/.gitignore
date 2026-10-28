@@ -6,3 +6,4 @@ dev/next-env.d.ts
 playwright-report
 test-results
 *.tsbuildinfo
+dev/AGENTS.md
