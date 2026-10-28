@@ -22,7 +22,7 @@ type Props = {
   onPublish: () => void;
 };
 
-// Payload's theme has no green (`success` is blue), so live takes the Publish button's green.
+// Payload's theme has no green (`success` is blue), so live takes the Deploy button's green.
 export const TONES: Record<DeployTone, string> = {
   live: "#16a34a",
   past: "#2f5bd3",
@@ -158,11 +158,11 @@ export const DeployPanel = ({
 
   const badge: Record<DeployView, { label: string; tone: DeployTone; line: string }> = {
     idle: {
-      label: status.lastPublishedAt ? "Live" : "Not published",
+      label: status.lastPublishedAt ? "Live" : "Not deployed",
       tone: status.lastPublishedAt ? "live" : "muted",
       line: status.lastPublishedAt
-        ? `Last published ${ago(status.lastPublishedAt, now)}`
-        : "Nothing published yet",
+        ? `Last deployed ${ago(status.lastPublishedAt, now)}`
+        : "Nothing deployed yet",
     },
     starting: { label: "Starting", tone: "busy", line: "Asking Netlify for a build…" },
     queued: {
@@ -192,7 +192,7 @@ export const DeployPanel = ({
       line: current ? `Stopped ${ago(current.createdAt, now)}` : "The build stopped",
     },
     publishing: {
-      label: "Publishing",
+      label: "Deploying",
       tone: "busy",
       line: "Replacing the live site with the preview…",
     },
@@ -203,7 +203,7 @@ export const DeployPanel = ({
   const builtAt = view === "ready" && current ? new Date(current.createdAt).getTime() : null;
   const changeLists =
     view === "idle"
-      ? [{ title: "Saved since the last publish", note: null, changes: status.changes }]
+      ? [{ title: "Saved since the last deploy", note: null, changes: status.changes }]
       : builtAt !== null
         ? [
             {
@@ -309,7 +309,7 @@ export const DeployPanel = ({
               onClick={onBuild}
               size="medium"
             >
-              {site.locked ? "Start publishing" : "Build and publish"}
+              {site.locked ? "Start deploying" : "Build and deploy"}
             </Button>
           )}
           {view === "failed" && can.build && (
@@ -320,7 +320,7 @@ export const DeployPanel = ({
           {(view === "starting" || view === "queued" || view === "building") && (
             <>
               <Button buttonStyle="primary" disabled margin={false} size="medium">
-                {ownBuild || view === "starting" ? "Building…" : "Start publishing"}
+                {ownBuild || view === "starting" ? "Building…" : "Start deploying"}
               </Button>
               {ownBuild && can.build && current && (
                 <Button
@@ -369,7 +369,7 @@ export const DeployPanel = ({
                 onClick={onPublish}
                 size="medium"
               >
-                Publish
+                Deploy
               </Button>
               {/* A new build replaces this preview as the one offered; this one stays on Netlify. */}
               {can.build && (
@@ -396,7 +396,7 @@ export const DeployPanel = ({
           )}
           {view === "publishing" && (
             <Button buttonStyle="primary" disabled margin={false} size="medium">
-              Publishing…
+              Deploying…
             </Button>
           )}
         </div>
