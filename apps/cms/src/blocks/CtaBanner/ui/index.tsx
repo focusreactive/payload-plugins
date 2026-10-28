@@ -1,8 +1,8 @@
 import { cva } from "class-variance-authority";
 
 import { cn } from "@/components/utils";
-import { SectionHeader } from "@/components/SectionHeader";
-import type { SectionHeaderProps } from "@/components/SectionHeader";
+import { SectionHeading } from "@/components/SectionHeading";
+import type { SectionHeadingProps } from "@/components/SectionHeading";
 
 export type CtaBannerVariant = "default" | "accent" | "dark";
 
@@ -21,12 +21,12 @@ const bannerVariants = cva(
 );
 
 interface CtaBannerProps {
-  header: SectionHeaderProps | null;
+  heading: SectionHeadingProps;
   actions: React.ReactNode;
   variant?: CtaBannerVariant | null;
 }
 
-export function CtaBanner({ header, actions, variant }: CtaBannerProps) {
+export function CtaBanner({ heading, actions, variant }: CtaBannerProps) {
   const resolved: CtaBannerVariant = variant ?? "default";
 
   return (
@@ -34,7 +34,7 @@ export function CtaBanner({ header, actions, variant }: CtaBannerProps) {
       className={cn(bannerVariants({ variant: resolved }))}
       data-theme={resolved === "dark" ? "dark" : undefined}
     >
-      {header && <SectionHeader {...header} align="left" size="h-section" />}
+      <SectionHeading {...heading} align="left" size="h-section" />
       <div className="flex flex-wrap items-center gap-3.5">{actions}</div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { joinText } from "@/lib/utils/text";
+import { joinText, sectionHeadingText } from "@/lib/utils/text";
 import type { Testimonial, TestimonialsListBlock } from "@/payload-types";
 
 export function extractTestimonialsText(block: TestimonialsListBlock): string {
@@ -9,5 +9,5 @@ export function extractTestimonialsText(block: TestimonialsListBlock): string {
     const testimonial = item.testimonial as Testimonial;
     return [testimonial.author, testimonial.company, testimonial.position, testimonial.content];
   });
-  return joinText([block.eyebrow, block.heading, block.description, ...testimonialText]);
+  return joinText([...sectionHeadingText(block.heading), ...testimonialText]);
 }

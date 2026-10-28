@@ -26,7 +26,7 @@ import type { Block } from "payload";
 
 import { BLOG_CONFIG } from "@/lib/config/blog";
 
-export type RichTextPreset = "default" | "hero";
+export type RichTextPreset = "default";
 
 interface Options {
   blocks?: Block[];
@@ -41,26 +41,6 @@ export function generateRichText(preset: RichTextPreset = "default", options?: O
       let defaultFeatures: FeatureProviderServer<any, any, any>[] = [];
 
       switch (preset) {
-        case "hero": {
-          defaultFeatures = [
-            ...toolbarFeatures,
-            HeadingFeature(),
-            ParagraphFeature(),
-            BoldFeature(),
-            UnderlineFeature(),
-            StrikethroughFeature(),
-            ItalicFeature(),
-            ParagraphFeature(),
-            SubscriptFeature(),
-            SuperscriptFeature(),
-            InlineCodeFeature(),
-            UnorderedListFeature(),
-            OrderedListFeature(),
-            IndentFeature(),
-            AlignFeature(),
-          ];
-          break;
-        }
         case "default": {
           defaultFeatures = [
             ...toolbarFeatures,

@@ -1,27 +1,12 @@
 import { cn, resolveBackdropTone } from "@/components/utils";
 import { AbstractBackdrop } from "@/components/AbstractBackdrop";
-import { DisplayHeading } from "@/components/DisplayHeading";
 import { GridLines } from "@/components/GridLines";
 import { Media } from "@/components/media";
 import type { PreparedMedia } from "@/components/media";
 import { Link } from "@/components/link";
 import type { LinkProps } from "@/components/link/types";
-import { Eyebrow } from "@/components/Eyebrow";
-import { RichText } from "@/components/richText";
+import { SectionHeading } from "@/components/SectionHeading";
 import type { IHeroProps } from "./types";
-
-interface HeroBadgeProps {
-  badge?: string | null;
-}
-
-function HeroBadge({ badge }: HeroBadgeProps) {
-  if (!badge) return null;
-  return (
-    <Eyebrow tone="accent" prefix="dot">
-      {badge}
-    </Eyebrow>
-  );
-}
 
 interface HeroActionsProps {
   links: LinkProps[];
@@ -49,7 +34,7 @@ function HeroImage({ image }: { image: PreparedMedia }) {
   );
 }
 
-export function Hero({ variant, theme, badge, title, text, image, links }: IHeroProps) {
+export function Hero({ variant, theme, heading, image, links }: IHeroProps) {
   const backdropTone = resolveBackdropTone(theme);
   const hasImage = typeof image?.data?.src === "string" && image.data.src.length > 0;
 
@@ -59,11 +44,13 @@ export function Hero({ variant, theme, badge, title, text, image, links }: IHero
         <AbstractBackdrop variant="blobs" tone={backdropTone} />
         <GridLines tone={backdropTone} />
         <div className="relative z-1 mx-auto flex max-w-[840px] flex-col items-center gap-6 text-center">
-          <HeroBadge badge={badge} />
-          <DisplayHeading as="h1" size="display-1" text={title} className="text-balance" />
-          <div className="text-lead max-w-[600px] text-muted-foreground">
-            <RichText {...text} />
-          </div>
+          <SectionHeading
+            {...heading}
+            as="h1"
+            align="center"
+            size="display-1"
+            className="max-w-[840px] gap-6"
+          />
           <HeroActions links={links} className="mt-2 justify-center" />
         </div>
       </>
@@ -81,11 +68,7 @@ export function Hero({ variant, theme, badge, title, text, image, links }: IHero
         )}
       >
         <div className="flex max-w-[620px] flex-col gap-6">
-          <HeroBadge badge={badge} />
-          <DisplayHeading as="h1" size="display-1" text={title} />
-          <div className="text-lead max-w-[520px] text-muted-foreground">
-            <RichText {...text} />
-          </div>
+          <SectionHeading {...heading} as="h1" size="display-1" className="gap-6" />
           <HeroActions links={links} className="mt-2" />
         </div>
         {hasImage && (

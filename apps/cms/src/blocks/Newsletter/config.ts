@@ -3,36 +3,16 @@ import type { Block, Field } from "payload";
 import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { injectSection } from "@/lib/fields/section/injectSection";
+import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 
 const fields: Field[] = [
-  {
-    type: "row",
-    fields: [
-      {
-        admin: { width: "40%" },
-        defaultValue: createLocalizedDefault({
-          en: "The Journal, monthly",
-          es: "The Journal, mensual",
-        }),
-        label: { en: "Eyebrow", es: "Antetítulo" },
-        localized: true,
-        name: "eyebrow",
-        type: "text",
-      },
-      {
-        admin: { width: "60%" },
-        defaultValue: createLocalizedDefault({
-          en: "One thoughtful email a month. No noise.",
-          es: "Un correo cuidado al mes. Sin ruido.",
-        }),
-        label: { en: "Heading", es: "Encabezado" },
-        localized: true,
-        name: "heading",
-        required: true,
-        type: "text",
-      },
-    ],
-  },
+  sectionHeadingField({
+    eyebrow: { en: "The Journal, monthly", es: "The Journal, mensual" },
+    title: {
+      en: "One thoughtful email a month. No noise.",
+      es: "Un correo cuidado al mes. Sin ruido.",
+    },
+  }),
   {
     type: "row",
     fields: [

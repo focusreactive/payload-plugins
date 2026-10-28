@@ -1,4 +1,4 @@
-import { SectionHeader } from "@/components/SectionHeader";
+import { SectionHeading } from "@/components/SectionHeading";
 import { Carousel } from "./ui";
 import type { ICarouselCardProps } from "./ui/types";
 import React from "react";
@@ -6,13 +6,10 @@ import React from "react";
 import { SectionContainer } from "@/components/shared";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareRichTextProps } from "@/lib/adapters/prepareRichTextProps";
-import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { CarouselBlock } from "@/payload-types";
 
 export const CarouselBlockComponent: React.FC<CarouselBlock> = ({
-  eyebrow,
   heading,
-  description,
   effect,
   slides,
   section,
@@ -24,16 +21,9 @@ export const CarouselBlockComponent: React.FC<CarouselBlock> = ({
     text: slide.text ? prepareRichTextProps(slide.text) : undefined,
   }));
 
-  const header = prepareSectionHeaderProps({
-    eyebrow,
-    description,
-    heading,
-    align: "center",
-  });
-
   return (
     <SectionContainer sectionData={{ ...section, id }}>
-      {header && <SectionHeader {...header} className="mb-12" />}
+      <SectionHeading {...heading} align="center" className="mb-12" />
       <Carousel slides={cards} effect={(effect as ICarouselCardProps["effect"]) ?? "slide"} />
     </SectionContainer>
   );

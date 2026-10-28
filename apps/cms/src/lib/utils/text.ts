@@ -1,6 +1,8 @@
 import type { LexicalNode, SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
 import { convertLexicalToPlaintext } from "@payloadcms/richtext-lexical/plaintext";
 
+import type { SectionHeadingFields } from "@/payload-types";
+
 export function extractLexicalText(value: unknown): string {
   if (!value || typeof value !== "object") {
     return "";
@@ -17,4 +19,8 @@ export function joinText(parts: (string | null | undefined)[]): string {
     .filter((part): part is string => typeof part === "string" && part.trim().length > 0)
     .map((part) => part.trim())
     .join(" ");
+}
+
+export function sectionHeadingText(heading: SectionHeadingFields | null | undefined) {
+  return [heading?.eyebrow, heading?.title, heading?.description];
 }

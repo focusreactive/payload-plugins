@@ -4,13 +4,10 @@ import { ContentSection } from "./ui";
 import { Media } from "@/components/media";
 import { CMSLink, RichText, SectionContainer } from "@/components/shared";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
-import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { ContentBlock as ContentBlockProps, Page, Post } from "@/payload-types";
 
 export const ContentBlockComponent: React.FC<ContentBlockProps> = ({
-  eyebrow,
   heading,
-  description,
   layout,
   content,
   image,
@@ -19,14 +16,13 @@ export const ContentBlockComponent: React.FC<ContentBlockProps> = ({
   id,
 }) => {
   const resolvedImage = typeof image !== "number" ? image : null;
-  const header = prepareSectionHeaderProps({ eyebrow, description, heading });
   const media = resolvedImage ? prepareMediaProps({ image: resolvedImage }) : null;
 
   return (
     <SectionContainer sectionData={{ ...section, id }}>
       <ContentSection
         layout={layout}
-        header={header}
+        heading={heading}
         image={
           media ? (
             <Media

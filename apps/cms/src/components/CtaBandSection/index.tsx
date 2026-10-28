@@ -3,7 +3,7 @@ import { CtaBand } from "@/components/ctaBand";
 import { ButtonSize } from "@/components/button/types";
 
 import { CMSLink } from "@/components/shared/CMSLink";
-import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
+import type { SectionHeadingContent } from "@/components/SectionHeading";
 import type { Page, Post } from "@/payload-types";
 
 export interface CtaBandSectionAction {
@@ -25,25 +25,15 @@ export interface CtaBandSectionAction {
 }
 
 interface CtaBandSectionProps {
-  eyebrow?: string | null;
-  heading?: string | null;
-  description?: string | null;
+  heading?: SectionHeadingContent | null;
   actions?: CtaBandSectionAction[] | null;
   theme?: string | null;
 }
 
-export function CtaBandSection({
-  eyebrow,
-  heading,
-  description,
-  actions,
-  theme,
-}: CtaBandSectionProps) {
-  const header = prepareSectionHeaderProps({ eyebrow, description, heading });
-
+export function CtaBandSection({ heading, actions, theme }: CtaBandSectionProps) {
   return (
     <CtaBand
-      header={header}
+      heading={heading}
       theme={theme}
       actions={(actions ?? []).map((action) => (
         <TrackLeadAction key={action.id ?? action.label} on="click" type="cta_click">
