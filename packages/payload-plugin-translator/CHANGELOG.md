@@ -1,3 +1,5 @@
+# @focus-reactive/payload-plugin-translator [1.0.0-next.7](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.6...@focus-reactive/payload-plugin-translator@1.0.0-next.7) (2026-10-28)
+
 # @focus-reactive/payload-plugin-translator [1.0.0-next.6](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.5...@focus-reactive/payload-plugin-translator@1.0.0-next.6) (2026-10-26)
 
 
