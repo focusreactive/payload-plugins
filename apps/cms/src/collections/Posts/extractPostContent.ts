@@ -7,6 +7,7 @@ import {
   buildRefQueries,
   linkToContentNode,
   richTextToContent,
+  sectionHeadingContent,
   uploadImage,
 } from "@/lib/contentExtraction";
 import type { LinkResolveCtx, LinkValue, Upload } from "@/lib/contentExtraction";
@@ -47,14 +48,12 @@ const extractPostContent: ContentExtractor = async (values, ctx, { resolveDocs, 
     paragraph(post.excerpt),
     uploadImage(post.heroImage as Upload, docs),
     ...richTextToContent(post.content, linkCtx),
-    heading(2, faq?.heading),
+    ...sectionHeadingContent(faq?.heading, 2),
     ...asArray<{ question?: string | null; answer?: unknown }>(faq?.items).flatMap((i) => [
       heading(3, i.question),
       ...richTextToContent(i.answer, linkCtx),
     ]),
-    paragraph(cta?.eyebrow),
-    heading(2, cta?.heading),
-    paragraph(cta?.description),
+    ...sectionHeadingContent(cta?.heading, 2),
     ...asArray<LinkValue>(cta?.actions).map((a) => linkToContentNode(a, linkCtx)),
     ...categoryNodes,
   ]);

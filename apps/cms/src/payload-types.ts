@@ -364,8 +364,14 @@ export interface Page {
    * The header to display on the page
    */
   header?: (number | null) | Header;
+  /**
+   * The page's main heading (H1). Every page has exactly one hero.
+   */
+  hero: HeroBlock[];
+  /**
+   * Page sections below the hero. Section titles render as H2.
+   */
   blocks: (
-    | HeroBlock
     | ContentBlock
     | FaqBlock
     | TestimonialsListBlock
@@ -564,7 +570,7 @@ export interface Post {
    * Optional FAQ shown after the article body.
    */
   faq?: {
-    heading?: string | null;
+    heading?: SectionHeadingFields;
     items?:
       | {
           question: string;
@@ -591,9 +597,7 @@ export interface Post {
    * Optional CTA band shown at the end of the post. Hidden when the heading is empty.
    */
   cta?: {
-    eyebrow?: string | null;
-    heading?: string | null;
-    description?: string | null;
+    heading?: SectionHeadingFields;
     actions?:
       | {
           type?: ('reference' | 'custom' | 'customPage') | null;
@@ -652,6 +656,18 @@ export interface Post {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SectionHeadingFields".
+ */
+export interface SectionHeadingFields {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  title?: string | null;
+  description?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "categories".
  */
 export interface Category {
@@ -685,23 +701,7 @@ export interface Author {
  */
 export interface HeroBlock {
   variant: 'showcase' | 'centered';
-  eyebrow?: string | null;
-  title?: string | null;
-  richText?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
+  heading?: SectionHeadingFields;
   actions?:
     | {
         type?: ('reference' | 'custom' | 'customPage') | null;
@@ -756,12 +756,7 @@ export interface HeroBlock {
  * via the `definition` "ContentBlock".
  */
 export interface ContentBlock {
-  eyebrow?: string | null;
-  /**
-   * Wrap a word in *asterisks* to accent it in the brand colour.
-   */
-  heading?: string | null;
-  description?: string | null;
+  heading?: SectionHeadingFields;
   layout: 'image-text' | 'text-image';
   image: number | Media;
   content: {
@@ -829,12 +824,7 @@ export interface ContentBlock {
  * via the `definition` "FaqBlock".
  */
 export interface FaqBlock {
-  eyebrow?: string | null;
-  /**
-   * Wrap a word in *asterisks* to accent it in the brand colour.
-   */
-  heading?: string | null;
-  description?: string | null;
+  heading?: SectionHeadingFields;
   items: {
     question: string;
     answer: {
@@ -881,12 +871,7 @@ export interface FaqBlock {
  * via the `definition` "TestimonialsListBlock".
  */
 export interface TestimonialsListBlock {
-  eyebrow?: string | null;
-  /**
-   * Wrap a word in *asterisks* to accent it in the brand colour.
-   */
-  heading?: string | null;
-  description?: string | null;
+  heading?: SectionHeadingFields;
   testimonialItems?:
     | {
         testimonial: number | Testimonial;
@@ -941,12 +926,7 @@ export interface Testimonial {
  * via the `definition` "CardsGridBlock".
  */
 export interface CardsGridBlock {
-  eyebrow?: string | null;
-  /**
-   * Wrap a word in *asterisks* to accent it in the brand colour.
-   */
-  heading?: string | null;
-  description?: string | null;
+  heading?: SectionHeadingFields;
   columns?: number | null;
   items: {
     /**
@@ -1034,12 +1014,7 @@ export interface CardsGridBlock {
  * via the `definition` "CarouselBlock".
  */
 export interface CarouselBlock {
-  eyebrow?: string | null;
-  /**
-   * Wrap a word in *asterisks* to accent it in the brand colour.
-   */
-  heading?: string | null;
-  description?: string | null;
+  heading?: SectionHeadingFields;
   effect?: ('slide' | 'fade' | 'cube' | 'flip' | 'coverflow' | 'cards') | null;
   slides: {
     image: {
@@ -1140,12 +1115,7 @@ export interface LogosBlock {
  * via the `definition` "ChartBlock".
  */
 export interface ChartBlock {
-  eyebrow?: string | null;
-  /**
-   * Wrap a word in *asterisks* to accent it in the brand colour.
-   */
-  heading?: string | null;
-  description?: string | null;
+  heading?: SectionHeadingFields;
   title: string;
   subtitle?: string | null;
   /**
@@ -1187,12 +1157,7 @@ export interface ChartBlock {
  * via the `definition` "CtaBandBlock".
  */
 export interface CtaBandBlock {
-  eyebrow?: string | null;
-  /**
-   * Wrap a word in *asterisks* to accent it in the brand colour.
-   */
-  heading?: string | null;
-  description?: string | null;
+  heading?: SectionHeadingFields;
   actions: {
     type?: ('reference' | 'custom' | 'customPage') | null;
     newTab?: boolean | null;
@@ -1241,8 +1206,7 @@ export interface CtaBandBlock {
  * via the `definition` "NewsletterBlock".
  */
 export interface NewsletterBlock {
-  eyebrow?: string | null;
-  heading: string;
+  heading?: SectionHeadingFields;
   inputPlaceholder: string;
   buttonLabel: string;
   disclaimer?: string | null;
@@ -1359,7 +1323,6 @@ export interface GlobalBlock {
    * The single block this global represents. Edit once, reuse on any page.
    */
   block: (
-    | HeroBlock
     | ContentBlock
     | FaqBlock
     | TestimonialsListBlock
@@ -1507,23 +1470,7 @@ export interface Preset {
   presetBlock: (
     | {
         variant: 'showcase' | 'centered';
-        eyebrow?: string | null;
-        title?: string | null;
-        richText?: {
-          root: {
-            type: string;
-            children: {
-              type: any;
-              version: number;
-              [k: string]: unknown;
-            }[];
-            direction: ('ltr' | 'rtl') | null;
-            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-            indent: number;
-            version: number;
-          };
-          [k: string]: unknown;
-        } | null;
+        heading?: SectionHeadingFields;
         actions?:
           | {
               type?: ('reference' | 'custom' | 'customPage') | null;
@@ -1574,12 +1521,7 @@ export interface Preset {
         blockType: 'hero';
       }
     | {
-        eyebrow?: string | null;
-        /**
-         * Wrap a word in *asterisks* to accent it in the brand colour.
-         */
-        heading?: string | null;
-        description?: string | null;
+        heading?: SectionHeadingFields;
         layout: 'image-text' | 'text-image';
         image: number | Media;
         content: {
@@ -1643,12 +1585,7 @@ export interface Preset {
         blockType: 'content';
       }
     | {
-        eyebrow?: string | null;
-        /**
-         * Wrap a word in *asterisks* to accent it in the brand colour.
-         */
-        heading?: string | null;
-        description?: string | null;
+        heading?: SectionHeadingFields;
         items: {
           question: string;
           answer: {
@@ -1691,12 +1628,7 @@ export interface Preset {
         blockType: 'faq';
       }
     | {
-        eyebrow?: string | null;
-        /**
-         * Wrap a word in *asterisks* to accent it in the brand colour.
-         */
-        heading?: string | null;
-        description?: string | null;
+        heading?: SectionHeadingFields;
         testimonialItems?:
           | {
               testimonial: number | Testimonial;
@@ -1732,12 +1664,7 @@ export interface Preset {
         blockType: 'testimonialsList';
       }
     | {
-        eyebrow?: string | null;
-        /**
-         * Wrap a word in *asterisks* to accent it in the brand colour.
-         */
-        heading?: string | null;
-        description?: string | null;
+        heading?: SectionHeadingFields;
         columns?: number | null;
         items: {
           /**
@@ -1821,12 +1748,7 @@ export interface Preset {
         blockType: 'cardsGrid';
       }
     | {
-        eyebrow?: string | null;
-        /**
-         * Wrap a word in *asterisks* to accent it in the brand colour.
-         */
-        heading?: string | null;
-        description?: string | null;
+        heading?: SectionHeadingFields;
         effect?: ('slide' | 'fade' | 'cube' | 'flip' | 'coverflow' | 'cards') | null;
         slides: {
           image: {
@@ -1919,12 +1841,7 @@ export interface Preset {
         blockType: 'logos';
       }
     | {
-        eyebrow?: string | null;
-        /**
-         * Wrap a word in *asterisks* to accent it in the brand colour.
-         */
-        heading?: string | null;
-        description?: string | null;
+        heading?: SectionHeadingFields;
         title: string;
         subtitle?: string | null;
         /**
@@ -1962,12 +1879,7 @@ export interface Preset {
         blockType: 'chart';
       }
     | {
-        eyebrow?: string | null;
-        /**
-         * Wrap a word in *asterisks* to accent it in the brand colour.
-         */
-        heading?: string | null;
-        description?: string | null;
+        heading?: SectionHeadingFields;
         actions: {
           type?: ('reference' | 'custom' | 'customPage') | null;
           newTab?: boolean | null;
@@ -2012,8 +1924,7 @@ export interface Preset {
         blockType: 'ctaBand';
       }
     | {
-        eyebrow?: string | null;
-        heading: string;
+        heading?: SectionHeadingFields;
         inputPlaceholder: string;
         buttonLabel: string;
         disclaimer?: string | null;
@@ -2143,7 +2054,7 @@ export interface Comment {
         id?: string | null;
       }[]
     | null;
-  author?: (number | null) | User;
+  author: number | User;
   isResolved?: boolean | null;
   resolvedBy?: (number | null) | User;
   resolvedAt?: string | null;
@@ -2740,10 +2651,14 @@ export interface PageSelect<T extends boolean = true> {
   _abPassPercentage?: T;
   title?: T;
   header?: T;
-  blocks?:
+  hero?:
     | T
     | {
         hero?: T | HeroBlockSelect<T>;
+      };
+  blocks?:
+    | T
+    | {
         content?: T | ContentBlockSelect<T>;
         faq?: T | FaqBlockSelect<T>;
         testimonialsList?: T | TestimonialsListBlockSelect<T>;
@@ -2790,9 +2705,7 @@ export interface PageSelect<T extends boolean = true> {
  */
 export interface HeroBlockSelect<T extends boolean = true> {
   variant?: T;
-  eyebrow?: T;
-  title?: T;
-  richText?: T;
+  heading?: T | SectionHeadingFieldsSelect<T>;
   actions?:
     | T
     | {
@@ -2832,12 +2745,19 @@ export interface HeroBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SectionHeadingFields_select".
+ */
+export interface SectionHeadingFieldsSelect<T extends boolean = true> {
+  eyebrow?: T;
+  title?: T;
+  description?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ContentBlock_select".
  */
 export interface ContentBlockSelect<T extends boolean = true> {
-  eyebrow?: T;
-  heading?: T;
-  description?: T;
+  heading?: T | SectionHeadingFieldsSelect<T>;
   layout?: T;
   image?: T;
   content?: T;
@@ -2877,9 +2797,7 @@ export interface ContentBlockSelect<T extends boolean = true> {
  * via the `definition` "FaqBlock_select".
  */
 export interface FaqBlockSelect<T extends boolean = true> {
-  eyebrow?: T;
-  heading?: T;
-  description?: T;
+  heading?: T | SectionHeadingFieldsSelect<T>;
   items?:
     | T
     | {
@@ -2911,9 +2829,7 @@ export interface FaqBlockSelect<T extends boolean = true> {
  * via the `definition` "TestimonialsListBlock_select".
  */
 export interface TestimonialsListBlockSelect<T extends boolean = true> {
-  eyebrow?: T;
-  heading?: T;
-  description?: T;
+  heading?: T | SectionHeadingFieldsSelect<T>;
   testimonialItems?:
     | T
     | {
@@ -2947,9 +2863,7 @@ export interface TestimonialsListBlockSelect<T extends boolean = true> {
  * via the `definition` "CardsGridBlock_select".
  */
 export interface CardsGridBlockSelect<T extends boolean = true> {
-  eyebrow?: T;
-  heading?: T;
-  description?: T;
+  heading?: T | SectionHeadingFieldsSelect<T>;
   columns?: T;
   items?:
     | T
@@ -3003,9 +2917,7 @@ export interface CardsGridBlockSelect<T extends boolean = true> {
  * via the `definition` "CarouselBlock_select".
  */
 export interface CarouselBlockSelect<T extends boolean = true> {
-  eyebrow?: T;
-  heading?: T;
-  description?: T;
+  heading?: T | SectionHeadingFieldsSelect<T>;
   effect?: T;
   slides?:
     | T
@@ -3088,9 +3000,7 @@ export interface LogosBlockSelect<T extends boolean = true> {
  * via the `definition` "ChartBlock_select".
  */
 export interface ChartBlockSelect<T extends boolean = true> {
-  eyebrow?: T;
-  heading?: T;
-  description?: T;
+  heading?: T | SectionHeadingFieldsSelect<T>;
   title?: T;
   subtitle?: T;
   ranges?:
@@ -3130,9 +3040,7 @@ export interface ChartBlockSelect<T extends boolean = true> {
  * via the `definition` "CtaBandBlock_select".
  */
 export interface CtaBandBlockSelect<T extends boolean = true> {
-  eyebrow?: T;
-  heading?: T;
-  description?: T;
+  heading?: T | SectionHeadingFieldsSelect<T>;
   actions?:
     | T
     | {
@@ -3169,8 +3077,7 @@ export interface CtaBandBlockSelect<T extends boolean = true> {
  * via the `definition` "NewsletterBlock_select".
  */
 export interface NewsletterBlockSelect<T extends boolean = true> {
-  eyebrow?: T;
-  heading?: T;
+  heading?: T | SectionHeadingFieldsSelect<T>;
   inputPlaceholder?: T;
   buttonLabel?: T;
   disclaimer?: T;
@@ -3292,7 +3199,7 @@ export interface PostsSelect<T extends boolean = true> {
   faq?:
     | T
     | {
-        heading?: T;
+        heading?: T | SectionHeadingFieldsSelect<T>;
         items?:
           | T
           | {
@@ -3304,9 +3211,7 @@ export interface PostsSelect<T extends boolean = true> {
   cta?:
     | T
     | {
-        eyebrow?: T;
-        heading?: T;
-        description?: T;
+        heading?: T | SectionHeadingFieldsSelect<T>;
         actions?:
           | T
           | {
@@ -3488,7 +3393,6 @@ export interface GlobalBlockSelect<T extends boolean = true> {
   block?:
     | T
     | {
-        hero?: T | HeroBlockSelect<T>;
         content?: T | ContentBlockSelect<T>;
         faq?: T | FaqBlockSelect<T>;
         testimonialsList?: T | TestimonialsListBlockSelect<T>;
@@ -3548,9 +3452,7 @@ export interface PresetsSelect<T extends boolean = true> {
           | T
           | {
               variant?: T;
-              eyebrow?: T;
-              title?: T;
-              richText?: T;
+              heading?: T | SectionHeadingFieldsSelect<T>;
               actions?:
                 | T
                 | {
@@ -3591,9 +3493,7 @@ export interface PresetsSelect<T extends boolean = true> {
         content?:
           | T
           | {
-              eyebrow?: T;
-              heading?: T;
-              description?: T;
+              heading?: T | SectionHeadingFieldsSelect<T>;
               layout?: T;
               image?: T;
               content?: T;
@@ -3631,9 +3531,7 @@ export interface PresetsSelect<T extends boolean = true> {
         faq?:
           | T
           | {
-              eyebrow?: T;
-              heading?: T;
-              description?: T;
+              heading?: T | SectionHeadingFieldsSelect<T>;
               items?:
                 | T
                 | {
@@ -3663,9 +3561,7 @@ export interface PresetsSelect<T extends boolean = true> {
         testimonialsList?:
           | T
           | {
-              eyebrow?: T;
-              heading?: T;
-              description?: T;
+              heading?: T | SectionHeadingFieldsSelect<T>;
               testimonialItems?:
                 | T
                 | {
@@ -3697,9 +3593,7 @@ export interface PresetsSelect<T extends boolean = true> {
         cardsGrid?:
           | T
           | {
-              eyebrow?: T;
-              heading?: T;
-              description?: T;
+              heading?: T | SectionHeadingFieldsSelect<T>;
               columns?: T;
               items?:
                 | T
@@ -3751,9 +3645,7 @@ export interface PresetsSelect<T extends boolean = true> {
         carousel?:
           | T
           | {
-              eyebrow?: T;
-              heading?: T;
-              description?: T;
+              heading?: T | SectionHeadingFieldsSelect<T>;
               effect?: T;
               slides?:
                 | T
@@ -3832,9 +3724,7 @@ export interface PresetsSelect<T extends boolean = true> {
         chart?:
           | T
           | {
-              eyebrow?: T;
-              heading?: T;
-              description?: T;
+              heading?: T | SectionHeadingFieldsSelect<T>;
               title?: T;
               subtitle?: T;
               ranges?:
@@ -3872,9 +3762,7 @@ export interface PresetsSelect<T extends boolean = true> {
         ctaBand?:
           | T
           | {
-              eyebrow?: T;
-              heading?: T;
-              description?: T;
+              heading?: T | SectionHeadingFieldsSelect<T>;
               actions?:
                 | T
                 | {
@@ -3909,8 +3797,7 @@ export interface PresetsSelect<T extends boolean = true> {
         newsletter?:
           | T
           | {
-              eyebrow?: T;
-              heading?: T;
+              heading?: T | SectionHeadingFieldsSelect<T>;
               inputPlaceholder?: T;
               buttonLabel?: T;
               disclaimer?: T;
@@ -4450,6 +4337,10 @@ export interface TaskSchedulePublish {
       | ({
           relationTo: 'posts';
           value: number | Post;
+        } | null)
+      | ({
+          relationTo: 'globalBlock';
+          value: number | GlobalBlock;
         } | null);
     global?: 'site-settings' | null;
     user?:

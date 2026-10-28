@@ -16,12 +16,28 @@ import {
   linkToContentNode,
   relationId,
   richTextToContent,
+  sectionHeadingContent,
   uploadImage,
 } from "@/lib/contentExtraction";
 import type { ImageGroup, LinkResolveCtx, LinkValue, Upload } from "@/lib/contentExtraction";
-import type { GlobalBlock, Page } from "@/payload-types";
+import type { GlobalBlock, HeroBlock, Page, SectionHeadingFields } from "@/payload-types";
 
 type Block = Page["blocks"][number];
+
+function extractHeroContent(
+  hero: HeroBlock,
+  ctx: LinkResolveCtx,
+  docs: DocStore,
+  helpers: { compact: (n: (ContentNode | null | undefined)[]) => ContentNode[] }
+): ContentNode[] {
+  return [
+    ...helpers.compact([
+      ...sectionHeadingContent(hero.heading, 1),
+      groupImage(hero.image as ImageGroup, docs),
+    ]),
+    ...actionLinks(hero.actions as LinkValue[], ctx),
+  ];
+}
 
 export function extractPageBlockContent(
   block: Block,
@@ -31,22 +47,10 @@ export function extractPageBlockContent(
 ): ContentNode[] {
   const b = block as Record<string, unknown> & Block;
   switch (block.blockType) {
-    case "hero":
-      return [
-        ...helpers.compact([
-          paragraph(b.eyebrow as string),
-          heading(1, b.title as string),
-          ...richTextToContent(b.richText, ctx),
-          groupImage(b.image as ImageGroup, docs),
-        ]),
-        ...actionLinks(b.actions as LinkValue[], ctx),
-      ];
     case "content":
       return [
         ...helpers.compact([
-          paragraph(b.eyebrow as string),
-          heading(2, b.heading as string),
-          paragraph(b.description as string),
+          ...sectionHeadingContent(b.heading as SectionHeadingFields, 2),
           uploadImage(b.image as Upload, docs),
           ...richTextToContent(b.content, ctx),
         ]),
@@ -54,9 +58,7 @@ export function extractPageBlockContent(
       ];
     case "faq":
       return helpers.compact([
-        paragraph(b.eyebrow as string),
-        heading(2, b.heading as string),
-        paragraph(b.description as string),
+        ...sectionHeadingContent(b.heading as SectionHeadingFields, 2),
         ...asArray<{ question?: string; answer?: unknown }>(b.items).flatMap((i) => [
           heading(3, i.question),
           ...richTextToContent(i.answer, ctx),
@@ -64,18 +66,12 @@ export function extractPageBlockContent(
       ]);
     case "ctaBand":
       return [
-        ...helpers.compact([
-          paragraph(b.eyebrow as string),
-          heading(2, b.heading as string),
-          paragraph(b.description as string),
-        ]),
+        ...helpers.compact([...sectionHeadingContent(b.heading as SectionHeadingFields, 2)]),
         ...actionLinks(b.actions as LinkValue[], ctx),
       ];
     case "carousel":
       return helpers.compact([
-        paragraph(b.eyebrow as string),
-        heading(2, b.heading as string),
-        paragraph(b.description as string),
+        ...sectionHeadingContent(b.heading as SectionHeadingFields, 2),
         ...asArray<{ image?: ImageGroup; text?: unknown }>(b.slides).flatMap((s) => [
           groupImage(s.image, docs),
           ...richTextToContent(s.text, ctx),
@@ -83,9 +79,7 @@ export function extractPageBlockContent(
       ]);
     case "cardsGrid":
       return helpers.compact([
-        paragraph(b.eyebrow as string),
-        heading(2, b.heading as string),
-        paragraph(b.description as string),
+        ...sectionHeadingContent(b.heading as SectionHeadingFields, 2),
         ...asArray<{
           title?: string;
           description?: string;
@@ -108,9 +102,7 @@ export function extractPageBlockContent(
         return undefined;
       };
       return helpers.compact([
-        paragraph(b.eyebrow as string),
-        heading(2, b.heading as string),
-        paragraph(b.description as string),
+        ...sectionHeadingContent(b.heading as SectionHeadingFields, 2),
         ...asArray<{ testimonial?: Testimonial | number | string }>(b.testimonialItems).flatMap(
           (t) => {
             const ref = resolveTestimonial(t.testimonial);
@@ -122,9 +114,7 @@ export function extractPageBlockContent(
     }
     case "chart":
       return helpers.compact([
-        paragraph(b.eyebrow as string),
-        heading(2, b.heading as string),
-        paragraph(b.description as string),
+        ...sectionHeadingContent(b.heading as SectionHeadingFields, 2),
         heading(3, b.title as string),
         paragraph(b.subtitle as string),
       ]);
@@ -138,8 +128,7 @@ export function extractPageBlockContent(
       ]);
     case "newsletter":
       return helpers.compact([
-        paragraph(b.eyebrow as string),
-        heading(2, b.heading as string),
+        ...sectionHeadingContent(b.heading as SectionHeadingFields, 2),
         paragraph(b.buttonLabel as string),
         paragraph(b.disclaimer as string),
       ]);
@@ -177,6 +166,7 @@ function mergeStores(...stores: (DocStore | null)[]): DocStore {
 }
 
 const extractPageContent: ContentExtractor = async (values, ctx, { resolveDocs, helpers }) => {
+  const hero = asArray<HeroBlock>((values as { hero?: unknown }).hero);
   const blocks = asArray<Block>((values as { blocks?: unknown }).blocks);
   const locale = ctx.locale ?? I18N_CONFIG.defaultLocale;
 
@@ -201,7 +191,10 @@ const extractPageContent: ContentExtractor = async (values, ctx, { resolveDocs, 
   const docs = mergeStores(docs1, docs2);
   const linkCtx: LinkResolveCtx = { docs, locale };
 
-  return blocks.flatMap((block) => extractPageBlockContent(block, linkCtx, docs, helpers));
+  return [
+    ...hero.flatMap((heroBlock) => extractHeroContent(heroBlock, linkCtx, docs, helpers)),
+    ...blocks.flatMap((block) => extractPageBlockContent(block, linkCtx, docs, helpers)),
+  ];
 };
 
 export default extractPageContent;
