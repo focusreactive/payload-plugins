@@ -364,8 +364,14 @@ export interface Page {
    * The header to display on the page
    */
   header?: (number | null) | Header;
+  /**
+   * The page's main heading (H1). Every page has exactly one hero.
+   */
+  hero: HeroBlock[];
+  /**
+   * Page sections below the hero. Section titles render as H2.
+   */
   blocks: (
-    | HeroBlock
     | ContentBlock
     | FaqBlock
     | TestimonialsListBlock
@@ -1317,7 +1323,6 @@ export interface GlobalBlock {
    * The single block this global represents. Edit once, reuse on any page.
    */
   block: (
-    | HeroBlock
     | ContentBlock
     | FaqBlock
     | TestimonialsListBlock
@@ -2646,10 +2651,14 @@ export interface PageSelect<T extends boolean = true> {
   _abPassPercentage?: T;
   title?: T;
   header?: T;
-  blocks?:
+  hero?:
     | T
     | {
         hero?: T | HeroBlockSelect<T>;
+      };
+  blocks?:
+    | T
+    | {
         content?: T | ContentBlockSelect<T>;
         faq?: T | FaqBlockSelect<T>;
         testimonialsList?: T | TestimonialsListBlockSelect<T>;
@@ -3384,7 +3393,6 @@ export interface GlobalBlockSelect<T extends boolean = true> {
   block?:
     | T
     | {
-        hero?: T | HeroBlockSelect<T>;
         content?: T | ContentBlockSelect<T>;
         faq?: T | FaqBlockSelect<T>;
         testimonialsList?: T | TestimonialsListBlockSelect<T>;
