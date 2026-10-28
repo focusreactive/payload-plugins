@@ -60,7 +60,7 @@ export const revalidatePagesUsingGlobalBlock: CollectionAfterChangeHook<GlobalBl
     });
 
     for (const page of publishedPages) {
-      revalidatePageCache({ doc: page, locale, payload });
+      revalidatePageCache({ doc: page, locales: [locale], payload });
     }
   }
 

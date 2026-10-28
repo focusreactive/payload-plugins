@@ -25,3 +25,5 @@ export const I18N_CONFIG: {
     es: "es_ES",
   },
 };
+
+export const ALL_LOCALES: readonly Locale[] = I18N_CONFIG.locales.map(({ code }) => code);

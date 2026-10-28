@@ -44,7 +44,7 @@ export const revalidateResourcesUsingFooter: CollectionAfterChangeHook<Footer> =
     });
 
     for (const page of pages.docs) {
-      revalidatePageCache({ doc: page, locale, payload });
+      revalidatePageCache({ doc: page, locales: [locale], payload });
     }
   }
 

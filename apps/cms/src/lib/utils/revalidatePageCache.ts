@@ -9,11 +9,13 @@ import { revalidateScopedTag } from "./scopedCache";
 
 export function revalidatePageCache(params: {
   doc: Pick<Page, "breadcrumbs" | "slug">;
-  locale: Locale;
+  locales: readonly Locale[];
   payload: Payload;
 }): void {
   const path = getPathFromBreadcrumbs(params.doc.breadcrumbs) ?? "home";
   params.payload.logger?.info?.(`Revalidating page with slug: ${params.doc.slug}`);
-  revalidateScopedTag(cacheTag({ locale: params.locale, path, type: "page" }), "max");
+  for (const locale of params.locales) {
+    revalidateScopedTag(cacheTag({ locale, path, type: "page" }), "max");
+  }
   revalidateScopedTag(cacheTag({ type: "sitemap" }), "max");
 }
