@@ -1,8 +1,7 @@
 # Folders plugin (Payload 4) - build progress
 
-Build lead log for the unattended run (29 Oct - 6 Nov 2026). Inputs: `spec/payload.md`,
-`spec/tickets-payload.md` and `spec/review.md` from `projects/folders-plugin/` on `origin/main` of
-focusreactive-labs. The orchestrator reads this file and `~/.local/state/vacation-run/status/folders-payload.md`.
+Build lead log for the agent-built first version (29 Oct - 6 Nov 2026). Inputs: the internal
+spec, ticket list and spec review for this plugin, kept outside this repo.
 
 This file replaces the tickets' `BUILD-STATUS.md`: every failing or blocked ticket is recorded here.
 
@@ -72,7 +71,10 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
 15. **Screenshots in a public PR.** Decision: committed under `screenshots/` in the package so the draft
     PR can link them; flagged in the PR body for removal before any merge.
 16. **Pre-push hook.** `lefthook` runs `bunx turbo run check-types` over the whole repo on every push,
-    and `--no-verify` is forbidden. If an unrelated package fails it, the push is a blocker recorded here.
+    and `--no-verify` is forbidden. On a fresh worktree it fails in `apps/dev` and
+    `apps/multi-tenancy-demo` until the workspace packages are built once
+    (`bunx turbo run build --filter='./packages/*'`), because their types come from `dist/`. Built once
+    on 29 Oct; the push then passed.
 
 ### Owner decisions (from spec/review.md, the spec writer's pick applies)
 
@@ -83,7 +85,7 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
 
 ### Scale and order
 
-56 tickets at 134 agent hours, one developer at a time, on seats near their weekly limit, will not
+56 tickets at 134 agent hours, run one developer at a time, will not
 all finish by 6 Nov. Decision: tickets run in groups, one developer run, one tester run and one
 reviewer pass per group, in this order, so the Storyblok behaviours editors miss (drag and drop, move
 with URL update and redirect, root pages) land before polish:
@@ -121,3 +123,10 @@ One line per ticket: `check.sh`, tester evidence, reviewer verdict, commit.
 
 | Ticket | check.sh | Tester | Reviewer | Commit |
 |---|---|---|---|---|
+| G0: P-01, P-02, check.sh | pass (5/5 int on SQLite and Postgres, smoke e2e) | `screenshots/g0-admin-dashboard.png`, `screenshots/g0-page-created.png`: auto-login admin, page created and listed | NOT DONE (getPayload cache returned a destroyed instance in a second boot), fixed in `11b43796`, re-review DONE | `f4010d2d`, `11b43796` |
+
+---
+
+## 3. Notes for the merge
+
+- Commit `42dee943` carries an earlier wording of this file that named internal tooling paths. Squash the branch on merge so it does not reach `main`.
