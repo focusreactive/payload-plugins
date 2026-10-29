@@ -28,6 +28,8 @@ export type DevConfigOptions = {
   extraCollections?: CollectionConfig[];
   /** Replaces the default SQLite adapter; the integration tests pass a per-file database here. */
   db?: Config["db"];
+  /** False builds the app without localization; tests use it to cover the plain-column shapes. */
+  localized?: boolean;
   /** Merged over the dev app's plugin options. */
   foldersOptions?: Partial<FoldersPluginOptions>;
 };
@@ -42,6 +44,7 @@ export const buildDevConfig = ({
   }),
   extraCollections = [],
   foldersOptions,
+  localized = true,
 }: DevConfigOptions = {}) =>
   buildConfig({
     admin: {
@@ -52,7 +55,9 @@ export const buildDevConfig = ({
     collections: [Pages, Posts, Users, ...extraCollections],
     db,
     email: testEmailAdapter,
-    localization: { defaultLocale: "en", fallback: true, locales: ["en", "de"] },
+    ...(localized
+      ? { localization: { defaultLocale: "en", fallback: true, locales: ["en", "de"] } }
+      : {}),
     onInit: async (payload) => {
       if (autoLogin) {
         await ensureDevAdmin(payload);

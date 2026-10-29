@@ -73,7 +73,7 @@ const createPostgresDatabase = async (): Promise<TestDatabase> => {
 
 export type GetTestPayloadOptions = Pick<
   DevConfigOptions,
-  "extraCollections" | "foldersOptions"
+  "extraCollections" | "foldersOptions" | "localized"
 > & {
   /** SQLite only: false boots the adapter without transactions, as a host that left them off would. */
   sqliteTransactions?: boolean;
@@ -82,6 +82,7 @@ export type GetTestPayloadOptions = Pick<
 export const getTestPayload = async ({
   extraCollections,
   foldersOptions,
+  localized,
   sqliteTransactions = true,
 }: GetTestPayloadOptions = {}): Promise<TestPayload> => {
   const databaseKind: TestDatabaseKind = process.env.TEST_DB === "postgres" ? "postgres" : "sqlite";
@@ -97,6 +98,7 @@ export const getTestPayload = async ({
       db: database.adapter,
       extraCollections,
       foldersOptions,
+      localized,
     });
     // getPayload caches instances by key and destroy() does not clear the cache, so a shared
     // key would hand a second call in the same file the destroyed first instance.

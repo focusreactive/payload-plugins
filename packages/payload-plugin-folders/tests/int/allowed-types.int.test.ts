@@ -130,7 +130,7 @@ describe("allowed types", () => {
 
     expect(error.status).toBe(400);
     expect(fieldMessages(error)).toEqual([
-      { message: 'This folder does not accept the type "Page"', path: "folder" },
+      { message: "/articles accepts only Blog post pages", path: "folder" },
     ]);
     const created = await payload.count({
       collection: "pages",
@@ -156,6 +156,38 @@ describe("allowed types", () => {
       payload,
     });
     expect(refused.status).toBe(400);
+  });
+
+  it("the refusal names the folder's path in the request locale and every allowed type", async () => {
+    const { payload } = harness;
+    const folder = await createTypedFolder(payload, {
+      allowedTypes: ["posts", "pages"],
+      name: "Mixed",
+      slug: "mixed",
+    });
+    await payload.update({
+      collection: "folders",
+      data: { name: "Gemischt", slug: "gemischt" },
+      depth: 0,
+      id: folder.id,
+      locale: "de",
+      overrideAccess: true,
+    });
+    await setTypes(payload, folder.id, { allowedTypes: ["posts"] });
+
+    const error = await catchError(
+      payload.create({
+        collection: "pages",
+        data: { folder: folder.id, slug: "seite", title: "Seite" },
+        depth: 0,
+        locale: "de",
+        overrideAccess: true,
+      })
+    );
+
+    expect(fieldMessages(error)).toEqual([
+      { message: "/gemischt accepts only Blog post pages", path: "folder" },
+    ]);
   });
 
   it("one allowed type becomes the default", async () => {

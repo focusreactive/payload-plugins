@@ -25,6 +25,7 @@ import {
 } from "../../core/structureGuard.js";
 import { keyForNewItem } from "../../core/orderKeys.js";
 import { SEGMENT_ERROR_MESSAGE, isValidSegment } from "../../core/slugify.js";
+import { getPageDefaultLocale, getPageLocaleKeys, queryLocaleOf } from "../../core/uniqueness.js";
 import { assertSubtreeWithinLimit, pushFolderSnapshot } from "../../core/subtree.js";
 import { describeTypeLockChange } from "../../core/typeLocks.js";
 import type { FolderId, ResolvedOptions } from "../../types.js";
@@ -270,29 +271,42 @@ export const buildFolderBeforeChange =
       // Rule 2 of spec section 2.6: a page in the same folder may not take the folder's segment.
       // A page's `pathSegment` is its own segment only, so the helper adds the pages whose segment
       // in this locale falls back to the default locale's.
+      // Folder segments that are not localized apply in every locale a page can be read in, and a
+      // localized page column cannot be queried without a locale, so each one is checked in turn.
+      const pageLocales: Array<string | undefined> =
+        key === noLocaleKey ? getPageLocaleKeys(payload).map(queryLocaleOf) : [locale];
+      let isUsedByPage = false;
       for (const page of Object.values(options.collections)) {
-        const pageClash = await payload.db.count({
-          collection: toCollectionSlug(page.slug),
-          locale,
-          req,
-          where: {
-            and: [
-              { folder: { equals: parentId } },
-              { isFolderRoot: { not_equals: true } },
-              page.segmentLocalized && key !== noLocaleKey
-                ? buildSegmentWhere({
-                    defaultLocale: defaultKey,
-                    locale: key,
-                    segment: plan.segments[key],
-                  })
-                : { pathSegment: { equals: plan.segments[key] } },
-            ],
-          },
-        });
-        if (pageClash.totalDocs > 0) {
-          problems.push({ locale, message: `${fullPath} is already used by a page`, path: "slug" });
+        for (const pageLocale of pageLocales) {
+          const pageClash = await payload.db.count({
+            collection: toCollectionSlug(page.slug),
+            locale: pageLocale,
+            req,
+            where: {
+              and: [
+                { folder: { equals: parentId } },
+                { isFolderRoot: { not_equals: true } },
+                page.segmentLocalized && pageLocale !== undefined
+                  ? buildSegmentWhere({
+                      defaultLocale: getPageDefaultLocale(payload),
+                      locale: pageLocale,
+                      segment: plan.segments[key],
+                    })
+                  : { pathSegment: { equals: plan.segments[key] } },
+              ],
+            },
+          });
+          if (pageClash.totalDocs > 0) {
+            isUsedByPage = true;
+            break;
+          }
+        }
+        if (isUsedByPage) {
           break;
         }
+      }
+      if (isUsedByPage) {
+        problems.push({ locale, message: `${fullPath} is already used by a page`, path: "slug" });
       }
     }
     if (problems.length > 0) {

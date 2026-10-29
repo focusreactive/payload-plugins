@@ -12,6 +12,19 @@ export const isTypeAllowed = (
 ): boolean =>
   !folder || folder.allowedTypes.length === 0 || folder.allowedTypes.includes(collection);
 
+const joinLabels = (labels: string[]): string =>
+  labels.length < 2 ? (labels[0] ?? "") : `${labels.slice(0, -1).join(", ")} and ${labels.at(-1)}`;
+
+/** Spec section 7.7: `/blog/2026 accepts only Article pages`. */
+export const describeAllowedTypes = (
+  folderPath: string,
+  allowedTypes: readonly string[],
+  options: ResolvedOptions
+): string =>
+  `${folderPath} accepts only ${joinLabels(
+    allowedTypes.map((type) => options.collections[type]?.label ?? type)
+  )} pages`;
+
 export const sameTypes = (left: readonly string[], right: readonly string[]): boolean =>
   left.length === right.length && left.every((type) => right.includes(type));
 

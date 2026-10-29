@@ -2,7 +2,7 @@ import { ValidationError } from "payload";
 import type { CollectionBeforeValidateHook } from "payload";
 
 import { toCollectionSlug } from "../../collectionSlug.js";
-import { isTypeAllowed } from "../../core/allowedTypes.js";
+import { describeAllowedTypes, isTypeAllowed } from "../../core/allowedTypes.js";
 import { normalizeFolderReference, readFolderRecord } from "../../core/folderRecords.js";
 import type { FolderRecord } from "../../core/folderRecords.js";
 import { noLocaleKey } from "../../core/locales.js";
@@ -286,9 +286,13 @@ export const buildPageBeforeValidate =
       });
     }
 
-    if (isCreate && !isTypeAllowed(folder, page.slug)) {
+    if (isCreate && folder && !isTypeAllowed(folder, page.slug)) {
       problems.push({
-        message: `This folder does not accept the type "${page.label}"`,
+        message: describeAllowedTypes(
+          folderPathIn(folder, requestKey, options, payload),
+          folder.allowedTypes,
+          options
+        ),
         path: "folder",
       });
     }

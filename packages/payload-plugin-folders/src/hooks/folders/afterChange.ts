@@ -1,15 +1,10 @@
 import type { CollectionAfterChangeHook } from "payload";
 
-import { toCollectionSlug } from "../../collectionSlug.js";
 import { queueAfterPathChange } from "../../core/afterPathChange.js";
 import { planFolderPaths, readFolderRecord } from "../../core/folderRecords.js";
 import type { FolderRecord } from "../../core/folderRecords.js";
-import {
-  getDefaultLocaleKey,
-  getFolderLocaleKeys,
-  withoutEmptyValues,
-} from "../../core/locales.js";
-import { popFolderSnapshot, rewriteFolderSubtree } from "../../core/subtree.js";
+import { getDefaultLocaleKey, getFolderLocaleKeys } from "../../core/locales.js";
+import { popFolderSnapshot, rewriteFolderSubtree, writeFolderRow } from "../../core/subtree.js";
 import { applyTypeLock, describeTypeLockChange, releaseTypeLock } from "../../core/typeLocks.js";
 import { bumpRevision } from "../../core/treeLock.js";
 import type { FolderId, ResolvedOptions } from "../../types.js";
@@ -56,19 +51,15 @@ export const buildFolderAfterChange =
       ) {
         // A database-level write, so the caller's request keeps its own context and locale (a
         // nested Local API update would merge `foldersInternal` and `locale: "all"` into the
-        // shared `req` and switch every later folder rule off). Every localized column goes in
-        // complete, because the drizzle adapter deletes the locale rows a write leaves out.
-        await payload.db.updateOne({
-          collection: toCollectionSlug(options.folders.slug),
-          data: {
-            fullPath: withoutEmptyValues(plan.fullPath),
-            name: withoutEmptyValues(stored.name),
-            slug: withoutEmptyValues(stored.slug),
-            updatedAt: new Date().toISOString(),
-          },
-          id: stored.id,
+        // shared `req` and switch every later folder rule off). The row goes in whole, because the
+        // drizzle adapter deletes the locale rows a write leaves out.
+        await writeFolderRow({
+          ancestorIds: plan.ancestorIds,
+          depth: plan.depth,
+          fullPath: plan.fullPath,
+          options,
+          record: stored,
           req,
-          returning: false,
         });
       }
     }

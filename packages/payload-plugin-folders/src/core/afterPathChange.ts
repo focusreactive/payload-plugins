@@ -9,14 +9,25 @@ import { runAfterCommit } from "./treeLock.js";
  * names the transaction that just ended (a host call made with it would use a finished
  * transaction) and carries a data loader that cached values from before the write, and because
  * whatever the host sets on it must not stick on the caller's request.
+ *
+ * The caller's context is copied, so a flag such as `disableRevalidate` still reaches the hook,
+ * minus `foldersInternal`. On a REST request `url`, `method` and the like are not own properties,
+ * so a spread drops them; they are copied by name.
  */
 export const createPostCommitRequest = (req: PayloadRequest): PayloadRequest => {
+  const { foldersInternal: _foldersInternal, ...context } = req.context ?? {};
   const copy = {
     ...req,
-    context: {},
-    // A request that is a web `Request` keeps these on its prototype, which a spread drops.
+    context,
     headers: req.headers,
+    host: req.host,
+    method: req.method,
+    origin: req.origin,
+    pathname: req.pathname,
+    protocol: req.protocol,
+    searchParams: req.searchParams,
     transactionID: undefined,
+    url: req.url,
   } as PayloadRequest;
   copy.payloadDataLoader = getDataLoader(copy);
 

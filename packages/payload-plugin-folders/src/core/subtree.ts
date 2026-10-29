@@ -113,9 +113,70 @@ export const popFolderSnapshot = (req: PayloadRequest, id: FolderId): FolderReco
 
 const toLocaleOrNull = (key: string): string | null => (key === noLocaleKey ? null : key);
 
-/** A locale slot a folder has stored values for. Writing any other would create a locale row. */
-const hasLocaleRow = (folder: FolderRecord, key: string): boolean =>
-  Boolean(folder.fullPath[key] || folder.name[key] || folder.slug[key]);
+const isValuesObject = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === "object" && !Array.isArray(value);
+
+/**
+ * Writes a folder row at database level, carrying the whole row as the read returned it. The
+ * drizzle adapter deletes a document's locale rows and re-inserts the ones in `data`, so a write
+ * that named only `name`, `slug` and `fullPath` would wipe any other localized field a host added
+ * through `folders.overrides`. Locales that hold no value are left out of a localized field, so a
+ * write never creates a locale row the folder did not have; only `fullPath` may add one, for a
+ * locale whose path differs from what a fallback read would return.
+ *
+ * `fullPath` is a value per locale when folder fields are localized, and the plain text of the one
+ * slot (`noLocaleKey`) when they are not.
+ */
+export const writeFolderRow = async ({
+  ancestorIds,
+  depth,
+  fullPath,
+  options,
+  record,
+  req,
+}: {
+  ancestorIds: string;
+  depth: number;
+  fullPath: Record<string, string>;
+  options: ResolvedOptions;
+  record: FolderRecord;
+  req: PayloadRequest;
+}): Promise<void> => {
+  const { payload } = req;
+  const localizedNames = new Set(
+    (payload.collections[toCollectionSlug(options.folders.slug)]?.config.flattenedFields ?? [])
+      .filter((field) => field.localized)
+      .map((field) => field.name)
+  );
+  const data: Record<string, unknown> = Object.fromEntries(
+    Object.entries(record.storedRow).flatMap(([name, value]): Array<[string, unknown]> => {
+      if (name === "id" || name === "createdAt") {
+        return [];
+      }
+      if (!(localizedNames.has(name) && isValuesObject(value))) {
+        return [[name, value]];
+      }
+      const present = Object.fromEntries(
+        Object.entries(value).filter(([, entry]) => entry !== null && entry !== undefined)
+      );
+
+      return Object.keys(present).length === 0 ? [] : [[name, present]];
+    })
+  );
+
+  data.ancestorIds = ancestorIds;
+  data.depth = depth;
+  data.fullPath = options.localizeSegments ? withoutEmptyValues(fullPath) : fullPath[noLocaleKey];
+  data.updatedAt = new Date().toISOString();
+
+  await payload.db.updateOne({
+    collection: toCollectionSlug(options.folders.slug),
+    data,
+    id: record.id,
+    req,
+    returning: false,
+  });
+};
 
 /**
  * The full paths of the pages inside the rewritten folders, before and after. One read per page
@@ -222,8 +283,8 @@ export type SubtreeRewrite = {
  *
  * Folders are unversioned, so each row is one `payload.db.updateOne`. The drizzle adapter deletes
  * a row's locale rows and inserts the ones in `data`, so a write carries every locale's `name`,
- * `slug` and `fullPath` (decision 3), and only locales the row already has: a rename in one locale
- * must not create a row for another. Page paths are computed from the folder path, so no page row
+ * `slug` and `fullPath` (decision 3), plus every other localized field the row has: a rename in one
+ * locale must not drop or create a locale row for another. Page paths are computed from the folder path, so no page row
  * is written; the pages are read once per collection to report them.
  */
 export const rewriteFolderSubtree = async ({
@@ -300,37 +361,40 @@ export const rewriteFolderSubtree = async ({
       parent,
       slug: descendant.slug,
     });
-    const rowKeys = keys.filter((key) => hasLocaleRow(descendant, key));
+    // A locale is written when its row already holds a path, or when its path differs from the
+    // default locale's, which is what a fallback read would return. A locale that would only
+    // repeat the fallback gets no row.
+    const writtenKeys = keys.filter(
+      (key) =>
+        plan.fullPath[key] !== "" &&
+        (key === defaultKey ||
+          Boolean(descendant.fullPath[key]) ||
+          plan.fullPath[key] !== plan.fullPath[defaultKey])
+    );
+    const writtenPaths = Object.fromEntries(writtenKeys.map((key) => [key, plan.fullPath[key]]));
     const isStale =
       descendant.ancestorIds !== plan.ancestorIds ||
       descendant.depth !== plan.depth ||
-      rowKeys.some((key) => (descendant.fullPath[key] ?? "") !== plan.fullPath[key]);
+      writtenKeys.some((key) => (descendant.fullPath[key] ?? "") !== plan.fullPath[key]);
 
+    // Only what is written counts as stored, so the reported path is the one a read returns.
     const current: FolderRecord = {
       ...descendant,
       ancestorIds: plan.ancestorIds,
       depth: plan.depth,
-      fullPath: plan.fullPath,
+      fullPath: writtenPaths,
     };
     currentById.set(String(descendant.id), current);
     recordFolderChanges(descendant, current);
 
     if (isStale) {
-      await payload.db.updateOne({
-        collection: toCollectionSlug(options.folders.slug),
-        data: {
-          ancestorIds: plan.ancestorIds,
-          depth: plan.depth,
-          fullPath: withoutEmptyValues(
-            Object.fromEntries(rowKeys.map((key) => [key, plan.fullPath[key]]))
-          ),
-          name: withoutEmptyValues(descendant.name),
-          slug: withoutEmptyValues(descendant.slug),
-          updatedAt: new Date().toISOString(),
-        },
-        id: descendant.id,
+      await writeFolderRow({
+        ancestorIds: plan.ancestorIds,
+        depth: plan.depth,
+        fullPath: writtenPaths,
+        options,
+        record: descendant,
         req,
-        returning: false,
       });
       rewrittenFolders += 1;
     }

@@ -473,7 +473,7 @@ describe("page segment rules", () => {
 
     expect(refused.status).toBe(400);
     expect(refused.body.errors[0].data?.errors).toEqual([
-      { message: 'This folder does not accept the type "Page"', path: "folder" },
+      { message: `${folder.fullPath} accepts only Blog post pages`, path: "folder" },
     ]);
     expect(allowed.status).toBe(201);
   });

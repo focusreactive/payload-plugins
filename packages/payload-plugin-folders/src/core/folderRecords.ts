@@ -21,6 +21,8 @@ export type FolderRecord = {
   orderKey: string | null;
   parent: FolderId | null;
   slug: ValuesByLocale;
+  /** The row exactly as the read returned it (every locale), for writes that must carry it whole. */
+  storedRow: Record<string, unknown>;
   structureRevision: number;
   /** The folder whose lock put this folder's `allowedTypes` here, when one did. */
   typesLockedBy: FolderId | null;
@@ -60,6 +62,7 @@ export const toFolderRecord = (row: Record<string, unknown>): FolderRecord => ({
   orderKey: typeof row.orderKey === "string" ? row.orderKey : null,
   parent: toId(row.parent),
   slug: toValuesByLocale(row.slug),
+  storedRow: row,
   structureRevision: typeof row.structureRevision === "number" ? row.structureRevision : 0,
   typesLockedBy: toId(row.typesLockedBy),
 });

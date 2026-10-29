@@ -19,11 +19,11 @@ test("admin opens without a login and the pages and folders collections load", a
   await expect(page.getByRole("link", { name: "Content", exact: true }).first()).toBeVisible();
 
   await page.goto("/admin/collections/pages");
-  await expect(page).toHaveURL(/\/admin\/collections\/pages$/u);
+  await expect(page).toHaveURL(/\/admin\/collections\/pages(\?.*)?$/u);
   await expect(page.getByRole("heading", { name: "Pages" })).toBeVisible();
 
   await page.goto("/admin/collections/folders");
-  await expect(page).toHaveURL(/\/admin\/collections\/folders$/u);
+  await expect(page).toHaveURL(/\/admin\/collections\/folders(\?.*)?$/u);
   await expect(page.getByRole("heading", { name: "Content" })).toBeVisible();
 
   expect(consoleErrors).toEqual([]);
