@@ -6,6 +6,13 @@ import type { ResolvedOptions } from "../types.js";
 type KeyedRow = { collection: string; id: number | string; kind: "folder" | "page" };
 
 /**
+ * Whether the collection keeps a `latest` flag on its versions, which only drafts add. A collection
+ * with versions but no drafts has no latest version to patch (`versions` alone is truthy for it).
+ */
+export const hasLatestVersion = (payload: PayloadRequest["payload"], collection: string): boolean =>
+  Boolean(payload.collections[toCollectionSlug(collection)]?.config.versions?.drafts);
+
+/**
  * Patches only the `version` columns named in `structure` on a page's latest version, never a
  * full version object, so no locale, array or block row of the draft is touched (spec section
  * 5.3). P-15 reuses it for `folder` and `structureRevision`.
@@ -87,7 +94,7 @@ export const writeOrderKey = async (
     returning: false,
   });
 
-  if (payload.collections[toCollectionSlug(row.collection)]?.config.versions) {
+  if (hasLatestVersion(payload, row.collection)) {
     await patchLatestVersionStructure(
       req,
       row.collection,

@@ -17,7 +17,8 @@
       "@payload-config": ["./dev/payload.config.ts"],
       "@focus-reactive/payload-plugin-folders": ["./src/index.ts"],
       "@focus-reactive/payload-plugin-folders/client": ["./src/exports/client.ts"],
-      "@focus-reactive/payload-plugin-folders/rsc": ["./src/exports/rsc.ts"]
+      "@focus-reactive/payload-plugin-folders/rsc": ["./src/exports/rsc.ts"],
+      "@focus-reactive/payload-plugin-folders/server": ["./src/server/index.ts"]
     }
   },
   "include": ["src", "dev", "tests", "*.ts"],

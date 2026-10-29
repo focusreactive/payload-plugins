@@ -21,6 +21,11 @@
       "types": "./src/exports/client.ts",
       "default": "./src/exports/client.ts"
     },
+    "./server": {
+      "import": "./src/server/index.ts",
+      "types": "./src/server/index.ts",
+      "default": "./src/server/index.ts"
+    },
     "./rsc": {
       "import": "./src/exports/rsc.ts",
       "types": "./src/exports/rsc.ts",

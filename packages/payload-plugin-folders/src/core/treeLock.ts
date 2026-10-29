@@ -1,7 +1,7 @@
-import { commitTransaction, initTransaction, killTransaction } from "payload";
 import type { Payload, PayloadRequest } from "payload";
 
 import { treeStateSlug } from "../constants.js";
+import { withTransaction } from "./transaction.js";
 
 /** Longest a writer waits for the lock before it fails, so a lost release cannot hang the server. */
 export const treeLockTimeoutMs = 30_000;
@@ -399,26 +399,26 @@ export const withTreeLock = async <TResult>(
   fn: () => Promise<TResult>
 ): Promise<TResult> => {
   installTreeLockTracking(req.payload, req.payload.db);
+  let alreadyHeld = false;
   // Beginning the transaction first matters on SQLite, where this is what takes the lock.
-  const shouldCommit = await initTransaction(req);
-  const alreadyHeld = await holdsTreeLock(req);
-  try {
-    await acquireTreeLock(req);
-    await touchTreeState(req);
-    const result = await fn();
-    if (shouldCommit) {
-      await commitTransaction(req);
-    }
+  const result = await withTransaction(req, async () => {
+    alreadyHeld = await holdsTreeLock(req);
+    try {
+      await acquireTreeLock(req);
+      await touchTreeState(req);
 
-    return result;
-  } catch (error) {
-    if (shouldCommit) {
-      await killTransaction(req);
+      return await fn();
+    } finally {
+      if (!alreadyHeld) {
+        releaseUnboundTreeLock(req);
+      }
     }
-    throw error;
-  } finally {
-    if (!alreadyHeld) {
-      releaseUnboundTreeLock(req);
-    }
+  });
+  if (!alreadyHeld) {
+    // A request without a transaction has no commit to run `runAfterCommit` callbacks; the writes
+    // are final now, so they run here. Never reached when `fn` threw.
+    await runUnboundAfterOperationCallbacks(req);
   }
+
+  return result;
 };
