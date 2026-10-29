@@ -11,14 +11,19 @@ process.env.FOLDERS_E2E_DATABASE_DIRECTORY ??= mkdtempSync(path.join(tmpdir(), "
 const databaseDirectory = process.env.FOLDERS_E2E_DATABASE_DIRECTORY;
 
 export default defineConfig({
+  // The first visit to a view compiles it in the dev server, which takes a while.
+  expect: { timeout: 15_000 },
   forbidOnly: Boolean(process.env.CI),
   fullyParallel: false,
+  // Runs after the web server is up, so the schema exists, and seeds the same database.
+  globalSetup: "./tests/e2e/globalSetup.ts",
   globalTeardown: "./tests/e2e/globalTeardown.ts",
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   reporter: process.env.CI ? "github" : "list",
   retries: process.env.CI ? 2 : 0,
   testDir: "./tests/e2e",
   testMatch: "**/*.e2e.spec.ts",
+  timeout: 90_000,
   use: {
     baseURL: `http://localhost:${port}`,
     trace: "on-first-retry",

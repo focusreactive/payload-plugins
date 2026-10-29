@@ -12,6 +12,10 @@ const buildHostConfig = (): Config =>
     secret: "unit",
   }) as unknown as Config;
 
+const listComponent = (config: Config) =>
+  config.collections?.find((collection) => collection.slug === "folders")?.admin?.components?.views
+    ?.list;
+
 describe("foldersPlugin", () => {
   it("registers under its package slug", () => {
     expect(foldersPlugin({ collections: {} }).slug).toBe(pluginSlug);
@@ -70,5 +74,57 @@ describe("foldersPlugin", () => {
     expect(() =>
       foldersPlugin({ collections: { missing: true } as never })(buildHostConfig())
     ).toThrow(FoldersConfigError);
+  });
+
+  it("puts the tree view on the folders list view unless admin.treeView is false", async () => {
+    const withTree = await foldersPlugin({ collections: { pages: true } as never })(
+      buildHostConfig()
+    );
+    const withoutTree = await foldersPlugin({
+      admin: { treeView: false },
+      collections: { pages: true } as never,
+    })(buildHostConfig());
+
+    expect(listComponent(withTree)).toEqual({
+      Component: "@focus-reactive/payload-plugin-folders/rsc#TreeViewServer",
+    });
+    expect(listComponent(withoutTree)).toBeUndefined();
+  });
+
+  it("hands the tree view the page size and the type labels as plain values", async () => {
+    const result = await foldersPlugin({
+      admin: { pageSize: 50 },
+      collections: { pages: { label: "Landing page" } } as never,
+    })(buildHostConfig());
+
+    const folders = result.collections?.find((collection) => collection.slug === "folders");
+
+    expect(folders?.custom?.[pluginSlug]).toEqual({
+      pageSize: 50,
+      typeLabels: { pages: "Landing page" },
+    });
+  });
+
+  it("merges its translations under the host's own, in every language the host sets", async () => {
+    const config = buildHostConfig();
+    config.i18n = {
+      translations: {
+        de: { custom: { greeting: "Hallo" }, foldersTree: { noPage: "ohne Seite" } },
+      },
+    } as never;
+
+    const result = await foldersPlugin({ collections: { pages: true } as never })(config);
+
+    const translations = result.i18n?.translations as unknown as Record<
+      string,
+      Record<string, Record<string, string>>
+    >;
+    // The host's strings stay, the plugin's fill in around them.
+    expect(translations.de?.custom).toEqual({ greeting: "Hallo" });
+    expect(translations.de?.foldersTree?.noPage).toBe("ohne Seite");
+    expect(translations.de?.foldersTree?.loadError).toBe(
+      "Dieser Ordner konnte nicht geladen werden"
+    );
+    expect(translations.en?.foldersTree?.noPage).toBe("no page");
   });
 });

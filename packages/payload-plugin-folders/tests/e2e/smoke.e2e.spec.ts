@@ -1,7 +1,5 @@
 import { expect, test } from "@playwright/test";
 
-// From P-33 on this test must also assert the folders tree view: open the folders collection and
-// expect the tree (rows for the seeded folders), not the stock list view.
 test("admin opens without a login and the pages and folders collections load", async ({ page }) => {
   const consoleErrors: string[] = [];
   page.on("console", (message) => {
@@ -25,6 +23,11 @@ test("admin opens without a login and the pages and folders collections load", a
   await page.goto("/admin/collections/folders");
   await expect(page).toHaveURL(/\/admin\/collections\/folders(\?.*)?$/u);
   await expect(page.getByRole("heading", { name: "Content" })).toBeVisible();
+  // From P-33 on the folders list is the tree, with a row for each seeded folder.
+  await expect(page.getByRole("treegrid")).toBeVisible();
+  await expect(
+    page.locator('[data-testid="tree-row"][data-kind="folder"][data-title="Blog"]')
+  ).toBeVisible();
 
   expect(consoleErrors).toEqual([]);
 });

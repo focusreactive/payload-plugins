@@ -1,3 +1,5 @@
-// Client admin components arrive from P-33; the entry point exists now so the package exports and
-// the dev app's import-map paths are stable.
-export const clientEntryPoint = "@focus-reactive/payload-plugin-folders/client";
+"use client";
+
+// Client components of the admin, for the import map: `@focus-reactive/payload-plugin-folders/client#Name`.
+export { TreeViewClient } from "../admin/TreeView/TreeViewClient.js";
+export type { TreeViewClientProps } from "../admin/TreeView/TreeViewClient.js";

@@ -138,6 +138,23 @@ Costs beyond the 12 database calls of a user whose access answers `true`:
   `depth` of a `TreeItem` is `number | null`) and no `ancestorIds`: its place in the tree is not
   theirs to know, and none is invented.
 
+## Admin tree view
+
+The folders collection's list view (nav label "Content") is a tree: folders and pages with their
+full paths, status dots, type labels and child counts, folders opening lazily with 100 rows per
+request and a "Load 100 more" row. A page opens its edit view on click. The plugin registers the
+view as `@focus-reactive/payload-plugin-folders/rsc#TreeViewServer`, so after installing or
+updating the plugin run `payload generate:importmap` (Payload does it on startup in development).
+`admin.treeView: false` keeps Payload's own list of folders.
+
+Every tree on the page reads one shared store (`src/admin/store.ts`) that polls
+`GET /api/folders-tree/revision` every 10 seconds and when the tab regains focus, and reads the
+folders on screen again when the number changed. The store also applies a move to its rows before
+the server answers and puts them back if the request fails (used by drag and drop, a later group).
+
+The plugin's strings live under the `foldersTree` namespace of `config.i18n.translations`, in
+English and German. A host that sets the same keys for a language keeps its own.
+
 ## Dev seed
 
 `npm run seed` fills the dev app's database with a small site in English and German: a site root

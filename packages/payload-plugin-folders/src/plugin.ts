@@ -9,6 +9,7 @@ import { buildFoldersCollection } from "./collections/folders.js";
 import { pluginSlug } from "./constants.js";
 import { buildFoldersEndpoints } from "./endpoints/index.js";
 import { addPageFields } from "./fields/pageFields.js";
+import { mergeFoldersTranslations } from "./translations/index.js";
 import { buildTreeStateGlobal } from "./globals/treeState.js";
 import {
   inspectRuntimeDatabase,
@@ -66,6 +67,14 @@ export const foldersPlugin = definePlugin<FoldersPluginOptions>({
     return {
       ...config,
       db: database,
+      i18n: resolved.disabled
+        ? config.i18n
+        : ({
+            ...config.i18n,
+            translations: mergeFoldersTranslations(
+              config.i18n?.translations as Parameters<typeof mergeFoldersTranslations>[0]
+            ),
+          } as Config["i18n"]),
       endpoints: [
         ...(config.endpoints ?? []),
         ...(resolved.disabled ? [] : buildFoldersEndpoints(resolved)),

@@ -7,6 +7,7 @@ import type {
 } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
+import { pluginSlug } from "../constants.js";
 import { buildRedirectCleanupBeforeDelete } from "../hooks/beforeDelete.js";
 import { buildFolderAfterChange } from "../hooks/folders/afterChange.js";
 import { buildFolderBeforeChange } from "../hooks/folders/beforeChange.js";
@@ -149,7 +150,26 @@ export const buildFoldersCollection = (options: ResolvedOptions): CollectionConf
       update: isLoggedIn,
       ...folders.access,
     },
-    admin: { useAsTitle: "name" },
+    admin: {
+      // The tree view is the folders list view; the sidebar tab and the stock list stay available.
+      ...(options.admin.treeView && !options.disabled
+        ? {
+            components: {
+              views: { list: { Component: `${pluginSlug}/rsc#TreeViewServer` } },
+            },
+          }
+        : {}),
+      useAsTitle: "name",
+    },
+    // Plain values the admin's server component hands to the browser.
+    custom: {
+      [pluginSlug]: {
+        pageSize: options.admin.pageSize,
+        typeLabels: Object.fromEntries(
+          pageCollectionEntries.map((pageCollection) => [pageCollection.slug, pageCollection.label])
+        ),
+      },
+    },
     // Folder copies go through the deep duplicate, never the stock Duplicate button.
     disableDuplicate: true,
     fields,

@@ -1,0 +1,268 @@
+/*
+ * Styles of the folders admin. Plain CSS on Payload 4's tokens, so the tree follows the admin's
+ * light and dark themes; classes are prefixed `fr-folders-` (spec section 7.13).
+ */
+@layer payload {
+  .fr-folders-body {
+    padding: var(--spacer-3) var(--gutter-h) var(--spacing-view-bottom);
+  }
+
+  .fr-folders-tree {
+    --fr-folders-columns: minmax(0, 1fr) 5.5rem;
+    --fr-folders-row-height: 2.25rem;
+
+    border: var(--stroke-width-small) solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background: var(--color-bg);
+    color: var(--color-text);
+    overflow: hidden;
+  }
+
+  .fr-folders-row {
+    display: grid;
+    grid-template-columns: var(--fr-folders-columns);
+    align-items: center;
+    min-height: var(--fr-folders-row-height);
+    border-top: var(--stroke-width-small) solid var(--color-border);
+    background: var(--color-bg);
+    cursor: default;
+  }
+
+  [role="rowgroup"]:first-child > .fr-folders-row {
+    border-top: none;
+  }
+
+  .fr-folders-row[data-kind]:hover,
+  .fr-folders-row[data-kind]:focus-within {
+    background: var(--color-bg-secondary);
+  }
+
+  .fr-folders-row[data-kind="folder"][aria-expanded] {
+    cursor: pointer;
+  }
+
+  .fr-folders-row[data-kind="page"] {
+    cursor: pointer;
+  }
+
+  .fr-folders-row--header {
+    min-height: var(--spacer-5);
+    background: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-small-font-size);
+    line-height: var(--text-body-small-line-height);
+  }
+
+  .fr-folders-row--status {
+    display: block;
+  }
+
+  .fr-folders-cell {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    padding: 0 var(--spacer-2-5);
+  }
+
+  .fr-folders-cell--wide {
+    gap: var(--spacer-2);
+    min-height: var(--fr-folders-row-height);
+  }
+
+  .fr-folders-cell--name {
+    gap: var(--spacer-1);
+    padding-block: var(--spacer-1);
+  }
+
+  .fr-folders-row--header .fr-folders-cell--name {
+    padding-inline-start: calc(var(--spacer-2-5) + 2.5rem);
+  }
+
+  .fr-folders-cell--type,
+  .fr-folders-cell--updated {
+    display: none;
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-small-font-size);
+    line-height: var(--text-body-small-line-height);
+  }
+
+  .fr-folders-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (min-width: 769px) {
+    .fr-folders-tree {
+      --fr-folders-columns: minmax(0, 1fr) 5.5rem minmax(7rem, 13rem) 9rem;
+    }
+
+    .fr-folders-cell--type,
+    .fr-folders-cell--updated {
+      display: flex;
+    }
+  }
+
+  .fr-folders-chevron {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--spacer-3);
+    height: var(--spacer-3);
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-small);
+    background: transparent;
+    color: var(--color-icon-tertiary);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-icon);
+    }
+
+    &:focus-visible {
+      outline: var(--accessibility-outline);
+      outline-offset: var(--accessibility-outline-offset);
+    }
+  }
+
+  .fr-folders-chevron--empty {
+    cursor: default;
+  }
+
+  .fr-folders-kind-icon {
+    display: inline-flex;
+    flex: none;
+    color: var(--color-icon-secondary);
+  }
+
+  .fr-folders-name-block {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin-inline-start: var(--spacer-1);
+  }
+
+  .fr-folders-name-line,
+  .fr-folders-path-line {
+    display: flex;
+    align-items: center;
+    gap: var(--spacer-1-5);
+    min-width: 0;
+  }
+
+  .fr-folders-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text);
+    font-size: var(--text-body-medium-font-size);
+    font-weight: var(--text-body-medium-bold-font-weight);
+    line-height: var(--text-body-medium-line-height);
+    text-decoration: none;
+  }
+
+  .fr-folders-name--link:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--color-border-strong);
+    text-underline-offset: 2px;
+  }
+
+  .fr-folders-name--link:focus-visible {
+    outline: var(--accessibility-outline);
+    outline-offset: var(--accessibility-outline-offset);
+    border-radius: var(--radius-small);
+  }
+
+  .fr-folders-path-line {
+    min-height: var(--text-body-small-line-height);
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-small-font-size);
+    line-height: var(--text-body-small-line-height);
+  }
+
+  .fr-folders-path {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fr-folders-path--missing {
+    color: var(--color-text-tertiary);
+  }
+
+  .fr-folders-root-page {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    color: var(--color-icon-brand);
+  }
+
+  .fr-folders-icon {
+    display: block;
+  }
+
+  .fr-folders-chip {
+    flex: none;
+    padding: 0 var(--spacer-1-5);
+    border: var(--stroke-width-small) solid var(--color-border);
+    border-radius: var(--radius-chip);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-small-font-size);
+    line-height: var(--text-body-small-line-height);
+    white-space: nowrap;
+  }
+
+  .fr-folders-chip--small {
+    padding-inline: var(--spacer-1);
+    font-size: var(--text-body-small-font-size);
+  }
+
+  .fr-folders-count {
+    flex: none;
+    min-width: var(--spacer-3);
+    padding: 0 var(--spacer-1);
+    border-radius: var(--radius-full);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-small-font-size);
+    line-height: var(--text-body-small-line-height);
+    text-align: center;
+  }
+
+  .fr-folders-dot {
+    display: inline-block;
+    flex: none;
+    box-sizing: border-box;
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: var(--radius-full);
+  }
+
+  .fr-folders-dot--draft {
+    border: var(--stroke-width-medium) solid var(--color-icon-tertiary);
+    background: transparent;
+  }
+
+  .fr-folders-dot--published,
+  .fr-folders-dot--live {
+    background: var(--color-icon-success);
+  }
+
+  /* Published, with a newer draft: a green core inside an amber ring. */
+  .fr-folders-dot--changed {
+    width: 0.8125rem;
+    height: 0.8125rem;
+    padding: 0.125rem;
+    border: var(--stroke-width-medium) solid var(--color-icon-warning);
+    background: var(--color-icon-success);
+    background-clip: content-box;
+  }
+
+  .fr-folders-error {
+    color: var(--color-text-danger);
+    font-size: var(--text-body-medium-font-size);
+  }
+}
