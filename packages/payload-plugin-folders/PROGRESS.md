@@ -108,6 +108,14 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     or a command built in a shell function, stops on a permission prompt that bypass mode does not skip.
     The G7 tester waited 15 minutes on one. Every agent writes each command in full, one per line.
     Every developer, tester and reviewer prompt carries this rule.
+22. **Legacy uppercase page segments (G7).** Spec §2.6 keeps a segment saved before the plugin until it
+    is edited, so a legacy page reads `/About`, while spec §3.1 makes URLs canonical lowercase and
+    folder paths are always lowercased. Case-insensitive checks in every segment query would need a
+    superset query plus an in-memory filter on each lookup, for data that exists only until repair.
+    Decision: the reserved-root check compares lowercased (G7); P-29 verify lists uppercase legacy
+    segments as drift and repair lowercases them, with a redirect from the old URL; until repaired, the
+    P-31 resolver tries the exact path, then the lowercased one. Uniqueness stays case-sensitive, so a
+    legacy `/About` next to `/about` is a known state that verify reports.
 
 ### Owner decisions (from spec/review.md, the spec writer's pick applies)
 
