@@ -7,6 +7,7 @@ import type {
 } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
+import { buildRedirectCleanupBeforeDelete } from "../hooks/beforeDelete.js";
 import { buildFolderAfterChange } from "../hooks/folders/afterChange.js";
 import { buildFolderBeforeChange } from "../hooks/folders/beforeChange.js";
 import { buildFolderBeforeValidate } from "../hooks/folders/beforeValidate.js";
@@ -158,6 +159,7 @@ export const buildFoldersCollection = (options: ResolvedOptions): CollectionConf
           afterChange: [buildFolderAfterChange(options)],
           afterOperation: [releaseUnboundTreeLockHook],
           beforeChange: [buildFolderBeforeChange(options)],
+          beforeDelete: [buildRedirectCleanupBeforeDelete(folders.slug)],
           beforeOperation: [folderBulkUpdateGuard, buildAcquireTreeLockHook(["create", "update"])],
           beforeValidate: [buildFolderBeforeValidate(options)],
         },

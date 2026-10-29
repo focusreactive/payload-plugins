@@ -7,14 +7,19 @@ import { planFolderPaths, toFolderRecord } from "./folderRecords.js";
 import type { FolderRecord } from "./folderRecords.js";
 import {
   getDefaultLocaleKey,
+  getFallbackLocaleKey,
   getFolderLocaleKeys,
   noLocaleKey,
   withoutEmptyValues,
 } from "./locales.js";
 import { effectiveSegmentsOf, isPublishedInLocale } from "./pageRecords.js";
 import { joinPath } from "./paths.js";
-import { writeFolderPrefixRedirects } from "./redirects.js";
-import type { FolderPrefixRedirect } from "./redirects.js";
+import {
+  planFolderPrefixRows,
+  settleRedirectRows,
+  shouldWriteRedirects,
+  takenPathsOf,
+} from "./redirects.js";
 import { folderPathIn, getPageDefaultLocale, getPageLocaleKeys } from "./uniqueness.js";
 
 const descendantsWhere = (folderId: FolderId) => ({
@@ -197,6 +202,7 @@ export const findPageChanges = async ({
   const { payload } = req;
   const pageKeys = getPageLocaleKeys(payload);
   const defaultLocale = getPageDefaultLocale(payload);
+  const fallbackKey = getFallbackLocaleKey(payload);
   const folderIds = [...currentById.values()].map((folder) => folder.id);
   const changes: PathChange[] = [];
 
@@ -257,7 +263,7 @@ export const findPageChanges = async ({
             id: row.id as FolderId,
             kind: "page",
             locale: toLocaleOrNull(key),
-            published: isPublishedInLocale(row._status, key, hasDrafts),
+            published: isPublishedInLocale(row._status, key, hasDrafts, fallbackKey),
             to,
           });
         }
@@ -412,21 +418,17 @@ export const planSubtreeRewrite = ({
 };
 
 /**
- * Writes what `planSubtreeRewrite` planned: every descendant row that differs, then (unless the
- * caller opted out) the `folderPrefix` redirect row of the root for each locale whose path changed.
- * Returns the number of folder rows written.
+ * Writes what `planSubtreeRewrite` planned: every descendant row that differs. Returns the number
+ * of folder rows written. The redirect rows are the caller's, because they depend on the pages
+ * beneath the folder, which only the caller has read.
  */
 export const writeSubtreeRewrite = async ({
   options,
-  redirects: shouldWriteRedirects = true,
   req,
-  root,
   subtree,
 }: {
   options: ResolvedOptions;
-  redirects?: boolean;
   req: PayloadRequest;
-  root: FolderRecord;
   subtree: SubtreePlan;
 }): Promise<number> => {
   let rewrittenFolders = 0;
@@ -444,17 +446,6 @@ export const writeSubtreeRewrite = async ({
     }
   }
 
-  if (shouldWriteRedirects) {
-    const redirects: FolderPrefixRedirect[] = subtree.changes
-      .filter((change) => change.kind === "folder" && change.id === root.id && change.from !== null)
-      .map((change) => ({
-        folder: root.id,
-        fromPath: change.from as string,
-        locale: change.locale,
-      }));
-    await writeFolderPrefixRedirects({ options, redirects, req });
-  }
-
   return rewrittenFolders;
 };
 
@@ -470,12 +461,14 @@ export const writeSubtreeRewrite = async ({
  * locale must not drop or create a locale row for another. Page paths are computed from the folder path, so no page row
  * is written; the pages are read once per collection to report them.
  *
- * `redirects: false` skips the `folderPrefix` redirect row (a move that opted out of redirects).
+ * The `folderPrefix` redirect rows (spec section 5.6) are written here, inside the same
+ * transaction, once the pages beneath are known; `redirects: false` skips them, and
+ * `context.foldersRedirects` sets the default for a save.
  */
 export const rewriteFolderSubtree = async ({
   options,
   previousRoot,
-  redirects: shouldWriteRedirects = true,
+  redirects,
   req,
   root,
 }: {
@@ -505,13 +498,7 @@ export const rewriteFolderSubtree = async ({
 
   const subtree = planSubtreeRewrite({ descendants, options, previousRoot, req, root });
   const changes = [...subtree.changes];
-  const rewrittenFolders = await writeSubtreeRewrite({
-    options,
-    redirects: shouldWriteRedirects,
-    req,
-    root,
-    subtree,
-  });
+  const rewrittenFolders = await writeSubtreeRewrite({ options, req, subtree });
 
   changes.push(
     ...(await findPageChanges({
@@ -521,6 +508,18 @@ export const rewriteFolderSubtree = async ({
       req,
     }))
   );
+
+  const isWritingRows = redirects ?? shouldWriteRedirects(req, options);
+  await settleRedirectRows({
+    clear: isWritingRows || options.redirects.enabled ? takenPathsOf(changes) : [],
+    req,
+    rows: isWritingRows
+      ? planFolderPrefixRows({
+          changes,
+          folder: { collection: foldersSlug, id: root.id },
+        })
+      : [],
+  });
 
   return { changes, rewrittenFolders };
 };

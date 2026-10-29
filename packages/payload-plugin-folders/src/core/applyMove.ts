@@ -8,6 +8,7 @@ import { readFolderRecord } from "./folderRecords.js";
 import { buildMovePlan, MoveBlockedError } from "./move.js";
 import type { MovePlan, MoveRequest, PlannedMoveItem, PlanSettings } from "./move.js";
 import { writeKeyRewrites } from "./orderKeys.js";
+import { redirectRowsOfMovedItem, settleRedirectRows, takenPathsOf } from "./redirects.js";
 import { getResolvedOptions } from "./runtime.js";
 import { hasLatestVersion, patchLatestVersionStructure } from "./structureWrite.js";
 import { writeFolderRow, writeSubtreeRewrite } from "./subtree.js";
@@ -32,12 +33,10 @@ const itemKey = (ref: ItemRef): string => `${ref.collection}:${ref.id}`;
 const writeMovedFolder = async ({
   item,
   options,
-  plan,
   req,
 }: {
   item: PlannedMoveItem;
   options: ResolvedOptions;
-  plan: MovePlan;
   req: PayloadRequest;
 }): Promise<void> => {
   const { current, previous, subtree } = item.folder as NonNullable<PlannedMoveItem["folder"]>;
@@ -67,13 +66,7 @@ const writeMovedFolder = async ({
     record: current,
     req,
   });
-  await writeSubtreeRewrite({
-    options,
-    redirects: plan.redirects,
-    req,
-    root: current,
-    subtree,
-  });
+  await writeSubtreeRewrite({ options, req, subtree });
 };
 
 /**
@@ -158,7 +151,7 @@ export const applyMove = async (
     // Folders first, then pages, as spec section 5.2 orders them.
     const movedFolders = plan.items.filter((item) => item.kind === "folder");
     for (const item of movedFolders) {
-      await writeMovedFolder({ item, options, plan, req });
+      await writeMovedFolder({ item, options, req });
     }
     await settleTypeLocks({
       movedFolders: movedFolders.filter((item) => item.parentChanges),
@@ -192,8 +185,17 @@ export const applyMove = async (
       }
     }
 
-    const revision = await bumpRevision(req);
     const changes = plan.items.flatMap((item) => item.changes);
+    // Spec section 5.6, inside this transaction: a rollback leaves no row. The rows are the same
+    // ones the preview counted (`redirectRowsOfMovedItem`); a page's own row is written here, a
+    // folder's prefix row stands for every page beneath it.
+    await settleRedirectRows({
+      clear: plan.redirects || options.redirects.enabled ? takenPathsOf(changes) : [],
+      req,
+      rows: plan.redirects ? plan.items.flatMap((item) => redirectRowsOfMovedItem(item)) : [],
+    });
+
+    const revision = await bumpRevision(req);
     await queueAfterPathChange({ changes, options, reason: "move", req });
 
     return {

@@ -18,3 +18,5 @@ export type {
   MoveWarning,
   PlanSettings,
 } from "../core/move.js";
+export { findRedirect, maxRedirectHops } from "../core/findRedirect.js";
+export type { FindRedirectArgs, FoundRedirect } from "../core/findRedirect.js";

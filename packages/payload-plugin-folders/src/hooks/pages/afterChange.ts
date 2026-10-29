@@ -2,7 +2,9 @@ import { ValidationError } from "payload";
 import type { CollectionAfterChangeHook } from "payload";
 
 import { readFolderRecord } from "../../core/folderRecords.js";
+import { settlePageRedirects } from "../../core/pageRedirects.js";
 import { readPageRow, popSnapshot, toSnapshot } from "../../core/pageRecords.js";
+import type { PageRow, PageSnapshot } from "../../core/pageRecords.js";
 import { bumpRevision } from "../../core/treeLock.js";
 import {
   describeMissingSegment,
@@ -35,22 +37,15 @@ type Problem = { locale?: string; message: string; path: string };
  * that leaves the main row alone (a draft over a published page) changes nothing and costs two
  * reads.
  */
-const checkWrittenPage = async (
+const validateWrittenPage = async (
   page: ResolvedPageCollection,
   options: ResolvedOptions,
   req: Parameters<CollectionAfterChangeHook>[0]["req"],
-  id: FolderId
+  id: FolderId,
+  before: PageSnapshot,
+  after: PageRow
 ): Promise<void> => {
-  const before = popSnapshot(req, page.slug, id);
-  if (!before) {
-    return;
-  }
   const { payload } = req;
-  const after = await readPageRow(req, page, id);
-  if (!after?.isPublished) {
-    return;
-  }
-
   const localeKeys = getPageLocaleKeys(payload);
   const defaultLocale = getPageDefaultLocale(payload);
   const written = toSnapshot(after, localeKeys, defaultLocale);
@@ -116,6 +111,48 @@ const checkWrittenPage = async (
   }
 };
 
+/**
+ * Compares the snapshot taken before the write with the row it left: the uniqueness rules first
+ * (a refusal rolls the save back), then the redirect rows of spec section 5.6, which a rolled-back
+ * save must not leave.
+ */
+const checkWrittenPage = async (
+  page: ResolvedPageCollection,
+  options: ResolvedOptions,
+  req: Parameters<CollectionAfterChangeHook>[0]["req"],
+  id: FolderId
+): Promise<void> => {
+  const before = popSnapshot(req, page.slug, id);
+  if (!before) {
+    return;
+  }
+  const after = await readPageRow(req, page, id);
+  if (!after) {
+    return;
+  }
+  if (after.isPublished) {
+    await validateWrittenPage(page, options, req, id, before, after);
+  }
+  await settlePageRedirects({ after, before, id, options, page, req });
+};
+
+/** A create is live at once unless it is a draft; its paths free the page rows that name them. */
+const settleCreatedPage = async (
+  page: ResolvedPageCollection,
+  options: ResolvedOptions,
+  req: Parameters<CollectionAfterChangeHook>[0]["req"],
+  doc: Record<string, unknown>
+): Promise<void> => {
+  if (doc._status === "draft") {
+    return;
+  }
+  const id = doc.id as FolderId;
+  const after = await readPageRow(req, page, id);
+  if (after?.isPublished) {
+    await settlePageRedirects({ after, before: null, id, options, page, req });
+  }
+};
+
 export const buildPageAfterChange =
   (page: ResolvedPageCollection, options: ResolvedOptions): CollectionAfterChangeHook =>
   async ({ doc, operation, req }) => {
@@ -123,6 +160,7 @@ export const buildPageAfterChange =
       return doc;
     }
     if (operation === "create") {
+      await settleCreatedPage(page, options, req, doc);
       await bumpRevision(req);
     } else if (operation === "update") {
       await checkWrittenPage(page, options, req, doc.id as FolderId);

@@ -3,7 +3,8 @@ import type { CollectionAfterChangeHook } from "payload";
 import { queueAfterPathChange } from "../../core/afterPathChange.js";
 import { planFolderPaths, readFolderRecord } from "../../core/folderRecords.js";
 import type { FolderRecord } from "../../core/folderRecords.js";
-import { getDefaultLocaleKey, getFolderLocaleKeys } from "../../core/locales.js";
+import { getDefaultLocaleKey, getFolderLocaleKeys, noLocaleKey } from "../../core/locales.js";
+import { clearTakenRedirectRows, shouldWriteRedirects } from "../../core/redirects.js";
 import { popFolderSnapshot, rewriteFolderSubtree, writeFolderRow } from "../../core/subtree.js";
 import { applyTypeLock, describeTypeLockChange, releaseTypeLock } from "../../core/typeLocks.js";
 import { bumpRevision } from "../../core/treeLock.js";
@@ -62,6 +63,24 @@ export const buildFolderAfterChange =
           req,
         });
       }
+    }
+
+    if (
+      operation === "create" &&
+      current &&
+      (shouldWriteRedirects(req, options) || options.redirects.enabled)
+    ) {
+      // A new folder takes its paths: a prefix row of a folder that used to live there is stale.
+      await clearTakenRedirectRows({
+        req,
+        taken: keys
+          .filter((key) => Boolean(current.fullPath[key]))
+          .map((key) => ({
+            kind: "folderPrefix" as const,
+            locale: key === noLocaleKey ? null : key,
+            path: current.fullPath[key] as string,
+          })),
+      });
     }
 
     if (previous && current) {

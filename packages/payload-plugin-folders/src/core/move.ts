@@ -17,12 +17,19 @@ import {
   wouldCreateCycle,
 } from "./folderRecords.js";
 import type { FolderRecord } from "./folderRecords.js";
-import { getDefaultLocaleKey, getFolderLocaleKeys, noLocaleKey } from "./locales.js";
+import {
+  getDefaultLocaleKey,
+  getFallbackLocaleKey,
+  getFolderLocaleKeys,
+  noLocaleKey,
+} from "./locales.js";
 import { findForbiddenMoves, findItemsRefusedUpdate, forbiddenMoveMessage } from "./moveAccess.js";
 import { planKeysForInsert } from "./orderKeys.js";
+import { redirectRowsOfMovedItem } from "./redirects.js";
 import type { InsertPlan } from "./orderKeys.js";
 import { effectiveSegmentsOf, isPublishedInLocale, readPageRows } from "./pageRecords.js";
 import type { PageRow } from "./pageRecords.js";
+import { pagePathIn } from "./pagePaths.js";
 import { joinPath, pathDepth } from "./paths.js";
 import { getResolvedOptions } from "./runtime.js";
 import {
@@ -290,33 +297,6 @@ const isRootPage = (subject: Subject): boolean =>
 const folderDepthOf = (folder: FolderRecord, defaultKey: string): number =>
   folder.depth ?? pathDepth(folder.fullPath[defaultKey] ?? "");
 
-/** A page's full path in locale slot `key`, or `null` while it has no segment there. */
-const pagePathIn = ({
-  folder,
-  isFolderRoot,
-  key,
-  options,
-  payload,
-  segment,
-}: {
-  folder: FolderRecord | null;
-  isFolderRoot: boolean;
-  key: string;
-  options: ResolvedOptions;
-  payload: PayloadRequest["payload"];
-  segment: string;
-}): string | null => {
-  const folderPath = folder ? folderPathIn(folder, key, options, payload) : "";
-  if (folder && folderPath === "") {
-    return null;
-  }
-  if (isFolderRoot) {
-    return folder ? folderPath : "/";
-  }
-
-  return segment === "" ? null : joinPath(folderPath, segment);
-};
-
 /**
  * Spec sections 5.2 to 5.4 and 6 without writing anything: reads the moved items and the target,
  * runs every check, and works out the paths, the redirect counts and the order keys. Call it under
@@ -346,6 +326,7 @@ export const buildMovePlan = async (
   const defaultFolderKey = getDefaultLocaleKey(payload, options);
   const pageKeys = getPageLocaleKeys(payload);
   const pageDefaultLocale = getPageDefaultLocale(payload);
+  const fallbackKey = getFallbackLocaleKey(payload);
   const redirects = request.redirects ?? options.redirects.enabled;
 
   if (request.items.length === 0) {
@@ -933,7 +914,7 @@ export const buildMovePlan = async (
               id: subject.ref.id,
               kind: "page",
               locale: toLocaleOrNull(key),
-              published: isPublishedInLocale(row.status, key, hasDrafts),
+              published: isPublishedInLocale(row.status, key, hasDrafts, fallbackKey),
               to,
             });
           }
@@ -1029,17 +1010,7 @@ export const buildMovePlan = async (
   const allChanges = items.flatMap((item) => item.changes);
   const { publishedChanges, samples, urlChanges } = summarizePageChanges(allChanges);
   const redirectRowsToWrite = redirects
-    ? items.reduce(
-        (sum, item) =>
-          sum +
-          (item.kind === "folder"
-            ? item.changes.filter(
-                (change) =>
-                  change.kind === "folder" && change.id === item.ref.id && change.from !== null
-              ).length
-            : item.changes.filter((change) => change.published && change.from !== null).length),
-        0
-      )
+    ? items.reduce((sum, item) => sum + redirectRowsOfMovedItem(item).length, 0)
     : 0;
   const orderKeys = Object.fromEntries(items.map((item) => [itemKey(item.ref), item.orderKey]));
 

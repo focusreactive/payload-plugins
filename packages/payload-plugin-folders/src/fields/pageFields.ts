@@ -1,6 +1,7 @@
 import type { CollectionConfig, Field, FieldAccess, FieldHook } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
+import { buildRedirectCleanupBeforeDelete } from "../hooks/beforeDelete.js";
 import { buildPageAfterChange } from "../hooks/pages/afterChange.js";
 import {
   buildSegmentBeforeDuplicate,
@@ -175,6 +176,10 @@ const addPageHooks = (
     beforeChange: [
       ...(hooks.beforeChange ?? []),
       buildStructureGuard(options.collections[collection.slug], options),
+    ],
+    beforeDelete: [
+      ...(hooks.beforeDelete ?? []),
+      buildRedirectCleanupBeforeDelete(collection.slug),
     ],
     beforeOperation: [
       ...(hooks.beforeOperation ?? []),

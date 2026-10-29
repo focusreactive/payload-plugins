@@ -23,6 +23,18 @@ export const getDefaultLocaleKey = (payload: Payload, options: ResolvedOptions):
     ? payload.config.localization.defaultLocale
     : noLocaleKey;
 
+/**
+ * The locale a page falls back to when it has nothing of its own in the locale being read: the
+ * default locale, unless the host turned `localization.fallback` off. Null when nothing is
+ * localized or fallback is off. Decision 24 counts a locale served through this fallback as
+ * published when the fallback locale is.
+ */
+export const getFallbackLocaleKey = (payload: Payload): string | null => {
+  const { localization } = payload.config;
+
+  return localization && localization.fallback !== false ? localization.defaultLocale : null;
+};
+
 /** Spec section 3.2: a locale without its own segment uses the default locale's. */
 export const effectiveSegment = (
   segments: ValuesByLocale,

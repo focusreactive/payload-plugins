@@ -13,13 +13,29 @@ export const isPublishedStatus = (status: unknown): boolean =>
 /**
  * Whether a page's main row is live in locale `key`: `_status` is one value, or one per locale when
  * it is localized. A collection without drafts has no status, and every row is live.
+ *
+ * Decision 24: a locale with no status of its own is live through the fallback when `fallbackKey`
+ * (the default locale, null when fallback is off) is published. A locale whose own status is
+ * `draft` is not live, whatever the fallback locale is.
  */
-export const isPublishedInLocale = (status: unknown, key: string, hasDrafts: boolean): boolean => {
+export const isPublishedInLocale = (
+  status: unknown,
+  key: string,
+  hasDrafts: boolean,
+  fallbackKey: string | null = null
+): boolean => {
   if (!hasDrafts) {
     return true;
   }
   if (status && typeof status === "object") {
-    return (status as Record<string, unknown>)[key] === "published";
+    const byLocale = status as Record<string, unknown>;
+    const own = byLocale[key];
+    if (own === "published") {
+      return true;
+    }
+    const hasOwnStatus = own !== undefined && own !== null;
+
+    return !hasOwnStatus && fallbackKey !== null && byLocale[fallbackKey] === "published";
   }
 
   return status === "published";
@@ -148,6 +164,8 @@ export type PageSnapshot = {
   folder: FolderId | null;
   isFolderRoot: boolean;
   isPublished: boolean;
+  /** `_status` as stored, so a redirect can tell which locales were live before the write. */
+  status: unknown;
 };
 
 export const toSnapshot = (
@@ -159,6 +177,7 @@ export const toSnapshot = (
   folder: row.folder,
   isFolderRoot: row.isFolderRoot,
   isPublished: row.isPublished,
+  status: row.status,
 });
 
 // A stack per document being written. `beforeValidate` pushes and `afterChange` pops, so a host

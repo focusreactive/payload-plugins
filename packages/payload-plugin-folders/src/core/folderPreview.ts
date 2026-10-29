@@ -13,6 +13,7 @@ import {
   requestLocaleKey,
 } from "./locales.js";
 import { planMove, summarizePageChanges } from "./move.js";
+import { planFolderPrefixRows, shouldWriteRedirects } from "./redirects.js";
 import type { MoveBlock, MovePreview, PlanSettings } from "./move.js";
 import { getResolvedOptions } from "./runtime.js";
 import { SEGMENT_ERROR_MESSAGE, isValidSegment } from "./slugify.js";
@@ -250,15 +251,17 @@ export const planFolderEdit = async (
     })),
   ];
   const { publishedChanges, samples, urlChanges } = summarizePageChanges(changes);
+  const isWritingRows = shouldWriteRedirects(req, options);
 
   return {
     ...emptyPreview([], stored.parent),
     foldersRewritten: 1 + descendants.length,
     mirrorRowsToWrite: options.redirects.mirrorToRedirectsPlugin ? publishedChanges.length : 0,
-    redirectRowsToWrite: options.redirects.enabled
-      ? subtree.changes.filter(
-          (change) => change.kind === "folder" && change.id === stored.id && change.from !== null
-        ).length
+    redirectRowsToWrite: isWritingRows
+      ? planFolderPrefixRows({
+          changes,
+          folder: { collection: options.folders.slug, id: stored.id },
+        }).length
       : 0,
     samples,
     urlChanges,
