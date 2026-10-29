@@ -4,6 +4,7 @@ import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, ResolvedOptions, ResolvedPageCollection } from "../types.js";
 import type { FolderRecord } from "./folderRecords.js";
 import { getDefaultLocaleKey, getLocaleCodes, noLocaleKey } from "./locales.js";
+import { effectiveSegmentsOf } from "./pageRecords.js";
 import { buildSegmentWhere } from "./segmentWhere.js";
 
 /** The locale slots a page's paths are checked in: every locale code, or one slot without localization. */
@@ -110,7 +111,7 @@ const buildPageSegmentWhere = (
   req: PayloadRequest,
   page: ResolvedPageCollection,
   locale: string,
-  segment: string
+  segment: string | string[]
 ): Where =>
   page.segmentLocalized && locale !== noLocaleKey
     ? buildSegmentWhere({
@@ -118,7 +119,7 @@ const buildPageSegmentWhere = (
         locale,
         segment,
       })
-    : { pathSegment: { equals: segment } };
+    : { pathSegment: Array.isArray(segment) ? { in: segment } : { equals: segment } };
 
 /**
  * Rules 1 and 2 of spec section 2.6 for one folder and locale: another non-root page in the folder
@@ -178,6 +179,116 @@ export const findSegmentConflict = async ({
   }
 
   return null;
+};
+
+/**
+ * `findSegmentConflict` for many segments of one folder and locale at once, for a bulk move: one
+ * query for folders (`fullPath in [...]`) and, per page collection, one query for the matching
+ * pages plus one more to read the matched pages' segments, instead of a handful of queries per
+ * segment. Returns the first conflict per segment, folders before pages, in collection order, the
+ * same answer and message data as the single check. The moved pages are never in `folder`, so
+ * none is excluded.
+ */
+export const findSegmentConflicts = async ({
+  folder,
+  locale,
+  options,
+  publishedOnly,
+  req,
+  segments,
+}: {
+  folder: FolderRecord | null;
+  locale: string;
+  options: ResolvedOptions;
+  publishedOnly: boolean;
+  req: PayloadRequest;
+  segments: string[];
+}): Promise<Map<string, SegmentConflict>> => {
+  const { payload } = req;
+  const conflicts = new Map<string, SegmentConflict>();
+  const wanted = [...new Set(segments)];
+  if (wanted.length === 0) {
+    return conflicts;
+  }
+  const folderPath = folderPathIn(folder, locale, options, payload);
+  const pathOf = (segment: string): string => `${folderPath}/${segment}`;
+
+  const folderClashes = await payload.db.find({
+    collection: toCollectionSlug(options.folders.slug),
+    locale: queryLocaleOf(locale),
+    pagination: false,
+    req,
+    select: { fullPath: true },
+    where: { fullPath: { in: wanted.map(pathOf) } },
+  });
+  // The adapter returns every locale of a localized column, so the locale asked about is picked.
+  const clashingPaths = new Set(
+    (folderClashes.docs as Array<{ fullPath?: unknown }>).map((doc) =>
+      doc.fullPath && typeof doc.fullPath === "object"
+        ? (doc.fullPath as Record<string, unknown>)[locale]
+        : doc.fullPath
+    )
+  );
+  for (const segment of wanted) {
+    if (clashingPaths.has(pathOf(segment))) {
+      conflicts.set(segment, { kind: "folder", path: pathOf(segment) });
+    }
+  }
+
+  const pageDefaultLocale = getPageDefaultLocale(payload);
+  for (const page of Object.values(options.collections)) {
+    const open = wanted.filter((segment) => !conflicts.has(segment));
+    if (open.length === 0) {
+      break;
+    }
+    const publishedWhere = publishedOnly ? buildPublishedWhere(payload, page.slug) : null;
+    const matched = await payload.db.find({
+      collection: toCollectionSlug(page.slug),
+      locale: queryLocaleOf(locale),
+      pagination: false,
+      req,
+      select: { id: true },
+      where: {
+        and: [
+          { folder: { equals: folder?.id ?? null } },
+          { isFolderRoot: { not_equals: true } },
+          buildPageSegmentWhere(req, page, locale, open),
+          ...(publishedWhere ? [publishedWhere] : []),
+        ],
+      },
+    });
+    const matchedIds = (matched.docs as Array<{ id: FolderId }>).map((doc) => doc.id);
+    if (matchedIds.length === 0) {
+      continue;
+    }
+    // The match used the request locale's value or the default locale's; the effective segment of
+    // each hit says which of the wanted segments it holds.
+    const hits = await payload.db.find({
+      collection: toCollectionSlug(page.slug),
+      locale: "all",
+      pagination: false,
+      req,
+      select: { pathSegment: true },
+      where: { id: { in: matchedIds } },
+    });
+    for (const hit of hits.docs as Array<{ id: FolderId; pathSegment?: unknown }>) {
+      const effective = effectiveSegmentsOf(
+        { segments: hit.pathSegment },
+        [locale],
+        pageDefaultLocale
+      )[locale];
+      if (!open.includes(effective) || conflicts.has(effective)) {
+        continue;
+      }
+      conflicts.set(effective, {
+        kind: "page",
+        path: pathOf(effective),
+        title: await readTitle(req, page, hit.id, locale),
+      });
+    }
+  }
+
+  return conflicts;
 };
 
 export const describeSegmentConflict = (conflict: SegmentConflict): string =>

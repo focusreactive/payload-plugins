@@ -19,6 +19,7 @@ import { effectiveSegmentsOf, isPublishedInLocale, readPageRows } from "./pageRe
 import type { PageRow } from "./pageRecords.js";
 import { joinPath, pathDepth } from "./paths.js";
 import { getResolvedOptions } from "./runtime.js";
+import { isValidSegment, SEGMENT_ERROR_MESSAGE } from "./slugify.js";
 import {
   findPageChanges,
   planSubtreeRewrite,
@@ -29,13 +30,14 @@ import type { SubtreePlan } from "./subtree.js";
 import {
   describeRootPageConflict,
   findRootPageConflict,
-  findSegmentConflict,
+  findSegmentConflicts,
   folderPathIn,
   getPageDefaultLocale,
   getPageLocaleKeys,
   pageDepthIn,
   readTitle,
 } from "./uniqueness.js";
+import type { SegmentConflict } from "./uniqueness.js";
 
 /** What the caller saw when it built the request; a mismatch means the tree moved on (spec section 6). */
 export type ExpectedState = { orderKey: string | null; parentId: FolderId | null };
@@ -164,6 +166,8 @@ export class MoveBlockedError extends APIError<{
       { blocked, item: first.item, reason: first.reason },
       true
     );
+    // APIError sets the name to "APIError"; callers tell a refused move from other API errors by it.
+    this.name = "MoveBlockedError";
     this.blocked = blocked;
   }
 }
@@ -636,17 +640,32 @@ export const buildMovePlan = async (
     });
   };
 
-  // Reserved root segments.
+  // Segments the site root cannot take: the ones the site itself uses, and the ones that fail the
+  // site-root segment rule (no dot, so robots.txt and sitemap.xml stay the frontend's), the same
+  // two checks a save makes at the top level.
   if (target === null) {
     for (const subject of live()) {
       if (!changesParent(subject) || isRootPage(subject)) {
         continue;
       }
-      const reserved = segmentsOf(subject).find(({ segment }) =>
-        options.reservedRootSegments.includes(segment)
-      );
-      if (reserved) {
-        block(subject.ref, "reserved", `/${reserved.segment} is used by the site itself`);
+      for (const { segment } of segmentsOf(subject)) {
+        if (segment === "") {
+          continue;
+        }
+        if (options.reservedRootSegments.includes(segment)) {
+          block(subject.ref, "reserved", `/${segment} is used by the site itself`);
+          break;
+        }
+        if (!isValidSegment(segment, { atSiteRoot: true })) {
+          block(
+            subject.ref,
+            "reserved",
+            segment.includes(".")
+              ? `/${segment} cannot be at the top level: a top-level segment cannot contain a dot`
+              : `/${segment} cannot be at the top level. ${SEGMENT_ERROR_MESSAGE}`
+          );
+          break;
+        }
       }
     }
   }
@@ -660,14 +679,9 @@ export const buildMovePlan = async (
     { options, req }
   );
   if (!typeCheck.isAllowed && target) {
-    const countsByItem = new Map<string, number>();
-    for (const sample of typeCheck.samples) {
-      const owner: ItemRef =
-        sample.insideFolder === null
-          ? { collection: sample.collection, id: sample.id }
-          : { collection: foldersSlug, id: sample.insideFolder };
-      countsByItem.set(itemKey(owner), (countsByItem.get(itemKey(owner)) ?? 0) + 1);
-    }
+    const countsByItem = new Map(
+      typeCheck.refusedItems.map((refused) => [itemKey(refused.item), refused.count])
+    );
     for (const subject of typeSubjects) {
       const count = countsByItem.get(itemKey(subject.ref));
       if (count === undefined) {
@@ -688,6 +702,32 @@ export const buildMovePlan = async (
 
   // Path conflicts in every locale against the stored rows, root pages, and the moved items
   // against each other.
+  // The stored rows are read once per locale for every segment that moves, not once per item.
+  const segmentsByKey = new Map<string, Set<string>>();
+  for (const subject of live()) {
+    if (!changesParent(subject) || isRootPage(subject)) {
+      continue;
+    }
+    for (const { key, segment } of segmentsOf(subject)) {
+      if (segment !== "") {
+        segmentsByKey.set(key, (segmentsByKey.get(key) ?? new Set()).add(segment));
+      }
+    }
+  }
+  const storedConflicts = new Map<string, Map<string, SegmentConflict>>();
+  for (const [key, segments] of segmentsByKey) {
+    storedConflicts.set(
+      key,
+      await findSegmentConflicts({
+        folder: target,
+        locale: key,
+        options,
+        publishedOnly: true,
+        req,
+        segments: [...segments],
+      })
+    );
+  }
   const claimedSegments = new Map<string, Subject>();
   let claimedRootPage: Subject | null = null;
   for (const subject of live()) {
@@ -742,18 +782,7 @@ export const buildMovePlan = async (
         );
         break;
       }
-      const conflict = await findSegmentConflict({
-        folder: target,
-        locale: key,
-        options,
-        publishedOnly: false,
-        req,
-        segment,
-        self:
-          subject.kind === "page"
-            ? { collection: subject.ref.collection, id: subject.ref.id }
-            : null,
-      });
+      const conflict = storedConflicts.get(key)?.get(segment);
       if (conflict) {
         const other = conflict.kind === "folder" ? "a folder" : conflict.title;
         block(

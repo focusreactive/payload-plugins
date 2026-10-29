@@ -39,6 +39,34 @@ afterEach(async () => {
   await clearTree(harness.payload);
 });
 
+/**
+ * A second app with a page collection that has `versions: true` and no drafts: it has versions but
+ * no `latest` flag, so a move must not look for a latest version. It gets its own harness, run and
+ * destroyed inside the test, so the file holds no extra database pool while the others run.
+ */
+const withNotesApp = async (work: (payload: Payload) => Promise<void>): Promise<void> => {
+  const notesApp = await getTestPayload({
+    extraCollections: [
+      {
+        slug: "notes",
+        fields: [
+          { name: "title", type: "text" },
+          { name: "slug", type: "text" },
+        ],
+        versions: true,
+      },
+    ],
+    foldersOptions: {
+      collections: { notes: true, pages: true, posts: { label: "Blog post" } } as never,
+    },
+  });
+  try {
+    await work(notesApp.payload);
+  } finally {
+    await notesApp.destroy();
+  }
+};
+
 const folderRef = (id: number) => ({ collection: "folders", id });
 const pageRef = (id: number) => ({ collection: "pages", id });
 const postRef = (id: number) => ({ collection: "posts", id });
@@ -550,6 +578,9 @@ describe("move apply", () => {
     }));
 
     expect(result.cycle).toBeInstanceOf(MoveBlockedError);
+    for (const error of [result.cycle, result.conflict, result.stale]) {
+      expect(error.name).toBe("MoveBlockedError");
+    }
     expect(result.cycle.status).toBe(400);
     expect(result.cycle.message).toBe(
       "A folder cannot be moved into itself or one of its subfolders"
@@ -808,6 +839,85 @@ describe("move apply", () => {
       await plain.destroy();
     }
   });
+
+  it("moves a page of a collection with versions but no drafts", () =>
+    withNotesApp(async (payload) => {
+      const target = await createFolder(payload, { slug: "docs" });
+      const note = (await payload.create({
+        collection: "notes" as never,
+        data: { slug: "memo", title: "Memo" } as never,
+        depth: 0,
+        overrideAccess: true,
+      })) as unknown as { id: number };
+
+      const result = await moveItems(payload, {
+        items: [{ collection: "notes", id: note.id }],
+        toFolder: target.id,
+      });
+
+      const moved = (await payload.db.findOne({
+        collection: "notes" as never,
+        where: { id: { equals: note.id } },
+      })) as unknown as PageStructure;
+      expect(moved).toMatchObject({ folder: target.id, structureRevision: 1 });
+      expect(moved.orderKey).toBe(result.orderKeys[`notes:${note.id}`]);
+      // One change per locale: the segment is shared, so both read the same path.
+      expect(result.changes).toHaveLength(2);
+      for (const change of result.changes) {
+        expect(change).toMatchObject({ collection: "notes", from: "/memo", to: "/docs/memo" });
+      }
+    }));
+
+  it("rebalances equal keys in a collection with versions but no drafts", () =>
+    withNotesApp(async (payload) => {
+      const target = await createFolder(payload, { slug: "docs" });
+      const [first, second] = await Promise.all(
+        ["first", "second"].map(
+          (slug) =>
+            payload.create({
+              collection: "notes" as never,
+              data: { folder: target.id, slug, title: slug } as never,
+              depth: 0,
+              overrideAccess: true,
+            }) as unknown as Promise<{ id: number }>
+        )
+      );
+      // Equal keys leave no gap, so the insert rewrites both neighbours' keys first.
+      for (const note of [first, second]) {
+        await payload.db.updateOne({
+          collection: "notes" as never,
+          data: { orderKey: "a0" },
+          id: note.id,
+          returning: false,
+        });
+      }
+      const loose = (await payload.create({
+        collection: "notes" as never,
+        data: { slug: "loose", title: "Loose" } as never,
+        depth: 0,
+        overrideAccess: true,
+      })) as unknown as { id: number };
+
+      const result = await moveItems(payload, {
+        after: { collection: "notes", id: first.id },
+        items: [{ collection: "notes", id: loose.id }],
+      });
+
+      const keyOf = async (id: number) =>
+        (
+          (await payload.db.findOne({
+            collection: "notes" as never,
+            where: { id: { equals: id } },
+          })) as unknown as { orderKey: string }
+        ).orderKey;
+      const keys = [
+        await keyOf(first.id),
+        result.orderKeys[`notes:${loose.id}`],
+        await keyOf(second.id),
+      ];
+      expect(new Set(keys).size).toBe(3);
+      expect([...keys].sort()).toEqual(keys);
+    }));
 
   it.skipIf(process.env.TEST_DB === "postgres")(
     "calls afterPathChange when the adapter runs without transactions",

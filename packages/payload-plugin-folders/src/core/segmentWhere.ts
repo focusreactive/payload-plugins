@@ -5,8 +5,12 @@ export type SegmentWhereOptions = {
   defaultLocale: string;
   /** The locale the query runs in: the request's `locale`. */
   locale: string;
-  /** The segment to find, for example `post`. */
-  segment: string;
+  /**
+   * The segment to find, for example `post`, or several to find any of them in one query (a bulk
+   * move checks all its segments at once; an `or` of one clause per segment would add a table join
+   * for each).
+   */
+  segment: string | string[];
 };
 
 /**
@@ -23,18 +27,18 @@ export const buildSegmentWhere = ({
   locale,
   segment,
 }: SegmentWhereOptions): Where => {
+  const matches = (path: string): Where =>
+    Array.isArray(segment) ? { [path]: { in: segment } } : { [path]: { equals: segment } };
+
   if (locale === defaultLocale) {
-    return { pathSegment: { equals: segment } };
+    return matches("pathSegment");
   }
 
   return {
     or: [
-      { pathSegment: { equals: segment } },
+      matches("pathSegment"),
       {
-        and: [
-          { pathSegment: { exists: false } },
-          { [`pathSegment.${defaultLocale}`]: { equals: segment } },
-        ],
+        and: [{ pathSegment: { exists: false } }, matches(`pathSegment.${defaultLocale}`)],
       },
     ],
   };

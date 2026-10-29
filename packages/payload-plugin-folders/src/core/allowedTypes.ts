@@ -179,12 +179,24 @@ export type DisallowedPage = ItemRef & {
   insideFolder: FolderId | null;
 };
 
+export type RefusedItem = {
+  /** Pages the target refuses under this item: 1 for a selected page, the pages inside a folder. */
+  count: number;
+  /** The selected page, or the selected folder holding refused pages. */
+  item: ItemRef;
+};
+
 export type AllowedTypesCheck = {
   /** Pages of each collection the target refuses, counted over everything that would move. */
   disallowedCounts: Record<string, number>;
   /** True when the target accepts everything that would move. */
   isAllowed: boolean;
-  /** Up to `sampleLimit` refused pages, to name in a block or warning. */
+  /**
+   * Every selected item that holds a refused page, uncapped: the move planner blocks or warns per
+   * item from this list, so no item is missed past the sample limit.
+   */
+  refusedItems: RefusedItem[];
+  /** Up to `sampleLimit` refused pages, to name in a message; not the whole set. */
   samples: DisallowedPage[];
 };
 
@@ -206,7 +218,12 @@ export const checkAllowedTypes = async (
   items: ItemRef[],
   { options, req }: { options: ResolvedOptions; req: PayloadRequest }
 ): Promise<AllowedTypesCheck> => {
-  const result: AllowedTypesCheck = { disallowedCounts: {}, isAllowed: true, samples: [] };
+  const result: AllowedTypesCheck = {
+    disallowedCounts: {},
+    isAllowed: true,
+    refusedItems: [],
+    samples: [],
+  };
   if (target === null) {
     return result;
   }
@@ -234,6 +251,7 @@ export const checkAllowedTypes = async (
       movedFolderIds.push(item.id);
     } else if (refusedCollections.includes(item.collection)) {
       record(item.collection, item.id, null);
+      result.refusedItems.push({ count: 1, item: { collection: item.collection, id: item.id } });
     }
   }
 
@@ -252,6 +270,7 @@ export const checkAllowedTypes = async (
       continue;
     }
 
+    let refusedInFolder = 0;
     for (const collection of refusedCollections) {
       const where = { folder: { in: subtreeIds } };
       const { totalDocs } = await payload.db.count({
@@ -263,6 +282,7 @@ export const checkAllowedTypes = async (
         continue;
       }
       result.isAllowed = false;
+      refusedInFolder += totalDocs;
       result.disallowedCounts[collection] = (result.disallowedCounts[collection] ?? 0) + totalDocs;
       const room = allowedTypesSampleLimit - result.samples.length;
       if (room > 0) {
@@ -277,6 +297,12 @@ export const checkAllowedTypes = async (
           result.samples.push({ collection, id: page.id, insideFolder: folderId });
         }
       }
+    }
+    if (refusedInFolder > 0) {
+      result.refusedItems.push({
+        count: refusedInFolder,
+        item: { collection: foldersSlug, id: folderId },
+      });
     }
   }
 
