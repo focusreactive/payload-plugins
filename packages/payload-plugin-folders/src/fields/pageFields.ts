@@ -51,6 +51,7 @@ export const buildPageFields = (
   {
     name: "structureRevision",
     type: "number",
+    access: { update: nobody },
     admin: { hidden: true, readOnly: true },
     defaultValue: 0,
   },

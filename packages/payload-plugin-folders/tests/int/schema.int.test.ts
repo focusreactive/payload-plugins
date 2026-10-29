@@ -33,7 +33,13 @@ const findField = (payload: Payload, collectionSlug: string, fieldName: string) 
 let folderCounter = 0;
 const createFolder = (
   payload: Payload,
-  data: { fullPath?: string; name?: string; parent?: number | null } = {}
+  data: {
+    ancestorIds?: string;
+    depth?: number;
+    fullPath?: string;
+    name?: string;
+    parent?: number | null;
+  } = {}
 ) => {
   folderCounter += 1;
   return payload.create({
@@ -140,7 +146,7 @@ describe("data model", () => {
     const { body, status } = await callEndpoint<{
       doc: { folder: number; orderKey: string; title: string };
     }>({
-      body: { folder: other.id, orderKey: "zz", title: "Renamed" },
+      body: { folder: other.id, orderKey: "zz", structureRevision: 42, title: "Renamed" },
       config,
       method: "PATCH",
       path: `/pages/${page.id}?depth=0`,
@@ -148,14 +154,19 @@ describe("data model", () => {
     });
 
     expect(status).toBe(200);
-    expect(body.doc).toMatchObject({ folder: original.id, orderKey: "a0", title: "Renamed" });
+    expect(body.doc).toMatchObject({
+      folder: original.id,
+      orderKey: "a0",
+      structureRevision: 0,
+      title: "Renamed",
+    });
     const reread = await payload.findByID({
       collection: "pages",
       depth: 0,
       id: page.id,
       overrideAccess: true,
     });
-    expect(reread).toMatchObject({ folder: original.id, orderKey: "a0" });
+    expect(reread).toMatchObject({ folder: original.id, orderKey: "a0", structureRevision: 0 });
 
     // A create may still set them, and so may the Local API once access is overridden.
     const moved = await payload.update({
@@ -166,6 +177,74 @@ describe("data model", () => {
       overrideAccess: true,
     });
     expect(moved.folder).toBe(other.id);
+  });
+
+  it("derived folder fields cannot be written over REST", async () => {
+    const { config, payload } = harness;
+    const derived = { ancestorIds: "/999/", depth: 7, fullPath: "/hacked", structureRevision: 42 };
+
+    const created = await callEndpoint<{ doc: Record<string, unknown> }>({
+      body: { name: "Rest folder", slug: "rest-folder", ...derived },
+      config,
+      method: "POST",
+      path: "/folders?depth=0",
+      payload,
+    });
+    expect(created.status).toBe(201);
+    expect(created.body.doc).toMatchObject({
+      ancestorIds: null,
+      depth: null,
+      fullPath: null,
+      structureRevision: 0,
+    });
+
+    const folder = await createFolder(payload, {
+      ancestorIds: "/1/",
+      depth: 1,
+      fullPath: "/rest-original",
+    });
+    const updated = await callEndpoint<{ doc: Record<string, unknown> }>({
+      body: { name: "Renamed over REST", ...derived },
+      config,
+      method: "PATCH",
+      path: `/folders/${folder.id}?depth=0`,
+      payload,
+    });
+    expect(updated.status).toBe(200);
+    expect(updated.body.doc).toMatchObject({
+      ancestorIds: "/1/",
+      depth: 1,
+      fullPath: "/rest-original",
+      name: "Renamed over REST",
+      structureRevision: 0,
+    });
+  });
+
+  it("a REST update cannot change folder parent or orderKey", async () => {
+    const { config, payload } = harness;
+    const parent = await createFolder(payload, { fullPath: "/rest-parent" });
+    const other = await createFolder(payload, { fullPath: "/rest-other" });
+    const child = await createFolder(payload, {
+      fullPath: "/rest-parent/child",
+      parent: parent.id,
+    });
+    await payload.update({
+      collection: "folders",
+      data: { orderKey: "a0" },
+      id: child.id,
+      overrideAccess: true,
+    });
+
+    const { body, status } = await callEndpoint<{ doc: Record<string, unknown> }>({
+      body: { name: "Renamed child", orderKey: "zz", parent: other.id },
+      config,
+      method: "PATCH",
+      path: `/folders/${child.id}?depth=0`,
+      payload,
+    });
+
+    expect(status).toBe(200);
+    expect(body.doc).toMatchObject({ name: "Renamed child", orderKey: "a0", parent: parent.id });
   });
 
   it("folder parent null round-trips as null", async () => {
@@ -239,6 +318,28 @@ describe("data model", () => {
         overrideAccess: true,
       })
     ).rejects.toThrow(/field is invalid: fullPath/u);
+  });
+
+  it("the tree-lock global is read-only for a logged-in user", async () => {
+    const { config, payload } = harness;
+
+    const read = await callEndpoint({ config, path: "/globals/folders-tree-state", payload });
+    expect(read.status).toBe(200);
+    const { status } = await callEndpoint({
+      body: { lockedAt: new Date().toISOString(), revision: 99 },
+      config,
+      method: "POST",
+      path: "/globals/folders-tree-state",
+      payload,
+    });
+    expect(status).toBe(403);
+    const anonymous = await callEndpoint({
+      anonymous: true,
+      config,
+      path: "/globals/folders-tree-state",
+      payload,
+    });
+    expect(anonymous.status).toBe(403);
   });
 
   it("folder-redirects refuses REST create", async () => {

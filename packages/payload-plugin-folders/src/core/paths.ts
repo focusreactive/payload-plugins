@@ -2,7 +2,10 @@ export type LocalePrefixMode = "all" | "non-default" | "none";
 
 const repeatedSlashes = /\/{2,}/gu;
 
-/** Leading slash, no trailing slash, lowercase, no repeated slashes. The site root is `/`. */
+/**
+ * Leading slash, no trailing slash, lowercase, no repeated slashes. The site root is `/`.
+ * Callers that take a URL from a request (P-31 resolve) must percent-decode it first.
+ */
 export const normalizePath = (path: string): string => {
   const collapsed = path.trim().toLowerCase().replace(repeatedSlashes, "/");
   const withoutTrailingSlash = collapsed.endsWith("/") ? collapsed.slice(0, -1) : collapsed;
@@ -50,6 +53,11 @@ export const buildUrl = (
   locale: string | null,
   { defaultLocale, localePrefix = "non-default" }: BuildUrlOptions = {}
 ): string => {
+  if (localePrefix === "non-default" && locale !== null && defaultLocale === undefined) {
+    throw new Error(
+      'buildUrl needs `defaultLocale` when localePrefix is "non-default" and a locale is given'
+    );
+  }
   const path = normalizePath(fullPath);
   const needsPrefix =
     locale !== null &&

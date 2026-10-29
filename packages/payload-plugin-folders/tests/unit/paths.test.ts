@@ -66,6 +66,15 @@ describe("buildUrl", () => {
     );
   });
 
+  it("throws when non-default has a locale but no defaultLocale", () => {
+    expect(() => buildUrl("/blog", "de", { localePrefix: "non-default" })).toThrow(
+      /defaultLocale/u
+    );
+    expect(() => buildUrl("/blog", "de")).toThrow(/defaultLocale/u);
+    expect(buildUrl("/blog", null)).toBe("/blog");
+    expect(buildUrl("/blog", "de", { localePrefix: "all" })).toBe("/de/blog");
+  });
+
   it("supports all, none, no locale and the site root", () => {
     expect(buildUrl("/blog", "en", { defaultLocale: "en", localePrefix: "all" })).toBe("/en/blog");
     expect(buildUrl("/blog", "de", { defaultLocale: "en", localePrefix: "none" })).toBe("/blog");

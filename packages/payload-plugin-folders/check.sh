@@ -35,5 +35,10 @@ if lsof -nP -iTCP:4078 -sTCP:LISTEN >/dev/null 2>&1; then
   exit 1
 fi
 npx playwright test tests/e2e/smoke.e2e.spec.ts
+# Playwright kills the dev server's process group; confirm nothing is left on the port.
+if lsof -nP -iTCP:4078 -sTCP:LISTEN >/dev/null 2>&1; then
+  echo "The dev server is still listening on port 4078 after the smoke test" >&2
+  exit 1
+fi
 
 printf '\ncheck.sh passed\n'

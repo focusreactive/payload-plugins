@@ -7,7 +7,11 @@ import { buildFoldersCollection } from "./collections/folders.js";
 import { pluginSlug } from "./constants.js";
 import { addPageFields } from "./fields/pageFields.js";
 import { buildTreeStateGlobal } from "./globals/treeState.js";
-import { normalizeOptions, stripUniqueFromSegmentFields } from "./options.js";
+import {
+  inspectRuntimeDatabase,
+  normalizeOptions,
+  stripUniqueFromSegmentFields,
+} from "./options.js";
 import type { FoldersPluginOptions } from "./types.js";
 
 export { pluginSlug } from "./constants.js";
@@ -28,7 +32,7 @@ export const foldersPlugin = definePlugin<FoldersPluginOptions>({
     const hostOnInit = config.onInit;
     const warnOnInit: Config["onInit"] = async (payload) => {
       await hostOnInit?.(payload);
-      for (const warning of resolved.warnings) {
+      for (const warning of [...resolved.warnings, ...inspectRuntimeDatabase(payload.db)]) {
         payload.logger.warn(`[folders] ${warning}`);
       }
     };

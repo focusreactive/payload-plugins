@@ -24,6 +24,17 @@ describe("slugify", () => {
     expect(slugify("Crème brûlée")).toBe("creme-brulee");
   });
 
+  it("transliterates decomposed German letters like precomposed ones", () => {
+    expect(slugify("u\u0308ber uns")).toBe("ueber-uns");
+    expect(slugify("\u00FCber uns")).toBe("ueber-uns");
+    expect(slugify("A\u0308rger")).toBe("aerger");
+  });
+
+  it("transliterates letters that do not decompose", () => {
+    expect(slugify("Łódź")).toBe("lodz");
+    expect(slugify("Æsir Øl Đạ Þor Œuvre")).toBe("aesir-ol-da-thor-oeuvre");
+  });
+
   it("collapses runs of other characters and trims the ends", () => {
     expect(slugify("  --Hello,   World!!  ")).toBe("hello-world");
     expect(slugify("???")).toBe("");

@@ -12,10 +12,17 @@ const transliterations: Record<string, string> = {
   ö: "oe",
   ü: "ue",
   ß: "ss",
+  // Letters NFKD does not decompose.
+  æ: "ae",
+  đ: "d",
+  ł: "l",
+  œ: "oe",
+  ø: "o",
+  þ: "th",
 };
 
 const combiningMarks = /\p{M}/gu;
-const transliterationPattern = /[äöüß]/gu;
+const transliterationPattern = /[äöüßæđłœøþ]/gu;
 const ampersands = /&/gu;
 const outsideSegmentCharacters = /[^a-z0-9]+/gu;
 const surroundingHyphens = /^-+|-+$/gu;
@@ -30,6 +37,8 @@ const surroundingHyphens = /^-+|-+$/gu;
 export const slugify = (input: string, _locale?: string): string => {
   const slug = input
     .toLowerCase()
+    // A decomposed "u" plus a combining diaeresis must hit the German table like a precomposed "ü".
+    .normalize("NFC")
     .replace(transliterationPattern, (character) => transliterations[character] ?? character)
     .normalize("NFKD")
     .replace(combiningMarks, "")

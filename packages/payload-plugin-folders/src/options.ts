@@ -38,6 +38,10 @@ export class FoldersConfigError extends Error {
 
 type FieldWithName = Field & { name: string };
 
+/** Payload 4 allows a `group` without a name; it only lays out its children, like a row. */
+const isUnnamedGroup = (field: Field): field is Field & { type: "group"; fields: Field[] } =>
+  field.type === "group" && !("name" in field && typeof field.name === "string");
+
 /**
  * Names that end up at the top level of the document: layout-only fields (row, collapsible,
  * unnamed tabs) are looked through, named groups and tabs count as one name.
@@ -54,7 +58,7 @@ const collectDataFields = (fields: Field[]): FieldWithName[] => {
           dataFields.push(...collectDataFields(tab.fields));
         }
       }
-    } else if (field.type === "row" || field.type === "collapsible") {
+    } else if (field.type === "row" || field.type === "collapsible" || isUnnamedGroup(field)) {
       dataFields.push(...collectDataFields(field.fields));
     } else if ("name" in field && typeof field.name === "string") {
       dataFields.push(field as FieldWithName);
@@ -81,8 +85,6 @@ const deriveReservedRootSegments = (config: Config, hostSegments: string[]): str
   const derived = [
     firstSegmentOf(config.routes?.admin ?? "/admin"),
     firstSegmentOf(config.routes?.api ?? "/api"),
-    firstSegmentOf(config.routes?.graphQL ?? "/graphql"),
-    firstSegmentOf(config.routes?.graphQLPlayground ?? "/graphql-playground"),
     ...fixedReservedRootSegments,
     ...normalizeSegmentList(hostSegments),
   ];
@@ -133,34 +135,24 @@ const hasNestedDocsFields = (collection: CollectionConfig, dataFields: FieldWith
       field.relationTo === collection.slug
   );
 
-type AdapterInspection = {
-  name: string | undefined;
-  /** `undefined` when the adapter cannot be asked without connecting. */
-  transactionsEnabled: boolean | undefined;
-};
-
 /**
- * Reads what the adapter result exposes before Payload has a `payload` instance: `name` is set by
- * every official adapter. Transaction settings live only on the instance, so the SQLite check
- * builds one with a stub: `init` connects nothing, `connect` runs later.
+ * `name` is set by every official adapter. Transaction settings live only on the adapter instance,
+ * so the SQLite check runs at startup (`inspectRuntimeDatabase`), not here.
  */
-const inspectDatabaseAdapter = (db: Config["db"] | undefined): AdapterInspection => {
-  const name = db?.name;
-  if (name !== "sqlite" || typeof db?.init !== "function") {
-    return { name, transactionsEnabled: undefined };
-  }
-  try {
-    const stubPayload = { logger: { warn: () => undefined } } as never;
-    const instance = db.init({ payload: stubPayload }) as { transactionOptions?: unknown };
-
-    return { name, transactionsEnabled: Boolean(instance.transactionOptions) };
-  } catch {
-    return { name, transactionsEnabled: undefined };
-  }
-};
-
 const isMongoAdapterName = (name: string | undefined): boolean =>
   name !== undefined && /mongo/iu.test(name);
+
+/** Warnings that need the live adapter, so they run in the plugin's `onInit`. */
+export const inspectRuntimeDatabase = (db: unknown): string[] => {
+  const adapter = db as { name?: string; transactionOptions?: unknown } | undefined;
+  if (adapter?.name === "sqlite" && !adapter.transactionOptions) {
+    return [
+      "The SQLite adapter has no `transactionOptions`, so its transactions do nothing and a failed move can leave half its writes. Pass `transactionOptions: {}` to sqliteAdapter().",
+    ];
+  }
+
+  return [];
+};
 
 const isPositiveInteger = (value: number): boolean => Number.isInteger(value) && value > 0;
 
@@ -215,9 +207,11 @@ const resolvePageCollection = ({
     (field) =>
       field.name.startsWith("_h_") &&
       field.type === "relationship" &&
-      [field.relationTo]
-        .flat()
-        .some((target) => config.collections?.find((other) => other.slug === target)?.folders)
+      [field.relationTo].flat().some((target) => {
+        const targetCollection = config.collections?.find((other) => other.slug === target);
+
+        return Boolean(targetCollection?.folders || targetCollection?.hierarchy);
+      })
   );
   if (coreFolderField) {
     problems.push(
@@ -319,18 +313,11 @@ export const normalizeOptions = (
     }
   }
 
-  const adapter = inspectDatabaseAdapter(config.db);
-  if (isMongoAdapterName(adapter.name)) {
+  if (isMongoAdapterName(config.db?.name)) {
     problems.push(
       "MongoDB is not supported: the plugin needs relational transactions and partial version writes. Use the Postgres or SQLite adapter."
     );
   }
-  if (adapter.name === "sqlite" && adapter.transactionsEnabled === false) {
-    warnings.push(
-      "The SQLite adapter has no `transactionOptions`, so its transactions do nothing and a failed move can leave half its writes. Pass `transactionOptions: {}` to sqliteAdapter()."
-    );
-  }
-
   const mirrorToRedirectsPlugin = options.redirects?.mirrorToRedirectsPlugin ?? false;
   if (
     mirrorToRedirectsPlugin &&
@@ -424,13 +411,14 @@ export const stripUniqueFromSegmentFields = (
             ),
           };
         }
-        if (field.type === "row" || field.type === "collapsible") {
+        if (field.type === "row" || field.type === "collapsible" || isUnnamedGroup(field)) {
           return { ...field, fields: withoutUnique(field.fields) };
         }
         if ("name" in field && field.name === resolved.segmentField && "unique" in field) {
           const { unique: _unique, ...rest } = field;
 
-          return rest as Field;
+          // Only `unique` goes; the segment lookup still needs the index (spec section 2.4).
+          return { ...rest, index: true } as Field;
         }
 
         return field;

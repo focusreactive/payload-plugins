@@ -12,6 +12,8 @@ const nobody: FieldAccess = () => false;
  * the caller does not override access. The move core writes with overrideAccess: true.
  */
 const neverUpdatedByRequest = { update: nobody };
+// Written by plugin hooks only: a request can neither set nor change them.
+const neverWrittenByRequest = { create: nobody, update: nobody };
 
 export const buildFoldersCollection = (options: ResolvedOptions): CollectionConfig => {
   const { folders, localizeSegments } = options;
@@ -48,15 +50,29 @@ export const buildFoldersCollection = (options: ResolvedOptions): CollectionConf
     {
       name: "fullPath",
       type: "text",
+      access: neverWrittenByRequest,
       admin: { position: "sidebar", readOnly: true },
       localized: localizeSegments,
       unique: true,
     },
-    { name: "ancestorIds", type: "text", admin: { hidden: true }, index: true },
-    { name: "depth", type: "number", admin: { hidden: true }, index: true },
+    {
+      name: "ancestorIds",
+      type: "text",
+      access: neverWrittenByRequest,
+      admin: { hidden: true },
+      index: true,
+    },
+    {
+      name: "depth",
+      type: "number",
+      access: neverWrittenByRequest,
+      admin: { hidden: true },
+      index: true,
+    },
     {
       name: "structureRevision",
       type: "number",
+      access: neverWrittenByRequest,
       admin: { hidden: true },
       defaultValue: 0,
     },
@@ -71,6 +87,7 @@ export const buildFoldersCollection = (options: ResolvedOptions): CollectionConf
     {
       name: "typesLockedBy",
       type: "relationship",
+      access: neverWrittenByRequest,
       admin: { readOnly: true },
       hasMany: false,
       relationTo: toCollectionSlug(folders.slug),
