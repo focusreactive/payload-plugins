@@ -194,7 +194,11 @@ describe("move apply", () => {
     const loose = await createPage(payload, { slug: "loose" });
     const revisionBefore = await readTreeRevision(payload);
 
-    const result = await moveItems(payload, { items: [pageRef(loose.id)], toFolder: target.id });
+    const result = await moveItems(payload, {
+      overrideAccess: true,
+      items: [pageRef(loose.id)],
+      toFolder: target.id,
+    });
 
     expect(await listPagesIn(payload, target.id)).toEqual([loose.id, newer.id, older.id]);
     const moved = await readMainRow(payload, loose.id);
@@ -216,7 +220,7 @@ describe("move apply", () => {
       title: "Guide",
     });
 
-    await moveItems(payload, { items: [pageRef(page.id)], toFolder: null });
+    await moveItems(payload, { overrideAccess: true, items: [pageRef(page.id)], toFolder: null });
 
     expect((await readMainRow(payload, page.id)).folder).toBeNull();
     expect((await readLatestVersion(payload, page.id)).version.folder).toBeNull();
@@ -232,15 +236,27 @@ describe("move apply", () => {
     const [first, second, third] = await listPagesIn(payload, target.id);
     const loose = await createPage(payload, { slug: "loose" });
 
-    await moveItems(payload, { after: pageRef(first), items: [pageRef(loose.id)] });
+    await moveItems(payload, {
+      overrideAccess: true,
+      after: pageRef(first),
+      items: [pageRef(loose.id)],
+    });
     expect(await listPagesIn(payload, target.id)).toEqual([first, loose.id, second, third]);
 
     // After the last sibling, and after a sibling that is a folder in the same list.
-    await moveItems(payload, { after: pageRef(third), items: [pageRef(loose.id)] });
+    await moveItems(payload, {
+      overrideAccess: true,
+      after: pageRef(third),
+      items: [pageRef(loose.id)],
+    });
     expect(await listPagesIn(payload, target.id)).toEqual([first, second, third, loose.id]);
     const subfolder = await createFolder(payload, { parent: target.id, slug: "sub" });
     const other = await createPage(payload, { slug: "other" });
-    await moveItems(payload, { after: folderRef(subfolder.id), items: [pageRef(other.id)] });
+    await moveItems(payload, {
+      overrideAccess: true,
+      after: folderRef(subfolder.id),
+      items: [pageRef(other.id)],
+    });
     const other_ = await readMainRow(payload, other.id);
     const subfolderRow = await readFolderRow(payload, subfolder.id);
     expect(other_.folder).toBe(target.id);
@@ -256,6 +272,7 @@ describe("move apply", () => {
     );
 
     const result = await moveItems(payload, {
+      overrideAccess: true,
       items: [pageRef(three.id), pageRef(one.id), pageRef(two.id)],
       position: "end",
       toFolder: target.id,
@@ -295,6 +312,7 @@ describe("move apply", () => {
     recorded.length = 0;
 
     const result = await moveItems(payload, {
+      overrideAccess: true,
       items: [folderRef(team.id), pageRef(loose.id)],
       toFolder: target.id,
     });
@@ -373,16 +391,22 @@ describe("move apply", () => {
     const orderBefore = await listPagesIn(payload, docs.id);
 
     const pageResult = await moveItems(payload, {
+      overrideAccess: true,
       items: [pageRef(orderBefore[0])],
       position: "end",
       toFolder: docs.id,
     });
     const folderResult = await moveItems(payload, {
+      overrideAccess: true,
       items: [folderRef(folderTwo.id)],
       position: "end",
       toFolder: docs.id,
     });
-    await moveItems(payload, { after: folderRef(folderTwo.id), items: [folderRef(folderOne.id)] });
+    await moveItems(payload, {
+      overrideAccess: true,
+      after: folderRef(folderTwo.id),
+      items: [folderRef(folderOne.id)],
+    });
 
     expect(await listPagesIn(payload, docs.id)).toEqual([orderBefore[1], orderBefore[0]]);
     expect(pageResult.changes).toEqual([]);
@@ -426,7 +450,11 @@ describe("move apply", () => {
     })) as unknown as PageStructure & { title: string };
     expect(staleForm.folder).toBe(source.id);
 
-    await moveItems(payload, { items: [pageRef(page.id)], toFolder: target.id });
+    await moveItems(payload, {
+      overrideAccess: true,
+      items: [pageRef(page.id)],
+      toFolder: target.id,
+    });
 
     // A draft read right after the move agrees with the tree: the latest version was patched.
     const draftRead = (await payload.findByID({
@@ -487,7 +515,11 @@ describe("move apply", () => {
     } as never);
     expect((await readMainRow(payload, page.id)).updatedAt).toBe(longAgo);
 
-    await moveItems(payload, { items: [pageRef(page.id)], toFolder: target.id });
+    await moveItems(payload, {
+      overrideAccess: true,
+      items: [pageRef(page.id)],
+      toFolder: target.id,
+    });
 
     expect((await readMainRow(payload, page.id)).updatedAt > longAgo).toBe(true);
     expect((await readLatestVersion(payload, page.id)).updatedAt > longAgo).toBe(true);
@@ -521,6 +553,7 @@ describe("move apply", () => {
     });
     await expect(
       moveItems(payload, {
+        overrideAccess: true,
         items: [folderRef(team.id), pageRef(page.id)],
         toFolder: target.id,
       })
@@ -539,6 +572,7 @@ describe("move apply", () => {
 
     // The same move succeeds afterwards: nothing was left half done.
     await moveItems(payload, {
+      overrideAccess: true,
       items: [folderRef(team.id), pageRef(page.id)],
       toFolder: target.id,
     });
@@ -567,10 +601,15 @@ describe("move apply", () => {
       throw new Error("expected the move to be refused");
     };
     const { result, writes } = await countDbWrites(payload, async () => ({
-      conflict: await failure(moveItems(payload, { items: [pageRef(page.id)], toFolder: news.id })),
-      cycle: await failure(moveItems(payload, { items: [folderRef(top.id)], toFolder: child.id })),
+      conflict: await failure(
+        moveItems(payload, { overrideAccess: true, items: [pageRef(page.id)], toFolder: news.id })
+      ),
+      cycle: await failure(
+        moveItems(payload, { overrideAccess: true, items: [folderRef(top.id)], toFolder: child.id })
+      ),
       stale: await failure(
         moveItems(payload, {
+          overrideAccess: true,
           items: [{ ...pageRef(page.id), expected: { orderKey: "not-the-key", parentId: top.id } }],
           toFolder: news.id,
         })
@@ -608,11 +647,16 @@ describe("move apply", () => {
     const seen = { orderKey: before.orderKey, parentId: before.folder };
 
     await moveItems(payload, {
+      overrideAccess: true,
       items: [{ ...pageRef(page.id), expected: seen }],
       toFolder: one.id,
     });
     await expect(
-      moveItems(payload, { items: [{ ...pageRef(page.id), expected: seen }], toFolder: two.id })
+      moveItems(payload, {
+        overrideAccess: true,
+        items: [{ ...pageRef(page.id), expected: seen }],
+        toFolder: two.id,
+      })
     ).rejects.toMatchObject({ status: 409 });
 
     expect((await readMainRow(payload, page.id)).folder).toBe(one.id);
@@ -651,7 +695,11 @@ describe("move apply", () => {
     const localesBefore = await readRowLocales();
     expect(localesBefore).toEqual({ slug: ["en"], title: ["en"] });
 
-    await moveItems(payload, { items: [pageRef(page.id)], toFolder: target.id });
+    await moveItems(payload, {
+      overrideAccess: true,
+      items: [pageRef(page.id)],
+      toFolder: target.id,
+    });
 
     const latest = await readLatestVersion(payload, page.id);
     expect(latest.version.folder).toBe(target.id);
@@ -689,6 +737,7 @@ describe("move apply", () => {
     const loose = await createPage(payload, { slug: "loose" });
 
     const result = await moveItems(payload, {
+      overrideAccess: true,
       after: pageRef(first.id),
       items: [pageRef(loose.id)],
     });
@@ -720,7 +769,11 @@ describe("move apply", () => {
     const outer = await createFolder(payload, { slug: "outer" });
     const inner = await createFolder(payload, { parent: outer.id, slug: "inner" });
 
-    await moveItems(payload, { items: [folderRef(outer.id)], toFolder: nested.id });
+    await moveItems(payload, {
+      overrideAccess: true,
+      items: [folderRef(outer.id)],
+      toFolder: nested.id,
+    });
 
     for (const id of [outer.id, inner.id]) {
       expect(await readFolderRow(payload, id)).toMatchObject({
@@ -730,7 +783,11 @@ describe("move apply", () => {
       });
     }
 
-    await moveItems(payload, { items: [folderRef(outer.id)], toFolder: null });
+    await moveItems(payload, {
+      overrideAccess: true,
+      items: [folderRef(outer.id)],
+      toFolder: null,
+    });
 
     for (const id of [outer.id, inner.id]) {
       expect(await readFolderRow(payload, id)).toMatchObject({
@@ -753,6 +810,7 @@ describe("move apply", () => {
     const page = await createPage(payload, { slug: "a-page" });
 
     const result = await moveItems(payload, {
+      overrideAccess: true,
       items: [postRef(post.id), pageRef(page.id)],
       toFolder: target.id,
     });
@@ -770,7 +828,12 @@ describe("move apply", () => {
     req.locale = "de";
     req.context = { marker: "caller" };
 
-    await moveItems(payload, { items: [pageRef(page.id)], req, toFolder: target.id });
+    await moveItems(payload, {
+      overrideAccess: true,
+      items: [pageRef(page.id)],
+      req,
+      toFolder: target.id,
+    });
 
     expect(req.locale).toBe("de");
     expect(req.context).toEqual({ marker: "caller" });
@@ -785,7 +848,9 @@ describe("move apply", () => {
     );
 
     await Promise.all(
-      pages.map((page) => moveItems(payload, { items: [pageRef(page.id)], toFolder: target.id }))
+      pages.map((page) =>
+        moveItems(payload, { overrideAccess: true, items: [pageRef(page.id)], toFolder: target.id })
+      )
     );
 
     const keys = await Promise.all(
@@ -832,9 +897,11 @@ describe("move apply", () => {
     }
 
     const refuse = async (post: { id: number }) =>
-      (await moveItems(payload, { items: [postRef(post.id)], toFolder: null }).catch(
-        (error: unknown) => error as MoveBlockedError
-      )) as MoveBlockedError;
+      (await moveItems(payload, {
+        overrideAccess: true,
+        items: [postRef(post.id)],
+        toFolder: null,
+      }).catch((error: unknown) => error as MoveBlockedError)) as MoveBlockedError;
     const refusedDotted = await refuse(dottedPost);
     const refusedAdmin = await refuse(adminPost);
     const refusedApi = await refuse(apiPost);
@@ -865,7 +932,11 @@ describe("move apply", () => {
       },
     ]);
 
-    const result = await moveItems(payload, { items: [postRef(legacyPost.id)], toFolder: null });
+    const result = await moveItems(payload, {
+      overrideAccess: true,
+      items: [postRef(legacyPost.id)],
+      toFolder: null,
+    });
 
     expect(result.moved).toEqual([postRef(legacyPost.id)]);
     expect(await readFullPath(payload, "posts", legacyPost.id)).toBe("/About");
@@ -894,6 +965,7 @@ describe("move apply", () => {
       });
 
       const result = await moveItems(payload, {
+        overrideAccess: true,
         items: [folderRef(team.id), pageRef(loose.id)],
         toFolder: target.id,
       });
@@ -926,6 +998,7 @@ describe("move apply", () => {
       })) as unknown as { id: number };
 
       const result = await moveItems(payload, {
+        overrideAccess: true,
         items: [{ collection: "notes", id: note.id }],
         toFolder: target.id,
       });
@@ -974,6 +1047,7 @@ describe("move apply", () => {
       })) as unknown as { id: number };
 
       const result = await moveItems(payload, {
+        overrideAccess: true,
         after: { collection: "notes", id: first.id },
         items: [{ collection: "notes", id: loose.id }],
       });
@@ -1012,7 +1086,11 @@ describe("move apply", () => {
         const target = await createFolder(payload, { slug: "docs" });
         const page = await createPage(payload, { slug: "page" });
 
-        await moveItems(payload, { items: [pageRef(page.id)], toFolder: target.id });
+        await moveItems(payload, {
+          overrideAccess: true,
+          items: [pageRef(page.id)],
+          toFolder: target.id,
+        });
 
         expect(recorded).toHaveLength(1);
         expect(recorded[0].reason).toBe("move");

@@ -776,7 +776,12 @@ describe("what a save makes live without naming it", () => {
     expect(oldVersion).toBeDefined();
 
     const error = await catchError(
-      payload.restoreVersion({ collection: "pages", depth: 0, id: oldVersion?.id as never })
+      payload.restoreVersion({
+        collection: "pages",
+        depth: 0,
+        id: oldVersion?.id as never,
+        overrideAccess: true,
+      })
     );
 
     expect(error.status).toBe(400);
@@ -817,7 +822,12 @@ describe("what a save makes live without naming it", () => {
     expect(rootVersion).toBeDefined();
 
     const error = await catchError(
-      payload.restoreVersion({ collection: "pages", depth: 0, id: rootVersion?.id as never })
+      payload.restoreVersion({
+        collection: "pages",
+        depth: 0,
+        id: rootVersion?.id as never,
+        overrideAccess: true,
+      })
     );
 
     expect(fieldErrors(error)).toEqual([

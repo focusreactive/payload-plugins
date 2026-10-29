@@ -1,14 +1,10 @@
-import type { Access, CollectionConfig } from "payload";
+import type { CollectionConfig } from "payload";
 
-// The drafter role may save drafts but not publish; publish rights are tested from P-20.
-const refuseDrafterPublish: Access = ({ data, req }) => {
-  const isDrafter = (req.user as { role?: string } | null)?.role === "drafter";
-  return !(isDrafter && data?._status === "published");
-};
+import { pageUpdateAccess } from "../access/roles.js";
 
 export const Pages: CollectionConfig = {
   slug: "pages",
-  access: { update: refuseDrafterPublish },
+  access: { update: pageUpdateAccess },
   admin: { useAsTitle: "title" },
   fields: [
     { name: "title", type: "text", localized: true, required: true },

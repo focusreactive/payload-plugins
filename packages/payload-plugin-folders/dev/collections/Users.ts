@@ -17,5 +17,12 @@ export const Users: CollectionConfig = {
       required: true,
       saveToJWT: true,
     },
+    {
+      // The folder an editorLimited user may work in, with everything beneath it.
+      name: "limitedFolder",
+      type: "relationship",
+      admin: { condition: (data) => data?.role === "editorLimited" },
+      relationTo: "folders",
+    },
   ],
 };

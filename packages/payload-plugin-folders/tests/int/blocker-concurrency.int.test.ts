@@ -95,6 +95,7 @@ const runCrossedMoves = async (
   const expected = { orderKey: null, parentId: null };
   const [first, second] = await Promise.allSettled([
     moveItems(payload, {
+      overrideAccess: true,
       items: [
         {
           ...folderRef(x.id),
@@ -104,6 +105,7 @@ const runCrossedMoves = async (
       toFolder: y.id,
     }),
     moveItems(secondPayload, {
+      overrideAccess: true,
       items: [
         {
           ...folderRef(y.id),
@@ -187,11 +189,13 @@ describe("crossed folder moves", () => {
       const result = await runCrossedMoves(payload);
       expectCycleRefusal(expectExactlyOneApplied(result));
       // A third move runs on whatever tree the crossing left; it may be refused, never fail otherwise.
-      await moveItems(payload, { items: [folderRef(base.id)], toFolder: result.x.id }).catch(
-        (error: unknown) => {
-          expect(error).toBeInstanceOf(MoveBlockedError);
-        }
-      );
+      await moveItems(payload, {
+        overrideAccess: true,
+        items: [folderRef(base.id)],
+        toFolder: result.x.id,
+      }).catch((error: unknown) => {
+        expect(error).toBeInstanceOf(MoveBlockedError);
+      });
 
       await expectEveryFolderReachesRoot(payload);
       await clearTree(payload);
@@ -251,10 +255,12 @@ describe("parallel writers into one folder", () => {
     const storedKey = page.orderKey as string;
 
     const outdatedKey = await moveItems(payload, {
+      overrideAccess: true,
       items: [{ ...pageRef(page.id), expected: { orderKey: "zzzz", parentId: source.id } }],
       toFolder: target.id,
     }).catch((error: unknown) => error as MoveBlockedError);
     const outdatedParent = await moveItems(payload, {
+      overrideAccess: true,
       items: [{ ...pageRef(page.id), expected: { orderKey: storedKey, parentId: target.id } }],
       toFolder: target.id,
     }).catch((error: unknown) => error as MoveBlockedError);
@@ -277,6 +283,7 @@ describe("parallel writers into one folder", () => {
 
     // The current state is accepted.
     await moveItems(payload, {
+      overrideAccess: true,
       items: [{ ...pageRef(page.id), expected: { orderKey: storedKey, parentId: source.id } }],
       toFolder: target.id,
     });
@@ -295,10 +302,12 @@ describe("parallel writers into one folder", () => {
 
     const [first, second] = await Promise.allSettled([
       moveItems(payload, {
+        overrideAccess: true,
         items: [{ ...pageRef(page.id), expected }],
         toFolder: targetOne.id,
       }),
       moveItems(secondPayload, {
+        overrideAccess: true,
         items: [{ ...pageRef(page.id), expected }],
         toFolder: targetTwo.id,
       }),
@@ -384,8 +393,16 @@ describe("parallel writers into one folder", () => {
     ]);
 
     await Promise.all([
-      moveItems(payload, { after: pageRef(above.id), items: [pageRef(first.id)] }),
-      moveItems(payload, { after: pageRef(above.id), items: [pageRef(second.id)] }),
+      moveItems(payload, {
+        overrideAccess: true,
+        after: pageRef(above.id),
+        items: [pageRef(first.id)],
+      }),
+      moveItems(payload, {
+        overrideAccess: true,
+        after: pageRef(above.id),
+        items: [pageRef(second.id)],
+      }),
     ]);
 
     await expectBothLandBetween(payload, folder.id, {
@@ -414,8 +431,16 @@ describe("parallel writers into one folder", () => {
     ]);
 
     await Promise.all([
-      moveItems(payload, { after: pageRef(above.id), items: [pageRef(first.id)] }),
-      moveItems(payload, { after: pageRef(above.id), items: [pageRef(second.id)] }),
+      moveItems(payload, {
+        overrideAccess: true,
+        after: pageRef(above.id),
+        items: [pageRef(first.id)],
+      }),
+      moveItems(payload, {
+        overrideAccess: true,
+        after: pageRef(above.id),
+        items: [pageRef(second.id)],
+      }),
     ]);
 
     await expectBothLandBetween(payload, folder.id, {

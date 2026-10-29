@@ -302,7 +302,11 @@ describe("moves never touch localized content", () => {
     expect(before.de.blocks[1]).toMatchObject({ body: "Deutscher Text" });
     const rawBefore = await snapshotOf(payload, "pages", id);
 
-    await moveItems(payload, { items: [itemRef("pages", id)], toFolder: target.id });
+    await moveItems(payload, {
+      overrideAccess: true,
+      items: [itemRef("pages", id)],
+      toFolder: target.id,
+    });
 
     for (const locale of ["de", "en"] as const) {
       const after = await readDraftIn(locale);
@@ -343,7 +347,11 @@ describe("moves never touch localized content", () => {
     expect(before.de).toMatchObject({ slug: "hello-de", title: "Hallo" });
     const rawBefore = await snapshotOf(payload, "pages", id);
 
-    await moveItems(payload, { items: [itemRef("pages", id)], toFolder: target.id });
+    await moveItems(payload, {
+      overrideAccess: true,
+      items: [itemRef("pages", id)],
+      toFolder: target.id,
+    });
 
     for (const locale of ["de", "en"] as const) {
       const after = await readPublishedIn(locale);
@@ -391,6 +399,7 @@ describe("moves never touch localized content", () => {
     });
 
     await moveItems(payload, {
+      overrideAccess: true,
       items: [itemRef("articles", articleId), itemRef("pages", pageId)],
       toFolder: target.id,
     });
@@ -438,7 +447,11 @@ describe("moves never touch localized content", () => {
     };
 
     const { writes } = await countDbWrites(payload, () =>
-      moveItems(payload, { items: [folderRef(parent.id)], toFolder: newHome.id })
+      moveItems(payload, {
+        overrideAccess: true,
+        items: [folderRef(parent.id)],
+        toFolder: newHome.id,
+      })
     );
 
     // Not one write to a page collection or its versions, so no row of a page can have changed.

@@ -339,8 +339,13 @@ describe("structure guard", () => {
       structureRevision: rebalanced.structureRevision,
     });
 
-    // The Local API restore overrides access by default, so the guard sees the old key.
-    await payload.restoreVersion({ collection: "pages", depth: 0, id: olderVersion.id });
+    // With access overridden, field access does not strip the old key, so the guard sees it.
+    await payload.restoreVersion({
+      collection: "pages",
+      depth: 0,
+      id: olderVersion.id,
+      overrideAccess: true,
+    });
 
     expect(await readMain(payload, page.id)).toEqual({
       folder: folder.id,

@@ -16,6 +16,11 @@ export type CallEndpointArgs = {
   payload: Payload;
   /** Call without logging in. */
   anonymous?: boolean;
+  /**
+   * Runs the request on the Payload instance cached under this key (`TestPayload.cacheKey`). Without
+   * it Payload opens its own instance on the same database, with its own tree lock and pool.
+   */
+  payloadInstanceCacheKey?: string;
   /** Log in as this user instead of the shared admin test user. */
   user?: { email: string; password: string };
 };
@@ -50,6 +55,7 @@ export const callEndpoint = async <TBody = unknown>({
   method = "GET",
   path,
   payload,
+  payloadInstanceCacheKey,
   user = testUser,
 }: CallEndpointArgs): Promise<EndpointResult<TBody>> => {
   const headers = new Headers({ "Content-Type": "application/json" });
@@ -67,6 +73,7 @@ export const callEndpoint = async <TBody = unknown>({
 
   const response = await handleEndpoints({
     config,
+    payloadInstanceCacheKey,
     request: new Request(`http://localhost:4078/api${path}`, {
       body: method === "GET" || body === undefined ? undefined : JSON.stringify(body),
       headers,

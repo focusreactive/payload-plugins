@@ -111,7 +111,11 @@ const movePublishedPage = async (slug: string) => {
   const staleForm = pickStructure(await readDraft(payload, page.id));
   expect(staleForm.folder).toBe(source.id);
 
-  await moveItems(payload, { items: [pageRef(page.id)], toFolder: target.id });
+  await moveItems(payload, {
+    overrideAccess: true,
+    items: [pageRef(page.id)],
+    toFolder: target.id,
+  });
   const moved = pickStructure(await readMain(payload, page.id));
   expect(moved.folder).toBe(target.id);
   expect(moved.structureRevision).toBeGreaterThan(staleForm.structureRevision);
@@ -181,7 +185,11 @@ describe("stale structure cannot undo a move", () => {
     const draftBeforeMove = await readDraft(payload, page.id);
     expect(draftBeforeMove.folder).toBe(source.id);
 
-    await moveItems(payload, { items: [pageRef(page.id)], toFolder: target.id });
+    await moveItems(payload, {
+      overrideAccess: true,
+      items: [pageRef(page.id)],
+      toFolder: target.id,
+    });
     await payload.update({
       collection: "pages",
       data: { _status: "published" } as never,
@@ -218,7 +226,11 @@ describe("stale structure cannot undo a move", () => {
       overrideAccess: true,
     });
 
-    await moveItems(payload, { items: [pageRef(page.id)], toFolder: target.id });
+    await moveItems(payload, {
+      overrideAccess: true,
+      items: [pageRef(page.id)],
+      toFolder: target.id,
+    });
 
     // The schedulePublish job runs exactly this update (payload/src/versions/schedule/job.ts).
     await payload.update({
@@ -274,7 +286,11 @@ describe("stale structure cannot undo a move", () => {
     const preMove = pickStructure(await readDraft(payload, page.id));
     expect(preMove.folder).toBe(source.id);
 
-    await moveItems(payload, { items: [pageRef(page.id)], toFolder: target.id });
+    await moveItems(payload, {
+      overrideAccess: true,
+      items: [pageRef(page.id)],
+      toFolder: target.id,
+    });
     const moved = pickStructure(await readMain(payload, page.id));
     expect(moved.folder).toBe(target.id);
     await patchLatestVersionStructure(
@@ -369,7 +385,11 @@ describe("stale structure cannot undo a move", () => {
     const olderVersion = olderVersions[0];
     expect((olderVersion.version as unknown as Structure).folder).toBe(source.id);
 
-    await moveItems(payload, { items: [pageRef(page.id)], toFolder: target.id });
+    await moveItems(payload, {
+      overrideAccess: true,
+      items: [pageRef(page.id)],
+      toFolder: target.id,
+    });
     const moved = pickStructure(await readMain(payload, page.id));
 
     // The Local API restore skips access, so the guard sees the old folder itself.
@@ -436,7 +456,11 @@ describe("stale structure cannot undo a move", () => {
     const staleForm = pickStructure(await readDraft(payload, second.id));
     expect(staleForm.orderKey).toBe("a5");
 
-    await moveItems(payload, { after: pageRef(first.id), items: [pageRef(outsider.id)] });
+    await moveItems(payload, {
+      overrideAccess: true,
+      after: pageRef(first.id),
+      items: [pageRef(outsider.id)],
+    });
     const rebalanced = pickStructure(await readMain(payload, second.id));
     expect(rebalanced.orderKey).not.toBe("a5");
     expect(rebalanced.structureRevision).toBeGreaterThan(staleForm.structureRevision);
@@ -478,8 +502,16 @@ describe("stale structure cannot undo a move", () => {
     await saveDraft(payload, page.id, "Old draft");
     const staleForm = pickStructure(await readDraft(payload, page.id));
 
-    await moveItems(payload, { items: [pageRef(page.id)], toFolder: middle.id });
-    const result = await moveItems(payload, { items: [pageRef(page.id)], toFolder: target.id });
+    await moveItems(payload, {
+      overrideAccess: true,
+      items: [pageRef(page.id)],
+      toFolder: middle.id,
+    });
+    const result = await moveItems(payload, {
+      overrideAccess: true,
+      items: [pageRef(page.id)],
+      toFolder: target.id,
+    });
     const movedRevision = result.structureRevisions[`pages:${page.id}`];
     expect(movedRevision).toBe(staleForm.structureRevision + 2);
 

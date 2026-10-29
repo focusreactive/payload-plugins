@@ -6,7 +6,7 @@ import type { FolderId, ItemRef, PathChange, ResolvedOptions } from "../types.js
 import { queueAfterPathChange } from "./afterPathChange.js";
 import { readFolderRecord } from "./folderRecords.js";
 import { buildMovePlan, MoveBlockedError } from "./move.js";
-import type { MovePlan, MoveRequest, PlannedMoveItem } from "./move.js";
+import type { MovePlan, MoveRequest, PlannedMoveItem, PlanSettings } from "./move.js";
 import { writeKeyRewrites } from "./orderKeys.js";
 import { getResolvedOptions } from "./runtime.js";
 import { hasLatestVersion, patchLatestVersionStructure } from "./structureWrite.js";
@@ -126,6 +126,9 @@ const settleTypeLocks = async ({
  * check blocks, then writes folders, pages and the revision, and calls `hooks.afterPathChange`
  * with reason `move` after the commit. Any failure rolls everything back and calls no hook.
  *
+ * Unless `overrideAccess` is true, the access checks of spec section 9 run inside the plan, so a
+ * refusal is a `MoveBlockedError` with reason `forbidden` (403) and nothing is written.
+ *
  * Writes go to the database directly, never through the Local API: a move is structure, it must
  * not run page hooks, publish a pending draft or create a version. A page's main row gets
  * `folder`, `orderKey`, `structureRevision` and `updatedAt`, and its latest version only the same
@@ -134,10 +137,13 @@ const settleTypeLocks = async ({
 export const applyMove = async (
   req: PayloadRequest,
   request: MoveRequest,
-  options: ResolvedOptions = getResolvedOptions(req.payload)
+  {
+    options = getResolvedOptions(req.payload),
+    overrideAccess = false,
+  }: { options?: ResolvedOptions } & PlanSettings = {}
 ): Promise<MoveResult> =>
   withTreeLock(req, async () => {
-    const plan = await buildMovePlan(req, options, request);
+    const plan = await buildMovePlan(req, options, request, { overrideAccess });
     if (!plan.preview.ok) {
       throw new MoveBlockedError(plan.preview.blocked);
     }
@@ -202,6 +208,13 @@ export const applyMove = async (
   });
 
 export type MoveItemsArgs = MoveRequest & {
+  /**
+   * Like Payload 4's Local API (4.0.0-beta.5): default false, so the `update` access of every moved
+   * document (and the publish rights a published URL change needs) and `access.move` are checked
+   * as the user of `req`, or `user`, and a refusal throws `MoveBlockedError` with reason
+   * `forbidden`. Pass true for a system call that must not be refused.
+   */
+  overrideAccess?: boolean;
   /** The request to run on, so a caller's transaction and user carry over. Default: a new one. */
   req?: PayloadRequest;
   /** Who moves the items, for `hooks.afterPathChange`; ignored when `req` is given. */
@@ -211,12 +224,12 @@ export type MoveItemsArgs = MoveRequest & {
 /**
  * Moves or reorders items under the tree lock (spec section 6): `{ items, toFolder, position? }`
  * or `{ items, after }`, one or many, kept in the given order. Throws `MoveBlockedError` (a
- * `APIError`) naming the item and the reason when a check refuses, and changes nothing. Does not
- * check access: the endpoints do (P-20).
+ * `APIError`) naming the item and the reason when a check refuses, and changes nothing. Checks
+ * access unless `overrideAccess: true`; the REST endpoints always do.
  */
 export const moveItems = async (payload: Payload, args: MoveItemsArgs): Promise<MoveResult> => {
-  const { req: callerRequest, user, ...request } = args;
+  const { overrideAccess, req: callerRequest, user, ...request } = args;
   const req = callerRequest ?? (await createPayloadRequest({ payload, req: {}, user }));
 
-  return applyMove(req, request as MoveRequest);
+  return applyMove(req, request as MoveRequest, { overrideAccess });
 };

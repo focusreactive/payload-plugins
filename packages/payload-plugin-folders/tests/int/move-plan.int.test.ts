@@ -42,7 +42,7 @@ const pageRef = (id: number) => ({ collection: "pages", id });
 const postRef = (id: number) => ({ collection: "posts", id });
 
 const plan = async (payload: Payload, request: MoveRequest) =>
-  planMove(await createTestRequest(payload), request);
+  planMove(await createTestRequest(payload), request, { overrideAccess: true });
 
 /** Posts written without the plugin's hooks: each carries a slug and a key, which is all the tree reads. */
 const createPostsInside = async (payload: Payload, folderId: number, count: number) => {

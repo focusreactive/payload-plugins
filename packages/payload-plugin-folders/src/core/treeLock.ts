@@ -419,13 +419,19 @@ export const touchTreeState = async (req: PayloadRequest): Promise<void> => {
   }
 };
 
+/** `folders-tree-state.revision`: what the admin compares to tell that the tree changed. */
+export const readRevision = async (req: PayloadRequest): Promise<number> => {
+  const current = (await req.payload.db.findGlobal({ req, slug: treeStateSlug as never })) as {
+    revision?: null | number;
+  };
+
+  return current.revision ?? 0;
+};
+
 /** Adds one to `folders-tree-state.revision`; the admin's change detection reads it. */
 export const bumpRevision = async (req: PayloadRequest): Promise<number> => {
   const { payload } = req;
-  const current = (await payload.db.findGlobal({ req, slug: treeStateSlug as never })) as {
-    revision?: null | number;
-  };
-  const revision = (current.revision ?? 0) + 1;
+  const revision = (await readRevision(req)) + 1;
   await payload.db.updateGlobal({
     data: { revision },
     req,

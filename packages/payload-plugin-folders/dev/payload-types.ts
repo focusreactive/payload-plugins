@@ -220,6 +220,7 @@ export interface Folder {
 export interface User {
   id: number;
   role: 'admin' | 'editor' | 'drafter' | 'editorLimited';
+  limitedFolder?: (number | null) | Folder;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -557,6 +558,7 @@ export interface PostsSelect<T extends boolean = true> {
  */
 export interface UsersSelect<T extends boolean = true> {
   role?: T;
+  limitedFolder?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;

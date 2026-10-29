@@ -10,9 +10,15 @@ import type {
   ResolvedPageCollection,
 } from "../types.js";
 import { checkAllowedTypes, describeAllowedTypes, lockSourceOf } from "./allowedTypes.js";
-import { planFolderPaths, toFolderRecord, wouldCreateCycle } from "./folderRecords.js";
+import {
+  normalizeFolderReference,
+  planFolderPaths,
+  toFolderRecord,
+  wouldCreateCycle,
+} from "./folderRecords.js";
 import type { FolderRecord } from "./folderRecords.js";
 import { getDefaultLocaleKey, getFolderLocaleKeys, noLocaleKey } from "./locales.js";
+import { findForbiddenMoves } from "./moveAccess.js";
 import { planKeysForInsert } from "./orderKeys.js";
 import type { InsertPlan } from "./orderKeys.js";
 import { effectiveSegmentsOf, isPublishedInLocale, readPageRows } from "./pageRecords.js";
@@ -185,6 +191,63 @@ const toLocaleOrNull = (key: string): string | null => (key === noLocaleKey ? nu
 
 const sampleLimit = 5;
 
+/**
+ * The page URLs a set of path changes touches, counted the way a preview reports them: pages
+ * published in a locale their URL changes in, the same counted per locale, and pages that change
+ * only where they are not published. Folder paths are not page URLs and are left out.
+ */
+export const summarizePageChanges = (
+  changes: PathChange[]
+): {
+  publishedChanges: PathChange[];
+  samples: MovePreview["samples"];
+  urlChanges: MovePreview["urlChanges"];
+} => {
+  const pageChanges = changes.filter((change) => change.kind === "page");
+  const publishedIds = new Set<string>();
+  const draftIds = new Set<string>();
+  let publishedAcrossLocales = 0;
+  for (const change of pageChanges) {
+    const key = itemKey(change);
+    if (change.published) {
+      publishedIds.add(key);
+      publishedAcrossLocales += 1;
+    } else {
+      draftIds.add(key);
+    }
+  }
+  const draftOnly = [...draftIds].filter((key) => !publishedIds.has(key)).length;
+  const publishedChanges = pageChanges.filter((change) => change.published);
+  const samples = [...publishedChanges, ...pageChanges.filter((change) => !change.published)]
+    .filter(
+      (change): change is PathChange & { from: string; to: string } =>
+        change.from !== null && change.to !== null
+    )
+    .slice(0, sampleLimit)
+    .map((change) => ({
+      collection: change.collection,
+      from: change.from,
+      id: change.id,
+      locale: change.locale,
+      to: change.to,
+    }));
+
+  return {
+    publishedChanges,
+    samples,
+    urlChanges: { draftOnly, published: publishedIds.size, publishedAcrossLocales },
+  };
+};
+
+export type PlanSettings = {
+  /**
+   * Default false, as Payload 4's Local API: the collections' `update` access, and `access.move`,
+   * are asked as the user of `req` (spec section 9), and a refusal is a `forbidden` block. True
+   * checks no access, for the plugin's own system calls.
+   */
+  overrideAccess?: boolean;
+};
+
 /** A moved item's rows, read once. */
 type Subject = {
   folder: FolderRecord | null;
@@ -263,13 +326,19 @@ const pagePathIn = ({
  * items) answer alone. The rest run for every item, and the first refusal of an item is the one
  * reported for it. `droppedItems` lists what moves with its folder instead of on its own.
  *
- * A malformed request (no items, an unknown collection, both or neither of `toFolder` and `after`)
- * throws a 400 instead of returning a preview.
+ * A malformed request (no items, an unknown collection, both or neither of `toFolder` and `after`,
+ * a `toFolder` that is not a folder id or `null`, an `after` item that is also selected) throws a
+ * 400 instead of returning a preview.
+ *
+ * Unless `overrideAccess` is true, the access checks of spec section 9 run last, once every other
+ * check passed and the order keys are known, because the access functions are asked about the
+ * order key the item gets.
  */
 export const buildMovePlan = async (
   req: PayloadRequest,
   options: ResolvedOptions,
-  request: MoveRequest
+  request: MoveRequest,
+  { overrideAccess = false }: PlanSettings = {}
 ): Promise<MovePlan> => {
   const { payload } = req;
   const foldersSlug = options.folders.slug;
@@ -286,6 +355,9 @@ export const buildMovePlan = async (
   const hasToFolder = request.toFolder !== undefined;
   if (hasAfter === hasToFolder) {
     throw badRequest("Name the target with either `toFolder` or `after`");
+  }
+  if (hasToFolder && normalizeFolderReference(request.toFolder).invalid) {
+    throw badRequest("Use null for the top level of the tree: 0 is not a folder");
   }
   for (const item of request.items) {
     if (item.collection !== foldersSlug && !options.collections[item.collection]) {
@@ -426,17 +498,8 @@ export const buildMovePlan = async (
   let targetId: FolderId | null;
   if (hasAfter && request.after) {
     const { after } = request;
-    if (
-      subjectByKey.has(itemKey(after)) ||
-      requested.some((item) => itemKey(item) === itemKey(after))
-    ) {
-      block(
-        firstRef,
-        "stale",
-        `${staleMessage} The item to place the selection after is part of the selection.`
-      );
-
-      return finish(null, null);
+    if (requested.some((item) => itemKey(item) === itemKey(after))) {
+      throw badRequest("The item to place the selection after cannot be part of the selection");
     }
     let afterParent: FolderId | null | undefined;
     if (after.collection === foldersSlug) {
@@ -929,24 +992,27 @@ export const buildMovePlan = async (
     });
   }
 
-  // Counts and samples.
-  const allChanges = items.flatMap((item) => item.changes);
-  const pageChanges = allChanges.filter((change) => change.kind === "page");
-  const publishedIds = new Set<string>();
-  const draftIds = new Set<string>();
-  let publishedAcrossLocales = 0;
-  for (const change of pageChanges) {
-    const key = itemKey(change);
-    if (change.published) {
-      publishedIds.add(key);
-      publishedAcrossLocales += 1;
-    } else {
-      draftIds.add(key);
+  if (!overrideAccess) {
+    const forbidden = await findForbiddenMoves({
+      items,
+      labelOf: (ref) => labelOf(subjectByKey.get(itemKey(ref)) as Subject),
+      options,
+      req,
+      targetId,
+    });
+    if (forbidden.length > 0) {
+      for (const refusal of forbidden) {
+        blocked.push(refusal);
+        blockedKeys.add(itemKey(refusal.item));
+      }
+
+      return finish(targetId, target, { droppedItems });
     }
   }
-  const draftOnly = [...draftIds].filter((key) => !publishedIds.has(key)).length;
 
-  const publishedChanges = pageChanges.filter((change) => change.published);
+  // Counts and samples.
+  const allChanges = items.flatMap((item) => item.changes);
+  const { publishedChanges, samples, urlChanges } = summarizePageChanges(allChanges);
   const redirectRowsToWrite = redirects
     ? items.reduce(
         (sum, item) =>
@@ -961,19 +1027,6 @@ export const buildMovePlan = async (
       )
     : 0;
   const orderKeys = Object.fromEntries(items.map((item) => [itemKey(item.ref), item.orderKey]));
-  const samples = [...publishedChanges, ...pageChanges.filter((change) => !change.published)]
-    .filter(
-      (change): change is PathChange & { from: string; to: string } =>
-        change.from !== null && change.to !== null
-    )
-    .slice(0, sampleLimit)
-    .map((change) => ({
-      collection: change.collection,
-      from: change.from,
-      id: change.id,
-      locale: change.locale,
-      to: change.to,
-    }));
 
   const preview: MovePreview = {
     blocked,
@@ -987,11 +1040,7 @@ export const buildMovePlan = async (
     redirectRowsToWrite,
     samples,
     targetFolderId: targetId,
-    urlChanges: {
-      draftOnly,
-      published: publishedIds.size,
-      publishedAcrossLocales,
-    },
+    urlChanges,
     warnings,
   };
 
@@ -1009,5 +1058,9 @@ export const buildMovePlan = async (
  * Spec section 5.4 as a preview, without writing: what a move would do, and what blocks it. Reads
  * the options the folders plugin was configured with on `req.payload`.
  */
-export const planMove = async (req: PayloadRequest, request: MoveRequest): Promise<MovePreview> =>
-  (await buildMovePlan(req, getResolvedOptions(req.payload), request)).preview;
+export const planMove = async (
+  req: PayloadRequest,
+  request: MoveRequest,
+  settings: PlanSettings = {}
+): Promise<MovePreview> =>
+  (await buildMovePlan(req, getResolvedOptions(req.payload), request, settings)).preview;

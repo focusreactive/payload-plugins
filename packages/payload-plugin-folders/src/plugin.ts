@@ -7,6 +7,7 @@ import { buildFolderOperationsCollection } from "./collections/folderOperations.
 import { buildFolderRedirectsCollection } from "./collections/folderRedirects.js";
 import { buildFoldersCollection } from "./collections/folders.js";
 import { pluginSlug } from "./constants.js";
+import { buildFoldersEndpoints } from "./endpoints/index.js";
 import { addPageFields } from "./fields/pageFields.js";
 import { buildTreeStateGlobal } from "./globals/treeState.js";
 import {
@@ -65,6 +66,10 @@ export const foldersPlugin = definePlugin<FoldersPluginOptions>({
     return {
       ...config,
       db: database,
+      endpoints: [
+        ...(config.endpoints ?? []),
+        ...(resolved.disabled ? [] : buildFoldersEndpoints(resolved)),
+      ],
       collections: [
         ...pageCollections,
         buildFoldersCollection(resolved),

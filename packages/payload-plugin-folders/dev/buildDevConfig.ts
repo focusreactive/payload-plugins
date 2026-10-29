@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { buildConfig } from "payload";
 import type { CollectionConfig, Config } from "payload";
 
+import { adminOnlyRepair, folderUpdateAccess } from "./access/roles.js";
 import { Pages } from "./collections/Pages.js";
 import { Posts } from "./collections/Posts.js";
 import { Users } from "./collections/Users.js";
@@ -67,6 +68,11 @@ export const buildDevConfig = ({
       foldersPlugin({
         collections: { pages: true, posts: { label: "Blog post" } },
         ...foldersOptions,
+        access: { repair: adminOnlyRepair, ...foldersOptions?.access },
+        folders: {
+          ...foldersOptions?.folders,
+          access: { update: folderUpdateAccess, ...foldersOptions?.folders?.access },
+        },
       }),
       redirectsPlugin({ collections: ["pages", "posts"] }),
     ],

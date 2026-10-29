@@ -52,6 +52,8 @@ type SegmentConflictArgs = {
   segment: string;
   /** The page being saved, which never conflicts with itself. */
   self: PageRef | null;
+  /** The folder being renamed, whose own path is not a clash with itself. */
+  selfFolder?: FolderId;
 };
 
 /**
@@ -136,6 +138,7 @@ export const findSegmentConflict = async ({
   req,
   segment,
   self,
+  selfFolder,
 }: SegmentConflictArgs): Promise<SegmentConflict | null> => {
   const { payload } = req;
   const path = `${folderPathIn(folder, locale, options, payload)}/${segment}`;
@@ -147,7 +150,12 @@ export const findSegmentConflict = async ({
     pagination: false,
     req,
     select: { id: true },
-    where: { fullPath: { equals: path } },
+    where: {
+      and: [
+        { fullPath: { equals: path } },
+        ...(selfFolder === undefined ? [] : [{ id: { not_equals: selfFolder } }]),
+      ],
+    },
   });
   if (folderClash.docs.length > 0) {
     return { kind: "folder", path };

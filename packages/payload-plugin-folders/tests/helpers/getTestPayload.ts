@@ -26,6 +26,8 @@ export const testPoolMaxConnections = 4;
 export type TestDatabaseKind = "postgres" | "sqlite";
 
 export type TestPayload = {
+  /** The key this instance is cached under; REST helpers pass it so a request runs on this instance. */
+  cacheKey: string;
   config: SanitizedConfig;
   databaseKind: TestDatabaseKind;
   /** Destroys the Payload instance and removes this file's database. */
@@ -137,9 +139,11 @@ export const getTestPayload = async ({
     });
     // getPayload caches instances by key and destroy() does not clear the cache, so a shared
     // key would hand a second call in the same file the destroyed first instance.
-    const payload = await getPayload({ config, key: randomUUID() });
+    const cacheKey = randomUUID();
+    const payload = await getPayload({ config, key: cacheKey });
 
     return {
+      cacheKey,
       config,
       databaseKind,
       destroy: async () => {
