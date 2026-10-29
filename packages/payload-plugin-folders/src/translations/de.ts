@@ -22,6 +22,7 @@ export const de: FoldersTranslations = {
     noPage: "keine Seite",
     noPageHint: "Dieser Ordner hat noch keine Startseite",
     noUrl: "Noch keine URL",
+    outOfDate: "Diese Einträge sind möglicherweise veraltet.",
     retry: "Erneut versuchen",
     rootPage: "Startseite",
     rootPageHint: "Startseite: ihre URL ist die URL des Ordners",

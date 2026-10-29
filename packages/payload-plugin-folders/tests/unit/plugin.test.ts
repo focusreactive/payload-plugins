@@ -101,7 +101,7 @@ describe("foldersPlugin", () => {
 
     expect(folders?.custom?.[pluginSlug]).toEqual({
       pageSize: 50,
-      typeLabels: { pages: "Landing page" },
+      typeLabels: { pages: { explicit: true, label: "Landing page" } },
     });
   });
 
@@ -126,5 +126,29 @@ describe("foldersPlugin", () => {
       "Dieser Ordner konnte nicht geladen werden"
     );
     expect(translations.en?.foldersTree?.noPage).toBe("no page");
+  });
+
+  it("gives every supported admin language the plugin's strings, in English where it has none", async () => {
+    const config = buildHostConfig();
+    config.i18n = {
+      supportedLanguages: { de: {}, en: {}, fr: {} },
+      translations: {
+        fr: { custom: { greeting: "Bonjour" }, foldersTree: { noPage: "sans page" } },
+      },
+    } as never;
+
+    const result = await foldersPlugin({ collections: { pages: true } as never })(config);
+
+    const translations = result.i18n?.translations as unknown as Record<
+      string,
+      Record<string, Record<string, string>>
+    >;
+    expect(translations.fr?.foldersTree?.loadError).toBe("Could not load this folder");
+    // What the host set for fr wins, and its other namespaces stay.
+    expect(translations.fr?.foldersTree?.noPage).toBe("sans page");
+    expect(translations.fr?.custom).toEqual({ greeting: "Bonjour" });
+    expect(translations.de?.foldersTree?.loadError).toBe(
+      "Dieser Ordner konnte nicht geladen werden"
+    );
   });
 });

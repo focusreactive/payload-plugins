@@ -183,12 +183,13 @@ export const TreeRow = ({
               </span>
             ) : null}
             {isFolder && item.childCount !== undefined ? (
-              <span
-                aria-label={translate("childCount", { count: item.childCount })}
-                className="fr-folders-count"
-                data-testid="child-count"
-              >
-                {item.childCount}
+              <span className="fr-folders-count">
+                <span aria-hidden="true" data-testid="child-count">
+                  {item.childCount}
+                </span>
+                <span className="fr-folders-visually-hidden">
+                  {translate("childCount", { count: item.childCount })}
+                </span>
               </span>
             ) : null}
           </div>

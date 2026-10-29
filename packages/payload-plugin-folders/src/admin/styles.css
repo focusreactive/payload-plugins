@@ -261,6 +261,27 @@
     background-clip: content-box;
   }
 
+  .fr-folders-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .fr-folders-count {
+    position: relative;
+  }
+
+  .fr-folders-muted {
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-medium-font-size);
+  }
+
   .fr-folders-error {
     color: var(--color-text-danger);
     font-size: var(--text-body-medium-font-size);

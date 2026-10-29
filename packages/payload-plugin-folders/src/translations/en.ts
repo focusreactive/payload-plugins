@@ -24,6 +24,7 @@ export const en = {
     noPage: "no page",
     noPageHint: "This folder has no root page yet",
     noUrl: "No URL yet",
+    outOfDate: "These rows may be out of date.",
     retry: "Try again",
     rootPage: "Root page",
     rootPageHint: "Root page: its URL is the folder's URL",

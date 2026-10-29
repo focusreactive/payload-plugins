@@ -9,6 +9,7 @@ import {
   useFoldersTranslation,
   useLocaleCode,
   useRouter,
+  useUserId,
 } from "../compat.js";
 import { getSharedTreeStore, revisionPollIntervalMs } from "../store.js";
 import { Tree } from "../Tree/Tree.js";
@@ -35,16 +36,17 @@ export const TreeViewClient = ({
   const { adminRoute, apiBaseUrl } = useAdminRoutes();
   const { language, translate } = useFoldersTranslation();
   const locale = useLocaleCode() ?? initialLocale;
+  const userId = useUserId();
   const [isConfigured, setIsConfigured] = useState(false);
 
   // Configuring resets the cache when the locale changed, which tells every subscriber, so it
   // happens in an effect and the tree mounts only afterwards.
   useEffect(() => {
-    store.configure({ baseUrl: apiBaseUrl, locale, pageSize });
+    store.configure({ baseUrl: apiBaseUrl, locale, pageSize, userId });
     setIsConfigured(true);
     // Coming back to the view (after editing a page, say) shows rows read earlier: read them again.
     void store.refetchVisible();
-  }, [apiBaseUrl, locale, pageSize, store]);
+  }, [apiBaseUrl, locale, pageSize, store, userId]);
 
   useEffect(() => {
     if (!isConfigured) {

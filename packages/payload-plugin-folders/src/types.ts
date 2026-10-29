@@ -121,6 +121,8 @@ export type ResolvedPageCollection = {
   segmentField: string;
   titleField: string;
   label: string;
+  /** The `label` option set it; the admin then does not read the collection's own labels. */
+  labelIsExplicit: boolean;
   /** False when the plugin has to add the segment field. */
   segmentFieldExists: boolean;
   /** Whether the segment field, and with it `pathSegment`, is localized. */

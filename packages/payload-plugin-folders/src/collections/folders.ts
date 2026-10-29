@@ -166,7 +166,10 @@ export const buildFoldersCollection = (options: ResolvedOptions): CollectionConf
       [pluginSlug]: {
         pageSize: options.admin.pageSize,
         typeLabels: Object.fromEntries(
-          pageCollectionEntries.map((pageCollection) => [pageCollection.slug, pageCollection.label])
+          pageCollectionEntries.map((pageCollection) => [
+            pageCollection.slug,
+            { explicit: pageCollection.labelIsExplicit, label: pageCollection.label },
+          ])
         ),
       },
     },

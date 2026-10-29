@@ -250,6 +250,7 @@ const resolvePageCollection = ({
     problems,
     resolved: {
       label: resolveLabel(collection, options.label),
+      labelIsExplicit: options.label !== undefined,
       segmentField,
       segmentFieldExists: existingSegmentField !== undefined,
       segmentFieldWasUnique,

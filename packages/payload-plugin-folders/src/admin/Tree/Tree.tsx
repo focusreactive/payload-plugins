@@ -5,7 +5,7 @@ import type { Translate } from "../compat.js";
 import type { FolderKey, TreeStore } from "../store.js";
 import { TreeRow } from "./TreeRow.js";
 import { useTreeData } from "./useTreeData.js";
-import type { LoadMoreRowModel, ErrorRowModel } from "./useTreeData.js";
+import type { ErrorRowModel, LoadMoreRowModel, StaleRowModel } from "./useTreeData.js";
 import { indentPerLevel } from "./TreeRow.js";
 
 export type TreeProps = {
@@ -27,6 +27,7 @@ const LoadingRow = ({ level, label }: { label: string; level: number }) => (
   <div
     aria-busy="true"
     aria-label={label}
+    aria-level={level + 1}
     className="fr-folders-row fr-folders-row--status"
     data-testid="loading-row"
     role="row"
@@ -50,7 +51,12 @@ const ErrorRow = ({
   row: ErrorRowModel;
   translate: Translate;
 }) => (
-  <div className="fr-folders-row fr-folders-row--status" data-testid="error-row" role="row">
+  <div
+    aria-level={row.level + 1}
+    className="fr-folders-row fr-folders-row--status"
+    data-testid="error-row"
+    role="row"
+  >
     <div
       className="fr-folders-cell fr-folders-cell--wide"
       role="gridcell"
@@ -59,6 +65,36 @@ const ErrorRow = ({
       <span className="fr-folders-error" role="alert">
         {translate("loadError")}
         {row.message === "" ? "" : `: ${row.message}`}
+      </span>
+      <Button buttonStyle="secondary" onClick={() => onRetry(row.parentKey)} size="medium">
+        {translate("retry")}
+      </Button>
+    </div>
+  </div>
+);
+
+const StaleRow = ({
+  onRetry,
+  row,
+  translate,
+}: {
+  onRetry: (parentKey: FolderKey) => void;
+  row: StaleRowModel;
+  translate: Translate;
+}) => (
+  <div
+    aria-level={row.level + 1}
+    className="fr-folders-row fr-folders-row--status"
+    data-testid="stale-row"
+    role="row"
+  >
+    <div
+      className="fr-folders-cell fr-folders-cell--wide"
+      role="gridcell"
+      style={{ paddingInlineStart: levelPadding(row.level) }}
+    >
+      <span className="fr-folders-muted" title={row.message}>
+        {translate("outOfDate")}
       </span>
       <Button buttonStyle="secondary" onClick={() => onRetry(row.parentKey)} size="medium">
         {translate("retry")}
@@ -78,7 +114,12 @@ const LoadMoreRow = ({
   row: LoadMoreRowModel;
   translate: Translate;
 }) => (
-  <div className="fr-folders-row fr-folders-row--status" data-testid="load-more-row" role="row">
+  <div
+    aria-level={row.level + 1}
+    className="fr-folders-row fr-folders-row--status"
+    data-testid="load-more-row"
+    role="row"
+  >
     <div
       className="fr-folders-cell fr-folders-cell--wide"
       role="gridcell"
@@ -133,11 +174,14 @@ export const Tree = ({
     [store]
   );
 
+  // The total is unknown while any folder on screen has rows left to load or is still loading.
+  const rowCountIsKnown = !rows.some((row) => row.type === "load-more" || row.type === "loading");
+
   return (
     <div
       aria-colcount={4}
       aria-label={translate("treeLabel")}
-      aria-rowcount={rows.length + 1}
+      aria-rowcount={rowCountIsKnown ? rows.length + 1 : -1}
       className="fr-folders-tree"
       data-testid="tree"
       role="treegrid"
@@ -181,6 +225,9 @@ export const Tree = ({
             }
             case "error": {
               return <ErrorRow key={row.key} onRetry={retry} row={row} translate={translate} />;
+            }
+            case "stale": {
+              return <StaleRow key={row.key} onRetry={retry} row={row} translate={translate} />;
             }
             case "load-more": {
               return (

@@ -97,6 +97,21 @@ describe("flattenTree", () => {
     expect(summary(state)).toEqual(["0:Alpha", "load-more@0"]);
   });
 
+  it("marks a loaded folder whose refresh failed, keeping its rows", () => {
+    const state = stateOf({
+      root: loaded([page(1, "Alpha")], { error: "Bad gateway", stale: true }),
+    });
+
+    expect(summary(state)).toEqual(["0:Alpha", "stale@0"]);
+    expect(flattenTree(state)[1]).toMatchObject({ message: "Bad gateway", type: "stale" });
+  });
+
+  it("does not mark a folder that is only waiting for its next read", () => {
+    const state = stateOf({ root: loaded([page(1, "Alpha")], { stale: true }) });
+
+    expect(summary(state)).toEqual(["0:Alpha"]);
+  });
+
   it("shows an error row, with the message, for a folder whose first read failed", () => {
     const state = stateOf({
       root: { ...loaded([]), error: "The server is down", phase: "error" },

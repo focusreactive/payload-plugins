@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { closeSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
@@ -70,14 +70,73 @@ export const startStockServer = async (): Promise<void> => {
   throw new Error("The stock-list server did not answer on /admin within 3 minutes");
 };
 
-export const stopStockServer = (): void => {
+/** What stopping needs from the machine; tests replace it. */
+export type StopDependencies = {
+  kill: (processId: number, signal: NodeJS.Signals) => void;
+  /** Process ids listening on the stock server's port. */
+  listenerProcessIds: () => number[];
+  /** The process group of a process, or `null` when it is gone. */
+  processGroupOf: (processId: number) => number | null;
+};
+
+const defaultStopDependencies: StopDependencies = {
+  kill: (processId, signal) => process.kill(processId, signal),
+  listenerProcessIds: () => {
+    try {
+      return execFileSync("lsof", ["-tiTCP:4079", "-sTCP:LISTEN"], { encoding: "utf-8" })
+        .split("\n")
+        .map((line) => Number(line.trim()))
+        .filter((processId) => Number.isInteger(processId) && processId > 1);
+    } catch {
+      // lsof exits 1 when nothing listens.
+      return [];
+    }
+  },
+  processGroupOf: (processId) => {
+    try {
+      const group = Number(
+        execFileSync("ps", ["-o", "pgid=", "-p", String(processId)], { encoding: "utf-8" }).trim()
+      );
+
+      return Number.isInteger(group) ? group : null;
+    } catch {
+      return null;
+    }
+  },
+};
+
+/**
+ * Stops the stock-list server named by the PID file, and only that one. A PID file that outlived
+ * its server may name a process that now belongs to someone else, so the group is signalled only
+ * when the saved PID leads the group of the process listening on the server's port.
+ */
+export const stopStockServerFromPidFile = (
+  pidFile: string,
+  dependencies: StopDependencies = defaultStopDependencies
+): boolean => {
   try {
-    const processId = Number(readFileSync(stockServerPidFile, "utf-8").trim());
-    if (Number.isInteger(processId) && processId > 1) {
-      process.kill(-processId, "SIGTERM");
+    const savedProcessId = Number(readFileSync(pidFile, "utf-8").trim());
+    if (Number.isInteger(savedProcessId) && savedProcessId > 1) {
+      const ownsListener = dependencies
+        .listenerProcessIds()
+        .some(
+          (listener) =>
+            listener === savedProcessId || dependencies.processGroupOf(listener) === savedProcessId
+        );
+      if (ownsListener) {
+        dependencies.kill(-savedProcessId, "SIGTERM");
+
+        return true;
+      }
     }
   } catch {
-    // Already gone.
+    // No PID file, or the process is gone already.
   }
+
+  return false;
+};
+
+export const stopStockServer = (): void => {
+  stopStockServerFromPidFile(stockServerPidFile);
   rmSync(stockServerPidFile, { force: true });
 };

@@ -1,6 +1,7 @@
 import {
   PayloadLink,
   SetStepNav,
+  useAuth,
   useConfig,
   useLocale,
   useParams,
@@ -28,6 +29,9 @@ export {
   useRouter,
   useSearchParams,
 };
+
+/** The signed-in user's id, `null` while signed out. */
+export const useUserId = (): number | string | null => useAuth().user?.id ?? null;
 
 /** The admin locale code, or `null` when localization is off (`useLocale` is nullable in 4.x). */
 export const useLocaleCode = (): string | null => useLocale()?.code ?? null;

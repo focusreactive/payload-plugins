@@ -36,8 +36,18 @@ export type ErrorRowModel = {
   type: "error";
 };
 
+/** A loaded folder whose last refresh failed: its rows are shown, and may be out of date. */
+export type StaleRowModel = {
+  key: string;
+  level: number;
+  message: string;
+  parentKey: FolderKey;
+  type: "stale";
+};
+
 export type TreeRowModel =
   | ErrorRowModel
+  | StaleRowModel
   | (ItemRowModel & { type: "item" })
   | LoadingRowModel
   | LoadMoreRowModel;
@@ -87,6 +97,15 @@ export const flattenTree = (state: TreeStoreState): TreeRowModel[] => {
       if (folderKey !== null && isExpanded && expandable && !path.has(folderKey)) {
         visit(folderKey, level + 1, new Set([...path, folderKey]));
       }
+    }
+    if (entry.stale && entry.error !== null) {
+      rows.push({
+        key: `stale:${parentKey}`,
+        level,
+        message: entry.error,
+        parentKey,
+        type: "stale",
+      });
     }
     if (entry.hasMore) {
       rows.push({

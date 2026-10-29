@@ -122,3 +122,31 @@ test("clicking a page opens its edit view", async ({ page }) => {
   await expect(page).toHaveURL(/\/admin\/collections\/pages\/\d+(\?.*)?$/u);
   await expect(page.locator("#field-title")).toHaveValue("Hello World");
 });
+
+test("the tree reports an unknown row count until every folder is fully loaded", async ({
+  page,
+}) => {
+  const tree = page.getByRole("treegrid");
+  await expect(tree).not.toHaveAttribute("aria-rowcount", "-1");
+
+  await expandFolder(page, "Archive");
+  await expect(page.getByRole("button", { name: "Load 100 more" })).toBeVisible();
+  await expect(tree).toHaveAttribute("aria-rowcount", "-1");
+  // Every row has its level, the load-more row included: it sits one level below Archive.
+  await expect(page.getByTestId("load-more-row")).toHaveAttribute("aria-level", "2");
+
+  await page.getByRole("button", { name: "Load 100 more" }).click();
+  await expect(page.locator('[data-kind="page"][data-title^="Archive entry"]')).toHaveCount(
+    archivePageCount
+  );
+  await expect(tree).not.toHaveAttribute("aria-rowcount", "-1");
+});
+
+test("a folder's child count is read as text by a screen reader", async ({ page }) => {
+  const count = folderRow(page, "Archive").locator(".fr-folders-count");
+
+  // The number is for the eye; the sentence is for assistive technology.
+  await expect(count.getByText("150 items")).toHaveCount(1);
+  await expect(count.getByTestId("child-count")).toHaveAttribute("aria-hidden", "true");
+  await expect(count).not.toHaveAttribute("aria-label", /.+/u);
+});

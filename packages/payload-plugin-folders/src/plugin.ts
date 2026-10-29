@@ -72,7 +72,8 @@ export const foldersPlugin = definePlugin<FoldersPluginOptions>({
         : ({
             ...config.i18n,
             translations: mergeFoldersTranslations(
-              config.i18n?.translations as Parameters<typeof mergeFoldersTranslations>[0]
+              config.i18n?.translations as Parameters<typeof mergeFoldersTranslations>[0],
+              Object.keys(config.i18n?.supportedLanguages ?? {})
             ),
           } as Config["i18n"]),
       endpoints: [
