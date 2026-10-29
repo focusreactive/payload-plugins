@@ -49,7 +49,12 @@ afterEach(async () => {
 const pageRef = (id: number) => ({ collection: "pages", id });
 const folderRef = (id: number) => ({ collection: "folders", id });
 
-const request = <TBody>(method: "PATCH" | "POST", path: string, body: unknown, role: Role) =>
+const request = <TBody>(
+  method: "DELETE" | "PATCH" | "POST",
+  path: string,
+  body: unknown,
+  role: Role
+) =>
   callEndpoint<TBody>({
     body,
     config: harness.config,
@@ -426,6 +431,28 @@ describe("the dev app's users cannot raise their own rights", () => {
     expect([200, 403]).toContain(status);
     expect(after.role).toBe("editorLimited");
     expect(after.limitedFolder).toBe(tree.blog.id);
+  });
+
+  it("a non-admin cannot delete a user", async () => {
+    const editor = await readUser("editor");
+
+    const own = await request<ErrorBody>(
+      "DELETE",
+      `/users/${editor.id}`,
+      undefined,
+      "editorLimited"
+    );
+    const self = await request<ErrorBody>(
+      "DELETE",
+      `/users/${(await readUser("editorLimited")).id}`,
+      undefined,
+      "editorLimited"
+    );
+
+    expect(own.status).toBe(403);
+    expect(self.status).toBe(403);
+    expect((await readUser("editor")).email).toBe(emailOf("editor"));
+    expect((await readUser("editorLimited")).email).toBe(emailOf("editorLimited"));
   });
 
   it("a non-admin cannot update another user or create an admin", async () => {

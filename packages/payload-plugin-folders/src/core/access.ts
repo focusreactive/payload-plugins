@@ -12,12 +12,14 @@ export type AccessCheck = {
   data?: Record<string, unknown>;
   /**
    * Makes the check stand for many documents of the collection: the function is asked once, with
-   * the `id` of the first, and a `Where` result is tested with one query on `scope`, which matches
-   * exactly `ids`. Any document the `Where` does not match refuses the whole check. Used where
-   * the documents are alike for access, such as the published pages in one folder.
+   * no `id`, the way Payload asks for a bulk update, and a `Where` result is tested with one query
+   * on `scope`, which matches exactly `ids`. Any document the `Where` does not match refuses the
+   * whole check. A host that decides per document returns a `Where`, which then applies to every
+   * page; an `id` of one page would make the answer depend on which page was picked.
    */
   group?: { ids: FolderId[]; scope: Where };
-  id: FolderId;
+  /** The document asked about; absent for a `group`. */
+  id?: FolderId;
   /** Names the check in the result of `findRefusedChecks`; unique per call. */
   key: string;
   operation: "delete" | "update";
@@ -26,7 +28,8 @@ export type AccessCheck = {
 const isWhere = (result: AccessResult): result is Where =>
   Boolean(result) && typeof result === "object";
 
-const idsOf = (check: AccessCheck): FolderId[] => check.group?.ids ?? [check.id];
+const idsOf = (check: AccessCheck): FolderId[] =>
+  check.group?.ids ?? (check.id === undefined ? [] : [check.id]);
 
 type WhereGroup = { checks: AccessCheck[]; collection: string; scope: Where | null; where: Where };
 
@@ -63,7 +66,7 @@ export const findRefusedChecks = async ({
     const result = await access({
       data: check.data,
       // The id type of the host's database is not known to the plugin's types.
-      id: check.id as number,
+      id: check.id as number | undefined,
       req: nestedRequest,
       slug: check.collection,
     });
@@ -162,7 +165,6 @@ export const isPublishRefusedBeneath = async ({
         collection: page.slug,
         data: { _status: "published", folder },
         group: { ids, scope: { folder: { equals: folder } } },
-        id: ids[0],
         key: `${page.slug}:${folder}`,
         operation: "update",
       });

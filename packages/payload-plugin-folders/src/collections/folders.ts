@@ -11,7 +11,7 @@ import { buildFolderAfterChange } from "../hooks/folders/afterChange.js";
 import { buildFolderBeforeChange } from "../hooks/folders/beforeChange.js";
 import { buildFolderBeforeValidate } from "../hooks/folders/beforeValidate.js";
 import { folderBulkUpdateGuard } from "../hooks/folders/bulkUpdateGuard.js";
-import { recordOverrideAccessHook } from "../hooks/folders/overrideAccess.js";
+import { buildSlugPublishRightsHook } from "../hooks/folders/renamePublishRights.js";
 import { buildAcquireTreeLockHook, releaseUnboundTreeLockHook } from "../hooks/operationLock.js";
 
 import type { ResolvedOptions } from "../types.js";
@@ -69,6 +69,10 @@ export const buildFoldersCollection = (options: ResolvedOptions): CollectionConf
     {
       name: "slug",
       type: "text",
+      // With the plugin disabled the schema stays and no hook runs.
+      ...(options.disabled
+        ? {}
+        : { hooks: { beforeChange: [buildSlugPublishRightsHook(options)] } }),
       index: true,
       localized: localizeSegments,
       ...segmentFieldRequirement(localizeSegments),
@@ -154,11 +158,7 @@ export const buildFoldersCollection = (options: ResolvedOptions): CollectionConf
           afterChange: [buildFolderAfterChange(options)],
           afterOperation: [releaseUnboundTreeLockHook],
           beforeChange: [buildFolderBeforeChange(options)],
-          beforeOperation: [
-            folderBulkUpdateGuard,
-            recordOverrideAccessHook,
-            buildAcquireTreeLockHook(["create", "update"]),
-          ],
+          beforeOperation: [folderBulkUpdateGuard, buildAcquireTreeLockHook(["create", "update"])],
           beforeValidate: [buildFolderBeforeValidate(options)],
         },
     indexes: [{ fields: ["parent", "orderKey"] }],

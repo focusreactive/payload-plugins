@@ -22,7 +22,7 @@ export const Users: CollectionConfig = {
   slug: "users",
   // Without these a signed-in editor could make an admin of themselves: the role and the folder
   // limit decide what the plugin's access checks allow.
-  access: { create: adminOnly, update: adminOrSelf },
+  access: { create: adminOnly, delete: adminOnly, update: adminOrSelf },
   admin: { useAsTitle: "email" },
   auth: true,
   fields: [
