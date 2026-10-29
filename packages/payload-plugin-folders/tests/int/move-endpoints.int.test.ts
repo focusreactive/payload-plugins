@@ -673,3 +673,123 @@ describe("without localization", () => {
     }
   });
 });
+
+describe("POST /folders-tree/move with an expected parent on `after`", () => {
+  /** Contact in about, the blog's post as the sibling to land after. */
+  const setUp = async () => {
+    const { payload } = harness;
+    const tree = await seedTree(payload);
+    const contact = await readStructure(payload, tree.pages.contact.id);
+
+    return { contact, tree };
+  };
+
+  it("lands after the sibling when it is still in the folder the caller saw", async () => {
+    const { payload } = harness;
+    const { tree } = await setUp();
+
+    const { body, status } = await post<MoveResult>("/folders-tree/move", {
+      after: { ...pageRef(tree.blogPost.id), expected: { parentId: tree.blog.id } },
+      items: [pageRef(tree.pages.contact.id)],
+    });
+
+    expect(status).toBe(200);
+    expect(body.moved).toEqual([pageRef(tree.pages.contact.id)]);
+    expect((await readStructure(payload, tree.pages.contact.id)).folder).toBe(tree.blog.id);
+  });
+
+  it("refuses with 409 stale and writes nothing when the sibling moved to another folder", async () => {
+    const { payload } = harness;
+    const { contact, tree } = await setUp();
+    // Someone moves the sibling out of the blog after the caller looked.
+    const sibling = await post<MoveResult>("/folders-tree/move", {
+      items: [pageRef(tree.blogPost.id)],
+      toFolder: tree.about.id,
+    });
+    expect(sibling.status).toBe(200);
+    const revisionBefore = await readTreeRevision(payload);
+    recordedChanges.length = 0;
+
+    const { result, writes } = await countDbWrites(payload, () =>
+      post<ErrorBody>("/folders-tree/move", {
+        after: { ...pageRef(tree.blogPost.id), expected: { parentId: tree.blog.id } },
+        items: [pageRef(tree.pages.contact.id)],
+      })
+    );
+
+    expect(result.status).toBe(409);
+    expect(result.body.errors[0].data?.reason).toBe("stale");
+    expect(result.body.errors[0].message).toContain("Reload and try again");
+    // Signing in writes the user's session; nothing of the tree may be written.
+    expect(writes.filter((write) => write.collection !== "users")).toEqual([]);
+    expect(await readStructure(payload, tree.pages.contact.id)).toEqual(contact);
+    expect(await readTreeRevision(payload)).toBe(revisionBefore);
+    expect(recordedChanges).toEqual([]);
+  });
+
+  it("answers the preview of the same request with ok false and a stale block", async () => {
+    const { tree } = await setUp();
+    await post<MoveResult>("/folders-tree/move", {
+      items: [pageRef(tree.blogPost.id)],
+      toFolder: tree.about.id,
+    });
+
+    const { body, status } = await post<MovePreview>("/folders-tree/move/preview", {
+      after: { ...pageRef(tree.blogPost.id), expected: { parentId: tree.blog.id } },
+      items: [pageRef(tree.pages.contact.id)],
+    });
+
+    expect(status).toBe(200);
+    expect(body.ok).toBe(false);
+    expect(body.blocked.map((block) => block.reason)).toEqual(["stale"]);
+  });
+
+  it("compares the top level as null", async () => {
+    const { payload } = harness;
+    const { tree } = await setUp();
+    const home = await createFolder(payload, { name: "Home", slug: "home" });
+
+    const atTop = await post<MoveResult>("/folders-tree/move", {
+      after: { ...folderRef(home.id), expected: { parentId: null } },
+      items: [pageRef(tree.pages.contact.id)],
+    });
+    const wrong = await post<ErrorBody>("/folders-tree/move", {
+      after: { ...folderRef(home.id), expected: { parentId: tree.blog.id } },
+      items: [pageRef(tree.pages.contact.id)],
+    });
+
+    expect(atTop.status).toBe(200);
+    expect(wrong.status).toBe(409);
+  });
+
+  it("changes nothing for a request that leaves `expected` out", async () => {
+    const { payload } = harness;
+    const { tree } = await setUp();
+    await post<MoveResult>("/folders-tree/move", {
+      items: [pageRef(tree.blogPost.id)],
+      toFolder: tree.about.id,
+    });
+
+    const { status } = await post<MoveResult>("/folders-tree/move", {
+      after: pageRef(tree.blogPost.id),
+      items: [pageRef(tree.pages.contact.id)],
+    });
+
+    // Without an expectation the move lands next to the sibling wherever it is.
+    expect(status).toBe(200);
+    expect((await readStructure(payload, tree.pages.contact.id)).folder).toBe(tree.about.id);
+  });
+
+  it("refuses a malformed `after.expected` with 400", async () => {
+    const { tree } = await setUp();
+    const contact = pageRef(tree.pages.contact.id);
+
+    for (const expected of [{}, { parentId: 0 }, { parentId: "abc" }, "blog", null]) {
+      const { status } = await post<ErrorBody>("/folders-tree/move", {
+        after: { ...pageRef(tree.blogPost.id), expected },
+        items: [contact],
+      });
+      expect(status, JSON.stringify(expected)).toBe(400);
+    }
+  });
+});

@@ -54,9 +54,16 @@ import type { SegmentConflict } from "./uniqueness.js";
 /** What the caller saw when it built the request; a mismatch means the tree moved on (spec section 6). */
 export type ExpectedState = { orderKey: string | null; parentId: FolderId | null };
 
+/**
+ * The sibling a move lands after. `expected.parentId` is the folder the caller saw the sibling in:
+ * when the sibling is somewhere else by the time the move runs, the move is refused as stale
+ * instead of landing next to the sibling in its new folder. Omitted, nothing is compared.
+ */
+export type MoveAnchor = ItemRef & { expected?: Pick<ExpectedState, "parentId"> };
+
 export type MoveTarget =
   | { after?: undefined; position?: "end" | "start"; toFolder: FolderId | null }
-  | { after: ItemRef; position?: undefined; toFolder?: undefined };
+  | { after: MoveAnchor; position?: undefined; toFolder?: undefined };
 
 export type MoveItemInput = ItemRef & { expected?: ExpectedState };
 
@@ -500,6 +507,13 @@ export const buildMovePlan = async (
         "stale",
         `${staleMessage} The item to place the selection after no longer exists.`
       );
+
+      return finish(null, null);
+    }
+    // The caller chose this place because of where the sibling was; a sibling that moved on
+    // would drop the items into a folder the caller never looked at.
+    if (after.expected && !sameParent(after.expected.parentId, afterParent)) {
+      block(firstRef, "stale", `${staleMessage} The item to place the selection after moved.`);
 
       return finish(null, null);
     }

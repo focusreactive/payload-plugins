@@ -3,7 +3,7 @@ import type { Payload, PayloadRequest } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
 import { normalizeFolderReference } from "../core/folderRecords.js";
-import type { MoveItemInput, MoveRequest } from "../core/move.js";
+import type { MoveAnchor, MoveItemInput, MoveRequest } from "../core/move.js";
 import type { FolderId, ItemRef, ResolvedOptions } from "../types.js";
 
 export const badRequest = (message: string): APIError => new APIError(message, 400, null, true);
@@ -123,6 +123,33 @@ const parseMoveItem = (
 };
 
 /**
+ * The `after` of a move: an item, with an optional `expected: { parentId }`, the folder the caller
+ * saw it in (`null` for the top level).
+ */
+const parseAnchor = (payload: Payload, options: ResolvedOptions, value: unknown): MoveAnchor => {
+  const ref = parseItemRef(payload, options, value, "after");
+  const { expected } = value as Record<string, unknown>;
+  if (expected === undefined) {
+    return ref;
+  }
+  if (!isRecord(expected) || !("parentId" in expected)) {
+    throw badRequest("after.expected must be { parentId }");
+  }
+
+  return {
+    ...ref,
+    expected: {
+      parentId: parseFolderReference(
+        payload,
+        options,
+        expected.parentId,
+        "after.expected.parentId"
+      ),
+    },
+  };
+};
+
+/**
  * The body of `POST /move` and `POST /move/preview`: `items`, exactly one of `toFolder` (a folder
  * id, or `null` for the top level) and `after` (an item), then optionally `position` (with
  * `toFolder` only) and `redirects`. Shape errors are 400; whether the items and the target still
@@ -155,7 +182,7 @@ export const parseMoveRequest = (
     if (body.position !== undefined) {
       throw badRequest("`position` goes with `toFolder`, not with `after`");
     }
-    const after = parseItemRef(payload, options, body.after, "after");
+    const after = parseAnchor(payload, options, body.after);
     if (items.some((item) => item.collection === after.collection && item.id === after.id)) {
       throw badRequest("The item to place the selection after cannot be part of the selection");
     }
