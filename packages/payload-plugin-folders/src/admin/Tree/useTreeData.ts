@@ -112,7 +112,8 @@ export const flattenTree = (state: TreeStoreState): TreeRowModel[] => {
         error: entry.error,
         key: `load-more:${parentKey}`,
         level,
-        loading: entry.loadingMore,
+        // Busy while it loads, and while a refresh is replacing the rows it would append to.
+        loading: entry.loadingMore || entry.refreshing,
         parentKey,
         type: "load-more",
       });

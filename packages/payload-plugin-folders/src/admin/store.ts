@@ -26,6 +26,10 @@ export type ChildrenEntry = {
   nextCursor: string | null;
   /** `loading` is a first load with nothing to show; a refresh keeps `loaded` and its rows. */
   phase: "error" | "loaded" | "loading";
+  /** The rows are being read again: Load more waits for it, because it would append to old rows. */
+  refreshing: boolean;
+  /** The tree revision this folder's first page was read at, `null` before the first answer. */
+  revision: number | null;
   /** Known to be out of date: the next load of this folder reads it again. */
   stale: boolean;
 };
@@ -114,6 +118,8 @@ const emptyEntry: ChildrenEntry = {
   loadingMore: false,
   nextCursor: null,
   phase: "loading",
+  refreshing: false,
+  revision: null,
   stale: false,
 };
 
@@ -288,7 +294,6 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
   const pageNumbers = new Map<FolderKey, number>();
   // A "Load more" has its own numbers: it must never cancel a first-page read of the folder.
   const moreNumbers = new Map<FolderKey, number>();
-  const pagesInFlight = new Map<FolderKey, number>();
   const firstLoads = new Map<FolderKey, Promise<ReadResult | null>>();
   let pendingOptimisticChanges = 0;
   const listeners = new Set<() => void>();
@@ -358,11 +363,12 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
     const { locale, pageSize } = requireOptions();
     const existing = state.childrenByFolder[key];
     const request = startPageRequest(key);
-    pagesInFlight.set(key, (pagesInFlight.get(key) ?? 0) + 1);
     if (!existing) {
       setEntry(key, emptyEntry);
     } else if (existing.phase === "error") {
       setEntry(key, { ...existing, error: null, phase: "loading" });
+    } else {
+      setEntry(key, { ...existing, refreshing: true });
     }
     const limit =
       refresh && existing
@@ -381,6 +387,8 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
         loadingMore: false,
         nextCursor: response.nextCursor,
         phase: "loaded",
+        refreshing: false,
+        revision: response.revision,
         stale: false,
       });
 
@@ -394,18 +402,17 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
       setEntry(
         key,
         current.items.length > 0 || current.phase === "loaded"
-          ? { ...current, error: errorMessageOf(error), loadingMore: false, stale: true }
-          : { ...current, error: errorMessageOf(error), phase: "error" }
+          ? {
+              ...current,
+              error: errorMessageOf(error),
+              loadingMore: false,
+              refreshing: false,
+              stale: true,
+            }
+          : { ...current, error: errorMessageOf(error), phase: "error", refreshing: false }
       );
 
       return null;
-    } finally {
-      const remaining = (pagesInFlight.get(key) ?? 1) - 1;
-      if (remaining <= 0) {
-        pagesInFlight.delete(key);
-      } else {
-        pagesInFlight.set(key, remaining);
-      }
     }
   };
 
@@ -417,8 +424,34 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
   let refetchRun: Promise<void> | null = null;
   let refetchAgain = false;
 
-  /** One read of every visible folder; moves the seen revision only when all of them landed. */
-  const refetchPass = async (): Promise<void> => {
+  /**
+   * Moves the seen revision to the lowest revision among the visible folders, once every one of
+   * them is loaded and current. It never moves back, and never past a folder read earlier.
+   */
+  const settleRevision = (): void => {
+    const visible = visibleFolderKeys(state);
+    if (visible.length === 0) {
+      return;
+    }
+    let lowest = Number.POSITIVE_INFINITY;
+    for (const key of visible) {
+      const entry = state.childrenByFolder[key];
+      if (!entry || entry.phase !== "loaded" || entry.stale || entry.revision === null) {
+        return;
+      }
+      lowest = Math.min(lowest, entry.revision);
+    }
+    if (state.revision === null || lowest > state.revision) {
+      setState({ ...state, revision: lowest });
+    }
+  };
+
+  /**
+   * Reads the visible folders again: all of them, or only those behind `behindRevision` (read at
+   * an older revision, or left stale by a failed read), so a folder that keeps failing does not
+   * make every poll read every open folder.
+   */
+  const refetchPass = async (behindRevision: number | null): Promise<void> => {
     const startedEpoch = epoch;
     const visible = visibleFolderKeys(state);
     const visibleSet = new Set(visible);
@@ -430,38 +463,47 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
       }
     }
     setState({ ...state, childrenByFolder: entries });
-    const results = await Promise.all(visible.map((key) => readFirstPage(key, true)));
+    const targets =
+      behindRevision === null
+        ? visible
+        : visible.filter((key) => {
+            const entry = state.childrenByFolder[key];
+
+            return (
+              entry === undefined ||
+              entry.stale ||
+              entry.revision === null ||
+              entry.revision < behindRevision
+            );
+          });
+    const results = await Promise.all(targets.map((key) => readFirstPage(key, true)));
     await Promise.all(
       foldersToOpen(results.flatMap((result) => result?.items ?? [])).map((key) =>
         loaders.loadChildren(key)
       )
     );
-    if (
-      startedEpoch !== epoch ||
-      results.length === 0 ||
-      results.some((result) => result === null)
-    ) {
-      return;
-    }
-    const reached = Math.min(...results.map((result) => (result as ReadResult).revision));
-    if (state.revision === null || reached > state.revision) {
-      setState({ ...state, revision: reached });
+    if (startedEpoch === epoch) {
+      settleRevision();
     }
   };
 
-  const refetchVisible = (): Promise<void> => {
+  const runRefetch = (behindRevision: number | null): Promise<void> => {
     if (refetchRun) {
-      // A pass already running may have read some folders before the change that asked for this.
-      refetchAgain = true;
+      // A pass already running may have read some folders before the change that asked for this;
+      // a poll only waits for it, because the next poll sees whatever it missed.
+      if (behindRevision === null) {
+        refetchAgain = true;
+      }
 
       return refetchRun;
     }
     const run = (async () => {
       try {
-        do {
+        await refetchPass(behindRevision);
+        while (refetchAgain) {
           refetchAgain = false;
-          await refetchPass();
-        } while (refetchAgain);
+          await refetchPass(null);
+        }
       } finally {
         refetchRun = null;
       }
@@ -471,15 +513,13 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
     return run;
   };
 
-  /** An answer's revision: the first one is the baseline, a newer one schedules a full read. */
-  const noteRevision = (revision: number): void => {
-    if (state.revision === null) {
-      setState({ ...state, revision });
+  const refetchVisible = (): Promise<void> => runRefetch(null);
 
-      return;
-    }
+  /** An answer's revision: a newer one than the seen one schedules a read of every visible folder. */
+  const noteRevision = (revision: number): void => {
+    settleRevision();
     // An optimistic change owns the cache; the poll after it catches up.
-    if (revision > state.revision && pendingOptimisticChanges === 0) {
+    if (state.revision !== null && revision > state.revision && pendingOptimisticChanges === 0) {
       void refetchVisible();
     }
   };
@@ -523,7 +563,7 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
       !entry.nextCursor ||
       entry.loadingMore ||
       // The refresh brings the rows the cursor would continue from; wait for it.
-      pagesInFlight.has(key)
+      entry.refreshing
     ) {
       return;
     }
@@ -600,15 +640,11 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
     epoch += 1;
     pageNumbers.clear();
     moreNumbers.clear();
-    pagesInFlight.clear();
     firstLoads.clear();
     // The open folders stay open across a locale change: they are the user's, the rows are only
     // a copy of the server's. Another user starts with a closed tree.
     setState({ ...initialState, expanded: keepExpanded ? state.expanded : [] });
   };
-
-  const hasStaleVisibleFolder = (): boolean =>
-    visibleFolderKeys(state).some((key) => state.childrenByFolder[key]?.stale === true);
 
   const runPoll = async (): Promise<void> => {
     if (!options || pendingOptimisticChanges > 0 || isHidden()) {
@@ -626,13 +662,12 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
     if (startedEpoch !== epoch || pendingOptimisticChanges > 0) {
       return;
     }
+    // Until an answer has set the baseline, the poll must not: that answer may still be on its
+    // way carrying an older revision, and a baseline from the poll would hide what it misses.
     if (state.revision === null) {
-      setState({ ...state, revision });
+      return;
     }
-    // Rows left stale by a failed read are read again even when the revision did not move.
-    if (revision !== state.revision || hasStaleVisibleFolder()) {
-      await refetchVisible();
-    }
+    await runRefetch(revision);
   };
 
   let pollRun: Promise<void> | null = null;
@@ -759,11 +794,16 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
     for (const key of affectedParents) {
       // Answers still on their way were read before this change and would undo it. A folder on
       // its first load keeps its request: dropping it would leave the folder loading for good.
-      if (entries[key]?.phase === "loaded") {
+      const affected = entries[key];
+      if (affected?.phase === "loaded") {
         startPageRequest(key);
+        // The refresh whose answer this drops will never clear its flag.
+        entries[key] = { ...affected, refreshing: false };
       }
     }
     const refreshParents = [...new Set([...affectedParents, ...countHolders])];
+    // After a reset the cache belongs to someone else: the handle only has to finish.
+    const startedEpoch = epoch;
     pendingOptimisticChanges += 1;
     setState({ ...state, childrenByFolder: entries });
 
@@ -781,7 +821,7 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
     return {
       affectedParents,
       commit: async () => {
-        if (finish()) {
+        if (finish() && startedEpoch === epoch) {
           await invalidate(
             [...new Set([...refreshParents, ...movedFolderKeys])].map((key) => parentOf(key))
           );
@@ -789,7 +829,7 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
       },
       refreshParents,
       rollback: () => {
-        if (!finish()) {
+        if (!finish() || startedEpoch !== epoch) {
           return;
         }
         const restored: Record<FolderKey, ChildrenEntry> = { ...state.childrenByFolder };
@@ -839,6 +879,7 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
     refetchVisible,
     reset: () => reset(),
     runOptimisticMove: async (move, request) => {
+      const startedEpoch = epoch;
       const handle = applyOptimisticMove(move);
       try {
         const result = await request();
@@ -849,7 +890,9 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
         handle.rollback();
         // A refused move may mean the tree changed under the editor, so read the folders again,
         // and the ones holding the counts the rollback just restored.
-        await invalidate(handle.refreshParents.map((key) => parentOf(key)));
+        if (startedEpoch === epoch) {
+          await invalidate(handle.refreshParents.map((key) => parentOf(key)));
+        }
 
         throw error;
       }

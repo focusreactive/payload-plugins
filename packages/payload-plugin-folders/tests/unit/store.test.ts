@@ -55,6 +55,8 @@ const freshTree = (): Record<string, TreeItem[]> => ({
 type FakeServer = {
   childrenRequests: URL[];
   failChildren: boolean;
+  /** Parents (a folder id or `root`) whose children requests answer 403. */
+  failParents: Set<string>;
   fetchImplementation: typeof fetch;
   /** While set, children requests wait for it before they are answered. */
   gate: Promise<void> | null;
@@ -70,6 +72,7 @@ const createServer = (tree: Record<string, TreeItem[]> = freshTree()): FakeServe
   const server: FakeServer = {
     childrenRequests: [],
     failChildren: false,
+    failParents: new Set<string>(),
     fetchImplementation: vi.fn(async (input: RequestInfo | URL) => {
       const url = new URL(String(input), "http://localhost");
       if (url.pathname.endsWith("/folders-tree/revision")) {
@@ -78,23 +81,29 @@ const createServer = (tree: Record<string, TreeItem[]> = freshTree()): FakeServe
         return json({ revision: server.revision });
       }
       server.childrenRequests.push(url);
+      const parent = url.searchParams.get("parent") ?? rootKey;
+      // The answer is read when the request arrives, as a real server would, then held back.
+      const rows = server.tree[parent] ?? [];
+      const limit = Number(url.searchParams.get("limit") ?? 100);
+      const start = Number(url.searchParams.get("cursor") ?? 0);
+      const end = start + limit;
+      const answer = {
+        hasMore: end < rows.length,
+        items: rows.slice(start, end),
+        nextCursor: end < rows.length ? String(end) : null,
+        revision: server.revision,
+      };
       if (server.gate) {
         await server.gate;
       }
       if (server.failChildren) {
         return json({ errors: [{ message: "The server is down" }] }, 500);
       }
-      const rows = server.tree[url.searchParams.get("parent") ?? rootKey] ?? [];
-      const limit = Number(url.searchParams.get("limit") ?? 100);
-      const start = Number(url.searchParams.get("cursor") ?? 0);
-      const end = start + limit;
+      if (server.failParents.has(parent)) {
+        return json({ errors: [{ message: "Forbidden" }] }, 403);
+      }
 
-      return json({
-        hasMore: end < rows.length,
-        items: rows.slice(start, end),
-        nextCursor: end < rows.length ? String(end) : null,
-        revision: server.revision,
-      });
+      return json(answer);
     }) as unknown as typeof fetch,
     gate: null,
     revision: 5,
@@ -656,6 +665,167 @@ describe("the tree store", () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it("store leaves the baseline to the first answer, not to a poll that came in before it", async () => {
+    const server = createServer();
+    const store = createStore(server);
+    const gate = deferred<void>();
+    server.gate = gate.promise;
+    const load = store.loadChildren(null);
+    await vi.waitFor(() => {
+      expect(server.childrenRequests).toHaveLength(1);
+    });
+    // Another editor adds a folder after the top level was read at revision 5.
+    server.tree[rootKey] = [...(server.tree[rootKey] as TreeItem[]), folder(12, "Archive", 0)];
+    server.revision = 6;
+
+    await store.pollRevision();
+    expect(store.getState().revision).toBeNull();
+    gate.resolve();
+    await load;
+    server.gate = null;
+
+    // The rows that landed are the old ones, so the poll that follows must read them again.
+    expect(titlesIn(store, rootKey)).toEqual(["Blog", "Products"]);
+    expect(store.getState().revision).toBe(5);
+    await store.pollRevision();
+    expect(titlesIn(store, rootKey)).toEqual(["Blog", "Products", "Archive"]);
+    expect(store.getState().revision).toBe(6);
+  });
+
+  it("store ignores Load more while a refresh of the folder is in flight, with no change of revision", async () => {
+    const server = createServer();
+    server.tree[blogId] = [
+      page(1, "Alpha", blogId),
+      page(2, "Beta", blogId),
+      page(4, "Extra", blogId),
+    ];
+    const store = createStore(server, 2);
+    await store.loadChildren(null);
+    await store.setExpanded(blogId, true);
+    expect(store.getState().childrenByFolder[String(blogId)]?.hasMore).toBe(true);
+
+    // A page is renamed in its edit view. The revision does not move: a rename is no tree change.
+    server.tree[blogId] = [
+      { ...page(1, "Alpha", blogId), title: "Alpha renamed" },
+      page(2, "Beta", blogId),
+      page(4, "Extra", blogId),
+    ];
+    const gate = deferred<void>();
+    server.gate = gate.promise;
+    const requestsBefore = server.childrenRequests.length;
+    // The user comes back to the view, which reads what is on screen again.
+    const refresh = store.refetchVisible();
+    await vi.waitFor(() => {
+      expect(server.childrenRequests.length).toBeGreaterThan(requestsBefore);
+    });
+    // The rows are being replaced, so the button has to show it.
+    expect(store.getState().childrenByFolder[String(blogId)]?.refreshing).toBe(true);
+    const click = store.loadMore(blogId);
+    gate.resolve();
+    await refresh;
+    await click;
+
+    // The refresh keeps the two rows shown; the click was ignored, so the third is still to load.
+    expect(titlesIn(store, String(blogId))).toEqual(["Alpha renamed", "Beta"]);
+    expect(store.getState().childrenByFolder[String(blogId)]?.refreshing).toBe(false);
+    expect(store.getState().childrenByFolder[String(blogId)]?.hasMore).toBe(true);
+
+    await store.loadMore(blogId);
+
+    expect(titlesIn(store, String(blogId))).toEqual(["Alpha renamed", "Beta", "Extra"]);
+  });
+
+  it("store does not write a refused move of the previous user into the next user's rows", async () => {
+    const server = createServer();
+    const options = {
+      baseUrl: "/api",
+      fetchImplementation: server.fetchImplementation,
+      locale: "en",
+      pageSize: 100,
+    };
+    const store = createTreeStore({ ...options, userId: 1 });
+    await openBoth(store);
+    const handle = store.applyOptimisticMove({
+      items: [{ collection: "pages", id: 1 }],
+      toFolder: productsId,
+    });
+
+    // User 2 signs in and can see only Beta in blog.
+    server.tree[blogId] = [page(2, "Beta", blogId)];
+    store.configure({ ...options, userId: 2 });
+    await store.loadChildren(null);
+    await store.setExpanded(blogId, true);
+    expect(titlesIn(store, String(blogId))).toEqual(["Beta"]);
+
+    handle.rollback();
+
+    expect(titlesIn(store, String(blogId))).toEqual(["Beta"]);
+    expect(rowIn(store, rootKey, "Blog")?.childCount).toBe(2);
+  });
+
+  it("store does not read the next user's folders again after the previous user's move is refused", async () => {
+    const server = createServer();
+    const options = {
+      baseUrl: "/api",
+      fetchImplementation: server.fetchImplementation,
+      locale: "en",
+      pageSize: 100,
+    };
+    const store = createTreeStore({ ...options, userId: 1 });
+    await openBoth(store);
+    const request = deferred<string>();
+    const move = store.runOptimisticMove(
+      { items: [{ collection: "pages", id: 1 }], toFolder: productsId },
+      () => request.promise
+    );
+    store.configure({ ...options, userId: 2 });
+    await store.loadChildren(null);
+    await store.setExpanded(blogId, true);
+    const requestsBefore = server.childrenRequests.length;
+
+    request.reject(new Error("The move was refused"));
+    await expect(move).rejects.toThrow("The move was refused");
+
+    expect(server.childrenRequests).toHaveLength(requestsBefore);
+    // The move is over, so polling is not held back for good.
+    await store.pollRevision();
+    expect(server.revisionRequests).toBe(1);
+  });
+
+  it("store reads only the folders that failed when a poll finds the revision unchanged", async () => {
+    const server = createServer();
+    const store = createStore(server);
+    await openBoth(store);
+    server.failParents.add(String(blogId));
+    await store.invalidate([blogId]);
+    expect(store.getState().childrenByFolder[String(blogId)]?.stale).toBe(true);
+
+    for (const expected of [1, 2, 3]) {
+      const before = server.childrenRequests.length;
+      await store.pollRevision();
+      // One request for the folder that keeps failing, none for the two that are current.
+      expect(server.childrenRequests).toHaveLength(before + 1);
+      expect(server.childrenRequests.at(-1)?.searchParams.get("parent")).toBe(String(blogId));
+      expect(expected).toBeGreaterThan(0);
+    }
+    expect(store.getState().revision).toBe(5);
+
+    // The revision moves while blog is still failing: every folder is behind, the seen revision
+    // waits for the failing one.
+    server.revision = 6;
+    const beforeMove = server.childrenRequests.length;
+    await store.pollRevision();
+    expect(server.childrenRequests).toHaveLength(beforeMove + 3);
+    expect(store.getState().revision).toBe(5);
+
+    // Blog recovers: only it is read, and the seen revision is the lowest of the visible folders.
+    server.failParents.clear();
+    const beforeRecovery = server.childrenRequests.length;
+    await store.pollRevision();
+    expect(server.childrenRequests).toHaveLength(beforeRecovery + 1);
+    expect(store.getState().revision).toBe(6);
   });
 
   it("store keys the top level as root and every folder by its id", () => {

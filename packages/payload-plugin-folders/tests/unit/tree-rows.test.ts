@@ -51,6 +51,8 @@ const loaded = (items: TreeItem[], overrides: Partial<ChildrenEntry> = {}): Chil
   loadingMore: false,
   nextCursor: null,
   phase: "loaded",
+  refreshing: false,
+  revision: 1,
   stale: false,
   ...overrides,
 });
@@ -110,6 +112,22 @@ describe("flattenTree", () => {
     const state = stateOf({ root: loaded([page(1, "Alpha")], { stale: true }) });
 
     expect(summary(state)).toEqual(["0:Alpha"]);
+  });
+
+  it("shows the load-more row as busy while the folder's rows are being refreshed", () => {
+    const state = stateOf({
+      root: loaded([page(1, "Alpha")], { hasMore: true, nextCursor: "abc", refreshing: true }),
+    });
+
+    expect(flattenTree(state)[1]).toMatchObject({ loading: true, type: "load-more" });
+  });
+
+  it("shows the load-more row as ready when nothing is loading", () => {
+    const state = stateOf({
+      root: loaded([page(1, "Alpha")], { hasMore: true, nextCursor: "abc" }),
+    });
+
+    expect(flattenTree(state)[1]).toMatchObject({ loading: false, type: "load-more" });
   });
 
   it("shows an error row, with the message, for a folder whose first read failed", () => {
