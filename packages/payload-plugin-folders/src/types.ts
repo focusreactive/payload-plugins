@@ -166,3 +166,42 @@ export type ResolvedOptions = {
   /** Startup warnings; the plugin logs them once Payload's logger exists. */
   warnings: string[];
 };
+
+/**
+ * What a page shows in the tree: `live` is a collection without drafts, `changed` a published page
+ * with a newer draft (spec section 7.2).
+ */
+export type TreeStatus = "changed" | "draft" | "live" | "published";
+
+/** One row of the tree endpoints (`children`, `search`), spec section 10.2. */
+export type TreeItem = {
+  access: { delete: boolean; publish: boolean; update: boolean };
+  allowedTypes?: string[];
+  ancestorIds?: string;
+  /** Folders: subfolders and pages directly inside, a root page included. */
+  childCount?: number;
+  collection: string;
+  /** Folders only. */
+  defaultType?: string | null;
+  depth: number;
+  /** The path in the requested locale, `""` while a page has no segment there. */
+  fullPath: string;
+  /** Folders: whether a root page exists, in any state. */
+  hasRootPage?: boolean;
+  id: number | string;
+  isFolderRoot?: boolean;
+  kind: "folder" | "page";
+  orderKey: string | null;
+  parentId: number | string | null;
+  /** The segment the item has in the requested locale, own or fallen back to. */
+  slug: string | null;
+  /** True when the requested locale has no segment of its own. */
+  slugIsFallback: boolean;
+  /** Pages only. */
+  status?: TreeStatus;
+  structureRevision: number;
+  title: string;
+  /** Folders only: the folder whose lock put the allowed types here. */
+  typesLockedBy?: number | string | null;
+  updatedAt: string;
+};

@@ -174,3 +174,54 @@ export const parseMoveRequest = (
     toFolder: parseFolderReference(payload, options, body.toFolder, "toFolder"),
   };
 };
+
+/** A query-string value that must be a string, such as `parent=root`. */
+export const parseQueryString = (value: unknown, label: string): string | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value !== "string") {
+    throw badRequest(`\`${label}\` must be a string`);
+  }
+
+  return value;
+};
+
+/** `limit`: a whole number of at least 1; larger values are the core function's to cap. */
+export const parseLimit = (value: unknown): number | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+  const parsed = typeof value === "string" && /^\d+$/u.test(value) ? Number(value) : Number.NaN;
+  if (!Number.isSafeInteger(parsed) || parsed < 1) {
+    throw badRequest("`limit` must be a whole number of at least 1");
+  }
+
+  return parsed;
+};
+
+/** `locale`: one of the configured locale codes. */
+export const parseLocale = (payload: Payload, value: unknown): string | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+  const codes = payload.config.localization ? payload.config.localization.localeCodes : [];
+  if (typeof value !== "string" || !codes.includes(value)) {
+    throw badRequest("`locale` is not a configured locale");
+  }
+
+  return value;
+};
+
+/** A list as `a,b` or `a&...[]`, empty entries dropped. */
+export const parseList = (value: unknown, label: string): string[] | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+  const entries = Array.isArray(value) ? value : [value];
+  if (!entries.every((entry) => typeof entry === "string")) {
+    throw badRequest(`\`${label}\` must be a list of strings`);
+  }
+
+  return entries.flatMap((entry: string) => entry.split(",")).filter((entry) => entry !== "");
+};

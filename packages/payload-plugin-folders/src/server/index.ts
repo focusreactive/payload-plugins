@@ -20,3 +20,11 @@ export type {
 } from "../core/move.js";
 export { findRedirect, maxRedirectHops } from "../core/findRedirect.js";
 export type { FindRedirectArgs, FoundRedirect } from "../core/findRedirect.js";
+export { getItemsAccess, getReadScope } from "../core/access.js";
+export type { ItemAccess, ReadScope } from "../core/access.js";
+export { getAncestors } from "../core/treeAncestors.js";
+export type { AncestorFolder } from "../core/treeAncestors.js";
+export { getChildren } from "../core/treeChildren.js";
+export type { ChildrenArgs, ChildrenResult } from "../core/treeChildren.js";
+export { searchTree } from "../core/treeSearch.js";
+export type { SearchArgs } from "../core/treeSearch.js";

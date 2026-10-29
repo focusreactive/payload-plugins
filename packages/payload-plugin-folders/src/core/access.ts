@@ -208,6 +208,129 @@ export const getItemAccess = async ({
   };
 };
 
+export type ItemAccess = { delete: boolean; publish: boolean; update: boolean };
+
+const accessQuestions = [
+  { data: {}, key: "update", operation: "update" },
+  { data: { _status: "published" }, key: "publish", operation: "update" },
+  { key: "delete", operation: "delete" },
+] as const;
+
+/**
+ * `getItemAccess` for many items at once, for a tree row's `access` (spec section 10.2): each
+ * collection's `update` (twice: as it is, and with `_status: 'published'`) and `delete` function is
+ * asked once, with no `id`, the way Payload asks for a bulk operation, and a `Where` answer is
+ * matched against the whole batch with one query per distinct `Where`. A host whose rule depends
+ * on the document must return a `Where`, as it must for a grouped move (README). Asking per item
+ * would cost one host call, and for a host that looks things up, several queries, per row.
+ *
+ * Keys of the result are `collection:id`.
+ */
+export const getItemsAccess = async ({
+  items,
+  req,
+}: {
+  items: ItemRef[];
+  req: PayloadRequest;
+}): Promise<Map<string, ItemAccess>> => {
+  const { payload } = req;
+  const result = new Map<string, ItemAccess>();
+  const idsByCollection = new Map<string, FolderId[]>();
+  for (const item of items) {
+    idsByCollection.set(item.collection, [
+      ...(idsByCollection.get(item.collection) ?? []),
+      item.id,
+    ]);
+  }
+  const nestedRequest = createNestedRequest(req);
+
+  for (const [collection, ids] of idsByCollection) {
+    const allowed: Record<(typeof accessQuestions)[number]["key"], Set<string>> = {
+      delete: new Set(),
+      publish: new Set(),
+      update: new Set(),
+    };
+    const matchedByWhere = new Map<string, Set<string>>();
+    const allIds = ids.map(String);
+
+    for (const question of accessQuestions) {
+      const access = payload.collections[toCollectionSlug(collection)]?.config.access?.[
+        question.operation
+      ] as Access | undefined;
+      if (!access) {
+        continue;
+      }
+      const answer = await access({
+        data: "data" in question ? { ...question.data } : undefined,
+        req: nestedRequest,
+        slug: collection,
+      });
+      if (answer === true) {
+        allowed[question.key] = new Set(allIds);
+      } else if (isWhere(answer)) {
+        const whereKey = JSON.stringify(answer);
+        let matched = matchedByWhere.get(whereKey);
+        if (!matched) {
+          const { docs } = await payload.db.find({
+            collection: toCollectionSlug(collection),
+            pagination: false,
+            req: nestedRequest,
+            select: { id: true },
+            where: { and: [{ id: { in: ids } }, answer] },
+          });
+          matched = new Set((docs as Array<{ id: FolderId }>).map((doc) => String(doc.id)));
+          matchedByWhere.set(whereKey, matched);
+        }
+        allowed[question.key] = matched;
+      }
+    }
+
+    for (const id of ids) {
+      result.set(`${collection}:${id}`, {
+        delete: allowed.delete.has(String(id)),
+        publish: allowed.publish.has(String(id)),
+        update: allowed.update.has(String(id)),
+      });
+    }
+  }
+
+  return result;
+};
+
+export type ReadScope = { isAllowed: boolean; where: Where | null };
+
+/**
+ * What the user of `req` may read of a collection, asked once with no `id` (spec section 10.2:
+ * "access evaluated once per collection"): nothing, everything, or the rows a `Where` matches. The
+ * tree endpoints read at database level, which runs no access, so they add this to every query
+ * before they read any title or path.
+ */
+export const getReadScope = async ({
+  collection,
+  nestedRequest,
+  req,
+}: {
+  collection: string;
+  nestedRequest?: PayloadRequest;
+  req: PayloadRequest;
+}): Promise<ReadScope> => {
+  const access = req.payload.collections[toCollectionSlug(collection)]?.config.access?.read as
+    | Access
+    | undefined;
+  if (!access) {
+    return { isAllowed: false, where: null };
+  }
+  const answer = await access({
+    req: nestedRequest ?? createNestedRequest(req),
+    slug: collection,
+  } as never);
+  if (answer === true) {
+    return { isAllowed: true, where: null };
+  }
+
+  return isWhere(answer) ? { isAllowed: true, where: answer } : { isAllowed: false, where: null };
+};
+
 /**
  * Whether the user of `req` may verify and repair the tree (spec section 9, decision 5):
  * `access.repair` when the host set it, else a user for whom the folders' `update` access passes
