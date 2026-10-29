@@ -10,6 +10,12 @@ const execFileAsync = promisify(execFile);
 
 export const postgresPort = 54_329;
 
+// Vitest runs about a dozen files at once and each holds one or two Payload instances with a pool
+// of their own, so the default of 100 connections ran out ("too many clients already"). Test pools
+// are capped at `testPoolMaxConnections` (getTestPayload.ts); this limit leaves room for every
+// worker even when each one holds a few instances.
+const clusterMaxConnections = 500;
+
 const homebrewBinaryDirectory = "/opt/homebrew/opt/postgresql@17/bin";
 
 // Every server this package starts records its PID here, so it can be stopped by that PID alone
@@ -76,7 +82,7 @@ export const startPostgres = async (): Promise<RunningPostgres> => {
       "-l",
       path.join(clusterDirectory, "postgres.log"),
       "-o",
-      `-p ${postgresPort} -k ${socketDirectory} -c listen_addresses=127.0.0.1 -c fsync=off`,
+      `-p ${postgresPort} -k ${socketDirectory} -c listen_addresses=127.0.0.1 -c fsync=off -c max_connections=${clusterMaxConnections}`,
       "-w",
       "start",
     ]);

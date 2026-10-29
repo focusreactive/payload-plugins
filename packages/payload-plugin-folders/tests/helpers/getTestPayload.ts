@@ -16,6 +16,13 @@ import { postgresConnectionEnvironmentKey } from "./postgresGlobalSetup.js";
 // so a second instance in the same file would get an empty database without this.
 process.env.PAYLOAD_FORCE_DRIZZLE_PUSH = "true";
 
+/**
+ * Connections one Payload instance may hold. The pg default of 10 times a dozen parallel test files
+ * overran the default Postgres limit; a tree write needs one for its transaction and a few more for
+ * reads outside it, so 4 is enough and keeps the total near 100 even without the raised limit.
+ */
+export const testPoolMaxConnections = 4;
+
 export type TestDatabaseKind = "postgres" | "sqlite";
 
 export type TestPayload = {
@@ -63,7 +70,10 @@ const createPostgresDatabase = async (): Promise<TestDatabase> => {
   }
 
   return {
-    adapter: postgresAdapter({ pool: { connectionString }, schemaName }),
+    adapter: postgresAdapter({
+      pool: { connectionString, max: testPoolMaxConnections },
+      schemaName,
+    }),
     cleanup: async () => {
       await adminPool.query(`DROP SCHEMA "${schemaName}" CASCADE`);
       await adminPool.end();
