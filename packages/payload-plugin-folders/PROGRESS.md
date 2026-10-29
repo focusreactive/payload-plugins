@@ -104,6 +104,10 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     blocks on another page that a save would ignore; the publish-time check still stops the second page
     going live. The moved page itself counts even as a draft, because it could never publish at that
     URL; the root-page rule behaves the same way.
+21. **Shell commands are written out literally (G7).** A `bash -c` whose script comes from a variable,
+    or a command built in a shell function, stops on a permission prompt that bypass mode does not skip.
+    The G7 tester waited 15 minutes on one. Every agent writes each command in full, one per line.
+    Every developer, tester and reviewer prompt carries this rule.
 
 ### Owner decisions (from spec/review.md, the spec writer's pick applies)
 
