@@ -211,6 +211,31 @@ describe("the tree store", () => {
     expect(store.getState().revision).toBe(6);
   });
 
+  it("store reads the target folder again when a move names rows the cache does not hold", async () => {
+    const server = createServer();
+    const store = createStore(server);
+    await openBoth(store);
+    // The rows the server will have in blog after an Undo, none of which the cache knows.
+    server.tree[blogId] = [
+      page(1, "Alpha", blogId),
+      page(2, "Beta", blogId),
+      page(9, "Back", blogId),
+    ];
+    const requestsBefore = server.childrenRequests.length;
+
+    await store.runOptimisticMove(
+      { items: [{ collection: "pages", id: 9 }], position: "end", toFolder: blogId },
+      () => Promise.resolve("done")
+    );
+
+    // Blog is on screen, so it was read again and shows the rows that arrived.
+    const refreshed = server.childrenRequests
+      .slice(requestsBefore)
+      .map((url) => url.searchParams.get("parent"));
+    expect(refreshed).toEqual([String(blogId)]);
+    expect(titlesIn(store, String(blogId))).toEqual(["Alpha", "Beta", "Back"]);
+  });
+
   it("store places a moved row after a named sibling and puts it back on rollback", async () => {
     const server = createServer();
     server.tree[productsId] = [page(3, "Gamma", productsId), page(4, "Delta", productsId)];

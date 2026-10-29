@@ -36,6 +36,13 @@ export const useUserId = (): number | string | null => useAuth().user?.id ?? nul
 /** The admin locale code, or `null` when localization is off (`useLocale` is nullable in 4.x). */
 export const useLocaleCode = (): string | null => useLocale()?.code ?? null;
 
+/** How many languages the admin has; 1 when localization is off. */
+export const useLocaleCount = (): number => {
+  const { config } = useConfig();
+
+  return config.localization ? config.localization.locales.length : 1;
+};
+
 /** Where the admin and the REST API live, as the host configured them. */
 export const useAdminRoutes = (): { adminRoute: string; apiBaseUrl: string } => {
   const { config } = useConfig();

@@ -1,6 +1,7 @@
 import type { ListViewServerProps } from "payload";
 
 import { pluginSlug } from "../../constants.js";
+import type { ConfirmMoves } from "../../types.js";
 import { TreeViewClient } from "./TreeViewClient.js";
 import { resolveLabelValue, resolveTypeLabels } from "./typeLabels.js";
 import type { LabelValue, TypeLabelSetting } from "./typeLabels.js";
@@ -9,6 +10,10 @@ const defaultPageSize = 100;
 
 /** What `plugin.ts` stores on the folders collection for the admin, all plain values. */
 export type TreeViewSettings = {
+  /** When the admin asks before a move (`admin.confirmMoves`). */
+  confirmMoves: ConfirmMoves;
+  /** Whether a folder's allowed types refuse a move; off turns the refusal into a warning. */
+  enforceAllowedTypesOnMove: boolean;
   pageSize: number;
   /** Page collection slug to its Type column label setting. */
   typeLabels: Record<string, TypeLabelSetting>;
@@ -27,7 +32,12 @@ export const TreeViewServer = ({
   // A host that replaces `custom` through `folders.overrides` still gets a working tree.
   const settings = (collectionConfig.custom as Record<string, TreeViewSettings | undefined>)[
     pluginSlug
-  ] ?? { pageSize: defaultPageSize, typeLabels: {} };
+  ] ?? {
+    confirmMoves: "urlChange",
+    enforceAllowedTypesOnMove: true,
+    pageSize: defaultPageSize,
+    typeLabels: {},
+  };
   const title = resolveLabelValue(
     collectionConfig.labels.plural as unknown as LabelValue,
     i18n.language,
@@ -44,6 +54,8 @@ export const TreeViewServer = ({
 
   return (
     <TreeViewClient
+      confirmMoves={settings.confirmMoves ?? "urlChange"}
+      enforceAllowedTypesOnMove={settings.enforceAllowedTypesOnMove ?? true}
       initialLocale={locale?.code ?? null}
       pageSize={settings.pageSize}
       title={title}

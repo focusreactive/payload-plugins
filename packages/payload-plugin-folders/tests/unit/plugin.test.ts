@@ -100,8 +100,25 @@ describe("foldersPlugin", () => {
     const folders = result.collections?.find((collection) => collection.slug === "folders");
 
     expect(folders?.custom?.[pluginSlug]).toEqual({
+      confirmMoves: "urlChange",
+      enforceAllowedTypesOnMove: true,
       pageSize: 50,
       typeLabels: { pages: { explicit: true, label: "Landing page" } },
+    });
+  });
+
+  it("hands the tree view the move settings it needs to ask before a move and to grey out folders", async () => {
+    const result = await foldersPlugin({
+      admin: { confirmMoves: "always" },
+      collections: { pages: true } as never,
+      enforceAllowedTypesOnMove: false,
+    })(buildHostConfig());
+
+    const folders = result.collections?.find((collection) => collection.slug === "folders");
+
+    expect(folders?.custom?.[pluginSlug]).toMatchObject({
+      confirmMoves: "always",
+      enforceAllowedTypesOnMove: false,
     });
   });
 

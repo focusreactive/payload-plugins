@@ -164,6 +164,8 @@ export const buildFoldersCollection = (options: ResolvedOptions): CollectionConf
     // Plain values the admin's server component hands to the browser.
     custom: {
       [pluginSlug]: {
+        confirmMoves: options.admin.confirmMoves,
+        enforceAllowedTypesOnMove: options.enforceAllowedTypesOnMove,
         pageSize: options.admin.pageSize,
         typeLabels: Object.fromEntries(
           pageCollectionEntries.map((pageCollection) => [

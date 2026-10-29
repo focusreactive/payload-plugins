@@ -724,10 +724,19 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
       .filter((location): location is Location => location !== null);
     const targetKey = folderKeyOf(move.toFolder);
     if (sources.length === 0) {
+      // None of the rows is cached (they are in a folder the tree never opened, as when an Undo
+      // brings rows back from one), so nothing moves on screen. The folder they land in still
+      // has to be read again, or the rows would only show up at the next poll.
+      const unknownStart = epoch;
+
       return {
         affectedParents: [],
-        commit: () => Promise.resolve(),
-        refreshParents: [],
+        commit: async () => {
+          if (unknownStart === epoch) {
+            await invalidate([move.toFolder]);
+          }
+        },
+        refreshParents: [targetKey],
         rollback: () => undefined,
       };
     }

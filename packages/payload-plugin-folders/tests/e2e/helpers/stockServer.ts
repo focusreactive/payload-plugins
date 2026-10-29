@@ -16,12 +16,22 @@ const isListening = async (): Promise<boolean> => {
   }
 };
 
+export type SecondServerOptions = {
+  /** Its own build directory under `dev/`, so it never shares a cache with the main server. */
+  distDirectory?: string;
+  /** What makes it differ from the main server; the default is the stock list view. */
+  env?: Record<string, string>;
+};
+
 /**
- * Starts a second dev server on the same database with `admin.treeView: false`, in its own
- * build directory, and waits until the admin answers. It runs in its own process group; the saved
- * PID is how `stopStockServer` and the global teardown stop it, never a search by name.
+ * Starts a second dev server on the same database, by default with `admin.treeView: false`, in its
+ * own build directory, and waits until the admin answers. It runs in its own process group; the
+ * saved PID is how `stopStockServer` and the global teardown stop it, never a search by name.
  */
-export const startStockServer = async (): Promise<void> => {
+export const startStockServer = async ({
+  distDirectory = ".next-stock",
+  env = { FOLDERS_TREE_VIEW: "false" },
+}: SecondServerOptions = {}): Promise<void> => {
   if (await isListening()) {
     throw new Error(`Something is already listening on port ${stockServerPort}`);
   }
@@ -39,8 +49,8 @@ export const startStockServer = async (): Promise<void> => {
       env: {
         ...process.env,
         DATABASE_URI: `file:${path.join(databaseDirectory, "e2e.db")}`,
-        FOLDERS_TREE_VIEW: "false",
-        NEXT_DIST_DIR: ".next-stock",
+        ...env,
+        NEXT_DIST_DIR: distDirectory,
         PAYLOAD_CONFIG_PATH: "./dev/payload.config.ts",
       },
       stdio: ["ignore", logDescriptor, logDescriptor],

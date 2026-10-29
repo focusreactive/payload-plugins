@@ -50,9 +50,14 @@ export const buildDevConfig = ({
   buildConfig({
     admin: {
       autoLogin: autoLogin ? { email: devUser.email, password: devUser.password } : false,
-      // The e2e server for `treeView: false` must not rewrite the committed import map without the
+      // The e2e servers for `treeView: false` and `confirmMoves` must not rewrite the committed import map without the
       // tree view's entry while the main server reads it.
-      importMap: { autoGenerate: process.env.FOLDERS_TREE_VIEW !== "false", baseDir: dirname },
+      importMap: {
+        autoGenerate:
+          process.env.FOLDERS_TREE_VIEW !== "false" &&
+          process.env.FOLDERS_CONFIRM_MOVES === undefined,
+        baseDir: dirname,
+      },
       user: "users",
     },
     collections: [Pages, Posts, Users, ...extraCollections],

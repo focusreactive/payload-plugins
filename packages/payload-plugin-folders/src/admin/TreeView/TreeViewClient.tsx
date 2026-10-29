@@ -14,8 +14,13 @@ import {
 import { getSharedTreeStore, revisionPollIntervalMs } from "../store.js";
 import "../styles.css";
 import { TreeWorkspace } from "./TreeWorkspace.js";
+import type { ConfirmMoves } from "../../types.js";
 
 export type TreeViewClientProps = {
+  /** When to ask before a move (`admin.confirmMoves`). */
+  confirmMoves: ConfirmMoves;
+  /** Whether a folder's allowed types refuse a move, for the folders the picker greys out. */
+  enforceAllowedTypesOnMove: boolean;
   /** The locale the server rendered the list in; the client's own locale wins once it is known. */
   initialLocale: string | null;
   pageSize: number;
@@ -26,6 +31,8 @@ export type TreeViewClientProps = {
 
 /** Content tree view: the folders list view of the collection, as a tree (spec section 7.2). */
 export const TreeViewClient = ({
+  confirmMoves,
+  enforceAllowedTypesOnMove,
   initialLocale,
   pageSize,
   title,
@@ -75,6 +82,8 @@ export const TreeViewClient = ({
       {isConfigured ? (
         <TreeWorkspace
           adminRoute={adminRoute}
+          confirmMoves={confirmMoves}
+          enforceAllowedTypesOnMove={enforceAllowedTypesOnMove}
           language={language}
           onOpenPage={(url) => router.push(url)}
           pageSize={pageSize}

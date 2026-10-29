@@ -39,6 +39,9 @@ export type PageCollectionOptions = {
   label?: string;
 };
 
+/** When the admin asks before a move (spec section 5.7). */
+export type ConfirmMoves = "always" | "never" | "urlChange";
+
 export type FoldersPluginOptions = {
   /** Opted-in page collections, keyed by slug. */
   collections: Partial<Record<CollectionSlug, true | PageCollectionOptions>>;
@@ -106,7 +109,7 @@ export type FoldersPluginOptions = {
     /** Default `{ label: 'Tree' }`; Payload 4 only. */
     sidebarTab?: false | { label?: string };
     /** Default `urlChange`. */
-    confirmMoves?: "urlChange" | "always" | "never";
+    confirmMoves?: ConfirmMoves;
     /** Default 100, max 1000. */
     pageSize?: number;
     /** Builds the "View page" link. Default: none, the menu item is hidden. */
@@ -160,7 +163,7 @@ export type ResolvedOptions = {
   admin: {
     treeView: boolean;
     sidebarTab: false | { label: string };
-    confirmMoves: "urlChange" | "always" | "never";
+    confirmMoves: ConfirmMoves;
     pageSize: number;
     previewUrl: NonNullable<FoldersPluginOptions["admin"]>["previewUrl"];
   };

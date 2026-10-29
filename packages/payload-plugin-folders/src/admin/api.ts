@@ -1,3 +1,5 @@
+import type { MoveResult } from "../core/applyMove.js";
+import type { ExpectedState, MovePreview } from "../core/move.js";
 import type { FolderId, ItemRef, TreeItem, TreeStatus } from "../types.js";
 
 /** Where the plugin's endpoints live and how to call them. */
@@ -29,11 +31,14 @@ export type RevisionResponse = { revision: number };
 
 /** An endpoint answered with an error status, or did not answer with the expected JSON. */
 export class FoldersApiError extends Error {
+  /** Why a move was refused (`stale`, `forbidden`, ...), when the endpoint says. */
+  readonly reason: string | null;
   readonly status: number;
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, reason: string | null = null) {
     super(message);
     this.name = "FoldersApiError";
+    this.reason = reason;
     this.status = status;
   }
 }
@@ -53,6 +58,18 @@ const messageOf = (body: unknown, status: number): string => {
   return `The request failed with status ${status}`;
 };
 
+/** The refusal reason a move endpoint puts in `errors[0].data.reason`. */
+const reasonOf = (body: unknown): string | null => {
+  if (isRecord(body) && Array.isArray(body.errors)) {
+    const [first] = body.errors as unknown[];
+    if (isRecord(first) && isRecord(first.data) && typeof first.data.reason === "string") {
+      return first.data.reason;
+    }
+  }
+
+  return null;
+};
+
 const buildQuery = (query: Record<string, string | number | null | undefined>): string => {
   const parameters = new URLSearchParams();
   for (const [name, value] of Object.entries(query)) {
@@ -63,6 +80,20 @@ const buildQuery = (query: Record<string, string | number | null | undefined>): 
   const text = parameters.toString();
 
   return text === "" ? "" : `?${text}`;
+};
+
+const readJsonResponse = async <Response>(response: globalThis.Response): Promise<Response> => {
+  let body: unknown = null;
+  try {
+    body = await response.json();
+  } catch {
+    // The status below says what went wrong when the body is not JSON.
+  }
+  if (!response.ok) {
+    throw new FoldersApiError(messageOf(body, response.status), response.status, reasonOf(body));
+  }
+
+  return body as Response;
 };
 
 const getJson = async <Response>(
@@ -78,17 +109,26 @@ const getJson = async <Response>(
     method: "GET",
     signal,
   });
-  let body: unknown = null;
-  try {
-    body = await response.json();
-  } catch {
-    // The status below says what went wrong when the body is not JSON.
-  }
-  if (!response.ok) {
-    throw new FoldersApiError(messageOf(body, response.status), response.status);
-  }
 
-  return body as Response;
+  return readJsonResponse<Response>(response);
+};
+
+const postJson = async <Response>(
+  context: FoldersApiContext,
+  path: string,
+  body: unknown,
+  signal?: AbortSignal
+): Promise<Response> => {
+  const send = context.fetchImplementation ?? fetch;
+  const response = await send(`${context.baseUrl}/folders-tree/${path}`, {
+    body: JSON.stringify(body),
+    credentials: "include",
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    method: "POST",
+    signal,
+  });
+
+  return readJsonResponse<Response>(response);
 };
 
 export type ChildrenQuery = {
@@ -164,3 +204,31 @@ export const fetchRevision = (
   context: FoldersApiContext,
   signal?: AbortSignal
 ): Promise<RevisionResponse> => getJson<RevisionResponse>(context, "revision", {}, signal);
+
+/** One item of a move request; `expected` is what the editor saw, so a changed tree answers 409. */
+export type MoveItemBody = ItemRef & { expected?: ExpectedState };
+
+/**
+ * The body of `POST /move` and `POST /move/preview`: the items, then either a folder (and where in
+ * it) or an item to land after. `redirects: false` is sent only when the editor unticked it.
+ */
+export type MoveBody = {
+  items: MoveItemBody[];
+  redirects?: boolean;
+} & (
+  | { after: ItemRef; position?: undefined; toFolder?: undefined }
+  | { after?: undefined; position?: "end" | "start"; toFolder: FolderId | null }
+);
+
+/** What `POST /move` would do, without writing; a move that cannot happen is `ok: false`. */
+export const previewMove = (
+  context: FoldersApiContext,
+  body: MoveBody,
+  signal?: AbortSignal
+): Promise<MovePreview> => postJson<MovePreview>(context, "move/preview", body, signal);
+
+/** Moves the items in one request. A refused move throws a `FoldersApiError` with its reason. */
+export const postMove = (context: FoldersApiContext, body: MoveBody): Promise<MoveResult> =>
+  postJson<MoveResult>(context, "move", body);
+
+export type { MovePreview, MoveResult };

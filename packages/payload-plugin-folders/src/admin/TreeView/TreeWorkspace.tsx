@@ -1,9 +1,12 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
-import { ListHeader } from "../compat.js";
+import type { ConfirmMoves } from "../../types.js";
+import { ListHeader, useLocaleCount } from "../compat.js";
 import type { Translate } from "../compat.js";
+import { useMoveFlow } from "../Move/useMoveFlow.js";
 import type { TreeStore } from "../store.js";
 import { BulkToolbar } from "../Toolbar/BulkToolbar.js";
+import type { ToolbarAction } from "../Toolbar/toolbarActions.js";
 import { Tree } from "../Tree/Tree.js";
 import { useTreeData } from "../Tree/useTreeData.js";
 import { useSelection } from "../useSelection.js";
@@ -11,6 +14,8 @@ import type { TreeItem } from "../../types.js";
 
 export type TreeWorkspaceProps = {
   adminRoute: string;
+  confirmMoves: ConfirmMoves;
+  enforceAllowedTypesOnMove: boolean;
   language: string;
   onOpenPage: (url: string) => void;
   pageSize: number;
@@ -27,6 +32,8 @@ export type TreeWorkspaceProps = {
  */
 export const TreeWorkspace = ({
   adminRoute,
+  confirmMoves,
+  enforceAllowedTypesOnMove,
   language,
   onOpenPage,
   pageSize,
@@ -41,18 +48,38 @@ export const TreeWorkspace = ({
     [rows]
   );
   const selection = useSelection(loadedItems);
-  const { clear } = selection;
+  const { clear, select } = selection;
+  const languageCount = useLocaleCount();
 
-  // Every button but Cancel opens its own dialog or mode in a later ticket (spec sections 7.4,
-  // 7.8, 7.9 and 7.10); until then pressing one does nothing.
-  const doNothingYet = () => undefined;
+  const moveFlow = useMoveFlow({
+    confirmMoves,
+    enforceAllowedTypesOnMove,
+    languageCount,
+    onMoved: clear,
+    onMoveFailed: select,
+    store,
+    translate,
+    typeLabels,
+  });
+  const { startMoveTo } = moveFlow;
+
+  const runAction = useCallback(
+    (action: ToolbarAction) => {
+      if (action === "moveTo") {
+        startMoveTo(selection.items);
+      }
+      // Move mode, Duplicate, Publish, Unpublish, Delete and Settings open their dialogs in later
+      // tickets (spec sections 7.4, 7.8 and 7.10); until then pressing one does nothing.
+    },
+    [selection.items, startMoveTo]
+  );
 
   return (
     <>
       {selection.items.length > 0 ? (
         <BulkToolbar
           items={selection.items}
-          onAction={doNothingYet}
+          onAction={runAction}
           onCancel={clear}
           translate={translate}
         />
@@ -72,6 +99,7 @@ export const TreeWorkspace = ({
           typeLabels={typeLabels}
         />
       </div>
+      {moveFlow.dialogs}
     </>
   );
 };
