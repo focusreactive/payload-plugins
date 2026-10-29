@@ -83,6 +83,19 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     on a permission prompt that unattended runs cannot answer, and it stalled G2 for two hours. Every
     agent reads the path first with `cat`, then deletes the folder by its literal path. Every developer,
     tester and reviewer prompt carries this rule.
+19. **Locale fallback for page segments is resolved in the query, not stored (G3, overrides spec
+    §3.2's "store the effective segment for every locale" and P-09's per-locale refresh).** The G3
+    review showed that storing fallback segments fails on two counts:
+    - With `localizeStatus` (the beta.5 default for drafts plus localized fields), an en publish
+      rebuilds the main row from published locales only, so an unpublished de segment becomes null and
+      the de stock query finds nothing.
+    - Writing a fallback segment creates a de locale row, which breaks collections with a required
+      localized field and no drafts (NOT NULL), and makes de read a field's `defaultValue` instead of
+      falling back to en.
+    Decision: `pathSegment[locale]` holds only the page's own segment, or null. Every lookup by
+    segment uses one exported query helper that matches `pathSegment = X`, or `pathSegment` absent and
+    `pathSegment.<defaultLocale> = X` (a locale-qualified path, `payload/dist/database/getLocalizedPaths.js:98-102`).
+    The README documents the helper and the raw `where` for REST. P-09's grep test still applies.
 
 ### Owner decisions (from spec/review.md, the spec writer's pick applies)
 
@@ -134,11 +147,12 @@ One line per ticket: `check.sh`, tester evidence, reviewer verdict, commit.
 | G0: P-01, P-02, check.sh | pass (5/5 int on SQLite and Postgres, smoke e2e) | `screenshots/g0-admin-dashboard.png`, `screenshots/g0-page-created.png`: auto-login admin, page created and listed | NOT DONE (getPayload cache returned a destroyed instance in a second boot), fixed in `11b43796`, re-review DONE | `f4010d2d`, `11b43796` |
 | G1: P-03, P-04, P-05 | pass (43 unit, 19 int on SQLite and Postgres, smoke opens folders) | `screenshots/g1-folder-created.png`, `g1-folder-no-duplicate.png`, `g1-page-fields.png`, `g1-page-in-folder.png`: folder created, no Duplicate, injected page fields, page shown in folder (picked over REST, the picker is P-47) | NOT DONE (derived folder fields, page structureRevision and the tree-state global writable over REST; host slug index dropped; disabled test vacuous), fixed in `d7771fad`, re-review DONE | `8dc3bf5f`, `98a96a0b`, `e259e12b`, `b8994430`, `d7771fad` |
 | G2: P-06, P-07 | pass (59 unit, 57 int on SQLite, 55 int on Postgres with 2 SQLite-only skips, smoke) | `screenshots/g2-nested-full-path.png`, `g2-de-full-path.png`, `g2-reserved-refused.png`, `g2-list-order.png`: nested path `/products/shoes/running`, de slug gives `/produkte` while en keeps `/products`, root `api` refused, newest folder first | NOT DONE (the locale write-back left the caller's req marked internal so later writes on it skipped validation; a flaky Postgres test; tree-state row touched after the stored doc was read), fixed in `53404584`, re-review DONE | `aeab7918`, `f7a870e1`, `53404584` |
-
+| G3: P-08, P-09 | pass (62 unit, 82 int on SQLite, 80 int on Postgres with 2 SQLite-only skips, smoke; rerun by the build lead on `8f9272af`) | `screenshots/g3-page-full-path-blog-post.png`, `g3-page-api-folderpath-fullpath.png`, `g3-de-read-follows-rename.png`, `g3-site-root-page-folderpath-null.png`, `g3-stock-query-folderpath-pathsegment.png` and four more: page fullPath `/blog/post`, de follows an en rename, folderPath null at the site root, stock query finds the page; `g3-defect-de-stock-query-empty.png` shows the defect that led to decision 19 | BLOCKED: failed review twice. Pass 1 NOT DONE (an en publish nulled the unpublished de segment; stored fallback segments created de rows that broke required localized fields; fullPath wrong under select), fixed in `045e0d1c` with decision 19. Re-review NOT DONE (a `locale: "all"` write still created a de row, `src/hooks/pages/pathSegment.ts:39`), fixed in `8f9272af` with create and update tests and verified by the build lead with check.sh; no third review ran | `6e1b1788`, `50fefa04`, `045e0d1c`, `8f9272af` |
 ---
 
 ## 3. Notes for the merge
 
 - Carry-over for later tickets: a REST create still accepts a client `orderKey` and `pathSegment`; P-06 must assign `orderKey` on create and P-08 must compute `pathSegment` on create, overwriting any sent value. Page `folderPath` reads as undefined, not null, at the site root (P-08).
 - Carry-over from G2: P-06 now assigns `orderKey` on create and drops a client value. P-08 must make the folder rule "no page with the same segment in that folder" read each page's segment with locale fallback (today `src/hooks/folders/beforeChange.ts` queries the page slug per locale with no fallback). The admin title of a folder with no name in the current locale shows the raw id (`useAsTitle` has no fallback); fix with the admin work (G10 or G14). P-17 should close two lock gaps: `seedTreeState` is a find then create, so two processes booting a fresh database can race, and a nested Local API call without `req` inside a tree write waits out the 30 s timeout (README "Known limits").
+- Carry-over from G3: P-11 uniqueness and P-31 resolve must look pages up with `buildSegmentWhere` (decision 19), never a bare `pathSegment equals`. GraphQL has no locale-qualified `where`, so the fallback lookup has no GraphQL form; P-31 resolve covers it. P-29 repair must backfill `pathSegment` for pages that existed before the plugin. A read with `fallbackLocale: false` gives a null `fullPath` for a page with no own segment in that locale (README Known limits). `@payloadcms/graphql` is only a transitive dependency; add it as a devDependency at the next lockfile regeneration. G3 is BLOCKED by the review rule, but its last finding is fixed and tested, so later groups build on it.
 - Commit `42dee943` carries an earlier wording of this file that named internal tooling paths. Squash the branch on merge so it does not reach `main`.
