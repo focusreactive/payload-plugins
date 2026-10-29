@@ -1,6 +1,6 @@
 import type { CollectionSlug, Endpoint } from "payload";
 
-import type { TranslationContext } from "../modules/translation-levels/index.js";
+import type { ConfigTimeContext } from "../modules/plugin-config/index.js";
 
 import { createEnqueueRoute } from "./enqueue-translation/index.js";
 import { createRunRoute } from "./run-translation/index.js";
@@ -8,53 +8,54 @@ import { createCancelRoute } from "./cancel/index.js";
 import { createCancelByCollectionRoute } from "./cancel-by-collection/index.js";
 import { createGetDocumentStatusRoute } from "./get-document-status/index.js";
 import { createGetCollectionStatusRoute } from "./get-collection-status/index.js";
-import { createGetDocumentStalenessRoute, createDismissStalenessRoute } from "./staleness/index.js";
 
 export type TranslationRoutesDeps = Pick<
-  TranslationContext,
-  "taskRunnerFactory" | "access" | "provenanceServiceFactory" | "settings"
+  ConfigTimeContext,
+  "taskRunnerFactory" | "runRecordStoreFactory" | "access" | "settings"
 > & {
   /** Collections the plugin manages — gates which slugs the routes accept. */
   collectionConfig: { availableCollections: Set<CollectionSlug> };
 };
 
-/**
- * The translator's HTTP surface as one shared bundle: the job-API endpoints
- * (enqueue / run / cancel / cancel-by-collection / document-status /
- * collection-status) plus the provenance-backed staleness endpoints
- * (document-staleness / dismiss), all wired to the same access guard.
- *
- * Extracted from the plugin's `init()` so registration is a single unit. The
- * document and collection levels each contribute this bundle via the level
- * context; the plugin deduplicates by method + path, so it registers exactly
- * once. The staleness endpoints always register; when provenance is disabled
- * (`provenanceServiceFactory` absent) they simply report no staleness.
- */
 export function createTranslationRoutes({
   taskRunnerFactory,
+  runRecordStoreFactory,
   collectionConfig,
   access,
   settings,
-  provenanceServiceFactory,
 }: TranslationRoutesDeps): Endpoint[] {
   const { basePath, failedWindowMs } = settings;
-  const stalenessConfig = {
-    availableCollections: collectionConfig.availableCollections,
-    provenanceServiceFactory,
-  };
+  const { stop, run } = taskRunnerFactory.capabilities;
+
   return [
-    createEnqueueRoute(taskRunnerFactory, collectionConfig, access, basePath),
-    createRunRoute(taskRunnerFactory, access, basePath),
-    createCancelRoute(taskRunnerFactory, access, basePath),
-    createCancelByCollectionRoute(collectionConfig, taskRunnerFactory, access, basePath),
-    createGetDocumentStatusRoute(collectionConfig, taskRunnerFactory, access, basePath),
-    createGetCollectionStatusRoute(
-      { ...collectionConfig, failedWindowMs },
+    createEnqueueRoute(
       taskRunnerFactory,
+      runRecordStoreFactory,
+      collectionConfig,
       access,
       basePath
     ),
-    createGetDocumentStalenessRoute(stalenessConfig, access, basePath),
-    createDismissStalenessRoute(stalenessConfig, access, basePath),
+    ...(run ? [createRunRoute(taskRunnerFactory, runRecordStoreFactory, access, basePath)] : []),
+    ...(stop
+      ? [createCancelRoute(taskRunnerFactory, runRecordStoreFactory, access, basePath)]
+      : []),
+    ...(stop
+      ? [
+          createCancelByCollectionRoute(
+            collectionConfig,
+            taskRunnerFactory,
+            runRecordStoreFactory,
+            access,
+            basePath
+          ),
+        ]
+      : []),
+    createGetDocumentStatusRoute(collectionConfig, runRecordStoreFactory, access, basePath),
+    createGetCollectionStatusRoute(
+      { ...collectionConfig, failedWindowMs },
+      runRecordStoreFactory,
+      access,
+      basePath
+    ),
   ];
 }

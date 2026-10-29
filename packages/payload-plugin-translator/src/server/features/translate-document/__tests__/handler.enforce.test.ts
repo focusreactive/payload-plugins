@@ -1,31 +1,35 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 
-import { TranslateDocumentHandler } from "../handler.js";
+import { translateDocument } from "../translateDocument.js";
+import type { TranslateDocumentDeps } from "../translateDocument.js";
 import type { TranslationProvider } from "../../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
-import type { TranslateDocumentInput } from "../model.js";
+import type { TranslateDocumentInput } from "../translateDocument.js";
 import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
 
 vi.mock("../../../../core/translation-pipeline/index.js", () => ({
-  translateContent: vi
-    .fn()
-    .mockResolvedValue({ translatedData: { title: "Titel" }, translatedPaths: ["title"] }),
+  translateContent: vi.fn().mockResolvedValue({
+    translatedData: { title: "Titel" },
+    leaves: [{ idPath: "title", answeredInFull: true }],
+  }),
 }));
 
-vi.mock("../translationPermission.js", () => ({
+vi.mock("../../../shared/access/permission.js", () => ({
   rebuildRequester: vi.fn().mockResolvedValue(null),
   checkTranslationPermission: vi.fn(),
   mayWrite: vi.fn().mockResolvedValue(true),
 }));
 
 const permission = async () =>
-  (await import("../translationPermission.js")).checkTranslationPermission as ReturnType<
+  (await import("../../../shared/access/permission.js")).checkTranslationPermission as ReturnType<
     typeof vi.fn
   >;
 
 const rebuilt = async () =>
-  (await import("../translationPermission.js")).rebuildRequester as ReturnType<typeof vi.fn>;
+  (await import("../../../shared/access/permission.js")).rebuildRequester as ReturnType<
+    typeof vi.fn
+  >;
 
 const ANNA = { id: "anna", collection: "users" };
 
@@ -33,8 +37,8 @@ const ANNA = { id: "anna", collection: "users" };
 // costs only the translation and is worth having on top of the pre-check. The inline path carries the
 // editor's transaction, and a refusal Payload raises there would roll their save back — which is the
 // reason the pre-check exists in the first place.
-describe("TranslateDocumentHandler — where Payload's own enforcement is affordable", () => {
-  let handler: TranslateDocumentHandler;
+describe("translateDocument — where Payload's own enforcement is affordable", () => {
+  let deps: TranslateDocumentDeps;
   let payload: Payload;
 
   const input = (): TranslateDocumentInput => ({
@@ -42,8 +46,8 @@ describe("TranslateDocumentHandler — where Payload's own enforcement is afford
     collectionId: "doc-123",
     sourceLng: "en",
     targetLng: "de",
-    strategy: "overwrite",
     publishOnTranslation: false,
+    previousAttempts: 0,
   });
 
   const writeArgs = () =>
@@ -63,13 +67,13 @@ describe("TranslateDocumentHandler — where Payload's own enforcement is afford
       collections: { posts: { config: { versions: { drafts: true } } } },
     } as unknown as Payload;
 
-    handler = new TranslateDocumentHandler(provider, schemaMap);
+    deps = { translationProvider: provider, schemaMap };
     (await permission()).mockResolvedValue(true);
     (await rebuilt()).mockResolvedValue(ANNA);
   });
 
   it("lets Payload check the deferred write as well", async () => {
-    await handler.handle(payload, input(), { requester: asRequester("anna", "users") });
+    await translateDocument(deps, payload, input(), { requester: asRequester("anna", "users") });
 
     expect(writeArgs()).toMatchObject({ overrideAccess: false, user: ANNA });
   });
@@ -77,7 +81,7 @@ describe("TranslateDocumentHandler — where Payload's own enforcement is afford
   // Inside the editor's transaction too: Payload deletes a field the requester may not write and
   // does not throw, so there is no refusal here for `killTransaction` to act on.
   it("lets Payload check the inline write as well", async () => {
-    await handler.handle(payload, input(), {
+    await translateDocument(deps, payload, input(), {
       transactionID: "tx-1",
       requester: asRequester("anna", "users"),
     });
@@ -88,7 +92,7 @@ describe("TranslateDocumentHandler — where Payload's own enforcement is afford
   it("adds nothing when the request named nobody", async () => {
     (await rebuilt()).mockResolvedValue(null);
 
-    await handler.handle(payload, input(), {});
+    await translateDocument(deps, payload, input(), {});
 
     expect(writeArgs()).not.toHaveProperty("overrideAccess");
   });

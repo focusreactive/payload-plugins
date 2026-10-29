@@ -29,12 +29,4 @@ export interface FieldTranslationConfig {
   exclude?: boolean;
 }
 
-/**
- * @deprecated Use `FieldTranslationConfig` instead
- */
-export type TranslateKitFieldConfig = FieldTranslationConfig;
-
-/**
- * Key used to store TranslateKit configuration in field.custom
- */
 export const TRANSLATE_KIT_CUSTOM_KEY = "translateKit" as const;

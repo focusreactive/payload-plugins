@@ -1,6 +1,6 @@
+import type { LeafAddress } from "../../domain/content-projection/idPath.js";
 import type { IdPath } from "../../domain/content-projection/idPath.js";
 import type { FieldLike } from "../../kernel/field-traversal/index.js";
-import type { ChangedLeaves } from "../../domain/provenance/staleness.js";
 import type { DocumentRef } from "../../domain/translation-providers/index.js";
 
 export type PipelineConfig = {
@@ -10,14 +10,16 @@ export type PipelineConfig = {
   sourceLng: string;
   targetLng: string;
   document: DocumentRef;
-  sourceChangedByLeaf?: ChangedLeaves;
+  selection: readonly LeafAddress[];
+};
+
+export type LeafOutcome = {
+  idPath: IdPath;
+  answeredInFull: boolean;
 };
 
 export type PipelineResult = {
   translatedData: Record<string, unknown>;
-  /**
-   * The leaves actually sent for translation, by the same address a provenance receipt is keyed on.
-   * A caller writing a receipt may only claim these — see `ProvenanceService.record`.
-   */
-  translatedPaths: IdPath[];
+  /** One entry per leaf that yielded a chunk; a leaf absent here was never sent. */
+  leaves: readonly LeafOutcome[];
 };

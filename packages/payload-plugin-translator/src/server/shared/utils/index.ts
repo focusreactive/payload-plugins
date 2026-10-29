@@ -5,5 +5,3 @@ export { getByPath } from "./getByPath.js";
 export { setByPath } from "./setByPath.js";
 export { pipe } from "./pipe.js";
 export { filterLocalizedFields } from "./filterLocalizedFields.js";
-export { LazyMap } from "./LazyMap.js";
-export type { LazyMapOptions } from "./LazyMap.js";

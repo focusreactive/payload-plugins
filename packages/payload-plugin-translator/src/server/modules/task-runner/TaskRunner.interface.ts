@@ -1,18 +1,14 @@
-import type { CollectionSlug } from "payload";
-
-import type { EnqueueAssignment, Task, TaskInput, RunResult } from "./types.js";
+import type { EnqueueAssignment, RunResult } from "./types.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
+import type { AuthorisedHandle, AuthorisedWork } from "../../shared/access/authorised.js";
 
 /**
  * Interface for task execution backends.
  *
- * Implementations handle queuing, cancellation, status tracking,
- * and execution of translation tasks. All business logic
- * (like cancelling existing tasks before enqueue) is encapsulated
- * within the implementation.
  *
- * **Obligations every implementation holds, whatever it queues onto.** `__tests__/TaskRunner.invariants.ts`
- * asserts them; a new runner calls that suite once, and the suite's `describe` names are the list.
+ * **Obligations every implementation holds, whatever it queues onto.** `assertTaskRunnerContract`,
+ * published from `@focus-reactive/payload-plugin-translator/testing`, asserts them; a new runner
+ * calls that suite once, and the suite's `describe` names are the list.
  *
  * Two it cannot assert, because they bind the caller rather than the runner:
  * - **A handle is never parsed.** Callers compare it, store it and hand it back.
@@ -25,67 +21,35 @@ import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
  * And a store may reject a value it could never have produced: on SQL the job id is an integer, so
  * a non-numeric handle fails inside the query rather than finding nothing. `DELETE /translate/cancel`
  * passes such a value straight through and answers with a server error.
+ * @since 1.0.0 — the port narrowed; see docs/DEPRECATIONS.md#the-runner-only-accepts-work.
  */
 export interface TaskRunner {
   /**
-   * Queue translation tasks for execution.
+   * Queues the work and answers one assignment per requested locale.
    *
    * `scope` joins the reads and writes this makes to the caller's transaction; omit it outside one —
    * an HTTP route — and each operation opens its own.
    *
-   * Answering with nothing still queues and still satisfies this contract — deprecated,
-   * docs/DEPRECATIONS.md#enqueue-void-return.
+   * The plugin has already decided that each document named here is free to take new work, so a
+   * runner never looks for a run of its own to merge into.
    *
    * @since 0.16.0 the return type widened.
    */
-  enqueue(tasks: TaskInput[], scope?: RequestScope): Promise<EnqueueAssignment[] | void>;
+  enqueue(tasks: AuthorisedWork[], scope?: RequestScope): Promise<EnqueueAssignment[]>;
 
   /**
    * Stop the work these handles stand for, as far as this runner can.
    *
-   * Best effort: a runner that translates inline inside `enqueue` has nothing left to stop.
+   * Best effort: a runner that translates inline inside `enqueue` has nothing left to stop, and says
+   * so by declaring `stop: false` rather than by implementing a no-op.
    * Report `cancelled` for each locale the run still owed, and for none it had delivered.
    */
-  cancel(taskIds: string[]): Promise<void>;
+  stop?(handles: AuthorisedHandle[]): Promise<void>;
 
   /**
-   * Execute a task immediately.
-   * Returns error status if task not found, already running, or completed.
-   */
-  run(taskId: string): Promise<RunResult>;
-
-  /**
-   * @deprecated Pass `{ documentIds }` instead. Removed in the next major.
-   * See docs/DEPRECATIONS.md#find-by-collection-document-ids-array
-   */
-  findByCollection(
-    collectionSlug: CollectionSlug,
-    documentIds: Array<string | number>
-  ): Promise<Task[]>;
-  /** Find tasks for a collection, optionally narrowed by a {@link TaskFilter}. */
-  findByCollection(collectionSlug: CollectionSlug, filter?: TaskFilter): Promise<Task[]>;
-}
-
-/**
- * How a {@link TaskRunner["findByCollection"]} call is narrowed. Each field says whether it reaches the
- * database or is applied in memory over everything the database returned.
- *
- * @since 0.11.2
- */
-export type TaskFilter = {
-  /** Keep only tasks for these documents. Applied in memory — see `PayloadJobsTaskRunner.findByCollection`. */
-  documentIds?: Array<string | number>;
-  /**
-   * Drop tasks that have finished. Keeps running and failed ones — everything a re-enqueue can still
-   * supersede — so it is wider than the `pending` status.
-   */
-  excludeCompleted?: boolean;
-  /**
-   * Runs still in flight are kept however old: the queue gives up only after the last retry, not on
-   * a failed attempt (`queues/errors/handleTaskError.js`). Reaches the database under the Payload
-   * Jobs runner.
+   * Process a queued job now rather than waiting for a schedule.
    *
-   * @since 0.17.0
+   * On a host with no cron this is the only thing that moves the queue.
    */
-  excludeGivenUpBefore?: Date;
-};
+  run?(handle: AuthorisedHandle): Promise<RunResult>;
+}

@@ -27,18 +27,21 @@ const withFieldRule = (collections: CollectionConfig[]): CollectionConfig[] =>
     } as CollectionConfig;
   });
 
-const jobsFor = async (documentId: string) => {
+const runsFor = async (documentId: string) => {
   const { docs } = await ctx.payload.find({
-    collection: "payload-jobs" as "pages",
+    collection: "translator-runs" as "pages",
     pagination: false,
-    where: { workflowSlug: { equals: "translate_document_locales" } } as never,
+    where: { collectionId: { equals: documentId } } as never,
   });
-  return (docs as Array<{ input?: Record<string, unknown> }>).filter(
-    (j) => j.input?.collection_id === documentId
-  );
+  return docs as Array<{ requesterId?: string | null; requesterCollection?: string | null }>;
 };
 
-const enqueueAs = async (id: string, user: { id: string; collection: string } | null) => {
+type Assignment = { handle: string };
+
+const enqueueAs = async (
+  id: string,
+  user: { id: string; collection: string } | null
+): Promise<Assignment[]> => {
   const res = await callEndpoint(ctx.payload, "post", "/translate/enqueue", {
     user,
     body: {
@@ -46,11 +49,12 @@ const enqueueAs = async (id: string, user: { id: string; collection: string } | 
       target_lng: ["de"],
       collection_slug: "docs",
       collection_id: [id],
-      strategy: "overwrite",
+
       publish_on_translation: false,
     },
   });
   expect(res.status).toBe(200);
+  return (res.data as { data: { assignments?: Assignment[] } }).data.assignments ?? [];
 };
 
 const seed = async (title: string, tagline: string) => {
@@ -94,14 +98,14 @@ describe("a queued translation is decided by whoever asked for it", () => {
     await ctx?.cleanup();
   });
 
-  it("records the requester on the job row", async () => {
+  it("records the requester on the run, which is what survives until it runs", async () => {
     const id = await seed("Queued", "Queued line");
 
     await enqueueAs(id, editor);
 
-    const [job] = await jobsFor(id);
-    expect(String(job?.input?.requester_id)).toBe(editor.id);
-    expect(job?.input?.requester_collection).toBe("users");
+    const [run] = await runsFor(id);
+    expect(run?.requesterId).toBe(editor.id);
+    expect(run?.requesterCollection).toBe("users");
   });
 
   // The request that queued this is long gone by the time it runs, so rebuilding from the row is the
@@ -128,5 +132,18 @@ describe("a queued translation is decided by whoever asked for it", () => {
     expect(de.title, "an unattributed write is not checked, so the rule does not apply").toBe(
       "de:Legacy"
     );
+  });
+
+  it("will not run on demand a row that recorded nobody — its write would skip every field rule", async () => {
+    const id = await seed("Orphan", "Orphan line");
+    const [assignment] = await enqueueAs(id, null);
+    expect(assignment, "nothing was queued, so the run route was never reached").toBeDefined();
+
+    const res = await callEndpoint(ctx.payload, "post", "/translate/run/:id", {
+      user: editor,
+      routeParams: { id: String(assignment?.handle) },
+    });
+
+    expect(res.status).toBe(403);
   });
 });

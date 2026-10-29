@@ -8,7 +8,6 @@ import { CloseIcon } from "../../../../shared/lib/assets/icons/CloseIcon.js";
 import { ReloadIcon } from "../../../../shared/lib/assets/icons/ReloadIcon.js";
 import { useCancelDocumentTranslation } from "../../api/mutations/useCancelDocumentTranslation.js";
 import { useDismissStaleness } from "../../api/mutations/useDismissStaleness.js";
-import { useQueueDocumentTranslation } from "../../api/mutations/useQueueDocumentTranslation.js";
 import { useRunDocumentTranslation } from "../../api/mutations/useRunDocumentTranslation.js";
 import type { TranslationStatusRow } from "../../model/statusRows.js";
 import { ActionButton } from "../ActionButton/index.js";
@@ -52,7 +51,6 @@ export function TranslationStatusList({ rows, collection, id }: TranslationStatu
   const runApi = useRunDocumentTranslation();
   const cancelApi = useCancelDocumentTranslation();
   const dismissApi = useDismissStaleness();
-  const queueApi = useQueueDocumentTranslation();
   const [dismissing, setDismissing] = useState<Set<string>>(new Set());
 
   const dismiss = async (targetLocale: string) => {
@@ -67,21 +65,6 @@ export function TranslationStatusList({ rows, collection, id }: TranslationStatu
       return next;
     });
   };
-
-  // `skip_existing`, not `overwrite`: this button sits under the "out of date" badge, so switching it
-  // back would silently discard a reviewer's edit to a leaf whose source never moved.
-  const reTranslate = (row: TranslationStatusRow) =>
-    withToast(
-      () =>
-        queueApi.mutateAsync({
-          source_lng: row.sourceLocale,
-          target_lng: row.targetLocale,
-          collection_slug: collection,
-          collection_id: [id],
-          strategy: "skip_existing",
-        }),
-      "Failed to queue translation"
-    );
 
   const retry = (row: TranslationStatusRow) =>
     row.jobId && withToast(() => runApi.mutateAsync({ id: row.jobId! }), "Error retrying");
@@ -135,14 +118,8 @@ export function TranslationStatusList({ rows, collection, id }: TranslationStatu
         return (
           <span className={styles.actions}>
             <ActionButton
-              icon={<ReloadIcon />}
-              title={`Re-translate from ${row.sourceLocale}`}
-              onClick={() => reTranslate(row)}
-              loading={queueApi.isPending}
-            />
-            <ActionButton
               icon={<CheckIcon />}
-              title="Keep as is — hide until the source changes again"
+              title="Hide this notice until the source changes again"
               onClick={() => dismiss(row.targetLocale)}
               disabled={dismissing.has(row.targetLocale)}
               loading={dismissing.has(row.targetLocale)}

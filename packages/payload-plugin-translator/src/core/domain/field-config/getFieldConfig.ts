@@ -24,15 +24,9 @@ export function getFieldTranslationConfig(field: {
 }
 
 /**
- * @deprecated Use `getFieldTranslationConfig` instead
- */
-export const getTranslateKitFieldConfig = getFieldTranslationConfig;
-
-/**
  * Check if a field should be excluded from translation.
  *
- * @param field - The field to check (only its `custom` extension point is read)
- * @returns true if the field has `translateKit.exclude: true`
+ * @returns true when the field sets `custom.translateKit.exclude: true`
  */
 export function isFieldExcludedFromTranslation(field: {
   custom?: Record<string, unknown>;

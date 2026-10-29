@@ -351,7 +351,7 @@
     },
     "packages/payload-plugin-json-form-builder": {
       "name": "@focus-reactive/payload-plugin-json-form-builder",
-      "version": "1.5.0",
+      "version": "1.6.0",
       "dependencies": {
         "clsx": "2.1.1",
       },
@@ -482,7 +482,7 @@
     },
     "packages/payload-plugin-translator": {
       "name": "@focus-reactive/payload-plugin-translator",
-      "version": "0.16.0",
+      "version": "1.0.0-next.2",
       "dependencies": {
         "@hookform/resolvers": "^3.9.0",
         "@radix-ui/react-popover": "^1.1.0",

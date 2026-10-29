@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, PayloadRequest, CollectionSlug } from "payload";
+
 import { GetDocumentStatusHandler } from "./handler.js";
 import type { GetDocumentStatusConfig } from "./model.js";
-import type { TaskRunnerFactory, TaskRunner, Task } from "../../modules/task-runner/index.js";
-import { GENERIC_TRANSLATION_ERROR } from "../../shared/index.js";
+import { runRow, storeDouble } from "../../modules/runs/__tests__/fixtures/runRecordStore.js";
+import type { RunRecordStoreDouble } from "../../modules/runs/__tests__/fixtures/runRecordStore.js";
 
 const everyDocumentIsVisible = () =>
   vi.fn(async (args: { where?: { id?: { in?: string[] } } }) => ({
@@ -12,159 +13,140 @@ const everyDocumentIsVisible = () =>
 
 describe("GetDocumentStatusHandler", () => {
   let handler: GetDocumentStatusHandler;
-  let mockTaskRunner: TaskRunner;
-  let mockTaskRunnerFactory: TaskRunnerFactory;
+  let runs: RunRecordStoreDouble;
+  let openTheRecord: ReturnType<typeof vi.fn>;
   let config: GetDocumentStatusConfig;
 
-  const createMockTask = (overrides: Partial<Task> = {}): Task => ({
-    id: "task-123",
-    status: "completed",
-    input: {
-      collectionSlug: "posts" as CollectionSlug,
-      collectionId: "doc-123",
-      sourceLng: "en",
-      targetLng: "de",
-      strategy: "overwrite",
-      publishOnTranslation: false,
-    },
-    createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T01:00:00Z",
-    completedAt: "2024-01-01T01:00:00Z",
-    cancelled: false,
-    ...overrides,
-  });
-
-  const createMockRequest = (params: Record<string, string> = {}): PayloadRequest =>
+  const request = (params: Record<string, string> = {}): PayloadRequest =>
     ({
       payload: { find: everyDocumentIsVisible() } as unknown as Payload,
       routeParams: params,
     }) as unknown as PayloadRequest;
 
+  const aboutDoc123 = () => request({ collection_slug: "posts", collection_id: "doc-123" });
+
+  const answered = async (req: PayloadRequest) => {
+    const response = await handler.handle(req);
+    return { status: response.status, body: await response.json() };
+  };
+
   beforeEach(() => {
-    mockTaskRunner = {
-      enqueue: vi.fn(),
-      cancel: vi.fn(),
-      run: vi.fn(),
-      findByCollection: vi.fn().mockResolvedValue([]),
-    };
-
-    mockTaskRunnerFactory = {
-      create: vi.fn().mockReturnValue(mockTaskRunner),
-    };
-
-    config = {
-      availableCollections: new Set(["posts", "pages"] as CollectionSlug[]),
-    };
-
-    handler = new GetDocumentStatusHandler(config, mockTaskRunnerFactory);
+    vi.unstubAllEnvs();
+    runs = storeDouble();
+    openTheRecord = vi.fn(() => runs);
+    config = { availableCollections: new Set(["posts", "pages"] as CollectionSlug[]) };
+    handler = new GetDocumentStatusHandler(config, openTheRecord);
   });
 
   describe("validation", () => {
-    it("returns validation error for missing collection_slug", async () => {
-      const req = createMockRequest({ collection_id: "doc-123" });
-
-      const response = await handler.handle(req);
-
-      expect(response.status).toBe(400);
-      const body = await response.json();
-      expect(body.message).toBe("Validation error");
+    it("refuses a request with no collection", async () => {
+      expect((await answered(request({ collection_id: "doc-123" }))).status).toBe(400);
     });
 
-    it("returns validation error for missing collection_id", async () => {
-      const req = createMockRequest({ collection_slug: "posts" });
-
-      const response = await handler.handle(req);
-
-      expect(response.status).toBe(400);
+    it("refuses a request with no document", async () => {
+      expect((await answered(request({ collection_slug: "posts" }))).status).toBe(400);
     });
 
-    it("returns validation error for empty collection_slug", async () => {
-      const req = createMockRequest({
-        collection_slug: "",
-        collection_id: "doc-123",
-      });
+    it("refuses a collection the plugin does not translate", async () => {
+      const { status, body } = await answered(
+        request({ collection_slug: "users", collection_id: "doc-123" })
+      );
 
-      const response = await handler.handle(req);
-
-      expect(response.status).toBe(400);
-    });
-  });
-
-  describe("collection availability", () => {
-    it("returns bad request for unavailable collection", async () => {
-      const req = createMockRequest({
-        collection_slug: "users",
-        collection_id: "doc-123",
-      });
-
-      const response = await handler.handle(req);
-
-      expect(response.status).toBe(400);
-      const body = await response.json();
+      expect(status).toBe(400);
       expect(body.message).toBe("Collection not available for translation");
     });
   });
 
-  describe("success responses", () => {
-    it("returns one task status entry per document, wrapped in an array", async () => {
-      const task = createMockTask();
-      (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue([task]);
+  describe("what it reads", () => {
+    it("asks the run record about that one document, and the runner about nothing", async () => {
+      await answered(request({ collection_slug: "posts", collection_id: "doc-456" }));
 
-      const req = createMockRequest({
-        collection_slug: "posts",
-        collection_id: "doc-123",
+      expect(runs.findByDocument).toHaveBeenCalledWith({
+        collectionSlug: "posts",
+        collectionId: "doc-456",
       });
-      const response = await handler.handle(req);
+    });
 
-      expect(response.status).toBe(200);
-      const body = await response.json();
+    it("opens the record on the request's own payload", async () => {
+      const req = aboutDoc123();
+
+      await answered(req);
+
+      expect(openTheRecord).toHaveBeenCalledWith(req.payload);
+    });
+
+    it("answers with nothing when the document has never been translated", async () => {
+      const { status, body } = await answered(aboutDoc123());
+
+      expect(status).toBe(200);
+      expect(body.data).toEqual([]);
+    });
+  });
+
+  describe("what it answers", () => {
+    it("names the run, the document and the locale", async () => {
+      runs.findByDocument.mockResolvedValue([
+        runRow({
+          handle: "job-7",
+          settledAt: "2026-10-27T10:05:00.000Z",
+          startedAt: "2026-10-27T10:01:00.000Z",
+          outcome: "delivered",
+        }),
+      ]);
+
+      const { body } = await answered(aboutDoc123());
+
       expect(body.data).toHaveLength(1);
       expect(body.data[0]).toMatchObject({
-        id: "task-123",
+        id: "job-7",
         status: "completed",
+        completed_at: "2026-10-27T10:05:00.000Z",
         input: {
-          collection: {
-            relationTo: "posts",
-            value: "doc-123",
-          },
+          collection: { relationTo: "posts", value: "doc-1" },
           source_lng: "en",
           target_lng: "de",
         },
       });
     });
 
-    it("returns one entry per target locale, keeping the latest job per locale", async () => {
-      // Two locales, and a superseded older job for `de` — the reduction keeps the newest per locale.
-      const deOld = createMockTask({
-        id: "de-old",
-        input: { ...createMockTask().input, targetLng: "de" },
-        createdAt: "2024-01-01T00:00:00Z",
-        status: "failed",
-      });
-      const deNew = createMockTask({
-        id: "de-new",
-        input: { ...createMockTask().input, targetLng: "de" },
-        createdAt: "2024-01-02T00:00:00Z",
-        status: "running",
-      });
-      const fr = createMockTask({
-        id: "fr-1",
-        input: { ...createMockTask().input, targetLng: "fr" },
-        createdAt: "2024-01-01T12:00:00Z",
-        status: "pending",
-      });
-      (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue([
-        deOld,
-        deNew,
-        fr,
+    it("says pending for a locale nothing has started, and running once it has", async () => {
+      runs.findByDocument.mockResolvedValue([
+        runRow({ targetLng: "fr" }),
+        runRow({ targetLng: "es", startedAt: "2026-10-27T10:01:00.000Z" }),
       ]);
 
-      const req = createMockRequest({ collection_slug: "posts", collection_id: "doc-123" });
-      const body = await (await handler.handle(req)).json();
+      const { body } = await answered(aboutDoc123());
+
+      const byLocale = Object.fromEntries(
+        (body.data as Array<{ status: string; input: { target_lng: string } }>).map((entry) => [
+          entry.input.target_lng,
+          entry.status,
+        ])
+      );
+      expect(byLocale).toEqual({ fr: "pending", es: "running" });
+    });
+
+    it("keeps one entry per target locale, the newest run for each", async () => {
+      runs.findByDocument.mockResolvedValue([
+        runRow({
+          handle: "de-old",
+          queuedAt: "2026-10-01T00:00:00.000Z",
+          outcome: "failed",
+          settledAt: "2026-10-01T00:01:00.000Z",
+        }),
+        runRow({
+          handle: "de-new",
+          queuedAt: "2026-10-02T00:00:00.000Z",
+          startedAt: "2026-10-02T00:01:00.000Z",
+        }),
+        runRow({ handle: "fr-1", targetLng: "fr", queuedAt: "2026-10-01T12:00:00.000Z" }),
+      ]);
+
+      const { body } = await answered(aboutDoc123());
 
       const byLocale = Object.fromEntries(
         (body.data as Array<{ id: string; status: string; input: { target_lng: string } }>).map(
-          (job) => [job.input.target_lng, job]
+          (entry) => [entry.input.target_lng, entry]
         )
       );
       expect(Object.keys(byLocale).sort()).toEqual(["de", "fr"]);
@@ -172,103 +154,67 @@ describe("GetDocumentStatusHandler", () => {
       expect(byLocale.fr).toMatchObject({ id: "fr-1", status: "pending" });
     });
 
-    it("returns an empty array when no task exists", async () => {
-      (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    it("says nothing about a locale whose only run was cancelled", async () => {
+      runs.findByDocument.mockResolvedValue([
+        runRow({ targetLng: "de", outcome: "cancelled", settledAt: "2026-10-27T10:02:00.000Z" }),
+        runRow({ targetLng: "fr" }),
+      ]);
 
-      const req = createMockRequest({
-        collection_slug: "posts",
-        collection_id: "doc-123",
-      });
-      const response = await handler.handle(req);
+      const { body } = await answered(aboutDoc123());
 
-      expect(response.status).toBe(200);
-      const body = await response.json();
-      expect(body.data).toEqual([]);
+      expect(
+        (body.data as Array<{ input: { target_lng: string } }>).map((e) => e.input.target_lng)
+      ).toEqual(["fr"]);
     });
 
-    it("calls findByCollection with correct parameters", async () => {
-      const req = createMockRequest({
-        collection_slug: "posts",
-        collection_id: "doc-456",
-      });
+    it("falls back to what a locale last did when its newest run was cancelled", async () => {
+      runs.findByDocument.mockResolvedValue([
+        runRow({
+          handle: "delivered-first",
+          queuedAt: "2026-10-01T00:00:00.000Z",
+          startedAt: "2026-10-01T00:01:00.000Z",
+          settledAt: "2026-10-01T00:02:00.000Z",
+          outcome: "delivered",
+        }),
+        runRow({
+          handle: "cancelled-later",
+          queuedAt: "2026-10-02T00:00:00.000Z",
+          settledAt: "2026-10-02T00:01:00.000Z",
+          outcome: "cancelled",
+        }),
+      ]);
 
-      await handler.handle(req);
+      const { body } = await answered(aboutDoc123());
 
-      expect(mockTaskRunner.findByCollection).toHaveBeenCalledWith("posts", {
-        documentIds: ["doc-456"],
-      });
+      expect(body.data[0]).toMatchObject({ id: "delivered-first", status: "completed" });
     });
 
-    it("creates task runner with request payload", async () => {
-      const mockPayload = {
-        collections: {},
-        find: everyDocumentIsVisible(),
-      } as unknown as Payload;
-      const req = createMockRequest({
-        collection_slug: "posts",
-        collection_id: "doc-123",
-      });
-      (req as any).payload = mockPayload;
-
-      await handler.handle(req);
-
-      expect(mockTaskRunnerFactory.create).toHaveBeenCalledWith(mockPayload);
-    });
-  });
-
-  describe("task status transformation", () => {
-    it("includes error information when present", async () => {
-      const task = createMockTask({
-        status: "failed",
-        error: { message: "Translation failed" },
-      });
-      (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue([task]);
-
-      const req = createMockRequest({
-        collection_slug: "posts",
-        collection_id: "doc-123",
-      });
-      const response = await handler.handle(req);
-
-      const body = await response.json();
-      expect(body.data[0].status).toBe("failed");
-      expect(body.data[0].error).toEqual({ message: "Translation failed" });
-    });
-
-    it("does not leak the raw error to the client in production", async () => {
+    it("hands the stored failure text on as it was stored, with no second cleaning", async () => {
       vi.stubEnv("NODE_ENV", "production");
-      try {
-        const task = createMockTask({
-          status: "failed",
-          error: { message: "401 Incorrect API key provided: sk-proj-abc123" },
-        });
-        (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue([task]);
+      runs.findByDocument.mockResolvedValue([
+        runRow({
+          outcome: "failed",
+          settledAt: "2026-10-27T10:05:00.000Z",
+          error: "The configured translation model is not available to this API key.",
+        }),
+      ]);
 
-        const req = createMockRequest({
-          collection_slug: "posts",
-          collection_id: "doc-123",
-        });
-        const body = await (await handler.handle(req)).json();
+      const { body } = await answered(aboutDoc123());
 
-        expect(body.data[0].error).toEqual({ message: GENERIC_TRANSLATION_ERROR });
-        expect(JSON.stringify(body)).not.toContain("sk-proj");
-      } finally {
-        vi.unstubAllEnvs();
-      }
+      expect(body.data[0].status).toBe("failed");
+      expect(body.data[0].error).toEqual({
+        message: "The configured translation model is not available to this API key.",
+      });
     });
 
-    it("includes cancelled flag", async () => {
-      const task = createMockTask({ cancelled: true });
-      (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue([task]);
+    it("hides a document the caller may not read", async () => {
+      runs.findByDocument.mockResolvedValue([runRow()]);
+      const req = request({ collection_slug: "posts", collection_id: "doc-123" });
+      (req.payload as unknown as { find: unknown }).find = vi.fn(async () => ({ docs: [] }));
 
-      const req = createMockRequest({
-        collection_slug: "posts",
-        collection_id: "doc-123",
-      });
-      const response = await handler.handle(req);
+      const { body } = await answered(req);
 
-      const body = await response.json();
-      expect(body.data[0].cancelled).toBe(true);
+      expect(body.data).toEqual([]);
     });
   });
 });

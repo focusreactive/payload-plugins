@@ -1,7 +1,6 @@
 import { createPayloadJobsRunner } from "@focus-reactive/payload-plugin-translator";
+import { assertTaskRunnerContract } from "@focus-reactive/payload-plugin-translator/testing";
 import { afterAll, beforeAll, vi } from "vitest";
-
-import { assertTaskRunnerContract } from "../../../../../packages/payload-plugin-translator/src/server/modules/task-runner/__tests__/TaskRunner.invariants";
 import { bootTestPayload } from "./bootTestPayload";
 import type { TestPayload } from "./bootTestPayload";
 
@@ -14,10 +13,14 @@ afterAll(async () => {
   await ctx?.cleanup();
 });
 
-assertTaskRunnerContract("PayloadJobsTaskRunner", (report) =>
-  createPayloadJobsRunner({ autoRun: false }).create(ctx.payload, {
-    handler: vi.fn().mockResolvedValue(undefined),
-    collections: [],
-    report,
-  })
+const provider = createPayloadJobsRunner({ autoRun: false });
+
+assertTaskRunnerContract(
+  "PayloadJobsTaskRunner",
+  (report) =>
+    provider.create(ctx.payload, {
+      handler: vi.fn().mockResolvedValue(undefined),
+      report,
+    }),
+  provider.capabilities
 );

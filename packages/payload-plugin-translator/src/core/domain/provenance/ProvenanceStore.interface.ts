@@ -1,4 +1,4 @@
-import type { SourceFingerprint } from "./SourceFingerprint.js";
+import type { RecordedFingerprints } from "./SourceFingerprint.js";
 
 /**
  * Translation provenance — the durable record of *what source state a target locale was translated
@@ -16,42 +16,35 @@ import type { SourceFingerprint } from "./SourceFingerprint.js";
  * `documentId` is always a string (Payload ids may be string or number — callers stringify on the
  * way in) and `translatedAt` is an ISO-8601 string, so the record shape is stable across databases.
  *
- * The fingerprint columns are not here: how the plugin decides a locale is out of date is its own
- * business, and the staleness endpoint answers that question without them.
+ * The source fingerprint is not here: how the plugin decides a locale is out of date is its own
+ * business, and the staleness endpoint answers that question without it.
  *
  * @since 0.7.0
  */
 export interface TranslationProvenanceRecord {
-  /** Slug of the translated collection. */
   collectionSlug: string;
   /** Stringified id of the translated document. */
   documentId: string;
-  /** Locale that was written (translated into). */
   targetLocale: string;
-  /** Locale the translation was derived from. */
   sourceLocale: string;
   translatedAt: string;
 }
 
-/** The receipt as the plugin holds it: what a consumer sees, plus the fingerprints that drive staleness. */
 export interface ProvenanceReceipt extends TranslationProvenanceRecord {
-  sourceFingerprint: SourceFingerprint | null;
-  /** The fingerprint an editor acknowledged as "stale but leave it" (#50). `null` until dismissed. */
-  dismissedFingerprint: SourceFingerprint | null;
+  /** The source this translation is considered current against — written by a run, or by an editor accepting it as it stands. */
+  sourceFingerprint: RecordedFingerprints | null;
 }
 
 /**
- * The composite key that identifies exactly one provenance record. Also the {@link ProvenanceStore}
- * `upsert`/`find` match key.
+ * The composite key that identifies exactly one provenance record, and what every method of
+ * {@link ProvenanceStore} but `findByDocument` matches on.
  *
  * @since 0.7.0
  */
 export interface ProvenanceKey {
-  /** Slug of the translated collection. */
   collectionSlug: string;
   /** Stringified id of the translated document. */
   documentId: string;
-  /** Locale that was written (translated into). */
   targetLocale: string;
 }
 
@@ -71,17 +64,16 @@ export interface ProvenanceKey {
  *   sourceLocale: "en",
  *   sourceFingerprint: fp,
  *   translatedAt: new Date().toISOString(),
- *   dismissedFingerprint: null,
  * });
  * const record = await store.find({ collectionSlug: "posts", documentId: "42", targetLocale: "de" });
  * ```
  */
 export interface ProvenanceStore {
   /**
-   * Create the record, or update it in place if one already exists for its
-   * `(collectionSlug, documentId, targetLocale)` key. Never produces a duplicate for the same key.
-   *
-   * @param record - The provenance receipt to persist.
+   * Write the whole receipt for its `(collectionSlug, documentId, targetLocale)` key, creating the
+   * row when there is none. **Every column is replaced**, so this is only for a caller that owns all
+   * of them: writing one field through here loses a translation that finished since the read — which
+   * is what {@link ProvenanceStore.rebaseSourceFingerprint} exists for.
    */
   upsert(record: ProvenanceReceipt): Promise<void>;
   /**
@@ -101,11 +93,17 @@ export interface ProvenanceStore {
    */
   findByDocument(collectionSlug: string, documentId: string): Promise<ProvenanceReceipt[]>;
   /**
-   * Acknowledge the current source drift for one locale without re-translating (#50's dismiss):
-   * persist `dismissedFingerprint` so the indicator hides until the source changes again. No-op if
-   * the key has no record.
+   * Re-base one record on the source it is now considered current against, touching nothing else.
+   * No-op if the key has no record.
+   *
+   * Narrow on purpose: an editor accepting a translation reads the record, hashes the source and
+   * writes, and a run finishing in between must keep its own `translatedAt` and its own claims
+   * rather than be replaced by the snapshot the read took.
    */
-  dismiss(key: ProvenanceKey, dismissedFingerprint: SourceFingerprint): Promise<void>;
+  rebaseSourceFingerprint(
+    key: ProvenanceKey,
+    sourceFingerprint: RecordedFingerprints
+  ): Promise<void>;
   /**
    * Delete every record for a document (all target locales). Used to cascade-clean when the source
    * document is deleted.

@@ -7,7 +7,7 @@ import type { FieldTranslationConfig } from "./model.js";
 import { TranslateFieldHandler } from "./handler.js";
 
 export type CreateFieldRouteArgs = FieldTranslationConfig & {
-  access?: AccessGuard;
+  access: AccessGuard;
   basePath?: string;
 };
 
@@ -26,6 +26,10 @@ export function createFieldRoute({
   return {
     path: `${basePath}/field`,
     method: "post",
-    handler: withAccessCheck(withErrorHandler(handler.handle.bind(handler)), access),
+    handler: withAccessCheck(
+      withErrorHandler(handler.handle.bind(handler)),
+      access,
+      "translate-field"
+    ),
   };
 }

@@ -1,8 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import type { Field } from "payload";
 import { TranslationPipeline } from "./TranslationPipeline.js";
-import { OverwriteStrategy } from "./strategies/Overwrite.strategy.js";
-import { SkipExistingStrategy } from "./strategies/SkipExisting.strategy.js";
+import { everyTranslatableLeaf } from "../domain/content-projection/contentProjector.js";
 import type { TranslationProvider } from "../domain/translation-providers/index.js";
 
 const createMockProvider = (
@@ -29,7 +28,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new OverwriteStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -39,6 +37,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: everyTranslatableLeaf(sourceData, schema),
       });
 
       expect(result).not.toBeNull();
@@ -59,7 +58,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new OverwriteStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -69,6 +67,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: everyTranslatableLeaf(sourceData, schema),
       });
 
       expect(result).not.toBeNull();
@@ -89,7 +88,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new OverwriteStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -99,6 +97,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: everyTranslatableLeaf(sourceData, schema),
       });
 
       expect(result).not.toBeNull();
@@ -124,7 +123,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new OverwriteStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -134,6 +132,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: everyTranslatableLeaf(sourceData, schema),
       });
 
       expect(result).not.toBeNull();
@@ -170,7 +169,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new OverwriteStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -180,6 +178,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: everyTranslatableLeaf(sourceData, schema),
       });
 
       expect(result).not.toBeNull();
@@ -230,7 +229,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new OverwriteStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -240,6 +238,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "es",
+        selection: everyTranslatableLeaf(sourceData, schema),
       });
 
       expect(result).not.toBeNull();
@@ -307,7 +306,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new OverwriteStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -317,6 +315,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "es",
+        selection: everyTranslatableLeaf(sourceData, schema),
       });
 
       expect(result).not.toBeNull();
@@ -356,7 +355,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new OverwriteStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -366,6 +364,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "es",
+        selection: everyTranslatableLeaf(sourceData, schema),
       });
 
       // No text nodes to translate — pipeline returns null
@@ -374,8 +373,8 @@ describe("TranslationPipeline", () => {
     });
   });
 
-  describe("strategy filtering", () => {
-    it("OverwriteStrategy translates all fields", async () => {
+  describe("what the selection leaves out", () => {
+    it("translates every leaf the selection names", async () => {
       const schema: Field[] = [{ name: "title", type: "text", localized: true }];
       const sourceData = { title: "Hello" };
       const targetData = { title: "Existing translation" };
@@ -383,7 +382,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new OverwriteStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -393,13 +391,14 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: everyTranslatableLeaf(sourceData, schema),
       });
 
       expect(result).not.toBeNull();
       expect(result!.translatedData.title).toBe("TR_Hello");
     });
 
-    it("SkipExistingStrategy skips fields with existing translations", async () => {
+    it("keeps the target text of a leaf the selection left out", async () => {
       const schema: Field[] = [
         { name: "title", type: "text", localized: true },
         { name: "description", type: "text", localized: true },
@@ -410,7 +409,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new SkipExistingStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -420,12 +418,10 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: ["description"],
       });
 
       expect(result).not.toBeNull();
-      // Result contains full document shape
-      // title: kept from target (already translated)
-      // description: translated from source
       expect(result!.translatedData).toEqual({
         title: "Existing",
         description: "TR_World",
@@ -442,7 +438,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new OverwriteStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -452,13 +447,14 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: everyTranslatableLeaf(sourceData, schema),
       });
 
       expect(result).toBeNull();
       expect(provider.translate).not.toHaveBeenCalled();
     });
 
-    it("returns null when all fields already translated (SkipExisting)", async () => {
+    it("returns null when the selection names nothing", async () => {
       const schema: Field[] = [{ name: "title", type: "text", localized: true }];
       const sourceData = { title: "Hello" };
       const targetData = { title: "Already translated" };
@@ -466,7 +462,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new SkipExistingStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -476,6 +471,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: [],
       });
 
       expect(result).toBeNull();
@@ -490,7 +486,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new OverwriteStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -500,6 +495,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: everyTranslatableLeaf(sourceData, schema),
       });
 
       expect(result).toBeNull();
@@ -517,7 +513,6 @@ describe("TranslationPipeline", () => {
       };
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new OverwriteStrategy(),
       });
 
       await expect(
@@ -528,6 +523,7 @@ describe("TranslationPipeline", () => {
           targetData,
           sourceLng: "en",
           targetLng: "ru",
+          selection: everyTranslatableLeaf(sourceData, schema),
         })
       ).rejects.toThrow("Translation provider returned null");
     });
@@ -542,7 +538,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new OverwriteStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -552,6 +547,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: everyTranslatableLeaf(sourceData, schema),
       });
 
       // Result contains translated data
@@ -574,7 +570,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new OverwriteStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -584,6 +579,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: everyTranslatableLeaf(sourceData, schema),
       });
 
       expect(result!.translatedData).toEqual({
@@ -604,7 +600,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new OverwriteStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -614,6 +609,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: everyTranslatableLeaf(sourceData, schema),
       });
 
       expect(result!.translatedData).toEqual({
@@ -622,7 +618,7 @@ describe("TranslationPipeline", () => {
       });
     });
 
-    it("preserves existing target values with SkipExisting", async () => {
+    it("keeps a left-out leaf's target text in the full document shape", async () => {
       const schema: Field[] = [
         { name: "title", type: "text", localized: true },
         { name: "description", type: "text", localized: true },
@@ -634,7 +630,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new SkipExistingStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -644,6 +639,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: ["description"],
       });
 
       expect(result!.translatedData).toEqual({
@@ -654,8 +650,8 @@ describe("TranslationPipeline", () => {
     });
   });
 
-  describe("nested structures with strategy", () => {
-    it("applies SkipExisting to nested array fields", async () => {
+  describe("nested structures", () => {
+    it("sends one element of an array and leaves its sibling alone", async () => {
       const schema: Field[] = [
         {
           name: "items",
@@ -679,7 +675,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new SkipExistingStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -689,6 +684,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: ["items.2.label"],
       });
 
       // Non-localized array → shared rows → id kept.
@@ -698,7 +694,7 @@ describe("TranslationPipeline", () => {
       ]);
     });
 
-    it("applies SkipExisting to nested group fields", async () => {
+    it("sends one leaf of a group and leaves its sibling alone", async () => {
       const schema: Field[] = [
         {
           name: "meta",
@@ -715,7 +711,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new SkipExistingStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -725,6 +720,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: ["meta.description"],
       });
 
       expect(result!.translatedData.meta).toEqual({
@@ -733,7 +729,7 @@ describe("TranslationPipeline", () => {
       });
     });
 
-    it("applies SkipExisting to blocks fields", async () => {
+    it("sends one block and leaves its sibling alone", async () => {
       const schema: Field[] = [
         {
           name: "layout",
@@ -762,7 +758,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new SkipExistingStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -772,6 +767,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: ["layout.2:text.content"],
       });
 
       // Non-localized blocks → shared rows → id kept.
@@ -799,7 +795,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new OverwriteStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -809,6 +804,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: everyTranslatableLeaf(sourceData, schema),
       });
 
       expect(result!.translatedData.title).toBe("TR_Hello");
@@ -831,7 +827,6 @@ describe("TranslationPipeline", () => {
       const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
-        translationStrategy: new OverwriteStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -841,6 +836,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
+        selection: everyTranslatableLeaf(sourceData, schema),
       });
 
       expect(result!.translatedData.title).toBe("TR_Hello");
@@ -867,7 +863,6 @@ describe("TranslationPipeline", () => {
     it("names every leaf it sent, by the same address the receipt is keyed on", async () => {
       const pipeline = new TranslationPipeline({
         translationProvider: createMockProvider(),
-        translationStrategy: new OverwriteStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -877,19 +872,19 @@ describe("TranslationPipeline", () => {
         targetData: {},
         sourceLng: "en",
         targetLng: "de",
+        selection: everyTranslatableLeaf(sourceData, schema),
       });
 
-      expect([...(result?.translatedPaths ?? [])].sort()).toEqual([
+      expect((result?.leaves ?? []).map((leaf) => String(leaf.idPath)).sort()).toEqual([
         "body",
         "items.a1.label",
         "title",
       ]);
     });
 
-    it("names only the leaves the strategy let through", async () => {
+    it("names only the leaves it was asked for", async () => {
       const pipeline = new TranslationPipeline({
         translationProvider: createMockProvider(),
-        translationStrategy: new SkipExistingStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -899,15 +894,18 @@ describe("TranslationPipeline", () => {
         targetData: { body: "Welt", items: [{ id: "a1", label: "" }] },
         sourceLng: "en",
         targetLng: "de",
+        selection: ["title", "items.a1.label"],
       });
 
-      expect([...(result?.translatedPaths ?? [])].sort()).toEqual(["items.a1.label", "title"]);
+      expect((result?.leaves ?? []).map((leaf) => String(leaf.idPath)).sort()).toEqual([
+        "items.a1.label",
+        "title",
+      ]);
     });
 
-    it("passes the per-leaf answer from the config down to the strategy", async () => {
+    it("sends only the leaves the selection names", async () => {
       const pipeline = new TranslationPipeline({
         translationProvider: createMockProvider(),
-        translationStrategy: new SkipExistingStrategy(),
       });
 
       const result = await pipeline.execute({
@@ -917,10 +915,10 @@ describe("TranslationPipeline", () => {
         targetData: { title: "Hallo", body: "Welt", items: [{ id: "a1", label: "Erste" }] },
         sourceLng: "en",
         targetLng: "de",
-        sourceChangedByLeaf: { title: true },
+        selection: ["title"],
       });
 
-      expect([...(result?.translatedPaths ?? [])]).toEqual(["title"]);
+      expect(result?.leaves).toEqual([{ idPath: "title", answeredInFull: true }]);
     });
   });
 });

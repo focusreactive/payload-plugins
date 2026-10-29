@@ -85,7 +85,7 @@ describe("a queued translation reads as whoever asked for it", () => {
         target_lng: ["de"],
         collection_slug: "docs",
         collection_id: [id],
-        strategy: "overwrite",
+
         publish_on_translation: false,
       },
     });

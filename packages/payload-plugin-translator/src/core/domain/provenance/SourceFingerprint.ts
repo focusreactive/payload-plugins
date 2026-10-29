@@ -1,26 +1,36 @@
+// zod in `core` relaxes its dependency-free rule — decided in
+// docs/plans/2026-10-02-per-field-fingerprints.task.md, "Deferred — validation in core".
 import { z } from "zod";
 
-/** A leaf the run saw and declined to translate: the target text is not ours to describe. */
-export const DECLINED = null;
+import type { SourceHash } from "../content-projection/computeFieldFingerprints.js";
+import { SOURCE_HASH_PATTERN } from "../content-projection/computeFieldFingerprints.js";
+import type { LeafAddress } from "../content-projection/idPath.js";
 
 /**
- * What a receipt records about one leaf: the hash it was translated from, {@link DECLINED}, or — when
- * the address is absent altogether — a leaf that appeared after the translation.
+ * A leaf no run has answered — sent and never got back, or declined by an older version. It reads
+ * as changed, so the next run selects it again.
  */
-export type RecordedFingerprints = Readonly<Record<string, string | typeof DECLINED>>;
+export const UNANSWERED = "!unanswered" as const;
+
+export type RecordedClaim = SourceHash | typeof UNANSWERED;
 
 /**
- * What a receipt stores about the source it was translated from. `document` is the single sha256
- * written before per-leaf fingerprints existed: it says the document moved without saying where, so
- * no leaf-level question can be answered from it.
+ * Keyed by leaf address, holding every leaf the run saw — sent or not. An absent address is a leaf
+ * that appeared after the translation.
  */
-export type SourceFingerprint =
-  | { kind: "document"; hash: string }
-  | { kind: "fields"; hashes: RecordedFingerprints };
+export type RecordedFingerprints = Readonly<Record<LeafAddress, RecordedClaim>>;
 
-// TODO(core-deps): zod in `core` relaxes its dependency-free rule — see the task contract,
-// "Deferred — validation in core". Revisit if `@repo/translator-core` is ever extracted.
-const recordedMap = z.record(z.string().nullable());
+const storedHash = z
+  .string()
+  .regex(SOURCE_HASH_PATTERN)
+  .transform((hash) => hash as SourceHash);
+
+/**
+ * `null` is what 1.0.0-next.3 and earlier wrote for a leaf a run skipped. Read, not refused: one
+ * value outside the schema degrades the whole map ({@link parseSourceFingerprint}).
+ */
+const legacyDecline = z.null().transform(() => UNANSWERED);
+const recordedMap = z.record(z.union([storedHash, z.literal(UNANSWERED), legacyDecline]));
 
 const asFieldMap = (stored: string): RecordedFingerprints | null => {
   try {
@@ -32,19 +42,17 @@ const asFieldMap = (stored: string): RecordedFingerprints | null => {
 };
 
 /**
- * Read a stored fingerprint. Anything that is not a per-field map is taken as the legacy document
- * digest — a corrupt value is deliberately not an error, it simply never matches. `null` only when
- * the column held nothing.
+ * `null` when the column claims nothing about any leaf: empty, not a per-leaf map (a pre-0.15.0
+ * document digest included — docs/DEPRECATIONS.md#the-document-wide-digest-stops-being-read), or a
+ * map with any value outside the schema, which fails whole rather than per leaf.
  */
 export function parseSourceFingerprint(
   stored: string | null | undefined
-): SourceFingerprint | null {
+): RecordedFingerprints | null {
   if (typeof stored !== "string" || stored.length === 0) return null;
-
-  const hashes = asFieldMap(stored);
-  return hashes === null ? { kind: "document", hash: stored } : { kind: "fields", hashes };
+  return asFieldMap(stored);
 }
 
-export function serializeSourceFingerprint(fingerprint: SourceFingerprint): string {
-  return fingerprint.kind === "document" ? fingerprint.hash : JSON.stringify(fingerprint.hashes);
+export function serializeSourceFingerprint(fingerprint: RecordedFingerprints): string {
+  return JSON.stringify(fingerprint);
 }

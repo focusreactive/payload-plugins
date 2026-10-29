@@ -53,7 +53,7 @@ describe("a run that spends its attempts across more than one locale", () => {
         target_lng: ["fr", "de"],
         collection_slug: "docs",
         collection_id: [String(made.id)],
-        strategy: "overwrite",
+
         publish_on_translation: false,
       },
     });

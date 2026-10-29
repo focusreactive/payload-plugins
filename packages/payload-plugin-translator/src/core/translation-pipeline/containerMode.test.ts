@@ -2,6 +2,14 @@ import type { Field } from "payload";
 import { describe, expect, it, vi } from "vitest";
 import type { TranslationProvider } from "../domain/translation-providers/index.js";
 import { translateContent } from "./translateContent.js";
+import type { TranslateContentArgs } from "./translateContent.js";
+import { everyTranslatableLeaf } from "../domain/content-projection/contentProjector.js";
+
+const translateAll = (args: Omit<TranslateContentArgs, "selection">) =>
+  translateContent({
+    ...args,
+    selection: everyTranslatableLeaf(args.sourceData, args.schema),
+  });
 
 const text = (value: string, format = 0) => ({
   type: "text",
@@ -66,9 +74,8 @@ const paragraphsOf = (result: { translatedData: Record<string, unknown> } | null
 };
 
 describe("container mode", () => {
-  describe("flag off", () => {
-    // Baseline captured from the untouched tree on 2026-09-09 (see the task contract).
-    it("translates per node, byte-identical to the recorded baseline", async () => {
+  describe("a provider that cannot keep marks", () => {
+    it("translates per node, byte-identical to the output recorded before container mode existed", async () => {
       const { provider } = bracketProvider();
       const source = {
         body: richText([
@@ -77,7 +84,7 @@ describe("container mode", () => {
         ]),
       };
 
-      const result = await translateContent({
+      const result = await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: source,
@@ -104,23 +111,39 @@ describe("container mode", () => {
         expect.objectContaining({ type: "text", text: "[ first]" }),
       ]);
     });
+
+    it("stays per-node for a provider that declares the capability false", async () => {
+      const { provider, sent } = bracketProvider({ capabilities: { inlineMarks: false } });
+
+      await translateAll({
+        document: { collection: "docs", id: "1" },
+        schema,
+        sourceData: {
+          body: richText([paragraph([text("a "), text("red", 1), text(" car")])]),
+        },
+        sourceLng: "en",
+        targetLng: "fr",
+        translationProvider: provider,
+      });
+
+      expect(Object.values(sent[0] ?? {})).toEqual(["a ", "red", " car"]);
+    });
   });
 
-  describe("flag on", () => {
+  describe("a provider that declares the capability", () => {
     it("sends a formatted paragraph as one marked string", async () => {
       const { provider, sent } = bracketProvider({ capabilities: { inlineMarks: true } });
       const source = {
         body: richText([paragraph([text("a "), text("red", 1), text(" car")])]),
       };
 
-      await translateContent({
+      await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: source,
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       expect(Object.values(sent[0] ?? {})).toEqual(["<1>a </1><2>red</2><3> car</3>"]);
@@ -135,14 +158,13 @@ describe("container mode", () => {
         body: richText([paragraph([text("a "), text("red", 1), text(" car")])]),
       };
 
-      const result = await translateContent({
+      const result = await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: source,
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
@@ -159,18 +181,15 @@ describe("container mode", () => {
         translate: vi.fn(async () => ({ 0: "<1>une </1><2>rouge</2><3> voiture</3>" })),
       } as TranslationProvider;
 
-      const result = await translateContent({
+      const result = await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: { body: richText([paragraph(nodes)]) },
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
-      // Both halves matter: the text alone passes on code that mutates the caller's tree, and the
-      // untouched source alone passes on code that translated nothing.
       expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
         "une ",
         "rouge",
@@ -188,7 +207,7 @@ describe("container mode", () => {
         translate: vi.fn(async () => ({ 0: "<2>Dokumentation</2><1> lesen</1>" })),
       } as TranslationProvider;
 
-      const result = await translateContent({
+      const result = await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: {
@@ -197,7 +216,6 @@ describe("container mode", () => {
         sourceLng: "en",
         targetLng: "de",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       const children = paragraphsOf(result ?? null)[0]?.children;
@@ -214,14 +232,13 @@ describe("container mode", () => {
         translate: vi.fn(async () => ({ 0: "<1>une voiture rouge</1><2></2><3></3>" })),
       } as TranslationProvider;
 
-      const result = await translateContent({
+      const result = await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: { body: richText([paragraph([text("a "), text("red", 1), text(" car")])]) },
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
@@ -238,14 +255,13 @@ describe("container mode", () => {
         ]),
       };
 
-      await translateContent({
+      await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: source,
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       expect(Object.values(sent[0] ?? {})).toEqual([
@@ -265,14 +281,13 @@ describe("container mode", () => {
         ]),
       };
 
-      await translateContent({
+      await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: source,
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       expect(Object.values(sent[0] ?? {})).toEqual([
@@ -289,7 +304,7 @@ describe("container mode", () => {
         translate: vi.fn(async () => ({ 0: "<1>Achetez </1><2>notre produit</2>" })),
       } as TranslationProvider;
 
-      const result = await translateContent({
+      const result = await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: {
@@ -298,7 +313,6 @@ describe("container mode", () => {
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
@@ -313,14 +327,13 @@ describe("container mode", () => {
         body: richText([paragraph([text("Sign up now")]), paragraph([text("No card needed")])]),
       };
 
-      await translateContent({
+      await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: source,
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       expect(Object.values(sent[0] ?? {})).toEqual(["Sign up now", "No card needed"]);
@@ -329,7 +342,7 @@ describe("container mode", () => {
     it("leaves a plain text field to the plain expander", async () => {
       const { provider, sent } = bracketProvider({ capabilities: { inlineMarks: true } });
 
-      await translateContent({
+      await translateAll({
         document: { collection: "docs", id: "1" },
         schema: mixedSchema,
         sourceData: {
@@ -339,7 +352,6 @@ describe("container mode", () => {
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       expect(Object.values(sent[0] ?? {})).toEqual([
@@ -355,14 +367,13 @@ describe("container mode", () => {
         translate: vi.fn(async () => ({ 0: "<1>une </1><2>rouge</2>" })),
       } as TranslationProvider;
 
-      const result = await translateContent({
+      const result = await translateAll({
         document: { collection: "docs", id: "1" },
         schema,
         sourceData: { body: richText([paragraph([text("a "), text("red", 1), text(" car")])]) },
         sourceLng: "en",
         targetLng: "fr",
         translationProvider: provider,
-        inlineMarks: true,
       });
 
       expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
@@ -380,14 +391,13 @@ describe("container mode", () => {
       const declaring = bracketProvider({ capabilities: { inlineMarks: true } });
 
       for (const each of [silent, declaring]) {
-        await translateContent({
+        await translateAll({
           document: { collection: "docs", id: "1" },
           schema,
           sourceData: body(),
           sourceLng: "en",
           targetLng: "fr",
           translationProvider: each.provider,
-          inlineMarks: true,
         });
       }
 

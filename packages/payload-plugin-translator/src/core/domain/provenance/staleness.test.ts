@@ -1,68 +1,37 @@
 import { describe, expect, it } from "vitest";
 
 import type { ProvenanceReceipt } from "./ProvenanceStore.interface.js";
-import type { CurrentFingerprint } from "./staleness.js";
-import { changedLeaves, isRecordStale, recordsEachLeaf, leafSourceChanged } from "./staleness.js";
+import type { FieldFingerprints } from "../content-projection/computeFieldFingerprints.js";
+import type { RecordedFingerprints } from "./SourceFingerprint.js";
+import { asHash } from "./__tests__/fixtures/claims.js";
+import { changedLeaves, isRecordStale } from "./staleness.js";
+import { parseSourceFingerprint, UNANSWERED } from "./SourceFingerprint.js";
 
-const SHA256_HEX_LENGTH = 64;
-const HASH_A = "a".repeat(SHA256_HEX_LENGTH);
-const HASH_B = "b".repeat(SHA256_HEX_LENGTH);
-const HASH_C = "c".repeat(SHA256_HEX_LENGTH);
+const hashed = (fields: Record<string, string>): FieldFingerprints =>
+  Object.fromEntries(Object.entries(fields).map(([address, seed]) => [address, asHash(seed)]));
 
 const record = (over: Partial<ProvenanceReceipt> = {}): ProvenanceReceipt => ({
   collectionSlug: "posts",
   documentId: "1",
   targetLocale: "de",
   sourceLocale: "en",
-  sourceFingerprint: { kind: "document", hash: HASH_A },
+  sourceFingerprint: hashed({ title: "1111" }),
   translatedAt: "2026-07-07T00:00:00.000Z",
-  dismissedFingerprint: null,
   ...over,
 });
 
-const current = (document: string, fields: Record<string, string> = {}): CurrentFingerprint => ({
-  document,
-  fields,
-});
-
-describe("isRecordStale — a receipt written before per-field fingerprints", () => {
-  it("is not stale when the current fingerprint matches the recorded source fingerprint", () => {
-    expect(isRecordStale(record(), current(HASH_A))).toBe(false);
-  });
-
-  it("is stale when the source drifted and nothing was dismissed", () => {
-    expect(isRecordStale(record(), current(HASH_B))).toBe(true);
-  });
-
-  it("is not stale when the current drift equals the dismissed fingerprint", () => {
-    const dismissed = record({ dismissedFingerprint: { kind: "document", hash: HASH_B } });
-    expect(isRecordStale(dismissed, current(HASH_B))).toBe(false);
-  });
-
-  it("becomes stale again when the source moves past a dismissed fingerprint", () => {
-    const dismissed = record({ dismissedFingerprint: { kind: "document", hash: HASH_B } });
-    expect(isRecordStale(dismissed, current(HASH_C))).toBe(true);
-  });
-});
-
-describe("isRecordStale — a receipt holding per-field fingerprints", () => {
-  const stored = { kind: "fields", hashes: { title: "1111", body: "2222" } } as const;
+describe("isRecordStale", () => {
+  const stored = hashed({ title: "1111", body: "2222" });
 
   it("is not stale when every leaf still hashes to what was translated", () => {
     expect(
-      isRecordStale(
-        record({ sourceFingerprint: stored }),
-        current(HASH_B, { title: "1111", body: "2222" })
-      )
+      isRecordStale(record({ sourceFingerprint: stored }), hashed({ title: "1111", body: "2222" }))
     ).toBe(false);
   });
 
   it("is stale when one leaf's source moved", () => {
     expect(
-      isRecordStale(
-        record({ sourceFingerprint: stored }),
-        current(HASH_B, { title: "1111", body: "9999" })
-      )
+      isRecordStale(record({ sourceFingerprint: stored }), hashed({ title: "1111", body: "9999" }))
     ).toBe(true);
   });
 
@@ -70,126 +39,92 @@ describe("isRecordStale — a receipt holding per-field fingerprints", () => {
     expect(
       isRecordStale(
         record({ sourceFingerprint: stored }),
-        current(HASH_B, { title: "1111", body: "2222", sub: "3333" })
+        hashed({ title: "1111", body: "2222", sub: "3333" })
       )
     ).toBe(true);
   });
 
   it("is stale when a leaf was removed", () => {
-    expect(
-      isRecordStale(record({ sourceFingerprint: stored }), current(HASH_B, { title: "1111" }))
-    ).toBe(true);
+    expect(isRecordStale(record({ sourceFingerprint: stored }), hashed({ title: "1111" }))).toBe(
+      true
+    );
   });
 
-  it("hides again once that exact drift is dismissed", () => {
+  it("hides again once the receipt names that exact drift", () => {
     const drifted = { title: "1111", body: "9999" };
-    const dismissed = record({
-      sourceFingerprint: stored,
-      dismissedFingerprint: { kind: "fields", hashes: drifted },
-    });
-    expect(isRecordStale(dismissed, current(HASH_B, drifted))).toBe(false);
-  });
-
-  // The defect this marker exists to fix: a run that translated some leaves and deliberately skipped
-  // others used to write a SHORTER map, which read as "the document changed" forever — and the skipped
-  // leaf could never be added, because adding it required translating it.
-  it("is not stale when a leaf it deliberately skipped is recorded as not ours", () => {
-    const withMarker = { kind: "fields", hashes: { title: null, body: "2222" } } as const;
-    expect(
-      isRecordStale(
-        record({ sourceFingerprint: withMarker }),
-        current(HASH_B, { title: "1111", body: "2222" })
-      )
-    ).toBe(false);
+    const accepted = record({ sourceFingerprint: hashed(drifted) });
+    expect(isRecordStale(accepted, hashed(drifted))).toBe(false);
   });
 
   it("is still stale when a leaf appeared that the receipt never saw at all", () => {
-    const withMarker = { kind: "fields", hashes: { title: null, body: "2222" } } as const;
     expect(
       isRecordStale(
-        record({ sourceFingerprint: withMarker }),
-        current(HASH_B, { title: "1111", body: "2222", sub: "3333" })
+        record({ sourceFingerprint: hashed({ title: "1111", body: "2222" }) }),
+        hashed({ title: "1111", body: "2222", sub: "3333" })
       )
     ).toBe(true);
-  });
-
-  it("does not care what the document-wide hash says", () => {
-    const same = { title: "1111", body: "2222" };
-    expect(
-      isRecordStale(record({ sourceFingerprint: stored }), current("anything at all", same))
-    ).toBe(false);
   });
 });
 
 describe("isRecordStale — a receipt that cannot be read", () => {
   it("reads as out of date, because nothing shows it is current", () => {
-    expect(isRecordStale(record({ sourceFingerprint: null }), current(HASH_A))).toBe(true);
-  });
-});
-
-describe("leafSourceChanged", () => {
-  const recorded = { title: "1111", body: "2222", seen: null } as const;
-
-  it("says a leaf changed when its stored hash differs from now", () => {
-    expect(leafSourceChanged(recorded, { title: "1111", body: "9999" }, "body")).toBe(true);
-  });
-
-  it("says a leaf did not change when its stored hash still matches", () => {
-    expect(leafSourceChanged(recorded, { title: "1111", body: "2222" }, "body")).toBe(false);
-  });
-
-  it("knows nothing about a leaf the receipt never recorded", () => {
-    expect(leafSourceChanged(recorded, { title: "1111", sub: "3333" }, "sub")).toBeUndefined();
-  });
-
-  it("knows nothing about a leaf recorded as seen-but-not-ours", () => {
-    expect(leafSourceChanged(recorded, { title: "1111", seen: "3333" }, "seen")).toBeUndefined();
-  });
-
-  it("says a leaf changed when it is recorded but absent from the document now", () => {
-    expect(leafSourceChanged(recorded, { title: "1111" }, "body")).toBe(true);
-  });
-});
-
-describe("recordsEachLeaf", () => {
-  it("accepts a receipt that claims leaf by leaf", () => {
-    expect(recordsEachLeaf({ kind: "fields", hashes: { title: "1111" } })).toBe(true);
+    expect(isRecordStale(record({ sourceFingerprint: null }), hashed({ title: "1111" }))).toBe(
+      true
+    );
   });
 
   it.each([
-    ["no receipt", null],
-    ["one written before per-field fingerprints", { kind: "document", hash: HASH_A } as const],
-  ])("refuses %s", (_label, fingerprint) => {
-    expect(recordsEachLeaf(fingerprint)).toBe(false);
+    ["the single sha256 a version before 0.15.0 wrote", "a".repeat(64)],
+    ["a column someone corrupted", "not a fingerprint"],
+  ])("reads a column holding %s as out of date, from the stored text in", (_label, stored) => {
+    const read = record({ sourceFingerprint: parseSourceFingerprint(stored) });
+
+    expect(isRecordStale(read, hashed({ title: "1111" }))).toBe(true);
   });
 });
 
-describe("changedLeaves", () => {
-  const stored = { kind: "fields", hashes: { title: "1111", body: "2222", seen: null } } as const;
+describe("changedLeaves — the per-leaf answer", () => {
+  const stored = hashed({ title: "1111", body: "2222" });
 
-  it("answers only for the leaves it can answer for", () => {
+  it("says a leaf changed when its stored hash differs from now", () => {
+    expect(changedLeaves(stored, hashed({ title: "1111", body: "9999" })).body).toBe(true);
+  });
+
+  it("says a leaf did not change when its stored hash still matches", () => {
+    expect(changedLeaves(stored, hashed({ title: "1111", body: "2222" })).body).toBe(false);
+  });
+
+  it("says nothing about a leaf the document no longer has", () => {
+    expect(changedLeaves(stored, hashed({ title: "1111" }))).not.toHaveProperty("body");
+  });
+
+  it("says a leaf the receipt never recorded changed, so the next run takes it", () => {
+    const answers = changedLeaves(stored, hashed({ title: "1111", body: "2222", sub: "3333" }));
+
+    expect(answers.sub, "nothing was recorded for it, so it is owed a translation").toBe(true);
+  });
+
+  it("answers for every leaf the source has now", () => {
     expect(
-      changedLeaves(stored, { title: "1111", body: "9999", seen: "3333", fresh: "4444" })
-    ).toEqual({ title: false, body: true });
+      changedLeaves(stored, hashed({ title: "1111", body: "9999", seen: "3333", fresh: "4444" }))
+    ).toStrictEqual({ title: false, body: true, seen: true, fresh: true });
   });
 
-  it("is empty when there is no receipt", () => {
-    expect(changedLeaves(null, { title: "1111" })).toEqual({});
+  it("drops a recorded leaf the document no longer has", () => {
+    expect(changedLeaves(stored, hashed({ title: "1111" }))).toStrictEqual({ title: false });
+  });
+});
+
+describe("a leaf recorded as unanswered", () => {
+  const stored: RecordedFingerprints = { title: asHash("1111"), body: UNANSWERED };
+
+  it("makes the record stale, however the source stands", () => {
+    expect(
+      isRecordStale(record({ sourceFingerprint: stored }), hashed({ title: "1111", body: "2222" }))
+    ).toBe(true);
   });
 
-  it("is empty for a receipt written before per-field fingerprints", () => {
-    expect(changedLeaves({ kind: "document", hash: HASH_A }, { title: "1111" })).toEqual({});
-  });
-
-  it("says a recorded leaf changed when the document no longer has it", () => {
-    expect(changedLeaves(stored, { title: "1111" })).toEqual({ title: false, body: true });
-  });
-
-  it("agrees with leafSourceChanged leaf for leaf", () => {
-    const now = { title: "1111", body: "9999", seen: "3333", fresh: "4444" };
-    const map = changedLeaves(stored, now);
-    for (const address of ["title", "body", "seen", "fresh"]) {
-      expect(map[address], address).toBe(leafSourceChanged(stored.hashes, now, address));
-    }
+  it("is reported as changed, so the next run selects the leaf again", () => {
+    expect(changedLeaves(stored, hashed({ title: "1111", body: "2222" })).body).toBe(true);
   });
 });

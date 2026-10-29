@@ -13,6 +13,7 @@ export type { TranslationProvenanceRecord } from "./core/index.js";
 
 // Access control
 export type { AccessGuard, AccessGuardRequest } from "./types/AccessGuard.js";
+export type { TranslatorAction } from "./types/TranslatorAction.js";
 export { AnyAccessGuard } from "./server/shared/access/AnyAccessGuard.js";
 
 // Translation provider port (from the dependency-free core)
@@ -47,15 +48,11 @@ export {
 export type { TranslationFailureCode } from "./translation-providers/index.js";
 
 // Task runners
-export {
-  createPayloadJobsRunner,
-  createSyncRunner,
-  toTaskFilter,
-} from "./server/modules/task-runner/index.js";
+export { createPayloadJobsRunner, createSyncRunner } from "./server/modules/task-runner/index.js";
 export type {
   TaskRunnerProvider,
   PayloadJobsRunnerOptions,
-  TaskFilter,
+  RunnerCapabilities,
 } from "./server/modules/task-runner/index.js";
 /**
  * A third-party `TaskRunnerProvider` has always had to accept a `RequestScope` — it is the second
@@ -66,9 +63,11 @@ export type {
  */
 export type { RequestScope, Requester } from "./server/shared/payload/RequestScope.shapes.js";
 
-// Translation levels
-export { documentLevel, collectionLevel, fieldLevel } from "./composition/levels/index.js";
-export type { TranslationLevel } from "./server/modules/translation-levels/index.js";
+export { documentTranslation, fieldTranslation } from "./composition/modules/index.js";
+export {
+  bulkTranslationDashboard,
+  translateDocumentControl,
+} from "./composition/components/index.js";
 
 // Field config
 export { withFieldTranslation } from "./field-config.js";
@@ -78,12 +77,7 @@ export type { FieldTranslationConfig } from "./field-config.js";
 // collection with `withAutoTranslate`; requires a working job runner/autorun to execute (see the
 // JSDoc for the Vercel/serverless caveat). Since v0.9.0.
 export { withAutoTranslate } from "./auto-translate-config.js";
-export type { AutoTranslateConfig, AutoTranslateStrategy } from "./auto-translate-config.js";
+export type { AutoTranslateConfig } from "./auto-translate-config.js";
 
-// Deprecated exports (for backwards compatibility)
-export { createTranslatePlugin, TranslateCollectionPlugin } from "./plugin.js";
-export type { TranslateCollectionPluginConfig } from "./plugin.js";
 export { createOpenAIProvider, OpenAITranslationProvider } from "./translation-providers/index.js";
 export type { OpenAIProviderConfig } from "./translation-providers/index.js";
-export { translateKitField } from "./field-config.js";
-export type { TranslateKitFieldConfig } from "./field-config.js";

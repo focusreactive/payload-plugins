@@ -7,7 +7,6 @@ const task: TranslationTask = {
   id: "doc-1",
   sourceLng: "en",
   targetLng: "de",
-  strategy: "overwrite",
 };
 
 const makeLogger = () => ({ error: vi.fn() });

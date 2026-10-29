@@ -1,20 +1,22 @@
+import { asHash } from "../../../core/domain/provenance/__tests__/fixtures/claims.js";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Field, Payload, PayloadRequest } from "payload";
 
 import { computeFieldFingerprints } from "../../../core/domain/content-projection/computeFieldFingerprints.js";
-import type { ProvenanceStore, ProvenanceReceipt } from "../../../core/domain/provenance/index.js";
+import type { ProvenanceReceipt, ProvenanceStore } from "../../../core/domain/provenance/index.js";
 import { ProvenanceService, provenanceIo } from "../../modules/provenance/index.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 
 import { GetDocumentStalenessHandler } from "./getDocumentStaleness.handler.js";
 import { DismissStalenessHandler } from "./dismissStaleness.handler.js";
 import type { StalenessConfig } from "./model.js";
+import { storeDouble } from "../../../core/domain/provenance/__tests__/fixtures/provenanceStore.js";
 
 const COLLECTION = "posts";
 const schema: Field[] = [{ name: "title", type: "text", localized: true }];
 const sourceDoc = { id: "1", title: "Hello" };
 const recordedFields = computeFieldFingerprints(sourceDoc, schema);
-const recordedFingerprint = { kind: "fields", hashes: recordedFields } as const;
+const recordedFingerprint = recordedFields;
 
 function makeRecord(overrides: Partial<ProvenanceReceipt> = {}): ProvenanceReceipt {
   return {
@@ -24,21 +26,11 @@ function makeRecord(overrides: Partial<ProvenanceReceipt> = {}): ProvenanceRecei
     sourceLocale: "en",
     sourceFingerprint: recordedFingerprint,
     translatedAt: "2026-07-07T00:00:00.000Z",
-    dismissedFingerprint: null,
     ...overrides,
   };
 }
 
-function makeStore(overrides: Partial<ProvenanceStore> = {}): ProvenanceStore {
-  return {
-    upsert: vi.fn().mockResolvedValue(undefined),
-    find: vi.fn().mockResolvedValue(null),
-    findByDocument: vi.fn().mockResolvedValue([]),
-    dismiss: vi.fn().mockResolvedValue(undefined),
-    deleteByDocument: vi.fn().mockResolvedValue(undefined),
-    ...overrides,
-  };
-}
+const makeStore = storeDouble;
 
 let payload: Payload;
 let logger: { error: ReturnType<typeof vi.fn> };
@@ -53,12 +45,10 @@ beforeEach(() => {
 
 const schemaMap = new Map([["posts", schema]]) as CollectionSchemaMap;
 
-function makeConfig(store: ProvenanceStore | null): StalenessConfig {
+function makeConfig(store: ProvenanceStore): StalenessConfig {
   return {
     availableCollections: new Set(["posts"]) as StalenessConfig["availableCollections"],
-    provenanceServiceFactory: store
-      ? (p) => new ProvenanceService(store, schemaMap, {}, provenanceIo(p))
-      : undefined,
+    provenanceServiceFactory: (p) => new ProvenanceService(store, schemaMap, {}, provenanceIo(p)),
   };
 }
 
@@ -87,6 +77,7 @@ describe("GetDocumentStalenessHandler", () => {
         source_lng: "en",
         is_stale: false,
         translated_at: "2026-07-07T00:00:00.000Z",
+        changed_leaves: [],
       },
     ]);
     // recompute must mirror the write path exactly: locale=sourceLocale, depth:0
@@ -99,9 +90,7 @@ describe("GetDocumentStalenessHandler", () => {
     const store = makeStore({
       findByDocument: vi
         .fn()
-        .mockResolvedValue([
-          makeRecord({ sourceFingerprint: { kind: "fields", hashes: { title: "fp-old" } } }),
-        ]),
+        .mockResolvedValue([makeRecord({ sourceFingerprint: { title: asHash("fa0d") } })]),
     });
     const res = await new GetDocumentStalenessHandler(makeConfig(store)).handle(readReq());
     expect((await bodyOf(res)).locales[0].is_stale).toBe(true);
@@ -110,11 +99,6 @@ describe("GetDocumentStalenessHandler", () => {
   it("omits locales with no provenance record (absent, not stale)", async () => {
     const store = makeStore({ findByDocument: vi.fn().mockResolvedValue([]) });
     const res = await new GetDocumentStalenessHandler(makeConfig(store)).handle(readReq());
-    expect((await bodyOf(res)).locales).toEqual([]);
-  });
-
-  it("returns empty when provenance is disabled", async () => {
-    const res = await new GetDocumentStalenessHandler(makeConfig(null)).handle(readReq());
     expect((await bodyOf(res)).locales).toEqual([]);
   });
 
@@ -155,6 +139,7 @@ describe("GetDocumentStalenessHandler", () => {
         source_lng: "en",
         is_stale: false,
         translated_at: "2026-07-07T00:00:00.000Z",
+        changed_leaves: [],
       },
     ]);
     expect(logger.error).toHaveBeenCalled();
@@ -170,23 +155,29 @@ describe("GetDocumentStalenessHandler", () => {
 describe("DismissStalenessHandler", () => {
   const body = { collection_slug: COLLECTION, collection_id: "1", target_lng: "de" };
 
-  it("persists the current fingerprint as the dismissed fingerprint", async () => {
-    const dismiss = vi.fn().mockResolvedValue(undefined);
-    const store = makeStore({ find: vi.fn().mockResolvedValue(makeRecord()), dismiss });
+  it("re-bases the receipt on the source as it stands", async () => {
+    const rebaseSourceFingerprint = vi.fn().mockResolvedValue(undefined);
+    const drifted = makeRecord({
+      sourceFingerprint: computeFieldFingerprints({ title: "Gone" }, schema),
+    });
+    const store = makeStore({
+      find: vi.fn().mockResolvedValue(drifted),
+      rebaseSourceFingerprint,
+    });
     const res = await new DismissStalenessHandler(makeConfig(store)).handle(dismissReq(body));
     expect(res.status).toBe(200);
-    expect(dismiss).toHaveBeenCalledWith(
+    expect(rebaseSourceFingerprint).toHaveBeenCalledWith(
       { collectionSlug: COLLECTION, documentId: "1", targetLocale: "de" },
       recordedFingerprint
     );
   });
 
   it("is a no-op when the locale has no record", async () => {
-    const dismiss = vi.fn();
-    const store = makeStore({ find: vi.fn().mockResolvedValue(null), dismiss });
+    const rebaseSourceFingerprint = vi.fn();
+    const store = makeStore({ find: vi.fn().mockResolvedValue(null), rebaseSourceFingerprint });
     const res = await new DismissStalenessHandler(makeConfig(store)).handle(dismissReq(body));
     expect(res.status).toBe(200);
-    expect(dismiss).not.toHaveBeenCalled();
+    expect(rebaseSourceFingerprint).not.toHaveBeenCalled();
   });
 
   it("rejects an invalid body", async () => {

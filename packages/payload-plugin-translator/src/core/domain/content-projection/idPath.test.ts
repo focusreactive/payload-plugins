@@ -65,6 +65,27 @@ describe("makeIdPath — grammar", () => {
     expect(withRealId).not.toBe(withFallback);
   });
 
+  it("escapes every dangerous character in a segment, not just the first", () => {
+    expect(makeIdPath([{ kind: "key", name: "a.b.c" }])).toBe("a\\.b\\.c");
+  });
+
+  it("escapes the blockType too, so a dotted type cannot split the path", () => {
+    expect(makeIdPath([{ kind: "element", id: "b1", blockType: "he.ro" }])).toBe("b1:he\\.ro");
+  });
+
+  it("escapes the escape character, so a name ending in it cannot impersonate an escaped separator", () => {
+    // without this, `a\` + `b` and the single dotted name `a.b` render identically
+    const twoNames = makeIdPath([
+      { kind: "key", name: "a\\" },
+      { kind: "key", name: "b" },
+    ]);
+    const oneDottedName = makeIdPath([{ kind: "key", name: "a.b" }]);
+
+    expect(twoNames).toBe("a\\\\.b");
+    expect(oneDottedName).toBe("a\\.b");
+    expect(twoNames).not.toBe(oneDottedName);
+  });
+
   it("is deterministic and location-based: same segments → same path", () => {
     const build = () =>
       makeIdPath([
@@ -103,6 +124,13 @@ describe("elementSegment — builder from a data item", () => {
 
   it("blocks element without a blockType string → id only", () => {
     expect(elementSegment({ id: "b1" }, true, 3)).toEqual({ kind: "element", id: "b1" });
+  });
+
+  it("folds blockType only for a blocks field, so an array element carrying one is unaffected", () => {
+    expect(elementSegment({ id: "e1", blockType: "hero" }, false, 0)).toEqual({
+      kind: "element",
+      id: "e1",
+    });
   });
 
   it("no id → positional index fallback", () => {

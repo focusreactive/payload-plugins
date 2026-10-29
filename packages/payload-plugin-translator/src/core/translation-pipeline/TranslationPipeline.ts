@@ -1,11 +1,12 @@
+import type { IdPath } from "../domain/content-projection/idPath.js";
 import type { TranslationProvider } from "../domain/translation-providers/index.js";
+import type { LeafOutcome, TextChunk } from "./types/index.js";
 import type {
   PipelineConfig,
   PipelineResult,
   PipelineContext,
   PipelineStage,
 } from "./types/index.js";
-import type { TranslationStrategy } from "./strategies/index.js";
 import type { TextExpander } from "./stages/index.js";
 import {
   DataReconcilerStage,
@@ -15,12 +16,28 @@ import {
   TranslationMutatorStage,
 } from "./stages/index.js";
 
+function leafOutcomes(sent: TextChunk[], written: TextChunk[]): LeafOutcome[] {
+  const applied = new Set(written);
+  const tally = new Map<IdPath, { sent: number; written: number }>();
+
+  for (const chunk of sent) {
+    const counts = tally.get(chunk.idPath) ?? { sent: 0, written: 0 };
+    counts.sent += 1;
+    if (applied.has(chunk)) counts.written += 1;
+    tally.set(chunk.idPath, counts);
+  }
+
+  return [...tally].map(([idPath, counts]) => ({
+    idPath,
+    answeredInFull: counts.written === counts.sent,
+  }));
+}
+
 /**
  * Options for TranslationPipeline.
  */
 export type TranslationPipelineOptions = {
   translationProvider: TranslationProvider;
-  translationStrategy: TranslationStrategy;
   textExpanders?: TextExpander[];
 };
 
@@ -43,7 +60,7 @@ export class TranslationPipeline {
   constructor(options: TranslationPipelineOptions) {
     this.stages = [
       new DataReconcilerStage(),
-      new FieldChunkCollectorStage(options.translationStrategy),
+      new FieldChunkCollectorStage(),
       new TextChunkExpanderStage(options.textExpanders),
       new TranslationStage(options.translationProvider),
       new TranslationMutatorStage(),
@@ -62,7 +79,7 @@ export class TranslationPipeline {
       sourceLng: config.sourceLng,
       targetLng: config.targetLng,
       document: config.document,
-      sourceChangedByLeaf: config.sourceChangedByLeaf,
+      selection: config.selection,
     };
 
     for (const stage of this.stages) {
@@ -76,13 +93,13 @@ export class TranslationPipeline {
       }
     }
 
-    if (!ctx.filteredData) {
+    if (!ctx.reconciledData) {
       return null;
     }
 
     return {
-      translatedData: ctx.filteredData,
-      translatedPaths: (ctx.fieldChunks ?? []).map((chunk) => chunk.idPath),
+      translatedData: ctx.reconciledData,
+      leaves: leafOutcomes(ctx.textChunks ?? [], ctx.writtenChunks ?? []),
     };
   }
 }

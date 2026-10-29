@@ -32,10 +32,7 @@ export const FieldTranslationInputSchema = z.object({
 
 export type FieldTranslationInput = z.infer<typeof FieldTranslationInputSchema>;
 
-/** Handler dependencies — the schema source of truth + the translation backend. */
 export type FieldTranslationConfig = {
   schemaMap: CollectionSchemaMap;
   translationProvider: TranslationProvider;
-  /** Not optional: an omitted flag would silently select per-node translation instead of failing to compile. */
-  inlineMarks: boolean;
 };

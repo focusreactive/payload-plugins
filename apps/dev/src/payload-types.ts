@@ -77,6 +77,7 @@ export interface Config {
     comments: Comment;
     'comment-reads': CommentRead;
     'translator-provenance': TranslatorProvenance;
+    'translator-runs': TranslatorRun;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -95,6 +96,7 @@ export interface Config {
     comments: CommentsSelect<false> | CommentsSelect<true>;
     'comment-reads': CommentReadsSelect<false> | CommentReadsSelect<true>;
     'translator-provenance': TranslatorProvenanceSelect<false> | TranslatorProvenanceSelect<true>;
+    'translator-runs': TranslatorRunsSelect<false> | TranslatorRunsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -716,7 +718,7 @@ export interface Comment {
         id?: string | null;
       }[]
     | null;
-  author: number | User;
+  author?: (number | null) | User;
   isResolved?: boolean | null;
   resolvedBy?: (number | null) | User;
   resolvedAt?: string | null;
@@ -747,7 +749,30 @@ export interface TranslatorProvenance {
   sourceLocale: string;
   sourceFingerprint: string;
   translatedAt: string;
-  dismissedFingerprint?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "translator-runs".
+ */
+export interface TranslatorRun {
+  id: number;
+  handle: string;
+  collectionSlug: string;
+  collectionId: string;
+  sourceLng: string;
+  targetLng: string;
+  filters?: string | null;
+  publishOnTranslation: boolean;
+  requesterId?: string | null;
+  requesterCollection?: string | null;
+  queuedAt: string;
+  startedAt?: string | null;
+  settledAt?: string | null;
+  outcome?: string | null;
+  error?: string | null;
+  attempts?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -907,6 +932,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'translator-provenance';
         value: number | TranslatorProvenance;
+      } | null)
+    | ({
+        relationTo: 'translator-runs';
+        value: number | TranslatorRun;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1298,7 +1327,29 @@ export interface TranslatorProvenanceSelect<T extends boolean = true> {
   sourceLocale?: T;
   sourceFingerprint?: T;
   translatedAt?: T;
-  dismissedFingerprint?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "translator-runs_select".
+ */
+export interface TranslatorRunsSelect<T extends boolean = true> {
+  handle?: T;
+  collectionSlug?: T;
+  collectionId?: T;
+  sourceLng?: T;
+  targetLng?: T;
+  filters?: T;
+  publishOnTranslation?: T;
+  requesterId?: T;
+  requesterCollection?: T;
+  queuedAt?: T;
+  startedAt?: T;
+  settledAt?: T;
+  outcome?: T;
+  error?: T;
+  attempts?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1461,7 +1512,15 @@ export interface TaskTranslateDocument {
         } | null);
     source_lng: string;
     target_lng: string;
-    strategy: string;
+    filters?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
     publish_on_translation?: boolean | null;
   };
   output?: unknown;
@@ -1516,9 +1575,8 @@ export interface WorkflowTranslateDocumentLocales {
           value: number | Playground;
         } | null);
     source_lng: string;
-    strategy: string;
     publish_on_translation?: boolean | null;
-    target_lngs:
+    targets:
       | {
           [k: string]: unknown;
         }

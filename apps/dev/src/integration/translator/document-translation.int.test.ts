@@ -42,7 +42,7 @@ describe("document translation (manual enqueue, en -> de/fr)", () => {
           target_lng: target,
           collection_slug: "docs",
           collection_id: [id],
-          strategy: "overwrite",
+
           publish_on_translation: true,
         },
       });

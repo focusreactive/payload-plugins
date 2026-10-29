@@ -1,7 +1,8 @@
-import type { CollectionAfterChangeHook } from "payload";
+import type { CollectionAfterChangeHook, CollectionSlug } from "payload";
 import { hasDraftsEnabled } from "payload/shared";
 
-import { authCollectionsOf, identityOf } from "../../shared/payload/identityOf.js";
+import { authCollectionsOf, identityOf, scopeOf } from "../../shared/payload/identityOf.js";
+import { authorisedByTheSave } from "../../shared/access/authorised.js";
 import { swallowOrThrow } from "../../shared/payload/swallowOrThrow.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 
@@ -10,6 +11,8 @@ import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../core/domain/auto-translate/i
 import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { TaskRunnerFactory } from "../task-runner/index.js";
+import type { RunRecordStoreFactory } from "../runs/index.js";
+import { admitWork } from "../../../core/domain/runs/index.js";
 
 import type {
   AutoTranslatePolicyResolver,
@@ -25,15 +28,20 @@ type AutoTranslateHookDeps = {
   resolvePolicy: AutoTranslatePolicyResolver;
   schemaMap: CollectionSchemaMap;
   taskRunnerFactory: TaskRunnerFactory;
+  runRecordStoreFactory: RunRecordStoreFactory;
 };
 
 /** `afterChange` hook that enqueues translations when a document's source-locale content changes. */
 export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAfterChangeHook {
-  const { resolvePolicy, schemaMap, taskRunnerFactory } = deps;
+  const { resolvePolicy, schemaMap, taskRunnerFactory, runRecordStoreFactory } = deps;
 
   const hook: MarkedHook = async ({ doc, previousDoc, req, collection }) => {
     const transactionID = await req.transactionID;
     const scope: RequestScope = transactionID == null ? {} : { transactionID };
+    const about = { collection: collection.slug, documentId: String(doc.id) };
+    const skipBecause = (msg: string) => {
+      req.payload.logger.warn({ ...about, msg });
+    };
 
     await swallowOrThrow(
       scope,
@@ -49,12 +57,9 @@ export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAf
         const sourceLocale =
           policy.sourceLocale ?? (localization ? localization.defaultLocale : undefined);
         if (!sourceLocale) {
-          req.payload.logger.warn({
-            collection: collection.slug,
-            documentId: String(doc.id),
-            msg: "translator: auto-translate skipped — no source locale resolvable (set localization.defaultLocale or a per-collection sourceLocale)",
-          });
-          return;
+          return skipBecause(
+            "translator: auto-translate skipped — no source locale resolvable (set localization.defaultLocale or a per-collection sourceLocale)"
+          );
         }
 
         if (req.locale !== sourceLocale) return;
@@ -76,16 +81,35 @@ export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAf
         });
         if (tasks.length === 0) return;
 
-        await taskRunnerFactory.create(req.payload).enqueue(tasks, {
+        const identity = identityOf(req, authCollectionsOf(req.payload), req.payload.logger);
+        if (identity.kind === "unnameable") {
+          return skipBecause(
+            "translator: auto-translate skipped, because the save carries an actor this project cannot name"
+          );
+        }
+
+        const { admitted, busyDocumentIds: busy } = admitWork({
+          work: authorisedByTheSave(tasks),
+          inFlight: await runRecordStoreFactory(req.payload, scope).findLiveForDocuments(
+            collection.slug as CollectionSlug,
+            [String(doc.id)]
+          ),
+        });
+        if (busy.length > 0) {
+          return skipBecause(
+            "translator: auto-translate skipped, because this document already has a translation run under way"
+          );
+        }
+
+        await taskRunnerFactory.create(req.payload).enqueue(admitted, {
           ...scope,
-          ...identityOf(req, authCollectionsOf(req.payload), req.payload.logger),
+          ...scopeOf(identity),
         });
       },
       (error) =>
         req.payload.logger.error({
+          ...about,
           err: error,
-          collection: collection.slug,
-          documentId: String(doc.id),
           msg: "translator: auto-translate hook failed",
         })
     );

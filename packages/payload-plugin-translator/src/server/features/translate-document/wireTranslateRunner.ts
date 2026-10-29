@@ -1,90 +1,163 @@
-import type { CollectionSlug } from "payload";
+import type { Payload } from "payload";
 
-import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
-import type { ProvenanceServiceFactory } from "../../modules/provenance/index.js";
-import { LifecycleNotifier, taskFromAssignment } from "../../modules/lifecycle/index.js";
-import type { TranslationLifecycleCallbacks } from "../../modules/lifecycle/index.js";
+import { LifecycleNotifier } from "../../modules/lifecycle/index.js";
+import type {
+  TranslationLifecycleCallbacks,
+  TranslationTask,
+} from "../../modules/lifecycle/index.js";
+import { filtersFromStore, RunRecordMissing, storedFilters } from "../../modules/runs/index.js";
+import type { RunRecord, RunRecordStoreFactory } from "../../modules/runs/index.js";
+import type { RunOutcome } from "../../modules/runs/RunRecord.types.js";
 import type {
   TaskRunnerContext,
   TaskRunnerFactory,
   TaskRunnerProvider,
 } from "../../modules/task-runner/index.js";
+import { toClientErrorMessage } from "../../shared/http/index.js";
+import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
+import { asRequester } from "../../shared/payload/RequestScope.shapes.js";
+import { swallowOrThrow } from "../../shared/payload/swallowOrThrow.js";
 
-import { TranslateDocumentHandler } from "./handler.js";
+import { translateDocument } from "./translateDocument.js";
+import type { TranslateDocumentDeps, TranslateDocumentInput } from "./translateDocument.js";
 
 type WireTranslateRunnerParams = {
-  translationProvider: TranslationProvider;
-  schemaMap: CollectionSchemaMap;
-  provenanceServiceFactory?: ProvenanceServiceFactory;
+  translation: TranslateDocumentDeps;
   runner: TaskRunnerProvider;
   lifecycle: TranslationLifecycleCallbacks;
-  collections: CollectionSlug[];
-  inlineMarks?: boolean;
+  storeFactory: RunRecordStoreFactory;
 };
 
+const now = (): string => new Date().toISOString();
+
+const requesterIdOf = (scope: RequestScope): string | null =>
+  scope.requester == null ? null : String(scope.requester.userId);
+
+/** Only a message is ours to store; the error itself may carry anything the provider put on it. */
+function messageOf(error: unknown): string | undefined {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  return undefined;
+}
+
+const whatToTranslate = (row: RunRecord, previousAttempts: number): TranslateDocumentInput => ({
+  collection: row.collectionSlug,
+  collectionId: row.collectionId,
+  sourceLng: row.sourceLng,
+  targetLng: row.targetLng,
+  filters: filtersFromStore(row.filters),
+  publishOnTranslation: row.publishOnTranslation,
+  previousAttempts,
+});
+
+const documentOf = (work: { collectionSlug: string; collectionId: string; sourceLng: string }) => ({
+  collection: work.collectionSlug,
+  id: work.collectionId,
+  sourceLng: work.sourceLng,
+});
+
+const taskFromRow = (row: RunRecord): TranslationTask => ({
+  collection: row.collectionSlug,
+  id: row.collectionId,
+  sourceLng: row.sourceLng,
+  targetLng: row.targetLng,
+  handle: row.handle,
+});
+
 /**
- * Assemble the document-translation task pipeline: the {@link TranslateDocumentHandler}, the runner
- * context that turns what the runner reports into the host's callbacks, the runner's config
- * modifier, and the per-request {@link TaskRunnerFactory}.
+ * The write policy for every row except the queued one: a lost stamp or settlement costs a
+ * timestamp, which is not worth failing a translation the host has already paid for.
+ */
+function writeOrLog(
+  payload: Payload,
+  scope: RequestScope,
+  write: () => Promise<void>
+): Promise<void> {
+  return swallowOrThrow(scope, write, (err) =>
+    payload.logger?.error?.({ err, msg: "[translator] the run record was not updated" })
+  );
+}
+
+/**
+ * Assembles the document-translation pipeline: the runner context, the runner's config modifier and
+ * the per-request {@link TaskRunnerFactory}.
  *
- * Extracted from the plugin's `init()` so the composition root stays a flat list — `plugin.ts` calls
- * this once and registers the returned `configModifier` through the shared builder.
+ * The record is written before the host's callback in every branch: the callback is best-effort by
+ * contract, the record is what the status, cancel and run-now routes answer from.
  */
 export function wireTranslateRunner({
-  translationProvider,
-  schemaMap,
-  provenanceServiceFactory,
+  translation,
   runner,
   lifecycle,
-  collections,
-  inlineMarks = false,
+  storeFactory,
 }: WireTranslateRunnerParams): {
   taskRunnerFactory: TaskRunnerFactory;
   configModifier: ConfigModifier;
 } {
-  const translateHandler = new TranslateDocumentHandler(
-    translationProvider,
-    schemaMap,
-    provenanceServiceFactory,
-    inlineMarks
-  );
-
   const runnerContext: TaskRunnerContext = {
     handler: async (payload, input, scope) => {
-      await translateHandler.handle(
-        payload,
-        {
-          collection: input.collection,
-          collectionId: input.collectionId,
-          sourceLng: input.sourceLng,
-          targetLng: input.targetLng,
-          strategy: input.strategy,
-          publishOnTranslation: input.publishOnTranslation,
-        },
-        scope
+      const asked = scope ?? {};
+      const runs = storeFactory(payload, asked);
+      const key = { handle: input.handle, targetLng: input.targetLng };
+      const row = await runs.find(key);
+      if (row === null) throw new RunRecordMissing(key.handle, key.targetLng);
+
+      await writeOrLog(payload, asked, () =>
+        runs.recordStarted(key, { startedAt: now(), attempts: input.previousAttempts + 1 })
       );
+
+      await translateDocument(translation, payload, whatToTranslate(row, input.previousAttempts), {
+        ...asked,
+        requester: asRequester(row.requesterId, row.requesterCollection),
+      });
     },
-    collections,
-    report: (payload, assignment, event) => {
+    report: async (payload, run, event, scope) => {
+      const asked = scope ?? {};
+      const runs = storeFactory(payload, asked);
       const notifier = new LifecycleNotifier(lifecycle, payload.logger);
-      const task = taskFromAssignment(assignment);
+
+      if (event.state === "queued") {
+        await runs.recordQueued({
+          handle: run.handle,
+          targetLng: run.targetLng,
+          collectionSlug: event.work.collectionSlug,
+          collectionId: event.work.collectionId,
+          sourceLng: event.work.sourceLng,
+          filters: storedFilters(event.work.filters),
+          publishOnTranslation: event.work.publishOnTranslation,
+          requesterId: requesterIdOf(asked),
+          requesterCollection: asked.requester?.userCollection ?? null,
+          queuedAt: now(),
+        });
+        return await notifier.queued({ ...run, ...documentOf(event.work) });
+      }
+
+      const settle = (outcome: RunOutcome, error: string | null) =>
+        writeOrLog(payload, asked, () =>
+          runs.recordSettled(run, { settledAt: now(), outcome, error })
+        );
+
+      const row = await runs.find(run);
+      const task = row === null ? null : taskFromRow(row);
+
       switch (event.state) {
-        case "queued":
-          return notifier.queued(task);
         case "delivered":
-          return notifier.completed(task);
+          await settle("delivered", null);
+          return await (task === null ? undefined : notifier.completed(task));
         case "failed":
-          return notifier.failed(task, event.error);
+          await settle("failed", toClientErrorMessage(messageOf(event.error)));
+          return await (task === null ? undefined : notifier.failed(task, event.error));
         case "cancelled":
-          return notifier.cancelled(task);
+          await settle("cancelled", null);
+          return await (task === null ? undefined : notifier.cancelled(task));
       }
     },
   };
 
   const taskRunnerFactory: TaskRunnerFactory = {
     create: (payload) => runner.create(payload, runnerContext),
+    capabilities: runner.capabilities,
   };
 
   return { taskRunnerFactory, configModifier: runner.configure(runnerContext) };

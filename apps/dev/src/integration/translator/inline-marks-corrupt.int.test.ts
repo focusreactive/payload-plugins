@@ -56,7 +56,7 @@ describe("a reply whose marks cannot be parsed", () => {
 
   beforeAll(async () => {
     ctx = await bootTestPayload({
-      inlineMarks: true,
+      declaresInlineMarks: true,
       collections: buildNestedCollections(),
       fake: { corrupt: "drop" },
     });
@@ -74,7 +74,7 @@ describe("a reply whose marks cannot be parsed", () => {
         target_lng: "de",
         collection_slug: "nested",
         collection_id: [id],
-        strategy: "overwrite",
+
         publish_on_translation: true,
       },
     });

@@ -65,29 +65,6 @@ export type TranslationProviderConfig = {
   dryRun?: boolean | DryRunConfig;
 };
 
-const MAX_LOGGED_REPLY_KEYS = 10;
-
-/** Keys are model output: quoting them stops a newline inside a key from forging log entries. */
-function describeReplyKeys(keys: string[]): string {
-  const shown = keys.slice(0, MAX_LOGGED_REPLY_KEYS).map((key) => JSON.stringify(key));
-  const rest = keys.length - shown.length;
-
-  return rest > 0 ? `${shown.join(", ")} and ${rest} more` : shown.join(", ");
-}
-
-function warnAboutPartialReply(missingInputKeys: number[], unrequestedReplyKeys: string[]): void {
-  const lead =
-    missingInputKeys.length > 0
-      ? `The provider's reply did not cover every field. Untranslated indices: ${missingInputKeys.join(", ")}.`
-      : "The provider's reply carried keys that were not requested.";
-  const extra =
-    unrequestedReplyKeys.length > 0
-      ? ` Unexpected keys ignored: ${describeReplyKeys(unrequestedReplyKeys)}.`
-      : "";
-
-  console.warn(`[payload-plugin-translator] ${lead}${extra}`);
-}
-
 async function asConfigurationFailure<T>(what: string, run: () => T | Promise<T>): Promise<T> {
   try {
     return await run();
@@ -173,14 +150,7 @@ export function createTranslationProvider(config: TranslationProviderConfig): Tr
         throw new NoContentError("The provider returned an empty reply.");
       }
 
-      const { translations, missingInputKeys, unrequestedReplyKeys } = parseAndValidateReply(
-        input,
-        raw
-      );
-
-      if (missingInputKeys.length > 0 || unrequestedReplyKeys.length > 0) {
-        warnAboutPartialReply(missingInputKeys, unrequestedReplyKeys);
-      }
+      const { translations } = parseAndValidateReply(input, raw);
 
       return translations;
     },

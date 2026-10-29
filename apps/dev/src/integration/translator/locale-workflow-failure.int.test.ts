@@ -32,13 +32,24 @@ describe("when one locale's provider fails", () => {
     });
     const id = String(doc.id);
 
+    // The run endpoint refuses a job nobody is recorded as having asked for, because running one
+    // writes with the host's rules off. Attribute this job so the retry under test is reachable.
+    const editor = {
+      ...(await failing.payload.create({
+        collection: "users",
+        data: { email: "retry@test.dev", password: "pw123456" } as never,
+      })),
+      collection: "users",
+    };
+
     const res = await callEndpoint(failing.payload, "post", "/translate/enqueue", {
+      user: editor as never,
       body: {
         source_lng: "en",
         target_lng: ["de", "fr", "es"],
         collection_slug: "docs",
         collection_id: [id],
-        strategy: "overwrite",
+
         publish_on_translation: false,
       },
     });
@@ -89,18 +100,19 @@ describe("when one locale's provider fails", () => {
       [];
     expect(
       rows.map((row) => [row.input.target_lng, row.status]).sort(),
-      "a locale is finished only on its own evidence; one whose attempt failed is still owed a retry, so it reads as pending rather than as a failure to act on"
+      "a locale is finished only on its own evidence: the one whose attempt failed is still owed a retry, so it reads as work in flight rather than as a failure to act on, and the one never reached has not started at all"
     ).toEqual([
       ["de", "completed"],
       ["es", "pending"],
-      ["fr", "pending"],
+      ["fr", "running"],
     ]);
 
     // Payload backs a failed job off exponentially; only the manual-run endpoint lifts that, so the
     // retry has to go through it.
     const before = failing.translateCount();
     const retry = await callEndpoint(failing.payload, "post", "/translate/run/:id", {
-      routeParams: { id: String((docs[0] as { id: string | number }).id) },
+      user: editor as never,
+      routeParams: { id: (docs[0] as { input?: { handle?: string } }).input?.handle },
     });
     expect(retry.status, "the retry endpoint did not accept the job").toBe(204);
 

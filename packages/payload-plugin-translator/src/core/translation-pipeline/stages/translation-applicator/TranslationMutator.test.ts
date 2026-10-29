@@ -8,7 +8,10 @@ import type {
 import type { InlineFragment } from "../../../kernel/lexical/collectInlineFragments.js";
 import type { SerializedLexicalNode } from "../../../kernel/lexical/index.js";
 import type { SerializedTextNode } from "../../../kernel/lexical/index.js";
+import { makeIdPath } from "../../../domain/content-projection/idPath.js";
 import { TranslationMutator } from "./TranslationMutator.js";
+
+const anywhere = makeIdPath([{ kind: "key", name: "field" }]);
 
 // Helper to create a mock SerializedTextNode with required properties
 const createTextNode = (text: string): SerializedTextNode =>
@@ -41,6 +44,7 @@ const chunkOf = (
   reply?: { markId: number; text: string }[]
 ): RichContainerChunk => ({
   type: "richContainer",
+  idPath: anywhere,
   index: 0,
   containerRef: container,
   fragments,
@@ -57,7 +61,7 @@ describe("TranslationMutator", () => {
     it("mutates dataRef with translation", () => {
       const data = { title: "Hello" };
       const chunks: PlainTextChunk[] = [
-        { type: "plain", index: 0, text: "Hello", dataRef: data, key: "title" },
+        { type: "plain", index: 0, idPath: anywhere, text: "Hello", dataRef: data, key: "title" },
       ];
       const translations = { 0: "Привет" };
 
@@ -70,8 +74,15 @@ describe("TranslationMutator", () => {
       const data1 = { title: "Hello" };
       const data2 = { description: "World" };
       const chunks: PlainTextChunk[] = [
-        { type: "plain", index: 0, text: "Hello", dataRef: data1, key: "title" },
-        { type: "plain", index: 1, text: "World", dataRef: data2, key: "description" },
+        { type: "plain", index: 0, idPath: anywhere, text: "Hello", dataRef: data1, key: "title" },
+        {
+          type: "plain",
+          index: 1,
+          idPath: anywhere,
+          text: "World",
+          dataRef: data2,
+          key: "description",
+        },
       ];
       const translations = { 0: "Привет", 1: "Мир" };
 
@@ -84,7 +95,7 @@ describe("TranslationMutator", () => {
     it("skips chunks without translation", () => {
       const data = { title: "Hello" };
       const chunks: PlainTextChunk[] = [
-        { type: "plain", index: 0, text: "Hello", dataRef: data, key: "title" },
+        { type: "plain", index: 0, idPath: anywhere, text: "Hello", dataRef: data, key: "title" },
       ];
       const translations = {}; // No translation for index 0
 
@@ -98,7 +109,7 @@ describe("TranslationMutator", () => {
     it("mutates nodeRef.text with translation", () => {
       const textNode = createTextNode("Hello");
       const chunks: RichTextChunk[] = [
-        { type: "richText", index: 0, text: "Hello", nodeRef: textNode },
+        { type: "richText", index: 0, idPath: anywhere, text: "Hello", nodeRef: textNode },
       ];
       const translations = { 0: "Привет" };
 
@@ -111,8 +122,8 @@ describe("TranslationMutator", () => {
       const node1 = createTextNode("Hello");
       const node2 = createTextNode("World");
       const chunks: RichTextChunk[] = [
-        { type: "richText", index: 0, text: "Hello", nodeRef: node1 },
-        { type: "richText", index: 1, text: "World", nodeRef: node2 },
+        { type: "richText", index: 0, idPath: anywhere, text: "Hello", nodeRef: node1 },
+        { type: "richText", index: 1, idPath: anywhere, text: "World", nodeRef: node2 },
       ];
       const translations = { 0: "Привет", 1: "Мир" };
 
@@ -129,8 +140,15 @@ describe("TranslationMutator", () => {
       const richTextNode = createTextNode("World");
 
       const chunks: TextChunk[] = [
-        { type: "plain", index: 0, text: "Hello", dataRef: plainData, key: "title" },
-        { type: "richText", index: 1, text: "World", nodeRef: richTextNode },
+        {
+          type: "plain",
+          index: 0,
+          idPath: anywhere,
+          text: "Hello",
+          dataRef: plainData,
+          key: "title",
+        },
+        { type: "richText", index: 1, idPath: anywhere, text: "World", nodeRef: richTextNode },
       ];
       const translations = { 0: "Привет", 1: "Мир" };
 
@@ -144,8 +162,15 @@ describe("TranslationMutator", () => {
       const data1 = { title: "Hello" };
       const data2 = { subtitle: "World" };
       const chunks: PlainTextChunk[] = [
-        { type: "plain", index: 0, text: "Hello", dataRef: data1, key: "title" },
-        { type: "plain", index: 1, text: "World", dataRef: data2, key: "subtitle" },
+        { type: "plain", index: 0, idPath: anywhere, text: "Hello", dataRef: data1, key: "title" },
+        {
+          type: "plain",
+          index: 1,
+          idPath: anywhere,
+          text: "World",
+          dataRef: data2,
+          key: "subtitle",
+        },
       ];
       const translations = { 0: "Привет" }; // Only first chunk translated
 
@@ -167,7 +192,7 @@ describe("TranslationMutator", () => {
     it("handles empty translations", () => {
       const data = { title: "Hello" };
       const chunks: PlainTextChunk[] = [
-        { type: "plain", index: 0, text: "Hello", dataRef: data, key: "title" },
+        { type: "plain", index: 0, idPath: anywhere, text: "Hello", dataRef: data, key: "title" },
       ];
 
       mutator.apply(chunks, {});
@@ -178,7 +203,7 @@ describe("TranslationMutator", () => {
     it("preserves other properties in dataRef", () => {
       const data = { title: "Hello", slug: "hello", count: 42 };
       const chunks: PlainTextChunk[] = [
-        { type: "plain", index: 0, text: "Hello", dataRef: data, key: "title" },
+        { type: "plain", index: 0, idPath: anywhere, text: "Hello", dataRef: data, key: "title" },
       ];
       const translations = { 0: "Привет" };
 
@@ -222,6 +247,39 @@ describe("TranslationMutator", () => {
       mutator.apply([chunk], { 0: "<1>une </1><2>rouge</2><3> voiture</3>" });
 
       expect(textsOf(container)).toEqual(["a ", "red", " car"]);
+    });
+  });
+
+  describe("what it reports back", () => {
+    it("returns the chunks it wrote, and leaves out the ones it did not", () => {
+      const data = { title: "Hello", subtitle: "World" };
+      const chunks: TextChunk[] = [
+        { type: "plain", index: 0, idPath: anywhere, text: "Hello", dataRef: data, key: "title" },
+        {
+          type: "plain",
+          index: 1,
+          idPath: anywhere,
+          text: "World",
+          dataRef: data,
+          key: "subtitle",
+        },
+      ];
+
+      expect(mutator.apply(chunks, { 0: "Hallo" })).toEqual([chunks[0]]);
+    });
+
+    it("returns a container only once its reply has parsed", () => {
+      const { container, fragments } = paragraph();
+
+      expect(mutator.apply([chunkOf(container, fragments)], {})).toEqual([]);
+    });
+
+    it("leaves out a container it could not write into, though a reply had parsed", () => {
+      const { fragments } = paragraph();
+      const childless = { type: "paragraph", version: 1 } as SerializedLexicalNode;
+      const chunk = chunkOf(childless, fragments, [{ markId: 1, text: "Hallo " }]);
+
+      expect(mutator.apply([chunk], {})).toEqual([]);
     });
   });
 });

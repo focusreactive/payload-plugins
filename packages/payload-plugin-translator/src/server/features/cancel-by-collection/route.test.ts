@@ -6,33 +6,54 @@ import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 
 import { createCancelByCollectionRoute } from "./route.js";
 import type { CancelConfig } from "./model.js";
+import { AnyAccessGuard } from "../../shared/access/AnyAccessGuard.js";
+import { storeDouble } from "../../modules/runs/__tests__/fixtures/runRecordStore.js";
 
+const OPEN_ON_PURPOSE = new AnyAccessGuard();
 // Route-contract test: pin path + method + access-guard wiring so the Phase 1
 // relocation of route registration stays behaviour-preserving. Handler logic
 // and the shared wrappers have their own unit tests.
 const config: CancelConfig = { availableCollections: new Set() };
 const denyAccess: AccessGuard = { check: vi.fn().mockReturnValue(false) };
 
+const noRuns = () => storeDouble();
+
 describe("createCancelByCollectionRoute (contract)", () => {
   it("registers DELETE at {basePath}/cancel-by-collection/:collection_slug with the default basePath", () => {
-    const endpoint = createCancelByCollectionRoute(config, { create: vi.fn() });
+    const endpoint = createCancelByCollectionRoute(
+      config,
+      { create: vi.fn(), capabilities: { stop: true, run: true } },
+      noRuns,
+      OPEN_ON_PURPOSE
+    );
     expect(endpoint.path).toBe("/translate/cancel-by-collection/:collection_slug");
     expect(endpoint.method).toBe("delete");
   });
 
   it("honors a custom basePath", () => {
-    const endpoint = createCancelByCollectionRoute(config, { create: vi.fn() }, undefined, "/i18n");
+    const endpoint = createCancelByCollectionRoute(
+      config,
+      { create: vi.fn(), capabilities: { stop: true, run: true } },
+      noRuns,
+      OPEN_ON_PURPOSE,
+      "/i18n"
+    );
     expect(endpoint.path).toBe("/i18n/cancel-by-collection/:collection_slug");
   });
 
   it("applies the access guard — a denied request gets 403 and never reaches the handler", async () => {
-    const taskRunnerFactory: TaskRunnerFactory = { create: vi.fn() };
-    const endpoint = createCancelByCollectionRoute(config, taskRunnerFactory, denyAccess);
+    const taskRunnerFactory: TaskRunnerFactory = {
+      create: vi.fn(),
+      capabilities: { stop: true, run: true },
+    };
+    const endpoint = createCancelByCollectionRoute(config, taskRunnerFactory, noRuns, denyAccess);
 
     const response = await endpoint.handler({} as PayloadRequest);
 
     expect(response.status).toBe(403);
-    expect(denyAccess.check).toHaveBeenCalled();
+    expect(denyAccess.check).toHaveBeenLastCalledWith(
+      expect.objectContaining({ action: "cancel-by-collection" })
+    );
     expect(taskRunnerFactory.create).not.toHaveBeenCalled();
   });
 });

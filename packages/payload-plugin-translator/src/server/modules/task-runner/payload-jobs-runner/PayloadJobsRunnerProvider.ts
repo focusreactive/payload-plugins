@@ -1,25 +1,25 @@
 import { TranslatorConfigError } from "../../../../core/errors/index.js";
-import type { Config, Payload, WorkflowConfig } from "payload";
+import type { CollectionSlug, Config, Payload, WorkflowConfig } from "payload";
 
 import type { TaskRunner } from "../TaskRunner.interface.js";
 import type { PayloadJobsRunnerOptions, PayloadJobsRunnerConfig, AutoRunConfig } from "./config.js";
-import type { StoredTaskInput, StoredWorkflowInput } from "./store/index.js";
-import type { TranslationStrategyName } from "../../../../core/translation-pipeline/strategies/index.js";
+import type { StoredTaskInput } from "./store/index.js";
 import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner.js";
 import { chain, contribute } from "../../../shared/payload/contribute.js";
 import {
-  assignmentOf,
-  readCollectionRef,
+  pointerOf,
   TaskInputSchema,
   toPayloadFields,
-  withLegacyCollection,
+  withoutAHandle,
   WorkflowInputSchema,
 } from "./store/index.js";
-import { deliveredLocales, localesAsTheyStand, owedIfGaveUp, retryLimitOf } from "./model/index.js";
+import type { PayloadJob, StoredWorkflowInput, TaskStatusByLocale } from "./store/index.js";
+import { attemptsBefore, deliveredLocales, owedIfGaveUp, retryLimitOf } from "./model/index.js";
+import { adoptLegacyJob } from "./legacy/index.js";
+import type { AdoptionDeps } from "./legacy/index.js";
 import type { TaskRunnerContext, TaskRunnerProvider } from "../TaskRunnerProvider.interface.js";
+import type { RunnerCapabilities } from "../RunnerCapabilities.js";
 import type { TaskEvent } from "../types.js";
-import type { Requester } from "../../../shared/payload/RequestScope.shapes.js";
-import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
 
 const defaultAutoRun: Required<AutoRunConfig> = {
   cron: "* * * * *",
@@ -54,31 +54,49 @@ const defaultValues = {
 };
 
 /**
- * What Payload hands this plugin's registered task: the request it runs under, the row it belongs to
- * — carried only so a throw can be stored against it — and the locale's stored input.
- *
- * `strategy` is narrowed here and nowhere else. The column holds any bounded string, because a row
- * written by an older version may name a strategy this one dropped; this handler is the one place
- * that hands the value to something which only accepts the names this version has.
+ * What Payload hands the registered task. `job` is carried only so a throw can be stored against it
+ * for the workflow to read back.
  */
 type TranslateLocaleTask = {
   req: { payload: Payload };
-  job?: { id?: unknown };
-  input: StoredTaskInput & { strategy: TranslationStrategyName };
+  job?: { id?: unknown; taskStatus?: TaskStatusByLocale };
+  input: StoredTaskInput;
 };
 
+const A_QUEUE_CAN_BE_REACHED: RunnerCapabilities = { stop: true, run: true };
+
 /**
- * Rows queued before the scope carried one `requester` object are already on disk as two nullable
- * columns, so both must be present before they read back as an identity.
+ * Gives every job queued before the upgrade its pointer. Completed rows are skipped: their work is
+ * over, and Payload may already have deleted them.
  */
-export function requesterOf(input: {
-  requester_id?: string | number | null;
-  requester_collection?: string | null;
-}): Requester | null {
-  return asRequester(input.requester_id, input.requester_collection);
+async function adoptQueuedBeforeTheUpgrade(
+  deps: AdoptionDeps,
+  names: { workflowName: string; taskName: string }
+): Promise<void> {
+  const { docs } = await deps.payload.find({
+    collection: deps.jobsCollection as CollectionSlug,
+    depth: 0,
+    pagination: false,
+    where: {
+      and: [
+        {
+          or: [
+            { workflowSlug: { equals: names.workflowName } },
+            { taskSlug: { equals: names.taskName } },
+          ],
+        },
+        { completedAt: { exists: false } },
+        withoutAHandle(),
+      ],
+    },
+  });
+
+  for (const job of docs as unknown as PayloadJob[]) await adoptLegacyJob(deps, job);
 }
 
 export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
+  readonly capabilities = A_QUEUE_CAN_BE_REACHED;
+
   private readonly config: PayloadJobsRunnerConfig;
 
   constructor(options?: PayloadJobsRunnerOptions) {
@@ -107,83 +125,24 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
   }
 
   configure(context: TaskRunnerContext): (config: Config) => Config {
-    const { taskName, workflowName, queueName, retries, autoRun } = this.config;
-    const retryLimit = retryLimitOf(retries);
-    const { handler, collections, report } = context;
+    const { queueName, autoRun } = this.config;
     const thrown = new WeakMap<object, unknown>();
 
     return (config) => {
-      const inputSchema = withLegacyCollection(toPayloadFields(TaskInputSchema), collections);
-      const workflowInputSchema = withLegacyCollection(
-        toPayloadFields(WorkflowInputSchema),
-        collections
-      );
-
-      const task = {
-        slug: taskName,
-        inputSchema,
-        retries,
-        handler: async (args: TranslateLocaleTask) => {
-          const { collectionSlug, collectionId } = readCollectionRef(args.input);
-          try {
-            await handler(
-              args.req.payload,
-              {
-                collection: collectionSlug,
-                collectionId,
-                sourceLng: args.input.source_lng,
-                targetLng: args.input.target_lng,
-                strategy: args.input.strategy,
-                publishOnTranslation: args.input.publish_on_translation ?? false,
-              },
-              { requester: requesterOf(args.input) }
-            );
-          } catch (error) {
-            if (args.job) thrown.set(args.job, error);
-            throw error;
-          }
-          return { output: {} };
-        },
-      };
-
-      const workflow: WorkflowConfig<StoredJobInput> = {
-        slug: workflowName,
-        inputSchema: workflowInputSchema,
-        retries,
-        ...(config.jobs?.enableConcurrencyControl
-          ? {
-              concurrency: {
-                key: ({ input }) => `${input.collection_slug}:${input.collection_id}`,
-                exclusive: true,
-              },
-            }
-          : {}),
-        handler: async ({ job, req, tasks }) => {
-          const runLocale = tasks[taskName];
-          const reportFor = async (locale: string, event: TaskEvent) => {
-            const assignment = assignmentOf(job, locale);
-            if (assignment) await report(req.payload, assignment, event);
-          };
-          const deliveredBefore = deliveredLocales(job);
-
-          for (const { target, input } of localesAsTheyStand(job)) {
-            try {
-              await runLocale(target, { input });
-              if (!deliveredBefore.has(target)) await reportFor(target, { state: "delivered" });
-            } catch (error) {
-              const owed = thrown.has(job) ? owedIfGaveUp(job, taskName, target, retryLimit) : [];
-              for (const dead of owed) {
-                await reportFor(dead.input.targetLng, { state: "failed", error: thrown.get(job) });
-              }
-              throw error;
-            }
-          }
-        },
-      };
-
+      // Read before `??=` creates the bag, so an absent `jobs` is not mistaken for one that opted in.
+      const exclusivePerRun = Boolean(config.jobs?.enableConcurrencyControl);
       const jobs = (config.jobs ??= {});
-      jobs.tasks = contribute(jobs.tasks, [task], (registered) => registered.slug);
-      jobs.workflows = contribute(jobs.workflows, [workflow], (registered) => registered.slug);
+
+      jobs.tasks = contribute(
+        jobs.tasks,
+        [this.translateOneLocale(context, thrown)],
+        (registered) => registered.slug
+      );
+      jobs.workflows = contribute(
+        jobs.workflows,
+        [this.walkTheRunsLocales(context, thrown, exclusivePerRun)],
+        (registered) => registered.slug
+      );
       if (autoRun) {
         jobs.autoRun = contribute(
           jobs.autoRun,
@@ -192,18 +151,116 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
         );
       }
 
-      config.onInit = chain(config.onInit, async (payload) => {
-        try {
-          await new PayloadJobsTaskRunner(payload, this.config, context).reclaimStaleJobs();
-        } catch (err) {
-          payload.logger?.error?.({
-            err,
-            msg: "[translator] failed to reclaim stale translation jobs",
-          });
-        }
-      });
+      config.onInit = chain(config.onInit, this.reclaimAndAdopt(context));
 
       return config;
+    };
+  }
+
+  /** A throw is kept against the job so the workflow can read back which locale gave up. */
+  private translateOneLocale(context: TaskRunnerContext, thrown: WeakMap<object, unknown>) {
+    const { taskName, retries } = this.config;
+
+    return {
+      slug: taskName,
+      inputSchema: toPayloadFields(TaskInputSchema),
+      retries,
+      handler: async (args: TranslateLocaleTask) => {
+        try {
+          await context.handler(args.req.payload, {
+            handle: args.input.handle,
+            targetLng: args.input.target_lng,
+            previousAttempts: attemptsBefore(
+              args.job?.taskStatus?.[taskName]?.[args.input.target_lng]
+            ),
+          });
+        } catch (error) {
+          if (args.job) thrown.set(args.job, error);
+          throw error;
+        }
+        return { output: {} };
+      },
+    };
+  }
+
+  private walkTheRunsLocales(
+    context: TaskRunnerContext,
+    thrown: WeakMap<object, unknown>,
+    exclusivePerRun: boolean
+  ): WorkflowConfig<StoredJobInput> {
+    const { taskName, workflowName, jobsCollection, retries } = this.config;
+    const retryLimit = retryLimitOf(retries);
+    const { report } = context;
+
+    return {
+      slug: workflowName,
+      inputSchema: toPayloadFields(WorkflowInputSchema),
+      retries,
+      ...(exclusivePerRun
+        ? {
+            concurrency: {
+              key: ({ input }) => String(input.handle ?? ""),
+              exclusive: true,
+            },
+          }
+        : {}),
+      handler: async ({ job, req, tasks }) => {
+        const runLocale = tasks[taskName];
+        const pointer =
+          pointerOf(job as PayloadJob) ??
+          (await adoptLegacyJob(
+            { payload: req.payload, jobsCollection, report },
+            job as PayloadJob
+          ));
+        if (pointer === null) return;
+
+        const reportFor = (targetLng: string, event: TaskEvent) =>
+          report(req.payload, { handle: pointer.handle, targetLng }, event);
+        const deliveredBefore = deliveredLocales(job as PayloadJob);
+
+        for (const target of pointer.locales) {
+          try {
+            await runLocale(target, { input: { handle: pointer.handle, target_lng: target } });
+            if (!deliveredBefore.has(target)) await reportFor(target, { state: "delivered" });
+          } catch (error) {
+            const owed = thrown.has(job)
+              ? owedIfGaveUp(job as PayloadJob, taskName, target, retryLimit, pointer.locales)
+              : [];
+            for (const dead of owed) {
+              await reportFor(dead, { state: "failed", error: thrown.get(job) });
+            }
+            throw error;
+          }
+        }
+      },
+    };
+  }
+
+  /** Both halves are best-effort: a host whose queue cannot be tidied still boots. */
+  private reclaimAndAdopt(context: TaskRunnerContext): (payload: Payload) => Promise<void> {
+    const { jobsCollection, workflowName, taskName } = this.config;
+    const { report } = context;
+
+    return async (payload) => {
+      try {
+        await new PayloadJobsTaskRunner(payload, this.config, context).reclaimStaleJobs();
+      } catch (err) {
+        payload.logger?.error?.({
+          err,
+          msg: "[translator] failed to reclaim stale translation jobs",
+        });
+      }
+      try {
+        await adoptQueuedBeforeTheUpgrade(
+          { payload, jobsCollection, report },
+          { workflowName, taskName }
+        );
+      } catch (err) {
+        payload.logger?.error?.({
+          err,
+          msg: "[translator] failed to adopt translation jobs queued before the upgrade",
+        });
+      }
     };
   }
 }

@@ -1,33 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, PayloadRequest, CollectionSlug } from "payload";
+
 import { CancelByCollectionHandler } from "./handler.js";
 import type { CancelConfig } from "./model.js";
-import type { TaskRunnerFactory, TaskRunner, Task } from "../../modules/task-runner/index.js";
+import type { TaskRunnerFactory, TaskRunner } from "../../modules/task-runner/index.js";
+import { runRow, storeDouble } from "../../modules/runs/__tests__/fixtures/runRecordStore.js";
+import type { RunRecordStoreDouble } from "../../modules/runs/__tests__/fixtures/runRecordStore.js";
+
+const STARTED = "2026-10-27T10:01:00.000Z";
 
 describe("CancelByCollectionHandler", () => {
   let handler: CancelByCollectionHandler;
   let mockTaskRunner: TaskRunner;
   let mockTaskRunnerFactory: TaskRunnerFactory;
+  let runs: RunRecordStoreDouble;
   let config: CancelConfig;
 
-  const createMockTask = (overrides: Partial<Task> = {}): Task => ({
-    id: "task-123",
-    status: "pending",
-    input: {
-      collectionSlug: "posts" as CollectionSlug,
-      collectionId: "doc-123",
-      sourceLng: "en",
-      targetLng: "de",
-      strategy: "overwrite",
-      publishOnTranslation: false,
-    },
-    createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T01:00:00Z",
-    cancelled: false,
-    ...overrides,
-  });
-
-  const createMockRequest = (params: Record<string, string> = {}): PayloadRequest =>
+  const request = (params: Record<string, string> = {}): PayloadRequest =>
     ({
       payload: {} as Payload,
       routeParams: params,
@@ -36,139 +25,115 @@ describe("CancelByCollectionHandler", () => {
   beforeEach(() => {
     mockTaskRunner = {
       enqueue: vi.fn(),
-      cancel: vi.fn().mockResolvedValue(undefined),
+      stop: vi.fn().mockResolvedValue(undefined),
       run: vi.fn(),
-      findByCollection: vi.fn().mockResolvedValue([]),
     };
 
     mockTaskRunnerFactory = {
       create: vi.fn().mockReturnValue(mockTaskRunner),
+      capabilities: { stop: true, run: true },
     };
+    runs = storeDouble();
+    config = { availableCollections: new Set(["posts", "pages"] as CollectionSlug[]) };
 
-    config = {
-      availableCollections: new Set(["posts", "pages"] as CollectionSlug[]),
-    };
-
-    handler = new CancelByCollectionHandler(config, mockTaskRunnerFactory);
+    handler = new CancelByCollectionHandler(config, mockTaskRunnerFactory, () => runs);
   });
 
   describe("validation", () => {
-    it("returns validation error for missing collection_slug", async () => {
-      const req = createMockRequest({});
-
-      const response = await handler.handle(req);
+    it("refuses a request naming no collection", async () => {
+      const response = await handler.handle(request({}));
 
       expect(response.status).toBe(400);
-      const body = await response.json();
-      expect(body.message).toBe("Validation error");
+      expect((await response.json()).message).toBe("Validation error");
     });
 
-    it("returns validation error for empty collection_slug", async () => {
-      const req = createMockRequest({ collection_slug: "" });
-
-      const response = await handler.handle(req);
+    it("refuses a collection the plugin does not translate", async () => {
+      const response = await handler.handle(request({ collection_slug: "users" }));
 
       expect(response.status).toBe(400);
+      expect((await response.json()).message).toBe("Collection not available for translation");
     });
   });
 
-  describe("collection availability", () => {
-    it("returns bad request for unavailable collection", async () => {
-      const req = createMockRequest({ collection_slug: "users" });
-
-      const response = await handler.handle(req);
-
-      expect(response.status).toBe(400);
-      const body = await response.json();
-      expect(body.message).toBe("Collection not available for translation");
-    });
-  });
-
-  describe("no tasks to cancel", () => {
-    it("returns 204 when no tasks exist for collection", async () => {
-      (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-
-      const req = createMockRequest({ collection_slug: "posts" });
-      const response = await handler.handle(req);
+  describe("nothing to stop", () => {
+    it("answers 204 when the collection has nothing in flight", async () => {
+      const response = await handler.handle(request({ collection_slug: "posts" }));
 
       expect(response.status).toBe(204);
       expect(response.body).toBeNull();
+      expect(mockTaskRunner.stop).not.toHaveBeenCalled();
     });
 
-    it("returns 204 when all tasks are running (not pending)", async () => {
-      const tasks = [
-        createMockTask({ id: "task-1", status: "running" }),
-        createMockTask({ id: "task-2", status: "running" }),
-      ];
-      (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue(tasks);
+    it("answers 204 when every run has already started", async () => {
+      runs.findLiveInCollection.mockResolvedValue([
+        runRow({ handle: "run-1", startedAt: STARTED }),
+        runRow({ handle: "run-2", startedAt: STARTED }),
+      ]);
 
-      const req = createMockRequest({ collection_slug: "posts" });
-      const response = await handler.handle(req);
+      const response = await handler.handle(request({ collection_slug: "posts" }));
 
       expect(response.status).toBe(204);
-      expect(mockTaskRunner.cancel).not.toHaveBeenCalled();
+      expect(mockTaskRunner.stop).not.toHaveBeenCalled();
     });
   });
 
-  describe("cancelling queued jobs", () => {
-    it("cancels every queued job and leaves the one in flight alone", async () => {
-      const tasks = [
-        createMockTask({ id: "task-1", status: "pending" }),
-        createMockTask({ id: "task-2", status: "running" }),
-        createMockTask({ id: "task-3", status: "pending" }),
-      ];
-      (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue(tasks);
+  describe("stopping what has not started", () => {
+    it("stops every queued run and leaves the one in flight alone", async () => {
+      runs.findLiveInCollection.mockResolvedValue([
+        runRow({ handle: "run-1" }),
+        runRow({ handle: "run-2", startedAt: STARTED }),
+        runRow({ handle: "run-3" }),
+      ]);
 
-      const req = createMockRequest({ collection_slug: "posts" });
-      const response = await handler.handle(req);
+      const response = await handler.handle(request({ collection_slug: "posts" }));
 
       expect(response.status).toBe(204);
-      expect(mockTaskRunner.cancel).toHaveBeenCalledWith(["task-1", "task-3"]);
+      expect(mockTaskRunner.stop).toHaveBeenCalledWith(["run-1", "run-3"]);
     });
 
-    it("cancels a job waiting to retry after a failure", async () => {
-      const tasks = [
-        createMockTask({ id: "task-1", status: "completed" }),
-        createMockTask({ id: "task-1", status: "failed" }),
-      ];
-      (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue(tasks);
+    it("protects a whole run when one of its locales has started", async () => {
+      runs.findLiveInCollection.mockResolvedValue([
+        runRow({ handle: "run-1", targetLng: "de", startedAt: STARTED }),
+        runRow({ handle: "run-1", targetLng: "fr" }),
+      ]);
 
-      const req = createMockRequest({ collection_slug: "posts" });
+      await handler.handle(request({ collection_slug: "posts" }));
+
+      expect(
+        mockTaskRunner.stop,
+        "stopping the run would abandon the locale already being written"
+      ).not.toHaveBeenCalled();
+    });
+
+    it("names each run once, however many locale rows it has", async () => {
+      runs.findLiveInCollection.mockResolvedValue([
+        runRow({ handle: "run-1", targetLng: "de" }),
+        runRow({ handle: "run-1", targetLng: "fr" }),
+      ]);
+
+      await handler.handle(request({ collection_slug: "posts" }));
+
+      expect(mockTaskRunner.stop).toHaveBeenCalledWith(["run-1"]);
+    });
+
+    it("asks the record what the collection has in flight", async () => {
+      await handler.handle(request({ collection_slug: "pages" }));
+
+      expect(
+        runs.findLiveInCollection,
+        "what the collection has in flight is the record's to answer, not the runner's"
+      ).toHaveBeenCalledWith("pages");
+    });
+
+    it("creates the runner with the request's own payload", async () => {
+      const payload = { collections: {} } as Payload;
+      const req = request({ collection_slug: "posts" });
+      (req as unknown as { payload: Payload }).payload = payload;
+      runs.findLiveInCollection.mockResolvedValue([runRow({ handle: "run-1" })]);
+
       await handler.handle(req);
 
-      expect(mockTaskRunner.cancel).toHaveBeenCalledWith(["task-1"]);
-    });
-
-    it("names each job once, however many locale rows it has", async () => {
-      const tasks = [
-        createMockTask({ id: "task-1", status: "pending" }),
-        createMockTask({ id: "task-1", status: "pending" }),
-      ];
-      (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue(tasks);
-
-      await handler.handle(createMockRequest({ collection_slug: "posts" }));
-
-      expect(mockTaskRunner.cancel).toHaveBeenCalledWith(["task-1"]);
-    });
-
-    it("calls findByCollection with correct collection slug", async () => {
-      const req = createMockRequest({ collection_slug: "pages" });
-
-      await handler.handle(req);
-
-      expect(mockTaskRunner.findByCollection).toHaveBeenCalledWith("pages", {
-        excludeCompleted: true,
-      });
-    });
-
-    it("creates task runner with request payload", async () => {
-      const mockPayload = { collections: {} } as Payload;
-      const req = createMockRequest({ collection_slug: "posts" });
-      (req as any).payload = mockPayload;
-
-      await handler.handle(req);
-
-      expect(mockTaskRunnerFactory.create).toHaveBeenCalledWith(mockPayload);
+      expect(mockTaskRunnerFactory.create).toHaveBeenCalledWith(payload);
     });
   });
 });

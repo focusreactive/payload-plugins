@@ -3,7 +3,7 @@ import type { PayloadRequest } from "payload";
 import { ServerResponse } from "../../shared/index.js";
 import { isCollectionAvailable } from "../_lib/collection-utils.js";
 
-import { GetDocumentStalenessInputSchema } from "./model.js";
+import { asStalenessBody, GetDocumentStalenessInputSchema } from "./model.js";
 import type { StalenessConfig } from "./model.js";
 
 /**
@@ -27,11 +27,9 @@ export class GetDocumentStalenessHandler {
     }
 
     try {
-      const service = this.config.provenanceServiceFactory?.(req.payload);
-      const locales = service
-        ? await service.getStaleness(collectionSlug, collection_id, req.user)
-        : [];
-      return ServerResponse.success({ locales });
+      const service = this.config.provenanceServiceFactory(req.payload);
+      const locales = await service.getStaleness(collectionSlug, collection_id, req.user);
+      return ServerResponse.success({ locales: locales.map(asStalenessBody) });
     } catch (error) {
       req.payload.logger.error({
         err: error,

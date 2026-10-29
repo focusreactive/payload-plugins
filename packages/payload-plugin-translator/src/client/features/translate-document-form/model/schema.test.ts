@@ -7,7 +7,6 @@ const base = {
   [FORM_FIELDS.SOURCE_LNG]: "en",
   [FORM_FIELDS.HIDDEN_COLLECTION_ID]: "doc-1",
   [FORM_FIELDS.HIDDEN_COLLECTION_SLUG]: "posts",
-  [FORM_FIELDS.STRATEGY]: "overwrite" as const,
   [FORM_FIELDS.PUBLISH_ON_TRANSLATION]: false,
 };
 
