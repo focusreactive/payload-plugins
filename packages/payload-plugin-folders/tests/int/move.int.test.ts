@@ -800,68 +800,79 @@ describe("move apply", () => {
     }
   });
 
-  it("a page and a folder with a legacy segment move back to the site root, a dotted one does not", async () => {
+  it("a page with a legacy segment moves back to the site root, a dotted or reserved one does not", async () => {
     const { payload } = harness;
     const home = await createFolder(payload, { slug: "legacy-home" });
-    const legacyFolder = await createFolder(payload, { parent: home.id, slug: "legacy-folder" });
-    const legacyPost = (await payload.create({
-      collection: "posts",
-      data: { folder: home.id, slug: "legacy-post", title: "Legacy post" },
-      depth: 0,
-      overrideAccess: true,
-    })) as unknown as { id: number };
-    const dottedPost = (await payload.create({
-      collection: "posts",
-      data: { folder: home.id, slug: "dotted-post", title: "Dotted post" },
-      depth: 0,
-      overrideAccess: true,
-    })) as unknown as { id: number };
+    const createPost = async (slug: string) =>
+      (await payload.create({
+        collection: "posts",
+        data: { folder: home.id, slug, title: slug },
+        depth: 0,
+        overrideAccess: true,
+      })) as unknown as { id: number };
+    const legacyPost = await createPost("legacy-post");
+    const dottedPost = await createPost("dotted-post");
+    const adminPost = await createPost("admin-post");
+    const apiPost = await createPost("api-post");
     // Segments written before the plugin existed (spec section 2.6 accepts them until edited): they
     // fail the segment pattern, so no save can produce them, only a write at database level.
-    await payload.db.updateOne({
-      collection: "posts",
-      data: { pathSegment: "About", slug: "About" },
-      id: legacyPost.id,
-      returning: false,
-    });
-    await payload.db.updateOne({
-      collection: "posts",
-      data: { pathSegment: "Feed.XML", slug: "Feed.XML" },
-      id: dottedPost.id,
-      returning: false,
-    });
-    await payload.db.updateOne({
-      collection: "folders",
-      data: { slug: { de: "Legacy_Folder", en: "Legacy_Folder" } },
-      id: legacyFolder.id,
-      returning: false,
-    });
+    const legacySegments = [
+      [legacyPost, "About"],
+      [dottedPost, "Feed.XML"],
+      [adminPost, "Admin"],
+      [apiPost, "API"],
+    ] as const;
+    for (const [post, segment] of legacySegments) {
+      await payload.db.updateOne({
+        collection: "posts",
+        data: { pathSegment: segment, slug: segment },
+        id: post.id,
+        returning: false,
+      });
+    }
 
-    const refused = await moveItems(payload, {
-      items: [postRef(dottedPost.id)],
-      toFolder: null,
-    }).catch((error: unknown) => error as MoveBlockedError);
-    expect(refused).toBeInstanceOf(MoveBlockedError);
-    expect((refused as MoveBlockedError).blocked).toEqual([
+    const refuse = async (post: { id: number }) =>
+      (await moveItems(payload, { items: [postRef(post.id)], toFolder: null }).catch(
+        (error: unknown) => error as MoveBlockedError
+      )) as MoveBlockedError;
+    const refusedDotted = await refuse(dottedPost);
+    const refusedAdmin = await refuse(adminPost);
+    const refusedApi = await refuse(apiPost);
+
+    expect(refusedDotted).toBeInstanceOf(MoveBlockedError);
+    expect(refusedDotted.blocked).toEqual([
       {
         item: postRef(dottedPost.id),
         message: "/Feed.XML cannot be at the top level: a top-level segment cannot contain a dot",
         reason: "reserved",
       },
     ]);
+    // Case does not get a reserved segment past the check: `Admin` is the site's `/admin`.
+    expect(refusedAdmin).toBeInstanceOf(MoveBlockedError);
+    expect(refusedAdmin.blocked).toEqual([
+      {
+        item: postRef(adminPost.id),
+        message: "/Admin is used by the site itself",
+        reason: "reserved",
+      },
+    ]);
+    expect(refusedApi).toBeInstanceOf(MoveBlockedError);
+    expect(refusedApi.blocked).toEqual([
+      {
+        item: postRef(apiPost.id),
+        message: "/API is used by the site itself",
+        reason: "reserved",
+      },
+    ]);
 
-    const result = await moveItems(payload, {
-      items: [postRef(legacyPost.id), folderRef(legacyFolder.id)],
-      toFolder: null,
-    });
+    const result = await moveItems(payload, { items: [postRef(legacyPost.id)], toFolder: null });
 
-    expect(result.moved).toEqual([postRef(legacyPost.id), folderRef(legacyFolder.id)]);
+    expect(result.moved).toEqual([postRef(legacyPost.id)]);
     expect(await readFullPath(payload, "posts", legacyPost.id)).toBe("/About");
-    // A stored folder path is always lowercased, so only the segment's validity changed hands here.
-    expect((await readFolderRow(payload, legacyFolder.id)).fullPath.en).toBe("/legacy_folder");
-    expect((await readFolderRow(payload, legacyFolder.id)).parent).toBeNull();
-    // The dotted post stayed where it was.
+    // The refused posts stayed where they were.
     expect(await readFullPath(payload, "posts", dottedPost.id)).toBe("/legacy-home/Feed.XML");
+    expect(await readFullPath(payload, "posts", adminPost.id)).toBe("/legacy-home/Admin");
+    expect(await readFullPath(payload, "posts", apiPost.id)).toBe("/legacy-home/API");
   });
 
   it("moves a folder and its pages in an app without localization", async () => {

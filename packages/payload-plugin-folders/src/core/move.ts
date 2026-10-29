@@ -643,6 +643,10 @@ export const buildMovePlan = async (
   // robots.txt and sitemap.xml stay the frontend's. A legacy segment that fails the segment pattern
   // (`About`) is accepted until it is edited (spec section 2.6), so it may move back to the root.
   if (target === null) {
+    // Lowercased on both sides: a legacy `Admin` is still the site's `/admin` (decision 22).
+    const reservedRootSegments = new Set(
+      options.reservedRootSegments.map((segment) => segment.toLowerCase())
+    );
     for (const subject of live()) {
       if (!changesParent(subject) || isRootPage(subject)) {
         continue;
@@ -651,7 +655,7 @@ export const buildMovePlan = async (
         if (segment === "") {
           continue;
         }
-        if (options.reservedRootSegments.includes(segment)) {
+        if (reservedRootSegments.has(segment.toLowerCase())) {
           block(subject.ref, "reserved", `/${segment} is used by the site itself`);
           break;
         }

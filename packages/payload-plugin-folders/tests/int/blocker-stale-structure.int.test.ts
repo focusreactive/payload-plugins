@@ -246,6 +246,103 @@ describe("stale structure cannot undo a move", () => {
     expect(fullPath).toBe("/target-scheduled/scheduled");
   });
 
+  /**
+   * The cases above keep the new folder partly because the move patched the latest version, so the
+   * draft being published already carries it. These two write the pre-move folder, key and revision
+   * back into that version row (non-localized columns only), the way a draft that predates the move
+   * would arrive, so only the structure guard can keep the new folder.
+   */
+  const publishDraftWithPreMoveVersionRow = async ({
+    prepareDraft,
+    publish,
+    slug,
+  }: {
+    prepareDraft?: (id: number) => Promise<void>;
+    publish: (id: number) => Promise<void>;
+    slug: string;
+  }): Promise<void> => {
+    const { payload } = harness;
+    const source = await createFolder(payload, { slug: `source-${slug}` });
+    const target = await createFolder(payload, { slug: `target-${slug}` });
+    const page = await createPublishedPage(payload, {
+      folder: source.id,
+      slug,
+      title: "Original",
+    });
+    await saveDraft(payload, page.id, "Pending draft");
+    await prepareDraft?.(page.id);
+    const preMove = pickStructure(await readDraft(payload, page.id));
+    expect(preMove.folder).toBe(source.id);
+
+    await moveItems(payload, { items: [pageRef(page.id)], toFolder: target.id });
+    const moved = pickStructure(await readMain(payload, page.id));
+    expect(moved.folder).toBe(target.id);
+    await patchLatestVersionStructure(
+      await createTestRequest(payload),
+      "pages",
+      page.id,
+      { ...preMove },
+      new Date().toISOString()
+    );
+    expect(await readLatestVersionStructure(payload, page.id)).toEqual(preMove);
+    expect((await readDraft(payload, page.id)).folder).toBe(source.id);
+
+    await publish(page.id);
+
+    const published = await readMain(payload, page.id);
+    expect(published.title).toBe("Pending draft");
+    expect(pickStructure(published)).toEqual(moved);
+    await expectStructureEverywhere(payload, page.id, moved);
+  };
+
+  it("publishing a draft whose version row holds the pre-move structure keeps the new folder", async () => {
+    const { payload } = harness;
+
+    await publishDraftWithPreMoveVersionRow({
+      publish: async (id) => {
+        await payload.update({
+          collection: "pages",
+          data: { _status: "published" } as never,
+          depth: 0,
+          id,
+          overrideAccess: true,
+        });
+      },
+      slug: "guard-publish",
+    });
+  });
+
+  it("a scheduled publish of a draft whose version row holds the pre-move structure keeps the new folder (the same update the job runs)", async () => {
+    const { payload } = harness;
+
+    await publishDraftWithPreMoveVersionRow({
+      // The job publishes every locale, and the dev page collection requires a title in each.
+      prepareDraft: async (id) => {
+        await payload.update({
+          collection: "pages",
+          data: { title: "Geplanter Entwurf" } as never,
+          depth: 0,
+          draft: true,
+          id,
+          locale: "de",
+          overrideAccess: true,
+        });
+      },
+      publish: async (id) => {
+        await payload.update({
+          collection: "pages",
+          data: { _status: "published" } as never,
+          depth: 0,
+          id,
+          overrideAccess: true,
+          publishAllLocales: true,
+          req: await createTestRequest(payload),
+        });
+      },
+      slug: "guard-scheduled",
+    });
+  });
+
   it("restoring a version from before the move keeps the new folder", async () => {
     const { payload } = harness;
     const source = await createFolder(payload, { slug: "source-restore" });

@@ -75,11 +75,8 @@ const expectEveryFolderReachesRoot = async (payload: Payload): Promise<void> => 
   }
 };
 
-const settledError = (result: PromiseSettledResult<unknown>): MoveBlockedError => {
-  expect(result.status).toBe("rejected");
-
-  return (result as PromiseRejectedResult).reason as MoveBlockedError;
-};
+const rejectionOf = (result: PromiseSettledResult<unknown>): unknown =>
+  (result as PromiseRejectedResult).reason;
 
 type CrossedMoves = {
   first: PromiseSettledResult<unknown>;
@@ -120,11 +117,30 @@ const runCrossedMoves = async (
   return { first, second, x, y };
 };
 
+/**
+ * Exactly one move applied, and the other was refused by the move check itself. A database error
+ * (a deadlock the database broke up, a lock timeout) is also a rejection, so it must not count: it
+ * is what two writers that did not queue on the lock produce.
+ */
 const expectExactlyOneApplied = ({ first, second }: CrossedMoves): MoveBlockedError => {
   const statuses = [first.status, second.status].sort();
   expect(statuses).toEqual(["fulfilled", "rejected"]);
+  const rejection = rejectionOf(first.status === "rejected" ? first : second);
+  expect(rejection).toBeInstanceOf(MoveBlockedError);
 
-  return settledError(first.status === "rejected" ? first : second);
+  return rejection as MoveBlockedError;
+};
+
+/**
+ * The loser of a crossed pair is refused as a cycle: the winner has committed, so the loser's
+ * target now sits inside the folder it moves. Its own item never changed, so a stale `expected`
+ * cannot be what stops it.
+ */
+const expectCycleRefusal = (error: MoveBlockedError): void => {
+  expect(error.status).toBe(400);
+  expect(error.blocked).toHaveLength(1);
+  expect(error.blocked[0].reason).toBe("cycle");
+  expect(error.message).toBe("A folder cannot be moved into itself or one of its subfolders");
 };
 
 describe("crossed folder moves", () => {
@@ -146,41 +162,40 @@ describe("crossed folder moves", () => {
     }
   });
 
-  it("the other returns 400 cycle or 409 stale", async () => {
+  it("the other returns 400 cycle or 409 stale: for crossed moves always 400 cycle", async () => {
     const { payload } = harness;
-    const withoutExpected = expectExactlyOneApplied(await runCrossedMoves(payload));
-    await clearTree(payload);
-    const withExpected = expectExactlyOneApplied(
-      await runCrossedMoves(payload, { sendExpected: true })
-    );
-
-    for (const error of [withoutExpected, withExpected]) {
-      expect(error.name).toBe("MoveBlockedError");
-      const [block] = error.blocked;
-      expect(
-        (error.status === 400 && block.reason === "cycle") ||
-          (error.status === 409 && block.reason === "stale")
-      ).toBe(true);
+    for (let round = 0; round < 3; round += 1) {
+      expectCycleRefusal(expectExactlyOneApplied(await runCrossedMoves(payload)));
+      await clearTree(payload);
+      // Sending `expected` changes nothing: the loser's own parent and key are what it expected.
+      expectCycleRefusal(
+        expectExactlyOneApplied(await runCrossedMoves(payload, { sendExpected: true }))
+      );
+      await clearTree(payload);
     }
   });
 
   it("every folder still reaches the root afterwards", async () => {
     const { payload } = harness;
-    // A small tree around the crossing pair, so ancestorIds of descendants are checked too.
-    const base = await createFolder(payload, { slug: "base" });
-    const baseChild = await createFolder(payload, { parent: base.id, slug: "base-child" });
-    await createFolder(payload, { parent: baseChild.id, slug: "base-grandchild" });
+    // Several rounds, each on a fresh small tree around the crossing pair, so the ancestorIds of
+    // descendants are checked too.
+    for (let round = 0; round < 5; round += 1) {
+      const base = await createFolder(payload, { slug: "base" });
+      const baseChild = await createFolder(payload, { parent: base.id, slug: "base-child" });
+      await createFolder(payload, { parent: baseChild.id, slug: "base-grandchild" });
 
-    const result = await runCrossedMoves(payload);
-    expectExactlyOneApplied(result);
-    // A third move runs on whatever tree the crossing left.
-    await moveItems(payload, { items: [folderRef(base.id)], toFolder: result.x.id }).catch(
-      (error: unknown) => {
-        expect(error).toBeInstanceOf(MoveBlockedError);
-      }
-    );
+      const result = await runCrossedMoves(payload);
+      expectCycleRefusal(expectExactlyOneApplied(result));
+      // A third move runs on whatever tree the crossing left; it may be refused, never fail otherwise.
+      await moveItems(payload, { items: [folderRef(base.id)], toFolder: result.x.id }).catch(
+        (error: unknown) => {
+          expect(error).toBeInstanceOf(MoveBlockedError);
+        }
+      );
 
-    await expectEveryFolderReachesRoot(payload);
+      await expectEveryFolderReachesRoot(payload);
+      await clearTree(payload);
+    }
   });
 
   it.skipIf(process.env.TEST_DB !== "postgres")(
@@ -190,8 +205,7 @@ describe("crossed folder moves", () => {
       try {
         for (let round = 0; round < 3; round += 1) {
           const result = await runCrossedMoves(harness.payload, { secondPayload: second.payload });
-          const error = expectExactlyOneApplied(result);
-          expect([400, 409]).toContain(error.status);
+          expectCycleRefusal(expectExactlyOneApplied(result));
           await expectEveryFolderReachesRoot(harness.payload);
           await clearTree(harness.payload);
         }
@@ -267,6 +281,72 @@ describe("parallel writers into one folder", () => {
       toFolder: target.id,
     });
   });
+
+  /** Two moves of one page to different folders, both built from the state the page had before either. */
+  const runSameExpectedRace = async (
+    payload: Payload,
+    secondPayload: Payload
+  ): Promise<MoveBlockedError> => {
+    const source = await createFolder(payload, { slug: "race-source" });
+    const targetOne = await createFolder(payload, { slug: "race-target-one" });
+    const targetTwo = await createFolder(payload, { slug: "race-target-two" });
+    const page = await createPage(payload, { folder: source.id, slug: "race-page" });
+    const expected = { orderKey: page.orderKey as string, parentId: source.id };
+
+    const [first, second] = await Promise.allSettled([
+      moveItems(payload, {
+        items: [{ ...pageRef(page.id), expected }],
+        toFolder: targetOne.id,
+      }),
+      moveItems(secondPayload, {
+        items: [{ ...pageRef(page.id), expected }],
+        toFolder: targetTwo.id,
+      }),
+    ]);
+
+    const loser = expectExactlyOneApplied({ first, second, x: source, y: source });
+    const winnerTarget = first.status === "fulfilled" ? targetOne : targetTwo;
+    const stored = (await payload.findByID({
+      collection: "pages",
+      depth: 0,
+      id: page.id,
+      overrideAccess: true,
+    })) as unknown as { folder: number };
+    expect(stored.folder).toBe(winnerTarget.id);
+
+    return loser;
+  };
+
+  const expectStaleRefusal = (error: MoveBlockedError): void => {
+    expect(error.status).toBe(409);
+    expect(error.blocked).toHaveLength(1);
+    expect(error.blocked[0].reason).toBe("stale");
+    expect(error.message).toBe("This part of the tree changed. Reload and try again.");
+  };
+
+  it("two parallel moves of one page with the same expected state apply one and refuse the other as 409 stale", async () => {
+    const { payload } = harness;
+    // Several rounds: a comparison made before the lock only fails when both moves read first.
+    for (let round = 0; round < 5; round += 1) {
+      expectStaleRefusal(await runSameExpectedRace(payload, payload));
+      await clearTree(payload);
+    }
+  });
+
+  it.skipIf(process.env.TEST_DB !== "postgres")(
+    "two server instances moving one page with the same expected state apply one and refuse the other as 409 stale",
+    async () => {
+      const second = await getTestPayload({ sharedWith: harness });
+      try {
+        for (let round = 0; round < 3; round += 1) {
+          expectStaleRefusal(await runSameExpectedRace(harness.payload, second.payload));
+          await clearTree(harness.payload);
+        }
+      } finally {
+        await second.destroy();
+      }
+    }
+  );
 
   const expectBothLandBetween = async (
     payload: Payload,
