@@ -190,7 +190,7 @@ export const applyMove = async (
     // ones the preview counted (`redirectRowsOfMovedItem`); a page's own row is written here, a
     // folder's prefix row stands for every page beneath it.
     await settleRedirectRows({
-      clear: plan.redirects || options.redirects.enabled ? takenPathsOf(changes) : [],
+      clear: plan.redirects || options.redirects.enabled ? takenPathsOf(req.payload, changes) : [],
       req,
       rows: plan.redirects ? plan.items.flatMap((item) => redirectRowsOfMovedItem(item)) : [],
     });

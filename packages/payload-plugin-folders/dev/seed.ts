@@ -1,6 +1,7 @@
 import { getPayload } from "payload";
 
 import config from "./payload.config.js";
+import { assertSeedAllowed } from "./seedGuard.js";
 import { seedSandboxTree } from "./seedSandboxTree.js";
 
 const defaultLargePageCount = 2000;
@@ -17,6 +18,8 @@ const parseLargePageCount = (value: string | undefined): number => {
 
   return Number.isInteger(count) && count > 1 ? count : defaultLargePageCount;
 };
+
+assertSeedAllowed();
 
 const payload = await getPayload({ config });
 

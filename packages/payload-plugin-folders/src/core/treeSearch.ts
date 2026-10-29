@@ -21,10 +21,15 @@ import { folderPathIn } from "./uniqueness.js";
 export const defaultSearchLimit = 50;
 export const maxSearchLimit = 200;
 
-/** Candidates read per collection before the merge; matches beyond it are not looked at. */
-const candidateLimit = 500;
+/**
+ * Candidates read per collection before the merge. Matches beyond it are not looked at, and the
+ * answer says so with `truncated: true`.
+ */
+export const searchCandidateLimit = 500;
 
 export type SearchArgs = {
+  /** Candidates read per collection (default 500); a lower value is for tests. */
+  candidateLimit?: number;
   /** The zoomed folder; `null` is the top level. */
   folder: FolderId | null;
   limit?: number;
@@ -32,7 +37,11 @@ export type SearchArgs = {
   query: string;
   /** `folder` (default): the folder and its subfolders; `all`: the whole tree. */
   scope?: "all" | "folder";
-  /** Only pages with one of these statuses; folders have none and drop out. */
+  /**
+   * Only pages with one of these statuses; folders have none and drop out. Where the status is
+   * known from the main row it narrows the database query, so the candidate cap is spent on
+   * pages that can match.
+   */
   status?: TreeStatus[];
   /** Only these collections (page collections, or the folders' own slug). */
   types?: string[];
@@ -173,6 +182,44 @@ const termWhere = ({
   };
 };
 
+/**
+ * The part of a status filter the database can answer, or `false` when the collection cannot hold
+ * a match at all. `changed` needs the latest version, and a locale that falls back to the default
+ * one needs the fallback's status, so those are left to the check after the read (this result is
+ * only ever a superset of the matches).
+ */
+const statusWhere = ({
+  isDefaultLocaleView,
+  source,
+  statuses,
+}: {
+  isDefaultLocaleView: boolean;
+  source: TreeSource;
+  statuses: TreeStatus[] | undefined;
+}): Where | false | null => {
+  if (!statuses || statuses.length === 0) {
+    return null;
+  }
+  if (source.kind === "folder") {
+    return false;
+  }
+  if (!source.hasDrafts) {
+    return statuses.includes("live") ? null : false;
+  }
+  const wantsDraft = statuses.includes("draft");
+  const wantsMain = statuses.includes("published") || statuses.includes("changed");
+  if (!(wantsDraft || wantsMain)) {
+    return false;
+  }
+  if (!isDefaultLocaleView || (wantsDraft && wantsMain)) {
+    return null;
+  }
+
+  return wantsMain
+    ? { _status: { equals: "published" } }
+    : { or: [{ _status: { equals: "draft" } }, { _status: { exists: false } }] };
+};
+
 const scopeWhere = (source: TreeSource, folder: FolderId): Where =>
   source.kind === "folder"
     ? { ancestorIds: { contains: `/${folder}/` } }
@@ -204,6 +251,10 @@ const pathOf = (
     return String(byLocale[view.folderKey] || byLocale[view.defaultFolderKey] || "");
   }
   const parentId = toFolderId(doc.folder);
+  // A page in a folder the user cannot read has no known path: it sorts first, with no invented URL.
+  if (parentId !== null && !parents.has(String(parentId))) {
+    return "";
+  }
   const folderPath = folderPathIn(
     parentId === null ? null : (parents.get(String(parentId)) ?? null),
     view.folderKey,
@@ -280,13 +331,15 @@ const matchesEveryTerm = (
  * applied to every query, so a collection the user cannot read finds nothing.
  *
  * A match is checked again in memory, because a `like` treats `%` and `_` in the query as
- * wildcards. Only the first 500 candidates of a collection are looked at.
+ * wildcards. Only the first 500 candidates of a collection are looked at; when a collection has
+ * more, `truncated` is true and the list may be missing matches.
  */
 export const searchTree = async (
   req: PayloadRequest,
   args: SearchArgs,
   options: ResolvedOptions = getResolvedOptions(req.payload)
-): Promise<{ items: TreeItem[] }> => {
+): Promise<{ items: TreeItem[]; truncated: boolean }> => {
+  const candidateLimit = Math.max(Math.trunc(args.candidateLimit ?? searchCandidateLimit), 1);
   const limit = Math.min(Math.max(Math.trunc(args.limit ?? defaultSearchLimit), 1), maxSearchLimit);
   const view = resolveViewLocale(req, options, args.locale);
   const allSources = await buildSources(req, options);
@@ -310,20 +363,27 @@ export const searchTree = async (
       source.scope.isAllowed && requestedTypes.every((types) => types.includes(source.collection))
   );
   if (terms.length === 0 && parsed.typeCollections.length === 0) {
-    return { items: [] };
+    return { items: [], truncated: false };
   }
 
   const isScoped = (args.scope ?? "folder") === "folder" && args.folder !== null;
   const folderScope = allSources[0].scope;
   const canMatchFolderPath = folderScope.isAllowed && folderScope.where === null;
   const rows: TreeRow[] = [];
+  let isTruncated = false;
+  const isDefaultLocaleView = view.pageKey === view.defaultPageKey || view.pageKey === noLocaleKey;
 
   for (const source of sources) {
+    const statusClause = statusWhere({ isDefaultLocaleView, source, statuses: args.status });
+    if (statusClause === false) {
+      continue;
+    }
     const collection = toCollectionSlug(source.collection);
     const locale = source.kind === "folder" ? view.folderKey : view.pageKey;
     const matched = await req.payload.db.find({
       collection,
-      limit: candidateLimit,
+      // One more than the cap, to tell a full result from a cut one.
+      limit: candidateLimit + 1,
       locale: locale === noLocaleKey ? undefined : locale,
       pagination: false,
       req,
@@ -335,6 +395,7 @@ export const searchTree = async (
       where: {
         and: [
           ...sourceClauses(req, source),
+          ...(statusClause ? [statusClause] : []),
           ...(isScoped ? [scopeWhere(source, args.folder as FolderId)] : []),
           ...terms.map((term) =>
             termWhere({ canMatchFolderPath, options, req, source, term, view })
@@ -342,7 +403,12 @@ export const searchTree = async (
         ],
       },
     });
-    const ids = (matched.docs as Array<{ id: FolderId }>).map((doc) => doc.id);
+    if (matched.docs.length > candidateLimit) {
+      isTruncated = true;
+    }
+    const ids = (matched.docs as Array<{ id: FolderId }>)
+      .slice(0, candidateLimit)
+      .map((doc) => doc.id);
     if (ids.length === 0) {
       continue;
     }
@@ -360,7 +426,7 @@ export const searchTree = async (
     }
   }
   if (rows.length === 0) {
-    return { items: [] };
+    return { items: [], truncated: isTruncated };
   }
 
   // The folders the pages sit in give their paths; the folders found are their own.
@@ -402,5 +468,6 @@ export const searchTree = async (
       ? items.filter((item) => item.status !== undefined && allowedStatuses.includes(item.status))
       : items
     ).slice(0, limit),
+    truncated: isTruncated,
   };
 };

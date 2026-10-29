@@ -89,7 +89,9 @@ A move, a folder rename and a publish that changes a published URL write rows in
   every write.
 
 `findRedirect(payload, { path, locale })` (from `@focus-reactive/payload-plugin-folders/server`)
-answers `{ to, status: 301, target, hops }` or `null`. One query reads the rows of the path and every
+answers `{ to, status: 301, target, hops }` or `null`. On a localized app a call without `locale`
+reads the default locale's rows. A row whose answer is the requested path itself (a stale row of a
+folder that sits at the old path again) is skipped, never returned as a loop. One query reads the rows of the path and every
 prefix of it in that locale, an exact page row winning over the longest prefix row, and one reads the
 target's current path, so a page moved twice redirects straight to its last path. A prefix row
 appends the rest of the path to the folder's current one. Without `isLive` it returns the first
@@ -117,6 +119,24 @@ For the admin tree, all of them need a signed-in user and read each collection t
 The `access` flags are asked once per collection with no `id`, the way Payload asks for a bulk
 operation, so a host whose rule depends on the document has to return a `Where`.
 
+Costs beyond the 12 database calls of a user whose access answers `true`:
+
+- A collection whose `update` access returns a `Where` costs one more query for the page: the
+  `Where` is matched against the page's ids once, and `update` and the publish question share it
+  when they return the same `Where`. A page of folders and two page collections that all answer
+  with a `Where` costs at most 12 + 3 calls. Whatever queries the host's own access functions run
+  (a role that looks up its folder subtree, for example) come on top, once per question.
+- Child counts read the children of every folder on the page in one query per collection. When a
+  collection has more than 5,000 such rows on the page, that read is dropped and the folders are
+  counted with one `count` query each instead, so a page of 100 folders holding 1,000 pages each
+  costs 100 cheap count queries and not 100,000 rows. Counts stay exact either way.
+- `search` reads at most 500 candidates per collection. When a collection has more, the answer has
+  `truncated: true` and the list may miss matches; narrow the search. A `status` filter is applied
+  in the query where the main row decides it (the default locale), so the cap is not spent on pages
+  that cannot match.
+- A page whose folder the user cannot read comes back with `fullPath: ""`, `depth: null` and no
+  `ancestorIds`: its place in the tree is not theirs to know, and none is invented.
+
 ## Dev seed
 
 `npm run seed` fills the dev app's database with a small site in English and German: a site root
@@ -127,7 +147,8 @@ empty folder, a draft page and a published page with a newer draft, and a user f
 (`dev@payloadcms.com` as admin, `editor@example.com`, `drafter@example.com`, `limited@example.com`,
 all with the password `test`). `SEED_LARGE=1 npm run seed` also adds 2,000 pages to an `archive`
 folder (`SEED_LARGE=500` adds that many). Running it again changes nothing. The content is
-synthetic.
+synthetic. It refuses to run with `NODE_ENV=production`, or when `DATABASE_URI` is set to anything
+but a `file:` SQLite database, because it creates users with a known password.
 
 ## Known limits
 

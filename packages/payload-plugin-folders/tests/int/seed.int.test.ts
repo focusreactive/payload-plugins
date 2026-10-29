@@ -1,6 +1,7 @@
 import type { Payload } from "payload";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import { assertSeedAllowed } from "../../dev/seedGuard.js";
 import { seededUsers, seedSandboxTree } from "../../dev/seedSandboxTree.js";
 import type { SeedSummary } from "../../dev/seedSandboxTree.js";
 import { findRedirect } from "../../src/server/index.js";
@@ -90,6 +91,34 @@ const assertLargeSeed = async (payload: Payload): Promise<void> => {
   await seedSandboxTree(payload, { largePageCount: 2000 });
   expect(await countArchived()).toBe(2000);
 };
+
+describe("the dev seed guard", () => {
+  it("refuses production and any database that is not a local SQLite file", () => {
+    expect(() => assertSeedAllowed({ NODE_ENV: "production" })).toThrow(/production/u);
+    expect(() =>
+      assertSeedAllowed({ DATABASE_URI: "postgres://user:secret@db.example.com/app" })
+    ).toThrow(/SQLite/u);
+    expect(() => assertSeedAllowed({ DATABASE_URI: "mongodb://localhost/app" })).toThrow(/SQLite/u);
+    // The dev app's own database, and no setting at all, are fine.
+    expect(() => assertSeedAllowed({ DATABASE_URI: "file:/tmp/dev.db" })).not.toThrow();
+    expect(() => assertSeedAllowed({ NODE_ENV: "development" })).not.toThrow();
+    expect(() => assertSeedAllowed({})).not.toThrow();
+  });
+
+  it("does not put the database address in its message", () => {
+    const refusal = (): Error => {
+      try {
+        assertSeedAllowed({ DATABASE_URI: "postgres://user:secret@db.example.com/app" });
+      } catch (error) {
+        return error as Error;
+      }
+      throw new Error("The seed guard let a remote database through");
+    };
+
+    expect(refusal().message).not.toContain("secret");
+    expect(refusal().message).not.toContain("db.example.com");
+  });
+});
 
 describe("the dev seed", () => {
   it("the seed creates every folder of the sandbox tree", async () => {

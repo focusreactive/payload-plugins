@@ -425,6 +425,38 @@ describe("redirect rows on a move", () => {
 });
 
 describe("redirect rows on a publish", () => {
+  it("a locale with its own draft status stays unpublished when only en goes live", async () => {
+    const { payload } = harness;
+    const news = await createFolder(payload, { slug: "news" });
+    // Created as a German draft, then published in English only: de has a status of its own, draft.
+    const page = await payload.create({
+      collection: "pages",
+      data: { _status: "draft", slug: "entwurf", title: "Entwurf" } as never,
+      depth: 0,
+      draft: true,
+      locale: "de",
+      overrideAccess: true,
+    });
+    await payload.update({
+      collection: "pages",
+      data: { _status: "published", slug: "draft-page", title: "Draft page" } as never,
+      depth: 0,
+      id: page.id,
+      locale: "en",
+      overrideAccess: true,
+    });
+    await forgetRows(payload);
+
+    await moveItems(payload, {
+      items: [pageRef(page.id)],
+      overrideAccess: true,
+      toFolder: news.id,
+    });
+
+    // decision 24: the de draft is not served through the fallback, so only en has a URL to redirect.
+    expect((await readRows(payload)).map((row) => row.lookupKey)).toEqual(["en:/draft-page"]);
+  });
+
   it("publishing a slug change writes a page row for the old path", async () => {
     const { payload } = harness;
     const folder = await createFolder(payload, { slug: "blog" });
@@ -567,15 +599,36 @@ describe("redirect rows and deletes", () => {
   });
 });
 
+describe("findRedirect without a locale", () => {
+  it("a localized app reads the default locale when none is named", async () => {
+    const { payload } = harness;
+    const news = await createFolder(payload, { slug: "news" });
+    const page = await publishedPage(payload, { slug: "hello" });
+    await moveItems(payload, {
+      items: [pageRef(page.id)],
+      overrideAccess: true,
+      toFolder: news.id,
+    });
+
+    expect(await findRedirect(payload, { path: "/hello" })).toMatchObject({ to: "/news/hello" });
+    expect(await findRedirect(payload, { locale: null, path: "/hello" })).toMatchObject({
+      to: "/news/hello",
+    });
+  });
+});
+
 describe("findRedirect hops", () => {
   it("follows at most three hops and returns null past them", async () => {
     const { payload } = harness;
-    const folder = await createFolder(payload, { slug: "target" });
-    const target = { collection: "folders", id: folder.id };
     const now = new Date().toISOString();
-    // /a -> /target (dead), and a row for /target itself that points at the folder again: a chain
-    // that never reaches a live path.
-    for (const fromPath of ["/a", "/target"]) {
+    // /a leads to the folder at /x, /x to the one at /y, /y to /z, /z to /w: four rows, none live.
+    const folders = [
+      await createFolder(payload, { slug: "x" }),
+      await createFolder(payload, { slug: "y" }),
+      await createFolder(payload, { slug: "z" }),
+      await createFolder(payload, { slug: "w" }),
+    ];
+    for (const [index, fromPath] of ["/a", "/x", "/y", "/z"].entries()) {
       await payload.db.create({
         collection: "folder-redirects",
         data: {
@@ -584,7 +637,7 @@ describe("findRedirect hops", () => {
           kind: "folderPrefix",
           locale: "en",
           lookupKey: `en:${fromPath}`,
-          target: { relationTo: target.collection, value: target.id },
+          target: { relationTo: "folders", value: folders[index].id },
           updatedAt: now,
         },
       });
@@ -602,7 +655,29 @@ describe("findRedirect hops", () => {
     });
 
     expect(result).toBeNull();
-    expect(visited).toEqual(["/target", "/target", "/target"]);
+    expect(visited).toEqual(["/x", "/y", "/z"]);
+  });
+
+  it("a row whose answer is the request itself is dead", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { slug: "about" });
+    const now = new Date().toISOString();
+    // A stale prefix row of a folder that sits at the old path again.
+    await payload.db.create({
+      collection: "folder-redirects",
+      data: {
+        createdAt: now,
+        fromPath: "/about",
+        kind: "folderPrefix",
+        locale: "en",
+        lookupKey: "en:/about",
+        target: { relationTo: "folders", value: folder.id },
+        updatedAt: now,
+      },
+    });
+
+    expect(await findRedirect(payload, { locale: "en", path: "/about/missing" })).toBeNull();
+    expect(await findRedirect(payload, { locale: "en", path: "/about" })).toBeNull();
   });
 
   it("stops at the first live answer", async () => {
@@ -622,5 +697,89 @@ describe("findRedirect hops", () => {
     });
 
     expect(result).toMatchObject({ hops: 1, to: "/news/hello" });
+  });
+});
+
+describe("redirect rows when folders are not localized", () => {
+  let unlocalized: TestPayload;
+
+  beforeAll(async () => {
+    unlocalized = await getTestPayload({ foldersOptions: { localizeSegments: false } });
+  });
+
+  afterAll(async () => {
+    await unlocalized?.destroy();
+  });
+
+  afterEach(async () => {
+    await forgetRows(unlocalized.payload);
+    await clearTree(unlocalized.payload);
+  });
+
+  const aboutWithPage = async (payload: Payload) => {
+    const folder = await createFolder(payload, { slug: "about" });
+    await publishedPage(payload, { folder: folder.id, slug: "contact" });
+
+    return folder;
+  };
+
+  it("a folder that takes an old path deletes the prefix row in every page locale", async () => {
+    const { payload } = unlocalized;
+    const folder = await aboutWithPage(payload);
+    await renameFolder(payload, folder.id, "company");
+    // One row per page locale: the folder has a single path, the pages are read in en and de.
+    expect((await readRows(payload)).map((row) => row.lookupKey)).toEqual([
+      "de:/about",
+      "en:/about",
+    ]);
+
+    await createFolder(payload, { slug: "about" });
+
+    expect(await readRows(payload)).toEqual([]);
+    expect(await findRedirect(payload, { locale: "en", path: "/about/x" })).toBeNull();
+    expect(await findRedirect(payload, { locale: "de", path: "/about/x" })).toBeNull();
+  });
+
+  it("renaming a folder back to an old path leaves no row and no 301 loop", async () => {
+    const { payload } = unlocalized;
+    const folder = await aboutWithPage(payload);
+    await renameFolder(payload, folder.id, "company");
+
+    await renameFolder(payload, folder.id, "about");
+
+    const keys = (await readRows(payload)).map((row) => row.lookupKey);
+    expect(keys).not.toContain("en:/about");
+    expect(keys).not.toContain("de:/about");
+    expect(await findRedirect(payload, { locale: "en", path: "/about/missing" })).toBeNull();
+    // The path it left in between still leads back.
+    expect(await findRedirect(payload, { locale: "en", path: "/company/contact" })).toMatchObject({
+      to: "/about/contact",
+    });
+  });
+
+  it("a move to an old folder path clears the prefix rows in every page locale", async () => {
+    const { payload } = unlocalized;
+    const folder = await aboutWithPage(payload);
+    const parent = await createFolder(payload, { slug: "parent" });
+    await moveItems(payload, {
+      items: [folderRef(folder.id)],
+      overrideAccess: true,
+      toFolder: parent.id,
+    });
+    expect((await readRows(payload)).map((row) => row.lookupKey)).toEqual([
+      "de:/about",
+      "en:/about",
+    ]);
+
+    await moveItems(payload, {
+      items: [folderRef(folder.id)],
+      overrideAccess: true,
+      toFolder: null,
+    });
+
+    const keys = (await readRows(payload)).map((row) => row.lookupKey);
+    expect(keys).not.toContain("en:/about");
+    expect(keys).not.toContain("de:/about");
+    expect(await findRedirect(payload, { locale: "en", path: "/about/missing" })).toBeNull();
   });
 });

@@ -1,9 +1,10 @@
-import type { PayloadRequest, Where } from "payload";
+import type { Payload, PayloadRequest, Where } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
 import { folderRedirectsSlug } from "../constants.js";
 import type { FolderId, ItemRef, PathChange, ResolvedOptions } from "../types.js";
 import { noLocaleKey } from "./locales.js";
+import { getPageLocaleKeys } from "./uniqueness.js";
 
 /** One row of `folder-redirects`: an old path and the document that took it over. */
 export type RedirectRow = {
@@ -110,20 +111,38 @@ export const redirectRowsOfMovedItem = (item: ChangedItem): RedirectRow[] =>
     : planFolderPrefixRows({ changes: item.changes, folder: item.ref });
 
 /**
- * The paths that live documents occupy after `changes`: published pages (a root page counts as its
- * folder's path) and every folder. A draft is not at its path yet; the publish takes it then.
+ * The locales a path change of a folder is served in. A folder whose fields are not localized has
+ * `locale: null` and serves every locale a page can be read in, and `planFolderPrefixRows` writes
+ * its rows under those page locales. A clear has to name the same keys, or it never matches.
  */
-export const takenPathsOf = (changes: PathChange[]): TakenPath[] =>
+export const pageLocalesOfFolderChange = (
+  payload: Payload,
+  locale: string | null
+): Array<string | null> =>
+  locale === null
+    ? getPageLocaleKeys(payload).map((key) => (key === noLocaleKey ? null : key))
+    : [locale];
+
+/**
+ * The paths that live documents occupy after `changes`: published pages (a root page counts as its
+ * folder's path) and every folder. A draft is not at its path yet; the publish takes it then. A
+ * folder path is taken in every page locale when the folder's own fields are not localized.
+ */
+export const takenPathsOf = (payload: Payload, changes: PathChange[]): TakenPath[] =>
   changes
     .filter(
       (change): change is PathChange & { to: string } =>
         change.to !== null && (change.kind === "folder" || change.published)
     )
-    .map((change) => ({
-      kind: change.kind === "folder" ? "folderPrefix" : "page",
-      locale: change.locale,
-      path: change.to,
-    }));
+    .flatMap((change): TakenPath[] =>
+      change.kind === "folder"
+        ? pageLocalesOfFolderChange(payload, change.locale).map((locale) => ({
+            kind: "folderPrefix",
+            locale,
+            path: change.to,
+          }))
+        : [{ kind: "page", locale: change.locale, path: change.to }]
+    );
 
 const chunk = <TValue>(values: TValue[]): TValue[][] => {
   const chunks: TValue[][] = [];

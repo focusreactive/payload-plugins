@@ -17,7 +17,8 @@ const statuses: ReadonlySet<string> = new Set(["changed", "draft", "live", "publ
 
 /**
  * `GET /api/folders-tree/search?q=&folder=root|<id>&scope=folder|all&locale=&types=&status=&limit=`
- * answers `{ items }` (spec section 10.2): words ANDed, `"a phrase"` exact, a page type's label as
+ * answers `{ items, truncated }` (spec section 10.2; `truncated` is true when a collection had more
+ * candidates than the search reads, so the list may be missing matches): words ANDed, `"a phrase"` exact, a page type's label as
  * a word limits the results to that type. `types` are collection slugs, `status` any of draft,
  * published, changed, live; both take a comma separated list.
  */

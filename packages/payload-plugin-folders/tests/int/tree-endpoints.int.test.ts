@@ -8,6 +8,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { getChildren, searchTree } from "../../src/server/index.js";
 import type { TreeItem } from "../../src/types.js";
 import { callEndpoint } from "../helpers/callEndpoint.js";
+import { countDbCalls } from "../helpers/countDbCalls.js";
 import { countDbReads } from "../helpers/countDbReads.js";
 import { getTestPayload } from "../helpers/getTestPayload.js";
 import type { TestPayload } from "../helpers/getTestPayload.js";
@@ -59,7 +60,13 @@ const asUser = async (
 
 const children = (
   request: PayloadRequest,
-  args: { cursor?: string | null; limit?: number; locale?: string; parent: number | null }
+  args: {
+    childCountReadLimit?: number;
+    cursor?: string | null;
+    limit?: number;
+    locale?: string;
+    parent: number | null;
+  }
 ) => getChildren(request, args);
 
 const titles = (items: TreeItem[]): string[] => items.map((item) => item.title);
@@ -104,6 +111,21 @@ const createInternal = async (
 
   return doc as unknown as { id: number };
 };
+
+const countsOn = (calls: Array<{ collection: string; method: string }>, collection: string) =>
+  calls.filter((call) => call.method === "count" && call.collection === collection).length;
+
+/** A host `update` access that answers with a `Where` for every user. */
+const whereAccess = () => ({ id: { exists: true } });
+
+const makePage = (payload: Payload, slug: string, status: "draft" | "published" = "published") =>
+  payload.create({
+    collection: "pages",
+    data: { _status: status, slug, title: `Item ${slug}` } as never,
+    depth: 0,
+    draft: status === "draft",
+    overrideAccess: true,
+  });
 
 const clearOrderKey = (
   payload: Payload,
@@ -396,6 +418,86 @@ describe("GET /folders-tree/children", () => {
     });
   });
 
+  it("a locale with its own draft status reads draft even when en is published", async () => {
+    const { payload } = harness;
+    const request = await asUser(payload, "admin");
+    const page = await payload.create({
+      collection: "pages",
+      data: { _status: "draft", slug: "entwurf", title: "Entwurf" } as never,
+      depth: 0,
+      draft: true,
+      locale: "de",
+      overrideAccess: true,
+    });
+    await payload.update({
+      collection: "pages",
+      data: { _status: "published", slug: "draft-page", title: "Draft page" } as never,
+      depth: 0,
+      id: page.id,
+      locale: "en",
+      overrideAccess: true,
+    });
+
+    const german = await children(request, { locale: "de", parent: null });
+    const english = await children(request, { locale: "en", parent: null });
+
+    // decision 24: a status of its own beats the fallback, so de is still a draft.
+    expect(german.items[0].status).toBe("draft");
+    expect(english.items[0].status).toBe("published");
+  });
+
+  it("child counts switch to count queries past the read limit and stay exact", async () => {
+    const { payload } = harness;
+    const request = await asUser(payload, "admin");
+    const big = await createFolder(payload, { name: "Big", slug: "big" });
+    const small = await createFolder(payload, { name: "Small", slug: "small" });
+    const keys = generateNKeysBetween(null, null, 25);
+    for (let index = 0; index < 25; index += 1) {
+      await createInternal(payload, "posts", {
+        folder: big.id,
+        orderKey: keys[index],
+        slug: `post-${index}`,
+        title: `Post ${index}`,
+      });
+    }
+    await payload.create({
+      collection: "pages",
+      data: {
+        _status: "published",
+        folder: big.id,
+        isFolderRoot: true,
+        slug: "home",
+        title: "Home",
+      } as never,
+      depth: 0,
+      overrideAccess: true,
+    });
+    await payload.create({
+      collection: "pages",
+      data: { _status: "published", folder: small.id, slug: "one", title: "One" } as never,
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    const normal = await countDbCalls(payload, () => children(request, { parent: null }));
+    const limited = await countDbCalls(payload, () =>
+      children(request, { childCountReadLimit: 10, parent: null })
+    );
+
+    for (const { result } of [normal, limited]) {
+      const bigItem = result.items.find((item) => item.id === big.id) as TreeItem;
+      const smallItem = result.items.find((item) => item.id === small.id) as TreeItem;
+      expect(bigItem).toMatchObject({ childCount: 26, hasRootPage: true });
+      expect(smallItem).toMatchObject({ childCount: 1, hasRootPage: false });
+    }
+    expect(normal.calls.some((call) => call.method === "count")).toBe(false);
+    // The 25 posts exceed the limit of 10, so they are counted per folder; pages (2 rows) and
+    // folders (none) stay within one read each.
+    expect(countsOn(limited.calls, "posts")).toBe(2);
+    expect(countsOn(limited.calls, "pages")).toBe(0);
+    expect(countsOn(limited.calls, "folders")).toBe(0);
+  });
+
   it("folders carry child counts and root-page flags, pages their root flag", async () => {
     const { payload } = harness;
     const request = await asUser(payload, "admin");
@@ -609,8 +711,9 @@ const search = (
     scope?: "all" | "folder";
     status?: Array<"changed" | "draft" | "live" | "published">;
     types?: string[];
-  }
-) => searchTree(request, { folder: args.folder ?? null, ...args });
+  },
+  extra: { candidateLimit?: number } = {}
+) => searchTree(request, { folder: args.folder ?? null, ...args, ...extra });
 
 const paths = (items: TreeItem[]): string[] => items.map((item) => item.fullPath);
 
@@ -879,5 +982,234 @@ describe("tree reads and read access", () => {
     } finally {
       await hostApp.destroy();
     }
+  });
+
+  it("a page whose folder the user cannot read gets no invented path or depth", async () => {
+    const hostApp = await getTestPayload({
+      foldersOptions: {
+        folders: {
+          access: {
+            read: ({ req }: { req: PayloadRequest }) =>
+              (req.user as { role?: string } | null)?.role !== "drafter",
+          },
+        },
+      },
+    });
+    try {
+      const { payload } = hostApp;
+      const folder = await createFolder(payload, { slug: "private" });
+      await payload.create({
+        collection: "pages",
+        data: { _status: "published", slug: "inside", title: "Inside", folder: folder.id } as never,
+        depth: 0,
+        overrideAccess: true,
+      });
+      const drafter = await asUser(payload, "drafter");
+      const admin = await asUser(payload, "admin");
+
+      const { items } = await searchTree(drafter, { folder: null, query: "inside", scope: "all" });
+      const asAdmin = await searchTree(admin, { folder: null, query: "inside", scope: "all" });
+
+      expect(items).toHaveLength(1);
+      expect(items[0]).toMatchObject({ depth: null, fullPath: "", parentId: folder.id });
+      // A page of unknown path sorts first instead of by an invented `/<segment>` among the root pages.
+      await payload.create({
+        collection: "pages",
+        data: {
+          _status: "published",
+          folder: folder.id,
+          slug: "zz-hidden",
+          title: "Item hidden",
+        } as never,
+        depth: 0,
+        overrideAccess: true,
+      });
+      await payload.create({
+        collection: "pages",
+        data: { _status: "published", slug: "aa-top", title: "Item top" } as never,
+        depth: 0,
+        overrideAccess: true,
+      });
+      const sorted = await searchTree(drafter, { folder: null, query: "item", scope: "all" });
+      expect(titles(sorted.items)).toEqual(["Item hidden", "Item top"]);
+      expect(items[0]).not.toHaveProperty("ancestorIds");
+      // Whoever can read the folder gets the real values.
+      expect(asAdmin.items[0]).toMatchObject({
+        ancestorIds: `/${folder.id}/`,
+        depth: 2,
+        fullPath: "/private/inside",
+      });
+    } finally {
+      await hostApp.destroy();
+    }
+  });
+});
+
+describe("tree reads and a read access that returns a Where", () => {
+  const allowedFolderIds: number[] = [];
+
+  it("children, search and child counts leave out the rows the Where excludes", async () => {
+    const hostApp = await getTestPayload({
+      extraCollections: [
+        {
+          slug: "notes",
+          access: {
+            read: ({ req }) => (req.user ? { folder: { in: allowedFolderIds } } : false),
+          },
+          fields: [
+            { name: "title", type: "text" },
+            { name: "slug", type: "text" },
+          ],
+        },
+      ],
+      foldersOptions: { collections: { notes: true } as never },
+    });
+    try {
+      const { payload } = hostApp;
+      const open = await createFolder(payload, { name: "Open", slug: "open" });
+      const closed = await createFolder(payload, { name: "Closed", slug: "closed" });
+      const note = (folder: number | null, title: string) =>
+        payload.create({
+          collection: "notes" as never,
+          data: { folder, slug: title.toLowerCase().replaceAll(" ", "-"), title } as never,
+          depth: 0,
+          overrideAccess: true,
+        });
+      await note(open.id, "Open note");
+      await note(closed.id, "Closed note");
+      await note(closed.id, "Shared note");
+      await note(null, "Root note");
+      allowedFolderIds.push(open.id);
+      const admin = await asUser(payload, "admin");
+
+      const root = await getChildren(admin, { parent: null });
+      const openChildren = await getChildren(admin, { parent: open.id });
+      const closedChildren = await getChildren(admin, { parent: closed.id });
+      const found = await searchTree(admin, { folder: null, query: "note", scope: "all" });
+
+      // The folders stay (their own read access passes); the root note is outside the Where.
+      expect(titles(root.items).sort()).toEqual(["Closed", "Open"]);
+      expect(root.items.find((item) => item.id === open.id)?.childCount).toBe(1);
+      expect(root.items.find((item) => item.id === closed.id)?.childCount).toBe(0);
+      expect(titles(openChildren.items)).toEqual(["Open note"]);
+      expect(closedChildren.items).toEqual([]);
+      expect(titles(found.items)).toEqual(["Open note"]);
+    } finally {
+      await hostApp.destroy();
+    }
+  });
+
+  it("100 rows across 2 collections cost 12 calls plus one per collection whose access is a Where", async () => {
+    const hostApp = await getTestPayload({
+      extraCollections: ["notes", "memos"].map((slug) => ({
+        slug,
+        access: { update: whereAccess },
+        fields: [
+          { name: "title", type: "text" as const },
+          { name: "slug", type: "text" as const },
+        ],
+      })),
+      foldersOptions: {
+        collections: { memos: true, notes: true } as never,
+        folders: { access: { update: whereAccess } },
+      },
+    });
+    try {
+      const { payload } = hostApp;
+      const parent = await createFolder(payload, { slug: "bulk" });
+      const keys = generateNKeysBetween(null, null, 100);
+      for (let index = 0; index < 100; index += 1) {
+        if (index < 10) {
+          await createFolder(payload, {
+            name: `Folder ${index}`,
+            parent: parent.id,
+            slug: `f-${index}`,
+          });
+          continue;
+        }
+        await payload.create({
+          collection: (index % 2 === 0 ? "notes" : "memos") as never,
+          context: { foldersInternal: true },
+          data: {
+            folder: parent.id,
+            orderKey: keys[index],
+            pathSegment: `row-${index}`,
+            slug: `row-${index}`,
+            structureRevision: 0,
+            title: `Row ${index}`,
+          } as never,
+          depth: 0,
+          overrideAccess: true,
+        });
+      }
+      const admin = await asUser(payload, "admin");
+
+      const { reads, result } = await countDbReads(payload, () =>
+        getChildren(admin, { limit: 100, parent: parent.id })
+      );
+
+      expect(result.items).toHaveLength(100);
+      // Folders, notes and memos each answer `update` with a Where: update and publish share it,
+      // so one match query per collection. That is 3 on top of the 12 of a user whose access is `true`.
+      expect(reads).toBeLessThanOrEqual(12 + 3);
+      expect(result.items.every((item) => item.access.update)).toBe(true);
+    } finally {
+      await hostApp.destroy();
+    }
+  });
+});
+
+describe("search candidates and status", () => {
+  it("says so when a collection has more candidates than it reads", async () => {
+    const { payload } = harness;
+    const request = await asUser(payload, "admin");
+    for (const slug of ["aaa-1", "aaa-2", "aaa-3"]) {
+      await makePage(payload, slug);
+    }
+
+    const cut = await search(request, { query: "item", scope: "all" }, { candidateLimit: 2 });
+    const exact = await search(request, { query: "item", scope: "all" }, { candidateLimit: 3 });
+    const normal = await search(request, { query: "item", scope: "all" });
+
+    expect(cut.truncated).toBe(true);
+    expect(cut.items).toHaveLength(2);
+    // Exactly as many matches as the cap is not a cut.
+    expect(exact.truncated).toBe(false);
+    expect(exact.items).toHaveLength(3);
+    expect(normal.truncated).toBe(false);
+  });
+
+  it("a status filter narrows the query, so the candidate cap is spent on matching pages", async () => {
+    const { payload } = harness;
+    const request = await asUser(payload, "admin");
+    for (const slug of ["aaa-1", "aaa-2", "aaa-3"]) {
+      await makePage(payload, slug);
+    }
+    await makePage(payload, "zzz-draft", "draft");
+    await payload.create({
+      collection: "posts",
+      data: { slug: "aaa-post", title: "Item aaa-post" },
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    const drafts = await countDbCalls(payload, () =>
+      search(request, { query: "item", scope: "all", status: ["draft"] }, { candidateLimit: 2 })
+    );
+    const published = await search(
+      request,
+      { query: "item", scope: "all", status: ["published"] },
+      { candidateLimit: 2 }
+    );
+    const live = await search(request, { query: "item", scope: "all", status: ["live"] });
+
+    // Sorted by path the draft comes last: without the narrowing the cap would never reach it.
+    expect(titles(drafts.result.items)).toEqual(["Item zzz-draft"]);
+    expect(drafts.result.truncated).toBe(false);
+    expect(drafts.calls.some((call) => ["folders", "posts"].includes(call.collection))).toBe(false);
+    expect(published.items).toHaveLength(2);
+    expect(published.truncated).toBe(true);
+    // Posts have no drafts: `live` is theirs alone, and pages are not even asked.
+    expect(titles(live.items)).toEqual(["Item aaa-post"]);
   });
 });

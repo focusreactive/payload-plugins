@@ -4,7 +4,11 @@ import { queueAfterPathChange } from "../../core/afterPathChange.js";
 import { planFolderPaths, readFolderRecord } from "../../core/folderRecords.js";
 import type { FolderRecord } from "../../core/folderRecords.js";
 import { getDefaultLocaleKey, getFolderLocaleKeys, noLocaleKey } from "../../core/locales.js";
-import { clearTakenRedirectRows, shouldWriteRedirects } from "../../core/redirects.js";
+import {
+  clearTakenRedirectRows,
+  pageLocalesOfFolderChange,
+  shouldWriteRedirects,
+} from "../../core/redirects.js";
 import { popFolderSnapshot, rewriteFolderSubtree, writeFolderRow } from "../../core/subtree.js";
 import { applyTypeLock, describeTypeLockChange, releaseTypeLock } from "../../core/typeLocks.js";
 import { bumpRevision } from "../../core/treeLock.js";
@@ -75,11 +79,13 @@ export const buildFolderAfterChange =
         req,
         taken: keys
           .filter((key) => Boolean(current.fullPath[key]))
-          .map((key) => ({
-            kind: "folderPrefix" as const,
-            locale: key === noLocaleKey ? null : key,
-            path: current.fullPath[key] as string,
-          })),
+          .flatMap((key) =>
+            pageLocalesOfFolderChange(payload, key === noLocaleKey ? null : key).map((locale) => ({
+              kind: "folderPrefix" as const,
+              locale,
+              path: current.fullPath[key] as string,
+            }))
+          ),
       });
     }
 

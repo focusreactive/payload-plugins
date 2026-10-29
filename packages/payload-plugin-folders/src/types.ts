@@ -177,13 +177,15 @@ export type TreeStatus = "changed" | "draft" | "live" | "published";
 export type TreeItem = {
   access: { delete: boolean; publish: boolean; update: boolean };
   allowedTypes?: string[];
+  /** Absent for a page whose folder the user cannot read. */
   ancestorIds?: string;
   /** Folders: subfolders and pages directly inside, a root page included. */
   childCount?: number;
   collection: string;
   /** Folders only. */
   defaultType?: string | null;
-  depth: number;
+  /** `null` for a page whose folder the user cannot read: the depth is unknown. */
+  depth: number | null;
   /** The path in the requested locale, `""` while a page has no segment there. */
   fullPath: string;
   /** Folders: whether a root page exists, in any state. */

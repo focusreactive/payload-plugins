@@ -19,7 +19,7 @@ export type FindRedirectArgs = {
    * (P-31) passes its own stock lookup here.
    */
   isLive?: (path: string) => boolean | Promise<boolean>;
-  /** The locale the path was requested in; omit when localization is off. */
+  /** The locale the path was requested in. Omit it when localization is off, or for the default locale. */
   locale?: string | null;
   /** The path that resolved to nothing, without a locale prefix. */
   path: string;
@@ -124,8 +124,14 @@ const lookupOnce = async ({
     }
     const target: ItemRef = { collection: row.target.relationTo, id: targetIdOf(row.target.value) };
     const currentPath = await readCurrentPath({ locale, payload, target });
-    if (currentPath !== null) {
-      return { target, to: remainder === "" ? currentPath : joinPath(currentPath, remainder) };
+    if (currentPath === null) {
+      continue;
+    }
+    const to = remainder === "" ? currentPath : joinPath(currentPath, remainder);
+    // A stale row can name a folder that sits at the old path again: the answer would be the
+    // request itself, a 301 loop. It gives way to the next candidate like a missing target.
+    if (to !== normalized) {
+      return { target, to };
     }
   }
 
@@ -148,7 +154,11 @@ export const findRedirect = async (
 ): Promise<FoundRedirect | null> => {
   // Fails early on a Payload instance without the plugin, as every server function does.
   getResolvedOptions(payload);
-  const localeOrNull = locale === noLocaleKey ? null : locale;
+  // A localized app keys its rows by locale, so a call that names none reads the default locale's.
+  const defaultLocale = payload.config.localization
+    ? payload.config.localization.defaultLocale
+    : null;
+  const localeOrNull = locale === noLocaleKey ? null : (locale ?? defaultLocale);
 
   let current = path;
   for (let hop = 1; hop <= maxRedirectHops; hop += 1) {

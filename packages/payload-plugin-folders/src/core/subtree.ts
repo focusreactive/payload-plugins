@@ -511,7 +511,7 @@ export const rewriteFolderSubtree = async ({
 
   const isWritingRows = redirects ?? shouldWriteRedirects(req, options);
   await settleRedirectRows({
-    clear: isWritingRows || options.redirects.enabled ? takenPathsOf(changes) : [],
+    clear: isWritingRows || options.redirects.enabled ? takenPathsOf(req.payload, changes) : [],
     req,
     rows: isWritingRows
       ? planFolderPrefixRows({

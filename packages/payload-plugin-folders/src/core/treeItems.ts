@@ -178,17 +178,128 @@ export const readFolders = async ({
   return records;
 };
 
-/** Subfolders and pages inside each folder, and whether a root page exists, in one query per collection. */
+/**
+ * Rows read per collection for the child counts before the counts switch to `count` queries. One
+ * read of the children of every folder on the page costs one query per collection and serves the
+ * common tree, but its cost grows with the children: 100 folders of 1,000 pages would read 100,000
+ * rows. A read that reaches the limit is thrown away and that collection is counted per folder
+ * instead, which transfers no rows.
+ */
+export const childCountReadLimit = 5000;
+
+type ChildCount = { childCount: number; hasRootPage: boolean };
+
+/** Counts one collection's children by reading them, or returns null when there are too many. */
+const countByReading = async ({
+  counts,
+  folderIds,
+  limit,
+  req,
+  source,
+}: {
+  counts: Map<string, ChildCount>;
+  folderIds: FolderId[];
+  limit: number;
+  req: PayloadRequest;
+  source: TreeSource;
+}): Promise<boolean> => {
+  const { docs } = await req.payload.db.find({
+    collection: toCollectionSlug(source.collection),
+    limit: limit + 1,
+    locale: "all",
+    pagination: false,
+    req,
+    select: (source.kind === "folder"
+      ? { parent: true }
+      : { folder: true, isFolderRoot: true }) as SelectType,
+    where: {
+      and: [{ [source.parentField]: { in: folderIds } }, ...sourceClauses(req, source)],
+    },
+  });
+  if (docs.length > limit) {
+    return false;
+  }
+  for (const doc of docs as Array<Record<string, unknown>>) {
+    const parentId = toFolderId(doc[source.parentField]);
+    const entry = parentId === null ? undefined : counts.get(String(parentId));
+    if (entry) {
+      entry.childCount += 1;
+      entry.hasRootPage = entry.hasRootPage || Boolean(doc.isFolderRoot);
+    }
+  }
+
+  return true;
+};
+
+/** Counts one collection's children with a `count` per folder, and finds the root pages in one read. */
+const countByCounting = async ({
+  counts,
+  folderIds,
+  req,
+  source,
+}: {
+  counts: Map<string, ChildCount>;
+  folderIds: FolderId[];
+  req: PayloadRequest;
+  source: TreeSource;
+}): Promise<void> => {
+  const collection = toCollectionSlug(source.collection);
+  for (const folderId of folderIds) {
+    const { totalDocs } = await req.payload.db.count({
+      collection,
+      req,
+      where: {
+        and: [{ [source.parentField]: { equals: folderId } }, ...sourceClauses(req, source)],
+      },
+    });
+    const entry = counts.get(String(folderId));
+    if (entry) {
+      entry.childCount += totalDocs;
+    }
+  }
+  if (source.kind !== "page") {
+    return;
+  }
+  // At most one root page per folder, so this read is bounded by the number of folders.
+  const { docs } = await req.payload.db.find({
+    collection,
+    locale: "all",
+    pagination: false,
+    req,
+    select: { folder: true } as SelectType,
+    where: {
+      and: [
+        { folder: { in: folderIds } },
+        { isFolderRoot: { equals: true } },
+        ...sourceClauses(req, source),
+      ],
+    },
+  });
+  for (const doc of docs as Array<Record<string, unknown>>) {
+    const parentId = toFolderId(doc.folder);
+    const entry = parentId === null ? undefined : counts.get(String(parentId));
+    if (entry) {
+      entry.hasRootPage = true;
+    }
+  }
+};
+
+/**
+ * Subfolders and pages inside each folder, and whether a root page exists: one read per
+ * collection, bounded by `limit` rows, and `count` per folder for a collection that exceeds it.
+ */
 const readChildCounts = async ({
   folderIds,
+  limit,
   req,
   sources,
 }: {
   folderIds: FolderId[];
+  limit: number;
   req: PayloadRequest;
   sources: TreeSource[];
-}): Promise<Map<string, { childCount: number; hasRootPage: boolean }>> => {
-  const counts = new Map<string, { childCount: number; hasRootPage: boolean }>(
+}): Promise<Map<string, ChildCount>> => {
+  const counts = new Map<string, ChildCount>(
     folderIds.map((id) => [String(id), { childCount: 0, hasRootPage: false }])
   );
   if (folderIds.length === 0) {
@@ -199,26 +310,9 @@ const readChildCounts = async ({
     if (!source.scope.isAllowed) {
       continue;
     }
-    const { docs } = await req.payload.db.find({
-      collection: toCollectionSlug(source.collection),
-      limit: 0,
-      locale: "all",
-      pagination: false,
-      req,
-      select: (source.kind === "folder"
-        ? { parent: true }
-        : { folder: true, isFolderRoot: true }) as SelectType,
-      where: {
-        and: [{ [source.parentField]: { in: folderIds } }, ...sourceClauses(req, source)],
-      },
-    });
-    for (const doc of docs as Array<Record<string, unknown>>) {
-      const parentId = toFolderId(doc[source.parentField]);
-      const entry = parentId === null ? undefined : counts.get(String(parentId));
-      if (entry) {
-        entry.childCount += 1;
-        entry.hasRootPage = entry.hasRootPage || Boolean(doc.isFolderRoot);
-      }
+    const isCounted = await countByReading({ counts, folderIds, limit, req, source });
+    if (!isCounted) {
+      await countByCounting({ counts, folderIds, req, source });
     }
   }
 
@@ -299,26 +393,33 @@ const toPageItem = ({
     view.defaultPageKey
   )[view.pageKey];
   const id = row.id as FolderId;
+  const parentId = toFolderId(row.folder);
+  // The page sits in a folder this user cannot read (or that is gone): its path and depth are
+  // unknown, and composing them as if it sat at the site root would invent a URL.
+  const isFolderUnknown = parentId !== null && parent === null;
 
   return {
     access,
-    ancestorIds: parent ? `${parent.ancestorIds ?? "/"}${parent.id}/` : "/",
+    ...(isFolderUnknown
+      ? {}
+      : { ancestorIds: parent ? `${parent.ancestorIds ?? "/"}${parent.id}/` : "/" }),
     collection: page.slug,
-    depth: pageDepthIn(parent, isFolderRoot),
-    fullPath:
-      pagePathIn({
-        folder: parent,
-        isFolderRoot,
-        key: view.pageKey,
-        options,
-        payload: req.payload,
-        segment,
-      }) ?? "",
+    depth: isFolderUnknown ? null : pageDepthIn(parent, isFolderRoot),
+    fullPath: isFolderUnknown
+      ? ""
+      : (pagePathIn({
+          folder: parent,
+          isFolderRoot,
+          key: view.pageKey,
+          options,
+          payload: req.payload,
+          segment,
+        }) ?? ""),
     id,
     isFolderRoot,
     kind: "page",
     orderKey: typeof row.orderKey === "string" ? row.orderKey : null,
-    parentId: toFolderId(row.folder),
+    parentId,
     slug: segment === "" ? null : segment,
     slugIsFallback: own === "" && segment !== "",
     status: resolveTreeStatus({
@@ -344,6 +445,7 @@ const toPageItem = ({
  * `parents` holds the folder record of every page's folder, which a page path is composed from.
  */
 export const buildTreeItems = async ({
+  childCountLimit = childCountReadLimit,
   options,
   parents,
   req,
@@ -351,6 +453,8 @@ export const buildTreeItems = async ({
   sources,
   view,
 }: {
+  /** Rows read per collection for child counts before they are counted instead. */
+  childCountLimit?: number;
   options: ResolvedOptions;
   parents: Map<string, FolderRecord>;
   req: PayloadRequest;
@@ -366,7 +470,12 @@ export const buildTreeItems = async ({
   const folderIds = rows
     .filter(({ source }) => source.kind === "folder")
     .map(({ doc }) => doc.id as FolderId);
-  const counts = await readChildCounts({ folderIds, req, sources });
+  const counts = await readChildCounts({
+    folderIds,
+    limit: childCountLimit,
+    req,
+    sources,
+  });
 
   const latestStatuses = new Map<string, unknown>();
   for (const source of sources) {

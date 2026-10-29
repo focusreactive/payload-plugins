@@ -119,7 +119,7 @@ export const settlePageRedirects = async ({
   }
 
   await settleRedirectRows({
-    clear: takenPathsOf(changes),
+    clear: takenPathsOf(payload, changes),
     req,
     rows: isWritingRows ? planPageRedirectRows(changes) : [],
   });

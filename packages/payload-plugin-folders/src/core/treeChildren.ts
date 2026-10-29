@@ -20,6 +20,8 @@ import type { TreeRow, TreeSource } from "./treeItems.js";
 import { readRevision } from "./treeLock.js";
 
 export type ChildrenArgs = {
+  /** Rows read per collection for the child counts before they are counted instead (tests). */
+  childCountReadLimit?: number;
   /** An opaque `nextCursor` of an earlier answer. */
   cursor?: string | null;
   /** Default `admin.pageSize`, at most 1000. */
@@ -281,6 +283,7 @@ export const getChildren = async (
       : null;
 
   const items = await buildTreeItems({
+    childCountLimit: args.childCountReadLimit,
     options,
     parents,
     req,
