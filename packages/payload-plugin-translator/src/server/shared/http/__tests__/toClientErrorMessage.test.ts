@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { markFailureReason } from "../../../../core/domain/translation-providers/failureReason.js";
+import { markFailureReason } from "../../../../core/errors/failureReason.js";
 import { GENERIC_TRANSLATION_ERROR, toClientErrorMessage } from "../toClientErrorMessage.js";
 
 describe("toClientErrorMessage", () => {

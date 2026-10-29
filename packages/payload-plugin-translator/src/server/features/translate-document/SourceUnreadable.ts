@@ -1,5 +1,5 @@
 import { TranslatorError } from "../../../core/errors/index.js";
-import { markFailureReason } from "../../../core/domain/translation-providers/failureReason.js";
+import { markFailureReason } from "../../../core/errors/failureReason.js";
 
 /**
  * Refused by the collection's `read` rule, or absent — deliberately the same answer, so a reply
