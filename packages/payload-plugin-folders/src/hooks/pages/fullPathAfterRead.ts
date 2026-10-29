@@ -1,4 +1,9 @@
-import type { CollectionAfterReadHook, FieldHook } from "payload";
+import type {
+  CollectionAfterReadHook,
+  CollectionBeforeOperationHook,
+  FieldHook,
+  SelectType,
+} from "payload";
 
 type ValuesByLocale = Record<string, unknown>;
 
@@ -40,18 +45,50 @@ export const composeFullPath = ({
   return pathSegment === null ? null : `${folderPath ?? ""}/${pathSegment}`;
 };
 
+const fullPathInputs = ["folder", "folderPath", "isFolderRoot", "pathSegment"] as const;
+
+/**
+ * A read with a `select` that names `fullPath` also has to load what it is composed from, or the
+ * path comes back wrong (a root page read without `isFolderRoot` is composed as a plain page).
+ * Selecting an input makes it appear in the result, which is the price of a correct path.
+ */
+export const selectFullPathInputsHook: CollectionBeforeOperationHook = ({ args, operation }) => {
+  const select = (args as { select?: SelectType }).select;
+  if (operation !== "read" || !select) {
+    return args;
+  }
+  const isIncludeSelect = Object.values(select).some((value) => value === true);
+  if (isIncludeSelect ? !select.fullPath : select.fullPath === false) {
+    return args;
+  }
+
+  const inputNames = new Set<string>(fullPathInputs);
+  const adjusted: SelectType = isIncludeSelect
+    ? { ...select, ...Object.fromEntries(fullPathInputs.map((input) => [input, true])) }
+    : Object.fromEntries(Object.entries(select).filter(([name]) => !inputNames.has(name)));
+
+  // Dropping the last exclusion leaves `{}`, which Payload reads as an include select of nothing.
+  return {
+    ...args,
+    select: Object.keys(adjusted).length > 0 ? adjusted : undefined,
+  } as typeof args;
+};
+
 /**
  * Sets `fullPath` from `folderPath` and `pathSegment`, which a read already holds, so it costs no
  * query of its own. It is a collection hook because Payload populates the virtual `folderPath`
  * after every field-level `afterRead` hook has run, so a hook on the `fullPath` field itself would
  * see the path still unset. With `locale=all` both inputs are objects keyed by locale and the
- * result is one too.
+ * result is one too. A locale without its own segment takes the default locale's, as it does in
+ * `buildSegmentWhere`.
+ *
+ * A read whose `select` left out one of the inputs (and did not select `fullPath`, which adds
+ * them) gets no `fullPath`: a path composed from part of its inputs would be wrong.
  */
 export const buildFullPathAfterRead =
   (): CollectionAfterReadHook =>
   ({ doc, req }) => {
-    // A `select` that leaves out both the folder and the segment has nothing to compose from.
-    if (!("folder" in doc) && !("pathSegment" in doc)) {
+    if (!fullPathInputs.every((input) => input in doc)) {
       return doc;
     }
 
@@ -74,8 +111,8 @@ export const buildFullPathAfterRead =
     const localization = req.payload.config.localization;
     const localeCodes = localization ? localization.localeCodes : [];
     const defaultLocale = localization ? localization.defaultLocale : "";
-    const valueOf = (value: unknown, code: string): unknown =>
-      isValuesByLocale(value) ? value[code] : value;
+    const valueOf = (value: unknown, code: string): string | null =>
+      toText(isValuesByLocale(value) ? value[code] : value);
 
     doc.fullPath = Object.fromEntries(
       localeCodes.map((code) => [

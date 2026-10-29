@@ -2,7 +2,14 @@ import type { Payload } from "payload";
 
 export type DbCall = { collection: string; method: string };
 
-const countedMethods = ["count", "find", "findOne"] as const;
+const countedMethods = [
+  "count",
+  "find",
+  "findDistinct",
+  "findOne",
+  "findVersions",
+  "queryDrafts",
+] as const;
 
 type CountableAdapter = Record<string, (args: { collection?: string }) => Promise<unknown>>;
 
@@ -21,6 +28,9 @@ export const countDbCalls = async <TResult>(
 
   for (const method of countedMethods) {
     const original = adapter[method];
+    if (typeof original !== "function") {
+      continue;
+    }
     originals.set(method, original);
     adapter[method] = function countedCall(this: unknown, args) {
       calls.push({ collection: String(args.collection), method });

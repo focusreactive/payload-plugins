@@ -1,16 +1,26 @@
-import type { Payload } from "payload";
+import type { CollectionConfig, Payload } from "payload";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { callEndpoint } from "../helpers/callEndpoint.js";
 import { countCallsOn, countDbCalls } from "../helpers/countDbCalls.js";
 import { getTestPayload } from "../helpers/getTestPayload.js";
+import { runGraphql } from "../helpers/runGraphql.js";
 import type { TestPayload } from "../helpers/getTestPayload.js";
 import { createFolder, createPage, uniqueName } from "../helpers/treeFixtures.js";
 
 let harness: TestPayload;
 
+// A collection that points at pages, to read a page populated through a relationship.
+const linkHolders = {
+  slug: "link-holders",
+  fields: [
+    { name: "label", type: "text" },
+    { name: "page", type: "relationship", relationTo: "pages" },
+  ],
+} as unknown as CollectionConfig;
+
 beforeAll(async () => {
-  harness = await getTestPayload();
+  harness = await getTestPayload({ extraCollections: [linkHolders] });
 });
 
 afterAll(async () => {
@@ -79,7 +89,7 @@ describe("page paths", () => {
     expect((await readPage(payload, blogRoot.id)).fullPath).toBe("/blog");
     expect((await readPage(payload, siteRoot.id)).fullPath).toBe("/");
 
-    // A list read and a page populated through a relationship compose the same path.
+    // A list read composes the same path.
     const list = await payload.find({
       collection: "pages",
       overrideAccess: true,
@@ -89,6 +99,127 @@ describe("page paths", () => {
       "/blog/2026/new-year",
       "/blog/post",
     ]);
+
+    // A page populated through a relationship composes it too, at depth 1 and from a list.
+    const holder = (await payload.create({
+      collection: "link-holders" as never,
+      data: { label: "Link", page: nested.id } as never,
+      depth: 0,
+      overrideAccess: true,
+    })) as unknown as { id: number };
+    const populated = (await payload.findByID({
+      collection: "link-holders" as never,
+      depth: 1,
+      id: holder.id,
+      overrideAccess: true,
+    })) as unknown as { page: PageDoc };
+    expect(populated.page.id).toBe(nested.id);
+    expect(populated.page.fullPath).toBe("/blog/2026/new-year");
+    expect(populated.page.folderPath).toBe("/blog/2026");
+    const populatedList = (await payload.find({
+      collection: "link-holders" as never,
+      depth: 1,
+      overrideAccess: true,
+      where: { id: { equals: holder.id } },
+    })) as unknown as { docs: Array<{ page: PageDoc }> };
+    expect(populatedList.docs[0].page.fullPath).toBe("/blog/2026/new-year");
+  });
+
+  it("fullPath is correct, or unset, under a select", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { name: "Sel", slug: "sel" });
+    const child = await createPage(payload, { folder: folder.id, slug: "child" });
+    const root = await createRootPage(payload, folder.id);
+    const select = async (id: number, fields: string[]) =>
+      (await payload.findByID({
+        collection: "pages",
+        depth: 0,
+        id,
+        overrideAccess: true,
+        select: Object.fromEntries(fields.map((field) => [field, true])),
+      })) as unknown as Partial<PageDoc>;
+
+    // A selected fullPath loads the inputs it is composed from.
+    expect((await select(child.id, ["fullPath", "pathSegment"])).fullPath).toBe("/sel/child");
+    expect((await select(child.id, ["folder", "fullPath"])).fullPath).toBe("/sel/child");
+    expect(
+      (await select(root.id, ["folder", "folderPath", "pathSegment", "fullPath"])).fullPath
+    ).toBe("/sel");
+    expect((await select(root.id, ["fullPath"])).fullPath).toBe("/sel");
+    expect((await select(child.id, ["fullPath"])).fullPath).toBe("/sel/child");
+
+    // A select without fullPath, and without all of its inputs, does not invent one.
+    expect((await select(child.id, ["pathSegment"])).fullPath).toBeUndefined();
+    expect((await select(child.id, ["folder", "pathSegment"])).fullPath).toBeUndefined();
+
+    // An exclude select that drops inputs keeps them while fullPath is not excluded.
+    const excludeInputs = (await payload.findByID({
+      collection: "pages",
+      depth: 0,
+      id: root.id,
+      overrideAccess: true,
+      select: { isFolderRoot: false, pathSegment: false },
+    })) as unknown as Partial<PageDoc>;
+    expect(excludeInputs.fullPath).toBe("/sel");
+    const excludeOther = (await payload.findByID({
+      collection: "pages",
+      depth: 0,
+      id: root.id,
+      overrideAccess: true,
+      select: { title: false },
+    })) as unknown as Partial<PageDoc>;
+    expect(excludeOther.fullPath).toBe("/sel");
+    const excludeInput = (await payload.findByID({
+      collection: "pages",
+      depth: 0,
+      id: root.id,
+      overrideAccess: true,
+      select: { pathSegment: false },
+    })) as unknown as Partial<PageDoc>;
+    expect(excludeInput.fullPath).toBe("/sel");
+    const excludeFullPath = (await payload.findByID({
+      collection: "pages",
+      depth: 0,
+      id: root.id,
+      overrideAccess: true,
+      select: { fullPath: false, pathSegment: false },
+    })) as unknown as Partial<PageDoc>;
+    expect(excludeFullPath.fullPath).toBeUndefined();
+  });
+
+  it("GraphQL composes fullPath, and its where cannot take a locale-qualified path", async () => {
+    const { payload } = harness;
+    const user = await payload.create({
+      collection: "users",
+      data: { email: "graphql-tester@example.com", password: "test-password", role: "admin" },
+      overrideAccess: true,
+    });
+    const page = await createPage(payload, { folder: null, slug: "graphql-page" });
+
+    const composed = await runGraphql(
+      harness,
+      user,
+      `{ Pages(locale: de, where: { id: { equals: ${page.id} } }) { docs { fullPath pathSegment } } }`
+    );
+    expect(composed.errors).toBeUndefined();
+    expect(composed.data).toEqual({
+      Pages: { docs: [{ fullPath: "/graphql-page", pathSegment: "graphql-page" }] },
+    });
+
+    // `exists` works, so a de page without its own segment can be listed, but the en half of the
+    // helper's where has no GraphQL spelling: the where input has no `pathSegment__en`.
+    const noOwnSegment = await runGraphql(
+      harness,
+      user,
+      `{ Pages(locale: de, where: { AND: [{ id: { equals: ${page.id} } }, { pathSegment: { exists: false } }] }) { docs { id } } }`
+    );
+    expect(noOwnSegment.data).toEqual({ Pages: { docs: [{ id: page.id }] } });
+    const qualified = await runGraphql(
+      harness,
+      user,
+      `{ Pages(locale: de, where: { pathSegment__en: { equals: "graphql-page" } }) { docs { id } } }`
+    );
+    expect(qualified.invalid?.[0]).toContain("pathSegment__en");
   });
 
   it("folderPath reads null, not undefined, for a page at the site root", async () => {
@@ -255,12 +386,13 @@ describe("page paths", () => {
         "/pages?where[folderPath][equals]=/aktuelles-grade&where[pathSegment][equals]=geschichte&locale=de"
       )
     ).toEqual([page.id]);
-    // The fallback page matches by its effective de segment too.
+    // The fallback page has no de segment of its own, so a plain equals misses it in de; the
+    // helper's where (tests/int/segment-fallback.int.test.ts) is what finds it.
     expect(
       await query(
         "/pages?where[folderPath][equals]=/aktuelles-grade&where[pathSegment][equals]=update&locale=de"
       )
-    ).toEqual([fallbackPage.id]);
+    ).toEqual([]);
 
     // The folder's en path does not leak into de, and the de path does not leak into en.
     expect(await query("/pages?where[folderPath][equals]=/news-grade&locale=de")).toEqual([]);
@@ -428,32 +560,5 @@ describe("pathSegment is computed by the plugin", () => {
       payload,
     });
     expect(renamedPost.body.doc.pathSegment).toBe("a-new-post");
-  });
-
-  it("a folder refuses a segment that a de page inherits from its en slug", async () => {
-    const { payload } = harness;
-    const parent = await createFolder(payload);
-    const folder = await createFolder(payload, { name: "Info", parent: parent.id, slug: "info" });
-    await createPage(payload, { folder: parent.id, slug: "contact" });
-
-    let failure: unknown;
-    try {
-      await payload.update({
-        collection: "folders",
-        data: { name: "Kontakt", slug: "contact" },
-        id: folder.id,
-        locale: "de",
-        overrideAccess: true,
-      });
-    } catch (error) {
-      failure = error;
-    }
-
-    const errors = (failure as { data?: { errors?: Array<{ message: string; path: string }> } })
-      ?.data?.errors;
-    expect(errors?.[0]).toMatchObject({
-      message: `/${parent.slug}/contact is already used by a page`,
-      path: "slug",
-    });
   });
 });

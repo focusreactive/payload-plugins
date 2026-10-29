@@ -2,7 +2,11 @@ import type { CollectionConfig, Field, FieldAccess } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
 import { buildPageBeforeChange, pageAfterChange } from "../hooks/pages/beforeChange.js";
-import { buildFullPathAfterRead, folderPathAfterRead } from "../hooks/pages/fullPathAfterRead.js";
+import {
+  buildFullPathAfterRead,
+  folderPathAfterRead,
+  selectFullPathInputsHook,
+} from "../hooks/pages/fullPathAfterRead.js";
 import { buildPathSegmentHook } from "../hooks/pages/pathSegment.js";
 import { buildAcquireTreeLockHook, releaseUnboundTreeLockHook } from "../hooks/operationLock.js";
 
@@ -103,7 +107,11 @@ const addPageHooks = (
     afterOperation: [...(hooks.afterOperation ?? []), releaseUnboundTreeLockHook],
     afterRead: [...(hooks.afterRead ?? []), buildFullPathAfterRead()],
     beforeChange: [...(hooks.beforeChange ?? []), buildPageBeforeChange(collection.slug, options)],
-    beforeOperation: [...(hooks.beforeOperation ?? []), buildAcquireTreeLockHook(["create"])],
+    beforeOperation: [
+      ...(hooks.beforeOperation ?? []),
+      buildAcquireTreeLockHook(["create"]),
+      selectFullPathInputsHook,
+    ],
   };
 };
 

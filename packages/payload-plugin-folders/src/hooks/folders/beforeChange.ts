@@ -16,6 +16,7 @@ import {
   requestLocaleKey,
 } from "../../core/locales.js";
 import type { ValuesByLocale } from "../../core/locales.js";
+import { buildSegmentWhere } from "../../core/segmentWhere.js";
 import { keyForNewItem } from "../../core/orderKeys.js";
 import { SEGMENT_ERROR_MESSAGE, isValidSegment } from "../../core/slugify.js";
 import type { FolderId, ResolvedOptions } from "../../types.js";
@@ -193,8 +194,8 @@ export const buildFolderBeforeChange =
       }
 
       // Rule 2 of spec section 2.6: a page in the same folder may not take the folder's segment.
-      // `pathSegment` holds the effective segment of every locale, so a page whose segment falls
-      // back to the default locale is found too, which its own slug field would not show.
+      // A page's `pathSegment` is its own segment only, so the helper adds the pages whose segment
+      // in this locale falls back to the default locale's.
       for (const page of Object.values(options.collections)) {
         const pageClash = await payload.db.count({
           collection: toCollectionSlug(page.slug),
@@ -204,7 +205,13 @@ export const buildFolderBeforeChange =
             and: [
               { folder: { equals: parentId } },
               { isFolderRoot: { not_equals: true } },
-              { pathSegment: { equals: plan.segments[key] } },
+              page.segmentLocalized && key !== noLocaleKey
+                ? buildSegmentWhere({
+                    defaultLocale: defaultKey,
+                    locale: key,
+                    segment: plan.segments[key],
+                  })
+                : { pathSegment: { equals: plan.segments[key] } },
             ],
           },
         });

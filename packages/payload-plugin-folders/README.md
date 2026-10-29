@@ -4,7 +4,69 @@ A Storyblok-style content tree for Payload 4: folders, per-folder ordering, full
 redirects. The package is private and under construction; this file only carries what a host
 needs to know about the tree lock for now.
 
+## Finding a page by its URL
+
+A page stores `pathSegment`: its own slug in each locale, or null where it has none. A locale
+without its own slug falls back to the default locale's, but the fallback is applied when you query,
+not stored. A stored fallback would create a locale row for every page that never had one, which
+breaks collections with a required localized field and replaces a field's fallback to the default
+locale with its `defaultValue`. An en publish also rebuilds the published row from the published
+locales only (`localizeStatus`), and would drop a stored fallback of a locale that was never
+published.
+
+So a lookup by segment in a non-default locale has to ask for both cases. Use the helper, with the
+same `locale` as the request:
+
+```ts
+import { buildSegmentWhere } from "@focus-reactive/payload-plugin-folders";
+
+const { docs } = await payload.find({
+  collection: "pages",
+  locale: "de",
+  where: {
+    and: [
+      { folderPath: { equals: "/blog" } },
+      { isFolderRoot: { not_equals: true } },
+      buildSegmentWhere({ defaultLocale: "en", locale: "de", segment: "post" }),
+    ],
+  },
+});
+```
+
+For the default locale the helper is a plain `pathSegment equals`. For any other locale it matches
+`pathSegment equals X`, or no `pathSegment` of its own and `pathSegment.<defaultLocale> equals X`.
+A client that is not JavaScript sends the same `where` as a query string (here for `de`, default
+locale `en`):
+
+```
+GET /api/pages?locale=de
+  &where[folderPath][equals]=/blog
+  &where[isFolderRoot][not_equals]=true
+  &where[or][0][pathSegment][equals]=post
+  &where[or][1][and][0][pathSegment][exists]=false
+  &where[or][1][and][1][pathSegment.en][equals]=post
+```
+
+Pages at the top level use `where[folder][exists]=false` instead of `folderPath`. Subtrees use
+`folder.ancestorIds contains /<id>/` (or the `folder` field), never `like` on `folderPath`, which
+also matches `/archive/blog/x`.
+
+GraphQL cannot express the fallback half: its `where` input has no locale-qualified field such as
+`pathSegment__en`, so `buildSegmentWhere` has no GraphQL form. A GraphQL client can read
+`fullPath` (which applies the fallback) and filter by `folderPath` and by the page's own
+`pathSegment`; to resolve a URL in a non-default locale use the resolve endpoint (P-31).
+
+When you read with a `select`, naming `fullPath` also loads `folder`, `folderPath`, `isFolderRoot`
+and `pathSegment`, because the path is composed from them. They appear in the result.
+
 ## Known limits
+
+- `fullPath` is null for a reader who cannot read folders: it is composed from the folder's path,
+  and folder reads are public by default.
+- The host's own collection `afterRead` hooks run before the plugin's, so they see `fullPath`
+  unset.
+- A page that existed before the plugin was installed has a null `pathSegment` until it is saved
+  again or repaired (P-29), so a segment lookup does not find it until then.
 
 Every write that changes the tree (a folder or page create, a folder update, a move) runs under
 one tree lock per Payload instance. It lives as long as the write's database transaction.
