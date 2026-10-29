@@ -79,6 +79,10 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
 17. **Stopping servers.** `pkill` and `killall` are banned, because they match other sessions'
     processes. Every server an agent starts writes its PID to `.run/<name>.pid` and is stopped with
     `kill` on that PID only. Every developer and tester prompt carries this rule.
+18. **Deleting scratch folders.** An `rm -rf` on a command substitution (`rm -rf "$(cat file)"`) stops
+    on a permission prompt that unattended runs cannot answer, and it stalled G2 for two hours. Every
+    agent reads the path first with `cat`, then deletes the folder by its literal path. Every developer,
+    tester and reviewer prompt carries this rule.
 
 ### Owner decisions (from spec/review.md, the spec writer's pick applies)
 
@@ -129,10 +133,12 @@ One line per ticket: `check.sh`, tester evidence, reviewer verdict, commit.
 |---|---|---|---|---|
 | G0: P-01, P-02, check.sh | pass (5/5 int on SQLite and Postgres, smoke e2e) | `screenshots/g0-admin-dashboard.png`, `screenshots/g0-page-created.png`: auto-login admin, page created and listed | NOT DONE (getPayload cache returned a destroyed instance in a second boot), fixed in `11b43796`, re-review DONE | `f4010d2d`, `11b43796` |
 | G1: P-03, P-04, P-05 | pass (43 unit, 19 int on SQLite and Postgres, smoke opens folders) | `screenshots/g1-folder-created.png`, `g1-folder-no-duplicate.png`, `g1-page-fields.png`, `g1-page-in-folder.png`: folder created, no Duplicate, injected page fields, page shown in folder (picked over REST, the picker is P-47) | NOT DONE (derived folder fields, page structureRevision and the tree-state global writable over REST; host slug index dropped; disabled test vacuous), fixed in `d7771fad`, re-review DONE | `8dc3bf5f`, `98a96a0b`, `e259e12b`, `b8994430`, `d7771fad` |
+| G2: P-06, P-07 | pass (59 unit, 57 int on SQLite, 55 int on Postgres with 2 SQLite-only skips, smoke) | `screenshots/g2-nested-full-path.png`, `g2-de-full-path.png`, `g2-reserved-refused.png`, `g2-list-order.png`: nested path `/products/shoes/running`, de slug gives `/produkte` while en keeps `/products`, root `api` refused, newest folder first | NOT DONE (the locale write-back left the caller's req marked internal so later writes on it skipped validation; a flaky Postgres test; tree-state row touched after the stored doc was read), fixed in `53404584`, re-review DONE | `aeab7918`, `f7a870e1`, `53404584` |
 
 ---
 
 ## 3. Notes for the merge
 
 - Carry-over for later tickets: a REST create still accepts a client `orderKey` and `pathSegment`; P-06 must assign `orderKey` on create and P-08 must compute `pathSegment` on create, overwriting any sent value. Page `folderPath` reads as undefined, not null, at the site root (P-08).
+- Carry-over from G2: P-06 now assigns `orderKey` on create and drops a client value. P-08 must make the folder rule "no page with the same segment in that folder" read each page's segment with locale fallback (today `src/hooks/folders/beforeChange.ts` queries the page slug per locale with no fallback). The admin title of a folder with no name in the current locale shows the raw id (`useAsTitle` has no fallback); fix with the admin work (G10 or G14). P-17 should close two lock gaps: `seedTreeState` is a find then create, so two processes booting a fresh database can race, and a nested Local API call without `req` inside a tree write waits out the 30 s timeout (README "Known limits").
 - Commit `42dee943` carries an earlier wording of this file that named internal tooling paths. Squash the branch on merge so it does not reach `main`.
