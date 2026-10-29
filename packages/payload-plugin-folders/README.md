@@ -71,6 +71,14 @@ and `pathSegment`, because the path is composed from them. They appear in the re
   unset.
 - A page that existed before the plugin was installed has a null `pathSegment` until it is saved
   again or repaired (P-29), so a segment lookup does not find it until then.
+- Segment uniqueness is strict under `localizeStatus` (the Payload 4 default for drafts with
+  localized fields). A page published only in `en` is live at its `en` path, and every other
+  locale falls back to it, so it blocks another page's `de` slug through that fallback even
+  though the first page has nothing published in `de`.
+- A draft save passes the uniqueness rules, because the edit view shows the conflict as a warning.
+  The rules bind when a save makes the segment live: the publish, a publish of every locale, a
+  version restore or a scheduled publish. Each of those is checked again after the write, inside
+  the same transaction, and a conflict rolls the save back.
 
 Every write that changes the tree (a folder or page create, a folder update, a move) runs under
 one tree lock per Payload instance. It lives as long as the write's database transaction.
@@ -83,3 +91,11 @@ one tree lock per Payload instance. It lives as long as the write's database tra
 - On SQLite without `transactionOptions`, a failed operation keeps the lock until a 5 second
   watchdog releases it, and operations there are not atomic anyway. Pass `transactionOptions: {}`
   to `sqliteAdapter()`.
+- Every page save takes the tree lock, autosaves included. A save queues behind a move, and on
+  Postgres it holds a pool connection while it waits. The lock stays on drafts on purpose: without
+  it a move between the structure guard's read and the version insert would leave the new version
+  in the old folder.
+- The after-write uniqueness check rolls a refused save back through the database transaction. On
+  SQLite without `transactionOptions` there is no transaction, so the refused save has already
+  written its row when the error is thrown and the conflict stays on the page. The startup
+  warning names this; pass `transactionOptions: {}` to `sqliteAdapter()`.

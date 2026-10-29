@@ -43,6 +43,11 @@ export const patchLatestVersionStructure = async (
 /**
  * Writes one sibling's key at database level: no hooks, no version entry, no locale touched.
  * `updatedAt` is set by hand because the drizzle adapter drops an unset one from an update.
+ *
+ * A page's `structureRevision` goes up with its key, on the main row and the latest version. The
+ * structure guard reads an incoming key at the stored revision as a deliberate edit, so without the
+ * bump a version restore (which carries the key the page had before the rebalance) would be refused
+ * instead of replaced by the stored structure.
  */
 export const writeOrderKey = async (
   req: PayloadRequest,
@@ -54,18 +59,41 @@ export const writeOrderKey = async (
   const updatedAt = new Date().toISOString();
   const collection = row.kind === "folder" ? options.folders.slug : row.collection;
 
+  if (row.kind === "folder") {
+    await payload.db.updateOne({
+      collection: toCollectionSlug(collection),
+      data: { orderKey, updatedAt },
+      id: row.id,
+      req,
+      returning: false,
+    });
+
+    return;
+  }
+
+  const stored = (await payload.db.findOne({
+    collection: toCollectionSlug(collection),
+    req,
+    select: { structureRevision: true },
+    where: { id: { equals: row.id } },
+  })) as { structureRevision?: number | null } | null;
+  const structureRevision = (stored?.structureRevision ?? 0) + 1;
+
   await payload.db.updateOne({
     collection: toCollectionSlug(collection),
-    data: { orderKey, updatedAt },
+    data: { orderKey, structureRevision, updatedAt },
     id: row.id,
     req,
     returning: false,
   });
 
-  if (
-    row.kind === "page" &&
-    payload.collections[toCollectionSlug(row.collection)]?.config.versions
-  ) {
-    await patchLatestVersionStructure(req, row.collection, row.id, { orderKey }, updatedAt);
+  if (payload.collections[toCollectionSlug(row.collection)]?.config.versions) {
+    await patchLatestVersionStructure(
+      req,
+      row.collection,
+      row.id,
+      { orderKey, structureRevision },
+      updatedAt
+    );
   }
 };

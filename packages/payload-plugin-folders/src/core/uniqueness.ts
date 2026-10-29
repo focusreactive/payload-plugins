@@ -180,6 +180,19 @@ export const findSegmentConflict = async ({
   return null;
 };
 
+export const describeSegmentConflict = (conflict: SegmentConflict): string =>
+  conflict.kind === "folder"
+    ? `${conflict.path} is already used by a folder`
+    : `${conflict.path} is already used by ${conflict.title} (published)`;
+
+export const describeRootPageConflict = (conflict: RootPageConflict, folderPath: string): string =>
+  `${conflict.title} is already the root page of ${folderPath}. Unset it first.`;
+
+export const describeMissingSegment = (defaultLocale: string): string =>
+  defaultLocale === noLocaleKey
+    ? "A page needs a slug"
+    : `A page needs a slug in the default locale (${defaultLocale}); save it in ${defaultLocale} first`;
+
 export type RootPageConflict = { title: string };
 
 /** Rule 3 of spec section 2.6: another page already marked as the root page of the folder. */

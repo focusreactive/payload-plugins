@@ -557,3 +557,298 @@ describe("page segment rules", () => {
     expect(totalDocs).toBe(1);
   });
 });
+
+type AllLocales = {
+  pathSegment: Record<string, string | null>;
+  slug: Record<string, string | null>;
+};
+
+const readAllLocales = (payload: Payload, id: number, draft = false) =>
+  payload.findByID({
+    collection: "pages",
+    depth: 0,
+    draft,
+    id,
+    locale: "all",
+    overrideAccess: true,
+  }) as unknown as Promise<AllLocales & { fullPath: Record<string, string> }>;
+
+describe("a locale that falls back keeps falling back", () => {
+  it("a de title save does not give a de slug to a page whose de falls back to en", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { name: "Follow en" });
+    const page = await createPublishedPage(payload, {
+      folder: folder.id,
+      slug: "probe-about",
+      title: "About",
+    });
+
+    // The first de save creates the de row, so the second one has a stored null slug to carry.
+    for (const title of ["Ueber uns", "Ueber uns zwei"]) {
+      await payload.update({
+        collection: "pages",
+        data: { _status: "published", title },
+        depth: 0,
+        id: page.id,
+        locale: "de",
+        overrideAccess: true,
+      });
+    }
+
+    const stored = await readAllLocales(payload, page.id);
+    expect(stored.pathSegment.de ?? null).toBeNull();
+    expect(stored.slug.de ?? null).toBeNull();
+    expect(stored.fullPath.de).toBe(`${folder.fullPath}/probe-about`);
+
+    await payload.update({
+      collection: "pages",
+      data: { _status: "published", slug: "probe-renamed" },
+      depth: 0,
+      id: page.id,
+      overrideAccess: true,
+    });
+    expect((await readAllLocales(payload, page.id)).fullPath.de).toBe(
+      `${folder.fullPath}/probe-renamed`
+    );
+  });
+
+  it("a locale-all save does not give a de slug either, sent as null or not sent", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { name: "Follow en all" });
+    const titleOnly = await createPublishedPage(payload, {
+      folder: folder.id,
+      slug: "all-title-only",
+      title: "Title only",
+    });
+    const sentNull = await createPublishedPage(payload, {
+      folder: folder.id,
+      slug: "all-sent-null",
+      title: "Sent null",
+    });
+
+    await payload.update({
+      collection: "pages",
+      data: { title: { de: "Alle zwei", en: "Title only" } } as never,
+      depth: 0,
+      id: titleOnly.id,
+      locale: "all" as never,
+      overrideAccess: true,
+    });
+    await payload.update({
+      collection: "pages",
+      data: {
+        slug: { de: null, en: "all-sent-null" },
+        title: { de: "Alle drei", en: "Sent null" },
+      } as never,
+      depth: 0,
+      id: sentNull.id,
+      locale: "all" as never,
+      overrideAccess: true,
+    });
+
+    for (const id of [titleOnly.id, sentNull.id]) {
+      const stored = await readAllLocales(payload, id);
+      expect(stored.pathSegment.de ?? null).toBeNull();
+      expect(stored.slug.de ?? null).toBeNull();
+    }
+    expect((await readAllLocales(payload, titleOnly.id)).fullPath.de).toBe(
+      `${folder.fullPath}/all-title-only`
+    );
+  });
+
+  it("an empty default-locale slug on an update is still derived from the title", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { name: "Derive on update" });
+    const page = await createDraftPage(payload, {
+      folder: folder.id,
+      slug: "temp-slug",
+      title: "Derived title",
+    });
+
+    const saved = await payload.update({
+      collection: "pages",
+      data: { slug: "" },
+      depth: 0,
+      draft: true,
+      id: page.id,
+      overrideAccess: true,
+    });
+
+    expect(saved.slug).toBe("derived-title");
+  });
+});
+
+describe("what a save makes live without naming it", () => {
+  it("publishing every locale refuses a de draft slug another page took", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { name: "Publish all" });
+    const owner = await createPublishedPage(payload, {
+      folder: folder.id,
+      slug: "owner-wire",
+      title: "Wire owner",
+    });
+    await payload.update({
+      collection: "pages",
+      data: { _status: "published", slug: "wire", title: "Draht" },
+      id: owner.id,
+      locale: "de",
+      overrideAccess: true,
+    });
+    const other = await createPublishedPage(payload, {
+      folder: folder.id,
+      slug: "other-wire",
+      title: "Other",
+    });
+    // A de draft with the owner's de segment passes on the server (decision 10).
+    await payload.update({
+      collection: "pages",
+      data: { slug: "wire", title: "Anderer Draht" },
+      depth: 0,
+      draft: true,
+      id: other.id,
+      locale: "de",
+      overrideAccess: true,
+    });
+
+    const error = await catchError(
+      payload.update({
+        collection: "pages",
+        data: { _status: "published" },
+        depth: 0,
+        id: other.id,
+        overrideAccess: true,
+        publishAllLocales: true,
+      })
+    );
+
+    expect(error.status).toBe(400);
+    expect(fieldErrors(error)).toEqual([
+      { message: `${folder.fullPath}/wire is already used by Draht (published)`, path: "slug" },
+    ]);
+    expect(errorLocales(error)).toEqual(["de"]);
+    // The refused publish rolled back: the main row still has no de segment of its own.
+    const stored = await readAllLocales(payload, other.id);
+    expect(stored.pathSegment.de ?? null).toBeNull();
+    expect(stored.fullPath.de).toBe(`${folder.fullPath}/other-wire`);
+  });
+
+  it("a version restore refuses a de slug another page took in the meantime", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { name: "Restore clash" });
+    const first = await createPublishedPage(payload, {
+      folder: folder.id,
+      slug: "first-restore",
+      title: "First",
+    });
+    const setGerman = (slug: string) =>
+      payload.update({
+        collection: "pages",
+        data: { _status: "published", slug, title: "Erste" },
+        id: first.id,
+        locale: "de",
+        overrideAccess: true,
+      });
+    await setGerman("alt");
+    await setGerman("neu");
+    const second = await createPublishedPage(payload, {
+      folder: folder.id,
+      slug: "second-restore",
+      title: "Second",
+    });
+    await payload.update({
+      collection: "pages",
+      data: { _status: "published", slug: "alt", title: "Zweite" },
+      id: second.id,
+      locale: "de",
+      overrideAccess: true,
+    });
+    const { docs: versions } = await payload.findVersions({
+      collection: "pages",
+      depth: 0,
+      limit: 20,
+      locale: "all",
+      overrideAccess: true,
+      where: { parent: { equals: first.id } },
+    });
+    const oldVersion = versions.find(
+      (version) => (version.version as unknown as AllLocales).slug?.de === "alt"
+    );
+    expect(oldVersion).toBeDefined();
+
+    const error = await catchError(
+      payload.restoreVersion({ collection: "pages", depth: 0, id: oldVersion?.id as never })
+    );
+
+    expect(error.status).toBe(400);
+    expect(fieldErrors(error)).toEqual([
+      { message: `${folder.fullPath}/alt is already used by Zweite (published)`, path: "slug" },
+    ]);
+    expect(errorLocales(error)).toEqual(["de"]);
+    const stored = await readAllLocales(payload, first.id);
+    expect(stored.pathSegment.de).toBe("neu");
+  });
+
+  it("a version restore refuses a root flag another page took", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { name: "Restore root", slug: uniqueName("rr") });
+    const former = await createPublishedPage(payload, {
+      folder: folder.id,
+      isFolderRoot: true,
+      slug: "former-root",
+      title: "Former root",
+    });
+    await publish(payload, former.id, { isFolderRoot: false, slug: "former-plain" });
+    await createPublishedPage(payload, {
+      folder: folder.id,
+      isFolderRoot: true,
+      slug: "new-root",
+      title: "New root",
+    });
+    const { docs: versions } = await payload.findVersions({
+      collection: "pages",
+      depth: 0,
+      limit: 20,
+      overrideAccess: true,
+      where: { parent: { equals: former.id } },
+    });
+    const rootVersion = versions.find(
+      (version) => (version.version as unknown as { isFolderRoot?: boolean }).isFolderRoot
+    );
+    expect(rootVersion).toBeDefined();
+
+    const error = await catchError(
+      payload.restoreVersion({ collection: "pages", depth: 0, id: rootVersion?.id as never })
+    );
+
+    expect(fieldErrors(error)).toEqual([
+      {
+        message: `New root is already the root page of ${folder.fullPath}. Unset it first.`,
+        path: "isFolderRoot",
+      },
+    ]);
+  });
+
+  it("a draft with no segment is refused when it is published", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { name: "Empty slug" });
+    const draft = await createDraftPage(payload, { folder: folder.id, slug: "", title: "!!!" });
+    expect(draft.pathSegment ?? null).toBeNull();
+
+    const error = await catchError(publish(payload, draft.id));
+
+    expect(fieldErrors(error)).toEqual([
+      {
+        message: "A page needs a slug in the default locale (en); save it in en first",
+        path: "slug",
+      },
+    ]);
+    const stillDraft = await payload.findByID({
+      collection: "pages",
+      depth: 0,
+      draft: true,
+      id: draft.id,
+      overrideAccess: true,
+    });
+    expect(stillDraft._status).toBe("draft");
+  });
+});

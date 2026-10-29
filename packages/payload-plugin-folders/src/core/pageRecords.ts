@@ -66,3 +66,84 @@ export const readPageRow = async (
     structureRevision: typeof row.structureRevision === "number" ? row.structureRevision : 0,
   };
 };
+
+const toSegmentText = (value: unknown): string => (typeof value === "string" ? value : "");
+
+/**
+ * A page's effective segment per locale slot, the way `buildSegmentWhere` and `fullPath` read it:
+ * its own segment, else the default locale's. A segment field that is not localized gives the one
+ * value to every slot.
+ */
+export const effectiveSegmentsOf = (
+  row: Pick<PageRow, "segments">,
+  localeKeys: string[],
+  defaultLocale: string
+): Record<string, string> => {
+  const { segments } = row;
+  if (segments && typeof segments === "object" && !Array.isArray(segments)) {
+    const own = segments as Record<string, unknown>;
+
+    return Object.fromEntries(
+      localeKeys.map((key) => [key, toSegmentText(own[key]) || toSegmentText(own[defaultLocale])])
+    );
+  }
+
+  return Object.fromEntries(localeKeys.map((key) => [key, toSegmentText(segments)]));
+};
+
+/** What the post-write check compares a saved main row against. */
+export type PageSnapshot = {
+  effective: Record<string, string>;
+  folder: FolderId | null;
+  isFolderRoot: boolean;
+  isPublished: boolean;
+};
+
+export const toSnapshot = (
+  row: PageRow,
+  localeKeys: string[],
+  defaultLocale: string
+): PageSnapshot => ({
+  effective: effectiveSegmentsOf(row, localeKeys, defaultLocale),
+  folder: row.folder,
+  isFolderRoot: row.isFolderRoot,
+  isPublished: row.isPublished,
+});
+
+// One snapshot per document being written: the tree lock serialises writers, and the entry is
+// taken out by the same operation's afterChange. A write that fails in between leaves an entry
+// that the next write of the document replaces before anything reads it.
+const snapshotsByPayload = new WeakMap<object, Map<string, PageSnapshot>>();
+
+const snapshotKey = (collection: string, id: FolderId): string => `${collection}:${id}`;
+
+export const rememberSnapshot = (
+  req: PayloadRequest,
+  collection: string,
+  id: FolderId,
+  snapshot: PageSnapshot | null
+): void => {
+  let snapshots = snapshotsByPayload.get(req.payload);
+  if (!snapshots) {
+    snapshots = new Map();
+    snapshotsByPayload.set(req.payload, snapshots);
+  }
+  if (snapshot) {
+    snapshots.set(snapshotKey(collection, id), snapshot);
+  } else {
+    snapshots.delete(snapshotKey(collection, id));
+  }
+};
+
+export const takeSnapshot = (
+  req: PayloadRequest,
+  collection: string,
+  id: FolderId
+): PageSnapshot | null => {
+  const snapshots = snapshotsByPayload.get(req.payload);
+  const key = snapshotKey(collection, id);
+  const snapshot = snapshots?.get(key) ?? null;
+  snapshots?.delete(key);
+
+  return snapshot;
+};

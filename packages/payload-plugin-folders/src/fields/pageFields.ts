@@ -1,7 +1,7 @@
 import type { CollectionConfig, Field, FieldAccess, FieldHook } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
-import { pageAfterChange } from "../hooks/pages/afterChange.js";
+import { buildPageAfterChange } from "../hooks/pages/afterChange.js";
 import {
   buildSegmentBeforeDuplicate,
   resetIsFolderRootOnDuplicate,
@@ -165,7 +165,10 @@ const addPageHooks = (
 
   return {
     ...hooks,
-    afterChange: [...(hooks.afterChange ?? []), pageAfterChange],
+    afterChange: [
+      ...(hooks.afterChange ?? []),
+      buildPageAfterChange(options.collections[collection.slug], options),
+    ],
     afterOperation: [...(hooks.afterOperation ?? []), releaseUnboundTreeLockHook],
     afterRead: [...(hooks.afterRead ?? []), buildFullPathAfterRead()],
     beforeChange: [

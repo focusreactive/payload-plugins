@@ -1,6 +1,9 @@
 import type { Payload } from "payload";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import { keysForInsert } from "../../src/core/orderKeys.js";
+import { withTreeLock } from "../../src/core/treeLock.js";
+import { resolveTestOptions } from "../helpers/treeFixtures.js";
 import { patchLatestVersionStructure } from "../../src/core/structureWrite.js";
 import { getTestPayload } from "../helpers/getTestPayload.js";
 import type { TestPayload } from "../helpers/getTestPayload.js";
@@ -277,6 +280,80 @@ describe("structure guard", () => {
       folder: moved.id,
       structureRevision: 1,
     });
+  });
+
+  it("a version restore after a sibling rebalance keeps the rebalanced key", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { name: "Rebalance restore" });
+    const sibling = await payload.create({
+      collection: "pages",
+      data: { _status: "published", folder: folder.id, slug: "neighbour", title: "Neighbour" },
+      depth: 0,
+      overrideAccess: true,
+    });
+    const page = await payload.create({
+      collection: "pages",
+      data: { _status: "published", folder: folder.id, slug: "rebalanced", title: "First" },
+      depth: 0,
+      overrideAccess: true,
+    });
+    await payload.update({
+      collection: "pages",
+      data: { _status: "published", title: "Second" },
+      depth: 0,
+      id: page.id,
+      overrideAccess: true,
+    });
+    const { docs: olderVersions } = await payload.findVersions({
+      collection: "pages",
+      depth: 0,
+      limit: 1,
+      overrideAccess: true,
+      where: { and: [{ parent: { equals: page.id } }, { latest: { equals: false } }] },
+    });
+    const olderVersion = olderVersions[0];
+    const oldKey = (olderVersion.version as unknown as Structure).orderKey;
+
+    // Two equal neighbour keys force the rebalance, which re-keys both rows.
+    for (const id of [page.id, sibling.id]) {
+      await payload.db.updateOne({
+        collection: "pages",
+        data: { orderKey: "a5" },
+        id,
+        returning: false,
+      });
+    }
+    const request = await createTestRequest(payload);
+    await withTreeLock(request, () =>
+      keysForInsert(request, resolveTestOptions(harness), {
+        at: { after: { collection: "pages", id: sibling.id } },
+        count: 1,
+        parent: folder.id,
+      })
+    );
+    const rebalanced = await readMain(payload, page.id);
+    expect(rebalanced.orderKey).not.toBe(oldKey);
+    expect(rebalanced.structureRevision).toBeGreaterThan(0);
+    expect(await readLatestVersion(payload, page.id)).toMatchObject({
+      orderKey: rebalanced.orderKey,
+      structureRevision: rebalanced.structureRevision,
+    });
+
+    // The Local API restore overrides access by default, so the guard sees the old key.
+    await payload.restoreVersion({ collection: "pages", depth: 0, id: olderVersion.id });
+
+    expect(await readMain(payload, page.id)).toEqual({
+      folder: folder.id,
+      orderKey: rebalanced.orderKey,
+      structureRevision: rebalanced.structureRevision,
+    });
+    const restored = await payload.findByID({
+      collection: "pages",
+      depth: 0,
+      id: page.id,
+      overrideAccess: true,
+    });
+    expect(restored.title).toBe("First");
   });
 
   it("stock duplicate of a root page succeeds as a non-root draft", async () => {

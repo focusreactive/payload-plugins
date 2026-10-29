@@ -5,10 +5,13 @@ import { toCollectionSlug } from "../../collectionSlug.js";
 import { normalizeFolderReference, readFolderRecord } from "../../core/folderRecords.js";
 import type { FolderRecord } from "../../core/folderRecords.js";
 import { noLocaleKey } from "../../core/locales.js";
-import { readPageRow } from "../../core/pageRecords.js";
+import { readPageRow, rememberSnapshot, toSnapshot } from "../../core/pageRecords.js";
 import type { PageRow } from "../../core/pageRecords.js";
 import { SEGMENT_ERROR_MESSAGE, isValidSegment, slugify } from "../../core/slugify.js";
 import {
+  describeMissingSegment,
+  describeRootPageConflict,
+  describeSegmentConflict,
   findRootPageConflict,
   findSegmentConflict,
   folderPathIn,
@@ -80,6 +83,9 @@ export const buildPageBeforeValidate =
         ? requestLocale
         : defaultLocale;
 
+    // Payload fills the stored slug into an update, so an empty slug there is a locale that falls
+    // back to the default locale (build-lead decision 19), not a request to derive one. Only the
+    // default locale, which has nothing to fall back to, and a create derive from the title.
     if (writesAllLocales) {
       const titles = isValuesByLocale(data[page.titleField]) ? data[page.titleField] : {};
       const slugs: Record<string, unknown> = isValuesByLocale(data[segmentField])
@@ -89,7 +95,7 @@ export const buildPageBeforeValidate =
         if (
           isEmpty(slugs[localeKey]) &&
           !isEmpty(title) &&
-          (isCreate || slugs[localeKey] !== undefined)
+          (isCreate || (localeKey === defaultLocale && slugs[localeKey] !== undefined))
         ) {
           slugs[localeKey] = slugify(String(title), localeKey);
         }
@@ -97,8 +103,12 @@ export const buildPageBeforeValidate =
       if (Object.keys(slugs).length > 0) {
         data[segmentField] = slugs as never;
       }
-    } else if (isEmpty(data[segmentField]) && (isCreate || data[segmentField] !== undefined)) {
-      // On an update the slug is only derived when the caller sent it empty, never when it is absent.
+    } else if (
+      isEmpty(data[segmentField]) &&
+      (isCreate ||
+        ((!page.segmentLocalized || requestKey === defaultLocale) &&
+          data[segmentField] !== undefined))
+    ) {
       const title = isEmpty(data[page.titleField])
         ? isCreate
           ? undefined
@@ -117,6 +127,14 @@ export const buildPageBeforeValidate =
     if (!isCreate && !mainRow) {
       return data;
     }
+    const pageId = originalDoc?.id as FolderId;
+    // The post-write check in afterChange compares the saved row with this one.
+    rememberSnapshot(
+      req,
+      page.slug,
+      pageId,
+      mainRow ? toSnapshot(mainRow, localeKeys, defaultLocale) : null
+    );
 
     let folderId: FolderId | null;
     if (isCreate) {
@@ -217,14 +235,8 @@ export const buildPageBeforeValidate =
         }
       }
 
-      if (!isDraft && (isCreate || becameNonRoot) && proposedEffective[defaultLocale] === "") {
-        problems.push({
-          message:
-            defaultLocale === noLocaleKey
-              ? "A page needs a slug"
-              : `A page needs a slug in the default locale (${defaultLocale}); save it in ${defaultLocale} first`,
-          path: segmentField,
-        });
+      if (!isDraft && proposedEffective[defaultLocale] === "") {
+        problems.push({ message: describeMissingSegment(defaultLocale), path: segmentField });
       }
     }
 
@@ -246,10 +258,7 @@ export const buildPageBeforeValidate =
         if (conflict) {
           problems.push({
             locale: queryLocaleOf(key),
-            message:
-              conflict.kind === "folder"
-                ? `${conflict.path} is already used by a folder`
-                : `${conflict.path} is already used by ${conflict.title} (published)`,
+            message: describeSegmentConflict(conflict),
             path: segmentField,
           });
         }
@@ -266,7 +275,7 @@ export const buildPageBeforeValidate =
       if (conflict) {
         const folderPath = folder ? folderPathIn(folder, requestKey, options, payload) : "/";
         problems.push({
-          message: `${conflict.title} is already the root page of ${folderPath}. Unset it first.`,
+          message: describeRootPageConflict(conflict, folderPath),
           path: "isFolderRoot",
         });
       }
@@ -292,6 +301,7 @@ export const buildPageBeforeValidate =
     }
 
     if (problems.length > 0) {
+      rememberSnapshot(req, page.slug, pageId, null);
       throw new ValidationError({ collection: page.slug, errors: dedupe(problems), req });
     }
 

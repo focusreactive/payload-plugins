@@ -147,7 +147,7 @@ export const inspectRuntimeDatabase = (db: unknown): string[] => {
   const adapter = db as { name?: string; transactionOptions?: unknown } | undefined;
   if (adapter?.name === "sqlite" && !adapter.transactionOptions) {
     return [
-      "The SQLite adapter has no `transactionOptions`, so its transactions do nothing and a failed move can leave half its writes. Pass `transactionOptions: {}` to sqliteAdapter().",
+      "The SQLite adapter has no `transactionOptions`, so its transactions do nothing: a failed move can leave half its writes, and a page save refused by the after-write uniqueness check stays written. Pass `transactionOptions: {}` to sqliteAdapter().",
     ];
   }
 
