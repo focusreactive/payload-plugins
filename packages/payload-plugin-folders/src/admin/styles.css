@@ -8,7 +8,8 @@
   }
 
   .fr-folders-tree {
-    --fr-folders-columns: minmax(0, 1fr) 5.5rem;
+    --fr-folders-select-width: 2.5rem;
+    --fr-folders-columns: var(--fr-folders-select-width) minmax(0, 1fr) 5.5rem;
     --fr-folders-row-height: 2.25rem;
 
     border: var(--stroke-width-small) solid var(--color-border);
@@ -94,7 +95,8 @@
 
   @media (min-width: 769px) {
     .fr-folders-tree {
-      --fr-folders-columns: minmax(0, 1fr) 5.5rem minmax(7rem, 13rem) 9rem;
+      --fr-folders-columns: var(--fr-folders-select-width) minmax(0, 1fr) 5.5rem minmax(7rem, 13rem)
+        9rem;
     }
 
     .fr-folders-cell--type,
@@ -285,5 +287,58 @@
   .fr-folders-error {
     color: var(--color-text-danger);
     font-size: var(--text-body-medium-font-size);
+  }
+
+  /* Selection */
+
+  .fr-folders-cell--select {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .fr-folders-cell--select .checkbox-input__input {
+    margin-block: 0;
+  }
+
+  .fr-folders-row[data-kind][aria-selected="true"],
+  .fr-folders-row[data-kind][aria-selected="true"]:hover,
+  .fr-folders-row[data-kind][aria-selected="true"]:focus-within {
+    background: var(--color-bg-selected);
+  }
+
+  .fr-folders-row[data-kind] {
+    user-select: none;
+  }
+
+  /* The toolbar takes the place of the list header, so it keeps the header's height and rhythm. */
+  .fr-folders-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacer-2);
+    min-height: calc(var(--text-heading-xl-line-height) + var(--spacer-2) + var(--spacer-3));
+    padding: var(--spacer-2) var(--gutter-h) var(--spacer-3);
+    border-bottom: var(--stroke-width-small) solid var(--color-border);
+    color: var(--color-text);
+  }
+
+  .fr-folders-toolbar__count {
+    margin-inline-end: var(--spacer-2);
+    font-size: var(--text-body-medium-font-size);
+    font-weight: var(--text-body-medium-bold-font-weight);
+    line-height: var(--text-body-medium-line-height);
+    white-space: nowrap;
+  }
+
+  .fr-folders-toolbar__actions {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacer-1);
+  }
+
+  .fr-folders-reason {
+    display: inline-flex;
   }
 }

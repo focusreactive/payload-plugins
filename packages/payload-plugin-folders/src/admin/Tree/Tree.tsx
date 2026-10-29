@@ -1,11 +1,16 @@
-import { Button, ShimmerEffect } from "@payloadcms/ui";
+import { Button, CheckboxInput, ShimmerEffect } from "@payloadcms/ui";
 import { useCallback } from "react";
 
 import type { Translate } from "../compat.js";
+import type { SelectionApi } from "../useSelection.js";
 import type { FolderKey, TreeStore } from "../store.js";
 import { TreeRow } from "./TreeRow.js";
-import { useTreeData } from "./useTreeData.js";
-import type { ErrorRowModel, LoadMoreRowModel, StaleRowModel } from "./useTreeData.js";
+import type {
+  ErrorRowModel,
+  LoadMoreRowModel,
+  StaleRowModel,
+  TreeRowModel,
+} from "./useTreeData.js";
 import { indentPerLevel } from "./TreeRow.js";
 
 export type TreeProps = {
@@ -15,13 +20,17 @@ export type TreeProps = {
   onOpenPage: (url: string) => void;
   /** Rows per request, shown in the "Load more" label. */
   pageSize: number;
+  /** The visible rows, from `useTreeData`: the caller reads them too, for the selection. */
+  rows: readonly TreeRowModel[];
+  selection: SelectionApi;
   store: TreeStore;
   translate: Translate;
   typeLabels: Readonly<Record<string, string>>;
 };
 
+// A status row spans the whole width, so it clears the select column to line up with the names.
 const levelPadding = (level: number): string =>
-  `calc(var(--spacer-2-5) + ${level * indentPerLevel}px)`;
+  `calc(var(--fr-folders-select-width) + var(--spacer-2-5) + ${level * indentPerLevel}px)`;
 
 const LoadingRow = ({ level, label }: { label: string; level: number }) => (
   <div
@@ -149,12 +158,12 @@ export const Tree = ({
   onOpenFolder,
   onOpenPage,
   pageSize,
+  rows,
+  selection,
   store,
   translate,
   typeLabels,
 }: TreeProps) => {
-  const { rows } = useTreeData(store);
-
   const toggleFolder = useCallback(
     (folderId: number | string) => {
       void store.toggleExpanded(folderId);
@@ -179,7 +188,8 @@ export const Tree = ({
 
   return (
     <div
-      aria-colcount={4}
+      aria-colcount={5}
+      aria-multiselectable="true"
       aria-label={translate("treeLabel")}
       aria-rowcount={rowCountIsKnown ? rows.length + 1 : -1}
       className="fr-folders-tree"
@@ -188,6 +198,14 @@ export const Tree = ({
     >
       <div role="rowgroup">
         <div className="fr-folders-row fr-folders-row--header" role="row">
+          <div className="fr-folders-cell fr-folders-cell--select" role="columnheader">
+            <CheckboxInput
+              aria-label={translate("selectAllRows")}
+              checked={selection.headerState === "all"}
+              onToggle={selection.toggleAll}
+              partialChecked={selection.headerState === "some"}
+            />
+          </div>
           <div className="fr-folders-cell fr-folders-cell--name" role="columnheader">
             {translate("columnName")}
           </div>
@@ -209,11 +227,14 @@ export const Tree = ({
               return (
                 <TreeRow
                   adminRoute={adminRoute}
+                  isSelected={selection.isSelected(row.item)}
                   key={row.key}
                   language={language}
                   onOpenFolder={onOpenFolder}
                   onOpenPage={onOpenPage}
+                  onSelectRange={selection.selectRange}
                   onToggleFolder={toggleFolder}
+                  onToggleSelect={selection.toggle}
                   row={row}
                   translate={translate}
                   typeLabels={typeLabels}

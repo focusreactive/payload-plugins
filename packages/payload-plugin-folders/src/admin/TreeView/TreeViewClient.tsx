@@ -12,8 +12,8 @@ import {
   useUserId,
 } from "../compat.js";
 import { getSharedTreeStore, revisionPollIntervalMs } from "../store.js";
-import { Tree } from "../Tree/Tree.js";
 import "../styles.css";
+import { TreeWorkspace } from "./TreeWorkspace.js";
 
 export type TreeViewClientProps = {
   /** The locale the server rendered the list in; the client's own locale wins once it is known. */
@@ -72,20 +72,20 @@ export const TreeViewClient = ({
   return (
     <div className="collection-list fr-folders">
       <SetStepNav nav={[{ label: title }]} />
-      <ListHeader title={title} />
-      <div className="fr-folders-body">
-        {isConfigured ? (
-          <Tree
-            adminRoute={adminRoute}
-            language={language}
-            onOpenPage={(url) => router.push(url)}
-            pageSize={pageSize}
-            store={store}
-            translate={translate}
-            typeLabels={typeLabels}
-          />
-        ) : null}
-      </div>
+      {isConfigured ? (
+        <TreeWorkspace
+          adminRoute={adminRoute}
+          language={language}
+          onOpenPage={(url) => router.push(url)}
+          pageSize={pageSize}
+          store={store}
+          title={title}
+          translate={translate}
+          typeLabels={typeLabels}
+        />
+      ) : (
+        <ListHeader title={title} />
+      )}
     </div>
   );
 };

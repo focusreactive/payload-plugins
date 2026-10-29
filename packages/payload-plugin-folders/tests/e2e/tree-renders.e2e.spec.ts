@@ -25,9 +25,10 @@ test("Content in the nav shows the seeded top-level rows in order", async ({ pag
     "Company",
     "Empty",
   ]);
-  // The header names the four columns of the tree-grid.
+  // The header names the four columns of the tree-grid, after the select column's checkbox.
   const header = page.getByRole("columnheader");
-  await expect(header).toHaveText(["Name", "Status", "Type", "Updated"]);
+  await expect(header).toHaveText(["", "Name", "Status", "Type", "Updated"]);
+  await expect(page.getByRole("checkbox", { name: "Select all loaded rows" })).toBeVisible();
 });
 
 test("treeView false keeps the stock list", async ({ page }) => {

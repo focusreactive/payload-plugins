@@ -2,6 +2,15 @@ import type { FoldersTranslations } from "./en.js";
 
 export const de: FoldersTranslations = {
   foldersTree: {
+    actionCancel: "Abbrechen",
+    actionDelete: "Löschen",
+    actionDuplicate: "Duplizieren",
+    actionMove: "Verschieben",
+    actionMoveTo: "Verschieben nach...",
+    actionNotAllowed: "Ihre Rolle erlaubt das nicht für jeden ausgewählten Eintrag",
+    actionPublish: "Veröffentlichen",
+    actionSettings: "Einstellungen",
+    actionUnpublish: "Zurückziehen",
     childCount_one: "{{count}} Eintrag",
     childCount_other: "{{count}} Einträge",
     collapse: "{{name}} einklappen",
@@ -15,6 +24,8 @@ export const de: FoldersTranslations = {
       "Diese Sprache hat kein eigenes URL-Segment, deshalb wird das Segment der Standardsprache gezeigt",
     folder: "Ordner",
     folderOnlyTypes: "Ordner, nur {{types}}",
+    itemsSelected_one: "{{count}} Eintrag ausgewählt",
+    itemsSelected_other: "{{count}} Einträge ausgewählt",
     loadError: "Dieser Ordner konnte nicht geladen werden",
     loading: "Inhalte werden geladen",
     loadingMore: "Weitere werden geladen",
@@ -26,10 +37,13 @@ export const de: FoldersTranslations = {
     retry: "Erneut versuchen",
     rootPage: "Startseite",
     rootPageHint: "Startseite: ihre URL ist die URL des Ordners",
+    selectAllRows: "Alle geladenen Zeilen auswählen",
+    selectRow: "{{name}} auswählen",
     statusChanged: "Geändert",
     statusDraft: "Entwurf",
     statusLive: "Live",
     statusPublished: "Veröffentlicht",
+    toolbarLabel: "Ausgewählte Einträge",
     treeLabel: "Inhaltsbaum",
   },
 };

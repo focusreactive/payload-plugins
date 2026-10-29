@@ -23,3 +23,14 @@ export const openContentTree = async (page: Page): Promise<void> => {
 /** The names of the rows at one level of the tree, top to bottom. */
 export const rowNamesAtLevel = (page: Page, level: number): Locator =>
   page.locator(`[data-testid="tree-row"][aria-level="${level}"] [data-testid="row-name"]`);
+
+/** The checkbox of a row, by the accessible name the row gives it. */
+export const rowCheckbox = (page: Page, title: string): Locator =>
+  page.getByRole("checkbox", { exact: true, name: `Select ${title}` });
+
+/** The selection toolbar that takes the header's place while anything is selected. */
+export const bulkToolbar = (page: Page): Locator => page.getByTestId("bulk-toolbar");
+
+/** A button of the selection toolbar. */
+export const toolbarButton = (page: Page, name: string): Locator =>
+  bulkToolbar(page).getByRole("button", { exact: true, name });

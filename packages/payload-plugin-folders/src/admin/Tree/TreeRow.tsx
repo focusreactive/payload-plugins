@@ -1,8 +1,8 @@
-import { ChevronIcon, DocumentIcon, FolderIcon, Tooltip } from "@payloadcms/ui";
+import { CheckboxInput, ChevronIcon, DocumentIcon, FolderIcon, Tooltip } from "@payloadcms/ui";
 import { useState } from "react";
-import type { MouseEvent } from "react";
+import type { ChangeEvent, MouseEvent } from "react";
 
-import type { TreeStatus } from "../../types.js";
+import type { TreeItem, TreeStatus } from "../../types.js";
 import { editViewUrl } from "../compat.js";
 import type { Translate } from "../compat.js";
 import { HouseIcon } from "./icons.js";
@@ -15,12 +15,17 @@ export const indentPerLevel = 16;
 
 export type TreeRowProps = {
   adminRoute: string;
+  isSelected: boolean;
   language: string;
   /** Opens a page's edit view in this tab. */
   onOpenPage: (url: string) => void;
   /** Double click on a folder; zooming is wired by the view that supports it. */
   onOpenFolder?: (folderId: number | string) => void;
+  /** Shift click or Shift on the checkbox: ticks from the last ticked row to this one. */
+  onSelectRange: (item: TreeItem) => void;
   onToggleFolder: (folderId: number | string) => void;
+  /** The checkbox, or Cmd/Ctrl click on the row. */
+  onToggleSelect: (item: TreeItem) => void;
   row: ItemRowModel;
   translate: Translate;
   /** Page collection slug to the label of the Type column. */
@@ -34,8 +39,11 @@ const statusLabelKeys = {
   published: "statusPublished",
 } as const satisfies Record<TreeStatus, string>;
 
-const opensInNewContext = (event: MouseEvent): boolean =>
-  event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
+/** Alt click or a non-primary button opens a page in a new tab; Shift and Cmd/Ctrl click select. */
+const opensInNewContext = (event: MouseEvent): boolean => event.button !== 0 || event.altKey;
+
+/** What a click inside the row answers for itself, so the row's own click rules stay out of it. */
+const rowIgnoreSelector = "a, button, input, label, [data-row-ignore]";
 
 const RootPageBadge = ({ hint, label }: { hint: string; label: string }) => {
   const [showHint, setShowHint] = useState(false);
@@ -61,10 +69,13 @@ const RootPageBadge = ({ hint, label }: { hint: string; label: string }) => {
 
 export const TreeRow = ({
   adminRoute,
+  isSelected,
   language,
   onOpenFolder,
   onOpenPage,
+  onSelectRange,
   onToggleFolder,
+  onToggleSelect,
   row,
   translate,
   typeLabels,
@@ -76,7 +87,17 @@ export const TreeRow = ({
 
   const handleRowClick = (event: MouseEvent<HTMLDivElement>) => {
     // Links and buttons inside the row answer for themselves.
-    if (event.target instanceof Element && event.target.closest("a, button") !== null) {
+    if (event.target instanceof Element && event.target.closest(rowIgnoreSelector) !== null) {
+      return;
+    }
+    if (event.shiftKey) {
+      onSelectRange(item);
+
+      return;
+    }
+    if (event.metaKey || event.ctrlKey) {
+      onToggleSelect(item);
+
       return;
     }
     if (pageUrl !== null) {
@@ -96,11 +117,29 @@ export const TreeRow = ({
   };
 
   const handleLinkClick = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (opensInNewContext(event) || pageUrl === null) {
+    // Shift selects a range instead of opening a window; Cmd or Ctrl click on the name keeps the
+    // browser's own new tab.
+    if (event.shiftKey) {
+      event.preventDefault();
+      onSelectRange(item);
+
+      return;
+    }
+    if (opensInNewContext(event) || event.metaKey || event.ctrlKey || pageUrl === null) {
       return;
     }
     event.preventDefault();
     onOpenPage(pageUrl);
+  };
+
+  const handleCheckboxToggle = (event: ChangeEvent<HTMLInputElement>) => {
+    // The change event of a checkbox is a click, which knows whether Shift was held.
+    const { nativeEvent } = event;
+    if ("shiftKey" in nativeEvent && nativeEvent.shiftKey === true) {
+      onSelectRange(item);
+    } else {
+      onToggleSelect(item);
+    }
   };
 
   const typeLabel = (() => {
@@ -118,7 +157,8 @@ export const TreeRow = ({
     <div
       aria-expanded={isFolder && expandable ? expanded : undefined}
       aria-level={level + 1}
-      className="fr-folders-row"
+      aria-selected={isSelected}
+      className={isSelected ? "fr-folders-row fr-folders-row--selected" : "fr-folders-row"}
       data-collection={item.collection}
       data-item-id={String(item.id)}
       data-kind={item.kind}
@@ -130,8 +170,21 @@ export const TreeRow = ({
           onOpenFolder?.(item.id);
         }
       }}
+      // Shift click selects a range: stop the browser from selecting the text in between.
+      onMouseDown={(event) => {
+        if (event.shiftKey) {
+          event.preventDefault();
+        }
+      }}
       role="row"
     >
+      <div className="fr-folders-cell fr-folders-cell--select" data-row-ignore role="gridcell">
+        <CheckboxInput
+          aria-label={translate("selectRow", { name: item.title })}
+          checked={isSelected}
+          onToggle={handleCheckboxToggle}
+        />
+      </div>
       <div
         className="fr-folders-cell fr-folders-cell--name"
         role="gridcell"
