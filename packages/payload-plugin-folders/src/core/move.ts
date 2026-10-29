@@ -19,7 +19,6 @@ import { effectiveSegmentsOf, isPublishedInLocale, readPageRows } from "./pageRe
 import type { PageRow } from "./pageRecords.js";
 import { joinPath, pathDepth } from "./paths.js";
 import { getResolvedOptions } from "./runtime.js";
-import { isValidSegment, SEGMENT_ERROR_MESSAGE } from "./slugify.js";
 import {
   findPageChanges,
   planSubtreeRewrite,
@@ -640,9 +639,9 @@ export const buildMovePlan = async (
     });
   };
 
-  // Segments the site root cannot take: the ones the site itself uses, and the ones that fail the
-  // site-root segment rule (no dot, so robots.txt and sitemap.xml stay the frontend's), the same
-  // two checks a save makes at the top level.
+  // Segments the site root cannot take: the ones the site itself uses, and the ones with a dot, so
+  // robots.txt and sitemap.xml stay the frontend's. A legacy segment that fails the segment pattern
+  // (`About`) is accepted until it is edited (spec section 2.6), so it may move back to the root.
   if (target === null) {
     for (const subject of live()) {
       if (!changesParent(subject) || isRootPage(subject)) {
@@ -656,13 +655,11 @@ export const buildMovePlan = async (
           block(subject.ref, "reserved", `/${segment} is used by the site itself`);
           break;
         }
-        if (!isValidSegment(segment, { atSiteRoot: true })) {
+        if (segment.includes(".")) {
           block(
             subject.ref,
             "reserved",
-            segment.includes(".")
-              ? `/${segment} cannot be at the top level: a top-level segment cannot contain a dot`
-              : `/${segment} cannot be at the top level. ${SEGMENT_ERROR_MESSAGE}`
+            `/${segment} cannot be at the top level: a top-level segment cannot contain a dot`
           );
           break;
         }
