@@ -1,5 +1,12 @@
 export { foldersPlugin, pluginSlug } from "./plugin.js";
-export type { FoldersPluginOptions, PageCollectionOptions } from "./types.js";
+export { FoldersConfigError } from "./options.js";
+export type {
+  FolderId,
+  FoldersPluginOptions,
+  ItemRef,
+  PageCollectionOptions,
+  PathChange,
+} from "./types.js";
 export {
   buildUrl,
   joinPath,
