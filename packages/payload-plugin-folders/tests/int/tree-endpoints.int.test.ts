@@ -226,6 +226,63 @@ describe("GET /folders-tree/children", () => {
     expect(seen.map(keyOf)).toEqual(whole.items.map(keyOf));
   });
 
+  it("pagination across equal order keys of different collections loses no row", async () => {
+    const { payload } = harness;
+    const request = await asUser(payload, "admin");
+    const folder = await createFolder(payload, { name: "Twin", slug: "twin" });
+    // Equal keys happen when rows are written behind the plugin's back; verify and repair list them.
+    await payload.db.updateOne({
+      collection: "folders",
+      data: { orderKey: "a5" },
+      id: folder.id,
+      returning: false,
+    });
+    for (const [collection, slug] of [
+      ["pages", "page-one"],
+      ["pages", "page-two"],
+      ["posts", "post-one"],
+      ["posts", "post-two"],
+    ] as const) {
+      await createInternal(payload, collection, {
+        folder: null,
+        orderKey: "a5",
+        slug,
+        title: slug,
+      });
+    }
+    await createInternal(payload, "pages", {
+      folder: null,
+      orderKey: "a6",
+      slug: "after",
+      title: "after",
+    });
+
+    const whole = await children(request, { limit: 100, parent: null });
+    const seen: TreeItem[] = [];
+    let cursor: string | null = null;
+    do {
+      const page: Awaited<ReturnType<typeof children>> = await children(request, {
+        cursor,
+        limit: 1,
+        parent: null,
+      });
+      seen.push(...page.items);
+      cursor = page.nextCursor;
+    } while (cursor !== null && seen.length < 20);
+
+    expect(whole.items).toHaveLength(6);
+    expect(seen.map(keyOf)).toEqual(whole.items.map(keyOf));
+    expect(new Set(seen.map(keyOf)).size).toBe(6);
+    // Folders sort before pages on a tie, then by collection, then by id.
+    expect(whole.items.slice(0, 5).map((item) => item.collection)).toEqual([
+      "folders",
+      "pages",
+      "pages",
+      "posts",
+      "posts",
+    ]);
+  });
+
   it("unkeyed rows come last on every adapter", async () => {
     const { payload } = harness;
     const request = await asUser(payload, "admin");
@@ -457,6 +514,22 @@ describe("GET /folders-tree/children", () => {
       payloadInstanceCacheKey: harness.cacheKey,
     });
     expect(bad.status).toBe(400);
+    // Well-formed JSON that names a collection outside the tree, or no sort value, is refused too:
+    // a cursor's values go into a query.
+    for (const forged of [
+      { collection: "users", id: 1, kind: "page", phase: "keyed", value: "a0" },
+      { collection: "pages", id: 1, kind: "page", phase: "keyed" },
+      { collection: "pages", id: { $gt: 0 }, kind: "page", phase: "keyed", value: "a0" },
+      { collection: "pages", id: 1, kind: "page", phase: "later", value: "a0" },
+    ]) {
+      const refused = await callEndpoint<unknown>({
+        config: harness.config,
+        path: `/folders-tree/children?parent=root&cursor=${Buffer.from(JSON.stringify(forged)).toString("base64url")}`,
+        payload,
+        payloadInstanceCacheKey: harness.cacheKey,
+      });
+      expect(refused.status).toBe(400);
+    }
     const anonymous = await callEndpoint<unknown>({
       anonymous: true,
       config: harness.config,

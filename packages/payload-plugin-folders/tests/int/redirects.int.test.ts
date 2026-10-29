@@ -118,14 +118,16 @@ describe("redirect rows on a folder rename", () => {
 
   it("a rename writes a row for a locale served through fallback", async () => {
     const { payload } = harness;
-    const tree = await seedTree(payload);
+    const folder = await createFolder(payload, { slug: "guides" });
+    // Published in en only (no post, which is live in every locale): de reads it through the
+    // fallback (decision 24), so its de URL changes too.
+    await publishedPage(payload, { folder: folder.id, slug: "intro" });
 
-    await renameFolder(payload, tree.about.id, "company");
+    await renameFolder(payload, folder.id, "manuals");
 
-    // Pages are published in en only; de reads them through the fallback (decision 24).
     expect((await readRows(payload)).map((row) => row.lookupKey)).toEqual([
-      "de:/about",
-      "en:/about",
+      "de:/guides",
+      "en:/guides",
     ]);
   });
 
@@ -302,6 +304,31 @@ describe("redirect rows on a move", () => {
     await renameFolder(payload, news.id, "latest", "en", { foldersRedirects: false });
 
     expect(await readRows(payload)).toEqual([]);
+  });
+
+  it("a newer change of the same old path replaces the row", async () => {
+    const { payload } = harness;
+    const misc = await createFolder(payload, { slug: "misc" });
+    const page = await publishedPage(payload, { slug: "about" });
+    await moveItems(payload, {
+      items: [pageRef(page.id)],
+      overrideAccess: true,
+      toFolder: misc.id,
+    });
+    expect((await readRows(payload)).filter((row) => row.lookupKey === "en:/about")).toEqual([
+      { kind: "page", lookupKey: "en:/about", target: `pages:${page.id}` },
+    ]);
+    // A folder at /about does not delete the page row (only a page at the path would), and when it
+    // is renamed away its prefix row takes over the same key.
+    const folder = await createFolder(payload, { slug: "about" });
+    await publishedPage(payload, { folder: folder.id, slug: "contact" });
+
+    await renameFolder(payload, folder.id, "company");
+
+    const aboutRows = (await readRows(payload)).filter((row) => row.lookupKey === "en:/about");
+    expect(aboutRows).toEqual([
+      { kind: "folderPrefix", lookupKey: "en:/about", target: `folders:${folder.id}` },
+    ]);
   });
 
   it("a draft-only change writes no row", async () => {

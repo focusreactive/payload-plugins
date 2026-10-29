@@ -68,6 +68,67 @@ passes, and it calls `access.move` with an empty `items` list, because "every it
 listed. A gate written as `items.every(...)` passes everyone that way, so set `access.repair` to
 keep repair for admins.
 
+## Redirects
+
+A move, a folder rename and a publish that changes a published URL write rows into
+`folder-redirects` inside the same database transaction, so a rolled back write leaves none.
+
+- A page row (`kind: 'page'`) for every locale in which the page was live at one path and is live at
+  another, and one `folderPrefix` row per locale for a moved or renamed folder that has a live page
+  beneath it. The prefix row stands for every path under the old folder path, so a rename writes one
+  row, not one per page. A change that touches only a draft writes nothing.
+- A locale counts as live when its own status is published, or when it has no status of its own and
+  `localization.fallback` is on and the default locale is published (decision 24). An en-only
+  published page is live at its de fallback URL, so its de URL gets a row too.
+- Rows are upserted by `lookupKey`, `<locale>:<path>` (`-` without localization). Keys are per locale.
+  A row whose path a live document now takes is deleted in the same transaction: a page row when a
+  page takes the path, a prefix row when a folder does. Deleting a page or a folder deletes the rows
+  that target it.
+- `redirects: false` on a move request, or `context: { foldersRedirects: false }` on a Local API save
+  (a folder rename, a publish), writes no row. `redirects.enabled: false` turns the rows off for
+  every write.
+
+`findRedirect(payload, { path, locale })` (from `@focus-reactive/payload-plugin-folders/server`)
+answers `{ to, status: 301, target, hops }` or `null`. One query reads the rows of the path and every
+prefix of it in that locale, an exact page row winning over the longest prefix row, and one reads the
+target's current path, so a page moved twice redirects straight to its last path. A prefix row
+appends the rest of the path to the folder's current one. Without `isLive` it returns the first
+answer without checking that anything lives there; give it `isLive(path)` and it follows a dead
+answer for at most 3 hops, returning `null` if none is live. A page that sits in a folder costs one
+more read than a folder prefix, because its path is composed from its folder's.
+
+## Tree read endpoints
+
+For the admin tree, all of them need a signed-in user and read each collection through its own
+`read` access (a collection the user cannot read contributes nothing):
+
+- `GET /api/folders-tree/children?parent=root|<id>&locale=&limit=&cursor=` returns
+  `{ items, hasMore, nextCursor, revision }`: the folders and pages inside one folder in tree order
+  (by order key, rows without a key after the keyed ones, oldest first), with child counts,
+  root-page flags, `status` (`draft`, `published`, `changed`, `live`) and `access` flags per row.
+  Titles and paths follow the requested locale with the default-locale fallback. A page of up to
+  100 rows across two page collections costs at most 12 database calls.
+- `GET /api/folders-tree/search?q=&folder=root|<id>&scope=folder|all&locale=&types=&status=&limit=`
+  returns `{ items }` ordered by full path. Words are ANDed, `"a phrase"` is matched exactly, and a
+  word equal to a page type's label (`article`, or `folder`) limits the results to that type. The
+  scope is the folder's subtree by `ancestorIds`.
+- `GET /api/folders-tree/ancestors?collection=&id=` returns `{ folders }`, root first.
+
+The `access` flags are asked once per collection with no `id`, the way Payload asks for a bulk
+operation, so a host whose rule depends on the document has to return a `Where`.
+
+## Dev seed
+
+`npm run seed` fills the dev app's database with a small site in English and German: a site root
+page, `blog` (`aktuelles` in German) with a root page and an Article-only `2026` folder, `products`,
+`shoes/running` (built under `products`, then moved to the top level with `moveItems`), `about`
+(renamed to `company` with a folder update, so `/about/contact` redirects to `/company/contact`), an
+empty folder, a draft page and a published page with a newer draft, and a user for each role
+(`dev@payloadcms.com` as admin, `editor@example.com`, `drafter@example.com`, `limited@example.com`,
+all with the password `test`). `SEED_LARGE=1 npm run seed` also adds 2,000 pages to an `archive`
+folder (`SEED_LARGE=500` adds that many). Running it again changes nothing. The content is
+synthetic.
+
 ## Known limits
 
 - `fullPath` is null for a reader who cannot read folders: it is composed from the folder's path,
