@@ -1,6 +1,8 @@
 import type { CollectionConfig, Field, FieldAccess } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
+import { buildPageBeforeChange, pageAfterChange } from "../hooks/pages/beforeChange.js";
+import { buildAcquireTreeLockHook, releaseUnboundTreeLockHook } from "../hooks/operationLock.js";
 
 import type { ResolvedOptions, ResolvedPageCollection } from "../types.js";
 
@@ -82,12 +84,29 @@ export const buildPageFields = (
   },
 ];
 
+/** Appended after the host's own hooks, so the host's `data` changes are in place when they run. */
+const addPageHooks = (
+  collection: CollectionConfig,
+  options: ResolvedOptions
+): CollectionConfig["hooks"] => {
+  const hooks = collection.hooks ?? {};
+
+  return {
+    ...hooks,
+    afterChange: [...(hooks.afterChange ?? []), pageAfterChange],
+    afterOperation: [...(hooks.afterOperation ?? []), releaseUnboundTreeLockHook],
+    beforeChange: [...(hooks.beforeChange ?? []), buildPageBeforeChange(collection.slug, options)],
+    beforeOperation: [...(hooks.beforeOperation ?? []), buildAcquireTreeLockHook(["create"])],
+  };
+};
+
 export const addPageFields = (
   collection: CollectionConfig,
   page: ResolvedPageCollection,
   options: ResolvedOptions
 ): CollectionConfig => ({
   ...collection,
+  ...(options.disabled ? {} : { hooks: addPageHooks(collection, options) }),
   fields: [
     ...collection.fields,
     ...(page.segmentFieldExists ? [] : [buildSegmentField(page)]),

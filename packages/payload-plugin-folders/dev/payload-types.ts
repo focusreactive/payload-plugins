@@ -190,8 +190,8 @@ export interface Content {
  */
 export interface Folder {
   id: number;
-  name: string;
-  slug: string;
+  name?: string | null;
+  slug?: string | null;
   parent?: (number | null) | Folder;
   orderKey?: string | null;
   fullPath?: string | null;

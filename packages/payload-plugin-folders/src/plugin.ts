@@ -1,6 +1,7 @@
 import { definePlugin } from "payload";
 import type { CollectionConfig, Config } from "payload";
 
+import { installTreeLockTracking } from "./core/treeLock.js";
 import { buildFolderOperationsCollection } from "./collections/folderOperations.js";
 import { buildFolderRedirectsCollection } from "./collections/folderRedirects.js";
 import { buildFoldersCollection } from "./collections/folders.js";
@@ -37,8 +38,25 @@ export const foldersPlugin = definePlugin<FoldersPluginOptions>({
       }
     };
 
+    // Wrapping the adapter's init is the earliest point that has the Payload instance, and the
+    // lock has to track transactions from the very first one.
+    const hostDatabase = config.db;
+    const database: Config["db"] =
+      !resolved.disabled && hostDatabase && typeof hostDatabase.init === "function"
+        ? {
+            ...hostDatabase,
+            init: (args) => {
+              const adapter = hostDatabase.init(args);
+              installTreeLockTracking(args.payload, adapter);
+
+              return adapter;
+            },
+          }
+        : hostDatabase;
+
     return {
       ...config,
+      db: database,
       collections: [
         ...pageCollections,
         buildFoldersCollection(resolved),

@@ -31,6 +31,8 @@ const findField = (payload: Payload, collectionSlug: string, fieldName: string) 
   );
 
 let folderCounter = 0;
+// These fixtures craft stored rows (paths, ancestors) directly, so the plugin's folder hooks, which
+// would compute those values, are skipped. The hooks have their own tests (folder-paths.int.test.ts).
 const createFolder = (
   payload: Payload,
   data: {
@@ -44,6 +46,7 @@ const createFolder = (
   folderCounter += 1;
   return payload.create({
     collection: "folders",
+    context: { foldersInternal: true },
     data: { name: `Folder ${folderCounter}`, slug: `folder-${folderCounter}`, ...data },
     overrideAccess: true,
   });
@@ -191,10 +194,11 @@ describe("data model", () => {
       payload,
     });
     expect(created.status).toBe(201);
+    // The hooks compute these from the folder's own data and ignore what the client sent.
     expect(created.body.doc).toMatchObject({
-      ancestorIds: null,
-      depth: null,
-      fullPath: null,
+      ancestorIds: "/",
+      depth: 1,
+      fullPath: "/rest-folder",
       structureRevision: 0,
     });
 
@@ -212,9 +216,9 @@ describe("data model", () => {
     });
     expect(updated.status).toBe(200);
     expect(updated.body.doc).toMatchObject({
-      ancestorIds: "/1/",
+      ancestorIds: "/",
       depth: 1,
-      fullPath: "/rest-original",
+      fullPath: `/${folder.slug}`,
       name: "Renamed over REST",
       structureRevision: 0,
     });
@@ -288,6 +292,7 @@ describe("data model", () => {
     const first = await createFolder(payload, { fullPath: "/taken" });
     await payload.update({
       collection: "folders",
+      context: { foldersInternal: true },
       data: { fullPath: "/vergeben", name: "Erster", slug: "erster" },
       id: first.id,
       locale: "de",
@@ -303,6 +308,7 @@ describe("data model", () => {
     await expect(
       payload.update({
         collection: "folders",
+        context: { foldersInternal: true },
         data: { fullPath: "/taken", name: "Zweiter", slug: "zweiter" },
         id: second.id,
         locale: "de",
@@ -312,6 +318,7 @@ describe("data model", () => {
     await expect(
       payload.update({
         collection: "folders",
+        context: { foldersInternal: true },
         data: { fullPath: "/vergeben" },
         id: second.id,
         locale: "de",

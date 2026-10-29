@@ -31,14 +31,14 @@ type TestDatabase = {
   cleanup: () => Promise<void>;
 };
 
-const createSqliteDatabase = async (): Promise<TestDatabase> => {
+const createSqliteDatabase = async (transactions: boolean): Promise<TestDatabase> => {
   const directory = await mkdtemp(path.join(tmpdir(), "folders-sqlite-"));
 
   return {
     // transactionOptions: {} turns real transactions on; without it SQLite transactions are no-ops.
     adapter: sqliteAdapter({
       client: { url: `file:${path.join(directory, "test.db")}` },
-      transactionOptions: {},
+      ...(transactions ? { transactionOptions: {} } : {}),
     }),
     cleanup: () => rm(directory, { force: true, recursive: true }),
   };
@@ -71,15 +71,24 @@ const createPostgresDatabase = async (): Promise<TestDatabase> => {
   };
 };
 
-export type GetTestPayloadOptions = Pick<DevConfigOptions, "extraCollections" | "foldersOptions">;
+export type GetTestPayloadOptions = Pick<
+  DevConfigOptions,
+  "extraCollections" | "foldersOptions"
+> & {
+  /** SQLite only: false boots the adapter without transactions, as a host that left them off would. */
+  sqliteTransactions?: boolean;
+};
 
 export const getTestPayload = async ({
   extraCollections,
   foldersOptions,
+  sqliteTransactions = true,
 }: GetTestPayloadOptions = {}): Promise<TestPayload> => {
   const databaseKind: TestDatabaseKind = process.env.TEST_DB === "postgres" ? "postgres" : "sqlite";
   const database =
-    databaseKind === "postgres" ? await createPostgresDatabase() : await createSqliteDatabase();
+    databaseKind === "postgres"
+      ? await createPostgresDatabase()
+      : await createSqliteDatabase(sqliteTransactions);
 
   try {
     // Auto-login is for browsers; the tests authenticate explicitly through callEndpoint.
