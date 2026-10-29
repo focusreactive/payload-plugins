@@ -10,6 +10,7 @@ import { toCollectionSlug } from "../collectionSlug.js";
 import { buildFolderAfterChange } from "../hooks/folders/afterChange.js";
 import { buildFolderBeforeChange } from "../hooks/folders/beforeChange.js";
 import { buildFolderBeforeValidate } from "../hooks/folders/beforeValidate.js";
+import { folderBulkUpdateGuard } from "../hooks/folders/bulkUpdateGuard.js";
 import { buildAcquireTreeLockHook, releaseUnboundTreeLockHook } from "../hooks/operationLock.js";
 
 import type { ResolvedOptions } from "../types.js";
@@ -152,7 +153,7 @@ export const buildFoldersCollection = (options: ResolvedOptions): CollectionConf
           afterChange: [buildFolderAfterChange(options)],
           afterOperation: [releaseUnboundTreeLockHook],
           beforeChange: [buildFolderBeforeChange(options)],
-          beforeOperation: [buildAcquireTreeLockHook(["create", "update"])],
+          beforeOperation: [folderBulkUpdateGuard, buildAcquireTreeLockHook(["create", "update"])],
           beforeValidate: [buildFolderBeforeValidate(options)],
         },
     indexes: [{ fields: ["parent", "orderKey"] }],

@@ -11,14 +11,19 @@ export type FolderRecord = {
   /** Page collection slugs the folder accepts; empty means every page type. */
   allowedTypes: string[];
   ancestorIds: string | null;
+  defaultType: string | null;
   depth: number | null;
   fullPath: ValuesByLocale;
   id: FolderId;
+  /** Whether the folder copies its `allowedTypes` to every subfolder (spec section 2.3). */
+  lockSubfolderTypes: boolean;
   name: ValuesByLocale;
   orderKey: string | null;
   parent: FolderId | null;
   slug: ValuesByLocale;
   structureRevision: number;
+  /** The folder whose lock put this folder's `allowedTypes` here, when one did. */
+  typesLockedBy: FolderId | null;
 };
 
 const toValuesByLocale = (value: unknown): ValuesByLocale => {
@@ -40,6 +45,25 @@ const toId = (value: unknown): FolderId | null => {
   return null;
 };
 
+/** Turns a database row read with `locale: "all"` into a `FolderRecord`. */
+export const toFolderRecord = (row: Record<string, unknown>): FolderRecord => ({
+  allowedTypes: Array.isArray(row.allowedTypes)
+    ? row.allowedTypes.filter((type): type is string => typeof type === "string")
+    : [],
+  ancestorIds: typeof row.ancestorIds === "string" ? row.ancestorIds : null,
+  defaultType: typeof row.defaultType === "string" ? row.defaultType : null,
+  depth: typeof row.depth === "number" ? row.depth : null,
+  fullPath: toValuesByLocale(row.fullPath),
+  id: row.id as FolderId,
+  lockSubfolderTypes: Boolean(row.lockSubfolderTypes),
+  name: toValuesByLocale(row.name),
+  orderKey: typeof row.orderKey === "string" ? row.orderKey : null,
+  parent: toId(row.parent),
+  slug: toValuesByLocale(row.slug),
+  structureRevision: typeof row.structureRevision === "number" ? row.structureRevision : 0,
+  typesLockedBy: toId(row.typesLockedBy),
+});
+
 /**
  * Reads one folder straight from the database with every locale and no fallback (spec section
  * 3.2). It bypasses the Local API's data loader, whose per-request cache could hand back a path
@@ -56,24 +80,8 @@ export const readFolderRecord = async (
     req,
     where: { id: { equals: id } },
   })) as Record<string, unknown> | null;
-  if (!row) {
-    return null;
-  }
 
-  return {
-    allowedTypes: Array.isArray(row.allowedTypes)
-      ? row.allowedTypes.filter((type): type is string => typeof type === "string")
-      : [],
-    ancestorIds: typeof row.ancestorIds === "string" ? row.ancestorIds : null,
-    depth: typeof row.depth === "number" ? row.depth : null,
-    fullPath: toValuesByLocale(row.fullPath),
-    id: row.id as FolderId,
-    name: toValuesByLocale(row.name),
-    orderKey: typeof row.orderKey === "string" ? row.orderKey : null,
-    parent: toId(row.parent),
-    slug: toValuesByLocale(row.slug),
-    structureRevision: typeof row.structureRevision === "number" ? row.structureRevision : 0,
-  };
+  return row ? toFolderRecord(row) : null;
 };
 
 export type FolderPathPlan = {

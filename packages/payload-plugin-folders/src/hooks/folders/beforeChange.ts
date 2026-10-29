@@ -2,6 +2,7 @@ import { APIError, ValidationError } from "payload";
 import type { CollectionBeforeChangeHook } from "payload";
 
 import { toCollectionSlug } from "../../collectionSlug.js";
+import { lockSourceOf, planFolderTypes } from "../../core/allowedTypes.js";
 import {
   normalizeFolderReference,
   planFolderPaths,
@@ -24,10 +25,25 @@ import {
 } from "../../core/structureGuard.js";
 import { keyForNewItem } from "../../core/orderKeys.js";
 import { SEGMENT_ERROR_MESSAGE, isValidSegment } from "../../core/slugify.js";
+import { assertSubtreeWithinLimit, pushFolderSnapshot } from "../../core/subtree.js";
+import { describeTypeLockChange } from "../../core/typeLocks.js";
 import type { FolderId, ResolvedOptions } from "../../types.js";
 import { isInternalWrite } from "../context.js";
 
 type FieldProblem = { locale?: string; message: string; path: string };
+
+const pathOfLocker = async (
+  req: Parameters<CollectionBeforeChangeHook>[0]["req"],
+  options: ResolvedOptions,
+  lockerId: FolderId | null
+): Promise<string | undefined> => {
+  if (lockerId === null) {
+    return undefined;
+  }
+  const locker = await readFolderRecord(req, options, lockerId);
+
+  return locker?.fullPath[getDefaultLocaleKey(req.payload, options)] || undefined;
+};
 
 const applyIncoming = (values: ValuesByLocale, incoming: unknown, writeKey: string): void => {
   if (incoming === undefined) {
@@ -136,6 +152,21 @@ export const buildFolderBeforeChange =
       }
     }
 
+    const typesPlan = planFolderTypes({
+      incoming: data,
+      lockedByPath: await pathOfLocker(
+        req,
+        options,
+        operation === "update" ? (stored?.typesLockedBy ?? null) : lockSourceOf(parent)
+      ),
+      parent,
+      stored,
+    });
+    problems.push(...typesPlan.problems);
+    if (problems.length > 0) {
+      fail();
+    }
+
     const name: ValuesByLocale = { ...stored?.name };
     const slug: ValuesByLocale = { ...stored?.slug };
     applyIncoming(name, data.name, writeKey);
@@ -182,6 +213,32 @@ export const buildFolderBeforeChange =
         path: operation === "create" ? "parent" : "slug",
       });
       fail();
+    }
+
+    if (stored && changedKeys.length > 0) {
+      await assertSubtreeWithinLimit({
+        action: "rename",
+        folderId: stored.id,
+        options,
+        path: "slug",
+        req,
+      });
+    }
+    if (
+      stored &&
+      describeTypeLockChange(stored, {
+        ...stored,
+        allowedTypes: typesPlan.allowedTypes,
+        lockSubfolderTypes: typesPlan.lockSubfolderTypes,
+      }) !== "none"
+    ) {
+      await assertSubtreeWithinLimit({
+        action: "type lock",
+        folderId: stored.id,
+        options,
+        path: "lockSubfolderTypes",
+        req,
+      });
     }
 
     for (const key of changedKeys) {
@@ -246,6 +303,11 @@ export const buildFolderBeforeChange =
       data.parent = parentId as never;
       data.orderKey = await keyForNewItem(req, options, parentId);
     }
+    data.allowedTypes = typesPlan.allowedTypes as never;
+    data.defaultType = typesPlan.defaultType as never;
+    data.lockSubfolderTypes = typesPlan.lockSubfolderTypes;
+    // Always the computed value: a Local API call with overrideAccess could otherwise name a lock.
+    data.typesLockedBy = typesPlan.typesLockedBy as never;
     data.ancestorIds = plan.ancestorIds;
     data.depth = plan.depth;
     data.fullPath = (
@@ -253,6 +315,12 @@ export const buildFolderBeforeChange =
         ? Object.fromEntries(Object.entries(plan.fullPath).filter(([, value]) => value !== ""))
         : plan.fullPath[writeKey]
     ) as never;
+
+    if (stored) {
+      // The save's afterChange compares the saved row with this one to find what a rename or a
+      // type lock has to rewrite below the folder.
+      pushFolderSnapshot(req, stored);
+    }
 
     return data;
   };

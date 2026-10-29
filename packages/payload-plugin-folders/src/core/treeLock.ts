@@ -67,7 +67,13 @@ type HeldLock = {
   touched: boolean;
 };
 
+type AfterCommitCallback = () => Promise<void> | void;
+
 type TreeLockRuntime = {
+  /** Callbacks that wait for a transaction to commit, keyed by transaction id. */
+  afterCommitByTransaction: Map<string, AfterCommitCallback[]>;
+  /** Callbacks of a request without a transaction, run when its operation has finished. */
+  afterOperationByRequest: WeakMap<PayloadRequest, AfterCommitCallback[]>;
   mutex: AsyncMutex;
   /** Locks that live exactly as long as a database transaction, keyed by transaction id. */
   heldByTransaction: Map<string, HeldLock>;
@@ -91,6 +97,8 @@ const getRuntime = (payload: Payload): TreeLockRuntime => {
   let runtime = runtimes.get(payload);
   if (!runtime) {
     runtime = {
+      afterCommitByTransaction: new Map(),
+      afterOperationByRequest: new WeakMap(),
       heldByRequest: new WeakMap(),
       heldByTransaction: new Map(),
       mutex: new AsyncMutex(),
@@ -157,26 +165,53 @@ export const installTreeLockTracking = (payload: Payload, adapter: object): void
     };
   }
 
-  const releaseWhenDone = (original: ((id: unknown) => Promise<unknown>) | undefined) =>
+  const runCallbacks = async (callbacks: AfterCommitCallback[]): Promise<void> => {
+    for (const callback of callbacks) {
+      try {
+        await callback();
+      } catch (error) {
+        // The writes are committed; a failing callback must not fail the commit it follows.
+        payload.logger.error({ err: error, msg: "[folders] a callback after commit threw" });
+      }
+    }
+  };
+
+  // The lock goes first and the callbacks after it, so a callback that writes to the tree takes
+  // the lock itself instead of waiting for one its own commit still holds.
+  const endTransaction = (
+    original: ((id: unknown) => Promise<unknown>) | undefined,
+    isCommit: boolean
+  ) =>
     async function endTransactionThroughTreeLock(this: unknown, id: unknown) {
       const resolvedId = await id;
       const transactionKey = toTransactionKey(resolvedId);
+      let hasEnded = false;
+      let result: unknown;
       try {
-        return await original?.call(this, resolvedId);
+        result = await original?.call(this, resolvedId);
+        hasEnded = true;
       } finally {
+        let callbacks: AfterCommitCallback[] = [];
         if (transactionKey !== undefined) {
+          callbacks = runtime.afterCommitByTransaction.get(transactionKey) ?? [];
+          runtime.afterCommitByTransaction.delete(transactionKey);
           const held = runtime.heldByTransaction.get(transactionKey);
           runtime.heldByTransaction.delete(transactionKey);
           held?.release();
         }
+        if (isCommit && hasEnded) {
+          await runCallbacks(callbacks);
+        }
       }
+
+      return result;
     };
 
   if (originalCommit) {
-    target.commitTransaction = releaseWhenDone(originalCommit);
+    target.commitTransaction = endTransaction(originalCommit, true);
   }
   if (originalRollback) {
-    target.rollbackTransaction = releaseWhenDone(originalRollback);
+    target.rollbackTransaction = endTransaction(originalRollback, false);
   }
 };
 
@@ -230,6 +265,49 @@ export const acquireTreeLock = async (req: PayloadRequest): Promise<boolean> => 
   }
 
   return true;
+};
+
+/**
+ * Runs `callback` once the write it belongs to is final. With a transaction that is after the
+ * commit, with the tree lock already released, and never when the transaction rolls back. Without
+ * one the writes are already final, so the callback waits only for the lock to be given back, at
+ * the end of the operation (`runUnboundAfterOperationCallbacks`). A callback that throws is logged.
+ */
+export const runAfterCommit = async (
+  req: PayloadRequest,
+  callback: AfterCommitCallback
+): Promise<void> => {
+  const runtime = getRuntime(req.payload);
+  const transactionKey = await resolveTransactionKey(req.transactionID);
+  if (transactionKey === undefined) {
+    runtime.afterOperationByRequest.set(req, [
+      ...(runtime.afterOperationByRequest.get(req) ?? []),
+      callback,
+    ]);
+
+    return;
+  }
+  runtime.afterCommitByTransaction.set(transactionKey, [
+    ...(runtime.afterCommitByTransaction.get(transactionKey) ?? []),
+    callback,
+  ]);
+};
+
+/** Runs what `runAfterCommit` queued for a request that had no transaction. */
+export const runUnboundAfterOperationCallbacks = async (req: PayloadRequest): Promise<void> => {
+  const runtime = runtimes.get(req.payload);
+  const callbacks = runtime?.afterOperationByRequest.get(req);
+  if (!runtime || !callbacks) {
+    return;
+  }
+  runtime.afterOperationByRequest.delete(req);
+  for (const callback of callbacks) {
+    try {
+      await callback();
+    } catch (error) {
+      req.payload.logger.error({ err: error, msg: "[folders] a callback after the write threw" });
+    }
+  }
 };
 
 /** Whether this request's transaction (or the request itself, without one) already holds the lock. */

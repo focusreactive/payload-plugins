@@ -4,7 +4,12 @@ import type {
   PayloadRequest,
 } from "payload";
 
-import { acquireTreeLock, releaseUnboundTreeLock, touchTreeState } from "../core/treeLock.js";
+import {
+  acquireTreeLock,
+  releaseUnboundTreeLock,
+  runUnboundAfterOperationCallbacks,
+  touchTreeState,
+} from "../core/treeLock.js";
 import { isInternalWrite } from "./context.js";
 
 // An operation that took the lock without a transaction has to give it back itself; one that only
@@ -40,9 +45,15 @@ export const buildAcquireTreeLockHook =
     await touchTreeState(req);
   };
 
-export const releaseUnboundTreeLockHook: CollectionAfterOperationHook = ({ args, req, result }) => {
+export const releaseUnboundTreeLockHook: CollectionAfterOperationHook = async ({
+  args,
+  req,
+  result,
+}) => {
   if (operationsThatAcquired.delete(args as object)) {
     releaseUnboundTreeLock(req as PayloadRequest);
+    // Only the operation that took the lock runs the callbacks, once the lock is free again.
+    await runUnboundAfterOperationCallbacks(req as PayloadRequest);
   }
 
   return result;

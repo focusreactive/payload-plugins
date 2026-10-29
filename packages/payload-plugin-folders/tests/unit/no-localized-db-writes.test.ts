@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 // Spec section 3.2: the drizzle adapter deletes every locale row of a document on a write that
 // carries localized data and re-inserts only the locales it was given, so a plugin write that
 // names `pathSegment`, `slug` or `name` on a page would drop the locales it left out. Folder rows
-// are the exception (build-lead decision 3): the folder write-back always carries every locale of
+// are the exception (build-lead decision 3): the folder writes carry every locale of
 // all three columns, read with `locale: "all"`, so the scan covers page-side writes only.
 
 const sourceDirectory = path.resolve(import.meta.dirname, "../../src");
@@ -75,9 +75,9 @@ describe("no localized database writes outside the folders collection", () => {
     expect(
       scans.flatMap((scan) => scan.offences.map((offence) => `${scan.file}: ${offence}`))
     ).toEqual([]);
-    // The scan is not vacuous: it saw the folder write-back it deliberately skips.
+    // The scan is not vacuous: it saw the folder subtree rewrite it deliberately skips.
     expect(
-      scans.find((scan) => scan.file.endsWith("hooks/folders/afterChange.ts"))?.folderWrites
+      scans.find((scan) => scan.file.endsWith("core/subtree.ts"))?.folderWrites
     ).toBeGreaterThan(0);
   });
 

@@ -51,3 +51,9 @@ export const requestLocaleKey = (
     ? requestLocale
     : getDefaultLocaleKey(payload, options);
 };
+
+/** Drops the locales a record has no value for, so a write never creates a locale row for them. */
+export const withoutEmptyValues = (values: ValuesByLocale): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(values).filter((entry): entry is [string, string] => Boolean(entry[1]))
+  );

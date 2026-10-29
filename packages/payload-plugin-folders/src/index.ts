@@ -19,4 +19,5 @@ export type {
   ItemRef,
   PageCollectionOptions,
   PathChange,
+  PathChangeReason,
 } from "./types.js";

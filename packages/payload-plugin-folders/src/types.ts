@@ -21,6 +21,15 @@ export type PathChange = {
   published: boolean;
 };
 
+export type PathChangeReason =
+  | "create"
+  | "move"
+  | "folderUpdate"
+  | "publish"
+  | "rootToggle"
+  | "delete"
+  | "repair";
+
 export type PageCollectionOptions = {
   /** Field holding the page's segment. Added as a text field if the collection lacks it. */
   segmentField?: string;
@@ -87,7 +96,7 @@ export type FoldersPluginOptions = {
     /** Runs after commit with every full path that changed. Errors are logged, not thrown. */
     afterPathChange?: (args: {
       changes: PathChange[];
-      reason: "create" | "move" | "folderUpdate" | "publish" | "rootToggle" | "delete" | "repair";
+      reason: PathChangeReason;
       req: PayloadRequest;
     }) => void | Promise<void>;
   };

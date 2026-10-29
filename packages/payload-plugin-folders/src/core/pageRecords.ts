@@ -10,6 +10,21 @@ const isPublishedStatus = (status: unknown): boolean =>
     typeof status === "object" &&
     Object.values(status as Record<string, unknown>).includes("published"));
 
+/**
+ * Whether a page's main row is live in locale `key`: `_status` is one value, or one per locale when
+ * it is localized. A collection without drafts has no status, and every row is live.
+ */
+export const isPublishedInLocale = (status: unknown, key: string, hasDrafts: boolean): boolean => {
+  if (!hasDrafts) {
+    return true;
+  }
+  if (status && typeof status === "object") {
+    return (status as Record<string, unknown>)[key] === "published";
+  }
+
+  return status === "published";
+};
+
 /** The columns of a page's main row the structure guard and the validation compare against. */
 export type PageRow = {
   folder: FolderId | null;
