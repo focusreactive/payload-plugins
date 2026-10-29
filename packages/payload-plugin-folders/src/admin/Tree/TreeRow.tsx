@@ -5,6 +5,7 @@ import type { ChangeEvent, MouseEvent } from "react";
 import type { TreeItem, TreeStatus } from "../../types.js";
 import { editViewUrl } from "../compat.js";
 import type { Translate } from "../compat.js";
+import { useRowDrag } from "../DragAndDrop/dragState.js";
 import { HouseIcon } from "./icons.js";
 import { formatAbsoluteTime, formatRelativeTime } from "./relativeTime.js";
 import { pathDisplayOf } from "./rowDisplay.js";
@@ -84,6 +85,7 @@ export const TreeRow = ({
   const isFolder = item.kind === "folder";
   const pageUrl = isFolder ? null : editViewUrl(adminRoute, item.collection, item.id);
   const pathDisplay = pathDisplayOf(item);
+  const drag = useRowDrag(item, row.key);
 
   const handleRowClick = (event: MouseEvent<HTMLDivElement>) => {
     // Links and buttons inside the row answer for themselves.
@@ -158,8 +160,20 @@ export const TreeRow = ({
       aria-expanded={isFolder && expandable ? expanded : undefined}
       aria-level={level + 1}
       aria-selected={isSelected}
-      className={isSelected ? "fr-folders-row fr-folders-row--selected" : "fr-folders-row"}
+      className={[
+        "fr-folders-row",
+        isSelected ? "fr-folders-row--selected" : "",
+        drag.isDragged ? "fr-folders-row--dragged" : "",
+        drag.indicator?.edge === "inside" ? "fr-folders-row--drop-inside" : "",
+        drag.indicator?.edge === "inside" && drag.indicator.isRefused
+          ? "fr-folders-row--drop-refused"
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       data-collection={item.collection}
+      data-dragged={drag.isDragged ? "true" : undefined}
+      data-drop={drag.indicator?.edge}
       data-item-id={String(item.id)}
       data-kind={item.kind}
       data-testid="tree-row"
@@ -176,8 +190,26 @@ export const TreeRow = ({
           event.preventDefault();
         }
       }}
+      ref={drag.setRowRef}
       role="row"
+      {...drag.listeners}
     >
+      {drag.indicator && drag.indicator.edge !== "inside" ? (
+        <span
+          aria-hidden="true"
+          className={`fr-folders-drop-line fr-folders-drop-line--${drag.indicator.edge}${
+            drag.indicator.isRefused ? " fr-folders-drop-line--refused" : ""
+          }`}
+          data-edge={drag.indicator.edge}
+          data-level={drag.indicator.level}
+          data-testid="drop-indicator"
+          style={{
+            insetInlineStart: `calc(var(--fr-folders-select-width) + var(--spacer-2-5) + ${
+              drag.indicator.level * indentPerLevel
+            }px)`,
+          }}
+        />
+      ) : null}
       <div className="fr-folders-cell fr-folders-cell--select" data-row-ignore role="gridcell">
         <CheckboxInput
           aria-label={translate("selectRow", { name: item.title })}
@@ -217,6 +249,8 @@ export const TreeRow = ({
               <a
                 className="fr-folders-name fr-folders-name--link"
                 data-testid="row-name"
+                // A link drags as a URL by itself, which would end the row's own drag.
+                draggable={false}
                 href={pageUrl}
                 onClick={handleLinkClick}
               >

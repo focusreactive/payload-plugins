@@ -4,14 +4,29 @@ import type { FoldersApiContext, MoveBody, MovePreview, MoveResult } from "../ap
 import { folderKeyOf, itemKeyOf } from "../store.js";
 import type { OptimisticMove, TreeStore, TreeStoreState } from "../store.js";
 
-/** Where a move puts the items: inside a folder, at the top or the bottom of it. */
-export type MoveTarget = {
+/** A move into a folder, at the top or the bottom of it. */
+export type InsideTarget = {
+  after?: undefined;
   position: "end" | "start";
   /** `null` is the top level. */
   toFolder: FolderId | null;
 };
 
-const isNestedIn = (item: TreeItem, folder: TreeItem): boolean =>
+/**
+ * A move to the gap right after a sibling, as a drop between two rows is. `toFolder` is the folder
+ * the editor saw that sibling in: the store needs it to place the rows, and the request sends it as
+ * `after.expected.parentId` (decision 27), so a sibling that has moved on makes the move stale.
+ */
+export type AfterTarget = {
+  after: ItemRef;
+  position?: undefined;
+  toFolder: FolderId | null;
+};
+
+/** Where a move puts the items. */
+export type MoveTarget = AfterTarget | InsideTarget;
+
+export const isNestedIn = (item: TreeItem, folder: TreeItem): boolean =>
   folder.kind === "folder" &&
   (String(item.parentId) === String(folder.id) ||
     (item.ancestorIds ?? "").includes(`/${folder.id}/`));
@@ -35,23 +50,34 @@ export const buildMoveBody = (
   items: readonly TreeItem[],
   target: MoveTarget,
   redirects = true
-): MoveBody => ({
-  items: items.map((item) => ({
-    collection: item.collection,
-    expected: { orderKey: item.orderKey, parentId: item.parentId },
-    id: item.id,
-  })),
-  position: target.position,
-  ...(redirects ? {} : { redirects: false }),
-  toFolder: target.toFolder,
-});
+): MoveBody => {
+  const common = {
+    items: items.map((item) => ({
+      collection: item.collection,
+      expected: { orderKey: item.orderKey, parentId: item.parentId },
+      id: item.id,
+    })),
+    ...(redirects ? {} : { redirects: false }),
+  };
+
+  return target.after
+    ? {
+        ...common,
+        after: {
+          collection: target.after.collection,
+          expected: { parentId: target.toFolder },
+          id: target.after.id,
+        },
+      }
+    : { ...common, position: target.position, toFolder: target.toFolder };
+};
 
 export const optimisticMoveOf = (
   items: readonly TreeItem[],
   target: MoveTarget
 ): OptimisticMove => ({
+  ...(target.after ? { after: target.after } : { position: target.position }),
   items: items.map((item) => ({ collection: item.collection, id: item.id })),
-  position: target.position,
   toFolder: target.toFolder,
 });
 

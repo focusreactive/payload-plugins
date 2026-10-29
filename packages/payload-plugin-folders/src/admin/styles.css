@@ -542,4 +542,90 @@
       outline-offset: var(--accessibility-outline-offset);
     }
   }
+
+  /* Drag and drop */
+
+  .fr-folders-row {
+    position: relative;
+  }
+
+  .fr-folders-row--dragged {
+    opacity: 0.45;
+  }
+
+  .fr-folders-row--drop-inside,
+  .fr-folders-row--drop-inside:hover {
+    background: var(--color-bg-selected);
+    outline: var(--stroke-width-medium) solid var(--color-bg-brand);
+    outline-offset: calc(var(--stroke-width-medium) * -1);
+  }
+
+  .fr-folders-row--drop-refused,
+  .fr-folders-row--drop-refused:hover {
+    background: transparent;
+    outline-color: var(--color-text-danger);
+  }
+
+  /* A before or after drop: a line from the row's own indent to its right edge. */
+  .fr-folders-drop-line {
+    position: absolute;
+    inset-inline-end: 0;
+    z-index: 1;
+    height: 2px;
+    background: var(--color-bg-brand);
+    pointer-events: none;
+  }
+
+  .fr-folders-drop-line--top {
+    top: 0;
+  }
+
+  .fr-folders-drop-line--bottom {
+    bottom: 0;
+  }
+
+  .fr-folders-drop-line--refused {
+    background: var(--color-text-danger);
+  }
+
+  body.fr-folders-dragging,
+  body.fr-folders-dragging * {
+    cursor: grabbing !important;
+  }
+
+  body.fr-folders-dragging--refused,
+  body.fr-folders-dragging--refused * {
+    cursor: not-allowed !important;
+  }
+
+  .fr-folders-drag-overlay {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-1);
+    width: max-content;
+    max-width: 24rem;
+    pointer-events: none;
+  }
+
+  .fr-folders-drag-overlay > span {
+    align-self: flex-start;
+    padding: var(--spacer-1) var(--spacer-2);
+    border: var(--stroke-width-small) solid var(--color-border-strong);
+    border-radius: var(--radius-medium);
+    background: var(--color-bg);
+    box-shadow: var(--elevation-400-menu-panel);
+    color: var(--color-text);
+    font-size: var(--text-body-medium-font-size);
+    font-weight: var(--text-body-medium-bold-font-weight);
+    line-height: var(--text-body-medium-line-height);
+  }
+
+  .fr-folders-drag-reason {
+    padding: var(--spacer-1) var(--spacer-2);
+    border-radius: var(--radius-medium);
+    background: var(--color-bg-inverse);
+    color: var(--color-text-oninverse);
+    font-size: var(--text-body-small-font-size);
+    line-height: var(--text-body-small-line-height);
+  }
 }

@@ -37,6 +37,15 @@ export const de: FoldersTranslations = {
     confirmUrlsChange_one: "{{count}} veröffentlichte URL ändert sich",
     confirmUrlsChange_other: "{{count}} veröffentlichte URLs ändern sich",
     confirmWarningsHeading: "Hinweis",
+    dragItems_one: "{{count}} Eintrag",
+    dragItems_other: "{{count}} Einträge",
+    dropConflict:
+      '"{{title}}" kann hier nicht abgelegt werden: {{path}} wird bereits von {{other}} verwendet',
+    dropConflictFolder: "einem Ordner",
+    dropDepth: "Die URLs wären dann {{depth}} Segmente tief; erlaubt sind {{limit}}",
+    dropReserved: "/{{segment}} wird von der Website selbst verwendet",
+    dropReservedDot:
+      "/{{segment}} darf nicht auf oberster Ebene stehen: ein Segment dort darf keinen Punkt enthalten",
     expand: "{{name}} aufklappen",
     fallback: "Ersatz",
     fallbackHint:

@@ -7,6 +7,7 @@ import { resolveLabelValue, resolveTypeLabels } from "./typeLabels.js";
 import type { LabelValue, TypeLabelSetting } from "./typeLabels.js";
 
 const defaultPageSize = 100;
+const defaultMaxDepth = 20;
 
 /** What `plugin.ts` stores on the folders collection for the admin, all plain values. */
 export type TreeViewSettings = {
@@ -16,7 +17,11 @@ export type TreeViewSettings = {
   enforceAllowedTypesOnMove: boolean;
   /** The slug of the folders collection, which the admin needs to tell folders from pages. */
   foldersSlug: string;
+  /** The deepest a URL may go; a drop that would pass it is refused on screen. */
+  maxDepth: number;
   pageSize: number;
+  /** Segments the top level cannot take, which a drop there is refused for on screen. */
+  reservedRootSegments: string[];
   /** Page collection slug to its Type column label setting. */
   typeLabels: Record<string, TypeLabelSetting>;
 };
@@ -38,7 +43,9 @@ export const TreeViewServer = ({
     confirmMoves: "urlChange",
     enforceAllowedTypesOnMove: true,
     foldersSlug: collectionConfig.slug,
+    maxDepth: defaultMaxDepth,
     pageSize: defaultPageSize,
+    reservedRootSegments: [],
     typeLabels: {},
   };
   const title = resolveLabelValue(
@@ -61,7 +68,9 @@ export const TreeViewServer = ({
       enforceAllowedTypesOnMove={settings.enforceAllowedTypesOnMove ?? true}
       foldersSlug={settings.foldersSlug ?? collectionConfig.slug}
       initialLocale={locale?.code ?? null}
+      maxDepth={settings.maxDepth ?? defaultMaxDepth}
       pageSize={settings.pageSize}
+      reservedRootSegments={settings.reservedRootSegments ?? []}
       title={title}
       typeLabels={typeLabels}
     />

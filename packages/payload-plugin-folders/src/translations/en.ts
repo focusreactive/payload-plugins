@@ -39,6 +39,14 @@ export const en = {
     confirmUrlsChange_one: "{{count}} published URL will change",
     confirmUrlsChange_other: "{{count}} published URLs will change",
     confirmWarningsHeading: "Heads up",
+    dragItems_one: "{{count}} item",
+    dragItems_other: "{{count}} items",
+    dropConflict: '"{{title}}" cannot go here: {{path}} is already used by {{other}}',
+    dropConflictFolder: "a folder",
+    dropDepth: "This would make URLs {{depth}} segments deep; the limit is {{limit}}",
+    dropReserved: "/{{segment}} is used by the site itself",
+    dropReservedDot:
+      "/{{segment}} cannot be at the top level: a top-level segment cannot contain a dot",
     expand: "Expand {{name}}",
     fallback: "fallback",
     fallbackHint:

@@ -3,6 +3,8 @@ import { useCallback, useMemo } from "react";
 import type { ConfirmMoves } from "../../types.js";
 import { ListHeader, useLocaleCount } from "../compat.js";
 import type { Translate } from "../compat.js";
+import { DragAndDropProvider } from "../DragAndDrop/DragAndDropProvider.js";
+import type { DropRules } from "../DragAndDrop/dropTargets.js";
 import { useMoveFlow } from "../Move/useMoveFlow.js";
 import type { TreeStore } from "../store.js";
 import { BulkToolbar } from "../Toolbar/BulkToolbar.js";
@@ -18,8 +20,12 @@ export type TreeWorkspaceProps = {
   enforceAllowedTypesOnMove: boolean;
   foldersSlug: string;
   language: string;
+  /** The deepest a URL may go. */
+  maxDepth: number;
   onOpenPage: (url: string) => void;
   pageSize: number;
+  /** Segments the top level cannot take. */
+  reservedRootSegments: readonly string[];
   store: TreeStore;
   title: string;
   translate: Translate;
@@ -37,14 +43,16 @@ export const TreeWorkspace = ({
   enforceAllowedTypesOnMove,
   foldersSlug,
   language,
+  maxDepth,
   onOpenPage,
   pageSize,
+  reservedRootSegments,
   store,
   title,
   translate,
   typeLabels,
 }: TreeWorkspaceProps) => {
-  const { rows } = useTreeData(store);
+  const { rows, state } = useTreeData(store);
   const loadedItems = useMemo(
     () => rows.flatMap((row): TreeItem[] => (row.type === "item" ? [row.item] : [])),
     [rows]
@@ -64,7 +72,16 @@ export const TreeWorkspace = ({
     translate,
     typeLabels,
   });
-  const { startMoveTo } = moveFlow;
+  const { startDropMove, startMoveTo } = moveFlow;
+  const dropRules = useMemo<DropRules>(
+    () => ({
+      enforceAllowedTypes: enforceAllowedTypesOnMove,
+      maxDepth,
+      reservedRootSegments,
+      typeLabels,
+    }),
+    [enforceAllowedTypesOnMove, maxDepth, reservedRootSegments, typeLabels]
+  );
 
   const runAction = useCallback(
     (action: ToolbarAction) => {
@@ -91,17 +108,28 @@ export const TreeWorkspace = ({
         <ListHeader title={title} />
       )}
       <div className="fr-folders-body">
-        <Tree
-          adminRoute={adminRoute}
-          language={language}
-          onOpenPage={onOpenPage}
-          pageSize={pageSize}
+        <DragAndDropProvider
+          disabled={moveFlow.isMoving}
+          onDrop={(drop) => void startDropMove(drop)}
           rows={rows}
-          selection={selection}
+          rules={dropRules}
+          selectedItems={selection.items}
+          state={state}
           store={store}
           translate={translate}
-          typeLabels={typeLabels}
-        />
+        >
+          <Tree
+            adminRoute={adminRoute}
+            language={language}
+            onOpenPage={onOpenPage}
+            pageSize={pageSize}
+            rows={rows}
+            selection={selection}
+            store={store}
+            translate={translate}
+            typeLabels={typeLabels}
+          />
+        </DragAndDropProvider>
       </div>
       {moveFlow.dialogs}
     </>

@@ -23,7 +23,7 @@ import { useTreeStoreState } from "../useTreeStore.js";
 import { pickerRowsOf, refusalOf } from "./folderPicker.js";
 import type { PickerRow, TargetRefusal } from "./folderPicker.js";
 import { buildMoveBody } from "./moveFlow.js";
-import type { MoveTarget } from "./moveFlow.js";
+import type { InsideTarget, MoveTarget } from "./moveFlow.js";
 
 export const moveDialogSlug = "fr-folders-move-to";
 
@@ -239,7 +239,7 @@ const MoveDialogContent = ({
   const state = useTreeStoreState(store);
   const [expanded, setExpanded] = useState<ReadonlySet<FolderKey>>(() => new Set());
   const [choice, setChoice] = useState<Choice | null>(null);
-  const [position, setPosition] = useState<MoveTarget["position"]>("start");
+  const [position, setPosition] = useState<InsideTarget["position"]>("start");
   const [previewState, setPreviewState] = useState<PreviewState>({ status: "idle" });
   const [activeReasonKey, setActiveReasonKey] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");

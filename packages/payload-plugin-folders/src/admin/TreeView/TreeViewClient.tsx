@@ -25,7 +25,11 @@ export type TreeViewClientProps = {
   foldersSlug: string;
   /** The locale the server rendered the list in; the client's own locale wins once it is known. */
   initialLocale: string | null;
+  /** The deepest a URL may go (`maxDepth`). */
+  maxDepth: number;
   pageSize: number;
+  /** Segments the top level cannot take. */
+  reservedRootSegments: string[];
   title: string;
   /** Page collection slug to the label of the Type column. */
   typeLabels: Record<string, string>;
@@ -37,7 +41,9 @@ export const TreeViewClient = ({
   enforceAllowedTypesOnMove,
   foldersSlug,
   initialLocale,
+  maxDepth,
   pageSize,
+  reservedRootSegments,
   title,
   typeLabels,
 }: TreeViewClientProps) => {
@@ -89,8 +95,10 @@ export const TreeViewClient = ({
           enforceAllowedTypesOnMove={enforceAllowedTypesOnMove}
           foldersSlug={foldersSlug}
           language={language}
+          maxDepth={maxDepth}
           onOpenPage={(url) => router.push(url)}
           pageSize={pageSize}
+          reservedRootSegments={reservedRootSegments}
           store={store}
           title={title}
           translate={translate}

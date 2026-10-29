@@ -167,7 +167,9 @@ export const buildFoldersCollection = (options: ResolvedOptions): CollectionConf
         confirmMoves: options.admin.confirmMoves,
         enforceAllowedTypesOnMove: options.enforceAllowedTypesOnMove,
         foldersSlug: folders.slug,
+        maxDepth: options.maxDepth,
         pageSize: options.admin.pageSize,
+        reservedRootSegments: options.reservedRootSegments,
         typeLabels: Object.fromEntries(
           pageCollectionEntries.map((pageCollection) => [
             pageCollection.slug,

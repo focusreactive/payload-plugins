@@ -103,7 +103,9 @@ describe("foldersPlugin", () => {
       confirmMoves: "urlChange",
       enforceAllowedTypesOnMove: true,
       foldersSlug: "folders",
+      maxDepth: 20,
       pageSize: 50,
+      reservedRootSegments: expect.arrayContaining(["admin", "api"]),
       typeLabels: { pages: { explicit: true, label: "Landing page" } },
     });
   });

@@ -3,15 +3,21 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { ConfirmMoves, TreeItem } from "../../types.js";
-import { FoldersApiError } from "../api.js";
-import type { FoldersApiContext } from "../api.js";
+import { FoldersApiError, previewMove } from "../api.js";
+import type { FoldersApiContext, MovePreview } from "../api.js";
 import type { Translate } from "../compat.js";
 import type { TreeStore } from "../store.js";
 import { confirmDialogSlug, ConfirmUrlChangeDialog } from "./ConfirmUrlChangeDialog.js";
 import type { ConfirmRequest } from "./ConfirmUrlChangeDialog.js";
 import { MoveDialog, moveDialogSlug } from "./MoveDialog.js";
 import type { MoveChoice } from "./MoveDialog.js";
-import { needsConfirmation, rootsOfSelection, runMove, undoMove } from "./moveFlow.js";
+import {
+  buildMoveBody,
+  needsConfirmation,
+  rootsOfSelection,
+  runMove,
+  undoMove,
+} from "./moveFlow.js";
 import type { MoveOutcome, MoveTarget } from "./moveFlow.js";
 
 /** The class the toast action button wears, so the stylesheet can align it with the title. */
@@ -40,14 +46,31 @@ export type MoveFlow = {
   dialogs: ReactNode;
   /** A move is in flight; a second one would be dropped, so what starts one is disabled. */
   isMoving: boolean;
+  /**
+   * Moves rows that were dropped on a gap or a folder: reads the preview, asks the confirmation the
+   * mode needs, and moves. `selection` is the ticked rows when the drag carried them, else empty.
+   */
+  startDropMove: (drop: DropMove) => Promise<void>;
   /** Opens "Move to..." for these rows. */
   startMoveTo: (items: readonly TreeItem[]) => void;
 };
 
+/** A move that a drop asks for. */
+export type DropMove = {
+  items: readonly TreeItem[];
+  /** The ticked rows when the drag carried the selection: those come back if the move fails. */
+  selection: readonly TreeItem[] | null;
+  target: MoveTarget;
+  targetTitle: string;
+};
+
 type Pending = {
   items: readonly TreeItem[];
-  /** Every ticked row, nested ones included: what comes back if the move fails. */
-  selection: readonly TreeItem[];
+  /**
+   * Every ticked row, nested ones included: what comes back if the move fails. `null` when the move
+   * is not the selection's (a drag of one unticked row), so the ticks stay as they are.
+   */
+  selection: readonly TreeItem[] | null;
   target: MoveTarget;
   targetTitle: string;
 };
@@ -78,6 +101,8 @@ export const useMoveFlow = ({
   const pending = useRef<Pending | null>(null);
   const selectionRef = useRef<readonly TreeItem[]>([]);
   const moving = useRef(false);
+  // A drop reads its preview before it moves; a second drop in that time would be dropped too.
+  const previewing = useRef(false);
   const [isMoving, setIsMoving] = useState(false);
 
   const options = store.getOptions();
@@ -137,7 +162,9 @@ export const useMoveFlow = ({
           request.target,
           redirects
         );
-        onMoved();
+        if (request.selection !== null) {
+          onMoved();
+        }
         toast.success(translate("moved", { count: outcome.result.moved.length }), {
           action: { label: translate("undo"), onClick: () => void undo(outcome) },
           classNames: { actionButton: toastActionClass },
@@ -146,7 +173,9 @@ export const useMoveFlow = ({
       } catch (error) {
         // The store already put every row back and read the folders again.
         showFailure(error, null);
-        onMoveFailed(request.selection);
+        if (request.selection !== null) {
+          onMoveFailed(request.selection);
+        }
       } finally {
         moving.current = false;
         setIsMoving(false);
@@ -155,27 +184,17 @@ export const useMoveFlow = ({
     [context, onMoved, onMoveFailed, showFailure, store, translate, undo]
   );
 
-  const choose = useCallback(
-    (choice: MoveChoice) => {
-      const items = pickItems;
-      if (items === null) {
-        return;
-      }
-      const request: Pending = {
-        items,
-        selection: selectionRef.current,
-        target: choice.target,
-        targetTitle: choice.targetTitle,
-      };
-      closeModal(moveDialogSlug);
-      if (needsConfirmation(confirmMoves, choice.preview)) {
+  // The confirmation the mode asks for, then the move: the picker and a drop end the same way.
+  const proceed = useCallback(
+    (request: Pending, preview: MovePreview) => {
+      if (needsConfirmation(confirmMoves, preview)) {
         pending.current = request;
         openings.current += 1;
         setConfirmRequest({
           id: openings.current,
-          items: rootsOfSelection(items),
-          preview: choice.preview,
-          targetTitle: choice.targetTitle,
+          items: rootsOfSelection(request.items),
+          preview,
+          targetTitle: request.targetTitle,
         });
         openModal(confirmDialogSlug);
 
@@ -183,7 +202,46 @@ export const useMoveFlow = ({
       }
       void execute(request, true);
     },
-    [closeModal, confirmMoves, execute, openModal, pickItems]
+    [confirmMoves, execute, openModal]
+  );
+
+  const choose = useCallback(
+    (choice: MoveChoice) => {
+      const items = pickItems;
+      if (items === null) {
+        return;
+      }
+      closeModal(moveDialogSlug);
+      proceed(
+        {
+          items,
+          selection: selectionRef.current,
+          target: choice.target,
+          targetTitle: choice.targetTitle,
+        },
+        choice.preview
+      );
+    },
+    [closeModal, pickItems, proceed]
+  );
+
+  const startDropMove = useCallback(
+    async (drop: DropMove) => {
+      if (moving.current || previewing.current) {
+        return;
+      }
+      previewing.current = true;
+      try {
+        const roots = rootsOfSelection(drop.items);
+        const preview = await previewMove(context, buildMoveBody(roots, drop.target));
+        proceed(drop, preview);
+      } catch (error) {
+        showFailure(error, null);
+      } finally {
+        previewing.current = false;
+      }
+    },
+    [context, proceed, showFailure]
   );
 
   const startMoveTo = useCallback(
@@ -229,5 +287,5 @@ export const useMoveFlow = ({
     </>
   );
 
-  return { dialogs, isMoving, startMoveTo };
+  return { dialogs, isMoving, startDropMove, startMoveTo };
 };

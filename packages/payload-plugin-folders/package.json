@@ -51,7 +51,9 @@
     "test:perf": "vitest run --project perf",
     "test:e2e": "playwright test"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1"
+  },
   "devDependencies": {
     "@payloadcms/db-postgres": "4.0.0-beta.5",
     "@payloadcms/db-sqlite": "4.0.0-beta.5",
