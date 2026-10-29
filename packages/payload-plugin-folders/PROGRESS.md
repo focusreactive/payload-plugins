@@ -76,6 +76,10 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     (`bunx turbo run build --filter='./packages/*'`), because their types come from `dist/`. Built once
     on 29 Oct; the push then passed.
 
+17. **Stopping servers.** `pkill` and `killall` are banned, because they match other sessions'
+    processes. Every server an agent starts writes its PID to `.run/<name>.pid` and is stopped with
+    `kill` on that PID only. Every developer and tester prompt carries this rule.
+
 ### Owner decisions (from spec/review.md, the spec writer's pick applies)
 
 - D14 Payload 3 port: not in this run; fund it right after v1.
@@ -124,9 +128,11 @@ One line per ticket: `check.sh`, tester evidence, reviewer verdict, commit.
 | Ticket | check.sh | Tester | Reviewer | Commit |
 |---|---|---|---|---|
 | G0: P-01, P-02, check.sh | pass (5/5 int on SQLite and Postgres, smoke e2e) | `screenshots/g0-admin-dashboard.png`, `screenshots/g0-page-created.png`: auto-login admin, page created and listed | NOT DONE (getPayload cache returned a destroyed instance in a second boot), fixed in `11b43796`, re-review DONE | `f4010d2d`, `11b43796` |
+| G1: P-03, P-04, P-05 | pass (43 unit, 19 int on SQLite and Postgres, smoke opens folders) | `screenshots/g1-folder-created.png`, `g1-folder-no-duplicate.png`, `g1-page-fields.png`, `g1-page-in-folder.png`: folder created, no Duplicate, injected page fields, page shown in folder (picked over REST, the picker is P-47) | NOT DONE (derived folder fields, page structureRevision and the tree-state global writable over REST; host slug index dropped; disabled test vacuous), fixed in `d7771fad`, re-review DONE | `8dc3bf5f`, `98a96a0b`, `e259e12b`, `b8994430`, `d7771fad` |
 
 ---
 
 ## 3. Notes for the merge
 
+- Carry-over for later tickets: a REST create still accepts a client `orderKey` and `pathSegment`; P-06 must assign `orderKey` on create and P-08 must compute `pathSegment` on create, overwriting any sent value. Page `folderPath` reads as undefined, not null, at the site root (P-08).
 - Commit `42dee943` carries an earlier wording of this file that named internal tooling paths. Squash the branch on merge so it does not reach `main`.
