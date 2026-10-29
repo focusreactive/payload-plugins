@@ -36,7 +36,11 @@ export const buildPathSegmentHook =
     if (req.locale === "all") {
       const merged = { ...storedSlugsByLocale, ...(isValuesByLocale(incoming) ? incoming : {}) };
 
-      return Object.fromEntries(localeCodes.map((code) => [code, toSegment(merged[code])]));
+      // Only locales the write names: a null for any other locale would create its locale row,
+      // and with it a NOT NULL failure on required localized fields and field defaults.
+      return Object.fromEntries(
+        localeCodes.filter((code) => code in merged).map((code) => [code, toSegment(merged[code])])
+      );
     }
 
     const locale = req.locale || defaultLocale;

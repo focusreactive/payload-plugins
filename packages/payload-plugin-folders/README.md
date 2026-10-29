@@ -63,6 +63,10 @@ and `pathSegment`, because the path is composed from them. They appear in the re
 
 - `fullPath` is null for a reader who cannot read folders: it is composed from the folder's path,
   and folder reads are public by default.
+- `fullPath` is also null for a page with no segment of its own in a locale when the read turns
+  the locale fallback off (`fallbackLocale: false`, or `localization.fallback: false` in the host
+  config), because the path has nothing to fall back to at read time. `buildSegmentWhere` still
+  finds that page, since it falls back in the query.
 - The host's own collection `afterRead` hooks run before the plugin's, so they see `fullPath`
   unset.
 - A page that existed before the plugin was installed has a null `pathSegment` until it is saved

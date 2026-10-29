@@ -355,6 +355,103 @@ describe("segment fallback", () => {
     expect(await findInGerman("article-one", false, "articles")).not.toContain(article.id);
   });
 
+  it("a locale all create and update on a required-title collection writes no de row", async () => {
+    const { payload } = harness;
+    const article = (await payload.create({
+      collection: "articles" as never,
+      data: {
+        slug: { en: "all-article" },
+        tagline: { en: "English tagline" },
+        title: { en: "All article" },
+      } as never,
+      depth: 0,
+      locale: "all" as never,
+      overrideAccess: true,
+    })) as unknown as { id: number };
+
+    const afterCreate = await readAllLocales(payload, article.id, false, "articles");
+    expect(Object.keys(afterCreate.pathSegment)).toEqual(["en"]);
+    expect(Object.keys(afterCreate.title)).toEqual(["en"]);
+    expect(afterCreate.pathSegment.en).toBe("all-article");
+
+    await payload.update({
+      collection: "articles" as never,
+      data: { slug: { en: "all-article-two" }, title: { en: "All article two" } } as never,
+      depth: 0,
+      id: article.id,
+      locale: "all" as never,
+      overrideAccess: true,
+    });
+
+    const afterUpdate = await readAllLocales(payload, article.id, false, "articles");
+    expect(Object.keys(afterUpdate.pathSegment)).toEqual(["en"]);
+    expect(Object.keys(afterUpdate.title)).toEqual(["en"]);
+    expect(Object.keys(afterUpdate.slug)).toEqual(["en"]);
+    expect(afterUpdate.pathSegment.en).toBe("all-article-two");
+    const german = (await payload.findByID({
+      collection: "articles" as never,
+      depth: 0,
+      id: article.id,
+      locale: "de",
+      overrideAccess: true,
+    })) as unknown as { tagline: string; title: string };
+    expect(german.tagline).toBe("English tagline");
+    expect(german.title).toBe("All article two");
+    expect(await findInGerman("all-article-two", false, "articles")).toContain(article.id);
+    expect(await findInGerman("all-article", false, "articles")).not.toContain(article.id);
+  });
+
+  it("a locale all create and update on pages stores no de segment", async () => {
+    const { payload } = harness;
+    const page = await payload.create({
+      collection: "pages",
+      data: { slug: { en: "all-page" }, title: { en: "All page" } } as never,
+      depth: 0,
+      locale: "all" as never,
+      overrideAccess: true,
+    });
+    // A versioned page gets a de row for its localized status whatever the segment does, so the
+    // claim here is that the segment itself is not stored for de (the articles case above proves
+    // that no row is created).
+    const created = await readAllLocales(payload, page.id);
+    expect(created.pathSegment.de ?? null).toBeNull();
+    expect(created.pathSegment.en).toBe("all-page");
+    expect(await findInGerman("all-page")).toContain(page.id);
+
+    await payload.update({
+      collection: "pages",
+      data: { slug: { en: "all-page-two" } } as never,
+      depth: 0,
+      // A draft save: the status row Payload keeps for de has a null title, which a published
+      // save would validate as required.
+      draft: true,
+      id: page.id,
+      locale: "all" as never,
+      overrideAccess: true,
+    });
+
+    const stored = await readAllLocales(payload, page.id, true);
+    expect(stored.pathSegment.de ?? null).toBeNull();
+    expect(stored.pathSegment.en).toBe("all-page-two");
+    expect(stored.title.de ?? null).toBeNull();
+    expect(await findInGerman("all-page-two", true)).toContain(page.id);
+
+    // A write that names de does store it.
+    await payload.update({
+      collection: "pages",
+      data: { slug: { de: "alle-seite" }, title: { de: "Alle Seite" } } as never,
+      depth: 0,
+      draft: true,
+      id: page.id,
+      locale: "all" as never,
+      overrideAccess: true,
+    });
+    expect((await readAllLocales(payload, page.id, true)).pathSegment).toEqual({
+      de: "alle-seite",
+      en: "all-page-two",
+    });
+  });
+
   it("a refresh leaves the caller's req.context and req.locale alone and later writes validated", async () => {
     const { payload } = harness;
     const req = await createTestRequest(payload);
