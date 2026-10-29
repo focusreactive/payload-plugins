@@ -227,8 +227,7 @@ describe("access control on moves", () => {
     expect(body.errors[0].data?.blocked).toEqual([
       {
         item: pageRef(tree.pages.contact.id),
-        message:
-          '"Contact" is published, and moving it changes its live URL: you need publish rights to move it',
+        message: "Moving this item changes a live URL: you need publish rights",
         reason: "forbidden",
       },
     ]);
@@ -295,8 +294,7 @@ describe("access control on moves", () => {
     expect(withLivePost.status).toBe(403);
     expect(withLivePost.body.errors[0].data?.blocked?.[0]).toMatchObject({
       item: folderRef(history.id),
-      message:
-        '"History" holds 1 published page whose live URL would change: you need publish rights to move it',
+      message: "Moving this item changes a live URL: you need publish rights",
     });
     expect(withLivePages.status).toBe(403);
     expect((await readStructure(payload, "folders", team.id)).folder).toBe(tree.blog.id);
@@ -323,7 +321,7 @@ describe("access control on moves", () => {
     expect(refused.body.errors[0].data?.blocked).toEqual([
       {
         item: pageRef(tree.pages.members.id),
-        message: 'You are not allowed to move "Members" here',
+        message: "You are not allowed to move this item here",
         reason: "forbidden",
       },
     ]);
@@ -579,7 +577,11 @@ describe("what the update access is asked", () => {
     }
 
     const orderKeyOf = (id: number) => result.orderKeys[`pages:${id}`];
-    expect(asked).toHaveLength(3);
+    // The first pass asks with the folder only, the late pass adds the order key, and the live
+    // page asks the publish question once more.
+    expect(asked).toHaveLength(5);
+    expect(asked).toContainEqual({ data: { folder: tree.blog.id }, id: tree.pages.contact.id });
+    expect(asked).toContainEqual({ data: { folder: tree.blog.id }, id: tree.pages.members.id });
     expect(asked).toContainEqual({
       data: { folder: tree.blog.id, orderKey: orderKeyOf(tree.pages.contact.id) },
       id: tree.pages.contact.id,
@@ -599,7 +601,7 @@ describe("what the update access is asked", () => {
     });
   });
 
-  it("asks the publish question for every published page beneath a moved folder", async () => {
+  it("asks the publish question once per collection and folder beneath a moved folder", async () => {
     const { payload } = harness;
     const tree = await seed();
     const asked: Array<Record<string, unknown> | undefined> = [];
@@ -621,17 +623,11 @@ describe("what the update access is asked", () => {
       pagesAccess.update = original;
     }
 
-    // The two live pages of about. Their folder and order key are their own, unchanged.
-    const stored = await readStructure(payload, "pages", tree.pages.contact.id);
-    expect(asked).toContainEqual({
-      _status: "published",
-      folder: tree.about.id,
-      id: tree.pages.contact.id,
-      orderKey: stored.orderKey,
-    });
-    expect(asked.map((entry) => entry?.id).sort()).toEqual(
-      [tree.pages.contact.id, tree.pages["about-us"].id].sort()
-    );
+    // The two live pages of about are one group. Their order key stays their own, so none is sent;
+    // the draft in team asks nothing.
+    expect(asked).toHaveLength(1);
+    expect(asked[0]).toMatchObject({ _status: "published", folder: tree.about.id });
+    expect(asked[0]).not.toHaveProperty("orderKey");
   });
 });
 

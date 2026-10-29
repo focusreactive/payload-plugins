@@ -59,6 +59,15 @@ GraphQL cannot express the fallback half: its `where` input has no locale-qualif
 When you read with a `select`, naming `fullPath` also loads `folder`, `folderPath`, `isFolderRoot`
 and `pathSegment`, because the path is composed from them. They appear in the result.
 
+## Access gates for moves and repair
+
+`access.move({ req, items, toFolder })` is an extra gate on every move, asked after the `update` and
+publish checks passed. `access.repair({ req })` decides who may verify and repair the tree. Without
+it, `canRepairTree` lets a user through when the folders' `update` access passes and `access.move`
+passes, and it calls `access.move` with an empty `items` list, because "every item" cannot be
+listed. A gate written as `items.every(...)` passes everyone that way, so set `access.repair` to
+keep repair for admins.
+
 ## Known limits
 
 - `fullPath` is null for a reader who cannot read folders: it is composed from the folder's path,

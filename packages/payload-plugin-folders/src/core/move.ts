@@ -18,7 +18,7 @@ import {
 } from "./folderRecords.js";
 import type { FolderRecord } from "./folderRecords.js";
 import { getDefaultLocaleKey, getFolderLocaleKeys, noLocaleKey } from "./locales.js";
-import { findForbiddenMoves } from "./moveAccess.js";
+import { findForbiddenMoves, findItemsRefusedUpdate, forbiddenMoveMessage } from "./moveAccess.js";
 import { planKeysForInsert } from "./orderKeys.js";
 import type { InsertPlan } from "./orderKeys.js";
 import { effectiveSegmentsOf, isPublishedInLocale, readPageRows } from "./pageRecords.js";
@@ -595,6 +595,22 @@ export const buildMovePlan = async (
   };
   const changesParent = (subject: Subject): boolean => !sameParent(subject.parentId, targetId);
 
+  // Access, first pass (spec section 5.4 order): may the user put each item into this folder at
+  // all? It runs before any check that reads the target's content, so a refused user is told
+  // "forbidden" and not that a path inside a folder they may not enter is taken.
+  if (!overrideAccess) {
+    const refusedUpdates = await findItemsRefusedUpdate({
+      items: live(),
+      req,
+      targetId,
+    });
+    for (const subject of live()) {
+      if (refusedUpdates.has(itemKey(subject.ref))) {
+        block(subject.ref, "forbidden", forbiddenMoveMessage);
+      }
+    }
+  }
+
   // Cycle.
   for (const subject of live()) {
     if (
@@ -995,7 +1011,6 @@ export const buildMovePlan = async (
   if (!overrideAccess) {
     const forbidden = await findForbiddenMoves({
       items,
-      labelOf: (ref) => labelOf(subjectByKey.get(itemKey(ref)) as Subject),
       options,
       req,
       targetId,

@@ -3,7 +3,7 @@ import type { PayloadRequest } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, ItemRef } from "../types.js";
-import { findRefusedChecks } from "./access.js";
+import { findRefusedChecks, forbiddenRenameMessage, isPublishRefusedBeneath } from "./access.js";
 import { normalizeFolderReference, planFolderPaths, readFolderRecord } from "./folderRecords.js";
 import type { FolderRecord } from "./folderRecords.js";
 import {
@@ -182,6 +182,23 @@ export const planFolderEdit = async (
     return emptyPreview(blocked, stored.parent);
   }
 
+  // A rename changes every live URL beneath the folder, so it needs the publish rights a move of
+  // those pages would (decision 23). This runs before any conflict is read, so a refused user is
+  // told nothing about the content around the folder.
+  const descendants = await readFolderDescendants(req, options, stored.id);
+  if (
+    !overrideAccess &&
+    (await isPublishRefusedBeneath({
+      folderIds: [stored.id, ...descendants.map((folder) => folder.id)],
+      options,
+      req,
+    }))
+  ) {
+    block("forbidden", forbiddenRenameMessage);
+
+    return emptyPreview(blocked, stored.parent);
+  }
+
   // Unlocalized folder segments apply in every locale a page can be read in.
   const pageKeys = getPageLocaleKeys(payload);
   for (const key of changedKeys) {
@@ -216,7 +233,6 @@ export const planFolderEdit = async (
     fullPath: selectWrittenPaths({ defaultKey, keys, plan, record: stored }),
     slug,
   };
-  const descendants = await readFolderDescendants(req, options, stored.id);
   const subtree = planSubtreeRewrite({
     descendants,
     options,

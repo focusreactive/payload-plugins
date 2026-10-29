@@ -1,14 +1,22 @@
-import type { Access, AccessResult, PayloadRequest, Where } from "payload";
+import type { Access, AccessResult, PayloadRequest, SelectType, Where } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, ItemRef, ResolvedOptions } from "../types.js";
 import { createNestedRequest } from "./nestedRequest.js";
+import { isPublishedStatus } from "./pageRecords.js";
 
 /** One question to a collection's `access.update` or `access.delete`. */
 export type AccessCheck = {
   collection: string;
   /** What the access function sees as `data`; for `update` only. */
   data?: Record<string, unknown>;
+  /**
+   * Makes the check stand for many documents of the collection: the function is asked once, with
+   * the `id` of the first, and a `Where` result is tested with one query on `scope`, which matches
+   * exactly `ids`. Any document the `Where` does not match refuses the whole check. Used where
+   * the documents are alike for access, such as the published pages in one folder.
+   */
+  group?: { ids: FolderId[]; scope: Where };
   id: FolderId;
   /** Names the check in the result of `findRefusedChecks`; unique per call. */
   key: string;
@@ -17,6 +25,10 @@ export type AccessCheck = {
 
 const isWhere = (result: AccessResult): result is Where =>
   Boolean(result) && typeof result === "object";
+
+const idsOf = (check: AccessCheck): FolderId[] => check.group?.ids ?? [check.id];
+
+type WhereGroup = { checks: AccessCheck[]; collection: string; scope: Where | null; where: Where };
 
 /**
  * Asks the collection's own `access.update` (or `access.delete`) about each check, as the user of
@@ -38,7 +50,7 @@ export const findRefusedChecks = async ({
   const { payload } = req;
   const refused = new Set<string>();
   const nestedRequest = createNestedRequest(req);
-  const groups = new Map<string, { checks: AccessCheck[]; collection: string; where: Where }>();
+  const groups = new Map<string, WhereGroup>();
 
   for (const check of checks) {
     const access = payload.collections[toCollectionSlug(check.collection)]?.config.access?.[
@@ -62,33 +74,102 @@ export const findRefusedChecks = async ({
       refused.add(check.key);
       continue;
     }
-    const groupKey = `${check.collection}\u0000${JSON.stringify(result)}`;
+    const scope = check.group?.scope ?? null;
+    const groupKey = `${check.collection}\u0000${JSON.stringify(result)}\u0000${scope ? JSON.stringify(scope) : ""}`;
     const group = groups.get(groupKey) ?? {
       checks: [],
       collection: check.collection,
+      scope,
       where: result,
     };
     group.checks.push(check);
     groups.set(groupKey, group);
   }
 
-  for (const { checks: groupChecks, collection, where } of groups.values()) {
+  for (const { checks: groupChecks, collection, scope, where } of groups.values()) {
     const { docs } = await payload.db.find({
       collection: toCollectionSlug(collection),
       pagination: false,
       req: nestedRequest,
       select: { id: true },
-      where: { and: [{ id: { in: groupChecks.map((check) => check.id) } }, where] },
+      where: {
+        and: [scope ?? { id: { in: groupChecks.flatMap((check) => idsOf(check)) } }, where],
+      },
     });
     const matched = new Set((docs as Array<{ id: FolderId }>).map((doc) => String(doc.id)));
     for (const check of groupChecks) {
-      if (!matched.has(String(check.id))) {
+      if (!idsOf(check).every((id) => matched.has(String(id)))) {
         refused.add(check.key);
       }
     }
   }
 
   return refused;
+};
+
+// Names no title and no path: a title is read with no read access check.
+export const forbiddenRenameMessage =
+  "Renaming this folder changes a live URL: you need publish rights";
+
+/**
+ * Whether the user of `req` is refused the publish question (`update` with `_status: 'published'`,
+ * spec section 9) for any published page in `folderIds`. A page there keeps its folder and order
+ * key when its folder moves or is renamed; only its URL changes. So the question is asked once per
+ * collection and folder, with no `orderKey`, and a `Where` result is tested with one query on that
+ * folder (decision 23). A collection without drafts has no unpublished pages, so each row counts.
+ * Collections and folders with no published page are never asked.
+ */
+export const isPublishRefusedBeneath = async ({
+  folderIds,
+  options,
+  req,
+}: {
+  folderIds: FolderId[];
+  options: ResolvedOptions;
+  req: PayloadRequest;
+}): Promise<boolean> => {
+  const { payload } = req;
+  const checks: AccessCheck[] = [];
+
+  for (const page of Object.values(options.collections)) {
+    const hasDrafts = Boolean(
+      payload.collections[toCollectionSlug(page.slug)]?.config.versions?.drafts
+    );
+    const { docs } = (await payload.db.find({
+      collection: toCollectionSlug(page.slug),
+      locale: "all",
+      pagination: false,
+      req,
+      select: { ...(hasDrafts ? { _status: true } : {}), folder: true } as SelectType,
+      where: { folder: { in: folderIds } },
+    })) as unknown as { docs: Array<Record<string, unknown>> };
+
+    const groupsByFolder = new Map<string, { folder: FolderId; ids: FolderId[] }>();
+    for (const row of docs) {
+      if (hasDrafts && !isPublishedStatus(row._status)) {
+        continue;
+      }
+      const folder =
+        typeof row.folder === "object" && row.folder
+          ? (row.folder as { id: FolderId }).id
+          : (row.folder as FolderId);
+      const group = groupsByFolder.get(String(folder)) ?? { folder, ids: [] };
+      group.ids.push(row.id as FolderId);
+      groupsByFolder.set(String(folder), group);
+    }
+    for (const { folder, ids } of groupsByFolder.values()) {
+      checks.push({
+        collection: page.slug,
+        data: { _status: "published", folder },
+        group: { ids, scope: { folder: { equals: folder } } },
+        id: ids[0],
+        key: `${page.slug}:${folder}`,
+        operation: "update",
+      });
+    }
+  }
+
+  return (await findRefusedChecks({ checks, req })).size > 0;
 };
 
 /**

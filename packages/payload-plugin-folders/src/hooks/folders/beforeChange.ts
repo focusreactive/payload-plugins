@@ -26,10 +26,16 @@ import {
 import { keyForNewItem } from "../../core/orderKeys.js";
 import { SEGMENT_ERROR_MESSAGE, isValidSegment } from "../../core/slugify.js";
 import { getPageDefaultLocale, getPageLocaleKeys, queryLocaleOf } from "../../core/uniqueness.js";
-import { assertSubtreeWithinLimit, pushFolderSnapshot } from "../../core/subtree.js";
+import {
+  assertSubtreeWithinLimit,
+  pushFolderSnapshot,
+  readFolderDescendants,
+} from "../../core/subtree.js";
+import { forbiddenRenameMessage, isPublishRefusedBeneath } from "../../core/access.js";
 import { describeTypeLockChange } from "../../core/typeLocks.js";
 import type { FolderId, ResolvedOptions } from "../../types.js";
 import { isInternalWrite } from "../context.js";
+import { isAccessOverridden } from "./overrideAccess.js";
 
 type FieldProblem = { locale?: string; message: string; path: string };
 
@@ -224,6 +230,19 @@ export const buildFolderBeforeChange =
         path: "slug",
         req,
       });
+      // A rename changes every live URL beneath the folder, so it needs the publish rights a move
+      // of those pages would (decision 23). A system call is never asked.
+      if (!isAccessOverridden(req)) {
+        const descendants = await readFolderDescendants(req, options, stored.id);
+        const isRefused = await isPublishRefusedBeneath({
+          folderIds: [stored.id, ...descendants.map((folder) => folder.id)],
+          options,
+          req,
+        });
+        if (isRefused) {
+          throw new APIError(forbiddenRenameMessage, 403, null, true);
+        }
+      }
     }
     if (
       stored &&

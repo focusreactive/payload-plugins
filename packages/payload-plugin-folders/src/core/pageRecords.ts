@@ -4,7 +4,7 @@ import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, ResolvedPageCollection } from "../types.js";
 import { normalizeFolderReference } from "./folderRecords.js";
 
-const isPublishedStatus = (status: unknown): boolean =>
+export const isPublishedStatus = (status: unknown): boolean =>
   status === "published" ||
   (Boolean(status) &&
     typeof status === "object" &&
