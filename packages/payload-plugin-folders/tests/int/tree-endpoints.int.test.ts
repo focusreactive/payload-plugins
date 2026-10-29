@@ -2,8 +2,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { createPayloadRequest } from "payload";
 import { generateNKeysBetween } from "payload/shared";
-import type { Payload, PayloadRequest } from "payload";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import type { Payload, PayloadRequest, Where } from "payload";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { getChildren, searchTree } from "../../src/server/index.js";
 import type { TreeItem } from "../../src/types.js";
@@ -70,6 +70,9 @@ const children = (
 ) => getChildren(request, args);
 
 const titles = (items: TreeItem[]): string[] => items.map((item) => item.title);
+
+const countsOf = (items: TreeItem[]) =>
+  Object.fromEntries(items.map((item) => [item.id, item.childCount]));
 
 const keyOf = (item: TreeItem): string => `${item.collection}:${item.id}`;
 
@@ -676,33 +679,6 @@ describe("GET /folders-tree/children", () => {
   });
 });
 
-describe("children p95", () => {
-  it("children p95 is under 300 ms with the large seed", async () => {
-    const { payload } = harness;
-    const request = await asUser(payload, "admin");
-    const tree = await seedTree(payload, { large: true });
-    const durations: number[] = [];
-
-    // about holds 20 folders of 49 posts each: the child counts read 980 rows.
-    for (let run = 0; run < 40; run += 1) {
-      const startedAt = performance.now();
-      const result = await children(request, { limit: 100, parent: tree.about.id });
-      durations.push(performance.now() - startedAt);
-      expect(result.items).toHaveLength(20);
-      expect(result.items.every((item) => item.childCount === 49)).toBe(true);
-    }
-    const sorted = [...durations].sort((left, right) => left - right);
-    const p95 = sorted[Math.ceil(sorted.length * 0.95) - 1];
-
-    mkdirSync(path.resolve(import.meta.dirname, "../../.run"), { recursive: true });
-    writeFileSync(
-      path.resolve(import.meta.dirname, `../../.run/g9-children-p95-${harness.databaseKind}.json`),
-      JSON.stringify({ medianMs: sorted[Math.floor(sorted.length / 2)], p95Ms: p95, runs: 40 })
-    );
-    expect(p95).toBeLessThan(300);
-  });
-});
-
 const search = (
   request: PayloadRequest,
   args: {
@@ -1155,6 +1131,103 @@ describe("tree reads and a read access that returns a Where", () => {
       expect(result.items.every((item) => item.access.update)).toBe(true);
     } finally {
       await hostApp.destroy();
+    }
+  });
+});
+
+describe("child counts counted per folder", () => {
+  const allowedFolderIds: number[] = [];
+  /** Readable by the folder, or by a title: a clause on a localized field. */
+  const readableRows = (): Where => ({
+    or: [{ folder: { in: allowedFolderIds } }, { title: { equals: "Visible" } }],
+  });
+
+  it("count the same rows as the read path, with a read Where on a localized field", async () => {
+    const hostApp = await getTestPayload({
+      extraCollections: [
+        {
+          slug: "notes",
+          access: {
+            read: ({ req }) => (req.user ? readableRows() : false),
+          },
+          fields: [
+            { name: "title", type: "text", localized: true },
+            { name: "slug", type: "text" },
+          ],
+        },
+      ],
+      foldersOptions: { collections: { notes: true } as never },
+    });
+    try {
+      const { payload } = hostApp;
+      const open = await createFolder(payload, { name: "Open", slug: "open" });
+      const closed = await createFolder(payload, { name: "Closed", slug: "closed" });
+      let sequence = 0;
+      const note = async (folder: number, title: string): Promise<void> => {
+        sequence += 1;
+        const created = await payload.create({
+          collection: "notes" as never,
+          data: { folder, slug: `note-${sequence}`, title } as never,
+          depth: 0,
+          locale: "en",
+          overrideAccess: true,
+        });
+        await payload.update({
+          collection: "notes" as never,
+          data: { title: `${title} de` } as never,
+          depth: 0,
+          id: (created as { id: number }).id,
+          locale: "de",
+          overrideAccess: true,
+        });
+      };
+      // open: two rows, both readable (one by its folder, one by its title). closed: one readable by
+      // its title and two that no clause lets through.
+      await note(open.id, "Alpha");
+      await note(open.id, "Visible");
+      await note(closed.id, "Visible");
+      await note(closed.id, "Hidden one");
+      await note(closed.id, "Hidden two");
+      allowedFolderIds.push(open.id);
+      const admin = await asUser(payload, "admin");
+
+      for (const locale of ["en", "de"]) {
+        const read = await children(admin, { locale, parent: null });
+        const counted = await children(admin, { childCountReadLimit: 0, locale, parent: null });
+
+        expect(countsOf(read.items)).toEqual({ [open.id]: 2, [closed.id]: 1 });
+        // Counted per folder, the access filtering and the numbers are the read path's.
+        expect(countsOf(counted.items)).toEqual(countsOf(read.items));
+      }
+    } finally {
+      await hostApp.destroy();
+    }
+  });
+});
+
+describe("internal read limits", () => {
+  it("a larger candidateLimit or childCountReadLimit is lowered to the default before it reaches the database", async () => {
+    const { payload } = harness;
+    const request = await asUser(payload, "admin");
+    const folder = await createFolder(payload, { slug: "limits" });
+    await createInternal(payload, "pages", {
+      folder: folder.id,
+      orderKey: "a0",
+      slug: "limited-page",
+      title: "Limited page",
+    });
+    const spy = vi.spyOn(payload.db, "find");
+    try {
+      await search(request, { query: "limited", scope: "all" }, { candidateLimit: 1_000_000_000 });
+      await children(request, { childCountReadLimit: 1_000_000_000, parent: null });
+
+      const limits = spy.mock.calls.map(([args]) => (args as { limit?: number }).limit ?? 0);
+      // The search asks for one more than its cap (500), the child count read for one more than its (5,000).
+      expect(Math.max(...limits)).toBe(5001);
+      expect(limits.filter((limit) => limit > 501 && limit !== 5001)).toEqual([]);
+      expect(limits).toContain(501);
+    } finally {
+      spy.mockRestore();
     }
   });
 });

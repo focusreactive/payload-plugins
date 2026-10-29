@@ -111,7 +111,7 @@ For the admin tree, all of them need a signed-in user and read each collection t
   Titles and paths follow the requested locale with the default-locale fallback. A page of up to
   100 rows across two page collections costs at most 12 database calls.
 - `GET /api/folders-tree/search?q=&folder=root|<id>&scope=folder|all&locale=&types=&status=&limit=`
-  returns `{ items }` ordered by full path. Words are ANDed, `"a phrase"` is matched exactly, and a
+  returns `{ items, truncated }` ordered by full path (`truncated` below). Words are ANDed, `"a phrase"` is matched exactly, and a
   word equal to a page type's label (`article`, or `folder`) limits the results to that type. The
   scope is the folder's subtree by `ancestorIds`.
 - `GET /api/folders-tree/ancestors?collection=&id=` returns `{ folders }`, root first.
@@ -134,8 +134,9 @@ Costs beyond the 12 database calls of a user whose access answers `true`:
   `truncated: true` and the list may miss matches; narrow the search. A `status` filter is applied
   in the query where the main row decides it (the default locale), so the cap is not spent on pages
   that cannot match.
-- A page whose folder the user cannot read comes back with `fullPath: ""`, `depth: null` and no
-  `ancestorIds`: its place in the tree is not theirs to know, and none is invented.
+- A page whose folder the user cannot read comes back with `fullPath: ""`, `depth: null` (the
+  `depth` of a `TreeItem` is `number | null`) and no `ancestorIds`: its place in the tree is not
+  theirs to know, and none is invented.
 
 ## Dev seed
 

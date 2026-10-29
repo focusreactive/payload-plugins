@@ -48,6 +48,7 @@
     "test:unit": "vitest run --project unit",
     "test:int": "vitest run --project int",
     "test:int:postgres": "cross-env TEST_DB=postgres vitest run --project int",
+    "test:perf": "vitest run --project perf",
     "test:e2e": "playwright test"
   },
   "dependencies": {},

@@ -28,6 +28,20 @@ export default defineConfig({
           testTimeout: integrationTimeoutMs,
         },
       },
+      {
+        test: {
+          name: "perf",
+          environment: "node",
+          // Timing budgets: one file at a time, never beside the integration files.
+          fileParallelism: false,
+          hookTimeout: integrationTimeoutMs,
+          include: ["tests/perf/**/*.perf.test.ts"],
+          isolate: true,
+          pool: "forks",
+          server: { deps: { inline: ["@payloadcms/graphql", "graphql"] } },
+          testTimeout: integrationTimeoutMs,
+        },
+      },
     ],
   },
 });

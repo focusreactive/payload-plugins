@@ -26,6 +26,9 @@ npm run test:int
 step "integration tests (Postgres)"
 npm run test:int:postgres
 
+step "perf budgets (SQLite, one file at a time)"
+npm run test:perf
+
 step "build"
 npm run build
 

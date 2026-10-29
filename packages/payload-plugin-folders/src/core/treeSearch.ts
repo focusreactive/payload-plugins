@@ -4,6 +4,7 @@ import { toCollectionSlug } from "../collectionSlug.js";
 import { getResolvedOptions } from "./runtime.js";
 import type { FolderId, ResolvedOptions, TreeItem, TreeStatus } from "../types.js";
 import type { FolderRecord } from "./folderRecords.js";
+import { clampInternalLimit } from "./limits.js";
 import { effectiveSegmentsOf } from "./pageRecords.js";
 import {
   buildSources,
@@ -28,7 +29,10 @@ export const maxSearchLimit = 200;
 export const searchCandidateLimit = 500;
 
 export type SearchArgs = {
-  /** Candidates read per collection (default 500); a lower value is for tests. */
+  /**
+   * For tests: candidates read per collection. Values above the default (500) are lowered to it.
+   * @internal
+   */
   candidateLimit?: number;
   /** The zoomed folder; `null` is the top level. */
   folder: FolderId | null;
@@ -339,7 +343,11 @@ export const searchTree = async (
   args: SearchArgs,
   options: ResolvedOptions = getResolvedOptions(req.payload)
 ): Promise<{ items: TreeItem[]; truncated: boolean }> => {
-  const candidateLimit = Math.max(Math.trunc(args.candidateLimit ?? searchCandidateLimit), 1);
+  const candidateLimit = clampInternalLimit({
+    defaultValue: searchCandidateLimit,
+    minimum: 1,
+    value: args.candidateLimit,
+  });
   const limit = Math.min(Math.max(Math.trunc(args.limit ?? defaultSearchLimit), 1), maxSearchLimit);
   const view = resolveViewLocale(req, options, args.locale);
   const allSources = await buildSources(req, options);

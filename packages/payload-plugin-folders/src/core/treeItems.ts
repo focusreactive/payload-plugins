@@ -9,6 +9,7 @@ import type {
   TreeItem,
 } from "../types.js";
 import { getItemsAccess, getReadScope } from "./access.js";
+import { clampInternalLimit } from "./limits.js";
 import type { ReadScope } from "./access.js";
 import { normalizeFolderReference, toFolderRecord } from "./folderRecords.js";
 import type { FolderRecord } from "./folderRecords.js";
@@ -247,6 +248,8 @@ const countByCounting = async ({
   for (const folderId of folderIds) {
     const { totalDocs } = await req.payload.db.count({
       collection,
+      // The read path reads with every locale; a read access `Where` on a localized field needs one.
+      locale: "all",
       req,
       where: {
         and: [{ [source.parentField]: { equals: folderId } }, ...sourceClauses(req, source)],
@@ -445,7 +448,7 @@ const toPageItem = ({
  * `parents` holds the folder record of every page's folder, which a page path is composed from.
  */
 export const buildTreeItems = async ({
-  childCountLimit = childCountReadLimit,
+  childCountLimit,
   options,
   parents,
   req,
@@ -453,7 +456,11 @@ export const buildTreeItems = async ({
   sources,
   view,
 }: {
-  /** Rows read per collection for child counts before they are counted instead. */
+  /**
+   * Rows read per collection for child counts before they are counted instead; never more than
+   * `childCountReadLimit`.
+   * @internal
+   */
   childCountLimit?: number;
   options: ResolvedOptions;
   parents: Map<string, FolderRecord>;
@@ -472,7 +479,11 @@ export const buildTreeItems = async ({
     .map(({ doc }) => doc.id as FolderId);
   const counts = await readChildCounts({
     folderIds,
-    limit: childCountLimit,
+    limit: clampInternalLimit({
+      defaultValue: childCountReadLimit,
+      minimum: 0,
+      value: childCountLimit,
+    }),
     req,
     sources,
   });

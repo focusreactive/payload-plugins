@@ -20,7 +20,11 @@ import type { TreeRow, TreeSource } from "./treeItems.js";
 import { readRevision } from "./treeLock.js";
 
 export type ChildrenArgs = {
-  /** Rows read per collection for the child counts before they are counted instead (tests). */
+  /**
+   * For tests: rows read per collection for the child counts before they are counted instead.
+   * Values above the default (5,000) are lowered to it.
+   * @internal
+   */
   childCountReadLimit?: number;
   /** An opaque `nextCursor` of an earlier answer. */
   cursor?: string | null;
