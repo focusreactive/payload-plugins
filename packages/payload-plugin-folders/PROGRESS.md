@@ -96,6 +96,12 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     segment uses one exported query helper that matches `pathSegment = X`, or `pathSegment` absent and
     `pathSegment.<defaultLocale> = X` (a locale-qualified path, `payload/dist/database/getLocalizedPaths.js:98-102`).
     The README documents the helper and the raw `where` for REST. P-09's grep test still applies.
+20. **Move conflicts count published pages only (G6).** Spec §5.4 says a move checks conflicts
+    "against main rows", which includes draft-only pages, while §2.6 lets two drafts share a segment
+    and only blocks publishing it, and G4's publish check and root-page check are published-only. The
+    G6 planner mixed them: segment conflicts counted drafts, root-page conflicts did not. Decision:
+    both move checks count published pages only, the same rule as a save, so a move never blocks
+    on something a save would allow; the publish-time check still stops the second page going live.
 
 ### Owner decisions (from spec/review.md, the spec writer's pick applies)
 
