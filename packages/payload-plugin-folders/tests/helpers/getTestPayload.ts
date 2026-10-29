@@ -31,11 +31,14 @@ export type TestPayload = {
   /** Destroys the Payload instance and removes this file's database. */
   destroy: () => Promise<void>;
   payload: Payload;
+  /** Postgres only: the schema this instance's tables live in, which `sharedWith` reuses. */
+  schemaName?: string;
 };
 
 type TestDatabase = {
   adapter: Config["db"];
   cleanup: () => Promise<void>;
+  schemaName?: string;
 };
 
 const createSqliteDatabase = async (transactions: boolean): Promise<TestDatabase> => {
@@ -51,12 +54,24 @@ const createSqliteDatabase = async (transactions: boolean): Promise<TestDatabase
   };
 };
 
-const createPostgresDatabase = async (): Promise<TestDatabase> => {
+const createPostgresDatabase = async (sharedSchemaName?: string): Promise<TestDatabase> => {
   const connectionString = process.env[postgresConnectionEnvironmentKey];
   if (!connectionString) {
     throw new Error(
       "Postgres is not running: run the tests through `npm run test:int:postgres`, which starts it"
     );
+  }
+
+  if (sharedSchemaName) {
+    // A second instance on an existing schema, the stand-in for a second server process; the
+    // first instance's destroy() removes the schema.
+    return {
+      adapter: postgresAdapter({
+        pool: { connectionString, max: testPoolMaxConnections },
+        schemaName: sharedSchemaName,
+      }),
+      cleanup: () => Promise.resolve(),
+    };
   }
 
   // A fresh schema per test file keeps files independent on one shared cluster.
@@ -74,6 +89,7 @@ const createPostgresDatabase = async (): Promise<TestDatabase> => {
       pool: { connectionString, max: testPoolMaxConnections },
       schemaName,
     }),
+    schemaName,
     cleanup: async () => {
       await adminPool.query(`DROP SCHEMA "${schemaName}" CASCADE`);
       await adminPool.end();
@@ -85,6 +101,11 @@ export type GetTestPayloadOptions = Pick<
   DevConfigOptions,
   "extraCollections" | "foldersOptions" | "localized"
 > & {
+  /**
+   * Postgres only: boots this instance on the database of an instance already running, as a second
+   * server process would. Destroy it before the instance it shares with.
+   */
+  sharedWith?: TestPayload;
   /** SQLite only: false boots the adapter without transactions, as a host that left them off would. */
   sqliteTransactions?: boolean;
 };
@@ -93,12 +114,16 @@ export const getTestPayload = async ({
   extraCollections,
   foldersOptions,
   localized,
+  sharedWith,
   sqliteTransactions = true,
 }: GetTestPayloadOptions = {}): Promise<TestPayload> => {
   const databaseKind: TestDatabaseKind = process.env.TEST_DB === "postgres" ? "postgres" : "sqlite";
+  if (sharedWith && databaseKind !== "postgres") {
+    throw new Error("sharedWith needs Postgres: two SQLite writers on one file do not queue");
+  }
   const database =
     databaseKind === "postgres"
-      ? await createPostgresDatabase()
+      ? await createPostgresDatabase(sharedWith?.schemaName)
       : await createSqliteDatabase(sqliteTransactions);
 
   try {
@@ -122,6 +147,7 @@ export const getTestPayload = async ({
         await database.cleanup();
       },
       payload,
+      schemaName: database.schemaName ?? sharedWith?.schemaName,
     };
   } catch (error) {
     await database.cleanup();

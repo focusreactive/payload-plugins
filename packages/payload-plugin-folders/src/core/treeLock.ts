@@ -6,6 +6,19 @@ import { withTransaction } from "./transaction.js";
 /** Longest a writer waits for the lock before it fails, so a lost release cannot hang the server. */
 export const treeLockTimeoutMs = 30_000;
 
+let currentTreeLockTimeoutMs = treeLockTimeoutMs;
+
+/** Shortens the wait so a test can prove the timeout error in milliseconds; returns the old wait. */
+export const setTreeLockTimeoutMs = (timeoutMs: number): number => {
+  const previous = currentTreeLockTimeoutMs;
+  currentTreeLockTimeoutMs = timeoutMs;
+
+  return previous;
+};
+
+export const treeLockTimeoutMessage = (timeoutMs: number): string =>
+  `Timed out after ${timeoutMs} ms waiting for the folder tree lock. If this write runs inside a hook of another tree write, pass the hook's req to every nested payload call so it joins that transaction.`;
+
 type Release = () => void;
 
 /** A first-come, first-served mutex whose waiters give up after a timeout. */
@@ -54,7 +67,7 @@ export class AsyncMutex {
         if (index !== -1) {
           this.waiters.splice(index, 1);
         }
-        reject(new Error(`Timed out after ${timeoutMs} ms waiting for the folder tree lock`));
+        reject(new Error(treeLockTimeoutMessage(timeoutMs)));
       }, timeoutMs);
       this.waiters.push(waiter);
     });
@@ -146,7 +159,7 @@ export const installTreeLockTracking = (payload: Payload, adapter: object): void
 
   if (originalBegin && target.name === "sqlite") {
     target.beginTransaction = async function beginTransaction(...args) {
-      const release = await runtime.mutex.acquire(treeLockTimeoutMs);
+      const release = await runtime.mutex.acquire(currentTreeLockTimeoutMs);
       try {
         const transactionID = await originalBegin.apply(this, args);
         const transactionKey = toTransactionKey(transactionID);
@@ -242,7 +255,7 @@ export const acquireTreeLock = async (req: PayloadRequest): Promise<boolean> => 
     return false;
   }
 
-  const release = await runtime.mutex.acquire(treeLockTimeoutMs);
+  const release = await runtime.mutex.acquire(currentTreeLockTimeoutMs);
   const transactionKey = await resolveTransactionKey(req.transactionID);
 
   if (transactionKey === undefined) {
@@ -328,22 +341,56 @@ export const releaseUnboundTreeLock = (req: PayloadRequest): void => {
 export const isTreeLockHeld = (payload: Payload): boolean =>
   runtimes.get(payload)?.mutex.locked ?? false;
 
+type TreeStateInsert = {
+  onConflictDoNothing: () => Promise<unknown>;
+};
+
+type TreeStateDatabase = {
+  drizzle?: {
+    insert: (table: unknown) => { values: (values: Record<string, unknown>) => TreeStateInsert };
+  };
+  tableNameMap?: Map<string, string>;
+  tables?: Record<string, unknown>;
+};
+
+/** The one tree-state row always has this id, so a second insert hits the primary key. */
+const treeStateRowId = 1;
+
 /**
  * Creates the tree-state row when it is missing. The first `updateGlobal` on an empty table is an
  * INSERT, which takes no row lock, so two processes could each insert their own row and never
  * queue on one.
+ *
+ * The insert names the row's id and does nothing when the id exists, so two processes booting a
+ * fresh database end up with one row whoever inserts first. A database that already holds a row
+ * (any id) is left alone by the check before it.
  */
 export const seedTreeState = async (payload: Payload): Promise<void> => {
   const existing = (await payload.db.findGlobal({ slug: treeStateSlug as never })) as {
     id?: number | string;
   };
-  if (existing.id === undefined) {
+  if (existing.id !== undefined) {
+    return;
+  }
+
+  const database = payload.db as unknown as TreeStateDatabase;
+  const tableName = database.tableNameMap?.get(treeStateSlug.replaceAll("-", "_"));
+  const table = tableName === undefined ? undefined : database.tables?.[tableName];
+  if (!(database.drizzle && table)) {
     await payload.db.createGlobal({
       data: { revision: 0 },
       returning: false,
       slug: treeStateSlug as never,
     });
+
+    return;
   }
+
+  const now = new Date().toISOString();
+  await database.drizzle
+    .insert(table)
+    .values({ createdAt: now, id: treeStateRowId, revision: 0, updatedAt: now })
+    .onConflictDoNothing();
 };
 
 /**

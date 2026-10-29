@@ -90,8 +90,12 @@ Every write that changes the tree (a folder or page create, a folder update, a m
 one tree lock per Payload instance. It lives as long as the write's database transaction.
 
 - A host hook that calls `payload.create` or `payload.update` on a folder or page without passing
-  `req`, inside a tree write, opens its own transaction and waits for the lock its caller holds. It
-  fails after the 30 second lock timeout. Always pass `req` to nested Local API calls.
+  `req`, inside a tree write, opens its own transaction and waits for the lock its caller holds,
+  while the caller waits for it. The plugin cannot tell this from an ordinary second writer, so it
+  cannot fail faster than the 30 second lock timeout; the error then says "Timed out after 30000
+  ms waiting for the folder tree lock" and names the cause, and the outer write rolls back. Always
+  pass `req` to nested Local API calls, as a shallow copy (`req: { ...req }`) if the nested call
+  would change the caller's `context` or `locale`.
 - On Postgres, queued tree writers each hold a pool connection while they wait. More parallel tree
   writes than the pool size starve other requests; size the pool for your write concurrency.
 - On SQLite without `transactionOptions`, a failed operation keeps the lock until a 5 second
