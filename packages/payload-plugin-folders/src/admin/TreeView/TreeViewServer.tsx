@@ -14,6 +14,8 @@ export type TreeViewSettings = {
   confirmMoves: ConfirmMoves;
   /** Whether a folder's allowed types refuse a move; off turns the refusal into a warning. */
   enforceAllowedTypesOnMove: boolean;
+  /** The slug of the folders collection, which the admin needs to tell folders from pages. */
+  foldersSlug: string;
   pageSize: number;
   /** Page collection slug to its Type column label setting. */
   typeLabels: Record<string, TypeLabelSetting>;
@@ -35,6 +37,7 @@ export const TreeViewServer = ({
   ] ?? {
     confirmMoves: "urlChange",
     enforceAllowedTypesOnMove: true,
+    foldersSlug: collectionConfig.slug,
     pageSize: defaultPageSize,
     typeLabels: {},
   };
@@ -56,6 +59,7 @@ export const TreeViewServer = ({
     <TreeViewClient
       confirmMoves={settings.confirmMoves ?? "urlChange"}
       enforceAllowedTypesOnMove={settings.enforceAllowedTypesOnMove ?? true}
+      foldersSlug={settings.foldersSlug ?? collectionConfig.slug}
       initialLocale={locale?.code ?? null}
       pageSize={settings.pageSize}
       title={title}

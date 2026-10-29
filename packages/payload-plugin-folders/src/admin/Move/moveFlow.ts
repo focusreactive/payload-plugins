@@ -144,9 +144,15 @@ export const buildUndoRequests = (
     const refs = items.map(({ collection, id }) => ({ collection, id }));
 
     // The store needs the folder the rows land in, which an `after` request names only by a row.
+    // The anchor was a sibling of the rows, so `first.parentId` is where it was when the editor
+    // moved them: the server refuses the undo when it has been somewhere else since.
     return first.anchor
       ? {
-          body: { after: first.anchor, items, redirects: false },
+          body: {
+            after: { ...first.anchor, expected: { parentId: first.parentId } },
+            items,
+            redirects: false,
+          },
           optimistic: { after: first.anchor, items: refs, toFolder: first.parentId },
         }
       : {
@@ -181,16 +187,35 @@ export const runMove = async (
   return { result, snapshots, target };
 };
 
+/** How far an undo got: `failure` is the refusal of the first group that was refused, if any. */
+export type UndoReport = {
+  failure: unknown;
+  /** Items in the groups that went back. */
+  movedBack: number;
+  /** Items the undo set out to put back. */
+  total: number;
+};
+
 /**
  * Puts the moved items back, one request per group (see `buildUndoRequests`). Groups run one after
- * the other; a group that is refused leaves the earlier ones undone and throws.
+ * the other. A group that is refused stops the undo and leaves the earlier groups undone, and the
+ * report says how many items went back, so the caller can say "2 of 3" and not a bare failure.
  */
 export const undoMove = async (
   { context, store }: { context: FoldersApiContext; store: TreeStore },
   outcome: MoveOutcome
-): Promise<void> => {
+): Promise<UndoReport> => {
   const requests = buildUndoRequests(outcome.snapshots, outcome.result, outcome.target.toFolder);
+  const total = requests.reduce((sum, { body }) => sum + body.items.length, 0);
+  let movedBack = 0;
   for (const { body, optimistic } of requests) {
-    await store.runOptimisticMove(optimistic, () => postMove(context, body));
+    try {
+      await store.runOptimisticMove(optimistic, () => postMove(context, body));
+    } catch (failure) {
+      return { failure, movedBack, total };
+    }
+    movedBack += body.items.length;
   }
+
+  return { failure: null, movedBack, total };
 };

@@ -21,6 +21,8 @@ export type TreeViewClientProps = {
   confirmMoves: ConfirmMoves;
   /** Whether a folder's allowed types refuse a move, for the folders the picker greys out. */
   enforceAllowedTypesOnMove: boolean;
+  /** The slug of the folders collection. */
+  foldersSlug: string;
   /** The locale the server rendered the list in; the client's own locale wins once it is known. */
   initialLocale: string | null;
   pageSize: number;
@@ -33,6 +35,7 @@ export type TreeViewClientProps = {
 export const TreeViewClient = ({
   confirmMoves,
   enforceAllowedTypesOnMove,
+  foldersSlug,
   initialLocale,
   pageSize,
   title,
@@ -84,6 +87,7 @@ export const TreeViewClient = ({
           adminRoute={adminRoute}
           confirmMoves={confirmMoves}
           enforceAllowedTypesOnMove={enforceAllowedTypesOnMove}
+          foldersSlug={foldersSlug}
           language={language}
           onOpenPage={(url) => router.push(url)}
           pageSize={pageSize}

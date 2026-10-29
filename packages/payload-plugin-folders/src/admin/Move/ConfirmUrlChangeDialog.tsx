@@ -29,6 +29,8 @@ export type ConfirmRequest = {
 };
 
 export type ConfirmUrlChangeDialogProps = {
+  /** A move is in flight: the confirm button is off, so a second move cannot start. */
+  busy: boolean;
   /** How many languages the admin has; the "across N languages" count shows with two or more. */
   languageCount: number;
   /** Runs the move; `redirects` is the checkbox. The dialog closes when it resolves. */
@@ -82,6 +84,7 @@ const Summary = ({
  * Move button, only the reasons.
  */
 const ConfirmContent = ({
+  busy,
   languageCount,
   onConfirm,
   onReload,
@@ -176,7 +179,12 @@ const ConfirmContent = ({
       </DialogBody>
       <DialogFooter>
         <DialogCancel label={translate("actionCancel")} />
-        {request.preview.ok ? (
+        {request.preview.ok && busy ? (
+          <Button disabled margin={false} size="medium">
+            {translate("confirmMoving")}
+          </Button>
+        ) : null}
+        {request.preview.ok && !busy ? (
           <DialogConfirm
             label={translate("confirmMoveButton")}
             loadingLabel={translate("confirmMoving")}

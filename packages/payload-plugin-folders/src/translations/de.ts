@@ -53,6 +53,7 @@ export const de: FoldersTranslations = {
     moved_other: "{{count}} Einträge verschoben",
     movedBack_one: "{{count}} Eintrag zurückverschoben",
     movedBack_other: "{{count}} Einträge zurückverschoben",
+    movedBackPartial: "{{moved}} von {{total}} Einträgen zurückverschoben",
     moveFailed: "Die Auswahl konnte nicht verschoben werden",
     moveToCycle:
       "Ein Ordner kann nicht in sich selbst oder einen seiner Unterordner verschoben werden",

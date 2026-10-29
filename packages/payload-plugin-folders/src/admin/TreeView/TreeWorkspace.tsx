@@ -16,6 +16,7 @@ export type TreeWorkspaceProps = {
   adminRoute: string;
   confirmMoves: ConfirmMoves;
   enforceAllowedTypesOnMove: boolean;
+  foldersSlug: string;
   language: string;
   onOpenPage: (url: string) => void;
   pageSize: number;
@@ -34,6 +35,7 @@ export const TreeWorkspace = ({
   adminRoute,
   confirmMoves,
   enforceAllowedTypesOnMove,
+  foldersSlug,
   language,
   onOpenPage,
   pageSize,
@@ -54,6 +56,7 @@ export const TreeWorkspace = ({
   const moveFlow = useMoveFlow({
     confirmMoves,
     enforceAllowedTypesOnMove,
+    foldersSlug,
     languageCount,
     onMoved: clear,
     onMoveFailed: select,
@@ -78,6 +81,7 @@ export const TreeWorkspace = ({
     <>
       {selection.items.length > 0 ? (
         <BulkToolbar
+          busy={moveFlow.isMoving}
           items={selection.items}
           onAction={runAction}
           onCancel={clear}

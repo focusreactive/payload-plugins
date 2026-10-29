@@ -55,6 +55,7 @@ export const en = {
     moved_other: "Moved {{count}} items",
     movedBack_one: "Moved {{count}} item back",
     movedBack_other: "Moved {{count}} items back",
+    movedBackPartial: "Moved {{moved}} of {{total}} items back",
     moveFailed: "Could not move the selection",
     moveToCycle: "A folder cannot be moved into itself or one of its subfolders",
     moveToEmptyFolder: "No subfolders",

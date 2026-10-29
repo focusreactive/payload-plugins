@@ -58,6 +58,8 @@ test.afterAll(async ({ baseURL, playwright }) => {
   }
 });
 
+const centre = (box: { width: number; x: number } | null) => (box?.x ?? 0) + (box?.width ?? 0) / 2;
+
 const addPage = async (
   request: Parameters<typeof createPage>[0],
   title: string,
@@ -153,13 +155,24 @@ test("a folder's own child is disabled with the reason", async ({ page }) => {
   await expect(pickerRow(dialog, "Blog")).toHaveAttribute("aria-disabled", "true");
   await expect(pickerRow(dialog, "Products")).not.toHaveAttribute("aria-disabled", "true");
   await child.hover();
-  // Blog still has the keyboard focus, so its tooltip shows too; both give the same reason.
-  await expect(
-    page
-      .getByRole("tooltip")
-      .filter({ hasText: "A folder cannot be moved into itself or one of its subfolders" })
-      .first()
-  ).toBeVisible();
+  // Blog still has the keyboard focus, and the tooltip moves to the row under the pointer: only
+  // one shows at a time.
+  const reason = "A folder cannot be moved into itself or one of its subfolders";
+  const shown = page.locator(".tooltip--show");
+  await expect(shown).toHaveCount(1);
+  await expect(shown).toHaveText(reason);
+  // It hangs from the folder's name, not from the middle of the full-width row.
+  const tooltipBox = await shown.boundingBox();
+  const titleBox = await child.locator(".fr-folders-picker__title").boundingBox();
+  const rowBox = await child.boundingBox();
+  expect(tooltipBox && titleBox && rowBox).toBeTruthy();
+  expect(Math.abs(centre(tooltipBox) - centre(titleBox))).toBeLessThan(
+    Math.abs(centre(tooltipBox) - centre(rowBox))
+  );
+  // Moving the focus to another disabled row takes the tooltip with it.
+  await pickerRow(dialog, "Blog").focus();
+  await page.mouse.move(0, 0);
+  await expect(shown).toHaveCount(1);
 
   // Pressing a disabled folder picks nothing (forced: Playwright refuses to click what is disabled).
   await child.click({ force: true });
@@ -240,6 +253,12 @@ test("Undo puts the item back", async ({ page, request }) => {
     before
   );
   expect(await childrenOf(request, newsId)).toEqual([]);
+  // Back at the old paths: the old paths' redirect rows went when the pages took them again, and
+  // the undo wrote none for the paths in News.
+  for (const slug of ["undo-alpha", "undo-beta"]) {
+    expect(await redirectsFrom(request, `/staging/${slug}`)).toBe(0);
+    expect(await redirectsFrom(request, `/news/${slug}`)).toBe(0);
+  }
   // The undo is one request as well, and the rows are back under Staging in their old order.
   expect(moveRequests).toHaveLength(2);
   const rows = page.locator('[data-testid="tree-row"][data-kind="page"][data-title^="Undo "]');
@@ -302,14 +321,20 @@ test("the folder search finds a nested folder and greys it out for a page it doe
   await expect(hit).toContainText("/blog/2026");
   await expect(hit).toHaveAttribute("aria-disabled", "true");
   await hit.hover();
-  await expect(page.getByRole("tooltip")).toHaveText("/blog/2026 accepts only Blog post pages");
+  await expect(page.locator(".tooltip--show")).toHaveText(
+    "/blog/2026 accepts only Blog post pages"
+  );
 
   await dialog.getByRole("searchbox", { name: "Search folders" }).fill("nothing like this");
   await expect(dialog.getByText('No folders match "nothing like this"')).toBeVisible();
 });
 
-test("a refused move puts the rows back and offers Reload", async ({ page, request }) => {
-  await addPage(request, "Refused Probe");
+test("a refused move puts the rows back, and Reload reads the folders again", async ({
+  page,
+  request,
+}) => {
+  const id = await addPage(request, "Refused Probe");
+  await page.route("**/api/folders-tree/revision", (route) => route.abort());
   await openStaging(page);
   await page.route("**/api/folders-tree/move", async (route) => {
     // The preview passed; the move itself is refused, as when the tree changed in between.
@@ -336,13 +361,126 @@ test("a refused move puts the rows back and offers Reload", async ({ page, reque
   await expect(
     page.getByText("This part of the tree changed. Reload and try again.")
   ).toBeVisible();
-  await expect(page.getByRole("button", { exact: true, name: "Reload" })).toBeVisible();
+  const reload = page.getByRole("button", { exact: true, name: "Reload" });
+  await expect(reload).toBeVisible();
   // The row is back where it was, and the server never moved it.
   await expect(pageRow(page, "Refused Probe")).toBeVisible();
   expect((await childrenOf(request, stagingId)).map((row) => row.title)).toEqual(["Refused Probe"]);
   expect(await childrenOf(request, newsId)).toEqual([]);
   // The selection stays, so the editor can try again.
   await expect(page.getByTestId("bulk-toolbar")).toContainText("1 item selected");
+
+  // Meanwhile another editor moved the page; Reload shows what the server has now.
+  const other = await request.post("/api/folders-tree/move", {
+    data: { items: [{ collection: "pages", id }], toFolder: newsId },
+  });
+  expect(other.ok()).toBe(true);
+  await expect(pageRow(page, "Refused Probe")).toBeVisible();
+  const refetch = page.waitForRequest(
+    (sent) => sent.method() === "GET" && sent.url().includes("/folders-tree/children")
+  );
+  await reload.click();
+  await refetch;
+  await expect(pageRow(page, "Refused Probe")).toHaveCount(0);
+});
+
+test("a refused move keeps every ticked row, nested ones too", async ({ page }) => {
+  await page.route("**/api/folders-tree/move", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({ errors: [{ message: "The move was refused" }] }),
+      contentType: "application/json",
+      status: 409,
+    });
+  });
+  await openContentTree(page);
+  await expandFolder(page, "Blog");
+  await rowCheckbox(page, "Blog").check();
+  await rowCheckbox(page, "Hello World").check();
+  await expect(page.getByTestId("bulk-toolbar")).toContainText("2 items selected");
+  await toolbarButton(page, "Move to...").click();
+  const dialog = await chooseFolder(page, "Empty");
+  await expect(dialog.getByTestId("move-preview-line")).toBeVisible();
+  await dialog.getByRole("button", { exact: true, name: "Move" }).click();
+  await confirmDialog(page).getByRole("button", { exact: true, name: "Move" }).click();
+
+  await expect(page.getByText("The move was refused")).toBeVisible();
+  // Blog moved on its own (Hello World goes with it), yet both rows are still ticked.
+  await expect(page.getByTestId("bulk-toolbar")).toContainText("2 items selected");
+  await expect(rowCheckbox(page, "Blog")).toBeChecked();
+  await expect(rowCheckbox(page, "Hello World")).toBeChecked();
+});
+
+test("Undo is refused when the sibling it goes after moved to another folder", async ({
+  page,
+  request,
+}) => {
+  // Created first, so it sits below the anchor and its Undo goes after it.
+  await addPage(request, "Undo Mover");
+  const anchorId = await addPage(request, "Undo Anchor");
+  expect((await childrenOf(request, stagingId)).map((row) => row.title)).toEqual([
+    "Undo Anchor",
+    "Undo Mover",
+  ]);
+  await page.route("**/api/folders-tree/revision", (route) => route.abort());
+  await openStaging(page);
+  await rowCheckbox(page, "Undo Mover").check();
+  await toolbarButton(page, "Move to...").click();
+  const dialog = await chooseFolder(page, "News");
+  await expect(dialog.getByTestId("move-preview-line")).toBeVisible();
+  await dialog.getByRole("button", { exact: true, name: "Move" }).click();
+  await confirmDialog(page).getByRole("button", { exact: true, name: "Move" }).click();
+  await expect(page.getByText("Moved 1 item")).toBeVisible();
+
+  // Another editor moves the anchor into News while the toast is up.
+  const other = await request.post("/api/folders-tree/move", {
+    data: { items: [{ collection: "pages", id: anchorId }], toFolder: newsId },
+  });
+  expect(other.ok()).toBe(true);
+  await page.getByRole("button", { name: "Undo" }).click();
+
+  await expect(page.getByText("Could not undo the move")).toBeVisible();
+  // Nothing was written: the mover is still where the move put it, at its new URL.
+  const inNews = await childrenOf(request, newsId);
+  expect(inNews.map((row) => [row.title, row.fullPath]).toSorted()).toEqual([
+    ["Undo Anchor", "/news/undo-anchor"],
+    ["Undo Mover", "/news/undo-mover"],
+  ]);
+  expect(await childrenOf(request, stagingId)).toEqual([]);
+});
+
+test("Move to... and Move wait while a move is in flight", async ({ page, request }) => {
+  await addPage(request, "Busy One");
+  await addPage(request, "Busy Two");
+  await page.route("**/api/folders-tree/revision", (route) => route.abort());
+  let settleGate!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    settleGate = resolve;
+  });
+  await page.route("**/api/folders-tree/move", async (route) => {
+    await gate;
+    await route.continue();
+  });
+  await openStaging(page);
+  await rowCheckbox(page, "Busy Two").check();
+  await toolbarButton(page, "Move to...").click();
+  const dialog = await chooseFolder(page, "Staging");
+  await dialog.getByLabel("At the bottom").check();
+  await expect(dialog.getByTestId("move-preview-line")).toBeVisible();
+  // A reorder asks nothing, so the request goes out as soon as Move is pressed and waits at the gate.
+  await dialog.getByRole("button", { exact: true, name: "Move" }).click();
+
+  const moveTo = toolbarButton(page, "Move to...");
+  await expect(moveTo).toBeDisabled();
+  await moveTo.click({ force: true });
+  await expect(moveDialog(page)).toHaveCount(0);
+
+  settleGate();
+  await expect(page.getByText("Moved 1 item")).toBeVisible();
+  await expect(page.getByTestId("bulk-toolbar")).toHaveCount(0);
+  expect((await childrenOf(request, stagingId)).map((row) => row.title)).toEqual([
+    "Busy One",
+    "Busy Two",
+  ]);
 });
 
 test("a drafter cannot move a published page and is told so without detail", async ({

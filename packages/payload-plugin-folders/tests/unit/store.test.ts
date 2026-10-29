@@ -211,16 +211,19 @@ describe("the tree store", () => {
     expect(store.getState().revision).toBe(6);
   });
 
-  it("store reads the target folder again when a move names rows the cache does not hold", async () => {
+  it("store reads the visible folders again, and their child counts, when a move names rows the cache does not hold", async () => {
     const server = createServer();
     const store = createStore(server);
     await openBoth(store);
-    // The rows the server will have in blog after an Undo, none of which the cache knows.
+    // What the server has after an Undo brings page 9 back to blog from products, which the
+    // cache never opened to see it there: blog gains a row, products loses one.
     server.tree[blogId] = [
       page(1, "Alpha", blogId),
       page(2, "Beta", blogId),
       page(9, "Back", blogId),
     ];
+    server.tree[productsId] = [];
+    server.tree[rootKey] = [folder(blogId, "Blog", 3), folder(productsId, "Products", 0)];
     const requestsBefore = server.childrenRequests.length;
 
     await store.runOptimisticMove(
@@ -228,12 +231,40 @@ describe("the tree store", () => {
       () => Promise.resolve("done")
     );
 
-    // Blog is on screen, so it was read again and shows the rows that arrived.
     const refreshed = server.childrenRequests
       .slice(requestsBefore)
       .map((url) => url.searchParams.get("parent"));
-    expect(refreshed).toEqual([String(blogId)]);
+    expect(refreshed.toSorted()).toEqual([String(blogId), String(productsId), "root"]);
     expect(titlesIn(store, String(blogId))).toEqual(["Alpha", "Beta", "Back"]);
+    // The counts sit in the rows of the top level, which were read again with the rest.
+    expect(rowIn(store, rootKey, "Blog")?.childCount).toBe(3);
+    expect(rowIn(store, rootKey, "Products")?.childCount).toBe(0);
+  });
+
+  it("store does not read the next user's folders again after the previous user's move of uncached rows", async () => {
+    const server = createServer();
+    const options = {
+      baseUrl: "/api",
+      fetchImplementation: server.fetchImplementation,
+      locale: "en",
+      pageSize: 100,
+    };
+    const store = createTreeStore({ ...options, userId: 1 });
+    await openBoth(store);
+    const request = deferred<string>();
+    const move = store.runOptimisticMove(
+      { items: [{ collection: "pages", id: 9 }], position: "end", toFolder: blogId },
+      () => request.promise
+    );
+    store.configure({ ...options, userId: 2 });
+    await store.loadChildren(null);
+    await store.setExpanded(blogId, true);
+    const requestsBefore = server.childrenRequests.length;
+
+    request.resolve("done");
+    await move;
+
+    expect(server.childrenRequests).toHaveLength(requestsBefore);
   });
 
   it("store places a moved row after a named sibling and puts it back on rollback", async () => {

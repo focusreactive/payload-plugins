@@ -14,12 +14,17 @@ import type { MoveChoice } from "./MoveDialog.js";
 import { needsConfirmation, rootsOfSelection, runMove, undoMove } from "./moveFlow.js";
 import type { MoveOutcome, MoveTarget } from "./moveFlow.js";
 
+/** The class the toast action button wears, so the stylesheet can align it with the title. */
+export const toastActionClass = "fr-folders-toast-action";
+
 /** How long the Undo toast stays (spec section 5.7). */
 export const undoToastDurationMs = 10_000;
 
 export type MoveFlowOptions = {
   confirmMoves: ConfirmMoves;
   enforceAllowedTypesOnMove: boolean;
+  /** The slug of the folders collection, from the plugin's settings. */
+  foldersSlug: string;
   languageCount: number;
   /** A move went through: the toolbar's selection is stale. */
   onMoved: () => void;
@@ -33,11 +38,19 @@ export type MoveFlowOptions = {
 export type MoveFlow = {
   /** The dialogs; render them once, anywhere under the page. */
   dialogs: ReactNode;
+  /** A move is in flight; a second one would be dropped, so what starts one is disabled. */
+  isMoving: boolean;
   /** Opens "Move to..." for these rows. */
   startMoveTo: (items: readonly TreeItem[]) => void;
 };
 
-type Pending = { items: readonly TreeItem[]; targetTitle: string; target: MoveTarget };
+type Pending = {
+  items: readonly TreeItem[];
+  /** Every ticked row, nested ones included: what comes back if the move fails. */
+  selection: readonly TreeItem[];
+  target: MoveTarget;
+  targetTitle: string;
+};
 
 const messageOf = (error: unknown): string => (error instanceof Error ? error.message : "");
 
@@ -49,6 +62,7 @@ const messageOf = (error: unknown): string => (error instanceof Error ? error.me
 export const useMoveFlow = ({
   confirmMoves,
   enforceAllowedTypesOnMove,
+  foldersSlug,
   languageCount,
   onMoved,
   onMoveFailed,
@@ -62,7 +76,9 @@ export const useMoveFlow = ({
   const [pickSession, setPickSession] = useState(0);
   const openings = useRef(0);
   const pending = useRef<Pending | null>(null);
+  const selectionRef = useRef<readonly TreeItem[]>([]);
   const moving = useRef(false);
+  const [isMoving, setIsMoving] = useState(false);
 
   const options = store.getOptions();
   const baseUrl = options?.baseUrl ?? "";
@@ -73,13 +89,17 @@ export const useMoveFlow = ({
   );
 
   const showFailure = useCallback(
-    (error: unknown, fallbackKey: "moveFailed" | "undoFailed") => {
+    (error: unknown, title: string | null) => {
       const stale = error instanceof FoldersApiError && error.reason === "stale";
-      const message = messageOf(error) || translate(fallbackKey);
-      toast.error(message, {
-        action: stale
-          ? { label: translate("reload"), onClick: () => void store.refetchVisible() }
-          : undefined,
+      const detail = messageOf(error);
+      // A failure with its own title (an undo) keeps the server's words as the second line.
+      const action = stale
+        ? { label: translate("reload"), onClick: () => void store.refetchVisible() }
+        : undefined;
+      toast.error(title ?? (detail || translate("moveFailed")), {
+        action,
+        classNames: { actionButton: toastActionClass },
+        description: title === null || detail === "" ? undefined : detail,
       });
     },
     [store, translate]
@@ -87,12 +107,18 @@ export const useMoveFlow = ({
 
   const undo = useCallback(
     async (outcome: MoveOutcome) => {
-      try {
-        await undoMove({ context, store }, outcome);
-        toast.success(translate("movedBack", { count: outcome.result.moved.length }));
-      } catch (error) {
-        showFailure(error, "undoFailed");
+      const report = await undoMove({ context, store }, outcome);
+      if (report.failure === null) {
+        toast.success(translate("movedBack", { count: report.movedBack }));
+
+        return;
       }
+      showFailure(
+        report.failure,
+        report.movedBack > 0
+          ? translate("movedBackPartial", { moved: report.movedBack, total: report.total })
+          : translate("undoFailed")
+      );
     },
     [context, showFailure, store, translate]
   );
@@ -103,6 +129,7 @@ export const useMoveFlow = ({
         return;
       }
       moving.current = true;
+      setIsMoving(true);
       try {
         const outcome = await runMove(
           { context, store },
@@ -113,14 +140,16 @@ export const useMoveFlow = ({
         onMoved();
         toast.success(translate("moved", { count: outcome.result.moved.length }), {
           action: { label: translate("undo"), onClick: () => void undo(outcome) },
+          classNames: { actionButton: toastActionClass },
           duration: undoToastDurationMs,
         });
       } catch (error) {
         // The store already put every row back and read the folders again.
-        showFailure(error, "moveFailed");
-        onMoveFailed(request.items);
+        showFailure(error, null);
+        onMoveFailed(request.selection);
       } finally {
         moving.current = false;
+        setIsMoving(false);
       }
     },
     [context, onMoved, onMoveFailed, showFailure, store, translate, undo]
@@ -132,7 +161,12 @@ export const useMoveFlow = ({
       if (items === null) {
         return;
       }
-      const request: Pending = { items, target: choice.target, targetTitle: choice.targetTitle };
+      const request: Pending = {
+        items,
+        selection: selectionRef.current,
+        target: choice.target,
+        targetTitle: choice.targetTitle,
+      };
       closeModal(moveDialogSlug);
       if (needsConfirmation(confirmMoves, choice.preview)) {
         pending.current = request;
@@ -154,6 +188,7 @@ export const useMoveFlow = ({
 
   const startMoveTo = useCallback(
     (items: readonly TreeItem[]) => {
+      selectionRef.current = items;
       setPickItems(rootsOfSelection(items));
       setPickSession((current) => current + 1);
       openModal(moveDialogSlug);
@@ -164,8 +199,10 @@ export const useMoveFlow = ({
   const dialogs = (
     <>
       <MoveDialog
+        busy={isMoving}
         context={context}
         enforceAllowedTypes={enforceAllowedTypesOnMove}
+        foldersSlug={foldersSlug}
         items={pickItems}
         onChoose={choose}
         session={pickSession}
@@ -174,6 +211,7 @@ export const useMoveFlow = ({
         typeLabels={typeLabels}
       />
       <ConfirmUrlChangeDialog
+        busy={isMoving}
         languageCount={languageCount}
         onConfirm={async (redirects) => {
           const request = pending.current;
@@ -191,5 +229,5 @@ export const useMoveFlow = ({
     </>
   );
 
-  return { dialogs, startMoveTo };
+  return { dialogs, isMoving, startMoveTo };
 };

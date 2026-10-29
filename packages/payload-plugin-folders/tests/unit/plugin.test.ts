@@ -102,9 +102,21 @@ describe("foldersPlugin", () => {
     expect(folders?.custom?.[pluginSlug]).toEqual({
       confirmMoves: "urlChange",
       enforceAllowedTypesOnMove: true,
+      foldersSlug: "folders",
       pageSize: 50,
       typeLabels: { pages: { explicit: true, label: "Landing page" } },
     });
+  });
+
+  it("hands the tree view the slug of the folders collection, whatever the host named it", async () => {
+    const result = await foldersPlugin({
+      collections: { pages: true } as never,
+      folders: { slug: "sections" },
+    })(buildHostConfig());
+
+    const folders = result.collections?.find((collection) => collection.slug === "sections");
+
+    expect(folders?.custom?.[pluginSlug]).toMatchObject({ foldersSlug: "sections" });
   });
 
   it("hands the tree view the move settings it needs to ask before a move and to grey out folders", async () => {

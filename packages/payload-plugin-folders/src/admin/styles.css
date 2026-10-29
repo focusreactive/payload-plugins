@@ -377,10 +377,6 @@
     background: var(--color-bg);
   }
 
-  .fr-folders-picker .fr-folders-reason {
-    display: block;
-  }
-
   .fr-folders-picker__row {
     display: flex;
     align-items: center;
@@ -414,6 +410,7 @@
   }
 
   .fr-folders-picker__title {
+    position: relative;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -513,5 +510,36 @@
 
   .fr-folders-confirm__redirect .checkbox-input {
     width: auto;
+  }
+
+  /*
+   * The action of a toast (Undo, Reload). Payload leaves its toasts to the library's own styles,
+   * which are not loaded, so the button would sit raw and a little above the title.
+   */
+  .fr-folders-toast-action {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    align-self: center;
+    margin-inline-start: auto;
+    padding: var(--spacer-1) var(--spacer-1-5);
+    border: none;
+    border-radius: var(--radius-small);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: var(--text-body-medium-bold-font-weight);
+    line-height: var(--text-body-medium-line-height);
+    text-decoration: underline;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-bg-transparent-hover);
+    }
+
+    &:focus-visible {
+      outline: var(--accessibility-outline);
+      outline-offset: var(--accessibility-outline-offset);
+    }
   }
 }

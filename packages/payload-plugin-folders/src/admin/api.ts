@@ -1,5 +1,5 @@
 import type { MoveResult } from "../core/applyMove.js";
-import type { ExpectedState, MovePreview } from "../core/move.js";
+import type { ExpectedState, MoveAnchor, MovePreview } from "../core/move.js";
 import type { FolderId, ItemRef, TreeItem, TreeStatus } from "../types.js";
 
 /** Where the plugin's endpoints live and how to call them. */
@@ -210,13 +210,15 @@ export type MoveItemBody = ItemRef & { expected?: ExpectedState };
 
 /**
  * The body of `POST /move` and `POST /move/preview`: the items, then either a folder (and where in
- * it) or an item to land after. `redirects: false` is sent only when the editor unticked it.
+ * it) or an item to land after. An `after` item always carries `expected: { parentId }`, the folder
+ * the editor saw it in, so a sibling that moved on makes the move stale instead of landing next to
+ * it in a folder nobody looked at. `redirects: false` is sent only when the editor unticked it.
  */
 export type MoveBody = {
   items: MoveItemBody[];
   redirects?: boolean;
 } & (
-  | { after: ItemRef; position?: undefined; toFolder?: undefined }
+  | { after: MoveAnchor; position?: undefined; toFolder?: undefined }
   | { after?: undefined; position?: "end" | "start"; toFolder: FolderId | null }
 );
 

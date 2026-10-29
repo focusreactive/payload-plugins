@@ -8,6 +8,7 @@ import {
   DialogModal,
   FolderIcon,
   ShimmerEffect,
+  Tooltip,
 } from "@payloadcms/ui";
 import { useEffect, useMemo, useState } from "react";
 import type { KeyboardEvent } from "react";
@@ -16,7 +17,6 @@ import type { FolderId, TreeItem } from "../../types.js";
 import { fetchSearch, previewMove } from "../api.js";
 import type { FoldersApiContext, MovePreview } from "../api.js";
 import type { Translate } from "../compat.js";
-import { ReasonTooltip } from "../ReasonTooltip.js";
 import { rootKey } from "../store.js";
 import type { FolderKey, TreeStore } from "../store.js";
 import { useTreeStoreState } from "../useTreeStore.js";
@@ -35,8 +35,12 @@ export type MoveChoice = {
 };
 
 export type MoveDialogProps = {
+  /** A move is in flight: pressing Move would be dropped, so it waits. */
+  busy: boolean;
   context: FoldersApiContext;
   enforceAllowedTypes: boolean;
+  /** The slug of the folders collection, from the plugin's settings. */
+  foldersSlug: string;
   /** The rows to move, nested ones already left out. `null` while the dialog is closed. */
   items: readonly TreeItem[] | null;
   onChoose: (choice: MoveChoice) => void;
@@ -63,22 +67,29 @@ const refusalText = (refusal: TargetRefusal, translate: Translate): string =>
     : translate("moveToType", { path: refusal.path, types: refusal.types.join(", ") });
 
 type TargetRowProps = {
+  /** The row whose reason is showing: one for the whole picker, so hover and focus never show two. */
+  activeReasonKey: string | null;
   chevron?: { expanded: boolean; onToggle: () => void; title: string; visible: boolean };
   isSelected: boolean;
   level: number;
+  onActivateReason: (key: string | null) => void;
   onSelect: () => void;
   refusal: string | null;
+  rowKey: string;
   secondary?: string;
   testId: string;
   title: string;
 };
 
 const TargetRow = ({
+  activeReasonKey,
   chevron,
   isSelected,
   level,
+  onActivateReason,
   onSelect,
   refusal,
+  rowKey,
   secondary,
   testId,
   title,
@@ -86,6 +97,17 @@ const TargetRow = ({
   const select = () => {
     if (refusal === null) {
       onSelect();
+    }
+  };
+  // The latest of hover and focus wins, and leaving or blurring only clears the row's own claim.
+  const claimReason = () => {
+    if (refusal !== null) {
+      onActivateReason(rowKey);
+    }
+  };
+  const releaseReason = () => {
+    if (activeReasonKey === rowKey) {
+      onActivateReason(null);
     }
   };
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -109,53 +131,62 @@ const TargetRow = ({
   };
 
   return (
-    <ReasonTooltip reason={refusal} position="top">
-      <div
-        aria-disabled={refusal === null ? undefined : true}
-        aria-expanded={chevron?.visible ? chevron.expanded : undefined}
-        aria-level={level + 1}
-        aria-selected={isSelected}
-        className={[
-          "fr-folders-picker__row",
-          isSelected ? "fr-folders-picker__row--selected" : "",
-          refusal === null ? "" : "fr-folders-picker__row--disabled",
-        ]
-          .filter(Boolean)
-          .join(" ")}
-        data-testid={testId}
-        data-title={title}
-        onClick={select}
-        onKeyDown={handleKeyDown}
-        role="treeitem"
-        style={{ paddingInlineStart: `calc(var(--spacer-1) + ${level * 16}px)` }}
-        tabIndex={0}
-      >
-        {chevron?.visible ? (
-          <button
-            aria-label={chevron.title}
-            className="fr-folders-chevron"
-            data-testid="picker-expand"
-            onClick={(event) => {
-              event.stopPropagation();
-              chevron.onToggle();
-            }}
-            type="button"
-          >
-            <ChevronIcon direction={chevron.expanded ? "down" : "right"} size={16} />
-          </button>
-        ) : (
-          <span aria-hidden="true" className="fr-folders-chevron fr-folders-chevron--empty" />
+    <div
+      aria-disabled={refusal === null ? undefined : true}
+      aria-expanded={chevron?.visible ? chevron.expanded : undefined}
+      aria-level={level + 1}
+      aria-selected={isSelected}
+      className={[
+        "fr-folders-picker__row",
+        isSelected ? "fr-folders-picker__row--selected" : "",
+        refusal === null ? "" : "fr-folders-picker__row--disabled",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      data-testid={testId}
+      data-title={title}
+      onBlur={releaseReason}
+      onClick={select}
+      onFocus={claimReason}
+      onKeyDown={handleKeyDown}
+      onMouseEnter={claimReason}
+      onMouseLeave={releaseReason}
+      role="treeitem"
+      style={{ paddingInlineStart: `calc(var(--spacer-1) + ${level * 16}px)` }}
+      tabIndex={0}
+    >
+      {chevron?.visible ? (
+        <button
+          aria-label={chevron.title}
+          className="fr-folders-chevron"
+          data-testid="picker-expand"
+          onClick={(event) => {
+            event.stopPropagation();
+            chevron.onToggle();
+          }}
+          type="button"
+        >
+          <ChevronIcon direction={chevron.expanded ? "down" : "right"} size={16} />
+        </button>
+      ) : (
+        <span aria-hidden="true" className="fr-folders-chevron fr-folders-chevron--empty" />
+      )}
+      <span aria-hidden="true" className="fr-folders-kind-icon">
+        <FolderIcon size={16} />
+      </span>
+      <span className="fr-folders-picker__title">
+        {title}
+        {refusal === null ? null : (
+          <Tooltip position="top" show={activeReasonKey === rowKey}>
+            {refusal}
+          </Tooltip>
         )}
-        <span aria-hidden="true" className="fr-folders-kind-icon">
-          <FolderIcon size={16} />
-        </span>
-        <span className="fr-folders-picker__title">{title}</span>
-        {secondary ? (
-          <span className="fr-folders-muted fr-folders-picker__path">{secondary}</span>
-        ) : null}
-        {refusal === null ? null : <span className="fr-folders-visually-hidden">{refusal}</span>}
-      </div>
-    </ReasonTooltip>
+      </span>
+      {secondary ? (
+        <span className="fr-folders-muted fr-folders-picker__path">{secondary}</span>
+      ) : null}
+      {refusal === null ? null : <span className="fr-folders-visually-hidden">{refusal}</span>}
+    </div>
   );
 };
 
@@ -195,8 +226,10 @@ const PreviewLine = ({ state, translate }: { state: PreviewState; translate: Tra
 type PickerProps = Omit<MoveDialogProps, "items" | "session"> & { items: readonly TreeItem[] };
 
 const MoveDialogContent = ({
+  busy,
   context,
   enforceAllowedTypes,
+  foldersSlug,
   items,
   onChoose,
   store,
@@ -208,6 +241,7 @@ const MoveDialogContent = ({
   const [choice, setChoice] = useState<Choice | null>(null);
   const [position, setPosition] = useState<MoveTarget["position"]>("start");
   const [previewState, setPreviewState] = useState<PreviewState>({ status: "idle" });
+  const [activeReasonKey, setActiveReasonKey] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
   const [searchHits, setSearchHits] = useState<{
     items: TreeItem[];
@@ -224,17 +258,6 @@ const MoveDialogContent = ({
     () => pickerRowsOf(state, expanded, translate("moveToRoot")),
     [state, expanded, translate]
   );
-
-  const foldersCollection = useMemo(() => {
-    for (const entry of Object.values(state.childrenByFolder)) {
-      const folder = entry.items.find((item) => item.kind === "folder");
-      if (folder) {
-        return folder.collection;
-      }
-    }
-
-    return null;
-  }, [state.childrenByFolder]);
 
   const toggleFolder = (key: FolderKey) => {
     const opening = !expanded.has(key);
@@ -256,7 +279,7 @@ const MoveDialogContent = ({
   // Searches the folders, everywhere, once the editor stops typing.
   useEffect(() => {
     const text = searchText.trim();
-    if (text === "" || foldersCollection === null) {
+    if (text === "") {
       setSearchHits({ items: [], status: "idle" });
 
       return undefined;
@@ -272,7 +295,7 @@ const MoveDialogContent = ({
             locale: store.getOptions()?.locale ?? null,
             query: text,
             scope: "all",
-            types: [foldersCollection],
+            types: [foldersSlug],
           },
           controller.signal
         );
@@ -291,7 +314,7 @@ const MoveDialogContent = ({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [context, foldersCollection, searchText, store]);
+  }, [context, foldersSlug, searchText, store]);
 
   // The live line under the tree: what moving to the chosen folder would do, read from the
   // server's preview so it is the same answer the move will check again.
@@ -371,13 +394,16 @@ const MoveDialogContent = ({
                 ) : null}
                 {searchHits.items.map((hit) => (
                   <TargetRow
+                    activeReasonKey={activeReasonKey}
                     isSelected={
                       choice !== null && choice.id !== null && String(choice.id) === String(hit.id)
                     }
                     key={`${hit.collection}:${hit.id}`}
                     level={0}
+                    onActivateReason={setActiveReasonKey}
                     onSelect={() => setChoice({ id: hit.id, title: hit.title })}
                     refusal={refusalFor(hit)}
+                    rowKey={`hit:${hit.collection}:${hit.id}`}
                     secondary={hit.fullPath}
                     testId="picker-row"
                     title={hit.title}
@@ -392,6 +418,7 @@ const MoveDialogContent = ({
 
                     return (
                       <TargetRow
+                        activeReasonKey={activeReasonKey}
                         chevron={
                           isRoot
                             ? undefined
@@ -412,8 +439,10 @@ const MoveDialogContent = ({
                         }
                         key={row.key}
                         level={row.level}
+                        onActivateReason={setActiveReasonKey}
                         onSelect={() => setChoice({ id: row.id, title: row.title })}
                         refusal={isRoot ? null : refusalFor(row.item)}
+                        rowKey={row.key}
                         testId={isRoot ? "picker-root" : "picker-row"}
                         title={row.title}
                       />
@@ -526,7 +555,7 @@ const MoveDialogContent = ({
       <DialogFooter>
         <DialogCancel label={translate("actionCancel")} />
         <Button
-          disabled={!canMove}
+          disabled={!canMove || busy}
           margin={false}
           onClick={() => {
             if (canMove && choice !== null && previewState.status === "ready") {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FoldersApiError } from "../../src/admin/api.js";
+import { FoldersApiError, postMove } from "../../src/admin/api.js";
 import type { MoveBody, MovePreview } from "../../src/admin/api.js";
 import {
   buildMoveBody,
@@ -118,6 +118,25 @@ const createServer = (): FakeServer => {
           );
         }
         const movedKeys = new Set(body.items.map(refKey));
+        // The same guard the real endpoint has: a sibling that left its folder makes the move stale.
+        if (body.after?.expected) {
+          const anchorRow = Object.values(server.tree)
+            .flat()
+            .find((row) => refKey(row) === refKey(body.after as ItemRef));
+          if (!anchorRow || String(anchorRow.parentId) !== String(body.after.expected.parentId)) {
+            return json(
+              {
+                errors: [
+                  {
+                    data: { reason: "stale" },
+                    message: "This part of the tree changed. Reload and try again.",
+                  },
+                ],
+              },
+              409
+            );
+          }
+        }
         // `expected` is what the move checks first: a stale parent is a 409.
         for (const item of body.items) {
           const current = Object.values(server.tree)
@@ -378,7 +397,12 @@ describe("the Undo path", () => {
     // One request for the move and one for the undo, not one per item.
     expect(server.moveBodies).toHaveLength(2);
     const undoBody = server.moveBodies[1] as MoveBody;
-    expect(undoBody.after).toEqual({ collection: "pages", id: 1 });
+    // The anchor carries the folder it was in, so the server can refuse when it has moved on.
+    expect(undoBody.after).toEqual({
+      collection: "pages",
+      expected: { parentId: blogId },
+      id: 1,
+    });
     expect(undoBody.redirects).toBe(false);
     expect(undoBody.items.map((item) => item.id)).toEqual([2, 3]);
     // The undo names what the move just gave each row, so a row moved again meanwhile is refused.
@@ -437,7 +461,11 @@ describe("the Undo path", () => {
 
     expect(requests).toHaveLength(3);
     expect(requests[0]?.body).toMatchObject({ position: "start", toFolder: blogId });
-    expect(requests[1]?.body).toMatchObject({ after: { collection: "pages", id: 2 } });
+    // Every `after` carries the folder the anchor was in; a request with `toFolder` needs none.
+    expect(requests[1]?.body).toMatchObject({
+      after: { collection: "pages", expected: { parentId: blogId }, id: 2 },
+    });
+    expect(requests[0]?.body).not.toHaveProperty("after");
     expect(requests[1]?.body.items.map((item) => item.id)).toEqual([3, 4]);
     expect(requests[2]?.body).toMatchObject({ position: "start", toFolder: null });
     expect(requests[2]?.optimistic.toFolder).toBeNull();
@@ -462,7 +490,7 @@ describe("the Undo path", () => {
     expect(requests[0]?.body.items.map((item) => item.id)).toEqual([1]);
   });
 
-  it("is refused when a moved row was moved again, and leaves the rows where the move put them", async () => {
+  it("reports a refused undo when a moved row was moved again, and leaves the rows where the move put them", async () => {
     const server = createServer();
     const store = createStore(server);
     await loadBoth(store);
@@ -484,10 +512,76 @@ describe("the Undo path", () => {
       page(2, "Beta", blogId, `/${blogId}/`),
     ];
 
-    await expect(undoMove({ context, store }, outcome)).rejects.toMatchObject({ reason: "stale" });
+    const report = await undoMove({ context, store }, outcome);
+
+    expect(report).toMatchObject({ failure: { reason: "stale" }, movedBack: 0, total: 1 });
     // The optimistic undo rolled back and the folders were read again: the store shows the server.
     expect(titlesIn(store, String(newsId))).toEqual(["Existing"]);
     expect(titlesIn(store, String(blogId))).toContain("Beta");
+  });
+
+  it("refuses an undo whose sibling moved to another folder, and puts nothing next to it there", async () => {
+    const server = createServer();
+    const store = createStore(server);
+    await loadBoth(store);
+    const [alpha, beta] = rowsOf(store, String(blogId), "Alpha", "Beta");
+    const context = { baseUrl: "/api", fetchImplementation: server.fetchImplementation };
+    // Beta moves out of blog; its place was right after Alpha.
+    const outcome = await runMove(
+      { context, store },
+      [beta as TreeItem],
+      { position: "start", toFolder: newsId },
+      true
+    );
+    // Then Alpha moves to news too, before the Undo.
+    await postMove(
+      context,
+      buildMoveBody([alpha as TreeItem], { position: "end", toFolder: newsId })
+    );
+    await store.refetchVisible();
+    const rowsInNewsBefore = titlesIn(store, String(newsId));
+
+    const report = await undoMove({ context, store }, outcome);
+
+    // Without the guard Beta would have gone after Alpha, into news, with no question asked.
+    expect(report.failure).toMatchObject({ reason: "stale", status: 409 });
+    expect(report.movedBack).toBe(0);
+    expect(titlesIn(store, String(newsId))).toEqual(rowsInNewsBefore);
+    expect(titlesIn(store, String(newsId))).toContain("Beta");
+    expect(titlesIn(store, String(blogId))).not.toContain("Beta");
+  });
+
+  it("counts the items that went back when a later group of an undo is refused", async () => {
+    const server = createServer();
+    const store = createStore(server);
+    await loadBoth(store);
+    const [alpha, gamma] = rowsOf(store, String(blogId), "Alpha", "Gamma");
+    const context = { baseUrl: "/api", fetchImplementation: server.fetchImplementation };
+    // Alpha was first in blog and Gamma came after Beta: two places, so two undo requests.
+    const outcome = await runMove(
+      { context, store },
+      [alpha as TreeItem, gamma as TreeItem],
+      { position: "start", toFolder: newsId },
+      true
+    );
+    expect(buildUndoRequests(outcome.snapshots, outcome.result, newsId)).toHaveLength(2);
+    // Beta, Gamma's anchor, leaves blog before the Undo.
+    const [beta] = (server.tree[String(blogId)] ?? []).filter((row) => row.title === "Beta");
+    server.tree[String(blogId)] = (server.tree[String(blogId)] ?? []).filter(
+      (row) => row.title !== "Beta"
+    );
+    server.tree[String(newsId)] = [
+      ...(server.tree[String(newsId)] ?? []),
+      { ...(beta as TreeItem), parentId: newsId },
+    ];
+
+    const report = await undoMove({ context, store }, outcome);
+
+    expect(report).toMatchObject({ failure: { reason: "stale" }, movedBack: 1, total: 2 });
+    // Alpha is back at the top of blog; Gamma stays where the move put it.
+    expect(titlesIn(store, String(blogId))[0]).toBe("Alpha");
+    expect(titlesIn(store, String(newsId))).toContain("Gamma");
+    expect(server.moveBodies).toHaveLength(3);
   });
 
   it("rolls the rows back when the move is refused, and sends the move as one request", async () => {

@@ -725,15 +725,17 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
     const targetKey = folderKeyOf(move.toFolder);
     if (sources.length === 0) {
       // None of the rows is cached (they are in a folder the tree never opened, as when an Undo
-      // brings rows back from one), so nothing moves on screen. The folder they land in still
-      // has to be read again, or the rows would only show up at the next poll.
+      // brings rows back from one), so nothing moves on screen. The server's answer still changes
+      // the folder they land in, the folder they left, and the child counts in the rows above
+      // both. The folders they left are unknown here, so every visible folder is read again, or
+      // the rows and the counts would only catch up at the next poll.
       const unknownStart = epoch;
 
       return {
         affectedParents: [],
         commit: async () => {
           if (unknownStart === epoch) {
-            await invalidate([move.toFolder]);
+            await refetchVisible();
           }
         },
         refreshParents: [targetKey],
