@@ -139,11 +139,12 @@ describe("data model", () => {
       data: { folder: original.id, slug: "stays", title: "Stays" },
       overrideAccess: true,
     });
-    await payload.update({
+    // The guard refuses a plain update of the key, so the fixture writes it at database level.
+    await payload.db.updateOne({
       collection: "pages",
       data: { orderKey: "a0" },
       id: page.id,
-      overrideAccess: true,
+      returning: false,
     });
 
     const { body, status } = await callEndpoint<{
@@ -171,15 +172,18 @@ describe("data model", () => {
     });
     expect(reread).toMatchObject({ folder: original.id, orderKey: "a0", structureRevision: 0 });
 
-    // A create may still set them, and so may the Local API once access is overridden.
-    const moved = await payload.update({
-      collection: "pages",
-      data: { folder: other.id },
-      depth: 0,
-      id: page.id,
-      overrideAccess: true,
-    });
-    expect(moved.folder).toBe(other.id);
+    // A create may still set them. The Local API with overridden access may not move a page: the
+    // structure guard (tests/int/structure-guard.int.test.ts) refuses it at the current revision.
+    const refused = await payload
+      .update({
+        collection: "pages",
+        data: { folder: other.id, structureRevision: 0 },
+        depth: 0,
+        id: page.id,
+        overrideAccess: true,
+      })
+      .catch((error: unknown) => error as { message: string; status: number });
+    expect(refused).toMatchObject({ message: "Use moveItems() to move content", status: 400 });
   });
 
   it("derived folder fields cannot be written over REST", async () => {
@@ -232,11 +236,11 @@ describe("data model", () => {
       fullPath: "/rest-parent/child",
       parent: parent.id,
     });
-    await payload.update({
+    await payload.db.updateOne({
       collection: "folders",
       data: { orderKey: "a0" },
       id: child.id,
-      overrideAccess: true,
+      returning: false,
     });
 
     const { body, status } = await callEndpoint<{ doc: Record<string, unknown> }>({

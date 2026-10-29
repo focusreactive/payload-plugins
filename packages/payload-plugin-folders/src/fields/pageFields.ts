@@ -1,7 +1,15 @@
-import type { CollectionConfig, Field, FieldAccess } from "payload";
+import type { CollectionConfig, Field, FieldAccess, FieldHook } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
-import { buildPageBeforeChange, pageAfterChange } from "../hooks/pages/beforeChange.js";
+import { pageAfterChange } from "../hooks/pages/afterChange.js";
+import {
+  buildSegmentBeforeDuplicate,
+  resetIsFolderRootOnDuplicate,
+  resetOrderKeyOnDuplicate,
+  resetStructureRevisionOnDuplicate,
+} from "../hooks/pages/beforeDuplicate.js";
+import { buildPageBeforeValidate } from "../hooks/pages/beforeValidate.js";
+import { buildStructureGuard } from "../hooks/pages/structureGuard.js";
 import {
   buildFullPathAfterRead,
   folderPathAfterRead,
@@ -15,12 +23,61 @@ import type { ResolvedOptions, ResolvedPageCollection } from "../types.js";
 const nobody: FieldAccess = () => false;
 
 /** The segment field the plugin adds when the host's collection has none. */
-export const buildSegmentField = (page: ResolvedPageCollection): Field => ({
+export const buildSegmentField = (
+  page: ResolvedPageCollection,
+  options: ResolvedOptions
+): Field => ({
   name: page.segmentField,
   type: "text",
+  ...(options.disabled
+    ? {}
+    : { hooks: { beforeDuplicate: [buildSegmentBeforeDuplicate(options)] } }),
   index: true,
   localized: page.segmentLocalized,
 });
+
+/**
+ * Adds the duplicate hook to the host's own segment field, wherever the collection nests it. A hook
+ * the host already set on that field stays in front of ours.
+ */
+const withSegmentBeforeDuplicate = (
+  fields: Field[],
+  segmentField: string,
+  hook: FieldHook
+): Field[] =>
+  fields.map((field): Field => {
+    if (field.type === "tabs") {
+      return {
+        ...field,
+        tabs: field.tabs.map((tab) =>
+          "name" in tab && typeof tab.name === "string"
+            ? tab
+            : { ...tab, fields: withSegmentBeforeDuplicate(tab.fields, segmentField, hook) }
+        ),
+      };
+    }
+    if (
+      field.type === "row" ||
+      field.type === "collapsible" ||
+      (field.type === "group" && !("name" in field && field.name))
+    ) {
+      return {
+        ...field,
+        fields: withSegmentBeforeDuplicate(field.fields, segmentField, hook),
+      } as Field;
+    }
+    if ("name" in field && field.name === segmentField && field.type === "text") {
+      return {
+        ...field,
+        hooks: {
+          ...field.hooks,
+          beforeDuplicate: [...(field.hooks?.beforeDuplicate ?? []), hook],
+        },
+      };
+    }
+
+    return field;
+  });
 
 /**
  * `access.update: () => false` drops a request's pathSegment in beforeValidate, but a field
@@ -58,6 +115,7 @@ export const buildPageFields = (
     type: "text",
     access: { update: nobody },
     admin: { hidden: true },
+    ...(options.disabled ? {} : { hooks: { beforeDuplicate: [resetOrderKeyOnDuplicate] } }),
     index: true,
   },
   {
@@ -66,12 +124,16 @@ export const buildPageFields = (
     access: { update: nobody },
     admin: { hidden: true, readOnly: true },
     defaultValue: 0,
+    ...(options.disabled
+      ? {}
+      : { hooks: { beforeDuplicate: [resetStructureRevisionOnDuplicate] } }),
   },
   {
     name: "isFolderRoot",
     type: "checkbox",
     admin: { position: "sidebar" },
     defaultValue: false,
+    ...(options.disabled ? {} : { hooks: { beforeDuplicate: [resetIsFolderRootOnDuplicate] } }),
     index: true,
   },
   buildPathSegmentField(page.segmentLocalized, options.disabled ? undefined : page.segmentField),
@@ -106,11 +168,18 @@ const addPageHooks = (
     afterChange: [...(hooks.afterChange ?? []), pageAfterChange],
     afterOperation: [...(hooks.afterOperation ?? []), releaseUnboundTreeLockHook],
     afterRead: [...(hooks.afterRead ?? []), buildFullPathAfterRead()],
-    beforeChange: [...(hooks.beforeChange ?? []), buildPageBeforeChange(collection.slug, options)],
+    beforeChange: [
+      ...(hooks.beforeChange ?? []),
+      buildStructureGuard(options.collections[collection.slug], options),
+    ],
     beforeOperation: [
       ...(hooks.beforeOperation ?? []),
-      buildAcquireTreeLockHook(["create"]),
+      buildAcquireTreeLockHook(["create", "update", "restoreVersion"]),
       selectFullPathInputsHook,
+    ],
+    beforeValidate: [
+      ...(hooks.beforeValidate ?? []),
+      buildPageBeforeValidate(options.collections[collection.slug], options),
     ],
   };
 };
@@ -119,13 +188,24 @@ export const addPageFields = (
   collection: CollectionConfig,
   page: ResolvedPageCollection,
   options: ResolvedOptions
-): CollectionConfig => ({
-  ...collection,
-  ...(options.disabled ? {} : { hooks: addPageHooks(collection, options) }),
-  fields: [
-    ...collection.fields,
-    ...(page.segmentFieldExists ? [] : [buildSegmentField(page)]),
-    ...buildPageFields(page, options),
-  ],
-  indexes: [...(collection.indexes ?? []), { fields: ["folder", "orderKey"] }],
-});
+): CollectionConfig => {
+  const hostFields =
+    page.segmentFieldExists && !options.disabled
+      ? withSegmentBeforeDuplicate(
+          collection.fields,
+          page.segmentField,
+          buildSegmentBeforeDuplicate(options)
+        )
+      : collection.fields;
+
+  return {
+    ...collection,
+    ...(options.disabled ? {} : { hooks: addPageHooks(collection, options) }),
+    fields: [
+      ...hostFields,
+      ...(page.segmentFieldExists ? [] : [buildSegmentField(page, options)]),
+      ...buildPageFields(page, options),
+    ],
+    indexes: [...(collection.indexes ?? []), { fields: ["folder", "orderKey"] }],
+  };
+};

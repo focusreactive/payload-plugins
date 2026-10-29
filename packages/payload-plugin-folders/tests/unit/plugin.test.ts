@@ -55,7 +55,15 @@ describe("foldersPlugin", () => {
 
     const pages = result.collections?.find((collection) => collection.slug === "pages");
     const slugFields = pages?.fields.filter((field) => "name" in field && field.name === "slug");
-    expect(slugFields).toEqual([{ index: true, name: "slug", type: "text" }]);
+    // The one field stays the host's, and gains only the duplicate hook (spec section 2.4).
+    expect(slugFields).toEqual([
+      {
+        hooks: { beforeDuplicate: [expect.any(Function)] },
+        index: true,
+        name: "slug",
+        type: "text",
+      },
+    ]);
   });
 
   it("throws the config error for an unknown collection", () => {

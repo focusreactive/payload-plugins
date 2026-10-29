@@ -8,6 +8,8 @@ import { joinPath, pathDepth } from "./paths.js";
 
 /** A folder row as stored: one value per locale for name, slug and fullPath, with no fallback. */
 export type FolderRecord = {
+  /** Page collection slugs the folder accepts; empty means every page type. */
+  allowedTypes: string[];
   ancestorIds: string | null;
   depth: number | null;
   fullPath: ValuesByLocale;
@@ -16,6 +18,7 @@ export type FolderRecord = {
   orderKey: string | null;
   parent: FolderId | null;
   slug: ValuesByLocale;
+  structureRevision: number;
 };
 
 const toValuesByLocale = (value: unknown): ValuesByLocale => {
@@ -58,6 +61,9 @@ export const readFolderRecord = async (
   }
 
   return {
+    allowedTypes: Array.isArray(row.allowedTypes)
+      ? row.allowedTypes.filter((type): type is string => typeof type === "string")
+      : [],
     ancestorIds: typeof row.ancestorIds === "string" ? row.ancestorIds : null,
     depth: typeof row.depth === "number" ? row.depth : null,
     fullPath: toValuesByLocale(row.fullPath),
@@ -66,6 +72,7 @@ export const readFolderRecord = async (
     orderKey: typeof row.orderKey === "string" ? row.orderKey : null,
     parent: toId(row.parent),
     slug: toValuesByLocale(row.slug),
+    structureRevision: typeof row.structureRevision === "number" ? row.structureRevision : 0,
   };
 };
 

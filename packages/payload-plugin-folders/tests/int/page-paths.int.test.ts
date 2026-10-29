@@ -541,7 +541,8 @@ describe("pathSegment is computed by the plugin", () => {
       path: "/pages",
       payload,
     });
-    expect(withoutSlug.body.doc.pathSegment).toBeNull();
+    // The slug is derived from the title (spec section 2.6); the client's pathSegment is not used.
+    expect(withoutSlug.body.doc.pathSegment).toBe("no-slug");
 
     // The same holds for a collection whose slug is not localized.
     const post = await callEndpoint<{ doc: PageDoc }>({

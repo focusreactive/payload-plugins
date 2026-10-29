@@ -17,6 +17,11 @@ import {
 } from "../../core/locales.js";
 import type { ValuesByLocale } from "../../core/locales.js";
 import { buildSegmentWhere } from "../../core/segmentWhere.js";
+import {
+  classifyStructureEdit,
+  namesOtherFolder,
+  namesOtherOrderKey,
+} from "../../core/structureGuard.js";
 import { keyForNewItem } from "../../core/orderKeys.js";
 import { SEGMENT_ERROR_MESSAGE, isValidSegment } from "../../core/slugify.js";
 import type { FolderId, ResolvedOptions } from "../../types.js";
@@ -93,21 +98,33 @@ export const buildFolderBeforeChange =
       parentId = reference.id;
     } else {
       parentId = stored?.parent ?? null;
-      if (data.parent !== undefined) {
-        const requested = normalizeFolderReference(data.parent);
-        if (requested.invalid || String(requested.id) !== String(parentId)) {
-          const target =
-            requested.id === null ? null : await readFolderRecord(req, options, requested.id);
-          if (target && stored && wouldCreateCycle(stored.id, target)) {
-            problems.push({
-              message: "A folder cannot be moved into itself or one of its subfolders",
-              path: "parent",
-            });
-            fail();
-          }
-          throw new APIError("Use moveItems() to move content", 400);
+      const requested = data.parent === undefined ? null : normalizeFolderReference(data.parent);
+      const edit = classifyStructureEdit({
+        changesStructure:
+          (requested !== null && namesOtherFolder(requested, parentId)) ||
+          namesOtherOrderKey(data.orderKey, stored?.orderKey ?? null),
+        incomingRevision: data.structureRevision,
+        missingRevisionIsStale: false,
+        storedRevision: stored?.structureRevision ?? 0,
+      });
+      if (edit === "deliberate") {
+        const target =
+          requested === null || requested.id === null
+            ? null
+            : await readFolderRecord(req, options, requested.id);
+        if (target && stored && wouldCreateCycle(stored.id, target)) {
+          problems.push({
+            message: "A folder cannot be moved into itself or one of its subfolders",
+            path: "parent",
+          });
+          fail();
         }
+        throw new APIError("Use moveItems() to move content", 400);
       }
+      // A stale or absent structure never reaches the row: the stored one is written back.
+      data.parent = parentId as never;
+      data.orderKey = (stored?.orderKey ?? null) as never;
+      data.structureRevision = (stored?.structureRevision ?? 0) as never;
     }
 
     let parent: FolderRecord | null = null;

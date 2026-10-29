@@ -11,7 +11,7 @@ import { isInternalWrite } from "./context.js";
 // found the lock already held (a nested update) must not release its caller's hold.
 const operationsThatAcquired = new WeakSet<object>();
 
-type LockedOperation = "create" | "update";
+type LockedOperation = "create" | "restoreVersion" | "update";
 
 /**
  * Takes the tree lock before the operation validates or writes anything, then writes the
