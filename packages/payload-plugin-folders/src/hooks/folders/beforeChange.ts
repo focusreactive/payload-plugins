@@ -193,7 +193,8 @@ export const buildFolderBeforeChange =
       }
 
       // Rule 2 of spec section 2.6: a page in the same folder may not take the folder's segment.
-      // `pathSegment` is complete from P-08 on; the segment field catches own segments until then.
+      // `pathSegment` holds the effective segment of every locale, so a page whose segment falls
+      // back to the default locale is found too, which its own slug field would not show.
       for (const page of Object.values(options.collections)) {
         const pageClash = await payload.db.count({
           collection: toCollectionSlug(page.slug),
@@ -203,12 +204,7 @@ export const buildFolderBeforeChange =
             and: [
               { folder: { equals: parentId } },
               { isFolderRoot: { not_equals: true } },
-              {
-                or: [
-                  { pathSegment: { equals: plan.segments[key] } },
-                  { [page.segmentField]: { equals: plan.segments[key] } },
-                ],
-              },
+              { pathSegment: { equals: plan.segments[key] } },
             ],
           },
         });

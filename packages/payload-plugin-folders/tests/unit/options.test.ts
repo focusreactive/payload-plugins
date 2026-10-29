@@ -282,7 +282,7 @@ describe("normalizeOptions", () => {
       const fieldHooks = collection.fields.flatMap((field) =>
         "hooks" in field && field.hooks ? Object.entries(field.hooks) : []
       );
-      // fullPath answers null until P-08 and is the only field hook the schema carries.
+      // fullPath answers null while the plugin is disabled and is the only field hook the schema carries.
       expect(fieldHooks.map(([hookName]) => hookName)).toEqual(
         collection.slug === "pages" ? ["afterRead"] : []
       );

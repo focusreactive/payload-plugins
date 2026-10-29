@@ -2,6 +2,8 @@ import type { CollectionConfig, Field, FieldAccess } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
 import { buildPageBeforeChange, pageAfterChange } from "../hooks/pages/beforeChange.js";
+import { buildFullPathAfterRead, folderPathAfterRead } from "../hooks/pages/fullPathAfterRead.js";
+import { buildPathSegmentHook } from "../hooks/pages/pathSegment.js";
 import { buildAcquireTreeLockHook, releaseUnboundTreeLockHook } from "../hooks/operationLock.js";
 
 import type { ResolvedOptions, ResolvedPageCollection } from "../types.js";
@@ -20,12 +22,16 @@ export const buildSegmentField = (page: ResolvedPageCollection): Field => ({
  * `access.update: () => false` drops a request's pathSegment in beforeValidate, but a field
  * beforeChange hook still sets the value afterwards, on create and update, for drafts and per
  * locale (tests/int/pathSegmentAccess.int.test.ts, build-lead decision 11). So the access stays.
+ * Without `segmentField` the field carries no hook; the access probe builds it that way.
  */
-export const buildPathSegmentField = (segmentLocalized: boolean): Field => ({
+export const buildPathSegmentField = (segmentLocalized: boolean, segmentField?: string): Field => ({
   name: "pathSegment",
   type: "text",
   access: { update: nobody },
   admin: { hidden: true },
+  ...(segmentField === undefined
+    ? {}
+    : { hooks: { beforeChange: [buildPathSegmentHook(segmentField, segmentLocalized)] } }),
   index: true,
   localized: segmentLocalized,
 });
@@ -64,11 +70,12 @@ export const buildPageFields = (
     defaultValue: false,
     index: true,
   },
-  buildPathSegmentField(page.segmentLocalized),
+  buildPathSegmentField(page.segmentLocalized, options.disabled ? undefined : page.segmentField),
   {
     name: "folderPath",
     type: "text",
     admin: { hidden: true },
+    ...(options.disabled ? {} : { hooks: { afterRead: [folderPathAfterRead] } }),
     // A string path makes Payload resolve queries and sorts through the related folder's column.
     virtual: "folder.fullPath",
   },
@@ -76,10 +83,9 @@ export const buildPageFields = (
     name: "fullPath",
     type: "text",
     admin: { position: "sidebar", readOnly: true },
-    hooks: {
-      // Composed from folderPath and pathSegment from P-08 on.
-      afterRead: [() => null],
-    },
+    // Composed by the collection's afterRead hook (buildFullPathAfterRead), not a field hook. A
+    // disabled plugin keeps the schema and answers null.
+    ...(options.disabled ? { hooks: { afterRead: [() => null] } } : {}),
     virtual: true,
   },
 ];
@@ -95,6 +101,7 @@ const addPageHooks = (
     ...hooks,
     afterChange: [...(hooks.afterChange ?? []), pageAfterChange],
     afterOperation: [...(hooks.afterOperation ?? []), releaseUnboundTreeLockHook],
+    afterRead: [...(hooks.afterRead ?? []), buildFullPathAfterRead()],
     beforeChange: [...(hooks.beforeChange ?? []), buildPageBeforeChange(collection.slug, options)],
     beforeOperation: [...(hooks.beforeOperation ?? []), buildAcquireTreeLockHook(["create"])],
   };

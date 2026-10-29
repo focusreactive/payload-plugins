@@ -108,7 +108,7 @@ describe("data model", () => {
     });
     expect(page).toMatchObject({
       folder: folder.id,
-      fullPath: null,
+      fullPath: "/blog/post",
       isFolderRoot: false,
       structureRevision: 0,
     });
