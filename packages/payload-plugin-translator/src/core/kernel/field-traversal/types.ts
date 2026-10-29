@@ -1,3 +1,6 @@
+/** A block's `slug`, which a data element's `blockType` names. @public */
+export type BlockSlug = string;
+
 /**
  * A block definition as this layer needs to read it: a `slug` to match a data element's
  * `blockType` against, and the child `fields` to descend into. Structurally a superset-compatible
@@ -6,7 +9,7 @@
  * @public
  */
 export interface BlockLike {
-  slug: string;
+  slug: BlockSlug;
   fields: FieldLike[];
 }
 
@@ -28,7 +31,8 @@ export interface TabLike {
  * The structural shape of a single field this traversal layer reads — a framework-agnostic
  * superset that Payload's concrete `Field` union is assignable to. The layer only ever reads
  * `type` (to classify), `name`/`localized`/`custom` (leaf data + translation config), and the
- * container members `fields`/`blocks`/`tabs` (to descend). Nothing Payload-specific leaks in.
+ * container members `fields`/`blocks`/`tabs` (to descend). Nothing Payload-specific leaks in, except
+ * `blockReferences`: input only, resolved into `blocks` by `projectFieldsToFieldLike`.
  *
  * @public
  */
@@ -39,6 +43,7 @@ export interface FieldLike {
   custom?: Record<string, unknown>;
   fields?: FieldLike[];
   blocks?: BlockLike[];
+  blockReferences?: (BlockLike | BlockSlug)[];
   tabs?: TabLike[];
 }
 

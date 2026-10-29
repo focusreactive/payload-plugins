@@ -107,7 +107,7 @@ export class TranslateCollectionPlugin {
       }
 
       const schemaMap: CollectionSchemaMap = new Map(
-        collections.map((col) => [col.slug, projectFieldsToFieldLike(col.fields)])
+        collections.map((col) => [col.slug, projectFieldsToFieldLike(col.fields, config.blocks)])
       );
       const collectionSlugs = new Set(schemaMap.keys());
 
