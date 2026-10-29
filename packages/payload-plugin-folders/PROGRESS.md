@@ -116,6 +116,19 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     segments as drift and repair lowercases them, with a redirect from the old URL; until repaired, the
     P-31 resolver tries the exact path, then the lowercased one. Uniqueness stays case-sensitive, so a
     legacy `/About` next to `/about` is a known state that verify reports.
+23. **A folder rename that changes live URLs needs publish rights (G8).** Spec §9 gates a move on
+    publish rights when a published URL changes, but says nothing for a rename, which changes the same
+    URLs. Decision: the folder save hook and the rename preview ask the same publish question
+    (`update` with `_status: 'published'`) for the published pages beneath the folder, once per
+    collection and folder, the same rule as a move. A drafter can still rename a folder with only
+    draft pages beneath it. Extends decision 5: `canRepairTree` calls `access.move` with an empty
+    item list, so a host gate written as `items.every(...)` passes for everyone; the README says so,
+    and P-29/P-51 rely on `access.repair` for the repair button.
+24. **A locale served through fallback counts as published (G8, for P-21).** Under decision 19 an
+    en-only published page is live at its de fallback URL when fallback is on. Decision: when a move or
+    rename reports URL changes, locale L counts as published when its own status is published, or
+    when it has none, fallback is on and the default locale is published. P-21 writes redirect rows
+    for those URLs; P-31 resolve must serve them the same way.
 
 ### Owner decisions (from spec/review.md, the spec writer's pick applies)
 
