@@ -24,7 +24,8 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   webServer: {
-    command: "npm run dev",
+    // The PID file lets anyone stop this server by that PID alone, never by process name.
+    command: "mkdir -p .run && echo $$ > .run/next-dev.pid && exec npm run dev",
     env: { DATABASE_URI: `file:${path.join(databaseDirectory, "e2e.db")}` },
     // A reused server would be pointing at some other database.
     reuseExistingServer: false,

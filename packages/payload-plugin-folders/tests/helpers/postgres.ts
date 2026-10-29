@@ -1,8 +1,9 @@
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -10,6 +11,11 @@ const execFileAsync = promisify(execFile);
 export const postgresPort = 54_329;
 
 const homebrewBinaryDirectory = "/opt/homebrew/opt/postgresql@17/bin";
+
+// Every server this package starts records its PID here, so it can be stopped by that PID alone
+// and never by process name, which would also match other sessions' processes.
+const pidDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../.run");
+const postgresPidFile = path.join(pidDirectory, "postgres.pid");
 
 export const missingPostgresMessage = "Set TEST_DATABASE_URL or install Postgres 17";
 
@@ -82,12 +88,18 @@ export const startPostgres = async (): Promise<RunningPostgres> => {
     );
   }
 
+  // The first line of postmaster.pid is the server's PID.
+  const postmasterPidFile = await readFile(path.join(dataDirectory, "postmaster.pid"), "utf-8");
+  await mkdir(pidDirectory, { recursive: true });
+  await writeFile(postgresPidFile, `${postmasterPidFile.split("\n")[0]}\n`);
+
   return {
     connectionString: `postgres://postgres@127.0.0.1:${postgresPort}/postgres`,
     stop: async () => {
       try {
         await execFileAsync(pgCtl, ["-D", dataDirectory, "-m", "immediate", "-w", "stop"]);
       } finally {
+        await rm(postgresPidFile, { force: true });
         await removeCluster();
       }
     },
