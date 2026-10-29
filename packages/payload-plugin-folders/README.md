@@ -71,6 +71,12 @@ and `pathSegment`, because the path is composed from them. They appear in the re
   unset.
 - A page that existed before the plugin was installed has a null `pathSegment` until it is saved
   again or repaired (P-29), so a segment lookup does not find it until then.
+- A bulk update that could change URLs is refused with a 400: a `where` update that publishes,
+  sets `publishAllLocales`, or sets the segment field, `isFolderRoot`, `folder` or `orderKey`.
+  This includes the admin list's bulk Publish. Payload saves the matching pages in parallel and
+  commits the ones that succeed even when others fail, so the uniqueness check could not keep two
+  pages from going live at one URL. Publish pages one at a time until batch publish (P-27)
+  exists. A bulk update of other fields, or of drafts, still works.
 - Segment uniqueness is strict under `localizeStatus` (the Payload 4 default for drafts with
   localized fields). A page published only in `en` is live at its `en` path, and every other
   locale falls back to it, so it blocks another page's `de` slug through that fallback even

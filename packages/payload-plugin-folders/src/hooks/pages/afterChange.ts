@@ -2,7 +2,7 @@ import { ValidationError } from "payload";
 import type { CollectionAfterChangeHook } from "payload";
 
 import { readFolderRecord } from "../../core/folderRecords.js";
-import { readPageRow, takeSnapshot, toSnapshot } from "../../core/pageRecords.js";
+import { readPageRow, popSnapshot, toSnapshot } from "../../core/pageRecords.js";
 import { bumpRevision } from "../../core/treeLock.js";
 import {
   describeMissingSegment,
@@ -41,7 +41,7 @@ const checkWrittenPage = async (
   req: Parameters<CollectionAfterChangeHook>[0]["req"],
   id: FolderId
 ): Promise<void> => {
-  const before = takeSnapshot(req, page.slug, id);
+  const before = popSnapshot(req, page.slug, id);
   if (!before) {
     return;
   }

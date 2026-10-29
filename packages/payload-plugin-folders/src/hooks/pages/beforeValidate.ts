@@ -5,7 +5,7 @@ import { toCollectionSlug } from "../../collectionSlug.js";
 import { normalizeFolderReference, readFolderRecord } from "../../core/folderRecords.js";
 import type { FolderRecord } from "../../core/folderRecords.js";
 import { noLocaleKey } from "../../core/locales.js";
-import { readPageRow, rememberSnapshot, toSnapshot } from "../../core/pageRecords.js";
+import { popSnapshot, pushSnapshot, readPageRow, toSnapshot } from "../../core/pageRecords.js";
 import type { PageRow } from "../../core/pageRecords.js";
 import { SEGMENT_ERROR_MESSAGE, isValidSegment, slugify } from "../../core/slugify.js";
 import {
@@ -129,12 +129,9 @@ export const buildPageBeforeValidate =
     }
     const pageId = originalDoc?.id as FolderId;
     // The post-write check in afterChange compares the saved row with this one.
-    rememberSnapshot(
-      req,
-      page.slug,
-      pageId,
-      mainRow ? toSnapshot(mainRow, localeKeys, defaultLocale) : null
-    );
+    if (mainRow) {
+      pushSnapshot(req, page.slug, pageId, toSnapshot(mainRow, localeKeys, defaultLocale));
+    }
 
     let folderId: FolderId | null;
     if (isCreate) {
@@ -301,7 +298,9 @@ export const buildPageBeforeValidate =
     }
 
     if (problems.length > 0) {
-      rememberSnapshot(req, page.slug, pageId, null);
+      if (mainRow) {
+        popSnapshot(req, page.slug, pageId);
+      }
       throw new ValidationError({ collection: page.slug, errors: dedupe(problems), req });
     }
 

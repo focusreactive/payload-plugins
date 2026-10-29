@@ -8,6 +8,7 @@ import {
   resetOrderKeyOnDuplicate,
   resetStructureRevisionOnDuplicate,
 } from "../hooks/pages/beforeDuplicate.js";
+import { buildBulkUpdateGuard } from "../hooks/pages/bulkUpdateGuard.js";
 import { buildPageBeforeValidate } from "../hooks/pages/beforeValidate.js";
 import { buildStructureGuard } from "../hooks/pages/structureGuard.js";
 import {
@@ -177,6 +178,7 @@ const addPageHooks = (
     ],
     beforeOperation: [
       ...(hooks.beforeOperation ?? []),
+      buildBulkUpdateGuard(options.collections[collection.slug]),
       buildAcquireTreeLockHook(["create", "update", "restoreVersion"]),
       selectFullPathInputsHook,
     ],

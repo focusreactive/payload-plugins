@@ -852,3 +852,108 @@ describe("what a save makes live without naming it", () => {
     expect(stillDraft._status).toBe("draft");
   });
 });
+
+describe("bulk updates", () => {
+  it("a bulk publish that could put two pages at one URL is refused and publishes neither", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { name: "Bulk twins" });
+    const first = await createDraftPage(payload, {
+      folder: folder.id,
+      slug: "bulk",
+      title: "Bulk one",
+    });
+    const second = await createDraftPage(payload, {
+      folder: folder.id,
+      slug: "bulk",
+      title: "Bulk two",
+    });
+
+    const error = await catchError(
+      payload.update({
+        collection: "pages",
+        data: { _status: "published" },
+        overrideAccess: true,
+        where: { id: { in: [first.id, second.id] } },
+      })
+    );
+
+    expect(error.status).toBe(400);
+    expect(error.message).toContain("Publish pages one at a time");
+    for (const page of [first, second]) {
+      const stored = await payload.findByID({
+        collection: "pages",
+        depth: 0,
+        draft: true,
+        id: page.id,
+        overrideAccess: true,
+      });
+      expect(stored._status).toBe("draft");
+    }
+    const { totalDocs } = await payload.count({
+      collection: "pages",
+      overrideAccess: true,
+      where: { and: [{ folder: { equals: folder.id } }, { _status: { equals: "published" } }] },
+    });
+    expect(totalDocs).toBe(0);
+  });
+
+  it("a bulk update of any field that moves a URL is refused", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { name: "Bulk url fields" });
+    const page = await createDraftPage(payload, {
+      folder: folder.id,
+      slug: "bulk-url",
+      title: "Bulk url",
+    });
+
+    for (const data of [{ slug: "changed" }, { isFolderRoot: true }, { orderKey: "zz" }]) {
+      const error = await catchError(
+        payload.update({
+          collection: "pages",
+          data,
+          draft: true,
+          overrideAccess: true,
+          where: { id: { equals: page.id } },
+        })
+      );
+      expect(error.status).toBe(400);
+    }
+    const byPublishAllLocales = await catchError(
+      payload.update({
+        collection: "pages",
+        data: { title: "Still refused" },
+        overrideAccess: true,
+        publishAllLocales: true,
+        where: { id: { equals: page.id } },
+      })
+    );
+    expect(byPublishAllLocales.status).toBe(400);
+  });
+
+  it("a bulk update of a field that does not move a URL still works", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { name: "Bulk title" });
+    const first = await createDraftPage(payload, {
+      folder: folder.id,
+      slug: "bulk-t1",
+      title: "T1",
+    });
+    const second = await createDraftPage(payload, {
+      folder: folder.id,
+      slug: "bulk-t2",
+      title: "T2",
+    });
+
+    const result = await payload.update({
+      collection: "pages",
+      data: { title: "Renamed in bulk" },
+      depth: 0,
+      draft: true,
+      overrideAccess: true,
+      where: { id: { in: [first.id, second.id] } },
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(result.docs.map((doc) => doc.title)).toEqual(["Renamed in bulk", "Renamed in bulk"]);
+  });
+});

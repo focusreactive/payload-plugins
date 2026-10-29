@@ -110,40 +110,48 @@ export const toSnapshot = (
   isPublished: row.isPublished,
 });
 
-// One snapshot per document being written: the tree lock serialises writers, and the entry is
-// taken out by the same operation's afterChange. A write that fails in between leaves an entry
-// that the next write of the document replaces before anything reads it.
-const snapshotsByPayload = new WeakMap<object, Map<string, PageSnapshot>>();
+// A stack per document being written. `beforeValidate` pushes and `afterChange` pops, so a host
+// `afterChange` hook that re-saves the same page on the same request (a nested update runs its own
+// push and pop first) leaves the outer save's snapshot where the outer `afterChange` will find it.
+// The tree lock serialises writers, so the top of a stack is always the running write's own entry.
+// A write that fails between the two hooks leaves its entry at the bottom, where later writes,
+// which push and pop above it, never read it.
+const snapshotsByPayload = new WeakMap<object, Map<string, PageSnapshot[]>>();
 
 const snapshotKey = (collection: string, id: FolderId): string => `${collection}:${id}`;
 
-export const rememberSnapshot = (
+export const pushSnapshot = (
   req: PayloadRequest,
   collection: string,
   id: FolderId,
-  snapshot: PageSnapshot | null
+  snapshot: PageSnapshot
 ): void => {
   let snapshots = snapshotsByPayload.get(req.payload);
   if (!snapshots) {
     snapshots = new Map();
     snapshotsByPayload.set(req.payload, snapshots);
   }
-  if (snapshot) {
-    snapshots.set(snapshotKey(collection, id), snapshot);
-  } else {
-    snapshots.delete(snapshotKey(collection, id));
-  }
+  const key = snapshotKey(collection, id);
+  snapshots.set(key, [...(snapshots.get(key) ?? []), snapshot]);
 };
 
-export const takeSnapshot = (
+/** Takes the newest snapshot of the document off its stack. */
+export const popSnapshot = (
   req: PayloadRequest,
   collection: string,
   id: FolderId
 ): PageSnapshot | null => {
   const snapshots = snapshotsByPayload.get(req.payload);
   const key = snapshotKey(collection, id);
-  const snapshot = snapshots?.get(key) ?? null;
-  snapshots?.delete(key);
+  const stack = snapshots?.get(key);
+  const snapshot = stack?.at(-1) ?? null;
+  if (stack && snapshots) {
+    if (stack.length > 1) {
+      snapshots.set(key, stack.slice(0, -1));
+    } else {
+      snapshots.delete(key);
+    }
+  }
 
   return snapshot;
 };
