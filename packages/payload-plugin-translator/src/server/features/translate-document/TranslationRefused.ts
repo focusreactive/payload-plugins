@@ -1,5 +1,5 @@
 import { TranslatorError } from "../../../core/errors/index.js";
-import { markFailureReason } from "../../../core/domain/translation-providers/failureReason.js";
+import { markFailureReason } from "../../../core/errors/failureReason.js";
 
 /**
  * A translation the host's access rules refused.

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { APIError } from "payload";
-import { markFailureReason } from "../../../../core/domain/translation-providers/failureReason.js";
+import { markFailureReason } from "../../../../core/errors/failureReason.js";
 import type { PayloadRequest } from "payload";
 
 import { withErrorHandler } from "../withErrorHandler.js";

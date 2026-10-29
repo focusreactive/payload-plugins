@@ -33,7 +33,7 @@ const TEST_SEAM = {
 // src/core/** is the consolidated framework-agnostic surface (slice 7, Option C):
 // no Payload, no React/Next, and no downward edges into the plugin adapter
 // (src/server, src/client). The cheap in-repo backstop is
-// src/core/no-payload-boundary.test.ts; this lint makes the boundary fail at edit
+// src/core/__tests__/no-payload-boundary.test.ts; this lint makes the boundary fail at edit
 // time too. Test files in this zone are exempt (the conformance test deliberately
 // imports payload types to assert structural compatibility).
 const TRANSLATOR = "packages/payload-plugin-translator";
