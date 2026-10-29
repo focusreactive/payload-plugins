@@ -5,7 +5,7 @@ import { redirectsPlugin } from "@payloadcms/plugin-redirects";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildConfig } from "payload";
-import type { Config } from "payload";
+import type { CollectionConfig, Config } from "payload";
 
 import { Pages } from "./collections/Pages.js";
 import { Posts } from "./collections/Posts.js";
@@ -24,6 +24,8 @@ const isProduction = process.env.NODE_ENV === "production";
 export type DevConfigOptions = {
   /** Log into the admin as the dev user without a form. Defaults to on outside production. */
   autoLogin?: boolean;
+  /** Collections added after the dev app's own; tests use them for probes the plugin does not own. */
+  extraCollections?: CollectionConfig[];
   /** Replaces the default SQLite adapter; the integration tests pass a per-file database here. */
   db?: Config["db"];
   /** Merged over the dev app's plugin options. */
@@ -38,6 +40,7 @@ export const buildDevConfig = ({
     // would leave half its writes behind.
     transactionOptions: {},
   }),
+  extraCollections = [],
   foldersOptions,
 }: DevConfigOptions = {}) =>
   buildConfig({
@@ -46,7 +49,7 @@ export const buildDevConfig = ({
       importMap: { baseDir: dirname },
       user: "users",
     },
-    collections: [Pages, Posts, Users],
+    collections: [Pages, Posts, Users, ...extraCollections],
     db,
     email: testEmailAdapter,
     localization: { defaultLocale: "en", fallback: true, locales: ["en", "de"] },

@@ -71,9 +71,10 @@ const createPostgresDatabase = async (): Promise<TestDatabase> => {
   };
 };
 
-export type GetTestPayloadOptions = Pick<DevConfigOptions, "foldersOptions">;
+export type GetTestPayloadOptions = Pick<DevConfigOptions, "extraCollections" | "foldersOptions">;
 
 export const getTestPayload = async ({
+  extraCollections,
   foldersOptions,
 }: GetTestPayloadOptions = {}): Promise<TestPayload> => {
   const databaseKind: TestDatabaseKind = process.env.TEST_DB === "postgres" ? "postgres" : "sqlite";
@@ -82,7 +83,12 @@ export const getTestPayload = async ({
 
   try {
     // Auto-login is for browsers; the tests authenticate explicitly through callEndpoint.
-    const config = await buildDevConfig({ autoLogin: false, db: database.adapter, foldersOptions });
+    const config = await buildDevConfig({
+      autoLogin: false,
+      db: database.adapter,
+      extraCollections,
+      foldersOptions,
+    });
     // getPayload caches instances by key and destroy() does not clear the cache, so a shared
     // key would hand a second call in the same file the destroyed first instance.
     const payload = await getPayload({ config, key: randomUUID() });

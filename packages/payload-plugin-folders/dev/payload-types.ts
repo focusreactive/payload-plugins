@@ -70,6 +70,9 @@ export interface Config {
     pages: Page;
     posts: Post;
     users: User;
+    folders: Folder;
+    'folder-redirects': FolderRedirect;
+    'folder-operations': FolderOperation;
     redirects: Redirect;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -82,6 +85,9 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
+    folders: FoldersSelect<false> | FoldersSelect<true>;
+    'folder-redirects': FolderRedirectsSelect<false> | FolderRedirectsSelect<true>;
+    'folder-operations': FolderOperationsSelect<false> | FolderOperationsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -93,8 +99,12 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: ('false' | 'none' | 'null') | false | null | ('en' | 'de') | ('en' | 'de')[];
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'folders-tree-state': FoldersTreeState;
+  };
+  globalsSelect: {
+    'folders-tree-state': FoldersTreeStateSelect<false> | FoldersTreeStateSelect<true>;
+  };
   locale: 'en' | 'de';
   widgets: {
     welcome: WelcomeWidget;
@@ -135,6 +145,13 @@ export interface Page {
   title: string;
   slug?: string | null;
   blocks?: (Hero | Content)[] | null;
+  folder?: (number | null) | Folder;
+  orderKey?: string | null;
+  structureRevision?: number | null;
+  isFolderRoot?: boolean | null;
+  pathSegment?: string | null;
+  folderPath?: string | null;
+  fullPath?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -166,6 +183,35 @@ export interface Content {
   id?: string | null;
   blockName?: string | null;
   blockType: 'content';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folders".
+ */
+export interface Folder {
+  id: number;
+  name: string;
+  slug: string;
+  parent?: (number | null) | Folder;
+  orderKey?: string | null;
+  fullPath?: string | null;
+  ancestorIds?: string | null;
+  depth?: number | null;
+  structureRevision?: number | null;
+  allowedTypes?: ('pages' | 'posts')[] | null;
+  defaultType?: ('pages' | 'posts') | null;
+  lockSubfolderTypes?: boolean | null;
+  typesLockedBy?: (number | null) | Folder;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -211,10 +257,88 @@ export interface Post {
   title: string;
   slug?: string | null;
   body?: string | null;
+  folder?: (number | null) | Folder;
+  orderKey?: string | null;
+  structureRevision?: number | null;
+  isFolderRoot?: boolean | null;
+  pathSegment?: string | null;
+  folderPath?: string | null;
+  fullPath?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
   } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folder-redirects".
+ */
+export interface FolderRedirect {
+  id: number;
+  lookupKey: string;
+  fromPath: string;
+  locale?: string | null;
+  kind: 'page' | 'folderPrefix';
+  target?:
+    | ({
+        relationTo: 'folders';
+        value: number | Folder;
+      } | null)
+    | ({
+        relationTo: 'pages';
+        value: number | Page;
+      } | null)
+    | ({
+        relationTo: 'posts';
+        value: number | Post;
+      } | null);
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folder-operations".
+ */
+export interface FolderOperation {
+  id: number;
+  kind: 'publish' | 'unpublish' | 'delete' | 'duplicate' | 'mirrorRedirects';
+  items?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  cursor?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  done?: number | null;
+  total?: number | null;
+  status: 'running' | 'done' | 'failed';
+  error?: string | null;
+  createdBy?: (number | null) | User;
   updatedBy?: {
     relationTo: 'users';
     value: number | User;
@@ -288,6 +412,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'users';
         value: number | User;
+      } | null)
+    | ({
+        relationTo: 'folders';
+        value: number | Folder;
+      } | null)
+    | ({
+        relationTo: 'folder-redirects';
+        value: number | FolderRedirect;
+      } | null)
+    | ({
+        relationTo: 'folder-operations';
+        value: number | FolderOperation;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -382,6 +518,13 @@ export interface PagesSelect<T extends boolean = true> {
               blockName?: T;
             };
       };
+  folder?: T;
+  orderKey?: T;
+  structureRevision?: T;
+  isFolderRoot?: T;
+  pathSegment?: T;
+  folderPath?: T;
+  fullPath?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
@@ -396,6 +539,13 @@ export interface PostsSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   body?: T;
+  folder?: T;
+  orderKey?: T;
+  structureRevision?: T;
+  isFolderRoot?: T;
+  pathSegment?: T;
+  folderPath?: T;
+  fullPath?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
@@ -426,6 +576,60 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folders_select".
+ */
+export interface FoldersSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  parent?: T;
+  orderKey?: T;
+  fullPath?: T;
+  ancestorIds?: T;
+  depth?: T;
+  structureRevision?: T;
+  allowedTypes?: T;
+  defaultType?: T;
+  lockSubfolderTypes?: T;
+  typesLockedBy?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folder-redirects_select".
+ */
+export interface FolderRedirectsSelect<T extends boolean = true> {
+  lookupKey?: T;
+  fromPath?: T;
+  locale?: T;
+  kind?: T;
+  target?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folder-operations_select".
+ */
+export interface FolderOperationsSelect<T extends boolean = true> {
+  kind?: T;
+  items?: T;
+  cursor?: T;
+  done?: T;
+  total?: T;
+  status?: T;
+  error?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -503,6 +707,38 @@ export interface PayloadLlmInstructionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folders-tree-state".
+ */
+export interface FoldersTreeState {
+  id: number;
+  revision?: number | null;
+  lockedAt?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folders-tree-state_select".
+ */
+export interface FoldersTreeStateSelect<T extends boolean = true> {
+  revision?: T;
+  lockedAt?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "welcome_widget".
  */
 export interface WelcomeWidget {
@@ -528,7 +764,7 @@ export interface CollectionsWidget {
 export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
-    relatedCollection: 'pages' | 'posts' | 'users' | 'redirects';
+    relatedCollection: 'pages' | 'posts' | 'users' | 'folders' | 'folder-redirects' | 'redirects';
     where?:
       | {
           [k: string]: unknown;
@@ -550,7 +786,7 @@ export interface CollectionQueryWidget {
  */
 export interface ActivityWidget {
   data?: {
-    excludedCollections?: ('pages' | 'posts' | 'users' | 'redirects')[] | null;
+    excludedCollections?: ('pages' | 'posts' | 'users' | 'folders' | 'folder-redirects' | 'redirects')[] | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }
