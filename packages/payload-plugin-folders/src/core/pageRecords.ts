@@ -38,8 +38,37 @@ export type PageRow = {
   orderKey: string | null;
   /** The segment field as stored: a value per locale when it is localized, else the plain value. */
   segments: unknown;
+  /** `_status` as stored: one value, or one per locale when it is localized. */
+  status: unknown;
   structureRevision: number;
 };
+
+const pageRowSelect = (page: ResolvedPageCollection, hasDrafts: boolean): SelectType =>
+  ({
+    ...(hasDrafts ? { _status: true } : {}),
+    folder: true,
+    isFolderRoot: true,
+    orderKey: true,
+    [page.segmentField]: true,
+    structureRevision: true,
+  }) as SelectType;
+
+const hasDraftsEnabled = (req: PayloadRequest, page: ResolvedPageCollection): boolean =>
+  Boolean(req.payload.collections[toCollectionSlug(page.slug)]?.config.versions?.drafts);
+
+const toPageRow = (
+  row: Record<string, unknown>,
+  page: ResolvedPageCollection,
+  hasDrafts: boolean
+): PageRow => ({
+  folder: normalizeFolderReference(row.folder).id,
+  isFolderRoot: Boolean(row.isFolderRoot),
+  isPublished: !hasDrafts || isPublishedStatus(row._status),
+  orderKey: typeof row.orderKey === "string" ? row.orderKey : null,
+  segments: row[page.segmentField],
+  status: row._status,
+  structureRevision: typeof row.structureRevision === "number" ? row.structureRevision : 0,
+});
 
 /**
  * Reads a page's main row with every locale, selecting only what the plugin compares. The main
@@ -51,35 +80,42 @@ export const readPageRow = async (
   page: ResolvedPageCollection,
   id: FolderId
 ): Promise<PageRow | null> => {
-  const hasDrafts = Boolean(
-    req.payload.collections[toCollectionSlug(page.slug)]?.config.versions?.drafts
-  );
+  const hasDrafts = hasDraftsEnabled(req, page);
   const row = (await req.payload.db.findOne({
     collection: toCollectionSlug(page.slug),
     locale: "all",
     req,
-    select: {
-      ...(hasDrafts ? { _status: true } : {}),
-      folder: true,
-      isFolderRoot: true,
-      orderKey: true,
-      [page.segmentField]: true,
-      structureRevision: true,
-    } as SelectType,
+    select: pageRowSelect(page, hasDrafts),
     where: { id: { equals: id } },
   })) as Record<string, unknown> | null;
-  if (!row) {
-    return null;
+
+  return row ? toPageRow(row, page, hasDrafts) : null;
+};
+
+/** `readPageRow` for several pages of one collection in one query, keyed by the id as text. */
+export const readPageRows = async (
+  req: PayloadRequest,
+  page: ResolvedPageCollection,
+  ids: FolderId[]
+): Promise<Map<string, PageRow>> => {
+  const rows = new Map<string, PageRow>();
+  if (ids.length === 0) {
+    return rows;
+  }
+  const hasDrafts = hasDraftsEnabled(req, page);
+  const { docs } = await req.payload.db.find({
+    collection: toCollectionSlug(page.slug),
+    locale: "all",
+    pagination: false,
+    req,
+    select: pageRowSelect(page, hasDrafts),
+    where: { id: { in: ids } },
+  });
+  for (const doc of docs as Array<Record<string, unknown>>) {
+    rows.set(String(doc.id), toPageRow(doc, page, hasDrafts));
   }
 
-  return {
-    folder: normalizeFolderReference(row.folder).id,
-    isFolderRoot: Boolean(row.isFolderRoot),
-    isPublished: !hasDrafts || isPublishedStatus(row._status),
-    orderKey: typeof row.orderKey === "string" ? row.orderKey : null,
-    segments: row[page.segmentField],
-    structureRevision: typeof row.structureRevision === "number" ? row.structureRevision : 0,
-  };
+  return rows;
 };
 
 const toSegmentText = (value: unknown): string => (typeof value === "string" ? value : "");

@@ -1,6 +1,7 @@
 import { definePlugin } from "payload";
 import type { CollectionConfig, Config } from "payload";
 
+import { registerResolvedOptions } from "./core/runtime.js";
 import { installTreeLockTracking, seedTreeState } from "./core/treeLock.js";
 import { buildFolderOperationsCollection } from "./collections/folderOperations.js";
 import { buildFolderRedirectsCollection } from "./collections/folderRedirects.js";
@@ -32,6 +33,9 @@ export const foldersPlugin = definePlugin<FoldersPluginOptions>({
 
     const hostOnInit = config.onInit;
     const warnOnInit: Config["onInit"] = async (payload) => {
+      if (!resolved.disabled) {
+        registerResolvedOptions(payload, resolved);
+      }
       await hostOnInit?.(payload);
       if (!resolved.disabled) {
         await seedTreeState(payload);
@@ -51,6 +55,7 @@ export const foldersPlugin = definePlugin<FoldersPluginOptions>({
             init: (args) => {
               const adapter = hostDatabase.init(args);
               installTreeLockTracking(args.payload, adapter);
+              registerResolvedOptions(args.payload, resolved);
 
               return adapter;
             },

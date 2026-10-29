@@ -78,7 +78,7 @@ const buildPublishedWhere = (payload: Payload, collectionSlug: string): Where | 
 
 const toText = (value: unknown): string => (typeof value === "string" ? value : "");
 
-const readTitle = async (
+export const readTitle = async (
   req: PayloadRequest,
   page: ResolvedPageCollection,
   id: FolderId,

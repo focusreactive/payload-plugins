@@ -183,7 +183,7 @@ export const writeFolderRow = async ({
  * collection with every locale; a page's path is its folder's path plus its own segment (or the
  * folder's path alone for a root page), so nothing is written for it.
  */
-const findPageChanges = async ({
+export const findPageChanges = async ({
   currentById,
   options,
   previousById,
@@ -276,48 +276,76 @@ export type SubtreeRewrite = {
 };
 
 /**
- * Spec section 5.2 step 6 for a rename: the folder `root` already holds its new paths, and this
- * rewrites every descendant's `ancestorIds`, `depth` and `fullPath` to follow, then lists the
- * changed URLs (pages included) for `hooks.afterPathChange`. Call it inside the write's
- * transaction, under the tree lock.
- *
- * Folders are unversioned, so each row is one `payload.db.updateOne`. The drizzle adapter deletes
- * a row's locale rows and inserts the ones in `data`, so a write carries every locale's `name`,
- * `slug` and `fullPath` (decision 3), plus every other localized field the row has: a rename in one
- * locale must not drop or create a locale row for another. Page paths are computed from the folder path, so no page row
- * is written; the pages are read once per collection to report them.
+ * The locales whose path goes into a write of `record`. A locale is written when its row already
+ * holds a path, or when its path differs from the default locale's, which is what a fallback read
+ * would return. A locale that would only repeat the fallback gets no row.
  */
-export const rewriteFolderSubtree = async ({
+export const selectWrittenPaths = ({
+  defaultKey,
+  keys,
+  plan,
+  record,
+}: {
+  defaultKey: string;
+  keys: string[];
+  plan: Pick<ReturnType<typeof planFolderPaths>, "fullPath">;
+  record: FolderRecord;
+}): Record<string, string> =>
+  Object.fromEntries(
+    keys
+      .filter(
+        (key) =>
+          plan.fullPath[key] !== "" &&
+          (key === defaultKey ||
+            Boolean(record.fullPath[key]) ||
+            plan.fullPath[key] !== plan.fullPath[defaultKey])
+      )
+      .map((key) => [key, plan.fullPath[key]])
+  );
+
+export type PlannedDescendant = {
+  /** The row with the paths a read will return once `plan` is written. */
+  current: FolderRecord;
+  /** The row as stored. */
+  previous: FolderRecord;
+  plan: ReturnType<typeof planFolderPaths>;
+  /** Whether any column differs from what is stored, so the row has to be written. */
+  isStale: boolean;
+  /** The locales whose path goes into the write. */
+  writtenPaths: Record<string, string>;
+};
+
+export type SubtreePlan = {
+  /** Folder path changes of the root and its descendants; pages are found by `findPageChanges`. */
+  changes: PathChange[];
+  currentById: Map<string, FolderRecord>;
+  descendants: PlannedDescendant[];
+  previousById: Map<string, FolderRecord>;
+};
+
+/**
+ * What a rewrite of `root`'s subtree would change, without writing: `root` already holds its new
+ * paths, `descendants` come from `readFolderDescendants`, parents before children.
+ */
+export const planSubtreeRewrite = ({
+  descendants,
   options,
   previousRoot,
   req,
   root,
 }: {
+  descendants: FolderRecord[];
   options: ResolvedOptions;
   /** The root as it was stored before the save. */
   previousRoot: FolderRecord;
   req: PayloadRequest;
   /** The root as saved, with `fullPath` complete in every locale. */
   root: FolderRecord;
-}): Promise<SubtreeRewrite> => {
+}): SubtreePlan => {
   const { payload } = req;
   const keys = getFolderLocaleKeys(payload, options);
   const defaultKey = getDefaultLocaleKey(payload, options);
   const foldersSlug = options.folders.slug;
-
-  const descendants = await readFolderDescendants(req, options, root.id);
-  if (descendants.length + 1 > options.limits.maxFoldersPerMove) {
-    throw new ValidationError({
-      collection: foldersSlug,
-      errors: [
-        {
-          message: `This rename would rewrite ${descendants.length + 1} folders; the limit is ${options.limits.maxFoldersPerMove}`,
-          path: "slug",
-        },
-      ],
-      req,
-    });
-  }
 
   const effectivePath = (folder: FolderRecord, key: string): string =>
     folder.fullPath[key] || folder.fullPath[defaultKey] || "";
@@ -347,7 +375,7 @@ export const rewriteFolderSubtree = async ({
   };
   recordFolderChanges(previousRoot, root);
 
-  let rewrittenFolders = 0;
+  const planned: PlannedDescendant[] = [];
   for (const descendant of descendants) {
     const parent = currentById.get(String(descendant.parent));
     if (!parent) {
@@ -361,17 +389,8 @@ export const rewriteFolderSubtree = async ({
       parent,
       slug: descendant.slug,
     });
-    // A locale is written when its row already holds a path, or when its path differs from the
-    // default locale's, which is what a fallback read would return. A locale that would only
-    // repeat the fallback gets no row.
-    const writtenKeys = keys.filter(
-      (key) =>
-        plan.fullPath[key] !== "" &&
-        (key === defaultKey ||
-          Boolean(descendant.fullPath[key]) ||
-          plan.fullPath[key] !== plan.fullPath[defaultKey])
-    );
-    const writtenPaths = Object.fromEntries(writtenKeys.map((key) => [key, plan.fullPath[key]]));
+    const writtenPaths = selectWrittenPaths({ defaultKey, keys, plan, record: descendant });
+    const writtenKeys = Object.keys(writtenPaths);
     const isStale =
       descendant.ancestorIds !== plan.ancestorIds ||
       descendant.depth !== plan.depth ||
@@ -386,30 +405,122 @@ export const rewriteFolderSubtree = async ({
     };
     currentById.set(String(descendant.id), current);
     recordFolderChanges(descendant, current);
+    planned.push({ current, isStale, plan, previous: descendant, writtenPaths });
+  }
 
+  return { changes, currentById, descendants: planned, previousById };
+};
+
+/**
+ * Writes what `planSubtreeRewrite` planned: every descendant row that differs, then (unless the
+ * caller opted out) the `folderPrefix` redirect row of the root for each locale whose path changed.
+ * Returns the number of folder rows written.
+ */
+export const writeSubtreeRewrite = async ({
+  options,
+  redirects: shouldWriteRedirects = true,
+  req,
+  root,
+  subtree,
+}: {
+  options: ResolvedOptions;
+  redirects?: boolean;
+  req: PayloadRequest;
+  root: FolderRecord;
+  subtree: SubtreePlan;
+}): Promise<number> => {
+  let rewrittenFolders = 0;
+  for (const { isStale, plan, previous, writtenPaths } of subtree.descendants) {
     if (isStale) {
       await writeFolderRow({
         ancestorIds: plan.ancestorIds,
         depth: plan.depth,
         fullPath: writtenPaths,
         options,
-        record: descendant,
+        record: previous,
         req,
       });
       rewrittenFolders += 1;
     }
   }
 
-  const redirects: FolderPrefixRedirect[] = changes
-    .filter((change) => change.kind === "folder" && change.id === root.id && change.from !== null)
-    .map((change) => ({
-      folder: root.id,
-      fromPath: change.from as string,
-      locale: change.locale,
-    }));
-  await writeFolderPrefixRedirects({ options, redirects, req });
+  if (shouldWriteRedirects) {
+    const redirects: FolderPrefixRedirect[] = subtree.changes
+      .filter((change) => change.kind === "folder" && change.id === root.id && change.from !== null)
+      .map((change) => ({
+        folder: root.id,
+        fromPath: change.from as string,
+        locale: change.locale,
+      }));
+    await writeFolderPrefixRedirects({ options, redirects, req });
+  }
 
-  changes.push(...(await findPageChanges({ currentById, options, previousById, req })));
+  return rewrittenFolders;
+};
+
+/**
+ * Spec section 5.2 step 6 for a rename or a move: the folder `root` already holds its new paths,
+ * and this rewrites every descendant's `ancestorIds`, `depth` and `fullPath` to follow, then lists
+ * the changed URLs (pages included) for `hooks.afterPathChange`. Call it inside the write's
+ * transaction, under the tree lock.
+ *
+ * Folders are unversioned, so each row is one `payload.db.updateOne`. The drizzle adapter deletes
+ * a row's locale rows and inserts the ones in `data`, so a write carries every locale's `name`,
+ * `slug` and `fullPath` (decision 3), plus every other localized field the row has: a rename in one
+ * locale must not drop or create a locale row for another. Page paths are computed from the folder path, so no page row
+ * is written; the pages are read once per collection to report them.
+ *
+ * `redirects: false` skips the `folderPrefix` redirect row (a move that opted out of redirects).
+ */
+export const rewriteFolderSubtree = async ({
+  options,
+  previousRoot,
+  redirects: shouldWriteRedirects = true,
+  req,
+  root,
+}: {
+  options: ResolvedOptions;
+  /** The root as it was stored before the save. */
+  previousRoot: FolderRecord;
+  redirects?: boolean;
+  req: PayloadRequest;
+  /** The root as saved, with `fullPath` complete in every locale. */
+  root: FolderRecord;
+}): Promise<SubtreeRewrite> => {
+  const foldersSlug = options.folders.slug;
+
+  const descendants = await readFolderDescendants(req, options, root.id);
+  if (descendants.length + 1 > options.limits.maxFoldersPerMove) {
+    throw new ValidationError({
+      collection: foldersSlug,
+      errors: [
+        {
+          message: `This rename would rewrite ${descendants.length + 1} folders; the limit is ${options.limits.maxFoldersPerMove}`,
+          path: "slug",
+        },
+      ],
+      req,
+    });
+  }
+
+  const subtree = planSubtreeRewrite({ descendants, options, previousRoot, req, root });
+  const changes = [...subtree.changes];
+  const rewrittenFolders = await writeSubtreeRewrite({
+    options,
+    redirects: shouldWriteRedirects,
+    req,
+    root,
+    subtree,
+  });
+
+  changes.push(
+    ...(await findPageChanges({
+      currentById: subtree.currentById,
+      options,
+      previousById: subtree.previousById,
+      req,
+    }))
+  );
 
   return { changes, rewrittenFolders };
 };

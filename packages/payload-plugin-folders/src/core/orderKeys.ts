@@ -241,18 +241,18 @@ export type InsertTarget = {
 const refKey = (ref: ItemRef): string => `${ref.collection}:${ref.id}`;
 
 /**
- * Keys for `count` items inserted into `parent`, rebalancing the siblings first when their keys
- * cannot take the insert. Call it under the tree lock: the sibling list is read once and the keys
- * are only valid while no other writer changes it. Rebalanced siblings are written here, main row
- * and latest version, inside the caller's transaction.
+ * Keys for `count` items inserted into `parent`, without writing anything: the keys, and the
+ * siblings that would be rebalanced first when their keys cannot take the insert. Call it under
+ * the tree lock: the sibling list is read once and the keys are only valid while no other writer
+ * changes it. The move preview calls it unlocked for an indicative answer.
  */
-export const keysForInsert = async (
+export const planKeysForInsert = async (
   req: PayloadRequest,
   options: ResolvedOptions,
   { at, count, exclude = [], parent }: InsertTarget
-): Promise<string[]> => {
+): Promise<InsertPlan> => {
   if (count === 0) {
-    return [];
+    return { keys: [], rewrites: [] };
   }
 
   // The common create puts one item on top: one query per collection beats loading every sibling.
@@ -260,7 +260,7 @@ export const keysForInsert = async (
     const smallest = await findSmallestKey(req, options, parent);
     const keys = generateBetween(undefined, smallest ?? undefined, count);
     if (keys) {
-      return keys;
+      return { keys, rewrites: [] };
     }
   }
 
@@ -280,10 +280,32 @@ export const keysForInsert = async (
     gap = afterIndex + 1;
   }
 
-  const plan = planInsertKeys({ count, gap, siblings });
-  for (const { orderKey, row } of plan.rewrites) {
+  return planInsertKeys({ count, gap, siblings });
+};
+
+/** Writes the rebalanced siblings of an insert plan, main row and latest version. */
+export const writeKeyRewrites = async (
+  req: PayloadRequest,
+  options: ResolvedOptions,
+  rewrites: KeyRewrite[]
+): Promise<void> => {
+  for (const { orderKey, row } of rewrites) {
     await writeOrderKey(req, options, row, orderKey);
   }
+};
+
+/**
+ * Keys for `count` items inserted into `parent`, rebalancing the siblings first when their keys
+ * cannot take the insert. Rebalanced siblings are written here, main row and latest version,
+ * inside the caller's transaction.
+ */
+export const keysForInsert = async (
+  req: PayloadRequest,
+  options: ResolvedOptions,
+  target: InsertTarget
+): Promise<string[]> => {
+  const plan = await planKeysForInsert(req, options, target);
+  await writeKeyRewrites(req, options, plan.rewrites);
 
   return plan.keys;
 };
