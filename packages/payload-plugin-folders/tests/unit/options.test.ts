@@ -231,6 +231,8 @@ describe("normalizeOptions", () => {
       const stubLogger = { warn: (message: string) => warnings.push(message) };
       // The live adapter exists only once Payload is up, so the check runs in onInit.
       const liveAdapter = db.init({ payload: { logger: stubLogger } as never });
+      // The tree-state row already exists, so onInit's seeding step has nothing to write.
+      liveAdapter.findGlobal = (() => Promise.resolve({ id: 1 })) as never;
       await result.onInit?.({ db: liveAdapter, logger: stubLogger } as never);
     };
 

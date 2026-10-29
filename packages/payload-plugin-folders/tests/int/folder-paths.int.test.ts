@@ -4,7 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { callEndpoint } from "../helpers/callEndpoint.js";
 import { getTestPayload } from "../helpers/getTestPayload.js";
 import type { TestPayload } from "../helpers/getTestPayload.js";
-import { createFolder, createPage } from "../helpers/treeFixtures.js";
+import { withTreeLock } from "../../src/core/treeLock.js";
+import { createFolder, createPage, createTestRequest } from "../helpers/treeFixtures.js";
 
 let harness: TestPayload;
 
@@ -377,6 +378,8 @@ describe("folder writes under the tree lock", () => {
       )
     );
 
+    const existingIds = new Set(existing.map((folder) => folder.id));
+
     const settled = await Promise.all([
       ...Array.from({ length: 8 }, (_, index) =>
         createFolder(payload, { parent: parent.id, slug: `new-${index}` })
@@ -394,9 +397,106 @@ describe("folder writes under the tree lock", () => {
 
     expect(new Set(settled.map((folder) => folder.fullPath)).size).toBe(12);
     const keys = settled
-      .filter((folder) => folder.id > existing[3].id)
+      .filter((folder) => !existingIds.has(folder.id))
       .map((folder) => folder.orderKey);
     expect(new Set(keys).size).toBe(8);
+  });
+});
+
+describe("folder requests that write more than once", () => {
+  it("a second create on the same req is validated, keyed and pathed", async () => {
+    const { payload } = harness;
+    const request = await createTestRequest(payload);
+    await withTreeLock(request, async () => {
+      // The first create also writes a locale row of its own, which used to leave
+      // `foldersInternal` and the `all` locale on the shared req.
+      await payload.create({
+        collection: "folders",
+        data: { name: "First", slug: "first-on-req" },
+        overrideAccess: true,
+        req: request,
+      });
+      expect(request.context.foldersInternal).toBeUndefined();
+      expect(request.locale).toBe("en");
+
+      const second = await payload.create({
+        collection: "folders",
+        data: { name: "Second", orderKey: "zz", slug: "second-on-req" },
+        depth: 0,
+        overrideAccess: true,
+        req: request,
+      });
+      expect(second).toMatchObject({
+        ancestorIds: "/",
+        depth: 1,
+        fullPath: "/second-on-req",
+      });
+      expect(second.orderKey).not.toBe("zz");
+      expect(second.orderKey).toBeTruthy();
+
+      const reserved = await catchError(
+        payload.create({
+          collection: "folders",
+          data: { name: "Api", slug: "api" },
+          overrideAccess: true,
+          req: request,
+        })
+      );
+      expect(fieldErrors(reserved)[0]).toMatchObject({ path: "slug" });
+      const malformed = await catchError(
+        payload.create({
+          collection: "folders",
+          data: { name: "Bad", slug: "Bad Slug!!" },
+          overrideAccess: true,
+          req: request,
+        })
+      );
+      expect(fieldErrors(malformed)[0]?.message).toMatch(/lowercase letters, numbers/u);
+    });
+  });
+});
+
+describe("a folder needs a name and a slug in the default locale", () => {
+  it("a locale all create with only a de name is refused", async () => {
+    const { payload } = harness;
+    const error = await catchError(
+      payload.create({
+        collection: "folders",
+        data: { name: { de: "Nur Deutsch" } } as never,
+        locale: "all" as never,
+        overrideAccess: true,
+      })
+    );
+
+    expect(error.status).toBe(400);
+    expect(
+      fieldErrors(error)
+        .map((entry) => entry.path)
+        .toSorted()
+    ).toEqual(["name", "slug"]);
+    expect(fieldErrors(error)[0].message).toMatch(/needs a .* in the default locale \(en\)/u);
+  });
+
+  it("a create in de without en values is refused with a clear message", async () => {
+    const { payload } = harness;
+    const error = await catchError(
+      payload.create({
+        collection: "folders",
+        data: { name: "Nur Deutsch", slug: "nur-deutsch" },
+        locale: "de",
+        overrideAccess: true,
+      })
+    );
+
+    expect(error.status).toBe(400);
+    for (const entry of fieldErrors(error)) {
+      expect(entry.message).toContain("in the default locale (en)");
+    }
+    expect(
+      fieldErrors(error)
+        .map((entry) => entry.message)
+        .join(" ")
+    ).not.toMatch(/lowercase/u);
   });
 });
 

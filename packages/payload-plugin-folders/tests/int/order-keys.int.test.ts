@@ -114,12 +114,24 @@ describe("order keys", () => {
     expect(new Set(keys).size).toBe(20);
     expect(keys.every((key) => isUsableOrderKey(key))).toBe(true);
 
-    // Every key the server handed out is the one stored, and the mixed list sorts without ties.
+    // Ids are handed out inside the lock, so within a collection a higher id was created later and
+    // must sit above (sort before) every earlier row: newest first.
+    for (const collection of ["pages", "posts"] as const) {
+      const keysInCreationOrder = created
+        .filter((_, index) => (index % 4 === 0 ? "posts" : "pages") === collection)
+        .toSorted((left, right) => left.id - right.id)
+        .map((doc) => doc.orderKey as string);
+      expect(keysInCreationOrder.length).toBeGreaterThan(0);
+      for (let index = 1; index < keysInCreationOrder.length; index += 1) {
+        expect(keysInCreationOrder[index] < keysInCreationOrder[index - 1]).toBe(true);
+      }
+    }
+
+    // Every key handed out is the one stored, and the mixed list has no ties.
     const request = await createTestRequest(harness.payload);
     const siblings = (await loadSiblings(request, options, folder.id)).sort(compareSiblings);
     expect(siblings).toHaveLength(20);
-    const sortedKeys = siblings.map((sibling) => sibling.orderKey as string);
-    expect(sortedKeys).toEqual([...keys].sort());
+    expect(siblings.map((sibling) => sibling.orderKey).toSorted()).toEqual([...keys].toSorted());
     expect(isTreeLockHeld(harness.payload)).toBe(false);
   });
 
@@ -293,6 +305,14 @@ describe("order keys", () => {
 });
 
 describe("the tree lock", () => {
+  it("boots with a tree-state row, so the first lock is an UPDATE of an existing row", async () => {
+    const row = (await harness.payload.db.findGlobal({ slug: "folders-tree-state" as never })) as {
+      id?: number | string;
+    };
+
+    expect(row.id).toBeDefined();
+  });
+
   it("a failed create releases the tree lock", async () => {
     // Both creates fail after the hooks took the lock: a missing required field is only found
     // by Payload's field validation, which runs after the collection hooks.

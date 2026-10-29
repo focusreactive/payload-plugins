@@ -3,7 +3,7 @@ import type { CollectionAfterChangeHook, CollectionBeforeChangeHook } from "payl
 
 import { normalizeFolderReference, readFolderRecord } from "../../core/folderRecords.js";
 import { keyForNewItem } from "../../core/orderKeys.js";
-import { bumpRevision, touchTreeState } from "../../core/treeLock.js";
+import { bumpRevision } from "../../core/treeLock.js";
 import type { ResolvedOptions } from "../../types.js";
 import { isInternalWrite } from "../context.js";
 
@@ -17,8 +17,6 @@ export const buildPageBeforeChange =
     if (operation !== "create" || isInternalWrite(req)) {
       return data;
     }
-
-    await touchTreeState(req);
 
     const reference = normalizeFolderReference(data.folder);
     const folderExists =

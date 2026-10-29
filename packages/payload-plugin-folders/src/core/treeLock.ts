@@ -251,11 +251,33 @@ export const isTreeLockHeld = (payload: Payload): boolean =>
   runtimes.get(payload)?.mutex.locked ?? false;
 
 /**
+ * Creates the tree-state row when it is missing. The first `updateGlobal` on an empty table is an
+ * INSERT, which takes no row lock, so two processes could each insert their own row and never
+ * queue on one.
+ */
+export const seedTreeState = async (payload: Payload): Promise<void> => {
+  const existing = (await payload.db.findGlobal({ slug: treeStateSlug as never })) as {
+    id?: number | string;
+  };
+  if (existing.id === undefined) {
+    await payload.db.createGlobal({
+      data: { revision: 0 },
+      returning: false,
+      slug: treeStateSlug as never,
+    });
+  }
+};
+
+/**
  * Writes the tree-state row so concurrent transactions in other processes queue on its row lock.
- * It has to run before the transaction reads anything it will act on.
+ * It has to run before the transaction reads anything it will act on. Without a transaction
+ * there is no lock to queue on, so it does nothing.
  */
 export const touchTreeState = async (req: PayloadRequest): Promise<void> => {
   const { payload } = req;
+  if ((await resolveTransactionKey(req.transactionID)) === undefined) {
+    return;
+  }
   const held = await findHeldLock(getRuntime(payload), req);
   if (held?.touched) {
     return;

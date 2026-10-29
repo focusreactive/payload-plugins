@@ -18,7 +18,6 @@ import {
 import type { ValuesByLocale } from "../../core/locales.js";
 import { keyForNewItem } from "../../core/orderKeys.js";
 import { SEGMENT_ERROR_MESSAGE, isValidSegment } from "../../core/slugify.js";
-import { touchTreeState } from "../../core/treeLock.js";
 import type { FolderId, ResolvedOptions } from "../../types.js";
 import { isInternalWrite } from "../context.js";
 
@@ -67,9 +66,6 @@ export const buildFolderBeforeChange =
       );
       throw new ValidationError({ collection, errors: distinct, req });
     };
-
-    // First statement under the lock: a writer in another process queues on this row.
-    await touchTreeState(req);
 
     const keys = getFolderLocaleKeys(payload, options);
     const defaultKey = getDefaultLocaleKey(payload, options);
@@ -132,14 +128,18 @@ export const buildFolderBeforeChange =
       ? planFolderPaths({ defaultLocaleKey: defaultKey, keys, parent, slug: stored.slug })
       : null;
 
-    if (!plan.segments[defaultKey]) {
-      problems.push({
-        message:
-          defaultKey === noLocaleKey
-            ? "A folder needs a slug"
-            : `A folder needs a slug in the default locale (${defaultKey})`,
-        path: "slug",
-      });
+    const missingInDefaultLocale = [
+      ...(name[defaultKey] ? [] : ["name"]),
+      ...(plan.segments[defaultKey] ? [] : ["slug"]),
+    ];
+    if (missingInDefaultLocale.length > 0) {
+      const message =
+        defaultKey === noLocaleKey
+          ? `A folder needs a ${missingInDefaultLocale.join(" and a ")}`
+          : `A folder needs a ${missingInDefaultLocale.join(" and a ")} in the default locale (${defaultKey}); save it in ${defaultKey} first`;
+      for (const path of missingInDefaultLocale) {
+        problems.push({ message, path });
+      }
       fail();
     }
 

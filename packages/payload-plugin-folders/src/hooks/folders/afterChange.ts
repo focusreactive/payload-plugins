@@ -1,5 +1,6 @@
 import type { CollectionAfterChangeHook } from "payload";
 
+import { toCollectionSlug } from "../../collectionSlug.js";
 import { planFolderPaths, readFolderRecord } from "../../core/folderRecords.js";
 import { getDefaultLocaleKey, getFolderLocaleKeys } from "../../core/locales.js";
 import type { ValuesByLocale } from "../../core/locales.js";
@@ -14,10 +15,7 @@ const withoutEmptyValues = (values: ValuesByLocale): Record<string, string> =>
 
 /**
  * The save wrote the request locale's path. Every other locale's path follows from the same
- * segments, so one write of all locales completes it. It goes through the Local API with every
- * localized column of the folder in the data: the drizzle adapter deletes the locale rows a
- * write leaves out, and a one-locale update would also fail Payload's required check on a locale
- * that has no name of its own.
+ * segments, so one write of all locales completes it.
  */
 export const buildFolderAfterChange =
   (options: ResolvedOptions): CollectionAfterChangeHook =>
@@ -40,22 +38,22 @@ export const buildFolderAfterChange =
           slug: stored.slug,
         });
         if (keys.some((key) => (stored.fullPath[key] ?? "") !== plan.fullPath[key])) {
-          // The generated locale union has no "all", and the folder slug is chosen at runtime.
-          await payload.update({
-            collection: options.folders.slug,
-            context: { foldersInternal: true },
+          // A database-level write, so the caller's request keeps its own context and locale (a
+          // nested Local API update would merge `foldersInternal` and `locale: "all"` into the
+          // shared `req` and switch every later folder rule off). Every localized column goes in
+          // complete, because the drizzle adapter deletes the locale rows a write leaves out.
+          await payload.db.updateOne({
+            collection: toCollectionSlug(options.folders.slug),
             data: {
               fullPath: withoutEmptyValues(plan.fullPath),
               name: withoutEmptyValues(stored.name),
               slug: withoutEmptyValues(stored.slug),
-            } as never,
-            depth: 0,
+              updatedAt: new Date().toISOString(),
+            },
             id: stored.id,
-            locale: "all",
-            overrideAccess: true,
             req,
-            select: { id: true },
-          } as never);
+            returning: false,
+          });
         }
       }
     }
