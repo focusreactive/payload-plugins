@@ -1,26 +1,53 @@
-import type { FieldLike, TabLike } from "./types.js";
+import type { BlockLike, BlockSlug, FieldLike, TabLike } from "./types.js";
 
-function projectField(field: FieldLike): FieldLike {
-  const out: FieldLike = { type: field.type };
-  if (field.name !== undefined) out.name = field.name;
-  if (field.localized !== undefined) out.localized = field.localized;
-  if (field.custom !== undefined) out.custom = field.custom;
-  if (field.fields) out.fields = field.fields.map(projectField);
-  if (field.blocks) {
-    out.blocks = field.blocks.map((block) => ({
-      slug: block.slug,
-      fields: block.fields.map(projectField),
-    }));
+class FieldProjection {
+  private readonly definitions: Map<BlockSlug, BlockLike>;
+  private readonly projectedShared = new Map<BlockSlug, BlockLike>();
+
+  constructor(sharedBlocks: readonly BlockLike[]) {
+    this.definitions = new Map(sharedBlocks.map((block) => [block.slug, block]));
   }
-  if (field.tabs) {
-    out.tabs = field.tabs.map((tab) => {
-      const projected: TabLike = { fields: tab.fields.map(projectField) };
-      if (tab.name !== undefined) projected.name = tab.name;
-      if (tab.localized !== undefined) projected.localized = tab.localized;
-      return projected;
-    });
+
+  private field(field: FieldLike): FieldLike {
+    const out: FieldLike = { type: field.type };
+    if (field.name !== undefined) out.name = field.name;
+    if (field.localized !== undefined) out.localized = field.localized;
+    if (field.custom !== undefined) out.custom = field.custom;
+    if (field.fields) out.fields = this.fields(field.fields);
+    const blocks = field.blockReferences ?? field.blocks;
+    if (blocks) out.blocks = blocks.flatMap((block) => this.block(block) ?? []);
+    if (field.tabs) {
+      out.tabs = field.tabs.map((tab) => {
+        const projected: TabLike = { fields: this.fields(tab.fields) };
+        if (tab.name !== undefined) projected.name = tab.name;
+        if (tab.localized !== undefined) projected.localized = tab.localized;
+        return projected;
+      });
+    }
+    return out;
   }
-  return out;
+
+  fields(fields: FieldLike[]): FieldLike[] {
+    return fields.map((field) => this.field(field));
+  }
+
+  private block(block: BlockLike | BlockSlug): BlockLike | undefined {
+    if (typeof block === "string") return this.sharedBlock(block);
+    return { slug: block.slug, fields: this.fields(block.fields) };
+  }
+
+  private sharedBlock(slug: BlockSlug): BlockLike | undefined {
+    const cached = this.projectedShared.get(slug);
+    if (cached) return cached;
+
+    const definition = this.definitions.get(slug);
+    if (!definition) return undefined;
+
+    const projected: BlockLike = { slug, fields: [] };
+    this.projectedShared.set(slug, projected);
+    projected.fields = this.fields(definition.fields);
+    return projected;
+  }
 }
 
 /**
@@ -45,14 +72,22 @@ function projectField(field: FieldLike): FieldLike {
  * kept 1:1 (including presentational `ui`/`row`/`collapsible`) so downstream classification is unchanged;
  * only the property set is narrowed.
  *
+ * A `blockReferences` field comes out as a plain `blocks` list (Payload's `blockReferences ?? blocks`); a
+ * slug resolves against `sharedBlocks` and is dropped when nothing defines it. A shared block is projected
+ * once and reused, so the result may be cyclic: consumers must walk it by data, never by schema alone.
+ *
  * `custom` is copied by reference: it is a passthrough bag Payload does not mutate during sanitize (only
  * `localized` is deleted, which we snapshot by value), and deep-copying it would re-introduce the
  * `structuredClone`-on-functions problem this projection exists to avoid.
  *
  * @param fields - The source field list (Payload's `Field[]` is structurally assignable to `FieldLike[]`).
+ * @param sharedBlocks - The config-level blocks (`config.blocks`) a `blockReferences` slug points into.
  * @returns A new, independent `FieldLike[]` unaffected by later mutation of the source objects.
  * @since 0.9.1
  */
-export function projectFieldsToFieldLike(fields: FieldLike[]): FieldLike[] {
-  return fields.map(projectField);
+export function projectFieldsToFieldLike(
+  fields: FieldLike[],
+  sharedBlocks: readonly BlockLike[] = []
+): FieldLike[] {
+  return new FieldProjection(sharedBlocks).fields(fields);
 }
