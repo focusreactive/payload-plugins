@@ -638,6 +638,8 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
 
   const reset = (keepExpanded = true): void => {
     epoch += 1;
+    // Moves in flight belong to the session that started them, and that session's cache is gone.
+    pendingOptimisticChanges = 0;
     pageNumbers.clear();
     moreNumbers.clear();
     firstLoads.clear();
@@ -813,7 +815,10 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
         return false;
       }
       finished = true;
-      pendingOptimisticChanges -= 1;
+      // A move of an earlier session was zeroed by the reset; it must not take one off the new count.
+      if (startedEpoch === epoch) {
+        pendingOptimisticChanges -= 1;
+      }
 
       return true;
     };

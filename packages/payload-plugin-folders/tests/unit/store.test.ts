@@ -794,6 +794,48 @@ describe("the tree store", () => {
     expect(server.revisionRequests).toBe(1);
   });
 
+  it("store polls for the next user while the previous user's move is still pending", async () => {
+    const server = createServer();
+    const options = {
+      baseUrl: "/api",
+      fetchImplementation: server.fetchImplementation,
+      locale: "en",
+      pageSize: 100,
+    };
+    const store = createTreeStore({ ...options, userId: 1 });
+    await openBoth(store);
+    const request = deferred<string>();
+    const move = store.runOptimisticMove(
+      { items: [{ collection: "pages", id: 1 }], toFolder: productsId },
+      () => request.promise
+    );
+    // User 1's move hangs; user 2 signs in and reads the tree.
+    store.configure({ ...options, userId: 2 });
+    await store.loadChildren(null);
+    expect(store.getState().revision).toBe(5);
+
+    server.revision = 6;
+    await store.pollRevision();
+
+    // The poll ran and read the top level again at the new revision.
+    expect(server.revisionRequests).toBe(1);
+    expect(store.getState().revision).toBe(6);
+
+    // The hanging move then settles without taking a pending move off user 2's count.
+    const handle = store.applyOptimisticMove({
+      items: [{ collection: "folders", id: blogId }],
+      toFolder: null,
+    });
+    request.reject(new Error("The move was refused"));
+    await expect(move).rejects.toThrow("The move was refused");
+    server.revision = 7;
+    await store.pollRevision();
+    // User 2's own move is still pending, so this poll sends nothing: the count was not lowered
+    // by the move of the earlier session.
+    expect(server.revisionRequests).toBe(1);
+    handle.rollback();
+  });
+
   it("store reads only the folders that failed when a poll finds the revision unchanged", async () => {
     const server = createServer();
     const store = createStore(server);
