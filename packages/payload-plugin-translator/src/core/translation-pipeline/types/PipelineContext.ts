@@ -2,6 +2,7 @@ import type { LeafAddress } from "../../domain/content-projection/idPath.js";
 import type { DocumentRef } from "../../domain/translation-providers/index.js";
 import type { FieldLike } from "../../kernel/field-traversal/index.js";
 import type { FieldChunk } from "./FieldChunk.js";
+import type { RejectedReply } from "./Pipeline.js";
 import type { TextChunk } from "./TextChunk.js";
 
 export type PipelineContext = {
@@ -18,6 +19,7 @@ export type PipelineContext = {
   textChunks?: TextChunk[];
   textMap?: Record<number, string>;
   translations?: Record<number, string>;
+  rejected?: RejectedReply[];
   writtenChunks?: TextChunk[];
 };
 

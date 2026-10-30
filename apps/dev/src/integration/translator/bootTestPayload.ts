@@ -97,7 +97,6 @@ export async function bootTestPayload(opts?: {
   runner?: TaskRunnerProvider;
   lifecycle?: TranslationLifecycleCallbacks;
   failedWindowMs?: number;
-  declaresInlineMarks?: boolean;
   fake?: FakeTranslationOptions;
   /** Also register the synchronous per-field surface, `POST {basePath}/field`. */
   fieldSurface?: boolean;
@@ -116,12 +115,10 @@ export async function bootTestPayload(opts?: {
 
   const baseProvider = createTranslationProvider({
     complete: fakeComplete(opts?.fake),
-    ...(opts?.declaresInlineMarks ? { capabilities: { inlineMarks: true } } : {}),
   });
   const failFor = new Set(opts?.failFor);
   let translateCalls = 0;
   const countingProvider: TranslationProvider = {
-    ...(opts?.declaresInlineMarks ? { capabilities: { inlineMarks: true } } : {}),
     translate: async (input, request) => {
       translateCalls += 1;
       opts?.onRequest?.(request);

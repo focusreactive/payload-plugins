@@ -18,10 +18,7 @@ export type ParsedMark = {
   text: string;
 };
 
-/**
- * Why a reply could not be used. Corruption is an ordinary outcome here, not an anomaly —
- * the caller retranslates the container per-node — so it is a returned value, never a throw.
- */
+/** Why a reply could not be used. A malformed model reply is expected, so it is returned, never thrown. */
 export type MarkFailure =
   | "missing-mark"
   | "unknown-mark"

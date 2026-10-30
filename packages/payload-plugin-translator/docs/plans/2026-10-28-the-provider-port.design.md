@@ -431,10 +431,7 @@ The plugin already holds the paragraph as numbered pieces before it encodes anyt
 `TranslationMutator` rebuilds the paragraph from numbered pieces after `parseInlineMarks` has decoded
 the reply. The marked string exists only on the wire.
 
-- **Options considered:** keep marks on the wire and require every provider to handle them (D2 as
-  written) · send both the marked string and its pieces, accept a reply in either form · send both,
-  accept only a marked string, and export a helper that builds one from translated pieces · send
-  the numbered pieces only, accept numbered pieces back, and export the mark encoding as utilities
+- **Options considered:** keep marks on the wire and require every provider to handle them (D2 as written) · send both the marked string and its pieces, accept a reply in either form · send both, accept only a marked string, and export a helper that builds one from translated pieces · send the numbered pieces only, accept numbered pieces back, and export the mark encoding as utilities
 
 **Decision.** (d), decided by the owner on 2026-10-30. A rich-text paragraph is a `segments` value:
 its pieces in source order, each with an id. The answer is the same ids, each exactly once, in the

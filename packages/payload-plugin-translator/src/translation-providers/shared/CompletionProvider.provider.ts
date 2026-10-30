@@ -45,14 +45,6 @@ export type CompletionFn = (request: CompletionRequest) => Promise<string>;
  * @since 0.11.0
  */
 export type TranslationProviderConfig = {
-  /**
-   * What the transport can be asked to do beyond plain translation — passed through to the
-   * provider unchanged. A transport that is not a language model must leave `inlineMarks` unset:
-   * the core then keeps translating rich text node by node.
-   *
-   * @since 0.13.0
-   */
-  capabilities?: TranslationProvider["capabilities"];
   complete: CompletionFn;
   systemPrompt?: SystemPromptBuilder;
   /**
@@ -106,7 +98,7 @@ function guardTransformer(dryRun: boolean | DryRunConfig): boolean | DryRunConfi
  * @since 0.11.0
  */
 export function createTranslationProvider(config: TranslationProviderConfig): TranslationProvider {
-  const { complete, systemPrompt, dryRun, capabilities } = config;
+  const { complete, systemPrompt, dryRun } = config;
 
   if (dryRun) {
     const guarded = guardTransformer(dryRun);
@@ -114,7 +106,6 @@ export function createTranslationProvider(config: TranslationProviderConfig): Tr
   }
 
   return {
-    capabilities,
     async translate(
       input: TranslationInput,
       request: TranslationRequest

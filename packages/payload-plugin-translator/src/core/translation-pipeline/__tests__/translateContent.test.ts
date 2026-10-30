@@ -222,10 +222,9 @@ describe("translateContent", () => {
       const sourceData = { body: richTextValue(["Hello ", "world"]) };
       const before = structuredClone(sourceData);
 
-      const marksProvider = {
-        capabilities: { inlineMarks: true },
+      const marksProvider: TranslationProvider = {
         translate: async () => ({ 0: "<2>Welt</2><1>Hallo </1>" }),
-      } as TranslationProvider;
+      };
 
       const result = await translateAll({
         document: { collection: "docs", id: "1" },

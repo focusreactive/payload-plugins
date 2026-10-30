@@ -23,14 +23,6 @@ export function resolveTranslatorRunner(): TaskRunnerProvider {
 }
 
 /**
- * Defaults on, unlike the `=== "1"` toggles beside it: a sandbox run that silently fell back to the
- * per-node path would look like a broken feature.
- */
-function declaresInlineMarks(): boolean {
-  return process.env.TRANSLATOR_INLINE_MARKS !== "0";
-}
-
-/**
  * The provider this sandbox runs on, driven by `TRANSLATOR_DRY_RUN`: `"1"` → a local fake, no API
  * spend; `"fail"` → a fake that throws, so the translation fails and `onFailed` fires. The fake is
  * also the default when no `OPENAI_API_KEY` is set.
@@ -41,14 +33,8 @@ export function resolveTranslationProvider(): TranslationProvider {
   }
 
   if (process.env.TRANSLATOR_DRY_RUN === "1" || !process.env.OPENAI_API_KEY) {
-    return createTranslationProvider({
-      capabilities: { inlineMarks: declaresInlineMarks() },
-      complete: fakeComplete(),
-    });
+    return createTranslationProvider({ complete: fakeComplete() });
   }
 
-  const openAI = createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY });
-  if (declaresInlineMarks()) return openAI;
-
-  return { translate: openAI.translate.bind(openAI), capabilities: { inlineMarks: false } };
+  return createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY });
 }

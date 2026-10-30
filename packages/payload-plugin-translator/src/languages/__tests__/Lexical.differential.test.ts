@@ -4,7 +4,10 @@ import { applyTranslations } from "../../core/traversal/index.js";
 import type { BlockLike, FieldLike } from "../../core/kernel/field-traversal/index.js";
 import { FieldChunkCollector } from "../../core/translation-pipeline/stages/field-collector/index.js";
 import { projectTranslatableContent } from "../../core/domain/content-projection/contentProjector.js";
-import { defaultExpanders } from "../../core/translation-pipeline/stages/text-expander/index.js";
+import {
+  PlainTextExpander,
+  RichTextExpander,
+} from "../../core/translation-pipeline/stages/text-expander/index.js";
 import { TranslationMutator } from "../../core/translation-pipeline/stages/translation-applicator/index.js";
 import type { TextChunk } from "../../core/translation-pipeline/types/index.js";
 import { addressesOf } from "./addresses.js";
@@ -31,6 +34,8 @@ const textAt = (textMap: Record<number, string>, index: number): string => {
   return found;
 };
 
+const perNode = [new RichTextExpander(), new PlainTextExpander()];
+
 const viaPipeline = (schema: FieldLike[], source: Doc): Compared => {
   const working = structuredClone(source);
   const fieldChunks = new FieldChunkCollector(
@@ -48,7 +53,7 @@ const viaPipeline = (schema: FieldLike[], source: Doc): Compared => {
 
   for (const fieldChunk of fieldChunks) {
     const value = fieldChunk.dataRef[fieldChunk.key];
-    const expander = defaultExpanders.find((candidate) => candidate.canExpand(fieldChunk, value));
+    const expander = perNode.find((candidate) => candidate.canExpand(fieldChunk, value));
     if (expander === undefined) continue;
 
     const expansion = expander.expand(fieldChunk, value, next);

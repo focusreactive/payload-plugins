@@ -48,10 +48,7 @@ const mixedSchema: Field[] = [
   { name: "title", type: "text", localized: true },
 ];
 
-/** Wraps each value so the result is deterministic, and records what was sent. */
-const bracketProvider = (
-  extra?: Partial<TranslationProvider> & { capabilities?: { inlineMarks?: boolean } }
-) => {
+const bracketProvider = () => {
   const sent: Record<number, string>[] = [];
   const provider = {
     translate: vi.fn(async (input: Record<number, string>) => {
@@ -60,7 +57,6 @@ const bracketProvider = (
       for (const [key, value] of Object.entries(input)) out[Number(key)] = `[${value}]`;
       return out;
     }),
-    ...extra,
   } as TranslationProvider;
   return { provider, sent };
 };
@@ -74,335 +70,283 @@ const paragraphsOf = (result: { translatedData: Record<string, unknown> } | null
 };
 
 describe("container mode", () => {
-  describe("a provider that cannot keep marks", () => {
-    it("translates per node, byte-identical to the output recorded before container mode existed", async () => {
-      const { provider } = bracketProvider();
-      const source = {
-        body: richText([
-          paragraph([text("Buy "), text("our product", 1), text(" today")]),
-          paragraph([text("Read the "), link("/docs", [text("documentation")]), text(" first")]),
-        ]),
-      };
+  it("sends a formatted paragraph as one marked string", async () => {
+    const { provider, sent } = bracketProvider();
+    const source = {
+      body: richText([paragraph([text("a "), text("red", 1), text(" car")])]),
+    };
 
-      const result = await translateAll({
-        document: { collection: "docs", id: "1" },
-        schema,
-        sourceData: source,
-        sourceLng: "en",
-        targetLng: "fr",
-        translationProvider: provider,
-      });
-
-      const [first, second] = paragraphsOf(result ?? null);
-      expect(first?.children.map((node) => node.text)).toEqual([
-        "[Buy ]",
-        "[our product]",
-        "[ today]",
-      ]);
-      // The nested link is the half that catches structural damage: text-only assertions pass
-      // even when a rebuild flattens or duplicates a wrapper.
-      expect(second?.children).toEqual([
-        expect.objectContaining({ type: "text", text: "[Read the ]" }),
-        expect.objectContaining({
-          type: "link",
-          fields: { url: "/docs", linkType: "custom" },
-          children: [expect.objectContaining({ type: "text", text: "[documentation]" })],
-        }),
-        expect.objectContaining({ type: "text", text: "[ first]" }),
-      ]);
+    await translateAll({
+      document: { collection: "docs", id: "1" },
+      schema,
+      sourceData: source,
+      sourceLng: "en",
+      targetLng: "fr",
+      translationProvider: provider,
     });
 
-    it("stays per-node for a provider that declares the capability false", async () => {
-      const { provider, sent } = bracketProvider({ capabilities: { inlineMarks: false } });
-
-      await translateAll({
-        document: { collection: "docs", id: "1" },
-        schema,
-        sourceData: {
-          body: richText([paragraph([text("a "), text("red", 1), text(" car")])]),
-        },
-        sourceLng: "en",
-        targetLng: "fr",
-        translationProvider: provider,
-      });
-
-      expect(Object.values(sent[0] ?? {})).toEqual(["a ", "red", " car"]);
-    });
+    expect(Object.values(sent[0] ?? {})).toEqual(["<1>a </1><2>red</2><3> car</3>"]);
   });
 
-  describe("a provider that declares the capability", () => {
-    it("sends a formatted paragraph as one marked string", async () => {
-      const { provider, sent } = bracketProvider({ capabilities: { inlineMarks: true } });
-      const source = {
-        body: richText([paragraph([text("a "), text("red", 1), text(" car")])]),
-      };
+  it("rebuilds children in the reply's order when marks move", async () => {
+    const provider = {
+      translate: vi.fn(async () => ({ 0: "<1>une </1><3>voiture </3><2>rouge</2>" })),
+    } as TranslationProvider;
+    const source = {
+      body: richText([paragraph([text("a "), text("red", 1), text(" car")])]),
+    };
 
-      await translateAll({
-        document: { collection: "docs", id: "1" },
-        schema,
-        sourceData: source,
-        sourceLng: "en",
-        targetLng: "fr",
-        translationProvider: provider,
-      });
-
-      expect(Object.values(sent[0] ?? {})).toEqual(["<1>a </1><2>red</2><3> car</3>"]);
+    const result = await translateAll({
+      document: { collection: "docs", id: "1" },
+      schema,
+      sourceData: source,
+      sourceLng: "en",
+      targetLng: "fr",
+      translationProvider: provider,
     });
 
-    it("rebuilds children in the reply's order when marks move", async () => {
-      const provider = {
-        capabilities: { inlineMarks: true },
-        translate: vi.fn(async () => ({ 0: "<1>une </1><3>voiture </3><2>rouge</2>" })),
-      } as TranslationProvider;
-      const source = {
-        body: richText([paragraph([text("a "), text("red", 1), text(" car")])]),
-      };
+    expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
+      "une ",
+      "voiture ",
+      "rouge",
+    ]);
+  });
 
-      const result = await translateAll({
-        document: { collection: "docs", id: "1" },
-        schema,
-        sourceData: source,
-        sourceLng: "en",
-        targetLng: "fr",
-        translationProvider: provider,
-      });
+  it("translates the caller's paragraph without touching its nodes", async () => {
+    const nodes = [text("a "), text("red", 1), text(" car")];
+    const provider = {
+      translate: vi.fn(async () => ({ 0: "<1>une </1><2>rouge</2><3> voiture</3>" })),
+    } as TranslationProvider;
 
-      expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
-        "une ",
-        "voiture ",
-        "rouge",
-      ]);
+    const result = await translateAll({
+      document: { collection: "docs", id: "1" },
+      schema,
+      sourceData: { body: richText([paragraph(nodes)]) },
+      sourceLng: "en",
+      targetLng: "fr",
+      translationProvider: provider,
     });
 
-    it("translates the caller's paragraph without touching its nodes", async () => {
-      const nodes = [text("a "), text("red", 1), text(" car")];
-      const provider = {
-        capabilities: { inlineMarks: true },
-        translate: vi.fn(async () => ({ 0: "<1>une </1><2>rouge</2><3> voiture</3>" })),
-      } as TranslationProvider;
+    expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
+      "une ",
+      "rouge",
+      " voiture",
+    ]);
+    expect(nodes.map((node) => node.text)).toEqual(["a ", "red", " car"]);
+    expect(paragraphsOf(result ?? null)[0]?.children[1]).not.toBe(nodes[1]);
+  });
 
-      const result = await translateAll({
-        document: { collection: "docs", id: "1" },
-        schema,
-        sourceData: { body: richText([paragraph(nodes)]) },
-        sourceLng: "en",
-        targetLng: "fr",
-        translationProvider: provider,
-      });
+  // The point of the whole mode: a wrapper has to travel with the word it formats, so the rebuilt
+  // array must carry the wrapper node itself, never the bare leaf inside it.
+  it("moves a link with its word when the reply reorders them", async () => {
+    const provider = {
+      translate: vi.fn(async () => ({ 0: "<2>Dokumentation</2><1> lesen</1>" })),
+    } as TranslationProvider;
 
-      expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
-        "une ",
-        "rouge",
-        " voiture",
-      ]);
-      expect(nodes.map((node) => node.text)).toEqual(["a ", "red", " car"]);
-      expect(paragraphsOf(result ?? null)[0]?.children[1]).not.toBe(nodes[1]);
+    const result = await translateAll({
+      document: { collection: "docs", id: "1" },
+      schema,
+      sourceData: {
+        body: richText([paragraph([text("Read the "), link("/docs", [text("docs")])])]),
+      },
+      sourceLng: "en",
+      targetLng: "de",
+      translationProvider: provider,
     });
 
-    // The point of the whole mode: a wrapper has to travel with the word it formats, so the rebuilt
-    // array must carry the wrapper node itself, never the bare leaf inside it.
-    it("moves a link with its word when the reply reorders them", async () => {
-      const provider = {
-        capabilities: { inlineMarks: true },
-        translate: vi.fn(async () => ({ 0: "<2>Dokumentation</2><1> lesen</1>" })),
-      } as TranslationProvider;
+    const children = paragraphsOf(result ?? null)[0]?.children;
 
-      const result = await translateAll({
-        document: { collection: "docs", id: "1" },
-        schema,
-        sourceData: {
-          body: richText([paragraph([text("Read the "), link("/docs", [text("docs")])])]),
-        },
-        sourceLng: "en",
-        targetLng: "de",
-        translationProvider: provider,
-      });
+    expect(children?.[0]?.type).toBe("link");
+    expect(children?.[0]?.fields?.url).toBe("/docs");
+    expect(children?.[0]?.children?.[0]?.text).toBe("Dokumentation");
+    expect(children?.[1]?.text).toBe(" lesen");
+  });
 
-      const children = paragraphsOf(result ?? null)[0]?.children;
+  it("drops the node of a mark that came back empty", async () => {
+    const provider = {
+      translate: vi.fn(async () => ({ 0: "<1>une voiture rouge</1><2></2><3></3>" })),
+    } as TranslationProvider;
 
-      expect(children?.[0]?.type).toBe("link");
-      expect(children?.[0]?.fields?.url).toBe("/docs");
-      expect(children?.[0]?.children?.[0]?.text).toBe("Dokumentation");
-      expect(children?.[1]?.text).toBe(" lesen");
+    const result = await translateAll({
+      document: { collection: "docs", id: "1" },
+      schema,
+      sourceData: { body: richText([paragraph([text("a "), text("red", 1), text(" car")])]) },
+      sourceLng: "en",
+      targetLng: "fr",
+      translationProvider: provider,
     });
 
-    it("drops the node of a mark that came back empty", async () => {
-      const provider = {
-        capabilities: { inlineMarks: true },
-        translate: vi.fn(async () => ({ 0: "<1>une voiture rouge</1><2></2><3></3>" })),
-      } as TranslationProvider;
+    expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
+      "une voiture rouge",
+    ]);
+  });
 
-      const result = await translateAll({
-        document: { collection: "docs", id: "1" },
-        schema,
-        sourceData: { body: richText([paragraph([text("a "), text("red", 1), text(" car")])]) },
-        sourceLng: "en",
-        targetLng: "fr",
-        translationProvider: provider,
-      });
+  it("falls back to per-node when the source holds a mark-shaped sequence", async () => {
+    const { provider, sent } = bracketProvider();
+    const source = {
+      body: richText([
+        paragraph([text("use "), text("<1>", 1), text(" as a placeholder")]),
+        paragraph([text("a "), text("red", 1), text(" car")]),
+      ]),
+    };
 
-      expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
-        "une voiture rouge",
-      ]);
+    await translateAll({
+      document: { collection: "docs", id: "1" },
+      schema,
+      sourceData: source,
+      sourceLng: "en",
+      targetLng: "fr",
+      translationProvider: provider,
     });
 
-    it("falls back to per-node when the source holds a mark-shaped sequence", async () => {
-      const { provider, sent } = bracketProvider({ capabilities: { inlineMarks: true } });
-      const source = {
+    expect(Object.values(sent[0] ?? {})).toEqual([
+      "use ",
+      "<1>",
+      " as a placeholder",
+      "<1>a </1><2>red</2><3> car</3>",
+    ]);
+  });
+
+  it("falls back to per-node for a single-fragment container", async () => {
+    const { provider, sent } = bracketProvider();
+    const source = {
+      body: richText([
+        paragraph([text("Sign up now")]),
+        paragraph([text("a "), text("red", 1), text(" car")]),
+      ]),
+    };
+
+    await translateAll({
+      document: { collection: "docs", id: "1" },
+      schema,
+      sourceData: source,
+      sourceLng: "en",
+      targetLng: "fr",
+      translationProvider: provider,
+    });
+
+    expect(Object.values(sent[0] ?? {})).toEqual(["Sign up now", "<1>a </1><2>red</2><3> car</3>"]);
+  });
+
+  // The glued whitespace node has no fragment, so it is absent from the rebuilt array. Were it
+  // left in place beside the neighbour that swallowed its space, the space would render twice.
+  it("does not double a glued space", async () => {
+    const provider = {
+      translate: vi.fn(async () => ({ 0: "<1>Achetez </1><2>notre produit</2>" })),
+    } as TranslationProvider;
+
+    const result = await translateAll({
+      document: { collection: "docs", id: "1" },
+      schema,
+      sourceData: {
+        body: richText([paragraph([text("Buy"), text(" "), text("our product", 1)])]),
+      },
+      sourceLng: "en",
+      targetLng: "fr",
+      translationProvider: provider,
+    });
+
+    expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
+      "Achetez ",
+      "notre produit",
+    ]);
+  });
+
+  it("writes a fallen-back paragraph node by node, beside a container, without flattening its link", async () => {
+    const provider = {
+      translate: vi.fn(async (input: Record<number, string>) =>
+        Object.fromEntries(
+          Object.entries(input).map(([key, value]) => [
+            Number(key),
+            value.startsWith("<1>") ? value : `[${value}]`,
+          ])
+        )
+      ),
+    } as TranslationProvider;
+
+    const result = await translateAll({
+      document: { collection: "docs", id: "1" },
+      schema,
+      sourceData: {
         body: richText([
-          paragraph([text("use "), text("<1>", 1), text(" as a placeholder")]),
+          paragraph([text("Use <1> "), link("/docs", [text("here")])]),
           paragraph([text("a "), text("red", 1), text(" car")]),
         ]),
-      };
-
-      await translateAll({
-        document: { collection: "docs", id: "1" },
-        schema,
-        sourceData: source,
-        sourceLng: "en",
-        targetLng: "fr",
-        translationProvider: provider,
-      });
-
-      expect(Object.values(sent[0] ?? {})).toEqual([
-        "use ",
-        "<1>",
-        " as a placeholder",
-        "<1>a </1><2>red</2><3> car</3>",
-      ]);
+      },
+      sourceLng: "en",
+      targetLng: "fr",
+      translationProvider: provider,
     });
 
-    it("falls back to per-node for a single-fragment container", async () => {
-      const { provider, sent } = bracketProvider({ capabilities: { inlineMarks: true } });
-      const source = {
-        body: richText([
-          paragraph([text("Sign up now")]),
-          paragraph([text("a "), text("red", 1), text(" car")]),
-        ]),
-      };
+    const [fallenBack, container] = paragraphsOf(result ?? null);
+    expect(fallenBack?.children).toEqual([
+      expect.objectContaining({ type: "text", text: "[Use <1> ]" }),
+      expect.objectContaining({
+        type: "link",
+        fields: { url: "/docs", linkType: "custom" },
+        children: [expect.objectContaining({ type: "text", text: "[here]" })],
+      }),
+    ]);
+    expect(container?.children.map((node) => node.text)).toEqual(["a ", "red", " car"]);
+  });
 
-      await translateAll({
-        document: { collection: "docs", id: "1" },
-        schema,
-        sourceData: source,
-        sourceLng: "en",
-        targetLng: "fr",
-        translationProvider: provider,
-      });
+  it("takes the whole field per-node when every container is skipped", async () => {
+    const { provider, sent } = bracketProvider();
+    const source = {
+      body: richText([paragraph([text("Sign up now")]), paragraph([text("No card needed")])]),
+    };
 
-      expect(Object.values(sent[0] ?? {})).toEqual([
-        "Sign up now",
-        "<1>a </1><2>red</2><3> car</3>",
-      ]);
+    await translateAll({
+      document: { collection: "docs", id: "1" },
+      schema,
+      sourceData: source,
+      sourceLng: "en",
+      targetLng: "fr",
+      translationProvider: provider,
     });
 
-    // The glued whitespace node has no fragment, so it is absent from the rebuilt array. Were it
-    // left in place beside the neighbour that swallowed its space, the space would render twice.
-    it("does not double a glued space", async () => {
-      const provider = {
-        capabilities: { inlineMarks: true },
-        translate: vi.fn(async () => ({ 0: "<1>Achetez </1><2>notre produit</2>" })),
-      } as TranslationProvider;
+    expect(Object.values(sent[0] ?? {})).toEqual(["Sign up now", "No card needed"]);
+  });
 
-      const result = await translateAll({
-        document: { collection: "docs", id: "1" },
-        schema,
-        sourceData: {
-          body: richText([paragraph([text("Buy"), text(" "), text("our product", 1)])]),
-        },
-        sourceLng: "en",
-        targetLng: "fr",
-        translationProvider: provider,
-      });
+  it("leaves a plain text field to the plain expander", async () => {
+    const { provider, sent } = bracketProvider();
 
-      expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
-        "Achetez ",
-        "notre produit",
-      ]);
-    });
-
-    it("takes the whole field per-node when every container is skipped", async () => {
-      const { provider, sent } = bracketProvider({ capabilities: { inlineMarks: true } });
-      const source = {
-        body: richText([paragraph([text("Sign up now")]), paragraph([text("No card needed")])]),
-      };
-
-      await translateAll({
-        document: { collection: "docs", id: "1" },
-        schema,
-        sourceData: source,
-        sourceLng: "en",
-        targetLng: "fr",
-        translationProvider: provider,
-      });
-
-      expect(Object.values(sent[0] ?? {})).toEqual(["Sign up now", "No card needed"]);
-    });
-
-    it("leaves a plain text field to the plain expander", async () => {
-      const { provider, sent } = bracketProvider({ capabilities: { inlineMarks: true } });
-
-      await translateAll({
-        document: { collection: "docs", id: "1" },
-        schema: mixedSchema,
-        sourceData: {
-          body: richText([paragraph([text("a "), text("red", 1), text(" car")])]),
-          title: "Weather data",
-        },
-        sourceLng: "en",
-        targetLng: "fr",
-        translationProvider: provider,
-      });
-
-      expect(Object.values(sent[0] ?? {})).toEqual([
-        "<1>a </1><2>red</2><3> car</3>",
-        "Weather data",
-      ]);
-    });
-
-    it("leaves the container untranslated when the reply is corrupt", async () => {
-      const provider = {
-        capabilities: { inlineMarks: true },
-        // Mark 3 never comes back: corrupt per D13.
-        translate: vi.fn(async () => ({ 0: "<1>une </1><2>rouge</2>" })),
-      } as TranslationProvider;
-
-      const result = await translateAll({
-        document: { collection: "docs", id: "1" },
-        schema,
-        sourceData: { body: richText([paragraph([text("a "), text("red", 1), text(" car")])]) },
-        sourceLng: "en",
-        targetLng: "fr",
-        translationProvider: provider,
-      });
-
-      expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
-        "a ",
-        "red",
-        " car",
-      ]);
-    });
-
-    it("stays per-node when the provider does not declare inlineMarks", async () => {
-      const body = () => ({
+    await translateAll({
+      document: { collection: "docs", id: "1" },
+      schema: mixedSchema,
+      sourceData: {
         body: richText([paragraph([text("a "), text("red", 1), text(" car")])]),
-      });
-      const silent = bracketProvider();
-      const declaring = bracketProvider({ capabilities: { inlineMarks: true } });
-
-      for (const each of [silent, declaring]) {
-        await translateAll({
-          document: { collection: "docs", id: "1" },
-          schema,
-          sourceData: body(),
-          sourceLng: "en",
-          targetLng: "fr",
-          translationProvider: each.provider,
-        });
-      }
-
-      expect(Object.values(silent.sent[0] ?? {})).toEqual(["a ", "red", " car"]);
-      expect(Object.values(declaring.sent[0] ?? {})).toEqual(["<1>a </1><2>red</2><3> car</3>"]);
+        title: "Weather data",
+      },
+      sourceLng: "en",
+      targetLng: "fr",
+      translationProvider: provider,
     });
+
+    expect(Object.values(sent[0] ?? {})).toEqual([
+      "<1>a </1><2>red</2><3> car</3>",
+      "Weather data",
+    ]);
+  });
+
+  it("leaves the container untranslated when a mark is missing from the reply", async () => {
+    const provider = {
+      translate: vi.fn(async () => ({ 0: "<1>une </1><2>rouge</2>" })),
+    } as TranslationProvider;
+
+    const result = await translateAll({
+      document: { collection: "docs", id: "1" },
+      schema,
+      sourceData: { body: richText([paragraph([text("a "), text("red", 1), text(" car")])]) },
+      sourceLng: "en",
+      targetLng: "fr",
+      translationProvider: provider,
+    });
+
+    expect(paragraphsOf(result ?? null)[0]?.children.map((node) => node.text)).toEqual([
+      "a ",
+      "red",
+      " car",
+    ]);
   });
 });

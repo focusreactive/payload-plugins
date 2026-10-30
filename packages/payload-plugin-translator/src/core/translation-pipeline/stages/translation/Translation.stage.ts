@@ -1,20 +1,25 @@
 import { parseInlineMarks } from "../../../kernel/lexical/inlineMarks.js";
-import type { PipelineContext, PipelineStage } from "../../types/index.js";
+import type { PipelineContext, PipelineStage, RejectedReply } from "../../types/index.js";
 import { isRichContainerChunk } from "../../types/index.js";
 import type {
   TranslationProvider,
   TranslationRequest,
 } from "../../../domain/translation-providers/index.js";
 
-/** Writes onto chunks the expander created, rather than returning — see `RichContainerChunk.reply`. */
-function parseContainerReplies(ctx: PipelineContext, translations: Record<number, string>): void {
+function attachContainerReplies(
+  ctx: PipelineContext,
+  translations: Record<number, string>
+): RejectedReply[] {
+  const rejected: RejectedReply[] = [];
   for (const chunk of (ctx.textChunks ?? []).filter(isRichContainerChunk)) {
     const reply = translations[chunk.index];
     if (reply === undefined) continue;
 
     const result = parseInlineMarks(reply, chunk.fragments);
     if (result.ok) chunk.reply = result.fragments;
+    else rejected.push({ idPath: chunk.idPath, reason: result.reason });
   }
+  return rejected;
 }
 
 function translationRequest(ctx: PipelineContext): TranslationRequest {
@@ -42,8 +47,8 @@ export class TranslationStage implements PipelineStage {
 
     const translations = await this.provider.translate(ctx.textMap, translationRequest(ctx));
 
-    parseContainerReplies(ctx, translations);
+    const rejected = attachContainerReplies(ctx, translations);
 
-    return { ...ctx, translations };
+    return { ...ctx, translations, rejected };
   }
 }

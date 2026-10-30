@@ -58,6 +58,7 @@ describe("translateDocument — it asks before it writes", () => {
         { idPath: "title", answeredInFull: true },
         { idPath: "body", answeredInFull: true },
       ],
+      rejected: [],
     });
     provider = { translate: vi.fn().mockResolvedValue({}) };
     const schemaMap = new Map([

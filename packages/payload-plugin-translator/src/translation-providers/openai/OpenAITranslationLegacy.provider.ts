@@ -18,10 +18,6 @@ export class OpenAITranslationProvider implements TranslationProvider {
     this.inner = createOpenAIProvider(config);
   }
 
-  get capabilities(): TranslationProvider["capabilities"] {
-    return this.inner.capabilities;
-  }
-
   translate(input: TranslationInput, request: TranslationRequest): Promise<TranslationOutput> {
     return this.inner.translate(input, request);
   }

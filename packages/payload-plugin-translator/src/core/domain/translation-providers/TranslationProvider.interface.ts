@@ -68,31 +68,10 @@ export type TranslationRequest = {
 };
 
 /**
- * Interface for translation service providers.
- *
- * Report failure by throwing; a returned value is always taken as success. A failure that is not
- * one of this package's own provider errors is re-wrapped before it reaches the caller and the
- * `code` it carried is replaced, so today only those classes preserve a
- * {@link TranslationFailureCode}.
+ * Report failure by throwing; a returned value is always taken as success. A thrown error that is
+ * not one of this package's provider errors is re-wrapped and its `code` replaced, so only those
+ * classes carry a {@link TranslationFailureCode} through.
  */
 export interface TranslationProvider {
-  /**
-   * What this provider can be asked to do beyond plain translation. Absent means "nothing extra" —
-   * every provider written before a capability existed keeps working unchanged.
-   *
-   * @since 0.13.0
-   */
-  capabilities?: {
-    /**
-     * The provider preserves numbered inline marks (`<1>text</1>`) in the values it returns,
-     * keeping every number exactly once and moving them where the target language needs them.
-     *
-     * Declare it only for a language model that was instructed accordingly. A machine-translation
-     * API would translate or strip the marks, so without this declaration the core translates rich
-     * text node by node.
-     */
-    inlineMarks?: boolean;
-  };
-  /** Translates indexed text content from source to target language. */
   translate(input: TranslationInput, request: TranslationRequest): Promise<TranslationOutput>;
 }

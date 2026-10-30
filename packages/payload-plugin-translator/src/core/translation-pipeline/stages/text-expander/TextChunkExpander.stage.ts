@@ -2,10 +2,10 @@ import { TranslatorBug } from "../../../errors/index.js";
 import type { PipelineContext, PipelineStage } from "../../types/index.js";
 import type { TextExpander } from "./TextExpander.interface.js";
 import { TextChunkExpander } from "./TextChunkExpander.js";
-import { RichTextExpander } from "./RichTextExpander.js";
+import { RichContainerExpander } from "./RichContainerExpander.js";
 import { PlainTextExpander } from "./PlainTextExpander.js";
 
-export const defaultExpanders: TextExpander[] = [new RichTextExpander(), new PlainTextExpander()];
+const defaultExpanders: TextExpander[] = [new RichContainerExpander(), new PlainTextExpander()];
 
 /**
  * Expands FieldChunks to TextChunks (schema-free).

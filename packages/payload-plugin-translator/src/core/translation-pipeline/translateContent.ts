@@ -2,7 +2,6 @@ import type { FieldLike } from "../kernel/field-traversal/index.js";
 import type { DocumentRef, TranslationProvider } from "../domain/translation-providers/index.js";
 import { TranslationPipeline } from "./TranslationPipeline.js";
 import type { LeafAddress } from "../domain/content-projection/idPath.js";
-import { PlainTextExpander, RichContainerExpander } from "./stages/index.js";
 import type { PipelineResult } from "./types/Pipeline.js";
 
 export type TranslateContentArgs = {
@@ -40,12 +39,7 @@ export async function translateContent({
   translationProvider,
   selection,
 }: TranslateContentArgs): Promise<TranslatedContent | null> {
-  const marksUsable = translationProvider.capabilities?.inlineMarks === true;
-
-  const pipeline = new TranslationPipeline({
-    translationProvider,
-    textExpanders: marksUsable ? [new RichContainerExpander(), new PlainTextExpander()] : undefined,
-  });
+  const pipeline = new TranslationPipeline({ translationProvider });
 
   return await pipeline.execute({
     schema,

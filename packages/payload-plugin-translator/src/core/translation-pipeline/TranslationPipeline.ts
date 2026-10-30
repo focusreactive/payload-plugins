@@ -100,6 +100,7 @@ export class TranslationPipeline {
     return {
       translatedData: ctx.reconciledData,
       leaves: leafOutcomes(ctx.textChunks ?? [], ctx.writtenChunks ?? []),
+      rejected: ctx.rejected ?? [],
     };
   }
 }

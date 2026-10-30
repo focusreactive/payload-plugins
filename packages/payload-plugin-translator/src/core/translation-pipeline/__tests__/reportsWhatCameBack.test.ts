@@ -7,11 +7,7 @@ import { asHash } from "../../domain/provenance/__tests__/fixtures/claims.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import { ProvenanceService } from "../../../server/modules/provenance/Provenance.service.js";
 import type { TranslationProvider } from "../../domain/translation-providers/index.js";
-import {
-  PlainTextExpander,
-  RichContainerExpander,
-  RichTextExpander,
-} from "../stages/text-expander/index.js";
+import { PlainTextExpander, RichTextExpander } from "../stages/text-expander/index.js";
 import { projectTranslatableContent } from "../../domain/content-projection/contentProjector.js";
 import { TranslationPipeline } from "../TranslationPipeline.js";
 import type { TextExpander } from "../stages/index.js";
@@ -73,19 +69,19 @@ const run = async (args: {
 const claimable = (result: Awaited<ReturnType<typeof run>>): string[] =>
   (result?.leaves ?? []).filter((leaf) => leaf.answeredInFull).map((leaf) => String(leaf.idPath));
 
-const paragraph = (...texts: string[]) => ({
+const paragraphs = (...each: string[][]) => ({
   root: {
     type: "root",
     version: 1,
-    children: [
-      {
-        type: "paragraph",
-        version: 1,
-        children: texts.map((text) => ({ type: "text", version: 1, text })),
-      },
-    ],
+    children: each.map((texts) => ({
+      type: "paragraph",
+      version: 1,
+      children: texts.map((text) => ({ type: "text", version: 1, text })),
+    })),
   },
 });
+
+const paragraph = (...texts: string[]) => paragraphs(texts);
 
 const twoTexts: Field[] = [
   { name: "title", type: "text", localized: true },
@@ -122,7 +118,6 @@ describe("a run reports the leaves that came back", () => {
       schema,
       source: { title: "Hello", body: paragraph("Some ", "prose") },
       answer: marksTheParserRefuses,
-      expanders: [new RichContainerExpander(), new PlainTextExpander()],
     });
 
     expect(claimable(result)).toEqual(["title"]);
@@ -134,7 +129,6 @@ describe("a run reports the leaves that came back", () => {
       schema,
       source: { body: paragraph("Some ", "prose") },
       answer: marksTheParserAccepts,
-      expanders: [new RichContainerExpander(), new PlainTextExpander()],
     });
 
     expect(claimable(result)).toEqual(["body"]);
@@ -277,5 +271,55 @@ describe("what the run reports is what the receipt claims", () => {
       title: asHash("aaaa"),
       summary: UNANSWERED,
     });
+  });
+});
+
+describe("a refused reply says why", () => {
+  const titleAndBody: Field[] = [
+    { name: "title", type: "text", localized: true },
+    { name: "body", type: "richText", localized: true },
+  ];
+
+  it("names the leaf and the parser's reason when a paragraph's marks do not come back", async () => {
+    const result = await run({
+      schema: titleAndBody,
+      source: { title: "Pricing", body: paragraph("Some ", "prose") },
+      answer: marksTheParserRefuses,
+    });
+
+    expect(result?.rejected).toEqual([{ idPath: "body", reason: "missing-mark" }]);
+  });
+
+  it("reports nothing refused when every paragraph's reply parses", async () => {
+    const result = await run({
+      schema: titleAndBody,
+      source: { title: "Pricing", body: paragraph("Some ", "prose") },
+      answer: marksTheParserAccepts,
+    });
+
+    expect(result?.rejected).toEqual([]);
+  });
+
+  it("names every refused paragraph of a leaf, each with its own reason, and none that parsed", async () => {
+    const replies = ["<1>Etwas </1><2>Prosa</2>", "no marks at all", "<1>eins</1><1>zwei</1>"];
+    const result = await run({
+      schema: titleAndBody,
+      source: {
+        title: "Pricing",
+        body: paragraphs(["Some ", "prose"], ["More ", "prose"], ["Last ", "prose"]),
+      },
+      answer: (sent) =>
+        Object.fromEntries(
+          Object.entries(sent).map(([key, text]) => [
+            Number(key),
+            text.startsWith("<1>") ? (replies.shift() ?? "") : text,
+          ])
+        ),
+    });
+
+    expect(result?.rejected).toEqual([
+      { idPath: "body", reason: "missing-mark" },
+      { idPath: "body", reason: "repeated-mark" },
+    ]);
   });
 });

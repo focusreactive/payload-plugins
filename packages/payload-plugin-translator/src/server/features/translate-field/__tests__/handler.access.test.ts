@@ -7,7 +7,9 @@ import { TranslateFieldHandler } from "../handler.js";
 import type { FieldTranslationConfig } from "../model.js";
 
 vi.mock("../../../../core/translation-pipeline/index.js", () => ({
-  translateContent: vi.fn().mockResolvedValue({ translatedData: { title: "Titel" }, leaves: [] }),
+  translateContent: vi
+    .fn()
+    .mockResolvedValue({ translatedData: { title: "Titel" }, leaves: [], rejected: [] }),
 }));
 
 vi.mock("../../../shared/access/permission.js", () => ({

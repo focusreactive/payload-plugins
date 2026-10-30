@@ -94,6 +94,29 @@ describe("translateDocument", () => {
     };
   });
 
+  describe("a paragraph whose reply was refused", () => {
+    it("logs the document, the locale, the leaf and the reason", async () => {
+      const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+        translatedData: { title: "Translated" },
+        leaves: [{ idPath: "title", answeredInFull: false }],
+        rejected: [{ idPath: "title", reason: "missing-mark" }],
+      });
+
+      await translateDocument(deps, mockPayload, createInput(), {});
+
+      expect(mockPayload.logger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          collection: "posts",
+          documentId: "doc-123",
+          targetLocale: TARGET_LNG,
+          idPath: "title",
+          reason: "missing-mark",
+        })
+      );
+    });
+  });
+
   describe("schema validation", () => {
     it("refuses a collection the schema map does not know", async () => {
       const input = createInput({ collection: "unknown" as CollectionSlug });
@@ -244,6 +267,7 @@ describe("translateDocument", () => {
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         translatedData: { title: "Übersetzter Titel" },
         leaves: [{ idPath: "title", answeredInFull: true }],
+        rejected: [],
       });
 
       const input = createInput();
@@ -259,6 +283,7 @@ describe("translateDocument", () => {
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         translatedData: { title: "Translated" },
         leaves: [{ idPath: "title", answeredInFull: true }],
+        rejected: [],
       });
     });
 
@@ -435,6 +460,7 @@ describe("translateDocument", () => {
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         translatedData: { title: "Hallo" },
         leaves,
+        rejected: [],
       });
     };
 
@@ -509,6 +535,7 @@ describe("translateDocument", () => {
           return {
             translatedData: { title: "TRANSLATED (pipeline mutation)" },
             leaves: [{ idPath: "title", answeredInFull: true }],
+            rejected: [],
           };
         }
       );
@@ -590,6 +617,7 @@ describe("translateDocument", () => {
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         translatedData: { title: "Hallo" },
         leaves: [{ idPath: "title", answeredInFull: true }],
+        rejected: [],
       });
       (mockPayload.findByID as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: "doc-123",
@@ -635,6 +663,7 @@ describe("translateDocument", () => {
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         translatedData: { title: "Hallo" },
         leaves: [{ idPath: "title", answeredInFull: true }],
+        rejected: [],
       });
       (mockPayload.findByID as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: "doc-123",
@@ -672,6 +701,7 @@ describe("translateDocument", () => {
     (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
       translatedData: { title: "Hallo" },
       leaves: [{ idPath: "title", answeredInFull: true }],
+      rejected: [],
     });
     (mockPayload.findByID as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: "doc-123",

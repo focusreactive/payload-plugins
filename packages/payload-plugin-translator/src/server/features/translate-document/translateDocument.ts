@@ -12,6 +12,7 @@ import type { Run } from "./run.js";
 import { runModulesAfter, runModulesBefore } from "./runModules.js";
 import { selectLeaves } from "./selectLeaves.js";
 import { translateOrWrap } from "./translateOrWrap.js";
+import { reportRejectedReplies } from "../_lib/index.js";
 
 /**
  * What translating one locale needs to know. Assembled by the caller from the run's own record —
@@ -74,6 +75,7 @@ export async function translateDocument(
   });
 
   if (translated?.translatedData) {
+    reportRejectedReplies(run.payload.logger, run.target, translated.rejected);
     await run.doc.saveTranslation(translated.translatedData, run.layer.write);
     await runModulesAfter({
       modules,

@@ -310,6 +310,11 @@ the single source of truth — code annotations link here by anchor instead of d
 - **Status:** removed
 - **Deprecated:** 2026-09-11 / PR #139 (issue #134)
 - **Removed:** 2026-10-19 / PR #186
+- **Superseded by the provider-port design** (D2, D11 of
+  `plans/2026-10-28-the-provider-port.design.md`): `capabilities` is gone too. Every provider now
+  receives rich text by container; the per-node path is only the fallback for a container that
+  cannot be sent with marks, and a reply that cannot be used leaves the container in its source
+  language with the reason logged. The bullets below describe the state at the flag's removal.
 - **Replacement:** none for the host. What used to be two conditions is now one: a provider that
   declares `capabilities.inlineMarks` gets container-granular rich text, and one that does not keeps
   translating node by node. Nothing is configured.

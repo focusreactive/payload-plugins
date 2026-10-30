@@ -22,12 +22,17 @@ const makeReq = (body: Partial<FieldTranslationInput> & Record<string, unknown>)
 // from-locale always reads the saved doc, so most requests need a `payload.findByID` mock.
 const makeReqWithPayload = (
   body: Partial<FieldTranslationInput> & Record<string, unknown>,
-  findByID: ReturnType<typeof vi.fn>
+  findByID: ReturnType<typeof vi.fn>,
+  logger: { warn: ReturnType<typeof vi.fn> } = { warn: vi.fn() }
 ): PayloadRequest =>
   ({
     json: () => Promise.resolve(body),
     // The endpoint now checks both locales against the project's own, so the fixture declares them.
-    payload: { findByID, config: { localization: { defaultLocale: "en", locales: ["en", "de"] } } },
+    payload: {
+      findByID,
+      logger,
+      config: { localization: { defaultLocale: "en", locales: ["en", "de"] } },
+    },
   }) as unknown as PayloadRequest;
 
 // Valid from-locale request: translate `posts.title` from `en` into `de`, reading doc `p1`.
@@ -112,10 +117,33 @@ describe("what the translation is told about the request", () => {
 });
 
 describe("TranslateFieldHandler", () => {
+  it("logs a paragraph whose reply was refused, with the document, the locale, the leaf and the reason", async () => {
+    (await importTranslateContent()).mockResolvedValue({
+      translatedData: { title: "Hello" },
+      leaves: [{ idPath: "title", answeredInFull: false }],
+      rejected: [{ idPath: "title", reason: "missing-mark" }],
+    });
+    const warn = vi.fn();
+    const findByID = vi.fn().mockResolvedValue({ id: "p1", title: "Hello" });
+
+    await handler.handle(makeReqWithPayload(baseBody, findByID, { warn }));
+
+    expect(warn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: "posts",
+        documentId: "p1",
+        targetLocale: "de",
+        idPath: "title",
+        reason: "missing-mark",
+      })
+    );
+  });
+
   it("reads the source-locale value from the saved doc and translates a localized leaf", async () => {
     (await importTranslateContent()).mockResolvedValue({
       translatedData: { title: "Hallo" },
       leaves: [{ idPath: "title", answeredInFull: true }],
+      rejected: [],
     });
     const findByID = vi.fn().mockResolvedValue({ id: "p1", title: "Hello" });
 
@@ -169,6 +197,7 @@ describe("TranslateFieldHandler", () => {
     (translateContent as ReturnType<typeof vi.fn>).mockResolvedValue({
       translatedData: { headline: "Hallo" },
       leaves: [{ idPath: "headline", answeredInFull: true }],
+      rejected: [],
     });
 
     const res = await handler.handle(
@@ -319,6 +348,7 @@ describe("TranslateFieldHandler", () => {
     (translateContent as ReturnType<typeof vi.fn>).mockResolvedValue({
       translatedData: { title: "Hallo" },
       leaves: [{ idPath: "title", answeredInFull: true }],
+      rejected: [],
     });
 
     await handler.handle(reqWithDoc({ id: "p1", title: "Hello" }));
