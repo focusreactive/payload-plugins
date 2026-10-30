@@ -42,9 +42,15 @@ describe("TranslationPipeline", () => {
 
       expect(result).not.toBeNull();
       expect(result!.translatedData).toEqual({ title: "TR_Hello" });
-      expect(provider.translate).toHaveBeenCalledWith({ 0: "Hello" }, "en", "ru", {
-        document: { collection: "docs", id: "1" },
-      });
+      expect(provider.translate).toHaveBeenCalledWith(
+        { 0: "Hello" },
+        {
+          sourceLng: "en",
+          targetLng: "ru",
+          document: { collection: "docs", id: "1" },
+          inlineMarks: false,
+        }
+      );
     });
 
     it("translates multiple fields", async () => {
@@ -499,33 +505,6 @@ describe("TranslationPipeline", () => {
       });
 
       expect(result).toBeNull();
-    });
-  });
-
-  describe("error handling", () => {
-    it("throws when translation provider returns null", async () => {
-      const schema: Field[] = [{ name: "title", type: "text", localized: true }];
-      const sourceData = { title: "Hello" };
-      const targetData = {};
-
-      const provider: TranslationProvider = {
-        translate: vi.fn().mockResolvedValue(null),
-      };
-      const pipeline = new TranslationPipeline({
-        translationProvider: provider,
-      });
-
-      await expect(
-        pipeline.execute({
-          document: { collection: "docs", id: "1" },
-          schema,
-          sourceData,
-          targetData,
-          sourceLng: "en",
-          targetLng: "ru",
-          selection: everyTranslatableLeaf(sourceData, schema),
-        })
-      ).rejects.toThrow("Translation provider returned null");
     });
   });
 

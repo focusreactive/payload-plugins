@@ -1,10 +1,9 @@
-import { TranslatorBug } from "../../../errors/index.js";
 import { parseInlineMarks } from "../../../kernel/lexical/inlineMarks.js";
 import type { PipelineContext, PipelineStage } from "../../types/index.js";
 import { isRichContainerChunk } from "../../types/index.js";
 import type {
   TranslationProvider,
-  TranslationRequestOptions,
+  TranslationRequest,
 } from "../../../domain/translation-providers/index.js";
 
 /** Writes onto chunks the expander created, rather than returning — see `RichContainerChunk.reply`. */
@@ -18,12 +17,13 @@ function parseContainerReplies(ctx: PipelineContext, translations: Record<number
   }
 }
 
-function requestOptions(ctx: PipelineContext): TranslationRequestOptions {
-  const options: TranslationRequestOptions = { document: ctx.document };
-
-  if ((ctx.textChunks ?? []).some(isRichContainerChunk)) options.inlineMarks = true;
-
-  return options;
+function translationRequest(ctx: PipelineContext): TranslationRequest {
+  return {
+    sourceLng: ctx.sourceLng,
+    targetLng: ctx.targetLng,
+    document: ctx.document,
+    inlineMarks: (ctx.textChunks ?? []).some(isRichContainerChunk),
+  };
 }
 
 /**
@@ -40,16 +40,7 @@ export class TranslationStage implements PipelineStage {
       return ctx;
     }
 
-    const translations = await this.provider.translate(
-      ctx.textMap,
-      ctx.sourceLng,
-      ctx.targetLng,
-      requestOptions(ctx)
-    );
-
-    if (!translations) {
-      throw new TranslatorBug("Translation provider returned null");
-    }
+    const translations = await this.provider.translate(ctx.textMap, translationRequest(ctx));
 
     parseContainerReplies(ctx, translations);
 

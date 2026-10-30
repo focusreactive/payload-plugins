@@ -6,6 +6,7 @@ export type {
 } from "./CompletionProvider.provider.js";
 
 export type { JsonSchemaObject } from "./buildResponseSchema.js";
+export { INLINE_MARKS_INSTRUCTION } from "./buildSystemPrompt.js";
 export type { SystemPromptBuilder, SystemPromptContext } from "./buildSystemPrompt.js";
 export type { DryRunConfig, DryRunTransformer } from "./runDryRun.js";
 

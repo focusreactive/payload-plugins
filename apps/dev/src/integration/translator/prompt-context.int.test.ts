@@ -17,8 +17,8 @@ describe("what the provider is told about a document run", () => {
 
   beforeAll(async () => {
     ctx = await bootTestPayload({
-      onRequest: (options) => {
-        seen.push(options?.document);
+      onRequest: (request) => {
+        seen.push(request.document);
       },
     });
   });

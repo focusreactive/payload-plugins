@@ -9,6 +9,7 @@ import {
   TransportError,
   UnparseableReplyError,
 } from "../errors/index.js";
+import type { TranslationRequest } from "../../../core/domain/translation-providers/index.js";
 
 function recordingComplete(reply: string) {
   const seen: CompletionRequest[] = [];
@@ -17,6 +18,18 @@ function recordingComplete(reply: string) {
     return reply;
   });
   return { complete, seen };
+}
+
+const DEFAULT_DOCUMENT = { collection: "docs", id: "1" };
+
+function aRequest(over: Partial<TranslationRequest> = {}): TranslationRequest {
+  return {
+    sourceLng: "en",
+    targetLng: "de",
+    document: DEFAULT_DOCUMENT,
+    inlineMarks: false,
+    ...over,
+  };
 }
 
 describe("createTranslationProvider", () => {
@@ -34,30 +47,9 @@ describe("createTranslationProvider", () => {
         seenDocument = document;
         return defaultPrompt;
       },
-    }).translate({ 0: "Home" }, "en", "de", { document: { collection: "machines", id: "7" } });
+    }).translate({ 0: "Home" }, aRequest({ document: { collection: "machines", id: "7" } }));
 
     expect(seenDocument).toEqual({ collection: "machines", id: "7" });
-  });
-
-  it("leaves the builder without a document when the caller named none", async () => {
-    const { complete } = recordingComplete('{"0":"Startseite"}');
-    let seenDocument: { collection: string; id: string } | undefined = {
-      collection: "unset",
-      id: "unset",
-    };
-
-    await createTranslationProvider({
-      complete,
-      systemPrompt: ({ document, defaultPrompt }) => {
-        seenDocument = document;
-        return defaultPrompt;
-      },
-    }).translate({ 0: "Home" }, "en", "de");
-
-    expect(
-      seenDocument,
-      "a provider driven directly has no document, and a builder must be able to tell"
-    ).toBeUndefined();
   });
 
   it("awaits a builder that reads something before it answers", async () => {
@@ -69,7 +61,7 @@ describe("createTranslationProvider", () => {
         await Promise.resolve();
         return `${defaultPrompt}\nGlossary: ampere = Ampere.`;
       },
-    }).translate({ 0: "Home" }, "en", "de");
+    }).translate({ 0: "Home" }, aRequest());
 
     expect(seen[0].systemPrompt).toContain("Glossary: ampere = Ampere.");
   });
@@ -77,7 +69,7 @@ describe("createTranslationProvider", () => {
   it("hands the transport a built prompt, the serialized input and a schema", async () => {
     const { complete, seen } = recordingComplete('{"0":"Startseite"}');
 
-    await createTranslationProvider({ complete }).translate({ 0: "Home" }, "en", "de");
+    await createTranslationProvider({ complete }).translate({ 0: "Home" }, aRequest());
 
     expect(complete).toHaveBeenCalledTimes(1);
     expect(seen[0].systemPrompt).toContain("from en into de");
@@ -95,8 +87,7 @@ describe("createTranslationProvider", () => {
 
     const result = await createTranslationProvider({ complete }).translate(
       { 0: "Home", 1: "About us" },
-      "en",
-      "de"
+      aRequest()
     );
 
     expect(result).toEqual({ 0: "Startseite", 1: "Über uns" });
@@ -107,8 +98,7 @@ describe("createTranslationProvider", () => {
 
     const result = await createTranslationProvider({ complete }).translate(
       { 0: "Home", 1: "About us", 2: "Contact" },
-      "en",
-      "de"
+      aRequest()
     );
 
     expect(result).toEqual({ 0: "Startseite", 2: "Kontakt" });
@@ -120,7 +110,7 @@ describe("createTranslationProvider", () => {
     await createTranslationProvider({
       complete,
       systemPrompt: ({ defaultPrompt }) => `${defaultPrompt}\nBe formal.`,
-    }).translate({ 0: "Home" }, "en", "de");
+    }).translate({ 0: "Home" }, aRequest());
 
     expect(seen[0].systemPrompt).toContain("Be formal.");
   });
@@ -129,7 +119,7 @@ describe("createTranslationProvider", () => {
     const { complete } = recordingComplete("");
 
     await expect(
-      createTranslationProvider({ complete }).translate({ 0: "Home" }, "en", "de")
+      createTranslationProvider({ complete }).translate({ 0: "Home" }, aRequest())
     ).rejects.toThrow(NoContentError);
   });
 
@@ -137,7 +127,7 @@ describe("createTranslationProvider", () => {
     const { complete } = recordingComplete("I cannot do that.");
 
     await expect(
-      createTranslationProvider({ complete }).translate({ 0: "Home" }, "en", "de")
+      createTranslationProvider({ complete }).translate({ 0: "Home" }, aRequest())
     ).rejects.toThrow(UnparseableReplyError);
   });
 
@@ -145,7 +135,7 @@ describe("createTranslationProvider", () => {
     const { complete } = recordingComplete('{"9":"x"}');
 
     await expect(
-      createTranslationProvider({ complete }).translate({ 0: "Home" }, "en", "de")
+      createTranslationProvider({ complete }).translate({ 0: "Home" }, aRequest())
     ).rejects.toThrow(KeySetMismatchError);
   });
 
@@ -156,7 +146,7 @@ describe("createTranslationProvider", () => {
     });
 
     const failure = await createTranslationProvider({ complete })
-      .translate({ 0: "Home" }, "en", "de")
+      .translate({ 0: "Home" }, aRequest())
       .catch((e: unknown) => e);
 
     expect(failure).toBeInstanceOf(TransportError);
@@ -168,8 +158,7 @@ describe("createTranslationProvider", () => {
 
     const result = await createTranslationProvider({ complete }).translate(
       { 0: "Home" },
-      "en",
-      "de"
+      aRequest()
     );
 
     expect(typeof result).toBe("object");
@@ -182,8 +171,7 @@ describe("createTranslationProvider", () => {
 
       const result = await createTranslationProvider({ complete, dryRun: true }).translate(
         { 0: "Home" },
-        "en",
-        "de"
+        aRequest()
       );
 
       expect(complete).not.toHaveBeenCalled();
@@ -196,7 +184,7 @@ describe("createTranslationProvider", () => {
       const result = await createTranslationProvider({
         complete,
         dryRun: { transform: (t) => `[T] ${t}` },
-      }).translate({ 0: "Home" }, "en", "de");
+      }).translate({ 0: "Home" }, aRequest());
 
       expect(result).toEqual({ 0: "[T] Home" });
     });
@@ -214,7 +202,7 @@ describe("createTranslationProvider", () => {
               throw new Error("transformer blew up");
             },
           },
-        }).translate({ 0: "Home" }, "en", "de")
+        }).translate({ 0: "Home" }, aRequest())
       ).rejects.toThrow(ProviderConfigurationError);
     });
 
@@ -223,7 +211,7 @@ describe("createTranslationProvider", () => {
       const unserializable = { 0: BigInt(1) } as unknown as Record<number, string>;
 
       await expect(
-        createTranslationProvider({ complete }).translate(unserializable, "en", "de")
+        createTranslationProvider({ complete }).translate(unserializable, aRequest())
       ).rejects.toThrow(ProviderConfigurationError);
     });
 
@@ -236,7 +224,7 @@ describe("createTranslationProvider", () => {
           systemPrompt: () => {
             throw new Error("prompt builder blew up");
           },
-        }).translate({ 0: "Home" }, "en", "de")
+        }).translate({ 0: "Home" }, aRequest())
       ).rejects.toThrow(ProviderConfigurationError);
     });
   });
@@ -246,8 +234,7 @@ describe("createTranslationProvider", () => {
 
     const result = await createTranslationProvider({ complete }).translate(
       { 0: "Home" },
-      "en",
-      "de"
+      aRequest()
     );
 
     expect(result).toEqual({ 0: "Startseite" });
@@ -256,7 +243,7 @@ describe("createTranslationProvider", () => {
   it("short-circuits empty input without calling the transport", async () => {
     const { complete } = recordingComplete("unused");
 
-    const result = await createTranslationProvider({ complete }).translate({}, "en", "de");
+    const result = await createTranslationProvider({ complete }).translate({}, aRequest());
 
     expect(complete).not.toHaveBeenCalled();
     expect(result).toEqual({});

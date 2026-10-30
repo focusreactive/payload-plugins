@@ -1,7 +1,10 @@
 import { describe, it, expect } from "vitest";
 import type { Field } from "payload";
 
-import type { TranslationProvider } from "../../domain/translation-providers/index.js";
+import type {
+  TranslationProvider,
+  TranslationRequest,
+} from "../../domain/translation-providers/index.js";
 import { computeSourceFingerprint } from "../../domain/content-projection/computeSourceFingerprint.js";
 import { translateContent } from "../translateContent.js";
 import type { TranslateContentArgs } from "../translateContent.js";
@@ -25,17 +28,14 @@ const fakeProvider: TranslationProvider = {
   },
 };
 
-const recordingProvider = (): {
-  provider: TranslationProvider;
-  seen: Array<Record<string, unknown> | undefined>;
-} => {
-  const seen: Array<Record<string, unknown> | undefined> = [];
+const recordingProvider = (): { provider: TranslationProvider; seen: TranslationRequest[] } => {
+  const seen: TranslationRequest[] = [];
 
   return {
     seen,
     provider: {
-      translate: async (input, _sourceLng, _targetLng, options) => {
-        seen.push(options as Record<string, unknown> | undefined);
+      translate: async (input, request) => {
+        seen.push(request);
         return Object.fromEntries(Object.keys(input).map((key) => [key, "x"]));
       },
     },

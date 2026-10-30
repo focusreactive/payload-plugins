@@ -3,7 +3,8 @@
 export type {
   TranslationProvider,
   DocumentRef,
-  TranslationRequestOptions,
+  TranslationRequest,
+  TranslationFailureCode,
   TranslationInput,
   TranslationOutput,
   TranslationIndex,

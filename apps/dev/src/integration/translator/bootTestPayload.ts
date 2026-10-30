@@ -17,6 +17,7 @@ import type {
   TaskRunnerProvider,
   TranslationLifecycleCallbacks,
   TranslationProvider,
+  TranslationRequest,
 } from "@focus-reactive/payload-plugin-translator";
 import { buildConfig } from "payload";
 import type { CollectionConfig, Payload } from "payload";
@@ -92,8 +93,7 @@ export async function bootTestPayload(opts?: {
   exclusiveQueue?: boolean;
   failFor?: string[];
   onTranslate?: (targetLng: string) => Promise<void> | void;
-  /** Sees the fourth argument the plugin hands the provider, request by request. */
-  onRequest?: (options?: { document?: { collection: string; id: string } }) => void;
+  onRequest?: (request: TranslationRequest) => void;
   runner?: TaskRunnerProvider;
   lifecycle?: TranslationLifecycleCallbacks;
   failedWindowMs?: number;
@@ -122,12 +122,14 @@ export async function bootTestPayload(opts?: {
   let translateCalls = 0;
   const countingProvider: TranslationProvider = {
     ...(opts?.declaresInlineMarks ? { capabilities: { inlineMarks: true } } : {}),
-    translate: async (input, sourceLng, targetLng, options) => {
+    translate: async (input, request) => {
       translateCalls += 1;
-      opts?.onRequest?.(options);
-      await opts?.onTranslate?.(targetLng);
-      if (failFor.has(targetLng)) throw new Error(`provider unavailable for ${targetLng}`);
-      return await baseProvider.translate(input, sourceLng, targetLng, options);
+      opts?.onRequest?.(request);
+      await opts?.onTranslate?.(request.targetLng);
+      if (failFor.has(request.targetLng)) {
+        throw new Error(`provider unavailable for ${request.targetLng}`);
+      }
+      return await baseProvider.translate(input, request);
     },
   };
 

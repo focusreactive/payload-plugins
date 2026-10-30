@@ -18,6 +18,13 @@ export { AnyAccessGuard } from "./server/shared/access/AnyAccessGuard.js";
 
 // Translation provider port (from the dependency-free core)
 export type { TranslationProvider, TranslationInput, TranslationOutput } from "./core/index.js";
+/**
+ * Exported because a class under `implements` gets no contextual typing for its method parameters:
+ * a class-based provider must name this type.
+ *
+ * @since 1.0.0
+ */
+export type { TranslationRequest } from "./core/index.js";
 
 export { openAIComplete } from "./translation-providers/index.js";
 export type {
@@ -27,7 +34,10 @@ export type {
   DryRunConfig,
 } from "./translation-providers/index.js";
 
-export { createTranslationProvider } from "./translation-providers/index.js";
+export {
+  createTranslationProvider,
+  INLINE_MARKS_INSTRUCTION,
+} from "./translation-providers/index.js";
 export type {
   CompletionFn,
   CompletionRequest,

@@ -15,22 +15,26 @@ export type TranslationIndex = number;
 export type TranslationInput = Record<TranslationIndex, string>;
 
 /**
- * Output of translation operation.
- * Must have the same keys as input, with translated values.
+ * Output of a translation request.
  *
- * @example
- * // Input: { 0: "Hello", 1: "World" }
- * // Output: { 0: "Привет", 1: "Мир" }
+ * Keys are a **subset** of the input's: a key that is absent was not translated, and the plugin
+ * keeps the source text for it. An absent key never means "translated to nothing" — to blank a
+ * value, return the empty string under its key.
  */
 export type TranslationOutput = Record<TranslationIndex, string>;
 
 /**
- * What the core can tell a provider about the request beyond the text itself.
+ * Failure causes a translation provider can report.
  *
- * Optional, so every implementation written before it keeps compiling and working.
- *
- * @since 0.13.0
+ * @since 0.11.0
  */
+export type TranslationFailureCode =
+  | "no-content"
+  | "unparseable-reply"
+  | "key-set-mismatch"
+  | "transport"
+  | "config";
+
 /**
  * Which document is being translated. Identity, not a switch — the two halves never arrive apart,
  * and neither tells a provider *how* to translate.
@@ -42,45 +46,34 @@ export type DocumentRef = {
   id: string;
 };
 
-export type TranslationRequestOptions = {
-  /**
-   * Required: describing a request without saying what it is about is not a state the core ever
-   * produces. The *parameter* stays optional — a provider called on its own is asked only to
-   * translate strings — but a half-description is not allowed.
-   *
-   * @since 0.18.0
-   */
+/**
+ * What the plugin tells a provider about one translation request, beyond the text itself.
+ *
+ * @since 1.0.0
+ */
+export type TranslationRequest = {
+  /** Source language code (e.g. 'en', 'de'). Always set: the plugin never sends an empty one. */
+  sourceLng: string;
+  targetLng: string;
   document: DocumentRef;
   /**
-   * The values carry numbered inline marks the provider must preserve.
+   * The values carry numbered inline marks (`<1>text</1>`, `<5/>`) standing in for formatting, and
+   * every mark must come back exactly once.
    *
    * Stated rather than sniffed: customer text can legitimately contain `<1>` — a footnote
-   * reference, a template placeholder, an article about markup — and inferring from content
-   * would change the prompt for documents that opted into nothing.
+   * reference, a template placeholder, an article about markup — and inferring from content would
+   * change the prompt for documents that opted into nothing.
    */
-  inlineMarks?: boolean;
+  inlineMarks: boolean;
 };
 
 /**
  * Interface for translation service providers.
  *
- * Implementations must:
- * - Preserve all numeric keys from input
- * - Return translated text values for each key
- * - Return null on translation failure
- * - Handle empty input gracefully
- *
- * @example
- * ```typescript
- * class MyProvider implements TranslationProvider {
- *   async translate(input, sourceLng, targetLng) {
- *     // Input:  { 0: "Hello", 1: "World" }
- *     // Output: { 0: "Bonjour", 1: "Monde" }
- *     const output = await myTranslationAPI.translate(input, targetLng)
- *     return output
- *   }
- * }
- * ```
+ * Report failure by throwing; a returned value is always taken as success. A failure that is not
+ * one of this package's own provider errors is re-wrapped before it reaches the caller and the
+ * `code` it carried is replaced, so today only those classes preserve a
+ * {@link TranslationFailureCode}.
  */
 export interface TranslationProvider {
   /**
@@ -100,18 +93,6 @@ export interface TranslationProvider {
      */
     inlineMarks?: boolean;
   };
-  /**
-   * Translates indexed text content from source to target language.
-   *
-   * @param input - Map of index to text string. Keys must be preserved in output.
-   * @param sourceLng - Source language code (e.g., 'en', 'de'). May be empty for auto-detect.
-   * @param targetLng - Target language code (e.g., 'fr', 'es').
-   * @returns Translated output with same keys, or null on failure.
-   */
-  translate(
-    input: TranslationInput,
-    sourceLng: string,
-    targetLng: string,
-    options?: TranslationRequestOptions
-  ): Promise<TranslationOutput | null>;
+  /** Translates indexed text content from source to target language. */
+  translate(input: TranslationInput, request: TranslationRequest): Promise<TranslationOutput>;
 }

@@ -4,6 +4,7 @@ import { createOpenAIProvider } from "../OpenAITranslation.provider.js";
 import { OpenAITranslationProvider } from "../OpenAITranslationLegacy.provider.js";
 import type { OpenAIChatParams, OpenAIClientShape } from "../OpenAI.shapes.js";
 import { loadOpenAIClient } from "../loadOpenAIClient.js";
+import type { TranslationRequest } from "../../../core/domain/translation-providers/index.js";
 
 vi.mock("../loadOpenAIClient.js", () => ({
   loadOpenAIClient: vi.fn(),
@@ -26,6 +27,18 @@ function stubClient(reply: string) {
   return { client, calls };
 }
 
+const DEFAULT_DOCUMENT = { collection: "docs", id: "1" };
+
+function aRequest(over: Partial<TranslationRequest> = {}): TranslationRequest {
+  return {
+    sourceLng: "en",
+    targetLng: "de",
+    document: DEFAULT_DOCUMENT,
+    inlineMarks: false,
+    ...over,
+  };
+}
+
 describe("OpenAITranslationProvider (deprecated class)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -36,13 +49,11 @@ describe("OpenAITranslationProvider (deprecated class)", () => {
 
     const fromClass = await new OpenAITranslationProvider({ client }).translate(
       { 0: "Hello" },
-      "en",
-      "de"
+      aRequest()
     );
     const fromFactory = await createOpenAIProvider({ client }).translate(
       { 0: "Hello" },
-      "en",
-      "de"
+      aRequest()
     );
 
     expect(fromClass).toEqual(fromFactory);
@@ -51,8 +62,7 @@ describe("OpenAITranslationProvider (deprecated class)", () => {
   it("delegates rather than re-implementing — a dry run short-circuits there too", async () => {
     const result = await new OpenAITranslationProvider({ apiKey: "", dryRun: true }).translate(
       { 0: "Hello" },
-      "en",
-      "de"
+      aRequest()
     );
 
     expect(result).toEqual({ 0: "olleH" });

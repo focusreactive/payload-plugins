@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { buildSystemPrompt } from "../buildSystemPrompt.js";
 
+const DOCUMENT = { collection: "docs", id: "1" };
+
 // Pinned verbatim: consumers extend this exact string via `defaultPrompt`, so a reword is breaking.
 const EXPECTED_EN_DE = `Translate the values from the JSON that the user will send you from en into de. Keep all JSON keys exactly as they are, only translate the values.
 The response should be a valid JSON object with the same structure and keys as the input, but with translated values.
@@ -11,11 +13,13 @@ const SOURCE_LANGUAGE_CLAUSE = "send you from";
 
 describe("buildSystemPrompt", () => {
   it("produces the shipped default text unchanged", async () => {
-    expect(await buildSystemPrompt({ sourceLng: "en", targetLng: "de" })).toBe(EXPECTED_EN_DE);
+    expect(await buildSystemPrompt({ sourceLng: "en", targetLng: "de", document: DOCUMENT })).toBe(
+      EXPECTED_EN_DE
+    );
   });
 
   it("omits the source clause when the source language is empty (auto-detect)", async () => {
-    const prompt = await buildSystemPrompt({ sourceLng: "", targetLng: "de" });
+    const prompt = await buildSystemPrompt({ sourceLng: "", targetLng: "de", document: DOCUMENT });
 
     expect(prompt).toContain("send you into de");
     expect(prompt).not.toContain(SOURCE_LANGUAGE_CLAUSE);
@@ -25,11 +29,12 @@ describe("buildSystemPrompt", () => {
     const prompt = await buildSystemPrompt({
       sourceLng: "en",
       targetLng: "fr",
+      document: DOCUMENT,
       override: ({ defaultPrompt }) => `${defaultPrompt}\nUse formal language.`,
     });
 
     expect(prompt).toBe(
-      `${await buildSystemPrompt({ sourceLng: "en", targetLng: "fr" })}\nUse formal language.`
+      `${await buildSystemPrompt({ sourceLng: "en", targetLng: "fr", document: DOCUMENT })}\nUse formal language.`
     );
   });
 
@@ -39,6 +44,7 @@ describe("buildSystemPrompt", () => {
     await buildSystemPrompt({
       sourceLng: "en",
       targetLng: "fr",
+      document: DOCUMENT,
       override: ({ sourceLang, targetLang }) => {
         seen.push(sourceLang, targetLang);
         return "replaced";
@@ -50,7 +56,12 @@ describe("buildSystemPrompt", () => {
 
   it("lets an override replace the default entirely", async () => {
     expect(
-      await buildSystemPrompt({ sourceLng: "en", targetLng: "fr", override: () => "only this" })
+      await buildSystemPrompt({
+        sourceLng: "en",
+        targetLng: "fr",
+        document: DOCUMENT,
+        override: () => "only this",
+      })
     ).toBe("only this");
   });
 
@@ -58,6 +69,7 @@ describe("buildSystemPrompt", () => {
     const prompt = await buildSystemPrompt({
       sourceLng: "en",
       targetLng: "fr",
+      document: DOCUMENT,
       hasInlineMarks: true,
       override: async ({ defaultPrompt }) => `${defaultPrompt}\nGlossary: ampere = Ampere.`,
     });
@@ -89,6 +101,7 @@ describe("buildSystemPrompt", () => {
       const prompt = await buildSystemPrompt({
         sourceLng: "en",
         targetLng: "de",
+        document: DOCUMENT,
         hasInlineMarks: true,
       });
 
@@ -96,7 +109,11 @@ describe("buildSystemPrompt", () => {
     });
 
     it("says nothing about marks when no value carries one", async () => {
-      const prompt = await buildSystemPrompt({ sourceLng: "en", targetLng: "de" });
+      const prompt = await buildSystemPrompt({
+        sourceLng: "en",
+        targetLng: "de",
+        document: DOCUMENT,
+      });
 
       expect(prompt).not.toContain("mark");
     });
@@ -105,6 +122,7 @@ describe("buildSystemPrompt", () => {
       const prompt = await buildSystemPrompt({
         sourceLng: "en",
         targetLng: "de",
+        document: DOCUMENT,
         hasInlineMarks: true,
         override: () => "Translate to German. Be formal.",
       });

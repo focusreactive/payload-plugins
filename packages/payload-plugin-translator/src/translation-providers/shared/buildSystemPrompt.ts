@@ -1,6 +1,8 @@
 import type { DocumentRef } from "../../core/domain/translation-providers/index.js";
 
 /**
+ * Append this to a system prompt when the request says the values carry inline marks.
+ *
  * Wording validated against 396 live translations (French, German, Japanese × four models) before
  * it shipped: the fallback rate was ~1% on gpt-4o and zero on newer models. Reword it only with
  * the same measurement in hand.
@@ -8,8 +10,10 @@ import type { DocumentRef } from "../../core/domain/translation-providers/index.
  * A rule telling the model to keep each mark around the same words was measured and rejected: it
  * tightens mark boundaries at the cost of target word order. See
  * `docs/plans/2026-09-12-field-surface-inline-marks.task.md`.
+ *
+ * @since 1.0.0
  */
-const INLINE_MARKS_INSTRUCTION = `Some values contain numbered inline marks, written as <1>text</1> or <5/>. They carry formatting, not content.
+export const INLINE_MARKS_INSTRUCTION = `Some values contain numbered inline marks, written as <1>text</1> or <5/>. They carry formatting, not content.
 Return every mark exactly once, keeping its number, and put each mark where the translated sentence needs it — the order of marks may change.
 If a piece of text merges into a neighbouring mark, return the emptied mark as <2></2>; never omit a mark.
 Never introduce a mark into a value that has none, and never nest marks.`;
@@ -25,12 +29,10 @@ export type SystemPromptContext = {
   targetLang: string;
   defaultPrompt: string;
   /**
-   * Which document is being translated. Absent only when the provider was called without one —
-   * both translation surfaces name it.
-   *
    * @since 0.18.0
+   * @since 1.0.0 always present.
    */
-  document?: DocumentRef;
+  document: DocumentRef;
 };
 
 /**
@@ -51,7 +53,7 @@ export async function buildSystemPrompt(args: {
   sourceLng: string;
   targetLng: string;
   override?: SystemPromptBuilder;
-  document?: DocumentRef;
+  document: DocumentRef;
   /**
    * Whether the values being sent carry inline marks. Appended **after** whatever `override`
    * returns: a builder is free to ignore `defaultPrompt`, and the format must not depend on it

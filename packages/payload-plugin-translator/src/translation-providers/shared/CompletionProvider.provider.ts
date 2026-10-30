@@ -2,7 +2,7 @@ import type {
   TranslationInput,
   TranslationOutput,
   TranslationProvider,
-  TranslationRequestOptions,
+  TranslationRequest,
 } from "../../core/domain/translation-providers/index.js";
 import { buildResponseSchema } from "./buildResponseSchema.js";
 import type { JsonSchemaObject } from "./buildResponseSchema.js";
@@ -117,23 +117,21 @@ export function createTranslationProvider(config: TranslationProviderConfig): Tr
     capabilities,
     async translate(
       input: TranslationInput,
-      sourceLng: string,
-      targetLng: string,
-      options?: TranslationRequestOptions
+      request: TranslationRequest
     ): Promise<TranslationOutput> {
       if (Object.keys(input).length === 0) return {};
 
       const systemPromptText = await asConfigurationFailure("systemPrompt builder", () =>
         buildSystemPrompt({
-          sourceLng,
-          targetLng,
+          sourceLng: request.sourceLng,
+          targetLng: request.targetLng,
           override: systemPrompt,
-          hasInlineMarks: options?.inlineMarks === true,
-          document: options?.document,
+          hasInlineMarks: request.inlineMarks,
+          document: request.document,
         })
       );
 
-      const request = await asConfigurationFailure("serialization of the input", () => ({
+      const completion = await asConfigurationFailure("serialization of the input", () => ({
         systemPrompt: systemPromptText,
         userContent: JSON.stringify(input),
         responseSchema: buildResponseSchema(input),
@@ -141,7 +139,7 @@ export function createTranslationProvider(config: TranslationProviderConfig): Tr
 
       let raw: string;
       try {
-        raw = await complete(request);
+        raw = await complete(completion);
       } catch (cause) {
         throw asTranslatorError(cause);
       }
