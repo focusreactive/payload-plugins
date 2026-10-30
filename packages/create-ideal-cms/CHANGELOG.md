@@ -1,3 +1,11 @@
+# create-ideal-cms [1.4.0](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.3.0...create-ideal-cms@1.4.0) (2026-10-30)
+
+
+### Features
+
+* **create-ideal-cms:** resolve plugin versions at scaffold time ([3ce499b](https://github.com/focusreactive/payload-plugins/commit/3ce499b3844eed12fc78b83bba91ad523221ebda))
+* **create-ideal-cms:** verify plugin versions against the npm registry ([195c342](https://github.com/focusreactive/payload-plugins/commit/195c3423b962bfe0a985ee1b5cdb82aad66dd76b))
+
 # create-ideal-cms [1.3.0](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.2.1...create-ideal-cms@1.3.0) (2026-10-05)
 
 
