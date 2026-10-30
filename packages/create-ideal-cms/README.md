@@ -45,7 +45,14 @@ my-app/
 ```
 
 The published `@focus-reactive/payload-plugin-*` packages are added to
-`apps/cms` as regular dependencies at their latest known versions.
+`apps/cms` as regular dependencies, pinned to exact versions. The versions are
+resolved at scaffold time, not baked into the CLI: each plugin gets the version
+recorded in the template's own `packages/<plugin>/package.json` — i.e. the
+release cut from the same commit as the `apps/cms` code — so a fresh project
+always starts on the newest plugins that match its code (and `--ref` stays
+consistent with older revisions). If that version isn't on npm, the plugin's
+npm `latest` is used instead. After scaffolding, the project is fully
+independent: upgrade plugins whenever you choose.
 
 ## Flags
 

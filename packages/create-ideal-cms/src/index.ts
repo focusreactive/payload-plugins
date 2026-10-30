@@ -7,6 +7,7 @@ import { collectAnswers } from "./prompts.js";
 import type { Answers, PackageManager } from "./prompts.js";
 import { fetchTemplate } from "./scaffold.js";
 import { applyTransforms } from "./transforms.js";
+import type { PluginVersions, ResolvedVersion } from "./versions.js";
 
 function parseCliArgs(): { name?: string; ref?: string; fromLocal?: string } {
   const { values, positionals } = parseArgs({
@@ -117,6 +118,20 @@ function printNextSteps(answers: Answers, migrationRan: boolean): void {
   outro(lines.join("\n"));
 }
 
+function reportPluginVersions(resolved: Map<string, ResolvedVersion>): void {
+  if (resolved.size === 0) return;
+  const rows = [...resolved.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([name, r]) => {
+      const note =
+        r.source === "npm-latest"
+          ? pc.yellow("  (npm latest — template version not published)")
+          : "";
+      return `  ${name}@${pc.cyan(r.version)}${note}`;
+    });
+  log.info(`Pinned plugin versions:\n${rows.join("\n")}`);
+}
+
 function describeSource(answers: Answers): string {
   return answers.source.kind === "local"
     ? `local checkout at ${answers.source.path}`
@@ -129,8 +144,9 @@ async function main(): Promise<void> {
 
   const s = spinner();
   s.start(`Fetching template from ${describeSource(answers)}`);
+  let templateVersions: PluginVersions;
   try {
-    await fetchTemplate(answers.targetDir, answers.source);
+    templateVersions = await fetchTemplate(answers.targetDir, answers.source);
     s.stop("Template fetched");
   } catch (err) {
     s.stop("Template fetch failed");
@@ -138,10 +154,11 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  s.start("Applying configuration");
+  s.start("Resolving plugin versions and applying configuration");
   try {
-    await applyTransforms(answers);
+    const resolved = await applyTransforms(answers, templateVersions);
     s.stop("Configuration applied");
+    reportPluginVersions(resolved);
   } catch (err) {
     s.stop("Configuration failed");
     log.error((err as Error).message);
