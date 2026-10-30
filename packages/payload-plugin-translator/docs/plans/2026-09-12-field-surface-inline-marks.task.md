@@ -54,8 +54,8 @@ build.
 
 **Rejected — tighten `wireTranslateRunner` and the document handler in the same pass.**
 They carry the same `= false` default. They are wired correctly and each has one caller,
-so changing them is a refactor of code the defect never touched. Handled as the Phase 4
-same-class sweep instead, where the evidence for acting is gathered rather than assumed.
+so changing them is a refactor of code the defect never touched. Handled in the regression
+sweep for the same class of defect instead, where the evidence for acting is gathered rather than assumed.
 
 ### D2 — the guard is the type plus an integration spec, not a unit test at the seam
 
@@ -118,10 +118,10 @@ None. No new abstraction, no new module, no new dependency.
 ### Written contract?
 
 No unit here owes callers anything its signature cannot state once `inlineMarks` is
-required. Items 1–3 are one bug fix, so Phase 3 takes the bug-fix path: the test goes red
-against the broken code, never against a stub.
+required. Items 1–3 are one bug fix, so the test goes red against the broken code, never
+against a stub.
 
-### Escalate to architecture?
+### Does this need a separate design?
 
 No. One module, no new pattern, no data-model change, no migration.
 
@@ -197,7 +197,7 @@ Of the two columns, word order is the one worth spending on. Emphasis covering a
 intended is cosmetic and the content is whole; a participle stranded in the middle of a German
 clause reads as broken language. V0 is the best of the four on that column and ties on the third.
 
-**What did not turn out to be a problem.** The owner's target was "the minimum of model invention".
+**What did not turn out to be a problem.** The owner's target was to minimise model invention.
 Across all four runs and forty paragraphs there was **not one** duplicated word, lost word, missing
 mark, or container that fell back to its source text. Invention is not the current weakness of the
 format — word order is, and these three wordings make it worse rather than better.
@@ -215,17 +215,11 @@ prompt.
 
 ## Review log
 
-### 2026-09-12 · phase 5
+### 2026-09-12 · verification and review
 
-- **Checks:** `bunx vitest run` → 1491 passed (113 files) · `bun run test:integration` → 112 passed (26 files) ·
-  `bun run check-types` → 5 tasks successful · `bunx ultracite check` over the package and the
-  integration suite → 58 warnings, 0 errors (the main branch's level) ·
-  `bunx turbo run build --filter='./packages/*'` → 8 tasks successful.
-- **Gates:** sp-diff-checks clean (5 checks, no findings); sp-lint-delta mode=two-run, **no findings
-  introduced**.
-- **Reviewers:** correctness, regression, intent, tests — run concurrently. Three returned nothing.
-  `tests` returned one major finding, confirmed and fixed (criterion 9 below).
-- **Criteria:** 8 met · 1 partial · 0 not-run · 0 not met. Partial is #5: everything in it holds
+- **Review:** correctness, regression, intent and tests. The tests review found one major gap, fixed
+  (criterion 9 below).
+- **Criteria:** 8 met, 1 partial. Partial is #5: everything in it holds
   except the whole-repo `turbo run build`, where `dev#build` fails on a **pre-existing** type
   mismatch unrelated to this work — `31cad546` removed `content` from the SEO plugin's
   `SeoFieldPaths`, and the sandbox config from `1ffcb1d3` still passes `content: "sections"`.
@@ -234,11 +228,10 @@ prompt.
 - **Left open:** the `dev#build` failure above, for the owner to decide on separately. Also the
   residual prompt finding in `## Item 5` — four paragraphs come back in English order under every
   wording tried, which no sentence in the system prompt fixed.
-- **Pin:** see below.
 
 #### The finding that was fixed
 
-The `tests` reviewer observed that the three original specs covered only three corners of
+The tests review observed that the three original specs covered only three corners of
 (flag × capability) — (on, on), (on, off), (off, off) — and that in all three the two signals agree
 on the answer. An implementation reading `provider.capabilities?.inlineMarks` in place of the
 configured flag would therefore pass all three, which is the same class of wiring defect this task
@@ -249,16 +242,11 @@ Verified rather than assumed: a fourth spec was added at (flag off, capability d
 mutation turned **only** the new spec red and left the other three green, exactly as predicted. The
 mutation was reverted and the suite re-run.
 
-## Human choices
+## Decisions by the owner
 
-- **2026-09-12** — the owner stepped away and instructed: no questions at the design gate,
-  take the optimal decision, record it here, continue through all five items. Commits are
-  allowed; pushing to the shared repository is not, until the owner returns.
-- **2026-09-12** — the owner asked for the prompt work to try several wordings and to aim
-  at "the minimum of model invention", while sparing the API budget (4–5 live runs total).
-  D3 is the reading of that instruction against the constraint already recorded in
-  `buildSystemPrompt.ts`.
-
-## Review log
-
-_(empty — appended by review passes)_
+- **2026-09-12** — decided by the owner: the design decisions for all five items are taken
+  without a separate approval step and recorded here. Commits are allowed; pushing to the shared
+  repository waits for the owner's review.
+- **2026-09-12** — decided by the owner: the prompt work tries several wordings and aims to
+  minimise model invention, within an API budget of 4–5 live runs. D3 applies that against the
+  constraint already recorded in `buildSystemPrompt.ts`.

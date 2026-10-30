@@ -64,10 +64,10 @@ write.
 `isRecordStale` takes `FieldFingerprints` directly.
 
 **Rejected:** keep `recordsEachLeaf` as a null-check helper. It loses because a named predicate over
-one `!== null` is the same shape the owner removed from `leavesMovedSince` on 2026-10-25 — a wrapper
+one `!== null` is the same shape removed from `leavesMovedSince` on 2026-10-25 — a wrapper
 folding a guard into a computation, where the guard no longer narrows anything a reader cannot see.
 
-**Constraint cited:** the owner's instruction on this branch, and the fact that `driftedAddresses`
+**Constraint cited:** the same decision earlier on this branch, and the fact that `driftedAddresses`
 already takes the map rather than the wrapper.
 
 ### D3 — an unreadable stored value is `null`, indistinguishable from no receipt
@@ -84,7 +84,7 @@ addresses reported, every leaf taken.
 identically. A document digest matching the current source read as **current**, while an empty
 column read as out of date. That difference is the behaviour this task removes, and it is what the
 `DEPRECATIONS` entry describes. An earlier draft of the `parseSourceFingerprint` docblock claimed no
-reader had ever acted on them differently; the comment audit caught it as false and it was
+reader had ever acted on them differently; the comment review caught it as false and it was
 rewritten.
 
 **Constraint cited:** the shape check's second question. A state the type admits and the system
@@ -127,12 +127,12 @@ third adds a level for no distinction. One shape survives.
 
 **New surface:** none. **Written contract owed:** `parseSourceFingerprint` must say what `null`
 means — no receipt and an unreadable one, deliberately the same. One sentence in its docblock, not
-a `/sp-red-test` case: the unit exists, has tests, and this is a removal.
+a new contract test: the unit exists, has tests, and this is a removal.
 
-**Escalate to `/sp-architect`?** No. It stays inside one feature's own files
+**Does this need a separate design?** No. It stays inside one feature's own files
 (`core/domain/provenance` + `server/modules/provenance`), adds no seam, needs no migration, and the
-data question — whether old receipts may stop being read — was settled by the owner before this run
-with the evidence in `## Human choices`.
+data question — whether old receipts may stop being read — was settled by the owner before this task,
+with the evidence in `## Decisions by the owner`.
 
 ## Acceptance Criteria
 
@@ -194,10 +194,10 @@ of this task.
 - **`driftGuard.test.ts`** pins that the fingerprint side and the collector mint byte-identical
   addresses. This task must not disturb it; AC10's suite covers it.
 
-## Human choices
+## Decisions by the owner
 
-**2026-10-25 — the owner authorised dropping the legacy read before this run started**, after asking
-for it to be verified first. The verification he accepted:
+**2026-10-25 — decided by the owner: drop the legacy read**, once verified. The verification it rests
+on:
 
 - The published surface is not touched: `package.json` publishes only `.` → `src/index.ts`, which
   exports `TranslationProvenanceRecord` alone, and that type deliberately excludes the fingerprint
@@ -219,18 +219,17 @@ was deleted in `2026-10-23-fields-not-a-strategy.task.md`, and `Provenance.crite
 takes every leaf when the receipt is not per-leaf. D4 was therefore already superseded before this
 task; this task does not touch the criterion.
 
-**2026-10-25, at the gate — the owner chose the full collapse** ("Да, как в договоре") over keeping
+**2026-10-25 — decided by the owner: the full collapse**, over keeping
 `SourceFingerprint` as an alias of the map, and over the smaller step of dropping only the
 `document` branch while leaving a one-member union behind.
 
-**2026-10-25, at the gate — the owner asked for `README.md:471` to be corrected in this same pass**
-("Поправить в этом же проходе"). It still promises three refusals the enqueue route stopped making
+**2026-10-25 — decided by the owner: correct `README.md:471` in this same pass.** It still promises three refusals the enqueue route stopped making
 earlier the same day: a `leaves` filter refused alongside `select_all` or a second id, a positional
 address refused, and an unknown rule name refused. Unrelated to this task's subject, folded in
 because it is a false statement in a published document. AC16 covers it.
 
-**2026-10-25, after the review log — the owner asked for `vouchedFor` to be renamed** and for the
-"vouch" vocabulary to be made one word across `src`. It was the only place in the mechanism using
+**2026-10-25, after review — decided by the owner: rename `vouchedFor`** and make the "vouch"
+vocabulary one word across `src`. It was the only place in the mechanism using
 that verb while everything around it said *answer* (`Criterion` "answers with", `answerTo`, the
 local `answered` that is the argument passed in); the name hid that the parameter is a list **of
 lists**; and it was wrong for half its callers, since `narrowSelection` is also called with the
@@ -253,10 +252,9 @@ addresses a person named, which nobody vouched for. `LeafAnswer` now names one a
 
 ## Review log
 
-### 2026-10-25 — comment audit (fresh eyes, 4 blocks, 4 verdicts)
+### 2026-10-25 — comment review
 
-Density 0.31 comment lines per 10 code lines — ok. **One finding was a real error of fact and is
-the reason this pass earned its place:** the `parseSourceFingerprint` docblock claimed "no reader
+**One finding was a real error of fact:** the `parseSourceFingerprint` docblock claimed "no reader
 has ever acted on them differently" about an empty column and a legacy digest. False about the past
 — until this change a digest matching the current source read as *current* while an empty column
 read as out of date, which is precisely the behaviour this task removes. Rewritten to state the

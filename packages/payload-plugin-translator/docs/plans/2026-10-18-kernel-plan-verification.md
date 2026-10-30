@@ -23,9 +23,9 @@ matter, and one of them inverts a premise the design rests on.
 
 ---
 
-## Phase 2 — codebase map
+## Codebase map
 
-Files the verification touched, as the next skill will need them:
+Files the verification touched:
 
 | Area | Path |
 |---|---|
@@ -171,9 +171,9 @@ Three owner decisions bear on it, none of which the document reflects:
   > "| `src/core/translation-pipeline/**` (primitive, stages, strategies) | `DataReconciler` **stays** — it is Payload storage policy (§3) |"
 - R7 (in) Fold in the three decisions taken since, and strike open question 5.
   > "5. **Does building the system prompt stay inside the provider?**"
-- R8 (out) [inferred] Implementing any phase. This research changes no code — rests on: the brief
-  asked for verification only, and the plan's own status is still *pending approval*.
-- R9 (out) Re-deciding the design. [inferred] — rests on: the brief says verification only, and the
+- R8 (out) [inferred] Implementing any phase. This research changes no code — rests on: the request
+  was for verification only, and the plan's own status is still *pending approval*.
+- R9 (out) Re-deciding the design. [inferred] — rests on: the request is verification only, and the
   ADRs were not contradicted by anything measured.
 
 **Non-functional scan.** Performance: N/A — no runtime change. Security / access control: N/A.
@@ -243,6 +243,5 @@ is the one term in it most likely to be misread.
 
 Soft spot: question 1 decides phase 1's size, and phase 1 is the first thing anyone would do.
 
-**Next: sp-task** — the work is seven edits to one document, with every target located. Likely
-architecture vectors: **structure only** — nothing here changes a module boundary, a contract or a
-data model; it corrects a record of one.
+**Next step:** seven edits to one document, with every target located. Nothing here changes a
+module boundary, a contract or a data model; it corrects a record of one.

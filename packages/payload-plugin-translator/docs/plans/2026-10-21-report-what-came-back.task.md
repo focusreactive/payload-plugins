@@ -60,8 +60,8 @@ called by both the mutator and the reporter, (b) letting the reporter re-derive 
 its own. *Constraint:* the rule is subtle and already written down —
 `RichContainerChunk.reply`'s docblock says the applicator "must not tell the two apart" when no
 reply came back and when one could not be parsed. Two expressions of that drift, and the drift is
-silent: the report claims a leaf the mutator skipped. (b) loses outright. (a) survived the gate and
-**was then rejected during execution** — see below.
+silent: the report claims a leaf the mutator skipped. (b) loses outright. (a) was the first choice
+and **was then rejected during implementation** — see below.
 
 **D2 was revised mid-build, and the revision is the point.** The shared-predicate version was
 written first. It did not survive contact: `wasWritten` returning `true` tells TypeScript nothing
@@ -111,7 +111,7 @@ D1 is still a shape decision and is recorded as one above.
 the mutator acts on rather than an approximation of it, and that for a container "written" means a
 parsed reply, not a returned string. Stated in its docblock, and pinned by AC3.
 
-### Escalate to `/sp-architect`?
+### Does this need a separate design?
 
 No. One module, no new dependency, no new seam, no data-model change — the stored shape is
 unchanged, only which addresses are claimed.
@@ -154,8 +154,7 @@ AC9's second half is a pre-existing false docblock found during investigation: `
 ## Risk notes
 
 **High risk** — it changes what is written into stored provenance records, and the staleness verdict
-a user reads. So: the regression sweep in Phase 4 is evidenced, and Phase 5b runs three review
-angles.
+a user reads. So: the regression sweep is evidenced, and the change is reviewed from three angles.
 
 - **The fix can only ever claim less — but "claiming less" is not free, and review found where.**
   See the review log entry below: when the dropped leaf has **no** earlier string claim, `record`
@@ -168,10 +167,10 @@ angles.
   drops an emptied mark's node deliberately. "Written" means the reply was applied, not that every
   word changed — and that is the existing meaning, not a new one.
 
-## Human choices
+## Decisions by the owner
 
-Forced at the gate, which the owner was not present for. All three are reversible and none is
-visible outside this package.
+Taken before implementation, without the owner. All three are reversible and none is visible
+outside this package.
 
 - **2026-10-21** — D3, that a leaf with no chunks is not claimed. F1 does not mention the case; it
   is reachable and claiming it would seal precisely the empty target F1 is about.
@@ -182,19 +181,15 @@ visible outside this package.
 
 ## Review log
 
-### 2026-10-21 — comment audit
+### 2026-10-21 — comment review
 
-Nine blocks were handed over; **ten verdicts came back**. 5 deleted, 4 shortened, 1 answered by
-renaming. Comment lines over the change: 18, all docblocks, no new inline comment — the density
-verdict was *ok*, with one file called out: `TextChunk.ts` added three doc lines for three field
-lines, all carrying the same sentence.
+`TextChunk.ts` added three doc lines for three field lines, all carrying the same sentence.
 
-**The tenth block was one this change stranded**, and the audit went looking rather than taking the
-list on trust: the docblock explaining why model-supplied keys were quoted before printing
-(`CompletionProvider.provider.ts`) outlived the function it described and came to sit on
-`asConfigurationFailure`, which it does not describe. It was false by the time the audit read it.
+**One block was stranded by this change:** the docblock explaining why model-supplied keys were
+quoted before printing (`CompletionProvider.provider.ts`) outlived the function it described and
+came to sit on `asConfigurationFailure`, which it does not describe. It was removed.
 
-**One finding was a factual overclaim of mine.** The rewritten `translatedPaths` docblock said a
+**One finding was a factual overclaim.** The rewritten `translatedPaths` docblock said a
 skipped leaf is absent "so the next run picks it up". That holds only when the previous claim is
 `DECLINED` or an older hash; if the stored receipt already claims the current source hash, the leaf
 stays up to date and is not picked up. The text now states the mechanism — absent, so the receipt
@@ -220,10 +215,10 @@ references for mutation" stopped being true the moment each variant carried an a
 Also fixed, outside the diff but falsified by it: `ProvenanceService.record`'s `@param` said it
 received "the leaves this run actually sent for translation".
 
-### 2026-10-21 — three review angles (high risk)
+### 2026-10-21 — review from three angles (high risk)
 
 **The claim rule: no findings.** Object identity between what the expander produced and what the
-applicator returned holds on every path, including the one that worried me — `RichContainerExpander`
+applicator returned holds on every path, including the one most at risk — `RichContainerExpander`
 spreads `{ ...perNodeChunk, index: at }` for a skipped container, and it is that copy, not the
 original, which reaches `textChunks` and then the applicator. Grouping by `IdPath` is unambiguous
 for any input the collector can produce, the tally counts exactly what was sent, and the early

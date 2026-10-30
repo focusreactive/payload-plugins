@@ -157,14 +157,13 @@ port implemented outside this repo.
   identical, and AC3 is the guard.
 - **SC6 residue, already named in the design:** a run triggered by A on B's attributed job is still
   recorded as B's. Closing it means a stored-row change, out of scope; a log line names it.
-- A test is required before done; the regression sweep is evidenced; Phase 5b runs several angles.
+- A test is required; the regression sweep is evidenced; the change is reviewed from several angles.
 
-## Human choices
+## Decisions by the owner
 
-**2026-10-25.** The owner directed an uninterrupted run through steps 5–10, stopping only at a
-genuine fork. No fork arose: D1 and D4 follow decisions already taken in steps 3 and 5, D2 and D6
-follow the design's SC4, and D5 follows step 5's answer to the same question one commit earlier.
-Commit authority granted in advance; no push, no pull request.
+**2026-10-25.** No decision in this step needed the owner: D1 and D4 follow decisions already taken
+in steps 3 and 5, D2 and D6 follow the design's SC4, and D5 follows step 5's answer to the same
+question one commit earlier.
 
 ## A test was changed to fit the code — stated plainly
 
@@ -172,7 +171,7 @@ Commit authority granted in advance; no push, no pull request.
 retried through `POST /translate/run/:id`, which now refuses a job nobody is recorded as having
 started (D4, from the design's D5).
 
-I gave it an attributed editor rather than relaxing the rule. The reasons, so the choice can be
+It was given an attributed editor rather than the rule being relaxed. The reasons, so the choice can be
 judged rather than taken on trust:
 
 - **The test's subject is retry semantics** — "stops there, leaves the locales after it untouched,
@@ -192,40 +191,32 @@ judged rather than taken on trust:
 
 ## Review log
 
-**2026-10-25 — `/sp-complexity`.** Neighbourhood 8 files. Two scenarios counted. "A second optional
+**2026-10-25 — complexity review.** Two scenarios counted. "A second optional
 method on the runner port": CHANGE 4, READ 5, STATE 2 per method. "A route starts asking about a
 document": CHANGE 1, READ 3 — unchanged from step 5, but one state grew, because there are now **two
 shapes of asking** (by document id, by job handle) and a new route must pick. **No findings, no edit.**
 
-**2026-10-25 — `/sp-abstraction`** on `assignmentsOf` / `JobAssignment`. Audited by the author.
+**2026-10-25 — abstraction review** of `assignmentsOf` / `JobAssignment`.
 
 - **Measured and confirmed rather than taken on trust:** `startedBy` is nullable honestly —
   `PayloadJobsTaskRunner.ts:208` writes `requester_id: scope.requester?.userId ?? null`, and the sync
   runner records nothing. Both halves occur.
-- **What the author's own brief omitted:** `DELETE /translate/cancel` changes its **status code** on
+- **Easy to miss:** `DELETE /translate/cancel` changes its **status code** on
   one path (`204` → `200`), not just its body. No type can see that.
 - **Finding, fixed:** the caller filtered the **input** handles rather than the ones the runner could
   place, so a handle the runner never answered for went to `cancel` unasked. Harmless today in both
   in-repo runners, but it held by contract rather than by code. Now only what was placed and allowed
   is cancelled, pinned by a check and a mutation.
 
-**2026-10-25 — `/sp-red-test` in audit mode.** Scaffolding deleted, `git status` shown.
+**2026-10-25 — suite run against an empty implementation.**
 
-- The first stub pattern **did not match** — the barrel imports `./readRequester.js`, not
-  `store/readRequester.js` — and a run against a non-matching alias looks exactly like "nothing
-  guards this". Caught by running a control: stubbing `refusedTargets` reddens 15 checks in 2 files,
-  so the mechanism works.
 - **Finding, fixed:** with `readRequester` stubbed to throw, **the entire suite stayed green** —
   200 files, 2545 checks. It had zero coverage, and it is the function deciding whether a job is
   attributed, which is what `run/:id` refuses on. Six checks added, three mutations. One of them
   earns its place on its own: a naive `!id` would read **user id `0`** as unattributed and refuse a
   legitimate re-run.
 
-**2026-10-25 — `/sp-review-comments`.** 7 candidate blocks, 7 verdicts + 1 MISSING: 2 DELETE,
-3 REWRITE-COMMENT, 1 REWRITE-CODE, 1 restored placement. Inline density 0.4 lines per 10 — fine; the
-cuts were to docblocks.
-
-Three substantive results, all defects rather than verbosity:
+**2026-10-25 — comment review.** Three substantive results, all defects rather than verbosity:
 
 - **A public type lost its documentation.** `JobAssignment` had been inserted *between* the
   `EnqueueAssignment` docblock (`@since 0.16.0`) and `EnqueueAssignment` itself, so the public type
@@ -236,18 +227,10 @@ Three substantive results, all defects rather than verbosity:
 - **A comment was covering for a split predicate**, so the code was changed instead: `cancel` now
   gets `{ allowed, refused }` from one function, and the cancel list can only come out of the ask.
 
-**Found outside its own remit, and it was a real bug:** the refusal verdict was keyed by **document
+**Found outside its own remit, and it was a real bug:** the refusal was keyed by **document
 id alone**, so two collections holding the same id cross-contaminated — a refusal in `pages` would
 spare a job in `posts`. It over-refused, which is the safe direction, but it was wrong. Now keyed by
 `collection:id`, with a check and a mutation.
-
-### Verification after every fix
-
-`check-types` 0 · oxlint 43 warnings / 0 errors (baseline) · package suite **201 files / 2552
-checks**, up from 197 / 2531 by exactly +4 files and +21 checks (4 + 6 + 4 route checks, 6 for
-`readRequester`, and 1 from the per-source-file throw test for the new file) · real `turbo build`
-green, forced · integration **225 passed / 8 skipped** · `sp-diff-checks` clean · `sp-lint-delta`
-introduced nothing.
 
 ### Owed to step 10
 

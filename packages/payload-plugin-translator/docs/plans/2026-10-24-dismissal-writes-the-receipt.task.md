@@ -25,7 +25,7 @@ lost. **Its `## Not this task` section is spent** — every finding it defers wa
 | write a receipt | `ProvenanceStore.upsert`, which takes exactly the shape a dismissal now produces |
 | read the one the dismissal must preserve | `store.find`, which `dismiss` already calls, returning `sourceLocale` and `translatedAt` |
 | decide what a leaf claims | `claimToRecord`, unchanged — a dismissal does not go through `record` |
-| hash the source as it stands | `sourceAsItStands`, added this morning, already used by both `getStaleness` and `dismiss` |
+| hash the source as it stands | `sourceAsItStands`, added earlier the same day, already used by both `getStaleness` and `dismiss` |
 
 Nothing new is built. The port loses a method and a field; no file is created.
 
@@ -34,7 +34,7 @@ Nothing new is built. The port loses a method and a field; no file is created.
 **D1 — a dismissal is a targeted write: `ProvenanceStore.rebaseSourceFingerprint(key, fingerprint)`
 replaces the deleted `dismiss`, and the port keeps five methods.**
 
-*Taken at the Phase 2 gate and reversed in Phase 5, after review.* The gate chose `upsert`, reasoning
+*Taken before implementation and reversed after review.* The first choice was `upsert`, reasoning
 that a dismissal **is** writing a receipt and the method already existed. **That was wrong, and the
 way it was wrong is the point:** `upsert` replaces the whole row from a snapshot taken before the
 source was read and hashed. A translation finishing in that window is overwritten — its
@@ -56,7 +56,7 @@ the design note: the bug exists because there are two fields and three readers, 
 option leaves that trap set for the next reader.
 
 **D3 — a leaf the receipt claimed unanswered is claimed current by a dismissal.**
-Settled by the owner at this gate. A dismissal is an explicit statement by a person about this whole
+Settled by the owner before implementation. A dismissal is an explicit statement by a person about this whole
 document-locale, unlike the automatic re-base that `claimToRecord` refuses. *Rejected: leave such a
 leaf unanswered.* `sameFields` compares the maps whole, so an unanswered claim never matches a hash —
 the mark would stay lit after the button and the button would look broken, and nothing today can
@@ -65,7 +65,7 @@ report "never translated" apart from "out of date".
 its source moves again.
 
 **D4 — the sidecar field is removed now.**
-Settled by the owner at this gate, over leaving it declared and unwritten — which is the same trap
+Settled by the owner before implementation, over leaving it declared and unwritten — which is the same trap
 this task exists to remove. Consumers' databases keep the column until their own migration drops it;
 `docs/DEPRECATIONS.md` says so. `apps/dev` must have `dev.db` reset, or Payload's push will stop on
 the column-drop prompt.
@@ -102,9 +102,9 @@ Triggers fired: a field is removed from a type; an exported method is removed fr
 ### Written contract
 
 `dismiss` owes callers what it does to a leaf nobody translated, which no signature states. That is
-D3, and Phase 3 writes it red-first.
+D3, and its test is written red-first.
 
-### Escalate to `/sp-architect`?
+### Does this need a separate design?
 
 No. One module, four files, and the design came from the owner.
 
@@ -135,7 +135,7 @@ Run from `packages/payload-plugin-translator` unless stated.
 |---|---|---|
 | AC1, AC2, AC5 | the cases do not exist; written against the untouched code each fails — a dismissal writes the other field | **change** |
 | AC3, AC4 | **invariants, not changes.** Written against the untouched code both pass: a dismissal already left `translatedAt` alone, and the mark already returned when the source moved past the dismissal. Recorded here as guards on the fix, which is what they turned out to be | **invariant** |
-| AC12–AC14 | added in Phase 5 with D1's reversal; the cases do not exist | **change** |
+| AC12–AC14 | added after review with D1's reversal; the cases do not exist | **change** |
 | AC6 | 37 hits across `src` | **change** |
 | AC7 | `Provenance.collection.test.ts:41` asserts the field **is** declared; seven `name:` entries in the collection | **change** |
 | AC8 | passing — the store already degrades an unreadable fingerprint to `null` | **invariant** |
@@ -160,7 +160,7 @@ One thing to watch: `provenance-access.int.test.ts:66` forges `dismissedFingerpr
 to `never`. That case goes with the field, and the cast goes with it — it must not be reproduced on
 another column.
 
-## Human choices
+## Decisions by the owner
 
 Settled by the owner, 2026-10-24:
 
@@ -176,14 +176,14 @@ Settled by the owner, 2026-10-24:
 
 ### 2026-10-24 — four reviews; one of them reversed a decision this contract had already made
 
-High risk, so three angles ran beside the comment audit.
+High risk, so the change was reviewed from three angles besides the comments.
 
-| Angle | Verdict |
+| Angle | Finding |
 |---|---|
 | the dismissal's behaviour | **two defects, one of them introduced by this task.** See D1 |
 | the stored shape and the boot path | no defect in the code; **two defects in the deprecation entry**, and one hazard the plugin cannot prevent |
 | the tests | no behaviour left unguarded, but **one tautology** and four untested cases |
-| comments | 8 blocks: 3 deleted, 2 rewritten, 2 answered by a rename, 1 kept |
+| comments | one finding not taken — see below |
 
 **Introduced by this task, caught in review, fixed.** Writing the receipt with `upsert` replaced the
 whole row from a snapshot taken before the source was read, so a translation finishing in that window
@@ -222,13 +222,13 @@ This predates the task — it is the same disagreement in a different pair of re
 own criteria do not cover it. Closing it means deciding whether a leaf the source no longer has
 counts as moved, which is a behaviour decision and the owner's. Recorded rather than fixed.
 
-### Disagreed with a verdict, visibly
+### A review finding not taken
 
-The comment audit asked for `apps/dev/scripts/verify-provenance.ts`'s four numbered section banners
+The comment review asked for `apps/dev/scripts/verify-provenance.ts`'s four numbered section banners
 to be replaced by a `step(name, work)` helper. Kept the banners: the script is a linear checklist a
 person reads top to bottom, which is the one shape where a numbered heading earns its line, and the
-rewrite widens a diff in a dev script for no behavioural gain. The dangling label the same verdict
-found — `ok("other fields round-trip")`, whose "other" referred to a check this task deleted — is
+rewrite widens a diff in a dev script for no behavioural gain. The dangling label the same finding
+pointed to — `ok("other fields round-trip")`, whose "other" referred to a check this task deleted — is
 fixed.
 
 ### Checks
@@ -240,10 +240,8 @@ fixed.
 | `bunx oxlint .` | 43 warnings, 0 errors — the baseline |
 | `bunx turbo run build` | green |
 | `bun run test:integration` | 56 files / 225 checks green, 8 skipped |
-| `sp-lint-delta` | `mode=two-run`, nothing introduced |
-| `sp-diff-checks` | two test-integrity rows remain, both accounted for below |
 
-The hygiene gate's third row cleared when the adapter's three checks were added. The two that remain:
+The automated diff check flags two removed assertions, both accounted for:
 `provenance.int.test.ts` lost one assertion about a column that no longer exists, and
 `chainOrder.test.ts` belongs to an earlier pass on this branch, where it guarded a field deleted
 wholesale.

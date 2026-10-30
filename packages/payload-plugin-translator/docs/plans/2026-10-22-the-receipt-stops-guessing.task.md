@@ -107,7 +107,7 @@ existing `claimFor`, which is what the two arms of this decision are.
 source hash for `address`, not a historic one. Stated in its docblock; the only caller passes it
 from the same `Object.entries(currentFields)` iteration that supplies `address`.
 
-### Escalate to `/sp-architect`?
+### Does this need a separate design?
 
 No. One module, no new seam, no new dependency. The data-model change is a state leaving a union
 that the plugin alone reads and writes, and its migration is decided in D4.
@@ -158,15 +158,15 @@ overwrites. Three consequences, all accepted:
   discarding a reviewer's edit (`TranslationStatusList.tsx:71-72`); that reason stops being true and
   the comment is removed rather than left lying.
 
-## Human choices
+## Decisions by the owner
 
 - **The rule itself** — "translate everything whose source moved; do not infer who touched the
-  target" — is the owner's, given in this session. The alternative they rejected was inferring
+  target" — is the owner's. The alternative they rejected was inferring
   authorship from a stored hash of our own output.
 - **Timing.** The owner settled that no separate sequencing risk exists, because the major ships
   only when the whole epic including #48 is done, so the field picker arrives in the same release.
-- **Scope of the notification obligation (D5)** was decided by the implementer under instruction to
-  decide rather than ask. It is recorded for the owner to overrule.
+- **Scope of the notification obligation (D5)** was decided during implementation, without the
+  owner. It is recorded for the owner to overrule.
 
 ## Open, not solved here
 
@@ -190,7 +190,7 @@ overwrites. Three consequences, all accepted:
 
 ## Review log
 
-### Three review angles and a comment audit, over the finished change
+### Review from three angles, and a comment review, over the finished change
 
 **The recording rule, over every reachable combination.** Two findings raised as major; both
 checked against the code and **declined, with evidence**:
@@ -205,11 +205,11 @@ checked against the code and **declined, with evidence**:
   change adds is that the leaf becomes eligible again when its source next moves.
 
 A third finding, that the `UNANSWERED` latch might be unreachable-but-harmful, was investigated and
-left as it is: the reviewer found no reachable path, and `currentFields` already excludes a leaf
+left as it is: review found no reachable path, and `currentFields` already excludes a leaf
 that produces no chunk.
 
-**The behaviour reversal in the open.** This angle found the most important defect in the change and
-it was mine: **the rewritten README overclaimed.** `provenance` defaults to `false` (README:162),
+**The behaviour reversal in the open.** This angle found the most important defect in the change:
+**the rewritten README overclaimed.** `provenance` defaults to `false` (README:162),
 and with it off `changedLeaves` returns `{}`, so `skip_existing` behaves exactly as before. The
 refresh also needs a per-leaf receipt to exist already. Five statements were corrected to say so —
 README:104, README:239, README:264, the strategy tooltip, and the DEPRECATIONS entry.
@@ -220,32 +220,27 @@ translations untouched"; `translateContent.ts` still said "target wins when non-
 leaf a run actually sends; and the "Keep as is" button promised to keep the text while only hiding
 the notice.
 
-**The label change is reverted, and the owner should know why.** The owner agreed that "Out of date"
-reads as a verdict and asked for wording closer to "the source changed". `isRecordStale` is true in
+**The label change is reverted.** The owner had asked for wording closer to "the source changed",
+since "Out of date" reads as a verdict. `isRecordStale` is true in
 four cases, and in two of them the source did **not** change: a leaf recorded `UNANSWERED`, and a
 legacy `null` read as one. "Source changed" would be false on screen and in the accessible name, so
 `STATE_LABEL.stale` and the panel title are back to "Out of date". A wording that is both accurate
 and non-accusatory needs the unanswered case separated from drift, which is more than a string.
 
-**What the suite still guards.** Nine mutations, run one at a time; none went uncaught. Two gaps the
-reviewer named were closed: the round-trip check passed when the parse returned `null` (tightened to
-an exact serialization), and `isRecordStale` over a legacy receipt was untested (added). One check I
-had added was removed on its advice — the type now makes an unanswerable claim unconstructible, so
+**What the suite still guards.** No mutation went uncaught. Two gaps found by review were closed: the round-trip check passed when the parse returned `null` (tightened to
+an exact serialization), and `isRecordStale` over a legacy receipt was untested (added). One check added
+in this change was removed — the type now makes an unanswerable claim unconstructible, so
 it guarded nothing the compiler did not.
 
-**Comments.** 12 blocks judged. Three pre-existing comments were **stranded false** by the change
+**Comments.** Three pre-existing comments were **stranded false** by the change
 and rewritten: `record`'s docblock still said the map is merged and a skipped leaf keeps its claim;
 `UNANSWERED`'s still said "sent and never got back", which no longer covers a legacy decline; and a
-test comment still said "not-ours". My own `claimForUnsent` docblock was wrong in both halves of its
-stated cause and was replaced. My rewrite of the refresh button's comment was wrong too — the old
+test comment still said "not-ours". The new `claimForUnsent` docblock was wrong in both halves of its
+stated cause and was replaced. The rewrite of the refresh button's comment was wrong too — the old
 reason still holds, since `overwrite` would still replace edits on leaves whose source never moved —
 so the function was renamed `refreshChangedLeaves` and the comment deleted.
 
-**One code change came from the audit.** `Claim` lost its third arm. `matchesClaim`'s `unknown`
+**One code change came from the comment review.** `Claim` lost its third arm. `matchesClaim`'s `unknown`
 branch was dead (its argument always comes from `Object.entries`), and absence is now handled at the
 lookup with `Object.hasOwn`, which also fixes a pre-existing read of `Object.prototype` keys —
 `leafSourceChanged(recorded, now, "constructor")` used to answer `true`.
-
-**Final state:** 180 files / 2407 checks · integration 58 files / 235 checks · `check-types` 0 across
-all nine workspaces · `oxlint` 44 warnings, 0 errors · `turbo run build` green · `sp-diff-checks`
-clean · `sp-lint-delta` introduced nothing.

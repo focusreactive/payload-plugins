@@ -3,8 +3,7 @@
 Implements step 2 of the §9 order of work in
 [2026-10-18-the-rewiring.md](./2026-10-18-the-rewiring.md), part one of two — the
 mechanical removals. Part two is the `experimental.inlineMarks` flag, in its own pull
-request. That document numbers its steps in prose rather than in the machine-readable
-form the plan gate expects, so it is cited here rather than linked as a `Build step:`.
+request. That document numbers its steps in prose, so the step is cited here by number.
 
 ## Requirements / Task restatement
 
@@ -23,7 +22,7 @@ In scope:
   them in `server/shared/index.ts`.
 - **C.** `DEPRECATIONS.md`: the four entries above move to `removed`; the legend gains the
   `removed` status it is already using in two entries without documenting.
-- **D.** the README table rows — **proposed in the reply, not edited here**.
+- **D.** the README table rows — **proposed separately, not edited here**.
 
 Out of scope, each because another step owns it: `OpenAITranslationProvider` /
 `createOpenAIProvider` (step 8, `openai-client-construction` removes the whole
@@ -33,7 +32,7 @@ step), and the nine remaining ledger entries (steps 5, 6 and 8).
 ## What already exists — platform · installed · project · verdict
 
 Nothing new is built. This change only deletes symbols and moves one function body that
-already exists, so the ladder in `investigate.md` has nothing to climb. No search.
+already exists, so there is nothing to look for.
 
 ## Decisions
 
@@ -76,7 +75,7 @@ read as breaking and may not be read as a release at all. The same preset's
 This is already recorded in `DEPRECATIONS.md#runner-create-takes-the-context`; D3 only
 applies it.
 
-**Shape check:** not run — none of its four triggers fires. No field is added to any type,
+**Shape check:** not needed. No field is added to any type,
 no exported function gains a parameter, nothing optional is introduced. The change is
 deletions plus one function body moved.
 
@@ -85,7 +84,7 @@ deletions plus one function body moved.
 **Written contract owed:** none. No unit here gains an obligation its signature cannot
 state; `translatorPlugin`'s signature is unchanged.
 
-**Escalate to a design pass?** No. Placement is settled by the step this implements, and
+**Does this need a separate design?** No. Placement is settled by the step this implements, and
 the only decision with two real answers is D1, taken above.
 
 ## Acceptance Criteria
@@ -141,16 +140,16 @@ Full suite baseline: `bunx vitest run` → 151 files, 2110 tests, all passing.
   that a later commit on this branch forgets and the footer convention is not visible in
   the header.
 
-## Human choices
+## Decisions by the owner
 
-- **2026-10-19** — the owner split step 2 into two pull requests: parts A–C here, the
-  `experimental.inlineMarks` flag separately, "потому что это единственное место с
-  настоящим изменением поведения, и его стоит смотреть в отрыве от механической уборки".
-- **2026-10-19** — the owner asked for the internal alias to go in the same change
-  ("и переименование тоже"), after it was raised as optional.
+- **2026-10-19** — step 2 is split into two pull requests: parts A–C here, the
+  `experimental.inlineMarks` flag separately, because it is the only place with a real
+  behaviour change and deserves review apart from the mechanical cleanup.
+- **2026-10-19** — the internal alias goes in the same change, although it was first raised
+  as optional.
 - **2026-10-19** — `OpenAITranslationProvider` was moved out of this change and into step 8
   on the finding that `openai-client-construction` already owns it; accepted.
-- **2026-10-19** — asked whether the package should unify on classes or on functions, the
+- **2026-10-19** — on whether the package should unify on classes or on functions, the
   owner chose **classes inside, functions at the public boundary**: a unit implementing a
   named port or holding state between calls is a class; the configuration surface a host
   writes, and the ports a host implements, are functions and objects. A module stays the
@@ -160,7 +159,7 @@ Full suite baseline: `bunx vitest run` → 151 files, 2110 tests, all passing.
 
 ## Review log
 
-### 2026-10-19 — one reviewer on the working diff, low risk
+### 2026-10-19 — one review pass on the working diff, low risk
 
 Verified the inlining line by line, which is the only part of this change that is not a
 deletion: the statements are identical and in the same order, `this.pluginConfig` became
@@ -195,21 +194,17 @@ names. Part D of this contract leaves that edit to the owner.
 | AC4 | met | `bun run test:integration:sqlite` → 237 passed / 7 skipped, no failure. The baseline recorded 235; the branch has gained tests since, and none of the gain is in this diff |
 | AC5 | met | `grep -rn "getTranslateKitFieldConfig\|TranslateKitFieldConfig" src` → no output |
 | AC6 | met | `check-types` in the package and in `apps/dev` → 0 errors each |
-| AC7 | met | `oxlint .` → 45 warnings / 0 errors; `oxlint src` in `apps/dev` → 5 / 0. Both equal to the pre-flight baseline, and `sp-lint-delta` reports no finding introduced |
+| AC7 | met | `oxlint .` → 45 warnings / 0 errors; `oxlint src` in `apps/dev` → 5 / 0. Both equal to the pre-flight baseline, and lint against the base reports nothing introduced |
 | AC8 | met | `git diff --name-only` names no file under `src/translation-providers/`; `grep -c "OpenAITranslationProvider" src/index.ts` → `1` |
 | AC9 | met | `git diff --name-only` does not name `src/settings.ts`; `grep -c "inlineMarks" src/settings.ts` → `4`, unchanged |
 | AC10 | met | the four entries carry `**Status:** removed` and a `**Removed:**` line; the Status legend documents `removed`; the Removal policy bullet now matches D3 |
 
-Gates: `sp-diff-checks` clean, 5 checks, no findings. `sp-lint-delta` — no findings
-introduced, over 457 lines of analyzer output.
+Checks: the diff checks are clean; lint introduces no finding.
 
-### 2026-10-19 — four further passes over the same diff
+### 2026-10-19 — further review of the same diff
 
-**Complexity.** No finding. For the recurring scenario the history shows — *add a module
-that takes part in the translation itself*, six times over — the counters read CHANGE 13,
-READ 6, STATE 16. The change moved READ from 7 to 6, because `translatorPlugin` no longer
-sends a reader to a class declaration above it to find out what the plugin does. CHANGE 13
-is recorded as the baseline step 4 will be graded against.
+**Complexity.** No finding. The change makes the plugin easier to read: `translatorPlugin`
+no longer sends a reader to a class declaration above it to find out what the plugin does.
 
 **Abstraction.** Two findings, both proposals, neither applied here:
 
@@ -226,7 +221,7 @@ is recorded as the baseline step 4 will be graded against.
   contextual typing reaches both. ADR-0002 says publish only what a consumer must name, and
   a major is the cheap moment. 2 of 27 probed; the other 25 were not.
 
-**Red test, audit mode.** `translatorPlugin` was redirected to a stub and the two files
+**Test strength.** `translatorPlugin` was redirected to a stub and the two files
 covering it re-run: **37 of 37 went red, 0 passed, no resolution errors, and every failure
 was the stub's own.** Nothing in that suite is tautological. Four mutations then probed the
 body move: removing `addAdminProvider` turns 2 red, dropping the level extension turns 6
@@ -239,8 +234,7 @@ escapes against a package median of 0 — and every escape is `as unknown as Con
 `as unknown as TranslatorPluginConfig`, which is the first abstraction finding showing up
 from the other side.
 
-**Comment audit.** Seven blocks collected, seven judged, plus two missing explanations.
-The diff added no comment of its own. Applied: three restatements deleted, one
+**Comment review.** The diff added no comment of its own. Applied: three restatements deleted, one
 four-line docblock cut to the single constraint it carried (the dropped fact is recorded
 where it belongs, `TranslateFieldControl.tsx:48,86`), the inner callback parameter renamed
 `config` → `payloadConfig` so the near-collision with `pluginConfig` stops being a thing to

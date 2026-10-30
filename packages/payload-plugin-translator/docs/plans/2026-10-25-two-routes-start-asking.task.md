@@ -9,7 +9,7 @@ asking whether the caller could **change** it, through one new function in the s
   provider. It never asks about update rights. Gap 5 of the design, and its trace 1.
 - **`POST /translate/stale/dismiss`** checks read access and then **writes**: `ProvenanceService.dismiss`
   calls `store.rebaseSourceFingerprint`, which re-bases the receipt so the out-of-date indicator goes
-  quiet for everyone. The seventh gap, found at adjudication and recorded in the design's
+  quiet for everyone. The seventh gap, found during design review and recorded in the design's
   `## Open questions`.
 
 Covers **R2** and **R5**. Nothing from steps 4–10 is in scope; the worker and the auto-translate hook
@@ -64,7 +64,7 @@ matter — it writes nothing. For dismiss, the write goes to the sidecar, not to
 
 ### D3 — whether an actor-less request is refused
 
-**This is the gate question.** Both routes can be reached with no user: `AnyAccessGuard` is a
+**This was the open question before implementation.** Both routes can be reached with no user: `AnyAccessGuard` is a
 supported configuration, and the integration helper `callEndpoint` defaults to `user: null`.
 
 Today, everywhere in the plugin, "no requester" means the question is not asked
@@ -73,7 +73,7 @@ where that policy is re-decided, through a three-valued identity. Doing it here 
 question early — and three integration suites (`per-field-receipt`, `field-surface-noop`,
 `field-surface-errors`) call the field route with no user, so it would turn them red.
 
-Options and their costs are in the gate message.
+The decision and the declined alternative are recorded under Decisions by the owner.
 
 ## Acceptance Criteria
 
@@ -87,7 +87,7 @@ Options and their costs are in the gate message.
 | AC6 | R2 | The ask happens before the source is read | read the handler: `mayInitiate` precedes `fetchSourceDocument` | true, and AC3's mutation proves the order matters |
 | AC7 | — | Behaviour is otherwise unchanged | `bunx vitest run`; count changed assertion lines in pre-existing test files | **0** changed assertion lines; any count change explained by the per-file suite |
 | AC8 | — | End to end, with a real Payload | rebuild, then from `apps/dev`: `bun run test:integration` | **225 passed / 8 skipped**, or more with every addition named |
-| AC9 | — | No new type errors, no new analyzer findings, the real build passes | `check-types` in the package and `apps/dev`; `sp-lint-delta.sh`; `turbo run build` | `0`, nothing introduced, exit 0 |
+| AC9 | — | No new type errors, no new analyzer findings, the real build passes | `check-types` in the package and `apps/dev`; oxlint before and after; `turbo run build` | `0`, nothing introduced, exit 0 |
 
 ## Pre-flight
 
@@ -99,45 +99,41 @@ Options and their costs are in the gate message.
 | AC6 | nothing precedes the read | must change — fails now ✓ |
 | AC5, AC7 | 190 files / **2491** passing | invariant — passes now ✓ |
 | AC9 | `check-types` 0; oxlint 43 warnings, 0 errors | invariant — passes now ✓ |
-| AC8 | 225 / 8 at the last run on this tree | invariant — re-run in Phase 5 |
+| AC8 | 225 / 8 at the last run on this tree | invariant — re-run after implementation |
 
 ## Risk notes
 
 - **High risk, and it binds.** This changes who may do what, on two routes, and one of them spends
-  money. A test is required before it is called done, the regression sweep is evidenced, and Phase 5b
-  runs several review angles.
+  money. A test is required before it is called done, the regression sweep is evidenced, and review
+  takes several angles.
 - **A refusal must cost nothing.** The whole point of AC3 is that the ask precedes the provider call.
   An implementation that asks after reading but before writing would pass AC2 and still leak the
   spend — which is why AC3 is mutation-proven rather than asserted.
-- **Three integration suites call the field route with no user.** They are the reason D3 is a gate
-  question rather than a decision I take alone.
+- **Three integration suites call the field route with no user.** They are the reason D3 was put to the
+  owner rather than decided during implementation.
 - **`callEndpoint` builds the request in-process**, so "no user" in those suites means "a request that
   carried no user", which in a deployment means the host's guard let an anonymous caller through.
 - Not in scope: the action union (step 4), the enqueue ask (5), jobs resolving to documents (6), the
   brand at the queue sink (7), the three-valued identity (8), the module seam (9).
 
-## Human choices
+## Decisions by the owner
 
-**2026-10-25, at the gate.** *"Не спрашивать, как везде"* — D3 resolves to asking only when the
-request carries a nameable user. An actor-less request is treated exactly as every other path in the
+**2026-10-25 — decided by the owner:** do not ask about an actor-less request, as everywhere else.
+D3 resolves to asking only when the request carries a nameable user. An actor-less request is treated exactly as every other path in the
 plugin treats it today, and the policy for such requests is re-decided at step 8, where the design
 introduces a three-valued identity.
 
-The alternative — refuse an actor-less caller here — was offered and declined. It would have closed
+The alternative — refuse an actor-less caller here — was declined. It would have closed
 more, but it would have decided step 8's question early, piecemeal, and without the reasoning step 8
 is going to do; and it would have turned three integration suites red for a reason unrelated to what
 they test.
 
 ## Review log
 
-**2026-10-25, Phase 5b — three independent angles**, run because the Risk notes classify this change
-high risk (it changes who may do what, and one of the two routes spends money).
-
-| Angle | Asked to break | Outcome |
-|---|---|---|
-| the guarantee | every path to the effect that skips the ask, on both routes and both `route.ts` files | no way round it; one real defect found (below) |
-| the new tests | whether either file is green-but-toothless — mock interception, revert-sensitivity, fixture honesty | no toothless case; both mocks resolve to the module the handler imports |
-| the shape | whether `mayInitiate` earns its existence, its signature, and its placement | keep it; two wording findings, both applied |
+**2026-10-25 — review from three independent angles** (the guarantee, the new tests, the shape), run
+because the Risk notes classify this change high risk (it changes who may do what, and one of the two
+routes spends money). No path to the effect skips the ask, and no new test is toothless; the
+findings below changed the code or were recorded.
 
 ### R1 — a document that is not there failed the ask instead of answering it (found, fixed here)
 

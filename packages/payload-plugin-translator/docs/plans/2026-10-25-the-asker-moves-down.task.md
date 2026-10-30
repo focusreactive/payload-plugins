@@ -60,11 +60,11 @@ files untouched. A mock target is setup.
 
 ### D3 — whether `checkTranslationPermission` moves as well
 
-**This is the gate question.** The design's D4 names three things to move and is silent about the
+**This was the open question before implementation.** The design's D4 names three things to move and is silent about the
 fourth. After D1, what is left in `translationPermission.ts` is one eight-line wrapper that imports
 everything it uses from `shared/access/`.
 
-Both options are buildable and both are honest; see the gate message.
+Both options are buildable and both are honest; the decision is recorded under Decisions by the owner.
 
 ## Acceptance Criteria
 
@@ -75,7 +75,7 @@ Both options are buildable and both are honest; see the gate message.
 | AC3 | R7 | The visibility helpers live in the shared layer | `server/shared/payload/collections.ts` declares `visibleIds` and `getAllCollectionIds`; `features/_lib/collection-utils.ts` declares only `isCollectionAvailable` | 2 and 1 |
 | AC4 | R7 | Behaviour is unchanged | `bunx vitest run`, then count changed assertion lines across every pre-existing test file | **2490 or more** passing with the delta explained; **0** changed assertion lines |
 | AC5 | — | The real declaration build passes | `bunx turbo run build --filter='./packages/payload-plugin-translator'` from the root | exit 0 |
-| AC6 | — | No new type errors, no new analyzer findings | `bun run check-types` in the package and in `apps/dev`; `sp-lint-delta.sh -- bunx oxlint .` | `0` each; nothing introduced |
+| AC6 | — | No new type errors, no new analyzer findings | `bun run check-types` in the package and in `apps/dev`; `bunx oxlint .` before and after | `0` each; nothing introduced |
 | AC7 | R7 | Access control still holds end to end | rebuild, then from `apps/dev`: `bun run test:integration` | **225 passed / 8 skipped** |
 | AC8 | — | Nothing but a move happened | `git diff` of the moved function bodies against their previous text | identical apart from import lines |
 
@@ -88,7 +88,7 @@ Both options are buildable and both are honest; see the gate message.
 | AC3 | `shared/payload/collections.ts` absent; both helpers in `_lib` | must change — fails now ✓ |
 | AC4 | 190 files / **2490** passing | invariant — passes now ✓ |
 | AC6 | `check-types` 0; oxlint 43 warnings, 0 errors | invariant — passes now ✓ |
-| AC5, AC7 | build green and 225/8 at the last run on this tree | invariant — re-run in Phase 5 |
+| AC5, AC7 | build green and 225/8 at the last run on this tree | invariant — re-run after implementation |
 
 **On AC4's number.** A pure move should leave the count alone, but the package has a check that runs
 once per source file under `src/server` and `src/core`. Two or four new files therefore add two or
@@ -97,7 +97,7 @@ four checks. Any other movement is a finding to report, not a number to adjust.
 ## Risk notes
 
 - **Low risk**, and it binds: no behaviour changes, no new question is asked, the public surface is
-  untouched, and the existing suites cover every moved function. Phase 5 runs one reviewer, not three.
+  untouched, and the existing suites cover every moved function. Review takes one angle, not three.
 - **The mock trap is the whole risk.** Three test files mock by module path. If a mock is re-pointed
   wrongly, the test still passes — it simply stops intercepting, and the assertion then checks a call
   that the real code made for a different reason. Each re-pointed mock needs its interception proved,
@@ -107,9 +107,9 @@ four checks. Any other movement is a finding to report, not a number to adjust.
 - Not in scope: any new ask, the action union, the brand at the queue sink, the module seam — steps
   3–10.
 
-## Human choices
+## Decisions by the owner
 
-**2026-10-25, at the gate.** *"Перевезти тоже, файл удалить"* — D3 resolves to moving
+**2026-10-25 — decided by the owner:** move it too and delete the file. D3 resolves to moving
 `checkTranslationPermission` as well, so `features/translate-document/translationPermission.ts` is
 deleted and everything about asking the host's rule lives in one file in the shared layer.
 
@@ -118,8 +118,8 @@ wrapper, it is a plugin-wide rule rather than a translate-document one, and buil
 is the step that changes it. Leaving it in a feature would mean step 8 editing a feature file to
 change a rule that governs every path.
 
-The alternative — follow the design's D4 literally, move three names, leave the wrapper — was offered
-and declined. Its cost was a one-function file importing everything it uses, and two mock paths in the
+The alternative — follow the design's D4 literally, move three names, leave the wrapper — was
+declined. Its cost was a one-function file importing everything it uses, and two mock paths in the
 tests instead of one.
 
 ## Result — every criterion walked with its declared check
@@ -131,11 +131,9 @@ tests instead of one.
 | AC3 | `collections.ts` declares 2; `collection-utils.ts` declares 1 | met |
 | AC4 | **2491 passing** (was 2490). The delta is one check, proved rather than assumed: adding a scratch file under `src/server` took `every-throw-is-a-translator-error` from 260 to 261 and removing it took it back, so the per-file suite counts one check per source file and this change nets one new file. **0** changed assertion lines | met |
 | AC5 | `turbo run build` exit 0 | met |
-| AC6 | `check-types` 0 in the package and in `apps/dev`; `sp-lint-delta` `mode=two-run`: nothing introduced | met |
+| AC6 | `check-types` 0 in the package and in `apps/dev`; oxlint before and after: nothing introduced | met |
 | AC7 | `bun run test:integration`: **225 passed / 8 skipped**, unchanged | met |
 | AC8 | `diff` against the pre-move copies: `permission.ts` differs in **two import lines only**; the moved visibility helpers are byte-identical; both error classes are byte-identical to `HEAD` | met |
-
-`sp-diff-checks`: clean, 5 checks, no findings.
 
 **The predicted trap fired, and loudly.** `enqueue-translation/__tests__/handler.test.ts` mocked
 `_lib/collection-utils.js` and supplied `getAllCollectionIds`; move 2 took that function elsewhere, so
@@ -146,15 +144,15 @@ of seven cases red.
 
 ## Review log
 
-### 2026-10-25 — comment audit: not run, and why
+### 2026-10-25 — comment review
 
 The change added **zero** comments. Every docblock travelled verbatim with the function it belongs
 to, which a byte-level diff against the pre-move copies confirms. One comment was deleted — the
 narration `// Mock collection-utils` above a mock block that the split made inaccurate anyway. The
-mechanical half of the audit was done inline instead: the only citation inside a moved file is
+only citation inside a moved file is
 `collections/operations/find.js`, a Payload-internal path the move does not affect.
 
-### 2026-10-25 — one review angle (low risk)
+### 2026-10-25 — review, one angle (low risk)
 
 **No findings.** The reviewer diffed both new files against the pre-move copies and confirmed the
 bodies are byte-identical apart from import paths, checked that the moved test's other relative paths

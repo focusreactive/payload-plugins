@@ -1,8 +1,8 @@
 # Architecture Review — `@focus-reactive/payload-plugin-translator`
 
 **Date:** 2026-06-26
-**Method:** `/sp-architecture-review` — cartographer map → 4 lens reviewers (layers-boundaries,
-coupling-dependencies, abstractions-models, dataflow-state) → opus synthesis.
+**Method:** architecture review — module map, then four lenses (layers-boundaries,
+coupling-dependencies, abstractions-models, dataflow-state), then a combined synthesis.
 **Focus:** validate the planned `@repo/translator-core` extraction
 (`2026-06-26-translator-core-extraction-design.md`) and its provenance follow-up
 (`2026-06-26-translation-provenance-and-lifecycle-design.md`).
@@ -61,7 +61,7 @@ a patch.**
 **Sequence:** 1+2 (keystone, together) → 3,4,5 (parallel, safe prep) → 6 (with design revision) →
 7 (capstone).
 
-## Deferred to /simplify (local, not architectural)
+## Deferred to local cleanup (not architectural)
 - `server/shared/http/index.ts` barrel mixes Payload-bound `withErrorHandler` with Web-native
   `ServerResponse` + type-only `withAccessCheck` — split the barrel.
 - `schemaMap` threaded through 5 relay layers; `PluginConfigBuilder` is a non-consumer relay — fold

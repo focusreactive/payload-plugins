@@ -34,8 +34,8 @@ Covers R4 of the design.
 Chosen: `admitWork({ work, inFlight })` over plain shapes, with the Payload-side read in the store
 and the orchestration in the two callers. Lost: deciding inside `PayloadJobsTaskRunner`, where the
 merge logic lives today. That is where it has always been, and it is why the rule is unavailable to
-the sync runner and to any runner a host writes. `core/` cannot import Payload (package
-`CLAUDE.md`), which is the point: the rule structurally cannot reach back into job rows.
+the sync runner and to any runner a host writes. `core/` cannot import Payload (a package
+convention), which is the point: the rule structurally cannot reach back into job rows.
 
 **D2 — "busy" is a field of its own, never folded into `refused`.**
 Chosen: `POST /enqueue` answers `{ queued, refused?, busy?, assignments? }`. Lost: one list. The two
@@ -54,9 +54,9 @@ Lost: one read for both. A `where … in [every id in the collection]` is the qu
 produce, and SQLite's bound on host parameters makes that a real failure rather than a slow one.
 
 **D5 — auto-translate skips a busy document, silently to the editor.**
-Chosen: the hook drops the work and logs. Lost: queueing anyway, and failing the save. Confirmed by
-the owner: "если занято и уже стоит перевода, значит отказ. Поле просто останется помеченым как
-устаревшее, не критично" — the staleness marker survives, so the document is visibly out of date and
+Chosen: the hook drops the work and logs. Lost: queueing anyway, and failing the save. Decided by
+the owner: a taken document with a translation already queued is a refusal, and that is not critical,
+because the field stays marked as stale — the staleness marker survives, so the document is visibly out of date and
 the next save or a manual run picks it up.
 
 **D6 — the host's `enableConcurrencyControl` is still honoured, never set.**

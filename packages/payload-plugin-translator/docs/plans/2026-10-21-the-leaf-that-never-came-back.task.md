@@ -1,6 +1,6 @@
 # The leaf that never came back
 
-Design: `~/.claude/plans/goofy-fluttering-phoenix.md` (approved by the owner, 2026-10-21)
+Design: approved by the owner, 2026-10-21; its decisions are recorded below.
 Builds on: [a run reports the leaves that came back](./2026-10-21-report-what-came-back.task.md)
 
 ## Requirements / Task restatement
@@ -56,7 +56,7 @@ re-selected. The remedy would be louder and still not work.
 **D2 — the pipeline reports one list of outcomes**, replacing `translatedPaths`. *Lost:* a second
 array `attemptedPaths` beside the first. *Constraint:* two arrays admit a state the system never
 produces — a leaf translated but not attempted — and nothing enforces the containment; one list
-makes that state unrepresentable. Chosen by the owner at the gate.
+makes that state unrepresentable. Chosen by the owner during design.
 
 **D3 — the hash becomes a branded type, and all three readers name all three states.** *Lost:*
 adding the literal and leaving `staleness.ts` alone. *Constraint:* that version works, but only
@@ -106,9 +106,9 @@ Two units owe callers what a signature cannot say:
 - **`parseSourceFingerprint` re-admits the brand.** It is the one cast in this change, it happens
   after validation, and it is the first branded value in this package read back from storage.
 
-### Escalate to `/sp-architect`?
+### Does this need a separate design?
 
-No — Phase 0 carries an approved design for exactly this change.
+No — an approved design for exactly this change already exists.
 
 ## Acceptance Criteria
 
@@ -181,7 +181,7 @@ invariant through the branding rather than as a change.
 ## Risk notes
 
 **High risk** — the change alters what is written into stored provenance and the staleness verdict a
-user reads. Phase 4's sweep is evidenced; Phase 5b runs three review angles.
+user reads. The regression sweep is evidenced, and the change is reviewed from three angles.
 
 - **The brand turns every hand-written fingerprint fixture into a compile error** — roughly twenty
   sites across six test files. Two of them hold short fake hashes (`"3a7f1c"`, `"2222"`) that the
@@ -194,14 +194,14 @@ user reads. Phase 4's sweep is evidenced; Phase 5b runs three review angles.
 - **`previousClaim`'s `?? DECLINED`** carries a string sentinel forward untouched, so a leaf
   unanswered twice stays unanswered. Verified by reading; pinned by AC3's sibling case.
 
-## Human choices
+## Decisions by the owner
 
 - **2026-10-21** — variant A (a third state) over reverting the reconciler's copy, with the reason
   stated by the owner: a required field left empty blocks the save of the whole translation, and a
   reader is better served by text in another language than by nothing.
 - **2026-10-21** — one list of outcomes rather than two parallel arrays.
-- **2026-10-21** — branding the hash is mandatory: *"Лучше уже вариант A, но его придется закрепить
-  на уровне схемы валидации и типов, раз мы не можем закрепить этот вариант на уровне БД."*
+- **2026-10-21** — branding the hash is mandatory: the third state has to be enforced by the
+  validation schema and the types, since the database cannot enforce it.
 
 ## Open, not solved here — carried to step 4 (#198)
 
@@ -212,7 +212,7 @@ user reads. Phase 4's sweep is evidenced; Phase 5b runs three review angles.
 
 ## Review log
 
-### Phase 5b — three angles on the final code
+### Review from three angles
 
 **The recorded state, over every reachable combination.** No defects. The full matrix of
 {never sent · sent and answered · sent and unanswered} × {no receipt · legacy document digest ·
@@ -257,10 +257,7 @@ over `computeFieldFingerprints.ts`, `HASH_LENGTH = 16` from the first version, o
 depends on that major, since `z.record` with one argument throws in 4.x — and a failed regex stops
 the transform, so the inferred output is exactly `RecordedClaim`.
 
-**After the three angles:** 179 files / 2397 checks · `check-types` 0 · `oxlint` 44 warnings,
-0 errors. Every acceptance criterion walked with its own declared command.
-
-### Four audits over the finished change
+### Four reviews of the finished change
 
 **Complexity.** One proposal, not applied: the three-state rule is written twice in
 `staleness.ts`, in `matchesClaim` and `leafSourceChanged`, and the two are exact negations with
@@ -284,9 +281,7 @@ Measured and declined: `PipelineContext` admits 64 combinations and the pipeline
 is what forces the `?? []` fallbacks at `TranslationPipeline.ts:104`. The fix is a typed stage
 chain, which step S rewrites anyway — the number is recorded so the swap inherits it.
 
-**Red-test, in audit mode.** Stubbing `staleness.ts` turned 51 checks red with no resolution errors;
-`staleness.test.ts` went 29 for 29. Six mutations, and two of them found checks that were green for
-the wrong reason:
+**Tests.** Mutation testing found two checks that were green for the wrong reason:
 
 - `changedLeaves` dropping its filter for the unknowable killed **nothing**, because `toEqual`
   ignores keys whose value is `undefined`. Four assertions became `toStrictEqual`; the mutation now
@@ -295,9 +290,7 @@ the wrong reason:
   unanswered too and the expectation was `toEqual([])` — a red there could have meant either rule
   broke. It now answers the sibling in full and expects `["title"]`.
 
-**Comments.** 25 blocks judged by a fresh reader; 5 deleted, 8 reworded, 2 turned into code, 10
-kept. Density was never the problem — 2 inline lines over 681 of added code. What the audit found
-was claims wider than the code:
+**Comments.** Density was never the problem. What the review found was claims wider than the code:
 
 - *"The `!` keeps it outside the hex values"* — false as a reason: `unanswered` already fails the
   pattern on length and characters. Replaced by a check that the marker never matches
@@ -312,19 +305,16 @@ was claims wider than the code:
   the assignment `const _: SourceHash = recorded` still failed on `null` — so the directive never
   went unused and the marker half was unpinned. Narrowing the subject to
   `Exclude<RecordedClaim, typeof DECLINED>` fixes it: removing the brand now reddens **both** pins.
-- `LeafOutcome.answered` became **`answeredInFull`**, and its docblock went with it. The auditor
+- `LeafOutcome.answered` became **`answeredInFull`**, and its docblock went with it. The review
   proposed `everyChunkWritten`; that was declined because chunks disappear at step S while
   `LeafOutcome` survives, and the receipt's vocabulary should not name the mechanism that is going.
 - `applyContainer` became `tryApplyContainer`, since the diff gave it a `boolean` the call site
   depends on.
 
-One verdict was applied in its fallback form rather than as written: the `TODO(core-deps)` note was
-marked for deletion, and is instead moved beside the `zod` import it is about, naming the plan file
+One finding was applied in a different form than proposed: the `TODO(core-deps)` note was marked
+for deletion, and is instead moved beside the `zod` import it is about, naming the plan file
 that records the decision — the diff had stranded it on top of an unrelated docblock.
 
 Checked and not a defect: `tryApplyContainer` returns `false` for a container with no `children`
 array, but a container only reaches the applicator by having produced inline fragments, so the guard
 is defensive rather than a reachable path.
-
-**After all four:** 179 files / 2398 checks · `check-types` 0 · `oxlint` 44 warnings, 0 errors ·
-`turbo run build` green, which is the real `tsc` declaration emit rather than `tsgo`.

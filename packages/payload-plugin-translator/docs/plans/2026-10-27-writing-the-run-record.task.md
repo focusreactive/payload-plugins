@@ -139,7 +139,7 @@ Run against the tree as step 1 left it, on 2026-10-27.
 
 - **The auto-translate path now writes inside the editor's save.** Four operations per locale, twenty
   on a five-locale document, and a failure fails the save. The design decided this (D5) and the
-  owner confirmed it: "давай не будем тратить пользовательские деньги". What this step must not do
+  owner confirmed it: "let's not spend the user's money". What this step must not do
   is make it worse than designed — the settlement is deliberately *not* fatal (D5 above).
 - **`toClientErrorMessage` returns the raw message under `NODE_ENV=development|test`.** That is its
   documented contract and it means AC8 is only true outside those environments. The spec sets the

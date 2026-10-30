@@ -1,6 +1,6 @@
 ## Architecture Design — one permission decision point
 
-### The ask (ground truth)
+### The ask
 
 Give the plugin one place that answers "may this actor perform this action on this target", so that
 permission checking stops being wired into the translation feature and every entry point asks the
@@ -23,7 +23,7 @@ Requirements:
 - R7 (in) The existing Payload-rule ask still works: "ask before acting, never catch `Forbidden`" weakens on no path, and the compile-time guarantee that a write cannot be sent without the rules having been asked about exactly that payload survives.
 - R8 (out) The translation pipeline, the stored job row, the client half.
 
-**Vectors:** structure + security + contract (leading: security) — security because the whole ask is
+**Concerns:** structure, security and contract (leading: security) — security because the whole ask is
 "who may do what"; contract because `AccessGuard` is implemented outside this repo and both sides
 cannot change in one commit, and because a host callback that throws inside the editor's transaction
 is the sharpest failure here.
@@ -58,7 +58,7 @@ three questions, not one.
 and pays the provider without asking about update rights · the module seam hands a host module the
 live `Payload` plus the run's target.
 
-**A seventh, found during adjudication:** `POST /translate/stale/dismiss` checks read access and then
+**A seventh, found during design review:** `POST /translate/stale/dismiss` checks read access and then
 **writes** — `rebaseSourceFingerprint` re-bases the receipt, so a read-only caller can mark
 translations accepted across the project.
 
@@ -141,7 +141,7 @@ design it is never called inside a transaction, so a hanging guard costs one req
 | R7 | `translationPermission.ts` is moved, not changed; the two brands and their distinct symbols are untouched; the probe is a separate question and never mints `ApprovedWrite` |
 | R8 | the pipeline, the job row and the client half are untouched |
 
-### Vector gates
+### Failure checks
 
 **security — the wrong-caller gate.** *No session:* the coarse guard decides, then every
 document-scoped handler refuses an actor-less HTTP request. *A valid user who does not own the
@@ -187,7 +187,7 @@ called twice per user action, and that idempotency obligation becomes documented
 - **Options considered:**
   - a route builder that is the only way to declare a route, so a route without an action does not compile
   - a shared function plus one pin test per route
-  - pushing the owner filter into the job query itself — *not proposed by any candidate, raised at adjudication*
+  - pushing the owner filter into the job query itself — *raised during design review*
 - **Decision:** the second, plus a brand demanded by `TaskRunner.enqueue/run/cancel` that only the ask
   can mint. The third is rejected as the sole mechanism because the host's document rule cannot be
   expressed as a query filter on the jobs collection; its concern (**SC3**) is answered by the brand.
@@ -201,13 +201,13 @@ called twice per user action, and that idempotency obligation becomes documented
 
 - **Context:** published, required since 0.14.0; the ripple is three production call sites, one
   implementer, about nine type consumers, about thirteen test files, three sites in `apps/`, and every
-  host that wrote a guard. The brief asserted the shape must change because the worker has no headers.
+  host that wrote a guard. The original request asserted the shape must change because the worker has no headers.
 - **Options considered:**
   - keep it untouched and add a second port beside it
   - replace it, with one prerelease of deprecation and an adapter
   - keep it unchanged and narrow only its documented meaning
-  - keep the type and extend the argument with the action — *grafted at adjudication*
-- **Decision:** the fourth. The brief's premise dissolves under D1: the worker never calls the guard,
+  - keep the type and extend the argument with the action — *added during design review*
+- **Decision:** the fourth. The request's premise dissolves under D1: the worker never calls the guard,
   so the guard never needs a shape that works without headers. The change is therefore **additive
   (CT1)**, not breaking — a host implementing `check({req})` is unaffected. Replacement is disqualified
   under **CT1** because its own migration adapter leaves revocation undetected: breaking *and* weaker
@@ -283,7 +283,7 @@ called twice per user action, and that idempotency obligation becomes documented
   - an eleven-action union with a target-correlation table driving the record question
   - the same union inside a replaced port
   - no union at all: "there is one question"
-  - a closed union carried by the coarse question only — *grafted at adjudication*
+  - a closed union carried by the coarse question only — *added during design review*
 - **Decision:** the fourth. The record question does not branch on the action — every document-scoped
   action asks the same thing — and giving that function a parameter it never reads would break the rule
   that a signature claims only what the answer depends on. The coarse question genuinely can branch: it
@@ -293,16 +293,16 @@ called twice per user action, and that idempotency obligation becomes documented
 
 ### Build sequence
 
-1. Move the permission asker down to `shared/access/permission.ts` — no behaviour change; the test moves with it · covers: R7 · via /sp-task · incremental
-2. Move `visibleIds` and `getAllCollectionIds` to `shared/payload/collections.ts` — removes the only `shared → features` edge the next steps would need · covers: R7 · via /sp-task · incremental
-3. The field route asks: `mayInitiate` after parse, before the source read and before the provider · covers: R2, R5 · via /sp-task · incremental
-4. The action reaches the guard: `TranslatorAction`, `withAccessCheck(handler, access, action)`, strict `=== true`, a throw becomes a refusal; nine routes and two widgets pass their literal · covers: R1, R4, R6 · via /sp-task · incremental
-5. Enqueue asks per document: `refusedTargets` for the explicit-id path; `select_all` keeps its read filter · covers: R2, R5 · via /sp-task · incremental
-6. Jobs resolve to documents: `JobAssignment` + optional `assignmentsOf` on both runners; run, cancel and cancel-by-collection ask; `run` refuses an unattributed job · covers: R2, R5 · via /sp-task · incremental
-7. The brand at the sink: `AuthorisedWork` / `AuthorisedHandle` demanded by the runner's three methods, minted by the four handlers and by the hook as `authorisedByTheSave()` · covers: R2 · via /sp-task · incremental
-8. Identity stops downgrading: the three-valued `Identity`; HTTP refuses `unnameable`; the hook skips it with a warning; the no-user case is untouched · covers: R2 · via /sp-task · incremental
-9. The module seam: `ModulePayload` refuses the run's own target collection; provenance needs no change · covers: R3, R5 · via /sp-task · **big-bang for host chain members**, with a release note
-10. Pins and docs: one pin per route for both asks, the field-route spend pin, `@since` on the guard's `action`, the idempotency obligation in its docblock · covers: R1, R6 · via /sp-task · incremental
+1. Move the permission asker down to `shared/access/permission.ts` — no behaviour change; the test moves with it · covers: R7 · incremental
+2. Move `visibleIds` and `getAllCollectionIds` to `shared/payload/collections.ts` — removes the only `shared → features` edge the next steps would need · covers: R7 · incremental
+3. The field route asks: `mayInitiate` after parse, before the source read and before the provider · covers: R2, R5 · incremental
+4. The action reaches the guard: `TranslatorAction`, `withAccessCheck(handler, access, action)`, strict `=== true`, a throw becomes a refusal; nine routes and two widgets pass their literal · covers: R1, R4, R6 · incremental
+5. Enqueue asks per document: `refusedTargets` for the explicit-id path; `select_all` keeps its read filter · covers: R2, R5 · incremental
+6. Jobs resolve to documents: `JobAssignment` + optional `assignmentsOf` on both runners; run, cancel and cancel-by-collection ask; `run` refuses an unattributed job · covers: R2, R5 · incremental
+7. The brand at the sink: `AuthorisedWork` / `AuthorisedHandle` demanded by the runner's three methods, minted by the four handlers and by the hook as `authorisedByTheSave()` · covers: R2 · incremental
+8. Identity stops downgrading: the three-valued `Identity`; HTTP refuses `unnameable`; the hook skips it with a warning; the no-user case is untouched · covers: R2 · incremental
+9. The module seam: `ModulePayload` refuses the run's own target collection; provenance needs no change · covers: R3, R5 · **big-bang for host chain members**, with a release note
+10. Pins and docs: one pin per route for both asks, the field-route spend pin, `@since` on the guard's `action`, the idempotency obligation in its docblock · covers: R1, R6 · incremental
 
 ### Open questions / unresolved
 
@@ -328,7 +328,7 @@ called twice per user action, and that idempotency obligation becomes documented
 - **ST2, the pre-existing `modules/provenance → features/staleness` edge.** Untouched by this work.
   What would force revisiting: a second module needing a feature, or the staleness routes moving.
 
-### Rejected / grafted (for the record)
+### Rejected / adopted in part (for the record)
 
 - A `TranslationPolicy` beside the guard — disqualified: **ST5**, and **ST1** (its only verifiable implementation delegates to Payload).
 - `OwnCollection` + `reserveCollection`, and `ModuleStore` + `ownedCollections` — disqualified: **ST1**, one in-repo caller each plus a hypothetical host module.
@@ -336,5 +336,5 @@ called twice per user action, and that idempotency obligation becomes documented
 - Replacing `AccessGuard` — disqualified: **CT1**, breaking a required published type with an adapter that weakens revocation detection.
 - Asking the host policy inside `afterChange` — disqualified: a foreign throw propagates and destroys the editor's save.
 - Routing the field route through `openTargetDocument` — disqualified: **ST2**, a sideways feature-to-feature edge, plus a question about data the route does not yet have.
-- **Grafted:** the job question carrying `startedBy` · "a user that cannot be named is a denial" · the action union, narrowed to the coarse question · "a route cannot be registered without an action", in spirit, as the brand at the sink.
+- **Adopted from rejected options:** the job question carrying `startedBy` · "a user that cannot be named is a denial" · the action union, narrowed to the coarse question · "a route cannot be registered without an action", in spirit, as the brand at the sink.
 - **Replaced:** `assignmentsOf` returning `EnqueueAssignment` — that type is per-locale and reaches host lifecycle callbacks, which must not start carrying requester ids (**SC4**).

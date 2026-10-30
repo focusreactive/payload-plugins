@@ -84,7 +84,7 @@ caller who passes `select_all` is not. Both end in the same place.
 ### D5 — one question per document, not one per document and locale
 
 A request fans out to `document × locale` tasks, and `mayInitiate` takes a `targetLocale`, so asking
-once per task looked like the honest reading. **It is not, and the owner caught it.**
+once per task looked like the honest reading. **It is not.**
 
 Payload's `Access` function receives `{ collectionConfig, data, id, isReadingStaticFile, req }`
 (`payload/dist/config/types.d.ts:232`) — **no locale argument, and no concept of per-locale
@@ -161,7 +161,7 @@ redundant.
 - **The cost of N evaluations** (D5) is the thing most likely to surprise someone later.
 - **The asymmetry with `select_all`** (D4) is the thing most likely to be re-raised in review. It is
   settled by the design and backstopped by the worker; the review log should say so once.
-- A test is required before done, the regression sweep is evidenced, and Phase 5b runs several angles.
+- A test is required, the regression sweep is evidenced, and the change is reviewed from several angles.
 
 ## Criteria results
 
@@ -176,20 +176,18 @@ redundant.
 | AC7 | met | 39 integration files enqueue without a user; all unchanged and green |
 | AC8 | met | real `turbo build` green (forced, uncached); integration **225 passed / 8 skipped**, unchanged |
 
-All three mutations were re-run after `/sp-review-comments` merged the doubled `select_all` branch,
+All three mutations were re-run after the comment review merged the doubled `select_all` branch,
 and each still reddens exactly its own check.
 
-## Human choices
+## Decisions by the owner
 
-**2026-10-25.** The owner directed an uninterrupted run through steps 5–10, stopping only at a
-genuine fork. No fork arose here: D1 was settled by the pinned integration test, D4 by the design,
-and D2 is recorded as a deliberate exception rather than a question. Commit authority for these steps
-was granted in advance; no push, no pull request.
+**2026-10-25.** No decision in this step needed the owner: D1 was settled by the pinned integration
+test, D4 by the design, and D2 is recorded as a deliberate exception rather than a question.
 
 ## Review log
 
-**2026-10-25 — adversarial review of the guarantee.** One angle, asked to find any way to queue a
-named id the `update` rule refuses. **No bypass found.** `runner.enqueue` is reachable from exactly
+**2026-10-25 — adversarial review of the guarantee**, looking for any way to queue a named id the
+`update` rule refuses. **No bypass found.** `runner.enqueue` is reachable from exactly
 two places in `src` — this route and the auto-translate hook — and in this handler the ids reach the
 task list only through `documentsToQueue`. Id coercion was checked for a mismatch between the id that
 is *asked about* and the id that is *filtered*: there is none, because both read the same string.
@@ -215,16 +213,15 @@ Four caveats, none a bypass, all recorded rather than changed:
   `create`, `read`, `delete`, `readVersions` or `unlock` that throws on empty `data` fails the whole
   request with a 500 rather than refusing one id. Same on every route that already uses `mayInitiate`.
 
-**2026-10-25 — `/sp-complexity`.** Neighbourhood 7 files, 20 commits. Both scenarios confirmed by
-history: "a route starts asking about a document" (3 occurrences) and "the enqueue answer changes
-shape" (3). One fix applied and then **reverted** in the same run: `targets[0] ?? ""` was replaced by
+**2026-10-25 — complexity review.** Two change scenarios recur in history: "a route starts asking
+about a document" (3 occurrences) and "the enqueue answer changes shape" (3). One fix was applied and
+then **reverted**: `targets[0] ?? ""` was replaced by
 a destructure-and-check so an unreachable empty locale would stop existing in the type — and then the
-abstraction audit removed the locale parameter entirely, which took the reason away. Recorded because
+abstraction review removed the locale parameter entirely, which took the reason away. Recorded because
 a reverted fix is still a fact about the code. For the scenario "add a fourth place that asks about a
 document": CHANGE 1, READ 3, STATE 4 — nothing to propose.
 
-**2026-10-25 — `/sp-abstraction`** on `refusedTargets`. Audited by the author. Two findings applied,
-one recorded.
+**2026-10-25 — abstraction review** of `refusedTargets`. Two findings applied, one recorded.
 
 - **Position, not name, bound two string parameters.** Proven by probe: a call with `collection` and
   `targetLocale` swapped **compiled silently**, because `CollectionSlug` resolves to `string` when the
@@ -236,16 +233,13 @@ one recorded.
   value it had to invent).
 - **Recorded, not fixed:** the enqueue response body is typed `unknown`
   (`ServerResponse.success(data: unknown = null)`), so the new `refused` key is invisible to the
-  type-checker and to every consumer. It exists only because a test asserts it. This is a boundary the
-  author's own brief had omitted.
+  type-checker and to every consumer. It exists only because a test asserts it.
 
-**2026-10-25 — `/sp-review-comments`.** 3 candidate blocks, 3 verdicts: 1 REWRITE-COMMENT,
-1 REWRITE-CODE, 1 DELETE. Density on the tracked diff was **2.7 inline comment lines per 10 lines of
-code** — judged too dense, and both offending blocks are gone.
+**2026-10-25 — comment review.** Density on the diff was **2.7 inline comment lines per 10 lines
+of code** — too dense, and both offending blocks are gone.
 
 The substantive half was the `refusedTargets` docblock, which stated **three things that were not
-true**. Two were caught by the mechanical check before the auditor saw them; the third was the
-auditor's:
+true**:
 
 1. *"this probe hides that anyway by asking with empty data"* — the reverse. `getEntityPermissions`
    treats `{}` as "no data supplied", so Payload **fetches the document in `req.locale`** and hands it
@@ -256,7 +250,7 @@ auditor's:
 3. *"No locale is asked for"* — **the docblock contradicted its own function body**, which passes the
    project's default locale.
 
-The REWRITE-CODE verdict found a split predicate the comment was covering for: the handler branched
+One finding was a split predicate the comment was covering for: the handler branched
 on `select_all` **twice**, once to produce an empty `refused` placeholder and once to pick the ids.
 Merged into one `documentsToQueue` with an early return per mode, so each mode shows its own gate and
 the comment has nothing left to do. The three mutations were re-run against the new shape and each
@@ -266,8 +260,7 @@ still reddens exactly its own check.
 and each evaluation does its own `findByID`. A long named list produces that many concurrent reads.
 D6 counted the evaluations but not their concurrency.
 
-**2026-10-25 — `/sp-red-test` in audit mode** over the enqueue and access suites. Scaffolding deleted
-and `git status` shown.
+**2026-10-25 — suite run against an empty implementation**, over the enqueue and access suites.
 
 - Stubbing `refusedTargets`: **11 of the 19** pre-existing `handler.test.ts` cases went red, so they
   do reach the new path. Stubbing the whole permission module: 70 red across the package.

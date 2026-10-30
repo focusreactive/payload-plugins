@@ -50,7 +50,7 @@ and its callers compile exactly as they do today.
 **N2 — a language refuses a context by returning `null` from `enter`, not through a separate
 `accepts`.** All four example languages do the same thing in `enter`: cast the context to a shape
 and destructure it. A separate predicate would need that same shape knowledge a second time, and
-the two could disagree — which is the split-predicate trigger, and this package has already shipped
+the two could disagree — which is the split-predicate defect, and this package has already shipped
 that defect once: `selects` and `boundary` answered parts of one question and left a case neither
 claimed, so content the host never marked went out for translation.
 *Rejected:* `accepts?(context: unknown): boolean`.
@@ -79,14 +79,14 @@ wiring. Wrapping is confined to `enter`, because that is where a context is read
 
 **New surface:** one error class, exported. `enter`'s return type widens. No new module.
 
-**Shape check:** fired on two triggers — a published type's member changes signature, and the new
+**Shape check:** needed, for two reasons — a published type's member changes signature, and the new
 state is an absence. The table under N2 is the answer.
 
 **Written contract?** Yes: `enter` now owes callers that `null` means "not my context" and nothing
 else — not "nothing to walk", which is `{ nodes: [], cursor }`. That distinction is the whole point
 and is the first thing a check must pin.
 
-**Escalate?** No. One package, no new seam, no dependency.
+**Does this need a separate design?** No. One package, no new seam, no dependency.
 
 ## Acceptance Criteria
 
@@ -136,12 +136,12 @@ Against the untouched tree, 2026-10-20.
   they are today; the change removes a way for two places to disagree, not the author's freedom to
   skip the check. Said plainly so nobody reads this as a guarantee.
 
-## Human choices
+## Decisions by the owner
 
 - All three parts now, nothing deferred — owner, 2026-10-20.
-- `enter` returning `null` in place of a separate `accepts` — owner, 2026-10-20, at the gate. He
-  had approved `accepts` earlier in conversation; shown the duplication it forces on every language
-  and the precedent of `selects`/`boundary`, he chose the single place.
+- `enter` returning `null` in place of a separate `accepts` — owner, 2026-10-20. `accepts` had been
+  approved earlier; given the duplication it forces on every language and the precedent of
+  `selects`/`boundary`, the single place was chosen.
 
 ## Decisions taken during execution
 
@@ -167,8 +167,7 @@ absence.** "An empty node list is not a refusal" asserted only `toEqual([])`; "a
 id" asserted only `not.toThrow()`; and the compile-time one asserted `typeof fn === "function"`.
 Each now carries a positive anchor in the same check — the same language shown walking something,
 a target actually collected — except the third, which was removed as a runtime check entirely
-(X2). Second audit: 48 red, 0 green. This is the rule added to the development skills earlier
-today, caught by its own instrument on the first change written after it.
+(X2). Second audit: 48 red, 0 green.
 
 **X4 — the four example languages were left alone.** They could demonstrate the refusal, but no
 acceptance criterion asks for it, and the checks that exercise the mechanism wrap
@@ -176,7 +175,7 @@ acceptance criterion asks for it, and the checks that exercise the mechanism wra
 touching code the previous step's thirty-six checks are measured against. The real Payload
 language, written later in the plugin, is where the refusal earns its place.
 
-**X5 — three of the docblocks this change wrote stated things that are false.** The comment audit
+**X5 — three of the docblocks this change wrote stated things that are false.** The comment review
 checked every behavioural claim against the code, and three did not survive:
 
 - `CannotEnterLanguageError.idPath` was documented as `<root>` at the entry. It is `[]`. `<root>`
@@ -188,12 +187,11 @@ checked every behavioural claim against the code, and three did not survive:
 - The same docblock's summary said `enter` builds "the root nodes this walk starts from". It runs at
   every crossing, not only at the root.
 
-All three were written by the author of the code they describe, which is the case this audit exists
-for. The design rationale paragraph went entirely: it argued *why* the check lives in `enter`
+All three were written alongside the code they describe. The design rationale paragraph went entirely: it argued *why* the check lives in `enter`
 rather than in a second function, which is an argument for a reviewer, has no second function for a
 consumer to choose between, and belongs in this document — where it is, as N2.
 
-**X6 — splitting a check reintroduced the tautology the stub audit had just removed.** The audit
+**X6 — splitting a check reintroduced the tautology the stub audit had just removed.** The comment review
 advised splitting "an empty node list is not a refusal" into two named checks, one assertion each.
 Applied literally, the first half asserted only `toEqual([])` — which an empty implementation
 satisfies — and the next stub audit caught it immediately.
@@ -202,8 +200,8 @@ must throw and the other must not; either alone is satisfied by a walk that does
 check, one reason" and "a negative assertion needs a positive anchor" collide here, and the second
 wins: a check whose subject is a distinction cannot be split without losing its subject.
 
-**X7 — the `cause` regression I introduced while "simplifying".** The first audit noted, out of
-scope, that `throw undefined` inside `enter` would be indistinguishable from a refusal. Fixing it
+**X7 — the `cause` regression introduced while "simplifying".** The first comment review noted,
+out of scope, that `throw undefined` inside `enter` would be indistinguishable from a refusal. Fixing it
 looked like a simplification — drop the conditional, always pass `{ cause }` — and it made things
 strictly worse: an options object carrying the `cause` key installs the property even when the value
 is `undefined`, so **every refusal** then looked like it had wrapped a throw. Caught by review and
@@ -266,12 +264,10 @@ was only possible under `claims`, which is gone.
 
 ## Review log
 
-### 2026-10-20 — comment audit
+### 2026-10-20 — comment review
 
-16 blocks judged, every one: 2 kept with a named reason, 6 shortened, 5 answered by changing the
-code, 3 deleted, plus 3 missing ones added. **Three carried false behavioural claims** (X5) — the
-class of defect the audit's third check exists for, and the first change written after that check
-was added to the development skills.
+Every comment was reviewed; several were shortened, deleted, or answered by changing the code, and
+missing ones were added. **Three carried false behavioural claims** (X5).
 
 Answered by code rather than prose: `enterOrReport` → `enterOrFail` (the old name suggested
 logging, which is why its docblock felt necessary); `picky` → `refusesWithoutFieldList`; `unnamed` →

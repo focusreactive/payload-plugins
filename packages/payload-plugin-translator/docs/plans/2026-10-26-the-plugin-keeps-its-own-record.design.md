@@ -213,7 +213,7 @@ locale already delivered is not asked for again. Otherwise cancelling costs mone
 | `retryLimitOf`, `isLastAttempt`, `attemptsBefore` | — | **stay**: they read this runner's own configuration |
 | `context.collections` | `TaskRunnerContext` | **gone** — its only two uses build the legacy `collection` field this step removes |
 
-`core/` cannot import Payload (package `CLAUDE.md`), which is the point: the policy structurally
+`core/` cannot import Payload (a package convention), which is the point: the policy structurally
 cannot reach back into job rows. **`serialisesPerDocument` is not needed** — blocking makes
 concurrent runs impossible by construction rather than by the host's flag.
 

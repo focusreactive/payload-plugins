@@ -79,7 +79,7 @@ same; `translationPermission.ts` exports the rebuild it already has; the three r
 the filter; `translate-document/handler.ts` reorders so the rebuild precedes the reads.
 
 **New surface:** two Payload options and one already-written function made visible to its neighbour —
-**plus, decided during Phase 3**, a `SourceUnreadable` error and a `source-unreadable` failure
+**plus, decided during implementation**, a `SourceUnreadable` error and a `source-unreadable` failure
 reason. The alternative was reusing `TranslationRefused`, whose message says the requester "may not
 **write**" — which would label a refused *read* as a refused write and send whoever is debugging to
 the wrong rule. Internal: neither is exported from `src/index.ts`.
@@ -149,7 +149,7 @@ PostgreSQL**, and all eight criteria hold, because every one of them names a use
 The mandatory `access` guard is the whole of the protection there, which means a host who lets an
 anonymous caller reach the plugin has made that decision explicitly.
 
-## Human choices
+## Decisions by the owner
 
 - **2026-10-02 — a report the caller may see nothing in answers with an empty list, not a refusal.**
   The same answer as for a document that does not exist, so the response distinguishes nothing and
@@ -163,7 +163,7 @@ anonymous caller reach the plugin has made that decision explicitly.
 
 ## Review log
 
-- 2026-10-02 — Phase 3, D1 challenged by its own guard and upheld. Criterion 3 ("still translates
+- 2026-10-02 — during implementation, D1 challenged by its own guard and upheld. Criterion 3 ("still translates
   for a caller the rule allows") went red, which looked like D1 being wrong: reads take `req.user`
   as given rather than rebuilding it, and a *stub* user carries none of the fields a rule reads.
   Measured: with a full user document both cases pass, and in a real HTTP request Payload's auth
@@ -171,20 +171,16 @@ anonymous caller reach the plugin has made that decision explicitly.
   accidental — rebuild when you hold only a reference (a job row stores id + collection), use the
   object when the request already carries one. Recorded because the next reader will wonder.
 
-- 2026-10-02 — contract written. Phase 1 found the constraint that shapes D2: the permission check
+- 2026-10-02 — contract written. Verification found the constraint that shapes D2: the permission check
   consumes the source document, so the read cannot be deferred until after the rule is asked, and the
   requester rebuild has to move ahead of both.
 
-### 2026-10-02 · phase 5
-- **Checks:** unit **1840 in 134 files** · check-types clean · oxlint **55 warnings, 0 errors** ·
-  integration **158 SQLite / 164 PostgreSQL / 157 Mongo** of 165. Each criterion was also run by
-  name on PostgreSQL and is listed below.
-- **Gates:** sp-diff-checks clean; sp-lint-delta 0 introduced, mode=two-run.
-- **Reviewers:** correctness · regression · intent, concurrent. Four findings, two fixed, two declined
-  with reasons.
-- **Criteria:** 8 met.
+### 2026-10-02 · verification
+- **Checks:** unit **1840 in 134 files** · check-types clean · oxlint **55 warnings, 0 errors**, none
+  introduced · integration **158 SQLite / 164 PostgreSQL / 157 Mongo** of 165. Each criterion was also
+  run by name on PostgreSQL and is listed below. All 8 criteria met.
 
-What changed because of a reviewer:
+What changed because of review:
 
 - **The refusal named the wrong locale.** `if (!sourceData || !currentTargetVersion)` always threw
   `SourceUnreadable(collection, sourceLng)`. A host rule keyed on `req.locale` can let the source
@@ -207,14 +203,12 @@ Declined, with reasons:
   returned, and matches how Payload itself presents a hidden document (rules on plus `disableErrors`
   yields nothing, which the REST layer reports as not-found). The cost is real and recorded: a
   refused caller sees a generic failure toast rather than a graceful notice. Changing it would add a
-  member to the public `FieldTranslationReason` union — new public surface this task was told not to
-  grow.
+  member to the public `FieldTranslationReason` union — new public surface outside this task's
+  scope.
 
 Honest about the test order: criteria 2 and 3 had a genuine red run against the pre-change code.
 Criteria 4, 5, 6 and 7 were written after the implementation and proved by mutation instead — each
 mutation named in this log's sibling entries and re-run at the end.
-
-- **Pin:** not set — the tree carries another session's uncommitted edits.
 
 Criteria, each by its declared check:
 
@@ -232,16 +226,16 @@ Criteria, each by its declared check:
 - **Left open:** an anonymous HTTP caller still reads unchecked — recorded in the amendment, held by
   the mandatory endpoint guard. Out of this task by the owner's boundary.
 
-### 2026-10-02 · three audits over the diff
+### 2026-10-02 · comment, complexity and abstraction review
 
-- **Comment audit — 22 verdicts.** Five docblocks this change had **falsified** were the real haul,
+- **Comment review.** Five docblocks this change had **falsified** were the main finding,
   and the worst was in `sourceDocument.ts`: the `user` field promised that "a caller with nobody to
   name gets `null`, not a free pass", while the code gives exactly a free pass. That text described
   the pre-Amendment build. Also stranded: the `docAccessOperation` paragraph was left on
   `rebuildRequester`, which does none of that, while `checkTranslationPermission` had no docblock at
   all. Both corrected, plus `dismiss`'s no-op enumeration and `makeCurrentFingerprint`'s now-nullable
-  return. Then 8 deletions, 5 rewrites, 4 places where a name replaced the prose.
-- **Complexity — one finding, applied at the owner's word.** The rule "ask the host's rules when
+  return. Several other comments were deleted or rewritten, and in places a name replaced the prose.
+- **Complexity — one finding, applied with the owner's approval.** The rule "ask the host's rules when
   someone is named, and never throw" was written out four times in three files. Named once as
   `enforcedAtTheRead`, the read-side mirror of the existing `enforcedAtTheWrite`.
   CHANGE 4 → 1, READ 6 → 3, STATE unchanged. Both halves mutated separately and each reddens a
@@ -251,7 +245,7 @@ Criteria, each by its declared check:
   `requester` and read it back four times under the other name. Measure 3, connascence of meaning.
   It now returns `boolean`; `TranslationPermission` and `ALLOW_ALL` are gone. The echo was created by
   this task's split — before it, the function derived the user itself.
-  The other four measures passed. `RebuiltRequester` is deliberately loose because it crosses into
+  `RebuiltRequester` is deliberately loose because it crosses into
   the host's own `access` rule, whose read set is unknowable — the one place a narrow type would be
   the bug.
 - **A coverage hole found while proving the above.** Mutating the pre-write re-check to receive
@@ -261,7 +255,7 @@ Criteria, each by its declared check:
 
 ### 2026-10-02 · the deferred read, written red-first
 
-The one gap the audits left: `access-control-queue.int.test.ts` pins the deferred path for **writes**
+The one gap the reviews left: `access-control-queue.int.test.ts` pins the deferred path for **writes**
 only, and nothing pinned a read on it — the path where the requester is rebuilt from a stored job row
 minutes after the request that queued it is gone, with nobody watching the outcome.
 

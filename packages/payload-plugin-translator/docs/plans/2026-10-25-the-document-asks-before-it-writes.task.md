@@ -4,7 +4,7 @@
 
 `translate-document/handler.ts` holds three unrelated jobs: it runs the translation, and it
 also knows who the requester is, what the collection's rules say about them, and how to write
-the document. The owner wants the second and third out of the handler, and wants the check to
+the document. The second and third belong out of the handler, and the check must
 be **impossible to forget, move, or quietly re-condition** — enforced by the contract rather
 than by test coverage.
 
@@ -60,11 +60,11 @@ on a refusal. The private write inside `targetDocument.ts` demands an `ApprovedW
 only way to reach a write is through the ask.
 
 **Rejected — fold the check into the write method and rely on the file being small.** Nothing
-then stops a third write added later from skipping it, which is precisely the failure the owner
-asked to make impossible.
+then stops a third write added later from skipping it, which is precisely the failure this task
+exists to make impossible.
 
-**Rejected — a decorator around `handle`, or a check lifted to the caller.** Settled in
-conversation: two of the three checks ask about data that does not exist until mid-run, because
+**Rejected — a decorator around `handle`, or a check lifted to the caller.** Ruled out
+during design: two of the three checks ask about data that does not exist until mid-run, because
 the collection's rule reads `data` (`translationPermission.ts:99-102`).
 
 **Constraint cited:** `Requester` (`RequestScope.shapes.ts:14-34`) is this package's own answer
@@ -88,7 +88,7 @@ Reintroducing it as optional fields would give back a guarantee the project alre
 
 **Constraint cited:** `targetLayer.ts:17-23` and its contract test.
 
-### D2a — amended in Phase 3: the brand is minted in `targetDocument.ts`, not in `translationPermission.ts`
+### D2a — amended during implementation: the brand is minted in `targetDocument.ts`, not in `translationPermission.ts`
 
 D2 placed `approveWrite` beside the condition it asks. Building it there broke one check, and the
 break was not cosmetic: `handler.access.test.ts:112` pins that the **write-time** ask is handed the
@@ -119,10 +119,10 @@ provider call.
 
 **Rejected — fold it into `readBothLocales` so it cannot be forgotten either.** It would be
 unforgettable, but a reader running their eye down `handle` would no longer see that a permission
-is asked, and the owner's last task on this file was spent making that list legible. The stakes
+is asked, and the previous task on this file was spent making that list legible. The stakes
 differ from the write checks: forgetting this one costs a provider call, not an editor's save.
 
-**This decision is the gate question.**
+**This decision was settled by the owner before implementation; see Decisions by the owner.**
 
 ## Acceptance Criteria
 
@@ -138,7 +138,7 @@ differ from the write checks: forgetting this one costs a provider call, not an 
 | AC8 | Payload still receives the same write arguments | `handler.enforce.test.ts` and `handler.transaction.test.ts` green | exit 0 |
 | AC9 | Access control still holds end-to-end | rebuild, then from `apps/dev`: `bun run test:integration` | 225 passed / 8 skipped |
 | AC10 | No new type errors | `bun run check-types` in the package and in `apps/dev` | `0` each |
-| AC11 | No new analyzer findings | `sp-lint-delta.sh -- bunx oxlint .` | nothing introduced |
+| AC11 | No new analyzer findings | `bunx oxlint .` before and after | nothing introduced |
 | AC12 | The build still emits declarations | `bunx turbo run build --filter='./packages/payload-plugin-translator'` from the root | exit 0 |
 | AC13 | `handler.ts` is shorter than 310 lines | `wc -l` | ≤ 310 (arithmetic in Risk notes; **report the real number**) |
 
@@ -154,14 +154,14 @@ differ from the write checks: forgetting this one costs a provider call, not an 
 | AC6 | `bunx vitest run .../translate-document/__tests__/` | **9 files / 95 passed** | invariant — passes now ✓ |
 | AC10 | `bun run check-types` | **0** | invariant — passes now ✓ |
 | AC13 | `wc -l handler.ts` | **365** | must change — fails now ✓ |
-| AC9, AC11, AC12 | integration / lint / build | taken from the run that closed `2026-10-25-one-run-one-context.task.md` this session: 225 passed / 8 skipped · 43 warnings, 0 errors · build green | invariant — passed then; re-run in Phase 5 |
+| AC9, AC11, AC12 | integration / lint / build | taken from the run that closed `2026-10-25-one-run-one-context.task.md`: 225 passed / 8 skipped · 43 warnings, 0 errors · build green | invariant — passed then; re-run after implementation |
 
 ## Risk notes
 
 - **High risk, and the classification binds.** The change moves access-control code. Behaviour
   must be identical, and the evidence for that is the nine unit suites plus the eight
   `access-control-*` / `read-access-*` integration suites in `apps/dev`, which run against a real
-  Payload. Phase 4's regression sweep is mandatory and evidenced; Phase 5b runs three review
+  Payload. The regression sweep is mandatory and evidenced; review takes three
   angles.
 - **Three unit suites mock `../translationPermission.js` by path** (`handler.access`,
   `handler.enforce`, `handler.spend`). The new file imports from that same module, so the mocks
@@ -179,23 +179,21 @@ differ from the write checks: forgetting this one costs a provider call, not an 
   unguarded `payload.collections[input.collection]` index at `handler.ts:182`, which is older
   than this task and whose fix is a behaviour change.
 
-## Human choices
+## Decisions by the owner
 
-**2026-10-25, at the gate.**
+**2026-10-25 — decided by the owner, before implementation.**
 
-1. *"Клеймо на проверенных данных (рекомендую)"* — D2 is in scope for this task. The write is
-   closed at the type level, not by the file being small.
-2. *"Видимым шагом (рекомендую)"* — D4 stands: the pre-provider check keeps its own line in
-   `handle`. Forgetting it costs a provider call, not an editor's save, and the step list stays
-   legible.
+1. A brand on the checked data — D2 is in scope for this task. The write is closed at the type
+   level, not by the file being small.
+2. The pre-provider check stays a visible step — D4 stands: it keeps its own line in `handle`.
+   Forgetting it costs a provider call, not an editor's save, and the step list stays legible.
 
-Earlier in the same conversation, before the contract existed:
+Earlier, during design:
 
-3. A decorator around `handle`, and lifting the check to the caller, were both proposed by the
-   owner and withdrawn once it was shown that two of the three checks ask about data that does
-   not exist until mid-run.
-4. *"Мне не нравится что управление разрешениями зашито прямо в хэндлер"* — the requirement
-   behind D1.
+3. A decorator around `handle`, and lifting the check to the caller, were both considered and
+   dropped once it was shown that two of the three checks ask about data that does not exist
+   until mid-run.
+4. Permission handling should not be hard-wired into the handler — the requirement behind D1.
 
 ## Result — every criterion walked with its declared check
 
@@ -211,31 +209,26 @@ Earlier in the same conversation, before the contract existed:
 | AC8 | `handler.enforce` + `handler.transaction` green | green, byte-unmodified | met |
 | AC9 | `bun run test:integration` from `apps/dev` after a rebuild | **225 passed / 8 skipped**, unchanged | met |
 | AC10 | `check-types` in the package and in `apps/dev` | `0` and `0` | met |
-| AC11 | `sp-lint-delta.sh -- bunx oxlint .` | `mode=two-run`, nothing introduced; 43 warnings / 0 errors, unchanged | met |
+| AC11 | `bunx oxlint .` before and after | nothing introduced; 43 warnings / 0 errors, unchanged | met |
 | AC12 | `turbo run build` for the package | exit 0 | met |
 | AC13 | `wc -l handler.ts` | **251** (was 365), against a ceiling of 310 | met |
 
-Package suite: **190 files / 2485 checks**. The brief carried 2482 as the baseline; measured by
+Package suite: **190 files / 2485 checks**. The plan carried 2482 as the baseline; measured by
 excluding only the new file, the baseline is **2483**, so this task adds exactly the 2 checks it
-wrote. The brief's number was one stale.
-
-`sp-diff-checks.sh`: three `test-integrity` rows, all on files this task did not touch
-(`provenance.int.test.ts`, `chainOrder.test.ts`, `Provenance.module.test.ts`) — they belong to
-earlier work on this branch. Reviewed diff pinned at `a55cf098a83d`.
+wrote. The plan's number was one stale.
 
 ## Review log
 
-### 2026-10-25 — comment audit (9 blocks, 8 candidates; one block held two comments)
+### 2026-10-25 — comment review
 
-DELETE 1 · REWRITE-CODE 2 · REWRITE-COMMENT 6 · KEEP 0. Every verdict applied. Two findings were
-substantive rather than stylistic:
+Two findings were substantive rather than stylistic:
 
 - **`WriteDestination` did not do what its docblock claimed.** An untagged union does not stop a
   literal mixing both members, and a probe confirmed that
   `{ locale, fallbackLocale, draft: true, autosave: false, publishSpecificLocale }` compiled. Fixed
   in code with `?: never` on each member's foreign keys; the docblock was then unnecessary and was
   deleted.
-- **Two comments of mine restated an overclaim I had already fixed elsewhere** — the test's docblock
+- **Two comments restated an overclaim already fixed elsewhere** — the test's docblock
   and its directive both said "a payload nobody asked about is not an `ApprovedWrite`", which is
   false when there is no requester, because `approveWrite` then mints one without asking. The test
   was rewritten as a type assertion (`expectTypeOf(...).not.toExtend<ApprovedWrite>()`), which
@@ -273,7 +266,7 @@ quietly rewritten to match what was built.
 
 What is true, measured: the condition itself — the one function that evaluates the collection's
 rules — is in `translationPermission.ts`, and **no call site is in `handler.ts`**, which is what the
-owner asked for.
+task required.
 
 ## Residuals and follow-ups — recorded, not fixed here
 

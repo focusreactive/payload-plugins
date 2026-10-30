@@ -74,8 +74,8 @@ for a second caller nobody has.
 **D6 — the chain stays assembled at boot.** The plan this task adopted said per-locale chain assembly
 was the largest piece of the work. **It is not owed.** That followed from criteria being modules; with
 D5 they are not. The chain is host modules plus provenance's recorder, the same for every run, and what
-varies per locale is a field the handler reads. One clause of the inherited design, dropped on the
-"is it due here" walk.
+varies per locale is a field the handler reads. One clause of the inherited design, dropped because it is
+not due here.
 
 **D7 — an old row's `skip_existing` is read as the `stale` criterion.** Rows written before this
 change are in flight when it deploys and carry a strategy the code no longer has. Translating the
@@ -123,7 +123,8 @@ One shape survives on the honesty row. Two new units, each with two callers name
 
 ### Written contract
 
-Two units owe callers what a signature cannot state, so Phase 3 runs these through `/sp-red-test`:
+Two units owe callers what a signature cannot state, so their tests are written against the contract
+first:
 
 - **the intersector**: the result is a subset of every input; order of inputs does not change it; an
   empty input list means an empty result, not "no restriction"; an address no input vouches for is
@@ -131,7 +132,7 @@ Two units owe callers what a signature cannot state, so Phase 3 runs these throu
 - **a criterion's answer**: the complete set of addresses it vouches for, independent of what the run
   already holds — never a filtered copy of the input.
 
-### Escalate to `/sp-architect`?
+### Does this need a separate design?
 
 No. The design arrived from `2026-10-18-the-rewiring.md` §4 and this task builds one of its steps.
 
@@ -193,15 +194,14 @@ Two things to watch while building:
 - `extendJob` appends to `target_lngs` with a `db.updateOne`; appending whole entries instead of
   strings must keep its two-attempt retry and its "the row completed mid-append" fallback.
 
-## Human choices
+## Decisions by the owner
 
-Settled by the owner in conversation, 2026-10-23:
+Settled by the owner, 2026-10-23:
 
 - **Strategies go completely**, including `AutoTranslateConfig.strategy` and the exported
   `AutoTranslateStrategy`. Auto-translate is not reworked here; its runs cover the whole document.
-  "б - убираем тогда стратегии полностью."
-- **The criterion is a source of a list, and the narrower only intersects.** "Сократитель … сам по
-  себе должен принимать только список полей которые мы переводим."
+- **The criterion is a source of a list, and the narrower only intersects.** The narrowing step
+  itself accepts only the list of fields to translate.
 - **The field is named `criteria`.**
 - **An old row's intent is translated** rather than dropped, marked as a shim with a drain-time
   removal condition.
@@ -209,7 +209,7 @@ Settled by the owner in conversation, 2026-10-23:
 - **The stored shape is exercised in `apps/dev`,** not `apps/cms` — `apps/cms` wires the simple runner
   and never writes a job row. §9 of the rewiring plan is corrected to say so.
 
-At the Phase 2 gate:
+Before implementation:
 
 - **D6 confirmed — the chain stays assembled at boot.** Per-locale assembly was carried into this
   task from the plan as "the largest piece"; it followed from criteria being modules, which D5
@@ -270,14 +270,14 @@ pass over a host consumer reading a field that no longer exists.
 
 ## Review log
 
-### Comment audit over the whole diff — 2026-10-23
+### Comment review over the whole diff — 2026-10-23
 
-67 blocks collected, 65 judged (two were Markdown and out of scope), verdicts reconciled. Density was
-fine for inline comments (0.15 per ten lines of added code) and heavy for docblocks: one fact — "a
+Density was fine for inline comments (0.15 per ten lines of added code) and heavy for docblocks: one
+fact — "a
 selection and criteria are per locale; omitting a selection means every leaf" — was written out in
 seven places.
 
-Four of the findings were **false statements**, not verbosity, and each is a defect this run
+Four of the findings were **false statements**, not verbosity, and each is a defect this change
 introduced:
 
 | Found | What was wrong | Done |
@@ -287,17 +287,16 @@ introduced:
 | `runTargets.ts` | "the module that answers to it is optional, so the name is spelled rather than imported" — importing a string constant needs nothing at run time. The real constraint is that `store/` must not depend on `provenance/` | reason corrected |
 | `Provenance.criterion.ts` | "the plugin passes the name around without reading it" — the store spells the same literal | corrected, and a test now ties the two spellings together rather than prose |
 
-The rest: 18 deleted, 22 rewritten, 17 answered by changing code — the largest of those replacing six
-copies of one docblock with a shared `RunAsk`, and six hand-written copies of an enumeration with
-`everyTranslatableLeaf`.
+The largest code changes it led to: six copies of one docblock replaced with a shared `RunAsk`, and
+six hand-written copies of an enumeration replaced with `everyTranslatableLeaf`.
 
-### Three fresh-eyes passes — 2026-10-23
+### Review from three angles — 2026-10-23
 
-Run in parallel over the finished diff: one on the new mechanism, one on stored data and consumers
-written before the change, one on what the deletion took with it. Between them they found one defect
-I had introduced **while fixing another one**, and three more.
+Over the finished diff: the new mechanism; stored data and consumers written before the change; what
+the deletion took with it. Between them they found one defect introduced **while fixing another
+one**, and three more.
 
-**The merge rule was wrong, and I removed it.** A previous pass had added `widenedBy`, merging a
+**The merge rule was wrong, and was removed.** An earlier fix had added `widenedBy`, merging a
 second request into a locale a live run already listed, so the second ask would not be dropped. The
 merge took the union of the selections and the intersection of the criteria — **independently**, and
 that is not the union of two asks. A run listing `{criteria: ["stale"]}` merged with a request naming
@@ -323,7 +322,7 @@ the README now says to switch `enableConcurrencyControl` on.
 | `README.md` still described `skip_existing` | rewritten around the `stale` criterion |
 | the converted blocks test could no longer catch a pairing bug, and no integration case ran a selection over blocks | one added: a selection naming one block's leaf by id, with its sibling's target text left standing |
 
-**One hygiene finding stands, with its proof.** `sp-diff-checks` reports an assertion removed from
+**One hygiene finding stands, with its proof.** An automated diff check reports an assertion removed from
 `chainOrder.test.ts` with none added back. It guarded the chain's fallback for `sourceChangedByLeaf`;
 that field now has zero references anywhere under `src`, so the behaviour it guarded no longer
 exists.

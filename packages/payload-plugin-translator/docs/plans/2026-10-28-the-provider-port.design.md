@@ -69,7 +69,7 @@ touch the same files:
 - R13 (in) The input map belongs to the plugin; a provider cannot empty it or edit it in place.
 - R14 (in) A failure code reaches the person who asked for the translation, as text they can act on.
 - R9 (out) Glossary and brand voice. A separate, unbuilt task. Nothing is built here; the shape must
-  **admit** them later, which is checked when the port is modelled, not implemented now.
+  **admit** them later, which is checked in the scenario review, not implemented now.
 - R10 (out) Auto-detecting the source language. Both codes stay required. Today an empty
   `sourceLng` means "detect it yourself" by provider convention; that convention goes. If detection
   ever lands it arrives as an explicit value, never as an empty string standing in for absence.
@@ -84,7 +84,7 @@ touch the same files:
 ## Decision points
 
 - D1 [load-bearing] Two arguments: what to translate, and the request it belongs to.
-- D2 [load-bearing] WITHDRAWN at modelling — `ProviderCapabilities` is removed, not made required.
+- D2 [load-bearing] WITHDRAWN during scenario review — `TranslationProvider.capabilities` is removed, not made required.
 - D3 [load-bearing] A failure is thrown and carries a code; the classes stay with the built-ins.
 - D4 [load-bearing] The mark instruction is exported, not dictated.
 - D5 [minor] Both language codes stay required.
@@ -100,13 +100,13 @@ touch the same files:
 |---|---|
 | R1 | `TranslationRequest`, carrying both codes as named fields |
 | R2 | `translate` returns `Promise<TranslationOutput>`; failure is a throw carrying `code` |
-| R3 | `ProviderCapabilities` deleted; `parseInlineMarks` on the reply is the whole check |
+| R3 | `TranslationProvider.capabilities` deleted; `parseInlineMarks` on the reply is the whole check |
 | R4 | `INLINE_MARKS_INSTRUCTION` exported from the package entry point |
 | R5 | `TranslationFailureCode` moves to `core/`; the classes stay in `shared/errors/` |
 | R6 | the tidy step, package-wide |
 | R7 | `failureReason.ts` moves out of the seam |
 | R8 | the deprecation sweep, step 6 of the build sequence |
-| R9 | not built — checked at modelling |
+| R9 | not built — checked during scenario review |
 | R10 | not built — the empty-string convention is removed, nothing replaces it |
 | R11 | not built — #199 |
 | R12 | `TranslatableValue` carries `carriesInlineMarks`; `TranslationRequest` carries no such field |
@@ -170,14 +170,14 @@ disappear into it.
 state the plugin produces, and `options?` pretended otherwise. Same move as the runner port at step
 6, for the same reason.
 
-### D2. WITHDRAWN at modelling. `ProviderCapabilities` is removed
+### D2. WITHDRAWN during scenario review. `TranslationProvider.capabilities` is removed
 
 **Proposed.** Make `capabilities` required rather than optional, so no provider silently gets the
 lesser behaviour.
 
 - **Options considered:** keep it optional, absent meaning nothing extra · make it required, as `RunnerCapabilities` already is · remove the declaration and let the reply decide, since the reply is already checked
 
-**Withdrawn before it was built**, for two reasons that only appeared once the port was modelled.
+**Withdrawn before it was built**, for two reasons that only appeared once the port was walked through concrete scenarios.
 
 *It buys a guarantee the plugin already has.* The declaration exists to keep marks away from a
 provider that would mangle them. But a mangled reply is already caught: `parseInlineMarks` rejects
@@ -191,10 +191,10 @@ must be required too, or the rule it enforces is abandoned. #142 brings exactly 
 compiled against 1.0.0, in a release nobody reads the notes for. The alternatives were a second major
 within months, or an optional field, which is the ambiguity this decision set out to remove.
 
-**Decision.** `ProviderCapabilities` is deleted. The plugin always expands rich text by container and
-always states, per value, whether that value carries marks. The node-by-node path survives as the
-expander's own fallback for containers it cannot serve — decided by the content, where `MARK_SHAPED`
-already decides it, not by a provider's claim.
+**Decision.** The `capabilities` field of `TranslationProvider` is deleted. The plugin always
+expands rich text by container and always states, per value, whether that value carries marks. The
+node-by-node path survives as the expander's own fallback for containers it cannot serve — decided
+by the content, where `MARK_SHAPED` already decides it, not by a provider's claim.
 
 **Consequences.**
 
@@ -205,7 +205,7 @@ already decides it, not by a provider's claim.
   gets today: its rich-text fields come back unparseable and stay untranslated, while plain fields
   translate normally. The failure is visible instead of quiet, but it is a real loss and the major's
   release notes must name it.
-- Four findings from the modelling run disappear with the type rather than being answered: capability
+- Four findings from the scenario review disappear with the type rather than being answered: capability
   growth, capabilities dropped by the dry-run branch, nothing requiring capabilities to be constant
   across calls, and the capability-shaped question #142 would otherwise have to ask.
 
@@ -403,7 +403,7 @@ Each step leaves the tree green and is reviewed on its own.
    returning `Promise<TranslationOutput>` with failure thrown; `TranslationFailureCode` moved to
    `core/`; `INLINE_MARKS_INSTRUCTION` exported; `TranslationOutput` documented as a subset.
    Breaking. covers: R1, R2, R4, R5, R16
-3. **Capabilities removed** — `ProviderCapabilities` deleted, the expander choice in
+3. **Capabilities removed** — `TranslationProvider.capabilities` deleted, the expander choice in
    `translateContent` collapsed to one path. Breaking, and the only step that changes what the
    plugin sends. covers: R3
 4. **Marks per value** — `TranslatableValue`; `inlineMarks` leaves the request;
@@ -416,18 +416,18 @@ Each step leaves the tree green and is reviewed on its own.
    client shape stay), and `OpenAITranslationLegacy`. Also the built-in prompt's branch for an
    empty `sourceLng` in `buildSystemPrompt`, which the plugin never takes. Breaking. covers: R8, R10
 
-Steps 2 to 5 were one step when this design was written; the modelling run split them, because each
+Steps 2 to 5 were one step when this design was written; the scenario review split them, because each
 is breaking on its own and reviewing them together would hide the one that changes behaviour (3).
 
-## Modelling — what it returned
+## Scenario review — what it found
 
-Run on 2026-10-29, against the shape above as it then stood, before any of the reshape was built. It
+Done on 2026-10-29, against the shape above as it then stood, before any of the reshape was built. It
 answered the two questions this section originally posed and changed the design in four places.
 
 **Will a glossary and a brand voice fit later?** Yes, on `TranslationRequest`: a field added there is
 additive, since an implementation that ignores it still satisfies the interface, and per-target-locale
 variation is natural because `targetLng` is already a field. The shape that could *not* absorb them
-was `ProviderCapabilities` — see D2, which the answer to this question is what withdrew.
+was `TranslationProvider.capabilities` — see D2, which the answer to this question is what withdrew.
 
 **What does a provider that cannot preserve marks cost?** Under the shape above it received one value
 per text node — `Hello <1>world</1> today` arriving as `{0:"Hello ", 1:"world", 2:" today"}` — so

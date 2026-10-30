@@ -98,7 +98,7 @@ One shape survives on the first two rows.
 
 ### Written contract
 
-Two units owe callers what a signature cannot state, so Phase 3 runs them red-first:
+Two units owe callers what a signature cannot state, so their tests are written red-first:
 
 - **`covers`** — what "covers" means (the listed ask translates at least what the new one asks for),
   that it is deliberately conservative (it may answer false for an ask it does in fact cover, which
@@ -107,7 +107,7 @@ Two units owe callers what a signature cannot state, so Phase 3 runs them red-fi
 - **the filter list** — an empty list means every translatable leaf, not none; order does not matter,
   because the result is an intersection.
 
-### Escalate to `/sp-architect`?
+### Does this need a separate design?
 
 No. One shape, five readers, all in this package, and the design came from the owner at the review.
 
@@ -162,19 +162,19 @@ and a request may now carry several filters of the same kind. Two `leaves` filte
 is legal and means something; two `rule` filters with the same name are a duplicate and mean nothing
 new.
 
-## Human choices
+## Decisions by the owner
 
 Settled by the owner at the review of the previous pass, 2026-10-23:
 
-- **One list, not two fields.** "selection — это тоже признак, как и stale… я бы это включил в более
-  общий неймспейс."
+- **One list, not two fields.** A selection is a criterion just like `stale`, so both belong under
+  one more general name.
 - **A tagged data shape, not a class instance** — the column holds JSON; a class does not survive it.
 - **Two kinds, not an enumeration of rule names** — a name in the type would put provenance's word in
   a type the plugin declares.
 - **Now, before the commit** — the stored shape is about to ship in a major and a third-party runner
   replays it; changing it twice costs two breaking entries.
 
-Raised by me at this gate:
+Raised during design:
 
 - **`leaves` rather than `fields`** for the tag value, because `SourceFingerprint` already uses
   `kind: "fields"` in this codebase for a different thing.
@@ -183,21 +183,21 @@ Raised by me at this gate:
 
 - Everything the previous contract left open stays open: the auto-translate rework, surfacing
   "translated nothing" to the host, the field-picker tree, a filter that widens rather than narrows.
-- **The field-picker tree in the parallel session posts the old shape.** It must be told before it
+- **The field-picker tree, built separately, posts the old shape.** It must change before it
   settles: `selection: ["title"]` becomes `filters: [{ kind: "leaves", addresses: ["title"] }]`.
 
 ## Review log
 
 ### 2026-10-23 — four reviews, three defects fixed
 
-Risk is high, so three angles ran in parallel beside the comment audit.
+Risk is high, so the change was reviewed from three angles besides the comments.
 
-| Angle | Verdict |
+| Angle | Finding |
 |---|---|
 | behaviour preservation | the four cases hold; the intersection, the empty list and the order-independence are all as stated. One defect: the wrong reason reported when a run sends nothing |
 | the stored row and the pre-1.0 shim | the round trip keeps each locale's filters, and the legacy branch is unchanged. One defect: `targets` entries were never parsed |
 | the request refusals | the positional refusal cannot be walked around; the known rule names cannot drift. One defect: two removed members were stripped in silence |
-| comments | 37 blocks judged. Four stated something false; two were stranded or broken; one contract was written four times over |
+| comments | Four stated something false; two were stranded or broken; one contract was written four times over |
 
 **Three defects, each fixed with a check that was red first.**
 
@@ -224,7 +224,7 @@ Risk is high, so three angles ran in parallel beside the comment audit.
    The reason now comes from `leavesToSend`, the only place that sees each step, as one of three
    named outcomes. Its docblock, which asserted the false premise, is gone with it.
 
-**Comment audit — 37 blocks, 14 kept.** Four false statements corrected: the throw in
+**Comment review.** Four false statements corrected: the throw in
 `leavesToSend` is also reached by a pre-1.0 row with provenance off; `everyTranslatableLeaf` does
 not answer for an empty leaf; `runTargets`' shim prose contradicted `DEPRECATIONS.md`, which calls
 `stale` the nearest meaning rather than the same one; `Provenance.criterion` still called the name
@@ -256,5 +256,4 @@ names were doing the work a comment had been covering: `acceptedBy` → `implied
 | `bunx oxlint .` | 43 warnings, 0 errors — the baseline |
 | `bunx turbo run build` | green |
 | `bun run test:integration` | 56 files / 225 checks green, 8 skipped |
-| `sp-lint-delta` | nothing introduced |
 | AC15 | the only hits are the pipeline's own `selection` parameter, which D3 keeps |

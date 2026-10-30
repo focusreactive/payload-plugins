@@ -53,7 +53,7 @@ re-exporting it, so the published surface does not move.
 **Db — `TranslationRequest` is exported from `src/index.ts`.**
 Chosen: export it, with `@since 1.0.0`. Lost: leave it unexported, as `TranslationRequestOptions` is
 today.
-`CLAUDE.md`'s test is whether a consumer can do its job without naming it. A provider written as
+The package's export rule asks whether a consumer can do its job without naming it. A provider written as
 `class … implements TranslationProvider` gets **no** contextual typing for its method parameters, so
 one that reads `request.targetLng` must name the type. That `TranslationRequestOptions` is
 unexported today is the same gap, survivable only because the parameter is optional and most
@@ -73,7 +73,7 @@ Chosen: required. Lost: leave it optional and unchanged.
 cannot produce. It is safe for consumers in a way the reverse would not be: a `SystemPromptBuilder`
 *receives* the context and never constructs one, so a field becoming required only adds a guarantee.
 **This is the one piece of scope beyond the step's six bullets** — it is one character, inside the
-same breaking window, and it is the user's to cut at the gate.
+same breaking window, and the owner may cut it before implementation.
 
 **De — the `null` guard in `TranslationStage` is deleted, not kept as a runtime check.**
 Chosen: delete `if (!translations) throw new TranslatorBug(…)`. Lost: keep it, guarding against a
@@ -111,7 +111,7 @@ rejected as D1 of the design; the shape check reaches the same answer from the o
 Yes, and it is the point of the step: `TranslationOutput` owes callers the subset rule (R16), and
 `TranslationInput` owes key preservation. Both are stated in docblocks on the port.
 
-**`/sp-red-test` is deliberately not run, and this is the reason.** Its discipline is for a contract
+**No red-first stub run is done, and this is the reason.** That discipline is for a contract
 whose behaviour is new. Here no behaviour changes at all, and the 64 existing call sites across
 three test files stop compiling the moment the signature moves — a red signal produced by the change
 itself, over tests that were written against the old contract rather than from the new
@@ -190,20 +190,20 @@ Run against the untouched tree on 2026-10-29.
 - **`OpenAITranslationLegacy.provider.ts` is deleted by step 6.** It still has to be updated here, or
   the tree is not green. Updating code scheduled to die is the cost of each step standing alone.
 
-## Human choices
+## Decisions by the owner
 
-- **2026-10-29 — the order.** "Сначала порт, потом читаемость" — the port is reshaped first, the
-  providers' readability is its own contract afterwards.
-- **2026-10-29 — modelling first.** "Да, прогнать" — the modelling run was required before the reshape
-  was built. It ran, and withdrew D2; see the design's "Modelling — what it returned".
-- **2026-10-29 — capabilities.** "да, убираем ProviderCapabilities", after the cost was stated:
-  a provider that cannot preserve marks loses its degraded node-by-node path and leaves rich text
-  untranslated instead. Removal is step 3, not this one.
-- **2026-10-29 — the prerelease.** "Давай пока не будем разбираться. Нам самое главное чтобы потом
-  выпустить 1.0.0 в конце" — the unexplained release of #213 is not chased now, and the reshape is not
-  blocked on it.
+- **2026-10-29 — the order.** Decided by the owner: the port is reshaped first, and the providers'
+  readability is its own contract afterwards.
+- **2026-10-29 — scenario review first.** Decided by the owner: the port is walked through concrete
+  scenarios before the reshape is built. It was, and that withdrew D2; see the design's "Scenario
+  review — what it found".
+- **2026-10-29 — capabilities.** Decided by the owner: `capabilities` is removed, after the cost was
+  stated — a provider that cannot preserve marks loses its degraded node-by-node path and leaves rich
+  text untranslated instead. Removal is step 3, not this one.
+- **2026-10-29 — the prerelease.** Decided by the owner: what matters is the 1.0.0 release at the
+  end, so the unexplained release of #213 is not chased now, and the reshape is not blocked on it.
 - **2026-10-29 — no commits.** Every step stops with the files listed; staging and committing are
-  the user's.
+  the owner's.
 
 ## Review log
 
@@ -251,19 +251,16 @@ recorded as a gap rather than papered over. With `| null` gone there is no error
 `TranslationPipeline` to exercise: a provider's throw propagates untouched. If step 3 or 4 adds one,
 it needs its own case.
 
-### Comment audit — 2026-10-29
+### Comment review — 2026-10-29
 
-23 added comment blocks, 23 verdicts, judged by an agent that saw the diff and the rules but not the
-reasoning behind them. 10 deleted · 8 rewritten · 5 kept · 1 missing-note fixed by typing instead of
-prose. Density came back **too dense on docblocks, clean on inline**: 50 docblock lines and 0 inline
-comments over 187 lines of added code, with the port's own file carrying 29 of the 50 and **stating
-the subset-of-keys rule four times** (`TranslationOutput`, the "Implementations must" list, `@param`
-and `@returns`). It now states it once.
+The added docblocks were too dense: the port's own file **stated the subset-of-keys rule four
+times** (`TranslationOutput`, the "Implementations must" list, `@param` and `@returns`). It now
+states it once.
 
-Three of the verdicts were mistakes of fact, not of style, and all three were mine:
+Three of the findings were mistakes of fact, not of style:
 
 - **`@since 1.0.0` on `TranslationFailureCode` was wrong.** The type has been exported from
-  `src/index.ts` since 0.11.0; this step moved only its definition file. `CLAUDE.md` says `@since`
+  `src/index.ts` since 0.11.0; this step moved only its definition file. The package convention says `@since`
   marks additions and pre-existing API is not retargeted. Corrected to `@since 0.11.0`.
 - **`sourceLng` is always set** (decided by the owner, 2026-10-30). Both entry points refuse an
   empty source locale (`enqueue-translation/model.ts`, `translate-field/model.ts`), so the plugin
@@ -276,14 +273,14 @@ Three of the verdicts were mistakes of fact, not of style, and all three were mi
 
 Also removed: the sentence claiming a plain `Error` with `code` is enough (false — see the design's
 D10), the three verbatim copies of one helper comment across three test files, and a
-`request as unknown as Record<string, unknown>` cast in `translateContent.test.ts` that the audit
+`request as unknown as Record<string, unknown>` cast in `translateContent.test.ts` that the review
 caught as a missing *why*. The cast was replaced by typing the recorder `TranslationRequest[]`,
-which is what the owner's rule about casts asks for; it only existed because the old parameter was
+which is what the project's rule about casts asks for; it only existed because the old parameter was
 optional, and that reason left with this step.
 
 **The helper duplication was not fixed here.** `aRequest()` and `DEFAULT_DOCUMENT` are copy-pasted
-into three test files; extracting one fixture module is a structural question and is left to the
-abstraction and design-smell passes that follow.
+into three test files; extracting one fixture module is a structural question and is left to a
+later design review.
 
 ### Found along the way
 
@@ -308,5 +305,5 @@ abstraction and design-smell passes that follow.
 - **One `buildSystemPrompt` case already named a document**, so the bulk edit gave it two; the
   duplicate was removed. The type-checker caught it.
 - **`README.md` is not updated.** Package convention asks for a `Since vX.Y.Z` note beside a new
-  public feature, and `INLINE_MARKS_INSTRUCTION` and `TranslationRequest` are two. The README is the
-  owner's; proposed text is in the step's report, not written here.
+  public feature, and `INLINE_MARKS_INSTRUCTION` and `TranslationRequest` are two. That text is owed
+  separately and is not written here.

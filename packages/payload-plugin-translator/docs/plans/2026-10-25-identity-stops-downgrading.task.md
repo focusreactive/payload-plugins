@@ -128,15 +128,14 @@ otherwise travel together.
   integration test being edited**.
 - **A message that is about to become false** is being changed, not deleted; a reader who has seen the
   old log line will otherwise believe the old behaviour.
-- A test is required before done; the regression sweep names what was grepped; Phase 5b runs several
-  angles.
+- A test is required; the regression sweep names what was grepped; the change is reviewed from
+  several angles.
 
-## Human choices
+## Decisions by the owner
 
-**2026-10-25.** Uninterrupted run through steps 5–10, stopping only at a genuine fork. None arose:
-D1, D2 and D5 follow decisions already recorded (the design's D6, SC1, and step 7's "make it not
-compile"), and D4 follows the answer this plugin gives on every other refusal. Commit authority
-granted in advance; no push, no pull request.
+**2026-10-25.** No decision in this step needed the owner: D1, D2 and D5 follow decisions already
+recorded (the design's D6, SC1, and step 7's "make it not compile"), and D4 follows the answer this
+plugin gives on every other refusal.
 
 ## Criteria results
 
@@ -162,7 +161,7 @@ granted in advance; no push, no pull request.
 - Step 6's prediction about 11 enqueue cases **did not apply**: it was about `mayInitiate` trusting a
   null *user*, and those cases carry no user at all, which stays `nobody`.
 
-**`/sp-complexity`.** Neighbourhood 5 files. **One finding, fixed and proven by probe:**
+**Complexity review.** **One finding, fixed and proven by probe:**
 `PlaceableIdentity` was `Exclude<Identity, { kind: "unnameable" }>`, which makes any **future** kind
 placeable by default. Adding a fourth kind and passing it to `scopeOf` produced **0** errors under
 `Exclude` and **1** under `Extract<Identity, { kind: "named" | "nobody" }>`. Now the placeable kinds
@@ -172,24 +171,21 @@ Also traced the second door into a scope and confirmed it is not a hole: `Payloa
 rebuilds a scope from the **stored** job row, which was filtered at enqueue time. Rows written before
 this step carry a null requester and still read as `nobody`.
 
-**`/sp-abstraction`.** Audited by the author. Measures: honesty 3 states admitted / 3 produced, gap 0.
+**Abstraction review.** States admitted 3, produced 3, gap 0.
 
 - **Finding, fixed:** the two `unnameable` branches were asymmetric. "No `collection` with several
   auth collections" logged a detailed diagnosis; **"no `id`" returned the same answer silently**, so a
   host would have got a `403` with no explanation. Both now say why, mutation-proven.
-- **A suspicion of mine, measured and confirmed:** `scopeOf` returning `{ requester: null }` rather
+- **A suspicion, measured and confirmed:** `scopeOf` returning `{ requester: null }` rather
   than `{}` is observed by **no reader** — `rebuildRequester` and the four `scope.requester?.…` sites
   treat null and undefined identically. Exactly one test sees it. Kept anyway, because AC7's promise
   was that the no-user case is untouched; recorded as a contract with a test, not with readers.
 
-**`/sp-red-test` in audit mode.** Stubbing `identityOf` reddened **52 checks across 9 files** — both
-identity suites, four enqueue suites and three auto-translate suites. **No toothless check found.**
-Scaffolding deleted, `git status` shown.
+**Suite run against an empty implementation.** Stubbing `identityOf` reddened **52 checks across 9
+files** — both identity suites, four enqueue suites and three auto-translate suites. **No toothless
+check found.**
 
-**`/sp-review-comments`.** 8 blocks, 8 verdicts: 4 KEEP, 3 REWRITE-COMMENT, 1 REWRITE-CODE. Inline
-density 0.5 per 10.
-
-Two of my own claims were overstated and are corrected:
+**Comment review.** Two claims were overstated and are corrected:
 
 - The hook's comment said a throw inside `afterChange` *"would roll back the save"*. Checked
   `swallowOrThrow`: it rethrows **only** when the caller is inside a transaction **and** the error
@@ -197,7 +193,7 @@ Two of my own claims were overstated and are corrected:
 - `scopeOf`'s docblock implied a downstream reader depends on the explicit `null`. None does, so the
   sentence would have stopped someone changing it for a reason that is not true. Cut.
 
-The REWRITE-CODE verdict removed a dead branch rather than explaining it: `named()` handled
+One finding removed a dead branch rather than explaining it: `named()` handled
 `asRequester` returning null, which cannot happen because both arguments are guarded above. A
 **non-null overload** on `asRequester` makes that structural — the branch and its comment are gone,
 and no cast was introduced.
@@ -206,14 +202,6 @@ and no cast was introduced.
 `stringContaining("auto-translate skipped")`, which **also matches the hook's other skip message**
 ("no source locale resolvable"). Tightened to the actor wording; a mutation substituting the other
 message now reddens it, where before it would have passed.
-
-### Verification after every fix
-
-`check-types` 0 · oxlint 43 warnings / 0 errors (baseline) · package suite **204 files / 2570
-checks**, up from 202 / 2559 by exactly +2 files and +11 checks (6 identity kinds, 3 enqueue refusal,
-2 hook skip) · real `turbo build` green, forced · integration **225 passed / 8 skipped**, with the
-pinned unattributed test green **and unmodified** · `sp-diff-checks` clean · `sp-lint-delta`
-introduced nothing.
 
 ### Owed to step 10
 

@@ -16,7 +16,7 @@ if (Array.isArray(existingAutoRun)) { … } else if (typeof existingAutoRun === 
 ```
 
 Give it one name, with its own tests, so it is read once instead of re-read at every review.
-**The owner's stated reason is review cost, not caller count** — a fiddly block that gets
+**The owner's reason is review cost, not caller count** — a fiddly block that gets
 re-read every time is worth a name even at one call site.
 
 ## What the helper must absorb
@@ -56,9 +56,9 @@ Converting those is a later pass.
 Three call sites are in scope: `config.jobs.tasks`, `config.jobs.workflows`,
 `config.jobs.autoRun`.
 
-## Phase 1 — what already exists
+## What already exists
 
-Climbed the ladder before planning anything new.
+Checked before planning anything new.
 
 - **The platform.** Payload exports nothing for registering a task, a workflow or an autoRun
   entry; every plugin writes into `config.jobs` directly.
@@ -83,7 +83,7 @@ workflow and autoRun entry Payload receives. Guarded by the existing characteris
 baseline, plus the integration suite on a real database.
 
 **Risk: low.** One file in scope, no public API, behaviour already pinned by a baseline test.
-Phase 5 therefore runs one reviewer rather than three.
+One review pass is therefore enough.
 
 ## The design
 
@@ -114,8 +114,7 @@ reason the owner asked for this at all.
 
 ### D3 — it lives in `src/server/shared/payload/contribute.ts`
 
-*Rejected: inside `payload-jobs-runner/`.* The folder convention recorded in the package's
-`CLAUDE.md` splits that module into `store/` (shapes of what is stored) and `model/`
+*Rejected: inside `payload-jobs-runner/`.* The package's folder convention splits that module into `store/` (shapes of what is stored) and `model/`
 (decisions); a config-time helper is neither, and the three out-of-scope call sites will
 want it shared.
 
@@ -125,7 +124,7 @@ the scope boundary forbids touching other packages.
 
 ### D4 — `config.onInit` joins, as a second helper named `chain`
 
-**Settled at the gate, 2026-10-09.** It is the same family — fold this plugin's contribution
+**Decided by the owner, 2026-10-09.** It is the same family — fold this plugin's contribution
 into whatever the host already had — but not the same operation: handlers return nothing, so
 there is no list to append to and no identity to compare.
 
@@ -157,9 +156,9 @@ Yes — `contribute` owes its callers three things a signature cannot state:
 3. **When the check happens.** For an array, at config time. For a function, at *call* time —
    so a host function that starts returning the same entry later still does not get it twice.
 
-That is what Phase 3 writes tests against, before the implementation.
+That is what the tests are written against, before the implementation.
 
-### Escalate to /sp-architect?
+### Does this need a separate design?
 
 No. One module, one small helper, no new dependency, no data migration.
 
@@ -190,7 +189,7 @@ when a task slug collides with a *workflow* slug.
 | 10 | Unit suite | `bunx vitest run` | ≥ 2026 passing, 0 failing |
 | 11 | Integration against a real database | `bun run test:integration:sqlite` | 224 passed / 7 skipped |
 | 12 | Types and the real `tsc` declaration build | `turbo run check-types --force`, `turbo run build` | both green |
-| 13 | The analyzer gains nothing | `sp-lint-delta.sh --base feat/translator-lifecycle-run-context` | nothing introduced |
+| 13 | The analyzer gains nothing | oxlint compared against `feat/translator-lifecycle-run-context` | nothing introduced |
 
 ## Criteria pre-flight — run 2026-10-09 against the untouched tree
 
@@ -216,12 +215,12 @@ when a task slug collides with a *workflow* slug.
 - Two overloads can quietly pick the wrong one. The call sites are type-checked, and the
   `Field[]` baseline plus the integration suite catch a wrong registration.
 
-## Human choices
+## Decisions by the owner
 
 - Review cost, not caller count, is the criterion for naming this — stated by the owner.
 - Return rather than mutate — chosen by the owner over mutate-by-key.
 - Scope limited to files already in the working diff — set by the owner.
-- `config.onInit` joins, as a separate `chain` — chosen at the gate over leaving it inline
+- `config.onInit` joins, as a separate `chain` — chosen by the owner over leaving it inline
   (which would have left the only hand-rolled block in `configure`) and over folding it into
   `contribute` (two operations under one name).
 - `README.md` is the owner's; this task does not touch it.
@@ -229,21 +228,17 @@ when a task slug collides with a *workflow* slug.
 
 ## Review log
 
-_(appended by each review pass)_
-
-### 2026-10-09 · phase 5 verification
+### 2026-10-09 · verification
 
 - **Checks:** unit 2045/146 files · `turbo run check-types --force` 9/9 · `bunx oxlint` 0 errors ·
   `turbo run build` green including the real `tsc` declaration build · integration on SQLite
   224 passed / 7 skipped · the `Field[]` baseline guard unmoved.
-- **Gates:** `sp-diff-checks` clean, 5 checks; `sp-lint-delta --base feat/translator-lifecycle-run-context`
-  (mode=two-run) nothing introduced — the single line it prints, `pickHost` in `model/planEnqueue.ts`,
-  is a path artifact of an earlier folder move and warned identically before it.
-- **Reviewer:** one, vector `full` (risk was low). **No findings.** It verified rather than read:
-  ran the type-check and both suites itself, grepped the package for any other writer of
+- **Lint against `feat/translator-lifecycle-run-context`:** nothing introduced — the one warning
+  reported, `pickHost` in `model/planEnqueue.ts`, comes from an earlier folder move and predates this.
+- **Review:** one pass, **no findings.** It ran the type-check and both suites, grepped the package for any other writer of
   `config.jobs.tasks/workflows/autoRun` and found none, and diffed against the branch to confirm
   `chain` leaves the host handler's error path exactly as it was.
-- **One fact it established that the design had assumed:** Payload declares `jobs.tasks` and
+- **One fact the review established that the design had assumed:** Payload declares `jobs.tasks` and
   `jobs.workflows` as plain arrays (`queues/config/types/index.d.ts:197,203`); `jobs.autoRun` at
   :127 is the only polymorphic one. So the two `contribute` overloads cannot resolve wrongly at any
   in-scope call site, and the polymorphic branch exists for exactly one field.
@@ -252,11 +247,8 @@ _(appended by each review pass)_
   implementation → green 15/15 → four mutations, one per contract clause, three of which turned
   exactly one named check red. The defect test was red against the real code first.
 - **Criteria:** 13 of 13 met.
-- **Comment gate:** not run as a skill; the five comments this change adds were judged by hand —
-  four docblocks stating why a type or a promise exists, one inline note explaining why a fixture's
+- **Comments:** the five comments this change adds were reviewed — four docblocks stating why a type or a promise exists, one inline note explaining why a fixture's
   host function changes its answer between calls. No comment restates what the code does.
 - **Left open:** the three out-of-scope sites (`PluginConfigBuilder`, `Provenance.wiring`,
   `plugin.ts`) still hand-roll their own; `packages/payload-plugin-scheduling/src/utils/overrideJobs.ts`
   writes the same chaining by hand in another package.
-- **Pin:** not set. The working diff holds three tasks' work and this pass reviewed only this one's
-  files; a pin would claim more than was verified.

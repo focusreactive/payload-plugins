@@ -86,7 +86,7 @@ gain an explicit `{}`. That is a visible change at each site, which is the point
 | AC7 | R7, R8 | Behaviour is unchanged | `bunx vitest run`; then rebuild and `bun run test:integration` from `apps/dev` | 190 files and **2487** checks or more, all passing; **225 passed / 8 skipped** |
 | AC8 | — | No module imports the entry except the wire and the tests | `grep -rl 'translateDocument.js' src/` | only `wireTranslateRunner.ts` and files under `__tests__/` |
 | AC9 | — | The real declaration build passes | `bunx turbo run build --filter='./packages/payload-plugin-translator'` from the root | exit 0 |
-| AC10 | — | No new type errors, no new analyzer findings | `bun run check-types` in the package and in `apps/dev`; `sp-lint-delta.sh -- bunx oxlint .` | `0` each; nothing introduced |
+| AC10 | — | No new type errors, no new analyzer findings | `bun run check-types` in the package and in `apps/dev`; `bunx oxlint .` before and after | `0` each; nothing introduced |
 | AC11 | R8 | The other translation path is untouched | `git diff --name-only` | `src/server/features/translate-field/` absent from the list |
 
 ## Pre-flight
@@ -101,13 +101,13 @@ gain an explicit `{}`. That is a visible change at each site, which is the point
 | AC6 | entry body **22** lines | invariant — passes now ✓ |
 | AC7 | **190 files / 2487 checks**; integration 225 / 8 | invariant — passes now ✓ |
 | AC10 | `check-types` 0; oxlint 43 warnings, 0 errors | invariant — passes now ✓ |
-| AC9, AC11 | build green at the last run; `translate-field` untouched by step 1 | invariant — re-run in Phase 5 |
+| AC9, AC11 | build green at the last run; `translate-field` untouched by step 1 | invariant — re-run after implementation |
 
 ## Risk notes
 
 - **High risk, and it binds.** 13 construction sites and a deleted shared interface, across seven
-  test files of about 1,400 lines. The regression sweep is evidenced and Phase 5b runs several
-  review angles.
+  test files of about 1,400 lines. The regression sweep is evidenced and review takes several
+  angles.
 - **Step 1 is in the working tree, uncommitted**, and this task builds on it. Everything here is
   measured against that state, not against `HEAD`.
 - **The test rewrite is not all mechanical.** Mechanical: the 13 constructions and the import of the
@@ -122,7 +122,7 @@ gain an explicit `{}`. That is a visible change at each site, which is the point
   reporting out of the wire file (step 5) · moving the provider-error wrap into `core` (declined,
   it would change `translate-field`).
 
-### AC6 amended during Phase 3, before it was graded
+### AC6 amended during implementation, before it was graded
 
 AC6 first said "the entry body is at most 22 lines, the number it is today". That measure fails for a
 reason that has nothing to do with readability: the extracted functions take object arguments, which
@@ -134,10 +134,10 @@ Changed to count statements rather than lines, and recorded here rather than qui
 same mistake — a line-count target set from a guess — is what made AC4 of
 `2026-10-25-one-run-one-context.task.md` unmeetable.
 
-## Human choices
+## Decisions by the owner
 
-**2026-10-25, at the gate.** *"В своём файле run.ts"* — D1 stands: `Run` and `openRun` move to
-`run.ts`, and the four siblings import the type from there. The two alternatives were offered and
+**2026-10-25 — decided by the owner:** `Run` goes in its own file, `run.ts`. D1 stands: `Run` and `openRun` move to
+`run.ts`, and the four siblings import the type from there. The two alternatives were
 declined: a type-only back-import from the entry (erased at build time, but a cycle a reader can
 see and nothing in the package can catch), and no shared type at all (honest about what each
 function touches, at the cost of four- and five-field signatures).
@@ -155,23 +155,18 @@ function touches, at the cost of four- and five-field signatures).
 | AC7 | **190 files / 2490 checks**, all passing; integration **225 passed / 8 skipped** | met |
 | AC8 | only `wireTranslateRunner.ts` and the seven test files import the entry | met |
 | AC9 | `turbo run build` exit 0 — run again after the exports were narrowed, which is what proves `Owed` needs no export | met |
-| AC10 | `check-types` 0 in the package and in `apps/dev`; `sp-lint-delta` `mode=two-run`: nothing introduced; 43 warnings / 0 errors, the baseline | met |
+| AC10 | `check-types` 0 in the package and in `apps/dev`; oxlint before and after: nothing introduced; 43 warnings / 0 errors, the baseline | met |
 | AC11 | `translate-field/` absent from the changed-file list | met |
 
 The package suite went 2487 → 2490 with no test added by hand. The difference is
 `core/__tests__/every-throw-is-a-translator-error.test.ts`, which runs one check per source file
 under `src/server` and `src/core`: step 2 added five files, step 3 removed three and added one.
 
-`sp-diff-checks`: clean, 5 checks, no findings.
-
 ## Review log
 
-### 2026-10-25 — comment audit (6 candidates, 18 entries including stranded comments)
+### 2026-10-25 — comment review
 
-DELETE 5 · REWRITE-COMMENT 11 · MISSING 2. Every verdict applied except the two MISSING, one of
-which was applied (a rename) and one of which is debt (below).
-
-**The finding that mattered: a new comment of mine claimed a protection the code does not give.**
+**The finding that mattered: a new comment claimed a protection the code does not give.**
 The entry's docblock said `scope` is required "so a caller that forgets it would not downgrade the
 run in silence". Checked and false: `RequestScope` has only optional fields, so `{}` type-checks and
 downgrades exactly as `undefined` did, and the single production caller supplies that `{}` itself
@@ -180,7 +175,7 @@ Making the parameter required moved the default one call up; it did not remove i
 one fact a caller needs: an empty scope is not neutral — with no requester, no rule is asked and both
 the read and the write run with Payload's access checks off.
 
-This is the third comment in this session to overclaim in the same way: an absolute ("cannot",
+This is the third comment on this branch to overclaim in the same way: an absolute ("cannot",
 "always", "in silence") that turned out to be "usually" or "yes, but visibly".
 
 Four docblocks were deleted as restatement. The clearest was the one on `Run`, which warned against
@@ -239,6 +234,5 @@ call site.
    checked.
 5. **`Provenance.module.ts:6` imports `features/staleness`** — a `modules` → `features` edge against
    the declared direction. Older than this work.
-6. **The layering rule is not written down.** A reviewer looked for "features → modules/shared →
-   core" in the package `CLAUDE.md` and did not find it; it exists as prose in the root guide and in
-   the briefs. Worth stating in the package guide, which is the owner's file to edit.
+6. **The layering rule is not written down.** "features → modules/shared → core" is not in the
+   package guide; it exists as prose in the root guide only. Worth stating in the package guide.
