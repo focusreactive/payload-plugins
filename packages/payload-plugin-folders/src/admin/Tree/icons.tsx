@@ -32,3 +32,32 @@ export const MoreIcon = () => (
     <circle cx="12.5" cy="8" r="1.25" />
   </svg>
 );
+
+/** Two chain links, whole when the field follows its source and apart when it does not. */
+export const LinkIcon = ({ isLinked }: { isLinked: boolean }) => (
+  <svg
+    aria-hidden="true"
+    className="fr-folders-icon"
+    fill="none"
+    height="16"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="1.5"
+    viewBox="0 0 16 16"
+    width="16"
+  >
+    {isLinked ? (
+      <>
+        <path d="M6.75 9.25a2.5 2.5 0 0 0 3.5 0l2.25-2.25a2.5 2.5 0 0 0-3.5-3.5l-.75.75" />
+        <path d="M9.25 6.75a2.5 2.5 0 0 0-3.5 0L3.5 9a2.5 2.5 0 0 0 3.5 3.5l.75-.75" />
+      </>
+    ) : (
+      <>
+        <path d="M7.5 4.25 8 3.75a2.5 2.5 0 0 1 3.5 3.5L10.5 8.25" />
+        <path d="M8.5 11.75 8 12.25a2.5 2.5 0 0 1-3.5-3.5l1-1" />
+        <path d="M2.5 2.5l11 11" />
+      </>
+    )}
+  </svg>
+);

@@ -3,6 +3,10 @@ import { useCallback, useMemo } from "react";
 import type { ConfirmMoves } from "../../types.js";
 import { ListHeader, useLocaleCount } from "../compat.js";
 import type { Translate } from "../compat.js";
+import { buildCreateMenu, createPageEntryPrefix } from "../Create/createMenu.js";
+import { CreateMenuButton } from "../Create/CreateMenuButton.js";
+import { pageTypeOptionsOf } from "../Create/pageTypes.js";
+import { useCreateFlow } from "../Create/useCreateFlow.js";
 import { useContextMenu } from "../ContextMenu/useContextMenu.js";
 import type { ContextMenuActions } from "../ContextMenu/useContextMenu.js";
 import { useRootPageFlow } from "../ContextMenu/useRootPageFlow.js";
@@ -27,6 +31,8 @@ import type { TreeItem } from "../../types.js";
 export type TreeWorkspaceProps = {
   adminRoute: string;
   confirmMoves: ConfirmMoves;
+  /** Page collections with drafts: a page of one is created as a draft. */
+  draftCollections: readonly string[];
   enforceAllowedTypesOnMove: boolean;
   foldersSlug: string;
   /** The host set `admin.previewUrl`: the context menu offers "View page". */
@@ -52,6 +58,7 @@ export type TreeWorkspaceProps = {
 export const TreeWorkspace = ({
   adminRoute,
   confirmMoves,
+  draftCollections,
   enforceAllowedTypesOnMove,
   foldersSlug,
   hasPreviewUrl,
@@ -154,15 +161,53 @@ export const TreeWorkspace = ({
     [startDropMove, state, translate]
   );
 
+  const createFlow = useCreateFlow({
+    adminRoute,
+    apiContext,
+    draftCollections,
+    foldersSlug,
+    onOpenPage,
+    state,
+    store,
+    translate,
+    typeLabels,
+  });
+  const { startFolder, startPage } = createFlow;
+  // The header creates at the top level until zooming (P-35) gives it a folder to create in.
+  const createMenuGroups = useMemo(
+    () => buildCreateMenu(pageTypeOptionsOf(null, typeLabels)),
+    [typeLabels]
+  );
+  const selectCreateEntry = useCallback(
+    (entryId: string) => {
+      if (entryId === "createFolder") {
+        startFolder(null);
+      } else if (entryId.startsWith(createPageEntryPrefix)) {
+        startPage(null, entryId.slice(createPageEntryPrefix.length));
+      }
+    },
+    [startFolder, startPage]
+  );
+
   const menuActions = useMemo<ContextMenuActions>(
     () => ({
+      createFolder: startFolder,
+      createPage: startPage,
       moveMode: startMoveMode,
       moveTo: startMoveTo,
       moveWithinFolder,
       openPage: onOpenPage,
       setAsRoot: startSetAsRoot,
     }),
-    [moveWithinFolder, onOpenPage, startMoveMode, startMoveTo, startSetAsRoot]
+    [
+      moveWithinFolder,
+      onOpenPage,
+      startFolder,
+      startMoveMode,
+      startMoveTo,
+      startPage,
+      startSetAsRoot,
+    ]
   );
   const contextMenu = useContextMenu({
     actions: menuActions,
@@ -175,6 +220,7 @@ export const TreeWorkspace = ({
     state,
     store,
     translate,
+    typeLabels,
   });
 
   const runAction = useCallback(
@@ -205,7 +251,19 @@ export const TreeWorkspace = ({
           translate={translate}
         />
       ) : null}
-      {selection.items.length === 0 && !moveMode.active ? <ListHeader title={title} /> : null}
+      {selection.items.length === 0 && !moveMode.active ? (
+        <ListHeader
+          Actions={[
+            <CreateMenuButton
+              groups={createMenuGroups}
+              key="create"
+              onSelect={selectCreateEntry}
+              translate={translate}
+            />,
+          ]}
+          title={title}
+        />
+      ) : null}
       <div className="fr-folders-body">
         <DragAndDropProvider
           disabled={isMoveBusy || moveMode.active}
@@ -244,6 +302,7 @@ export const TreeWorkspace = ({
       </div>
       {moveFlow.dialogs}
       {rootPageFlow.dialog}
+      {createFlow.dialogs}
       {contextMenu.menu}
     </>
   );

@@ -524,6 +524,27 @@ describe("GET /folders-tree/children", () => {
     expect(contact).toMatchObject({ depth: 2, fullPath: "/about/contact", slug: "contact" });
   });
 
+  it("a folder row says whether it locks the page types of its subfolders", async () => {
+    const { payload } = harness;
+    const request = await asUser(payload, "admin");
+    const locking = await payload.create({
+      collection: "folders",
+      data: { allowedTypes: ["pages"], lockSubfolderTypes: true, name: "locking", slug: "locking" },
+      depth: 0,
+      overrideAccess: true,
+    });
+    const plain = await createFolder(payload, { slug: "plain" });
+
+    const { items } = await children(request, { parent: null });
+
+    expect(items.find((item) => item.id === locking.id)).toMatchObject({
+      lockSubfolderTypes: true,
+    });
+    expect(items.find((item) => item.id === plain.id)).toMatchObject({
+      lockSubfolderTypes: false,
+    });
+  });
+
   it("access flags follow the user's role and the Where their access returns", async () => {
     const { payload } = harness;
     const tree = await seedTree(payload);

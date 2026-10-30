@@ -1,4 +1,6 @@
 import type { TreeItem } from "../../types.js";
+import { pageTypeEntries } from "../Create/createMenu.js";
+import type { PageTypeOption } from "../Create/pageTypes.js";
 import type { MenuEntry, MenuGroups, MenuReason } from "../Menu/menuEntries.js";
 import { rootUpdateModeOf } from "./rootPage.js";
 import type { ExistingRoot } from "./rootPage.js";
@@ -15,6 +17,8 @@ export type ContextMenuContext = {
   isBusy: boolean;
   /** The row the menu opened on. */
   item: TreeItem;
+  /** The page types a new page in the row's folder can have, default first; empty for a page. */
+  pageTypes: readonly PageTypeOption[];
   /** The root page the item's folder already has, which Set as root page cannot replace. */
   rootPage: ExistingRoot;
   /** The loaded rows of the item's folder, in order. */
@@ -110,6 +114,33 @@ export const contextMenuDefinitions: ContextMenuDefinition[] = [
         : null,
     group: "open",
     id: "openInNewTab",
+  },
+  {
+    // Creating adds to the folder, so it needs the same right as changing it; the rows carry no
+    // `create` flag, and the server checks again.
+    build: ({ item, pageTypes }) =>
+      item.kind === "folder" && pageTypes.length > 0
+        ? {
+            children: pageTypeEntries(pageTypes),
+            id: "createPage",
+            label: { key: "menuCreatePage" },
+            reason: item.access.update ? null : noAccess,
+          }
+        : null,
+    group: "create",
+    id: "createPage",
+  },
+  {
+    build: ({ item }) =>
+      item.kind === "folder"
+        ? {
+            id: "createFolder",
+            label: { key: "menuCreateFolder" },
+            reason: item.access.update ? null : noAccess,
+          }
+        : null,
+    group: "create",
+    id: "createFolder",
   },
   {
     // A page that is already the root has Unset root page instead, which a later ticket adds.

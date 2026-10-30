@@ -32,26 +32,36 @@ export const rootPageBodyOf = (item: TreeItem): Record<string, boolean | string>
 export type ExistingRoot = { title: string } | "unknown" | null;
 
 /**
- * Whether the folder the page sits in already has a root page, from the rows on screen: another
- * page of that folder that is the root, else the folder's own `hasRootPage` flag. The server
- * checks again when the save goes live (spec section 4).
+ * Whether a folder already has a root page (`null` is the top level), from the rows on screen: a
+ * page of that folder that is the root, else the folder's own `hasRootPage` flag. `ignoring` is a
+ * page that does not count, the one being made the root. The server checks again when the save
+ * goes live (spec section 4).
  */
-export const existingRootOf = (item: TreeItem, state: TreeStoreState): ExistingRoot => {
-  const siblings = state.childrenByFolder[folderKeyOf(item.parentId)]?.items ?? [];
+export const existingRootIn = (
+  state: TreeStoreState,
+  folderId: FolderId | null,
+  ignoring?: TreeItem
+): ExistingRoot => {
+  const siblings = state.childrenByFolder[folderKeyOf(folderId)]?.items ?? [];
   const root = siblings.find(
     (sibling) =>
       sibling.kind === "page" &&
       sibling.isFolderRoot === true &&
-      itemKeyOf(sibling) !== itemKeyOf(item)
+      (ignoring === undefined || itemKeyOf(sibling) !== itemKeyOf(ignoring))
   );
   if (root) {
     return { title: root.title };
   }
-  if (item.parentId === null) {
+  if (folderId === null) {
     return null;
   }
-  return findLoadedFolder(state, item.parentId)?.hasRootPage === true ? "unknown" : null;
+
+  return findLoadedFolder(state, folderId)?.hasRootPage === true ? "unknown" : null;
 };
+
+/** `existingRootIn` for the folder a page sits in, not counting the page itself. */
+export const existingRootOf = (item: TreeItem, state: TreeStoreState): ExistingRoot =>
+  existingRootIn(state, item.parentId, item);
 
 /**
  * What the confirmation shows for a live root change: the page's URL becomes its folder's path.

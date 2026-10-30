@@ -198,6 +198,8 @@ export type TreeItem = {
   id: number | string;
   isFolderRoot?: boolean;
   kind: "folder" | "page";
+  /** Folders only: the folder hands its page types to every subfolder (the new-folder dialog reads it). */
+  lockSubfolderTypes?: boolean;
   orderKey: string | null;
   parentId: number | string | null;
   /** The segment the item has in the requested locale, own or fallen back to. */

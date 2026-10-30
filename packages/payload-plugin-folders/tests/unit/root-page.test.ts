@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  existingRootIn,
   existingRootOf,
   rootChangePreviewOf,
   rootPageBodyOf,
@@ -92,5 +93,29 @@ describe("rootChangePreviewOf", () => {
     expect(preview.samples).toEqual([
       { collection: "pages", from: "/company/contact", id: 10, locale: null, to: "/company" },
     ]);
+  });
+});
+
+describe("existingRootIn", () => {
+  it("finds the root page of a folder for a dialog that creates a page in it", () => {
+    const state = stateOf({
+      "5": [pageRow(11, "About Us", 5, { isFolderRoot: true }), pageRow(10, "Contact", 5)],
+      root: [folderRow(5, "Company", null, { hasRootPage: true })],
+    });
+
+    expect(existingRootIn(state, 5)).toEqual({ title: "About Us" });
+  });
+
+  it("answers unknown when only the folder knows, and none for a folder without one", () => {
+    expect(
+      existingRootIn(stateOf({ root: [folderRow(5, "Company", null, { hasRootPage: true })] }), 5)
+    ).toBe("unknown");
+    expect(existingRootIn(stateOf({ root: [folderRow(5, "Company")] }), 5)).toBeNull();
+  });
+
+  it("looks at the top level's pages for the site root page", () => {
+    const state = stateOf({ root: [pageRow(21, "Home", null, { isFolderRoot: true })] });
+
+    expect(existingRootIn(state, null)).toEqual({ title: "Home" });
   });
 });

@@ -24,6 +24,7 @@ const contextFor = (
   hasPreviewUrl: false,
   isBusy: false,
   item,
+  pageTypes: [],
   rootPage: null,
   siblings: [pageRow(1, "Before", 5), item, pageRow(3, "After", 5)],
   targets: [item],
@@ -42,6 +43,7 @@ describe("buildContextMenu, which entries a row gets", () => {
   it("gives a folder no Open in new tab and no Set as root page", () => {
     expect(idsOf(contextFor(folderRow(2, "News", 5)))).toEqual([
       ["open"],
+      ["createFolder"],
       ["move", "moveTo", "moveUp", "moveDown"],
       ["copyUrl"],
     ]);
@@ -52,9 +54,9 @@ describe("buildContextMenu, which entries a row gets", () => {
 
     expect(idsOf(contextFor(page))).not.toContainEqual(expect.arrayContaining(["viewPage"]));
     expect(idsOf(contextFor(page, { hasPreviewUrl: true }))[2]).toEqual(["copyUrl", "viewPage"]);
-    expect(idsOf(contextFor(folderRow(2, "News", 5), { hasPreviewUrl: true }))[2]).toEqual([
-      "copyUrl",
-    ]);
+    expect(
+      idsOf(contextFor(folderRow(2, "News", 5), { hasPreviewUrl: true })).flat()
+    ).not.toContain("viewPage");
   });
 
   it("leaves Set as root page out for a page that already is the root", () => {

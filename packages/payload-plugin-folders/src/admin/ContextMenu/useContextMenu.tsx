@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { TreeItem } from "../../types.js";
+import { createPageEntryPrefix } from "../Create/createMenu.js";
+import { pageTypeOptionsOf } from "../Create/pageTypes.js";
 import { fetchPreviewUrl } from "../api.js";
 import type { FoldersApiContext } from "../api.js";
 import { editViewUrl } from "../compat.js";
@@ -21,6 +23,10 @@ import { siblingMoveOf } from "./siblingMove.js";
 
 /** The flows a menu entry starts; each one belongs to the ticket that built it. */
 export type ContextMenuActions = {
+  /** "Create folder here": opens New folder inside this folder. */
+  createFolder: (folder: TreeItem) => void;
+  /** An entry of "Create page here": opens New page in this folder with that page type. */
+  createPage: (folder: TreeItem, collection: string) => void;
   /** "Move": starts Move mode for these rows. */
   moveMode: (items: readonly TreeItem[]) => void;
   /** "Move to...": opens the folder picker for these rows. */
@@ -46,6 +52,8 @@ export type ContextMenuOptions = {
   state: TreeStoreState;
   store: TreeStore;
   translate: Translate;
+  /** Page collection slug to label, in the host's order. */
+  typeLabels: Readonly<Record<string, string>>;
 };
 
 type OpenRequest = {
@@ -79,6 +87,7 @@ export const useContextMenu = ({
   state,
   store,
   translate,
+  typeLabels,
 }: ContextMenuOptions): ContextMenuApi => {
   const [request, setRequest] = useState<OpenRequest | null>(null);
 
@@ -112,11 +121,12 @@ export const useContextMenu = ({
       hasPreviewUrl,
       isBusy,
       item,
+      pageTypes: item.kind === "folder" ? pageTypeOptionsOf(item, typeLabels) : [],
       rootPage: item.kind === "page" ? existingRootOf(item, state) : null,
       siblings: entry?.items ?? [],
       targets: isTicked && selection.items.length > 1 ? selection.items : [item],
     };
-  }, [hasPreviewUrl, isBusy, item, selection, state]);
+  }, [hasPreviewUrl, isBusy, item, selection, state, typeLabels]);
 
   const groups = useMemo(
     () => (context === null ? [] : buildContextMenu(context, definitions)),
@@ -221,7 +231,14 @@ export const useContextMenu = ({
           void viewPage(target);
           break;
         }
+        case "createFolder": {
+          actions.createFolder(target);
+          break;
+        }
         default: {
+          if (entryId.startsWith(createPageEntryPrefix)) {
+            actions.createPage(target, entryId.slice(createPageEntryPrefix.length));
+          }
           break;
         }
       }

@@ -246,3 +246,22 @@ test("Open on a page opens its edit view, and on a folder expands it", async ({ 
   await menuItem(page, "Open").click();
   await expect(page).toHaveURL(/\/admin\/collections\/pages\/\d+$/u);
 });
+
+test("right click on a folder lists Create page here with the folder's types", async ({ page }) => {
+  await openContentTree(page);
+  await expandFolder(page, "Blog");
+
+  // Blog takes every type; the page type comes first because it is listed first.
+  await openRowMenu(folderRow(page, "Blog"));
+  await expect(menuItem(page, "Create folder here")).toBeVisible();
+  await menuItem(page, "Create page here").click();
+  const submenu = page.getByTestId("context-submenu");
+  await expect(submenu.getByRole("menuitem")).toHaveText(["Page", "Blog post"]);
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
+
+  // 2026 takes Blog posts only, and that is its default.
+  await openRowMenu(folderRow(page, "2026"));
+  await menuItem(page, "Create page here").click();
+  await expect(submenu.getByRole("menuitem")).toHaveText(["Blog postdefault"]);
+});

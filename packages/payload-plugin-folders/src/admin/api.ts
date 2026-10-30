@@ -244,6 +244,25 @@ export const postMove = (context: FoldersApiContext, body: MoveBody): Promise<Mo
 
 export type { MovePreview, MoveResult };
 
+export type SegmentCheckResponse = { message?: string; ok: boolean };
+
+/** Whether `segment` is free in a folder (`null` is the top level), for the create dialogs. */
+export const fetchCheckSegment = (
+  context: FoldersApiContext,
+  { exclude, parent, segment }: { exclude?: ItemRef; parent: FolderId | null; segment: string },
+  signal?: AbortSignal
+): Promise<SegmentCheckResponse> =>
+  getJson<SegmentCheckResponse>(
+    context,
+    "check-segment",
+    {
+      exclude: exclude === undefined ? undefined : `${exclude.collection}:${exclude.id}`,
+      parent: parent === null ? "root" : String(parent),
+      segment,
+    },
+    signal
+  );
+
 /** The host's "View page" link for a page's path. */
 export const fetchPreviewUrl = (
   context: FoldersApiContext,

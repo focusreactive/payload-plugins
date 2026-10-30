@@ -19,6 +19,8 @@ import type { ConfirmMoves } from "../../types.js";
 export type TreeViewClientProps = {
   /** When to ask before a move (`admin.confirmMoves`). */
   confirmMoves: ConfirmMoves;
+  /** Page collections with drafts: a new page of one is created as a draft. */
+  draftCollections: string[];
   /** Whether a folder's allowed types refuse a move, for the folders the picker greys out. */
   enforceAllowedTypesOnMove: boolean;
   /** The slug of the folders collection. */
@@ -40,6 +42,7 @@ export type TreeViewClientProps = {
 /** Content tree view: the folders list view of the collection, as a tree (spec section 7.2). */
 export const TreeViewClient = ({
   confirmMoves,
+  draftCollections,
   enforceAllowedTypesOnMove,
   foldersSlug,
   hasPreviewUrl,
@@ -95,6 +98,7 @@ export const TreeViewClient = ({
         <TreeWorkspace
           adminRoute={adminRoute}
           confirmMoves={confirmMoves}
+          draftCollections={draftCollections}
           enforceAllowedTypesOnMove={enforceAllowedTypesOnMove}
           foldersSlug={foldersSlug}
           hasPreviewUrl={hasPreviewUrl}

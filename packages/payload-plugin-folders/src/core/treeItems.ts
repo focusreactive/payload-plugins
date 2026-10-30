@@ -352,6 +352,7 @@ const toFolderItem = ({
     hasRootPage: counts?.hasRootPage ?? false,
     id: folder.id,
     kind: "folder",
+    lockSubfolderTypes: folder.lockSubfolderTypes,
     orderKey: folder.orderKey,
     parentId: folder.parent,
     slug: slug === "" ? null : slug,

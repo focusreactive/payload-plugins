@@ -65,9 +65,15 @@ export const TreeViewServer = ({
     i18n
   );
 
+  // Only a collection with drafts has a draft to create: the others open their own form.
+  const draftCollections = Object.keys(settings.typeLabels).filter(
+    (slug) => payload.collections[slug as keyof typeof payload.collections]?.config.versions?.drafts
+  );
+
   return (
     <TreeViewClient
       confirmMoves={settings.confirmMoves ?? "urlChange"}
+      draftCollections={draftCollections}
       enforceAllowedTypesOnMove={settings.enforceAllowedTypesOnMove ?? true}
       foldersSlug={settings.foldersSlug ?? collectionConfig.slug}
       hasPreviewUrl={settings.hasPreviewUrl ?? false}
