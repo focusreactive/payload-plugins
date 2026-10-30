@@ -1,6 +1,7 @@
 import { downloadTemplate } from "giget";
 import { copyFile, mkdir, readdir, readlink, rm, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { readPluginVersions } from "./versions.js";
 
 export type TemplateSource = { kind: "github"; ref: string } | { kind: "local"; path: string };
 
@@ -97,7 +98,10 @@ async function resetMigrations(targetDir: string): Promise<void> {
   await writeFile(join(dir, "index.ts"), MIGRATION_STUB);
 }
 
-export async function fetchTemplate(targetDir: string, source: TemplateSource): Promise<void> {
+export async function fetchTemplate(
+  targetDir: string,
+  source: TemplateSource
+): Promise<Record<string, string>> {
   if (source.kind === "local") {
     await copyLocal(source.path, targetDir);
   } else {
@@ -109,9 +113,13 @@ export async function fetchTemplate(targetDir: string, source: TemplateSource): 
     });
   }
 
+  const pluginVersions = await readPluginVersions(targetDir);
+
   await Promise.all(
     PRUNE_PATHS.map((path) => rm(join(targetDir, path), { recursive: true, force: true }))
   );
 
   await resetMigrations(targetDir);
+
+  return pluginVersions;
 }

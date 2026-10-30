@@ -129,8 +129,9 @@ async function main(): Promise<void> {
 
   const s = spinner();
   s.start(`Fetching template from ${describeSource(answers)}`);
+  let pluginVersions: Record<string, string>;
   try {
-    await fetchTemplate(answers.targetDir, answers.source);
+    pluginVersions = await fetchTemplate(answers.targetDir, answers.source);
     s.stop("Template fetched");
   } catch (err) {
     s.stop("Template fetch failed");
@@ -140,7 +141,7 @@ async function main(): Promise<void> {
 
   s.start("Applying configuration");
   try {
-    await applyTransforms(answers);
+    await applyTransforms(answers, pluginVersions);
     s.stop("Configuration applied");
   } catch (err) {
     s.stop("Configuration failed");

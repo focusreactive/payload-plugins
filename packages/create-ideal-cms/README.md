@@ -45,7 +45,10 @@ my-app/
 ```
 
 The published `@focus-reactive/payload-plugin-*` packages are added to
-`apps/cms` as regular dependencies at their latest known versions.
+`apps/cms` as regular dependencies, pinned to the exact versions released from
+the same revision as the template — so a fresh project always starts on the
+newest plugins that match its code, and stays independent afterwards. If a
+version isn't on npm yet, the plugin's `latest` release is used instead.
 
 ## Flags
 
