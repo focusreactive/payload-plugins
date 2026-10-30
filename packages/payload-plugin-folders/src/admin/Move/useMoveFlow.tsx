@@ -46,6 +46,8 @@ export type MoveFlow = {
   dialogs: ReactNode;
   /** A move is in flight; a second one would be dropped, so what starts one is disabled. */
   isMoving: boolean;
+  /** A drop is reading its preview: a second drop would be dropped too, so drags wait for it. */
+  isPreviewing: boolean;
   /**
    * Moves rows that were dropped on a gap or a folder: reads the preview, asks the confirmation the
    * mode needs, and moves. `selection` is the ticked rows when the drag carried them, else empty.
@@ -104,6 +106,7 @@ export const useMoveFlow = ({
   // A drop reads its preview before it moves; a second drop in that time would be dropped too.
   const previewing = useRef(false);
   const [isMoving, setIsMoving] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
 
   const options = store.getOptions();
   const baseUrl = options?.baseUrl ?? "";
@@ -231,6 +234,7 @@ export const useMoveFlow = ({
         return;
       }
       previewing.current = true;
+      setIsPreviewing(true);
       try {
         const roots = rootsOfSelection(drop.items);
         const preview = await previewMove(context, buildMoveBody(roots, drop.target));
@@ -239,6 +243,7 @@ export const useMoveFlow = ({
         showFailure(error, null);
       } finally {
         previewing.current = false;
+        setIsPreviewing(false);
       }
     },
     [context, proceed, showFailure]
@@ -279,7 +284,10 @@ export const useMoveFlow = ({
         }}
         onReload={() => {
           void store.refetchVisible();
-          onMoved();
+          // A drag of a row that was not ticked carried no selection, so the ticks are not its to clear.
+          if (pending.current?.selection !== null) {
+            onMoved();
+          }
         }}
         request={confirmRequest}
         translate={translate}
@@ -287,5 +295,5 @@ export const useMoveFlow = ({
     </>
   );
 
-  return { dialogs, isMoving, startDropMove, startMoveTo };
+  return { dialogs, isMoving, isPreviewing, startDropMove, startMoveTo };
 };

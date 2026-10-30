@@ -30,6 +30,24 @@ export const startDrag = async (page: Page, source: Locator): Promise<void> => {
   await page.mouse.move(x + 12, y + 12, { steps: 4 });
 };
 
+/**
+ * Presses the mouse on the middle of an element, which may be the row's name, its checkbox or its
+ * chevron, and moves well past the five pixels a drag takes. Returns where it pressed.
+ */
+export const pressAndPull = async (
+  page: Page,
+  element: Locator
+): Promise<{ x: number; y: number }> => {
+  const box = await boxOf(element);
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + 14, y + 14, { steps: 4 });
+
+  return { x, y };
+};
+
 /** Moves a pressed mouse onto a zone of another row, in steps like a hand. */
 export const moveOver = async (
   page: Page,

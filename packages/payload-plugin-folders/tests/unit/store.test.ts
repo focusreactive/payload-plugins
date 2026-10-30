@@ -288,6 +288,31 @@ describe("the tree store", () => {
     expect(itemsByFolder(store)).toEqual(before);
   });
 
+  it("store lays moved rows from two folders out in the order the request lists them", async () => {
+    const server = createServer();
+    const store = createStore(server);
+    await openBoth(store);
+    const before = itemsByFolder(store);
+
+    // Gamma is first in Products, Beta second in Blog, Alpha first in Blog: sorted by position in
+    // their own folders the rows would come out Gamma, Alpha, Beta.
+    const handle = store.applyOptimisticMove({
+      items: [
+        { collection: "pages", id: 3 },
+        { collection: "pages", id: 2 },
+        { collection: "pages", id: 1 },
+      ],
+      position: "start",
+      toFolder: null,
+    });
+
+    expect(titlesIn(store, rootKey)).toEqual(["Gamma", "Beta", "Alpha", "Blog", "Products"]);
+
+    handle.rollback();
+
+    expect(itemsByFolder(store)).toEqual(before);
+  });
+
   it("store rolls back a reorder inside one folder to the original order", async () => {
     const server = createServer();
     const store = createStore(server);

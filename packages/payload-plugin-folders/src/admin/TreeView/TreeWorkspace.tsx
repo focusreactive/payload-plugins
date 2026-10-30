@@ -109,7 +109,7 @@ export const TreeWorkspace = ({
       )}
       <div className="fr-folders-body">
         <DragAndDropProvider
-          disabled={moveFlow.isMoving}
+          disabled={moveFlow.isMoving || moveFlow.isPreviewing}
           onDrop={(drop) => void startDropMove(drop)}
           rows={rows}
           rules={dropRules}

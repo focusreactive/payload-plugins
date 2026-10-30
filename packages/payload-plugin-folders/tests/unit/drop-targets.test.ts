@@ -411,6 +411,15 @@ describe("invalid targets", () => {
     });
   });
 
+  it("lets a root page keep its folder's depth, one level less than a page beside it", () => {
+    const { alpha, archive, state } = fixture();
+    // Archive is two deep: a page in it is three deep, and a root page in it is two.
+    const rootPage = { ...alpha, isFolderRoot: true };
+
+    expect(drop(state, [alpha], archive, "inside", { maxDepth: 2 })?.refusal?.kind).toBe("depth");
+    expect(drop(state, [rootPage], archive, "inside", { maxDepth: 2 })?.refusal).toBeNull();
+  });
+
   it("refuses a folder whose loaded rows would pass the depth limit", () => {
     const { archive, shop, state } = fixture();
     // Archive (2) with Deep (3) inside moves under Shop (1): Archive 2, Deep 3 stay at the limit...

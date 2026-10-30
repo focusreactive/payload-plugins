@@ -777,9 +777,9 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
     let insertedKeys = new Set<string>();
     // A folder still on its first load gets the server's answer, which commit reads again.
     if (target?.phase === "loaded") {
-      const moving = sources
-        .toSorted((left, right) => left.index - right.index)
-        .map(({ item }) => ({ ...item, parentId: move.toFolder }));
+      // In the order the request lists them: that is the order the server writes, so the rows do
+      // not jump when the answer is read. `sources` already follows `move.items`.
+      const moving = sources.map(({ item }) => ({ ...item, parentId: move.toFolder }));
       const afterIndex = move.after
         ? target.items.findIndex((item) => itemKeyOf(item) === itemKeyOf(move.after as ItemRef))
         : -1;

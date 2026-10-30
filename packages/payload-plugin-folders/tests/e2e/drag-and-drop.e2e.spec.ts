@@ -9,7 +9,7 @@ import {
   deletePage,
 } from "./helpers/content.js";
 import type { ChildRow } from "./helpers/content.js";
-import { dragRowTo, moveOver, rowTitlesIn, startDrag } from "./helpers/drag.js";
+import { dragRowTo, moveOver, pressAndPull, rowTitlesIn, startDrag } from "./helpers/drag.js";
 import { expandFolder, folderRow, openContentTree, pageRow, rowCheckbox } from "./helpers/tree.js";
 
 // The rows these tests drag are their own, in folders the tests create and remove, so the seeded
@@ -283,6 +283,8 @@ test("a three-item drag keeps their order", async ({ page, request }) => {
   );
   await confirm.getByRole("button", { exact: true, name: "Move" }).click();
   await expect(page.getByText("Moved 3 items")).toBeVisible();
+  // The drag carried the selection, so a move that went through clears it.
+  await expect(page.getByTestId("bulk-toolbar")).toHaveCount(0);
 
   await reloadTree(page);
   expect(titlesAndPaths(await childrenOf(request, destinationId))).toEqual(
@@ -417,6 +419,7 @@ test("a refused drop moves the row at once, then puts it back and offers Reload"
 }) => {
   await addPage(request, "Stale A");
   await addPage(request, "Stale B");
+  await addPage(request, "Stale C");
   await page.route("**/api/folders-tree/revision", (route) => route.abort());
   let refuse!: () => void;
   const gate = new Promise<void>((resolve) => {
@@ -439,24 +442,36 @@ test("a refused drop moves the row at once, then puts it back and offers Reload"
   });
   await openLab(page);
   await expect(pageRow(page, "Stale B")).toBeVisible();
-  const staleTitles = ["Stale A", "Stale B"];
-  expect(await rowTitlesIn(page, staleTitles)).toEqual(["Stale B", "Stale A"]);
+  const staleTitles = ["Stale A", "Stale B", "Stale C"];
+  expect(await rowTitlesIn(page, staleTitles)).toEqual(["Stale C", "Stale B", "Stale A"]);
+  await rowCheckbox(page, "Stale A").check();
+  await rowCheckbox(page, "Stale C").check();
 
+  // A and C travel together, to the top of the folder.
   await dragRowTo(page, pageRow(page, "Stale A"), pageRow(page, "Stale B"), "before");
 
   // The server has not answered, and the tree already shows the new order.
-  await expect.poll(() => rowTitlesIn(page, staleTitles)).toEqual(["Stale A", "Stale B"]);
+  await expect
+    .poll(() => rowTitlesIn(page, staleTitles))
+    .toEqual(["Stale C", "Stale A", "Stale B"]);
   refuse();
 
   await expect(
     page.getByText("This part of the tree changed. Reload and try again.")
   ).toBeVisible();
   await expect(page.getByRole("button", { exact: true, name: "Reload" })).toBeVisible();
-  await expect.poll(() => rowTitlesIn(page, staleTitles)).toEqual(["Stale B", "Stale A"]);
+  await expect
+    .poll(() => rowTitlesIn(page, staleTitles))
+    .toEqual(["Stale C", "Stale B", "Stale A"]);
   expect((await childrenOf(request, labId)).map((row) => row.title)).toEqual([
+    "Stale C",
     "Stale B",
     "Stale A",
   ]);
+  // The refused move keeps the rows ticked, so the editor can try again.
+  await expect(page.getByTestId("bulk-toolbar")).toContainText("2 items selected");
+  await expect(rowCheckbox(page, "Stale A")).toBeChecked();
+  await expect(rowCheckbox(page, "Stale C")).toBeChecked();
 });
 
 test("the list scrolls while a row is held near the bottom edge", async ({ page }) => {
@@ -477,4 +492,209 @@ test("the list scrolls while a row is held near the bottom edge", async ({ page 
   await page.keyboard.press("Escape");
   await page.mouse.up();
   expect(moveRequests.count()).toBe(0);
+});
+
+test("a drop before the first row asks for the start of its folder", async ({ page, request }) => {
+  const ids: Record<string, number> = {};
+  for (const title of ["Top A", "Top B", "Top C"]) {
+    ids[title] = await addPage(request, title);
+  }
+  const moveRequests = countMoveRequests(page);
+  await openLab(page);
+
+  // On screen: C, B, A. Before the first row is no row's "after": the folder's start.
+  await dragRowTo(page, pageRow(page, "Top A"), pageRow(page, "Top C"), "before");
+  await expect(page.getByText("Moved 1 item")).toBeVisible();
+
+  expect(moveRequests.bodies).toHaveLength(1);
+  const [body] = moveRequests.bodies as Record<string, unknown>[];
+  expect(body).toMatchObject({
+    items: [{ collection: "pages", id: ids["Top A"] }],
+    position: "start",
+    toFolder: labId,
+  });
+  expect(body).not.toHaveProperty("after");
+  await reloadTree(page);
+  expect((await childrenOf(request, labId)).map((row) => row.title)).toEqual([
+    "Top A",
+    "Top C",
+    "Top B",
+  ]);
+});
+
+test("releasing over the row after Escape does not click it", async ({ page, request }) => {
+  await addPage(request, "Escape Click");
+  await openLab(page);
+  const treeUrl = page.url();
+
+  // A page name: a click would open the page.
+  const pageName = pageRow(page, "Escape Click").getByTestId("row-name");
+  const pageStart = await pressAndPull(page, pageName);
+  await expect(overlay(page)).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(overlay(page)).toHaveCount(0);
+  await page.mouse.move(pageStart.x, pageStart.y, { steps: 4 });
+  await page.mouse.up();
+
+  // A folder: a click would close it.
+  const folderName = folderRow(page, "Drag Lab").getByTestId("row-name");
+  await expect(folderRow(page, "Drag Lab")).toHaveAttribute("aria-expanded", "true");
+  const folderStart = await pressAndPull(page, folderName);
+  await expect(overlay(page)).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(overlay(page)).toHaveCount(0);
+  await page.mouse.move(folderStart.x, folderStart.y, { steps: 4 });
+  await page.mouse.up();
+
+  // A click would already have happened.
+  await page.waitForTimeout(500);
+  expect(page.url()).toBe(treeUrl);
+  await expect(folderRow(page, "Drag Lab")).toHaveAttribute("aria-expanded", "true");
+  await expect(pageRow(page, "Escape Click")).toBeVisible();
+
+  // The blocker comes off after that release: the next click works again.
+  await folderRow(page, "Drag Lab").getByTestId("row-name").click();
+  await expect(folderRow(page, "Drag Lab")).toHaveAttribute("aria-expanded", "false");
+});
+
+test("no drag starts while a drop is reading its preview", async ({ page, request }) => {
+  await addPage(request, "Preview A");
+  await addPage(request, "Preview B");
+  await addPage(request, "Preview C");
+  await page.route("**/api/folders-tree/revision", (route) => route.abort());
+  let releasePreview!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    releasePreview = resolve;
+  });
+  await page.route("**/api/folders-tree/move/preview", async (route) => {
+    await gate;
+    await route.continue();
+  });
+  const moveRequests = countMoveRequests(page);
+  await openLab(page);
+
+  await dragRowTo(page, pageRow(page, "Preview A"), pageRow(page, "Preview C"), "before");
+  // The preview waits at the gate and no move has been sent: a second drag must not start, or its
+  // drop would be thrown away.
+  await startDrag(page, pageRow(page, "Preview B"));
+  await expect(overlay(page)).toHaveCount(0);
+  await page.mouse.up();
+  expect(moveRequests.count()).toBe(0);
+
+  releasePreview();
+  await expect(page.getByText("Moved 1 item")).toBeVisible();
+  expect(moveRequests.count()).toBe(1);
+  expect((await childrenOf(request, labId)).map((row) => row.title)).toEqual([
+    "Preview A",
+    "Preview C",
+    "Preview B",
+  ]);
+});
+
+test("a stale Reload keeps the ticks of rows the drag did not carry", async ({ page, request }) => {
+  const staleId = await addPage(request, "Reload Stale");
+  await addPage(request, "Reload Ticked");
+  await addPage(request, "Reload Other");
+  const newsId = await addFolder(request, "Drag Reload Away");
+  await page.route("**/api/folders-tree/revision", (route) => route.abort());
+  await openLab(page);
+  await expect(pageRow(page, "Reload Stale")).toBeVisible();
+
+  // Another editor moves the page while this tree still shows it in the lab.
+  const other = await request.post("/api/folders-tree/move", {
+    data: { items: [{ collection: "pages", id: staleId }], toFolder: newsId },
+  });
+  expect(other.ok()).toBe(true);
+
+  await rowCheckbox(page, "Reload Ticked").check();
+  // The dragged row is not ticked, so the drag carries it alone.
+  await dragRowTo(page, pageRow(page, "Reload Stale"), pageRow(page, "Reload Other"), "before");
+
+  const confirm = confirmDialog(page);
+  await expect(confirm.getByTestId("blocked-list")).toContainText("Reload Stale");
+  await confirm.getByRole("button", { exact: true, name: "Reload" }).click();
+  await expect(pageRow(page, "Reload Stale")).toHaveCount(0);
+
+  await expect(page.getByTestId("bulk-toolbar")).toContainText("1 item selected");
+  await expect(rowCheckbox(page, "Reload Ticked")).toBeChecked();
+  await deletePage(request, staleId);
+  createdPages.splice(createdPages.indexOf(staleId), 1);
+});
+
+test("pressing the checkbox or the chevron and moving starts no drag", async ({
+  page,
+  request,
+}) => {
+  await addPage(request, "Handle Probe");
+  const moveRequests = countMoveRequests(page);
+  await openContentTree(page);
+  await expandFolder(page, "Drag Lab");
+
+  const checkbox = rowCheckbox(page, "Handle Probe");
+  const checkboxStart = await pressAndPull(page, checkbox);
+  await expect(overlay(page)).toHaveCount(0);
+  await expect(page.locator("[data-drop]")).toHaveCount(0);
+  await page.mouse.move(checkboxStart.x + 200, checkboxStart.y, { steps: 4 });
+  await page.mouse.up();
+
+  const chevron = folderRow(page, "Drag Lab").getByTestId("expand-toggle");
+  const chevronStart = await pressAndPull(page, chevron);
+  await expect(overlay(page)).toHaveCount(0);
+  await expect(page.locator("[data-drop]")).toHaveCount(0);
+  await page.mouse.move(chevronStart.x + 200, chevronStart.y, { steps: 4 });
+  await page.mouse.up();
+
+  expect(moveRequests.count()).toBe(0);
+  expect((await childrenOf(request, labId)).map((row) => row.title)).toEqual(["Handle Probe"]);
+});
+
+test("a move of ticked rows that stay on screen clears the ticks", async ({ page, request }) => {
+  for (const title of ["Clear A", "Clear B", "Clear C"]) {
+    await addPage(request, title);
+  }
+  await openLab(page);
+  await rowCheckbox(page, "Clear A").check();
+  await rowCheckbox(page, "Clear C").check();
+  await expect(page.getByTestId("bulk-toolbar")).toContainText("2 items selected");
+
+  // A reorder inside the folder: the rows never leave the screen, so only the move's own
+  // clearing of the selection can take the ticks away.
+  await dragRowTo(page, pageRow(page, "Clear A"), pageRow(page, "Clear B"), "before");
+
+  await expect(page.getByText("Moved 2 items")).toBeVisible();
+  await expect(page.getByTestId("bulk-toolbar")).toHaveCount(0);
+  await expect(rowCheckbox(page, "Clear A")).not.toBeChecked();
+});
+
+test("a refused move of ticked rows puts their ticks back", async ({ page, request }) => {
+  await addPage(request, "Tick A");
+  await addPage(request, "Tick B");
+  await addFolder(request, "Drag Tick Destination");
+  await page.route("**/api/folders-tree/revision", (route) => route.abort());
+  await page.route("**/api/folders-tree/move", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({ errors: [{ message: "The move was refused" }] }),
+      contentType: "application/json",
+      status: 409,
+    });
+  });
+  await openLab(page);
+  await rowCheckbox(page, "Tick A").check();
+  await rowCheckbox(page, "Tick B").check();
+
+  // Into a closed folder: the rows leave the screen while the request is out, which drops their
+  // ticks, and only the refusal can bring them back.
+  await dragRowTo(
+    page,
+    pageRow(page, "Tick A"),
+    folderRow(page, "Drag Tick Destination"),
+    "inside"
+  );
+  await confirmDialog(page).getByRole("button", { exact: true, name: "Move" }).click();
+
+  await expect(page.getByText("The move was refused")).toBeVisible();
+  await expect(pageRow(page, "Tick A")).toBeVisible();
+  await expect(page.getByTestId("bulk-toolbar")).toContainText("2 items selected");
+  await expect(rowCheckbox(page, "Tick A")).toBeChecked();
+  await expect(rowCheckbox(page, "Tick B")).toBeChecked();
 });

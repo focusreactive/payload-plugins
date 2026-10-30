@@ -26,6 +26,26 @@ import type { RowHitData } from "./pointerSensors.js";
 /** How long a closed folder is hovered before it opens (spec section 7.3). */
 export const autoExpandDelayMs = 600;
 
+/**
+ * Swallows the click a cancelled drag still ends in. Pressing a row, dragging, pressing Escape and
+ * letting go over the row where the drag began makes the browser fire a click there, which would
+ * open a page or toggle a folder; dnd-kit swallows its own click for 50 ms after a drag, and a
+ * mouse held through an Escape is released later than that. The blocker comes off after the
+ * release, one tick later, because the click is dispatched right after the release.
+ */
+const blockClickAfterRelease = (): void => {
+  const block = (event: Event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+  const release = () => {
+    document.removeEventListener("pointerup", release, true);
+    setTimeout(() => document.removeEventListener("click", block, true), 0);
+  };
+  document.addEventListener("click", block, true);
+  document.addEventListener("pointerup", release, true);
+};
+
 /** The body classes the stylesheet turns into the grabbing and not-allowed cursors. */
 const draggingBodyClass = "fr-folders-dragging";
 const refusedBodyClass = "fr-folders-dragging--refused";
@@ -193,7 +213,10 @@ export const DragAndDropProvider = ({
         screenReaderInstructions: { draggable: "" },
       }}
       collisionDetection={rowUnderPointer}
-      onDragCancel={stop}
+      onDragCancel={() => {
+        stop();
+        blockClickAfterRelease();
+      }}
       onDragEnd={handleDragEnd}
       onDragMove={track}
       onDragOver={track}
