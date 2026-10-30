@@ -48,10 +48,17 @@ export const useRowDrag = (item: TreeItem, rowKey: string) => {
     [setActivatorNodeRef, setDraggableRef, setDroppableRef]
   );
 
+  // The keyboard sensor stays registered but is not wired to the row: a focused row now answers its
+  // own keys (the context menu's), and Enter or Space on it must not start a keyboard drag that has
+  // no drop logic until the keyboard ticket.
+  const pointerListeners = listeners
+    ? Object.fromEntries(Object.entries(listeners).filter(([name]) => name !== "onKeyDown"))
+    : undefined;
+
   return {
     indicator: indicator?.rowKey === rowKey ? { ...indicator, isRefused } : null,
     isDragged: draggedKeys.has(rowKey),
-    listeners,
+    listeners: pointerListeners,
     setRowRef,
   };
 };

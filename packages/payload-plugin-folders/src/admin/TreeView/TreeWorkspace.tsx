@@ -3,14 +3,20 @@ import { useCallback, useMemo } from "react";
 import type { ConfirmMoves } from "../../types.js";
 import { ListHeader, useLocaleCount } from "../compat.js";
 import type { Translate } from "../compat.js";
+import { useContextMenu } from "../ContextMenu/useContextMenu.js";
+import type { ContextMenuActions } from "../ContextMenu/useContextMenu.js";
+import { useRootPageFlow } from "../ContextMenu/useRootPageFlow.js";
 import { DragAndDropProvider } from "../DragAndDrop/DragAndDropProvider.js";
 import type { DropRules } from "../DragAndDrop/dropTargets.js";
+import type { MoveTarget } from "../Move/moveFlow.js";
 import { useMoveFlow } from "../Move/useMoveFlow.js";
+import { findLoadedFolder } from "../store.js";
 import type { TreeStore } from "../store.js";
 import { BulkToolbar } from "../Toolbar/BulkToolbar.js";
 import type { ToolbarAction } from "../Toolbar/toolbarActions.js";
 import { Tree } from "../Tree/Tree.js";
 import { useTreeData } from "../Tree/useTreeData.js";
+import { useApiContext } from "../useApiContext.js";
 import { useSelection } from "../useSelection.js";
 import type { TreeItem } from "../../types.js";
 
@@ -19,6 +25,8 @@ export type TreeWorkspaceProps = {
   confirmMoves: ConfirmMoves;
   enforceAllowedTypesOnMove: boolean;
   foldersSlug: string;
+  /** The host set `admin.previewUrl`: the context menu offers "View page". */
+  hasPreviewUrl: boolean;
   language: string;
   /** The deepest a URL may go. */
   maxDepth: number;
@@ -42,6 +50,7 @@ export const TreeWorkspace = ({
   confirmMoves,
   enforceAllowedTypesOnMove,
   foldersSlug,
+  hasPreviewUrl,
   language,
   maxDepth,
   onOpenPage,
@@ -83,6 +92,46 @@ export const TreeWorkspace = ({
     [enforceAllowedTypesOnMove, maxDepth, reservedRootSegments, typeLabels]
   );
 
+  const apiContext = useApiContext(store);
+  const rootPageFlow = useRootPageFlow({ apiContext, languageCount, state, store, translate });
+  const { start: startSetAsRoot } = rootPageFlow;
+
+  // Move up and Move down are single-row moves through the same plan, confirm and Undo as a drop.
+  const moveWithinFolder = useCallback(
+    (item: TreeItem, target: MoveTarget) => {
+      const folder = findLoadedFolder(state, item.parentId);
+      void startDropMove({
+        items: [item],
+        selection: null,
+        target,
+        targetTitle: folder?.title ?? translate("moveToRoot"),
+      });
+    },
+    [startDropMove, state, translate]
+  );
+
+  const menuActions = useMemo<ContextMenuActions>(
+    () => ({
+      moveTo: startMoveTo,
+      moveWithinFolder,
+      openPage: onOpenPage,
+      setAsRoot: startSetAsRoot,
+    }),
+    [moveWithinFolder, onOpenPage, startMoveTo, startSetAsRoot]
+  );
+  const contextMenu = useContextMenu({
+    actions: menuActions,
+    adminRoute,
+    apiContext,
+    hasPreviewUrl,
+    isBusy: moveFlow.isMoving || moveFlow.isPreviewing,
+    rows,
+    selection,
+    state,
+    store,
+    translate,
+  });
+
   const runAction = useCallback(
     (action: ToolbarAction) => {
       if (action === "moveTo") {
@@ -121,7 +170,9 @@ export const TreeWorkspace = ({
           <Tree
             adminRoute={adminRoute}
             language={language}
+            onOpenMenu={contextMenu.openMenu}
             onOpenPage={onOpenPage}
+            openMenuItemKey={contextMenu.openItemKey}
             pageSize={pageSize}
             rows={rows}
             selection={selection}
@@ -132,6 +183,8 @@ export const TreeWorkspace = ({
         </DragAndDropProvider>
       </div>
       {moveFlow.dialogs}
+      {rootPageFlow.dialog}
+      {contextMenu.menu}
     </>
   );
 };

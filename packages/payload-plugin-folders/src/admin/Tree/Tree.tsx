@@ -2,8 +2,10 @@ import { Button, CheckboxInput, ShimmerEffect } from "@payloadcms/ui";
 import { useCallback } from "react";
 
 import type { Translate } from "../compat.js";
+import type { MenuAnchor } from "../Menu/menuEntries.js";
 import type { SelectionApi } from "../useSelection.js";
 import type { FolderKey, TreeStore } from "../store.js";
+import type { TreeItem } from "../../types.js";
 import { TreeRow } from "./TreeRow.js";
 import type {
   ErrorRowModel,
@@ -17,7 +19,11 @@ export type TreeProps = {
   adminRoute: string;
   language: string;
   onOpenFolder?: (folderId: number | string) => void;
+  /** Opens a row's context menu; see `TreeRowProps.onOpenMenu`. */
+  onOpenMenu: (item: TreeItem, anchor: MenuAnchor, returnFocus: HTMLElement | null) => void;
   onOpenPage: (url: string) => void;
+  /** The key of the row whose context menu is open. */
+  openMenuItemKey: string | null;
   /** Rows per request, shown in the "Load more" label. */
   pageSize: number;
   /** The visible rows, from `useTreeData`: the caller reads them too, for the selection. */
@@ -156,7 +162,9 @@ export const Tree = ({
   adminRoute,
   language,
   onOpenFolder,
+  onOpenMenu,
   onOpenPage,
+  openMenuItemKey,
   pageSize,
   rows,
   selection,
@@ -188,7 +196,7 @@ export const Tree = ({
 
   return (
     <div
-      aria-colcount={5}
+      aria-colcount={6}
       aria-multiselectable="true"
       aria-label={translate("treeLabel")}
       aria-rowcount={rowCountIsKnown ? rows.length + 1 : -1}
@@ -218,6 +226,11 @@ export const Tree = ({
           <div className="fr-folders-cell fr-folders-cell--updated" role="columnheader">
             {translate("columnUpdated")}
           </div>
+          <div
+            aria-label={translate("columnActions")}
+            className="fr-folders-cell fr-folders-cell--menu"
+            role="columnheader"
+          />
         </div>
       </div>
       <div role="rowgroup">
@@ -227,10 +240,12 @@ export const Tree = ({
               return (
                 <TreeRow
                   adminRoute={adminRoute}
+                  isMenuOpen={openMenuItemKey === row.key}
                   isSelected={selection.isSelected(row.item)}
                   key={row.key}
                   language={language}
                   onOpenFolder={onOpenFolder}
+                  onOpenMenu={onOpenMenu}
                   onOpenPage={onOpenPage}
                   onSelectRange={selection.selectRange}
                   onToggleFolder={toggleFolder}

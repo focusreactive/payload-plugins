@@ -103,11 +103,23 @@ describe("foldersPlugin", () => {
       confirmMoves: "urlChange",
       enforceAllowedTypesOnMove: true,
       foldersSlug: "folders",
+      hasPreviewUrl: false,
       maxDepth: 20,
       pageSize: 50,
       reservedRootSegments: expect.arrayContaining(["admin", "api"]),
       typeLabels: { pages: { explicit: true, label: "Landing page" } },
     });
+  });
+
+  it("tells the tree view whether the host set a preview link, without the function itself", async () => {
+    const result = await foldersPlugin({
+      admin: { previewUrl: ({ fullPath }) => `https://preview.example.test${fullPath}` },
+      collections: { pages: true } as never,
+    })(buildHostConfig());
+
+    const folders = result.collections?.find((collection) => collection.slug === "folders");
+
+    expect(folders?.custom?.[pluginSlug]).toMatchObject({ hasPreviewUrl: true });
   });
 
   it("hands the tree view the slug of the folders collection, whatever the host named it", async () => {

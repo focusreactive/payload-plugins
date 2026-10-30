@@ -9,7 +9,9 @@
 
   .fr-folders-tree {
     --fr-folders-select-width: 2.5rem;
-    --fr-folders-columns: var(--fr-folders-select-width) minmax(0, 1fr) 5.5rem;
+    --fr-folders-menu-width: 2.5rem;
+    --fr-folders-columns: var(--fr-folders-select-width) minmax(0, 1fr) 5.5rem
+      var(--fr-folders-menu-width);
     --fr-folders-row-height: 2.25rem;
 
     border: var(--stroke-width-small) solid var(--color-border);
@@ -96,7 +98,7 @@
   @media (min-width: 769px) {
     .fr-folders-tree {
       --fr-folders-columns: var(--fr-folders-select-width) minmax(0, 1fr) 5.5rem minmax(7rem, 13rem)
-        9rem;
+        9rem var(--fr-folders-menu-width);
     }
 
     .fr-folders-cell--type,
@@ -625,6 +627,135 @@
     border-radius: var(--radius-medium);
     background: var(--color-bg-inverse);
     color: var(--color-text-oninverse);
+    font-size: var(--text-body-small-font-size);
+    line-height: var(--text-body-small-line-height);
+  }
+
+  /* The row's "..." button and the context menu */
+
+  .fr-folders-cell--menu {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .fr-folders-menu-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--spacer-4);
+    height: var(--spacer-4);
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-small);
+    background: transparent;
+    color: var(--color-icon-tertiary);
+    cursor: pointer;
+
+    &:hover,
+    &[aria-expanded="true"] {
+      background: var(--color-bg-transparent-hover);
+      color: var(--color-icon);
+    }
+
+    &:focus-visible {
+      outline: var(--accessibility-outline);
+      outline-offset: var(--accessibility-outline-offset);
+    }
+  }
+
+  .fr-folders-row:focus-visible {
+    outline: var(--accessibility-outline);
+    outline-offset: calc(var(--accessibility-outline-offset) * -1);
+  }
+
+  .fr-folders-menu {
+    position: fixed;
+    z-index: var(--z-popup, 100);
+    box-sizing: border-box;
+    min-width: 13rem;
+    max-width: 22rem;
+    padding: var(--spacer-1);
+    border: var(--stroke-width-small) solid var(--color-border-strong);
+    border-radius: var(--radius-medium);
+    background: var(--color-bg);
+    box-shadow: var(--elevation-400-menu-panel);
+    color: var(--color-text);
+    font-size: var(--text-body-medium-font-size);
+    line-height: var(--text-body-medium-line-height);
+  }
+
+  .fr-folders-menu--sub {
+    position: absolute;
+    top: calc(var(--spacer-1) * -1);
+    inset-inline-start: 100%;
+    min-width: 11rem;
+  }
+
+  .fr-folders-menu--flip {
+    inset-inline-start: auto;
+    inset-inline-end: 100%;
+  }
+
+  .fr-folders-menu__entry {
+    position: relative;
+  }
+
+  .fr-folders-menu__group--divided {
+    margin-top: var(--spacer-1);
+    padding-top: var(--spacer-1);
+    border-top: var(--stroke-width-small) solid var(--color-border);
+  }
+
+  .fr-folders-menu__row {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .fr-folders-menu__item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacer-1-5);
+    width: 100%;
+    padding: var(--spacer-1) var(--spacer-2);
+    border: none;
+    border-radius: var(--radius-small);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible,
+    &[aria-expanded="true"] {
+      background: var(--color-bg-secondary-hover);
+      outline: none;
+    }
+
+    &:focus-visible {
+      outline: var(--accessibility-outline);
+      outline-offset: calc(var(--accessibility-outline-offset) * -1);
+    }
+
+    &[aria-disabled="true"] {
+      color: var(--color-text-disabled);
+      cursor: not-allowed;
+    }
+  }
+
+  .fr-folders-menu__label {
+    flex: 1 1 auto;
+  }
+
+  .fr-folders-menu__arrow {
+    display: inline-flex;
+    flex: none;
+    color: var(--color-icon-tertiary);
+  }
+
+  .fr-folders-menu__reason {
+    padding: 0 var(--spacer-2) var(--spacer-1);
+    color: var(--color-text-secondary);
     font-size: var(--text-body-small-font-size);
     line-height: var(--text-body-small-line-height);
   }

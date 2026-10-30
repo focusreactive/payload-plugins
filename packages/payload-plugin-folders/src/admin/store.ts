@@ -109,6 +109,22 @@ export type TreeStore = {
   toggleExpanded: (folder: FolderId) => Promise<void>;
 };
 
+/** Every row any folder has loaded, in no particular order. */
+export const loadedItemsOf = (state: TreeStoreState): TreeItem[] =>
+  Object.values(state.childrenByFolder).flatMap((entry) => [...entry.items]);
+
+/** A folder's own row, found in the rows its parent loaded; `null` when it is not loaded. */
+export const findLoadedFolder = (state: TreeStoreState, id: FolderId | null): TreeItem | null => {
+  if (id === null) {
+    return null;
+  }
+
+  return (
+    loadedItemsOf(state).find((item) => item.kind === "folder" && String(item.id) === String(id)) ??
+    null
+  );
+};
+
 const initialState: TreeStoreState = { childrenByFolder: {}, expanded: [], revision: null };
 
 const emptyEntry: ChildrenEntry = {

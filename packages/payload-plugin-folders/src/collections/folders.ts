@@ -167,6 +167,9 @@ export const buildFoldersCollection = (options: ResolvedOptions): CollectionConf
         confirmMoves: options.admin.confirmMoves,
         enforceAllowedTypesOnMove: options.enforceAllowedTypesOnMove,
         foldersSlug: folders.slug,
+        // The link builder itself is a function and stays on the server; the menu asks the
+        // `preview-url` endpoint for each link.
+        hasPreviewUrl: Boolean(options.admin.previewUrl),
         maxDepth: options.maxDepth,
         pageSize: options.admin.pageSize,
         reservedRootSegments: options.reservedRootSegments,

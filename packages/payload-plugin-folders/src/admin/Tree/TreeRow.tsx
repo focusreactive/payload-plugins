@@ -1,12 +1,13 @@
 import { CheckboxInput, ChevronIcon, DocumentIcon, FolderIcon, Tooltip } from "@payloadcms/ui";
 import { useState } from "react";
-import type { ChangeEvent, MouseEvent } from "react";
+import type { ChangeEvent, KeyboardEvent, MouseEvent } from "react";
 
 import type { TreeItem, TreeStatus } from "../../types.js";
 import { editViewUrl } from "../compat.js";
 import type { Translate } from "../compat.js";
 import { useRowDrag } from "../DragAndDrop/dragState.js";
-import { HouseIcon } from "./icons.js";
+import type { MenuAnchor } from "../Menu/menuEntries.js";
+import { HouseIcon, MoreIcon } from "./icons.js";
 import { formatAbsoluteTime, formatRelativeTime } from "./relativeTime.js";
 import { pathDisplayOf } from "./rowDisplay.js";
 import type { ItemRowModel } from "./useTreeData.js";
@@ -16,12 +17,19 @@ export const indentPerLevel = 16;
 
 export type TreeRowProps = {
   adminRoute: string;
+  /** This row's context menu is open. */
+  isMenuOpen: boolean;
   isSelected: boolean;
   language: string;
   /** Opens a page's edit view in this tab. */
   onOpenPage: (url: string) => void;
   /** Double click on a folder; zooming is wired by the view that supports it. */
   onOpenFolder?: (folderId: number | string) => void;
+  /**
+   * Opens the context menu: from a right click, the row's button, or Shift+F10 and the ContextMenu
+   * key. `returnFocus` is where focus goes when the keyboard closes the menu.
+   */
+  onOpenMenu: (item: TreeItem, anchor: MenuAnchor, returnFocus: HTMLElement | null) => void;
   /** Shift click or Shift on the checkbox: ticks from the last ticked row to this one. */
   onSelectRange: (item: TreeItem) => void;
   onToggleFolder: (folderId: number | string) => void;
@@ -70,9 +78,11 @@ const RootPageBadge = ({ hint, label }: { hint: string; label: string }) => {
 
 export const TreeRow = ({
   adminRoute,
+  isMenuOpen,
   isSelected,
   language,
   onOpenFolder,
+  onOpenMenu,
   onOpenPage,
   onSelectRange,
   onToggleFolder,
@@ -134,6 +144,27 @@ export const TreeRow = ({
     onOpenPage(pageUrl);
   };
 
+  const handleContextMenu = (event: MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    onOpenMenu(item, { x: event.clientX, y: event.clientY }, null);
+  };
+
+  // Shift+F10 and the ContextMenu key open the menu from whichever control of the row has focus.
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10")) {
+      return;
+    }
+    event.preventDefault();
+    const origin = event.target instanceof HTMLElement ? event.target : event.currentTarget;
+    const { bottom, left } = origin.getBoundingClientRect();
+    onOpenMenu(item, { x: left, y: bottom }, origin);
+  };
+
+  const handleMenuButtonClick = (event: MouseEvent<HTMLButtonElement>) => {
+    const { bottom, right } = event.currentTarget.getBoundingClientRect();
+    onOpenMenu(item, { align: "end", x: right, y: bottom }, event.currentTarget);
+  };
+
   const handleCheckboxToggle = (event: ChangeEvent<HTMLInputElement>) => {
     // The change event of a checkbox is a click, which knows whether Shift was held.
     const { nativeEvent } = event;
@@ -179,12 +210,14 @@ export const TreeRow = ({
       data-testid="tree-row"
       data-title={item.title}
       onClick={handleRowClick}
+      onContextMenu={handleContextMenu}
       onDoubleClick={() => {
         if (isFolder) {
           onOpenFolder?.(item.id);
         }
       }}
       // Shift click selects a range: stop the browser from selecting the text in between.
+      onKeyDown={handleKeyDown}
       onMouseDown={(event) => {
         if (event.shiftKey) {
           event.preventDefault();
@@ -192,6 +225,8 @@ export const TreeRow = ({
       }}
       ref={drag.setRowRef}
       role="row"
+      // Focusable by script, not by Tab: the new folder of the create dialog takes focus.
+      tabIndex={-1}
       {...drag.listeners}
     >
       {drag.indicator && drag.indicator.edge !== "inside" ? (
@@ -324,6 +359,19 @@ export const TreeRow = ({
         >
           {formatRelativeTime(item.updatedAt, language)}
         </time>
+      </div>
+      <div className="fr-folders-cell fr-folders-cell--menu" data-row-ignore role="gridcell">
+        <button
+          aria-expanded={isMenuOpen}
+          aria-haspopup="menu"
+          aria-label={translate("menuButton", { name: item.title })}
+          className="fr-folders-menu-button"
+          data-testid="row-menu-button"
+          onClick={handleMenuButtonClick}
+          type="button"
+        >
+          <MoreIcon />
+        </button>
       </div>
     </div>
   );

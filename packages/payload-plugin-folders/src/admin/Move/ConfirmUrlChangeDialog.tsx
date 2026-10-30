@@ -19,6 +19,10 @@ import { itemKeyOf } from "../store.js";
 export const confirmDialogSlug = "fr-folders-confirm-move";
 
 export type ConfirmRequest = {
+  /** The button's label while it works; "Moving..." unless the question is not about a move. */
+  confirmingLabel?: string;
+  /** The button's label; "Move" unless the question is not about a move. */
+  confirmLabel?: string;
   /** One per opening, so the checkbox starts ticked again every time. */
   id: number;
   /** The rows being moved, for naming a refused item. */
@@ -26,6 +30,8 @@ export type ConfirmRequest = {
   preview: MovePreview;
   /** The destination's name as the editor reads it. */
   targetTitle: string;
+  /** The question; "Move N items to ..." unless the question is not about a move. */
+  title?: string;
 };
 
 export type ConfirmUrlChangeDialogProps = {
@@ -38,6 +44,8 @@ export type ConfirmUrlChangeDialogProps = {
   /** The tree changed under the editor: read it again. */
   onReload: () => void;
   request: ConfirmRequest | null;
+  /** The dialog's modal slug; a second question of another flow needs its own. */
+  slug?: string;
   translate: Translate;
 };
 
@@ -89,6 +97,7 @@ const ConfirmContent = ({
   onConfirm,
   onReload,
   request,
+  slug = confirmDialogSlug,
   translate,
 }: Omit<ConfirmUrlChangeDialogProps, "request"> & { request: ConfirmRequest }) => {
   const { closeModal } = useModal();
@@ -99,10 +108,10 @@ const ConfirmContent = ({
     <>
       <DialogHeader
         showClose
-        title={translate("confirmTitle", {
-          count: request.items.length,
-          target: request.targetTitle,
-        })}
+        title={
+          request.title ??
+          translate("confirmTitle", { count: request.items.length, target: request.targetTitle })
+        }
       />
       <DialogBody>
         <div className="fr-folders-confirm" data-testid="confirm-move">
@@ -181,13 +190,13 @@ const ConfirmContent = ({
         <DialogCancel label={translate("actionCancel")} />
         {request.preview.ok && busy ? (
           <Button disabled margin={false} size="medium">
-            {translate("confirmMoving")}
+            {request.confirmingLabel ?? translate("confirmMoving")}
           </Button>
         ) : null}
         {request.preview.ok && !busy ? (
           <DialogConfirm
-            label={translate("confirmMoveButton")}
-            loadingLabel={translate("confirmMoving")}
+            label={request.confirmLabel ?? translate("confirmMoveButton")}
+            loadingLabel={request.confirmingLabel ?? translate("confirmMoving")}
             onClick={() => onConfirm(redirects)}
           />
         ) : null}
@@ -195,7 +204,7 @@ const ConfirmContent = ({
           <Button
             margin={false}
             onClick={() => {
-              closeModal(confirmDialogSlug);
+              closeModal(slug);
               onReload();
             }}
             size="medium"
@@ -208,8 +217,14 @@ const ConfirmContent = ({
   );
 };
 
-export const ConfirmUrlChangeDialog = ({ request, ...rest }: ConfirmUrlChangeDialogProps) => (
-  <DialogModal className="fr-folders-dialog" size="medium" slug={confirmDialogSlug}>
-    {request === null ? null : <ConfirmContent key={request.id} request={request} {...rest} />}
+export const ConfirmUrlChangeDialog = ({
+  request,
+  slug = confirmDialogSlug,
+  ...rest
+}: ConfirmUrlChangeDialogProps) => (
+  <DialogModal className="fr-folders-dialog" size="medium" slug={slug}>
+    {request === null ? null : (
+      <ConfirmContent key={request.id} request={request} slug={slug} {...rest} />
+    )}
   </DialogModal>
 );

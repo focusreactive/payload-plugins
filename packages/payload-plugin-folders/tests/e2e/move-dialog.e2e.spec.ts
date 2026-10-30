@@ -246,7 +246,7 @@ test("Undo puts the item back", async ({ page, request }) => {
   // Two pages, one request.
   expect(moveRequests).toHaveLength(1);
 
-  await page.getByRole("button", { name: "Undo" }).click();
+  await page.getByRole("button", { exact: true, name: "Undo" }).click();
 
   await expect(page.getByText("Moved 2 items back")).toBeVisible();
   expect((await childrenOf(request, stagingId)).map((row) => [row.title, row.fullPath])).toEqual(
@@ -436,7 +436,7 @@ test("Undo is refused when the sibling it goes after moved to another folder", a
     data: { items: [{ collection: "pages", id: anchorId }], toFolder: newsId },
   });
   expect(other.ok()).toBe(true);
-  await page.getByRole("button", { name: "Undo" }).click();
+  await page.getByRole("button", { exact: true, name: "Undo" }).click();
 
   await expect(page.getByText("Could not undo the move")).toBeVisible();
   // Nothing was written: the mover is still where the move put it, at its new URL.

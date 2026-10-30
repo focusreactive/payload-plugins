@@ -46,10 +46,19 @@ export class FoldersApiError extends Error {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-/** Payload's error body is `{ errors: [{ message }] }`; anything else gets a generic message. */
+/**
+ * Payload's error body is `{ errors: [{ message }] }`. A validation error's own message only says
+ * which field is invalid, so the first field message in `data.errors` is the better one to show.
+ */
 const messageOf = (body: unknown, status: number): string => {
   if (isRecord(body) && Array.isArray(body.errors)) {
     const [first] = body.errors as unknown[];
+    if (isRecord(first) && isRecord(first.data) && Array.isArray(first.data.errors)) {
+      const [field] = first.data.errors as unknown[];
+      if (isRecord(field) && typeof field.message === "string") {
+        return field.message;
+      }
+    }
     if (isRecord(first) && typeof first.message === "string") {
       return first.message;
     }
@@ -234,3 +243,44 @@ export const postMove = (context: FoldersApiContext, body: MoveBody): Promise<Mo
   postJson<MoveResult>(context, "move", body);
 
 export type { MovePreview, MoveResult };
+
+/** The host's "View page" link for a page's path. */
+export const fetchPreviewUrl = (
+  context: FoldersApiContext,
+  { collection, fullPath, locale }: { collection: string; fullPath: string; locale?: string | null }
+): Promise<{ url: string }> =>
+  getJson<{ url: string }>(context, "preview-url", { collection, fullPath, locale });
+
+/**
+ * A write through Payload's own REST routes (`/api/pages/41`, `/api/folders`): the create dialogs
+ * and Set as root page use them, so the collection's hooks, access and validation all apply.
+ * `doc` is what Payload answers with.
+ */
+export const writeDocument = async <Doc = { id: FolderId }>(
+  context: FoldersApiContext,
+  {
+    body,
+    collection,
+    id,
+    query = {},
+  }: {
+    body: unknown;
+    collection: string;
+    /** Present for an update (PATCH), absent for a create (POST). */
+    id?: FolderId;
+    query?: Record<string, string | number | null | undefined>;
+  }
+): Promise<{ doc: Doc }> => {
+  const send = context.fetchImplementation ?? fetch;
+  const response = await send(
+    `${context.baseUrl}/${collection}${id === undefined ? "" : `/${id}`}${buildQuery(query)}`,
+    {
+      body: JSON.stringify(body),
+      credentials: "include",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      method: id === undefined ? "POST" : "PATCH",
+    }
+  );
+
+  return readJsonResponse<{ doc: Doc }>(response);
+};

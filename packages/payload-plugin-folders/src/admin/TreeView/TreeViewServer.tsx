@@ -17,6 +17,8 @@ export type TreeViewSettings = {
   enforceAllowedTypesOnMove: boolean;
   /** The slug of the folders collection, which the admin needs to tell folders from pages. */
   foldersSlug: string;
+  /** Whether the host set `admin.previewUrl`, which shows "View page" in the context menu. */
+  hasPreviewUrl: boolean;
   /** The deepest a URL may go; a drop that would pass it is refused on screen. */
   maxDepth: number;
   pageSize: number;
@@ -43,6 +45,7 @@ export const TreeViewServer = ({
     confirmMoves: "urlChange",
     enforceAllowedTypesOnMove: true,
     foldersSlug: collectionConfig.slug,
+    hasPreviewUrl: false,
     maxDepth: defaultMaxDepth,
     pageSize: defaultPageSize,
     reservedRootSegments: [],
@@ -67,6 +70,7 @@ export const TreeViewServer = ({
       confirmMoves={settings.confirmMoves ?? "urlChange"}
       enforceAllowedTypesOnMove={settings.enforceAllowedTypesOnMove ?? true}
       foldersSlug={settings.foldersSlug ?? collectionConfig.slug}
+      hasPreviewUrl={settings.hasPreviewUrl ?? false}
       initialLocale={locale?.code ?? null}
       maxDepth={settings.maxDepth ?? defaultMaxDepth}
       pageSize={settings.pageSize}

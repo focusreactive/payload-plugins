@@ -1,7 +1,7 @@
 import type { FolderId, ItemRef, TreeItem } from "../../types.js";
 import { isNestedIn, rootsOfSelection } from "../Move/moveFlow.js";
 import type { MoveTarget } from "../Move/moveFlow.js";
-import { folderKeyOf, itemKeyOf } from "../store.js";
+import { findLoadedFolder, folderKeyOf, itemKeyOf, loadedItemsOf } from "../store.js";
 import type { TreeStoreState } from "../store.js";
 import type { TreeRowModel } from "../Tree/useTreeData.js";
 import type { DropZone } from "./dropZones.js";
@@ -62,21 +62,6 @@ export const draggedItemsOf = (
   return { isSelection: false, items: [grabbed] };
 };
 
-const allLoadedItems = (state: TreeStoreState): TreeItem[] =>
-  Object.values(state.childrenByFolder).flatMap((entry) => [...entry.items]);
-
-const findFolder = (state: TreeStoreState, id: FolderId | null): TreeItem | null => {
-  if (id === null) {
-    return null;
-  }
-
-  return (
-    allLoadedItems(state).find(
-      (item) => item.kind === "folder" && String(item.id) === String(id)
-    ) ?? null
-  );
-};
-
 const segmentOf = (item: TreeItem): string => item.slug ?? "";
 
 const joinPath = (folder: TreeItem | null, segment: string): string =>
@@ -89,7 +74,7 @@ const refusalOf = (
   state: TreeStoreState,
   rules: DropRules
 ): DropRefusal | null => {
-  const loaded = allLoadedItems(state);
+  const loaded = loadedItemsOf(state);
   const targetKey = folderKeyOf(targetFolder?.id ?? null);
 
   const movesIntoItself = moving.some(
@@ -304,7 +289,7 @@ export const resolveDrop = ({
     }
   }
 
-  const targetFolder = zone === "inside" ? item : findFolder(state, parentId);
+  const targetFolder = zone === "inside" ? item : findLoadedFolder(state, parentId);
   const anchorRef = anchor === null ? null : { collection: anchor.collection, id: anchor.id };
   const target: MoveTarget = anchorRef
     ? { after: anchorRef, toFolder: parentId }

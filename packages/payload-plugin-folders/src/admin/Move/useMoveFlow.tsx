@@ -1,12 +1,13 @@
 import { toast, useModal } from "@payloadcms/ui";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { ConfirmMoves, TreeItem } from "../../types.js";
 import { FoldersApiError, previewMove } from "../api.js";
-import type { FoldersApiContext, MovePreview } from "../api.js";
+import type { MovePreview } from "../api.js";
 import type { Translate } from "../compat.js";
 import type { TreeStore } from "../store.js";
+import { useApiContext } from "../useApiContext.js";
 import { confirmDialogSlug, ConfirmUrlChangeDialog } from "./ConfirmUrlChangeDialog.js";
 import type { ConfirmRequest } from "./ConfirmUrlChangeDialog.js";
 import { MoveDialog, moveDialogSlug } from "./MoveDialog.js";
@@ -108,13 +109,7 @@ export const useMoveFlow = ({
   const [isMoving, setIsMoving] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
 
-  const options = store.getOptions();
-  const baseUrl = options?.baseUrl ?? "";
-  const fetchImplementation = options?.fetchImplementation;
-  const context = useMemo<FoldersApiContext>(
-    () => ({ baseUrl, fetchImplementation }),
-    [baseUrl, fetchImplementation]
-  );
+  const context = useApiContext(store);
 
   const showFailure = useCallback(
     (error: unknown, title: string | null) => {

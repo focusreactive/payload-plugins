@@ -23,6 +23,8 @@ export type TreeViewClientProps = {
   enforceAllowedTypesOnMove: boolean;
   /** The slug of the folders collection. */
   foldersSlug: string;
+  /** Whether the host set `admin.previewUrl`: the context menu then offers "View page". */
+  hasPreviewUrl: boolean;
   /** The locale the server rendered the list in; the client's own locale wins once it is known. */
   initialLocale: string | null;
   /** The deepest a URL may go (`maxDepth`). */
@@ -40,6 +42,7 @@ export const TreeViewClient = ({
   confirmMoves,
   enforceAllowedTypesOnMove,
   foldersSlug,
+  hasPreviewUrl,
   initialLocale,
   maxDepth,
   pageSize,
@@ -94,6 +97,7 @@ export const TreeViewClient = ({
           confirmMoves={confirmMoves}
           enforceAllowedTypesOnMove={enforceAllowedTypesOnMove}
           foldersSlug={foldersSlug}
+          hasPreviewUrl={hasPreviewUrl}
           language={language}
           maxDepth={maxDepth}
           onOpenPage={(url) => router.push(url)}
