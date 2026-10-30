@@ -759,4 +759,63 @@
     font-size: var(--text-body-small-font-size);
     line-height: var(--text-body-small-line-height);
   }
+
+  /* Move mode: an insert marker in every gap */
+
+  .fr-folders-row--marker {
+    min-height: 1.5rem;
+    border-top: none;
+  }
+
+  .fr-folders-row--marker .fr-folders-cell--wide {
+    min-height: 1.5rem;
+  }
+
+  .fr-folders-marker {
+    display: flex;
+    align-items: center;
+    gap: var(--spacer-1-5);
+    width: 100%;
+    min-height: 1.5rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: var(--text-body-small-font-size);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-text);
+    }
+
+    &:focus-visible {
+      outline: var(--accessibility-outline);
+      outline-offset: var(--accessibility-outline-offset);
+      border-radius: var(--radius-small);
+    }
+
+    &[aria-disabled="true"] {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+  }
+
+  .fr-folders-marker__line {
+    flex: 1 1 auto;
+    height: 0;
+    border-top: var(--stroke-width-medium) dashed var(--color-border-strong);
+  }
+
+  .fr-folders-marker:not([aria-disabled="true"]):hover .fr-folders-marker__line,
+  .fr-folders-marker:not([aria-disabled="true"]):focus-visible .fr-folders-marker__line {
+    border-top-color: var(--color-bg-brand);
+  }
+
+  .fr-folders-marker__label {
+    flex: none;
+    order: -1;
+    white-space: nowrap;
+  }
 }

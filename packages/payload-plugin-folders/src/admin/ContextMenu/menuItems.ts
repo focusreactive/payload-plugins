@@ -123,6 +123,16 @@ export const contextMenuDefinitions: ContextMenuDefinition[] = [
   {
     appliesToSelection: true,
     build: (context) => ({
+      id: "move",
+      label: { key: "actionMove" },
+      reason: moveReason(context),
+    }),
+    group: "structure",
+    id: "move",
+  },
+  {
+    appliesToSelection: true,
+    build: (context) => ({
       id: "moveTo",
       label: { key: "actionMoveTo" },
       reason: moveReason(context),

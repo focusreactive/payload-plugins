@@ -177,7 +177,7 @@ const refusalOf = (
 };
 
 /** The sibling a gap lands after, skipping dragged rows (they leave their place when they move). */
-const anchorBefore = (
+export const anchorBefore = (
   siblings: readonly TreeItem[],
   index: number,
   movingKeys: ReadonlySet<string>
@@ -231,6 +231,65 @@ const lastRowOfSubtree = (rows: readonly TreeRowModel[], index: number): string 
   return lastKey;
 };
 
+export type GapInput = {
+  /**
+   * The row the dragged rows land directly after, `null` for the top of the folder. It is never one
+   * of the dragged rows: see `anchorAfterRow` and `anchorBefore`.
+   */
+  anchor: TreeItem | null;
+  dragged: readonly TreeItem[];
+  /** The folder the rows land in; `null` is the top level. */
+  parentId: FolderId | null;
+  rules: DropRules;
+  state: TreeStoreState;
+  /** That folder's own row, `null` for the top level or a folder that is not loaded. */
+  targetFolder: TreeItem | null;
+};
+
+/**
+ * What putting the dragged rows into one gap does: the move request's target, whether it leaves
+ * everything where it is, and the reason the gap refuses the rows. Drag and drop and Move mode both
+ * ask this, so a gap is refused for the same reason, in the same words, whichever way it is chosen.
+ */
+export const resolveGap = ({
+  anchor,
+  dragged,
+  parentId,
+  rules,
+  state,
+  targetFolder,
+}: GapInput): Omit<DropResolution, "indicator"> => {
+  const anchorRef = anchor === null ? null : { collection: anchor.collection, id: anchor.id };
+  const target: MoveTarget = anchorRef
+    ? { after: anchorRef, toFolder: parentId }
+    : { position: "start", toFolder: parentId };
+
+  const targetKey = folderKeyOf(parentId);
+  const changing = dragged.filter((moved) => folderKeyOf(moved.parentId) !== targetKey);
+  const targetSiblings = state.childrenByFolder[targetKey]?.items ?? [];
+
+  return {
+    isNoOp: leavesOrderUnchanged(dragged, targetSiblings, anchorRef),
+    refusal: refusalOf(changing, targetFolder, state, rules),
+    target,
+    targetFolder,
+  };
+};
+
+/** The row a gap right after `item` lands after: the row, or the one before it when it is dragged too. */
+export const anchorAfterRow = (
+  siblings: readonly TreeItem[],
+  item: TreeItem,
+  movingKeys: ReadonlySet<string>
+): TreeItem | null => {
+  if (!movingKeys.has(itemKeyOf(item))) {
+    return item;
+  }
+  const index = siblings.findIndex((sibling) => itemKeyOf(sibling) === itemKeyOf(item));
+
+  return anchorBefore(siblings, index, movingKeys);
+};
+
 export type DropInput = {
   dragged: readonly TreeItem[];
   /** The row under the pointer, by its row key, and where on it the pointer is. */
@@ -277,7 +336,7 @@ export const resolveDrop = ({
     }
     parentId = item.parentId;
     if (zone === "after") {
-      anchor = movingKeys.has(over.key) ? anchorBefore(siblings, siblingIndex, movingKeys) : item;
+      anchor = anchorAfterRow(siblings, item, movingKeys);
       indicator = {
         edge: "bottom",
         level,
@@ -290,20 +349,6 @@ export const resolveDrop = ({
   }
 
   const targetFolder = zone === "inside" ? item : findLoadedFolder(state, parentId);
-  const anchorRef = anchor === null ? null : { collection: anchor.collection, id: anchor.id };
-  const target: MoveTarget = anchorRef
-    ? { after: anchorRef, toFolder: parentId }
-    : { position: "start", toFolder: parentId };
 
-  const targetKey = folderKeyOf(parentId);
-  const changing = dragged.filter((moved) => folderKeyOf(moved.parentId) !== targetKey);
-  const targetSiblings = state.childrenByFolder[targetKey]?.items ?? [];
-
-  return {
-    indicator,
-    isNoOp: leavesOrderUnchanged(dragged, targetSiblings, anchorRef),
-    refusal: refusalOf(changing, targetFolder, state, rules),
-    target,
-    targetFolder,
-  };
+  return { ...resolveGap({ anchor, dragged, parentId, rules, state, targetFolder }), indicator };
 };

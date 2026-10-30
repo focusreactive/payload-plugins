@@ -9,8 +9,12 @@ import { useRootPageFlow } from "../ContextMenu/useRootPageFlow.js";
 import { DragAndDropProvider } from "../DragAndDrop/DragAndDropProvider.js";
 import type { DropRules } from "../DragAndDrop/dropTargets.js";
 import type { MoveTarget } from "../Move/moveFlow.js";
+import { MoveModeBar } from "../MoveMode/MoveModeBar.js";
+import { placeMarkers } from "../MoveMode/moveMarkers.js";
+import type { MoveMarker } from "../MoveMode/moveMarkers.js";
+import { useMoveMode } from "../MoveMode/useMoveMode.js";
 import { useMoveFlow } from "../Move/useMoveFlow.js";
-import { findLoadedFolder } from "../store.js";
+import { findLoadedFolder, itemKeyOf } from "../store.js";
 import type { TreeStore } from "../store.js";
 import { BulkToolbar } from "../Toolbar/BulkToolbar.js";
 import type { ToolbarAction } from "../Toolbar/toolbarActions.js";
@@ -92,6 +96,46 @@ export const TreeWorkspace = ({
     [enforceAllowedTypesOnMove, maxDepth, reservedRootSegments, typeLabels]
   );
 
+  const isMoveBusy = moveFlow.isMoving || moveFlow.isPreviewing;
+  const moveMode = useMoveMode({ isBusy: isMoveBusy, selectedItems: selection.items, state });
+  const { enter: enterMoveMode, exit: exitMoveMode } = moveMode;
+  const placedRows = useMemo(
+    () =>
+      moveMode.active
+        ? placeMarkers(rows, { moving: moveMode.moving, rules: dropRules, state })
+        : null,
+    [dropRules, moveMode.active, moveMode.moving, rows, state]
+  );
+  const startMoveMode = useCallback(
+    (items: readonly TreeItem[]) => {
+      // Moving exactly the ticked rows is the selection's move: a refusal puts the ticks back.
+      const tickedKeys = new Set(selection.items.map(itemKeyOf));
+      const isSelection =
+        items.length === tickedKeys.size && items.every((item) => tickedKeys.has(itemKeyOf(item)));
+      enterMoveMode(items, isSelection);
+    },
+    [enterMoveMode, selection.items]
+  );
+  const pickMarker = useCallback(
+    (marker: MoveMarker) => {
+      void startDropMove({
+        items: moveMode.moving,
+        onMoved: exitMoveMode,
+        selection: moveMode.movesSelection ? selection.items : null,
+        target: marker.target,
+        targetTitle: marker.targetFolder?.title ?? translate("moveToRoot"),
+      });
+    },
+    [
+      exitMoveMode,
+      moveMode.movesSelection,
+      moveMode.moving,
+      selection.items,
+      startDropMove,
+      translate,
+    ]
+  );
+
   const apiContext = useApiContext(store);
   const rootPageFlow = useRootPageFlow({ apiContext, languageCount, state, store, translate });
   const { start: startSetAsRoot } = rootPageFlow;
@@ -112,19 +156,20 @@ export const TreeWorkspace = ({
 
   const menuActions = useMemo<ContextMenuActions>(
     () => ({
+      moveMode: startMoveMode,
       moveTo: startMoveTo,
       moveWithinFolder,
       openPage: onOpenPage,
       setAsRoot: startSetAsRoot,
     }),
-    [moveWithinFolder, onOpenPage, startMoveTo, startSetAsRoot]
+    [moveWithinFolder, onOpenPage, startMoveMode, startMoveTo, startSetAsRoot]
   );
   const contextMenu = useContextMenu({
     actions: menuActions,
     adminRoute,
     apiContext,
     hasPreviewUrl,
-    isBusy: moveFlow.isMoving || moveFlow.isPreviewing,
+    isBusy: isMoveBusy,
     rows,
     selection,
     state,
@@ -137,28 +182,33 @@ export const TreeWorkspace = ({
       if (action === "moveTo") {
         startMoveTo(selection.items);
       }
-      // Move mode, Duplicate, Publish, Unpublish, Delete and Settings open their dialogs in later
-      // tickets (spec sections 7.4, 7.8 and 7.10); until then pressing one does nothing.
+      if (action === "move") {
+        enterMoveMode(selection.items, true);
+      }
+      // Duplicate, Publish, Unpublish, Delete and Settings open their dialogs in later tickets
+      // (spec sections 7.8 and 7.10); until then pressing one does nothing.
     },
-    [selection.items, startMoveTo]
+    [enterMoveMode, selection.items, startMoveTo]
   );
 
   return (
     <>
-      {selection.items.length > 0 ? (
+      {moveMode.active ? (
+        <MoveModeBar count={moveMode.moving.length} onCancel={exitMoveMode} translate={translate} />
+      ) : null}
+      {selection.items.length > 0 && !moveMode.active ? (
         <BulkToolbar
-          busy={moveFlow.isMoving}
+          busy={isMoveBusy}
           items={selection.items}
           onAction={runAction}
           onCancel={clear}
           translate={translate}
         />
-      ) : (
-        <ListHeader title={title} />
-      )}
+      ) : null}
+      {selection.items.length === 0 && !moveMode.active ? <ListHeader title={title} /> : null}
       <div className="fr-folders-body">
         <DragAndDropProvider
-          disabled={moveFlow.isMoving || moveFlow.isPreviewing}
+          disabled={isMoveBusy || moveMode.active}
           onDrop={(drop) => void startDropMove(drop)}
           rows={rows}
           rules={dropRules}
@@ -170,6 +220,16 @@ export const TreeWorkspace = ({
           <Tree
             adminRoute={adminRoute}
             language={language}
+            moveMode={
+              placedRows === null
+                ? undefined
+                : {
+                    count: moveMode.moving.length,
+                    isBusy: isMoveBusy,
+                    onPick: pickMarker,
+                    placed: placedRows,
+                  }
+            }
             onOpenMenu={contextMenu.openMenu}
             onOpenPage={onOpenPage}
             openMenuItemKey={contextMenu.openItemKey}

@@ -3,6 +3,9 @@ import { useCallback } from "react";
 
 import type { Translate } from "../compat.js";
 import type { MenuAnchor } from "../Menu/menuEntries.js";
+import { MoveMarkerRow } from "../MoveMode/MoveMarkerRow.js";
+import { markerReasonOf } from "../MoveMode/moveMarkers.js";
+import type { MoveMarker, MoveModeRow } from "../MoveMode/moveMarkers.js";
 import type { SelectionApi } from "../useSelection.js";
 import type { FolderKey, TreeStore } from "../store.js";
 import type { TreeItem } from "../../types.js";
@@ -15,10 +18,22 @@ import type {
 } from "./useTreeData.js";
 import { indentPerLevel } from "./TreeRow.js";
 
+/** What Move mode adds to the tree: the rows with a marker in every gap, and how a marker is picked. */
+export type MoveModeView = {
+  /** How many rows are moving, for the markers' label. */
+  count: number;
+  /** A move is in flight: no marker can be picked. */
+  isBusy: boolean;
+  onPick: (marker: MoveMarker) => void;
+  placed: readonly MoveModeRow[];
+};
+
 export type TreeProps = {
   adminRoute: string;
   language: string;
   onOpenFolder?: (folderId: number | string) => void;
+  /** Set while Move mode is on. */
+  moveMode?: MoveModeView;
   /** Opens a row's context menu; see `TreeRowProps.onOpenMenu`. */
   onOpenMenu: (item: TreeItem, anchor: MenuAnchor, returnFocus: HTMLElement | null) => void;
   onOpenPage: (url: string) => void;
@@ -161,6 +176,7 @@ const LoadMoreRow = ({
 export const Tree = ({
   adminRoute,
   language,
+  moveMode,
   onOpenFolder,
   onOpenMenu,
   onOpenPage,
@@ -234,53 +250,72 @@ export const Tree = ({
         </div>
       </div>
       <div role="rowgroup">
-        {rows.map((row) => {
-          switch (row.type) {
-            case "item": {
+        {(moveMode?.placed ?? rows.map((row): MoveModeRow => ({ row, type: "row" }))).map(
+          (entry) => {
+            if (entry.type === "marker") {
               return (
-                <TreeRow
-                  adminRoute={adminRoute}
-                  isMenuOpen={openMenuItemKey === row.key}
-                  isSelected={selection.isSelected(row.item)}
-                  key={row.key}
-                  language={language}
-                  onOpenFolder={onOpenFolder}
-                  onOpenMenu={onOpenMenu}
-                  onOpenPage={onOpenPage}
-                  onSelectRange={selection.selectRange}
-                  onToggleFolder={toggleFolder}
-                  onToggleSelect={selection.toggle}
-                  row={row}
-                  translate={translate}
-                  typeLabels={typeLabels}
-                />
-              );
-            }
-            case "loading": {
-              return <LoadingRow key={row.key} label={translate("loading")} level={row.level} />;
-            }
-            case "error": {
-              return <ErrorRow key={row.key} onRetry={retry} row={row} translate={translate} />;
-            }
-            case "stale": {
-              return <StaleRow key={row.key} onRetry={retry} row={row} translate={translate} />;
-            }
-            case "load-more": {
-              return (
-                <LoadMoreRow
-                  key={row.key}
-                  onLoadMore={loadMore}
-                  pageSize={pageSize}
-                  row={row}
+                <MoveMarkerRow
+                  count={moveMode?.count ?? 0}
+                  key={`marker:${entry.marker.key}`}
+                  marker={entry.marker}
+                  onPick={moveMode?.onPick ?? (() => undefined)}
+                  reason={markerReasonOf(entry.marker, {
+                    count: moveMode?.count ?? 0,
+                    isBusy: moveMode?.isBusy ?? false,
+                    translate,
+                  })}
                   translate={translate}
                 />
               );
             }
-            default: {
-              return null;
+            const { row } = entry;
+            switch (row.type) {
+              case "item": {
+                return (
+                  <TreeRow
+                    adminRoute={adminRoute}
+                    isMenuOpen={openMenuItemKey === row.key}
+                    isSelected={selection.isSelected(row.item)}
+                    key={row.key}
+                    language={language}
+                    onOpenFolder={onOpenFolder}
+                    onOpenMenu={onOpenMenu}
+                    onOpenPage={onOpenPage}
+                    onSelectRange={selection.selectRange}
+                    onToggleFolder={toggleFolder}
+                    onToggleSelect={selection.toggle}
+                    row={row}
+                    translate={translate}
+                    typeLabels={typeLabels}
+                  />
+                );
+              }
+              case "loading": {
+                return <LoadingRow key={row.key} label={translate("loading")} level={row.level} />;
+              }
+              case "error": {
+                return <ErrorRow key={row.key} onRetry={retry} row={row} translate={translate} />;
+              }
+              case "stale": {
+                return <StaleRow key={row.key} onRetry={retry} row={row} translate={translate} />;
+              }
+              case "load-more": {
+                return (
+                  <LoadMoreRow
+                    key={row.key}
+                    onLoadMore={loadMore}
+                    pageSize={pageSize}
+                    row={row}
+                    translate={translate}
+                  />
+                );
+              }
+              default: {
+                return null;
+              }
             }
           }
-        })}
+        )}
       </div>
     </div>
   );

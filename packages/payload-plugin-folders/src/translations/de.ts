@@ -86,6 +86,13 @@ export const de: FoldersTranslations = {
     movedBack_other: "{{count}} Einträge zurückverschoben",
     movedBackPartial: "{{moved}} von {{total}} Einträgen zurückverschoben",
     moveFailed: "Die Auswahl konnte nicht verschoben werden",
+    moveModeBar_one: "{{count}} Eintrag wird verschoben. Wählen Sie das Ziel",
+    moveModeBar_other: "{{count}} Einträge werden verschoben. Wählen Sie das Ziel",
+    moveModeBarLabel: "Verschiebemodus",
+    moveModeHere_one: "{{count}} Eintrag hierher verschieben",
+    moveModeHere_other: "{{count}} Einträge hierher verschieben",
+    moveModeNoOp_one: "Er ist schon hier",
+    moveModeNoOp_other: "Sie sind schon hier",
     moveToCycle:
       "Ein Ordner kann nicht in sich selbst oder einen seiner Unterordner verschoben werden",
     moveToEmptyFolder: "Keine Unterordner",

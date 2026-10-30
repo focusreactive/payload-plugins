@@ -34,7 +34,7 @@ describe("buildContextMenu, which entries a row gets", () => {
   it("gives a page Open, Open in new tab, Set as root page, the moves and Copy URL", () => {
     expect(idsOf(contextFor(pageRow(2, "Contact", 5)))).toEqual([
       ["open", "openInNewTab"],
-      ["setAsRoot", "moveTo", "moveUp", "moveDown"],
+      ["setAsRoot", "move", "moveTo", "moveUp", "moveDown"],
       ["copyUrl"],
     ]);
   });
@@ -42,7 +42,7 @@ describe("buildContextMenu, which entries a row gets", () => {
   it("gives a folder no Open in new tab and no Set as root page", () => {
     expect(idsOf(contextFor(folderRow(2, "News", 5)))).toEqual([
       ["open"],
-      ["moveTo", "moveUp", "moveDown"],
+      ["move", "moveTo", "moveUp", "moveDown"],
       ["copyUrl"],
     ]);
   });
@@ -83,7 +83,7 @@ describe("buildContextMenu, entries a row refuses stay with a reason", () => {
     const page = pageRow(2, "Contact", 5, { access: readOnly });
     const context = contextFor(page);
 
-    for (const id of ["setAsRoot", "moveTo", "moveUp", "moveDown"]) {
+    for (const id of ["setAsRoot", "move", "moveTo", "moveUp", "moveDown"]) {
       expect(entryOf(context, id)?.reason).toEqual({ key: "menuNoAccess" });
     }
     expect(entryOf(context, "open")?.reason).toBeNull();
@@ -116,7 +116,7 @@ describe("buildContextMenu, entries a row refuses stay with a reason", () => {
   it("turns the moves off while another move is under way, and nothing else", () => {
     const context = contextFor(pageRow(2, "Contact", 5), { isBusy: true });
 
-    for (const id of ["moveTo", "moveUp", "moveDown"]) {
+    for (const id of ["move", "moveTo", "moveUp", "moveDown"]) {
       expect(entryOf(context, id)?.reason).toEqual({ key: "menuBusy" });
     }
     expect(entryOf(context, "setAsRoot")?.reason).toBeNull();
@@ -169,7 +169,9 @@ describe("buildContextMenu on a ticked row of several", () => {
       access: { delete: false, publish: false, update: false },
     });
 
-    expect(idsOf(contextFor(ticked, { targets: [ticked, readOnlyRow] }))).toEqual([["moveTo"]]);
+    expect(idsOf(contextFor(ticked, { targets: [ticked, readOnlyRow] }))).toEqual([
+      ["move", "moveTo"],
+    ]);
     expect(
       entryOf(contextFor(ticked, { targets: [ticked, readOnlyRow] }), "moveTo")?.reason
     ).toEqual({ key: "menuNoAccess" });

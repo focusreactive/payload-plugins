@@ -164,7 +164,7 @@ test("Move to... from the menu acts on every ticked row", async ({ page, request
 
   await openRowMenu(pageRow(page, "Pick One"));
   // Opened on a ticked row of two, the menu offers what works on a selection.
-  await expect(contextMenu(page).getByRole("menuitem")).toHaveText(["Move to..."]);
+  await expect(contextMenu(page).getByRole("menuitem")).toHaveText(["Move", "Move to..."]);
   await menuItem(page, "Move to...").click();
 
   await expect(page.getByRole("dialog").getByText("Move 2 items to...")).toBeVisible();

@@ -21,6 +21,8 @@ import { siblingMoveOf } from "./siblingMove.js";
 
 /** The flows a menu entry starts; each one belongs to the ticket that built it. */
 export type ContextMenuActions = {
+  /** "Move": starts Move mode for these rows. */
+  moveMode: (items: readonly TreeItem[]) => void;
   /** "Move to...": opens the folder picker for these rows. */
   moveTo: (items: readonly TreeItem[]) => void;
   /** Opens a page's edit view in this tab. */
@@ -188,6 +190,10 @@ export const useContextMenu = ({
         }
         case "setAsRoot": {
           actions.setAsRoot(target);
+          break;
+        }
+        case "move": {
+          actions.moveMode(targets);
           break;
         }
         case "moveTo": {

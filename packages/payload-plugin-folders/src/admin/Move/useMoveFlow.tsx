@@ -61,6 +61,8 @@ export type MoveFlow = {
 /** A move that a drop asks for. */
 export type DropMove = {
   items: readonly TreeItem[];
+  /** Runs once the move went through, for what the caller keeps beside it (Move mode ends here). */
+  onMoved?: () => void;
   /** The ticked rows when the drag carried the selection: those come back if the move fails. */
   selection: readonly TreeItem[] | null;
   target: MoveTarget;
@@ -69,6 +71,7 @@ export type DropMove = {
 
 type Pending = {
   items: readonly TreeItem[];
+  onMoved?: () => void;
   /**
    * Every ticked row, nested ones included: what comes back if the move fails. `null` when the move
    * is not the selection's (a drag of one unticked row), so the ticks stay as they are.
@@ -163,6 +166,7 @@ export const useMoveFlow = ({
         if (request.selection !== null) {
           onMoved();
         }
+        request.onMoved?.();
         toast.success(translate("moved", { count: outcome.result.moved.length }), {
           action: { label: translate("undo"), onClick: () => void undo(outcome) },
           classNames: { actionButton: toastActionClass },

@@ -8,7 +8,7 @@ import { toolbarActions, toolbarStateOf } from "./toolbarActions.js";
 import type { ToolbarAction } from "./toolbarActions.js";
 
 export type BulkToolbarProps = {
-  /** A move is in flight: Move to... waits for it, because a second move would be dropped. */
+  /** A move is in flight: Move and Move to... wait for it, because a second move would be dropped. */
   busy?: boolean;
   items: readonly TreeItem[];
   onCancel: () => void;
@@ -66,7 +66,7 @@ export const BulkToolbar = ({
             <ReasonTooltip key={action} reason={isOff ? translate("actionNotAllowed") : null}>
               <Button
                 buttonStyle="ghost"
-                disabled={isOff || (busy && action === "moveTo")}
+                disabled={isOff || (busy && (action === "move" || action === "moveTo"))}
                 // Kept focusable while off, so the reason is reachable from the keyboard too.
                 extraButtonProps={{ disabled: false }}
                 margin={false}
