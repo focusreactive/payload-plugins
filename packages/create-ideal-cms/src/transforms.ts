@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Answers } from "./prompts.js";
+import { resolvePublishedVersion } from "./versions.js";
 
 type Pkg = Record<string, unknown> & {
   name?: string;
@@ -17,18 +18,18 @@ async function writeJson(file: string, data: unknown): Promise<void> {
   await writeFile(file, `${JSON.stringify(data, null, 2)}\n`);
 }
 
-// Plugins ship as `workspace:*` in the source monorepo; pin each to its exact
-// released version so the scaffold stands on its own.
-function rewritePluginRefs(
+async function rewritePluginRefs(
   deps: Record<string, string> | undefined,
   pluginVersions: Record<string, string>
-): void {
+): Promise<void> {
   if (!deps) return;
-  for (const [name, range] of Object.entries(deps)) {
-    if (range === "workspace:*" && pluginVersions[name]) {
-      deps[name] = pluginVersions[name];
-    }
-  }
+  await Promise.all(
+    Object.entries(deps).map(async ([name, range]) => {
+      const templateVersion = pluginVersions[name];
+      if (range !== "workspace:*" || !templateVersion) return;
+      deps[name] = await resolvePublishedVersion(name, templateVersion);
+    })
+  );
 }
 
 async function transformRootPackageJson(targetDir: string, answers: Answers): Promise<void> {
@@ -61,8 +62,8 @@ async function transformCmsPackageJson(
 ): Promise<void> {
   const file = join(targetDir, "apps/cms/package.json");
   const pkg = await readJson<Pkg>(file);
-  rewritePluginRefs(pkg.dependencies, pluginVersions);
-  rewritePluginRefs(pkg.devDependencies, pluginVersions);
+  await rewritePluginRefs(pkg.dependencies, pluginVersions);
+  await rewritePluginRefs(pkg.devDependencies, pluginVersions);
   await writeJson(file, pkg);
 }
 

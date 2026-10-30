@@ -1,15 +1,7 @@
 import { downloadTemplate } from "giget";
-import {
-  copyFile,
-  mkdir,
-  readdir,
-  readFile,
-  readlink,
-  rm,
-  symlink,
-  writeFile,
-} from "node:fs/promises";
+import { copyFile, mkdir, readdir, readlink, rm, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { readPluginVersions } from "./versions.js";
 
 export type TemplateSource = { kind: "github"; ref: string } | { kind: "local"; path: string };
 
@@ -106,25 +98,6 @@ async function resetMigrations(targetDir: string): Promise<void> {
   await writeFile(join(dir, "index.ts"), MIGRATION_STUB);
 }
 
-type Manifest = { name: string; version: string; private?: boolean };
-
-// semantic-release commits every released version back into the plugin's
-// package.json, so the template's manifests name exactly the plugin releases
-// cut from the same commit as the apps/cms code being scaffolded.
-async function readPluginVersions(targetDir: string): Promise<Record<string, string>> {
-  const dir = join(targetDir, "packages");
-  const entries = await readdir(dir, { withFileTypes: true });
-  const manifests = await Promise.all(
-    entries
-      .filter((entry) => entry.isDirectory())
-      .map(async (entry) => {
-        const file = join(dir, entry.name, "package.json");
-        return JSON.parse(await readFile(file, "utf-8")) as Manifest;
-      })
-  );
-  return Object.fromEntries(manifests.filter((m) => !m.private).map((m) => [m.name, m.version]));
-}
-
 export async function fetchTemplate(
   targetDir: string,
   source: TemplateSource
@@ -140,7 +113,6 @@ export async function fetchTemplate(
     });
   }
 
-  // Must run before pruning removes the plugin packages.
   const pluginVersions = await readPluginVersions(targetDir);
 
   await Promise.all(
