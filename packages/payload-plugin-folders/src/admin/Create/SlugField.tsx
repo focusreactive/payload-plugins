@@ -43,6 +43,7 @@ export const SlugField = ({
   disabled = false,
   inputId,
   isLinked,
+  linkable = true,
   onChange,
   onRelink,
   parentPath,
@@ -54,6 +55,8 @@ export const SlugField = ({
   disabled?: boolean;
   inputId: string;
   isLinked: boolean;
+  /** False hides the link icon: the segment does not follow another field (the settings forms). */
+  linkable?: boolean;
   onChange: (value: string) => void;
   onRelink: () => void;
   /** The path of the folder it goes in, `/` for the top level, for the URL under the field. */
@@ -84,18 +87,20 @@ export const SlugField = ({
           type="text"
           value={value}
         />
-        <button
-          aria-label={translate(isLinked ? "createSegmentLinked" : "createSegmentRelink")}
-          aria-pressed={isLinked}
-          className="fr-folders-slug__link"
-          data-testid="segment-link"
-          disabled={disabled || isLinked}
-          onClick={onRelink}
-          title={translate(isLinked ? "createSegmentLinked" : "createSegmentRelink")}
-          type="button"
-        >
-          <LinkIcon isLinked={isLinked} />
-        </button>
+        {linkable ? (
+          <button
+            aria-label={translate(isLinked ? "createSegmentLinked" : "createSegmentRelink")}
+            aria-pressed={isLinked}
+            className="fr-folders-slug__link"
+            data-testid="segment-link"
+            disabled={disabled || isLinked}
+            onClick={onRelink}
+            title={translate(isLinked ? "createSegmentLinked" : "createSegmentRelink")}
+            type="button"
+          >
+            <LinkIcon isLinked={isLinked} />
+          </button>
+        ) : null}
       </div>
       <p
         aria-live="polite"

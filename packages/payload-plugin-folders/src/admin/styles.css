@@ -989,4 +989,42 @@
     border-color: var(--color-bg-brand);
     background: var(--color-bg-selected);
   }
+
+  .fr-folders-type-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacer-1);
+
+    &[data-locked="true"] {
+      cursor: not-allowed;
+    }
+  }
+
+  /* The settings drawers and the edit view's sidebar fields */
+
+  .fr-folders-settings {
+    padding: var(--spacer-3);
+  }
+
+  .fr-folders-settings__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacer-2);
+  }
+
+  .fr-folders-history {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-1);
+
+    summary {
+      cursor: pointer;
+    }
+  }
+
+  .fr-folders-history__list {
+    margin: 0;
+    padding-inline-start: var(--spacer-3);
+    font-size: var(--text-body-small-font-size);
+  }
 }

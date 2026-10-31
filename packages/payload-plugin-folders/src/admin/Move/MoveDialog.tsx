@@ -52,7 +52,7 @@ type PreviewState =
   | { status: "loading" }
   | { status: "ready"; preview: MovePreview };
 
-const refusalText = (refusal: TargetRefusal, translate: Translate): string =>
+export const refusalText = (refusal: TargetRefusal, translate: Translate): string =>
   refusal.kind === "cycle"
     ? translate("moveToCycle")
     : translate("moveToType", { path: refusal.path, types: refusal.types.join(", ") });

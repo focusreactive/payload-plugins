@@ -1,4 +1,8 @@
 import { LLMInstructionsMenuItem as LLMInstructionsMenuItem_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
+import { LockableSelectField as LockableSelectField_b5541ff0ab47b391bfc0c8c2e16024d7 } from '@focus-reactive/payload-plugin-folders/client'
+import { LockableCheckboxField as LockableCheckboxField_b5541ff0ab47b391bfc0c8c2e16024d7 } from '@focus-reactive/payload-plugin-folders/client'
+import { FolderTitleFallback as FolderTitleFallback_b5541ff0ab47b391bfc0c8c2e16024d7 } from '@focus-reactive/payload-plugin-folders/client'
+import { FolderSaveButton as FolderSaveButton_b5541ff0ab47b391bfc0c8c2e16024d7 } from '@focus-reactive/payload-plugin-folders/client'
 import { TreeViewServer as TreeViewServer_e45148d59eb6c02c94ad4789bb33f130 } from '@focus-reactive/payload-plugin-folders/rsc'
 import { LLMInstructionsDescription as LLMInstructionsDescription_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { LLMInstructionsCell as LLMInstructionsCell_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
@@ -13,6 +17,10 @@ import { CollectionFilter as CollectionFilter_3817bf644402e67bfe6577f60ef982de }
 /** @type import('payload').ImportMap */
 export const importMap = {
   "@payloadcms/ui#LLMInstructionsMenuItem": LLMInstructionsMenuItem_3817bf644402e67bfe6577f60ef982de,
+  "@focus-reactive/payload-plugin-folders/client#LockableSelectField": LockableSelectField_b5541ff0ab47b391bfc0c8c2e16024d7,
+  "@focus-reactive/payload-plugin-folders/client#LockableCheckboxField": LockableCheckboxField_b5541ff0ab47b391bfc0c8c2e16024d7,
+  "@focus-reactive/payload-plugin-folders/client#FolderTitleFallback": FolderTitleFallback_b5541ff0ab47b391bfc0c8c2e16024d7,
+  "@focus-reactive/payload-plugin-folders/client#FolderSaveButton": FolderSaveButton_b5541ff0ab47b391bfc0c8c2e16024d7,
   "@focus-reactive/payload-plugin-folders/rsc#TreeViewServer": TreeViewServer_e45148d59eb6c02c94ad4789bb33f130,
   "@payloadcms/ui#LLMInstructionsDescription": LLMInstructionsDescription_3817bf644402e67bfe6577f60ef982de,
   "@payloadcms/ui/rsc#LLMInstructionsCell": LLMInstructionsCell_ab83ff7e88da8d3530831f296ec4756a,

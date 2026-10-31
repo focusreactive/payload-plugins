@@ -32,19 +32,19 @@ const contextFor = (
 });
 
 describe("buildContextMenu, which entries a row gets", () => {
-  it("gives a page Open, Open in new tab, Set as root page, the moves and Copy URL", () => {
+  it("gives a page Open, Open in new tab, Settings, Set as root page, the moves and Copy URL", () => {
     expect(idsOf(contextFor(pageRow(2, "Contact", 5)))).toEqual([
       ["open", "openInNewTab"],
-      ["setAsRoot", "move", "moveTo", "moveUp", "moveDown"],
+      ["settings", "setAsRoot", "move", "moveTo", "moveUp", "moveDown"],
       ["copyUrl"],
     ]);
   });
 
-  it("gives a folder no Open in new tab and no Set as root page", () => {
+  it("gives a folder Settings, and no Open in new tab and no Set as root page", () => {
     expect(idsOf(contextFor(folderRow(2, "News", 5)))).toEqual([
       ["open"],
       ["createFolder"],
-      ["move", "moveTo", "moveUp", "moveDown"],
+      ["settings", "move", "moveTo", "moveUp", "moveDown"],
       ["copyUrl"],
     ]);
   });
@@ -59,10 +59,19 @@ describe("buildContextMenu, which entries a row gets", () => {
     ).not.toContain("viewPage");
   });
 
-  it("leaves Set as root page out for a page that already is the root", () => {
+  it("gives a page that already is the root Unset root page instead of Set as root page", () => {
     const root = pageRow(2, "About Us", 5, { isFolderRoot: true });
 
     expect(idsOf(contextFor(root)).flat()).not.toContain("setAsRoot");
+    expect(idsOf(contextFor(root))[1]).toEqual([
+      "settings",
+      "unsetRoot",
+      "move",
+      "moveTo",
+      "moveUp",
+      "moveDown",
+    ]);
+    expect(entryOf(contextFor(root), "unsetRoot")?.label).toEqual({ key: "menuUnsetRoot" });
   });
 
   it("builds from the definitions it is given, so a later ticket adds its entry in one place", () => {
@@ -85,7 +94,7 @@ describe("buildContextMenu, entries a row refuses stay with a reason", () => {
     const page = pageRow(2, "Contact", 5, { access: readOnly });
     const context = contextFor(page);
 
-    for (const id of ["setAsRoot", "move", "moveTo", "moveUp", "moveDown"]) {
+    for (const id of ["settings", "setAsRoot", "move", "moveTo", "moveUp", "moveDown"]) {
       expect(entryOf(context, id)?.reason).toEqual({ key: "menuNoAccess" });
     }
     expect(entryOf(context, "open")?.reason).toBeNull();
@@ -99,6 +108,33 @@ describe("buildContextMenu, entries a row refuses stay with a reason", () => {
 
     expect(entryOf(contextFor(published), "setAsRoot")?.reason).toEqual({ key: "menuNoAccess" });
     expect(entryOf(contextFor(draft), "setAsRoot")?.reason).toBeNull();
+  });
+
+  it("needs publish access to unset the root page of a published page, but not of a draft", () => {
+    const drafterAccess = { delete: true, publish: false, update: true };
+    const published = pageRow(2, "About Us", 5, {
+      access: drafterAccess,
+      isFolderRoot: true,
+      status: "published",
+    });
+    const draft = pageRow(2, "About Us", 5, {
+      access: drafterAccess,
+      isFolderRoot: true,
+      status: "draft",
+    });
+
+    expect(entryOf(contextFor(published), "unsetRoot")?.reason).toEqual({ key: "menuNoAccess" });
+    expect(entryOf(contextFor(draft), "unsetRoot")?.reason).toBeNull();
+  });
+
+  it("offers Settings for one row, never for a selection of several", () => {
+    const ticked = pageRow(2, "A", 5);
+    const other = pageRow(3, "B", 5);
+
+    expect(entryOf(contextFor(ticked), "settings")?.reason).toBeNull();
+    expect(idsOf(contextFor(ticked, { targets: [ticked, other] })).flat()).not.toContain(
+      "settings"
+    );
   });
 
   it("names the page that is already the folder's root", () => {

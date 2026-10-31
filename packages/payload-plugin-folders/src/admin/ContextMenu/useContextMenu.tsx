@@ -36,6 +36,10 @@ export type ContextMenuActions = {
   /** Moves one row one place up or down its folder. */
   moveWithinFolder: (item: TreeItem, target: MoveTarget) => void;
   setAsRoot: (item: TreeItem) => void;
+  /** "Settings": opens the folder's or the page's drawer. */
+  settings: (item: TreeItem) => void;
+  /** "Unset root page": asks for the page's own segment, then saves it. */
+  unsetRoot: (item: TreeItem) => void;
 };
 
 export type ContextMenuOptions = {
@@ -200,6 +204,14 @@ export const useContextMenu = ({
         }
         case "setAsRoot": {
           actions.setAsRoot(target);
+          break;
+        }
+        case "settings": {
+          actions.settings(target);
+          break;
+        }
+        case "unsetRoot": {
+          actions.unsetRoot(target);
           break;
         }
         case "move": {

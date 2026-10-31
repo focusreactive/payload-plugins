@@ -61,3 +61,22 @@ export const LinkIcon = ({ isLinked }: { isLinked: boolean }) => (
     )}
   </svg>
 );
+
+/** A padlock: a page type a folder above has locked. */
+export const LockIcon = () => (
+  <svg
+    aria-hidden="true"
+    className="fr-folders-icon"
+    fill="none"
+    height="12"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="1.5"
+    viewBox="0 0 16 16"
+    width="12"
+  >
+    <rect height="6.5" rx="1.25" width="9.5" x="3.25" y="7.25" />
+    <path d="M5.25 7.25V5.25a2.75 2.75 0 0 1 5.5 0v2" />
+  </svg>
+);

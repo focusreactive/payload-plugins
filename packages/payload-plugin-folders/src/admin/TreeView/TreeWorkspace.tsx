@@ -18,6 +18,8 @@ import { placeMarkers } from "../MoveMode/moveMarkers.js";
 import type { MoveMarker } from "../MoveMode/moveMarkers.js";
 import { useMoveMode } from "../MoveMode/useMoveMode.js";
 import { useMoveFlow } from "../Move/useMoveFlow.js";
+import type { PageFieldNames } from "../Settings/PageSettingsDrawer.js";
+import { useSettingsFlow } from "../Settings/useSettingsFlow.js";
 import { findLoadedFolder, itemKeyOf } from "../store.js";
 import type { TreeStore } from "../store.js";
 import { BulkToolbar } from "../Toolbar/BulkToolbar.js";
@@ -41,6 +43,8 @@ export type TreeWorkspaceProps = {
   /** The deepest a URL may go. */
   maxDepth: number;
   onOpenPage: (url: string) => void;
+  /** Page collection slug to the names of its title and segment fields. */
+  pageFields: Record<string, PageFieldNames>;
   pageSize: number;
   /** Segments the top level cannot take. */
   reservedRootSegments: readonly string[];
@@ -65,6 +69,7 @@ export const TreeWorkspace = ({
   language,
   maxDepth,
   onOpenPage,
+  pageFields,
   pageSize,
   reservedRootSegments,
   store,
@@ -146,6 +151,24 @@ export const TreeWorkspace = ({
   const apiContext = useApiContext(store);
   const rootPageFlow = useRootPageFlow({ apiContext, languageCount, state, store, translate });
   const { start: startSetAsRoot } = rootPageFlow;
+  const settingsFlow = useSettingsFlow({
+    adminRoute,
+    apiContext,
+    confirmMoves,
+    draftCollections,
+    enforceAllowedTypes: enforceAllowedTypesOnMove,
+    foldersSlug,
+    language,
+    languageCount,
+    locale: store.getOptions()?.locale ?? null,
+    onMove: startDropMove,
+    pageFields,
+    state,
+    store,
+    translate,
+    typeLabels,
+  });
+  const { startSettings, startUnroot } = settingsFlow;
 
   // Move up and Move down are single-row moves through the same plan, confirm and Undo as a drop.
   const moveWithinFolder = useCallback(
@@ -198,6 +221,8 @@ export const TreeWorkspace = ({
       moveWithinFolder,
       openPage: onOpenPage,
       setAsRoot: startSetAsRoot,
+      settings: startSettings,
+      unsetRoot: startUnroot,
     }),
     [
       moveWithinFolder,
@@ -207,6 +232,8 @@ export const TreeWorkspace = ({
       startMoveTo,
       startPage,
       startSetAsRoot,
+      startSettings,
+      startUnroot,
     ]
   );
   const contextMenu = useContextMenu({
@@ -231,10 +258,13 @@ export const TreeWorkspace = ({
       if (action === "move") {
         enterMoveMode(selection.items, true);
       }
-      // Duplicate, Publish, Unpublish, Delete and Settings open their dialogs in later tickets
-      // (spec sections 7.8 and 7.10); until then pressing one does nothing.
+      if (action === "settings" && selection.items.length === 1) {
+        startSettings(selection.items[0] as TreeItem);
+      }
+      // Duplicate, Publish, Unpublish and Delete open their dialogs in a later ticket (spec
+      // section 7.10); until then pressing one does nothing.
     },
-    [enterMoveMode, selection.items, startMoveTo]
+    [enterMoveMode, selection.items, startMoveTo, startSettings]
   );
 
   return (
@@ -290,6 +320,7 @@ export const TreeWorkspace = ({
             }
             onOpenMenu={contextMenu.openMenu}
             onOpenPage={onOpenPage}
+            onOpenSettings={startSettings}
             openMenuItemKey={contextMenu.openItemKey}
             pageSize={pageSize}
             rows={rows}
@@ -302,6 +333,7 @@ export const TreeWorkspace = ({
       </div>
       {moveFlow.dialogs}
       {rootPageFlow.dialog}
+      {settingsFlow.dialogs}
       {createFlow.dialogs}
       {contextMenu.menu}
     </>

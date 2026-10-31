@@ -105,6 +105,7 @@ describe("foldersPlugin", () => {
       foldersSlug: "folders",
       hasPreviewUrl: false,
       maxDepth: 20,
+      pageFields: { pages: { segmentField: "slug", titleField: "title" } },
       pageSize: 50,
       reservedRootSegments: expect.arrayContaining(["admin", "api"]),
       typeLabels: { pages: { explicit: true, label: "Landing page" } },
@@ -193,5 +194,44 @@ describe("foldersPlugin", () => {
     expect(translations.de?.foldersTree?.loadError).toBe(
       "Dieser Ordner konnte nicht geladen werden"
     );
+  });
+
+  it("replaces the folders edit view's Save button and greys the locked type fields", async () => {
+    const result = await foldersPlugin({ collections: { pages: true } as never })(
+      buildHostConfig()
+    );
+    const folders = result.collections?.find((collection) => collection.slug === "folders");
+    const fieldComponent = (name: string) =>
+      (
+        folders?.fields.find((field) => "name" in field && field.name === name) as {
+          admin?: { components?: { Field?: string } };
+        }
+      )?.admin?.components?.Field;
+
+    expect(folders?.admin?.components?.edit?.SaveButton).toBe(
+      `${pluginSlug}/client#FolderSaveButton`
+    );
+    expect(folders?.admin?.components?.edit?.beforeDocumentControls).toEqual([
+      `${pluginSlug}/client#FolderTitleFallback`,
+    ]);
+    expect(fieldComponent("allowedTypes")).toBe(`${pluginSlug}/client#LockableSelectField`);
+    expect(fieldComponent("defaultType")).toBe(`${pluginSlug}/client#LockableSelectField`);
+    expect(fieldComponent("lockSubfolderTypes")).toBe(`${pluginSlug}/client#LockableCheckboxField`);
+  });
+
+  it("leaves the stock edit view alone when the plugin is disabled", async () => {
+    const result = await foldersPlugin({ collections: { pages: true } as never, disabled: true })(
+      buildHostConfig()
+    );
+    const pages = result.collections?.find((collection) => collection.slug === "pages");
+    const folders = result.collections?.find((collection) => collection.slug === "folders");
+    const folderField = pages?.fields.find(
+      (field) => "name" in field && field.name === "folder"
+    ) as {
+      admin?: { components?: unknown };
+    };
+
+    expect(folderField.admin?.components).toBeUndefined();
+    expect(folders?.admin?.components).toBeUndefined();
   });
 });

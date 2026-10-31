@@ -78,3 +78,25 @@ export const toStoryblokFullSlug = (fullPath: string, isFolderRoot: boolean): st
 
   return `${segments.join("/")}${isFolderRoot ? "/" : ""}`;
 };
+
+/**
+ * A page's path from its folder's path (`/` or an empty string at the top level), its segment and
+ * its root flag: a root page takes its folder's path, any other page its folder's path plus its
+ * own segment. The browser composes the path of unsaved form values with this, so the edit view
+ * can say what a save will change; `null` while a page has no segment yet.
+ */
+export const composeFullPath = ({
+  folderPath,
+  isFolderRoot,
+  segment,
+}: {
+  folderPath: string;
+  isFolderRoot: boolean;
+  segment: string;
+}): string | null => {
+  if (isFolderRoot) {
+    return joinPath(folderPath === "" ? "/" : folderPath);
+  }
+
+  return segment === "" ? null : joinPath(folderPath, segment);
+};

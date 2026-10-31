@@ -23,7 +23,13 @@ const expectOk = async (
 /** Creates a top-level folder (or one inside `parent`) through the REST API, as the dev admin. */
 export const createFolder = async (
   request: APIRequestContext,
-  data: { name: string; parent?: number; slug: string }
+  data: {
+    allowedTypes?: string[];
+    lockSubfolderTypes?: boolean;
+    name: string;
+    parent?: number;
+    slug: string;
+  }
 ): Promise<number> => {
   const response = await request.post("/api/folders", { data });
   await expectOk(response, `Creating folder ${data.name}`);
@@ -79,4 +85,33 @@ export const redirectsFrom = async (
   await expectOk(response, `Reading redirects from ${fromPath}`);
 
   return ((await response.json()) as { totalDocs: number }).totalDocs;
+};
+
+/** Deletes a folder with everything inside it, the deepest rows first. */
+export const removeFolderTree = async (
+  request: APIRequestContext,
+  folderId: number
+): Promise<void> => {
+  for (const row of await childrenOf(request, folderId)) {
+    if (row.kind === "folder") {
+      await removeFolderTree(request, row.id);
+    } else {
+      await request.delete(`/api/${row.collection}/${row.id}`);
+    }
+  }
+  await request.delete(`/api/folders/${folderId}`);
+};
+
+/** A page as Payload's REST route answers it: the live row, or the latest version with `draft`. */
+export const readPage = async <Doc = Record<string, unknown>>(
+  request: APIRequestContext,
+  id: number,
+  { collection = "pages", draft = false }: { collection?: string; draft?: boolean } = {}
+): Promise<Doc> => {
+  const response = await request.get(
+    `/api/${collection}/${id}?depth=0${draft ? "&draft=true" : ""}`
+  );
+  await expectOk(response, `Reading page ${id}`);
+
+  return (await response.json()) as Doc;
 };

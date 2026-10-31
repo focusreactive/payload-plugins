@@ -28,6 +28,11 @@ export type ConfirmRequest = {
   /** The rows being moved, for naming a refused item. */
   items: readonly TreeItem[];
   preview: MovePreview;
+  /**
+   * The save goes through Payload's own route, which cannot leave the redirects out: the dialog
+   * says how many will be written instead of offering the box (a folder rename).
+   */
+  redirectsAreAutomatic?: boolean;
   /** The destination's name as the editor reads it. */
   targetTitle: string;
   /** The question; "Move N items to ..." unless the question is not about a move. */
@@ -137,7 +142,14 @@ const ConfirmContent = ({
                   </ul>
                 </div>
               ) : null}
-              {request.preview.redirectRowsToWrite > 0 ? (
+              {request.preview.redirectRowsToWrite > 0 && request.redirectsAreAutomatic ? (
+                <p className="fr-folders-muted" data-testid="redirect-automatic">
+                  {translate("confirmRedirectsAutomatic", {
+                    count: request.preview.redirectRowsToWrite,
+                  })}
+                </p>
+              ) : null}
+              {request.preview.redirectRowsToWrite > 0 && !request.redirectsAreAutomatic ? (
                 <div className="fr-folders-confirm__redirect">
                   <CheckboxInput
                     checked={redirects}

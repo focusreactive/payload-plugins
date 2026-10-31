@@ -3,7 +3,7 @@ import { useCallback, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { TreeItem } from "../../types.js";
-import { fetchLatestStatus, writeDocument } from "../api.js";
+import { fetchLatestStatus, isDraftPendingError, writeDocument } from "../api.js";
 import type { FoldersApiContext } from "../api.js";
 import type { Translate } from "../compat.js";
 import { ConfirmUrlChangeDialog } from "../Move/ConfirmUrlChangeDialog.js";
@@ -48,10 +48,10 @@ export const useRootPageFlow = ({
   const openings = useRef(0);
 
   const save = useCallback(
-    async (item: TreeItem, folderPath: string) => {
+    async (item: TreeItem, folderPath: string, forceDraft = false) => {
       setIsSaving(true);
       try {
-        let mode = rootUpdateModeOf(item);
+        let mode = forceDraft ? "draft" : rootUpdateModeOf(item);
         if (mode === "live") {
           // The row's status was read when the tree loaded. A draft saved since (elsewhere, or by an
           // autosave) leaves it stale, and a live save would publish that draft with the flag: read
@@ -78,7 +78,16 @@ export const useRootPageFlow = ({
         );
       } catch (error) {
         const detail = messageOf(error);
-        toast.error(detail === "" ? translate("rootSetFailed") : detail);
+        // A draft saved after the status read above got past it: the server refused the live save
+        // under the tree lock (spec section 4), and the draft stays a draft if the editor says so.
+        toast.error(detail === "" ? translate("rootSetFailed") : detail, {
+          action: isDraftPendingError(error)
+            ? {
+                label: translate("saveAsDraftInstead"),
+                onClick: () => void save(item, folderPath, true),
+              }
+            : undefined,
+        });
       } finally {
         setIsSaving(false);
       }

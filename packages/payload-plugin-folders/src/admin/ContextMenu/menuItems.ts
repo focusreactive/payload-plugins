@@ -96,10 +96,16 @@ const setAsRootReason = (context: ContextMenuContext): MenuReason | null => {
     : { key: "menuRootTaken", variables: { title: rootPage.title } };
 };
 
+/** Un-setting a published root page changes its live URL, which takes publish rights as well. */
+const unsetRootReason = ({ item }: ContextMenuContext): MenuReason | null =>
+  item.access.update && (rootUpdateModeOf(item) === "draft" || item.access.publish)
+    ? null
+    : noAccess;
+
 /**
  * The menu's entries, in the order of the spec's table (section 7.5). Later tickets add theirs here
- * in that place instead of the menu showing an entry that does nothing: Settings (P-40), Unset root
- * page (P-40), Duplicate (P-46), Publish and Unpublish (P-27), Delete (P-26, P-28).
+ * in that place instead of the menu showing an entry that does nothing: Duplicate (P-46), Publish
+ * and Unpublish (P-27), Delete (P-26, P-28).
  */
 export const contextMenuDefinitions: ContextMenuDefinition[] = [
   {
@@ -143,11 +149,26 @@ export const contextMenuDefinitions: ContextMenuDefinition[] = [
     id: "createFolder",
   },
   {
-    // A page that is already the root has Unset root page instead, which a later ticket adds.
-    build: (context) =>
-      context.item.kind === "page" && context.item.isFolderRoot !== true
-        ? { id: "setAsRoot", label: { key: "menuSetAsRoot" }, reason: setAsRootReason(context) }
-        : null,
+    // Settings opens the folder's or the page's drawer, and changes what the drawer saves.
+    build: ({ item }) => ({
+      id: "settings",
+      label: { key: "actionSettings" },
+      reason: item.access.update ? null : noAccess,
+    }),
+    group: "structure",
+    id: "settings",
+  },
+  {
+    // A page that is already the root has Unset root page instead.
+    build: (context) => {
+      if (context.item.kind !== "page") {
+        return null;
+      }
+
+      return context.item.isFolderRoot === true
+        ? { id: "unsetRoot", label: { key: "menuUnsetRoot" }, reason: unsetRootReason(context) }
+        : { id: "setAsRoot", label: { key: "menuSetAsRoot" }, reason: setAsRootReason(context) };
+    },
     group: "structure",
     id: "setAsRoot",
   },

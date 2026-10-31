@@ -9,6 +9,7 @@ import { useRowDrag } from "../DragAndDrop/dragState.js";
 import type { MenuAnchor } from "../Menu/menuEntries.js";
 import { HouseIcon, MoreIcon } from "./icons.js";
 import { formatAbsoluteTime, formatRelativeTime } from "./relativeTime.js";
+import { isTextEntry, opensSettings } from "../Settings/settingsKey.js";
 import { pathDisplayOf } from "./rowDisplay.js";
 import type { ItemRowModel } from "./useTreeData.js";
 
@@ -30,6 +31,8 @@ export type TreeRowProps = {
    * key. `returnFocus` is where focus goes when the keyboard closes the menu.
    */
   onOpenMenu: (item: TreeItem, anchor: MenuAnchor, returnFocus: HTMLElement | null) => void;
+  /** F2 on the row or a control inside it: opens the row's Settings. */
+  onOpenSettings: (item: TreeItem) => void;
   /** Shift click or Shift on the checkbox: ticks from the last ticked row to this one. */
   onSelectRange: (item: TreeItem) => void;
   onToggleFolder: (folderId: number | string) => void;
@@ -84,6 +87,7 @@ export const TreeRow = ({
   onOpenFolder,
   onOpenMenu,
   onOpenPage,
+  onOpenSettings,
   onSelectRange,
   onToggleFolder,
   onToggleSelect,
@@ -151,6 +155,27 @@ export const TreeRow = ({
 
   // Shift+F10 and the ContextMenu key open the menu from whichever control of the row has focus.
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (
+      opensSettings({
+        altKey: event.altKey,
+        ctrlKey: event.ctrlKey,
+        key: event.key,
+        metaKey: event.metaKey,
+        shiftKey: event.shiftKey,
+        targetIsTextInput:
+          event.target instanceof HTMLElement &&
+          isTextEntry({
+            inputType: event.target instanceof HTMLInputElement ? event.target.type : null,
+            isContentEditable: event.target.isContentEditable,
+            tagName: event.target.tagName,
+          }),
+      })
+    ) {
+      event.preventDefault();
+      onOpenSettings(item);
+
+      return;
+    }
     if (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10")) {
       return;
     }

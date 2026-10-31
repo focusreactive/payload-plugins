@@ -37,6 +37,8 @@ export type TreeProps = {
   /** Opens a row's context menu; see `TreeRowProps.onOpenMenu`. */
   onOpenMenu: (item: TreeItem, anchor: MenuAnchor, returnFocus: HTMLElement | null) => void;
   onOpenPage: (url: string) => void;
+  /** F2 on a row: opens its Settings. */
+  onOpenSettings: (item: TreeItem) => void;
   /** The key of the row whose context menu is open. */
   openMenuItemKey: string | null;
   /** Rows per request, shown in the "Load more" label. */
@@ -180,6 +182,7 @@ export const Tree = ({
   onOpenFolder,
   onOpenMenu,
   onOpenPage,
+  onOpenSettings,
   openMenuItemKey,
   pageSize,
   rows,
@@ -299,6 +302,7 @@ export const Tree = ({
                     onOpenFolder={onOpenFolder}
                     onOpenMenu={onOpenMenu}
                     onOpenPage={onOpenPage}
+                    onOpenSettings={onOpenSettings}
                     onSelectRange={selection.selectRange}
                     onToggleFolder={toggleFolder}
                     onToggleSelect={selection.toggle}

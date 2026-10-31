@@ -31,6 +31,8 @@ export type TreeViewClientProps = {
   initialLocale: string | null;
   /** The deepest a URL may go (`maxDepth`). */
   maxDepth: number;
+  /** Page collection slug to the names of its title and segment fields. */
+  pageFields: Record<string, { segmentField: string; titleField: string }>;
   pageSize: number;
   /** Segments the top level cannot take. */
   reservedRootSegments: string[];
@@ -48,6 +50,7 @@ export const TreeViewClient = ({
   hasPreviewUrl,
   initialLocale,
   maxDepth,
+  pageFields,
   pageSize,
   reservedRootSegments,
   title,
@@ -105,6 +108,7 @@ export const TreeViewClient = ({
           language={language}
           maxDepth={maxDepth}
           onOpenPage={(url) => router.push(url)}
+          pageFields={pageFields}
           pageSize={pageSize}
           reservedRootSegments={reservedRootSegments}
           store={store}

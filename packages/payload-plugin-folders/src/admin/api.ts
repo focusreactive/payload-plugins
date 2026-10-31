@@ -1,5 +1,6 @@
 import type { MoveResult } from "../core/applyMove.js";
 import type { ExpectedState, MoveAnchor, MovePreview } from "../core/move.js";
+import { rootDraftPendingMessage } from "../core/rootFlip.js";
 import type { FolderId, ItemRef, TreeItem, TreeStatus } from "../types.js";
 
 /** Where the plugin's endpoints live and how to call them. */
@@ -244,12 +245,20 @@ export const postMove = (context: FoldersApiContext, body: MoveBody): Promise<Mo
 
 export type { MovePreview, MoveResult };
 
-export type SegmentCheckResponse = { message?: string; ok: boolean };
+export type SegmentCheckResponse = {
+  message?: string;
+  ok: boolean;
+};
 
 /** Whether `segment` is free in a folder (`null` is the top level), for the create dialogs. */
 export const fetchCheckSegment = (
   context: FoldersApiContext,
-  { exclude, parent, segment }: { exclude?: ItemRef; parent: FolderId | null; segment: string },
+  {
+    exclude,
+    locale,
+    parent,
+    segment,
+  }: { exclude?: ItemRef; locale?: string | null; parent: FolderId | null; segment: string },
   signal?: AbortSignal
 ): Promise<SegmentCheckResponse> =>
   getJson<SegmentCheckResponse>(
@@ -257,6 +266,7 @@ export const fetchCheckSegment = (
     "check-segment",
     {
       exclude: exclude === undefined ? undefined : `${exclude.collection}:${exclude.id}`,
+      locale,
       parent: parent === null ? "root" : String(parent),
       segment,
     },
@@ -321,3 +331,97 @@ export const fetchLatestStatus = async (
 
   return readJsonResponse<{ _status?: string }>(response);
 };
+
+/** The refusal of a live save that would publish a newer draft along with the root flag. */
+export const isDraftPendingError = (error: unknown): boolean =>
+  error instanceof FoldersApiError && error.message === rootDraftPendingMessage;
+
+/**
+ * One document as Payload's REST route answers it: the latest version, drafts included (or the live
+ * row with `draft: false`), and only the values the locale has of its own (`fallback-locale=none`),
+ * so a settings form shows what an edit would change and not what falls back.
+ */
+export const fetchDocument = async <Doc>(
+  context: FoldersApiContext,
+  {
+    collection,
+    draft = true,
+    id,
+    locale,
+  }: { collection: string; draft?: boolean; id: FolderId; locale?: string | null }
+): Promise<Doc> => {
+  const send = context.fetchImplementation ?? fetch;
+  const response = await send(
+    `${context.baseUrl}/${collection}/${id}${buildQuery({
+      depth: 0,
+      draft: draft ? "true" : undefined,
+      "fallback-locale": "none",
+      locale,
+    })}`,
+    { credentials: "include", headers: { Accept: "application/json" }, method: "GET" }
+  );
+
+  return readJsonResponse<Doc>(response);
+};
+
+/** How many folders sit anywhere below a folder, for the lock confirmation. */
+export const fetchSubfolderCount = async (
+  context: FoldersApiContext,
+  { foldersSlug, id }: { foldersSlug: string; id: FolderId }
+): Promise<number> => {
+  const send = context.fetchImplementation ?? fetch;
+  const response = await send(
+    `${context.baseUrl}/${foldersSlug}${buildQuery({
+      depth: 0,
+      limit: 1,
+      "select[id]": "true",
+      "where[ancestorIds][contains]": `/${id}/`,
+    })}`,
+    { credentials: "include", headers: { Accept: "application/json" }, method: "GET" }
+  );
+
+  return (await readJsonResponse<{ totalDocs: number }>(response)).totalDocs;
+};
+
+/** The old path of a URL history row. */
+export type UrlHistoryEntry = {
+  createdAt: string;
+  fromPath: string;
+  id: FolderId;
+  kind: "folderPrefix" | "page";
+  locale: string | null;
+};
+
+/** The URL history rows that point at one document, newest first. */
+export const fetchUrlHistory = async (
+  context: FoldersApiContext,
+  { collection, id }: { collection: string; id: FolderId }
+): Promise<UrlHistoryEntry[]> => {
+  const send = context.fetchImplementation ?? fetch;
+  const response = await send(
+    `${context.baseUrl}/folder-redirects${buildQuery({
+      depth: 0,
+      limit: 50,
+      sort: "-createdAt",
+      "where[target.relationTo][equals]": collection,
+      "where[target.value][equals]": String(id),
+    })}`,
+    { credentials: "include", headers: { Accept: "application/json" }, method: "GET" }
+  );
+
+  return (await readJsonResponse<{ docs: UrlHistoryEntry[] }>(response)).docs;
+};
+
+export type FolderPreviewBody = { locale?: string | null; parent?: FolderId | null; slug?: string };
+
+/** What saving a rename of one folder would change, without writing. */
+export const previewFolderEdit = (
+  context: FoldersApiContext,
+  id: FolderId,
+  body: FolderPreviewBody
+): Promise<MovePreview> =>
+  postJson<MovePreview>(context, `folders/${id}/preview`, {
+    ...(body.slug === undefined ? {} : { slug: body.slug }),
+    ...(body.parent === undefined ? {} : { parent: body.parent }),
+    ...(body.locale ? { locale: body.locale } : {}),
+  });

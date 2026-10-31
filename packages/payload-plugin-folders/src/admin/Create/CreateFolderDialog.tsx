@@ -1,6 +1,5 @@
 import {
   Button,
-  CheckboxInput,
   DialogBody,
   DialogCancel,
   DialogFooter,
@@ -15,11 +14,13 @@ import type { FolderId, TreeItem } from "../../types.js";
 import { writeDocument } from "../api.js";
 import type { FoldersApiContext } from "../api.js";
 import type { Translate } from "../compat.js";
-import { FolderPickerTree } from "../Move/FolderPickerTree.js";
 import type { FolderChoice } from "../Move/FolderPickerTree.js";
 import { findLoadedFolder } from "../store.js";
 import type { TreeStore } from "../store.js";
 import { useTreeStoreState } from "../useTreeStore.js";
+import { AllowedTypesField } from "./AllowedTypesField.js";
+import type { AllowedTypesValue } from "./AllowedTypesField.js";
+import { ParentField } from "./ParentField.js";
 import { SlugField } from "./SlugField.js";
 import {
   initialSlugState,
@@ -59,8 +60,6 @@ export type CreateFolderDialogProps = {
   typeLabels: Readonly<Record<string, string>>;
 };
 
-type TypesMode = "all" | "specific";
-
 const CreateFolderContent = ({
   apiContext,
   foldersSlug,
@@ -81,11 +80,12 @@ const CreateFolderContent = ({
     id: initialParent?.id ?? null,
     title: initialParent?.title ?? translate("moveToRoot"),
   });
-  const [isPickingParent, setIsPickingParent] = useState(false);
-  const [typesMode, setTypesMode] = useState<TypesMode>("all");
-  const [chosenTypes, setChosenTypes] = useState<readonly string[]>([]);
-  const [defaultType, setDefaultType] = useState("");
-  const [locksTypes, setLocksTypes] = useState(false);
+  const [types, setTypes] = useState<AllowedTypesValue>({
+    chosenTypes: [],
+    defaultType: "",
+    locksTypes: false,
+    mode: "all",
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
 
@@ -99,22 +99,16 @@ const CreateFolderContent = ({
   const check = useSegmentCheck({ context: apiContext, parent: parent.id, segment: segment.value });
 
   const allSlugs = Object.keys(typeLabels);
-  const defaultOptions = typesMode === "specific" ? chosenTypes : allSlugs;
+  const defaultOptions = types.mode === "specific" ? types.chosenTypes : allSlugs;
   // A default that left the list (its chip was unticked) reads as no default.
-  const effectiveDefault = defaultOptions.includes(defaultType) ? defaultType : "";
-  const needsTypes = !isLocked && typesMode === "specific" && chosenTypes.length === 0;
+  const effectiveDefault = defaultOptions.includes(types.defaultType) ? types.defaultType : "";
+  const needsTypes = !isLocked && types.mode === "specific" && types.chosenTypes.length === 0;
   const canCreate = name.trim() !== "" && check.state === "ok" && !needsTypes && !isSaving;
 
   const changeName = (value: string) => {
     setName(value);
     setSegment((current) => slugAfterSourceChange(current, value));
   };
-  const toggleType = (slug: string) => {
-    setChosenTypes((current) =>
-      current.includes(slug) ? current.filter((chosen) => chosen !== slug) : [...current, slug]
-    );
-  };
-
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!canCreate) {
@@ -130,9 +124,9 @@ const CreateFolderContent = ({
           name: name.trim(),
           slug: segment.value,
           ...(parent.id === null ? {} : { parent: parent.id }),
-          ...(isLocked || typesMode === "all" ? {} : { allowedTypes: chosenTypes }),
+          ...(isLocked || types.mode === "all" ? {} : { allowedTypes: types.chosenTypes }),
           ...(isLocked || effectiveDefault === "" ? {} : { defaultType: effectiveDefault }),
-          ...(!isLocked && typesMode === "specific" && locksTypes
+          ...(!isLocked && types.mode === "specific" && types.locksTypes
             ? { lockSubfolderTypes: true }
             : {}),
         },
@@ -182,120 +176,28 @@ const CreateFolderContent = ({
             value={segment.value}
           />
 
-          <div className="fr-folders-field">
-            <span className="fr-folders-field__label">{translate("createParent")}</span>
-            <div className="fr-folders-parent">
-              <span data-testid="parent-name">{parent.title}</span>
-              <Button
-                buttonStyle="secondary"
-                extraButtonProps={{ "data-testid": "parent-change" }}
-                margin={false}
-                onClick={() => setIsPickingParent((current) => !current)}
-                size="medium"
-              >
-                {translate("createParentChange")}
-              </Button>
-            </div>
-            {isPickingParent ? (
-              <div className="fr-folders-picker" data-testid="parent-picker">
-                <FolderPickerTree
-                  choice={parent}
-                  context={apiContext}
-                  foldersSlug={foldersSlug}
-                  onChoose={(choice) => {
-                    setParent(choice);
-                    setIsPickingParent(false);
-                  }}
-                  refusalFor={() => null}
-                  store={store}
-                  translate={translate}
-                />
-              </div>
-            ) : null}
-          </div>
+          <ParentField
+            apiContext={apiContext}
+            choice={parent}
+            foldersSlug={foldersSlug}
+            onChoose={setParent}
+            refusalFor={() => null}
+            store={store}
+            translate={translate}
+          />
 
-          <fieldset className="fr-folders-fieldset" disabled={isLocked}>
-            <legend className="fr-folders-field__label">{translate("createTypes")}</legend>
-            {isLocked ? (
-              <p className="fr-folders-field__hint" data-testid="types-locked">
-                {lockOwner
-                  ? translate("createTypesLocked", { title: lockOwner.title })
-                  : translate("createTypesLockedUnknown")}
-              </p>
-            ) : null}
-            <div className="fr-folders-radios">
-              <label>
-                <input
-                  checked={typesMode === "all"}
-                  name={`${formId}-types`}
-                  onChange={() => setTypesMode("all")}
-                  type="radio"
-                />
-                {translate("createTypesAll")}
-              </label>
-              <label>
-                <input
-                  checked={typesMode === "specific"}
-                  name={`${formId}-types`}
-                  onChange={() => setTypesMode("specific")}
-                  type="radio"
-                />
-                {translate("createTypesSpecific")}
-              </label>
-            </div>
-            {typesMode === "specific" ? (
-              <div className="fr-folders-chips" data-testid="type-chips" role="group">
-                {allSlugs.map((slug) => (
-                  <button
-                    aria-checked={chosenTypes.includes(slug)}
-                    className={`fr-folders-type-chip${chosenTypes.includes(slug) ? " fr-folders-type-chip--on" : ""}`}
-                    key={slug}
-                    onClick={() => toggleType(slug)}
-                    role="checkbox"
-                    type="button"
-                  >
-                    {typeLabels[slug] ?? slug}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            {needsTypes ? (
-              <p className="fr-folders-field__hint" data-testid="types-needed">
-                {translate("createTypesNeeded")}
-              </p>
-            ) : null}
-            <div className="fr-folders-field">
-              <label className="fr-folders-field__label" htmlFor={`${formId}-default`}>
-                {translate("createDefaultType")}
-              </label>
-              <select
-                className="fr-folders-input"
-                data-testid="default-type"
-                id={`${formId}-default`}
-                onChange={(event) => setDefaultType(event.target.value)}
-                value={effectiveDefault}
-              >
-                <option value="">{translate("createDefaultTypeNone")}</option>
-                {defaultOptions.map((slug) => (
-                  <option key={slug} value={slug}>
-                    {typeLabels[slug] ?? slug}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="fr-folders-field">
-              <CheckboxInput
-                checked={typesMode === "specific" && locksTypes}
-                id={`${formId}-lock`}
-                label={translate("createLockTypes")}
-                onToggle={() => setLocksTypes((current) => !current)}
-                readOnly={typesMode !== "specific"}
-              />
-              {typesMode === "specific" ? null : (
-                <p className="fr-folders-field__hint">{translate("createLockNeedsTypes")}</p>
-              )}
-            </div>
-          </fieldset>
+          <AllowedTypesField
+            formId={formId}
+            lock={
+              isLocked
+                ? { ownerTitle: lockOwner?.title ?? null, types: parentFolder?.allowedTypes ?? [] }
+                : null
+            }
+            onChange={setTypes}
+            translate={translate}
+            typeLabels={typeLabels}
+            value={types}
+          />
 
           {failure === null ? null : (
             <p className="fr-folders-error" data-testid="create-failure" role="alert">

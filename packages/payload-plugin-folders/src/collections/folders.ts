@@ -53,6 +53,16 @@ const requiredInDefaultLocale: TextFieldSingleValidation = (value, { req }) => {
 const segmentFieldRequirement = (localizeSegments: boolean) =>
   localizeSegments ? { validate: requiredInDefaultLocale } : { required: true as const };
 
+/**
+ * A folder under a type lock gets these fields read-only in its edit view, with a note naming the
+ * folder that locked them. The server refuses an edit of them either way.
+ */
+const lockableTypeField = (
+  component: "LockableCheckboxField" | "LockableSelectField",
+  options: ResolvedOptions
+): { components?: { Field: string } } =>
+  options.disabled ? {} : { components: { Field: `${pluginSlug}/client#${component}` } };
+
 export const buildFoldersCollection = (options: ResolvedOptions): CollectionConfig => {
   const { folders, localizeSegments } = options;
   const pageCollectionEntries = Object.values(options.collections);
@@ -126,11 +136,21 @@ export const buildFoldersCollection = (options: ResolvedOptions): CollectionConf
     {
       name: "allowedTypes",
       type: "select",
+      admin: lockableTypeField("LockableSelectField", options),
       hasMany: true,
       options: pageTypeOptions,
     },
-    { name: "defaultType", type: "select", options: pageTypeOptions },
-    { name: "lockSubfolderTypes", type: "checkbox" },
+    {
+      name: "defaultType",
+      type: "select",
+      admin: lockableTypeField("LockableSelectField", options),
+      options: pageTypeOptions,
+    },
+    {
+      name: "lockSubfolderTypes",
+      type: "checkbox",
+      admin: lockableTypeField("LockableCheckboxField", options),
+    },
     {
       name: "typesLockedBy",
       type: "relationship",
@@ -152,13 +172,21 @@ export const buildFoldersCollection = (options: ResolvedOptions): CollectionConf
     },
     admin: {
       // The tree view is the folders list view; the sidebar tab and the stock list stay available.
-      ...(options.admin.treeView && !options.disabled
-        ? {
+      ...(options.disabled
+        ? {}
+        : {
             components: {
-              views: { list: { Component: `${pluginSlug}/rsc#TreeViewServer` } },
+              edit: {
+                // The heading shows the default language's name where this language has none.
+                beforeDocumentControls: [`${pluginSlug}/client#FolderTitleFallback`],
+                // Saving a folder asks first when it renames URLs or locks subfolder types.
+                SaveButton: `${pluginSlug}/client#FolderSaveButton`,
+              },
+              ...(options.admin.treeView
+                ? { views: { list: { Component: `${pluginSlug}/rsc#TreeViewServer` } } }
+                : {}),
             },
-          }
-        : {}),
+          }),
       useAsTitle: "name",
     },
     // Plain values the admin's server component hands to the browser.
@@ -171,6 +199,13 @@ export const buildFoldersCollection = (options: ResolvedOptions): CollectionConf
         // `preview-url` endpoint for each link.
         hasPreviewUrl: Boolean(options.admin.previewUrl),
         maxDepth: options.maxDepth,
+        // What the settings drawers write a page's title and segment into.
+        pageFields: Object.fromEntries(
+          pageCollectionEntries.map((pageCollection) => [
+            pageCollection.slug,
+            { segmentField: pageCollection.segmentField, titleField: pageCollection.titleField },
+          ])
+        ),
         pageSize: options.admin.pageSize,
         reservedRootSegments: options.reservedRootSegments,
         typeLabels: Object.fromEntries(
