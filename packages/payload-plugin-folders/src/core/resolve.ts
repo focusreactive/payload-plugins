@@ -9,6 +9,7 @@ import { normalizeFolderReference, toFolderRecord } from "./folderRecords.js";
 import { getFolderLocaleKeys, getLocaleCodes, noLocaleKey } from "./locales.js";
 import { composeFullPath, joinPath, normalizePath } from "./paths.js";
 import { buildLiveInLocaleWhere } from "./publishedWhere.js";
+import { isForbidden, resolveReadMode } from "./readMode.js";
 import { getResolvedOptions } from "./runtime.js";
 import { buildPageSegmentWhere, folderPathIn, getPageDefaultLocale } from "./uniqueness.js";
 
@@ -51,9 +52,6 @@ type LookupContext = {
   payload: Payload;
   user: User | null;
 };
-
-const isForbidden = (error: unknown): boolean =>
-  typeof error === "object" && error !== null && (error as { status?: unknown }).status === 403;
 
 /** The locale a request reads in: the one asked for, else the default; `null` when nothing is localized. */
 export const resolveRequestLocale = (
@@ -208,14 +206,10 @@ export const resolvePath = async <TDoc = Record<string, unknown>>(
 ): Promise<ResolveResult<TDoc>> => {
   const options = getResolvedOptions(payload);
   const locale = resolveRequestLocale(payload, args.locale);
-  const overrideAccess = args.overrideAccess ?? false;
-  const user = args.user ?? null;
+  const { draft, overrideAccess, user } = resolveReadMode(args);
   const context: LookupContext = {
     depth: Math.min(Math.max(Math.trunc(args.depth ?? 1), 0), 10),
-    // A draft read past access control is for a reader that is known; anonymous callers read the
-    // published pages whatever they ask for, because a collection's public `read` says nothing
-    // about drafts.
-    draft: Boolean(args.draft) && (overrideAccess || user !== null),
+    draft,
     locale,
     options,
     overrideAccess,

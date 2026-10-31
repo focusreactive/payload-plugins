@@ -8,10 +8,12 @@ import { buildChildrenEndpoint } from "./children.js";
 import { buildFolderPreviewEndpoint } from "./folderPreview.js";
 import { buildMoveEndpoint } from "./move.js";
 import { buildMovePreviewEndpoint } from "./movePreview.js";
+import { buildPathsEndpoint } from "./paths.js";
 import { buildPreviewUrlEndpoint } from "./previewUrl.js";
 import { buildResolveEndpoint } from "./resolve.js";
 import { buildRevisionEndpoint } from "./revision.js";
 import { buildSearchEndpoint } from "./search.js";
+import { buildTreeEndpoint } from "./tree.js";
 
 /** The REST endpoints the plugin adds under `/api/folders-tree/` (spec section 10.2). */
 export const buildFoldersEndpoints = (options: ResolvedOptions): Endpoint[] => [
@@ -26,4 +28,6 @@ export const buildFoldersEndpoints = (options: ResolvedOptions): Endpoint[] => [
   buildAncestorsEndpoint(options),
   buildPreviewUrlEndpoint(options),
   buildResolveEndpoint(),
+  buildTreeEndpoint(options),
+  buildPathsEndpoint(),
 ];
