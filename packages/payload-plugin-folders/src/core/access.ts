@@ -332,6 +332,38 @@ export const getReadScope = async ({
 };
 
 /**
+ * Whether the user of `req` may read one document: the collection's `read` access, and its `Where`
+ * result matched against the document. The tree reads at database level, which runs no access, so
+ * a document that decides what a caller learns (a move's `after` anchor) is asked about first.
+ */
+export const canReadItem = async ({
+  item,
+  req,
+}: {
+  item: ItemRef;
+  req: PayloadRequest;
+}): Promise<boolean> => {
+  const nestedRequest = createNestedRequest(req);
+  const scope = await getReadScope({ collection: item.collection, nestedRequest, req });
+  if (!scope.isAllowed) {
+    return false;
+  }
+  if (!scope.where) {
+    return true;
+  }
+  const { docs } = await req.payload.db.find({
+    collection: toCollectionSlug(item.collection),
+    limit: 1,
+    pagination: false,
+    req: nestedRequest,
+    select: { id: true },
+    where: { and: [{ id: { equals: item.id } }, scope.where] },
+  });
+
+  return docs.length > 0;
+};
+
+/**
  * Whether the user of `req` may verify and repair the tree (spec section 9, decision 5):
  * `access.repair` when the host set it, else a user for whom the folders' `update` access passes
  * outright and `access.move` passes. `access.move` is asked with no items, because "every item"

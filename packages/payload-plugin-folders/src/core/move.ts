@@ -9,6 +9,7 @@ import type {
   ResolvedOptions,
   ResolvedPageCollection,
 } from "../types.js";
+import { canReadItem } from "./access.js";
 import { checkAllowedTypes, describeAllowedTypes, lockSourceOf } from "./allowedTypes.js";
 import {
   normalizeFolderReference,
@@ -489,17 +490,25 @@ export const buildMovePlan = async (
     if (requested.some((item) => itemKey(item) === itemKey(after))) {
       throw badRequest("The item to place the selection after cannot be part of the selection");
     }
+    if (after.collection !== foldersSlug && !options.collections[after.collection]) {
+      throw badRequest(`"${after.collection}" is not a folder or a page collection of the tree`);
+    }
+    // An anchor the user cannot read is answered like one that does not exist, so a move cannot be
+    // used to learn which folder a page or folder the user may not see sits in.
+    const isAnchorReadable =
+      overrideAccess ||
+      (await canReadItem({ item: { collection: after.collection, id: after.id }, req }));
     let afterParent: FolderId | null | undefined;
-    if (after.collection === foldersSlug) {
+    if (!isAnchorReadable) {
+      afterParent = undefined;
+    } else if (after.collection === foldersSlug) {
       afterParent = (await readFolderRecords(req, options, [after.id])).get(
         String(after.id)
       )?.parent;
-    } else if (options.collections[after.collection]) {
+    } else {
       afterParent = (
         await readPageRows(req, options.collections[after.collection], [after.id])
       ).get(String(after.id))?.folder;
-    } else {
-      throw badRequest(`"${after.collection}" is not a folder or a page collection of the tree`);
     }
     if (afterParent === undefined) {
       block(
