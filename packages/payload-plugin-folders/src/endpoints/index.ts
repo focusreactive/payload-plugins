@@ -8,6 +8,7 @@ import { buildChildrenEndpoint } from "./children.js";
 import { buildFolderPreviewEndpoint } from "./folderPreview.js";
 import { buildMoveEndpoint } from "./move.js";
 import { buildMovePreviewEndpoint } from "./movePreview.js";
+import { buildOperationStepEndpoint } from "./operationStep.js";
 import { buildPathsEndpoint } from "./paths.js";
 import { buildPreviewUrlEndpoint } from "./previewUrl.js";
 import { buildResolveEndpoint } from "./resolve.js";
@@ -30,4 +31,5 @@ export const buildFoldersEndpoints = (options: ResolvedOptions): Endpoint[] => [
   buildResolveEndpoint(),
   buildTreeEndpoint(options),
   buildPathsEndpoint(),
+  buildOperationStepEndpoint(options),
 ];
