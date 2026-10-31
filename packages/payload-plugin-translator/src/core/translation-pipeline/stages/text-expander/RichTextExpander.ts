@@ -19,7 +19,7 @@ export class RichTextExpander implements TextExpander {
     const textNodeRefs = collectSerializedLexicalTextNodes(root.root);
 
     const chunks: RichTextChunk[] = [];
-    const textMap: Record<number, string> = {};
+    const textMap: ExpansionResult["textMap"] = {};
     let index = startIndex;
 
     for (const ref of textNodeRefs) {
@@ -30,7 +30,7 @@ export class RichTextExpander implements TextExpander {
         text: ref.node.text,
         nodeRef: ref.node,
       });
-      textMap[index] = ref.node.text;
+      textMap[index] = { kind: "text", text: ref.node.text };
       index++;
     }
 

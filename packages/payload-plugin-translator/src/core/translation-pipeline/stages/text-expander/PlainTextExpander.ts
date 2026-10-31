@@ -23,7 +23,7 @@ export class PlainTextExpander implements TextExpander {
 
     return {
       chunks: [textChunk],
-      textMap: { [startIndex]: text },
+      textMap: { [startIndex]: { kind: "text", text } },
       nextIndex: startIndex + 1,
     };
   }

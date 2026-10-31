@@ -31,12 +31,14 @@ export type {
   OpenAIClientShape,
   OpenAISamplingParams,
   OpenAIStructuredOutput,
-  DryRunConfig,
 } from "./translation-providers/index.js";
 
 export {
   createTranslationProvider,
-  INLINE_MARKS_INSTRUCTION,
+  inlineMarksInstruction,
+  canEncodeSegments,
+  decodeSegments,
+  encodeSegments,
 } from "./translation-providers/index.js";
 export type {
   CompletionFn,

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import type { Field } from "payload";
 
 import type {
+  TranslationOutput,
   TranslationProvider,
   TranslationRequest,
 } from "../../domain/translation-providers/index.js";
@@ -16,13 +17,17 @@ const translateAll = (args: Omit<TranslateContentArgs, "selection">) =>
     selection: everyTranslatableLeaf(args.sourceData, args.schema),
   });
 
-// Deterministic fake provider: prefixes each collected text chunk with "T:".
-// Preserves the numeric keys, as the contract requires.
 const fakeProvider: TranslationProvider = {
   translate: async (input) => {
-    const out: Record<number, string> = {};
-    for (const key of Object.keys(input)) {
-      out[Number(key)] = `T:${input[Number(key)]}`;
+    const out: TranslationOutput = {};
+    for (const [key, value] of Object.entries(input)) {
+      out[Number(key)] =
+        value.kind === "text"
+          ? { kind: "text", text: `T:${value.text}` }
+          : {
+              kind: "segments",
+              segments: value.segments.map((s) => ({ id: s.id, text: `T:${s.text ?? ""}` })),
+            };
     }
     return out;
   },
@@ -36,7 +41,9 @@ const recordingProvider = (): { provider: TranslationProvider; seen: Translation
     provider: {
       translate: async (input, request) => {
         seen.push(request);
-        return Object.fromEntries(Object.keys(input).map((key) => [key, "x"]));
+        return Object.fromEntries(
+          Object.keys(input).map((key) => [key, { kind: "text", text: "x" } as const])
+        );
       },
     },
   };
@@ -61,17 +68,20 @@ describe("what the provider is told about the request", () => {
   });
 });
 
-const run = async (schema: Field[], sourceData: Record<string, unknown>) =>
-  (
-    await translateAll({
-      document: { collection: "docs", id: "1" },
-      schema,
-      sourceData,
-      sourceLng: "en",
-      targetLng: "de",
-      translationProvider: fakeProvider,
-    })
-  )?.translatedData ?? null;
+const runResult = async (schema: Field[], sourceData: Record<string, unknown>) =>
+  await translateAll({
+    document: { collection: "docs", id: "1" },
+    schema,
+    sourceData,
+    sourceLng: "en",
+    targetLng: "de",
+    translationProvider: fakeProvider,
+  });
+
+const run = async (schema: Field[], sourceData: Record<string, unknown>) => {
+  const result = await runResult(schema, sourceData);
+  return result.sent ? result.translatedData : null;
+};
 
 const richTextNode = (value: string) => ({
   type: "text",
@@ -163,9 +173,9 @@ describe("translateContent", () => {
     expect(result).toEqual({ layout: [{ blockType: "cta", text: "T:click" }] });
   });
 
-  it("returns null when nothing is translatable (no localized leaves)", async () => {
-    const result = await run([{ name: "sku", type: "text" }], { sku: "ABC" });
-    expect(result).toBeNull();
+  it("sends nothing when nothing is translatable (no localized leaves)", async () => {
+    const result = await runResult([{ name: "sku", type: "text" }], { sku: "ABC" });
+    expect(result).toEqual({ sent: false });
   });
 
   it("sends nothing when the selection is empty, whatever the target holds", async () => {
@@ -179,7 +189,7 @@ describe("translateContent", () => {
       translationProvider: fakeProvider,
       selection: [],
     });
-    expect(result).toBeNull();
+    expect(result).toEqual({ sent: false });
   });
 
   it("translates a named leaf over a target that already holds text", async () => {
@@ -193,8 +203,11 @@ describe("translateContent", () => {
       translationProvider: fakeProvider,
       selection: ["title"],
     });
-    expect(result?.translatedData).toEqual({ title: "T:hello" });
-    expect(result?.leaves).toEqual([{ idPath: "title", answeredInFull: true }]);
+    expect(result).toEqual({
+      sent: true,
+      translatedData: { title: "T:hello" },
+      leaves: [{ idPath: "title", answered: true }],
+    });
   });
 
   describe("the caller's source document", () => {
@@ -223,7 +236,15 @@ describe("translateContent", () => {
       const before = structuredClone(sourceData);
 
       const marksProvider: TranslationProvider = {
-        translate: async () => ({ 0: "<2>Welt</2><1>Hallo </1>" }),
+        translate: async () => ({
+          0: {
+            kind: "segments",
+            segments: [
+              { id: 2, text: "Welt" },
+              { id: 1, text: "Hallo " },
+            ],
+          },
+        }),
       };
 
       const result = await translateAll({

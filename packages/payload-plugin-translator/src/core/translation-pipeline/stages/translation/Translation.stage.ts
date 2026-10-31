@@ -1,39 +1,44 @@
-import { parseInlineMarks } from "../../../kernel/lexical/inlineMarks.js";
-import type { PipelineContext, PipelineStage, RejectedReply } from "../../types/index.js";
+import { checkSegments } from "../../../kernel/lexical/checkSegments.js";
+import type {
+  PipelineContext,
+  PipelineStage,
+  SettledAnswer,
+  TextChunk,
+} from "../../types/index.js";
 import { isRichContainerChunk } from "../../types/index.js";
 import type {
+  TranslatedValue,
   TranslationProvider,
   TranslationRequest,
 } from "../../../domain/translation-providers/index.js";
 
-function attachContainerReplies(
-  ctx: PipelineContext,
-  translations: Record<number, string>
-): RejectedReply[] {
-  const rejected: RejectedReply[] = [];
-  for (const chunk of (ctx.textChunks ?? []).filter(isRichContainerChunk)) {
-    const reply = translations[chunk.index];
-    if (reply === undefined) continue;
-
-    const result = parseInlineMarks(reply, chunk.fragments);
-    if (result.ok) chunk.reply = result.fragments;
-    else rejected.push({ idPath: chunk.idPath, reason: result.reason });
-  }
-  return rejected;
-}
-
 function translationRequest(ctx: PipelineContext): TranslationRequest {
-  return {
-    sourceLng: ctx.sourceLng,
-    targetLng: ctx.targetLng,
-    document: ctx.document,
-    inlineMarks: (ctx.textChunks ?? []).some(isRichContainerChunk),
-  };
+  return { sourceLng: ctx.sourceLng, targetLng: ctx.targetLng, document: ctx.document };
 }
 
 /**
- * Calls translation provider to translate text.
+ * Judged against `chunk.fragments`, not against `ctx.textMap`: the stage hands the provider a
+ * shallow copy, so `TranslationInput`'s `Readonly` stops nothing at run time.
  */
+function settle(chunk: TextChunk, answer: TranslatedValue | undefined): SettledAnswer {
+  if (answer === undefined) return { kind: "failed", failure: { code: "not-answered" } };
+  if (answer.kind === "failed") {
+    return { kind: "failed", failure: { code: answer.code, message: answer.message } };
+  }
+
+  if (!isRichContainerChunk(chunk)) {
+    return answer.kind === "text"
+      ? { kind: "text", text: answer.text }
+      : { kind: "failed", failure: { code: "wrong-kind" } };
+  }
+  if (answer.kind !== "segments") return { kind: "failed", failure: { code: "wrong-kind" } };
+
+  const checked = checkSegments(answer.segments, chunk.fragments);
+  return checked.ok
+    ? { kind: "segments", segments: checked.segments }
+    : { kind: "failed", failure: { code: checked.reason } };
+}
+
 export class TranslationStage implements PipelineStage {
   private readonly provider: TranslationProvider;
   constructor(provider: TranslationProvider) {
@@ -45,10 +50,13 @@ export class TranslationStage implements PipelineStage {
       return ctx;
     }
 
-    const translations = await this.provider.translate(ctx.textMap, translationRequest(ctx));
+    const answers = await this.provider.translate({ ...ctx.textMap }, translationRequest(ctx));
 
-    const rejected = attachContainerReplies(ctx, translations);
+    const settled: Record<number, SettledAnswer> = {};
+    for (const chunk of ctx.textChunks ?? []) {
+      settled[chunk.index] = settle(chunk, answers[chunk.index]);
+    }
 
-    return { ...ctx, translations, rejected };
+    return { ...ctx, answers: settled };
   }
 }

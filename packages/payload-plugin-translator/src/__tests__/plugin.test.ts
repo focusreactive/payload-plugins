@@ -17,13 +17,12 @@ import {
 import { TranslateDocumentExport } from "../client/widgets/translate-document/index.js";
 import { BulkDocumentTranslationDashboard } from "../client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.export.js";
 
-// Isolate the lifecycle-wiring tests from the real pipeline: a mocked translateContent that returns
-// null makes the handler finish cleanly (nothing to translate) so we can assert `completed` fires
-// without standing up a provider. `vi.mock` is hoisted, so it applies regardless of position; kept
-// below the imports to satisfy the import/first lint rule. Other tests never execute the handler.
-vi.mock("../core/translation-pipeline/index.js", () => ({
-  translateContent: vi.fn().mockResolvedValue(null),
-}));
+// `vi.mock` is hoisted; it sits below the imports only for the import/first lint rule.
+vi.mock("../core/translation-pipeline/index.js", async () => {
+  const { nothingSent } =
+    await import("../core/translation-pipeline/__tests__/fixtures/pipelineResult.js");
+  return { translateContent: vi.fn().mockResolvedValue(nothingSent) };
+});
 
 const STALENESS_PATH = "/translate/stale/:collection_slug/:collection_id";
 const DISMISS_PATH = "/translate/stale/dismiss";

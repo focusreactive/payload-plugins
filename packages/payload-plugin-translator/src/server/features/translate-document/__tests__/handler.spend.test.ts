@@ -6,14 +6,15 @@ import type { TranslateDocumentDeps } from "../translateDocument.js";
 import type { TranslationProvider } from "../../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 import type { TranslateDocumentInput } from "../translateDocument.js";
+import { pipelineResult } from "../../../../core/translation-pipeline/__tests__/fixtures/pipelineResult.js";
 
-vi.mock("../../../../core/translation-pipeline/index.js", () => ({
-  translateContent: vi.fn().mockResolvedValue({
-    translatedData: { title: "Titel" },
-    leaves: [{ idPath: "title", answeredInFull: true }],
-    rejected: [],
-  }),
-}));
+vi.mock("../../../../core/translation-pipeline/index.js", async () => {
+  const fixture =
+    await import("../../../../core/translation-pipeline/__tests__/fixtures/pipelineResult.js");
+  return {
+    translateContent: vi.fn().mockResolvedValue(fixture.pipelineResult({ title: "Titel" })),
+  };
+});
 
 vi.mock("../../../shared/access/permission.js", () => ({
   rebuildRequester: vi.fn().mockResolvedValue(null),
@@ -60,7 +61,7 @@ describe("translateDocument — a refusal costs nothing at the provider", () => 
 
     deps = { translationProvider: provider, schemaMap };
     const { translate } = await mocks();
-    translate.mockResolvedValue({ title: "Titel" });
+    translate.mockResolvedValue(pipelineResult({ title: "Titel" }));
   });
 
   it("never calls the translation pipeline when the write is refused", async () => {
@@ -90,7 +91,7 @@ describe("translateDocument — a refusal costs nothing at the provider", () => 
     });
     translate.mockImplementation(async () => {
       order.push("translate");
-      return { title: "Titel" };
+      return pipelineResult({ title: "Titel" });
     });
 
     await translateDocument(deps, payload, input(), {});

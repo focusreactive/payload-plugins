@@ -5,23 +5,60 @@
 export type TranslationIndex = number;
 
 /**
- * Input map of text content for translation.
- * Keys are numeric indices that must be preserved in the output.
- * Values are the text strings to translate.
- *
- * @example
- * { 0: "Hello", 1: "World", 2: "Welcome to our site" }
+ * Identifies one segment of a rich-text paragraph, unique within its value.
  */
-export type TranslationInput = Record<TranslationIndex, string>;
+export type SegmentId = number;
+
+/**
+ * One piece of a rich-text paragraph, carrying one run of formatting. `text: null` is a line break
+ * or an inline block: it holds a position and may move, but has nothing to translate.
+ */
+export type Segment = { id: SegmentId; text: string | null };
+
+/**
+ * One value to translate: `segments` (in source order) for a rich-text paragraph whose pieces may
+ * reorder, `text` for everything else.
+ */
+export type TranslatableValue =
+  | { kind: "text"; text: string }
+  | { kind: "segments"; segments: readonly Segment[] };
+
+export type TranslationInput = Readonly<Record<TranslationIndex, TranslatableValue>>;
+
+/** What a provider answers when it will not, or cannot, translate one value. */
+export type ProviderValueFailureCode = "malformed" | "refused" | "untranslatable";
+
+/** What the plugin's own check of an answer concludes. */
+export type PluginValueFailureCode =
+  | "missing-segment"
+  | "unknown-segment"
+  | "repeated-segment"
+  | "no-text"
+  | "wrong-kind";
+
+/** Why one value was not translated. A failure of the whole call is a throw instead. */
+export type ValueFailureCode = ProviderValueFailureCode | PluginValueFailureCode;
+
+/**
+ * The answer to one value, in the kind it was asked in, or `failed` — the value keeps its source text,
+ * and `message` goes to the server log.
+ *
+ * `segments` carries every id of the value exactly once, in target-language order. An empty `text`
+ * merges the segment into a neighbour; text answered for a `null` segment is ignored.
+ */
+export type TranslatedValue =
+  | { kind: "text"; text: string }
+  | { kind: "segments"; segments: readonly { id: SegmentId; text: string }[] }
+  | { kind: "failed"; code: ValueFailureCode; message?: string };
 
 /**
  * Output of a translation request.
  *
  * Keys are a **subset** of the input's: a key that is absent was not translated, and the plugin
  * keeps the source text for it. An absent key never means "translated to nothing" — to blank a
- * value, return the empty string under its key.
+ * value, answer `{ kind: "text", text: "" }`; a segments answer with no text fails as `no-text`.
  */
-export type TranslationOutput = Record<TranslationIndex, string>;
+export type TranslationOutput = Record<TranslationIndex, TranslatedValue>;
 
 /**
  * Failure causes a translation provider can report.
@@ -52,25 +89,14 @@ export type DocumentRef = {
  * @since 1.0.0
  */
 export type TranslationRequest = {
-  /** Source language code (e.g. 'en', 'de'). Always set: the plugin never sends an empty one. */
   sourceLng: string;
   targetLng: string;
   document: DocumentRef;
-  /**
-   * The values carry numbered inline marks (`<1>text</1>`, `<5/>`) standing in for formatting, and
-   * every mark must come back exactly once.
-   *
-   * Stated rather than sniffed: customer text can legitimately contain `<1>` — a footnote
-   * reference, a template placeholder, an article about markup — and inferring from content would
-   * change the prompt for documents that opted into nothing.
-   */
-  inlineMarks: boolean;
 };
 
 /**
- * Report failure by throwing; a returned value is always taken as success. A thrown error that is
- * not one of this package's provider errors is re-wrapped and its `code` replaced, so only those
- * classes carry a {@link TranslationFailureCode} through.
+ * A thrown error that is not one of this package's provider errors is re-wrapped and its `code`
+ * replaced, so only those classes carry a {@link TranslationFailureCode} through.
  */
 export interface TranslationProvider {
   translate(input: TranslationInput, request: TranslationRequest): Promise<TranslationOutput>;

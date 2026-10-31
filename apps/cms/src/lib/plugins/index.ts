@@ -354,7 +354,6 @@ export const plugins: Plugin[] = [
     components: [translateDocumentControl(), bulkTranslationDashboard()],
     translationProvider: createOpenAIProvider({
       apiKey: process.env.OPENAI_API_KEY!,
-      dryRun: false,
       model: "gpt-4o-mini",
       systemPrompt: ({ defaultPrompt }) =>
         `${defaultPrompt}\nUse formal language. Keep brand names unchanged.`,

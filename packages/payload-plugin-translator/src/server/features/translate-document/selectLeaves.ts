@@ -1,3 +1,4 @@
+import type { SelectionEmptyBecause } from "../_lib/index.js";
 import { TranslatorConfigError } from "../../../core/errors/index.js";
 import type { LeafAddress } from "../../../core/domain/content-projection/idPath.js";
 import { everyTranslatableLeaf } from "../../../core/domain/content-projection/contentProjector.js";
@@ -8,21 +9,16 @@ import type { Criteria, CriterionQuestion } from "../../modules/translation-run/
 import type { Run } from "./run.js";
 import type { ApprovedSource } from "./targetDocument.js";
 
-export type EmptyBecause =
-  | "no-translatable-text"
-  | "named-leaves-are-not-here"
-  | "rules-kept-nothing";
-
 type Owed = {
   readonly addresses: readonly LeafAddress[];
-  readonly emptyBecause: EmptyBecause | null;
+  readonly emptyBecause: SelectionEmptyBecause | null;
 };
 
 const emptyBecause = (step: {
   everything: readonly LeafAddress[];
   afterLeaves: readonly LeafAddress[];
   addresses: readonly LeafAddress[];
-}): EmptyBecause | null => {
+}): SelectionEmptyBecause | null => {
   if (step.addresses.length > 0) return null;
   if (step.everything.length === 0) return "no-translatable-text";
   if (step.afterLeaves.length === 0) return "named-leaves-are-not-here";

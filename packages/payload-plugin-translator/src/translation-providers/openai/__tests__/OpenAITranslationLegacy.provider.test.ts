@@ -34,10 +34,12 @@ function aRequest(over: Partial<TranslationRequest> = {}): TranslationRequest {
     sourceLng: "en",
     targetLng: "de",
     document: DEFAULT_DOCUMENT,
-    inlineMarks: false,
     ...over,
   };
 }
+
+const HELLO = { 0: { kind: "text", text: "Hello" } } as const;
+const HALLO_REPLY = '{"marked":{},"plain":{"0":"Hallo"}}';
 
 describe("OpenAITranslationProvider (deprecated class)", () => {
   beforeEach(() => {
@@ -45,27 +47,29 @@ describe("OpenAITranslationProvider (deprecated class)", () => {
   });
 
   it("still works, and produces what the factory produces", async () => {
-    const { client } = stubClient('{"0":"Hallo"}');
+    const { client } = stubClient(HALLO_REPLY);
 
-    const fromClass = await new OpenAITranslationProvider({ client }).translate(
-      { 0: "Hello" },
-      aRequest()
-    );
-    const fromFactory = await createOpenAIProvider({ client }).translate(
-      { 0: "Hello" },
-      aRequest()
-    );
+    const fromClass = await new OpenAITranslationProvider({ client }).translate(HELLO, aRequest());
+    const fromFactory = await createOpenAIProvider({ client }).translate(HELLO, aRequest());
 
+    expect(fromClass).toEqual({ 0: { kind: "text", text: "Hallo" } });
     expect(fromClass).toEqual(fromFactory);
   });
 
-  it("delegates rather than re-implementing — a dry run short-circuits there too", async () => {
-    const result = await new OpenAITranslationProvider({ apiKey: "", dryRun: true }).translate(
-      { 0: "Hello" },
+  it("delegates rather than re-implementing — the factory's lazy SDK load and default timeout apply", async () => {
+    const { client } = stubClient(HALLO_REPLY);
+    loadClient.mockResolvedValue(client);
+
+    const result = await new OpenAITranslationProvider({ apiKey: "sk-test" }).translate(
+      HELLO,
       aRequest()
     );
 
-    expect(result).toEqual({ 0: "olleH" });
-    expect(loadClient).not.toHaveBeenCalled();
+    expect(result).toEqual({ 0: { kind: "text", text: "Hallo" } });
+    expect(loadClient).toHaveBeenCalledWith({
+      apiKey: "sk-test",
+      timeout: 60_000,
+      maxRetries: undefined,
+    });
   });
 });

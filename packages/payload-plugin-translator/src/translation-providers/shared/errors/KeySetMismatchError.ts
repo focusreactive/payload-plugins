@@ -25,8 +25,6 @@ export class KeySetMismatchError extends TranslationProviderError {
     this.missingInputKeys = missingInputKeys;
     this.unrequestedReplyKeys = unrequestedReplyKeys;
 
-    // Model-invented strings: enumerable, they would land in `JSON.stringify(error)` and every
-    // structured logger.
     Object.defineProperty(this, "missingInputKeys", { enumerable: false });
     Object.defineProperty(this, "unrequestedReplyKeys", { enumerable: false });
   }

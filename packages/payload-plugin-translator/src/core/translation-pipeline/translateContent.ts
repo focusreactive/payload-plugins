@@ -27,7 +27,7 @@ export type TranslatedContent = PipelineResult;
  * Translate a content object over a schema subtree — pure: no DB, no document.
  *
  * Only the `selection`'s leaves are translated, and only where the schema says they are
- * translatable; everything else is reconciled through unchanged. `null` when nothing was sent.
+ * translatable; everything else is reconciled through unchanged.
  */
 export async function translateContent({
   schema,
@@ -38,7 +38,7 @@ export async function translateContent({
   document,
   translationProvider,
   selection,
-}: TranslateContentArgs): Promise<TranslatedContent | null> {
+}: TranslateContentArgs): Promise<TranslatedContent> {
   const pipeline = new TranslationPipeline({ translationProvider });
 
   return await pipeline.execute({

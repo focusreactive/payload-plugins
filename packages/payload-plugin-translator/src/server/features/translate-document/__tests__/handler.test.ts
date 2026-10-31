@@ -18,10 +18,17 @@ import type { TranslateDocumentInput } from "../translateDocument.js";
 import { provenanceInAChain } from "../../../modules/provenance/__tests__/fixtures/inAChain.js";
 import { storeDouble } from "../../../../core/domain/provenance/__tests__/fixtures/provenanceStore.js";
 import type { ProvenanceStore } from "../../../../core/domain/provenance/index.js";
+import {
+  nothingSent,
+  pipelineResult,
+  unanswered,
+} from "../../../../core/translation-pipeline/__tests__/fixtures/pipelineResult.js";
 
-vi.mock("../../../../core/translation-pipeline/index.js", () => ({
-  translateContent: vi.fn().mockResolvedValue(null),
-}));
+vi.mock("../../../../core/translation-pipeline/index.js", async () => {
+  const fixture =
+    await import("../../../../core/translation-pipeline/__tests__/fixtures/pipelineResult.js");
+  return { translateContent: vi.fn().mockResolvedValue(fixture.nothingSent) };
+});
 
 vi.mock("../../../../core/domain/content-projection/computeFieldFingerprints.js", () => ({
   computeFieldFingerprints: vi.fn(() => ({ title: "fp-fixed" })),
@@ -94,14 +101,12 @@ describe("translateDocument", () => {
     };
   });
 
-  describe("a paragraph whose reply was refused", () => {
-    it("logs the document, the locale, the leaf and the reason", async () => {
+  describe("a leaf whose value kept its source text", () => {
+    it("logs the document, the locale, the leaf and the failure code", async () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-        translatedData: { title: "Translated" },
-        leaves: [{ idPath: "title", answeredInFull: false }],
-        rejected: [{ idPath: "title", reason: "missing-mark" }],
-      });
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+        pipelineResult({ title: "Translated" }, [unanswered("title", "missing-segment")])
+      );
 
       await translateDocument(deps, mockPayload, createInput(), {});
 
@@ -111,7 +116,8 @@ describe("translateDocument", () => {
           documentId: "doc-123",
           targetLocale: TARGET_LNG,
           idPath: "title",
-          reason: "missing-mark",
+          code: "missing-segment",
+          msg: expect.any(String),
         })
       );
     });
@@ -196,7 +202,7 @@ describe("translateDocument", () => {
   describe("translateContent invocation", () => {
     it("forwards fetched docs, strategy and locales to translateContent", async () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(nothingSent);
 
       const input = createInput({
         sourceLng: "en",
@@ -250,9 +256,9 @@ describe("translateDocument", () => {
   });
 
   describe("success responses", () => {
-    it("returns success when no translation needed (pipeline returns null)", async () => {
+    it("returns success when no translation needed (nothing was sent)", async () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(nothingSent);
 
       const input = createInput();
 
@@ -264,11 +270,9 @@ describe("translateDocument", () => {
 
     it("returns success after saving translated document", async () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-        translatedData: { title: "Übersetzter Titel" },
-        leaves: [{ idPath: "title", answeredInFull: true }],
-        rejected: [],
-      });
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+        pipelineResult({ title: "Übersetzter Titel" })
+      );
 
       const input = createInput();
       const result = await translateDocument(deps, mockPayload, input, {});
@@ -280,11 +284,9 @@ describe("translateDocument", () => {
   describe("saving translated documents", () => {
     beforeEach(async () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-        translatedData: { title: "Translated" },
-        leaves: [{ idPath: "title", answeredInFull: true }],
-        rejected: [],
-      });
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+        pipelineResult({ title: "Translated" })
+      );
     });
 
     it("saves document with target locale and source as fallback", async () => {
@@ -380,7 +382,7 @@ describe("translateDocument", () => {
   describe("publishing", () => {
     const nothingToTranslate = async () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(nothingSent);
     };
 
     const publishCalls = () =>
@@ -451,17 +453,11 @@ describe("translateDocument", () => {
       );
     });
 
-    const withTranslatedData = async (
-      leaves: { idPath: string; answeredInFull: boolean }[] = [
-        { idPath: "title", answeredInFull: true },
-      ]
-    ) => {
+    const withTranslatedData = async () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-        translatedData: { title: "Hallo" },
-        leaves,
-        rejected: [],
-      });
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+        pipelineResult({ title: "Hallo" })
+      );
     };
 
     it("upserts a provenance record after a successful translation", async () => {
@@ -532,11 +528,7 @@ describe("translateDocument", () => {
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockImplementation(
         async ({ sourceData }: { sourceData: Record<string, unknown> }) => {
           sourceData.title = "TRANSLATED (pipeline mutation)";
-          return {
-            translatedData: { title: "TRANSLATED (pipeline mutation)" },
-            leaves: [{ idPath: "title", answeredInFull: true }],
-            rejected: [],
-          };
+          return pipelineResult({ title: "TRANSLATED (pipeline mutation)" });
         }
       );
 
@@ -570,9 +562,9 @@ describe("translateDocument", () => {
       expect(store.upsert).not.toHaveBeenCalled();
     });
 
-    it("does not record provenance when nothing was translated (pipeline returns null)", async () => {
+    it("does not record provenance when nothing was translated (nothing was sent)", async () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(nothingSent);
 
       await translateDocument(depsWithProvenance(), mockPayload, createInput(), {});
 
@@ -614,11 +606,9 @@ describe("translateDocument", () => {
           )
       );
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-        translatedData: { title: "Hallo" },
-        leaves: [{ idPath: "title", answeredInFull: true }],
-        rejected: [],
-      });
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+        pipelineResult({ title: "Hallo" })
+      );
       (mockPayload.findByID as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: "doc-123",
         title: "Source",
@@ -660,11 +650,9 @@ describe("translateDocument", () => {
           )
       );
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-        translatedData: { title: "Hallo" },
-        leaves: [{ idPath: "title", answeredInFull: true }],
-        rejected: [],
-      });
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+        pipelineResult({ title: "Hallo" })
+      );
       (mockPayload.findByID as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: "doc-123",
         title: "Source",
@@ -698,11 +686,9 @@ describe("translateDocument", () => {
         )
     );
     const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-    (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-      translatedData: { title: "Hallo" },
-      leaves: [{ idPath: "title", answeredInFull: true }],
-      rejected: [],
-    });
+    (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+      pipelineResult({ title: "Hallo" })
+    );
     (mockPayload.findByID as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: "doc-123",
       title: "Source",

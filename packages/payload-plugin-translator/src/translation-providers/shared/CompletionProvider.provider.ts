@@ -8,10 +8,14 @@ import { buildResponseSchema } from "./buildResponseSchema.js";
 import type { JsonSchemaObject } from "./buildResponseSchema.js";
 import { buildSystemPrompt } from "./buildSystemPrompt.js";
 import type { SystemPromptBuilder } from "./buildSystemPrompt.js";
-import { NoContentError, ProviderConfigurationError, asTranslatorError } from "./errors/index.js";
+import {
+  KeySetMismatchError,
+  NoContentError,
+  ProviderConfigurationError,
+  asTranslatorError,
+} from "./errors/index.js";
 import { parseAndValidateReply } from "./parseAndValidateReply.js";
-import { runDryRun } from "./runDryRun.js";
-import type { DryRunConfig } from "./runDryRun.js";
+import { fromSections, toSections } from "./wire/index.js";
 
 /**
  * Everything a transport needs in order to make one translation request.
@@ -21,9 +25,12 @@ import type { DryRunConfig } from "./runDryRun.js";
 export type CompletionRequest = {
   /** Already includes any `systemPrompt` override — send it verbatim, do not rebuild it. */
   systemPrompt: string;
-  /** The user message: the input serialized as JSON. */
+  /**
+   * The user message: JSON `{ marked, plain }` of strings. A paragraph that cannot be marked is sent
+   * as its pieces under `plain`, keyed `<index>.<segmentId>`.
+   */
   userContent: string;
-  /** A JSON Schema requiring exactly the input's keys. Feed it to the service's structured-output mechanism. */
+  /** A strict JSON Schema: both sections, exactly the keys that were sent. */
   responseSchema: JsonSchemaObject;
   /** Reserved: the port carries no cancellation yet, so this is always `undefined` today. */
   signal?: AbortSignal;
@@ -47,15 +54,17 @@ export type CompletionFn = (request: CompletionRequest) => Promise<string>;
 export type TranslationProviderConfig = {
   complete: CompletionFn;
   systemPrompt?: SystemPromptBuilder;
-  /**
-   * Simulate translations without calling anything. `true` reverses the text; an object supplies a
-   * transformer and an optional delay.
-   *
-   * @deprecated Supply your own fake `complete` instead. Remove in next major.
-   * See docs/DEPRECATIONS.md#provider-dry-run
-   */
-  dryRun?: boolean | DryRunConfig;
 };
+
+/** Pieces can come back while no whole value assembles — a gap the reply's own key check cannot see. */
+function assertSomethingAssembled(input: TranslationInput, output: TranslationOutput): void {
+  if (Object.keys(output).length > 0) return;
+  throw new KeySetMismatchError(
+    `The provider's reply let none of the ${Object.keys(input).length} values be assembled.`,
+    Object.keys(input).map(Number),
+    []
+  );
+}
 
 async function asConfigurationFailure<T>(what: string, run: () => T | Promise<T>): Promise<T> {
   try {
@@ -65,17 +74,6 @@ async function asConfigurationFailure<T>(what: string, run: () => T | Promise<T>
       cause,
     });
   }
-}
-
-/** Only the consumer's transform is wrapped — our own loop must not report its bugs as configuration failures. */
-function guardTransformer(dryRun: boolean | DryRunConfig): boolean | DryRunConfig {
-  if (typeof dryRun !== "object" || !dryRun.transform) return dryRun;
-
-  const { transform } = dryRun;
-  return {
-    ...dryRun,
-    transform: (text) => asConfigurationFailure("dry-run transformer", () => transform(text)),
-  };
 }
 
 /**
@@ -98,12 +96,7 @@ function guardTransformer(dryRun: boolean | DryRunConfig): boolean | DryRunConfi
  * @since 0.11.0
  */
 export function createTranslationProvider(config: TranslationProviderConfig): TranslationProvider {
-  const { complete, systemPrompt, dryRun } = config;
-
-  if (dryRun) {
-    const guarded = guardTransformer(dryRun);
-    return { translate: (input) => runDryRun(input, guarded) };
-  }
+  const { complete, systemPrompt } = config;
 
   return {
     async translate(
@@ -112,20 +105,21 @@ export function createTranslationProvider(config: TranslationProviderConfig): Tr
     ): Promise<TranslationOutput> {
       if (Object.keys(input).length === 0) return {};
 
+      const sections = toSections(input);
       const systemPromptText = await asConfigurationFailure("systemPrompt builder", () =>
         buildSystemPrompt({
           sourceLng: request.sourceLng,
           targetLng: request.targetLng,
           override: systemPrompt,
-          hasInlineMarks: request.inlineMarks,
+          hasInlineMarks: Object.keys(sections.marked).length > 0,
           document: request.document,
         })
       );
 
       const completion = await asConfigurationFailure("serialization of the input", () => ({
         systemPrompt: systemPromptText,
-        userContent: JSON.stringify(input),
-        responseSchema: buildResponseSchema(input),
+        userContent: JSON.stringify(sections),
+        responseSchema: buildResponseSchema(sections),
       }));
 
       let raw: string;
@@ -139,9 +133,10 @@ export function createTranslationProvider(config: TranslationProviderConfig): Tr
         throw new NoContentError("The provider returned an empty reply.");
       }
 
-      const { translations } = parseAndValidateReply(input, raw);
-
-      return translations;
+      const reply = parseAndValidateReply(sections, raw);
+      const output = fromSections(input, reply);
+      assertSomethingAssembled(input, output);
+      return output;
     },
   };
 }

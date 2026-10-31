@@ -2,17 +2,23 @@ import { describe, it, expect, vi } from "vitest";
 import type { Field } from "payload";
 import { TranslationPipeline } from "../TranslationPipeline.js";
 import { everyTranslatableLeaf } from "../../domain/content-projection/contentProjector.js";
-import type { TranslationProvider } from "../../domain/translation-providers/index.js";
+import type {
+  TranslationInput,
+  TranslationOutput,
+  TranslationProvider,
+} from "../../domain/translation-providers/index.js";
 
-const createMockProvider = (
-  translationFn?: (textMap: Record<number, string>) => Record<number, string>
-): TranslationProvider => ({
-  translate: vi.fn().mockImplementation(async (textMap: Record<number, string>) => {
-    if (translationFn) return translationFn(textMap);
-    // Default: prefix each value with "TR_"
-    const result: Record<number, string> = {};
-    for (const [key, value] of Object.entries(textMap)) {
-      result[Number(key)] = `TR_${value}`;
+const createMockProvider = (): TranslationProvider => ({
+  translate: vi.fn().mockImplementation(async (input: TranslationInput) => {
+    const result: TranslationOutput = {};
+    for (const [key, value] of Object.entries(input)) {
+      result[Number(key)] =
+        value.kind === "text"
+          ? { kind: "text", text: `TR_${value.text}` }
+          : {
+              kind: "segments",
+              segments: value.segments.map((s) => ({ id: s.id, text: `TR_${s.text ?? ""}` })),
+            };
     }
     return result;
   }),
@@ -40,15 +46,14 @@ describe("TranslationPipeline", () => {
         selection: everyTranslatableLeaf(sourceData, schema),
       });
 
-      expect(result).not.toBeNull();
-      expect(result!.translatedData).toEqual({ title: "TR_Hello" });
+      if (!result.sent) throw new Error("nothing was sent");
+      expect(result.translatedData).toEqual({ title: "TR_Hello" });
       expect(provider.translate).toHaveBeenCalledWith(
-        { 0: "Hello" },
+        { 0: { kind: "text", text: "Hello" } },
         {
           sourceLng: "en",
           targetLng: "ru",
           document: { collection: "docs", id: "1" },
-          inlineMarks: false,
         }
       );
     });
@@ -76,8 +81,8 @@ describe("TranslationPipeline", () => {
         selection: everyTranslatableLeaf(sourceData, schema),
       });
 
-      expect(result).not.toBeNull();
-      expect(result!.translatedData).toEqual({ title: "TR_Hello", description: "TR_World" });
+      if (!result.sent) throw new Error("nothing was sent");
+      expect(result.translatedData).toEqual({ title: "TR_Hello", description: "TR_World" });
     });
 
     it("translates nested fields in groups", async () => {
@@ -106,8 +111,8 @@ describe("TranslationPipeline", () => {
         selection: everyTranslatableLeaf(sourceData, schema),
       });
 
-      expect(result).not.toBeNull();
-      expect(result!.translatedData).toEqual({ meta: { title: "TR_Hello" } });
+      if (!result.sent) throw new Error("nothing was sent");
+      expect(result.translatedData).toEqual({ meta: { title: "TR_Hello" } });
     });
 
     it("translates array items", async () => {
@@ -141,9 +146,9 @@ describe("TranslationPipeline", () => {
         selection: everyTranslatableLeaf(sourceData, schema),
       });
 
-      expect(result).not.toBeNull();
+      if (!result.sent) throw new Error("nothing was sent");
       // Non-localized array → shared rows → id kept so Payload updates them in place.
-      expect(result!.translatedData).toEqual({
+      expect(result.translatedData).toEqual({
         items: [
           { id: "1", label: "TR_First" },
           { id: "2", label: "TR_Second" },
@@ -187,9 +192,9 @@ describe("TranslationPipeline", () => {
         selection: everyTranslatableLeaf(sourceData, schema),
       });
 
-      expect(result).not.toBeNull();
+      if (!result.sent) throw new Error("nothing was sent");
       // The richText structure should have translated text nodes
-      const content = result!.translatedData.content as {
+      const content = result.translatedData.content as {
         root: { children: { children: { text: string }[] }[] };
       };
       expect(content.root.children[0].children[0].text).toBe("TR_Hello");
@@ -247,8 +252,8 @@ describe("TranslationPipeline", () => {
         selection: everyTranslatableLeaf(sourceData, schema),
       });
 
-      expect(result).not.toBeNull();
-      const root = (result!.translatedData.content as any).root;
+      if (!result.sent) throw new Error("nothing was sent");
+      const root = (result.translatedData.content as any).root;
 
       // Text nodes are translated
       expect(root.children[0].children[0].text).toBe("TR_Intro text");
@@ -324,8 +329,8 @@ describe("TranslationPipeline", () => {
         selection: everyTranslatableLeaf(sourceData, schema),
       });
 
-      expect(result).not.toBeNull();
-      const root = (result!.translatedData.content as any).root;
+      if (!result.sent) throw new Error("nothing was sent");
+      const root = (result.translatedData.content as any).root;
 
       // Text translated
       expect(root.children[0].children[0].text).toBe("TR_Hello");
@@ -373,8 +378,7 @@ describe("TranslationPipeline", () => {
         selection: everyTranslatableLeaf(sourceData, schema),
       });
 
-      // No text nodes to translate — pipeline returns null
-      expect(result).toBeNull();
+      expect(result).toEqual({ sent: false });
       expect(provider.translate).not.toHaveBeenCalled();
     });
   });
@@ -400,8 +404,8 @@ describe("TranslationPipeline", () => {
         selection: everyTranslatableLeaf(sourceData, schema),
       });
 
-      expect(result).not.toBeNull();
-      expect(result!.translatedData.title).toBe("TR_Hello");
+      if (!result.sent) throw new Error("nothing was sent");
+      expect(result.translatedData.title).toBe("TR_Hello");
     });
 
     it("keeps the target text of a leaf the selection left out", async () => {
@@ -427,8 +431,8 @@ describe("TranslationPipeline", () => {
         selection: ["description"],
       });
 
-      expect(result).not.toBeNull();
-      expect(result!.translatedData).toEqual({
+      if (!result.sent) throw new Error("nothing was sent");
+      expect(result.translatedData).toEqual({
         title: "Existing",
         description: "TR_World",
       });
@@ -436,7 +440,7 @@ describe("TranslationPipeline", () => {
   });
 
   describe("early exit conditions", () => {
-    it("returns null when no localized fields", async () => {
+    it("sends nothing when no localized fields", async () => {
       const schema: Field[] = [{ name: "slug", type: "text", localized: false }];
       const sourceData = { slug: "hello" };
       const targetData = {};
@@ -456,11 +460,11 @@ describe("TranslationPipeline", () => {
         selection: everyTranslatableLeaf(sourceData, schema),
       });
 
-      expect(result).toBeNull();
+      expect(result).toEqual({ sent: false });
       expect(provider.translate).not.toHaveBeenCalled();
     });
 
-    it("returns null when the selection names nothing", async () => {
+    it("sends nothing when the selection names nothing", async () => {
       const schema: Field[] = [{ name: "title", type: "text", localized: true }];
       const sourceData = { title: "Hello" };
       const targetData = { title: "Already translated" };
@@ -480,11 +484,11 @@ describe("TranslationPipeline", () => {
         selection: [],
       });
 
-      expect(result).toBeNull();
+      expect(result).toEqual({ sent: false });
       expect(provider.translate).not.toHaveBeenCalled();
     });
 
-    it("returns null when source fields are empty", async () => {
+    it("sends nothing when source fields are empty", async () => {
       const schema: Field[] = [{ name: "title", type: "text", localized: true }];
       const sourceData = { title: "" };
       const targetData = {};
@@ -504,7 +508,7 @@ describe("TranslationPipeline", () => {
         selection: everyTranslatableLeaf(sourceData, schema),
       });
 
-      expect(result).toBeNull();
+      expect(result).toEqual({ sent: false });
     });
   });
 
@@ -530,7 +534,8 @@ describe("TranslationPipeline", () => {
       });
 
       // Result contains translated data
-      expect(result!.translatedData.title).toBe("TR_Hello");
+      if (!result.sent) throw new Error("nothing was sent");
+      expect(result.translatedData.title).toBe("TR_Hello");
       // Original sourceData is NOT mutated (pipeline works on filtered copy)
       expect(sourceData.title).toBe("Hello");
     });
@@ -561,7 +566,8 @@ describe("TranslationPipeline", () => {
         selection: everyTranslatableLeaf(sourceData, schema),
       });
 
-      expect(result!.translatedData).toEqual({
+      if (!result.sent) throw new Error("nothing was sent");
+      expect(result.translatedData).toEqual({
         title: "TR_Hello",
         slug: "hello",
         order: 1,
@@ -591,7 +597,8 @@ describe("TranslationPipeline", () => {
         selection: everyTranslatableLeaf(sourceData, schema),
       });
 
-      expect(result!.translatedData).toEqual({
+      if (!result.sent) throw new Error("nothing was sent");
+      expect(result.translatedData).toEqual({
         title: "TR_Hello",
         slug: "other-slug",
       });
@@ -621,7 +628,8 @@ describe("TranslationPipeline", () => {
         selection: ["description"],
       });
 
-      expect(result!.translatedData).toEqual({
+      if (!result.sent) throw new Error("nothing was sent");
+      expect(result.translatedData).toEqual({
         title: "Translated",
         description: "TR_World",
         slug: "other",
@@ -667,7 +675,8 @@ describe("TranslationPipeline", () => {
       });
 
       // Non-localized array → shared rows → id kept.
-      expect(result!.translatedData.items).toEqual([
+      if (!result.sent) throw new Error("nothing was sent");
+      expect(result.translatedData.items).toEqual([
         { id: "1", label: "Translated" },
         { id: "2", label: "TR_Second" },
       ]);
@@ -702,7 +711,8 @@ describe("TranslationPipeline", () => {
         selection: ["meta.description"],
       });
 
-      expect(result!.translatedData.meta).toEqual({
+      if (!result.sent) throw new Error("nothing was sent");
+      expect(result.translatedData.meta).toEqual({
         title: "Translated",
         description: "TR_World",
       });
@@ -750,7 +760,8 @@ describe("TranslationPipeline", () => {
       });
 
       // Non-localized blocks → shared rows → id kept.
-      expect(result!.translatedData.layout).toEqual([
+      if (!result.sent) throw new Error("nothing was sent");
+      expect(result.translatedData.layout).toEqual([
         { id: "1", blockType: "text", content: "Translated" },
         { id: "2", blockType: "text", content: "TR_World" },
       ]);
@@ -786,8 +797,9 @@ describe("TranslationPipeline", () => {
         selection: everyTranslatableLeaf(sourceData, schema),
       });
 
-      expect(result!.translatedData.title).toBe("TR_Hello");
-      expect(result!.translatedData.sku).toBe("SKU-456");
+      if (!result.sent) throw new Error("nothing was sent");
+      expect(result.translatedData.title).toBe("TR_Hello");
+      expect(result.translatedData.sku).toBe("SKU-456");
     });
 
     it("uses source value for excluded fields when target is empty", async () => {
@@ -818,8 +830,9 @@ describe("TranslationPipeline", () => {
         selection: everyTranslatableLeaf(sourceData, schema),
       });
 
-      expect(result!.translatedData.title).toBe("TR_Hello");
-      expect(result!.translatedData.sku).toBe("SKU-123");
+      if (!result.sent) throw new Error("nothing was sent");
+      expect(result.translatedData.title).toBe("TR_Hello");
+      expect(result.translatedData.sku).toBe("SKU-123");
     });
   });
 
@@ -854,7 +867,7 @@ describe("TranslationPipeline", () => {
         selection: everyTranslatableLeaf(sourceData, schema),
       });
 
-      expect((result?.leaves ?? []).map((leaf) => String(leaf.idPath)).sort()).toEqual([
+      expect((result.sent ? result.leaves : []).map((leaf) => String(leaf.idPath)).sort()).toEqual([
         "body",
         "items.a1.label",
         "title",
@@ -876,7 +889,7 @@ describe("TranslationPipeline", () => {
         selection: ["title", "items.a1.label"],
       });
 
-      expect((result?.leaves ?? []).map((leaf) => String(leaf.idPath)).sort()).toEqual([
+      expect((result.sent ? result.leaves : []).map((leaf) => String(leaf.idPath)).sort()).toEqual([
         "items.a1.label",
         "title",
       ]);
@@ -897,7 +910,7 @@ describe("TranslationPipeline", () => {
         selection: ["title"],
       });
 
-      expect(result?.leaves).toEqual([{ idPath: "title", answeredInFull: true }]);
+      expect(result.sent && result.leaves).toEqual([{ idPath: "title", answered: true }]);
     });
   });
 });

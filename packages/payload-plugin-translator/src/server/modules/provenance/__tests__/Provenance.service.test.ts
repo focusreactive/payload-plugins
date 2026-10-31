@@ -5,6 +5,7 @@ import { APIError } from "payload";
 
 import type { ProvenanceReceipt } from "../../../../core/domain/provenance/index.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
+import type { LeafOutcome } from "../../../../core/translation-pipeline/types/index.js";
 
 import { ProvenanceService } from "../Provenance.service.js";
 import { asHash } from "../../../../core/domain/provenance/__tests__/fixtures/claims.js";
@@ -12,16 +13,15 @@ import { makeIdPath } from "../../../../core/domain/content-projection/idPath.js
 import { UNANSWERED } from "../../../../core/domain/provenance/SourceFingerprint.js";
 import { storeDouble } from "../../../../core/domain/provenance/__tests__/fixtures/provenanceStore.js";
 
-const answered = (name: string) => ({
+const answered = (name: string): LeafOutcome => ({
   idPath: makeIdPath([{ kind: "key", name }]),
-  answeredInFull: true,
+  answered: true,
 });
 
-/* `TranslationPipeline` sets `answeredInFull: counts.written === counts.sent`, so a rich-text leaf
- * cut into paragraphs is answered in part whenever the provider returns fewer than it was sent. */
-const answeredInPart = (name: string) => ({
+const answeredInPart = (name: string): LeafOutcome => ({
   idPath: makeIdPath([{ kind: "key", name }]),
-  answeredInFull: false,
+  answered: false,
+  failures: [{ code: "missing-segment" }],
 });
 
 const hashed = (fields: Record<string, string>) =>

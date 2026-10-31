@@ -10,10 +10,12 @@ import { makeIdPath } from "../../domain/content-projection/idPath.js";
 import type { LeafOutcome } from "../types/index.js";
 import { storeDouble } from "../../domain/provenance/__tests__/fixtures/provenanceStore.js";
 
-const sent = (name: string, answeredInFull: boolean) => ({
-  idPath: makeIdPath([{ kind: "key", name }]),
-  answeredInFull,
-});
+const sent = (name: string, answered: boolean): LeafOutcome => {
+  const idPath = makeIdPath([{ kind: "key", name }]);
+  return answered
+    ? { idPath, answered }
+    : { idPath, answered, failures: [{ code: "not-answered" }] };
+};
 
 const COLLECTION = "posts";
 const KEY = {

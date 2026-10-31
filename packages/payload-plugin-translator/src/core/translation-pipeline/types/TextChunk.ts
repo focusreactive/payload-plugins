@@ -1,6 +1,5 @@
 import type { IdPath } from "../../domain/content-projection/idPath.js";
 import type { InlineFragment } from "../../kernel/lexical/collectInlineFragments.js";
-import type { ParsedMark } from "../../kernel/lexical/inlineMarks.js";
 import type { SerializedLexicalNode, SerializedTextNode } from "../../kernel/lexical/index.js";
 
 /**
@@ -45,16 +44,8 @@ export type RichContainerChunk = {
   type: "richContainer";
   index: number;
   idPath: IdPath;
-  /** The container whose `children` are rebuilt when the reply reorders marks */
   containerRef: SerializedLexicalNode;
-  /** Fragments in document order, as collected */
   fragments: InlineFragment[];
-  /**
-   * The reply's marks, once the translation stage has parsed a usable one. Absent means this
-   * container keeps its source text — the same outcome whether no reply came back or it could not
-   * be parsed, and the applicator must not tell the two apart.
-   */
-  reply?: ParsedMark[];
 };
 
 /**

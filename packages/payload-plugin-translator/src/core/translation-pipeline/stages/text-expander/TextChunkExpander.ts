@@ -1,3 +1,4 @@
+import type { TranslatableValue } from "../../../domain/translation-providers/index.js";
 import type { FieldChunk, TextChunk } from "../../types/index.js";
 import type { TextExpander } from "./TextExpander.interface.js";
 
@@ -7,8 +8,7 @@ import type { TextExpander } from "./TextExpander.interface.js";
 export type TextExpansionResult = {
   /** All text chunks ready for translation */
   textChunks: TextChunk[];
-  /** Map of index -> original text for translation API */
-  textMap: Record<number, string>;
+  textMap: Record<number, TranslatableValue>;
 };
 
 /**
@@ -23,7 +23,7 @@ export class TextChunkExpander {
    */
   expand(fieldChunks: FieldChunk[]): TextExpansionResult {
     const textChunks: TextChunk[] = [];
-    const textMap: Record<number, string> = {};
+    const textMap: Record<number, TranslatableValue> = {};
     let currentIndex = 0;
 
     for (const fieldChunk of fieldChunks) {

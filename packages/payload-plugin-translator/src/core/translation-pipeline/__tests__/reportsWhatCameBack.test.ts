@@ -6,55 +6,76 @@ import { UNANSWERED } from "../../domain/provenance/index.js";
 import { asHash } from "../../domain/provenance/__tests__/fixtures/claims.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import { ProvenanceService } from "../../../server/modules/provenance/Provenance.service.js";
-import type { TranslationProvider } from "../../domain/translation-providers/index.js";
-import { PlainTextExpander, RichTextExpander } from "../stages/text-expander/index.js";
+import type {
+  SegmentId,
+  TranslatableValue,
+  TranslatedValue,
+  TranslationInput,
+  TranslationOutput,
+  TranslationProvider,
+} from "../../domain/translation-providers/index.js";
 import { projectTranslatableContent } from "../../domain/content-projection/contentProjector.js";
 import { TranslationPipeline } from "../TranslationPipeline.js";
-import type { TextExpander } from "../stages/index.js";
 import { storeDouble } from "../../domain/provenance/__tests__/fixtures/provenanceStore.js";
 
 const hashed = (fields: Record<string, string>) =>
   Object.fromEntries(Object.entries(fields).map(([address, seed]) => [address, asHash(seed)]));
 
-type Answers = (sent: Record<number, string>) => Record<number, string>;
+type Answers = (sent: TranslationInput) => TranslationOutput;
 
 const provider = (answer: Answers): TranslationProvider => ({
-  translate: vi.fn(async (sent: Record<number, string>) => answer(sent)),
+  translate: vi.fn(async (sent: TranslationInput) => answer(sent)),
 });
 
-const everything: Answers = (sent) =>
-  Object.fromEntries(Object.entries(sent).map(([key, text]) => [key, `[de] ${text}`]));
+const inGerman = (value: TranslatableValue): TranslatedValue =>
+  value.kind === "text"
+    ? { kind: "text", text: `[de] ${value.text}` }
+    : {
+        kind: "segments",
+        segments: value.segments.map((s) => ({ id: s.id, text: `[de] ${s.text ?? ""}` })),
+      };
 
-const marksTheParserAccepts: Answers = (sent) =>
-  Object.fromEntries(Object.keys(sent).map((key) => [Number(key), "<1>Etwas </1><2>Prosa</2>"]));
+const answerEach =
+  (answer: (value: TranslatableValue) => TranslatedValue | undefined): Answers =>
+  (sent) => {
+    const out: TranslationOutput = {};
+    for (const [key, value] of Object.entries(sent)) {
+      const answered = answer(value);
+      if (answered) out[Number(key)] = answered;
+    }
+    return out;
+  };
 
-const marksTheParserRefuses: Answers = (sent) =>
-  Object.fromEntries(Object.keys(sent).map((key) => [Number(key), "no marks at all"]));
+const everything: Answers = answerEach(inGerman);
+
+const segments = (...pairs: [SegmentId, string][]): TranslatedValue => ({
+  kind: "segments",
+  segments: pairs.map(([id, text]) => ({ id, text })),
+});
+
+const segmentsTheCheckAccepts: Answers = answerEach((value) =>
+  value.kind === "segments" ? segments([1, "Etwas "], [2, "Prosa"]) : inGerman(value)
+);
+
+const everythingAnsweredAsText: Answers = answerEach(() => ({
+  kind: "text",
+  text: "no segments at all",
+}));
 
 const onlyIndex =
   (kept: number): Answers =>
-  (sent) =>
-    kept in sent ? { [kept]: `[de] ${sent[kept]}` } : {};
+  (sent) => {
+    const value = sent[kept];
+    return value === undefined ? {} : { [kept]: inGerman(value) };
+  };
 
-const allExcept =
-  (dropped: string): Answers =>
-  (sent) =>
-    Object.fromEntries(
-      Object.entries(sent)
-        .filter(([, text]) => text !== dropped)
-        .map(([key, text]) => [Number(key), `[de] ${text}`])
-    );
+const allExcept = (dropped: string): Answers =>
+  answerEach((value) =>
+    value.kind === "text" && value.text === dropped ? undefined : inGerman(value)
+  );
 
-const run = async (args: {
-  schema: Field[];
-  source: Record<string, unknown>;
-  answer: Answers;
-  expanders?: TextExpander[];
-}) =>
-  new TranslationPipeline({
-    translationProvider: provider(args.answer),
-    textExpanders: args.expanders,
-  }).execute({
+const run = async (args: { schema: Field[]; source: Record<string, unknown>; answer: Answers }) =>
+  new TranslationPipeline({ translationProvider: provider(args.answer) }).execute({
     document: { collection: "posts", id: "1" },
     schema: args.schema,
     sourceData: args.source,
@@ -66,8 +87,12 @@ const run = async (args: {
     ),
   });
 
+const leavesOf = (result: Awaited<ReturnType<typeof run>>) => (result.sent ? result.leaves : []);
+
 const claimable = (result: Awaited<ReturnType<typeof run>>): string[] =>
-  (result?.leaves ?? []).filter((leaf) => leaf.answeredInFull).map((leaf) => String(leaf.idPath));
+  leavesOf(result)
+    .filter((leaf) => leaf.answered)
+    .map((leaf) => String(leaf.idPath));
 
 const paragraphs = (...each: string[][]) => ({
   root: {
@@ -109,7 +134,7 @@ describe("a run reports the leaves that came back", () => {
     expect(claimable(result)).toEqual(["title", "summary"]);
   });
 
-  it("leaves out a rich-text leaf whose container reply is unparsable, though a string came back", async () => {
+  it("leaves out a rich-text leaf whose container answer fails the check, though an answer came back", async () => {
     const schema: Field[] = [
       { name: "title", type: "text", localized: true },
       { name: "body", type: "richText", localized: true },
@@ -117,18 +142,18 @@ describe("a run reports the leaves that came back", () => {
     const result = await run({
       schema,
       source: { title: "Hello", body: paragraph("Some ", "prose") },
-      answer: marksTheParserRefuses,
+      answer: everythingAnsweredAsText,
     });
 
     expect(claimable(result)).toEqual(["title"]);
   });
 
-  it("names a rich-text leaf whose container reply parsed", async () => {
+  it("names a rich-text leaf whose container answer passed the check", async () => {
     const schema: Field[] = [{ name: "body", type: "richText", localized: true }];
     const result = await run({
       schema,
       source: { body: paragraph("Some ", "prose") },
-      answer: marksTheParserAccepts,
+      answer: segmentsTheCheckAccepts,
     });
 
     expect(claimable(result)).toEqual(["body"]);
@@ -142,9 +167,8 @@ describe("a run reports the leaves that came back", () => {
 
     const result = await run({
       schema,
-      source: { title: "Hello", body: paragraph("First", "Second") },
+      source: { title: "Hello", body: paragraphs(["First"], ["Second"]) },
       answer: everything,
-      expanders: [new RichTextExpander(), new PlainTextExpander()],
     });
 
     expect(claimable(result)).toEqual(["title", "body"]);
@@ -158,9 +182,8 @@ describe("a run reports the leaves that came back", () => {
 
     const result = await run({
       schema,
-      source: { title: "Hello", body: paragraph("First", "Second") },
+      source: { title: "Hello", body: paragraphs(["First"], ["Second"]) },
       answer: allExcept("Second"),
-      expanders: [new RichTextExpander(), new PlainTextExpander()],
     });
 
     expect(claimable(result)).toStrictEqual(["title"]);
@@ -176,7 +199,6 @@ describe("a run reports the leaves that came back", () => {
       schema,
       source: { title: "Hello", body: paragraph("   ", "") },
       answer: everything,
-      expanders: [new RichTextExpander(), new PlainTextExpander()],
     });
 
     expect(claimable(result)).toEqual(["title"]);
@@ -222,7 +244,7 @@ describe("what the run reports is what the receipt claims", () => {
     await service.record(
       { collectionSlug: "posts", documentId: "1", targetLocale: "de", sourceLocale: "en" },
       hashed({ title: "aaaa", summary: "bbbb" }),
-      result?.leaves ?? []
+      leavesOf(result)
     );
 
     const stored = written.upsert.mock.calls[0]?.[0] as {
@@ -260,7 +282,7 @@ describe("what the run reports is what the receipt claims", () => {
     await service.record(
       { collectionSlug: "posts", documentId: "1", targetLocale: "de", sourceLocale: "en" },
       hashed({ title: "aaaa", summary: "bbbb" }),
-      result?.leaves ?? []
+      leavesOf(result)
     );
 
     const stored = written.upsert.mock.calls[0]?.[0] as {
@@ -280,46 +302,56 @@ describe("a refused reply says why", () => {
     { name: "body", type: "richText", localized: true },
   ];
 
-  it("names the leaf and the parser's reason when a paragraph's marks do not come back", async () => {
+  it("names the leaf and the check's reason when a paragraph's answer comes back in the wrong kind", async () => {
     const result = await run({
       schema: titleAndBody,
       source: { title: "Pricing", body: paragraph("Some ", "prose") },
-      answer: marksTheParserRefuses,
+      answer: everythingAnsweredAsText,
     });
 
-    expect(result?.rejected).toEqual([{ idPath: "body", reason: "missing-mark" }]);
+    expect(leavesOf(result)).toEqual([
+      { idPath: "title", answered: true },
+      { idPath: "body", answered: false, failures: [{ code: "wrong-kind" }] },
+    ]);
   });
 
-  it("reports nothing refused when every paragraph's reply parses", async () => {
+  it("reports no failure when every paragraph's answer passes the check", async () => {
     const result = await run({
       schema: titleAndBody,
       source: { title: "Pricing", body: paragraph("Some ", "prose") },
-      answer: marksTheParserAccepts,
+      answer: segmentsTheCheckAccepts,
     });
 
-    expect(result?.rejected).toEqual([]);
+    expect(leavesOf(result)).toEqual([
+      { idPath: "title", answered: true },
+      { idPath: "body", answered: true },
+    ]);
   });
 
-  it("names every refused paragraph of a leaf, each with its own reason, and none that parsed", async () => {
-    const replies = ["<1>Etwas </1><2>Prosa</2>", "no marks at all", "<1>eins</1><1>zwei</1>"];
+  it("names every refused paragraph of a leaf, each with its own reason, and none that passed", async () => {
+    const replies = [
+      segments([1, "Etwas "], [2, "Prosa"]),
+      segments([1, "Mehr "]),
+      segments([1, "eins"], [1, "zwei"], [2, "drei"]),
+    ];
     const result = await run({
       schema: titleAndBody,
       source: {
         title: "Pricing",
         body: paragraphs(["Some ", "prose"], ["More ", "prose"], ["Last ", "prose"]),
       },
-      answer: (sent) =>
-        Object.fromEntries(
-          Object.entries(sent).map(([key, text]) => [
-            Number(key),
-            text.startsWith("<1>") ? (replies.shift() ?? "") : text,
-          ])
-        ),
+      answer: answerEach((value) =>
+        value.kind === "segments" ? replies.shift() : inGerman(value)
+      ),
     });
 
-    expect(result?.rejected).toEqual([
-      { idPath: "body", reason: "missing-mark" },
-      { idPath: "body", reason: "repeated-mark" },
+    expect(leavesOf(result)).toEqual([
+      { idPath: "title", answered: true },
+      {
+        idPath: "body",
+        answered: false,
+        failures: [{ code: "missing-segment" }, { code: "repeated-segment" }],
+      },
     ]);
   });
 });

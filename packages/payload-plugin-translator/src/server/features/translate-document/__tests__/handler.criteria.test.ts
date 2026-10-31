@@ -12,9 +12,11 @@ import type { TranslateDocumentInput } from "../translateDocument.js";
 const leaves = (...addresses: string[]): TranslationFilter => ({ kind: "leaves", addresses });
 const rule = (name: string): TranslationFilter => ({ kind: "rule", name });
 
-vi.mock("../../../../core/translation-pipeline/index.js", () => ({
-  translateContent: vi.fn().mockResolvedValue(null),
-}));
+vi.mock("../../../../core/translation-pipeline/index.js", async () => {
+  const { nothingSent } =
+    await import("../../../../core/translation-pipeline/__tests__/fixtures/pipelineResult.js");
+  return { translateContent: vi.fn().mockResolvedValue(nothingSent) };
+});
 
 const SCHEMA = [
   { name: "title", type: "text", localized: true },

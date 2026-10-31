@@ -6,6 +6,10 @@ import type { TranslateDocumentDeps } from "../translateDocument.js";
 import type { TranslationProvider } from "../../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 import type { TranslateDocumentInput } from "../translateDocument.js";
+import {
+  nothingSent,
+  pipelineResult,
+} from "../../../../core/translation-pipeline/__tests__/fixtures/pipelineResult.js";
 import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
 
 vi.mock("../../../../core/translation-pipeline/index.js", () => ({
@@ -52,14 +56,7 @@ describe("translateDocument — it asks before it writes", () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    (await pipeline()).mockResolvedValue({
-      translatedData: { title: "Titel", body: "Text" },
-      leaves: [
-        { idPath: "title", answeredInFull: true },
-        { idPath: "body", answeredInFull: true },
-      ],
-      rejected: [],
-    });
+    (await pipeline()).mockResolvedValue(pipelineResult({ title: "Titel", body: "Text" }));
     provider = { translate: vi.fn().mockResolvedValue({}) };
     const schemaMap = new Map([
       ["posts" as CollectionSlug, [{ name: "title", type: "text", localized: true }]],
@@ -129,7 +126,7 @@ describe("translateDocument — it asks before it writes", () => {
   // it is worth pinning that it does — and that a collection-level refusal stops it, which is the
   // only thing that can.
   it("still publishes a locale the pipeline left alone", async () => {
-    (await pipeline()).mockResolvedValue(null);
+    (await pipeline()).mockResolvedValue(nothingSent);
 
     await translateDocument(deps, payload, input({ publishOnTranslation: true }), {});
 
@@ -140,7 +137,7 @@ describe("translateDocument — it asks before it writes", () => {
   });
 
   it("does not publish when the collection refuses the update", async () => {
-    (await pipeline()).mockResolvedValue(null);
+    (await pipeline()).mockResolvedValue(nothingSent);
     (await permission()).mockResolvedValue(false);
 
     await translateDocument(deps, payload, input({ publishOnTranslation: true }), {}).catch(

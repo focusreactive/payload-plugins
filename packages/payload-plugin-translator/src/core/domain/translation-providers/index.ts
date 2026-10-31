@@ -8,4 +8,9 @@ export type {
   TranslationInput,
   TranslationOutput,
   TranslationIndex,
+  TranslatableValue,
+  TranslatedValue,
+  Segment,
+  SegmentId,
+  ValueFailureCode,
 } from "./TranslationProvider.interface.js";

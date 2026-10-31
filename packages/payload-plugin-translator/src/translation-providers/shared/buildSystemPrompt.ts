@@ -1,22 +1,5 @@
 import type { DocumentRef } from "../../core/domain/translation-providers/index.js";
-
-/**
- * Append this to a system prompt when the request says the values carry inline marks.
- *
- * Wording validated against 396 live translations (French, German, Japanese × four models) before
- * it shipped: the fallback rate was ~1% on gpt-4o and zero on newer models. Reword it only with
- * the same measurement in hand.
- *
- * A rule telling the model to keep each mark around the same words was measured and rejected: it
- * tightens mark boundaries at the cost of target word order. See
- * `docs/plans/2026-09-12-field-surface-inline-marks.task.md`.
- *
- * @since 1.0.0
- */
-export const INLINE_MARKS_INSTRUCTION = `Some values contain numbered inline marks, written as <1>text</1> or <5/>. They carry formatting, not content.
-Return every mark exactly once, keeping its number, and put each mark where the translated sentence needs it — the order of marks may change.
-If a piece of text merges into a neighbouring mark, return the emptied mark as <2></2>; never omit a mark.
-Never introduce a mark into a value that has none, and never nest marks.`;
+import { inlineMarksInstruction } from "./wire/index.js";
 
 /**
  * Context handed to a {@link SystemPromptBuilder}.
@@ -55,9 +38,8 @@ export async function buildSystemPrompt(args: {
   override?: SystemPromptBuilder;
   document: DocumentRef;
   /**
-   * Whether the values being sent carry inline marks. Appended **after** whatever `override`
-   * returns: a builder is free to ignore `defaultPrompt`, and the format must not depend on it
-   * remembering to include this rule.
+   * The mark instruction is appended **after** whatever `override` returns: a builder may ignore
+   * `defaultPrompt`, and the wire format must not depend on it repeating this rule.
    */
   hasInlineMarks?: boolean;
 }): Promise<string> {
@@ -78,5 +60,5 @@ Maintain any special formatting, placeholders, or variables within the values if
       })
     : defaultPrompt;
 
-  return hasInlineMarks ? `${prompt}\n\n${INLINE_MARKS_INSTRUCTION}` : prompt;
+  return hasInlineMarks ? `${prompt}\n\n${inlineMarksInstruction()}` : prompt;
 }

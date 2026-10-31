@@ -9,13 +9,11 @@ import { translateDocument } from "../translateDocument.js";
 import type { TranslateDocumentDeps } from "../translateDocument.js";
 import type { TranslateDocumentInput } from "../translateDocument.js";
 
-vi.mock("../../../../core/translation-pipeline/index.js", () => ({
-  translateContent: vi.fn().mockResolvedValue({
-    translatedData: { title: "Titel" },
-    leaves: [{ idPath: "title", answeredInFull: true }],
-    rejected: [],
-  }),
-}));
+vi.mock("../../../../core/translation-pipeline/index.js", async () => {
+  const { pipelineResult } =
+    await import("../../../../core/translation-pipeline/__tests__/fixtures/pipelineResult.js");
+  return { translateContent: vi.fn().mockResolvedValue(pipelineResult({ title: "Titel" })) };
+});
 
 const INSIDE_THE_EDITORS_SAVE = { transactionID: "tx-42" };
 

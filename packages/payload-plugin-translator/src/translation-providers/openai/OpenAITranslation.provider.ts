@@ -1,5 +1,5 @@
 import type { TranslationProvider } from "../../core/domain/translation-providers/index.js";
-import type { DryRunConfig, SystemPromptBuilder } from "../shared/index.js";
+import type { SystemPromptBuilder } from "../shared/index.js";
 import { createTranslationProvider } from "../shared/index.js";
 import { loadOpenAIClient } from "./loadOpenAIClient.js";
 import type { OpenAIClientShape } from "./OpenAI.shapes.js";
@@ -23,14 +23,6 @@ type OpenAIProviderBase = {
    * package would otherwise send, so you can extend it rather than rewrite it.
    */
   systemPrompt?: SystemPromptBuilder;
-  /**
-   * Simulate translations without calling OpenAI — see {@link DryRunConfig}.
-   *
-   * @default false
-   * @deprecated Pass your own `client`, or build a provider with `createTranslationProvider({
-   * complete })`. Remove in next major. See docs/DEPRECATIONS.md#provider-dry-run
-   */
-  dryRun?: boolean | DryRunConfig;
   /**
    * Per-request timeout in milliseconds for the client this package builds.
    *
@@ -96,7 +88,7 @@ export type OpenAIProviderConfig = OpenAIProviderBase &
  * major. See the recipe in the README and docs/DEPRECATIONS.md#openai-client-construction
  */
 export function createOpenAIProvider(config: OpenAIProviderConfig): TranslationProvider {
-  const { model = DEFAULT_MODEL, systemPrompt, dryRun, sampling, structuredOutput } = config;
+  const { model = DEFAULT_MODEL, systemPrompt, sampling, structuredOutput } = config;
 
   let clientPromise: Promise<OpenAIClientShape> | undefined;
 
@@ -122,7 +114,6 @@ export function createOpenAIProvider(config: OpenAIProviderConfig): TranslationP
 
   return createTranslationProvider({
     systemPrompt,
-    dryRun,
     complete: async (request) => {
       const client = await resolveClient();
       return openAIComplete({ client, model, sampling, structuredOutput })(request);

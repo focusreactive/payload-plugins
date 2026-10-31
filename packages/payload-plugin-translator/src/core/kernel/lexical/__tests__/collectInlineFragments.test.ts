@@ -169,7 +169,7 @@ describe("collectInlineFragments", () => {
         ]),
       ]);
 
-      expect(collectInlineFragments(root)[0]?.fragments.map((piece) => piece.markId)).toEqual([
+      expect(collectInlineFragments(root)[0]?.fragments.map((piece) => piece.id)).toEqual([
         1, 2, 3,
       ]);
     });
@@ -186,9 +186,7 @@ describe("collectInlineFragments", () => {
         ]),
       ]);
 
-      expect(collectInlineFragments(root)[1]?.fragments.map((piece) => piece.markId)).toEqual([
-        1, 2,
-      ]);
+      expect(collectInlineFragments(root)[1]?.fragments.map((piece) => piece.id)).toEqual([1, 2]);
     });
 
     it("takes the fragment text from the leaf itself", () => {
@@ -349,7 +347,7 @@ describe("collectInlineFragments", () => {
     it("still numbers a fragment that carries no text", () => {
       const { root } = lineBreakMidParagraph();
 
-      expect(collectInlineFragments(root)[0]?.fragments.map((piece) => piece.markId)).toEqual([
+      expect(collectInlineFragments(root)[0]?.fragments.map((piece) => piece.id)).toEqual([
         1, 2, 3,
       ]);
     });
@@ -401,9 +399,7 @@ describe("collectInlineFragments", () => {
     it("whitespace: numbering leaves no gap where the dropped node was", () => {
       const { root } = spaceBetweenWords();
 
-      expect(collectInlineFragments(root)[0]?.fragments.map((piece) => piece.markId)).toEqual([
-        1, 2,
-      ]);
+      expect(collectInlineFragments(root)[0]?.fragments.map((piece) => piece.id)).toEqual([1, 2]);
     });
 
     it("whitespace: glues backwards past a text-free fragment", () => {
@@ -451,88 +447,36 @@ describe("collectInlineFragments", () => {
   });
 
   describe("containers that cannot use marks", () => {
-    it("mark-shaped: an opening-shaped sequence in the source skips the container", () => {
-      const root = createNode("root", {}, [
+    const markLike = (lead: string) =>
+      createNode("root", {}, [
         createNode("paragraph", {}, [
-          createNode("text", { text: "the <12> sequence " }),
+          createNode("text", { text: lead }),
           createNode("link", { url: "https://example.com" }, [
             createNode("text", { text: "explained" }),
           ]),
         ]),
       ]);
 
-      expect(collectInlineFragments(root)[0]?.skip).toBe("mark-shaped-source");
-    });
-
-    it("mark-shaped: a closing-shaped sequence in the source skips the container", () => {
-      const root = createNode("root", {}, [
-        createNode("paragraph", {}, [
-          createNode("text", { text: "the </12> sequence " }),
-          createNode("link", { url: "https://example.com" }, [
-            createNode("text", { text: "explained" }),
-          ]),
-        ]),
-      ]);
-
-      expect(collectInlineFragments(root)[0]?.skip).toBe("mark-shaped-source");
-    });
-
-    it("mark-shaped: a self-closing-shaped sequence in the source skips the container", () => {
-      const root = createNode("root", {}, [
-        createNode("paragraph", {}, [
-          createNode("text", { text: "the <12/> sequence " }),
-          createNode("link", { url: "https://example.com" }, [
-            createNode("text", { text: "explained" }),
-          ]),
-        ]),
-      ]);
-
-      expect(collectInlineFragments(root)[0]?.skip).toBe("mark-shaped-source");
-    });
-
-    it("mark-shaped: a skipped container still carries its fragments", () => {
-      const root = createNode("root", {}, [
-        createNode("paragraph", {}, [
-          createNode("text", { text: "the <12> sequence " }),
-          createNode("link", { url: "https://example.com" }, [
-            createNode("text", { text: "explained" }),
-          ]),
-        ]),
-      ]);
-
-      expect(collectInlineFragments(root)[0]?.fragments).toHaveLength(2);
-    });
-
-    it("mark-shaped: a plain tag like <div> is not mark-shaped", () => {
-      const root = createNode("root", {}, [
-        createNode("paragraph", {}, [
-          createNode("text", { text: "wrap it in " }),
-          createNode("link", { url: "https://example.com" }, [
-            createNode("text", { text: "<div>" }),
-          ]),
-        ]),
-      ]);
-
-      const containers = collectInlineFragments(root);
+    it.each([
+      ["an opening-shaped sequence", "the <12> sequence "],
+      ["a closing-shaped sequence", "the </12> sequence "],
+      ["a self-closing-shaped sequence", "the <12/> sequence "],
+      ["a plain tag like <div>", "wrap it in <div> "],
+      ["a comparison like 5 < 10", "5 < 10 is "],
+    ])("mark-like text: %s in the source does not skip the container", (_label, lead) => {
+      const containers = collectInlineFragments(markLike(lead));
 
       expect(containers).toHaveLength(1);
       expect(containers[0]?.skip).toBeUndefined();
     });
 
-    it("mark-shaped: a comparison like 5 < 10 is not mark-shaped", () => {
-      const root = createNode("root", {}, [
-        createNode("paragraph", {}, [
-          createNode("text", { text: "5 < 10 is " }),
-          createNode("link", { url: "https://example.com" }, [
-            createNode("text", { text: "always true" }),
-          ]),
-        ]),
+    it("mark-like text: the container carries the sequence as fragment text, unchanged", () => {
+      const fragments = collectInlineFragments(markLike("the <12> sequence "))[0]?.fragments;
+
+      expect(fragments?.map((fragment) => fragment.text)).toEqual([
+        "the <12> sequence ",
+        "explained",
       ]);
-
-      const containers = collectInlineFragments(root);
-
-      expect(containers).toHaveLength(1);
-      expect(containers[0]?.skip).toBeUndefined();
     });
 
     it("skips a container that is one plain text leaf", () => {

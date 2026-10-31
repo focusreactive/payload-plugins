@@ -150,9 +150,8 @@ export type TranslationRequest = {
  * The answer to one value: in the kind it was asked in, or `failed` with the reason.
  *
  * `segments` carries every id of the input exactly once, in the order the target language needs;
- * an empty `text` means the segment merged into a neighbour, a `null`-text segment's text is
- * ignored, and edge whitespace is the provider's to preserve. `failed` leaves the value
- * untranslated; `message` is logged, never sent to a client.
+ * an empty `text` means the segment merged into a neighbour, and a `null`-text segment's text is
+ * ignored. `failed` leaves the value untranslated; `message` is logged, never sent to a client.
  */
 export type TranslatedValue =
   | { kind: "text"; text: string }
@@ -162,7 +161,7 @@ export type TranslatedValue =
 /** Why one value was not translated. A failure of the whole call is a throw, see D3. */
 export type ValueFailureCode =
   | "missing-segment" | "unknown-segment" | "repeated-segment" | "no-text"
-  | "wrong-kind" | "refused" | "untranslatable";
+  | "wrong-kind" | "malformed" | "refused" | "untranslatable";
 
 /** Keys are a subset of the input's. A key that is absent was not translated. */
 export type TranslationOutput = Record<TranslationIndex, TranslatedValue>;
@@ -487,13 +486,19 @@ reply in the wrong kind is a compile error rather than a runtime refusal.
 - One call per document, as today. The model receives two sections — values encoded with marks,
   and plain values — and the mark instruction names the marked section only, so a plain field
   holding `Compare <1> and <2> plans` is never read as formatting. The instruction is reworded for
-  the sections and **re-measured before release**, against the same 396-translation baseline.
+  the sections and **re-measured before release**. The 396-translation corpus is not in the
+  repository, so the measurement is an A/B of the old and new wording on a rebuilt corpus,
+  recorded in `2026-10-30-segments-on-the-port.task.md`.
 - A paragraph `encodeSegments` refuses (its text looks like a mark) goes into the plain section as
   one value per segment and is assembled back into segments by the provider.
-- Every segment sent without marks passes through the edge-whitespace utility: the model and
-  machine-translation APIs drop edge spaces, and "Klicken Sie" + "hier" would be stored as
-  "Klicken Siehier" with nothing to catch it. The utility leaves an empty answer empty, since empty
-  means merged.
+- Edge spaces are restored by the plugin, not by a provider utility (amended while building step
+  4): the plugin's check already gives a same-shape answer — same order, nothing emptied — its
+  source's edge whitespace back, as it did for marked replies. Every machine-translation API and the
+  built-in provider's plain pieces answer in the same shape, so "Klicken Sie" + "hier" is stored as
+  "Klicken Sie hier" without any provider remembering to ask for it.
+- A marked reply that does not decode — a nested mark, a close that matches nothing, a mark never
+  closed — is answered `failed` with `malformed`: the string format is the provider's, so the plugin
+  no longer sees these cases.
 - Escaping mark-shaped source text, so such a paragraph can still travel with marks, is a possible
   later improvement and needs its own measurement.
 

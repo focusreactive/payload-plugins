@@ -121,7 +121,7 @@ describe("the receipt a run leaves behind", () => {
     await service.record(
       { collectionSlug: COLLECTION, documentId: "1", targetLocale: "de", sourceLocale: "en" },
       sourceNow({ title: "ace", body: "beef" }),
-      [{ idPath: makeIdPath([{ kind: "key", name: "title" }]), answeredInFull: true }]
+      [{ idPath: makeIdPath([{ kind: "key", name: "title" }]), answered: true }]
     );
 
     const written = upsert.mock.calls[0]?.[0] as { sourceFingerprint: RecordedFingerprints };

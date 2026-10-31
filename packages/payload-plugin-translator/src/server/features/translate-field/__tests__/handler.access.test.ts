@@ -6,11 +6,11 @@ import type { TranslationProvider } from "../../../../core/domain/translation-pr
 import { TranslateFieldHandler } from "../handler.js";
 import type { FieldTranslationConfig } from "../model.js";
 
-vi.mock("../../../../core/translation-pipeline/index.js", () => ({
-  translateContent: vi
-    .fn()
-    .mockResolvedValue({ translatedData: { title: "Titel" }, leaves: [], rejected: [] }),
-}));
+vi.mock("../../../../core/translation-pipeline/index.js", async () => {
+  const { pipelineResult } =
+    await import("../../../../core/translation-pipeline/__tests__/fixtures/pipelineResult.js");
+  return { translateContent: vi.fn().mockResolvedValue(pipelineResult({ title: "Titel" })) };
+});
 
 vi.mock("../../../shared/access/permission.js", () => ({
   mayInitiate: vi.fn(),

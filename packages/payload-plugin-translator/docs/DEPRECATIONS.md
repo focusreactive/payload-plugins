@@ -240,8 +240,11 @@ the single source of truth — code annotations link here by anchor instead of d
 
 - **What:** the `dryRun` option on `TranslationProviderConfig` and `OpenAIProviderConfig`, and with
   it the exported `DryRunConfig` / `DryRunTransformer` types.
-- **Status:** live
+- **Status:** removed
 - **Deprecated:** 2026-08-28 / PR #101
+- **Removed:** 2026-10-30, with the provider port's segments (step 4 of
+  `plans/2026-10-28-the-provider-port.design.md`): the option could not read segments, and teaching
+  it to would have kept alive what this entry already scheduled for removal.
 - **Replacement:** supply your own fake request function —
   `createTranslationProvider({ complete })`, or `createOpenAIProvider({ client })` with a stub
   client. Both reach no network and need no API key. The README carries the recipe; the package
@@ -263,7 +266,7 @@ the single source of truth — code annotations link here by anchor instead of d
 
   Known wart, left as is for the same reason: the built-in transformer reverses by UTF-16 code unit
   (`split("")`), so text outside the basic plane comes back mangled.
-- **Code refs:** `src/translation-providers/shared/runDryRun.ts`,
+- **Code refs (at removal):** `src/translation-providers/shared/runDryRun.ts`,
   `src/translation-providers/shared/CompletionProvider.provider.ts`,
   `src/translation-providers/openai/OpenAITranslation.provider.ts`
 
