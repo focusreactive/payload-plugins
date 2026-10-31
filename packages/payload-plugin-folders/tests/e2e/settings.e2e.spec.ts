@@ -328,6 +328,13 @@ test("a locked subfolder's type fields are read-only in its edit view, with who 
   await expect(page.getByTestId("types-locked-note")).toHaveText(
     "Locked by Edit Lock Parent: this folder takes its page types from it"
   );
+  // The note heads the locked group: above the first locked field, so it never reads as a note on
+  // the Default Type field that follows the page types.
+  const noteBox = await page.getByTestId("types-locked-note").boundingBox();
+  const allowedTypesBox = await page.locator("#field-allowedTypes").boundingBox();
+  expect(noteBox).not.toBeNull();
+  expect(allowedTypesBox).not.toBeNull();
+  expect((noteBox?.y ?? 0) + (noteBox?.height ?? 0)).toBeLessThanOrEqual(allowedTypesBox?.y ?? 0);
   // The stock select and checkbox are there, and cannot be changed.
   await expect(page.locator("#field-allowedTypes .rs__control--is-disabled")).toBeVisible();
   await expect(page.locator("#field-defaultType .rs__control--is-disabled")).toBeVisible();

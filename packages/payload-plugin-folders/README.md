@@ -115,6 +115,17 @@ For the admin tree, all of them need a signed-in user and read each collection t
   word equal to a page type's label (`article`, or `folder`) limits the results to that type. The
   scope is the folder's subtree by `ancestorIds`.
 - `GET /api/folders-tree/ancestors?collection=&id=` returns `{ folders }`, root first.
+- `GET /api/folders-tree/check-root?parent=root|<id>&locale=&exclude=<collection>:<id>` returns
+  `{ ok, conflict?: { title, path }, message? }`: whether another page is, or in its latest version
+  is about to be, the folder's root page. The edit view's draft warning and its disabled root
+  checkbox read it.
+
+A save of a page can carry `?frFoldersIfUpdatedAt=<updatedAt of the latest version>`. The admin's
+partial saves (Set as root page, Unset root page, the page settings drawer) send it with the
+version they just read; under the tree lock the server refuses the save with a field error on
+`isFolderRoot` when the latest version differs, so a live root change never publishes edits nobody
+reviewed. A save without the parameter, such as the edit view's full form or a Local API call, is
+not checked.
 
 The `access` flags are asked once per collection with no `id`, the way Payload asks for a bulk
 operation, so a host whose rule depends on the document has to return a `Where`.

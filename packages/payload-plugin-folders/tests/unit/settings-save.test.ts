@@ -276,3 +276,50 @@ describe("effectiveDefaultType", () => {
     expect(effectiveDefaultType("posts", [], ["pages", "posts"])).toBe("posts");
   });
 });
+
+describe("a language the item has no value of its own for", () => {
+  // The drawers read with no fallback, so the title and segment are empty in a language that shows
+  // the default language's values.
+  const emptyPage: PageSettingsValues = { ...storedPage, segment: "", title: "" };
+
+  it("writes neither title nor segment of a page when the editor changed neither", () => {
+    expect(
+      planPageSettingsSave({
+        edited: { ...emptyPage, isFolderRoot: true },
+        hasDrafts: true,
+        hasNewerDraft: true,
+        stored: emptyPage,
+      })
+    ).toEqual([
+      { changes: { isFolderRoot: true }, kind: "content", mode: "draft", needsConfirm: false },
+    ]);
+  });
+
+  it("writes only the field the editor filled in", () => {
+    expect(
+      planPageSettingsSave({
+        edited: { ...emptyPage, title: "Kontakt" },
+        hasDrafts: true,
+        hasNewerDraft: false,
+        stored: emptyPage,
+      })
+    ).toEqual([
+      { changes: { title: "Kontakt" }, kind: "content", mode: "draft", needsConfirm: false },
+    ]);
+  });
+
+  it("writes neither name nor slug of a folder when the editor changed neither", () => {
+    const emptyFolder: FolderSettingsValues = {
+      allowedTypes: [],
+      defaultType: "",
+      lockSubfolderTypes: false,
+      name: "",
+      parentId: 5,
+      segment: "",
+    };
+
+    expect(
+      planFolderSettingsSave({ edited: emptyFolder, isLocked: false, stored: emptyFolder })
+    ).toEqual({ locksSubfolders: false, patch: {}, renames: false, toParent: null });
+  });
+});
