@@ -11,6 +11,7 @@ import { buildMovePreviewEndpoint } from "./movePreview.js";
 import { buildOperationStepEndpoint } from "./operationStep.js";
 import { buildPathsEndpoint } from "./paths.js";
 import { buildPreviewUrlEndpoint } from "./previewUrl.js";
+import { buildPublishEndpoint } from "./publish.js";
 import { buildResolveEndpoint } from "./resolve.js";
 import { buildRevisionEndpoint } from "./revision.js";
 import { buildSearchEndpoint } from "./search.js";
@@ -32,4 +33,5 @@ export const buildFoldersEndpoints = (options: ResolvedOptions): Endpoint[] => [
   buildTreeEndpoint(options),
   buildPathsEndpoint(),
   buildOperationStepEndpoint(options),
+  buildPublishEndpoint(options),
 ];

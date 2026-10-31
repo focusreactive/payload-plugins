@@ -80,7 +80,7 @@ const pageRowSelect = (page: ResolvedPageCollection, hasDrafts: boolean): Select
 const hasDraftsEnabled = (req: PayloadRequest, page: ResolvedPageCollection): boolean =>
   Boolean(req.payload.collections[toCollectionSlug(page.slug)]?.config.versions?.drafts);
 
-const toPageRow = (
+export const toPageRow = (
   row: Record<string, unknown>,
   page: ResolvedPageCollection,
   hasDrafts: boolean

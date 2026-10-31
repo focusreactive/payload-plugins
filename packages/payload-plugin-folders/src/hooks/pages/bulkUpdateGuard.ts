@@ -11,8 +11,8 @@ const structureFieldNames = ["isFolderRoot", "folder", "orderKey", "structureRev
  * failed page in `errors` while the shared transaction commits anyway. The after-write
  * uniqueness check cannot roll such a page back, and two pages saved at once do not see each
  * other's write, so two pages could end up live at one URL while the call reports an error. A
- * bulk update that could change a URL is refused until batch publish (P-27) runs it page by page.
- * An update that touches only other fields, or saves drafts, passes.
+ * bulk update that could change a URL is refused; batch publish (`core/publish.ts`) runs page by
+ * page instead. An update that touches only other fields, or saves drafts, passes.
  */
 export const buildBulkUpdateGuard =
   (page: ResolvedPageCollection): CollectionBeforeOperationHook =>
@@ -37,7 +37,7 @@ export const buildBulkUpdateGuard =
       [page.segmentField, "pathSegment", ...structureFieldNames].some((name) => name in data);
     if (couldChangeUrl) {
       throw new APIError(
-        "Publishing or changing the URL of several pages at once is not supported yet. Publish pages one at a time until batch publish exists.",
+        "Publishing or changing the URL of several pages at once is not supported. Publish pages one at a time, or publish a selection through the folders tree (POST /api/folders-tree/publish), which publishes page by page.",
         400
       );
     }
