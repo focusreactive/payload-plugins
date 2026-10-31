@@ -30,9 +30,14 @@ export type ClientTreeArgs = Pick<TreeArgs, "depth" | "draft" | "includeEmptyFol
 };
 export type ClientPathsArgs = Pick<PathsArgs, "rootPages" | "under"> & {
   draft?: boolean;
-  /** Rows asked for per request while the client collects every page of the answer. Default 1,000. */
+  /** Pages asked for per request while the client collects every page of the answer. Default 1,000. */
   limit?: number;
   locale?: string;
+  /**
+   * The most requests one `paths` call makes before it gives up with an error, so a server that
+   * keeps saying there is more cannot hold the caller in a loop. Default 1,000.
+   */
+  maxRequests?: number;
 };
 
 export type FoldersClient = {
@@ -70,6 +75,7 @@ const buildQuery = (
 };
 
 const defaultPathsPageSize = 1000;
+const defaultPathsMaxRequests = 1000;
 
 export const createFoldersClient = ({
   apiRoute = "/api",
@@ -105,8 +111,9 @@ export const createFoldersClient = ({
 
   return {
     paths: async (args = {}) => {
+      const maxRequests = args.maxRequests ?? defaultPathsMaxRequests;
       const rows: PathRow[] = [];
-      for (let page = 1; ; page += 1) {
+      for (let page = 1; page <= maxRequests; page += 1) {
         const answer = await readJson<{ docs: PathRow[]; hasNextPage: boolean }>(
           await request("paths", {
             draft: args.draft,
@@ -119,10 +126,15 @@ export const createFoldersClient = ({
           "paths"
         );
         rows.push(...answer.docs);
-        if (!answer.hasNextPage) {
+        // An empty page ends the walk whatever `hasNextPage` says: nothing more can come of it.
+        if (answer.docs.length === 0 || !answer.hasNextPage) {
           return rows;
         }
       }
+      throw new FoldersClientError(
+        `folders-tree/paths still had more pages after ${maxRequests} requests; ask for a larger limit`,
+        0
+      );
     },
     resolve: async (args) => {
       const response = await request("resolve", {

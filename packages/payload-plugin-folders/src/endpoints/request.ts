@@ -289,3 +289,20 @@ export const parseWholeNumber = ({
 
   return parsed;
 };
+
+/**
+ * Headers of the public read endpoints (`resolve`, `tree`, `paths`). The answer depends on who
+ * asks, so a shared cache must key on the credentials (`Vary`); a signed-in or draft read must not
+ * be stored by one at all, because it can hold unpublished pages.
+ */
+export const buildReadHeaders = (
+  req: PayloadRequest,
+  isDraftRead: boolean | undefined
+): Headers => {
+  const headers = new Headers({ Vary: "Cookie, Authorization" });
+  if (req.user || isDraftRead) {
+    headers.set("Cache-Control", "private, no-store");
+  }
+
+  return headers;
+};

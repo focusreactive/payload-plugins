@@ -2,9 +2,15 @@ import { handleEndpoints } from "payload";
 import type { CollectionConfig, User } from "payload";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { createFoldersClient } from "../../src/rest/index.js";
-import { getAllPaths, getTree, moveItems, resolvePath } from "../../src/server/index.js";
-import type { TreeNode } from "../../src/server/index.js";
+import { FoldersClientError, createFoldersClient } from "../../src/rest/index.js";
+import {
+  getAllPaths,
+  getPathsPage,
+  getTree,
+  moveItems,
+  resolvePath,
+} from "../../src/server/index.js";
+import type { PathRow, TreeNode } from "../../src/server/index.js";
 import { callEndpoint } from "../helpers/callEndpoint.js";
 import { getTestPayload } from "../helpers/getTestPayload.js";
 import type { TestPayload } from "../helpers/getTestPayload.js";
@@ -65,6 +71,16 @@ const createArticle = (data: ArticleData) =>
 
 /** What a helper answer looks like after the trip over HTTP. */
 const same = (value: unknown): unknown => JSON.parse(JSON.stringify(value));
+
+/** Rows in one fixed order, for comparing two answers that page differently. */
+const byRowKey = (rows: PathRow[]): PathRow[] =>
+  rows.toSorted((left, right) =>
+    `${left.collection}/${left.id}/${left.locale}`.localeCompare(
+      `${right.collection}/${right.id}/${right.locale}`,
+      "en",
+      { numeric: true }
+    )
+  );
 
 const titlesOf = (nodes: TreeNode[]): string[] => nodes.map((node) => node.title);
 
@@ -375,14 +391,17 @@ describe("tree helpers", () => {
       same(await getTree(payload, { draft: true, includeEmptyFolders: true, user: editor }))
     );
     // paths, collected over several requests of two rows each.
+    // The endpoint pages by collection and id, the helper sorts by path: same rows, any order.
     const helperRows = await getAllPaths(payload, { locale: "all" });
     expect(helperRows.length).toBeGreaterThan(2);
-    expect(await publicClient.paths({ limit: 2, locale: "all" })).toEqual(same(helperRows));
-    expect(await publicClient.paths({ under: "/blog" })).toEqual(
-      same(await getAllPaths(payload, { under: "/blog" }))
+    expect(byRowKey(await publicClient.paths({ limit: 2, locale: "all" }))).toEqual(
+      byRowKey(same(helperRows) as PathRow[])
     );
-    expect(await signedInClient.paths({ draft: true })).toEqual(
-      same(await getAllPaths(payload, { draft: true, user: editor }))
+    expect(byRowKey(await publicClient.paths({ under: "/blog" }))).toEqual(
+      byRowKey(same(await getAllPaths(payload, { under: "/blog" })) as PathRow[])
+    );
+    expect(byRowKey(await signedInClient.paths({ draft: true }))).toEqual(
+      byRowKey(same(await getAllPaths(payload, { draft: true, user: editor })) as PathRow[])
     );
     expect(publicClient.toStoryblokFullSlug("/blog", true)).toBe("blog/");
     expect(publicClient.toStoryblokFullSlug("/blog/team", false)).toBe("blog/team");
@@ -435,5 +454,279 @@ describe("tree and paths endpoints", () => {
     expect((await get("/folders-tree/paths?limit=0")).status).toBe(400);
     expect((await get("/folders-tree/paths?page=0")).status).toBe(400);
     expect((await get("/folders-tree/paths?limit=10001")).status).toBe(400);
+  });
+});
+
+describe("read endpoint cache headers", () => {
+  const endpoints = [
+    "/folders-tree/resolve?path=/blog/team",
+    "/folders-tree/tree?depth=1",
+    "/folders-tree/paths?limit=5",
+  ];
+
+  it("every answer varies on the credentials; a signed-in or draft read is never stored", async () => {
+    const { config, payload } = harness;
+    const headersOf = async (path: string, anonymous: boolean) =>
+      (await callEndpoint({ anonymous, config, path, payload })).response.headers;
+
+    for (const endpoint of endpoints) {
+      const joiner = endpoint.includes("?") ? "&" : "?";
+      const publicRead = await headersOf(endpoint, true);
+      expect(publicRead.get("Vary")).toContain("Cookie");
+      expect(publicRead.get("Vary")).toContain("Authorization");
+      expect(publicRead.get("Cache-Control")).toBeNull();
+
+      for (const [path, anonymous] of [
+        [endpoint, false],
+        [`${endpoint}${joiner}draft=true`, true],
+        [`${endpoint}${joiner}draft=true`, false],
+      ] as const) {
+        const headers = await headersOf(path, anonymous);
+
+        expect(headers.get("Cache-Control"), path).toBe("private, no-store");
+        expect(headers.get("Vary"), path).toContain("Cookie, Authorization");
+      }
+    }
+    // A 404 from resolve carries them too.
+    const missing = await callEndpoint({
+      anonymous: false,
+      config,
+      path: "/folders-tree/resolve?path=/no/such/page",
+      payload,
+    });
+    expect(missing.status).toBe(404);
+    expect(missing.response.headers.get("Cache-Control")).toBe("private, no-store");
+  });
+});
+
+describe("paths paging", () => {
+  type PagedAnswer = { docs: PathRow[]; hasNextPage: boolean; page: number };
+
+  const createPageRow = (folder: number, slug: string) =>
+    harness.payload.create({
+      collection: "pages",
+      data: { _status: "published", folder, slug, title: slug },
+      depth: 0,
+      overrideAccess: true,
+    });
+
+  const walk = async (limit: number, args: { locale?: "all" | "de" | "en"; under: string }) => {
+    const collected: PathRow[] = [];
+    for (let page = 1; page < 100; page += 1) {
+      const answer = await getPathsPage(harness.payload, {
+        ...args,
+        limit,
+        overrideAccess: true,
+        page,
+      });
+      expect(answer.docs.length).toBeLessThanOrEqual(limit * (args.locale === "all" ? 2 : 1));
+      collected.push(...answer.docs);
+      if (!answer.hasNextPage) {
+        return collected;
+      }
+    }
+    throw new Error("the walk did not end");
+  };
+
+  it("walking pages of any size lists every page once across two collections", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { name: "Walk", slug: "walk" });
+    for (let index = 0; index < 7; index += 1) {
+      await createArticle({ folder: folder.id, slug: `article-${index}` });
+    }
+    for (let index = 0; index < 5; index += 1) {
+      await createPageRow(folder.id, `page-${index}`);
+    }
+    const expected = byRowKey(await getAllPaths(payload, { overrideAccess: true, under: "/walk" }));
+    expect(expected).toHaveLength(12);
+
+    // Sizes that fall inside a collection, on the boundary between them, and past both.
+    for (const limit of [1, 2, 3, 5, 7, 8, 12, 13]) {
+      const collected = await walk(limit, { under: "/walk" });
+
+      expect(byRowKey(collected)).toEqual(expected);
+      expect(new Set(collected.map((row) => `${row.collection}/${row.id}`)).size).toBe(12);
+    }
+  });
+
+  it("a deep page reads about one page of rows, not the whole site", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { name: "Deep walk", slug: "deep-walk" });
+    for (let index = 0; index < 30; index += 1) {
+      await createArticle({ folder: folder.id, slug: `item-${index}` });
+    }
+    for (let index = 0; index < 30; index += 1) {
+      await createPageRow(folder.id, `entry-${index}`);
+    }
+    const adapter = payload.db as unknown as {
+      find: (args: unknown) => Promise<{ docs: unknown[] }>;
+    };
+    const originalFind = adapter.find;
+    let rowsRead = 0;
+    adapter.find = async function find(this: unknown, args) {
+      const result = await originalFind.call(this, args);
+      // The folders read is Payload filling `folderPath` of each page query, one row a time.
+      if ((args as { collection: string }).collection !== "folders") {
+        rowsRead += result.docs.length;
+      }
+
+      return result;
+    };
+
+    try {
+      // Page 9 of 5 starts at row 40, in the second collection.
+      const answer = await getPathsPage(payload, {
+        limit: 5,
+        overrideAccess: true,
+        page: 9,
+        under: "/deep-walk",
+      });
+
+      expect(answer.docs).toHaveLength(5);
+      expect(answer.hasNextPage).toBe(true);
+      // A probe row for each of two collections, then two database pages of six rows; the site holds 60.
+      expect(rowsRead).toBeLessThanOrEqual(2 + 12);
+    } finally {
+      adapter.find = originalFind;
+    }
+  });
+
+  it("locale all pages the pages, and each gives a row for every locale it is live in", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { name: "Both", slug: "both" });
+    for (let index = 0; index < 3; index += 1) {
+      await createArticle({ folder: folder.id, slug: `both-${index}` });
+    }
+
+    const first = await getPathsPage(payload, {
+      limit: 2,
+      locale: "all",
+      overrideAccess: true,
+      page: 1,
+      under: "/both",
+    });
+
+    expect(first.docs).toHaveLength(4);
+    expect(first.docs.map((row) => row.locale)).toEqual(["en", "de", "en", "de"]);
+    expect(first.hasNextPage).toBe(true);
+    expect(await walk(2, { locale: "all", under: "/both" })).toHaveLength(6);
+  });
+
+  it("hasNextPage is false when the last page holds exactly limit rows", async () => {
+    const { config, payload } = harness;
+    const get = (query: string) =>
+      callEndpoint<PagedAnswer>({
+        anonymous: true,
+        config,
+        path: `/folders-tree/paths?${query}`,
+        payload,
+      });
+    const folder = await createFolder(payload, { name: "Exact", slug: "exact" });
+    for (let index = 0; index < 3; index += 1) {
+      await createArticle({ folder: folder.id, slug: `exact-${index}` });
+    }
+
+    const exact = await get("under=/exact&limit=3");
+    expect(exact.body.docs).toHaveLength(3);
+    expect(exact.body.hasNextPage).toBe(false);
+    const short = await get("under=/exact&limit=2");
+    expect(short.body.docs).toHaveLength(2);
+    expect(short.body.hasNextPage).toBe(true);
+    const rest = await get("under=/exact&limit=2&page=2");
+    expect(rest.body).toMatchObject({ hasNextPage: false, page: 2 });
+    expect(rest.body.docs).toHaveLength(1);
+    const one = await get("under=/exact&limit=1&page=3");
+    expect(one.body.docs).toHaveLength(1);
+    expect(one.body.hasNextPage).toBe(false);
+  });
+
+  it("under finds a folder by its path in any locale when locale is all", async () => {
+    const { config, payload } = harness;
+    const folder = await createFolder(payload, { name: "Press", slug: "press" });
+    await payload.update({
+      collection: "folders",
+      data: { name: "Aktuelles", slug: "aktuelles" },
+      id: folder.id,
+      locale: "de",
+      overrideAccess: true,
+    });
+    const story = await createArticle({ folder: folder.id, slug: "meldung" });
+
+    const rows = await getAllPaths(payload, { locale: "all", under: "/aktuelles" });
+    expect(rows.map(({ fullPath, id, locale }) => ({ fullPath, id, locale }))).toEqual([
+      { fullPath: "/aktuelles/meldung", id: story.id, locale: "de" },
+      { fullPath: "/press/meldung", id: story.id, locale: "en" },
+    ]);
+    // A single locale still reads the path in that locale only.
+    expect(await getAllPaths(payload, { locale: "en", under: "/aktuelles" })).toEqual([]);
+    expect(
+      (await getAllPaths(payload, { locale: "de", under: "/aktuelles" })).map((row) => row.fullPath)
+    ).toEqual(["/aktuelles/meldung"]);
+    const viaEndpoint = await callEndpoint<PagedAnswer>({
+      anonymous: true,
+      config,
+      path: "/folders-tree/paths?locale=all&under=/aktuelles",
+      payload,
+    });
+    expect(viaEndpoint.body.docs.map((row) => row.locale).toSorted()).toEqual(["de", "en"]);
+  });
+});
+
+const rowOf = (id: number): PathRow => ({
+  collection: "articles",
+  fullPath: `/row-${id}`,
+  id,
+  locale: "en",
+  updatedAt: "2026-01-01T00:00:00.000Z",
+});
+const answerWith = (docs: PathRow[], hasNextPage: boolean) =>
+  Promise.resolve(Response.json({ docs, hasNextPage, page: 1 }));
+
+describe("REST client paths loop", () => {
+  it("stops on an empty page even when the server says there is more", async () => {
+    let requests = 0;
+    const client = createFoldersClient({
+      baseUrl: "http://localhost:4078",
+      fetch: () => {
+        requests += 1;
+
+        return requests === 1 ? answerWith([rowOf(1)], true) : answerWith([], true);
+      },
+    });
+
+    const rows = await client.paths();
+
+    expect(rows.map((row) => row.id)).toEqual([1]);
+    expect(requests).toBe(2);
+  });
+
+  it("gives up with an error after the request cap instead of looping", async () => {
+    let requests = 0;
+    const client = createFoldersClient({
+      baseUrl: "http://localhost:4078",
+      fetch: () => {
+        requests += 1;
+
+        return answerWith([rowOf(requests)], true);
+      },
+    });
+
+    await expect(client.paths({ maxRequests: 3 })).rejects.toThrow(FoldersClientError);
+    expect(requests).toBe(3);
+  });
+
+  it("stops at the page that says there is no next one", async () => {
+    let requests = 0;
+    const client = createFoldersClient({
+      baseUrl: "http://localhost:4078",
+      fetch: () => {
+        requests += 1;
+
+        return answerWith([rowOf(requests)], requests < 4);
+      },
+    });
+
+    expect((await client.paths()).map((row) => row.id)).toEqual([1, 2, 3, 4]);
+    expect(requests).toBe(4);
   });
 });
