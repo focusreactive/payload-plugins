@@ -13,6 +13,7 @@ import type { FormEvent, ReactNode } from "react";
 import type { FolderId, TreeItem } from "../../types.js";
 import { writeDocument } from "../api.js";
 import type { FoldersApiContext } from "../api.js";
+import { useContentLocales, useLocalizedFieldNames } from "../compat.js";
 import type { Translate } from "../compat.js";
 import type { FolderChoice } from "../Move/FolderPickerTree.js";
 import { findLoadedFolder } from "../store.js";
@@ -29,7 +30,8 @@ import {
   slugAfterSourceChange,
 } from "./slugState.js";
 import type { SlugState } from "./slugState.js";
-import { useSegmentCheck } from "./useSegmentCheck.js";
+import { localizeNewValues } from "./localizedValues.js";
+import { useCreateSegmentCheck } from "./useCreateSegmentCheck.js";
 
 // Payload's dialog puts the focus on its heading when it opens, which is no place to start typing:
 // the first field is.
@@ -59,6 +61,9 @@ export type CreateFolderDialogProps = {
   /** Page collection slug to label, in the host's order. */
   typeLabels: Readonly<Record<string, string>>;
 };
+
+/** The folder fields the editor types; spec section 8 says where they are written. */
+const folderTextFields = ["name", "slug"] as const;
 
 const CreateFolderContent = ({
   apiContext,
@@ -96,7 +101,14 @@ const CreateFolderContent = ({
     (parentFolder?.lockSubfolderTypes === true ? parentFolder.id : null);
   const lockOwner = lockOwnerId === null ? null : findLoadedFolder(state, lockOwnerId);
   const isLocked = lockOwnerId !== null;
-  const check = useSegmentCheck({ context: apiContext, parent: parent.id, segment: segment.value });
+  const locales = useContentLocales();
+  const localizedFields = useLocalizedFieldNames(foldersSlug, folderTextFields);
+  const check = useCreateSegmentCheck({
+    context: apiContext,
+    locales,
+    parent: parent.id,
+    segment: segment.value,
+  });
 
   const allSlugs = Object.keys(typeLabels);
   const defaultOptions = types.mode === "specific" ? types.chosenTypes : allSlugs;
@@ -119,10 +131,14 @@ const CreateFolderContent = ({
     try {
       // Types are left out under a lock (the server hands the folder the lock's types) and when
       // they are all of them, so a server refusal never comes from a value the editor did not set.
+      const typed = localizeNewValues({
+        locales,
+        localizedFields,
+        values: { name: name.trim(), slug: segment.value },
+      });
       const { doc } = await writeDocument(apiContext, {
         body: {
-          name: name.trim(),
-          slug: segment.value,
+          ...typed.body,
           ...(parent.id === null ? {} : { parent: parent.id }),
           ...(isLocked || types.mode === "all" ? {} : { allowedTypes: types.chosenTypes }),
           ...(isLocked || effectiveDefault === "" ? {} : { defaultType: effectiveDefault }),
@@ -131,6 +147,7 @@ const CreateFolderContent = ({
             : {}),
         },
         collection: foldersSlug,
+        query: { locale: typed.locale },
       });
       closeModal(createFolderDialogSlug);
       await onCreated({ id: doc.id, name: name.trim(), parentId: parent.id });

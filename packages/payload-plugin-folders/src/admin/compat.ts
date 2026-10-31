@@ -11,9 +11,10 @@ import {
   useTranslation,
 } from "@payloadcms/ui";
 import { ListHeader } from "@payloadcms/ui/elements/ListHeader";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 import type { FoldersTranslationKey } from "../translations/index.js";
+import { findLocalizedFields } from "./Create/localizedValues.js";
 
 /**
  * The one place the admin touches Payload's router, links, config and translations. A build for
@@ -35,6 +36,36 @@ export const useUserId = (): number | string | null => useAuth().user?.id ?? nul
 
 /** The admin locale code, or `null` when localization is off (`useLocale` is nullable in 4.x). */
 export const useLocaleCode = (): string | null => useLocale()?.code ?? null;
+
+/**
+ * The content locale the admin shows and the site's default locale, for a create that has to name
+ * both (spec section 8); `null` for each when localization is off.
+ */
+export const useContentLocales = (): { current: string | null; default: string | null } => {
+  const { config } = useConfig();
+  const current = useLocale()?.code ?? null;
+
+  return {
+    current,
+    default: config.localization ? config.localization.defaultLocale : null,
+  };
+};
+
+/** The names among `names` that are localized top-level fields of a collection, as the admin knows it. */
+export const useLocalizedFieldNames = (
+  collectionSlug: string,
+  names: readonly string[]
+): ReadonlySet<string> => {
+  const { getEntityConfig } = useConfig();
+  const fields = getEntityConfig({ collectionSlug })?.fields;
+
+  return useMemo(
+    () => findLocalizedFields((fields ?? []) as Parameters<typeof findLocalizedFields>[0], names),
+    // `names` is a literal list at every call site.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fields, names.join("|")]
+  );
+};
 
 /** How many languages the admin has; 1 when localization is off. */
 export const useLocaleCount = (): number => {

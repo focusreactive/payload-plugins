@@ -381,3 +381,35 @@ test("the Create button offers Folder and every page type at the top level", asy
   await expect(folderDialog(page)).toHaveCount(0);
   await expect(pageRow(page, "Home")).toBeVisible();
 });
+
+test("a folder created while the admin shows German is written in German and in English", async ({
+  page,
+  request,
+}) => {
+  const parentId = await addFolder(request, "Locale Probe Parent");
+  try {
+    await page.goto("/admin/collections/folders?locale=de");
+    await page.getByRole("treegrid").waitFor();
+    const dialog = await startFolderIn(page, "Locale Probe Parent");
+    await dialog.getByTestId("name-input").fill("Aktuelle Berichte");
+    await expect(dialog.getByTestId("segment-input")).toHaveValue("aktuelle-berichte");
+    await expect(createButton(dialog)).toBeEnabled();
+    await createButton(dialog).click();
+
+    await expect(folderRow(page, "Aktuelle Berichte")).toBeVisible();
+    const [row] = await childrenOf(request, parentId);
+    const stored = (await (
+      await request.get(`/api/folders/${row.id}?locale=all&depth=0`)
+    ).json()) as {
+      name: Record<string, string>;
+      slug: Record<string, string>;
+    };
+    // The typed text is in the locale the editor was working in, and in the default one, which
+    // the folder cannot do without.
+    expect(stored.name).toMatchObject({ de: "Aktuelle Berichte", en: "Aktuelle Berichte" });
+    expect(stored.slug).toMatchObject({ de: "aktuelle-berichte", en: "aktuelle-berichte" });
+  } finally {
+    // Payload remembers the admin locale per user, and every later spec reads English.
+    await page.goto("/admin/collections/folders?locale=en");
+  }
+});

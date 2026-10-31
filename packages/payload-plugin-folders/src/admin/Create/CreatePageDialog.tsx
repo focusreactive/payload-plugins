@@ -14,6 +14,7 @@ import type { FormEvent, ReactNode } from "react";
 import type { FolderId, TreeItem } from "../../types.js";
 import { FoldersApiError, writeDocument } from "../api.js";
 import type { FoldersApiContext } from "../api.js";
+import { useContentLocales, useLocalizedFieldNames } from "../compat.js";
 import type { Translate } from "../compat.js";
 import { existingRootIn } from "../ContextMenu/rootPage.js";
 import type { TreeStore } from "../store.js";
@@ -27,7 +28,8 @@ import {
   slugAfterSourceChange,
 } from "./slugState.js";
 import type { SlugState } from "./slugState.js";
-import { useSegmentCheck } from "./useSegmentCheck.js";
+import { localizeNewValues } from "./localizedValues.js";
+import { useCreateSegmentCheck } from "./useCreateSegmentCheck.js";
 
 // Payload's dialog puts the focus on its heading when it opens, which is no place to start typing:
 // the first field is.
@@ -64,6 +66,9 @@ export type CreatePageDialogProps = {
   translate: Translate;
   typeLabels: Readonly<Record<string, string>>;
 };
+
+/** The page fields the editor types; spec section 8 says where they are written. */
+const pageTextFields = ["title", "slug"] as const;
 
 const CreatePageContent = ({
   apiContext,
@@ -103,9 +108,12 @@ const CreatePageContent = ({
   }, [folderId, hasRootFlag, isFolderLoaded, store]);
   const existingRoot = existingRootIn(state, folderId);
 
-  const check = useSegmentCheck({
+  const locales = useContentLocales();
+  const localizedFields = useLocalizedFieldNames(collection, pageTextFields);
+  const check = useCreateSegmentCheck({
     context: apiContext,
     enabled: !isRoot,
+    locales,
     parent: folderId,
     segment: segment.value,
   });
@@ -133,10 +141,20 @@ const CreatePageContent = ({
     setIsSaving(true);
     setFailure(null);
     try {
+      const typed = localizeNewValues({
+        locales,
+        localizedFields,
+        values: { title: values.title, slug: values.slug },
+      });
       const { doc } = await writeDocument(apiContext, {
-        body: { ...values, _status: "draft" },
+        body: {
+          ...typed.body,
+          _status: "draft",
+          folder: values.folder,
+          isFolderRoot: values.isFolderRoot,
+        },
         collection,
-        query: { draft: "true" },
+        query: { draft: "true", locale: typed.locale },
       });
       closeModal(createPageDialogSlug);
       onCreated({ collection, id: doc.id, parentId: folderId });
