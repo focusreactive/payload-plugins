@@ -8,7 +8,10 @@ import { getResolvedOptions } from "./runtime.js";
 import { SEGMENT_ERROR_MESSAGE, isValidSegment } from "./slugify.js";
 import { findSegmentConflict, getPageDefaultLocale } from "./uniqueness.js";
 
-export type SegmentCheck = { message?: string; ok: boolean };
+/** What holds the path a segment would take: a folder, or a page (in any state, drafts included). */
+export type SegmentCheckConflict = { kind: "folder" | "page"; path: string };
+
+export type SegmentCheck = { conflict?: SegmentCheckConflict; message?: string; ok: boolean };
 
 /**
  * Whether `segment` is free in the folder `parent` (`null` is the site root), the answer the edit
@@ -62,6 +65,7 @@ export const checkSegment = async (
   });
   if (conflict) {
     return {
+      conflict: { kind: conflict.kind, path: conflict.path },
       message: `${conflict.path} is already used by ${conflict.kind === "folder" ? "a folder" : conflict.title}`,
       ok: false,
     };

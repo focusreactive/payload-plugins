@@ -6,7 +6,7 @@ import type { Translate } from "../compat.js";
 import { buildCreateMenu, createPageEntryPrefix } from "../Create/createMenu.js";
 import { CreateMenuButton } from "../Create/CreateMenuButton.js";
 import { pageTypeOptionsOf } from "../Create/pageTypes.js";
-import { useCreateFlow } from "../Create/useCreateFlow.js";
+import { focusTreeRowWhenShown, useCreateFlow } from "../Create/useCreateFlow.js";
 import { useContextMenu } from "../ContextMenu/useContextMenu.js";
 import type { ContextMenuActions } from "../ContextMenu/useContextMenu.js";
 import { useRootPageFlow } from "../ContextMenu/useRootPageFlow.js";
@@ -27,6 +27,7 @@ import type { ToolbarAction } from "../Toolbar/toolbarActions.js";
 import { Tree } from "../Tree/Tree.js";
 import { useTreeData } from "../Tree/useTreeData.js";
 import { useApiContext } from "../useApiContext.js";
+import { useFolderFromQuery } from "./useFolderFromQuery.js";
 import { useSelection } from "../useSelection.js";
 import type { TreeItem } from "../../types.js";
 
@@ -149,6 +150,7 @@ export const TreeWorkspace = ({
   );
 
   const apiContext = useApiContext(store);
+  useFolderFromQuery({ apiContext, focusRow: focusTreeRowWhenShown, foldersSlug, store });
   const rootPageFlow = useRootPageFlow({ apiContext, languageCount, state, store, translate });
   const { start: startSetAsRoot } = rootPageFlow;
   const settingsFlow = useSettingsFlow({

@@ -15,6 +15,8 @@ export const injectedPageFieldNames = [
   "pathSegment",
   "folderPath",
   "fullPath",
+  "folderUrlHistory",
+  "folderDraftWarning",
 ] as const;
 
 /** Segments the frontend or Payload itself owns, whatever the config says. */

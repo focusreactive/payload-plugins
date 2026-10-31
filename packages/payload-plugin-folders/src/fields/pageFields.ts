@@ -1,6 +1,7 @@
 import type { CollectionConfig, Field, FieldAccess, FieldHook } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
+import { pluginSlug } from "../constants.js";
 import { buildRedirectCleanupBeforeDelete } from "../hooks/beforeDelete.js";
 import { buildPageAfterChange } from "../hooks/pages/afterChange.js";
 import {
@@ -99,64 +100,122 @@ export const buildPathSegmentField = (segmentLocalized: boolean, segmentField?: 
   localized: segmentLocalized,
 });
 
+/**
+ * The edit view's sidebar fields (spec section 7.11), in the order the spec lists them: location,
+ * folder root page, full URL, URL history and the draft conflict warning. A disabled plugin keeps
+ * the schema and the stock fields.
+ */
+const editViewComponents = (page: ResolvedPageCollection, options: ResolvedOptions) =>
+  options.disabled
+    ? {}
+    : {
+        conflict: {
+          Field: {
+            clientProps: { segmentField: page.segmentField },
+            path: `${pluginSlug}/client#DraftConflictField`,
+          },
+        },
+        folder: {
+          Field: {
+            path: `${pluginSlug}/rsc#FolderLocationField`,
+            serverProps: {
+              foldersSlug: options.folders.slug,
+              segmentField: page.segmentField,
+              titleField: page.titleField,
+            },
+          },
+        },
+        fullPath: {
+          Field: {
+            clientProps: {
+              hasPreviewUrl: Boolean(options.admin.previewUrl),
+              segmentField: page.segmentField,
+            },
+            path: `${pluginSlug}/client#FullPathField`,
+          },
+        },
+        history: { Field: `${pluginSlug}/client#UrlHistoryField` },
+        root: {
+          Field: {
+            clientProps: { segmentField: page.segmentField, titleField: page.titleField },
+            path: `${pluginSlug}/client#FolderRootField`,
+          },
+        },
+      };
+
 export const buildPageFields = (
   page: ResolvedPageCollection,
   options: ResolvedOptions
-): Field[] => [
-  {
-    name: "folder",
-    type: "relationship",
-    access: { update: nobody },
-    admin: { position: "sidebar" },
-    hasMany: false,
-    index: true,
-    relationTo: toCollectionSlug(options.folders.slug),
-  },
-  {
-    name: "orderKey",
-    type: "text",
-    access: { update: nobody },
-    admin: { hidden: true },
-    ...(options.disabled ? {} : { hooks: { beforeDuplicate: [resetOrderKeyOnDuplicate] } }),
-    index: true,
-  },
-  {
-    name: "structureRevision",
-    type: "number",
-    access: { update: nobody },
-    admin: { hidden: true, readOnly: true },
-    defaultValue: 0,
-    ...(options.disabled
-      ? {}
-      : { hooks: { beforeDuplicate: [resetStructureRevisionOnDuplicate] } }),
-  },
-  {
-    name: "isFolderRoot",
-    type: "checkbox",
-    admin: { position: "sidebar" },
-    defaultValue: false,
-    ...(options.disabled ? {} : { hooks: { beforeDuplicate: [resetIsFolderRootOnDuplicate] } }),
-    index: true,
-  },
-  buildPathSegmentField(page.segmentLocalized, options.disabled ? undefined : page.segmentField),
-  {
-    name: "folderPath",
-    type: "text",
-    admin: { hidden: true },
-    ...(options.disabled ? {} : { hooks: { afterRead: [folderPathAfterRead] } }),
-    // A string path makes Payload resolve queries and sorts through the related folder's column.
-    virtual: "folder.fullPath",
-  },
-  {
-    name: "fullPath",
-    type: "text",
-    admin: { position: "sidebar", readOnly: true },
-    // Composed by the collection's afterRead hook (buildFullPathAfterRead), not a field hook. A
-    // disabled plugin keeps the schema and answers null.
-    ...(options.disabled ? { hooks: { afterRead: [() => null] } } : {}),
-    virtual: true,
-  },
-];
+): Field[] => {
+  const components = editViewComponents(page, options);
+
+  return [
+    {
+      name: "folder",
+      type: "relationship",
+      access: { update: nobody },
+      admin: { components: components.folder, position: "sidebar" },
+      hasMany: false,
+      index: true,
+      relationTo: toCollectionSlug(options.folders.slug),
+    },
+    {
+      name: "orderKey",
+      type: "text",
+      access: { update: nobody },
+      admin: { hidden: true },
+      ...(options.disabled ? {} : { hooks: { beforeDuplicate: [resetOrderKeyOnDuplicate] } }),
+      index: true,
+    },
+    {
+      name: "structureRevision",
+      type: "number",
+      access: { update: nobody },
+      admin: { hidden: true, readOnly: true },
+      defaultValue: 0,
+      ...(options.disabled
+        ? {}
+        : { hooks: { beforeDuplicate: [resetStructureRevisionOnDuplicate] } }),
+    },
+    {
+      name: "isFolderRoot",
+      type: "checkbox",
+      admin: { components: components.root, position: "sidebar" },
+      defaultValue: false,
+      ...(options.disabled ? {} : { hooks: { beforeDuplicate: [resetIsFolderRootOnDuplicate] } }),
+      index: true,
+    },
+    buildPathSegmentField(page.segmentLocalized, options.disabled ? undefined : page.segmentField),
+    {
+      name: "folderPath",
+      type: "text",
+      admin: { hidden: true },
+      ...(options.disabled ? {} : { hooks: { afterRead: [folderPathAfterRead] } }),
+      // A string path makes Payload resolve queries and sorts through the related folder's column.
+      virtual: "folder.fullPath",
+    },
+    {
+      name: "fullPath",
+      type: "text",
+      admin: { components: components.fullPath, position: "sidebar", readOnly: true },
+      // Composed by the collection's afterRead hook (buildFullPathAfterRead), not a field hook. A
+      // disabled plugin keeps the schema and answers null.
+      ...(options.disabled ? { hooks: { afterRead: [() => null] } } : {}),
+      virtual: true,
+    },
+    // Interface-only fields: they hold no data, so they add no column.
+    {
+      name: "folderUrlHistory",
+      type: "ui",
+      admin: { components: components.history, position: "sidebar" },
+    },
+    {
+      name: "folderDraftWarning",
+      type: "ui",
+      admin: { components: components.conflict, position: "sidebar" },
+    },
+  ];
+};
 
 /** Appended after the host's own hooks, so the host's `data` changes are in place when they run. */
 const addPageHooks = (

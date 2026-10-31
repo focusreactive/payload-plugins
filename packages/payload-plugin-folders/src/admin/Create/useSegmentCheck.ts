@@ -10,7 +10,8 @@ export const segmentCheckDelayMs = 300;
 
 export type SegmentStatus =
   | { state: "checking" | "idle" | "invalid" }
-  | { message: string; state: "error" | "taken" }
+  | { message: string; state: "error" }
+  | { conflict?: { kind: "folder" | "page"; path: string }; message: string; state: "taken" }
   | { state: "ok" };
 
 type Settled = { key: string; status: SegmentStatus };
@@ -72,7 +73,9 @@ export const useSegmentCheck = ({
         if (!controller.signal.aborted) {
           setSettled({
             key,
-            status: answer.ok ? { state: "ok" } : { message: answer.message ?? "", state: "taken" },
+            status: answer.ok
+              ? { state: "ok" }
+              : { conflict: answer.conflict, message: answer.message ?? "", state: "taken" },
           });
         }
       } catch (error) {

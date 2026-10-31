@@ -528,10 +528,15 @@ describe("GET /folders-tree/check-segment", () => {
     const free = await check(`parent=${tree.about.id}&segment=brand-new`);
 
     expect(takenPage.body).toEqual({
+      conflict: { kind: "page", path: "/about/contact" },
       message: "/about/contact is already used by Contact",
       ok: false,
     });
-    expect(takenFolder.body).toEqual({ message: "/about is already used by a folder", ok: false });
+    expect(takenFolder.body).toEqual({
+      conflict: { kind: "folder", path: "/about" },
+      message: "/about is already used by a folder",
+      ok: false,
+    });
     expect(free.body).toEqual({ ok: true });
   });
 
@@ -551,7 +556,11 @@ describe("GET /folders-tree/check-segment", () => {
 
     const { body } = await check(`parent=${tree.about.id}&segment=contact&locale=de`);
 
-    expect(body).toEqual({ message: "/about/contact is already used by Contact", ok: false });
+    expect(body).toEqual({
+      conflict: { kind: "page", path: "/about/contact" },
+      message: "/about/contact is already used by Contact",
+      ok: false,
+    });
   });
 
   it("does not count the item being edited against itself", async () => {

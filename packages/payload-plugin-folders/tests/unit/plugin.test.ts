@@ -42,6 +42,8 @@ describe("foldersPlugin", () => {
       "pathSegment",
       "folderPath",
       "fullPath",
+      "folderUrlHistory",
+      "folderDraftWarning",
     ]);
     expect(pages?.indexes).toEqual([{ fields: ["folder", "orderKey"] }]);
     // The host's own config object is never modified.
@@ -194,6 +196,50 @@ describe("foldersPlugin", () => {
     expect(translations.de?.foldersTree?.loadError).toBe(
       "Dieser Ordner konnte nicht geladen werden"
     );
+  });
+
+  it("puts the edit view's sidebar fields on a page collection in the order of spec section 7.11", async () => {
+    const result = await foldersPlugin({
+      admin: { previewUrl: ({ fullPath }) => `https://preview.example.test${fullPath}` },
+      collections: { pages: true } as never,
+    })(buildHostConfig());
+    const pages = result.collections?.find((collection) => collection.slug === "pages");
+    const componentOf = (name: string) =>
+      (
+        pages?.fields.find((field) => "name" in field && field.name === name) as {
+          admin?: { components?: { Field?: unknown }; position?: string };
+        }
+      )?.admin;
+
+    // Location, folder root page, full URL, URL history, draft conflict warning: all in the sidebar.
+    expect(componentOf("folder")?.components?.Field).toEqual({
+      path: `${pluginSlug}/rsc#FolderLocationField`,
+      serverProps: { foldersSlug: "folders", segmentField: "slug", titleField: "title" },
+    });
+    expect(componentOf("isFolderRoot")?.components?.Field).toEqual({
+      clientProps: { segmentField: "slug", titleField: "title" },
+      path: `${pluginSlug}/client#FolderRootField`,
+    });
+    expect(componentOf("fullPath")?.components?.Field).toEqual({
+      clientProps: { hasPreviewUrl: true, segmentField: "slug" },
+      path: `${pluginSlug}/client#FullPathField`,
+    });
+    expect(componentOf("folderUrlHistory")?.components?.Field).toBe(
+      `${pluginSlug}/client#UrlHistoryField`
+    );
+    expect(componentOf("folderDraftWarning")?.components?.Field).toEqual({
+      clientProps: { segmentField: "slug" },
+      path: `${pluginSlug}/client#DraftConflictField`,
+    });
+    for (const name of [
+      "folder",
+      "isFolderRoot",
+      "fullPath",
+      "folderUrlHistory",
+      "folderDraftWarning",
+    ]) {
+      expect(componentOf(name)?.position).toBe("sidebar");
+    }
   });
 
   it("replaces the folders edit view's Save button and greys the locked type fields", async () => {

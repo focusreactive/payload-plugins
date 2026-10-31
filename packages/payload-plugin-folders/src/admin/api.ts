@@ -246,6 +246,8 @@ export const postMove = (context: FoldersApiContext, body: MoveBody): Promise<Mo
 export type { MovePreview, MoveResult };
 
 export type SegmentCheckResponse = {
+  /** What holds the path when it is taken: a folder or a page. */
+  conflict?: { kind: "folder" | "page"; path: string };
   message?: string;
   ok: boolean;
 };
