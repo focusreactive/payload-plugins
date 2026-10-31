@@ -13,6 +13,7 @@ import {
 import type { FoldersApiContext } from "../api.js";
 import type { Translate } from "../compat.js";
 import { rootUpdateModeOf } from "../ContextMenu/rootPage.js";
+import { toastActionClass, toastStackedClass } from "../Move/useMoveFlow.js";
 import type { DropMove } from "../Move/useMoveFlow.js";
 import type { TreeStore, TreeStoreState } from "../store.js";
 import { FolderSettingsDrawer, folderSettingsDrawerSlug } from "./FolderSettingsDrawer.js";
@@ -168,6 +169,7 @@ export const useSettingsFlow = ({
               label: translate("saveAsDraftInstead"),
               onClick: () => void saveUnroot(item, segment, true),
             },
+            classNames: { actionButton: toastActionClass, toast: toastStackedClass },
           });
 
           return;

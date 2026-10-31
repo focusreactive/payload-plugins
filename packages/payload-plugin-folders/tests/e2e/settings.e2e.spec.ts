@@ -381,3 +381,270 @@ test("a folder with no name in this language shows its default-language name as 
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Only English Folder");
   }
 });
+
+test("folder settings checks the segment against the picked parent before it writes anything", async ({
+  page,
+  request,
+}) => {
+  const targetId = await addFolder(request, "Clash Target");
+  const sourceId = await addFolder(request, "Clash Source");
+  // The target already has a subfolder with the segment the mover has.
+  await createFolder(request, {
+    name: "Clash Twin",
+    parent: targetId,
+    slug: "clash-mover",
+  });
+  const moverId = await createFolder(request, {
+    name: "Clash Mover",
+    parent: sourceId,
+    slug: "clash-mover",
+  });
+  await openContentTree(page);
+  await expandFolder(page, "Clash Source");
+  await openRowMenu(folderRow(page, "Clash Mover"));
+  await menuItem(page, "Settings").click();
+  const form = folderSettings(page);
+  await expect(form.getByTestId("settings-full-url")).toHaveText("/clash-source/clash-mover");
+
+  await form.getByTestId("name-input").fill("Clash Mover Renamed");
+  await form.getByTestId("parent-change").click();
+  await form
+    .getByTestId("parent-picker")
+    .getByRole("treeitem", { name: /Clash Target/u })
+    .click();
+
+  // The unchanged segment is checked in the new parent, and the clash keeps Save off: a rename
+  // that saved first and met the clash in the move would be half done.
+  await expect(form.getByTestId("segment-status")).toHaveText(
+    "/clash-target/clash-mover is already used by a folder"
+  );
+  await expect(form.getByRole("button", { exact: true, name: "Save" })).toBeDisabled();
+  const stored = await request.get(`/api/folders/${moverId}?depth=0`);
+  expect(await stored.json()).toMatchObject({ name: "Clash Mover", parent: sourceId });
+
+  // The Full URL and the segment's folder follow the picked parent before anything is saved.
+  await expect(form.getByTestId("settings-full-url")).toHaveText("/clash-target/clash-mover");
+  await form.getByTestId("segment-input").fill("clash-free");
+  await expect(form.getByTestId("segment-status")).toHaveAttribute("data-state", "ok");
+  await expect(form.getByTestId("segment-status")).toContainText("/clash-target/clash-free");
+  await expect(form.getByTestId("settings-full-url")).toHaveText("/clash-target/clash-free");
+  await expect(form.getByRole("button", { exact: true, name: "Save" })).toBeEnabled();
+});
+
+test("page settings checks the segment against the picked parent before it writes anything", async ({
+  page,
+  request,
+}) => {
+  const targetId = await addFolder(request, "Dup Target");
+  const sourceId = await addFolder(request, "Dup Source");
+  await createPage(request, { folder: targetId, slug: "dup", title: "Dup Resident" });
+  const moverId = await createPage(request, { folder: sourceId, slug: "dup", title: "Dup Mover" });
+  await openContentTree(page);
+  await expandFolder(page, "Dup Source");
+  await openRowMenu(pageRow(page, "Dup Mover"));
+  await menuItem(page, "Settings").click();
+  const form = pageSettings(page);
+
+  await form.getByTestId("title-input").fill("Dup Mover Renamed");
+  await form.getByTestId("parent-change").click();
+  await form
+    .getByTestId("parent-picker")
+    .getByRole("treeitem", { name: /Dup Target/u })
+    .click();
+
+  await expect(form.getByTestId("segment-status")).toHaveText(
+    "/dup-target/dup is already used by Dup Resident"
+  );
+  await expect(form.getByRole("button", { exact: true, name: "Save" })).toBeDisabled();
+  // Nothing was written: the title edit would have been a draft ahead of the refused move.
+  expect(await readPage(request, moverId, { draft: true })).toMatchObject({ title: "Dup Mover" });
+});
+
+test("the folders edit view does not save a lock it could not count the subfolders of", async ({
+  page,
+  request,
+}) => {
+  const folderId = await addFolder(request, "Uncounted Lock");
+  const childId = await createFolder(request, {
+    name: "Uncounted Child",
+    parent: folderId,
+    slug: "uncounted-child",
+  });
+  await page.goto(`/admin/collections/folders/${folderId}`);
+  // The count is a read of the folders list; refused, there is no number to confirm.
+  await page.route(/\/api\/folders\?.*ancestorIds/u, (route) => route.abort());
+
+  await page.locator("#field-allowedTypes").click();
+  await page.getByRole("option", { name: "Blog post" }).click();
+  await page.locator("#field-lockSubfolderTypes").check();
+  await page.getByRole("button", { name: "Save" }).click();
+
+  await expect(
+    page.getByText("Could not count the subfolders this lock reaches, so nothing was saved.")
+  ).toBeVisible();
+  const stored = await request.get(`/api/folders/${folderId}?depth=0`);
+  expect(await stored.json()).toMatchObject({ lockSubfolderTypes: false });
+  const child = await request.get(`/api/folders/${childId}?depth=0`);
+  expect(((await child.json()) as { allowedTypes?: string[] }).allowedTypes ?? []).toEqual([]);
+});
+
+test("page settings keeps a root flag a draft when the page changed since it was read", async ({
+  page,
+  request,
+}) => {
+  const folderId = await addFolder(request, "Stale Drawer Folder");
+  const pageId = await createPage(request, {
+    folder: folderId,
+    slug: "stale-drawer",
+    title: "Stale Drawer Page",
+  });
+  await openContentTree(page);
+  await expandFolder(page, "Stale Drawer Folder");
+  await openRowMenu(pageRow(page, "Stale Drawer Page"));
+  await menuItem(page, "Settings").click();
+  const form = pageSettings(page);
+  await expect(form.getByTestId("title-input")).toHaveValue("Stale Drawer Page");
+
+  await form.getByRole("checkbox", { name: "Folder root page" }).click();
+  await form.getByRole("button", { exact: true, name: "Save" }).click();
+  // The confirmation is open, so the drawer has read the page. A draft saved now is news to it.
+  const dialog = confirmDialog(page);
+  await expect(dialog.getByTestId("url-samples")).toContainText("becomes /stale-drawer-folder");
+  const draftSave = await request.patch(`/api/pages/${pageId}?draft=true&depth=0`, {
+    data: { _status: "draft", title: "Stale Drawer Unreviewed" },
+  });
+  expect(draftSave.ok()).toBe(true);
+  await dialog.getByRole("button", { exact: true, name: "Set as root page" }).click();
+
+  // The server refused the live save, and nothing went live.
+  await expect(form.getByTestId("settings-failure")).toContainText(
+    "This page changed since it was read"
+  );
+  expect(await readPage(request, pageId)).toMatchObject({
+    isFolderRoot: false,
+    title: "Stale Drawer Page",
+  });
+
+  // Saved as a draft instead, the flag rides on the draft and the live page stays as it was.
+  await form.getByTestId("save-as-draft-instead").click();
+  await expect(form).toBeHidden();
+  expect(await readPage(request, pageId)).toMatchObject({
+    isFolderRoot: false,
+    title: "Stale Drawer Page",
+  });
+  expect(await readPage(request, pageId, { draft: true })).toMatchObject({
+    _status: "draft",
+    isFolderRoot: true,
+    title: "Stale Drawer Unreviewed",
+  });
+});
+
+/**
+ * Lets the page's first live save through only after a draft has been saved behind the editor's
+ * back, the race the version precondition exists for. Returns when the draft is in.
+ */
+const saveDraftBeforeLiveSave = async (
+  page: import("@playwright/test").Page,
+  request: APIRequestContext,
+  pageId: number,
+  title: string
+): Promise<void> => {
+  let isInjected = false;
+  await page.route(`**/api/pages/${pageId}?*`, async (route) => {
+    const sent = route.request();
+    if (!isInjected && sent.method() === "PATCH" && sent.url().includes("frFoldersIfUpdatedAt")) {
+      isInjected = true;
+      const saved = await request.patch(`/api/pages/${pageId}?draft=true&depth=0`, {
+        data: { _status: "draft", title },
+      });
+      expect(saved.ok()).toBe(true);
+    }
+    await route.continue();
+  });
+};
+
+test("Set as root page offers Save as draft instead when a draft lands in the round trip, and the toast reads in full", async ({
+  page,
+  request,
+}) => {
+  const folderId = await addFolder(request, "Race Root Folder");
+  const pageId = await createPage(request, {
+    folder: folderId,
+    slug: "race-root",
+    title: "Race Root Page",
+  });
+  await openContentTree(page);
+  await expandFolder(page, "Race Root Folder");
+  await saveDraftBeforeLiveSave(page, request, pageId, "Race Root Unreviewed");
+  await openRowMenu(pageRow(page, "Race Root Page"));
+  await menuItem(page, "Set as root page").click();
+  await confirmDialog(page).getByRole("button", { exact: true, name: "Set as root page" }).click();
+
+  const toast = page.locator("[data-sonner-toast]").filter({ hasText: "This page changed" });
+  await expect(toast).toBeVisible();
+  expect(await readPage(request, pageId)).toMatchObject({ isFolderRoot: false });
+  // The action sits under the message, which keeps the full width of the toast.
+  const message = toast.locator("[data-title]");
+  const action = toast.getByRole("button", { name: "Save as draft instead" });
+  const messageBox = await message.boundingBox();
+  const actionBox = await action.boundingBox();
+  expect(messageBox).not.toBeNull();
+  expect(actionBox).not.toBeNull();
+  expect(messageBox?.width ?? 0).toBeGreaterThan(200);
+  expect(actionBox?.y ?? 0).toBeGreaterThan((messageBox?.y ?? 0) + (messageBox?.height ?? 0) - 2);
+
+  await action.click();
+  await expect(
+    page.getByText(
+      '"Race Root Page" becomes the root page of /race-root-folder when it is published'
+    )
+  ).toBeVisible();
+  expect(await readPage(request, pageId, { draft: true })).toMatchObject({
+    _status: "draft",
+    isFolderRoot: true,
+    title: "Race Root Unreviewed",
+  });
+  expect(await readPage(request, pageId)).toMatchObject({ isFolderRoot: false });
+});
+
+test("Unset root page offers Save as draft instead when a draft lands in the round trip", async ({
+  page,
+  request,
+}) => {
+  const folderId = await addFolder(request, "Race Unroot Folder");
+  const pageId = (
+    (await (
+      await request.post("/api/pages", {
+        data: {
+          _status: "published",
+          folder: folderId,
+          isFolderRoot: true,
+          slug: "race-unroot",
+          title: "Race Unroot Page",
+        },
+      })
+    ).json()) as { doc: { id: number } }
+  ).doc.id;
+  await openContentTree(page);
+  await expandFolder(page, "Race Unroot Folder");
+  await saveDraftBeforeLiveSave(page, request, pageId, "Race Unroot Unreviewed");
+  await openRowMenu(pageRow(page, "Race Unroot Page"));
+  await menuItem(page, "Unset root page").click();
+  await unrootDialog(page).getByRole("button", { exact: true, name: "Unset root page" }).click();
+
+  const toast = page.locator("[data-sonner-toast]").filter({ hasText: "This page changed" });
+  await expect(toast).toBeVisible();
+  expect(await readPage(request, pageId)).toMatchObject({ isFolderRoot: true });
+
+  await toast.getByRole("button", { name: "Save as draft instead" }).click();
+  await expect(
+    page.getByText('"Race Unroot Page" stops being the root page when it is published')
+  ).toBeVisible();
+  expect(await readPage(request, pageId, { draft: true })).toMatchObject({
+    _status: "draft",
+    isFolderRoot: false,
+    slug: "race-unroot",
+    title: "Race Unroot Unreviewed",
+  });
+  expect(await readPage(request, pageId)).toMatchObject({ isFolderRoot: true });
+});

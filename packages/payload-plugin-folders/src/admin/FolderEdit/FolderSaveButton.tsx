@@ -8,6 +8,7 @@ import {
   useOperation,
   useTranslation,
   FormSubmit,
+  toast,
 } from "@payloadcms/ui";
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
@@ -67,7 +68,16 @@ export const FolderSaveButton = ({ label }: { label?: string }): ReactNode => {
         (lock.initialValue !== true ||
           !sameTypes(listOf(allowedTypes?.value), listOf(allowedTypes?.initialValue)));
       if (isLocking) {
-        const count = await fetchSubfolderCount(context, { foldersSlug: collectionSlug, id });
+        let count: number;
+        try {
+          count = await fetchSubfolderCount(context, { foldersSlug: collectionSlug, id });
+        } catch {
+          // The lock rewrites every subfolder, so it is never saved without the editor having seen
+          // how many: no number, no save.
+          toast.error(translate("lockCountFailed"));
+
+          return;
+        }
         if (
           count > 0 &&
           !(await confirmations.askAction({

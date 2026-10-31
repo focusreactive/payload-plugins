@@ -13,6 +13,7 @@ import {
 import type { FoldersApiContext } from "../api.js";
 import type { Translate } from "../compat.js";
 import { ConfirmUrlChangeDialog } from "../Move/ConfirmUrlChangeDialog.js";
+import { toastActionClass, toastStackedClass } from "../Move/useMoveFlow.js";
 import type { ConfirmRequest } from "../Move/ConfirmUrlChangeDialog.js";
 import { findLoadedFolder } from "../store.js";
 import type { TreeStore, TreeStoreState } from "../store.js";
@@ -107,6 +108,7 @@ export const useRootPageFlow = ({
                   onClick: () => void save(item, folderPath, true),
                 }
               : undefined,
+          classNames: { actionButton: toastActionClass, toast: toastStackedClass },
         });
       } finally {
         setIsSaving(false);

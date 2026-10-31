@@ -19,8 +19,10 @@ import type { ConfirmMoves } from "../../types.js";
 import type { DropMove } from "../Move/useMoveFlow.js";
 import type { TreeStore } from "../store.js";
 import { useTreeStoreState } from "../useTreeStore.js";
+import { composeFullPath } from "../../core/paths.js";
 import { folderPathOf } from "./folderPath.js";
 import { effectiveDefaultType, planFolderSettingsSave } from "./folderSettings.js";
+import { isValueAccepted, needsSegmentCheck } from "./segmentRules.js";
 import type { FolderSettingsValues } from "./folderSettings.js";
 import type { Confirmations } from "./useConfirmations.js";
 import { useFolderName } from "./useFolderName.js";
@@ -67,6 +69,8 @@ export type FolderSettingsDrawerProps = {
 
 type FormProps = Omit<FolderSettingsDrawerProps, "dialogs" | "request"> & {
   document: FolderDocument;
+  /** The same folder with the language fallback applied: what the empty fields show instead. */
+  fallbackDocument: FolderDocument | null;
   item: TreeItem;
 };
 
@@ -76,6 +80,7 @@ const FolderSettingsForm = ({
   confirmMoves,
   document: folder,
   enforceAllowedTypes,
+  fallbackDocument,
   foldersSlug,
   item,
   language,
@@ -128,14 +133,23 @@ const FolderSettingsForm = ({
     title: storedParentId === null ? translate("moveToRoot") : (parentName ?? "..."),
   };
 
+  // The segment is checked in the folder it is going to, before anything is written: a rename that
+  // saved and then met a clash in the new parent would leave the folder half changed.
+  const isSegmentChecked = needsSegmentCheck({
+    editedParentId: choice.id,
+    editedSegment: segment,
+    storedParentId,
+    storedSegment: stored.segment,
+  });
   const segmentCheck = useSegmentCheck({
     context: apiContext,
-    enabled: segment !== stored.segment,
+    enabled: isSegmentChecked,
     exclude: { collection: foldersSlug, id: item.id },
     locale,
-    parent: storedParentId,
+    parent: choice.id,
     segment,
   });
+  const targetPath = folderPathOf(state, choice.id);
 
   const edited: FolderSettingsValues = {
     allowedTypes: types.mode === "specific" ? types.chosenTypes : [],
@@ -150,8 +164,21 @@ const FolderSettingsForm = ({
     segment,
   };
   const needsTypes = !isLocked && types.mode === "specific" && types.chosenTypes.length === 0;
-  const isSegmentOk = segment === stored.segment || segmentCheck.state === "ok";
-  const canSave = edited.name !== "" && segment !== "" && isSegmentOk && !needsTypes && !isSaving;
+  const isSegmentOk = !isSegmentChecked || segmentCheck.state === "ok";
+  // A name or segment this language has no value of its own for may stay empty, because the default
+  // language's value shows through; one the editor emptied may not.
+  const canSave =
+    isValueAccepted(stored.name, edited.name) &&
+    isValueAccepted(stored.segment, segment) &&
+    isSegmentOk &&
+    !needsTypes &&
+    !isSaving;
+  // The URL the folder will have once the picked parent and the typed segment are saved.
+  const isPathEdited = segment !== stored.segment || String(choice.id) !== String(storedParentId);
+  const fullUrl =
+    (isPathEdited
+      ? composeFullPath({ folderPath: targetPath, isFolderRoot: false, segment })
+      : null) ?? item.fullPath;
 
   const refusalFor = (target: TreeItem | null): string | null => {
     const refusal = refusalOf([item], target, { enforceAllowedTypes, typeLabels });
@@ -245,6 +272,7 @@ const FolderSettingsForm = ({
           data-testid="name-input"
           id={`${formId}-name`}
           onChange={(event) => setName(event.target.value)}
+          placeholder={fallbackDocument?.name ?? undefined}
           type="text"
           value={name}
         />
@@ -255,7 +283,8 @@ const FolderSettingsForm = ({
         linkable={false}
         onChange={setSegment}
         onRelink={() => undefined}
-        parentPath={folderPathOf(state, storedParentId)}
+        parentPath={targetPath}
+        placeholder={fallbackDocument?.slug ?? undefined}
         status={segmentCheck}
         translate={translate}
         value={segment}
@@ -279,7 +308,7 @@ const FolderSettingsForm = ({
       />
       <div className="fr-folders-field">
         <span className="fr-folders-field__label">{translate("settingsFullUrl")}</span>
-        <code data-testid="settings-full-url">{item.fullPath === "" ? "/" : item.fullPath}</code>
+        <code data-testid="settings-full-url">{fullUrl === "" ? "/" : fullUrl}</code>
       </div>
       <UrlHistoryList
         apiContext={apiContext}
@@ -310,7 +339,9 @@ const FolderSettingsForm = ({
   );
 };
 
-type Loaded = { document: FolderDocument; key: string } | { error: string; key: string };
+type Loaded =
+  | { document: FolderDocument; fallbackDocument: FolderDocument | null; key: string }
+  | { error: string; key: string };
 
 const FolderSettingsContent = ({
   item,
@@ -328,13 +359,22 @@ const FolderSettingsContent = ({
     let isCurrent = true;
     const read = async () => {
       try {
-        const document = await fetchDocument<FolderDocument>(apiContext, {
-          collection: foldersSlug,
-          id: item.id,
-          locale,
-        });
+        const [document, fallbackDocument] = await Promise.all([
+          fetchDocument<FolderDocument>(apiContext, {
+            collection: foldersSlug,
+            id: item.id,
+            locale,
+          }),
+          // Only for the placeholders: a folder that cannot be read with the fallback still edits.
+          fetchDocument<FolderDocument>(apiContext, {
+            collection: foldersSlug,
+            fallback: true,
+            id: item.id,
+            locale,
+          }).catch(() => null),
+        ]);
         if (isCurrent) {
-          setLoaded({ document, key });
+          setLoaded({ document, fallbackDocument, key });
         }
       } catch (error) {
         if (isCurrent) {
@@ -366,7 +406,14 @@ const FolderSettingsContent = ({
     );
   }
 
-  return <FolderSettingsForm document={current.document} item={item} {...rest} />;
+  return (
+    <FolderSettingsForm
+      document={current.document}
+      fallbackDocument={current.fallbackDocument}
+      item={item}
+      {...rest}
+    />
+  );
 };
 
 /**

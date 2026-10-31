@@ -26,6 +26,7 @@ import type { TreeStore } from "../store.js";
 import { useTreeStoreState } from "../useTreeStore.js";
 import { folderPathOfPage } from "./folderPath.js";
 import { pageBodyOf, planPageSettingsSave } from "./pageSettings.js";
+import { isValueAccepted, needsSegmentCheck } from "./segmentRules.js";
 import type { PageSaveStep, PageSettingsValues } from "./pageSettings.js";
 import type { UnrootRequest } from "./UnrootDialog.js";
 import type { Confirmations } from "./useConfirmations.js";
@@ -73,6 +74,8 @@ export type PageSettingsDrawerProps = {
 
 type FormProps = Omit<PageSettingsDrawerProps, "dialogs" | "request"> & {
   document: PageDocument;
+  /** The same page with the language fallback applied: what the empty fields show instead. */
+  fallbackDocument: PageDocument | null;
   item: TreeItem;
 };
 
@@ -87,6 +90,7 @@ const PageSettingsForm = ({
   askUnroot,
   confirmations,
   document: page,
+  fallbackDocument,
   draftCollections,
   enforceAllowedTypes,
   foldersSlug,
@@ -135,17 +139,33 @@ const PageSettingsForm = ({
   const existingRoot = existingRootIn(state, storedParentId, item);
   const isRootBlocked = !stored.isFolderRoot && existingRoot !== null;
 
-  // A root page's segment is not part of its URL, so it is not checked while the page is root.
+  // A root page's segment is not part of its URL, so it is not checked while the page is root. It
+  // is checked in the folder the page is going to, before anything is written: a draft edit that
+  // saved and then met a clash in the new parent would leave the page half changed.
+  const isSegmentChecked =
+    !isRoot &&
+    needsSegmentCheck({
+      editedParentId: choice.id,
+      editedSegment: segment,
+      storedParentId,
+      storedSegment: stored.segment,
+    });
   const segmentCheck = useSegmentCheck({
     context: apiContext,
-    enabled: !isRoot && segment !== stored.segment,
+    enabled: isSegmentChecked,
     exclude: { collection: item.collection, id: item.id },
     locale,
-    parent: storedParentId,
+    parent: choice.id,
     segment,
   });
-  const isSegmentOk = isRoot || segment === stored.segment || segmentCheck.state === "ok";
-  const canSave = title.trim() !== "" && (isRoot || segment !== "") && isSegmentOk && !isSaving;
+  const isSegmentOk = !isSegmentChecked || segmentCheck.state === "ok";
+  // A title or segment this language has no value of its own for may stay empty, because the
+  // default language's value shows through; one the editor emptied may not.
+  const canSave =
+    isValueAccepted(stored.title, title.trim()) &&
+    (isRoot || isValueAccepted(stored.segment, segment)) &&
+    isSegmentOk &&
+    !isSaving;
 
   const edited: PageSettingsValues = {
     isFolderRoot: isRoot,
@@ -330,6 +350,7 @@ const PageSettingsForm = ({
           data-testid="title-input"
           id={`${formId}-title`}
           onChange={(event) => setTitle(event.target.value)}
+          placeholder={textOf(fallbackDocument?.[names.titleField]) || undefined}
           type="text"
           value={title}
         />
@@ -342,6 +363,7 @@ const PageSettingsForm = ({
         onChange={setSegment}
         onRelink={() => undefined}
         parentPath={folderPath}
+        placeholder={textOf(fallbackDocument?.[names.segmentField]) || undefined}
         status={segmentCheck}
         translate={translate}
         value={segment}
@@ -422,7 +444,9 @@ const PageSettingsForm = ({
   );
 };
 
-type Loaded = { document: PageDocument; key: string } | { error: string; key: string };
+type Loaded =
+  | { document: PageDocument; fallbackDocument: PageDocument | null; key: string }
+  | { error: string; key: string };
 
 const PageSettingsContent = ({
   item,
@@ -440,13 +464,22 @@ const PageSettingsContent = ({
     let isCurrent = true;
     const read = async () => {
       try {
-        const document = await fetchDocument<PageDocument>(apiContext, {
-          collection: item.collection,
-          id: item.id,
-          locale,
-        });
+        const [document, fallbackDocument] = await Promise.all([
+          fetchDocument<PageDocument>(apiContext, {
+            collection: item.collection,
+            id: item.id,
+            locale,
+          }),
+          // Only for the placeholders: a page that cannot be read with the fallback still edits.
+          fetchDocument<PageDocument>(apiContext, {
+            collection: item.collection,
+            fallback: true,
+            id: item.id,
+            locale,
+          }).catch(() => null),
+        ]);
         if (isCurrent) {
-          setLoaded({ document, key });
+          setLoaded({ document, fallbackDocument, key });
         }
       } catch (error) {
         if (isCurrent) {
@@ -478,7 +511,14 @@ const PageSettingsContent = ({
     );
   }
 
-  return <PageSettingsForm document={current.document} item={item} {...rest} />;
+  return (
+    <PageSettingsForm
+      document={current.document}
+      fallbackDocument={current.fallbackDocument}
+      item={item}
+      {...rest}
+    />
+  );
 };
 
 /**

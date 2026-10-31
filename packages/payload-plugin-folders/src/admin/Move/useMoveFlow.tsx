@@ -24,6 +24,9 @@ import type { MoveOutcome, MoveTarget } from "./moveFlow.js";
 /** The class the toast action button wears, so the stylesheet can align it with the title. */
 export const toastActionClass = "fr-folders-toast-action";
 
+/** For a long message with an action: the action sits under the text instead of squeezing it. */
+export const toastStackedClass = "fr-folders-toast--stacked";
+
 /** How long the Undo toast stays (spec section 5.7). */
 export const undoToastDurationMs = 10_000;
 

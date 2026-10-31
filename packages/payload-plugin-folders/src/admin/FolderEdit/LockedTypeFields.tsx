@@ -67,7 +67,7 @@ const LockNote = ({ lockerName }: { lockerName: string | null }): ReactNode => {
   const { translate } = useFoldersTranslation();
 
   return (
-    <p className="fr-folders-field__hint" data-testid="types-locked-note">
+    <p className="fr-folders-field__hint fr-folders-lock-note" data-testid="types-locked-note">
       {lockerName === null
         ? translate("createTypesLockedUnknown")
         : translate("createTypesLocked", { title: lockerName })}
@@ -86,8 +86,10 @@ export const LockableSelectField = (props: SelectFieldClientProps): ReactNode =>
 
   return (
     <>
-      <SelectField {...props} readOnly={props.readOnly || isLocked} />
+      {/* Above the first locked field, so it reads as the heading of the locked group and not as a
+          note on the Default Type field that follows the page types. */}
       {isLocked && props.path === "allowedTypes" ? <LockNote lockerName={lockerName} /> : null}
+      <SelectField {...props} readOnly={props.readOnly || isLocked} />
     </>
   );
 };

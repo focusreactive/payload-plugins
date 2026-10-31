@@ -545,6 +545,30 @@
     }
   }
 
+  /*
+   * A long message with an action: the message keeps a readable width, so the action wraps under it
+   * instead of squeezing it down to a word or two per line.
+   */
+  .fr-folders-toast--stacked {
+    flex-wrap: wrap;
+
+    [data-content] {
+      flex: 1 1 0;
+      min-width: 12rem;
+    }
+
+    .fr-folders-toast-action {
+      margin-inline-start: 0;
+    }
+  }
+
+  /* The note above the locked page type fields of a folder's edit view. */
+  .fr-folders-lock-note {
+    margin: 0 0 var(--spacer-2);
+    padding-inline-start: var(--spacer-2);
+    border-inline-start: 3px solid var(--color-border-strong);
+  }
+
   /* Drag and drop */
 
   .fr-folders-row {
