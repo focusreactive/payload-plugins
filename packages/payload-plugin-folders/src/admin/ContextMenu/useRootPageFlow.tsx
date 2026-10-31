@@ -3,7 +3,7 @@ import { useCallback, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { TreeItem } from "../../types.js";
-import { writeDocument } from "../api.js";
+import { fetchLatestStatus, writeDocument } from "../api.js";
 import type { FoldersApiContext } from "../api.js";
 import type { Translate } from "../compat.js";
 import { ConfirmUrlChangeDialog } from "../Move/ConfirmUrlChangeDialog.js";
@@ -49,11 +49,20 @@ export const useRootPageFlow = ({
 
   const save = useCallback(
     async (item: TreeItem, folderPath: string) => {
-      const mode = rootUpdateModeOf(item);
       setIsSaving(true);
       try {
+        let mode = rootUpdateModeOf(item);
+        if (mode === "live") {
+          // The row's status was read when the tree loaded. A draft saved since (elsewhere, or by an
+          // autosave) leaves it stale, and a live save would publish that draft with the flag: read
+          // the page again right before writing, and keep a pending draft a draft.
+          const latest = await fetchLatestStatus(apiContext, item);
+          if (latest._status === "draft") {
+            mode = "draft";
+          }
+        }
         await writeDocument(apiContext, {
-          body: rootPageBodyOf(item),
+          body: rootPageBodyOf(item, mode),
           collection: item.collection,
           id: item.id,
           query: mode === "draft" ? { draft: "true" } : {},

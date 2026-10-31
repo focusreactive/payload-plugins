@@ -15,11 +15,15 @@ export const rootUpdateModeOf = (item: TreeItem): RootUpdateMode =>
   item.status === "draft" || item.status === "changed" ? "draft" : "live";
 
 /**
- * The body of the page update. A published page of a collection with drafts must say it stays
- * published, or the save would count as a draft; a collection without drafts has no status field.
+ * The body of the page update in the given mode. A published page of a collection with drafts must
+ * say it stays published, or the save would count as a draft; a collection without drafts has no
+ * status field.
  */
-export const rootPageBodyOf = (item: TreeItem): Record<string, boolean | string> => {
-  if (rootUpdateModeOf(item) === "draft") {
+export const rootPageBodyOf = (
+  item: TreeItem,
+  mode: RootUpdateMode = rootUpdateModeOf(item)
+): Record<string, boolean | string> => {
+  if (mode === "draft") {
     return { _status: "draft", isFolderRoot: true };
   }
 

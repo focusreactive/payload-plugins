@@ -112,6 +112,27 @@ const validateWrittenPage = async (
 };
 
 /**
+ * Whether the save changed what the tree shows of the live page: its root flag, whether it is live
+ * at all, or its effective path in any locale. A draft save over a published page leaves the main
+ * row alone, so a title-only draft changes none of them and the revision stays where it was.
+ */
+const hasLiveUrlChanged = (
+  req: Parameters<CollectionAfterChangeHook>[0]["req"],
+  before: PageSnapshot,
+  after: PageRow
+): boolean => {
+  const { payload } = req;
+  const localeKeys = getPageLocaleKeys(payload);
+  const written = toSnapshot(after, localeKeys, getPageDefaultLocale(payload));
+
+  return (
+    before.isFolderRoot !== written.isFolderRoot ||
+    before.isPublished !== written.isPublished ||
+    localeKeys.some((key) => before.effective[key] !== written.effective[key])
+  );
+};
+
+/**
  * Compares the snapshot taken before the write with the row it left: the uniqueness rules first
  * (a refusal rolls the save back), then the redirect rows of spec section 5.6, which a rolled-back
  * save must not leave.
@@ -134,6 +155,11 @@ const checkWrittenPage = async (
     await validateWrittenPage(page, options, req, id, before, after);
   }
   await settlePageRedirects({ after, before, id, options, page, req });
+  if (hasLiveUrlChanged(req, before, after)) {
+    // Inside the save's transaction and tree lock (the page's beforeOperation hook took it), so
+    // other editors' trees see the new revision exactly when the new path becomes visible.
+    await bumpRevision(req);
+  }
 };
 
 /** A create is live at once unless it is a draft; its paths free the page rows that name them. */

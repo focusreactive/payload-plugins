@@ -303,3 +303,21 @@ export const writeDocument = async <Doc = { id: FolderId }>(
 
   return readJsonResponse<{ doc: Doc }>(response);
 };
+
+/**
+ * The page's latest saved state, drafts included, read straight from Payload's REST route. The tree
+ * rows are read earlier and a draft save never bumps the tree revision, so a row's status can be
+ * stale; this is the answer to "is there a draft nobody has published?" right now.
+ */
+export const fetchLatestStatus = async (
+  context: FoldersApiContext,
+  { collection, id }: { collection: string; id: FolderId }
+): Promise<{ _status?: string }> => {
+  const send = context.fetchImplementation ?? fetch;
+  const response = await send(
+    `${context.baseUrl}/${collection}/${id}${buildQuery({ depth: 0, draft: "true" })}`,
+    { credentials: "include", headers: { Accept: "application/json" }, method: "GET" }
+  );
+
+  return readJsonResponse<{ _status?: string }>(response);
+};

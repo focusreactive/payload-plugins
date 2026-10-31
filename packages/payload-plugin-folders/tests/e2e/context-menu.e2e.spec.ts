@@ -62,6 +62,28 @@ test("a page menu has Set as root page", async ({ page }) => {
   await expect(menuItem(page, "Move to...")).toBeVisible();
 });
 
+test("a forced click on a disabled menu entry does nothing", async ({ page }) => {
+  const writes: string[] = [];
+  page.on("request", (sent) => {
+    if (sent.method() !== "GET") {
+      writes.push(`${sent.method()} ${sent.url()}`);
+    }
+  });
+  await openContentTree(page);
+  await expandFolder(page, "Company");
+  await openRowMenu(pageRow(page, "Contact"));
+  const entry = menuItem(page, "Set as root page");
+  await expect(entry).toHaveAttribute("aria-disabled", "true");
+
+  // Playwright refuses to click an aria-disabled button without force, so the press is forced.
+  await entry.click({ force: true });
+
+  // No dialog, no write, and the menu is still open: the entry only explains itself.
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(contextMenu(page)).toBeVisible();
+  expect(writes.filter((write) => write.includes("/api/pages"))).toEqual([]);
+});
+
 test("Set as root page confirms the URL change, then saves the page and writes a redirect", async ({
   page,
   request,
@@ -119,6 +141,47 @@ test("Set as root page on a draft asks nothing and keeps the page out of the liv
   // Still a draft: the tree, which follows the live row, shows no root page yet.
   expect((await childrenOf(request, folderId)).map((row) => row.fullPath)).toEqual([
     "/draft-root-probe/draft-landing",
+  ]);
+});
+
+test("Set as root page never publishes a draft saved after the tree loaded", async ({
+  page,
+  request,
+}) => {
+  const folderId = await addFolder(request, "Stale Root Probe");
+  const pageId = await addPage(request, "Stale v1", folderId);
+  await openContentTree(page);
+  await expandFolder(page, "Stale Root Probe");
+  // The tree shows the page as published, and nothing tells it about the draft saved next: a draft
+  // save leaves the tree revision where it was.
+  await expect(pageRow(page, "Stale v1").getByTestId("status-dot")).toHaveAttribute(
+    "data-status",
+    "published"
+  );
+  const draftSave = await request.patch(`/api/pages/${pageId}?draft=true&depth=0`, {
+    data: { _status: "draft", title: "Stale v2 unreviewed" },
+  });
+  expect(draftSave.ok()).toBe(true);
+
+  await openRowMenu(pageRow(page, "Stale v1"));
+  await menuItem(page, "Set as root page").click();
+  const dialog = page.getByRole("dialog").filter({ has: page.getByTestId("confirm-move") });
+  await dialog.getByRole("button", { exact: true, name: "Set as root page" }).click();
+
+  // The save is kept as a draft, and the toast says so.
+  await expect(
+    page.getByText('"Stale v1" becomes the root page of /stale-root-probe when it is published')
+  ).toBeVisible();
+  const live = await request.get(`/api/pages/${pageId}?depth=0`);
+  expect(await live.json()).toMatchObject({ isFolderRoot: false, title: "Stale v1" });
+  const latest = await request.get(`/api/pages/${pageId}?draft=true&depth=0`);
+  expect(await latest.json()).toMatchObject({
+    _status: "draft",
+    isFolderRoot: true,
+    title: "Stale v2 unreviewed",
+  });
+  expect((await childrenOf(request, folderId)).map((row) => [row.title, row.fullPath])).toEqual([
+    ["Stale v1", "/stale-root-probe/stale-v1"],
   ]);
 });
 
