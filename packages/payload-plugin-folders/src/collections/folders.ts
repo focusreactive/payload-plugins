@@ -8,11 +8,11 @@ import type {
 
 import { toCollectionSlug } from "../collectionSlug.js";
 import { pluginSlug } from "../constants.js";
-import { buildRedirectCleanupBeforeDelete } from "../hooks/beforeDelete.js";
 import { buildFolderAfterChange } from "../hooks/folders/afterChange.js";
 import { buildFolderBeforeChange } from "../hooks/folders/beforeChange.js";
 import { buildFolderBeforeValidate } from "../hooks/folders/beforeValidate.js";
 import { folderBulkUpdateGuard } from "../hooks/folders/bulkUpdateGuard.js";
+import { buildFolderBeforeDelete, buildFolderTrashGuard } from "../hooks/folders/deleteHooks.js";
 import { buildSlugPublishRightsHook } from "../hooks/folders/renamePublishRights.js";
 import { buildAcquireTreeLockHook, releaseUnboundTreeLockHook } from "../hooks/operationLock.js";
 
@@ -225,9 +225,12 @@ export const buildFoldersCollection = (options: ResolvedOptions): CollectionConf
           afterChange: [buildFolderAfterChange(options)],
           afterOperation: [releaseUnboundTreeLockHook],
           beforeChange: [buildFolderBeforeChange(options)],
-          beforeDelete: [buildRedirectCleanupBeforeDelete(folders.slug)],
-          beforeOperation: [folderBulkUpdateGuard, buildAcquireTreeLockHook(["create", "update"])],
-          beforeValidate: [buildFolderBeforeValidate(options)],
+          beforeDelete: [buildFolderBeforeDelete(options)],
+          beforeOperation: [
+            folderBulkUpdateGuard,
+            buildAcquireTreeLockHook(["create", "update", "delete"]),
+          ],
+          beforeValidate: [buildFolderBeforeValidate(options), buildFolderTrashGuard(options)],
         },
     indexes: [{ fields: ["parent", "orderKey"] }],
     labels: folders.labels,

@@ -2,8 +2,12 @@ import type { CollectionConfig, Field, FieldAccess, FieldHook } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
 import { pluginSlug } from "../constants.js";
-import { buildRedirectCleanupBeforeDelete } from "../hooks/beforeDelete.js";
 import { buildPageAfterChange } from "../hooks/pages/afterChange.js";
+import {
+  buildPageAfterDelete,
+  buildPageBeforeDelete,
+  buildPageRestoreGuard,
+} from "../hooks/pages/deleteHooks.js";
 import {
   buildSegmentBeforeDuplicate,
   folderBeforeDuplicate,
@@ -232,6 +236,10 @@ const addPageHooks = (
       ...(hooks.afterChange ?? []),
       buildPageAfterChange(options.collections[collection.slug], options),
     ],
+    afterDelete: [
+      ...(hooks.afterDelete ?? []),
+      buildPageAfterDelete(options.collections[collection.slug], options),
+    ],
     afterOperation: [...(hooks.afterOperation ?? []), releaseUnboundTreeLockHook],
     afterRead: [...(hooks.afterRead ?? []), buildFullPathAfterRead()],
     beforeChange: [
@@ -240,17 +248,18 @@ const addPageHooks = (
     ],
     beforeDelete: [
       ...(hooks.beforeDelete ?? []),
-      buildRedirectCleanupBeforeDelete(collection.slug),
+      buildPageBeforeDelete(options.collections[collection.slug], options),
     ],
     beforeOperation: [
       ...(hooks.beforeOperation ?? []),
       buildBulkUpdateGuard(options.collections[collection.slug]),
-      buildAcquireTreeLockHook(["create", "update", "restoreVersion"]),
+      buildAcquireTreeLockHook(["create", "update", "restoreVersion", "delete"]),
       selectFullPathInputsHook,
     ],
     beforeValidate: [
       ...(hooks.beforeValidate ?? []),
       buildPageBeforeValidate(options.collections[collection.slug], options),
+      buildPageRestoreGuard(options.collections[collection.slug], options),
     ],
   };
 };

@@ -6,6 +6,7 @@ import type { FolderRecord } from "../../core/folderRecords.js";
 import { getDefaultLocaleKey, getFolderLocaleKeys, noLocaleKey } from "../../core/locales.js";
 import {
   clearTakenRedirectRows,
+  deleteRedirectsTargeting,
   pageLocalesOfFolderChange,
   shouldWriteRedirects,
 } from "../../core/redirects.js";
@@ -28,8 +29,20 @@ import { isInternalWrite } from "../context.js";
  */
 export const buildFolderAfterChange =
   (options: ResolvedOptions): CollectionAfterChangeHook =>
-  async ({ doc, operation, req }) => {
+  async ({ data, doc, operation, previousDoc, req }) => {
     if (isInternalWrite(req)) {
+      return doc;
+    }
+    if (data?.deletedAt && !previousDoc?.deletedAt) {
+      // Moved to the trash (an update that sets `deletedAt`): the folder is gone from the tree, and
+      // no redirect row may point at it.
+      popFolderSnapshot(req, doc.id as FolderId);
+      await deleteRedirectsTargeting({
+        ref: { collection: options.folders.slug, id: doc.id as FolderId },
+        req,
+      });
+      await bumpRevision(req);
+
       return doc;
     }
     const { payload } = req;

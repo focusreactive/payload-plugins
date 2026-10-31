@@ -5,6 +5,8 @@ import { buildAncestorsEndpoint } from "./ancestors.js";
 import { buildCheckRootPageEndpoint } from "./checkRootPage.js";
 import { buildCheckSegmentEndpoint } from "./checkSegment.js";
 import { buildChildrenEndpoint } from "./children.js";
+import { buildDeleteEndpoint } from "./delete.js";
+import { buildDeletePreviewEndpoint } from "./deletePreview.js";
 import { buildDuplicateEndpoint } from "./duplicate.js";
 import { buildFolderPreviewEndpoint } from "./folderPreview.js";
 import { buildMoveEndpoint } from "./move.js";
@@ -36,4 +38,6 @@ export const buildFoldersEndpoints = (options: ResolvedOptions): Endpoint[] => [
   buildOperationStepEndpoint(options),
   buildPublishEndpoint(options),
   buildDuplicateEndpoint(options),
+  buildDeletePreviewEndpoint(options),
+  buildDeleteEndpoint(options),
 ];

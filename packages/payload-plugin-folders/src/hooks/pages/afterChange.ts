@@ -22,6 +22,7 @@ import {
 } from "../../core/uniqueness.js";
 import type { FolderId, ResolvedOptions, ResolvedPageCollection } from "../../types.js";
 import { isInternalWrite } from "../context.js";
+import { settleTrashedPage } from "./deleteHooks.js";
 
 type Problem = { locale?: string; message: string; path: string };
 
@@ -205,7 +206,7 @@ const settleCreatedPage = async (
 
 export const buildPageAfterChange =
   (page: ResolvedPageCollection, options: ResolvedOptions): CollectionAfterChangeHook =>
-  async ({ doc, operation, req }) => {
+  async ({ data, doc, operation, previousDoc, req }) => {
     if (isInternalWrite(req)) {
       return doc;
     }
@@ -213,7 +214,24 @@ export const buildPageAfterChange =
       await settleCreatedPage(page, options, req, doc);
       await bumpRevision(req);
     } else if (operation === "update") {
-      await checkWrittenPage(page, options, req, doc.id as FolderId);
+      const id = doc.id as FolderId;
+      // `data`, not `doc`: a save that selects fields returns a `doc` without `deletedAt`.
+      if (data?.deletedAt && !previousDoc?.deletedAt) {
+        // Moved to the trash: nothing to validate, the page is gone from the tree.
+        await settleTrashedPage({
+          before: popSnapshot(req, page.slug, id),
+          id,
+          options,
+          page,
+          req,
+        });
+      } else {
+        await checkWrittenPage(page, options, req, id);
+        if (previousDoc?.deletedAt && data?.deletedAt === null) {
+          // Restored from the trash: the page is back in the tree.
+          await bumpRevision(req);
+        }
+      }
     }
 
     return doc;
