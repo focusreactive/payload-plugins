@@ -1,6 +1,6 @@
 import type { MoveResult } from "../core/applyMove.js";
 import type { ExpectedState, MoveAnchor, MovePreview } from "../core/move.js";
-import { rootDraftPendingMessage } from "../core/rootFlip.js";
+import { isPageChangedMessage, rootPreconditionParameter } from "../core/rootPrecondition.js";
 import type { FolderId, ItemRef, TreeItem, TreeStatus } from "../types.js";
 
 /** Where the plugin's endpoints live and how to call them. */
@@ -334,9 +334,57 @@ export const fetchLatestStatus = async (
   return readJsonResponse<{ _status?: string }>(response);
 };
 
-/** The refusal of a live save that would publish a newer draft along with the root flag. */
-export const isDraftPendingError = (error: unknown): boolean =>
-  error instanceof FoldersApiError && error.message === rootDraftPendingMessage;
+/**
+ * The query a partial root save sends so the server refuses it when the page changed after this
+ * read (`rootPreconditionParameter`); empty when the page has no `updatedAt` to compare.
+ */
+export const preconditionQueryOf = (marker: string | undefined): Record<string, string> =>
+  marker === undefined ? {} : { [rootPreconditionParameter]: marker };
+
+/**
+ * The `updatedAt` of the page's latest version, the marker a partial save sends back as its
+ * precondition. A collection with drafts answers from its newest version row (`latest`), the very
+ * row the server reads as the page's current state, so a draft saved in a locale other than the
+ * admin's still changes it; a collection without drafts has the row itself. Read it before the
+ * status and before any confirmation: whatever changes the page after it makes the save fail.
+ */
+export const fetchVersionMarker = async (
+  context: FoldersApiContext,
+  { collection, hasDrafts, id }: { collection: string; hasDrafts: boolean; id: FolderId }
+): Promise<string | undefined> => {
+  const send = context.fetchImplementation ?? fetch;
+  if (hasDrafts) {
+    const response = await send(
+      `${context.baseUrl}/${collection}/versions${buildQuery({
+        depth: 0,
+        limit: 1,
+        sort: "-updatedAt",
+        "where[latest][equals]": "true",
+        "where[parent][equals]": String(id),
+      })}`,
+      { credentials: "include", headers: { Accept: "application/json" }, method: "GET" }
+    );
+    const { docs } = await readJsonResponse<{ docs: Array<{ version?: { updatedAt?: string } }> }>(
+      response
+    );
+    const marker = docs[0]?.version?.updatedAt;
+    if (typeof marker === "string") {
+      return marker;
+    }
+  }
+  const response = await send(`${context.baseUrl}/${collection}/${id}${buildQuery({ depth: 0 })}`, {
+    credentials: "include",
+    headers: { Accept: "application/json" },
+    method: "GET",
+  });
+  const { updatedAt } = await readJsonResponse<{ updatedAt?: string }>(response);
+
+  return typeof updatedAt === "string" ? updatedAt : undefined;
+};
+
+/** The refusal of a root save whose page changed after the admin read it. */
+export const isPageChangedError = (error: unknown): boolean =>
+  error instanceof FoldersApiError && isPageChangedMessage(error.message);
 
 /**
  * One document as Payload's REST route answers it: the latest version, drafts included (or the live

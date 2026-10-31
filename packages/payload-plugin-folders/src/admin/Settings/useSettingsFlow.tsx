@@ -3,7 +3,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { ConfirmMoves, TreeItem } from "../../types.js";
-import { fetchLatestStatus, isDraftPendingError, writeDocument } from "../api.js";
+import {
+  fetchLatestStatus,
+  fetchVersionMarker,
+  isPageChangedError,
+  preconditionQueryOf,
+  writeDocument,
+} from "../api.js";
 import type { FoldersApiContext } from "../api.js";
 import type { Translate } from "../compat.js";
 import { rootUpdateModeOf } from "../ContextMenu/rootPage.js";
@@ -126,6 +132,17 @@ export const useSettingsFlow = ({
         // so a draft saved since is kept a draft (the same care as Set as root page).
         let mode: "draft" | "live" =
           forceDraft || (hasDrafts && rootUpdateModeOf(item) === "draft") ? "draft" : "live";
+        // Read first: a page that changes after this read makes the server refuse the live save.
+        const precondition =
+          mode === "live"
+            ? preconditionQueryOf(
+                await fetchVersionMarker(apiContext, {
+                  collection: item.collection,
+                  hasDrafts,
+                  id: item.id,
+                })
+              )
+            : {};
         if (hasDrafts && mode === "live") {
           mode = (await fetchLatestStatus(apiContext, item))._status === "draft" ? "draft" : "live";
         }
@@ -138,14 +155,14 @@ export const useSettingsFlow = ({
           }),
           collection: item.collection,
           id: item.id,
-          query: mode === "draft" ? { draft: "true", locale } : { locale },
+          query: mode === "draft" ? { draft: "true", locale } : { locale, ...precondition },
         });
         await store.invalidate([item.parentId]);
         toast.success(
           translate(mode === "draft" ? "unrootDoneDraft" : "unrootDone", { title: item.title })
         );
       } catch (error) {
-        if (hasDrafts && isDraftPendingError(error)) {
+        if (hasDrafts && isPageChangedError(error)) {
           toast.error(error instanceof Error ? error.message : "", {
             action: {
               label: translate("saveAsDraftInstead"),

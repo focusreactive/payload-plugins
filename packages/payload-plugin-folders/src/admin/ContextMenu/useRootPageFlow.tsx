@@ -3,7 +3,13 @@ import { useCallback, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { TreeItem } from "../../types.js";
-import { fetchLatestStatus, isDraftPendingError, writeDocument } from "../api.js";
+import {
+  fetchLatestStatus,
+  fetchVersionMarker,
+  isPageChangedError,
+  preconditionQueryOf,
+  writeDocument,
+} from "../api.js";
 import type { FoldersApiContext } from "../api.js";
 import type { Translate } from "../compat.js";
 import { ConfirmUrlChangeDialog } from "../Move/ConfirmUrlChangeDialog.js";
@@ -21,6 +27,9 @@ export type RootPageFlow = {
 };
 
 const messageOf = (error: unknown): string => (error instanceof Error ? error.message : "");
+
+/** A page of a collection without drafts has no draft status to show, only `live`. */
+const hasDraftsOf = (item: TreeItem): boolean => item.status !== "live";
 
 /**
  * "Set as root page" (spec section 4): one update of the page through Payload's REST route, so the
@@ -52,10 +61,20 @@ export const useRootPageFlow = ({
       setIsSaving(true);
       try {
         let mode = forceDraft ? "draft" : rootUpdateModeOf(item);
+        let precondition: Record<string, string> = {};
         if (mode === "live") {
           // The row's status was read when the tree loaded. A draft saved since (elsewhere, or by an
           // autosave) leaves it stale, and a live save would publish that draft with the flag: read
-          // the page again right before writing, and keep a pending draft a draft.
+          // the page again right before writing, and keep a pending draft a draft. The version
+          // marker is read first and goes with the save, so a draft that lands after that read is
+          // refused by the server under the tree lock (spec section 4).
+          precondition = preconditionQueryOf(
+            await fetchVersionMarker(apiContext, {
+              collection: item.collection,
+              hasDrafts: hasDraftsOf(item),
+              id: item.id,
+            })
+          );
           const latest = await fetchLatestStatus(apiContext, item);
           if (latest._status === "draft") {
             mode = "draft";
@@ -65,7 +84,7 @@ export const useRootPageFlow = ({
           body: rootPageBodyOf(item, mode),
           collection: item.collection,
           id: item.id,
-          query: mode === "draft" ? { draft: "true" } : {},
+          query: mode === "draft" ? { draft: "true" } : precondition,
         });
         const folder = findLoadedFolder(state, item.parentId);
         // The folder's "no page" chip and the page's house icon come from the folder's own row.
@@ -78,15 +97,16 @@ export const useRootPageFlow = ({
         );
       } catch (error) {
         const detail = messageOf(error);
-        // A draft saved after the status read above got past it: the server refused the live save
-        // under the tree lock (spec section 4), and the draft stays a draft if the editor says so.
+        // The page changed after the read above: the server refused the live save under the tree
+        // lock (spec section 4), and the change stays a draft if the editor says so.
         toast.error(detail === "" ? translate("rootSetFailed") : detail, {
-          action: isDraftPendingError(error)
-            ? {
-                label: translate("saveAsDraftInstead"),
-                onClick: () => void save(item, folderPath, true),
-              }
-            : undefined,
+          action:
+            isPageChangedError(error) && hasDraftsOf(item)
+              ? {
+                  label: translate("saveAsDraftInstead"),
+                  onClick: () => void save(item, folderPath, true),
+                }
+              : undefined,
         });
       } finally {
         setIsSaving(false);

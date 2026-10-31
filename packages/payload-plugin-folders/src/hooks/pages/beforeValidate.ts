@@ -6,7 +6,12 @@ import { describeAllowedTypes, isTypeAllowed } from "../../core/allowedTypes.js"
 import { normalizeFolderReference, readFolderRecord } from "../../core/folderRecords.js";
 import type { FolderRecord } from "../../core/folderRecords.js";
 import { noLocaleKey } from "../../core/locales.js";
-import { isRootFlipOverDraft, rootDraftPendingMessage } from "../../core/rootFlip.js";
+import {
+  hasPageChangedSince,
+  pageChangedLiveMessage,
+  pageChangedMessage,
+  readRootPrecondition,
+} from "../../core/rootPrecondition.js";
 import { popSnapshot, pushSnapshot, readPageRow, toSnapshot } from "../../core/pageRecords.js";
 import type { PageRow } from "../../core/pageRecords.js";
 import { SEGMENT_ERROR_MESSAGE, isValidSegment, slugify } from "../../core/slugify.js";
@@ -153,26 +158,28 @@ export const buildPageBeforeValidate =
     }
 
     const problems: Problem[] = [];
-    const isDraft =
-      Boolean(payload.collections[toCollectionSlug(page.slug)]?.config.versions?.drafts) &&
-      isDraftStatus(data._status);
+    const hasDraftsEnabled = Boolean(
+      payload.collections[toCollectionSlug(page.slug)]?.config.versions?.drafts
+    );
+    const isDraft = hasDraftsEnabled && isDraftStatus(data._status);
 
+    // The plugin's partial saves send the latest version they read. Under the tree lock, a page
+    // that changed since then is refused, so a live root flip never publishes edits nobody saw.
+    const precondition = readRootPrecondition(req.query);
     if (
       !isCreate &&
-      isRootFlipOverDraft({
-        hasDrafts: Boolean(
-          payload.collections[toCollectionSlug(page.slug)]?.config.versions?.drafts
-        ),
-        isLiveSave: !isDraftStatus(data._status),
-        latestIsDraft: isDraftStatus(originalDoc?._status),
-        latestIsRoot: Boolean(originalDoc?.isFolderRoot),
-        requestedRoot: data.isFolderRoot,
-      })
+      precondition !== null &&
+      hasPageChangedSince(precondition, originalDoc?.updatedAt)
     ) {
       popSnapshot(req, page.slug, pageId);
       throw new ValidationError({
         collection: page.slug,
-        errors: [{ message: rootDraftPendingMessage, path: "isFolderRoot" }],
+        errors: [
+          {
+            message: hasDraftsEnabled ? pageChangedMessage : pageChangedLiveMessage,
+            path: "isFolderRoot",
+          },
+        ],
         req,
       });
     }

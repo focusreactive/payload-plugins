@@ -3,7 +3,14 @@ import { useEffect, useId, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import type { ConfirmMoves, FolderId, TreeItem } from "../../types.js";
-import { fetchDocument, fetchLatestStatus, isDraftPendingError, writeDocument } from "../api.js";
+import {
+  fetchDocument,
+  fetchLatestStatus,
+  fetchVersionMarker,
+  isPageChangedError,
+  preconditionQueryOf,
+  writeDocument,
+} from "../api.js";
 import type { FoldersApiContext, MovePreview } from "../api.js";
 import { Link, editViewUrl } from "../compat.js";
 import type { Translate } from "../compat.js";
@@ -183,7 +190,8 @@ const PageSettingsForm = ({
   };
 
   const runContentStep = async (
-    step: Extract<PageSaveStep, { kind: "content" }>
+    step: Extract<PageSaveStep, { kind: "content" }>,
+    marker: string | undefined
   ): Promise<boolean> => {
     if (step.needsConfirm) {
       const isNewRoot = step.changes.isFolderRoot === true;
@@ -219,7 +227,15 @@ const PageSettingsForm = ({
       body: pageBodyOf({ ...names, changes: step.changes, hasDrafts, mode: step.mode }),
       collection: item.collection,
       id: item.id,
-      query: step.mode === "draft" ? { draft: "true", locale } : { locale },
+      // A live save of the root flag carries the version it read, so the server refuses it when the
+      // page changed since (spec section 4), whichever way the flag flips.
+      query:
+        step.mode === "draft"
+          ? { draft: "true", locale }
+          : {
+              locale,
+              ...(step.changes.isFolderRoot === undefined ? {} : preconditionQueryOf(marker)),
+            },
     });
 
     return true;
@@ -234,7 +250,16 @@ const PageSettingsForm = ({
     setFailure(null);
     try {
       // The page's status was read when the drawer opened; a draft saved since would be published
-      // by a live save of the root flag, so it is read again right before.
+      // by a live save of the root flag, so it is read again right before. The version marker is
+      // read first and goes with that save, so a draft that lands after it makes the server refuse.
+      const marker =
+        forceDraft || stored.isFolderRoot === isRoot
+          ? undefined
+          : await fetchVersionMarker(apiContext, {
+              collection: item.collection,
+              hasDrafts,
+              id: item.id,
+            });
       let hasNewerDraft = page._status === "draft" || forceDraft;
       if (hasDrafts && !hasNewerDraft) {
         hasNewerDraft = (await fetchLatestStatus(apiContext, item))._status === "draft";
@@ -248,7 +273,7 @@ const PageSettingsForm = ({
           moveStep = step;
           continue;
         }
-        if (!(await runContentStep(step))) {
+        if (!(await runContentStep(step, marker))) {
           return;
         }
         wroteContent = true;
@@ -275,7 +300,7 @@ const PageSettingsForm = ({
       }
     } catch (error) {
       setFailure({
-        canSaveAsDraft: hasDrafts && isDraftPendingError(error),
+        canSaveAsDraft: hasDrafts && isPageChangedError(error),
         message:
           error instanceof Error && error.message !== ""
             ? error.message
