@@ -1,0 +1,33 @@
+import { expect, test } from "@playwright/test";
+
+test("admin opens without a login and the pages and folders collections load", async ({ page }) => {
+  const consoleErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") {
+      consoleErrors.push(message.text());
+    }
+  });
+  page.on("pageerror", (error) => consoleErrors.push(error.message));
+
+  await page.goto("/admin");
+  // admin.autoLogin signs in the dev admin, so the login form never shows.
+  await expect(page).not.toHaveURL(/\/admin\/login/u);
+  await expect(page.getByRole("link", { name: "Pages", exact: true }).first()).toBeVisible();
+  // The folders collection's plural label is the nav label.
+  await expect(page.getByRole("link", { name: "Content", exact: true }).first()).toBeVisible();
+
+  await page.goto("/admin/collections/pages");
+  await expect(page).toHaveURL(/\/admin\/collections\/pages(\?.*)?$/u);
+  await expect(page.getByRole("heading", { name: "Pages" })).toBeVisible();
+
+  await page.goto("/admin/collections/folders");
+  await expect(page).toHaveURL(/\/admin\/collections\/folders(\?.*)?$/u);
+  await expect(page.getByRole("heading", { name: "Content" })).toBeVisible();
+  // From P-33 on the folders list is the tree, with a row for each seeded folder.
+  await expect(page.getByRole("treegrid")).toBeVisible();
+  await expect(
+    page.locator('[data-testid="tree-row"][data-kind="folder"][data-title="Blog"]')
+  ).toBeVisible();
+
+  expect(consoleErrors).toEqual([]);
+});

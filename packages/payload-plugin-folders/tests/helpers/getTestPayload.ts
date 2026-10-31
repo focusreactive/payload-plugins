@@ -1,0 +1,160 @@
+import { postgresAdapter } from "@payloadcms/db-postgres";
+import { sqliteAdapter } from "@payloadcms/db-sqlite";
+import { randomUUID } from "node:crypto";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { Pool } from "pg";
+import { getPayload } from "payload";
+import type { Config, Payload, SanitizedConfig } from "payload";
+
+import { buildDevConfig } from "../../dev/buildDevConfig.js";
+import type { DevConfigOptions } from "../../dev/buildDevConfig.js";
+import { postgresConnectionEnvironmentKey } from "./postgresGlobalSetup.js";
+
+// Payload remembers the last schema it pushed per process and skips the push for an identical one,
+// so a second instance in the same file would get an empty database without this.
+process.env.PAYLOAD_FORCE_DRIZZLE_PUSH = "true";
+
+/**
+ * Connections one Payload instance may hold. The pg default of 10 times a dozen parallel test files
+ * overran the default Postgres limit; a tree write needs one for its transaction and a few more for
+ * reads outside it, so 4 is enough and keeps the total near 100 even without the raised limit.
+ */
+export const testPoolMaxConnections = 4;
+
+export type TestDatabaseKind = "postgres" | "sqlite";
+
+export type TestPayload = {
+  /** The key this instance is cached under; REST helpers pass it so a request runs on this instance. */
+  cacheKey: string;
+  config: SanitizedConfig;
+  databaseKind: TestDatabaseKind;
+  /** Destroys the Payload instance and removes this file's database. */
+  destroy: () => Promise<void>;
+  payload: Payload;
+  /** Postgres only: the schema this instance's tables live in, which `sharedWith` reuses. */
+  schemaName?: string;
+};
+
+type TestDatabase = {
+  adapter: Config["db"];
+  cleanup: () => Promise<void>;
+  schemaName?: string;
+};
+
+const createSqliteDatabase = async (transactions: boolean): Promise<TestDatabase> => {
+  const directory = await mkdtemp(path.join(tmpdir(), "folders-sqlite-"));
+
+  return {
+    // transactionOptions: {} turns real transactions on; without it SQLite transactions are no-ops.
+    adapter: sqliteAdapter({
+      client: { url: `file:${path.join(directory, "test.db")}` },
+      ...(transactions ? { transactionOptions: {} } : {}),
+    }),
+    cleanup: () => rm(directory, { force: true, recursive: true }),
+  };
+};
+
+const createPostgresDatabase = async (sharedSchemaName?: string): Promise<TestDatabase> => {
+  const connectionString = process.env[postgresConnectionEnvironmentKey];
+  if (!connectionString) {
+    throw new Error(
+      "Postgres is not running: run the tests through `npm run test:int:postgres`, which starts it"
+    );
+  }
+
+  if (sharedSchemaName) {
+    // A second instance on an existing schema, the stand-in for a second server process; the
+    // first instance's destroy() removes the schema.
+    return {
+      adapter: postgresAdapter({
+        pool: { connectionString, max: testPoolMaxConnections },
+        schemaName: sharedSchemaName,
+      }),
+      cleanup: () => Promise.resolve(),
+    };
+  }
+
+  // A fresh schema per test file keeps files independent on one shared cluster.
+  const schemaName = `test_${randomUUID().replaceAll("-", "")}`;
+  const adminPool = new Pool({ connectionString, max: 1 });
+  try {
+    await adminPool.query(`CREATE SCHEMA "${schemaName}"`);
+  } catch (error) {
+    await adminPool.end();
+    throw error;
+  }
+
+  return {
+    adapter: postgresAdapter({
+      pool: { connectionString, max: testPoolMaxConnections },
+      schemaName,
+    }),
+    schemaName,
+    cleanup: async () => {
+      await adminPool.query(`DROP SCHEMA "${schemaName}" CASCADE`);
+      await adminPool.end();
+    },
+  };
+};
+
+export type GetTestPayloadOptions = Pick<
+  DevConfigOptions,
+  "extraCollections" | "foldersOptions" | "localized"
+> & {
+  /**
+   * Postgres only: boots this instance on the database of an instance already running, as a second
+   * server process would. Destroy it before the instance it shares with.
+   */
+  sharedWith?: TestPayload;
+  /** SQLite only: false boots the adapter without transactions, as a host that left them off would. */
+  sqliteTransactions?: boolean;
+};
+
+export const getTestPayload = async ({
+  extraCollections,
+  foldersOptions,
+  localized,
+  sharedWith,
+  sqliteTransactions = true,
+}: GetTestPayloadOptions = {}): Promise<TestPayload> => {
+  const databaseKind: TestDatabaseKind = process.env.TEST_DB === "postgres" ? "postgres" : "sqlite";
+  if (sharedWith && databaseKind !== "postgres") {
+    throw new Error("sharedWith needs Postgres: two SQLite writers on one file do not queue");
+  }
+  const database =
+    databaseKind === "postgres"
+      ? await createPostgresDatabase(sharedWith?.schemaName)
+      : await createSqliteDatabase(sqliteTransactions);
+
+  try {
+    // Auto-login is for browsers; the tests authenticate explicitly through callEndpoint.
+    const config = await buildDevConfig({
+      autoLogin: false,
+      db: database.adapter,
+      extraCollections,
+      foldersOptions,
+      localized,
+    });
+    // getPayload caches instances by key and destroy() does not clear the cache, so a shared
+    // key would hand a second call in the same file the destroyed first instance.
+    const cacheKey = randomUUID();
+    const payload = await getPayload({ config, key: cacheKey });
+
+    return {
+      cacheKey,
+      config,
+      databaseKind,
+      destroy: async () => {
+        await payload.destroy();
+        await database.cleanup();
+      },
+      payload,
+      schemaName: database.schemaName ?? sharedWith?.schemaName,
+    };
+  } catch (error) {
+    await database.cleanup();
+    throw error;
+  }
+};

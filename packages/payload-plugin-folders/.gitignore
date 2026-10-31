@@ -1,0 +1,12 @@
+node_modules
+dist
+dev/.next
+dev/dev.db*
+dev/next-env.d.ts
+playwright-report
+test-results
+*.tsbuildinfo
+dev/AGENTS.md
+.run/
+dev/.next-*
+.vitest

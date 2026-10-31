@@ -1,0 +1,1074 @@
+/*
+ * Styles of the folders admin. Plain CSS on Payload 4's tokens, so the tree follows the admin's
+ * light and dark themes; classes are prefixed `fr-folders-` (spec section 7.13).
+ */
+@layer payload {
+  .fr-folders-body {
+    padding: var(--spacer-3) var(--gutter-h) var(--spacing-view-bottom);
+  }
+
+  .fr-folders-tree {
+    --fr-folders-select-width: 2.5rem;
+    --fr-folders-menu-width: 2.5rem;
+    --fr-folders-columns: var(--fr-folders-select-width) minmax(0, 1fr) 5.5rem
+      var(--fr-folders-menu-width);
+    --fr-folders-row-height: 2.25rem;
+
+    border: var(--stroke-width-small) solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background: var(--color-bg);
+    color: var(--color-text);
+    overflow: hidden;
+  }
+
+  .fr-folders-row {
+    display: grid;
+    grid-template-columns: var(--fr-folders-columns);
+    align-items: center;
+    min-height: var(--fr-folders-row-height);
+    border-top: var(--stroke-width-small) solid var(--color-border);
+    background: var(--color-bg);
+    cursor: default;
+  }
+
+  [role="rowgroup"]:first-child > .fr-folders-row {
+    border-top: none;
+  }
+
+  .fr-folders-row[data-kind]:hover,
+  .fr-folders-row[data-kind]:focus-within {
+    background: var(--color-bg-secondary);
+  }
+
+  .fr-folders-row[data-kind="folder"][aria-expanded] {
+    cursor: pointer;
+  }
+
+  .fr-folders-row[data-kind="page"] {
+    cursor: pointer;
+  }
+
+  .fr-folders-row--header {
+    min-height: var(--spacer-5);
+    background: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-small-font-size);
+    line-height: var(--text-body-small-line-height);
+  }
+
+  .fr-folders-row--status {
+    display: block;
+  }
+
+  .fr-folders-cell {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    padding: 0 var(--spacer-2-5);
+  }
+
+  .fr-folders-cell--wide {
+    gap: var(--spacer-2);
+    min-height: var(--fr-folders-row-height);
+  }
+
+  .fr-folders-cell--name {
+    gap: var(--spacer-1);
+    padding-block: var(--spacer-1);
+  }
+
+  .fr-folders-row--header .fr-folders-cell--name {
+    padding-inline-start: calc(var(--spacer-2-5) + 2.5rem);
+  }
+
+  .fr-folders-cell--type,
+  .fr-folders-cell--updated {
+    display: none;
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-small-font-size);
+    line-height: var(--text-body-small-line-height);
+  }
+
+  .fr-folders-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (min-width: 769px) {
+    .fr-folders-tree {
+      --fr-folders-columns: var(--fr-folders-select-width) minmax(0, 1fr) 5.5rem minmax(7rem, 13rem)
+        9rem var(--fr-folders-menu-width);
+    }
+
+    .fr-folders-cell--type,
+    .fr-folders-cell--updated {
+      display: flex;
+    }
+  }
+
+  .fr-folders-chevron {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--spacer-3);
+    height: var(--spacer-3);
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-small);
+    background: transparent;
+    color: var(--color-icon-tertiary);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-icon);
+    }
+
+    &:focus-visible {
+      outline: var(--accessibility-outline);
+      outline-offset: var(--accessibility-outline-offset);
+    }
+  }
+
+  .fr-folders-chevron--empty {
+    cursor: default;
+  }
+
+  .fr-folders-kind-icon {
+    display: inline-flex;
+    flex: none;
+    color: var(--color-icon-secondary);
+  }
+
+  .fr-folders-name-block {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin-inline-start: var(--spacer-1);
+  }
+
+  .fr-folders-name-line,
+  .fr-folders-path-line {
+    display: flex;
+    align-items: center;
+    gap: var(--spacer-1-5);
+    min-width: 0;
+  }
+
+  .fr-folders-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text);
+    font-size: var(--text-body-medium-font-size);
+    font-weight: var(--text-body-medium-bold-font-weight);
+    line-height: var(--text-body-medium-line-height);
+    text-decoration: none;
+  }
+
+  .fr-folders-name--link:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--color-border-strong);
+    text-underline-offset: 2px;
+  }
+
+  .fr-folders-name--link:focus-visible {
+    outline: var(--accessibility-outline);
+    outline-offset: var(--accessibility-outline-offset);
+    border-radius: var(--radius-small);
+  }
+
+  .fr-folders-path-line {
+    min-height: var(--text-body-small-line-height);
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-small-font-size);
+    line-height: var(--text-body-small-line-height);
+  }
+
+  .fr-folders-path {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fr-folders-path--missing {
+    color: var(--color-text-tertiary);
+  }
+
+  .fr-folders-root-page {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    color: var(--color-icon-brand);
+  }
+
+  .fr-folders-icon {
+    display: block;
+  }
+
+  .fr-folders-chip {
+    flex: none;
+    padding: 0 var(--spacer-1-5);
+    border: var(--stroke-width-small) solid var(--color-border);
+    border-radius: var(--radius-chip);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-small-font-size);
+    line-height: var(--text-body-small-line-height);
+    white-space: nowrap;
+  }
+
+  .fr-folders-chip--small {
+    padding-inline: var(--spacer-1);
+    font-size: var(--text-body-small-font-size);
+  }
+
+  .fr-folders-count {
+    flex: none;
+    min-width: var(--spacer-3);
+    padding: 0 var(--spacer-1);
+    border-radius: var(--radius-full);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-small-font-size);
+    line-height: var(--text-body-small-line-height);
+    text-align: center;
+  }
+
+  .fr-folders-dot {
+    display: inline-block;
+    flex: none;
+    box-sizing: border-box;
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: var(--radius-full);
+  }
+
+  .fr-folders-dot--draft {
+    border: var(--stroke-width-medium) solid var(--color-icon-tertiary);
+    background: transparent;
+  }
+
+  .fr-folders-dot--published,
+  .fr-folders-dot--live {
+    background: var(--color-icon-success);
+  }
+
+  /* Published, with a newer draft: a green core inside an amber ring. */
+  .fr-folders-dot--changed {
+    width: 0.8125rem;
+    height: 0.8125rem;
+    padding: 0.125rem;
+    border: var(--stroke-width-medium) solid var(--color-icon-warning);
+    background: var(--color-icon-success);
+    background-clip: content-box;
+  }
+
+  .fr-folders-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .fr-folders-count {
+    position: relative;
+  }
+
+  .fr-folders-muted {
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-medium-font-size);
+  }
+
+  .fr-folders-error {
+    color: var(--color-text-danger);
+    font-size: var(--text-body-medium-font-size);
+  }
+
+  /* Selection */
+
+  .fr-folders-cell--select {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .fr-folders-cell--select .checkbox-input__input {
+    margin-block: 0;
+  }
+
+  .fr-folders-row[data-kind][aria-selected="true"],
+  .fr-folders-row[data-kind][aria-selected="true"]:hover,
+  .fr-folders-row[data-kind][aria-selected="true"]:focus-within {
+    background: var(--color-bg-selected);
+  }
+
+  .fr-folders-row[data-kind] {
+    user-select: none;
+  }
+
+  /* The toolbar takes the place of the list header, so it keeps the header's height and rhythm. */
+  .fr-folders-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacer-2);
+    min-height: calc(var(--text-heading-xl-line-height) + var(--spacer-2) + var(--spacer-3));
+    padding: var(--spacer-2) var(--gutter-h) var(--spacer-3);
+    border-bottom: var(--stroke-width-small) solid var(--color-border);
+    color: var(--color-text);
+  }
+
+  .fr-folders-toolbar__count {
+    margin-inline-end: var(--spacer-2);
+    font-size: var(--text-body-medium-font-size);
+    font-weight: var(--text-body-medium-bold-font-weight);
+    line-height: var(--text-body-medium-line-height);
+    white-space: nowrap;
+  }
+
+  .fr-folders-toolbar__actions {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacer-1);
+  }
+
+  .fr-folders-reason {
+    display: inline-flex;
+  }
+
+  /* Move to... and the confirmation */
+
+  .fr-folders-picker {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-2);
+  }
+
+  .fr-folders-picker__search {
+    box-sizing: border-box;
+    width: 100%;
+    padding: var(--spacer-1-5) var(--spacer-2);
+    border: var(--stroke-width-small) solid var(--color-border-control);
+    border-radius: var(--radius-medium);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font: inherit;
+
+    &:focus-visible {
+      outline: var(--accessibility-outline);
+      outline-offset: var(--accessibility-outline-offset);
+    }
+  }
+
+  .fr-folders-picker__tree {
+    box-sizing: border-box;
+    height: 16rem;
+    max-height: 40dvh;
+    padding: var(--spacer-1);
+    overflow-y: auto;
+    border: var(--stroke-width-small) solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background: var(--color-bg);
+  }
+
+  .fr-folders-picker__row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacer-1);
+    min-height: 2rem;
+    padding-inline-end: var(--spacer-2);
+    border-radius: var(--radius-small);
+    color: var(--color-text);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-bg-secondary-hover);
+    }
+
+    &:focus-visible {
+      outline: var(--accessibility-outline);
+      outline-offset: calc(var(--accessibility-outline-offset) * -1);
+    }
+  }
+
+  .fr-folders-picker__row--selected,
+  .fr-folders-picker__row--selected:hover {
+    background: var(--color-bg-selected);
+  }
+
+  .fr-folders-picker__row--disabled,
+  .fr-folders-picker__row--disabled:hover {
+    background: transparent;
+    color: var(--color-text-disabled);
+    cursor: not-allowed;
+  }
+
+  .fr-folders-picker__title {
+    position: relative;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fr-folders-picker__path {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--text-body-small-font-size);
+  }
+
+  .fr-folders-picker__note {
+    display: flex;
+    align-items: center;
+    gap: var(--spacer-2);
+    min-height: 2rem;
+    padding-inline: var(--spacer-1);
+    font-size: var(--text-body-small-font-size);
+  }
+
+  .fr-folders-picker__position {
+    display: flex;
+    align-items: center;
+    gap: var(--spacer-3);
+    margin: 0;
+    padding: 0;
+    border: none;
+
+    legend {
+      float: inline-start;
+      margin-inline-end: var(--spacer-3);
+      padding: 0;
+      color: var(--color-text-secondary);
+    }
+
+    label {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacer-1);
+      cursor: pointer;
+    }
+
+    input {
+      margin: 0;
+      accent-color: var(--color-bg-brand);
+    }
+  }
+
+  .fr-folders-picker__preview {
+    min-height: var(--text-body-medium-line-height);
+
+    p {
+      margin: 0;
+    }
+  }
+
+  .fr-folders-confirm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-2);
+
+    p {
+      margin: 0;
+    }
+
+    code {
+      padding: 0 var(--spacer-1);
+      border-radius: var(--radius-small);
+      background: var(--color-bg-tertiary);
+      font-family: var(--font-family-mono);
+      font-size: var(--text-body-small-font-size);
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .fr-folders-confirm__label {
+    margin-bottom: var(--spacer-1);
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-small-font-size);
+  }
+
+  .fr-folders-confirm__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fr-folders-confirm__redirect {
+    display: flex;
+    align-items: center;
+    gap: var(--spacer-1-5);
+  }
+
+  .fr-folders-confirm__redirect .checkbox-input {
+    width: auto;
+  }
+
+  /*
+   * The action of a toast (Undo, Reload). Payload leaves its toasts to the library's own styles,
+   * which are not loaded, so the button would sit raw and a little above the title.
+   */
+  .fr-folders-toast-action {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    align-self: center;
+    margin-inline-start: auto;
+    padding: var(--spacer-1) var(--spacer-1-5);
+    border: none;
+    border-radius: var(--radius-small);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: var(--text-body-medium-bold-font-weight);
+    line-height: var(--text-body-medium-line-height);
+    text-decoration: underline;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-bg-transparent-hover);
+    }
+
+    &:focus-visible {
+      outline: var(--accessibility-outline);
+      outline-offset: var(--accessibility-outline-offset);
+    }
+  }
+
+  /* Drag and drop */
+
+  .fr-folders-row {
+    position: relative;
+  }
+
+  .fr-folders-row--dragged {
+    opacity: 0.45;
+  }
+
+  .fr-folders-row--drop-inside,
+  .fr-folders-row--drop-inside:hover {
+    background: var(--color-bg-selected);
+    outline: var(--stroke-width-medium) solid var(--color-bg-brand);
+    outline-offset: calc(var(--stroke-width-medium) * -1);
+  }
+
+  .fr-folders-row--drop-refused,
+  .fr-folders-row--drop-refused:hover {
+    background: transparent;
+    outline-color: var(--color-text-danger);
+  }
+
+  /* A before or after drop: a line from the row's own indent to its right edge. */
+  .fr-folders-drop-line {
+    position: absolute;
+    inset-inline-end: 0;
+    z-index: 1;
+    height: 2px;
+    background: var(--color-bg-brand);
+    pointer-events: none;
+  }
+
+  .fr-folders-drop-line--top {
+    top: 0;
+  }
+
+  .fr-folders-drop-line--bottom {
+    bottom: 0;
+  }
+
+  .fr-folders-drop-line--refused {
+    background: var(--color-text-danger);
+  }
+
+  body.fr-folders-dragging,
+  body.fr-folders-dragging * {
+    cursor: grabbing !important;
+  }
+
+  body.fr-folders-dragging--refused,
+  body.fr-folders-dragging--refused * {
+    cursor: not-allowed !important;
+  }
+
+  .fr-folders-drag-overlay {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-1);
+    width: max-content;
+    max-width: 24rem;
+    pointer-events: none;
+  }
+
+  .fr-folders-drag-overlay > span {
+    align-self: flex-start;
+    padding: var(--spacer-1) var(--spacer-2);
+    border: var(--stroke-width-small) solid var(--color-border-strong);
+    border-radius: var(--radius-medium);
+    background: var(--color-bg);
+    box-shadow: var(--elevation-400-menu-panel);
+    color: var(--color-text);
+    font-size: var(--text-body-medium-font-size);
+    font-weight: var(--text-body-medium-bold-font-weight);
+    line-height: var(--text-body-medium-line-height);
+  }
+
+  .fr-folders-drag-reason {
+    padding: var(--spacer-1) var(--spacer-2);
+    border-radius: var(--radius-medium);
+    background: var(--color-bg-inverse);
+    color: var(--color-text-oninverse);
+    font-size: var(--text-body-small-font-size);
+    line-height: var(--text-body-small-line-height);
+  }
+
+  /* The row's "..." button and the context menu */
+
+  .fr-folders-cell--menu {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .fr-folders-menu-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--spacer-4);
+    height: var(--spacer-4);
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-small);
+    background: transparent;
+    color: var(--color-icon-tertiary);
+    cursor: pointer;
+
+    &:hover,
+    &[aria-expanded="true"] {
+      background: var(--color-bg-transparent-hover);
+      color: var(--color-icon);
+    }
+
+    &:focus-visible {
+      outline: var(--accessibility-outline);
+      outline-offset: var(--accessibility-outline-offset);
+    }
+  }
+
+  .fr-folders-row:focus-visible {
+    outline: var(--accessibility-outline);
+    outline-offset: calc(var(--accessibility-outline-offset) * -1);
+  }
+
+  .fr-folders-menu {
+    position: fixed;
+    z-index: var(--z-popup, 100);
+    box-sizing: border-box;
+    min-width: 13rem;
+    max-width: 22rem;
+    padding: var(--spacer-1);
+    border: var(--stroke-width-small) solid var(--color-border-strong);
+    border-radius: var(--radius-medium);
+    background: var(--color-bg);
+    box-shadow: var(--elevation-400-menu-panel);
+    color: var(--color-text);
+    font-size: var(--text-body-medium-font-size);
+    line-height: var(--text-body-medium-line-height);
+  }
+
+  .fr-folders-menu--sub {
+    position: absolute;
+    top: calc(var(--spacer-1) * -1);
+    inset-inline-start: 100%;
+    min-width: 11rem;
+  }
+
+  .fr-folders-menu--flip {
+    inset-inline-start: auto;
+    inset-inline-end: 100%;
+  }
+
+  .fr-folders-menu__entry {
+    position: relative;
+  }
+
+  .fr-folders-menu__group--divided {
+    margin-top: var(--spacer-1);
+    padding-top: var(--spacer-1);
+    border-top: var(--stroke-width-small) solid var(--color-border);
+  }
+
+  .fr-folders-menu__row {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .fr-folders-menu__item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacer-1-5);
+    width: 100%;
+    padding: var(--spacer-1) var(--spacer-2);
+    border: none;
+    border-radius: var(--radius-small);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible,
+    &[aria-expanded="true"] {
+      background: var(--color-bg-secondary-hover);
+      outline: none;
+    }
+
+    &:focus-visible {
+      outline: var(--accessibility-outline);
+      outline-offset: calc(var(--accessibility-outline-offset) * -1);
+    }
+
+    &[aria-disabled="true"] {
+      color: var(--color-text-disabled);
+      cursor: not-allowed;
+    }
+  }
+
+  .fr-folders-menu__label {
+    flex: 1 1 auto;
+  }
+
+  .fr-folders-menu__arrow {
+    display: inline-flex;
+    flex: none;
+    color: var(--color-icon-tertiary);
+  }
+
+  .fr-folders-menu__row:has(.fr-folders-menu__reason) {
+    margin-bottom: var(--spacer-1);
+  }
+
+  .fr-folders-menu__reason {
+    padding: 0 var(--spacer-2) var(--spacer-1-5);
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-small-font-size);
+    line-height: var(--text-body-small-line-height);
+  }
+
+  /* Move mode: an insert marker in every gap */
+
+  .fr-folders-row--marker {
+    min-height: 1.5rem;
+    border-top: none;
+  }
+
+  .fr-folders-row--marker .fr-folders-cell--wide {
+    min-height: 1.5rem;
+  }
+
+  .fr-folders-marker {
+    display: flex;
+    align-items: center;
+    gap: var(--spacer-1-5);
+    width: 100%;
+    min-height: 1.5rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: var(--text-body-small-font-size);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-text);
+    }
+
+    &:focus-visible {
+      outline: var(--accessibility-outline);
+      outline-offset: var(--accessibility-outline-offset);
+      border-radius: var(--radius-small);
+    }
+
+    &[aria-disabled="true"] {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+  }
+
+  .fr-folders-marker__line {
+    flex: 1 1 auto;
+    height: 0;
+    border-top: var(--stroke-width-medium) dashed var(--color-border-strong);
+  }
+
+  .fr-folders-marker:not([aria-disabled="true"]):hover .fr-folders-marker__line,
+  .fr-folders-marker:not([aria-disabled="true"]):focus-visible .fr-folders-marker__line {
+    border-top-color: var(--color-bg-brand);
+  }
+
+  .fr-folders-marker__label {
+    flex: none;
+    order: -2;
+    white-space: nowrap;
+  }
+
+  /* After the label, muted: the reason an off marker gives is read, not hovered. */
+  .fr-folders-marker__reason {
+    flex: 0 1 auto;
+    order: -1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text-secondary);
+  }
+
+  /* The create dialogs */
+
+  .fr-folders-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-3);
+  }
+
+  .fr-folders-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-1);
+  }
+
+  .fr-folders-field__label {
+    padding: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-small-font-size);
+  }
+
+  .fr-folders-field__hint {
+    min-height: var(--text-body-small-line-height);
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-small-font-size);
+    line-height: var(--text-body-small-line-height);
+    overflow-wrap: anywhere;
+  }
+
+  /* An error message is red even where it is also a field hint (the taken-segment line). */
+  .fr-folders-field__hint.fr-folders-error {
+    color: var(--color-text-danger);
+  }
+
+  .fr-folders-input {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: var(--spacer-1-5) var(--spacer-2);
+    border: var(--stroke-width-small) solid var(--color-border-control);
+    border-radius: var(--radius-medium);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font: inherit;
+
+    &:focus-visible {
+      outline: var(--accessibility-outline);
+      outline-offset: var(--accessibility-outline-offset);
+    }
+
+    &:disabled {
+      color: var(--color-text-disabled);
+      cursor: not-allowed;
+    }
+
+    &[aria-invalid="true"] {
+      border-color: var(--color-text-danger);
+    }
+  }
+
+  .fr-folders-slug {
+    display: flex;
+    align-items: center;
+    gap: var(--spacer-1);
+  }
+
+  .fr-folders-slug__link {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--spacer-4);
+    height: var(--spacer-4);
+    padding: 0;
+    border: var(--stroke-width-small) solid var(--color-border);
+    border-radius: var(--radius-small);
+    background: transparent;
+    color: var(--color-icon-tertiary);
+    cursor: pointer;
+
+    &:disabled {
+      color: var(--color-icon-brand);
+      cursor: default;
+    }
+
+    &:not(:disabled):hover {
+      background: var(--color-bg-transparent-hover);
+      color: var(--color-icon);
+    }
+
+    &:focus-visible {
+      outline: var(--accessibility-outline);
+      outline-offset: var(--accessibility-outline-offset);
+    }
+  }
+
+  .fr-folders-parent {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacer-2);
+  }
+
+  .fr-folders-fieldset {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-2);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+  }
+
+  .fr-folders-radios {
+    display: flex;
+    gap: var(--spacer-3);
+
+    label {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacer-1);
+      cursor: pointer;
+    }
+
+    input {
+      margin: 0;
+      accent-color: var(--color-bg-brand);
+    }
+  }
+
+  .fr-folders-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacer-1);
+  }
+
+  .fr-folders-type-chip {
+    padding: var(--spacer-1) var(--spacer-2);
+    border: var(--stroke-width-small) solid var(--color-border-control);
+    border-radius: var(--radius-chip);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--text-body-small-font-size);
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: var(--accessibility-outline);
+      outline-offset: var(--accessibility-outline-offset);
+    }
+  }
+
+  .fr-folders-type-chip--on {
+    border-color: var(--color-bg-brand);
+    background: var(--color-bg-selected);
+  }
+
+  .fr-folders-type-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacer-1);
+
+    &[data-locked="true"] {
+      cursor: not-allowed;
+    }
+  }
+
+  /* The settings drawers and the edit view's sidebar fields */
+
+  .fr-folders-settings {
+    padding: var(--spacer-3);
+  }
+
+  .fr-folders-settings__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacer-2);
+  }
+
+  .fr-folders-history {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-1);
+
+    summary {
+      cursor: pointer;
+    }
+  }
+
+  .fr-folders-history__list {
+    margin: 0;
+    padding-inline-start: var(--spacer-3);
+    font-size: var(--text-body-small-font-size);
+  }
+
+  .fr-folders-sidebar-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-1);
+    margin-bottom: var(--spacer-3);
+  }
+
+  .fr-folders-sidebar-field__title {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-small-font-size);
+  }
+
+  .fr-folders-crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacer-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li + li::before {
+      margin-inline-end: var(--spacer-1);
+      color: var(--color-text-secondary);
+      content: ">";
+    }
+  }
+
+  .fr-folders-warning {
+    margin: 0;
+    padding: var(--spacer-2);
+    border: var(--stroke-width-small) solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background: var(--color-bg-warning);
+    color: var(--color-text);
+    font-size: var(--text-body-small-font-size);
+  }
+
+  /* A root page's segment is not part of its URL: the field is greyed out while the box is ticked. */
+  [data-fr-folders-greyed="true"] {
+    opacity: 0.5;
+  }
+}

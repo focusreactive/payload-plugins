@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["DOM", "DOM.Iterable", "ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowJs": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "types": ["node"],
+    "paths": {
+      "@payload-config": ["./dev/payload.config.ts"],
+      "@focus-reactive/payload-plugin-folders": ["./src/index.ts"],
+      "@focus-reactive/payload-plugin-folders/client": ["./src/exports/client.ts"],
+      "@focus-reactive/payload-plugin-folders/rsc": ["./src/exports/rsc.ts"],
+      "@focus-reactive/payload-plugin-folders/server": ["./src/server/index.ts"]
+    }
+  },
+  "include": ["src", "dev", "tests", "*.ts"],
+  "exclude": ["node_modules", "dist", "dev/.next"]
+}

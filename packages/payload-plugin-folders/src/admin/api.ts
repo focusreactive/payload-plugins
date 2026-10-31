@@ -1,0 +1,429 @@
+import type { MoveResult } from "../core/applyMove.js";
+import type { ExpectedState, MoveAnchor, MovePreview } from "../core/move.js";
+import { rootDraftPendingMessage } from "../core/rootFlip.js";
+import type { FolderId, ItemRef, TreeItem, TreeStatus } from "../types.js";
+
+/** Where the plugin's endpoints live and how to call them. */
+export type FoldersApiContext = {
+  /** The API root including the route prefix, such as `/api` or `https://cms.example.com/api`. */
+  baseUrl: string;
+  /** For tests; the browser's `fetch` by default. */
+  fetchImplementation?: typeof fetch;
+};
+
+export type ChildrenResponse = {
+  hasMore: boolean;
+  items: TreeItem[];
+  nextCursor: string | null;
+  revision: number;
+};
+
+/** `truncated` is true when a collection had more candidates than the search reads. */
+export type SearchResponse = {
+  items: TreeItem[];
+  truncated: boolean;
+};
+
+export type AncestorFolder = { fullPath: string; id: FolderId; name: string };
+
+export type AncestorsResponse = { folders: AncestorFolder[] };
+
+export type RevisionResponse = { revision: number };
+
+/** An endpoint answered with an error status, or did not answer with the expected JSON. */
+export class FoldersApiError extends Error {
+  /** Why a move was refused (`stale`, `forbidden`, ...), when the endpoint says. */
+  readonly reason: string | null;
+  readonly status: number;
+
+  constructor(message: string, status: number, reason: string | null = null) {
+    super(message);
+    this.name = "FoldersApiError";
+    this.reason = reason;
+    this.status = status;
+  }
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+/**
+ * Payload's error body is `{ errors: [{ message }] }`. A validation error's own message only says
+ * which field is invalid, so the first field message in `data.errors` is the better one to show.
+ */
+const messageOf = (body: unknown, status: number): string => {
+  if (isRecord(body) && Array.isArray(body.errors)) {
+    const [first] = body.errors as unknown[];
+    if (isRecord(first) && isRecord(first.data) && Array.isArray(first.data.errors)) {
+      const [field] = first.data.errors as unknown[];
+      if (isRecord(field) && typeof field.message === "string") {
+        return field.message;
+      }
+    }
+    if (isRecord(first) && typeof first.message === "string") {
+      return first.message;
+    }
+  }
+
+  return `The request failed with status ${status}`;
+};
+
+/** The refusal reason a move endpoint puts in `errors[0].data.reason`. */
+const reasonOf = (body: unknown): string | null => {
+  if (isRecord(body) && Array.isArray(body.errors)) {
+    const [first] = body.errors as unknown[];
+    if (isRecord(first) && isRecord(first.data) && typeof first.data.reason === "string") {
+      return first.data.reason;
+    }
+  }
+
+  return null;
+};
+
+const buildQuery = (query: Record<string, string | number | null | undefined>): string => {
+  const parameters = new URLSearchParams();
+  for (const [name, value] of Object.entries(query)) {
+    if (value !== undefined && value !== null && value !== "") {
+      parameters.set(name, String(value));
+    }
+  }
+  const text = parameters.toString();
+
+  return text === "" ? "" : `?${text}`;
+};
+
+const readJsonResponse = async <Response>(response: globalThis.Response): Promise<Response> => {
+  let body: unknown = null;
+  try {
+    body = await response.json();
+  } catch {
+    // The status below says what went wrong when the body is not JSON.
+  }
+  if (!response.ok) {
+    throw new FoldersApiError(messageOf(body, response.status), response.status, reasonOf(body));
+  }
+
+  return body as Response;
+};
+
+const getJson = async <Response>(
+  context: FoldersApiContext,
+  path: string,
+  query: Record<string, string | number | null | undefined> = {},
+  signal?: AbortSignal
+): Promise<Response> => {
+  const send = context.fetchImplementation ?? fetch;
+  const response = await send(`${context.baseUrl}/folders-tree/${path}${buildQuery(query)}`, {
+    credentials: "include",
+    headers: { Accept: "application/json" },
+    method: "GET",
+    signal,
+  });
+
+  return readJsonResponse<Response>(response);
+};
+
+const postJson = async <Response>(
+  context: FoldersApiContext,
+  path: string,
+  body: unknown,
+  signal?: AbortSignal
+): Promise<Response> => {
+  const send = context.fetchImplementation ?? fetch;
+  const response = await send(`${context.baseUrl}/folders-tree/${path}`, {
+    body: JSON.stringify(body),
+    credentials: "include",
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    method: "POST",
+    signal,
+  });
+
+  return readJsonResponse<Response>(response);
+};
+
+export type ChildrenQuery = {
+  cursor?: string | null;
+  limit?: number;
+  locale?: string | null;
+  /** `null` is the top level of the tree. */
+  parent: FolderId | null;
+};
+
+/** One page of the folders and pages directly inside a folder, in tree order. */
+export const fetchChildren = (
+  context: FoldersApiContext,
+  { cursor, limit, locale, parent }: ChildrenQuery,
+  signal?: AbortSignal
+): Promise<ChildrenResponse> =>
+  getJson<ChildrenResponse>(
+    context,
+    "children",
+    { cursor, limit, locale, parent: parent === null ? "root" : String(parent) },
+    signal
+  );
+
+export type SearchQuery = {
+  /** The zoomed folder; `null` is the top level. */
+  folder: FolderId | null;
+  limit?: number;
+  locale?: string | null;
+  query: string;
+  scope?: "all" | "folder";
+  status?: TreeStatus[];
+  /** Collection slugs. */
+  types?: string[];
+};
+
+export const fetchSearch = (
+  context: FoldersApiContext,
+  { folder, limit, locale, query, scope, status, types }: SearchQuery,
+  signal?: AbortSignal
+): Promise<SearchResponse> =>
+  getJson<SearchResponse>(
+    context,
+    "search",
+    {
+      folder: folder === null ? "root" : String(folder),
+      limit,
+      locale,
+      q: query,
+      scope,
+      status: status?.join(","),
+      types: types?.join(","),
+    },
+    signal
+  );
+
+export type AncestorsQuery = { item: ItemRef; locale?: string | null };
+
+/** The folders above an item, the top one first. */
+export const fetchAncestors = (
+  context: FoldersApiContext,
+  { item, locale }: AncestorsQuery,
+  signal?: AbortSignal
+): Promise<AncestorsResponse> =>
+  getJson<AncestorsResponse>(
+    context,
+    "ancestors",
+    { collection: item.collection, id: String(item.id), locale },
+    signal
+  );
+
+/** The number the store polls to learn that the tree changed. */
+export const fetchRevision = (
+  context: FoldersApiContext,
+  signal?: AbortSignal
+): Promise<RevisionResponse> => getJson<RevisionResponse>(context, "revision", {}, signal);
+
+/** One item of a move request; `expected` is what the editor saw, so a changed tree answers 409. */
+export type MoveItemBody = ItemRef & { expected?: ExpectedState };
+
+/**
+ * The body of `POST /move` and `POST /move/preview`: the items, then either a folder (and where in
+ * it) or an item to land after. An `after` item always carries `expected: { parentId }`, the folder
+ * the editor saw it in, so a sibling that moved on makes the move stale instead of landing next to
+ * it in a folder nobody looked at. `redirects: false` is sent only when the editor unticked it.
+ */
+export type MoveBody = {
+  items: MoveItemBody[];
+  redirects?: boolean;
+} & (
+  | { after: MoveAnchor; position?: undefined; toFolder?: undefined }
+  | { after?: undefined; position?: "end" | "start"; toFolder: FolderId | null }
+);
+
+/** What `POST /move` would do, without writing; a move that cannot happen is `ok: false`. */
+export const previewMove = (
+  context: FoldersApiContext,
+  body: MoveBody,
+  signal?: AbortSignal
+): Promise<MovePreview> => postJson<MovePreview>(context, "move/preview", body, signal);
+
+/** Moves the items in one request. A refused move throws a `FoldersApiError` with its reason. */
+export const postMove = (context: FoldersApiContext, body: MoveBody): Promise<MoveResult> =>
+  postJson<MoveResult>(context, "move", body);
+
+export type { MovePreview, MoveResult };
+
+export type SegmentCheckResponse = {
+  /** What holds the path when it is taken: a folder or a page. */
+  conflict?: { kind: "folder" | "page"; path: string };
+  message?: string;
+  ok: boolean;
+};
+
+/** Whether `segment` is free in a folder (`null` is the top level), for the create dialogs. */
+export const fetchCheckSegment = (
+  context: FoldersApiContext,
+  {
+    exclude,
+    locale,
+    parent,
+    segment,
+  }: { exclude?: ItemRef; locale?: string | null; parent: FolderId | null; segment: string },
+  signal?: AbortSignal
+): Promise<SegmentCheckResponse> =>
+  getJson<SegmentCheckResponse>(
+    context,
+    "check-segment",
+    {
+      exclude: exclude === undefined ? undefined : `${exclude.collection}:${exclude.id}`,
+      locale,
+      parent: parent === null ? "root" : String(parent),
+      segment,
+    },
+    signal
+  );
+
+/** The host's "View page" link for a page's path. */
+export const fetchPreviewUrl = (
+  context: FoldersApiContext,
+  { collection, fullPath, locale }: { collection: string; fullPath: string; locale?: string | null }
+): Promise<{ url: string }> =>
+  getJson<{ url: string }>(context, "preview-url", { collection, fullPath, locale });
+
+/**
+ * A write through Payload's own REST routes (`/api/pages/41`, `/api/folders`): the create dialogs
+ * and Set as root page use them, so the collection's hooks, access and validation all apply.
+ * `doc` is what Payload answers with.
+ */
+export const writeDocument = async <Doc = { id: FolderId }>(
+  context: FoldersApiContext,
+  {
+    body,
+    collection,
+    id,
+    query = {},
+  }: {
+    body: unknown;
+    collection: string;
+    /** Present for an update (PATCH), absent for a create (POST). */
+    id?: FolderId;
+    query?: Record<string, string | number | null | undefined>;
+  }
+): Promise<{ doc: Doc }> => {
+  const send = context.fetchImplementation ?? fetch;
+  const response = await send(
+    `${context.baseUrl}/${collection}${id === undefined ? "" : `/${id}`}${buildQuery(query)}`,
+    {
+      body: JSON.stringify(body),
+      credentials: "include",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      method: id === undefined ? "POST" : "PATCH",
+    }
+  );
+
+  return readJsonResponse<{ doc: Doc }>(response);
+};
+
+/**
+ * The page's latest saved state, drafts included, read straight from Payload's REST route. The tree
+ * rows are read earlier and a draft save never bumps the tree revision, so a row's status can be
+ * stale; this is the answer to "is there a draft nobody has published?" right now.
+ */
+export const fetchLatestStatus = async (
+  context: FoldersApiContext,
+  { collection, id }: { collection: string; id: FolderId }
+): Promise<{ _status?: string }> => {
+  const send = context.fetchImplementation ?? fetch;
+  const response = await send(
+    `${context.baseUrl}/${collection}/${id}${buildQuery({ depth: 0, draft: "true" })}`,
+    { credentials: "include", headers: { Accept: "application/json" }, method: "GET" }
+  );
+
+  return readJsonResponse<{ _status?: string }>(response);
+};
+
+/** The refusal of a live save that would publish a newer draft along with the root flag. */
+export const isDraftPendingError = (error: unknown): boolean =>
+  error instanceof FoldersApiError && error.message === rootDraftPendingMessage;
+
+/**
+ * One document as Payload's REST route answers it: the latest version, drafts included (or the live
+ * row with `draft: false`), and only the values the locale has of its own (`fallback-locale=none`),
+ * so a settings form shows what an edit would change and not what falls back.
+ */
+export const fetchDocument = async <Doc>(
+  context: FoldersApiContext,
+  {
+    collection,
+    draft = true,
+    id,
+    locale,
+  }: { collection: string; draft?: boolean; id: FolderId; locale?: string | null }
+): Promise<Doc> => {
+  const send = context.fetchImplementation ?? fetch;
+  const response = await send(
+    `${context.baseUrl}/${collection}/${id}${buildQuery({
+      depth: 0,
+      draft: draft ? "true" : undefined,
+      "fallback-locale": "none",
+      locale,
+    })}`,
+    { credentials: "include", headers: { Accept: "application/json" }, method: "GET" }
+  );
+
+  return readJsonResponse<Doc>(response);
+};
+
+/** How many folders sit anywhere below a folder, for the lock confirmation. */
+export const fetchSubfolderCount = async (
+  context: FoldersApiContext,
+  { foldersSlug, id }: { foldersSlug: string; id: FolderId }
+): Promise<number> => {
+  const send = context.fetchImplementation ?? fetch;
+  const response = await send(
+    `${context.baseUrl}/${foldersSlug}${buildQuery({
+      depth: 0,
+      limit: 1,
+      "select[id]": "true",
+      "where[ancestorIds][contains]": `/${id}/`,
+    })}`,
+    { credentials: "include", headers: { Accept: "application/json" }, method: "GET" }
+  );
+
+  return (await readJsonResponse<{ totalDocs: number }>(response)).totalDocs;
+};
+
+/** The old path of a URL history row. */
+export type UrlHistoryEntry = {
+  createdAt: string;
+  fromPath: string;
+  id: FolderId;
+  kind: "folderPrefix" | "page";
+  locale: string | null;
+};
+
+/** The URL history rows that point at one document, newest first. */
+export const fetchUrlHistory = async (
+  context: FoldersApiContext,
+  { collection, id }: { collection: string; id: FolderId }
+): Promise<UrlHistoryEntry[]> => {
+  const send = context.fetchImplementation ?? fetch;
+  const response = await send(
+    `${context.baseUrl}/folder-redirects${buildQuery({
+      depth: 0,
+      limit: 50,
+      sort: "-createdAt",
+      "where[target.relationTo][equals]": collection,
+      "where[target.value][equals]": String(id),
+    })}`,
+    { credentials: "include", headers: { Accept: "application/json" }, method: "GET" }
+  );
+
+  return (await readJsonResponse<{ docs: UrlHistoryEntry[] }>(response)).docs;
+};
+
+export type FolderPreviewBody = { locale?: string | null; parent?: FolderId | null; slug?: string };
+
+/** What saving a rename of one folder would change, without writing. */
+export const previewFolderEdit = (
+  context: FoldersApiContext,
+  id: FolderId,
+  body: FolderPreviewBody
+): Promise<MovePreview> =>
+  postJson<MovePreview>(context, `folders/${id}/preview`, {
+    ...(body.slug === undefined ? {} : { slug: body.slug }),
+    ...(body.parent === undefined ? {} : { parent: body.parent }),
+    ...(body.locale ? { locale: body.locale } : {}),
+  });
