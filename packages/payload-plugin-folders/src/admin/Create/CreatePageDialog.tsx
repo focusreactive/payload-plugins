@@ -28,7 +28,8 @@ import {
   slugAfterSourceChange,
 } from "./slugState.js";
 import type { SlugState } from "./slugState.js";
-import { localizeNewValues } from "./localizedValues.js";
+import { buildDraftPageRequest, defaultPageFieldNames } from "./localizedValues.js";
+import type { PageFieldNames } from "./localizedValues.js";
 import { useCreateSegmentCheck } from "./useCreateSegmentCheck.js";
 
 // Payload's dialog puts the focus on its heading when it opens, which is no place to start typing:
@@ -60,15 +61,14 @@ export type CreatePageDialogProps = {
   onCreated: (created: { collection: string; id: FolderId; parentId: FolderId | null }) => void;
   /** The collection has no drafts or refused the draft: its drawer takes over with these values. */
   onNeedsDrawer: (request: { collection: string; values: NewPageValues }) => void;
+  /** What each page collection calls its title and segment fields; the request writes under those. */
+  pageFields: Readonly<Record<string, PageFieldNames>>;
   /** One per opening, so the form starts empty every time. */
   session: number;
   store: TreeStore;
   translate: Translate;
   typeLabels: Readonly<Record<string, string>>;
 };
-
-/** The page fields the editor types; spec section 8 says where they are written. */
-const pageTextFields = ["title", "slug"] as const;
 
 const CreatePageContent = ({
   apiContext,
@@ -77,6 +77,7 @@ const CreatePageContent = ({
   initialCollection,
   onCreated,
   onNeedsDrawer,
+  pageFields,
   store,
   translate,
   typeLabels,
@@ -109,7 +110,11 @@ const CreatePageContent = ({
   const existingRoot = existingRootIn(state, folderId);
 
   const locales = useContentLocales();
-  const localizedFields = useLocalizedFieldNames(collection, pageTextFields);
+  const names = pageFields[collection] ?? defaultPageFieldNames;
+  const localizedFields = useLocalizedFieldNames(collection, [
+    names.titleField,
+    names.segmentField,
+  ]);
   const check = useCreateSegmentCheck({
     context: apiContext,
     enabled: !isRoot,
@@ -141,20 +146,18 @@ const CreatePageContent = ({
     setIsSaving(true);
     setFailure(null);
     try {
-      const typed = localizeNewValues({
+      const request = buildDraftPageRequest({
+        folder: values.folder,
+        isFolderRoot: values.isFolderRoot,
         locales,
         localizedFields,
-        values: { title: values.title, slug: values.slug },
+        names,
+        texts: { slug: values.slug, title: values.title },
       });
       const { doc } = await writeDocument(apiContext, {
-        body: {
-          ...typed.body,
-          _status: "draft",
-          folder: values.folder,
-          isFolderRoot: values.isFolderRoot,
-        },
+        body: request.body,
         collection,
-        query: { draft: "true", locale: typed.locale },
+        query: { draft: "true", locale: request.locale },
       });
       closeModal(createPageDialogSlug);
       onCreated({ collection, id: doc.id, parentId: folderId });

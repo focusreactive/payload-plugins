@@ -2,6 +2,8 @@ import { useDocumentDrawer } from "@payloadcms/ui";
 import { useEffect, useRef } from "react";
 
 import type { NewPageValues } from "./CreatePageDialog.js";
+import { defaultPageFieldNames, pageTextValues } from "./localizedValues.js";
+import type { PageFieldNames } from "./localizedValues.js";
 
 /**
  * A collection's own create form in a drawer, with the dialog's four values filled in (spec
@@ -11,11 +13,13 @@ export const PageDrawer = ({
   collection,
   onClose,
   onSaved,
+  pageFields,
   values,
 }: {
   collection: string;
   onClose: () => void;
   onSaved: () => void;
+  pageFields: Readonly<Record<string, PageFieldNames>>;
   values: NewPageValues;
 }) => {
   const [DocumentDrawer, , { closeDrawer, isDrawerOpen, openDrawer }] = useDocumentDrawer({
@@ -38,7 +42,14 @@ export const PageDrawer = ({
 
   return (
     <DocumentDrawer
-      initialData={values}
+      initialData={{
+        folder: values.folder,
+        isFolderRoot: values.isFolderRoot,
+        ...pageTextValues(
+          { slug: values.slug, title: values.title },
+          pageFields[collection] ?? defaultPageFieldNames
+        ),
+      }}
       // Saving a page here must leave the editor on the tree, not follow Payload's redirect to the
       // new page's edit view.
       redirectAfterCreate={false}

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { findLocalizedFields, localizeNewValues } from "../../src/admin/Create/localizedValues.js";
+import {
+  buildDraftPageRequest,
+  defaultPageFieldNames,
+  findLocalizedFields,
+  localizeNewValues,
+  pageTextValues,
+} from "../../src/admin/Create/localizedValues.js";
 
 const folderValues = { name: "Aktuelles", slug: "aktuelles" };
 const localizedNameAndSlug = new Set(["name", "slug"]);
@@ -83,5 +89,56 @@ describe("which fields of a collection are localized", () => {
     ];
 
     expect(findLocalizedFields(fields, ["title"])).toEqual(new Set());
+  });
+});
+
+describe("a new page is written under the collection's own field names", () => {
+  const names = { segmentField: "path", titleField: "heading" };
+  const texts = { slug: "neu", title: "Neu" };
+
+  it("names the typed text by the configured fields, not title and slug", () => {
+    expect(pageTextValues(texts, names)).toEqual({ heading: "Neu", path: "neu" });
+    expect(pageTextValues(texts, defaultPageFieldNames)).toEqual({ slug: "neu", title: "Neu" });
+  });
+
+  it("builds the draft request with the configured names in the default locale", () => {
+    expect(
+      buildDraftPageRequest({
+        folder: 7,
+        isFolderRoot: false,
+        locales: { current: "en", default: "en" },
+        localizedFields: new Set(["heading", "path"]),
+        names,
+        texts,
+      })
+    ).toEqual({
+      body: { _status: "draft", folder: 7, heading: "Neu", isFolderRoot: false, path: "neu" },
+      locale: "en",
+    });
+  });
+
+  it("writes the configured localized fields in both locales for another locale", () => {
+    const request = buildDraftPageRequest({
+      folder: null,
+      isFolderRoot: true,
+      locales: { current: "de", default: "en" },
+      localizedFields: new Set(["heading", "path"]),
+      names,
+      texts,
+    });
+
+    expect(request).toEqual({
+      body: {
+        _status: "draft",
+        folder: null,
+        heading: { de: "Neu", en: "Neu" },
+        isFolderRoot: true,
+        path: { de: "neu", en: "neu" },
+      },
+      locale: "all",
+    });
+    // Nothing is sent under the default names.
+    expect(request.body).not.toHaveProperty("title");
+    expect(request.body).not.toHaveProperty("slug");
   });
 });

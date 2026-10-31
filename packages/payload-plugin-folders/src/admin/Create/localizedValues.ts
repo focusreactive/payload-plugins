@@ -78,3 +78,53 @@ export const findLocalizedFields = (
 
   return found;
 };
+
+/** What the host named a page collection's title and segment fields (`titleField`, `segmentField`). */
+export type PageFieldNames = { segmentField: string; titleField: string };
+
+/** The plugin's defaults, for a collection the tree view settings do not list. */
+export const defaultPageFieldNames: PageFieldNames = { segmentField: "slug", titleField: "title" };
+
+/** What the New page dialog collects, under the names the form uses. */
+export type NewPageTexts = { slug: string; title: string };
+
+/** The typed title and segment under the collection's own field names, not `title` and `slug`. */
+export const pageTextValues = (
+  texts: NewPageTexts,
+  names: PageFieldNames
+): Record<string, string> => ({
+  [names.titleField]: texts.title,
+  [names.segmentField]: texts.slug,
+});
+
+/**
+ * The body and locale of the request that makes a new page as a draft: the typed text under the
+ * collection's own field names, in the locale or locales `localizeNewValues` picks, plus the
+ * folder and the root flag.
+ */
+export const buildDraftPageRequest = ({
+  folder,
+  isFolderRoot,
+  locales,
+  localizedFields,
+  names,
+  texts,
+}: {
+  folder: number | string | null;
+  isFolderRoot: boolean;
+  locales: CreateLocales;
+  localizedFields: ReadonlySet<string>;
+  names: PageFieldNames;
+  texts: NewPageTexts;
+}): { body: Record<string, unknown>; locale: string | null } => {
+  const typed = localizeNewValues({
+    locales,
+    localizedFields,
+    values: pageTextValues(texts, names),
+  });
+
+  return {
+    body: { ...typed.body, _status: "draft", folder, isFolderRoot },
+    locale: typed.locale,
+  };
+};

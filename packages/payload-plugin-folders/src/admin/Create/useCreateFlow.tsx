@@ -11,6 +11,7 @@ import type { TreeStore, TreeStoreState } from "../store.js";
 import { CreateFolderDialog, createFolderDialogSlug } from "./CreateFolderDialog.js";
 import { CreatePageDialog, createPageDialogSlug } from "./CreatePageDialog.js";
 import type { NewPageValues } from "./CreatePageDialog.js";
+import type { PageFieldNames } from "./localizedValues.js";
 import { PageDrawer } from "./PageDrawer.js";
 
 export type CreateFlow = {
@@ -72,6 +73,7 @@ export const useCreateFlow = ({
   draftCollections,
   foldersSlug,
   onOpenPage,
+  pageFields,
   state,
   store,
   translate,
@@ -82,6 +84,7 @@ export const useCreateFlow = ({
   draftCollections: readonly string[];
   foldersSlug: string;
   onOpenPage: (url: string) => void;
+  pageFields: Readonly<Record<string, PageFieldNames>>;
   state: TreeStoreState;
   store: TreeStore;
   translate: Translate;
@@ -173,6 +176,7 @@ export const useCreateFlow = ({
         initialCollection={pageRequest?.collection ?? ""}
         onCreated={handlePageCreated}
         onNeedsDrawer={handleNeedsDrawer}
+        pageFields={pageFields}
         session={pageRequest?.session ?? 0}
         store={store}
         translate={translate}
@@ -184,6 +188,7 @@ export const useCreateFlow = ({
           key={drawerRequest.session}
           onClose={clearDrawer}
           onSaved={() => void refreshAround(drawerRequest.parentId)}
+          pageFields={pageFields}
           values={drawerRequest.values}
         />
       )}

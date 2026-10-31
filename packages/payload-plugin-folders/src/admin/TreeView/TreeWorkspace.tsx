@@ -192,6 +192,7 @@ export const TreeWorkspace = ({
     draftCollections,
     foldersSlug,
     onOpenPage,
+    pageFields,
     state,
     store,
     translate,
