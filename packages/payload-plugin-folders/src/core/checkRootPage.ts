@@ -3,6 +3,7 @@ import type { PayloadRequest } from "payload";
 
 import type { FolderId, ItemRef } from "../types.js";
 import { readFolderRecord } from "./folderRecords.js";
+import { getLocaleCodes } from "./locales.js";
 import { getResolvedOptions } from "./runtime.js";
 import {
   describeRootPageConflict,
@@ -29,6 +30,10 @@ export const checkRootPage = async (
 ): Promise<RootPageCheck> => {
   const { payload } = req;
   const options = getResolvedOptions(payload);
+  const codes = getLocaleCodes(payload.config);
+  if (locale !== undefined && codes.length > 0 && !codes.includes(locale)) {
+    throw new APIError(`"${locale}" is not a locale of this site`, 400, null, true);
+  }
   const folder = parent === null ? null : await readFolderRecord(req, options, parent);
   if (parent !== null && !folder) {
     throw new APIError("This folder no longer exists", 404, null, true);

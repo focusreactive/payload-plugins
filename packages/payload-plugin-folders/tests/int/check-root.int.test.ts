@@ -134,6 +134,11 @@ describe("GET /folders-tree/check-root", () => {
     expect(missing.status).toBe(404);
   });
 
+  it("an unknown locale is 400", async () => {
+    expect((await check("parent=root&locale=fr")).status).toBe(400);
+    expect((await check("parent=root&locale=de")).status).toBe(200);
+  });
+
   it("is for signed-in users only", async () => {
     expect((await check("parent=root", true)).status).toBe(403);
   });
