@@ -73,6 +73,38 @@ export const pageUpdateAccess: Access = async (args) => {
 
 export const folderUpdateAccess: Access = restrictLimitedRole("id", "parent");
 
+/**
+ * `create` access of the dev app: the same limit as `update`, so `editorLimited` may only create
+ * inside its folder subtree (the new document names its folder in `data`; a `Where` answer is not
+ * meaningful for a create and counts as allowed).
+ */
+export const pageCreateAccess: Access = restrictLimitedRole("folder", "folder");
+
+export const folderCreateAccess: Access = restrictLimitedRole("id", "parent");
+
+/**
+ * `delete` access of the dev app: a drafter deletes nothing (a delete takes live URLs down), and
+ * `editorLimited` only what sits inside its folder subtree. The recursive delete (spec section 9)
+ * asks this for every document it removes.
+ */
+const refuseDrafter: Access = ({ req }) => roleOf(req) !== "drafter";
+
+export const pageDeleteAccess: Access = async (args) => {
+  if (!refuseDrafter(args)) {
+    return false;
+  }
+
+  return restrictLimitedRole("folder", "folder")(args);
+};
+
+export const folderDeleteAccess: Access = async (args) => {
+  if (!refuseDrafter(args)) {
+    return false;
+  }
+
+  return restrictLimitedRole("id", "parent")(args);
+};
+
 /** Only an admin sees the repair action (decision 5): every editor passes the default rule. */
 export const adminOnlyRepair = ({ req }: { req: PayloadRequest }): boolean =>
   roleOf(req) === "admin";

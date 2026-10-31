@@ -637,8 +637,9 @@ describe("tree item access and repair", () => {
     const drafter = await createRequestFor("drafter");
     const editor = await createRequestFor("editor");
 
+    // The dev drafter saves drafts but publishes and deletes nothing.
     expect(await getItemAccess({ item: pageRef(tree.pages.contact.id), req: drafter })).toEqual({
-      delete: true,
+      delete: false,
       publish: false,
       update: true,
     });

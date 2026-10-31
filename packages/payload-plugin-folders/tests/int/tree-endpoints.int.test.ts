@@ -566,10 +566,11 @@ describe("GET /folders-tree/children", () => {
       publish: true,
       update: true,
     });
-    // The drafter may save but not publish (the dev role's update refuses `_status: published`).
+    // The drafter may save but not publish (the dev role's update refuses `_status: published`)
+    // and not delete.
     const drafterFlags = await flagsOf(drafter, tree.about.id);
     expect(drafterFlags[`pages:${tree.pages.contact.id}`]).toEqual({
-      delete: true,
+      delete: false,
       publish: false,
       update: true,
     });

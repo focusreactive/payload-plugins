@@ -6,6 +6,7 @@ import { buildRedirectCleanupBeforeDelete } from "../hooks/beforeDelete.js";
 import { buildPageAfterChange } from "../hooks/pages/afterChange.js";
 import {
   buildSegmentBeforeDuplicate,
+  folderBeforeDuplicate,
   resetIsFolderRootOnDuplicate,
   resetOrderKeyOnDuplicate,
   resetStructureRevisionOnDuplicate,
@@ -156,6 +157,7 @@ export const buildPageFields = (
       access: { update: nobody },
       admin: { components: components.folder, position: "sidebar" },
       hasMany: false,
+      ...(options.disabled ? {} : { hooks: { beforeDuplicate: [folderBeforeDuplicate] } }),
       index: true,
       relationTo: toCollectionSlug(options.folders.slug),
     },

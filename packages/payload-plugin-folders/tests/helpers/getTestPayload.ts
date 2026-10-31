@@ -101,7 +101,7 @@ const createPostgresDatabase = async (sharedSchemaName?: string): Promise<TestDa
 
 export type GetTestPayloadOptions = Pick<
   DevConfigOptions,
-  "extraCollections" | "foldersOptions" | "localized"
+  "extraCollections" | "foldersOptions" | "localized" | "trash"
 > & {
   /**
    * Postgres only: boots this instance on the database of an instance already running, as a second
@@ -118,6 +118,7 @@ export const getTestPayload = async ({
   localized,
   sharedWith,
   sqliteTransactions = true,
+  trash,
 }: GetTestPayloadOptions = {}): Promise<TestPayload> => {
   const databaseKind: TestDatabaseKind = process.env.TEST_DB === "postgres" ? "postgres" : "sqlite";
   if (sharedWith && databaseKind !== "postgres") {
@@ -136,6 +137,7 @@ export const getTestPayload = async ({
       extraCollections,
       foldersOptions,
       localized,
+      trash,
     });
     // getPayload caches instances by key and destroy() does not clear the cache, so a shared
     // key would hand a second call in the same file the destroyed first instance.

@@ -364,6 +364,80 @@ export const canReadItem = async ({
 };
 
 /**
+ * The items among `items` the user of `req` may not read, one `read` question per collection, with
+ * the `Where` of an answer tested against the whole batch in one query. A duplicate reads every
+ * document it copies, so one refusal stops the whole copy before anything is written.
+ */
+export const findUnreadableItems = async ({
+  items,
+  req,
+}: {
+  items: ItemRef[];
+  req: PayloadRequest;
+}): Promise<ItemRef[]> => {
+  const nestedRequest = createNestedRequest(req);
+  const idsByCollection = new Map<string, FolderId[]>();
+  for (const item of items) {
+    idsByCollection.set(item.collection, [
+      ...(idsByCollection.get(item.collection) ?? []),
+      item.id,
+    ]);
+  }
+
+  const unreadable: ItemRef[] = [];
+  for (const [collection, ids] of idsByCollection) {
+    const scope = await getReadScope({ collection, nestedRequest, req });
+    if (!scope.isAllowed) {
+      unreadable.push(...ids.map((id) => ({ collection, id })));
+      continue;
+    }
+    if (!scope.where) {
+      continue;
+    }
+    for (let start = 0; start < ids.length; start += 500) {
+      const chunkIds = ids.slice(start, start + 500);
+      const { docs } = await req.payload.db.find({
+        collection: toCollectionSlug(collection),
+        pagination: false,
+        req: nestedRequest,
+        select: { id: true },
+        where: { and: [{ id: { in: chunkIds } }, scope.where] },
+      });
+      const readable = new Set((docs as Array<{ id: FolderId }>).map((doc) => String(doc.id)));
+      unreadable.push(
+        ...chunkIds.filter((id) => !readable.has(String(id))).map((id) => ({ collection, id }))
+      );
+    }
+  }
+
+  return unreadable;
+};
+
+/**
+ * Whether the user of `req` may create a document of `collection` with `data`: the collection's
+ * `create` access, which Payload treats as allowed for anything but `false` (a `Where` answer has no
+ * meaning for a document that does not exist yet). A collection with no such function refuses.
+ */
+export const canCreateIn = async ({
+  collection,
+  data,
+  req,
+}: {
+  collection: string;
+  data: Record<string, unknown>;
+  req: PayloadRequest;
+}): Promise<boolean> => {
+  const access = req.payload.collections[toCollectionSlug(collection)]?.config.access?.create as
+    | Access
+    | undefined;
+  if (!access) {
+    return false;
+  }
+
+  return Boolean(await access({ data, req: createNestedRequest(req), slug: collection } as never));
+};
+
+/**
  * Whether the user of `req` may verify and repair the tree (spec section 9, decision 5):
  * `access.repair` when the host set it, else a user for whom the folders' `update` access passes
  * outright and `access.move` passes. `access.move` is asked with no items, because "every item"

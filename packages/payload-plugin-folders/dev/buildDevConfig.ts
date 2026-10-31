@@ -7,7 +7,12 @@ import { fileURLToPath } from "node:url";
 import { buildConfig } from "payload";
 import type { CollectionConfig, Config } from "payload";
 
-import { adminOnlyRepair, folderUpdateAccess } from "./access/roles.js";
+import {
+  adminOnlyRepair,
+  folderCreateAccess,
+  folderDeleteAccess,
+  folderUpdateAccess,
+} from "./access/roles.js";
 import { Pages } from "./collections/Pages.js";
 import { Posts } from "./collections/Posts.js";
 import { Users } from "./collections/Users.js";
@@ -33,6 +38,8 @@ export type DevConfigOptions = {
   localized?: boolean;
   /** Merged over the dev app's plugin options. */
   foldersOptions?: Partial<FoldersPluginOptions>;
+  /** Turns the trash on for the pages and posts collections, so deletes are soft (tests only). */
+  trash?: boolean;
 };
 
 export const buildDevConfig = ({
@@ -46,6 +53,7 @@ export const buildDevConfig = ({
   extraCollections = [],
   foldersOptions,
   localized = true,
+  trash = false,
 }: DevConfigOptions = {}) =>
   buildConfig({
     admin: {
@@ -60,7 +68,12 @@ export const buildDevConfig = ({
       },
       user: "users",
     },
-    collections: [Pages, Posts, Users, ...extraCollections],
+    collections: [
+      trash ? { ...Pages, trash: true } : Pages,
+      trash ? { ...Posts, trash: true } : Posts,
+      Users,
+      ...extraCollections,
+    ],
     db,
     email: testEmailAdapter,
     ...(localized
@@ -78,7 +91,12 @@ export const buildDevConfig = ({
         access: { repair: adminOnlyRepair, ...foldersOptions?.access },
         folders: {
           ...foldersOptions?.folders,
-          access: { update: folderUpdateAccess, ...foldersOptions?.folders?.access },
+          access: {
+            create: folderCreateAccess,
+            delete: folderDeleteAccess,
+            update: folderUpdateAccess,
+            ...foldersOptions?.folders?.access,
+          },
         },
       }),
       redirectsPlugin({ collections: ["pages", "posts"] }),
