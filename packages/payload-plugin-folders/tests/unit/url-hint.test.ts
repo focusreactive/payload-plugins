@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { composeFullPath } from "../../src/core/paths.js";
-import { urlChangeOf } from "../../src/admin/Settings/urlHint.js";
+import { fullPathHintOf, urlChangeOf } from "../../src/admin/Settings/urlHint.js";
 
 describe("composeFullPath, a page's path from its form values", () => {
   it("joins the folder's path and the segment", () => {
@@ -73,5 +73,54 @@ describe("urlChangeOf, the edit view's 'URL will change from /a/b to /a/c' hint"
     const root = { ...stored, isFolderRoot: true };
 
     expect(urlChangeOf(root, { ...root, segment: "other" })).toBeNull();
+  });
+});
+
+describe("fullPathHintOf, the Full URL hint against the live row", () => {
+  const edited = { folderPath: "/blog", isFolderRoot: false, segment: "second" };
+
+  it("says where a page nobody has published will be published", () => {
+    expect(fullPathHintOf({ edited, isPublished: false, livePath: null })).toEqual({
+      kind: "publishAt",
+      to: "/blog/second",
+    });
+  });
+
+  it("says nothing for an unpublished page that has no segment yet", () => {
+    expect(
+      fullPathHintOf({
+        edited: { ...edited, segment: "" },
+        isPublished: false,
+        livePath: null,
+      })
+    ).toBeNull();
+  });
+
+  it("compares a published page with its live URL, so an autosaved draft segment still shows", () => {
+    // The form was reloaded with the draft's segment already in it: nothing is dirty, and the live
+    // URL is still the old one.
+    expect(fullPathHintOf({ edited, isPublished: true, livePath: "/blog/first" })).toEqual({
+      from: "/blog/first",
+      kind: "change",
+      to: "/blog/second",
+    });
+  });
+
+  it("says nothing when the form holds the live URL", () => {
+    expect(fullPathHintOf({ edited, isPublished: true, livePath: "/blog/second" })).toBeNull();
+  });
+
+  it("follows the root flag: a live page ticked as root moves to its folder's path", () => {
+    expect(
+      fullPathHintOf({
+        edited: { ...edited, isFolderRoot: true },
+        isPublished: true,
+        livePath: "/blog/first",
+      })
+    ).toEqual({ from: "/blog/first", kind: "change", to: "/blog" });
+  });
+
+  it("says nothing for a live page that has no path to change from", () => {
+    expect(fullPathHintOf({ edited, isPublished: true, livePath: null })).toBeNull();
   });
 });

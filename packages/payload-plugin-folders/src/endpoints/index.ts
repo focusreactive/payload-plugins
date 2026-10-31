@@ -2,6 +2,7 @@ import type { Endpoint } from "payload";
 
 import type { ResolvedOptions } from "../types.js";
 import { buildAncestorsEndpoint } from "./ancestors.js";
+import { buildCheckRootPageEndpoint } from "./checkRootPage.js";
 import { buildCheckSegmentEndpoint } from "./checkSegment.js";
 import { buildChildrenEndpoint } from "./children.js";
 import { buildFolderPreviewEndpoint } from "./folderPreview.js";
@@ -18,6 +19,7 @@ export const buildFoldersEndpoints = (options: ResolvedOptions): Endpoint[] => [
   buildFolderPreviewEndpoint(options),
   buildRevisionEndpoint(),
   buildCheckSegmentEndpoint(options),
+  buildCheckRootPageEndpoint(options),
   buildChildrenEndpoint(options),
   buildSearchEndpoint(options),
   buildAncestorsEndpoint(options),

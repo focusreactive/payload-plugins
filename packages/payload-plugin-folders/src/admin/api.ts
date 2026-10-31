@@ -275,6 +275,37 @@ export const fetchCheckSegment = (
     signal
   );
 
+export type RootCheckResponse = {
+  /** The page that holds, or is about to hold, the root page place of the folder. */
+  conflict?: { path: string; title: string };
+  message?: string;
+  ok: boolean;
+};
+
+/**
+ * Whether another page already is, or in its latest version is about to be, the root page of a
+ * folder (`null` is the top level): the edit view's draft warning and its disabled checkbox.
+ */
+export const fetchCheckRoot = (
+  context: FoldersApiContext,
+  {
+    exclude,
+    locale,
+    parent,
+  }: { exclude?: ItemRef; locale?: string | null; parent: FolderId | null },
+  signal?: AbortSignal
+): Promise<RootCheckResponse> =>
+  getJson<RootCheckResponse>(
+    context,
+    "check-root",
+    {
+      exclude: exclude === undefined ? undefined : `${exclude.collection}:${exclude.id}`,
+      locale,
+      parent: parent === null ? "root" : String(parent),
+    },
+    signal
+  );
+
 /** The host's "View page" link for a page's path. */
 export const fetchPreviewUrl = (
   context: FoldersApiContext,
@@ -389,23 +420,31 @@ export const isPageChangedError = (error: unknown): boolean =>
 /**
  * One document as Payload's REST route answers it: the latest version, drafts included (or the live
  * row with `draft: false`), and only the values the locale has of its own (`fallback-locale=none`),
- * so a settings form shows what an edit would change and not what falls back.
+ * so a settings form shows what an edit would change and not what falls back. `fallback: true` reads
+ * what the locale shows, which is what its URL is made of.
  */
 export const fetchDocument = async <Doc>(
   context: FoldersApiContext,
   {
     collection,
     draft = true,
+    fallback = false,
     id,
     locale,
-  }: { collection: string; draft?: boolean; id: FolderId; locale?: string | null }
+  }: {
+    collection: string;
+    draft?: boolean;
+    fallback?: boolean;
+    id: FolderId;
+    locale?: string | null;
+  }
 ): Promise<Doc> => {
   const send = context.fetchImplementation ?? fetch;
   const response = await send(
     `${context.baseUrl}/${collection}/${id}${buildQuery({
       depth: 0,
       draft: draft ? "true" : undefined,
-      "fallback-locale": "none",
+      "fallback-locale": fallback ? undefined : "none",
       locale,
     })}`,
     { credentials: "include", headers: { Accept: "application/json" }, method: "GET" }

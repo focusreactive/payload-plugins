@@ -314,22 +314,31 @@ export const describeMissingSegment = (defaultLocale: string): string =>
 
 export type RootPageConflict = { title: string };
 
-/** Rule 3 of spec section 2.6: another page already marked as the root page of the folder. */
+/**
+ * Rule 3 of spec section 2.6: another page already marked as the root page of the folder.
+ *
+ * `published` counts main rows of pages that are live, the rule a publish binds to. `latest` is the
+ * draft warning of the edit view (decision 10): any main row marked as root, and, in a collection
+ * with drafts, any page whose latest version is marked, so a root that exists only as an unpublished
+ * draft counts too.
+ */
 export const findRootPageConflict = async ({
   folder,
   options,
   req,
+  scope = "published",
   self,
 }: {
   folder: FolderRecord | null;
   options: ResolvedOptions;
   req: PayloadRequest;
+  scope?: "latest" | "published";
   self: PageRef | null;
 }): Promise<RootPageConflict | null> => {
   const { payload } = req;
 
   for (const page of Object.values(options.collections)) {
-    const publishedWhere = buildPublishedWhere(payload, page.slug);
+    const publishedWhere = scope === "published" ? buildPublishedWhere(payload, page.slug) : null;
     const clash = await payload.db.find({
       collection: toCollectionSlug(page.slug),
       limit: 1,
@@ -345,9 +354,30 @@ export const findRootPageConflict = async ({
         ],
       },
     });
-    const [other] = clash.docs as Array<{ id: FolderId }>;
-    if (other) {
-      return { title: await readTitle(req, page, other.id, getPageDefaultLocale(payload)) };
+    let other = (clash.docs as Array<{ id: FolderId }>)[0]?.id;
+    if (
+      other === undefined &&
+      scope === "latest" &&
+      payload.collections[toCollectionSlug(page.slug)]?.config.versions?.drafts
+    ) {
+      const versions = await payload.db.findVersions({
+        collection: toCollectionSlug(page.slug),
+        limit: 1,
+        pagination: false,
+        req,
+        where: {
+          and: [
+            { latest: { equals: true } },
+            { "version.folder": { equals: folder?.id ?? null } },
+            { "version.isFolderRoot": { equals: true } },
+            ...(self?.collection === page.slug ? [{ parent: { not_equals: self.id } }] : []),
+          ],
+        },
+      });
+      other = (versions.docs as Array<{ parent: FolderId }>)[0]?.parent;
+    }
+    if (other !== undefined) {
+      return { title: await readTitle(req, page, other, getPageDefaultLocale(payload)) };
     }
   }
 

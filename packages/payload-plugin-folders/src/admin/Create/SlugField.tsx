@@ -47,6 +47,8 @@ export const SlugField = ({
   onChange,
   onRelink,
   parentPath,
+  placeholder,
+  readOnly = false,
   status,
   translate,
   value,
@@ -61,6 +63,10 @@ export const SlugField = ({
   onRelink: () => void;
   /** The path of the folder it goes in, `/` for the top level, for the URL under the field. */
   parentPath: string;
+  /** What an empty field shows: the default language's segment, in the settings forms. */
+  placeholder?: string;
+  /** Not editable for now, but still focusable: the dialog's field while its starting value loads. */
+  readOnly?: boolean;
   status: SegmentStatus;
   translate: Translate;
   value: string;
@@ -83,6 +89,8 @@ export const SlugField = ({
           disabled={disabled}
           id={inputId}
           onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(event.target.value)}
+          placeholder={placeholder}
+          readOnly={readOnly}
           spellCheck={false}
           type="text"
           value={value}

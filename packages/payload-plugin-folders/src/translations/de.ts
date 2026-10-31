@@ -41,6 +41,8 @@ export const de: FoldersTranslations = {
     confirmUrlsChange_one: "{{count}} veröffentlichte URL ändert sich",
     confirmUrlsChange_other: "{{count}} veröffentlichte URLs ändern sich",
     confirmWarningsHeading: "Hinweis",
+    conflictWarningRoot:
+      "{{title}} ist bereits die Stammseite von {{path}}; das Veröffentlichen dieser Seite als Stammseite schlägt fehl, bis diese zurückgesetzt wird.",
     conflictWarningFolder:
       "Ein Ordner verwendet bereits {{path}}; das Veröffentlichen schlägt fehl, bis einer von beiden geändert wird.",
     conflictWarningPage:
@@ -98,6 +100,7 @@ export const de: FoldersTranslations = {
     folderOnlyTypes: "Ordner, nur {{types}}",
     fullPathCopy: "Kopieren",
     fullPathWillChange: "Die URL ändert sich beim Veröffentlichen von {{from}} zu {{to}}",
+    fullPathWillPublish: "Wird veröffentlicht unter {{to}}",
     itemsSelected_one: "{{count}} Eintrag ausgewählt",
     itemsSelected_other: "{{count}} Einträge ausgewählt",
     loadError: "Dieser Ordner konnte nicht geladen werden",
@@ -108,6 +111,8 @@ export const de: FoldersTranslations = {
     locationMoveFailed: "Der Verschieben-Dialog konnte nicht geöffnet werden",
     locationRoot: "Inhalt",
     locationTitle: "Ort",
+    lockCountFailed:
+      "Die Unterordner, die diese Sperre betrifft, konnten nicht gezählt werden, daher wurde nichts gespeichert. Bitte erneut versuchen.",
     lockConfirmBody_one: "Damit werden die Seitentypen von {{count}} Unterordner festgelegt.",
     lockConfirmBody_other: "Damit werden die Seitentypen von {{count}} Unterordnern festgelegt.",
     lockConfirmButton: "Seitentypen sperren",

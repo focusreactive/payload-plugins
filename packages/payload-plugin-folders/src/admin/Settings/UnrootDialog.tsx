@@ -7,7 +7,7 @@ import {
   DialogModal,
   useModal,
 } from "@payloadcms/ui";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import type { FolderId } from "../../types.js";
@@ -64,6 +64,9 @@ const UnrootContent = ({
   const { closeModal } = useModal();
   const formId = useId();
   const [segment, setSegment] = useState("");
+  // The starting segment is looked up asynchronously. Once the editor has typed, a late answer (or
+  // a second lookup after the parent rendered with a new `apiContext`) must not overwrite it.
+  const hasEdited = useRef(false);
   const [isChoosing, setIsChoosing] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
@@ -88,12 +91,12 @@ const UnrootContent = ({
           storedSlug,
           title,
         });
-        if (isCurrent) {
+        if (isCurrent && !hasEdited.current) {
           setSegment(chosen);
         }
       } catch {
         // The field stays editable and its own check reports what is wrong.
-        if (isCurrent) {
+        if (isCurrent && !hasEdited.current) {
           setSegment(storedSlug ?? "");
         }
       } finally {
@@ -152,9 +155,15 @@ const UnrootContent = ({
               inputId={`${formId}-segment`}
               isLinked={false}
               linkable={false}
-              onChange={setSegment}
+              onChange={(value) => {
+                hasEdited.current = true;
+                setSegment(value);
+              }}
               onRelink={() => undefined}
               parentPath={request.folderPath}
+              // The starting value is still on its way: typing now would be replaced under the
+              // editor's hands when it lands.
+              readOnly={isChoosing}
               status={check}
               translate={translate}
               value={segment}

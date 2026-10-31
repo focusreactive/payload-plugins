@@ -142,6 +142,209 @@ test("unticking root always opens the dialog pre-filled with the stored slug", a
   ]);
 });
 
+/** A published root page of a folder, made through the REST API. */
+const createRootPage = async (
+  request: APIRequestContext,
+  data: { folder: number; slug: string; title: string }
+): Promise<number> => {
+  const response = await request.post("/api/pages", {
+    data: { _status: "published", isFolderRoot: true, ...data },
+  });
+  expect(response.ok()).toBe(true);
+
+  return ((await response.json()) as { doc: { id: number } }).doc.id;
+};
+
+test("the segment chosen in the un-root dialog survives slow form-state round trips", async ({
+  page,
+  request,
+}) => {
+  const folderId = await addFolder(request, "Slow State Folder");
+  const rootId = await createRootPage(request, {
+    folder: folderId,
+    slug: "start-here",
+    title: "Slow State Landing",
+  });
+  // The form-state requests are server actions posted to the edit view's URL. Held back, one that
+  // was sent before the dialog closed comes back after it, which used to put the stored segment back.
+  await page.route("**/admin/collections/pages/**", async (route) => {
+    if (route.request().method() === "POST") {
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+    }
+    await route.continue();
+  });
+  await openEditView(page, "pages", rootId);
+
+  const checkbox = page.getByTestId("folder-root-field").getByRole("checkbox");
+  await checkbox.click();
+  const dialog = page.getByRole("dialog").filter({ has: page.getByTestId("unroot-form") });
+  await dialog.getByTestId("segment-input").fill("front-door");
+  await expect(dialog.getByTestId("segment-status")).toHaveAttribute("data-state", "ok");
+  await dialog.getByRole("button", { exact: true, name: "Unset root page" }).click();
+
+  await expect(checkbox).not.toBeChecked();
+  await expect(segmentInput(page)).toHaveValue("front-door");
+  // The round trips that were in flight have all landed by now.
+  await page.waitForTimeout(4000);
+  await expect(segmentInput(page)).toHaveValue("front-door");
+  await expect(checkbox).not.toBeChecked();
+  await page.getByRole("button", { name: "Publish in en" }).click();
+  await expect(page.getByText("Updated successfully")).toBeVisible();
+  expect(await readPage(request, rootId)).toMatchObject({
+    isFolderRoot: false,
+    slug: "front-door",
+  });
+});
+
+test("unticking root waits for the page's folder to be known, so the dialog never asks about the top level", async ({
+  page,
+  request,
+}) => {
+  const folderId = await addFolder(request, "Located Root Folder");
+  const rootId = await createRootPage(request, {
+    folder: folderId,
+    slug: "locate-me",
+    title: "Located Root Page",
+  });
+  // The folder comes from the ancestors request; held back, the box starts out with no location.
+  await page.route("**/api/folders-tree/ancestors*", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+    await route.continue();
+  });
+  await page.goto(`/admin/collections/pages/${rootId}`);
+
+  const checkbox = page.getByTestId("folder-root-field").getByRole("checkbox");
+  await expect(checkbox).toBeChecked();
+  await expect(checkbox).toBeDisabled();
+  // Once the location is known the box works, and the dialog names the page's own folder.
+  await expect(checkbox).toBeEnabled();
+  await checkbox.click();
+  const dialog = page.getByRole("dialog").filter({ has: page.getByTestId("unroot-form") });
+  await expect(dialog.getByTestId("unroot-url")).toHaveText(
+    "The page's URL becomes /located-root-folder/locate-me"
+  );
+});
+
+test("a draft that ticks root over a folder that already has a root page shows the warning", async ({
+  page,
+  request,
+}) => {
+  const folderId = await addFolder(request, "Root Clash Folder");
+  await createRootPage(request, { folder: folderId, slug: "alpha-root", title: "Alpha Root" });
+  const draftId = await createPage(request, {
+    folder: folderId,
+    slug: "beta-draft",
+    status: "draft",
+    title: "Beta Draft",
+  });
+  // A draft save passes the root page rule (decision 10): the warning is the edit view's job.
+  const saved = await request.patch(`/api/pages/${draftId}?draft=true&depth=0`, {
+    data: { _status: "draft", isFolderRoot: true },
+  });
+  expect(saved.ok()).toBe(true);
+
+  await openEditView(page, "pages", draftId);
+
+  await expect(page.getByTestId("folder-root-field").getByRole("checkbox")).toBeChecked();
+  await expect(page.getByTestId("draft-root-conflict")).toHaveText(
+    "Alpha Root is already the root page of /root-clash-folder; publishing this page as the root page will fail until that is unset."
+  );
+});
+
+test("the root checkbox is disabled, with the name of the page that already is the folder's root", async ({
+  page,
+  request,
+}) => {
+  const folderId = await addFolder(request, "Taken Root Folder");
+  await createRootPage(request, { folder: folderId, slug: "gamma-root", title: "Gamma Root" });
+  const otherId = await createPage(request, {
+    folder: folderId,
+    slug: "delta-page",
+    title: "Delta Page",
+  });
+
+  await openEditView(page, "pages", otherId);
+
+  const field = page.getByTestId("folder-root-field");
+  await expect(field.getByTestId("root-taken")).toHaveText("Gamma Root is already the root page");
+  await expect(field.getByRole("checkbox")).toBeDisabled();
+});
+
+test("a refused publish of the root flag shows the server's reason under the checkbox", async ({
+  page,
+  request,
+}) => {
+  const folderId = await addFolder(request, "Refused Root Folder");
+  const otherId = await createPage(request, {
+    folder: folderId,
+    slug: "epsilon-page",
+    title: "Epsilon Page",
+  });
+  const rootChecked = page.waitForResponse((response) =>
+    response.url().includes("/api/folders-tree/check-root")
+  );
+  await openEditView(page, "pages", otherId);
+  await rootChecked;
+  const checkbox = page.getByTestId("folder-root-field").getByRole("checkbox");
+  await expect(checkbox).toBeEnabled();
+  // Someone else makes another page the root page after this view loaded, so the box is still on offer.
+  await createRootPage(request, { folder: folderId, slug: "zeta-root", title: "Zeta Root" });
+
+  await checkbox.click();
+  await page.getByRole("button", { name: "Publish in en" }).click();
+
+  await expect(page.getByTestId("root-error")).toHaveText(
+    "Zeta Root is already the root page of /refused-root-folder. Unset it first."
+  );
+  expect(await readPage(request, otherId)).toMatchObject({ isFolderRoot: false });
+});
+
+test("a page nobody has published says where it will be published", async ({ page, request }) => {
+  const folderId = await addFolder(request, "Unpublished Hint Folder");
+  const draftId = await createPage(request, {
+    folder: folderId,
+    slug: "not-yet",
+    status: "draft",
+    title: "Not Yet Page",
+  });
+
+  await openEditView(page, "pages", draftId);
+
+  await expect(page.getByTestId("url-will-publish")).toHaveText(
+    "Will be published at /unpublished-hint-folder/not-yet"
+  );
+  await expect(page.getByTestId("url-will-change")).toHaveCount(0);
+  await segmentInput(page).fill("sooner-or-later");
+  await expect(page.getByTestId("url-will-publish")).toHaveText(
+    "Will be published at /unpublished-hint-folder/sooner-or-later"
+  );
+});
+
+test("a segment that was autosaved as a draft still shows the change from the live URL after a reload", async ({
+  page,
+  request,
+}) => {
+  const folderId = await addFolder(request, "Autosaved Hint Folder");
+  const pageId = await createPage(request, {
+    folder: folderId,
+    slug: "live-name",
+    title: "Autosaved Hint Page",
+  });
+  const saved = await request.patch(`/api/pages/${pageId}?draft=true&depth=0`, {
+    data: { _status: "draft", slug: "draft-name" },
+  });
+  expect(saved.ok()).toBe(true);
+
+  await openEditView(page, "pages", pageId);
+
+  // The form loads with the draft's segment, so nothing is dirty; the page is still live at the old URL.
+  await expect(segmentInput(page)).toHaveValue("draft-name");
+  await expect(page.getByTestId("full-path")).toHaveText("/autosaved-hint-folder/live-name");
+  await expect(page.getByTestId("url-will-change")).toHaveText(
+    "URL will change from /autosaved-hint-folder/live-name to /autosaved-hint-folder/draft-name on publish"
+  );
+});
+
 test("editing the slug shows the URL will change hint", async ({ page, request }) => {
   const folderId = await addFolder(request, "Hint Fields Folder");
   const pageId = await createPage(request, {

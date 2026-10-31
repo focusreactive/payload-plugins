@@ -42,6 +42,8 @@ export const en = {
     confirmUrlsChange_one: "{{count}} published URL will change",
     confirmUrlsChange_other: "{{count}} published URLs will change",
     confirmWarningsHeading: "Heads up",
+    conflictWarningRoot:
+      "{{title}} is already the root page of {{path}}; publishing this page as the root page will fail until that is unset.",
     conflictWarningFolder:
       "A folder already uses {{path}}; publishing will fail until one of them changes.",
     conflictWarningPage:
@@ -96,6 +98,7 @@ export const en = {
     folderOnlyTypes: "Folder, only {{types}}",
     fullPathCopy: "Copy",
     fullPathWillChange: "URL will change from {{from}} to {{to}} on publish",
+    fullPathWillPublish: "Will be published at {{to}}",
     itemsSelected_one: "{{count}} item selected",
     itemsSelected_other: "{{count}} items selected",
     loadError: "Could not load this folder",
@@ -106,6 +109,8 @@ export const en = {
     locationMoveFailed: "Could not open the Move dialog",
     locationRoot: "Content",
     locationTitle: "Location",
+    lockCountFailed:
+      "Could not count the subfolders this lock reaches, so nothing was saved. Try again.",
     lockConfirmBody_one: "This sets the page types of {{count}} subfolder.",
     lockConfirmBody_other: "This sets the page types of {{count}} subfolders.",
     lockConfirmButton: "Lock page types",
