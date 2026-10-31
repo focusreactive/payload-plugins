@@ -1,0 +1,5 @@
+GET /api/folders-tree/resolve?path=/aktuelles/team&locale=de (signed-in admin)
+HTTP/1.1 200 OK
+content-type: application/json
+
+{"alternates":{"en":"/blog/team","de":"/aktuelles/team"},"collection":"pages","doc":{"id":13,"title":"Team","slug":"team","folder":{"id":6,"name":"Aktuelles","slug":"aktuelles","parent":null,"orderKey":"9x","fullPath":"/aktuelles","ancestorIds":"/","depth":1,"structureRevision":0,"allowedTypes":[],"defaultType":null,"lockSubfolderTypes":false,"typesLockedBy":null,"updatedAt":"2026-10-31T22:35:07.370Z","createdAt":"2026-10-31T22:35:07.365Z"},"orderKey":"9y","structureRevision":0,"isFolderRoot":false,"pathSegment":"team","updatedAt":"2026-10-31T22:35:07.415Z","createdAt":"2026-10-31T22:35:07.406Z","_status":"published","blocks":[],"folderPath":"/aktuelles","fullPath":"/aktuelles/team"},"fullPath":"/aktuelles/team","locale":"de","type":"page"}

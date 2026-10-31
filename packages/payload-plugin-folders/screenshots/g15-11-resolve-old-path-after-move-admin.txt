@@ -1,0 +1,5 @@
+GET /api/folders-tree/resolve?path=/products/shoes/running&locale=en (old path after move, signed-in admin)
+HTTP/1.1 200 OK
+content-type: application/json
+
+{"status":301,"to":"/shoes/running","type":"redirect"}

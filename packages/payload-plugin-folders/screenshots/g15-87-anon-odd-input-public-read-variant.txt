@@ -1,0 +1,55 @@
+Odd inputs, anonymous, public-read variant (:4079). Request, status, body (200 chars).
+## resolve?path=//
+HTTP 200
+{"alternates":{"en":"/","de":"/"},"collection":"pages","doc":{"id":16,"title":"Home","slug":"home","folder":null,"orderKey":"9w","structureRevision":0
+## resolve?path=//blog//team
+HTTP 200
+{"alternates":{"en":"/blog/team","de":"/aktuelles/team"},"collection":"pages","doc":{"id":13,"title":"Team","slug":"team","folder":{"id":6,"name":"Blo
+## resolve?path=/blog%252Fteam
+HTTP 200
+{"alternates":{"en":"/blog/team","de":"/aktuelles/team"},"collection":"pages","doc":{"id":13,"title":"Team","slug":"team","folder":{"id":6,"name":"Blo
+## resolve?path=/blog/../company
+HTTP 404
+{"type":"notFound"}
+## resolve?path=/../../etc/passwd
+HTTP 404
+{"type":"notFound"}
+## resolve?path=/blog&locale=xx
+HTTP 400
+{"errors":[{"message":"`locale` is not a configured locale"}]}
+## resolve?path=/blog&locale=all
+HTTP 400
+{"errors":[{"message":"`locale` is not a configured locale"}]}
+## resolve?path=/BLOG/Team
+HTTP 200
+{"status":301,"to":"/blog/team","type":"redirect"}
+## resolve?path=/blog/<5000 x a>
+HTTP 404 in 0.004912s
+{"type":"notFound"}
+## resolve?path=/<2000 x a/>
+HTTP 404 in 0.032218s
+{"type":"notFound"}
+## resolve?path=/blog&depth=10 (max depth, anonymous)
+HTTP 200
+{"alternates":{"en":"/blog","de":"/aktuelles"},"collection":"pages","doc":{"id":15,"title":"Blog Home","slug":"blog-home","folder":{"id":6,"name":"Blo
+## paths?under=/blog/../company
+HTTP 200
+{"docs":[],"hasNextPage":false,"page":1}
+## paths?under=/secret-renamed (folder with only drafts)
+HTTP 200
+{"docs":[],"hasNextPage":false,"page":1}
+## paths?under=/secret-renamed&draft=true
+HTTP 200
+{"docs":[],"hasNextPage":false,"page":1}
+## tree?root=11 (folder with only drafts)
+HTTP 200
+{"nodes":[]}
+## tree?root=11&draft=true&includeEmptyFolders=true
+HTTP 200
+{"nodes":[]}
+## tree?root=1 (empty folder, includeEmptyFolders=true anonymous)
+HTTP 200
+{"nodes":[]}
+## tree?root=abc
+HTTP 400
+{"errors":[{"message":"root must be a positive whole number"}]}

@@ -1,0 +1,5 @@
+GET /api/folders-tree/resolve?path=/company/press-kit&locale=en (never-published page, no draft flag, signed-in admin)
+HTTP/1.1 404 Not Found
+content-type: application/json
+
+{"type":"notFound"}

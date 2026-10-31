@@ -1,0 +1,22 @@
+Uniqueness per locale. Tree: folder 6 (en blog, de aktuelles) holds folder 8 (en careers, de jobs). Folder 9 at root (en/de fallback-probe, de falls back). Signed-in admin.
+## U1 POST folder at root, en slug fallback-probe (same en segment as folder 9)
+{"errors":[{"name":"ValidationError","data":{"collection":"folders","errors":[{"locale":"en","message":"/fallback-probe is already used by another folder","path":"slug"}]},"message":"The following field is invalid: slug"}]}
+HTTP 400
+## U2 POST folder under 6 with locale=all slug {en: other-two, de: jobs} (de clash with folder 8)
+{"errors":[{"name":"ValidationError","data":{"collection":"folders","errors":[{"locale":"de","message":"/aktuelles/jobs is already used by another folder","path":"slug"}]},"message":"The following field is invalid: slug"}]}
+HTTP 400
+## U3 POST folder under 6 en only, slug jobs (de falls back to jobs, clashes with folder 8 de jobs)
+{"errors":[{"name":"ValidationError","data":{"collection":"folders","errors":[{"locale":"de","message":"/aktuelles/jobs is already used by another folder","path":"slug"}]},"message":"The following field is invalid: slug"}]}
+HTTP 400
+## U4 POST folder under 6 en only, slug careers (en clash with folder 8 en careers)
+{"errors":[{"name":"ValidationError","data":{"collection":"folders","errors":[{"locale":"en","message":"/blog/careers is already used by another folder","path":"slug"}]},"message":"The following field is invalid: slug"}]}
+HTTP 400
+## U5 POST folder under 6 en only, slug stellenangebote (old en slug of folder 8, free now; de falls back and is also free)
+{"doc":{"id":10,"name":"Old Name Reuse","slug":"stellenangebote","parent":6,"orderKey":"9u","fullPath":"/blog/stellenangebote","ancestorIds":"/6/","depth":2,"structureRevision":0,"allowedTypes":[],"defaultType":null,"lockSubfolderTypes":false,"typesLockedBy":null,"createdBy":{"relationTo":"users","v
+HTTP 201
+## U6 POST folder under 6 en slug team (page /blog/team exists published in en)
+{"errors":[{"name":"ValidationError","data":{"collection":"folders","errors":[{"locale":"en","message":"/blog/team is already used by a page","path":"slug"},{"locale":"de","message":"/aktuelles/team is already used by a page","path":"slug"}]},"message":"The following fields are invalid: [en] slug, [de] slug"}]}
+HTTP 400
+## U7 POST folder under 6 de only slug-value hallo-welt via locale=all {en: fresh-en, de: hallo-welt} (page de /aktuelles/hallo-welt exists)
+{"errors":[{"name":"ValidationError","data":{"collection":"folders","errors":[{"locale":"de","message":"/aktuelles/hallo-welt is already used by a page","path":"slug"}]},"message":"The following field is invalid: slug"}]}
+HTTP 400

@@ -1,0 +1,5 @@
+GET /api/folders-tree/paths?under=/blog&locale=en (signed-in admin)
+HTTP/1.1 200 OK
+content-type: application/json
+
+{"docs":[{"collection":"pages","fullPath":"/blog","id":15,"locale":"en","updatedAt":"2026-10-31T22:35:07.446Z"},{"collection":"posts","fullPath":"/blog/2026/new-year","id":2,"locale":"en","updatedAt":"2026-10-31T22:35:07.388Z"},{"collection":"posts","fullPath":"/blog/2026/spring-update","id":1,"locale":"en","updatedAt":"2026-10-31T22:35:07.382Z"},{"collection":"pages","fullPath":"/blog/hello-world","id":14,"locale":"en","updatedAt":"2026-10-31T22:35:07.432Z"},{"collection":"pages","fullPath":"/blog/team","id":13,"locale":"en","updatedAt":"2026-10-31T22:35:07.415Z"}],"hasNextPage":false,"page":1}

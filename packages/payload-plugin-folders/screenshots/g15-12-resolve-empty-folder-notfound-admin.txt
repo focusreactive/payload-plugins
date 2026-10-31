@@ -1,0 +1,5 @@
+GET /api/folders-tree/resolve?path=/empty&locale=en (signed-in admin)
+HTTP/1.1 404 Not Found
+content-type: application/json
+
+{"type":"notFound"}

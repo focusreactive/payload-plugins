@@ -1,0 +1,27 @@
+createFoldersClient from src/rest/index.ts run with tsx against the dev app. Signed-in run: baseUrl http://localhost:4078 (autologin). Anonymous run: baseUrl http://localhost:4079 (public-read variant), header DisableAutologin: true. Documents shown as (omitted).
+=== signed-in :4078
+resolve /blog en => {"alternates":{"en":"/blog","de":"/aktuelles"},"collection":"pages","fullPath":"/blog","locale":"en","type":"page","doc":"(omitted)"}
+resolve /Blog en => {"status":301,"to":"/blog","type":"redirect"}
+resolve /about/contact en => {"status":301,"to":"/company/contact","type":"redirect"}
+resolve /nope en => {"type":"notFound"}
+resolve /company/press-kit en draft => {"alternates":{"en":"/company/press-kit","de":"/unternehmen/press-kit"},"collection":"pages","fullPath":"/company/press-kit","locale":"en","type":"page","doc":"(omitted)"}
+resolve locale xx => THROWS FoldersClientError: folders-tree/resolve answered 400
+paths under /blog de => [{"collection":"pages","fullPath":"/blog","id":15,"locale":"en","updatedAt":"2026-10-31T22:35:07.446Z"},{"collection":"posts","fullPath":"/blog/2026/new-year","id":2,"locale":"en","updatedAt":"2026-10-31T22:35:07.388Z"},
+tree en depth 1 => ["/admin-renamed","/","/blog","/products","/shoes","/company"]
+toStoryblokFullSlug('/blog/team', false) => "blog/team"
+toStoryblokFullSlug('/blog', true) => "blog/"
+toStoryblokFullSlug('/', true) => ""
+toStoryblokFullSlug('/blog/', false) => "blog"
+=== anonymous :4079
+resolve /blog en => {"alternates":{"en":"/blog","de":"/aktuelles"},"collection":"pages","fullPath":"/blog","locale":"en","type":"page","doc":"(omitted)"}
+resolve /Blog en => {"status":301,"to":"/blog","type":"redirect"}
+resolve /about/contact en => {"status":301,"to":"/company/contact","type":"redirect"}
+resolve /nope en => {"type":"notFound"}
+resolve /company/press-kit en draft => {"type":"notFound"}
+resolve locale xx => THROWS FoldersClientError: folders-tree/resolve answered 400
+paths under /blog de => [{"collection":"pages","fullPath":"/blog","id":15,"locale":"en","updatedAt":"2026-10-31T22:35:07.446Z"},{"collection":"posts","fullPath":"/blog/2026/new-year","id":2,"locale":"en","updatedAt":"2026-10-31T22:35:07.388Z"},
+tree en depth 1 => ["/","/blog","/products","/shoes","/company"]
+toStoryblokFullSlug('/blog/team', false) => "blog/team"
+toStoryblokFullSlug('/blog', true) => "blog/"
+toStoryblokFullSlug('/', true) => ""
+toStoryblokFullSlug('/blog/', false) => "blog"

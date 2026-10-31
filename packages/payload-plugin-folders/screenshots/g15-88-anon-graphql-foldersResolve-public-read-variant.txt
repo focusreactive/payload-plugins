@@ -1,0 +1,19 @@
+POST :4079/api/graphql anonymous (DisableAutologin: true), public-read variant
+--- /aktuelles/team de
+{"data":{"foldersResolve":{"type":"page","collection":"pages","id":"13","fullPath":"/aktuelles/team","redirectTo":null,"alternates":[{"locale":"en","path":"/blog/team"},{"locale":"de","path":"/aktuelles/team"}]}}}
+HTTP 200
+--- /about/contact en (old path)
+{"data":{"foldersResolve":{"type":"redirect","redirectTo":"/company/contact"}}}
+HTTP 200
+--- /company/press-kit en draft:true (never published)
+{"data":{"foldersResolve":{"type":"notFound","collection":null,"id":null,"fullPath":null}}}
+HTTP 200
+--- /Blog en
+{"data":{"foldersResolve":{"type":"redirect","redirectTo":"/blog"}}}
+HTTP 200
+--- /secret-renamed/hidden-plan en draft:true
+{"data":{"foldersResolve":{"type":"notFound","collection":null,"id":null,"fullPath":null}}}
+HTTP 200
+--- same draft query, signed-in
+{"data":{"foldersResolve":{"type":"page","collection":"pages","id":"22","fullPath":"/secret-renamed/hidden-plan"}}}
+HTTP 200

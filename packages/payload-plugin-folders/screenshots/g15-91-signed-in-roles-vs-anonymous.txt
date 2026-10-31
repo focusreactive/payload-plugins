@@ -1,0 +1,17 @@
+Roles. Drafter user (drafter@example.com, JWT via Authorization header; DisableAutologin: true) on the main dev server :4078, where pages need a signed-in user to read.
+## drafter: resolve /company/press-kit en draft=true (expect page)
+{"alternates":{"en":"/company/press-kit","de":"/unternehmen/press-kit"},"collection":"pages","doc":{"id":1,"title":"Press Kit","slug":"press-kit","folder":2,"orderKey":"a0","structureRevision":0,"isFo
+HTTP 200
+## drafter: resolve /company/press-kit en (no draft flag, expect notFound)
+{"type":"notFound"}
+HTTP 404
+## drafter: paths draft=true count
+23
+## drafter: tree draft=true includes /company/press-kit?
+1
+## anonymous: same draft resolve (expect notFound)
+{"type":"notFound"}
+HTTP 404
+## invalid JWT: resolve /blog (expect same as anonymous, no 500)
+{"type":"notFound"}
+HTTP 404

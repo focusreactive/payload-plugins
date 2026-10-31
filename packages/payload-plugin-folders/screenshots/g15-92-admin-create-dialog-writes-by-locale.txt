@@ -1,0 +1,12 @@
+What the admin create dialogs stored, read back with GET /api/<collection>/<id>?locale=all&depth=0 (signed-in admin, main dev server :4078).
+
+## New folder "Stellenangebote", dialog opened with content locale de (folder 8, read right after creation)
+{"name":{"de":"Stellenangebote","en":"Stellenangebote"},"slug":{"de":"stellenangebote","en":"stellenangebote"},"parent":6,"fullPath":{"de":"/aktuelles/stellenangebote","en":"/blog/stellenangebote"}}
+
+## New page "Offene Stelle", dialog opened with content locale de (page 17, read right after creation, draft=true)
+{"title":{"de":"Offene Stelle","en":"Offene Stelle"},"slug":{"de":"offene-stelle","en":"offene-stelle"},"pathSegment":{"de":"offene-stelle","en":"offene-stelle"},"_status":{"de":"draft","en":"draft"},"folder":8}
+fullPath {"en":"/blog/stellenangebote/offene-stelle","de":"/aktuelles/stellenangebote/offene-stelle"}
+
+## New folder "English Only Folder", dialog opened with content locale en under Products (folder 11, read after creation)
+{"name":{"de":null,"en":"English Only Folder"},"slug":{"de":null,"en":"english-only-folder"},"fullPath":{"de":"/produkte/english-only-folder","en":"/products/english-only-folder"}}
+(de stays empty and falls back to the en segment, so the de path follows the translated parent: /produkte/english-only-folder)

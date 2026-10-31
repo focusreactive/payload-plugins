@@ -1,0 +1,14 @@
+Scenario continues: folder 8 now en=stellenangebote, de=jobs. Signed-in admin.
+## PATCH /api/folders/8?locale=en  {slug: careers}
+HTTP 200
+## folder 8 locale=all
+{"slug":{"de":"jobs","en":"careers"},"fullPath":{"de":"/aktuelles/jobs","en":"/blog/careers"}}
+## resolve /blog/careers/offene-stelle en
+{"alternates":{"en":"/blog/careers/offene-stelle","de":"/aktuelles/jobs/offene-stelle"},"collection":"pages","doc":{"id":17,"title":"Offene Stelle","slug":"offe
+HTTP 200
+## resolve /aktuelles/jobs/offene-stelle de (must stay)
+{"alternates":{"en":"/blog/careers/offene-stelle","de":"/aktuelles/jobs/offene-stelle"},"collection":"pages","doc":{"id":17,"title":"Offene Stelle","slug":"offe
+HTTP 200
+## resolve /blog/stellenangebote/offene-stelle en (old en path, expect redirect)
+{"status":301,"to":"/blog/careers/offene-stelle","type":"redirect"}
+HTTP 200

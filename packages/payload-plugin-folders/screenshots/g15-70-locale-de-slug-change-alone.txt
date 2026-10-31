@@ -1,0 +1,24 @@
+Scenario: folder 8 (name/slug en=stellenangebote, de=stellenangebote), pages 17 and 19 published in en and de. Signed-in admin (autologin).
+## PATCH /api/folders/8?locale=de  {slug: jobs}
+{"doc":{"id":8,"name":"Stellenangebote","slug":"jobs","parent":6,"orderKey":"9v","fullPath":"/aktuelles/jobs","ancestorIds":"/6/","depth":2,"structureRevision":0,"allowedTypes":[],"defaultType":null,"lockSubfolderTypes":false,"typesLockedBy":null,"createdBy":{"relationTo":"users","value":1},"updatedBy":{"relationTo":"users","value":1},"updatedAt":"2026-10-31T22:45:02.408Z","createdAt":"2026-10-31T22:42:42.077Z"},"message":"Updated successfully."}
+HTTP 200
+## GET folder 8 locale=all fullPath
+{"slug":{"de":"jobs","en":"stellenangebote"},"fullPath":{"de":"/aktuelles/jobs","en":"/blog/stellenangebote"}}
+## resolve /aktuelles/jobs/offene-stelle de
+{"alternates":{"en":"/blog/stellenangebote/offene-stelle","de":"/aktuelles/jobs/offene-stelle"},"collection":"pages","doc":{"id":17,"title":"Offene Stelle","slug":"offene-stelle","folder":8,"orderKey"
+HTTP 200
+## resolve /blog/stellenangebote/offene-stelle en (must be unchanged)
+{"alternates":{"en":"/blog/stellenangebote/offene-stelle","de":"/aktuelles/jobs/offene-stelle"},"collection":"pages","doc":{"id":17,"title":"Offene Stelle","slug":"offene-stelle","folder":8,"orderKey"
+HTTP 200
+## resolve /aktuelles/stellenangebote/offene-stelle de (old de path, expect redirect to new de path)
+{"status":301,"to":"/aktuelles/jobs/offene-stelle","type":"redirect"}
+HTTP 200
+## resolve /aktuelles/stellenangebote/offene-stelle en (de path asked in en locale)
+{"type":"notFound"}
+HTTP 404
+## paths under /aktuelles/jobs de
+{"id":17,"fullPath":"/aktuelles/jobs/offene-stelle","locale":"de"}
+{"id":19,"fullPath":"/aktuelles/jobs/probe-two","locale":"de"}
+## paths under /blog/stellenangebote en
+{"id":17,"fullPath":"/blog/stellenangebote/offene-stelle","locale":"en"}
+{"id":19,"fullPath":"/blog/stellenangebote/probe-two","locale":"en"}

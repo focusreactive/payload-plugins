@@ -1,0 +1,5 @@
+GET /api/folders-tree/resolve?path=/aktuelles/2026/new-year&locale=de (posts collection, signed-in admin)
+HTTP/1.1 200 OK
+content-type: application/json
+
+{"alternates":{"en":"/blog/2026/new-year","de":"/aktuelles/2026/new-year"},"collection":"posts","doc":{"id":2,"title":"New Year","slug":"new-year","body":null,"folder":{"id":7,"name":"2026","slug":"2026","parent":6,"orderKey":"a0","fullPath":"/aktuelles/2026","ancestorIds":"/6/","depth":2,"structureRevision":0,"allowedTypes":["posts"],"defaultType":"posts","lockSubfolderTypes":false,"typesLockedBy":null,"updatedAt":"2026-10-31T22:35:07.377Z","createdAt":"2026-10-31T22:35:07.376Z"},"orderKey":"9z","structureRevision":0,"isFolderRoot":false,"pathSegment":"new-year","updatedAt":"2026-10-31T22:35:07.388Z","createdAt":"2026-10-31T22:35:07.388Z","folderPath":"/aktuelles/2026","fullPath":"/aktuelles/2026/new-year"},"fullPath":"/aktuelles/2026/new-year","locale":"de","type":"page"}
