@@ -1,15 +1,18 @@
 import { ValidationError } from "payload";
 import type { CollectionAfterChangeHook } from "payload";
 
+import { toCollectionSlug } from "../../collectionSlug.js";
 import { readFolderRecord } from "../../core/folderRecords.js";
 import { settlePageRedirects } from "../../core/pageRedirects.js";
-import { readPageRow, popSnapshot, toSnapshot } from "../../core/pageRecords.js";
+import { getFallbackLocaleKey } from "../../core/locales.js";
+import { liveLocaleKeysOf, readPageRow, popSnapshot, toSnapshot } from "../../core/pageRecords.js";
 import type { PageRow, PageSnapshot } from "../../core/pageRecords.js";
 import { bumpRevision } from "../../core/treeLock.js";
 import {
   describeMissingSegment,
   describeRootPageConflict,
   describeSegmentConflict,
+  findLocaleWithoutSegment,
   findRootPageConflict,
   findSegmentConflict,
   folderPathIn,
@@ -79,12 +82,33 @@ const validateWrittenPage = async (
       });
     }
   } else {
-    if (written.effective[defaultLocale] === "") {
-      problems.push({ message: describeMissingSegment(defaultLocale), path: page.segmentField });
+    // Every live locale needs a segment of its own or the default locale's live one. A page live
+    // only in `de` with its own `de` segment is valid: `localizeStatus` leaves no `en` segment on
+    // the main row then, which is not a missing one.
+    const hasDrafts = Boolean(
+      payload.collections[toCollectionSlug(page.slug)]?.config.versions?.drafts
+    );
+    const liveKeys = liveLocaleKeysOf(
+      after.status,
+      localeKeys,
+      hasDrafts,
+      getFallbackLocaleKey(payload)
+    );
+    const missingLocale = findLocaleWithoutSegment({
+      defaultLocale,
+      effective: written.effective,
+      liveKeys,
+    });
+    if (missingLocale !== null) {
+      problems.push({
+        message: describeMissingSegment(missingLocale, defaultLocale),
+        path: page.segmentField,
+      });
     }
     for (const key of changedKeys) {
       const segment = written.effective[key];
-      if (segment === "") {
+      // A locale the page is not live in has no URL, so nothing there can clash.
+      if (segment === "" || !liveKeys.includes(key)) {
         continue;
       }
       const conflict = await findSegmentConflict({

@@ -307,10 +307,40 @@ export const describeSegmentConflict = (conflict: SegmentConflict): string =>
 export const describeRootPageConflict = (conflict: RootPageConflict, folderPath: string): string =>
   `${conflict.title} is already the root page of ${folderPath}. Unset it first.`;
 
-export const describeMissingSegment = (defaultLocale: string): string =>
-  defaultLocale === noLocaleKey
-    ? "A page needs a slug"
-    : `A page needs a slug in the default locale (${defaultLocale}); save it in ${defaultLocale} first`;
+/**
+ * The refusal for a live locale with no segment: its own, or the default locale's live one through
+ * fallback. `locale` is the live locale that has none.
+ */
+export const describeMissingSegment = (locale: string, defaultLocale: string): string => {
+  if (defaultLocale === noLocaleKey) {
+    return "A page needs a slug";
+  }
+  if (locale === defaultLocale) {
+    return `A page needs a slug in the default locale (${defaultLocale}); save it in ${defaultLocale} first`;
+  }
+
+  return `A page published in ${locale} needs a ${locale} slug, or a published ${defaultLocale} slug to fall back to: give it a ${locale} slug or publish it in ${defaultLocale} first`;
+};
+
+/**
+ * The first live locale whose effective segment is empty, the default locale first; `null` when
+ * every live locale has one. A locale is live when it is published itself or is served the default
+ * locale's published page through fallback (decision 24), so a page live only in `de` with its own
+ * `de` segment is valid and needs no `en` segment.
+ */
+export const findLocaleWithoutSegment = ({
+  defaultLocale,
+  effective,
+  liveKeys,
+}: {
+  defaultLocale: string;
+  effective: Record<string, string>;
+  liveKeys: string[];
+}): string | null => {
+  const missing = liveKeys.filter((key) => (effective[key] ?? "") === "");
+
+  return missing.includes(defaultLocale) ? defaultLocale : (missing[0] ?? null);
+};
 
 export type RootPageConflict = { title: string };
 

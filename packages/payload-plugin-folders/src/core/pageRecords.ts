@@ -41,6 +41,14 @@ export const isPublishedInLocale = (
   return status === "published";
 };
 
+/** The locale slots a status leaves live: published themselves, or served through the fallback locale. */
+export const liveLocaleKeysOf = (
+  status: unknown,
+  localeKeys: string[],
+  hasDrafts: boolean,
+  fallbackKey: string | null
+): string[] => localeKeys.filter((key) => isPublishedInLocale(status, key, hasDrafts, fallbackKey));
+
 /** The columns of a page's main row the structure guard and the validation compare against. */
 export type PageRow = {
   folder: FolderId | null;

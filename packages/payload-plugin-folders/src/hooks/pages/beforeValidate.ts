@@ -5,20 +5,28 @@ import { toCollectionSlug } from "../../collectionSlug.js";
 import { describeAllowedTypes, isTypeAllowed } from "../../core/allowedTypes.js";
 import { normalizeFolderReference, readFolderRecord } from "../../core/folderRecords.js";
 import type { FolderRecord } from "../../core/folderRecords.js";
-import { noLocaleKey } from "../../core/locales.js";
+import { getFallbackLocaleKey, noLocaleKey } from "../../core/locales.js";
 import {
   hasPageChangedSince,
   pageChangedLiveMessage,
   pageChangedMessage,
   readRootPrecondition,
 } from "../../core/rootPrecondition.js";
-import { popSnapshot, pushSnapshot, readPageRow, toSnapshot } from "../../core/pageRecords.js";
+import {
+  liveLocaleKeysOf,
+  popSnapshot,
+  pushSnapshot,
+  readPageRow,
+  toSnapshot,
+} from "../../core/pageRecords.js";
 import type { PageRow } from "../../core/pageRecords.js";
+import { isStatusLocalized } from "../../core/publishedWhere.js";
 import { SEGMENT_ERROR_MESSAGE, isValidSegment, slugify } from "../../core/slugify.js";
 import {
   describeMissingSegment,
   describeRootPageConflict,
   describeSegmentConflict,
+  findLocaleWithoutSegment,
   findRootPageConflict,
   findSegmentConflict,
   folderPathIn,
@@ -47,6 +55,51 @@ const isDraftStatus = (status: unknown): boolean =>
   (isValuesByLocale(status) &&
     Object.values(status).length > 0 &&
     Object.values(status).every((value) => value === "draft"));
+
+/**
+ * The `_status` the main row will hold after this save, as far as the data says: publishing in one
+ * locale of a localized status makes that locale live next to the ones already live, and a status
+ * that is not localized is one value for every locale. The post-write check in `afterChange` reads
+ * the real row, so a guess too lax here is caught there.
+ */
+const estimateStatusAfterWrite = ({
+  hasDrafts,
+  isCreate,
+  isLocalized,
+  localeKeys,
+  mainStatus,
+  requestKey,
+  requestLocale,
+  statusInput,
+}: {
+  hasDrafts: boolean;
+  isCreate: boolean;
+  isLocalized: boolean;
+  localeKeys: string[];
+  mainStatus: unknown;
+  requestKey: string;
+  requestLocale: string | undefined;
+  statusInput: unknown;
+}): unknown => {
+  if (!hasDrafts) {
+    return "published";
+  }
+  if (statusInput === undefined) {
+    return isCreate ? "published" : mainStatus;
+  }
+  if (!isLocalized) {
+    return statusInput;
+  }
+  const base = isValuesByLocale(mainStatus) ? mainStatus : {};
+  if (isValuesByLocale(statusInput)) {
+    return { ...base, ...statusInput };
+  }
+  if (requestLocale === "all") {
+    return Object.fromEntries(localeKeys.map((key) => [key, statusInput]));
+  }
+
+  return { ...base, [requestKey]: statusInput };
+};
 
 const dedupe = (problems: Problem[]): Problem[] =>
   problems.filter(
@@ -227,6 +280,22 @@ export const buildPageBeforeValidate =
     const hasSegmentChanged = (key: string): boolean =>
       isCreate || becameNonRoot || proposedEffective[key] !== mainEffective[key];
 
+    const estimatedLiveKeys = liveLocaleKeysOf(
+      estimateStatusAfterWrite({
+        hasDrafts: hasDraftsEnabled,
+        isCreate,
+        isLocalized: isStatusLocalized(payload, page.slug),
+        localeKeys,
+        mainStatus: mainRow?.status,
+        requestKey,
+        requestLocale,
+        statusInput: data._status,
+      }),
+      localeKeys,
+      hasDraftsEnabled,
+      getFallbackLocaleKey(payload)
+    );
+
     const invalidKeys = new Set<string>();
     if (!proposedIsRoot) {
       for (const key of localeKeys) {
@@ -261,15 +330,31 @@ export const buildPageBeforeValidate =
         }
       }
 
-      if (!isDraft && proposedEffective[defaultLocale] === "") {
-        problems.push({ message: describeMissingSegment(defaultLocale), path: segmentField });
+      if (!isDraft) {
+        const missingLocale = findLocaleWithoutSegment({
+          defaultLocale,
+          effective: proposedEffective,
+          liveKeys: estimatedLiveKeys,
+        });
+        if (missingLocale !== null) {
+          problems.push({
+            message: describeMissingSegment(missingLocale, defaultLocale),
+            path: segmentField,
+          });
+        }
       }
     }
 
     if (!isDraft && !proposedIsRoot) {
       for (const key of localeKeys) {
         const segment = proposedEffective[key];
-        if (segment === "" || invalidKeys.has(key) || !hasSegmentChanged(key)) {
+        // A locale the page is not live in has no URL, so nothing there can clash.
+        if (
+          segment === "" ||
+          invalidKeys.has(key) ||
+          !hasSegmentChanged(key) ||
+          !estimatedLiveKeys.includes(key)
+        ) {
           continue;
         }
         const conflict = await findSegmentConflict({
