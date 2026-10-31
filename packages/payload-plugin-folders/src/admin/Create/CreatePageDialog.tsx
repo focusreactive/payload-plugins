@@ -29,6 +29,13 @@ import {
 import type { SlugState } from "./slugState.js";
 import { useSegmentCheck } from "./useSegmentCheck.js";
 
+// Payload's dialog puts the focus on its heading when it opens, which is no place to start typing:
+// the first field is.
+const pageDialogFocusOptions = {
+  initialFocus: () =>
+    document.querySelector<HTMLElement>('[data-testid="title-input"]') ?? undefined,
+};
+
 export const createPageDialogSlug = "fr-folders-create-page";
 
 /** What a page needs to be made: the four values of spec section 7.7. */
@@ -185,7 +192,6 @@ const CreatePageContent = ({
             </label>
             <input
               autoComplete="off"
-              autoFocus
               className="fr-folders-input"
               data-testid="title-input"
               id={`${formId}-title`}
@@ -254,7 +260,12 @@ const CreatePageContent = ({
  * own form opens with the same values.
  */
 export const CreatePageDialog = ({ folder, session, ...rest }: CreatePageDialogProps) => (
-  <DialogModal className="fr-folders-dialog" size="medium" slug={createPageDialogSlug}>
+  <DialogModal
+    className="fr-folders-dialog"
+    focusTrapOptions={pageDialogFocusOptions}
+    size="medium"
+    slug={createPageDialogSlug}
+  >
     {folder === undefined ? null : <CreatePageContent folder={folder} key={session} {...rest} />}
   </DialogModal>
 );

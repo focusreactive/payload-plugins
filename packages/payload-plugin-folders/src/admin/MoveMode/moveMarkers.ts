@@ -116,3 +116,17 @@ export const markerReasonOf = (
 
   return marker.isNoOp ? translate("moveModeNoOp", { count }) : null;
 };
+
+/**
+ * The one marker that is in the tab order (spec section 7.6): the one that last had the focus when
+ * it is still there, else the first marker that can be picked, else the first marker. Up and Down
+ * move between markers; Tab leaves the list.
+ */
+export const tabbableMarkerKey = (
+  markers: readonly { isOff: boolean; key: string }[],
+  activeKey: string | null
+): string | null =>
+  markers.find((marker) => marker.key === activeKey)?.key ??
+  markers.find((marker) => !marker.isOff)?.key ??
+  markers[0]?.key ??
+  null;

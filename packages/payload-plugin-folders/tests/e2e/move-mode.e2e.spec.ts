@@ -187,10 +187,12 @@ test("a marker inside the moved folder is disabled", async ({ page, request }) =
 
   const inside = marker(page, `inside:${blogId}`);
   await expect(inside).toHaveAttribute("aria-disabled", "true");
-  await inside.hover();
-  await expect(page.locator(".tooltip--show")).toHaveText(
+  // The reason is written after the label, not shown as a tooltip that would cover the folder above.
+  await expect(inside.getByTestId("move-marker-reason")).toHaveText(
     "A folder cannot be moved into itself or one of its subfolders"
   );
+  await inside.hover();
+  await expect(page.locator(".tooltip--show")).toHaveCount(0);
   // The gaps in the folder's own contents are refused too, and one outside it is open.
   const blogHome = pageRow(page, "Blog Home");
   await expect(
@@ -207,7 +209,7 @@ test("a marker inside the moved folder is disabled", async ({ page, request }) =
   await expect(moveModeBar(page)).toBeVisible();
 });
 
-test("a marker in a folder that takes another type is disabled with the folder's types", async ({
+test("a marker in a folder that takes another type is disabled with the folder's types written beside it", async ({
   page,
   request,
 }) => {
@@ -220,8 +222,7 @@ test("a marker in a folder that takes another type is disabled with the folder's
 
   const inside = marker(page, `inside:${yearId}`);
   await expect(inside).toHaveAttribute("aria-disabled", "true");
-  await inside.hover();
-  await expect(page.locator(".tooltip--show")).toHaveText(
+  await expect(inside.getByTestId("move-marker-reason")).toHaveText(
     "/blog/2026 accepts only Blog post pages"
   );
 });
@@ -253,6 +254,33 @@ test("Up and Down walk the markers, and the first one has the focus when Move mo
   expect(await focusedMarker(page)).toBe(all[0]);
 });
 
+test("only one marker is in the tab order, and Tab leaves the markers", async ({ page }) => {
+  await openContentTree(page);
+  await expandFolder(page, "Blog");
+  await rowCheckbox(page, "Home").check();
+  await page.keyboard.press("m");
+
+  const markers = page.getByTestId("move-marker");
+  expect(await markers.count()).toBeGreaterThan(5);
+  const tabStops = page.locator('[data-testid="move-marker"][tabindex="0"]');
+  await expect(tabStops).toHaveCount(1);
+  // The marker that has the focus is the tab stop, and the stop follows Up and Down.
+  const first = await focusedMarker(page);
+  expect(first).not.toBeNull();
+  await expect(tabStops).toHaveAttribute("data-marker", first ?? "");
+  await page.keyboard.press("ArrowDown");
+  const second = await focusedMarker(page);
+  expect(second).not.toBe(first);
+  await expect(tabStops).toHaveCount(1);
+  await expect(tabStops).toHaveAttribute("data-marker", second ?? "");
+
+  // Tab goes on to whatever follows the markers, never to the next marker.
+  await page.keyboard.press("Tab");
+  expect(await focusedMarker(page)).toBeNull();
+  await page.keyboard.press("Shift+Tab");
+  expect(await focusedMarker(page)).toBe(second);
+});
+
 test("Escape leaves Move mode", async ({ page }) => {
   await openContentTree(page);
   await rowCheckbox(page, "Home").check();
@@ -263,6 +291,8 @@ test("Escape leaves Move mode", async ({ page }) => {
 
   await expect(moveModeBar(page)).toHaveCount(0);
   await expect(page.getByTestId("move-marker")).toHaveCount(0);
+  // The keyboard is where it was before Move mode began, not lost on the page.
+  await expect(rowCheckbox(page, "Home")).toBeFocused();
   // The ticked row is still ticked, so the selection toolbar is back and M starts it again.
   await expect(bulkToolbar(page)).toContainText("1 item selected");
   await page.keyboard.press("m");

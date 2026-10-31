@@ -1,5 +1,5 @@
 import { useModal } from "@payloadcms/ui";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { TreeItem } from "../../types.js";
 import { rootsOfSelection } from "../Move/moveFlow.js";
@@ -22,6 +22,21 @@ export type MoveModeApi = {
   /** The moving rows are the ticked ones. */
   movesSelection: boolean;
 };
+
+/** The element that has the focus, unless nothing in particular does. */
+const focusedElement = (): HTMLElement | null => {
+  const { activeElement } = document;
+
+  return activeElement instanceof HTMLElement && activeElement !== document.body
+    ? activeElement
+    : null;
+};
+
+/** The tree row of an item, which takes focus by script. */
+const rowElementOf = (item: TreeItem): HTMLElement | null =>
+  document.querySelector<HTMLElement>(
+    `[data-testid="tree-row"][data-collection="${item.collection}"][data-item-id="${item.id}"]`
+  );
 
 const isTyping = (target: EventTarget | null): boolean =>
   target instanceof HTMLElement &&
@@ -54,8 +69,13 @@ export const useMoveMode = ({
   const { modalState } = useModal();
   const isModalOpen = Object.values(modalState).some((modal) => modal.isOpen);
 
+  // Where the keyboard was when Move mode began, so leaving it puts it back there (spec section 7.6).
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const lastMovingRef = useRef<readonly TreeItem[]>([]);
+
   const enter = useCallback((items: readonly TreeItem[], isSelection: boolean) => {
     if (rootsOfSelection(items).length > 0) {
+      returnFocusRef.current = focusedElement();
       setMode({ isSelection, items });
     }
   }, []);
@@ -92,6 +112,7 @@ export const useMoveMode = ({
         !event.altKey;
       if (isPlainM && !isActive && hasSelection && !isBusy) {
         event.preventDefault();
+        returnFocusRef.current = focusedElement();
         setMode({ isSelection: true, items: selectedItems });
       }
     };
@@ -108,6 +129,28 @@ export const useMoveMode = ({
         ?.focus();
     }
   }, [isActive]);
+
+  // Leaving Move mode takes the markers away, and the focus with them. It goes back to what had it
+  // before, or to the first row that was moving when that element is gone (the toolbar's Move
+  // button, say, which the bar replaced). A focus the editor has put elsewhere is left alone.
+  const wasActive = useRef(false);
+  useEffect(() => {
+    if (isActive) {
+      lastMovingRef.current = moving;
+    }
+    if (wasActive.current && !isActive && focusedElement() === null) {
+      const previous = returnFocusRef.current;
+      const [firstMoving] = lastMovingRef.current;
+      const target =
+        previous?.isConnected === true
+          ? previous
+          : firstMoving === undefined
+            ? null
+            : rowElementOf(firstMoving);
+      target?.focus();
+    }
+    wasActive.current = isActive;
+  }, [isActive, moving]);
 
   // Left alone when the rows it was for are gone, say the last of them was deleted elsewhere.
   useEffect(() => {

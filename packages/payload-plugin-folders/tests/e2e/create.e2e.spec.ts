@@ -71,6 +71,8 @@ test("New folder derives the segment from the name", async ({ page, request }) =
   await openContentTree(page);
   const dialog = await startFolderIn(page, "Create Probe Parent");
 
+  // The first field has the focus, not the dialog's heading.
+  await expect(dialog.getByTestId("name-input")).toBeFocused();
   // The parent is the folder the menu was opened on, and the segment follows the name.
   await expect(dialog.getByTestId("parent-name")).toHaveText("Create Probe Parent");
   const segment = dialog.getByTestId("segment-input");
@@ -115,6 +117,17 @@ test("Create stays disabled for a taken segment", async ({ page }) => {
   await expect(dialog.getByTestId("segment-status")).toHaveText(
     "/blog/hello-world is already used by Hello World"
   );
+  // Every error in the dialogs is in the danger colour, this one as well as the failure line.
+  const colours = await dialog.getByTestId("segment-status").evaluate((status) => {
+    const probe = document.createElement("span");
+    probe.style.color = "var(--color-text-danger)";
+    document.body.append(probe);
+    const danger = getComputedStyle(probe).color;
+    probe.remove();
+
+    return { danger, status: getComputedStyle(status).color };
+  });
+  expect(colours.status).toBe(colours.danger);
   await expect(createButton(dialog)).toBeDisabled();
 
   // A free segment turns it on, and a malformed one turns it off without asking the server.
@@ -154,6 +167,7 @@ test("New page creates a draft and opens the editor", async ({ page, request }) 
   await openContentTree(page);
   const dialog = await startPageIn(page, "Draft Probe Folder", "Page");
 
+  await expect(dialog.getByTestId("title-input")).toBeFocused();
   await dialog.getByTestId("title-input").fill("Fresh Draft Probe");
   await expect(dialog.getByTestId("segment-input")).toHaveValue("fresh-draft-probe");
   await expect(createButton(dialog)).toBeEnabled();
@@ -188,12 +202,71 @@ test("a posts page opens the prefilled drawer", async ({ page, request }) => {
   await expect(drawer.locator("#field-slug")).toHaveValue("drawer-probe-post");
   expect(await childrenOf(request, folderId)).toEqual([]);
 
+  const treeUrl = page.url();
   await drawer.getByRole("button", { name: "Save", exact: true }).click();
   await expect(drawer).toHaveCount(0);
+  // Saving did not take the editor away from the tree. Payload's redirect after a create starts
+  // when the save answers, so let the page settle before looking at the address.
+  await expandFolder(page, "Drawer Probe Folder");
+  await expect(pageRow(page, "Drawer Probe Post")).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  expect(page.url()).toBe(treeUrl);
+  await expect(page.getByRole("treegrid")).toBeVisible();
   const inFolder = await childrenOf(request, folderId);
   expect(inFolder.map((row) => [row.collection, row.title, row.fullPath])).toEqual([
     ["posts", "Drawer Probe Post", "/drawer-probe-folder/drawer-probe-post"],
   ]);
+});
+
+test("a refused draft opens the prefilled drawer, and any other failure stays in the dialog", async ({
+  page,
+  request,
+}) => {
+  await addFolder(request, "Refused Draft Probe");
+  let answer: { body: unknown; status: number } = {
+    body: {
+      errors: [
+        {
+          data: { errors: [{ message: "This field is required.", path: "blocks" }] },
+          message: "The following field is invalid: blocks",
+        },
+      ],
+    },
+    status: 400,
+  };
+  await page.route(
+    (url) => url.pathname === "/api/pages" && url.searchParams.get("draft") === "true",
+    (route) =>
+      route.request().method() === "POST"
+        ? route.fulfill({
+            body: JSON.stringify(answer.body),
+            contentType: "application/json",
+            status: answer.status,
+          })
+        : route.continue()
+  );
+  await openContentTree(page);
+  const dialog = await startPageIn(page, "Refused Draft Probe", "Page");
+  await dialog.getByTestId("title-input").fill("Refused Draft Page");
+  await createButton(dialog).click();
+
+  // A validation refusal of the draft hands the same four values to the collection's own form.
+  const drawer = page.locator(".doc-drawer");
+  await expect(drawer).toBeVisible();
+  await expect(drawer.locator("#field-title")).toHaveValue("Refused Draft Page");
+  await expect(drawer.locator("#field-slug")).toHaveValue("refused-draft-page");
+  await expect(pageDialog(page)).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(drawer).toHaveCount(0);
+
+  // A server failure is not the form's to fix: the dialog stays, with the message, to try again.
+  answer = { body: { errors: [{ message: "The database is away" }] }, status: 500 };
+  // A new title: the drawer's autosave already saved the first page, and its segment is taken.
+  const again = await startPageIn(page, "Refused Draft Probe", "Page");
+  await again.getByTestId("title-input").fill("Failed Server Page");
+  await createButton(again).click();
+  await expect(again.getByTestId("create-failure")).toHaveText("The database is away");
+  await expect(page.locator(".doc-drawer")).toHaveCount(0);
 });
 
 test("the root checkbox is disabled where a root exists", async ({ page, request }) => {

@@ -1,10 +1,10 @@
 import { Button, CheckboxInput, ShimmerEffect } from "@payloadcms/ui";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
 import type { Translate } from "../compat.js";
 import type { MenuAnchor } from "../Menu/menuEntries.js";
 import { MoveMarkerRow } from "../MoveMode/MoveMarkerRow.js";
-import { markerReasonOf } from "../MoveMode/moveMarkers.js";
+import { markerReasonOf, tabbableMarkerKey } from "../MoveMode/moveMarkers.js";
 import type { MoveMarker, MoveModeRow } from "../MoveMode/moveMarkers.js";
 import type { SelectionApi } from "../useSelection.js";
 import type { FolderKey, TreeStore } from "../store.js";
@@ -207,6 +207,26 @@ export const Tree = ({
     [store]
   );
 
+  // Move mode: why each marker is off, and the one marker that is in the tab order.
+  const [activeMarkerKey, setActiveMarkerKey] = useState<string | null>(null);
+  const markers = (moveMode?.placed ?? []).flatMap((entry) =>
+    entry.type === "marker" ? [entry.marker] : []
+  );
+  const markerReasons = new Map(
+    markers.map((marker) => [
+      marker.key,
+      markerReasonOf(marker, {
+        count: moveMode?.count ?? 0,
+        isBusy: moveMode?.isBusy ?? false,
+        translate,
+      }),
+    ])
+  );
+  const tabbableKey = tabbableMarkerKey(
+    markers.map((marker) => ({ isOff: markerReasons.get(marker.key) !== null, key: marker.key })),
+    activeMarkerKey
+  );
+
   // The total is unknown while any folder on screen has rows left to load or is still loading.
   const rowCountIsKnown = !rows.some((row) => row.type === "load-more" || row.type === "loading");
 
@@ -256,14 +276,12 @@ export const Tree = ({
               return (
                 <MoveMarkerRow
                   count={moveMode?.count ?? 0}
+                  isTabStop={entry.marker.key === tabbableKey}
                   key={`marker:${entry.marker.key}`}
                   marker={entry.marker}
+                  onFocused={(marker) => setActiveMarkerKey(marker.key)}
                   onPick={moveMode?.onPick ?? (() => undefined)}
-                  reason={markerReasonOf(entry.marker, {
-                    count: moveMode?.count ?? 0,
-                    isBusy: moveMode?.isBusy ?? false,
-                    translate,
-                  })}
+                  reason={markerReasons.get(entry.marker.key) ?? null}
                   translate={translate}
                 />
               );

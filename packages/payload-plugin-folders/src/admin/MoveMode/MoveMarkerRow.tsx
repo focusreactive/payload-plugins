@@ -1,7 +1,6 @@
 import type { KeyboardEvent, ReactNode } from "react";
 
 import type { Translate } from "../compat.js";
-import { ReasonTooltip } from "../ReasonTooltip.js";
 import { indentPerLevel } from "../Tree/TreeRow.js";
 import type { MoveMarker } from "./moveMarkers.js";
 
@@ -26,18 +25,26 @@ const walkMarkers = (event: KeyboardEvent<HTMLButtonElement>): void => {
 
 /**
  * One insert marker (spec section 7.4): a line with "Move 2 items here". A marker the rows cannot
- * go to stays, off, with the reason as its tooltip, and stays focusable so the reason can be read
- * from the keyboard. Up and Down walk the markers, Enter picks.
+ * go to stays, off, with the reason written after the label, and stays focusable so the reason is
+ * reachable from the keyboard. The reason is inline, not a tooltip: a tooltip over a line this thin
+ * would cover the name of the folder above it. Only one marker is in the tab order at a time (the
+ * one that has the focus, else the first that can be picked); Up and Down walk the rest, Enter picks.
  */
 export const MoveMarkerRow = ({
   count,
+  isTabStop,
   marker,
+  onFocused,
   onPick,
   reason,
   translate,
 }: {
   count: number;
+  /** The one marker Tab reaches. */
+  isTabStop: boolean;
   marker: MoveMarker;
+  /** The marker took the focus, so it is the tab stop from now on. */
+  onFocused: (marker: MoveMarker) => void;
   onPick: (marker: MoveMarker) => void;
   /** Why the marker is off, `null` when it can be picked. */
   reason: string | null;
@@ -58,25 +65,29 @@ export const MoveMarkerRow = ({
         }px)`,
       }}
     >
-      <ReasonTooltip position="top" reason={reason}>
-        <button
-          aria-disabled={reason === null ? undefined : true}
-          className="fr-folders-marker"
-          data-marker={marker.key}
-          data-testid="move-marker"
-          onClick={() => {
-            if (reason === null) {
-              onPick(marker);
-            }
-          }}
-          onKeyDown={walkMarkers}
-          type="button"
-        >
-          <span aria-hidden="true" className="fr-folders-marker__line" />
-          <span className="fr-folders-marker__label">{translate("moveModeHere", { count })}</span>
-          {reason === null ? null : <span className="fr-folders-visually-hidden">{reason}</span>}
-        </button>
-      </ReasonTooltip>
+      <button
+        aria-disabled={reason === null ? undefined : true}
+        className="fr-folders-marker"
+        data-marker={marker.key}
+        data-testid="move-marker"
+        onClick={() => {
+          if (reason === null) {
+            onPick(marker);
+          }
+        }}
+        onFocus={() => onFocused(marker)}
+        onKeyDown={walkMarkers}
+        tabIndex={isTabStop ? 0 : -1}
+        type="button"
+      >
+        <span aria-hidden="true" className="fr-folders-marker__line" />
+        <span className="fr-folders-marker__label">{translate("moveModeHere", { count })}</span>
+        {reason === null ? null : (
+          <span className="fr-folders-marker__reason" data-testid="move-marker-reason">
+            {reason}
+          </span>
+        )}
+      </button>
     </div>
   </div>
 );

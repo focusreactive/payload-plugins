@@ -39,6 +39,9 @@ export const PageDrawer = ({
   return (
     <DocumentDrawer
       initialData={values}
+      // Saving a page here must leave the editor on the tree, not follow Payload's redirect to the
+      // new page's edit view.
+      redirectAfterCreate={false}
       onSave={() => {
         onSaved();
         closeDrawer();
