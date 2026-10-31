@@ -1,6 +1,6 @@
 import { cva } from "@/components/utils";
-import type { SectionHeaderProps } from "@/components/SectionHeader";
-import { SectionHeader } from "@/components/SectionHeader";
+import type { SectionHeadingContent } from "@/components/SectionHeading";
+import { SectionHeading } from "@/components/SectionHeading";
 
 const gridVariants = cva(
   "flex flex-col items-start gap-10 lg:grid lg:grid-cols-2 lg:items-center lg:gap-[clamp(36px,6vw,90px)]",
@@ -17,13 +17,13 @@ const gridVariants = cva(
 
 interface ContentSectionProps {
   layout?: "image-text" | "text-image" | null;
-  header?: SectionHeaderProps | null;
+  heading?: SectionHeadingContent | null;
   image?: React.ReactNode;
   body?: React.ReactNode;
   actions?: React.ReactNode;
 }
 
-export function ContentSection({ layout, header, image, body, actions }: ContentSectionProps) {
+export function ContentSection({ layout, heading, image, body, actions }: ContentSectionProps) {
   return (
     <div className={gridVariants({ layout: layout ?? "image-text" })}>
       {image && (
@@ -31,7 +31,7 @@ export function ContentSection({ layout, header, image, body, actions }: Content
       )}
 
       <div className="flex max-w-[520px] flex-col gap-[18px]">
-        {header && <SectionHeader {...header} className="gap-[18px]" />}
+        <SectionHeading {...heading} className="gap-[18px]" />
 
         {body}
 

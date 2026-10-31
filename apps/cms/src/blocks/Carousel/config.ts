@@ -4,10 +4,10 @@ import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 import { generateRichText } from "@/lib/utils/generateRichText";
 import { imageField } from "@/lib/fields/imageField";
 import { injectSection } from "@/lib/fields/section/injectSection";
-import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
+import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 
 const fields: Field[] = [
-  ...sectionHeaderFields(),
+  sectionHeadingField(),
   {
     defaultValue: "slide",
     label: { en: "Effect", es: "Efecto" },

@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-netlify-deploy [1.1.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-netlify-deploy@1.1.0...@focus-reactive/payload-plugin-netlify-deploy@1.1.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* the deploy button says Deploy, so it is not mistaken for Payload's Publish ([#218](https://github.com/focusreactive/payload-plugins/issues/218)) ([9a7e9df](https://github.com/focusreactive/payload-plugins/commit/9a7e9df3f8afba5f5c6244ff459a6d98fe82cad6))
+
 # @focus-reactive/payload-plugin-netlify-deploy [1.1.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-netlify-deploy@1.0.1...@focus-reactive/payload-plugin-netlify-deploy@1.1.0) (2026-09-29)
 
 

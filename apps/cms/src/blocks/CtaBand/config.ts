@@ -2,13 +2,13 @@ import type { Block, Field, GroupField } from "payload";
 
 import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 import { injectSection } from "@/lib/fields/section/injectSection";
-import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
+import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 import { link } from "@/lib/fields/link";
 
 const fields: Field[] = [
-  ...sectionHeaderFields({
-    eyebrowDefault: { en: "Get started", es: "Empieza ahora" },
-    headingDefault: { en: "Start shipping in rhythm.", es: "Empieza a publicar con ritmo." },
+  sectionHeadingField({
+    eyebrow: { en: "Get started", es: "Empieza ahora" },
+    title: { en: "Start shipping in rhythm.", es: "Empieza a publicar con ritmo." },
   }),
   {
     admin: {

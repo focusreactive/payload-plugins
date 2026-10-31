@@ -3,19 +3,9 @@ import { SectionContainer } from "@/components/shared";
 import { FaqSection } from "@/components/FaqSection";
 import type { FaqBlock as FaqBlockProps } from "@/payload-types";
 
-export const FaqBlockComponent: React.FC<FaqBlockProps> = ({
-  eyebrow,
-  heading,
-  description,
-  items,
-  section,
-  id,
-  ...rest
-}) => (
-  <SectionContainer sectionData={{ ...section, id }}>
-    <FaqJsonLd
-      faq={{ eyebrow, heading, description, items, section, id, ...rest } as FaqBlockProps}
-    />
-    <FaqSection eyebrow={eyebrow} heading={heading} description={description} items={items} />
+export const FaqBlockComponent: React.FC<FaqBlockProps> = (faq) => (
+  <SectionContainer sectionData={{ ...faq.section, id: faq.id }}>
+    <FaqJsonLd faq={faq} />
+    <FaqSection heading={faq.heading} items={faq.items} />
   </SectionContainer>
 );

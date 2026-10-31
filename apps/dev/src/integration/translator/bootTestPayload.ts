@@ -20,7 +20,7 @@ import type {
   TranslationRequest,
 } from "@focus-reactive/payload-plugin-translator";
 import { buildConfig } from "payload";
-import type { CollectionConfig, Payload } from "payload";
+import type { Block, CollectionConfig, Payload } from "payload";
 import { getPayload } from "payload";
 
 import { createTestDatabase } from "../../lib/database/resolveAdapter";
@@ -72,6 +72,7 @@ export type TestPayload = {
  * @param opts.collections - replaces the shared fixture set entirely (not merged). The set must
  *   still contain a `docs` collection when `autoTranslate` is passed.
  * @param opts.unmanagedCollections - registered with Payload, but not handed to the plugin.
+ * @param opts.blocks - the config-level blocks a `blockReferences` slug points into.
  * @param opts.failFor - target locales the fake provider should throw for, so a spec can exercise a
  *   partial failure. Every other locale translates normally.
  * @param opts.runner - defaults to the sync runner. `createPayloadJobsRunner({ autoRun: false })`
@@ -88,6 +89,7 @@ export async function bootTestPayload(opts?: {
   autoTranslate?: { targets: string[] };
   collections?: CollectionConfig[];
   unmanagedCollections?: CollectionConfig[];
+  blocks?: Block[];
   fallback?: boolean;
   deleteJobOnComplete?: boolean;
   exclusiveQueue?: boolean;
@@ -151,6 +153,7 @@ export async function bootTestPayload(opts?: {
       ],
     },
     collections: [...collections, ...(opts?.unmanagedCollections ?? [])],
+    ...(opts?.blocks ? { blocks: opts.blocks } : {}),
     jobs: {
       // Payload deletes completed jobs by default, leaving the status panels nothing to read.
       deleteJobOnComplete: opts?.deleteJobOnComplete ?? false,
