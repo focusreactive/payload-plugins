@@ -82,6 +82,9 @@ const decodePath = (path: string): string | null => {
 
 const repeatedSlashes = /\/{2,}/gu;
 
+/** Whether the visitor typed `//` anywhere: the URL has one canonical form without it. */
+const hasRepeatedSlashes = (path: string): boolean => path.trim().includes("//");
+
 /** The shape `normalizePath` gives, without lowercasing: one leading slash, no trailing one. */
 const toPathShape = (path: string): string => {
   const collapsed = path.trim().replace(repeatedSlashes, "/");
@@ -192,9 +195,11 @@ const joinPathKeepingCase = (canonical: string, segment: string): string => {
  * Spec section 10.1: the page, redirect or nothing that a URL path stands for.
  *
  * 1. The path is decoded and normalised (lowercase, one leading slash, no trailing one). A trailing
- *    slash or a missing leading one resolves in place; a path that differs only in case is a
- *    `redirect` to the lowercase one, when a page lives there. A page saved with capitals before
- *    the plugin (decision 22) answers at its own exact path first.
+ *    slash or a missing leading one resolves in place; a path that differs in case or has repeated
+ *    slashes (`//blog//team`) is a `redirect` to the collapsed lowercase one, when a page lives
+ *    there. A page saved with capitals before the plugin (decision 22) answers at its own exact
+ *    path first, but only when the folder part is already lowercase: `/Blog/About` redirects to
+ *    `/blog/About`, which answers in place.
  * 2. `/` is the site root page.
  * 3. Published pages only unless `draft` is set by a signed-in user, with the user's access.
  * 4. Nothing found runs `findRedirect`, and a redirect is answered only when something live is at
@@ -243,19 +248,25 @@ export const resolvePath = async <TDoc = Record<string, unknown>>(
     };
   };
 
+  const hasSlashRepeats = hasRepeatedSlashes(decoded);
   // Only the last segment can keep its capitals: a folder's path is always lowercase.
   const lastExactSegment = exactShape.split("/").at(-1) ?? "";
   if (isCaseDifferent && lastExactSegment !== lastExactSegment.toLowerCase()) {
     const legacyPath = joinPathKeepingCase(canonical, lastExactSegment);
     const legacyHit = await lookupPage(context, legacyPath);
     if (legacyHit) {
-      return toPageResult(legacyHit, legacyPath);
+      const exactFolderPart = exactShape.slice(0, exactShape.lastIndexOf("/"));
+      const isFolderPartExact = exactFolderPart === exactFolderPart.toLowerCase();
+
+      return hasSlashRepeats || !isFolderPartExact
+        ? { status: 301, to: legacyPath, type: "redirect" }
+        : toPageResult(legacyHit, legacyPath);
     }
   }
 
   const hit = await lookupPage(context, canonical);
   if (hit) {
-    return isCaseDifferent
+    return isCaseDifferent || hasSlashRepeats
       ? { status: 301, to: canonical, type: "redirect" }
       : toPageResult(hit, canonical);
   }
@@ -277,6 +288,11 @@ export const resolvePath = async <TDoc = Record<string, unknown>>(
  * past access control, with the default-locale fallback a folder path gets in `locale`. A root page
  * takes its folder's path, and a page without a slug yet takes its folder's path too, so a preview
  * of a new page points at the folder.
+ *
+ * Throws an `APIError` with status 404 when `folder` names a folder that does not exist (a form
+ * pointing at a folder deleted since it was opened). A caller in `admin.preview` or
+ * `admin.livePreview.url`, where a throw breaks the whole preview button, should catch it and fall
+ * back to no preview URL.
  */
 export const computeFullPath = async (
   payload: Payload,

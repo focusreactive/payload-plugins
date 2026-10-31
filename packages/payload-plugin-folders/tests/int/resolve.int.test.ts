@@ -1,3 +1,5 @@
+import { setTimeout as sleep } from "node:timers/promises";
+
 import type { CollectionConfig, User } from "payload";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
@@ -128,7 +130,7 @@ describe("resolvePath", () => {
       expect(titleOf(result)).toBe("Blog Home");
     }
     // The other forms of a nested path land on the page too, and a page is not its folder's root.
-    for (const path of ["/blog/team", "blog/team/", "//blog//team"]) {
+    for (const path of ["/blog/team", "blog/team/"]) {
       const result = await resolve({ path });
 
       expect(titleOf(result)).toBe("Team");
@@ -161,12 +163,61 @@ describe("resolvePath", () => {
   it("/ is the site root page", async () => {
     await createArticle({ isFolderRoot: true, slug: "start", title: "Home" });
 
-    for (const path of ["/", "", "//"]) {
+    for (const path of ["/", ""]) {
       const result = await resolve({ path });
 
       expect(result).toMatchObject({ collection: "articles", fullPath: "/", type: "page" });
       expect(titleOf(result)).toBe("Home");
     }
+    expect(await resolve({ path: "//" })).toEqual({ status: 301, to: "/", type: "redirect" });
+  });
+
+  it("repeated slashes redirect to the collapsed path, a trailing or missing slash resolves in place", async () => {
+    const folder = await createFolder(harness.payload, {
+      name: "Slashes",
+      slug: uniqueName("slashes"),
+    });
+    await createArticle({ folder: folder.id, slug: "team", title: "Team" });
+    const base = `/${folder.slug}`;
+
+    for (const path of [
+      `//${folder.slug}//team`,
+      `${base}//team`,
+      `${base}/team//`,
+      `//${folder.slug}/team`,
+    ]) {
+      expect(await resolve({ path })).toEqual({
+        status: 301,
+        to: `${base}/team`,
+        type: "redirect",
+      });
+    }
+    // The redirect follows the same rules as the case redirect: it needs a page at the target.
+    expect(await resolve({ path: `${base}//nothing` })).toEqual({ type: "notFound" });
+    // A trailing slash and a missing leading slash stay in place (ticket P-31).
+    expect(titleOf(await resolve({ path: `${base}/team/` }))).toBe("Team");
+    expect(titleOf(await resolve({ path: `${folder.slug}/team` }))).toBe("Team");
+    // The collapsed path can also be the case redirect's: one hop to the canonical form.
+    expect(await resolve({ path: `//${String(folder.slug).toUpperCase()}//Team` })).toEqual({
+      status: 301,
+      to: `${base}/team`,
+      type: "redirect",
+    });
+  });
+
+  it("a root page does not answer at its own slug", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { name: "Roots", slug: uniqueName("roots") });
+    await createArticle({
+      folder: folder.id,
+      isFolderRoot: true,
+      slug: "landing",
+      title: "Landing",
+    });
+
+    // The root page answers at its folder's path and nowhere else.
+    expect(titleOf(await resolve({ path: `/${folder.slug}` }))).toBe("Landing");
+    expect(await resolve({ path: `/${folder.slug}/landing` })).toEqual({ type: "notFound" });
   });
 
   it("an old path returns a redirect", async () => {
@@ -345,6 +396,64 @@ describe("resolvePath rules", () => {
     const result = await resolve({ path: `/${folder.slug}/same` });
 
     expect(titleOf(result)).toBe("First");
+  });
+
+  it("oldest wins when two collections share a path, whichever collection holds it", async () => {
+    const { payload } = harness;
+    const createInternalPage = (folder: number, title: string) =>
+      payload.create({
+        collection: "pages",
+        context: { foldersInternal: true },
+        data: { _status: "published", folder, slug: "same", title },
+        depth: 0,
+        overrideAccess: true,
+      });
+
+    // The article is the oldest: the pages collection holds a later duplicate that predates no check.
+    const articleFirst = await createFolder(payload, { name: "AF", slug: uniqueName("af") });
+    await createArticle({ folder: articleFirst.id, slug: "same", title: "Article first" });
+    await sleep(15);
+    await createInternalPage(articleFirst.id, "Page second");
+    // The page is the oldest: the article collection holds the later duplicate.
+    const pageFirst = await createFolder(payload, { name: "PF", slug: uniqueName("pf") });
+    await createPage({ folder: pageFirst.id, slug: "same", title: "Page first" });
+    await sleep(15);
+    await createArticle(
+      { folder: pageFirst.id, slug: "same", title: "Article second" },
+      { context: { foldersInternal: true } }
+    );
+
+    expect(
+      titleOf(await resolve({ overrideAccess: true, path: `/${articleFirst.slug}/same` }))
+    ).toBe("Article first");
+    expect(titleOf(await resolve({ overrideAccess: true, path: `/${pageFirst.slug}/same` }))).toBe(
+      "Page first"
+    );
+  });
+
+  it("a legacy segment answers in place only under a lowercase folder path", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { name: "Cased", slug: uniqueName("cased") });
+    // Saved before the plugin: an internal write skips the segment pattern (decision 22).
+    await createArticle(
+      { folder: folder.id, slug: "About", title: "Old About" },
+      { context: { foldersInternal: true } }
+    );
+    const shouted = String(folder.slug).toUpperCase();
+
+    // The folder part gets the case redirect; the page segment keeps its own case.
+    expect(await resolve({ path: `/${shouted}/About` })).toEqual({
+      status: 301,
+      to: `/${folder.slug}/About`,
+      type: "redirect",
+    });
+    expect(titleOf(await resolve({ path: `/${folder.slug}/About` }))).toBe("Old About");
+    // A repeated slash is redirected for a legacy segment as well.
+    expect(await resolve({ path: `/${folder.slug}//About` })).toEqual({
+      status: 301,
+      to: `/${folder.slug}/About`,
+      type: "redirect",
+    });
   });
 
   it("answers a segment saved with capitals at its own path first", async () => {
