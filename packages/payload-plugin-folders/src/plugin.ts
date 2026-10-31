@@ -8,6 +8,7 @@ import { buildFolderRedirectsCollection } from "./collections/folderRedirects.js
 import { buildFoldersCollection } from "./collections/folders.js";
 import { pluginSlug } from "./constants.js";
 import { buildFoldersEndpoints } from "./endpoints/index.js";
+import { buildFoldersResolveQueries } from "./graphql/foldersResolve.js";
 import { addPageFields } from "./fields/pageFields.js";
 import { mergeFoldersTranslations } from "./translations/index.js";
 import { buildTreeStateGlobal } from "./globals/treeState.js";
@@ -19,6 +20,16 @@ import {
 import type { FoldersPluginOptions } from "./types.js";
 
 export { pluginSlug } from "./constants.js";
+
+type GraphqlQueries = NonNullable<NonNullable<Config["graphQL"]>["queries"]>;
+
+/** The host's own custom queries stay; the plugin's are added beside them. */
+const addGraphqlQueries =
+  (hostQueries: GraphqlQueries | undefined, pluginQueries: GraphqlQueries): GraphqlQueries =>
+  (graphQL, context) => ({
+    ...hostQueries?.(graphQL, context),
+    ...pluginQueries(graphQL, context),
+  });
 
 export const foldersPlugin = definePlugin<FoldersPluginOptions>({
   slug: pluginSlug,
@@ -76,6 +87,12 @@ export const foldersPlugin = definePlugin<FoldersPluginOptions>({
               Object.keys(config.i18n?.supportedLanguages ?? {})
             ),
           } as Config["i18n"]),
+      graphQL: resolved.disabled
+        ? config.graphQL
+        : {
+            ...config.graphQL,
+            queries: addGraphqlQueries(config.graphQL?.queries, buildFoldersResolveQueries()),
+          },
       endpoints: [
         ...(config.endpoints ?? []),
         ...(resolved.disabled ? [] : buildFoldersEndpoints(resolved)),

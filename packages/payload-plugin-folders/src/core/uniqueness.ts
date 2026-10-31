@@ -61,7 +61,7 @@ type SegmentConflictArgs = {
  * collection has drafts and localized fields (`localizeStatus`), and a page is live as soon as one
  * locale is published. Null for a collection without drafts, where every row is live.
  */
-const buildPublishedWhere = (payload: Payload, collectionSlug: string): Where | null => {
+export const buildPublishedWhere = (payload: Payload, collectionSlug: string): Where | null => {
   const config = payload.collections[toCollectionSlug(collectionSlug)]?.config;
   if (!config?.versions?.drafts) {
     return null;
@@ -109,15 +109,15 @@ export const readTitle = async (
   return toText(value) || "Untitled";
 };
 
-const buildPageSegmentWhere = (
-  req: PayloadRequest,
+export const buildPageSegmentWhere = (
+  payload: Payload,
   page: ResolvedPageCollection,
   locale: string,
   segment: string | string[]
 ): Where =>
   page.segmentLocalized && locale !== noLocaleKey
     ? buildSegmentWhere({
-        defaultLocale: getPageDefaultLocale(req.payload),
+        defaultLocale: getPageDefaultLocale(payload),
         locale,
         segment,
       })
@@ -174,7 +174,7 @@ export const findSegmentConflict = async ({
         and: [
           { folder: { equals: folder?.id ?? null } },
           { isFolderRoot: { not_equals: true } },
-          buildPageSegmentWhere(req, page, locale, segment),
+          buildPageSegmentWhere(payload, page, locale, segment),
           ...(self?.collection === page.slug ? [{ id: { not_equals: self.id } }] : []),
           ...(publishedWhere ? [publishedWhere] : []),
         ],
@@ -260,7 +260,7 @@ export const findSegmentConflicts = async ({
         and: [
           { folder: { equals: folder?.id ?? null } },
           { isFolderRoot: { not_equals: true } },
-          buildPageSegmentWhere(req, page, locale, open),
+          buildPageSegmentWhere(payload, page, locale, open),
           ...(publishedWhere ? [publishedWhere] : []),
         ],
       },

@@ -252,3 +252,40 @@ export const parseList = (value: unknown, label: string): string[] | undefined =
 
   return entries.flatMap((entry: string) => entry.split(",")).filter((entry) => entry !== "");
 };
+
+/** A flag in a query string: `true`, `false`, `1` or `0`. */
+export const parseBoolean = (value: unknown, label: string): boolean | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (value === "true" || value === "1" || value === true) {
+    return true;
+  }
+  if (value === "false" || value === "0" || value === false) {
+    return false;
+  }
+  throw badRequest(`\`${label}\` must be true or false`);
+};
+
+/** A whole number from a query string, between `minimum` and `maximum`. */
+export const parseWholeNumber = ({
+  label,
+  maximum,
+  minimum,
+  value,
+}: {
+  label: string;
+  maximum: number;
+  minimum: number;
+  value: unknown;
+}): number | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+  const parsed = typeof value === "string" && /^\d+$/u.test(value) ? Number(value) : Number.NaN;
+  if (!Number.isSafeInteger(parsed) || parsed < minimum || parsed > maximum) {
+    throw badRequest(`\`${label}\` must be a whole number from ${minimum} to ${maximum}`);
+  }
+
+  return parsed;
+};

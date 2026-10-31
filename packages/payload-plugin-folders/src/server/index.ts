@@ -28,3 +28,5 @@ export { getChildren } from "../core/treeChildren.js";
 export type { ChildrenArgs, ChildrenResult } from "../core/treeChildren.js";
 export { searchTree } from "../core/treeSearch.js";
 export type { SearchArgs } from "../core/treeSearch.js";
+export { computeFullPath, resolvePath } from "../core/resolve.js";
+export type { ResolveArgs, ResolveResult } from "../core/resolve.js";
