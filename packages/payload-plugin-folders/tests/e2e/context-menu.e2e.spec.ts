@@ -236,7 +236,14 @@ test("Move to... from the menu acts on every ticked row", async ({ page, request
 
   await openRowMenu(pageRow(page, "Pick One"));
   // Opened on a ticked row of two, the menu offers what works on a selection.
-  await expect(contextMenu(page).getByRole("menuitem")).toHaveText(["Move", "Move to..."]);
+  await expect(contextMenu(page).getByRole("menuitem")).toHaveText([
+    "Move",
+    "Move to...",
+    "Duplicate",
+    "Publish",
+    "Unpublish",
+    "Delete",
+  ]);
   await menuItem(page, "Move to...").click();
 
   await expect(page.getByRole("dialog").getByText("Move 2 items to...")).toBeVisible();
@@ -286,7 +293,8 @@ test("Shift+F10 opens the menu", async ({ page }) => {
   await page.keyboard.press("ArrowDown");
   await expect(menuItem(page, "Open in new tab")).toBeFocused();
   await page.keyboard.press("End");
-  await expect(menuItem(page, "Copy URL")).toBeFocused();
+  // Delete is the last entry, in a group of its own after Publish and Unpublish (spec section 7.5).
+  await expect(menuItem(page, "Delete")).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(contextMenu(page)).toHaveCount(0);
   await expect(checkbox).toBeFocused();
