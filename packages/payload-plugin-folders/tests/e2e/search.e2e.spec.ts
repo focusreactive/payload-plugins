@@ -193,6 +193,10 @@ test("no results offers Search everywhere", async ({ page, request }) => {
 
 test("Escape expands to the focused result", async ({ page }) => {
   await openContentTree(page);
+  // A CI runner has two slow cores: the tree rebuilds well after the keys are pressed, and the
+  // row's focus has to survive that.
+  const session = await page.context().newCDPSession(page);
+  await session.send("Emulation.setCPUThrottlingRate", { rate: 6 });
   await typeSearch(page, "new year");
   await expect(pageRow(page, "New Year")).toBeVisible();
 

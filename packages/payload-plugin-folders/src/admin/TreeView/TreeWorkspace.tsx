@@ -435,6 +435,17 @@ const TreeWorkspaceContent = ({
 
   // The keyboard hook is built after the actions that need its tree element.
   const keyboardRef = useRef<TreeKeyboard | null>(null);
+  // The hits and the tree draw a row for the same item, so a row asked for while the hits are still
+  // on screen is found at once and then replaced by the tree's own, and the focus is lost with it.
+  // The row is therefore asked for only after the render that leaves the search.
+  const [focusAfterSearch, setFocusAfterSearch] = useState<TreeItem | null>(null);
+  useEffect(() => {
+    if (focusAfterSearch === null || isSearching) {
+      return;
+    }
+    setFocusAfterSearch(null);
+    focusRowWhenShown(focusAfterSearch, () => keyboardRef.current?.treeRef.current ?? null);
+  }, [focusAfterSearch, isSearching]);
   // Escape in a search: the tree is back, the focused hit's folders are open and its row has the focus.
   const leaveSearch = useCallback(
     (focused: TreeItem | null) => {
@@ -453,7 +464,7 @@ const TreeWorkspaceContent = ({
         for (const id of toOpen) {
           await store.setExpanded(id, true);
         }
-        focusRowWhenShown(focused, () => keyboardRef.current?.treeRef.current ?? null);
+        setFocusAfterSearch(focused);
       })();
     },
     [onSearchChange, onZoom, store, zoom?.folderId]
