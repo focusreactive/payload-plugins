@@ -7,13 +7,15 @@ import { en } from "@payloadcms/translations/languages/en";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildConfig } from "payload";
-import type { CollectionConfig, Config } from "payload";
+import type { Access, CollectionConfig, Config } from "payload";
 
 import {
   adminOnlyRepair,
   folderCreateAccess,
   folderDeleteAccess,
   folderUpdateAccess,
+  publicReadsAll,
+  publicReadsPublished,
 } from "./access/roles.js";
 import { Pages } from "./collections/Pages.js";
 import { Posts } from "./collections/Posts.js";
@@ -38,6 +40,12 @@ export type DevConfigOptions = {
   db?: Config["db"];
   /** False builds the app without localization; tests use it to cover the plain-column shapes. */
   localized?: boolean;
+  /**
+   * Lets a visitor read published pages and posts, as the frontend example (`dev/app/(frontend)`)
+   * needs. Off by default: the integration tests rely on pages a reader cannot see, and only the
+   * dev server (`dev/payload.config.ts`) turns it on.
+   */
+  publicReads?: boolean;
   /** The collections `@payloadcms/plugin-redirects` may reference; default pages and posts. */
   redirectsCollections?: string[];
   /** Merged over the dev app's plugin options. */
@@ -50,6 +58,13 @@ export type DevConfigOptions = {
   trash?: boolean | "pagesOnly";
 };
 
+const withPublicRead = (
+  collection: CollectionConfig,
+  read: Access,
+  isOn: boolean
+): CollectionConfig =>
+  isOn ? { ...collection, access: { ...collection.access, read } } : collection;
+
 export const buildDevConfig = ({
   autoLogin = !isProduction,
   db = sqliteAdapter({
@@ -61,6 +76,7 @@ export const buildDevConfig = ({
   extraCollections = [],
   foldersOptions,
   localized = true,
+  publicReads = false,
   redirectsCollections = ["pages", "posts"],
   trash = false,
 }: DevConfigOptions = {}) =>
@@ -78,8 +94,12 @@ export const buildDevConfig = ({
       user: "users",
     },
     collections: [
-      trash ? { ...Pages, trash: true } : Pages,
-      trash === true ? { ...Posts, trash: true } : Posts,
+      withPublicRead(trash ? { ...Pages, trash: true } : Pages, publicReadsPublished, publicReads),
+      withPublicRead(
+        trash === true ? { ...Posts, trash: true } : Posts,
+        publicReadsAll,
+        publicReads
+      ),
       Users,
       ...extraCollections,
     ],

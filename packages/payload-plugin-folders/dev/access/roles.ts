@@ -108,3 +108,13 @@ export const folderDeleteAccess: Access = async (args) => {
 /** Only an admin sees the repair action (decision 5): every editor passes the default rule. */
 export const adminOnlyRepair = ({ req }: { req: PayloadRequest }): boolean =>
   roleOf(req) === "admin";
+
+/**
+ * `read` access of the dev app's page collections for the frontend example (spec section 10.3): a
+ * signed-in user reads everything, a visitor only what is published.
+ */
+export const publicReadsPublished: Access = ({ req }) =>
+  req.user ? true : { _status: { equals: "published" } };
+
+/** The same for a collection without drafts, whose rows are all live. */
+export const publicReadsAll: Access = () => true;
