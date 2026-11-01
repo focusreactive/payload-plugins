@@ -161,9 +161,13 @@ export const useOperationsFlow = ({
         if (isCancelled) {
           return;
         }
+        // Only operations the page did not know are started: one it tracks has its own runner loop,
+        // or was stopped on this page (a failed run shows as failed here while the server still has
+        // it as running), and a new revision must not step it again.
+        const known = new Set(operationsRef.current.map((operation) => String(operation.id)));
         update((current) => mergeResumed(current, resumed));
         for (const operation of resumed) {
-          if (operation.status === "running") {
+          if (operation.status === "running" && !known.has(String(operation.id))) {
             void runner.run(operation.id, operation);
           }
         }
