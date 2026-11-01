@@ -577,8 +577,8 @@ describe("what the update access is asked", () => {
     }
 
     const orderKeyOf = (id: number) => result.orderKeys[`pages:${id}`];
-    // The first pass asks with the folder only, the late pass adds the order key, and the live
-    // page asks the publish question once more.
+    // The first pass asks with the folder only, and the live page asks the publish question there,
+    // before any conflict is read (its order key is not known yet); the late pass adds the order key.
     expect(asked).toHaveLength(5);
     expect(asked).toContainEqual({ data: { folder: tree.blog.id }, id: tree.pages.contact.id });
     expect(asked).toContainEqual({ data: { folder: tree.blog.id }, id: tree.pages.members.id });
@@ -592,13 +592,10 @@ describe("what the update access is asked", () => {
     });
     // Only the published page asks the publish question.
     expect(asked).toContainEqual({
-      data: {
-        _status: "published",
-        folder: tree.blog.id,
-        orderKey: orderKeyOf(tree.pages.contact.id),
-      },
+      data: { _status: "published", folder: tree.blog.id },
       id: tree.pages.contact.id,
     });
+    expect(asked.filter((entry) => entry.data?._status === "published")).toHaveLength(1);
   });
 
   it("asks the publish question once per collection and folder beneath a moved folder", async () => {
@@ -698,5 +695,80 @@ describe("tree item access and repair", () => {
     ).toBe(false);
     const anonymous = await createPayloadRequest({ payload: harness.payload, req: {} });
     expect(await canRepairTree({ options: withoutRepairOption, req: anonymous })).toBe(false);
+  });
+});
+
+describe("the dev drafter in a collection without drafts", () => {
+  // A post has no draft state: a save of it is live at once and carries no `_status`, so the
+  // drafter's "may not publish" rule never sees it. The dev role refuses the drafter outright.
+  const send = <TBody>(
+    method: "PATCH" | "POST",
+    path: string,
+    body: unknown,
+    user: { email: string; password: string }
+  ) =>
+    callEndpoint<TBody>({
+      body,
+      config: harness.config,
+      method,
+      path,
+      payload: harness.payload,
+      payloadInstanceCacheKey: harness.cacheKey,
+      user,
+    });
+
+  it("cannot change a post's slug or set it as a root page over REST", async () => {
+    const tree = await seed();
+    const postId = tree.pages.timeline.id;
+
+    const slug = await send<ErrorBody>(
+      "PATCH",
+      `/posts/${postId}`,
+      { slug: "moved" },
+      as("drafter")
+    );
+    const root = await send<ErrorBody>(
+      "PATCH",
+      `/posts/${postId}`,
+      { isFolderRoot: true },
+      as("drafter")
+    );
+    const asEditor = await send<ErrorBody>(
+      "PATCH",
+      `/posts/${postId}`,
+      { slug: "moved" },
+      as("editor")
+    );
+
+    expect(slug.status).toBe(403);
+    expect(root.status).toBe(403);
+    expect(asEditor.status).toBe(200);
+  });
+
+  it("cannot create a post or duplicate into posts, and still creates a page draft", async () => {
+    const tree = await seed();
+
+    const created = await send<ErrorBody>(
+      "POST",
+      "/posts",
+      { folder: tree.blog.id, slug: "fresh", title: "Fresh" },
+      as("drafter")
+    );
+    const duplicated = await send<ErrorBody>(
+      "POST",
+      "/folders-tree/duplicate",
+      { items: [{ collection: "posts", id: tree.pages.timeline.id }] },
+      as("drafter")
+    );
+    const page = await send<ErrorBody>(
+      "POST",
+      "/pages",
+      { _status: "draft", folder: tree.blog.id, slug: "fresh", title: "Fresh" },
+      as("drafter")
+    );
+
+    expect(created.status).toBe(403);
+    expect(duplicated.status).toBe(403);
+    expect(page.status).toBe(201);
   });
 });
