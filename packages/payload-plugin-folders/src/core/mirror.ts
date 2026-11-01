@@ -5,6 +5,7 @@ import type { FolderId, ItemRef, MirrorTarget, PathChange, ResolvedOptions } fro
 import { createNestedRequest } from "./nestedRequest.js";
 import { registerOperationHandler, startOperation } from "./operations.js";
 import { buildUrl } from "./paths.js";
+import { hasLivePageAt } from "./resolve.js";
 import { getPageDefaultLocale } from "./uniqueness.js";
 
 /** One `@payloadcms/plugin-redirects` row to write: a prefixed old path and the page that took it over. */
@@ -13,6 +14,10 @@ export type MirrorRow = {
   /** The old path with the frontend's locale prefix, the redirects plugin's unique `from`. */
   from: string;
   id: FolderId;
+  /** The locale the old path was live in, `null` when nothing is localized. A queued row is checked against it. */
+  locale: string | null;
+  /** The old path without the locale prefix, for the live-page check a queued row runs when it is stepped. */
+  path: string;
   /** The new path with the same prefix; the target of a row whose collection cannot be referenced. */
   to: string;
 };
@@ -70,6 +75,8 @@ export const planMirrorRows = (
         collection: change.collection,
         from,
         id: change.id,
+        locale: change.locale,
+        path: change.from,
         to: withPrefix(change.to, change.locale, options, payload),
       });
     }
@@ -120,19 +127,25 @@ const rowData = (row: MirrorRow, mirror: MirrorTarget): Record<string, unknown> 
  * Upserts rows by `from` (the redirects plugin's unique field) through the Local API, so the host's
  * own hooks on its redirects collection run (a cache revalidation, for one), on the caller's
  * transaction: a rollback leaves none. Idempotent, so a retried step writes nothing twice.
+ *
+ * `notUpdatedSince` is for a queued row: an existing row that changed after the operation was
+ * queued was written by someone newer (another move, an editor), and is left as it is.
  */
 const upsertMirrorRows = async ({
   mirror,
+  notUpdatedSince = null,
   req,
   rows,
 }: {
   mirror: MirrorTarget;
+  notUpdatedSince?: string | null;
   req: PayloadRequest;
   rows: MirrorRow[];
 }): Promise<void> => {
   const { payload } = req;
   const collection = toCollectionSlug(mirror.collectionSlug);
   const nested = createNestedRequest(req);
+  const queuedAt = notUpdatedSince === null ? Number.NaN : Date.parse(notUpdatedSince);
 
   for (const rowsOfChunk of chunk(rows)) {
     const { docs } = await payload.find({
@@ -141,15 +154,21 @@ const upsertMirrorRows = async ({
       overrideAccess: true,
       pagination: false,
       req: nested,
-      select: { from: true } as never,
+      select: { from: true, updatedAt: true } as never,
       where: { from: { in: rowsOfChunk.map((row) => row.from) } },
     });
-    const existingIdByFrom = new Map(
-      (docs as Array<{ from: string; id: FolderId }>).map((doc) => [doc.from, doc.id])
+    const existingByFrom = new Map(
+      (docs as unknown as Array<{ from: string; id: FolderId; updatedAt: string }>).map((doc) => [
+        doc.from,
+        doc,
+      ])
     );
 
     for (const row of rowsOfChunk) {
-      const existingId = existingIdByFrom.get(row.from);
+      const existing = existingByFrom.get(row.from);
+      if (existing !== undefined && Date.parse(existing.updatedAt) > queuedAt) {
+        continue;
+      }
       const common = {
         collection,
         data: rowData(row, mirror) as never,
@@ -158,13 +177,36 @@ const upsertMirrorRows = async ({
         req: nested,
         select: { id: true } as never,
       };
-      if (existingId === undefined) {
+      if (existing === undefined) {
         await payload.create(common);
       } else {
-        await payload.update({ ...common, id: existingId });
+        await payload.update({ ...common, id: existing.id });
       }
     }
   }
+};
+
+/** The rows of a queued operation whose `from` has no live page now: a page that took the path since must keep it. */
+const dropRowsOnLivePaths = async ({
+  req,
+  rows,
+}: {
+  req: PayloadRequest;
+  rows: MirrorRow[];
+}): Promise<MirrorRow[]> => {
+  const nested = createNestedRequest(req);
+  const kept: MirrorRow[] = [];
+  for (const row of rows) {
+    // A unit stored before rows carried their path cannot be checked, and is written as it was.
+    const isLive =
+      typeof row.path === "string" &&
+      (await hasLivePageAt(req.payload, { locale: row.locale, path: row.path, req: nested }));
+    if (!isLive) {
+      kept.push(row);
+    }
+  }
+
+  return kept;
 };
 
 /** Deletes the rows whose `from` is one of `froms`, `keyChunkSize` at a time. */
@@ -234,7 +276,12 @@ export const settleMirror = async ({
     return { operationId: null };
   }
   if (rows.length > options.limits.maxSyncDocuments && req.user) {
-    const { id } = await startOperation({ items: rows, kind: "mirrorRedirects", req });
+    const { id } = await startOperation({
+      items: rows,
+      kind: "mirrorRedirects",
+      params: { queuedAt: new Date().toISOString() },
+      req,
+    });
 
     return { operationId: id };
   }
@@ -294,11 +341,20 @@ export const deleteMirrorRowsTargeting = async ({
 };
 
 registerOperationHandler("mirrorRedirects", {
-  run: async ({ options, req }, units) => {
+  run: async ({ options, params, req }, units) => {
     const { mirror } = options.redirects;
     // A host that turned the mirror off while an operation was open has nothing left to write.
-    if (mirror) {
-      await upsertMirrorRows({ mirror, req, rows: units as MirrorRow[] });
+    if (!mirror) {
+      return;
     }
+    // The rows were planned when the operation was queued, and the site has moved on since: a page
+    // may hold a path a row redirects from, and a newer row may stand where one would be written.
+    const rows = await dropRowsOnLivePaths({ req, rows: units as MirrorRow[] });
+    await upsertMirrorRows({
+      mirror,
+      notUpdatedSince: typeof params.queuedAt === "string" ? params.queuedAt : null,
+      req,
+      rows,
+    });
   },
 });

@@ -440,6 +440,86 @@ describe("a change with no user above the limit", () => {
   });
 });
 
+describe("a queued batch the site outran", () => {
+  const renameAbout = (instance: TestPayload, folderId: number) =>
+    callEndpoint({
+      body: { slug: "company" },
+      config: instance.config,
+      method: "PATCH",
+      path: `/folders/${folderId}`,
+      payload: instance.payload,
+      payloadInstanceCacheKey: instance.cacheKey,
+    });
+
+  const stepAll = async (instance: TestPayload, operationId: number) => {
+    let progress: OperationProgress = { done: 0, status: "running", total: 1 };
+    while (progress.status === "running") {
+      progress = (
+        await callEndpoint<OperationProgress>({
+          config: instance.config,
+          method: "POST",
+          path: `/folders-tree/operations/${operationId}/step`,
+          payload: instance.payload,
+          payloadInstanceCacheKey: instance.cacheKey,
+        })
+      ).body;
+    }
+
+    return progress;
+  };
+
+  it("does not write a row from a path a live page took after it was queued", async () => {
+    const { payload } = smallLimitHarness;
+    const tree = await seedTree(payload);
+    expect((await renameAbout(smallLimitHarness, tree.about.id)).status).toBe(200);
+    const { docs } = await findMirrorOperation(payload);
+    expect(docs).toHaveLength(1);
+    expect(await readMirrorRows(payload)).toEqual([]);
+
+    // A new folder takes the vacated /about and a live page takes /about/contact.
+    const taken = await createFolder(payload, { slug: "about" });
+    await payload.create({
+      collection: "pages",
+      data: { _status: "published", folder: taken.id, slug: "contact", title: "New contact" },
+      depth: 0,
+      overrideAccess: true,
+    });
+    expect((await stepAll(smallLimitHarness, docs[0].id)).status).toBe("done");
+
+    expect(await rowFrom(payload, "/about/contact")).toBeUndefined();
+    expect(await rowFrom(payload, "/de/about/contact")).toBeUndefined();
+    // The pages nobody took the path of are still written.
+    expect(await rowFrom(payload, "/about/history/timeline")).toBeDefined();
+  });
+
+  it("does not overwrite a row that changed after it was queued", async () => {
+    const { payload } = smallLimitHarness;
+    const tree = await seedTree(payload);
+    expect((await renameAbout(smallLimitHarness, tree.about.id)).status).toBe(200);
+    const { docs } = await findMirrorOperation(payload);
+
+    // A newer row for the same old URL, as a later move or an editor would write it.
+    await new Promise((resolve) => {
+      setTimeout(resolve, 20);
+    });
+    await payload.create({
+      collection: "redirects",
+      data: { from: "/about/contact", to: { type: "custom", url: "/newer" } } as never,
+      overrideAccess: true,
+    });
+    expect((await stepAll(smallLimitHarness, docs[0].id)).status).toBe("done");
+
+    expect((await rowFrom(payload, "/about/contact"))?.to).toMatchObject({
+      type: "custom",
+      url: "/newer",
+    });
+    // The row nobody touched is written as queued.
+    expect(await rowFrom(payload, "/de/about/contact")).toMatchObject({
+      to: { reference: { value: tree.pages.contact.id }, type: "reference" },
+    });
+  });
+});
+
 describe("a large folder rename", () => {
   const adminRequest = (payload: Payload, instance: TestPayload) => ({
     config: instance.config,

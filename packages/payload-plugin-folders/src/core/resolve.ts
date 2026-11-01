@@ -1,5 +1,5 @@
 import { APIError } from "payload";
-import type { Payload, User, Where } from "payload";
+import type { Payload, PayloadRequest, User, Where } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, ResolvedOptions } from "../types.js";
@@ -50,6 +50,8 @@ type LookupContext = {
   options: ResolvedOptions;
   overrideAccess: boolean;
   payload: Payload;
+  /** Runs the reads on this request, so they join its transaction. */
+  req?: PayloadRequest;
   user: User | null;
 };
 
@@ -105,7 +107,7 @@ const toPathShape = (path: string): string => {
  * (decision 22), and `resolvePath` tries the exact path before the lowercased one.
  */
 const lookupPage = async (context: LookupContext, path: string): Promise<PageHit | null> => {
-  const { depth, draft, locale, options, overrideAccess, payload, user } = context;
+  const { depth, draft, locale, options, overrideAccess, payload, req, user } = context;
   const segments = path.split("/").filter((segment) => segment !== "");
   const lastSegment = segments.at(-1);
   const parentPath = `/${segments.slice(0, -1).join("/")}`;
@@ -151,6 +153,7 @@ const lookupPage = async (context: LookupContext, path: string): Promise<PageHit
           ...(locale === null ? {} : { locale: locale as never }),
           overrideAccess,
           pagination: false,
+          ...(req ? { req } : {}),
           sort: ["createdAt", "id"],
           user,
           where: { and: [{ or: clauses }, ...(live ? [live] : [])] },
@@ -183,6 +186,29 @@ const lookupPage = async (context: LookupContext, path: string): Promise<PageHit
 
   return oldest;
 };
+
+/**
+ * Whether a published page answers at exactly `path` (no locale prefix, capitals kept) in `locale`,
+ * whoever asks: for plugin code that must know what is live, such as a queued redirect row that
+ * should not start at a path a page has taken since. Pass `req` to read inside its transaction.
+ */
+export const hasLivePageAt = async (
+  payload: Payload,
+  { locale, path, req }: { locale: string | null; path: string; req?: PayloadRequest }
+): Promise<boolean> =>
+  (await lookupPage(
+    {
+      depth: 0,
+      draft: false,
+      locale: resolveRequestLocale(payload, locale),
+      options: getResolvedOptions(payload),
+      overrideAccess: true,
+      payload,
+      ...(req ? { req } : {}),
+      user: null,
+    },
+    path
+  )) !== null;
 
 /** The lowercase path with its last segment replaced by `segment`, as the visitor typed it. */
 const joinPathKeepingCase = (canonical: string, segment: string): string => {

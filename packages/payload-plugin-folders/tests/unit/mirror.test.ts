@@ -41,7 +41,14 @@ describe("planMirrorRows", () => {
     );
 
     expect(rows).toEqual([
-      { collection: "pages", from: "/de/blog/post", id: 1, to: "/de/news/post" },
+      {
+        collection: "pages",
+        from: "/de/blog/post",
+        id: 1,
+        locale: "de",
+        path: "/blog/post",
+        to: "/de/news/post",
+      },
     ]);
   });
 
