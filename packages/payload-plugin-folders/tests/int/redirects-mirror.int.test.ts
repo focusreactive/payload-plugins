@@ -15,6 +15,8 @@ import { createFolder } from "../helpers/treeFixtures.js";
 let harness: TestPayload;
 let pagesOnlyHarness: TestPayload;
 let pagesTrashHarness: TestPayload;
+// A mirror whose limit is one row, so any change of two or more rows is above it.
+let smallLimitHarness: TestPayload;
 
 beforeAll(async () => {
   const mirror = { redirects: { mirrorToRedirectsPlugin: true } };
@@ -24,12 +26,16 @@ beforeAll(async () => {
     redirectsCollections: ["pages"],
   });
   pagesTrashHarness = await getTestPayload({ foldersOptions: mirror, trash: "pagesOnly" });
+  smallLimitHarness = await getTestPayload({
+    foldersOptions: { ...mirror, limits: { maxSyncDocuments: 1 } },
+  });
 });
 
 afterAll(async () => {
   await harness?.destroy();
   await pagesOnlyHarness?.destroy();
   await pagesTrashHarness?.destroy();
+  await smallLimitHarness?.destroy();
 });
 
 const forgetRows = async (payload: Payload): Promise<void> => {
@@ -39,7 +45,7 @@ const forgetRows = async (payload: Payload): Promise<void> => {
 };
 
 afterEach(async () => {
-  for (const { payload } of [harness, pagesOnlyHarness, pagesTrashHarness]) {
+  for (const { payload } of [harness, pagesOnlyHarness, pagesTrashHarness, smallLimitHarness]) {
     await forgetRows(payload);
     await clearTree(payload);
   }
@@ -365,6 +371,74 @@ const findMirrorOperation = async (payload: Payload) =>
     collection: "folder-operations" as never,
     where: { kind: { equals: "mirrorRedirects" } },
   })) as { docs: Array<{ done: number; id: number; status: string; total: number }> };
+
+describe("a change with no user above the limit", () => {
+  it("moveItems writes every row at once and answers no operation", async () => {
+    const { payload } = smallLimitHarness;
+    const tree = await seedTree(payload);
+
+    const result = await moveItems(payload, {
+      items: [pageRef(tree.pages.contact.id)],
+      overrideAccess: true,
+      toFolder: tree.blog.id,
+    });
+
+    // The page is live in en and, through fallback, in de: two rows above a limit of one.
+    expect(result.mirrorOperationId).toBeUndefined();
+    expect((await readMirrorRows(payload)).map((row) => row.from).toSorted()).toEqual([
+      "/about/contact",
+      "/de/about/contact",
+    ]);
+    expect((await findMirrorOperation(payload)).docs).toEqual([]);
+  });
+
+  it("repairTree writes every row at once", async () => {
+    const { payload } = smallLimitHarness;
+    for (const segment of ["About", "Team"]) {
+      await payload.db.create({
+        collection: "posts",
+        data: {
+          createdAt: "2026-01-01T00:00:00.000Z",
+          folder: null,
+          isFolderRoot: false,
+          orderKey: segment === "About" ? "a0" : "a1",
+          pathSegment: segment,
+          slug: segment,
+          structureRevision: 0,
+          title: segment,
+          updatedAt: "2026-01-01T00:00:00.000Z",
+        },
+      });
+    }
+
+    await repairTree(payload);
+
+    expect((await readMirrorRows(payload)).map((row) => row.from).toSorted()).toEqual([
+      "/About",
+      "/Team",
+      "/de/About",
+      "/de/Team",
+    ]);
+    expect((await findMirrorOperation(payload)).docs).toEqual([]);
+  });
+
+  it("a change made by a user still queues an operation", async () => {
+    const { payload } = smallLimitHarness;
+    const tree = await seedTree(payload);
+
+    const renamed = await callEndpoint({
+      config: smallLimitHarness.config,
+      body: { slug: "company" },
+      method: "PATCH",
+      path: `/folders/${tree.about.id}`,
+      payload,
+      payloadInstanceCacheKey: smallLimitHarness.cacheKey,
+    });
+
+    expect(renamed.status).toBe(200);
+    expect((await findMirrorOperation(payload)).docs).toHaveLength(1);
+  });
+});
 
 describe("a large folder rename", () => {
   const adminRequest = (payload: Payload, instance: TestPayload) => ({

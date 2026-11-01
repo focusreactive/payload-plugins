@@ -198,7 +198,10 @@ const deleteMirrorRowsFrom = async ({
  *
  * Above `limits.maxSyncDocuments` rows the writes are stored as a `mirrorRedirects` operation for
  * the admin to step (spec section 5.8) and its id is answered; the stale rows are deleted at once,
- * because that is one query per 500 paths. Answers null when everything was written here.
+ * because that is one query per 500 paths. A change with no user (a seed, the repair CLI, a Local
+ * API call with `overrideAccess`) has nobody who could step an operation, because only its owner may
+ * (decision 32), so its rows are written here whatever their number. Answers null when everything
+ * was written here.
  */
 export const settleMirror = async ({
   changes,
@@ -230,7 +233,7 @@ export const settleMirror = async ({
   if (rows.length === 0) {
     return { operationId: null };
   }
-  if (rows.length > options.limits.maxSyncDocuments) {
+  if (rows.length > options.limits.maxSyncDocuments && req.user) {
     const { id } = await startOperation({ items: rows, kind: "mirrorRedirects", req });
 
     return { operationId: id };
