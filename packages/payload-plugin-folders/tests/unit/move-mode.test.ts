@@ -23,7 +23,7 @@ let container: HTMLElement | null = null;
 let latest: MoveModeApi | null = null;
 
 const Probe = ({ selected, isBusy }: { isBusy: boolean; selected: readonly TreeItem[] }) => {
-  latest = useMoveMode({ isBusy, selectedItems: selected, state });
+  latest = useMoveMode({ isBusy, isCompact: false, selectedItems: selected, state });
 
   return null;
 };
@@ -34,11 +34,14 @@ const mount = async ({
   selected = [home],
 }: { isBusy?: boolean; selected?: readonly TreeItem[] } = {}) => {
   container = document.createElement("div");
+  // The hook answers keys for the workspace element it finds on the page, as the tree view's is.
   container.innerHTML = `
-    <input data-testid="search" type="text" />
-    <input data-testid="tick" type="checkbox" />
-    <button data-testid="toolbar-move" type="button">Move</button>
-    <div data-testid="tree-row" data-collection="pages" data-item-id="1" tabindex="-1"></div>
+    <div class="fr-folders">
+      <input data-testid="search" type="text" />
+      <input data-testid="tick" type="checkbox" />
+      <button data-testid="toolbar-move" type="button">Move</button>
+      <div data-testid="tree-row" data-collection="pages" data-item-id="1" tabindex="-1"></div>
+    </div>
   `;
   document.body.append(container);
   root = createRoot(document.createElement("div"));

@@ -144,7 +144,6 @@ const TreeWorkspaceContent = ({
     folderId: zoom?.folderId ?? null,
     locale: store.getOptions()?.locale ?? null,
     query: searchQuery,
-    revision: state.revision,
     scope: searchScope,
   });
   const resultRows = useMemo(
@@ -183,7 +182,12 @@ const TreeWorkspaceContent = ({
   );
 
   const isMoveBusy = moveFlow.isMoving || moveFlow.isPreviewing;
-  const moveMode = useMoveMode({ isBusy: isMoveBusy, selectedItems: selection.items, state });
+  const moveMode = useMoveMode({
+    isBusy: isMoveBusy,
+    isCompact,
+    selectedItems: selection.items,
+    state,
+  });
   const { enter: enterMoveMode, exit: exitMoveMode } = moveMode;
   const placedRows = useMemo(
     () =>
@@ -260,6 +264,7 @@ const TreeWorkspaceContent = ({
     languageCount,
     locale: store.getOptions()?.locale ?? null,
     onSettled: clear,
+    revision: state.revision,
     store,
     translate,
     typeLabels,

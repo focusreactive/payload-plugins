@@ -385,6 +385,48 @@ test("Escape and / answer in the tree that has the focus, with the tab and the t
   await expect(view(page).getByTestId("search-input")).toBeFocused();
 });
 
+test("M starts Move mode and Escape ends it in the tree that has the focus, with a selection in both", async ({
+  page,
+  request,
+}) => {
+  const folder = await addFolder(request, "Move Both");
+  await addDraft(request, "Move Both First", folder);
+  await addDraft(request, "Move Both Second", folder);
+  await page.goto(`/admin/collections/folders?expanded=${folder}&folder=`);
+  await view(page).getByRole("treegrid").waitFor();
+  await openTreeTab(page);
+  const viewFirst = viewRow(page, "Move Both First");
+  const tabSecond = tabRow(page, "Move Both Second");
+
+  // A row ticked in each tree, the tab's first: a document listener that was added earlier answers
+  // first, so the order shows whether the key is scoped to the tree it was pressed in.
+  await tabSecond.focus();
+  await page.keyboard.press("Space");
+  await viewFirst.getByRole("checkbox").check();
+  await expect(viewFirst).toHaveAttribute("aria-selected", "true");
+  await expect(tabSecond).toHaveAttribute("aria-selected", "true");
+
+  // M in the tree view starts Move mode there only.
+  await viewFirst.focus();
+  await page.keyboard.press("m");
+  await expect(view(page).getByTestId("move-marker").first()).toBeVisible();
+  await expect(tab(page).getByTestId("move-marker")).toHaveCount(0);
+
+  // Escape ends it, and the tab never entered it.
+  await page.keyboard.press("Escape");
+  await expect(view(page).getByTestId("move-marker")).toHaveCount(0);
+  await expect(tab(page).getByTestId("move-marker")).toHaveCount(0);
+
+  // The same from the tab: only the tab enters, and Escape from it ends it.
+  await tabSecond.focus();
+  await page.keyboard.press("m");
+  await expect(tab(page).getByTestId("move-marker").first()).toBeVisible();
+  await expect(view(page).getByTestId("move-marker")).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(tab(page).getByTestId("move-marker")).toHaveCount(0);
+  await expect(view(page).getByTestId("move-marker")).toHaveCount(0);
+});
+
 test("the tree view and the tab each have a search landmark with a name of its own", async ({
   page,
 }) => {

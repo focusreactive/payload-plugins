@@ -2,6 +2,7 @@ import { useModal } from "@payloadcms/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { TreeItem } from "../../types.js";
+import { isKeyForWorkspace, workspaceElementOf } from "../Keyboard/workspaceScope.js";
 import { rootsOfSelection } from "../Move/moveFlow.js";
 import { itemKeyOf, loadedItemsOf } from "../store.js";
 import type { TreeStoreState } from "../store.js";
@@ -54,14 +55,19 @@ const isMenuOpen = (): boolean => document.querySelector(".fr-folders-menu") !==
  * Move mode (spec section 7.4): the rows being moved, and the two keys that start and end it. `M`
  * starts it for the ticked rows, Escape leaves it. Neither works while a dialog, a menu or a text
  * field has the keyboard, or while a move is in flight (`isBusy`), because a second move would be
- * dropped.
+ * dropped. The tree view and the sidebar tab can be on one page, each with its own Move mode, and
+ * the two keys belong to the workspace that has the keyboard (`isKeyForWorkspace`), so a selection
+ * in both never starts or ends the wrong one.
  */
 export const useMoveMode = ({
   isBusy,
+  isCompact,
   selectedItems,
   state,
 }: {
   isBusy: boolean;
+  /** This is the sidebar tab's workspace, not the tree view's. */
+  isCompact: boolean;
   selectedItems: readonly TreeItem[];
   state: TreeStoreState;
 }): MoveModeApi => {
@@ -99,6 +105,9 @@ export const useMoveMode = ({
       if (event.defaultPrevented || isModalOpen || isMenuOpen() || isTyping(event.target)) {
         return;
       }
+      if (!isKeyForWorkspace(workspaceElementOf(isCompact), event.target)) {
+        return;
+      }
       if (event.key === "Escape" && isActive) {
         event.preventDefault();
         setMode(null);
@@ -119,7 +128,7 @@ export const useMoveMode = ({
     document.addEventListener("keydown", handleKey);
 
     return () => document.removeEventListener("keydown", handleKey);
-  }, [hasSelection, isActive, isBusy, isModalOpen, selectedItems]);
+  }, [hasSelection, isActive, isBusy, isCompact, isModalOpen, selectedItems]);
 
   // The keyboard picks the target, so the first marker that can take the rows has the focus.
   useEffect(() => {

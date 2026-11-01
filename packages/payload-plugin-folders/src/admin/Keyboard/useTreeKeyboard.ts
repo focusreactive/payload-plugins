@@ -30,6 +30,12 @@ import {
   tabStopKeyOf,
   treeKeyActionOf,
 } from "./treeKeys.js";
+import {
+  forgetFocusedWorkspace,
+  isKeyForWorkspace,
+  rememberFocusedWorkspace,
+  workspaceElementOf,
+} from "./workspaceScope.js";
 
 export type TreeKeyboardActions = {
   /** Delete and Backspace: opens the delete dialog for these rows. */
@@ -94,42 +100,6 @@ const isTypingTarget = (target: EventTarget | null): boolean =>
 
 /** A drag is in progress: dnd-kit cancels it on Escape and the key is not the tree's. */
 const isDragging = (): boolean => document.body.classList.contains("fr-folders-dragging");
-
-/** A tree workspace's own element: the tree view's page, or the sidebar tab. */
-const workspaceSelector = ".fr-folders";
-const compactWorkspaceSelector = ".fr-folders--compact";
-
-/** There is one of each on a page, and the element exists whether or not the tree is drawn. */
-const workspaceElementOf = (isCompact: boolean): Element | null =>
-  document.querySelector(
-    isCompact ? compactWorkspaceSelector : `${workspaceSelector}:not(${compactWorkspaceSelector})`
-  );
-
-/** The workspace that last had the focus, for a key pressed while the focus is on neither. */
-let lastFocusedWorkspace: Element | null = null;
-
-/**
- * Whether a key that works from anywhere on the page (Escape, `/`, undo) is this workspace's. The
- * tree view and the sidebar tab can be on the page together, and each one listens on the document:
- * without this the first one to listen would answer for both. The workspace the key was pressed in
- * answers; with the focus on neither, the one that had it last; with none yet, the tree view, or
- * the tab when the tree view is not on the page.
- */
-const isKeyForWorkspace = (workspace: Element | null, target: EventTarget | null): boolean => {
-  if (workspace === null) {
-    return false;
-  }
-  const targetWorkspace = target instanceof Element ? target.closest(workspaceSelector) : null;
-  if (targetWorkspace !== null) {
-    return targetWorkspace === workspace;
-  }
-  if (lastFocusedWorkspace?.isConnected) {
-    return lastFocusedWorkspace === workspace;
-  }
-
-  // On an edit view the tab is the only tree, and nobody else would answer.
-  return !workspace.matches(compactWorkspaceSelector) || workspaceElementOf(false) === null;
-};
 
 /** The search box of the workspace the key is for; the tab and the view each have one. */
 const focusSearchInput = (workspace: Element | null): boolean => {
@@ -265,16 +235,12 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
     if (workspace === null) {
       return undefined;
     }
-    const handleFocusIn = () => {
-      lastFocusedWorkspace = workspace;
-    };
+    const handleFocusIn = () => rememberFocusedWorkspace(workspace);
     workspace.addEventListener("focusin", handleFocusIn);
 
     return () => {
       workspace.removeEventListener("focusin", handleFocusIn);
-      if (lastFocusedWorkspace === workspace) {
-        lastFocusedWorkspace = null;
-      }
+      forgetFocusedWorkspace(workspace);
     };
   }, [isCompact]);
 
