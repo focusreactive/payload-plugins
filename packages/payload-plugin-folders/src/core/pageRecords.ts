@@ -3,6 +3,7 @@ import type { PayloadRequest, SelectType } from "payload";
 import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, ResolvedPageCollection } from "../types.js";
 import { normalizeFolderReference } from "./folderRecords.js";
+import { getGlobalRegistry } from "./globalRegistry.js";
 
 export const isPublishedStatus = (status: unknown): boolean =>
   status === "published" ||
@@ -198,7 +199,10 @@ export const toSnapshot = (
 // The tree lock serialises writers, so the top of a stack is always the running write's own entry.
 // A write that fails between the two hooks leaves its entry at the bottom, where later writes,
 // which push and pop above it, never read it.
-const snapshotsByPayload = new WeakMap<object, Map<string, PageSnapshot[]>>();
+const snapshotsByPayload = getGlobalRegistry(
+  "page-snapshots",
+  () => new WeakMap<object, Map<string, PageSnapshot[]>>()
+);
 
 const snapshotKey = (collection: string, id: FolderId): string => `${collection}:${id}`;
 

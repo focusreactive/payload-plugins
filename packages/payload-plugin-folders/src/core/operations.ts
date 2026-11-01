@@ -4,6 +4,7 @@ import type { PayloadRequest } from "payload";
 import { toCollectionSlug } from "../collectionSlug.js";
 import { folderOperationsSlug } from "../constants.js";
 import type { FolderId, ResolvedOptions } from "../types.js";
+import { getGlobalRegistry } from "./globalRegistry.js";
 import { getResolvedOptions } from "./runtime.js";
 import { bumpRevision, withTreeLock } from "./treeLock.js";
 
@@ -32,7 +33,12 @@ export type OperationHandler = {
   run: (context: OperationHandlerContext, units: unknown[]) => Promise<void>;
 };
 
-const handlers = new Map<OperationKind, OperationHandler>();
+// In the global registry because the copy of this module that steps an operation (an endpoint) is
+// not always the copy whose imports registered the handlers.
+const handlers = getGlobalRegistry(
+  "operation-handlers",
+  () => new Map<OperationKind, OperationHandler>()
+);
 
 /** The operations of spec section 5.8 register themselves; tests register a stand-in. */
 export const registerOperationHandler = (kind: OperationKind, handler: OperationHandler): void => {

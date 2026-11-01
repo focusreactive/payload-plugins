@@ -5,6 +5,7 @@ import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, PathChange, ResolvedOptions } from "../types.js";
 import { planFolderPaths, toFolderRecord } from "./folderRecords.js";
 import type { FolderRecord } from "./folderRecords.js";
+import { getGlobalRegistry } from "./globalRegistry.js";
 import {
   getDefaultLocaleKey,
   getFallbackLocaleKey,
@@ -89,7 +90,10 @@ export const assertSubtreeWithinLimit = async ({
 // A stack per folder being saved: `beforeChange` pushes the row as stored, `afterChange` pops it.
 // The tree lock serialises writers, and a save that fails between the two hooks leaves its entry at
 // the bottom, where later saves, which push and pop above it, never read it.
-const snapshotsByPayload = new WeakMap<object, Map<string, FolderRecord[]>>();
+const snapshotsByPayload = getGlobalRegistry(
+  "folder-snapshots",
+  () => new WeakMap<object, Map<string, FolderRecord[]>>()
+);
 
 export const pushFolderSnapshot = (req: PayloadRequest, record: FolderRecord): void => {
   let snapshots = snapshotsByPayload.get(req.payload);

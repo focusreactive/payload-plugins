@@ -1,6 +1,7 @@
 import type { Payload, PayloadRequest } from "payload";
 
 import { treeStateSlug } from "../constants.js";
+import { getGlobalRegistry } from "./globalRegistry.js";
 import { withTransaction } from "./transaction.js";
 
 /** Longest a writer waits for the lock before it fails, so a lost release cannot hang the server. */
@@ -95,9 +96,16 @@ type TreeLockRuntime = {
 };
 
 // Keyed on the Payload instance so that parallel instances (the integration tests boot one per
-// file) never queue behind each other.
-const runtimes = new WeakMap<Payload, TreeLockRuntime>();
-const trackedAdapters = new WeakSet<object>();
+// file) never queue behind each other. Both live in the global registry: a write helper called from
+// a Next.js page runs in another copy of this module than the hooks, and the two must see one lock.
+const runtimes = getGlobalRegistry(
+  "tree-lock-runtimes",
+  () => new WeakMap<Payload, TreeLockRuntime>()
+);
+const trackedAdapters = getGlobalRegistry(
+  "tree-lock-tracked-adapters",
+  () => new WeakSet<object>()
+);
 
 /**
  * Without a transaction nothing signals a failed operation, so a lock held for a request that has
