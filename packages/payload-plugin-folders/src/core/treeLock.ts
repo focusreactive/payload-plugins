@@ -393,6 +393,43 @@ export const seedTreeState = async (payload: Payload): Promise<void> => {
     .onConflictDoNothing();
 };
 
+type TreeStateSelect = {
+  select: () => { from: (table: unknown) => PromiseLike<Array<{ id: number | string }>> };
+};
+
+/**
+ * The ids of every tree-state row. There is meant to be one; a database seeded by the racy first
+ * version of `seedTreeState` can hold two, and the lock queues on whichever row `findGlobal` returns.
+ * Adapters without drizzle (none today: MongoDB is refused at config time) report the one row the
+ * global read finds.
+ */
+export const readTreeStateRowIds = async (
+  payload: Payload,
+  req?: PayloadRequest
+): Promise<Array<number | string>> => {
+  const database = payload.db as unknown as TreeStateDatabase & {
+    drizzle?: TreeStateSelect;
+    sessions?: Record<string, { db?: TreeStateSelect } | undefined>;
+  };
+  const tableName = database.tableNameMap?.get(treeStateSlug.replaceAll("-", "_"));
+  const table = tableName === undefined ? undefined : database.tables?.[tableName];
+  // Inside a transaction the read goes through its connection, as the adapter's own reads do.
+  const transactionKey = req ? await resolveTransactionKey(req.transactionID) : undefined;
+  const connection =
+    (transactionKey === undefined ? undefined : database.sessions?.[transactionKey]?.db) ??
+    database.drizzle;
+  if (connection && table) {
+    const rows = await connection.select().from(table);
+
+    return rows.map((row) => row.id);
+  }
+  const existing = (await payload.db.findGlobal({ req, slug: treeStateSlug as never })) as {
+    id?: number | string;
+  };
+
+  return existing.id === undefined ? [] : [existing.id];
+};
+
 /**
  * Writes the tree-state row so concurrent transactions in other processes queue on its row lock.
  * It has to run before the transaction reads anything it will act on. Without a transaction

@@ -56,3 +56,17 @@ export type {
   PublishResult,
   PublishSkip,
 } from "../core/publish.js";
+export { repairTree } from "../core/repair.js";
+export type { RepairResult, RepairTreeArgs } from "../core/repair.js";
+export { verifyTree } from "../core/verify.js";
+export type { VerifyResult, VerifyTreeArgs } from "../core/verify.js";
+export { issueItemLimit, listedIssuesPerKind, treeIssueKinds } from "../core/treeIssues.js";
+export type {
+  IssueCounts,
+  IssueList,
+  PathDrift,
+  SegmentDrift,
+  StructureField,
+  TreeIssue,
+  TreeIssueKind,
+} from "../core/treeIssues.js";
