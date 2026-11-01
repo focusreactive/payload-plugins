@@ -230,6 +230,41 @@ describe("a conflict names a page only to a reader who may read it", () => {
     });
   });
 
+  it("a move says another page, not its title, when the root page in the way is unreadable", async () => {
+    const { payload } = harness;
+    const docs = await createFolder(payload, { slug: "docs" });
+    const guide = await createFolder(payload, { slug: "guide" });
+    const hiddenRoot = (await payload.create({
+      collection: "posts",
+      data: { folder: docs.id, isFolderRoot: true, slug: "start", title: hiddenTitle } as never,
+      depth: 0,
+      overrideAccess: true,
+    })) as unknown as { id: number };
+    const mover = (await payload.create({
+      collection: "pages",
+      data: {
+        _status: "published",
+        folder: guide.id,
+        isFolderRoot: true,
+        slug: "intro",
+        title: "Intro",
+      } as never,
+      depth: 0,
+      overrideAccess: true,
+    })) as unknown as { id: number };
+
+    await withRead("posts", editor, [hiddenRoot.id], async () => {
+      const preview = await call<MovePreview>("POST", "/folders-tree/move/preview", editor, {
+        items: [{ collection: "pages", id: mover.id }],
+        toFolder: docs.id,
+      });
+
+      expect(preview.body.blocked[0]).toMatchObject({ reason: "rootPage" });
+      expect(JSON.stringify(preview.body)).not.toContain(hiddenTitle);
+      expect(preview.body.blocked[0].message).toContain("Another page is already the root page");
+    });
+  });
+
   it("a rename preview says a page when the editor cannot read the page in the way", async () => {
     const { payload } = harness;
     const old = await createFolder(payload, { slug: "old" });
