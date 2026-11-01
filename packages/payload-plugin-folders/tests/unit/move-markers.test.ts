@@ -229,3 +229,57 @@ describe("markerReasonOf", () => {
     expect(reasonOf(markerNamed(markersOf([standalone]), "inside:1"), true)).toBe("menuBusy");
   });
 });
+
+describe("placeMarkers, in a zoomed view", () => {
+  // Zoomed into Blog: its rows are the view, and the top marker is the top of Blog.
+  const zoomedState = (chain: (typeof blog)[] | null) => ({
+    ...stateOf({ "1": [postA, year], "12": [yearPost], root: [blog, products] }),
+    zoom: { chain, error: null, folderId: 1 },
+  });
+
+  it("puts the top marker at the top of the zoomed folder, not of the top level", () => {
+    const zoomed = zoomedState([blog]);
+
+    const top = markerNamed(
+      placeMarkers(flattenTree(zoomed), { moving: [standalone], rules, state: zoomed }).flatMap(
+        (entry) => (entry.type === "marker" ? [entry.marker] : [])
+      ),
+      "top"
+    );
+
+    expect(top.target).toEqual({ position: "start", toFolder: 1 });
+    expect(top.targetFolder?.title).toBe("Blog");
+  });
+
+  it("starts the gaps at the zoomed folder's own rows", () => {
+    const zoomed = zoomedState([blog]);
+
+    const placed = placeMarkers(flattenTree(zoomed), {
+      moving: [standalone],
+      rules,
+      state: zoomed,
+    }).map((entry) => (entry.type === "marker" ? `marker ${entry.marker.key}` : entry.row.key));
+
+    expect(placed.slice(0, 3)).toEqual(["marker top", "pages:11", "marker after:pages:11"]);
+    expect(placed).not.toContain("folders:2");
+  });
+
+  it("does not refuse the top marker as the top level while the zoomed folder's row is unknown", () => {
+    const reserved = pageRow(61, "Admin", 12, { slug: "admin" });
+    // The page opened on Blog: only Blog's rows are read, and Blog's own row has not arrived.
+    const zoomed = {
+      ...stateOf({ "1": [postA, year], "12": [yearPost] }),
+      zoom: { chain: null, error: null, folderId: 1 },
+    };
+
+    const top = markerNamed(
+      placeMarkers(flattenTree(zoomed), { moving: [reserved], rules, state: zoomed }).flatMap(
+        (entry) => (entry.type === "marker" ? [entry.marker] : [])
+      ),
+      "top"
+    );
+
+    expect(top.target).toEqual({ position: "start", toFolder: 1 });
+    expect(top.refusal).toBeNull();
+  });
+});

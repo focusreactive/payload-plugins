@@ -9,6 +9,9 @@ import type { MoveMarker, MoveModeRow } from "../MoveMode/moveMarkers.js";
 import type { SelectionApi } from "../useSelection.js";
 import type { FolderKey, TreeStore } from "../store.js";
 import type { TreeItem } from "../../types.js";
+import { EmptyRow } from "./EmptyStates.js";
+import type { EmptyCreateActions } from "./EmptyStates.js";
+import { levelPadding } from "./levelPadding.js";
 import { TreeRow } from "./TreeRow.js";
 import type {
   ErrorRowModel,
@@ -16,7 +19,6 @@ import type {
   StaleRowModel,
   TreeRowModel,
 } from "./useTreeData.js";
-import { indentPerLevel } from "./TreeRow.js";
 
 /** What Move mode adds to the tree: the rows with a marker in every gap, and how a marker is picked. */
 export type MoveModeView = {
@@ -30,6 +32,8 @@ export type MoveModeView = {
 
 export type TreeProps = {
   adminRoute: string;
+  /** What the empty row of an open folder with nothing in it starts. */
+  emptyActions: EmptyCreateActions;
   language: string;
   onOpenFolder?: (folderId: number | string) => void;
   /** Set while Move mode is on. */
@@ -50,10 +54,6 @@ export type TreeProps = {
   translate: Translate;
   typeLabels: Readonly<Record<string, string>>;
 };
-
-// A status row spans the whole width, so it clears the select column to line up with the names.
-const levelPadding = (level: number): string =>
-  `calc(var(--fr-folders-select-width) + var(--spacer-2-5) + ${level * indentPerLevel}px)`;
 
 const LoadingRow = ({ level, label }: { label: string; level: number }) => (
   <div
@@ -177,6 +177,7 @@ const LoadMoreRow = ({
 /** The tree-grid of spec section 7.2: header row, then one row per visible folder and page. */
 export const Tree = ({
   adminRoute,
+  emptyActions,
   language,
   moveMode,
   onOpenFolder,
@@ -317,6 +318,17 @@ export const Tree = ({
               }
               case "error": {
                 return <ErrorRow key={row.key} onRetry={retry} row={row} translate={translate} />;
+              }
+              case "empty": {
+                return (
+                  <EmptyRow
+                    actions={emptyActions}
+                    folder={row.folder}
+                    key={row.key}
+                    level={row.level}
+                    translate={translate}
+                  />
+                );
               }
               case "stale": {
                 return <StaleRow key={row.key} onRetry={retry} row={row} translate={translate} />;

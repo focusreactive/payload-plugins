@@ -2,6 +2,7 @@ import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { createContext, useCallback, useContext } from "react";
 
 import type { TreeItem } from "../../types.js";
+import { crumbKeyOf } from "./dropTargets.js";
 import type { DropIndicator } from "./dropTargets.js";
 
 /** What the rows of the tree need to know about the drag in progress. */
@@ -60,5 +61,22 @@ export const useRowDrag = (item: TreeItem, rowKey: string) => {
     isDragged: draggedKeys.has(rowKey),
     listeners: pointerListeners,
     setRowRef,
+  };
+};
+
+/**
+ * Makes a breadcrumb, or the zoom header, a drop target (spec section 7.3): "inside" the folder it
+ * names, `null` being the "Content" crumb, the top level. It only takes drops; a crumb is a link,
+ * not something to drag.
+ */
+export const useCrumbDrop = (folder: TreeItem | null) => {
+  const { indicator, isRefused } = useContext(DragStateContext);
+  const key = crumbKeyOf(folder);
+  const { setNodeRef } = useDroppable({ data: { crumb: { folder } }, id: key });
+
+  return {
+    isOver: indicator?.rowKey === key,
+    isRefused: indicator?.rowKey === key && isRefused,
+    setNodeRef,
   };
 };

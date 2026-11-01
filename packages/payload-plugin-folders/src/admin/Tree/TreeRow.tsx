@@ -24,7 +24,7 @@ export type TreeRowProps = {
   language: string;
   /** Opens a page's edit view in this tab. */
   onOpenPage: (url: string) => void;
-  /** Double click on a folder; zooming is wired by the view that supports it. */
+  /** Double click or Alt+Enter on a folder: zooms into it. */
   onOpenFolder?: (folderId: number | string) => void;
   /**
    * Opens the context menu: from a right click, the row's button, or Shift+F10 and the ContextMenu
@@ -176,6 +176,20 @@ export const TreeRow = ({
 
       return;
     }
+    // Alt+Enter on a folder zooms into it (spec section 7.2).
+    if (
+      event.key === "Enter" &&
+      event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.shiftKey &&
+      isFolder
+    ) {
+      event.preventDefault();
+      onOpenFolder?.(item.id);
+
+      return;
+    }
     if (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10")) {
       return;
     }
@@ -288,7 +302,12 @@ export const TreeRow = ({
             aria-label={translate(expanded ? "collapse" : "expand", { name: item.title })}
             className="fr-folders-chevron"
             data-testid="expand-toggle"
-            onClick={() => onToggleFolder(item.id)}
+            // The second click of a double click is the zoom's, as on the rest of the row.
+            onClick={(event) => {
+              if (event.detail < 2) {
+                onToggleFolder(item.id);
+              }
+            }}
             type="button"
           >
             <ChevronIcon direction={expanded ? "down" : "right"} size={16} />

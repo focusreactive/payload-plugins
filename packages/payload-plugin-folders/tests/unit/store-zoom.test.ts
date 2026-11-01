@@ -277,14 +277,14 @@ describe("zooming", () => {
   it("drops the answer of a zoom the editor has already left", async () => {
     const server = createServer();
     const store = createStore(server);
-    let release: () => void = () => undefined;
+    let release: (() => void) | undefined;
     server.ancestorsGate = new Promise<void>((resolve) => {
       release = resolve;
     });
 
     const zooming = store.setZoom(yearId);
     await store.setZoom(null);
-    release();
+    release?.();
     await zooming;
 
     expect(store.getState().zoom).toBeNull();

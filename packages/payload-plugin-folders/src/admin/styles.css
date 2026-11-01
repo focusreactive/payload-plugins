@@ -1096,13 +1096,24 @@
     opacity: 0.5;
   }
 
-  /* Operations: the banner of a stepped operation and its progress dialog (spec section 5.8) */
+  /*
+   * Banners: the drift notice (spec section 5.9) and the banner of a stepped operation (section
+   * 5.8) share one strip above the tree, and one look.
+   */
 
-  .fr-folders-operations {
+  .fr-folders-banners {
     display: flex;
     flex-direction: column;
     gap: var(--spacer-1);
     padding: var(--spacer-2) var(--gutter-h) 0;
+  }
+
+  .fr-folders-banners:empty {
+    display: none;
+  }
+
+  .fr-folders-operation-banner[data-kind="drift"] {
+    border-color: var(--color-warning-500, var(--color-border));
   }
 
   .fr-folders-operation-banner {
@@ -1137,5 +1148,113 @@
     width: 100%;
     height: var(--spacer-1-5);
     accent-color: var(--color-text);
+  }
+
+  /* Breadcrumbs of the zoomed tree (spec section 7.2): each crumb is a link and a drop target. */
+
+  .fr-folders-crumbs {
+    padding: var(--spacer-2) var(--gutter-h) 0;
+    outline: none;
+  }
+
+  .fr-folders-crumbs__list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacer-1);
+  }
+
+  .fr-folders-crumbs__item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacer-1);
+  }
+
+  .fr-folders-crumbs__separator {
+    display: inline-flex;
+    color: var(--color-text-secondary);
+  }
+
+  .fr-folders-crumb {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 var(--spacer-1-5);
+    border-radius: var(--radius-medium);
+    font-size: var(--text-body-large-font-size);
+  }
+
+  .fr-folders-crumb__name {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+  }
+
+  a.fr-folders-crumb__name:hover {
+    color: var(--color-text);
+    text-decoration: underline;
+  }
+
+  .fr-folders-crumb--current .fr-folders-crumb__name {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  .fr-folders-crumb--drop-inside {
+    background: var(--color-bg-selected);
+    outline: var(--stroke-width-medium) solid var(--color-bg-brand);
+  }
+
+  .fr-folders-crumb--drop-refused {
+    background: transparent;
+    outline-color: var(--color-text-danger);
+  }
+
+  /* Empty states (spec section 7.2): a panel for a view with nothing in it, a muted row under a folder. */
+
+  .fr-folders-empty-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacer-2);
+    padding: var(--spacer-6, 3rem) var(--spacer-3);
+    border: var(--stroke-width-small) dashed var(--color-border);
+    border-radius: var(--radius-medium);
+    background: var(--color-bg);
+    color: var(--color-text);
+    text-align: center;
+  }
+
+  .fr-folders-empty-panel__title {
+    margin: 0;
+    font-size: var(--text-h4-font-size, 1.25rem);
+  }
+
+  .fr-folders-empty-panel__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--spacer-2);
+  }
+
+  .fr-folders-empty-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacer-3);
+    min-height: var(--fr-folders-row-height);
+  }
+
+  .fr-folders-link-button {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--color-text-link, var(--color-text));
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .fr-folders-link-button:disabled {
+    color: var(--color-text-secondary);
+    cursor: not-allowed;
+    text-decoration: none;
   }
 }

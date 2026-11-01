@@ -21,7 +21,7 @@ import { readPageAsItem } from "./pageAsItem.js";
 import { useConfiguredStore, useItemLocation } from "./useItemLocation.js";
 import "../styles.css";
 
-/** The link of a crumb: the tree with this folder opened and focused (P-35 turns it into a zoom). */
+/** The link of a crumb: the tree zoomed into this folder (`?folder=<id>`, spec section 7.2). */
 export const treeLinkOf = (
   adminRoute: string,
   foldersSlug: string,

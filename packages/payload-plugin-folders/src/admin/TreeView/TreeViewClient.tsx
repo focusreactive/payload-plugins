@@ -8,11 +8,14 @@ import {
   useAdminRoutes,
   useFoldersTranslation,
   useLocaleCode,
+  usePreferences,
   useRouter,
   useUserId,
 } from "../compat.js";
 import { getSharedTreeStore, revisionPollIntervalMs } from "../store.js";
 import "../styles.css";
+import { useExpandedPersistence } from "./useExpandedPersistence.js";
+import { useTreeUrlState } from "./useTreeUrlState.js";
 import { TreeWorkspace } from "./TreeWorkspace.js";
 import type { ConfirmMoves } from "../../types.js";
 
@@ -63,15 +66,43 @@ export const TreeViewClient = ({
   const locale = useLocaleCode() ?? initialLocale;
   const userId = useUserId();
   const [isConfigured, setIsConfigured] = useState(false);
+  const urlState = useTreeUrlState();
+  const { getPreference, setPreference } = usePreferences();
+  // Which folders are open comes from the address, else from what the editor left open before.
+  const isReady = useExpandedPersistence({
+    expandedParam: urlState.expandedParam,
+    getPreference,
+    isConfigured,
+    setExpandedInUrl: urlState.setExpandedInUrl,
+    setPreference,
+    store,
+    zoomFolderId: urlState.zoomFolderId,
+  });
+
+  // The address names the zoomed folder; going back to the top level or to another folder with
+  // the browser's buttons changes it too.
+  const { zoomFolderId } = urlState;
+  useEffect(() => {
+    if (isReady) {
+      void store.setZoom(zoomFolderId);
+    }
+  }, [isReady, store, zoomFolderId]);
+  // The store is shared with the edit view's location field, which wants the whole tree.
+  useEffect(
+    () => () => {
+      void store.setZoom(null);
+    },
+    [store]
+  );
 
   // Configuring resets the cache when the locale changed, which tells every subscriber, so it
   // happens in an effect and the tree mounts only afterwards.
   useEffect(() => {
-    store.configure({ baseUrl: apiBaseUrl, locale, pageSize, userId });
+    store.configure({ baseUrl: apiBaseUrl, foldersSlug, locale, pageSize, userId });
     setIsConfigured(true);
     // Coming back to the view (after editing a page, say) shows rows read earlier: read them again.
     void store.refetchVisible();
-  }, [apiBaseUrl, locale, pageSize, store, userId]);
+  }, [apiBaseUrl, foldersSlug, locale, pageSize, store, userId]);
 
   useEffect(() => {
     if (!isConfigured) {
@@ -97,7 +128,7 @@ export const TreeViewClient = ({
   return (
     <div className="collection-list fr-folders">
       <SetStepNav nav={[{ label: title }]} />
-      {isConfigured ? (
+      {isConfigured && isReady ? (
         <TreeWorkspace
           adminRoute={adminRoute}
           confirmMoves={confirmMoves}
@@ -108,6 +139,11 @@ export const TreeViewClient = ({
           language={language}
           maxDepth={maxDepth}
           onOpenPage={(url) => router.push(url)}
+          onZoom={(folderId) => {
+            // The store moves at once, from the rows it has; the address follows so Back works.
+            void store.setZoom(folderId);
+            urlState.setZoomInUrl(folderId);
+          }}
           pageFields={pageFields}
           pageSize={pageSize}
           reservedRootSegments={reservedRootSegments}

@@ -38,8 +38,13 @@ export class RowPointerSensor extends PointerSensor {
   ];
 }
 
-/** What the collision of a hovered row carries: the row's item and where on it the pointer is. */
-export type RowHitData = { item: TreeItem; zone: DropZone };
+/**
+ * What the collision of a hovered row carries: the row's item and where on it the pointer is. A
+ * breadcrumb carries its folder instead (`null` is the top level) and is always "inside".
+ */
+export type RowHitData =
+  | { crumb: { folder: TreeItem | null }; zone: "inside" }
+  | { item: TreeItem; zone: DropZone };
 
 /**
  * The row under the pointer, from the rows' live rectangles. The rectangles dnd-kit keeps are
@@ -55,15 +60,21 @@ export const rowUnderPointer: CollisionDetection = ({
   for (const container of droppableContainers) {
     const rect = container.node.current?.getBoundingClientRect();
     const item = container.data.current?.item as TreeItem | undefined;
+    const crumb = container.data.current?.crumb as { folder: TreeItem | null } | undefined;
     if (
       rect &&
-      item &&
+      (item || crumb) &&
       pointerCoordinates.x >= rect.left &&
       pointerCoordinates.x <= rect.right &&
       pointerCoordinates.y >= rect.top &&
       pointerCoordinates.y < rect.bottom
     ) {
-      const data: RowHitData = { item, zone: dropZoneOf(item.kind, pointerCoordinates.y, rect) };
+      const data: RowHitData = crumb
+        ? { crumb, zone: "inside" }
+        : {
+            item: item as TreeItem,
+            zone: dropZoneOf((item as TreeItem).kind, pointerCoordinates.y, rect),
+          };
 
       return [{ data, id: container.id }];
     }

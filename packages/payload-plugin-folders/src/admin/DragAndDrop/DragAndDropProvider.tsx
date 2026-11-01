@@ -1,6 +1,6 @@
 import { DndContext, DragOverlay, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core";
 import type { DragEndEvent, DragMoveEvent, DragOverEvent, DragStartEvent } from "@dnd-kit/core";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { TreeItem } from "../../types.js";
@@ -12,7 +12,7 @@ import type { TreeRowModel } from "../Tree/useTreeData.js";
 import { DragStateContext } from "./dragState.js";
 import type { DragRowState } from "./dragState.js";
 import { dropRefusalText } from "./dropRefusalText.js";
-import { draggedItemsOf, resolveDrop } from "./dropTargets.js";
+import { draggedItemsOf, resolveCrumbDrop, resolveDrop } from "./dropTargets.js";
 import type { DropResolution, DropRules } from "./dropTargets.js";
 import type { DropZone } from "./dropZones.js";
 import {
@@ -50,7 +50,8 @@ const blockClickAfterRelease = (): void => {
 const draggingBodyClass = "fr-folders-dragging";
 const refusedBodyClass = "fr-folders-dragging--refused";
 
-type Hit = { key: string; zone: DropZone };
+/** What is under the pointer: a row, or a breadcrumb (whose folder `null` is the top level). */
+type Hit = { crumb?: { folder: TreeItem | null }; key: string; zone: DropZone };
 
 type Carried = { isSelection: boolean; items: TreeItem[] };
 
@@ -71,8 +72,13 @@ export type DragAndDropProviderProps = {
 const hitOf = (event: DragEndEvent | DragMoveEvent | DragOverEvent): Hit | null => {
   const [collision] = event.collisions ?? [];
   const data = collision?.data as RowHitData | undefined;
+  if (!collision || !data) {
+    return null;
+  }
 
-  return collision && data ? { key: String(collision.id), zone: data.zone } : null;
+  return "crumb" in data
+    ? { crumb: data.crumb, key: String(collision.id), zone: data.zone }
+    : { key: String(collision.id), zone: data.zone };
 };
 
 // Dragging by keyboard is the keyboard ticket's: until then these stay silent, because dnd-kit's
@@ -109,17 +115,22 @@ export const DragAndDropProvider = ({
   const [carried, setCarried] = useState<Carried | null>(null);
   const [hit, setHit] = useState<Hit | null>(null);
 
+  const resolveHit = useCallback(
+    (landed: Hit, dragged: readonly TreeItem[]): DropResolution | null =>
+      landed.crumb
+        ? resolveCrumbDrop({ dragged, folder: landed.crumb.folder, rules, state })
+        : resolveDrop({ dragged, over: landed, rows, rules, state }),
+    [rows, rules, state]
+  );
   const resolution = useMemo<DropResolution | null>(
-    () =>
-      carried && hit
-        ? resolveDrop({ dragged: carried.items, over: hit, rows, rules, state })
-        : null,
-    [carried, hit, rows, rules, state]
+    () => (carried && hit ? resolveHit(hit, carried.items) : null),
+    [carried, hit, resolveHit]
   );
   const isRefused = resolution?.refusal != null;
 
   const track = (event: DragMoveEvent | DragOverEvent) => {
     const next = hitOf(event);
+    // A breadcrumb's folder row changes as the breadcrumbs are read again; the key names it.
     setHit((current) =>
       current?.key === next?.key && current?.zone === next?.zone ? current : next
     );
@@ -139,10 +150,7 @@ export const DragAndDropProvider = ({
 
   const handleDragEnd = (event: DragEndEvent) => {
     const landed = hitOf(event);
-    const dropped =
-      carried && landed
-        ? resolveDrop({ dragged: carried.items, over: landed, rows, rules, state })
-        : null;
+    const dropped = carried && landed ? resolveHit(landed, carried.items) : null;
     stop();
     if (!carried || !dropped || dropped.refusal !== null || dropped.isNoOp) {
       return;
@@ -151,7 +159,10 @@ export const DragAndDropProvider = ({
       items: carried.items,
       selection: carried.isSelection ? selectedItems : null,
       target: dropped.target,
-      targetTitle: dropped.targetFolder?.title ?? translate("moveToRoot"),
+      // A folder whose row is not known yet has an id and no title.
+      targetTitle:
+        dropped.targetFolder?.title ??
+        translate(dropped.target.toFolder === null ? "moveToRoot" : "folder"),
     });
   };
 
@@ -178,8 +189,13 @@ export const DragAndDropProvider = ({
     resolution?.indicator.edge === "inside"
       ? rows.find((row) => row.type === "item" && row.key === resolution.indicator.rowKey)
       : undefined;
+  // A folder with nothing in it has nothing to show by opening it, and opening it would move the
+  // rows under the pointer.
   const folderToOpen =
-    hoveredRow?.type === "item" && hoveredRow.expandable && !hoveredRow.expanded
+    hoveredRow?.type === "item" &&
+    hoveredRow.expandable &&
+    !hoveredRow.expanded &&
+    (hoveredRow.item.childCount ?? 1) > 0
       ? hoveredRow.item.id
       : null;
   useEffect(() => {

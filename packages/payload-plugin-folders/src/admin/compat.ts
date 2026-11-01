@@ -6,6 +6,7 @@ import {
   useLocale,
   useParams,
   usePathname,
+  usePreferences,
   useRouter,
   useSearchParams,
   useTranslation,
@@ -28,6 +29,7 @@ export {
   SetStepNav,
   useParams,
   usePathname,
+  usePreferences,
   useRouter,
   useSearchParams,
 };

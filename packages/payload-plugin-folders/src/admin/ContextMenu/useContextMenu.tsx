@@ -35,6 +35,8 @@ export type ContextMenuActions = {
   delete: (items: readonly TreeItem[]) => void;
   /** "Duplicate": opens the duplicate dialog for these rows. */
   duplicate: (items: readonly TreeItem[]) => void;
+  /** "Open" on a folder: zooms into it. */
+  openFolder: (folder: TreeItem) => void;
   /** Opens a page's edit view in this tab. */
   openPage: (url: string) => void;
   /** "Publish" and "Unpublish": open the publish dialog for these rows. */
@@ -207,8 +209,7 @@ export const useContextMenu = ({
           if (target.kind === "page") {
             actions.openPage(editViewUrl(adminRoute, target.collection, target.id));
           } else {
-            // Zooming into a folder is the zoom ticket's (P-35); until then opening it expands it.
-            void store.setExpanded(target.id, true);
+            actions.openFolder(target);
           }
           break;
         }

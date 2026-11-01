@@ -11,10 +11,13 @@ import { PopupMenu } from "../Menu/PopupMenu.js";
  * caller's: Folder, and the page types the folder it creates in allows.
  */
 export const CreateMenuButton = ({
+  disabled = false,
   groups,
   onSelect,
   translate,
 }: {
+  /** Off while the folder the button creates in is still being read. */
+  disabled?: boolean;
   groups: MenuGroups;
   onSelect: (entryId: string) => void;
   translate: Translate;
@@ -26,6 +29,7 @@ export const CreateMenuButton = ({
     <>
       <Button
         buttonStyle="primary"
+        disabled={disabled}
         extraButtonProps={{
           "aria-expanded": anchor !== null,
           "aria-haspopup": "menu",

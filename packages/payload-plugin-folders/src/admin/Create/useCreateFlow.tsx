@@ -124,8 +124,10 @@ export const useCreateFlow = ({
   const handleFolderCreated = useCallback(
     async ({ id, name, parentId }: { id: FolderId; name: string; parentId: FolderId | null }) => {
       await refreshAround(parentId);
-      // The new folder sits on top of its parent, so the parent opens to show it.
-      if (parentId !== null) {
+      // The new folder sits on top of its parent, so the parent opens to show it. The zoomed
+      // folder is the view itself and has nothing to open.
+      const { zoom } = store.getState();
+      if (parentId !== null && String(zoom?.folderId) !== String(parentId)) {
         await store.setExpanded(parentId, true);
       }
       toast.success(translate("createFolderDone", { name }));
