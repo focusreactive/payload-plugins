@@ -62,22 +62,26 @@ const findCycles = (records: Map<string, FolderRecord>): FolderRecord[][] => {
 };
 
 const describeFolderDrift = ({
+  drifts,
   expectedPath,
-  firstDrift,
   id,
 }: {
+  drifts: PathDrift[];
   expectedPath: string;
-  firstDrift: PathDrift | undefined;
   id: FolderId;
 }): string => {
-  if (!firstDrift) {
+  if (drifts.length === 0) {
     return `Folder ${id} at ${expectedPath} has stale ancestor ids or depth`;
   }
-  const where = firstDrift.locale === null ? "" : ` in ${firstDrift.locale}`;
+  const sentences = drifts.map((drift) => {
+    const where = drift.locale === null ? "" : ` in ${drift.locale}`;
 
-  return firstDrift.stored === null
-    ? `Folder ${id} has no path${where} and should be at ${firstDrift.expected}`
-    : `Folder ${id} should be at ${firstDrift.expected}${where} but holds ${firstDrift.stored}`;
+    return drift.stored === null
+      ? `has no path${where} and should be at ${drift.expected}`
+      : `should be at ${drift.expected}${where} but holds ${drift.stored}`;
+  });
+
+  return `Folder ${id} ${sentences.join(", and ")}`;
 };
 
 const toLocale = (key: string): string | null => (key === noLocaleKey ? null : key);
@@ -112,33 +116,65 @@ export const analyzeFolders = ({
     id: record.id,
   });
 
+  const reservedSegments = new Set(
+    options.reservedRootSegments.map((segment) => segment.toLowerCase())
+  );
+  // The segment a folder would have at the top level that the site keeps for itself, in any locale.
+  const reservedSegmentOf = (record: FolderRecord): string | undefined =>
+    keys
+      .map((key) => (record.slug[key] || record.slug[defaultKey] || "").toLowerCase())
+      .find((segment) => reservedSegments.has(segment));
+  // A folder repair cannot move to the top level (its segment is reserved there) is planned as
+  // if it had moved, so the folders beneath it are still reached, but nothing is written for it
+  // or them: its path is unknown until a person settles it.
+  const held = new Set<string>();
+
   for (const cycle of findCycles(records)) {
     const lowest = cycle.reduce((best, record) =>
       compareIds(record.id, best.id) < 0 ? record : best
     );
+    const reservedSegment = reservedSegmentOf(lowest);
     expectedParents.set(String(lowest.id), null);
-    parentFixes.push({ folder: lowest, reason: "cycle" });
+    const cycleIds = cycle
+      .map((record) => record.id)
+      .sort(compareIds)
+      .join(", ");
+    if (reservedSegment === undefined) {
+      parentFixes.push({ folder: lowest, reason: "cycle" });
+    } else {
+      held.add(String(lowest.id));
+    }
     issues.push({
-      fixable: true,
+      fixable: reservedSegment === undefined,
       folders: cycle.map((record) => record.id).sort(compareIds),
       item: folderRef(lowest),
       kind: "folderCycle",
-      message: `Folders ${cycle
-        .map((record) => record.id)
-        .sort(compareIds)
-        .join(", ")} are each other's parents; repair moves folder ${lowest.id} to the top level`,
+      message:
+        reservedSegment === undefined
+          ? `Folders ${cycleIds} are each other's parents; repair moves folder ${lowest.id} to the top level`
+          : `Folders ${cycleIds} are each other's parents; folder ${lowest.id} cannot go to the top level because /${reservedSegment} is used by the site itself, so repair leaves it`,
+      ...(reservedSegment === undefined ? {} : { reservedSegment }),
     });
   }
   for (const record of recordList) {
     if (record.parent !== null && !records.has(String(record.parent))) {
+      const reservedSegment = reservedSegmentOf(record);
       expectedParents.set(String(record.id), null);
-      parentFixes.push({ folder: record, reason: "missingParent" });
+      if (reservedSegment === undefined) {
+        parentFixes.push({ folder: record, reason: "missingParent" });
+      } else {
+        held.add(String(record.id));
+      }
       issues.push({
-        fixable: true,
+        fixable: reservedSegment === undefined,
         item: folderRef(record),
         kind: "folderParentMissing",
-        message: `Folder ${record.id} names folder ${record.parent} as its parent, and that folder does not exist; repair moves it to the top level`,
+        message:
+          reservedSegment === undefined
+            ? `Folder ${record.id} names folder ${record.parent} as its parent, and that folder does not exist; repair moves it to the top level`
+            : `Folder ${record.id} names folder ${record.parent} as its parent, and that folder does not exist; it cannot go to the top level because /${reservedSegment} is used by the site itself, so repair leaves it`,
         parent: record.parent,
+        ...(reservedSegment === undefined ? {} : { reservedSegment }),
       });
     }
   }
@@ -149,11 +185,17 @@ export const analyzeFolders = ({
   const movedIds = new Set(parentFixes.map(({ folder }) => String(folder.id)));
   const childrenOf = new Map<string | null, FolderRecord[]>();
   for (const stored of recordList) {
+    // The parent fix bumps `structureRevision` on the row it writes, so the row a later write
+    // sends back whole carries the bumped value and not the one before.
     const record = movedIds.has(String(stored.id))
       ? {
           ...stored,
           parent: null,
-          storedRow: { ...stored.storedRow, parent: null },
+          storedRow: {
+            ...stored.storedRow,
+            parent: null,
+            structureRevision: stored.structureRevision + 1,
+          },
         }
       : stored;
     const parent = expectedParents.get(String(record.id)) ?? null;
@@ -166,7 +208,11 @@ export const analyzeFolders = ({
   // Parents first, so each plan reads its parent's planned path. Every folder is reachable from
   // the top level now that cycles and orphans have been moved there.
   const pending: Array<{ record: FolderRecord; parent: FolderRecord | null; plannable: boolean }> =
-    (childrenOf.get(null) ?? []).map((record) => ({ parent: null, plannable: true, record }));
+    (childrenOf.get(null) ?? []).map((record) => ({
+      parent: null,
+      plannable: !held.has(String(record.id)),
+      record,
+    }));
 
   for (const { parent, plannable, record } of pending) {
     const key = String(record.id);
@@ -209,7 +255,6 @@ export const analyzeFolders = ({
       isDrifted = fullPath.length > 0 || Boolean(ancestorIds) || Boolean(depth);
       if (isDrifted) {
         const expectedPath = plan.fullPath[defaultKey];
-        const [firstDrift] = fullPath;
         issues.push({
           ancestorIds,
           depth,
@@ -217,7 +262,7 @@ export const analyzeFolders = ({
           fullPath,
           item: folderRef(record),
           kind: "folderPath",
-          message: describeFolderDrift({ expectedPath, firstDrift, id: record.id }),
+          message: describeFolderDrift({ drifts: fullPath, expectedPath, id: record.id }),
           path: expectedPath,
         });
       }

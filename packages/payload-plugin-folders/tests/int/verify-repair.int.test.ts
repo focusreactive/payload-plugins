@@ -3,6 +3,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { isTreeLockHeld, readRevision } from "../../src/core/treeLock.js";
 import { repairTree } from "../../src/core/repair.js";
 import type { RepairResult } from "../../src/core/repair.js";
+import { resolvePath } from "../../src/server/index.js";
 import { verifyTree } from "../../src/core/verify.js";
 import type { VerifyResult } from "../../src/core/verify.js";
 import type { PathChange, PathChangeReason } from "../../src/types.js";
@@ -1038,6 +1039,345 @@ describe("the endpoints", () => {
     expect(repaired.body.fixed.counts.folderPath).toBe(1);
     expect((await readRow("folders", docs.id)).fullPath).toEqual({ de: "/docs", en: "/docs" });
     expect(hookCalls.map((hookCall) => hookCall.reason)).toEqual(["repair"]);
+  });
+});
+
+type DraftPage = {
+  id: number;
+  slug: string;
+  fullPath: string;
+  title: string;
+  _status?: string;
+};
+
+const readDraft = async (id: number, locale: "de" | "en" = "en"): Promise<DraftPage> =>
+  (await harness.payload.findByID({
+    collection: "pages",
+    depth: 0,
+    draft: true,
+    id,
+    locale,
+    overrideAccess: true,
+  })) as unknown as DraftPage;
+
+/** The latest version's segment columns, every locale, as stored. */
+const readLatestVersionSegments = async (id: number) => {
+  const { docs } = (await harness.payload.db.findVersions({
+    collection: "pages",
+    locale: "all",
+    pagination: false,
+    where: { and: [{ parent: { equals: id } }, { latest: { equals: true } }] },
+  })) as unknown as {
+    docs: Array<{
+      version: {
+        blocks?: unknown;
+        pathSegment: Record<string, string | null>;
+        slug: Record<string, string>;
+        title: Record<string, string>;
+      };
+    }>;
+  };
+
+  return docs[0].version;
+};
+
+/** Puts a page back as it was before the plugin: no saved path segment on the row or its latest version. */
+const clearPathSegments = async (id: number): Promise<void> => {
+  const { id: _id, createdAt: _createdAt, ...stored } = await readRow("pages", id);
+  await harness.payload.db.updateOne({
+    collection: "pages",
+    data: { ...stored, pathSegment: { en: null } },
+    id,
+    returning: false,
+  });
+  const { docs } = (await harness.payload.db.findVersions({
+    collection: "pages",
+    locale: "all",
+    pagination: false,
+    where: { and: [{ parent: { equals: id } }, { latest: { equals: true } }] },
+  })) as unknown as { docs: Array<{ id: number; version: Record<string, unknown> }> };
+  const { id: _versionId, ...version } = docs[0].version;
+  await harness.payload.db.updateVersion({
+    collection: "pages",
+    id: docs[0].id,
+    returning: false,
+    versionData: { version: { ...version, pathSegment: { en: null } } },
+  } as never);
+};
+
+describe("repair and the latest version of a page with drafts", () => {
+  const createRawDraft = (slug: string, title = slug) =>
+    harness.payload.create({
+      collection: "pages",
+      context: { foldersInternal: true },
+      data: {
+        blocks: [{ blockType: "hero", heading: "Hello", id: "draft-hero" }],
+        folder: null,
+        slug,
+        title,
+      } as never,
+      depth: 0,
+      draft: true,
+      overrideAccess: true,
+    }) as unknown as Promise<DraftPage>;
+
+  it("a legacy segment is lowercased in the draft too, and the next publish keeps it", async () => {
+    const { payload } = harness;
+    const page = await createRawDraft("About", "About us");
+    expect((await readDraft(page.id)).slug).toBe("About");
+
+    const result = await repairTree(payload);
+
+    expect(result.fixed.counts.invalidSegment).toBe(1);
+    expect((await readRow("pages", page.id)).slug).toEqual(
+      expect.objectContaining({ en: "about" })
+    );
+    const draft = await readDraft(page.id);
+    expect(draft).toMatchObject({ fullPath: "/about", slug: "about" });
+    const version = await readLatestVersionSegments(page.id);
+    expect(version.slug.en).toBe("about");
+    expect(version.pathSegment.en).toBe("about");
+    // The rest of the draft went back as it was.
+    expect(version.title.en).toBe("About us");
+    expect(version.blocks).toEqual([expect.objectContaining({ blockType: "hero" })]);
+
+    await payload.update({
+      collection: "pages",
+      data: { _status: "published", title: "About us, again" },
+      depth: 0,
+      id: page.id,
+      overrideAccess: true,
+    });
+
+    expect((await readRow("pages", page.id)).slug).toEqual(
+      expect.objectContaining({ en: "about" })
+    );
+    expect((await readRow("pages", page.id)).pathSegment).toEqual(
+      expect.objectContaining({ en: "about" })
+    );
+    expect(await readDraft(page.id)).toMatchObject({ fullPath: "/about", slug: "about" });
+    expect(await verifyTree(payload)).toMatchObject({ ok: true });
+  });
+
+  it("a draft edited to another segment keeps its edit, and the backfill reaches the draft", async () => {
+    const { payload } = harness;
+    const page = await createRawDraft("about-us");
+    // A newer draft: its slug is not the main row's.
+    await payload.update({
+      collection: "pages",
+      context: { foldersInternal: true },
+      data: { slug: "about-the-team" },
+      depth: 0,
+      draft: true,
+      id: page.id,
+      overrideAccess: true,
+    });
+    await clearPathSegments(page.id);
+    expect((await readRow("pages", page.id)).pathSegment).toEqual({ en: null });
+    expect((await readLatestVersionSegments(page.id)).pathSegment.en).toBeNull();
+
+    await repairTree(payload);
+
+    expect((await readRow("pages", page.id)).pathSegment).toEqual({ en: "about-us" });
+    const version = await readLatestVersionSegments(page.id);
+    expect(version.slug.en).toBe("about-the-team");
+    expect(version.pathSegment.en).toBe("about-the-team");
+    expect(await readDraft(page.id)).toMatchObject({
+      fullPath: "/about-the-team",
+      slug: "about-the-team",
+    });
+  });
+});
+
+describe("repair and pages in a duplicate-path clash", () => {
+  it("a page with a saved segment that another page now claims keeps its URL", async () => {
+    const { payload } = harness;
+    const first = await createPost({ orderKey: "a0", slug: "dup-one" });
+    const second = await createPost({ orderKey: "a1", slug: "dup-two" });
+    await payload.db.updateOne({
+      collection: "posts",
+      data: { slug: "dup-one" },
+      id: second.id,
+      returning: false,
+    });
+    const before = await readRow("posts", second.id);
+
+    const verified = await verifyTree(payload);
+    const result = await repairTree(payload);
+
+    const segmentIssues = issuesOfKind(verified, "pageSegment");
+    expect(segmentIssues).toEqual([
+      expect.objectContaining({
+        fixable: false,
+        item: { collection: "posts", id: second.id },
+        segments: [{ expected: "dup-one", locale: null, stored: "dup-two" }],
+      }),
+    ]);
+    expect(issuesOfKind(verified, "duplicatePath").some((issue) => issue.path === "/dup-one")).toBe(
+      true
+    );
+    expect(result.writes.pages).toBe(0);
+    expect(result.fixed.total).toBe(0);
+    expect(issuesOfKind(result.conflicts, "pageSegment")).toHaveLength(1);
+    expect(await readRedirects()).toEqual([]);
+    expect(await readRow("posts", second.id)).toEqual(before);
+    expect((await readRow("posts", first.id)).pathSegment).toBe("dup-one");
+    const resolved = await resolvePath(payload, { overrideAccess: true, path: "/dup-two" });
+    expect(resolved).toMatchObject({ doc: { id: second.id }, type: "page" });
+  });
+
+  it("a clashing page with no saved segment is backfilled, the oldest first", async () => {
+    const { payload } = harness;
+    await createPost({ createdAt: "2026-01-01T00:00:00.000Z", orderKey: "a0", slug: "twin" });
+    const newer = await createPost({
+      createdAt: "2026-02-01T00:00:00.000Z",
+      orderKey: "a1",
+      pathSegment: null,
+      slug: "twin",
+    });
+
+    const result = await repairTree(payload);
+
+    expect(result.writes.pages).toBe(1);
+    expect((await readRow("posts", newer.id)).pathSegment).toBe("twin");
+    expect(result.conflicts.counts.duplicatePath).toBeGreaterThan(0);
+  });
+});
+
+describe("what repair holds back and how it moves a folder", () => {
+  it("a folder that would take a live page's URL stays, and so does the folder beneath it", async () => {
+    const { payload } = harness;
+    const guide = await createFolder(payload, { slug: "guide" });
+    const inner = await createFolder(payload, { parent: guide.id, slug: "inner" });
+    const page = (await payload.create({
+      collection: "posts",
+      data: { slug: "wiki", title: "Wiki" },
+      depth: 0,
+      overrideAccess: true,
+    })) as unknown as { id: number };
+    // `guide` now carries the page's segment while its stored path still says /guide.
+    await rewriteFolderRow(guide.id, { slug: { de: "wiki", en: "wiki" } });
+    const before = {
+      guide: await readRow("folders", guide.id),
+      inner: await readRow("folders", inner.id),
+    };
+
+    const result = await repairTree(payload);
+
+    expect(result.writes.folders).toBe(0);
+    expect(result.fixed.counts.folderPath).toBe(0);
+    expect(issuesOfKind(result.conflicts, "folderPath").map((issue) => issue.item.id)).toEqual([
+      guide.id,
+      inner.id,
+    ]);
+    expect(
+      issuesOfKind(result.conflicts, "duplicatePath").find((issue) => issue.locale === "en")
+    ).toMatchObject({
+      items: expect.arrayContaining([{ collection: "posts", id: page.id }]),
+      path: "/wiki",
+    });
+    expect({
+      guide: await readRow("folders", guide.id),
+      inner: await readRow("folders", inner.id),
+    }).toEqual(before);
+    expect(await resolvePath(payload, { overrideAccess: true, path: "/wiki" })).toMatchObject({
+      doc: { id: page.id },
+      type: "page",
+    });
+  });
+
+  it("a folder beneath a held-back folder is held back too, though its own path is free", async () => {
+    const { payload } = harness;
+    const alpha = await createFolder(payload, { slug: "alpha" });
+    const beta = await createFolder(payload, { slug: "beta" });
+    const child = await createFolder(payload, { parent: beta.id, slug: "child" });
+    await rewriteFolderRow(beta.id, { slug: { de: "alpha", en: "alpha" } });
+    const before = await readRow("folders", child.id);
+
+    const result = await repairTree(payload);
+
+    expect(result.writes.folders).toBe(0);
+    expect(issuesOfKind(result.conflicts, "folderPath").map((issue) => issue.item.id)).toEqual([
+      beta.id,
+      child.id,
+    ]);
+    expect(await readRow("folders", child.id)).toEqual(before);
+    expect((await readRow("folders", alpha.id)).fullPath).toEqual({ de: "/alpha", en: "/alpha" });
+  });
+
+  it("a folder repair moves keeps the revision its parent fix gave it", async () => {
+    const { payload } = harness;
+    const first = await createFolder(payload, { slug: "first" });
+    const second = await createFolder(payload, { parent: first.id, slug: "second" });
+    await rewriteFolderRow(first.id, {
+      ancestorIds: `/${second.id}/`,
+      depth: 3,
+      fullPath: { de: "/first/second/first", en: "/first/second/first" },
+      parent: second.id,
+    });
+    const revisionBefore = (await readRow("folders", first.id)).structureRevision as number;
+
+    await repairTree(payload);
+
+    const after = await readRow("folders", first.id);
+    expect(after).toMatchObject({ fullPath: { de: "/first", en: "/first" }, parent: null });
+    expect(after.structureRevision).toBe(revisionBefore + 1);
+  });
+
+  it("a folder whose segment the site reserves is not moved to the top level to break a cycle", async () => {
+    const { payload } = harness;
+    const first = await createFolder(payload, { slug: "blog" });
+    const second = await createFolder(payload, { parent: first.id, slug: "second" });
+    await rewriteFolderRow(first.id, {
+      ancestorIds: `/${second.id}/`,
+      depth: 3,
+      fullPath: { de: "/admin/second/admin", en: "/admin/second/admin" },
+      parent: second.id,
+      slug: { de: "admin", en: "admin" },
+    });
+    const before = {
+      first: await readRow("folders", first.id),
+      second: await readRow("folders", second.id),
+    };
+
+    const verified = await verifyTree(payload);
+    const result = await repairTree(payload);
+
+    expect(issuesOfKind(verified, "folderCycle")).toEqual([
+      expect.objectContaining({
+        fixable: false,
+        item: { collection: "folders", id: first.id },
+        reservedSegment: "admin",
+      }),
+    ]);
+    expect(result.writes.folders).toBe(0);
+    expect(result.fixed.total).toBe(0);
+    expect(result.conflicts.counts.folderCycle).toBe(1);
+    expect({
+      first: await readRow("folders", first.id),
+      second: await readRow("folders", second.id),
+    }).toEqual(before);
+  });
+
+  it("a folder drift writes the prefix redirect row and no row for each page beneath it", async () => {
+    const { payload } = harness;
+    const docs = await createFolder(payload, { slug: "docs" });
+    for (const slug of ["one", "two", "three"]) {
+      await payload.create({
+        collection: "posts",
+        data: { folder: docs.id, slug, title: slug },
+        depth: 0,
+        overrideAccess: true,
+      });
+    }
+    await rewriteFolderRow(docs.id, { fullPath: { de: "/wrong", en: "/wrong" } });
+
+    await repairTree(payload);
+
+    const rows = await readRedirects();
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.map((row) => row.kind)).toEqual(rows.map(() => "folderPrefix"));
+    expect(rows.map((row) => row.fromPath)).toEqual(rows.map(() => "/wrong"));
   });
 });
 

@@ -9,7 +9,10 @@ import { staleStructureFields, toOwnSegments } from "../../src/core/verifyPages.
 import { planSiblingKeys } from "../../src/core/verifySiblings.js";
 import type { ResolvedOptions } from "../../src/types.js";
 
-const options = { folders: { slug: "folders" } } as ResolvedOptions;
+const options = {
+  folders: { slug: "folders" },
+  reservedRootSegments: ["admin", "api"],
+} as ResolvedOptions;
 const keys = ["en", "de"];
 
 const folder = (id: number, parent: number | null, slug: string, extra = {}) =>

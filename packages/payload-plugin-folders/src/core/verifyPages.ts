@@ -246,20 +246,43 @@ export const readPageFacts = async ({
   return { facts, staleVersions };
 };
 
-export const pageSegmentIssue = (
+/**
+ * The `pageSegment` issues of one page, from its drift per locale. A locale of a page in a
+ * duplicate-path clash (`heldKeys`) is listed apart as not fixable: its saved segment is what the
+ * page is reached by now, and writing the segment it was edited to would hand the page over to the
+ * other claimant's URL. A locale with no saved segment is backfilled even in a clash, the way the
+ * install flow gives the oldest page the path.
+ */
+export const pageSegmentIssues = (
   page: ResolvedPageCollection,
-  fact: PageFact
-): TreeIssue | null => {
+  fact: PageFact,
+  heldKeys: ReadonlySet<string>
+): TreeIssue[] => {
   const segments = segmentDrift(fact.ownSlug, fact.ownStored);
-  if (segments.length === 0) {
-    return null;
+  const isHeld = (segment: { locale: string | null }): boolean =>
+    heldKeys.has(segment.locale ?? noLocaleKey);
+  const writable = segments.filter((segment) => !isHeld(segment));
+  const held = segments.filter((segment) => isHeld(segment));
+  const issues: TreeIssue[] = [];
+
+  if (writable.length > 0) {
+    issues.push({
+      fixable: true,
+      item: { collection: page.slug, id: fact.id },
+      kind: "pageSegment",
+      message: `${page.slug} ${fact.id} has no saved path segment matching its ${page.segmentField}; its URL is wrong or missing`,
+      segments: writable,
+    });
+  }
+  if (held.length > 0) {
+    issues.push({
+      fixable: false,
+      item: { collection: page.slug, id: fact.id },
+      kind: "pageSegment",
+      message: `${page.slug} ${fact.id} has a saved path segment that differs from its ${page.segmentField}, and another item has the URL it would take; repair leaves it`,
+      segments: held,
+    });
   }
 
-  return {
-    fixable: true,
-    item: { collection: page.slug, id: fact.id },
-    kind: "pageSegment",
-    message: `${page.slug} ${fact.id} has no saved path segment matching its ${page.segmentField}; its URL is wrong or missing`,
-    segments,
-  };
+  return issues;
 };

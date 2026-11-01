@@ -4,7 +4,7 @@ import type { CreatePayloadRequestArgs, Payload, PayloadRequest } from "payload"
 import { toCollectionSlug } from "../collectionSlug.js";
 import { folderRedirectsSlug } from "../constants.js";
 import { composeFullPath } from "../hooks/pages/fullPathAfterRead.js";
-import type { PathChange, ResolvedOptions } from "../types.js";
+import type { FolderId, ItemRef, PathChange, ResolvedOptions } from "../types.js";
 import { queueAfterPathChange } from "./afterPathChange.js";
 import { getDefaultLocaleKey, getFolderLocaleKeys, noLocaleKey } from "./locales.js";
 import { writeKeyRewrites } from "./orderKeys.js";
@@ -17,16 +17,16 @@ import {
 } from "./redirects.js";
 import type { RedirectRow } from "./redirects.js";
 import { getResolvedOptions } from "./runtime.js";
-import { patchLatestVersionStructure } from "./structureWrite.js";
+import { hasLatestVersion, patchLatestVersionStructure } from "./structureWrite.js";
 import { writeFolderRow } from "./subtree.js";
 import { listIssues } from "./treeIssues.js";
 import type { IssueList, TreeIssue } from "./treeIssues.js";
 import { bumpRevision, withTreeLock } from "./treeLock.js";
 import { folderPathIn, getPageDefaultLocale, getPageLocaleKeys } from "./uniqueness.js";
 import { analyzeTree } from "./verify.js";
-import type { TreeAnalysis } from "./verify.js";
+import type { PageWrite, TreeAnalysis } from "./verify.js";
 import type { PlannedFolder } from "./verifyFolders.js";
-import { effectiveSegmentOf } from "./verifyPages.js";
+import { effectiveSegmentOf, toOwnSegments } from "./verifyPages.js";
 import type { OwnSegments, PageFact } from "./verifyPages.js";
 
 /** Path changes a dry run lists by name; `total` is the full count. */
@@ -46,27 +46,72 @@ type RepairWrites = {
   versions: number;
 };
 
+type BlockedFolder = {
+  /** The item that holds the path this folder would take; `null` when its parent is held back. */
+  collision: ItemRef | null;
+  key: string;
+  path: string;
+};
+
 type FolderWriteSelection = {
   /** Folders to write, parents before children. */
   writes: PlannedFolder[];
-  /** Folders left as they are because a path they would take belongs to another folder. */
-  blocked: Map<string, { collision: PlannedFolder | null; key: string; path: string }>;
+  /** Folders left as they are because a path they would take belongs to another folder or a live page. */
+  blocked: Map<string, BlockedFolder>;
 };
 
 const pathClaimKey = (key: string, path: string): string => `${key}\u0000${path}`;
 
+const parentKeyOf = (parent: FolderId | null): string => (parent === null ? "" : `/${parent}`);
+
+/** Live pages by the URL they hold: locale, parent folder and lowercase segment, as the duplicate check reads them. */
+const pageClaimKey = (key: string, parent: FolderId | null, segment: string): string =>
+  `${key}\u0000${parentKeyOf(parent)}\u0000${segment.toLowerCase()}`;
+
+const readPageClaims = (
+  pages: PageFact[],
+  keys: string[],
+  defaultLocale: string
+): Map<string, ItemRef> => {
+  const claims = new Map<string, ItemRef>();
+  for (const fact of pages) {
+    if (fact.isFolderRoot) {
+      continue;
+    }
+    for (const key of keys.filter((candidate) => fact.liveKeys.includes(candidate))) {
+      const segment = effectiveSegmentOf(fact.ownSlug, key, defaultLocale);
+      if (segment !== "") {
+        claims.set(pageClaimKey(key, fact.folder, segment), {
+          collection: fact.collection,
+          id: fact.id,
+        });
+      }
+    }
+  }
+
+  return claims;
+};
+
 /**
  * Picks the folder rows to write. A folder whose planned path in some locale is the stored or
- * planned path of another folder stays as it is (`fullPath` is unique per locale, so the write
- * would fail and take the whole repair with it), and so does everything beneath it, which was
- * planned from that path. Such a clash is a conflict a person settles.
+ * planned path of another folder, or the URL of a live page, stays as it is (`fullPath` is unique
+ * per locale, so a folder clash would fail the write and take the whole repair with it, and a page
+ * clash would put the folder on a URL the page is reached by), and so does everything beneath it,
+ * which was planned from that path. Such a clash is a conflict a person settles.
  */
-const selectFolderWrites = (
-  folders: Map<string, PlannedFolder>,
-  keys: string[]
-): FolderWriteSelection => {
+const selectFolderWrites = ({
+  folders,
+  foldersSlug,
+  keys,
+  pageClaims,
+}: {
+  folders: Map<string, PlannedFolder>;
+  foldersSlug: string;
+  keys: string[];
+  pageClaims: Map<string, ItemRef>;
+}): FolderWriteSelection => {
   const all = [...folders.values()];
-  const blocked = new Map<string, { collision: PlannedFolder | null; key: string; path: string }>();
+  const blocked = new Map<string, BlockedFolder>();
   const isWritten = (folder: PlannedFolder): boolean =>
     folder.isDrifted &&
     !folder.isTrashed &&
@@ -91,21 +136,42 @@ const selectFolderWrites = (
       if (!isWritten(folder)) {
         continue;
       }
-      const clash = keys
+      const folderClash = keys
         .map((key) => ({ key, path: folder.plan?.fullPath[key] ?? "" }))
         .find(({ key, path }) =>
           (claims.get(pathClaimKey(key, path)) ?? []).some((other) => other !== folder)
         );
+      // Only a path that changes can take a page's URL: a folder already at a page's URL (a clash
+      // verify lists) is not made worse by a write that fixes its ancestry.
+      const pageClash = keys
+        .map((key) => ({
+          key,
+          page: pageClaims.get(
+            pageClaimKey(
+              key,
+              folder.expectedParent,
+              folder.plan?.segments[key] ?? folder.plan?.segments[noLocaleKey] ?? ""
+            )
+          ),
+          path: folder.plan?.fullPath[key] ?? "",
+        }))
+        .find(
+          ({ key, page, path }) =>
+            page !== undefined && path !== "" && path !== (folder.record.fullPath[key] ?? "")
+        );
       const parentIsBlocked =
         folder.expectedParent !== null && blocked.has(String(folder.expectedParent));
-      if (clash || parentIsBlocked) {
-        const collision = clash
-          ? ((claims.get(pathClaimKey(clash.key, clash.path)) ?? []).find(
-              (other) => other !== folder
-            ) ?? null)
+      if (folderClash || pageClash || parentIsBlocked) {
+        const collisionFolder = folderClash
+          ? (claims
+              .get(pathClaimKey(folderClash.key, folderClash.path))
+              ?.find((other) => other !== folder) ?? null)
           : null;
+        const clash = folderClash ?? pageClash;
         blocked.set(id, {
-          collision,
+          collision: collisionFolder
+            ? { collection: foldersSlug, id: collisionFolder.record.id }
+            : (pageClash?.page ?? null),
           key: clash?.key ?? "",
           path: clash?.path ?? "",
         });
@@ -114,10 +180,9 @@ const selectFolderWrites = (
     }
   }
 
-  // Parents first: the plan of a child was made from its parent's planned `ancestorIds`.
-  const writes = all
-    .filter((folder) => isWritten(folder))
-    .sort((left, right) => (left.plan?.depth ?? 0) - (right.plan?.depth ?? 0));
+  // `folders` holds every folder after its parent (the analysis adds a folder once its parent is
+  // planned), and the filter keeps that order, which is the order the plans were made in.
+  const writes = all.filter((folder) => isWritten(folder));
 
   return { blocked, writes };
 };
@@ -216,16 +281,15 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  * segment columns change.
  */
 const writePageSegments = async ({
-  fact,
-  fixes,
   options,
+  pageWrite,
   req,
 }: {
-  fact: PageFact;
-  fixes: Record<string, string>;
   options: ResolvedOptions;
+  pageWrite: PageWrite;
   req: PayloadRequest;
 }): Promise<boolean> => {
+  const { fact, fixes, segmentsAfter } = pageWrite;
   const { payload } = req;
   const page = options.collections[fact.collection];
   const row = (await payload.db.findOne({
@@ -238,7 +302,6 @@ const writePageSegments = async ({
     return false;
   }
   const isLocalized = page.segmentLocalized && Boolean(payload.config.localization);
-  const slugAfter: OwnSegments = { ...fact.ownSlug, ...fixes };
   const data: Record<string, unknown> = Object.fromEntries(
     Object.entries(row).filter(([name]) => name !== "id" && name !== "createdAt")
   );
@@ -252,12 +315,12 @@ const writePageSegments = async ({
   // Only locales that already hold a value: a null for any other locale would create its row.
   data.pathSegment = isLocalized
     ? Object.fromEntries(
-        [...new Set([...Object.keys(slugAfter), ...Object.keys(fact.ownStored)])].map((key) => [
+        [...new Set([...Object.keys(segmentsAfter), ...Object.keys(fact.ownStored)])].map((key) => [
           key,
-          slugAfter[key] ?? null,
+          segmentsAfter[key] ?? null,
         ])
       )
-    : (slugAfter[noLocaleKey] ?? null);
+    : (segmentsAfter[noLocaleKey] ?? null);
 
   await payload.db.updateOne({
     collection: toCollectionSlug(fact.collection),
@@ -268,6 +331,88 @@ const writePageSegments = async ({
   });
 
   return true;
+};
+
+/**
+ * The same segment rewrite on the latest version of a page with drafts, which a draft read and
+ * the next publish start from: left alone, the next publish writes the old segment back over the
+ * fixed main row. The version's segment is lowercased only where it still equals the main row's
+ * legacy value (a draft edited to something else keeps its edit), and its `pathSegment` follows the
+ * version's own segment in every locale the page is not held back in, as the hook would set it.
+ * The version goes back whole with its own `updatedAt`, for the reason `writePageSegments` does,
+ * and so that a draft newer than the main row stays the one a draft read returns.
+ */
+const writeLatestVersionSegments = async ({
+  options,
+  pageWrite,
+  req,
+}: {
+  options: ResolvedOptions;
+  pageWrite: PageWrite;
+  req: PayloadRequest;
+}): Promise<void> => {
+  const { fact, fixes, heldKeys } = pageWrite;
+  const { payload } = req;
+  if (!hasLatestVersion(payload, fact.collection)) {
+    return;
+  }
+  const page = options.collections[fact.collection];
+  const isLocalized = page.segmentLocalized && Boolean(payload.config.localization);
+  const { docs } = (await payload.db.findVersions({
+    collection: toCollectionSlug(fact.collection),
+    limit: 1,
+    locale: "all",
+    pagination: false,
+    req,
+    where: { and: [{ parent: { equals: fact.id } }, { latest: { equals: true } }] },
+  })) as unknown as {
+    docs: Array<{ id: FolderId; updatedAt?: string; version?: Record<string, unknown> }>;
+  };
+  const [latest] = docs;
+  if (!latest?.version) {
+    return;
+  }
+
+  const version = latest.version;
+  const versionSlug = toOwnSegments(version[page.segmentField]);
+  const versionStored = toOwnSegments(version.pathSegment);
+  const slugFixes = Object.fromEntries(
+    Object.entries(fixes).filter(([key]) => versionSlug[key] === fact.ownSlug[key])
+  );
+  const slugAfter: OwnSegments = { ...versionSlug, ...slugFixes };
+  const segmentKeys = [...new Set([...Object.keys(slugAfter), ...Object.keys(versionStored)])];
+  const pathSegmentAfter: OwnSegments = Object.fromEntries(
+    segmentKeys.flatMap((key): Array<[string, string]> => {
+      const value = heldKeys.includes(key) ? versionStored[key] : slugAfter[key];
+
+      return value === undefined ? [] : [[key, value]];
+    })
+  );
+  const isChanged =
+    Object.keys(slugFixes).length > 0 ||
+    segmentKeys.some((key) => (pathSegmentAfter[key] ?? null) !== (versionStored[key] ?? null));
+  if (!isChanged) {
+    return;
+  }
+
+  const { id: _versionId, ...versionData } = version;
+  if (Object.keys(slugFixes).length > 0) {
+    const storedSlug = version[page.segmentField];
+    versionData[page.segmentField] = isLocalized
+      ? { ...(isRecord(storedSlug) ? storedSlug : {}), ...slugFixes }
+      : slugFixes[noLocaleKey];
+  }
+  versionData.pathSegment = isLocalized
+    ? Object.fromEntries(segmentKeys.map((key) => [key, pathSegmentAfter[key] ?? null]))
+    : (pathSegmentAfter[noLocaleKey] ?? null);
+
+  await payload.db.updateVersion({
+    collection: toCollectionSlug(fact.collection),
+    id: latest.id,
+    req,
+    returning: false,
+    versionData: { updatedAt: latest.updatedAt, version: versionData },
+  } as never);
 };
 
 type PlannedChanges = {
@@ -318,8 +463,11 @@ const planPathChanges = (
     }
   }
 
-  const fixesByPage = new Map(
-    analysis.pageWrites.map(({ fact, fixes }) => [`${fact.collection}:${fact.id}`, fixes])
+  const segmentsAfterByPage = new Map(
+    analysis.pageWrites.map(({ fact, segmentsAfter }) => [
+      `${fact.collection}:${fact.id}`,
+      segmentsAfter,
+    ])
   );
   const pathOf = (
     fact: PageFact,
@@ -344,13 +492,12 @@ const planPathChanges = (
       planned?.plan && writtenFolders.has(String(planned.record.id))
         ? { ...planned.record, fullPath: planned.plan.fullPath }
         : storedFolder;
-    const slugAfter: OwnSegments = {
-      ...fact.ownSlug,
-      ...fixesByPage.get(`${fact.collection}:${fact.id}`),
-    };
+    // A page with no write keeps its stored segments: no drift, or every drifted locale held back.
+    const segmentsAfter: OwnSegments =
+      segmentsAfterByPage.get(`${fact.collection}:${fact.id}`) ?? fact.ownStored;
     for (const key of pageKeys) {
       const storedSegment = effectiveSegmentOf(fact.ownStored, key, defaultLocale);
-      const expectedSegment = effectiveSegmentOf(slugAfter, key, defaultLocale);
+      const expectedSegment = effectiveSegmentOf(segmentsAfter, key, defaultLocale);
       const from = pathOf(fact, key, storedSegment, storedFolder);
       const to = pathOf(fact, key, expectedSegment, expectedFolder);
       if (from === to) {
@@ -449,10 +596,13 @@ const planRepair = (
   payload: Payload
 ): RepairPlan => {
   const { folders } = analysis.folderAnalysis;
-  const { blocked, writes: folderWrites } = selectFolderWrites(
+  const folderKeys = getFolderLocaleKeys(payload, options);
+  const { blocked, writes: folderWrites } = selectFolderWrites({
     folders,
-    getFolderLocaleKeys(payload, options)
-  );
+    foldersSlug: options.folders.slug,
+    keys: folderKeys,
+    pageClaims: readPageClaims(analysis.pages, folderKeys, getPageDefaultLocale(payload)),
+  });
   const planned = planPathChanges(
     analysis,
     options,
@@ -479,13 +629,13 @@ const planRepair = (
         {
           count: 2,
           fixable: false,
-          items: [
-            { collection: options.folders.slug, id: folder.record.id },
-            { collection: options.folders.slug, id: collision.record.id },
-          ],
+          items: [{ collection: options.folders.slug, id: folder.record.id }, collision],
           kind: "duplicatePath",
           locale: toLocale(key),
-          message: `Folders ${folder.record.id} and ${collision.record.id} both belong at ${path}; repair leaves both`,
+          message:
+            collision.collection === options.folders.slug
+              ? `Folders ${folder.record.id} and ${collision.id} both belong at ${path}; repair leaves both`
+              : `Folder ${folder.record.id} and ${collision.collection} ${collision.id} both belong at ${path}; repair leaves both`,
           path,
         },
       ];
@@ -569,8 +719,9 @@ const applyRepair = async ({
     writes: plan.folderWrites,
   });
 
-  for (const { fact, fixes } of analysis.pageWrites) {
-    await writePageSegments({ fact, fixes, options, req });
+  for (const pageWrite of analysis.pageWrites) {
+    await writePageSegments({ options, pageWrite, req });
+    await writeLatestVersionSegments({ options, pageWrite, req });
   }
 
   // Versions before keys: a rewritten key patches the latest version itself, on top of this.
@@ -620,7 +771,8 @@ const applyRepair = async ({
  *   the plugin), and a legacy segment that only fails the pattern by its capitals is saved in
  *   lowercase with a redirect from the old URL, unless another page or folder already has that
  *   path.
- * - The latest version of a page takes the main row's `folder`, `orderKey` and `structureRevision`.
+ * - The latest version of a page with drafts takes the same segment fixes, so the next publish does
+ *   not undo them, and the main row's `folder`, `orderKey` and `structureRevision`.
  * - Rows without an `orderKey` get keys after their keyed siblings in `createdAt` order; equal and
  *   unusable keys rebalance their siblings in the order a read shows them.
  * - Redirect rows whose target is gone are deleted.

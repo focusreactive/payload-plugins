@@ -12,8 +12,8 @@ import { readTreeStateRowIds } from "./treeLock.js";
 import { getPageDefaultLocale, getPageLocaleKeys } from "./uniqueness.js";
 import { analyzeFolders } from "./verifyFolders.js";
 import type { FolderAnalysis } from "./verifyFolders.js";
-import { pageSegmentIssue, readPageFacts, segmentDrift } from "./verifyPages.js";
-import type { PageFact, StaleVersion } from "./verifyPages.js";
+import { pageSegmentIssues, readPageFacts, segmentDrift } from "./verifyPages.js";
+import type { OwnSegments, PageFact, StaleVersion } from "./verifyPages.js";
 import {
   duplicateClaimKey,
   findDuplicatePaths,
@@ -25,6 +25,17 @@ import type { KeyRewrite } from "./orderKeys.js";
 import { readDanglingRedirects } from "./verifyRedirects.js";
 import type { DanglingRedirect } from "./verifyRedirects.js";
 
+/** What repair writes for one page's segments. */
+export type PageWrite = {
+  fact: PageFact;
+  /** The segment field's lowercase fixes, per locale. */
+  fixes: Record<string, string>;
+  /** The locales whose `pathSegment` stays as stored because the page is in a duplicate-path clash. */
+  heldKeys: string[];
+  /** What `pathSegment` holds after the write, per locale: the page's own segment, a held locale's stored one. */
+  segmentsAfter: OwnSegments;
+};
+
 /** Everything `repairTree` needs besides the issues, found by the same pass that finds them. */
 export type TreeAnalysis = {
   /** Folder rows with their planned paths; every folder, trashed ones included. */
@@ -34,7 +45,7 @@ export type TreeAnalysis = {
   /** Every live page's facts; empty for a quick pass. */
   pages: PageFact[];
   /** The pages whose segment or `pathSegment` repair rewrites. */
-  pageWrites: Array<{ fact: PageFact; fixes: Record<string, string> }>;
+  pageWrites: PageWrite[];
   redirects: DanglingRedirect[];
   staleVersions: Array<StaleVersion & { collection: string }>;
 };
@@ -91,12 +102,6 @@ export const analyzeTree = async (
   for (const page of Object.values(options.collections)) {
     const read = await readPageFacts({ options, page, req });
     facts.push(...read.facts);
-    for (const fact of read.facts) {
-      const issue = pageSegmentIssue(page, fact);
-      if (issue) {
-        issues.push(issue);
-      }
-    }
     for (const stale of read.staleVersions) {
       analysis.staleVersions.push({ ...stale, collection: page.slug });
       issues.push({
@@ -120,8 +125,20 @@ export const analyzeTree = async (
   issues.push(...duplicateIssues, ...findMultipleRootPages(facts));
 
   for (const fact of facts) {
-    const isClaimed = pageKeys.some((key) =>
-      claimedPages.has(duplicateClaimKey(fact.collection, fact.id, key))
+    const isClaimedIn = (key: string): boolean =>
+      claimedPages.has(duplicateClaimKey(fact.collection, fact.id, key));
+    const isClaimed = pageKeys.some(isClaimedIn);
+    // A saved segment in a clash stays: the page is reached by it now. Without one the page has
+    // no URL at all, and backfilling gives it the one its own segment says, like the install flow.
+    // A segment that is not localized (`noLocaleKey`) is the page's segment in every locale.
+    const heldKeys = segmentDrift(fact.ownSlug, fact.ownStored)
+      .map(({ locale }) => locale ?? noLocaleKey)
+      .filter(
+        (key) =>
+          (key === noLocaleKey ? isClaimed : isClaimedIn(key)) && (fact.ownStored[key] ?? "") !== ""
+      );
+    issues.push(
+      ...pageSegmentIssues(options.collections[fact.collection], fact, new Set(heldKeys))
     );
     const fixes: Record<string, string> = {};
     for (const { fixedSegment, key, segment } of fact.invalid) {
@@ -141,8 +158,15 @@ export const analyzeTree = async (
         segment,
       });
     }
-    if (segmentDrift(fact.ownSlug, fact.ownStored).length > 0 || Object.keys(fixes).length > 0) {
-      analysis.pageWrites.push({ fact, fixes });
+    const hasWritableDrift = segmentDrift(fact.ownSlug, fact.ownStored).some(
+      ({ locale }) => !heldKeys.includes(locale ?? noLocaleKey)
+    );
+    if (hasWritableDrift || Object.keys(fixes).length > 0) {
+      const segmentsAfter: OwnSegments = { ...fact.ownSlug, ...fixes };
+      for (const key of heldKeys) {
+        segmentsAfter[key] = fact.ownStored[key];
+      }
+      analysis.pageWrites.push({ fact, fixes, heldKeys, segmentsAfter });
     }
   }
 

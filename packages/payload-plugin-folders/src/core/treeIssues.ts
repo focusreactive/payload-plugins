@@ -27,6 +27,13 @@ export type SegmentDrift = {
 export type StructureField = "folder" | "orderKey" | "structureRevision";
 
 /**
+ * An item an issue names. `kind` and `title` are filled by the full pass for the issues it lists
+ * (one batched read per collection), so a dialog can name the item instead of its id; a quick
+ * pass leaves them out, and an item whose title cannot be read has `title: null`.
+ */
+export type IssueItem = ItemRef & { kind?: "folder" | "page"; title?: string | null };
+
+/**
  * One thing `verifyTree` found (spec section 5.9). `fixable` says whether `repairTree` has one right
  * answer for it and fixes it; the others are conflicts a person has to settle. `message` is a plain
  * English sentence for a log or a list; the other fields carry the facts for a dialog of your own.
@@ -37,7 +44,7 @@ export type TreeIssue =
       fixable: true;
       message: string;
       /** The folder. */
-      item: ItemRef;
+      item: IssueItem;
       /** The folder's expected path in the default locale. */
       path: string;
       ancestorIds?: { expected: string; stored: string | null };
@@ -46,34 +53,44 @@ export type TreeIssue =
     }
   | {
       kind: "folderCycle";
-      fixable: true;
+      /** False when the folder repair would move to the top level has a segment the site reserves there. */
+      fixable: boolean;
       message: string;
       /** Every folder of the cycle. */
       folders: FolderId[];
       /** The one repair moves to the top level: the lowest id. */
-      item: ItemRef;
+      item: IssueItem;
+      /** The reserved top-level segment that stops the move. */
+      reservedSegment?: string;
     }
   | {
       kind: "folderParentMissing";
-      fixable: true;
+      /** False when the folder has a segment the site reserves at the top level. */
+      fixable: boolean;
       message: string;
-      item: ItemRef;
+      item: IssueItem;
       /** The id the folder names as its parent, which no folder has. */
       parent: FolderId;
+      /** The reserved top-level segment that stops the move. */
+      reservedSegment?: string;
     }
-  | { kind: "folderSlugMissing"; fixable: false; message: string; item: ItemRef }
+  | { kind: "folderSlugMissing"; fixable: false; message: string; item: IssueItem }
   | {
       kind: "pageSegment";
-      fixable: true;
+      /**
+       * False for the locales of a page that is in a duplicate-path clash and already has a saved
+       * segment: writing the segment would move the page onto the other claimant's URL.
+       */
+      fixable: boolean;
       message: string;
-      item: ItemRef;
+      item: IssueItem;
       segments: SegmentDrift[];
     }
   | {
       kind: "invalidSegment";
       fixable: boolean;
       message: string;
-      item: ItemRef;
+      item: IssueItem;
       locale: string | null;
       segment: string;
       /** The lowercased segment repair would save; `null` when no safe fix exists. */
@@ -87,7 +104,7 @@ export type TreeIssue =
       /** The URL path two or more items claim, in lowercase. */
       path: string;
       count: number;
-      items: ItemRef[];
+      items: IssueItem[];
     }
   | {
       kind: "multipleRootPages";
@@ -95,8 +112,10 @@ export type TreeIssue =
       message: string;
       /** The folder; `null` is the top level. */
       folder: FolderId | null;
+      /** The folder's name, once the full pass has read it. */
+      folderTitle?: string | null;
       count: number;
-      items: ItemRef[];
+      items: IssueItem[];
     }
   | {
       kind: "orderKeyMissing" | "orderKeyEqual" | "orderKeyInvalid";
@@ -104,14 +123,16 @@ export type TreeIssue =
       message: string;
       /** The folder whose children share the problem; `null` is the top level. */
       parent: FolderId | null;
+      /** The folder's name, once the full pass has read it. */
+      parentTitle?: string | null;
       count: number;
-      items: ItemRef[];
+      items: IssueItem[];
     }
   | {
       kind: "staleVersion";
       fixable: true;
       message: string;
-      item: ItemRef;
+      item: IssueItem;
       fields: StructureField[];
     }
   | {
