@@ -16,10 +16,12 @@ import { buildOperationStepEndpoint } from "./operationStep.js";
 import { buildPathsEndpoint } from "./paths.js";
 import { buildPreviewUrlEndpoint } from "./previewUrl.js";
 import { buildPublishEndpoint } from "./publish.js";
+import { buildRepairEndpoint } from "./repair.js";
 import { buildResolveEndpoint } from "./resolve.js";
 import { buildRevisionEndpoint } from "./revision.js";
 import { buildSearchEndpoint } from "./search.js";
 import { buildTreeEndpoint } from "./tree.js";
+import { buildVerifyEndpoint } from "./verify.js";
 
 /** The REST endpoints the plugin adds under `/api/folders-tree/` (spec section 10.2). */
 export const buildFoldersEndpoints = (options: ResolvedOptions): Endpoint[] => [
@@ -42,4 +44,6 @@ export const buildFoldersEndpoints = (options: ResolvedOptions): Endpoint[] => [
   buildDuplicateEndpoint(options),
   buildDeletePreviewEndpoint(options),
   buildDeleteEndpoint(options),
+  buildVerifyEndpoint(options),
+  buildRepairEndpoint(options),
 ];
