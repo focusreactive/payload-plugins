@@ -123,6 +123,64 @@ const rowData = (row: MirrorRow, mirror: MirrorTarget): Record<string, unknown> 
   };
 };
 
+const isCustomRow = (row: MirrorRow, mirror: MirrorTarget): boolean =>
+  !mirror.referenceCollections.includes(row.collection);
+
+/**
+ * A custom-URL row that was written for the old path of `rows` now sends visitors to a path that
+ * itself redirects, so it is pointed at the final path at once (A -> /B, then B moves to /C: A -> /C).
+ * Reference rows follow their document and never chain. A row that would point at its own path is
+ * left, since the page that took that path has already cleared it.
+ */
+const repointChainedCustomRows = async ({
+  mirror,
+  nested,
+  req,
+  rows,
+}: {
+  mirror: MirrorTarget;
+  nested: PayloadRequest;
+  req: PayloadRequest;
+  rows: MirrorRow[];
+}): Promise<void> => {
+  const customRows = rows.filter((row) => isCustomRow(row, mirror));
+  if (customRows.length === 0) {
+    return;
+  }
+  const targetByFrom = new Map(customRows.map((row) => [row.from, row.to]));
+  const collection = toCollectionSlug(mirror.collectionSlug);
+  const { docs } = await req.payload.find({
+    collection,
+    depth: 0,
+    overrideAccess: true,
+    pagination: false,
+    req: nested,
+    select: { from: true, to: true } as never,
+    where: {
+      and: [{ "to.type": { equals: "custom" } }, { "to.url": { in: [...targetByFrom.keys()] } }],
+    },
+  });
+  for (const doc of docs as unknown as Array<{
+    from: string;
+    id: FolderId;
+    to: { url?: string };
+  }>) {
+    const newTarget = doc.to.url === undefined ? undefined : targetByFrom.get(doc.to.url);
+    if (newTarget === undefined || newTarget === doc.from) {
+      continue;
+    }
+    await req.payload.update({
+      collection,
+      data: { to: { reference: null, type: "custom", url: newTarget } } as never,
+      depth: 0,
+      id: doc.id,
+      overrideAccess: true,
+      req: nested,
+      select: { id: true } as never,
+    });
+  }
+};
+
 /**
  * Upserts rows by `from` (the redirects plugin's unique field) through the Local API, so the host's
  * own hooks on its redirects collection run (a cache revalidation, for one), on the caller's
@@ -164,6 +222,7 @@ const upsertMirrorRows = async ({
       ])
     );
 
+    const written: MirrorRow[] = [];
     for (const row of rowsOfChunk) {
       const existing = existingByFrom.get(row.from);
       if (existing !== undefined && Date.parse(existing.updatedAt) > queuedAt) {
@@ -182,7 +241,9 @@ const upsertMirrorRows = async ({
       } else {
         await payload.update({ ...common, id: existing.id });
       }
+      written.push(row);
     }
+    await repointChainedCustomRows({ mirror, nested, req, rows: written });
   }
 };
 
@@ -310,7 +371,8 @@ export const countMirrorRows = (
 /**
  * Spec section 5.6, "Delete ... deletes rows whose target is the deleted document", for the
  * mirror: the rows that reference the document go. A row of a collection the redirects plugin cannot
- * reference is a custom URL and has no link to the document, so it stays.
+ * reference is a custom URL with no link to the document, so `deleteCustomMirrorRowsTo` removes it by
+ * the URL it points at.
  */
 export const deleteMirrorRowsTargeting = async ({
   options,
@@ -338,6 +400,50 @@ export const deleteMirrorRowsTargeting = async ({
       ],
     },
   });
+};
+
+/**
+ * Removes the custom-URL rows that send visitors to a page that is being deleted: `changes` are the
+ * paths the page held (`planDeletedPageChanges`), and a row whose `to.url` is one of them would
+ * redirect to a 404. Only pages of a collection the redirects plugin cannot reference are looked at,
+ * since the rows of the others are deleted by reference.
+ */
+export const deleteCustomMirrorRowsTo = async ({
+  changes,
+  options,
+  req,
+}: {
+  changes: PathChange[];
+  options: ResolvedOptions;
+  req: PayloadRequest;
+}): Promise<void> => {
+  const { mirror } = options.redirects;
+  if (!mirror) {
+    return;
+  }
+  const urls = [
+    ...new Set(
+      changes
+        .filter(
+          (change): change is PathChange & { from: string } =>
+            change.kind === "page" &&
+            change.from !== null &&
+            !mirror.referenceCollections.includes(change.collection)
+        )
+        .map((change) => withPrefix(change.from, change.locale, options, req.payload))
+    ),
+  ];
+  const nested = createNestedRequest(req);
+  for (const urlsOfChunk of chunk(urls)) {
+    await req.payload.delete({
+      collection: toCollectionSlug(mirror.collectionSlug),
+      depth: 0,
+      overrideAccess: true,
+      req: nested,
+      select: { id: true } as never,
+      where: { and: [{ "to.type": { equals: "custom" } }, { "to.url": { in: urlsOfChunk } }] },
+    });
+  }
 };
 
 registerOperationHandler("mirrorRedirects", {

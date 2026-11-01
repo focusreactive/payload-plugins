@@ -12,6 +12,7 @@ import {
 } from "../../core/deletedPaths.js";
 import { readFolderRecord } from "../../core/folderRecords.js";
 import { getDefaultLocaleKey } from "../../core/locales.js";
+import { deleteCustomMirrorRowsTo } from "../../core/mirror.js";
 import { readPageRow } from "../../core/pageRecords.js";
 import type { PageSnapshot } from "../../core/pageRecords.js";
 import { deleteRedirectsTargeting } from "../../core/redirects.js";
@@ -28,7 +29,8 @@ const keyOf = (collection: string, id: FolderId): string => `${collection}:${id}
 
 /**
  * Spec sections 4 and 5.6 for a page that is deleted: its redirect rows go (a delete writes none),
- * and the URLs it held are worked out while the page and its folder can still be read.
+ * the URLs it held are worked out while the page and its folder can still be read, and the custom-URL
+ * mirror rows that point at those URLs go with them.
  */
 export const buildPageBeforeDelete =
   (page: ResolvedPageCollection, options: ResolvedOptions): CollectionBeforeDeleteHook =>
@@ -48,6 +50,7 @@ export const buildPageBeforeDelete =
       req,
       snapshot: snapshotOfRow(req, row),
     });
+    await deleteCustomMirrorRowsTo({ changes, options, req });
     const pending = (req.context[pendingChangesContextKey] ?? {}) as Record<string, PathChange[]>;
     pending[keyOf(page.slug, id)] = changes;
     req.context[pendingChangesContextKey] = pending;
@@ -97,6 +100,7 @@ export const settleTrashedPage = async ({
   await deleteRedirectsTargeting({ ref: { collection: page.slug, id }, req });
   if (before) {
     const changes = await planDeletedPageChanges({ id, options, page, req, snapshot: before });
+    await deleteCustomMirrorRowsTo({ changes, options, req });
     await reportDeletedPaths({ changes, options, req });
   }
   await bumpRevision(req);

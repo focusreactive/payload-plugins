@@ -372,6 +372,55 @@ const findMirrorOperation = async (payload: Payload) =>
     where: { kind: { equals: "mirrorRedirects" } },
   })) as { docs: Array<{ done: number; id: number; status: string; total: number }> };
 
+describe("custom-URL rows of a collection the redirects plugin cannot reference", () => {
+  const moveTimeline = async (payload: Payload, postId: number, toFolder: number) =>
+    moveItems(payload, {
+      items: [{ collection: "posts", id: postId }],
+      overrideAccess: true,
+      toFolder,
+    });
+
+  it("a second move points the first row at the final URL instead of chaining", async () => {
+    const { payload } = pagesOnlyHarness;
+    const tree = await seedTree(payload);
+    const docs = await createFolder(payload, { slug: "docs" });
+
+    await moveTimeline(payload, tree.pages.timeline.id, tree.blog.id);
+    expect((await rowFrom(payload, "/about/history/timeline"))?.to.url).toBe("/blog/timeline");
+    await moveTimeline(payload, tree.pages.timeline.id, docs.id);
+
+    expect((await rowFrom(payload, "/about/history/timeline"))?.to).toMatchObject({
+      type: "custom",
+      url: "/docs/timeline",
+    });
+    expect((await rowFrom(payload, "/blog/timeline"))?.to).toMatchObject({
+      type: "custom",
+      url: "/docs/timeline",
+    });
+  });
+
+  it("a delete removes the rows that point at the post and keeps the others", async () => {
+    const { payload } = pagesOnlyHarness;
+    const tree = await seedTree(payload);
+    await moveTimeline(payload, tree.pages.timeline.id, tree.blog.id);
+    await payload.create({
+      collection: "redirects",
+      data: { from: "/promo", to: { type: "custom", url: "/elsewhere" } } as never,
+      overrideAccess: true,
+    });
+    expect(await rowFrom(payload, "/about/history/timeline")).toBeDefined();
+
+    await payload.delete({
+      collection: "posts",
+      id: tree.pages.timeline.id,
+      overrideAccess: true,
+    });
+
+    expect(await rowFrom(payload, "/about/history/timeline")).toBeUndefined();
+    expect(await rowFrom(payload, "/promo")).toBeDefined();
+  });
+});
+
 describe("a change with no user above the limit", () => {
   it("moveItems writes every row at once and answers no operation", async () => {
     const { payload } = smallLimitHarness;
