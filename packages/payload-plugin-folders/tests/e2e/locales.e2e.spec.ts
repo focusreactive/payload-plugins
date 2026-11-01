@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { APIRequestContext, Locator, Page } from "@playwright/test";
 
-import { createFolder, createPage, removeFolderTree } from "./helpers/content.js";
+import { createFolder, createPage, createPost, removeFolderTree } from "./helpers/content.js";
 import { dragRowTo } from "./helpers/drag.js";
 import { openRowMenu } from "./helpers/menu.js";
 import { expandFolder, folderRow, openContentTree, pageRow } from "./helpers/tree.js";
@@ -138,6 +138,26 @@ test("an untranslated page shows the fallback chip", async ({ page, request }) =
   await openTree(page, "de", [bare]);
   await expect(folderRow(page, "Chip Bare").getByTestId("name-fallback-chip")).toBeVisible();
   await expect(folderRow(page, "Chip Bare").getByTestId("fallback-chip")).toBeVisible();
+});
+
+test("a post whose title is not localized shows no fallback chip in any locale", async ({
+  page,
+  request,
+}) => {
+  const folder = await addFolder(request, "Post Folder", {
+    name: "Post Ordner",
+    slug: "post-ordner",
+  });
+  await createPost(request, { folder, slug: "plain-post", title: "Plain Post" });
+
+  // `posts.title` is one string for every locale, so the German tree has nothing to fall back from.
+  for (const locale of ["en", "de"]) {
+    await openTree(page, locale, [folder]);
+    const row = pageRow(page, "Plain Post");
+    await expect(row).toBeVisible();
+    await expect(row.getByTestId("name-fallback-chip")).toHaveCount(0);
+    await expect(row.getByTestId("fallback-chip")).toHaveCount(0);
+  }
 });
 
 test("the confirm dialog counts URLs in both locales", async ({ page, request }) => {

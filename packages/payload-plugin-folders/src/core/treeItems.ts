@@ -143,9 +143,14 @@ const pickLocalized = (value: unknown, key: string, defaultKey: string): string 
   return toText(value);
 };
 
-/** The value a locale has of its own: `""` when it has none, which the default locale then fills in. */
+/**
+ * The value a locale has of its own: `""` when it has none, which the default locale then fills in.
+ * A plain string is a field that is not localized, so it belongs to every locale.
+ */
 const ownLocalized = (value: unknown, key: string): string =>
-  value && typeof value === "object" ? toText((value as Record<string, unknown>)[key]) : "";
+  value && typeof value === "object"
+    ? toText((value as Record<string, unknown>)[key])
+    : toText(value);
 
 const ownSegmentOf = (segments: unknown, key: string): string =>
   segments && typeof segments === "object"

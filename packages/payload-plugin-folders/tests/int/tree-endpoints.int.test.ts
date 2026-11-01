@@ -472,6 +472,24 @@ describe("GET /folders-tree/children", () => {
     expect(Object.values(await fallbackOf("en")).every((isFallback) => !isFallback)).toBe(true);
   });
 
+  it("never marks a title as the default locale's when the title field is not localized", async () => {
+    const { payload } = harness;
+    const request = await asUser(payload, "admin");
+    // `posts.title` is a plain string column, so the one value belongs to every locale.
+    await payload.create({
+      collection: "posts",
+      data: { slug: "post", title: "A post" },
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    for (const locale of ["en", "de"]) {
+      const { items } = await children(request, { locale, parent: null });
+
+      expect(items.map((item) => [item.title, item.titleIsFallback])).toEqual([["A post", false]]);
+    }
+  });
+
   it("a locale with its own draft status reads draft even when en is published", async () => {
     const { payload } = harness;
     const request = await asUser(payload, "admin");
