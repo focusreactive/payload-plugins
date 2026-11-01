@@ -3,7 +3,7 @@ import { RequesterMissing } from "../RequesterMissing.js";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload } from "payload";
 
-import { readFailureReason } from "../../../../core/domain/translation-providers/failureReason.js";
+import { readFailureReason } from "../../../../core/errors/failureReason.js";
 import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
 
 vi.mock("payload", async (importOriginal) => ({

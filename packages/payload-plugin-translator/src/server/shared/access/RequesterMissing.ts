@@ -1,5 +1,5 @@
 import { TranslatorError } from "../../../core/errors/index.js";
-import { markFailureReason } from "../../../core/domain/translation-providers/failureReason.js";
+import { markFailureReason } from "../../../core/errors/failureReason.js";
 
 /**
  * The requester recorded on a job no longer resolves to a user. `mustPropagate` is `false` even

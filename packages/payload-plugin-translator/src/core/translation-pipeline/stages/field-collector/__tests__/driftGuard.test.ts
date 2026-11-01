@@ -1,0 +1,156 @@
+import type { Field } from "payload";
+import { describe, expect, it } from "vitest";
+
+import { projectTranslatableContent } from "../../../../domain/content-projection/contentProjector.js";
+import type { FieldLike } from "../../../../kernel/field-traversal/types.js";
+import type { FieldChunk } from "../../../types/index.js";
+import { PlainTextExpander } from "../../text-expander/PlainTextExpander.js";
+import { RichTextExpander } from "../../text-expander/RichTextExpander.js";
+import { TextChunkExpander } from "../../text-expander/TextChunkExpander.js";
+import { FieldChunkCollector } from "../FieldChunkCollector.js";
+
+// Drift guard (slice 6, option B): the read-only ContentProjector and the translation pipeline
+// must agree on WHICH leaves are translatable and WHAT source text each holds. They derive that
+// from one shared selection core, so this fixture pins their agreement executably. If someone
+// changes the translatable set on one side only, this fails.
+
+const richText = (...texts: string[]) => ({
+  root: {
+    type: "root",
+    children: texts.map((text) => ({
+      type: "paragraph",
+      children: [{ type: "text", text }],
+    })),
+  },
+});
+
+const schema: FieldLike[] = [
+  { name: "title", type: "text", localized: true },
+  {
+    name: "internalNote",
+    type: "text",
+    localized: true,
+    custom: { translateKit: { exclude: true } },
+  },
+  { name: "slug", type: "text" }, // not localized
+  { name: "views", type: "number", localized: true }, // not a translatable type
+  { name: "body", type: "richText", localized: true },
+  {
+    name: "meta",
+    type: "group",
+    fields: [{ name: "description", type: "textarea", localized: true }],
+  },
+  {
+    name: "content",
+    type: "blocks",
+    blocks: [
+      {
+        slug: "hero",
+        fields: [
+          { name: "heading", type: "text", localized: true },
+          { name: "sub", type: "richText", localized: true },
+        ],
+      },
+    ],
+  },
+];
+
+const doc = {
+  title: "The Title",
+  internalNote: "secret",
+  slug: "the-title",
+  views: 42,
+  body: richText("Body para one.", "Body para two."),
+  meta: { description: "A description." },
+  content: [
+    { id: "b1", blockType: "hero", heading: "Hero heading", sub: richText("Hero sub.") },
+    { id: "b2", blockType: "hero", heading: "Second hero", sub: richText("Second sub.") },
+  ],
+};
+
+/**
+ * What the collector is really handed: `DataReconciler` strips a per-locale row's `id` before the
+ * collect walk ever runs. Feeding it the untouched document hides the one failure this guard exists
+ * to catch — a collector that names leaves from the walked data instead of from the source.
+ */
+const asReconciled = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(asReconciled);
+  if (value === null || typeof value !== "object") return value;
+  const { id: _strippedByTheReconciler, ...rest } = value as Record<string, unknown>;
+  return Object.fromEntries(Object.entries(rest).map(([k, v]) => [k, asReconciled(v)]));
+};
+
+const filtered = () => asReconciled(structuredClone(doc)) as Record<string, unknown>;
+
+// Fed back as the selection: a leaf the collector addresses differently matches nothing and goes
+// missing below, so the guard still fails on drift.
+const asTheProjectionNamesThem = (): string[] =>
+  projectTranslatableContent(doc, schema).map((entry) => String(entry.idPath));
+
+const pipelineAddresses = (): string[] =>
+  new FieldChunkCollector(
+    schema as unknown as Field[],
+    filtered(),
+    structuredClone(doc),
+    asTheProjectionNamesThem()
+  )
+    .collect()
+    .map((chunk) => chunk.idPath)
+    .sort();
+
+const pipelineFieldTexts = (): string[] => {
+  const reconciledData = filtered();
+  const source = structuredClone(doc);
+  const chunks: FieldChunk[] = new FieldChunkCollector(
+    schema as unknown as Field[],
+    reconciledData,
+    source,
+    asTheProjectionNamesThem()
+  ).collect();
+
+  // Per-node expanders only, deliberately: a container expander sends marked strings
+  // (`<1>a </1>`), and this guard compares source prose against the projection's source prose.
+  const expander = new TextChunkExpander([new RichTextExpander(), new PlainTextExpander()]);
+
+  // Expand each field chunk independently, then join per field (richText spans multiple nodes).
+  return chunks.map((chunk) => {
+    const { textChunks, textMap } = expander.expand([chunk]);
+    return textChunks
+      .map((tc) => textMap[tc.index] ?? "")
+      .join("")
+      .trim();
+  });
+};
+
+describe("projection / translation drift guard", () => {
+  it("both select the same leaves with the same source text (as a multiset)", () => {
+    const projectionTexts = projectTranslatableContent(doc, schema)
+      .map((entry) => entry.text)
+      .sort();
+    const pipelineTexts = pipelineFieldTexts().sort();
+
+    expect(pipelineTexts).toEqual(projectionTexts);
+  });
+
+  it("both select the same number of translatable leaves", () => {
+    expect(pipelineFieldTexts()).toHaveLength(projectTranslatableContent(doc, schema).length);
+  });
+
+  // If the two sides name a leaf differently, every per-leaf fingerprint lookup misses and nothing
+  // ever reads as current.
+  it("both give a leaf the same address, not merely the same text", () => {
+    const projectionAddresses = projectTranslatableContent(doc, schema)
+      .map((entry) => String(entry.idPath))
+      .sort();
+
+    expect(pipelineAddresses()).toEqual(projectionAddresses);
+  });
+
+  it("excludes the same non-translatable content from both", () => {
+    const projectionTexts = projectTranslatableContent(doc, schema).map((e) => e.text);
+    expect(projectionTexts).not.toContain("secret"); // excluded field
+    expect(projectionTexts).not.toContain("the-title"); // not localized
+    expect(pipelineFieldTexts()).not.toContain("secret");
+    expect(pipelineFieldTexts()).not.toContain("the-title");
+  });
+});

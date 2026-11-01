@@ -1,4 +1,4 @@
-import { markFailureReason } from "../../core/domain/translation-providers/failureReason.js";
+import { markFailureReason } from "../../core/errors/failureReason.js";
 import { isObject } from "../../core/kernel/utils/isObject.js";
 import type { CompletionFn } from "../shared/index.js";
 import { errorMessageLower, NoContentError, ProviderConfigurationError } from "../shared/index.js";

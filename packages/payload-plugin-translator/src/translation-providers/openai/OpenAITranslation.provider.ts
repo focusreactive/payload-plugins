@@ -98,24 +98,16 @@ export type OpenAIProviderConfig = OpenAIProviderBase &
 export function createOpenAIProvider(config: OpenAIProviderConfig): TranslationProvider {
   const { model = DEFAULT_MODEL, systemPrompt, dryRun, sampling, structuredOutput } = config;
 
-  // The promise, not the client: two concurrent first calls would otherwise each start their own
-  // import. Per instance, never module-level — one consumer's client must not reach a differently
-  // configured provider in the same process.
   let clientPromise: Promise<OpenAIClientShape> | undefined;
 
   const loadClientAndForgetOnFailure = async (): Promise<OpenAIClientShape> => {
     try {
-      // `apiKey` goes through unchanged — never defaulted to "". The SDK checks for `undefined`, so an
-      // empty string would build a client that 401s on every request instead of saying the key is
-      // missing.
       return await loadOpenAIClient({
         apiKey: config.apiKey,
         timeout: config.timeout ?? DEFAULT_TIMEOUT_MS,
         maxRetries: config.maxRetries,
       });
     } catch (error) {
-      // A cached rejected promise makes one bad first call permanent — the job runner's retries
-      // would replay the same stale error.
       clientPromise = undefined;
       throw error;
     }
