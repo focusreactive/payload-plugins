@@ -44,9 +44,11 @@ const password = "test-password";
 const limited = { email: "duplicate-limited@example.com", password };
 
 let harness: TestPayload;
+let shallowHarness: TestPayload;
 
 beforeAll(async () => {
   harness = await getTestPayload();
+  shallowHarness = await getTestPayload({ foldersOptions: { maxDepth: 3 } });
   await harness.payload.create({
     collection: "users",
     data: { email: limited.email, password, role: "editorLimited" } as never,
@@ -55,11 +57,13 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  await shallowHarness?.destroy();
   await harness?.destroy();
 });
 
 afterEach(async () => {
   await clearTree(harness.payload);
+  await clearTree(shallowHarness.payload);
 });
 
 const post = <TBody>(path: string, body: unknown, user?: { email: string; password: string }) =>
@@ -405,6 +409,60 @@ describe("POST /folders-tree/duplicate", () => {
     expect(allowedPost.status).toBe(200);
     expect(await countAll(payload, "pages")).toBe(2);
     expect(await countAll(payload, "folders")).toBe(2);
+  });
+
+  it("a copy that would go deeper than maxDepth is refused", async () => {
+    const { payload } = shallowHarness;
+    const first = await createFolder(payload, { slug: "one" });
+    const second = await createFolder(payload, { parent: first.id, slug: "two" });
+    const source = await createFolder(payload, { slug: "source" });
+    const child = await createFolder(payload, { parent: source.id, slug: "child" });
+    const page = await createLivePage(payload, second.id, "deep-page");
+    const copyTo = (items: ItemRef[], toFolder: number) =>
+      callEndpoint<DuplicateBody>({
+        body: { items, toFolder },
+        config: shallowHarness.config,
+        method: "POST",
+        path: "/folders-tree/duplicate",
+        payload,
+        payloadInstanceCacheKey: shallowHarness.cacheKey,
+      });
+    const before = await countAll(payload, "folders");
+
+    // /one/two/source would be 3 deep, and /one/two/source/child 4.
+    const tooDeep = await copyTo([folderRef(source.id)], second.id);
+    // A page in /one/two is 3 deep; a copy of it into /one would be fine, into the copy below not.
+    const pageFits = await copyTo([pageRef(page.id)], first.id);
+    const emptySource = await createFolder(payload, { slug: "leaf" });
+    const folderFits = await copyTo([folderRef(emptySource.id)], second.id);
+
+    expect(tooDeep.status).toBe(400);
+    expect(tooDeep.body.errors?.[0].data?.reason).toBe("depth");
+    expect(tooDeep.body.errors?.[0].message).toBe(
+      "This would make URLs 4 segments deep; the limit is 3"
+    );
+    expect(pageFits.status).toBe(200);
+    expect(folderFits.status).toBe(200);
+    expect(await countAll(payload, "folders")).toBe(before + 2);
+    expect(child.id).toBeDefined();
+  });
+
+  it("a copy to the top level refuses a segment the site uses", async () => {
+    const { payload } = harness;
+    const docs = await createFolder(payload, { slug: "docs" });
+    const reserved = await createLivePage(payload, docs.id, "api");
+    const dotted = await createLivePage(payload, docs.id, "robots.txt");
+    const plain = await createLivePage(payload, docs.id, "plain");
+
+    const refusedReserved = await duplicate({ items: [pageRef(reserved.id)], toFolder: null });
+    const refusedDotted = await duplicate({ items: [pageRef(dotted.id)], toFolder: null });
+    const allowed = await duplicate({ items: [pageRef(plain.id)], toFolder: null });
+
+    expect(refusedReserved.status).toBe(400);
+    expect(refusedReserved.body.errors?.[0].data?.reason).toBe("reserved");
+    expect(refusedDotted.status).toBe(400);
+    expect(allowed.status).toBe(200);
+    expect(await countAll(payload, "pages")).toBe(4);
   });
 
   it("a user who may not create in the target gets 403 and nothing is copied", async () => {

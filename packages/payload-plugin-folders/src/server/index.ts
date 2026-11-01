@@ -36,3 +36,23 @@ export { getTree } from "../core/siteTree.js";
 export type { TreeArgs, TreeNode } from "../core/siteTree.js";
 export { buildUrl, toStoryblokFullSlug } from "../core/paths.js";
 export type { BuildUrlOptions, LocalePrefixMode } from "../core/paths.js";
+export { applyDelete, deleteItems, planDelete, previewDelete } from "../core/deleteItems.js";
+export type {
+  DeleteItemsArgs,
+  DeletePreview,
+  DeleteRequest,
+  DeleteResult,
+} from "../core/deleteItems.js";
+export { applyDuplicate, duplicateItems, planDuplicate } from "../core/duplicate.js";
+export type { DuplicateItemsArgs, DuplicateRequest, DuplicateResult } from "../core/duplicate.js";
+export { runOrQueue, startOperation, stepOperation } from "../core/operations.js";
+export type { OperationKind, OperationProgress } from "../core/operations.js";
+export { applyPublish, planPublish, previewPublish, publishItems } from "../core/publish.js";
+export type {
+  PublishAction,
+  PublishItemsArgs,
+  PublishPreview,
+  PublishRequest,
+  PublishResult,
+  PublishSkip,
+} from "../core/publish.js";

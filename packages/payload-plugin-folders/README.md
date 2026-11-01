@@ -195,8 +195,9 @@ but a `file:` SQLite database, because it creates users with a known password.
   sets `publishAllLocales`, or sets the segment field, `isFolderRoot`, `folder` or `orderKey`.
   This includes the admin list's bulk Publish. Payload saves the matching pages in parallel and
   commits the ones that succeed even when others fail, so the uniqueness check could not keep two
-  pages from going live at one URL. Publish pages one at a time until batch publish (P-27)
-  exists. A bulk update of other fields, or of drafts, still works.
+  pages from going live at one URL. Publish pages one at a time, or through
+  `POST /api/folders-tree/publish` (`publishItems()`), which publishes page by page. A bulk
+  update of other fields, or of drafts, still works.
 - Segment uniqueness is strict under `localizeStatus` (the Payload 4 default for drafts with
   localized fields). A page published only in `en` is live at its `en` path, and every other
   locale falls back to it, so it blocks another page's `de` slug through that fallback even
