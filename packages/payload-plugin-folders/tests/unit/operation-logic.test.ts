@@ -95,9 +95,14 @@ describe("isDeleteConfirmed, the typed confirm gate", () => {
 });
 
 describe("refusedCountOf", () => {
-  it("counts the items a refusal names, and reads nothing else as none", () => {
-    expect(refusedCountOf({ items: [{}, {}], reason: "forbidden" })).toBe(2);
-    expect(refusedCountOf({ reason: "forbidden" })).toBe(0);
+  it("reads the full count of a refusal, not the length of the capped list", () => {
+    expect(refusedCountOf({ count: 120, items: [{}, {}], reason: "forbidden" })).toBe(120);
+    expect(refusedCountOf({ count: 6, reason: "forbidden" })).toBe(6);
+  });
+
+  it("reads a refusal without a count as none", () => {
+    expect(refusedCountOf({ items: [{}, {}], reason: "forbidden" })).toBe(0);
+    expect(refusedCountOf({ count: "6", reason: "forbidden" })).toBe(0);
     expect(refusedCountOf(null)).toBe(0);
   });
 });

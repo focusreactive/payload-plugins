@@ -13,7 +13,10 @@ type ItemRef = { collection: string; id: number };
 
 type DuplicateBody = {
   created?: ItemRef[];
-  errors?: Array<{ data?: { reason?: string }; message: string }>;
+  errors?: Array<{
+    data?: { count?: number; items?: ItemRef[]; reason?: string };
+    message: string;
+  }>;
   operationId?: number;
   total?: number;
 };
@@ -492,6 +495,48 @@ describe("POST /folders-tree/duplicate", () => {
     expect(refused.body.errors?.[0].data?.reason).toBe("forbidden");
     expect(allowed.status).toBe(200);
     expect(await countAll(payload, "pages")).toBe(2);
+  });
+
+  it("a refusal names a folder once and counts every refused item past the first 50", async () => {
+    const { payload } = harness;
+    const own = await createFolder(payload, { slug: "own" });
+    const outside = await createFolder(payload, { slug: "outside" });
+    const inner = await createFolder(payload, { parent: own.id, slug: "inner" });
+    await createLivePage(payload, inner.id, "inner-page");
+    const pageIds: number[] = [];
+    for (let index = 1; index <= 60; index += 1) {
+      pageIds.push((await createLivePage(payload, own.id, `many-${index}`)).id);
+    }
+    const limitedUser = (
+      await payload.find({
+        collection: "users",
+        depth: 0,
+        overrideAccess: true,
+        where: { email: { equals: limited.email } },
+      })
+    ).docs[0];
+    await payload.update({
+      collection: "users",
+      data: { limitedFolder: own.id } as never,
+      id: limitedUser.id,
+      overrideAccess: true,
+    });
+
+    const folderCopy = await duplicate(
+      { items: [folderRef(inner.id)], toFolder: outside.id },
+      limited
+    );
+    const manyCopy = await duplicate(
+      { items: pageIds.map((id) => pageRef(id)), toFolder: outside.id },
+      limited
+    );
+
+    expect(folderCopy.status).toBe(403);
+    expect(folderCopy.body.errors?.[0].data?.items).toEqual([folderRef(inner.id)]);
+    expect(folderCopy.body.errors?.[0].data?.count).toBe(1);
+    expect(manyCopy.status).toBe(403);
+    expect(manyCopy.body.errors?.[0].data?.count).toBe(60);
+    expect(manyCopy.body.errors?.[0].data?.items).toHaveLength(50);
   });
 
   it("a 300-page folder copy runs as an operation", async () => {

@@ -91,11 +91,14 @@ export const deleteHeadlineOf = (items: readonly TreeItem[]): DeleteHeadline => 
 export const isDeleteConfirmed = (confirmWord: string | null, typed: string): boolean =>
   confirmWord === null || typed.trim() === confirmWord;
 
-/** The refusal of a delete or a publish or a copy, from the endpoint's 403: how many it names. */
+/**
+ * The refusal of a delete or a publish or a copy, from the endpoint's 403: how many documents it is
+ * about. `items` is only the first 50 of them, so the number comes from `count`.
+ */
 export const refusedCountOf = (data: Record<string, unknown> | null): number => {
-  const items = data?.items;
+  const count = data?.count;
 
-  return Array.isArray(items) ? items.length : 0;
+  return typeof count === "number" && Number.isFinite(count) ? count : 0;
 };
 
 /** What the Publish dialog states for a preview: pages that change, folders they sit in, what is skipped. */

@@ -48,13 +48,16 @@ export type PublishPreview = {
   isBatched: boolean;
 } & Pick<PublishPlan, "folders" | "pages" | "skipped">;
 
-/** Refused without a title or a path: a refused user learns nothing about the content. */
+/**
+ * Refused without a title or a path: a refused user learns nothing about the content. `count` is
+ * every refused page; `items` is the first 50 of them, which is all a client needs to show.
+ */
 export class PublishRefusedError extends APIError {
   constructor(refused: ItemRef[], action: PublishAction) {
     super(
       `You are not allowed to ${action} ${refused.length === 1 ? "one of these pages" : `${refused.length} of these pages`}`,
       403,
-      { reason: "forbidden", refused: refused.slice(0, 50) },
+      { count: refused.length, items: refused.slice(0, 50), reason: "forbidden" },
       true
     );
     this.name = "PublishRefusedError";

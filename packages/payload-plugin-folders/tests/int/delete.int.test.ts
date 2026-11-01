@@ -17,7 +17,7 @@ type ItemRef = { collection: string; id: number };
 type DeleteBody = {
   deleted?: number;
   errors?: Array<{
-    data?: { confirmWord?: string; items?: ItemRef[]; reason?: string };
+    data?: { confirmWord?: string; count?: number; items?: ItemRef[]; reason?: string };
     message: string;
   }>;
   operationId?: number;
@@ -365,6 +365,41 @@ describe("deleting folders and pages", () => {
     expect(JSON.stringify(refused.body)).not.toMatch(/story/u);
     expect(await countAll(payload, "pages")).toBe(4);
     expect(await countAll(payload, "folders")).toBe(2);
+  });
+
+  it("a refusal counts every refused document though it lists only the first 50", async () => {
+    const { payload } = harness;
+    const news = await createFolder(payload, { name: "News", slug: "news" });
+    for (let index = 1; index <= 60; index += 1) {
+      await payload.create({
+        collection: "pages",
+        context: { foldersInternal: true },
+        data: {
+          _status: "published",
+          folder: news.id,
+          orderKey: `a${String(index).padStart(4, "0")}`,
+          slug: `story-${index}`,
+          structureRevision: 0,
+          title: `Story ${index}`,
+        } as never,
+        depth: 0,
+        overrideAccess: true,
+      });
+    }
+
+    const refused = await call<DeleteBody>(
+      harness,
+      "POST",
+      "/folders-tree/delete",
+      { items: [folderRef(news.id)] },
+      drafter
+    );
+
+    expect(refused.status).toBe(403);
+    // 60 pages and the folder itself.
+    expect(refused.body.errors?.[0].data?.count).toBe(61);
+    expect(refused.body.errors?.[0].data?.items).toHaveLength(50);
+    expect(await countAll(payload, "pages")).toBe(60);
   });
 
   it("a 300-page folder delete runs as an operation", async () => {

@@ -57,6 +57,9 @@ export type DeleteBlockReason = "confirm" | "forbidden";
 /** A delete the checks of spec sections 7.10 and 9 refused. Nothing was written. */
 export class DeleteBlockedError extends APIError<{
   confirmWord?: string;
+  /** Every refused document, however many `items` lists. */
+  count: number;
+  /** The first 50 of them. */
   items: ItemRef[];
   reason: DeleteBlockReason;
 }> {
@@ -74,7 +77,12 @@ export class DeleteBlockedError extends APIError<{
     super(
       message,
       reason === "forbidden" ? 403 : 400,
-      { ...(confirmWord === undefined ? {} : { confirmWord }), items: items.slice(0, 50), reason },
+      {
+        ...(confirmWord === undefined ? {} : { confirmWord }),
+        count: items.length,
+        items: items.slice(0, 50),
+        reason,
+      },
       true
     );
     this.name = "DeleteBlockedError";
@@ -168,7 +176,8 @@ const findRefusedItems = async ({
     if ((await findRefusedChecks({ checks: grouped, req })).size === 0) {
       continue;
     }
-    const perDocument = ids.slice(0, 500).flatMap((id) =>
+    // Every document is asked, because the refusal states how many it is about.
+    const perDocument = ids.flatMap((id) =>
       operations.map(
         ({ data, operation }): AccessCheck => ({
           collection,
@@ -180,12 +189,10 @@ const findRefusedItems = async ({
       )
     );
     const refusedKeys = await findRefusedChecks({ checks: perDocument, req });
-    const refusedIds = ids
-      .slice(0, 500)
-      .filter((id) => operations.some(({ operation }) => refusedKeys.has(`${operation}:${id}`)));
-    refused.push(
-      ...(refusedIds.length > 0 ? refusedIds : ids.slice(0, 50)).map((id) => ({ collection, id }))
+    const refusedIds = ids.filter((id) =>
+      operations.some(({ operation }) => refusedKeys.has(`${operation}:${id}`))
     );
+    refused.push(...(refusedIds.length > 0 ? refusedIds : ids).map((id) => ({ collection, id })));
   }
 
   return refused;

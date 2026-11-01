@@ -64,11 +64,19 @@ const statusByReason: Record<DuplicateBlockReason, number> = {
 
 /** A duplicate the checks of spec section 7.10 refused. Nothing was written. */
 export class DuplicateBlockedError extends APIError<{
+  /** Every item the refusal names, however many `items` lists. */
+  count: number;
+  /** The first 50 of them. */
   items: ItemRef[];
   reason: DuplicateBlockReason;
 }> {
   constructor(reason: DuplicateBlockReason, message: string, items: ItemRef[] = []) {
-    super(message, statusByReason[reason], { items: items.slice(0, 50), reason }, true);
+    super(
+      message,
+      statusByReason[reason],
+      { count: items.length, items: items.slice(0, 50), reason },
+      true
+    );
     this.name = "DuplicateBlockedError";
   }
 }
@@ -381,27 +389,32 @@ export const planDuplicate = async (
   // Creating: the user must be allowed to make what the copy makes.
   if (!overrideAccess) {
     const collections = new Set(selection.pages.map((page) => page.collection));
-    const refusedRoots: ItemRef[] = [];
+    // Keyed, because a top folder is named once for the folders and once for each page collection
+    // that refuses, and a refusal counts it once.
+    const refusedRoots = new Map<string, ItemRef>();
+    const refuse = (refs: ItemRef[]) => {
+      for (const ref of refs) {
+        refusedRoots.set(itemKey(ref), ref);
+      }
+    };
     for (const collection of collections) {
       if (!(await canCreateIn({ collection, data: { folder: targetFolder }, req }))) {
-        refusedRoots.push(
+        refuse([
           ...roots.filter((root) => root.collection === collection),
-          ...topFolders.filter(() => collection !== foldersSlug)
-        );
+          ...topFolders.filter(() => collection !== foldersSlug),
+        ]);
       }
     }
     if (
       selection.folders.length > 0 &&
       !(await canCreateIn({ collection: foldersSlug, data: { parent: targetFolder }, req }))
     ) {
-      refusedRoots.push(...topFolders);
+      refuse(topFolders);
     }
-    if (refusedRoots.length > 0) {
-      throw new DuplicateBlockedError(
-        "forbidden",
-        "You are not allowed to create copies here",
-        refusedRoots
-      );
+    if (refusedRoots.size > 0) {
+      throw new DuplicateBlockedError("forbidden", "You are not allowed to create copies here", [
+        ...refusedRoots.values(),
+      ]);
     }
   }
 

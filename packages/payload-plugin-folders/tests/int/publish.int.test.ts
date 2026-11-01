@@ -11,7 +11,10 @@ import { clearTree } from "../helpers/seedTree.js";
 import { createFolder } from "../helpers/treeFixtures.js";
 
 type PublishBody = {
-  errors?: Array<{ data?: { reason?: string; refused?: unknown[] }; message: string }>;
+  errors?: Array<{
+    data?: { count?: number; items?: unknown[]; reason?: string };
+    message: string;
+  }>;
   operationId?: number;
   skipped?: PublishSkip[];
   total?: number;
@@ -219,7 +222,8 @@ describe("POST /folders-tree/publish", () => {
 
     expect(refused.status).toBe(403);
     expect(refused.body.errors?.[0].data?.reason).toBe("forbidden");
-    expect(refused.body.errors?.[0].data?.refused).toHaveLength(2);
+    expect(refused.body.errors?.[0].data?.items).toHaveLength(2);
+    expect(refused.body.errors?.[0].data?.count).toBe(2);
     // A refusal names no title or path.
     expect(JSON.stringify(refused.body)).not.toMatch(/first|second/u);
     expect(await readStatus(payload, first.id)).toBe("draft");
@@ -250,6 +254,38 @@ describe("POST /folders-tree/publish", () => {
     expect(status).toBe(200);
     expect(body).toEqual({ folders: 2, isBatched: false, pages: 1, skipped: [] });
     expect(await readStatus(payload, page.id)).toBe("draft");
+  });
+
+  it("a refusal counts every refused page though it lists only the first 50", async () => {
+    const { payload } = harness;
+    const docs = await createFolder(payload, { slug: "docs" });
+    for (let index = 1; index <= 60; index += 1) {
+      await payload.create({
+        collection: "pages",
+        context: { foldersInternal: true },
+        data: {
+          _status: "draft",
+          folder: docs.id,
+          orderKey: `a${String(index).padStart(4, "0")}`,
+          slug: `many-${index}`,
+          structureRevision: 0,
+          title: `Many ${index}`,
+        } as never,
+        depth: 0,
+        draft: true,
+        overrideAccess: true,
+      });
+    }
+
+    const refused = await post<PublishBody>(
+      "/folders-tree/publish",
+      { action: "publish", items: [folderRef(docs.id)] },
+      drafter
+    );
+
+    expect(refused.status).toBe(403);
+    expect(refused.body.errors?.[0].data?.count).toBe(60);
+    expect(refused.body.errors?.[0].data?.items).toHaveLength(50);
   });
 
   it("a 300-page publish runs as an operation", async () => {
