@@ -83,6 +83,7 @@ export const stateOf = (
   ),
   expanded,
   revision: 1,
+  zoom: null,
 });
 
 export { rootKey };

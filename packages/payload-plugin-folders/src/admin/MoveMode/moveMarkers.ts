@@ -3,7 +3,7 @@ import { anchorAfterRow, resolveGap } from "../DragAndDrop/dropTargets.js";
 import type { DropRefusal, DropRules } from "../DragAndDrop/dropTargets.js";
 import { dropRefusalText } from "../DragAndDrop/dropRefusalText.js";
 import type { MoveTarget } from "../Move/moveFlow.js";
-import { findLoadedFolder, itemKeyOf } from "../store.js";
+import { findLoadedFolder, folderKeyOf, itemKeyOf } from "../store.js";
 import type { TreeStoreState } from "../store.js";
 import type { TreeItem } from "../../types.js";
 import type { ItemRowModel, TreeRowModel } from "./../Tree/useTreeData.js";
@@ -78,7 +78,16 @@ export const placeMarkers = (
     );
   };
 
-  const result: MoveModeRow[] = [markerAt("top", 0, null, null, null)];
+  // A folder with nothing in it counts as open, shown or not.
+  const isEmptyFolder = (folder: TreeItem): boolean =>
+    (folder.childCount ?? 1) === 0 &&
+    (state.childrenByFolder[folderKeyOf(folder.id)]?.items.length ?? 0) === 0;
+
+  // The top marker is the top of the tree on screen: the zoomed folder, or the top level.
+  const viewRootId = state.zoom?.folderId ?? null;
+  const result: MoveModeRow[] = [
+    markerAt("top", 0, viewRootId, null, findLoadedFolder(state, viewRootId)),
+  ];
   // Rows whose contents are still being listed: each one's own gap comes after its last row.
   const open: ItemRowModel[] = [];
   const closeDownTo = (level: number) => {
@@ -92,7 +101,7 @@ export const placeMarkers = (
     result.push({ row, type: "row" });
     if (row.type === "item") {
       open.push(row);
-      if (row.item.kind === "folder" && (row.expanded || !row.expandable)) {
+      if (row.item.kind === "folder" && (row.expanded || isEmptyFolder(row.item))) {
         result.push(markerAt(`inside:${row.item.id}`, row.level + 1, row.item.id, null, row.item));
       }
     }

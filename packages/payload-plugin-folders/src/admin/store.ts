@@ -1,5 +1,5 @@
 import type { FolderId, ItemRef, TreeItem } from "../types.js";
-import { fetchChildren, fetchRevision } from "./api.js";
+import { FoldersApiError, fetchAncestors, fetchChildren, fetchRevision } from "./api.js";
 import type { FoldersApiContext } from "./api.js";
 
 /** Key of a folder's children in the cache: `root` for the top level, else the folder's id. */
@@ -34,6 +34,18 @@ export type ChildrenEntry = {
   stale: boolean;
 };
 
+/** The folder the tree view is zoomed into (`?folder=<id>`, spec section 7.2). */
+export type ZoomState = {
+  /**
+   * The breadcrumb folders as tree rows, top first, then the zoomed folder itself; `null` until
+   * they are read. A breadcrumb is a drop target, so its depth, types and access come along.
+   */
+  chain: readonly TreeItem[] | null;
+  /** Why the folder cannot be shown: gone or unreadable (`not-found`), or the read failed. */
+  error: "failed" | "not-found" | null;
+  folderId: FolderId;
+};
+
 export type TreeStoreState = {
   childrenByFolder: Readonly<Record<FolderKey, ChildrenEntry>>;
   /** Folders the user opened, whether or not their children are loaded yet. */
@@ -43,12 +55,16 @@ export type TreeStoreState = {
    * first answer and a successful read of every visible folder set it.
    */
   revision: number | null;
+  /** The zoomed folder; `null` shows the top level. The tree on screen starts at this folder. */
+  zoom: ZoomState | null;
 };
 
 export type TreeStoreOptions = {
   baseUrl: string;
   /** For tests; the browser's `fetch` by default. */
   fetchImplementation?: typeof fetch;
+  /** The slug of the folders collection, for the zoom's breadcrumb read. Default `folders`. */
+  foldersSlug?: string;
   /** The admin locale; `null` when localization is off. */
   locale: string | null;
   /** Rows per children request. */
@@ -90,6 +106,11 @@ export type TreeStore = {
   /** Reads a folder's first page unless it is loaded and current. */
   loadChildren: (parent: FolderId | null) => Promise<void>;
   loadMore: (parent: FolderId | null) => Promise<void>;
+  /**
+   * Opens exactly these folders and closes the rest: the `?expanded=` list and the saved
+   * preference come back this way. Their rows load as the folders above them show.
+   */
+  replaceExpanded: (folders: readonly FolderId[]) => Promise<void>;
   /** Asks the server for the revision and reads the visible folders again when it changed. */
   pollRevision: () => Promise<void>;
   /** Reads every visible folder again. */
@@ -104,6 +125,11 @@ export type TreeStore = {
     request: () => Promise<Result>
   ) => Promise<Result>;
   setExpanded: (folder: FolderId, expanded: boolean) => Promise<void>;
+  /**
+   * Zooms into a folder, or back to the top level with `null`: the tree on screen starts at that
+   * folder, which is read at once together with the breadcrumb rows above it.
+   */
+  setZoom: (folder: FolderId | null) => Promise<void>;
   startPolling: (intervalMs?: number) => () => void;
   subscribe: (listener: () => void) => () => void;
   toggleExpanded: (folder: FolderId) => Promise<void>;
@@ -113,7 +139,11 @@ export type TreeStore = {
 export const loadedItemsOf = (state: TreeStoreState): TreeItem[] =>
   Object.values(state.childrenByFolder).flatMap((entry) => [...entry.items]);
 
-/** A folder's own row, found in the rows its parent loaded; `null` when it is not loaded. */
+/**
+ * A folder's own row, found in the rows its parent loaded, or in the breadcrumbs of the zoom (a
+ * zoomed folder's row is not loaded when the page opened straight on it); `null` when it is in
+ * neither, and for the top level.
+ */
 export const findLoadedFolder = (state: TreeStoreState, id: FolderId | null): TreeItem | null => {
   if (id === null) {
     return null;
@@ -121,11 +151,21 @@ export const findLoadedFolder = (state: TreeStoreState, id: FolderId | null): Tr
 
   return (
     loadedItemsOf(state).find((item) => item.kind === "folder" && String(item.id) === String(id)) ??
+    state.zoom?.chain?.find((item) => String(item.id) === String(id)) ??
     null
   );
 };
 
-const initialState: TreeStoreState = { childrenByFolder: {}, expanded: [], revision: null };
+/** The key of the folder the tree on screen starts at: the zoomed folder, else the top level. */
+export const viewRootKeyOf = (state: Pick<TreeStoreState, "zoom">): FolderKey =>
+  state.zoom === null ? rootKey : String(state.zoom.folderId);
+
+const initialState: TreeStoreState = {
+  childrenByFolder: {},
+  expanded: [],
+  revision: null,
+  zoom: null,
+};
 
 const emptyEntry: ChildrenEntry = {
   error: null,
@@ -240,11 +280,11 @@ const removeItems = (
   }
 };
 
-/** The folders shown right now: the top level, and every opened folder under an opened path. */
+/** The folders shown right now: the view's root, and every opened folder under an opened path. */
 const visibleFolderKeys = (state: TreeStoreState): FolderKey[] => {
   const expanded = new Set(state.expanded);
   const visible: FolderKey[] = [];
-  const pending: FolderKey[] = [rootKey];
+  const pending: FolderKey[] = [viewRootKeyOf(state)];
   while (pending.length > 0) {
     const key = pending.shift() as FolderKey;
     const entry = state.childrenByFolder[key];
@@ -439,6 +479,67 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
 
   let refetchRun: Promise<void> | null = null;
   let refetchAgain = false;
+  // Each breadcrumb read gets the next number; only the newest answer is applied.
+  let zoomReads = 0;
+
+  const isZoomedTo = (folderId: FolderId): boolean =>
+    state.zoom !== null && String(state.zoom.folderId) === String(folderId);
+
+  /** Reads the breadcrumb rows of the zoomed folder: its ancestors and itself, as tree rows. */
+  const loadZoomChain = async (): Promise<void> => {
+    if (state.zoom === null || !options) {
+      return;
+    }
+    const { folderId } = state.zoom;
+    const { foldersSlug = "folders", locale } = options;
+    const startedEpoch = epoch;
+    zoomReads += 1;
+    const read = zoomReads;
+    const isCurrent = (): boolean =>
+      read === zoomReads && startedEpoch === epoch && isZoomedTo(folderId);
+    try {
+      const response = await fetchAncestors(context(), {
+        item: { collection: foldersSlug, id: folderId },
+        locale,
+        withItems: true,
+      });
+      if (!isCurrent()) {
+        return;
+      }
+      const chain = [...(response.items ?? []), ...(response.item ? [response.item] : [])];
+      setState({ ...state, zoom: { chain, error: null, folderId } });
+    } catch (error) {
+      if (!isCurrent()) {
+        return;
+      }
+      const isGone = error instanceof FoldersApiError && error.status === 404;
+      // A failed refresh keeps the breadcrumbs on screen; a folder that is gone has none.
+      setState({
+        ...state,
+        zoom: {
+          chain: isGone ? null : (state.zoom?.chain ?? null),
+          error: isGone ? "not-found" : "failed",
+          folderId,
+        },
+      });
+    }
+  };
+
+  /** The breadcrumb rows of a folder, when the rows already read hold the folder and every folder above it. */
+  const chainFromLoadedRows = (folderId: FolderId): TreeItem[] | null => {
+    const folder = findLoadedFolder(state, folderId);
+    if (folder === null) {
+      return null;
+    }
+    const ancestors = (folder.ancestorIds ?? "")
+      .split("/")
+      .filter((id) => id !== "")
+      .map((id) => findLoadedFolder(state, id));
+
+    return ancestors.every((ancestor) => ancestor !== null)
+      ? [...(ancestors as TreeItem[]), folder]
+      : null;
+  };
 
   /**
    * Moves the seen revision to the lowest revision among the visible folders, once every one of
@@ -492,12 +593,15 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
               entry.revision < behindRevision
             );
           });
+    // A folder renamed or moved changes the breadcrumbs too.
+    const chainRead = loadZoomChain();
     const results = await Promise.all(targets.map((key) => readFirstPage(key, true)));
     await Promise.all(
       foldersToOpen(results.flatMap((result) => result?.items ?? [])).map((key) =>
         loaders.loadChildren(key)
       )
     );
+    await chainRead;
     if (startedEpoch === epoch) {
       settleRevision();
     }
@@ -652,6 +756,38 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
     return expanded ? loadChildren(key) : Promise.resolve();
   };
 
+  const replaceExpanded = async (folders: readonly FolderId[]): Promise<void> => {
+    const expanded = [...new Set(folders.map(String))];
+    const isSame =
+      expanded.length === state.expanded.length &&
+      expanded.every((key, index) => key === state.expanded[index]);
+    if (!isSame) {
+      setState({ ...state, expanded });
+    }
+    // Rows that are already loaded may show folders that are open now and have nothing yet.
+    await Promise.all(foldersToOpen(loadedItemsOf(state)).map((key) => loadChildren(key)));
+  };
+
+  const setZoom = async (folder: FolderId | null): Promise<void> => {
+    if (folder === null) {
+      if (state.zoom !== null) {
+        zoomReads += 1;
+        setState({ ...state, zoom: null });
+      }
+
+      return;
+    }
+    if (state.zoom !== null && isZoomedTo(folder)) {
+      return;
+    }
+    // Rows already read give the breadcrumbs at once; the read below makes them current.
+    setState({
+      ...state,
+      zoom: { chain: chainFromLoadedRows(folder), error: null, folderId: folder },
+    });
+    await Promise.all([loadZoomChain(), loadChildren(folder)]);
+  };
+
   const reset = (keepExpanded = true): void => {
     epoch += 1;
     // Moves in flight belong to the session that started them, and that session's cache is gone.
@@ -660,8 +796,14 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
     moreNumbers.clear();
     firstLoads.clear();
     // The open folders stay open across a locale change: they are the user's, the rows are only
-    // a copy of the server's. Another user starts with a closed tree.
-    setState({ ...initialState, expanded: keepExpanded ? state.expanded : [] });
+    // a copy of the server's. Another user starts with a closed tree. The zoom is the address's,
+    // not the user's: it stays, and its breadcrumbs are read again in the new language.
+    setState({
+      ...initialState,
+      expanded: keepExpanded ? state.expanded : [],
+      zoom: state.zoom === null ? null : { ...state.zoom, chain: null, error: null },
+    });
+    void loadZoomChain();
   };
 
   const runPoll = async (): Promise<void> => {
@@ -909,6 +1051,7 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
     loadMore,
     pollRevision,
     refetchVisible,
+    replaceExpanded,
     reset: () => reset(),
     runOptimisticMove: async (move, request) => {
       const startedEpoch = epoch;
@@ -930,6 +1073,7 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
       }
     },
     setExpanded,
+    setZoom,
     startPolling,
     subscribe: (listener) => {
       listeners.add(listener);

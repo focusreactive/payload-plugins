@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { draggedItemsOf, resolveDrop } from "../../src/admin/DragAndDrop/dropTargets.js";
+import {
+  crumbKeyOf,
+  draggedItemsOf,
+  resolveCrumbDrop,
+  resolveDrop,
+} from "../../src/admin/DragAndDrop/dropTargets.js";
 import type { DropRules } from "../../src/admin/DragAndDrop/dropTargets.js";
 import type { DropZone } from "../../src/admin/DragAndDrop/dropZones.js";
 import { buildMoveBody, optimisticMoveOf } from "../../src/admin/Move/moveFlow.js";
@@ -107,6 +112,7 @@ const fixture = (expanded: string[] = [String(blogId)]) => {
     },
     expanded,
     revision: 1,
+    zoom: null,
   };
 
   return { alpha, archive, articles, beta, blog, deep, gamma, home, shop, state };
@@ -533,5 +539,101 @@ describe("invalid targets", () => {
     const same = { ...alpha, slug: "beta" };
 
     expect(drop(state, [same], beta, "after")?.refusal).toBeNull();
+  });
+});
+
+describe("a zoomed view", () => {
+  // The page opened on Archive: its own row arrives with the breadcrumbs, and until then the
+  // zoomed folder has an id and no row.
+  const zoomedFixture = (withBreadcrumbs: boolean) => {
+    const parts = fixture();
+    const chain = withBreadcrumbs ? [parts.blog, parts.archive] : null;
+    const state: TreeStoreState = {
+      ...parts.state,
+      zoom: { chain, error: null, folderId: archiveId },
+    };
+    // The rows the view shows are the zoomed folder's own, at level 0.
+    const unloaded: TreeStoreState = {
+      ...state,
+      childrenByFolder: Object.fromEntries(
+        Object.entries(state.childrenByFolder).filter(([key]) => key !== String(blogId))
+      ),
+    };
+
+    return { ...parts, state: withBreadcrumbs ? state : unloaded };
+  };
+
+  it("does not apply the top level's reserved segments to a folder whose row is not known yet", () => {
+    const { deep, state } = zoomedFixture(false);
+    const admin = page(50, "Admin", blogId, 2, { slug: "admin" });
+
+    const resolved = drop(state, [admin], deep, "before");
+
+    expect(resolved?.target).toEqual({ position: "start", toFolder: archiveId });
+    expect(resolved?.refusal).toBeNull();
+  });
+
+  it("still refuses a reserved segment at the real top level", () => {
+    const { blog, state } = fixture();
+    const admin = page(50, "Admin", blogId, 2, { slug: "admin" });
+
+    expect(drop(state, [admin], blog, "before")?.refusal).toMatchObject({ kind: "reserved" });
+  });
+
+  it("checks the depth below the zoomed folder, not below the top level", () => {
+    const { deep, state } = zoomedFixture(true);
+    const shop = folder(60, "Shop 2", null, 1);
+
+    // A folder under Archive (depth 2) is at depth 3, which is the cap here and over a cap of 2.
+    expect(drop(state, [shop], deep, "before")?.refusal).toBeNull();
+    expect(drop(state, [shop], deep, "before", { maxDepth: 2 })?.refusal).toEqual({
+      depth: 3,
+      kind: "depth",
+      limit: 2,
+    });
+  });
+
+  it("leaves the depth to the server while the zoomed folder's row is not known", () => {
+    const { deep, state } = zoomedFixture(false);
+    const shop = folder(60, "Shop 2", null, 1);
+
+    expect(drop(state, [shop], deep, "before", { maxDepth: 1 })?.refusal).toBeNull();
+  });
+
+  it("refuses a folder dropped into the zoomed folder itself, known or not", () => {
+    for (const withBreadcrumbs of [true, false]) {
+      const { archive, deep, state } = zoomedFixture(withBreadcrumbs);
+
+      expect(drop(state, [archive], deep, "before")?.refusal).toEqual({ kind: "cycle" });
+    }
+  });
+
+  it("drops on a breadcrumb inside that folder, at its start, with the folder's own checks", () => {
+    const { articles, blog, deep, home, state } = zoomedFixture(true);
+    const admin = page(50, "Admin", blogId, 2, { slug: "admin" });
+
+    const intoBlog = resolveCrumbDrop({ dragged: [deep], folder: blog, rules, state });
+    expect(intoBlog.target).toEqual({ position: "start", toFolder: blogId });
+    expect(intoBlog.refusal).toBeNull();
+    expect(intoBlog.indicator).toEqual({ edge: "inside", level: 0, rowKey: crumbKeyOf(blog) });
+
+    // The "Content" crumb is the top level, where the reserved segments apply.
+    const intoTop = resolveCrumbDrop({ dragged: [admin], folder: null, rules, state });
+    expect(intoTop.target).toEqual({ position: "start", toFolder: null });
+    expect(intoTop.refusal).toMatchObject({ kind: "reserved" });
+    expect(intoTop.indicator.rowKey).toBe("crumb:root");
+
+    // A breadcrumb folder that takes posts only refuses a page, as its own row would.
+    expect(
+      resolveCrumbDrop({ dragged: [home], folder: articles, rules, state }).refusal
+    ).toMatchObject({
+      kind: "type",
+    });
+  });
+
+  it("makes a drop on the breadcrumb of the folder the rows already lead no change", () => {
+    const { archive, deep, state } = zoomedFixture(true);
+
+    expect(resolveCrumbDrop({ dragged: [deep], folder: archive, rules, state }).isNoOp).toBe(true);
   });
 });

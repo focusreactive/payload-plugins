@@ -67,21 +67,31 @@ const segmentOf = (item: TreeItem): string => item.slug ?? "";
 const joinPath = (folder: TreeItem | null, segment: string): string =>
   `${folder?.fullPath === "/" ? "" : (folder?.fullPath ?? "")}/${segment}`;
 
-/** The refusals that apply to rows that change folder; the server runs the same checks under its lock. */
+/**
+ * The refusals that apply to rows that change folder; the server runs the same checks under its
+ * lock. `parentId` is the folder they land in and `targetFolder` its row: `null` for both is the
+ * top level, but a folder whose row is not known (a zoomed folder the page opened on, before its
+ * breadcrumbs arrive) has an id and no row. What needs the row (the depth, the allowed types, the
+ * path of a conflict) is then left to the server instead of being checked as if it were the top
+ * level, which would apply the top level's depth and reserved segments.
+ */
 const refusalOf = (
   moving: readonly TreeItem[],
+  parentId: FolderId | null,
   targetFolder: TreeItem | null,
   state: TreeStoreState,
   rules: DropRules
 ): DropRefusal | null => {
   const loaded = loadedItemsOf(state);
-  const targetKey = folderKeyOf(targetFolder?.id ?? null);
+  const targetKey = folderKeyOf(parentId);
+  const isTopLevel = parentId === null;
 
   const movesIntoItself = moving.some(
     (item) =>
       item.kind === "folder" &&
-      targetFolder !== null &&
-      (String(item.id) === String(targetFolder.id) || isNestedIn(targetFolder, item))
+      !isTopLevel &&
+      (String(item.id) === String(parentId) ||
+        (targetFolder !== null && isNestedIn(targetFolder, item)))
   );
   if (movesIntoItself) {
     return { kind: "cycle" };
@@ -111,7 +121,7 @@ const refusalOf = (
 
   // A page is one segment below its folder, a folder's deepest loaded row decides for a folder, and
   // a root page shares its folder's depth. What is not loaded is left to the server.
-  const targetDepth = targetFolder === null ? 0 : targetFolder.depth;
+  const targetDepth = isTopLevel ? 0 : (targetFolder?.depth ?? null);
   if (targetDepth !== null) {
     for (const item of moving) {
       if (item.depth === null) {
@@ -134,7 +144,7 @@ const refusalOf = (
   }
 
   const namedItems = moving.filter((item) => !item.isFolderRoot && segmentOf(item) !== "");
-  if (targetFolder === null) {
+  if (isTopLevel) {
     const reserved = new Set(rules.reservedRootSegments.map((segment) => segment.toLowerCase()));
     for (const item of namedItems) {
       const segment = segmentOf(item);
@@ -166,7 +176,8 @@ const refusalOf = (
       return {
         kind: "conflict",
         otherTitle: other.kind === "folder" ? null : other.title,
-        path: joinPath(targetFolder, segment),
+        path:
+          isTopLevel || targetFolder !== null ? joinPath(targetFolder, segment) : `.../${segment}`,
         title: item.title,
       };
     }
@@ -270,7 +281,7 @@ export const resolveGap = ({
 
   return {
     isNoOp: leavesOrderUnchanged(dragged, targetSiblings, anchorRef),
-    refusal: refusalOf(changing, targetFolder, state, rules),
+    refusal: refusalOf(changing, parentId, targetFolder, state, rules),
     target,
     targetFolder,
   };
@@ -352,3 +363,37 @@ export const resolveDrop = ({
 
   return { ...resolveGap({ anchor, dragged, parentId, rules, state, targetFolder }), indicator };
 };
+
+/** The key of a breadcrumb in a drag: `crumb:root` for the top level, else `crumb:<folder id>`. */
+export const crumbKeyOf = (folder: Pick<TreeItem, "id"> | null): string =>
+  folder === null ? "crumb:root" : `crumb:${folder.id}`;
+
+export type CrumbDropInput = {
+  dragged: readonly TreeItem[];
+  /** The breadcrumb's folder; `null` is the "Content" crumb, the top level. */
+  folder: TreeItem | null;
+  rules: DropRules;
+  state: TreeStoreState;
+};
+
+/**
+ * Dropping on a breadcrumb or on the zoom header (spec section 7.3): "inside" that folder, at its
+ * start. The folder's row comes with the breadcrumbs, so its depth, types and path are checked like
+ * a drop on the folder's own row.
+ */
+export const resolveCrumbDrop = ({
+  dragged,
+  folder,
+  rules,
+  state,
+}: CrumbDropInput): DropResolution => ({
+  ...resolveGap({
+    anchor: null,
+    dragged,
+    parentId: folder?.id ?? null,
+    rules,
+    state,
+    targetFolder: folder,
+  }),
+  indicator: { edge: "inside", level: 0, rowKey: crumbKeyOf(folder) },
+});

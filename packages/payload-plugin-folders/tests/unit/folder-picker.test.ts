@@ -105,6 +105,7 @@ describe("pickerRowsOf", () => {
     },
     expanded: [],
     revision: 1,
+    zoom: null,
   };
 
   it("lists the top level and the folders of the top level, never a page", () => {

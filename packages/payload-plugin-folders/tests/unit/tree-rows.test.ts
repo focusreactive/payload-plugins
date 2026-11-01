@@ -60,7 +60,7 @@ const loaded = (items: TreeItem[], overrides: Partial<ChildrenEntry> = {}): Chil
 const stateOf = (
   childrenByFolder: TreeStoreState["childrenByFolder"],
   expanded: string[] = []
-): TreeStoreState => ({ childrenByFolder, expanded, revision: 1 });
+): TreeStoreState => ({ childrenByFolder, expanded, revision: 1, zoom: null });
 
 const summary = (state: TreeStoreState) =>
   flattenTree(state).map((row) =>
@@ -140,13 +140,66 @@ describe("flattenTree", () => {
     expect(row).toMatchObject({ message: "The server is down", type: "error" });
   });
 
-  it("does not open a folder with nothing in it", () => {
-    const state = stateOf({ root: loaded([folder(10, "Empty", 0)]) }, ["10"]);
+  it("lets a folder with nothing in it open, and shows one empty row under it", () => {
+    const state = stateOf({ "10": loaded([]), root: loaded([folder(10, "Empty", 0)]) }, ["10"]);
 
-    const [row] = flattenTree(state);
+    const [row, emptyRow] = flattenTree(state);
 
-    expect(row).toMatchObject({ expandable: false, expanded: false, type: "item" });
-    expect(summary(state)).toEqual(["0:Empty"]);
+    expect(row).toMatchObject({ expandable: true, expanded: true, type: "item" });
+    expect(emptyRow).toMatchObject({ folder: { id: 10 }, level: 1, type: "empty" });
+    expect(summary(state)).toEqual(["0:Empty", "empty@1"]);
+  });
+
+  it("shows no empty row for a closed folder, one still loading, or one with more rows to load", () => {
+    const closed = stateOf({ "10": loaded([]), root: loaded([folder(10, "Empty", 0)]) });
+    const loading = stateOf(
+      { "10": loaded([], { phase: "loading" }), root: loaded([folder(10, "Empty", 0)]) },
+      ["10"]
+    );
+    const hasMore = stateOf(
+      { "10": loaded([], { hasMore: true }), root: loaded([folder(10, "Empty", 0)]) },
+      ["10"]
+    );
+
+    expect(summary(closed)).toEqual(["0:Empty"]);
+    expect(summary(loading)).toEqual(["0:Empty", "loading@1"]);
+    expect(summary(hasMore)).toEqual(["0:Empty", "load-more@1"]);
+  });
+
+  it("starts at the zoomed folder, one level for its rows, and keeps its opened folders open", () => {
+    const blog = folder(10, "Blog", 2);
+    const year = folder(11, "2026", 1);
+    const state: TreeStoreState = {
+      ...stateOf(
+        {
+          "10": loaded([year, page(2, "Alpha")]),
+          "11": loaded([page(3, "Beta")]),
+          root: loaded([blog, folder(12, "Other", 0)]),
+        },
+        ["11"]
+      ),
+      zoom: { chain: null, error: null, folderId: 10 },
+    };
+
+    expect(summary(state)).toEqual(["0:2026", "1:Beta", "0:Alpha"]);
+  });
+
+  it("shows no row for a zoomed folder that is empty: the view shows a panel", () => {
+    const state: TreeStoreState = {
+      ...stateOf({ "10": loaded([]), root: loaded([folder(10, "Blog", 0)]) }),
+      zoom: { chain: null, error: null, folderId: 10 },
+    };
+
+    expect(summary(state)).toEqual([]);
+  });
+
+  it("shows a loading row while the zoomed folder's rows are on their way", () => {
+    const state: TreeStoreState = {
+      ...stateOf({}),
+      zoom: { chain: null, error: null, folderId: 10 },
+    };
+
+    expect(summary(state)).toEqual(["loading@0"]);
   });
 
   it("opens a folder whose count says empty but whose rows were loaded", () => {
