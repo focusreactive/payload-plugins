@@ -47,6 +47,7 @@
     "dev": "cross-env PAYLOAD_CONFIG_PATH=./dev/payload.config.ts next dev dev --port 4078",
     "dev:payload": "cross-env PAYLOAD_CONFIG_PATH=./dev/payload.config.ts payload",
     "seed": "cross-env PAYLOAD_CONFIG_PATH=./dev/payload.config.ts payload run ./dev/seed.ts",
+    "seed:drafts": "cross-env PAYLOAD_CONFIG_PATH=./dev/payload.config.ts payload run ./dev/seedDraftPages.ts",
     "generate:importmap": "cross-env PAYLOAD_CONFIG_PATH=./dev/payload.config.ts payload generate:importmap",
     "generate:types": "cross-env PAYLOAD_CONFIG_PATH=./dev/payload.config.ts payload generate:types",
     "typecheck": "tsc --noEmit",

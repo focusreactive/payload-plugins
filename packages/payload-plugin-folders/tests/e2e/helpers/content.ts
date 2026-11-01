@@ -8,6 +8,8 @@ export type ChildRow = {
   kind: "folder" | "page";
   orderKey: string | null;
   parentId: number | null;
+  /** Pages only. */
+  status?: string;
   title: string;
 };
 
@@ -114,4 +116,58 @@ export const readPage = async <Doc = Record<string, unknown>>(
   await expectOk(response, `Reading page ${id}`);
 
   return (await response.json()) as Doc;
+};
+
+/** Creates a post, which the dev app keeps without drafts, so it is always live. */
+export const createPost = async (
+  request: APIRequestContext,
+  data: { folder: number; slug: string; title: string }
+): Promise<number> => {
+  const response = await request.post("/api/posts", { data });
+  await expectOk(response, `Creating post ${data.title}`);
+
+  return ((await response.json()) as { doc: { id: number } }).doc.id;
+};
+
+/** How many documents of a collection sit directly in a folder, optionally with one `_status`. */
+export const countIn = async (
+  request: APIRequestContext,
+  { collection, folder, status }: { collection: string; folder: number; status?: string }
+): Promise<number> => {
+  const statusQuery = status === undefined ? "" : `&where[_status][equals]=${status}`;
+  const response = await request.get(
+    `/api/${collection}?limit=1&depth=0&where[folder][equals]=${folder}${statusQuery}`
+  );
+  await expectOk(response, `Counting ${collection} in folder ${folder}`);
+
+  return ((await response.json()) as { totalDocs: number }).totalDocs;
+};
+
+/**
+ * Deletes a folder with everything in it through the plugin's own delete, stepping the operation a
+ * large one becomes until it is done: 2,000 REST deletes would take minutes.
+ */
+export const deleteFolderWithContent = async (
+  request: APIRequestContext,
+  { confirmWord, folder }: { confirmWord: string; folder: number }
+): Promise<void> => {
+  const response = await request.post("/api/folders-tree/delete", {
+    data: { confirmWord, items: [{ collection: "folders", id: folder }] },
+  });
+  await expectOk(response, `Deleting folder ${folder} with its content`);
+  const result = (await response.json()) as { operationId?: number };
+  if (result.operationId === undefined) {
+    return;
+  }
+  for (;;) {
+    const step = await request.post(`/api/folders-tree/operations/${result.operationId}/step`);
+    await expectOk(step, `Stepping operation ${result.operationId}`);
+    const { error, status } = (await step.json()) as { error?: string; status: string };
+    if (status === "done") {
+      return;
+    }
+    if (status === "failed") {
+      throw new Error(`Operation ${result.operationId} failed: ${error ?? "no message"}`);
+    }
+  }
 };
