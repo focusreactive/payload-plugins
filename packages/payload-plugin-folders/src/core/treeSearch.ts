@@ -2,7 +2,7 @@ import type { PayloadRequest, Where } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
 import { getResolvedOptions } from "./runtime.js";
-import type { FolderId, ResolvedOptions, TreeItem, TreeStatus } from "../types.js";
+import type { FolderId, FolderLabel, ResolvedOptions, TreeItem, TreeStatus } from "../types.js";
 import { toFolderRecord } from "./folderRecords.js";
 import type { FolderRecord } from "./folderRecords.js";
 import { clampInternalLimit } from "./limits.js";
@@ -328,6 +328,19 @@ const matchesEveryTerm = (
   return terms.every((term) => lowered.some((text) => text.includes(term)));
 };
 
+/**
+ * The words that name the folders as a type in a query: the label in the admin's language, and the
+ * English one besides, because an editor in another language may still type `folder`.
+ */
+const folderTypeWords = (label: FolderLabel, language: string | undefined): string[] => {
+  if (typeof label === "string") {
+    return [label];
+  }
+  const inLanguage = (language && label[language]) || label.en || Object.values(label)[0] || "";
+
+  return [...new Set([inLanguage, label.en ?? ""])].filter(Boolean);
+};
+
 /** The names of the folders in every hit's `ancestorIds`, one read for all of them. */
 const readAncestorNames = async ({
   folderSource,
@@ -408,13 +421,19 @@ export const searchTree = async (
   const allSources = await buildSources(req, options);
   const parsed = parseSearchQuery(
     args.query,
-    allSources.map((source) => ({
-      collection: source.collection,
-      label:
-        source.kind === "folder"
-          ? options.folders.labels.singular
-          : (source.page as NonNullable<TreeSource["page"]>).label,
-    }))
+    allSources.flatMap((source) =>
+      source.kind === "folder"
+        ? folderTypeWords(options.folders.labels.singular, req.i18n?.language).map((label) => ({
+            collection: source.collection,
+            label,
+          }))
+        : [
+            {
+              collection: source.collection,
+              label: (source.page as NonNullable<TreeSource["page"]>).label,
+            },
+          ]
+    )
   );
   const terms = [...parsed.words, ...parsed.phrases];
   const requestedTypes = [

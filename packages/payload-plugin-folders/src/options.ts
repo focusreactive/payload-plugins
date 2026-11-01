@@ -365,8 +365,8 @@ export const normalizeOptions = (
     folders: {
       access: options.folders?.access,
       labels: {
-        plural: options.folders?.labels?.plural ?? "Content",
-        singular: options.folders?.labels?.singular ?? "Folder",
+        plural: options.folders?.labels?.plural ?? { de: "Inhalt", en: "Content" },
+        singular: options.folders?.labels?.singular ?? { de: "Ordner", en: "Folder" },
       },
       overrides: options.folders?.overrides,
       slug: foldersSlug,

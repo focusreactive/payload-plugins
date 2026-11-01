@@ -917,6 +917,21 @@ describe("GET /folders-tree/search", () => {
     expect(folders.items).toHaveLength(3);
   });
 
+  it("the folders' type word is the one of the admin's language, and the English one still works", async () => {
+    const { payload } = harness;
+    const request = await asUser(payload, "admin");
+    await seedSearchTree(payload);
+    request.i18n = { ...request.i18n, language: "de" } as never;
+
+    // The default label is per language, so a German admin says `ordner`.
+    for (const query of ["ordner blog", "folder blog"]) {
+      const folders = await search(request, { query, scope: "all" });
+
+      expect(folders.items).toHaveLength(3);
+      expect(folders.items.every((item) => item.kind === "folder")).toBe(true);
+    }
+  });
+
   it("types and status filter the answer", async () => {
     const { payload } = harness;
     const request = await asUser(payload, "admin");

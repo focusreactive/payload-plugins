@@ -58,7 +58,13 @@ describe("normalizeOptions", () => {
       },
       disabled: false,
       enforceAllowedTypesOnMove: true,
-      folders: { labels: { plural: "Content", singular: "Folder" }, slug: "folders" },
+      folders: {
+        labels: {
+          plural: { de: "Inhalt", en: "Content" },
+          singular: { de: "Ordner", en: "Folder" },
+        },
+        slug: "folders",
+      },
       limits: { maxFoldersPerMove: 2000, maxItemsPerMove: 500, maxSyncDocuments: 200 },
       localizeSegments: false,
       maxDepth: 20,

@@ -247,9 +247,11 @@ test.describe("the admin in German", () => {
 
     // The words of the tree are German; the names and paths are the English content.
     await expect(page.getByRole("button", { name: "Erstellen" })).toBeVisible();
+    // The default name of the folders collection is per language too.
+    await expect(page.getByRole("heading", { name: "Inhalt" })).toBeVisible();
     await expect(page.getByTestId("search-input")).toHaveAttribute(
       "placeholder",
-      "In Content suchen"
+      "In Inhalt suchen"
     );
     await expect(page.getByRole("columnheader", { name: "Typ" })).toBeVisible();
     await expect(page.getByRole("columnheader", { name: "Aktualisiert" })).toBeVisible();
@@ -265,7 +267,7 @@ test.describe("the admin in German", () => {
     await expect(tab.getByRole("button", { name: "Erstellen" })).toBeVisible();
     await expect(tab.getByTestId("search-input")).toHaveAttribute(
       "placeholder",
-      "In Content suchen"
+      "In Inhalt suchen"
     );
   });
 

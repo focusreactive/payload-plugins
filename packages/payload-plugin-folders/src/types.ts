@@ -39,6 +39,9 @@ export type PageCollectionOptions = {
   label?: string;
 };
 
+/** A name for the folders collection: text, or text per admin language. */
+export type FolderLabel = string | Record<string, string>;
+
 /** When the admin asks before a move (spec section 5.7). */
 export type ConfirmMoves = "always" | "never" | "urlChange";
 
@@ -48,8 +51,11 @@ export type FoldersPluginOptions = {
   folders?: {
     /** Default `folders`. */
     slug?: string;
-    /** Default `Folder` / `Content`. */
-    labels?: { singular?: string; plural?: string };
+    /**
+     * Default `{ en: "Folder", de: "Ordner" }` / `{ en: "Content", de: "Inhalt" }`. Text, or text
+     * per admin language.
+     */
+    labels?: { singular?: FolderLabel; plural?: FolderLabel };
     /** Merged over the defaults in spec section 9. */
     access?: CollectionConfig["access"];
     overrides?: (collection: CollectionConfig) => CollectionConfig;
@@ -140,7 +146,7 @@ export type ResolvedOptions = {
   collections: Record<string, ResolvedPageCollection>;
   folders: {
     slug: string;
-    labels: { singular: string; plural: string };
+    labels: { singular: FolderLabel; plural: FolderLabel };
     access: CollectionConfig["access"] | undefined;
     overrides: ((collection: CollectionConfig) => CollectionConfig) | undefined;
     /** True only when every opted-in collection has `trash: true`. */

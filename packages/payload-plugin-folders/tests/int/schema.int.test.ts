@@ -91,7 +91,7 @@ describe("data model", () => {
       folders.sanitizedIndexes.map((index) => index.fields.map((indexField) => indexField.path))
     ).toContainEqual(["parent", "orderKey"]);
     expect(folders.versions).toBeFalsy();
-    expect(folders.labels.plural).toBe("Content");
+    expect(folders.labels.plural).toEqual({ de: "Inhalt", en: "Content" });
     expect(Object.keys(payload.collections)).toEqual(
       expect.arrayContaining(["folders", "folder-redirects", "folder-operations"])
     );
