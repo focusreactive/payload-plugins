@@ -6,7 +6,7 @@ import { readFolderRecord } from "./folderRecords.js";
 import { getLocaleCodes } from "./locales.js";
 import { getResolvedOptions } from "./runtime.js";
 import { SEGMENT_ERROR_MESSAGE, isValidSegment } from "./slugify.js";
-import { findSegmentConflict, getPageDefaultLocale } from "./uniqueness.js";
+import { createConflictNamer, findSegmentConflict, getPageDefaultLocale } from "./uniqueness.js";
 
 /** What holds the path a segment would take: a folder, or a page (in any state, drafts included). */
 export type SegmentCheckConflict = { kind: "folder" | "page"; path: string };
@@ -64,9 +64,14 @@ export const checkSegment = async (
     selfFolder: isFolderExcluded ? exclude.id : undefined,
   });
   if (conflict) {
+    // The check looks at every page and at drafts, so the page it finds may be one the reader may
+    // not read: the answer then says a path is taken and no more.
+    const holder =
+      conflict.kind === "folder" ? "a folder" : await createConflictNamer(req)(conflict);
+
     return {
       conflict: { kind: conflict.kind, path: conflict.path },
-      message: `${conflict.path} is already used by ${conflict.kind === "folder" ? "a folder" : conflict.title}`,
+      message: `${conflict.path} is already used by ${holder}`,
       ok: false,
     };
   }

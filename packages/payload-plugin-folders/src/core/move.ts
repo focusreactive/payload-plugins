@@ -9,7 +9,7 @@ import type {
   ResolvedOptions,
   ResolvedPageCollection,
 } from "../types.js";
-import { canReadItem, findUnreadableItems } from "./access.js";
+import { canReadItem, findUnreadableItems, isPublishRefusedBeneath } from "./access.js";
 import { checkAllowedTypes, describeAllowedTypes, lockSourceOf } from "./allowedTypes.js";
 import {
   normalizeFolderReference,
@@ -24,7 +24,13 @@ import {
   getFolderLocaleKeys,
   noLocaleKey,
 } from "./locales.js";
-import { findForbiddenMoves, findItemsRefusedUpdate, forbiddenMoveMessage } from "./moveAccess.js";
+import {
+  findForbiddenMoves,
+  findItemsRefusedUpdate,
+  forbiddenMoveMessage,
+  forbiddenPublishMessage,
+  publishKeyOf,
+} from "./moveAccess.js";
 import { countMirrorRows } from "./mirror.js";
 import { planKeysForInsert } from "./orderKeys.js";
 import { redirectRowsOfMovedItem } from "./redirects.js";
@@ -42,6 +48,8 @@ import {
 } from "./subtree.js";
 import type { SubtreePlan } from "./subtree.js";
 import {
+  createConflictNamer,
+  describeHiddenRootPageConflict,
   describeRootPageConflict,
   findRootPageConflict,
   findSegmentConflicts,
@@ -216,7 +224,6 @@ export const summarizePageChanges = (
   changes: PathChange[]
 ): {
   publishedChanges: PathChange[];
-  samples: MovePreview["samples"];
   urlChanges: MovePreview["urlChanges"];
 } => {
   const pageChanges = changes.filter((change) => change.kind === "page");
@@ -233,12 +240,51 @@ export const summarizePageChanges = (
     }
   }
   const draftOnly = [...draftIds].filter((key) => !publishedIds.has(key)).length;
-  const publishedChanges = pageChanges.filter((change) => change.published);
-  const samples = [...publishedChanges, ...pageChanges.filter((change) => !change.published)]
+
+  return {
+    publishedChanges: pageChanges.filter((change) => change.published),
+    urlChanges: { draftOnly, published: publishedIds.size, publishedAcrossLocales },
+  };
+};
+
+/**
+ * The first few URL changes of a preview, as examples: published pages first. The changes read at
+ * database level, which checks no access, so a page the user of `req` may not read is left out of
+ * the examples (its path and id would tell them it exists). Only the first candidates are asked
+ * about, the way the delete preview picks its sample.
+ */
+export const pickSamples = async ({
+  changes,
+  overrideAccess,
+  req,
+}: {
+  changes: PathChange[];
+  overrideAccess: boolean;
+  req: PayloadRequest;
+}): Promise<MovePreview["samples"]> => {
+  const pageChanges = changes.filter((change) => change.kind === "page");
+  const candidates = [
+    ...pageChanges.filter((change) => change.published),
+    ...pageChanges.filter((change) => !change.published),
+  ]
     .filter(
       (change): change is PathChange & { from: string; to: string } =>
         change.from !== null && change.to !== null
     )
+    .slice(0, sampleLimit * 4);
+  const hidden = new Set(
+    overrideAccess
+      ? []
+      : (
+          await findUnreadableItems({
+            items: candidates.map((change) => ({ collection: change.collection, id: change.id })),
+            req,
+          })
+        ).map((item) => itemKey(item))
+  );
+
+  return candidates
+    .filter((change) => !hidden.has(itemKey(change)))
     .slice(0, sampleLimit)
     .map((change) => ({
       collection: change.collection,
@@ -247,12 +293,6 @@ export const summarizePageChanges = (
       locale: change.locale,
       to: change.to,
     }));
-
-  return {
-    publishedChanges,
-    samples,
-    urlChanges: { draftOnly, published: publishedIds.size, publishedAcrossLocales },
-  };
 };
 
 export type PlanSettings = {
@@ -620,15 +660,37 @@ export const buildMovePlan = async (
   // Access, first pass (spec section 5.4 order): may the user put each item into this folder at
   // all? It runs before any check that reads the target's content, so a refused user is told
   // "forbidden" and not that a path inside a folder they may not enter is taken.
+  // The publish question of a page whose live URL changes is part of this pass: it is known from
+  // the page's row (its folder and its status), and a refusal must not wait behind a conflict
+  // message that names another page.
+  const changesLiveUrl = (subject: Subject): boolean => {
+    const { page, row } = subject;
+    if (subject.kind !== "page" || !page || !row || !changesParent(subject)) {
+      return false;
+    }
+    const isDraftsCollection = Boolean(
+      payload.collections[toCollectionSlug(page.slug)]?.config.versions?.drafts
+    );
+
+    return pageKeys.some((key) =>
+      isPublishedInLocale(row.status, key, isDraftsCollection, fallbackKey)
+    );
+  };
   if (!overrideAccess) {
     const refusedUpdates = await findItemsRefusedUpdate({
-      items: live(),
+      items: live().map((subject) => ({
+        changesLiveUrl: changesLiveUrl(subject),
+        kind: subject.kind,
+        ref: subject.ref,
+      })),
       req,
       targetId,
     });
     for (const subject of live()) {
       if (refusedUpdates.has(itemKey(subject.ref))) {
         block(subject.ref, "forbidden", forbiddenMoveMessage);
+      } else if (refusedUpdates.has(publishKeyOf(subject.ref))) {
+        block(subject.ref, "forbidden", forbiddenPublishMessage);
       }
     }
   }
@@ -670,6 +732,27 @@ export const buildMovePlan = async (
       String(subject.ref.id),
       await readFolderDescendants(req, options, subject.ref.id)
     );
+  }
+
+  // A moved folder changes the live URL of every published page beneath it, so it needs the publish
+  // rights a move of those pages would. The question is asked before any type or conflict check,
+  // for the same reason as the page's above.
+  if (!overrideAccess) {
+    for (const subject of live()) {
+      const descendants = descendantsByFolder.get(String(subject.ref.id));
+      if (subject.kind !== "folder" || !subject.folder || !descendants) {
+        continue;
+      }
+      if (
+        await isPublishRefusedBeneath({
+          folderIds: [subject.folder.id, ...descendants.map((folder) => folder.id)],
+          options,
+          req,
+        })
+      ) {
+        block(subject.ref, "forbidden", forbiddenPublishMessage);
+      }
+    }
   }
 
   // Depth: the deepest path the moved subtree reaches after the move.
@@ -830,6 +913,7 @@ export const buildMovePlan = async (
       })
     );
   }
+  const nameConflictingPage = createConflictNamer(req);
   const claimedSegments = new Map<string, Subject>();
   let claimedRootPage: Subject | null = null;
   for (const subject of live()) {
@@ -854,10 +938,14 @@ export const buildMovePlan = async (
         self: { collection: subject.ref.collection, id: subject.ref.id },
       });
       if (conflict) {
+        const folderPath = target ? targetPath : "/";
+        const isNamed =
+          overrideAccess ||
+          (await canReadItem({ item: { collection: conflict.collection, id: conflict.id }, req }));
         block(
           subject.ref,
           "rootPage",
-          `"${await labelOf(subject)}" cannot move to ${targetLabel}: ${describeRootPageConflict(conflict, target ? targetPath : "/")}`
+          `"${await labelOf(subject)}" cannot move to ${targetLabel}: ${isNamed ? describeRootPageConflict(conflict, folderPath) : describeHiddenRootPageConflict(folderPath)}`
         );
         continue;
       }
@@ -886,7 +974,10 @@ export const buildMovePlan = async (
       }
       const conflict = storedConflicts.get(key)?.get(segment);
       if (conflict) {
-        const other = conflict.kind === "folder" ? "a folder" : conflict.title;
+        let other = "a folder";
+        if (conflict.kind === "page") {
+          other = overrideAccess ? conflict.title : await nameConflictingPage(conflict);
+        }
         block(
           subject.ref,
           "conflict",
@@ -1049,7 +1140,8 @@ export const buildMovePlan = async (
 
   // Counts and samples.
   const allChanges = items.flatMap((item) => item.changes);
-  const { samples, urlChanges } = summarizePageChanges(allChanges);
+  const { urlChanges } = summarizePageChanges(allChanges);
+  const samples = await pickSamples({ changes: allChanges, overrideAccess, req });
   const redirectRowsToWrite = redirects
     ? items.reduce((sum, item) => sum + redirectRowsOfMovedItem(item).length, 0)
     : 0;

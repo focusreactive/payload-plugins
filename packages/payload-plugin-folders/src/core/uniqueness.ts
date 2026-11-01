@@ -3,6 +3,7 @@ import type { Payload, PayloadRequest, SelectType, Where } from "payload";
 import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, ResolvedOptions, ResolvedPageCollection } from "../types.js";
 import type { FolderRecord } from "./folderRecords.js";
+import { canReadItem } from "./access.js";
 import { getDefaultLocaleKey, getLocaleCodes, noLocaleKey } from "./locales.js";
 import { effectiveSegmentsOf } from "./pageRecords.js";
 import { buildSegmentWhere } from "./segmentWhere.js";
@@ -37,9 +38,16 @@ export const folderPathIn = (
 
 export type PageRef = { collection: string; id: FolderId };
 
-export type SegmentConflict =
-  | { kind: "folder"; path: string }
-  | { kind: "page"; path: string; title: string };
+export type PageSegmentConflict = {
+  /** The collection and id let a caller decide whether the reader may be told the title. */
+  collection: string;
+  id: FolderId;
+  kind: "page";
+  path: string;
+  title: string;
+};
+
+export type SegmentConflict = { kind: "folder"; path: string } | PageSegmentConflict;
 
 type SegmentConflictArgs = {
   /** The folder the page sits in; `null` is the site root level. */
@@ -182,7 +190,13 @@ export const findSegmentConflict = async ({
     });
     const [other] = clash.docs as Array<{ id: FolderId }>;
     if (other) {
-      return { kind: "page", path, title: await readTitle(req, page, other.id, locale) };
+      return {
+        collection: page.slug,
+        id: other.id,
+        kind: "page",
+        path,
+        title: await readTitle(req, page, other.id, locale),
+      };
     }
   }
 
@@ -289,6 +303,8 @@ export const findSegmentConflicts = async ({
         continue;
       }
       conflicts.set(effective, {
+        collection: page.slug,
+        id: hit.id,
         kind: "page",
         path: pathOf(effective),
         title: await readTitle(req, page, hit.id, locale),
@@ -297,6 +313,35 @@ export const findSegmentConflicts = async ({
   }
 
   return conflicts;
+};
+
+/** What a message calls a page the reader may not read, so it names nothing about it. */
+export const hiddenPageName = "a page";
+
+/**
+ * Names the page that holds a conflicting path for the user of `req`: its title when the user may
+ * read it, "a page" when not. A title is read at database level, which checks no access, and a
+ * check or a preview runs over drafts and over pages the caller may have no read access to. The
+ * answer is kept per page, so the `read` access runs once for each conflicting page.
+ */
+export const createConflictNamer = (
+  req: PayloadRequest
+): ((conflict: PageSegmentConflict) => Promise<string>) => {
+  const readable = new Map<string, boolean>();
+
+  return async (conflict) => {
+    const key = `${conflict.collection}:${conflict.id}`;
+    let isReadable = readable.get(key);
+    if (isReadable === undefined) {
+      isReadable = await canReadItem({
+        item: { collection: conflict.collection, id: conflict.id },
+        req,
+      });
+      readable.set(key, isReadable);
+    }
+
+    return isReadable ? conflict.title : hiddenPageName;
+  };
 };
 
 export const describeSegmentConflict = (conflict: SegmentConflict): string =>

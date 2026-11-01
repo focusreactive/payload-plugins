@@ -3,7 +3,7 @@ import type { CreatePayloadRequestArgs, Payload, PayloadRequest } from "payload"
 
 import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, ItemRef, ResolvedOptions } from "../types.js";
-import { findRefusedChecks } from "./access.js";
+import { findRefusedChecks, keepReadableItems } from "./access.js";
 import type { AccessCheck } from "./access.js";
 import { getFallbackLocaleKey, getLocaleCodes, noLocaleKey } from "./locales.js";
 import { createNestedRequest } from "./nestedRequest.js";
@@ -50,14 +50,23 @@ export type PublishPreview = {
 
 /**
  * Refused without a title or a path: a refused user learns nothing about the content. `count` is
- * every refused page; `items` is the first 50 of them, which is all a client needs to show.
+ * every refused page; `items` is the first 50 of the ones the user may read, which is all a client
+ * needs to show.
  */
 export class PublishRefusedError extends APIError {
-  constructor(refused: ItemRef[], action: PublishAction) {
+  constructor({
+    action,
+    count,
+    readable,
+  }: {
+    action: PublishAction;
+    count: number;
+    readable: ItemRef[];
+  }) {
     super(
-      `You are not allowed to ${action} ${refused.length === 1 ? "one of these pages" : `${refused.length} of these pages`}`,
+      `You are not allowed to ${action} ${count === 1 ? "one of these pages" : `${count} of these pages`}`,
       403,
-      { count: refused.length, items: refused.slice(0, 50), reason: "forbidden" },
+      { count, items: readable.slice(0, 50), reason: "forbidden" },
       true
     );
     this.name = "PublishRefusedError";
@@ -195,10 +204,12 @@ export const planPublish = async (
   if (!overrideAccess && checks.length > 0) {
     const refused = await findRefusedChecks({ checks, req });
     if (refused.size > 0) {
-      throw new PublishRefusedError(
-        units.filter((unit) => refused.has(unit.collection)),
-        request.action
-      );
+      const refusedUnits = units.filter((unit) => refused.has(unit.collection));
+      throw new PublishRefusedError({
+        action: request.action,
+        count: refusedUnits.length,
+        readable: await keepReadableItems({ items: refusedUnits, req }),
+      });
     }
   }
 

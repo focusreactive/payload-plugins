@@ -1,10 +1,18 @@
 import type { CollectionConfig } from "payload";
 
-import { pageCreateAccess, pageDeleteAccess, pageUpdateAccess } from "../access/roles.js";
+import {
+  pageDeleteAccess,
+  unversionedCreateAccess,
+  unversionedUpdateAccess,
+} from "../access/roles.js";
 
 export const Posts: CollectionConfig = {
   slug: "posts",
-  access: { create: pageCreateAccess, delete: pageDeleteAccess, update: pageUpdateAccess },
+  access: {
+    create: unversionedCreateAccess,
+    delete: pageDeleteAccess,
+    update: unversionedUpdateAccess,
+  },
   admin: { useAsTitle: "title" },
   fields: [
     { name: "title", type: "text", required: true },

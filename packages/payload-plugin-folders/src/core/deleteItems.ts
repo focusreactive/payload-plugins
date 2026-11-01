@@ -3,7 +3,7 @@ import type { CreatePayloadRequestArgs, Payload, PayloadRequest } from "payload"
 
 import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, ItemRef, PathChange, ResolvedOptions } from "../types.js";
-import { findRefusedChecks, findUnreadableItems } from "./access.js";
+import { findRefusedChecks, findUnreadableItems, keepReadableItems } from "./access.js";
 import type { AccessCheck } from "./access.js";
 import { queueAfterPathChange } from "./afterPathChange.js";
 import { deleteChangesContextKey } from "./deletedPaths.js";
@@ -70,11 +70,14 @@ export class DeleteBlockedError extends APIError<{
 }> {
   constructor({
     confirmWord,
+    count,
     items = [],
     message,
     reason,
   }: {
     confirmWord?: string;
+    /** Default: the length of `items`. A caller that leaves unreadable items out passes the full count. */
+    count?: number;
     items?: ItemRef[];
     message: string;
     reason: DeleteBlockReason;
@@ -84,7 +87,7 @@ export class DeleteBlockedError extends APIError<{
       reason === "forbidden" ? 403 : 400,
       {
         ...(confirmWord === undefined ? {} : { confirmWord }),
-        count: items.length,
+        count: count ?? items.length,
         items: items.slice(0, 50),
         reason,
       },
@@ -251,8 +254,10 @@ export const planDelete = async (
   if (!overrideAccess && units.length > 0) {
     const refused = await findRefusedItems({ isSoft, req, units });
     if (refused.length > 0) {
+      // The count is every refused document; the list leaves out the ones the user may not read.
       throw new DeleteBlockedError({
-        items: refused,
+        count: refused.length,
+        items: await keepReadableItems({ items: refused, req }),
         message: "You are not allowed to delete everything in this selection",
         reason: "forbidden",
       });

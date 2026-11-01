@@ -72,6 +72,22 @@ export const pageUpdateAccess: Access = async (args) => {
   return restrictLimitedRole("folder", "folder")(args);
 };
 
+/**
+ * `update` access of a collection without drafts (the dev `posts`): a save there is live at once
+ * and carries no `_status`, so `refuseDrafterPublish` never sees it, and a drafter could change a
+ * live URL with a plain `PATCH` (a new slug, or `isFolderRoot`). The drafter may not write in such
+ * a collection at all. A host with a "may not publish" role needs the same rule, because the
+ * plugin gates its own structural writes (move, rename, root toggle through its endpoints) but a
+ * stock save is gated only by `update` and `create`.
+ */
+export const unversionedUpdateAccess: Access = async (args) => {
+  if (roleOf(args.req) === "drafter") {
+    return false;
+  }
+
+  return restrictLimitedRole("folder", "folder")(args);
+};
+
 export const folderUpdateAccess: Access = restrictLimitedRole("id", "parent");
 
 /**
@@ -80,6 +96,15 @@ export const folderUpdateAccess: Access = restrictLimitedRole("id", "parent");
  * meaningful for a create and counts as allowed).
  */
 export const pageCreateAccess: Access = restrictLimitedRole("folder", "folder");
+
+/** `create` access of a collection without drafts: see `unversionedUpdateAccess`. */
+export const unversionedCreateAccess: Access = async (args) => {
+  if (roleOf(args.req) === "drafter") {
+    return false;
+  }
+
+  return pageCreateAccess(args);
+};
 
 export const folderCreateAccess: Access = restrictLimitedRole("id", "parent");
 

@@ -13,7 +13,7 @@ import {
   requestLocaleKey,
 } from "./locales.js";
 import { countMirrorRows } from "./mirror.js";
-import { planMove, summarizePageChanges } from "./move.js";
+import { pickSamples, planMove, summarizePageChanges } from "./move.js";
 import { planFolderPrefixRows, shouldWriteRedirects } from "./redirects.js";
 import type { MoveBlock, MovePreview, PlanSettings } from "./move.js";
 import { getResolvedOptions } from "./runtime.js";
@@ -24,7 +24,7 @@ import {
   readFolderDescendants,
   selectWrittenPaths,
 } from "./subtree.js";
-import { findSegmentConflicts, getPageLocaleKeys } from "./uniqueness.js";
+import { createConflictNamer, findSegmentConflicts, getPageLocaleKeys } from "./uniqueness.js";
 
 export type FolderEdit = {
   /** The folder being edited. */
@@ -203,6 +203,7 @@ export const planFolderEdit = async (
 
   // Unlocalized folder segments apply in every locale a page can be read in.
   const pageKeys = getPageLocaleKeys(payload);
+  const nameConflictingPage = createConflictNamer(req);
   for (const key of changedKeys) {
     const segment = plan.segments[key];
     for (const slot of key === noLocaleKey ? pageKeys : [key]) {
@@ -216,11 +217,15 @@ export const planFolderEdit = async (
       });
       const conflict = conflicts.get(segment);
       if (conflict) {
-        block(
-          "conflict",
-          `${conflict.path} is already used by ${conflict.kind === "folder" ? "another folder" : conflict.title}`,
-          toLocale(slot)
-        );
+        // A system call (`overrideAccess`) names the page as it is; a user is told its title only
+        // when they may read it.
+        const holder =
+          conflict.kind === "folder"
+            ? "another folder"
+            : overrideAccess
+              ? conflict.title
+              : await nameConflictingPage(conflict);
+        block("conflict", `${conflict.path} is already used by ${holder}`, toLocale(slot));
       }
     }
   }
@@ -251,7 +256,8 @@ export const planFolderEdit = async (
       req,
     })),
   ];
-  const { samples, urlChanges } = summarizePageChanges(changes);
+  const { urlChanges } = summarizePageChanges(changes);
+  const samples = await pickSamples({ changes, overrideAccess, req });
   const isWritingRows = shouldWriteRedirects(req, options);
 
   return {

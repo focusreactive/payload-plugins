@@ -418,6 +418,24 @@ export const findUnreadableItems = async ({
 };
 
 /**
+ * `items` without the ones the user of `req` may not read, in the same order. A refusal lists the
+ * documents it is about, and a list read at database level would name a page the user cannot see.
+ */
+export const keepReadableItems = async ({
+  items,
+  req,
+}: {
+  items: ItemRef[];
+  req: PayloadRequest;
+}): Promise<ItemRef[]> => {
+  const hidden = new Set(
+    (await findUnreadableItems({ items, req })).map((item) => `${item.collection}:${item.id}`)
+  );
+
+  return items.filter((item) => !hidden.has(`${item.collection}:${item.id}`));
+};
+
+/**
  * Whether the user of `req` may create a document of `collection` with `data`: the collection's
  * `create` access, which Payload treats as allowed for anything but `false` (a `Where` answer has no
  * meaning for a document that does not exist yet). A collection with no such function refuses.
