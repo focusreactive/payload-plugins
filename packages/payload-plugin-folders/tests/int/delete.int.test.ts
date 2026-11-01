@@ -32,6 +32,7 @@ const recorded: Array<{ changes: PathChange[]; reason: PathChangeReason }> = [];
 
 let harness: TestPayload;
 let trashHarness: TestPayload;
+let mixedTrashHarness: TestPayload;
 
 const afterPathChange = ({
   changes,
@@ -49,7 +50,11 @@ beforeAll(async () => {
     foldersOptions: { hooks: { afterPathChange } },
     trash: true,
   });
-  for (const instance of [harness, trashHarness]) {
+  mixedTrashHarness = await getTestPayload({
+    foldersOptions: { hooks: { afterPathChange } },
+    trash: "pagesOnly",
+  });
+  for (const instance of [harness, trashHarness, mixedTrashHarness]) {
     await instance.payload.create({
       collection: "users",
       data: { email: drafter.email, password, role: "drafter" } as never,
@@ -59,13 +64,14 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  await mixedTrashHarness?.destroy();
   await trashHarness?.destroy();
   await harness?.destroy();
 });
 
 afterEach(async () => {
   recorded.length = 0;
-  for (const instance of [harness, trashHarness]) {
+  for (const instance of [harness, trashHarness, mixedTrashHarness]) {
     await clearTree(instance.payload);
     await instance.payload.db.deleteMany({
       collection: "folder-redirects" as never,
@@ -584,5 +590,66 @@ describe("deleting with the trash on", () => {
     expect(restored.status).toBe(200);
     expect((await readTrashed(payload, "pages", old.id))?.deletedAt ?? null).toBeNull();
     expect((await restorePage(root.id)).status).toBe(200);
+  });
+});
+
+describe("deleting when only some collections have a trash", () => {
+  it("a permanent delete takes the trashed pages of the folder along and counts them", async () => {
+    const { payload } = mixedTrashHarness;
+    const news = await createFolder(payload, { name: "News", slug: "news" });
+    await createPage(payload, news.id, "live-story");
+    const trashed = await createPage(payload, news.id, "trashed-story");
+    await payload.create({
+      collection: "posts",
+      data: { folder: news.id, slug: "a-post", title: "A post" },
+      depth: 0,
+      overrideAccess: true,
+    });
+    await payload.update({
+      collection: "pages",
+      data: { deletedAt: new Date().toISOString() } as never,
+      depth: 0,
+      id: trashed.id,
+      overrideAccess: true,
+    });
+
+    const preview = await call<DeletePreview>(
+      mixedTrashHarness,
+      "POST",
+      "/folders-tree/delete/preview",
+      {
+        items: [folderRef(news.id)],
+      }
+    );
+    const { body, status } = await call<DeleteBody>(
+      mixedTrashHarness,
+      "POST",
+      "/folders-tree/delete",
+      { items: [folderRef(news.id)] }
+    );
+
+    expect(status).toBe(200);
+    expect(body).toEqual({ deleted: 4, trashed: 0 });
+    expect(preview.body).toMatchObject({ folders: 1, inTrash: 1, pages: 3, trash: false });
+    expect(await countAll(payload, "pages")).toBe(0);
+    expect(await countAll(payload, "posts")).toBe(0);
+    expect(await countAll(payload, "folders")).toBe(0);
+  });
+
+  it("a soft delete counts nothing as already in the trash", async () => {
+    const { payload } = trashHarness;
+    const news = await createFolder(payload, { name: "News", slug: "news" });
+    await createPage(payload, news.id, "live-story");
+
+    const preview = await call<DeletePreview>(
+      trashHarness,
+      "POST",
+      "/folders-tree/delete/preview",
+      {
+        items: [folderRef(news.id)],
+      }
+    );
+
+    expect(preview.body).toMatchObject({ inTrash: 0, trash: true });
   });
 });

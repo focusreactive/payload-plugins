@@ -38,8 +38,12 @@ export type DevConfigOptions = {
   localized?: boolean;
   /** Merged over the dev app's plugin options. */
   foldersOptions?: Partial<FoldersPluginOptions>;
-  /** Turns the trash on for the pages and posts collections, so deletes are soft (tests only). */
-  trash?: boolean;
+  /**
+   * Turns the trash on for the pages and posts collections, so deletes are soft; `pagesOnly` turns
+   * it on for pages alone, which leaves the folders without a trash and the delete permanent
+   * (tests only).
+   */
+  trash?: boolean | "pagesOnly";
 };
 
 export const buildDevConfig = ({
@@ -70,7 +74,7 @@ export const buildDevConfig = ({
     },
     collections: [
       trash ? { ...Pages, trash: true } : Pages,
-      trash ? { ...Posts, trash: true } : Posts,
+      trash === true ? { ...Posts, trash: true } : Posts,
       Users,
       ...extraCollections,
     ],

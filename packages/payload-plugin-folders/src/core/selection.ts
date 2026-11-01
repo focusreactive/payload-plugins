@@ -26,6 +26,8 @@ export type SelectionPage = {
   collection: string;
   createdAt: string | null;
   id: FolderId;
+  /** In the trash; only a selection read with `includeTrashed` holds such a page. */
+  isTrashed: boolean;
   row: PageRow;
 };
 
@@ -46,12 +48,12 @@ const isTrashed = (row: Record<string, unknown>): boolean =>
   row.deletedAt !== undefined && row.deletedAt !== null;
 
 const pageSelect = (req: PayloadRequest, collection: string, segmentField: string): SelectType => {
-  const hasDrafts = Boolean(
-    req.payload.collections[toCollectionSlug(collection)]?.config.versions?.drafts
-  );
+  const config = req.payload.collections[toCollectionSlug(collection)]?.config;
+  const hasDrafts = Boolean(config?.versions?.drafts);
 
   return {
     ...(hasDrafts ? { _status: true } : {}),
+    ...(config?.trash ? { deletedAt: true } : {}),
     createdAt: true,
     folder: true,
     isFolderRoot: true,
@@ -61,14 +63,16 @@ const pageSelect = (req: PayloadRequest, collection: string, segmentField: strin
   } as SelectType;
 };
 
-/** Pages of one collection matching `where`, with every locale, trashed rows left out. */
+/** Pages of one collection matching `where`, with every locale; trashed rows only with `includeTrashed`. */
 export const readSelectionPages = async ({
   collection,
+  includeTrashed = false,
   options,
   req,
   where,
 }: {
   collection: string;
+  includeTrashed?: boolean;
   options: ResolvedOptions;
   req: PayloadRequest;
   where: Where;
@@ -82,15 +86,17 @@ export const readSelectionPages = async ({
     pagination: false,
     req,
     select: pageSelect(req, collection, page.segmentField),
-    where: config?.trash ? { and: [where, { deletedAt: { exists: false } }] } : where,
+    where:
+      config?.trash && !includeTrashed ? { and: [where, { deletedAt: { exists: false } }] } : where,
   });
 
   return (docs as Array<Record<string, unknown>>)
-    .filter((doc) => !isTrashed(doc))
+    .filter((doc) => includeTrashed || !isTrashed(doc))
     .map((doc) => ({
       collection,
       createdAt: typeof doc.createdAt === "string" ? doc.createdAt : null,
       id: doc.id as FolderId,
+      isTrashed: isTrashed(doc),
       row: toPageRow(doc, page, hasDrafts),
     }));
 };
@@ -100,11 +106,16 @@ export const readSelectionPages = async ({
  * selected folders and everything beneath them. An item whose folder, or a folder above it, is also
  * selected is dropped, as a move drops it. Reads at database level and checks no access: callers
  * ask the access questions of their own operation about what this returns.
+ *
+ * Rows in the trash are left out, because a move, a copy or a publish has nothing to do with them.
+ * A permanent delete reads with `includeTrashed`: a folder cannot be deleted while a trashed page
+ * or folder still points at it, so what sits in the trash beneath it goes too.
  */
 export const readSelection = async (
   req: PayloadRequest,
   options: ResolvedOptions,
-  items: ItemRef[]
+  items: ItemRef[],
+  { includeTrashed = false }: { includeTrashed?: boolean } = {}
 ): Promise<Selection> => {
   const foldersSlug = options.folders.slug;
   const unique = items.filter(
@@ -121,7 +132,7 @@ export const readSelection = async (
       where: { id: { in: ids } },
     });
     for (const doc of docs as Array<Record<string, unknown>>) {
-      if (!isTrashed(doc)) {
+      if (includeTrashed || !isTrashed(doc)) {
         const record = toFolderRecord(doc);
         folderRows.set(String(record.id), record);
       }
@@ -149,7 +160,7 @@ export const readSelection = async (
   for (const record of topFolders) {
     folderById.set(String(record.id), record);
     for (const descendant of await readFolderDescendants(req, options, record.id)) {
-      if (!isTrashed(descendant.storedRow)) {
+      if (includeTrashed || !isTrashed(descendant.storedRow)) {
         folderById.set(String(descendant.id), descendant);
       }
     }
@@ -167,6 +178,7 @@ export const readSelection = async (
     for (const ids of chunk(selectedIds)) {
       for (const found of await readSelectionPages({
         collection: page.slug,
+        includeTrashed,
         options,
         req,
         where: { id: { in: ids } },
@@ -177,6 +189,7 @@ export const readSelection = async (
     for (const ids of chunk(folderIds)) {
       for (const found of await readSelectionPages({
         collection: page.slug,
+        includeTrashed,
         options,
         req,
         where: { folder: { in: ids } },

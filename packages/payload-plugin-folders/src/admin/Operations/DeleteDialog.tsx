@@ -183,6 +183,11 @@ const DeleteContent = ({
                     : translate("deleteNoUrlStops")}
                 </p>
               )}
+              {preview.inTrash > 0 ? (
+                <p className="fr-folders-muted" data-testid="delete-in-trash">
+                  {translate("deleteIncludingTrash", { count: preview.inTrash })}
+                </p>
+              ) : null}
               {listing.rootPageCount > 0 ? (
                 <p className="fr-folders-muted" data-testid="delete-root-pages">
                   {translate("deleteRootPages", { count: listing.rootPageCount })}

@@ -91,6 +91,8 @@ export const de: FoldersTranslations = {
     deleteDone_one: "{{count}} Eintrag gelöscht",
     deleteDone_other: "{{count}} Einträge gelöscht",
     deleteFailed: "Die Auswahl konnte nicht gelöscht werden",
+    deleteIncludingTrash_one: "Davon liegt {{count}} schon im Papierkorb.",
+    deleteIncludingTrash_other: "Davon liegen {{count}} schon im Papierkorb.",
     deleteLoading: "Der Inhalt wird gezählt...",
     deleteMore_one: "und {{count}} weiterer",
     deleteMore_other: "und {{count}} weitere",

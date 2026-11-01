@@ -90,6 +90,8 @@ export const en = {
     deleteDone_one: "Deleted {{count}} item",
     deleteDone_other: "Deleted {{count}} items",
     deleteFailed: "Could not delete the selection",
+    deleteIncludingTrash_one: "Including {{count}} that is already in the trash.",
+    deleteIncludingTrash_other: "Including {{count}} that are already in the trash.",
     deleteLoading: "Counting what is inside...",
     deleteMore_one: "and {{count}} more",
     deleteMore_other: "and {{count}} more",

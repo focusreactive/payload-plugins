@@ -38,6 +38,11 @@ export type DeletePreview = {
   confirmWord: string | null;
   /** Folders that go, subfolders included. */
   folders: number;
+  /**
+   * How many of `folders` and `pages` already sit in the trash. Only a permanent delete takes them
+   * along; a soft one leaves them where they are and counts none.
+   */
+  inTrash: number;
   /** Pages that go. */
   pages: number;
   /** Page URLs that stop working: one per locale a page is live in. */
@@ -94,6 +99,7 @@ type DeleteUnit = { collection: string; id: FolderId };
 export type DeletePlan = {
   confirmWord: string | null;
   folders: number;
+  inTrash: number;
   isSoft: boolean;
   pages: number;
   selection: Selection;
@@ -235,9 +241,12 @@ export const planDelete = async (
     }
   }
 
-  const selection = await readSelection(req, options, request.items);
-  const units = orderUnits(selection, options);
+  // A permanent delete takes the trashed content of the folders along: the folder's own
+  // `beforeDelete` refuses a folder that anything, trashed or not, still points at. This is the
+  // case when only some of the page collections have a trash.
   const isSoft = isTrashEnabled(payload, options);
+  const selection = await readSelection(req, options, request.items, { includeTrashed: !isSoft });
+  const units = orderUnits(selection, options);
 
   if (!overrideAccess && units.length > 0) {
     const refused = await findRefusedItems({ isSoft, req, units });
@@ -253,6 +262,9 @@ export const planDelete = async (
   return {
     confirmWord: confirmWordOf(selection, options, payload),
     folders: selection.folders.length,
+    inTrash:
+      selection.pages.filter((page) => page.isTrashed).length +
+      selection.folders.filter((folder) => Boolean(folder.storedRow.deletedAt)).length,
     isSoft,
     pages: selection.pages.length,
     selection,
@@ -265,6 +277,9 @@ const countPublishedUrls = (selection: Selection, payload: Payload): number => {
   const fallbackKey = getFallbackLocaleKey(payload);
   let total = 0;
   for (const page of selection.pages) {
+    if (page.isTrashed) {
+      continue;
+    }
     const hasDrafts = Boolean(
       payload.collections[toCollectionSlug(page.collection)]?.config.versions?.drafts
     );
@@ -372,6 +387,7 @@ export const previewDelete = async (
   return {
     confirmWord: plan.confirmWord,
     folders: plan.folders,
+    inTrash: plan.inTrash,
     pages: plan.pages,
     publishedUrls: countPublishedUrls(plan.selection, payload),
     sample: await buildSample({ options, overrideAccess, req, selection: plan.selection }),
@@ -406,7 +422,9 @@ const deleteHandler: OperationHandler = {
           select: (config?.trash ? { deletedAt: true } : { id: true }) as never,
           where: { id: { equals: unit.id } },
         })) as { deletedAt?: string | null } | null;
-        if (!stored || stored.deletedAt) {
+        // A permanent delete also removes what is already in the trash; a soft one has nothing to
+        // do with it.
+        if (!stored || (isSoft && stored.deletedAt)) {
           skipped += 1;
           continue;
         }
@@ -428,6 +446,7 @@ const deleteHandler: OperationHandler = {
             overrideAccess,
             req: createNestedRequest(req),
             select: { id: true } as never,
+            trash: true,
           });
           deleted += 1;
         }
