@@ -72,3 +72,7 @@ export const savedExpandedOf = (value: unknown): FolderId[] | null => {
     expanded.filter((id) => typeof id === "number" || typeof id === "string").join(",")
   );
 };
+
+/** The zoomed folder as the browser's address says it right now, whatever the router has caught up with. */
+export const zoomFolderIdOfLocation = (): FolderId | null =>
+  parseFolderParam(new URLSearchParams(window.location.search).get("folder"));

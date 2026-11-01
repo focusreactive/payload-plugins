@@ -14,6 +14,7 @@ import {
 } from "../compat.js";
 import { getSharedTreeStore, revisionPollIntervalMs } from "../store.js";
 import "../styles.css";
+import { zoomFolderIdOfLocation } from "./treeUrlState.js";
 import { useExpandedPersistence } from "./useExpandedPersistence.js";
 import { useTreeUrlState } from "./useTreeUrlState.js";
 import { TreeWorkspace } from "./TreeWorkspace.js";
@@ -80,12 +81,24 @@ export const TreeViewClient = ({
   });
 
   // The address names the zoomed folder; going back to the top level or to another folder with
-  // the browser's buttons changes it too.
+  // the browser's buttons changes it too. The browser's own address is what is read, not the
+  // router's copy of it: after two quick steps through the history the router can still be
+  // catching up with the first while the address has already moved on. `zoomFolderId` only says
+  // when to look.
   const { zoomFolderId } = urlState;
   useEffect(() => {
-    if (isReady) {
-      void store.setZoom(zoomFolderId);
+    if (!isReady) {
+      return undefined;
     }
+    const followAddress = () => {
+      void store.setZoom(zoomFolderIdOfLocation());
+    };
+    followAddress();
+    window.addEventListener("popstate", followAddress);
+
+    return () => window.removeEventListener("popstate", followAddress);
+    // `zoomFolderId` is the trigger for a change the router noticed (a link, Payload's own redirect).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReady, store, zoomFolderId]);
   // The store is shared with the edit view's location field, which wants the whole tree.
   useEffect(
