@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { Locator, Page } from "@playwright/test";
 
-import { childrenOf, createFolder, createPage } from "./helpers/content.js";
+import { childrenOf, createFolder, createPage, removeFolderTree } from "./helpers/content.js";
 import { contextMenu, menuItem, openRowMenu } from "./helpers/menu.js";
 import {
   bulkToolbar,
@@ -21,8 +21,11 @@ test.afterEach(async ({ request }) => {
   for (const id of createdPages.splice(0)) {
     await request.delete(`/api/pages/${id}`);
   }
-  for (const id of createdFolders.splice(0)) {
-    await request.delete(`/api/folders/${id}`);
+  // Newest first, each with whatever a test moved into it: a folder that is not empty is refused.
+  for (const id of createdFolders.splice(0).toReversed()) {
+    if ((await request.get(`/api/folders/${id}?depth=0`)).ok()) {
+      await removeFolderTree(request, id);
+    }
   }
 });
 

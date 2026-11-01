@@ -5,8 +5,8 @@ import {
   childrenOf,
   createFolder,
   createPage,
-  deleteFolder,
   deletePage,
+  removeFolderTree,
 } from "./helpers/content.js";
 import type { ChildRow } from "./helpers/content.js";
 import { dragRowTo, moveOver, pressAndPull, rowTitlesIn, startDrag } from "./helpers/drag.js";
@@ -33,13 +33,12 @@ test.beforeAll(async ({ baseURL, playwright }) => {
 
 test.afterEach(async ({ request }) => {
   // Newest first, so a folder is emptied before the folder that holds it.
+  // A folder a test moved into another is removed with it: the server refuses a folder that is
+  // not empty.
   for (const folderId of [...createdFolders.splice(0)].toReversed()) {
-    for (const row of await childrenOf(request, folderId)) {
-      if (row.kind === "page") {
-        await deletePage(request, row.id);
-      }
+    if ((await request.get(`/api/folders/${folderId}?depth=0`)).ok()) {
+      await removeFolderTree(request, folderId);
     }
-    await deleteFolder(request, folderId);
   }
   for (const id of createdPages.splice(0)) {
     await request.delete(`/api/pages/${id}`);
@@ -49,12 +48,7 @@ test.afterEach(async ({ request }) => {
 test.afterAll(async ({ baseURL, playwright }) => {
   const request = await playwright.request.newContext({ baseURL });
   try {
-    for (const row of await childrenOf(request, labId)) {
-      if (row.kind === "page") {
-        await deletePage(request, row.id);
-      }
-    }
-    await deleteFolder(request, labId);
+    await removeFolderTree(request, labId);
   } finally {
     await request.dispose();
   }
