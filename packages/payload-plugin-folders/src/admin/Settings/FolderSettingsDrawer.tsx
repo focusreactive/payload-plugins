@@ -2,6 +2,7 @@ import { Button, Drawer, ShimmerEffect, useModal } from "@payloadcms/ui";
 import { useEffect, useId, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
+import { useDialogSlug } from "../dialogScope.js";
 import type { FolderId, TreeItem } from "../../types.js";
 import { fetchDocument, fetchSubfolderCount, previewFolderEdit, writeDocument } from "../api.js";
 import type { FoldersApiContext } from "../api.js";
@@ -91,6 +92,7 @@ const FolderSettingsForm = ({
   typeLabels,
 }: FormProps): ReactNode => {
   const { closeModal } = useModal();
+  const drawerSlug = useDialogSlug(folderSettingsDrawerSlug);
   const state = useTreeStoreState(store);
   const formId = useId();
   const allTypes = Object.keys(typeLabels);
@@ -237,7 +239,7 @@ const FolderSettingsForm = ({
         });
         await store.invalidate([item.parentId, item.id]);
       }
-      closeModal(folderSettingsDrawerSlug);
+      closeModal(drawerSlug);
       if (plan.toParent !== null) {
         await onMove({
           items: [item],
@@ -326,7 +328,7 @@ const FolderSettingsForm = ({
         <Button
           buttonStyle="secondary"
           margin={false}
-          onClick={() => closeModal(folderSettingsDrawerSlug)}
+          onClick={() => closeModal(drawerSlug)}
           size="medium"
         >
           {translate("actionCancel")}
@@ -425,7 +427,7 @@ const FolderSettingsContent = ({
 export const FolderSettingsDrawer = ({ dialogs, request, ...rest }: FolderSettingsDrawerProps) => (
   <Drawer
     className="fr-folders-settings-drawer"
-    slug={folderSettingsDrawerSlug}
+    slug={useDialogSlug(folderSettingsDrawerSlug)}
     title={
       request === null ? "" : rest.translate("settingsFolderTitle", { name: request.item.title })
     }

@@ -10,6 +10,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
+import { useDialogSlug } from "../dialogScope.js";
 import type { Translate } from "../compat.js";
 import { ConfirmUrlChangeDialog } from "../Move/ConfirmUrlChangeDialog.js";
 import type { ConfirmRequest } from "../Move/ConfirmUrlChangeDialog.js";
@@ -46,6 +47,8 @@ export const useConfirmations = ({
   translate: Translate;
 }): Confirmations => {
   const { modalState, openModal } = useModal();
+  const urlConfirmSlug = useDialogSlug(settingsConfirmSlug);
+  const actionConfirmSlug = useDialogSlug(settingsActionConfirmSlug);
   const [urlRequest, setUrlRequest] = useState<ConfirmRequest | null>(null);
   const [actionRequest, setActionRequest] = useState<ActionConfirmRequest | null>(null);
   const urlAnswer = useRef<((answer: boolean) => void) | null>(null);
@@ -58,9 +61,9 @@ export const useConfirmations = ({
         openings.current += 1;
         urlAnswer.current = resolve;
         setUrlRequest({ ...request, id: openings.current });
-        openModal(settingsConfirmSlug);
+        openModal(urlConfirmSlug);
       }),
-    [openModal]
+    [openModal, urlConfirmSlug]
   );
   const askAction = useCallback(
     (request: Omit<ActionConfirmRequest, "id">) =>
@@ -68,16 +71,16 @@ export const useConfirmations = ({
         openings.current += 1;
         actionAnswer.current = resolve;
         setActionRequest({ ...request, id: openings.current });
-        openModal(settingsActionConfirmSlug);
+        openModal(actionConfirmSlug);
       }),
-    [openModal]
+    [actionConfirmSlug, openModal]
   );
 
   // A dialog that closed with its question unanswered was cancelled.
   const wasUrlOpen = useRef(false);
   const wasActionOpen = useRef(false);
-  const isUrlOpen = Boolean(modalState[settingsConfirmSlug]?.isOpen);
-  const isActionOpen = Boolean(modalState[settingsActionConfirmSlug]?.isOpen);
+  const isUrlOpen = Boolean(modalState[urlConfirmSlug]?.isOpen);
+  const isActionOpen = Boolean(modalState[actionConfirmSlug]?.isOpen);
   useEffect(() => {
     if (wasUrlOpen.current && !isUrlOpen) {
       urlAnswer.current?.(false);
@@ -104,10 +107,10 @@ export const useConfirmations = ({
         }}
         onReload={() => undefined}
         request={urlRequest}
-        slug={settingsConfirmSlug}
+        slug={urlConfirmSlug}
         translate={translate}
       />
-      <DialogModal className="fr-folders-dialog" size="small" slug={settingsActionConfirmSlug}>
+      <DialogModal className="fr-folders-dialog" size="small" slug={actionConfirmSlug}>
         {actionRequest === null ? null : (
           <div key={actionRequest.id}>
             <DialogHeader showClose title={actionRequest.title} />

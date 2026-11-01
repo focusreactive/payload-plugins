@@ -10,6 +10,7 @@ import {
 import { useEffect, useId, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
+import { useDialogSlug } from "../dialogScope.js";
 import type { FolderId } from "../../types.js";
 import { fetchCheckSegment } from "../api.js";
 import type { FoldersApiContext } from "../api.js";
@@ -62,6 +63,7 @@ const UnrootContent = ({
   translate,
 }: Omit<UnrootDialogProps, "request"> & { request: UnrootRequest }): ReactNode => {
   const { closeModal } = useModal();
+  const slug = useDialogSlug(unrootDialogSlug);
   const formId = useId();
   const [segment, setSegment] = useState("");
   // The starting segment is looked up asynchronously. Once the editor has typed, a late answer (or
@@ -134,7 +136,7 @@ const UnrootContent = ({
     setFailure(null);
     try {
       await onConfirm(segment);
-      closeModal(unrootDialogSlug);
+      closeModal(slug);
     } catch (error) {
       setFailure(
         error instanceof Error && error.message !== "" ? error.message : translate("unrootFailed")
@@ -218,7 +220,7 @@ export const UnrootDialog = ({ request, ...rest }: UnrootDialogProps) => (
     className="fr-folders-dialog"
     focusTrapOptions={unrootFocusOptions}
     size="medium"
-    slug={unrootDialogSlug}
+    slug={useDialogSlug(unrootDialogSlug)}
   >
     {request === null ? null : <UnrootContent key={request.session} request={request} {...rest} />}
   </DialogModal>

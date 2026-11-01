@@ -2,6 +2,7 @@ import { toast, useModal } from "@payloadcms/ui";
 import { useCallback, useState } from "react";
 import type { ReactNode } from "react";
 
+import { useDialogSlug } from "../dialogScope.js";
 import type { RepairResult } from "../../core/repair.js";
 import type { FoldersApiContext } from "../api.js";
 import type { Translate } from "../compat.js";
@@ -33,16 +34,17 @@ export const useRepairFlow = ({
   translate: Translate;
 }): RepairFlow => {
   const { closeModal, openModal } = useModal();
+  const repairSlug = useDialogSlug(repairDialogSlug);
   const [session, setSession] = useState(0);
 
   const start = useCallback(() => {
     setSession((current) => current + 1);
-    openModal(repairDialogSlug);
-  }, [openModal]);
+    openModal(repairSlug);
+  }, [openModal, repairSlug]);
 
   const handleRepaired = useCallback(
     async (result: RepairResult) => {
-      closeModal(repairDialogSlug);
+      closeModal(repairSlug);
       const left = result.conflicts.total;
       toast.success(
         left > 0 ? translate("repairDoneWithConflicts", { count: left }) : translate("repairDone")
@@ -50,7 +52,7 @@ export const useRepairFlow = ({
       await store.refetchVisible();
       await onRepaired();
     },
-    [closeModal, onRepaired, store, translate]
+    [closeModal, onRepaired, repairSlug, store, translate]
   );
 
   return {

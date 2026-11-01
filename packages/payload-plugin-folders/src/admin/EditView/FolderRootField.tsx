@@ -10,6 +10,7 @@ import type { CheckboxFieldClientProps } from "payload";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
+import { useDialogSlug } from "../dialogScope.js";
 import { useAdminRoutes, useFoldersTranslation, useLocaleCode } from "../compat.js";
 import { UnrootDialog, unrootDialogSlug } from "../Settings/UnrootDialog.js";
 import type { UnrootRequest } from "../Settings/UnrootDialog.js";
@@ -66,6 +67,7 @@ export const FolderRootField = ({
   const { translate } = useFoldersTranslation();
   const locale = useLocaleCode();
   const { openModal } = useModal();
+  const unrootSlug = useDialogSlug(unrootDialogSlug);
   const { dispatchFields, setModified } = useForm();
   const { errorMessage, setValue, showError, value } = useField<boolean>({ path });
   const segment = useFormFields(([fields]) => fields[segmentField]);
@@ -124,7 +126,7 @@ export const FolderRootField = ({
       title: typeof title?.value === "string" ? title.value : "",
       willGoLive: null,
     });
-    openModal(unrootDialogSlug);
+    openModal(unrootSlug);
   };
 
   return (

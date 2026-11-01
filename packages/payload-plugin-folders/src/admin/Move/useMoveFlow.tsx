@@ -8,6 +8,7 @@ import type { MovePreview } from "../api.js";
 import type { Translate } from "../compat.js";
 import type { TreeStore } from "../store.js";
 import { useApiContext } from "../useApiContext.js";
+import { useDialogSlug } from "../dialogScope.js";
 import { confirmDialogSlug, ConfirmUrlChangeDialog } from "./ConfirmUrlChangeDialog.js";
 import type { ConfirmRequest } from "./ConfirmUrlChangeDialog.js";
 import { MoveDialog, moveDialogSlug } from "./MoveDialog.js";
@@ -119,6 +120,8 @@ export const useMoveFlow = ({
   typeLabels,
 }: MoveFlowOptions): MoveFlow => {
   const { closeModal, openModal } = useModal();
+  const confirmSlug = useDialogSlug(confirmDialogSlug);
+  const moveToSlug = useDialogSlug(moveDialogSlug);
   const [pickItems, setPickItems] = useState<readonly TreeItem[] | null>(null);
   const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(null);
   const [pickSession, setPickSession] = useState(0);
@@ -235,13 +238,13 @@ export const useMoveFlow = ({
           preview,
           targetTitle: request.targetTitle,
         });
-        openModal(confirmDialogSlug);
+        openModal(confirmSlug);
 
         return;
       }
       void execute(request, true);
     },
-    [confirmMoves, execute, openModal]
+    [confirmMoves, confirmSlug, execute, openModal]
   );
 
   const choose = useCallback(
@@ -250,7 +253,7 @@ export const useMoveFlow = ({
       if (items === null) {
         return;
       }
-      closeModal(moveDialogSlug);
+      closeModal(moveToSlug);
       proceed(
         {
           items,
@@ -261,7 +264,7 @@ export const useMoveFlow = ({
         choice.preview
       );
     },
-    [closeModal, pickItems, proceed]
+    [closeModal, moveToSlug, pickItems, proceed]
   );
 
   const startDropMove = useCallback(
@@ -291,7 +294,7 @@ export const useMoveFlow = ({
   // A confirmation that closes without the Move button was dismissed: whoever showed the move
   // before asking puts the rows back.
   const { modalState } = useModal();
-  const isConfirmOpen = modalState[confirmDialogSlug]?.isOpen === true;
+  const isConfirmOpen = modalState[confirmSlug]?.isOpen === true;
   const wasConfirmOpen = useRef(false);
   useEffect(() => {
     if (isConfirmOpen) {
@@ -325,9 +328,9 @@ export const useMoveFlow = ({
       selectionRef.current = items;
       setPickItems(rootsOfSelection(items));
       setPickSession((current) => current + 1);
-      openModal(moveDialogSlug);
+      openModal(moveToSlug);
     },
-    [openModal]
+    [moveToSlug, openModal]
   );
 
   const dialogs = (

@@ -11,6 +11,7 @@ import {
 import { useEffect, useId, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
+import { useDialogSlug } from "../dialogScope.js";
 import type { FolderId, TreeItem } from "../../types.js";
 import { FoldersApiError, writeDocument } from "../api.js";
 import type { FoldersApiContext } from "../api.js";
@@ -83,6 +84,7 @@ const CreatePageContent = ({
   typeLabels,
 }: Omit<CreatePageDialogProps, "folder" | "session"> & { folder: TreeItem | null }): ReactNode => {
   const { closeModal } = useModal();
+  const slug = useDialogSlug(createPageDialogSlug);
   const state = useTreeStoreState(store);
   const formId = useId();
   const pageTypes = pageTypeOptionsOf(folder, typeLabels);
@@ -138,7 +140,7 @@ const CreatePageContent = ({
     };
     // A collection without drafts has no draft to make: its own form takes the four values.
     if (!draftCollections.includes(collection)) {
-      closeModal(createPageDialogSlug);
+      closeModal(slug);
       onNeedsDrawer({ collection, values });
 
       return;
@@ -159,13 +161,13 @@ const CreatePageContent = ({
         collection,
         query: { draft: "true", locale: request.locale },
       });
-      closeModal(createPageDialogSlug);
+      closeModal(slug);
       onCreated({ collection, id: doc.id, parentId: folderId });
     } catch (error) {
       // A refused draft (a field that must be filled even for a draft, say) is finished in the
       // collection's own form; anything else is shown here and can be tried again.
       if (error instanceof FoldersApiError && error.status === 400) {
-        closeModal(createPageDialogSlug);
+        closeModal(slug);
         onNeedsDrawer({ collection, values });
 
         return;
@@ -285,7 +287,7 @@ export const CreatePageDialog = ({ folder, session, ...rest }: CreatePageDialogP
     className="fr-folders-dialog"
     focusTrapOptions={pageDialogFocusOptions}
     size="medium"
-    slug={createPageDialogSlug}
+    slug={useDialogSlug(createPageDialogSlug)}
   >
     {folder === undefined ? null : <CreatePageContent folder={folder} key={session} {...rest} />}
   </DialogModal>

@@ -7,6 +7,7 @@ import {
   DialogModal,
 } from "@payloadcms/ui";
 
+import { useDialogSlug } from "../dialogScope.js";
 import type { FolderId } from "../../types.js";
 import type { Translate } from "../compat.js";
 import { percentOf, titleKeyOf } from "./operationLogic.js";
@@ -101,7 +102,7 @@ const ProgressContent = ({
  * and a retry, or a stop that gives the operation up.
  */
 export const ProgressDialog = ({ operation, ...rest }: ProgressDialogProps) => (
-  <DialogModal className="fr-folders-dialog" size="small" slug={progressDialogSlug}>
+  <DialogModal className="fr-folders-dialog" size="small" slug={useDialogSlug(progressDialogSlug)}>
     {operation === null ? null : <ProgressContent operation={operation} {...rest} />}
   </DialogModal>
 );

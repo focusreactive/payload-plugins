@@ -2,6 +2,7 @@ import { toast, useModal } from "@payloadcms/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
+import { useDialogSlug } from "../dialogScope.js";
 import type { ConfirmMoves, TreeItem } from "../../types.js";
 import {
   fetchLatestStatus,
@@ -76,6 +77,9 @@ export const useSettingsFlow = ({
   typeLabels,
 }: SettingsFlowOptions): SettingsFlow => {
   const { modalState, openModal } = useModal();
+  const folderDrawerSlug = useDialogSlug(folderSettingsDrawerSlug);
+  const pageDrawerSlug = useDialogSlug(pageSettingsDrawerSlug);
+  const unrootSlug = useDialogSlug(unrootDialogSlug);
   const confirmations = useConfirmations({ languageCount, translate });
   const [folderRequest, setFolderRequest] = useState<FolderSettingsRequest | null>(null);
   const [pageRequest, setPageRequest] = useState<PageSettingsRequest | null>(null);
@@ -88,13 +92,13 @@ export const useSettingsFlow = ({
       sessions.current += 1;
       if (item.kind === "folder") {
         setFolderRequest({ item, session: sessions.current });
-        openModal(folderSettingsDrawerSlug);
+        openModal(folderDrawerSlug);
       } else {
         setPageRequest({ item, session: sessions.current });
-        openModal(pageSettingsDrawerSlug);
+        openModal(pageDrawerSlug);
       }
     },
-    [openModal]
+    [folderDrawerSlug, openModal, pageDrawerSlug]
   );
 
   const askUnroot = useCallback(
@@ -103,14 +107,14 @@ export const useSettingsFlow = ({
         sessions.current += 1;
         unrootAnswer.current = resolve;
         setUnrootRequest({ ...request, session: sessions.current });
-        openModal(unrootDialogSlug);
+        openModal(unrootSlug);
       }),
-    [openModal]
+    [openModal, unrootSlug]
   );
 
   // The dialog closed without a choice: Cancel, the close button or Escape.
   const wasUnrootOpen = useRef(false);
-  const isUnrootOpen = Boolean(modalState[unrootDialogSlug]?.isOpen);
+  const isUnrootOpen = Boolean(modalState[unrootSlug]?.isOpen);
   useEffect(() => {
     if (wasUnrootOpen.current && !isUnrootOpen) {
       unrootAnswer.current?.(null);
@@ -203,8 +207,8 @@ export const useSettingsFlow = ({
 
   // The questions a settings save asks go inside the open drawer, which would otherwise cover them;
   // with no drawer open (Unset root page from the menu) they sit beside the tree.
-  const isFolderDrawerOpen = Boolean(modalState[folderSettingsDrawerSlug]?.isOpen);
-  const isPageDrawerOpen = Boolean(modalState[pageSettingsDrawerSlug]?.isOpen);
+  const isFolderDrawerOpen = Boolean(modalState[folderDrawerSlug]?.isOpen);
+  const isPageDrawerOpen = Boolean(modalState[pageDrawerSlug]?.isOpen);
   const questions = (
     <>
       <UnrootDialog

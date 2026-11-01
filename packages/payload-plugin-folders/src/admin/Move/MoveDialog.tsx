@@ -12,6 +12,7 @@ import type { TreeItem } from "../../types.js";
 import { previewMove } from "../api.js";
 import type { FoldersApiContext, MovePreview } from "../api.js";
 import type { Translate } from "../compat.js";
+import { useDialogSlug } from "../dialogScope.js";
 import type { TreeStore } from "../store.js";
 import { FolderPickerTree } from "./FolderPickerTree.js";
 import type { FolderChoice } from "./FolderPickerTree.js";
@@ -218,7 +219,7 @@ const MoveDialogContent = ({
  * Pressing Move hands the choice back; whether a confirmation follows is the caller's.
  */
 export const MoveDialog = ({ items, session, ...rest }: MoveDialogProps) => (
-  <DialogModal className="fr-folders-dialog" size="medium" slug={moveDialogSlug}>
+  <DialogModal className="fr-folders-dialog" size="medium" slug={useDialogSlug(moveDialogSlug)}>
     {items === null ? null : <MoveDialogContent items={items} key={session} {...rest} />}
   </DialogModal>
 );

@@ -10,6 +10,7 @@ import { useCreateFlow } from "../Create/useCreateFlow.js";
 import { useContextMenu } from "../ContextMenu/useContextMenu.js";
 import type { ContextMenuActions } from "../ContextMenu/useContextMenu.js";
 import { useRootPageFlow } from "../ContextMenu/useRootPageFlow.js";
+import { DialogScopeProvider } from "../dialogScope.js";
 import { DragAndDropProvider } from "../DragAndDrop/DragAndDropProvider.js";
 import { focusRowWhenShown } from "../Keyboard/focusRow.js";
 import { useTreeKeyboard } from "../Keyboard/useTreeKeyboard.js";
@@ -96,7 +97,7 @@ export type TreeWorkspaceProps = {
  * be configured before this mounts. It owns the selection because the toolbar and the rows both
  * read it.
  */
-export const TreeWorkspace = ({
+const TreeWorkspaceContent = ({
   adminRoute,
   confirmMoves,
   currentKey = null,
@@ -726,3 +727,13 @@ export const TreeWorkspace = ({
     </>
   );
 };
+
+/**
+ * Gives the workspace its own dialog slugs: it sits beside another one when the tree view is open
+ * and the sidebar tab shows a tree too, and the two must not open each other's dialogs.
+ */
+export const TreeWorkspace = (props: TreeWorkspaceProps) => (
+  <DialogScopeProvider>
+    <TreeWorkspaceContent {...props} />
+  </DialogScopeProvider>
+);

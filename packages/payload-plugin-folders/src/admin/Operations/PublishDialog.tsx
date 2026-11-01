@@ -8,6 +8,7 @@ import {
 } from "@payloadcms/ui";
 import { useEffect, useState } from "react";
 
+import { useDialogSlug } from "../dialogScope.js";
 import type { TreeItem } from "../../types.js";
 import { FoldersApiError, postPublish, previewPublish } from "../api.js";
 import type { FoldersApiContext, PublishPreview, PublishResult } from "../api.js";
@@ -219,7 +220,7 @@ const PublishContent = ({
  * live and skipped, and a note when the run is large enough to be stepped.
  */
 export const PublishDialog = ({ request, session, ...rest }: PublishDialogProps) => (
-  <DialogModal className="fr-folders-dialog" size="medium" slug={publishDialogSlug}>
+  <DialogModal className="fr-folders-dialog" size="medium" slug={useDialogSlug(publishDialogSlug)}>
     {request === null ? null : <PublishContent key={session} request={request} {...rest} />}
   </DialogModal>
 );

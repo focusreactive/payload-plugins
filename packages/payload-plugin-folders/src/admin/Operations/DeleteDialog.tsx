@@ -9,6 +9,7 @@ import {
 import { useEffect, useId, useState } from "react";
 import type { FormEvent } from "react";
 
+import { useDialogSlug } from "../dialogScope.js";
 import type { TreeItem } from "../../types.js";
 import { FoldersApiError, postDelete, previewDelete } from "../api.js";
 import type { DeletePreview, DeleteResult, FoldersApiContext } from "../api.js";
@@ -270,7 +271,7 @@ export const DeleteDialog = ({ items, session, ...rest }: DeleteDialogProps) => 
     className="fr-folders-dialog"
     focusTrapOptions={deleteFocusOptions}
     size="medium"
-    slug={deleteDialogSlug}
+    slug={useDialogSlug(deleteDialogSlug)}
   >
     {items === null ? null : <DeleteContent items={items} key={session} {...rest} />}
   </DialogModal>

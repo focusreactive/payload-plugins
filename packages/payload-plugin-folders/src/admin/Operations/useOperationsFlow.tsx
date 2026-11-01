@@ -2,6 +2,7 @@ import { toast, useModal } from "@payloadcms/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
+import { useDialogSlug } from "../dialogScope.js";
 import type { OperationProgress } from "../../core/operations.js";
 import type { FolderId, TreeItem } from "../../types.js";
 import { fetchUnfinishedOperations, postOperationAbandon, postOperationStep } from "../api.js";
@@ -68,6 +69,10 @@ export const useOperationsFlow = ({
   typeLabels,
 }: OperationsFlowOptions): OperationsFlow => {
   const { closeModal, isModalOpen, openModal } = useModal();
+  const progressSlug = useDialogSlug(progressDialogSlug);
+  const deleteSlug = useDialogSlug(deleteDialogSlug);
+  const duplicateSlug = useDialogSlug(duplicateDialogSlug);
+  const publishSlug = useDialogSlug(publishDialogSlug);
   const [operations, setOperations] = useState<OperationView[]>([]);
   const operationsRef = useRef<OperationView[]>([]);
   const [shownId, setShownId] = useState<FolderId | null>(null);
@@ -173,10 +178,10 @@ export const useOperationsFlow = ({
         afterDone.current.set(String(operation.id), onDone);
       }
       setShownId(operation.id);
-      openModal(progressDialogSlug);
+      openModal(progressSlug);
       void runner.run(operation.id, operation);
     },
-    [openModal, runner, update]
+    [openModal, progressSlug, runner, update]
   );
 
   const retry = useCallback(
@@ -218,7 +223,7 @@ export const useOperationsFlow = ({
         afterDone.current.delete(String(id));
         update((all) => withoutOperation(all, id));
         if (String(shownId) === String(id)) {
-          closeModal(progressDialogSlug);
+          closeModal(progressSlug);
         }
         toast.success(
           translate("operationStopped", { done: progress.done, total: progress.total })
@@ -236,15 +241,15 @@ export const useOperationsFlow = ({
         );
       }
     },
-    [closeModal, onSettled, shownId, store, translate, update]
+    [closeModal, onSettled, progressSlug, shownId, store, translate, update]
   );
 
   const show = useCallback(
     (id: FolderId) => {
       setShownId(id);
-      openModal(progressDialogSlug);
+      openModal(progressSlug);
     },
-    [openModal]
+    [openModal, progressSlug]
   );
 
   const open = useCallback(
@@ -258,28 +263,28 @@ export const useOperationsFlow = ({
   const startDelete = useCallback(
     (items: readonly TreeItem[]) => {
       setDeleteItems(items);
-      open("delete", deleteDialogSlug);
+      open("delete", deleteSlug);
     },
-    [open]
+    [deleteSlug, open]
   );
   const startDuplicate = useCallback(
     (items: readonly TreeItem[]) => {
       setDuplicateItems(items);
-      open("duplicate", duplicateDialogSlug);
+      open("duplicate", duplicateSlug);
     },
-    [open]
+    [duplicateSlug, open]
   );
   const startPublish = useCallback(
     (items: readonly TreeItem[], action: PublishAction) => {
       setPublishRequest({ action, items });
-      open("publish", publishDialogSlug);
+      open("publish", publishSlug);
     },
-    [open]
+    [open, publishSlug]
   );
 
   const finishDelete = useCallback(
     (result: DeleteResult, _preview: DeletePreview) => {
-      closeModal(deleteDialogSlug);
+      closeModal(deleteSlug);
       if ("operationId" in result) {
         track({
           done: 0,
@@ -296,12 +301,12 @@ export const useOperationsFlow = ({
       void store.refetchVisible();
       onSettled();
     },
-    [closeModal, onSettled, store, track, translate]
+    [closeModal, deleteSlug, onSettled, store, track, translate]
   );
 
   const finishDuplicate = useCallback(
     (result: DuplicateResult, target: FolderChoice) => {
-      closeModal(duplicateDialogSlug);
+      closeModal(duplicateSlug);
       const showCopies = () => {
         if (target.id !== null) {
           void store.setExpanded(target.id, true);
@@ -326,12 +331,12 @@ export const useOperationsFlow = ({
       showCopies();
       onSettled();
     },
-    [closeModal, onSettled, store, track, translate]
+    [closeModal, duplicateSlug, onSettled, store, track, translate]
   );
 
   const finishPublish = useCallback(
     (result: PublishResult, action: PublishAction, _preview: PublishPreview) => {
-      closeModal(publishDialogSlug);
+      closeModal(publishSlug);
       if ("operationId" in result) {
         track({
           done: 0,
@@ -346,11 +351,11 @@ export const useOperationsFlow = ({
       toast.success(translate(doneKeyOf(action), { count: result.updated, total: result.updated }));
       void store.refetchVisible();
     },
-    [closeModal, store, track, translate]
+    [closeModal, publishSlug, store, track, translate]
   );
 
   const shown = operations.find((operation) => String(operation.id) === String(shownId)) ?? null;
-  const isProgressOpen = isModalOpen(progressDialogSlug);
+  const isProgressOpen = isModalOpen(progressSlug);
   const bannerOperations = operations.filter(
     (operation) =>
       operation.status !== "done" &&

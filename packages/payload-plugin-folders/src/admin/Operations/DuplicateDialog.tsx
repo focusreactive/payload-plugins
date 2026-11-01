@@ -9,6 +9,7 @@ import {
 import { useId, useState } from "react";
 import type { FormEvent } from "react";
 
+import { useDialogSlug } from "../dialogScope.js";
 import { slugify } from "../../core/slugify.js";
 import type { TreeItem } from "../../types.js";
 import { postDuplicate } from "../api.js";
@@ -230,7 +231,7 @@ export const DuplicateDialog = ({ items, session, ...rest }: DuplicateDialogProp
     className="fr-folders-dialog"
     focusTrapOptions={duplicateFocusOptions}
     size="medium"
-    slug={duplicateDialogSlug}
+    slug={useDialogSlug(duplicateDialogSlug)}
   >
     {items === null ? null : <DuplicateContent items={items} key={session} {...rest} />}
   </DialogModal>

@@ -298,3 +298,50 @@ test("the tab's rows answer the keyboard, the context menu and Ctrl or Cmd click
   await tab(page).getByTestId("bulk-toolbar").getByRole("button", { name: "Cancel" }).click();
   await expect(tab(page).getByTestId("bulk-toolbar")).toHaveCount(0);
 });
+
+test("a move confirmed in the tree view does not open again with the tab's move", async ({
+  page,
+  request,
+}) => {
+  const source = await addFolder(request, "Twin Source");
+  const target = await addFolder(request, "Twin Target");
+  const viewPage = await createPage(request, {
+    folder: source,
+    slug: "twin-view-page",
+    title: "Twin View Page",
+  });
+  const tabPage = await createPage(request, {
+    folder: source,
+    slug: "twin-tab-page",
+    title: "Twin Tab Page",
+  });
+
+  await page.goto(`/admin/collections/folders?expanded=${source},${target}&folder=`);
+  await view(page).getByRole("treegrid").waitFor();
+  await openTreeTab(page);
+  const confirmDialogs = page.getByRole("dialog").filter({ has: page.getByTestId("confirm-move") });
+
+  // Moving a published page changes its URL, so the tree view asks first, and the editor says yes.
+  await startDrag(page, viewRow(page, "Twin View Page"));
+  await moveOver(page, viewRow(page, "Twin Target"), "inside");
+  await page.mouse.up();
+  await expect(confirmDialogs).toHaveCount(1);
+  await confirmDialogs.getByRole("button", { exact: true, name: "Move" }).click();
+  await expect(confirmDialogs).toHaveCount(0);
+  await expect
+    .poll(async () => (await childrenOf(request, target)).map((row) => row.id))
+    .toEqual([viewPage]);
+
+  // The same question from the tab is one dialog, about the tab's page, and it moves that page.
+  await startDrag(page, tabRow(page, "Twin Tab Page"));
+  await moveOver(page, tabRow(page, "Twin Target"), "inside");
+  await page.mouse.up();
+  await expect(confirmDialogs).toHaveCount(1);
+  await expect(confirmDialogs.getByTestId("url-samples")).toContainText("/twin-tab-page");
+  await confirmDialogs.getByRole("button", { exact: true, name: "Move" }).click();
+  await expect(confirmDialogs).toHaveCount(0);
+  await expect(page.getByText("This part of the tree changed")).toHaveCount(0);
+  await expect
+    .poll(async () => (await childrenOf(request, target)).map((row) => row.id).sort())
+    .toEqual([viewPage, tabPage].sort());
+});

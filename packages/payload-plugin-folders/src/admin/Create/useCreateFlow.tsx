@@ -2,6 +2,7 @@ import { toast, useModal } from "@payloadcms/ui";
 import { useCallback, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
+import { useDialogSlug } from "../dialogScope.js";
 import type { FolderId, TreeItem } from "../../types.js";
 import { deleteDocument, fetchRecentDocuments } from "../api.js";
 import type { FoldersApiContext } from "../api.js";
@@ -94,6 +95,8 @@ export const useCreateFlow = ({
   typeLabels: Readonly<Record<string, string>>;
 }): CreateFlow => {
   const { openModal } = useModal();
+  const folderDialogSlug = useDialogSlug(createFolderDialogSlug);
+  const pageDialogSlug = useDialogSlug(createPageDialogSlug);
   const [folderRequest, setFolderRequest] = useState<FolderRequest | null>(null);
   const [pageRequest, setPageRequest] = useState<PageRequest | null>(null);
   const [drawerRequest, setDrawerRequest] = useState<DrawerRequest | null>(null);
@@ -103,17 +106,17 @@ export const useCreateFlow = ({
     (parent: TreeItem | null) => {
       sessions.current += 1;
       setFolderRequest({ parent, session: sessions.current });
-      openModal(createFolderDialogSlug);
+      openModal(folderDialogSlug);
     },
-    [openModal]
+    [folderDialogSlug, openModal]
   );
   const startPage = useCallback(
     (folder: TreeItem | null, collection: string) => {
       sessions.current += 1;
       setPageRequest({ collection, folder, session: sessions.current });
-      openModal(createPageDialogSlug);
+      openModal(pageDialogSlug);
     },
-    [openModal]
+    [openModal, pageDialogSlug]
   );
 
   const refreshAround = useCallback(

@@ -10,6 +10,7 @@ import {
 import { useId, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
+import { useDialogSlug } from "../dialogScope.js";
 import type { FolderId, TreeItem } from "../../types.js";
 import { writeDocument } from "../api.js";
 import type { FoldersApiContext } from "../api.js";
@@ -77,6 +78,7 @@ const CreateFolderContent = ({
   parent: TreeItem | null;
 }): ReactNode => {
   const { closeModal } = useModal();
+  const slug = useDialogSlug(createFolderDialogSlug);
   const state = useTreeStoreState(store);
   const formId = useId();
   const [name, setName] = useState("");
@@ -149,7 +151,7 @@ const CreateFolderContent = ({
         collection: foldersSlug,
         query: { locale: typed.locale },
       });
-      closeModal(createFolderDialogSlug);
+      closeModal(slug);
       await onCreated({ id: doc.id, name: name.trim(), parentId: parent.id });
     } catch (error) {
       const detail = error instanceof Error ? error.message : "";
@@ -249,7 +251,7 @@ export const CreateFolderDialog = ({ parent, session, ...rest }: CreateFolderDia
     className="fr-folders-dialog"
     focusTrapOptions={folderDialogFocusOptions}
     size="medium"
-    slug={createFolderDialogSlug}
+    slug={useDialogSlug(createFolderDialogSlug)}
   >
     {parent === undefined ? null : <CreateFolderContent key={session} parent={parent} {...rest} />}
   </DialogModal>

@@ -2,6 +2,7 @@ import { toast, useModal } from "@payloadcms/ui";
 import { useCallback, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
+import { useDialogSlug } from "../dialogScope.js";
 import type { TreeItem } from "../../types.js";
 import {
   fetchLatestStatus,
@@ -52,6 +53,7 @@ export const useRootPageFlow = ({
   translate: Translate;
 }): RootPageFlow => {
   const { openModal } = useModal();
+  const rootSlug = useDialogSlug(rootDialogSlug);
   const [request, setRequest] = useState<ConfirmRequest | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const pending = useRef<TreeItem | null>(null);
@@ -137,9 +139,9 @@ export const useRootPageFlow = ({
         targetTitle: folderPath,
         title: translate("rootConfirmTitle", { path: folderPath, title: item.title }),
       });
-      openModal(rootDialogSlug);
+      openModal(rootSlug);
     },
-    [openModal, save, state, translate]
+    [openModal, rootSlug, save, state, translate]
   );
 
   const dialog = (
@@ -154,7 +156,7 @@ export const useRootPageFlow = ({
       }}
       onReload={() => void store.refetchVisible()}
       request={request}
-      slug={rootDialogSlug}
+      slug={rootSlug}
       translate={translate}
     />
   );

@@ -9,6 +9,7 @@ import {
 import { useEffect, useId, useState } from "react";
 import type { FormEvent } from "react";
 
+import { useDialogSlug } from "../dialogScope.js";
 import type { RepairResult } from "../../core/repair.js";
 import { postRepair } from "../api.js";
 import type { FoldersApiContext } from "../api.js";
@@ -208,7 +209,7 @@ const RepairContent = ({
  * click that opened it.
  */
 export const RepairDialog = ({ isOpen, session, ...rest }: RepairDialogProps) => (
-  <DialogModal className="fr-folders-dialog" size="medium" slug={repairDialogSlug}>
+  <DialogModal className="fr-folders-dialog" size="medium" slug={useDialogSlug(repairDialogSlug)}>
     {isOpen ? <RepairContent key={session} {...rest} /> : null}
   </DialogModal>
 );

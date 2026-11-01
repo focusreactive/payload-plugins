@@ -14,6 +14,7 @@ import { useState } from "react";
 import type { ItemRef, TreeItem } from "../../types.js";
 import type { Translate } from "../compat.js";
 import type { MovePreview } from "../api.js";
+import { useDialogSlug } from "../dialogScope.js";
 import { itemKeyOf } from "../store.js";
 
 export const confirmDialogSlug = "fr-folders-confirm-move";
@@ -102,9 +103,12 @@ const ConfirmContent = ({
   onConfirm,
   onReload,
   request,
-  slug = confirmDialogSlug,
+  slug,
   translate,
-}: Omit<ConfirmUrlChangeDialogProps, "request"> & { request: ConfirmRequest }) => {
+}: Omit<ConfirmUrlChangeDialogProps, "request" | "slug"> & {
+  request: ConfirmRequest;
+  slug: string;
+}) => {
   const { closeModal } = useModal();
   // Ticked by default, and ticked again for every move: the state lives and dies with one opening.
   const [redirects, setRedirects] = useState(true);
@@ -231,12 +235,17 @@ const ConfirmContent = ({
 
 export const ConfirmUrlChangeDialog = ({
   request,
-  slug = confirmDialogSlug,
+  slug: slugOverride,
   ...rest
-}: ConfirmUrlChangeDialogProps) => (
-  <DialogModal className="fr-folders-dialog" size="medium" slug={slug}>
-    {request === null ? null : (
-      <ConfirmContent key={request.id} request={request} slug={slug} {...rest} />
-    )}
-  </DialogModal>
-);
+}: ConfirmUrlChangeDialogProps) => {
+  const moveConfirmSlug = useDialogSlug(confirmDialogSlug);
+  const slug = slugOverride ?? moveConfirmSlug;
+
+  return (
+    <DialogModal className="fr-folders-dialog" size="medium" slug={slug}>
+      {request === null ? null : (
+        <ConfirmContent key={request.id} request={request} slug={slug} {...rest} />
+      )}
+    </DialogModal>
+  );
+};

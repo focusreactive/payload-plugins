@@ -2,6 +2,7 @@ import { Button, CheckboxInput, Drawer, ShimmerEffect, toast, useModal } from "@
 import { useEffect, useId, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
+import { useDialogSlug } from "../dialogScope.js";
 import type { ConfirmMoves, FolderId, TreeItem } from "../../types.js";
 import {
   fetchDocument,
@@ -103,6 +104,7 @@ const PageSettingsForm = ({
   typeLabels,
 }: FormProps): ReactNode => {
   const { closeModal } = useModal();
+  const drawerSlug = useDialogSlug(pageSettingsDrawerSlug);
   const state = useTreeStoreState(store);
   const formId = useId();
   const names = pageFields[item.collection] ?? { segmentField: "slug", titleField: "title" };
@@ -309,7 +311,7 @@ const PageSettingsForm = ({
               })
         );
       }
-      closeModal(pageSettingsDrawerSlug);
+      closeModal(drawerSlug);
       if (moveStep !== null) {
         await onMove({
           items: [item],
@@ -431,7 +433,7 @@ const PageSettingsForm = ({
         <Button
           buttonStyle="secondary"
           margin={false}
-          onClick={() => closeModal(pageSettingsDrawerSlug)}
+          onClick={() => closeModal(drawerSlug)}
           size="medium"
         >
           {translate("actionCancel")}
@@ -529,7 +531,7 @@ const PageSettingsContent = ({
 export const PageSettingsDrawer = ({ dialogs, request, ...rest }: PageSettingsDrawerProps) => (
   <Drawer
     className="fr-folders-settings-drawer"
-    slug={pageSettingsDrawerSlug}
+    slug={useDialogSlug(pageSettingsDrawerSlug)}
     title={
       request === null ? "" : rest.translate("settingsPageTitle", { title: request.item.title })
     }
