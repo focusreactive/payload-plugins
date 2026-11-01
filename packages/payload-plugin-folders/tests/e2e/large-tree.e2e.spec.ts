@@ -60,13 +60,19 @@ const scrollToEnd = (page: Page): Promise<void> =>
 
 /** Presses Load more `times` times, going to the end of the list each time, as an editor would. */
 const loadMore = async (page: Page, times: number): Promise<void> => {
+  const button = page.getByTestId("load-more-row").getByRole("button");
   for (let index = 0; index < times; index += 1) {
-    await scrollToEnd(page);
+    // The rows of the last answer may be drawn a moment after it, and a scroll made before that
+    // stops short of the new end: scroll again until the button is there.
+    await expect(async () => {
+      await scrollToEnd(page);
+      await expect(button).toBeVisible({ timeout: 1000 });
+    }).toPass();
     const answered = page.waitForResponse(
       (response) =>
         response.url().includes("/folders-tree/children") && response.url().includes("cursor=")
     );
-    await page.getByTestId("load-more-row").getByRole("button").click();
+    await button.click();
     await answered;
   }
 };
