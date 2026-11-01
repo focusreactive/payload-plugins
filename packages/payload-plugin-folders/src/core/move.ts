@@ -9,7 +9,7 @@ import type {
   ResolvedOptions,
   ResolvedPageCollection,
 } from "../types.js";
-import { canReadItem } from "./access.js";
+import { canReadItem, findUnreadableItems } from "./access.js";
 import { checkAllowedTypes, describeAllowedTypes, lockSourceOf } from "./allowedTypes.js";
 import {
   normalizeFolderReference,
@@ -416,13 +416,30 @@ export const buildMovePlan = async (
       ) === index
   );
 
+  // `readFolderRecords` and `readPageRows` read at database level, which checks no access. An item
+  // the user cannot read is left out of what they read, so it is answered like one that does not
+  // exist: a move cannot be used to learn that a hidden page is there or which URL it has. A call
+  // with no user at all is server code (the endpoints refuse an anonymous request before any
+  // planning), and gets the plain refusal from the access check below.
+  const hiddenKeys = new Set(
+    overrideAccess || !req.user
+      ? []
+      : (
+          await findUnreadableItems({
+            items: requested.map((item) => ({ collection: item.collection, id: item.id })),
+            req,
+          })
+        ).map((item) => itemKey(item))
+  );
+  const readable = requested.filter((item) => !hiddenKeys.has(itemKey(item)));
+
   // Read every moved row: one query per collection.
   const subjects: Subject[] = [];
   const subjectByKey = new Map<string, Subject>();
   const folderRecords = await readFolderRecords(
     req,
     options,
-    requested.filter((item) => item.collection === foldersSlug).map((item) => item.id)
+    readable.filter((item) => item.collection === foldersSlug).map((item) => item.id)
   );
   const pageRowsByCollection = new Map<string, Map<string, PageRow>>();
   for (const page of Object.values(options.collections)) {
@@ -431,7 +448,7 @@ export const buildMovePlan = async (
       await readPageRows(
         req,
         page,
-        requested.filter((item) => item.collection === page.slug).map((item) => item.id)
+        readable.filter((item) => item.collection === page.slug).map((item) => item.id)
       )
     );
   }

@@ -116,7 +116,11 @@ export const readPageRow = async (
   return row ? toPageRow(row, page, hasDrafts) : null;
 };
 
-/** `readPageRow` for several pages of one collection in one query, keyed by the id as text. */
+/**
+ * `readPageRow` for several pages of one collection in one query, keyed by the id as text. Like
+ * `readPageRow` it reads at database level and checks no access: the move planner is the caller,
+ * and it passes only ids the user may read (`findUnreadableItems`), so a hidden page is never read.
+ */
 export const readPageRows = async (
   req: PayloadRequest,
   page: ResolvedPageCollection,
