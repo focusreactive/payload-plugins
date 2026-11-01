@@ -1150,13 +1150,15 @@ describe("tree reads and read access", () => {
                 return true;
               }
               const rootId =
-                typeof user.limitedFolder === "object"
+                (typeof user.limitedFolder === "object"
                   ? user.limitedFolder?.id
-                  : user.limitedFolder;
+                  : user.limitedFolder) ?? 0;
 
-              return {
+              const where: Where = {
                 or: [{ id: { equals: rootId } }, { ancestorIds: { contains: `/${rootId}/` } }],
               };
+
+              return where;
             },
           },
         },
