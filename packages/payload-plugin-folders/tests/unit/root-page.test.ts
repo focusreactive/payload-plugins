@@ -89,6 +89,9 @@ describe("rootChangePreviewOf", () => {
     );
 
     expect(preview.ok).toBe(true);
+    // No count is promised: the dialog hides the redirect and mirror lines at 0.
+    expect(preview.redirectRowsToWrite).toBe(0);
+    expect(preview.mirrorRowsToWrite).toBe(0);
     expect(preview.urlChanges).toEqual({ draftOnly: 0, published: 1, publishedAcrossLocales: 1 });
     expect(preview.samples).toEqual([
       { collection: "pages", from: "/company/contact", id: 10, locale: null, to: "/company" },

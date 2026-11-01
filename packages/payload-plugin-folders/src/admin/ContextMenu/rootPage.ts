@@ -70,7 +70,9 @@ export const existingRootOf = (item: TreeItem, state: TreeStoreState): ExistingR
 /**
  * What the confirmation shows for a live root change: the page's URL becomes its folder's path.
  * Only the page the editor sees is named; the server writes the redirect rows and counts every
- * language itself, so none is promised here.
+ * language itself, so none is promised here: this flip has no server preview, and the dialog shows
+ * the redirect and mirror lines only for a count above 0, so both stay 0 rather than state a number
+ * the save may not write.
  */
 export const rootChangePreviewOf = (
   item: TreeItem,
