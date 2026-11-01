@@ -126,6 +126,15 @@ export const useMoveFlow = ({
   const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(null);
   const [pickSession, setPickSession] = useState(0);
   const openings = useRef(0);
+  // A move that is still being previewed when the page is left has no dialog to ask in.
+  const isUnmounted = useRef(false);
+  useEffect(() => {
+    isUnmounted.current = false;
+
+    return () => {
+      isUnmounted.current = true;
+    };
+  }, []);
   const pending = useRef<Pending | null>(null);
   const selectionRef = useRef<readonly TreeItem[]>([]);
   const moving = useRef(false);
@@ -230,6 +239,11 @@ export const useMoveFlow = ({
   const proceed = useCallback(
     (request: Pending, preview: MovePreview) => {
       if (needsConfirmation(confirmMoves, preview)) {
+        if (isUnmounted.current) {
+          request.onAbandon?.();
+
+          return;
+        }
         pending.current = request;
         openings.current += 1;
         setConfirmRequest({

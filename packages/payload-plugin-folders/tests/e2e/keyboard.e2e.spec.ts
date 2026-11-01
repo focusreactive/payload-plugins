@@ -176,6 +176,27 @@ test("three Alt+Down presses commit one move", async ({ page, request }) => {
   expect(await titlesIn(request, folder)).toEqual(["Kb A", "Kb B", "Kb C", "Kb D", "Kb E"]);
 });
 
+test("Alt+Down then Enter before the pause still saves the move and opens the page", async ({
+  page,
+  request,
+}) => {
+  const folder = await addFolder(request, "Kb leave");
+  const ids = new Map<string, number>();
+  for (const title of ["Kb L3", "Kb L2", "Kb L1"]) {
+    ids.set(title, await addPage(request, title, folder));
+  }
+  await openZoomedTree(page, folder);
+  await expect(pageRow(page, "Kb L1")).toBeVisible();
+
+  // Enter comes well inside the 800 ms the presses wait, so the page is left with one pending.
+  await pageRow(page, "Kb L1").focus();
+  await page.keyboard.press("Alt+ArrowDown");
+  await page.keyboard.press("Enter");
+
+  await expect(page).toHaveURL(new RegExp(`/admin/collections/pages/${ids.get("Kb L1")}$`, "u"));
+  await expect.poll(() => titlesIn(request, folder)).toEqual(["Kb L2", "Kb L1", "Kb L3"]);
+});
+
 test("a row that moves in the page keeps the keyboard where the browser drops the focus on a move", async ({
   page,
   request,

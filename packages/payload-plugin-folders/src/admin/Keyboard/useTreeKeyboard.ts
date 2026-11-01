@@ -192,9 +192,12 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
     },
     store,
   });
+  // Leaving the page with presses still waiting sends them: the editor pressed Alt+Down and moved
+  // on, and the rows they saw move are the move they asked for. A move that needs a confirmation
+  // cannot ask once the page is gone, so the move flow drops that one and puts the rows back.
   useEffect(
     () => () => {
-      reorderRef.current?.cancel();
+      reorderRef.current?.flush();
     },
     []
   );
@@ -403,10 +406,12 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
         case "activate": {
           consume();
           if (item.kind === "page") {
+            reorderRef.current?.flush();
             current.actions.openPage(editViewUrl(current.adminRoute, item.collection, item.id));
           } else if (focusedRow.expandable) {
             void current.store.toggleExpanded(item.id);
           } else {
+            reorderRef.current?.flush();
             current.actions.openFolder(item);
           }
 
