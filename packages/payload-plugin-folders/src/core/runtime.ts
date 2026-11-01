@@ -3,8 +3,13 @@ import type { Payload } from "payload";
 import type { ResolvedOptions } from "../types.js";
 
 // The plugin resolves its options while the config is built, long before a Payload instance
-// exists. Server functions that take only `payload` (moveItems, planMove) read them back here.
-const optionsByPayload = new WeakMap<Payload, ResolvedOptions>();
+// exists. Server functions that take only `payload` (moveItems, planMove, resolvePath) read them
+// back here. The map lives on `globalThis`, because a Next.js app bundles the plugin once per
+// route layer: the copy that registered the options in `onInit` is not the copy a page imports,
+// and a module-level map would be empty for the page.
+const registryKey = Symbol.for("@focus-reactive/payload-plugin-folders/resolved-options");
+const globalRegistry = globalThis as { [registryKey]?: WeakMap<Payload, ResolvedOptions> };
+const optionsByPayload = (globalRegistry[registryKey] ??= new WeakMap<Payload, ResolvedOptions>());
 
 export const registerResolvedOptions = (payload: Payload, options: ResolvedOptions): void => {
   optionsByPayload.set(payload, options);
