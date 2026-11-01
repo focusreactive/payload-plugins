@@ -3,9 +3,11 @@ name: Payload plugin folders
 # Checks for packages/payload-plugin-folders, which is its own npm project (the root workspaces list
 # excludes it, see the package's README). Every step runs inside the package with npm.
 #
-# Lint is left out on purpose: it runs through ultracite from the repository root with bun, and the
-# root oxlint and oxfmt configs import ultracite from the root node_modules, which only a full
-# workspace install provides. `./check.sh` runs it locally.
+# Lint is left out as a cost choice, not because it cannot run here: it goes through ultracite from
+# the repository root with bun, and release.yml already does `oven-sh/setup-bun` plus
+# `bun install --frozen-lockfile --filter '!./apps/*'` at the root, so a lint job is possible. The
+# performance tests are left out because timing budgets on shared runners are flaky. `./check.sh`
+# runs both locally.
 
 on:
   pull_request:
@@ -30,7 +32,7 @@ env:
 
 jobs:
   checks:
-    name: Types, README, unit and SQLite tests
+    name: Types, build, README, unit and SQLite tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -51,6 +53,9 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Build
+        run: npm run build
 
       - name: README code blocks
         run: npm run check:readme
