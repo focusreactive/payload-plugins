@@ -210,6 +210,8 @@ export type TreeItem = {
   status?: TreeStatus;
   structureRevision: number;
   title: string;
+  /** True when the requested locale has no name or title of its own, so the default locale's is shown. */
+  titleIsFallback: boolean;
   /** Folders only: the folder whose lock put the allowed types here. */
   typesLockedBy?: number | string | null;
   updatedAt: string;

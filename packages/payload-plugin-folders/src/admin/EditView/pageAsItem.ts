@@ -55,6 +55,7 @@ export const readPageAsItem = async (
           : folder,
     slug: segment === "" ? null : segment,
     slugIsFallback: false,
+    titleIsFallback: false,
     status:
       page._status === "draft" ? "draft" : page._status === "published" ? "published" : "live",
     structureRevision: page.structureRevision ?? 0,

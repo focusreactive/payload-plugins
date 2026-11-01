@@ -317,7 +317,9 @@ export const de: FoldersTranslations = {
     expand: "{{name}} aufklappen",
     fallback: "Ersatz",
     fallbackHint:
-      "Diese Sprache hat kein eigenes URL-Segment, deshalb wird das Segment der Standardsprache gezeigt",
+      "Diese Sprache hat kein eigenes URL-Segment, deshalb wird das Segment der Standardsprache ({{locale}}) gezeigt",
+    fallbackNameHint:
+      "Diese Sprache hat keinen eigenen Namen, deshalb wird der Name der Standardsprache ({{locale}}) gezeigt",
     folder: "Ordner",
     folderOnlyTypes: "Ordner, nur {{types}}",
     fullPathCopy: "Kopieren",
@@ -482,6 +484,7 @@ export const de: FoldersTranslations = {
     searchSummary_other: '{{count}} Ergebnisse für "{{query}}" in {{name}}',
     searchTruncated:
       "Nur die ersten Treffer werden angezeigt. Grenzen Sie die Suche ein, um den Rest zu sehen.",
+    sidebarTab: "Baum",
     treeLabel: "Inhaltsbaum",
     undo: "Rückgängig",
     undoFailed: "Das Verschieben konnte nicht rückgängig gemacht werden",

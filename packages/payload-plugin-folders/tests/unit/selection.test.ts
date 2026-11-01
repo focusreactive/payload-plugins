@@ -21,6 +21,7 @@ const row = (id: number, kind: "folder" | "page" = "page"): TreeItem => ({
   parentId: null,
   slug: `row-${id}`,
   slugIsFallback: false,
+  titleIsFallback: false,
   structureRevision: 0,
   title: `Row ${id}`,
   updatedAt: "2026-01-01T00:00:00.000Z",

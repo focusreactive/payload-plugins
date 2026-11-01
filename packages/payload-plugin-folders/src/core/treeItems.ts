@@ -143,6 +143,10 @@ const pickLocalized = (value: unknown, key: string, defaultKey: string): string 
   return toText(value);
 };
 
+/** The value a locale has of its own: `""` when it has none, which the default locale then fills in. */
+const ownLocalized = (value: unknown, key: string): string =>
+  value && typeof value === "object" ? toText((value as Record<string, unknown>)[key]) : "";
+
 const ownSegmentOf = (segments: unknown, key: string): string =>
   segments && typeof segments === "object"
     ? toText((segments as Record<string, unknown>)[key])
@@ -380,6 +384,9 @@ const toFolderItem = ({
       pickLocalized(folder.name, view.folderKey, view.defaultFolderKey) ||
       slug ||
       `Folder ${String(folder.id)}`,
+    titleIsFallback:
+      ownLocalized(folder.name, view.folderKey) === "" &&
+      pickLocalized(folder.name, view.folderKey, view.defaultFolderKey) !== "",
     typesLockedBy: folder.typesLockedBy,
     updatedAt: toText(row.updatedAt),
   };
@@ -453,6 +460,9 @@ const toPageItem = ({
     }),
     structureRevision: typeof row.structureRevision === "number" ? row.structureRevision : 0,
     title: pickLocalized(row[page.titleField], view.pageKey, view.defaultPageKey) || "Untitled",
+    titleIsFallback:
+      ownLocalized(row[page.titleField], view.pageKey) === "" &&
+      pickLocalized(row[page.titleField], view.pageKey, view.defaultPageKey) !== "",
     updatedAt: toText(row.updatedAt),
   };
 };

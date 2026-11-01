@@ -305,7 +305,9 @@ export const en = {
     expand: "Expand {{name}}",
     fallback: "fallback",
     fallbackHint:
-      "This language has no URL segment of its own, so the default language's segment is shown",
+      "This language has no URL segment of its own, so the segment of the default language ({{locale}}) is shown",
+    fallbackNameHint:
+      "This language has no name of its own, so the name of the default language ({{locale}}) is shown",
     folder: "Folder",
     folderOnlyTypes: "Folder, only {{types}}",
     fullPathCopy: "Copy",
@@ -463,6 +465,7 @@ export const en = {
     searchSummary_one: '{{count}} result for "{{query}}" in {{name}}',
     searchSummary_other: '{{count}} results for "{{query}}" in {{name}}',
     searchTruncated: "Only the first matches are listed. Narrow the search to see the rest.",
+    sidebarTab: "Tree",
     treeLabel: "Content tree",
     undo: "Undo",
     undoFailed: "Could not undo the move",

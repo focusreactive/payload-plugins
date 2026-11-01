@@ -418,7 +418,58 @@ describe("GET /folders-tree/children", () => {
       slugIsFallback: true,
       status: "published",
       title: "Welcome",
+      titleIsFallback: true,
     });
+  });
+
+  it("says when a name or a title is the default locale's, in a locale that has none of its own", async () => {
+    const { payload } = harness;
+    const request = await asUser(payload, "admin");
+    await createFolder(payload, { name: "Reports", slug: "reports" });
+    const named = await createFolder(payload, { name: "News", slug: "news" });
+    await payload.update({
+      collection: "folders",
+      data: { name: "Nachrichten" },
+      depth: 0,
+      id: named.id,
+      locale: "de",
+      overrideAccess: true,
+    });
+    await payload.create({
+      collection: "pages",
+      data: { _status: "published", slug: "plain", title: "Plain" } as never,
+      depth: 0,
+      overrideAccess: true,
+    });
+    const translated = await payload.create({
+      collection: "pages",
+      data: { _status: "published", slug: "translated", title: "Translated" } as never,
+      depth: 0,
+      overrideAccess: true,
+    });
+    await payload.update({
+      collection: "pages",
+      data: { title: "Uebersetzt" } as never,
+      depth: 0,
+      id: translated.id,
+      locale: "de",
+      overrideAccess: true,
+    });
+    const fallbackOf = async (locale: string): Promise<Record<string, boolean>> => {
+      const { items } = await children(request, { locale, parent: null });
+
+      return Object.fromEntries(items.map((item) => [item.title, item.titleIsFallback]));
+    };
+
+    // German has its own name for News and its own title for one page; the rest show English.
+    expect(await fallbackOf("de")).toEqual({
+      Nachrichten: false,
+      Plain: true,
+      Reports: true,
+      Uebersetzt: false,
+    });
+    // The default locale never falls back.
+    expect(Object.values(await fallbackOf("en")).every((isFallback) => !isFallback)).toBe(true);
   });
 
   it("a locale with its own draft status reads draft even when en is published", async () => {
