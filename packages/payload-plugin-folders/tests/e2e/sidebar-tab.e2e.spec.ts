@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import type { APIRequestContext, Locator, Page } from "@playwright/test";
 
@@ -99,6 +100,19 @@ test("the open nested page is highlighted with ancestors expanded", async ({ pag
   await expect(tab(page).getByRole("columnheader")).toHaveCount(0);
   // A folder that does not hold the page stays closed.
   await expect(tabRow(page, "Archive")).toHaveAttribute("aria-expanded", "false");
+
+  // The compact grid has no serious or critical accessibility finding.
+  const results = await new AxeBuilder({ page })
+    .include('[data-testid="sidebar-tab"]')
+    .exclude('[data-testid="create-button"]')
+    .analyze();
+  expect(
+    results.violations
+      .filter((violation) => violation.impact === "serious" || violation.impact === "critical")
+      .map(
+        (violation) => `${violation.id}: ${violation.nodes.map((node) => node.target).join(" | ")}`
+      )
+  ).toEqual([]);
 });
 
 test("navigating to another page moves the highlight", async ({ page, request }) => {

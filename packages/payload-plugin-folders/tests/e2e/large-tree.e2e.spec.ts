@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import type { Locator, Page } from "@playwright/test";
 
@@ -217,4 +218,18 @@ test("End on a long tree focuses the last row, which is drawn, and Home the firs
   });
   await expect(page.locator('[data-testid="tree-row"][tabindex="0"]')).toHaveCount(1);
   await expect(first).toBeAttached();
+
+  // A tree that draws part of its rows is still a tree to a screen reader: no serious or critical
+  // finding in the grid, the rows and the scrolling body.
+  const results = await new AxeBuilder({ page })
+    .include('[data-testid="tree"]')
+    .exclude('[data-testid="create-button"]')
+    .analyze();
+  expect(
+    results.violations
+      .filter((violation) => violation.impact === "serious" || violation.impact === "critical")
+      .map(
+        (violation) => `${violation.id}: ${violation.nodes.map((node) => node.target).join(" | ")}`
+      )
+  ).toEqual([]);
 });
