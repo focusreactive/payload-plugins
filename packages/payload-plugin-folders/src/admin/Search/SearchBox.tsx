@@ -134,7 +134,12 @@ export const SearchBox = ({
   const filterCount = activeFilterCount(filters);
 
   return (
-    <div className="fr-folders-search" data-testid="search-bar" role="search">
+    <div
+      aria-label={translate(isCompact ? "searchLandmarkTab" : "searchLandmarkView")}
+      className="fr-folders-search"
+      data-testid="search-bar"
+      role="search"
+    >
       <div className="fr-folders-search__row">
         {isCompact ? null : (
           <button

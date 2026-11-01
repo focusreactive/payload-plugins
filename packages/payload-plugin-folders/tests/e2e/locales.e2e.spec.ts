@@ -262,8 +262,10 @@ test.describe("the admin in German", () => {
     await page.keyboard.press("Escape");
 
     // The plugin's sidebar tab is named in German too, and holds the same tree.
+    await expect(page.getByRole("search", { name: "Suche in der Baumansicht" })).toHaveCount(1);
     await page.getByRole("tab", { name: "Baum" }).click();
     const tab = page.getByTestId("sidebar-tab");
+    await expect(tab.getByRole("search", { name: "Suche im Seitenleistenbaum" })).toHaveCount(1);
     await expect(tab.getByRole("button", { name: "Erstellen" })).toBeVisible();
     await expect(tab.getByTestId("search-input")).toHaveAttribute(
       "placeholder",

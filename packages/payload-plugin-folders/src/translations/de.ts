@@ -473,6 +473,8 @@ export const de: FoldersTranslations = {
     searchFilterStatus: "Status",
     searchFilterType: "Seitentyp",
     searchLabel: "Inhaltsbaum durchsuchen",
+    searchLandmarkTab: "Suche im Seitenleistenbaum",
+    searchLandmarkView: "Suche in der Baumansicht",
     searchNoResults: 'Keine Ergebnisse für "{{query}}" in {{name}}',
     searchPath: "In {{path}}",
     searchPlaceholder: "In {{name}} suchen",

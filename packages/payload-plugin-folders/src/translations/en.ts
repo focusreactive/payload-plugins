@@ -455,6 +455,8 @@ export const en = {
     searchFilterStatus: "Status",
     searchFilterType: "Page type",
     searchLabel: "Search the content tree",
+    searchLandmarkTab: "Sidebar tree search",
+    searchLandmarkView: "Tree view search",
     searchNoResults: 'No results for "{{query}}" in {{name}}',
     searchPath: "In {{path}}",
     searchPlaceholder: "Search in {{name}}",

@@ -384,3 +384,16 @@ test("Escape and / answer in the tree that has the focus, with the tab and the t
   await page.keyboard.press("/");
   await expect(view(page).getByTestId("search-input")).toBeFocused();
 });
+
+test("the tree view and the tab each have a search landmark with a name of its own", async ({
+  page,
+}) => {
+  await page.goto("/admin/collections/folders?expanded=&folder=");
+  await view(page).getByRole("treegrid").waitFor();
+  await openTreeTab(page);
+
+  const landmarks = page.getByRole("search");
+  await expect(landmarks).toHaveCount(2);
+  await expect(view(page).getByRole("search", { name: "Tree view search" })).toHaveCount(1);
+  await expect(tab(page).getByRole("search", { name: "Sidebar tree search" })).toHaveCount(1);
+});
