@@ -954,7 +954,7 @@ Everything below is a function you write in your own config. The dev app has wor
 
 | Operation | Rule |
 |---|---|
-| Move or reorder | Each moved document's `update` access, evaluated with `data: { folder, orderKey }` and its `Where` result. When a published URL changes (any parent change of a published page, or any page beneath a moved folder), `update` is also evaluated with `data: { _status: "published", folder, orderKey }`. Then `access.move`. |
+| Move or reorder | Each moved document's `update` access, evaluated with `data: { folder, orderKey }` and its `Where` result. When a published URL changes (any parent change of a published page, or any page beneath a moved folder), `update` is also evaluated with `data: { _status: "published", folder }`, before any path conflict is read, so a user refused publish rights gets a 403 and never a conflict message that names another page. Then `access.move`. |
 | Rename a folder | When the rename changes published URLs, the same publish question for the published pages beneath it, once per collection and folder. A drafter can still rename a folder that holds only drafts. |
 | Create a page in a folder | The page collection's `create` access, and the folder's allowed types. |
 | Delete a folder | `delete` access on the folder and every descendant. One refusal aborts the whole delete and lists the refused items. |
@@ -964,6 +964,13 @@ Everything below is a function you write in your own config. The dev app has wor
 The Local API write helpers (`moveItems`, `planMove`, `deleteItems`, `duplicateItems`,
 `publishItems`, and the previews) default to `overrideAccess: false`, like Payload 4's Local API. A
 system caller passes `overrideAccess: true`.
+
+The plugin gates its own structural writes: move, rename and the root toggle through its endpoints.
+A stock save on a collection without drafts (a `PATCH /api/posts/:id` that changes the slug or sets
+`isFolderRoot`) is gated only by the host's `update` and `create` access, and such a save carries no
+`_status`, so a "may not publish" rule never sees it. A host with a "may not publish" role must
+refuse that role on collections without drafts, as the dev app's drafter does
+(`unversionedUpdateAccess` and `unversionedCreateAccess` in `dev/access/roles.ts`).
 
 Access flags in tree rows come from one call per collection with no `id`, the way Payload asks for a
 bulk operation. A rule that depends on the document has to return a `Where`. The same goes for the
@@ -1411,9 +1418,10 @@ of operations that acquired the lock.
   shows no row for its old URL: the prefix row targets the folder.
 - A redirect answers 301 only for a published URL. An old draft URL is a 404, with or without
   `draft=true`.
-- `check-segment` names the page that holds a segment, draft-only ones included, to any signed-in
-  user, because it backs the draft warning. `check-root` names a page only to a reader who can read
-  it.
+- `check-segment` and `check-root` look at every page, draft-only ones included, because they back
+  the draft warning, and name the page that holds a segment or a root place only to a reader who
+  can read it; anyone else is told "a page". A move, a move preview and a rename preview do the
+  same, and a preview's sample URLs leave out pages the reader cannot read.
 - GraphQL has no locale-qualified `where` and no relationship-path `where`. Use `foldersResolve`
   and a two-step subtree query.
 - The paths endpoint is not in path order, and with `locale=all` its `limit` counts pages.
