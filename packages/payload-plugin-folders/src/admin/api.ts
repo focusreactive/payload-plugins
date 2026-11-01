@@ -348,6 +348,55 @@ export const writeDocument = async <Doc = { id: FolderId }>(
 };
 
 /**
+ * The documents of a collection made in a folder since `since`, newest first, read through
+ * Payload's own REST route. The create drawer of a collection with autosave finds the draft its
+ * opening made with this; the caller picks the one that is its own.
+ */
+export const fetchRecentDocuments = async <Doc extends { id: FolderId }>(
+  context: FoldersApiContext,
+  { collection, folder, since }: { collection: string; folder: FolderId | null; since: Date }
+): Promise<Doc[]> => {
+  const send = context.fetchImplementation ?? fetch;
+  const parameters = new URLSearchParams({
+    depth: "0",
+    limit: "20",
+    sort: "-createdAt",
+  });
+  parameters.set("where[and][0][createdAt][greater_than_equal]", since.toISOString());
+  if (folder === null) {
+    parameters.set("where[and][1][folder][exists]", "false");
+  } else {
+    parameters.set("where[and][1][folder][equals]", String(folder));
+  }
+  const response = await send(`${context.baseUrl}/${collection}?${parameters.toString()}`, {
+    credentials: "include",
+    headers: { Accept: "application/json" },
+    method: "GET",
+  });
+  const body = await readJsonResponse<{ docs?: Doc[] }>(response);
+
+  return body.docs ?? [];
+};
+
+/**
+ * Deletes one document through Payload's own REST route, for a document nobody has kept (the
+ * draft a cancelled create drawer left behind). Payload's `DELETE` removes it for good, also from a
+ * collection with a trash, which is right for something that was never saved by hand.
+ */
+export const deleteDocument = async (
+  context: FoldersApiContext,
+  { collection, id }: { collection: string; id: FolderId }
+): Promise<void> => {
+  const send = context.fetchImplementation ?? fetch;
+  const response = await send(`${context.baseUrl}/${collection}/${id}`, {
+    credentials: "include",
+    headers: { Accept: "application/json" },
+    method: "DELETE",
+  });
+  await readJsonResponse<unknown>(response);
+};
+
+/**
  * The page's latest saved state, drafts included, read straight from Payload's REST route. The tree
  * rows are read earlier and a draft save never bumps the tree revision, so a row's status can be
  * stale; this is the answer to "is there a draft nobody has published?" right now.

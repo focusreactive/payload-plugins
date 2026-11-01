@@ -222,7 +222,7 @@ test("a refused draft opens the prefilled drawer, and any other failure stays in
   page,
   request,
 }) => {
-  await addFolder(request, "Refused Draft Probe");
+  const probeFolderId = await addFolder(request, "Refused Draft Probe");
   let answer: { body: unknown; status: number } = {
     body: {
       errors: [
@@ -258,15 +258,51 @@ test("a refused draft opens the prefilled drawer, and any other failure stays in
   await expect(pageDialog(page)).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(drawer).toHaveCount(0);
+  // Cancel leaves nothing behind: whatever the drawer's autosave made is deleted again.
+  await expect.poll(async () => (await childrenOf(request, probeFolderId)).length).toBe(0);
 
   // A server failure is not the form's to fix: the dialog stays, with the message, to try again.
   answer = { body: { errors: [{ message: "The database is away" }] }, status: 500 };
-  // A new title: the drawer's autosave already saved the first page, and its segment is taken.
   const again = await startPageIn(page, "Refused Draft Probe", "Page");
   await again.getByTestId("title-input").fill("Failed Server Page");
   await createButton(again).click();
   await expect(again.getByTestId("create-failure")).toHaveText("The database is away");
   await expect(page.locator(".doc-drawer")).toHaveCount(0);
+});
+
+test("saving the drawer of a collection with autosave keeps its page", async ({
+  page,
+  request,
+}) => {
+  const savedFolderId = await addFolder(request, "Kept Draft Probe");
+  await page.route(
+    (url) => url.pathname === "/api/pages" && url.searchParams.get("draft") === "true",
+    (route) =>
+      route.request().method() === "POST"
+        ? route.fulfill({
+            body: JSON.stringify({ errors: [{ message: "Refused on purpose" }] }),
+            contentType: "application/json",
+            status: 400,
+          })
+        : route.continue()
+  );
+  await openContentTree(page);
+  const dialog = await startPageIn(page, "Kept Draft Probe", "Page");
+  await dialog.getByTestId("title-input").fill("Kept Draft Page");
+  await createButton(dialog).click();
+
+  const drawer = page.locator(".doc-drawer");
+  await expect(drawer).toBeVisible();
+  await expect(drawer.locator("#field-title")).toHaveValue("Kept Draft Page");
+  // Typing starts the autosave, which is not a save the editor asked for: the drawer stays open.
+  await drawer.locator("#field-title").fill("Kept Draft Page, edited");
+  await page.waitForTimeout(2500);
+  await expect(drawer).toBeVisible();
+  await drawer.getByRole("button", { name: "Publish in en", exact: true }).click();
+  await expect(drawer).toHaveCount(0);
+
+  const kept = await childrenOf(request, savedFolderId);
+  expect(kept.map((row) => row.title)).toEqual(["Kept Draft Page, edited"]);
 });
 
 test("the root checkbox is disabled where a root exists", async ({ page, request }) => {

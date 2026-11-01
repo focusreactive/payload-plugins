@@ -3,6 +3,7 @@ import { useCallback, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { FolderId, TreeItem } from "../../types.js";
+import { deleteDocument, fetchRecentDocuments } from "../api.js";
 import type { FoldersApiContext } from "../api.js";
 import { editViewUrl } from "../compat.js";
 import type { Translate } from "../compat.js";
@@ -11,6 +12,8 @@ import type { TreeStore, TreeStoreState } from "../store.js";
 import { CreateFolderDialog, createFolderDialogSlug } from "./CreateFolderDialog.js";
 import { CreatePageDialog, createPageDialogSlug } from "./CreatePageDialog.js";
 import type { NewPageValues } from "./CreatePageDialog.js";
+import { pickDrawerDraft } from "./drawerDraft.js";
+import { defaultPageFieldNames } from "./localizedValues.js";
 import type { PageFieldNames } from "./localizedValues.js";
 import { PageDrawer } from "./PageDrawer.js";
 
@@ -149,6 +152,32 @@ export const useCreateFlow = ({
 
   const clearDrawer = useCallback(() => setDrawerRequest(null), []);
 
+  // A collection with autosave has its draft made when the drawer opens. When the drawer is
+  // cancelled, find that draft (the one carrying the segment the drawer was given) and delete it,
+  // then let the tree catch up.
+  const discardDrawerDraft = useCallback(
+    async (openedAt: Date) => {
+      if (drawerRequest === null) {
+        return;
+      }
+      const { collection, parentId, values } = drawerRequest;
+      const segmentField = (pageFields[collection] ?? defaultPageFieldNames).segmentField;
+      const found = await fetchRecentDocuments<{ _status?: unknown; id: FolderId }>(apiContext, {
+        collection,
+        folder: parentId,
+        // The server's clock may differ from the browser's by a little.
+        since: new Date(openedAt.getTime() - 60_000),
+      });
+      const id = pickDrawerDraft(found, { segmentField, slug: values.slug });
+      if (id === null) {
+        return;
+      }
+      await deleteDocument(apiContext, { collection, id });
+      await refreshAround(parentId);
+    },
+    [apiContext, drawerRequest, pageFields, refreshAround]
+  );
+
   const handleNeedsDrawer = useCallback(
     ({ collection, values }: { collection: string; values: NewPageValues }) => {
       sessions.current += 1;
@@ -187,6 +216,7 @@ export const useCreateFlow = ({
           collection={drawerRequest.collection}
           key={drawerRequest.session}
           onClose={clearDrawer}
+          onDiscard={discardDrawerDraft}
           onSaved={() => void refreshAround(drawerRequest.parentId)}
           pageFields={pageFields}
           values={drawerRequest.values}
