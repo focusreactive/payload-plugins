@@ -24,8 +24,12 @@ export type ChildrenResponse = {
   revision: number;
 };
 
-/** `truncated` is true when a collection had more candidates than the search reads. */
+/**
+ * `truncated` is true when a collection had more candidates than the search reads; `folders` names
+ * the folders above the hits by id, for each hit's breadcrumb.
+ */
 export type SearchResponse = {
+  folders: Record<string, string>;
   items: TreeItem[];
   truncated: boolean;
 };

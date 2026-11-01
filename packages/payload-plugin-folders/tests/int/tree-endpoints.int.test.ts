@@ -866,6 +866,25 @@ describe("GET /folders-tree/search", () => {
     expect(drafts.items.map((item) => item.title)).toEqual(["Year plan"]);
   });
 
+  it("names the folders above each hit for its breadcrumb", async () => {
+    const { payload } = harness;
+    const request = await asUser(payload, "admin");
+    const tree = await seedSearchTree(payload);
+
+    const result = await search(request, { query: "old news", scope: "all" });
+    const [hit] = result.items;
+    const ids = (hit?.ancestorIds ?? "").split("/").filter(Boolean);
+
+    // The page's own folder is in its `ancestorIds`, so the breadcrumb is read off the answer.
+    expect(ids.map((id) => result.folders[id])).toEqual(["Archive", "Blog"]);
+    expect(Object.keys(result.folders).sort()).toEqual(
+      [String(tree.archive.id), String(tree.archivedBlog.id)].sort()
+    );
+
+    const noHits = await search(request, { query: "zzz nothing", scope: "all" });
+    expect(noHits.folders).toEqual({});
+  });
+
   it("the endpoint takes q, folder, scope and types and answers items", async () => {
     const { payload } = harness;
     const tree = await seedSearchTree(payload);

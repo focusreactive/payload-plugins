@@ -3,6 +3,7 @@ import type { PayloadRequest, Where } from "payload";
 import { toCollectionSlug } from "../collectionSlug.js";
 import { getResolvedOptions } from "./runtime.js";
 import type { FolderId, ResolvedOptions, TreeItem, TreeStatus } from "../types.js";
+import { toFolderRecord } from "./folderRecords.js";
 import type { FolderRecord } from "./folderRecords.js";
 import { clampInternalLimit } from "./limits.js";
 import { effectiveSegmentsOf } from "./pageRecords.js";
@@ -10,6 +11,7 @@ import {
   buildSources,
   buildTreeItems,
   pageSelect,
+  readFolderDocs,
   readFolders,
   resolveViewLocale,
   sourceClauses,
@@ -326,6 +328,59 @@ const matchesEveryTerm = (
   return terms.every((term) => lowered.some((text) => text.includes(term)));
 };
 
+/** The names of the folders in every hit's `ancestorIds`, one read for all of them. */
+const readAncestorNames = async ({
+  folderSource,
+  items,
+  req,
+  view,
+}: {
+  folderSource: TreeSource;
+  items: readonly TreeItem[];
+  req: PayloadRequest;
+  view: ViewLocale;
+}): Promise<Record<string, string>> => {
+  const wanted = [
+    ...new Set(items.flatMap((item) => (item.ancestorIds ?? "").split("/").filter(Boolean))),
+  ];
+  if (wanted.length === 0) {
+    return {};
+  }
+  const isNumeric =
+    (req.payload.collections[toCollectionSlug(folderSource.collection)]?.customIDType ??
+      req.payload.db.defaultIDType) === "number";
+  const docs = await readFolderDocs({
+    ids: wanted.map((id) => (isNumeric ? Number(id) : id)),
+    req,
+    source: folderSource,
+  });
+
+  return Object.fromEntries(
+    [...docs.entries()].map(([id, doc]) => {
+      const folder = toFolderRecord(doc);
+
+      return [
+        id,
+        folder.name[view.folderKey] ||
+          folder.name[view.defaultFolderKey] ||
+          folder.slug[view.defaultFolderKey] ||
+          "",
+      ];
+    })
+  );
+};
+
+export type SearchResult = {
+  /**
+   * The name of every folder a hit sits in or under, by id, in the viewed locale, for the hit's
+   * breadcrumb without a request per hit. A folder the user cannot read is left out.
+   */
+  folders: Record<string, string>;
+  items: TreeItem[];
+  /** True when a collection had more candidates than the search reads. */
+  truncated: boolean;
+};
+
 /**
  * Spec section 10.2 `GET /search`: folders and pages whose name or title, segment or folder path
  * match every word and every quoted phrase, ordered by full path. Each collection is asked once for
@@ -342,7 +397,7 @@ export const searchTree = async (
   req: PayloadRequest,
   args: SearchArgs,
   options: ResolvedOptions = getResolvedOptions(req.payload)
-): Promise<{ items: TreeItem[]; truncated: boolean }> => {
+): Promise<SearchResult> => {
   const candidateLimit = clampInternalLimit({
     defaultValue: searchCandidateLimit,
     minimum: 1,
@@ -371,7 +426,7 @@ export const searchTree = async (
       source.scope.isAllowed && requestedTypes.every((types) => types.includes(source.collection))
   );
   if (terms.length === 0 && parsed.typeCollections.length === 0) {
-    return { items: [], truncated: false };
+    return { folders: {}, items: [], truncated: false };
   }
 
   const isScoped = (args.scope ?? "folder") === "folder" && args.folder !== null;
@@ -434,7 +489,7 @@ export const searchTree = async (
     }
   }
   if (rows.length === 0) {
-    return { items: [], truncated: isTruncated };
+    return { folders: {}, items: [], truncated: isTruncated };
   }
 
   // The folders the pages sit in give their paths; the folders found are their own.
@@ -470,12 +525,15 @@ export const searchTree = async (
     view,
   });
   const allowedStatuses = args.status;
-
-  return {
-    items: (allowedStatuses && allowedStatuses.length > 0
+  const shown = (
+    allowedStatuses && allowedStatuses.length > 0
       ? items.filter((item) => item.status !== undefined && allowedStatuses.includes(item.status))
       : items
-    ).slice(0, limit),
+  ).slice(0, limit);
+
+  return {
+    folders: await readAncestorNames({ folderSource, items: shown, req, view }),
+    items: shown,
     truncated: isTruncated,
   };
 };
