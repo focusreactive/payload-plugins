@@ -267,6 +267,35 @@ describe("the plugin-redirects mirror", () => {
     expect(withoutRedirects.mirrorRowsToWrite).toBe(0);
   });
 
+  it("the folder rename preview counts the rows the rename writes, per locale", async () => {
+    const { payload } = harness;
+    const tree = await seedTree(payload);
+    const { planFolderEdit } = await import("../../src/server/index.js");
+    const { createPayloadRequest } = await import("payload");
+    const preview = (edit: { locale?: string; slug: string }) =>
+      createPayloadRequest({ payload, req: {} }).then((req) =>
+        planFolderEdit(req, { folder: tree.about.id, ...edit }, { overrideAccess: true })
+      );
+
+    // An en rename changes the en URLs, and the de URLs that fall back to them.
+    const enPreview = await preview({ slug: "company" });
+    // A de rename gives the folder its own de segment and changes the de URLs only.
+    const dePreview = await preview({ locale: "de", slug: "ueber-uns" });
+
+    // Root page, contact and timeline, live in en and in de; the draft under team is not a URL.
+    expect(enPreview.mirrorRowsToWrite).toBe(6);
+    expect(dePreview.mirrorRowsToWrite).toBe(3);
+
+    await payload.update({
+      collection: "folders",
+      data: { slug: "company" },
+      depth: 0,
+      id: tree.about.id,
+      overrideAccess: true,
+    });
+    expect(await readMirrorRows(payload)).toHaveLength(enPreview.mirrorRowsToWrite);
+  });
+
   it("repair writes a row for the URL it lowercases", async () => {
     const { payload } = harness;
     // A post as it was stored before the plugin: a capital in its segment, written below the hooks.
