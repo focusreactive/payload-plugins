@@ -1,0 +1,368 @@
+# G19b recipe checks against the dev app on port 4081, scratch SQLite database, fresh seed
+# Seeded tree: /blog (de /aktuelles), /blog/2026, /company (de /unternehmen, renamed from about), /empty, /products, /shoes, /shoes/running
+
+## Stock queries over REST
+### Page by URL /aktuelles/hallo-welt in de, REST segment clause
+# README says: the page at /aktuelles/hallo-welt
+> GET /api/pages?locale=de&depth=0&where[folderPath][equals]=/aktuelles&where[isFolderRoot][not_equals]=true&where[or][0][pathSegment][equals]=hallo-welt&where[or][1][and][0][pathSegment][exists]=false&where[or][1][and][1][pathSegment.en][equals]=hallo-welt   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< docs(1/1): 14:/aktuelles/hallo-welt
+
+### Page /aktuelles/team in de, falls back to the en segment (README: fallback clause)
+# README says: matches the page through the default locale segment
+> GET /api/pages?locale=de&depth=0&where[folderPath][equals]=/aktuelles&where[isFolderRoot][not_equals]=true&where[or][0][pathSegment][equals]=team&where[or][1][and][0][pathSegment][exists]=false&where[or][1][and][1][pathSegment.en][equals]=team   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< docs(1/1): 13:/aktuelles/team
+
+### Page /blog/hello-world in en
+# README says: one page
+> GET /api/pages?locale=en&depth=0&where[folderPath][equals]=/blog&where[isFolderRoot][not_equals]=true&where[pathSegment][equals]=hello-world   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< docs(1/1): 14:/blog/hello-world
+
+### Top-level page /about (none exists as a non-root page)
+# README says: top-level lookup, expect 0 here
+> GET /api/pages?depth=0&where[folder][exists]=false&where[pathSegment][equals]=about&where[isFolderRoot][not_equals]=true   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< docs(0/0): 
+
+### Root page of /blog
+# README says: the /blog root page (id 15)
+> GET /api/pages?depth=0&where[folderPath][equals]=/blog&where[isFolderRoot][equals]=true   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< docs(1/1): 15:/blog
+
+### Site root page /
+# README says: the page at / (id 16)
+> GET /api/pages?depth=0&where[folder][exists]=false&where[isFolderRoot][equals]=true   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< docs(1/1): 16:/
+
+### Published pages only
+# README says: add _status published
+> GET /api/pages?depth=0&where[_status][equals]=published   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< docs(10/14): 16:/, 15:/blog, 14:/blog/hello-world, 13:/blog/team, 11:/products, 10:/products/pricing, 9:/products/gift-cards, 8:/shoes, 7:/shoes/running, 6:/shoes/running/fast-runner
+
+### Everything under /blog (folder id 6)
+# README says: Storyblok starts_with: pages of /blog and /blog/2026
+> GET /api/pages?depth=0&where[or][0][folder][equals]=6&where[or][1][folder.ancestorIds][contains]=/6/   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< docs(3/3): 15:/blog, 14:/blog/hello-world, 13:/blog/team
+
+### Folder by full path /blog in de
+# README says: README writes /blog with locale=de; the de path is /aktuelles
+> GET /api/folders?depth=0&where[fullPath][equals]=/aktuelles&locale=de   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< docs(1/1): 6:/aktuelles
+
+### Folder by full path /blog in en
+# README says: one folder
+> GET /api/folders?depth=0&where[fullPath][equals]=/blog&locale=en   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< docs(1/1): 6:/blog
+
+### Folder by full path /blog in de (the literal README example)
+# README says: literal README text; /blog is not a de path
+> GET /api/folders?depth=0&where[fullPath][equals]=/blog&locale=de   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< docs(0/0): 
+
+### Folder subtree of /shoes (id 4)
+# README says: descendants of folder 4
+> GET /api/folders?depth=0&where[ancestorIds][contains]=/4/   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< docs(1/1): 5:/shoes/running
+
+### Pages in one folder in tree order (folder 5)
+# README says: tree order
+> GET /api/pages?depth=0&where[folder][equals]=5&sort=orderKey   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< docs(3/3): 7:/shoes/running, 6:/shoes/running/fast-runner, 5:/shoes/running/trail-blazer
+
+### Sort a list by folder path
+# README says: sorted by folderPath
+> GET /api/pages?depth=0&sort=folderPath&limit=50   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< docs(14/14): 16:/, 15:/blog, 14:/blog/hello-world, 13:/blog/team, 4:/company, 3:/company/contact, 2:/company/our-team, 11:/products, 10:/products/pricing, 9:/products/gift-cards, 8:/shoes, 7:/shoes/running, 6:/shoes/running/fast-runner, 5:/shoes/running/trail-blazer
+
+### Redirect lookup, anonymous
+# README says: logged-in users read rows
+> GET /api/folder-redirects?where[lookupKey][in]=en:/about/contact,en:/about   (anonymous: DisableAutologin: true)
+< 403 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< {"errors":[{"message":"You are not allowed to perform this action."}]}
+
+### Redirect lookup, signed in
+# README says: rows for a moved or renamed URL
+> GET /api/folder-redirects?depth=0&where[lookupKey][in]=en:/about/contact,en:/about,de:/about/contact   (autologin admin)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< docs(1/1): 1:
+
+### like pitfall: folderPath like blog
+# README says: like matches anywhere (README warning)
+> GET /api/folders?depth=0&where[fullPath][like]=blog   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< docs(2/2): 7:/blog/2026, 6:/blog
+
+## Resolve, tree and paths endpoints
+### resolve a page
+# README says: 200 for a page
+> GET /api/folders-tree/resolve?path=/blog/hello-world&locale=en   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Cookie, Authorization
+< {"alternates":{"en":"/blog/hello-world","de":"/aktuelles/hallo-welt"},"collection":"pages","doc":{"id":14,"title":"Hello World","slug":"hello-world","folder":{"id":6,"name":"Blog","slug":"blog","parent":null,"orderKey":"9x","fullPath":"/blog","ancestorIds":"/","depth":1,"structureRevision":0,"allowedTypes":[],"defaultType":null,"lockSubfolderTypes":false,"typesLockedBy":null,"updatedAt":"2026-11-01T16:33:05.674Z","createdAt":"2026-11-01T16:33:05.670Z"},"orderKey":"9x","structureRevision":0,"isFolderRoot":false,"pathSegment":"hello-world","updatedAt":"2026-11-01T16:33:05.728Z","createdAt":"2026-11-01T16:33:05.721Z","_status":"published","blocks":[],"folderPath":"/blog","fullPath":"/blog/hello-world"},"fullPath":"/blog/hello-world","locale":"en","type":"page"}
+
+### resolve de page by translated URL
+# README says: 200 page, alternates
+> GET /api/folders-tree/resolve?path=/aktuelles/team&locale=de   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Cookie, Authorization
+< {"alternates":{"en":"/blog/team","de":"/aktuelles/team"},"collection":"pages","doc":{"id":13,"title":"Team","slug":"team","folder":{"id":6,"name":"Aktuelles","slug":"aktuelles","parent":null,"orderKey":"9x","fullPath":"/aktuelles","ancestorIds":"/","depth":1,"structureRevision":0,"allowedTypes":[],"defaultType":null,"lockSubfolderTypes":false,"typesLockedBy":null,"updatedAt":"2026-11-01T16:33:05.674Z","createdAt":"2026-11-01T16:33:05.670Z"},"orderKey":"9y","structureRevision":0,"isFolderRoot":false,"pathSegment":"team","updatedAt":"2026-11-01T16:33:05.714Z","createdAt":"2026-11-01T16:33:05.707Z","_status":"published","blocks":[],"folderPath":"/aktuelles","fullPath":"/aktuelles/team"},"fullPath":"/aktuelles/team","locale":"de","type":"page"}
+
+### resolve old URL after rename (about -> company)
+# README says: 200 redirect
+> GET /api/folders-tree/resolve?path=/about/contact&locale=en   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Cookie, Authorization
+< {"status":301,"to":"/company/contact","type":"redirect"}
+
+### resolve wrong case
+# README says: redirect to canonical path
+> GET /api/folders-tree/resolve?path=/Blog/Hello-World&locale=en   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Cookie, Authorization
+< {"status":301,"to":"/blog/hello-world","type":"redirect"}
+
+### resolve unknown path
+# README says: 404 not found
+> GET /api/folders-tree/resolve?path=/nope&locale=en   (anonymous: DisableAutologin: true)
+< 404 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Cookie, Authorization
+< {"type":"notFound"}
+
+### resolve unknown locale
+# README says: 400
+> GET /api/folders-tree/resolve?path=/blog&locale=xx   (anonymous: DisableAutologin: true)
+< 400 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< {"errors":[{"message":"`locale` is not a configured locale"}]}
+
+### tree depth 1
+# README says: { nodes }
+> GET /api/folders-tree/tree?depth=1&locale=en   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Cookie, Authorization
+< {"nodes":[{"alternates":{"en":"/","de":"/"},"children":[],"collection":"pages","fullPath":"/","hasPage":false,"id":16,"isFolderRoot":true,"kind":"page","title":"Home","updatedAt":"2026-11-01T16:33:05.756Z"},{"alternates":{"en":"/blog","de":"/aktuelles"},"children":[],"collection":"folders","fullPath":"/blog","hasPage":true,"id":6,"isFolderRoot":false,"kind":"folder","title":"Blog","updatedAt":"2026-11-01T16:33:05.674Z"},{"alternates":{"en":"/products","de":"/produkte"},"children":[],"collection":"folders","fullPath":"/products","hasPage":true,"id":3,"isFolderRoot":false,"kind":"folder","title":"Products","updatedAt":"2026-11-01T16:33:05.531Z"},{"alternates":{"en":"/shoes","de":"/schuhe"},"children":[],"collection":"folders","fullPath":"/shoes","hasPage":true,"id":4,"isFolderRoot":false,"kind":"folder","title":"Shoes","updatedAt":"2026-11-01T16:33:05.657Z"},{"alternates":{"en":"/company","de":"/unternehmen"},"children":[],"collection":"folders","fullPath":"/company","hasPage":true,"id":2,"isFolderRoot":false,"kind":"folder","title":"Company","updatedAt":"2026-11-01T16:33:05.516Z"}]}
+
+### paths all locales
+# README says: { docs, hasNextPage, page }
+> GET /api/folders-tree/paths?locale=all&limit=1000   (anonymous: DisableAutologin: true)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Cookie, Authorization
+< docs(32/?): 2:/company/our-team, 2:/unternehmen/our-team, 3:/company/contact, 3:/unternehmen/kontakt, 4:/company, 4:/unternehmen, 5:/shoes/running/trail-blazer, 5:/schuhe/laufschuhe/trail-blazer, 6:/shoes/running/fast-runner, 6:/schuhe/laufschuhe/fast-runner, 7:/shoes/running, 7:/schuhe/laufschuhe, 8:/shoes, 8:/schuhe, 9:/products/gift-cards, 9:/produkte/gift-cards, 10:/products/pricing, 10:/produkte/pricing, 11:/products, 11:/produkte, 13:/blog/team, 13:/aktuelles/team, 14:/blog/hello-world, 14:/aktuelles/hallo-welt, 15:/blog, 15:/aktuelles, 16:/, 16:/, 1:/blog/2026/spring-update, 1:/aktuelles/2026/spring-update, 2:/blog/2026/new-year, 2:/aktuelles/2026/new-year
+
+### admin read endpoint anonymous (children)
+# README says: signed in only
+> GET /api/folders-tree/children?parent=root   (anonymous: DisableAutologin: true)
+< 403 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< {"errors":[{"message":"You are not allowed to perform this action."}]}
+
+### admin read endpoint signed in (children)
+# README says: { items, hasMore, nextCursor, revision }
+> GET /api/folders-tree/children?parent=root   (autologin admin)
+< 200 application/json
+< vary: Sec-CH-Prefers-Color-Scheme, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+< {"hasMore":false,"items":[{"access":{"delete":true,"publish":true,"update":true},"ancestorIds":"/","collection":"pages","depth":0,"fullPath":"/","id":16,"isFolderRoot":true,"kind":"page","orderKey":"9w","parentId":null,"slug":"home","slugIsFallback":false,"status":"published","structureRevision":0,"title":"Home","titleIsFallback":false,"updatedAt":"2026-11-01T16:33:05.756Z"},{"access":{"delete":true,"publish":true,"update":true},"allowedTypes":[],"ancestorIds":"/","childCount":5,"collection":"folders","defaultType":null,"depth":1,"fullPath":"/blog","hasRootPage":true,"id":6,"kind":"folder","lockSubfolderTypes":false,"orderKey":"9x","parentId":null,"slug":"blog","slugIsFallback":false,"structureRevision":0,"title":"Blog","titleIsFallback":false,"typesLockedBy":null,"updatedAt":"2026-11-01T16:33:05.674Z"},{"access":{"delete":true,"publish":true,"update":true},"allowedTypes":[],"ancestorIds":"/","childCount":3,"collection":"folders","defaultType":null,"depth":1,"fullPath":"/products","hasRootPage":true,"id":3,"kind":"folder","lockSubfolderTypes":false,"orderKey":"9y","parentId":null,"sl ...[truncated 1525 chars]
+
+## GraphQL
+### Pages where folderPath + isFolderRoot
+# README says: docs with id and fullPath
+> POST /api/graphql   (anonymous: DisableAutologin: true)
+> { Pages(where: { folderPath: { equals: "/blog" }, isFolderRoot: { not_equals: true } }) { docs { id fullPath } } }
+< 200
+< {"data":{"Pages":{"docs":[{"id":14,"fullPath":"/blog/hello-world"},{"id":13,"fullPath":"/blog/team"}]}}}
+
+### Folders where ancestorIds contains
+# README says: descendants of folder 4
+> POST /api/graphql   (anonymous: DisableAutologin: true)
+> { Folders(where: { ancestorIds: { contains: "/4/" } }) { docs { id } } }
+< 200
+< {"data":{"Folders":{"docs":[{"id":5}]}}}
+
+### foldersResolve page
+# README says: README writes locale: "de" as a string
+> POST /api/graphql   (anonymous: DisableAutologin: true)
+> { foldersResolve(path: "/aktuelles/team", locale: de) { type collection id fullPath redirectTo alternates { locale path } } }
+< 200
+< {"errors":[{"message":"Argument \"locale\" has invalid value de.","locations":[{"line":1,"column":51}]},{"message":"String cannot represent a non string value: de","locations":[{"line":1,"column":51}]}]}
+
+### foldersResolve page, literal README text (locale as string)
+# README says: literal README query
+> POST /api/graphql   (anonymous: DisableAutologin: true)
+> { foldersResolve(path: "/aktuelles/team", locale: "de") { type collection id fullPath redirectTo alternates { locale path } } }
+< 200
+< {"data":{"foldersResolve":{"type":"page","collection":"pages","id":"13","fullPath":"/aktuelles/team","redirectTo":null,"alternates":[{"locale":"en","path":"/blog/team"},{"locale":"de","path":"/aktuelles/team"}]}}}
+
+### foldersResolve redirect
+# README says: type redirect with redirectTo
+> POST /api/graphql   (anonymous: DisableAutologin: true)
+> { foldersResolve(path: "/about/contact", locale: en) { type collection id fullPath redirectTo } }
+< 200
+< {"errors":[{"message":"Argument \"locale\" has invalid value en.","locations":[{"line":1,"column":50}]},{"message":"String cannot represent a non string value: en","locations":[{"line":1,"column":50}]}]}
+
+### Pages with a folder.ancestorIds relationship path (README says not in input)
+# README says: no GraphQL form
+> POST /api/graphql   (anonymous: DisableAutologin: true)
+> { Pages(where: { folder__ancestorIds: { contains: "/6/" } }) { docs { id } } }
+< 200
+< {"errors":[{"message":"Field \"folder__ancestorIds\" is not defined by type \"Page_where\".","locations":[{"line":1,"column":18}]}]}
+
+
+## Notes added by the tester
+# The two foldersResolve queries with 'locale: de' / 'locale: en' (enum style) fail because locale is a String argument; the README writes locale: "de" with quotes, and that literal query works (second foldersResolve block). The failures above are the tester's own mistaken variants, not README faults.
+# Posts under /blog (same where as the pages recipe, collection posts): posts under /blog: 2 -> 2:/blog/2026/new-year, 1:/blog/2026/spring-update (GET /api/posts?where[or][0][folder][equals]=6&where[or][1][folder.ancestorIds][contains]=/6/), so the subtree recipe reaches nested folders as the README says.
+
+## Repair CLI, both README forms, against the scratch database
+> DATABASE_URI=file:<scratch>/g19b.db npx cross-env PAYLOAD_CONFIG_PATH=./dev/payload.config.ts npx payload run dist/bin/repair.js -- --dry-run
+< exit 0: Folder tree repair (dry run, nothing written) / To fix: none / Conflicts left for you: none / URL changes: 0
+> DATABASE_URI=file:<scratch>/g19b.db npm run repair -- --dry-run
+< exit 0 (builds dist first, then the same report)
+
+## Frontend (port 4081), curl -i -s, no redirect following
+### GET /
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+title/h1: <h1>Home</h1> 
+
+### GET /blog
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+title/h1: <h1>Blog Home</h1> 
+
+### GET /blog/hello-world
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+title/h1: <h1>Hello World</h1> 
+
+### GET /de/aktuelles/team
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+title/h1: <h1>Team</h1> 
+
+### GET /about/contact
+HTTP/1.1 308 Permanent Redirect
+location: /company/contact
+Content-Type: text/html; charset=utf-8
+title/h1: 
+
+### GET /Blog/Hello-World
+HTTP/1.1 308 Permanent Redirect
+location: /blog/hello-world
+Content-Type: text/html; charset=utf-8
+title/h1: 
+
+### GET /company/contact
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+title/h1: <h1>Contact</h1> 
+
+### GET /nope
+HTTP/1.1 404 Not Found
+Content-Type: text/html; charset=utf-8
+title/h1: 
+
+### GET /sitemap.xml
+HTTP/1.1 200 OK
+content-type: application/xml
+title/h1: 
+
+## Sitemap
+# /sitemap.xml has 32 <loc> entries (16 pages x 2 locales incl. posts). Entries use the base http://localhost:4078 because dev/app/(frontend)/sitemap.ts defaults SITE_URL to port 4078; the app here runs on 4081.
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<url>
+<loc>http://localhost:4078/de</loc>
+<xhtml:link rel="alternate" hreflang="de" href="http://localhost:4078/de" />
+<xhtml:link rel="alternate" hreflang="en" href="http://localhost:4078/" />
+<lastmod>2026-11-01T16:33:05.756Z</lastmod>
+</url>
+<url>
+<loc>http://localhost:4078/</loc>
+<xhtml:link rel="alternate" hreflang="de" href="http://localhost:4078/de" />
+<xhtml:link rel="alternate" hreflang="en" href="http://localhost:4078/" />
+<lastmod>2026-11-01T16:33:05.756Z</lastmod>
+</url>
+<url>
+<loc>http://localhost:4078/de/aktuelles</loc>
+<xhtml:link rel="
+## ================ Install on existing content ================
+# Install-on-existing-content simulation on the scratch SQLite database
+# Legacy state forced with raw SQL: pages 13 and 14 lose path_segment and order_key; page 10 (en) gets slug 'Pricing' and a null path_segment
+
+## Before repair: stock segment query for /blog/team (README: a segment lookup does not find it until repair)
+docs: 0
+## Before repair: resolver for /blog/team and /products/pricing and /products/Pricing
+GET /api/folders-tree/resolve?path=/blog/team&locale=en -> {"type":"notFound"}
+GET /api/folders-tree/resolve?path=/products/pricing&locale=en -> {"type":"notFound"}
+GET /api/folders-tree/resolve?path=/products/Pricing&locale=en -> {"type":"notFound"}
+
+## Dry run (npx payload run dist/bin/repair.js -- --dry-run)
+Folder tree repair (dry run, nothing written)
+To fix: 7
+  - The latest version of pages 14 holds a different orderKey than the page
+  - The latest version of pages 13 holds a different orderKey than the page
+  - pages 10 has no saved path segment matching its slug; its URL is wrong or missing
+  - pages 10 has the segment "Pricing", which is not a valid segment; repair saves "pricing"
+  - pages 13 has no saved path segment matching its slug; its URL is wrong or missing
+  - pages 14 has no saved path segment matching its slug; its URL is wrong or missing
+  - 2 items in folder 6 have no order key
+Conflicts left for you: none
+URL changes: 5
+Rows to write: folders 0, pages 3, order keys 2, latest versions 2, redirect rows 0, redirect rows deleted 0
+
+## Repair (npx payload run dist/bin/repair.js, no flags)
+Folder tree repair
+Fixed: 7
+  - The latest version of pages 14 holds a different orderKey than the page
+  - The latest version of pages 13 holds a different orderKey than the page
+  - pages 10 has no saved path segment matching its slug; its URL is wrong or missing
+  - pages 10 has the segment "Pricing", which is not a valid segment; repair saves "pricing"
+  - pages 13 has no saved path segment matching its slug; its URL is wrong or missing
+  - pages 14 has no saved path segment matching its slug; its URL is wrong or missing
+  - 2 items in folder 6 have no order key
+Conflicts left for you: none
+URL changes: 5
+Rows written: folders 0, pages 3, order keys 2, latest versions 2, redirect rows 0, redirect rows deleted 0
+Verify: clean
+
+## After repair
+GET /api/folders-tree/resolve?path=/blog/team&locale=en -> {"alternates":{"en":"/blog/team","de":"/aktuelles/team"},"collection":"pages","doc":{"id":13,"title":"Team","slug":"team","folder":{"id":6,"name":"Blog","slug":
+GET /api/folders-tree/resolve?path=/products/pricing&locale=en -> {"alternates":{"en":"/products/pricing","de":"/produkte/pricing"},"collection":"pages","doc":{"id":10,"title":"Pricing","slug":"pricing","folder":{"id":3,"name"
+GET /api/folders-tree/resolve?path=/products/Pricing&locale=en -> {"status":301,"to":"/products/pricing","type":"redirect"}
+GET /products/Pricing on the frontend -> HTTP/1.1 308 Permanent Redirect location: /products/pricing 
+GET /api/pages segment lookup /blog/team -> docs: 1
+Second dry run:
+Folder tree repair (dry run, nothing written)
+To fix: none
+Conflicts left for you: none
+URL changes: 0
+Rows to write: folders 0, pages 0, order keys 0, latest versions 0, redirect rows 0, redirect rows deleted 0
+# Observation: the repair fixed the capitals-only segment ('Pricing' -> 'pricing') but wrote redirect rows 0; /products/Pricing is answered by the resolver's case redirect, not by a folder-redirects row. README line 217 says the fix writes a redirect row from the old URL; in this forced state (null path_segment, so the old URL was never live) it wrote none.
