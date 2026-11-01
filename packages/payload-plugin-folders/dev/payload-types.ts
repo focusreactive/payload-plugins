@@ -337,7 +337,7 @@ export interface FolderOperation {
     | null;
   done?: number | null;
   total?: number | null;
-  status: 'running' | 'done' | 'failed';
+  status: 'running' | 'done' | 'failed' | 'abandoned';
   error?: string | null;
   createdBy?: (number | null) | User;
   updatedBy?: {

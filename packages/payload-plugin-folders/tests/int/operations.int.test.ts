@@ -118,6 +118,24 @@ const stepAs = async (id: number | string, user?: { email: string; password: str
     ...(user ? { user } : {}),
   });
 
+const abandonAs = async (id: number | string, user?: { email: string; password: string }) =>
+  callEndpoint<OperationProgress & { errors?: unknown[] }>({
+    config: harness.config,
+    method: "POST",
+    path: `/folders-tree/operations/${id}/abandon`,
+    payload: harness.payload,
+    payloadInstanceCacheKey: harness.cacheKey,
+    ...(user ? { user } : {}),
+  });
+
+const readStatus = async (id: number | string): Promise<string | undefined> =>
+  (
+    (await harness.payload.db.findOne({
+      collection: "folder-operations" as never,
+      where: { id: { equals: id } },
+    })) as unknown as { status?: string } | null
+  )?.status;
+
 describe("the batch runner", () => {
   it("500 items run in three steps", async () => {
     const { id, total } = await startOperation({
@@ -243,5 +261,112 @@ describe("the batch runner", () => {
     expect(owned.status).toBe(200);
     expect(await countRows(harness.payload)).toBe(200);
     expect(owned.body).toEqual({ done: 200, status: "running", total: 300 });
+  });
+});
+
+describe("abandoning a failed operation", () => {
+  const owner = { email: ownerEmail, password };
+
+  it("the owner stops it, later steps change nothing, and what was done stays", async () => {
+    const { id } = await startOperation({
+      items: units(500),
+      kind: standInKind,
+      req: ownerRequest,
+    });
+    await stepOperation(ownerRequest, id);
+    failAtUnit = 250;
+    const failed = await stepOperation(ownerRequest, id);
+    expect(failed).toMatchObject({ done: 200, status: "failed" });
+
+    const abandoned = await abandonAs(id, owner);
+
+    expect(abandoned.status).toBe(200);
+    expect(abandoned.body).toEqual({ done: 200, status: "abandoned", total: 500 });
+    expect(await readStatus(id)).toBe("abandoned");
+
+    const step = await stepAs(id, owner);
+
+    expect(step.status).toBe(200);
+    expect(step.body).toEqual({ done: 200, status: "abandoned", total: 500 });
+    expect(await countRows(harness.payload)).toBe(200);
+    // Stopping twice answers the same.
+    expect((await abandonAs(id, owner)).body).toEqual({
+      done: 200,
+      status: "abandoned",
+      total: 500,
+    });
+  });
+
+  it("another user gets 403, an anonymous call gets 403, an unknown operation 404", async () => {
+    const { id } = await startOperation({
+      items: units(300),
+      kind: standInKind,
+      req: ownerRequest,
+    });
+
+    // The default test user is an admin and still not the owner.
+    const other = await abandonAs(id);
+    const anonymous = await callEndpoint({
+      anonymous: true,
+      config: harness.config,
+      method: "POST",
+      path: `/folders-tree/operations/${id}/abandon`,
+      payload: harness.payload,
+      payloadInstanceCacheKey: harness.cacheKey,
+    });
+    const unknown = await abandonAs(987_654, owner);
+
+    expect(other.status).toBe(403);
+    expect(anonymous.status).toBe(403);
+    expect(unknown.status).toBe(404);
+    expect(await readStatus(id)).toBe("running");
+  });
+
+  it("a finished operation stays done", async () => {
+    const { id } = await startOperation({
+      items: units(10),
+      kind: standInKind,
+      req: ownerRequest,
+    });
+    await stepOperation(ownerRequest, id);
+
+    const abandoned = await abandonAs(id, owner);
+
+    expect(abandoned.body).toEqual({ done: 10, status: "done", total: 10 });
+    expect(await readStatus(id)).toBe("done");
+  });
+});
+
+describe("reading the operation records over the stock REST routes", () => {
+  it("a user reads their own records and nobody else's", async () => {
+    const { id } = await startOperation({
+      items: units(10),
+      kind: standInKind,
+      req: ownerRequest,
+    });
+    const get = (path: string, user?: { email: string; password: string }) =>
+      callEndpoint<{ docs?: Array<{ id: number }>; totalDocs?: number }>({
+        config: harness.config,
+        path,
+        payload: harness.payload,
+        payloadInstanceCacheKey: harness.cacheKey,
+        ...(user ? { user } : {}),
+      });
+
+    const own = await get("/folder-operations?depth=0", { email: ownerEmail, password });
+    const others = await get("/folder-operations?depth=0");
+    const othersById = await get(`/folder-operations/${id}?depth=0`);
+    const anonymous = await callEndpoint<{ totalDocs?: number }>({
+      anonymous: true,
+      config: harness.config,
+      path: "/folder-operations?depth=0",
+      payload: harness.payload,
+      payloadInstanceCacheKey: harness.cacheKey,
+    });
+
+    expect(own.body.docs?.map((doc) => doc.id)).toEqual([id]);
+    expect(others.body.totalDocs).toBe(0);
+    expect(othersById.status).not.toBe(200);
+    expect(anonymous.body.totalDocs ?? 0).toBe(0);
   });
 });

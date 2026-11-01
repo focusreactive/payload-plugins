@@ -11,6 +11,7 @@ import { buildDuplicateEndpoint } from "./duplicate.js";
 import { buildFolderPreviewEndpoint } from "./folderPreview.js";
 import { buildMoveEndpoint } from "./move.js";
 import { buildMovePreviewEndpoint } from "./movePreview.js";
+import { buildOperationAbandonEndpoint } from "./operationAbandon.js";
 import { buildOperationStepEndpoint } from "./operationStep.js";
 import { buildPathsEndpoint } from "./paths.js";
 import { buildPreviewUrlEndpoint } from "./previewUrl.js";
@@ -36,6 +37,7 @@ export const buildFoldersEndpoints = (options: ResolvedOptions): Endpoint[] => [
   buildTreeEndpoint(options),
   buildPathsEndpoint(),
   buildOperationStepEndpoint(options),
+  buildOperationAbandonEndpoint(),
   buildPublishEndpoint(options),
   buildDuplicateEndpoint(options),
   buildDeletePreviewEndpoint(options),

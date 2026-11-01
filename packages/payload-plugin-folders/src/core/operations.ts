@@ -48,7 +48,8 @@ const getHandler = (kind: OperationKind): OperationHandler => {
   return handler;
 };
 
-export type OperationStatus = "done" | "failed" | "running";
+/** `abandoned`: the owner gave up on a failed run; it takes no more steps and nothing is undone. */
+export type OperationStatus = "abandoned" | "done" | "failed" | "running";
 
 export type OperationProgress = {
   done: number;
@@ -156,6 +157,42 @@ export const readOperationProgress = async (
   return progressOf(row);
 };
 
+/**
+ * Gives up on an operation that failed (or is still running), for its owner only (403 otherwise,
+ * 404 when there is none): it takes no more steps, and what earlier steps did stays done. Answers
+ * how far it got. Waits for the tree lock, so a step in flight finishes first; a finished operation
+ * is left as it is and answers `done`.
+ */
+export const abandonOperation = async (
+  req: PayloadRequest,
+  id: FolderId
+): Promise<OperationProgress> => {
+  const before = await readOperation(req, id);
+  if (!before) {
+    throw new APIError("This operation does not exist", 404, null, true);
+  }
+  assertOwner(req, before);
+
+  return withTreeLock(req, async () => {
+    const row = await readOperation(req, id);
+    if (!row) {
+      throw new APIError("This operation does not exist", 404, null, true);
+    }
+    if (row.status === "done" || row.status === "abandoned") {
+      return progressOf(row);
+    }
+    await req.payload.db.updateOne({
+      collection: operationsCollection,
+      data: { error: null, status: "abandoned", updatedAt: new Date().toISOString() },
+      id,
+      req,
+      returning: false,
+    });
+
+    return { done: row.done, status: "abandoned", total: row.total };
+  });
+};
+
 const messageOf = (error: unknown): string =>
   error instanceof Error && error.message ? error.message : "The step failed";
 
@@ -180,7 +217,7 @@ export const stepOperation = async (
     throw new APIError("This operation does not exist", 404, null, true);
   }
   assertOwner(req, before);
-  if (before.status === "done") {
+  if (before.status === "done" || before.status === "abandoned") {
     return progressOf(before);
   }
 
@@ -190,7 +227,8 @@ export const stepOperation = async (
       if (!row) {
         throw new APIError("This operation does not exist", 404, null, true);
       }
-      if (row.status === "done") {
+      // Read again under the lock: an abandon that queued ahead of this step has landed by now.
+      if (row.status === "done" || row.status === "abandoned") {
         return progressOf(row);
       }
 

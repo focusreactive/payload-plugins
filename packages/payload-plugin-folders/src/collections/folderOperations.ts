@@ -3,13 +3,14 @@ import type { Access, CollectionConfig } from "payload";
 import { toCollectionSlug } from "../collectionSlug.js";
 import { folderOperationsSlug } from "../constants.js";
 
-const isLoggedIn: Access = ({ req }) => Boolean(req.user);
+/** A record is its owner's: another signed-in user reads nothing of it through the stock REST routes. */
+const ownRecords: Access = ({ req }) => (req.user ? { createdBy: { equals: req.user.id } } : false);
 const nobody: Access = () => false;
 
 /** Progress records of batch publish, delete, duplicate and mirror runs (spec section 5.8). */
 export const buildFolderOperationsCollection = (userCollectionSlug: string): CollectionConfig => ({
   slug: folderOperationsSlug,
-  access: { create: nobody, delete: nobody, read: isLoggedIn, update: nobody },
+  access: { create: nobody, delete: nobody, read: ownRecords, update: nobody },
   admin: { hidden: true },
   disableDuplicate: true,
   fields: [
@@ -27,7 +28,7 @@ export const buildFolderOperationsCollection = (userCollectionSlug: string): Col
       name: "status",
       type: "select",
       defaultValue: "running",
-      options: ["running", "done", "failed"],
+      options: ["running", "done", "failed", "abandoned"],
       required: true,
     },
     { name: "error", type: "text" },
