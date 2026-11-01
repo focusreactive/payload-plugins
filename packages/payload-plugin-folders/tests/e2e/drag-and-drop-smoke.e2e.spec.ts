@@ -9,7 +9,7 @@ import {
   deletePage,
 } from "./helpers/content.js";
 import { dragRowTo } from "./helpers/drag.js";
-import { expandFolder, folderRow, openContentTree, pageRow } from "./helpers/tree.js";
+import { expandFolder, folderRow, openContentTree, pageRow, reloadClosed } from "./helpers/tree.js";
 
 // Rows on screen: the two folders these tests build, kept in view without scrolling.
 test.use({ viewport: { height: 1000, width: 1280 } });
@@ -89,7 +89,7 @@ test("a mouse reorder within a folder persists after reload", async ({ page, req
 
   // A reorder inside one folder changes no URL, so nothing asks.
   await expect(page.getByText("Moved 1 item")).toBeVisible();
-  await page.reload();
+  await reloadClosed(page);
   await page.getByRole("treegrid").waitFor();
 
   const rows = await childrenOf(request, labId);
@@ -125,7 +125,7 @@ test("a drop inside a folder asks to confirm the URL change", async ({ page, req
   await confirm.getByRole("button", { exact: true, name: "Move" }).click();
   await expect(page.getByText("Moved 1 item")).toBeVisible();
 
-  await page.reload();
+  await reloadClosed(page);
   await page.getByRole("treegrid").waitFor();
   expect((await childrenOf(request, targetId)).map((row) => [row.title, row.fullPath])).toEqual([
     ["Smoke Mover", "/drag-smoke-target/smoke-mover"],

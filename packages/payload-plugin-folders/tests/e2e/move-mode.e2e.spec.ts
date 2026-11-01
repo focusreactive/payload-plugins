@@ -4,11 +4,13 @@ import type { Locator, Page } from "@playwright/test";
 import { childrenOf, createFolder, createPage, removeFolderTree } from "./helpers/content.js";
 import { contextMenu, menuItem, openRowMenu } from "./helpers/menu.js";
 import {
+  breadcrumb,
   bulkToolbar,
   expandFolder,
   folderRow,
   openContentTree,
   pageRow,
+  reloadClosed,
   rowCheckbox,
   toolbarButton,
 } from "./helpers/tree.js";
@@ -135,7 +137,7 @@ test("two items move into the gap after the third row of another folder with no 
   await expect(moveModeBar(page)).toHaveCount(0);
   await expect(page.getByTestId("bulk-toolbar")).toHaveCount(0);
 
-  await page.reload();
+  await reloadClosed(page);
   const inTarget = await childrenOf(request, targetId);
   expect(inTarget.map((row) => [row.title, row.fullPath])).toEqual([
     ["Target One", "/mode-target/target-one"],
@@ -174,10 +176,45 @@ test("markers appear at the top of an expanded folder", async ({ page, request }
   ).toHaveAttribute("data-marker", `inside:${productsId}`);
 });
 
-// Needs zoom: P-35 (group G17) adds it, and the view has nothing to zoom into until then.
-test.fixme("zooming while in Move mode keeps it active", () => {
-  // Enter Move mode with a ticked page, zoom into a folder (double click, Alt+Enter or a
-  // breadcrumb), and expect the bar and the markers inside the zoomed folder to stay.
+test("zooming while in Move mode keeps it active, and the markers move into the zoomed folder", async ({
+  page,
+  request,
+}) => {
+  const labId = await addFolder(request, "Zoom Move Lab");
+  const targetId = await addFolder(request, "Zoom Move Target");
+  const inLab = await addPage(request, "Zoom Move Page", labId);
+  await openContentTree(page);
+  await expandFolder(page, "Zoom Move Lab");
+  await rowCheckbox(page, "Zoom Move Page").check();
+  await toolbarButton(page, "Move").click();
+  await expect(moveModeBar(page)).toContainText("Moving 1 item. Choose where to put it");
+
+  // Zoom into another folder, by double click, and the bar and the markers are still there. The
+  // moving page is not in the new view; the markers belong to the zoomed folder.
+  await folderRow(page, "Zoom Move Target").dblclick();
+  await expect(page).toHaveURL(new RegExp(`[?&]folder=${targetId}(&|$)`, "u"));
+  await expect(moveModeBar(page)).toContainText("Moving 1 item. Choose where to put it");
+  await expect(pageRow(page, "Zoom Move Page")).toHaveCount(0);
+  // The folder is empty, and Move mode keeps the tree for it, with the zoomed folder's own
+  // marker as the only one: the top of the view.
+  await expect(page.getByTestId("zoom-header")).toHaveText("Zoom Move Target");
+  await expect(marker(page, "top")).not.toHaveAttribute("aria-disabled", "true");
+
+  // A crumb is a way to navigate while moving: the Content crumb shows the whole tree again.
+  await breadcrumb(page, "Content").click();
+  await expect(moveModeBar(page)).toBeVisible();
+  await expect(folderRow(page, "Zoom Move Lab")).toBeVisible();
+
+  // Zoom back, pick the zoomed folder's top marker: the page lands in that folder.
+  await folderRow(page, "Zoom Move Target").dblclick();
+  await marker(page, "top").click();
+  const confirm = page.getByRole("dialog").filter({ has: page.getByTestId("confirm-move") });
+  await confirm.getByRole("button", { exact: true, name: "Move" }).click();
+  await expect(moveModeBar(page)).toHaveCount(0);
+  await expect
+    .poll(async () => (await childrenOf(request, targetId)).map((row) => row.id))
+    .toEqual([inLab]);
+  await expect(pageRow(page, "Zoom Move Page")).toBeVisible();
 });
 
 test("a marker inside the moved folder is disabled", async ({ page, request }) => {

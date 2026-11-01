@@ -546,7 +546,7 @@ test("confirmMoves always asks for a reorder", async ({ page, request }) => {
       distDirectory: ".next-confirm",
       env: { FOLDERS_CONFIRM_MOVES: "always" },
     });
-    await page.goto(`${stockServerUrl}/admin/collections/folders`);
+    await page.goto(`${stockServerUrl}/admin/collections/folders?expanded=`);
     await page.getByRole("treegrid").waitFor();
     await expandFolder(page, "Staging");
     await rowCheckbox(page, "Always Two").check();

@@ -10,7 +10,14 @@ import {
 } from "./helpers/content.js";
 import type { ChildRow } from "./helpers/content.js";
 import { dragRowTo, moveOver, pressAndPull, rowTitlesIn, startDrag } from "./helpers/drag.js";
-import { expandFolder, folderRow, openContentTree, pageRow, rowCheckbox } from "./helpers/tree.js";
+import {
+  expandFolder,
+  folderRow,
+  openContentTree,
+  pageRow,
+  reloadClosed,
+  rowCheckbox,
+} from "./helpers/tree.js";
 
 // The rows these tests drag are their own, in folders the tests create and remove, so the seeded
 // tree that the other specs read is never touched. The one seeded row used is the folder 2026 that
@@ -88,7 +95,7 @@ const titlesAndPaths = (rows: ChildRow[]): string[][] =>
   rows.map((row) => [row.title, row.fullPath]);
 
 const reloadTree = async (page: Page): Promise<void> => {
-  await page.reload();
+  await reloadClosed(page);
   await page.getByRole("treegrid").waitFor();
 };
 

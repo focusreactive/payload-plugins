@@ -3,7 +3,7 @@ import type { APIRequestContext, Locator, Page } from "@playwright/test";
 
 import { childrenOf, createFolder } from "./helpers/content.js";
 import { menuItem, openRowMenu } from "./helpers/menu.js";
-import { expandFolder, folderRow, openContentTree, pageRow } from "./helpers/tree.js";
+import { expandFolder, folderRow, openContentTree, pageRow, reloadClosed } from "./helpers/tree.js";
 
 // Every test works in a folder of its own, removed afterwards with everything the test made in it,
 // so the seeded tree the other specs read is never changed.
@@ -100,7 +100,7 @@ test("New folder derives the segment from the name", async ({ page, request }) =
     "data-title",
     "Create Probe Parent"
   );
-  await page.reload();
+  await reloadClosed(page);
   const inParent = await childrenOf(request, parentId);
   expect(inParent.map((row) => [row.title, row.fullPath])).toEqual([
     ["Quarterly Reports Archive", "/create-probe-parent/quarterly-reports-archive"],
@@ -202,7 +202,8 @@ test("a posts page opens the prefilled drawer", async ({ page, request }) => {
   await expect(drawer.locator("#field-slug")).toHaveValue("drawer-probe-post");
   expect(await childrenOf(request, folderId)).toEqual([]);
 
-  const treeUrl = page.url();
+  // The address also carries the open folders now, so it is the page that must stay the same.
+  const treePath = new URL(page.url()).pathname;
   await drawer.getByRole("button", { name: "Save", exact: true }).click();
   await expect(drawer).toHaveCount(0);
   // Saving did not take the editor away from the tree. Payload's redirect after a create starts
@@ -210,7 +211,7 @@ test("a posts page opens the prefilled drawer", async ({ page, request }) => {
   await expandFolder(page, "Drawer Probe Folder");
   await expect(pageRow(page, "Drawer Probe Post")).toBeVisible();
   await page.waitForLoadState("networkidle");
-  expect(page.url()).toBe(treeUrl);
+  expect(new URL(page.url()).pathname).toBe(treePath);
   await expect(page.getByRole("treegrid")).toBeVisible();
   const inFolder = await childrenOf(request, folderId);
   expect(inFolder.map((row) => [row.collection, row.title, row.fullPath])).toEqual([
@@ -318,7 +319,7 @@ test("the root checkbox is disabled where a root exists", async ({ page, request
 
   // A folder without one offers it, and ticking it greys out the segment that no URL uses.
   const folderId = await addFolder(request, "Root Probe Folder");
-  await page.reload();
+  await reloadClosed(page);
   const open = await startPageIn(page, "Root Probe Folder", "Page");
   const rootBox = open.getByRole("checkbox", { name: "Folder root page" });
   await expect(rootBox).toBeEnabled();
@@ -351,7 +352,7 @@ test("the parent folder can be changed with the folder picker", async ({ page, r
   await createButton(dialog).click();
 
   await expect(folderRow(page, "Moved Parent Probe")).toBeVisible();
-  await page.reload();
+  await reloadClosed(page);
   expect(await childrenOf(request, firstId)).toEqual([]);
   expect((await childrenOf(request, secondId)).map((row) => row.title)).toEqual([
     "Moved Parent Probe",

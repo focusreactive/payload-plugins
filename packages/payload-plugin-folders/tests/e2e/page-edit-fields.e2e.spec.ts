@@ -9,7 +9,7 @@ import {
   redirectsFrom,
   removeFolderTree,
 } from "./helpers/content.js";
-import { folderRow, rowNamesAtLevel } from "./helpers/tree.js";
+import { folderRow } from "./helpers/tree.js";
 
 // Every test works in a folder of its own, removed afterwards with what is inside, so the seeded
 // tree the other specs read stays as it is (and the seeded pages are never autosaved).
@@ -61,17 +61,21 @@ test("the location breadcrumb links to the zoomed tree", async ({ page, request 
     new RegExp(`/admin/collections/folders\\?folder=${yearId}$`, "u")
   );
 
-  // The crumb leads to the tree with Blog open and the 2026 row focused. Zooming is P-35's.
+  // The crumb leads to the tree zoomed into 2026: its breadcrumbs are Content and Blog, and the
+  // rows are 2026's own, at the top.
   await crumbs.nth(2).click();
   // Payload adds its own list parameters after the folder.
   await expect(page).toHaveURL(
-    new RegExp(`/admin/collections/folders\\?folder=${yearId}(&|$)`, "u")
+    new RegExp(`/admin/collections/folders\\?(.*&)?folder=${yearId}(&|$)`, "u")
   );
-  await expect(page.getByRole("treegrid")).toBeVisible();
-  await expect(folderRow(page, "Blog")).toHaveAttribute("aria-expanded", "true");
-  await expect(folderRow(page, "2026")).toBeVisible();
-  await expect(folderRow(page, "2026")).toBeFocused();
-  await expect(rowNamesAtLevel(page, 2).filter({ hasText: "2026" })).toHaveCount(1);
+  await expect(page.getByTestId("zoom-header")).toHaveText("2026");
+  await expect(page.getByTestId("breadcrumbs").getByRole("link")).toHaveText(["Content", "Blog"]);
+  await expect(
+    page.locator('[data-kind="page"][data-collection="posts"][data-title="New Year"]')
+  ).toBeVisible();
+  // The other rows of the tree are not in the view.
+  await expect(folderRow(page, "Blog")).toHaveCount(0);
+  await expect(folderRow(page, "Products")).toHaveCount(0);
 });
 
 test("unticking root always opens the dialog pre-filled with the stored slug", async ({

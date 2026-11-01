@@ -17,6 +17,7 @@ import {
   folderRow,
   openContentTree,
   pageRow,
+  reloadClosed,
   rowCheckbox,
   toolbarButton,
 } from "./helpers/tree.js";
@@ -264,7 +265,7 @@ test("a 2,000-page publish shows progress and resumes from the banner after clos
 
     // A reload while it is unfinished: the banner comes back from the operation's record and the
     // stepping resumes from where the server stands (the held step never reached it).
-    await page.reload();
+    await reloadClosed(page);
     await expect(page.getByTestId("operation-banner-text")).toHaveText(
       /^Publishing: \d+ of 2000$/u
     );
@@ -337,7 +338,7 @@ test("a failed run can be stopped, and the stop says how far it got and clears t
     const resumeRead = page.waitForResponse(
       (response) => new URL(response.url()).pathname === "/api/folder-operations"
     );
-    await page.reload();
+    await reloadClosed(page);
     expect((await resumeRead).ok()).toBe(true);
     await expect(folderRow(page, "Stop Probe")).toBeVisible();
     await expect(page.getByTestId("operation-banner")).toHaveCount(0);

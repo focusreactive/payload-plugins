@@ -82,8 +82,8 @@ test("no console errors", async ({ page }) => {
     archivePageCount
   );
 
-  // A double click on a folder, then closing everything again.
-  await folderRow(page, "Company").dblclick();
+  // Another folder opened, then closing everything again. A double click zooms (tree-zoom spec).
+  await expandFolder(page, "Company");
   await expect(pageRow(page, "Contact")).toBeVisible();
   for (const title of ["Archive", "Products", "Blog", "Company"]) {
     await folderRow(page, title)

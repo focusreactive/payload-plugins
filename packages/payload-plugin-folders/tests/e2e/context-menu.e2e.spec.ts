@@ -8,7 +8,14 @@ import {
   removeFolderTree,
 } from "./helpers/content.js";
 import { contextMenu, menuItem, menuReason, openRowMenu } from "./helpers/menu.js";
-import { expandFolder, folderRow, openContentTree, pageRow, rowCheckbox } from "./helpers/tree.js";
+import {
+  expandFolder,
+  folderRow,
+  openContentTree,
+  pageRow,
+  reloadClosed,
+  rowCheckbox,
+} from "./helpers/tree.js";
 
 // Every test that changes anything works on its own folder, so the seeded tree the other specs read
 // stays as it is.
@@ -113,7 +120,7 @@ test("Set as root page confirms the URL change, then saves the page and writes a
   await dialog.getByRole("button", { exact: true, name: "Set as root page" }).click();
   await expect(page.getByText('"Landing Probe" is now the root page of /root-probe')).toBeVisible();
 
-  await page.reload();
+  await reloadClosed(page);
   const saved = await request.get(`/api/pages/${pageId}`);
   expect(((await saved.json()) as { isFolderRoot: boolean }).isFolderRoot).toBe(true);
   expect((await childrenOf(request, folderId)).map((row) => [row.title, row.fullPath])).toEqual([
@@ -144,7 +151,7 @@ test("Set as root page on a draft asks nothing and keeps the page out of the liv
   ).toBeVisible();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 
-  await page.reload();
+  await reloadClosed(page);
   const draft = await request.get(`/api/pages/${pageId}?draft=true`);
   expect(((await draft.json()) as { isFolderRoot: boolean }).isFolderRoot).toBe(true);
   // Still a draft: the tree, which follows the live row, shows no root page yet.
@@ -213,7 +220,7 @@ test("Move down swaps two pages and persists", async ({ page, request }) => {
   await menuItem(page, "Move down").click();
   await expect(page.getByText("Moved 1 item")).toBeVisible();
 
-  await page.reload();
+  await reloadClosed(page);
   expect((await childrenOf(request, folderId)).map((row) => row.title)).toEqual([
     "Alpha Probe",
     "Beta Probe",
@@ -316,11 +323,15 @@ test("the ContextMenu key and the row button open the menu too", async ({ page }
   await expect(contextMenu(page)).toHaveCount(0);
 });
 
-test("Open on a page opens its edit view, and on a folder expands it", async ({ page }) => {
+test("Open on a page opens its edit view, and on a folder zooms into it", async ({ page }) => {
   await openContentTree(page);
   await openRowMenu(folderRow(page, "Blog"));
   await menuItem(page, "Open").click();
+  // The tree now starts at Blog: its pages are the top rows and the other folders are gone.
+  await expect(page).toHaveURL(/[?&]folder=\d+/u);
   await expect(pageRow(page, "Blog Home")).toBeVisible();
+  await expect(folderRow(page, "Products")).toHaveCount(0);
+  await expect(page.getByTestId("zoom-current")).toHaveText("Blog");
 
   await openRowMenu(pageRow(page, "Blog Home"));
   await menuItem(page, "Open").click();

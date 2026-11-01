@@ -11,7 +11,7 @@ import {
 } from "./helpers/content.js";
 import { menuItem, openRowMenu } from "./helpers/menu.js";
 import { confirmDialog, folderSettings, pageSettings, unrootDialog } from "./helpers/settings.js";
-import { expandFolder, folderRow, openContentTree, pageRow } from "./helpers/tree.js";
+import { expandFolder, folderRow, openContentTree, pageRow, reloadClosed } from "./helpers/tree.js";
 
 // Tests that change anything work in folders of their own, removed afterwards with what is inside,
 // so the seeded tree the other specs read stays as it is. The one test that renames the seeded
@@ -72,7 +72,7 @@ test("renaming company asks with the URL count, then the tree shows the new path
     await dialog.getByRole("button", { exact: true, name: "Rename" }).click();
 
     await expect(folderRow(page, "Company").getByTestId("row-path")).toHaveText("/firm");
-    await page.reload();
+    await reloadClosed(page);
     expect(await readFolderSlug(request, companyId as number)).toBe("firm");
     expect(
       (await childrenOf(request, companyId as number)).find((row) => row.title === "Contact")
@@ -111,7 +111,7 @@ test("locking types asks first and locks subfolders", async ({ page, request }) 
   await dialog.getByRole("button", { exact: true, name: "Lock page types" }).click();
 
   await expect(form).toBeHidden();
-  await page.reload();
+  await reloadClosed(page);
   for (const childId of [firstId, secondId]) {
     const stored = await request.get(`/api/folders/${childId}?depth=0`);
     expect(await stored.json()).toMatchObject({
@@ -155,7 +155,7 @@ test("page settings saves a segment as a draft with the URL hint", async ({ page
   await form.getByRole("button", { exact: true, name: "Save" }).click();
   await expect(page.getByText("Saved as a draft. The URL changes from")).toBeVisible();
 
-  await page.reload();
+  await reloadClosed(page);
   // The live page keeps its URL; only the latest version has the new segment.
   expect(await readPage(request, pageId)).toMatchObject({ slug: "hint-probe" });
   expect(await readPage(request, pageId, { draft: true })).toMatchObject({
@@ -206,7 +206,7 @@ test("unticking root in page settings opens the un-root dialog", async ({ page, 
 
   await form.getByRole("button", { exact: true, name: "Save" }).click();
   await expect(form).toBeHidden();
-  await page.reload();
+  await reloadClosed(page);
   expect(await readPage(request, rootId)).toMatchObject({ isFolderRoot: false, slug: "landing" });
   expect((await childrenOf(request, folderId)).map((row) => row.fullPath)).toEqual([
     "/unroot-folder/landing",
@@ -244,7 +244,7 @@ test("changing the parent in page settings moves the page", async ({ page, reque
   await dialog.getByRole("button", { exact: true, name: "Move" }).click();
   await expect(page.getByText("Moved 1 item")).toBeVisible();
 
-  await page.reload();
+  await reloadClosed(page);
   expect((await childrenOf(request, targetId)).map((row) => [row.title, row.fullPath])).toEqual([
     ["Traveller", "/target-folder/traveller"],
   ]);
@@ -303,7 +303,7 @@ test("a page of a collection without drafts asks about its new URL, then saves i
   await dialog.getByRole("button", { exact: true, name: "Save" }).click();
   await expect(form).toBeHidden();
 
-  await page.reload();
+  await reloadClosed(page);
   expect(await readPage(request, postId, { collection: "posts" })).toMatchObject({
     slug: "live-post-2",
   });
@@ -365,7 +365,7 @@ test("the folders edit view saves a rename only after asking with the URL count"
   expect(await readFolderSlug(request, folderId)).toBe("edit-rename-folder");
   await dialog.getByRole("button", { exact: true, name: "Rename" }).click();
   await expect(page.getByText("Updated successfully")).toBeVisible();
-  await page.reload();
+  await reloadClosed(page);
   expect(await readFolderSlug(request, folderId)).toBe("edit-renamed");
   expect((await childrenOf(request, folderId)).map((row) => row.fullPath)).toEqual([
     "/edit-renamed/inside",
