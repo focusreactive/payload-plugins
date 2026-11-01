@@ -1395,6 +1395,11 @@ of operations that acquired the lock.
   permanently may report its URL to `afterPathChange` a second time (not verified).
 - The tree's delete counts include rows the user cannot read. Only numbers leak: the sample is
   filtered by read access.
+- **Known limit: a page in the trash keeps its URL and its root place.** The uniqueness checks read
+  at database level, which includes trashed rows, so a restore never collides with another page.
+  An editor cannot reuse a trashed page's URL, or take its folder's root place, until that page is
+  deleted permanently; delete it from the trash to free them. The refusal calls the trashed page
+  "(published)".
 - A rename that changes live URLs needs publish rights, like a move.
 - A stepped duplicate stores the dialog's locale. The duplicate dialog has no note for large runs.
 - A repair, a seed or the command line tool writes with no user, so a mirror batch is not queued.
