@@ -3,6 +3,7 @@ import type { Payload, PayloadRequest } from "payload";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import {
+  abandonOperation,
   registerOperationHandler,
   runOrQueue,
   startOperation,
@@ -136,6 +137,14 @@ const readStatus = async (id: number | string): Promise<string | undefined> =>
     })) as unknown as { status?: string } | null
   )?.status;
 
+const readError = async (id: number | string): Promise<string | null | undefined> =>
+  (
+    (await harness.payload.db.findOne({
+      collection: "folder-operations" as never,
+      where: { id: { equals: id } },
+    })) as unknown as { error?: string | null } | null
+  )?.error;
+
 describe("the batch runner", () => {
   it("500 items run in three steps", async () => {
     const { id, total } = await startOperation({
@@ -261,6 +270,92 @@ describe("the batch runner", () => {
     expect(owned.status).toBe(200);
     expect(await countRows(harness.payload)).toBe(200);
     expect(owned.body).toEqual({ done: 200, status: "running", total: 300 });
+  });
+});
+
+type Adapter = Record<string, (...args: never[]) => Promise<unknown>>;
+
+// A write of a failed status that cannot happen, as `SQLITE_BUSY` makes one on SQLite.
+const failingStatusWrite = (original: Adapter[string]) =>
+  function updateOne(this: unknown, ...args: never[]) {
+    const [{ collection, data }] = args as unknown as [
+      { collection: string; data: { status?: string } },
+    ];
+    if (collection === "folder-operations" && data.status === "failed") {
+      return Promise.reject(new Error("SQLITE_BUSY: database is locked"));
+    }
+
+    return original.apply(this, args);
+  };
+
+describe("recording the failure of a step", () => {
+  it("an abandon that commits while the step fails stays abandoned", async () => {
+    const { id } = await startOperation({
+      items: units(10),
+      kind: standInKind,
+      req: ownerRequest,
+    });
+    const abandoner = await createPayloadRequest({
+      payload: harness.payload,
+      req: {},
+      user: ownerRequest.user as never,
+    });
+    const adapter = harness.payload.db as unknown as Adapter;
+    const originalRollback = adapter.rollbackTransaction;
+    let abandonedDuringRollback: OperationProgress | null = null;
+    // The step's transaction has rolled back and the tree lock is free again, but the step has not
+    // yet written its failure: exactly the gap an abandon from another request can land in.
+    adapter.rollbackTransaction = async function rollbackTransaction(...args: never[]) {
+      const result = await originalRollback.apply(this, args);
+      adapter.rollbackTransaction = originalRollback;
+      abandonedDuringRollback = await abandonOperation(abandoner, id);
+
+      return result;
+    };
+    failAtUnit = 3;
+
+    let answer: OperationProgress;
+    try {
+      answer = await stepOperation(ownerRequest, id);
+    } finally {
+      adapter.rollbackTransaction = originalRollback;
+    }
+
+    expect(abandonedDuringRollback).toEqual({ done: 0, status: "abandoned", total: 10 });
+    expect(answer).toMatchObject({ error: "The stand-in failed on purpose", status: "failed" });
+    expect(await readStatus(id)).toBe("abandoned");
+    expect(await readError(id)).toBeNull();
+  });
+
+  it("a failure that cannot be stored still answers failed, and stepping again retries", async () => {
+    const { id } = await startOperation({
+      items: units(10),
+      kind: standInKind,
+      req: ownerRequest,
+    });
+    const adapter = harness.payload.db as unknown as Adapter;
+    const originals = { updateMany: adapter.updateMany, updateOne: adapter.updateOne };
+    adapter.updateMany = failingStatusWrite(originals.updateMany);
+    adapter.updateOne = failingStatusWrite(originals.updateOne);
+    failAtUnit = 3;
+
+    let answer: OperationProgress;
+    try {
+      answer = await stepOperation(ownerRequest, id);
+    } finally {
+      adapter.updateMany = originals.updateMany;
+      adapter.updateOne = originals.updateOne;
+    }
+
+    expect(answer).toEqual({
+      done: 0,
+      error: "The stand-in failed on purpose",
+      status: "failed",
+      total: 10,
+    });
+    // Nothing stored the failure, so the record still reads as running and a retry finishes it.
+    expect(await readStatus(id)).toBe("running");
+    expect(await stepOperation(ownerRequest, id)).toEqual({ done: 10, status: "done", total: 10 });
   });
 });
 

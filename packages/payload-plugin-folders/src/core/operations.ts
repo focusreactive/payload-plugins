@@ -197,6 +197,33 @@ const messageOf = (error: unknown): string =>
   error instanceof Error && error.message ? error.message : "The step failed";
 
 /**
+ * Stores a failed step's error after its own transaction rolled back, in a transaction of its own so
+ * the failure outlives the rollback. It runs under the tree lock and only touches a record that is
+ * not `done` or `abandoned`: an abandon that committed while this step was failing must keep its
+ * status, and on SQLite a write outside the lock collides with that abandon's transaction
+ * (`SQLITE_BUSY`). A write that still fails is logged and swallowed: the step's answer is the
+ * failure it already has, and the record keeps its last status, so stepping again retries.
+ */
+const recordFailure = async (req: PayloadRequest, id: FolderId, message: string): Promise<void> => {
+  try {
+    await withTreeLock(req, async () => {
+      await req.payload.db.updateMany({
+        collection: operationsCollection,
+        data: { error: message, status: "failed", updatedAt: new Date().toISOString() },
+        req,
+        returning: false,
+        where: { and: [{ id: { equals: id } }, { status: { not_in: ["abandoned", "done"] } }] },
+      });
+    });
+  } catch (error) {
+    req.payload.logger.error({
+      err: error,
+      msg: "[folders] could not record the failure of an operation step",
+    });
+  }
+};
+
+/**
  * Processes the next slice of an operation, up to `operationStepSize` units, in one transaction
  * under the tree lock, and answers `{ done, total, status }`. Only the user who started it may step
  * it (403 otherwise).
@@ -267,13 +294,7 @@ export const stepOperation = async (
       req.payload.logger.error({ err: error, msg: "[folders] an operation step failed" });
     }
     const message = messageOf(error);
-    // The step's transaction is rolled back; the failure is recorded outside it, so it stays.
-    await req.payload.db.updateOne({
-      collection: operationsCollection,
-      data: { error: message, status: "failed", updatedAt: new Date().toISOString() },
-      id,
-      returning: false,
-    });
+    await recordFailure(req, id, message);
 
     return { done: before.done, error: message, status: "failed", total: before.total };
   }
