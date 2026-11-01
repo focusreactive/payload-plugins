@@ -1,36 +1,28 @@
-/**
- * Payload's job queue keeps only the message: it rethrows a handler failure as
- * `new TaskError({ message: err.message })` and persists `{ name, cancelled, message, stack }`,
- * so the error's class, `code` and `cause` are gone before anything is stored (Payload 3.x).
- * That is why a reason travels inside the string rather than as an error subclass or a field.
- */
-
-/** A failure cause safe to name to an end user. Every member obliges admin-facing copy for it. */
-export type UserFacingFailureReason =
-  | "source-unreadable"
-  | "model-unavailable"
-  | "permission-denied"
-  | "requester-missing"
-  | "permission-check-failed";
-
-const MARKER_PREFIX = "translator:";
-
-const MARKER = new RegExp(`^\\[${MARKER_PREFIX}([a-z-]+)\\] `, "u");
-
-const REASONS: ReadonlySet<string> = new Set<UserFacingFailureReason>([
+export const REASONS = [
   "source-unreadable",
   "model-unavailable",
   "permission-denied",
   "requester-missing",
   "permission-check-failed",
-]);
+  "service-no-answer",
+  "service-unreachable",
+  "translation-damaged",
+  "translation-incomplete",
+  "translation-not-configured",
+] as const;
+
+/** A failure cause safe to name to an end user. */
+export type UserFacingFailureReason = (typeof REASONS)[number];
+
+const MARKER_PREFIX = "translator:";
+
+const MARKER = new RegExp(`^\\[${MARKER_PREFIX}([a-z-]+)\\] `, "u");
 
 const isUserFacingFailureReason = (value: string): value is UserFacingFailureReason =>
-  REASONS.has(value);
+  (REASONS as readonly string[]).includes(value);
 
-/** `detail` is for logs and the job record; it is never shown to a user. */
-export function markFailureReason(reason: UserFacingFailureReason, detail: string): string {
-  return `[${MARKER_PREFIX}${reason}] ${detail}`;
+export function markFailureReason(reason: UserFacingFailureReason, detailForLogs: string): string {
+  return `[${MARKER_PREFIX}${reason}] ${detailForLogs}`;
 }
 
 /** Anchored: a marked message quoted inside another error's text is not that error's own reason. */

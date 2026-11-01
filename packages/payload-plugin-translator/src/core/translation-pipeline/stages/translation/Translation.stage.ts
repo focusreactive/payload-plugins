@@ -1,4 +1,7 @@
 import { checkSegments } from "../../../kernel/lexical/checkSegments.js";
+import { isFailureCode, TranslationFailed } from "./TranslationFailed.js";
+import { isObject } from "../../../kernel/utils/isObject.js";
+import { readFailureReason } from "../../../errors/failureReason.js";
 import type {
   PipelineContext,
   PipelineStage,
@@ -11,6 +14,17 @@ import type {
   TranslationProvider,
   TranslationRequest,
 } from "../../../domain/translation-providers/index.js";
+
+const alreadyNamesItsReason = (thrown: unknown): boolean =>
+  thrown instanceof Error && readFailureReason(thrown.message) !== null;
+
+function asUserFacingFailure(thrown: unknown): unknown {
+  if (alreadyNamesItsReason(thrown)) return thrown;
+  if (!isObject(thrown)) return thrown;
+
+  const { code } = thrown;
+  return isFailureCode(code) ? new TranslationFailed(code, thrown) : thrown;
+}
 
 function translationRequest(ctx: PipelineContext): TranslationRequest {
   return { sourceLng: ctx.sourceLng, targetLng: ctx.targetLng, document: ctx.document };
@@ -50,7 +64,11 @@ export class TranslationStage implements PipelineStage {
       return ctx;
     }
 
-    const answers = await this.provider.translate({ ...ctx.textMap }, translationRequest(ctx));
+    const answers = await this.provider
+      .translate({ ...ctx.textMap }, translationRequest(ctx))
+      .catch((thrown: unknown): never => {
+        throw asUserFacingFailure(thrown);
+      });
 
     const settled: Record<number, SettledAnswer> = {};
     for (const chunk of ctx.textChunks ?? []) {

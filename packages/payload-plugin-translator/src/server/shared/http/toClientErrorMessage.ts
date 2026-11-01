@@ -13,6 +13,12 @@ const REASON_TEXT: Record<UserFacingFailureReason, string> = {
     "This translation did not run: the source document is not readable by the user who requested it, under the access rules of its own collection.",
   "permission-check-failed":
     "This translation was not written: the target collection's access rules could not be evaluated. If a save triggered it, that save was rolled back — check the server logs and the collection's `access` functions.",
+  "service-no-answer": "The translation service did not respond. Try again in a moment.",
+  "service-unreachable":
+    "The translation service could not be reached. Check the connection and try again.",
+  "translation-damaged": "The translation came back damaged and was not saved. Try again.",
+  "translation-incomplete": "The translation came back incomplete and was not saved. Try again.",
+  "translation-not-configured": "Translation is not set up. Check the plugin settings.",
 };
 
 /** Call this on any message before it reaches a user — see {@link REASON_TEXT}. */
