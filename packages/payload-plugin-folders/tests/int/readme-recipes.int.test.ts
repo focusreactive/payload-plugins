@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { buildSegmentWhere } from "@focus-reactive/payload-plugin-folders";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
@@ -15,7 +17,31 @@ let blogId: number;
 let newsId: number;
 const ids: Record<string, number> = {};
 
-type Docs = { docs: Array<{ id: number; orderKey?: string }> };
+type Docs = { docs: Array<{ folderPath?: string | null; id: number; orderKey?: string }> };
+
+const readmeText = readFileSync(new URL("../../README.md", import.meta.url), "utf-8");
+
+// The REST column of a "Stock queries" row, as the README writes it, so that a row the README gets
+// wrong fails here. A `GET /api/<path>` row becomes the path the test endpoint takes; a row that is
+// only a `where` is given the collection it applies to.
+const readmeQuery = (
+  needStart: string,
+  collection: string,
+  replacements: Record<string, string> = {}
+) => {
+  const row = readmeText.split("\n").find((line) => line.startsWith(`| ${needStart}`));
+  if (!row) {
+    throw new Error(`README has no stock query row starting with "${needStart}"`);
+  }
+  const [, restCell = ""] = row.split(" | ");
+  const code = /`([^`]+)`/u.exec(restCell)?.[1] ?? "";
+  let query = code;
+  for (const [placeholder, value] of Object.entries(replacements)) {
+    query = query.replaceAll(placeholder, value);
+  }
+
+  return query.startsWith("GET /api") ? query.slice("GET /api".length) : `/${collection}?${query}`;
+};
 
 const createPage = async (
   key: string,
@@ -76,15 +102,23 @@ const idsFrom = (data: unknown) =>
     .sort((first, second) => first - second);
 const sorted = (...values: number[]) => values.sort((first, second) => first - second);
 
+// The README's segment clause for a non-default locale, over REST.
+const segmentClause = (segment: string) =>
+  `&where[or][0][pathSegment][equals]=${segment}` +
+  `&where[or][1][and][0][pathSegment][exists]=false&where[or][1][and][1][pathSegment.en][equals]=${segment}`;
 describe("stock query recipes", () => {
   it("page by URL in de, over REST and the Local API", async () => {
     // /aktuelles/2026/new-year: the page has no German segment of its own, so it answers to the
     // English one, and its folders are translated.
-    const restWhere =
+    const newYearWhere =
       `locale=de&where[folderPath][equals]=/aktuelles/2026&where[isFolderRoot][not_equals]=true` +
-      `&where[or][0][pathSegment][equals]=new-year` +
-      `&where[or][1][and][0][pathSegment][exists]=false&where[or][1][and][1][pathSegment.en][equals]=new-year`;
-    expect(idsOf((await rest(`/pages?${restWhere}`)).body)).toEqual([ids.newYear]);
+      segmentClause("new-year");
+    expect(idsOf((await rest(`/pages?${newYearWhere}`)).body)).toEqual([ids.newYear]);
+
+    // The table row as the README writes it, with the segment clause appended: the page has a German
+    // segment of its own, `beitrag`.
+    const pageRow = readmeQuery("Page by URL", "pages");
+    expect(idsOf((await rest(`${pageRow}${segmentClause("beitrag")}`)).body)).toEqual([ids.post]);
 
     const { docs } = await harness.payload.find({
       collection: "pages",
@@ -102,25 +136,11 @@ describe("stock query recipes", () => {
   });
 
   it("page at the top level, root page of a folder, site root page", async () => {
-    expect(
-      idsOf(
-        (
-          await rest(
-            "/pages?where[folder][exists]=false&where[pathSegment][equals]=about&where[isFolderRoot][not_equals]=true"
-          )
-        ).body
-      )
-    ).toEqual([ids.about]);
-    expect(
-      idsOf(
-        (await rest("/pages?where[folderPath][equals]=/blog&where[isFolderRoot][equals]=true")).body
-      )
-    ).toEqual([ids.blogHome]);
-    expect(
-      idsOf(
-        (await rest("/pages?where[folder][exists]=false&where[isFolderRoot][equals]=true")).body
-      )
-    ).toEqual([ids.home]);
+    expect(idsOf((await rest(readmeQuery("Page at the top level", "pages"))).body)).toEqual([
+      ids.about,
+    ]);
+    expect(idsOf((await rest(readmeQuery("Root page of", "pages"))).body)).toEqual([ids.blogHome]);
+    expect(idsOf((await rest(readmeQuery("Site root page", "pages"))).body)).toEqual([ids.home]);
   });
 
   it("published only", async () => {
@@ -134,9 +154,7 @@ describe("stock query recipes", () => {
 
   it("everything under /blog, by folder id and by ancestor ids", async () => {
     const everything = sorted(ids.blogHome, ids.post, ids.draftPost, ids.newYear);
-    const byIds = await rest(
-      `/pages?where[or][0][folder][equals]=${blogId}&where[or][1][folder.ancestorIds][contains]=/${blogId}/`
-    );
+    const byIds = await rest(readmeQuery("Everything under", "pages", { "<id>": String(blogId) }));
     expect(idsOf(byIds.body)).toEqual(everything);
 
     const { docs } = await harness.payload.find({
@@ -150,24 +168,40 @@ describe("stock query recipes", () => {
   });
 
   it("folder by full path and folder subtree", async () => {
-    const byPath = await rest("/folders?where[fullPath][equals]=/aktuelles&locale=de", {
-      anonymous: true,
-    });
+    const byPath = await rest(readmeQuery("Folder by full path", "folders"), { anonymous: true });
     expect(idsOf(byPath.body)).toEqual([blogId]);
-    const subtree = await rest(`/folders?where[ancestorIds][contains]=/${blogId}/`, {
-      anonymous: true,
-    });
+    const subtree = await rest(
+      readmeQuery("Folder subtree", "folders", { "<id>": String(blogId) }),
+      { anonymous: true }
+    );
     expect(idsOf(subtree.body)).toEqual([newsId]);
   });
 
   it("pages in one folder in tree order, and a list sorted by folder path", async () => {
-    const inOrder = await rest(`/pages?where[folder][equals]=${blogId}&sort=orderKey`);
+    const inOrder = await rest(
+      readmeQuery("Pages in one folder", "pages", { "<id>": String(blogId) })
+    );
     const keys = inOrder.body.docs.map((doc) => doc.orderKey ?? "");
     expect(keys).toHaveLength(3);
     expect(keys).toEqual([...keys].sort());
-    const byPath = await rest("/pages?sort=folderPath&limit=50");
+    const byPath = await rest(`${readmeQuery("Sort a list", "pages")}&limit=50`);
     expect(byPath.status).toBe(200);
-    expect(byPath.body.docs.length).toBeGreaterThan(0);
+    // Pages without a folder have a null path, which databases sort first or last, so only the
+    // pages in folders are compared.
+    const folderPaths = byPath.body.docs
+      .map((doc) => doc.folderPath)
+      .filter(
+        (folderPath): folderPath is string => typeof folderPath === "string" && folderPath !== ""
+      );
+    expect(folderPaths).toEqual(["/blog", "/blog", "/blog", "/blog/2026"]);
+    const descending = await rest(`/pages?sort=-folderPath&limit=50`);
+    expect(
+      descending.body.docs
+        .map((doc) => doc.folderPath)
+        .filter(
+          (folderPath): folderPath is string => typeof folderPath === "string" && folderPath !== ""
+        )
+    ).toEqual(["/blog/2026", "/blog", "/blog", "/blog"]);
   });
 
   it("a page's URL is fullPath on any read", async () => {
