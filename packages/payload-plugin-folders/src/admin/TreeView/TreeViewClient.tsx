@@ -12,7 +12,8 @@ import {
   useRouter,
   useUserId,
 } from "../compat.js";
-import { getSharedTreeStore, revisionPollIntervalMs } from "../store.js";
+import { getSharedTreeStore } from "../store.js";
+import { usePolling } from "../usePolling.js";
 import "../styles.css";
 import { zoomFolderIdOfLocation } from "./treeUrlState.js";
 import { useExpandedPersistence } from "./useExpandedPersistence.js";
@@ -117,26 +118,7 @@ export const TreeViewClient = ({
     void store.refetchVisible();
   }, [apiBaseUrl, foldersSlug, locale, pageSize, store, userId]);
 
-  useEffect(() => {
-    if (!isConfigured) {
-      return undefined;
-    }
-    // Payload has no realtime API: the revision is polled, and read again when the tab is back.
-    const stopPolling = store.startPolling(revisionPollIntervalMs);
-    const pollOnReturn = () => {
-      if (document.visibilityState === "visible") {
-        void store.pollRevision();
-      }
-    };
-    window.addEventListener("focus", pollOnReturn);
-    document.addEventListener("visibilitychange", pollOnReturn);
-
-    return () => {
-      stopPolling();
-      window.removeEventListener("focus", pollOnReturn);
-      document.removeEventListener("visibilitychange", pollOnReturn);
-    };
-  }, [isConfigured, store]);
+  usePolling(store, isConfigured);
 
   return (
     <div className="collection-list fr-folders">

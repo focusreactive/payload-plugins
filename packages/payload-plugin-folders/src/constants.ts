@@ -1,5 +1,8 @@
 export const pluginSlug = "@focus-reactive/payload-plugin-folders";
 
+/** The slug of the plugin's tab in the admin's sidebar (`admin.components.sidebar.tabs`). */
+export const sidebarTabSlug = "folders-tree";
+
 export const redirectsPluginSlug = "@payloadcms/plugin-redirects";
 
 export const folderRedirectsSlug = "folder-redirects";

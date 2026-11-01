@@ -22,6 +22,8 @@ export type SearchTypeOption = { label: string; value: string };
 
 export type SearchBoxProps = {
   filters: SearchFilters;
+  /** The sidebar tab: the text box alone, without the scope toggle and the filters. */
+  isCompact?: boolean;
   /** A search is on: the filters apply to its hits, so the filter button shows. */
   isSearching: boolean;
   /** The folder the view is zoomed into; `false` at the top level, where there is nothing narrower than everything. */
@@ -54,6 +56,7 @@ export const SearchBox = ({
   coverName,
   filters,
   folderName,
+  isCompact = false,
   isSearching,
   isZoomed,
   onFiltersChange,
@@ -133,22 +136,24 @@ export const SearchBox = ({
   return (
     <div className="fr-folders-search" data-testid="search-bar" role="search">
       <div className="fr-folders-search__row">
-        <button
-          aria-label={translate(isZoomed ? "searchScopeFolder" : "searchScopeNeedsFolder", {
-            name: folderName,
-          })}
-          aria-pressed={isScoped}
-          className="fr-folders-search__scope"
-          data-testid="search-scope"
-          disabled={!isZoomed}
-          onClick={() => onScopeChange(scope === "all" ? "folder" : "all")}
-          title={translate(isZoomed ? "searchScopeFolder" : "searchScopeNeedsFolder", {
-            name: folderName,
-          })}
-          type="button"
-        >
-          <FolderIcon size={16} />
-        </button>
+        {isCompact ? null : (
+          <button
+            aria-label={translate(isZoomed ? "searchScopeFolder" : "searchScopeNeedsFolder", {
+              name: folderName,
+            })}
+            aria-pressed={isScoped}
+            className="fr-folders-search__scope"
+            data-testid="search-scope"
+            disabled={!isZoomed}
+            onClick={() => onScopeChange(scope === "all" ? "folder" : "all")}
+            title={translate(isZoomed ? "searchScopeFolder" : "searchScopeNeedsFolder", {
+              name: folderName,
+            })}
+            type="button"
+          >
+            <FolderIcon size={16} />
+          </button>
+        )}
         <div className="fr-folders-search__field">
           <span aria-hidden="true" className="fr-folders-search__icon">
             <SearchIcon />
@@ -180,7 +185,7 @@ export const SearchBox = ({
             </button>
           )}
         </div>
-        {isSearching ? (
+        {isSearching && !isCompact ? (
           <button
             aria-controls={filtersId}
             aria-expanded={filtersOpen}

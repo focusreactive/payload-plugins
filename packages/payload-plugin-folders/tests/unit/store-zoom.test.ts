@@ -31,6 +31,7 @@ const folder = (
   parentId,
   slug: title.toLowerCase(),
   slugIsFallback: false,
+  titleIsFallback: false,
   structureRevision: 0,
   title,
   updatedAt: "2026-01-01T00:00:00.000Z",
@@ -47,6 +48,7 @@ const page = (id: number, title: string, parentId: number): TreeItem => ({
   parentId,
   slug: title.toLowerCase(),
   slugIsFallback: false,
+  titleIsFallback: false,
   status: "published",
   structureRevision: 0,
   title,
@@ -395,5 +397,52 @@ describe("replacing the open folders", () => {
     await store.replaceExpanded([blogId, blogId]);
 
     expect(store.getState().expanded).toEqual(["10"]);
+  });
+});
+
+describe("retaining the full tree for the sidebar tab", () => {
+  it("keeps the folders under the top level current while the tree view is zoomed elsewhere", async () => {
+    const server = createServer();
+    const store = createStore(server);
+    await store.loadChildren(null);
+    await store.setExpanded(shopId, true);
+    await store.setZoom(yearId);
+    await store.pollRevision();
+    server.childrenRequests.length = 0;
+
+    server.revision = 6;
+    await store.pollRevision();
+    const withoutTab = server.childrenRequests.map((request) => request.searchParams.get("parent"));
+
+    const release = store.retainFullTree();
+    server.childrenRequests.length = 0;
+    server.revision = 7;
+    await store.pollRevision();
+    const withTab = server.childrenRequests.map((request) => request.searchParams.get("parent"));
+    release();
+
+    // Zoomed into 2026, only that folder is read; with the tab mounted the top level is read too,
+    // and the open Shop under it.
+    expect(withoutTab).toEqual([String(yearId)]);
+    expect(withTab).toEqual(expect.arrayContaining([String(yearId), rootKey, String(shopId)]));
+  });
+
+  it("goes back to reading only the zoomed folder once the tab lets go", async () => {
+    const server = createServer();
+    const store = createStore(server);
+    await store.loadChildren(null);
+    await store.setZoom(yearId);
+    await store.pollRevision();
+    const release = store.retainFullTree();
+    release();
+    release();
+    server.childrenRequests.length = 0;
+
+    server.revision = 6;
+    await store.pollRevision();
+
+    expect(server.childrenRequests.map((request) => request.searchParams.get("parent"))).toEqual([
+      String(yearId),
+    ]);
   });
 });

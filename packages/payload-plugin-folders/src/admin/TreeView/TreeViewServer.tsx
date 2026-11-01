@@ -2,6 +2,7 @@ import type { ListViewServerProps } from "payload";
 
 import { TreeViewClient } from "./TreeViewClient.js";
 import { readTreeSettings, resolveCollectionTitle } from "./readTreeSettings.js";
+import { treeClientPropsOf } from "./treeClientProps.js";
 
 export type { TreeViewSettings } from "./readTreeSettings.js";
 
@@ -20,18 +21,7 @@ export const TreeViewServer = ({
 
   return (
     <TreeViewClient
-      confirmMoves={settings.confirmMoves}
-      draftCollections={settings.draftCollections}
-      enforceAllowedTypesOnMove={settings.enforceAllowedTypesOnMove}
-      foldersSlug={settings.foldersSlug}
-      hasPreviewUrl={settings.hasPreviewUrl}
-      initialLocale={locale?.code ?? null}
-      maxDepth={settings.maxDepth}
-      pageFields={settings.pageFields}
-      pageSize={settings.pageSize}
-      reservedRootSegments={settings.reservedRootSegments}
-      title={title}
-      typeLabels={settings.typeLabels}
+      {...treeClientPropsOf({ initialLocale: locale?.code ?? null, settings, title })}
     />
   );
 };

@@ -111,6 +111,11 @@ export type TreeStore = {
    * preference come back this way. Their rows load as the folders above them show.
    */
   replaceExpanded: (folders: readonly FolderId[]) => Promise<void>;
+  /**
+   * The sidebar tab shows the top level whatever the tree view is zoomed into: while it is
+   * mounted, the store keeps the folders under the top level current too. Returns the release.
+   */
+  retainFullTree: () => () => void;
   /** Asks the server for the revision and reads the visible folders again when it changed. */
   pollRevision: () => Promise<void>;
   /** Reads every visible folder again. */
@@ -280,13 +285,24 @@ const removeItems = (
   }
 };
 
-/** The folders shown right now: the view's root, and every opened folder under an opened path. */
-const visibleFolderKeys = (state: TreeStoreState): FolderKey[] => {
+/**
+ * The folders shown right now: the view's root, and every opened folder under an opened path. With
+ * the full tree retained (the sidebar tab is mounted) the top level counts as a root too, because
+ * the tab shows it whatever folder the tree view is zoomed into.
+ */
+const visibleFolderKeys = (state: TreeStoreState, retainFullTree: boolean): FolderKey[] => {
   const expanded = new Set(state.expanded);
   const visible: FolderKey[] = [];
-  const pending: FolderKey[] = [viewRootKeyOf(state)];
+  const seen = new Set<FolderKey>();
+  const pending: FolderKey[] = retainFullTree
+    ? [viewRootKeyOf(state), rootKey]
+    : [viewRootKeyOf(state)];
   while (pending.length > 0) {
     const key = pending.shift() as FolderKey;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
     const entry = state.childrenByFolder[key];
     if (entry) {
       visible.push(key);
@@ -352,6 +368,7 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
   const moreNumbers = new Map<FolderKey, number>();
   const firstLoads = new Map<FolderKey, Promise<ReadResult | null>>();
   let pendingOptimisticChanges = 0;
+  let fullTreeRetainers = 0;
   const listeners = new Set<() => void>();
 
   const setState = (next: TreeStoreState): void => {
@@ -549,7 +566,7 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
    * them is loaded and current. It never moves back, and never past a folder read earlier.
    */
   const settleRevision = (): void => {
-    const visible = visibleFolderKeys(state);
+    const visible = visibleFolderKeys(state, fullTreeRetainers > 0);
     if (visible.length === 0) {
       return;
     }
@@ -573,7 +590,7 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
    */
   const refetchPass = async (behindRevision: number | null): Promise<void> => {
     const startedEpoch = epoch;
-    const visible = visibleFolderKeys(state);
+    const visible = visibleFolderKeys(state, fullTreeRetainers > 0);
     const visibleSet = new Set(visible);
     // What is loaded but not on screen is only marked; it is read when its folder opens.
     const entries = { ...state.childrenByFolder };
@@ -724,7 +741,7 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
 
   const invalidate = async (parents: readonly (FolderId | null)[]): Promise<void> => {
     const keys = [...new Set(parents.map(folderKeyOf))];
-    const visibleSet = new Set(visibleFolderKeys(state));
+    const visibleSet = new Set(visibleFolderKeys(state, fullTreeRetainers > 0));
     const entries = { ...state.childrenByFolder };
     for (const key of keys) {
       const entry = entries[key];
@@ -1056,6 +1073,17 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
     refetchVisible,
     replaceExpanded,
     reset: () => reset(),
+    retainFullTree: () => {
+      fullTreeRetainers += 1;
+      let released = false;
+
+      return () => {
+        if (!released) {
+          released = true;
+          fullTreeRetainers -= 1;
+        }
+      };
+    },
     runOptimisticMove: async (move, request) => {
       const startedEpoch = epoch;
       const handle = applyOptimisticMove(move);

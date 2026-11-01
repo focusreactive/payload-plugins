@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { ConfirmMoves, FolderId } from "../../types.js";
 import { ListHeader, useCanCreate, useLocaleCount } from "../compat.js";
@@ -13,6 +13,7 @@ import { useRootPageFlow } from "../ContextMenu/useRootPageFlow.js";
 import { DragAndDropProvider } from "../DragAndDrop/DragAndDropProvider.js";
 import { focusRowWhenShown } from "../Keyboard/focusRow.js";
 import { useTreeKeyboard } from "../Keyboard/useTreeKeyboard.js";
+import type { TreeKeyboard } from "../Keyboard/useTreeKeyboard.js";
 import { resolveCrumbDrop } from "../DragAndDrop/dropTargets.js";
 import type { DropRules } from "../DragAndDrop/dropTargets.js";
 import type { MoveTarget } from "../Move/moveFlow.js";
@@ -54,6 +55,8 @@ import { ZoomNotFound } from "./ZoomNotFound.js";
 export type TreeWorkspaceProps = {
   adminRoute: string;
   confirmMoves: ConfirmMoves;
+  /** The row of the document open in the edit view (sidebar tab): highlighted, scrolled to. */
+  currentKey?: string | null;
   /** Page collections with drafts: a page of one is created as a draft. */
   draftCollections: readonly string[];
   enforceAllowedTypesOnMove: boolean;
@@ -63,6 +66,11 @@ export type TreeWorkspaceProps = {
   language: string;
   /** The deepest a URL may go. */
   maxDepth: number;
+  /**
+   * `compact` is the sidebar tab (spec section 7.12): the whole tree, whatever the tree view is
+   * zoomed into, showing the name and the status dot, with the search box and Create above it.
+   */
+  mode?: "compact" | "full";
   /** Zooms into a folder, or back to the top level with `null`: the address changes, then the store. */
   onZoom: (folderId: FolderId | null) => void;
   onOpenPage: (url: string) => void;
@@ -91,12 +99,14 @@ export type TreeWorkspaceProps = {
 export const TreeWorkspace = ({
   adminRoute,
   confirmMoves,
+  currentKey = null,
   draftCollections,
   enforceAllowedTypesOnMove,
   foldersSlug,
   hasPreviewUrl,
   language,
   maxDepth,
+  mode = "full",
   onOpenPage,
   onSearchChange,
   onZoom,
@@ -110,7 +120,8 @@ export const TreeWorkspace = ({
   translate,
   typeLabels,
 }: TreeWorkspaceProps) => {
-  const { rows, state } = useTreeData(store);
+  const isCompact = mode === "compact";
+  const { rows, state } = useTreeData(store, { ignoreZoom: isCompact });
   const { zoom } = state;
   const apiContext = useApiContext(store);
   // The zoomed folder's row: the breadcrumbs carry it when no parent loaded it.
@@ -253,7 +264,8 @@ export const TreeWorkspace = ({
     typeLabels,
   });
   const { startDelete, startDuplicate, startPublish } = operationsFlow;
-  const health = useTreeHealth({ apiContext, revision: state.revision });
+  // The drift banner belongs to the tree view; the tab does not ask the server about it.
+  const health = useTreeHealth({ apiContext, revision: isCompact ? null : state.revision });
   const repairFlow = useRepairFlow({
     apiContext,
     onRepaired: health.refresh,
@@ -414,6 +426,8 @@ export const TreeWorkspace = ({
     typeLabels,
   });
 
+  // The keyboard hook is built after the actions that need its tree element.
+  const keyboardRef = useRef<TreeKeyboard | null>(null);
   // Escape in a search: the tree is back, the focused hit's folders are open and its row has the focus.
   const leaveSearch = useCallback(
     (focused: TreeItem | null) => {
@@ -432,7 +446,7 @@ export const TreeWorkspace = ({
         for (const id of toOpen) {
           await store.setExpanded(id, true);
         }
-        focusRowWhenShown(focused);
+        focusRowWhenShown(focused, () => keyboardRef.current?.treeRef.current ?? null);
       })();
     },
     [onSearchChange, onZoom, store, zoom?.folderId]
@@ -458,6 +472,7 @@ export const TreeWorkspace = ({
     store,
     translate,
   });
+  keyboardRef.current = keyboard;
 
   const runAction = useCallback(
     (action: ToolbarAction) => {
@@ -511,7 +526,9 @@ export const TreeWorkspace = ({
     [foldersSlug, translate, typeLabels]
   );
   const focusTabStopRow = useCallback(() => {
-    document.querySelector<HTMLElement>('[data-testid="tree-row"][tabindex="0"]')?.focus();
+    keyboardRef.current?.treeRef.current
+      ?.querySelector<HTMLElement>('[data-testid="tree-row"][tabindex="0"]')
+      ?.focus();
   }, []);
 
   const headerActions = [
@@ -550,7 +567,7 @@ export const TreeWorkspace = ({
           translate={translate}
         />
       ) : null}
-      {selection.items.length === 0 && !moveMode.active ? (
+      {selection.items.length === 0 && !moveMode.active && !isCompact ? (
         <ListHeader Actions={headerActions} title={title} />
       ) : null}
       <DragAndDropProvider
@@ -575,11 +592,17 @@ export const TreeWorkspace = ({
             translate={translate}
           />
         )}
+        {isCompact && selection.items.length === 0 && !moveMode.active ? (
+          <div className="fr-folders-compact-header" data-testid="compact-header">
+            {headerActions}
+          </div>
+        ) : null}
         {moveMode.active ? null : (
           <SearchBox
             coverName={coverName}
             filters={filters}
             folderName={folderName}
+            isCompact={isCompact}
             isSearching={isSearching}
             isZoomed={zoom !== null}
             onFiltersChange={setFilters}
@@ -593,17 +616,19 @@ export const TreeWorkspace = ({
             typeOptions={typeOptions}
           />
         )}
-        <div className="fr-folders-banners" data-testid="tree-banners">
-          {health.hasDrift ? (
-            <DriftBanner
-              canRepair={health.canRepair}
-              onRebuild={startRepair}
-              translate={translate}
-            />
-          ) : null}
-          {operationsFlow.banner}
-        </div>
-        <div className="fr-folders-body">
+        {isCompact ? null : (
+          <div className="fr-folders-banners" data-testid="tree-banners">
+            {health.hasDrift ? (
+              <DriftBanner
+                canRepair={health.canRepair}
+                onRebuild={startRepair}
+                translate={translate}
+              />
+            ) : null}
+            {operationsFlow.banner}
+          </div>
+        )}
+        <div className={isCompact ? "fr-folders-body fr-folders-body--compact" : "fr-folders-body"}>
           {showZoomNotFound ? (
             <ZoomNotFound onBack={() => onZoom(null)} title={topLevelTitle} translate={translate} />
           ) : showSearchView ? (
@@ -630,7 +655,9 @@ export const TreeWorkspace = ({
               ) : search.items.length > 0 ? (
                 <Tree
                   adminRoute={adminRoute}
+                  currentKey={currentKey}
                   emptyActions={emptyActions}
+                  isCompact={isCompact}
                   keyboard={keyboard}
                   label={translate("searchResultsLabel")}
                   language={language}
@@ -658,7 +685,9 @@ export const TreeWorkspace = ({
           ) : (
             <Tree
               adminRoute={adminRoute}
+              currentKey={currentKey}
               emptyActions={emptyActions}
+              isCompact={isCompact}
               keyboard={keyboard}
               label={translate("treeLabel")}
               language={language}

@@ -1,6 +1,7 @@
 import { definePlugin } from "payload";
 import type { CollectionConfig, Config } from "payload";
 
+import { withSidebarTab } from "./admin/SidebarTab/sidebarTabConfig.js";
 import { registerResolvedOptions } from "./core/runtime.js";
 import { installTreeLockTracking, seedTreeState } from "./core/treeLock.js";
 import { buildFolderOperationsCollection } from "./collections/folderOperations.js";
@@ -77,6 +78,7 @@ export const foldersPlugin = definePlugin<FoldersPluginOptions>({
 
     return {
       ...config,
+      admin: resolved.disabled ? config.admin : withSidebarTab(config.admin, resolved),
       db: database,
       i18n: resolved.disabled
         ? config.i18n

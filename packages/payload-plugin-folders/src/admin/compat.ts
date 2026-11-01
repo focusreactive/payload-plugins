@@ -9,6 +9,7 @@ import {
   usePreferences,
   useRouter,
   useSearchParams,
+  useSidebarTabs,
   useTranslation,
 } from "@payloadcms/ui";
 import { ListHeader } from "@payloadcms/ui/elements/ListHeader";
@@ -33,6 +34,13 @@ export {
   useRouter,
   useSearchParams,
 };
+
+/**
+ * Whether the sidebar tab with this slug is the one showing. Payload keeps the content of every
+ * tab it has loaded mounted, hidden, so a tab uses this to do nothing while another is open.
+ */
+export const useIsSidebarTabActive = (tabSlug: string): boolean =>
+  useSidebarTabs()?.activeTabSlug === tabSlug;
 
 /** The signed-in user's id, `null` while signed out. */
 export const useUserId = (): number | string | null => useAuth().user?.id ?? null;

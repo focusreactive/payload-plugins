@@ -2,3 +2,4 @@
 export { TreeViewServer } from "../admin/TreeView/TreeViewServer.js";
 export type { TreeViewSettings } from "../admin/TreeView/TreeViewServer.js";
 export { FolderLocationField } from "../admin/EditView/FolderLocationField.js";
+export { SidebarTabServer } from "../admin/SidebarTab/SidebarTabServer.js";
