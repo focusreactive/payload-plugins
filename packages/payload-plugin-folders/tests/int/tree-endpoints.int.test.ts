@@ -1135,6 +1135,75 @@ describe("tree reads and read access", () => {
     }
   });
 
+  it("the search's folders map leaves out folders the user cannot read", async () => {
+    const hostApp = await getTestPayload({
+      foldersOptions: {
+        folders: {
+          access: {
+            // A limited editor reads their folder and what is beneath it, and nothing above.
+            read: ({ req }: { req: PayloadRequest }) => {
+              const user = req.user as {
+                limitedFolder?: { id: number } | number | null;
+                role?: string;
+              } | null;
+              if (user?.role !== "editorLimited") {
+                return true;
+              }
+              const rootId =
+                typeof user.limitedFolder === "object"
+                  ? user.limitedFolder?.id
+                  : user.limitedFolder;
+
+              return {
+                or: [{ id: { equals: rootId } }, { ancestorIds: { contains: `/${rootId}/` } }],
+              };
+            },
+          },
+        },
+      },
+    });
+    try {
+      const { payload } = hostApp;
+      const archive = await createFolder(payload, { name: "Archive", slug: "archive" });
+      const archivedBlog = await createFolder(payload, {
+        name: "Blog",
+        parent: archive.id,
+        slug: "blog",
+      });
+      await payload.create({
+        collection: "pages",
+        data: {
+          _status: "published",
+          folder: archivedBlog.id,
+          slug: "old-news",
+          title: "Old news",
+        } as never,
+        depth: 0,
+        overrideAccess: true,
+      });
+      const admin = await asUser(payload, "admin");
+      const limited = await asUser(payload, "editorLimited", archivedBlog.id);
+
+      const asAdmin = await searchTree(admin, { folder: null, query: "old news", scope: "all" });
+      const asLimited = await searchTree(limited, {
+        folder: null,
+        query: "old news",
+        scope: "all",
+      });
+
+      expect(asAdmin.folders).toEqual({
+        [String(archive.id)]: "Archive",
+        [String(archivedBlog.id)]: "Blog",
+      });
+      // The hit still names the folder above its own in `ancestorIds`, but not that folder's name.
+      expect(asLimited.items).toHaveLength(1);
+      expect(asLimited.items[0]?.ancestorIds).toContain(`/${archive.id}/`);
+      expect(asLimited.folders).toEqual({ [String(archivedBlog.id)]: "Blog" });
+    } finally {
+      await hostApp.destroy();
+    }
+  });
+
   it("a page whose folder the user cannot read gets no invented path or depth", async () => {
     const hostApp = await getTestPayload({
       foldersOptions: {
