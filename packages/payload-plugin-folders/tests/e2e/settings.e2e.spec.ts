@@ -9,6 +9,7 @@ import {
   redirectsFrom,
   removeFolderTree,
 } from "./helpers/content.js";
+import { waitUntilHydrated } from "./helpers/hydration.js";
 import { menuItem, openRowMenu } from "./helpers/menu.js";
 import { confirmDialog, folderSettings, pageSettings, unrootDialog } from "./helpers/settings.js";
 import { expandFolder, folderRow, openContentTree, pageRow, reloadClosed } from "./helpers/tree.js";
@@ -481,6 +482,8 @@ test("the folders edit view does not save a lock it could not count the subfolde
   // The count is a read of the folders list; refused, there is no number to confirm.
   await page.route(/\/api\/folders\?.*ancestorIds/u, (route) => route.abort());
 
+  // A click on the server-rendered select, before React has taken it over, opens nothing.
+  await waitUntilHydrated(page.getByRole("combobox", { name: "Allowed Types" }));
   await page.locator("#field-allowedTypes").click();
   await page.getByRole("option", { name: "Blog post" }).click();
   await page.locator("#field-lockSubfolderTypes").check();
@@ -590,15 +593,27 @@ test("Set as root page offers Save as draft instead when a draft lands in the ro
   const toast = page.locator("[data-sonner-toast]").filter({ hasText: "This page changed" });
   await expect(toast).toBeVisible();
   expect(await readPage(request, pageId)).toMatchObject({ isFolderRoot: false });
-  // The action sits under the message, which keeps the full width of the toast.
-  const message = toast.locator("[data-title]");
+  // The action sits under the message, which keeps the full width of the toast. The toast slides
+  // in, so two separate measurements would be taken at two points of the slide: both boxes are read
+  // in one call, in the same frame.
   const action = toast.getByRole("button", { name: "Save as draft instead" });
-  const messageBox = await message.boundingBox();
-  const actionBox = await action.boundingBox();
-  expect(messageBox).not.toBeNull();
-  expect(actionBox).not.toBeNull();
-  expect(messageBox?.width ?? 0).toBeGreaterThan(200);
-  expect(actionBox?.y ?? 0).toBeGreaterThan((messageBox?.y ?? 0) + (messageBox?.height ?? 0) - 2);
+  const layout = await toast.evaluate((element) => {
+    const messageBox = element.querySelector("[data-title]")?.getBoundingClientRect();
+    const actionBox = [...element.querySelectorAll("button")]
+      .find((button) => button.textContent?.trim() === "Save as draft instead")
+      ?.getBoundingClientRect();
+
+    return messageBox && actionBox
+      ? {
+          actionTop: actionBox.top,
+          messageBottom: messageBox.bottom,
+          messageWidth: messageBox.width,
+        }
+      : null;
+  });
+  expect(layout).not.toBeNull();
+  expect(layout?.messageWidth ?? 0).toBeGreaterThan(200);
+  expect(layout?.actionTop ?? 0).toBeGreaterThan((layout?.messageBottom ?? 0) - 2);
 
   await action.click();
   await expect(
