@@ -1406,7 +1406,8 @@ of operations that acquired the lock.
 - `fullPath` is also null for a page with no segment of its own in a locale when the read turns the
   locale fallback off (`fallbackLocale: false`, or `localization.fallback: false`). The path has
   nothing to fall back to at read time. `buildSegmentWhere` still finds that page, since it falls
-  back in the query.
+  back in the query. A `locale=all` read is the exception: it always applies the default-locale
+  fallback, even when `localization.fallback` is false.
 - Your own collection `afterRead` hooks run before the plugin's, so they see `fullPath` unset.
 - A page that existed before the plugin has a null `pathSegment` until it is saved again or
   repaired, so a segment lookup does not find it until then. Repair also lowercases a legacy
