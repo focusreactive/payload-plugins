@@ -21,7 +21,8 @@ export type OperationBannerProps = {
 /**
  * What the tree shows for an operation whose dialog was closed (spec section 5.8): "Publishing: 400
  * of 980", with a bar. It goes on stepping behind the banner, and after a reload it comes back from
- * the operation's record.
+ * the operation's record. The banners share one strip (`fr-folders-banners`) with the drift banner,
+ * which the view draws.
  */
 export const OperationBanner = ({
   onAbandon,
@@ -35,7 +36,7 @@ export const OperationBanner = ({
   }
 
   return (
-    <div className="fr-folders-operations" data-testid="operation-banners">
+    <>
       {operations.map((operation) => {
         const isFailed = operation.status === "failed";
         const counts = { done: operation.done, total: operation.total };
@@ -98,6 +99,6 @@ export const OperationBanner = ({
           </div>
         );
       })}
-    </div>
+    </>
   );
 };
