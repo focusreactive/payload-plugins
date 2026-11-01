@@ -746,7 +746,7 @@ const duplicateHandler: OperationHandler = {
     }
     const { req } = context;
     const previousLocale = req.locale;
-    req.locale = locale;
+    req.locale = locale as typeof req.locale;
     try {
       await copyUnits(context, units);
     } finally {
