@@ -292,6 +292,292 @@ describe("a conflict names a page only to a reader who may read it", () => {
   });
 });
 
+const readUserDocument = async (email: string) =>
+  ({
+    ...(
+      await harness.payload.find({
+        collection: "users",
+        depth: 0,
+        overrideAccess: true,
+        where: { email: { equals: email } },
+      })
+    ).docs[0],
+    collection: "users",
+  }) as never;
+
+/** The messages of the validation error a save as `user` is refused with. */
+const saveRefusal = async (work: Promise<unknown>): Promise<string[]> => {
+  try {
+    await work;
+  } catch (error) {
+    return ((error as { data?: { errors?: Array<{ message: string }> } }).data?.errors ?? []).map(
+      ({ message }) => message
+    );
+  }
+  throw new Error("expected the save to be refused");
+};
+
+describe("a refused save names a page only to a reader who may read it", () => {
+  it("a taken slug says a page when the editor cannot read the live page that holds it", async () => {
+    const { payload } = harness;
+    const blog = await createFolder(payload, { slug: "blog" });
+    const hidden = await createLivePage(payload, blog.id, "secret", hiddenTitle);
+    await createLivePage(payload, blog.id, "open", "Open page");
+    const user = await readUserDocument(editor.email);
+
+    await withRead("pages", editor, [hidden.id], async () => {
+      const refusedHidden = await saveRefusal(
+        payload.create({
+          collection: "pages",
+          data: { _status: "published", folder: blog.id, slug: "secret", title: "Late" } as never,
+          depth: 0,
+          overrideAccess: false,
+          user,
+        })
+      );
+      const refusedOpen = await saveRefusal(
+        payload.create({
+          collection: "pages",
+          data: {
+            _status: "published",
+            folder: blog.id,
+            slug: "open",
+            title: "Late open",
+          } as never,
+          depth: 0,
+          overrideAccess: false,
+          user,
+        })
+      );
+
+      expect(JSON.stringify(refusedHidden)).not.toContain(hiddenTitle);
+      expect(refusedHidden).toEqual(["/blog/secret is already used by a page (published)"]);
+      expect(refusedOpen).toEqual(["/blog/open is already used by Open page (published)"]);
+    });
+  });
+
+  it("a taken slug says a page when the editor cannot read the collection of the page that holds it", async () => {
+    const { payload } = harness;
+    const blog = await createFolder(payload, { slug: "blog" });
+    await createPost(payload, blog.id, "secret", hiddenTitle);
+    const user = await readUserDocument(editor.email);
+
+    const config = payload.collections.posts.config;
+    const original = config.access.read;
+    config.access.read = ({ req }) => req.user?.email !== editor.email;
+    try {
+      const refused = await saveRefusal(
+        payload.create({
+          collection: "pages",
+          data: { _status: "published", folder: blog.id, slug: "secret", title: "Late" } as never,
+          depth: 0,
+          overrideAccess: false,
+          user,
+        })
+      );
+
+      expect(JSON.stringify(refused)).not.toContain(hiddenTitle);
+      expect(refused).toEqual(["/blog/secret is already used by a page (published)"]);
+    } finally {
+      config.access.read = original;
+    }
+  });
+
+  it("a publish that takes a slug names a page only when the editor may read the holder", async () => {
+    const { payload } = harness;
+    const blog = await createFolder(payload, { slug: "blog" });
+    const hidden = await createLivePage(payload, blog.id, "secret", hiddenTitle);
+    const open = await createLivePage(payload, blog.id, "open", "Open page");
+    const hiddenDraft = await createDraftPage(payload, blog.id, "secret", "Draft one");
+    const openDraft = await createDraftPage(payload, blog.id, "open", "Draft two");
+    const user = await readUserDocument(editor.email);
+
+    await withRead("pages", editor, [hidden.id], async () => {
+      const publish = (id: number) =>
+        saveRefusal(
+          payload.update({
+            collection: "pages",
+            data: { _status: "published" } as never,
+            depth: 0,
+            id,
+            overrideAccess: false,
+            user,
+          })
+        );
+
+      expect(await publish(hiddenDraft.id)).toEqual([
+        "/blog/secret is already used by a page (published)",
+      ]);
+      expect(await publish(openDraft.id)).toEqual([
+        "/blog/open is already used by Open page (published)",
+      ]);
+      expect(open.id).toBeDefined();
+    });
+  });
+
+  it("a taken root place says another page when the editor cannot read the root page", async () => {
+    const { payload } = harness;
+    const docs = await createFolder(payload, { slug: "docs" });
+    const guide = await createFolder(payload, { slug: "guide" });
+    const hiddenRoot = (await payload.create({
+      collection: "pages",
+      data: {
+        _status: "published",
+        folder: docs.id,
+        isFolderRoot: true,
+        slug: "start",
+        title: hiddenTitle,
+      } as never,
+      depth: 0,
+      overrideAccess: true,
+    })) as unknown as { id: number };
+    await createPost(payload, guide.id, "intro", "Open root");
+    await payload.update({
+      collection: "posts",
+      data: { isFolderRoot: true } as never,
+      depth: 0,
+      id: (
+        await payload.find({
+          collection: "posts",
+          depth: 0,
+          overrideAccess: true,
+          where: { slug: { equals: "intro" } },
+        })
+      ).docs[0].id,
+      overrideAccess: true,
+    });
+    const user = await readUserDocument(editor.email);
+    const saveRoot = (folder: number, slug: string) =>
+      saveRefusal(
+        payload.create({
+          collection: "pages",
+          data: {
+            _status: "published",
+            folder,
+            isFolderRoot: true,
+            slug,
+            title: "Late root",
+          } as never,
+          depth: 0,
+          overrideAccess: false,
+          user,
+        })
+      );
+
+    await withRead("pages", editor, [hiddenRoot.id], async () => {
+      const refusedHidden = await saveRoot(docs.id, "begin");
+      const refusedOpen = await saveRoot(guide.id, "begin");
+
+      expect(JSON.stringify(refusedHidden)).not.toContain(hiddenTitle);
+      expect(refusedHidden).toEqual([
+        "Another page is already the root page of /docs. Unset it first.",
+      ]);
+      expect(refusedOpen).toEqual([
+        "Open root is already the root page of /guide. Unset it first.",
+      ]);
+    });
+  });
+});
+
+describe("a refused publish of every locale names a page only to a reader who may read it", () => {
+  // A de draft slug is judged when the page is written, after the default-locale checks passed.
+  it("a de slug that another page took says a page when the editor cannot read it", async () => {
+    const { payload } = harness;
+    const blog = await createFolder(payload, { slug: "blog" });
+    const owner = await createLivePage(payload, blog.id, "owner", "Owner");
+    await payload.update({
+      collection: "pages",
+      data: { _status: "published", slug: "wire", title: hiddenTitle } as never,
+      depth: 0,
+      id: owner.id,
+      locale: "de",
+      overrideAccess: true,
+    });
+    const other = await createLivePage(payload, blog.id, "other", "Other");
+    await payload.update({
+      collection: "pages",
+      data: { slug: "wire", title: "Anderer Draht" } as never,
+      depth: 0,
+      draft: true,
+      id: other.id,
+      locale: "de",
+      overrideAccess: true,
+    });
+    const user = await readUserDocument(editor.email);
+    const publishAsEditor = () =>
+      saveRefusal(
+        payload.update({
+          collection: "pages",
+          data: { _status: "published" } as never,
+          depth: 0,
+          id: other.id,
+          overrideAccess: false,
+          publishAllLocales: true,
+          user,
+        })
+      );
+
+    await withRead("pages", editor, [owner.id], async () => {
+      const refused = await publishAsEditor();
+
+      expect(JSON.stringify(refused)).not.toContain(hiddenTitle);
+      expect(refused).toEqual(["/blog/wire is already used by a page (published)"]);
+    });
+    await withRead("pages", editor, [], async () => {
+      expect(await publishAsEditor()).toEqual([
+        `/blog/wire is already used by ${hiddenTitle} (published)`,
+      ]);
+    });
+  });
+
+  it("a root flag that another page took says another page when the editor cannot read it", async () => {
+    const { payload } = harness;
+    const docs = await createFolder(payload, { slug: "docs" });
+    const taker = await createLivePage(payload, docs.id, "taker", hiddenTitle);
+    await payload.update({
+      collection: "pages",
+      data: { isFolderRoot: true } as never,
+      depth: 0,
+      id: taker.id,
+      overrideAccess: true,
+    });
+    const former = await createLivePage(payload, docs.id, "former", "Former");
+    await payload.update({
+      collection: "pages",
+      data: { isFolderRoot: true } as never,
+      depth: 0,
+      draft: true,
+      id: former.id,
+      overrideAccess: true,
+    });
+    const user = await readUserDocument(editor.email);
+    const publishAsEditor = () =>
+      saveRefusal(
+        payload.update({
+          collection: "pages",
+          data: { _status: "published" } as never,
+          depth: 0,
+          id: former.id,
+          overrideAccess: false,
+          publishAllLocales: true,
+          user,
+        })
+      );
+
+    await withRead("pages", editor, [taker.id], async () => {
+      const refused = await publishAsEditor();
+
+      expect(JSON.stringify(refused)).not.toContain(hiddenTitle);
+      expect(refused).toEqual(["Another page is already the root page of /docs. Unset it first."]);
+    });
+    await withRead("pages", editor, [], async () => {
+      expect(await publishAsEditor()).toEqual([
+        `${hiddenTitle} is already the root page of /docs. Unset it first.`,
+      ]);
+    });
+  });
+});
+
 describe("samples and refusals list only what the reader may read", () => {
   it("a folder move preview and a rename preview sample no page the editor cannot read", async () => {
     const { payload } = harness;

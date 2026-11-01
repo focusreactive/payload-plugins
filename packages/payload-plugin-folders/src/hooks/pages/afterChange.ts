@@ -9,9 +9,8 @@ import { liveLocaleKeysOf, readPageRow, popSnapshot, toSnapshot } from "../../co
 import type { PageRow, PageSnapshot } from "../../core/pageRecords.js";
 import { bumpRevision } from "../../core/treeLock.js";
 import {
+  createSaveConflictDescriber,
   describeMissingSegment,
-  describeRootPageConflict,
-  describeSegmentConflict,
   findLocaleWithoutSegment,
   findRootPageConflict,
   findSegmentConflict,
@@ -47,7 +46,8 @@ const validateWrittenPage = async (
   req: Parameters<CollectionAfterChangeHook>[0]["req"],
   id: FolderId,
   before: PageSnapshot,
-  after: PageRow
+  after: PageRow,
+  overrideAccess: boolean
 ): Promise<void> => {
   const { payload } = req;
   const localeKeys = getPageLocaleKeys(payload);
@@ -72,13 +72,14 @@ const validateWrittenPage = async (
 
   const self = { collection: page.slug, id };
   const problems: Problem[] = [];
+  const describeConflict = createSaveConflictDescriber({ overrideAccess, req });
 
   if (written.isFolderRoot) {
     const conflict = await findRootPageConflict({ folder, options, req, self });
     if (conflict) {
       const folderPath = folder ? folderPathIn(folder, defaultLocale, options, payload) : "/";
       problems.push({
-        message: describeRootPageConflict(conflict, folderPath),
+        message: await describeConflict.rootPage(conflict, folderPath),
         path: "isFolderRoot",
       });
     }
@@ -124,7 +125,7 @@ const validateWrittenPage = async (
       if (conflict) {
         problems.push({
           locale: queryLocaleOf(key),
-          message: describeSegmentConflict(conflict),
+          message: await describeConflict.segment(conflict),
           path: page.segmentField,
         });
       }
@@ -166,7 +167,8 @@ const checkWrittenPage = async (
   page: ResolvedPageCollection,
   options: ResolvedOptions,
   req: Parameters<CollectionAfterChangeHook>[0]["req"],
-  id: FolderId
+  id: FolderId,
+  overrideAccess: boolean
 ): Promise<void> => {
   const before = popSnapshot(req, page.slug, id);
   if (!before) {
@@ -177,7 +179,7 @@ const checkWrittenPage = async (
     return;
   }
   if (after.isPublished) {
-    await validateWrittenPage(page, options, req, id, before, after);
+    await validateWrittenPage(page, options, req, id, before, after, overrideAccess);
   }
   await settlePageRedirects({ after, before, id, options, page, req });
   if (hasLiveUrlChanged(req, before, after)) {
@@ -206,7 +208,7 @@ const settleCreatedPage = async (
 
 export const buildPageAfterChange =
   (page: ResolvedPageCollection, options: ResolvedOptions): CollectionAfterChangeHook =>
-  async ({ data, doc, operation, previousDoc, req }) => {
+  async ({ data, doc, operation, overrideAccess, previousDoc, req }) => {
     if (isInternalWrite(req)) {
       return doc;
     }
@@ -226,7 +228,7 @@ export const buildPageAfterChange =
           req,
         });
       } else {
-        await checkWrittenPage(page, options, req, id);
+        await checkWrittenPage(page, options, req, id, overrideAccess === true);
         if (previousDoc?.deletedAt && data?.deletedAt === null) {
           // Restored from the trash: the page is back in the tree.
           await bumpRevision(req);

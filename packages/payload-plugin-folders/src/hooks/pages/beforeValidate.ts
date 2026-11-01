@@ -23,9 +23,8 @@ import type { PageRow } from "../../core/pageRecords.js";
 import { isStatusLocalized } from "../../core/publishedWhere.js";
 import { SEGMENT_ERROR_MESSAGE, isValidSegment, slugify } from "../../core/slugify.js";
 import {
+  createSaveConflictDescriber,
   describeMissingSegment,
-  describeRootPageConflict,
-  describeSegmentConflict,
   findLocaleWithoutSegment,
   findRootPageConflict,
   findSegmentConflict,
@@ -37,6 +36,7 @@ import {
 } from "../../core/uniqueness.js";
 import type { FolderId, ResolvedOptions, ResolvedPageCollection } from "../../types.js";
 import { isInternalWrite } from "../context.js";
+import { isAccessOverridden } from "./overrideAccessMark.js";
 
 type Problem = { locale?: string; message: string; path: string };
 type SegmentsByLocale = Record<string, string | null>;
@@ -211,6 +211,10 @@ export const buildPageBeforeValidate =
     }
 
     const problems: Problem[] = [];
+    const describeConflict = createSaveConflictDescriber({
+      overrideAccess: isAccessOverridden(req),
+      req,
+    });
     const hasDraftsEnabled = Boolean(
       payload.collections[toCollectionSlug(page.slug)]?.config.versions?.drafts
     );
@@ -369,7 +373,7 @@ export const buildPageBeforeValidate =
         if (conflict) {
           problems.push({
             locale: queryLocaleOf(key),
-            message: describeSegmentConflict(conflict),
+            message: await describeConflict.segment(conflict),
             path: segmentField,
           });
         }
@@ -386,7 +390,7 @@ export const buildPageBeforeValidate =
       if (conflict) {
         const folderPath = folder ? folderPathIn(folder, requestKey, options, payload) : "/";
         problems.push({
-          message: describeRootPageConflict(conflict, folderPath),
+          message: await describeConflict.rootPage(conflict, folderPath),
           path: "isFolderRoot",
         });
       }

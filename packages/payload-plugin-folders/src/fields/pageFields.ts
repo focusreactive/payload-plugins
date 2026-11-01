@@ -23,6 +23,7 @@ import {
   folderPathAfterRead,
   selectFullPathInputsHook,
 } from "../hooks/pages/fullPathAfterRead.js";
+import { buildMarkOverrideAccessHook } from "../hooks/pages/overrideAccessMark.js";
 import { buildPathSegmentHook } from "../hooks/pages/pathSegment.js";
 import { buildAcquireTreeLockHook, releaseUnboundTreeLockHook } from "../hooks/operationLock.js";
 
@@ -100,7 +101,12 @@ export const buildPathSegmentField = (segmentLocalized: boolean, segmentField?: 
   admin: { hidden: true },
   ...(segmentField === undefined
     ? {}
-    : { hooks: { beforeChange: [buildPathSegmentHook(segmentField, segmentLocalized)] } }),
+    : {
+        hooks: {
+          beforeChange: [buildPathSegmentHook(segmentField, segmentLocalized)],
+          beforeValidate: [buildMarkOverrideAccessHook()],
+        },
+      }),
   index: true,
   localized: segmentLocalized,
 });

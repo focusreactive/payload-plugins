@@ -357,6 +357,37 @@ export const describeHiddenRootPageConflict = (folderPath: string): string =>
   `Another page is already the root page of ${folderPath}. Unset it first.`;
 
 /**
+ * The refusal messages of a page save. The page that holds the path or the root place is named
+ * only when the caller may read it (decision 37), else it is "a page" and the root page message
+ * names nothing; a system call (`overrideAccess`) names it as it is. The segment holder's answer
+ * is kept per page, so the `read` access runs once for each one.
+ */
+export const createSaveConflictDescriber = ({
+  overrideAccess,
+  req,
+}: {
+  overrideAccess: boolean;
+  req: PayloadRequest;
+}): {
+  rootPage: (conflict: RootPageConflict, folderPath: string) => Promise<string>;
+  segment: (conflict: SegmentConflict) => Promise<string>;
+} => {
+  const nameConflictingPage = createConflictNamer(req);
+
+  return {
+    rootPage: async (conflict, folderPath) =>
+      overrideAccess ||
+      (await canReadItem({ item: { collection: conflict.collection, id: conflict.id }, req }))
+        ? describeRootPageConflict(conflict, folderPath)
+        : describeHiddenRootPageConflict(folderPath),
+    segment: async (conflict) =>
+      conflict.kind === "folder" || overrideAccess
+        ? describeSegmentConflict(conflict)
+        : describeSegmentConflict({ ...conflict, title: await nameConflictingPage(conflict) }),
+  };
+};
+
+/**
  * The refusal for a live locale with no segment: its own, or the default locale's live one through
  * fallback. `locale` is the live locale that has none.
  */
