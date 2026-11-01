@@ -1111,6 +1111,34 @@ const clearPathSegments = async (id: number): Promise<void> => {
   } as never);
 };
 
+/** The page row with `patch` applied, whole, because the adapter drops the locale rows a write leaves out. */
+const patchMainRow = async (id: number, patch: Record<string, unknown>): Promise<void> => {
+  const { id: _id, createdAt: _createdAt, ...stored } = await readRow("pages", id);
+  await harness.payload.db.updateOne({
+    collection: "pages",
+    data: { ...stored, ...patch },
+    id,
+    returning: false,
+  });
+};
+
+/** The latest version of a page with `patch` applied to its fields, whole, for the same reason. */
+const patchLatestVersion = async (id: number, patch: Record<string, unknown>): Promise<void> => {
+  const { docs } = (await harness.payload.db.findVersions({
+    collection: "pages",
+    locale: "all",
+    pagination: false,
+    where: { and: [{ parent: { equals: id } }, { latest: { equals: true } }] },
+  })) as unknown as { docs: Array<{ id: number; version: Record<string, unknown> }> };
+  const { id: _versionId, ...version } = docs[0].version;
+  await harness.payload.db.updateVersion({
+    collection: "pages",
+    id: docs[0].id,
+    returning: false,
+    versionData: { version: { ...version, ...patch } },
+  } as never);
+};
+
 describe("repair and the latest version of a page with drafts", () => {
   const createRawDraft = (slug: string, title = slug) =>
     harness.payload.create({
@@ -1192,6 +1220,68 @@ describe("repair and the latest version of a page with drafts", () => {
       fullPath: "/about-the-team",
       slug: "about-the-team",
     });
+  });
+
+  it("a newer de draft segment is kept while the en and de capitals of the main row are lowercased", async () => {
+    const { payload } = harness;
+    const page = await createRawDraft("About", "About us");
+    await patchMainRow(page.id, { slug: { de: "Info", en: "About" } });
+    // The de draft is newer than the main row: its segment is the editor's, not the legacy one.
+    await payload.update({
+      collection: "pages",
+      context: { foldersInternal: true },
+      data: { slug: "kontakt" },
+      depth: 0,
+      draft: true,
+      id: page.id,
+      locale: "de",
+      overrideAccess: true,
+    });
+    expect((await readLatestVersionSegments(page.id)).slug).toEqual(
+      expect.objectContaining({ de: "kontakt", en: "About" })
+    );
+
+    await repairTree(payload);
+
+    expect((await readRow("pages", page.id)).slug).toEqual({ de: "info", en: "about" });
+    const version = await readLatestVersionSegments(page.id);
+    expect(version.slug).toEqual({ de: "kontakt", en: "about" });
+    expect(version.pathSegment).toEqual({ de: "kontakt", en: "about" });
+    expect(await readDraft(page.id, "de")).toMatchObject({ slug: "kontakt" });
+  });
+
+  it("a locale held back in a clash keeps the version's stored segment while another locale is written", async () => {
+    const { payload } = harness;
+    await payload.create({
+      collection: "pages",
+      data: { _status: "published", slug: "dup", title: "First" } as never,
+      depth: 0,
+      overrideAccess: true,
+    });
+    const second = (await payload.create({
+      collection: "pages",
+      data: { _status: "published", slug: "dup-two", title: "Second" } as never,
+      depth: 0,
+      overrideAccess: true,
+    })) as unknown as DraftPage;
+    // The second page's en segment now equals the first page's (a clash, so en is held back) and it
+    // gains a de segment that has no saved path segment yet (written, in the row and its version).
+    const slugs = { de: "kontakt", en: "dup" };
+    const titles = { de: "Zweite", en: "Second" };
+    const pathSegment = { de: null, en: "dup-two" };
+    await patchMainRow(second.id, { pathSegment, slug: slugs, title: titles });
+    await patchLatestVersion(second.id, { pathSegment, slug: slugs, title: titles });
+
+    const result = await repairTree(payload);
+
+    expect(result.conflicts.counts.pageSegment).toBe(1);
+    expect((await readRow("pages", second.id)).pathSegment).toEqual({
+      de: "kontakt",
+      en: "dup-two",
+    });
+    const version = await readLatestVersionSegments(second.id);
+    expect(version.pathSegment).toEqual({ de: "kontakt", en: "dup-two" });
+    expect(version.slug).toEqual({ de: "kontakt", en: "dup" });
   });
 });
 
