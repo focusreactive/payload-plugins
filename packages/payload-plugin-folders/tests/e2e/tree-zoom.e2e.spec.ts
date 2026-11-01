@@ -203,8 +203,8 @@ test("after quick Back and Forward steps the view shows the folder the address n
       position += goBack ? -1 : 1;
     }
     bursts.push(burst);
-    await page.evaluate((steps) => {
-      for (const step of steps) {
+    await page.evaluate((sequence) => {
+      for (const step of sequence) {
         if (step === "b") {
           window.history.back();
         } else {
