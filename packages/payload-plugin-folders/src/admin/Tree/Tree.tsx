@@ -2,6 +2,7 @@ import { Button, CheckboxInput, ShimmerEffect } from "@payloadcms/ui";
 import { useCallback, useState } from "react";
 
 import type { Translate } from "../compat.js";
+import type { TreeKeyboard } from "../Keyboard/useTreeKeyboard.js";
 import type { MenuAnchor } from "../Menu/menuEntries.js";
 import { MoveMarkerRow } from "../MoveMode/MoveMarkerRow.js";
 import { markerReasonOf, tabbableMarkerKey } from "../MoveMode/moveMarkers.js";
@@ -34,6 +35,10 @@ export type TreeProps = {
   adminRoute: string;
   /** What the empty row of an open folder with nothing in it starts. */
   emptyActions: EmptyCreateActions;
+  /** Roving tab index, cut rows, live region and the element keys are read against. */
+  keyboard: TreeKeyboard;
+  /** The grid's accessible name: the tree's, or the search's hits. */
+  label: string;
   language: string;
   onOpenFolder?: (folderId: number | string) => void;
   /** Set while Move mode is on. */
@@ -178,6 +183,8 @@ const LoadMoreRow = ({
 export const Tree = ({
   adminRoute,
   emptyActions,
+  keyboard,
+  label,
   language,
   moveMode,
   onOpenFolder,
@@ -235,122 +242,138 @@ export const Tree = ({
   const rowCountIsKnown = !rows.some((row) => row.type === "load-more" || row.type === "loading");
 
   return (
-    <div
-      aria-colcount={6}
-      aria-multiselectable="true"
-      aria-label={translate("treeLabel")}
-      aria-rowcount={rowCountIsKnown ? rows.length + 1 : -1}
-      className="fr-folders-tree"
-      data-testid="tree"
-      role="treegrid"
-    >
-      <div role="rowgroup">
-        <div className="fr-folders-row fr-folders-row--header" role="row">
-          <div className="fr-folders-cell fr-folders-cell--select" role="columnheader">
-            <CheckboxInput
-              aria-label={translate("selectAllRows")}
-              checked={selection.headerState === "all"}
-              onToggle={selection.toggleAll}
-              partialChecked={selection.headerState === "some"}
+    <>
+      <div
+        aria-colcount={6}
+        aria-multiselectable="true"
+        aria-label={label}
+        aria-rowcount={rowCountIsKnown ? rows.length + 1 : -1}
+        className="fr-folders-tree"
+        data-testid="tree"
+        onFocus={(event) => keyboard.onFocus(event.target)}
+        ref={keyboard.treeRef}
+        role="treegrid"
+      >
+        <div role="rowgroup">
+          <div className="fr-folders-row fr-folders-row--header" role="row">
+            <div className="fr-folders-cell fr-folders-cell--select" role="columnheader">
+              <CheckboxInput
+                aria-label={translate("selectAllRows")}
+                checked={selection.headerState === "all"}
+                onToggle={selection.toggleAll}
+                partialChecked={selection.headerState === "some"}
+              />
+            </div>
+            <div className="fr-folders-cell fr-folders-cell--name" role="columnheader">
+              {translate("columnName")}
+            </div>
+            <div className="fr-folders-cell fr-folders-cell--status" role="columnheader">
+              {translate("columnStatus")}
+            </div>
+            <div className="fr-folders-cell fr-folders-cell--type" role="columnheader">
+              {translate("columnType")}
+            </div>
+            <div className="fr-folders-cell fr-folders-cell--updated" role="columnheader">
+              {translate("columnUpdated")}
+            </div>
+            <div
+              aria-label={translate("columnActions")}
+              className="fr-folders-cell fr-folders-cell--menu"
+              role="columnheader"
             />
           </div>
-          <div className="fr-folders-cell fr-folders-cell--name" role="columnheader">
-            {translate("columnName")}
-          </div>
-          <div className="fr-folders-cell fr-folders-cell--status" role="columnheader">
-            {translate("columnStatus")}
-          </div>
-          <div className="fr-folders-cell fr-folders-cell--type" role="columnheader">
-            {translate("columnType")}
-          </div>
-          <div className="fr-folders-cell fr-folders-cell--updated" role="columnheader">
-            {translate("columnUpdated")}
-          </div>
-          <div
-            aria-label={translate("columnActions")}
-            className="fr-folders-cell fr-folders-cell--menu"
-            role="columnheader"
-          />
+        </div>
+        <div role="rowgroup">
+          {(moveMode?.placed ?? rows.map((row): MoveModeRow => ({ row, type: "row" }))).map(
+            (entry) => {
+              if (entry.type === "marker") {
+                return (
+                  <MoveMarkerRow
+                    count={moveMode?.count ?? 0}
+                    isTabStop={entry.marker.key === tabbableKey}
+                    key={`marker:${entry.marker.key}`}
+                    marker={entry.marker}
+                    onFocused={(marker) => setActiveMarkerKey(marker.key)}
+                    onPick={moveMode?.onPick ?? (() => undefined)}
+                    reason={markerReasons.get(entry.marker.key) ?? null}
+                    translate={translate}
+                  />
+                );
+              }
+              const { row } = entry;
+              switch (row.type) {
+                case "item": {
+                  return (
+                    <TreeRow
+                      adminRoute={adminRoute}
+                      isCut={keyboard.cutKeys.has(row.key)}
+                      isMenuOpen={openMenuItemKey === row.key}
+                      isSelected={selection.isSelected(row.item)}
+                      isTabStop={keyboard.activeKey === row.key}
+                      key={row.key}
+                      language={language}
+                      onOpenFolder={onOpenFolder}
+                      onOpenMenu={onOpenMenu}
+                      onOpenPage={onOpenPage}
+                      onOpenSettings={onOpenSettings}
+                      onSelectRange={selection.selectRange}
+                      onToggleFolder={toggleFolder}
+                      onToggleSelect={selection.toggle}
+                      row={row}
+                      translate={translate}
+                      typeLabels={typeLabels}
+                    />
+                  );
+                }
+                case "loading": {
+                  return (
+                    <LoadingRow key={row.key} label={translate("loading")} level={row.level} />
+                  );
+                }
+                case "error": {
+                  return <ErrorRow key={row.key} onRetry={retry} row={row} translate={translate} />;
+                }
+                case "empty": {
+                  return (
+                    <EmptyRow
+                      actions={emptyActions}
+                      folder={row.folder}
+                      key={row.key}
+                      level={row.level}
+                      translate={translate}
+                    />
+                  );
+                }
+                case "stale": {
+                  return <StaleRow key={row.key} onRetry={retry} row={row} translate={translate} />;
+                }
+                case "load-more": {
+                  return (
+                    <LoadMoreRow
+                      key={row.key}
+                      onLoadMore={loadMore}
+                      pageSize={pageSize}
+                      row={row}
+                      translate={translate}
+                    />
+                  );
+                }
+                default: {
+                  return null;
+                }
+              }
+            }
+          )}
         </div>
       </div>
-      <div role="rowgroup">
-        {(moveMode?.placed ?? rows.map((row): MoveModeRow => ({ row, type: "row" }))).map(
-          (entry) => {
-            if (entry.type === "marker") {
-              return (
-                <MoveMarkerRow
-                  count={moveMode?.count ?? 0}
-                  isTabStop={entry.marker.key === tabbableKey}
-                  key={`marker:${entry.marker.key}`}
-                  marker={entry.marker}
-                  onFocused={(marker) => setActiveMarkerKey(marker.key)}
-                  onPick={moveMode?.onPick ?? (() => undefined)}
-                  reason={markerReasons.get(entry.marker.key) ?? null}
-                  translate={translate}
-                />
-              );
-            }
-            const { row } = entry;
-            switch (row.type) {
-              case "item": {
-                return (
-                  <TreeRow
-                    adminRoute={adminRoute}
-                    isMenuOpen={openMenuItemKey === row.key}
-                    isSelected={selection.isSelected(row.item)}
-                    key={row.key}
-                    language={language}
-                    onOpenFolder={onOpenFolder}
-                    onOpenMenu={onOpenMenu}
-                    onOpenPage={onOpenPage}
-                    onOpenSettings={onOpenSettings}
-                    onSelectRange={selection.selectRange}
-                    onToggleFolder={toggleFolder}
-                    onToggleSelect={selection.toggle}
-                    row={row}
-                    translate={translate}
-                    typeLabels={typeLabels}
-                  />
-                );
-              }
-              case "loading": {
-                return <LoadingRow key={row.key} label={translate("loading")} level={row.level} />;
-              }
-              case "error": {
-                return <ErrorRow key={row.key} onRetry={retry} row={row} translate={translate} />;
-              }
-              case "empty": {
-                return (
-                  <EmptyRow
-                    actions={emptyActions}
-                    folder={row.folder}
-                    key={row.key}
-                    level={row.level}
-                    translate={translate}
-                  />
-                );
-              }
-              case "stale": {
-                return <StaleRow key={row.key} onRetry={retry} row={row} translate={translate} />;
-              }
-              case "load-more": {
-                return (
-                  <LoadMoreRow
-                    key={row.key}
-                    onLoadMore={loadMore}
-                    pageSize={pageSize}
-                    row={row}
-                    translate={translate}
-                  />
-                );
-              }
-              default: {
-                return null;
-              }
-            }
-          }
-        )}
+      <div
+        aria-live="polite"
+        className="fr-folders-visually-hidden"
+        data-testid="live-region"
+        role="status"
+      >
+        <span key={keyboard.liveMessage.nonce}>{keyboard.liveMessage.text}</span>
       </div>
-    </div>
+    </>
   );
 };

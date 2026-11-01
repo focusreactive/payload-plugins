@@ -18,9 +18,13 @@ export const indentPerLevel = 16;
 
 export type TreeRowProps = {
   adminRoute: string;
+  /** Cut with Cmd/Ctrl+X and waiting to be pasted. */
+  isCut: boolean;
   /** This row's context menu is open. */
   isMenuOpen: boolean;
   isSelected: boolean;
+  /** The one row that is in the tab order (roving tab index, spec section 7.6). */
+  isTabStop: boolean;
   language: string;
   /** Opens a page's edit view in this tab. */
   onOpenPage: (url: string) => void;
@@ -81,8 +85,10 @@ const RootPageBadge = ({ hint, label }: { hint: string; label: string }) => {
 
 export const TreeRow = ({
   adminRoute,
+  isCut,
   isMenuOpen,
   isSelected,
+  isTabStop,
   language,
   onOpenFolder,
   onOpenMenu,
@@ -229,10 +235,13 @@ export const TreeRow = ({
     <div
       aria-expanded={isFolder && expandable ? expanded : undefined}
       aria-level={level + 1}
+      aria-posinset={row.posInSet}
       aria-selected={isSelected}
+      aria-setsize={row.setSize}
       className={[
         "fr-folders-row",
         isSelected ? "fr-folders-row--selected" : "",
+        isCut ? "fr-folders-row--cut" : "",
         drag.isDragged ? "fr-folders-row--dragged" : "",
         drag.indicator?.edge === "inside" ? "fr-folders-row--drop-inside" : "",
         drag.indicator?.edge === "inside" && drag.indicator.isRefused
@@ -242,6 +251,7 @@ export const TreeRow = ({
         .filter(Boolean)
         .join(" ")}
       data-collection={item.collection}
+      data-cut={isCut ? "true" : undefined}
       data-dragged={drag.isDragged ? "true" : undefined}
       data-drop={drag.indicator?.edge}
       data-item-id={String(item.id)}
@@ -264,8 +274,9 @@ export const TreeRow = ({
       }}
       ref={drag.setRowRef}
       role="row"
-      // Focusable by script, not by Tab: the new folder of the create dialog takes focus.
-      tabIndex={-1}
+      // One row at a time is in the tab order; the others are reached with the arrow keys, and by
+      // script (the new folder of the create dialog takes focus).
+      tabIndex={isTabStop ? 0 : -1}
       {...drag.listeners}
     >
       {drag.indicator && drag.indicator.edge !== "inside" ? (
@@ -360,6 +371,11 @@ export const TreeRow = ({
             ) : null}
           </div>
           <div className="fr-folders-path-line" data-testid="row-path">
+            {row.searchPath === undefined ? null : (
+              <span className="fr-folders-search-path" data-testid="row-breadcrumb">
+                {translate("searchPath", { path: row.searchPath.join(" > ") })}
+              </span>
+            )}
             {pathDisplay === "path" ? (
               <>
                 <span className="fr-folders-path">{item.fullPath}</span>

@@ -3,6 +3,14 @@
  * light and dark themes; classes are prefixed `fr-folders-` (spec section 7.13).
  */
 @layer payload {
+  :root {
+    /*
+     * Payload's secondary text is 3.9:1 on the header and on a hovered row, short of the 4.5:1 that
+     * body text needs; the muted text of the tree is the text color, a little faded, in either theme.
+     */
+    --fr-folders-text-muted: color-mix(in srgb, var(--color-text) 72%, var(--color-bg));
+  }
+
   .fr-folders-body {
     padding: var(--spacer-3) var(--gutter-h) var(--spacing-view-bottom);
   }
@@ -51,7 +59,7 @@
   .fr-folders-row--header {
     min-height: var(--spacer-5);
     background: var(--color-bg-secondary);
-    color: var(--color-text-secondary);
+    color: var(--fr-folders-text-muted);
     font-size: var(--text-body-small-font-size);
     line-height: var(--text-body-small-line-height);
   }
@@ -84,7 +92,7 @@
   .fr-folders-cell--type,
   .fr-folders-cell--updated {
     display: none;
-    color: var(--color-text-secondary);
+    color: var(--fr-folders-text-muted);
     font-size: var(--text-body-small-font-size);
     line-height: var(--text-body-small-line-height);
   }
@@ -181,7 +189,7 @@
 
   .fr-folders-path-line {
     min-height: var(--text-body-small-line-height);
-    color: var(--color-text-secondary);
+    color: var(--fr-folders-text-muted);
     font-size: var(--text-body-small-font-size);
     line-height: var(--text-body-small-line-height);
   }
@@ -213,7 +221,7 @@
     border: var(--stroke-width-small) solid var(--color-border);
     border-radius: var(--radius-chip);
     background: var(--color-bg-tertiary);
-    color: var(--color-text-secondary);
+    color: var(--fr-folders-text-muted);
     font-size: var(--text-body-small-font-size);
     line-height: var(--text-body-small-line-height);
     white-space: nowrap;
@@ -230,7 +238,7 @@
     padding: 0 var(--spacer-1);
     border-radius: var(--radius-full);
     background: var(--color-bg-tertiary);
-    color: var(--color-text-secondary);
+    color: var(--fr-folders-text-muted);
     font-size: var(--text-body-small-font-size);
     line-height: var(--text-body-small-line-height);
     text-align: center;
@@ -282,7 +290,7 @@
   }
 
   .fr-folders-muted {
-    color: var(--color-text-secondary);
+    color: var(--fr-folders-text-muted);
     font-size: var(--text-body-medium-font-size);
   }
 
@@ -446,7 +454,7 @@
       float: inline-start;
       margin-inline-end: var(--spacer-3);
       padding: 0;
-      color: var(--color-text-secondary);
+      color: var(--fr-folders-text-muted);
     }
 
     label {
@@ -491,7 +499,7 @@
 
   .fr-folders-confirm__label {
     margin-bottom: var(--spacer-1);
-    color: var(--color-text-secondary);
+    color: var(--fr-folders-text-muted);
     font-size: var(--text-body-small-font-size);
   }
 
@@ -783,7 +791,7 @@
 
   .fr-folders-menu__reason {
     padding: 0 var(--spacer-2) var(--spacer-1-5);
-    color: var(--color-text-secondary);
+    color: var(--fr-folders-text-muted);
     font-size: var(--text-body-small-font-size);
     line-height: var(--text-body-small-line-height);
   }
@@ -808,7 +816,7 @@
     padding: 0;
     border: none;
     background: transparent;
-    color: var(--color-text-secondary);
+    color: var(--fr-folders-text-muted);
     font: inherit;
     font-size: var(--text-body-small-font-size);
     cursor: pointer;
@@ -854,7 +862,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--color-text-secondary);
+    color: var(--fr-folders-text-muted);
   }
 
   /* The create dialogs */
@@ -873,14 +881,14 @@
 
   .fr-folders-field__label {
     padding: 0;
-    color: var(--color-text-secondary);
+    color: var(--fr-folders-text-muted);
     font-size: var(--text-body-small-font-size);
   }
 
   .fr-folders-field__hint {
     min-height: var(--text-body-small-line-height);
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--fr-folders-text-muted);
     font-size: var(--text-body-small-font-size);
     line-height: var(--text-body-small-line-height);
     overflow-wrap: anywhere;
@@ -1061,7 +1069,7 @@
 
   .fr-folders-sidebar-field__title {
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--fr-folders-text-muted);
     font-size: var(--text-body-small-font-size);
   }
 
@@ -1076,7 +1084,7 @@
 
     li + li::before {
       margin-inline-end: var(--spacer-1);
-      color: var(--color-text-secondary);
+      color: var(--fr-folders-text-muted);
       content: ">";
     }
   }
@@ -1172,7 +1180,7 @@
 
   .fr-folders-crumbs__separator {
     display: inline-flex;
-    color: var(--color-text-secondary);
+    color: var(--fr-folders-text-muted);
   }
 
   .fr-folders-crumb {
@@ -1186,7 +1194,7 @@
   }
 
   .fr-folders-crumb__name {
-    color: var(--color-text-secondary);
+    color: var(--fr-folders-text-muted);
     text-decoration: none;
   }
 
@@ -1278,8 +1286,146 @@
   }
 
   .fr-folders-link-button:disabled {
-    color: var(--color-text-secondary);
+    color: var(--fr-folders-text-muted);
     cursor: not-allowed;
     text-decoration: none;
+  }
+
+  /* A row waiting to be pasted (Cmd/Ctrl+X). */
+  .fr-folders-row--cut {
+    opacity: 0.55;
+  }
+
+  .fr-folders-search {
+    padding: var(--spacer-2) var(--gutter-h) 0;
+  }
+
+  .fr-folders-search__row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacer-2);
+  }
+
+  .fr-folders-search__scope,
+  .fr-folders-search__filter-button {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacer-1);
+    box-sizing: border-box;
+    min-width: 2.25rem;
+    height: 2.25rem;
+    padding: 0 var(--spacer-2);
+    border: var(--stroke-width-small) solid var(--color-border-control);
+    border-radius: var(--radius-small);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font: inherit;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: var(--color-bg-secondary-hover);
+    }
+
+    &:focus-visible {
+      outline: var(--accessibility-outline);
+      outline-offset: var(--accessibility-outline-offset);
+    }
+
+    &:disabled {
+      color: var(--color-text-disabled);
+      cursor: not-allowed;
+    }
+  }
+
+  .fr-folders-search__scope[aria-pressed="true"] {
+    background: var(--color-bg-selected);
+  }
+
+  .fr-folders-search__field {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    max-width: 32rem;
+  }
+
+  .fr-folders-search__icon {
+    position: absolute;
+    inset-inline-start: var(--spacer-2);
+    display: flex;
+    color: var(--color-icon);
+    pointer-events: none;
+  }
+
+  .fr-folders-search__input {
+    box-sizing: border-box;
+    width: 100%;
+    height: 2.25rem;
+    padding: 0 2.25rem;
+    border: var(--stroke-width-small) solid var(--color-border-control);
+    border-radius: var(--radius-small);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font: inherit;
+
+    &:focus-visible {
+      outline: var(--accessibility-outline);
+      outline-offset: var(--accessibility-outline-offset);
+    }
+  }
+
+  .fr-folders-search__clear {
+    position: absolute;
+    inset-inline-end: var(--spacer-1);
+    display: flex;
+    align-items: center;
+    padding: var(--spacer-1);
+    border: none;
+    border-radius: var(--radius-small);
+    background: none;
+    color: var(--color-icon);
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: var(--accessibility-outline);
+      outline-offset: var(--accessibility-outline-offset);
+    }
+  }
+
+  .fr-folders-search__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacer-5);
+    margin-top: var(--spacer-2);
+    padding: var(--spacer-2) var(--spacer-3);
+    border: var(--stroke-width-small) solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background: var(--color-bg);
+  }
+
+  .fr-folders-search__group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-1);
+    margin: 0;
+    padding: 0;
+    border: none;
+
+    legend {
+      padding: 0;
+      color: var(--fr-folders-text-muted);
+      font-size: var(--text-body-small-font-size);
+    }
+  }
+
+  .fr-folders-search-summary p {
+    margin: 0 0 var(--spacer-2);
+  }
+
+  .fr-folders-search-path {
+    color: var(--fr-folders-text-muted);
+    font-size: var(--text-body-small-font-size);
   }
 }

@@ -1,0 +1,570 @@
+import { toast, useModal } from "@payloadcms/ui";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { RefObject } from "react";
+
+import type { TreeItem } from "../../types.js";
+import { editViewUrl } from "../compat.js";
+import type { Translate } from "../compat.js";
+import { dropRefusalText } from "../DragAndDrop/dropRefusalText.js";
+import { resolveDrop } from "../DragAndDrop/dropTargets.js";
+import type { DropRules } from "../DragAndDrop/dropTargets.js";
+import type { DropMove } from "../Move/useMoveFlow.js";
+import { isTextEntry } from "../Settings/settingsKey.js";
+import { findLoadedFolder, folderKeyOf, itemKeyOf, loadedItemsOf } from "../store.js";
+import type { TreeStore, TreeStoreState } from "../store.js";
+import type { TreeRowModel } from "../Tree/useTreeData.js";
+import type { SelectionApi } from "../useSelection.js";
+import {
+  focusRowWhenShown,
+  hasLostFocus,
+  isMenuOpen,
+  rowElementOf,
+  rowKeyOfElement,
+} from "./focusRow.js";
+import { createReorderController } from "./reorder.js";
+import type { ReorderController } from "./reorder.js";
+import {
+  itemRowsOf,
+  navigationFor,
+  neighbourKeyOf,
+  tabStopKeyOf,
+  treeKeyActionOf,
+} from "./treeKeys.js";
+
+export type TreeKeyboardActions = {
+  /** Delete and Backspace: opens the delete dialog for these rows. */
+  delete: (items: readonly TreeItem[]) => void;
+  /** Cmd/Ctrl+D: opens the duplicate dialog for these rows. */
+  duplicate: (items: readonly TreeItem[]) => void;
+  /** Escape in a search: back to the tree, with this hit's folders open and its row focused. */
+  leaveSearch: (focused: TreeItem | null) => void;
+  /** Enter on a folder that cannot be opened in place (a search hit): zooms into it. */
+  openFolder: (folder: TreeItem) => void;
+  /** Enter on a page: opens its edit view. */
+  openPage: (url: string) => void;
+  startDropMove: (drop: DropMove) => Promise<void>;
+  /** Cmd/Ctrl+Z: undoes the last move while its toast is on screen; false when there is none. */
+  undoLastMove: () => boolean;
+};
+
+export type TreeKeyboardOptions = {
+  actions: TreeKeyboardActions;
+  adminRoute: string;
+  /** A move or its preview is in flight. */
+  isBusy: boolean;
+  /** Move mode has the keyboard: its own keys decide. */
+  isMoveModeActive: boolean;
+  isSearching: boolean;
+  /** The rows on screen: the tree's, or a search's hits. */
+  rows: readonly TreeRowModel[];
+  rules: DropRules;
+  selection: SelectionApi;
+  state: TreeStoreState;
+  store: TreeStore;
+  translate: Translate;
+};
+
+export type TreeKeyboard = {
+  /** The one row in the tab order. */
+  activeKey: string | null;
+  /** The rows that were cut and wait to be pasted. */
+  cutKeys: ReadonlySet<string>;
+  /** What the live region says now; `nonce` makes the same words read out again. */
+  liveMessage: { nonce: number; text: string };
+  /** Focus entered the tree: the row it is in becomes the one in the tab order. */
+  onFocus: (target: EventTarget) => void;
+  /** The treegrid's element: keys count as the tree's only while the focus is inside it. */
+  treeRef: RefObject<HTMLDivElement | null>;
+};
+
+const isTypingTarget = (target: EventTarget | null): boolean =>
+  target instanceof HTMLElement &&
+  isTextEntry({
+    inputType: target instanceof HTMLInputElement ? target.type : null,
+    isContentEditable: target.isContentEditable,
+    tagName: target.tagName,
+  });
+
+/** A drag is in progress: dnd-kit cancels it on Escape and the key is not the tree's. */
+const isDragging = (): boolean => document.body.classList.contains("fr-folders-dragging");
+
+const focusSearchInput = (): boolean => {
+  const input = document.querySelector<HTMLInputElement>('[data-testid="search-input"]');
+  if (input === null) {
+    return false;
+  }
+  input.focus();
+  input.select();
+
+  return true;
+};
+
+/**
+ * Every key of spec section 7.6 that is the tree's: arrows, Home and End, Enter and Space,
+ * selection, cut and paste, the Alt moves, duplicate, delete, undo, Escape and `/`. One listener on
+ * the document, because `/` and Escape work from anywhere on the page; the rest count only while
+ * the focus is inside the tree, never in a text field, a dialog or a menu, and never in Move mode,
+ * which has its own keys. Also keeps the roving tab index (one row in the tab order), the cut rows,
+ * and a live region that says what a key did.
+ */
+export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
+  const { rows, store } = options;
+  const treeRef = useRef<HTMLDivElement | null>(null);
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [cutItems, setCutItems] = useState<readonly TreeItem[]>([]);
+  const [liveMessage, setLiveMessage] = useState({ nonce: 0, text: "" });
+  const { modalState } = useModal();
+  const isModalOpen = Object.values(modalState).some((modal) => modal.isOpen);
+
+  const itemRows = useMemo(() => itemRowsOf(rows), [rows]);
+  const tabStopKey = tabStopKeyOf(itemRows, activeKey);
+
+  const latest = useRef(options);
+  latest.current = options;
+  const modalOpenRef = useRef(isModalOpen);
+  modalOpenRef.current = isModalOpen;
+  const cutRef = useRef(cutItems);
+  cutRef.current = cutItems;
+
+  const announce = useCallback((text: string) => {
+    setLiveMessage((current) => ({ nonce: current.nonce + 1, text }));
+  }, []);
+
+  // The reorder controller holds the store, which never changes; the move itself goes through the
+  // flow the workspace passes in, read at the time of the press.
+  const reorderRef = useRef<ReorderController | null>(null);
+  reorderRef.current ??= createReorderController({
+    commit: ({ item, onAbandon, onBeforeApply, target }) => {
+      const current = latest.current;
+      const folder = findLoadedFolder(current.state, item.parentId);
+      void current.actions.startDropMove({
+        items: [item],
+        onAbandon,
+        onBeforeApply,
+        onMoved: () => focusRowWhenShown(item),
+        selection: null,
+        target,
+        targetTitle: folder?.title ?? current.translate("moveToRoot"),
+      });
+    },
+    store,
+  });
+  useEffect(
+    () => () => {
+      reorderRef.current?.cancel();
+    },
+    []
+  );
+
+  // A row that moved in the DOM can lose the focus, and the next key press would then not find it:
+  // the focus goes back to it in the same turn the rows are drawn, before the next key.
+  const keepFocusOn = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    const key = keepFocusOn.current;
+    if (key === null) {
+      return;
+    }
+    keepFocusOn.current = null;
+    const row = itemRows.find((candidate) => candidate.key === key);
+    if (row !== undefined && hasLostFocus()) {
+      rowElementOf(row.item)?.focus();
+    }
+  });
+
+  const focusKey = useCallback((key: string) => {
+    const row = latest.current.rows.find(
+      (candidate) => candidate.type === "item" && candidate.key === key
+    );
+    if (row?.type === "item") {
+      rowElementOf(row.item)?.focus();
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      const current = latest.current;
+      if (
+        event.defaultPrevented ||
+        event.isComposing ||
+        modalOpenRef.current ||
+        isMenuOpen() ||
+        isTypingTarget(event.target)
+      ) {
+        return;
+      }
+      const action = treeKeyActionOf(event);
+      if (action === null) {
+        return;
+      }
+      const consume = () => event.preventDefault();
+
+      if (action === "focusSearch") {
+        if (focusSearchInput()) {
+          consume();
+        }
+
+        return;
+      }
+      if (action === "undo") {
+        if (current.actions.undoLastMove()) {
+          consume();
+        }
+
+        return;
+      }
+
+      const rowsNow = itemRowsOf(current.rows);
+      const target = event.target instanceof Element ? event.target : null;
+      const focusedKey = rowKeyOfElement(target);
+      const focusedRow = rowsNow.find((row) => row.key === focusedKey);
+
+      if (action === "escape") {
+        // A drag cancels itself and Move mode leaves itself: neither is this key's.
+        if (isDragging() || current.isMoveModeActive) {
+          return;
+        }
+        if (cutRef.current.length > 0) {
+          consume();
+          setCutItems([]);
+          announce(current.translate("announceCutCancelled"));
+        } else if (current.selection.items.length > 0) {
+          consume();
+          current.selection.clear();
+        } else if (current.isSearching) {
+          consume();
+          current.actions.leaveSearch(focusedRow?.item ?? null);
+        }
+
+        return;
+      }
+
+      // The rest are the tree's own: the focus is inside it, and Move mode is not on.
+      if (current.isMoveModeActive || !(target && treeRef.current?.contains(target))) {
+        return;
+      }
+      const isOnRow = target === target.closest('[data-testid="tree-row"]');
+
+      if (action === "selectAll") {
+        consume();
+        current.selection.select(rowsNow.map((row) => row.item));
+
+        return;
+      }
+      if (focusedRow === undefined) {
+        return;
+      }
+      const { item } = focusedRow;
+      // Enter and Space on a button, a link or a checkbox inside the row are that control's own.
+      if ((action === "activate" || action === "toggleSelection") && !isOnRow) {
+        return;
+      }
+
+      // What delete, duplicate and cut act on: the ticked rows when the focused one is ticked,
+      // else the focused row alone.
+      const targets =
+        current.selection.isSelected(item) && current.selection.items.length > 0
+          ? current.selection.items
+          : [item];
+
+      switch (action) {
+        case "activate": {
+          consume();
+          if (item.kind === "page") {
+            current.actions.openPage(editViewUrl(current.adminRoute, item.collection, item.id));
+          } else if (focusedRow.expandable) {
+            void current.store.toggleExpanded(item.id);
+          } else {
+            current.actions.openFolder(item);
+          }
+
+          return;
+        }
+        case "toggleSelection": {
+          consume();
+          current.selection.toggle(item);
+
+          return;
+        }
+        case "focusFirst":
+        case "focusLast":
+        case "focusNext":
+        case "focusPrevious":
+        case "expandOrFirstChild":
+        case "collapseOrParent": {
+          const navigation = navigationFor(action, rowsNow, focusedRow.key);
+          if (navigation === null) {
+            return;
+          }
+          consume();
+          if (navigation.type === "focus") {
+            focusKey(navigation.key);
+          } else {
+            void current.store.setExpanded(navigation.id, navigation.type === "expand");
+          }
+
+          return;
+        }
+        case "extendDown":
+        case "extendUp": {
+          const navigation = navigationFor(
+            action === "extendDown" ? "focusNext" : "focusPrevious",
+            rowsNow,
+            focusedRow.key
+          );
+          consume();
+          if (navigation?.type !== "focus") {
+            return;
+          }
+          // The row the extension starts from is ticked too.
+          if (!current.selection.isSelected(item)) {
+            current.selection.toggle(item);
+          }
+          const next = rowsNow.find((row) => row.key === navigation.key);
+          if (next !== undefined) {
+            current.selection.selectRange(next.item);
+          }
+          focusKey(navigation.key);
+
+          return;
+        }
+        case "delete": {
+          consume();
+          current.actions.delete(targets);
+
+          return;
+        }
+        case "duplicate": {
+          consume();
+          current.actions.duplicate(targets);
+
+          return;
+        }
+        case "cut": {
+          consume();
+          setCutItems(targets);
+          announce(current.translate("announceCut", { count: targets.length }));
+
+          return;
+        }
+        case "paste": {
+          if (cutRef.current.length === 0) {
+            return;
+          }
+          consume();
+          const cut = cutRef.current;
+          const loaded = new Map(loadedItemsOf(current.state).map((row) => [itemKeyOf(row), row]));
+          const dragged = cut.map((row) => loaded.get(itemKeyOf(row)) ?? row);
+          const resolution = resolveDrop({
+            dragged,
+            over: { key: focusedRow.key, zone: item.kind === "folder" ? "inside" : "after" },
+            rows: current.rows,
+            rules: current.rules,
+            state: current.state,
+          });
+          if (resolution === null) {
+            return;
+          }
+          if (resolution.refusal !== null) {
+            const reason = dropRefusalText(resolution.refusal, current.translate);
+            announce(current.translate("announcePasteRefused", { reason }));
+            toast.error(current.translate("announcePasteRefused", { reason }));
+
+            return;
+          }
+          if (resolution.isNoOp) {
+            setCutItems([]);
+
+            return;
+          }
+          const [first] = dragged;
+          void current.actions.startDropMove({
+            items: dragged,
+            onMoved: () => {
+              setCutItems([]);
+              if (first !== undefined) {
+                focusRowWhenShown(first);
+              }
+            },
+            selection: null,
+            target: resolution.target,
+            targetTitle: resolution.targetFolder?.title ?? current.translate("moveToRoot"),
+          });
+
+          return;
+        }
+        case "moveUp":
+        case "moveDown": {
+          consume();
+          const reorder = reorderRef.current as ReorderController;
+          if (current.isBusy && !reorder.hasPending()) {
+            return;
+          }
+          const result = reorder.press(item, action === "moveUp" ? "up" : "down");
+          if (result.type === "moved") {
+            announce(
+              current.translate("announceMovePosition", {
+                name: item.title,
+                position: result.position,
+                total: result.total,
+              })
+            );
+          } else if (result.type === "blocked") {
+            announce(
+              result.blocked === "unloaded"
+                ? current.translate("announceNotLoaded", { name: item.title })
+                : current.translate(
+                    result.blocked === "first" ? "announceAlreadyFirst" : "announceAlreadyLast",
+                    { name: item.title }
+                  )
+            );
+          }
+          keepFocusOn.current = focusedRow.key;
+
+          return;
+        }
+        case "moveOut":
+        case "moveIn": {
+          consume();
+          const reorder = reorderRef.current as ReorderController;
+          if (reorder.hasPending()) {
+            reorder.flush();
+
+            return;
+          }
+          if (current.isBusy) {
+            return;
+          }
+          if (action === "moveOut") {
+            if (item.parentId === null) {
+              announce(current.translate("announceMoveOutTopLevel", { name: item.title }));
+
+              return;
+            }
+            const parent = findLoadedFolder(current.state, item.parentId);
+            if (parent === null) {
+              announce(current.translate("announceNotLoaded", { name: item.title }));
+
+              return;
+            }
+            const grandparent = findLoadedFolder(current.state, parent.parentId);
+            void current.actions.startDropMove({
+              items: [item],
+              onMoved: () => focusRowWhenShown(item),
+              selection: null,
+              target: {
+                after: { collection: parent.collection, id: parent.id },
+                toFolder: parent.parentId,
+              },
+              targetTitle: grandparent?.title ?? current.translate("moveToRoot"),
+            });
+
+            return;
+          }
+          const siblings = current.state.childrenByFolder[folderKeyOf(item.parentId)]?.items ?? [];
+          const above =
+            siblings[siblings.findIndex((row) => itemKeyOf(row) === focusedRow.key) - 1];
+          if (above === undefined || above.kind !== "folder") {
+            announce(current.translate("announceMoveInNoFolder", { name: item.title }));
+
+            return;
+          }
+          // Opened first, so the row has a place to land in and stays on screen.
+          void (async () => {
+            await current.store.setExpanded(above.id, true);
+            await current.actions.startDropMove({
+              items: [item],
+              onMoved: () => focusRowWhenShown(item),
+              selection: null,
+              target: { position: "start", toFolder: above.id },
+              targetTitle: above.title,
+            });
+          })();
+
+          return;
+        }
+        default: {
+          return;
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [announce, focusKey]);
+
+  // The row that has the focus is the one in the tab order.
+  const onFocus = useCallback((target: EventTarget) => {
+    const key = target instanceof Element ? rowKeyOfElement(target) : null;
+    if (key !== null) {
+      setActiveKey(key);
+    }
+  }, []);
+
+  // Only the row in the tab order is a stop: the controls inside the other rows are reached from
+  // their row, so Tab does not walk through every checkbox and menu button of a long tree.
+  useEffect(() => {
+    const tree = treeRef.current;
+    if (tree === null) {
+      return;
+    }
+    for (const row of tree.querySelectorAll<HTMLElement>('[data-testid="tree-row"]')) {
+      const isStop = rowKeyOfElement(row) === tabStopKey;
+      for (const control of row.querySelectorAll<HTMLElement>("a[href], button, input")) {
+        if (isStop) {
+          control.removeAttribute("tabindex");
+        } else {
+          control.tabIndex = -1;
+        }
+      }
+    }
+  }, [itemRows, tabStopKey]);
+
+  // The row that had the focus is gone (deleted, moved out of view, a search ended): the one that
+  // now stands in its place takes the focus, so the keyboard is not left on the page.
+  const previousKeys = useRef<string[]>([]);
+  useEffect(() => {
+    const keys = itemRows.map((row) => row.key);
+    if (activeKey !== null && !keys.includes(activeKey) && keys.length > 0) {
+      const next = neighbourKeyOf(itemRows, previousKeys.current, activeKey);
+      setActiveKey(next);
+      if (next !== null && hasLostFocus() && !modalOpenRef.current) {
+        focusKey(next);
+      }
+    }
+    previousKeys.current = keys;
+  }, [activeKey, focusKey, itemRows]);
+
+  // A dialog closed and the focus did not come back to anything: it goes to the row the keyboard was on.
+  const wasModalOpen = useRef(false);
+  useEffect(() => {
+    if (wasModalOpen.current && !isModalOpen) {
+      const timer = setTimeout(() => {
+        if (hasLostFocus() && tabStopKey !== null) {
+          focusKey(tabStopKey);
+        }
+      }, 0);
+      wasModalOpen.current = false;
+
+      return () => clearTimeout(timer);
+    }
+    wasModalOpen.current = isModalOpen;
+
+    return undefined;
+  }, [focusKey, isModalOpen, tabStopKey]);
+
+  // The cut rows that are no longer there are not waiting for a paste.
+  useEffect(() => {
+    if (cutItems.length === 0) {
+      return;
+    }
+    const keys = new Set(loadedItemsOf(options.state).map(itemKeyOf));
+    if (cutItems.every((item) => !keys.has(itemKeyOf(item)))) {
+      setCutItems([]);
+    }
+  }, [cutItems, options.state]);
+
+  const cutKeys = useMemo(() => new Set(cutItems.map(itemKeyOf)), [cutItems]);
+
+  return { activeKey: tabStopKey, cutKeys, liveMessage, onFocus, treeRef };
+};

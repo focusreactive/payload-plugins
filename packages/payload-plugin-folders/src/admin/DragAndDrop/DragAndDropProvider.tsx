@@ -1,12 +1,18 @@
-import { DndContext, DragOverlay, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core";
-import type { DragEndEvent, DragMoveEvent, DragOverEvent, DragStartEvent } from "@dnd-kit/core";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { DndContext, DragOverlay, useSensor, useSensors } from "@dnd-kit/core";
+import type {
+  Announcements,
+  DragEndEvent,
+  DragMoveEvent,
+  DragOverEvent,
+  DragStartEvent,
+} from "@dnd-kit/core";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { TreeItem } from "../../types.js";
 import type { Translate } from "../compat.js";
 import type { DropMove } from "../Move/useMoveFlow.js";
-import { itemKeyOf } from "../store.js";
+import { itemKeyOf, loadedItemsOf } from "../store.js";
 import type { TreeStore, TreeStoreState } from "../store.js";
 import type { TreeRowModel } from "../Tree/useTreeData.js";
 import { DragStateContext } from "./dragState.js";
@@ -81,16 +87,6 @@ const hitOf = (event: DragEndEvent | DragMoveEvent | DragOverEvent): Hit | null 
     : { key: String(collision.id), zone: data.zone };
 };
 
-// Dragging by keyboard is the keyboard ticket's: until then these stay silent, because dnd-kit's
-// own announcements would read out the raw row keys.
-const silentAnnouncements = {
-  onDragCancel: () => undefined,
-  onDragEnd: () => undefined,
-  onDragMove: () => undefined,
-  onDragOver: () => undefined,
-  onDragStart: () => undefined,
-};
-
 /**
  * Drag and drop for the tree rows (spec section 7.3): the drag context, the line or highlight of
  * the gap under the pointer, the overlay that follows it, the folder that opens when hovered, and
@@ -107,10 +103,11 @@ export const DragAndDropProvider = ({
   store,
   translate,
 }: DragAndDropProviderProps) => {
-  // The keyboard sensor is registered for the keyboard ticket; the rows keep it from starting.
+  // The pointer is the only sensor. Keyboard users move rows with Move mode, Alt and the arrow
+  // keys, and cut and paste, which reach every place a drag can and ask the same confirmation;
+  // dnd-kit's keyboard sensor would be a second, slower way to the same moves.
   const sensors = useSensors(
-    useSensor(RowPointerSensor, { activationConstraint: { distance: dragActivationDistance } }),
-    useSensor(KeyboardSensor)
+    useSensor(RowPointerSensor, { activationConstraint: { distance: dragActivationDistance } })
   );
   const [carried, setCarried] = useState<Carried | null>(null);
   const [hit, setHit] = useState<Hit | null>(null);
@@ -128,8 +125,16 @@ export const DragAndDropProvider = ({
   );
   const isRefused = resolution?.refusal != null;
 
+  // What the announcements read. dnd-kit calls `onDragOver` before it announces, so the refs are
+  // current when the words are built.
+  const carriedRef = useRef<Carried | null>(null);
+  const resolutionRef = useRef<DropResolution | null>(null);
+  const lastWordsRef = useRef("");
+
   const track = (event: DragMoveEvent | DragOverEvent) => {
     const next = hitOf(event);
+    resolutionRef.current =
+      next && carriedRef.current ? resolveHit(next, carriedRef.current.items) : null;
     // A breadcrumb's folder row changes as the breadcrumbs are read again; the key names it.
     setHit((current) =>
       current?.key === next?.key && current?.zone === next?.zone ? current : next
@@ -141,10 +146,77 @@ export const DragAndDropProvider = ({
     setHit(null);
   };
 
+  // Words for a screen reader, with the rows' titles where dnd-kit would read out their keys.
+  const announcements = useMemo<Announcements>(() => {
+    const nameOf = (items: readonly TreeItem[] | undefined): string =>
+      items?.length === 1
+        ? (items[0] as TreeItem).title
+        : translate("dragItems", { count: items?.length ?? 0 });
+    const whereOf = (dropped: DropResolution): string => {
+      const { after } = dropped.target;
+      if (after) {
+        const anchor = loadedItemsOf(state).find((item) => itemKeyOf(item) === itemKeyOf(after));
+
+        return translate("dragWhereAfter", { target: anchor?.title ?? "" });
+      }
+
+      return translate("dragWhereInside", {
+        target: dropped.targetFolder?.title ?? translate("moveToRoot"),
+      });
+    };
+
+    return {
+      onDragCancel: () => translate("dragCancelled", { name: nameOf(carriedRef.current?.items) }),
+      onDragEnd: () => {
+        const name = nameOf(carriedRef.current?.items);
+        const latest = resolutionRef.current;
+        if (latest === null || latest.refusal !== null || latest.isNoOp) {
+          return translate("dragNotMoved", { name });
+        }
+
+        return translate("dragDropped", { name, where: whereOf(latest) });
+      },
+      // The place under the pointer changes inside one row as often as from row to row (the top, the
+      // middle and the bottom of a folder are three places), and dnd-kit only reports a change of
+      // row. So the words are built on every move, and said when they differ from the last ones.
+      onDragMove: () => {
+        const name = nameOf(carriedRef.current?.items);
+        const latest = resolutionRef.current;
+        if (latest === null || (latest.refusal === null && latest.isNoOp)) {
+          return undefined;
+        }
+        const words =
+          latest.refusal === null
+            ? translate("dragRelease", { name, where: whereOf(latest) })
+            : translate("dragOverRefused", {
+                name,
+                reason: dropRefusalText(latest.refusal, translate),
+              });
+        if (words === lastWordsRef.current) {
+          return undefined;
+        }
+        lastWordsRef.current = words;
+
+        return words;
+      },
+      onDragOver: () => undefined,
+      onDragStart: ({ active }) => {
+        const grabbed = active.data.current?.item as TreeItem | undefined;
+
+        return translate("dragPickedUp", {
+          name: nameOf(grabbed ? draggedItemsOf(grabbed, selectedItems).items : undefined),
+        });
+      },
+    };
+  }, [selectedItems, state, translate]);
+
   const handleDragStart = (event: DragStartEvent) => {
     const grabbed = event.active.data.current?.item as TreeItem | undefined;
     if (grabbed) {
-      setCarried(draggedItemsOf(grabbed, selectedItems));
+      carriedRef.current = draggedItemsOf(grabbed, selectedItems);
+      resolutionRef.current = null;
+      lastWordsRef.current = "";
+      setCarried(carriedRef.current);
     }
   };
 
@@ -224,10 +296,7 @@ export const DragAndDropProvider = ({
 
   return (
     <DndContext
-      accessibility={{
-        announcements: silentAnnouncements,
-        screenReaderInstructions: { draggable: "" },
-      }}
+      accessibility={{ announcements, screenReaderInstructions: { draggable: "" } }}
       collisionDetection={rowUnderPointer}
       onDragCancel={() => {
         stop();

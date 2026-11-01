@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { ConfirmMoves, FolderId } from "../../types.js";
 import { ListHeader, useCanCreate, useLocaleCount } from "../compat.js";
@@ -11,6 +11,8 @@ import { useContextMenu } from "../ContextMenu/useContextMenu.js";
 import type { ContextMenuActions } from "../ContextMenu/useContextMenu.js";
 import { useRootPageFlow } from "../ContextMenu/useRootPageFlow.js";
 import { DragAndDropProvider } from "../DragAndDrop/DragAndDropProvider.js";
+import { focusRowWhenShown } from "../Keyboard/focusRow.js";
+import { useTreeKeyboard } from "../Keyboard/useTreeKeyboard.js";
 import { resolveCrumbDrop } from "../DragAndDrop/dropTargets.js";
 import type { DropRules } from "../DragAndDrop/dropTargets.js";
 import type { MoveTarget } from "../Move/moveFlow.js";
@@ -31,6 +33,11 @@ import { useRepairFlow } from "../Repair/useRepairFlow.js";
 import { useTreeHealth } from "../Repair/useTreeHealth.js";
 import { HeaderMenuButton } from "../Menu/HeaderMenuButton.js";
 import type { MenuGroups } from "../Menu/menuEntries.js";
+import { SearchBox } from "../Search/SearchBox.js";
+import { foldersToOpenFor, noFilters, searchRowsOf } from "../Search/searchLogic.js";
+import type { SearchFilters } from "../Search/searchLogic.js";
+import { SearchEmpty, SearchError, SearchSummary } from "../Search/SearchStatus.js";
+import { useSearch } from "../Search/useSearch.js";
 import { EmptyPanel } from "../Tree/EmptyStates.js";
 import type { EmptyCreateActions } from "../Tree/EmptyStates.js";
 import { Tree } from "../Tree/Tree.js";
@@ -38,8 +45,10 @@ import { useTreeData } from "../Tree/useTreeData.js";
 import { useApiContext } from "../useApiContext.js";
 import { useSelection } from "../useSelection.js";
 import type { TreeItem } from "../../types.js";
+import type { TreeRowModel } from "../Tree/useTreeData.js";
 import { Breadcrumbs } from "./Breadcrumbs.js";
 import type { CrumbMoveMode } from "./Breadcrumbs.js";
+import type { SearchScope } from "./treeUrlState.js";
 import { ZoomNotFound } from "./ZoomNotFound.js";
 
 export type TreeWorkspaceProps = {
@@ -62,6 +71,12 @@ export type TreeWorkspaceProps = {
   pageSize: number;
   /** Segments the top level cannot take. */
   reservedRootSegments: readonly string[];
+  /** `?q=`: the search text; an empty one is the tree. */
+  searchQuery: string;
+  /** `?scope=all`: search everywhere, not only the zoomed folder. */
+  searchScope: SearchScope;
+  /** Writes `?q=` and `?scope=` into the address. */
+  onSearchChange: (changes: { query?: string; scope?: SearchScope }) => void;
   store: TreeStore;
   title: string;
   translate: Translate;
@@ -83,10 +98,13 @@ export const TreeWorkspace = ({
   language,
   maxDepth,
   onOpenPage,
+  onSearchChange,
   onZoom,
   pageFields,
   pageSize,
   reservedRootSegments,
+  searchQuery,
+  searchScope,
   store,
   title,
   translate,
@@ -94,12 +112,37 @@ export const TreeWorkspace = ({
 }: TreeWorkspaceProps) => {
   const { rows, state } = useTreeData(store);
   const { zoom } = state;
+  const apiContext = useApiContext(store);
   // The zoomed folder's row: the breadcrumbs carry it when no parent loaded it.
   const zoomFolder = zoom === null ? null : findLoadedFolder(state, zoom.folderId);
   const viewRootKey = viewRootKeyOf(state);
+
+  // A search replaces the tree with its hits; the filters belong to one search.
+  const isSearching = searchQuery.trim() !== "";
+  const [filters, setFilters] = useState<SearchFilters>(noFilters);
+  useEffect(() => {
+    if (!isSearching) {
+      setFilters(noFilters);
+    }
+  }, [isSearching]);
+  const search = useSearch({
+    apiContext,
+    enabled: isSearching,
+    filters,
+    folderId: zoom?.folderId ?? null,
+    locale: store.getOptions()?.locale ?? null,
+    query: searchQuery,
+    revision: state.revision,
+    scope: searchScope,
+  });
+  const resultRows = useMemo(
+    () => searchRowsOf(search.items, search.folders, title),
+    [search.folders, search.items, title]
+  );
+  const selectableRows: readonly TreeRowModel[] = isSearching ? resultRows : rows;
   const loadedItems = useMemo(
-    () => rows.flatMap((row): TreeItem[] => (row.type === "item" ? [row.item] : [])),
-    [rows]
+    () => selectableRows.flatMap((row): TreeItem[] => (row.type === "item" ? [row.item] : [])),
+    [selectableRows]
   );
   const selection = useSelection(loadedItems);
   const { clear, select } = selection;
@@ -137,6 +180,10 @@ export const TreeWorkspace = ({
         : null,
     [dropRules, moveMode.active, moveMode.moving, rows, state]
   );
+  // The hits, while a search is on. Move mode shows the tree instead, because a place to put rows
+  // is a place in the tree; the hits come back when it ends.
+  const showSearchView = isSearching && !moveMode.active;
+  const displayRows: readonly TreeRowModel[] = showSearchView ? resultRows : rows;
   const startMoveMode = useCallback(
     (items: readonly TreeItem[]) => {
       // Moving exactly the ticked rows is the selection's move: a refusal puts the ticks back.
@@ -194,7 +241,6 @@ export const TreeWorkspace = ({
     };
   }, [dropRules, isMoveBusy, moveMode.active, moveMode.moving, pickTarget, state, translate]);
 
-  const apiContext = useApiContext(store);
   const canCreate = useCanCreate();
   const operationsFlow = useOperationsFlow({
     apiContext,
@@ -360,12 +406,57 @@ export const TreeWorkspace = ({
     draftCollections,
     hasPreviewUrl,
     isBusy: isMoveBusy,
-    rows,
+    rows: displayRows,
     selection,
     state,
     store,
     translate,
     typeLabels,
+  });
+
+  // Escape in a search: the tree is back, the focused hit's folders are open and its row has the focus.
+  const leaveSearch = useCallback(
+    (focused: TreeItem | null) => {
+      onSearchChange({ query: "" });
+      if (focused === null) {
+        return;
+      }
+      void (async () => {
+        const zoomFolderId = zoom?.folderId ?? null;
+        let toOpen = foldersToOpenFor(focused, zoomFolderId);
+        // A hit outside the zoomed folder is only on screen from the top level.
+        if (toOpen === null) {
+          onZoom(null);
+          toOpen = foldersToOpenFor(focused, null) ?? [];
+        }
+        for (const id of toOpen) {
+          await store.setExpanded(id, true);
+        }
+        focusRowWhenShown(focused);
+      })();
+    },
+    [onSearchChange, onZoom, store, zoom?.folderId]
+  );
+  const keyboard = useTreeKeyboard({
+    actions: {
+      delete: startDelete,
+      duplicate: startDuplicate,
+      leaveSearch,
+      openFolder: (folder) => onZoom(folder.id),
+      openPage: onOpenPage,
+      startDropMove,
+      undoLastMove: moveFlow.undoLast,
+    },
+    adminRoute,
+    isBusy: isMoveBusy,
+    isMoveModeActive: moveMode.active,
+    isSearching,
+    rows: displayRows,
+    rules: dropRules,
+    selection,
+    state,
+    store,
+    translate,
   });
 
   const runAction = useCallback(
@@ -405,9 +496,23 @@ export const TreeWorkspace = ({
   const isViewEmpty =
     viewEntry?.phase === "loaded" && viewEntry.items.length === 0 && !viewEntry.hasMore;
   // Move mode needs the tree even when it is empty: the top marker is where rows can be put in.
-  const showEmptyPanel = isViewEmpty && isCreateReady && !moveMode.active;
+  const showEmptyPanel = isViewEmpty && isCreateReady && !moveMode.active && !isSearching;
   const showZoomNotFound = zoom?.error === "not-found";
   const topLevelTitle = title;
+
+  const isScopedToFolder = zoom !== null && searchScope === "folder";
+  const folderName = zoomFolder?.title ?? topLevelTitle;
+  const coverName = isScopedToFolder ? folderName : topLevelTitle;
+  const typeOptions = useMemo(
+    () => [
+      ...Object.entries(typeLabels).map(([value, label]) => ({ label, value })),
+      { label: translate("folder"), value: foldersSlug },
+    ],
+    [foldersSlug, translate, typeLabels]
+  );
+  const focusTabStopRow = useCallback(() => {
+    document.querySelector<HTMLElement>('[data-testid="tree-row"][tabindex="0"]')?.focus();
+  }, []);
 
   const headerActions = [
     <CreateMenuButton
@@ -449,7 +554,7 @@ export const TreeWorkspace = ({
         <ListHeader Actions={headerActions} title={title} />
       ) : null}
       <DragAndDropProvider
-        disabled={isMoveBusy || moveMode.active}
+        disabled={isMoveBusy || moveMode.active || isSearching}
         onDrop={(drop) => void startDropMove(drop)}
         rows={rows}
         rules={dropRules}
@@ -470,6 +575,24 @@ export const TreeWorkspace = ({
             translate={translate}
           />
         )}
+        {moveMode.active ? null : (
+          <SearchBox
+            coverName={coverName}
+            filters={filters}
+            folderName={folderName}
+            isSearching={isSearching}
+            isZoomed={zoom !== null}
+            onFiltersChange={setFilters}
+            onFocusResults={focusTabStopRow}
+            onQueryChange={(query) => onSearchChange({ query })}
+            onReturnToTree={focusTabStopRow}
+            onScopeChange={(scope) => onSearchChange({ scope })}
+            query={searchQuery}
+            scope={searchScope}
+            translate={translate}
+            typeOptions={typeOptions}
+          />
+        )}
         <div className="fr-folders-banners" data-testid="tree-banners">
           {health.hasDrift ? (
             <DriftBanner
@@ -483,6 +606,48 @@ export const TreeWorkspace = ({
         <div className="fr-folders-body">
           {showZoomNotFound ? (
             <ZoomNotFound onBack={() => onZoom(null)} title={topLevelTitle} translate={translate} />
+          ) : showSearchView ? (
+            <>
+              <SearchSummary
+                coverName={coverName}
+                count={search.items.length}
+                isLoading={!search.isCurrent}
+                query={searchQuery}
+                translate={translate}
+                truncated={search.truncated}
+              />
+              {search.error !== null ? (
+                <SearchError message={search.error} onRetry={search.retry} translate={translate} />
+              ) : search.isCurrent && search.items.length === 0 ? (
+                <SearchEmpty
+                  coverName={coverName}
+                  onSearchEverywhere={
+                    isScopedToFolder ? () => onSearchChange({ scope: "all" }) : null
+                  }
+                  query={searchQuery}
+                  translate={translate}
+                />
+              ) : search.items.length > 0 ? (
+                <Tree
+                  adminRoute={adminRoute}
+                  emptyActions={emptyActions}
+                  keyboard={keyboard}
+                  label={translate("searchResultsLabel")}
+                  language={language}
+                  onOpenFolder={onZoom}
+                  onOpenMenu={contextMenu.openMenu}
+                  onOpenPage={onOpenPage}
+                  onOpenSettings={startSettings}
+                  openMenuItemKey={contextMenu.openItemKey}
+                  pageSize={pageSize}
+                  rows={resultRows}
+                  selection={selection}
+                  store={store}
+                  translate={translate}
+                  typeLabels={typeLabels}
+                />
+              ) : null}
+            </>
           ) : showEmptyPanel ? (
             <EmptyPanel
               actions={emptyActions}
@@ -494,6 +659,8 @@ export const TreeWorkspace = ({
             <Tree
               adminRoute={adminRoute}
               emptyActions={emptyActions}
+              keyboard={keyboard}
+              label={translate("treeLabel")}
               language={language}
               moveMode={
                 placedRows === null

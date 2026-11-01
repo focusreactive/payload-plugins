@@ -2,7 +2,13 @@ import { useCallback } from "react";
 
 import type { FolderId } from "../../types.js";
 import { useSearchParams } from "../compat.js";
-import { formatExpandedParam, parseFolderParam, queryWith } from "./treeUrlState.js";
+import {
+  formatExpandedParam,
+  parseFolderParam,
+  parseSearchScope,
+  queryWith,
+} from "./treeUrlState.js";
+import type { SearchScope } from "./treeUrlState.js";
 
 /**
  * Puts parameters into the address without leaving the page. Next.js routes the browser's own
@@ -30,8 +36,17 @@ const writeQuery = (
 export type TreeUrlState = {
   /** The raw `?expanded=` value; `null` when the address has none. */
   expandedParam: string | null;
+  /** `?q=`: the search text, `""` when the address has none. */
+  searchQuery: string;
+  /** `?scope=all` is everywhere; anything else is the zoomed folder (or the top level). */
+  searchScope: SearchScope;
   /** Writes the open folders into the address, replacing the current history entry. */
   setExpandedInUrl: (folders: readonly FolderId[]) => void;
+  /**
+   * Writes the search into the address, replacing the current history entry: a letter typed is not
+   * a place to come back to. A name left out stays as it is; an empty text leaves search mode.
+   */
+  setSearchInUrl: (changes: { query?: string; scope?: SearchScope }) => void;
   /** Zooms by adding a history entry, so Back returns to where the editor was. */
   setZoomInUrl: (folderId: FolderId | null) => void;
   /** `?folder=<id>`: the zoomed folder, `null` for the top level. */
@@ -43,6 +58,8 @@ export const useTreeUrlState = (): TreeUrlState => {
   const searchParams = useSearchParams();
   const zoomFolderId = parseFolderParam(searchParams.get("folder"));
   const expandedParam = searchParams.get("expanded");
+  const searchQuery = searchParams.get("q") ?? "";
+  const searchScope = parseSearchScope(searchParams.get("scope"));
 
   const setZoomInUrl = useCallback((folderId: FolderId | null) => {
     writeQuery({ folder: folderId === null ? null : String(folderId) }, "push");
@@ -51,5 +68,23 @@ export const useTreeUrlState = (): TreeUrlState => {
     writeQuery({ expanded: formatExpandedParam(folders) }, "replace");
   }, []);
 
-  return { expandedParam, setExpandedInUrl, setZoomInUrl, zoomFolderId };
+  const setSearchInUrl = useCallback((changes: { query?: string; scope?: SearchScope }) => {
+    writeQuery(
+      {
+        ...(changes.query === undefined ? {} : { q: changes.query === "" ? null : changes.query }),
+        ...(changes.scope === undefined ? {} : { scope: changes.scope === "all" ? "all" : null }),
+      },
+      "replace"
+    );
+  }, []);
+
+  return {
+    expandedParam,
+    searchQuery,
+    searchScope,
+    setExpandedInUrl,
+    setSearchInUrl,
+    setZoomInUrl,
+    zoomFolderId,
+  };
 };

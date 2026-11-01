@@ -152,6 +152,7 @@ export const TreeViewClient = ({
           language={language}
           maxDepth={maxDepth}
           onOpenPage={(url) => router.push(url)}
+          onSearchChange={urlState.setSearchInUrl}
           onZoom={(folderId) => {
             // The store moves at once, from the rows it has; the address follows so Back works.
             void store.setZoom(folderId);
@@ -160,6 +161,8 @@ export const TreeViewClient = ({
           pageFields={pageFields}
           pageSize={pageSize}
           reservedRootSegments={reservedRootSegments}
+          searchQuery={urlState.searchQuery}
+          searchScope={urlState.searchScope}
           store={store}
           title={title}
           translate={translate}

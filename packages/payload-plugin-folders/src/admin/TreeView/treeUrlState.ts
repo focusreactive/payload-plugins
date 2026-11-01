@@ -20,6 +20,12 @@ const folderIdOf = (value: string): FolderId =>
 export const parseFolderParam = (value: string | null): FolderId | null =>
   value !== null && idPattern.test(value) ? folderIdOf(value) : null;
 
+/** What a search covers: the zoomed folder and its subfolders, or everything (`?scope=all`). */
+export type SearchScope = "all" | "folder";
+
+export const parseSearchScope = (value: string | null): SearchScope =>
+  value === "all" ? "all" : "folder";
+
 /** `?expanded=<id>,<id>`: the open folders, `null` when the address says nothing about them. */
 export const parseExpandedParam = (value: string | null): FolderId[] | null => {
   if (value === null) {

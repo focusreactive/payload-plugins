@@ -27,8 +27,7 @@ export const DragStateContext = createContext<DragRowState>({
 
 /**
  * Makes one row a drag source and a drop target. The listeners go on the row, and the row is also
- * the activator node: without that, a key pressed in the row's checkbox would start a keyboard
- * drag, which has no drop logic until the keyboard ticket.
+ * the activator node.
  */
 export const useRowDrag = (item: TreeItem, rowKey: string) => {
   const { disabled, draggedKeys, indicator, isRefused } = useContext(DragStateContext);
@@ -49,9 +48,8 @@ export const useRowDrag = (item: TreeItem, rowKey: string) => {
     [setActivatorNodeRef, setDraggableRef, setDroppableRef]
   );
 
-  // The keyboard sensor stays registered but is not wired to the row: a focused row now answers its
-  // own keys (the context menu's), and Enter or Space on it must not start a keyboard drag that has
-  // no drop logic until the keyboard ticket.
+  // dnd-kit's listeners include a key handler for its keyboard sensor, which is not registered
+  // (see `DragAndDropProvider`); the row answers its own keys, so only the pointer's are kept.
   const pointerListeners = listeners
     ? Object.fromEntries(Object.entries(listeners).filter(([name]) => name !== "onKeyDown"))
     : undefined;
