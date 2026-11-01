@@ -15,6 +15,7 @@ import { useCallback, useMemo } from "react";
 
 import type { FoldersTranslationKey } from "../translations/index.js";
 import { findLocalizedFields } from "./Create/localizedValues.js";
+import { isCreatePermitted } from "./createPermission.js";
 
 /**
  * The one place the admin touches Payload's router, links, config and translations. A build for
@@ -46,7 +47,7 @@ export const useCanCreate = (): ((collection: string) => boolean) => {
     (collection: string) =>
       permissions?.collections === undefined
         ? true
-        : permissions.collections[collection]?.create === true,
+        : isCreatePermitted(permissions.collections[collection]?.create),
     [permissions]
   );
 };
