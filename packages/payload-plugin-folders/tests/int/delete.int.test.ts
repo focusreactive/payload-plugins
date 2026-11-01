@@ -1,9 +1,11 @@
+import { createPayloadRequest } from "payload";
 import type { Payload } from "payload";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import type { DeletePreview } from "../../src/core/deleteItems.js";
 import type { OperationProgress } from "../../src/core/operations.js";
 import { resolvePath } from "../../src/core/resolve.js";
+import { withTreeLock } from "../../src/core/treeLock.js";
 import { moveItems } from "../../src/server/index.js";
 import type { PathChange, PathChangeReason } from "../../src/types.js";
 import { callEndpoint } from "../helpers/callEndpoint.js";
@@ -651,5 +653,45 @@ describe("deleting when only some collections have a trash", () => {
     );
 
     expect(preview.body).toMatchObject({ inTrash: 0, trash: true });
+  });
+});
+
+describe("a page delete that fails after the page's beforeDelete", () => {
+  it("leaves nothing behind for a later afterDelete to report", async () => {
+    const { payload } = harness;
+    const news = await createFolder(payload, { name: "News", slug: "news" });
+    const story = await createPage(payload, news.id, "story");
+    const pagesConfig = payload.collections.pages.config;
+    const afterDeleteHooks = pagesConfig.hooks.afterDelete as unknown as Array<
+      (args: unknown) => Promise<void> | void
+    >;
+    // The plugin's own hook is the last one; a host hook ahead of it that throws stops the delete
+    // after the plugin's beforeDelete has worked out the page's URLs, and its own afterDelete never runs.
+    const pluginAfterDelete = afterDeleteHooks.at(-1) as (args: unknown) => Promise<void>;
+    afterDeleteHooks.unshift(() => {
+      throw new Error("A host hook failed");
+    });
+    try {
+      await expect(
+        payload.delete({ collection: "pages", id: story.id, overrideAccess: true })
+      ).rejects.toThrow("A host hook failed");
+    } finally {
+      afterDeleteHooks.shift();
+    }
+    expect(await countAll(payload, "pages")).toBe(1);
+    recorded.length = 0;
+
+    const req = await createPayloadRequest({ payload, req: {} });
+    await withTreeLock(req, async () => {
+      await pluginAfterDelete({
+        collection: pagesConfig,
+        context: req.context,
+        doc: story,
+        id: story.id,
+        req,
+      });
+    });
+
+    expect(recorded).toEqual([]);
   });
 });

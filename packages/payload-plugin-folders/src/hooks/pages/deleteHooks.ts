@@ -20,8 +20,9 @@ import type { FolderId, PathChange, ResolvedOptions, ResolvedPageCollection } fr
 import { isInternalWrite } from "../context.js";
 
 // The changes a page's `beforeDelete` worked out, until its `afterDelete` reports them: the page
-// is gone by then, and so is what the paths were read from.
-const changesByPayload = new WeakMap<object, Map<string, PathChange[]>>();
+// is gone by then, and so is what the paths were read from. They live on the request's context, so
+// a delete that fails between the two hooks takes them along with its request.
+const pendingChangesContextKey = "foldersPendingDeleteChanges";
 
 const keyOf = (collection: string, id: FolderId): string => `${collection}:${id}`;
 
@@ -47,12 +48,9 @@ export const buildPageBeforeDelete =
       req,
       snapshot: snapshotOfRow(req, row),
     });
-    let byKey = changesByPayload.get(req.payload);
-    if (!byKey) {
-      byKey = new Map();
-      changesByPayload.set(req.payload, byKey);
-    }
-    byKey.set(keyOf(page.slug, id), changes);
+    const pending = (req.context[pendingChangesContextKey] ?? {}) as Record<string, PathChange[]>;
+    pending[keyOf(page.slug, id)] = changes;
+    req.context[pendingChangesContextKey] = pending;
   };
 
 /**
@@ -65,10 +63,14 @@ export const buildPageAfterDelete =
     if (isInternalWrite(req)) {
       return;
     }
-    const byKey = changesByPayload.get(req.payload);
+    const pending = req.context[pendingChangesContextKey] as
+      | Record<string, PathChange[]>
+      | undefined;
     const key = keyOf(page.slug, id);
-    const changes = byKey?.get(key) ?? [];
-    byKey?.delete(key);
+    const changes = pending?.[key] ?? [];
+    if (pending) {
+      delete pending[key];
+    }
     await reportDeletedPaths({ changes, options, req });
     await bumpRevision(req);
   };
