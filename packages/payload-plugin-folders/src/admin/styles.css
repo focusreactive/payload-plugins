@@ -1428,4 +1428,82 @@
     color: var(--fr-folders-text-muted);
     font-size: var(--text-body-small-font-size);
   }
+
+  /*
+   * A long tree draws only the rows near the view: the body of the grid scrolls, the rows are
+   * placed by the virtualizer, and the header row stays above them.
+   */
+  .fr-folders-tree__scroll {
+    max-height: 70vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .fr-folders-tree__rows {
+    position: relative;
+    width: 100%;
+  }
+
+  .fr-folders-tree__slot {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+
+  /*
+   * The sidebar tab (spec section 7.12): the same tree in a narrow column, with the name and the
+   * status dot only. The select column is gone, so its width is zero for everything that indents
+   * by it.
+   */
+  .fr-folders-tree--compact {
+    --fr-folders-select-width: 0px;
+    --fr-folders-columns: minmax(0, 1fr) 1.5rem;
+
+    border: none;
+    border-radius: 0;
+  }
+
+  .fr-folders-tree--compact .fr-folders-cell--status {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .fr-folders-tree--compact .fr-folders-row {
+    border-top: none;
+  }
+
+  .fr-folders-tree--compact .fr-folders-tree__scroll {
+    max-height: calc(100vh - 14rem);
+  }
+
+  .fr-folders-compact-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacer-2);
+    padding: var(--spacer-2) var(--spacer-2-5) 0;
+  }
+
+  .fr-folders--compact .fr-folders-search {
+    padding: var(--spacer-2) var(--spacer-2-5) 0;
+  }
+
+  .fr-folders--compact .fr-folders-search__field {
+    max-width: none;
+  }
+
+  .fr-folders--compact .fr-folders-toolbar {
+    min-height: 0;
+    padding: var(--spacer-2) var(--spacer-2-5);
+  }
+
+  .fr-folders-body--compact {
+    padding: var(--spacer-2) 0 var(--spacer-3);
+  }
+
+  .fr-folders-row--current,
+  .fr-folders-row--current:hover {
+    background: var(--color-bg-selected);
+    box-shadow: inset 3px 0 0 var(--color-bg-brand);
+  }
 }

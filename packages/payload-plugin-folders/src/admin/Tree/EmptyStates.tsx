@@ -21,17 +21,21 @@ export type EmptyCreateActions = {
  */
 export const EmptyRow = ({
   actions,
+  ariaRowIndex,
   folder,
   level,
   translate,
 }: {
   actions: EmptyCreateActions;
+  /** The row's place among all the rows when only some are in the page. */
+  ariaRowIndex?: number;
   folder: TreeItem;
   level: number;
   translate: Translate;
 }): ReactNode => (
   <div
     aria-level={level + 1}
+    aria-rowindex={ariaRowIndex}
     className="fr-folders-row fr-folders-row--status"
     data-testid="empty-row"
     role="row"

@@ -59,7 +59,7 @@ const refusedBodyClass = "fr-folders-dragging--refused";
 /** What is under the pointer: a row, or a breadcrumb (whose folder `null` is the top level). */
 type Hit = { crumb?: { folder: TreeItem | null }; key: string; zone: DropZone };
 
-type Carried = { isSelection: boolean; items: TreeItem[] };
+type Carried = { grabbedKey: string; isSelection: boolean; items: TreeItem[] };
 
 export type DragAndDropProviderProps = {
   children: ReactNode;
@@ -213,7 +213,10 @@ export const DragAndDropProvider = ({
   const handleDragStart = (event: DragStartEvent) => {
     const grabbed = event.active.data.current?.item as TreeItem | undefined;
     if (grabbed) {
-      carriedRef.current = draggedItemsOf(grabbed, selectedItems);
+      carriedRef.current = {
+        ...draggedItemsOf(grabbed, selectedItems),
+        grabbedKey: String(event.active.id),
+      };
       resolutionRef.current = null;
       lastWordsRef.current = "";
       setCarried(carriedRef.current);
@@ -283,6 +286,7 @@ export const DragAndDropProvider = ({
     () => ({
       disabled,
       draggedKeys: new Set((carried?.items ?? []).map(itemKeyOf)),
+      grabbedKey: carried?.grabbedKey ?? null,
       indicator: resolution?.indicator ?? null,
       isRefused,
     }),

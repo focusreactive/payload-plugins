@@ -1,6 +1,6 @@
 import { toast, useModal } from "@payloadcms/ui";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { RefObject } from "react";
+import type { MutableRefObject, RefObject } from "react";
 
 import type { TreeItem } from "../../types.js";
 import { editViewUrl } from "../compat.js";
@@ -73,6 +73,11 @@ export type TreeKeyboard = {
   liveMessage: { nonce: number; text: string };
   /** Focus entered the tree: the row it is in becomes the one in the tab order. */
   onFocus: (target: EventTarget) => void;
+  /**
+   * Set by the tree: brings a row into view when a long tree does not draw it, so the keyboard can
+   * focus a row that is not in the page (End on 2,000 rows).
+   */
+  revealRowRef: MutableRefObject<((key: string) => void) | null>;
   /** The treegrid's element: keys count as the tree's only while the focus is inside it. */
   treeRef: RefObject<HTMLDivElement | null>;
 };
@@ -88,8 +93,11 @@ const isTypingTarget = (target: EventTarget | null): boolean =>
 /** A drag is in progress: dnd-kit cancels it on Escape and the key is not the tree's. */
 const isDragging = (): boolean => document.body.classList.contains("fr-folders-dragging");
 
-const focusSearchInput = (): boolean => {
-  const input = document.querySelector<HTMLInputElement>('[data-testid="search-input"]');
+/** The search box of the workspace the key was pressed in; the tab and the view each have one. */
+const focusSearchInput = (from: Element | null): boolean => {
+  const input =
+    from?.closest(".fr-folders")?.querySelector<HTMLInputElement>('[data-testid="search-input"]') ??
+    document.querySelector<HTMLInputElement>('[data-testid="search-input"]');
   if (input === null) {
     return false;
   }
@@ -110,6 +118,7 @@ const focusSearchInput = (): boolean => {
 export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
   const { rows, store } = options;
   const treeRef = useRef<HTMLDivElement | null>(null);
+  const revealRowRef = useRef<((key: string) => void) | null>(null);
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [cutItems, setCutItems] = useState<readonly TreeItem[]>([]);
   const [liveMessage, setLiveMessage] = useState({ nonce: 0, text: "" });
@@ -141,7 +150,7 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
         items: [item],
         onAbandon,
         onBeforeApply,
-        onMoved: () => focusRowWhenShown(item),
+        onMoved: () => focusRowWhenShown(item, () => treeRef.current),
         selection: null,
         target,
         targetTitle: folder?.title ?? current.translate("moveToRoot"),
@@ -167,7 +176,7 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
     keepFocusOn.current = null;
     const row = itemRows.find((candidate) => candidate.key === key);
     if (row !== undefined && hasLostFocus()) {
-      rowElementOf(row.item)?.focus();
+      rowElementOf(row.item, treeRef.current)?.focus();
     }
   });
 
@@ -175,9 +184,22 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
     const row = latest.current.rows.find(
       (candidate) => candidate.type === "item" && candidate.key === key
     );
-    if (row?.type === "item") {
-      rowElementOf(row.item)?.focus();
+    if (row?.type !== "item") {
+      return;
     }
+    const element = rowElementOf(row.item, treeRef.current);
+    if (element !== null) {
+      element.focus();
+
+      return;
+    }
+    // A long tree draws only the rows near the view: bring this one in, then focus it.
+    revealRowRef.current?.(key);
+    focusRowWhenShown(
+      row.item,
+      () => treeRef.current,
+      () => hasLostFocus() || treeRef.current?.contains(document.activeElement) === true
+    );
   }, []);
 
   useEffect(() => {
@@ -199,7 +221,7 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
       const consume = () => event.preventDefault();
 
       if (action === "focusSearch") {
-        if (focusSearchInput()) {
+        if (focusSearchInput(event.target instanceof Element ? event.target : null)) {
           consume();
         }
 
@@ -382,7 +404,7 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
             onMoved: () => {
               setCutItems([]);
               if (first !== undefined) {
-                focusRowWhenShown(first);
+                focusRowWhenShown(first, () => treeRef.current);
               }
             },
             selection: null,
@@ -449,7 +471,7 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
             const grandparent = findLoadedFolder(current.state, parent.parentId);
             void current.actions.startDropMove({
               items: [item],
-              onMoved: () => focusRowWhenShown(item),
+              onMoved: () => focusRowWhenShown(item, () => treeRef.current),
               selection: null,
               target: {
                 after: { collection: parent.collection, id: parent.id },
@@ -473,7 +495,7 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
             await current.store.setExpanded(above.id, true);
             await current.actions.startDropMove({
               items: [item],
-              onMoved: () => focusRowWhenShown(item),
+              onMoved: () => focusRowWhenShown(item, () => treeRef.current),
               selection: null,
               target: { position: "start", toFolder: above.id },
               targetTitle: above.title,
@@ -502,22 +524,30 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
   }, []);
 
   // Only the row in the tab order is a stop: the controls inside the other rows are reached from
-  // their row, so Tab does not walk through every checkbox and menu button of a long tree.
+  // their row, so Tab does not walk through every checkbox and menu button of a long tree. A long
+  // tree draws rows as it scrolls, so the rows that come in are set too.
   useEffect(() => {
     const tree = treeRef.current;
     if (tree === null) {
-      return;
+      return undefined;
     }
-    for (const row of tree.querySelectorAll<HTMLElement>('[data-testid="tree-row"]')) {
-      const isStop = rowKeyOfElement(row) === tabStopKey;
-      for (const control of row.querySelectorAll<HTMLElement>("a[href], button, input")) {
-        if (isStop) {
-          control.removeAttribute("tabindex");
-        } else {
-          control.tabIndex = -1;
+    const setTabStops = () => {
+      for (const row of tree.querySelectorAll<HTMLElement>('[data-testid="tree-row"]')) {
+        const isStop = rowKeyOfElement(row) === tabStopKey;
+        for (const control of row.querySelectorAll<HTMLElement>("a[href], button, input")) {
+          if (isStop) {
+            control.removeAttribute("tabindex");
+          } else {
+            control.tabIndex = -1;
+          }
         }
       }
-    }
+    };
+    setTabStops();
+    const observer = new MutationObserver(setTabStops);
+    observer.observe(tree, { childList: true, subtree: true });
+
+    return () => observer.disconnect();
   }, [itemRows, tabStopKey]);
 
   // The row that had the focus is gone (deleted, moved out of view, a search ended): the one that
@@ -580,5 +610,5 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
 
   const cutKeys = useMemo(() => new Set(cutItems.map(itemKeyOf)), [cutItems]);
 
-  return { activeKey: tabStopKey, cutKeys, liveMessage, onFocus, treeRef };
+  return { activeKey: tabStopKey, cutKeys, liveMessage, onFocus, revealRowRef, treeRef };
 };

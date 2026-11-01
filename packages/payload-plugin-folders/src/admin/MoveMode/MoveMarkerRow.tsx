@@ -31,6 +31,7 @@ const walkMarkers = (event: KeyboardEvent<HTMLButtonElement>): void => {
  * one that has the focus, else the first that can be picked); Up and Down walk the rest, Enter picks.
  */
 export const MoveMarkerRow = ({
+  ariaRowIndex,
   count,
   isTabStop,
   marker,
@@ -39,6 +40,8 @@ export const MoveMarkerRow = ({
   reason,
   translate,
 }: {
+  /** The row's place among all the rows when only some are in the page. */
+  ariaRowIndex?: number;
   count: number;
   /** The one marker Tab reaches. */
   isTabStop: boolean;
@@ -52,6 +55,7 @@ export const MoveMarkerRow = ({
 }): ReactNode => (
   <div
     aria-level={marker.level + 1}
+    aria-rowindex={ariaRowIndex}
     className="fr-folders-row fr-folders-row--status fr-folders-row--marker"
     data-testid="move-marker-row"
     role="row"

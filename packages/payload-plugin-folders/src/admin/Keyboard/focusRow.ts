@@ -1,8 +1,14 @@
 import type { ItemRef } from "../../types.js";
 
-/** The DOM row of an item. */
-export const rowElementOf = (item: ItemRef): HTMLElement | null =>
-  document.querySelector<HTMLElement>(
+/**
+ * The DOM row of an item, in `root` (a tree's own element: the tree view and the sidebar tab can
+ * be on the page together, each with a row for the same item) or anywhere on the page.
+ */
+export const rowElementOf = (
+  item: ItemRef,
+  root: ParentNode | null = document
+): HTMLElement | null =>
+  (root ?? document).querySelector<HTMLElement>(
     `[data-testid="tree-row"][data-collection="${item.collection}"][data-item-id="${item.id}"]`
   );
 
@@ -31,10 +37,16 @@ const giveUpMs = 3000;
 
 /**
  * Puts the focus on a row that is not on screen yet (a folder was just opened, a search just
- * ended): looks every 50 ms for up to 3 seconds, and waits out a dialog instead of taking the focus
- * from it. Returns a function that stops looking.
+ * ended, a long list was scrolled to it): looks every 50 ms for up to 3 seconds, and waits out a
+ * dialog instead of taking the focus from it. `getRoot` names the tree to look in, and
+ * `isStillWanted` lets the caller give up when the focus has gone somewhere else meanwhile.
+ * Returns a function that stops looking.
  */
-export const focusRowWhenShown = (item: ItemRef): (() => void) => {
+export const focusRowWhenShown = (
+  item: ItemRef,
+  getRoot: () => ParentNode | null = () => document,
+  isStillWanted: () => boolean = () => true
+): (() => void) => {
   const deadline = Date.now() + giveUpMs;
   const timer = setInterval(() => {
     if (Date.now() > deadline) {
@@ -45,7 +57,12 @@ export const focusRowWhenShown = (item: ItemRef): (() => void) => {
     if (isDialogOpen()) {
       return;
     }
-    const row = rowElementOf(item);
+    if (!isStillWanted()) {
+      clearInterval(timer);
+
+      return;
+    }
+    const row = rowElementOf(item, getRoot());
     if (row) {
       clearInterval(timer);
       row.focus();

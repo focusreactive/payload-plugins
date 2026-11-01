@@ -18,6 +18,14 @@ export const indentPerLevel = 16;
 
 export type TreeRowProps = {
   adminRoute: string;
+  /** The row's place among all the rows when only some are in the page (a long, virtualized tree). */
+  ariaRowIndex?: number;
+  /** The sidebar tab shows the name and the status dot only: no checkbox, columns or menu button. */
+  isCompact?: boolean;
+  /** The document open in the edit view (sidebar tab). */
+  isCurrent?: boolean;
+  /** The site's default locale, which a name or segment that has no value of its own falls back to. */
+  defaultLocale?: string | null;
   /** Cut with Cmd/Ctrl+X and waiting to be pasted. */
   isCut: boolean;
   /** This row's context menu is open. */
@@ -85,6 +93,10 @@ const RootPageBadge = ({ hint, label }: { hint: string; label: string }) => {
 
 export const TreeRow = ({
   adminRoute,
+  ariaRowIndex,
+  defaultLocale = null,
+  isCompact = false,
+  isCurrent = false,
   isCut,
   isMenuOpen,
   isSelected,
@@ -233,13 +245,16 @@ export const TreeRow = ({
 
   return (
     <div
+      aria-current={isCurrent ? "page" : undefined}
       aria-expanded={isFolder && expandable ? expanded : undefined}
       aria-level={level + 1}
       aria-posinset={row.posInSet}
+      aria-rowindex={ariaRowIndex}
       aria-selected={isSelected}
       aria-setsize={row.setSize}
       className={[
         "fr-folders-row",
+        isCurrent ? "fr-folders-row--current" : "",
         isSelected ? "fr-folders-row--selected" : "",
         isCut ? "fr-folders-row--cut" : "",
         drag.isDragged ? "fr-folders-row--dragged" : "",
@@ -252,6 +267,7 @@ export const TreeRow = ({
         .join(" ")}
       data-collection={item.collection}
       data-cut={isCut ? "true" : undefined}
+      data-current={isCurrent ? "true" : undefined}
       data-dragged={drag.isDragged ? "true" : undefined}
       data-drop={drag.indicator?.edge}
       data-item-id={String(item.id)}
@@ -295,13 +311,15 @@ export const TreeRow = ({
           }}
         />
       ) : null}
-      <div className="fr-folders-cell fr-folders-cell--select" data-row-ignore role="gridcell">
-        <CheckboxInput
-          aria-label={translate("selectRow", { name: item.title })}
-          checked={isSelected}
-          onToggle={handleCheckboxToggle}
-        />
-      </div>
+      {isCompact ? null : (
+        <div className="fr-folders-cell fr-folders-cell--select" data-row-ignore role="gridcell">
+          <CheckboxInput
+            aria-label={translate("selectRow", { name: item.title })}
+            checked={isSelected}
+            onToggle={handleCheckboxToggle}
+          />
+        </div>
+      )}
       <div
         className="fr-folders-cell fr-folders-cell--name"
         role="gridcell"
@@ -347,6 +365,15 @@ export const TreeRow = ({
                 {item.title}
               </a>
             )}
+            {item.titleIsFallback && !isCompact ? (
+              <span
+                className="fr-folders-chip fr-folders-chip--small"
+                data-testid="name-fallback-chip"
+                title={translate("fallbackNameHint", { locale: defaultLocale ?? "" })}
+              >
+                {translate("fallback")}
+              </span>
+            ) : null}
             {item.isFolderRoot ? (
               <RootPageBadge hint={translate("rootPageHint")} label={translate("rootPage")} />
             ) : null}
@@ -370,30 +397,34 @@ export const TreeRow = ({
               </span>
             ) : null}
           </div>
-          <div className="fr-folders-path-line" data-testid="row-path">
-            {row.searchPath === undefined ? null : (
-              <span className="fr-folders-search-path" data-testid="row-breadcrumb">
-                {translate("searchPath", { path: row.searchPath.join(" > ") })}
-              </span>
-            )}
-            {pathDisplay === "path" ? (
-              <>
-                <span className="fr-folders-path">{item.fullPath}</span>
-                {item.slugIsFallback ? (
-                  <span
-                    className="fr-folders-chip fr-folders-chip--small"
-                    data-testid="fallback-chip"
-                    title={translate("fallbackHint")}
-                  >
-                    {translate("fallback")}
-                  </span>
-                ) : null}
-              </>
-            ) : null}
-            {pathDisplay === "missing" ? (
-              <span className="fr-folders-path fr-folders-path--missing">{translate("noUrl")}</span>
-            ) : null}
-          </div>
+          {isCompact && row.searchPath === undefined ? null : (
+            <div className="fr-folders-path-line" data-testid="row-path">
+              {row.searchPath === undefined ? null : (
+                <span className="fr-folders-search-path" data-testid="row-breadcrumb">
+                  {translate("searchPath", { path: row.searchPath.join(" > ") })}
+                </span>
+              )}
+              {isCompact ? null : pathDisplay === "path" ? (
+                <>
+                  <span className="fr-folders-path">{item.fullPath}</span>
+                  {item.slugIsFallback ? (
+                    <span
+                      className="fr-folders-chip fr-folders-chip--small"
+                      data-testid="fallback-chip"
+                      title={translate("fallbackHint", { locale: defaultLocale ?? "" })}
+                    >
+                      {translate("fallback")}
+                    </span>
+                  ) : null}
+                </>
+              ) : null}
+              {!isCompact && pathDisplay === "missing" ? (
+                <span className="fr-folders-path fr-folders-path--missing">
+                  {translate("noUrl")}
+                </span>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
       <div className="fr-folders-cell fr-folders-cell--status" role="gridcell">
@@ -408,31 +439,35 @@ export const TreeRow = ({
           />
         )}
       </div>
-      <div className="fr-folders-cell fr-folders-cell--type" role="gridcell">
-        <span className="fr-folders-truncate">{typeLabel}</span>
-      </div>
-      <div className="fr-folders-cell fr-folders-cell--updated" role="gridcell">
-        <time
-          className="fr-folders-truncate"
-          dateTime={item.updatedAt}
-          title={formatAbsoluteTime(item.updatedAt, language)}
-        >
-          {formatRelativeTime(item.updatedAt, language)}
-        </time>
-      </div>
-      <div className="fr-folders-cell fr-folders-cell--menu" data-row-ignore role="gridcell">
-        <button
-          aria-expanded={isMenuOpen}
-          aria-haspopup="menu"
-          aria-label={translate("menuButton", { name: item.title })}
-          className="fr-folders-menu-button"
-          data-testid="row-menu-button"
-          onClick={handleMenuButtonClick}
-          type="button"
-        >
-          <MoreIcon />
-        </button>
-      </div>
+      {isCompact ? null : (
+        <>
+          <div className="fr-folders-cell fr-folders-cell--type" role="gridcell">
+            <span className="fr-folders-truncate">{typeLabel}</span>
+          </div>
+          <div className="fr-folders-cell fr-folders-cell--updated" role="gridcell">
+            <time
+              className="fr-folders-truncate"
+              dateTime={item.updatedAt}
+              title={formatAbsoluteTime(item.updatedAt, language)}
+            >
+              {formatRelativeTime(item.updatedAt, language)}
+            </time>
+          </div>
+          <div className="fr-folders-cell fr-folders-cell--menu" data-row-ignore role="gridcell">
+            <button
+              aria-expanded={isMenuOpen}
+              aria-haspopup="menu"
+              aria-label={translate("menuButton", { name: item.title })}
+              className="fr-folders-menu-button"
+              data-testid="row-menu-button"
+              onClick={handleMenuButtonClick}
+              type="button"
+            >
+              <MoreIcon />
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 };

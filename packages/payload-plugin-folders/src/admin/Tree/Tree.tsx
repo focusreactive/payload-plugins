@@ -1,7 +1,11 @@
 import { Button, CheckboxInput, ShimmerEffect } from "@payloadcms/ui";
-import { useCallback, useState } from "react";
+import { defaultRangeExtractor, useVirtualizer } from "@tanstack/react-virtual";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
+import { useContentLocales } from "../compat.js";
 import type { Translate } from "../compat.js";
+import { DragStateContext } from "../DragAndDrop/dragState.js";
+import { rowElementOf } from "../Keyboard/focusRow.js";
 import type { TreeKeyboard } from "../Keyboard/useTreeKeyboard.js";
 import type { MenuAnchor } from "../Menu/menuEntries.js";
 import { MoveMarkerRow } from "../MoveMode/MoveMarkerRow.js";
@@ -31,10 +35,27 @@ export type MoveModeView = {
   placed: readonly MoveModeRow[];
 };
 
+/**
+ * A tree with more rows than this on screen draws only the rows near the view (spec section 7.13).
+ * Below it every row is in the page, as always: a list this short needs no help, and the plain
+ * rows keep the browser's own find and focus behaviour.
+ */
+export const virtualizeAboveRows = 300;
+
+/** What a row is worth before it has been measured: a name with its path under it. */
+const estimatedRowHeight = 40;
+
+/** Rows drawn beyond the view on each side, so a scroll shows rows at once. */
+const rowOverscan = 8;
+
 export type TreeProps = {
   adminRoute: string;
+  /** The key of the row of the document open in the edit view (sidebar tab); it is highlighted. */
+  currentKey?: string | null;
   /** What the empty row of an open folder with nothing in it starts. */
   emptyActions: EmptyCreateActions;
+  /** The sidebar tab: the name and the status dot only, no header row. */
+  isCompact?: boolean;
   /** Roving tab index, cut rows, live region and the element keys are read against. */
   keyboard: TreeKeyboard;
   /** The grid's accessible name: the tree's, or the search's hits. */
@@ -60,11 +81,20 @@ export type TreeProps = {
   typeLabels: Readonly<Record<string, string>>;
 };
 
-const LoadingRow = ({ level, label }: { label: string; level: number }) => (
+const LoadingRow = ({
+  ariaRowIndex,
+  level,
+  label,
+}: {
+  ariaRowIndex?: number;
+  label: string;
+  level: number;
+}) => (
   <div
     aria-busy="true"
     aria-label={label}
     aria-level={level + 1}
+    aria-rowindex={ariaRowIndex}
     className="fr-folders-row fr-folders-row--status"
     data-testid="loading-row"
     role="row"
@@ -80,16 +110,19 @@ const LoadingRow = ({ level, label }: { label: string; level: number }) => (
 );
 
 const ErrorRow = ({
+  ariaRowIndex,
   onRetry,
   row,
   translate,
 }: {
+  ariaRowIndex?: number;
   onRetry: (parentKey: FolderKey) => void;
   row: ErrorRowModel;
   translate: Translate;
 }) => (
   <div
     aria-level={row.level + 1}
+    aria-rowindex={ariaRowIndex}
     className="fr-folders-row fr-folders-row--status"
     data-testid="error-row"
     role="row"
@@ -111,16 +144,19 @@ const ErrorRow = ({
 );
 
 const StaleRow = ({
+  ariaRowIndex,
   onRetry,
   row,
   translate,
 }: {
+  ariaRowIndex?: number;
   onRetry: (parentKey: FolderKey) => void;
   row: StaleRowModel;
   translate: Translate;
 }) => (
   <div
     aria-level={row.level + 1}
+    aria-rowindex={ariaRowIndex}
     className="fr-folders-row fr-folders-row--status"
     data-testid="stale-row"
     role="row"
@@ -141,11 +177,13 @@ const StaleRow = ({
 );
 
 const LoadMoreRow = ({
+  ariaRowIndex,
   onLoadMore,
   pageSize,
   row,
   translate,
 }: {
+  ariaRowIndex?: number;
   onLoadMore: (parentKey: FolderKey) => void;
   pageSize: number;
   row: LoadMoreRowModel;
@@ -153,6 +191,7 @@ const LoadMoreRow = ({
 }) => (
   <div
     aria-level={row.level + 1}
+    aria-rowindex={ariaRowIndex}
     className="fr-folders-row fr-folders-row--status"
     data-testid="load-more-row"
     role="row"
@@ -179,10 +218,16 @@ const LoadMoreRow = ({
   </div>
 );
 
+/** The key a displayed entry goes by: a row's own, or its marker's. */
+const entryKeyOf = (entry: MoveModeRow): string =>
+  entry.type === "marker" ? `marker:${entry.marker.key}` : entry.row.key;
+
 /** The tree-grid of spec section 7.2: header row, then one row per visible folder and page. */
 export const Tree = ({
   adminRoute,
+  currentKey = null,
   emptyActions,
+  isCompact = false,
   keyboard,
   label,
   language,
@@ -220,9 +265,11 @@ export const Tree = ({
 
   // Move mode: why each marker is off, and the one marker that is in the tab order.
   const [activeMarkerKey, setActiveMarkerKey] = useState<string | null>(null);
-  const markers = (moveMode?.placed ?? []).flatMap((entry) =>
-    entry.type === "marker" ? [entry.marker] : []
+  const entries = useMemo(
+    () => moveMode?.placed ?? rows.map((row): MoveModeRow => ({ row, type: "row" })),
+    [moveMode?.placed, rows]
   );
+  const markers = entries.flatMap((entry) => (entry.type === "marker" ? [entry.marker] : []));
   const markerReasons = new Map(
     markers.map((marker) => [
       marker.key,
@@ -241,130 +288,275 @@ export const Tree = ({
   // The total is unknown while any folder on screen has rows left to load or is still loading.
   const rowCountIsKnown = !rows.some((row) => row.type === "load-more" || row.type === "loading");
 
+  // A long list draws only the rows near the view. The scrolling element is the body of the grid,
+  // below the header row, so the header stays where it is.
+  const isVirtual = entries.length > virtualizeAboveRows;
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const entryKeys = useMemo(() => entries.map(entryKeyOf), [entries]);
+  const indexByKey = useMemo(
+    () => new Map(entryKeys.map((key, index) => [key, index])),
+    [entryKeys]
+  );
+  // The row in the tab order, the marker in the tab order and the row being dragged are drawn
+  // wherever the view is: Tab would have nothing to land on after a scroll, and a drag that
+  // scrolls its own row out would lose the node dnd-kit measures its scroll parents from. The
+  // drag overlay does not depend on the row (it is placed from the pointer), so a row that did
+  // unmount would still be carried.
+  const { grabbedKey } = useContext(DragStateContext);
+  const { default: defaultLocale } = useContentLocales();
+  const pinnedIndexes = useMemo(
+    () =>
+      [
+        keyboard.activeKey === null ? undefined : indexByKey.get(keyboard.activeKey),
+        tabbableKey === null ? undefined : indexByKey.get(`marker:${tabbableKey}`),
+        grabbedKey === null ? undefined : indexByKey.get(grabbedKey),
+      ].filter((index): index is number => index !== undefined),
+    [grabbedKey, indexByKey, keyboard.activeKey, tabbableKey]
+  );
+  const virtualizer = useVirtualizer({
+    count: entries.length,
+    enabled: isVirtual,
+    estimateSize: () => estimatedRowHeight,
+    getItemKey: (index) => entryKeys[index] ?? index,
+    getScrollElement: () => scrollRef.current,
+    overscan: rowOverscan,
+    rangeExtractor: (range) =>
+      [...new Set([...defaultRangeExtractor(range), ...pinnedIndexes])].toSorted(
+        (left, right) => left - right
+      ),
+  });
+
+  // Brings a row into view: the browser does it for a row in the page, the virtualizer for one
+  // that is not drawn. The keyboard asks for it too (End on a long list).
+  const revealRow = useCallback(
+    (key: string) => {
+      const index = indexByKey.get(key);
+      if (index === undefined) {
+        return;
+      }
+      if (isVirtual) {
+        virtualizer.scrollToIndex(index, { align: "auto" });
+      } else {
+        const entry = entries[index];
+        if (entry?.type === "row" && entry.row.type === "item") {
+          rowElementOf(entry.row.item, keyboard.treeRef.current)?.scrollIntoView({
+            block: "nearest",
+          });
+        }
+      }
+    },
+    [entries, indexByKey, isVirtual, keyboard.treeRef, virtualizer]
+  );
+  useEffect(() => {
+    keyboard.revealRowRef.current = revealRow;
+
+    return () => {
+      keyboard.revealRowRef.current = null;
+    };
+  }, [keyboard.revealRowRef, revealRow]);
+
+  // The document open in the edit view comes into view once, when its row first shows.
+  const revealedCurrentKey = useRef<string | null>(null);
+  const currentIndex = currentKey === null ? undefined : indexByKey.get(currentKey);
+  useEffect(() => {
+    if (currentKey === null) {
+      revealedCurrentKey.current = null;
+
+      return;
+    }
+    if (currentIndex !== undefined && revealedCurrentKey.current !== currentKey) {
+      revealedCurrentKey.current = currentKey;
+      revealRow(currentKey);
+    }
+  }, [currentIndex, currentKey, revealRow]);
+
+  const headerRows = isCompact ? 0 : 1;
+  const renderEntry = (entry: MoveModeRow, index: number) => {
+    const ariaRowIndex = isVirtual ? index + 1 + headerRows : undefined;
+    if (entry.type === "marker") {
+      return (
+        <MoveMarkerRow
+          ariaRowIndex={ariaRowIndex}
+          count={moveMode?.count ?? 0}
+          isTabStop={entry.marker.key === tabbableKey}
+          key={`marker:${entry.marker.key}`}
+          marker={entry.marker}
+          onFocused={(marker) => setActiveMarkerKey(marker.key)}
+          onPick={moveMode?.onPick ?? (() => undefined)}
+          reason={markerReasons.get(entry.marker.key) ?? null}
+          translate={translate}
+        />
+      );
+    }
+    const { row } = entry;
+    switch (row.type) {
+      case "item": {
+        return (
+          <TreeRow
+            adminRoute={adminRoute}
+            ariaRowIndex={ariaRowIndex}
+            defaultLocale={defaultLocale}
+            isCompact={isCompact}
+            isCurrent={currentKey === row.key}
+            isCut={keyboard.cutKeys.has(row.key)}
+            isMenuOpen={openMenuItemKey === row.key}
+            isSelected={selection.isSelected(row.item)}
+            isTabStop={keyboard.activeKey === row.key}
+            key={row.key}
+            language={language}
+            onOpenFolder={onOpenFolder}
+            onOpenMenu={onOpenMenu}
+            onOpenPage={onOpenPage}
+            onOpenSettings={onOpenSettings}
+            onSelectRange={selection.selectRange}
+            onToggleFolder={toggleFolder}
+            onToggleSelect={selection.toggle}
+            row={row}
+            translate={translate}
+            typeLabels={typeLabels}
+          />
+        );
+      }
+      case "loading": {
+        return (
+          <LoadingRow
+            ariaRowIndex={ariaRowIndex}
+            key={row.key}
+            label={translate("loading")}
+            level={row.level}
+          />
+        );
+      }
+      case "error": {
+        return (
+          <ErrorRow
+            ariaRowIndex={ariaRowIndex}
+            key={row.key}
+            onRetry={retry}
+            row={row}
+            translate={translate}
+          />
+        );
+      }
+      case "empty": {
+        return (
+          <EmptyRow
+            actions={emptyActions}
+            ariaRowIndex={ariaRowIndex}
+            folder={row.folder}
+            key={row.key}
+            level={row.level}
+            translate={translate}
+          />
+        );
+      }
+      case "stale": {
+        return (
+          <StaleRow
+            ariaRowIndex={ariaRowIndex}
+            key={row.key}
+            onRetry={retry}
+            row={row}
+            translate={translate}
+          />
+        );
+      }
+      case "load-more": {
+        return (
+          <LoadMoreRow
+            ariaRowIndex={ariaRowIndex}
+            key={row.key}
+            onLoadMore={loadMore}
+            pageSize={pageSize}
+            row={row}
+            translate={translate}
+          />
+        );
+      }
+      default: {
+        return null;
+      }
+    }
+  };
+
   return (
     <>
       <div
-        aria-colcount={6}
+        aria-colcount={isCompact ? 2 : 6}
         aria-multiselectable="true"
         aria-label={label}
-        aria-rowcount={rowCountIsKnown ? rows.length + 1 : -1}
-        className="fr-folders-tree"
+        aria-rowcount={rowCountIsKnown ? entries.length + headerRows : -1}
+        className={[
+          "fr-folders-tree",
+          isCompact ? "fr-folders-tree--compact" : "",
+          isVirtual ? "fr-folders-tree--virtual" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
         data-testid="tree"
         onFocus={(event) => keyboard.onFocus(event.target)}
         ref={keyboard.treeRef}
         role="treegrid"
       >
-        <div role="rowgroup">
-          <div className="fr-folders-row fr-folders-row--header" role="row">
-            <div className="fr-folders-cell fr-folders-cell--select" role="columnheader">
-              <CheckboxInput
-                aria-label={translate("selectAllRows")}
-                checked={selection.headerState === "all"}
-                onToggle={selection.toggleAll}
-                partialChecked={selection.headerState === "some"}
+        {isCompact ? null : (
+          <div role="rowgroup">
+            <div className="fr-folders-row fr-folders-row--header" role="row">
+              <div className="fr-folders-cell fr-folders-cell--select" role="columnheader">
+                <CheckboxInput
+                  aria-label={translate("selectAllRows")}
+                  checked={selection.headerState === "all"}
+                  onToggle={selection.toggleAll}
+                  partialChecked={selection.headerState === "some"}
+                />
+              </div>
+              <div className="fr-folders-cell fr-folders-cell--name" role="columnheader">
+                {translate("columnName")}
+              </div>
+              <div className="fr-folders-cell fr-folders-cell--status" role="columnheader">
+                {translate("columnStatus")}
+              </div>
+              <div className="fr-folders-cell fr-folders-cell--type" role="columnheader">
+                {translate("columnType")}
+              </div>
+              <div className="fr-folders-cell fr-folders-cell--updated" role="columnheader">
+                {translate("columnUpdated")}
+              </div>
+              <div
+                aria-label={translate("columnActions")}
+                className="fr-folders-cell fr-folders-cell--menu"
+                role="columnheader"
               />
             </div>
-            <div className="fr-folders-cell fr-folders-cell--name" role="columnheader">
-              {translate("columnName")}
-            </div>
-            <div className="fr-folders-cell fr-folders-cell--status" role="columnheader">
-              {translate("columnStatus")}
-            </div>
-            <div className="fr-folders-cell fr-folders-cell--type" role="columnheader">
-              {translate("columnType")}
-            </div>
-            <div className="fr-folders-cell fr-folders-cell--updated" role="columnheader">
-              {translate("columnUpdated")}
-            </div>
-            <div
-              aria-label={translate("columnActions")}
-              className="fr-folders-cell fr-folders-cell--menu"
-              role="columnheader"
-            />
           </div>
-        </div>
-        <div role="rowgroup">
-          {(moveMode?.placed ?? rows.map((row): MoveModeRow => ({ row, type: "row" }))).map(
-            (entry) => {
-              if (entry.type === "marker") {
-                return (
-                  <MoveMarkerRow
-                    count={moveMode?.count ?? 0}
-                    isTabStop={entry.marker.key === tabbableKey}
-                    key={`marker:${entry.marker.key}`}
-                    marker={entry.marker}
-                    onFocused={(marker) => setActiveMarkerKey(marker.key)}
-                    onPick={moveMode?.onPick ?? (() => undefined)}
-                    reason={markerReasons.get(entry.marker.key) ?? null}
-                    translate={translate}
-                  />
+        )}
+        {isVirtual ? (
+          <div className="fr-folders-tree__scroll" ref={scrollRef} role="rowgroup">
+            <div
+              className="fr-folders-tree__rows"
+              role="presentation"
+              style={{ height: virtualizer.getTotalSize() }}
+            >
+              {virtualizer.getVirtualItems().map((item) => {
+                const entry = entries[item.index];
+
+                return entry === undefined ? null : (
+                  <div
+                    className="fr-folders-tree__slot"
+                    data-index={item.index}
+                    key={item.key}
+                    ref={virtualizer.measureElement}
+                    role="presentation"
+                    style={{ transform: `translateY(${item.start}px)` }}
+                  >
+                    {renderEntry(entry, item.index)}
+                  </div>
                 );
-              }
-              const { row } = entry;
-              switch (row.type) {
-                case "item": {
-                  return (
-                    <TreeRow
-                      adminRoute={adminRoute}
-                      isCut={keyboard.cutKeys.has(row.key)}
-                      isMenuOpen={openMenuItemKey === row.key}
-                      isSelected={selection.isSelected(row.item)}
-                      isTabStop={keyboard.activeKey === row.key}
-                      key={row.key}
-                      language={language}
-                      onOpenFolder={onOpenFolder}
-                      onOpenMenu={onOpenMenu}
-                      onOpenPage={onOpenPage}
-                      onOpenSettings={onOpenSettings}
-                      onSelectRange={selection.selectRange}
-                      onToggleFolder={toggleFolder}
-                      onToggleSelect={selection.toggle}
-                      row={row}
-                      translate={translate}
-                      typeLabels={typeLabels}
-                    />
-                  );
-                }
-                case "loading": {
-                  return (
-                    <LoadingRow key={row.key} label={translate("loading")} level={row.level} />
-                  );
-                }
-                case "error": {
-                  return <ErrorRow key={row.key} onRetry={retry} row={row} translate={translate} />;
-                }
-                case "empty": {
-                  return (
-                    <EmptyRow
-                      actions={emptyActions}
-                      folder={row.folder}
-                      key={row.key}
-                      level={row.level}
-                      translate={translate}
-                    />
-                  );
-                }
-                case "stale": {
-                  return <StaleRow key={row.key} onRetry={retry} row={row} translate={translate} />;
-                }
-                case "load-more": {
-                  return (
-                    <LoadMoreRow
-                      key={row.key}
-                      onLoadMore={loadMore}
-                      pageSize={pageSize}
-                      row={row}
-                      translate={translate}
-                    />
-                  );
-                }
-                default: {
-                  return null;
-                }
-              }
-            }
-          )}
-        </div>
+              })}
+            </div>
+          </div>
+        ) : (
+          <div role="rowgroup">{entries.map(renderEntry)}</div>
+        )}
       </div>
       <div
         aria-live="polite"

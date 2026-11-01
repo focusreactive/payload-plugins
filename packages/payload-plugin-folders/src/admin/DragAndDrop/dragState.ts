@@ -10,6 +10,8 @@ export type DragRowState = {
   /** A move is in flight: no drag starts until it is done. */
   disabled: boolean;
   draggedKeys: ReadonlySet<string>;
+  /** The row the pointer picked up, whether or not it is still in the page; `null` when idle. */
+  grabbedKey: string | null;
   /** Where the line or the highlight of the gap under the pointer is drawn. */
   indicator: DropIndicator | null;
   /** The gap under the pointer refuses the rows. */
@@ -21,6 +23,7 @@ const noDraggedKeys: ReadonlySet<string> = new Set();
 export const DragStateContext = createContext<DragRowState>({
   disabled: false,
   draggedKeys: noDraggedKeys,
+  grabbedKey: null,
   indicator: null,
   isRefused: false,
 });

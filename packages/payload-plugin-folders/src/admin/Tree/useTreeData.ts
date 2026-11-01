@@ -164,9 +164,20 @@ export const flattenTree = (state: TreeStoreState): TreeRowModel[] => {
   return rows;
 };
 
-/** The visible rows of the shared tree, reading the top level as soon as there is a store. */
-export const useTreeData = (store: TreeStore): { rows: TreeRowModel[]; state: TreeStoreState } => {
-  const state = useTreeStoreState(store);
+/**
+ * The visible rows of the shared tree, reading the top level as soon as there is a store.
+ * `ignoreZoom` is for the sidebar tab, which always shows the whole tree: the zoom belongs to the
+ * tree view, and the state returned has none, so everything read from it starts at the top level.
+ */
+export const useTreeData = (
+  store: TreeStore,
+  { ignoreZoom = false }: { ignoreZoom?: boolean } = {}
+): { rows: TreeRowModel[]; state: TreeStoreState } => {
+  const storeState = useTreeStoreState(store);
+  const state = useMemo(
+    () => (ignoreZoom && storeState.zoom !== null ? { ...storeState, zoom: null } : storeState),
+    [ignoreZoom, storeState]
+  );
   const rows = useMemo(() => flattenTree(state), [state]);
   const viewRoot = viewRootKeyOf(state);
   const hasViewRoot = state.childrenByFolder[viewRoot] !== undefined;
