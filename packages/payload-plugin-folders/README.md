@@ -1187,7 +1187,8 @@ header are drop targets, and in Move mode they are "Move here" targets. Open fol
 
 ### Keyboard
 
-The tree view is one tab stop (a roving tabindex) and a WAI-ARIA `treegrid`. The tab is a `tree`.
+The tree view and the sidebar tab are each one tab stop (a roving tabindex) and a WAI-ARIA
+`treegrid`.
 
 | Key | Action |
 |---|---|
@@ -1430,7 +1431,13 @@ of operations that acquired the lock.
   creates a draft, and Cancel leaves it in the folder. That fallback saves in the admin locale only.
 - A folder with no name in the current locale shows its raw id in Payload's stock list and in
   relationship pickers. The tree and the folders edit view heading are fixed.
-- `scope=all` stays in the address after Escape clears the search.
+- `scope=all` stays in the address after Escape clears the search. The folders list address may
+  carry `limit=10`: it comes from Payload's own list route, not from the plugin (not verified).
+- A drag that is cancelled while the mouse is already up (a window resize, a tab switch) swallows
+  the next click once.
+- In the URL history list Payload fills the Target column only after it has loaded the related
+  titles, so a screenshot has to wait for it. The table also shifts by 1 px when the selection
+  toolbar replaces the header.
 - The keyboard code that keeps focus after a move is not needed in Chromium, and is untested in
   Firefox and Safari.
 - `hooks.afterPathChange` limits are in "Reading content".
