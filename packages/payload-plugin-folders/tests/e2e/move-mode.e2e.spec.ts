@@ -316,7 +316,14 @@ test("Move in the context menu starts Move mode with that row, or with the selec
   await rowCheckbox(page, "Home").check();
   await rowCheckbox(page, "Blog").check();
   await openRowMenu(pageRow(page, "Home"));
-  await expect(contextMenu(page).getByRole("menuitem")).toHaveText(["Move", "Move to..."]);
+  await expect(contextMenu(page).getByRole("menuitem")).toHaveText([
+    "Move",
+    "Move to...",
+    "Duplicate",
+    "Publish",
+    "Unpublish",
+    "Delete",
+  ]);
   await menuItem(page, "Move").click();
   await expect(moveModeBar(page)).toContainText("Moving 2 items");
 });
