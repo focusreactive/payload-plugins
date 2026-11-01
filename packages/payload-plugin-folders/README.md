@@ -165,7 +165,15 @@ npm project with its own `package-lock.json`. Work in it with `npm`, not `bun`.
 ## Install on existing content
 
 Pages that existed before the plugin have no folder, no order key and a null `pathSegment`. Every
-page starts at the site root. Do this once, in order:
+page starts at the site root.
+
+**Warning: run repair before you deploy a frontend that reads the plugin's paths.** Between the
+install and the repair every page that existed before the plugin has a null `pathSegment`, so its
+`fullPath` is null. `resolvePath`, `getTree` and `getAllPaths` skip such a page, except a folder's
+root page, whose path is its folder's. A frontend built on them answers 404 for those pages, leaves
+them out of the navigation and leaves them out of the sitemap until repair has run.
+
+Do this once, in order:
 
 1. Install the plugin and create the schema (above).
 2. Run a dry run and read it. It writes nothing:
@@ -214,7 +222,10 @@ Fixed, because there is one right answer:
 - A folder cycle, broken by moving the lowest-id folder to the top level. A folder whose parent no
   longer exists goes to the top level too.
 - A missing `pathSegment`, and a legacy segment that differs from its slug only in capitals. The
-  capitals-only fix lowercases the segment and writes a redirect row from the old URL.
+  capitals-only fix lowercases the segment. It writes a redirect row from the old URL only when the
+  capitalised segment was already saved in `pathSegment`. A page from before the plugin has a null
+  `pathSegment`, so repair has no old URL to record and writes no row for it. Its capitalised URL is
+  then answered by the resolver, which redirects it to the lowercase one.
 - Missing and equal order keys among siblings, in `createdAt` order after the keyed rows.
 - A latest version whose folder, order key or structure revision differs from the main row. The
   fix keeps a draft's own different segment.
@@ -462,13 +473,13 @@ the Local API, and through GraphQL where the table says so. `<id>` stands for a 
 
 | Need | REST |
 |---|---|
-| Page by URL `/blog/post` in `de` | `GET /api/pages?locale=de&where[folderPath][equals]=/blog&where[isFolderRoot][not_equals]=true` plus the segment clause below |
+| Page by URL `/aktuelles/beitrag` in `de` | `GET /api/pages?locale=de&where[folderPath][equals]=/aktuelles&where[isFolderRoot][not_equals]=true` plus the segment clause below |
 | Page at the top level, `/about` | `where[folder][exists]=false&where[pathSegment][equals]=about&where[isFolderRoot][not_equals]=true` |
 | Root page of `/blog` | `where[folderPath][equals]=/blog&where[isFolderRoot][equals]=true` |
 | Site root page `/` | `where[folder][exists]=false&where[isFolderRoot][equals]=true` |
 | Published pages only | add `where[_status][equals]=published` on a collection with drafts |
 | Everything under `/blog`, like Storyblok's `starts_with` | `where[or][0][folder][equals]=<id>&where[or][1][folder.ancestorIds][contains]=/<id>/` |
-| Folder by full path | `GET /api/folders?where[fullPath][equals]=/blog&locale=de` |
+| Folder by full path | `GET /api/folders?where[fullPath][equals]=/aktuelles&locale=de` |
 | Folder subtree | `GET /api/folders?where[ancestorIds][contains]=/<id>/` |
 | Pages in one folder, in tree order | `where[folder][equals]=<id>&sort=orderKey` |
 | Sort a list by folder path | `sort=folderPath` |
@@ -1386,9 +1397,11 @@ of operations that acquired the lock.
 - Your own collection `afterRead` hooks run before the plugin's, so they see `fullPath` unset.
 - A page that existed before the plugin has a null `pathSegment` until it is saved again or
   repaired, so a segment lookup does not find it until then. Repair also lowercases a legacy
-  capitalised segment and redirects its old URL. Until then, the resolver tries the exact path and
-  then the lowercased one. Uniqueness stays case-sensitive, so a legacy `/About` next to `/about` is
-  a known state that verify reports.
+  capitalised segment. It writes a redirect row from the old URL only when the capitalised segment
+  was already saved in `pathSegment`; a page with a null `pathSegment` gets no row, and its
+  capitalised URL is answered by the resolver's case redirect to the lowercase one. Once a segment
+  is saved, the resolver tries the exact path and then the lowercased one. Uniqueness stays
+  case-sensitive, so a legacy `/About` next to `/about` is a known state that verify reports.
 - A folder written raw, with no `de` `fullPath` row, does not match `folderPath` in `de`, because the
   query has no folder fallback. Verify lists such rows.
 - Folder `alternates` list every locale, even where nothing in the folder is live. Folders are public.
