@@ -96,6 +96,10 @@ const createServer = (): Server => {
           return json({ errors: [{ message: "The server is down" }] }, 500);
         }
         const id = Number(url.searchParams.get("id"));
+        // A numeric id column refuses text with a 400 before it looks anything up.
+        if (Number.isNaN(id)) {
+          return json({ errors: [{ message: "`id` is not a valid id" }] }, 400);
+        }
         const self = server.folders.get(id);
         if (!self || server.missing.has(id)) {
           return json({ errors: [{ message: "Not found" }] }, 404);
@@ -236,6 +240,15 @@ describe("zooming", () => {
     await store.setZoom(yearId);
 
     expect(store.getState().zoom).toEqual({ chain: null, error: "not-found", folderId: yearId });
+  });
+
+  it("says an id the server refuses as malformed is not found too, not a failed read", async () => {
+    const server = createServer();
+    const store = createStore(server);
+
+    await store.setZoom("abc");
+
+    expect(store.getState().zoom).toEqual({ chain: null, error: "not-found", folderId: "abc" });
   });
 
   it("keeps the breadcrumbs it has when a later read of them fails for another reason", async () => {

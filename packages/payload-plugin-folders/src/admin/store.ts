@@ -512,7 +512,10 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
       if (!isCurrent()) {
         return;
       }
-      const isGone = error instanceof FoldersApiError && error.status === 404;
+      // A 400 is an id the server cannot read at all (`?folder=abc` on a numeric id): there is no
+      // such folder, which is what the panel says, and not a failed read to retry.
+      const isGone =
+        error instanceof FoldersApiError && (error.status === 404 || error.status === 400);
       // A failed refresh keeps the breadcrumbs on screen; a folder that is gone has none.
       setState({
         ...state,
