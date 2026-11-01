@@ -8,10 +8,10 @@ import { generateRichText } from "@/lib/utils/generateRichText";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
 import { injectSection } from "@/lib/fields/section/injectSection";
-import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
+import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 
 const fields: Field[] = [
-  ...sectionHeaderFields({ headingDefault: DEFAULT_VALUES.blocks.content.heading }),
+  sectionHeadingField({ title: DEFAULT_VALUES.blocks.content.heading }),
   {
     defaultValue: "image-text",
     label: {

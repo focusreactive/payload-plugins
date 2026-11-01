@@ -177,7 +177,10 @@ export function translatorPlugin(
     refuseAnUnusableConfig(pluginConfig);
 
     const schemaMap: CollectionSchemaMap = new Map(
-      collections.map((col) => [col.slug, projectFieldsToFieldLike(col.fields)])
+      collections.map((col) => [
+        col.slug,
+        projectFieldsToFieldLike(col.fields, payloadConfig.blocks),
+      ])
     );
     const collectionSlugs = new Set(schemaMap.keys());
 

@@ -3,20 +3,12 @@ import { CtaBandSection } from "@/components/CtaBandSection";
 import type { CtaBandBlock } from "@/payload-types";
 
 export const CtaBandBlockComponent: React.FC<CtaBandBlock> = ({
-  eyebrow,
   heading,
-  description,
   actions,
   section,
   id,
 }) => (
   <SectionContainer sectionData={{ ...section, id }}>
-    <CtaBandSection
-      eyebrow={eyebrow}
-      heading={heading}
-      description={description}
-      actions={actions}
-      theme={section?.theme}
-    />
+    <CtaBandSection heading={heading} actions={actions} theme={section?.theme} />
   </SectionContainer>
 );

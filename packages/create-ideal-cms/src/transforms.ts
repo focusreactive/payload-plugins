@@ -1,20 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Answers } from "./prompts.js";
-
-// Plugins that ship as `workspace:*` in the source monorepo and need a real
-// version range in the scaffold output. Pinned exactly to match the source's
-// "exact-version" style. Bump when a new plugin version ships.
-const PLUGIN_VERSIONS: Record<string, string> = {
-  "@focus-reactive/payload-plugin-ab": "2.6.0",
-  "@focus-reactive/payload-plugin-analytics": "1.2.2",
-  "@focus-reactive/payload-plugin-comments": "1.8.0",
-  "@focus-reactive/payload-plugin-presets": "0.11.0",
-  "@focus-reactive/payload-plugin-scheduling": "1.2.0",
-  "@focus-reactive/payload-plugin-seo": "1.10.1",
-  "@focus-reactive/payload-plugin-translator": "0.2.0",
-  "@focus-reactive/payload-plugin-visual-editing": "1.0.0",
-};
+import { resolvePublishedVersion } from "./versions.js";
 
 type Pkg = Record<string, unknown> & {
   name?: string;
@@ -31,13 +18,18 @@ async function writeJson(file: string, data: unknown): Promise<void> {
   await writeFile(file, `${JSON.stringify(data, null, 2)}\n`);
 }
 
-function rewritePluginRefs(deps: Record<string, string> | undefined): void {
+async function rewritePluginRefs(
+  deps: Record<string, string> | undefined,
+  pluginVersions: Record<string, string>
+): Promise<void> {
   if (!deps) return;
-  for (const [name, range] of Object.entries(deps)) {
-    if (range === "workspace:*" && PLUGIN_VERSIONS[name]) {
-      deps[name] = PLUGIN_VERSIONS[name];
-    }
-  }
+  await Promise.all(
+    Object.entries(deps).map(async ([name, range]) => {
+      const templateVersion = pluginVersions[name];
+      if (range !== "workspace:*" || !templateVersion) return;
+      deps[name] = await resolvePublishedVersion(name, templateVersion);
+    })
+  );
 }
 
 async function transformRootPackageJson(targetDir: string, answers: Answers): Promise<void> {
@@ -64,11 +56,14 @@ async function transformRootPackageJson(targetDir: string, answers: Answers): Pr
   await writeJson(file, pkg);
 }
 
-async function transformCmsPackageJson(targetDir: string): Promise<void> {
+async function transformCmsPackageJson(
+  targetDir: string,
+  pluginVersions: Record<string, string>
+): Promise<void> {
   const file = join(targetDir, "apps/cms/package.json");
   const pkg = await readJson<Pkg>(file);
-  rewritePluginRefs(pkg.dependencies);
-  rewritePluginRefs(pkg.devDependencies);
+  await rewritePluginRefs(pkg.dependencies, pluginVersions);
+  await rewritePluginRefs(pkg.devDependencies, pluginVersions);
   await writeJson(file, pkg);
 }
 
@@ -196,9 +191,12 @@ async function overrideThemeColor(targetDir: string, hex: string): Promise<void>
   await writeFile(file, `${css.trimEnd()}\n${overlay}`);
 }
 
-export async function applyTransforms(answers: Answers): Promise<void> {
+export async function applyTransforms(
+  answers: Answers,
+  pluginVersions: Record<string, string>
+): Promise<void> {
   await transformRootPackageJson(answers.targetDir, answers);
-  await transformCmsPackageJson(answers.targetDir);
+  await transformCmsPackageJson(answers.targetDir, pluginVersions);
   await writeEnvFile(answers.targetDir, answers);
   await overrideThemeColor(answers.targetDir, answers.primaryColor);
   await writeRootReadme(answers);

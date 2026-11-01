@@ -4,6 +4,7 @@ import { draftMode } from "next/headers";
 import React from "react";
 
 import { RenderBlocks } from "@/blocks/RenderBlocks";
+import { RenderHero } from "@/blocks/RenderHero";
 import { SYNTHETIC_REFS } from "@/lib/plugins/analytics/SYNTHETIC_REFS";
 import { generateMeta } from "@/lib/utils/generateMeta";
 import { generateNotFoundMeta } from "@/lib/utils/generateNotFoundMeta";
@@ -55,6 +56,7 @@ export default async function Page({ params }: Args) {
 
           <PayloadRedirects disableNotFound url={url} locale={locale} />
 
+          <RenderHero hero={page.hero} />
           <RenderBlocks blocks={page.blocks} />
         </div>
       </main>

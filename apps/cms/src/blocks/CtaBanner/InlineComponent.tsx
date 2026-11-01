@@ -2,14 +2,13 @@ import { TrackLeadAction } from "@focus-reactive/payload-plugin-analytics/client
 
 import { ButtonSize } from "@/components/button/types";
 import { CMSLink } from "@/components/shared/CMSLink";
-import type { SectionHeaderEyebrow } from "@/components/SectionHeader";
-import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
+import type { EyebrowTone } from "@/components/Eyebrow";
 import type { CtaBannerInline, Page, Post } from "@/payload-types";
 
 import { CtaBanner } from "./ui";
 import type { CtaBannerVariant } from "./ui";
 
-const eyebrowToneByVariant: Record<CtaBannerVariant, SectionHeaderEyebrow["variant"]> = {
+const eyebrowToneByVariant: Record<CtaBannerVariant, EyebrowTone> = {
   accent: "default",
   dark: "accent",
   default: "accent",
@@ -23,15 +22,6 @@ export const CtaBannerInlineComponent: React.FC<CtaBannerInline> = ({
   variant,
 }) => {
   const resolvedVariant: CtaBannerVariant = variant ?? "default";
-
-  const header = prepareSectionHeaderProps({
-    align: "left",
-    description,
-    eyebrow,
-    eyebrowVariant: eyebrowToneByVariant[resolvedVariant],
-    heading,
-    size: "h-section",
-  });
 
   return (
     <CtaBanner
@@ -55,7 +45,12 @@ export const CtaBannerInlineComponent: React.FC<CtaBannerInline> = ({
           />
         </TrackLeadAction>
       ))}
-      header={header}
+      heading={{
+        description,
+        eyebrow,
+        eyebrowTone: eyebrowToneByVariant[resolvedVariant],
+        title: heading,
+      }}
       variant={resolvedVariant}
     />
   );

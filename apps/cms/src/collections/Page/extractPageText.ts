@@ -3,26 +3,19 @@ import { extractCarouselText } from "@/blocks/Carousel/extractText";
 import { extractChartText } from "@/blocks/Chart/extractText";
 import { extractCtaBandText } from "@/blocks/CtaBand/extractText";
 import { extractNewsletterText } from "@/blocks/Newsletter/extractText";
+import { extractRawHtmlText } from "@/blocks/RawHtml/extractText";
 import { extractStatsText } from "@/blocks/Stats/extractText";
 import { extractFaqText } from "@/blocks/Faq/extractText";
 import { extractHeroText } from "@/blocks/Hero/extractText";
 import { extractLogosText } from "@/blocks/Logos/extractText";
 import { extractTestimonialsText } from "@/blocks/TestimonialsList/extractText";
-import { extractLexicalText, joinText } from "@/lib/utils/text";
+import { extractLexicalText, joinText, sectionHeadingText } from "@/lib/utils/text";
 import type { Page } from "@/payload-types";
 
 export function extractPageBlockText(block: Page["blocks"][number]): string {
   switch (block.blockType) {
-    case "hero": {
-      return extractHeroText(block);
-    }
     case "content": {
-      return joinText([
-        block.eyebrow,
-        block.heading,
-        block.description,
-        extractLexicalText(block.content),
-      ]);
+      return joinText([...sectionHeadingText(block.heading), extractLexicalText(block.content)]);
     }
     case "chart": {
       return extractChartText(block);
@@ -51,12 +44,23 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
     case "stats": {
       return extractStatsText(block);
     }
+    case "rawHtml": {
+      return extractRawHtmlText(block);
+    }
+    case "globalSectionSlot": {
+      // Shared text stays out of page vectors, so one global block edit does not re-embed every page using it.
+      return "";
+    }
     default: {
       return "";
     }
   }
 }
 
-export function extractPageText(page: Pick<Page, "title" | "blocks">): string {
-  return joinText([page.title, ...(page.blocks ?? []).map(extractPageBlockText)]);
+export function extractPageText(page: Pick<Page, "title" | "hero" | "blocks">): string {
+  return joinText([
+    page.title,
+    ...(page.hero ?? []).map(extractHeroText),
+    ...(page.blocks ?? []).map(extractPageBlockText),
+  ]);
 }

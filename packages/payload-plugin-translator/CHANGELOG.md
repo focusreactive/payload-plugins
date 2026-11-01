@@ -1,5 +1,12 @@
 # @focus-reactive/payload-plugin-translator [1.0.0-next.7](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.6...@focus-reactive/payload-plugin-translator@1.0.0-next.7) (2026-10-28)
 
+## @focus-reactive/payload-plugin-translator [0.18.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.18.0...@focus-reactive/payload-plugin-translator@0.18.1) (2026-10-29)
+
+
+### Bug Fixes
+
+* **translator:** translate blocks wired through blockReferences ([55e619a](https://github.com/focusreactive/payload-plugins/commit/55e619a60d757561a568dcd8f5011f7dd1bdc225)), closes [#222](https://github.com/focusreactive/payload-plugins/issues/222)
+
 # @focus-reactive/payload-plugin-translator [1.0.0-next.6](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.5...@focus-reactive/payload-plugin-translator@1.0.0-next.6) (2026-10-26)
 
 

@@ -18,18 +18,19 @@ import type { DeployView } from "./DeployPanel.js";
 import { useDeploy } from "./useDeploy.js";
 
 const LABELS: Record<DeployView, string> = {
-  idle: "Publish",
+  idle: "Deploy",
   starting: "Building…",
   queued: "In queue…",
   building: "Building…",
   ready: "Preview ready",
   failed: "Build failed",
-  publishing: "Publishing…",
+  publishing: "Deploying…",
 };
 
 type Props = { placement?: "document" | "header" };
 
-// The Publish button — beside Save on a document, or in the admin's top bar — and the drawer it opens.
+// The Deploy button — beside Save on a document, or in the admin's top bar — and the drawer it opens.
+// Not "Publish": with drafts on, Payload's own Publish sits next to it and means the document.
 export const DeployButton = ({ placement = "document" }: Props) => {
   const info = useDocumentInfo();
   const { mostRecentUpdate } = useDocumentEvents();
@@ -102,7 +103,7 @@ export const DeployButton = ({ placement = "document" }: Props) => {
   const waiting = view === "idle" ? status.changes.length : 0;
 
   // Cancel means nothing goes live: the build is stopped or its preview deleted, and the drawer
-  // closes on the Publish button again.
+  // closes on the Deploy button again.
   const cancel = async () => {
     closeModal(drawerSlug);
     if (current) {
@@ -129,7 +130,7 @@ export const DeployButton = ({ placement = "document" }: Props) => {
           {LABELS[view]}
           {waiting > 0 && (
             <span
-              aria-label={`${waiting} unpublished changes`}
+              aria-label={`${waiting} changes not deployed`}
               style={{
                 padding: "0 7px",
                 borderRadius: 999,
@@ -144,7 +145,7 @@ export const DeployButton = ({ placement = "document" }: Props) => {
           )}
         </span>
       </Button>
-      <Drawer slug={drawerSlug} title="Publish site">
+      <Drawer slug={drawerSlug} title="Deploy site">
         <DeployPanel
           error={error}
           log={log}
@@ -159,8 +160,8 @@ export const DeployButton = ({ placement = "document" }: Props) => {
       </Drawer>
       <ConfirmationModal
         body={`${status.note ? `${status.note} ` : ""}The preview replaces what is live at ${host}.`}
-        confirmLabel="Publish"
-        heading={`Publish ${host}?`}
+        confirmLabel="Deploy"
+        heading={`Deploy ${host}?`}
         modalSlug={confirmSlug}
         onConfirm={async () => {
           if (current) {

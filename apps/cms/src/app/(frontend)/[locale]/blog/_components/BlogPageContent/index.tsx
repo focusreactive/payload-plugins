@@ -1,11 +1,10 @@
-import { DisplayHeading } from "@/components/DisplayHeading";
-import { Eyebrow } from "@/components/Eyebrow";
 import { getTranslations } from "next-intl/server";
 
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import type { Locale } from "@/lib/types";
 import { EmptyState } from "@/components/EmptyState";
 import { Pagination } from "@/components/Pagination";
+import { SectionHeading } from "@/components/SectionHeading";
 
 import { BlogFilterProvider } from "./components/BlogFilterProvider";
 import { DimWhilePending } from "./components/DimWhilePending";
@@ -52,14 +51,13 @@ export async function BlogPageContent({
     <BlogFilterProvider>
       <section className="pt-[clamp(48px,7vw,88px)]">
         <div className="mx-auto w-full max-w-containerMaxW px-containerBase">
-          <div className="mx-auto flex max-w-[720px] flex-col items-center gap-5 text-center">
-            {eyebrow && (
-              <Eyebrow prefix="dot" tone="accent">
-                {eyebrow}
-              </Eyebrow>
-            )}
-            {blogTitle && <DisplayHeading as="h1" size="display-1" text={blogTitle} />}
-          </div>
+          <SectionHeading
+            as="h1"
+            align="center"
+            size="display-1"
+            eyebrow={eyebrow}
+            title={blogTitle}
+          />
 
           <BlogActions
             categories={categories}

@@ -10,7 +10,7 @@ components/
                #   referenced by path string in field/collection configs + the import map
   seo/         # JSON-LD renderers + schema builders (JsonLd, ArticleJsonLd, BlogJsonLd, FaqJsonLd, …)
   <Component>/ # every other reusable component gets its own folder, flat here:
-               #   Button, SectionHeader, Eyebrow, DisplayHeading, GridLines, AbstractBackdrop,
+               #   Button, SectionHeading, Eyebrow, DisplayHeading, GridLines, AbstractBackdrop,
                #   Switch, HorizontalSelect, image, link, richText, Card, Accordion, Pagination,
                #   FaqSection, CtaBandSection, AuthorAvatar, PageRange, ErrorBoundary, EmptyState,
                #   SkeletonFallback, EmptyBlock, blog, newsletter, ctaBand, cookieBanner, copy, linksList,

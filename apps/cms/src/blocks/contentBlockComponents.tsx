@@ -6,7 +6,6 @@ import { ChartBlockComponent } from "./Chart/Component";
 import { ContentBlockComponent } from "./Content/Component";
 import { CtaBandBlockComponent } from "./CtaBand/Component";
 import { FaqBlockComponent } from "./Faq/Component";
-import { HeroBlockComponent } from "./Hero/Component";
 import { LogosBlockComponent } from "./Logos/Component";
 import { NewsletterBlockComponent } from "./Newsletter/Component";
 import { RawHtmlBlockComponent } from "./RawHtml/Component";
@@ -22,7 +21,6 @@ export const contentBlockComponents = {
   newsletter: NewsletterBlockComponent,
   stats: StatsBlockComponent,
   faq: FaqBlockComponent,
-  hero: HeroBlockComponent,
   logos: LogosBlockComponent,
   rawHtml: RawHtmlBlockComponent,
   testimonialsList: TestimonialsListBlockComponent,

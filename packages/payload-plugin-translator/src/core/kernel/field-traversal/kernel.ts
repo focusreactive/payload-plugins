@@ -120,10 +120,8 @@ export function tabScopes(field: TabsFieldLike): TabScope[] {
  * @returns The matched block's `fields`, or `null` when `item` is not a block object or its
  * `blockType` matches no defined block.
  *
- * Assumes the **original, un-sanitized** schema, where blocks are inline `Block` objects on
- * `field.blocks`. Payload's sanitized config may instead carry `blockReferences` resolved
- * against the top-level config — not handled here by design, since this package traverses
- * the original schema to preserve nested `localized` flags.
+ * Expects `blockReferences` already resolved into `blocks` (see `projectFieldsToFieldLike`); on a
+ * raw Payload field a referenced block's `blockType` matches nothing and yields `null`.
  *
  * @example
  * ```ts

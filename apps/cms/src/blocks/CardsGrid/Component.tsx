@@ -1,4 +1,4 @@
-import { SectionHeader } from "@/components/SectionHeader";
+import { SectionHeading } from "@/components/SectionHeading";
 import { CardsGrid } from "./ui";
 import type { IDefaultCardProps } from "./ui/types";
 import {
@@ -29,7 +29,6 @@ import { resolveLocale } from "@/lib/utils/resolveLocale";
 import { SectionContainer } from "@/components/shared";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
-import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { CardsGridBlock } from "@/payload-types";
 
 import type { CardIcon } from "./icons";
@@ -58,9 +57,7 @@ const ICON_MAP: Record<CardIcon, React.ReactElement> = {
 };
 
 export async function CardsGridBlockComponent({
-  eyebrow,
   heading,
-  description,
   items,
   columns,
   section,
@@ -84,11 +81,9 @@ export async function CardsGridBlockComponent({
     };
   });
 
-  const header = prepareSectionHeaderProps({ eyebrow, description, heading });
-
   return (
     <SectionContainer sectionData={{ ...section, id }}>
-      {header && <SectionHeader {...header} className="mb-12" />}
+      <SectionHeading {...heading} className="mb-12" />
       <CardsGrid items={cards} columns={columns ?? 3} />
     </SectionContainer>
   );
