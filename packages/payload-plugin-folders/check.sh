@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The gate every ticket must pass: types, lint, unit and integration tests, build, browser tests.
+# The gate every ticket must pass: types, README code blocks, lint, unit and integration tests, build, browser tests.
 set -euo pipefail
 
 packageDirectory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -13,6 +13,9 @@ cd "$packageDirectory"
 
 step "typecheck"
 npm run typecheck
+
+step "README code blocks"
+npm run check:readme
 
 step "lint and format (ultracite, from the repo root)"
 (cd "$repositoryRoot" && bunx ultracite check packages/payload-plugin-folders)

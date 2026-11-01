@@ -22,6 +22,6 @@
       "@focus-reactive/payload-plugin-folders/server": ["./src/server/index.ts"]
     }
   },
-  "include": ["src", "dev", "tests", "*.ts"],
+  "include": ["src", "dev", "tests", "scripts", "*.ts"],
   "exclude": ["node_modules", "dist", "dev/.next"]
 }

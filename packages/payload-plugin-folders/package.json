@@ -52,6 +52,7 @@
     "generate:importmap": "cross-env PAYLOAD_CONFIG_PATH=./dev/payload.config.ts payload generate:importmap",
     "generate:types": "cross-env PAYLOAD_CONFIG_PATH=./dev/payload.config.ts payload generate:types",
     "typecheck": "tsc --noEmit",
+    "check:readme": "tsx scripts/check-readme.ts",
     "test:unit": "vitest run --project unit",
     "test:int": "vitest run --project int",
     "test:int:postgres": "cross-env TEST_DB=postgres vitest run --project int",
