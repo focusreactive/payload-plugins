@@ -143,8 +143,19 @@ export const analyzeFolders = ({
     }
   }
 
+  // A folder that moves to the top level carries that parent in the row a later write sends back
+  // whole, or the write would restore the parent it was moved away from (and, for a parent that
+  // does not exist, fail on the foreign key).
+  const movedIds = new Set(parentFixes.map(({ folder }) => String(folder.id)));
   const childrenOf = new Map<string | null, FolderRecord[]>();
-  for (const record of recordList) {
+  for (const stored of recordList) {
+    const record = movedIds.has(String(stored.id))
+      ? {
+          ...stored,
+          parent: null,
+          storedRow: { ...stored.storedRow, parent: null },
+        }
+      : stored;
     const parent = expectedParents.get(String(record.id)) ?? null;
     const siblings = childrenOf.get(parent === null ? null : String(parent)) ?? [];
     siblings.push(record);

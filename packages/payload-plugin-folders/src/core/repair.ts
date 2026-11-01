@@ -552,15 +552,6 @@ const applyRepair = async ({
   const { payload } = req;
   const updatedAt = new Date().toISOString();
 
-  await writeFolderRows({
-    folders: analysis.folderAnalysis.folders,
-    keys: getFolderLocaleKeys(payload, options),
-    options,
-    req,
-    writes: plan.folderWrites,
-  });
-
-  // After the rows above, which carry the stored `parent` back with the rest of the row.
   for (const { folder } of analysis.folderAnalysis.parentFixes) {
     await payload.db.updateOne({
       collection: toCollectionSlug(options.folders.slug),
@@ -570,6 +561,14 @@ const applyRepair = async ({
       returning: false,
     });
   }
+  await writeFolderRows({
+    folders: analysis.folderAnalysis.folders,
+    keys: getFolderLocaleKeys(payload, options),
+    options,
+    req,
+    writes: plan.folderWrites,
+  });
+
   for (const { fact, fixes } of analysis.pageWrites) {
     await writePageSegments({ fact, fixes, options, req });
   }
