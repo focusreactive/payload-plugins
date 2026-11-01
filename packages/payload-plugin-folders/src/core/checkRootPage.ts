@@ -2,10 +2,12 @@ import { APIError } from "payload";
 import type { PayloadRequest } from "payload";
 
 import type { FolderId, ItemRef } from "../types.js";
+import { canReadItem } from "./access.js";
 import { readFolderRecord } from "./folderRecords.js";
 import { getLocaleCodes } from "./locales.js";
 import { getResolvedOptions } from "./runtime.js";
 import {
+  describeHiddenRootPageConflict,
   describeRootPageConflict,
   findRootPageConflict,
   folderPathIn,
@@ -13,7 +15,8 @@ import {
 } from "./uniqueness.js";
 
 /** The page that already holds the folder's root page place, and the folder's path. */
-export type RootPageCheckConflict = { path: string; title: string };
+/** `title` is left out when the reader may not read the page that holds the place. */
+export type RootPageCheckConflict = { path: string; title?: string };
 
 export type RootPageCheck = { conflict?: RootPageCheckConflict; message?: string; ok: boolean };
 
@@ -52,6 +55,16 @@ export const checkRootPage = async (
   const path = folder
     ? folderPathIn(folder, locale ?? getPageDefaultLocale(payload), options, payload) || "/"
     : "/";
+
+  // The check looks at every page and at drafts, so the page it finds may be one the reader may
+  // not see (a draft they have no read access to): then the answer says a place is taken and no more.
+  const canReadConflict = await canReadItem({
+    item: { collection: conflict.collection, id: conflict.id },
+    req,
+  });
+  if (!canReadConflict) {
+    return { conflict: { path }, message: describeHiddenRootPageConflict(path), ok: false };
+  }
 
   return {
     conflict: { path, title: conflict.title },

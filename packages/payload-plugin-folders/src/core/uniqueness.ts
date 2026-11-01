@@ -307,6 +307,10 @@ export const describeSegmentConflict = (conflict: SegmentConflict): string =>
 export const describeRootPageConflict = (conflict: RootPageConflict, folderPath: string): string =>
   `${conflict.title} is already the root page of ${folderPath}. Unset it first.`;
 
+/** The same refusal for a reader who may not see the other page, so it names nothing about it. */
+export const describeHiddenRootPageConflict = (folderPath: string): string =>
+  `Another page is already the root page of ${folderPath}. Unset it first.`;
+
 /**
  * The refusal for a live locale with no segment: its own, or the default locale's live one through
  * fallback. `locale` is the live locale that has none.
@@ -342,7 +346,8 @@ export const findLocaleWithoutSegment = ({
   return missing.includes(defaultLocale) ? defaultLocale : (missing[0] ?? null);
 };
 
-export type RootPageConflict = { title: string };
+/** The page that holds the place: `collection` and `id` let a caller decide whether to name it. */
+export type RootPageConflict = { collection: string; id: FolderId; title: string };
 
 /**
  * Rule 3 of spec section 2.6: another page already marked as the root page of the folder.
@@ -407,7 +412,11 @@ export const findRootPageConflict = async ({
       other = (versions.docs as Array<{ parent: FolderId }>)[0]?.parent;
     }
     if (other !== undefined) {
-      return { title: await readTitle(req, page, other, getPageDefaultLocale(payload)) };
+      return {
+        collection: page.slug,
+        id: other,
+        title: await readTitle(req, page, other, getPageDefaultLocale(payload)),
+      };
     }
   }
 

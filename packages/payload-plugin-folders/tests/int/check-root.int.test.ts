@@ -1,4 +1,4 @@
-import type { Payload } from "payload";
+import type { Access, Payload } from "payload";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { callEndpoint } from "../helpers/callEndpoint.js";
@@ -7,12 +7,19 @@ import type { TestPayload } from "../helpers/getTestPayload.js";
 import { clearTree } from "../helpers/seedTree.js";
 import { createFolder } from "../helpers/treeFixtures.js";
 
-type RootResult = { conflict?: { path: string; title: string }; message?: string; ok: boolean };
+type RootResult = { conflict?: { path: string; title?: string }; message?: string; ok: boolean };
 
 let harness: TestPayload;
 
+const reader = { email: "root-reader@example.com", password: "test-password" };
+
 beforeAll(async () => {
   harness = await getTestPayload();
+  await harness.payload.create({
+    collection: "users",
+    data: { ...reader, role: "editor" } as never,
+    overrideAccess: true,
+  });
 });
 
 afterAll(async () => {
@@ -23,9 +30,10 @@ afterEach(async () => {
   await clearTree(harness.payload);
 });
 
-const check = (query: string, anonymous = false) =>
+const check = (query: string, anonymous = false, user?: { email: string; password: string }) =>
   callEndpoint<RootResult>({
     anonymous,
+    ...(user ? { user } : {}),
     config: harness.config,
     path: `/folders-tree/check-root?${query}`,
     payload: harness.payload,
@@ -137,6 +145,44 @@ describe("GET /folders-tree/check-root", () => {
   it("an unknown locale is 400", async () => {
     expect((await check("parent=root&locale=fr")).status).toBe(400);
     expect((await check("parent=root&locale=de")).status).toBe(200);
+  });
+
+  it("keeps the title of a page the reader cannot read to itself", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { slug: "docs" });
+    await createPage(payload, {
+      folder: folder.id,
+      isFolderRoot: true,
+      slug: "secret-launch",
+      status: "draft",
+    });
+    // The reader may read published pages only: the draft root page is hidden from them.
+    const pagesConfig = payload.collections.pages.config;
+    const originalRead = pagesConfig.access.read;
+    const publishedOnly: Access = ({ req }) =>
+      req.user?.email === reader.email ? { _status: { equals: "published" } } : true;
+    pagesConfig.access.read = publishedOnly;
+    try {
+      const asAdmin = await check(`parent=${folder.id}`);
+      const asReader = await check(`parent=${folder.id}`, false, reader);
+
+      expect(asAdmin.body.conflict?.title).toBe("secret-launch");
+      expect(asReader.body.ok).toBe(false);
+      expect(asReader.body.conflict).toEqual({ path: "/docs" });
+      expect(asReader.body.message).toBe(
+        "Another page is already the root page of /docs. Unset it first."
+      );
+      expect(JSON.stringify(asReader.body)).not.toContain("secret-launch");
+
+      // A published root page is readable: its title is shown, as before.
+      await payload.db.deleteMany({ collection: "pages", where: { id: { exists: true } } });
+      await createPage(payload, { folder: folder.id, isFolderRoot: true, slug: "public-overview" });
+      expect((await check(`parent=${folder.id}`, false, reader)).body.conflict?.title).toBe(
+        "public-overview"
+      );
+    } finally {
+      pagesConfig.access.read = originalRead;
+    }
   });
 
   it("is for signed-in users only", async () => {

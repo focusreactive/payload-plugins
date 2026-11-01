@@ -354,6 +354,9 @@ export const canReadItem = async ({
   const { docs } = await req.payload.db.find({
     collection: toCollectionSlug(item.collection),
     limit: 1,
+    // A `Where` on a localized field (`_status` with localized status) needs a locale at database
+    // level; `all` asks whether the document is readable in any of them.
+    locale: "all",
     pagination: false,
     req: nestedRequest,
     select: { id: true },
@@ -398,6 +401,7 @@ export const findUnreadableItems = async ({
       const chunkIds = ids.slice(start, start + 500);
       const { docs } = await req.payload.db.find({
         collection: toCollectionSlug(collection),
+        locale: "all",
         pagination: false,
         req: nestedRequest,
         select: { id: true },
