@@ -658,78 +658,100 @@ const copyPage = async ({
  * whose parent copy was not made, is passed over; a unit copied by an earlier try of this step
  * (its folder is in `idMap`) is not copied again.
  */
-const duplicateHandler: OperationHandler = {
-  run: async ({ options, params, req, state }, units) => {
-    const targetFolder = (params.targetFolder ?? null) as FolderId | null;
-    const overrides = params.overrides as DuplicateRequest["overrides"] | undefined;
-    const overrideAccess = params.overrideAccess === true;
-    const idMap = (state.idMap ?? {}) as Record<string, FolderId>;
-    const created = (state.created ?? []) as ItemRef[];
-    let copied = typeof state.copied === "number" ? state.copied : 0;
-    let skipped = typeof state.skipped === "number" ? state.skipped : 0;
+const copyUnits: OperationHandler["run"] = async ({ options, params, req, state }, units) => {
+  const targetFolder = (params.targetFolder ?? null) as FolderId | null;
+  const overrides = params.overrides as DuplicateRequest["overrides"] | undefined;
+  const overrideAccess = params.overrideAccess === true;
+  const idMap = (state.idMap ?? {}) as Record<string, FolderId>;
+  const created = (state.created ?? []) as ItemRef[];
+  let copied = typeof state.copied === "number" ? state.copied : 0;
+  let skipped = typeof state.skipped === "number" ? state.skipped : 0;
 
-    for (const unit of units as DuplicateUnit[]) {
-      const isRoot = unit.parent === "target";
-      const parentId = isRoot ? targetFolder : (idMap[String(unit.parent)] ?? undefined);
-      if (parentId === undefined) {
+  for (const unit of units as DuplicateUnit[]) {
+    const isRoot = unit.parent === "target";
+    const parentId = isRoot ? targetFolder : (idMap[String(unit.parent)] ?? undefined);
+    if (parentId === undefined) {
+      skipped += 1;
+      continue;
+    }
+    if (unit.kind === "folder") {
+      if (idMap[String(unit.id)] !== undefined) {
+        continue;
+      }
+      const source = await readFolderRecord(req, options, unit.id);
+      if (!source || source.storedRow.deletedAt) {
         skipped += 1;
         continue;
       }
-      if (unit.kind === "folder") {
-        if (idMap[String(unit.id)] !== undefined) {
-          continue;
-        }
-        const source = await readFolderRecord(req, options, unit.id);
-        if (!source || source.storedRow.deletedAt) {
-          skipped += 1;
-          continue;
-        }
-        const copyId = await copyFolder({
-          isRoot,
-          options,
-          overrideAccess,
-          overrides,
-          parentId,
-          req,
-          source,
-        });
-        idMap[String(unit.id)] = copyId;
-        if (isRoot) {
-          created.push({ collection: options.folders.slug, id: copyId });
-        }
-      } else {
-        const source = (await req.payload.db.findOne({
-          collection: toCollectionSlug(unit.collection),
-          req,
-          select: { folder: true } as never,
-          where: { id: { equals: unit.id } },
-        })) as { folder?: FolderId | { id: FolderId } | null } | null;
-        if (!source) {
-          skipped += 1;
-          continue;
-        }
-        const sourceFolder = normalizeFolderReference(source.folder).id;
-        const copyId = await copyPage({
-          collection: unit.collection,
-          id: unit.id,
-          isBesideSource: String(sourceFolder) === String(parentId),
-          isRoot,
-          options,
-          overrideAccess,
-          overrides,
-          parentId,
-          req,
-        });
-        if (isRoot) {
-          created.push({ collection: unit.collection, id: copyId });
-        }
+      const copyId = await copyFolder({
+        isRoot,
+        options,
+        overrideAccess,
+        overrides,
+        parentId,
+        req,
+        source,
+      });
+      idMap[String(unit.id)] = copyId;
+      if (isRoot) {
+        created.push({ collection: options.folders.slug, id: copyId });
       }
-      copied += 1;
+    } else {
+      const source = (await req.payload.db.findOne({
+        collection: toCollectionSlug(unit.collection),
+        req,
+        select: { folder: true } as never,
+        where: { id: { equals: unit.id } },
+      })) as { folder?: FolderId | { id: FolderId } | null } | null;
+      if (!source) {
+        skipped += 1;
+        continue;
+      }
+      const sourceFolder = normalizeFolderReference(source.folder).id;
+      const copyId = await copyPage({
+        collection: unit.collection,
+        id: unit.id,
+        isBesideSource: String(sourceFolder) === String(parentId),
+        isRoot,
+        options,
+        overrideAccess,
+        overrides,
+        parentId,
+        req,
+      });
+      if (isRoot) {
+        created.push({ collection: unit.collection, id: copyId });
+      }
     }
-    state.copied = copied;
-    state.created = created;
-    state.idMap = idMap;
-    state.skipped = skipped;
+    copied += 1;
+  }
+  state.copied = copied;
+  state.created = created;
+  state.idMap = idMap;
+  state.skipped = skipped;
+};
+
+/**
+ * A step is its own request and carries no `?locale=`, while the copies write a chosen name and
+ * segment into the locale of the request that started the copy, so the step takes that locale from
+ * the stored params for as long as it runs.
+ */
+const duplicateHandler: OperationHandler = {
+  run: async (context, units) => {
+    const { locale } = context.params;
+    if (typeof locale !== "string") {
+      await copyUnits(context, units);
+
+      return;
+    }
+    const { req } = context;
+    const previousLocale = req.locale;
+    req.locale = locale;
+    try {
+      await copyUnits(context, units);
+    } finally {
+      req.locale = previousLocale;
+    }
   },
 };
 
@@ -754,6 +776,7 @@ export const applyDuplicate = async (
     kind: "duplicate",
     options,
     params: {
+      ...(typeof req.locale === "string" ? { locale: req.locale } : {}),
       overrideAccess,
       overrides: request.overrides ?? null,
       targetFolder: plan.targetFolder,
