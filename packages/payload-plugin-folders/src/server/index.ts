@@ -30,6 +30,7 @@ export { searchTree } from "../core/treeSearch.js";
 export type { SearchArgs } from "../core/treeSearch.js";
 export { computeFullPath, resolvePath } from "../core/resolve.js";
 export type { ResolveArgs, ResolveResult } from "../core/resolve.js";
+export { buildLiveInLocaleWhere } from "../core/publishedWhere.js";
 export { getAllPaths, getPathsPage } from "../core/allPaths.js";
 export type { PathRow, PathsArgs, PathsPage, PathsPageArgs } from "../core/allPaths.js";
 export { getTree } from "../core/siteTree.js";

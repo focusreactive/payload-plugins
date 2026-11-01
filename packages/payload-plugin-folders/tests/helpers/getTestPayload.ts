@@ -101,7 +101,12 @@ const createPostgresDatabase = async (sharedSchemaName?: string): Promise<TestDa
 
 export type GetTestPayloadOptions = Pick<
   DevConfigOptions,
-  "extraCollections" | "foldersOptions" | "localized" | "redirectsCollections" | "trash"
+  | "extraCollections"
+  | "foldersOptions"
+  | "localized"
+  | "publicReads"
+  | "redirectsCollections"
+  | "trash"
 > & {
   /**
    * Postgres only: boots this instance on the database of an instance already running, as a second
@@ -116,6 +121,7 @@ export const getTestPayload = async ({
   extraCollections,
   foldersOptions,
   localized,
+  publicReads,
   redirectsCollections,
   sharedWith,
   sqliteTransactions = true,
@@ -138,6 +144,7 @@ export const getTestPayload = async ({
       extraCollections,
       foldersOptions,
       localized,
+      publicReads,
       redirectsCollections,
       trash,
     });

@@ -62,3 +62,8 @@ test("the German path resolves under its prefix", async ({ page }) => {
   expect(response?.status()).toBe(200);
   await expect(page.getByRole("heading", { level: 1, name: "Kontakt" })).toBeVisible();
 });
+
+test("a page only en published is served in de through fallback", async ({ request }) => {
+  // The seed's archive entries have no German row; public read access must still find them.
+  expect((await request.get("/de/archive/entry-0150")).status()).toBe(200);
+});

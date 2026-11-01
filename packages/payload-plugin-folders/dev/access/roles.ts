@@ -1,3 +1,4 @@
+import { buildLiveInLocaleWhere } from "@focus-reactive/payload-plugin-folders/server";
 import type { Access, PayloadRequest } from "payload";
 
 type RoleUser = {
@@ -111,10 +112,24 @@ export const adminOnlyRepair = ({ req }: { req: PayloadRequest }): boolean =>
 
 /**
  * `read` access of the dev app's page collections for the frontend example (spec section 10.3): a
- * signed-in user reads everything, a visitor only what is published.
+ * signed-in user reads everything, a visitor only what is live in the locale being read. In a
+ * non-default locale that includes a page only the default locale published, which is live there
+ * through fallback (decision 24); a plain `_status` check would be evaluated against the locale's
+ * own row, which such a page does not have. The default locale and `locale: "all"` keep the plain
+ * check.
  */
-export const publicReadsPublished: Access = ({ req }) =>
-  req.user ? true : { _status: { equals: "published" } };
+export const publicReadsPublished: Access = ({ req }) => {
+  if (req.user) {
+    return true;
+  }
+  const { localization } = req.payload.config;
+  const { locale } = req;
+  if (!localization || !locale || locale === "all" || locale === localization.defaultLocale) {
+    return { _status: { equals: "published" } };
+  }
+
+  return buildLiveInLocaleWhere(req.payload, "pages", locale) ?? true;
+};
 
 /** The same for a collection without drafts, whose rows are all live. */
 export const publicReadsAll: Access = () => true;
