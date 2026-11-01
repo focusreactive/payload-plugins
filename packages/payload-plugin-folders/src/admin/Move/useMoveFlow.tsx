@@ -1,5 +1,5 @@
 import { toast, useModal } from "@payloadcms/ui";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { ConfirmMoves, TreeItem } from "../../types.js";
@@ -59,11 +59,25 @@ export type MoveFlow = {
   startDropMove: (drop: DropMove) => Promise<void>;
   /** Opens "Move to..." for these rows. */
   startMoveTo: (items: readonly TreeItem[]) => void;
+  /**
+   * Undoes the last move while its toast is on screen (Cmd/Ctrl+Z); false when there is none.
+   */
+  undoLast: () => boolean;
 };
 
 /** A move that a drop asks for. */
 export type DropMove = {
   items: readonly TreeItem[];
+  /**
+   * The move did not start: the preview failed, the confirmation was dismissed, or another move was
+   * in flight. For a caller that showed the move before asking (the keyboard reorder).
+   */
+  onAbandon?: () => void;
+  /**
+   * Called in the same turn as the move is applied to the rows, once it is confirmed: a caller
+   * that showed the move before asking puts its own change back here, so the rows do not jump.
+   */
+  onBeforeApply?: () => void;
   /** Runs once the move went through, for what the caller keeps beside it (Move mode ends here). */
   onMoved?: () => void;
   /** The ticked rows when the drag carried the selection: those come back if the move fails. */
@@ -74,6 +88,8 @@ export type DropMove = {
 
 type Pending = {
   items: readonly TreeItem[];
+  onAbandon?: () => void;
+  onBeforeApply?: () => void;
   onMoved?: () => void;
   /**
    * Every ticked row, nested ones included: what comes back if the move fails. `null` when the move
@@ -114,6 +130,10 @@ export const useMoveFlow = ({
   const previewing = useRef(false);
   const [isMoving, setIsMoving] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
+  // The move whose Undo toast is on screen: Cmd/Ctrl+Z undoes it too (spec section 7.6).
+  const lastUndo = useRef<{ run: () => void; toastId: number | string } | null>(null);
+  // Requests that were confirmed, so a closing dialog does not count them as dismissed.
+  const started = useRef(new WeakSet<Pending>());
 
   const context = useApiContext(store);
 
@@ -159,7 +179,9 @@ export const useMoveFlow = ({
       }
       moving.current = true;
       setIsMoving(true);
+      started.current.add(request);
       try {
+        request.onBeforeApply?.();
         const outcome = await runMove(
           { context, store },
           rootsOfSelection(request.items),
@@ -170,11 +192,23 @@ export const useMoveFlow = ({
           onMoved();
         }
         request.onMoved?.();
-        toast.success(translate("moved", { count: outcome.result.moved.length }), {
-          action: { label: translate("undo"), onClick: () => void undo(outcome) },
+        const runUndo = () => {
+          lastUndo.current = null;
+          void undo(outcome);
+        };
+        const forget = () => {
+          if (lastUndo.current?.run === runUndo) {
+            lastUndo.current = null;
+          }
+        };
+        const toastId = toast.success(translate("moved", { count: outcome.result.moved.length }), {
+          action: { label: translate("undo"), onClick: runUndo },
           classNames: { actionButton: toastActionClass },
           duration: undoToastDurationMs,
+          onAutoClose: forget,
+          onDismiss: forget,
         });
+        lastUndo.current = { run: runUndo, toastId };
       } catch (error) {
         // The store already put every row back and read the folders again.
         showFailure(error, null);
@@ -233,6 +267,8 @@ export const useMoveFlow = ({
   const startDropMove = useCallback(
     async (drop: DropMove) => {
       if (moving.current || previewing.current) {
+        drop.onAbandon?.();
+
         return;
       }
       previewing.current = true;
@@ -243,6 +279,7 @@ export const useMoveFlow = ({
         proceed(drop, preview);
       } catch (error) {
         showFailure(error, null);
+        drop.onAbandon?.();
       } finally {
         previewing.current = false;
         setIsPreviewing(false);
@@ -250,6 +287,38 @@ export const useMoveFlow = ({
     },
     [context, proceed, showFailure]
   );
+
+  // A confirmation that closes without the Move button was dismissed: whoever showed the move
+  // before asking puts the rows back.
+  const { modalState } = useModal();
+  const isConfirmOpen = modalState[confirmDialogSlug]?.isOpen === true;
+  const wasConfirmOpen = useRef(false);
+  useEffect(() => {
+    if (isConfirmOpen) {
+      wasConfirmOpen.current = true;
+
+      return;
+    }
+    if (wasConfirmOpen.current) {
+      wasConfirmOpen.current = false;
+      const request = pending.current;
+      if (request && !started.current.has(request)) {
+        pending.current = null;
+        request.onAbandon?.();
+      }
+    }
+  }, [isConfirmOpen]);
+
+  const undoLast = useCallback((): boolean => {
+    const last = lastUndo.current;
+    if (last === null) {
+      return false;
+    }
+    toast.dismiss(last.toastId);
+    last.run();
+
+    return true;
+  }, []);
 
   const startMoveTo = useCallback(
     (items: readonly TreeItem[]) => {
@@ -297,5 +366,5 @@ export const useMoveFlow = ({
     </>
   );
 
-  return { dialogs, isMoving, isPreviewing, startDropMove, startMoveTo };
+  return { dialogs, isMoving, isPreviewing, startDropMove, startMoveTo, undoLast };
 };

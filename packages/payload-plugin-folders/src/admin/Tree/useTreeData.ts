@@ -15,6 +15,15 @@ export type ItemRowModel = {
   /** Nesting depth in the tree on screen, from 0. Not `item.depth`, which can be unknown. */
   level: number;
   parentKey: FolderKey;
+  /** The row's place among the loaded rows of its folder, from 1 (`aria-posinset`). */
+  posInSet: number;
+  /**
+   * Search results only: the names of the folders above the hit, top first. The tree has no use for
+   * it, because there the rows above are the folders.
+   */
+  searchPath?: readonly string[];
+  /** How many rows its folder has, or -1 while more are still to load (`aria-setsize`). */
+  setSize: number;
 };
 
 export type LoadingRowModel = { key: string; level: number; type: "loading" };
@@ -96,7 +105,9 @@ export const flattenTree = (state: TreeStoreState): TreeRowModel[] => {
 
       return;
     }
-    for (const item of entry.items) {
+    // The total is unknown while rows are left to load, which ARIA writes as -1.
+    const setSize = entry.hasMore ? -1 : entry.items.length;
+    for (const [index, item] of entry.items.entries()) {
       const folderKey = item.kind === "folder" ? String(item.id) : null;
       const isExpanded = folderKey !== null && expanded.has(folderKey);
       const expandable = folderKey !== null;
@@ -107,6 +118,8 @@ export const flattenTree = (state: TreeStoreState): TreeRowModel[] => {
         key: `${item.collection}:${item.id}`,
         level,
         parentKey,
+        posInSet: index + 1,
+        setSize,
         type: "item",
       });
       // A folder that listed itself among its own ancestors would never end.
