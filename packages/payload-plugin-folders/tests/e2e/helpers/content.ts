@@ -89,6 +89,16 @@ export const redirectsFrom = async (
   return ((await response.json()) as { totalDocs: number }).totalDocs;
 };
 
+/** The rows of `@payloadcms/plugin-redirects` (the mirror's) whose `from` is `from`. */
+export const mirrorRowsFrom = async (request: APIRequestContext, from: string): Promise<number> => {
+  const response = await request.get(
+    `/api/redirects?where[from][equals]=${encodeURIComponent(from)}&limit=10`
+  );
+  await expectOk(response, `Reading mirror rows from ${from}`);
+
+  return ((await response.json()) as { totalDocs: number }).totalDocs;
+};
+
 /** Deletes a folder with everything inside it, the deepest rows first. */
 export const removeFolderTree = async (
   request: APIRequestContext,

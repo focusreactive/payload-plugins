@@ -37,6 +37,11 @@ export type OperationsFlowOptions = {
   locale: string | null;
   /** A delete or a duplicate finished: the toolbar's selection is stale. */
   onSettled: () => void;
+  /**
+   * The tree revision the page is showing. A move or a folder rename that stored a batch of its own
+   * (the plugin-redirects mirror) bumps it, and the change makes the flow look for new operations.
+   */
+  revision: number | null;
   store: TreeStore;
   translate: Translate;
   typeLabels: Readonly<Record<string, string>>;
@@ -64,6 +69,7 @@ export const useOperationsFlow = ({
   languageCount,
   locale,
   onSettled,
+  revision,
   store,
   translate,
   typeLabels,
@@ -142,7 +148,8 @@ export const useOperationsFlow = ({
     };
   }, []);
 
-  // A reload, or coming back to the tree, finds what is not done and carries on with it.
+  // A reload, coming back to the tree, or a new revision (a move stored a batch for the mirror)
+  // finds what is not done and carries on with it; an operation already stepping is not started twice.
   useEffect(() => {
     if (userId === null) {
       return undefined;
@@ -169,7 +176,7 @@ export const useOperationsFlow = ({
     return () => {
       isCancelled = true;
     };
-  }, [apiContext, runner, update, userId]);
+  }, [apiContext, revision, runner, update, userId]);
 
   const track = useCallback(
     (operation: OperationView, { onDone }: { onDone?: () => void } = {}) => {

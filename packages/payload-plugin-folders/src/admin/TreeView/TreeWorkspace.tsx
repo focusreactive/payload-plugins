@@ -144,6 +144,7 @@ const TreeWorkspaceContent = ({
     folderId: zoom?.folderId ?? null,
     locale: store.getOptions()?.locale ?? null,
     query: searchQuery,
+    revision: state.revision,
     scope: searchScope,
   });
   const resultRows = useMemo(

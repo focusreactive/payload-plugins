@@ -7,6 +7,7 @@ import {
   createPage,
   deleteFolder,
   deletePage,
+  mirrorRowsFrom,
   redirectsFrom,
 } from "./helpers/content.js";
 import {
@@ -121,9 +122,16 @@ test("Move to... into news shows the URL count and moves", async ({ page, reques
   );
   await expect(confirm.getByRole("checkbox", { name: "Redirect the old URLs" })).toBeChecked();
   await expect(confirm.getByTestId("redirect-count")).toHaveText("(2 redirect entries)");
+  // The dev app mirrors into the Redirects collection of @payloadcms/plugin-redirects too.
+  await expect(confirm.getByTestId("mirror-count")).toHaveText(
+    "2 entries will be added to Redirects."
+  );
   await confirm.getByRole("button", { exact: true, name: "Move" }).click();
 
   await expect(page.getByText("Moved 1 item")).toBeVisible();
+  // One row per language, the German one under its /de prefix, each pointing at the page.
+  expect(await mirrorRowsFrom(request, "/staging/move-probe")).toBe(1);
+  expect(await mirrorRowsFrom(request, "/de/staging/move-probe")).toBe(1);
   // The row left Staging at once and the server has it in News at the new URL, with a redirect.
   await expect(pageRow(page, "Move Probe")).toHaveCount(0);
   const inNews = await childrenOf(request, newsId);
@@ -194,13 +202,17 @@ test("unticking Redirect writes no redirect", async ({ page, request }) => {
   const confirm = confirmDialog(page);
   const redirect = confirm.getByRole("checkbox", { name: "Redirect the old URLs" });
   await expect(redirect).toBeChecked();
+  await expect(confirm.getByTestId("mirror-count")).toBeVisible();
   await redirect.uncheck();
+  // Without redirects there is nothing to mirror either.
+  await expect(confirm.getByTestId("mirror-count")).toHaveCount(0);
   await confirm.getByRole("button", { exact: true, name: "Move" }).click();
 
   await expect(page.getByText("Moved 1 item")).toBeVisible();
   const inNews = await childrenOf(request, newsId);
   expect(inNews.map((row) => row.fullPath)).toEqual(["/news/no-redirect"]);
   expect(await redirectsFrom(request, "/staging/no-redirect")).toBe(0);
+  expect(await mirrorRowsFrom(request, "/staging/no-redirect")).toBe(0);
 
   // The next move in the same session starts ticked again: unticking was for that one move.
   await rowCheckbox(page, "Redirect Again").check();

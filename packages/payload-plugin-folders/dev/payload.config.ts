@@ -9,5 +9,7 @@ export default buildDevConfig({
   foldersOptions: {
     admin: adminOptionsFromEnv(process.env),
     hooks: { afterPathChange: revalidateFrontend },
+    // The dev app has @payloadcms/plugin-redirects, so a move also fills its Redirects collection.
+    redirects: { mirrorToRedirectsPlugin: true },
   },
 });
