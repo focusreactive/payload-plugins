@@ -89,6 +89,8 @@ export const buildStructureGuard =
 
     data.folder = reference.id as never;
     data.orderKey = await keyForNewItem(req, options, reference.id);
+    // A new page starts at revision 0 whatever a request sent; only a move raises it.
+    data.structureRevision = 0 as never;
 
     return data;
   };

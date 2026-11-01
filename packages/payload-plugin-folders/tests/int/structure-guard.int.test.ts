@@ -479,6 +479,26 @@ describe("structure guard", () => {
     expect(page.orderKey).toBeTruthy();
   });
 
+  it("a create stores revision 0 whatever structureRevision the request sent", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { name: "Create revision" });
+
+    const page = await payload.create({
+      collection: "pages",
+      data: {
+        folder: folder.id,
+        slug: "sent-revision",
+        structureRevision: 4242,
+        title: "Sent revision",
+      },
+      depth: 0,
+      overrideAccess: false,
+      user: adminUser as never,
+    });
+
+    expect((await readMain(payload, page.id as number)).structureRevision).toBe(0);
+  });
+
   it("a guarded update leaves the caller's req context and locale unchanged", async () => {
     const { payload } = harness;
     const page = await createPage(payload, {});
