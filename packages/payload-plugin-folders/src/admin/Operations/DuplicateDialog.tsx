@@ -39,7 +39,7 @@ export type DuplicateDialogProps = {
   /** The admin locale: a single copy's name and segment are written in it. */
   locale: string | null;
   /** The copy went through (made at once, or stored as an operation to step). */
-  onDuplicated: (result: DuplicateResult, target: FolderChoice, rootCount: number) => void;
+  onDuplicated: (result: DuplicateResult, target: FolderChoice) => void;
   /** One per opening, so the form starts at its defaults every time. */
   session: number;
   store: TreeStore;
@@ -120,7 +120,7 @@ const DuplicateContent = ({
         ...(isSingle ? { overrides: { name: name.trim(), slug: segment.value } } : {}),
         toFolder: target.id,
       });
-      onDuplicated(result, target, roots.length);
+      onDuplicated(result, target);
     } catch (error) {
       setFailure(
         error instanceof Error && error.message !== ""

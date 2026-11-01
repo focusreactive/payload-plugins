@@ -664,6 +664,16 @@ export const postOperationStep = (
   id: FolderId
 ): Promise<OperationProgress> => postJson<OperationProgress>(context, `operations/${id}/step`, {});
 
+/**
+ * Gives up on a failed operation: it takes no more steps and what it did stays. Answers how far it
+ * got, with status `abandoned`.
+ */
+export const postOperationAbandon = (
+  context: FoldersApiContext,
+  id: FolderId
+): Promise<OperationProgress> =>
+  postJson<OperationProgress>(context, `operations/${id}/abandon`, {});
+
 /** An operation as the progress dialog and the banner show it. */
 export type OperationSummary = {
   done: number;
@@ -678,7 +688,7 @@ export type OperationSummary = {
 export const resumableOperationAgeMs = 24 * 60 * 60 * 1000;
 
 /**
- * The signed-in user's operations that are not done, newest first, read through Payload's own REST
+ * The signed-in user's operations that are still running or failed, newest first, read through Payload's own REST
  * route. The work list (`items`) is left out of the read, because it holds one entry per document.
  */
 export const fetchUnfinishedOperations = async (
@@ -698,7 +708,7 @@ export const fetchUnfinishedOperations = async (
       "select[total]": "true",
       sort: "-createdAt",
       "where[and][0][createdBy][equals]": String(userId),
-      "where[and][1][status][not_equals]": "done",
+      "where[and][1][status][in]": "running,failed",
       "where[and][2][updatedAt][greater_than]": since,
     })}`,
     { credentials: "include", headers: { Accept: "application/json" }, method: "GET" }

@@ -5,6 +5,7 @@ import {
   fetchUnfinishedOperations,
   postDelete,
   postDuplicate,
+  postOperationAbandon,
   postOperationStep,
   postPublish,
   previewPublish,
@@ -46,7 +47,8 @@ describe("the operation requests", () => {
     const url = new URL(requests[0]?.url ?? "", "http://localhost");
     expect(url.pathname).toBe("/api/folder-operations");
     expect(url.searchParams.get("where[and][0][createdBy][equals]")).toBe("42");
-    expect(url.searchParams.get("where[and][1][status][not_equals]")).toBe("done");
+    // Neither a finished nor an abandoned one comes back.
+    expect(url.searchParams.get("where[and][1][status][in]")).toBe("running,failed");
     expect(url.searchParams.get("where[and][2][updatedAt][greater_than]")).toBe(
       "2026-10-31T12:00:00.000Z"
     );
@@ -128,6 +130,22 @@ describe("the operation requests", () => {
     expect(requests[0]).toMatchObject({
       method: "POST",
       url: "/api/folders-tree/operations/12/step",
+    });
+  });
+
+  it("abandons an operation by its id and answers how far it got", async () => {
+    const { context, requests } = recorder(() =>
+      jsonResponse({ done: 400, status: "abandoned", total: 980 })
+    );
+
+    expect(await postOperationAbandon(context, 12)).toEqual({
+      done: 400,
+      status: "abandoned",
+      total: 980,
+    });
+    expect(requests[0]).toMatchObject({
+      method: "POST",
+      url: "/api/folders-tree/operations/12/abandon",
     });
   });
 

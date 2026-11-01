@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 
 import type { OperationProgress } from "../../core/operations.js";
 import type { FolderId, TreeItem } from "../../types.js";
-import { fetchUnfinishedOperations, postOperationStep } from "../api.js";
+import { fetchUnfinishedOperations, postOperationAbandon, postOperationStep } from "../api.js";
 import type {
   DeletePreview,
   DeleteResult,
@@ -24,7 +24,7 @@ import { PublishDialog, publishDialogSlug } from "./PublishDialog.js";
 import type { PublishRequestView } from "./PublishDialog.js";
 import { createOperationRunner } from "./operationRunner.js";
 import type { OperationRunner } from "./operationRunner.js";
-import { doneKeyOf, mergeResumed, withProgress } from "./operationLogic.js";
+import { doneKeyOf, mergeResumed, withProgress, withoutOperation } from "./operationLogic.js";
 import type { OperationView, PublishAction } from "./operationLogic.js";
 
 export type OperationsFlowOptions = {
@@ -115,10 +115,14 @@ export const useOperationsFlow = ({
     }
   };
 
+  const translateRef = useRef(translate);
+  translateRef.current = translate;
+
   const runnerRef = useRef<OperationRunner | null>(null);
   if (runnerRef.current === null) {
     runnerRef.current = createOperationRunner({
       isActive: () => isActive.current,
+      networkErrorMessage: () => translateRef.current("operationNetworkError"),
       onProgress: (id, progress) => onProgressRef.current?.(id, progress),
       step: (id) => postOperationStep(apiContextRef.current, id),
     });
@@ -195,6 +199,46 @@ export const useOperationsFlow = ({
     [runner, update]
   );
 
+  const abandon = useCallback(
+    async (id: FolderId) => {
+      const stopped = operationsRef.current.find(
+        (operation) => String(operation.id) === String(id)
+      );
+      if (stopped === undefined) {
+        return;
+      }
+      try {
+        const progress = await postOperationAbandon(apiContextRef.current, id);
+        if (progress.status !== "abandoned") {
+          // It finished while the editor was deciding: report it like any other answer.
+          onProgressRef.current?.(id, progress);
+
+          return;
+        }
+        afterDone.current.delete(String(id));
+        update((all) => withoutOperation(all, id));
+        if (String(shownId) === String(id)) {
+          closeModal(progressDialogSlug);
+        }
+        toast.success(
+          translate("operationStopped", { done: progress.done, total: progress.total })
+        );
+        // What the steps before the stop did is on the server.
+        void store.refetchVisible();
+        if (stopped.kind === "delete" || stopped.kind === "duplicate") {
+          onSettled();
+        }
+      } catch (error) {
+        toast.error(
+          error instanceof Error && error.message !== ""
+            ? error.message
+            : translate("operationStopFailed")
+        );
+      }
+    },
+    [closeModal, onSettled, shownId, store, translate, update]
+  );
+
   const show = useCallback(
     (id: FolderId) => {
       setShownId(id);
@@ -256,7 +300,7 @@ export const useOperationsFlow = ({
   );
 
   const finishDuplicate = useCallback(
-    (result: DuplicateResult, target: FolderChoice, rootCount: number) => {
+    (result: DuplicateResult, target: FolderChoice) => {
       closeModal(duplicateDialogSlug);
       const showCopies = () => {
         if (target.id !== null) {
@@ -278,7 +322,7 @@ export const useOperationsFlow = ({
 
         return;
       }
-      toast.success(translate("duplicateDone", { count: rootCount }));
+      toast.success(translate("duplicateDone", { count: result.copied }));
       showCopies();
       onSettled();
     },
@@ -309,12 +353,15 @@ export const useOperationsFlow = ({
   const isProgressOpen = isModalOpen(progressDialogSlug);
   const bannerOperations = operations.filter(
     (operation) =>
-      operation.status !== "done" && !(isProgressOpen && String(operation.id) === String(shownId))
+      operation.status !== "done" &&
+      operation.status !== "abandoned" &&
+      !(isProgressOpen && String(operation.id) === String(shownId))
   );
 
   return {
     banner: (
       <OperationBanner
+        onAbandon={abandon}
         onRetry={retry}
         onShow={show}
         operations={bannerOperations}
@@ -351,7 +398,12 @@ export const useOperationsFlow = ({
           translate={translate}
           typeLabels={typeLabels}
         />
-        <ProgressDialog onRetry={retry} operation={shown} translate={translate} />
+        <ProgressDialog
+          onAbandon={abandon}
+          onRetry={retry}
+          operation={shown}
+          translate={translate}
+        />
       </>
     ),
     startDelete,

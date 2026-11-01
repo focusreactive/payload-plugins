@@ -4,6 +4,8 @@ import type { FolderId } from "../../types.js";
 export type OperationRunnerOptions = {
   /** Whether stepping may go on: false once the page that owns the runner is gone. */
   isActive: () => boolean;
+  /** The translated text for a step that never reached the server. */
+  networkErrorMessage: () => string;
   /** Called with every answer, the last one of a run included. */
   onProgress: (id: FolderId, progress: OperationProgress) => void;
   /** Takes the next step of an operation; a thrown error (the network) counts as a failed step. */
@@ -22,8 +24,15 @@ export type OperationRunner = {
   run: (id: FolderId, known?: { done: number; total: number }) => Promise<void>;
 };
 
-const failureMessageOf = (error: unknown): string =>
-  error instanceof Error && error.message !== "" ? error.message : "The step failed";
+const failureMessageOf = (error: unknown, networkErrorMessage: () => string): string => {
+  // `fetch` rejects with a TypeError whose text is the browser's own ("Failed to fetch", "Load
+  // failed"), when the request never got an answer.
+  if (error instanceof TypeError) {
+    return networkErrorMessage();
+  }
+
+  return error instanceof Error && error.message !== "" ? error.message : "The step failed";
+};
 
 /**
  * The stepping loop of spec section 5.8, apart from React: a closed dialog does not stop it, a
@@ -32,6 +41,7 @@ const failureMessageOf = (error: unknown): string =>
  */
 export const createOperationRunner = ({
   isActive,
+  networkErrorMessage,
   onProgress,
   step,
 }: OperationRunnerOptions): OperationRunner => {
@@ -53,7 +63,7 @@ export const createOperationRunner = ({
         } catch (error) {
           progress = {
             done: lastDone,
-            error: failureMessageOf(error),
+            error: failureMessageOf(error, networkErrorMessage),
             status: "failed",
             total: lastTotal,
           };

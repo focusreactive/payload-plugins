@@ -15,6 +15,8 @@ import type { OperationView } from "./operationLogic.js";
 export const progressDialogSlug = "fr-folders-progress";
 
 export type ProgressDialogProps = {
+  /** Gives up on a failed operation. */
+  onAbandon: (id: FolderId) => void;
   /** Steps a failed operation again. */
   onRetry: (id: FolderId) => void;
   /** The operation shown; `null` while the dialog is closed. */
@@ -23,6 +25,7 @@ export type ProgressDialogProps = {
 };
 
 const ProgressContent = ({
+  onAbandon,
   onRetry,
   operation,
   translate,
@@ -76,6 +79,16 @@ const ProgressContent = ({
             {translate("retry")}
           </Button>
         ) : null}
+        {isFailed ? (
+          <Button
+            buttonStyle="secondary"
+            margin={false}
+            onClick={() => onAbandon(operation.id)}
+            size="medium"
+          >
+            {translate("operationStop")}
+          </Button>
+        ) : null}
         <DialogCancel label={translate(isDone ? "progressClose" : "progressCloseKeepGoing")} />
       </DialogFooter>
     </>
@@ -85,7 +98,7 @@ const ProgressContent = ({
 /**
  * The progress of a stepped operation (spec section 5.8): a bar and "400 of 980". Closing it does
  * not stop the work; the tree shows a banner that goes on stepping. A failed step shows its error
- * and a retry.
+ * and a retry, or a stop that gives the operation up.
  */
 export const ProgressDialog = ({ operation, ...rest }: ProgressDialogProps) => (
   <DialogModal className="fr-folders-dialog" size="small" slug={progressDialogSlug}>

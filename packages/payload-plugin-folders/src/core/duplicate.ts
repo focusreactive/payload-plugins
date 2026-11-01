@@ -96,7 +96,9 @@ export type DuplicatePlan = {
   units: DuplicateUnit[];
 };
 
-export type DuplicateResult = { created: ItemRef[] } | { operationId: FolderId; total: number };
+export type DuplicateResult =
+  /** `copied` is every document the copy made (a folder's content included); `created` is its roots. */
+  { copied: number; created: ItemRef[] } | { operationId: FolderId; total: number };
 
 const sourceFolderOf = (
   selection: Selection,
@@ -790,7 +792,10 @@ export const applyDuplicate = async (
   }
 
   // Created in reverse, so the first item selected ends on top; the answer follows the selection.
-  return { created: [...(outcome.state.created as ItemRef[])].reverse() };
+  return {
+    copied: outcome.state.copied as number,
+    created: [...(outcome.state.created as ItemRef[])].reverse(),
+  };
 };
 
 export type DuplicateItemsArgs = DuplicateRequest & {

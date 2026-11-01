@@ -12,6 +12,7 @@ import { createFolder } from "../helpers/treeFixtures.js";
 type ItemRef = { collection: string; id: number };
 
 type DuplicateBody = {
+  copied?: number;
   created?: ItemRef[];
   errors?: Array<{
     data?: { count?: number; items?: ItemRef[]; reason?: string };
@@ -248,6 +249,7 @@ describe("POST /folders-tree/duplicate", () => {
 
     expect(status).toBe(200);
     expect(body.created).toHaveLength(3);
+    expect(body.copied).toBe(3);
     const [firstCopy, secondCopy] = await Promise.all(
       (body.created ?? []).slice(0, 2).map((ref) => readPage(payload, ref.id))
     );
@@ -304,6 +306,9 @@ describe("POST /folders-tree/duplicate", () => {
     });
 
     expect(status).toBe(200);
+    // Every document of the copy counts, not only the one root: three folders and four pages.
+    expect(body.copied).toBe(7);
+    expect(body.created).toHaveLength(1);
     const copyId = body.created?.[0].id as number;
     const copy = await readFolder(payload, copyId);
     expect(copy).toMatchObject({

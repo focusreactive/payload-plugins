@@ -125,7 +125,8 @@ test("duplicating a folder copies its subtree as drafts", async ({ page, request
   await expect(copyButton).toBeEnabled();
   await copyButton.click();
 
-  await expect(page.getByText("Duplicated 1 item")).toBeVisible();
+  // The toast counts every copied document: two folders and two pages.
+  await expect(page.getByText("Duplicated 4 items")).toBeVisible();
   await expect(folderRow(page, "Copy Source (copy)")).toBeVisible();
 
   const copy = (await childrenOf(request, "root")).find(
@@ -287,5 +288,60 @@ test("a 2,000-page publish shows progress and resumes from the banner after clos
     );
   } finally {
     await deleteFolderWithContent(request, { confirmWord: "bulk-publish", folder: folderId });
+  }
+});
+
+test("a failed run can be stopped, and the stop says how far it got and clears the banner", async ({
+  page,
+  request,
+}) => {
+  test.setTimeout(300_000);
+  const folderId = await createFolder(request, { name: "Stop Probe", slug: "stop-probe" });
+  try {
+    await addDraftPages(request, folderId, 250);
+    // The first step reaches the server and publishes 200 pages; the second fails on the page's side.
+    let stepsSent = 0;
+    await page.route("**/api/folders-tree/operations/*/step", async (route) => {
+      stepsSent += 1;
+      if (stepsSent === 2) {
+        await route.fulfill({
+          body: JSON.stringify({ done: 200, error: "Out of luck", status: "failed", total: 250 }),
+          contentType: "application/json",
+          status: 200,
+        });
+
+        return;
+      }
+      await route.continue();
+    });
+    await openContentTree(page);
+    await rowCheckbox(page, "Stop Probe").check();
+    await toolbarButton(page, "Publish").click();
+    const dialog = dialogWith(page, "publish-dialog");
+    await dialog.getByRole("button", { exact: true, name: "Publish" }).click();
+
+    // The failure shows in the progress dialog with both ways out.
+    const progress = dialogWith(page, "progress-dialog");
+    await expect(progress.getByTestId("progress-failure")).toContainText("Out of luck");
+    await expect(progress.getByRole("button", { name: "Try again" })).toBeVisible();
+    await progress.getByRole("button", { name: "Stop" }).click();
+
+    await expect(page.getByText("Stopped after 200 of 250")).toBeVisible();
+    await expect(progress).toHaveCount(0);
+    await expect(page.getByTestId("operation-banner")).toHaveCount(0);
+    expect(
+      await countIn(request, { collection: "pages", folder: folderId, status: "published" })
+    ).toBe(200);
+
+    // A stopped run does not come back with the next load.
+    const resumeRead = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === "/api/folder-operations"
+    );
+    await page.reload();
+    expect((await resumeRead).ok()).toBe(true);
+    await expect(folderRow(page, "Stop Probe")).toBeVisible();
+    await expect(page.getByTestId("operation-banner")).toHaveCount(0);
+  } finally {
+    await deleteFolderWithContent(request, { confirmWord: "stop-probe", folder: folderId });
   }
 });

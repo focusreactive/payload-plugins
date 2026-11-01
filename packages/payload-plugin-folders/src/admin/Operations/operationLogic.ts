@@ -220,6 +220,12 @@ export const withProgress = (
       : operation
   );
 
+/** The operations of the page without one: a stopped operation leaves the banner. */
+export const withoutOperation = (
+  operations: readonly OperationView[],
+  id: FolderId
+): OperationView[] => operations.filter((operation) => String(operation.id) !== String(id));
+
 /**
  * What the unfinished operations a reload read add to what the page already tracks: an operation
  * started in this page keeps its own, newer progress.

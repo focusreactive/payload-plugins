@@ -11,6 +11,7 @@ const setup = (answers: Answer[], { isActive = () => true } = {}) => {
   const remaining = [...answers];
   const runner = createOperationRunner({
     isActive,
+    networkErrorMessage: () => "Could not reach the server. Try again.",
     onProgress: (id, progress) => seen.push({ id, progress }),
     step: async (id) => {
       calls.push(id);
@@ -59,15 +60,33 @@ describe("createOperationRunner", () => {
     expect(seen.at(-1)?.progress).toMatchObject({ done: 500, status: "done" });
   });
 
-  it("counts a thrown step (the network) as a failed one and reports where it stood", async () => {
-    const { runner, seen } = setup([new Error("network down")]);
+  it("counts a thrown step as a failed one and reports where it stood", async () => {
+    const { runner, seen } = setup([new Error("The step blew up")]);
 
     await runner.run(7, { done: 400, total: 980 });
 
     expect(seen).toEqual([
       {
         id: 7,
-        progress: { done: 400, error: "network down", status: "failed", total: 980 },
+        progress: { done: 400, error: "The step blew up", status: "failed", total: 980 },
+      },
+    ]);
+  });
+
+  it("says the server could not be reached, not the browser's own words, when a request never got an answer", async () => {
+    const { runner, seen } = setup([new TypeError("Failed to fetch")]);
+
+    await runner.run(7, { done: 400, total: 980 });
+
+    expect(seen).toEqual([
+      {
+        id: 7,
+        progress: {
+          done: 400,
+          error: "Could not reach the server. Try again.",
+          status: "failed",
+          total: 980,
+        },
       },
     ]);
   });
@@ -99,6 +118,7 @@ describe("createOperationRunner", () => {
     const calls: number[] = [];
     const runner = createOperationRunner({
       isActive: () => active,
+      networkErrorMessage: () => "unreachable",
       onProgress: () => {
         // The page unmounts after the first answer.
         active = false;

@@ -9,6 +9,8 @@ import type { OperationView } from "./operationLogic.js";
 export type OperationBannerProps = {
   /** Opens the progress dialog of an operation. */
   onShow: (id: FolderId) => void;
+  /** Gives up on a failed operation. */
+  onAbandon: (id: FolderId) => void;
   /** Steps a failed operation again. */
   onRetry: (id: FolderId) => void;
   /** The operations that are not done and are not shown in the progress dialog. */
@@ -22,6 +24,7 @@ export type OperationBannerProps = {
  * the operation's record.
  */
 export const OperationBanner = ({
+  onAbandon,
   onRetry,
   onShow,
   operations,
@@ -72,6 +75,16 @@ export const OperationBanner = ({
                 size="medium"
               >
                 {translate("retry")}
+              </Button>
+            ) : null}
+            {isFailed ? (
+              <Button
+                buttonStyle="secondary"
+                margin={false}
+                onClick={() => onAbandon(operation.id)}
+                size="medium"
+              >
+                {translate("operationStop")}
               </Button>
             ) : null}
             <Button

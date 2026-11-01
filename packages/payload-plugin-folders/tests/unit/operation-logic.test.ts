@@ -16,6 +16,7 @@ import {
   refusedCountOf,
   rootsOf,
   titleKeyOf,
+  withoutOperation,
   withProgress,
 } from "../../src/admin/Operations/operationLogic.js";
 import type { OperationView } from "../../src/admin/Operations/operationLogic.js";
@@ -235,5 +236,22 @@ describe("operation views", () => {
       expect(titleKeyOf(kind)).toMatch(/^operationTitle/u);
       expect(doneKeyOf(kind)).toMatch(/^operationDone/u);
     }
+  });
+});
+
+describe("withoutOperation, what a stopped operation leaves behind", () => {
+  const operation = (id: number, status: OperationView["status"]): OperationView => ({
+    done: 200,
+    id,
+    kind: "publish",
+    status,
+    total: 500,
+  });
+
+  it("drops the stopped operation from the page and keeps the others, matching ids as text", () => {
+    const operations = [operation(3, "failed"), operation(4, "running")];
+
+    expect(withoutOperation(operations, "3")).toEqual([operation(4, "running")]);
+    expect(withoutOperation(operations, 9)).toEqual(operations);
   });
 });
