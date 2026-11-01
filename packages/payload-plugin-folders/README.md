@@ -475,7 +475,7 @@ the Local API, and through GraphQL where the table says so. `<id>` stands for a 
 | Need | REST |
 |---|---|
 | Page by URL `/aktuelles/beitrag` in `de` | `GET /api/pages?locale=de&where[folderPath][equals]=/aktuelles&where[isFolderRoot][not_equals]=true` plus the segment clause below |
-| Page at the top level, `/about` | `where[folder][exists]=false&where[pathSegment][equals]=about&where[isFolderRoot][not_equals]=true` |
+| Page at the top level, `/about` | `where[folder][exists]=false&where[pathSegment][equals]=about&where[isFolderRoot][not_equals]=true` plus the segment clause below in a non-default locale |
 | Root page of `/blog` | `where[folderPath][equals]=/blog&where[isFolderRoot][equals]=true` |
 | Site root page `/` | `where[folder][exists]=false&where[isFolderRoot][equals]=true` |
 | Published pages only | add `where[_status][equals]=published` on a collection with drafts |
