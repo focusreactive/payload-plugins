@@ -11,7 +11,9 @@ import { isRecord, parseBoolean, requireUser } from "./request.js";
  * counts, issues, fixable, conflicts, truncated }`.
  *
  * `?quick=1` reads the folder rows only (one query) and is for any signed-in user, which is the
- * tree view's drift banner: folders are public and the answer names nothing else. The full pass
+ * tree view's drift banner: folders are public and the answer names nothing else. It adds
+ * `canRepair`, whether the user passes `canRepairTree`, so the admin knows whether to show the
+ * Rebuild action. The full pass
  * lists pages, segments and ids that include drafts, so it needs repair rights (`canRepairTree`),
  * the same as `POST /repair`; others get 403.
  */
@@ -24,9 +26,15 @@ export const buildVerifyEndpoint = (options: ResolvedOptions): Endpoint => ({
       throw new Forbidden(req.t);
     }
 
-    return Response.json(await verifyTree(req.payload, { quick, req }), {
-      headers: { "Cache-Control": "private, no-store" },
-    });
+    const result = await verifyTree(req.payload, { quick, req });
+
+    // The quick answer is what the tree view reads on load, and it is the one place the admin can
+    // ask whether to offer "Rebuild full URLs": `access.repair` is a function of the host's, so the
+    // browser cannot evaluate it. The full pass already needs the right, so it adds nothing.
+    return Response.json(
+      quick ? { ...result, canRepair: await canRepairTree({ options, req }) } : result,
+      { headers: { "Cache-Control": "private, no-store" } }
+    );
   },
   method: "get",
   path: "/folders-tree/verify",

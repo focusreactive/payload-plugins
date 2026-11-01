@@ -989,14 +989,23 @@ describe("the endpoints", () => {
     const quickAsEditor = await call<VerifyResult>("/folders-tree/verify?quick=1", {
       user: editor,
     });
+    const quickAsAdmin = await call<VerifyResult & { canRepair?: boolean }>(
+      "/folders-tree/verify?quick=1"
+    );
     const fullAsEditor = await call("/folders-tree/verify", { user: editor });
-    const fullAsAdmin = await call<VerifyResult>("/folders-tree/verify");
+    const fullAsAdmin = await call<VerifyResult & { canRepair?: boolean }>("/folders-tree/verify");
     const quickAnonymous = await call("/folders-tree/verify?quick=1", { anonymous: true });
     const badFlag = await call("/folders-tree/verify?quick=maybe");
 
     expect(quickAsEditor.status).toBe(200);
     expect(quickAsEditor.body).toMatchObject({ ok: false, quick: true });
     expect(quickAsEditor.body.counts.folderPath).toBe(1);
+    // The admin learns from the quick answer whether to offer Rebuild full URLs: the dev app's
+    // `access.repair` is for the admin role only, so an editor passes every other rule and still
+    // gets false.
+    expect((quickAsEditor.body as { canRepair?: boolean }).canRepair).toBe(false);
+    expect(quickAsAdmin.body.canRepair).toBe(true);
+    expect(fullAsAdmin.body.canRepair).toBeUndefined();
     expect(fullAsEditor.status).toBe(403);
     expect(fullAsAdmin.status).toBe(200);
     expect(fullAsAdmin.body).toMatchObject({ fixable: 1, ok: false, quick: false });

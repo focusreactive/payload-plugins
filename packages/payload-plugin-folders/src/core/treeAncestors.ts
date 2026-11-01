@@ -2,11 +2,32 @@ import { NotFound } from "payload";
 import type { PayloadRequest } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
+import { toFolderRecord } from "./folderRecords.js";
 import { getResolvedOptions } from "./runtime.js";
-import type { FolderId, ItemRef, ResolvedOptions } from "../types.js";
-import { buildSources, readFolders, resolveViewLocale, sourceClauses } from "./treeItems.js";
+import type { FolderId, ItemRef, ResolvedOptions, TreeItem } from "../types.js";
+import {
+  buildSources,
+  buildTreeItems,
+  readFolderDocs,
+  readFolders,
+  resolveViewLocale,
+  sourceClauses,
+} from "./treeItems.js";
+import type { TreeRow } from "./treeItems.js";
 
 export type AncestorFolder = { fullPath: string; id: FolderId; name: string };
+
+export type AncestorsResult = {
+  folders: AncestorFolder[];
+  /**
+   * With `withItems`: the tree row of each of `folders`, in the same order, as `GET /children`
+   * would give it. The zoomed tree view needs a breadcrumb folder's depth, allowed types and
+   * access, which `folders` leaves out.
+   */
+  items?: TreeItem[];
+  /** With `withItems`, for a folder: the folder's own tree row. */
+  item?: TreeItem;
+};
 
 /** Ids come out of the slash-delimited `ancestorIds` as text; the folders' own id type is restored. */
 const idsOfAncestors = (ancestorIds: string | null, isNumeric: boolean): FolderId[] =>
@@ -23,9 +44,13 @@ const idsOfAncestors = (ancestorIds: string | null, isNumeric: boolean): FolderI
  */
 export const getAncestors = async (
   req: PayloadRequest,
-  { item, locale }: { item: ItemRef; locale?: string | null },
+  {
+    item,
+    locale,
+    withItems = false,
+  }: { item: ItemRef; locale?: string | null; withItems?: boolean },
   options: ResolvedOptions = getResolvedOptions(req.payload)
-): Promise<{ folders: AncestorFolder[] }> => {
+): Promise<AncestorsResult> => {
   const sources = await buildSources(req, options);
   const [folderSource] = sources;
   const itemSource = sources.find((source) => source.collection === item.collection);
@@ -36,7 +61,10 @@ export const getAncestors = async (
     collection: toCollectionSlug(item.collection),
     locale: "all",
     req,
-    select: itemSource.kind === "folder" ? { ancestorIds: true } : { folder: true },
+    // The tree row of a folder is built from the whole row.
+    ...(withItems && itemSource.kind === "folder"
+      ? {}
+      : { select: itemSource.kind === "folder" ? { ancestorIds: true } : { folder: true } }),
     where: { and: [{ id: { equals: item.id } }, ...sourceClauses(req, itemSource)] },
   })) as Record<string, unknown> | null;
   if (!row) {
@@ -63,27 +91,39 @@ export const getAncestors = async (
     chain = parent ? [...idsOfAncestors(parent.ancestorIds, isNumeric), parent.id] : [];
   }
 
-  const records = await readFolders({ ids: chain, req, source: folderSource });
+  const docs = await readFolderDocs({ ids: chain, req, source: folderSource });
   const view = resolveViewLocale(req, options, locale);
+  // A folder in the chain that the user cannot read is left out.
+  const readableChain = chain.filter((id) => docs.has(String(id)));
 
-  return {
-    folders: chain.flatMap((id) => {
-      const folder = records.get(String(id));
-      if (!folder) {
-        return [];
-      }
+  const folders = readableChain.map((id) => {
+    const folder = toFolderRecord(docs.get(String(id)) as Record<string, unknown>);
 
-      return [
-        {
-          fullPath: folder.fullPath[view.folderKey] || folder.fullPath[view.defaultFolderKey] || "",
-          id: folder.id,
-          name:
-            folder.name[view.folderKey] ||
-            folder.name[view.defaultFolderKey] ||
-            folder.slug[view.defaultFolderKey] ||
-            "",
-        },
-      ];
-    }),
-  };
+    return {
+      fullPath: folder.fullPath[view.folderKey] || folder.fullPath[view.defaultFolderKey] || "",
+      id: folder.id,
+      name:
+        folder.name[view.folderKey] ||
+        folder.name[view.defaultFolderKey] ||
+        folder.slug[view.defaultFolderKey] ||
+        "",
+    };
+  });
+  if (!withItems) {
+    return { folders };
+  }
+
+  const rows: TreeRow[] = readableChain.map((id) => ({
+    doc: docs.get(String(id)) as Record<string, unknown>,
+    source: folderSource,
+  }));
+  const isFolderItem = itemSource.kind === "folder";
+  if (isFolderItem) {
+    rows.push({ doc: row, source: folderSource });
+  }
+  const built = await buildTreeItems({ options, parents: new Map(), req, rows, sources, view });
+
+  return isFolderItem
+    ? { folders, item: built.at(-1), items: built.slice(0, -1) }
+    : { folders, items: built };
 };

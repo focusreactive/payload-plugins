@@ -933,6 +933,71 @@ describe("GET /folders-tree/ancestors", () => {
     });
     expect(missing.status).toBe(404);
   });
+
+  it("with withItems it also answers the tree rows of the chain and of the folder itself", async () => {
+    const { payload } = harness;
+    const tree = await seedSearchTree(payload);
+
+    const folder = await callEndpoint<{
+      folders: Array<{ id: number }>;
+      item: TreeItem;
+      items: TreeItem[];
+    }>({
+      config: harness.config,
+      path: `/folders-tree/ancestors?collection=folders&id=${tree.year.id}&withItems=1`,
+      payload,
+      payloadInstanceCacheKey: harness.cacheKey,
+    });
+
+    expect(folder.status).toBe(200);
+    expect(folder.body.folders.map((entry) => entry.id)).toEqual([tree.blog.id]);
+    // The rows carry what a breadcrumb drop target needs: the depth, the path and the access.
+    expect(folder.body.items).toHaveLength(1);
+    expect(folder.body.items[0]).toMatchObject({
+      access: { update: true },
+      depth: 1,
+      fullPath: "/blog",
+      id: tree.blog.id,
+      kind: "folder",
+      title: "Blog",
+    });
+    expect(folder.body.item).toMatchObject({
+      depth: 2,
+      fullPath: "/blog/2026",
+      id: tree.year.id,
+      kind: "folder",
+      parentId: tree.blog.id,
+      title: "2026",
+    });
+    expect(folder.body.item.childCount).toBeGreaterThan(0);
+
+    // A page has no row of its own in this answer: only its folders.
+    const page = await callEndpoint<{ item?: TreeItem; items: TreeItem[] }>({
+      config: harness.config,
+      path: `/folders-tree/ancestors?collection=posts&id=${tree.newYear.id}&withItems=1`,
+      payload,
+      payloadInstanceCacheKey: harness.cacheKey,
+    });
+    expect(page.body.items.map((item) => item.id)).toEqual([tree.blog.id, tree.year.id]);
+    expect(page.body.item).toBeUndefined();
+
+    // Without the flag the answer is the old one.
+    const plain = await callEndpoint<Record<string, unknown>>({
+      config: harness.config,
+      path: `/folders-tree/ancestors?collection=folders&id=${tree.year.id}`,
+      payload,
+      payloadInstanceCacheKey: harness.cacheKey,
+    });
+    expect(Object.keys(plain.body)).toEqual(["folders"]);
+
+    const badFlag = await callEndpoint<unknown>({
+      config: harness.config,
+      path: `/folders-tree/ancestors?collection=folders&id=${tree.year.id}&withItems=maybe`,
+      payload,
+      payloadInstanceCacheKey: harness.cacheKey,
+    });
+    expect(badFlag.status).toBe(400);
+  });
 });
 
 describe("tree reads and read access", () => {

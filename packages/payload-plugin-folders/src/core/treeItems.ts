@@ -150,6 +150,34 @@ const ownSegmentOf = (segments: unknown, key: string): string =>
 
 export const toFolderId = (value: unknown): FolderId | null => normalizeFolderReference(value).id;
 
+/** Reads folder rows by id, with every locale, subject to the user's read access. */
+export const readFolderDocs = async ({
+  ids,
+  req,
+  source,
+}: {
+  ids: FolderId[];
+  req: PayloadRequest;
+  source: TreeSource;
+}): Promise<Map<string, Record<string, unknown>>> => {
+  const docsById = new Map<string, Record<string, unknown>>();
+  if (ids.length === 0 || !source.scope.isAllowed) {
+    return docsById;
+  }
+  const { docs } = await req.payload.db.find({
+    collection: toCollectionSlug(source.collection),
+    locale: "all",
+    pagination: false,
+    req,
+    where: { and: [{ id: { in: ids } }, ...sourceClauses(req, source)] },
+  });
+  for (const doc of docs as Array<Record<string, unknown>>) {
+    docsById.set(String(doc.id), doc);
+  }
+
+  return docsById;
+};
+
 /** Reads folders by id, with every locale, subject to the user's read access. */
 export const readFolders = async ({
   ids,
@@ -161,17 +189,7 @@ export const readFolders = async ({
   source: TreeSource;
 }): Promise<Map<string, FolderRecord>> => {
   const records = new Map<string, FolderRecord>();
-  if (ids.length === 0 || !source.scope.isAllowed) {
-    return records;
-  }
-  const { docs } = await req.payload.db.find({
-    collection: toCollectionSlug(source.collection),
-    locale: "all",
-    pagination: false,
-    req,
-    where: { and: [{ id: { in: ids } }, ...sourceClauses(req, source)] },
-  });
-  for (const doc of docs as Array<Record<string, unknown>>) {
+  for (const doc of (await readFolderDocs({ ids, req, source })).values()) {
     const record = toFolderRecord(doc);
     records.set(String(record.id), record);
   }

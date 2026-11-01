@@ -3,6 +3,8 @@ import type { DeletePreview, DeleteResult } from "../core/deleteItems.js";
 import type { DuplicateResult } from "../core/duplicate.js";
 import type { ExpectedState, MoveAnchor, MovePreview } from "../core/move.js";
 import type { OperationKind, OperationProgress } from "../core/operations.js";
+import type { RepairResult } from "../core/repair.js";
+import type { VerifyResult } from "../core/verify.js";
 import type { PublishAction, PublishPreview, PublishResult } from "../core/publish.js";
 import { isPageChangedMessage, rootPreconditionParameter } from "../core/rootPrecondition.js";
 import type { FolderId, ItemRef, TreeItem, TreeStatus } from "../types.js";
@@ -30,7 +32,11 @@ export type SearchResponse = {
 
 export type AncestorFolder = { fullPath: string; id: FolderId; name: string };
 
-export type AncestorsResponse = { folders: AncestorFolder[] };
+/**
+ * `items` and `item` come with `withItems`: the tree rows of `folders` in the same order, and a
+ * folder's own row.
+ */
+export type AncestorsResponse = { folders: AncestorFolder[]; item?: TreeItem; items?: TreeItem[] };
 
 export type RevisionResponse = { revision: number };
 
@@ -226,18 +232,28 @@ export const fetchSearch = (
     signal
   );
 
-export type AncestorsQuery = { item: ItemRef; locale?: string | null };
+export type AncestorsQuery = {
+  item: ItemRef;
+  locale?: string | null;
+  /** Also answer the tree rows of the folders and of the item itself, for the zoomed view. */
+  withItems?: boolean;
+};
 
 /** The folders above an item, the top one first. */
 export const fetchAncestors = (
   context: FoldersApiContext,
-  { item, locale }: AncestorsQuery,
+  { item, locale, withItems }: AncestorsQuery,
   signal?: AbortSignal
 ): Promise<AncestorsResponse> =>
   getJson<AncestorsResponse>(
     context,
     "ancestors",
-    { collection: item.collection, id: String(item.id), locale },
+    {
+      collection: item.collection,
+      id: String(item.id),
+      locale,
+      withItems: withItems ? 1 : undefined,
+    },
     signal
   );
 
@@ -733,3 +749,21 @@ export const fetchUnfinishedOperations = async (
     total: doc.total ?? 0,
   }));
 };
+
+/** The quick verify answer: the verify result of the folder rows, and whether the user may repair. */
+export type QuickVerifyResponse = VerifyResult & { canRepair: boolean };
+
+/** One query of the folder rows: does any folder's path, ancestry or depth disagree with its parent chain. */
+export const fetchQuickVerify = (
+  context: FoldersApiContext,
+  signal?: AbortSignal
+): Promise<QuickVerifyResponse> =>
+  getJson<QuickVerifyResponse>(context, "verify", { quick: 1 }, signal);
+
+/** Rebuilds the full URLs; with `dryRun` it only reports what it would fix and what it leaves. */
+export const postRepair = (
+  context: FoldersApiContext,
+  { dryRun }: { dryRun: boolean },
+  signal?: AbortSignal
+): Promise<RepairResult> =>
+  postJson<RepairResult>(context, "repair", dryRun ? { dryRun } : {}, signal);
