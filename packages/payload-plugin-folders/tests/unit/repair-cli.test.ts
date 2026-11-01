@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { formatRepairReport, parseRepairArguments } from "../../src/bin/repairReport.js";
 import type { RepairResult } from "../../src/core/repair.js";
 import { listIssues } from "../../src/core/treeIssues.js";
+import type { VerifyResult } from "../../src/core/verify.js";
 
 describe("the repair script's flags", () => {
   it("reads --dry-run and --no-redirects after the separator", () => {
@@ -38,6 +39,7 @@ describe("the repair report", () => {
     ]),
     dryRun: true,
     fixed: listIssues([]),
+    isLarge: false,
     revision: null,
     writes: {
       folders: 1,
@@ -83,5 +85,67 @@ describe("the repair report", () => {
     expect(report).not.toContain("redirect 5");
     expect(report).toContain("  - 2 more of kind danglingRedirect");
     expect(report).toContain("Rows written:");
+  });
+
+  describe("the verify pass after a real repair", () => {
+    const verified = (overrides: Partial<VerifyResult> = {}): VerifyResult => {
+      const issues = overrides.issues ?? [];
+
+      return {
+        conflicts: 0,
+        counts: listIssues(issues).counts,
+        fixable: 0,
+        issues,
+        ok: issues.length === 0,
+        quick: false,
+        truncated: false,
+        ...overrides,
+      };
+    };
+
+    it("says clean when nothing is left", () => {
+      const report = formatRepairReport(result({ dryRun: false }), verified());
+
+      expect(report.split("\n").at(-1)).toBe("Verify: clean");
+      expect(report).not.toContain("Warning");
+    });
+
+    it("lists what is left and warns when a problem repair fixes is still there", () => {
+      const left = [
+        {
+          fixable: true as const,
+          fromPath: "/gone",
+          id: 1,
+          kind: "danglingRedirect" as const,
+          locale: null,
+          message: "The redirect from /gone points at nothing",
+          target: null,
+        },
+      ];
+      const report = formatRepairReport(
+        result({ dryRun: false }),
+        verified({ fixable: 1, issues: left })
+      );
+
+      expect(report).toContain("Verify after repair, left: 1");
+      expect(report).toContain("  - The redirect from /gone points at nothing");
+      expect(report).toContain("Warning: 1 fixable problem is still there after the repair");
+    });
+
+    it("lists conflicts without a warning, since repair leaves those for a person", () => {
+      const conflicts = result().conflicts;
+      const report = formatRepairReport(
+        result({ dryRun: false }),
+        verified({ conflicts: 1, counts: conflicts.counts, issues: conflicts.issues })
+      );
+
+      expect(report).toContain("Verify after repair, left: 1");
+      expect(report).toContain("  - 2 items claim /contact in en");
+      expect(report).not.toContain("Warning");
+    });
+
+    it("leaves a dry run alone: nothing was written to check", () => {
+      expect(formatRepairReport(result(), verified())).not.toContain("Verify");
+    });
   });
 });

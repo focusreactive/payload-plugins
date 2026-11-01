@@ -41,7 +41,8 @@ export type IssueItem = ItemRef & { kind?: "folder" | "page"; title?: string | n
 export type TreeIssue =
   | {
       kind: "folderPath";
-      fixable: true;
+      /** False when repair holds the folder back: the path it would take belongs to another item. */
+      fixable: boolean;
       message: string;
       /** The folder. */
       item: IssueItem;

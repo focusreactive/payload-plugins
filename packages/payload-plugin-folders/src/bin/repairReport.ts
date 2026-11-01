@@ -1,5 +1,6 @@
 import type { RepairResult } from "../core/repair.js";
 import type { IssueList } from "../core/treeIssues.js";
+import type { VerifyResult } from "../core/verify.js";
 
 export type RepairArguments = {
   dryRun: boolean;
@@ -57,7 +58,35 @@ const describeList = (heading: string, list: IssueList): string[] => {
   return lines;
 };
 
-export const formatRepairReport = (result: RepairResult): string => {
+/**
+ * What a verify pass found after a real repair, as the last lines of the report. "Rows written"
+ * counts the writes issued, not the ones that stuck: an adapter that swallows the commit leaves the
+ * database as it was, and only a second read shows it. A fixable problem still there after the
+ * repair is that sign, so it gets a warning of its own; conflicts are what the repair leaves for a
+ * person and are expected.
+ */
+const describeVerifyAfter = (verified: VerifyResult): string[] => {
+  const list: IssueList = {
+    counts: verified.counts,
+    issues: verified.issues,
+    total: verified.fixable + verified.conflicts,
+    truncated: verified.truncated,
+  };
+  if (list.total === 0) {
+    return ["Verify: clean"];
+  }
+
+  return [
+    ...describeList("Verify after repair, left", list),
+    ...(verified.fixable > 0
+      ? [
+          `Warning: ${verified.fixable} fixable ${verified.fixable === 1 ? "problem is" : "problems are"} still there after the repair, so the writes above may not have been committed. Check the database adapter's transaction settings and run the repair again.`,
+        ]
+      : []),
+  ];
+};
+
+export const formatRepairReport = (result: RepairResult, verifiedAfter?: VerifyResult): string => {
   const { writes } = result;
 
   return [
@@ -66,5 +95,6 @@ export const formatRepairReport = (result: RepairResult): string => {
     ...describeList("Conflicts left for you", result.conflicts),
     `URL changes: ${result.changes.total}`,
     `${result.dryRun ? "Rows to write" : "Rows written"}: folders ${writes.folders}, pages ${writes.pages}, order keys ${writes.orderKeys}, latest versions ${writes.versions}, redirect rows ${writes.redirectsWritten}, redirect rows deleted ${writes.redirectsDeleted}`,
+    ...(verifiedAfter && !result.dryRun ? describeVerifyAfter(verifiedAfter) : []),
   ].join("\n");
 };

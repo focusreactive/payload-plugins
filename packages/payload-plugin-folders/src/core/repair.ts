@@ -4,10 +4,12 @@ import type { CreatePayloadRequestArgs, Payload, PayloadRequest } from "payload"
 import { toCollectionSlug } from "../collectionSlug.js";
 import { folderRedirectsSlug } from "../constants.js";
 import { composeFullPath } from "../hooks/pages/fullPathAfterRead.js";
-import type { FolderId, ItemRef, PathChange, ResolvedOptions } from "../types.js";
+import type { FolderId, PathChange, ResolvedOptions } from "../types.js";
 import { queueAfterPathChange } from "./afterPathChange.js";
+import { withItemTitles } from "./issueTitles.js";
 import { getDefaultLocaleKey, getFolderLocaleKeys, noLocaleKey } from "./locales.js";
 import { writeKeyRewrites } from "./orderKeys.js";
+import { pathClaimKey } from "./selectFolderWrites.js";
 import {
   planFolderPrefixRows,
   planPageRedirectRows,
@@ -44,147 +46,6 @@ type RepairWrites = {
   /** Redirect rows written or updated. */
   redirectsWritten: number;
   versions: number;
-};
-
-type BlockedFolder = {
-  /** The item that holds the path this folder would take; `null` when its parent is held back. */
-  collision: ItemRef | null;
-  key: string;
-  path: string;
-};
-
-type FolderWriteSelection = {
-  /** Folders to write, parents before children. */
-  writes: PlannedFolder[];
-  /** Folders left as they are because a path they would take belongs to another folder or a live page. */
-  blocked: Map<string, BlockedFolder>;
-};
-
-const pathClaimKey = (key: string, path: string): string => `${key}\u0000${path}`;
-
-const parentKeyOf = (parent: FolderId | null): string => (parent === null ? "" : `/${parent}`);
-
-/** Live pages by the URL they hold: locale, parent folder and lowercase segment, as the duplicate check reads them. */
-const pageClaimKey = (key: string, parent: FolderId | null, segment: string): string =>
-  `${key}\u0000${parentKeyOf(parent)}\u0000${segment.toLowerCase()}`;
-
-const readPageClaims = (
-  pages: PageFact[],
-  keys: string[],
-  defaultLocale: string
-): Map<string, ItemRef> => {
-  const claims = new Map<string, ItemRef>();
-  for (const fact of pages) {
-    if (fact.isFolderRoot) {
-      continue;
-    }
-    for (const key of keys.filter((candidate) => fact.liveKeys.includes(candidate))) {
-      const segment = effectiveSegmentOf(fact.ownSlug, key, defaultLocale);
-      if (segment !== "") {
-        claims.set(pageClaimKey(key, fact.folder, segment), {
-          collection: fact.collection,
-          id: fact.id,
-        });
-      }
-    }
-  }
-
-  return claims;
-};
-
-/**
- * Picks the folder rows to write. A folder whose planned path in some locale is the stored or
- * planned path of another folder, or the URL of a live page, stays as it is (`fullPath` is unique
- * per locale, so a folder clash would fail the write and take the whole repair with it, and a page
- * clash would put the folder on a URL the page is reached by), and so does everything beneath it,
- * which was planned from that path. Such a clash is a conflict a person settles.
- */
-const selectFolderWrites = ({
-  folders,
-  foldersSlug,
-  keys,
-  pageClaims,
-}: {
-  folders: Map<string, PlannedFolder>;
-  foldersSlug: string;
-  keys: string[];
-  pageClaims: Map<string, ItemRef>;
-}): FolderWriteSelection => {
-  const all = [...folders.values()];
-  const blocked = new Map<string, BlockedFolder>();
-  const isWritten = (folder: PlannedFolder): boolean =>
-    folder.isDrifted &&
-    !folder.isTrashed &&
-    folder.plan !== null &&
-    !blocked.has(String(folder.record.id));
-
-  for (let changed = true; changed; ) {
-    changed = false;
-    const claims = new Map<string, PlannedFolder[]>();
-    for (const folder of all) {
-      for (const key of keys) {
-        const path = isWritten(folder) ? folder.plan?.fullPath[key] : folder.record.fullPath[key];
-        if (path) {
-          const holders = claims.get(pathClaimKey(key, path)) ?? [];
-          holders.push(folder);
-          claims.set(pathClaimKey(key, path), holders);
-        }
-      }
-    }
-    for (const folder of all) {
-      const id = String(folder.record.id);
-      if (!isWritten(folder)) {
-        continue;
-      }
-      const folderClash = keys
-        .map((key) => ({ key, path: folder.plan?.fullPath[key] ?? "" }))
-        .find(({ key, path }) =>
-          (claims.get(pathClaimKey(key, path)) ?? []).some((other) => other !== folder)
-        );
-      // Only a path that changes can take a page's URL: a folder already at a page's URL (a clash
-      // verify lists) is not made worse by a write that fixes its ancestry.
-      const pageClash = keys
-        .map((key) => ({
-          key,
-          page: pageClaims.get(
-            pageClaimKey(
-              key,
-              folder.expectedParent,
-              folder.plan?.segments[key] ?? folder.plan?.segments[noLocaleKey] ?? ""
-            )
-          ),
-          path: folder.plan?.fullPath[key] ?? "",
-        }))
-        .find(
-          ({ key, page, path }) =>
-            page !== undefined && path !== "" && path !== (folder.record.fullPath[key] ?? "")
-        );
-      const parentIsBlocked =
-        folder.expectedParent !== null && blocked.has(String(folder.expectedParent));
-      if (folderClash || pageClash || parentIsBlocked) {
-        const collisionFolder = folderClash
-          ? (claims
-              .get(pathClaimKey(folderClash.key, folderClash.path))
-              ?.find((other) => other !== folder) ?? null)
-          : null;
-        const clash = folderClash ?? pageClash;
-        blocked.set(id, {
-          collision: collisionFolder
-            ? { collection: foldersSlug, id: collisionFolder.record.id }
-            : (pageClash?.page ?? null),
-          key: clash?.key ?? "",
-          path: clash?.path ?? "",
-        });
-        changed = true;
-      }
-    }
-  }
-
-  // `folders` holds every folder after its parent (the analysis adds a folder once its parent is
-  // planned), and the filter keeps that order, which is the order the plans were made in.
-  const writes = all.filter((folder) => isWritten(folder));
-
-  return { blocked, writes };
 };
 
 /**
@@ -561,6 +422,12 @@ export type RepairResult = {
   dryRun: boolean;
   /** What repair fixed, or in a dry run would fix. */
   fixed: IssueList;
+  /**
+   * The rows written, or to be written, outnumber `limits.maxSyncDocuments`. The repair is one
+   * transaction under the tree lock, so every page save waits for it (up to the lock's timeout):
+   * a dialog warns before it, and a large site runs the script from a terminal instead.
+   */
+  isLarge: boolean;
   /** The value of `folders-tree-state.revision` after the repair; `null` for a dry run or no write. */
   revision: number | null;
   /** Rows written, or in a dry run to be written. */
@@ -596,21 +463,13 @@ const planRepair = (
   payload: Payload
 ): RepairPlan => {
   const { folders } = analysis.folderAnalysis;
-  const folderKeys = getFolderLocaleKeys(payload, options);
-  const { blocked, writes: folderWrites } = selectFolderWrites({
-    folders,
-    foldersSlug: options.folders.slug,
-    keys: folderKeys,
-    pageClaims: readPageClaims(analysis.pages, folderKeys, getPageDefaultLocale(payload)),
-  });
+  const { blocked, writes: folderWrites } = analysis.folderSelection;
   const planned = planPathChanges(
     analysis,
     options,
     payload,
     new Set(folderWrites.map((folder) => String(folder.record.id)))
   );
-  const isBlockedFolder = (issue: TreeIssue): boolean =>
-    issue.kind === "folderPath" && blocked.has(String(issue.item.id));
   const listedDuplicates = new Set(
     analysis.issues.flatMap((issue) =>
       issue.kind === "duplicatePath" ? [`${issue.locale ?? noLocaleKey}\u0000${issue.path}`] : []
@@ -643,47 +502,57 @@ const planRepair = (
   );
 
   return {
-    conflictIssues: [
-      ...analysis.issues.filter((issue) => !issue.fixable || isBlockedFolder(issue)),
-      ...blockIssues,
-    ],
-    fixedIssues: analysis.issues.filter((issue) => issue.fixable && !isBlockedFolder(issue)),
+    conflictIssues: [...analysis.issues.filter((issue) => !issue.fixable), ...blockIssues],
+    fixedIssues: analysis.issues.filter((issue) => issue.fixable),
     folderWrites,
     planned,
     redirectRows: planRedirectRows(planned),
   };
 };
 
-const toResult = ({
+const toResult = async ({
   analysis,
   dryRun,
   isWritingRows,
+  options,
   plan,
+  req,
   revision,
 }: {
   analysis: TreeAnalysis;
   dryRun: boolean;
   isWritingRows: boolean;
+  options: ResolvedOptions;
   plan: RepairPlan;
+  req: PayloadRequest;
   revision: number | null;
-}): RepairResult => ({
-  changes: {
-    samples: plan.planned.changes.slice(0, changeSampleLimit),
-    total: plan.planned.changes.length,
-  },
-  conflicts: listIssues(plan.conflictIssues),
-  dryRun,
-  fixed: listIssues(plan.fixedIssues),
-  revision,
-  writes: {
+}): Promise<RepairResult> => {
+  const conflicts = listIssues(plan.conflictIssues);
+  const fixed = listIssues(plan.fixedIssues);
+  const writes: RepairWrites = {
     folders: plan.folderWrites.length + analysis.folderAnalysis.parentFixes.length,
     orderKeys: analysis.keyRewrites.length,
     pages: analysis.pageWrites.length,
     redirectsDeleted: analysis.redirects.length,
     redirectsWritten: isWritingRows ? plan.redirectRows.length : 0,
     versions: analysis.staleVersions.length,
-  },
-});
+  };
+
+  return {
+    changes: {
+      samples: plan.planned.changes.slice(0, changeSampleLimit),
+      total: plan.planned.changes.length,
+    },
+    conflicts: { ...conflicts, issues: await withItemTitles(req, options, conflicts.issues) },
+    dryRun,
+    fixed: { ...fixed, issues: await withItemTitles(req, options, fixed.issues) },
+    isLarge:
+      Object.values(writes).reduce((sum, count) => sum + count, 0) >
+      options.limits.maxSyncDocuments,
+    revision,
+    writes,
+  };
+};
 
 /** The writes of a repair, in the order that keeps every intermediate state valid. */
 const applyRepair = async ({
@@ -800,7 +669,9 @@ export const repairTree = async (
       analysis,
       dryRun,
       isWritingRows,
+      options,
       plan: planRepair(analysis, options, payload),
+      req,
       revision: null,
     });
   }
@@ -816,7 +687,15 @@ export const repairTree = async (
       req,
     });
 
-    const result = toResult({ analysis, dryRun, isWritingRows, plan, revision: null });
+    const result = await toResult({
+      analysis,
+      dryRun,
+      isWritingRows,
+      options,
+      plan,
+      req,
+      revision: null,
+    });
     const hasWritten = Object.entries(result.writes).some(
       ([name, count]) => name !== "redirectsWritten" && count > 0
     );

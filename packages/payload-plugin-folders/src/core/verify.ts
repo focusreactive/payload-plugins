@@ -4,6 +4,9 @@ import type { CreatePayloadRequestArgs, Payload, PayloadRequest } from "payload"
 import { toCollectionSlug } from "../collectionSlug.js";
 import type { ResolvedOptions } from "../types.js";
 import { toFolderRecord } from "./folderRecords.js";
+import { readPageClaims, selectFolderWrites } from "./selectFolderWrites.js";
+import type { FolderWriteSelection } from "./selectFolderWrites.js";
+import { withItemTitles } from "./issueTitles.js";
 import { getDefaultLocaleKey, getFolderLocaleKeys, noLocaleKey } from "./locales.js";
 import { getResolvedOptions } from "./runtime.js";
 import { listIssues } from "./treeIssues.js";
@@ -40,6 +43,8 @@ export type PageWrite = {
 export type TreeAnalysis = {
   /** Folder rows with their planned paths; every folder, trashed ones included. */
   folderAnalysis: FolderAnalysis;
+  /** Which drifted folders repair writes and which it holds back; held ones are not `fixable` in `issues`. */
+  folderSelection: FolderWriteSelection;
   issues: TreeIssue[];
   keyRewrites: KeyRewrite[];
   /** Every live page's facts; empty for a quick pass. */
@@ -85,6 +90,7 @@ export const analyzeTree = async (
   const issues: TreeIssue[] = [...folderAnalysis.issues];
   const analysis: TreeAnalysis = {
     folderAnalysis,
+    folderSelection: { blocked: new Map(), writes: [] },
     issues,
     keyRewrites: [],
     pageWrites: [],
@@ -92,7 +98,27 @@ export const analyzeTree = async (
     redirects: [],
     staleVersions: [],
   };
+  // A folder repair holds back (its new path belongs to another item) is a conflict, so the quick
+  // answer the banner reads does not offer a rebuild that would leave it as it is.
+  const holdBackFolders = (pageClaims: Parameters<typeof selectFolderWrites>[0]["pageClaims"]) => {
+    analysis.folderSelection = selectFolderWrites({
+      folders: folderAnalysis.folders,
+      foldersSlug: options.folders.slug,
+      keys,
+      pageClaims,
+    });
+    for (const [index, issue] of issues.entries()) {
+      if (
+        issue.kind === "folderPath" &&
+        analysis.folderSelection.blocked.has(String(issue.item.id))
+      ) {
+        issues[index] = { ...issue, fixable: false };
+      }
+    }
+  };
   if (quick) {
+    holdBackFolders(new Map());
+
     return analysis;
   }
 
@@ -196,6 +222,8 @@ export const analyzeTree = async (
     });
   }
 
+  holdBackFolders(readPageClaims(facts, keys, defaultLocale));
+
   const treeStateIds = await readTreeStateRowIds(payload, req);
   if (treeStateIds.length > 1) {
     issues.push({
@@ -249,7 +277,8 @@ export const verifyTree = async (
   { quick = false, req: callerRequest, user }: VerifyTreeArgs = {}
 ): Promise<VerifyResult> => {
   const req = callerRequest ?? (await createPayloadRequest({ payload, req: {}, user }));
-  const { issues } = await analyzeTree(req, getResolvedOptions(payload), { quick });
+  const options = getResolvedOptions(payload);
+  const { issues } = await analyzeTree(req, options, { quick });
   const listed = listIssues(issues);
   const fixable = issues.filter((issue) => issue.fixable).length;
 
@@ -257,7 +286,8 @@ export const verifyTree = async (
     conflicts: issues.length - fixable,
     counts: listed.counts,
     fixable,
-    issues: listed.issues,
+    // A quick answer names no items, so it reads no titles: it runs on every tree view load.
+    issues: quick ? listed.issues : await withItemTitles(req, options, listed.issues),
     ok: issues.length === 0,
     quick,
     truncated: listed.truncated,

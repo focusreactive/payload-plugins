@@ -3,7 +3,7 @@
 // `--dry-run` lists what would change and writes nothing; `--no-redirects` writes no redirect rows.
 // It imports the plugin through its package name, so it shares the Payload instance's plugin state
 // (options, tree lock) with the config the CLI loads; a relative import would load a second copy.
-import { repairTree } from "@focus-reactive/payload-plugin-folders/server";
+import { repairTree, verifyTree } from "@focus-reactive/payload-plugin-folders/server";
 import { getPayload } from "payload";
 import { findConfig } from "payload/node";
 import { pathToFileURL } from "node:url";
@@ -21,7 +21,8 @@ try {
       dryRun: parsed.dryRun,
       redirects: parsed.redirects,
     });
-    console.log(formatRepairReport(result));
+    // A second read, outside the repair's transaction: the report says what is in the database now.
+    console.log(formatRepairReport(result, parsed.dryRun ? undefined : await verifyTree(payload)));
   } finally {
     await payload.destroy();
   }

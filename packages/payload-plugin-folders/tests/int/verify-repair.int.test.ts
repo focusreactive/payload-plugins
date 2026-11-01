@@ -375,7 +375,7 @@ describe("installing on existing content", () => {
 
     const verified = await verifyTree(payload);
     const [segmentIssue] = issuesOfKind(verified, "pageSegment");
-    expect(segmentIssue.item).toEqual({ collection: "pages", id: legacy.id });
+    expect(segmentIssue.item).toMatchObject({ collection: "pages", id: legacy.id });
     expect(segmentIssue.segments).toHaveLength(2);
     expect(segmentIssue.segments).toEqual(
       expect.arrayContaining([
@@ -491,8 +491,8 @@ describe("conflicts", () => {
         count: 2,
         folder: docs.id,
         items: [
-          { collection: "posts", id: first.id },
-          { collection: "posts", id: second.id },
+          expect.objectContaining({ collection: "posts", id: first.id }),
+          expect.objectContaining({ collection: "posts", id: second.id }),
         ],
       }),
     ]);
@@ -584,7 +584,7 @@ describe("versions, cycles and folder rows", () => {
       expect.objectContaining({
         fields: ["folder", "orderKey", "structureRevision"],
         fixable: true,
-        item: { collection: "pages", id: page.id },
+        item: expect.objectContaining({ collection: "pages", id: page.id }),
       }),
     ]);
     expect(verified.conflicts).toBe(0);
@@ -631,7 +631,7 @@ describe("versions, cycles and folder rows", () => {
       expect.objectContaining({
         fixable: true,
         folders: [first.id, second.id, third.id],
-        item: { collection: "folders", id: first.id },
+        item: expect.objectContaining({ collection: "folders", id: first.id }),
       }),
     ]);
     expect(kindsOf(await verifyTree(payload, { quick: true }))).toEqual(
@@ -677,7 +677,7 @@ describe("versions, cycles and folder rows", () => {
       expect(issuesOfKind(verified, "folderParentMissing")).toEqual([
         expect.objectContaining({
           fixable: true,
-          item: { collection: "folders", id: orphan.id },
+          item: expect.objectContaining({ collection: "folders", id: orphan.id }),
           parent: 987_654,
         }),
       ]);
@@ -884,12 +884,13 @@ describe("order keys, redirects and the tree lock", () => {
     const docs = await createFolder(payload, { slug: "docs" });
     await rewriteFolderRow(docs.id, { fullPath: { de: "/wrong", en: "/wrong" } });
     const adapter = payload.db as unknown as {
-      find: (args: { collection: string }) => Promise<unknown>;
+      find: (args: { collection: string; select?: unknown }) => Promise<unknown>;
     };
     const originalFind = adapter.find;
     const lockHeldAtFolderRead: boolean[] = [];
     adapter.find = function find(this: unknown, args) {
-      if (args.collection === "folders") {
+      // The whole-row read of the analysis; the title reads of a result carry a `select`.
+      if (args.collection === "folders" && args.select === undefined) {
         lockHeldAtFolderRead.push(isTreeLockHeld(payload));
       }
 
@@ -1006,6 +1007,11 @@ describe("the endpoints", () => {
     // gets false.
     expect((quickAsEditor.body as { canRepair?: boolean }).canRepair).toBe(false);
     expect(quickAsAdmin.body.canRepair).toBe(true);
+    // The issue list names folder ids and paths, so only a user who can repair gets it; the banner
+    // needs the counts.
+    expect(quickAsEditor.body).toMatchObject({ conflicts: 0, fixable: 1 });
+    expect("issues" in quickAsEditor.body).toBe(false);
+    expect(quickAsAdmin.body.issues).toHaveLength(1);
     expect(fullAsAdmin.body.canRepair).toBeUndefined();
     expect(fullAsEditor.status).toBe(403);
     expect(fullAsAdmin.status).toBe(200);
@@ -1209,7 +1215,7 @@ describe("repair and pages in a duplicate-path clash", () => {
     expect(segmentIssues).toEqual([
       expect.objectContaining({
         fixable: false,
-        item: { collection: "posts", id: second.id },
+        item: expect.objectContaining({ collection: "posts", id: second.id }),
         segments: [{ expected: "dup-one", locale: null, stored: "dup-two" }],
       }),
     ]);
@@ -1273,7 +1279,9 @@ describe("what repair holds back and how it moves a folder", () => {
     expect(
       issuesOfKind(result.conflicts, "duplicatePath").find((issue) => issue.locale === "en")
     ).toMatchObject({
-      items: expect.arrayContaining([{ collection: "posts", id: page.id }]),
+      items: expect.arrayContaining([
+        expect.objectContaining({ collection: "posts", id: page.id }),
+      ]),
       path: "/wiki",
     });
     expect({
@@ -1346,7 +1354,7 @@ describe("what repair holds back and how it moves a folder", () => {
     expect(issuesOfKind(verified, "folderCycle")).toEqual([
       expect.objectContaining({
         fixable: false,
-        item: { collection: "folders", id: first.id },
+        item: expect.objectContaining({ collection: "folders", id: first.id }),
         reservedSegment: "admin",
       }),
     ]);
@@ -1378,6 +1386,101 @@ describe("what repair holds back and how it moves a folder", () => {
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.map((row) => row.kind)).toEqual(rows.map(() => "folderPrefix"));
     expect(rows.map((row) => row.fromPath)).toEqual(rows.map(() => "/wrong"));
+  });
+});
+
+describe("what the issues tell a dialog", () => {
+  it("a clash a rebuild would leave is a conflict in the quick answer too, so the banner stays away", async () => {
+    const { payload } = harness;
+    await createFolder(payload, { slug: "alpha" });
+    const beta = await createFolder(payload, { slug: "beta" });
+    await rewriteFolderRow(beta.id, { slug: { de: "alpha", en: "alpha" } });
+
+    const quick = await verifyTree(payload, { quick: true });
+
+    expect(quick.fixable).toBe(0);
+    expect(quick.conflicts).toBeGreaterThan(0);
+    expect(issuesOfKind(quick, "folderPath")).toEqual([
+      expect.objectContaining({ fixable: false, item: { collection: "folders", id: beta.id } }),
+    ]);
+    // A folder that drifted without a clash is still what the banner is for.
+    const gamma = await createFolder(payload, { slug: "gamma" });
+    await rewriteFolderRow(gamma.id, { fullPath: { de: "/wrong", en: "/wrong" } });
+    expect((await verifyTree(payload, { quick: true })).fixable).toBe(1);
+  });
+
+  it("the full pass names the folders and pages in what it lists, and a quick pass names none", async () => {
+    const { payload } = harness;
+    const alpha = await createFolder(payload, { name: "Alpha folder", slug: "alpha" });
+    const beta = await createFolder(payload, { name: "Beta folder", slug: "beta" });
+    await rewriteFolderRow(beta.id, { slug: { de: "alpha", en: "alpha" } });
+    const page = await createLegacyPage({
+      createdAt: "2025-03-01T00:00:00.000Z",
+      slug: "about-us",
+      title: "About us",
+    });
+
+    const verified = await verifyTree(payload);
+    const quick = await verifyTree(payload, { quick: true });
+
+    const duplicate = issuesOfKind(verified, "duplicatePath").find(
+      (issue) => issue.locale === "en"
+    );
+    expect(duplicate?.items).toEqual(
+      expect.arrayContaining([
+        { collection: "folders", id: alpha.id, kind: "folder", title: "Alpha folder" },
+        { collection: "folders", id: beta.id, kind: "folder", title: "Beta folder" },
+      ])
+    );
+    expect(issuesOfKind(verified, "pageSegment")[0].item).toEqual({
+      collection: "pages",
+      id: page.id,
+      kind: "page",
+      title: "About us",
+    });
+    expect(issuesOfKind(verified, "folderPath")[0].item).toMatchObject({ title: "Beta folder" });
+    expect(issuesOfKind(quick, "folderPath")[0].item).toEqual({
+      collection: "folders",
+      id: beta.id,
+    });
+    const dryRun = await repairTree(payload, { dryRun: true });
+    expect(issuesOfKind(dryRun.conflicts, "duplicatePath")[0].items[0]).toHaveProperty("title");
+    expect(issuesOfKind(dryRun.fixed, "pageSegment")[0].item).toMatchObject({ title: "About us" });
+  });
+});
+
+describe("a repair that outgrows the sync limit", () => {
+  it("is marked large when the rows it writes outnumber limits.maxSyncDocuments", async () => {
+    const small = await getTestPayload({ foldersOptions: { limits: { maxSyncDocuments: 2 } } });
+    try {
+      const { payload } = small;
+      for (const index of [1, 2, 3]) {
+        await payload.db.create({
+          collection: "posts",
+          data: {
+            createdAt: createdAtOf(index),
+            orderKey: null,
+            pathSegment: null,
+            slug: `legacy-${index}`,
+            title: `legacy-${index}`,
+            updatedAt: createdAtOf(index),
+          },
+        });
+      }
+
+      const large = await repairTree(payload, { dryRun: true });
+
+      // Three page rows and three order keys: more than the two the limit allows.
+      expect(large.writes).toMatchObject({ orderKeys: 3, pages: 3 });
+      expect(large.isLarge).toBe(true);
+    } finally {
+      await small.destroy();
+    }
+    // The default limit is 200 rows, which the harness's two rows stay under.
+    const { payload } = harness;
+    await createPost({ orderKey: null, pathSegment: null, slug: "one" });
+    await createPost({ orderKey: null, pathSegment: null, slug: "two" });
+    expect((await repairTree(payload, { dryRun: true })).isLarge).toBe(false);
   });
 });
 
