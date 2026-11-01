@@ -25,3 +25,27 @@ export const writeFolderPathDrift = async (folderId: number, fullPath: string): 
     client.close();
   }
 };
+
+/**
+ * Writes a folder's slug straight into the end-to-end database, in every locale, leaving its stored
+ * path alone: a folder that now belongs at another folder's path, which a rebuild holds back.
+ */
+export const writeFolderSlug = async (folderId: number, slug: string): Promise<void> => {
+  const databaseDirectory = process.env.FOLDERS_E2E_DATABASE_DIRECTORY;
+  if (!databaseDirectory) {
+    throw new Error("FOLDERS_E2E_DATABASE_DIRECTORY is not set: playwright.config.ts sets it");
+  }
+  const { createClient } = await import("@libsql/client");
+  const client = createClient({ url: `file:${path.join(databaseDirectory, "e2e.db")}` });
+  try {
+    const result = await client.execute({
+      args: [slug, folderId],
+      sql: "UPDATE folders_locales SET slug = ? WHERE _parent_id = ?",
+    });
+    if (result.rowsAffected === 0) {
+      throw new Error(`Folder ${folderId} has no locale rows to put a slug into`);
+    }
+  } finally {
+    client.close();
+  }
+};

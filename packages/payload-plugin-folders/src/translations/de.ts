@@ -222,6 +222,61 @@ export const de: FoldersTranslations = {
     repairDoneWithConflicts_other:
       "Vollständige URLs neu erstellt. {{count}} Probleme bleiben für Sie übrig.",
     repairFailed: "Das Neuerstellen der URLs ist fehlgeschlagen",
+    repairDriftHolds: "{{locale}}: hat {{stored}}, sollte {{expected}} sein",
+    repairDriftHoldsPlain: "hat {{stored}}, sollte {{expected}} sein",
+    repairFieldFolder: "Ordner",
+    repairFieldOrderKey: "Position",
+    repairFieldRevision: "Revision",
+    repairIssueDanglingRedirect:
+      "Die Weiterleitung von {{path}} zeigt auf etwas, das nicht mehr existiert",
+    repairIssueDuplicate: "{{count}} Einträge beanspruchen {{path}}: {{items}}",
+    repairIssueFolderCycle:
+      "{{count}} Ordner sind gegenseitig ihre übergeordneten Ordner. {{item}} wird auf die oberste Ebene verschoben.",
+    repairIssueFolderCycleReserved:
+      "{{count}} Ordner sind gegenseitig ihre übergeordneten Ordner. {{item}} kann nicht auf die oberste Ebene verschoben werden, weil /{{segment}} von der Website selbst verwendet wird.",
+    repairIssueFolderParentMissing:
+      "{{item}} liegt in einem Ordner, den es nicht mehr gibt, und wird auf die oberste Ebene verschoben.",
+    repairIssueFolderParentMissingReserved:
+      "{{item}} liegt in einem Ordner, den es nicht mehr gibt. Er kann nicht auf die oberste Ebene verschoben werden, weil /{{segment}} von der Website selbst verwendet wird.",
+    repairIssueFolderPath: "{{item}} hat die falsche URL ({{drifts}})",
+    repairIssueFolderPathHeld:
+      "{{item}} würde eine URL bekommen, die schon ein anderer Eintrag hat ({{drifts}}), und bleibt deshalb unverändert",
+    repairIssueFolderSlugMissing:
+      "{{item}} hat in der Standardsprache keinen URL-Namen, daher haben er und alles darin keine URL.",
+    repairIssueFolderStale:
+      "{{item}} hat veraltete Angaben zur Ordnerhierarchie und bleibt bei {{path}}",
+    repairIssueInvalidSegment:
+      '{{item}} hat das Segment "{{segment}}", das ungültig ist, und das Neuerstellen kann kein anderes wählen.',
+    repairIssueInvalidSegmentFixed:
+      '{{item}} hat das Segment "{{segment}}", das ungültig ist. Es wird als "{{fixed}}" gespeichert.',
+    repairIssueOrderKeyEqual:
+      "{{count}} Einträge in {{place}} teilen sich eine Position mit einem anderen Eintrag",
+    repairIssueOrderKeyInvalid: "{{count}} Einträge in {{place}} haben eine unbrauchbare Position",
+    repairIssueOrderKeyMissing: "{{count}} Einträge in {{place}} haben keine Position",
+    repairIssuePageSegment:
+      "{{item}} hat kein gespeichertes URL-Segment, das zu seinem Slug passt ({{drifts}})",
+    repairIssuePageSegmentHeld:
+      "{{item}} hat ein gespeichertes URL-Segment, das von seinem Slug abweicht, und ein anderer Eintrag hat die URL, die es bekäme ({{drifts}}), daher bleibt es unverändert",
+    repairIssueRootPages: "{{count}} Seiten sind die Startseite von {{folder}}: {{items}}",
+    repairIssueStaleVersion:
+      "Der neueste Entwurf von {{item}} hat {{fields}}, die von der Seite abweichen",
+    repairIssueTreeStateRows:
+      "Die Baumsperre hat {{count}} Zeilen, braucht aber eine. Löschen Sie die überzähligen Zeilen von Hand.",
+    repairItemFolder: 'Ordner "{{title}}"',
+    repairItemFolderUntitled: "Ordner {{id}}",
+    repairItemPage: 'Seite "{{title}}"',
+    repairItemPageUntitled: "Seite {{id}}",
+    repairLocaleSuffix: " ({{locale}})",
+    repairNone: "keins",
+    repairPlaceFolder: 'Ordner "{{title}}"',
+    repairPlaceFolderUntitled: "Ordner {{id}}",
+    repairPlaceTopLevel: "der obersten Ebene",
+    repairSegmentDrift: "{{locale}}: gespeichert {{stored}}, Slug {{expected}}",
+    repairSegmentDriftPlain: "gespeichert {{stored}}, Slug {{expected}}",
+    repairWarnLarge_one:
+      "Dieses Neuerstellen schreibt {{count}} Zeile. Solange es läuft, wartet das Speichern von Seiten darauf. Führen Sie auf einer großen Website stattdessen `npm run repair` (oder `npx payload run dist/bin/repair.js`) im Terminal aus.",
+    repairWarnLarge_other:
+      "Dieses Neuerstellen schreibt {{count}} Zeilen. Solange es läuft, wartet das Speichern von Seiten darauf. Führen Sie auf einer großen Website stattdessen `npm run repair` (oder `npx payload run dist/bin/repair.js`) im Terminal aus.",
     repairFixedHeading_one: "{{count}} Problem wird behoben",
     repairFixedHeading_other: "{{count}} Probleme werden behoben",
     repairIntro:

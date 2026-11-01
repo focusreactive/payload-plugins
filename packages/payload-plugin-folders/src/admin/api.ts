@@ -750,8 +750,12 @@ export const fetchUnfinishedOperations = async (
   }));
 };
 
-/** The quick verify answer: the verify result of the folder rows, and whether the user may repair. */
-export type QuickVerifyResponse = VerifyResult & { canRepair: boolean };
+/**
+ * The quick verify answer: the verify result of the folder rows, and whether the user may repair.
+ * `issues` is left out for a user who cannot repair: the banner needs only the counts.
+ */
+export type QuickVerifyResponse = Omit<VerifyResult, "issues"> &
+  Partial<Pick<VerifyResult, "issues">> & { canRepair: boolean };
 
 /** One query of the folder rows: does any folder's path, ancestry or depth disagree with its parent chain. */
 export const fetchQuickVerify = (

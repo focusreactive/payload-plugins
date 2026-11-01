@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { APIRequestContext, Locator, Page } from "@playwright/test";
 
 import { createFolder, removeFolderTree } from "./helpers/content.js";
-import { writeFolderPathDrift } from "./helpers/drift.js";
+import { writeFolderPathDrift, writeFolderSlug } from "./helpers/drift.js";
 import { folderRow, openContentTree } from "./helpers/tree.js";
 import { signInAs } from "./helpers/users.js";
 
@@ -102,8 +102,9 @@ test("the dry run lists a drifted folder", async ({ page, request }) => {
 
   const dialog = repairDialog(page);
   await expect(dialog.getByTestId("repair-fixed")).toContainText("1 problem will be fixed");
+  // The line names the folder and says every language that is wrong, not only the first.
   await expect(dialog.getByTestId("repair-fixed")).toContainText(
-    `should be at ${path} in en but holds /somewhere-else`
+    `Folder "Dry Run Lab" is at the wrong URL (en: holds /somewhere-else, should be ${path}; de: holds /somewhere-else, should be ${path})`
   );
   await expect(dialog.getByTestId("repair-url-changes")).toContainText("URL");
   // Nothing is left for a person to settle here, so there is no such list.
@@ -148,5 +149,35 @@ test("a healthy tree has nothing to rebuild, and the dialog says so", async ({ p
   await expect(dialog.getByTestId("repair-clean")).toHaveText(
     "Every URL is up to date. There is nothing to rebuild."
   );
+  await expect(dialog.getByTestId("repair-submit")).toBeDisabled();
+});
+
+test("a clash a rebuild would leave does not raise the banner, and the dialog names the folders", async ({
+  page,
+  request,
+}) => {
+  const alphaId = await createFolder(request, { name: "Held Alpha", slug: "held-alpha" });
+  createdFolders.push(alphaId);
+  const betaId = await createFolder(request, { name: "Held Beta", slug: "held-beta" });
+  createdFolders.push(betaId);
+  // Beta now carries alpha's segment, so a rebuild would put it on alpha's path and holds it back.
+  await writeFolderSlug(betaId, "held-alpha");
+
+  await openContentTree(page);
+  await expect(folderRow(page, "Held Alpha")).toBeVisible();
+  // The quick answer has a conflict and nothing a rebuild fixes: a banner would never clear.
+  const verify = await page.request.get("/api/folders-tree/verify?quick=1");
+  expect(await verify.json()).toMatchObject({ conflicts: 1, fixable: 0, ok: false });
+  await expect(page.getByTestId("drift-banner")).toHaveCount(0);
+
+  await openMoreMenu(page);
+  await rebuildEntry(page).click();
+  const dialog = repairDialog(page);
+  const conflicts = dialog.getByTestId("repair-conflicts");
+  await expect(conflicts).toContainText('Folder "Held Beta" would take a URL');
+  await expect(conflicts).toContainText(
+    '2 items claim /held-alpha: Folder "Held Beta", Folder "Held Alpha" (en)'
+  );
+  await expect(dialog.getByTestId("repair-fixed")).toHaveCount(0);
   await expect(dialog.getByTestId("repair-submit")).toBeDisabled();
 });

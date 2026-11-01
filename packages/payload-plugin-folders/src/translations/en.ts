@@ -214,6 +214,58 @@ export const en = {
     repairDoneWithConflicts_one: "Full URLs rebuilt. {{count}} problem is left for you.",
     repairDoneWithConflicts_other: "Full URLs rebuilt. {{count}} problems are left for you.",
     repairFailed: "Rebuilding the URLs failed",
+    repairDriftHolds: "{{locale}}: holds {{stored}}, should be {{expected}}",
+    repairDriftHoldsPlain: "holds {{stored}}, should be {{expected}}",
+    repairFieldFolder: "folder",
+    repairFieldOrderKey: "position",
+    repairFieldRevision: "revision",
+    repairIssueDanglingRedirect:
+      "The redirect from {{path}} points at something that no longer exists",
+    repairIssueDuplicate: "{{count}} items claim {{path}}: {{items}}",
+    repairIssueFolderCycle:
+      "{{count}} folders are each other's parents. {{item}} moves to the top level.",
+    repairIssueFolderCycleReserved:
+      "{{count}} folders are each other's parents. {{item}} cannot move to the top level, because /{{segment}} is used by the site itself.",
+    repairIssueFolderParentMissing:
+      "{{item}} sits in a folder that no longer exists and moves to the top level.",
+    repairIssueFolderParentMissingReserved:
+      "{{item}} sits in a folder that no longer exists. It cannot move to the top level, because /{{segment}} is used by the site itself.",
+    repairIssueFolderPath: "{{item}} is at the wrong URL ({{drifts}})",
+    repairIssueFolderPathHeld:
+      "{{item}} would take a URL that another item already has ({{drifts}}), so it stays as it is",
+    repairIssueFolderSlugMissing:
+      "{{item}} has no URL name in the default language, so it and everything inside it have no URL.",
+    repairIssueFolderStale: "{{item}} has out-of-date ancestry data and stays at {{path}}",
+    repairIssueInvalidSegment:
+      '{{item}} has the segment "{{segment}}", which is not valid, and rebuilding cannot choose another.',
+    repairIssueInvalidSegmentFixed:
+      '{{item}} has the segment "{{segment}}", which is not valid. It will be saved as "{{fixed}}".',
+    repairIssueOrderKeyEqual: "{{count}} items in {{place}} share a position with a sibling",
+    repairIssueOrderKeyInvalid: "{{count}} items in {{place}} have a position that cannot be used",
+    repairIssueOrderKeyMissing: "{{count}} items in {{place}} have no position",
+    repairIssuePageSegment: "{{item}} has no saved URL segment that matches its slug ({{drifts}})",
+    repairIssuePageSegmentHeld:
+      "{{item}} has a saved URL segment that differs from its slug, and another item has the URL it would take ({{drifts}}), so it stays as it is",
+    repairIssueRootPages: "{{count}} pages are the root page of {{folder}}: {{items}}",
+    repairIssueStaleVersion:
+      "The latest draft of {{item}} holds a different {{fields}} than the page",
+    repairIssueTreeStateRows:
+      "The tree lock has {{count}} rows where it needs one. Delete the extra rows by hand.",
+    repairItemFolder: 'Folder "{{title}}"',
+    repairItemFolderUntitled: "Folder {{id}}",
+    repairItemPage: 'Page "{{title}}"',
+    repairItemPageUntitled: "Page {{id}}",
+    repairLocaleSuffix: " ({{locale}})",
+    repairNone: "none",
+    repairPlaceFolder: 'folder "{{title}}"',
+    repairPlaceFolderUntitled: "folder {{id}}",
+    repairPlaceTopLevel: "the top level",
+    repairSegmentDrift: "{{locale}}: saved {{stored}}, slug {{expected}}",
+    repairSegmentDriftPlain: "saved {{stored}}, slug {{expected}}",
+    repairWarnLarge_one:
+      "This rebuild writes {{count}} row. While it runs, saving pages waits for it. On a large site, run `npm run repair` (or `npx payload run dist/bin/repair.js`) from a terminal instead.",
+    repairWarnLarge_other:
+      "This rebuild writes {{count}} rows. While it runs, saving pages waits for it. On a large site, run `npm run repair` (or `npx payload run dist/bin/repair.js`) from a terminal instead.",
     repairFixedHeading_one: "{{count}} problem will be fixed",
     repairFixedHeading_other: "{{count}} problems will be fixed",
     repairIntro:

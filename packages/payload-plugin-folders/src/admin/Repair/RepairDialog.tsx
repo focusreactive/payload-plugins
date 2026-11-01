@@ -95,7 +95,8 @@ const RepairContent = ({
     return () => controller.abort();
   }, [context]);
 
-  const listing = previewState.status === "ready" ? repairListingOf(previewState.result) : null;
+  const listing =
+    previewState.status === "ready" ? repairListingOf(previewState.result, translate) : null;
   const canRepair = listing?.isRepairable === true && !isRepairing;
 
   const submit = async (event: FormEvent) => {
@@ -155,6 +156,11 @@ const RepairContent = ({
                       {translate("repairUrlChanges", { count: listing.urlChanges })}
                     </p>
                   ) : null}
+                  {listing.largeWrites === null ? null : (
+                    <p className="fr-folders-warning" data-testid="repair-large" role="alert">
+                      {translate("repairWarnLarge", { count: listing.largeWrites })}
+                    </p>
+                  )}
                 </>
               ) : null}
               {listing.conflicts.total > 0 ? (

@@ -2,11 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { fetchQuickVerify } from "../api.js";
 import type { FoldersApiContext, QuickVerifyResponse } from "../api.js";
+import { hasFixableDrift } from "./repairLogic.js";
 
 export type TreeHealth = {
   /** The user may rebuild the full URLs (`canRepairTree`), which the quick answer says. */
   canRepair: boolean;
-  /** Some folder's path, ancestry or depth disagrees with its parent chain. */
+  /** Some folder's path, ancestry or depth disagrees with its parent chain and a rebuild fixes it. */
   hasDrift: boolean;
   /** Reads the quick answer again; resolves once it is applied (or has failed quietly). */
   refresh: () => Promise<void>;
@@ -61,5 +62,5 @@ export const useTreeHealth = ({
     // `revision` is the trigger: a new number means the tree changed.
   }, [hasRevision, refresh, revision]);
 
-  return { canRepair: answer?.canRepair === true, hasDrift: answer?.ok === false, refresh };
+  return { canRepair: answer?.canRepair === true, hasDrift: hasFixableDrift(answer), refresh };
 };
