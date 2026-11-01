@@ -20,8 +20,12 @@ export const addDraftPages = async (
   if (!databaseDirectory) {
     throw new Error("FOLDERS_E2E_DATABASE_DIRECTORY is not set: playwright.config.ts sets it");
   }
-  // A run beside the live dev server has ended short of its count now and then, so the seed (which
-  // only adds what is missing) runs again until the folder holds every page.
+  // Two processes on one SQLite file get SQLITE_BUSY, and Payload's drizzle adapter swallows a
+  // failed COMMIT (@payloadcms/drizzle dist/transactions/beginTransaction.js and
+  // commitTransaction.js), so `payload.create` in the seed process can return a document whose
+  // transaction rolled back. That is why the seed exiting cleanly proves nothing: the helper
+  // re-counts through the dev server, and the seed, which only adds what is missing, runs again
+  // until the folder holds every page.
   for (let attempt = 1; attempt <= 6; attempt += 1) {
     const result = spawnSync("npm", ["run", "seed:drafts"], {
       encoding: "utf-8",
