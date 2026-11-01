@@ -52,6 +52,8 @@ export type TreeKeyboardOptions = {
   adminRoute: string;
   /** A move or its preview is in flight. */
   isBusy: boolean;
+  /** The sidebar tab's tree, not the tree view's. */
+  isCompact: boolean;
   /** Move mode has the keyboard: its own keys decide. */
   isMoveModeActive: boolean;
   isSearching: boolean;
@@ -93,12 +95,44 @@ const isTypingTarget = (target: EventTarget | null): boolean =>
 /** A drag is in progress: dnd-kit cancels it on Escape and the key is not the tree's. */
 const isDragging = (): boolean => document.body.classList.contains("fr-folders-dragging");
 
-/** The search box of the workspace the key was pressed in; the tab and the view each have one. */
-const focusSearchInput = (from: Element | null): boolean => {
-  const input =
-    from?.closest(".fr-folders")?.querySelector<HTMLInputElement>('[data-testid="search-input"]') ??
-    document.querySelector<HTMLInputElement>('[data-testid="search-input"]');
-  if (input === null) {
+/** A tree workspace's own element: the tree view's page, or the sidebar tab. */
+const workspaceSelector = ".fr-folders";
+const compactWorkspaceSelector = ".fr-folders--compact";
+
+/** There is one of each on a page, and the element exists whether or not the tree is drawn. */
+const workspaceElementOf = (isCompact: boolean): Element | null =>
+  document.querySelector(
+    isCompact ? compactWorkspaceSelector : `${workspaceSelector}:not(${compactWorkspaceSelector})`
+  );
+
+/** The workspace that last had the focus, for a key pressed while the focus is on neither. */
+let lastFocusedWorkspace: Element | null = null;
+
+/**
+ * Whether a key that works from anywhere on the page (Escape, `/`, undo) is this workspace's. The
+ * tree view and the sidebar tab can be on the page together, and each one listens on the document:
+ * without this the first one to listen would answer for both. The workspace the key was pressed in
+ * answers; with the focus on neither, the one that had it last; with none yet, the tree view.
+ */
+const isKeyForWorkspace = (workspace: Element | null, target: EventTarget | null): boolean => {
+  if (workspace === null) {
+    return false;
+  }
+  const targetWorkspace = target instanceof Element ? target.closest(workspaceSelector) : null;
+  if (targetWorkspace !== null) {
+    return targetWorkspace === workspace;
+  }
+  if (lastFocusedWorkspace?.isConnected) {
+    return lastFocusedWorkspace === workspace;
+  }
+
+  return !workspace.matches(compactWorkspaceSelector);
+};
+
+/** The search box of the workspace the key is for; the tab and the view each have one. */
+const focusSearchInput = (workspace: Element | null): boolean => {
+  const input = workspace?.querySelector<HTMLInputElement>('[data-testid="search-input"]');
+  if (!input) {
     return false;
   }
   input.focus();
@@ -218,6 +252,27 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
     };
   }, []);
 
+  // The focus entering a workspace, anywhere in it (the search box and the header too), makes it the
+  // one that answers a page-wide key pressed while the focus is on neither.
+  const { isCompact } = options;
+  useEffect(() => {
+    const workspace = workspaceElementOf(isCompact);
+    if (workspace === null) {
+      return undefined;
+    }
+    const handleFocusIn = () => {
+      lastFocusedWorkspace = workspace;
+    };
+    workspace.addEventListener("focusin", handleFocusIn);
+
+    return () => {
+      workspace.removeEventListener("focusin", handleFocusIn);
+      if (lastFocusedWorkspace === workspace) {
+        lastFocusedWorkspace = null;
+      }
+    };
+  }, [isCompact]);
+
   // The focus fell to the page from inside the tree because what had it was removed: it goes back
   // to the row the keyboard was on, in the commit that removed it, so the next key finds it.
   useLayoutEffect(() => {
@@ -270,8 +325,14 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
       }
       const consume = () => event.preventDefault();
 
+      const isPageWideKey = action === "focusSearch" || action === "undo" || action === "escape";
+      const workspace = workspaceElementOf(current.isCompact);
+      if (isPageWideKey && !isKeyForWorkspace(workspace, event.target)) {
+        return;
+      }
+
       if (action === "focusSearch") {
-        if (focusSearchInput(event.target instanceof Element ? event.target : null)) {
+        if (focusSearchInput(workspace)) {
           consume();
         }
 

@@ -345,3 +345,42 @@ test("a move confirmed in the tree view does not open again with the tab's move"
     .poll(async () => (await childrenOf(request, target)).map((row) => row.id).sort())
     .toEqual([viewPage, tabPage].sort());
 });
+
+test("Escape and / answer in the tree that has the focus, with the tab and the tree view both open", async ({
+  page,
+  request,
+}) => {
+  const folder = await addFolder(request, "Keys Both");
+  await addDraft(request, "Keys Both First", folder);
+  await addDraft(request, "Keys Both Second", folder);
+  await page.goto(`/admin/collections/folders?expanded=${folder}&folder=`);
+  await view(page).getByRole("treegrid").waitFor();
+  await openTreeTab(page);
+  const viewFirst = viewRow(page, "Keys Both First");
+  const tabSecond = tabRow(page, "Keys Both Second");
+
+  // A row ticked in the tree view, and a row cut in the tab.
+  await viewFirst.getByRole("checkbox").check();
+  await expect(viewFirst).toHaveAttribute("aria-selected", "true");
+  await tabSecond.focus();
+  await page.keyboard.press("ControlOrMeta+x");
+  await expect(tabSecond).toHaveAttribute("data-cut", "true");
+
+  // Escape in the tab ends the tab's cut and leaves the view's ticks alone.
+  await page.keyboard.press("Escape");
+  await expect(tabSecond).not.toHaveAttribute("data-cut", "true");
+  await expect(viewFirst).toHaveAttribute("aria-selected", "true");
+
+  // Escape in the tree view clears the view's ticks.
+  await viewFirst.focus();
+  await page.keyboard.press("Escape");
+  await expect(viewFirst).toHaveAttribute("aria-selected", "false");
+
+  // The slash goes to the search box of the tree it was pressed in.
+  await tabSecond.focus();
+  await page.keyboard.press("/");
+  await expect(tab(page).getByTestId("search-input")).toBeFocused();
+  await viewFirst.focus();
+  await page.keyboard.press("/");
+  await expect(view(page).getByTestId("search-input")).toBeFocused();
+});

@@ -464,6 +464,7 @@ const TreeWorkspaceContent = ({
     },
     adminRoute,
     isBusy: isMoveBusy,
+    isCompact,
     isMoveModeActive: moveMode.active,
     isSearching,
     rows: displayRows,
