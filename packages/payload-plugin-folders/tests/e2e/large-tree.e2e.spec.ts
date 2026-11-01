@@ -5,7 +5,7 @@ import type { Locator, Page } from "@playwright/test";
 import { addDraftPages } from "./helpers/bulk.js";
 import { childrenOf, createFolder, deleteFolderWithContent } from "./helpers/content.js";
 import { moveOver, startDrag } from "./helpers/drag.js";
-import { expandFolder, openContentTree, pageRow } from "./helpers/tree.js";
+import { expandFolder, folderRow, openContentTree, pageRow } from "./helpers/tree.js";
 
 // One folder with 2,000 draft pages, seeded once for the whole file and removed with its content.
 // Folders show 100 rows at a time, so the tree has to be asked for the rest ("Load more") before
@@ -232,4 +232,61 @@ test("End on a long tree focuses the last row, which is drawn, and Home the firs
         (violation) => `${violation.id}: ${violation.nodes.map((node) => node.target).join(" | ")}`
       )
   ).toEqual([]);
+});
+
+test("the focus stays on its row when the list crosses 300 rows", async ({ page }) => {
+  test.setTimeout(120_000);
+  await openLargeFolder(page);
+  await loadMore(page, 3);
+  await expect(scrollBody(page)).toHaveCount(1);
+  await scrollBody(page).evaluate((body) => {
+    body.scrollTop = 0;
+  });
+  const folder = folderRow(page, folderName);
+  await expect(folder).toBeVisible();
+
+  // Closing the folder takes the list under 300 rows, so it stops drawing only some of them.
+  await folder.focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(scrollBody(page)).toHaveCount(0);
+  await expect(folder).toHaveAttribute("aria-expanded", "false");
+  await expect(folder).toBeFocused();
+
+  // Opening it again, and going into it, with the keys alone.
+  await page.keyboard.press("ArrowRight");
+  await expect(folder).toHaveAttribute("aria-expanded", "true");
+  await expect(folder).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(draftRow(page, 1)).toBeFocused();
+});
+
+test("Load more pressed with Enter moves the focus into the new rows, below and past 300 rows", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await openLargeFolder(page);
+  const button = page.getByTestId("load-more-row").getByRole("button");
+  // The pages by their place among the folder's pages, because earlier tests reorder them.
+  const pageAt = (position: number): Locator =>
+    page.locator(`[data-testid="tree-row"][data-kind="page"][aria-posinset="${position}"]`);
+  const pressLoadMoreFrom = async (lastPosition: number): Promise<void> => {
+    await pageAt(lastPosition).focus();
+    await button.focus();
+    await page.keyboard.press("Enter");
+  };
+
+  // 100 rows are loaded, a short list: Enter brings 100 more and the focus lands on the first.
+  await pressLoadMoreFrom(100);
+  await expect(pageAt(101)).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(pageAt(102)).toBeFocused();
+  await expect(scrollBody(page)).toHaveCount(0);
+
+  // The next page takes the list past 300 rows with the folders around it, where it draws only
+  // some of them: the focus still lands on the first new row.
+  await pressLoadMoreFrom(200);
+  await expect(scrollBody(page)).toHaveCount(1);
+  await expect(pageAt(201)).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(pageAt(202)).toBeFocused();
 });

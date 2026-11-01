@@ -5,13 +5,14 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "r
 import { useContentLocales } from "../compat.js";
 import type { Translate } from "../compat.js";
 import { DragStateContext } from "../DragAndDrop/dragState.js";
-import { rowElementOf } from "../Keyboard/focusRow.js";
+import { focusRowWhenShown, hasLostFocus, rowElementOf } from "../Keyboard/focusRow.js";
 import type { TreeKeyboard } from "../Keyboard/useTreeKeyboard.js";
 import type { MenuAnchor } from "../Menu/menuEntries.js";
 import { MoveMarkerRow } from "../MoveMode/MoveMarkerRow.js";
 import { markerReasonOf, tabbableMarkerKey } from "../MoveMode/moveMarkers.js";
 import type { MoveMarker, MoveModeRow } from "../MoveMode/moveMarkers.js";
 import type { SelectionApi } from "../useSelection.js";
+import { folderKeyOf, itemKeyOf } from "../store.js";
 import type { FolderKey, TreeStore } from "../store.js";
 import type { TreeItem } from "../../types.js";
 import { EmptyRow } from "./EmptyStates.js";
@@ -184,7 +185,8 @@ const LoadMoreRow = ({
   translate,
 }: {
   ariaRowIndex?: number;
-  onLoadMore: (parentKey: FolderKey) => void;
+  /** `byKeyboard` is true for Enter or Space, which the tree answers by moving into the new rows. */
+  onLoadMore: (parentKey: FolderKey, byKeyboard: boolean) => Promise<void>;
   pageSize: number;
   row: LoadMoreRowModel;
   translate: Translate;
@@ -201,10 +203,17 @@ const LoadMoreRow = ({
       role="gridcell"
       style={{ paddingInlineStart: levelPadding(row.level) }}
     >
+      {/* Not `disabled`: a button that disables itself while it is focused drops the keyboard on the page. */}
       <Button
         buttonStyle="secondary"
-        disabled={row.loading}
-        onClick={() => onLoadMore(row.parentKey)}
+        className={row.loading ? "btn--disabled" : undefined}
+        extraButtonProps={{ "aria-disabled": row.loading }}
+        onClick={(event) => {
+          if (!row.loading) {
+            // Enter and Space click with no pointer, so a click with a detail of 0 is the keyboard.
+            void onLoadMore(row.parentKey, event.detail === 0);
+          }
+        }}
         size="medium"
       >
         {row.loading ? translate("loadingMore") : translate("loadMore", { count: pageSize })}
@@ -247,12 +256,6 @@ export const Tree = ({
   const toggleFolder = useCallback(
     (folderId: number | string) => {
       void store.toggleExpanded(folderId);
-    },
-    [store]
-  );
-  const loadMore = useCallback(
-    (parentKey: FolderKey) => {
-      void store.loadMore(parentKey === "root" ? null : parentKey);
     },
     [store]
   );
@@ -319,6 +322,10 @@ export const Tree = ({
     estimateSize: () => estimatedRowHeight,
     getItemKey: (index) => entryKeys[index] ?? index,
     getScrollElement: () => scrollRef.current,
+    // The height the observer reports comes a frame late. A list that has just grown past the limit
+    // would draw no rows until then, and every row, the focused one too, would be taken out of the
+    // page for that frame.
+    initialRect: { height: estimatedRowHeight * 20, width: 0 },
     overscan: rowOverscan,
     rangeExtractor: (range) =>
       [...new Set([...defaultRangeExtractor(range), ...pinnedIndexes])].toSorted(
@@ -354,6 +361,36 @@ export const Tree = ({
       keyboard.revealRowRef.current = null;
     };
   }, [keyboard.revealRowRef, revealRow]);
+
+  // A keyboard user who pressed Load more goes on in the rows that came in: the button stays (it is
+  // only marked busy), so the focus is still on it when they arrive, and an ArrowDown from a button
+  // would do nothing. The row is asked for after the render that draws it, because a long list has
+  // to scroll to a row before it draws it.
+  const [focusAfterLoad, setFocusAfterLoad] = useState<TreeItem | null>(null);
+  const loadMore = useCallback(
+    async (parentKey: FolderKey, byKeyboard: boolean) => {
+      const parent = parentKey === "root" ? null : parentKey;
+      const itemsOf = () => store.getState().childrenByFolder[folderKeyOf(parent)]?.items ?? [];
+      const keysBefore = new Set(itemsOf().map(itemKeyOf));
+      await store.loadMore(parent);
+      if (byKeyboard) {
+        setFocusAfterLoad(itemsOf().find((item) => !keysBefore.has(itemKeyOf(item))) ?? null);
+      }
+    },
+    [store]
+  );
+  useEffect(() => {
+    if (focusAfterLoad === null || !indexByKey.has(itemKeyOf(focusAfterLoad))) {
+      return;
+    }
+    setFocusAfterLoad(null);
+    revealRow(itemKeyOf(focusAfterLoad));
+    focusRowWhenShown(
+      focusAfterLoad,
+      () => keyboard.treeRef.current,
+      () => hasLostFocus() || keyboard.treeRef.current?.contains(document.activeElement) === true
+    );
+  }, [focusAfterLoad, indexByKey, keyboard.treeRef, revealRow]);
 
   // The document open in the edit view comes into view once, when its row first shows.
   const revealedCurrentKey = useRef<string | null>(null);

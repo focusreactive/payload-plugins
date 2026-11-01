@@ -180,6 +180,56 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
     }
   });
 
+  // Whether the focus is on a row or in one (a marker of Move mode, which puts the focus back itself
+  // when it ends, is not a row). Chrome reports a focusout when the element that has the focus
+  // is taken out of the page, with that element still attached, and Firefox reports none: so a
+  // focusout with nowhere to go is judged after the render that may have removed the element, and
+  // counts as leaving only when the element is still there.
+  const hasFocusInRow = useRef(false);
+  useEffect(() => {
+    const tree = treeRef.current;
+    if (tree === null) {
+      return undefined;
+    }
+    const handleFocusIn = (event: FocusEvent) => {
+      hasFocusInRow.current = rowKeyOfElement(event.target as Element | null) !== null;
+    };
+    const handleFocusOut = (event: FocusEvent) => {
+      const { relatedTarget, target } = event;
+      if (relatedTarget instanceof Node) {
+        if (!tree.contains(relatedTarget)) {
+          hasFocusInRow.current = false;
+        }
+
+        return;
+      }
+      queueMicrotask(() => {
+        if (target instanceof Node && target.isConnected) {
+          hasFocusInRow.current = false;
+        }
+      });
+    };
+    tree.addEventListener("focusin", handleFocusIn);
+    tree.addEventListener("focusout", handleFocusOut);
+
+    return () => {
+      tree.removeEventListener("focusin", handleFocusIn);
+      tree.removeEventListener("focusout", handleFocusOut);
+    };
+  }, []);
+
+  // The focus fell to the page from inside the tree because what had it was removed: it goes back
+  // to the row the keyboard was on, in the commit that removed it, so the next key finds it.
+  useLayoutEffect(() => {
+    if (!hasFocusInRow.current || modalOpenRef.current || !hasLostFocus() || activeKey === null) {
+      return;
+    }
+    const row = itemRows.find((candidate) => candidate.key === activeKey);
+    if (row !== undefined) {
+      rowElementOf(row.item, treeRef.current)?.focus();
+    }
+  });
+
   const focusKey = useCallback((key: string) => {
     const row = latest.current.rows.find(
       (candidate) => candidate.type === "item" && candidate.key === key
