@@ -11,11 +11,12 @@ import { useContextMenu } from "../ContextMenu/useContextMenu.js";
 import type { ContextMenuActions } from "../ContextMenu/useContextMenu.js";
 import { useRootPageFlow } from "../ContextMenu/useRootPageFlow.js";
 import { DragAndDropProvider } from "../DragAndDrop/DragAndDropProvider.js";
+import { resolveCrumbDrop } from "../DragAndDrop/dropTargets.js";
 import type { DropRules } from "../DragAndDrop/dropTargets.js";
 import type { MoveTarget } from "../Move/moveFlow.js";
 import { useOperationsFlow } from "../Operations/useOperationsFlow.js";
 import { MoveModeBar } from "../MoveMode/MoveModeBar.js";
-import { placeMarkers } from "../MoveMode/moveMarkers.js";
+import { markerReasonOf, placeMarkers } from "../MoveMode/moveMarkers.js";
 import type { MoveMarker } from "../MoveMode/moveMarkers.js";
 import { useMoveMode } from "../MoveMode/useMoveMode.js";
 import { useMoveFlow } from "../Move/useMoveFlow.js";
@@ -38,6 +39,7 @@ import { useApiContext } from "../useApiContext.js";
 import { useSelection } from "../useSelection.js";
 import type { TreeItem } from "../../types.js";
 import { Breadcrumbs } from "./Breadcrumbs.js";
+import type { CrumbMoveMode } from "./Breadcrumbs.js";
 import { ZoomNotFound } from "./ZoomNotFound.js";
 
 export type TreeWorkspaceProps = {
@@ -145,16 +147,16 @@ export const TreeWorkspace = ({
     },
     [enterMoveMode, selection.items]
   );
-  const pickMarker = useCallback(
-    (marker: MoveMarker) => {
+  // A marker in the tree and a crumb above it are the same move: the same plan and confirm.
+  const pickTarget = useCallback(
+    (target: MoveTarget, targetFolder: TreeItem | null) => {
       void startDropMove({
         items: moveMode.moving,
         onMoved: exitMoveMode,
         selection: moveMode.movesSelection ? selection.items : null,
-        target: marker.target,
+        target,
         targetTitle:
-          marker.targetFolder?.title ??
-          translate(marker.target.toFolder === null ? "moveToRoot" : "folder"),
+          targetFolder?.title ?? translate(target.toFolder === null ? "moveToRoot" : "folder"),
       });
     },
     [
@@ -166,6 +168,31 @@ export const TreeWorkspace = ({
       translate,
     ]
   );
+  const pickMarker = useCallback(
+    (marker: MoveMarker) => pickTarget(marker.target, marker.targetFolder),
+    [pickTarget]
+  );
+  const crumbMoveMode = useMemo<CrumbMoveMode | undefined>(() => {
+    if (!moveMode.active) {
+      return undefined;
+    }
+    const count = moveMode.moving.length;
+    const resolve = (folder: TreeItem | null) =>
+      resolveCrumbDrop({ dragged: moveMode.moving, folder, rules: dropRules, state });
+    const reasonOf = (folder: TreeItem | null): string | null =>
+      markerReasonOf(resolve(folder), { count, isBusy: isMoveBusy, translate });
+
+    return {
+      count,
+      onPick: (folder) => {
+        if (reasonOf(folder) === null) {
+          const { target, targetFolder } = resolve(folder);
+          pickTarget(target, targetFolder);
+        }
+      },
+      reasonOf,
+    };
+  }, [dropRules, isMoveBusy, moveMode.active, moveMode.moving, pickTarget, state, translate]);
 
   const apiContext = useApiContext(store);
   const canCreate = useCanCreate();
@@ -437,6 +464,7 @@ export const TreeWorkspace = ({
             chain={zoom.chain}
             folderId={zoom.folderId}
             foldersSlug={foldersSlug}
+            moveMode={crumbMoveMode}
             onZoom={onZoom}
             title={topLevelTitle}
             translate={translate}

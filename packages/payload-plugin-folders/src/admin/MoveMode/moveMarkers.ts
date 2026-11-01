@@ -113,7 +113,7 @@ export const placeMarkers = (
 
 /** The reason a marker is off, as its tooltip words it; `null` when it can be picked. */
 export const markerReasonOf = (
-  marker: MoveMarker,
+  marker: Pick<MoveMarker, "isNoOp" | "refusal">,
   { count, isBusy, translate }: { count: number; isBusy: boolean; translate: Translate }
 ): string | null => {
   if (isBusy) {

@@ -14,6 +14,8 @@ import {
   openContentTree,
   openZoomedTree,
   pageRow,
+  rowCheckbox,
+  toolbarButton,
   zoomHeader,
 } from "./helpers/tree.js";
 
@@ -132,6 +134,95 @@ test("double click zooms and the breadcrumb returns", async ({ page, request }) 
   await expect(zoomHeader(page)).toHaveText("Blog");
   await page.goBack();
   await expect(zoomHeader(page)).toHaveText("2026");
+  await page.goForward();
+  await expect(zoomHeader(page)).toHaveText("Blog");
+  await page.goForward();
+  await expect(breadcrumbs(page)).toHaveCount(0);
+  await expect(folderRow(page, "Products")).toBeVisible();
+});
+
+/** A small generator with a fixed seed, so the series of history steps is the same on every run. */
+const seededRandom = (seed: number): (() => number) => {
+  let state = seed;
+
+  return () => {
+    state = (state * 1_103_515_245 + 12_345) % 2_147_483_648;
+
+    return state / 2_147_483_648;
+  };
+};
+
+// The zoom follows the browser's address, not the router's copy of it, which falls behind when
+// history steps come quickly. This walks a fixed series of bursts (back and forward steps taken in
+// one script, so no step waits for the one before) through the five entries a visit leaves, and
+// after each burst the view must show the folder the address names. With the series seeded the
+// same bursts run every time, and four of them left the view on another folder when the zoom
+// read the router's copy.
+test("after quick Back and Forward steps the view shows the folder the address names", async ({
+  page,
+  request,
+}) => {
+  test.setTimeout(120_000);
+  const blogId = await seededId(request, "Blog");
+  const yearId = await seededId(request, "2026", blogId);
+  await openContentTree(page);
+  await folderRow(page, "Blog").dblclick();
+  await expect(zoomHeader(page)).toHaveText("Blog");
+  await folderRow(page, "2026").dblclick();
+  await expect(zoomHeader(page)).toHaveText("2026");
+  await breadcrumb(page, "Blog").click();
+  await expect(zoomHeader(page)).toHaveText("Blog");
+  await breadcrumb(page, "Content").click();
+  await expect(breadcrumbs(page)).toHaveCount(0);
+  await expect(folderRow(page, "Products")).toBeVisible();
+
+  // The history is now Content, Blog, 2026, Blog, Content.
+  const entriesOfVisit = 5;
+  const random = seededRandom(12_345);
+  const bursts: string[] = [];
+  for (let round = 0; round < 22; round += 1) {
+    const { index, length } = await page.evaluate(() => {
+      const { navigation } = window as unknown as {
+        navigation: { currentEntry: { index: number }; entries: () => unknown[] };
+      };
+
+      return { index: navigation.currentEntry.index, length: navigation.entries().length };
+    });
+    const lowest = length - entriesOfVisit;
+    let position = index;
+    let burst = "";
+    const steps = 2 + Math.floor(random() * 4);
+    for (let step = 0; step < steps; step += 1) {
+      const canGoBack = position > lowest;
+      const canGoForward = position < length - 1;
+      const goBack = canGoBack && (!canGoForward || random() < 0.5);
+      if (!(goBack || canGoForward)) {
+        break;
+      }
+      burst += goBack ? "b" : "f";
+      position += goBack ? -1 : 1;
+    }
+    bursts.push(burst);
+    await page.evaluate((steps) => {
+      for (const step of steps) {
+        if (step === "b") {
+          window.history.back();
+        } else {
+          window.history.forward();
+        }
+      }
+    }, burst);
+    // The router settles in its own time; the view has to settle on the address.
+    await page.waitForTimeout(1500);
+    const zoomed = new URL(page.url()).searchParams.get("folder");
+    if (zoomed === null) {
+      await expect(breadcrumbs(page), `burst ${round}: ${bursts.join(" ")}`).toHaveCount(0);
+    } else {
+      await expect(zoomHeader(page), `burst ${round}: ${bursts.join(" ")}`).toHaveText(
+        zoomed === String(yearId) ? "2026" : "Blog"
+      );
+    }
+  }
 });
 
 test("a zoomed address opens straight on the folder, with its breadcrumbs", async ({
@@ -169,6 +260,18 @@ test("Alt+Enter on a folder zooms, and a double click on its chevron toggles onc
   await expect(page).toHaveURL(new RegExp(`[?&]folder=${companyId}(&|$)`, "u"));
   await breadcrumb(page, "Content").click();
   await expect(folderRow(page, "Company")).toHaveAttribute("aria-expanded", "true");
+});
+
+test("a malformed folder in the address says the folder was not found, not a raw error", async ({
+  page,
+}) => {
+  await page.goto("/admin/collections/folders?expanded=&folder=abc");
+
+  await expect(page.getByTestId("zoom-not-found")).toContainText("This folder was not found");
+  await expect(page.getByTestId("zoom-not-found")).not.toContainText("400");
+  await page.getByTestId("zoom-back").click();
+  await expect(page).not.toHaveURL(/[?&]folder=/u);
+  await expect(folderRow(page, "Blog")).toBeVisible();
 });
 
 test("a folder that is gone says so, and the way back leads to the top level", async ({ page }) => {
@@ -246,6 +349,8 @@ test("an empty folder shows This folder is empty with create links", async ({ pa
   await folderRow(page, "Empty").dblclick();
   const panel = page.getByTestId("empty-panel");
   await expect(panel).toContainText("This folder is empty");
+  // Like "No content yet", it has a line under the title before the buttons.
+  await expect(panel.locator("p")).toHaveText("Create a folder or a page in it to get started.");
   await expect(panel.getByRole("button", { name: "Create folder" })).toBeVisible();
   await expect(panel.getByRole("button", { name: "Create page" })).toBeVisible();
   await expect(page.getByRole("treegrid")).toHaveCount(0);
@@ -331,6 +436,87 @@ test("dropping on a breadcrumb moves the rows into that folder", async ({ page, 
   await confirmMove(page);
   await expect.poll(() => folderOf(request, pageId)).toBe(labId);
   await expect(pageRow(page, "Crumb Traveller")).toHaveCount(0);
+});
+
+test("in Move mode a crumb has a Move here button that moves the marked rows into its folder", async ({
+  page,
+  request,
+}) => {
+  const labId = await addFolder(request, "Crumb Mode Lab");
+  const innerId = await addFolder(request, "Crumb Mode Inner", labId);
+  const pageId = await addPage(request, "Crumb Mode Traveller", innerId);
+  await openZoomedTree(page, innerId);
+  await rowCheckbox(page, "Crumb Mode Traveller").check();
+  await toolbarButton(page, "Move").click();
+  await expect(page.getByTestId("move-mode-bar")).toContainText("Moving 1 item");
+
+  // Every crumb has its button, the zoomed folder's own included, and none shows outside Move mode.
+  await expect(breadcrumbs(page).getByTestId("crumb-move")).toHaveCount(3);
+  await expect(breadcrumb(page, "Crumb Mode Lab").getByTestId("crumb-move")).toHaveAccessibleName(
+    "Move 1 item into Crumb Mode Lab"
+  );
+  // The crumb is still a link: it zooms while Move mode stays on.
+  await breadcrumb(page, "Crumb Mode Lab").getByRole("link").click();
+  await expect(page.getByTestId("zoom-current")).toHaveText("Crumb Mode Lab");
+  await expect(page.getByTestId("move-mode-bar")).toBeVisible();
+  await expect(breadcrumbs(page).getByTestId("crumb-move")).toHaveCount(2);
+
+  // The zoomed folder's own crumb is the folder the page is not in yet: the button picks it, and
+  // the same confirm as any other target asks before a published page's URL changes.
+  await zoomHeader(page).getByTestId("crumb-move").click();
+  await confirmMove(page);
+  await expect.poll(() => folderOf(request, pageId)).toBe(labId);
+  await expect(page.getByTestId("move-mode-bar")).toHaveCount(0);
+  await expect(breadcrumbs(page).getByTestId("crumb-move")).toHaveCount(0);
+});
+
+test("in Move mode a crumb that cannot take the rows is disabled with the reason, and picks nothing", async ({
+  page,
+  request,
+}) => {
+  const labId = await addFolder(request, "Crumb Refuse Lab");
+  const innerId = await addFolder(request, "Crumb Refuse Inner", labId);
+  await addFolder(request, "Crumb Refuse Leaf", innerId);
+  await openZoomedTree(page, labId);
+  await rowCheckbox(page, "Crumb Refuse Inner").check();
+  await toolbarButton(page, "Move").click();
+  await expect(page.getByTestId("move-mode-bar")).toContainText("Moving 1 item");
+
+  // The folder is already in the zoomed one: nothing would change.
+  const lab = zoomHeader(page).getByTestId("crumb-move");
+  await expect(lab).toHaveAttribute("aria-disabled", "true");
+  await expect(lab).toHaveAttribute("title", "It is already here");
+  await lab.click({ force: true });
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByTestId("move-mode-bar")).toBeVisible();
+
+  // The Content crumb takes it: the folder goes to the top level (nothing published, no question).
+  await breadcrumb(page, "Content").getByTestId("crumb-move").click();
+  await expect
+    .poll(async () => (await childrenOf(request, "root")).some((row) => row.id === innerId))
+    .toBe(true);
+  await expect(page.getByTestId("move-mode-bar")).toHaveCount(0);
+});
+
+test("the crumbs are at least 24 pixels tall to hit, and sit clear of the header rule", async ({
+  page,
+  request,
+}) => {
+  const labId = await addFolder(request, "Crumb Size Lab");
+  const innerId = await addFolder(request, "Crumb Size Inner", labId);
+  await openZoomedTree(page, innerId);
+
+  const heights = await page
+    .locator('[data-testid="breadcrumb"], [data-testid="zoom-header"]')
+    .evaluateAll((crumbs) => crumbs.map((crumb) => crumb.getBoundingClientRect().height));
+  expect(heights).toHaveLength(3);
+  for (const height of heights) {
+    expect(height).toBeGreaterThanOrEqual(24);
+  }
+  const topPadding = await breadcrumbs(page).evaluate((element) =>
+    Number.parseFloat(getComputedStyle(element).paddingTop)
+  );
+  expect(topPadding).toBeGreaterThanOrEqual(12);
 });
 
 test("dropping on the Content crumb moves the rows to the top level", async ({ page, request }) => {

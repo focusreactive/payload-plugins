@@ -91,7 +91,9 @@ export const EmptyPanel = ({
     <h2 className="fr-folders-empty-panel__title">
       {translate(isZoomed ? "emptyFolder" : "emptyNoContent")}
     </h2>
-    {isZoomed ? null : <p className="fr-folders-muted">{translate("emptyNoContentHint")}</p>}
+    <p className="fr-folders-muted">
+      {translate(isZoomed ? "emptyFolderHint" : "emptyNoContentHint")}
+    </p>
     <div className="fr-folders-empty-panel__actions">
       <Button
         buttonStyle="primary"

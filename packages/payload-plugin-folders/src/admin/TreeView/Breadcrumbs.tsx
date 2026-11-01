@@ -14,21 +14,35 @@ export const zoomHrefOf = (
 ): string =>
   `${adminRoute}/collections/${foldersSlug}${folderId === null ? "" : `?folder=${folderId}`}`;
 
+/** What a crumb needs while Move mode is on: it becomes a target next to being a link. */
+export type CrumbMoveMode = {
+  /** How many items are moving, for the words of the button. */
+  count: number;
+  /** Picks the crumb's folder (`null`, the top level) as where the rows go. */
+  onPick: (folder: TreeItem | null) => void;
+  /** Why the crumb cannot take the rows, `null` when it can. */
+  reasonOf: (folder: TreeItem | null) => string | null;
+};
+
 type CrumbProps = {
   /** The folder this crumb names; `null` is the top level. */
   folder: TreeItem | null;
   href: string;
   isCurrent: boolean;
   label: string;
+  moveMode?: CrumbMoveMode;
   onZoom: (folderId: FolderId | null) => void;
+  translate: Translate;
 };
 
 /**
  * One crumb. A plain click zooms in place, a click with a modifier or the middle button keeps the
  * browser's own new tab. Every crumb takes drops, the last one (the zoomed folder itself, the zoom
- * header) too: "inside" the folder, at the top.
+ * header) too: "inside" the folder, at the top. In Move mode every crumb also has a "Move here"
+ * button, which is the same move as a marker in the tree; the link keeps zooming, because looking
+ * for the folder to move into is what Move mode is for.
  */
-const Crumb = ({ folder, href, isCurrent, label, onZoom }: CrumbProps) => {
+const Crumb = ({ folder, href, isCurrent, label, moveMode, onZoom, translate }: CrumbProps) => {
   const drop = useCrumbDrop(folder);
   const className = [
     "fr-folders-crumb",
@@ -47,6 +61,12 @@ const Crumb = ({ folder, href, isCurrent, label, onZoom }: CrumbProps) => {
     onZoom(folder?.id ?? null);
   };
 
+  const moveReason = moveMode?.reasonOf(folder) ?? null;
+  const moveLabel =
+    moveMode === undefined
+      ? ""
+      : translate("crumbMoveInto", { count: moveMode.count, title: label });
+
   return (
     <span
       className={className}
@@ -63,6 +83,23 @@ const Crumb = ({ folder, href, isCurrent, label, onZoom }: CrumbProps) => {
           {label}
         </a>
       )}
+      {moveMode === undefined ? null : (
+        <button
+          aria-disabled={moveReason === null ? undefined : true}
+          aria-label={moveReason === null ? moveLabel : `${moveLabel}: ${moveReason}`}
+          className="fr-folders-crumb__move"
+          data-testid="crumb-move"
+          onClick={() => {
+            if (moveReason === null) {
+              moveMode.onPick(folder);
+            }
+          }}
+          title={moveReason ?? moveLabel}
+          type="button"
+        >
+          {translate("crumbMoveHere")}
+        </button>
+      )}
     </span>
   );
 };
@@ -74,6 +111,8 @@ export type BreadcrumbsProps = {
   foldersSlug: string;
   /** The zoomed folder's id, from the address. */
   folderId: FolderId;
+  /** Set while Move mode is on: each crumb gets its "Move here" button. */
+  moveMode?: CrumbMoveMode;
   onZoom: (folderId: FolderId | null) => void;
   /** The name of the top level, the collection's label. */
   title: string;
@@ -90,6 +129,7 @@ export const Breadcrumbs = ({
   chain,
   folderId,
   foldersSlug,
+  moveMode,
   onZoom,
   title,
   translate,
@@ -114,7 +154,9 @@ export const Breadcrumbs = ({
           href={zoomHrefOf(adminRoute, foldersSlug, null)}
           isCurrent={false}
           label={title}
+          moveMode={moveMode}
           onZoom={onZoom}
+          translate={translate}
         />
       ),
     },
@@ -126,7 +168,9 @@ export const Breadcrumbs = ({
           href={zoomHrefOf(adminRoute, foldersSlug, folder.id)}
           isCurrent={index === (chain?.length ?? 0) - 1}
           label={folder.title}
+          moveMode={moveMode}
           onZoom={onZoom}
+          translate={translate}
         />
       ),
     })),

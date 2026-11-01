@@ -197,11 +197,11 @@ test("zooming while in Move mode keeps it active, and the markers move into the 
   await expect(pageRow(page, "Zoom Move Page")).toHaveCount(0);
   // The folder is empty, and Move mode keeps the tree for it, with the zoomed folder's own
   // marker as the only one: the top of the view.
-  await expect(page.getByTestId("zoom-header")).toHaveText("Zoom Move Target");
+  await expect(page.getByTestId("zoom-current")).toHaveText("Zoom Move Target");
   await expect(marker(page, "top")).not.toHaveAttribute("aria-disabled", "true");
 
   // A crumb is a way to navigate while moving: the Content crumb shows the whole tree again.
-  await breadcrumb(page, "Content").click();
+  await breadcrumb(page, "Content").getByRole("link").click();
   await expect(moveModeBar(page)).toBeVisible();
   await expect(folderRow(page, "Zoom Move Lab")).toBeVisible();
 
