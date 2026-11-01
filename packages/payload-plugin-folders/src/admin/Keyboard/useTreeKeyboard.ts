@@ -535,23 +535,37 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
     previousKeys.current = keys;
   }, [activeKey, focusKey, itemRows]);
 
-  // A dialog closed and the focus did not come back to anything: it goes to the row the keyboard was on.
+  // A dialog closed and the focus did not come back to anything (what opened it was a menu item,
+  // which is gone): it goes to the row the keyboard was on. The focus trap hands the focus back a
+  // moment after the dialog has gone, so this looks for a short while before it gives up. Only a
+  // keyboard that was on a row before is brought back; a pointer user has no row to return to.
+  const restoreKey = useRef<string | null>(null);
+  restoreKey.current = activeKey === null ? null : tabStopKey;
   const wasModalOpen = useRef(false);
   useEffect(() => {
-    if (wasModalOpen.current && !isModalOpen) {
-      const timer = setTimeout(() => {
-        if (hasLostFocus() && tabStopKey !== null) {
-          focusKey(tabStopKey);
-        }
-      }, 0);
-      wasModalOpen.current = false;
+    if (isModalOpen) {
+      wasModalOpen.current = true;
 
-      return () => clearTimeout(timer);
+      return undefined;
     }
-    wasModalOpen.current = isModalOpen;
+    if (!wasModalOpen.current) {
+      return undefined;
+    }
+    wasModalOpen.current = false;
+    let ticks = 0;
+    const timer = setInterval(() => {
+      ticks += 1;
+      const key = restoreKey.current;
+      if (key !== null && hasLostFocus()) {
+        focusKey(key);
+        clearInterval(timer);
+      } else if (ticks >= 8) {
+        clearInterval(timer);
+      }
+    }, 50);
 
-    return undefined;
-  }, [focusKey, isModalOpen, tabStopKey]);
+    return () => clearInterval(timer);
+  }, [focusKey, isModalOpen]);
 
   // The cut rows that are no longer there are not waiting for a paste.
   useEffect(() => {

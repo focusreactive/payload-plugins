@@ -4,6 +4,7 @@ import type { APIRequestContext, Locator, Page } from "@playwright/test";
 
 import { childrenOf, createFolder, createPage, removeFolderTree } from "./helpers/content.js";
 import { moveOver, startDrag } from "./helpers/drag.js";
+import { menuItem, openRowMenu } from "./helpers/menu.js";
 import {
   expandFolder,
   folderRow,
@@ -173,6 +174,64 @@ test("three Alt+Down presses commit one move", async ({ page, request }) => {
   await page.keyboard.press("ControlOrMeta+z");
   await expect(page.getByText("Moved 1 item back")).toBeVisible();
   expect(await titlesIn(request, folder)).toEqual(["Kb A", "Kb B", "Kb C", "Kb D", "Kb E"]);
+});
+
+test("a row that moves in the page keeps the keyboard where the browser drops the focus on a move", async ({
+  page,
+  request,
+}) => {
+  const folder = await addFolder(request, "Kb focus");
+  for (const title of ["Kb f3", "Kb f2", "Kb f1"]) {
+    await addPage(request, title, folder);
+  }
+  // React moves a row with `moveBefore` where the browser has it, which keeps the focus; without
+  // it a row is taken out and put back, and a focused row loses the focus.
+  await page.addInitScript(() => {
+    (Element.prototype as unknown as { moveBefore?: unknown }).moveBefore = undefined;
+  });
+  await openZoomedTree(page, folder);
+  await expect(pageRow(page, "Kb f3")).toBeVisible();
+
+  await pageRow(page, "Kb f1").focus();
+  await page.keyboard.press("Alt+ArrowDown");
+  await page.keyboard.press("Alt+ArrowDown");
+
+  // The second press found the row focused, and it moved two places.
+  expect(await screenTitles(page)).toEqual(["Kb f2", "Kb f3", "Kb f1"]);
+  await expect(pageRow(page, "Kb f1")).toBeFocused();
+});
+
+test("a dialog opened from the context menu gives the focus back to its row", async ({
+  page,
+  request,
+}) => {
+  const folder = await addFolder(request, "Kb dialog");
+  await addPage(request, "Kb d1", folder);
+  await openZoomedTree(page, folder);
+
+  await openRowMenu(pageRow(page, "Kb d1"));
+  await menuItem(page, "Delete").click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  // What opened the dialog, the menu item, is gone: the row the keyboard was on takes the focus.
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(pageRow(page, "Kb d1")).toBeFocused();
+});
+
+test("after a delete the focus is on the row that took its place", async ({ page, request }) => {
+  const folder = await addFolder(request, "Kb vanish");
+  for (const title of ["Kb v3", "Kb v2", "Kb v1"]) {
+    await addPage(request, title, folder);
+  }
+  await openZoomedTree(page, folder);
+
+  await pageRow(page, "Kb v2").focus();
+  await page.keyboard.press("Delete");
+  await page.getByRole("dialog").getByRole("button", { exact: true, name: "Delete" }).click();
+
+  await expect(pageRow(page, "Kb v2")).toHaveCount(0);
+  await expect(pageRow(page, "Kb v3")).toBeFocused();
 });
 
 test("Alt+Up and Alt+Down at the ends move nothing", async ({ page, request }) => {
