@@ -274,6 +274,40 @@ describe("normalizeOptions", () => {
     expect(normalizeOptions(buildOptions(), buildConfig()).warnings).toEqual([]);
   });
 
+  it("warns when a locale falls back to a locale other than the default", () => {
+    const withFallback = normalizeOptions(
+      buildOptions(),
+      buildConfig({
+        localization: {
+          defaultLocale: "en",
+          locales: [
+            { code: "en", label: "English" },
+            { code: "de", label: "German" },
+            { code: "de-at", fallbackLocale: "de", label: "Austrian" },
+          ],
+        },
+      })
+    );
+    expect(withFallback.warnings).toHaveLength(1);
+    expect(withFallback.warnings[0]).toContain('"de-at"');
+    expect(withFallback.warnings[0]).toContain("default locale");
+
+    const withoutFallback = normalizeOptions(
+      buildOptions(),
+      buildConfig({
+        localization: {
+          defaultLocale: "en",
+          locales: [
+            { code: "en", label: "English" },
+            { code: "de", fallbackLocale: "en", label: "German" },
+            { code: "fr", label: "French" },
+          ],
+        },
+      })
+    );
+    expect(withoutFallback.warnings).toEqual([]);
+  });
+
   it("disabled returns the schema only", () => {
     const hostCollections = [
       buildCollection({ slug: "pages" }),

@@ -323,6 +323,19 @@ export const normalizeOptions = (
     }
   }
 
+  const localization = config.localization || undefined;
+  for (const locale of localization?.locales ?? []) {
+    if (typeof locale === "string" || locale.code === localization?.defaultLocale) {
+      continue;
+    }
+    const fallbackCodes = [locale.fallbackLocale ?? []].flat();
+    if (fallbackCodes.some((code) => code !== localization?.defaultLocale)) {
+      warnings.push(
+        `localization.locales: the locale "${locale.code}" sets fallbackLocale to ${fallbackCodes.map((code) => `"${code}"`).join(", ")}, but the plugin falls back to the default locale "${localization?.defaultLocale}" only. A "${locale.code}" read can report a page path that resolve and the stock query do not match.`
+      );
+    }
+  }
+
   const collections: Record<string, ResolvedPageCollection> = {};
   for (const [slug, pageOptions] of Object.entries(options.collections)) {
     if (!pageOptions) {
