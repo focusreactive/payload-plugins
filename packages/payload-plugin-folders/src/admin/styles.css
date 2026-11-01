@@ -1095,4 +1095,47 @@
   [data-fr-folders-greyed="true"] {
     opacity: 0.5;
   }
+
+  /* Operations: the banner of a stepped operation and its progress dialog (spec section 5.8) */
+
+  .fr-folders-operations {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-1);
+    padding: var(--spacer-2) var(--gutter-h) 0;
+  }
+
+  .fr-folders-operation-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacer-2);
+    padding: var(--spacer-2) var(--spacer-3);
+    border: var(--stroke-width-small) solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
+  }
+
+  .fr-folders-operation-banner__bar {
+    flex: 1 1 8rem;
+    min-width: 6rem;
+    max-width: 20rem;
+  }
+
+  .fr-folders-progress {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-2);
+
+    p {
+      margin: 0;
+    }
+  }
+
+  .fr-folders-progress__bar {
+    width: 100%;
+    height: var(--spacer-1-5);
+    accent-color: var(--color-text);
+  }
 }

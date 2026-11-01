@@ -1,5 +1,9 @@
 import type { MoveResult } from "../core/applyMove.js";
+import type { DeletePreview, DeleteResult } from "../core/deleteItems.js";
+import type { DuplicateResult } from "../core/duplicate.js";
 import type { ExpectedState, MoveAnchor, MovePreview } from "../core/move.js";
+import type { OperationKind, OperationProgress } from "../core/operations.js";
+import type { PublishAction, PublishPreview, PublishResult } from "../core/publish.js";
 import { isPageChangedMessage, rootPreconditionParameter } from "../core/rootPrecondition.js";
 import type { FolderId, ItemRef, TreeItem, TreeStatus } from "../types.js";
 
@@ -32,13 +36,24 @@ export type RevisionResponse = { revision: number };
 
 /** An endpoint answered with an error status, or did not answer with the expected JSON. */
 export class FoldersApiError extends Error {
+  /**
+   * What the refusal carries beyond its reason (`items` of a refused delete, `confirmWord`), from
+   * `errors[0].data`; `null` when the endpoint sends none.
+   */
+  readonly data: Record<string, unknown> | null;
   /** Why a move was refused (`stale`, `forbidden`, ...), when the endpoint says. */
   readonly reason: string | null;
   readonly status: number;
 
-  constructor(message: string, status: number, reason: string | null = null) {
+  constructor(
+    message: string,
+    status: number,
+    reason: string | null = null,
+    data: Record<string, unknown> | null = null
+  ) {
     super(message);
     this.name = "FoldersApiError";
+    this.data = data;
     this.reason = reason;
     this.status = status;
   }
@@ -80,6 +95,18 @@ const reasonOf = (body: unknown): string | null => {
   return null;
 };
 
+/** The `errors[0].data` object of an error body: the refusal's own details. */
+const dataOf = (body: unknown): Record<string, unknown> | null => {
+  if (isRecord(body) && Array.isArray(body.errors)) {
+    const [first] = body.errors as unknown[];
+    if (isRecord(first) && isRecord(first.data)) {
+      return first.data;
+    }
+  }
+
+  return null;
+};
+
 const buildQuery = (query: Record<string, string | number | null | undefined>): string => {
   const parameters = new URLSearchParams();
   for (const [name, value] of Object.entries(query)) {
@@ -100,7 +127,12 @@ const readJsonResponse = async <Response>(response: globalThis.Response): Promis
     // The status below says what went wrong when the body is not JSON.
   }
   if (!response.ok) {
-    throw new FoldersApiError(messageOf(body, response.status), response.status, reasonOf(body));
+    throw new FoldersApiError(
+      messageOf(body, response.status),
+      response.status,
+      reasonOf(body),
+      dataOf(body)
+    );
   }
 
   return body as Response;
@@ -563,3 +595,131 @@ export const previewFolderEdit = (
     ...(body.parent === undefined ? {} : { parent: body.parent }),
     ...(body.locale ? { locale: body.locale } : {}),
   });
+
+export type { DeletePreview, DeleteResult, DuplicateResult, PublishPreview, PublishResult };
+
+/** One selected item as the publish, duplicate and delete endpoints take it. */
+export type ItemBody = ItemRef;
+
+export type PublishBody = {
+  action: PublishAction;
+  items: ItemBody[];
+  locale?: string | null;
+};
+
+const publishRequestOf = ({ action, items, locale }: PublishBody) => ({
+  action,
+  items,
+  ...(locale ? { locale } : {}),
+});
+
+/** The counts the Publish dialog states; nothing is written (`dryRun`). */
+export const previewPublish = (
+  context: FoldersApiContext,
+  body: PublishBody,
+  signal?: AbortSignal
+): Promise<PublishPreview> =>
+  postJson<PublishPreview>(context, "publish", { ...publishRequestOf(body), dryRun: true }, signal);
+
+/** Publishes or unpublishes; above the synchronous limit the answer is an operation to step. */
+export const postPublish = (
+  context: FoldersApiContext,
+  body: PublishBody
+): Promise<PublishResult> => postJson<PublishResult>(context, "publish", publishRequestOf(body));
+
+export type DuplicateBody = {
+  items: ItemBody[];
+  /** The admin locale: the name and segment of a single copy are written in it. */
+  locale?: string | null;
+  overrides?: { name?: string; slug?: string };
+  /** `null` is the top level; left out, a single item is copied beside the original. */
+  toFolder?: FolderId | null;
+};
+
+export const postDuplicate = (
+  context: FoldersApiContext,
+  { locale, ...body }: DuplicateBody
+): Promise<DuplicateResult> =>
+  postJson<DuplicateResult>(context, `duplicate${buildQuery({ locale })}`, body);
+
+/** What a delete would remove, and the word the dialog asks for above 10 pages. */
+export const previewDelete = (
+  context: FoldersApiContext,
+  items: ItemBody[],
+  signal?: AbortSignal
+): Promise<DeletePreview> => postJson<DeletePreview>(context, "delete/preview", { items }, signal);
+
+export const postDelete = (
+  context: FoldersApiContext,
+  { confirmWord, items }: { confirmWord?: string; items: ItemBody[] }
+): Promise<DeleteResult> =>
+  postJson<DeleteResult>(context, "delete", {
+    ...(confirmWord === undefined ? {} : { confirmWord }),
+    items,
+  });
+
+/** Processes the next slice of a stepped operation; a failed step answers `status: "failed"`. */
+export const postOperationStep = (
+  context: FoldersApiContext,
+  id: FolderId
+): Promise<OperationProgress> => postJson<OperationProgress>(context, `operations/${id}/step`, {});
+
+/** An operation as the progress dialog and the banner show it. */
+export type OperationSummary = {
+  done: number;
+  error?: string;
+  id: FolderId;
+  kind: OperationKind;
+  status: OperationProgress["status"];
+  total: number;
+};
+
+/** How long an unfinished operation stays worth resuming: older ones are left alone. */
+export const resumableOperationAgeMs = 24 * 60 * 60 * 1000;
+
+/**
+ * The signed-in user's operations that are not done, newest first, read through Payload's own REST
+ * route. The work list (`items`) is left out of the read, because it holds one entry per document.
+ */
+export const fetchUnfinishedOperations = async (
+  context: FoldersApiContext,
+  { now = new Date(), userId }: { now?: Date; userId: FolderId }
+): Promise<OperationSummary[]> => {
+  const send = context.fetchImplementation ?? fetch;
+  const since = new Date(now.getTime() - resumableOperationAgeMs).toISOString();
+  const response = await send(
+    `${context.baseUrl}/folder-operations${buildQuery({
+      depth: 0,
+      limit: 10,
+      "select[done]": "true",
+      "select[error]": "true",
+      "select[kind]": "true",
+      "select[status]": "true",
+      "select[total]": "true",
+      sort: "-createdAt",
+      "where[and][0][createdBy][equals]": String(userId),
+      "where[and][1][status][not_equals]": "done",
+      "where[and][2][updatedAt][greater_than]": since,
+    })}`,
+    { credentials: "include", headers: { Accept: "application/json" }, method: "GET" }
+  );
+  const { docs } = await readJsonResponse<{
+    docs: Array<{
+      done?: number;
+      error?: string | null;
+      id: FolderId;
+      kind: OperationKind;
+      status: OperationProgress["status"];
+      total?: number;
+    }>;
+  }>(response);
+
+  return docs.map((doc) => ({
+    done: doc.done ?? 0,
+    ...(doc.error ? { error: doc.error } : {}),
+    id: doc.id,
+    kind: doc.kind,
+    status: doc.status,
+    total: doc.total ?? 0,
+  }));
+};

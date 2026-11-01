@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import type { TreeItem } from "../../types.js";
 import type { FoldersApiContext } from "../api.js";
 import type { Translate } from "../compat.js";
+import type { FoldersTranslationKey } from "../../translations/index.js";
 import { FolderPickerTree } from "../Move/FolderPickerTree.js";
 import type { FolderChoice } from "../Move/FolderPickerTree.js";
 import type { TreeStore } from "../store.js";
@@ -17,6 +18,7 @@ export const ParentField = ({
   apiContext,
   choice,
   foldersSlug,
+  labelKey = "createParent",
   onChoose,
   refusalFor,
   store,
@@ -25,6 +27,8 @@ export const ParentField = ({
   apiContext: FoldersApiContext;
   choice: FolderChoice;
   foldersSlug: string;
+  /** What the field is called; "Parent folder" unless the dialog says "Target folder". */
+  labelKey?: FoldersTranslationKey;
   onChoose: (choice: FolderChoice) => void;
   refusalFor: (target: TreeItem | null) => string | null;
   store: TreeStore;
@@ -34,7 +38,7 @@ export const ParentField = ({
 
   return (
     <div className="fr-folders-field">
-      <span className="fr-folders-field__label">{translate("createParent")}</span>
+      <span className="fr-folders-field__label">{translate(labelKey)}</span>
       <div className="fr-folders-parent">
         <span data-testid="parent-name">{choice.title}</span>
         <Button

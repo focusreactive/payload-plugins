@@ -31,8 +31,14 @@ export type ContextMenuActions = {
   moveMode: (items: readonly TreeItem[]) => void;
   /** "Move to...": opens the folder picker for these rows. */
   moveTo: (items: readonly TreeItem[]) => void;
+  /** "Delete": opens the delete dialog for these rows. */
+  delete: (items: readonly TreeItem[]) => void;
+  /** "Duplicate": opens the duplicate dialog for these rows. */
+  duplicate: (items: readonly TreeItem[]) => void;
   /** Opens a page's edit view in this tab. */
   openPage: (url: string) => void;
+  /** "Publish" and "Unpublish": open the publish dialog for these rows. */
+  publish: (items: readonly TreeItem[], action: "publish" | "unpublish") => void;
   /** Moves one row one place up or down its folder. */
   moveWithinFolder: (item: TreeItem, target: MoveTarget) => void;
   setAsRoot: (item: TreeItem) => void;
@@ -46,8 +52,12 @@ export type ContextMenuOptions = {
   actions: ContextMenuActions;
   adminRoute: string;
   apiContext: FoldersApiContext;
+  /** Whether the user may create documents in a collection, for Duplicate. */
+  canCreate?: (collection: string) => boolean;
   /** The menu's entries, `contextMenuDefinitions` unless a test passes its own. */
   definitions?: readonly ContextMenuDefinition[];
+  /** The page collections with drafts: a page of any other is always live and has no Publish. */
+  draftCollections?: readonly string[];
   hasPreviewUrl: boolean;
   /** A move or its preview is in flight. */
   isBusy: boolean;
@@ -83,7 +93,9 @@ export const useContextMenu = ({
   actions,
   adminRoute,
   apiContext,
+  canCreate,
   definitions,
+  draftCollections,
   hasPreviewUrl,
   isBusy,
   rows,
@@ -121,6 +133,8 @@ export const useContextMenu = ({
     const isTicked = selection.isSelected(item);
 
     return {
+      canCreate,
+      draftCollections,
       hasMoreSiblings: entry?.hasMore ?? false,
       hasPreviewUrl,
       isBusy,
@@ -130,7 +144,7 @@ export const useContextMenu = ({
       siblings: entry?.items ?? [],
       targets: isTicked && selection.items.length > 1 ? selection.items : [item],
     };
-  }, [hasPreviewUrl, isBusy, item, selection, state, typeLabels]);
+  }, [canCreate, draftCollections, hasPreviewUrl, isBusy, item, selection, state, typeLabels]);
 
   const groups = useMemo(
     () => (context === null ? [] : buildContextMenu(context, definitions)),
@@ -233,6 +247,19 @@ export const useContextMenu = ({
           if (moveTarget !== null) {
             actions.moveWithinFolder(target, moveTarget);
           }
+          break;
+        }
+        case "duplicate": {
+          actions.duplicate(targets);
+          break;
+        }
+        case "publish":
+        case "unpublish": {
+          actions.publish(targets, entryId);
+          break;
+        }
+        case "delete": {
+          actions.delete(targets);
           break;
         }
         case "copyUrl": {

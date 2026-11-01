@@ -21,6 +21,8 @@ const item = (
   ...overrides,
 });
 
+const folderOnly = (collection: string) => collection === "folders";
+
 describe("toolbarStateOf", () => {
   const page = item({ id: 1, kind: "page", title: "Page" });
   const folder = item({ id: 2, kind: "folder", title: "Folder" });
@@ -55,7 +57,7 @@ describe("toolbarStateOf", () => {
     expect(states.delete.disabledBecause).toBeNull();
   });
 
-  it("follows each flag: update for moving, duplicating and settings, delete for Delete", () => {
+  it("follows each flag: update for moving and settings, delete for Delete, publish for Publish", () => {
     const readOnly = item({
       access: { delete: false, publish: false, update: false },
       id: 4,
@@ -65,10 +67,30 @@ describe("toolbarStateOf", () => {
 
     const states = toolbarStateOf([readOnly]);
 
-    for (const action of ["move", "moveTo", "duplicate", "settings"] as const) {
+    for (const action of ["move", "moveTo", "settings"] as const) {
       expect(states[action].disabledBecause).toBe("access");
     }
     expect(states.delete.disabledBecause).toBe("access");
     expect(states.publish.disabledBecause).toBe("access");
+  });
+
+  it("turns Duplicate off when the user may not create where the rows live, whatever their update flag says", () => {
+    const readOnly = item({
+      access: { delete: false, publish: false, update: false },
+      id: 4,
+      kind: "page",
+      title: "Locked",
+    });
+
+    expect(toolbarStateOf([readOnly]).duplicate.disabledBecause).toBeNull();
+    expect(toolbarStateOf([page], { canCreate: folderOnly }).duplicate.disabledBecause).toBe(
+      "access"
+    );
+    expect(
+      toolbarStateOf([folder], { canCreate: folderOnly }).duplicate.disabledBecause
+    ).toBeNull();
+    expect(
+      toolbarStateOf([folder, page], { canCreate: folderOnly }).duplicate.disabledBecause
+    ).toBe("access");
   });
 });

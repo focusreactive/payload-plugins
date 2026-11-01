@@ -35,8 +35,10 @@ describe("buildContextMenu, which entries a row gets", () => {
   it("gives a page Open, Open in new tab, Settings, Set as root page, the moves and Copy URL", () => {
     expect(idsOf(contextFor(pageRow(2, "Contact", 5)))).toEqual([
       ["open", "openInNewTab"],
-      ["settings", "setAsRoot", "move", "moveTo", "moveUp", "moveDown"],
+      ["settings", "setAsRoot", "move", "moveTo", "moveUp", "moveDown", "duplicate"],
       ["copyUrl"],
+      ["publish", "unpublish"],
+      ["delete"],
     ]);
   });
 
@@ -44,8 +46,10 @@ describe("buildContextMenu, which entries a row gets", () => {
     expect(idsOf(contextFor(folderRow(2, "News", 5)))).toEqual([
       ["open"],
       ["createFolder"],
-      ["settings", "move", "moveTo", "moveUp", "moveDown"],
+      ["settings", "move", "moveTo", "moveUp", "moveDown", "duplicate"],
       ["copyUrl"],
+      ["publish", "unpublish"],
+      ["delete"],
     ]);
   });
 
@@ -70,6 +74,7 @@ describe("buildContextMenu, which entries a row gets", () => {
       "moveTo",
       "moveUp",
       "moveDown",
+      "duplicate",
     ]);
     expect(entryOf(contextFor(root), "unsetRoot")?.label).toEqual({ key: "menuUnsetRoot" });
   });
@@ -208,7 +213,9 @@ describe("buildContextMenu on a ticked row of several", () => {
     });
 
     expect(idsOf(contextFor(ticked, { targets: [ticked, readOnlyRow] }))).toEqual([
-      ["move", "moveTo"],
+      ["move", "moveTo", "duplicate"],
+      ["publish", "unpublish"],
+      ["delete"],
     ]);
     expect(
       entryOf(contextFor(ticked, { targets: [ticked, readOnlyRow] }), "moveTo")?.reason
@@ -216,5 +223,63 @@ describe("buildContextMenu on a ticked row of several", () => {
     expect(
       entryOf(contextFor(ticked, { targets: [ticked, pageRow(4, "C", 5)] }), "moveTo")?.reason
     ).toBeNull();
+  });
+});
+
+const canCreateOnlyFolders = (collection: string) => collection === "folders";
+
+describe("buildContextMenu, Duplicate, Publish, Unpublish and Delete (P-46)", () => {
+  const drafter = { delete: false, publish: false, update: true };
+
+  it("disables Duplicate without create access on what is copied, and asks nothing when it is not given", () => {
+    const page = pageRow(2, "Contact", 5);
+
+    expect(entryOf(contextFor(page), "duplicate")?.reason).toBeNull();
+    expect(
+      entryOf(contextFor(page, { canCreate: canCreateOnlyFolders }), "duplicate")?.reason
+    ).toEqual({ key: "menuNoAccess" });
+    expect(
+      entryOf(contextFor(folderRow(2, "News", 5), { canCreate: canCreateOnlyFolders }), "duplicate")
+        ?.reason
+    ).toBeNull();
+  });
+
+  it("disables Publish and Unpublish without publish access, and Delete without delete access", () => {
+    const context = contextFor(pageRow(2, "Contact", 5, { access: drafter }));
+
+    expect(entryOf(context, "publish")?.reason).toEqual({ key: "menuNoAccess" });
+    expect(entryOf(context, "unpublish")?.reason).toEqual({ key: "menuNoAccess" });
+    expect(entryOf(context, "delete")?.reason).toEqual({ key: "menuNoAccess" });
+    expect(entryOf(context, "duplicate")?.reason).toBeNull();
+  });
+
+  it("needs the right on every ticked row of a selection", () => {
+    const ticked = pageRow(2, "A", 5);
+    const other = pageRow(3, "B", 5, { access: drafter });
+
+    expect(entryOf(contextFor(ticked, { targets: [ticked, other] }), "delete")?.reason).toEqual({
+      key: "menuNoAccess",
+    });
+    expect(
+      entryOf(contextFor(ticked, { targets: [ticked, pageRow(4, "C", 5)] }), "delete")?.reason
+    ).toBeNull();
+  });
+
+  it("leaves Publish and Unpublish off a page whose collection has no drafts, but not off a folder", () => {
+    const page = pageRow(2, "Contact", 5);
+    const folder = folderRow(3, "News", 5);
+
+    expect(idsOf(contextFor(page, { draftCollections: ["posts"] })).flat()).not.toContain(
+      "publish"
+    );
+    expect(idsOf(contextFor(page, { draftCollections: ["pages"] })).flat()).toContain("unpublish");
+    expect(idsOf(contextFor(folder, { draftCollections: [] })).flat()).toContain("publish");
+  });
+
+  it("puts Delete in a group of its own, last, as the spec table does", () => {
+    const groups = idsOf(contextFor(pageRow(2, "Contact", 5)));
+
+    expect(groups.at(-1)).toEqual(["delete"]);
+    expect(groups.at(-2)).toEqual(["publish", "unpublish"]);
   });
 });

@@ -27,11 +27,13 @@ export type ActionState = {
   visible: boolean;
 };
 
-/** The row access flag each action needs on every selected row. */
-const flagByAction: Record<ToolbarAction, "delete" | "publish" | "update"> = {
+/**
+ * The row access flag each action needs on every selected row. Duplicate has none: copies are new
+ * documents, so it asks `canCreate` instead (the rows carry no create flag).
+ */
+const flagByAction: Record<ToolbarAction, "delete" | "publish" | "update" | null> = {
   delete: "delete",
-  // Copies are new drafts of what the editor may change; the rows carry no create flag.
-  duplicate: "update",
+  duplicate: null,
   move: "update",
   moveTo: "update",
   publish: "publish",
@@ -43,12 +45,24 @@ const flagByAction: Record<ToolbarAction, "delete" | "publish" | "update"> = {
  * Which buttons the toolbar offers for a selection. An action is off when any selected row denies
  * the flag it needs, so the UI never offers what a row refuses (the server checks again).
  */
-export const toolbarStateOf = (items: readonly TreeItem[]): Record<ToolbarAction, ActionState> => {
+export const toolbarStateOf = (
+  items: readonly TreeItem[],
+  {
+    canCreate = () => true,
+  }: {
+    /** Whether the user may create documents in a collection; Duplicate needs it for every row. */
+    canCreate?: (collection: string) => boolean;
+  } = {}
+): Record<ToolbarAction, ActionState> => {
   const states = {} as Record<ToolbarAction, ActionState>;
   for (const action of toolbarActions) {
     const flag = flagByAction[action];
+    const isAllowed =
+      flag === null
+        ? items.every((item) => canCreate(item.collection))
+        : items.every((item) => item.access[flag]);
     states[action] = {
-      disabledBecause: items.every((item) => item.access[flag]) ? null : "access",
+      disabledBecause: isAllowed ? null : "access",
       visible: action !== "settings" || items.length === 1,
     };
   }

@@ -9,6 +9,17 @@ import type { SiblingMoveBlock } from "./siblingMove.js";
 
 /** What the rules need to know about the row a menu opened on and the rows around it. */
 export type ContextMenuContext = {
+  /**
+   * Whether the user may create documents in a collection (a folder row's `collection` is the
+   * folders collection). The rows carry no `create` flag, so Duplicate asks the admin's own
+   * permissions; absent, the menu does not ask and the server decides.
+   */
+  canCreate?: (collection: string) => boolean;
+  /**
+   * The page collections with drafts. A page of any other collection is always live, so it has
+   * nothing to publish and no Publish entry (spec section 7.5); absent, every page counts.
+   */
+  draftCollections?: readonly string[];
   /** More rows of the item's folder exist than are loaded. */
   hasMoreSiblings: boolean;
   /** The host set `admin.previewUrl`. */
@@ -31,7 +42,14 @@ export type ContextMenuContext = {
 };
 
 /** The groups of the menu, in the order the spec table lists them; a divider separates two groups. */
-export const contextMenuGroups = ["open", "create", "structure", "share"] as const;
+export const contextMenuGroups = [
+  "open",
+  "create",
+  "structure",
+  "share",
+  "publish",
+  "danger",
+] as const;
 
 export type ContextMenuGroup = (typeof contextMenuGroups)[number];
 
@@ -55,6 +73,28 @@ const moveReason = (context: ContextMenuContext): MenuReason | null => {
 
   return context.targets.every((target) => target.access.update) ? null : noAccess;
 };
+
+/** Copies are new documents, so Duplicate needs `create` on what is copied. */
+const duplicateReason = (context: ContextMenuContext): MenuReason | null =>
+  context.canCreate === undefined ||
+  context.targets.every((target) => context.canCreate?.(target.collection) !== false)
+    ? null
+    : noAccess;
+
+/** A page of a collection without drafts is always live: there is nothing to publish or unpublish. */
+const hasPublishState = (context: ContextMenuContext): boolean =>
+  context.targets.some(
+    (target) =>
+      target.kind === "folder" ||
+      context.draftCollections === undefined ||
+      context.draftCollections.includes(target.collection)
+  );
+
+const publishReason = (context: ContextMenuContext): MenuReason | null =>
+  context.targets.every((target) => target.access.publish) ? null : noAccess;
+
+const deleteReason = (context: ContextMenuContext): MenuReason | null =>
+  context.targets.every((target) => target.access.delete) ? null : noAccess;
 
 const blockReasons: Record<SiblingMoveBlock, MenuReason> = {
   first: { key: "menuFirstItem" },
@@ -102,10 +142,20 @@ const unsetRootReason = ({ item }: ContextMenuContext): MenuReason | null =>
     ? null
     : noAccess;
 
+const publishEntry =
+  (action: "publish" | "unpublish") =>
+  (context: ContextMenuContext): MenuEntry | null =>
+    hasPublishState(context)
+      ? {
+          id: action,
+          label: { key: action === "publish" ? "actionPublish" : "actionUnpublish" },
+          reason: publishReason(context),
+        }
+      : null;
+
 /**
- * The menu's entries, in the order of the spec's table (section 7.5). Later tickets add theirs here
- * in that place instead of the menu showing an entry that does nothing: Duplicate (P-46), Publish
- * and Unpublish (P-27), Delete (P-26, P-28).
+ * The menu's entries, in the order of the spec's table (section 7.5). A later ticket adds its entry
+ * here, in that place, instead of the menu showing an entry that does nothing.
  */
 export const contextMenuDefinitions: ContextMenuDefinition[] = [
   {
@@ -195,6 +245,16 @@ export const contextMenuDefinitions: ContextMenuDefinition[] = [
   { build: siblingMoveEntry("up"), group: "structure", id: "moveUp" },
   { build: siblingMoveEntry("down"), group: "structure", id: "moveDown" },
   {
+    appliesToSelection: true,
+    build: (context) => ({
+      id: "duplicate",
+      label: { key: "actionDuplicate" },
+      reason: duplicateReason(context),
+    }),
+    group: "structure",
+    id: "duplicate",
+  },
+  {
     build: ({ item }) => {
       if (item.kind === "page") {
         return {
@@ -225,6 +285,23 @@ export const contextMenuDefinitions: ContextMenuDefinition[] = [
         : null,
     group: "share",
     id: "viewPage",
+  },
+  { appliesToSelection: true, build: publishEntry("publish"), group: "publish", id: "publish" },
+  {
+    appliesToSelection: true,
+    build: publishEntry("unpublish"),
+    group: "publish",
+    id: "unpublish",
+  },
+  {
+    appliesToSelection: true,
+    build: (context) => ({
+      id: "delete",
+      label: { key: "actionDelete" },
+      reason: deleteReason(context),
+    }),
+    group: "danger",
+    id: "delete",
   },
 ];
 

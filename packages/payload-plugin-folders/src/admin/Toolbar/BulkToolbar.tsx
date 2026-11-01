@@ -10,12 +10,11 @@ import type { ToolbarAction } from "./toolbarActions.js";
 export type BulkToolbarProps = {
   /** A move is in flight: Move and Move to... wait for it, because a second move would be dropped. */
   busy?: boolean;
+  /** Whether the user may create documents in a collection, for Duplicate. */
+  canCreate?: (collection: string) => boolean;
   items: readonly TreeItem[];
   onCancel: () => void;
-  /**
-   * What each button does. An action with no handler yet (its dialog is a later ticket) is shown
-   * as access allows and does nothing when pressed.
-   */
+  /** What each button does. */
   onAction: (action: ToolbarAction) => void;
   translate: Translate;
 };
@@ -37,12 +36,13 @@ const labelKeys = {
  */
 export const BulkToolbar = ({
   busy = false,
+  canCreate,
   items,
   onAction,
   onCancel,
   translate,
 }: BulkToolbarProps): ReactNode => {
-  const states = toolbarStateOf(items);
+  const states = toolbarStateOf(items, { canCreate });
 
   return (
     <header

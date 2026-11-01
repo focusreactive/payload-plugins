@@ -34,6 +34,23 @@ export {
 /** The signed-in user's id, `null` while signed out. */
 export const useUserId = (): number | string | null => useAuth().user?.id ?? null;
 
+/**
+ * Whether the signed-in user may create documents in a collection, from the admin's own
+ * permissions (the tree rows carry no `create` flag). Before the permissions have loaded it says
+ * yes: the server checks again whatever the button allowed.
+ */
+export const useCanCreate = (): ((collection: string) => boolean) => {
+  const { permissions } = useAuth();
+
+  return useCallback(
+    (collection: string) =>
+      permissions?.collections === undefined
+        ? true
+        : permissions.collections[collection]?.create === true,
+    [permissions]
+  );
+};
+
 /** The admin locale code, or `null` when localization is off (`useLocale` is nullable in 4.x). */
 export const useLocaleCode = (): string | null => useLocale()?.code ?? null;
 

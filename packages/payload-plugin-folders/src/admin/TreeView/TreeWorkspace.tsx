@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 
 import type { ConfirmMoves } from "../../types.js";
-import { ListHeader, useLocaleCount } from "../compat.js";
+import { ListHeader, useCanCreate, useLocaleCount } from "../compat.js";
 import type { Translate } from "../compat.js";
 import { buildCreateMenu, createPageEntryPrefix } from "../Create/createMenu.js";
 import { CreateMenuButton } from "../Create/CreateMenuButton.js";
@@ -13,6 +13,7 @@ import { useRootPageFlow } from "../ContextMenu/useRootPageFlow.js";
 import { DragAndDropProvider } from "../DragAndDrop/DragAndDropProvider.js";
 import type { DropRules } from "../DragAndDrop/dropTargets.js";
 import type { MoveTarget } from "../Move/moveFlow.js";
+import { useOperationsFlow } from "../Operations/useOperationsFlow.js";
 import { MoveModeBar } from "../MoveMode/MoveModeBar.js";
 import { placeMarkers } from "../MoveMode/moveMarkers.js";
 import type { MoveMarker } from "../MoveMode/moveMarkers.js";
@@ -150,6 +151,18 @@ export const TreeWorkspace = ({
   );
 
   const apiContext = useApiContext(store);
+  const canCreate = useCanCreate();
+  const operationsFlow = useOperationsFlow({
+    apiContext,
+    foldersSlug,
+    languageCount,
+    locale: store.getOptions()?.locale ?? null,
+    onSettled: clear,
+    store,
+    translate,
+    typeLabels,
+  });
+  const { startDelete, startDuplicate, startPublish } = operationsFlow;
   useFolderFromQuery({ apiContext, focusRow: focusTreeRowWhenShown, foldersSlug, store });
   const rootPageFlow = useRootPageFlow({ apiContext, languageCount, state, store, translate });
   const { start: startSetAsRoot } = rootPageFlow;
@@ -219,10 +232,13 @@ export const TreeWorkspace = ({
     () => ({
       createFolder: startFolder,
       createPage: startPage,
+      delete: startDelete,
+      duplicate: startDuplicate,
       moveMode: startMoveMode,
       moveTo: startMoveTo,
       moveWithinFolder,
       openPage: onOpenPage,
+      publish: startPublish,
       setAsRoot: startSetAsRoot,
       settings: startSettings,
       unsetRoot: startUnroot,
@@ -230,10 +246,13 @@ export const TreeWorkspace = ({
     [
       moveWithinFolder,
       onOpenPage,
+      startDelete,
+      startDuplicate,
       startFolder,
       startMoveMode,
       startMoveTo,
       startPage,
+      startPublish,
       startSetAsRoot,
       startSettings,
       startUnroot,
@@ -243,6 +262,8 @@ export const TreeWorkspace = ({
     actions: menuActions,
     adminRoute,
     apiContext,
+    canCreate,
+    draftCollections,
     hasPreviewUrl,
     isBusy: isMoveBusy,
     rows,
@@ -264,10 +285,25 @@ export const TreeWorkspace = ({
       if (action === "settings" && selection.items.length === 1) {
         startSettings(selection.items[0] as TreeItem);
       }
-      // Duplicate, Publish, Unpublish and Delete open their dialogs in a later ticket (spec
-      // section 7.10); until then pressing one does nothing.
+      if (action === "duplicate") {
+        startDuplicate(selection.items);
+      }
+      if (action === "publish" || action === "unpublish") {
+        startPublish(selection.items, action);
+      }
+      if (action === "delete") {
+        startDelete(selection.items);
+      }
     },
-    [enterMoveMode, selection.items, startMoveTo, startSettings]
+    [
+      enterMoveMode,
+      selection.items,
+      startDelete,
+      startDuplicate,
+      startMoveTo,
+      startPublish,
+      startSettings,
+    ]
   );
 
   return (
@@ -278,6 +314,7 @@ export const TreeWorkspace = ({
       {selection.items.length > 0 && !moveMode.active ? (
         <BulkToolbar
           busy={isMoveBusy}
+          canCreate={canCreate}
           items={selection.items}
           onAction={runAction}
           onCancel={clear}
@@ -297,6 +334,7 @@ export const TreeWorkspace = ({
           title={title}
         />
       ) : null}
+      {operationsFlow.banner}
       <div className="fr-folders-body">
         <DragAndDropProvider
           disabled={isMoveBusy || moveMode.active}
@@ -338,6 +376,7 @@ export const TreeWorkspace = ({
       {rootPageFlow.dialog}
       {settingsFlow.dialogs}
       {createFlow.dialogs}
+      {operationsFlow.dialogs}
       {contextMenu.menu}
     </>
   );
