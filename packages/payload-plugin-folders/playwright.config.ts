@@ -9,6 +9,8 @@ const port = 4078;
 // all of them agree on one temporary database directory.
 process.env.FOLDERS_E2E_DATABASE_DIRECTORY ??= mkdtempSync(path.join(tmpdir(), "folders-e2e-"));
 const databaseDirectory = process.env.FOLDERS_E2E_DATABASE_DIRECTORY;
+// The seed and the second dev servers inherit this, and so does the main server below.
+process.env.FOLDERS_SQLITE_WAL ??= "true";
 
 export default defineConfig({
   // The first visit to a view compiles it in the dev server, which takes a while.
@@ -19,7 +21,8 @@ export default defineConfig({
   globalSetup: "./tests/e2e/globalSetup.ts",
   globalTeardown: "./tests/e2e/globalTeardown.ts",
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  reporter: process.env.CI ? "github" : "list",
+  // The list shows how long each test took, which a CI log needs to tell a slow runner from a hang.
+  reporter: process.env.CI ? [["github"], ["list"]] : "list",
   retries: process.env.CI ? 2 : 0,
   testDir: "./tests/e2e",
   testMatch: "**/*.e2e.spec.ts",

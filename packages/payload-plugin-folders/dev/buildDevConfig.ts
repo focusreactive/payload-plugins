@@ -68,10 +68,17 @@ const withPublicRead = (
 export const buildDevConfig = ({
   autoLogin = !isProduction,
   db = sqliteAdapter({
+    // Several processes open the file (the server, the process that prepares static paths, a
+    // second dev server, the seed), and each starts by writing to it. Without a wait, a reader that
+    // meets another process's write fails at once with SQLITE_BUSY and the page answers 500.
+    busyTimeout: 10_000,
     client: { url: process.env.DATABASE_URI || `file:${path.resolve(dirname, "dev.db")}` },
     // Without transactionOptions the SQLite adapter's transactions are no-ops and a failed move
     // would leave half its writes behind.
     transactionOptions: {},
+    // The end-to-end run turns this on: in WAL mode a reader is not blocked by a write. It is off
+    // otherwise so that `dev.db` does not grow -wal and -shm files beside it.
+    wal: process.env.FOLDERS_SQLITE_WAL === "true",
   }),
   extraCollections = [],
   foldersOptions,

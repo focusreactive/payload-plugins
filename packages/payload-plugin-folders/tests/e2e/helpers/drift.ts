@@ -14,6 +14,8 @@ export const writeFolderPathDrift = async (folderId: number, fullPath: string): 
   const { createClient } = await import("@libsql/client");
   const client = createClient({ url: `file:${path.join(databaseDirectory, "e2e.db")}` });
   try {
+    // The dev server writes to the same file; without a wait a write that meets one fails at once.
+    await client.execute("PRAGMA busy_timeout = 10000");
     const result = await client.execute({
       args: [fullPath, folderId],
       sql: "UPDATE folders_locales SET full_path = ? WHERE _parent_id = ?",
@@ -38,6 +40,8 @@ export const writeFolderSlug = async (folderId: number, slug: string): Promise<v
   const { createClient } = await import("@libsql/client");
   const client = createClient({ url: `file:${path.join(databaseDirectory, "e2e.db")}` });
   try {
+    // The dev server writes to the same file; without a wait a write that meets one fails at once.
+    await client.execute("PRAGMA busy_timeout = 10000");
     const result = await client.execute({
       args: [slug, folderId],
       sql: "UPDATE folders_locales SET slug = ? WHERE _parent_id = ?",
