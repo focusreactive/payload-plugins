@@ -31,7 +31,11 @@ export default defineConfig({
   webServer: {
     // The PID file lets anyone stop this server by that PID alone, never by process name.
     command: "mkdir -p .run && echo $$ > .run/next-dev.pid && exec npm run dev",
-    env: { DATABASE_URI: `file:${path.join(databaseDirectory, "e2e.db")}` },
+    env: {
+      DATABASE_URI: `file:${path.join(databaseDirectory, "e2e.db")}`,
+      // Offers German as an admin language; a spec asks for it with the browser's locale.
+      FOLDERS_ADMIN_GERMAN: "true",
+    },
     // A reused server would be pointing at some other database.
     reuseExistingServer: false,
     timeout: 180_000,

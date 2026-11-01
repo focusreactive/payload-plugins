@@ -2,6 +2,8 @@ import { foldersPlugin } from "@focus-reactive/payload-plugin-folders";
 import type { FoldersPluginOptions } from "@focus-reactive/payload-plugin-folders";
 import { sqliteAdapter } from "@payloadcms/db-sqlite";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
+import { de } from "@payloadcms/translations/languages/de";
+import { en } from "@payloadcms/translations/languages/en";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildConfig } from "payload";
@@ -80,6 +82,12 @@ export const buildDevConfig = ({
     ],
     db,
     email: testEmailAdapter,
+    // German is an admin language only when `FOLDERS_ADMIN_GERMAN=true`, so the plugin's German
+    // strings can be seen on screen; without it the dev admin stays English-only. The language
+    // follows the browser's Accept-Language, so the flag changes nothing for an English browser.
+    ...(process.env.FOLDERS_ADMIN_GERMAN === "true"
+      ? { i18n: { supportedLanguages: { de, en } } }
+      : {}),
     ...(localized
       ? { localization: { defaultLocale: "en", fallback: true, locales: ["en", "de"] } }
       : {}),
