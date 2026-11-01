@@ -590,6 +590,6 @@ test("confirmMoves always asks for a reorder", async ({ page, request }) => {
       "Always Two",
     ]);
   } finally {
-    stopStockServer();
+    await stopStockServer();
   }
 });

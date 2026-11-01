@@ -45,7 +45,7 @@ test("treeView false keeps the stock list", async ({ page }) => {
     await expect(page.getByRole("link", { name: "Blog", exact: true })).toBeVisible();
     await expect(page.getByRole("treegrid")).toHaveCount(0);
   } finally {
-    stopStockServer();
+    await stopStockServer();
   }
 });
 

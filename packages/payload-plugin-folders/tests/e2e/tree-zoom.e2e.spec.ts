@@ -658,6 +658,6 @@ test("a fresh database shows No content yet", async ({ page }) => {
     await expect(folderRow(page, "First Folder")).toBeVisible();
     await expect(page.getByTestId("empty-panel")).toHaveCount(0);
   } finally {
-    stopStockServer();
+    await stopStockServer();
   }
 });

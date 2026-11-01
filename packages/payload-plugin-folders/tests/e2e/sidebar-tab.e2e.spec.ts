@@ -478,7 +478,7 @@ test("a keyboard move that needs a confirmation is dropped when the tree view is
     await addDraft(request, "Leave Confirm Late", folder);
     await expect(tabRow(page, "Leave Confirm Late")).toBeVisible({ timeout: 40_000 });
   } finally {
-    stopStockServer();
+    await stopStockServer();
   }
 });
 
