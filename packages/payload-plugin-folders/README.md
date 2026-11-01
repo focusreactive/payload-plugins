@@ -148,8 +148,9 @@ The plugin throws one `FoldersConfigError` that lists every problem it found:
 - A limit, `maxDepth` or `admin.pageSize` that is not a positive whole number.
 
 Warnings go to the Payload logger at startup. The plugin warns about a SQLite adapter without
-`transactionOptions`, about a unique segment field (below), and about a collection that also uses
-`@payloadcms/plugin-nested-docs`.
+`transactionOptions`, about a unique segment field (below), about a collection that also uses
+`@payloadcms/plugin-nested-docs`, and about a locale whose `fallbackLocale` is not the default
+locale (see Locales).
 
 **A unique slug field loses its index.** The same segment must be allowed in two folders, so the
 plugin removes `unique` from the segment field and keeps a plain index. The next migration drops
@@ -1088,6 +1089,11 @@ export const folderUpdateAccess = restrictLimitedRole("id", "parent");
 - **A page can be live in one locale only.** Each live locale needs an effective segment, its own or
   the default locale's live one through fallback. The default-locale segment is required only when
   a live locale falls back to it.
+- **Known limit: a per-locale `fallbackLocale` other than the default locale.** The plugin falls
+  back to the default locale only. A locale such as `{ code: "de-at", fallbackLocale: "de" }` reads
+  its page segment through `de` in a `de-at` read, but the stored paths, `locale=all` reads, folder
+  paths and the stock segment query use the default locale. A URL a `de-at` read reports can then
+  miss in `resolvePath` and in the stock query. The plugin logs a startup warning naming the locale.
 - **Locale prefixes are not stored.** Add them with `buildUrl(fullPath, locale, { defaultLocale })`.
   With `urls.localePrefix: "non-default"`, `/aktuelles/team` in `de` becomes `/de/aktuelles/team`
   and `/blog/team` in `en` stays as it is.
