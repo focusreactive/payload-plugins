@@ -112,7 +112,8 @@ let lastFocusedWorkspace: Element | null = null;
  * Whether a key that works from anywhere on the page (Escape, `/`, undo) is this workspace's. The
  * tree view and the sidebar tab can be on the page together, and each one listens on the document:
  * without this the first one to listen would answer for both. The workspace the key was pressed in
- * answers; with the focus on neither, the one that had it last; with none yet, the tree view.
+ * answers; with the focus on neither, the one that had it last; with none yet, the tree view, or
+ * the tab when the tree view is not on the page.
  */
 const isKeyForWorkspace = (workspace: Element | null, target: EventTarget | null): boolean => {
   if (workspace === null) {
@@ -126,7 +127,8 @@ const isKeyForWorkspace = (workspace: Element | null, target: EventTarget | null
     return lastFocusedWorkspace === workspace;
   }
 
-  return !workspace.matches(compactWorkspaceSelector);
+  // On an edit view the tab is the only tree, and nobody else would answer.
+  return !workspace.matches(compactWorkspaceSelector) || workspaceElementOf(false) === null;
 };
 
 /** The search box of the workspace the key is for; the tab and the view each have one. */

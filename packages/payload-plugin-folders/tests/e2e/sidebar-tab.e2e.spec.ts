@@ -397,3 +397,124 @@ test("the tree view and the tab each have a search landmark with a name of its o
   await expect(view(page).getByRole("search", { name: "Tree view search" })).toHaveCount(1);
   await expect(tab(page).getByRole("search", { name: "Sidebar tree search" })).toHaveCount(1);
 });
+
+/** Puts the focus on the page itself, as after a click on empty space or a closed dialog. */
+const focusBody = (page: Page): Promise<void> =>
+  page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  });
+
+test("on an edit view, / and Escape from the body answer in the tab, which is the only tree", async ({
+  page,
+  request,
+}) => {
+  const folder = await addFolder(request, "Only Tab");
+  const first = await addDraft(request, "Only Tab First", folder);
+  await addDraft(request, "Only Tab Second", folder);
+  await openEditView(page, first);
+  await openTreeTab(page);
+  await expect(view(page)).toHaveCount(0);
+  await focusBody(page);
+  await expect(page.locator("body")).toBeFocused();
+
+  // No tree has had the focus and the tree view is not on the page: the tab answers.
+  await page.keyboard.press("/");
+  await expect(tab(page).getByTestId("search-input")).toBeFocused();
+
+  // A row cut in the tab is let go by Escape pressed from the body.
+  const second = tabRow(page, "Only Tab Second");
+  await second.focus();
+  await page.keyboard.press("ControlOrMeta+x");
+  await expect(second).toHaveAttribute("data-cut", "true");
+  await focusBody(page);
+  await page.keyboard.press("Escape");
+  await expect(second).not.toHaveAttribute("data-cut", "true");
+});
+
+test("after a trip through the tree view and a click on a tab row, / from the body still finds the tab", async ({
+  page,
+  request,
+}) => {
+  const folder = await addFolder(request, "Trip");
+  const first = await addDraft(request, "Trip First", folder);
+  const second = await addDraft(request, "Trip Second", folder);
+  await openEditView(page, first);
+  await openTreeTab(page);
+
+  // Client-side to the tree view, so the tab stays mounted, then a click on a tab row opens a page.
+  await page.evaluate(() => {
+    (window as unknown as { __noReload: boolean }).__noReload = true;
+  });
+  await page
+    .getByTestId("folder-location")
+    .getByRole("link", { exact: true, name: "Content" })
+    .click();
+  await view(page).getByRole("treegrid").waitFor();
+  await tabRow(page, "Trip Second").getByTestId("row-name").click();
+  await expect(page).toHaveURL(new RegExp(`/admin/collections/pages/${second}$`, "u"));
+  await expect(view(page)).toHaveCount(0);
+  expect(
+    await page.evaluate(() => (window as unknown as { __noReload?: boolean }).__noReload)
+  ).toBe(true);
+
+  await focusBody(page);
+  await page.keyboard.press("/");
+  await expect(tab(page).getByTestId("search-input")).toBeFocused();
+});
+
+test("with the tab and the tree view both open and the focus on the body, / goes to the tree view", async ({
+  page,
+}) => {
+  await page.goto("/admin/collections/folders?expanded=&folder=");
+  await view(page).getByRole("treegrid").waitFor();
+  await openTreeTab(page);
+  await focusBody(page);
+
+  await page.keyboard.press("/");
+  await expect(view(page).getByTestId("search-input")).toBeFocused();
+  await expect(tab(page).getByTestId("search-input")).not.toBeFocused();
+});
+
+test("a click on a tab row, which focuses it, makes the tab the one that answers / from the body", async ({
+  page,
+  request,
+}) => {
+  const folder = await addFolder(request, "Pointer");
+  await addDraft(request, "Pointer First", folder);
+  await page.goto(`/admin/collections/folders?expanded=${folder}&folder=`);
+  await view(page).getByRole("treegrid").waitFor();
+  await openTreeTab(page);
+
+  // A Ctrl or Cmd click selects the row without leaving the page.
+  const row = tabRow(page, "Pointer First");
+  await row.click({ modifiers: ["ControlOrMeta"], position: { x: 220, y: 16 } });
+  await expect(row).toHaveAttribute("aria-selected", "true");
+  await focusBody(page);
+
+  await page.keyboard.press("/");
+  await expect(tab(page).getByTestId("search-input")).toBeFocused();
+});
+
+test("with no tree focused yet, / from the body goes to the tree view even when the tab listened first", async ({
+  page,
+  request,
+}) => {
+  // The tab is mounted before the tree view when the editor comes from an edit view, so its
+  // listener runs first: only the rule, not the order of the listeners, can send the key to the view.
+  const folder = await addFolder(request, "Order");
+  const first = await addDraft(request, "Order First", folder);
+  await openEditView(page, first);
+  await openTreeTab(page);
+  await page
+    .getByTestId("folder-location")
+    .getByRole("link", { exact: true, name: "Content" })
+    .click();
+  await view(page).getByRole("treegrid").waitFor();
+  await focusBody(page);
+
+  await page.keyboard.press("/");
+  await expect(view(page).getByTestId("search-input")).toBeFocused();
+  await expect(tab(page).getByTestId("search-input")).not.toBeFocused();
+});
