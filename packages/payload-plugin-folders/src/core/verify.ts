@@ -157,11 +157,20 @@ export const analyzeTree = async (
     // A saved segment in a clash stays: the page is reached by it now. Without one the page has
     // no URL at all, and backfilling gives it the one its own segment says, like the install flow.
     // A segment that is not localized (`noLocaleKey`) is the page's segment in every locale.
+    // A locale with no segment of its own is reached through the default locale's, so writing the
+    // default locale's segment changes the URL there too: a clash in such a locale holds the
+    // default locale's key.
+    const isClaimedThroughFallback = pageKeys.some(
+      (key) => key !== defaultLocale && (fact.ownSlug[key] ?? "") === "" && isClaimedIn(key)
+    );
     const heldKeys = segmentDrift(fact.ownSlug, fact.ownStored)
       .map(({ locale }) => locale ?? noLocaleKey)
       .filter(
         (key) =>
-          (key === noLocaleKey ? isClaimed : isClaimedIn(key)) && (fact.ownStored[key] ?? "") !== ""
+          (key === noLocaleKey
+            ? isClaimed
+            : isClaimedIn(key) || (key === defaultLocale && isClaimedThroughFallback)) &&
+          (fact.ownStored[key] ?? "") !== ""
       );
     issues.push(
       ...pageSegmentIssues(options.collections[fact.collection], fact, new Set(heldKeys))

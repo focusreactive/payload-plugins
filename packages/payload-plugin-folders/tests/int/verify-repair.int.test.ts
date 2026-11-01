@@ -1322,6 +1322,58 @@ describe("repair and pages in a duplicate-path clash", () => {
     expect(resolved).toMatchObject({ doc: { id: second.id }, type: "page" });
   });
 
+  it("a clash that exists only through locale fallback holds the default locale's segment too", async () => {
+    const { payload } = harness;
+    const fallbackPage = (await payload.create({
+      collection: "pages",
+      data: { _status: "published", slug: "dup", title: "Fallback page" } as never,
+      depth: 0,
+      overrideAccess: true,
+    })) as unknown as DraftPage;
+    const owner = (await payload.create({
+      collection: "pages",
+      data: { _status: "published", slug: "alpha", title: "Owner" } as never,
+      depth: 0,
+      overrideAccess: true,
+    })) as unknown as DraftPage;
+    // The owner holds de "dup". The other page has en "dup" and a stale saved segment "old": it is
+    // live in de through fallback and reached there at /old. Writing en "dup" would move that URL
+    // onto the owner's.
+    await patchMainRow(owner.id, {
+      _status: { de: "published", en: "published" },
+      pathSegment: { de: "dup", en: "alpha" },
+      slug: { de: "dup", en: "alpha" },
+      title: { de: "Besitzer", en: "Owner" },
+    });
+    await patchMainRow(fallbackPage.id, { pathSegment: { en: "old" } });
+    const before = await readRow("pages", fallbackPage.id);
+
+    const verified = await verifyTree(harness.payload);
+    const result = await repairTree(payload);
+
+    expect(
+      issuesOfKind(verified, "duplicatePath").some(
+        (issue) => issue.path === "/dup" && issue.locale === "de"
+      )
+    ).toBe(true);
+    expect(result.writes.pages).toBe(0);
+    expect(issuesOfKind(result.conflicts, "pageSegment")).toEqual([
+      expect.objectContaining({
+        fixable: false,
+        item: expect.objectContaining({ collection: "pages", id: fallbackPage.id }),
+        segments: [{ expected: "dup", locale: "en", stored: "old" }],
+      }),
+    ]);
+    expect(await readRow("pages", fallbackPage.id)).toEqual(before);
+    expect(await readRedirects()).toEqual([]);
+    expect(
+      await resolvePath(payload, { locale: "de", overrideAccess: true, path: "/old" })
+    ).toMatchObject({
+      doc: { id: fallbackPage.id },
+      type: "page",
+    });
+  });
+
   it("a clashing page with no saved segment is backfilled, the oldest first", async () => {
     const { payload } = harness;
     await createPost({ createdAt: "2026-01-01T00:00:00.000Z", orderKey: "a0", slug: "twin" });
