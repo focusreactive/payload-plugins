@@ -11,6 +11,7 @@ import {
 } from "./helpers/content.js";
 import { moveOver, startDrag } from "./helpers/drag.js";
 import { menuItem, openRowMenu } from "./helpers/menu.js";
+import { startStockServer, stockServerUrl, stopStockServer } from "./helpers/stockServer.js";
 
 // Every test builds its own folders and removes them with what is inside, so the seeded tree the
 // other specs read is never changed. The sidebar remembers the open tab in the user's preferences,
@@ -425,6 +426,60 @@ test("M starts Move mode and Escape ends it in the tree that has the focus, with
   await page.keyboard.press("Escape");
   await expect(tab(page).getByTestId("move-marker")).toHaveCount(0);
   await expect(view(page).getByTestId("move-marker")).toHaveCount(0);
+});
+
+test("a keyboard move that needs a confirmation is dropped when the tree view is left, and the tab stays alive", async ({
+  page,
+  request,
+}) => {
+  // The first compile of a second dev server is slow.
+  test.setTimeout(300_000);
+  const folder = await addFolder(request, "Leave Confirm");
+  const rows: Record<string, number> = {};
+  for (const title of ["Leave Confirm Third", "Leave Confirm Second", "Leave Confirm First"]) {
+    rows[title] = await addDraft(request, title, folder);
+  }
+  const titles = async (): Promise<string[]> =>
+    (await childrenOf(request, folder)).map((child) => child.title);
+  // New items land on top, so the last one added is first.
+  const inOrder = ["Leave Confirm First", "Leave Confirm Second", "Leave Confirm Third"];
+  try {
+    // Every move asks, even a reorder: a press that is sent after the tree view is gone has no
+    // dialog to ask in.
+    await startStockServer({
+      distDirectory: ".next-confirm",
+      env: { FOLDERS_CONFIRM_MOVES: "always" },
+    });
+    await page.goto(`${stockServerUrl}/admin/collections/folders?expanded=${folder}&folder=`);
+    await view(page).getByRole("treegrid").waitFor();
+    await openTreeTab(page);
+
+    // Alt+Down, then out of the tree view through a row of the tab, well inside the 800 ms the
+    // press waits: the page is left with the move still pending.
+    await viewRow(page, "Leave Confirm First").focus();
+    await page.keyboard.press("Alt+ArrowDown");
+    await tabRow(page, "Leave Confirm Third").getByTestId("row-name").click();
+    await expect(page).toHaveURL(
+      new RegExp(`/admin/collections/pages/${rows["Leave Confirm Third"]}$`, "u")
+    );
+
+    // The move was dropped, not made, and no confirmation was left open behind the page.
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    expect(await titles()).toEqual(inOrder);
+
+    // The tab's keyboard works: it was not left waiting behind a dialog that never opened.
+    await expect(tab(page).getByRole("treegrid")).toBeVisible();
+    await tabRow(page, "Leave Confirm First").focus();
+    await page.keyboard.press("ArrowDown");
+    await expect(tabRow(page, "Leave Confirm Second")).toBeFocused();
+
+    // And the next poll reaches the tab: a page added meanwhile shows up in it. The store only
+    // refreshes while no move of the user's own is pending.
+    await addDraft(request, "Leave Confirm Late", folder);
+    await expect(tabRow(page, "Leave Confirm Late")).toBeVisible({ timeout: 40_000 });
+  } finally {
+    stopStockServer();
+  }
 });
 
 test("the tree view and the tab each have a search landmark with a name of its own", async ({
