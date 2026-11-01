@@ -1,0 +1,10 @@
+316 /de/aktuelles/2026/new-year {"type": "reference", "reference": {"relationTo": "posts", "value": 2}, "url": null}
+315 /blog/2026/new-year {"type": "reference", "reference": {"relationTo": "posts", "value": 2}, "url": null}
+== /blog/2026/new-year
+HTTP/1.1 308 Permanent Redirect
+location: /products/new-year
+== /de/aktuelles/2026/new-year
+HTTP/1.1 308 Permanent Redirect
+location: /de/produkte/new-year
+== /products/new-year
+HTTP/1.1 200 OK

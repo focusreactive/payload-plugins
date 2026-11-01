@@ -1,0 +1,25 @@
+<nav aria-label="Site">
+<ul>
+<li><span>Archive</span>
+<ul>
+<li><a href="/">Home</a></li>
+<li><a href="/blog">Blog</a>
+<ul>
+<li><a href="/blog">Blog Home</a></li>
+<li><a href="/blog/hello-world">Hello World</a></li>
+<li><a href="/blog/team">Team</a></li>
+<li><span>2026</span></li></ul></li>
+<li><a href="/products">Products</a>
+<ul>
+<li><a href="/products">Products</a></li>
+<li><a href="/products/pricing">Pricing</a></li>
+<li><a href="/products/gift-cards">Gift Cards</a></li></ul></li>
+<li><a href="/shoes">Shoes</a>
+<ul>
+<li><a href="/shoes">Shoes</a></li>
+<li><a href="/shoes/running">Running</a></li></ul></li>
+<li><a href="/company">Company</a>
+<ul>
+<li><a href="/company">About Us</a></li>
+<li><a href="/company/contact">Contact</a></li>
+<li><a href="/company/our-team">Our Team</a></li></ul></li></ul></nav>

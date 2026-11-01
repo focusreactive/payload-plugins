@@ -1,0 +1,37 @@
+"{\"status\":201,\"id\":168}"
+--- as signed-in admin, locale=en
+"200 {\"conflict\":{\"path\":\"/empty\",\"title\":\"Secret Draft Root Title\"},\"message\":\"Secret Draft Root Title is already the root page of /empty. Unset it first.\",\"ok\":false}"
+--- as signed-in admin, no locale
+"200 {\"conflict\":{\"path\":\"/empty\",\"title\":\"Secret Draft Root Title\"},\"message\":\"Secret Draft Root Title is already the root page of /empty. Unset it first.\",\"ok\":false}"
+--- unknown locale xx
+"400 {\"errors\":[{\"message\":\"\\\"xx\\\" is not a locale of this site\"}]}"
+--- locale de
+"200 {\"conflict\":{\"path\":\"/empty\",\"title\":\"Secret Draft Root Title\"},\"message\":\"Secret Draft Root Title is already the root page of /empty. Unset it first.\",\"ok\":false}"
+--- anonymous, locale=en (curl)
+{"conflict":{"path":"/empty","title":"Secret Draft Root Title"},"message":"Secret Draft Root Title is already the root page of /empty. Unset it first.","ok":false}
+HTTP 200
+--- anonymous, unknown locale (curl)
+{"errors":[{"message":"\"xx\" is not a locale of this site"}]}
+HTTP 400
+NOTE: the dev app auto-logs-in any request without a session as the admin; the two curl calls above are therefore the admin. Below: DisableAutologin true.
+--- no auto-login (anonymous), locale=en
+{"errors":[{"message":"You are not allowed to perform this action."}]}
+HTTP 403
+--- no auto-login (anonymous), unknown locale xx
+{"errors":[{"message":"You are not allowed to perform this action."}]}
+HTTP 403
+--- login as editor@example.com
+--- login as drafter@example.com
+--- login as limited@example.com
+login editor@example.com 200
+check-root as editor@example.com:
+{"conflict":{"path":"/empty","title":"Secret Draft Root Title"},"message":"Secret Draft Root Title is already the root page of /empty. Unset it first.","ok":false}
+HTTP 200
+login drafter@example.com 200
+check-root as drafter@example.com:
+{"conflict":{"path":"/empty","title":"Secret Draft Root Title"},"message":"Secret Draft Root Title is already the root page of /empty. Unset it first.","ok":false}
+HTTP 200
+login limited@example.com 200
+check-root as limited@example.com:
+{"conflict":{"path":"/empty","title":"Secret Draft Root Title"},"message":"Secret Draft Root Title is already the root page of /empty. Unset it first.","ok":false}
+HTTP 200

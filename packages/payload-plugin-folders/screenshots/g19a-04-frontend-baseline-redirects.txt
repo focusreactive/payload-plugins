@@ -1,0 +1,21 @@
+== /products/shoes/running
+HTTP/1.1 308 Permanent Redirect
+location: /shoes/running
+== /about/contact
+HTTP/1.1 308 Permanent Redirect
+location: /company/contact
+== /Company/Contact
+HTTP/1.1 308 Permanent Redirect
+location: /company/contact
+== /company/press-kit
+HTTP/1.1 404 Not Found
+== /empty
+HTTP/1.1 404 Not Found
+== /de/ueber-uns/kontakt
+HTTP/1.1 308 Permanent Redirect
+location: /de/unternehmen/kontakt
+== /de/Unternehmen/Kontakt
+HTTP/1.1 308 Permanent Redirect
+location: /de/unternehmen/kontakt
+== /nope
+HTTP/1.1 404 Not Found
