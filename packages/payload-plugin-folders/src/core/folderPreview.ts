@@ -12,6 +12,7 @@ import {
   noLocaleKey,
   requestLocaleKey,
 } from "./locales.js";
+import { countMirrorRows } from "./mirror.js";
 import { planMove, summarizePageChanges } from "./move.js";
 import { planFolderPrefixRows, shouldWriteRedirects } from "./redirects.js";
 import type { MoveBlock, MovePreview, PlanSettings } from "./move.js";
@@ -250,13 +251,13 @@ export const planFolderEdit = async (
       req,
     })),
   ];
-  const { publishedChanges, samples, urlChanges } = summarizePageChanges(changes);
+  const { samples, urlChanges } = summarizePageChanges(changes);
   const isWritingRows = shouldWriteRedirects(req, options);
 
   return {
     ...emptyPreview([], stored.parent),
     foldersRewritten: 1 + descendants.length,
-    mirrorRowsToWrite: options.redirects.mirrorToRedirectsPlugin ? publishedChanges.length : 0,
+    mirrorRowsToWrite: isWritingRows ? countMirrorRows(changes, options, req.payload) : 0,
     redirectRowsToWrite: isWritingRows
       ? planFolderPrefixRows({
           changes,

@@ -101,7 +101,7 @@ const createPostgresDatabase = async (sharedSchemaName?: string): Promise<TestDa
 
 export type GetTestPayloadOptions = Pick<
   DevConfigOptions,
-  "extraCollections" | "foldersOptions" | "localized" | "trash"
+  "extraCollections" | "foldersOptions" | "localized" | "redirectsCollections" | "trash"
 > & {
   /**
    * Postgres only: boots this instance on the database of an instance already running, as a second
@@ -116,6 +116,7 @@ export const getTestPayload = async ({
   extraCollections,
   foldersOptions,
   localized,
+  redirectsCollections,
   sharedWith,
   sqliteTransactions = true,
   trash,
@@ -137,6 +138,7 @@ export const getTestPayload = async ({
       extraCollections,
       foldersOptions,
       localized,
+      redirectsCollections,
       trash,
     });
     // getPayload caches instances by key and destroy() does not clear the cache, so a shared

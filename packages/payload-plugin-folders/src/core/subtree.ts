@@ -12,6 +12,7 @@ import {
   noLocaleKey,
   withoutEmptyValues,
 } from "./locales.js";
+import { settleMirror } from "./mirror.js";
 import { effectiveSegmentsOf, isPublishedInLocale } from "./pageRecords.js";
 import { joinPath } from "./paths.js";
 import {
@@ -520,6 +521,7 @@ export const rewriteFolderSubtree = async ({
         })
       : [],
   });
+  await settleMirror({ changes, options, req, write: isWritingRows });
 
   return { changes, rewrittenFolders };
 };

@@ -10,3 +10,4 @@ dev/AGENTS.md
 .run/
 dev/.next-*
 .vitest
+tests/results

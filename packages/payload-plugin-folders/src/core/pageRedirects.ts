@@ -5,6 +5,7 @@ import type { FolderId, PathChange, ResolvedOptions, ResolvedPageCollection } fr
 import { readFolderRecord } from "./folderRecords.js";
 import type { FolderRecord } from "./folderRecords.js";
 import { getFallbackLocaleKey, noLocaleKey } from "./locales.js";
+import { settleMirror } from "./mirror.js";
 import { pagePathIn } from "./pagePaths.js";
 import { effectiveSegmentsOf, isPublishedInLocale } from "./pageRecords.js";
 import type { PageRow, PageSnapshot } from "./pageRecords.js";
@@ -123,4 +124,5 @@ export const settlePageRedirects = async ({
     req,
     rows: isWritingRows ? planPageRedirectRows(changes) : [],
   });
+  await settleMirror({ changes, options, req, write: isWritingRows });
 };

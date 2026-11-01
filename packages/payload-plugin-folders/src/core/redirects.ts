@@ -4,6 +4,8 @@ import { toCollectionSlug } from "../collectionSlug.js";
 import { folderRedirectsSlug } from "../constants.js";
 import type { FolderId, ItemRef, PathChange, ResolvedOptions } from "../types.js";
 import { noLocaleKey } from "./locales.js";
+import { deleteMirrorRowsTargeting } from "./mirror.js";
+import { getResolvedOptions } from "./runtime.js";
 import { getPageLocaleKeys } from "./uniqueness.js";
 
 /** One row of `folder-redirects`: an old path and the document that took it over. */
@@ -275,7 +277,8 @@ export const writeFolderPrefixRedirects = ({
 
 /**
  * Spec section 5.6, "Delete writes no redirect, and deletes rows whose target is the deleted
- * document": no row may point at a document that is gone.
+ * document": no row may point at a document that is gone, in `folder-redirects` and, when the
+ * mirror is on, in the redirects plugin's collection.
  */
 export const deleteRedirectsTargeting = async ({
   ref,
@@ -295,6 +298,7 @@ export const deleteRedirectsTargeting = async ({
     req,
     where,
   });
+  await deleteMirrorRowsTargeting({ options: getResolvedOptions(req.payload), ref, req });
 };
 
 /**

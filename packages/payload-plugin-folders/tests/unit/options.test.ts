@@ -69,7 +69,7 @@ describe("normalizeOptions", () => {
       localizeSegments: false,
       maxDepth: 20,
       newItemPosition: "top",
-      redirects: { enabled: true, mirrorToRedirectsPlugin: false },
+      redirects: { enabled: true, mirror: null, mirrorToRedirectsPlugin: false },
       urls: { localePrefix: "non-default" },
       warnings: [],
     });
@@ -197,6 +197,28 @@ describe("normalizeOptions", () => {
 
     const withPlugin = buildConfig({ plugins: [redirectsPlugin({ collections: [] as never })] });
     expect(normalizeOptions(options, withPlugin).redirects.mirrorToRedirectsPlugin).toBe(true);
+  });
+
+  it("reads the redirects plugin's collection, slug and redirect type for the mirror", () => {
+    const options = buildOptions({ redirects: { mirrorToRedirectsPlugin: true } });
+    const config = buildConfig({
+      plugins: [
+        redirectsPlugin({
+          collections: ["pages"] as never,
+          overrides: { slug: "site-redirects" },
+          redirectTypes: ["302", "301"],
+        }),
+      ],
+    });
+
+    expect(normalizeOptions(options, config).redirects.mirror).toEqual({
+      collectionSlug: "site-redirects",
+      redirectType: "301",
+      referenceCollections: ["pages"],
+    });
+    expect(
+      normalizeOptions(options, buildConfig({ plugins: [redirectsPlugin({})] })).redirects.mirror
+    ).toEqual({ collectionSlug: "redirects", redirectType: null, referenceCollections: [] });
   });
 
   it("warns and strips unique on the host slug field", () => {

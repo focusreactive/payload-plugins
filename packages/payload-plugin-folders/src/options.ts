@@ -11,6 +11,7 @@ import {
 } from "./constants.js";
 import type {
   FoldersPluginOptions,
+  MirrorTarget,
   PageCollectionOptions,
   ResolvedOptions,
   ResolvedPageCollection,
@@ -263,6 +264,33 @@ const resolvePageCollection = ({
   };
 };
 
+type RedirectsPluginOptions = {
+  collections?: string[];
+  overrides?: { slug?: string };
+  redirectTypes?: string[];
+};
+
+/**
+ * Reads the redirects plugin's own options off its plugin function (`definePlugin` keeps them as
+ * `options`), because the mirror has to know which collections a row may reference and which slug
+ * and `type` field the plugin built.
+ */
+const resolveMirrorTarget = (plugin: unknown): MirrorTarget => {
+  const redirectsOptions = ((plugin as { options?: RedirectsPluginOptions }).options ??
+    {}) as RedirectsPluginOptions;
+  const redirectTypes = redirectsOptions.redirectTypes;
+
+  return {
+    collectionSlug: redirectsOptions.overrides?.slug ?? "redirects",
+    redirectType: redirectTypes?.length
+      ? redirectTypes.includes("301")
+        ? "301"
+        : redirectTypes[0]
+      : null,
+    referenceCollections: redirectsOptions.collections ?? [],
+  };
+};
+
 /**
  * Applies every default and runs every config-time check. Throws a `FoldersConfigError` listing all
  * errors; warnings come back in `warnings`. It reads the config and never changes it.
@@ -320,10 +348,10 @@ export const normalizeOptions = (
     );
   }
   const mirrorToRedirectsPlugin = options.redirects?.mirrorToRedirectsPlugin ?? false;
-  if (
-    mirrorToRedirectsPlugin &&
-    !config.plugins?.some((plugin) => (plugin as { slug?: string }).slug === redirectsPluginSlug)
-  ) {
+  const redirectsPlugin = config.plugins?.find(
+    (plugin) => (plugin as { slug?: string }).slug === redirectsPluginSlug
+  );
+  if (mirrorToRedirectsPlugin && !redirectsPlugin) {
     problems.push(
       `redirects.mirrorToRedirectsPlugin needs ${redirectsPluginSlug} registered in \`plugins\`.`
     );
@@ -379,7 +407,12 @@ export const normalizeOptions = (
     localizeSegments,
     maxDepth,
     newItemPosition: options.newItemPosition ?? "top",
-    redirects: { enabled: options.redirects?.enabled ?? true, mirrorToRedirectsPlugin },
+    redirects: {
+      enabled: options.redirects?.enabled ?? true,
+      mirror:
+        mirrorToRedirectsPlugin && redirectsPlugin ? resolveMirrorTarget(redirectsPlugin) : null,
+      mirrorToRedirectsPlugin,
+    },
     reservedRootSegments: deriveReservedRootSegments(config, options.reservedRootSegments ?? []),
     urls: { localePrefix: options.urls?.localePrefix ?? "non-default" },
     warnings,

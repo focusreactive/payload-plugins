@@ -8,6 +8,7 @@ import type { FolderId, PathChange, ResolvedOptions } from "../types.js";
 import { queueAfterPathChange } from "./afterPathChange.js";
 import { withItemTitles } from "./issueTitles.js";
 import { getDefaultLocaleKey, getFolderLocaleKeys, noLocaleKey } from "./locales.js";
+import { settleMirror } from "./mirror.js";
 import { writeKeyRewrites } from "./orderKeys.js";
 import { pathClaimKey } from "./selectFolderWrites.js";
 import {
@@ -626,6 +627,7 @@ const applyRepair = async ({
     req,
     rows: isWritingRows ? plan.redirectRows : [],
   });
+  await settleMirror({ changes: plan.planned.changes, options, req, write: isWritingRows });
 };
 
 /**

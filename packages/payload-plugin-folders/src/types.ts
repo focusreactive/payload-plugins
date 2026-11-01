@@ -141,6 +141,16 @@ export type ResolvedPageCollection = {
   trash: boolean;
 };
 
+/** The `@payloadcms/plugin-redirects` setup the mirror writes into (spec section 5.6). */
+export type MirrorTarget = {
+  /** The redirects collection's slug (`redirects` unless the host overrode it). */
+  collectionSlug: string;
+  /** The collections the redirects plugin lets a row reference; any other page gets a custom URL. */
+  referenceCollections: string[];
+  /** The plugin's required `type` select when the host configured `redirectTypes`; else the field does not exist. */
+  redirectType: string | null;
+};
+
 export type ResolvedOptions = {
   /** Resolved page collections, keyed by slug, in the order the host listed them. */
   collections: Record<string, ResolvedPageCollection>;
@@ -160,7 +170,12 @@ export type ResolvedOptions = {
   localizeSegments: boolean;
   limits: { maxItemsPerMove: number; maxFoldersPerMove: number; maxSyncDocuments: number };
   urls: { localePrefix: LocalePrefixMode };
-  redirects: { enabled: boolean; mirrorToRedirectsPlugin: boolean };
+  redirects: {
+    enabled: boolean;
+    /** What the mirror writes into; null while `mirrorToRedirectsPlugin` is off. */
+    mirror: MirrorTarget | null;
+    mirrorToRedirectsPlugin: boolean;
+  };
   access: {
     move: NonNullable<FoldersPluginOptions["access"]>["move"];
     repair: NonNullable<FoldersPluginOptions["access"]>["repair"];

@@ -7,6 +7,7 @@ import { queueAfterPathChange } from "./afterPathChange.js";
 import { readFolderRecord } from "./folderRecords.js";
 import { buildMovePlan, MoveBlockedError } from "./move.js";
 import type { MovePlan, MoveRequest, PlannedMoveItem, PlanSettings } from "./move.js";
+import { settleMirror } from "./mirror.js";
 import { writeKeyRewrites } from "./orderKeys.js";
 import { redirectRowsOfMovedItem, settleRedirectRows, takenPathsOf } from "./redirects.js";
 import { getResolvedOptions } from "./runtime.js";
@@ -18,6 +19,11 @@ import { applyTypeLock } from "./typeLocks.js";
 export type MoveResult = {
   /** Every full path the move changed, folders and pages, per locale. */
   changes: PathChange[];
+  /**
+   * The operation that writes the plugin-redirects rows, when there were more than
+   * `limits.maxSyncDocuments` of them; the admin steps it like any batch (spec section 5.8).
+   */
+  mirrorOperationId?: FolderId;
   /** The items that moved on their own, in the given order; items that moved with a folder are not listed. */
   moved: ItemRef[];
   /** The key each moved item now has, `collection:id` to key. */
@@ -194,12 +200,19 @@ export const applyMove = async (
       req,
       rows: plan.redirects ? plan.items.flatMap((item) => redirectRowsOfMovedItem(item)) : [],
     });
+    const { operationId: mirrorOperationId } = await settleMirror({
+      changes,
+      options,
+      req,
+      write: plan.redirects,
+    });
 
     const revision = await bumpRevision(req);
     await queueAfterPathChange({ changes, options, reason: "move", req });
 
     return {
       changes,
+      ...(mirrorOperationId === null ? {} : { mirrorOperationId }),
       moved: plan.items.map((item) => item.ref),
       orderKeys: Object.fromEntries(plan.items.map((item) => [itemKey(item.ref), item.orderKey])),
       revision,

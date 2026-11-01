@@ -38,6 +38,8 @@ export type DevConfigOptions = {
   db?: Config["db"];
   /** False builds the app without localization; tests use it to cover the plain-column shapes. */
   localized?: boolean;
+  /** The collections `@payloadcms/plugin-redirects` may reference; default pages and posts. */
+  redirectsCollections?: string[];
   /** Merged over the dev app's plugin options. */
   foldersOptions?: Partial<FoldersPluginOptions>;
   /**
@@ -59,6 +61,7 @@ export const buildDevConfig = ({
   extraCollections = [],
   foldersOptions,
   localized = true,
+  redirectsCollections = ["pages", "posts"],
   trash = false,
 }: DevConfigOptions = {}) =>
   buildConfig({
@@ -111,7 +114,7 @@ export const buildDevConfig = ({
           },
         },
       }),
-      redirectsPlugin({ collections: ["pages", "posts"] }),
+      redirectsPlugin({ collections: redirectsCollections }),
     ],
     secret: process.env.PAYLOAD_SECRET || "dev-secret-not-for-production",
     typescript: { outputFile: path.resolve(dirname, "payload-types.ts") },

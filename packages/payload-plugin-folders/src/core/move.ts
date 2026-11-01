@@ -25,6 +25,7 @@ import {
   noLocaleKey,
 } from "./locales.js";
 import { findForbiddenMoves, findItemsRefusedUpdate, forbiddenMoveMessage } from "./moveAccess.js";
+import { countMirrorRows } from "./mirror.js";
 import { planKeysForInsert } from "./orderKeys.js";
 import { redirectRowsOfMovedItem } from "./redirects.js";
 import type { InsertPlan } from "./orderKeys.js";
@@ -1031,7 +1032,7 @@ export const buildMovePlan = async (
 
   // Counts and samples.
   const allChanges = items.flatMap((item) => item.changes);
-  const { publishedChanges, samples, urlChanges } = summarizePageChanges(allChanges);
+  const { samples, urlChanges } = summarizePageChanges(allChanges);
   const redirectRowsToWrite = redirects
     ? items.reduce((sum, item) => sum + redirectRowsOfMovedItem(item).length, 0)
     : 0;
@@ -1043,7 +1044,7 @@ export const buildMovePlan = async (
     foldersRewritten: items
       .filter((item) => item.kind === "folder" && item.parentChanges)
       .reduce((sum, item) => sum + 1 + (item.folder?.subtree?.descendants.length ?? 0), 0),
-    mirrorRowsToWrite: options.redirects.mirrorToRedirectsPlugin ? publishedChanges.length : 0,
+    mirrorRowsToWrite: redirects ? countMirrorRows(allChanges, options, req.payload) : 0,
     ok: true,
     orderKeys,
     redirectRowsToWrite,
