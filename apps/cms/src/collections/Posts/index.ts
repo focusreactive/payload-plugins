@@ -6,6 +6,7 @@ import { CtaBannerInlineBlock } from "@/blocks/CtaBanner/inlineConfig";
 import { LogosInlineBlock } from "@/blocks/Logos/inlineConfig";
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
+import { LIVE_PREVIEW_AUTOSAVE_INTERVAL_MS } from "@/lib/constants/livePreview";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { anyone, author, or, user, superAdmin } from "@/lib/access";
 import {
@@ -331,7 +332,9 @@ export const Posts: CollectionConfig<"posts"> = {
   },
   slug: BLOG_CONFIG.collection,
   versions: {
-    drafts: true,
+    drafts: {
+      autosave: { interval: LIVE_PREVIEW_AUTOSAVE_INTERVAL_MS },
+    },
     maxPerDoc: 50,
   },
 };

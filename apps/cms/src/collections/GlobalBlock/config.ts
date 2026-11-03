@@ -2,6 +2,7 @@ import type { CollectionConfig } from "payload";
 
 import { contentBlocks } from "@/blocks/contentBlocks";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import { LIVE_PREVIEW_AUTOSAVE_INTERVAL_MS } from "@/lib/constants/livePreview";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
@@ -81,7 +82,9 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
   },
   slug: "globalBlock",
   versions: {
-    drafts: true,
+    drafts: {
+      autosave: { interval: LIVE_PREVIEW_AUTOSAVE_INTERVAL_MS },
+    },
     maxPerDoc: 50,
   },
 };
