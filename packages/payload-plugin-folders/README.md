@@ -894,9 +894,11 @@ A move, a folder rename and a publish that changes a published URL write rows in
   `de` URL gets a row too.
 - Rows are upserted by `lookupKey`, `<locale>:<path>` (`-` without localization), and `kind`: one row
   per path and kind, so a page row and a folder prefix row can sit at the same path (a page that took
-  a renamed folder's old path), and writing one leaves the other. A row whose path a
-  live document now takes is deleted in the same transaction. Deleting a page or a folder deletes the
-  rows that target it, and writes no redirect.
+  a renamed folder's old path), and writing one leaves the other. A page row is deleted in the
+  same transaction when a live page takes its path, and a prefix row when a folder takes its path,
+  so a folder created at a page's old path keeps that page row, and a page at a folder's old path
+  keeps that folder's prefix row. Deleting a page or a folder deletes the rows that target it, and
+  writes no redirect.
 - `redirects: false` on a move request, or `context: { foldersRedirects: false }` on a Local API
   save, writes no row. `redirects.enabled: false` turns the rows off for every write. REST has no
   such field for a rename or a publish.
