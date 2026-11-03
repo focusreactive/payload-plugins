@@ -50,7 +50,10 @@ const readRows = async (payload: Payload): Promise<RedirectSummary[]> => {
 
       return { kind: doc.kind, lookupKey: doc.lookupKey, target: `${target.relationTo}:${value}` };
     })
-    .sort((left, right) => left.lookupKey.localeCompare(right.lookupKey));
+    .sort(
+      (left, right) =>
+        left.lookupKey.localeCompare(right.lookupKey) || left.kind.localeCompare(right.kind)
+    );
 };
 
 const publishedPage = async (
@@ -319,7 +322,7 @@ describe("redirect rows on a move", () => {
       { kind: "page", lookupKey: "en:/about", target: `pages:${page.id}` },
     ]);
     // A folder at /about does not delete the page row (only a page at the path would), and when it
-    // is renamed away its prefix row takes over the same key.
+    // is renamed away its prefix row sits beside the page row at the same key.
     const folder = await createFolder(payload, { slug: "about" });
     await publishedPage(payload, { folder: folder.id, slug: "contact" });
 
@@ -328,7 +331,86 @@ describe("redirect rows on a move", () => {
     const aboutRows = (await readRows(payload)).filter((row) => row.lookupKey === "en:/about");
     expect(aboutRows).toEqual([
       { kind: "folderPrefix", lookupKey: "en:/about", target: `folders:${folder.id}` },
+      { kind: "page", lookupKey: "en:/about", target: `pages:${page.id}` },
     ]);
+    // An exact page row wins; the prefix row still serves everything beneath.
+    expect(await findRedirect(payload, { locale: "en", path: "/about" })).toMatchObject({
+      to: "/misc/about",
+    });
+    expect(await findRedirect(payload, { locale: "en", path: "/about/contact" })).toMatchObject({
+      to: "/company/contact",
+    });
+  });
+
+  it("a page moved off a renamed folder's old path leaves the folder's prefix row", async () => {
+    const { payload } = harness;
+    const tree = await seedTree(payload);
+    await renameFolder(payload, tree.about.id, "company");
+    const misc = await createFolder(payload, { slug: "misc" });
+    const page = await publishedPage(payload, { slug: "about" });
+
+    await moveItems(payload, {
+      items: [pageRef(page.id)],
+      overrideAccess: true,
+      toFolder: misc.id,
+    });
+
+    expect((await readRows(payload)).filter((row) => row.lookupKey === "en:/about")).toEqual([
+      { kind: "folderPrefix", lookupKey: "en:/about", target: `folders:${tree.about.id}` },
+      { kind: "page", lookupKey: "en:/about", target: `pages:${page.id}` },
+    ]);
+    expect(await findRedirect(payload, { locale: "en", path: "/about/contact" })).toMatchObject({
+      to: "/company/contact",
+    });
+    expect(await findRedirect(payload, { locale: "en", path: "/about" })).toMatchObject({
+      to: "/misc/about",
+    });
+  });
+
+  it("a page whose slug changes off a renamed folder's old path leaves the folder's prefix row", async () => {
+    const { payload } = harness;
+    const tree = await seedTree(payload);
+    await renameFolder(payload, tree.about.id, "company");
+    const page = await publishedPage(payload, { slug: "about" });
+
+    await payload.update({
+      collection: "pages",
+      data: { _status: "published", slug: "about-us" } as never,
+      depth: 0,
+      id: page.id,
+      locale: "en",
+      overrideAccess: true,
+    });
+
+    expect((await readRows(payload)).filter((row) => row.lookupKey === "en:/about")).toEqual([
+      { kind: "folderPrefix", lookupKey: "en:/about", target: `folders:${tree.about.id}` },
+      { kind: "page", lookupKey: "en:/about", target: `pages:${page.id}` },
+    ]);
+    expect(await findRedirect(payload, { locale: "en", path: "/about/contact" })).toMatchObject({
+      to: "/company/contact",
+    });
+    expect(await findRedirect(payload, { locale: "en", path: "/about" })).toMatchObject({
+      to: "/about-us",
+    });
+  });
+
+  it("the database refuses a second row of one kind at one key but takes the other kind", async () => {
+    const { payload } = harness;
+    const folder = await createFolder(payload, { slug: "unique-check" });
+    const row = (kind: "folderPrefix" | "page") => ({
+      fromPath: "/old",
+      kind,
+      locale: "en",
+      lookupKey: "en:/old",
+      target: { relationTo: "folders", value: folder.id },
+    });
+    const create = (kind: "folderPrefix" | "page") =>
+      payload.db.create({ collection: "folder-redirects", data: row(kind), returning: false });
+
+    await create("page");
+    await create("folderPrefix");
+    await expect(create("page")).rejects.toThrow();
+    await expect(create("folderPrefix")).rejects.toThrow();
   });
 
   it("a draft-only change writes no row", async () => {

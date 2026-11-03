@@ -398,7 +398,7 @@ Folders have no drafts, so a folder rename is live at once.
 
 | Name | Purpose |
 |---|---|
-| `folder-redirects` | The "URL history". `lookupKey` (`<locale>:<path>`, unique), `fromPath`, `locale`, `kind` (`page` or `folderPrefix`), `target`. A `folderPrefix` row stands for every path beneath it. Logged-in users read and delete rows. Nobody creates or updates them but the plugin. |
+| `folder-redirects` | The "URL history". `lookupKey` (`<locale>:<path>`, unique together with `kind`), `fromPath`, `locale`, `kind` (`page` or `folderPrefix`), `target`. A `folderPrefix` row stands for every path beneath it. Logged-in users read and delete rows. Nobody creates or updates them but the plugin. |
 | `folder-operations` | Hidden. The progress of a stepped batch: `kind`, `items`, `cursor`, `done`, `total`, `status`, `error`, `createdBy`. Each user reads only their own. |
 | `folders-tree-state` | A hidden global. `revision` changes on every tree change and drives the admin's change detection. `lockedAt` is part of the cross-process tree lock. |
 
@@ -892,7 +892,9 @@ A move, a folder rename and a publish that changes a published URL write rows in
 - A locale counts as live when its own status is published, or when it has none, fallback is on and
   the default locale is published. An en-only published page is live at its `de` fallback URL, so its
   `de` URL gets a row too.
-- Rows are upserted by `lookupKey`, `<locale>:<path>` (`-` without localization). A row whose path a
+- Rows are upserted by `lookupKey`, `<locale>:<path>` (`-` without localization), and `kind`: one row
+  per path and kind, so a page row and a folder prefix row can sit at the same path (a page that took
+  a renamed folder's old path), and writing one leaves the other. A row whose path a
   live document now takes is deleted in the same transaction. Deleting a page or a folder deletes the
   rows that target it, and writes no redirect.
 - `redirects: false` on a move request, or `context: { foldersRedirects: false }` on a Local API

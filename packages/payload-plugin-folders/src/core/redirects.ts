@@ -28,6 +28,9 @@ const keyChunkSize = 500;
 export const lookupKeyOf = (locale: string | null, path: string): string =>
   `${locale ?? noLocaleKey}:${path}`;
 
+/** One row per kind at a path, so the kind is part of a row's identity next to its key. */
+const slotOf = (kind: RedirectRow["kind"], lookupKey: string): string => `${kind}|${lookupKey}`;
+
 /**
  * Whether a write that is not a move request writes redirect rows: `context.foldersRedirects`
  * when the caller set it (false opts one save out), else `redirects.enabled`.
@@ -187,11 +190,13 @@ export const clearTakenRedirectRows = async ({
 };
 
 /**
- * Upserts rows by `lookupKey`: one read per chunk of keys finds the rows that exist, and each row
- * is then one update or one insert (the adapter has no bulk insert). A newer change of the same
- * old path replaces the target. Written on the caller's request, so they join its transaction and
- * a rollback leaves none. The collection is not localized and unversioned, so these are
- * database-level writes that run no hook and touch no page data.
+ * Upserts rows by `lookupKey` and `kind`: a page row and a prefix row may share a path (a page
+ * that took a renamed folder's old path), and a write of one kind must leave the other alone. One
+ * read per chunk of keys finds the rows that exist, and each row is then one update or one insert
+ * (the adapter has no bulk insert). A newer change of the same old path replaces the target.
+ * Written on the caller's request, so they join its transaction and a rollback leaves none. The
+ * collection is not localized and unversioned, so these are database-level writes that run no hook
+ * and touch no page data.
  */
 export const writeRedirectRows = async ({
   req,
@@ -202,23 +207,32 @@ export const writeRedirectRows = async ({
 }): Promise<void> => {
   const { payload } = req;
   const collection = toCollectionSlug(folderRedirectsSlug);
-  const rowByKey = new Map(rows.map((row) => [lookupKeyOf(row.locale, row.fromPath), row]));
+  const rowBySlot = new Map(
+    rows.map((row) => [slotOf(row.kind, lookupKeyOf(row.locale, row.fromPath)), row])
+  );
 
-  for (const keysOfChunk of chunk([...rowByKey.keys()])) {
+  for (const rowsOfChunk of chunk([...rowBySlot.values()])) {
     const { docs } = await payload.db.find({
       collection,
       pagination: false,
       req,
-      select: { lookupKey: true },
-      where: { lookupKey: { in: keysOfChunk } },
+      select: { kind: true, lookupKey: true },
+      where: {
+        lookupKey: {
+          in: [...new Set(rowsOfChunk.map((row) => lookupKeyOf(row.locale, row.fromPath)))],
+        },
+      },
     });
-    const existingIdByKey = new Map(
-      (docs as Array<{ id: FolderId; lookupKey: string }>).map((doc) => [doc.lookupKey, doc.id])
+    const existingIdBySlot = new Map(
+      (docs as Array<{ id: FolderId; kind: RedirectRow["kind"]; lookupKey: string }>).map((doc) => [
+        slotOf(doc.kind, doc.lookupKey),
+        doc.id,
+      ])
     );
     const now = new Date().toISOString();
 
-    for (const lookupKey of keysOfChunk) {
-      const row = rowByKey.get(lookupKey) as RedirectRow;
+    for (const row of rowsOfChunk) {
+      const lookupKey = lookupKeyOf(row.locale, row.fromPath);
       const data = {
         fromPath: row.fromPath,
         kind: row.kind,
@@ -227,7 +241,7 @@ export const writeRedirectRows = async ({
         target: { relationTo: row.target.collection, value: row.target.id },
         updatedAt: now,
       };
-      const existingId = existingIdByKey.get(lookupKey);
+      const existingId = existingIdBySlot.get(slotOf(row.kind, lookupKey));
       if (existingId === undefined) {
         await payload.db.create({
           collection,
