@@ -1,0 +1,12 @@
+Scenario: folder 10 reuses the old en slug stellenangebote under /blog (folder 8 moved to careers, leaving a redirect row from /blog/stellenangebote/offene-stelle). Signed-in admin.
+## resolve before the new page exists: /blog/stellenangebote/offene-stelle en
+{"type":"notFound"}
+HTTP 404
+## POST page in folder 10, slug offene-stelle, published en
+HTTP 201
+## resolve /blog/stellenangebote/offene-stelle en (live page must win over the redirect row)
+{"alternates":{"en":"/blog/stellenangebote/offene-stelle","de":"/aktuelles/stellenangebote/offene-stelle"},"collection":"pages","doc":{"id":21,"title":"Reused Slug Page","slug":"offene-stelle","folder":10,"orderKey":"a0","structureRevision":0,"isFolderRoot":fa
+HTTP 200
+## resolve /aktuelles/stellenangebote/offene-stelle de (page 21 falls back to en in de; folder 8 had this as its old de path)
+{"alternates":{"en":"/blog/stellenangebote/offene-stelle","de":"/aktuelles/stellenangebote/offene-stelle"},"collection":"pages","doc":{"id":21,"title":"Reused Slug Page","slug":"offene-stelle","folder":10,"orderKey":"a0","structureRevision":0,"isFolderRoot":false,"pathSegment":"offene-stelle","creat
+HTTP 200

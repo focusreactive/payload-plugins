@@ -1,0 +1,450 @@
+G6 move output: SQLite dev app, fresh database, Local API (moveItems / planMove)
+Seed: folder blog (en blog, de blog-de) with page post (en post, de beitrag), folder news (en news, de nachrichten)
+
+##### SEED
+
+=== seeded ===
+{
+  "blog": 1,
+  "news": 2,
+  "post": 1
+}
+
+=== folders after ===
+[
+  {
+    "id": 2,
+    "slug": {
+      "de": "nachrichten",
+      "en": "news"
+    },
+    "parent": null,
+    "fullPath": {
+      "de": "/nachrichten",
+      "en": "/news"
+    },
+    "depth": 1,
+    "orderKey": "9z",
+    "structureRevision": 0
+  },
+  {
+    "id": 1,
+    "slug": {
+      "de": "blog-de",
+      "en": "blog"
+    },
+    "parent": null,
+    "fullPath": {
+      "de": "/blog-de",
+      "en": "/blog"
+    },
+    "depth": 1,
+    "orderKey": "a0",
+    "structureRevision": 0
+  }
+]
+
+=== pages after ===
+[
+  {
+    "id": 1,
+    "slug": {
+      "de": "beitrag",
+      "en": "post"
+    },
+    "folder": 1,
+    "fullPath": {
+      "en": "/blog/post",
+      "de": "/blog-de/beitrag"
+    },
+    "orderKey": "a0",
+    "structureRevision": 0,
+    "_status": {
+      "de": "published",
+      "en": "published"
+    }
+  }
+]
+
+##### (a)
+
+=== (a) move page post from blog into news: planMove preview ===
+{
+  "blocked": [],
+  "droppedItems": [],
+  "foldersRewritten": 0,
+  "mirrorRowsToWrite": 0,
+  "ok": true,
+  "orderKeys": {
+    "pages:1": "a0"
+  },
+  "redirectRowsToWrite": 2,
+  "samples": [
+    {
+      "collection": "pages",
+      "from": "/blog/post",
+      "id": 1,
+      "locale": "en",
+      "to": "/news/post"
+    },
+    {
+      "collection": "pages",
+      "from": "/blog-de/beitrag",
+      "id": 1,
+      "locale": "de",
+      "to": "/nachrichten/beitrag"
+    }
+  ],
+  "targetFolderId": 2,
+  "urlChanges": {
+    "draftOnly": 0,
+    "published": 1,
+    "publishedAcrossLocales": 2
+  },
+  "warnings": []
+}
+
+=== (a) move page post from blog into news: moveItems result ===
+{
+  "changes": [
+    {
+      "collection": "pages",
+      "from": "/blog/post",
+      "id": 1,
+      "kind": "page",
+      "locale": "en",
+      "published": true,
+      "to": "/news/post"
+    },
+    {
+      "collection": "pages",
+      "from": "/blog-de/beitrag",
+      "id": 1,
+      "kind": "page",
+      "locale": "de",
+      "published": true,
+      "to": "/nachrichten/beitrag"
+    }
+  ],
+  "moved": [
+    {
+      "collection": "pages",
+      "id": 1
+    }
+  ],
+  "orderKeys": {
+    "pages:1": "a0"
+  },
+  "revision": 6,
+  "structureRevisions": {
+    "pages:1": 1
+  }
+}
+
+=== folders after ===
+[
+  {
+    "id": 2,
+    "slug": {
+      "de": "nachrichten",
+      "en": "news"
+    },
+    "parent": null,
+    "fullPath": {
+      "de": "/nachrichten",
+      "en": "/news"
+    },
+    "depth": 1,
+    "orderKey": "9z",
+    "structureRevision": 0
+  },
+  {
+    "id": 1,
+    "slug": {
+      "de": "blog-de",
+      "en": "blog"
+    },
+    "parent": null,
+    "fullPath": {
+      "de": "/blog-de",
+      "en": "/blog"
+    },
+    "depth": 1,
+    "orderKey": "a0",
+    "structureRevision": 0
+  }
+]
+
+=== pages after ===
+[
+  {
+    "id": 1,
+    "slug": {
+      "de": "beitrag",
+      "en": "post"
+    },
+    "folder": 2,
+    "fullPath": {
+      "en": "/news/post",
+      "de": "/nachrichten/beitrag"
+    },
+    "orderKey": "a0",
+    "structureRevision": 1,
+    "_status": {
+      "de": "published",
+      "en": "published"
+    }
+  }
+]
+
+##### (b)
+
+=== (b) move folder news under blog: planMove preview ===
+{
+  "blocked": [],
+  "droppedItems": [],
+  "foldersRewritten": 1,
+  "mirrorRowsToWrite": 0,
+  "ok": true,
+  "orderKeys": {
+    "folders:2": "a0"
+  },
+  "redirectRowsToWrite": 2,
+  "samples": [
+    {
+      "collection": "pages",
+      "from": "/news/post",
+      "id": 1,
+      "locale": "en",
+      "to": "/blog/news/post"
+    },
+    {
+      "collection": "pages",
+      "from": "/nachrichten/beitrag",
+      "id": 1,
+      "locale": "de",
+      "to": "/blog-de/nachrichten/beitrag"
+    }
+  ],
+  "targetFolderId": 1,
+  "urlChanges": {
+    "draftOnly": 0,
+    "published": 1,
+    "publishedAcrossLocales": 2
+  },
+  "warnings": []
+}
+
+=== (b) move folder news under blog: moveItems result ===
+{
+  "changes": [
+    {
+      "collection": "folders",
+      "from": "/news",
+      "id": 2,
+      "kind": "folder",
+      "locale": "en",
+      "published": true,
+      "to": "/blog/news"
+    },
+    {
+      "collection": "folders",
+      "from": "/nachrichten",
+      "id": 2,
+      "kind": "folder",
+      "locale": "de",
+      "published": true,
+      "to": "/blog-de/nachrichten"
+    },
+    {
+      "collection": "pages",
+      "from": "/news/post",
+      "id": 1,
+      "kind": "page",
+      "locale": "en",
+      "published": true,
+      "to": "/blog/news/post"
+    },
+    {
+      "collection": "pages",
+      "from": "/nachrichten/beitrag",
+      "id": 1,
+      "kind": "page",
+      "locale": "de",
+      "published": true,
+      "to": "/blog-de/nachrichten/beitrag"
+    }
+  ],
+  "moved": [
+    {
+      "collection": "folders",
+      "id": 2
+    }
+  ],
+  "orderKeys": {
+    "folders:2": "a0"
+  },
+  "revision": 7,
+  "structureRevisions": {
+    "folders:2": 1
+  }
+}
+
+=== folders after ===
+[
+  {
+    "id": 2,
+    "slug": {
+      "de": "nachrichten",
+      "en": "news"
+    },
+    "parent": 1,
+    "fullPath": {
+      "de": "/blog-de/nachrichten",
+      "en": "/blog/news"
+    },
+    "depth": 2,
+    "orderKey": "a0",
+    "structureRevision": 1
+  },
+  {
+    "id": 1,
+    "slug": {
+      "de": "blog-de",
+      "en": "blog"
+    },
+    "parent": null,
+    "fullPath": {
+      "de": "/blog-de",
+      "en": "/blog"
+    },
+    "depth": 1,
+    "orderKey": "a0",
+    "structureRevision": 0
+  }
+]
+
+=== pages after ===
+[
+  {
+    "id": 1,
+    "slug": {
+      "de": "beitrag",
+      "en": "post"
+    },
+    "folder": 2,
+    "fullPath": {
+      "en": "/blog/news/post",
+      "de": "/blog-de/nachrichten/beitrag"
+    },
+    "orderKey": "a0",
+    "structureRevision": 1,
+    "_status": {
+      "de": "published",
+      "en": "published"
+    }
+  }
+]
+
+##### (c)
+created child folder id 3 under blog
+
+=== (c) move folder blog into its own child: planMove preview ===
+{
+  "blocked": [
+    {
+      "item": {
+        "collection": "folders",
+        "id": 1
+      },
+      "message": "A folder cannot be moved into itself or one of its subfolders",
+      "reason": "cycle"
+    }
+  ],
+  "droppedItems": [],
+  "foldersRewritten": 0,
+  "mirrorRowsToWrite": 0,
+  "ok": false,
+  "orderKeys": {},
+  "redirectRowsToWrite": 0,
+  "samples": [],
+  "targetFolderId": 3,
+  "urlChanges": {
+    "draftOnly": 0,
+    "published": 0,
+    "publishedAcrossLocales": 0
+  },
+  "warnings": []
+}
+moveItems threw: APIError: A folder cannot be moved into itself or one of its subfolders
+
+=== folders after ===
+[
+  {
+    "id": 3,
+    "slug": {
+      "de": null,
+      "en": "child"
+    },
+    "parent": 1,
+    "fullPath": {
+      "de": "/blog-de/child",
+      "en": "/blog/child"
+    },
+    "depth": 2,
+    "orderKey": "9z",
+    "structureRevision": 0
+  },
+  {
+    "id": 2,
+    "slug": {
+      "de": "nachrichten",
+      "en": "news"
+    },
+    "parent": 1,
+    "fullPath": {
+      "de": "/blog-de/nachrichten",
+      "en": "/blog/news"
+    },
+    "depth": 2,
+    "orderKey": "a0",
+    "structureRevision": 1
+  },
+  {
+    "id": 1,
+    "slug": {
+      "de": "blog-de",
+      "en": "blog"
+    },
+    "parent": null,
+    "fullPath": {
+      "de": "/blog-de",
+      "en": "/blog"
+    },
+    "depth": 1,
+    "orderKey": "a0",
+    "structureRevision": 0
+  }
+]
+
+=== pages after ===
+[
+  {
+    "id": 1,
+    "slug": {
+      "de": "beitrag",
+      "en": "post"
+    },
+    "folder": 2,
+    "fullPath": {
+      "en": "/blog/news/post",
+      "de": "/blog-de/nachrichten/beitrag"
+    },
+    "orderKey": "a0",
+    "structureRevision": 1,
+    "_status": {
+      "de": "published",
+      "en": "published"
+    }
+  }
+]

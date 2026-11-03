@@ -1,0 +1,48 @@
+import { defineConfig, devices } from "@playwright/test";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
+const port = 4078;
+
+// Playwright loads this file in the runner and in every worker; the environment variable makes
+// all of them agree on one temporary database directory.
+process.env.FOLDERS_E2E_DATABASE_DIRECTORY ??= mkdtempSync(path.join(tmpdir(), "folders-e2e-"));
+const databaseDirectory = process.env.FOLDERS_E2E_DATABASE_DIRECTORY;
+// The seed and the second dev servers inherit this, and so does the main server below.
+process.env.FOLDERS_SQLITE_WAL ??= "true";
+
+export default defineConfig({
+  // The first visit to a view compiles it in the dev server, which takes a while.
+  expect: { timeout: 15_000 },
+  forbidOnly: Boolean(process.env.CI),
+  fullyParallel: false,
+  // Runs after the web server is up, so the schema exists, and seeds the same database.
+  globalSetup: "./tests/e2e/globalSetup.ts",
+  globalTeardown: "./tests/e2e/globalTeardown.ts",
+  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  // The list shows how long each test took, which a CI log needs to tell a slow runner from a hang.
+  reporter: process.env.CI ? [["github"], ["list"]] : "list",
+  retries: process.env.CI ? 2 : 0,
+  testDir: "./tests/e2e",
+  testMatch: "**/*.e2e.spec.ts",
+  timeout: 90_000,
+  use: {
+    baseURL: `http://localhost:${port}`,
+    trace: "on-first-retry",
+  },
+  webServer: {
+    // The PID file lets anyone stop this server by that PID alone, never by process name.
+    command: "mkdir -p .run && echo $$ > .run/next-dev.pid && exec npm run dev",
+    env: {
+      DATABASE_URI: `file:${path.join(databaseDirectory, "e2e.db")}`,
+      // Offers German as an admin language; a spec asks for it with the browser's locale.
+      FOLDERS_ADMIN_GERMAN: "true",
+    },
+    // A reused server would be pointing at some other database.
+    reuseExistingServer: false,
+    timeout: 180_000,
+    url: `http://localhost:${port}/admin`,
+  },
+  workers: 1,
+});

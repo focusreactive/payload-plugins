@@ -1,0 +1,231 @@
+=== COMMAND: npx vitest run tests/int/blocker-stale-structure.int.test.ts ===
+
+ RUN  v5.0.1 /Users/eugene/orca/workspaces/payload-plugins/vr-folders-payload/packages/payload-plugin-folders
+
+[⣷] Pulling schema from database...
+[✓] Pulling schema from database...
+[⣷] Pulling schema from database...
+[✓] Pulling schema from database...
+ ✓ |int| tests/int/blocker-stale-structure.int.test.ts > stale structure cannot undo a move > a REST PATCH carrying the old folder after a move keeps the new folder 301ms
+ ✓ |int| tests/int/blocker-stale-structure.int.test.ts > stale structure cannot undo a move > an autosave of a form loaded before the move keeps the new folder 130ms
+ ✓ |int| tests/int/blocker-stale-structure.int.test.ts > stale structure cannot undo a move > publishing a draft created before the move keeps the new folder 47ms
+ ✓ |int| tests/int/blocker-stale-structure.int.test.ts > stale structure cannot undo a move > a scheduled publish of an old draft keeps the new folder (the dev config has no schedulePublish, so this runs the update the job runs) 66ms
+ ✓ |int| tests/int/blocker-stale-structure.int.test.ts > stale structure cannot undo a move > restoring a version from before the move keeps the new folder 149ms
+ ✓ |int| tests/int/blocker-stale-structure.int.test.ts > stale structure cannot undo a move > a rebalance followed by publishing a sibling's old draft keeps the rebalanced order 56ms
+ ✓ |int| tests/int/blocker-stale-structure.int.test.ts > stale structure cannot undo a move > a publish of an old draft leaves the page's structureRevision at the moved value 49ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  10:16:43
+   Duration  2.31s (import 47%, tests 47%, transform 6%)
+
+=== END ===
+
+=== COMMAND: npm run test:int:postgres -- tests/int/blocker-stale-structure.int.test.ts ===
+
+> @focus-reactive/payload-plugin-folders@0.0.0 test:int:postgres
+> cross-env TEST_DB=postgres vitest run --project int tests/int/blocker-stale-structure.int.test.ts --reporter=verbose
+
+
+ RUN  v5.0.1 /Users/eugene/orca/workspaces/payload-plugins/vr-folders-payload/packages/payload-plugin-folders
+
+[⣷] Pulling schema from database...
+[✓] Pulling schema from database...
+[⣷] Pulling schema from database...
+[⣯] Pulling schema from database...
+[✓] Pulling schema from database...
+ ✓ |int| tests/int/blocker-stale-structure.int.test.ts > stale structure cannot undo a move > a REST PATCH carrying the old folder after a move keeps the new folder 563ms
+ ✓ |int| tests/int/blocker-stale-structure.int.test.ts > stale structure cannot undo a move > an autosave of a form loaded before the move keeps the new folder 168ms
+ ✓ |int| tests/int/blocker-stale-structure.int.test.ts > stale structure cannot undo a move > publishing a draft created before the move keeps the new folder 66ms
+ ✓ |int| tests/int/blocker-stale-structure.int.test.ts > stale structure cannot undo a move > a scheduled publish of an old draft keeps the new folder (the dev config has no schedulePublish, so this runs the update the job runs) 67ms
+ ✓ |int| tests/int/blocker-stale-structure.int.test.ts > stale structure cannot undo a move > restoring a version from before the move keeps the new folder 178ms
+ ✓ |int| tests/int/blocker-stale-structure.int.test.ts > stale structure cannot undo a move > a rebalance followed by publishing a sibling's old draft keeps the rebalanced order 126ms
+ ✓ |int| tests/int/blocker-stale-structure.int.test.ts > stale structure cannot undo a move > a publish of an old draft leaves the page's structureRevision at the moved value 69ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  10:16:46
+   Duration  3.04s (tests 67%, import 28%, transform 5%)
+
+=== END ===
+
+=== COMMAND: npx vitest run tests/int/blocker-concurrency.int.test.ts ===
+
+ RUN  v5.0.1 /Users/eugene/orca/workspaces/payload-plugins/vr-folders-payload/packages/payload-plugin-folders
+
+[⣷] Pulling schema from database...
+[✓] Pulling schema from database...
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > crossed folder moves > crossed folder moves X into Y and Y into X in parallel apply exactly one 122ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > crossed folder moves > the other returns 400 cycle or 409 stale 39ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > crossed folder moves > every folder still reaches the root afterwards 44ms
+ ↓ |int| tests/int/blocker-concurrency.int.test.ts > crossed folder moves > crossed moves from two server instances on one database apply exactly one
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > parallel writers into one folder > 50 parallel page creates in one folder get 50 distinct keys 306ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > parallel writers into one folder > a move with an outdated expected orderKey returns 409 27ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > parallel writers into one folder > two parallel moves into one gap both land in a valid order 34ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > parallel writers into one folder > two parallel moves into a gap whose lower neighbour has no key rebalance and both land in a valid order 39ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > the tree-state row > seedTreeState leaves one row when many inits race on an empty database 3ms
+ ↓ |int| tests/int/blocker-concurrency.int.test.ts > the tree-state row > two server instances seeding an empty database at once leave one row
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > the tree-state row > seedTreeState leaves an existing row alone, whatever its id 2ms
+
+ Test Files  1 passed (1)
+      Tests  9 passed | 2 skipped (11)
+   Start at  10:16:49
+   Duration  1.62s (tests 56%, import 38%, transform 7%)
+
+=== END ===
+
+=== COMMAND: npm run test:int:postgres -- tests/int/blocker-concurrency.int.test.ts ===
+
+> @focus-reactive/payload-plugin-folders@0.0.0 test:int:postgres
+> cross-env TEST_DB=postgres vitest run --project int tests/int/blocker-concurrency.int.test.ts --reporter=verbose
+
+
+ RUN  v5.0.1 /Users/eugene/orca/workspaces/payload-plugins/vr-folders-payload/packages/payload-plugin-folders
+
+[⣷] Pulling schema from database...
+[✓] Pulling schema from database...
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > crossed folder moves > crossed folder moves X into Y and Y into X in parallel apply exactly one 219ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > crossed folder moves > the other returns 400 cycle or 409 stale 61ms
+[⣷] Pulling schema from database...
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > crossed folder moves > every folder still reaches the root afterwards 56ms
+[⣯] Pulling schema from database...
+[✓] Pulling schema from database...
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > crossed folder moves > crossed moves from two server instances on one database apply exactly one 290ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > parallel writers into one folder > 50 parallel page creates in one folder get 50 distinct keys 377ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > parallel writers into one folder > a move with an outdated expected orderKey returns 409 34ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > parallel writers into one folder > two parallel moves into one gap both land in a valid order 41ms
+[⣷] Pulling schema from database...
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > parallel writers into one folder > two parallel moves into a gap whose lower neighbour has no key rebalance and both land in a valid order 43ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > the tree-state row > seedTreeState leaves one row when many inits race on an empty database 3ms
+[⣯] Pulling schema from database...
+[✓] Pulling schema from database...
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > the tree-state row > two server instances seeding an empty database at once leave one row 173ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > the tree-state row > seedTreeState leaves an existing row alone, whatever its id 2ms
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  10:16:51
+   Duration  2.98s (tests 69%, import 25%, transform 6%)
+
+=== END ===
+
+=== COMMAND: npx vitest run tests/int/blocker-locale-safe.int.test.ts ===
+
+ RUN  v5.0.1 /Users/eugene/orca/workspaces/payload-plugins/vr-folders-payload/packages/payload-plugin-folders
+
+[⣷] Pulling schema from database...
+[✓] Pulling schema from database...
+ ✓ |int| tests/int/blocker-locale-safe.int.test.ts > moves never touch localized content > a draft with en and de title, body and slug, moved, reads unchanged in both locales 91ms
+ ✓ |int| tests/int/blocker-locale-safe.int.test.ts > moves never touch localized content > the same holds for the published row 61ms
+ ✓ |int| tests/int/blocker-locale-safe.int.test.ts > moves never touch localized content > array and block rows of the draft are unchanged 65ms
+ ✓ |int| tests/int/blocker-locale-safe.int.test.ts > moves never touch localized content > a folder move leaves page rows untouched 107ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  10:16:55
+   Duration  1.45s (tests 46%, import 44%, transform 10%)
+
+=== END ===
+
+=== COMMAND: npm run test:int:postgres -- tests/int/blocker-locale-safe.int.test.ts ===
+
+> @focus-reactive/payload-plugin-folders@0.0.0 test:int:postgres
+> cross-env TEST_DB=postgres vitest run --project int tests/int/blocker-locale-safe.int.test.ts --reporter=verbose
+
+
+ RUN  v5.0.1 /Users/eugene/orca/workspaces/payload-plugins/vr-folders-payload/packages/payload-plugin-folders
+
+[⣷] Pulling schema from database...
+[✓] Pulling schema from database...
+ ✓ |int| tests/int/blocker-locale-safe.int.test.ts > moves never touch localized content > a draft with en and de title, body and slug, moved, reads unchanged in both locales 112ms
+ ✓ |int| tests/int/blocker-locale-safe.int.test.ts > moves never touch localized content > the same holds for the published row 100ms
+ ✓ |int| tests/int/blocker-locale-safe.int.test.ts > moves never touch localized content > array and block rows of the draft are unchanged 91ms
+ ✓ |int| tests/int/blocker-locale-safe.int.test.ts > moves never touch localized content > a folder move leaves page rows untouched 175ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  10:16:57
+   Duration  2.25s (tests 58%, import 35%, transform 7%)
+
+=== END ===
+
+=== COMMAND: npm run test:int:postgres -- tests/int/blocker-concurrency.int.test.ts --reporter=verbose (flakiness rerun 1) ===
+
+> @focus-reactive/payload-plugin-folders@0.0.0 test:int:postgres
+> cross-env TEST_DB=postgres vitest run --project int tests/int/blocker-concurrency.int.test.ts --reporter=verbose
+
+
+ RUN  v5.0.1 /Users/eugene/orca/workspaces/payload-plugins/vr-folders-payload/packages/payload-plugin-folders
+
+[⣷] Pulling schema from database...
+[✓] Pulling schema from database...
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > crossed folder moves > crossed folder moves X into Y and Y into X in parallel apply exactly one 227ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > crossed folder moves > the other returns 400 cycle or 409 stale 60ms
+[⣷] Pulling schema from database...
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > crossed folder moves > every folder still reaches the root afterwards 66ms
+[⣯] Pulling schema from database...
+[✓] Pulling schema from database...
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > crossed folder moves > crossed moves from two server instances on one database apply exactly one 285ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > parallel writers into one folder > 50 parallel page creates in one folder get 50 distinct keys 378ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > parallel writers into one folder > a move with an outdated expected orderKey returns 409 37ms
+[⣷] Pulling schema from database...
+[⣯] Pulling schema from database...
+[✓] Pulling schema from database...
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > parallel writers into one folder > two parallel moves into one gap both land in a valid order 54ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > parallel writers into one folder > two parallel moves into a gap whose lower neighbour has no key rebalance and both land in a valid order 61ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > the tree-state row > seedTreeState leaves one row when many inits race on an empty database 4ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > the tree-state row > two server instances seeding an empty database at once leave one row 270ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > the tree-state row > seedTreeState leaves an existing row alone, whatever its id 2ms
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  10:17:22
+   Duration  5.19s (tests 51%, import 40%, transform 8%)
+
+=== END ===
+
+=== COMMAND: npm run test:int:postgres -- tests/int/blocker-concurrency.int.test.ts --reporter=verbose (flakiness rerun 2) ===
+
+> @focus-reactive/payload-plugin-folders@0.0.0 test:int:postgres
+> cross-env TEST_DB=postgres vitest run --project int tests/int/blocker-concurrency.int.test.ts --reporter=verbose
+
+
+ RUN  v5.0.1 /Users/eugene/orca/workspaces/payload-plugins/vr-folders-payload/packages/payload-plugin-folders
+
+[⣷] Pulling schema from database...
+[✓] Pulling schema from database...
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > crossed folder moves > crossed folder moves X into Y and Y into X in parallel apply exactly one 202ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > crossed folder moves > the other returns 400 cycle or 409 stale 69ms
+[⣷] Pulling schema from database...
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > crossed folder moves > every folder still reaches the root afterwards 60ms
+[⣯] Pulling schema from database...
+[✓] Pulling schema from database...
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > crossed folder moves > crossed moves from two server instances on one database apply exactly one 440ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > parallel writers into one folder > 50 parallel page creates in one folder get 50 distinct keys 730ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > parallel writers into one folder > a move with an outdated expected orderKey returns 409 43ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > parallel writers into one folder > two parallel moves into one gap both land in a valid order 45ms
+[⣷] Pulling schema from database...
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > parallel writers into one folder > two parallel moves into a gap whose lower neighbour has no key rebalance and both land in a valid order 47ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > the tree-state row > seedTreeState leaves one row when many inits race on an empty database 4ms
+[⣯] Pulling schema from database...
+[✓] Pulling schema from database...
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > the tree-state row > two server instances seeding an empty database at once leave one row 225ms
+ ✓ |int| tests/int/blocker-concurrency.int.test.ts > the tree-state row > seedTreeState leaves an existing row alone, whatever its id 4ms
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  10:17:35
+   Duration  3.57s (tests 75%, import 21%, transform 4%)
+
+=== END ===
+
+=== SUMMARY ===
+stale-structure sqlite: 7 passed (7)
+stale-structure postgres: 7 passed (7)
+concurrency sqlite: 9 passed, 2 skipped (11) (the two skipped are the two-server-instance cases, which need Postgres)
+concurrency postgres: 11 passed (11)
+locale-safe sqlite: 4 passed (4)
+locale-safe postgres: 4 passed (4)
+concurrency postgres flakiness rerun 1: 11 passed (11)
+concurrency postgres flakiness rerun 2: 11 passed (11)
+Total concurrency postgres runs: 3 of 3 green, 33 of 33 test executions passed

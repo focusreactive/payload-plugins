@@ -1,0 +1,10 @@
+POST /api/graphql with header DisableAutologin: true (anonymous)
+--- Q1
+{"data":{"foldersResolve":{"type":"notFound","collection":null,"id":null,"fullPath":null,"redirectTo":null,"alternates":[]}}}
+HTTP 200
+--- Q4 draft:true
+{"data":{"foldersResolve":{"type":"notFound","collection":null,"id":null,"fullPath":null,"redirectTo":null,"alternates":[]}}}
+HTTP 200
+--- Q2 old path
+{"data":{"foldersResolve":{"type":"notFound","collection":null,"id":null,"fullPath":null,"redirectTo":null,"alternates":[]}}}
+HTTP 200

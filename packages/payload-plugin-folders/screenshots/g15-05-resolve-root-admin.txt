@@ -1,0 +1,5 @@
+GET /api/folders-tree/resolve?path=/&locale=en (signed-in admin)
+HTTP/1.1 200 OK
+content-type: application/json
+
+{"alternates":{"en":"/","de":"/"},"collection":"pages","doc":{"id":16,"title":"Home","slug":"home","folder":null,"orderKey":"9w","structureRevision":0,"isFolderRoot":true,"pathSegment":"home","updatedAt":"2026-10-31T22:35:07.462Z","createdAt":"2026-10-31T22:35:07.455Z","_status":"published","blocks":[],"folderPath":null,"fullPath":"/"},"fullPath":"/","locale":"en","type":"page"}

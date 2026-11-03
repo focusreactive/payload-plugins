@@ -1,0 +1,25 @@
+Leak check on :4079. Folder 11 (secret-drafts) holds only drafts. Rename it, then ask anonymously for the old path. Also unpublish a published page after a rename and ask for its old path.
+## PATCH folder 11 slug -> secret-renamed (signed-in)
+HTTP 200
+## anon /secret-drafts/hidden-plan en (expect notFound, no redirect revealing the new name)
+{"type":"notFound"}
+HTTP 404
+## anon /secret-drafts/hidden-plan en draft=true
+{"type":"notFound"}
+HTTP 404
+## admin /secret-drafts/hidden-plan en draft=true (what the editor sees)
+{"type":"notFound"}
+HTTP 404
+## anon /secret-drafts en (folder-level old path)
+{"type":"notFound"}
+HTTP 404
+## PATCH /api/pages/20?locale=en {_status: draft} (unpublish Fallback Page, the only page of folder 9)
+HTTP 200
+## anon /fallback-probe/fallback-page en (old path of page 20, now unpublished; target is not public)
+{"type":"notFound"}
+HTTP 404
+## anon /admin-renamed/fallback-page en (current path, unpublished)
+{"type":"notFound"}
+HTTP 404
+## anon tree contains Fallback Probe folder?
+0

@@ -1,0 +1,5 @@
+14
+14 /de/produkte/schuhe/laufschuhe/trail-blazer {"type": "reference", "reference": {"relationTo": "pages", "value": 5}, "url": null}
+13 /products/shoes/running/trail-blazer {"type": "reference", "reference": {"relationTo": "pages", "value": 5}, "url": null}
+12 /de/produkte/schuhe/laufschuhe/fast-runner {"type": "reference", "reference": {"relationTo": "pages", "value": 6}, "url": null}
+[]

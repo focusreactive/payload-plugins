@@ -1,0 +1,21 @@
+Scenario: folder 9 renamed three times: fallback-probe -> renamed-probe -> renamed-two -> fallback-probe (back). Page under it: fallback-page. Signed-in admin.
+## PATCH slug renamed-two
+HTTP 200
+## resolve /fallback-probe/fallback-page en (oldest path, expect a single hop to /renamed-two)
+{"status":301,"to":"/renamed-two/fallback-page","type":"redirect"}
+HTTP 200
+## resolve /renamed-probe/fallback-page en (middle path)
+{"status":301,"to":"/renamed-two/fallback-page","type":"redirect"}
+HTTP 200
+## PATCH slug back to fallback-probe
+{"doc":{"id":9,"name":"Fallback Probe","slug":"fallback-probe","parent":null,"orderKey":"9v","fullPath":"/fallback-probe","ancestorIds":"/","depth":1,"structureRevision":0,"allowedTypes":[],"defaultType":null,"lockSubfolderTypes":false,"typesLockedBy":null,"createdBy":{"relationTo":"users","value":1
+HTTP 200
+## resolve /fallback-probe/fallback-page en (live again, must be a page not a redirect)
+{"alternates":{"en":"/fallback-probe/fallback-page","de":"/fallback-probe/fallback-page"},"collection":"pages","doc":{"id":20,"title":"Fallback Page","slug":"fallback-page","folder":9,"orderKey":"a0",
+HTTP 200
+## resolve /renamed-two/fallback-page en (expect redirect to /fallback-probe/...)
+{"status":301,"to":"/fallback-probe/fallback-page","type":"redirect"}
+HTTP 200
+## resolve /renamed-probe/fallback-page en (expect redirect to /fallback-probe/...)
+{"status":301,"to":"/fallback-probe/fallback-page","type":"redirect"}
+HTTP 200

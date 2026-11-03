@@ -1,0 +1,467 @@
+import { createPayloadRequest } from "payload";
+import type { Payload, PayloadRequest } from "payload";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+
+import {
+  abandonOperation,
+  registerOperationHandler,
+  runOrQueue,
+  startOperation,
+  stepOperation,
+} from "../../src/core/operations.js";
+import type { OperationProgress } from "../../src/core/operations.js";
+import { callEndpoint } from "../helpers/callEndpoint.js";
+import { getTestPayload } from "../helpers/getTestPayload.js";
+import type { TestPayload } from "../helpers/getTestPayload.js";
+
+type Unit = { n: number };
+
+const password = "test-password";
+const ownerEmail = "operation-owner@example.com";
+
+let harness: TestPayload;
+let ownerRequest: PayloadRequest;
+/** The unit number at which the stand-in handler throws once, after writing the units before it. */
+let failAtUnit: number | null = null;
+let targetPageId: number;
+const processed: number[] = [];
+
+const standInKind = "mirrorRedirects";
+
+const countRows = async (payload: Payload): Promise<number> =>
+  (
+    await payload.db.count({
+      collection: "folder-redirects" as never,
+      where: { lookupKey: { like: "-:/operation-test/" } },
+    })
+  ).totalDocs;
+
+const countOperations = async (payload: Payload): Promise<number> =>
+  (await payload.db.count({ collection: "folder-operations" as never })).totalDocs;
+
+const units = (count: number): Unit[] =>
+  Array.from({ length: count }, (_, index) => ({ n: index }));
+
+beforeAll(async () => {
+  harness = await getTestPayload();
+  const { payload } = harness;
+  targetPageId = (
+    await payload.create({
+      collection: "pages",
+      data: { slug: "operation-target", title: "Operation target" },
+      depth: 0,
+      overrideAccess: true,
+    })
+  ).id;
+  const owner = await payload.create({
+    collection: "users",
+    data: { email: ownerEmail, password, role: "editor" } as never,
+    overrideAccess: true,
+  });
+  ownerRequest = await createPayloadRequest({
+    payload,
+    req: {},
+    user: { ...owner, collection: "users" } as never,
+  });
+
+  // A stand-in for an operation of a later ticket: each unit writes one row, so a rolled-back step
+  // shows as missing rows and a repeated unit as a unique key error.
+  registerOperationHandler(standInKind, {
+    run: async ({ req }, batch) => {
+      for (const unit of batch as Unit[]) {
+        if (failAtUnit === unit.n) {
+          failAtUnit = null;
+          throw new Error("The stand-in failed on purpose");
+        }
+        await req.payload.db.create({
+          collection: "folder-redirects" as never,
+          data: {
+            createdAt: new Date().toISOString(),
+            fromPath: `/operation-test/${unit.n}`,
+            kind: "page",
+            locale: null,
+            lookupKey: `-:/operation-test/${unit.n}`,
+            target: { relationTo: "pages", value: targetPageId },
+            updatedAt: new Date().toISOString(),
+          },
+          req,
+        });
+        processed.push(unit.n);
+      }
+    },
+  });
+});
+
+afterAll(async () => {
+  await harness?.destroy();
+});
+
+afterEach(async () => {
+  failAtUnit = null;
+  processed.length = 0;
+  await harness.payload.db.deleteMany({
+    collection: "folder-redirects" as never,
+    where: { id: { exists: true } },
+  });
+  await harness.payload.db.deleteMany({
+    collection: "folder-operations" as never,
+    where: { id: { exists: true } },
+  });
+});
+
+const stepAs = async (id: number | string, user?: { email: string; password: string }) =>
+  callEndpoint<OperationProgress & { errors?: unknown[] }>({
+    config: harness.config,
+    method: "POST",
+    path: `/folders-tree/operations/${id}/step`,
+    payload: harness.payload,
+    payloadInstanceCacheKey: harness.cacheKey,
+    ...(user ? { user } : {}),
+  });
+
+const abandonAs = async (id: number | string, user?: { email: string; password: string }) =>
+  callEndpoint<OperationProgress & { errors?: unknown[] }>({
+    config: harness.config,
+    method: "POST",
+    path: `/folders-tree/operations/${id}/abandon`,
+    payload: harness.payload,
+    payloadInstanceCacheKey: harness.cacheKey,
+    ...(user ? { user } : {}),
+  });
+
+const readStatus = async (id: number | string): Promise<string | undefined> =>
+  (
+    (await harness.payload.db.findOne({
+      collection: "folder-operations" as never,
+      where: { id: { equals: id } },
+    })) as unknown as { status?: string } | null
+  )?.status;
+
+const readError = async (id: number | string): Promise<string | null | undefined> =>
+  (
+    (await harness.payload.db.findOne({
+      collection: "folder-operations" as never,
+      where: { id: { equals: id } },
+    })) as unknown as { error?: string | null } | null
+  )?.error;
+
+describe("the batch runner", () => {
+  it("500 items run in three steps", async () => {
+    const { id, total } = await startOperation({
+      items: units(500),
+      kind: standInKind,
+      req: ownerRequest,
+    });
+    expect(total).toBe(500);
+    expect(await countRows(harness.payload)).toBe(0);
+
+    const first = await stepOperation(ownerRequest, id);
+    const second = await stepOperation(ownerRequest, id);
+    const third = await stepOperation(ownerRequest, id);
+
+    expect(first).toEqual({ done: 200, status: "running", total: 500 });
+    expect(second).toEqual({ done: 400, status: "running", total: 500 });
+    expect(third).toEqual({ done: 500, status: "done", total: 500 });
+    expect(processed).toEqual(units(500).map((unit) => unit.n));
+    expect(await countRows(harness.payload)).toBe(500);
+  });
+
+  it("a failed step can be retried without duplicating work", async () => {
+    const { id } = await startOperation({
+      items: units(500),
+      kind: standInKind,
+      req: ownerRequest,
+    });
+    await stepOperation(ownerRequest, id);
+
+    // The second step writes units 200 to 249 and then throws.
+    failAtUnit = 250;
+    const failed = await stepOperation(ownerRequest, id);
+
+    expect(failed).toMatchObject({
+      done: 200,
+      error: "The stand-in failed on purpose",
+      status: "failed",
+      total: 500,
+    });
+    // The whole step rolled back, the units it had already written included.
+    expect(await countRows(harness.payload)).toBe(200);
+
+    const retried = await stepOperation(ownerRequest, id);
+    const last = await stepOperation(ownerRequest, id);
+
+    expect(retried).toEqual({ done: 400, status: "running", total: 500 });
+    expect(last).toEqual({ done: 500, status: "done", total: 500 });
+    expect(await countRows(harness.payload)).toBe(500);
+    // Units 200 to 249 ran twice (once rolled back) and every unit has exactly one row.
+    expect(new Set(processed).size).toBe(500);
+  });
+
+  it("status is done after the last step", async () => {
+    const { id } = await startOperation({
+      items: units(201),
+      kind: standInKind,
+      req: ownerRequest,
+    });
+
+    expect(await stepOperation(ownerRequest, id)).toEqual({
+      done: 200,
+      status: "running",
+      total: 201,
+    });
+    expect(await stepOperation(ownerRequest, id)).toEqual({
+      done: 201,
+      status: "done",
+      total: 201,
+    });
+    // Stepping a finished operation changes nothing.
+    expect(await stepOperation(ownerRequest, id)).toEqual({
+      done: 201,
+      status: "done",
+      total: 201,
+    });
+
+    const stored = (await harness.payload.db.findOne({
+      collection: "folder-operations" as never,
+      where: { id: { equals: id } },
+    })) as unknown as { done: number; status: string };
+    expect(stored).toMatchObject({ done: 201, status: "done" });
+    expect(await countRows(harness.payload)).toBe(201);
+  });
+
+  it("200 items or fewer run synchronously", async () => {
+    const small = await runOrQueue({ kind: standInKind, req: ownerRequest, units: units(200) });
+
+    expect(small.queued).toBe(false);
+    expect(await countRows(harness.payload)).toBe(200);
+    expect(await countOperations(harness.payload)).toBe(0);
+
+    const large = await runOrQueue({ kind: standInKind, req: ownerRequest, units: units(201) });
+
+    expect(large.queued).toBe(true);
+    expect(await countOperations(harness.payload)).toBe(1);
+    // Queued work waits for the first step.
+    expect(await countRows(harness.payload)).toBe(200);
+  });
+
+  it("stepping someone else's operation is 403", async () => {
+    const { id } = await startOperation({
+      items: units(300),
+      kind: standInKind,
+      req: ownerRequest,
+    });
+
+    // The default test user is an admin and still not the owner.
+    const refused = await stepAs(id);
+    const anonymous = await callEndpoint({
+      anonymous: true,
+      config: harness.config,
+      method: "POST",
+      path: `/folders-tree/operations/${id}/step`,
+      payload: harness.payload,
+      payloadInstanceCacheKey: harness.cacheKey,
+    });
+    expect(refused.status).toBe(403);
+    expect(anonymous.status).toBe(403);
+    expect(await countRows(harness.payload)).toBe(0);
+
+    const owned = await stepAs(id, { email: ownerEmail, password });
+
+    expect(owned.status).toBe(200);
+    expect(await countRows(harness.payload)).toBe(200);
+    expect(owned.body).toEqual({ done: 200, status: "running", total: 300 });
+  });
+});
+
+type Adapter = Record<string, (...args: never[]) => Promise<unknown>>;
+
+// A write of a failed status that cannot happen, as `SQLITE_BUSY` makes one on SQLite.
+const failingStatusWrite = (original: Adapter[string]) =>
+  function updateOne(this: unknown, ...args: never[]) {
+    const [{ collection, data }] = args as unknown as [
+      { collection: string; data: { status?: string } },
+    ];
+    if (collection === "folder-operations" && data.status === "failed") {
+      return Promise.reject(new Error("SQLITE_BUSY: database is locked"));
+    }
+
+    return original.apply(this, args);
+  };
+
+describe("recording the failure of a step", () => {
+  it("an abandon that commits while the step fails stays abandoned", async () => {
+    const { id } = await startOperation({
+      items: units(10),
+      kind: standInKind,
+      req: ownerRequest,
+    });
+    const abandoner = await createPayloadRequest({
+      payload: harness.payload,
+      req: {},
+      user: ownerRequest.user as never,
+    });
+    const adapter = harness.payload.db as unknown as Adapter;
+    const originalRollback = adapter.rollbackTransaction;
+    let abandonedDuringRollback: OperationProgress | null = null;
+    // The step's transaction has rolled back and the tree lock is free again, but the step has not
+    // yet written its failure: exactly the gap an abandon from another request can land in.
+    adapter.rollbackTransaction = async function rollbackTransaction(...args: never[]) {
+      const result = await originalRollback.apply(this, args);
+      adapter.rollbackTransaction = originalRollback;
+      abandonedDuringRollback = await abandonOperation(abandoner, id);
+
+      return result;
+    };
+    failAtUnit = 3;
+
+    let answer: OperationProgress;
+    try {
+      answer = await stepOperation(ownerRequest, id);
+    } finally {
+      adapter.rollbackTransaction = originalRollback;
+    }
+
+    expect(abandonedDuringRollback).toEqual({ done: 0, status: "abandoned", total: 10 });
+    expect(answer).toMatchObject({ error: "The stand-in failed on purpose", status: "failed" });
+    expect(await readStatus(id)).toBe("abandoned");
+    expect(await readError(id)).toBeNull();
+  });
+
+  it("a failure that cannot be stored still answers failed, and stepping again retries", async () => {
+    const { id } = await startOperation({
+      items: units(10),
+      kind: standInKind,
+      req: ownerRequest,
+    });
+    const adapter = harness.payload.db as unknown as Adapter;
+    const originals = { updateMany: adapter.updateMany, updateOne: adapter.updateOne };
+    adapter.updateMany = failingStatusWrite(originals.updateMany);
+    adapter.updateOne = failingStatusWrite(originals.updateOne);
+    failAtUnit = 3;
+
+    let answer: OperationProgress;
+    try {
+      answer = await stepOperation(ownerRequest, id);
+    } finally {
+      adapter.updateMany = originals.updateMany;
+      adapter.updateOne = originals.updateOne;
+    }
+
+    expect(answer).toEqual({
+      done: 0,
+      error: "The stand-in failed on purpose",
+      status: "failed",
+      total: 10,
+    });
+    // Nothing stored the failure, so the record still reads as running and a retry finishes it.
+    expect(await readStatus(id)).toBe("running");
+    expect(await stepOperation(ownerRequest, id)).toEqual({ done: 10, status: "done", total: 10 });
+  });
+});
+
+describe("abandoning a failed operation", () => {
+  const owner = { email: ownerEmail, password };
+
+  it("the owner stops it, later steps change nothing, and what was done stays", async () => {
+    const { id } = await startOperation({
+      items: units(500),
+      kind: standInKind,
+      req: ownerRequest,
+    });
+    await stepOperation(ownerRequest, id);
+    failAtUnit = 250;
+    const failed = await stepOperation(ownerRequest, id);
+    expect(failed).toMatchObject({ done: 200, status: "failed" });
+
+    const abandoned = await abandonAs(id, owner);
+
+    expect(abandoned.status).toBe(200);
+    expect(abandoned.body).toEqual({ done: 200, status: "abandoned", total: 500 });
+    expect(await readStatus(id)).toBe("abandoned");
+
+    const step = await stepAs(id, owner);
+
+    expect(step.status).toBe(200);
+    expect(step.body).toEqual({ done: 200, status: "abandoned", total: 500 });
+    expect(await countRows(harness.payload)).toBe(200);
+    // Stopping twice answers the same.
+    expect((await abandonAs(id, owner)).body).toEqual({
+      done: 200,
+      status: "abandoned",
+      total: 500,
+    });
+  });
+
+  it("another user gets 403, an anonymous call gets 403, an unknown operation 404", async () => {
+    const { id } = await startOperation({
+      items: units(300),
+      kind: standInKind,
+      req: ownerRequest,
+    });
+
+    // The default test user is an admin and still not the owner.
+    const other = await abandonAs(id);
+    const anonymous = await callEndpoint({
+      anonymous: true,
+      config: harness.config,
+      method: "POST",
+      path: `/folders-tree/operations/${id}/abandon`,
+      payload: harness.payload,
+      payloadInstanceCacheKey: harness.cacheKey,
+    });
+    const unknown = await abandonAs(987_654, owner);
+
+    expect(other.status).toBe(403);
+    expect(anonymous.status).toBe(403);
+    expect(unknown.status).toBe(404);
+    expect(await readStatus(id)).toBe("running");
+  });
+
+  it("a finished operation stays done", async () => {
+    const { id } = await startOperation({
+      items: units(10),
+      kind: standInKind,
+      req: ownerRequest,
+    });
+    await stepOperation(ownerRequest, id);
+
+    const abandoned = await abandonAs(id, owner);
+
+    expect(abandoned.body).toEqual({ done: 10, status: "done", total: 10 });
+    expect(await readStatus(id)).toBe("done");
+  });
+});
+
+describe("reading the operation records over the stock REST routes", () => {
+  it("a user reads their own records and nobody else's", async () => {
+    const { id } = await startOperation({
+      items: units(10),
+      kind: standInKind,
+      req: ownerRequest,
+    });
+    const get = (path: string, user?: { email: string; password: string }) =>
+      callEndpoint<{ docs?: Array<{ id: number }>; totalDocs?: number }>({
+        config: harness.config,
+        path,
+        payload: harness.payload,
+        payloadInstanceCacheKey: harness.cacheKey,
+        ...(user ? { user } : {}),
+      });
+
+    const own = await get("/folder-operations?depth=0", { email: ownerEmail, password });
+    const others = await get("/folder-operations?depth=0");
+    const othersById = await get(`/folder-operations/${id}?depth=0`);
+    const anonymous = await callEndpoint<{ totalDocs?: number }>({
+      anonymous: true,
+      config: harness.config,
+      path: "/folder-operations?depth=0",
+      payload: harness.payload,
+      payloadInstanceCacheKey: harness.cacheKey,
+    });
+
+    expect(own.body.docs?.map((doc) => doc.id)).toEqual([id]);
+    expect(others.body.totalDocs).toBe(0);
+    expect(othersById.status).not.toBe(200);
+    expect(anonymous.body.totalDocs ?? 0).toBe(0);
+  });
+});
