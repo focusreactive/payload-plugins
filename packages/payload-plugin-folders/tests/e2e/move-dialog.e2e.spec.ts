@@ -115,7 +115,7 @@ test("Move to... into news shows the URL count and moves", async ({ page, reques
   const confirm = confirmDialog(page);
   // The page is published in English and, through the fallback, in German: two URLs.
   await expect(confirm.getByTestId("url-change-summary")).toHaveText(
-    "1 published URL will change (2 across 2 languages)."
+    "2 published URLs will change across 2 languages."
   );
   await expect(confirm.getByTestId("url-samples")).toContainText(
     "/staging/move-probe becomes /news/move-probe"

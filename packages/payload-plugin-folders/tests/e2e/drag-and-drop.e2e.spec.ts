@@ -210,7 +210,7 @@ test("drop inside a collapsed folder after auto-expand", async ({ page, request 
 
   const confirm = confirmDialog(page);
   await expect(confirm.getByTestId("url-change-summary")).toContainText(
-    "1 published URL will change"
+    "2 published URLs will change across 2 languages"
   );
   await confirm.getByRole("button", { exact: true, name: "Move" }).click();
   await expect(page.getByText("Moved 1 item")).toBeVisible();
@@ -240,7 +240,7 @@ test("move a folder with children and confirm the URL count", async ({ page, req
   // Two published pages under the folder: two URLs, in two languages through the fallback.
   const confirm = confirmDialog(page);
   await expect(confirm.getByTestId("url-change-summary")).toHaveText(
-    "2 published URLs will change (4 across 2 languages)."
+    "4 published URLs will change across 2 languages."
   );
   await expect(confirm.getByTestId("url-samples")).toContainText(
     "/drag-lab/drag-mover/mover-one becomes /drag-lab/drag-destination/drag-mover/mover-one"
@@ -280,7 +280,7 @@ test("a three-item drag keeps their order", async ({ page, request }) => {
 
   const confirm = confirmDialog(page);
   await expect(confirm.getByTestId("url-change-summary")).toContainText(
-    "3 published URLs will change"
+    "6 published URLs will change across 2 languages"
   );
   await confirm.getByRole("button", { exact: true, name: "Move" }).click();
   await expect(page.getByText("Moved 3 items")).toBeVisible();

@@ -41,7 +41,8 @@ export const de: FoldersTranslations = {
       "{{count}} Weiterleitungen werden für die alten URLs angelegt.",
     confirmTitle_one: '{{count}} Eintrag nach "{{target}}" verschieben?',
     confirmTitle_other: '{{count}} Einträge nach "{{target}}" verschieben?',
-    confirmUrlsAcrossLanguages: "({{count}} in {{languages}} Sprachen)",
+    confirmUrlsAcrossLanguages:
+      "{{count}} veröffentlichte URLs ändern sich in {{languages}} Sprachen",
     confirmUrlsChange_one: "{{count}} veröffentlichte URL ändert sich",
     confirmUrlsChange_other: "{{count}} veröffentlichte URLs ändern sich",
     confirmWarningsHeading: "Hinweis",

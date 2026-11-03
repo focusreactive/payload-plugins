@@ -42,7 +42,8 @@ export const en = {
     confirmRedirectsAutomatic_other: "{{count}} redirect entries will be added for the old URLs.",
     confirmTitle_one: 'Move {{count}} item to "{{target}}"?',
     confirmTitle_other: 'Move {{count}} items to "{{target}}"?',
-    confirmUrlsAcrossLanguages: "({{count}} across {{languages}} languages)",
+    confirmUrlsAcrossLanguages:
+      "{{count}} published URLs will change across {{languages}} languages",
     confirmUrlsChange_one: "{{count}} published URL will change",
     confirmUrlsChange_other: "{{count}} published URLs will change",
     confirmWarningsHeading: "Heads up",

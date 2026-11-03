@@ -361,7 +361,7 @@ test("the folders edit view saves a rename only after asking with the URL count"
 
   const dialog = confirmDialog(page);
   await expect(dialog.getByTestId("url-change-summary")).toContainText(
-    "1 published URL will change"
+    "2 published URLs will change across 2 languages"
   );
   expect(await readFolderSlug(request, folderId)).toBe("edit-rename-folder");
   await dialog.getByRole("button", { exact: true, name: "Rename" }).click();

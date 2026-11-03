@@ -176,7 +176,7 @@ test("the confirm dialog counts URLs in both locales", async ({ page, request })
   // German one with the German folder and segment.
   const confirm = page.getByRole("dialog").filter({ has: page.getByTestId("confirm-move") });
   await expect(confirm.getByTestId("url-change-summary")).toHaveText(
-    "1 published URL will change (2 across 2 languages)."
+    "2 published URLs will change across 2 languages."
   );
   const samples = confirm.getByTestId("url-samples");
   await expect(samples).toContainText("/zaehl-quelle/zaehl-seite becomes /zaehl-ziel/zaehl-seite");

@@ -69,15 +69,16 @@ const Summary = ({
 }) => {
   const { draftOnly, published, publishedAcrossLocales } = preview.urlChanges;
   const parts: string[] = [];
-  if (published > 0) {
-    const acrossLanguages =
-      languageCount > 1 && publishedAcrossLocales > published
-        ? ` ${translate("confirmUrlsAcrossLanguages", {
-            count: publishedAcrossLocales,
-            languages: languageCount,
-          })}`
-        : "";
-    parts.push(`${translate("confirmUrlsChange", { count: published })}${acrossLanguages}.`);
+  // One count per sentence: a page count next to a URL count read as a contradiction.
+  if (published > 0 && languageCount > 1 && publishedAcrossLocales > published) {
+    parts.push(
+      `${translate("confirmUrlsAcrossLanguages", {
+        count: publishedAcrossLocales,
+        languages: languageCount,
+      })}.`
+    );
+  } else if (published > 0) {
+    parts.push(`${translate("confirmUrlsChange", { count: published })}.`);
   } else {
     parts.push(translate("confirmNoUrlChange"));
   }

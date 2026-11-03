@@ -114,7 +114,7 @@ test("a drop inside a folder asks to confirm the URL change", async ({ page, req
   // The page is published, so moving it changes a live URL: the editor is asked first.
   const confirm = page.getByRole("dialog").filter({ has: page.getByTestId("confirm-move") });
   await expect(confirm.getByTestId("url-change-summary")).toContainText(
-    "1 published URL will change"
+    "2 published URLs will change across 2 languages"
   );
   await expect(confirm.getByTestId("url-samples")).toContainText(
     "/drag-smoke-lab/smoke-mover becomes /drag-smoke-target/smoke-mover"

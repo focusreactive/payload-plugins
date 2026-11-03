@@ -1145,8 +1145,9 @@ through `admin.components.sidebar.tabs` (slug `folders-tree`), which is Payload 
   reads "Moving 2 items. Choose where to put them", and markers appear in every gap and at the top of
   every open folder. Up and Down walk the markers, Enter picks one, Escape leaves. A refused marker
   shows its reason as text. Move mode ends after a successful move and stays on after a refusal.
-- **The confirm dialog** appears before a move that changes published URLs: "128 published URLs will
-  change (256 across 2 languages). 4 draft pages will also move", up to 5 examples, a box to
+- **The confirm dialog** appears before a move that changes published URLs: "256 published URLs will
+  change across 2 languages. 4 draft pages will also move" (one language: "128 published URLs will
+  change"), up to 5 examples, a box to
   redirect the old URLs, and the mirror line. `admin.confirmMoves` changes when it appears.
 - **Undo.** A toast says "Moved 3 items" with Undo for 10 seconds, also on Cmd or Ctrl Z. Undo puts
   each item back after its previous sibling. It restores the position, not the exact order key, and
