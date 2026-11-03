@@ -676,6 +676,74 @@ describe("tree item access and repair", () => {
     expect(outside.update).toBe(false);
   });
 
+  it("lets only a user who may repair delete URL history rows", async () => {
+    const tree = await seed();
+    const createRow = async () =>
+      (await harness.payload.create({
+        collection: "folder-redirects",
+        data: {
+          fromPath: "/old-path",
+          kind: "page",
+          locale: "en",
+          lookupKey: "en:/old-path",
+          target: { relationTo: "pages", value: tree.pages.contact.id },
+        },
+        overrideAccess: true,
+      } as never)) as { id: number };
+    const rowCount = async () =>
+      (
+        await harness.payload.count({
+          collection: "folder-redirects",
+          overrideAccess: true,
+          where: { lookupKey: { equals: "en:/old-path" } },
+        })
+      ).totalDocs;
+    const row = await createRow();
+
+    for (const role of ["drafter", "editor", "editorLimited"] as const) {
+      const refused = await callEndpoint({
+        config: harness.config,
+        method: "DELETE",
+        path: `/folder-redirects/${row.id}`,
+        payload: harness.payload,
+        payloadInstanceCacheKey: harness.cacheKey,
+        user: as(role),
+      });
+      expect(refused.status).toBe(403);
+      expect(await rowCount()).toBe(1);
+    }
+    await expect(
+      harness.payload.delete({
+        collection: "folder-redirects",
+        id: row.id,
+        overrideAccess: false,
+        user: await readUser("drafter"),
+      })
+    ).rejects.toThrow();
+    expect(await rowCount()).toBe(1);
+
+    // Read stays open to any signed-in user.
+    const read = await callEndpoint({
+      config: harness.config,
+      path: `/folder-redirects/${row.id}`,
+      payload: harness.payload,
+      payloadInstanceCacheKey: harness.cacheKey,
+      user: as("drafter"),
+    });
+    expect(read.status).toBe(200);
+
+    const deleted = await callEndpoint({
+      config: harness.config,
+      method: "DELETE",
+      path: `/folder-redirects/${row.id}`,
+      payload: harness.payload,
+      payloadInstanceCacheKey: harness.cacheKey,
+      user: as("admin"),
+    });
+    expect(deleted.status).toBe(200);
+    expect(await rowCount()).toBe(0);
+  });
+
   it("lets only the admin repair in the dev app, and applies the spec's rule without access.repair", async () => {
     await seed();
     const options = getResolvedOptions(harness.payload);

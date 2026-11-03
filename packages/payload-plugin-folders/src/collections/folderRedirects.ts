@@ -2,15 +2,24 @@ import type { Access, CollectionConfig } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
 import { folderRedirectsSlug } from "../constants.js";
+import { canRepairTree } from "../core/access.js";
 import type { ResolvedOptions } from "../types.js";
 
 const isLoggedIn: Access = ({ req }) => Boolean(req.user);
 const nobody: Access = () => false;
 
-/** Old paths and where they went. The plugin writes rows with overrideAccess: true. */
+/**
+ * Old paths and where they went. The plugin writes rows with overrideAccess: true. Deleting URL
+ * history is a repair-level act, so it takes the same right as verify and repair (decision 5).
+ */
 export const buildFolderRedirectsCollection = (options: ResolvedOptions): CollectionConfig => ({
   slug: folderRedirectsSlug,
-  access: { create: nobody, delete: isLoggedIn, read: isLoggedIn, update: nobody },
+  access: {
+    create: nobody,
+    delete: ({ req }) => canRepairTree({ options, req }),
+    read: isLoggedIn,
+    update: nobody,
+  },
   admin: { defaultColumns: ["fromPath", "locale", "kind", "target"], useAsTitle: "fromPath" },
   disableDuplicate: true,
   indexes: [{ fields: ["lookupKey", "kind"], unique: true }],
