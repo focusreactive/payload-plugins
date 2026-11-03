@@ -104,6 +104,7 @@ export type GetTestPayloadOptions = Pick<
   | "extraCollections"
   | "foldersOptions"
   | "localized"
+  | "mcp"
   | "publicReads"
   | "redirectsCollections"
   | "trash"
@@ -121,6 +122,7 @@ export const getTestPayload = async ({
   extraCollections,
   foldersOptions,
   localized,
+  mcp,
   publicReads,
   redirectsCollections,
   sharedWith,
@@ -144,6 +146,7 @@ export const getTestPayload = async ({
       extraCollections,
       foldersOptions,
       localized,
+      mcp,
       publicReads,
       redirectsCollections,
       trash,

@@ -977,6 +977,17 @@ A stock save on a collection without drafts (a `PATCH /api/posts/:id` that chang
 refuse that role on collections without drafts, as the dev app's drafter does
 (`unversionedUpdateAccess` and `unversionedCreateAccess` in `dev/access/roles.ts`).
 
+An update through `@payloadcms/plugin-mcp` (its stock `updateDocument` tool) is stricter than the
+same save from the admin or the REST API. It is refused with a 400, before anything in the call is
+saved, when its `data` names a page's `folder`, `orderKey` or `structureRevision`, or a folder's
+`parent`, `orderKey`, `structureRevision` or `slug`, with a value different from the stored one. The
+message says what to use instead: the folder tree in the admin, `POST /api/folders-tree/move`
+(preview it with `/api/folders-tree/move/preview`) or `moveItems()` for a move, and the admin or
+`POST /api/folders-tree/folders/:id/preview` for a folder slug. Without the refusal the stock tool
+answers "Document updated successfully" while Payload drops the value, so an agent reports a move that
+did not happen. Sending the stored value back passes, and a folder `name` change passes. The plugin
+recognises the call by the request's `payloadAPI` being `"MCP"`, which `@payloadcms/plugin-mcp` sets.
+
 Access flags in tree rows come from one call per collection with no `id`, the way Payload asks for a
 bulk operation. A rule that depends on the document has to return a `Where`. The same goes for the
 grouped publish check: a rule that decides per document must return a `Where`.
@@ -1393,6 +1404,12 @@ of operations that acquired the lock.
   includes the admin list's bulk Publish. Payload saves matching pages in parallel and commits the
   ones that succeed, so the uniqueness check could not keep two pages from going live at one URL.
   Publish pages one at a time, or through `POST /api/folders-tree/publish` (`publishItems()`).
+- **MCP `updateDocument` refuses structure and folder slug changes.** A page's `folder`,
+  `orderKey` and `structureRevision` and a folder's `parent`, `orderKey`, `structureRevision` and
+  `slug` cannot be changed through the stock tool, and an agent has no tool for the move or rename
+  yet: it gets the 400 and the user does the change in the admin. Only a request that
+  `@payloadcms/plugin-mcp` marks as MCP is checked, so a host that writes its own MCP tool, or calls
+  the Local API from one, gets the admin's quiet replace of a stale value instead. See "Access".
 - **Repair is one transaction.** Every page save waits for it. See "Install on existing content".
 - **Delete costs.** The exact delete refusal count asks access once per document, about 2,000
   queries for a 2,000-page refusal when your access function queries the database. The preview

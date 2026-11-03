@@ -14,6 +14,7 @@ import { buildFolderBeforeValidate } from "../hooks/folders/beforeValidate.js";
 import { folderBulkUpdateGuard } from "../hooks/folders/bulkUpdateGuard.js";
 import { buildFolderBeforeDelete, buildFolderTrashGuard } from "../hooks/folders/deleteHooks.js";
 import { buildSlugPublishRightsHook } from "../hooks/folders/renamePublishRights.js";
+import { buildFolderMcpStructureGuard } from "../hooks/mcpStructureGuard.js";
 import { buildAcquireTreeLockHook, releaseUnboundTreeLockHook } from "../hooks/operationLock.js";
 
 import type { ResolvedOptions } from "../types.js";
@@ -227,6 +228,7 @@ export const buildFoldersCollection = (options: ResolvedOptions): CollectionConf
           beforeChange: [buildFolderBeforeChange(options)],
           beforeDelete: [buildFolderBeforeDelete(options)],
           beforeOperation: [
+            buildFolderMcpStructureGuard(options),
             folderBulkUpdateGuard,
             buildAcquireTreeLockHook(["create", "update", "delete"]),
           ],

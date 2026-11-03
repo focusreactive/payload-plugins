@@ -6,10 +6,12 @@ proposes what the folders plugin should add so an agent moves, renames and creat
 editor in the admin does: with every language in view, and with a confirmation before a live URL
 changes.
 
-Status: section 1 describes a trial that was run. Sections 2 to 5 are a proposal. None of the tools,
-options or hooks named there exist yet. Paths are relative to this package unless they start with
-`node_modules/`, which means this package's own `node_modules` (plugin-mcp 4.0.0-beta.5, payload
-4.0.0-beta.5).
+Status: section 1 describes a trial that was run. The loud refusal on the stock `updateDocument`
+(section 3, "The stock `updateDocument` path: refuse loudly") is built and tested. The rest of
+sections 2 to 5 is a proposal: the five tools (`browseTree`, `createFolder`, `previewMove`,
+`previewRename` and `applyTreeChange`), the options and the other hooks named there do not exist
+yet. Paths are relative to this package unless they start with `node_modules/`, which means this
+package's own `node_modules` (plugin-mcp 4.0.0-beta.5, payload 4.0.0-beta.5).
 
 ## 1. What the trial showed
 
@@ -355,9 +357,14 @@ stored one:
   the hook, and `previewRename` answers a draft-only rename with `needsConfirmation: false` anyway.
   A name-only change passes: it changes no URL.
 
-The message says what to do instead, for example: `"folder" cannot be changed by updateDocument.
-Moving a page changes its live URL in every language. Call previewMove, show the user what changes,
-then call applyTreeChange.` plugin-mcp turns the thrown error into `Error updating document in
+The message says what to do instead. The built message for a page move is: `"folder" cannot be
+changed through MCP updateDocument. Moving a page changes its live URL in every language, so it goes
+through the folder tree in the admin, POST /api/folders-tree/move (preview it with POST
+/api/folders-tree/move/preview) or moveItems(), which show the URL changes and write redirects.
+Nothing was saved.` It names only what exists today. The tool names `previewMove` and
+`applyTreeChange` come into the message when the tools are built. The refusal is an `APIError` 400
+with `data.reason` set to `mcp-structure-change` or, for a folder slug, `mcp-slug-change`
+(`src/hooks/mcpStructureGuard.ts`). plugin-mcp turns the thrown error into `Error updating document in
 collection "pages": <message>` with `isError: true`
 (`node_modules/@payloadcms/plugin-mcp/dist/mcp/builtin/formatEntityError.js:3-14`), so the model sees
 it and has its next step.
@@ -384,6 +391,9 @@ Why not the alternatives:
   call would already be saved, and the model would be told after the fact.
 
 A same-value write passes, so an agent that copies a whole document back does not trip the guard.
+A folder slug read through the fallback locale and sent back unchanged passes too. plugin-mcp's own
+input check accepts only a string for `slug`, so a `locale: "all"` slug object cannot reach the hook
+through the stock tool in 4.0.0-beta.5; the hook compares it per locale all the same.
 On pages, a `where` update that names these fields is already refused by `bulkUpdateGuard`
 (`src/hooks/pages/bulkUpdateGuard.ts:7`). On folders the existing bulk guard covers `slug` but not
 `parent` (`src/hooks/folders/bulkUpdateGuard.ts:6`), so the new hook handles `where` updates on

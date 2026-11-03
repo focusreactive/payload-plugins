@@ -10,6 +10,8 @@ export type CallEndpointArgs = {
   /** JSON body, sent for anything but GET. */
   body?: unknown;
   config: SanitizedConfig;
+  /** Extra request headers, set after the defaults. */
+  headers?: Record<string, string>;
   method?: "DELETE" | "GET" | "PATCH" | "POST" | "PUT";
   /** Path under /api, with a leading slash, e.g. `/pages?limit=5`. */
   path: string;
@@ -52,6 +54,7 @@ export const callEndpoint = async <TBody = unknown>({
   anonymous = false,
   body,
   config,
+  headers: extraHeaders = {},
   method = "GET",
   path,
   payload,
@@ -69,6 +72,10 @@ export const callEndpoint = async <TBody = unknown>({
       data: user,
     });
     headers.set("Authorization", `JWT ${token}`);
+  }
+
+  for (const [name, value] of Object.entries(extraHeaders)) {
+    headers.set(name, value);
   }
 
   const response = await handleEndpoints({

@@ -15,6 +15,7 @@ import {
   resetOrderKeyOnDuplicate,
   resetStructureRevisionOnDuplicate,
 } from "../hooks/pages/beforeDuplicate.js";
+import { buildMcpStructureGuard } from "../hooks/mcpStructureGuard.js";
 import { buildBulkUpdateGuard } from "../hooks/pages/bulkUpdateGuard.js";
 import { buildPageBeforeValidate } from "../hooks/pages/beforeValidate.js";
 import { buildStructureGuard } from "../hooks/pages/structureGuard.js";
@@ -258,6 +259,7 @@ const addPageHooks = (
     ],
     beforeOperation: [
       ...(hooks.beforeOperation ?? []),
+      buildMcpStructureGuard(options.collections[collection.slug]),
       buildBulkUpdateGuard(options.collections[collection.slug]),
       buildAcquireTreeLockHook(["create", "update", "restoreVersion", "delete"]),
       selectFullPathInputsHook,
