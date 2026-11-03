@@ -11,7 +11,7 @@ import { createMutationPipeline } from "./mutationPipeline.js";
 import { createStegaBookkeeper } from "./stegaBookkeeper.js";
 import { collectAttrMatches, collectTextMatches } from "./stegaScanner.js";
 import { createTargetRegistry } from "./targetRegistry.js";
-import { pickTargetForGroup } from "./targetSelector.js";
+import { findTargetAncestor, pickTargetForGroup } from "./targetSelector.js";
 
 export type OverlayCtx = {
   buildAdminEditUrl: BuildAdminEditUrl;
@@ -94,7 +94,23 @@ export function createOverlay(main: HTMLElement, getCtx: () => OverlayCtx): () =
     onTextReset: (node) => bookkeeper.forgetText(node),
   });
 
+  // A click on the highlighted element itself opens its field, same as the Edit badge.
+  // Capture phase, so a link or button target never navigates or runs its own handler first.
+  // A modifier click passes through, so the page stays usable without leaving edit mode.
+  const onTargetClick = (event: MouseEvent) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+    const target = findTargetAncestor(event.target instanceof Element ? event.target : null);
+    const config = target ? registry.get(target) : undefined;
+    if (!config) return;
+    event.stopPropagation();
+    config.clickHandler(event);
+  };
+  main.addEventListener("click", onTargetClick, true);
+
   return () => {
+    main.removeEventListener("click", onTargetClick, true);
     pipeline.dispose();
     hover.dispose();
     registry.disposeAll();

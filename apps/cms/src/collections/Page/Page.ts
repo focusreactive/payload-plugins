@@ -2,6 +2,7 @@ import { createParentField, createBreadcrumbsField } from "@payloadcms/plugin-ne
 import type { CollectionConfig } from "payload";
 
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
+import { LIVE_PREVIEW_AUTOSAVE_INTERVAL_MS } from "@/lib/constants/livePreview";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
@@ -109,7 +110,9 @@ export const Page: CollectionConfig<"page"> = {
   },
   slug: "page",
   versions: {
-    drafts: true,
+    drafts: {
+      autosave: { interval: LIVE_PREVIEW_AUTOSAVE_INTERVAL_MS },
+    },
     maxPerDoc: 50,
   },
 };

@@ -37,11 +37,14 @@ export async function getPageBySlugQuery(
   return docs.find((p) => p?.breadcrumbs?.at(-1)?.url === targetUrl) ?? null;
 }
 
-export const getPageBySlug = cache(
+// React `cache()` compares arguments by reference, and every caller builds a new segments array,
+// so the page and its metadata each ran the query. The cache is keyed by a string instead.
+const getPageBySegmentsKey = cache(
   async (
-    pathSegments: string[],
+    segmentsKey: string,
     locale?: Locale
   ): Promise<RequiredDataFromCollectionSlug<"page"> | null> => {
+    const pathSegments = JSON.parse(segmentsKey) as string[];
     const { isEnabled: draft } = await draftMode();
     const resolvedLocale = await resolveLocale(locale);
     const pathSegmentsNorm = pathSegments.length === 0 ? ["home"] : [...pathSegments];
@@ -67,3 +70,9 @@ export const getPageBySlug = cache(
     )();
   }
 );
+
+export const getPageBySlug = (
+  pathSegments: string[],
+  locale?: Locale
+): Promise<RequiredDataFromCollectionSlug<"page"> | null> =>
+  getPageBySegmentsKey(JSON.stringify(pathSegments), locale);
