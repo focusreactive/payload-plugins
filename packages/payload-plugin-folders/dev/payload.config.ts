@@ -5,6 +5,8 @@ import { revalidateFrontend } from "./helpers/revalidateFrontend.js";
 // The end-to-end tests start a second dev server with one of these variables set: the stock list
 // for `admin.treeView: false`, and `FOLDERS_CONFIRM_MOVES` for the confirmation mode of moves.
 export default buildDevConfig({
+  // `FOLDERS_MCP=true` adds `@payloadcms/plugin-mcp` at `/api/mcp`, for trying agents on the tree.
+  mcp: process.env.FOLDERS_MCP === "true",
   publicReads: true,
   foldersOptions: {
     admin: adminOptionsFromEnv(process.env),

@@ -1,6 +1,7 @@
 import { foldersPlugin } from "@focus-reactive/payload-plugin-folders";
 import type { FoldersPluginOptions } from "@focus-reactive/payload-plugin-folders";
 import { sqliteAdapter } from "@payloadcms/db-sqlite";
+import { mcpPlugin } from "@payloadcms/plugin-mcp";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
 import { de } from "@payloadcms/translations/languages/de";
 import { en } from "@payloadcms/translations/languages/en";
@@ -23,6 +24,7 @@ import { Users } from "./collections/Users.js";
 import { devUser } from "./helpers/credentials.js";
 import { ensureDevAdmin } from "./helpers/ensureDevAdmin.js";
 import { testEmailAdapter } from "./helpers/testEmailAdapter.js";
+import { mcpPluginOptions } from "./mcpPluginOptions.js";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -48,6 +50,12 @@ export type DevConfigOptions = {
   publicReads?: boolean;
   /** The collections `@payloadcms/plugin-redirects` may reference; default pages and posts. */
   redirectsCollections?: string[];
+  /**
+   * Adds `@payloadcms/plugin-mcp` (find, create, update, delete on folders, pages and posts at
+   * `/api/mcp`) and gives users an API key to call it with. Off by default; only the dev server
+   * (`dev/payload.config.ts`) turns it on, through `FOLDERS_MCP=true`.
+   */
+  mcp?: boolean;
   /** Merged over the dev app's plugin options. */
   foldersOptions?: Partial<FoldersPluginOptions>;
   /**
@@ -83,6 +91,7 @@ export const buildDevConfig = ({
   extraCollections = [],
   foldersOptions,
   localized = true,
+  mcp = false,
   publicReads = false,
   redirectsCollections = ["pages", "posts"],
   trash = false,
@@ -107,7 +116,9 @@ export const buildDevConfig = ({
         publicReadsAll,
         publicReads
       ),
-      Users,
+      // The plugin authenticates a request as a user, and a user signs in with an API key only when
+      // the collection asks for one.
+      mcp ? { ...Users, auth: { useAPIKey: true } } : Users,
       ...extraCollections,
     ],
     db,
@@ -142,6 +153,7 @@ export const buildDevConfig = ({
         },
       }),
       redirectsPlugin({ collections: redirectsCollections }),
+      ...(mcp ? [mcpPlugin(mcpPluginOptions())] : []),
     ],
     secret: process.env.PAYLOAD_SECRET || "dev-secret-not-for-production",
     typescript: { outputFile: path.resolve(dirname, "payload-types.ts") },

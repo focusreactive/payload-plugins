@@ -69,6 +69,7 @@
     "@payloadcms/db-sqlite": "4.0.0-beta.5",
     "@payloadcms/graphql": "4.0.0-beta.5",
     "@payloadcms/next": "4.0.0-beta.5",
+    "@payloadcms/plugin-mcp": "4.0.0-beta.5",
     "@payloadcms/plugin-redirects": "4.0.0-beta.5",
     "@payloadcms/ui": "4.0.0-beta.5",
     "@playwright/test": "1.63.0",
