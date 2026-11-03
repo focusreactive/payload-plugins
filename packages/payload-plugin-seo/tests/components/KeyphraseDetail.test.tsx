@@ -11,7 +11,7 @@ afterEach(() => {
 const base = {
   entry: { id: "a", text: "payload cms", synonyms: [] },
   duplicate: false,
-  analysis: { kind: "hint" as const, message: "…" },
+  analysis: { kind: "hint" as const, message: "keyphrase.hintEmpty" as const },
   onTextChange: vi.fn(),
   onAddSynonym: vi.fn(),
   onRemoveSynonym: vi.fn(),

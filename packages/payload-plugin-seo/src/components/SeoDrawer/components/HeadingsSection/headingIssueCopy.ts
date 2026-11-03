@@ -1,16 +1,17 @@
 import type { HeadingDocIssue, HeadingLevel } from "../../../../engine/types/analysis";
+import type { Message } from "../../../../translations/types";
 
-export function describeDocIssue(issue: HeadingDocIssue): { title: string; body: string } {
+export function describeDocIssue(issue: HeadingDocIssue): { title: Message; body: Message } {
   switch (issue.type) {
     case "missing-h1":
       return {
-        title: "No H1 heading found",
-        body: "Add a single top-level heading so the page has a clear title anchor.",
+        title: { key: "headings.missingH1.title" },
+        body: { key: "headings.missingH1.body" },
       };
     case "multiple-h1":
       return {
-        title: `Multiple H1 headings (${issue.count})`,
-        body: "Use exactly one H1 so search engines and screen readers get a single page title.",
+        title: { key: "headings.multipleH1.title", vars: { count: issue.count } },
+        body: { key: "headings.multipleH1.body" },
       };
     default: {
       const _exhaustive: never = issue;
@@ -19,6 +20,7 @@ export function describeDocIssue(issue: HeadingDocIssue): { title: string; body:
   }
 }
 
+/** `[2, 3]` -> `"H2·H3"`; the sentence around it is translated by the caller. */
 export function formatSkippedLevels(skipped: HeadingLevel[]): string {
-  return `Skipped ${skipped.map((level) => `H${level}`).join("·")}`;
+  return skipped.map((level) => `H${level}`).join("·");
 }

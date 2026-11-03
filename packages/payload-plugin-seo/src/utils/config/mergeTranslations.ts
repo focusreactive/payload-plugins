@@ -1,10 +1,28 @@
-import type { Translations } from "../../translations/types";
+type NamespacedTranslations = Record<string, Record<string, unknown>>;
 
-export function mergeTranslations(base: Translations, extra: Translations): Translations {
-  const out: Translations = { ...base };
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
-  for (const [locale, strings] of Object.entries(extra)) {
-    out[locale] = { ...(out[locale] ?? {}), ...strings };
+/**
+ * Merges two `{ [language]: { [namespace]: { [key]: string } } }` objects, one
+ * namespace level deep, `extra` winning. A language's other namespaces — the
+ * host app's own custom translations — are kept.
+ */
+export function mergeTranslations(
+  base: NamespacedTranslations,
+  extra: NamespacedTranslations
+): NamespacedTranslations {
+  const out: NamespacedTranslations = { ...base };
+
+  for (const [language, namespaces] of Object.entries(extra)) {
+    const merged: Record<string, unknown> = { ...out[language] };
+    for (const [namespace, value] of Object.entries(namespaces)) {
+      const existing = merged[namespace];
+      merged[namespace] =
+        isPlainObject(existing) && isPlainObject(value) ? { ...existing, ...value } : value;
+    }
+    out[language] = merged;
   }
 
   return out;

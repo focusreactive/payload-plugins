@@ -4,6 +4,7 @@ import { cva } from "class-variance-authority";
 import { cn } from "../utils/style";
 import type { CheckResult, Status } from "../engine/types/analysis";
 import { statusVar } from "../components/SeoDrawer/variants";
+import { useSeoTranslation } from "../translations/useSeoTranslation";
 
 export type Filter = "all" | Status;
 
@@ -61,18 +62,19 @@ interface FilterPillsProps {
 }
 
 export function FilterPills({ checks, value, onChange }: FilterPillsProps) {
+  const { t } = useSeoTranslation();
   return (
     <div className="flex gap-[6px] flex-wrap px-[15px] py-[11px]">
       <Pill
         filter="all"
-        label="All"
+        label={t("filter.all")}
         count={checks.length}
         active={value === "all"}
         onSelect={onChange}
       />
       <Pill
         filter="bad"
-        label="Problems"
+        label={t("filter.bad")}
         count={countByStatus(checks, "bad")}
         active={value === "bad"}
         onSelect={onChange}
@@ -80,7 +82,7 @@ export function FilterPills({ checks, value, onChange }: FilterPillsProps) {
       />
       <Pill
         filter="warn"
-        label="Needs work"
+        label={t("filter.warn")}
         count={countByStatus(checks, "warn")}
         active={value === "warn"}
         onSelect={onChange}
@@ -88,7 +90,7 @@ export function FilterPills({ checks, value, onChange }: FilterPillsProps) {
       />
       <Pill
         filter="good"
-        label="Good"
+        label={t("filter.good")}
         count={countByStatus(checks, "good")}
         active={value === "good"}
         onSelect={onChange}

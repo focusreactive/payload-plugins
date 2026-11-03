@@ -1,14 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { scoreInclusive } from "../../src/engine/inclusiveScore";
+import type { InclusiveCategoryId } from "../../src/engine/types/analysis";
 
-const ALL = [
-  "Age",
-  "Appearance & body",
-  "Culture, race & religion",
-  "Disability",
-  "Gendered language",
-  "Sexual orientation",
-  "Other",
+const ALL: InclusiveCategoryId[] = [
+  "age",
+  "appearance",
+  "culture",
+  "disability",
+  "gender",
+  "sexualOrientation",
+  "other",
 ];
 
 describe("scoreInclusive", () => {
@@ -23,13 +24,13 @@ describe("scoreInclusive", () => {
     const r = scoreInclusive(
       [
         {
-          category: "Gendered langkuage",
+          category: "gender",
           term: "chairman",
           suggestion: "chair, chairperson",
           location: "Section 1, ¶3",
         },
         {
-          category: "Gendered language",
+          category: "gender",
           term: "manpower",
           suggestion: "workforce, staff",
           location: "Section 4, ¶2",
@@ -38,8 +39,9 @@ describe("scoreInclusive", () => {
       ALL
     );
     expect(r.categories).toHaveLength(1);
+    expect(r.categories[0]?.id).toBe("gender");
     expect(r.categories[0]?.flags).toHaveLength(2);
-    expect(r.cleanCategories).not.toContain("Gendered language");
+    expect(r.cleanCategories).not.toContain("gender");
     expect(r.ringScore).toBeLessThan(100);
     expect(r.ringScore).toBeGreaterThanOrEqual(0);
   });

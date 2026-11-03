@@ -16,6 +16,7 @@ import { SerpTab } from "./tabs/SerpTab";
 import { VitalsTab } from "./tabs/VitalsTab";
 
 import "../../admin.css";
+import { useSeoTranslation } from "../../translations/useSeoTranslation";
 
 export interface SeoDrawerProps {
   drawerSlug: string;
@@ -50,6 +51,7 @@ export const SeoDrawer = memo(function SeoDrawer({
   onTextChange,
   selectedId,
 }: SeoDrawerProps) {
+  const { t } = useSeoTranslation();
   const [tab, setTab] = useState<TabKey>("keyphrase");
 
   const total = result?.overall.seoScore ?? 0;
@@ -75,7 +77,7 @@ export const SeoDrawer = memo(function SeoDrawer({
               aria-live="polite"
             >
               <Loader2 aria-hidden="true" className="w-[14px] h-[14px] animate-spin" />
-              Analyzing…
+              {t("analyzing")}
             </div>
           ) : (
             <>

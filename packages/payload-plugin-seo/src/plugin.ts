@@ -4,7 +4,7 @@ import { PLUGIN_NAME } from "./constants";
 import type { SeoPluginConfig } from "./types/config";
 import { overrideAdmin } from "./utils/config/overrideAdmin";
 import { mergeTranslations } from "./utils/config/mergeTranslations";
-import { en } from "./translations/en";
+import { buildTranslations } from "./translations";
 
 const PREFIX = `[${PLUGIN_NAME}]`;
 
@@ -42,7 +42,7 @@ export const seoPlugin =
 
     const merged = mergeTranslations(
       (incomingConfig.i18n?.translations as never) ?? {},
-      mergeTranslations(en, effectiveConfig.translations ?? {})
+      buildTranslations(effectiveConfig.translations)
     );
 
     const withTranslations: Config = {
