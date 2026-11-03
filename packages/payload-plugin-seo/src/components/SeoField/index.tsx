@@ -11,6 +11,7 @@ import { cn } from "../../utils/style";
 import { AutoPublishIcon, ErrorIcon, GenerateIcon, SpinnerIcon } from "./icons";
 import { Meter } from "./Meter";
 import { useGenerate } from "./useGenerate";
+import { useSeoTranslation } from "../../translations/useSeoTranslation";
 
 interface SeoFieldProps {
   path: string;
@@ -40,6 +41,7 @@ interface InjectedComponents {
 
 export function SeoField(props: SeoFieldProps) {
   const { path, field, readOnly, kind, showButton, generateOnPublish, range } = props;
+  const { t } = useSeoTranslation();
   const fieldState = useField<string>({ path });
   const { value, setValue, showError } = fieldState;
   const injected: InjectedComponents =
@@ -47,7 +49,6 @@ export function SeoField(props: SeoFieldProps) {
   const text = value ?? "";
   const measurement =
     kind === "title" ? measureTitle(text, range) : measureDescription(text, range);
-  const kindLabel = kind === "title" ? "title" : "description";
 
   const { generate, status, error } = useGenerate({ kind, measurement, setValue });
   const enabled = getSeoClientConfig().enabled;
@@ -63,15 +64,16 @@ export function SeoField(props: SeoFieldProps) {
             align="end"
             content={
               <>
-                <TooltipTitle>Generation failed</TooltipTitle>
-                <TooltipText>
-                  {error ?? "Your text is unchanged — press Generate to try again."}
-                </TooltipText>
+                <TooltipTitle>{t("field.generationFailed")}</TooltipTitle>
+                <TooltipText>{error ?? t("field.unchanged")}</TooltipText>
               </>
             }
             side="bottom"
           >
-            <ErrorIcon aria-label="Generation failed" className="size-[14px] text-seo-bad" />
+            <ErrorIcon
+              aria-label={t("field.generationFailed")}
+              className="size-[14px] text-seo-bad"
+            />
           </Tooltip>
         )}
 
@@ -80,17 +82,14 @@ export function SeoField(props: SeoFieldProps) {
             align="end"
             content={
               <>
-                <TooltipTitle>Generated automatically</TooltipTitle>
-                <TooltipText>
-                  Left empty, this {kindLabel} is generated from the page content when you publish.
-                  Type a value to keep your own.
-                </TooltipText>
+                <TooltipTitle>{t("field.auto.title")}</TooltipTitle>
+                <TooltipText>{t(`field.auto.body.${kind}`)}</TooltipText>
               </>
             }
             side="bottom"
           >
             <AutoPublishIcon
-              aria-label="Generated on publish"
+              aria-label={t("field.auto.label")}
               className="size-[14px] text-neutral-500"
             />
           </Tooltip>
@@ -109,7 +108,7 @@ export function SeoField(props: SeoFieldProps) {
               <GenerateIcon className="size-[14px]" />
             )}
 
-            {loading ? "Generating…" : "Generate"}
+            {t(loading ? "field.generating" : "field.generate")}
           </button>
         )}
       </span>
@@ -146,7 +145,7 @@ export function SeoField(props: SeoFieldProps) {
 
       <Meter
         hasText={text.trim().length > 0}
-        kindLabel={kindLabel}
+        kind={kind}
         loading={loading}
         measurement={measurement}
       />

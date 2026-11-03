@@ -6,31 +6,34 @@ import { TabHeader } from "../../../ui/TabHeader";
 import { SectionCard } from "../../../ui/SectionCard";
 import { Pill } from "../../../ui/Pill";
 import { TabWrapper } from "../components/TabWrapper";
+import { useSeoTranslation } from "../../../translations/useSeoTranslation";
 
 export function InclusiveTab({ data }: { data: AnalysisResult["inclusive"] }) {
+  const { t } = useSeoTranslation();
   const flagged = data.categories.reduce((n, c) => n + c.flags.length, 0);
 
   return (
     <TabWrapper>
       <section className="flex flex-col gap-[13px]">
         <TabHeader
-          title="Inclusive language"
+          title={t("inclusive.title")}
           score={data.ringScore}
           status={data.status}
-          statusLabel={data.status === "good" ? "Good" : "Needs work"}
-          subtitle={
-            <>
-              {flagged} phrases flagged across {data.categories.length} categories
-            </>
-          }
+          statusLabel={t(data.status === "good" ? "status.good" : "status.warn")}
+          subtitle={t("inclusive.subtitle", { flagged, categories: data.categories.length })}
         />
 
         {data.categories.length > 0 && (
-          <SectionCard title="Marked by category" widget={<Pill variant="neutral">{flagged}</Pill>}>
+          <SectionCard
+            title={t("inclusive.flagged")}
+            widget={<Pill variant="neutral">{flagged}</Pill>}
+          >
             {data.categories.map((cat) => (
-              <div className={cn("relative px-[15px] py-[12px]", ROW_SEPARATOR)} key={cat.name}>
+              <div className={cn("relative px-[15px] py-[12px]", ROW_SEPARATOR)} key={cat.id}>
                 <div className="flex items-center gap-[8px] mb-[9px]">
-                  <span className="font-bold text-[12.5px]">{cat.name}</span>
+                  <span className="font-bold text-[12.5px]">
+                    {t(`inclusive.category.${cat.id}`)}
+                  </span>
                   <Pill variant="bad">{cat.flags.length}</Pill>
                 </div>
                 {cat.flags.map((f, i) => (
@@ -53,16 +56,16 @@ export function InclusiveTab({ data }: { data: AnalysisResult["inclusive"] }) {
 
         {data.cleanCategories.length > 0 && (
           <SectionCard
-            title="No issues found"
+            title={t("inclusive.clean")}
             widget={<Pill variant="neutral">{data.cleanCategories.length}</Pill>}
           >
             <div className="flex gap-[8px] flex-wrap px-[15px] py-[13px]">
-              {data.cleanCategories.map((n) => (
+              {data.cleanCategories.map((id) => (
                 <span
                   className="inline-flex items-center gap-[6px] text-[11.5px] text-seo-good bg-seo-good-100 border border-seo-good-200 rounded-[20px] px-[11px] py-[4px] font-medium"
-                  key={n}
+                  key={id}
                 >
-                  ✓ {n}
+                  ✓ {t(`inclusive.category.${id}`)}
                 </span>
               ))}
             </div>

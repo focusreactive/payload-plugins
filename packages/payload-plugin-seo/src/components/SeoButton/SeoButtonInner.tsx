@@ -8,6 +8,7 @@ import { SeoDrawer } from "../SeoDrawer";
 import { useAnalysis } from "../SeoDrawer/useAnalysis";
 import { useKeyphrases } from "../SeoDrawer/useKeyphrases";
 import { useLiveDocument } from "../SeoDrawer/useLiveDocument";
+import { useSeoTranslation } from "../../translations/useSeoTranslation";
 
 export interface SeoButtonProps {
   collectionSlug: string;
@@ -26,6 +27,7 @@ export function SeoButtonInner({
   supportedLocales,
   extractContentPath,
 }: SeoButtonProps) {
+  const { t } = useSeoTranslation();
   const { openModal } = useModal();
   const { id } = useDocumentInfo();
   const locale = useLocale();
@@ -79,7 +81,7 @@ export function SeoButtonInner({
   return (
     <span className="relative inline-flex">
       <Button
-        aria-label="SEO Analytics"
+        aria-label={t("title")}
         buttonStyle="none"
         className="frseo-doc-btn m-0 w-[calc(var(--base)*1.6)] h-[calc(var(--base)*1.6)] inline-flex items-center justify-center border border-[var(--theme-elevation-100)] rounded-rs bg-transparent text-neutral-800 transition-[border-color,background-color] duration-100 hover:border-neutral-300 hover:bg-neutral-100"
         extraButtonProps={{ title: undefined }}
@@ -88,7 +90,7 @@ export function SeoButtonInner({
         margin={false}
         onClick={open}
         size="small"
-        tooltip="SEO Analytics"
+        tooltip={t("title")}
       />
       {overall && <ScoreBadge score={overall.seoScore} status={overall.status} />}
 

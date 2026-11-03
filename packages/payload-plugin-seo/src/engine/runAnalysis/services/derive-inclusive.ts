@@ -3,21 +3,25 @@ import { assessors } from "yoastseo";
 import { scoreInclusive } from "../../inclusiveScore";
 import type { InclusiveResult, RawInclusiveFlag } from "../../inclusiveScore";
 import { makeResearcher } from "../../researcherAdapter";
+import type { InclusiveCategoryId } from "../../types/analysis";
 
 const { InclusiveLanguageAssessor } = assessors;
 
-const CATEGORY_LABELS: Record<string, string> = {
-  age: "Age",
-  appearance: "Appearance & body",
-  culture: "Culture, race & religion",
-  disability: "Disability",
-  gender: "Gendered language",
-  sexualOrientation: "Sexual orientation",
-  ses: "Socioeconomic status",
-  other: "Other",
-};
+/** Yoast's category ids, in display order. The UI names them. */
+const INCLUSIVE_CATEGORIES: InclusiveCategoryId[] = [
+  "age",
+  "appearance",
+  "culture",
+  "disability",
+  "gender",
+  "sexualOrientation",
+  "ses",
+  "other",
+];
 
-const INCLUSIVE_CATEGORIES = Object.values(CATEGORY_LABELS);
+function categoryOf(yoastCategory: string | undefined): InclusiveCategoryId {
+  return INCLUSIVE_CATEGORIES.find((id) => id === yoastCategory) ?? "other";
+}
 
 interface YoastInclusiveResult {
   getIdentifier?: () => string;
@@ -62,7 +66,7 @@ function extractInclusiveFlags(assessor: YoastInclusiveAssessor): RawInclusiveFl
       return [];
     }
 
-    const category = CATEGORY_LABELS[assessment?.category ?? ""] ?? "Other";
+    const category = categoryOf(assessment?.category);
     const suggestion = (assessment?.inclusiveAlternatives ?? [])
       .map(stripTags)
       .filter(Boolean)

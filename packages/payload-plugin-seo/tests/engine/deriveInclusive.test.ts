@@ -32,14 +32,14 @@ describe("deriveInclusive (real yoastseo)", () => {
     expect(result.ringScore).toBeLessThan(100);
   });
 
-  it("maps yoast category keys to plugin display names", () => {
+  it("keeps yoast category keys as category ids", () => {
     const paper = buildPaper(inputWith("<p>The firemen arrived at the scene quickly.</p>"));
 
     const result = deriveInclusive(paper);
 
-    const gendered = result.categories.find((c) => c.name === "Gendered language");
-    expect(gendered, "expected a 'Gendered language' category").toBeDefined();
-    expect(result.cleanCategories).not.toContain("Gendered language");
+    const gendered = result.categories.find((c) => c.id === "gender");
+    expect(gendered, "expected a 'gender' category").toBeDefined();
+    expect(result.cleanCategories).not.toContain("gender");
   });
 
   it("extracts the matched term and an HTML-free suggestion", () => {

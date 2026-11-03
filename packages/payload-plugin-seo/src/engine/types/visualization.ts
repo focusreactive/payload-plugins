@@ -1,3 +1,4 @@
+import type { Message } from "../../translations/types";
 import type { Status } from "./analysis";
 
 export interface GaugeBand {
@@ -48,12 +49,15 @@ export interface SegmentModel {
   countLabel?: string;
   filledPct: number;
   filledStatus: Status;
-  legend?: { tone: SwatchTone; label: string }[];
+  legend?: { tone: SwatchTone; label: Message }[];
 }
+
+/** What a drilldown lists; the button reads "Show 3 links" in the admin language. */
+export type DrilldownNoun = "link" | "section" | "paragraph" | "group";
 
 export interface DrilldownModel {
   items: { left: string; right: string }[];
-  label: string;
+  noun: DrilldownNoun;
 }
 
 export interface DistributionModel {

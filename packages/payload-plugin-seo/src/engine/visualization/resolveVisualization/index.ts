@@ -27,13 +27,13 @@ export function resolveVisualization(
     case "internalLinks":
       return resolveLinks(check, data);
     case "textCompetingLinks":
-      return resolveDrilldown(data, "items", "link", "links");
+      return resolveDrilldown(data, "items", "link");
     case "subheadingsTooLong":
-      return resolveDrilldown(data, "items", "section", "sections");
+      return resolveDrilldown(data, "items", "section");
     case "textParagraphTooLong":
-      return resolveDrilldown(data, "paragraphs", "paragraph", "paragraphs");
+      return resolveDrilldown(data, "paragraphs", "paragraph");
     case "sentenceBeginnings":
-      return resolveDrilldown(data, "items", "group", "groups");
+      return resolveDrilldown(data, "items", "group");
     case "keyphraseDistribution": {
       const positions = readPositions(data);
       if (!positions?.length) return resolvePresence();
