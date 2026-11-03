@@ -27,7 +27,7 @@ export const buildFolderRedirectsCollection = (options: ResolvedOptions): Collec
     // `<locale>:<path>`, locale `-` when localization is off. One row per old path and kind, so a
     // newer change of the same old path replaces the target of that kind. A page row and a prefix
     // row can share a key (a page that took a renamed folder's old path), so uniqueness is the
-    // compound index below, not this field.
+    // compound index in `indexes`, not this field.
     { name: "lookupKey", type: "text", index: true, required: true },
     { name: "fromPath", type: "text", required: true },
     { name: "locale", type: "text" },
