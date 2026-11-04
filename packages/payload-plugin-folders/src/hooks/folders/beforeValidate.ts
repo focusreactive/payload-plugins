@@ -2,10 +2,9 @@ import type { CollectionBeforeValidateHook } from "payload";
 
 import { getDefaultLocaleKey, requestLocaleKey } from "../../core/locales.js";
 import { slugify } from "../../core/slugify.js";
+import { isEmptyText } from "../../core/structureGuard.js";
 import type { ResolvedOptions } from "../../types.js";
 import { isInternalWrite, slugNotSentContextKey } from "../context.js";
-
-const isEmpty = (value: unknown): boolean => value === undefined || value === null || value === "";
 
 const asText = (value: unknown): string => (typeof value === "string" ? value : "");
 
@@ -27,8 +26,8 @@ export const buildFolderBeforeValidate =
       const slugs = { ...((data.slug ?? {}) as Record<string, string | null>) };
       for (const [localeKey, name] of Object.entries(names)) {
         if (
-          isEmpty(slugs[localeKey]) &&
-          !isEmpty(name) &&
+          isEmptyText(slugs[localeKey]) &&
+          !isEmptyText(name) &&
           (operation === "create" || localeKey in slugs)
         ) {
           slugs[localeKey] = slugify(asText(name), localeKey);
@@ -42,7 +41,7 @@ export const buildFolderBeforeValidate =
     }
 
     // On an update the slug is only derived when the caller sent it empty, never when it is absent.
-    const slugIsEmpty = isEmpty(data.slug);
+    const slugIsEmpty = isEmptyText(data.slug);
     if (
       !slugIsEmpty ||
       (operation === "update" && !("slug" in data)) ||
@@ -51,7 +50,7 @@ export const buildFolderBeforeValidate =
       return data;
     }
     const isDefaultLocale = writeKey === getDefaultLocaleKey(req.payload, options);
-    const name = isEmpty(data.name)
+    const name = isEmptyText(data.name)
       ? operation === "update" && isDefaultLocale
         ? originalDoc?.name
         : undefined

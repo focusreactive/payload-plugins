@@ -15,6 +15,14 @@ type ClassifyArgs = {
   missingRevisionIsStale: boolean;
 };
 
+/** A revision a write carries as a number: NaN when it names none or something that is not a number. */
+export const coerceRevision = (incoming: unknown): number =>
+  typeof incoming === "number" || typeof incoming === "string" ? Number(incoming) : Number.NaN;
+
+/** An unset, null or empty-string text value, which a form and an MCP tool both send for "no value". */
+export const isEmptyText = (value: unknown): boolean =>
+  value === undefined || value === null || value === "";
+
 /**
  * Spec section 5.3: a structural change that carries the stored revision is a deliberate edit and
  * is refused outside the move core; one that carries an older revision (or none, for pages) comes
@@ -29,10 +37,7 @@ export const classifyStructureEdit = ({
   if (!changesStructure) {
     return "none";
   }
-  const revision =
-    typeof incomingRevision === "number" || typeof incomingRevision === "string"
-      ? Number(incomingRevision)
-      : Number.NaN;
+  const revision = coerceRevision(incomingRevision);
   if (Number.isNaN(revision)) {
     return missingRevisionIsStale ? "stale" : "deliberate";
   }

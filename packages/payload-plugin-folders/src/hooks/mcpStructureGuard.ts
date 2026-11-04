@@ -5,7 +5,12 @@ import { normalizeFolderReference, readFolderRecord } from "../core/folderRecord
 import { effectiveSegment, getDefaultLocaleKey, requestLocaleKey } from "../core/locales.js";
 import type { ValuesByLocale } from "../core/locales.js";
 import { readPageRow } from "../core/pageRecords.js";
-import { namesOtherFolder, namesOtherOrderKey } from "../core/structureGuard.js";
+import {
+  coerceRevision,
+  isEmptyText,
+  namesOtherFolder,
+  namesOtherOrderKey,
+} from "../core/structureGuard.js";
 import type { FolderId, ResolvedOptions, ResolvedPageCollection } from "../types.js";
 import { isInternalWrite, slugNotSentContextKey } from "./context.js";
 
@@ -57,14 +62,8 @@ const isSameRevision = (incoming: unknown, stored: number): boolean => {
   if (incoming === null || incoming === undefined) {
     return stored === 0;
   }
-  const revision =
-    typeof incoming === "number" || typeof incoming === "string" ? Number(incoming) : Number.NaN;
-
-  return revision === stored;
+  return coerceRevision(incoming) === stored;
 };
-
-const isEmptyText = (value: unknown): boolean =>
-  value === undefined || value === null || value === "";
 
 type StoredStructure = {
   orderKey: string | null;

@@ -22,6 +22,7 @@ import {
 import type { PageRow } from "../../core/pageRecords.js";
 import { isStatusLocalized } from "../../core/publishedWhere.js";
 import { SEGMENT_ERROR_MESSAGE, isValidSegment, slugify } from "../../core/slugify.js";
+import { isEmptyText } from "../../core/structureGuard.js";
 import {
   createSaveConflictDescriber,
   describeMissingSegment,
@@ -43,8 +44,6 @@ type SegmentsByLocale = Record<string, string | null>;
 
 const isValuesByLocale = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === "object" && !Array.isArray(value);
-
-const isEmpty = (value: unknown): boolean => value === undefined || value === null || value === "";
 
 const toSegment = (value: unknown): string | null =>
   typeof value === "string" && value !== "" ? value : null;
@@ -153,8 +152,8 @@ export const buildPageBeforeValidate =
         : {};
       for (const [localeKey, title] of Object.entries(titles as Record<string, unknown>)) {
         if (
-          isEmpty(slugs[localeKey]) &&
-          !isEmpty(title) &&
+          isEmptyText(slugs[localeKey]) &&
+          !isEmptyText(title) &&
           (isCreate || (localeKey === defaultLocale && slugs[localeKey] !== undefined))
         ) {
           slugs[localeKey] = slugify(String(title), localeKey);
@@ -164,12 +163,12 @@ export const buildPageBeforeValidate =
         data[segmentField] = slugs as never;
       }
     } else if (
-      isEmpty(data[segmentField]) &&
+      isEmptyText(data[segmentField]) &&
       (isCreate ||
         ((!page.segmentLocalized || requestKey === defaultLocale) &&
           data[segmentField] !== undefined))
     ) {
-      const title = isEmpty(data[page.titleField])
+      const title = isEmptyText(data[page.titleField])
         ? isCreate
           ? undefined
           : originalDoc?.[page.titleField]
