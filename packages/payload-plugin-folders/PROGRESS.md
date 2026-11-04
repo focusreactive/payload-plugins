@@ -189,6 +189,7 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     replaces the folder picker only for a saved page. F2 opens Settings for the focused row, not in
     text fields or with a modifier held. Drawers in a locale where the item has no own value show the
     default-locale value as a placeholder and write nothing for a field left alone.
+    (Superseded in part by decision 41: folder renames now show the redirect checkbox.)
 31. **Frontend API and locales (G15, P-24, P-31, P-32).** `resolve`, `tree` and `paths` allow
     anonymous reads: spec §10.2's "authenticated by the usual cookie or header" says how the user is
     read, and §9 describes anonymous output; the other tree endpoints still need a user. `draft: true`
@@ -306,7 +307,8 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     section 3.4: `afterPathChange` fires for folder updates, moves, deletes and repair only; the
     `create`, `publish` and `rootToggle` reasons are in the type but never sent, so a plain page
     publish reports nothing. The README says so first. Fixing it means sending them from the page
-    hooks or removing the three values from the type.
+    hooks or removing the three values from the type. (Fixed by decision 41: the page hooks now send
+    `create`, `publish` and `rootToggle`.)
 37. **Final re-review of G8: access before content, and no names of unreadable pages (P-19, P-20).**
     A move asks the publish question in its first access pass, before any type, path or root-page
     conflict is read, and a folder move asks it for the pages beneath right after they are read, so a
@@ -344,7 +346,21 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     Before this, a page that took a renamed folder's old path and then moved or changed its slug
     overwrote the prefix row, and every old URL beneath the folder stopped redirecting. Deleting a
     URL history row is a repair-level act and takes `canRepairTree` (decision 5); read stays open to
-    signed-in users as spec section 9 lists it.
+    signed-in users as spec section 9 lists it. (Superseded by decision 41: delete is open to any
+    signed-in user, as the spec says.)
+41. **Code review fixes on `feat/folders-agents` (review of 4 Nov, one commit per finding).**
+    Decisions that changed: P-31 sends `afterPathChange` from the page hooks for create, publish,
+    root toggle and a live slug change, and a duplicate (always a draft) sends nothing; this closes
+    decision 36's deviation. P-33 lets any signed-in user delete a `folder-redirects` row, so an
+    editor can drop a redirect that points the wrong way; this replaces decision 40's
+    `canRepairTree` rule. P-38 gives a folder rename the same redirect checkbox as a move, ticked by
+    default; the admin's save sends `?frFoldersRedirects=false` when it is unticked, a folder
+    `beforeValidate` maps that to `context.foldersRedirects = false`, and only the value `false`
+    counts, so it can never switch redirects on; this replaces the count-only confirm of decisions
+    29 and 30. P-46 makes a queued delete leave a folder that gained content after the delete was
+    planned, finish, and report the skipped folder, instead of failing on every retry. P-04 did not
+    hold (a copied root page becomes a non-root draft by design, decision 32), so it is pinned by a
+    test, not changed.
 
 ### Owner decisions (from spec/review.md, the spec writer's pick applies)
 
