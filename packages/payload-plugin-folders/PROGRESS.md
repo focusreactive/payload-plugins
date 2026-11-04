@@ -384,6 +384,20 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     preview (`previewRename`, `applyTreeChange`) exist, because the stock tool shows the agent no
     changed URLs, languages or redirects, so it cannot ask the user first. No code change. The
     reasoning is in `docs/agents.md` under "The stock `updateDocument` path: refuse loudly".
+44. **The loud structure refusal for every caller (review P-02).** The `beforeOperation` hook no
+    longer refuses for MCP only. It refuses, with a 400 (`data.reason` `mcp-structure-change`), a
+    deliberate edit from every non-internal request that runs field access (`overrideAccess` not
+    `true`): REST, GraphQL, a host's own MCP tool, and the Local API with `overrideAccess: false`,
+    which is Payload 4's Local API default. Deliberate means a different page `folder` or folder
+    `parent`, or a different `orderKey`, that carries no `structureRevision` or one not older than
+    the stored one. A missing revision is deliberate, because the admin's form, autosave and folder
+    form always send the stored structure with its revision and a script sends none. An older
+    revision stays a silent replace, and `null` counts as 0. A folder `slug` change is never refused
+    for these callers (decision 43 keeps the MCP-only slug refusal). The Local API with
+    `overrideAccess: true` is trusted and keeps `beforeChange`'s own rule. MCP keeps its stricter
+    rule and messages. A `structureRevision` sent alone is still dropped silently, because it moves
+    nothing. The admin's payload is pinned by `tests/e2e/admin-structure-replay.e2e.spec.ts`. This
+    replaces the MCP-only pick in `docs/agents.md`, which now describes both.
 
 ### Owner decisions (from spec/review.md, the spec writer's pick applies)
 
