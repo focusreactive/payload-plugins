@@ -195,7 +195,7 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     read, and §9 describes anonymous output; the other tree endpoints still need a user. `draft: true`
     counts only for a signed-in user or `overrideAccess`. A case difference, a capitalised folder part
     and repeated slashes redirect to the canonical path; a trailing slash and a missing leading slash
-    resolve in place (P-31 requires it); a legacy segment such as `About` answers at its own case
+    resolve in place (P-31 requires it; the URL form of answers: decision 42); a legacy segment such as `About` answers at its own case
     under a lowercase folder path (decision 22). A redirect is answered only when its target is live
     for the same reader. Unknown locales give 400. `getTree` and `getAllPaths` take `user` and
     `overrideAccess` (§9). `getTree` lists a folder's root page also as a child with `isFolderRoot`,
@@ -361,6 +361,23 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     planned, finish, and report the skipped folder, instead of failing on every retry. P-04 did not
     hold (a copied root page becomes a non-root draft by design, decision 32), so it is pinned by a
     test, not changed.
+42. **URL form (review P-37, the session owner's ruling of 4 Nov).** The plugin adds no
+    trailing-slash redirect: the framework (Next.js or Vercel) redirects one form to the other, and
+    the plugin redirects only moves, renames, case and repeated slashes. `resolvePath` answers a path
+    with or without a slash in place, in either setting, because Next passes route params without the
+    slash and a plugin redirect would loop. One option, `urls.trailingSlash` (default `false`), sets
+    the form of every URL the plugin hands out: page `fullPath` (virtual, formatted on every read),
+    `resolvePath`, `findRedirect`, `getTree`, alternates, `computeFullPath`, `afterPathChange`, mirror
+    rows, the preview endpoint, `buildUrl` (when passed `trailingSlash`) and the admin's URL displays
+    (through `admin.custom`). Storage stays canonical (no slash): folder `fullPath`, `folderPath`,
+    `folder-redirects` rows and `PathChange` inside the plugin, because they are `where` keys and
+    are composed by concatenation. The root `/`, a file-like last segment (`feed.xml`) and
+    `.well-known` never get a slash, copying Next's rule. After a switch of the option the mirror
+    rows keep the old form: verify lists them as `mirrorSlashForm` and `repairTree` rewrites them,
+    plain paths only, editor-made rows included, because a plain path in the other form is dead
+    behind the framework's redirect. Not read: how Vercel decides what counts as a file extension.
+    Sources in `docs/trailing-slash-research.md`. The spec's section 10.1 step 1 (redirect a
+    trailing slash) is overruled; the `resolve.ts` doc comment carries the new wording.
 
 ### Owner decisions (from spec/review.md, the spec writer's pick applies)
 
