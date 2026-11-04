@@ -1,5 +1,0 @@
-GET /api/folders-tree/resolve?path=blog&locale=en (signed-in admin)
-HTTP/1.1 200 OK
-content-type: application/json
-
-{"alternates":{"en":"/blog","de":"/aktuelles"},"collection":"pages","doc":{"id":15,"title":"Blog Home","slug":"blog-home","folder":{"id":6,"name":"Blog","slug":"blog","parent":null,"orderKey":"9x","fullPath":"/blog","ancestorIds":"/","depth":1,"structureRevision":0,"allowedTypes":[],"defaultType":null,"lockSubfolderTypes":false,"typesLockedBy":null,"updatedAt":"2026-10-31T22:35:07.370Z","createdAt":"2026-10-31T22:35:07.365Z"},"orderKey":"9w","structureRevision":0,"isFolderRoot":true,"pathSegment":"blog-home","updatedAt":"2026-10-31T22:35:07.446Z","createdAt":"2026-10-31T22:35:07.439Z","_status":"published","blocks":[],"folderPath":"/blog","fullPath":"/blog"},"fullPath":"/blog","locale":"en","type":"page"}

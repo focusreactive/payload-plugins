@@ -69,7 +69,10 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     full path in the folders edit view, a moved page's folder, a redirect row); pure library or test-only
     tickets (P-02, P-04, P-16 to P-18, P-53, P-55) record the acceptance output instead, noted per ticket.
 15. **Screenshots in a public PR.** Decision: committed under `screenshots/` in the package so the draft
-    PR can link them; flagged in the PR body for removal before any merge.
+    PR can link them; flagged in the PR body for removal before any merge. (Done in review P-40 on
+    `feat/folders-agents`: the 445 files, 27 MB, left git. The 9 the README shows moved to
+    `docs/images/`, 684 KB; the rest are kept outside git by the session owner, so the
+    `screenshots/` paths in the ticket log below are no longer in the repo.)
 16. **Pre-push hook.** `lefthook` runs `bunx turbo run check-types` over the whole repo on every push,
     and `--no-verify` is forbidden. On a fresh worktree it fails in `apps/dev` and
     `apps/multi-tenancy-demo` until the workspace packages are built once

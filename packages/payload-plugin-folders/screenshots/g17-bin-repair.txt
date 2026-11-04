@@ -1,8 +1,0 @@
-Folder tree repair
-Fixed: 1
-  - Folder 4 should be at /shoes in en but holds /x-shoes
-Conflicts left for you: 2
-  - 2 items claim /dup-one in en
-  - 2 items claim /dup-one in de
-URL changes: 4
-Rows written: folders 1, pages 0, order keys 0, latest versions 0, redirect rows 2, redirect rows deleted 0

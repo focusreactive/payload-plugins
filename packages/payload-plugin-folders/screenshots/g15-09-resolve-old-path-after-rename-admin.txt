@@ -1,5 +1,0 @@
-GET /api/folders-tree/resolve?path=/about/contact&locale=en (old path after rename, signed-in admin)
-HTTP/1.1 200 OK
-content-type: application/json
-
-{"status":301,"to":"/company/contact","type":"redirect"}

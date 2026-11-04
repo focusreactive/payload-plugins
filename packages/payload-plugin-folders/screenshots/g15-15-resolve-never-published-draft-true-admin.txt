@@ -1,5 +1,0 @@
-GET /api/folders-tree/resolve?path=/company/press-kit&locale=en&draft=true (signed-in admin)
-HTTP/1.1 200 OK
-content-type: application/json
-
-{"alternates":{"en":"/company/press-kit","de":"/unternehmen/press-kit"},"collection":"pages","doc":{"id":1,"title":"Press Kit","slug":"press-kit","folder":{"id":2,"name":"Company","slug":"company","parent":null,"orderKey":"9z","fullPath":"/company","ancestorIds":"/","depth":1,"structureRevision":0,"allowedTypes":[],"defaultType":null,"lockSubfolderTypes":false,"typesLockedBy":null,"updatedAt":"2026-10-31T22:35:07.195Z","createdAt":"2026-10-31T22:35:07.108Z"},"orderKey":"a0","structureRevision":0,"isFolderRoot":false,"pathSegment":"press-kit","updatedAt":"2026-10-31T22:35:07.124Z","createdAt":"2026-10-31T22:35:07.124Z","_status":"draft","blocks":[],"folderPath":"/company","fullPath":"/company/press-kit"},"fullPath":"/company/press-kit","locale":"en","type":"page"}

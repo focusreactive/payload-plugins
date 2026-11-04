@@ -1,5 +1,0 @@
-GET /api/folders-tree/tree?locale=en&root=6&depth=1 (signed-in admin)
-HTTP/1.1 200 OK
-content-type: application/json
-
-{"nodes":[{"alternates":{"en":"/blog","de":"/aktuelles"},"children":[],"collection":"pages","fullPath":"/blog","hasPage":false,"id":15,"isFolderRoot":true,"kind":"page","title":"Blog Home","updatedAt":"2026-10-31T22:35:07.446Z"},{"alternates":{"en":"/blog/hello-world","de":"/aktuelles/hallo-welt"},"children":[],"collection":"pages","fullPath":"/blog/hello-world","hasPage":false,"id":14,"isFolderRoot":false,"kind":"page","title":"Hello World","updatedAt":"2026-10-31T22:35:07.432Z"},{"alternates":{"en":"/blog/team","de":"/aktuelles/team"},"children":[],"collection":"pages","fullPath":"/blog/team","hasPage":false,"id":13,"isFolderRoot":false,"kind":"page","title":"Team","updatedAt":"2026-10-31T22:35:07.415Z"},{"alternates":{"en":"/blog/2026","de":"/aktuelles/2026"},"children":[],"collection":"folders","fullPath":"/blog/2026","hasPage":false,"id":7,"isFolderRoot":false,"kind":"folder","title":"2026","updatedAt":"2026-10-31T22:35:07.377Z"}]}

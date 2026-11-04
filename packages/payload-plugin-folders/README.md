@@ -3,7 +3,7 @@
 A Storyblok-style content tree for Payload 4. Folders, per-folder ordering, full URLs, moves and
 renames with redirects, and an admin tree with drag and drop.
 
-![The Content tree: folders, pages, status dots, root-page icons and child counts](screenshots/g13-00-tree-overview.png)
+![The Content tree: folders, pages, status dots, root-page icons and child counts](docs/images/g13-00-tree-overview.png)
 
 The package is private for now and is not on npm. Everything below describes the package as you
 would install it. Until it is published, the app in `dev/` is the working example.
@@ -244,7 +244,7 @@ Pages with no saved segment that share a slug are all given that segment, becaus
 guess which one should change. The clash is then listed as a conflict. Until you rename one of the
 pages, the resolver serves the oldest page at the shared path.
 
-![The repair dialog: a dry run lists what will be fixed and how many URLs change](screenshots/g17-32-repair-dialog-dry-run.png)
+![The repair dialog: a dry run lists what will be fixed and how many URLs change](docs/images/g17-32-repair-dialog-dry-run.png)
 
 Repair re-reads under the tree lock and writes the whole tree in one transaction. Every page save
 waits for it. The dialog warns when the writes exceed `limits.maxSyncDocuments`. On a large site run
@@ -356,7 +356,7 @@ English and German. A host that sets the same keys for a language keeps its own.
 
 ## Data model
 
-![A page's edit view: location, root-page checkbox, full URL and URL history in the sidebar](screenshots/g14-09-page-edit-sidebar.png)
+![A page's edit view: location, root-page checkbox, full URL and URL history in the sidebar](docs/images/g14-09-page-edit-sidebar.png)
 
 ### The `folders` collection
 
@@ -660,7 +660,7 @@ export default async function Page({ params }: { params: Promise<{ path?: string
 }
 ```
 
-![The dev frontend answering /blog](screenshots/g19a-01-frontend-blog.png)
+![The dev frontend answering /blog](docs/images/g19a-01-frontend-blog.png)
 
 ### Redirects: 308 from a page, 301 from the proxy
 
@@ -962,7 +962,7 @@ With `redirects.mirrorToRedirectsPlugin: true`, every changed published page pat
 into `@payloadcms/plugin-redirects`, so a host that already serves that collection needs no
 second lookup. Register the redirects plugin in `plugins`. The mirror needs its unique `from` field.
 
-![The confirm dialog with the mirror line: "2 entries will be added to Redirects"](screenshots/g19a-08-confirm-dialog-mirror-line.png)
+![The confirm dialog with the mirror line: "2 entries will be added to Redirects"](docs/images/g19a-08-confirm-dialog-mirror-line.png)
 
 - `from` is the old path with the locale prefix that `urls.localePrefix` gives and in the
   `urls.trailingSlash` form, capitals kept. The target is a `reference` to the page when the page's
@@ -1189,7 +1189,7 @@ export const folderUpdateAccess = restrictLimitedRole("id", "parent");
   one request, because a folder needs a default-locale name and slug.
 - A locale served only through fallback counts as published for redirects and for URL change counts.
 
-![The tree in German: translated paths with fallback chips](screenshots/g18-08-german-content-locale-tree.png)
+![The tree in German: translated paths with fallback chips](docs/images/g18-08-german-content-locale-tree.png)
 
 ## The admin
 
@@ -1233,7 +1233,7 @@ through `admin.components.sidebar.tabs` (slug `folders-tree`), which is Payload 
 - **Stale tree.** A move names the folder the caller saw each item in. When the tree changed in
   between, the server answers 409 "This part of the tree changed. Reload and try again."
 
-![The confirm dialog for a move: URL counts in both languages and the redirect box](screenshots/g11-confirm-move-url-change-and-redirect.png)
+![The confirm dialog for a move: URL counts in both languages and the redirect box](docs/images/g11-confirm-move-url-change-and-redirect.png)
 
 ### Context menu, create, settings
 
@@ -1279,7 +1279,7 @@ full-path order. `/` focuses the search, and Escape clears it. Each collection c
 
 ### Sidebar Tree tab
 
-![The Tree tab beside a page's edit view, with the open page highlighted](screenshots/g18-06a-sidebar-tab-our-team.png)
+![The Tree tab beside a page's edit view, with the open page highlighted](docs/images/g18-06a-sidebar-tab-our-team.png)
 
 The tab shows the whole tree in a compact form: names, icons and status dots, with a search box and
 a Create button. It expands and highlights the page that is open. Drag and drop, Move mode, the
@@ -1335,7 +1335,7 @@ are put back.
 - **A batch banner**, such as "Publishing: 400 of 980", stays while an operation runs, resumes after
   a reload, and offers Try again after a failed step.
 
-![The drift banner and the Rebuild full URLs dialog](screenshots/g17-30-drift-banner-admin.png)
+![The drift banner and the Rebuild full URLs dialog](docs/images/g17-30-drift-banner-admin.png)
 
 ### Large trees
 
