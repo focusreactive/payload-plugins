@@ -2,6 +2,7 @@ import type { DeletePreview } from "../../core/deleteItems.js";
 import type { OperationKind, OperationProgress } from "../../core/operations.js";
 import type { PublishAction, PublishPreview } from "../../core/publish.js";
 import type { FolderId, TreeItem } from "../../types.js";
+import type { Translate } from "../compat.js";
 import { isNestedIn } from "../Move/moveFlow.js";
 import { itemKeyOf } from "../store.js";
 
@@ -189,9 +190,21 @@ export type OperationView = {
   error?: string;
   id: FolderId;
   kind: OperationKind;
+  skipped?: OperationProgress["skipped"];
   status: OperationProgress["status"];
   total: number;
 };
+
+/** One line per folder an operation left in place, for the dialog and the toast. */
+export const skippedLinesOf = (
+  skipped: NonNullable<OperationProgress["skipped"]>,
+  translate: Translate
+): string[] =>
+  skipped.map((skip) =>
+    skip.child === null
+      ? translate("progressSkippedFolderUnnamed", { path: skip.path })
+      : translate("progressSkippedFolder", { child: skip.child, path: skip.path })
+  );
 
 /** The share of the work done, 0 to 100, for the bar; an empty work list counts as done. */
 export const percentOf = ({ done, total }: Pick<OperationView, "done" | "total">): number =>
@@ -214,6 +227,7 @@ export const withProgress = (
           ...(progress.error ? { error: progress.error } : {}),
           id: operation.id,
           kind: operation.kind,
+          ...(progress.skipped ? { skipped: progress.skipped } : {}),
           status: progress.status,
           total: progress.total,
         }

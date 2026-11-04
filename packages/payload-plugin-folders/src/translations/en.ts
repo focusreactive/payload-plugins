@@ -192,6 +192,9 @@ export const en = {
     progressFailed: "A step failed. Trying again continues where it stopped",
     progressHint: "You can close this window. The work goes on, and the tree shows how far it is.",
     progressLabel: "Progress",
+    progressSkippedHeading: "Left in place because they gained content after you confirmed:",
+    progressSkippedFolder: "{{path}} now holds {{child}}",
+    progressSkippedFolderUnnamed: "{{path}} now holds something that was added",
     publishBatched:
       "This is a large run. It goes in steps and shows its progress, and you can close the progress window and keep working.",
     publishBody: "They will be public at their URLs.",

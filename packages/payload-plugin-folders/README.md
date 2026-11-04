@@ -1295,6 +1295,12 @@ transaction whatever its size.
 - Publish and unpublish run page by page through a normal update. Collections without drafts are
   listed as always live and skipped.
 - Every refusal carries the full `count` and the first 50 `items`.
+- A queued delete stores its list of documents when it starts. A folder that gained a page or a
+  subfolder after that was never confirmed, so the step that reaches it leaves the folder and the
+  new content in place and goes on. The step answer, and the result of a delete that ran at once,
+  lists each such folder as `skipped: [{ path, child, reason: "notEmpty" }]`, and the progress
+  dialog shows the list at the end. `child` is the title or name of what it holds when the caller
+  may read it, and `null` when not.
 
 ### The admin's read endpoints
 

@@ -15,6 +15,7 @@ import {
   publishSummaryOf,
   refusedCountOf,
   rootsOf,
+  skippedLinesOf,
   titleKeyOf,
   withoutOperation,
   withProgress,
@@ -209,6 +210,34 @@ describe("operation views", () => {
 
     const resumed = withProgress(failed, 7, { done: 600, status: "running", total: 980 });
     expect(resumed[0]?.error).toBeUndefined();
+  });
+
+  it("carries the folders a delete left in place and drops them when an answer has none", () => {
+    const skipped = [{ child: "Late arrival", path: "/news", reason: "notEmpty" as const }];
+
+    const done = withProgress([publishing], 7, { done: 980, skipped, status: "done", total: 980 });
+    expect(done[0]?.skipped).toEqual(skipped);
+
+    const later = withProgress(done, 7, { done: 980, status: "done", total: 980 });
+    expect(later[0]?.skipped).toBeUndefined();
+  });
+
+  it("writes one line per skipped folder, naming the child only when the server did", () => {
+    const translate = ((key: string, variables?: Record<string, unknown>) =>
+      `${key}:${JSON.stringify(variables)}`) as Parameters<typeof skippedLinesOf>[1];
+
+    expect(
+      skippedLinesOf(
+        [
+          { child: "Late arrival", path: "/news", reason: "notEmpty" },
+          { child: null, path: "/blog", reason: "notEmpty" },
+        ],
+        translate
+      )
+    ).toEqual([
+      'progressSkippedFolder:{"child":"Late arrival","path":"/news"}',
+      'progressSkippedFolderUnnamed:{"path":"/blog"}',
+    ]);
   });
 
   it("only a running operation has steps to take", () => {

@@ -10,7 +10,7 @@ import {
 import { useDialogSlug } from "../dialogScope.js";
 import type { FolderId } from "../../types.js";
 import type { Translate } from "../compat.js";
-import { percentOf, titleKeyOf } from "./operationLogic.js";
+import { percentOf, skippedLinesOf, titleKeyOf } from "./operationLogic.js";
 import type { OperationView } from "./operationLogic.js";
 
 export const progressDialogSlug = "fr-folders-progress";
@@ -61,6 +61,16 @@ const ProgressContent = ({
             {translate("progressCount", { done: operation.done, total: operation.total })}
           </p>
           {isDone ? <p data-testid="progress-done">{translate("progressDone")}</p> : null}
+          {isDone && operation.skipped ? (
+            <div data-testid="progress-skipped">
+              <p>{translate("progressSkippedHeading")}</p>
+              <ul>
+                {skippedLinesOf(operation.skipped, translate).map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {isFailed ? (
             <p className="fr-folders-error" data-testid="progress-failure" role="alert">
               {translate("progressFailed")}

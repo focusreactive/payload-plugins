@@ -25,7 +25,13 @@ import { PublishDialog, publishDialogSlug } from "./PublishDialog.js";
 import type { PublishRequestView } from "./PublishDialog.js";
 import { createOperationRunner } from "./operationRunner.js";
 import type { OperationRunner } from "./operationRunner.js";
-import { doneKeyOf, mergeResumed, withProgress, withoutOperation } from "./operationLogic.js";
+import {
+  doneKeyOf,
+  mergeResumed,
+  skippedLinesOf,
+  withProgress,
+  withoutOperation,
+} from "./operationLogic.js";
 import type { OperationView, PublishAction } from "./operationLogic.js";
 
 export type OperationsFlowOptions = {
@@ -112,12 +118,16 @@ export const useOperationsFlow = ({
       void store.refetchVisible();
     }
     if (progress.status === "done") {
-      toast.success(
-        translate(doneKeyOf(before.kind), {
-          count: progress.total,
-          total: progress.total,
-        })
-      );
+      const finished = progress.total - (progress.skipped?.length ?? 0);
+      toast.success(translate(doneKeyOf(before.kind), { count: finished, total: finished }));
+      if (progress.skipped) {
+        toast.info(
+          [
+            translate("progressSkippedHeading"),
+            ...skippedLinesOf(progress.skipped, translate),
+          ].join(" ")
+        );
+      }
       afterDone.current.get(String(id))?.();
       afterDone.current.delete(String(id));
       if (before.kind === "delete" || before.kind === "duplicate") {
@@ -309,6 +319,13 @@ export const useOperationsFlow = ({
       }
       const count = result.trashed > 0 ? result.trashed : result.deleted;
       toast.success(translate(result.trashed > 0 ? "deleteDoneTrash" : "deleteDone", { count }));
+      if (result.skipped) {
+        toast.info(
+          [translate("progressSkippedHeading"), ...skippedLinesOf(result.skipped, translate)].join(
+            " "
+          )
+        );
+      }
       void store.refetchVisible();
       onSettled();
     },

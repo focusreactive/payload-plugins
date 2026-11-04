@@ -195,6 +195,10 @@ export const de: FoldersTranslations = {
     progressHint:
       "Sie können dieses Fenster schließen. Die Arbeit läuft weiter, und der Baum zeigt, wie weit sie ist.",
     progressLabel: "Fortschritt",
+    progressSkippedHeading:
+      "Stehen geblieben, weil sie nach Ihrer Bestätigung Inhalt bekommen haben:",
+    progressSkippedFolder: "{{path}} enthält jetzt {{child}}",
+    progressSkippedFolderUnnamed: "{{path}} enthält jetzt etwas, das hinzugefügt wurde",
     publishBatched:
       "Das ist ein großer Lauf. Er geht in Schritten und zeigt seinen Fortschritt, und Sie können das Fortschrittsfenster schließen und weiterarbeiten.",
     publishBody: "Sie werden unter ihren URLs öffentlich sichtbar.",

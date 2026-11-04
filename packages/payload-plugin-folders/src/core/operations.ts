@@ -57,9 +57,25 @@ const getHandler = (kind: OperationKind): OperationHandler => {
 /** `abandoned`: the owner gave up on a failed run; it takes no more steps and nothing is undone. */
 export type OperationStatus = "abandoned" | "done" | "failed" | "running";
 
+/**
+ * A folder a delete left in place because it gained content after the operation started. `path` is
+ * the folder's URL path, `child` the title or name of what it holds when the caller may read it
+ * and null when not.
+ */
+export type OperationSkip = {
+  child: string | null;
+  path: string;
+  reason: "notEmpty";
+};
+
+/** The key a handler lists its `OperationSkip` entries under in the operation state. */
+export const skippedUnitsStateKey = "skippedUnits";
+
 export type OperationProgress = {
   done: number;
   error?: string;
+  /** Left out when the operation skipped nothing. */
+  skipped?: OperationSkip[];
   status: OperationStatus;
   total: number;
 };
@@ -142,12 +158,23 @@ export const startOperation = async ({
   return { id: created.id, total: items.length };
 };
 
-const progressOf = (row: OperationRow): OperationProgress => ({
-  done: row.done,
-  ...(row.error ? { error: row.error } : {}),
-  status: row.status,
-  total: row.total,
-});
+const skippedOf = (state: OperationState | undefined): OperationSkip[] => {
+  const skipped = state?.[skippedUnitsStateKey];
+
+  return Array.isArray(skipped) ? (skipped as OperationSkip[]) : [];
+};
+
+const progressOf = (row: OperationRow): OperationProgress => {
+  const skipped = skippedOf(row.cursor?.state);
+
+  return {
+    done: row.done,
+    ...(row.error ? { error: row.error } : {}),
+    ...(skipped.length > 0 ? { skipped } : {}),
+    status: row.status,
+    total: row.total,
+  };
+};
 
 /** What the user can read about an operation they started, without stepping it. */
 export const readOperationProgress = async (
@@ -293,7 +320,14 @@ export const stepOperation = async (
       });
       await bumpRevision(req);
 
-      return { done: Math.min(offset, row.total), status, total: row.total };
+      const skipped = skippedOf(context.state);
+
+      return {
+        done: Math.min(offset, row.total),
+        ...(skipped.length > 0 ? { skipped } : {}),
+        status,
+        total: row.total,
+      };
     });
   } catch (error) {
     if (!(error instanceof APIError)) {

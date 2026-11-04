@@ -3,21 +3,33 @@ import type { CreatePayloadRequestArgs, Payload, PayloadRequest } from "payload"
 
 import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, ItemRef, PathChange, ResolvedOptions } from "../types.js";
-import { findRefusedChecks, findUnreadableItems, keepReadableItems } from "./access.js";
+import {
+  canReadItem,
+  findRefusedChecks,
+  findUnreadableItems,
+  keepReadableItems,
+} from "./access.js";
 import type { AccessCheck } from "./access.js";
+import { findFirstChild } from "../hooks/folders/deleteHooks.js";
 import { queueAfterPathChange } from "./afterPathChange.js";
 import { deleteChangesContextKey } from "./deletedPaths.js";
+import { readFolderRecord } from "./folderRecords.js";
 import { getDefaultLocaleKey, getFallbackLocaleKey } from "./locales.js";
 import { createNestedRequest } from "./nestedRequest.js";
-import { registerOperationHandler, runOrQueue } from "./operations.js";
-import type { OperationHandler } from "./operations.js";
+import { registerOperationHandler, runOrQueue, skippedUnitsStateKey } from "./operations.js";
+import type { OperationHandler, OperationSkip } from "./operations.js";
 import { pagePathIn } from "./pagePaths.js";
 import { effectiveSegmentsOf, liveLocaleKeysOf } from "./pageRecords.js";
 import { getResolvedOptions } from "./runtime.js";
 import { itemKey, readSelection } from "./selection.js";
 import type { Selection } from "./selection.js";
 import { readLatestStatuses, resolveTreeStatus } from "./status.js";
-import { getPageDefaultLocale, getPageLocaleKeys } from "./uniqueness.js";
+import {
+  createConflictNamer,
+  getPageDefaultLocale,
+  getPageLocaleKeys,
+  readTitle,
+} from "./uniqueness.js";
 
 /** Above this many pages a delete asks for a typed word (spec section 7.10). */
 export const confirmAbovePages = 10;
@@ -54,7 +66,12 @@ export type DeletePreview = {
 };
 
 export type DeleteResult =
-  | { deleted: number; trashed: number }
+  | {
+      deleted: number;
+      /** Folders left in place because they gained content after the delete was planned. */
+      skipped?: OperationSkip[];
+      trashed: number;
+    }
   | { operationId: FolderId; total: number };
 
 export type DeleteBlockReason = "confirm" | "forbidden";
@@ -425,11 +442,58 @@ export const previewDelete = async (
 };
 
 /**
+ * What a skipped folder's message calls its new child: the page's title or the subfolder's name
+ * when the caller may read it, nothing otherwise. A system call (`overrideAccess`) reads everything.
+ */
+const nameNewChild = async ({
+  child,
+  nameConflictingPage,
+  options,
+  overrideAccess,
+  req,
+}: {
+  child: ItemRef;
+  nameConflictingPage: ReturnType<typeof createConflictNamer>;
+  options: ResolvedOptions;
+  overrideAccess: boolean;
+  req: PayloadRequest;
+}): Promise<string | null> => {
+  const { payload } = req;
+  if (child.collection === options.folders.slug) {
+    if (!overrideAccess && !(await canReadItem({ item: child, req }))) {
+      return null;
+    }
+    const folder = await readFolderRecord(req, options, child.id);
+    const key = getDefaultLocaleKey(payload, options);
+
+    return folder ? folder.name[key] || folder.slug[key] || null : null;
+  }
+  const page = options.collections[child.collection];
+  if (!page) {
+    return null;
+  }
+  const title = await readTitle(req, page, child.id, getPageDefaultLocale(payload));
+
+  return overrideAccess
+    ? title
+    : nameConflictingPage({
+        collection: child.collection,
+        id: child.id,
+        kind: "page",
+        path: "",
+        title,
+      });
+};
+
+/**
  * The step of a delete: each unit is removed through Payload (`delete`, or an update that sets
  * `deletedAt` when the trash is on), so the collections' own hooks run: a page's redirect rows go
  * and its URLs are collected for `hooks.afterPathChange`, and a folder is deleted empty. Pages come
  * first and folders deepest first, so nothing is left behind. A unit that is already gone is passed
- * over, so a retried or repeated step removes nothing twice. The URLs of the whole step are
+ * over, so a retried or repeated step removes nothing twice. A folder that holds something when its
+ * turn comes gained it after the work list was made: the user never confirmed deleting it, so the
+ * folder stays, is listed in the state's skipped units, and the operation goes on instead of
+ * answering the folder guard's 409 on every retry. The URLs of the whole step are
  * reported once, with reason `delete`, after the step commits.
  */
 const deleteHandler: OperationHandler = {
@@ -441,6 +505,10 @@ const deleteHandler: OperationHandler = {
     let deleted = typeof state.deleted === "number" ? state.deleted : 0;
     let trashed = typeof state.trashed === "number" ? state.trashed : 0;
     let skipped = typeof state.skipped === "number" ? state.skipped : 0;
+    const skippedFolders: OperationSkip[] = Array.isArray(state[skippedUnitsStateKey])
+      ? [...(state[skippedUnitsStateKey] as OperationSkip[])]
+      : [];
+    const nameConflictingPage = createConflictNamer(req);
 
     try {
       for (const unit of units as DeleteUnit[]) {
@@ -456,6 +524,29 @@ const deleteHandler: OperationHandler = {
         if (!stored || (isSoft && stored.deletedAt)) {
           skipped += 1;
           continue;
+        }
+        if (unit.collection === options.folders.slug) {
+          const newChild = await findFirstChild({
+            folderId: unit.id,
+            includeTrashed: !isSoft,
+            options,
+            req,
+          });
+          if (newChild) {
+            const folder = await readFolderRecord(req, options, unit.id);
+            skippedFolders.push({
+              child: await nameNewChild({
+                child: newChild,
+                nameConflictingPage,
+                options,
+                overrideAccess,
+                req,
+              }),
+              path: folder?.fullPath[getDefaultLocaleKey(req.payload, options)] ?? "",
+              reason: "notEmpty",
+            });
+            continue;
+          }
         }
         if (isSoft) {
           await req.payload.update({
@@ -488,6 +579,9 @@ const deleteHandler: OperationHandler = {
     await queueAfterPathChange({ changes: collected, options, reason: "delete", req });
     state.deleted = deleted;
     state.skipped = skipped;
+    if (skippedFolders.length > 0) {
+      state[skippedUnitsStateKey] = skippedFolders;
+    }
     state.trashed = trashed;
   },
 };
@@ -530,8 +624,11 @@ export const applyDelete = async (
     return { operationId: outcome.operationId, total: plan.units.length };
   }
 
+  const skippedFolders = outcome.state[skippedUnitsStateKey] as OperationSkip[] | undefined;
+
   return {
     deleted: outcome.state.deleted as number,
+    ...(skippedFolders ? { skipped: skippedFolders } : {}),
     trashed: outcome.state.trashed as number,
   };
 };
