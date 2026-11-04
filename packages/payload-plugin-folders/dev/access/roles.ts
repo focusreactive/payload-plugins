@@ -1,4 +1,7 @@
-import { buildLiveInLocaleWhere } from "@focus-reactive/payload-plugin-folders/server";
+import {
+  buildLiveInLocaleWhere,
+  getSubtreeFolderIds,
+} from "@focus-reactive/payload-plugin-folders/server";
 import type { Access, PayloadRequest } from "payload";
 
 type RoleUser = {
@@ -25,20 +28,9 @@ const limitedSubtreeFolderIds = async (req: PayloadRequest): Promise<number[]> =
   if (rootId === null || rootId === undefined) {
     return [];
   }
-  const { docs } = await req.payload.find({
-    collection: "folders",
-    depth: 0,
-    overrideAccess: true,
-    pagination: false,
-    // A shallow copy: this runs inside an access check, and a nested call must not change the
-    // request's context or locale.
-    req: { ...req },
-    where: {
-      or: [{ id: { equals: rootId } }, { ancestorIds: { contains: `/${rootId}/` } }],
-    },
-  });
-
-  return docs.map((doc) => doc.id);
+  // A shallow copy: this runs inside an access check, and a nested call must not change the
+  // request's context or locale.
+  return getSubtreeFolderIds(req.payload, { folder: rootId, req: { ...req } }) as Promise<number[]>;
 };
 
 /**

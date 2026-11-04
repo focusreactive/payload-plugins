@@ -24,6 +24,7 @@ export { getItemsAccess, getReadScope } from "../core/access.js";
 export type { ItemAccess, ReadScope } from "../core/access.js";
 export { getAncestors } from "../core/treeAncestors.js";
 export type { AncestorFolder } from "../core/treeAncestors.js";
+export { getSubtreeFolderIds } from "../core/subtreeFolderIds.js";
 export { getChildren } from "../core/treeChildren.js";
 export type { ChildrenArgs, ChildrenResult } from "../core/treeChildren.js";
 export { searchTree } from "../core/treeSearch.js";

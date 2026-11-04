@@ -610,6 +610,7 @@ The Local API helpers live in `@focus-reactive/payload-plugin-folders/server`:
 | `getAllPaths(payload, { locale, under, rootPages, draft })` | Every live path, for a sitemap or static params. `locale: "all"` gives a row per page and locale. |
 | `findRedirect(payload, { path, locale, isLive })` | The stock redirect lookup. |
 | `computeFullPath(payload, { folder, slug, isFolderRoot, locale })` | A page's URL from unsaved form values. |
+| `getSubtreeFolderIds(payload, { folder, req })` | The ids of the folder and every folder beneath it, read without access checks; `req` is optional, and an access function passes a shallow copy of its request. An empty list when the folder does not exist. See "Per-folder permissions". |
 | `buildUrl`, `toStoryblokFullSlug` | URL helpers, also exported from the main entry. |
 | `moveItems`, `deleteItems`, `duplicateItems`, `publishItems`, `repairTree`, `verifyTree` | The write side, for scripts and tests. |
 
@@ -1104,6 +1105,7 @@ folder subtree. This is the dev app's `editorLimited` role: a user tied to one f
 documents inside that folder's subtree, and cannot move a document out of it.
 
 ```ts
+import { getSubtreeFolderIds } from "@focus-reactive/payload-plugin-folders/server";
 import type { Access, PayloadRequest } from "payload";
 
 type RoleUser = { limitedFolder?: { id: number } | number | null; role?: string } | null;
@@ -1114,18 +1116,10 @@ const subtreeFolderIds = async (req: PayloadRequest): Promise<number[]> => {
   if (rootId === null || rootId === undefined) {
     return [];
   }
-  const { docs } = await req.payload.find({
-    collection: "folders",
-    depth: 0,
-    overrideAccess: true,
-    pagination: false,
-    // A shallow copy: this runs inside an access check, and a nested call must not change the
-    // request's context or locale.
-    req: { ...req },
-    where: { or: [{ id: { equals: rootId } }, { ancestorIds: { contains: `/${rootId}/` } }] },
-  });
 
-  return docs.map((doc) => doc.id);
+  // A shallow copy: this runs inside an access check, and a nested call must not change the
+  // request's context or locale.
+  return (await getSubtreeFolderIds(req.payload, { folder: rootId, req: { ...req } })) as number[];
 };
 
 const restrictLimitedRole =
