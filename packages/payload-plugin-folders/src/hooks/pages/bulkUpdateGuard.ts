@@ -3,8 +3,7 @@ import type { CollectionBeforeOperationHook } from "payload";
 
 import type { ResolvedPageCollection } from "../../types.js";
 import { isInternalWrite } from "../context.js";
-
-const structureFieldNames = ["isFolderRoot", "folder", "orderKey", "structureRevision"];
+import { pageStructureFieldNames } from "../../constants.js";
 
 /**
  * A bulk update (`where` instead of an id) saves every matching page in parallel and reports a
@@ -34,7 +33,9 @@ export const buildBulkUpdateGuard =
     const couldChangeUrl =
       data._status === "published" ||
       Boolean(bulk.publishAllLocales) ||
-      [page.segmentField, "pathSegment", ...structureFieldNames].some((name) => name in data);
+      [page.segmentField, "pathSegment", "isFolderRoot", ...pageStructureFieldNames].some(
+        (name) => name in data
+      );
     if (couldChangeUrl) {
       throw new APIError(
         "Publishing or changing the URL of several pages at once is not supported. Publish pages one at a time, or publish a selection through the folders tree (POST /api/folders-tree/publish), which publishes page by page.",

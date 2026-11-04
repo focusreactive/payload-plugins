@@ -22,5 +22,10 @@ export const injectedPageFieldNames = [
   "folderDraftWarning",
 ] as const;
 
+/** The page fields that hold its place in the tree: only a move or a reorder may change them. */
+export const pageStructureFieldNames = ["folder", "orderKey", "structureRevision"] as const;
+
+export type PageStructureField = (typeof pageStructureFieldNames)[number];
+
 /** Segments the frontend or Payload itself owns, whatever the config says. */
 export const fixedReservedRootSegments = ["graphql", "graphql-playground", "_next"] as const;

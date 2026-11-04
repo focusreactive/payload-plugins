@@ -1,4 +1,5 @@
 import type { FolderId, ItemRef } from "../types.js";
+import type { PageStructureField } from "../constants.js";
 
 /** Most items an issue lists by name; its `count` is always the full number. */
 export const issueItemLimit = 50;
@@ -24,7 +25,7 @@ export type SegmentDrift = {
   stored: string | null;
 };
 
-export type StructureField = "folder" | "orderKey" | "structureRevision";
+export type StructureField = PageStructureField;
 
 /**
  * An item an issue names. `kind` and `title` are filled by the full pass for the issues it lists

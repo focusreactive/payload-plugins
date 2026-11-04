@@ -14,6 +14,7 @@ import {
 } from "../core/structureGuard.js";
 import type { FolderId, ResolvedOptions, ResolvedPageCollection } from "../types.js";
 import { isInternalWrite, slugNotSentContextKey } from "./context.js";
+import { pageStructureFieldNames } from "../constants.js";
 
 type UpdateArgs = {
   data?: Record<string, unknown>;
@@ -24,7 +25,6 @@ type UpdateArgs = {
 
 type RefusedField = "folder" | "orderKey" | "parent" | "slug" | "structureRevision";
 
-const pageStructureFieldNames = ["folder", "orderKey", "structureRevision"] as const;
 const folderStructureFieldNames = ["parent", "orderKey", "structureRevision", "slug"] as const;
 /** The names a plain update is refused for: a slug rename through REST is allowed. */
 const folderStructureFieldNamesWithoutSlug = ["parent", "orderKey", "structureRevision"] as const;
