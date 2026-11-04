@@ -401,6 +401,20 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     rule and messages. A `structureRevision` sent alone is still dropped silently, because it moves
     nothing. The admin's payload is pinned by `tests/e2e/admin-structure-replay.e2e.spec.ts`. This
     replaces the MCP-only pick in `docs/agents.md`, which now describes both.
+45. **Review "After these" fixes (P-07, P-35, P-22, P-05, P-47).** P-22 renames
+    `limits.maxItemsPerMove` to `limits.maxItemsPerOperation` (default 500), because it caps the
+    selected items of one move, delete, duplicate or publish; a larger request is refused with a 400
+    that names the limit, and there is no alias, as the package is private at 0.0.0. P-47: a page
+    already in the trash that is deleted for good reports nothing to `afterPathChange` and deletes no
+    custom mirror rows, because the trash step did both and a second report would name URLs the site
+    had stopped serving; the redirect rows that reference the page and the tree revision bump still
+    run, and a custom mirror row written after the trash step stays (it points at a 404 either way).
+    P-07: a bottom create finds the largest key with two limit-1 queries per collection (the largest
+    key, and whether an unkeyed row exists, since unkeyed rows sort last) instead of reading every
+    sibling under the lock. P-05: an empty stored key is skipped when looking for the smallest or
+    largest key. P-35: `getSubtreeFolderIds(payload, { folder, req? })` is exported from the server
+    entry and includes the folder itself; the optional `req` lets an access function read on the
+    request's own connection.
 
 ### Owner decisions (from spec/review.md, the spec writer's pick applies)
 
