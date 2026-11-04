@@ -266,6 +266,43 @@ test("the focus stays on its row when the list crosses 300 rows", async ({ page 
   await expect(draftRow(page, 1)).toBeFocused();
 });
 
+test("the focus stays on its row when the list crosses 300 rows after a search and back", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await openContentTree(page);
+  // The search swaps the treegrid for another element and back: the keyboard has to follow it.
+  const searchInput = page.getByTestId("search-input");
+  await searchInput.fill(folderName);
+  await expect(page.getByTestId("search-summary")).toBeVisible();
+  await expect(folderRow(page, folderName)).toBeVisible();
+  await searchInput.press("Escape");
+  await expect(page.getByTestId("search-summary")).toHaveCount(0);
+  const folder = folderRow(page, folderName);
+  await expect(folder).toBeVisible();
+  if ((await folder.getAttribute("aria-expanded")) !== "true") {
+    await expandFolder(page, folderName);
+  }
+  await expect(draftRow(page, 1)).toBeVisible();
+  await loadMore(page, 3);
+  await expect(scrollBody(page)).toHaveCount(1);
+
+  await folder.focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(scrollBody(page)).toHaveCount(0);
+  await expect(folder).toBeFocused();
+
+  // Opening it again takes the list past 300 rows, which remounts the rows and drops the focus to
+  // the page unless the keyboard put it back.
+  await page.keyboard.press("ArrowRight");
+  await expect(folder).toHaveAttribute("aria-expanded", "true");
+  await expect(folder).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(draftRow(page, 1)).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(draftRow(page, 2)).toBeFocused();
+});
+
 test("Load more pressed with Enter moves the focus into the new rows, below and past 300 rows", async ({
   page,
 }) => {

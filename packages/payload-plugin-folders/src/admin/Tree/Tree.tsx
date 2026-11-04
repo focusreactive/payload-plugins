@@ -532,7 +532,7 @@ export const Tree = ({
           .join(" ")}
         data-testid="tree"
         onFocus={(event) => keyboard.onFocus(event.target)}
-        ref={keyboard.treeRef}
+        ref={keyboard.bindTree}
         role="treegrid"
       >
         {isCompact ? null : (

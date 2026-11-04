@@ -86,6 +86,8 @@ export type TreeKeyboard = {
    * focus a row that is not in the page (End on 2,000 rows).
    */
   revealRowRef: MutableRefObject<((key: string) => void) | null>;
+  /** The ref of the treegrid element: the keyboard follows whichever one is on screen. */
+  bindTree: (tree: HTMLDivElement) => () => void;
   /** The treegrid's element: keys count as the tree's only while the focus is inside it. */
   treeRef: RefObject<HTMLDivElement | null>;
 };
@@ -195,11 +197,10 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
   // focusout with nowhere to go is judged after the render that may have removed the element, and
   // counts as leaving only when the element is still there.
   const hasFocusInRow = useRef(false);
-  useEffect(() => {
-    const tree = treeRef.current;
-    if (tree === null) {
-      return undefined;
-    }
+  // The workspace draws a different treegrid element for the search hits and for the tree, so the
+  // listeners follow the element through its ref instead of staying on the one drawn at mount.
+  const bindTree = useCallback((tree: HTMLDivElement) => {
+    treeRef.current = tree;
     const handleFocusIn = (event: FocusEvent) => {
       hasFocusInRow.current = rowKeyOfElement(event.target as Element | null) !== null;
     };
@@ -224,6 +225,9 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
     return () => {
       tree.removeEventListener("focusin", handleFocusIn);
       tree.removeEventListener("focusout", handleFocusOut);
+      if (treeRef.current === tree) {
+        treeRef.current = null;
+      }
     };
   }, []);
 
@@ -694,5 +698,13 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
 
   const cutKeys = useMemo(() => new Set(cutItems.map(itemKeyOf)), [cutItems]);
 
-  return { activeKey: tabStopKey, cutKeys, liveMessage, onFocus, revealRowRef, treeRef };
+  return {
+    activeKey: tabStopKey,
+    bindTree,
+    cutKeys,
+    liveMessage,
+    onFocus,
+    revealRowRef,
+    treeRef,
+  };
 };
