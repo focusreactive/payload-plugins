@@ -149,40 +149,55 @@ const readJsonResponse = async <Response>(response: globalThis.Response): Promis
   return body as Response;
 };
 
-const getJson = async <Response>(
+/**
+ * One call to the plugin's own endpoints or to Payload's REST routes, with the session cookie, JSON
+ * both ways and the same error handling. A `body` is sent as JSON.
+ */
+const requestJson = async <Response>(
+  context: FoldersApiContext,
+  url: string,
+  {
+    body,
+    method = "GET",
+    signal,
+  }: { body?: unknown; method?: "DELETE" | "GET" | "PATCH" | "POST"; signal?: AbortSignal } = {}
+): Promise<Response> => {
+  const send = context.fetchImplementation ?? fetch;
+  const hasBody = body !== undefined;
+  const response = await send(url, {
+    ...(hasBody ? { body: JSON.stringify(body) } : {}),
+    credentials: "include",
+    headers: hasBody
+      ? { Accept: "application/json", "Content-Type": "application/json" }
+      : { Accept: "application/json" },
+    method,
+    signal,
+  });
+
+  return readJsonResponse<Response>(response);
+};
+
+const getJson = <Response>(
   context: FoldersApiContext,
   path: string,
   query: Record<string, string | number | null | undefined> = {},
   signal?: AbortSignal
-): Promise<Response> => {
-  const send = context.fetchImplementation ?? fetch;
-  const response = await send(`${context.baseUrl}/folders-tree/${path}${buildQuery(query)}`, {
-    credentials: "include",
-    headers: { Accept: "application/json" },
-    method: "GET",
+): Promise<Response> =>
+  requestJson<Response>(context, `${context.baseUrl}/folders-tree/${path}${buildQuery(query)}`, {
     signal,
   });
 
-  return readJsonResponse<Response>(response);
-};
-
-const postJson = async <Response>(
+const postJson = <Response>(
   context: FoldersApiContext,
   path: string,
   body: unknown,
   signal?: AbortSignal
-): Promise<Response> => {
-  const send = context.fetchImplementation ?? fetch;
-  const response = await send(`${context.baseUrl}/folders-tree/${path}`, {
-    body: JSON.stringify(body),
-    credentials: "include",
-    headers: { Accept: "application/json", "Content-Type": "application/json" },
+): Promise<Response> =>
+  requestJson<Response>(context, `${context.baseUrl}/folders-tree/${path}`, {
+    body,
     method: "POST",
     signal,
   });
-
-  return readJsonResponse<Response>(response);
-};
 
 export type ChildrenQuery = {
   cursor?: string | null;
@@ -386,18 +401,11 @@ export const writeDocument = async <Doc = { id: FolderId }>(
     query?: Record<string, string | number | null | undefined>;
   }
 ): Promise<{ doc: Doc }> => {
-  const send = context.fetchImplementation ?? fetch;
-  const response = await send(
+  return requestJson<{ doc: Doc }>(
+    context,
     `${context.baseUrl}/${collection}${id === undefined ? "" : `/${id}`}${buildQuery(query)}`,
-    {
-      body: JSON.stringify(body),
-      credentials: "include",
-      headers: { Accept: "application/json", "Content-Type": "application/json" },
-      method: id === undefined ? "POST" : "PATCH",
-    }
+    { body, method: id === undefined ? "POST" : "PATCH" }
   );
-
-  return readJsonResponse<{ doc: Doc }>(response);
 };
 
 /**
@@ -409,7 +417,6 @@ export const fetchRecentDocuments = async <Doc extends { id: FolderId }>(
   context: FoldersApiContext,
   { collection, folder, since }: { collection: string; folder: FolderId | null; since: Date }
 ): Promise<Doc[]> => {
-  const send = context.fetchImplementation ?? fetch;
   const parameters = new URLSearchParams({
     depth: "0",
     limit: "20",
@@ -421,12 +428,10 @@ export const fetchRecentDocuments = async <Doc extends { id: FolderId }>(
   } else {
     parameters.set("where[and][1][folder][equals]", String(folder));
   }
-  const response = await send(`${context.baseUrl}/${collection}?${parameters.toString()}`, {
-    credentials: "include",
-    headers: { Accept: "application/json" },
-    method: "GET",
-  });
-  const body = await readJsonResponse<{ docs?: Doc[] }>(response);
+  const body = await requestJson<{ docs?: Doc[] }>(
+    context,
+    `${context.baseUrl}/${collection}?${parameters.toString()}`
+  );
 
   return body.docs ?? [];
 };
@@ -440,13 +445,9 @@ export const deleteDocument = async (
   context: FoldersApiContext,
   { collection, id }: { collection: string; id: FolderId }
 ): Promise<void> => {
-  const send = context.fetchImplementation ?? fetch;
-  const response = await send(`${context.baseUrl}/${collection}/${id}`, {
-    credentials: "include",
-    headers: { Accept: "application/json" },
+  await requestJson<unknown>(context, `${context.baseUrl}/${collection}/${id}`, {
     method: "DELETE",
   });
-  await readJsonResponse<unknown>(response);
 };
 
 /**
@@ -458,13 +459,10 @@ export const fetchLatestStatus = async (
   context: FoldersApiContext,
   { collection, id }: { collection: string; id: FolderId }
 ): Promise<{ _status?: string }> => {
-  const send = context.fetchImplementation ?? fetch;
-  const response = await send(
-    `${context.baseUrl}/${collection}/${id}${buildQuery({ depth: 0, draft: "true" })}`,
-    { credentials: "include", headers: { Accept: "application/json" }, method: "GET" }
+  return requestJson<{ _status?: string }>(
+    context,
+    `${context.baseUrl}/${collection}/${id}${buildQuery({ depth: 0, draft: "true" })}`
   );
-
-  return readJsonResponse<{ _status?: string }>(response);
 };
 
 /**
@@ -492,32 +490,26 @@ export const fetchVersionMarker = async (
   context: FoldersApiContext,
   { collection, hasDrafts, id }: { collection: string; hasDrafts: boolean; id: FolderId }
 ): Promise<string | undefined> => {
-  const send = context.fetchImplementation ?? fetch;
   if (hasDrafts) {
-    const response = await send(
+    const { docs } = await requestJson<{ docs: Array<{ version?: { updatedAt?: string } }> }>(
+      context,
       `${context.baseUrl}/${collection}/versions${buildQuery({
         depth: 0,
         limit: 1,
         sort: "-updatedAt",
         "where[latest][equals]": "true",
         "where[parent][equals]": String(id),
-      })}`,
-      { credentials: "include", headers: { Accept: "application/json" }, method: "GET" }
-    );
-    const { docs } = await readJsonResponse<{ docs: Array<{ version?: { updatedAt?: string } }> }>(
-      response
+      })}`
     );
     const marker = docs[0]?.version?.updatedAt;
     if (typeof marker === "string") {
       return marker;
     }
   }
-  const response = await send(`${context.baseUrl}/${collection}/${id}${buildQuery({ depth: 0 })}`, {
-    credentials: "include",
-    headers: { Accept: "application/json" },
-    method: "GET",
-  });
-  const { updatedAt } = await readJsonResponse<{ updatedAt?: string }>(response);
+  const { updatedAt } = await requestJson<{ updatedAt?: string }>(
+    context,
+    `${context.baseUrl}/${collection}/${id}${buildQuery({ depth: 0 })}`
+  );
 
   return typeof updatedAt === "string" ? updatedAt : undefined;
 };
@@ -548,18 +540,15 @@ export const fetchDocument = async <Doc>(
     locale?: string | null;
   }
 ): Promise<Doc> => {
-  const send = context.fetchImplementation ?? fetch;
-  const response = await send(
+  return requestJson<Doc>(
+    context,
     `${context.baseUrl}/${collection}/${id}${buildQuery({
       depth: 0,
       draft: draft ? "true" : undefined,
       "fallback-locale": fallback ? undefined : "none",
       locale,
-    })}`,
-    { credentials: "include", headers: { Accept: "application/json" }, method: "GET" }
+    })}`
   );
-
-  return readJsonResponse<Doc>(response);
 };
 
 /** How many folders sit anywhere below a folder, for the lock confirmation. */
@@ -567,18 +556,17 @@ export const fetchSubfolderCount = async (
   context: FoldersApiContext,
   { foldersSlug, id }: { foldersSlug: string; id: FolderId }
 ): Promise<number> => {
-  const send = context.fetchImplementation ?? fetch;
-  const response = await send(
+  const { totalDocs } = await requestJson<{ totalDocs: number }>(
+    context,
     `${context.baseUrl}/${foldersSlug}${buildQuery({
       depth: 0,
       limit: 1,
       "select[id]": "true",
       "where[ancestorIds][contains]": `/${id}/`,
-    })}`,
-    { credentials: "include", headers: { Accept: "application/json" }, method: "GET" }
+    })}`
   );
 
-  return (await readJsonResponse<{ totalDocs: number }>(response)).totalDocs;
+  return totalDocs;
 };
 
 /** The old path of a URL history row. */
@@ -595,19 +583,18 @@ export const fetchUrlHistory = async (
   context: FoldersApiContext,
   { collection, id }: { collection: string; id: FolderId }
 ): Promise<UrlHistoryEntry[]> => {
-  const send = context.fetchImplementation ?? fetch;
-  const response = await send(
+  const { docs } = await requestJson<{ docs: UrlHistoryEntry[] }>(
+    context,
     `${context.baseUrl}/folder-redirects${buildQuery({
       depth: 0,
       limit: 50,
       sort: "-createdAt",
       "where[target.relationTo][equals]": collection,
       "where[target.value][equals]": String(id),
-    })}`,
-    { credentials: "include", headers: { Accept: "application/json" }, method: "GET" }
+    })}`
   );
 
-  return (await readJsonResponse<{ docs: UrlHistoryEntry[] }>(response)).docs;
+  return docs;
 };
 
 export type FolderPreviewBody = { locale?: string | null; parent?: FolderId | null; slug?: string };
@@ -723,9 +710,18 @@ export const fetchUnfinishedOperations = async (
   context: FoldersApiContext,
   { now = new Date(), userId }: { now?: Date; userId: FolderId }
 ): Promise<OperationSummary[]> => {
-  const send = context.fetchImplementation ?? fetch;
   const since = new Date(now.getTime() - resumableOperationAgeMs).toISOString();
-  const response = await send(
+  const { docs } = await requestJson<{
+    docs: Array<{
+      done?: number;
+      error?: string | null;
+      id: FolderId;
+      kind: OperationKind;
+      status: OperationProgress["status"];
+      total?: number;
+    }>;
+  }>(
+    context,
     `${context.baseUrl}/folder-operations${buildQuery({
       depth: 0,
       limit: 10,
@@ -738,19 +734,8 @@ export const fetchUnfinishedOperations = async (
       "where[and][0][createdBy][equals]": String(userId),
       "where[and][1][status][in]": "running,failed",
       "where[and][2][updatedAt][greater_than]": since,
-    })}`,
-    { credentials: "include", headers: { Accept: "application/json" }, method: "GET" }
+    })}`
   );
-  const { docs } = await readJsonResponse<{
-    docs: Array<{
-      done?: number;
-      error?: string | null;
-      id: FolderId;
-      kind: OperationKind;
-      status: OperationProgress["status"];
-      total?: number;
-    }>;
-  }>(response);
 
   return docs.map((doc) => ({
     done: doc.done ?? 0,
