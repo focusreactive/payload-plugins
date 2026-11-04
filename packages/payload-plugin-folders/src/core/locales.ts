@@ -5,6 +5,9 @@ import type { ResolvedOptions } from "../types.js";
 /** The one slot a folder's values occupy when its fields are not localized. */
 export const noLocaleKey = "-";
 
+/** The locale a slot key stands for: `null` for the slot of a site that localizes nothing. */
+export const toLocaleOrNull = (key: string): string | null => (key === noLocaleKey ? null : key);
+
 /** A value per locale code, or per `noLocaleKey` when nothing is localized. */
 export type ValuesByLocale = Record<string, string | null | undefined>;
 

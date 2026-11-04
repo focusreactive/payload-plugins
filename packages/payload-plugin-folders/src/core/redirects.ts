@@ -3,7 +3,7 @@ import type { Payload, PayloadRequest, Where } from "payload";
 import { toCollectionSlug } from "../collectionSlug.js";
 import { folderRedirectsSlug } from "../constants.js";
 import type { FolderId, ItemRef, PathChange, ResolvedOptions } from "../types.js";
-import { noLocaleKey } from "./locales.js";
+import { noLocaleKey, toLocaleOrNull } from "./locales.js";
 import { deleteMirrorRowsTargeting } from "./mirror.js";
 import { getResolvedOptions } from "./runtime.js";
 import { getPageLocaleKeys } from "./uniqueness.js";
@@ -124,9 +124,7 @@ export const pageLocalesOfFolderChange = (
   payload: Payload,
   locale: string | null
 ): Array<string | null> =>
-  locale === null
-    ? getPageLocaleKeys(payload).map((key) => (key === noLocaleKey ? null : key))
-    : [locale];
+  locale === null ? getPageLocaleKeys(payload).map(toLocaleOrNull) : [locale];
 
 /**
  * The paths that live documents occupy after `changes`: published pages (a root page counts as its

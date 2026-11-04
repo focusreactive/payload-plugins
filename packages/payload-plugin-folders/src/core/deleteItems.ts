@@ -31,6 +31,7 @@ import {
   getPageLocaleKeys,
   readTitle,
 } from "./uniqueness.js";
+import { badRequest } from "./badRequest.js";
 
 /** Above this many pages a delete asks for a typed word (spec section 7.10). */
 export const confirmAbovePages = 10;
@@ -227,7 +228,7 @@ const findRefusedItems = async ({
 
 const assertDeletableItems = (request: DeleteRequest, options: ResolvedOptions): void => {
   if (request.items.length === 0) {
-    throw new APIError("Choose at least one item to delete", 400, null, true);
+    throw badRequest("Choose at least one item to delete");
   }
   if (request.items.length > options.limits.maxItemsPerOperation) {
     throw new APIError(

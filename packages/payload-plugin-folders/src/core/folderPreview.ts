@@ -11,6 +11,7 @@ import {
   getFolderLocaleKeys,
   noLocaleKey,
   requestLocaleKey,
+  toLocaleOrNull,
 } from "./locales.js";
 import { countMirrorRows } from "./mirror.js";
 import { pickSamples, planMove, summarizePageChanges } from "./move.js";
@@ -25,6 +26,7 @@ import {
   selectWrittenPaths,
 } from "./subtree.js";
 import { createConflictNamer, findSegmentConflicts, getPageLocaleKeys } from "./uniqueness.js";
+import { badRequest } from "./badRequest.js";
 
 export type FolderEdit = {
   /** The folder being edited. */
@@ -36,8 +38,6 @@ export type FolderEdit = {
   /** The new segment in `locale`; absent leaves the slug as it is. */
   slug?: string;
 };
-
-const badRequest = (message: string): APIError => new APIError(message, 400, null, true);
 
 const emptyPreview = (blocked: MoveBlock[], targetFolderId: FolderId | null): MovePreview => ({
   blocked,
@@ -111,7 +111,6 @@ export const planFolderEdit = async (
   const block = (reason: MoveBlock["reason"], message: string, locale?: string | null): void => {
     blocked.push({ item: folderRef, message, reason, ...(locale === undefined ? {} : { locale }) });
   };
-  const toLocale = (key: string): string | null => (key === noLocaleKey ? null : key);
 
   if (!overrideAccess) {
     const refused = await findRefusedChecks({
@@ -153,11 +152,11 @@ export const planFolderEdit = async (
   for (const key of changedKeys) {
     const segment = plan.segments[key];
     if (segment === "") {
-      block("reserved", "A folder needs a slug", toLocale(key));
+      block("reserved", "A folder needs a slug", toLocaleOrNull(key));
     } else if (!isValidSegment(segment, { atSiteRoot: stored.parent === null })) {
-      block("reserved", SEGMENT_ERROR_MESSAGE, toLocale(key));
+      block("reserved", SEGMENT_ERROR_MESSAGE, toLocaleOrNull(key));
     } else if (stored.parent === null && reservedRootSegments.has(segment.toLowerCase())) {
-      block("reserved", `/${segment} is used by the site itself`, toLocale(key));
+      block("reserved", `/${segment} is used by the site itself`, toLocaleOrNull(key));
     }
   }
   if (plan.depth > options.maxDepth) {
@@ -225,7 +224,7 @@ export const planFolderEdit = async (
             : overrideAccess
               ? conflict.title
               : await nameConflictingPage(conflict);
-        block("conflict", `${conflict.path} is already used by ${holder}`, toLocale(slot));
+        block("conflict", `${conflict.path} is already used by ${holder}`, toLocaleOrNull(slot));
       }
     }
   }

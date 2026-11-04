@@ -13,6 +13,7 @@ import {
   folderPathIn,
   getPageDefaultLocale,
 } from "./uniqueness.js";
+import { badRequest } from "./badRequest.js";
 
 /** The page that already holds the folder's root page place, and the folder's path. */
 /** `title` is left out when the reader may not read the page that holds the place. */
@@ -35,7 +36,7 @@ export const checkRootPage = async (
   const options = getResolvedOptions(payload);
   const codes = getLocaleCodes(payload.config);
   if (locale !== undefined && codes.length > 0 && !codes.includes(locale)) {
-    throw new APIError(`"${locale}" is not a locale of this site`, 400, null, true);
+    throw badRequest(`"${locale}" is not a locale of this site`);
   }
   const folder = parent === null ? null : await readFolderRecord(req, options, parent);
   if (parent !== null && !folder) {

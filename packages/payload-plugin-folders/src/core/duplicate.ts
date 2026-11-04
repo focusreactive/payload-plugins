@@ -30,6 +30,8 @@ import { readSelection } from "./selection.js";
 import type { Selection } from "./selection.js";
 import { SEGMENT_ERROR_MESSAGE, isValidSegment } from "./slugify.js";
 import { findSegmentConflict, getPageLocaleKeys } from "./uniqueness.js";
+import { staleMessage } from "./move.js";
+import { badRequest } from "./badRequest.js";
 
 export type DuplicateRequest = {
   items: ItemRef[];
@@ -81,8 +83,6 @@ export class DuplicateBlockedError extends APIError<{
     this.name = "DuplicateBlockedError";
   }
 }
-
-const staleMessage = "This part of the tree changed. Reload and try again.";
 
 /** One document to copy, in the order the step runs them: a folder always comes before its content. */
 type DuplicateUnit =
@@ -195,7 +195,7 @@ export const planDuplicate = async (
   const { payload } = req;
   const foldersSlug = options.folders.slug;
   if (request.items.length === 0) {
-    throw new APIError("Choose at least one item to copy", 400, null, true);
+    throw badRequest("Choose at least one item to copy");
   }
   if (request.items.length > options.limits.maxItemsPerOperation) {
     throw new DuplicateBlockedError(

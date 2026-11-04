@@ -23,6 +23,7 @@ import {
   getFallbackLocaleKey,
   getFolderLocaleKeys,
   noLocaleKey,
+  toLocaleOrNull,
 } from "./locales.js";
 import {
   findForbiddenMoves,
@@ -61,6 +62,7 @@ import {
 } from "./uniqueness.js";
 import type { SegmentConflict } from "./uniqueness.js";
 import { itemKey } from "./itemKey.js";
+import { badRequest } from "./badRequest.js";
 
 /** What the caller saw when it built the request; a mismatch means the tree moved on (spec section 6). */
 export type ExpectedState = { orderKey: string | null; parentId: FolderId | null };
@@ -202,15 +204,11 @@ export class MoveBlockedError extends APIError<{
   }
 }
 
-const badRequest = (message: string): APIError => new APIError(message, 400, null, true);
-
 const idsOfAncestors = (ancestorIds: string | null): string[] =>
   (ancestorIds ?? "").split("/").filter((id) => id !== "");
 
 const sameParent = (left: FolderId | null, right: FolderId | null): boolean =>
   String(left ?? null) === String(right ?? null);
-
-const toLocaleOrNull = (key: string): string | null => (key === noLocaleKey ? null : key);
 
 const sampleLimit = 5;
 

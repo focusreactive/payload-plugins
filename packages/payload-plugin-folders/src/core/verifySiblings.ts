@@ -1,7 +1,7 @@
 import { generateNKeysBetween } from "payload/shared";
 
 import type { FolderId, ItemRef } from "../types.js";
-import { noLocaleKey } from "./locales.js";
+import { noLocaleKey, toLocaleOrNull } from "./locales.js";
 import { compareSiblings, isUsableOrderKey, planInsertKeys } from "./orderKeys.js";
 import type { KeyRewrite, SiblingRow } from "./orderKeys.js";
 import type { PageFact } from "./verifyPages.js";
@@ -244,7 +244,7 @@ export const findDuplicatePaths = ({
       fixable: false,
       items: sampleItems(group.map(({ ref }) => ref)),
       kind: "duplicatePath",
-      locale: locale === noLocaleKey ? null : locale,
+      locale: toLocaleOrNull(locale),
       message: `${group.length} items claim ${path}${locale === noLocaleKey ? "" : ` in ${locale}`}`,
       path,
     });

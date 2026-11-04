@@ -4,7 +4,7 @@ import { toCollectionSlug } from "../collectionSlug.js";
 import type { PathChange, ResolvedOptions, ResolvedPageCollection } from "../types.js";
 import { queueAfterPathChange } from "./afterPathChange.js";
 import { readFolderRecord } from "./folderRecords.js";
-import { getFallbackLocaleKey, noLocaleKey } from "./locales.js";
+import { getFallbackLocaleKey, toLocaleOrNull } from "./locales.js";
 import { pagePathIn } from "./pagePaths.js";
 import { isPublishedInLocale, toSnapshot } from "./pageRecords.js";
 import type { PageRow, PageSnapshot } from "./pageRecords.js";
@@ -13,8 +13,6 @@ import { getPageDefaultLocale, getPageLocaleKeys } from "./uniqueness.js";
 /** The snapshot of a stored page row, for `planDeletedPageChanges`. */
 export const snapshotOfRow = (req: PayloadRequest, row: PageRow): PageSnapshot =>
   toSnapshot(row, getPageLocaleKeys(req.payload), getPageDefaultLocale(req.payload));
-
-const toLocaleOrNull = (key: string): string | null => (key === noLocaleKey ? null : key);
 
 /**
  * The URLs a deleted (or trashed) page takes down, one change per locale in which it was live (spec

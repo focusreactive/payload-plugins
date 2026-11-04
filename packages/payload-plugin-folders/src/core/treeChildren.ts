@@ -1,4 +1,4 @@
-import { APIError, NotFound } from "payload";
+import { NotFound } from "payload";
 import type { PayloadRequest, Where } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
@@ -18,6 +18,7 @@ import {
 } from "./treeItems.js";
 import type { TreeRow, TreeSource } from "./treeItems.js";
 import { readRevision } from "./treeLock.js";
+import { badRequest } from "./badRequest.js";
 
 export type ChildrenArgs = {
   /**
@@ -54,8 +55,6 @@ type CursorPosition = {
   /** The row's `orderKey` in the keyed phase, its `createdAt` in the unkeyed one. */
   value: string;
 };
-
-const badRequest = (message: string): APIError => new APIError(message, 400, null, true);
 
 export const encodeCursor = (position: CursorPosition): string =>
   Buffer.from(JSON.stringify(position)).toString("base64url");

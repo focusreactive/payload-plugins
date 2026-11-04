@@ -7,7 +7,12 @@ import { composeFullPath } from "../hooks/pages/fullPathAfterRead.js";
 import type { FolderId, PathChange, ResolvedOptions } from "../types.js";
 import { queueAfterPathChange } from "./afterPathChange.js";
 import { withItemTitles } from "./issueTitles.js";
-import { getDefaultLocaleKey, getFolderLocaleKeys, noLocaleKey } from "./locales.js";
+import {
+  getDefaultLocaleKey,
+  getFolderLocaleKeys,
+  noLocaleKey,
+  toLocaleOrNull,
+} from "./locales.js";
 import { rewriteMirrorFormDrift, settleMirror } from "./mirror.js";
 import { writeKeyRewrites } from "./orderKeys.js";
 import { pathClaimKey } from "./selectFolderWrites.js";
@@ -35,8 +40,6 @@ import { itemKey } from "./itemKey.js";
 
 /** Path changes a dry run lists by name; `total` is the full count. */
 const changeSampleLimit = 50;
-
-const toLocale = (key: string): string | null => (key === noLocaleKey ? null : key);
 
 const emptyToNull = (value: string): string | null => (value === "" ? null : value);
 
@@ -318,7 +321,7 @@ const planPathChanges = (
           from: emptyToNull(from),
           id: folder.record.id,
           kind: "folder",
-          locale: toLocale(key),
+          locale: toLocaleOrNull(key),
           published: true,
           to: emptyToNull(to),
         });
@@ -367,7 +370,7 @@ const planPathChanges = (
         from,
         id: fact.id,
         kind: "page",
-        locale: toLocale(key),
+        locale: toLocaleOrNull(key),
         published: fact.liveKeys.includes(key),
         to,
       });
@@ -488,7 +491,7 @@ const planRepair = (
           fixable: false,
           items: [{ collection: options.folders.slug, id: folder.record.id }, collision],
           kind: "duplicatePath",
-          locale: toLocale(key),
+          locale: toLocaleOrNull(key),
           message:
             collision.collection === options.folders.slug
               ? `Folders ${folder.record.id} and ${collision.id} both belong at ${path}; repair leaves both`

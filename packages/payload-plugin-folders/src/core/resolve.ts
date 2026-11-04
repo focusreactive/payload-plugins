@@ -13,6 +13,7 @@ import { isForbidden, resolveReadMode } from "./readMode.js";
 import { getResolvedOptions } from "./runtime.js";
 import { buildPageSegmentWhere, folderPathIn, getPageDefaultLocale } from "./uniqueness.js";
 import { toText } from "./text.js";
+import { badRequest } from "./badRequest.js";
 
 export type ResolveArgs = {
   /** Default 1. */
@@ -69,7 +70,7 @@ export const resolveRequestLocale = (
     return getPageDefaultLocale(payload);
   }
   if (!codes.includes(locale)) {
-    throw new APIError(`"${locale}" is not a configured locale`, 400, null, true);
+    throw badRequest(`"${locale}" is not a configured locale`);
   }
 
   return locale;

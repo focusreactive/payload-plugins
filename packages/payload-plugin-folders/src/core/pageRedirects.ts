@@ -4,7 +4,7 @@ import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, PathChange, ResolvedOptions, ResolvedPageCollection } from "../types.js";
 import { readFolderRecord } from "./folderRecords.js";
 import type { FolderRecord } from "./folderRecords.js";
-import { getFallbackLocaleKey, noLocaleKey } from "./locales.js";
+import { getFallbackLocaleKey, toLocaleOrNull } from "./locales.js";
 import { settleMirror } from "./mirror.js";
 import { pagePathIn } from "./pagePaths.js";
 import { effectiveSegmentsOf, isPublishedInLocale } from "./pageRecords.js";
@@ -16,8 +16,6 @@ import {
   takenPathsOf,
 } from "./redirects.js";
 import { getPageDefaultLocale, getPageLocaleKeys } from "./uniqueness.js";
-
-const toLocaleOrNull = (key: string): string | null => (key === noLocaleKey ? null : key);
 
 /**
  * Spec section 5.6 for a save that went through the page's own hooks (a publish, a change of the

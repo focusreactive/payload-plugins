@@ -1,7 +1,7 @@
 import type { FolderId, ResolvedOptions } from "../types.js";
 import { planFolderPaths } from "./folderRecords.js";
 import type { FolderPathPlan, FolderRecord } from "./folderRecords.js";
-import { noLocaleKey } from "./locales.js";
+import { toLocaleOrNull } from "./locales.js";
 import type { PathDrift, TreeIssue } from "./treeIssues.js";
 
 export type PlannedFolder = {
@@ -83,8 +83,6 @@ const describeFolderDrift = ({
 
   return `Folder ${id} ${sentences.join(", and ")}`;
 };
-
-const toLocale = (key: string): string | null => (key === noLocaleKey ? null : key);
 
 /**
  * Spec section 5.9 for folders, from the rows alone: parent cycles and parents that do not exist
@@ -243,7 +241,7 @@ export const analyzeFolders = ({
         .filter((localeKey) => (record.fullPath[localeKey] ?? "") !== plan?.fullPath[localeKey])
         .map((localeKey) => ({
           expected: plan?.fullPath[localeKey] ?? "",
-          locale: toLocale(localeKey),
+          locale: toLocaleOrNull(localeKey),
           stored: record.fullPath[localeKey] || null,
         }));
       const ancestorIds =

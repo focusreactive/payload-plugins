@@ -13,6 +13,7 @@ import { itemKey } from "./itemKey.js";
 import { readSelection, readSelectionPages } from "./selection.js";
 import { getResolvedOptions } from "./runtime.js";
 import { readLatestStatuses, resolveTreeStatus } from "./status.js";
+import { badRequest } from "./badRequest.js";
 
 export type PublishAction = "publish" | "unpublish";
 
@@ -137,7 +138,7 @@ const assertKnownItems = (options: ResolvedOptions, items: ItemRef[]): void => {
 const assertKnownLocale = (payload: Payload, locale: string | undefined): void => {
   const codes = getLocaleCodes(payload.config);
   if (locale !== undefined && (codes.length === 0 || !codes.includes(locale))) {
-    throw new APIError(`"${locale}" is not a locale of this site`, 400, null, true);
+    throw badRequest(`"${locale}" is not a locale of this site`);
   }
 };
 

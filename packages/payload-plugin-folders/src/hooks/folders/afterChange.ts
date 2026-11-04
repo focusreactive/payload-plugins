@@ -3,7 +3,7 @@ import type { CollectionAfterChangeHook } from "payload";
 import { queueAfterPathChange } from "../../core/afterPathChange.js";
 import { planFolderPaths, readFolderRecord } from "../../core/folderRecords.js";
 import type { FolderRecord } from "../../core/folderRecords.js";
-import { getDefaultLocaleKey, getFolderLocaleKeys, noLocaleKey } from "../../core/locales.js";
+import { getDefaultLocaleKey, getFolderLocaleKeys, toLocaleOrNull } from "../../core/locales.js";
 import {
   clearTakenRedirectRows,
   deleteRedirectsTargeting,
@@ -93,7 +93,7 @@ export const buildFolderAfterChange =
         taken: keys
           .filter((key) => Boolean(current.fullPath[key]))
           .flatMap((key) =>
-            pageLocalesOfFolderChange(payload, key === noLocaleKey ? null : key).map((locale) => ({
+            pageLocalesOfFolderChange(payload, toLocaleOrNull(key)).map((locale) => ({
               kind: "folderPrefix" as const,
               locale,
               path: current.fullPath[key] as string,

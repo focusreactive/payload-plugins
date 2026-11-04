@@ -12,6 +12,7 @@ import {
   getFolderLocaleKeys,
   noLocaleKey,
   withoutEmptyValues,
+  toLocaleOrNull,
 } from "./locales.js";
 import { settleMirror } from "./mirror.js";
 import { effectiveSegmentsOf, isPublishedInLocale } from "./pageRecords.js";
@@ -121,8 +122,6 @@ export const popFolderSnapshot = (req: PayloadRequest, id: FolderId): FolderReco
 
   return snapshot;
 };
-
-const toLocaleOrNull = (key: string): string | null => (key === noLocaleKey ? null : key);
 
 const isValuesObject = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === "object" && !Array.isArray(value);

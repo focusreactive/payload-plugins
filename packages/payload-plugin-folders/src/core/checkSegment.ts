@@ -7,6 +7,7 @@ import { getLocaleCodes } from "./locales.js";
 import { getResolvedOptions } from "./runtime.js";
 import { SEGMENT_ERROR_MESSAGE, isValidSegment } from "./slugify.js";
 import { createConflictNamer, findSegmentConflict, getPageDefaultLocale } from "./uniqueness.js";
+import { badRequest } from "./badRequest.js";
 
 /** What holds the path a segment would take: a folder, or a page (in any state, drafts included). */
 export type SegmentCheckConflict = { kind: "folder" | "page"; path: string };
@@ -38,7 +39,7 @@ export const checkSegment = async (
 
   const codes = getLocaleCodes(payload.config);
   if (locale !== undefined && codes.length > 0 && !codes.includes(locale)) {
-    throw new APIError(`"${locale}" is not a locale of this site`, 400, null, true);
+    throw badRequest(`"${locale}" is not a locale of this site`);
   }
   const folder = parent === null ? null : await readFolderRecord(req, options, parent);
   if (parent !== null && !folder) {

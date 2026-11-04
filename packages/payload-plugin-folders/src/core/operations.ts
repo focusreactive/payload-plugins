@@ -8,6 +8,7 @@ import { getGlobalRegistry } from "./globalRegistry.js";
 import { getResolvedOptions } from "./runtime.js";
 import { bumpRevision, withTreeLock } from "./treeLock.js";
 import { relationIdOf } from "./relationId.js";
+import { badRequest } from "./badRequest.js";
 
 /** Documents one step of a batched operation processes (spec section 5.8). */
 export const operationStepSize = 200;
@@ -49,7 +50,7 @@ export const registerOperationHandler = (kind: OperationKind, handler: Operation
 const getHandler = (kind: OperationKind): OperationHandler => {
   const handler = handlers.get(kind);
   if (!handler) {
-    throw new APIError(`There is no operation of kind "${kind}"`, 400, null, true);
+    throw badRequest(`There is no operation of kind "${kind}"`);
   }
 
   return handler;

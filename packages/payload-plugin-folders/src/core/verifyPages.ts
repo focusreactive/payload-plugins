@@ -3,7 +3,7 @@ import type { PayloadRequest, SelectType } from "payload";
 import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, ResolvedOptions, ResolvedPageCollection } from "../types.js";
 import { normalizeFolderReference } from "./folderRecords.js";
-import { getFallbackLocaleKey, noLocaleKey } from "./locales.js";
+import { getFallbackLocaleKey, noLocaleKey, toLocaleOrNull } from "./locales.js";
 import { isPublishedInLocale } from "./pageRecords.js";
 import { isValidSegment } from "./slugify.js";
 import type { StructureField, TreeIssue } from "./treeIssues.js";
@@ -80,7 +80,7 @@ export const segmentDrift = (
     .filter((key) => (slug[key] ?? null) !== (stored[key] ?? null))
     .map((key) => ({
       expected: slug[key] ?? null,
-      locale: key === noLocaleKey ? null : key,
+      locale: toLocaleOrNull(key),
       stored: stored[key] ?? null,
     }));
 

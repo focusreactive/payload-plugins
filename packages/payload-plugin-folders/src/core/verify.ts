@@ -7,7 +7,12 @@ import { toFolderRecord } from "./folderRecords.js";
 import { readPageClaims, selectFolderWrites } from "./selectFolderWrites.js";
 import type { FolderWriteSelection } from "./selectFolderWrites.js";
 import { withItemTitles } from "./issueTitles.js";
-import { getDefaultLocaleKey, getFolderLocaleKeys, noLocaleKey } from "./locales.js";
+import {
+  getDefaultLocaleKey,
+  getFolderLocaleKeys,
+  noLocaleKey,
+  toLocaleOrNull,
+} from "./locales.js";
 import { readMirrorFormDrift } from "./mirror.js";
 import type { MirrorFormDrift } from "./mirror.js";
 import { getResolvedOptions } from "./runtime.js";
@@ -191,7 +196,7 @@ export const analyzeTree = async (
         fixedSegment: isFixable ? fixedSegment : null,
         item: { collection: fact.collection, id: fact.id },
         kind: "invalidSegment",
-        locale: key === noLocaleKey ? null : key,
+        locale: toLocaleOrNull(key),
         message: isFixable
           ? `${fact.collection} ${fact.id} has the segment "${segment}", which is not a valid segment; repair saves "${fixedSegment}"`
           : `${fact.collection} ${fact.id} has the segment "${segment}", which is not a valid segment, and repair cannot choose another`,

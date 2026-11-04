@@ -1,12 +1,13 @@
-import { APIError, Forbidden } from "payload";
+import { Forbidden } from "payload";
 import type { Payload, PayloadRequest } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
+import { badRequest } from "../core/badRequest.js";
 import { normalizeFolderReference } from "../core/folderRecords.js";
 import type { MoveAnchor, MoveItemInput, MoveRequest } from "../core/move.js";
 import type { FolderId, ItemRef, ResolvedOptions } from "../types.js";
 
-export const badRequest = (message: string): APIError => new APIError(message, 400, null, true);
+export { badRequest };
 
 /** Every endpoint of the plugin is for a signed-in user; what the user may do is access control's. */
 export const requireUser = (req: PayloadRequest): void => {
