@@ -28,6 +28,7 @@ import type { TreeStore } from "../store.js";
 import { useFormatUrl } from "../urlForm.js";
 import { useTreeStoreState } from "../useTreeStore.js";
 import { composeFullPath } from "../../core/paths.js";
+import { relationIdOf } from "../../core/relationId.js";
 import { folderPathOf } from "./folderPath.js";
 import { effectiveDefaultType, planFolderSettingsSave } from "./folderSettings.js";
 import { isValueAccepted, needsSegmentCheck } from "./segmentRules.js";
@@ -48,9 +49,6 @@ type FolderDocument = {
   slug?: string | null;
   typesLockedBy?: FolderId | { id: FolderId } | null;
 };
-
-const idOf = (value: FolderId | { id: FolderId } | null | undefined): FolderId | null =>
-  value === null || value === undefined ? null : typeof value === "object" ? value.id : value;
 
 export type FolderSettingsRequest = { item: TreeItem; session: number };
 
@@ -105,8 +103,8 @@ const FolderSettingsForm = ({
   const formId = useId();
   const allTypes = Object.keys(typeLabels);
 
-  const storedParentId = idOf(folder.parent);
-  const lockerId = idOf(folder.typesLockedBy);
+  const storedParentId = relationIdOf(folder.parent);
+  const lockerId = relationIdOf(folder.typesLockedBy);
   const isLocked = lockerId !== null;
   const storedTypes = folder.allowedTypes ?? [];
   const stored: FolderSettingsValues = {

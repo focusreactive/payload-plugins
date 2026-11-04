@@ -5,6 +5,7 @@ import type { FolderId, ResolvedOptions } from "../types.js";
 import { getFolderLocaleKeys, noLocaleKey } from "./locales.js";
 import type { ValuesByLocale } from "./locales.js";
 import { joinPath, pathDepth } from "./paths.js";
+import { relationIdOf } from "./relationId.js";
 
 /** A folder row as stored: one value per locale for name, slug and fullPath, with no fallback. */
 export type FolderRecord = {
@@ -36,17 +37,6 @@ const toValuesByLocale = (value: unknown): ValuesByLocale => {
   return typeof value === "string" ? { [noLocaleKey]: value } : {};
 };
 
-const toId = (value: unknown): FolderId | null => {
-  if (typeof value === "number" || typeof value === "string") {
-    return value;
-  }
-  if (value && typeof value === "object" && "id" in value) {
-    return toId((value as { id: unknown }).id);
-  }
-
-  return null;
-};
-
 /** Turns a database row read with `locale: "all"` into a `FolderRecord`. */
 export const toFolderRecord = (row: Record<string, unknown>): FolderRecord => ({
   allowedTypes: Array.isArray(row.allowedTypes)
@@ -60,11 +50,11 @@ export const toFolderRecord = (row: Record<string, unknown>): FolderRecord => ({
   lockSubfolderTypes: Boolean(row.lockSubfolderTypes),
   name: toValuesByLocale(row.name),
   orderKey: typeof row.orderKey === "string" ? row.orderKey : null,
-  parent: toId(row.parent),
+  parent: relationIdOf(row.parent),
   slug: toValuesByLocale(row.slug),
   storedRow: row,
   structureRevision: typeof row.structureRevision === "number" ? row.structureRevision : 0,
-  typesLockedBy: toId(row.typesLockedBy),
+  typesLockedBy: relationIdOf(row.typesLockedBy),
 });
 
 /**
@@ -154,7 +144,7 @@ export const normalizeFolderReference = (
   if (value === undefined || value === null) {
     return { id: null, invalid: false };
   }
-  const id = toId(value);
+  const id = relationIdOf(value);
   if (id === null || id === 0 || id === "" || id === "0") {
     return { id: null, invalid: true };
   }

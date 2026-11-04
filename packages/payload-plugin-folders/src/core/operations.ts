@@ -7,6 +7,7 @@ import type { FolderId, ResolvedOptions } from "../types.js";
 import { getGlobalRegistry } from "./globalRegistry.js";
 import { getResolvedOptions } from "./runtime.js";
 import { bumpRevision, withTreeLock } from "./treeLock.js";
+import { relationIdOf } from "./relationId.js";
 
 /** Documents one step of a batched operation processes (spec section 5.8). */
 export const operationStepSize = 200;
@@ -104,12 +105,9 @@ const readOperation = async (req: PayloadRequest, id: FolderId): Promise<Operati
   })) as OperationRow | null;
 
 const ownerIdOf = (row: OperationRow): string | null => {
-  const { createdBy } = row;
-  if (createdBy === null || createdBy === undefined) {
-    return null;
-  }
+  const ownerId = relationIdOf(row.createdBy);
 
-  return String(typeof createdBy === "object" ? createdBy.id : createdBy);
+  return ownerId === null ? null : String(ownerId);
 };
 
 const assertOwner = (req: PayloadRequest, row: OperationRow): void => {

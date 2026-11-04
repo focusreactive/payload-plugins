@@ -3,6 +3,7 @@ import type { PayloadRequest, SelectType } from "payload";
 import { toCollectionSlug } from "../collectionSlug.js";
 import { folderRedirectsSlug } from "../constants.js";
 import type { FolderId, ItemRef, ResolvedOptions } from "../types.js";
+import { relationIdOf } from "./relationId.js";
 import { pageBatchSize } from "./verifyPages.js";
 
 export type DanglingRedirect = {
@@ -20,10 +21,9 @@ const toTarget = (value: unknown): ItemRef | null => {
     return null;
   }
   const { relationTo, value: id } = value as { relationTo?: unknown; value?: unknown };
-  const targetId = typeof id === "object" && id !== null ? (id as { id?: unknown }).id : id;
+  const targetId = relationIdOf(id);
 
-  return typeof relationTo === "string" &&
-    (typeof targetId === "number" || typeof targetId === "string")
+  return typeof relationTo === "string" && targetId !== null
     ? { collection: relationTo, id: targetId }
     : null;
 };

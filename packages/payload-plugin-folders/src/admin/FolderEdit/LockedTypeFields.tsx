@@ -3,24 +3,10 @@ import type { CheckboxFieldClientProps, SelectFieldClientProps } from "payload";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
+import { relationIdOf } from "../../core/relationId.js";
 import type { FolderId } from "../../types.js";
 import { fetchDocument } from "../api.js";
 import { useAdminRoutes, useFoldersTranslation, useLocaleCode } from "../compat.js";
-
-/** The id a relationship field holds in the form: the id itself, or a populated document. */
-const relationIdOf = (value: unknown): FolderId | null => {
-  if (value === null || value === undefined || value === "") {
-    return null;
-  }
-  if (typeof value === "object") {
-    const id =
-      (value as { id?: unknown; value?: unknown }).id ?? (value as { value?: unknown }).value;
-
-    return typeof id === "string" || typeof id === "number" ? id : null;
-  }
-
-  return typeof value === "string" || typeof value === "number" ? value : null;
-};
 
 /**
  * The folder whose lock owns this folder's page types, and the note that says so. `typesLockedBy`

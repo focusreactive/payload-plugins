@@ -3,6 +3,7 @@ import type { PayloadRequest } from "payload";
 import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, TreeStatus } from "../types.js";
 import { isPublishedInLocale } from "./pageRecords.js";
+import { relationIdOf } from "./relationId.js";
 
 /**
  * The tree status of a page in locale `key` (spec section 7.2): `live` for a collection without
@@ -67,7 +68,7 @@ export const readLatestStatuses = async ({
     parent: FolderId | { id: FolderId };
     version?: { _status?: unknown };
   }>) {
-    const parent = typeof doc.parent === "object" ? doc.parent.id : doc.parent;
+    const parent = relationIdOf(doc.parent);
     statuses.set(String(parent), doc.version?._status);
   }
 

@@ -4,6 +4,7 @@ import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, ItemRef, ResolvedOptions } from "../types.js";
 import { createNestedRequest } from "./nestedRequest.js";
 import { isPublishedStatus } from "./pageRecords.js";
+import { relationIdOf } from "./relationId.js";
 
 /** One question to a collection's `access.update` or `access.delete`. */
 export type AccessCheck = {
@@ -152,10 +153,10 @@ export const isPublishRefusedBeneath = async ({
       if (hasDrafts && !isPublishedStatus(row._status)) {
         continue;
       }
-      const folder =
-        typeof row.folder === "object" && row.folder
-          ? (row.folder as { id: FolderId }).id
-          : (row.folder as FolderId);
+      const folder = relationIdOf(row.folder);
+      if (folder === null) {
+        continue;
+      }
       const group = groupsByFolder.get(String(folder)) ?? { folder, ids: [] };
       group.ids.push(row.id as FolderId);
       groupsByFolder.set(String(folder), group);

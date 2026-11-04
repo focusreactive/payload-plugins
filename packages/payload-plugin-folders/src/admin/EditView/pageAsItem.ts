@@ -1,4 +1,5 @@
 import { withoutTrailingSlash } from "../../core/paths.js";
+import { relationIdOf } from "../../core/relationId.js";
 import type { FolderId, TreeItem } from "../../types.js";
 import { fetchDocument } from "../api.js";
 import type { FoldersApiContext } from "../api.js";
@@ -36,7 +37,6 @@ export const readPageAsItem = async (
   }
 ): Promise<TreeItem> => {
   const page = await fetchDocument<PageDocument>(context, { collection, id, locale });
-  const folder = page.folder;
   const segment = textOf(page[segmentField]);
 
   return {
@@ -49,12 +49,7 @@ export const readPageAsItem = async (
     isFolderRoot: Boolean(page.isFolderRoot),
     kind: "page",
     orderKey: page.orderKey ?? null,
-    parentId:
-      folder === null || folder === undefined
-        ? null
-        : typeof folder === "object"
-          ? folder.id
-          : folder,
+    parentId: relationIdOf(page.folder),
     slug: segment === "" ? null : segment,
     slugIsFallback: false,
     titleIsFallback: false,

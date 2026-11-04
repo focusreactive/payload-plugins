@@ -8,6 +8,7 @@ import type { FolderRecord } from "./folderRecords.js";
 import { getDefaultLocaleKey, getLocaleCodes, noLocaleKey } from "./locales.js";
 import { compareSiblings } from "./orderKeys.js";
 import { formatPath } from "./paths.js";
+import { relationIdOf } from "./relationId.js";
 import type { SiblingRow } from "./orderKeys.js";
 import { buildLiveInLocaleWhere, collectionHasDrafts } from "./publishedWhere.js";
 import { isForbidden, resolveReadMode } from "./readMode.js";
@@ -58,17 +59,6 @@ const pickLocalized = (value: unknown, key: string, defaultKey: string): string 
 /** One locale's value of a page field that is an object per locale when localized. */
 const valueIn = (value: unknown, key: string, defaultKey: string): string =>
   pickLocalized(value, key, defaultKey);
-
-const idOf = (value: unknown): FolderId | null => {
-  if (typeof value === "number" || typeof value === "string") {
-    return value;
-  }
-  if (value && typeof value === "object" && "id" in value) {
-    return idOf((value as { id: unknown }).id);
-  }
-
-  return null;
-};
 
 type PageRow = {
   collection: string;
@@ -160,7 +150,7 @@ const readVisiblePages = async ({
         },
       });
       for (const doc of docs as unknown as Array<Record<string, unknown>>) {
-        const folder = idOf(doc.folder);
+        const folder = relationIdOf(doc.folder);
         if (folder !== null) {
           rows.push({ folder, isFolderRoot: Boolean(doc.isFolderRoot) });
         }
@@ -230,7 +220,7 @@ const readPages = async ({
           collection: page.slug,
           createdAt: typeof doc.createdAt === "string" ? doc.createdAt : null,
           doc,
-          folder: idOf(doc.folder),
+          folder: relationIdOf(doc.folder),
           id: doc.id as FolderId,
           page,
         });

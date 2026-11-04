@@ -23,6 +23,7 @@ import {
   takenPathsOf,
 } from "./redirects.js";
 import { folderPathIn, getPageDefaultLocale, getPageLocaleKeys } from "./uniqueness.js";
+import { relationIdOf } from "./relationId.js";
 
 const descendantsWhere = (folderId: FolderId) => ({
   ancestorIds: { contains: `/${folderId}/` },
@@ -252,10 +253,7 @@ export const findPageChanges = async ({
     })) as unknown as { docs: Array<Record<string, unknown>> };
 
     for (const row of docs) {
-      const folderId =
-        typeof row.folder === "object" && row.folder
-          ? (row.folder as { id: FolderId }).id
-          : (row.folder as FolderId);
+      const folderId = relationIdOf(row.folder);
       const previous = previousById.get(String(folderId));
       const current = currentById.get(String(folderId));
       // A trashed page is not at a URL. Its path follows its folder on read, so a restore lands at

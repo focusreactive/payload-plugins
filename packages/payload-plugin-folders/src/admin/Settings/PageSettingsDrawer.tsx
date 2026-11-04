@@ -3,6 +3,7 @@ import { useEffect, useId, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import { useDialogSlug } from "../dialogScope.js";
+import { relationIdOf } from "../../core/relationId.js";
 import type { ConfirmMoves, FolderId, TreeItem } from "../../types.js";
 import {
   fetchDocument,
@@ -83,9 +84,6 @@ type FormProps = Omit<PageSettingsDrawerProps, "dialogs" | "request"> & {
 
 const textOf = (value: unknown): string => (typeof value === "string" ? value : "");
 
-const idOf = (value: FolderId | { id: FolderId } | null | undefined): FolderId | null =>
-  value === null || value === undefined ? null : typeof value === "object" ? value.id : value;
-
 const PageSettingsForm = ({
   adminRoute,
   apiContext,
@@ -112,7 +110,7 @@ const PageSettingsForm = ({
   const names = pageFields[item.collection] ?? { segmentField: "slug", titleField: "title" };
   const hasDrafts = draftCollections.includes(item.collection);
 
-  const storedParentId = idOf(page.folder);
+  const storedParentId = relationIdOf(page.folder);
   const stored: PageSettingsValues = {
     isFolderRoot: Boolean(page.isFolderRoot),
     parentId: storedParentId,

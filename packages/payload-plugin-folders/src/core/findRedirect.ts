@@ -7,6 +7,7 @@ import { noLocaleKey } from "./locales.js";
 import { formatPath, joinPath, normalizePath, prefixesOf, withoutTrailingSlash } from "./paths.js";
 import { lookupKeyOf } from "./redirects.js";
 import { getResolvedOptions } from "./runtime.js";
+import { relationIdOf } from "./relationId.js";
 
 /** Redirect hops followed at most, so a loop of rows ends instead of spinning. */
 export const maxRedirectHops = 3;
@@ -41,9 +42,6 @@ type RedirectRowDoc = {
   lookupKey: string;
   target?: { relationTo: string; value: FolderId | { id: FolderId } } | null;
 };
-
-const targetIdOf = (value: NonNullable<RedirectRowDoc["target"]>["value"]): FolderId =>
-  typeof value === "object" ? value.id : value;
 
 /**
  * The target's current path in `locale`, canonical, or null when it is gone, not published or has
@@ -128,7 +126,10 @@ const lookupOnce = async ({
     if (!row.target) {
       continue;
     }
-    const target: ItemRef = { collection: row.target.relationTo, id: targetIdOf(row.target.value) };
+    const target: ItemRef = {
+      collection: row.target.relationTo,
+      id: relationIdOf(row.target.value),
+    };
     const currentPath = await readCurrentPath({ locale, payload, target });
     if (currentPath === null) {
       continue;

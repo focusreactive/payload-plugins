@@ -14,6 +14,7 @@ import {
   sourceClauses,
 } from "./treeItems.js";
 import type { TreeRow } from "./treeItems.js";
+import { relationIdOf } from "./relationId.js";
 
 export type AncestorFolder = { fullPath: string; id: FolderId; name: string };
 
@@ -78,11 +79,8 @@ export const getAncestors = async (
   if (itemSource.kind === "folder") {
     chain = idsOfAncestors(typeof row.ancestorIds === "string" ? row.ancestorIds : null, isNumeric);
   } else {
-    const folderId =
-      typeof row.folder === "object" && row.folder
-        ? (row.folder as { id: FolderId }).id
-        : (row.folder as FolderId | null);
-    if (folderId === null || folderId === undefined) {
+    const folderId = relationIdOf(row.folder);
+    if (folderId === null) {
       return { folders: [] };
     }
     const parent = (await readFolders({ ids: [folderId], req, source: folderSource })).get(

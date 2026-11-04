@@ -12,6 +12,7 @@ import {
 } from "./publishedWhere.js";
 import { isForbidden, resolveReadMode } from "./readMode.js";
 import type { ReadModeArgs } from "./readMode.js";
+import { relationIdOf } from "./relationId.js";
 import { resolveRequestLocale } from "./resolve.js";
 import { getResolvedOptions } from "./runtime.js";
 
@@ -50,17 +51,6 @@ export type PathsPage = {
 
 const toText = (value: unknown): string => (typeof value === "string" ? value : "");
 
-const idOf = (value: unknown): FolderId | null => {
-  if (typeof value === "number" || typeof value === "string") {
-    return value;
-  }
-  if (value && typeof value === "object" && "id" in value) {
-    return idOf((value as { id: unknown }).id);
-  }
-
-  return null;
-};
-
 /** The folder at `path` in `locale`, the reader permitting; `null` when there is none. */
 const findFolderAt = async ({
   locale,
@@ -88,7 +78,7 @@ const findFolderAt = async ({
       where: { fullPath: { equals: path } },
     });
 
-    return idOf((docs[0] as { id?: unknown } | undefined)?.id);
+    return relationIdOf((docs[0] as { id?: unknown } | undefined)?.id);
   } catch (error) {
     if (isForbidden(error)) {
       return null;
