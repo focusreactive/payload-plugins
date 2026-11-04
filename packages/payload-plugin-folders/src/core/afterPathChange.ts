@@ -2,6 +2,7 @@ import { getDataLoader } from "payload";
 import type { PayloadRequest } from "payload";
 
 import type { PathChange, PathChangeReason, ResolvedOptions } from "../types.js";
+import { formatPath } from "./paths.js";
 import { runAfterCommit } from "./treeLock.js";
 
 /**
@@ -54,9 +55,17 @@ export const queueAfterPathChange = async ({
     return;
   }
 
+  // Paths are canonical inside the plugin; the host's hook is a URL hook, so it gets the URL form.
+  const { trailingSlash } = options.urls;
+  const formatted = changes.map((change) => ({
+    ...change,
+    from: change.from === null ? null : formatPath(change.from, trailingSlash),
+    to: change.to === null ? null : formatPath(change.to, trailingSlash),
+  }));
+
   await runAfterCommit(req, async () => {
     try {
-      await hook({ changes, reason, req: createPostCommitRequest(req) });
+      await hook({ changes: formatted, reason, req: createPostCommitRequest(req) });
     } catch (error) {
       req.payload.logger.error({
         err: error,

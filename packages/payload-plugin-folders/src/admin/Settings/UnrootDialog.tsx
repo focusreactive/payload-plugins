@@ -17,6 +17,7 @@ import type { FoldersApiContext } from "../api.js";
 import type { Translate } from "../compat.js";
 import { SlugField } from "../Create/SlugField.js";
 import { useSegmentCheck } from "../Create/useSegmentCheck.js";
+import { useFormatUrl } from "../urlForm.js";
 import { chooseUnrootSegment, unrootedPathOf } from "./unroot.js";
 
 export const unrootDialogSlug = "fr-folders-unroot";
@@ -63,6 +64,7 @@ const UnrootContent = ({
   translate,
 }: Omit<UnrootDialogProps, "request"> & { request: UnrootRequest }): ReactNode => {
   const { closeModal } = useModal();
+  const formatUrl = useFormatUrl();
   const slug = useDialogSlug(unrootDialogSlug);
   const formId = useId();
   const [segment, setSegment] = useState("");
@@ -173,7 +175,7 @@ const UnrootContent = ({
           </div>
           {segment === "" ? null : (
             <p className="fr-folders-field__hint" data-testid="unroot-url">
-              {translate("unrootResult", { path: resultPath })}
+              {translate("unrootResult", { path: formatUrl(resultPath) })}
             </p>
           )}
           <p className="fr-folders-field__hint" data-testid="unroot-timing">

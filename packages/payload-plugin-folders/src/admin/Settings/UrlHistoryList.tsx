@@ -6,6 +6,7 @@ import { fetchUrlHistory } from "../api.js";
 import type { FoldersApiContext, UrlHistoryEntry } from "../api.js";
 import type { Translate } from "../compat.js";
 import { formatAbsoluteTime } from "../Tree/relativeTime.js";
+import { useFormatUrl } from "../urlForm.js";
 
 type Loaded = { entries: UrlHistoryEntry[]; key: string } | { error: string; key: string };
 
@@ -29,6 +30,7 @@ export const UrlHistoryList = ({
   refreshKey?: number | string;
   translate: Translate;
 }): ReactNode => {
+  const formatUrl = useFormatUrl();
   const key = `${collection}:${id}:${refreshKey}`;
   const [loaded, setLoaded] = useState<Loaded | null>(null);
 
@@ -76,7 +78,7 @@ export const UrlHistoryList = ({
         <ul className="fr-folders-history__list" data-testid="url-history-list">
           {entries.map((entry) => (
             <li key={String(entry.id)}>
-              <code>{entry.fromPath}</code>
+              <code>{formatUrl(entry.fromPath)}</code>
               {entry.kind === "folderPrefix" ? (
                 <span className="fr-folders-muted"> {translate("urlHistoryPrefix")}</span>
               ) : null}

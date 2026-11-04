@@ -246,6 +246,10 @@ export const en = {
       '{{item}} has the segment "{{segment}}", which is not valid, and rebuilding cannot choose another.',
     repairIssueInvalidSegmentFixed:
       '{{item}} has the segment "{{segment}}", which is not valid. It will be saved as "{{fixed}}".',
+    repairIssueMirrorSlashForm:
+      "The redirect from {{path}} is in the other URL form and is rewritten to {{to}}",
+    repairIssueMirrorSlashFormTarget:
+      "The redirect from {{path}} points at {{url}}, in the other URL form, and is rewritten to point at {{to}}",
     repairIssueOrderKeyEqual: "{{count}} items in {{place}} share a position with a sibling",
     repairIssueOrderKeyInvalid: "{{count}} items in {{place}} have a position that cannot be used",
     repairIssueOrderKeyMissing: "{{count}} items in {{place}} have no position",

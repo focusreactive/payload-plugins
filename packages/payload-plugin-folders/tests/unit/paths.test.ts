@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildUrl,
+  formatPath,
   joinPath,
   normalizePath,
   parentPathOf,
@@ -9,6 +10,7 @@ import {
   prefixesOf,
   splitPath,
   toStoryblokFullSlug,
+  withoutTrailingSlash,
 } from "../../src/core/paths.js";
 
 describe("normalizePath", () => {
@@ -80,6 +82,76 @@ describe("buildUrl", () => {
     expect(buildUrl("/blog", "de", { defaultLocale: "en", localePrefix: "none" })).toBe("/blog");
     expect(buildUrl("/blog", null, { localePrefix: "all" })).toBe("/blog");
     expect(buildUrl("/", "de", { defaultLocale: "en" })).toBe("/de");
+  });
+});
+
+describe("buildUrl with trailingSlash", () => {
+  const withSlash = { defaultLocale: "en", trailingSlash: true } as const;
+
+  it("ends every path in a slash but the root of the default locale", () => {
+    expect(buildUrl("/", "de", withSlash)).toBe("/de/");
+    expect(buildUrl("/", "en", { ...withSlash, localePrefix: "all" })).toBe("/en/");
+    expect(buildUrl("/", "en", { ...withSlash, localePrefix: "none" })).toBe("/");
+    expect(buildUrl("/blog", "de", withSlash)).toBe("/de/blog/");
+    expect(buildUrl("/blog/team/", null, { trailingSlash: true })).toBe("/blog/team/");
+  });
+
+  it("gives a file-like last segment no slash", () => {
+    expect(buildUrl("/f/feed.xml", "de", withSlash)).toBe("/de/f/feed.xml");
+  });
+
+  it("answers with no slash by default and when false", () => {
+    expect(buildUrl("/blog/", "de", { defaultLocale: "en" })).toBe("/de/blog");
+    expect(buildUrl("/", "de", { defaultLocale: "en", trailingSlash: false })).toBe("/de");
+  });
+});
+
+describe("withoutTrailingSlash", () => {
+  it("strips the slashes at the end, keeps case and keeps the root", () => {
+    expect(withoutTrailingSlash("/a/B/")).toBe("/a/B");
+    expect(withoutTrailingSlash("/a//")).toBe("/a");
+    expect(withoutTrailingSlash("/a")).toBe("/a");
+    expect(withoutTrailingSlash("/")).toBe("/");
+    expect(withoutTrailingSlash("//")).toBe("/");
+    expect(withoutTrailingSlash("")).toBe("");
+  });
+});
+
+describe("formatPath", () => {
+  it("never changes the root", () => {
+    expect(formatPath("/", true)).toBe("/");
+    expect(formatPath("/", false)).toBe("/");
+  });
+
+  it("adds the slash with true and removes it with false", () => {
+    expect(formatPath("/a/b", true)).toBe("/a/b/");
+    expect(formatPath("/a/b/", true)).toBe("/a/b/");
+    expect(formatPath("/a/b", false)).toBe("/a/b");
+    expect(formatPath("/a/b/", false)).toBe("/a/b");
+  });
+
+  it("is idempotent", () => {
+    for (const trailingSlash of [true, false]) {
+      for (const path of ["/", "/a", "/a/b/", "/a/feed.xml", "/.well-known/x", "/a/v1.2-beta"]) {
+        const once = formatPath(path, trailingSlash);
+
+        expect(formatPath(once, trailingSlash)).toBe(once);
+      }
+    }
+  });
+
+  it("follows Next.js: a file-like last segment and .well-known get no slash", () => {
+    expect(formatPath("/a/feed.xml", true)).toBe("/a/feed.xml");
+    expect(formatPath("/a/feed.xml/", true)).toBe("/a/feed.xml");
+    expect(formatPath("/.well-known/x", true)).toBe("/.well-known/x");
+    expect(formatPath("/.well-known", true)).toBe("/.well-known");
+    expect(formatPath("/a/v1.2-beta", true)).toBe("/a/v1.2-beta/");
+  });
+
+  it("keeps case, and keeps an empty path empty", () => {
+    expect(formatPath("/a/About", true)).toBe("/a/About/");
+    expect(formatPath("", true)).toBe("");
+    expect(formatPath("", false)).toBe("");
   });
 });
 

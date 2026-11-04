@@ -1,6 +1,7 @@
 import { APIError } from "payload";
 import type { Endpoint } from "payload";
 
+import { formatPath } from "../core/paths.js";
 import type { ResolvedOptions } from "../types.js";
 import { badRequest, isRecord, requireUser } from "./request.js";
 
@@ -28,7 +29,14 @@ export const buildPreviewUrlEndpoint = (options: ResolvedOptions): Endpoint => (
       throw badRequest("`locale` must be a string");
     }
 
-    return Response.json({ url: buildUrl({ collection, fullPath, locale: locale ?? null }) });
+    // A client may send either form; the builder always gets the configured one.
+    return Response.json({
+      url: buildUrl({
+        collection,
+        fullPath: formatPath(fullPath, options.urls.trailingSlash),
+        locale: locale ?? null,
+      }),
+    });
   },
   method: "get",
   path: "/folders-tree/preview-url",

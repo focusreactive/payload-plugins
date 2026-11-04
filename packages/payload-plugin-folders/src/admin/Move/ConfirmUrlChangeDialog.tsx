@@ -16,6 +16,7 @@ import type { Translate } from "../compat.js";
 import type { MovePreview } from "../api.js";
 import { useDialogSlug } from "../dialogScope.js";
 import { itemKeyOf } from "../store.js";
+import { useFormatUrl } from "../urlForm.js";
 
 export const confirmDialogSlug = "fr-folders-confirm-move";
 
@@ -106,6 +107,7 @@ const ConfirmContent = ({
   slug: string;
 }) => {
   const { closeModal } = useModal();
+  const formatUrl = useFormatUrl();
   // Ticked by default, and ticked again for every move: the state lives and dies with one opening.
   const [redirects, setRedirects] = useState(true);
 
@@ -133,7 +135,8 @@ const ConfirmContent = ({
                   <ul className="fr-folders-confirm__list" data-testid="url-samples">
                     {request.preview.samples.map((sample) => (
                       <li key={`${sample.collection}:${sample.id}:${sample.locale}`}>
-                        <code>{sample.from}</code> {translate("becomes")} <code>{sample.to}</code>
+                        <code>{formatUrl(sample.from)}</code> {translate("becomes")}{" "}
+                        <code>{formatUrl(sample.to)}</code>
                         {sample.locale !== null && languageCount > 1 ? (
                           <span className="fr-folders-muted"> ({sample.locale})</span>
                         ) : null}

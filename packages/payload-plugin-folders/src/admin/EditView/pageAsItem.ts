@@ -1,3 +1,4 @@
+import { withoutTrailingSlash } from "../../core/paths.js";
 import type { FolderId, TreeItem } from "../../types.js";
 import { fetchDocument } from "../api.js";
 import type { FoldersApiContext } from "../api.js";
@@ -42,7 +43,8 @@ export const readPageAsItem = async (
     access: { delete: true, publish: true, update: true },
     collection,
     depth: null,
-    fullPath: textOf(page.fullPath),
+    // The page's `fullPath` is in the `urls.trailingSlash` form; admin logic works on canonical paths.
+    fullPath: withoutTrailingSlash(textOf(page.fullPath)),
     id,
     isFolderRoot: Boolean(page.isFolderRoot),
     kind: "page",

@@ -2,10 +2,11 @@ import { Button, toast, useDocumentInfo, useFormFields } from "@payloadcms/ui";
 import type { TextFieldClientProps } from "payload";
 import type { ReactNode } from "react";
 
-import { composeFullPath } from "../../core/paths.js";
+import { composeFullPath, withoutTrailingSlash } from "../../core/paths.js";
 import { fetchPreviewUrl } from "../api.js";
 import { useAdminRoutes, useFoldersTranslation, useLocaleCode } from "../compat.js";
 import { fullPathHintOf } from "../Settings/urlHint.js";
+import { useFormatUrl } from "../urlForm.js";
 import { useConfiguredStore, useItemLocation } from "./useItemLocation.js";
 import { useLivePage } from "./useLivePage.js";
 import "../styles.css";
@@ -31,6 +32,7 @@ export const FullPathField = ({
   const { apiBaseUrl } = useAdminRoutes();
   const { translate } = useFoldersTranslation();
   const locale = useLocaleCode();
+  const formatUrl = useFormatUrl();
   const store = useConfiguredStore(100);
   const { location } = useItemLocation({ collection: collectionSlug ?? "", id, store });
   const fullPath = useFormFields(([fields]) => fields[path]);
@@ -58,7 +60,10 @@ export const FullPathField = ({
   const shownPath =
     (live?.isPublished === true ? livePath : null) ??
     formPath ??
-    (typeof fullPath?.value === "string" && fullPath.value !== "" ? fullPath.value : null);
+    // The form's value is in the `urls.trailingSlash` form; the shown path stays canonical until it is displayed.
+    (typeof fullPath?.value === "string" && fullPath.value !== ""
+      ? withoutTrailingSlash(fullPath.value)
+      : null);
   // Until the live row is read there is nothing to compare with; a page whose live row cannot be
   // read is compared with what the form loaded.
   const hint =
@@ -75,8 +80,8 @@ export const FullPathField = ({
       return;
     }
     try {
-      await navigator.clipboard.writeText(shownPath);
-      toast.success(translate("menuCopied", { path: shownPath }));
+      await navigator.clipboard.writeText(formatUrl(shownPath));
+      toast.success(translate("menuCopied", { path: formatUrl(shownPath) }));
     } catch {
       toast.error(translate("menuCopyFailed"));
     }
@@ -104,15 +109,17 @@ export const FullPathField = ({
   return (
     <div className="fr-folders-sidebar-field" data-testid="full-path-field">
       <p className="fr-folders-sidebar-field__title">{translate("settingsFullUrl")}</p>
-      <code data-testid="full-path">{shownPath ?? translate("noUrl")}</code>
+      <code data-testid="full-path">
+        {shownPath === null ? translate("noUrl") : formatUrl(shownPath)}
+      </code>
       {hint?.kind === "change" ? (
         <p className="fr-folders-field__hint" data-testid="url-will-change">
-          {translate("fullPathWillChange", { from: hint.from, to: hint.to })}
+          {translate("fullPathWillChange", { from: formatUrl(hint.from), to: formatUrl(hint.to) })}
         </p>
       ) : null}
       {hint?.kind === "publishAt" ? (
         <p className="fr-folders-field__hint" data-testid="url-will-publish">
-          {translate("fullPathWillPublish", { to: hint.to })}
+          {translate("fullPathWillPublish", { to: formatUrl(hint.to) })}
         </p>
       ) : null}
       <div className="fr-folders-settings__actions">

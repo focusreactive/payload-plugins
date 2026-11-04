@@ -16,6 +16,7 @@ import { folderKeyOf, itemKeyOf } from "../store.js";
 import type { TreeStore, TreeStoreState } from "../store.js";
 import type { SelectionApi } from "../useSelection.js";
 import type { TreeRowModel } from "../Tree/useTreeData.js";
+import { useFormatUrl } from "../urlForm.js";
 import { buildContextMenu } from "./menuItems.js";
 import type { ContextMenuContext, ContextMenuDefinition } from "./menuItems.js";
 import { existingRootOf } from "./rootPage.js";
@@ -108,6 +109,7 @@ export const useContextMenu = ({
   typeLabels,
 }: ContextMenuOptions): ContextMenuApi => {
   const [request, setRequest] = useState<OpenRequest | null>(null);
+  const formatUrl = useFormatUrl();
 
   const item = useMemo<TreeItem | null>(() => {
     if (request === null) {
@@ -173,13 +175,14 @@ export const useContextMenu = ({
   const copyUrl = useCallback(
     async (target: TreeItem) => {
       try {
-        await navigator.clipboard.writeText(target.fullPath);
-        toast.success(translate("menuCopied", { path: target.fullPath }));
+        const url = formatUrl(target.fullPath);
+        await navigator.clipboard.writeText(url);
+        toast.success(translate("menuCopied", { path: url }));
       } catch {
         toast.error(translate("menuCopyFailed"));
       }
     },
-    [translate]
+    [formatUrl, translate]
   );
 
   const viewPage = useCallback(

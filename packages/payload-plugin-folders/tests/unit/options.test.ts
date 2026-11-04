@@ -70,7 +70,7 @@ describe("normalizeOptions", () => {
       maxDepth: 20,
       newItemPosition: "top",
       redirects: { enabled: true, mirror: null, mirrorToRedirectsPlugin: false },
-      urls: { localePrefix: "non-default" },
+      urls: { localePrefix: "non-default", trailingSlash: false },
       warnings: [],
     });
     expect(resolved.collections.pages).toMatchObject({
@@ -121,6 +121,18 @@ describe("normalizeOptions", () => {
     );
     expect(custom).not.toContain("admin");
     expect(custom).not.toContain("api");
+  });
+
+  it("takes urls.trailingSlash as a boolean and refuses anything else", () => {
+    expect(
+      normalizeOptions(buildOptions({ urls: { trailingSlash: true } }), buildConfig()).urls
+    ).toEqual({ localePrefix: "non-default", trailingSlash: true });
+
+    const problems = configErrorProblems(() =>
+      normalizeOptions(buildOptions({ urls: { trailingSlash: "true" as never } }), buildConfig())
+    );
+
+    expect(problems).toEqual(['urls.trailingSlash must be true or false, got "true".']);
   });
 
   it("errors on an unknown collection slug", () => {

@@ -144,6 +144,7 @@ export const withItemTitles = async (
         return { ...issue, items: issue.items.map(name), parentTitle: folderTitle(issue.parent) };
       }
       case "danglingRedirect":
+      case "mirrorSlashForm":
       case "treeStateRows": {
         return issue;
       }

@@ -8,6 +8,8 @@ import { readPageClaims, selectFolderWrites } from "./selectFolderWrites.js";
 import type { FolderWriteSelection } from "./selectFolderWrites.js";
 import { withItemTitles } from "./issueTitles.js";
 import { getDefaultLocaleKey, getFolderLocaleKeys, noLocaleKey } from "./locales.js";
+import { readMirrorFormDrift } from "./mirror.js";
+import type { MirrorFormDrift } from "./mirror.js";
 import { getResolvedOptions } from "./runtime.js";
 import { listIssues } from "./treeIssues.js";
 import type { IssueCounts, TreeIssue } from "./treeIssues.js";
@@ -47,6 +49,8 @@ export type TreeAnalysis = {
   folderSelection: FolderWriteSelection;
   issues: TreeIssue[];
   keyRewrites: KeyRewrite[];
+  /** Mirror rows in the other `urls.trailingSlash` form; empty for a quick pass. */
+  mirrorRows: MirrorFormDrift[];
   /** Every live page's facts; empty for a quick pass. */
   pages: PageFact[];
   /** The pages whose segment or `pathSegment` repair rewrites. */
@@ -93,6 +97,7 @@ export const analyzeTree = async (
     folderSelection: { blocked: new Map(), writes: [] },
     issues,
     keyRewrites: [],
+    mirrorRows: [],
     pageWrites: [],
     pages: [],
     redirects: [],
@@ -228,6 +233,23 @@ export const analyzeTree = async (
         ? `The redirect from ${redirect.fromPath} points at ${redirect.target.collection} ${redirect.target.id}, which no longer exists`
         : `The redirect from ${redirect.fromPath} points at nothing`,
       target: redirect.target,
+    });
+  }
+
+  analysis.mirrorRows = await readMirrorFormDrift(req, options);
+  for (const row of analysis.mirrorRows) {
+    issues.push({
+      expectedFrom: row.expectedFrom,
+      expectedUrl: row.expectedUrl,
+      fixable: true,
+      from: row.from,
+      id: row.id,
+      kind: "mirrorSlashForm",
+      message:
+        row.expectedFrom === row.from && row.url !== null
+          ? `The redirect row from ${row.from} points at ${row.url}, which is not in the urls.trailingSlash form; repair rewrites it to ${row.expectedUrl}`
+          : `The redirect row from ${row.from} is not in the urls.trailingSlash form; repair rewrites it to ${row.expectedFrom}`,
+      url: row.url,
     });
   }
 

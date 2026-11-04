@@ -81,6 +81,8 @@ export type FoldersPluginOptions = {
   urls?: {
     /** How locale prefixes are added by buildUrl() and mirrored redirect rows. Never stored. Default `non-default`. */
     localePrefix?: LocalePrefixMode;
+    /** Match the site's `trailingSlash` (next.config or vercel.json). Every URL the plugin hands out ends in `/` when true, except `/` and a file-like last segment. Never stored. Default false. */
+    trailingSlash?: boolean;
   };
   redirects?: {
     /** Default true; the confirm dialog can still untick it per move. */
@@ -118,7 +120,7 @@ export type FoldersPluginOptions = {
     confirmMoves?: ConfirmMoves;
     /** Default 100, max 1000. */
     pageSize?: number;
-    /** Builds the "View page" link. Default: none, the menu item is hidden. */
+    /** Builds the "View page" link. `fullPath` is in the `urls.trailingSlash` form, without a locale prefix. Default: none, the menu item is hidden. */
     previewUrl?: (args: { fullPath: string; locale: string | null; collection: string }) => string;
   };
   /** Keeps the schema, removes hooks, endpoints and UI. Run repairTree() after turning it back on. */
@@ -169,7 +171,7 @@ export type ResolvedOptions = {
   /** Folder names and slugs, and added segment fields, are localized. */
   localizeSegments: boolean;
   limits: { maxItemsPerMove: number; maxFoldersPerMove: number; maxSyncDocuments: number };
-  urls: { localePrefix: LocalePrefixMode };
+  urls: { localePrefix: LocalePrefixMode; trailingSlash: boolean };
   redirects: {
     enabled: boolean;
     /** What the mirror writes into; null while `mirrorToRedirectsPlugin` is off. */

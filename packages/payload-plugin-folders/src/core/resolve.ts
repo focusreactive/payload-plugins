@@ -7,7 +7,7 @@ import { readAlternates } from "./alternates.js";
 import { findRedirect } from "./findRedirect.js";
 import { normalizeFolderReference, toFolderRecord } from "./folderRecords.js";
 import { getFolderLocaleKeys, getLocaleCodes, noLocaleKey } from "./locales.js";
-import { composeFullPath, joinPath, normalizePath } from "./paths.js";
+import { composeFullPath, formatPath, joinPath, normalizePath } from "./paths.js";
 import { buildLiveInLocaleWhere } from "./publishedWhere.js";
 import { isForbidden, resolveReadMode } from "./readMode.js";
 import { getResolvedOptions } from "./runtime.js";
@@ -22,7 +22,7 @@ export type ResolveArgs = {
   locale?: string | null;
   /** Default false: access control applies. */
   overrideAccess?: boolean;
-  /** `/blog/post`, `blog/post/`, `/Blog/Post` and `/` are all accepted. */
+  /** `/blog/post`, `/blog/post/`, `blog/post`, `/Blog/Post` and `/` are all accepted; a slash alone never redirects. */
   path: string;
   /** Default null: a public read. */
   user?: User | null;
@@ -221,11 +221,14 @@ const joinPathKeepingCase = (canonical: string, segment: string): string => {
  * Spec section 10.1: the page, redirect or nothing that a URL path stands for.
  *
  * 1. The path is decoded and normalised (lowercase, one leading slash, no trailing one). A trailing
- *    slash or a missing leading one resolves in place; a path that differs in case or has repeated
- *    slashes (`//blog//team`) is a `redirect` to the collapsed lowercase one, when a page lives
- *    there. A page saved with capitals before the plugin (decision 22) answers at its own exact
- *    path first, but only when the folder part is already lowercase: `/Blog/About` redirects to
- *    `/blog/About`, which answers in place.
+ *    slash or a missing leading one resolves in place, because the framework's `trailingSlash`
+ *    redirect has already chosen the URL form and a slash redirect of the plugin's would loop
+ *    against it (the host passes route params, which never carry the slash). A path that differs
+ *    in case or has repeated slashes (`//blog//team`) is a `redirect` to the collapsed lowercase
+ *    one, when a page lives there. A page saved with capitals before the plugin (decision 22)
+ *    answers at its own exact path first, but only when the folder part is already lowercase:
+ *    `/Blog/About` redirects to `/blog/About`, which answers in place. Every path the resolver
+ *    answers (`fullPath`, `alternates`, `to`) is in the form set by `urls.trailingSlash`.
  * 2. `/` is the site root page.
  * 3. Published pages only unless `draft` is set by a signed-in user, with the user's access.
  * 4. Nothing found runs `findRedirect`, and a redirect is answered only when something live is at
@@ -253,11 +256,12 @@ export const resolvePath = async <TDoc = Record<string, unknown>>(
     return { type: "notFound" };
   }
   const canonical = normalizePath(decoded);
+  const form = (path: string): string => formatPath(path, options.urls.trailingSlash);
   const exactShape = toPathShape(decoded);
   const isCaseDifferent = exactShape !== canonical;
 
   const toPageResult = async (hit: PageHit, matchedPath: string): Promise<ResolveResult<TDoc>> => {
-    const fullPath = typeof hit.doc.fullPath === "string" ? hit.doc.fullPath : matchedPath;
+    const fullPath = form(typeof hit.doc.fullPath === "string" ? hit.doc.fullPath : matchedPath);
 
     return {
       alternates: await readAlternates({
@@ -285,7 +289,7 @@ export const resolvePath = async <TDoc = Record<string, unknown>>(
       const isFolderPartExact = exactFolderPart === exactFolderPart.toLowerCase();
 
       return hasSlashRepeats || !isFolderPartExact
-        ? { status: 301, to: legacyPath, type: "redirect" }
+        ? { status: 301, to: form(legacyPath), type: "redirect" }
         : toPageResult(legacyHit, legacyPath);
     }
   }
@@ -293,7 +297,7 @@ export const resolvePath = async <TDoc = Record<string, unknown>>(
   const hit = await lookupPage(context, canonical);
   if (hit) {
     return isCaseDifferent || hasSlashRepeats
-      ? { status: 301, to: canonical, type: "redirect" }
+      ? { status: 301, to: form(canonical), type: "redirect" }
       : toPageResult(hit, canonical);
   }
 
@@ -356,5 +360,8 @@ export const computeFullPath = async (
     segment: args.slug.trim(),
   });
 
-  return composed ?? joinPath(folderPath === "" ? "/" : folderPath);
+  return formatPath(
+    composed ?? joinPath(folderPath === "" ? "/" : folderPath),
+    options.urls.trailingSlash
+  );
 };

@@ -22,6 +22,7 @@ import {
   refusedCountOf,
   rootsOf,
 } from "./operationLogic.js";
+import { useFormatUrl } from "../urlForm.js";
 import { countText } from "./countText.js";
 
 export const deleteDialogSlug = "fr-folders-delete";
@@ -75,6 +76,7 @@ const DeleteContent = ({
   onDeleted,
   translate,
 }: Omit<DeleteDialogProps, "items" | "session"> & { items: readonly TreeItem[] }) => {
+  const formatUrl = useFormatUrl();
   const formId = useId();
   const [previewState, setPreviewState] = useState<PreviewState>({ status: "loading" });
   const [typed, setTyped] = useState("");
@@ -170,7 +172,7 @@ const DeleteContent = ({
               {isSinglePage ? (
                 <p data-testid="delete-summary">
                   {preview.publishedUrls > 0
-                    ? translate("deletePageUrlStops", { path: roots[0].fullPath })
+                    ? translate("deletePageUrlStops", { path: formatUrl(roots[0].fullPath) })
                     : translate("deletePageNoUrl")}
                 </p>
               ) : (

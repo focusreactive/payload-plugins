@@ -13,7 +13,10 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
     ? payload.config.localization.defaultLocale
     : null;
   const urlOf = (fullPath: string, locale: string | null): string =>
-    `${siteUrl}${buildUrl(fullPath, locale, { defaultLocale: defaultLocale ?? undefined })}`;
+    `${siteUrl}${buildUrl(fullPath, locale, {
+      defaultLocale: defaultLocale ?? undefined,
+      trailingSlash: process.env.FOLDERS_TRAILING_SLASH === "true",
+    })}`;
 
   return rows.map((row) => {
     const translations = rows.filter(

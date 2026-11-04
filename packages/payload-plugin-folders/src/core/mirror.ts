@@ -4,9 +4,10 @@ import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, ItemRef, MirrorTarget, PathChange, ResolvedOptions } from "../types.js";
 import { createNestedRequest } from "./nestedRequest.js";
 import { registerOperationHandler, startOperation } from "./operations.js";
-import { buildUrl } from "./paths.js";
+import { buildUrl, formatPath } from "./paths.js";
 import { hasLivePageAt } from "./resolve.js";
 import { getPageDefaultLocale } from "./uniqueness.js";
+import { pageBatchSize } from "./verifyPages.js";
 
 /** One `@payloadcms/plugin-redirects` row to write: a prefixed old path and the page that took it over. */
 export type MirrorRow = {
@@ -26,9 +27,10 @@ export type MirrorRow = {
 const keyChunkSize = 500;
 
 /**
- * The path with the frontend's locale prefix. It does not go through `buildUrl`, which lowercases:
- * a legacy `/About` is a URL visitors reached, and a redirect that starts at `/about` would never
- * match it.
+ * The path with the frontend's locale prefix, in the `urls.trailingSlash` form: the framework or
+ * the host reads these rows, so they carry the form a visitor is served. It does not go through
+ * `buildUrl` for the path, which lowercases: a legacy `/About` is a URL visitors reached, and a
+ * redirect that starts at `/about` would never match it.
  */
 const withPrefix = (
   path: string,
@@ -40,11 +42,12 @@ const withPrefix = (
     defaultLocale: getPageDefaultLocale(payload),
     localePrefix: options.urls.localePrefix,
   });
+  const { trailingSlash } = options.urls;
   if (prefix === "/") {
-    return path;
+    return formatPath(path, trailingSlash);
   }
 
-  return path === "/" ? prefix : `${prefix}${path}`;
+  return formatPath(path === "/" ? prefix : `${prefix}${path}`, trailingSlash);
 };
 
 /**
@@ -446,6 +449,152 @@ export const deleteCustomMirrorRowsTo = async ({
   }
 };
 
+/** A mirror row whose `from`, or custom `to.url`, is not in the current `urls.trailingSlash` form. */
+export type MirrorFormDrift = {
+  expectedFrom: string;
+  expectedUrl: string | null;
+  from: string;
+  id: FolderId;
+  url: string | null;
+};
+
+/**
+ * A plain site path: only these are rewritten. A value with a query, a fragment or a host is the
+ * editor's own redirect and has no form to correct.
+ */
+const isPlainSitePath = (value: unknown): value is string =>
+  typeof value === "string" &&
+  value.startsWith("/") &&
+  !value.startsWith("//") &&
+  !/[?#]/u.test(value) &&
+  !value.includes("://");
+
+/**
+ * The rows of the redirects plugin that start (or, for a custom row, end) at a plain path in the
+ * other URL form: a site that switched `urls.trailingSlash` keeps the rows it wrote before, and
+ * the framework redirects the other form before any of them can match. Reads in batches by id.
+ */
+export const readMirrorFormDrift = async (
+  req: PayloadRequest,
+  options: ResolvedOptions
+): Promise<MirrorFormDrift[]> => {
+  const { mirror } = options.redirects;
+  if (!mirror) {
+    return [];
+  }
+  const { trailingSlash } = options.urls;
+  const nested = createNestedRequest(req);
+  const drift: MirrorFormDrift[] = [];
+  let lastId: FolderId | null = null;
+
+  for (;;) {
+    const { docs } = (await req.payload.find({
+      collection: toCollectionSlug(mirror.collectionSlug),
+      depth: 0,
+      limit: pageBatchSize,
+      overrideAccess: true,
+      pagination: false,
+      req: nested,
+      select: { from: true, to: true } as never,
+      sort: "id",
+      ...(lastId === null ? {} : { where: { id: { greater_than: lastId } } }),
+    })) as unknown as {
+      docs: Array<{ from?: unknown; id: FolderId; to?: { type?: unknown; url?: unknown } | null }>;
+    };
+    if (docs.length === 0) {
+      break;
+    }
+    lastId = docs.at(-1)?.id as FolderId;
+
+    for (const doc of docs) {
+      const url = doc.to?.type === "custom" && isPlainSitePath(doc.to.url) ? doc.to.url : null;
+      const expectedUrl = url === null ? null : formatPath(url, trailingSlash);
+      const expectedFrom = isPlainSitePath(doc.from)
+        ? formatPath(doc.from, trailingSlash)
+        : String(doc.from);
+      if (expectedFrom !== doc.from || expectedUrl !== url) {
+        drift.push({ expectedFrom, expectedUrl, from: String(doc.from), id: doc.id, url });
+      }
+    }
+
+    if (docs.length < pageBatchSize) {
+      break;
+    }
+  }
+
+  return drift;
+};
+
+/**
+ * Puts the rows of `readMirrorFormDrift` in the current form, through the Local API so the host's
+ * hooks on its redirects collection run. A row whose corrected `from` another row already holds is
+ * deleted, since that row serves the path, and so is a custom row that would now point at itself.
+ */
+export const rewriteMirrorFormDrift = async ({
+  drift,
+  mirror,
+  req,
+}: {
+  drift: MirrorFormDrift[];
+  mirror: MirrorTarget;
+  req: PayloadRequest;
+}): Promise<void> => {
+  if (drift.length === 0) {
+    return;
+  }
+  const { payload } = req;
+  const nested = createNestedRequest(req);
+  const collection = toCollectionSlug(mirror.collectionSlug);
+
+  // The row that holds each corrected `from` now. A row whose `from` is already right is its own holder.
+  const holderOf = new Map<string, FolderId>();
+  for (const driftOfChunk of chunk(drift)) {
+    const { docs } = await payload.find({
+      collection,
+      depth: 0,
+      overrideAccess: true,
+      pagination: false,
+      req: nested,
+      select: { from: true } as never,
+      where: { from: { in: driftOfChunk.map((row) => row.expectedFrom) } },
+    });
+    for (const doc of docs as unknown as Array<{ from: string; id: FolderId }>) {
+      holderOf.set(doc.from, doc.id);
+    }
+  }
+
+  for (const row of drift) {
+    const pointsAtItself = row.expectedUrl !== null && row.expectedUrl === row.expectedFrom;
+    const holder = holderOf.get(row.expectedFrom);
+    if ((holder !== undefined && holder !== row.id) || pointsAtItself) {
+      await payload.delete({
+        collection,
+        depth: 0,
+        id: row.id,
+        overrideAccess: true,
+        req: nested,
+        select: { id: true } as never,
+      });
+      continue;
+    }
+    await payload.update({
+      collection,
+      data: {
+        from: row.expectedFrom,
+        ...(row.expectedUrl === null || row.expectedUrl === row.url
+          ? {}
+          : { to: { reference: null, type: "custom", url: row.expectedUrl } }),
+      } as never,
+      depth: 0,
+      id: row.id,
+      overrideAccess: true,
+      req: nested,
+      select: { id: true } as never,
+    });
+    holderOf.set(row.expectedFrom, row.id);
+  }
+};
+
 registerOperationHandler("mirrorRedirects", {
   run: async ({ options, params, req }, units) => {
     const { mirror } = options.redirects;
@@ -455,7 +604,11 @@ registerOperationHandler("mirrorRedirects", {
     }
     // The rows were planned when the operation was queued, and the site has moved on since: a page
     // may hold a path a row redirects from, and a newer row may stand where one would be written.
-    const rows = await dropRowsOnLivePaths({ req, rows: units as MirrorRow[] });
+    const rows = (await dropRowsOnLivePaths({ req, rows: units as MirrorRow[] })).map((row) => ({
+      ...row,
+      from: formatPath(row.from, options.urls.trailingSlash),
+      to: formatPath(row.to, options.urls.trailingSlash),
+    }));
     await upsertMirrorRows({
       mirror,
       notUpdatedSince: typeof params.queuedAt === "string" ? params.queuedAt : null,

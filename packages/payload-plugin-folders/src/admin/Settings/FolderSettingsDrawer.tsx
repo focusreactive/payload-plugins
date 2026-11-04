@@ -25,6 +25,7 @@ import { needsConfirmation } from "../Move/moveFlow.js";
 import type { ConfirmMoves } from "../../types.js";
 import type { DropMove } from "../Move/useMoveFlow.js";
 import type { TreeStore } from "../store.js";
+import { useFormatUrl } from "../urlForm.js";
 import { useTreeStoreState } from "../useTreeStore.js";
 import { composeFullPath } from "../../core/paths.js";
 import { folderPathOf } from "./folderPath.js";
@@ -98,6 +99,7 @@ const FolderSettingsForm = ({
   typeLabels,
 }: FormProps): ReactNode => {
   const { closeModal } = useModal();
+  const formatUrl = useFormatUrl();
   const drawerSlug = useDialogSlug(folderSettingsDrawerSlug);
   const state = useTreeStoreState(store);
   const formId = useId();
@@ -317,7 +319,7 @@ const FolderSettingsForm = ({
       />
       <div className="fr-folders-field">
         <span className="fr-folders-field__label">{translate("settingsFullUrl")}</span>
-        <code data-testid="settings-full-url">{fullUrl === "" ? "/" : fullUrl}</code>
+        <code data-testid="settings-full-url">{fullUrl === "" ? "/" : formatUrl(fullUrl)}</code>
       </div>
       <UrlHistoryList
         apiContext={apiContext}

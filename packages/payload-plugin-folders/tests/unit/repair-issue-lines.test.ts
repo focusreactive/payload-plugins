@@ -271,6 +271,53 @@ describe("the lines of the Rebuild dialog", () => {
       )
     ).toBe("The redirect from /old points at something that no longer exists (de)");
     expect(
+      describeIssue(
+        {
+          expectedFrom: "/old/",
+          expectedUrl: "/new/",
+          fixable: true,
+          from: "/old",
+          id: 3,
+          kind: "mirrorSlashForm",
+          message: "",
+          url: "/new",
+        },
+        english
+      )
+    ).toBe("The redirect from /old is in the other URL form and is rewritten to /old/");
+    expect(
+      describeIssue(
+        {
+          expectedFrom: "/old/",
+          expectedUrl: "/new/",
+          fixable: true,
+          from: "/old",
+          id: 3,
+          kind: "mirrorSlashForm",
+          message: "",
+          url: "/new",
+        },
+        german
+      )
+    ).toBe("Die Weiterleitung von /old hat die andere URL-Form und wird zu /old/ umgeschrieben");
+    expect(
+      describeIssue(
+        {
+          expectedFrom: "/feed.xml",
+          expectedUrl: "/new/",
+          fixable: true,
+          from: "/feed.xml",
+          id: 4,
+          kind: "mirrorSlashForm",
+          message: "",
+          url: "/new",
+        },
+        english
+      )
+    ).toBe(
+      "The redirect from /feed.xml points at /new, in the other URL form, and is rewritten to point at /new/"
+    );
+    expect(
       describeIssue({ fixable: false, ids: [1, 2], kind: "treeStateRows", message: "" }, english)
     ).toBe("The tree lock has 2 rows where it needs one. Delete the extra rows by hand.");
   });

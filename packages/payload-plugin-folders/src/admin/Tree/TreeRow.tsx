@@ -10,6 +10,7 @@ import type { MenuAnchor } from "../Menu/menuEntries.js";
 import { HouseIcon, MoreIcon } from "./icons.js";
 import { formatAbsoluteTime, formatRelativeTime } from "./relativeTime.js";
 import { isTextEntry, opensSettings } from "../Settings/settingsKey.js";
+import { useFormatUrl } from "../urlForm.js";
 import { pathDisplayOf } from "./rowDisplay.js";
 import type { ItemRowModel } from "./useTreeData.js";
 
@@ -114,6 +115,7 @@ export const TreeRow = ({
   typeLabels,
 }: TreeRowProps) => {
   const { expandable, expanded, item, level } = row;
+  const formatUrl = useFormatUrl();
   const isFolder = item.kind === "folder";
   const pageUrl = isFolder ? null : editViewUrl(adminRoute, item.collection, item.id);
   const pathDisplay = pathDisplayOf(item);
@@ -406,7 +408,7 @@ export const TreeRow = ({
               )}
               {isCompact ? null : pathDisplay === "path" ? (
                 <>
-                  <span className="fr-folders-path">{item.fullPath}</span>
+                  <span className="fr-folders-path">{formatUrl(item.fullPath)}</span>
                   {item.slugIsFallback ? (
                     <span
                       className="fr-folders-chip fr-folders-chip--small"

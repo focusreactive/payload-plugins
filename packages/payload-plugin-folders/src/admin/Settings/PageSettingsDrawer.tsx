@@ -24,6 +24,7 @@ import { refusalOf } from "../Move/folderPicker.js";
 import { refusalText } from "../Move/MoveDialog.js";
 import type { DropMove } from "../Move/useMoveFlow.js";
 import type { TreeStore } from "../store.js";
+import { useFormatUrl } from "../urlForm.js";
 import { useTreeStoreState } from "../useTreeStore.js";
 import { folderPathOfPage } from "./folderPath.js";
 import { pageBodyOf, planPageSettingsSave } from "./pageSettings.js";
@@ -104,6 +105,7 @@ const PageSettingsForm = ({
   typeLabels,
 }: FormProps): ReactNode => {
   const { closeModal } = useModal();
+  const formatUrl = useFormatUrl();
   const drawerSlug = useDialogSlug(pageSettingsDrawerSlug);
   const state = useTreeStoreState(store);
   const formId = useId();
@@ -305,7 +307,10 @@ const PageSettingsForm = ({
         await store.invalidate([item.parentId]);
         toast.success(
           wasDraftEdit && urlChange !== null
-            ? translate("settingsSavedDraftUrl", { from: urlChange.from, to: urlChange.to })
+            ? translate("settingsSavedDraftUrl", {
+                from: formatUrl(urlChange.from),
+                to: formatUrl(urlChange.to),
+              })
             : translate(wasDraftEdit ? "settingsSavedDraft" : "settingsSaved", {
                 title: item.title,
               })
@@ -372,12 +377,12 @@ const PageSettingsForm = ({
       />
       {isRoot ? (
         <p className="fr-folders-field__hint" data-testid="root-url">
-          {translate("settingsRootUrl", { path: folderPath })}
+          {translate("settingsRootUrl", { path: formatUrl(folderPath) })}
         </p>
       ) : null}
       {urlChange === null || isRoot !== stored.isFolderRoot ? null : (
         <p className="fr-folders-field__hint" data-testid="url-hint">
-          {translate(hintKey, { from: urlChange.from, to: urlChange.to })}
+          {translate(hintKey, { from: formatUrl(urlChange.from), to: formatUrl(urlChange.to) })}
         </p>
       )}
       <div className="fr-folders-field" data-testid="root-field">

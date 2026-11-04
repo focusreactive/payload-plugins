@@ -255,6 +255,10 @@ export const de: FoldersTranslations = {
       '{{item}} hat das Segment "{{segment}}", das ungültig ist, und das Neuerstellen kann kein anderes wählen.',
     repairIssueInvalidSegmentFixed:
       '{{item}} hat das Segment "{{segment}}", das ungültig ist. Es wird als "{{fixed}}" gespeichert.',
+    repairIssueMirrorSlashForm:
+      "Die Weiterleitung von {{path}} hat die andere URL-Form und wird zu {{to}} umgeschrieben",
+    repairIssueMirrorSlashFormTarget:
+      "Die Weiterleitung von {{path}} zeigt auf {{url}} in der anderen URL-Form und wird auf {{to}} umgestellt",
     repairIssueOrderKeyEqual:
       "{{count}} Einträge in {{place}} teilen sich eine Position mit einem anderen Eintrag",
     repairIssueOrderKeyInvalid: "{{count}} Einträge in {{place}} haben eine unbrauchbare Position",

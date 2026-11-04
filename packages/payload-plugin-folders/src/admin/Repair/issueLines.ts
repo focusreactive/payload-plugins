@@ -185,6 +185,15 @@ export const describeIssue = (issue: TreeIssue, translate: Translate): string =>
     case "danglingRedirect": {
       return `${translate("repairIssueDanglingRedirect", { path: issue.fromPath })}${localeSuffix(issue.locale, translate)}`;
     }
+    case "mirrorSlashForm": {
+      return issue.expectedFrom === issue.from && issue.url !== null
+        ? translate("repairIssueMirrorSlashFormTarget", {
+            path: issue.from,
+            to: issue.expectedUrl ?? issue.url,
+            url: issue.url,
+          })
+        : translate("repairIssueMirrorSlashForm", { path: issue.from, to: issue.expectedFrom });
+    }
     case "treeStateRows": {
       return translate("repairIssueTreeStateRows", { count: issue.ids.length });
     }

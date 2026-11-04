@@ -104,7 +104,8 @@ export const buildDevConfig = ({
       importMap: {
         autoGenerate:
           process.env.FOLDERS_TREE_VIEW !== "false" &&
-          process.env.FOLDERS_CONFIRM_MOVES === undefined,
+          process.env.FOLDERS_CONFIRM_MOVES === undefined &&
+          process.env.FOLDERS_TRAILING_SLASH === undefined,
         baseDir: dirname,
       },
       user: "users",

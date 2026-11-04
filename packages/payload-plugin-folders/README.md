@@ -258,6 +258,7 @@ Writes that skip the plugin, such as raw `payload.db` writes, migrations, and a 
 Every option, with its default. The first block is complete, so you can copy it and delete lines.
 
 ```ts
+import { buildUrl } from "@focus-reactive/payload-plugin-folders";
 import type { FoldersPluginOptions } from "@focus-reactive/payload-plugin-folders";
 
 export const options: FoldersPluginOptions = {
@@ -277,7 +278,7 @@ export const options: FoldersPluginOptions = {
   enforceAllowedTypesOnMove: true,
   localizeSegments: true,
   limits: { maxItemsPerMove: 500, maxFoldersPerMove: 2000, maxSyncDocuments: 200 },
-  urls: { localePrefix: "non-default" },
+  urls: { localePrefix: "non-default", trailingSlash: false },
   redirects: { enabled: true, mirrorToRedirectsPlugin: false },
   access: {
     move: ({ req }) => Boolean(req.user),
@@ -293,7 +294,8 @@ export const options: FoldersPluginOptions = {
     sidebarTab: { label: "Tree" },
     confirmMoves: "urlChange",
     pageSize: 100,
-    previewUrl: ({ fullPath, locale }) => `https://example.com${locale ? `/${locale}` : ""}${fullPath}`,
+    previewUrl: ({ fullPath, locale }) =>
+      `https://example.com${buildUrl(fullPath, locale, { defaultLocale: "en", trailingSlash: false })}`,
   },
   disabled: false,
 };
@@ -336,6 +338,7 @@ query read the folder with the requester's access. A reader who cannot read fold
 | `limits.maxFoldersPerMove` | `2000` | Folder rows that one move or rename may rewrite. |
 | `limits.maxSyncDocuments` | `200` | Above this many documents, publish, unpublish, delete, duplicate and the redirects mirror run as stepped batches. |
 | `urls.localePrefix` | `non-default` | How `buildUrl` and the mirrored redirect rows add a locale prefix: `none`, `non-default` or `all`. Stored paths never carry one. |
+| `urls.trailingSlash` | `false` | Set it to the site's `trailingSlash` (in `next.config`, or `vercel.json` when Vercel does the redirect). `true` ends every URL the plugin hands out with `/`: a page's `fullPath`, `resolvePath`, `getTree`, `getAllPaths`, alternates, redirect targets, mirrored redirect rows, `afterPathChange`, the preview link, Copy URL and `buildUrl` when you pass it. The site root `/` and a last segment that looks like a file (`feed.xml`) never get one, as in Next.js. Stored paths, `folderPath` and `where` values never carry it. The plugin adds no slash redirect: the framework does that. See "Trailing slashes". |
 | `redirects.enabled` | `true` | Write `folder-redirects` rows for every changed published URL. The confirm dialog can still untick it for one move. |
 | `redirects.mirrorToRedirectsPlugin` | `false` | Also write rows into `@payloadcms/plugin-redirects`. That plugin must be registered. |
 | `access.move` | none | An extra gate on every move, asked after the `update` and publish checks passed. |
@@ -365,7 +368,7 @@ on. It has trash only when every opted-in page collection has trash.
 | `name`, `slug` | Required. Localized when `localizeSegments` is on. `slug` is the folder's URL segment. |
 | `parent` | Relationship to `folders`. `null` at the top level, never `0`. Changes only through a move. |
 | `orderKey` | Fractional key among siblings. Hidden. Written by the plugin only. |
-| `fullPath` | Unique per locale, stored, written by hooks only: `/blog/2026`. |
+| `fullPath` | Unique per locale, stored, written by hooks only: `/blog/2026`. Canonical: no trailing slash, whatever `urls.trailingSlash` says. |
 | `ancestorIds` | `/<rootId>/<childId>/`, ancestors only, and `/` at the top level. Slash-delimited, so `contains /12/` is exact. |
 | `depth` | Segments in `fullPath`. A top-level folder has depth 1. |
 | `structureRevision` | Bumped by every move of this folder. |
@@ -379,8 +382,8 @@ on. It has trash only when every opted-in page collection has trash.
 | `orderKey`, `structureRevision` | Position among siblings and a stale-form guard. Written by the plugin only. |
 | `isFolderRoot` | Checkbox. The page that answers at the folder's own URL. A page with `folder: null` and `isFolderRoot: true` is the site root page `/`. One per folder. It is content: it follows drafts. |
 | `pathSegment` | The page's own segment in each locale, or null where it has none. Hidden. A fallback to the default locale is applied when you query, not stored. |
-| `folderPath` | Virtual: the folder's `fullPath`. Null at the site root. You can use it in `where`. |
-| `fullPath` | Virtual: `folderPath` plus the segment, composed on read, per locale. You cannot use it in `where`. |
+| `folderPath` | Virtual: the folder's `fullPath`, canonical (no trailing slash). Null at the site root. You can use it in `where`. |
+| `fullPath` | Virtual: `folderPath` plus the segment, composed on read, per locale, in the `urls.trailingSlash` form. You cannot use it in `where`. |
 | the segment field (`slug`) | Added only when the collection lacks it. |
 | `folderUrlHistory`, `folderDraftWarning` | Admin-only display fields. |
 
@@ -441,7 +444,8 @@ Read this before you rely on it.
 - A hook that throws is logged and never fails the save. A failed revalidation is silent.
 - The `changes` list holds a row per path and locale, so a folder rename over 980 pages reports a
   thousand rows or more in one call.
-- Paths carry no locale prefix. Run them through `buildUrl` to get the URL a visitor uses.
+- Paths carry no locale prefix and are in the `urls.trailingSlash` form. Run them through `buildUrl`
+  to get the URL a visitor uses.
 - A write that skips the plugin (raw `payload.db` writes, migrations, `disabled: true`) reports
   nothing. Run repair for those.
 
@@ -457,7 +461,7 @@ export const afterPathChange: AfterPathChange = ({ changes }) => {
   for (const change of changes) {
     for (const path of [change.from, change.to]) {
       if (path !== null) {
-        urls.add(buildUrl(path, change.locale, { defaultLocale: "en" }));
+        urls.add(buildUrl(path, change.locale, { defaultLocale: "en", trailingSlash: false }));
       }
     }
   }
@@ -484,7 +488,7 @@ the Local API, and through GraphQL where the table says so. `<id>` stands for a 
 | Folder subtree | `GET /api/folders?where[ancestorIds][contains]=/<id>/` |
 | Pages in one folder, in tree order | `where[folder][equals]=<id>&sort=orderKey` |
 | Sort a list by folder path | `sort=folderPath` |
-| A page's URL | `fullPath` on any read, also in populated relationships |
+| A page's URL | `fullPath` on any read, also in populated relationships, in the `urls.trailingSlash` form |
 | A moved or renamed URL | `GET /api/folder-redirects?where[lookupKey][in]=de:/a/b,de:/a` |
 
 Do not use `like` on `folderPath` for "starts with `/blog/`". Drizzle's `like` matches the word
@@ -609,11 +613,14 @@ The Local API helpers live in `@focus-reactive/payload-plugin-folders/server`:
 | `buildUrl`, `toStoryblokFullSlug` | URL helpers, also exported from the main entry. |
 | `moveItems`, `deleteItems`, `duplicateItems`, `publishItems`, `repairTree`, `verifyTree` | The write side, for scripts and tests. |
 
-`resolvePath` accepts `/blog/post`, `blog/post/`, `/Blog/Post` and `/`. A different case, a
-capitalised folder part or repeated slashes answer a `redirect` to the canonical path, so search
-engines see one URL. A trailing slash or a missing leading slash resolve in place. The frontend owns
-the trailing-slash policy. An unknown locale gives a 400. It looks for redirects only after the path
-resolves to nothing, so a live page always wins over a redirect row.
+`resolvePath` accepts `/blog/post`, `/blog/post/`, `blog/post`, `/Blog/Post` and `/`. A different
+case, a capitalised folder part or repeated slashes answer a `redirect` to the canonical path, so
+search engines see one URL. A trailing slash or a missing leading slash resolves in place in either
+`urls.trailingSlash` setting: the framework's own `trailingSlash` redirect has already chosen the
+form, Next passes route params without the slash, and a plugin redirect would loop against it.
+Every path it answers (`fullPath`, `alternates`, a redirect's `to`) is in the `urls.trailingSlash`
+form. An unknown locale gives a 400. It looks for redirects only after the path resolves to
+nothing, so a live page always wins over a redirect row.
 
 ### Next.js catch-all
 
@@ -632,7 +639,7 @@ export async function generateStaticParams() {
   const rows = await getAllPaths(payload, { locale: "en" });
 
   return rows.map(({ fullPath }) => ({
-    path: fullPath === "/" ? [] : fullPath.slice(1).split("/"),
+    path: fullPath.split("/").filter((segment) => segment !== ""),
   }));
 }
 
@@ -700,7 +707,7 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
 
   return rows.map((row) => ({
     lastModified: row.updatedAt,
-    url: `${siteUrl}${buildUrl(row.fullPath, row.locale, { defaultLocale: "en" })}`,
+    url: `${siteUrl}${buildUrl(row.fullPath, row.locale, { defaultLocale: "en", trailingSlash: false })}`,
   }));
 };
 
@@ -880,6 +887,40 @@ export const publicReadsPublished: Access = ({ req }) => {
 It returns null for a collection without drafts, where every row is live. The plugin's own helpers
 already apply this rule. A frontend that reads with stock queries needs it in its `read` access.
 
+### Trailing slashes
+
+Search engines treat `/a` and `/a/` as two URLs. The advice is to serve one, send the other to it
+with a permanent redirect, and link to the one you chose. What each source says is in
+[docs/trailing-slash-research.md](docs/trailing-slash-research.md).
+
+- The framework does that redirect. Next.js sends `/about/` to `/about` by default and `/about` to
+  `/about/` with `trailingSlash: true`; Vercel does it when `trailingSlash` in `vercel.json` is
+  `true` or `false`. The plugin adds no slash redirect of its own, and `resolvePath` answers a path
+  with or without the slash in place, so it cannot loop against the framework's redirect.
+- The plugin writes redirects for moves and renames only: the `folder-redirects` rows, the mirror
+  rows, and the case and repeated-slash redirects `resolvePath` answers.
+- Set `urls.trailingSlash` to what the site serves. Every URL the plugin hands out is then in that
+  one form: a page's `fullPath`, the answers of `resolvePath`, `getTree`, `getAllPaths` and
+  `findRedirect`, `alternates`, `computeFullPath`, the `afterPathChange` paths, the mirror rows, the
+  `previewUrl` argument, the URLs the admin shows and copies, and `buildUrl` when you pass it
+  `trailingSlash`.
+- What stays canonical (no trailing slash) because it is stored or compared: a folder's `fullPath`,
+  a page's `folderPath`, every `where` value, `folder-redirects` rows, and the plans and results of
+  `planMove`, move previews and `repairTree`. `resolvePath` and the `under` argument of
+  `getAllPaths` accept either form.
+- The root `/` never gets a slash, and neither does a last segment that looks like a file
+  (`feed.xml`) nor a path under `/.well-known`, as in Next.js. `/docs/v1.2-beta` is not a file by
+  Next.js's rule, so it gets one with `true`. How Vercel decides what has an extension was not
+  checked.
+- If the plugin's setting and the framework's differ, nothing loops: each URL the plugin emits costs
+  one extra hop through the framework's redirect. With `skipTrailingSlashRedirect` in Next.js, or
+  `trailingSlash` left unset on Vercel, nothing redirects the other form, and the plugin will not
+  either.
+- Nothing stored depends on the setting, so switching it needs no data migration. The redirects
+  plugin rows the mirror wrote keep the old form, and the framework's redirect hides them. Run
+  `repairTree`: it lists them as `mirrorSlashForm` and rewrites them, plain paths only, and it also
+  rewrites such rows an editor made. Then rebuild static output and the sitemap.
+
 ## Redirects and the redirects plugin mirror
 
 A move, a folder rename and a publish that changes a published URL write rows into
@@ -923,9 +964,10 @@ second lookup. Register the redirects plugin in `plugins`. The mirror needs its 
 
 ![The confirm dialog with the mirror line: "2 entries will be added to Redirects"](screenshots/g19a-08-confirm-dialog-mirror-line.png)
 
-- `from` is the old path with the locale prefix that `urls.localePrefix` gives, capitals kept. The
-  target is a `reference` to the page when the page's collection is in the redirects plugin's
-  `collections`, and otherwise a `custom` URL of the prefixed new path.
+- `from` is the old path with the locale prefix that `urls.localePrefix` gives and in the
+  `urls.trailingSlash` form, capitals kept. The target is a `reference` to the page when the page's
+  collection is in the redirects plugin's `collections`, and otherwise a `custom` URL of the
+  prefixed new path, in the same form.
 - A folder rename writes one row per page, because the redirects collection has no prefix form.
 - Rows whose `from` is now a live path are deleted after every write.
 - A delete or trash writes no row. It removes reference rows to the document and custom rows to its
@@ -1348,7 +1390,9 @@ path row. The page, version, order key and redirect checks need the full pass.
 
 Issue kinds: `folderPath`, `folderCycle`, `folderParentMissing`, `folderSlugMissing`,
 `pageSegment`, `invalidSegment`, `duplicatePath`, `multipleRootPages`, `orderKeyMissing`,
-`orderKeyEqual`, `orderKeyInvalid`, `staleVersion`, `danglingRedirect` and `treeStateRows`. Each has
+`orderKeyEqual`, `orderKeyInvalid`, `staleVersion`, `danglingRedirect`, `mirrorSlashForm` and
+`treeStateRows`. `mirrorSlashForm` is a mirror row whose path is in the other `urls.trailingSlash`
+form (see "Trailing slashes"); repair rewrites it. Each has
 `fixable` and a plain `message`. A result lists at most 100 issues per kind, and `counts` is
 complete.
 

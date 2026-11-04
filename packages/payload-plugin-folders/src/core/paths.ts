@@ -41,17 +41,46 @@ export const prefixesOf = (path: string): string[] => {
 /** Number of segments; the site root is 0. */
 export const pathDepth = (path: string): number => splitPath(path).length;
 
+/** Next.js `trailingSlash: true` never adds a slash to these (next/dist/lib/load-custom-routes.js). */
+const fileLikeSegment = /^[^/]+\.\w+$/u;
+const isWellKnownPath = (path: string): boolean =>
+  path === "/.well-known" || path.startsWith("/.well-known/");
+
+/** The path without trailing slashes; `/` stays `/`. Keeps case. */
+export const withoutTrailingSlash = (path: string): string =>
+  path.length > 1 && path.endsWith("/") ? path.replace(/\/+$/u, "") || "/" : path;
+
+/**
+ * The URL form of `urls.trailingSlash` for a canonical or already formatted path. Idempotent, keeps
+ * case, `""` stays `""`. `/` never changes; with `true` a path gets a slash unless its last segment
+ * looks like a file (`feed.xml`) or it is under `/.well-known`, as Next.js does.
+ */
+export const formatPath = (path: string, trailingSlash: boolean): string => {
+  if (path === "") {
+    return "";
+  }
+  const base = withoutTrailingSlash(path);
+  if (!trailingSlash || base === "/" || isWellKnownPath(base)) {
+    return base;
+  }
+  const lastSegment = base.slice(base.lastIndexOf("/") + 1);
+
+  return fileLikeSegment.test(lastSegment) ? base : `${base}/`;
+};
+
 export type BuildUrlOptions = {
   /** Needed for `non-default`: the locale that gets no prefix. */
   defaultLocale?: string;
   localePrefix?: LocalePrefixMode;
+  /** Match `urls.trailingSlash`. Default false. */
+  trailingSlash?: boolean;
 };
 
-/** Adds the locale prefix to a stored path. Stored paths never carry one. */
+/** Adds the locale prefix to a stored path and puts it in the `trailingSlash` form. Stored paths never carry a prefix. */
 export const buildUrl = (
   fullPath: string,
   locale: string | null,
-  { defaultLocale, localePrefix = "non-default" }: BuildUrlOptions = {}
+  { defaultLocale, localePrefix = "non-default", trailingSlash = false }: BuildUrlOptions = {}
 ): string => {
   if (localePrefix === "non-default" && locale !== null && defaultLocale === undefined) {
     throw new Error(
@@ -63,10 +92,10 @@ export const buildUrl = (
     locale !== null &&
     (localePrefix === "all" || (localePrefix === "non-default" && locale !== defaultLocale));
   if (!needsPrefix) {
-    return path;
+    return formatPath(path, trailingSlash);
   }
 
-  return path === "/" ? `/${locale}` : `/${locale}${path}`;
+  return formatPath(path === "/" ? `/${locale}` : `/${locale}${path}`, trailingSlash);
 };
 
 /** Storyblok's `full_slug`: no leading slash, and a trailing slash on a folder's root page. */

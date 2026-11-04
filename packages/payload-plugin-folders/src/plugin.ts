@@ -22,6 +22,26 @@ import type { FoldersPluginOptions } from "./types.js";
 
 export { pluginSlug } from "./constants.js";
 
+/**
+ * The admin config the plugin adds to: its sidebar tab, and the `urls.trailingSlash` option under
+ * `admin.custom`, which reaches the client config, so the browser shows URLs in the form the site
+ * serves.
+ */
+const withAdminOptions = (
+  admin: Config["admin"],
+  resolved: ReturnType<typeof normalizeOptions>
+): Config["admin"] => {
+  const withTab = withSidebarTab(admin, resolved);
+
+  return {
+    ...withTab,
+    custom: {
+      ...withTab?.custom,
+      [pluginSlug]: { trailingSlash: resolved.urls.trailingSlash },
+    },
+  };
+};
+
 type GraphqlQueries = NonNullable<NonNullable<Config["graphQL"]>["queries"]>;
 
 /** The host's own custom queries stay; the plugin's are added beside them. */
@@ -78,7 +98,7 @@ export const foldersPlugin = definePlugin<FoldersPluginOptions>({
 
     return {
       ...config,
-      admin: resolved.disabled ? config.admin : withSidebarTab(config.admin, resolved),
+      admin: resolved.disabled ? config.admin : withAdminOptions(config.admin, resolved),
       db: database,
       i18n: resolved.disabled
         ? config.i18n

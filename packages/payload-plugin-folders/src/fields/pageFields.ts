@@ -248,7 +248,7 @@ const addPageHooks = (
       buildPageAfterDelete(options.collections[collection.slug], options),
     ],
     afterOperation: [...(hooks.afterOperation ?? []), releaseUnboundTreeLockHook],
-    afterRead: [...(hooks.afterRead ?? []), buildFullPathAfterRead()],
+    afterRead: [...(hooks.afterRead ?? []), buildFullPathAfterRead(options)],
     beforeChange: [
       ...(hooks.beforeChange ?? []),
       buildStructureGuard(options.collections[collection.slug], options),

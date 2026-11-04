@@ -7,6 +7,7 @@ import { toFolderRecord } from "./folderRecords.js";
 import type { FolderRecord } from "./folderRecords.js";
 import { getDefaultLocaleKey, getLocaleCodes, noLocaleKey } from "./locales.js";
 import { compareSiblings } from "./orderKeys.js";
+import { formatPath } from "./paths.js";
 import type { SiblingRow } from "./orderKeys.js";
 import { buildLiveInLocaleWhere, collectionHasDrafts } from "./publishedWhere.js";
 import { isForbidden, resolveReadMode } from "./readMode.js";
@@ -331,18 +332,21 @@ export const getTree = async (payload: Payload, args: TreeArgs = {}): Promise<Tr
             ? Object.fromEntries(
                 codes.map((code) => [
                   code,
-                  folderPathIn(
-                    folder,
-                    options.localizeSegments ? code : noLocaleKey,
-                    options,
-                    payload
+                  formatPath(
+                    folderPathIn(
+                      folder,
+                      options.localizeSegments ? code : noLocaleKey,
+                      options,
+                      payload
+                    ),
+                    options.urls.trailingSlash
                   ),
                 ])
               )
             : undefined,
         children: [],
         collection: options.folders.slug,
-        fullPath: path,
+        fullPath: formatPath(path, options.urls.trailingSlash),
         hasPage: foldersWithRootPage.has(String(folder.id)),
         id: folder.id,
         isFolderRoot: false,

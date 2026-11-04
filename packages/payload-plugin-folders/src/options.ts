@@ -380,6 +380,14 @@ export const normalizeOptions = (
       problems.push(`limits.${name} must be a positive whole number, got ${value}.`);
     }
   }
+  if (
+    options.urls?.trailingSlash !== undefined &&
+    typeof options.urls.trailingSlash !== "boolean"
+  ) {
+    problems.push(
+      `urls.trailingSlash must be true or false, got ${JSON.stringify(options.urls.trailingSlash)}.`
+    );
+  }
   const requestedPageSize = options.admin?.pageSize ?? defaultPageSize;
   if (!isPositiveInteger(requestedPageSize)) {
     problems.push(`admin.pageSize must be a positive whole number, got ${requestedPageSize}.`);
@@ -427,7 +435,10 @@ export const normalizeOptions = (
       mirrorToRedirectsPlugin,
     },
     reservedRootSegments: deriveReservedRootSegments(config, options.reservedRootSegments ?? []),
-    urls: { localePrefix: options.urls?.localePrefix ?? "non-default" },
+    urls: {
+      localePrefix: options.urls?.localePrefix ?? "non-default",
+      trailingSlash: options.urls?.trailingSlash ?? false,
+    },
     warnings,
   };
 };

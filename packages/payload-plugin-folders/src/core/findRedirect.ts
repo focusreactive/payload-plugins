@@ -4,7 +4,7 @@ import { toCollectionSlug } from "../collectionSlug.js";
 import { folderRedirectsSlug } from "../constants.js";
 import type { FolderId, ItemRef } from "../types.js";
 import { noLocaleKey } from "./locales.js";
-import { joinPath, normalizePath, prefixesOf } from "./paths.js";
+import { formatPath, joinPath, normalizePath, prefixesOf, withoutTrailingSlash } from "./paths.js";
 import { lookupKeyOf } from "./redirects.js";
 import { getResolvedOptions } from "./runtime.js";
 
@@ -31,7 +31,7 @@ export type FoundRedirect = {
   /** The document or folder the row names. */
   target: ItemRef;
   status: 301;
-  /** The current path of the target, with the remainder of a prefix row appended. Never locale prefixed. */
+  /** The current path of the target, with the remainder of a prefix row appended, in the `urls.trailingSlash` form. Never locale prefixed. */
   to: string;
 };
 
@@ -45,7 +45,11 @@ type RedirectRowDoc = {
 const targetIdOf = (value: NonNullable<RedirectRowDoc["target"]>["value"]): FolderId =>
   typeof value === "object" ? value.id : value;
 
-/** The target's current path in `locale`, or null when it is gone, not published or has no path. */
+/**
+ * The target's current path in `locale`, canonical, or null when it is gone, not published or has
+ * no path. A page's `fullPath` arrives in the `urls.trailingSlash` form, and the hop, the loop check
+ * and `isLive` compare canonical paths.
+ */
 const readCurrentPath = async ({
   locale,
   payload,
@@ -73,7 +77,9 @@ const readCurrentPath = async ({
     return null;
   }
 
-  return typeof doc.fullPath === "string" && doc.fullPath !== "" ? doc.fullPath : null;
+  return typeof doc.fullPath === "string" && doc.fullPath !== ""
+    ? withoutTrailingSlash(doc.fullPath)
+    : null;
 };
 
 type Candidate = { remainder: string; row: RedirectRowDoc };
@@ -153,7 +159,7 @@ export const findRedirect = async (
   { isLive, locale = null, path }: FindRedirectArgs
 ): Promise<FoundRedirect | null> => {
   // Fails early on a Payload instance without the plugin, as every server function does.
-  getResolvedOptions(payload);
+  const { trailingSlash } = getResolvedOptions(payload).urls;
   // A localized app keys its rows by locale, so a call that names none reads the default locale's.
   const defaultLocale = payload.config.localization
     ? payload.config.localization.defaultLocale
@@ -167,7 +173,12 @@ export const findRedirect = async (
       return null;
     }
     if (!isLive || (await isLive(found.to))) {
-      return { hops: hop, status: 301, target: found.target, to: found.to };
+      return {
+        hops: hop,
+        status: 301,
+        target: found.target,
+        to: formatPath(found.to, trailingSlash),
+      };
     }
     current = found.to;
   }

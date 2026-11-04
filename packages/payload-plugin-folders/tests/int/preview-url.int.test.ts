@@ -41,6 +41,15 @@ describe("GET /folders-tree/preview-url with a builder", () => {
     expect(body.url).toBe("https://preview.example.test/pages/company/contact?locale=de");
   });
 
+  it("hands the builder the default form, with no trailing slash, whichever the client sent", async () => {
+    const { body } = await get(
+      harness,
+      "/folders-tree/preview-url?collection=pages&fullPath=/x/&locale=en"
+    );
+
+    expect(body.url).toBe("https://preview.example.test/pages/x?locale=en");
+  });
+
   it("passes no locale as null", async () => {
     const { body } = await get(
       harness,

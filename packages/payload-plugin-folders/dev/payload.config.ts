@@ -13,5 +13,8 @@ export default buildDevConfig({
     hooks: { afterPathChange: revalidateFrontend },
     // The dev app has @payloadcms/plugin-redirects, so a move also fills its Redirects collection.
     redirects: { mirrorToRedirectsPlugin: true },
+    // The e2e test for the URL form starts a second server with this set, which also sets Next's
+    // own `trailingSlash` (dev/next.config.mjs).
+    urls: { trailingSlash: process.env.FOLDERS_TRAILING_SLASH === "true" },
   },
 });

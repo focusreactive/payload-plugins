@@ -147,6 +147,21 @@ export type TreeIssue =
       /** The document the row names; `null` when the row names none at all. */
       target: ItemRef | null;
     }
+  | {
+      kind: "mirrorSlashForm";
+      fixable: true;
+      message: string;
+      /** The `@payloadcms/plugin-redirects` row. */
+      id: FolderId;
+      /** The row's `from` as stored. */
+      from: string;
+      /** The row's `from` in the current `urls.trailingSlash` form. */
+      expectedFrom: string;
+      /** A custom-URL row's `to.url` as stored; `null` for a row that references a document. */
+      url: string | null;
+      /** `url` in the current form. */
+      expectedUrl: string | null;
+    }
   | { kind: "treeStateRows"; fixable: false; message: string; ids: FolderId[] };
 
 export type TreeIssueKind = TreeIssue["kind"];
@@ -165,6 +180,7 @@ export const treeIssueKinds: TreeIssueKind[] = [
   "orderKeyInvalid",
   "staleVersion",
   "danglingRedirect",
+  "mirrorSlashForm",
   "treeStateRows",
 ];
 

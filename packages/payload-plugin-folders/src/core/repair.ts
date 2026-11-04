@@ -8,7 +8,7 @@ import type { FolderId, PathChange, ResolvedOptions } from "../types.js";
 import { queueAfterPathChange } from "./afterPathChange.js";
 import { withItemTitles } from "./issueTitles.js";
 import { getDefaultLocaleKey, getFolderLocaleKeys, noLocaleKey } from "./locales.js";
-import { settleMirror } from "./mirror.js";
+import { rewriteMirrorFormDrift, settleMirror } from "./mirror.js";
 import { writeKeyRewrites } from "./orderKeys.js";
 import { pathClaimKey } from "./selectFolderWrites.js";
 import {
@@ -621,6 +621,14 @@ const applyRepair = async ({
       where: { id: { in: analysis.redirects.map((redirect) => redirect.id) } },
     });
   }
+  // Before the mirror settles, so a row it frees or writes meets the corrected `from` values.
+  if (options.redirects.mirror) {
+    await rewriteMirrorFormDrift({
+      drift: analysis.mirrorRows,
+      mirror: options.redirects.mirror,
+      req,
+    });
+  }
   await settleRedirectRows({
     clear:
       isWritingRows || options.redirects.enabled ? takenPathsOf(payload, plan.planned.changes) : [],
@@ -647,6 +655,8 @@ const applyRepair = async ({
  * - Rows without an `orderKey` get keys after their keyed siblings in `createdAt` order; equal and
  *   unusable keys rebalance their siblings in the order a read shows them.
  * - Redirect rows whose target is gone are deleted.
+ * - Rows of the redirects plugin that start or end at a plain path in the other
+ *   `urls.trailingSlash` form are rewritten to the current one (the one row of a clash is kept).
  *
  * Duplicate paths, two root pages in a folder, invalid segments with no safe fix and extra
  * tree-lock rows are listed in `conflicts` and left alone. `hooks.afterPathChange` runs after the

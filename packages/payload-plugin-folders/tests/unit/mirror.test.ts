@@ -8,7 +8,8 @@ const payload = { config: { localization: { defaultLocale: "en" } } } as unknown
 
 const buildOptions = (
   localePrefix: ResolvedOptions["urls"]["localePrefix"] = "non-default",
-  isMirrorOn = true
+  isMirrorOn = true,
+  trailingSlash = false
 ): ResolvedOptions =>
   ({
     redirects: {
@@ -18,7 +19,7 @@ const buildOptions = (
         : null,
       mirrorToRedirectsPlugin: isMirrorOn,
     },
-    urls: { localePrefix },
+    urls: { localePrefix, trailingSlash },
   }) as unknown as ResolvedOptions;
 
 const pageChange = (overrides: Partial<PathChange> = {}): PathChange => ({
@@ -64,6 +65,21 @@ describe("planMirrorRows", () => {
         payload
       )[0].from
     ).toBe("/de");
+  });
+
+  it("writes both paths in the urls.trailingSlash form, the locale root included", () => {
+    const options = buildOptions("non-default", true, true);
+
+    expect(
+      planMirrorRows([pageChange({ locale: "de", from: "/old", to: "/new" })], options, payload)[0]
+    ).toMatchObject({ from: "/de/old/", path: "/old", to: "/de/new/" });
+    expect(
+      planMirrorRows([pageChange({ from: "/", locale: "de", to: "/home" })], options, payload)[0]
+        .from
+    ).toBe("/de/");
+    expect(
+      planMirrorRows([pageChange({ from: "/a/feed.xml", to: "/b" })], options, payload)[0].from
+    ).toBe("/a/feed.xml");
   });
 
   it("keeps the capitals of a legacy path, which visitors reached as written", () => {

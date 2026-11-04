@@ -172,7 +172,7 @@ describe("resolvePath", () => {
     expect(await resolve({ path: "//" })).toEqual({ status: 301, to: "/", type: "redirect" });
   });
 
-  it("repeated slashes redirect to the collapsed path, a trailing or missing slash resolves in place", async () => {
+  it("repeated slashes redirect to the collapsed path, a trailing or missing slash resolves in place in either setting (P-37)", async () => {
     const folder = await createFolder(harness.payload, {
       name: "Slashes",
       slug: uniqueName("slashes"),
@@ -197,6 +197,13 @@ describe("resolvePath", () => {
     // A trailing slash and a missing leading slash stay in place (ticket P-31).
     expect(titleOf(await resolve({ path: `${base}/team/` }))).toBe("Team");
     expect(titleOf(await resolve({ path: `${folder.slug}/team` }))).toBe("Team");
+    // The framework owns the slash redirect, so no answer of the plugin carries a trailing slash.
+    for (const path of [`${base}/team/`, `${folder.slug}/team`, `//${folder.slug}//team/`]) {
+      const answer = await resolve({ path });
+      const emitted = answer.type === "page" ? answer.fullPath : "to" in answer ? answer.to : "";
+
+      expect(emitted).not.toMatch(/.\/$/u);
+    }
     // The collapsed path can also be the case redirect's: one hop to the canonical form.
     expect(await resolve({ path: `//${String(folder.slug).toUpperCase()}//Team` })).toEqual({
       status: 301,

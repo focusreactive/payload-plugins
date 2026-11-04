@@ -14,6 +14,7 @@ import { useDialogSlug } from "../dialogScope.js";
 import { useAdminRoutes, useFoldersTranslation, useLocaleCode } from "../compat.js";
 import { UnrootDialog, unrootDialogSlug } from "../Settings/UnrootDialog.js";
 import type { UnrootRequest } from "../Settings/UnrootDialog.js";
+import { useFormatUrl } from "../urlForm.js";
 import { useConfiguredStore, useItemLocation } from "./useItemLocation.js";
 import { useRootClash } from "./useRootClash.js";
 import "../styles.css";
@@ -65,6 +66,7 @@ export const FolderRootField = ({
   const { collectionSlug, id } = useDocumentInfo();
   const { apiBaseUrl } = useAdminRoutes();
   const { translate } = useFoldersTranslation();
+  const formatUrl = useFormatUrl();
   const locale = useLocaleCode();
   const { openModal } = useModal();
   const unrootSlug = useDialogSlug(unrootDialogSlug);
@@ -155,7 +157,7 @@ export const FolderRootField = ({
       </p>
       {isRoot ? (
         <p className="fr-folders-field__hint" data-testid="root-path">
-          {translate("settingsRootUrl", { path: location?.folderPath ?? "/" })}
+          {translate("settingsRootUrl", { path: formatUrl(location?.folderPath ?? "/") })}
         </p>
       ) : null}
       <UnrootDialog

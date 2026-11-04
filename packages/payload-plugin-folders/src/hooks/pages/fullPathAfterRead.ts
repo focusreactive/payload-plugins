@@ -5,6 +5,9 @@ import type {
   SelectType,
 } from "payload";
 
+import { formatPath } from "../../core/paths.js";
+import type { ResolvedOptions } from "../../types.js";
+
 type ValuesByLocale = Record<string, unknown>;
 
 const isValuesByLocale = (value: unknown): value is ValuesByLocale =>
@@ -84,9 +87,13 @@ export const selectFullPathInputsHook: CollectionBeforeOperationHook = ({ args, 
  *
  * A read whose `select` left out one of the inputs (and did not select `fullPath`, which adds
  * them) gets no `fullPath`: a path composed from part of its inputs would be wrong.
+ *
+ * The value is in the `urls.trailingSlash` form, because it is the URL a host links with. It is
+ * virtual, so nothing stored changes; code that compares or composes paths strips it with
+ * `withoutTrailingSlash` first.
  */
 export const buildFullPathAfterRead =
-  (): CollectionAfterReadHook =>
+  (options: ResolvedOptions): CollectionAfterReadHook =>
   ({ doc, req }) => {
     if (!fullPathInputs.every((input) => input in doc)) {
       return doc;
@@ -94,13 +101,16 @@ export const buildFullPathAfterRead =
 
     const { folder, folderPath, isFolderRoot, pathSegment } = doc as Record<string, unknown>;
     const hasFolder = folder !== null && folder !== undefined;
-    const compose = (folderPathOfLocale: unknown, segmentOfLocale: unknown) =>
-      composeFullPath({
+    const compose = (folderPathOfLocale: unknown, segmentOfLocale: unknown) => {
+      const path = composeFullPath({
         folderPath: toText(folderPathOfLocale),
         hasFolder,
         isFolderRoot: Boolean(isFolderRoot),
         pathSegment: toText(segmentOfLocale),
       });
+
+      return path === null ? null : formatPath(path, options.urls.trailingSlash);
+    };
 
     if (!isValuesByLocale(folderPath) && !isValuesByLocale(pathSegment)) {
       doc.fullPath = compose(folderPath, pathSegment);
