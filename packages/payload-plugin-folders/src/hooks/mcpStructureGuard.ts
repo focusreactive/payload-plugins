@@ -48,8 +48,20 @@ const refuse = (field: RefusedField): never => {
 const isMcpRequest = (req: PayloadRequest): boolean =>
   (req.payloadAPI as string | undefined) === "MCP";
 
-const isSameRevision = (incoming: unknown, stored: number): boolean =>
-  (typeof incoming === "number" || typeof incoming === "string") && Number(incoming) === stored;
+/**
+ * A page from before the plugin reads back `structureRevision: null` (Payload fills a default only
+ * for undefined) while the plugin counts it as 0, so an agent that echoes the doc back sends null.
+ * That is the stored value, not a change.
+ */
+const isSameRevision = (incoming: unknown, stored: number): boolean => {
+  if (incoming === null || incoming === undefined) {
+    return stored === 0;
+  }
+  const revision =
+    typeof incoming === "number" || typeof incoming === "string" ? Number(incoming) : Number.NaN;
+
+  return revision === stored;
+};
 
 const isEmptyText = (value: unknown): boolean =>
   value === undefined || value === null || value === "";

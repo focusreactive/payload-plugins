@@ -183,6 +183,48 @@ describe("MCP updateDocument on a page", () => {
     });
   });
 
+  it("passes a page from before the plugin that is echoed back with a null structureRevision", async () => {
+    const { payload } = harness;
+    const products = await createFolder(payload, { slug: "products" });
+    const page = await createPage(payload, { folder: products.id, slug: "gift-cards" });
+    await payload.db.updateOne({
+      collection: "pages",
+      data: { structureRevision: null },
+      id: page.id,
+      returning: false,
+    });
+    const before = await readPage(payload, page.id);
+
+    const result = await updatePage(
+      page.id,
+      {
+        folder: products.id,
+        orderKey: before.orderKey,
+        structureRevision: null,
+        title: "Gift cards, renamed",
+      },
+      { locale: "en" }
+    );
+
+    expect(result.isError).toBe(false);
+    expect(result.text).toContain("Document updated successfully");
+    expect((await readPage(payload, page.id)).title).toBe("Gift cards, renamed");
+  });
+
+  it("still refuses a null structureRevision on a page that has been moved", async () => {
+    const { payload } = harness;
+    const products = await createFolder(payload, { slug: "products" });
+    const page = await createPage(payload, { folder: products.id, slug: "gift-cards" });
+    await payload.db.updateOne({
+      collection: "pages",
+      data: { structureRevision: 3 },
+      id: page.id,
+      returning: false,
+    });
+
+    expectRefusal(await updatePage(page.id, { structureRevision: null }), "structureRevision");
+  });
+
   it("refuses a bulk update that names the folder, through the page bulk guard", async () => {
     const { payload } = harness;
     const products = await createFolder(payload, { slug: "products" });
