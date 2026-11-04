@@ -899,9 +899,12 @@ A move, a folder rename and a publish that changes a published URL write rows in
   so a folder created at a page's old path keeps that page row, and a page at a folder's old path
   keeps that folder's prefix row. Deleting a page or a folder deletes the rows that target it, and
   writes no redirect.
-- `redirects: false` on a move request, or `context: { foldersRedirects: false }` on a Local API
-  save, writes no row. `redirects.enabled: false` turns the rows off for every write. REST has no
-  such field for a rename or a publish.
+- `redirects: false` on a move request, `?frFoldersRedirects=false` on a REST save of a folder, or
+  `context: { foldersRedirects: false }` on a Local API save, writes no row. The admin sends the
+  query parameter when the box in a folder rename's dialog is unticked. Only the value `false`
+  counts, and the parameter can only turn rows off: it cannot turn them on when
+  `redirects.enabled` is `false`, and a REST save of a page ignores it, so a rename or a publish of
+  a page has no such field. `redirects.enabled: false` turns the rows off for every write.
 
 `findRedirect(payload, { path, locale })` answers `{ to, status: 301, target, hops }` or null. One
 query reads the rows of the path and every prefix of it, an exact page row winning over the longest
@@ -1180,7 +1183,9 @@ hidden, and says why.
   the segment. The server checks the segment against its folder.
 - **Settings** (F2) opens a drawer for a folder (name, segment, parent, allowed types, lock) or a
   page (segment, root flag, folder). Renaming a folder that changes live URLs asks for confirmation
-  with the number of redirect entries it writes.
+  with the number of redirect entries it writes and a box to redirect the old URLs, ticked by
+  default. The edit view's Save button asks the same question. Unticking the box saves the rename
+  and writes no redirect rows.
 - **Set as root page** re-reads the page before it saves. When a newer draft exists it saves a draft
   instead, so an unreviewed draft never goes live. **Unset root page** always asks for the page's
   own segment, pre-filled with its stored slug when that is valid and free, and shows the resulting

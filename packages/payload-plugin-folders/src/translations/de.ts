@@ -36,9 +36,6 @@ export const de: FoldersTranslations = {
     confirmRedirectCheckbox: "Alte URLs weiterleiten",
     confirmRedirectEntries_one: "({{count}} Weiterleitung)",
     confirmRedirectEntries_other: "({{count}} Weiterleitungen)",
-    confirmRedirectsAutomatic_one: "{{count}} Weiterleitung wird für die alten URLs angelegt.",
-    confirmRedirectsAutomatic_other:
-      "{{count}} Weiterleitungen werden für die alten URLs angelegt.",
     confirmTitle_one: '{{count}} Eintrag nach "{{target}}" verschieben?',
     confirmTitle_other: '{{count}} Einträge nach "{{target}}" verschieben?',
     confirmUrlsAcrossLanguages:

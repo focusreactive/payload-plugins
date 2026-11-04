@@ -6,6 +6,7 @@ import type { OperationKind, OperationProgress } from "../core/operations.js";
 import type { RepairResult } from "../core/repair.js";
 import type { VerifyResult } from "../core/verify.js";
 import type { PublishAction, PublishPreview, PublishResult } from "../core/publish.js";
+import { redirectsParameter } from "../core/redirectsOptOut.js";
 import { isPageChangedMessage, rootPreconditionParameter } from "../core/rootPrecondition.js";
 import type { FolderId, ItemRef, TreeItem, TreeStatus } from "../types.js";
 
@@ -465,6 +466,13 @@ export const fetchLatestStatus = async (
 
   return readJsonResponse<{ _status?: string }>(response);
 };
+
+/**
+ * The query a folder save sends so the server writes no redirect rows (`redirectsParameter`):
+ * empty when the editor left the redirect box ticked, which is the server's default.
+ */
+export const redirectsQueryOf = (redirects: boolean): Record<string, string> =>
+  redirects ? {} : { [redirectsParameter]: "false" };
 
 /**
  * The query a partial root save sends so the server refuses it when the page changed after this

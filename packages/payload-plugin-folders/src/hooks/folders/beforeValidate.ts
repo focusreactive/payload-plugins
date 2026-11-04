@@ -1,6 +1,7 @@
 import type { CollectionBeforeValidateHook } from "payload";
 
 import { getDefaultLocaleKey, requestLocaleKey } from "../../core/locales.js";
+import { readRedirectsOptOut } from "../../core/redirectsOptOut.js";
 import { slugify } from "../../core/slugify.js";
 import { isEmptyText } from "../../core/structureGuard.js";
 import type { ResolvedOptions } from "../../types.js";
@@ -17,6 +18,13 @@ export const buildFolderBeforeValidate =
   ({ data, operation, originalDoc, req }) => {
     if (!data || isInternalWrite(req) || (operation !== "create" && operation !== "update")) {
       return data;
+    }
+
+    // The admin's folder saves reach Payload's own route, which has no field for this, so the choice
+    // of the confirmation dialog rides on the query. The folder's hooks and the subtree rewrite read
+    // it from the request context, the same place a Local API caller sets it.
+    if (operation === "update" && readRedirectsOptOut(req.query)) {
+      req.context.foldersRedirects = false;
     }
 
     const writeKey = requestLocaleKey(req.payload, options, req.locale);

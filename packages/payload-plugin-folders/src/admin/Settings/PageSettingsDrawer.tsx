@@ -231,7 +231,7 @@ const PageSettingsForm = ({
               },
             ],
           };
-      const isConfirmed = await confirmations.askUrlChange({
+      const answer = await confirmations.askUrlChange({
         confirmingLabel: translate("rootConfirming"),
         confirmLabel: translate(isNewRoot ? "menuSetAsRoot" : "settingsSave"),
         items: [item],
@@ -241,7 +241,7 @@ const PageSettingsForm = ({
           ? translate("rootConfirmTitle", { path: folderPath, title: item.title })
           : translate("settingsLiveConfirmTitle", { title: item.title }),
       });
-      if (!isConfirmed) {
+      if (answer === null) {
         return false;
       }
     }

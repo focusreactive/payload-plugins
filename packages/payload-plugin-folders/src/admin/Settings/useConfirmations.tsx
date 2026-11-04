@@ -26,18 +26,23 @@ export type ActionConfirmRequest = {
   title: string;
 };
 
+export type UrlChangeAnswer = { redirects: boolean };
+
 export type Confirmations = {
   /** Asks the lock question; `true` when the editor confirmed. */
   askAction: (request: Omit<ActionConfirmRequest, "id">) => Promise<boolean>;
-  /** Asks the URL-change question of the settings saves; `true` when the editor confirmed. */
-  askUrlChange: (request: Omit<ConfirmRequest, "id">) => Promise<boolean>;
+  /**
+   * Asks the URL-change question of the settings saves. Answers the redirect checkbox when the
+   * editor confirmed, `null` when the dialog closed any other way.
+   */
+  askUrlChange: (request: Omit<ConfirmRequest, "id">) => Promise<UrlChangeAnswer | null>;
   /** The dialogs; render them once, anywhere under the page. */
   dialogs: ReactNode;
 };
 
 /**
  * Two questions the settings drawers ask in the middle of a save, as promises: the save waits for
- * the answer, and closing the dialog by any other way than Confirm answers `false`.
+ * the answer, and closing the dialog by any other way than Confirm answers `false` (`null` for the URL question).
  */
 export const useConfirmations = ({
   languageCount,
@@ -51,13 +56,13 @@ export const useConfirmations = ({
   const actionConfirmSlug = useDialogSlug(settingsActionConfirmSlug);
   const [urlRequest, setUrlRequest] = useState<ConfirmRequest | null>(null);
   const [actionRequest, setActionRequest] = useState<ActionConfirmRequest | null>(null);
-  const urlAnswer = useRef<((answer: boolean) => void) | null>(null);
+  const urlAnswer = useRef<((answer: UrlChangeAnswer | null) => void) | null>(null);
   const actionAnswer = useRef<((answer: boolean) => void) | null>(null);
   const openings = useRef(0);
 
   const askUrlChange = useCallback(
     (request: Omit<ConfirmRequest, "id">) =>
-      new Promise<boolean>((resolve) => {
+      new Promise<UrlChangeAnswer | null>((resolve) => {
         openings.current += 1;
         urlAnswer.current = resolve;
         setUrlRequest({ ...request, id: openings.current });
@@ -83,7 +88,7 @@ export const useConfirmations = ({
   const isActionOpen = Boolean(modalState[actionConfirmSlug]?.isOpen);
   useEffect(() => {
     if (wasUrlOpen.current && !isUrlOpen) {
-      urlAnswer.current?.(false);
+      urlAnswer.current?.(null);
       urlAnswer.current = null;
     }
     wasUrlOpen.current = isUrlOpen;
@@ -101,8 +106,8 @@ export const useConfirmations = ({
       <ConfirmUrlChangeDialog
         busy={false}
         languageCount={languageCount}
-        onConfirm={async () => {
-          urlAnswer.current?.(true);
+        onConfirm={async (redirects) => {
+          urlAnswer.current?.({ redirects });
           urlAnswer.current = null;
         }}
         onReload={() => undefined}

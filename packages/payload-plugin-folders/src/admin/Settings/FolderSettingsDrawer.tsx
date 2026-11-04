@@ -4,7 +4,13 @@ import type { FormEvent, ReactNode } from "react";
 
 import { useDialogSlug } from "../dialogScope.js";
 import type { FolderId, TreeItem } from "../../types.js";
-import { fetchDocument, fetchSubfolderCount, previewFolderEdit, writeDocument } from "../api.js";
+import {
+  fetchDocument,
+  fetchSubfolderCount,
+  previewFolderEdit,
+  redirectsQueryOf,
+  writeDocument,
+} from "../api.js";
 import type { FoldersApiContext } from "../api.js";
 import type { Translate } from "../compat.js";
 import { AllowedTypesField } from "../Create/AllowedTypesField.js";
@@ -210,24 +216,25 @@ const FolderSettingsForm = ({
           return;
         }
       }
+      let isWritingRedirects = true;
       if (plan.renames) {
         const preview = await previewFolderEdit(apiContext, item.id, {
           locale,
           slug: edited.segment,
         });
-        if (
-          needsConfirmation(confirmMoves, preview) &&
-          !(await confirmations.askUrlChange({
+        if (needsConfirmation(confirmMoves, preview)) {
+          const answer = await confirmations.askUrlChange({
             confirmingLabel: translate("renameSaving"),
             confirmLabel: translate("renameConfirmButton"),
             items: [item],
             preview,
-            redirectsAreAutomatic: true,
             targetTitle: item.title,
             title: translate("renameConfirmTitle", { name: item.title, segment: edited.segment }),
-          }))
-        ) {
-          return;
+          });
+          if (answer === null) {
+            return;
+          }
+          isWritingRedirects = answer.redirects;
         }
       }
       if (Object.keys(plan.patch).length > 0) {
@@ -235,7 +242,7 @@ const FolderSettingsForm = ({
           body: plan.patch,
           collection: foldersSlug,
           id: item.id,
-          query: { locale },
+          query: { locale, ...redirectsQueryOf(isWritingRedirects) },
         });
         await store.invalidate([item.parentId, item.id]);
       }

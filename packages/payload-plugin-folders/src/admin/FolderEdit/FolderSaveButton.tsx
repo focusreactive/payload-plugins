@@ -13,7 +13,7 @@ import {
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 
-import { fetchSubfolderCount, previewFolderEdit } from "../api.js";
+import { fetchSubfolderCount, previewFolderEdit, redirectsQueryOf } from "../api.js";
 import { useAdminRoutes, useFoldersTranslation, useLocaleCode } from "../compat.js";
 import { useConfirmations } from "../Settings/useConfirmations.js";
 import { useLocaleCount } from "../compat.js";
@@ -31,7 +31,7 @@ const listOf = (value: unknown): string[] =>
  * subfolders says how many subfolders it sets. Everything else saves at once, as the stock button.
  */
 export const FolderSaveButton = ({ label }: { label?: string }): ReactNode => {
-  const { collectionSlug, id } = useDocumentInfo();
+  const { action, collectionSlug, id } = useDocumentInfo();
   const { apiBaseUrl } = useAdminRoutes();
   const { submit } = useForm();
   const modified = useFormModified();
@@ -53,9 +53,21 @@ export const FolderSaveButton = ({ label }: { label?: string }): ReactNode => {
   const isUpdate = operation === "update" && id !== undefined && Boolean(collectionSlug);
   const isDisabled = (operation === "update" && !modified) || isChecking;
 
+  // The form's own save URL with the redirect choice added, so the save still goes through
+  // Payload's route with every parameter the form sends.
+  const submitWith = (isWritingRedirects: boolean) => {
+    const optOut = new URLSearchParams(redirectsQueryOf(isWritingRedirects)).toString();
+    if (optOut === "" || action === undefined) {
+      void submit();
+
+      return;
+    }
+    void submit({ action: `${action}${action.includes("?") ? "&" : "?"}${optOut}` });
+  };
+
   const save = async () => {
     if (!isUpdate || !collectionSlug || id === undefined) {
-      void submit();
+      submitWith(true);
 
       return;
     }
@@ -89,28 +101,29 @@ export const FolderSaveButton = ({ label }: { label?: string }): ReactNode => {
           return;
         }
       }
+      let isWritingRedirects = true;
       const segment = typeof slug?.value === "string" ? slug.value : "";
       if (segment !== "" && segment !== slug?.initialValue) {
         const preview = await previewFolderEdit(context, id, { locale, slug: segment });
-        if (
-          (!preview.ok || preview.urlChanges.published > 0 || preview.warnings.length > 0) &&
-          !(await confirmations.askUrlChange({
+        if (!preview.ok || preview.urlChanges.published > 0 || preview.warnings.length > 0) {
+          const answer = await confirmations.askUrlChange({
             confirmingLabel: translate("renameSaving"),
             confirmLabel: translate("renameConfirmButton"),
             items: [],
             preview,
-            redirectsAreAutomatic: true,
             targetTitle: folderName,
             title: translate("renameConfirmTitle", { name: folderName, segment }),
-          }))
-        ) {
-          return;
+          });
+          if (answer === null) {
+            return;
+          }
+          isWritingRedirects = answer.redirects;
         }
       }
-      void submit();
+      submitWith(isWritingRedirects);
     } catch {
       // The preview could not be read: the save is not blocked by it, and the server checks again.
-      void submit();
+      submitWith(true);
     } finally {
       setIsChecking(false);
     }

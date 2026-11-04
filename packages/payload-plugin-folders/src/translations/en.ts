@@ -38,8 +38,6 @@ export const en = {
     confirmRedirectCheckbox: "Redirect the old URLs",
     confirmRedirectEntries_one: "({{count}} redirect entry)",
     confirmRedirectEntries_other: "({{count}} redirect entries)",
-    confirmRedirectsAutomatic_one: "{{count}} redirect entry will be added for the old URLs.",
-    confirmRedirectsAutomatic_other: "{{count}} redirect entries will be added for the old URLs.",
     confirmTitle_one: 'Move {{count}} item to "{{target}}"?',
     confirmTitle_other: 'Move {{count}} items to "{{target}}"?',
     confirmUrlsAcrossLanguages:
