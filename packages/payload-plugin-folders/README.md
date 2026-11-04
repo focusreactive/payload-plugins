@@ -1455,7 +1455,9 @@ of operations that acquired the lock.
 - `check-segment` and `check-root` look at every page, draft-only ones included, because they back
   the draft warning, and name the page that holds a segment or a root place only to a reader who
   can read it; anyone else is told "a page". A move, a move preview and a rename preview do the
-  same, and a preview's sample URLs leave out pages the reader cannot read.
+  same, and a preview's sample URLs leave out pages the reader cannot read. A delete or publish
+  preview of an item the reader cannot read answers as for an item that does not exist: zero counts
+  and no confirm word.
 - GraphQL has no locale-qualified `where` and no relationship-path `where`. Use `foldersResolve`
   and a two-step subtree query.
 - The paths endpoint is not in path order, and with `locale=all` its `limit` counts pages.

@@ -3,13 +3,13 @@ import type { CreatePayloadRequestArgs, Payload, PayloadRequest } from "payload"
 
 import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, ItemRef, ResolvedOptions } from "../types.js";
-import { findRefusedChecks, keepReadableItems } from "./access.js";
+import { findRefusedChecks, findUnreadableItems, keepReadableItems } from "./access.js";
 import type { AccessCheck } from "./access.js";
 import { getFallbackLocaleKey, getLocaleCodes, noLocaleKey } from "./locales.js";
 import { createNestedRequest } from "./nestedRequest.js";
 import { registerOperationHandler, runOrQueue } from "./operations.js";
 import type { OperationHandler } from "./operations.js";
-import { readSelection, readSelectionPages } from "./selection.js";
+import { itemKey, readSelection, readSelectionPages } from "./selection.js";
 import { getResolvedOptions } from "./runtime.js";
 import { readLatestStatuses, resolveTreeStatus } from "./status.js";
 
@@ -216,13 +216,31 @@ export const planPublish = async (
   return { folders: selection.folders.length, pages: units.length, skipped, units };
 };
 
-/** The counts a dialog states before it asks: nothing is written and no access question is asked. */
+/**
+ * The counts a dialog states before it asks: nothing is written and no write access is asked. An
+ * item the user may not read answers as a missing one does, so the counts never describe a folder
+ * the user cannot see.
+ */
 export const previewPublish = async (
   req: PayloadRequest,
   request: PublishRequest,
-  { options = getResolvedOptions(req.payload) }: { options?: ResolvedOptions } = {}
+  {
+    options = getResolvedOptions(req.payload),
+    overrideAccess = false,
+  }: { options?: ResolvedOptions; overrideAccess?: boolean } = {}
 ): Promise<PublishPreview> => {
-  const plan = await planPublish(req, request, { options, overrideAccess: true });
+  assertKnownItems(options, request.items);
+  assertKnownLocale(req.payload, request.locale);
+  const unreadable = new Set(
+    overrideAccess
+      ? []
+      : (await findUnreadableItems({ items: request.items, req })).map((item) => itemKey(item))
+  );
+  const items = request.items.filter((item) => !unreadable.has(itemKey(item)));
+  if (items.length === 0) {
+    return { folders: 0, isBatched: false, pages: 0, skipped: [] };
+  }
+  const plan = await planPublish(req, { ...request, items }, { options, overrideAccess: true });
 
   return {
     folders: plan.folders,

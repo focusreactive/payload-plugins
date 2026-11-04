@@ -207,21 +207,7 @@ const findRefusedItems = async ({
   return refused;
 };
 
-/**
- * What a delete of `items` removes (spec sections 7.10 and 9), with nothing written: every folder and
- * page beneath a selected folder, ordered for removal. Unless `overrideAccess` is true the user needs
- * `delete` access on every one of them, and a refusal aborts the whole delete with a
- * `DeleteBlockedError` that lists the refused items (references only, no title).
- */
-export const planDelete = async (
-  req: PayloadRequest,
-  request: DeleteRequest,
-  {
-    options = getResolvedOptions(req.payload),
-    overrideAccess = false,
-  }: { options?: ResolvedOptions; overrideAccess?: boolean } = {}
-): Promise<DeletePlan> => {
-  const { payload } = req;
+const assertDeletableItems = (request: DeleteRequest, options: ResolvedOptions): void => {
   if (request.items.length === 0) {
     throw new APIError("Choose at least one item to delete", 400, null, true);
   }
@@ -243,6 +229,24 @@ export const planDelete = async (
       );
     }
   }
+};
+
+/**
+ * What a delete of `items` removes (spec sections 7.10 and 9), with nothing written: every folder and
+ * page beneath a selected folder, ordered for removal. Unless `overrideAccess` is true the user needs
+ * `delete` access on every one of them, and a refusal aborts the whole delete with a
+ * `DeleteBlockedError` that lists the refused items (references only, no title).
+ */
+export const planDelete = async (
+  req: PayloadRequest,
+  request: DeleteRequest,
+  {
+    options = getResolvedOptions(req.payload),
+    overrideAccess = false,
+  }: { options?: ResolvedOptions; overrideAccess?: boolean } = {}
+): Promise<DeletePlan> => {
+  const { payload } = req;
+  assertDeletableItems(request, options);
 
   // A permanent delete takes the trashed content of the folders along: the folder's own
   // `beforeDelete` refuses a folder that anything, trashed or not, still points at. This is the
@@ -387,7 +391,27 @@ export const previewDelete = async (
   }: { options?: ResolvedOptions; overrideAccess?: boolean } = {}
 ): Promise<DeletePreview> => {
   const { payload } = req;
-  const plan = await planDelete(req, request, { options, overrideAccess: true });
+  assertDeletableItems(request, options);
+  // An item the user may not read answers as a missing one does, so a preview never tells the
+  // counts or the confirm word of a folder the user cannot see.
+  const unreadable = new Set(
+    overrideAccess
+      ? []
+      : (await findUnreadableItems({ items: request.items, req })).map((item) => itemKey(item))
+  );
+  const items = request.items.filter((item) => !unreadable.has(itemKey(item)));
+  if (items.length === 0) {
+    return {
+      confirmWord: null,
+      folders: 0,
+      inTrash: 0,
+      pages: 0,
+      publishedUrls: 0,
+      sample: [],
+      trash: isTrashEnabled(payload, options),
+    };
+  }
+  const plan = await planDelete(req, { ...request, items }, { options, overrideAccess: true });
 
   return {
     confirmWord: plan.confirmWord,

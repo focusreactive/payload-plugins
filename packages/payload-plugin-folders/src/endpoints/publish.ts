@@ -49,7 +49,7 @@ export const buildPublishEndpoint = (options: ResolvedOptions): Endpoint => ({
     };
 
     if (body.dryRun === true) {
-      return Response.json(await previewPublish(req, request, { options }));
+      return Response.json(await previewPublish(req, request, { options, overrideAccess: false }));
     }
 
     return Response.json(await applyPublish(req, request, { options, overrideAccess: false }));
