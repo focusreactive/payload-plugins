@@ -66,6 +66,37 @@ const isSameRevision = (incoming: unknown, stored: number): boolean => {
 const isEmptyText = (value: unknown): boolean =>
   value === undefined || value === null || value === "";
 
+type StoredStructure = {
+  orderKey: string | null;
+  structureRevision: number;
+} & Partial<Record<"folder" | "parent", FolderId | null>>;
+
+/** Refuses a structure value in `data` that differs from the stored row; `parentFieldName` is the field that holds the parent folder. */
+const refuseChangedStructure = (
+  data: Record<string, unknown>,
+  stored: StoredStructure,
+  parentFieldName: "folder" | "parent"
+): void => {
+  if (
+    data[parentFieldName] !== undefined &&
+    namesOtherFolder(
+      normalizeFolderReference(data[parentFieldName]),
+      stored[parentFieldName] ?? null
+    )
+  ) {
+    refuse(parentFieldName);
+  }
+  if (data.orderKey !== undefined && namesOtherOrderKey(data.orderKey, stored.orderKey)) {
+    refuse("orderKey");
+  }
+  if (
+    data.structureRevision !== undefined &&
+    !isSameRevision(data.structureRevision, stored.structureRevision)
+  ) {
+    refuse("structureRevision");
+  }
+};
+
 const isSameText = (incoming: unknown, stored: unknown): boolean =>
   incoming === stored || (isEmptyText(incoming) && isEmptyText(stored));
 
@@ -127,21 +158,7 @@ export const buildMcpStructureGuard =
     if (!stored) {
       return args;
     }
-    if (
-      data.folder !== undefined &&
-      namesOtherFolder(normalizeFolderReference(data.folder), stored.folder)
-    ) {
-      refuse("folder");
-    }
-    if (data.orderKey !== undefined && namesOtherOrderKey(data.orderKey, stored.orderKey)) {
-      refuse("orderKey");
-    }
-    if (
-      data.structureRevision !== undefined &&
-      !isSameRevision(data.structureRevision, stored.structureRevision)
-    ) {
-      refuse("structureRevision");
-    }
+    refuseChangedStructure(data, stored, "folder");
 
     return args;
   };
@@ -172,21 +189,7 @@ export const buildFolderMcpStructureGuard =
     if (!stored) {
       return args;
     }
-    if (
-      data.parent !== undefined &&
-      namesOtherFolder(normalizeFolderReference(data.parent), stored.parent)
-    ) {
-      refuse("parent");
-    }
-    if (data.orderKey !== undefined && namesOtherOrderKey(data.orderKey, stored.orderKey)) {
-      refuse("orderKey");
-    }
-    if (
-      data.structureRevision !== undefined &&
-      !isSameRevision(data.structureRevision, stored.structureRevision)
-    ) {
-      refuse("structureRevision");
-    }
+    refuseChangedStructure(data, stored, "parent");
     if (data.slug !== undefined) {
       const writeKey = requestLocaleKey(req.payload, options, req.locale);
       const defaultLocaleKey = getDefaultLocaleKey(req.payload, options);
