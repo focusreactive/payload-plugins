@@ -1425,6 +1425,9 @@ of operations that acquired the lock.
   deleted permanently; delete it from the trash to free them. The refusal calls the trashed page
   "(published)".
 - A rename that changes live URLs needs publish rights, like a move.
+- A folder rename or move leaves trashed pages out of its redirects, mirror rows, `afterPathChange`
+  report and preview counts. A trashed page's path still follows its folder, so a restore lands at
+  the new URL.
 - A stepped duplicate stores the dialog's locale. The duplicate dialog has no note for large runs.
 - A repair, a seed or the command line tool writes with no user, so a mirror batch is not queued.
 

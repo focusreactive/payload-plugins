@@ -191,7 +191,8 @@ export const writeFolderRow = async ({
 /**
  * The full paths of the pages inside the rewritten folders, before and after. One read per page
  * collection with every locale; a page's path is its folder's path plus its own segment (or the
- * folder's path alone for a root page), so nothing is written for it.
+ * folder's path alone for a root page), so nothing is written for it. Pages in the trash are left
+ * out.
  */
 export const findPageChanges = async ({
   currentById,
@@ -242,6 +243,7 @@ export const findPageChanges = async ({
         folder: true,
         isFolderRoot: true,
         pathSegment: true,
+        ...(page.trash ? { deletedAt: true } : {}),
       } as SelectType,
       where: { folder: { in: folderIds } },
     })) as unknown as { docs: Array<Record<string, unknown>> };
@@ -253,7 +255,9 @@ export const findPageChanges = async ({
           : (row.folder as FolderId);
       const previous = previousById.get(String(folderId));
       const current = currentById.get(String(folderId));
-      if (!previous || !current) {
+      // A trashed page is not at a URL. Its path follows its folder on read, so a restore lands at
+      // the new one, but no redirect, mirror row or report is owed for it.
+      if (!previous || !current || (page.trash && row.deletedAt)) {
         continue;
       }
       const segments = effectiveSegmentsOf({ segments: row.pathSegment }, pageKeys, defaultLocale);
