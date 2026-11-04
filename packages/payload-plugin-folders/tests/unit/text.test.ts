@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { textOrNull, toText } from "../../src/core/text.js";
+import { pickLocalized, textOrNull, toText } from "../../src/core/text.js";
 
 describe("toText", () => {
   it("returns a string as it is, including the empty one", () => {
@@ -25,5 +25,25 @@ describe("textOrNull", () => {
     expect(textOrNull("")).toBeNull();
     expect(textOrNull(undefined)).toBeNull();
     expect(textOrNull(4)).toBeNull();
+  });
+});
+
+describe("pickLocalized", () => {
+  it("takes the locale's own value, else the default locale's", () => {
+    const title = { de: "Titel", en: "Title", fr: "" };
+
+    expect(pickLocalized(title, "de", "en")).toBe("Titel");
+    expect(pickLocalized(title, "fr", "en")).toBe("Title");
+    expect(pickLocalized(title, "es", "en")).toBe("Title");
+  });
+
+  it("is empty when neither the locale nor the default has a value", () => {
+    expect(pickLocalized({ de: "" }, "de", "en")).toBe("");
+  });
+
+  it("gives a field that is not localized to every locale", () => {
+    expect(pickLocalized("Home", "de", "en")).toBe("Home");
+    expect(pickLocalized(undefined, "de", "en")).toBe("");
+    expect(pickLocalized(null, "de", "en")).toBe("");
   });
 });

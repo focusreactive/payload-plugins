@@ -20,6 +20,7 @@ import {
 import type { TreeRow, TreeSource, ViewLocale } from "./treeItems.js";
 import { noLocaleKey } from "./locales.js";
 import { folderPathIn } from "./uniqueness.js";
+import { pickLocalized } from "./text.js";
 
 export const defaultSearchLimit = 50;
 export const maxSearchLimit = 200;
@@ -276,17 +277,6 @@ const pathOf = (
   return doc.isFolderRoot ? folderPath || "/" : `${folderPath}/${segment}`;
 };
 
-const asText = (value: unknown, key: string, defaultKey: string): string => {
-  if (value && typeof value === "object") {
-    const byLocale = value as Record<string, unknown>;
-    const text = byLocale[key] || byLocale[defaultKey];
-
-    return typeof text === "string" ? text : "";
-  }
-
-  return typeof value === "string" ? value : "";
-};
-
 /** The exact check behind the database's `like`: every term is inside the title, segment or path. */
 const matchesEveryTerm = (
   row: TreeRow & { path: string },
@@ -300,14 +290,14 @@ const matchesEveryTerm = (
   let haystack: string[];
   if (source.kind === "folder") {
     haystack = [
-      asText(doc.name, view.folderKey, view.defaultFolderKey),
-      asText(doc.slug, view.folderKey, view.defaultFolderKey),
+      pickLocalized(doc.name, view.folderKey, view.defaultFolderKey),
+      pickLocalized(doc.slug, view.folderKey, view.defaultFolderKey),
       row.path,
     ];
   } else {
     const parentId = toFolderId(doc.folder);
     haystack = [
-      asText(
+      pickLocalized(
         doc[(source.page as NonNullable<TreeSource["page"]>).titleField],
         view.pageKey,
         view.defaultPageKey

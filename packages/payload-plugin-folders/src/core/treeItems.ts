@@ -24,7 +24,7 @@ import { effectiveSegmentsOf } from "./pageRecords.js";
 import { createNestedRequest } from "./nestedRequest.js";
 import { readLatestStatuses, resolveTreeStatus } from "./status.js";
 import { getPageDefaultLocale, pageDepthIn } from "./uniqueness.js";
-import { toText } from "./text.js";
+import { pickLocalized, toText } from "./text.js";
 import { itemKey } from "./itemKey.js";
 
 /** Rows the tree reads per query are bounded by the caller; this caps what a client may ask for. */
@@ -131,16 +131,6 @@ export const pageSelect = (source: TreeSource): SelectType => {
     ...(page ? { [page.titleField]: true } : {}),
     updatedAt: true,
   } as SelectType;
-};
-
-const pickLocalized = (value: unknown, key: string, defaultKey: string): string => {
-  if (value && typeof value === "object") {
-    const byLocale = value as Record<string, unknown>;
-
-    return toText(byLocale[key]) || toText(byLocale[defaultKey]);
-  }
-
-  return toText(value);
 };
 
 /**

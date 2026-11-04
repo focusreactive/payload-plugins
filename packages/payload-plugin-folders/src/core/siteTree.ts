@@ -16,7 +16,7 @@ import type { ReadModeArgs } from "./readMode.js";
 import { resolveRequestLocale } from "./resolve.js";
 import { getResolvedOptions } from "./runtime.js";
 import { folderPathIn, getPageDefaultLocale } from "./uniqueness.js";
-import { toText } from "./text.js";
+import { pickLocalized, toText } from "./text.js";
 
 export type TreeNode = {
   alternates?: Record<string, string>;
@@ -44,20 +44,6 @@ export type TreeArgs = ReadModeArgs & {
 };
 
 const maxTreeLevels = 20;
-
-const pickLocalized = (value: unknown, key: string, defaultKey: string): string => {
-  if (value && typeof value === "object") {
-    const byLocale = value as Record<string, unknown>;
-
-    return toText(byLocale[key]) || toText(byLocale[defaultKey]);
-  }
-
-  return toText(value);
-};
-
-/** One locale's value of a page field that is an object per locale when localized. */
-const valueIn = (value: unknown, key: string, defaultKey: string): string =>
-  pickLocalized(value, key, defaultKey);
 
 type PageRow = {
   collection: string;
@@ -358,7 +344,7 @@ export const getTree = async (payload: Payload, args: TreeArgs = {}): Promise<Tr
   }
 
   for (const row of pageRows) {
-    const path = valueIn(row.doc.fullPath, pageKey, defaultPageKey);
+    const path = pickLocalized(row.doc.fullPath, pageKey, defaultPageKey);
     if (path === "") {
       continue;
     }
