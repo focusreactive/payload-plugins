@@ -8,6 +8,7 @@ import {
   parseExpandedParam,
   savedExpandedOf,
 } from "./treeUrlState.js";
+import { useAsyncRead } from "../useAsyncRead.js";
 
 type PreferenceApi = {
   getPreference: <T = unknown>(key: string) => Promise<T>;
@@ -47,12 +48,11 @@ export const useExpandedPersistence = ({
   latest.current = { expandedParam, getPreference, zoomFolderId };
   const lastWritten = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (!isConfigured || isReady) {
-      return undefined;
-    }
-    let isCurrent = true;
-    const restore = async () => {
+  useAsyncRead(
+    async (isCurrent) => {
+      if (!isConfigured || isReady) {
+        return;
+      }
       const fromUrl = parseExpandedParam(latest.current.expandedParam);
       let folders = fromUrl;
       if (folders === null && store.getState().expanded.length === 0) {
@@ -64,7 +64,7 @@ export const useExpandedPersistence = ({
           // No saved list is the same as a closed tree.
         }
       }
-      if (!isCurrent) {
+      if (!isCurrent()) {
         return;
       }
       // The zoom is set before the tree mounts, so its first read is the zoomed folder's.
@@ -75,13 +75,9 @@ export const useExpandedPersistence = ({
       // A list that came from the address is already there; any other is written to it below.
       lastWritten.current = fromUrl === null ? null : formatExpandedParam(fromUrl);
       setIsReady(true);
-    };
-    void restore();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [isConfigured, isReady, store]);
+    },
+    [isConfigured, isReady, store]
+  );
 
   useEffect(() => {
     if (!isReady) {

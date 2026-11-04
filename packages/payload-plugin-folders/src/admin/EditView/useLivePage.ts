@@ -1,11 +1,12 @@
 import { useDocumentInfo } from "@payloadcms/ui";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import type { FolderId } from "../../types.js";
 import { fetchDocument } from "../api.js";
 import { useAdminRoutes, useLocaleCode } from "../compat.js";
 import { sharedRead } from "./sharedRead.js";
 import { toText } from "../../core/text.js";
+import { useAsyncRead } from "../useAsyncRead.js";
 
 /** The page as its live row has it: what the site serves, which the form's draft may differ from. */
 export type LivePage = {
@@ -38,12 +39,11 @@ export const useLivePage = ({
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const key = `${collection}:${id}:${locale}:${segmentField}:${String(lastUpdateTime)}`;
 
-  useEffect(() => {
-    if (collection === undefined || id === undefined) {
-      return undefined;
-    }
-    let isCurrent = true;
-    const read = async () => {
+  useAsyncRead(
+    async (isCurrent) => {
+      if (collection === undefined || id === undefined) {
+        return;
+      }
       try {
         const row = await sharedRead(`live:${key}`, () =>
           fetchDocument<Record<string, unknown> & { _status?: string }>(
@@ -51,7 +51,7 @@ export const useLivePage = ({
             { collection, draft: false, fallback: true, id, locale }
           )
         );
-        if (isCurrent) {
+        if (isCurrent()) {
           setLoaded({
             key,
             live: {
@@ -63,17 +63,13 @@ export const useLivePage = ({
           });
         }
       } catch {
-        if (isCurrent) {
+        if (isCurrent()) {
           setLoaded({ key, live: null });
         }
       }
-    };
-    void read();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [apiBaseUrl, collection, id, key, locale, segmentField]);
+    },
+    [apiBaseUrl, collection, id, key, locale, segmentField]
+  );
 
   // The previous answer stays until the next one lands, so the hint does not blink on a save.
   return loaded === null ? undefined : loaded.live;

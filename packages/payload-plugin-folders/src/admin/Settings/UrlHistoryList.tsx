@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import type { FolderId } from "../../types.js";
@@ -7,6 +7,7 @@ import type { FoldersApiContext, UrlHistoryEntry } from "../api.js";
 import type { Translate } from "../compat.js";
 import { formatAbsoluteTime } from "../Tree/relativeTime.js";
 import { useFormatUrl } from "../urlForm.js";
+import { useAsyncRead } from "../useAsyncRead.js";
 
 type Loaded = { entries: UrlHistoryEntry[]; key: string } | { error: string; key: string };
 
@@ -34,26 +35,21 @@ export const UrlHistoryList = ({
   const key = `${collection}:${id}:${refreshKey}`;
   const [loaded, setLoaded] = useState<Loaded | null>(null);
 
-  useEffect(() => {
-    let isCurrent = true;
-    const read = async () => {
+  useAsyncRead(
+    async (isCurrent) => {
       try {
         const entries = await fetchUrlHistory(apiContext, { collection, id });
-        if (isCurrent) {
+        if (isCurrent()) {
           setLoaded({ entries, key });
         }
       } catch (error) {
-        if (isCurrent) {
+        if (isCurrent()) {
           setLoaded({ error: error instanceof Error ? error.message : "", key });
         }
       }
-    };
-    void read();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [apiContext, collection, id, key]);
+    },
+    [apiContext, collection, id, key]
+  );
 
   const current = loaded?.key === key ? loaded : null;
   const entries = current && "entries" in current ? current.entries : null;

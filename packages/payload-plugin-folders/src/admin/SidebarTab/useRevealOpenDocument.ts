@@ -1,9 +1,8 @@
-import { useEffect } from "react";
-
 import { fetchAncestors } from "../api.js";
 import type { FoldersApiContext } from "../api.js";
 import type { TreeStore } from "../store.js";
 import type { OpenDocument } from "./openDocument.js";
+import { useAsyncRead } from "../useAsyncRead.js";
 
 /**
  * Opens the folders above the document that is open in the edit view, so its row is in the tree
@@ -27,24 +26,20 @@ export const useRevealOpenDocument = ({
 }): void => {
   const collection = openDocument?.collection;
   const id = openDocument?.id;
-  useEffect(() => {
-    if (!isReady || collection === undefined || id === undefined) {
-      return undefined;
-    }
-    let isCurrent = true;
-    void (async () => {
+  useAsyncRead(
+    async (isCurrent) => {
+      if (!isReady || collection === undefined || id === undefined) {
+        return;
+      }
       try {
         const { folders } = await fetchAncestors(apiContext, { item: { collection, id }, locale });
-        if (isCurrent) {
+        if (isCurrent()) {
           await Promise.all(folders.map((folder) => store.setExpanded(folder.id, true)));
         }
       } catch {
         // A page that is gone, or that this user cannot read, has no place in the tree to show.
       }
-    })();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [apiContext, collection, id, isReady, locale, store]);
+    },
+    [apiContext, collection, id, isReady, locale, store]
+  );
 };

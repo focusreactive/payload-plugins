@@ -1,5 +1,5 @@
 import { Button, Drawer, ShimmerEffect, useModal } from "@payloadcms/ui";
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import { useDialogSlug } from "../dialogScope.js";
@@ -36,6 +36,7 @@ import type { FolderSettingsValues } from "./folderSettings.js";
 import type { Confirmations } from "./useConfirmations.js";
 import { useFolderName } from "./useFolderName.js";
 import { UrlHistoryList } from "./UrlHistoryList.js";
+import { useAsyncRead } from "../useAsyncRead.js";
 
 export const folderSettingsDrawerSlug = "fr-folders-folder-settings";
 
@@ -364,9 +365,8 @@ const FolderSettingsContent = ({
   const key = `${session}`;
   const [loaded, setLoaded] = useState<Loaded | null>(null);
 
-  useEffect(() => {
-    let isCurrent = true;
-    const read = async () => {
+  useAsyncRead(
+    async (isCurrent) => {
       try {
         const [document, fallbackDocument] = await Promise.all([
           fetchDocument<FolderDocument>(apiContext, {
@@ -382,21 +382,17 @@ const FolderSettingsContent = ({
             locale,
           }).catch(() => null),
         ]);
-        if (isCurrent) {
+        if (isCurrent()) {
           setLoaded({ document, fallbackDocument, key });
         }
       } catch (error) {
-        if (isCurrent) {
+        if (isCurrent()) {
           setLoaded({ error: error instanceof Error ? error.message : "", key });
         }
       }
-    };
-    void read();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [apiContext, foldersSlug, item.id, key, locale]);
+    },
+    [apiContext, foldersSlug, item.id, key, locale]
+  );
 
   const current = loaded?.key === key ? loaded : null;
   if (current === null) {

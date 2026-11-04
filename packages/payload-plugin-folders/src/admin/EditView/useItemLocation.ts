@@ -8,6 +8,7 @@ import { getSharedTreeStore, loadedItemsOf, revisionPollIntervalMs } from "../st
 import type { TreeStore, TreeStoreState } from "../store.js";
 import { useApiContext } from "../useApiContext.js";
 import { useTreeStoreState } from "../useTreeStore.js";
+import { useAsyncRead } from "../useAsyncRead.js";
 
 /** Where a page sits: the folders above it, the top one first. */
 export type ItemLocation = {
@@ -83,15 +84,14 @@ export const useItemLocation = ({
     return store.startPolling(revisionPollIntervalMs);
   }, [store]);
 
-  useEffect(() => {
-    if (store === null || id === undefined) {
-      return undefined;
-    }
-    let isCurrent = true;
-    const read = async () => {
+  useAsyncRead(
+    async (isCurrent) => {
+      if (store === null || id === undefined) {
+        return;
+      }
       try {
         const { folders } = await fetchAncestors(apiContext, { item: { collection, id }, locale });
-        if (isCurrent) {
+        if (isCurrent()) {
           const last = folders.at(-1);
           setLoaded({
             key,
@@ -105,13 +105,9 @@ export const useItemLocation = ({
       } catch {
         // The breadcrumb keeps what it showed: the page may be gone or unreadable for this user.
       }
-    };
-    void read();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [apiContext, collection, id, key, locale, store]);
+    },
+    [apiContext, collection, id, key, locale, store]
+  );
 
   return useMemo(
     () => ({

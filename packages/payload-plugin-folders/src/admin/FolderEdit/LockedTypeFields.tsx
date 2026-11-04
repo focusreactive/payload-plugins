@@ -1,12 +1,13 @@
 import { CheckboxField, SelectField, useDocumentInfo, useFormFields } from "@payloadcms/ui";
 import type { CheckboxFieldClientProps, SelectFieldClientProps } from "payload";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { relationIdOf } from "../../core/relationId.js";
 import type { FolderId } from "../../types.js";
 import { fetchDocument } from "../api.js";
 import { useAdminRoutes, useFoldersTranslation, useLocaleCode } from "../compat.js";
+import { useAsyncRead } from "../useAsyncRead.js";
 
 /**
  * The folder whose lock owns this folder's page types, and the note that says so. `typesLockedBy`
@@ -19,32 +20,27 @@ const useTypeLock = (): { lockerName: string | null; lockerId: FolderId | null }
   const lockerId = relationIdOf(useFormFields(([fields]) => fields.typesLockedBy?.value));
   const [lockerName, setLockerName] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (lockerId === null || !collectionSlug) {
-      setLockerName(null);
+  useAsyncRead(
+    async (isCurrent) => {
+      if (lockerId === null || !collectionSlug) {
+        setLockerName(null);
 
-      return undefined;
-    }
-    let isCurrent = true;
-    const read = async () => {
+        return;
+      }
       try {
         const folder = await fetchDocument<{ name?: string | null }>(
           { baseUrl: apiBaseUrl },
           { collection: collectionSlug, id: lockerId, locale }
         );
-        if (isCurrent) {
+        if (isCurrent()) {
           setLockerName(folder.name ?? null);
         }
       } catch {
         // The note then names no folder.
       }
-    };
-    void read();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [apiBaseUrl, collectionSlug, lockerId, locale]);
+    },
+    [apiBaseUrl, collectionSlug, lockerId, locale]
+  );
 
   return { lockerId, lockerName };
 };

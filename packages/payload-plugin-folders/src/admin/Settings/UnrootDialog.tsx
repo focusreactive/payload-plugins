@@ -7,7 +7,7 @@ import {
   DialogModal,
   useModal,
 } from "@payloadcms/ui";
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import { useDialogSlug } from "../dialogScope.js";
@@ -19,6 +19,7 @@ import { SlugField } from "../Create/SlugField.js";
 import { useSegmentCheck } from "../Create/useSegmentCheck.js";
 import { useFormatUrl } from "../urlForm.js";
 import { chooseUnrootSegment, unrootedPathOf } from "./unroot.js";
+import { useAsyncRead } from "../useAsyncRead.js";
 
 export const unrootDialogSlug = "fr-folders-unroot";
 
@@ -77,9 +78,8 @@ const UnrootContent = ({
   const { collection, folderId, id, locale, storedSlug, title } = request;
 
   // Starts from the stored slug when it is valid and free, else from the title (spec section 4).
-  useEffect(() => {
-    let isCurrent = true;
-    const choose = async () => {
+  useAsyncRead(
+    async (isCurrent) => {
       try {
         const chosen = await chooseUnrootSegment({
           atSiteRoot: folderId === null,
@@ -95,26 +95,22 @@ const UnrootContent = ({
           storedSlug,
           title,
         });
-        if (isCurrent && !hasEdited.current) {
+        if (isCurrent() && !hasEdited.current) {
           setSegment(chosen);
         }
       } catch {
         // The field stays editable and its own check reports what is wrong.
-        if (isCurrent && !hasEdited.current) {
+        if (isCurrent() && !hasEdited.current) {
           setSegment(storedSlug ?? "");
         }
       } finally {
-        if (isCurrent) {
+        if (isCurrent()) {
           setIsChoosing(false);
         }
       }
-    };
-    void choose();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [apiContext, collection, folderId, id, locale, storedSlug, title]);
+    },
+    [apiContext, collection, folderId, id, locale, storedSlug, title]
+  );
 
   const check = useSegmentCheck({
     context: apiContext,

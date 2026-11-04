@@ -1,10 +1,11 @@
 import { useDocumentInfo } from "@payloadcms/ui";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import type { FolderId } from "../../types.js";
 import { fetchCheckRoot } from "../api.js";
 import { useAdminRoutes, useLocaleCode } from "../compat.js";
 import { sharedRead } from "./sharedRead.js";
+import { useAsyncRead } from "../useAsyncRead.js";
 
 /** The other page that is, or in its latest version is about to be, the folder's root page. */
 export type RootClash = { path: string; title: string };
@@ -34,31 +35,26 @@ export const useRootClash = ({
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const key = `${collection}:${id}:${locale}:${String(parent)}:${String(lastUpdateTime)}`;
 
-  useEffect(() => {
-    if (!enabled || collection === undefined || id === undefined) {
-      return undefined;
-    }
-    let isCurrent = true;
-    const read = async () => {
+  useAsyncRead(
+    async (isCurrent) => {
+      if (!enabled || collection === undefined || id === undefined) {
+        return;
+      }
       try {
         const answer = await sharedRead(`root:${key}`, () =>
           fetchCheckRoot({ baseUrl: apiBaseUrl }, { exclude: { collection, id }, locale, parent })
         );
-        if (isCurrent) {
+        if (isCurrent()) {
           setLoaded({ clash: answer.ok ? null : (answer.conflict ?? null), key });
         }
       } catch {
-        if (isCurrent) {
+        if (isCurrent()) {
           setLoaded({ clash: null, key });
         }
       }
-    };
-    void read();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [apiBaseUrl, collection, enabled, id, key, locale, parent]);
+    },
+    [apiBaseUrl, collection, enabled, id, key, locale, parent]
+  );
 
   return enabled && loaded !== null ? loaded.clash : null;
 };

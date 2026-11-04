@@ -1,9 +1,10 @@
 import { useConfig, useDocumentInfo, useDocumentTitle } from "@payloadcms/ui";
-import { useEffect } from "react";
+
 import type { ReactNode } from "react";
 
 import { fetchDocument } from "../api.js";
 import { useAdminRoutes } from "../compat.js";
+import { useAsyncRead } from "../useAsyncRead.js";
 
 /**
  * A folder that has no name in the language the admin is in gets its id as the heading, because
@@ -20,30 +21,25 @@ export const FolderTitleFallback = (): ReactNode => {
   const defaultLocale = config.localization ? config.localization.defaultLocale : null;
   const hasIdAsTitle = id !== undefined && title === String(id);
 
-  useEffect(() => {
-    if (!hasIdAsTitle || id === undefined || !collectionSlug || defaultLocale === null) {
-      return undefined;
-    }
-    let isCurrent = true;
-    const read = async () => {
+  useAsyncRead(
+    async (isCurrent) => {
+      if (!hasIdAsTitle || id === undefined || !collectionSlug || defaultLocale === null) {
+        return;
+      }
       try {
         const folder = await fetchDocument<{ name?: string | null }>(
           { baseUrl: apiBaseUrl },
           { collection: collectionSlug, draft: false, id, locale: defaultLocale }
         );
-        if (isCurrent && folder.name) {
+        if (isCurrent() && folder.name) {
           setDocumentTitle(folder.name);
         }
       } catch {
         // The heading stays as Payload made it.
       }
-    };
-    void read();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [apiBaseUrl, collectionSlug, defaultLocale, hasIdAsTitle, id, setDocumentTitle]);
+    },
+    [apiBaseUrl, collectionSlug, defaultLocale, hasIdAsTitle, id, setDocumentTitle]
+  );
 
   return null;
 };

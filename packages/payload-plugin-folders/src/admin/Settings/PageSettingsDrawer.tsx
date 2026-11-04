@@ -1,5 +1,5 @@
 import { Button, CheckboxInput, Drawer, ShimmerEffect, toast, useModal } from "@payloadcms/ui";
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import { useDialogSlug } from "../dialogScope.js";
@@ -36,6 +36,7 @@ import type { Confirmations } from "./useConfirmations.js";
 import { useFolderName } from "./useFolderName.js";
 import { urlChangeOf } from "./urlHint.js";
 import { toText } from "../../core/text.js";
+import { useAsyncRead } from "../useAsyncRead.js";
 
 export const pageSettingsDrawerSlug = "fr-folders-page-settings";
 
@@ -464,9 +465,8 @@ const PageSettingsContent = ({
   const key = `${session}`;
   const [loaded, setLoaded] = useState<Loaded | null>(null);
 
-  useEffect(() => {
-    let isCurrent = true;
-    const read = async () => {
+  useAsyncRead(
+    async (isCurrent) => {
       try {
         const [document, fallbackDocument] = await Promise.all([
           fetchDocument<PageDocument>(apiContext, {
@@ -482,21 +482,17 @@ const PageSettingsContent = ({
             locale,
           }).catch(() => null),
         ]);
-        if (isCurrent) {
+        if (isCurrent()) {
           setLoaded({ document, fallbackDocument, key });
         }
       } catch (error) {
-        if (isCurrent) {
+        if (isCurrent()) {
           setLoaded({ error: error instanceof Error ? error.message : "", key });
         }
       }
-    };
-    void read();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [apiContext, item.collection, item.id, key, locale]);
+    },
+    [apiContext, item.collection, item.id, key, locale]
+  );
 
   const current = loaded?.key === key ? loaded : null;
   if (current === null) {
