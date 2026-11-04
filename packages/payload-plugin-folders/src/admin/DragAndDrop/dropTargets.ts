@@ -46,6 +46,16 @@ export type DropResolution = {
 };
 
 /**
+ * The rows a paste moves: the cut rows as the store holds them now, less the rows inside another
+ * cut folder, which travel with it and are not checked on their own.
+ */
+export const pastedItemsOf = (cut: readonly TreeItem[], state: TreeStoreState): TreeItem[] => {
+  const loaded = new Map(loadedItemsOf(state).map((row) => [itemKeyOf(row), row]));
+
+  return rootsOfSelection(cut.map((row) => loaded.get(itemKeyOf(row)) ?? row));
+};
+
+/**
  * The rows a drag carries. Dragging a ticked row carries the whole selection (spec section 7.3),
  * less the rows inside another ticked folder, which travel with it; dragging any other row carries
  * that row alone and leaves the selection as it is.

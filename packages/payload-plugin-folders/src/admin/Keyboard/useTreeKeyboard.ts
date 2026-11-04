@@ -6,7 +6,7 @@ import type { TreeItem } from "../../types.js";
 import { editViewUrl } from "../compat.js";
 import type { Translate } from "../compat.js";
 import { dropRefusalText } from "../DragAndDrop/dropRefusalText.js";
-import { resolveDrop } from "../DragAndDrop/dropTargets.js";
+import { pastedItemsOf, resolveDrop } from "../DragAndDrop/dropTargets.js";
 import type { DropRules } from "../DragAndDrop/dropTargets.js";
 import type { DropMove } from "../Move/useMoveFlow.js";
 import { isTextEntry } from "../Settings/settingsKey.js";
@@ -462,8 +462,7 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
           }
           consume();
           const cut = cutRef.current;
-          const loaded = new Map(loadedItemsOf(current.state).map((row) => [itemKeyOf(row), row]));
-          const dragged = cut.map((row) => loaded.get(itemKeyOf(row)) ?? row);
+          const dragged = pastedItemsOf(cut, current.state);
           const resolution = resolveDrop({
             dragged,
             over: { key: focusedRow.key, zone: item.kind === "folder" ? "inside" : "after" },

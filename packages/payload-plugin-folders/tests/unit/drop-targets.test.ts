@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   crumbKeyOf,
   draggedItemsOf,
+  pastedItemsOf,
   resolveCrumbDrop,
   resolveDrop,
 } from "../../src/admin/DragAndDrop/dropTargets.js";
@@ -344,6 +345,38 @@ describe("the dragged set", () => {
     const carried = draggedItemsOf(gamma, [alpha, beta]);
 
     expect(carried).toEqual({ isSelection: false, items: [gamma] });
+  });
+});
+
+describe("the pasted set", () => {
+  it("leaves out a cut row that sits inside another cut folder, so it is not checked on its own", () => {
+    const { alpha, blog, shop, state } = fixture();
+    const sibling = page(40, "Alpha Twin", shopId, 2, {
+      ancestorIds: `/${shopId}/`,
+      slug: "alpha",
+    });
+    const withSibling: TreeStoreState = {
+      ...state,
+      childrenByFolder: { ...state.childrenByFolder, [shopId]: entryOf([sibling]) },
+    };
+    const cut = [blog, alpha];
+
+    // Alpha travels inside Blog and stays at /shop/blog/alpha, so Shop's own alpha is no conflict.
+    const roomy = { maxDepth: 10 };
+    expect(drop(withSibling, cut, shop, "inside", roomy)?.refusal).toMatchObject({
+      kind: "conflict",
+    });
+    const pasted = pastedItemsOf(cut, withSibling);
+    expect(pasted.map((item) => item.title)).toEqual(["Blog"]);
+    expect(drop(withSibling, pasted, shop, "inside", roomy)?.refusal).toBeNull();
+  });
+
+  it("takes each row as the store holds it now", () => {
+    const { alpha, state } = fixture();
+    const stale: TreeItem = { ...alpha, title: "Old title" };
+
+    expect(pastedItemsOf([stale], state)).toEqual([alpha]);
+    expect(pastedItemsOf([stale], { ...state, childrenByFolder: {} })).toEqual([stale]);
   });
 });
 
