@@ -357,6 +357,19 @@ stored one:
   the hook, and `previewRename` answers a draft-only rename with `needsConfirmation: false` anyway.
   A name-only change passes: it changes no URL.
 
+Decided (review finding P-36, a ruling reversible by the session owner): the folder slug refusal
+stays until the plugin's own agent tools with a preview exist. The spec allows a folder slug change
+through a normal update and runs the subtree rewrite, and a REST `PATCH` still does exactly that.
+MCP is held to a stricter rule because of who is on the other end. A person saving in the admin sees
+the rename dialog first, with the live URLs that change and the redirect checkbox, and a developer
+who writes a REST script chose the rename in code. An agent calling `updateDocument` sees neither:
+the stock tool answers `Document updated successfully` and nothing else, so the agent cannot tell
+the user how many live pages changed URL, in which languages, or that redirects were written. Task 3
+above shows the same agent offering the slug change in general terms, after the write. A slug
+change passed through would be a rename with no preview and no confirmation. Once `previewRename`
+and `applyTreeChange` are built, the refusal message names them, and the agent gets the preview it
+needs to ask first; whether the stock tool then accepts a slug change again is decided at that point.
+
 The message says what to do instead. The built message for a page move is: `"folder" cannot be
 changed through MCP updateDocument. Moving a page changes its live URL in every language, so it goes
 through the folder tree in the admin, POST /api/folders-tree/move (preview it with POST

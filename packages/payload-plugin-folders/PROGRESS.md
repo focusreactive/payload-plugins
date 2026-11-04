@@ -378,6 +378,12 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     behind the framework's redirect. Not read: how Vercel decides what counts as a file extension.
     Sources in `docs/trailing-slash-research.md`. The spec's section 10.1 step 1 (redirect a
     trailing slash) is overruled; the `resolve.ts` doc comment carries the new wording.
+43. **Folder slug changes through MCP (review P-36, decided, reversible by the session owner).**
+    The spec allows a folder slug change through a normal update, and a REST `PATCH` still makes
+    one. Through MCP `updateDocument` it stays refused until the plugin's own agent tools with a
+    preview (`previewRename`, `applyTreeChange`) exist, because the stock tool shows the agent no
+    changed URLs, languages or redirects, so it cannot ask the user first. No code change. The
+    reasoning is in `docs/agents.md` under "The stock `updateDocument` path: refuse loudly".
 
 ### Owner decisions (from spec/review.md, the spec writer's pick applies)
 
