@@ -1678,6 +1678,40 @@ describe("an app without localization", () => {
       await plain.destroy();
     }
   });
+
+  it("repair puts two folders that swapped paths back on a site without localization", async () => {
+    const plain = await getTestPayload({ localized: false });
+    try {
+      const { payload } = plain;
+      const read = async (id: number) =>
+        (await payload.db.findOne({
+          collection: "folders",
+          where: { id: { equals: id } },
+        })) as unknown as Row;
+      const rewrite = async (id: number, fullPath: string) => {
+        const { id: _id, createdAt: _createdAt, ...stored } = await read(id);
+        await payload.db.updateOne({
+          collection: "folders",
+          data: { ...stored, fullPath },
+          id,
+          returning: false,
+        });
+      };
+      const alpha = await createFolder(payload, { slug: "alpha" });
+      const beta = await createFolder(payload, { slug: "beta" });
+      await rewrite(alpha.id, "/parking");
+      await rewrite(beta.id, "/alpha");
+      await rewrite(alpha.id, "/beta");
+
+      const result = await repairTree(payload);
+
+      expect(result.fixed.counts.folderPath).toBe(2);
+      expect((await read(alpha.id)).fullPath).toBe("/alpha");
+      expect((await read(beta.id)).fullPath).toBe("/beta");
+    } finally {
+      await plain.destroy();
+    }
+  });
 });
 
 describe("trashed content", () => {

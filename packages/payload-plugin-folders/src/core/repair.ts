@@ -89,7 +89,7 @@ const writeFolderRows = async ({
       held.set(pathClaimKey(key, folder.plan?.fullPath[key] ?? ""), String(folder.record.id));
     }
   };
-  const write = (folder: PlannedFolder, fullPath: Record<string, string>) => {
+  const write = (folder: PlannedFolder, fullPath: Record<string, string> | null) => {
     const plan = folder.plan as NonNullable<PlannedFolder["plan"]>;
 
     return writeFolderRow({
@@ -114,7 +114,7 @@ const writeFolderRows = async ({
     if (ready.length === 0) {
       // A cycle of rows each waiting on the next: empty their paths, then every one is free.
       for (const folder of waiting) {
-        await write(folder, {});
+        await write(folder, null);
         release(folder);
       }
       for (const folder of waiting) {

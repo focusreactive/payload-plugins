@@ -135,7 +135,8 @@ const isValuesObject = (value: unknown): value is Record<string, unknown> =>
  * locale whose path differs from what a fallback read would return.
  *
  * `fullPath` is a value per locale when folder fields are localized, and the plain text of the one
- * slot (`noLocaleKey`) when they are not.
+ * slot (`noLocaleKey`) when they are not. `null` clears the path: the plain column is set to null,
+ * because the adapter skips an undefined value and would leave the old path where it was.
  */
 export const writeFolderRow = async ({
   ancestorIds,
@@ -147,7 +148,7 @@ export const writeFolderRow = async ({
 }: {
   ancestorIds: string;
   depth: number;
-  fullPath: Record<string, string>;
+  fullPath: Record<string, string> | null;
   options: ResolvedOptions;
   record: FolderRecord;
   req: PayloadRequest;
@@ -176,7 +177,9 @@ export const writeFolderRow = async ({
 
   data.ancestorIds = ancestorIds;
   data.depth = depth;
-  data.fullPath = options.localizeSegments ? withoutEmptyValues(fullPath) : fullPath[noLocaleKey];
+  data.fullPath = options.localizeSegments
+    ? withoutEmptyValues(fullPath ?? {})
+    : (fullPath?.[noLocaleKey] ?? null);
   data.updatedAt = new Date().toISOString();
 
   await payload.db.updateOne({
