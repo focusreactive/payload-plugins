@@ -349,7 +349,8 @@ it. MCP's newer answer is elicitation, see section 6.
 
 Pick: the folders plugin adds a `beforeOperation` hook on the page collections and on folders that
 refuses, with a 400, an update that comes through MCP and names a structure value different from the
-stored one:
+stored one. The same hook refuses a deliberate edit from any other caller whose field access would
+drop the value (see "The same hook for every other caller" below). Through MCP the fields are:
 
 - pages: `folder`, `orderKey`, `structureRevision`;
 - folders: `parent`, `orderKey`, `structureRevision`, and `slug`. Any slug change is refused, not
@@ -388,6 +389,28 @@ into `payload.update` (`updateTool.js:61`), and the Local API keeps an existing 
 (`node_modules/payload/dist/utilities/createPayloadRequest.js:87`). It runs before field access, which
 is where the value is lost today. The pattern is the one `bulkUpdateGuard` already uses
 (`src/hooks/pages/bulkUpdateGuard.ts`).
+
+The same hook for every other caller (review finding P-02): the loud refusal is not limited to MCP,
+because a REST `PATCH /api/pages/5 {"folder": 9}`, a GraphQL `updatePage`, a host's own MCP tool or a
+Local API call with `overrideAccess: false` hit the same silent drop and the caller reports a move
+that never happened. The hook runs for every request that is not internal (`isInternalWrite`) and
+whose `overrideAccess` is not `true`, which is exactly the set for which field access strips the
+value. For these callers the rule is the one `beforeChange` applies to a value that reaches it
+(`classifyStructureEdit`, `src/core/structureGuard.ts`): a different `folder` (page) or `parent`
+(folder), or a different `orderKey`, is a deliberate edit and is refused when it carries no
+`structureRevision` or one that is not older than the stored one. A missing revision is a deliberate
+edit here, never stale, because a script sends none while the admin never omits it: the edit form,
+its autosave and the folder form all post the stored `folder` or `parent`, `orderKey` and
+`structureRevision` (recorded in `tests/e2e/admin-structure-replay.e2e.spec.ts`), and the plugin's
+own partial saves (create dialogs, settings drawers, Set as root page, publish, trash) send no
+structure at all. An older revision stays a silent replace, so a form loaded before a move in another
+tab cannot be refused, and a `null` revision counts as 0, the stored value of a page from before the
+plugin. `structureRevision` alone is not refused for these callers (it changes no place in the tree),
+and a folder `slug` change is never refused for them: the MCP-only slug refusal above stands. The
+Local API with `overrideAccess: true` is a host's server code, trusted to know what it does; its
+structure values reach `beforeChange`, which keeps its own rule. The refusal reuses the MCP message
+table with the channel phrase "by updating the document" in place of "through MCP updateDocument",
+and the same `data.reason` values.
 
 Why not the alternatives:
 

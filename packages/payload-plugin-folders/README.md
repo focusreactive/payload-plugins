@@ -1022,16 +1022,38 @@ A stock save on a collection without drafts (a `PATCH /api/posts/:id` that chang
 refuse that role on collections without drafts, as the dev app's drafter does
 (`unversionedUpdateAccess` and `unversionedCreateAccess` in `dev/access/roles.ts`).
 
-An update through `@payloadcms/plugin-mcp` (its stock `updateDocument` tool) is stricter than the
-same save from the admin or the REST API. It is refused with a 400, before anything in the call is
-saved, when its `data` names a page's `folder`, `orderKey` or `structureRevision`, or a folder's
-`parent`, `orderKey`, `structureRevision` or `slug`, with a value different from the stored one. The
-message says what to use instead: the folder tree in the admin, `POST /api/folders-tree/move`
-(preview it with `/api/folders-tree/move/preview`) or `moveItems()` for a move, and the admin or
-`POST /api/folders-tree/folders/:id/preview` for a folder slug. Without the refusal the stock tool
-answers "Document updated successfully" while Payload drops the value, so an agent reports a move that
-did not happen. Sending the stored value back passes, and a folder `name` change passes. The plugin
-recognises the call by the request's `payloadAPI` being `"MCP"`, which `@payloadcms/plugin-mcp` sets.
+A save that names a different structure is refused with a 400, before anything in the call is
+saved, instead of answering 200 while Payload drops the value (a page's `folder`, `orderKey` and
+`structureRevision` and a folder's `parent`, `orderKey` and `structureRevision` have `update:
+nobody` access). The refusal says what to use instead: the folder tree in the admin,
+`POST /api/folders-tree/move` (preview it with `/api/folders-tree/move/preview`) or `moveItems()`.
+It covers every caller whose field access runs: REST, GraphQL, a host's own MCP tool and the Local
+API with `overrideAccess: false`. What counts as a different structure depends on the caller:
+
+- A REST, GraphQL or Local API save is refused when it names a different `folder` (page) or
+  `parent` (folder), or a different `orderKey`, and carries no `structureRevision` or one that is
+  not older than the stored one. A script sends no revision, so `PATCH /api/pages/5 { "folder": 9 }`
+  is a 400. The admin's edit form and autosave always send the stored folder, `orderKey` and
+  revision, or the older ones after a move in another tab: those pass, and a stale value is replaced
+  by the stored one without a message, so an old form cannot undo a move. A `null` revision counts
+  as the oldest. A `where` update of folders that names `parent`, `orderKey` or `structureRevision`
+  is refused too. A folder `slug` change stays allowed: it is the documented rename and runs the
+  subtree rewrite.
+- An update through `@payloadcms/plugin-mcp` (its stock `updateDocument` tool) is stricter. It is
+  refused when its `data` names a page's `folder`, `orderKey` or `structureRevision`, or a folder's
+  `parent`, `orderKey`, `structureRevision` or `slug`, with a value different from the stored one,
+  whatever the revision. For a folder slug the message points at the admin and
+  `POST /api/folders-tree/folders/:id/preview`. The stock tool answers "Document updated
+  successfully" even when Payload dropped the value, so without the refusal an agent reports a move
+  that did not happen. The plugin recognises the call by the request's `payloadAPI` being `"MCP"`,
+  which `@payloadcms/plugin-mcp` sets.
+- The Local API with `overrideAccess: true` is not refused here: a host's server code is trusted to
+  know what it does. Such a call that names a different `folder` or `orderKey` at the current
+  revision gets "Use moveItems() to move content" (a 400) from the page collection's own guard.
+
+Sending the stored value back passes for every caller, and a folder `name` change passes. The
+refusal is an `APIError` with `data.reason` set to `mcp-structure-change` (`mcp-slug-change` for an
+MCP folder slug) and `data.field` naming the field.
 
 Access flags in tree rows come from one call per collection with no `id`, the way Payload asks for a
 bulk operation. A rule that depends on the document has to return a `Where`. The same goes for the
@@ -1461,12 +1483,14 @@ of operations that acquired the lock.
   includes the admin list's bulk Publish. Payload saves matching pages in parallel and commits the
   ones that succeed, so the uniqueness check could not keep two pages from going live at one URL.
   Publish pages one at a time, or through `POST /api/folders-tree/publish` (`publishItems()`).
-- **MCP `updateDocument` refuses structure and folder slug changes.** A page's `folder`,
-  `orderKey` and `structureRevision` and a folder's `parent`, `orderKey`, `structureRevision` and
-  `slug` cannot be changed through the stock tool, and an agent has no tool for the move or rename
-  yet: it gets the 400 and the user does the change in the admin. Only a request that
-  `@payloadcms/plugin-mcp` marks as MCP is checked, so a host that writes its own MCP tool, or calls
-  the Local API from one, gets the admin's quiet replace of a stale value instead. See "Access".
+- **Structure changes are refused outside the move endpoints.** A page's `folder` and `orderKey`
+  and a folder's `parent` and `orderKey` cannot be changed by a plain save over REST, GraphQL or the
+  Local API with `overrideAccess: false`, and through the stock MCP tool a changed
+  `structureRevision` and a folder `slug` are refused as well. An agent has no tool for the move or
+  rename yet: it gets the 400 and the user does the change in the admin. A request that sends an
+  older `structureRevision` with an old structure is treated as a stale form and replaced
+  silently, so a script that deliberately sends an old revision with a different folder is not
+  told. See "Access".
 - **Repair is one transaction.** Every page save waits for it. See "Install on existing content".
 - **Delete costs.** The exact delete refusal count asks access once per document, about 2,000
   queries for a 2,000-page refusal when your access function queries the database. The preview

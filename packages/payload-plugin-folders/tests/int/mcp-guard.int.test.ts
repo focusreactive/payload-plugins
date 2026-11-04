@@ -243,40 +243,6 @@ describe("MCP updateDocument on a page", () => {
   });
 });
 
-describe("a page update that does not come through MCP", () => {
-  it("still replaces a changed folder silently, as the admin's stale form does", async () => {
-    const { payload } = harness;
-    const user = await payload.create({
-      collection: "users",
-      data: {
-        email: "local-editor@example.com",
-        password: "test-password",
-        role: "admin",
-      } as never,
-      overrideAccess: true,
-    });
-    const products = await createFolder(payload, { slug: "products" });
-    const guides = await createFolder(payload, { slug: "guides" });
-    const page = await createPage(payload, { folder: products.id, slug: "gift-cards" });
-    const before = await readPage(payload, page.id);
-
-    await payload.update({
-      collection: "pages",
-      data: { folder: guides.id, title: "Changed through the Local API" } as never,
-      depth: 0,
-      id: page.id,
-      locale: "en",
-      overrideAccess: false,
-      user,
-    });
-
-    expect(await readPage(payload, page.id)).toEqual({
-      ...before,
-      title: "Changed through the Local API",
-    });
-  });
-});
-
 describe("MCP updateDocument on a folder", () => {
   const createCompany = async (payload: Payload) => {
     const company = await createFolder(payload, { name: "Company", slug: "company" });

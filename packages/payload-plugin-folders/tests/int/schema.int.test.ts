@@ -130,7 +130,7 @@ describe("data model", () => {
     expect(findField(payload, "posts", "pathSegment")?.localized).toBeFalsy();
   });
 
-  it("a REST update cannot change folder or orderKey", async () => {
+  it("a REST update that names another folder or orderKey is refused and saves nothing", async () => {
     const { config, payload } = harness;
     const original = await createFolder(payload, { fullPath: "/original" });
     const other = await createFolder(payload, { fullPath: "/other" });
@@ -147,9 +147,7 @@ describe("data model", () => {
       returning: false,
     });
 
-    const { body, status } = await callEndpoint<{
-      doc: { folder: number; orderKey: string; title: string };
-    }>({
+    const { status } = await callEndpoint({
       body: { folder: other.id, orderKey: "zz", structureRevision: 42, title: "Renamed" },
       config,
       method: "PATCH",
@@ -157,20 +155,19 @@ describe("data model", () => {
       payload,
     });
 
-    expect(status).toBe(200);
-    expect(body.doc).toMatchObject({
-      folder: original.id,
-      orderKey: "a0",
-      structureRevision: 0,
-      title: "Renamed",
-    });
+    expect(status).toBe(400);
     const reread = await payload.findByID({
       collection: "pages",
       depth: 0,
       id: page.id,
       overrideAccess: true,
     });
-    expect(reread).toMatchObject({ folder: original.id, orderKey: "a0", structureRevision: 0 });
+    expect(reread).toMatchObject({
+      folder: original.id,
+      orderKey: "a0",
+      structureRevision: 0,
+      title: "Stays",
+    });
 
     // A create may still set them. The Local API with overridden access may not move a page: the
     // structure guard (tests/int/structure-guard.int.test.ts) refuses it at the current revision.
@@ -228,7 +225,7 @@ describe("data model", () => {
     });
   });
 
-  it("a REST update cannot change folder parent or orderKey", async () => {
+  it("a REST update that names another folder parent or orderKey is refused and saves nothing", async () => {
     const { config, payload } = harness;
     const parent = await createFolder(payload, { fullPath: "/rest-parent" });
     const other = await createFolder(payload, { fullPath: "/rest-other" });
@@ -243,7 +240,7 @@ describe("data model", () => {
       returning: false,
     });
 
-    const { body, status } = await callEndpoint<{ doc: Record<string, unknown> }>({
+    const { status } = await callEndpoint({
       body: { name: "Renamed child", orderKey: "zz", parent: other.id },
       config,
       method: "PATCH",
@@ -251,8 +248,15 @@ describe("data model", () => {
       payload,
     });
 
-    expect(status).toBe(200);
-    expect(body.doc).toMatchObject({ name: "Renamed child", orderKey: "a0", parent: parent.id });
+    expect(status).toBe(400);
+    const reread = await payload.findByID({
+      collection: "folders",
+      depth: 0,
+      id: child.id,
+      overrideAccess: true,
+    });
+    expect(reread).toMatchObject({ orderKey: "a0", parent: parent.id });
+    expect(reread.name).not.toBe("Renamed child");
   });
 
   it("folder parent null round-trips as null", async () => {

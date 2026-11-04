@@ -6,6 +6,7 @@ import { effectiveSegment, getDefaultLocaleKey, requestLocaleKey } from "../core
 import type { ValuesByLocale } from "../core/locales.js";
 import { readPageRow } from "../core/pageRecords.js";
 import {
+  classifyStructureEdit,
   coerceRevision,
   isEmptyText,
   namesOtherFolder,
@@ -17,6 +18,7 @@ import { isInternalWrite, slugNotSentContextKey } from "./context.js";
 type UpdateArgs = {
   data?: Record<string, unknown>;
   id?: FolderId;
+  overrideAccess?: boolean;
   where?: unknown;
 };
 
@@ -24,22 +26,33 @@ type RefusedField = "folder" | "orderKey" | "parent" | "slug" | "structureRevisi
 
 const pageStructureFieldNames = ["folder", "orderKey", "structureRevision"] as const;
 const folderStructureFieldNames = ["parent", "orderKey", "structureRevision", "slug"] as const;
+/** The names a plain update is refused for: a slug rename through REST is allowed. */
+const folderStructureFieldNamesWithoutSlug = ["parent", "orderKey", "structureRevision"] as const;
 
-const refusalMessages: Record<RefusedField, string> = {
+/** What the caller should do instead, per field; `refuse` puts the channel in front. */
+const refusalAdvice: Record<RefusedField, string> = {
   folder:
-    '"folder" cannot be changed through MCP updateDocument. Moving a page changes its live URL in every language, so it goes through the folder tree in the admin, POST /api/folders-tree/move (preview it with POST /api/folders-tree/move/preview) or moveItems(), which show the URL changes and write redirects. Nothing was saved.',
+    "Moving a page changes its live URL in every language, so it goes through the folder tree in the admin, POST /api/folders-tree/move (preview it with POST /api/folders-tree/move/preview) or moveItems(), which show the URL changes and write redirects. Nothing was saved.",
   orderKey:
-    '"orderKey" cannot be changed through MCP updateDocument. The position in the tree is set by a move or a reorder, which go through the folder tree in the admin, POST /api/folders-tree/move (preview it with POST /api/folders-tree/move/preview) or moveItems(). Nothing was saved.',
+    "The position in the tree is set by a move or a reorder, which go through the folder tree in the admin, POST /api/folders-tree/move (preview it with POST /api/folders-tree/move/preview) or moveItems(). Nothing was saved.",
   parent:
-    '"parent" cannot be changed through MCP updateDocument. Moving a folder changes the live URL of every page beneath it, in every language, so it goes through the folder tree in the admin, POST /api/folders-tree/move (preview it with POST /api/folders-tree/move/preview) or moveItems(), which show the URL changes and write redirects. Nothing was saved.',
-  slug: '"slug" cannot be changed through MCP updateDocument. A folder\'s slug is part of the live URL of every page beneath it, in every language, so a change goes through the admin, which shows which live pages change and offers redirects (or preview it with POST /api/folders-tree/folders/:id/preview). Nothing was saved.',
+    "Moving a folder changes the live URL of every page beneath it, in every language, so it goes through the folder tree in the admin, POST /api/folders-tree/move (preview it with POST /api/folders-tree/move/preview) or moveItems(), which show the URL changes and write redirects. Nothing was saved.",
+  slug: "A folder's slug is part of the live URL of every page beneath it, in every language, so a change goes through the admin, which shows which live pages change and offers redirects (or preview it with POST /api/folders-tree/folders/:id/preview). Nothing was saved.",
   structureRevision:
-    '"structureRevision" cannot be changed through MCP updateDocument. It counts the moves of a document and is raised only by a move, through the folder tree in the admin, POST /api/folders-tree/move or moveItems(). Nothing was saved.',
+    "It counts the moves of a document and is raised only by a move, through the folder tree in the admin, POST /api/folders-tree/move or moveItems(). Nothing was saved.",
 };
 
-const refuse = (field: RefusedField): never => {
+/** Who sent the update: the stock MCP tool, or any other caller whose field access drops structure values. */
+type RefusalChannel = "api" | "mcp";
+
+const channelPhrases: Record<RefusalChannel, string> = {
+  api: "by updating the document",
+  mcp: "through MCP updateDocument",
+};
+
+const refuse = (field: RefusedField, channel: RefusalChannel): never => {
   throw new APIError(
-    refusalMessages[field],
+    `"${field}" cannot be changed ${channelPhrases[channel]}. ${refusalAdvice[field]}`,
     400,
     {
       field,
@@ -70,7 +83,10 @@ type StoredStructure = {
   structureRevision: number;
 } & Partial<Record<"folder" | "parent", FolderId | null>>;
 
-/** Refuses a structure value in `data` that differs from the stored row; `parentFieldName` is the field that holds the parent folder. */
+/**
+ * The MCP rule: refuses any structure value in `data` that differs from the stored row, whatever
+ * revision comes with it; `parentFieldName` is the field that holds the parent folder.
+ */
 const refuseChangedStructure = (
   data: Record<string, unknown>,
   stored: StoredStructure,
@@ -83,16 +99,67 @@ const refuseChangedStructure = (
       stored[parentFieldName] ?? null
     )
   ) {
-    refuse(parentFieldName);
+    refuse(parentFieldName, "mcp");
   }
   if (data.orderKey !== undefined && namesOtherOrderKey(data.orderKey, stored.orderKey)) {
-    refuse("orderKey");
+    refuse("orderKey", "mcp");
   }
   if (
     data.structureRevision !== undefined &&
     !isSameRevision(data.structureRevision, stored.structureRevision)
   ) {
-    refuse("structureRevision");
+    refuse("structureRevision", "mcp");
+  }
+};
+
+/**
+ * The rule for every other caller whose field access drops the structure fields: refuses what the
+ * collection's `beforeChange` would call a deliberate edit had the value reached it, which is a
+ * different parent or orderKey that carries no revision or one that is not older than the stored
+ * one. An older revision is a stale replay (the admin's form or autosave loaded before a move),
+ * and stays a silent replace there. A request that names no revision cannot be one: the admin's
+ * form always sends the revision with the structure, while a script sends none. A null revision
+ * is the stored 0 of a page from before the plugin, so it counts as the oldest revision.
+ */
+const refuseDeliberateStructure = (
+  data: Record<string, unknown>,
+  stored: StoredStructure,
+  parentFieldName: "folder" | "parent"
+): void => {
+  const requestedParent =
+    data[parentFieldName] === undefined ? null : normalizeFolderReference(data[parentFieldName]);
+  const changesParent =
+    requestedParent !== null && namesOtherFolder(requestedParent, stored[parentFieldName] ?? null);
+  const changesOrderKey = namesOtherOrderKey(data.orderKey, stored.orderKey);
+  const edit = classifyStructureEdit({
+    changesStructure: changesParent || changesOrderKey,
+    incomingRevision: data.structureRevision === null ? 0 : data.structureRevision,
+    missingRevisionIsStale: false,
+    storedRevision: stored.structureRevision,
+  });
+  if (edit === "deliberate") {
+    refuse(changesParent ? parentFieldName : "orderKey", "api");
+  }
+};
+
+/**
+ * Whether the update reaches this guard at all: the stock MCP tool, or any call that runs field
+ * access. `overrideAccess: true` is a host's server code, trusted to know what it does: its
+ * structure values reach the collection's `beforeChange` guard, which has its own rule.
+ */
+const isGuardedCaller = (req: PayloadRequest, update: UpdateArgs): boolean =>
+  !isInternalWrite(req) && (isMcpRequest(req) || update.overrideAccess !== true);
+
+const refuseStructureEdit = (
+  req: PayloadRequest,
+  data: Record<string, unknown>,
+  stored: StoredStructure,
+  parentFieldName: "folder" | "parent"
+): void => {
+  if (isMcpRequest(req)) {
+    refuseChangedStructure(data, stored, parentFieldName);
+  } else {
+    refuseDeliberateStructure(data, stored, parentFieldName);
   }
 };
 
@@ -125,13 +192,15 @@ export const slugDiffersFromStored = (
 };
 
 /**
- * Update through plugin-mcp (`req.payloadAPI === "MCP"`) that names a structure value different
- * from the stored one. The page's `folder`, `orderKey` and `structureRevision` have `update:
- * nobody` field access, so without this hook Payload drops the value, the stock tool answers
- * "Document updated successfully" and the page has not moved. The admin's full edit form sends
- * the stored structure back, or an old one after a move in another tab, and that stays a silent
- * replace (`structureGuard.ts`), so only MCP is refused. It runs in `beforeOperation`, before any
- * field in the call is written.
+ * Update that names a page's `folder`, `orderKey` or `structureRevision` and would lose it. These
+ * fields have `update: nobody` field access, so without this hook Payload drops the value, answers
+ * 200 and the page has not moved. Through plugin-mcp (`req.payloadAPI === "MCP"`) any value
+ * different from the stored one is refused. Any other caller that runs field access (REST,
+ * GraphQL, a host's own MCP tool, the Local API with `overrideAccess: false`) is refused only for
+ * a deliberate edit (`refuseDeliberateStructure`), because the admin's full edit form and autosave
+ * send the stored structure back, or an old one after a move in another tab, and that stays a
+ * silent replace (`structureGuard.ts`). It runs in `beforeOperation`, before any field in the call
+ * is written.
  */
 export const buildMcpStructureGuard =
   (page: ResolvedPageCollection): CollectionBeforeOperationHook =>
@@ -139,8 +208,7 @@ export const buildMcpStructureGuard =
     const update = args as UpdateArgs;
     if (
       operation !== "update" ||
-      !isMcpRequest(req) ||
-      isInternalWrite(req) ||
+      !isGuardedCaller(req, update) ||
       update.id === undefined ||
       !update.data
     ) {
@@ -157,43 +225,49 @@ export const buildMcpStructureGuard =
     if (!stored) {
       return args;
     }
-    refuseChangedStructure(data, stored, "folder");
+    refuseStructureEdit(req, data, stored, "folder");
 
     return args;
   };
 
 /**
- * The folders collection's counterpart of `buildMcpStructureGuard`: `parent`, `orderKey`,
- * `structureRevision` and every `slug` change are refused. A name-only change passes. A `where`
- * update that names any of the four is refused, because it has no single stored value to compare
- * with and the folder bulk guard does not cover `parent`.
+ * The folders collection's counterpart of `buildMcpStructureGuard`. Through MCP `parent`,
+ * `orderKey`, `structureRevision` and every `slug` change are refused, and a name-only change
+ * passes. Any other caller whose field access drops the structure is refused for a deliberate
+ * `parent` or `orderKey` edit only; a `slug` change stays allowed there, because a REST save is
+ * the documented way to rename a folder and runs the subtree rewrite. A `where` update that names
+ * a guarded field is refused, because it has no single stored value to compare with and the folder
+ * bulk guard does not cover `parent`.
  */
 export const buildFolderMcpStructureGuard =
   (options: ResolvedOptions): CollectionBeforeOperationHook =>
   async ({ args, operation, req }) => {
     const update = args as UpdateArgs;
-    if (operation !== "update" || !isMcpRequest(req) || isInternalWrite(req) || !update.data) {
+    if (operation !== "update" || !isGuardedCaller(req, update) || !update.data) {
       return args;
     }
     const { data } = update;
-    const named = folderStructureFieldNames.filter((name) => data[name] !== undefined);
+    const isMcp = isMcpRequest(req);
+    const named = (isMcp ? folderStructureFieldNames : folderStructureFieldNamesWithoutSlug).filter(
+      (name) => data[name] !== undefined
+    );
     if (named.length === 0) {
       return args;
     }
     if (update.id === undefined) {
-      return refuse(named[0]);
+      return refuse(named[0], isMcp ? "mcp" : "api");
     }
 
     const stored = await readFolderRecord(req, options, update.id);
     if (!stored) {
       return args;
     }
-    refuseChangedStructure(data, stored, "parent");
-    if (data.slug !== undefined) {
+    refuseStructureEdit(req, data, stored, "parent");
+    if (isMcp && data.slug !== undefined) {
       const writeKey = requestLocaleKey(req.payload, options, req.locale);
       const defaultLocaleKey = getDefaultLocaleKey(req.payload, options);
       if (slugDiffersFromStored(data.slug, stored.slug, writeKey, defaultLocaleKey)) {
-        refuse("slug");
+        refuse("slug", "mcp");
       }
       // The agent read the default locale's slug as this locale's by fallback and sent it back.
       // Left in the update, the folder's `beforeChange` would store it as this locale's own and

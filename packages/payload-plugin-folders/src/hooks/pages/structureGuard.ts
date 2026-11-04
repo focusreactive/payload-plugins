@@ -24,6 +24,8 @@ import { isInternalWrite } from "../context.js";
  *   is refused. One with an older or absent revision comes from stale data (an old form, an
  *   autosave, a pending draft that is published, a scheduled publish, a version restore) and is
  *   replaced.
+ *   A request that runs field access never gets that far with a different `folder`: the value is
+ *   dropped, so `buildMcpStructureGuard` (`beforeOperation`) refuses a deliberate one first.
  * - Both ways the data written to the main row, and to any new version, carries the main row's
  *   structure, so a draft read never disagrees with the tree.
  *
