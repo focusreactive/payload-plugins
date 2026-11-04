@@ -132,6 +132,30 @@ describe("order keys", () => {
     expect(reads.every((read) => read.limit === 1)).toBe(true);
   });
 
+  it("an empty stored key never hides the real smallest key of a collection", async () => {
+    const parent = await createFolder(harness.payload);
+    const child = await createFolder(harness.payload, { parent: parent.id });
+    const keyedPage = await createPage(harness.payload, { folder: parent.id, slug: "keyed" });
+    const emptyPage = await createPage(harness.payload, { folder: parent.id, slug: "empty" });
+    await forceOrderKey("folders", child.id, "a5");
+    await forceOrderKey("pages", keyedPage.id, "a0");
+    // Written below the hooks: an import or a hand edit can leave an empty string, which sorts
+    // before every real key and also is not null.
+    await harness.payload.db.updateOne({
+      collection: "pages",
+      data: { orderKey: "" },
+      id: emptyPage.id,
+      returning: false,
+    });
+    const request = await createTestRequest(harness.payload);
+
+    const [topKey] = await withTreeLock(request, () =>
+      keysForInsert(request, options, { at: "start", count: 1, parent: parent.id })
+    );
+
+    expect(topKey < "a0").toBe(true);
+  });
+
   it("folders and pages share one key space in a folder", async () => {
     const parent = await createFolder(harness.payload);
     const page = await createPage(harness.payload, { folder: parent.id, slug: "p" });

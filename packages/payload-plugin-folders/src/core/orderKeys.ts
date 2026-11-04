@@ -216,7 +216,15 @@ const findEdgeKey = async (
       req,
       select: { orderKey: true },
       sort: edge === "smallest" ? "orderKey" : "-orderKey",
-      where: { and: [parentWhere(field, parent), { orderKey: { exists: true } }] },
+      // An empty string is stored, so `exists` alone would let it win the limit-1 query and hide the
+      // collection's real smallest key.
+      where: {
+        and: [
+          parentWhere(field, parent),
+          { orderKey: { exists: true } },
+          { orderKey: { not_equals: "" } },
+        ],
+      },
     });
     const [doc] = docs as Array<Record<string, unknown>>;
     if (doc) {
