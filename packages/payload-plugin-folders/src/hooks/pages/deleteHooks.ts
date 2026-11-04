@@ -10,6 +10,7 @@ import {
   reportDeletedPaths,
   snapshotOfRow,
 } from "../../core/deletedPaths.js";
+import { toCollectionSlug } from "../../collectionSlug.js";
 import { readFolderRecord } from "../../core/folderRecords.js";
 import { getDefaultLocaleKey } from "../../core/locales.js";
 import { deleteCustomMirrorRowsTo } from "../../core/mirror.js";
@@ -27,6 +28,25 @@ const pendingChangesContextKey = "foldersPendingDeleteChanges";
 
 const keyOf = (collection: string, id: FolderId): string => `${collection}:${id}`;
 
+const isInTrash = async (
+  req: Parameters<CollectionBeforeDeleteHook>[0]["req"],
+  page: ResolvedPageCollection,
+  id: FolderId
+): Promise<boolean> => {
+  const { config } = req.payload.collections[toCollectionSlug(page.slug)];
+  if (!config.trash) {
+    return false;
+  }
+  const stored = (await req.payload.db.findOne({
+    collection: toCollectionSlug(page.slug),
+    req,
+    select: { deletedAt: true } as never,
+    where: { id: { equals: id } },
+  })) as { deletedAt?: string | null } | null;
+
+  return Boolean(stored?.deletedAt);
+};
+
 /**
  * Spec sections 4 and 5.6 for a page that is deleted: its redirect rows go (a delete writes none),
  * the URLs it held are worked out while the page and its folder can still be read, and the custom-URL
@@ -37,6 +57,12 @@ export const buildPageBeforeDelete =
   async ({ id, req }) => {
     await deleteRedirectsTargeting({ ref: { collection: page.slug, id }, req });
     if (isInternalWrite(req)) {
+      return;
+    }
+    // The trash step already reported these URLs and cleared the custom rows; a permanent delete
+    // from the trash would report URLs the site stopped serving earlier, or, after a folder
+    // rename, URLs that were never live.
+    if (await isInTrash(req, page, id)) {
       return;
     }
     const row = await readPageRow(req, page, id);
