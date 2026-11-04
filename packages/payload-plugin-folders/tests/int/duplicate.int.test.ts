@@ -455,6 +455,28 @@ describe("POST /folders-tree/duplicate", () => {
     expect(child.id).toBeDefined();
   });
 
+  it("a copied folder holding only its root page may land exactly at maxDepth", async () => {
+    const { payload } = shallowHarness;
+    const first = await createFolder(payload, { slug: "one" });
+    const second = await createFolder(payload, { parent: first.id, slug: "two" });
+    const source = await createFolder(payload, { slug: "source" });
+    await createLivePage(payload, source.id, "start", { isFolderRoot: true });
+
+    // /one/two/source is 3 deep and its root page lives at that same URL.
+    const { body, status } = await callEndpoint<DuplicateBody>({
+      body: { items: [folderRef(source.id)], toFolder: second.id },
+      config: shallowHarness.config,
+      method: "POST",
+      path: "/folders-tree/duplicate",
+      payload,
+      payloadInstanceCacheKey: shallowHarness.cacheKey,
+    });
+
+    expect(body.errors).toBeUndefined();
+    expect(status).toBe(200);
+    expect(await countAll(payload, "pages")).toBe(2);
+  });
+
   it("a copy to the top level refuses a segment the site uses", async () => {
     const { payload } = harness;
     const docs = await createFolder(payload, { slug: "docs" });
