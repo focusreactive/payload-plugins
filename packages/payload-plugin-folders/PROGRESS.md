@@ -415,6 +415,12 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     largest key. P-35: `getSubtreeFolderIds(payload, { folder, req? })` is exported from the server
     entry and includes the folder itself; the optional `req` lets an access function read on the
     request's own connection.
+46. **Only the own slug is stored (review P-32, decided, reversible by the session owner).**
+    Decision 19 stands: `pathSegment[locale]` holds the page's own segment or null, so a stock query
+    for a locale that falls back needs the exported `buildSegmentWhere`. The review read this as a
+    deviation from spec lines 46 and 97 (`pathSegment` stores the effective segment, and
+    `{ path, locale }` resolves with a plain stock query). The orchestrator keeps the code and amends
+    those spec lines on the spec's own repository; no code change here.
 
 ### Owner decisions (from spec/review.md, the spec writer's pick applies)
 
