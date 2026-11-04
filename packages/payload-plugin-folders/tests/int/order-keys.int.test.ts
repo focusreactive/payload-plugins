@@ -1,8 +1,9 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
   compareSiblings,
   isUsableOrderKey,
+  keyForNewItem,
   keysForInsert,
   loadSiblings,
 } from "../../src/core/orderKeys.js";
@@ -83,6 +84,52 @@ describe("order keys", () => {
     }
 
     expect(await slugsInTreeOrder(bottomHarness, folder.id)).toEqual(["first", "second", "third"]);
+  });
+
+  it("a bottom create lands below the largest key across folders, pages and posts", async () => {
+    const parent = await createFolder(bottomHarness.payload);
+    await createPage(bottomHarness.payload, { folder: parent.id, slug: "page-a" });
+    const post = await bottomHarness.payload.create({
+      collection: "posts",
+      data: { folder: parent.id, slug: "post-a", title: "Post A" },
+      depth: 0,
+      overrideAccess: true,
+    });
+    const child = await createFolder(bottomHarness.payload, { parent: parent.id });
+    const lastPage = await createPage(bottomHarness.payload, { folder: parent.id, slug: "page-b" });
+
+    expect((post.orderKey as string) > (lastPage.orderKey as string)).toBe(false);
+    expect((child.orderKey as string) > (post.orderKey as string)).toBe(true);
+    expect((lastPage.orderKey as string) > (child.orderKey as string)).toBe(true);
+  });
+
+  it("a bottom create reads one row per query, never every sibling", async () => {
+    const parent = await createFolder(bottomHarness.payload);
+    for (const slug of ["one", "two", "three", "four", "five"]) {
+      await createPage(bottomHarness.payload, { folder: parent.id, slug });
+    }
+    const bottomOptions = resolveTestOptions(bottomHarness, { newItemPosition: "bottom" });
+    const request = await createTestRequest(bottomHarness.payload);
+    const findSpy = vi.spyOn(bottomHarness.payload.db, "find");
+
+    let key: string;
+    let reads: Array<{ limit?: number }>;
+    try {
+      key = await keyForNewItem(request, bottomOptions, parent.id);
+      reads = findSpy.mock.calls.map(([args]) => ({ limit: args.limit }));
+    } finally {
+      findSpy.mockRestore();
+    }
+
+    const siblings = await loadSiblings(request, bottomOptions, parent.id);
+    const largestStored = siblings
+      .map((sibling) => sibling.orderKey as string)
+      .toSorted()
+      .at(-1);
+    expect(key > (largestStored as string)).toBe(true);
+    // Per collection: one query for a keyless row, one for the largest key.
+    expect(reads).toHaveLength(6);
+    expect(reads.every((read) => read.limit === 1)).toBe(true);
   });
 
   it("folders and pages share one key space in a folder", async () => {

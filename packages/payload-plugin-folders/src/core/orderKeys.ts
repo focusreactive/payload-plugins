@@ -196,11 +196,15 @@ export const loadSiblings = async (
   return siblings;
 };
 
-/** The smallest key among the children of `parent`, from one indexed query per collection. */
-const findSmallestKey = async (
+/**
+ * The row holding the smallest or the largest key among the children of `parent`, from one
+ * indexed query per collection.
+ */
+const findEdgeKey = async (
   req: PayloadRequest,
   options: ResolvedOptions,
-  parent: FolderId | null
+  parent: FolderId | null,
+  edge: "largest" | "smallest"
 ): Promise<SiblingRow | null> => {
   const candidates: SiblingRow[] = [];
 
@@ -211,7 +215,7 @@ const findSmallestKey = async (
       pagination: false,
       req,
       select: { orderKey: true },
-      sort: "orderKey",
+      sort: edge === "smallest" ? "orderKey" : "-orderKey",
       where: { and: [parentWhere(field, parent), { orderKey: { exists: true } }] },
     });
     const [doc] = docs as Array<Record<string, unknown>>;
@@ -226,8 +230,50 @@ const findSmallestKey = async (
     }
   }
 
-  return candidates.filter((candidate) => hasKey(candidate)).sort(compareSiblings)[0] ?? null;
+  const keyed = candidates.filter((candidate) => hasKey(candidate)).sort(compareSiblings);
+
+  return (edge === "smallest" ? keyed[0] : keyed.at(-1)) ?? null;
 };
+
+const findSmallestKey = (
+  req: PayloadRequest,
+  options: ResolvedOptions,
+  parent: FolderId | null
+): Promise<SiblingRow | null> => findEdgeKey(req, options, parent, "smallest");
+
+/** Rows without a usable key sort after every keyed row, so an insert at the end must key them first. */
+const hasUnkeyedChild = async (
+  req: PayloadRequest,
+  options: ResolvedOptions,
+  parent: FolderId | null
+): Promise<boolean> => {
+  for (const { collection, field } of siblingSources(options)) {
+    const { docs } = await req.payload.db.find({
+      collection: toCollectionSlug(collection),
+      limit: 1,
+      pagination: false,
+      req,
+      select: { orderKey: true },
+      where: {
+        and: [
+          parentWhere(field, parent),
+          { or: [{ orderKey: { exists: false } }, { orderKey: { equals: "" } }] },
+        ],
+      },
+    });
+    if (docs.length > 0) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+const findLargestKey = (
+  req: PayloadRequest,
+  options: ResolvedOptions,
+  parent: FolderId | null
+): Promise<SiblingRow | null> => findEdgeKey(req, options, parent, "largest");
 
 export type InsertTarget = {
   /** Where the keys go: the very start or end of the folder, or directly after a sibling. */
@@ -255,10 +301,19 @@ export const planKeysForInsert = async (
     return { keys: [], rewrites: [] };
   }
 
-  // The common create puts one item on top: one query per collection beats loading every sibling.
+  // The common create puts one item at the top or the bottom: a couple of limit-1 queries per
+  // collection beat loading every sibling.
   if (at === "start" && exclude.length === 0) {
     const smallest = await findSmallestKey(req, options, parent);
     const keys = generateBetween(undefined, smallest ?? undefined, count);
+    if (keys) {
+      return { keys, rewrites: [] };
+    }
+  }
+
+  if (at === "end" && exclude.length === 0 && !(await hasUnkeyedChild(req, options, parent))) {
+    const largest = await findLargestKey(req, options, parent);
+    const keys = generateBetween(largest ?? undefined, undefined, count);
     if (keys) {
       return { keys, rewrites: [] };
     }
