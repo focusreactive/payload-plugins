@@ -20,7 +20,7 @@ import type {
 const defaultMaxDepth = 20;
 const defaultPageSize = 100;
 const maximumPageSize = 1000;
-const defaultLimits = { maxFoldersPerMove: 2000, maxItemsPerMove: 500, maxSyncDocuments: 200 };
+const defaultLimits = { maxFoldersPerMove: 2000, maxItemsPerOperation: 500, maxSyncDocuments: 200 };
 
 /** Thrown once, listing every configuration error found, so a host fixes them in one pass. */
 export class FoldersConfigError extends Error {

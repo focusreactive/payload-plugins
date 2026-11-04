@@ -338,7 +338,7 @@ Boolean(req.user)`. Each returns a short text block for the model and the same d
 Stateless, so it works on serverless and across instances: base64url of a JSON body plus an
 HMAC-SHA256 signature keyed from `payload.secret`. The body holds a version, the kind (`move` or
 `rename`), the normalized request, the user's collection and id, the plan digest, and the expiry. A
-move is capped at `limits.maxItemsPerMove` items (default 500), which bounds its size. Replaying a
+move is capped at `limits.maxItemsPerOperation` items (default 500), which bounds its size. Replaying a
 used token fails on step 2, because the re-plan no longer matches.
 
 This proves that the model saw the preview, not that a human approved it. Only the client can ask the

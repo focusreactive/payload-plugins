@@ -18,8 +18,8 @@ export const buildDeletePreviewEndpoint = (options: ResolvedOptions): Endpoint =
     if (!isRecord(body) || !Array.isArray(body.items) || body.items.length === 0) {
       throw badRequest("Choose at least one item to delete");
     }
-    if (body.items.length > options.limits.maxItemsPerMove) {
-      throw badRequest(`Delete at most ${options.limits.maxItemsPerMove} items at once`);
+    if (body.items.length > options.limits.maxItemsPerOperation) {
+      throw badRequest(`Delete at most ${options.limits.maxItemsPerOperation} items at once`);
     }
     const items = body.items.map((item, index) =>
       parseItemRef(req.payload, options, item, `items[${index}]`)

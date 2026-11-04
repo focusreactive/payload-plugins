@@ -31,8 +31,8 @@ export const buildPublishEndpoint = (options: ResolvedOptions): Endpoint => ({
     if (!Array.isArray(body.items) || body.items.length === 0) {
       throw badRequest("Choose at least one item");
     }
-    if (body.items.length > options.limits.maxItemsPerMove) {
-      throw badRequest(`Choose at most ${options.limits.maxItemsPerMove} items at once`);
+    if (body.items.length > options.limits.maxItemsPerOperation) {
+      throw badRequest(`Choose at most ${options.limits.maxItemsPerOperation} items at once`);
     }
     if (body.action !== "publish" && body.action !== "unpublish") {
       throw badRequest("`action` must be publish or unpublish");

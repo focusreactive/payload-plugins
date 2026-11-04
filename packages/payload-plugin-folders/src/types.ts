@@ -71,8 +71,8 @@ export type FoldersPluginOptions = {
   /** Default true when `config.localization` is set. */
   localizeSegments?: boolean;
   limits?: {
-    /** Default 500 selected items. */
-    maxItemsPerMove?: number;
+    /** Default 500 selected items in one move, delete, duplicate or publish. */
+    maxItemsPerOperation?: number;
     /** Default 2000 folder rows rewritten by one move or rename. */
     maxFoldersPerMove?: number;
     /** Default 200; above it publish, delete, duplicate and mirror run in batches. */
@@ -170,7 +170,7 @@ export type ResolvedOptions = {
   enforceAllowedTypesOnMove: boolean;
   /** Folder names and slugs, and added segment fields, are localized. */
   localizeSegments: boolean;
-  limits: { maxItemsPerMove: number; maxFoldersPerMove: number; maxSyncDocuments: number };
+  limits: { maxItemsPerOperation: number; maxFoldersPerMove: number; maxSyncDocuments: number };
   urls: { localePrefix: LocalePrefixMode; trailingSlash: boolean };
   redirects: {
     enabled: boolean;

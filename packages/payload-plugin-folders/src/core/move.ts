@@ -437,12 +437,12 @@ export const buildMovePlan = async (
   const [firstRequested] = request.items;
   const firstRef: ItemRef = { collection: firstRequested.collection, id: firstRequested.id };
 
-  if (request.items.length > options.limits.maxItemsPerMove) {
-    const over = request.items[options.limits.maxItemsPerMove];
+  if (request.items.length > options.limits.maxItemsPerOperation) {
+    const over = request.items[options.limits.maxItemsPerOperation];
     block(
       { collection: over.collection, id: over.id },
       "size",
-      `Move at most ${options.limits.maxItemsPerMove} items at once`
+      `Move at most ${options.limits.maxItemsPerOperation} items at once`
     );
 
     return finish(null, null);

@@ -228,9 +228,9 @@ const assertDeletableItems = (request: DeleteRequest, options: ResolvedOptions):
   if (request.items.length === 0) {
     throw new APIError("Choose at least one item to delete", 400, null, true);
   }
-  if (request.items.length > options.limits.maxItemsPerMove) {
+  if (request.items.length > options.limits.maxItemsPerOperation) {
     throw new APIError(
-      `Delete at most ${options.limits.maxItemsPerMove} items at once`,
+      `Delete at most ${options.limits.maxItemsPerOperation} items at once`,
       400,
       null,
       true

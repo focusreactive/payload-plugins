@@ -31,8 +31,8 @@ export const buildDuplicateEndpoint = (options: ResolvedOptions): Endpoint => ({
     if (!Array.isArray(body.items) || body.items.length === 0) {
       throw badRequest("Choose at least one item to copy");
     }
-    if (body.items.length > options.limits.maxItemsPerMove) {
-      throw badRequest(`Copy at most ${options.limits.maxItemsPerMove} items at once`);
+    if (body.items.length > options.limits.maxItemsPerOperation) {
+      throw badRequest(`Copy at most ${options.limits.maxItemsPerOperation} items at once`);
     }
 
     const request: DuplicateRequest = {

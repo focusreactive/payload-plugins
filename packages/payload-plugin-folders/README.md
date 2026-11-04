@@ -277,7 +277,7 @@ export const options: FoldersPluginOptions = {
   newItemPosition: "top",
   enforceAllowedTypesOnMove: true,
   localizeSegments: true,
-  limits: { maxItemsPerMove: 500, maxFoldersPerMove: 2000, maxSyncDocuments: 200 },
+  limits: { maxItemsPerOperation: 500, maxFoldersPerMove: 2000, maxSyncDocuments: 200 },
   urls: { localePrefix: "non-default", trailingSlash: false },
   redirects: { enabled: true, mirrorToRedirectsPlugin: false },
   access: {
@@ -334,7 +334,7 @@ query read the folder with the requester's access. A reader who cannot read fold
 | `newItemPosition` | `top` | Where a new item lands among its siblings: `top` or `bottom`. |
 | `enforceAllowedTypesOnMove` | `true` | A move into a folder that does not allow the page type is blocked. `false` turns the block into a warning. |
 | `localizeSegments` | `true` when the config has `localization` | Folder `name` and `slug`, and a segment field the plugin adds, are localized. A segment field you already have keeps its own `localized` setting. |
-| `limits.maxItemsPerMove` | `500` | Selected items in one move. |
+| `limits.maxItemsPerOperation` | `500` | Selected items in one move, delete, duplicate or publish. A larger request is refused with a 400 that names the limit. |
 | `limits.maxFoldersPerMove` | `2000` | Folder rows that one move or rename may rewrite. |
 | `limits.maxSyncDocuments` | `200` | Above this many documents, publish, unpublish, delete, duplicate and the redirects mirror run as stepped batches. |
 | `urls.localePrefix` | `non-default` | How `buildUrl` and the mirrored redirect rows add a locale prefix: `none`, `non-default` or `all`. Stored paths never carry one. |

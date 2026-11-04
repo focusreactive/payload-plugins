@@ -65,7 +65,7 @@ describe("normalizeOptions", () => {
         },
         slug: "folders",
       },
-      limits: { maxFoldersPerMove: 2000, maxItemsPerMove: 500, maxSyncDocuments: 200 },
+      limits: { maxFoldersPerMove: 2000, maxItemsPerOperation: 500, maxSyncDocuments: 200 },
       localizeSegments: false,
       maxDepth: 20,
       newItemPosition: "top",
