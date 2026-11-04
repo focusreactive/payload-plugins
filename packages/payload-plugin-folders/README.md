@@ -1282,7 +1282,9 @@ Publish, unpublish, delete, duplicate and the redirects mirror touch one documen
 `limits.maxSyncDocuments` (200) they are stored as a `folder-operations` record and stepped, 200
 documents at a time, each step in its own transaction under the tree lock. A step is idempotent, so
 a failed step can be retried: the cursor moves in the step's own transaction, and a step that fails
-rolls its work and its cursor back.
+rolls its work and its cursor back. A Local API call with no user (no `user` and no `req.user`)
+cannot be stepped by anyone, because only the record's owner may step it, so it always runs in one
+transaction whatever its size.
 
 - A dialog shows a progress bar. Closing it leaves a banner in the tree that resumes stepping, also
   after a reload.

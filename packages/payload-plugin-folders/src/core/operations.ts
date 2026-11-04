@@ -309,8 +309,8 @@ export const stepOperation = async (
 /**
  * Spec section 5.8: runs `units` at once when there are at most `limits.maxSyncDocuments` of them,
  * in one transaction under the tree lock, and answers the handler's final state; above that it
- * stores them as an operation for the admin to step and answers its id. A step is idempotent, so
- * the dialog can retry one.
+ * stores them as an operation for the admin to step and answers its id, unless the call has no user
+ * (a script or a job), which runs them at once. A step is idempotent, so the dialog can retry one.
  */
 export const runOrQueue = async ({
   kind,
@@ -329,7 +329,8 @@ export const runOrQueue = async ({
 }): Promise<{ operationId: FolderId; queued: true } | { queued: false; state: OperationState }> => {
   const handler = getHandler(kind);
   const options = givenOptions ?? getResolvedOptions(req.payload);
-  if (units.length > options.limits.maxSyncDocuments) {
+  // A queued operation belongs to its user, who alone may step it, so a call with no user runs now.
+  if (units.length > options.limits.maxSyncDocuments && req.user) {
     const { id } = await startOperation({ items: units, kind, params, req, state });
 
     return { operationId: id, queued: true };
