@@ -455,25 +455,33 @@ describe("POST /folders-tree/duplicate", () => {
     expect(child.id).toBeDefined();
   });
 
-  it("a copied folder holding only its root page may land exactly at maxDepth", async () => {
+  it("a copied root page becomes a plain page, so its folder copy counts one level deeper", async () => {
     const { payload } = shallowHarness;
     const first = await createFolder(payload, { slug: "one" });
     const second = await createFolder(payload, { parent: first.id, slug: "two" });
     const source = await createFolder(payload, { slug: "source" });
     await createLivePage(payload, source.id, "start", { isFolderRoot: true });
+    const copyTo = (toFolder: number) =>
+      callEndpoint<DuplicateBody>({
+        body: { items: [folderRef(source.id)], toFolder },
+        config: shallowHarness.config,
+        method: "POST",
+        path: "/folders-tree/duplicate",
+        payload,
+        payloadInstanceCacheKey: shallowHarness.cacheKey,
+      });
 
-    // /one/two/source is 3 deep and its root page lives at that same URL.
-    const { body, status } = await callEndpoint<DuplicateBody>({
-      body: { items: [folderRef(source.id)], toFolder: second.id },
-      config: shallowHarness.config,
-      method: "POST",
-      path: "/folders-tree/duplicate",
-      payload,
-      payloadInstanceCacheKey: shallowHarness.cacheKey,
-    });
+    // The folder copy would be /one/two/source (3 deep), but its copied page is no longer the
+    // folder's root page, so it lands at /one/two/source/start-copy (4 deep).
+    const refused = await copyTo(second.id);
+    const fits = await copyTo(first.id);
 
-    expect(body.errors).toBeUndefined();
-    expect(status).toBe(200);
+    expect(refused.status).toBe(400);
+    expect(refused.body.errors?.[0].data?.reason).toBe("depth");
+    expect(refused.body.errors?.[0].message).toBe(
+      "This would make URLs 4 segments deep; the limit is 3"
+    );
+    expect(fits.status).toBe(200);
     expect(await countAll(payload, "pages")).toBe(2);
   });
 

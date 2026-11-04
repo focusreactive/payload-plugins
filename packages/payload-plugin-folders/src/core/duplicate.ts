@@ -328,9 +328,7 @@ export const planDuplicate = async (
         parent &&
         (parent.id === rootRecord.id || (parent.ancestorIds ?? "").includes(`/${rootRecord.id}/`))
       ) {
-        // A folder's root page shares the folder's own URL depth; any other page sits one level below.
-        const pageOffset = page.row.isFolderRoot ? 1 : 2;
-        deepest = Math.max(deepest, targetDepth + pageOffset + ((parent.depth ?? 0) - baseDepth));
+        deepest = Math.max(deepest, targetDepth + 2 + ((parent.depth ?? 0) - baseDepth));
       }
     }
   }
