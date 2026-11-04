@@ -339,7 +339,7 @@ query read the folder with the requester's access. A reader who cannot read fold
 | `redirects.enabled` | `true` | Write `folder-redirects` rows for every changed published URL. The confirm dialog can still untick it for one move. |
 | `redirects.mirrorToRedirectsPlugin` | `false` | Also write rows into `@payloadcms/plugin-redirects`. That plugin must be registered. |
 | `access.move` | none | An extra gate on every move, asked after the `update` and publish checks passed. |
-| `access.repair` | users who pass `folders.access.update` and `access.move` | Who may verify and repair, see "Rebuild full URLs", and delete `folder-redirects` rows. |
+| `access.repair` | users who pass `folders.access.update` and `access.move` | Who may verify and repair, and see "Rebuild full URLs". |
 | `hooks.afterPathChange` | none | Runs after commit with every full path that changed. Read the warning in "Reading content" first. |
 | `admin.treeView` | `true` | `false` keeps Payload's own folders list. The sidebar tab still works. |
 | `admin.sidebarTab` | `{ label: "Tree" }` | `false` removes the Tree tab, or pass a label. |
@@ -398,7 +398,7 @@ Folders have no drafts, so a folder rename is live at once.
 
 | Name | Purpose |
 |---|---|
-| `folder-redirects` | The "URL history". `lookupKey` (`<locale>:<path>`, unique together with `kind`), `fromPath`, `locale`, `kind` (`page` or `folderPrefix`), `target`. A `folderPrefix` row stands for every path beneath it. Logged-in users read rows. Only users who pass `access.repair` (its default is in the options table) delete them. Nobody creates or updates them but the plugin. |
+| `folder-redirects` | The "URL history". `lookupKey` (`<locale>:<path>`, unique together with `kind`), `fromPath`, `locale`, `kind` (`page` or `folderPrefix`), `target`. A `folderPrefix` row stands for every path beneath it. Logged-in users read and delete rows, so an editor can drop a wrong redirect, whatever `access.repair` says. Nobody creates or updates them but the plugin. |
 | `folder-operations` | Hidden. The progress of a stepped batch: `kind`, `items`, `cursor`, `done`, `total`, `status`, `error`, `createdBy`. Each user reads only their own. |
 | `folders-tree-state` | A hidden global. `revision` changes on every tree change and drives the admin's change detection. `lockedAt` is part of the cross-process tree lock. |
 

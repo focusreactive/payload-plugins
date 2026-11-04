@@ -676,8 +676,11 @@ describe("tree item access and repair", () => {
     expect(outside.update).toBe(false);
   });
 
-  it("lets only a user who may repair delete URL history rows", async () => {
+  it("lets any signed-in user delete URL history rows, even when repair is limited to admins", async () => {
     const tree = await seed();
+    const options = getResolvedOptions(harness.payload);
+    expect(await canRepairTree({ options, req: await createRequestFor("editor") })).toBe(false);
+
     const createRow = async () =>
       (await harness.payload.create({
         collection: "folder-redirects",
@@ -700,26 +703,17 @@ describe("tree item access and repair", () => {
       ).totalDocs;
     const row = await createRow();
 
-    for (const role of ["drafter", "editor", "editorLimited"] as const) {
-      const refused = await callEndpoint({
-        config: harness.config,
-        method: "DELETE",
-        path: `/folder-redirects/${row.id}`,
-        payload: harness.payload,
-        payloadInstanceCacheKey: harness.cacheKey,
-        user: as(role),
-      });
-      expect(refused.status).toBe(403);
-      expect(await rowCount()).toBe(1);
-    }
-    await expect(
-      harness.payload.delete({
-        collection: "folder-redirects",
-        id: row.id,
-        overrideAccess: false,
-        user: await readUser("drafter"),
-      })
-    ).rejects.toThrow();
+    // The dev app signs anonymous requests in as the admin unless this header says not to.
+    const anonymous = await callEndpoint({
+      anonymous: true,
+      config: harness.config,
+      headers: { DisableAutologin: "true" },
+      method: "DELETE",
+      path: `/folder-redirects/${row.id}`,
+      payload: harness.payload,
+      payloadInstanceCacheKey: harness.cacheKey,
+    });
+    expect(anonymous.status).toBe(403);
     expect(await rowCount()).toBe(1);
 
     // Read stays open to any signed-in user.
@@ -732,16 +726,20 @@ describe("tree item access and repair", () => {
     });
     expect(read.status).toBe(200);
 
-    const deleted = await callEndpoint({
-      config: harness.config,
-      method: "DELETE",
-      path: `/folder-redirects/${row.id}`,
-      payload: harness.payload,
-      payloadInstanceCacheKey: harness.cacheKey,
-      user: as("admin"),
-    });
-    expect(deleted.status).toBe(200);
-    expect(await rowCount()).toBe(0);
+    let current = row;
+    for (const role of ["editor", "editorLimited", "drafter", "admin"] as const) {
+      const deleted = await callEndpoint({
+        config: harness.config,
+        method: "DELETE",
+        path: `/folder-redirects/${current.id}`,
+        payload: harness.payload,
+        payloadInstanceCacheKey: harness.cacheKey,
+        user: as(role),
+      });
+      expect(deleted.status).toBe(200);
+      expect(await rowCount()).toBe(0);
+      current = await createRow();
+    }
   });
 
   it("lets only the admin repair in the dev app, and applies the spec's rule without access.repair", async () => {
