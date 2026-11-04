@@ -5,8 +5,7 @@ import { findRefusedChecks } from "./access.js";
 import type { AccessCheck } from "./access.js";
 import type { MoveBlock, PlannedMoveItem } from "./move.js";
 import { createNestedRequest } from "./nestedRequest.js";
-
-const itemKey = (ref: ItemRef): string => `${ref.collection}:${ref.id}`;
+import { itemKey } from "./itemKey.js";
 
 // The messages name no title and no path: a refused user must learn nothing about content they may
 // not touch, and a title is read with no read access check.

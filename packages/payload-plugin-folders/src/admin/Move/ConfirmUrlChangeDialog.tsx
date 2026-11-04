@@ -15,8 +15,8 @@ import type { ItemRef, TreeItem } from "../../types.js";
 import type { Translate } from "../compat.js";
 import type { MovePreview } from "../api.js";
 import { useDialogSlug } from "../dialogScope.js";
-import { itemKeyOf } from "../store.js";
 import { useFormatUrl } from "../urlForm.js";
+import { itemKey } from "../../core/itemKey.js";
 
 export const confirmDialogSlug = "fr-folders-confirm-move";
 
@@ -52,7 +52,7 @@ export type ConfirmUrlChangeDialogProps = {
 };
 
 const titleOf = (items: readonly TreeItem[], ref: ItemRef): string =>
-  items.find((item) => itemKeyOf(item) === itemKeyOf(ref))?.title ?? `${ref.collection} ${ref.id}`;
+  items.find((item) => itemKey(item) === itemKey(ref))?.title ?? `${ref.collection} ${ref.id}`;
 
 const Summary = ({
   languageCount,
@@ -134,7 +134,7 @@ const ConfirmContent = ({
                   <p className="fr-folders-confirm__label">{translate("confirmExamples")}</p>
                   <ul className="fr-folders-confirm__list" data-testid="url-samples">
                     {request.preview.samples.map((sample) => (
-                      <li key={`${sample.collection}:${sample.id}:${sample.locale}`}>
+                      <li key={`${itemKey(sample)}:${sample.locale}`}>
                         <code>{formatUrl(sample.from)}</code> {translate("becomes")}{" "}
                         <code>{formatUrl(sample.to)}</code>
                         {sample.locale !== null && languageCount > 1 ? (
@@ -173,7 +173,7 @@ const ConfirmContent = ({
               <p className="fr-folders-confirm__label">{translate("confirmBlockedHeading")}</p>
               <ul className="fr-folders-confirm__list" data-testid="blocked-list">
                 {request.preview.blocked.map((block) => (
-                  <li key={`${itemKeyOf(block.item)}:${block.reason}:${block.locale ?? ""}`}>
+                  <li key={`${itemKey(block.item)}:${block.reason}:${block.locale ?? ""}`}>
                     <strong>{titleOf(request.items, block.item)}</strong>: {block.message}
                   </li>
                 ))}
@@ -185,7 +185,7 @@ const ConfirmContent = ({
               <p className="fr-folders-confirm__label">{translate("confirmWarningsHeading")}</p>
               <ul className="fr-folders-confirm__list">
                 {request.preview.warnings.map((warning) => (
-                  <li key={`${itemKeyOf(warning.item)}:${warning.reason}`}>
+                  <li key={`${itemKey(warning.item)}:${warning.reason}`}>
                     <strong>{titleOf(request.items, warning.item)}</strong>: {warning.message}
                   </li>
                 ))}

@@ -11,6 +11,7 @@ import type { FolderKey, TreeStore } from "../store.js";
 import { useTreeStoreState } from "../useTreeStore.js";
 import { pickerRowsOf } from "./folderPicker.js";
 import type { PickerRow } from "./folderPicker.js";
+import { itemKey } from "../../core/itemKey.js";
 
 const searchDelayMs = 250;
 
@@ -285,12 +286,12 @@ export const FolderPickerTree = ({
                 isSelected={
                   choice !== null && choice.id !== null && String(choice.id) === String(hit.id)
                 }
-                key={`${hit.collection}:${hit.id}`}
+                key={itemKey(hit)}
                 level={0}
                 onActivateReason={setActiveReasonKey}
                 onSelect={() => onChoose({ id: hit.id, title: hit.title })}
                 refusal={refusalFor(hit)}
-                rowKey={`hit:${hit.collection}:${hit.id}`}
+                rowKey={`hit:${itemKey(hit)}`}
                 secondary={hit.fullPath}
                 testId="picker-row"
                 title={hit.title}

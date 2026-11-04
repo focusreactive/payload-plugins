@@ -1,6 +1,6 @@
 import type { TreeItem } from "../../types.js";
-import { itemKeyOf } from "../store.js";
 import type { ItemRowModel, TreeRowModel } from "../Tree/useTreeData.js";
+import { itemKey } from "../../core/itemKey.js";
 
 /** What a key press says, for the tree to decide what it means (spec section 7.6). */
 export type KeyFacts = {
@@ -199,4 +199,4 @@ export const neighbourKeyOf = (
 
 /** The key of the row a DOM row element stands for. */
 export const rowKeyOfAttributes = (collection: string | null, id: string | null): string | null =>
-  collection === null || id === null ? null : itemKeyOf({ collection, id });
+  collection === null || id === null ? null : itemKey({ collection, id });

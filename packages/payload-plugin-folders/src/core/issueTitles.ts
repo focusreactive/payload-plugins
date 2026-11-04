@@ -4,6 +4,7 @@ import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, ItemRef, ResolvedOptions } from "../types.js";
 import { noLocaleKey } from "./locales.js";
 import type { IssueItem, TreeIssue } from "./treeIssues.js";
+import { itemKey } from "./itemKey.js";
 
 /** Ids per title query; a listed result names at most a few thousand items. */
 const titleBatchSize = 500;
@@ -27,8 +28,6 @@ const toTitle = (value: unknown, defaultLocale: string): string | null => {
 
   return typeof other === "string" ? other : null;
 };
-
-const itemKey = (collection: string, id: FolderId): string => `${collection}:${id}`;
 
 const refsOf = (issue: TreeIssue, foldersSlug: string): ItemRef[] => {
   const refs: ItemRef[] = [];
@@ -87,7 +86,7 @@ const readTitles = async (
       })) as unknown as { docs: Array<Record<string, unknown>> };
       for (const doc of docs) {
         titles.set(
-          itemKey(collection, doc.id as FolderId),
+          itemKey({ collection, id: doc.id as FolderId }),
           toTitle(doc[titleField], defaultLocale)
         );
       }
@@ -116,10 +115,10 @@ export const withItemTitles = async (
   const name = (item: IssueItem): IssueItem => ({
     ...item,
     kind: item.collection === foldersSlug ? "folder" : "page",
-    title: titles.get(itemKey(item.collection, item.id)) ?? null,
+    title: titles.get(itemKey(item)) ?? null,
   });
   const folderTitle = (id: FolderId | null): string | null =>
-    id === null ? null : (titles.get(itemKey(foldersSlug, id)) ?? null);
+    id === null ? null : (titles.get(itemKey({ collection: foldersSlug, id })) ?? null);
 
   return issues.map((issue): TreeIssue => {
     switch (issue.kind) {

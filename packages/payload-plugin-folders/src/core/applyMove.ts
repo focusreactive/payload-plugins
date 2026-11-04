@@ -15,6 +15,7 @@ import { hasLatestVersion, patchLatestVersionStructure } from "./structureWrite.
 import { writeFolderRow, writeSubtreeRewrite } from "./subtree.js";
 import { bumpRevision, withTreeLock } from "./treeLock.js";
 import { applyTypeLock } from "./typeLocks.js";
+import { itemKey } from "./itemKey.js";
 
 export type MoveResult = {
   /** Every full path the move changed, folders and pages, per locale. */
@@ -33,8 +34,6 @@ export type MoveResult = {
   /** The revision each moved item now has, `collection:id` to revision. */
   structureRevisions: Record<string, number>;
 };
-
-const itemKey = (ref: ItemRef): string => `${ref.collection}:${ref.id}`;
 
 const writeMovedFolder = async ({
   item,

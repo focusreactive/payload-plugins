@@ -1,4 +1,5 @@
 import type { ItemRef } from "../../types.js";
+import { itemKey } from "../../core/itemKey.js";
 
 /**
  * The DOM row of an item, in `root` (a tree's own element: the tree view and the sidebar tab can
@@ -12,13 +13,13 @@ export const rowElementOf = (
     `[data-testid="tree-row"][data-collection="${item.collection}"][data-item-id="${item.id}"]`
   );
 
-/** The key a DOM row stands for, the same as `itemKeyOf` of its item. */
+/** The key a DOM row stands for, the same as `itemKey` of its item. */
 export const rowKeyOfElement = (element: Element | null): string | null => {
   const row = element?.closest('[data-testid="tree-row"]');
   const collection = row?.getAttribute("data-collection");
   const id = row?.getAttribute("data-item-id");
 
-  return collection && id ? `${collection}:${id}` : null;
+  return collection && id ? itemKey({ collection, id }) : null;
 };
 
 /** A dialog has the keyboard: it keeps the focus until it closes. */

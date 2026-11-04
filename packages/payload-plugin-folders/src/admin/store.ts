@@ -1,6 +1,7 @@
 import type { FolderId, ItemRef, TreeItem } from "../types.js";
 import { FoldersApiError, fetchAncestors, fetchChildren, fetchRevision } from "./api.js";
 import type { FoldersApiContext } from "./api.js";
+import { itemKey } from "../core/itemKey.js";
 
 /** Key of a folder's children in the cache: `root` for the top level, else the folder's id. */
 export type FolderKey = string;
@@ -8,9 +9,6 @@ export type FolderKey = string;
 export const rootKey: FolderKey = "root";
 
 export const folderKeyOf = (id: FolderId | null): FolderKey => (id === null ? rootKey : String(id));
-
-/** Key of one tree row: pages and folders can share an id, so the collection is part of it. */
-export const itemKeyOf = (item: ItemRef): string => `${item.collection}:${item.id}`;
 
 /** The most rows one request may ask for; the endpoint clamps to the same number. */
 const maximumRefreshLimit = 1000;
@@ -192,7 +190,7 @@ const withoutDuplicates = (items: readonly TreeItem[]): TreeItem[] => {
   const seen = new Set<string>();
   const unique: TreeItem[] = [];
   for (const item of items) {
-    const key = itemKeyOf(item);
+    const key = itemKey(item);
     if (!seen.has(key)) {
       seen.add(key);
       unique.push(item);
@@ -206,10 +204,10 @@ type Location = { index: number; item: TreeItem; key: FolderKey };
 
 const locate = (
   entries: Readonly<Record<FolderKey, ChildrenEntry>>,
-  itemKey: string
+  rowKey: string
 ): Location | null => {
   for (const [key, entry] of Object.entries(entries)) {
-    const index = entry.items.findIndex((item) => itemKeyOf(item) === itemKey);
+    const index = entry.items.findIndex((item) => itemKey(item) === rowKey);
     if (index !== -1) {
       return { index, item: entry.items[index] as TreeItem, key };
     }
@@ -276,10 +274,10 @@ const removeItems = (
   itemKeys: ReadonlySet<string>
 ): void => {
   for (const [key, entry] of Object.entries(entries)) {
-    if (entry.items.some((item) => itemKeys.has(itemKeyOf(item)))) {
+    if (entry.items.some((item) => itemKeys.has(itemKey(item)))) {
       entries[key] = {
         ...entry,
-        items: entry.items.filter((item) => !itemKeys.has(itemKeyOf(item))),
+        items: entry.items.filter((item) => !itemKeys.has(itemKey(item))),
       };
     }
   }
@@ -896,9 +894,9 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
   };
 
   const applyOptimisticMove = (move: OptimisticMove): OptimisticHandle => {
-    const movedKeys = new Set(move.items.map(itemKeyOf));
+    const movedKeys = new Set(move.items.map(itemKey));
     const sources = [...movedKeys]
-      .map((itemKey) => locate(state.childrenByFolder, itemKey))
+      .map((rowKey) => locate(state.childrenByFolder, rowKey))
       .filter((location): location is Location => location !== null);
     const targetKey = folderKeyOf(move.toFolder);
     if (sources.length === 0) {
@@ -959,7 +957,7 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
       // not jump when the answer is read. `sources` already follows `move.items`.
       const moving = sources.map(({ item }) => ({ ...item, parentId: move.toFolder }));
       const afterIndex = move.after
-        ? target.items.findIndex((item) => itemKeyOf(item) === itemKeyOf(move.after as ItemRef))
+        ? target.items.findIndex((item) => itemKey(item) === itemKey(move.after as ItemRef))
         : -1;
       let insertAt: number | null = 0;
       if (afterIndex !== -1) {
@@ -974,7 +972,7 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
         const items = [...target.items];
         items.splice(insertAt, 0, ...moving);
         entries[targetKey] = { ...target, items };
-        insertedKeys = new Set(moving.map(itemKeyOf));
+        insertedKeys = new Set(moving.map(itemKey));
       }
     }
     for (const [key, delta] of deltas) {

@@ -7,8 +7,7 @@ import type { FolderRecord } from "./folderRecords.js";
 import { toPageRow } from "./pageRecords.js";
 import type { PageRow } from "./pageRecords.js";
 import { readFolderDescendants } from "./subtree.js";
-
-export const itemKey = (ref: ItemRef): string => `${ref.collection}:${ref.id}`;
+import { itemKey } from "./itemKey.js";
 
 /** Ids per query, far below the bound-parameter limit of either adapter. */
 const idChunkSize = 500;

@@ -12,7 +12,7 @@ import { MoveMarkerRow } from "../MoveMode/MoveMarkerRow.js";
 import { markerReasonOf, tabbableMarkerKey } from "../MoveMode/moveMarkers.js";
 import type { MoveMarker, MoveModeRow } from "../MoveMode/moveMarkers.js";
 import type { SelectionApi } from "../useSelection.js";
-import { folderKeyOf, itemKeyOf } from "../store.js";
+import { folderKeyOf } from "../store.js";
 import type { FolderKey, TreeStore } from "../store.js";
 import type { TreeItem } from "../../types.js";
 import { EmptyRow } from "./EmptyStates.js";
@@ -25,6 +25,7 @@ import type {
   StaleRowModel,
   TreeRowModel,
 } from "./useTreeData.js";
+import { itemKey } from "../../core/itemKey.js";
 
 /** What Move mode adds to the tree: the rows with a marker in every gap, and how a marker is picked. */
 export type MoveModeView = {
@@ -371,20 +372,20 @@ export const Tree = ({
     async (parentKey: FolderKey, byKeyboard: boolean) => {
       const parent = parentKey === "root" ? null : parentKey;
       const itemsOf = () => store.getState().childrenByFolder[folderKeyOf(parent)]?.items ?? [];
-      const keysBefore = new Set(itemsOf().map(itemKeyOf));
+      const keysBefore = new Set(itemsOf().map(itemKey));
       await store.loadMore(parent);
       if (byKeyboard) {
-        setFocusAfterLoad(itemsOf().find((item) => !keysBefore.has(itemKeyOf(item))) ?? null);
+        setFocusAfterLoad(itemsOf().find((item) => !keysBefore.has(itemKey(item))) ?? null);
       }
     },
     [store]
   );
   useEffect(() => {
-    if (focusAfterLoad === null || !indexByKey.has(itemKeyOf(focusAfterLoad))) {
+    if (focusAfterLoad === null || !indexByKey.has(itemKey(focusAfterLoad))) {
       return;
     }
     setFocusAfterLoad(null);
-    revealRow(itemKeyOf(focusAfterLoad));
+    revealRow(itemKey(focusAfterLoad));
     focusRowWhenShown(
       focusAfterLoad,
       () => keyboard.treeRef.current,

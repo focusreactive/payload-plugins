@@ -12,7 +12,7 @@ import type { ReactNode } from "react";
 import type { TreeItem } from "../../types.js";
 import type { Translate } from "../compat.js";
 import type { DropMove } from "../Move/useMoveFlow.js";
-import { itemKeyOf, loadedItemsOf } from "../store.js";
+import { loadedItemsOf } from "../store.js";
 import type { TreeStore, TreeStoreState } from "../store.js";
 import type { TreeRowModel } from "../Tree/useTreeData.js";
 import { DragStateContext } from "./dragState.js";
@@ -28,6 +28,7 @@ import {
   rowUnderPointer,
 } from "./pointerSensors.js";
 import type { RowHitData } from "./pointerSensors.js";
+import { itemKey } from "../../core/itemKey.js";
 
 /** How long a closed folder is hovered before it opens (spec section 7.3). */
 export const autoExpandDelayMs = 600;
@@ -155,7 +156,7 @@ export const DragAndDropProvider = ({
     const whereOf = (dropped: DropResolution): string => {
       const { after } = dropped.target;
       if (after) {
-        const anchor = loadedItemsOf(state).find((item) => itemKeyOf(item) === itemKeyOf(after));
+        const anchor = loadedItemsOf(state).find((item) => itemKey(item) === itemKey(after));
 
         return translate("dragWhereAfter", { target: anchor?.title ?? "" });
       }
@@ -285,7 +286,7 @@ export const DragAndDropProvider = ({
   const rowState = useMemo<DragRowState>(
     () => ({
       disabled,
-      draggedKeys: new Set((carried?.items ?? []).map(itemKeyOf)),
+      draggedKeys: new Set((carried?.items ?? []).map(itemKey)),
       grabbedKey: carried?.grabbedKey ?? null,
       indicator: resolution?.indicator ?? null,
       isRefused,

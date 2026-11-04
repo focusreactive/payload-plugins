@@ -1,6 +1,7 @@
 import type { TreeItem, TreeStatus } from "../../types.js";
-import { folderKeyOf, itemKeyOf } from "../store.js";
+import { folderKeyOf } from "../store.js";
 import type { ItemRowModel } from "../Tree/useTreeData.js";
+import { itemKey } from "../../core/itemKey.js";
 
 /** The hits a search asks for: more than a person reads down a list, fewer than the endpoint's cap. */
 export const searchResultLimit = 100;
@@ -68,7 +69,7 @@ export const searchRowsOf = (
     expandable: false,
     expanded: false,
     item,
-    key: itemKeyOf(item),
+    key: itemKey(item),
     level: 0,
     parentKey: folderKeyOf(item.parentId),
     posInSet: index + 1,

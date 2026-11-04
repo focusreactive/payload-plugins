@@ -8,6 +8,7 @@ import { getDefaultLocaleKey, getLocaleCodes, noLocaleKey } from "./locales.js";
 import { effectiveSegmentsOf } from "./pageRecords.js";
 import { buildSegmentWhere } from "./segmentWhere.js";
 import { toText } from "./text.js";
+import { itemKey } from "./itemKey.js";
 
 /** The locale slots a page's paths are checked in: every locale code, or one slot without localization. */
 export const getPageLocaleKeys = (payload: Payload): string[] => {
@@ -329,7 +330,7 @@ export const createConflictNamer = (
   const readable = new Map<string, boolean>();
 
   return async (conflict) => {
-    const key = `${conflict.collection}:${conflict.id}`;
+    const key = itemKey(conflict);
     let isReadable = readable.get(key);
     if (isReadable === undefined) {
       isReadable = await canReadItem({

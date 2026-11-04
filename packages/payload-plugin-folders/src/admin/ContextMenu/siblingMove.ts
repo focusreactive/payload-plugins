@@ -1,6 +1,6 @@
 import type { TreeItem } from "../../types.js";
 import type { MoveTarget } from "../Move/moveFlow.js";
-import { itemKeyOf } from "../store.js";
+import { itemKey } from "../../core/itemKey.js";
 
 export type SiblingMoveDirection = "down" | "up";
 
@@ -25,7 +25,7 @@ export const siblingMoveOf = (
   hasMore: boolean,
   direction: SiblingMoveDirection
 ): SiblingMove => {
-  const index = siblings.findIndex((sibling) => itemKeyOf(sibling) === itemKeyOf(item));
+  const index = siblings.findIndex((sibling) => itemKey(sibling) === itemKey(item));
   if (index === -1) {
     return { blocked: "unloaded", target: null };
   }

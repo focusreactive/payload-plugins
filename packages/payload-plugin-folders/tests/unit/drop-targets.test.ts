@@ -10,10 +10,11 @@ import {
 import type { DropRules } from "../../src/admin/DragAndDrop/dropTargets.js";
 import type { DropZone } from "../../src/admin/DragAndDrop/dropZones.js";
 import { buildMoveBody, optimisticMoveOf } from "../../src/admin/Move/moveFlow.js";
-import { itemKeyOf, rootKey } from "../../src/admin/store.js";
+import { rootKey } from "../../src/admin/store.js";
 import type { ChildrenEntry, TreeStoreState } from "../../src/admin/store.js";
 import { flattenTree } from "../../src/admin/Tree/useTreeData.js";
 import type { TreeItem } from "../../src/types.js";
+import { itemKey } from "../../src/core/itemKey.js";
 
 const access = { delete: true, publish: true, update: true };
 
@@ -137,7 +138,7 @@ const drop = (
 ) =>
   resolveDrop({
     dragged,
-    over: { key: itemKeyOf(over), zone },
+    over: { key: itemKey(over), zone },
     rows: flattenTree(state),
     rules: { ...rules, ...overrides },
     state,
@@ -323,7 +324,7 @@ describe("the dragged set", () => {
     const selected = flattenTree(state)
       .flatMap((row) => (row.type === "item" ? [row.item] : []))
       .filter((item) =>
-        [alpha, archive, beta, blog, deep].some((other) => itemKeyOf(other) === itemKeyOf(item))
+        [alpha, archive, beta, blog, deep].some((other) => itemKey(other) === itemKey(item))
       );
 
     const carried = draggedItemsOf(alpha, selected);

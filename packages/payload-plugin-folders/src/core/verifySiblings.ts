@@ -9,6 +9,7 @@ import { effectiveSegmentOf } from "./verifyPages.js";
 import type { PlannedFolder } from "./verifyFolders.js";
 import { issueItemLimit, sampleItems } from "./treeIssues.js";
 import type { TreeIssue } from "./treeIssues.js";
+import { itemKey } from "./itemKey.js";
 
 const hasKey = (row: SiblingRow): boolean =>
   typeof row.orderKey === "string" && row.orderKey !== "";
@@ -163,7 +164,7 @@ export const findMultipleRootPages = (facts: PageFact[]): TreeIssue[] => {
 };
 
 export const duplicateClaimKey = (collection: string, id: FolderId, locale: string): string =>
-  `${collection}:${id}:${locale}`;
+  `${itemKey({ collection, id })}:${locale}`;
 
 /**
  * Rules 1, 2 and 4 of spec section 2.6, compared in lowercase because URLs are canonical lowercase

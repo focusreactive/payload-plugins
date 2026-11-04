@@ -9,7 +9,8 @@ import { getFallbackLocaleKey, getLocaleCodes, noLocaleKey } from "./locales.js"
 import { createNestedRequest } from "./nestedRequest.js";
 import { registerOperationHandler, runOrQueue } from "./operations.js";
 import type { OperationHandler } from "./operations.js";
-import { itemKey, readSelection, readSelectionPages } from "./selection.js";
+import { itemKey } from "./itemKey.js";
+import { readSelection, readSelectionPages } from "./selection.js";
 import { getResolvedOptions } from "./runtime.js";
 import { readLatestStatuses, resolveTreeStatus } from "./status.js";
 

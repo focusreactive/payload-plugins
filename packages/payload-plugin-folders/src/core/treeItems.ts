@@ -25,6 +25,7 @@ import { createNestedRequest } from "./nestedRequest.js";
 import { readLatestStatuses, resolveTreeStatus } from "./status.js";
 import { getPageDefaultLocale, pageDepthIn } from "./uniqueness.js";
 import { toText } from "./text.js";
+import { itemKey } from "./itemKey.js";
 
 /** Rows the tree reads per query are bounded by the caller; this caps what a client may ask for. */
 export const maxTreePageSize = 1000;
@@ -459,7 +460,7 @@ const toPageItem = ({
       fallbackKey,
       hasDrafts: source.hasDrafts,
       key: view.pageKey,
-      latestStatus: latestStatuses.get(`${page.slug}:${id}`),
+      latestStatus: latestStatuses.get(itemKey({ collection: page.slug, id })),
       mainStatus: row._status,
     }),
     structureRevision: typeof row.structureRevision === "number" ? row.structureRevision : 0,
@@ -532,7 +533,7 @@ export const buildTreeItems = async ({
       ids,
       req,
     })) {
-      latestStatuses.set(`${source.collection}:${id}`, status);
+      latestStatuses.set(itemKey({ collection: source.collection, id }), status);
     }
   }
 
@@ -540,7 +541,7 @@ export const buildTreeItems = async ({
   const noAccess = { delete: false, publish: false, update: false };
 
   return rows.map(({ doc, source }) => {
-    const key = `${source.collection}:${doc.id}`;
+    const key = itemKey({ collection: source.collection, id: doc.id as FolderId });
     const itemAccess = access.get(key) ?? noAccess;
     if (source.kind === "folder") {
       return toFolderItem({

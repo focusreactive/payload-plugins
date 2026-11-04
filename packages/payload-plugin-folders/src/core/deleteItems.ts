@@ -21,7 +21,8 @@ import type { OperationHandler, OperationSkip } from "./operations.js";
 import { pagePathIn } from "./pagePaths.js";
 import { effectiveSegmentsOf, liveLocaleKeysOf } from "./pageRecords.js";
 import { getResolvedOptions } from "./runtime.js";
-import { itemKey, readSelection } from "./selection.js";
+import { itemKey } from "./itemKey.js";
+import { readSelection } from "./selection.js";
 import type { Selection } from "./selection.js";
 import { readLatestStatuses, resolveTreeStatus } from "./status.js";
 import {

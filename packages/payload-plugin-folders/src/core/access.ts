@@ -5,6 +5,7 @@ import type { FolderId, ItemRef, ResolvedOptions } from "../types.js";
 import { createNestedRequest } from "./nestedRequest.js";
 import { isPublishedStatus } from "./pageRecords.js";
 import { relationIdOf } from "./relationId.js";
+import { itemKey } from "./itemKey.js";
 
 /** One question to a collection's `access.update` or `access.delete`. */
 export type AccessCheck = {
@@ -287,7 +288,7 @@ export const getItemsAccess = async ({
     }
 
     for (const id of ids) {
-      result.set(`${collection}:${id}`, {
+      result.set(itemKey({ collection, id }), {
         delete: allowed.delete.has(String(id)),
         publish: allowed.publish.has(String(id)),
         update: allowed.update.has(String(id)),
@@ -429,11 +430,9 @@ export const keepReadableItems = async ({
   items: ItemRef[];
   req: PayloadRequest;
 }): Promise<ItemRef[]> => {
-  const hidden = new Set(
-    (await findUnreadableItems({ items, req })).map((item) => `${item.collection}:${item.id}`)
-  );
+  const hidden = new Set((await findUnreadableItems({ items, req })).map((item) => itemKey(item)));
 
-  return items.filter((item) => !hidden.has(`${item.collection}:${item.id}`));
+  return items.filter((item) => !hidden.has(itemKey(item)));
 };
 
 /**

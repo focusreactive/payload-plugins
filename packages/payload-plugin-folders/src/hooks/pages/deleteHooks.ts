@@ -20,13 +20,12 @@ import { deleteRedirectsTargeting } from "../../core/redirects.js";
 import { bumpRevision } from "../../core/treeLock.js";
 import type { FolderId, PathChange, ResolvedOptions, ResolvedPageCollection } from "../../types.js";
 import { isInternalWrite } from "../context.js";
+import { itemKey } from "../../core/itemKey.js";
 
 // The changes a page's `beforeDelete` worked out, until its `afterDelete` reports them: the page
 // is gone by then, and so is what the paths were read from. They live on the request's context, so
 // a delete that fails between the two hooks takes them along with its request.
 const pendingChangesContextKey = "foldersPendingDeleteChanges";
-
-const keyOf = (collection: string, id: FolderId): string => `${collection}:${id}`;
 
 const isInTrash = async (
   req: Parameters<CollectionBeforeDeleteHook>[0]["req"],
@@ -78,7 +77,7 @@ export const buildPageBeforeDelete =
     });
     await deleteCustomMirrorRowsTo({ changes, options, req });
     const pending = (req.context[pendingChangesContextKey] ?? {}) as Record<string, PathChange[]>;
-    pending[keyOf(page.slug, id)] = changes;
+    pending[itemKey({ collection: page.slug, id })] = changes;
     req.context[pendingChangesContextKey] = pending;
   };
 
@@ -95,7 +94,7 @@ export const buildPageAfterDelete =
     const pending = req.context[pendingChangesContextKey] as
       | Record<string, PathChange[]>
       | undefined;
-    const key = keyOf(page.slug, id);
+    const key = itemKey({ collection: page.slug, id });
     const changes = pending?.[key] ?? [];
     if (pending) {
       delete pending[key];

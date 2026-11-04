@@ -3,8 +3,9 @@ import { siblingMoveOf } from "../ContextMenu/siblingMove.js";
 import type { SiblingMoveBlock, SiblingMoveDirection } from "../ContextMenu/siblingMove.js";
 import { optimisticMoveOf } from "../Move/moveFlow.js";
 import type { MoveTarget } from "../Move/moveFlow.js";
-import { folderKeyOf, itemKeyOf } from "../store.js";
+import { folderKeyOf } from "../store.js";
 import type { OptimisticHandle, TreeStore } from "../store.js";
+import { itemKey } from "../../core/itemKey.js";
 
 /** How long repeated Alt+Up and Alt+Down wait after the last press before one move is sent (spec section 7.6). */
 export const reorderDelayMs = 800;
@@ -78,9 +79,9 @@ export const createReorderController = ({
     }
     pending = null;
     clearTimeout(session.timer);
-    const key = itemKeyOf(session.original);
+    const key = itemKey(session.original);
     const siblings = store.getState().childrenByFolder[folderKeyOf(session.original.parentId)];
-    const index = siblings?.items.findIndex((sibling) => itemKeyOf(sibling) === key) ?? -1;
+    const index = siblings?.items.findIndex((sibling) => itemKey(sibling) === key) ?? -1;
     // The row left its folder under the editor's hands, or ended where it began: nothing to send.
     if (siblings === undefined || index === -1 || index === session.originalIndex) {
       rollbackAll(session);
@@ -112,14 +113,14 @@ export const createReorderController = ({
     flush: send,
     hasPending: () => pending !== null,
     press: (item, direction) => {
-      const key = itemKeyOf(item);
-      if (pending !== null && itemKeyOf(pending.original) !== key) {
+      const key = itemKey(item);
+      if (pending !== null && itemKey(pending.original) !== key) {
         send();
 
         return { type: "flushed" };
       }
       const siblings = store.getState().childrenByFolder[folderKeyOf(item.parentId)];
-      const current = siblings?.items.find((sibling) => itemKeyOf(sibling) === key);
+      const current = siblings?.items.find((sibling) => itemKey(sibling) === key);
       if (siblings === undefined || current === undefined) {
         return { blocked: "unloaded", type: "blocked" };
       }
@@ -144,7 +145,7 @@ export const createReorderController = ({
       const after = store.getState().childrenByFolder[folderKeyOf(item.parentId)];
 
       return {
-        position: (after?.items.findIndex((sibling) => itemKeyOf(sibling) === key) ?? 0) + 1,
+        position: (after?.items.findIndex((sibling) => itemKey(sibling) === key) ?? 0) + 1,
         total: after?.items.length ?? 0,
         type: "moved",
       };

@@ -60,6 +60,7 @@ import {
   readTitle,
 } from "./uniqueness.js";
 import type { SegmentConflict } from "./uniqueness.js";
+import { itemKey } from "./itemKey.js";
 
 /** What the caller saw when it built the request; a mismatch means the tree moved on (spec section 6). */
 export type ExpectedState = { orderKey: string | null; parentId: FolderId | null };
@@ -200,8 +201,6 @@ export class MoveBlockedError extends APIError<{
     this.blocked = blocked;
   }
 }
-
-const itemKey = (ref: ItemRef): string => `${ref.collection}:${ref.id}`;
 
 const badRequest = (message: string): APIError => new APIError(message, 400, null, true);
 

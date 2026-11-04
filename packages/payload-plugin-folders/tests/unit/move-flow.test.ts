@@ -11,9 +11,10 @@ import {
   snapshotBeforeMove,
   undoMove,
 } from "../../src/admin/Move/moveFlow.js";
-import { createTreeStore, itemKeyOf, rootKey } from "../../src/admin/store.js";
+import { createTreeStore, rootKey } from "../../src/admin/store.js";
 import type { TreeStore } from "../../src/admin/store.js";
 import type { ItemRef, TreeItem } from "../../src/types.js";
+import { itemKey } from "../../src/core/itemKey.js";
 
 const allowed = { delete: true, publish: true, update: true };
 
@@ -629,6 +630,6 @@ describe("the Undo path", () => {
   });
 
   it("keeps item keys in the same shape the store uses", () => {
-    expect(itemKeyOf({ collection: "pages", id: 3 })).toBe("pages:3");
+    expect(itemKey({ collection: "pages", id: 3 })).toBe("pages:3");
   });
 });

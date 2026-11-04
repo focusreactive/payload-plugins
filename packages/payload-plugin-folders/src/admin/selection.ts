@@ -1,5 +1,5 @@
-import { itemKeyOf } from "./store.js";
 import type { TreeItem } from "../types.js";
+import { itemKey } from "../core/itemKey.js";
 
 /**
  * What the editor ticked: the keys in tick order, and the row the next Shift click starts from.
@@ -107,5 +107,5 @@ export const selectOnly = (keys: readonly string[]): SelectionState => ({
 export const selectedItemsOf = (state: SelectionState, items: readonly TreeItem[]): TreeItem[] => {
   const ticked = new Set(state.keys);
 
-  return items.filter((item) => ticked.has(itemKeyOf(item)));
+  return items.filter((item) => ticked.has(itemKey(item)));
 };

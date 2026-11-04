@@ -26,7 +26,7 @@ import { useMoveMode } from "../MoveMode/useMoveMode.js";
 import { useMoveFlow } from "../Move/useMoveFlow.js";
 import type { PageFieldNames } from "../Settings/PageSettingsDrawer.js";
 import { useSettingsFlow } from "../Settings/useSettingsFlow.js";
-import { findLoadedFolder, itemKeyOf, viewRootKeyOf } from "../store.js";
+import { findLoadedFolder, viewRootKeyOf } from "../store.js";
 import type { TreeStore } from "../store.js";
 import { BulkToolbar } from "../Toolbar/BulkToolbar.js";
 import type { ToolbarAction } from "../Toolbar/toolbarActions.js";
@@ -52,6 +52,7 @@ import { Breadcrumbs } from "./Breadcrumbs.js";
 import type { CrumbMoveMode } from "./Breadcrumbs.js";
 import type { SearchScope } from "./treeUrlState.js";
 import { ZoomNotFound } from "./ZoomNotFound.js";
+import { itemKey } from "../../core/itemKey.js";
 
 export type TreeWorkspaceProps = {
   adminRoute: string;
@@ -204,9 +205,9 @@ const TreeWorkspaceContent = ({
   const startMoveMode = useCallback(
     (items: readonly TreeItem[]) => {
       // Moving exactly the ticked rows is the selection's move: a refusal puts the ticks back.
-      const tickedKeys = new Set(selection.items.map(itemKeyOf));
+      const tickedKeys = new Set(selection.items.map(itemKey));
       const isSelection =
-        items.length === tickedKeys.size && items.every((item) => tickedKeys.has(itemKeyOf(item)));
+        items.length === tickedKeys.size && items.every((item) => tickedKeys.has(itemKey(item)));
       enterMoveMode(items, isSelection);
     },
     [enterMoveMode, selection.items]

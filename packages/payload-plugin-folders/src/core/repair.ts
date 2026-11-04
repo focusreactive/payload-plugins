@@ -31,6 +31,7 @@ import type { PageWrite, TreeAnalysis } from "./verify.js";
 import type { PlannedFolder } from "./verifyFolders.js";
 import { effectiveSegmentOf, toOwnSegments } from "./verifyPages.js";
 import type { OwnSegments, PageFact } from "./verifyPages.js";
+import { itemKey } from "./itemKey.js";
 
 /** Path changes a dry run lists by name; `total` is the full count. */
 const changeSampleLimit = 50;
@@ -326,10 +327,7 @@ const planPathChanges = (
   }
 
   const segmentsAfterByPage = new Map(
-    analysis.pageWrites.map(({ fact, segmentsAfter }) => [
-      `${fact.collection}:${fact.id}`,
-      segmentsAfter,
-    ])
+    analysis.pageWrites.map(({ fact, segmentsAfter }) => [itemKey(fact), segmentsAfter])
   );
   const pathOf = (
     fact: PageFact,
@@ -355,8 +353,7 @@ const planPathChanges = (
         ? { ...planned.record, fullPath: planned.plan.fullPath }
         : storedFolder;
     // A page with no write keeps its stored segments: no drift, or every drifted locale held back.
-    const segmentsAfter: OwnSegments =
-      segmentsAfterByPage.get(`${fact.collection}:${fact.id}`) ?? fact.ownStored;
+    const segmentsAfter: OwnSegments = segmentsAfterByPage.get(itemKey(fact)) ?? fact.ownStored;
     for (const key of pageKeys) {
       const storedSegment = effectiveSegmentOf(fact.ownStored, key, defaultLocale);
       const expectedSegment = effectiveSegmentOf(segmentsAfter, key, defaultLocale);
@@ -375,7 +372,7 @@ const planPathChanges = (
         to,
       });
       if (storedSegment !== "" && expectedSegment !== "" && storedSegment !== expectedSegment) {
-        segmentChanged.add(`${fact.collection}:${fact.id}:${key}`);
+        segmentChanged.add(`${itemKey(fact)}:${key}`);
       }
     }
   }
@@ -400,7 +397,7 @@ const planRedirectRows = ({ changes, segmentChanged }: PlannedChanges): Redirect
     changes.filter(
       (change) =>
         change.kind === "page" &&
-        segmentChanged.has(`${change.collection}:${change.id}:${change.locale ?? noLocaleKey}`)
+        segmentChanged.has(`${itemKey(change)}:${change.locale ?? noLocaleKey}`)
     )
   );
   const folderRows = changes
@@ -595,9 +592,9 @@ const applyRepair = async ({
   }
 
   // Versions before keys: a rewritten key patches the latest version itself, on top of this.
-  const factsById = new Map(analysis.pages.map((fact) => [`${fact.collection}:${fact.id}`, fact]));
+  const factsById = new Map(analysis.pages.map((fact) => [itemKey(fact), fact]));
   for (const stale of analysis.staleVersions) {
-    const main = factsById.get(`${stale.collection}:${stale.id}`);
+    const main = factsById.get(itemKey(stale));
     if (main) {
       await patchLatestVersionStructure(
         req,

@@ -4,6 +4,7 @@ import { rootKey, viewRootKeyOf } from "../store.js";
 import type { FolderKey, TreeStore, TreeStoreState } from "../store.js";
 import { useTreeStoreState } from "../useTreeStore.js";
 import type { TreeItem } from "../../types.js";
+import { itemKey } from "../../core/itemKey.js";
 
 export type ItemRowModel = {
   /** Folders only: whether the user opened it. */
@@ -115,7 +116,7 @@ export const flattenTree = (state: TreeStoreState): TreeRowModel[] => {
         expanded: isExpanded && expandable,
         expandable,
         item,
-        key: `${item.collection}:${item.id}`,
+        key: itemKey(item),
         level,
         parentKey,
         posInSet: index + 1,

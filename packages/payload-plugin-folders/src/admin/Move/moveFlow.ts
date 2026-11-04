@@ -1,8 +1,9 @@
 import type { ConfirmMoves, FolderId, ItemRef, TreeItem } from "../../types.js";
 import { postMove } from "../api.js";
 import type { FoldersApiContext, MoveBody, MovePreview, MoveResult } from "../api.js";
-import { folderKeyOf, itemKeyOf } from "../store.js";
+import { folderKeyOf } from "../store.js";
 import type { OptimisticMove, TreeStore, TreeStoreState } from "../store.js";
+import { itemKey } from "../../core/itemKey.js";
 
 /** A move into a folder, at the top or the bottom of it. */
 export type InsideTarget = {
@@ -37,8 +38,7 @@ export const isNestedIn = (item: TreeItem, folder: TreeItem): boolean =>
  */
 export const rootsOfSelection = (items: readonly TreeItem[]): TreeItem[] =>
   items.filter(
-    (item) =>
-      !items.some((other) => itemKeyOf(other) !== itemKeyOf(item) && isNestedIn(item, other))
+    (item) => !items.some((other) => itemKey(other) !== itemKey(item) && isNestedIn(item, other))
   );
 
 /**
@@ -117,15 +117,15 @@ export const snapshotBeforeMove = (
   state: TreeStoreState,
   roots: readonly TreeItem[]
 ): MovedSnapshot[] => {
-  const movedKeys = new Set(roots.map(itemKeyOf));
+  const movedKeys = new Set(roots.map(itemKey));
 
   return roots.map((item) => {
     const siblings = state.childrenByFolder[folderKeyOf(item.parentId)]?.items ?? [];
-    const index = siblings.findIndex((sibling) => itemKeyOf(sibling) === itemKeyOf(item));
+    const index = siblings.findIndex((sibling) => itemKey(sibling) === itemKey(item));
     let anchor: ItemRef | null = null;
     for (let before = index - 1; before >= 0; before -= 1) {
       const sibling = siblings[before] as TreeItem;
-      if (!movedKeys.has(itemKeyOf(sibling))) {
+      if (!movedKeys.has(itemKey(sibling))) {
         anchor = { collection: sibling.collection, id: sibling.id };
         break;
       }
@@ -151,11 +151,11 @@ export const buildUndoRequests = (
   result: MoveResult,
   movedTo: FolderId | null
 ): UndoRequest[] => {
-  const moved = new Set(result.moved.map(itemKeyOf));
+  const moved = new Set(result.moved.map(itemKey));
   const groups = new Map<string, MovedSnapshot[]>();
   for (const snapshot of snapshots) {
-    if (moved.has(itemKeyOf(snapshot.item))) {
-      const groupKey = `${snapshot.parentId ?? "root"}|${snapshot.anchor ? itemKeyOf(snapshot.anchor) : ""}`;
+    if (moved.has(itemKey(snapshot.item))) {
+      const groupKey = `${snapshot.parentId ?? "root"}|${snapshot.anchor ? itemKey(snapshot.anchor) : ""}`;
       groups.set(groupKey, [...(groups.get(groupKey) ?? []), snapshot]);
     }
   }
@@ -164,7 +164,7 @@ export const buildUndoRequests = (
     const [first] = group as [MovedSnapshot];
     const items = group.map(({ item }) => ({
       ...item,
-      expected: { orderKey: result.orderKeys[itemKeyOf(item)] ?? null, parentId: movedTo },
+      expected: { orderKey: result.orderKeys[itemKey(item)] ?? null, parentId: movedTo },
     }));
 
     const refs = items.map(({ collection, id }) => ({ collection, id }));

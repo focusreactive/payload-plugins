@@ -4,6 +4,7 @@ import type { PayloadRequest, Where } from "payload";
 import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, ItemRef, ResolvedOptions } from "../types.js";
 import { writeOrderKey } from "./structureWrite.js";
+import { itemKey } from "./itemKey.js";
 
 /** Keys longer than this are rebalanced away; a fresh sibling list needs two or three characters. */
 export const maxOrderKeyLength = 32;
@@ -292,8 +293,6 @@ export type InsertTarget = {
   parent: FolderId | null;
 };
 
-const refKey = (ref: ItemRef): string => `${ref.collection}:${ref.id}`;
-
 /**
  * Keys for `count` items inserted into `parent`, without writing anything: the keys, and the
  * siblings that would be rebalanced first when their keys cannot take the insert. Call it under
@@ -327,18 +326,18 @@ export const planKeysForInsert = async (
     }
   }
 
-  const excluded = new Set(exclude.map(refKey));
+  const excluded = new Set(exclude.map(itemKey));
   const siblings = (await loadSiblings(req, options, parent))
-    .filter((sibling) => !excluded.has(refKey(sibling)))
+    .filter((sibling) => !excluded.has(itemKey(sibling)))
     .sort(compareSiblings);
 
   let gap = siblings.length;
   if (at === "start") {
     gap = 0;
   } else if (at !== "end") {
-    const afterIndex = siblings.findIndex((sibling) => refKey(sibling) === refKey(at.after));
+    const afterIndex = siblings.findIndex((sibling) => itemKey(sibling) === itemKey(at.after));
     if (afterIndex === -1) {
-      throw new Error(`${refKey(at.after)} is not a child of folder ${parent ?? "(root)"}`);
+      throw new Error(`${itemKey(at.after)} is not a child of folder ${parent ?? "(root)"}`);
     }
     gap = afterIndex + 1;
   }

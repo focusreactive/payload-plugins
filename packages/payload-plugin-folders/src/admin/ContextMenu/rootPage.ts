@@ -1,7 +1,8 @@
 import type { FolderId, TreeItem } from "../../types.js";
 import type { MovePreview } from "../api.js";
-import { findLoadedFolder, folderKeyOf, itemKeyOf } from "../store.js";
+import { findLoadedFolder, folderKeyOf } from "../store.js";
 import type { TreeStoreState } from "../store.js";
+import { itemKey } from "../../core/itemKey.js";
 
 /**
  * How "Set as root page" saves. A page with a newer draft (or none published yet) is edited as a
@@ -51,7 +52,7 @@ export const existingRootIn = (
     (sibling) =>
       sibling.kind === "page" &&
       sibling.isFolderRoot === true &&
-      (ignoring === undefined || itemKeyOf(sibling) !== itemKeyOf(ignoring))
+      (ignoring === undefined || itemKey(sibling) !== itemKey(ignoring))
   );
   if (root) {
     return { title: root.title };

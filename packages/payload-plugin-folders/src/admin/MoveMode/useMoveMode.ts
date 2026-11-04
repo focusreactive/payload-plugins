@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { TreeItem } from "../../types.js";
 import { isKeyForWorkspace, workspaceElementOf } from "../Keyboard/workspaceScope.js";
 import { rootsOfSelection } from "../Move/moveFlow.js";
-import { itemKeyOf, loadedItemsOf } from "../store.js";
+import { loadedItemsOf } from "../store.js";
 import type { TreeStoreState } from "../store.js";
+import { itemKey } from "../../core/itemKey.js";
 
 type ActiveMoveMode = {
   /** The rows as they were when Move mode began; the live rows replace them while they are loaded. */
@@ -93,9 +94,9 @@ export const useMoveMode = ({
     if (mode === null) {
       return [];
     }
-    const loaded = new Map(loadedItemsOf(state).map((item) => [itemKeyOf(item), item]));
+    const loaded = new Map(loadedItemsOf(state).map((item) => [itemKey(item), item]));
 
-    return rootsOfSelection(mode.items.map((item) => loaded.get(itemKeyOf(item)) ?? item));
+    return rootsOfSelection(mode.items.map((item) => loaded.get(itemKey(item)) ?? item));
   }, [mode, state]);
 
   const isActive = mode !== null;

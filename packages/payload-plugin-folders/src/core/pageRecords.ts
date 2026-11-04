@@ -5,6 +5,7 @@ import type { FolderId, ResolvedPageCollection } from "../types.js";
 import { normalizeFolderReference } from "./folderRecords.js";
 import { getGlobalRegistry } from "./globalRegistry.js";
 import { toText } from "./text.js";
+import { itemKey } from "./itemKey.js";
 
 export const isPublishedStatus = (status: unknown): boolean =>
   status === "published" ||
@@ -203,8 +204,6 @@ const snapshotsByPayload = getGlobalRegistry(
   () => new WeakMap<object, Map<string, PageSnapshot[]>>()
 );
 
-const snapshotKey = (collection: string, id: FolderId): string => `${collection}:${id}`;
-
 export const pushSnapshot = (
   req: PayloadRequest,
   collection: string,
@@ -216,7 +215,7 @@ export const pushSnapshot = (
     snapshots = new Map();
     snapshotsByPayload.set(req.payload, snapshots);
   }
-  const key = snapshotKey(collection, id);
+  const key = itemKey({ collection, id });
   snapshots.set(key, [...(snapshots.get(key) ?? []), snapshot]);
 };
 
@@ -227,7 +226,7 @@ export const popSnapshot = (
   id: FolderId
 ): PageSnapshot | null => {
   const snapshots = snapshotsByPayload.get(req.payload);
-  const key = snapshotKey(collection, id);
+  const key = itemKey({ collection, id });
   const stack = snapshots?.get(key);
   const snapshot = stack?.at(-1) ?? null;
   if (stack && snapshots) {

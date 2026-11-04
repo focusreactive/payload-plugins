@@ -12,7 +12,7 @@ import {
   toggleKey,
 } from "./selection.js";
 import type { HeaderCheckboxState, SelectionState } from "./selection.js";
-import { itemKeyOf } from "./store.js";
+import { itemKey } from "../core/itemKey.js";
 
 export type SelectionApi = {
   /** Unticks everything: the toolbar's Cancel. */
@@ -39,7 +39,7 @@ export type SelectionApi = {
  */
 export const useSelection = (loadedItems: readonly TreeItem[]): SelectionApi => {
   const [state, setState] = useState<SelectionState>(emptySelection);
-  const rowKeys = useMemo(() => loadedItems.map(itemKeyOf), [loadedItems]);
+  const rowKeys = useMemo(() => loadedItems.map(itemKey), [loadedItems]);
 
   // A row that closed, moved or went away leaves the selection, so no action reaches a row that
   // is out of sight. State is replaced only when something actually left.
@@ -48,11 +48,11 @@ export const useSelection = (loadedItems: readonly TreeItem[]): SelectionApi => 
   }, [rowKeys]);
 
   const toggle = useCallback((item: TreeItem) => {
-    setState((current) => toggleKey(current, itemKeyOf(item)));
+    setState((current) => toggleKey(current, itemKey(item)));
   }, []);
   const selectRange = useCallback(
     (item: TreeItem) => {
-      setState((current) => selectRangeTo(current, rowKeys, itemKeyOf(item)));
+      setState((current) => selectRangeTo(current, rowKeys, itemKey(item)));
     },
     [rowKeys]
   );
@@ -61,7 +61,7 @@ export const useSelection = (loadedItems: readonly TreeItem[]): SelectionApi => 
   }, [rowKeys]);
   const clear = useCallback(() => setState(emptySelection), []);
   const select = useCallback((items: readonly TreeItem[]) => {
-    setState(selectOnly(items.map(itemKeyOf)));
+    setState(selectOnly(items.map(itemKey)));
   }, []);
 
   const visibleState = useMemo(() => pruneKeys(state, rowKeys), [state, rowKeys]);
@@ -70,7 +70,7 @@ export const useSelection = (loadedItems: readonly TreeItem[]): SelectionApi => 
     [visibleState, loadedItems]
   );
   const ticked = useMemo(() => new Set(visibleState.keys), [visibleState]);
-  const isSelected = useCallback((item: TreeItem) => ticked.has(itemKeyOf(item)), [ticked]);
+  const isSelected = useCallback((item: TreeItem) => ticked.has(itemKey(item)), [ticked]);
 
   return {
     clear,

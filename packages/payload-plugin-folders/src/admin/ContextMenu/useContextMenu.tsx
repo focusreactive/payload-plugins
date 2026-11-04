@@ -12,7 +12,7 @@ import type { Translate } from "../compat.js";
 import { PopupMenu } from "../Menu/PopupMenu.js";
 import type { MenuAnchor } from "../Menu/menuEntries.js";
 import type { MoveTarget } from "../Move/moveFlow.js";
-import { folderKeyOf, itemKeyOf } from "../store.js";
+import { folderKeyOf } from "../store.js";
 import type { TreeStore, TreeStoreState } from "../store.js";
 import type { SelectionApi } from "../useSelection.js";
 import type { TreeRowModel } from "../Tree/useTreeData.js";
@@ -21,6 +21,7 @@ import { buildContextMenu } from "./menuItems.js";
 import type { ContextMenuContext, ContextMenuDefinition } from "./menuItems.js";
 import { existingRootOf } from "./rootPage.js";
 import { siblingMoveOf } from "./siblingMove.js";
+import { itemKey } from "../../core/itemKey.js";
 
 /** The flows a menu entry starts; each one belongs to the ticket that built it. */
 export type ContextMenuActions = {
@@ -157,7 +158,7 @@ export const useContextMenu = ({
 
   const openMenu = useCallback(
     (target: TreeItem, anchor: MenuAnchor, returnFocus: HTMLElement | null) => {
-      setRequest({ anchor, itemKey: itemKeyOf(target), returnFocus });
+      setRequest({ anchor, itemKey: itemKey(target), returnFocus });
     },
     []
   );

@@ -4,13 +4,12 @@ import type { PublishAction, PublishPreview } from "../../core/publish.js";
 import type { FolderId, TreeItem } from "../../types.js";
 import type { Translate } from "../compat.js";
 import { isNestedIn } from "../Move/moveFlow.js";
-import { itemKeyOf } from "../store.js";
+import { itemKey } from "../../core/itemKey.js";
 
 /** Items to hand an endpoint: a folder carries everything inside it, so nested rows are left out. */
 export const rootsOf = (items: readonly TreeItem[]): TreeItem[] =>
   items.filter(
-    (item) =>
-      !items.some((other) => itemKeyOf(other) !== itemKeyOf(item) && isNestedIn(item, other))
+    (item) => !items.some((other) => itemKey(other) !== itemKey(item) && isNestedIn(item, other))
   );
 
 /** One line of the delete preview's `sample`: `/news/a (published)`, `/news (folder)`. */

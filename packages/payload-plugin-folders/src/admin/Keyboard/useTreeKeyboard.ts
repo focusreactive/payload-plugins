@@ -10,7 +10,7 @@ import { pastedItemsOf, resolveDrop } from "../DragAndDrop/dropTargets.js";
 import type { DropRules } from "../DragAndDrop/dropTargets.js";
 import type { DropMove } from "../Move/useMoveFlow.js";
 import { isTextEntry } from "../Settings/settingsKey.js";
-import { findLoadedFolder, folderKeyOf, itemKeyOf, loadedItemsOf } from "../store.js";
+import { findLoadedFolder, folderKeyOf, loadedItemsOf } from "../store.js";
 import type { TreeStore, TreeStoreState } from "../store.js";
 import type { TreeRowModel } from "../Tree/useTreeData.js";
 import type { SelectionApi } from "../useSelection.js";
@@ -36,6 +36,7 @@ import {
   rememberFocusedWorkspace,
   workspaceElementOf,
 } from "./workspaceScope.js";
+import { itemKey } from "../../core/itemKey.js";
 
 export type TreeKeyboardActions = {
   /** Delete and Backspace: opens the delete dialog for these rows. */
@@ -570,8 +571,7 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
             return;
           }
           const siblings = current.state.childrenByFolder[folderKeyOf(item.parentId)]?.items ?? [];
-          const above =
-            siblings[siblings.findIndex((row) => itemKeyOf(row) === focusedRow.key) - 1];
+          const above = siblings[siblings.findIndex((row) => itemKey(row) === focusedRow.key) - 1];
           if (above === undefined || above.kind !== "folder") {
             announce(current.translate("announceMoveInNoFolder", { name: item.title }));
 
@@ -689,13 +689,13 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
     if (cutItems.length === 0) {
       return;
     }
-    const keys = new Set(loadedItemsOf(options.state).map(itemKeyOf));
-    if (cutItems.every((item) => !keys.has(itemKeyOf(item)))) {
+    const keys = new Set(loadedItemsOf(options.state).map(itemKey));
+    if (cutItems.every((item) => !keys.has(itemKey(item)))) {
       setCutItems([]);
     }
   }, [cutItems, options.state]);
 
-  const cutKeys = useMemo(() => new Set(cutItems.map(itemKeyOf)), [cutItems]);
+  const cutKeys = useMemo(() => new Set(cutItems.map(itemKey)), [cutItems]);
 
   return {
     activeKey: tabStopKey,

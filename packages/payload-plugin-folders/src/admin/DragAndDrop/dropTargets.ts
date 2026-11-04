@@ -1,10 +1,11 @@
 import type { FolderId, ItemRef, TreeItem } from "../../types.js";
 import { isNestedIn, rootsOfSelection } from "../Move/moveFlow.js";
 import type { MoveTarget } from "../Move/moveFlow.js";
-import { findLoadedFolder, folderKeyOf, itemKeyOf, loadedItemsOf } from "../store.js";
+import { findLoadedFolder, folderKeyOf, loadedItemsOf } from "../store.js";
 import type { TreeStoreState } from "../store.js";
 import type { TreeRowModel } from "../Tree/useTreeData.js";
 import type { DropZone } from "./dropZones.js";
+import { itemKey } from "../../core/itemKey.js";
 
 /** What the checks that run on the rows on screen need to know about the site. */
 export type DropRules = {
@@ -50,9 +51,9 @@ export type DropResolution = {
  * cut folder, which travel with it and are not checked on their own.
  */
 export const pastedItemsOf = (cut: readonly TreeItem[], state: TreeStoreState): TreeItem[] => {
-  const loaded = new Map(loadedItemsOf(state).map((row) => [itemKeyOf(row), row]));
+  const loaded = new Map(loadedItemsOf(state).map((row) => [itemKey(row), row]));
 
-  return rootsOfSelection(cut.map((row) => loaded.get(itemKeyOf(row)) ?? row));
+  return rootsOfSelection(cut.map((row) => loaded.get(itemKey(row)) ?? row));
 };
 
 /**
@@ -64,8 +65,8 @@ export const draggedItemsOf = (
   grabbed: TreeItem,
   selectedItems: readonly TreeItem[]
 ): { isSelection: boolean; items: TreeItem[] } => {
-  const grabbedKey = itemKeyOf(grabbed);
-  if (selectedItems.some((item) => itemKeyOf(item) === grabbedKey)) {
+  const grabbedKey = itemKey(grabbed);
+  if (selectedItems.some((item) => itemKey(item) === grabbedKey)) {
     return { isSelection: true, items: rootsOfSelection(selectedItems) };
   }
 
@@ -169,9 +170,9 @@ const refusalOf = (
 
   // A moved page conflicts with a published sibling page (a draft is not at that URL yet), a folder
   // conflicts with either, and the moved rows conflict with each other.
-  const movingKeys = new Set(moving.map(itemKeyOf));
+  const movingKeys = new Set(moving.map(itemKey));
   const siblings = (state.childrenByFolder[targetKey]?.items ?? []).filter(
-    (sibling) => !movingKeys.has(itemKeyOf(sibling)) && !sibling.isFolderRoot
+    (sibling) => !movingKeys.has(itemKey(sibling)) && !sibling.isFolderRoot
   );
   const claimed = new Map<string, TreeItem>();
   for (const item of namedItems) {
@@ -205,7 +206,7 @@ export const anchorBefore = (
 ): TreeItem | null => {
   for (let before = index - 1; before >= 0; before -= 1) {
     const sibling = siblings[before] as TreeItem;
-    if (!movingKeys.has(itemKeyOf(sibling))) {
+    if (!movingKeys.has(itemKey(sibling))) {
       return sibling;
     }
   }
@@ -219,13 +220,13 @@ const leavesOrderUnchanged = (
   siblings: readonly TreeItem[],
   anchor: ItemRef | null
 ): boolean => {
-  const keys = siblings.map(itemKeyOf);
-  const movingKeys = new Set(moving.map(itemKeyOf));
+  const keys = siblings.map(itemKey);
+  const movingKeys = new Set(moving.map(itemKey));
   if (![...movingKeys].every((key) => keys.includes(key))) {
     return false;
   }
   const staying = keys.filter((key) => !movingKeys.has(key));
-  const insertAt = anchor === null ? 0 : staying.indexOf(itemKeyOf(anchor)) + 1;
+  const insertAt = anchor === null ? 0 : staying.indexOf(itemKey(anchor)) + 1;
   const reordered = [
     ...staying.slice(0, insertAt),
     ...keys.filter((key) => movingKeys.has(key)),
@@ -303,10 +304,10 @@ export const anchorAfterRow = (
   item: TreeItem,
   movingKeys: ReadonlySet<string>
 ): TreeItem | null => {
-  if (!movingKeys.has(itemKeyOf(item))) {
+  if (!movingKeys.has(itemKey(item))) {
     return item;
   }
-  const index = siblings.findIndex((sibling) => itemKeyOf(sibling) === itemKeyOf(item));
+  const index = siblings.findIndex((sibling) => itemKey(sibling) === itemKey(item));
 
   return anchorBefore(siblings, index, movingKeys);
 };
@@ -340,9 +341,9 @@ export const resolveDrop = ({
     return null;
   }
   const { item, level } = row;
-  const movingKeys = new Set(dragged.map(itemKeyOf));
+  const movingKeys = new Set(dragged.map(itemKey));
   const siblings = state.childrenByFolder[row.parentKey]?.items ?? [];
-  const siblingIndex = siblings.findIndex((sibling) => itemKeyOf(sibling) === over.key);
+  const siblingIndex = siblings.findIndex((sibling) => itemKey(sibling) === over.key);
   const zone = over.zone === "inside" && item.kind !== "folder" ? "after" : over.zone;
 
   let parentId: FolderId | null;

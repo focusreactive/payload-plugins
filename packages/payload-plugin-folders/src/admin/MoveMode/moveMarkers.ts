@@ -3,10 +3,11 @@ import { anchorAfterRow, resolveGap } from "../DragAndDrop/dropTargets.js";
 import type { DropRefusal, DropRules } from "../DragAndDrop/dropTargets.js";
 import { dropRefusalText } from "../DragAndDrop/dropRefusalText.js";
 import type { MoveTarget } from "../Move/moveFlow.js";
-import { findLoadedFolder, folderKeyOf, itemKeyOf } from "../store.js";
+import { findLoadedFolder, folderKeyOf } from "../store.js";
 import type { TreeStoreState } from "../store.js";
 import type { TreeItem } from "../../types.js";
 import type { ItemRowModel, TreeRowModel } from "./../Tree/useTreeData.js";
+import { itemKey } from "../../core/itemKey.js";
 
 /** One insert marker of Move mode: a gap the moving rows can be put in (spec section 7.4). */
 export type MoveMarker = {
@@ -49,7 +50,7 @@ export const placeMarkers = (
   rows: readonly TreeRowModel[],
   { moving, rules, state }: PlaceInput
 ): MoveModeRow[] => {
-  const movingKeys = new Set(moving.map(itemKeyOf));
+  const movingKeys = new Set(moving.map(itemKey));
 
   const markerAt = (
     key: string,

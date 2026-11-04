@@ -13,7 +13,7 @@ import {
   useRouter,
   useUserId,
 } from "../compat.js";
-import { getSharedTreeStore, itemKeyOf } from "../store.js";
+import { getSharedTreeStore } from "../store.js";
 import "../styles.css";
 import type { SearchScope } from "../TreeView/treeUrlState.js";
 import type { TreeViewClientProps } from "../TreeView/TreeViewClient.js";
@@ -23,6 +23,7 @@ import { usePolling } from "../usePolling.js";
 import { sidebarTabSlug } from "../../constants.js";
 import { openDocumentOf } from "./openDocument.js";
 import { useRevealOpenDocument } from "./useRevealOpenDocument.js";
+import { itemKey } from "../../core/itemKey.js";
 
 /** The tree view's address for a folder: where "open" on a folder leads from the sidebar. */
 const treeViewUrl = (adminRoute: string, foldersSlug: string, folderId: FolderId | null): string =>
@@ -108,7 +109,7 @@ export const SidebarTabClient = ({
         <TreeWorkspace
           adminRoute={adminRoute}
           confirmMoves={confirmMoves}
-          currentKey={openDocument === null ? null : itemKeyOf(openDocument)}
+          currentKey={openDocument === null ? null : itemKey(openDocument)}
           draftCollections={draftCollections}
           enforceAllowedTypesOnMove={enforceAllowedTypesOnMove}
           foldersSlug={foldersSlug}

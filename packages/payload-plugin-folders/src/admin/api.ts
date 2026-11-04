@@ -9,6 +9,7 @@ import type { PublishAction, PublishPreview, PublishResult } from "../core/publi
 import { redirectsParameter } from "../core/redirectsOptOut.js";
 import { isPageChangedMessage, rootPreconditionParameter } from "../core/rootPrecondition.js";
 import type { FolderId, ItemRef, TreeItem, TreeStatus } from "../types.js";
+import { itemKey } from "../core/itemKey.js";
 
 /** Where the plugin's endpoints live and how to call them. */
 export type FoldersApiContext = {
@@ -335,7 +336,7 @@ export const fetchCheckSegment = (
     context,
     "check-segment",
     {
-      exclude: exclude === undefined ? undefined : `${exclude.collection}:${exclude.id}`,
+      exclude: exclude === undefined ? undefined : itemKey(exclude),
       locale,
       parent: parent === null ? "root" : String(parent),
       segment,
@@ -367,7 +368,7 @@ export const fetchCheckRoot = (
     context,
     "check-root",
     {
-      exclude: exclude === undefined ? undefined : `${exclude.collection}:${exclude.id}`,
+      exclude: exclude === undefined ? undefined : itemKey(exclude),
       locale,
       parent: parent === null ? "root" : String(parent),
     },
