@@ -5,6 +5,7 @@ import type { FolderId } from "../../types.js";
 import { fetchDocument } from "../api.js";
 import { useAdminRoutes, useLocaleCode } from "../compat.js";
 import { sharedRead } from "./sharedRead.js";
+import { toText } from "../../core/text.js";
 
 /** The page as its live row has it: what the site serves, which the form's draft may differ from. */
 export type LivePage = {
@@ -57,7 +58,7 @@ export const useLivePage = ({
               isFolderRoot: row.isFolderRoot === true,
               // A collection without drafts has no status: every row is live.
               isPublished: row._status === undefined || row._status === "published",
-              segment: typeof row[segmentField] === "string" ? row[segmentField] : "",
+              segment: toText(row[segmentField]),
             },
           });
         }

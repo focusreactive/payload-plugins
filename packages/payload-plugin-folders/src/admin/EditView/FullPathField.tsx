@@ -10,6 +10,7 @@ import { useFormatUrl } from "../urlForm.js";
 import { useConfiguredStore, useItemLocation } from "./useItemLocation.js";
 import { useLivePage } from "./useLivePage.js";
 import "../styles.css";
+import { toText } from "../../core/text.js";
 
 export type FullPathFieldProps = TextFieldClientProps & {
   hasPreviewUrl: boolean;
@@ -42,8 +43,8 @@ export const FullPathField = ({
   const live = useLivePage({ collection: collectionSlug, id, segmentField });
 
   const folderPath = location?.folderPath ?? "";
-  const storedSegment = typeof segment?.initialValue === "string" ? segment.initialValue : "";
-  const editedSegment = typeof segment?.value === "string" ? segment.value : "";
+  const storedSegment = toText(segment?.initialValue);
+  const editedSegment = toText(segment?.value);
   const storedIsRoot = root?.initialValue === true;
   const editedIsRoot = root?.value === true;
   // After a move the form's own value is the old one, so the paths are composed from the folder the

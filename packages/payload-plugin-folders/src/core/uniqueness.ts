@@ -7,6 +7,7 @@ import { canReadItem } from "./access.js";
 import { getDefaultLocaleKey, getLocaleCodes, noLocaleKey } from "./locales.js";
 import { effectiveSegmentsOf } from "./pageRecords.js";
 import { buildSegmentWhere } from "./segmentWhere.js";
+import { toText } from "./text.js";
 
 /** The locale slots a page's paths are checked in: every locale code, or one slot without localization. */
 export const getPageLocaleKeys = (payload: Payload): string[] => {
@@ -86,8 +87,6 @@ export const buildPublishedWhere = (payload: Payload, collectionSlug: string): W
       }
     : { _status: { equals: "published" } };
 };
-
-const toText = (value: unknown): string => (typeof value === "string" ? value : "");
 
 export const readTitle = async (
   req: PayloadRequest,

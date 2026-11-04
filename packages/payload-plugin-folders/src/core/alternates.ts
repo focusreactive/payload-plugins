@@ -5,8 +5,7 @@ import type { FolderId } from "../types.js";
 import { getFallbackLocaleKey, getLocaleCodes } from "./locales.js";
 import { isPublishedInLocale } from "./pageRecords.js";
 import { collectionHasDrafts } from "./publishedWhere.js";
-
-const toText = (value: unknown): string => (typeof value === "string" ? value : "");
+import { toText } from "./text.js";
 
 /**
  * The page's path in every locale it can be read in (spec section 8, hreflang): a locale appears

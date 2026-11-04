@@ -37,7 +37,7 @@ const changeSampleLimit = 50;
 
 const toLocale = (key: string): string | null => (key === noLocaleKey ? null : key);
 
-const toText = (value: string): string | null => (value === "" ? null : value);
+const emptyToNull = (value: string): string | null => (value === "" ? null : value);
 
 type RepairWrites = {
   folders: number;
@@ -314,12 +314,12 @@ const planPathChanges = (
       if (from !== to) {
         changes.push({
           collection: options.folders.slug,
-          from: toText(from),
+          from: emptyToNull(from),
           id: folder.record.id,
           kind: "folder",
           locale: toLocale(key),
           published: true,
-          to: toText(to),
+          to: emptyToNull(to),
         });
       }
     }
@@ -340,10 +340,10 @@ const planPathChanges = (
     const folderPath = folderPathIn(folderRecord, key, options, payload);
 
     return composeFullPath({
-      folderPath: toText(folderPath),
+      folderPath: emptyToNull(folderPath),
       hasFolder: fact.folder !== null,
       isFolderRoot: fact.isFolderRoot,
-      pathSegment: toText(segment),
+      pathSegment: emptyToNull(segment),
     });
   };
 

@@ -17,6 +17,7 @@ import { fetchSubfolderCount, previewFolderEdit, redirectsQueryOf } from "../api
 import { useAdminRoutes, useFoldersTranslation, useLocaleCode } from "../compat.js";
 import { useConfirmations } from "../Settings/useConfirmations.js";
 import { useLocaleCount } from "../compat.js";
+import { toText } from "../../core/text.js";
 
 const sameTypes = (left: readonly string[], right: readonly string[]): boolean =>
   left.length === right.length && left.every((type) => right.includes(type));
@@ -74,7 +75,7 @@ export const FolderSaveButton = ({ label }: { label?: string }): ReactNode => {
     setIsChecking(true);
     try {
       const context = { baseUrl: apiBaseUrl };
-      const folderName = typeof name?.value === "string" ? name.value : "";
+      const folderName = toText(name?.value);
       const isLocking =
         lock?.value === true &&
         (lock.initialValue !== true ||
@@ -102,7 +103,7 @@ export const FolderSaveButton = ({ label }: { label?: string }): ReactNode => {
         }
       }
       let isWritingRedirects = true;
-      const segment = typeof slug?.value === "string" ? slug.value : "";
+      const segment = toText(slug?.value);
       if (segment !== "" && segment !== slug?.initialValue) {
         const preview = await previewFolderEdit(context, id, { locale, slug: segment });
         if (!preview.ok || preview.urlChanges.published > 0 || preview.warnings.length > 0) {

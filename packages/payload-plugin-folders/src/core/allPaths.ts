@@ -15,6 +15,7 @@ import type { ReadModeArgs } from "./readMode.js";
 import { relationIdOf } from "./relationId.js";
 import { resolveRequestLocale } from "./resolve.js";
 import { getResolvedOptions } from "./runtime.js";
+import { toText } from "./text.js";
 
 export type PathRow = {
   collection: string;
@@ -48,8 +49,6 @@ export type PathsPage = {
   /** Whether more pages exist past this one. */
   hasNextPage: boolean;
 };
-
-const toText = (value: unknown): string => (typeof value === "string" ? value : "");
 
 /** The folder at `path` in `locale`, the reader permitting; `null` when there is none. */
 const findFolderAt = async ({

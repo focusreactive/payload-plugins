@@ -18,6 +18,7 @@ import { useFormatUrl } from "../urlForm.js";
 import { useConfiguredStore, useItemLocation } from "./useItemLocation.js";
 import { useRootClash } from "./useRootClash.js";
 import "../styles.css";
+import { toText } from "../../core/text.js";
 
 /** Marks the segment field a root page greys out: the page's own segment is not part of its URL. */
 const greyedAttribute = "data-fr-folders-greyed";
@@ -125,7 +126,7 @@ export const FolderRootField = ({
           : typeof segment?.value === "string"
             ? segment.value
             : null,
-      title: typeof title?.value === "string" ? title.value : "",
+      title: toText(title?.value),
       willGoLive: null,
     });
     openModal(unrootSlug);

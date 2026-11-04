@@ -16,6 +16,7 @@ import type { ReadModeArgs } from "./readMode.js";
 import { resolveRequestLocale } from "./resolve.js";
 import { getResolvedOptions } from "./runtime.js";
 import { folderPathIn, getPageDefaultLocale } from "./uniqueness.js";
+import { toText } from "./text.js";
 
 export type TreeNode = {
   alternates?: Record<string, string>;
@@ -43,8 +44,6 @@ export type TreeArgs = ReadModeArgs & {
 };
 
 const maxTreeLevels = 20;
-
-const toText = (value: unknown): string => (typeof value === "string" ? value : "");
 
 const pickLocalized = (value: unknown, key: string, defaultKey: string): string => {
   if (value && typeof value === "object") {

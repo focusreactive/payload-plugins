@@ -6,8 +6,7 @@ import { slugify } from "../../core/slugify.js";
 import { isEmptyText } from "../../core/structureGuard.js";
 import type { ResolvedOptions } from "../../types.js";
 import { isInternalWrite, slugNotSentContextKey } from "../context.js";
-
-const asText = (value: unknown): string => (typeof value === "string" ? value : "");
+import { toText } from "../../core/text.js";
 
 /**
  * An empty slug is derived from the name (spec section 2.6), before Payload's required check on
@@ -38,7 +37,7 @@ export const buildFolderBeforeValidate =
           !isEmptyText(name) &&
           (operation === "create" || localeKey in slugs)
         ) {
-          slugs[localeKey] = slugify(asText(name), localeKey);
+          slugs[localeKey] = slugify(toText(name), localeKey);
         }
       }
       if (Object.keys(slugs).length > 0) {
@@ -63,7 +62,7 @@ export const buildFolderBeforeValidate =
         ? originalDoc?.name
         : undefined
       : data.name;
-    const derived = slugify(asText(name), req.locale ?? undefined);
+    const derived = slugify(toText(name), req.locale ?? undefined);
     if (derived !== "") {
       data.slug = derived;
     }

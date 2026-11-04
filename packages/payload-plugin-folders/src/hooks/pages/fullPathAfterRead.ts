@@ -7,14 +7,12 @@ import type {
 
 import { formatPath } from "../../core/paths.js";
 import type { ResolvedOptions } from "../../types.js";
+import { textOrNull } from "../../core/text.js";
 
 type ValuesByLocale = Record<string, unknown>;
 
 const isValuesByLocale = (value: unknown): value is ValuesByLocale =>
   Boolean(value) && typeof value === "object" && !Array.isArray(value);
-
-const toText = (value: unknown): string | null =>
-  typeof value === "string" && value !== "" ? value : null;
 
 /**
  * Payload fills a virtual `folder.fullPath` after the field hooks have run and leaves the field
@@ -103,10 +101,10 @@ export const buildFullPathAfterRead =
     const hasFolder = folder !== null && folder !== undefined;
     const compose = (folderPathOfLocale: unknown, segmentOfLocale: unknown) => {
       const path = composeFullPath({
-        folderPath: toText(folderPathOfLocale),
+        folderPath: textOrNull(folderPathOfLocale),
         hasFolder,
         isFolderRoot: Boolean(isFolderRoot),
-        pathSegment: toText(segmentOfLocale),
+        pathSegment: textOrNull(segmentOfLocale),
       });
 
       return path === null ? null : formatPath(path, options.urls.trailingSlash);
@@ -122,7 +120,7 @@ export const buildFullPathAfterRead =
     const localeCodes = localization ? localization.localeCodes : [];
     const defaultLocale = localization ? localization.defaultLocale : "";
     const valueOf = (value: unknown, code: string): string | null =>
-      toText(isValuesByLocale(value) ? value[code] : value);
+      textOrNull(isValuesByLocale(value) ? value[code] : value);
 
     doc.fullPath = Object.fromEntries(
       localeCodes.map((code) => [

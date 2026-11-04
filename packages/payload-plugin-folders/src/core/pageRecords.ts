@@ -4,6 +4,7 @@ import { toCollectionSlug } from "../collectionSlug.js";
 import type { FolderId, ResolvedPageCollection } from "../types.js";
 import { normalizeFolderReference } from "./folderRecords.js";
 import { getGlobalRegistry } from "./globalRegistry.js";
+import { toText } from "./text.js";
 
 export const isPublishedStatus = (status: unknown): boolean =>
   status === "published" ||
@@ -147,8 +148,6 @@ export const readPageRows = async (
   return rows;
 };
 
-const toSegmentText = (value: unknown): string => (typeof value === "string" ? value : "");
-
 /**
  * A page's effective segment per locale slot, the way `buildSegmentWhere` and `fullPath` read it:
  * its own segment, else the default locale's. A segment field that is not localized gives the one
@@ -164,11 +163,11 @@ export const effectiveSegmentsOf = (
     const own = segments as Record<string, unknown>;
 
     return Object.fromEntries(
-      localeKeys.map((key) => [key, toSegmentText(own[key]) || toSegmentText(own[defaultLocale])])
+      localeKeys.map((key) => [key, toText(own[key]) || toText(own[defaultLocale])])
     );
   }
 
-  return Object.fromEntries(localeKeys.map((key) => [key, toSegmentText(segments)]));
+  return Object.fromEntries(localeKeys.map((key) => [key, toText(segments)]));
 };
 
 /** What the post-write check compares a saved main row against. */

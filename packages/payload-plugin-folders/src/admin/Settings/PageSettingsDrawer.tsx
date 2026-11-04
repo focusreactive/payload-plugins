@@ -35,6 +35,7 @@ import type { UnrootRequest } from "./UnrootDialog.js";
 import type { Confirmations } from "./useConfirmations.js";
 import { useFolderName } from "./useFolderName.js";
 import { urlChangeOf } from "./urlHint.js";
+import { toText } from "../../core/text.js";
 
 export const pageSettingsDrawerSlug = "fr-folders-page-settings";
 
@@ -82,8 +83,6 @@ type FormProps = Omit<PageSettingsDrawerProps, "dialogs" | "request"> & {
   item: TreeItem;
 };
 
-const textOf = (value: unknown): string => (typeof value === "string" ? value : "");
-
 const PageSettingsForm = ({
   adminRoute,
   apiContext,
@@ -114,8 +113,8 @@ const PageSettingsForm = ({
   const stored: PageSettingsValues = {
     isFolderRoot: Boolean(page.isFolderRoot),
     parentId: storedParentId,
-    segment: textOf(page[names.segmentField]),
-    title: textOf(page[names.titleField]),
+    segment: toText(page[names.segmentField]),
+    title: toText(page[names.titleField]),
   };
 
   const [title, setTitle] = useState(stored.title);
@@ -355,7 +354,7 @@ const PageSettingsForm = ({
           data-testid="title-input"
           id={`${formId}-title`}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder={textOf(fallbackDocument?.[names.titleField]) || undefined}
+          placeholder={toText(fallbackDocument?.[names.titleField]) || undefined}
           type="text"
           value={title}
         />
@@ -368,7 +367,7 @@ const PageSettingsForm = ({
         onChange={setSegment}
         onRelink={() => undefined}
         parentPath={folderPath}
-        placeholder={textOf(fallbackDocument?.[names.segmentField]) || undefined}
+        placeholder={toText(fallbackDocument?.[names.segmentField]) || undefined}
         status={segmentCheck}
         translate={translate}
         value={segment}

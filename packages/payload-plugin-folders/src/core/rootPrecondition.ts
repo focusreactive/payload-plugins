@@ -1,3 +1,5 @@
+import { toText } from "./text.js";
+
 /**
  * The query parameter the plugin's own partial saves (Set as root page, Unset root page, the page
  * settings drawer) send with the `updatedAt` of the latest version they just read. A save without
@@ -30,7 +32,7 @@ export const readRootPrecondition = (query: unknown): string | null => {
     return null;
   }
 
-  return typeof value === "string" ? value : "";
+  return toText(value);
 };
 
 const toTime = (value: unknown): number => {

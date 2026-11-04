@@ -10,6 +10,7 @@ import { useConfiguredStore, useItemLocation } from "./useItemLocation.js";
 import { useLivePage } from "./useLivePage.js";
 import { useRootClash } from "./useRootClash.js";
 import "../styles.css";
+import { toText } from "../../core/text.js";
 
 export type DraftConflictFieldProps = UIFieldClientProps & { segmentField: string };
 
@@ -34,7 +35,7 @@ export const DraftConflictField = ({ segmentField }: DraftConflictFieldProps): R
   const hasDrafts = Boolean(
     docConfig && "versions" in docConfig && docConfig.versions && docConfig.versions.drafts
   );
-  const editedSegment = typeof segment?.value === "string" ? segment.value : "";
+  const editedSegment = toText(segment?.value);
   const isRoot = root?.value === true;
   const parent = location?.parentId ?? null;
 

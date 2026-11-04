@@ -38,6 +38,7 @@ import {
 import type { FolderId, ResolvedOptions, ResolvedPageCollection } from "../../types.js";
 import { isInternalWrite } from "../context.js";
 import { isAccessOverridden } from "./overrideAccessMark.js";
+import { toText } from "../../core/text.js";
 
 type Problem = { locale?: string; message: string; path: string };
 type SegmentsByLocale = Record<string, string | null>;
@@ -174,7 +175,7 @@ export const buildPageBeforeValidate =
           : originalDoc?.[page.titleField]
         : data[page.titleField];
       const titleText = isValuesByLocale(title) ? title[defaultLocale] : title;
-      const derived = slugify(typeof titleText === "string" ? titleText : "", requestLocale);
+      const derived = slugify(toText(titleText), requestLocale);
       if (derived !== "") {
         data[segmentField] = derived as never;
       }

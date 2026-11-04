@@ -8,6 +8,7 @@ import { isPublishedInLocale } from "./pageRecords.js";
 import { isValidSegment } from "./slugify.js";
 import type { StructureField, TreeIssue } from "./treeIssues.js";
 import { getPageLocaleKeys } from "./uniqueness.js";
+import { textOrNull } from "./text.js";
 
 /** Pages read per query; the rows are small, the batches only bound one query's result. */
 export const pageBatchSize = 1000;
@@ -67,9 +68,6 @@ const readPageFields = (page: ResolvedPageCollection, hasDrafts: boolean): Selec
     structureRevision: true,
   }) as SelectType;
 
-const toText = (value: unknown): string | null =>
-  typeof value === "string" && value !== "" ? value : null;
-
 export const hasDraftsEnabled = (req: PayloadRequest, page: ResolvedPageCollection): boolean =>
   Boolean(req.payload.collections[toCollectionSlug(page.slug)]?.config.versions?.drafts);
 
@@ -88,7 +86,7 @@ export const segmentDrift = (
 
 export type StaleVersion = { fields: StructureField[]; id: FolderId };
 
-const normalizeKey = (value: unknown): string | null => toText(value);
+const normalizeKey = (value: unknown): string | null => textOrNull(value);
 
 const normalizeRevision = (value: unknown): number => (typeof value === "number" ? value : 0);
 
@@ -188,7 +186,7 @@ export const readPageFacts = async ({
             }));
       facts.push({
         collection: page.slug,
-        createdAt: toText(row.createdAt),
+        createdAt: textOrNull(row.createdAt),
         folder,
         id: row.id as FolderId,
         invalid,
@@ -196,7 +194,7 @@ export const readPageFacts = async ({
         liveKeys: keys.filter((key) =>
           isPublishedInLocale(row._status, key, hasDrafts, fallbackKey)
         ),
-        orderKey: toText(row.orderKey),
+        orderKey: textOrNull(row.orderKey),
         ownSlug,
         ownStored: toOwnSegments(row.pathSegment),
         structureRevision: normalizeRevision(row.structureRevision),

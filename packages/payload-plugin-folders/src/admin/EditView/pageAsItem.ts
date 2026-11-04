@@ -3,6 +3,7 @@ import { relationIdOf } from "../../core/relationId.js";
 import type { FolderId, TreeItem } from "../../types.js";
 import { fetchDocument } from "../api.js";
 import type { FoldersApiContext } from "../api.js";
+import { toText } from "../../core/text.js";
 
 type PageDocument = Record<string, unknown> & {
   _status?: string;
@@ -12,8 +13,6 @@ type PageDocument = Record<string, unknown> & {
   structureRevision?: number | null;
   updatedAt?: string;
 };
-
-const textOf = (value: unknown): string => (typeof value === "string" ? value : "");
 
 /**
  * The page as a tree row, read fresh from the page itself, for the Move dialog of the edit view:
@@ -37,14 +36,14 @@ export const readPageAsItem = async (
   }
 ): Promise<TreeItem> => {
   const page = await fetchDocument<PageDocument>(context, { collection, id, locale });
-  const segment = textOf(page[segmentField]);
+  const segment = toText(page[segmentField]);
 
   return {
     access: { delete: true, publish: true, update: true },
     collection,
     depth: null,
     // The page's `fullPath` is in the `urls.trailingSlash` form; admin logic works on canonical paths.
-    fullPath: withoutTrailingSlash(textOf(page.fullPath)),
+    fullPath: withoutTrailingSlash(toText(page.fullPath)),
     id,
     isFolderRoot: Boolean(page.isFolderRoot),
     kind: "page",
@@ -56,7 +55,7 @@ export const readPageAsItem = async (
     status:
       page._status === "draft" ? "draft" : page._status === "published" ? "published" : "live",
     structureRevision: page.structureRevision ?? 0,
-    title: textOf(page[titleField]),
+    title: toText(page[titleField]),
     updatedAt: page.updatedAt ?? "",
   };
 };

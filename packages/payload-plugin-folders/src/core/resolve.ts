@@ -12,6 +12,7 @@ import { buildLiveInLocaleWhere } from "./publishedWhere.js";
 import { isForbidden, resolveReadMode } from "./readMode.js";
 import { getResolvedOptions } from "./runtime.js";
 import { buildPageSegmentWhere, folderPathIn, getPageDefaultLocale } from "./uniqueness.js";
+import { toText } from "./text.js";
 
 export type ResolveArgs = {
   /** Default 1. */
@@ -163,7 +164,7 @@ const lookupPage = async (context: LookupContext, path: string): Promise<PageHit
         return doc
           ? {
               collection: page.slug,
-              createdAt: typeof doc.createdAt === "string" ? doc.createdAt : "",
+              createdAt: toText(doc.createdAt),
               doc,
             }
           : null;
