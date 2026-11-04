@@ -431,11 +431,11 @@ and for a save alike.
 Read this before you rely on it.
 
 - It fires for a folder rename or move through a normal update (`folderUpdate`), a move or reorder
-  (`move`), a delete or trash (`delete`) and a repair (`repair`).
-- It does not fire when a page is created, when a page is published with a new slug, or when a page
-  becomes or stops being a root page. The reason names `create`, `publish` and `rootToggle` exist in
-  the type but this version never sends them. Revalidate those from your page collection's own
-  `afterChange` hook.
+  (`move`), a delete or trash (`delete`), a repair (`repair`), a page created live (`create`), a
+  page published or saved live with another slug (`publish`) and a page that becomes or stops being
+  a root page while live (`rootToggle`).
+- A page save reports only published URLs. A draft save, a draft create and a duplicate (its copies
+  are drafts) report nothing. Unpublishing a page does not report its old URL.
 - It runs after the commit, with the tree lock released, and receives a copy of the request that has
   no transaction. Pass that `req` to nested Local API calls as it is.
 - A hook that throws is logged and never fails the save. A failed revalidation is silent.

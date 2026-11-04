@@ -9,6 +9,7 @@ import { callEndpoint } from "../helpers/callEndpoint.js";
 import { countDbWrites } from "../helpers/countDbWrites.js";
 import { getTestPayload } from "../helpers/getTestPayload.js";
 import type { TestPayload } from "../helpers/getTestPayload.js";
+import { isPageSaveReason } from "../helpers/pathChangeReasons.js";
 import { clearTree, seedTree } from "../helpers/seedTree.js";
 import { createFolder, createTestRequest } from "../helpers/treeFixtures.js";
 
@@ -29,7 +30,10 @@ beforeAll(async () => {
   harness = await getTestPayload({
     foldersOptions: {
       hooks: {
-        afterPathChange: ({ changes }) => {
+        afterPathChange: ({ changes, reason }) => {
+          if (isPageSaveReason(reason)) {
+            return;
+          }
           recordedChanges.push(changes);
         },
       },

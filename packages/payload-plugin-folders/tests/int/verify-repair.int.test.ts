@@ -11,6 +11,7 @@ import { callEndpoint } from "../helpers/callEndpoint.js";
 import { countDbCalls } from "../helpers/countDbCalls.js";
 import { getTestPayload } from "../helpers/getTestPayload.js";
 import type { TestPayload } from "../helpers/getTestPayload.js";
+import { isPageSaveReason } from "../helpers/pathChangeReasons.js";
 import { createFolder, createPage, createTestRequest } from "../helpers/treeFixtures.js";
 
 type HookCall = { changes: PathChange[]; reason: PathChangeReason };
@@ -23,6 +24,9 @@ beforeAll(async () => {
     foldersOptions: {
       hooks: {
         afterPathChange: ({ changes, reason }) => {
+          if (isPageSaveReason(reason)) {
+            return;
+          }
           hookCalls.push({ changes, reason });
         },
       },

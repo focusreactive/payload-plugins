@@ -3,6 +3,7 @@ import type { CollectionAfterChangeHook } from "payload";
 
 import { toCollectionSlug } from "../../collectionSlug.js";
 import { readFolderRecord } from "../../core/folderRecords.js";
+import { queueAfterPathChange } from "../../core/afterPathChange.js";
 import { settlePageRedirects } from "../../core/pageRedirects.js";
 import { getFallbackLocaleKey } from "../../core/locales.js";
 import { liveLocaleKeysOf, readPageRow, popSnapshot, toSnapshot } from "../../core/pageRecords.js";
@@ -19,7 +20,13 @@ import {
   getPageLocaleKeys,
   queryLocaleOf,
 } from "../../core/uniqueness.js";
-import type { FolderId, ResolvedOptions, ResolvedPageCollection } from "../../types.js";
+import type {
+  FolderId,
+  PathChange,
+  PathChangeReason,
+  ResolvedOptions,
+  ResolvedPageCollection,
+} from "../../types.js";
 import { isInternalWrite } from "../context.js";
 import { settleTrashedPage } from "./deleteHooks.js";
 
@@ -159,6 +166,34 @@ const hasLiveUrlChanged = (
 };
 
 /**
+ * Sends the live path changes of a page save to `hooks.afterPathChange`, after the commit. A copy
+ * made by the duplicate operation is skipped: it is meant to be a draft, and a status-per-locale
+ * collection keeps the original's published locales on the copy for a moment before the duplicate
+ * unpublishes them, which would report URLs that never went live.
+ */
+const reportPageChanges = async ({
+  changes,
+  options,
+  reason,
+  req,
+}: {
+  changes: PathChange[];
+  options: ResolvedOptions;
+  reason: PathChangeReason;
+  req: Parameters<CollectionAfterChangeHook>[0]["req"];
+}): Promise<void> => {
+  if (req.context?.foldersDuplicate) {
+    return;
+  }
+  await queueAfterPathChange({
+    changes: changes.filter((change) => change.from !== null || change.to !== null),
+    options,
+    reason,
+    req,
+  });
+};
+
+/**
  * Compares the snapshot taken before the write with the row it left: the uniqueness rules first
  * (a refusal rolls the save back), then the redirect rows of spec section 5.6, which a rolled-back
  * save must not leave.
@@ -181,7 +216,13 @@ const checkWrittenPage = async (
   if (after.isPublished) {
     await validateWrittenPage(page, options, req, id, before, after, overrideAccess);
   }
-  await settlePageRedirects({ after, before, id, options, page, req });
+  const changes = await settlePageRedirects({ after, before, id, options, page, req });
+  await reportPageChanges({
+    changes,
+    options,
+    reason: before.isFolderRoot === after.isFolderRoot ? "publish" : "rootToggle",
+    req,
+  });
   if (hasLiveUrlChanged(req, before, after)) {
     // Inside the save's transaction and tree lock (the page's beforeOperation hook took it), so
     // other editors' trees see the new revision exactly when the new path becomes visible.
@@ -202,7 +243,8 @@ const settleCreatedPage = async (
   const id = doc.id as FolderId;
   const after = await readPageRow(req, page, id);
   if (after?.isPublished) {
-    await settlePageRedirects({ after, before: null, id, options, page, req });
+    const changes = await settlePageRedirects({ after, before: null, id, options, page, req });
+    await reportPageChanges({ changes, options, reason: "create", req });
   }
 };
 

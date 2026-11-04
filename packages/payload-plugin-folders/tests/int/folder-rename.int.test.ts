@@ -63,6 +63,14 @@ type FolderAllLocales = {
   slug: Record<string, string>;
 };
 
+// Seeding publishes pages, which the hook reports too; these tests look at the rename's reports.
+const seedWithoutReports = async (payload: Payload): Promise<SeededTree> => {
+  const tree = await seedTree(payload);
+  recorded.length = 0;
+
+  return tree;
+};
+
 const readAllLocales = async (payload: Payload, id: number): Promise<FolderAllLocales> =>
   (await payload.findByID({
     collection: "folders",
@@ -145,7 +153,7 @@ const folderChanges = (changes: PathChange[]) =>
 describe("folder rename", () => {
   it("rename about to company moves /about/contact to /company/contact", async () => {
     const { payload } = harness;
-    const tree = await seedTree(payload);
+    const tree = await seedWithoutReports(payload);
     expect(await readFullPath(payload, "pages", tree.pages.contact.id)).toBe("/about/contact");
 
     await renameFolder(payload, tree.about.id, { name: "Company", slug: "company" });
@@ -186,7 +194,7 @@ describe("folder rename", () => {
 
   it("a de rename touches only de", async () => {
     const { payload } = harness;
-    const tree = await seedTree(payload);
+    const tree = await seedWithoutReports(payload);
     const [team] = tree.subfolders;
 
     await renameFolder(payload, tree.about.id, { name: "Ueber uns", slug: "ueber-uns" }, "de");
@@ -214,7 +222,7 @@ describe("folder rename", () => {
 
   it("an en rename moves the de path too while de has no slug of its own", async () => {
     const { payload } = harness;
-    const tree = await seedTree(payload);
+    const tree = await seedWithoutReports(payload);
 
     await renameFolder(payload, tree.about.id, { name: "Company", slug: "company" });
 
@@ -230,7 +238,7 @@ describe("folder rename", () => {
 
   it("every reported change has from different from to", async () => {
     const { payload } = harness;
-    const tree = await seedTree(payload);
+    const tree = await seedWithoutReports(payload);
     // A de slug of its own for one subfolder, so a rename leaves its en path alone but moves de.
     const [team] = tree.subfolders;
     await renameFolder(payload, team.id, { name: "Team de", slug: "mannschaft" }, "de");
@@ -278,7 +286,7 @@ describe("folder rename", () => {
 
   it("a de rename reports only URLs that resolve in de, also for a folder with no de row", async () => {
     const { payload } = harness;
-    const tree = await seedTree(payload);
+    const tree = await seedWithoutReports(payload);
     const legacy = await createEnglishOnlyFolder(payload, tree.about.id, "/about");
 
     await renameFolder(payload, tree.about.id, { name: "Firma", slug: "firma" }, "de");
@@ -293,7 +301,7 @@ describe("folder rename", () => {
 
   it("en values survive a de rename", async () => {
     const { payload } = harness;
-    const tree = await seedTree(payload);
+    const tree = await seedWithoutReports(payload);
     const [team] = tree.subfolders;
     await renameFolder(payload, team.id, { name: "Teamarbeit", slug: "teamarbeit" }, "de");
 
@@ -312,7 +320,7 @@ describe("folder rename", () => {
 
   it("a de rename gives a descendant with no de row a de path only, and keeps its en values", async () => {
     const { payload } = harness;
-    const tree = await seedTree(payload);
+    const tree = await seedWithoutReports(payload);
     const legacy = await createEnglishOnlyFolder(payload, tree.about.id, "/about");
 
     await renameFolder(payload, tree.about.id, { name: "Firma", slug: "firma" }, "de");
@@ -328,7 +336,7 @@ describe("folder rename", () => {
 
   it("an en rename creates no de row for a descendant that has none", async () => {
     const { payload } = harness;
-    const tree = await seedTree(payload);
+    const tree = await seedWithoutReports(payload);
     const legacy = await createEnglishOnlyFolder(payload, tree.about.id, "/about");
 
     await renameFolder(payload, tree.about.id, { name: "Company", slug: "company" });
@@ -350,7 +358,7 @@ describe("folder rename", () => {
 
   it("a failure part way through the subtree leaves nothing changed and reports nothing", async () => {
     const { payload } = harness;
-    const tree = await seedTree(payload);
+    const tree = await seedWithoutReports(payload);
     const [team] = tree.subfolders;
     const deepest = await createFolder(payload, { name: "Deep", parent: team.id, slug: "deep" });
     const before = {
@@ -404,7 +412,7 @@ describe("folder rename", () => {
 
   it("afterPathChange runs after the commit, with the lock free and a request of its own", async () => {
     const { payload } = harness;
-    const tree = await seedTree(payload);
+    const tree = await seedWithoutReports(payload);
     const observed: { isLockHeld?: boolean; pathSeenOutsideTransaction?: string } = {};
     hookBehaviour = async () => {
       observed.isLockHeld = isTreeLockHeld(payload);
@@ -427,7 +435,7 @@ describe("folder rename", () => {
 
   it("a throw inside afterPathChange is logged and the save stands", async () => {
     const { payload } = harness;
-    const tree = await seedTree(payload);
+    const tree = await seedWithoutReports(payload);
     const logged = vi.spyOn(payload.logger, "error");
     hookBehaviour = () => {
       throw new Error("revalidation failed");
@@ -446,7 +454,7 @@ describe("folder rename", () => {
 
   it("afterPathChange does not run for a save that changes no path", async () => {
     const { payload } = harness;
-    const tree = await seedTree(payload);
+    const tree = await seedWithoutReports(payload);
 
     await renameFolder(payload, tree.about.id, { name: "About us" });
 
@@ -455,7 +463,7 @@ describe("folder rename", () => {
 
   it("a rename leaves the caller's request context, locale and transaction alone", async () => {
     const { payload } = harness;
-    const tree = await seedTree(payload);
+    const tree = await seedWithoutReports(payload);
     const req = await createTestRequest(payload);
     const localeBefore = req.locale;
 
@@ -489,7 +497,7 @@ describe("folder rename", () => {
 
   it("afterPathChange gets the caller's context without foldersInternal, as a copy", async () => {
     const { payload } = harness;
-    const tree = await seedTree(payload);
+    const tree = await seedWithoutReports(payload);
     const req = await createTestRequest(payload);
     req.context = { disableRevalidate: true, foldersInternal: true } as never;
     const contextBefore = { ...req.context };
@@ -514,7 +522,7 @@ describe("folder rename", () => {
 
   it("a REST rename reports to afterPathChange with the signed-in user", async () => {
     const { config, payload } = harness;
-    const tree = await seedTree(payload);
+    const tree = await seedWithoutReports(payload);
 
     const { status } = await callEndpoint({
       body: { name: "Company", slug: "company" },
@@ -534,7 +542,7 @@ describe("folder rename", () => {
 
   it("a rename writes folder rows only, one per changed folder", async () => {
     const { payload } = harness;
-    const tree = await seedTree(payload);
+    const tree = await seedWithoutReports(payload);
 
     const { writes } = await countDbWrites(payload, () =>
       renameFolder(payload, tree.about.id, { name: "Company", slug: "company" })
@@ -634,6 +642,7 @@ describe("folder rename without transactions", () => {
     }
     const { payload } = untransacted;
     const tree = await seedTree(payload);
+    reportedWithoutTransactions.length = 0;
 
     await renameFolder(payload, tree.about.id, { name: "Company", slug: "company" });
 
@@ -675,7 +684,7 @@ describe("folder rename carries every localized field of the row", () => {
 
   it("a host's localized description survives a rename in en and in de", async () => {
     const { payload } = overridden;
-    const tree = await seedTree(payload);
+    const tree = await seedWithoutReports(payload);
     const [team] = tree.subfolders;
     for (const folder of [tree.about, team]) {
       await describeFolder(payload, folder.id, "en");

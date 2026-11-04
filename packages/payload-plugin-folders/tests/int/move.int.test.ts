@@ -8,6 +8,7 @@ import type { PathChange, PathChangeReason } from "../../src/types.js";
 import { countDbWrites } from "../helpers/countDbWrites.js";
 import { getTestPayload } from "../helpers/getTestPayload.js";
 import type { TestPayload } from "../helpers/getTestPayload.js";
+import { isPageSaveReason } from "../helpers/pathChangeReasons.js";
 import { clearTree } from "../helpers/seedTree.js";
 import { createFolder, createPage, createTestRequest } from "../helpers/treeFixtures.js";
 
@@ -22,6 +23,9 @@ beforeAll(async () => {
     foldersOptions: {
       hooks: {
         afterPathChange: ({ changes, reason }) => {
+          if (isPageSaveReason(reason)) {
+            return;
+          }
           recorded.push({ changes, reason });
         },
       },

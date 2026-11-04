@@ -32,6 +32,9 @@ const toLocaleOrNull = (key: string): string | null => (key === noLocaleKey ? nu
  * returns before it reads anything.
  *
  * Runs inside the save's transaction, after the uniqueness check, so a refused save leaves no row.
+ *
+ * Returns the published path changes whether or not redirects are on, because the caller reports
+ * them to `hooks.afterPathChange`; with redirects off nothing is written.
  */
 export const settlePageRedirects = async ({
   after,
@@ -47,11 +50,8 @@ export const settlePageRedirects = async ({
   options: ResolvedOptions;
   page: ResolvedPageCollection;
   req: PayloadRequest;
-}): Promise<void> => {
+}): Promise<PathChange[]> => {
   const isWritingRows = shouldWriteRedirects(req, options);
-  if (!(isWritingRows || options.redirects.enabled)) {
-    return;
-  }
   const { payload } = req;
   const hasDrafts = Boolean(
     payload.collections[toCollectionSlug(page.slug)]?.config.versions?.drafts
@@ -73,14 +73,14 @@ export const settlePageRedirects = async ({
       (!isLiveBefore(key) || hasStructureChanged || before?.effective[key] !== effectiveAfter[key])
   );
   if (changedKeys.length === 0) {
-    return;
+    return [];
   }
 
   const readFolder = (folderId: PageRow["folder"]): Promise<FolderRecord | null> =>
     folderId === null ? Promise.resolve(null) : readFolderRecord(req, options, folderId);
   const folderAfter = await readFolder(after.folder);
   if (after.folder !== null && !folderAfter) {
-    return;
+    return [];
   }
   const folderBefore =
     before === null || !hasStructureChanged || String(before.folder) === String(after.folder)
@@ -119,10 +119,14 @@ export const settlePageRedirects = async ({
     });
   }
 
-  await settleRedirectRows({
-    clear: takenPathsOf(payload, changes),
-    req,
-    rows: isWritingRows ? planPageRedirectRows(changes) : [],
-  });
-  await settleMirror({ changes, options, req, write: isWritingRows });
+  if (isWritingRows || options.redirects.enabled) {
+    await settleRedirectRows({
+      clear: takenPathsOf(payload, changes),
+      req,
+      rows: isWritingRows ? planPageRedirectRows(changes) : [],
+    });
+    await settleMirror({ changes, options, req, write: isWritingRows });
+  }
+
+  return changes;
 };

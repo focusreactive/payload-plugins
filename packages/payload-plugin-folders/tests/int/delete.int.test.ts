@@ -11,6 +11,7 @@ import type { PathChange, PathChangeReason } from "../../src/types.js";
 import { callEndpoint } from "../helpers/callEndpoint.js";
 import { getTestPayload } from "../helpers/getTestPayload.js";
 import type { TestPayload } from "../helpers/getTestPayload.js";
+import { isPageSaveReason } from "../helpers/pathChangeReasons.js";
 import { clearTree } from "../helpers/seedTree.js";
 import { createFolder } from "../helpers/treeFixtures.js";
 
@@ -43,6 +44,9 @@ const afterPathChange = ({
   changes: PathChange[];
   reason: PathChangeReason;
 }) => {
+  if (isPageSaveReason(reason)) {
+    return;
+  }
   recorded.push({ changes, reason });
 };
 
