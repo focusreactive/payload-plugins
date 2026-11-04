@@ -419,8 +419,11 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     Decision 19 stands: `pathSegment[locale]` holds the page's own segment or null, so a stock query
     for a locale that falls back needs the exported `buildSegmentWhere`. The review read this as a
     deviation from spec lines 46 and 97 (`pathSegment` stores the effective segment, and
-    `{ path, locale }` resolves with a plain stock query). The orchestrator keeps the code and amends
-    those spec lines on the spec's own repository; no code change here.
+    `{ path, locale }` resolves with a plain stock query). The orchestrator kept the code and amended
+    the spec instead: on focusreactive-labs main in e1cf2f2a plus a wording fix,
+    `projects/folders-plugin/spec/payload.md` lines 44-47, 97-101 and the `pathSegment` row of the
+    field table now say own segment or null, with the fallback applied at read time through
+    `buildSegmentWhere`. No code change here.
 
 ### Owner decisions (from spec/review.md, the spec writer's pick applies)
 
