@@ -301,6 +301,24 @@ describe("MCP updateDocument on a folder", () => {
     expect(after.slug).toEqual({ de: "firma", en: "company" });
   });
 
+  it("does not store the fallback slug as the locale's own when an agent echoes it back", async () => {
+    const { payload } = harness;
+    const company = await createFolder(payload, { name: "Company", slug: "company" });
+    expect((await readFolder(payload, company.id)).slug.de ?? null).toBeNull();
+
+    const result = await updateFolder(
+      company.id,
+      { name: "Unternehmen", slug: "company" },
+      { locale: "de" }
+    );
+
+    expect(result.isError).toBe(false);
+    const after = await readFolder(payload, company.id);
+    expect(after.name.de).toBe("Unternehmen");
+    expect(after.slug.de ?? null).toBeNull();
+    expect(after.slug.en).toBe("company");
+  });
+
   // plugin-mcp's own input check (`data.slug: expected string`) refuses an object slug before any
   // hook runs, so `locale: "all"` with a slug object cannot arrive through the real tool in
   // 4.0.0-beta.5. These two calls mark a Local API request as MCP themselves to reach the hook's

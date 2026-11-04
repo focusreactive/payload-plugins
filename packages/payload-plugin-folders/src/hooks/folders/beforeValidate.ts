@@ -3,7 +3,7 @@ import type { CollectionBeforeValidateHook } from "payload";
 import { getDefaultLocaleKey, requestLocaleKey } from "../../core/locales.js";
 import { slugify } from "../../core/slugify.js";
 import type { ResolvedOptions } from "../../types.js";
-import { isInternalWrite } from "../context.js";
+import { isInternalWrite, slugNotSentContextKey } from "../context.js";
 
 const isEmpty = (value: unknown): boolean => value === undefined || value === null || value === "";
 
@@ -43,7 +43,11 @@ export const buildFolderBeforeValidate =
 
     // On an update the slug is only derived when the caller sent it empty, never when it is absent.
     const slugIsEmpty = isEmpty(data.slug);
-    if (!slugIsEmpty || (operation === "update" && !("slug" in data))) {
+    if (
+      !slugIsEmpty ||
+      (operation === "update" && !("slug" in data)) ||
+      req.context?.[slugNotSentContextKey]
+    ) {
       return data;
     }
     const isDefaultLocale = writeKey === getDefaultLocaleKey(req.payload, options);

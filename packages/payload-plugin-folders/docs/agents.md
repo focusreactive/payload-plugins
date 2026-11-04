@@ -391,7 +391,9 @@ Why not the alternatives:
   call would already be saved, and the model would be told after the fact.
 
 A same-value write passes, so an agent that copies a whole document back does not trip the guard.
-A folder slug read through the fallback locale and sent back unchanged passes too. plugin-mcp's own
+A folder slug read through the fallback locale and sent back unchanged passes too, and the guard
+leaves it out of the update, so the locale keeps falling back instead of storing the default
+locale's slug as its own. plugin-mcp's own
 input check accepts only a string for `slug`, so a `locale: "all"` slug object cannot reach the hook
 through the stock tool in 4.0.0-beta.5; the hook compares it per locale all the same.
 On pages, a `where` update that names these fields is already refused by `bulkUpdateGuard`

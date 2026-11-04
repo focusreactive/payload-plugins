@@ -7,7 +7,7 @@ import type { ValuesByLocale } from "../core/locales.js";
 import { readPageRow } from "../core/pageRecords.js";
 import { namesOtherFolder, namesOtherOrderKey } from "../core/structureGuard.js";
 import type { FolderId, ResolvedOptions, ResolvedPageCollection } from "../types.js";
-import { isInternalWrite } from "./context.js";
+import { isInternalWrite, slugNotSentContextKey } from "./context.js";
 
 type UpdateArgs = {
   data?: Record<string, unknown>;
@@ -175,16 +175,24 @@ export const buildFolderMcpStructureGuard =
     ) {
       refuse("structureRevision");
     }
-    if (
-      data.slug !== undefined &&
-      slugDiffersFromStored(
-        data.slug,
-        stored.slug,
-        requestLocaleKey(req.payload, options, req.locale),
-        getDefaultLocaleKey(req.payload, options)
-      )
-    ) {
-      refuse("slug");
+    if (data.slug !== undefined) {
+      const writeKey = requestLocaleKey(req.payload, options, req.locale);
+      const defaultLocaleKey = getDefaultLocaleKey(req.payload, options);
+      if (slugDiffersFromStored(data.slug, stored.slug, writeKey, defaultLocaleKey)) {
+        refuse("slug");
+      }
+      // The agent read the default locale's slug as this locale's by fallback and sent it back.
+      // Left in the update, the folder's `beforeChange` would store it as this locale's own and
+      // detach the locale from every later change to the default slug.
+      if (
+        writeKey !== "all" &&
+        writeKey !== defaultLocaleKey &&
+        data.slug &&
+        !stored.slug[writeKey]
+      ) {
+        delete data.slug;
+        req.context[slugNotSentContextKey] = true;
+      }
     }
 
     return args;

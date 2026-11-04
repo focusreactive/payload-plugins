@@ -6,3 +6,10 @@ import type { PayloadRequest } from "payload";
  */
 export const isInternalWrite = (req: PayloadRequest): boolean =>
   Boolean(req.context?.foldersInternal);
+
+/**
+ * Set by the MCP guard when it takes an echoed fallback slug out of an update. Payload then fills
+ * the missing slug back in from the stored document as an empty value, which `beforeValidate`
+ * would read as "the caller sent it empty" and derive a slug from the name.
+ */
+export const slugNotSentContextKey = "foldersSlugNotSent";
