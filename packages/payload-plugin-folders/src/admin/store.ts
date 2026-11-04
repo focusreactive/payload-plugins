@@ -67,6 +67,8 @@ export type TreeStoreOptions = {
   locale: string | null;
   /** Rows per children request. */
   pageSize: number;
+  /** The admin language's word for a page with no title, shown in place of the server's English one. */
+  untitledTitle?: string;
   /** The signed-in user: another one gets a fresh, closed tree. */
   userId?: number | string | null;
 };
@@ -389,9 +391,9 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
   };
 
   const context = (): FoldersApiContext => {
-    const { baseUrl, fetchImplementation } = requireOptions();
+    const { baseUrl, fetchImplementation, untitledTitle } = requireOptions();
 
-    return { baseUrl, fetchImplementation };
+    return { baseUrl, fetchImplementation, untitledTitle };
   };
 
   const startPageRequest = (key: FolderKey): { isCurrent: () => boolean } => {
@@ -1057,7 +1059,9 @@ export const createTreeStore = (initialOptions?: TreeStoreOptions): TreeStore =>
         reset(false);
       } else if (
         previous &&
-        (previous.baseUrl !== next.baseUrl || previous.locale !== next.locale)
+        (previous.baseUrl !== next.baseUrl ||
+          previous.locale !== next.locale ||
+          previous.untitledTitle !== next.untitledTitle)
       ) {
         reset();
       }

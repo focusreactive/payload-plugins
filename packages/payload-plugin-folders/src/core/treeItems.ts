@@ -26,6 +26,7 @@ import { readLatestStatuses, resolveTreeStatus } from "./status.js";
 import { getPageDefaultLocale, pageDepthIn } from "./uniqueness.js";
 import { pickLocalized, toText } from "./text.js";
 import { itemKey } from "./itemKey.js";
+import { untitledTitle } from "./untitled.js";
 
 /** Rows the tree reads per query are bounded by the caller; this caps what a client may ask for. */
 export const maxTreePageSize = 1000;
@@ -454,7 +455,7 @@ const toPageItem = ({
       mainStatus: row._status,
     }),
     structureRevision: typeof row.structureRevision === "number" ? row.structureRevision : 0,
-    title: pickLocalized(row[page.titleField], view.pageKey, view.defaultPageKey) || "Untitled",
+    title: pickLocalized(row[page.titleField], view.pageKey, view.defaultPageKey) || untitledTitle,
     titleIsFallback:
       ownLocalized(row[page.titleField], view.pageKey) === "" &&
       pickLocalized(row[page.titleField], view.pageKey, view.defaultPageKey) !== "",

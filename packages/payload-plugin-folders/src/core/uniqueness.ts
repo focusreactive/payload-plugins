@@ -9,6 +9,7 @@ import { effectiveSegmentsOf } from "./pageRecords.js";
 import { buildSegmentWhere } from "./segmentWhere.js";
 import { toText } from "./text.js";
 import { itemKey } from "./itemKey.js";
+import { untitledTitle } from "./untitled.js";
 
 /** The locale slots a page's paths are checked in: every locale code, or one slot without localization. */
 export const getPageLocaleKeys = (payload: Payload): string[] => {
@@ -110,11 +111,11 @@ export const readTitle = async (
       toText(byLocale[locale]) ||
       toText(byLocale[getPageDefaultLocale(req.payload)]) ||
       Object.values(byLocale).map(toText).find(Boolean) ||
-      "Untitled"
+      untitledTitle
     );
   }
 
-  return toText(value) || "Untitled";
+  return toText(value) || untitledTitle;
 };
 
 export const buildPageSegmentWhere = (

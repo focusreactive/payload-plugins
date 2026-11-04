@@ -7,6 +7,7 @@ import type { RepairResult } from "../core/repair.js";
 import type { VerifyResult } from "../core/verify.js";
 import type { PublishAction, PublishPreview, PublishResult } from "../core/publish.js";
 import { redirectsParameter } from "../core/redirectsOptOut.js";
+import { untitledTitle } from "../core/untitled.js";
 import { isPageChangedMessage, rootPreconditionParameter } from "../core/rootPrecondition.js";
 import type { FolderId, ItemRef, TreeItem, TreeStatus } from "../types.js";
 import { itemKey } from "../core/itemKey.js";
@@ -17,6 +18,8 @@ export type FoldersApiContext = {
   baseUrl: string;
   /** For tests; the browser's `fetch` by default. */
   fetchImplementation?: typeof fetch;
+  /** The admin language's word for a page with no title; the server's English one is shown without it. */
+  untitledTitle?: string;
 };
 
 export type ChildrenResponse = {
@@ -178,6 +181,12 @@ const requestJson = async <Response>(
   return readJsonResponse<Response>(response);
 };
 
+/** Swaps the server's English title of a page that has none for the admin language's word. */
+const localizeTitle = (context: FoldersApiContext, item: TreeItem): TreeItem =>
+  context.untitledTitle !== undefined && item.kind === "page" && item.title === untitledTitle
+    ? { ...item, title: context.untitledTitle }
+    : item;
+
 const getJson = <Response>(
   context: FoldersApiContext,
   path: string,
@@ -209,17 +218,20 @@ export type ChildrenQuery = {
 };
 
 /** One page of the folders and pages directly inside a folder, in tree order. */
-export const fetchChildren = (
+export const fetchChildren = async (
   context: FoldersApiContext,
   { cursor, limit, locale, parent }: ChildrenQuery,
   signal?: AbortSignal
-): Promise<ChildrenResponse> =>
-  getJson<ChildrenResponse>(
+): Promise<ChildrenResponse> => {
+  const response = await getJson<ChildrenResponse>(
     context,
     "children",
     { cursor, limit, locale, parent: parent === null ? "root" : String(parent) },
     signal
   );
+
+  return { ...response, items: response.items.map((item) => localizeTitle(context, item)) };
+};
 
 export type SearchQuery = {
   /** The zoomed folder; `null` is the top level. */
@@ -233,12 +245,12 @@ export type SearchQuery = {
   types?: string[];
 };
 
-export const fetchSearch = (
+export const fetchSearch = async (
   context: FoldersApiContext,
   { folder, limit, locale, query, scope, status, types }: SearchQuery,
   signal?: AbortSignal
-): Promise<SearchResponse> =>
-  getJson<SearchResponse>(
+): Promise<SearchResponse> => {
+  const response = await getJson<SearchResponse>(
     context,
     "search",
     {
@@ -253,6 +265,9 @@ export const fetchSearch = (
     signal
   );
 
+  return { ...response, items: response.items.map((item) => localizeTitle(context, item)) };
+};
+
 export type AncestorsQuery = {
   item: ItemRef;
   locale?: string | null;
@@ -261,12 +276,12 @@ export type AncestorsQuery = {
 };
 
 /** The folders above an item, the top one first. */
-export const fetchAncestors = (
+export const fetchAncestors = async (
   context: FoldersApiContext,
   { item, locale, withItems }: AncestorsQuery,
   signal?: AbortSignal
-): Promise<AncestorsResponse> =>
-  getJson<AncestorsResponse>(
+): Promise<AncestorsResponse> => {
+  const response = await getJson<AncestorsResponse>(
     context,
     "ancestors",
     {
@@ -277,6 +292,13 @@ export const fetchAncestors = (
     },
     signal
   );
+
+  return {
+    ...response,
+    ...(response.item ? { item: localizeTitle(context, response.item) } : {}),
+    ...(response.items ? { items: response.items.map((row) => localizeTitle(context, row)) } : {}),
+  };
+};
 
 /** The number the store polls to learn that the tree changed. */
 export const fetchRevision = (

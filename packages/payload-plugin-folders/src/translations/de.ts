@@ -496,6 +496,7 @@ export const de: FoldersTranslations = {
     treeLabel: "Inhaltsbaum",
     undo: "Rückgängig",
     undoFailed: "Das Verschieben konnte nicht rückgängig gemacht werden",
+    untitledPage: "Ohne Titel",
     unrootConfirm: "Stammseite aufheben",
     unrootDone: '"{{title}}" ist nicht mehr die Stammseite',
     unrootDoneDraft: '"{{title}}" ist nicht mehr die Stammseite, sobald sie veröffentlicht wird',

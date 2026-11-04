@@ -477,6 +477,7 @@ export const en = {
     treeLabel: "Content tree",
     undo: "Undo",
     undoFailed: "Could not undo the move",
+    untitledPage: "Untitled",
     unrootConfirm: "Unset root page",
     unrootDone: '"{{title}}" is no longer the root page',
     unrootDoneDraft: '"{{title}}" stops being the root page when it is published',

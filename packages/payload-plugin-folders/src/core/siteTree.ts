@@ -17,6 +17,7 @@ import { resolveRequestLocale } from "./resolve.js";
 import { getResolvedOptions } from "./runtime.js";
 import { folderPathIn, getPageDefaultLocale } from "./uniqueness.js";
 import { pickLocalized, toText } from "./text.js";
+import { untitledTitle } from "./untitled.js";
 
 export type TreeNode = {
   alternates?: Record<string, string>;
@@ -365,7 +366,8 @@ export const getTree = async (payload: Payload, args: TreeArgs = {}): Promise<Tr
         id: row.id,
         isFolderRoot: Boolean(row.doc.isFolderRoot),
         kind: "page",
-        title: pickLocalized(row.doc[row.page.titleField], pageKey, defaultPageKey) || "Untitled",
+        title:
+          pickLocalized(row.doc[row.page.titleField], pageKey, defaultPageKey) || untitledTitle,
         updatedAt: toText(row.doc.updatedAt),
       },
       parent: row.folder,

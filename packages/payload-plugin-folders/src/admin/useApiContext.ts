@@ -8,6 +8,10 @@ export const useApiContext = (store: TreeStore): FoldersApiContext => {
   const options = store.getOptions();
   const baseUrl = options?.baseUrl ?? "";
   const fetchImplementation = options?.fetchImplementation;
+  const untitledTitle = options?.untitledTitle;
 
-  return useMemo(() => ({ baseUrl, fetchImplementation }), [baseUrl, fetchImplementation]);
+  return useMemo(
+    () => ({ baseUrl, fetchImplementation, untitledTitle }),
+    [baseUrl, fetchImplementation, untitledTitle]
+  );
 };

@@ -54,6 +54,7 @@ export const SidebarTabClient = ({
   const router = useRouter();
   const { adminRoute, apiBaseUrl } = useAdminRoutes();
   const { language, translate } = useFoldersTranslation();
+  const untitledTitle = translate("untitledPage");
   const locale = useLocaleCode() ?? initialLocale;
   const userId = useUserId();
   const isActive = useIsSidebarTabActive(sidebarTabSlug);
@@ -69,7 +70,7 @@ export const SidebarTabClient = ({
     if (!isActive) {
       return undefined;
     }
-    store.configure({ baseUrl: apiBaseUrl, foldersSlug, locale, pageSize, userId });
+    store.configure({ baseUrl: apiBaseUrl, foldersSlug, locale, pageSize, untitledTitle, userId });
     setIsConfigured(true);
     // The tab was hidden, or never shown: whatever it shows is read again.
     void store.refetchVisible();
@@ -77,7 +78,7 @@ export const SidebarTabClient = ({
     const release = store.retainFullTree();
 
     return release;
-  }, [apiBaseUrl, foldersSlug, isActive, locale, pageSize, store, userId]);
+  }, [apiBaseUrl, foldersSlug, isActive, locale, pageSize, store, untitledTitle, userId]);
   const isReady = isActive && isConfigured;
   usePolling(store, isReady);
 

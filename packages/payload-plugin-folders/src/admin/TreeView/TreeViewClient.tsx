@@ -65,6 +65,7 @@ export const TreeViewClient = ({
   const router = useRouter();
   const { adminRoute, apiBaseUrl } = useAdminRoutes();
   const { language, translate } = useFoldersTranslation();
+  const untitledTitle = translate("untitledPage");
   const locale = useLocaleCode() ?? initialLocale;
   const userId = useUserId();
   const [isConfigured, setIsConfigured] = useState(false);
@@ -112,11 +113,11 @@ export const TreeViewClient = ({
   // Configuring resets the cache when the locale changed, which tells every subscriber, so it
   // happens in an effect and the tree mounts only afterwards.
   useEffect(() => {
-    store.configure({ baseUrl: apiBaseUrl, foldersSlug, locale, pageSize, userId });
+    store.configure({ baseUrl: apiBaseUrl, foldersSlug, locale, pageSize, untitledTitle, userId });
     setIsConfigured(true);
     // Coming back to the view (after editing a page, say) shows rows read earlier: read them again.
     void store.refetchVisible();
-  }, [apiBaseUrl, foldersSlug, locale, pageSize, store, userId]);
+  }, [apiBaseUrl, foldersSlug, locale, pageSize, store, untitledTitle, userId]);
 
   usePolling(store, isConfigured);
 

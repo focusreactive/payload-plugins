@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { FolderId } from "../../types.js";
 import { fetchAncestors } from "../api.js";
 import type { AncestorFolder } from "../api.js";
-import { useAdminRoutes, useLocaleCode, useUserId } from "../compat.js";
+import { useAdminRoutes, useFoldersTranslation, useLocaleCode, useUserId } from "../compat.js";
 import { getSharedTreeStore, loadedItemsOf, revisionPollIntervalMs } from "../store.js";
 import type { TreeStore, TreeStoreState } from "../store.js";
 import { useApiContext } from "../useApiContext.js";
@@ -28,12 +28,14 @@ export const useConfiguredStore = (pageSize: number): TreeStore | null => {
   const { apiBaseUrl } = useAdminRoutes();
   const locale = useLocaleCode();
   const userId = useUserId();
+  const { translate } = useFoldersTranslation();
+  const untitledTitle = translate("untitledPage");
   const [isConfigured, setIsConfigured] = useState(false);
 
   useEffect(() => {
-    store.configure({ baseUrl: apiBaseUrl, locale, pageSize, userId });
+    store.configure({ baseUrl: apiBaseUrl, locale, pageSize, untitledTitle, userId });
     setIsConfigured(true);
-  }, [apiBaseUrl, locale, pageSize, store, userId]);
+  }, [apiBaseUrl, locale, pageSize, store, untitledTitle, userId]);
 
   return isConfigured ? store : null;
 };
