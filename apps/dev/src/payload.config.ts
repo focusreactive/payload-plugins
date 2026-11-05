@@ -12,6 +12,7 @@ import {
   fieldLevel,
   withAutoTranslate,
 } from "@focus-reactive/payload-plugin-translator";
+import { auditLogPlugin } from "@focus-reactive/payload-plugin-audit-log";
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { seoPlugin } from "@focus-reactive/payload-plugin-seo";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
@@ -173,6 +174,7 @@ export default buildConfig({
       },
       supportedLocales: ["en", "de", "fr", "es"],
     }),
+    auditLogPlugin(),
   ],
   secret: process.env.PAYLOAD_SECRET || "",
   serverURL: process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4040",

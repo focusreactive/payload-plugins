@@ -31,6 +31,11 @@ import { default as default_587142b484744b5573788fdf4a68522a } from '@focus-reac
 import { BlockLabelWithPresets as BlockLabelWithPresets_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { PresetAdminComponentPreview as PresetAdminComponentPreview_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { PresetAdminComponentCellWrapper as PresetAdminComponentCellWrapper_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
+import { AuditActionCell as AuditActionCell_ae17e35f4822061b0c53c889ebf392e3 } from '@focus-reactive/payload-plugin-audit-log/client'
+import { AuditActionField as AuditActionField_ae17e35f4822061b0c53c889ebf392e3 } from '@focus-reactive/payload-plugin-audit-log/client'
+import { AuditActorTypeCell as AuditActorTypeCell_ae17e35f4822061b0c53c889ebf392e3 } from '@focus-reactive/payload-plugin-audit-log/client'
+import { AuditActorTypeField as AuditActorTypeField_ae17e35f4822061b0c53c889ebf392e3 } from '@focus-reactive/payload-plugin-audit-log/client'
+import { AuditExportButton as AuditExportButton_ae17e35f4822061b0c53c889ebf392e3 } from '@focus-reactive/payload-plugin-audit-log/client'
 import { CommentsHeaderButton as CommentsHeaderButton_30d38dd40c31eff500900a16a2792204 } from '@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton'
 import { CommentsProviderWrapper as CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a } from '@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper'
 import { default as default_5668654bc04fc84f784cb30b290f6f3d } from '@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider'
@@ -72,6 +77,11 @@ export const importMap = {
   "@focus-reactive/payload-plugin-presets/client#BlockLabelWithPresets": BlockLabelWithPresets_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-presets/client#PresetAdminComponentPreview": PresetAdminComponentPreview_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-presets/client#PresetAdminComponentCellWrapper": PresetAdminComponentCellWrapper_f0a4a6f21f15d606fa328a5e35f17d11,
+  "@focus-reactive/payload-plugin-audit-log/client#AuditActionCell": AuditActionCell_ae17e35f4822061b0c53c889ebf392e3,
+  "@focus-reactive/payload-plugin-audit-log/client#AuditActionField": AuditActionField_ae17e35f4822061b0c53c889ebf392e3,
+  "@focus-reactive/payload-plugin-audit-log/client#AuditActorTypeCell": AuditActorTypeCell_ae17e35f4822061b0c53c889ebf392e3,
+  "@focus-reactive/payload-plugin-audit-log/client#AuditActorTypeField": AuditActorTypeField_ae17e35f4822061b0c53c889ebf392e3,
+  "@focus-reactive/payload-plugin-audit-log/client#AuditExportButton": AuditExportButton_ae17e35f4822061b0c53c889ebf392e3,
   "@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton#CommentsHeaderButton": CommentsHeaderButton_30d38dd40c31eff500900a16a2792204,
   "@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper#CommentsProviderWrapper": CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a,
   "@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider#default": default_5668654bc04fc84f784cb30b290f6f3d,

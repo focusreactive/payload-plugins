@@ -38,6 +38,7 @@
   "dependencies": {
     "@focus-reactive/payload-plugin-ab": "workspace:*",
     "@focus-reactive/payload-plugin-analytics": "workspace:*",
+    "@focus-reactive/payload-plugin-audit-log": "workspace:*",
     "@focus-reactive/payload-plugin-comments": "workspace:*",
     "@focus-reactive/payload-plugin-presets": "workspace:*",
     "@focus-reactive/payload-plugin-scheduling": "workspace:*",
