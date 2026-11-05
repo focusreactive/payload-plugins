@@ -21,6 +21,7 @@ import {
   takeCapturedMainGlobal,
 } from "../core/mainGlobalCapture";
 import type { CapturedMainGlobal } from "../core/mainGlobalCapture";
+import { stampOperationStart } from "../core/operationClock";
 import { markActive, pushOpFlags, takeOpFlags, unmarkActive } from "../core/requestState";
 import { withStoredLocalizedValues } from "../core/storedLocalizedValues";
 import { recordAuditEvent } from "../core/writeEvent";
@@ -91,6 +92,7 @@ export function withGlobalAudit(
       ...(select === undefined ? {} : { selected: true }),
       ...(capturesMainGlobal ? { capturesMainGlobal } : {}),
       savedIn: { locale: req.locale, fallbackLocale: req.fallbackLocale },
+      startedAt: stampOperationStart(),
     });
   };
 
@@ -160,6 +162,7 @@ export function withGlobalAudit(
       changes,
       overrideAccess: overrideAccess === true,
       localized,
+      occurredAt: flags.startedAt,
     });
   };
 

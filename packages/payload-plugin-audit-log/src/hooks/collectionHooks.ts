@@ -15,7 +15,7 @@ import { operationFlagsOf } from "../core/requestState";
 import { labelOf } from "../core/resolveActor";
 import { usesApiKeys, withSecretFieldsFirst } from "../core/secretFields";
 import { withStoredLocalizedValues } from "../core/storedLocalizedValues";
-import type { AuditEventArgs } from "../core/writeEvent";
+import type { OperationEventArgs } from "../core/writeEvent";
 import { recordAuditEvent } from "../core/writeEvent";
 import type { ResolvedOptions } from "../options";
 import { failOpen } from "../utils/failOpen";
@@ -79,7 +79,7 @@ export function withCollectionAudit(
 
   const record = (
     req: PayloadRequest,
-    args: AuditEventArgs,
+    args: OperationEventArgs,
     savedIn: LocaleOfRequest = localeOfOperation(req)
   ) =>
     recordAuditEvent(req, opts.slug, {
@@ -137,7 +137,7 @@ export function withCollectionAudit(
     diff: ChangeDiff,
     liveDoc: Doc | undefined,
     doc: Doc,
-    overrideAccess: boolean
+    { overrideAccess, occurredAt }: { overrideAccess: boolean; occurredAt?: string }
   ) => {
     const { before, after } = diff.comparable(liveDoc, doc);
     const roleFields = changedRoleFields(before, after, opts.roleFields);
@@ -149,6 +149,7 @@ export function withCollectionAudit(
         target: auditTarget("collection", slug, doc.id, titleOf(doc) ?? labelOf(doc)),
         changes: roleFields,
         overrideAccess,
+        occurredAt,
       },
       savedIn
     );
@@ -217,6 +218,7 @@ export function withCollectionAudit(
         target: auditTarget("collection", slug, doc.id, titleOf(doc)),
         changes,
         overrideAccess: accessWasOverridden,
+        occurredAt: flags.startedAt,
         ...(action === "doc.duplicate" && flags.duplicateFrom
           ? { metadata: { duplicateFrom: flags.duplicateFrom } }
           : {}),
@@ -225,7 +227,10 @@ export function withCollectionAudit(
     );
 
     if (isAuth && operation === "update" && !savesDraft) {
-      await recordRoleChange(req, savedIn, diff, liveDoc, docAsStored, accessWasOverridden);
+      await recordRoleChange(req, savedIn, diff, liveDoc, docAsStored, {
+        overrideAccess: accessWasOverridden,
+        occurredAt: flags.startedAt,
+      });
     }
   };
 

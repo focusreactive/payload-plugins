@@ -26,6 +26,7 @@ export type OpFlags = {
   writtenDocCaptures?: Set<string>;
   capturesMainGlobal?: boolean;
   savedIn?: LocaleOfRequest;
+  startedAt?: string;
 };
 
 type Counts = Map<string, number>;

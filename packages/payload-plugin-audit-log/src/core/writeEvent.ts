@@ -20,17 +20,22 @@ export type AuditEventArgs = {
 
 export type LogAuditEventArgs = AuditEventArgs & { req?: PayloadRequest };
 
+export type OperationEventArgs = AuditEventArgs & { occurredAt?: string };
+
 type PluginRuntimeSettings = { slug: string };
 
 export const standaloneLocalReq = (): ReqLike => ({ context: {}, payloadAPI: "local" });
 
-export function buildEvent(req: ReqLike & { locale?: unknown }, args: AuditEventArgs): AuditEvent {
+export function buildEvent(
+  req: ReqLike & { locale?: unknown },
+  args: OperationEventArgs
+): AuditEvent {
   const resolved = resolveActor(req);
   const who = args.actorOverride ? { ...resolved, ...args.actorOverride } : resolved;
   const locale =
     args.localized !== false && typeof req.locale === "string" ? req.locale : undefined;
   const event: AuditEvent = {
-    occurredAt: new Date().toISOString(),
+    occurredAt: args.occurredAt ?? new Date().toISOString(),
     action: args.action,
     status: args.status ?? "success",
     actor: who.actor,
@@ -49,7 +54,7 @@ export function buildEvent(req: ReqLike & { locale?: unknown }, args: AuditEvent
 function buildEventOrLog(
   payload: Payload,
   req: ReqLike & { locale?: unknown },
-  args: AuditEventArgs
+  args: OperationEventArgs
 ): AuditEvent | undefined {
   try {
     return buildEvent(req, args);
@@ -73,7 +78,7 @@ export async function writeAuditEvent(
 export async function recordAuditEvent(
   req: PayloadRequest,
   slug: string,
-  args: AuditEventArgs
+  args: OperationEventArgs
 ): Promise<void> {
   const event = buildEventOrLog(req.payload, req, args);
   if (event) await writeAuditEvent(req.payload, slug, event, req);

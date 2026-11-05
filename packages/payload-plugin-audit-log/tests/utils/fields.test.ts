@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { localizedFieldPaths, storedFieldCheckOf, storedFieldNames } from "../../src/utils/fields";
+import {
+  localizedFieldPaths,
+  readRestrictedFieldPaths,
+  storedFieldCheckOf,
+  storedFieldNames,
+} from "../../src/utils/fields";
 
 const flattenedFields = [
   { name: "title", type: "text" },
@@ -59,6 +64,44 @@ describe("localized field paths", () => {
       ["links", { rows: true }, "label"],
       ["gallery"],
     ]);
+  });
+});
+
+const fieldsWithNamedTab = (tab: Record<string, unknown>) => [
+  { name: "code", type: "text" as const },
+  {
+    type: "tabs" as const,
+    tabs: [
+      { name: "meta", fields: [{ name: "title", type: "text" as const }], ...tab },
+      { label: "Plain", fields: [{ name: "note", type: "text" as const, localized: true }] },
+    ],
+  },
+];
+
+describe("named tabs", () => {
+  it("lists a localized named tab as one localized field", () => {
+    expect(localizedFieldPaths(fieldsWithNamedTab({ localized: true }))).toEqual([
+      ["meta"],
+      ["note"],
+    ]);
+  });
+
+  it("lists a hidden or read-restricted named tab as one read-restricted field", () => {
+    expect(readRestrictedFieldPaths(fieldsWithNamedTab({ hidden: true }))).toEqual([["meta"]]);
+    expect(readRestrictedFieldPaths(fieldsWithNamedTab({ access: { read: () => false } }))).toEqual(
+      [["meta"]]
+    );
+  });
+
+  it("lists the localized fields inside a named tab that is not localized itself", () => {
+    expect(
+      localizedFieldPaths([
+        {
+          type: "tabs",
+          tabs: [{ name: "meta", fields: [{ name: "title", type: "text", localized: true }] }],
+        },
+      ])
+    ).toEqual([["meta", "title"]]);
   });
 });
 

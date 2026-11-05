@@ -133,3 +133,32 @@ describe("changedStoredFields of a save in one locale", () => {
     ).toEqual(["title", "secret"]);
   });
 });
+
+describe("createdFields", () => {
+  const diffOfCreate = (submittedData: Record<string, unknown>) =>
+    createChangeDiff({
+      readRestrictedFields: [["token"], ["details", "secret"], ["links", ROWS, "secret"]],
+      maxChangedPaths: 200,
+    })({ submittedData });
+
+  it("lists the hidden and read-restricted fields a create wrote although the created document leaves them out", () => {
+    const submitted = {
+      title: "T",
+      token: "t1",
+      details: { secret: "s1" },
+      links: [{ id: "r", secret: "s2" }],
+    };
+    const shown = { id: 1, title: "T", details: {}, links: [{ id: "r" }] };
+    expect(diffOfCreate(submitted).createdFields(shown)).toEqual([
+      "title",
+      "details",
+      "links",
+      "token",
+    ]);
+  });
+
+  it("does not list hidden and read-restricted fields a create did not write", () => {
+    const shown = { id: 1, title: "T", details: {} };
+    expect(diffOfCreate({ title: "T", details: {} }).createdFields(shown)).toEqual(["title"]);
+  });
+});

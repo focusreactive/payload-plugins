@@ -1,3 +1,5 @@
+import { GRAPHQL_POST } from "@payloadcms/next/routes";
+import type { CollectionConfig } from "payload";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import {
@@ -13,11 +15,32 @@ import {
 import type { AuditEventRow, AuditTestPayload } from "./bootAuditPayload";
 
 const HIDDEN_ROLE_FIELD = "internalNote";
+const RESTRICTED_NOTES = "restricted-notes";
+
+const restrictedNotes: CollectionConfig = {
+  slug: RESTRICTED_NOTES,
+  fields: [
+    { name: "visible", type: "text" },
+    { name: "hiddenNote", type: "text", hidden: true },
+    { name: "unreadable", type: "text", access: { read: () => false } },
+    {
+      name: "details",
+      type: "group",
+      fields: [
+        { name: "label", type: "text" },
+        { name: "secret", type: "text", hidden: true },
+      ],
+    },
+  ],
+};
 
 let ctx: AuditTestPayload;
 let signedInAdmin: Record<string, string>;
 beforeAll(async () => {
-  ctx = await bootAuditPayload({ plugin: { roleFields: ["role", "roles", HIDDEN_ROLE_FIELD] } });
+  ctx = await bootAuditPayload({
+    plugin: { roleFields: ["role", "roles", HIDDEN_ROLE_FIELD] },
+    collections: [restrictedNotes],
+  });
   await createUser(ctx.payload, "restricted-admin@x.io", { role: "admin" });
   signedInAdmin = await loginHeaders(ctx.payload, "restricted-admin@x.io");
 });
@@ -112,6 +135,83 @@ describe("writes to fields the caller cannot read", () => {
     await updateUser(user.id, {});
 
     expect(await userEventsOfThisTest(user.id)).toEqual([]);
+  });
+});
+
+const noteCreatesOfThisTest = async () =>
+  actionsAndChanges(
+    await events(ctx.payload, {
+      and: [
+        { "target.slug": { equals: RESTRICTED_NOTES } },
+        { occurredAt: { greater_than_equal: testStartedAt } },
+      ],
+    })
+  );
+
+const RESTRICTED_NOTE = {
+  visible: "v",
+  hiddenNote: "hidden-value",
+  unreadable: "unreadable-value",
+  details: { secret: "secret-value" },
+};
+
+const createNoteOverGraphql = async (data: Record<string, unknown>) => {
+  const res = await GRAPHQL_POST(Promise.resolve(ctx.payload.config))(
+    new Request("http://localhost:3000/api/graphql", {
+      method: "POST",
+      headers: { ...signedInAdmin, "content-type": "application/json" },
+      body: JSON.stringify({
+        query:
+          "mutation ($data: mutationRestrictedNoteInput!) { createRestrictedNote(data: $data) { id } }",
+        variables: { data },
+      }),
+    })
+  );
+  const body = (await res.json()) as { errors?: unknown[] };
+  expect(body.errors).toBeUndefined();
+};
+
+describe("creates with fields the caller cannot read", () => {
+  it("a REST create lists the hidden and read-restricted fields it wrote by name, never by value", async () => {
+    const res = await rest(ctx.payload, "POST", `/${RESTRICTED_NOTES}`, {
+      body: RESTRICTED_NOTE,
+      headers: signedInAdmin,
+    });
+    expect(res.status).toBe(201);
+
+    expect(await noteCreatesOfThisTest()).toEqual([
+      ["doc.create", ["visible", "details", "hiddenNote", "unreadable"]],
+    ]);
+    const rows = await everyRowOfThisTestAsStored();
+    for (const value of ["hidden-value", "unreadable-value", "secret-value"]) {
+      expect(rows).not.toContain(value);
+    }
+  });
+
+  it("a Local API create lists the hidden and read-restricted fields it wrote", async () => {
+    await ctx.payload.create({
+      collection: RESTRICTED_NOTES as never,
+      data: RESTRICTED_NOTE as never,
+    });
+
+    expect(await noteCreatesOfThisTest()).toEqual([
+      ["doc.create", ["visible", "unreadable", "details", "hiddenNote"]],
+    ]);
+  });
+
+  it("a GraphQL create lists the read-restricted fields it wrote", async () => {
+    await createNoteOverGraphql({ visible: "v", unreadable: "unreadable-value" });
+
+    expect(await noteCreatesOfThisTest()).toEqual([["doc.create", ["visible", "unreadable"]]]);
+  });
+
+  it("a create without hidden or read-restricted values lists only what it wrote", async () => {
+    await ctx.payload.create({
+      collection: RESTRICTED_NOTES as never,
+      data: { visible: "v" } as never,
+    });
+
+    expect(await noteCreatesOfThisTest()).toEqual([["doc.create", ["visible"]]]);
   });
 });
 

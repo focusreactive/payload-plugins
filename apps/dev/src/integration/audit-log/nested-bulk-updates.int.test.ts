@@ -139,8 +139,8 @@ describe("a bulk update that an afterChange hook runs on the document it saves",
       id: String(versions[0]?.id),
     });
     expect(await docEventsOfThisTest("bulk-versioned-pages", page.id)).toEqual([
-      ["doc.update", ["note"]],
       ["doc.restore", ["title"]],
+      ["doc.update", ["note"]],
     ]);
   });
 
@@ -154,8 +154,8 @@ describe("a bulk update that an afterChange hook runs on the document it saves",
       select: { title: true },
     });
     expect(await docEventsOfThisTest("bulk-plain-pages", page.id)).toEqual([
-      ["doc.update", ["note"]],
       ["doc.update", ["title"]],
+      ["doc.update", ["note"]],
     ]);
   });
 });

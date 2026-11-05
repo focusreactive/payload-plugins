@@ -37,6 +37,20 @@ describe("buildEvent", () => {
     });
     expect(e.requestId).toBe(req.context.__auditRequestId);
   });
+
+  it("takes the timestamp of the operation the event records when there is one", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-04T10:00:05.000Z"));
+    const e = buildEvent(
+      { context: {}, payloadAPI: "local" },
+      {
+        action: "doc.create",
+        target: { kind: "collection", slug: "posts", docId: "9" },
+        occurredAt: "2026-11-04T10:00:00.000Z",
+      }
+    );
+    expect(e.occurredAt).toBe("2026-11-04T10:00:00.000Z");
+  });
 });
 
 describe("writeAuditEvent", () => {

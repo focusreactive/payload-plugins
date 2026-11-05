@@ -8,6 +8,7 @@ import type {
 } from "payload";
 import { hasLeafValue } from "../core/diffPaths";
 import { readForAudit } from "../core/failOpenInsert";
+import { stampOperationStart } from "../core/operationClock";
 import type { OpFlags } from "../core/requestState";
 import {
   ensureActive,
@@ -129,6 +130,7 @@ export function trackCollectionOperations(collection: CollectionConfig, localize
         isAutosaveDraftTick(autosaveEnabled, { autosave, draft, data }),
       ...(select === undefined ? {} : { selected: true }),
       savedIn,
+      startedAt: stampOperationStart(),
     };
 
     if (runtimeOperation === "create") {

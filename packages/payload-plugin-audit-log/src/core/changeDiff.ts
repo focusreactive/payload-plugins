@@ -202,6 +202,11 @@ export function createChangeDiff({
 
     const storedAfter = (doc: Doc): Doc => stored(savedDoc(doc));
 
+    const writtenByCreate = (doc: Doc): Doc =>
+      stored(
+        withStoredValuesOfFieldsMissingFrom(savedDoc(doc), submittedData, readRestrictedFields)
+      );
+
     const comparable = (before: Doc | undefined, doc: Doc) => {
       const storedBefore = before && stored(before);
       const after = withSavedValuesAt(
@@ -267,7 +272,7 @@ export function createChangeDiff({
     return {
       savedDoc,
       changedStoredFields,
-      createdFields: (doc) => createdPaths(storedAfter(doc)),
+      createdFields: (doc) => createdPaths(writtenByCreate(doc)),
       changedFields: (before, doc) => {
         const pair = comparable(before, doc);
         return diffPaths(pair.before, pair.after, { max: maxChangedPaths });

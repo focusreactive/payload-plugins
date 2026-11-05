@@ -8,7 +8,7 @@ type FieldShape = {
   hidden?: boolean;
   access?: { read?: unknown };
   fields?: Field[];
-  tabs?: { name?: string; fields?: Field[] }[];
+  tabs?: FieldShape[];
   blocks?: BlockShape[];
   blockReferences?: (BlockShape | string)[];
 };
@@ -28,21 +28,25 @@ export type RowsSegment = { rows: true; blockType?: string };
 export type FieldPathSegment = string | RowsSegment;
 export type FieldPathPattern = readonly FieldPathSegment[];
 
+const fieldsOf = (fields: readonly Field[] | undefined): readonly FieldShape[] =>
+  (fields ?? []) as readonly FieldShape[];
+
+const subfieldsOfUnnamed = (field: FieldShape): readonly FieldShape[] => [
+  ...fieldsOf(field.fields),
+  ...(field.tabs ?? []),
+];
+
 function topLevelFieldNames(
-  fields: readonly Field[] | undefined,
+  fields: readonly FieldShape[],
   matches: (field: FieldShape) => boolean,
   names: string[] = []
 ): string[] {
-  for (const field of fields ?? []) {
-    const f = field as FieldShape;
+  for (const f of fields) {
     if (f.name) {
       if (matches(f)) names.push(f.name);
       continue;
     }
-    topLevelFieldNames(f.fields, matches, names);
-    for (const tab of f.tabs ?? []) {
-      if (!tab.name) topLevelFieldNames(tab.fields, matches, names);
-    }
+    topLevelFieldNames(subfieldsOfUnnamed(f), matches, names);
   }
   return names;
 }
@@ -72,7 +76,9 @@ export type IsStoredField = (key: string) => boolean;
 export function storedFieldCheckOf(
   fields: readonly Field[] | undefined
 ): (sanitized: SanitizedFieldsShape) => IsStoredField {
-  const notStoredNames: ReadonlySet<string> = new Set(topLevelFieldNames(fields, isNotStored));
+  const notStoredNames: ReadonlySet<string> = new Set(
+    topLevelFieldNames(fieldsOf(fields), isNotStored)
+  );
   const isNotJoinOrVirtual: IsStoredField = (key) => !notStoredNames.has(key);
   return (sanitized) => {
     if (!sanitized?.flattenedFields) return isNotJoinOrVirtual;
@@ -94,34 +100,41 @@ function blocksOf(field: FieldShape, sharedBlocks: readonly BlockShape[]): Block
 }
 
 function collectFieldPaths(
-  fields: readonly Field[] | undefined,
+  fields: readonly FieldShape[],
   sharedBlocks: readonly BlockShape[],
   matches: (field: FieldShape) => boolean,
   prefix: FieldPathPattern,
   paths: FieldPathPattern[]
 ): FieldPathPattern[] {
-  for (const field of fields ?? []) {
-    const f = field as FieldShape;
+  for (const f of fields) {
     if (!f.name) {
-      collectFieldPaths(f.fields, sharedBlocks, matches, prefix, paths);
-      for (const tab of f.tabs ?? []) {
-        const tabPrefix = tab.name ? [...prefix, tab.name] : prefix;
-        collectFieldPaths(tab.fields, sharedBlocks, matches, tabPrefix, paths);
-      }
+      collectFieldPaths(subfieldsOfUnnamed(f), sharedBlocks, matches, prefix, paths);
       continue;
     }
     const path = [...prefix, f.name];
     if (matches(f)) {
       paths.push(path);
     } else if (f.type === "array") {
-      collectFieldPaths(f.fields, sharedBlocks, matches, [...path, { rows: true }], paths);
+      collectFieldPaths(
+        fieldsOf(f.fields),
+        sharedBlocks,
+        matches,
+        [...path, { rows: true }],
+        paths
+      );
     } else if (f.type === "blocks") {
       for (const block of blocksOf(f, sharedBlocks)) {
         const rowsOfBlock = { rows: true, blockType: block.slug } as const;
-        collectFieldPaths(block.fields, sharedBlocks, matches, [...path, rowsOfBlock], paths);
+        collectFieldPaths(
+          fieldsOf(block.fields),
+          sharedBlocks,
+          matches,
+          [...path, rowsOfBlock],
+          paths
+        );
       }
     } else {
-      collectFieldPaths(f.fields, sharedBlocks, matches, path, paths);
+      collectFieldPaths(fieldsOf(f.fields), sharedBlocks, matches, path, paths);
     }
   }
   return paths;
@@ -130,11 +143,12 @@ function collectFieldPaths(
 export const readRestrictedFieldPaths = (
   fields: readonly Field[] | undefined,
   sharedBlocks: readonly Block[] = []
-): FieldPathPattern[] => collectFieldPaths(fields, sharedBlocks, isReadRestricted, [], []);
+): FieldPathPattern[] =>
+  collectFieldPaths(fieldsOf(fields), sharedBlocks, isReadRestricted, [], []);
 
 const isLocalized = (f: FieldShape): boolean => f.localized === true;
 
 export const localizedFieldPaths = (
   fields: readonly Field[] | undefined,
   sharedBlocks: readonly Block[] = []
-): FieldPathPattern[] => collectFieldPaths(fields, sharedBlocks, isLocalized, [], []);
+): FieldPathPattern[] => collectFieldPaths(fieldsOf(fields), sharedBlocks, isLocalized, [], []);
