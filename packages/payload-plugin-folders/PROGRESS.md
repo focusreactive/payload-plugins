@@ -424,6 +424,11 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     `projects/folders-plugin/spec/payload.md` lines 44-47, 97-101 and the `pathSegment` row of the
     field table now say own segment or null, with the fallback applied at read time through
     `buildSegmentWhere`. No code change here.
+47. **A page with no title (review P-17).** The server keeps one English `untitledTitle`
+    ("Untitled", `src/core/untitled.ts`) for its messages and the site tree. The admin swaps it for
+    its translated `untitledPage` ("Ohne Titel" in German) where it lists tree rows, so a German
+    editor no longer sees an English word in the tree. Refactors P-11 to P-16, P-18 and P-25 merge
+    copied helpers into one shared copy each, with no behavior change.
 
 ### Owner decisions (from spec/review.md, the spec writer's pick applies)
 
