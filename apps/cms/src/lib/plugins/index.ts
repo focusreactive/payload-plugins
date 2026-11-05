@@ -1,5 +1,6 @@
 import { abTestingPlugin } from "@focus-reactive/payload-plugin-ab";
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
+import { auditLogPlugin } from "@focus-reactive/payload-plugin-audit-log";
 import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
@@ -118,6 +119,9 @@ const resolveAnalyticsPagePath = async (ref: string, req: PayloadRequest): Promi
 };
 
 const ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
+
+const runAfter = (earlier: Plugin, plugin: Plugin): Plugin =>
+  Object.assign(plugin, { order: (earlier.order ?? 0) + 1 });
 
 export const plugins: Plugin[] = [
   vercelBlobStorage({
@@ -435,6 +439,13 @@ export const plugins: Plugin[] = [
   }),
 
   mcpPluginConfig,
+
+  runAfter(
+    mcpPluginConfig,
+    auditLogPlugin({
+      access: { read: superAdmin },
+    })
+  ),
 
   // Must stay last so it also protects collections and globals added by the plugins above.
   restrictApiAccess({
