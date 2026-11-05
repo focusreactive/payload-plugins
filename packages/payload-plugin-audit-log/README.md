@@ -226,7 +226,7 @@ SQL run by a migration's `db` directly is not seen by the plugin.
 | --- | --- | --- |
 | `enabled` | `true` | `false` leaves the config untouched |
 | `slug` | `"audit-events"` | Slug of the log collection |
-| `excludeCollections` | `[]` | Collections not to log. The log itself is always excluded. Payload adds its internal collections and globals (jobs, preferences, locks, migrations, key-value store, job stats) after plugins run, so they are never audited |
+| `excludeCollections` | `[]` | Collections not to log. The log itself is always excluded. Payload adds its internal collections and globals (jobs, preferences, locks, migrations, key-value store, job stats) after plugins run, so they are never audited. The folder collection (`payload-folders` unless `folders.slug` says otherwise) is audited through `folders.collectionOverrides`; list its slug here to leave it out |
 | `excludeGlobals` | `[]` | Globals not to log |
 | `apiKeyCollections` | `["payload-mcp-api-keys"]` | Collections whose create / delete means issuing / revoking a key |
 | `roleFields` | `["role", "roles"]` | Auth collection fields reported as `user.role_changed` |
@@ -297,6 +297,7 @@ Other plugins that write a whole stored document through `payload.db.*` outside 
 ## Not captured
 
 - Raw SQL and direct database access. Call `logAuditEvent` if you need a record.
+- Changes the database makes on its own, such as clearing a relationship or upload field (`ON DELETE SET NULL` on Postgres and SQLite) when the document it points to is deleted. The delete is logged, the cleared field of each referencing document is not, for example the `folder` of documents in a deleted folder.
 - Raw server-side version writes through the adapter: `payload.db.createVersion`, `updateVersion` and `deleteVersions`, and for globals `createGlobalVersion`, `updateGlobalVersion` and `deleteVersions` with `globalSlug`.
 - Failed logins through the Local API, and GraphQL logins that use an aliased mutation.
 - Field values, IP addresses and user agents.

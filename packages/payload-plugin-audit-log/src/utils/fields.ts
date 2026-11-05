@@ -28,18 +28,6 @@ export type RowsSegment = { rows: true; blockType?: string };
 export type FieldPathSegment = string | RowsSegment;
 export type FieldPathPattern = readonly FieldPathSegment[];
 
-export function hasLocalizedFields(fields: readonly Field[] | undefined): boolean {
-  return (fields ?? []).some((field) => {
-    const f = field as FieldShape;
-    return (
-      Boolean(f.localized) ||
-      hasLocalizedFields(f.fields) ||
-      Boolean(f.tabs?.some((tab) => hasLocalizedFields(tab.fields))) ||
-      Boolean(f.blocks?.some((block) => hasLocalizedFields(block.fields)))
-    );
-  });
-}
-
 function topLevelFieldNames(
   fields: readonly Field[] | undefined,
   matches: (field: FieldShape) => boolean,

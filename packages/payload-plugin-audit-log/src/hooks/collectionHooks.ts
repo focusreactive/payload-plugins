@@ -22,12 +22,7 @@ import { failOpen } from "../utils/failOpen";
 import { getNestedValue } from "../utils/getNestedValue";
 import { readsWithFallbackLocale } from "../utils/fallbackLocale";
 import type { LocaleOfRequest } from "../utils/fallbackLocale";
-import {
-  hasLocalizedFields,
-  localizedFieldPaths,
-  readRestrictedFieldPaths,
-  storedFieldCheckOf,
-} from "../utils/fields";
+import { localizedFieldPaths, readRestrictedFieldPaths, storedFieldCheckOf } from "../utils/fields";
 import type { SanitizedFieldsShape } from "../utils/fields";
 import { hasAutosave, hasDrafts } from "../utils/versions";
 import { buildCollectionAuthHooks } from "./collectionAuthHooks";
@@ -58,12 +53,12 @@ export function withCollectionAudit(
   const slug = collection.slug;
   const isApiKeyCollection = opts.apiKeyCollections.has(slug);
   const isAuth = Boolean(collection.auth);
-  const localized = hasLocalizedFields(collection.fields);
   const drafts = hasDrafts(collection.versions);
   const autosave = hasAutosave(collection.versions);
   const localizedFields = localizedFieldPaths(collection.fields, sharedBlocks);
+  const localized = localizedFields.length > 0;
   const titleField = collection.admin?.useAsTitle;
-  const tracking = trackCollectionOperations(collection);
+  const tracking = trackCollectionOperations(collection, localized);
   const storedFieldCheck = storedFieldCheckOf(collection.fields);
   const diffForSave = createChangeDiff({
     readRestrictedFields: [

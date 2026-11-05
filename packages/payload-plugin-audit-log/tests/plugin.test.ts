@@ -18,6 +18,28 @@ const base = (): Config =>
     ],
   }) as unknown as Config;
 
+type FolderOverride = NonNullable<
+  Exclude<Config["folders"], false | undefined>["collectionOverrides"]
+>[number];
+
+const withFolders = (folders: Config["folders"]): Config => ({
+  ...base(),
+  collections: [...(base().collections ?? []), { slug: "docs", folders: true, fields: [] }],
+  folders,
+});
+
+const folderCollection = async (out: Config) => {
+  const overrides = (out.folders ? out.folders.collectionOverrides : undefined) ?? [];
+  let collection: Awaited<ReturnType<FolderOverride>> = { slug: "payload-folders", fields: [] };
+  for (const override of overrides) collection = await override({ collection });
+  return collection;
+};
+
+const relabelled: FolderOverride = ({ collection }) => ({
+  ...collection,
+  labels: { plural: "Dirs" },
+});
+
 const WRAPPED = Symbol.for("payload-plugin-audit-log.dbWrapped");
 
 type Op = (args: Record<string, unknown>) => Promise<unknown>;
@@ -202,6 +224,41 @@ describe("auditLogPlugin", () => {
       .filter((args) => args.collection === "audit-events")
       .map((args) => args.data.target.slug);
     expect(auditedSlugs).toEqual(["posts", "settings"]);
+  });
+
+  describe("the folder collection Payload adds after plugins run", () => {
+    it("is audited like any collection, after the project's own overrides", async () => {
+      const out = auditLogPlugin()(withFolders({ collectionOverrides: [relabelled] })) as Config;
+      expect(out.folders && out.folders.collectionOverrides?.[0]).toBe(relabelled);
+      const folders = await folderCollection(out);
+      expect(folders.labels).toEqual({ plural: "Dirs" });
+      expect(folders.hooks?.afterChange).toHaveLength(1);
+      expect(folders.hooks?.afterDelete).toHaveLength(1);
+    });
+
+    it("tracks raw writes on the folder collection under its configured slug", async () => {
+      const { payload, db, create } = fakePayload();
+      const out = auditLogPlugin()(withDatabase(withFolders({ slug: "dirs" }), db)) as Config;
+      createAdapter(out, payload);
+      const req = { context: {}, payloadAPI: "local" };
+
+      await (db.updateOne as Op)({ collection: "dirs", id: 5, data: { name: "x" }, req });
+
+      const auditedSlugs = create.mock.calls
+        .map(([args]) => args as { collection: string; data: { target: { slug: string } } })
+        .filter((args) => args.collection === "audit-events")
+        .map((args) => args.data.target.slug);
+      expect(auditedSlugs).toEqual(["dirs"]);
+    });
+
+    it("is left alone when excluded or when folders are disabled", async () => {
+      const excluded = auditLogPlugin({ excludeCollections: ["payload-folders"] })(
+        withFolders(undefined)
+      ) as Config;
+      expect(excluded.folders).toBeUndefined();
+      const disabled = auditLogPlugin()(withFolders(false)) as Config;
+      expect(disabled.folders).toBe(false);
+    });
   });
 
   it("does nothing when disabled", () => {

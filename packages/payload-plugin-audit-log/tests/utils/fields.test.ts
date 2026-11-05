@@ -61,3 +61,29 @@ describe("localized field paths", () => {
     ]);
   });
 });
+
+describe("localized fields in blocks", () => {
+  const hero = {
+    slug: "hero",
+    fields: [{ name: "heading", type: "text" as const, localized: true }],
+  };
+  const plain = { slug: "plain", fields: [{ name: "body", type: "text" as const }] };
+
+  it.each([
+    { described: "inline", layout: { blocks: [hero] } },
+    { described: "referenced by slug", layout: { blocks: [], blockReferences: ["hero"] } },
+    { described: "referenced as a block", layout: { blocks: [], blockReferences: [hero] } },
+  ])("finds a localized field of a block $described", ({ layout }) => {
+    const fields = [{ name: "layout", type: "blocks" as const, ...layout }];
+    expect(localizedFieldPaths(fields, [hero, plain])).toEqual([
+      ["layout", { rows: true, blockType: "hero" }, "heading"],
+    ]);
+  });
+
+  it("does not count blocks without localized fields", () => {
+    const fields = [
+      { name: "layout", type: "blocks" as const, blocks: [], blockReferences: ["plain"] },
+    ];
+    expect(localizedFieldPaths(fields, [hero, plain])).toEqual([]);
+  });
+});

@@ -2,6 +2,7 @@ export const PLUGIN_NAME = "payload-plugin-audit-log";
 export const LOG_PREFIX = `[${PLUGIN_NAME}]`;
 
 export const DEFAULT_SLUG = "audit-events";
+export const DEFAULT_FOLDERS_SLUG = "payload-folders";
 export const DEFAULT_MAX_CHANGED_PATHS = 200;
 export const MAX_RETENTION_DAYS = 36_500;
 export const DEFAULT_ROLE_FIELDS = ["role", "roles"] as const;

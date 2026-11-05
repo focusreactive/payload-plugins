@@ -28,12 +28,7 @@ import type { ResolvedOptions } from "../options";
 import { failOpen } from "../utils/failOpen";
 import { readsWithFallbackLocale } from "../utils/fallbackLocale";
 import type { LocaleOfRequest } from "../utils/fallbackLocale";
-import {
-  hasLocalizedFields,
-  localizedFieldPaths,
-  readRestrictedFieldPaths,
-  storedFieldCheckOf,
-} from "../utils/fields";
+import { localizedFieldPaths, readRestrictedFieldPaths, storedFieldCheckOf } from "../utils/fields";
 import type { SanitizedFieldsShape } from "../utils/fields";
 import { hasAutosave, hasDrafts, isAutosaveDraftTick } from "../utils/versions";
 
@@ -47,11 +42,11 @@ export function withGlobalAudit(
   sharedBlocks: readonly Block[] = []
 ): GlobalConfig {
   const slug = global.slug;
-  const localized = hasLocalizedFields(global.fields);
   const drafts = hasDrafts(global.versions);
   const autosave = hasAutosave(global.versions);
   const storedFieldCheck = storedFieldCheckOf(global.fields);
   const localizedFields = localizedFieldPaths(global.fields, sharedBlocks);
+  const localized = localizedFields.length > 0;
   const readRestrictedFields = readRestrictedFieldPaths(global.fields, sharedBlocks);
   const diffForSave = createChangeDiff({
     readRestrictedFields,

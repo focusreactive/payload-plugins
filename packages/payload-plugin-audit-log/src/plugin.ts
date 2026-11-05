@@ -1,6 +1,6 @@
-import type { BaseDatabaseAdapter, Config, Payload, Plugin } from "payload";
+import type { BaseDatabaseAdapter, CollectionConfig, Config, Payload, Plugin } from "payload";
 import { buildAuditCollection } from "./collection/auditCollection";
-import { CUSTOM_CONFIG_KEY } from "./constants";
+import { CUSTOM_CONFIG_KEY, DEFAULT_FOLDERS_SLUG } from "./constants";
 import { deferAuditWritesToCommit } from "./core/failOpenInsert";
 import { auditMigrations } from "./db/auditMigrations";
 import { captureCollectionWrites } from "./db/captureCollectionWrites";
@@ -27,6 +27,27 @@ function auditEach<T extends { slug: string }>(
     return withAudit(config);
   });
   return { configs: audited, auditedSlugs };
+}
+
+function auditFolders(
+  folders: Config["folders"],
+  excluded: ReadonlySet<string>,
+  withAudit: (collection: CollectionConfig) => CollectionConfig
+): { folders: Config["folders"]; auditedSlugs: Set<string> } {
+  const unaudited = { folders, auditedSlugs: new Set<string>() };
+  if (folders === false) return unaudited;
+  const slug = folders?.slug ?? DEFAULT_FOLDERS_SLUG;
+  if (excluded.has(slug)) return unaudited;
+  return {
+    folders: {
+      ...folders,
+      collectionOverrides: [
+        ...(folders?.collectionOverrides ?? []),
+        ({ collection }) => withAudit(collection),
+      ],
+    },
+    auditedSlugs: new Set([slug]),
+  };
 }
 
 const withPurgeTask = (jobs: Config["jobs"], opts: ResolvedOptions): Config["jobs"] =>
@@ -60,9 +81,10 @@ export function auditLogPlugin(options: AuditLogPluginOptions = {}): Plugin {
     if (options.enabled === false) return config;
     const opts = normalizeOptions(options);
 
-    const collections = auditEach(config.collections, opts.excludedCollections, (collection) =>
-      withCollectionAudit(collection, opts, config.blocks)
-    );
+    const withAudit = (collection: CollectionConfig) =>
+      withCollectionAudit(collection, opts, config.blocks);
+    const collections = auditEach(config.collections, opts.excludedCollections, withAudit);
+    const folders = auditFolders(config.folders, opts.excludedCollections, withAudit);
     const globals = auditEach(config.globals, opts.excludedGlobals, (global) =>
       withGlobalAudit(global, opts, config.blocks)
     );
@@ -71,13 +93,17 @@ export function auditLogPlugin(options: AuditLogPluginOptions = {}): Plugin {
     });
     const jobs = withPurgeTask(config.jobs, opts);
 
-    const scope = { collections: collections.auditedSlugs, globals: globals.auditedSlugs };
+    const scope = {
+      collections: new Set([...collections.auditedSlugs, ...folders.auditedSlugs]),
+      globals: globals.auditedSlugs,
+    };
 
     return {
       ...config,
       db: auditedWhenCreated(config.db, auditAdapter(opts, scope)),
       collections: [...collections.configs, auditCollection],
       globals: globals.configs,
+      folders: folders.folders,
       custom: {
         ...config.custom,
         [CUSTOM_CONFIG_KEY]: { slug: opts.slug },

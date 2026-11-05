@@ -25,7 +25,6 @@ import { submittedSecretFields } from "../core/secretFields";
 import { openWrittenDocCapture, takeWrittenDoc } from "../core/writtenDocCapture";
 import { failOpen } from "../utils/failOpen";
 import { readsWithFallbackLocale } from "../utils/fallbackLocale";
-import { hasLocalizedFields } from "../utils/fields";
 import { hasAutosave, hasDrafts, isAutosaveDraftTick } from "../utils/versions";
 
 type Doc = Record<string, unknown>;
@@ -75,12 +74,11 @@ function tagCreate(data: unknown, tag: CreateTag): void {
   if (isObject(data)) data[CREATE_TAG] = tag;
 }
 
-export function trackCollectionOperations(collection: CollectionConfig) {
+export function trackCollectionOperations(collection: CollectionConfig, localized: boolean) {
   const slug = collection.slug;
   const isAuth = Boolean(collection.auth);
   const drafts = hasDrafts(collection.versions);
   const autosaveEnabled = hasAutosave(collection.versions);
-  const localized = hasLocalizedFields(collection.fields);
   const comparesPublishWithLiveDoc = autosaveEnabled || (isAuth && drafts);
 
   const secretFieldsOf = (data: unknown, draft: unknown): string[] => {

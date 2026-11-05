@@ -1037,3 +1037,40 @@ describe("an autosave publish of a localized global compares what it writes in e
     ]);
   });
 });
+
+const hero = {
+  slug: "hero",
+  fields: [{ name: "heading", type: "text" as const, localized: true }],
+};
+
+describe.each([
+  {
+    described: "inline blocks",
+    global: {
+      slug: "home",
+      fields: [{ name: "layout", type: "blocks", blocks: [hero] }],
+    } satisfies GlobalConfig,
+  },
+  {
+    described: "blocks referenced from the config",
+    global: {
+      slug: "home",
+      fields: [{ name: "layout", type: "blocks", blocks: [], blockReferences: ["hero"] }],
+    } satisfies GlobalConfig,
+  },
+])("a global whose only localized fields live in $described", ({ global }) => {
+  it("records the locale it was saved in", async () => {
+    const layoutGlobal = withGlobalAudit(global, normalizeOptions(), [hero]);
+    const { req, create } = makeReq({ locale: "de" });
+    await runHooks(layoutGlobal.hooks?.afterChange, {
+      doc: { layout: [{ id: "b1", blockType: "hero", heading: "B" }] },
+      previousDoc: { layout: [{ id: "b1", blockType: "hero", heading: "A" }] },
+      req,
+    });
+    expect(recordedEvents(create)[0]?.target).toEqual({
+      kind: "global",
+      slug: "home",
+      locale: "de",
+    });
+  });
+});

@@ -11,6 +11,7 @@ import { sqliteAdapter } from "@payloadcms/db-sqlite";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { buildConfig, getPayload, handleEndpoints } from "payload";
 import type {
+  Block,
   CollectionAfterChangeHook,
   CollectionAfterOperationHook,
   CollectionConfig,
@@ -533,6 +534,7 @@ export async function bootAuditPayload(options?: {
   key?: string;
   collections?: CollectionConfig[];
   globals?: GlobalConfig[];
+  blocks?: Block[];
 }): Promise<AuditTestPayload> {
   const dir = mkdtempSync(join(tmpdir(), "audit-int-"));
   const database = testDatabase(dir, options?.enableSqliteTransactions ?? false);
@@ -560,6 +562,7 @@ export async function bootAuditPayload(options?: {
       }),
       ...(options?.globals ?? []),
     ],
+    blocks: options?.blocks,
     plugins: [
       auditLogPlugin({
         apiKeyCollections: ["payload-mcp-api-keys", SERVICE_KEYS_SLUG],

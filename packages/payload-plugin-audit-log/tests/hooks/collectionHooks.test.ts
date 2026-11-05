@@ -2697,3 +2697,70 @@ describe.each([
     });
   }
 );
+
+const hero = {
+  slug: "hero",
+  fields: [{ name: "heading", type: "text" as const, localized: true }],
+};
+
+describe.each([
+  {
+    described: "inline blocks",
+    collection: {
+      slug: "posts",
+      fields: [
+        { name: "code", type: "text" },
+        { name: "layout", type: "blocks", blocks: [hero] },
+      ],
+    } satisfies CollectionConfig,
+  },
+  {
+    described: "blocks referenced from the config",
+    collection: {
+      slug: "posts",
+      fields: [
+        { name: "code", type: "text" },
+        { name: "layout", type: "blocks", blocks: [], blockReferences: ["hero"] },
+      ],
+    } satisfies CollectionConfig,
+  },
+])("a collection whose only localized fields live in $described", ({ collection }) => {
+  const layoutPosts = withCollectionAudit(collection, normalizeOptions(), [hero]);
+
+  const saveInGerman = async (change: { previousDoc: Doc; data: Doc; written: Doc; doc: Doc }) => {
+    const { req: callerReq, create } = fakeRequest({ locale: "de", fallbackLocale: "en" });
+    const req = await runBeforeOperation(layoutPosts.hooks?.beforeOperation, {
+      operation: "update",
+      args: { id: 1, data: change.data },
+      req: callerReq,
+      collection: postsCollection,
+    });
+    await runHooks(layoutPosts.hooks?.beforeChange, {
+      operation: "update",
+      originalDoc: change.previousDoc,
+      data: change.data,
+      req,
+      collection: postsCollection,
+    });
+    captureWrittenDoc(req, "posts", 1, change.written);
+    await runUpdate(layoutPosts.hooks, req, change);
+    return create;
+  };
+
+  it("records the locale of the save and leaves out the fallback values of the blocks", async () => {
+    const create = await saveInGerman({
+      previousDoc: { id: 1, code: "c", layout: [{ id: "b1", blockType: "hero", heading: null }] },
+      data: { code: "x" },
+      written: {
+        id: 1,
+        code: "x",
+        layout: [{ id: "b1", blockType: "hero", heading: { en: "Hello" } }],
+      },
+      doc: { id: 1, code: "x", layout: [{ id: "b1", blockType: "hero", heading: "Hello" }] },
+    });
+    expect(firstEvent(create)).toMatchObject({
+      target: { slug: "posts", docId: "1", locale: "de" },
+      changes: ["code"],
+    });
+  });
+});
