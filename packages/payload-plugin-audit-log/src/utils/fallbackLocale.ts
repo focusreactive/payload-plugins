@@ -1,4 +1,4 @@
-type LocaleOfRequest = { locale?: unknown; fallbackLocale?: unknown };
+export type LocaleOfRequest = { locale?: unknown; fallbackLocale?: unknown };
 
 const ALL_LOCALES = "all";
 

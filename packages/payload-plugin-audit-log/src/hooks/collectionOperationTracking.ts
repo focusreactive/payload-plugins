@@ -37,12 +37,19 @@ type OperationArgs = {
   autosave?: boolean;
   duplicateFromID?: unknown;
   select?: unknown;
+  publishSpecificLocale?: unknown;
 };
 
 const TRACKING_FAILURE = "could not track the document operation";
 const PENDING_RESTORE_KEY = "restoreVersion";
 const PAYLOAD_RESTORING_VERSION_CONTEXT_KEY = "isRestoringVersion";
 const TRACKED_OPERATIONS: ReadonlySet<string> = new Set(["create", "update", "restoreVersion"]);
+const OPERATIONS_RECORDED_IN_THEIR_LOCALE: ReadonlySet<string> = new Set([
+  "delete",
+  "login",
+  "forgotPassword",
+  "resetPassword",
+]);
 
 const CREATE_TAG = Symbol.for("payload-plugin-audit-log.create");
 
@@ -50,6 +57,9 @@ type CreateTag = { flags: OpFlags; activeKey: string };
 type TaggedData = { [CREATE_TAG]?: CreateTag };
 
 const isPresent = (value: unknown): boolean => value !== undefined && value !== null;
+
+const savesOneDocument = (operation: string, id: unknown): boolean =>
+  operation === "create" || (operation === "update" && isPresent(id));
 
 const isObject = (value: unknown): value is TaggedData =>
   typeof value === "object" && value !== null;
@@ -97,8 +107,20 @@ export function trackCollectionOperations(collection: CollectionConfig) {
     req,
   }: Parameters<CollectionBeforeOperationHook>[0]) => {
     const runtimeOperation: string = operation;
+    const { id, data, draft, autosave, duplicateFromID, select, publishSpecificLocale } =
+      args as OperationArgs;
+    const operationReq: PayloadRequest = args.req ?? req;
+    const savedIn = {
+      locale:
+        publishSpecificLocale && savesOneDocument(runtimeOperation, id)
+          ? publishSpecificLocale
+          : operationReq.locale,
+      fallbackLocale: operationReq.fallbackLocale,
+    };
+    if (OPERATIONS_RECORDED_IN_THEIR_LOCALE.has(runtimeOperation)) {
+      return { ...args, req: withOperationFlags(operationReq, slug, { savedIn }) };
+    }
     if (!TRACKED_OPERATIONS.has(runtimeOperation)) return undefined;
-    const { id, data, draft, autosave, duplicateFromID, select } = args as OperationArgs;
 
     const flags: OpFlags = {
       source: "operation",
@@ -108,6 +130,7 @@ export function trackCollectionOperations(collection: CollectionConfig) {
         runtimeOperation !== "create" &&
         isAutosaveDraftTick(autosaveEnabled, { autosave, draft, data }),
       ...(select === undefined ? {} : { selected: true }),
+      savedIn,
     };
 
     if (runtimeOperation === "create") {
@@ -123,7 +146,6 @@ export function trackCollectionOperations(collection: CollectionConfig) {
       return undefined;
     }
     const savedFlags = isPresent(id) ? flags : { ...flags, source: "bulk" as const };
-    const operationReq: PayloadRequest = args.req ?? req;
     return {
       ...args,
       req: withOperationFlags(operationReq, slug, withSecretFields(savedFlags, data, draft)),
@@ -221,7 +243,7 @@ export function trackCollectionOperations(collection: CollectionConfig) {
       await rememberLiveDocBeforePublish(req, flags, originalDoc.id);
     }
 
-    const showsFallbackValues = localized && readsWithFallbackLocale(req);
+    const showsFallbackValues = localized && readsWithFallbackLocale(flags.savedIn ?? req);
     if (showsFallbackValues || (publishesOverDraft && autosaveEnabled)) {
       captureWrittenDocOfSave(req, flags, id, originalDoc.id);
     }

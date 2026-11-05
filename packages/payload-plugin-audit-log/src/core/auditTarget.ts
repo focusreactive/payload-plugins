@@ -11,3 +11,6 @@ export function auditTarget(
   if (label) target.label = label;
   return target;
 }
+
+export const inLocale = (target: AuditTarget, locale: unknown): AuditTarget =>
+  typeof locale === "string" ? { ...target, locale } : target;

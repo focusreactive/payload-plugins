@@ -338,6 +338,31 @@ describe("global hooks", () => {
     expect(recordedEvents(b.create)[0]?.target).toEqual({ kind: "global", slug: "settings" });
   });
 
+  it("records the locale a global was saved in although its own hooks read it in another locale", async () => {
+    const localizedGlobal = withGlobalAudit(
+      { slug: "footer", fields: [{ name: "t", type: "text", localized: true }] },
+      normalizeOptions()
+    );
+    const { req, create } = makeReq({ locale: "en", fallbackLocale: false });
+    await runHooks(localizedGlobal.hooks?.beforeOperation, {
+      operation: "update",
+      args: { data: { t: "B" } },
+      req,
+    });
+    Object.assign(req, { locale: "de", fallbackLocale: "en" });
+    await runHooks(localizedGlobal.hooks?.afterChange, {
+      doc: { t: "B" },
+      previousDoc: { t: "A" },
+      data: { t: "B" },
+      req,
+    });
+    expect(recordedEvents(create)[0]).toMatchObject({
+      action: "global.update",
+      target: { kind: "global", slug: "footer", locale: "en" },
+      changes: ["t"],
+    });
+  });
+
   it("keeps the project's own hooks and appends ours", () => {
     const own = vi.fn();
     const g = withGlobalAudit(

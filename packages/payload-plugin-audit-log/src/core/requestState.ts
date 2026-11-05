@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { isolateObjectProperty } from "payload";
 import { CTX_ACTIVE, CTX_AUTH_OPERATIONS, CTX_OP, CTX_REQUEST_ID } from "../constants";
+import type { LocaleOfRequest } from "../utils/fallbackLocale";
 
 type Context = Record<string, unknown>;
 type AdapterWithSessions = { sessions?: Record<string, unknown> };
@@ -24,6 +25,7 @@ export type OpFlags = {
   selected?: boolean;
   writtenDocCaptures?: Set<string>;
   capturesMainGlobal?: boolean;
+  savedIn?: LocaleOfRequest;
 };
 
 type Counts = Map<string, number>;

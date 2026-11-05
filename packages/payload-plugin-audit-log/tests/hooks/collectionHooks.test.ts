@@ -1317,6 +1317,198 @@ describe("collection hooks", () => {
     expect(firstEvent(inPlain.create)?.target).not.toHaveProperty("locale");
   });
 
+  describe("a localized save whose own hooks read the document in another locale", () => {
+    const localizedPages = audited({
+      slug: "pages",
+      fields: [{ name: "title", type: "text", localized: true }],
+    });
+    const pagesCollection = { slug: "pages" };
+
+    const saveReadInGermanAfterwards = async (args: Record<string, unknown>) => {
+      const caller = fakeRequest({ locale: "en", fallbackLocale: false });
+      const req = await runBeforeOperation(localizedPages.hooks?.beforeOperation, {
+        operation: "update",
+        args: { id: 1, data: { title: "B" }, ...args },
+        req: caller.req,
+        collection: pagesCollection,
+      });
+      await runBeforeChange(localizedPages.hooks, {
+        operation: "update",
+        originalDoc: { id: 1, title: "A" },
+        data: { title: "B" },
+        req,
+        collection: pagesCollection,
+      });
+      Object.assign(req, { locale: "de", fallbackLocale: "en" });
+      await runUpdate(localizedPages.hooks, req, {
+        previousDoc: { id: 1, title: "A" },
+        doc: { id: 1, title: "B" },
+        data: { title: "B" },
+        collection: pagesCollection,
+      });
+      return firstEvent(caller.create);
+    };
+
+    it("records the locale the save was made in", async () => {
+      expect(await saveReadInGermanAfterwards({})).toMatchObject({
+        action: "doc.update",
+        target: { slug: "pages", docId: "1", locale: "en" },
+        changes: ["title"],
+      });
+    });
+
+    it("records the locale a publish was limited to", async () => {
+      const event = await saveReadInGermanAfterwards({ publishSpecificLocale: "fr" });
+      expect(event?.target.locale).toBe("fr");
+    });
+
+    it("records the locale a bulk update wrote, which Payload does not limit to the publish locale", async () => {
+      const event = await saveReadInGermanAfterwards({
+        id: undefined,
+        where: { id: { equals: 1 } },
+        publishSpecificLocale: "fr",
+      });
+      expect(event?.target.locale).toBe("en");
+    });
+  });
+
+  describe("a localized operation whose own hooks read documents in another locale", () => {
+    const localizedMembers = audited({
+      slug: "members",
+      auth: true,
+      fields: [{ name: "nickname", type: "text", localized: true }],
+    });
+    const membersCollection = { slug: "members" };
+
+    const startedInEnglishThenReadInGerman = async (
+      operation: string,
+      args: object = { id: 4 }
+    ) => {
+      const caller = fakeRequest({ locale: "en" });
+      const req = await runBeforeOperation(localizedMembers.hooks?.beforeOperation, {
+        operation,
+        args,
+        req: caller.req,
+        collection: membersCollection,
+      });
+      Object.assign(req, { locale: "de" });
+      return { req, create: caller.create };
+    };
+
+    it("records a delete in the locale it was made in", async () => {
+      const { req, create } = await startedInEnglishThenReadInGerman("delete");
+      await runHooks(localizedMembers.hooks?.beforeDelete, {
+        id: 4,
+        req,
+        collection: membersCollection,
+      });
+      await runHooks(localizedMembers.hooks?.afterDelete, {
+        id: 4,
+        doc: { id: 4 },
+        req,
+        collection: membersCollection,
+      });
+      expect(firstEvent(create)).toMatchObject({
+        action: "doc.delete",
+        target: { slug: "members", docId: "4", locale: "en" },
+      });
+    });
+
+    it("records a login in the locale it was made in", async () => {
+      const { req, create } = await startedInEnglishThenReadInGerman("login");
+      await runHooks(localizedMembers.hooks?.afterLogin, {
+        user: { id: 4, email: "m@x.io" },
+        req,
+        collection: membersCollection,
+        token: "t",
+      });
+      expect(firstEvent(create)).toMatchObject({
+        action: "auth.login",
+        target: { kind: "auth", slug: "members", docId: "4", locale: "en" },
+      });
+    });
+
+    it("records a restore in the locale it was made in", async () => {
+      const { req, create } = await startedInEnglishThenReadInGerman("restoreVersion", {
+        id: "v1",
+      });
+      req.context.isRestoringVersion = true;
+      await runHooks(localizedMembers.hooks?.beforeChange, {
+        operation: "update",
+        originalDoc: { id: 4, nickname: "B" },
+        data: { nickname: "A" },
+        req,
+        collection: membersCollection,
+      });
+      await runUpdate(localizedMembers.hooks, req, {
+        previousDoc: { id: 4, nickname: "B" },
+        doc: { id: 4, nickname: "A" },
+        collection: membersCollection,
+      });
+      expect(firstEvent(create)).toMatchObject({
+        action: "doc.restore",
+        target: { slug: "members", docId: "4", locale: "en" },
+      });
+    });
+
+    it("records a duplicate in the locale it was made in", async () => {
+      const data = { nickname: "Copy" };
+      const { req, create } = await startedInEnglishThenReadInGerman("create", {
+        data,
+        duplicateFromID: 4,
+      });
+      await runHooks(localizedMembers.hooks?.beforeChange, {
+        operation: "create",
+        originalDoc: { nickname: "Orig" },
+        data,
+        req,
+        collection: membersCollection,
+      });
+      await runHooks(localizedMembers.hooks?.afterChange, {
+        operation: "create",
+        data,
+        previousDoc: {},
+        doc: { id: 5, nickname: "Copy" },
+        req,
+        collection: membersCollection,
+      });
+      expect(firstEvent(create)).toMatchObject({
+        action: "doc.duplicate",
+        target: { slug: "members", docId: "5", locale: "en" },
+      });
+    });
+
+    it("records a password reset request in the locale it was made in", async () => {
+      const { req, create } = await startedInEnglishThenReadInGerman("forgotPassword", {
+        data: { email: "m@x.io" },
+      });
+      await runHooks(localizedMembers.hooks?.afterForgotPassword, {
+        args: { req, data: { email: "m@x.io" } },
+        collection: membersCollection,
+      });
+      expect(firstEvent(create)).toMatchObject({
+        action: "auth.password_reset_requested",
+        target: { kind: "auth", slug: "members", label: "m@x.io", locale: "en" },
+      });
+    });
+
+    it("records a password reset in the locale it was made in", async () => {
+      const { req, create } = await startedInEnglishThenReadInGerman("resetPassword", {
+        data: { token: "t", password: "p" },
+      });
+      await runHooks(localizedMembers.hooks?.afterOperation, {
+        operation: "resetPassword",
+        req,
+        result: { token: "t", user: { id: 4, email: "m@x.io" } },
+        collection: membersCollection,
+      });
+      expect(firstEvent(create)).toMatchObject({
+        action: "auth.password_reset",
+        target: { kind: "auth", slug: "members", docId: "4", locale: "en" },
+      });
+    });
+  });
+
   it("writes doc.delete", async () => {
     const { req, create } = fakeRequest();
     await runHooks(posts.hooks?.afterDelete, {

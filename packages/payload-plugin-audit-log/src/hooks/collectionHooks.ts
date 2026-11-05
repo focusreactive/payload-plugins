@@ -6,11 +6,12 @@ import type {
   PayloadRequest,
 } from "payload";
 import { API_KEY_HIDDEN_FIELDS, AUTH_HIDDEN_FIELDS } from "../constants";
-import { auditTarget } from "../core/auditTarget";
+import { auditTarget, inLocale } from "../core/auditTarget";
 import { configuredLocalesOf, createChangeDiff } from "../core/changeDiff";
 import type { ChangeDiff } from "../core/changeDiff";
 import { classifyCollectionChange } from "../core/classify";
 import { valuesDiffer } from "../core/diffPaths";
+import { operationFlagsOf } from "../core/requestState";
 import { labelOf } from "../core/resolveActor";
 import { usesApiKeys, withSecretFieldsFirst } from "../core/secretFields";
 import { withStoredLocalizedValues } from "../core/storedLocalizedValues";
@@ -20,6 +21,7 @@ import type { ResolvedOptions } from "../options";
 import { failOpen } from "../utils/failOpen";
 import { getNestedValue } from "../utils/getNestedValue";
 import { readsWithFallbackLocale } from "../utils/fallbackLocale";
+import type { LocaleOfRequest } from "../utils/fallbackLocale";
 import {
   hasLocalizedFields,
   localizedFieldPaths,
@@ -77,33 +79,47 @@ export function withCollectionAudit(
     return typeof title === "string" ? title : undefined;
   };
 
-  const record = (req: PayloadRequest, args: AuditEventArgs) =>
-    recordAuditEvent(req, opts.slug, { ...args, localized });
+  const localeOfOperation = (req: PayloadRequest): LocaleOfRequest =>
+    operationFlagsOf(req, slug)?.savedIn ?? req;
+
+  const record = (
+    req: PayloadRequest,
+    args: AuditEventArgs,
+    savedIn: LocaleOfRequest = localeOfOperation(req)
+  ) =>
+    recordAuditEvent(req, opts.slug, {
+      ...args,
+      target: localized ? inLocale(args.target, savedIn.locale) : args.target,
+      localized,
+    });
 
   const localesOf = (req: PayloadRequest): readonly string[] =>
     localized ? configuredLocalesOf(req) : [];
 
-  const localeOfSave = (req: PayloadRequest): string | undefined =>
-    localized && typeof req.locale === "string" && req.locale !== ALL_LOCALES
-      ? req.locale
-      : undefined;
+  const localeOfSave = ({ locale }: LocaleOfRequest): string | undefined =>
+    localized && typeof locale === "string" && locale !== ALL_LOCALES ? locale : undefined;
 
-  const inLocaleOfSave = (req: PayloadRequest, stored: Doc): Doc => {
-    const locale = localeOfSave(req);
+  const inLocaleOfSave = (savedIn: LocaleOfRequest, stored: Doc): Doc => {
+    const locale = localeOfSave(savedIn);
     return locale === undefined
       ? stored
       : withStoredLocalizedValues(stored, stored, localizedFields, locale);
   };
 
-  const withoutFallbackValues = (req: PayloadRequest, doc: Doc, written: Doc | undefined): Doc => {
-    const locale = localeOfSave(req);
-    return written && locale !== undefined && readsWithFallbackLocale(req)
+  const withoutFallbackValues = (
+    savedIn: LocaleOfRequest,
+    doc: Doc,
+    written: Doc | undefined
+  ): Doc => {
+    const locale = localeOfSave(savedIn);
+    return written && locale !== undefined && readsWithFallbackLocale(savedIn)
       ? withStoredLocalizedValues(doc, written, localizedFields, locale)
       : doc;
   };
 
   const changesOfUpdate = (
     req: PayloadRequest,
+    savedIn: LocaleOfRequest,
     diff: ChangeDiff,
     {
       previousDoc,
@@ -114,12 +130,15 @@ export function withCollectionAudit(
   ): string[] => {
     if (!liveDocBeforeSave) return diff.changedFields(previousDoc, doc);
     const lastPublish = publishedOnly(liveDocBeforeSave);
-    if (!written) return diff.changedFields(lastPublish && inLocaleOfSave(req, lastPublish), doc);
+    if (!written) {
+      return diff.changedFields(lastPublish && inLocaleOfSave(savedIn, lastPublish), doc);
+    }
     return diff.changedStoredFields(lastPublish, written, doc, localesOf(req));
   };
 
   const recordRoleChange = async (
     req: PayloadRequest,
+    savedIn: LocaleOfRequest,
     diff: ChangeDiff,
     liveDoc: Doc | undefined,
     doc: Doc,
@@ -128,12 +147,16 @@ export function withCollectionAudit(
     const { before, after } = diff.comparable(liveDoc, doc);
     const roleFields = changedRoleFields(before, after, opts.roleFields);
     if (roleFields.length === 0) return;
-    await record(req, {
-      action: "user.role_changed",
-      target: auditTarget("collection", slug, doc.id, titleOf(doc) ?? labelOf(doc)),
-      changes: roleFields,
-      overrideAccess,
-    });
+    await record(
+      req,
+      {
+        action: "user.role_changed",
+        target: auditTarget("collection", slug, doc.id, titleOf(doc) ?? labelOf(doc)),
+        changes: roleFields,
+        overrideAccess,
+      },
+      savedIn
+    );
   };
 
   const recordChange = async ({
@@ -150,21 +173,22 @@ export function withCollectionAudit(
     const written =
       operation === "update" ? tracking.takeWrittenDocOfSave(req, flags, doc.id) : undefined;
     if (flags.autosave) return;
+    const savedIn = flags.savedIn ?? req;
     const diff = diffForSave({
       isStoredField: storedFieldCheck(sanitizedCollection as SanitizedFieldsShape),
       selected: flags.selected,
       submittedData: data,
-      saveLocale: localeOfSave(req),
+      saveLocale: localeOfSave(savedIn),
     });
     const savedDoc = diff.savedDoc(doc);
-    const docAsStored = withoutFallbackValues(req, doc, written);
+    const docAsStored = withoutFallbackValues(savedIn, doc, written);
     const savesDraft = drafts && flags.draft === true && savedDoc._status !== "published";
     const publishes =
       operation === "update" &&
       !flags.restore &&
       savedDoc._status === "published" &&
       previousDoc?._status !== "published";
-    const liveDoc = flags.liveDoc ? inLocaleOfSave(req, flags.liveDoc) : previousDoc;
+    const liveDoc = flags.liveDoc ? inLocaleOfSave(savedIn, flags.liveDoc) : previousDoc;
     const action = classifyCollectionChange({
       operation,
       previousDoc,
@@ -181,7 +205,7 @@ export function withCollectionAudit(
       secretFields,
       operation === "create"
         ? diff.createdFields(doc)
-        : changesOfUpdate(req, diff, {
+        : changesOfUpdate(req, savedIn, diff, {
             previousDoc,
             liveDocBeforeSave: comparesWithLiveDoc ? flags.liveDoc : undefined,
             written,
@@ -191,18 +215,22 @@ export function withCollectionAudit(
     );
     if (action === "doc.update" && changes.length === 0) return;
 
-    await record(req, {
-      action,
-      target: auditTarget("collection", slug, doc.id, titleOf(doc)),
-      changes,
-      overrideAccess: accessWasOverridden,
-      ...(action === "doc.duplicate" && flags.duplicateFrom
-        ? { metadata: { duplicateFrom: flags.duplicateFrom } }
-        : {}),
-    });
+    await record(
+      req,
+      {
+        action,
+        target: auditTarget("collection", slug, doc.id, titleOf(doc)),
+        changes,
+        overrideAccess: accessWasOverridden,
+        ...(action === "doc.duplicate" && flags.duplicateFrom
+          ? { metadata: { duplicateFrom: flags.duplicateFrom } }
+          : {}),
+      },
+      savedIn
+    );
 
     if (isAuth && operation === "update" && !savesDraft) {
-      await recordRoleChange(req, diff, liveDoc, docAsStored, accessWasOverridden);
+      await recordRoleChange(req, savedIn, diff, liveDoc, docAsStored, accessWasOverridden);
     }
   };
 
