@@ -1,5 +1,9 @@
 import type { FieldLike } from "../kernel/field-traversal/index.js";
-import type { DocumentRef, TranslationProvider } from "../domain/translation-providers/index.js";
+import type {
+  DocumentRef,
+  LanguageCode,
+  TranslationProvider,
+} from "../domain/translation-providers/index.js";
 import { TranslationPipeline } from "./TranslationPipeline.js";
 import type { LeafAddress } from "../domain/content-projection/idPath.js";
 import type { PipelineResult } from "./types/Pipeline.js";
@@ -12,9 +16,8 @@ export type TranslateContentArgs = {
    * Existing target-locale values; a leaf outside `selection` keeps its text. Defaults to `{}`.
    */
   targetData?: Record<string, unknown>;
-  /** Source language code, or `''` for provider auto-detect. */
-  sourceLng: string;
-  targetLng: string;
+  sourceLng: LanguageCode;
+  targetLng: LanguageCode;
   document: DocumentRef;
   translationProvider: TranslationProvider;
   /** The leaf addresses to translate, as {@link makeIdPath} mints them. */

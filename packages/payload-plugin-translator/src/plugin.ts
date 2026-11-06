@@ -97,9 +97,9 @@ export type TranslatorPluginConfig = TranslatorSettingsOptions & {
     slug?: string;
   };
   /**
-   * Optional server-side lifecycle callbacks fired around each translation task
-   * (`onQueued` / `onCompleted` / `onFailed`). Always available — no schema, no migration, not gated
-   * by `provenance`. A throwing callback is caught and logged, never failing the translation.
+   * Optional server-side lifecycle callbacks fired around each translation task. Always available —
+   * no schema, no migration, not gated by `provenance`. A throwing callback is caught and logged,
+   * never failing the translation.
    * @since 0.7.0
    */
   lifecycle?: TranslationLifecycleCallbacks;
@@ -153,9 +153,10 @@ function refuseDuplicateNames(chain: readonly TranslationModule[]): void {
  *     translatorPlugin({
  *       collections: [Posts, Pages],
  *       translationProvider: createTranslationProvider({
- *         complete: openAIComplete({
- *           client: new OpenAI({ apiKey: process.env.OPENAI_API_KEY }),
- *           model: 'gpt-5.4-mini',
+ *         askModel: askOpenAI({
+ *           // 60s, because the SDK's own default is ten minutes.
+ *           client: new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 60_000 }),
+ *           params: { model: 'gpt-5.4-mini' },
  *         }),
  *       }),
  *       runner: createPayloadJobsRunner(),

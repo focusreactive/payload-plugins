@@ -1,4 +1,4 @@
-import type { DocumentRef } from "../../core/domain/translation-providers/index.js";
+import type { DocumentRef, LanguageCode } from "../../core/domain/translation-providers/index.js";
 import { inlineMarksInstruction } from "./wire/index.js";
 
 /**
@@ -7,9 +7,8 @@ import { inlineMarksInstruction } from "./wire/index.js";
  * @since 0.11.0
  */
 export type SystemPromptContext = {
-  /** Source language code (e.g. 'en', 'de'). Empty when the provider should auto-detect. */
-  sourceLang: string;
-  targetLang: string;
+  sourceLang: LanguageCode;
+  targetLang: LanguageCode;
   defaultPrompt: string;
   /**
    * @since 0.18.0
@@ -45,9 +44,7 @@ export async function buildSystemPrompt(args: {
 }): Promise<string> {
   const { sourceLng, targetLng, override, hasInlineMarks, document } = args;
 
-  const defaultPrompt = `Translate the values from the JSON that the user will send you${
-    sourceLng ? ` from ${sourceLng}` : ""
-  } into ${targetLng}. Keep all JSON keys exactly as they are, only translate the values.
+  const defaultPrompt = `Translate the values from the JSON that the user will send you from ${sourceLng} into ${targetLng}. Keep all JSON keys exactly as they are, only translate the values.
 The response should be a valid JSON object with the same structure and keys as the input, but with translated values.
 Maintain any special formatting, placeholders, or variables within the values if they exist.`;
 

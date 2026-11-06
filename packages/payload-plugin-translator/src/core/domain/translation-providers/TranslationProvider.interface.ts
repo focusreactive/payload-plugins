@@ -84,13 +84,18 @@ export type DocumentRef = {
 };
 
 /**
+ * A language code, e.g. 'en'. Never empty.
+ */
+export type LanguageCode = string;
+
+/**
  * What the plugin tells a provider about one translation request, beyond the text itself.
  *
  * @since 1.0.0
  */
 export type TranslationRequest = {
-  sourceLng: string;
-  targetLng: string;
+  sourceLng: LanguageCode;
+  targetLng: LanguageCode;
   document: DocumentRef;
 };
 
