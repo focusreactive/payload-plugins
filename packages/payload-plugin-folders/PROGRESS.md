@@ -429,6 +429,16 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     its translated `untitledPage` ("Ohne Titel" in German) where it lists tree rows, so a German
     editor no longer sees an English word in the tree. Refactors P-11 to P-16, P-18 and P-25 merge
     copied helpers into one shared copy each, with no behavior change.
+48. **Last review fixes (P-19, P-50, P-51, the breadcrumb e2e).** P-19 splits `buildMovePlan`
+    into named steps over one shared context, with no behavior change. P-50: the app's own click
+    blocker after a cancelled drag is installed only while a pointer button is still down, and comes
+    off on the next `pointerdown`, on `pointercancel` or after 5 s, so a drag cancelled by switching
+    windows no longer swallows the next click. P-51 (orchestrator's pick, reversible by the session
+    owner): Alt+Right and Alt+Left do nothing in search results and the live region says why,
+    because "the folder above" there would be one the editor cannot see; Alt+Up and Alt+Down still
+    work. The breadcrumb drop e2e flake was the test clicking Move within dnd-kit's own 50 ms
+    click swallow after a drop (`@dnd-kit/core` `detach`), faster than a person can; the test now
+    waits until a click reaches the page.
 
 ### Owner decisions (from spec/review.md, the spec writer's pick applies)
 
