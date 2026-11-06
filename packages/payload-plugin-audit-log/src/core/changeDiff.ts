@@ -1,6 +1,6 @@
 import type { PayloadRequest } from "payload";
 import { TRUNCATED_MARKER } from "../constants";
-import type { FieldPathPattern, IsStoredField } from "../utils/fields";
+import type { FieldPathPattern, StoredValuesOf } from "../utils/fields";
 import { createdPaths, diffPaths, isLexicalRichText } from "./diffPaths";
 import { isRowOf, matchingRowOf } from "./rows";
 import { withStoredLocalizedValues } from "./storedLocalizedValues";
@@ -21,7 +21,7 @@ export type ChangeDiff = {
 };
 
 export type SavedDocScope = {
-  isStoredField?: IsStoredField;
+  storedValuesOf?: StoredValuesOf;
   selected?: boolean;
   submittedData?: Doc;
   saveLocale?: string;
@@ -177,11 +177,6 @@ function withSelectedOverSubmitted(submitted: unknown, selected: unknown): unkno
   );
 }
 
-const withOnlyStoredFields = (doc: Doc, isStoredField: IsStoredField | undefined): Doc =>
-  isStoredField
-    ? Object.fromEntries(Object.entries(doc).filter(([key]) => isStoredField(key)))
-    : doc;
-
 export function createChangeDiff({
   readRestrictedFields,
   localizedFields = [],
@@ -191,8 +186,8 @@ export function createChangeDiff({
   localizedFields?: readonly FieldPathPattern[];
   maxChangedPaths: number;
 }): (scope?: SavedDocScope) => ChangeDiff {
-  return ({ isStoredField, selected = false, submittedData = {}, saveLocale } = {}) => {
-    const stored = (doc: Doc): Doc => withOnlyStoredFields(doc, isStoredField);
+  return ({ storedValuesOf, selected = false, submittedData = {}, saveLocale } = {}) => {
+    const stored = (doc: Doc): Doc => (storedValuesOf ? storedValuesOf(doc) : doc);
 
     const readableSubmittedData = (doc: Doc) =>
       withoutFieldsMissingFromAfter(submittedData, doc, readRestrictedFields) ?? {};

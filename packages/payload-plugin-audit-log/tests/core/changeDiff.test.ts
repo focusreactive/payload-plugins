@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { TRUNCATED_MARKER } from "../../src/constants";
 import { createChangeDiff } from "../../src/core/changeDiff";
+import { storedValuesOf } from "../../src/utils/fields";
 
 const LOCALES = ["en", "de"] as const;
 const ROWS = { rows: true } as const;
@@ -160,5 +161,49 @@ describe("createdFields", () => {
   it("does not list hidden and read-restricted fields a create did not write", () => {
     const shown = { id: 1, title: "T", details: {} };
     expect(diffOfCreate({ title: "T", details: {} }).createdFields(shown)).toEqual(["title"]);
+  });
+
+  it("does not list a group or named tab whose only submitted value is a nested virtual field", () => {
+    const flattenedFields = [
+      { name: "title", type: "text" },
+      {
+        name: "details",
+        type: "group",
+        flattenedFields: [
+          { name: "label", type: "text" },
+          { name: "computed", type: "text", virtual: true },
+          { name: "secret", type: "text" },
+        ],
+      },
+      {
+        name: "meta",
+        type: "tab",
+        flattenedFields: [
+          {
+            name: "inner",
+            type: "group",
+            flattenedFields: [{ name: "computed", type: "text", virtual: true }],
+          },
+        ],
+      },
+    ];
+    const diffOfVirtualCreate = (submittedData: Record<string, unknown>) =>
+      createChangeDiff({
+        readRestrictedFields: [
+          ["details", "computed"],
+          ["details", "secret"],
+          ["meta", "inner", "computed"],
+        ],
+        maxChangedPaths: 200,
+      })({ storedValuesOf: storedValuesOf([])({ flattenedFields }), submittedData });
+    const shown = { id: 1, title: "T", details: { label: null }, meta: { inner: {} } };
+    const virtualOnly = {
+      title: "T",
+      details: { computed: "c" },
+      meta: { inner: { computed: "c" } },
+    };
+    expect(diffOfVirtualCreate(virtualOnly).createdFields(shown)).toEqual(["title"]);
+    const withSecret = { title: "T", details: { computed: "c", secret: "s" } };
+    expect(diffOfVirtualCreate(withSecret).createdFields(shown)).toEqual(["title", "details"]);
   });
 });

@@ -29,6 +29,19 @@ const restrictedNotes: CollectionConfig = {
       fields: [
         { name: "label", type: "text" },
         { name: "secret", type: "text", hidden: true },
+        { name: "computed", type: "text", hidden: true, virtual: true },
+      ],
+    },
+    {
+      type: "tabs",
+      tabs: [
+        {
+          name: "meta",
+          fields: [
+            { name: "summary", type: "text" },
+            { name: "computed", type: "text", hidden: true, virtual: true },
+          ],
+        },
       ],
     },
   ],
@@ -209,6 +222,15 @@ describe("creates with fields the caller cannot read", () => {
     await ctx.payload.create({
       collection: RESTRICTED_NOTES as never,
       data: { visible: "v" } as never,
+    });
+
+    expect(await noteCreatesOfThisTest()).toEqual([["doc.create", ["visible"]]]);
+  });
+
+  it("a create does not list a group or named tab whose only submitted value is virtual", async () => {
+    await ctx.payload.create({
+      collection: RESTRICTED_NOTES as never,
+      data: { visible: "v", details: { computed: "c" }, meta: { computed: "c" } } as never,
     });
 
     expect(await noteCreatesOfThisTest()).toEqual([["doc.create", ["visible"]]]);

@@ -29,7 +29,7 @@ import type { ResolvedOptions } from "../options";
 import { failOpen } from "../utils/failOpen";
 import { readsWithFallbackLocale } from "../utils/fallbackLocale";
 import type { LocaleOfRequest } from "../utils/fallbackLocale";
-import { localizedFieldPaths, readRestrictedFieldPaths, storedFieldCheckOf } from "../utils/fields";
+import { localizedFieldPaths, readRestrictedFieldPaths, storedValuesOf } from "../utils/fields";
 import type { SanitizedFieldsShape } from "../utils/fields";
 import { hasAutosave, hasDrafts, isAutosaveDraftTick } from "../utils/versions";
 
@@ -45,7 +45,7 @@ export function withGlobalAudit(
   const slug = global.slug;
   const drafts = hasDrafts(global.versions);
   const autosave = hasAutosave(global.versions);
-  const storedFieldCheck = storedFieldCheckOf(global.fields);
+  const storedValuesOfConfig = storedValuesOf(global.fields);
   const localizedFields = localizedFieldPaths(global.fields, sharedBlocks);
   const localized = localizedFields.length > 0;
   const readRestrictedFields = readRestrictedFieldPaths(global.fields, sharedBlocks);
@@ -138,7 +138,7 @@ export function withGlobalAudit(
     const savedIn = flags.savedIn ?? req;
     const previousDoc = previousDocAsStored(savedIn, previousDocAsRead, mainGlobal);
     const diff = diffForSave({
-      isStoredField: storedFieldCheck(sanitizedGlobal as SanitizedFieldsShape),
+      storedValuesOf: storedValuesOfConfig(sanitizedGlobal as SanitizedFieldsShape),
       selected: flags.selected,
       submittedData: data,
       saveLocale: localeOfSave(savedIn),

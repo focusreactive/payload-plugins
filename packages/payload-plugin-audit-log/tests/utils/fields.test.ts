@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   localizedFieldPaths,
   readRestrictedFieldPaths,
-  storedFieldCheckOf,
   storedFieldNames,
+  storedValuesOf,
 } from "../../src/utils/fields";
 
 const flattenedFields = [
@@ -18,18 +18,58 @@ describe("stored fields", () => {
     expect(storedFieldNames(flattenedFields)).toBe(storedFieldNames(flattenedFields));
   });
 
-  it("checks keys against the sanitized fields when Payload provides them", () => {
-    const isStoredField = storedFieldCheckOf([])({ flattenedFields });
-    expect(["title", "notes", "titleUpper", "globalType"].filter(isStoredField)).toEqual(["title"]);
+  it("keeps the stored values of the sanitized fields when Payload provides them", () => {
+    const storedOf = storedValuesOf([])({ flattenedFields });
+    expect(storedOf({ title: "T", notes: [], titleUpper: "T", globalType: "g" })).toEqual({
+      title: "T",
+    });
+  });
+
+  it("leaves out virtual fields nested in groups and named tabs", () => {
+    const storedOf = storedValuesOf([])({
+      flattenedFields: [
+        {
+          name: "details",
+          type: "group",
+          flattenedFields: [
+            { name: "label", type: "text" },
+            { name: "computed", type: "text", virtual: true },
+          ],
+        },
+        {
+          name: "meta",
+          type: "tab",
+          flattenedFields: [
+            {
+              name: "inner",
+              type: "group",
+              flattenedFields: [
+                { name: "computed", type: "text", virtual: true },
+                { name: "kept", type: "text" },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    expect(
+      storedOf({
+        details: { label: "L", computed: "c" },
+        meta: { inner: { computed: "c", kept: "k" } },
+      })
+    ).toEqual({ details: { label: "L" }, meta: { inner: { kept: "k" } } });
   });
 
   it("falls back to leaving out the join and virtual fields of the raw config", () => {
-    const isStoredField = storedFieldCheckOf([
+    const storedOf = storedValuesOf([
       { name: "title", type: "text" },
       { name: "notes", type: "join", collection: "comments", on: "page" },
       { type: "row", fields: [{ name: "computed", type: "text", virtual: true }] },
     ])(undefined);
-    expect(["title", "notes", "computed", "body"].filter(isStoredField)).toEqual(["title", "body"]);
+    expect(storedOf({ title: "T", notes: [], computed: "c", body: "B" })).toEqual({
+      title: "T",
+      body: "B",
+    });
   });
 });
 

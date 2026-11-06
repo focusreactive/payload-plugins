@@ -71,19 +71,56 @@ export function storedFieldNames(
   return names;
 }
 
-export type IsStoredField = (key: string) => boolean;
+type Doc = Record<string, unknown>;
 
-export function storedFieldCheckOf(
+export type StoredValuesOf = (doc: Doc) => Doc;
+
+const isRecord = (value: unknown): value is Doc =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const hasNamedSubfields = (field: FlattenedFieldShape): boolean =>
+  field.type === "group" || field.type === "tab";
+
+const fieldsByNameOf = (
+  fields: readonly FlattenedFieldShape[]
+): ReadonlyMap<string, FlattenedFieldShape> => new Map(fields.map((field) => [field.name, field]));
+
+function withStoredValues(
+  doc: Doc,
+  isStored: (key: string) => boolean,
+  fieldsByName: ReadonlyMap<string, FlattenedFieldShape>
+): Doc {
+  return Object.fromEntries(
+    Object.entries(doc)
+      .filter(([key]) => isStored(key))
+      .map(([key, value]) => {
+        const field = fieldsByName.get(key);
+        if (!(field?.flattenedFields && hasNamedSubfields(field) && isRecord(value))) {
+          return [key, value];
+        }
+        const subfields = fieldsByNameOf(field.flattenedFields);
+        const isStoredSubfield = (subkey: string): boolean => {
+          const subfield = subfields.get(subkey);
+          return !(subfield && isNotStored(subfield));
+        };
+        return [key, withStoredValues(value, isStoredSubfield, subfields)];
+      })
+  );
+}
+
+export function storedValuesOf(
   fields: readonly Field[] | undefined
-): (sanitized: SanitizedFieldsShape) => IsStoredField {
+): (sanitized: SanitizedFieldsShape) => StoredValuesOf {
   const notStoredNames: ReadonlySet<string> = new Set(
     topLevelFieldNames(fieldsOf(fields), isNotStored)
   );
-  const isNotJoinOrVirtual: IsStoredField = (key) => !notStoredNames.has(key);
+  const withoutJoinOrVirtual: StoredValuesOf = (doc) =>
+    withStoredValues(doc, (key) => !notStoredNames.has(key), new Map());
   return (sanitized) => {
-    if (!sanitized?.flattenedFields) return isNotJoinOrVirtual;
+    if (!sanitized?.flattenedFields) return withoutJoinOrVirtual;
     const names = storedFieldNames(sanitized.flattenedFields);
-    return (key) => names.has(key);
+    const fieldsByName = fieldsByNameOf(sanitized.flattenedFields);
+    return (doc) => withStoredValues(doc, (key) => names.has(key), fieldsByName);
   };
 }
 
