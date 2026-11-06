@@ -33,25 +33,38 @@ import { itemKey } from "../../core/itemKey.js";
 /** How long a closed folder is hovered before it opens (spec section 7.3). */
 export const autoExpandDelayMs = 600;
 
+/** How long a click blocker may stay when no later pointer event takes it off. */
+const clickBlockerLifetimeMs = 5000;
+
+const swallow = (event: Event): void => {
+  event.preventDefault();
+  event.stopPropagation();
+};
+
 /**
  * Swallows the click a cancelled drag still ends in. Pressing a row, dragging, pressing Escape and
  * letting go over the row where the drag began makes the browser fire a click there, which would
  * open a page or toggle a folder; dnd-kit swallows its own click for 50 ms after a drag, and a
  * mouse held through an Escape is released later than that. The blocker comes off after the
  * release, one tick later, because the click is dispatched right after the release.
+ *
+ * Only call it while a pointer button is still down. A release the page never sees (the button came
+ * up outside the window, or the tab was hidden) sends no `pointerup`, so the blocker also comes off
+ * at the next press, which starts a click of its own, and after a fixed time as a last resort.
  */
-const blockClickAfterRelease = (): void => {
-  const block = (event: Event) => {
-    event.preventDefault();
-    event.stopPropagation();
-  };
-  const release = () => {
-    document.removeEventListener("pointerup", release, true);
-    setTimeout(() => document.removeEventListener("click", block, true), 0);
-  };
-  document.addEventListener("click", block, true);
-  document.addEventListener("pointerup", release, true);
+const blockClickAfterCancel = (): void => {
+  const listeners = new AbortController();
+  const { signal } = listeners;
+  const remove = () => listeners.abort();
+  document.addEventListener("click", swallow, { capture: true, signal });
+  document.addEventListener("pointerdown", remove, { capture: true, signal });
+  for (const name of ["pointerup", "pointercancel"]) {
+    document.addEventListener(name, () => setTimeout(remove, 0), { capture: true, signal });
+  }
+  setTimeout(remove, clickBlockerLifetimeMs);
 };
+
+const pointerEventNames = ["pointerdown", "pointermove", "pointerup", "pointercancel"] as const;
 
 /** The body classes the stylesheet turns into the grabbing and not-allowed cursors. */
 const draggingBodyClass = "fr-folders-dragging";
@@ -243,6 +256,25 @@ export const DragAndDropProvider = ({
   };
 
   const isDragging = carried !== null;
+  // Whether a button is held right now, from the last pointer event the page saw. It is tracked for
+  // as long as the tree is mounted, not from the start of a drag, so no move before a late effect is
+  // missed. A drag cancelled with no button held (by a hidden tab or a resize after the release) has
+  // no click coming.
+  const isPointerButtonDownRef = useRef(false);
+  useEffect(() => {
+    const trackPointerButton = (event: PointerEvent) => {
+      isPointerButtonDownRef.current = event.buttons !== 0;
+    };
+    for (const name of pointerEventNames) {
+      document.addEventListener(name, trackPointerButton, true);
+    }
+
+    return () => {
+      for (const name of pointerEventNames) {
+        document.removeEventListener(name, trackPointerButton, true);
+      }
+    };
+  }, []);
   useEffect(() => {
     if (!isDragging) {
       return undefined;
@@ -305,7 +337,9 @@ export const DragAndDropProvider = ({
       collisionDetection={rowUnderPointer}
       onDragCancel={() => {
         stop();
-        blockClickAfterRelease();
+        if (isPointerButtonDownRef.current) {
+          blockClickAfterCancel();
+        }
       }}
       onDragEnd={handleDragEnd}
       onDragMove={track}

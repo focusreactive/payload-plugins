@@ -558,6 +558,94 @@ test("releasing over the row after Escape does not click it", async ({ page, req
   await expect(folderRow(page, "Drag Lab")).toHaveAttribute("aria-expanded", "false");
 });
 
+/**
+ * Starts a drag from synthetic pointer events and cancels it the way a window losing focus does:
+ * with a `visibilitychange`, after which no `pointerup` ever reaches the page. `releasedUnseen`
+ * tells the page the button came up outside the window, as a pointer move without a button.
+ */
+const dragAndCancelWithoutPointerUp = async (
+  page: Page,
+  source: Locator,
+  releasedUnseen: boolean
+): Promise<void> => {
+  const pointerOptions = { bubbles: true, cancelable: true, isPrimary: true, pointerId: 1 };
+  const point = await source.evaluate((element, options) => {
+    const box = element.getBoundingClientRect();
+    const start = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    element.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        ...options,
+        button: 0,
+        buttons: 1,
+        clientX: start.x,
+        clientY: start.y,
+      })
+    );
+    document.dispatchEvent(
+      new PointerEvent("pointermove", {
+        ...options,
+        buttons: 1,
+        clientX: start.x + 14,
+        clientY: start.y + 14,
+      })
+    );
+
+    return start;
+  }, pointerOptions);
+  await expect(overlay(page)).toBeVisible();
+
+  await page.evaluate(
+    ({ options, start, unseen }) => {
+      if (unseen) {
+        document.dispatchEvent(
+          new PointerEvent("pointermove", {
+            ...options,
+            buttons: 0,
+            clientX: start.x + 20,
+            clientY: start.y + 20,
+          })
+        );
+      }
+      document.dispatchEvent(new Event("visibilitychange", { bubbles: true }));
+    },
+    { options: pointerOptions, start: point, unseen: releasedUnseen }
+  );
+  await expect(overlay(page)).toHaveCount(0);
+  // dnd-kit swallows a click of its own for 50 ms after any drag; the click under test is the next
+  // one the editor makes, which is never that fast.
+  await page.waitForTimeout(100);
+};
+
+test("a drag cancelled after the button came up unseen does not swallow the next click", async ({
+  page,
+  request,
+}) => {
+  await addPage(request, "Unseen Release");
+  await openLab(page);
+  const labName = folderRow(page, "Drag Lab").getByTestId("row-name");
+  await expect(folderRow(page, "Drag Lab")).toHaveAttribute("aria-expanded", "true");
+
+  await dragAndCancelWithoutPointerUp(page, labName, true);
+
+  await labName.click();
+  await expect(folderRow(page, "Drag Lab")).toHaveAttribute("aria-expanded", "false");
+});
+
+test("a new press lifts the click blocker a cancelled drag left behind", async ({
+  page,
+  request,
+}) => {
+  await addPage(request, "Stale Blocker");
+  await openLab(page);
+  const labName = folderRow(page, "Drag Lab").getByTestId("row-name");
+  await expect(folderRow(page, "Drag Lab")).toHaveAttribute("aria-expanded", "true");
+
+  await dragAndCancelWithoutPointerUp(page, labName, false);
+
+  await labName.click();
+  await expect(folderRow(page, "Drag Lab")).toHaveAttribute("aria-expanded", "false");
+});
+
 test("no drag starts while a drop is reading its preview", async ({ page, request }) => {
   await addPage(request, "Preview A");
   await addPage(request, "Preview B");
