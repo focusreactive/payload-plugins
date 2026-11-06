@@ -3,6 +3,9 @@ import type { TranslationLifecycleCallbacks, TranslationTask } from "./types.js"
 /** Minimal logger surface used for swallowed callback errors (Payload's `payload.logger` satisfies it). */
 type LifecycleLogger = { error: (obj: unknown) => void };
 
+/** The callbacks that take the task alone; `onFailed` also takes the failure, so it fires on its own. */
+type TaskOnlyCallback = Exclude<keyof TranslationLifecycleCallbacks, "onFailed">;
+
 /**
  * Fires the host's translation lifecycle callbacks, best-effort. Each callback is invoked in a
  * try/catch (covering both synchronous throws and rejected promises); a failure is logged and
@@ -19,13 +22,11 @@ export class LifecycleNotifier {
   }
 
   queued(task: TranslationTask): Promise<void> {
-    const callback = this.callbacks.onQueued;
-    return this.safe("lifecycle.onQueued", callback && (() => callback(task)));
+    return this.fire("onQueued", task);
   }
 
   completed(task: TranslationTask): Promise<void> {
-    const callback = this.callbacks.onCompleted;
-    return this.safe("lifecycle.onCompleted", callback && (() => callback(task)));
+    return this.fire("onCompleted", task);
   }
 
   async failed(task: TranslationTask, error: unknown): Promise<void> {
@@ -43,9 +44,17 @@ export class LifecycleNotifier {
     await this.safe("lifecycle.onFailed", () => callback(task, error));
   }
 
+  abandoned(task: TranslationTask): Promise<void> {
+    return this.fire("onAbandoned", task);
+  }
+
   cancelled(task: TranslationTask): Promise<void> {
-    const callback = this.callbacks.onCancelled;
-    return this.safe("lifecycle.onCancelled", callback && (() => callback(task)));
+    return this.fire("onCancelled", task);
+  }
+
+  private fire(name: TaskOnlyCallback, task: TranslationTask): Promise<void> {
+    const callback = this.callbacks[name];
+    return this.safe(`lifecycle.${name}`, callback && (() => callback(task)));
   }
 
   private async safe(name: string, thunk?: () => void | Promise<void>): Promise<void> {

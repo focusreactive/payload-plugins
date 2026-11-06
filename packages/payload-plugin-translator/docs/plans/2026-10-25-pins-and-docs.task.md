@@ -13,7 +13,7 @@ debts steps 4, 6, 7, 8 and 9 each recorded as owed here.
 The zero option is applied to every item: an item that is not owed is dropped with the measurement
 that drops it, not built because a contract once named it.
 
-| Item | Source | Verdict |
+| Item | Source | Decision |
 |---|---|---|
 | one pin per route for the coarse ask | design | **build** — eight of nine routes are unpinned |
 | one pin per route for the record ask | design | **drop** — three routes have no record ask to pin; the other six each already carry one |
@@ -86,15 +86,13 @@ One route is pinned: `enqueue-translation/__tests__/route.test.ts:41` asserts
   uses for behaviour changes that remove no name (`## 2026-10-22`, `## 2026-10-24`, `## 2026-10-25`),
   not in the `### anchor` entry form, which is for a named symbol going away.
 
-## Human choices
+## Decisions by the owner
 
-- The README text is proposed in the final report and not written. Standing rule: the README is the
-  owner's.
+- The README text is proposed separately and not written here: the README is the owner's.
 
 ## Owed to no one
 
-This is the last step. Anything found here that is not built here is reported in the final report as
-open, not recorded as owed to a step that does not exist.
+This is the last step. Anything found here that is not built here is reported as open, not recorded as owed to a step that does not exist.
 
 ## Criteria results
 
@@ -104,7 +102,7 @@ open, not recorded as owed to a step that does not exist.
 | AC2 | met | `run-translation/route.ts`'s literal changed `"run"` → `"cancel"`: **1 failed, 18 passed**, the failure being `createRunRoute asks about "run"`. Restored by copy, not by `git checkout`. A second mutation — `withAccessCheck` asking twice — reddened the nine *asks once* checks and no others. A third — a tenth member added to `TranslatorAction` — failed `check-types` at the table, `TS2741` |
 | AC3 | met | `access-control-queue.int.test.ts` — *"refuses to re-run a row that recorded nobody"*. Proven by deleting `if (!job.startedBy) return ServerResponse.forbidden();` from the run handler and rebuilding: that case alone failed, 3 passed |
 | AC4 | met | `@since 1.0.0` on `TranslatorAction`, on the guard's `action` field, on `TaskRunner.assignmentsOf` |
-| AC5 | met, reworded | the obligation is stated, but not in the words the criterion used — see *The comment audit moved AC5* below |
+| AC5 | met, reworded | the obligation is stated, but not in the words the criterion used — see *The comment review moved AC5* below |
 | AC6 | met | `docs/DEPRECATIONS.md`, section `## 2026-10-25 — one permission decision point`, six sub-sections, one per step from 4 to 9 |
 | AC7 | met | see below |
 
@@ -113,8 +111,7 @@ open, not recorded as owed to a step that does not exist.
 Package suite **206 files / 2599 checks**, up from 205 / 2581 by exactly +1 file and +18 checks —
 the pin file and nothing else. `check-types` 0. oxlint **43 warnings / 0 errors**, the baseline
 unchanged. Real `turbo build` green, forced and uncached. Integration **226 passed / 8 skipped**, up
-from 225 by exactly the one new case. `sp-diff-checks` clean, 5 checks. `sp-lint-delta` introduced
-nothing.
+from 225 by exactly the one new case.
 
 ### One claim corrected while writing
 
@@ -131,22 +128,21 @@ the guard. The other six each already carry a `handler.access.test.ts` from step
 what was built is one pin per route for the **coarse** ask, which is the half that had none.
 
 
-## The comment audit
+## The comment review
 
-Run over the step's own diff by a reader who had not seen the code. Five blocks were handed over;
-seven verdicts came back. Everything it found was applied.
+Everything it found was applied.
 
-| Block | Verdict | What was wrong |
+| Block | Finding | What was wrong |
 |---|---|---|
 | the integration case's three-line note | rewrite the code | the name said *"re-run"* for a row that had never run, and the reason belonged in the name |
 | `@since` on `assignmentsOf` | keep | the surrounding prose was re-checked against both handlers and is accurate |
 | the obligation on `check` | rewrite the comment | **it overstated and understated at once** — see below |
 | the prose on the `action` field | rewrite the comment | it restated `TranslatorAction`'s own docblock, which a reader reaches by hovering the type |
 | `@since` on `TranslatorAction` | keep | — |
-| the docblock on the route table | rewrite the code | not on the list — written after the audit began. The constraint is already in the `Record` type; the name now carries the intent and the docblock is gone |
-| `user: editor as never` | missing | my own new line, and against a standing rule. The cast was also unnecessary: `callEndpoint` already accepts that shape |
+| the docblock on the route table | rewrite the code | not on the list — written after the review began. The constraint is already in the `Record` type; the name now carries the intent and the docblock is gone |
+| `user: editor as never` | missing | a new line, and against a project rule. The cast was also unnecessary: `callEndpoint` already accepts that shape |
 
-### The comment audit moved AC5
+### The comment review moved AC5
 
 AC5 asked the docblock to say the guard is asked *"once by the route and again by each admin widget
 offering the action"*. Measured, that is wrong in both directions:
@@ -170,7 +166,7 @@ The docblock now says the measured thing. The criterion's own wording was the in
 - `user: editor as never` is now `user: editor`. The cast was copied from neighbouring integration
   tests; those are not a reason.
 
-## The other three passes
+## The other three reviews
 
 - **Complexity** — nothing to judge: no production code path changed. Every production edit in this
   step is a comment. One counter did move, and deliberately: adding a tenth action now costs **three**
@@ -179,8 +175,7 @@ The docblock now says the measured thing. The criterion's own wording was the in
 - **Abstraction** — nothing to judge: no boundary moved. `TranslatorAction`, `AccessGuard.check` and
   `TaskRunner.assignmentsOf` gained documentation, not surface. `RouteUnderTest` is local to one test
   file with one caller, which is a field, not a type anybody crosses.
-- **Red test** — ran in full rather than in audit mode, because the checks are new: written from this
-  contract's AC1–AC3 before the code they guard was touched, then proven by three mutations (a route
+- **Tests** — the checks are new, so they were written from this contract's AC1–AC3 before the code they guard was touched, then proven by three mutations (a route
   literal, the asker asking twice, a tenth union member) and, for the integration case, by deleting
   the refusal from the run handler and rebuilding.
 
@@ -190,8 +185,8 @@ The table above reads `@since` on `assignmentsOf` → **build**, three rows abov
 `@since` on `JobAssignment` → **drop — not published**. Both sit on `TaskRunner`, so only one of
 them can be right.
 
-The verdicts were split because I grepped `\bTaskRunner\b` in `src/index.ts`, found a match, and
-read it as an export. **It is a line of prose inside a comment.** `src/index.ts` re-exports
+The decisions were split because a grep of `\bTaskRunner\b` in `src/index.ts` found a match that
+was read as an export. **It is a line of prose inside a comment.** `src/index.ts` re-exports
 `TaskRunnerProvider`; `TaskRunner` is reachable only structurally, as the return type of
 `create(payload, context)`, and the package's `exports` map carries only `.` and `./client/*`. So
 the package rule — `@since` on *"anything re-exported from `src/index.ts`"* — never applied to a

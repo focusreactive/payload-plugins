@@ -110,15 +110,15 @@ Triggers: a field's **type** changes on a type implemented outside this package 
 - **The guarantee is runtime, not compile-time** (D2). A reader who has followed steps 3–8 will
   expect the step-7 kind of guarantee and will not get it. The release note must say so plainly.
 - **Prototype delegation is the mechanism** (D1). A module that enumerates `payload`'s own keys, or
-  checks `instanceof`, would see a difference. No in-repo module does either — swept in Phase 4.
+  checks `instanceof`, would see a difference. No in-repo module does either — swept during implementation.
 - **A host module that writes to the translated collection breaks at run time**, with no compile
   warning. That is the whole point, and it is also the thing most likely to surprise.
-- A test is required before done; the regression sweep names what was grepped; Phase 5b runs several
+- A test is required before done; the regression sweep names what was grepped; review takes several
   angles.
 
-## Human choices
+## Decisions by the owner
 
-**2026-10-25.** The owner asked to be stopped only if the measurement showed `ModulePayload` breaking
+**2026-10-25.** Decided by the owner: proceed unless the measurement shows `ModulePayload` breaking
 **every** chain module including read-only ones. It showed the opposite — the honest implementation
 breaks **nothing** at compile time — so no fork was raised. The design's wording is contradicted on
 three points (narrowed type, compile-time refusal, big-bang), each recorded above with its
@@ -143,12 +143,10 @@ recorded above in `## Measured`: a narrowed type breaks provenance; the refusal 
 type (probe: `Exclude` collapses to `never`); and therefore the step is **not** the big bang the
 design called it — nothing breaks at compile time.
 
-**`/sp-complexity`.** Neighbourhood 6 files; history mute for the new ones. "A fourth guarded
-operation": CHANGE 2 in one file, READ 2. "A new chain member": CHANGE 1, and the guard applies by
-itself because it sits in `runChain`. Verified `forTheModule` is the only path to a module.
-**No findings.**
+**Complexity review.** No findings. The guard applies to a new chain member by itself because it
+sits in `runChain`; `forTheModule` is the only path to a module.
 
-**`/sp-abstraction`.** Audited by the author.
+**Design review.**
 
 - **The honesty gap is real but forced.** The type admits writes to every collection; the system
   refuses one. It cannot be closed — the signature cannot carry it, so the docblock does.
@@ -159,12 +157,10 @@ itself because it sits in `runChain`. Verified `forTheModule` is the only path t
 - **Finding, fixed:** `operation: string` in the error, where exactly three values existed. Named as
   `GuardedWrite`.
 
-**`/sp-red-test` in audit mode.** Replacing the guard with a pass-through reddened **5 checks in 3
-files** — three on the refusal itself, two on the seam actually handing the guarded view. No toothless
-check. Scaffolding deleted.
+**Test audit.** Replacing the guard with a pass-through reddened **5 checks in 3 files** — three on
+the refusal itself, two on the seam actually handing the guarded view. No toothless check.
 
-**`/sp-review-comments`.** 4 blocks, 4 verdicts + 1 MISSING: 1 KEEP… in fact 0 KEEP — 2
-REWRITE-COMMENT, 1 DELETE, 1 REWRITE-CODE. Inline density 0.36 per 10.
+**Comment review.**
 
 - The 12-line docblock on `payloadForModules` was cut to 5. Two of its paragraphs argued with a
   **reviewer** ("why isn't this a type?", "`Object.create` keeps everything") rather than telling a
@@ -174,10 +170,10 @@ REWRITE-COMMENT, 1 DELETE, 1 REWRITE-CODE. Inline density 0.36 per 10.
   `swallowOrThrow` rethrows only inside a transaction. Now states the condition.
 - `forTheModule`'s note repeated its own name; the view is now built inside the closure handed to the
   module, so `carried` and `state` visibly stay unguarded and the note had nothing left to say.
-- The MISSING entry was an unexplained cast; the helper was reshaped so the cast has one stated
+- An unexplained cast was found; the helper was reshaped so the cast has one stated
   reason beside it.
 
-**Found outside its own remit, and it was a real gap:** the guard covered `create`, `update` and
+**Also found, and it was a real gap:** the guard covered `create`, `update` and
 `delete` only. Checked Payload's surface — **`duplicate` and `restoreVersion` also write and also take
 a collection**, and both were reachable. Added, with two checks and a mutation. `payload.db` reaches
 the database directly and **cannot** be covered this way; that limit is now stated in the docblock.
@@ -186,8 +182,7 @@ the database directly and **cannot** be covered this way; that limit is now stat
 
 `check-types` 0 · oxlint 43 warnings / 0 errors · package suite **205 files / 2581 checks**, up from
 204 / 2570 by exactly +1 file and +11 checks (9 for the guard, 2 from the per-source-file throw test
-for the two new files) · real `turbo build` green, forced · integration **225 passed / 8 skipped** ·
-both gates clean.
+for the two new files) · real `turbo build` green, forced · integration **225 passed / 8 skipped**.
 
 ### Owed to step 10
 

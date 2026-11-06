@@ -61,7 +61,7 @@ transaction by looking for `transactionID` on the `req` passed **to each individ
 (`initTransaction` reads it off the options object). Threading a request as far as
 `TaskRunnerFactory.create` and stopping there changes nothing — `fetchSourceDocument` and
 `TranslateDocumentHandler` still call `payload.findByID` / `payload.update` with no `req`, on a fresh
-connection. That was the first version of this decision and it was wrong; the critique caught it and
+connection. That was the first version of this decision and it was wrong; design review caught it and
 two source reads confirmed it.
 
 What travels is the smallest thing that does the job:
@@ -78,7 +78,7 @@ the uncommitted row is visible through it, and invisible without it. `createLoca
 
 Rejected: threading the live `PayloadRequest` down the call chain. Two reasons, either sufficient.
 It puts a Payload god type into leaf helpers, which the package's own `CLAUDE.md` forbids outside
-`plugin.ts`, the config wiring and HTTP route boundaries — and an audit shows the package currently
+`plugin.ts`, the config wiring and HTTP route boundaries — and a search shows the package currently
 *honours* that rule everywhere, so this would have been the first breach. And `createLocalReq`
 **mutates the request it is handed**: the translator's own skip-context flag would stick to the
 caller's request permanently, and because Payload processes a bulk update with one shared request, a
@@ -100,7 +100,7 @@ runner's catch.
 **Written contract owed:** yes — that the work a runner starts joins the caller's transaction. Nothing
 in the signature says it, and it is the whole point of the change.
 
-**Escalate to `/sp-architect`?** No. One module owns the seam, no new dependency, no data-model change.
+**Does this need a separate design?** No. One module owns the seam, no new dependency, no data-model change.
 
 ## D2 — everything joins the transaction, and a failure that kills it is surfaced
 
@@ -109,13 +109,13 @@ Decided after the first build was rejected. Three candidates, all measured rathe
 - **Everything inside, failures swallowed** (the first build). Fixes #124, but a translation Payload
   rejects rolls the editor's save back and the hook reports success over it. Reproduced in
   `transaction-validation-failure.int.test.ts`. Rejected: silent data loss.
-- **Reads inside, writes outside** (the user's first choice). **Impossible**, measured: the
+- **Reads inside, writes outside** (the owner's first choice). **Impossible**, measured: the
   translation writes to the very document the caller has not committed, so from outside the
   transaction there is nothing to update — `payload.update` answers "Not Found" and #124 is not fixed
   at all. This is the measurement that settled the design; it is not a preference.
 - **Everything inside, and a failure that killed the transaction is rethrown** — chosen. The edit is
   already gone by the time the translator sees the error, so rethrowing cannot save it; it makes the
-  loss visible instead of silent, which is the trade the user accepted at the outset.
+  loss visible instead of silent, which is the trade the owner accepted at the outset.
 
 `killedTheCallersTransaction` narrows the rethrow to `APIError`, because only a Payload operation
 reaches `killTransaction`. A provider outage throws before any operation runs and leaves the save
@@ -142,7 +142,7 @@ nothing to add to `docs/DEPRECATIONS.md`.
 What does change for a host is **behaviour**, and only on the sync runner: an auto-translation now
 runs inside the transaction of the save that triggered it. Two consequences worth a README line —
 the translation is no longer visible to another connection until that save commits, and a translation
-that fails with a database error can, on Postgres, fail the save it was triggered by. The user
+that fails with a database error can, on Postgres, fail the save it was triggered by. The owner
 accepted the second; the escape hatch for a host it hurts is `createPayloadJobsRunner()`, whose jobs
 are picked up after the commit.
 
@@ -192,21 +192,21 @@ transaction behaviour is therefore Postgres-only, and the adapter-independent gu
 test. Worth knowing before writing a rollback test that would have passed vacuously on the default
 adapter.
 
-## Human choices
+## Decisions by the owner
 
 - **Fix all three in one pass** rather than splitting them.
 - **Tests first**, red against the broken code, then the fix.
-- **Carry a one-field slice, not the request** — raised as an abstraction objection ("we need one
-  field, why drag the whole request through every handler"), and it turned out to also prevent a
-  bulk-publish data loss.
+- **Carry a one-field slice, not the request** — raised as an abstraction objection (only one field is
+  needed, so the whole request should not travel through every handler), and it turned out to also
+  prevent a bulk-publish data loss.
 - **Accept that a failed translation can, on Postgres, fail the save.** Once the inline translation
   runs inside the caller's transaction, a *failed SQL statement* inside it poisons the transaction and
   every later statement in the save fails with it. That contradicts the hook's best-effort contract,
-  and the user accepted it rather than nesting the translation in a savepoint or leaving the sync
+  and the owner accepted it rather than nesting the translation in a savepoint or leaving the sync
   runner outside the transaction (which would leave this bug unfixed for it). Noted as unmeasured: the
   two failures we know of — a missing source row and an unreachable provider — are JavaScript throws
   with no failed statement, so they may not poison anything; nobody has measured which failures do.
-- **Log the failure, do not fail the save.** The user rejected the alternative on the grounds that a
+- **Log the failure, do not fail the save.** The owner rejected the alternative on the grounds that a
   translation failure can be asynchronous: with the jobs runner it happens after the save has
   committed, so "fail the save" is not a behaviour that runner can have at all.
 
@@ -223,13 +223,8 @@ adapter.
 
 ## Review log
 
-_(appended by review runs)_
-
-## Review log
-
-**2026-09-14 — built and verified.** Red tests first on untouched source: 8 red over four files, every
-failure an assertion reaching the unit. All nine criteria met; the six adapter/queue-mode integration
-runs are green.
+**2026-09-14 — built and verified.** Tests were written first and failed on the untouched source.
+All nine criteria met; the integration runs on every adapter and queue mode are green.
 
 **Corrected while building — the first implementation was inert.** The scope was passed as a top-level
 `transactionID` option on each call. Payload's local API has no such option: `createLocalReq` reads the
@@ -255,7 +250,7 @@ Postgres: the save commits, the locale that did not fail still translates, and t
 So the exposure is confined to a failure that leaves a *rejected SQL statement* in the transaction —
 not to the failures a host actually meets. The README says so rather than implying the wider risk.
 
-**2026-09-14 — the reads-only design was measured and abandoned, and the fix was rebuilt.** The user
+**2026-09-14 — the reads-only design was measured and abandoned, and the fix was rebuilt.** The owner
 chose "reads inside the transaction, writes outside" over the silent-loss risk. It does not build: the
 translation writes to the document the caller has not committed, so from outside the transaction
 `payload.update` answers "Not Found" and the three #124 cases go red again — the same failure the task
@@ -267,7 +262,7 @@ already destroyed it. Both halves are pinned by integration tests on Postgres: a
 leaves the save intact, and a value Payload rejects makes the save fail with that error instead of
 vanishing.
 
-**The bulk-publish guard now exists and discriminates.** Gate A found that nothing anywhere exercised
+**The bulk-publish guard now exists and discriminates.** Verification found that nothing anywhere exercised
 a bulk update, which is the regression the narrowed slice was chosen to prevent. The new case
 translates two documents through one shared request; reverting to the rejected design — the live
 request travelling uncopied — turns it red.

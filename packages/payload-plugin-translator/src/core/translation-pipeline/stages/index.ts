@@ -7,6 +7,5 @@ export {
   RichContainerExpander,
   TextChunkExpanderStage,
 } from "./text-expander/index.js";
-export type { TextExpansionResult, TextExpander, ExpansionResult } from "./text-expander/index.js";
 export { TranslationStage } from "./translation/index.js";
-export { TranslationMutator, TranslationMutatorStage } from "./translation-applicator/index.js";
+export { TranslationMutatorStage } from "./translation-applicator/index.js";

@@ -51,7 +51,7 @@ that class. Rejected: changing `TaskInput` to carry a locale array — it would 
 sync runner, the lifecycle wrapper and the endpoint, for no gain, since the array already arrives.
 
 **D3 — a re-enqueue supersedes every live job for the document, the one in flight included.**
-The user's decision, taken twice. The first version spared a running workflow so it could keep its
+Decided by the owner, in two rounds. The first version spared a running workflow so it could keep its
 already-translated locales; review showed that premise does not hold — Payload has no "queue behind",
 its picker takes any job that is not currently processing, so the spared job and the new one write the
 document at once on the next cron tick. That is the lost update at workflow granularity. Rejected on
@@ -63,7 +63,7 @@ written to the documents. Only the job's log and its unfinished locale go, and t
 redoes that locale against the newer source — which is what the user asked for by re-enqueueing.
 
 **D4 — the panel reads per-locale state from the job log.**
-The user's decision. Payload writes an entry per task, so the detail survives the collapse from N jobs
+Decided by the owner. Payload writes an entry per task, so the detail survives the collapse from N jobs
 to one. Rejected: one row per document — less work now, but the editor loses sight of which locale is
 done and which failed, which is the information the panel exists to show.
 
@@ -77,7 +77,7 @@ accepts `target_lng` as a string or an array.
 **Written contract owed:** yes — what the workflow guarantees about ordering and about partial
 completion after a failure. Neither is expressible in a signature.
 
-**Escalate:** no. One module, no new dependency, no schema change.
+**Scope:** one module, no new dependency, no schema change.
 
 ## Acceptance criteria
 
@@ -99,7 +99,7 @@ completion after a failure. Neither is expressible in a signature.
 8. **The sync runner is unaffected.** *Check: the existing 73 integration tests stay green on SQLite.*
 9. **Checks clean:** check-types both packages, unit tests, lint at the repo baseline.
 
-## Human choices
+## Decisions by the owner
 
 - **Supersede every live job for the document** (D3), after the first version's premise was
   disproved. Rejected alternative recorded above.
@@ -159,10 +159,10 @@ Payload 3.84.1's source before being acted on; four were real defects and are fi
   unpaginated and filters in memory, so `select_all` meant one full scan per document. One read now
   serves the whole batch, and the orphaned `groupByCollection` is gone.
 
-**Test findings, and what closed them.** The audit's central result was that D4 was not tested at all:
+**Test findings, and what closed them.** The test review's central result was that D4 was not tested at all:
 `normalizeJobLocales` could have its entire `job.log` branch deleted and the suite stayed green — in
 production that is the panel reporting "completed" for a locale that failed. Seven unit cases now
-cover it, and the audit's own empty implementation was pasted in to confirm four of them go red.
+cover it, and an empty implementation confirmed that four of them go red.
 Three more gaps closed: the sequencing check asserted order, which survives `Promise.all`, and now
 asserts non-overlap (`executedAt` of each locale against the previous locale's `completedAt`) —
 verified by mutating the handler to `Promise.all`, which reddens it; the failure spec failed the
@@ -170,16 +170,15 @@ verified by mutating the handler to `Promise.all`, which reddens it; the failure
 and "does not re-run a completed workflow" passed equally for a job left failed, so it now asserts the
 workflow reached `completedAt` first. A third locale (`es`) was added to the shared harness for this.
 
-**Comment audit.** 110 comment lines over 569 lines of code, judged too dense. The #114 lost-update
-story had been written out in five places; `PayloadJobsTaskRunner.enqueue` now owns it and the others
-point at it or are gone. Twenty-two comments deleted or shortened, mostly narration of the line below.
+**Comment review.** The #114 lost-update story had been written out in five places;
+`PayloadJobsTaskRunner.enqueue` now owns it and the others point at it or are gone. Comments that
+narrated the line below were deleted or shortened.
 What was kept is measured Payload behaviour a reader cannot recover without opening `node_modules`:
 `completedAt` on failed log entries, the locale-as-task-id restoration, the retry backoff, the
 `getPayload` per-process cache.
 
-**Verification.** Unit 1332 in the plugin; integration 15/15 on SQLite and MongoDB, 13/15 on Postgres
-— the two failing files are the known #124 auto-translate cases, red on `main` as well. check-types
-clean in both packages; lint at the repo baseline.
+**Verification.** Integration passes on SQLite and MongoDB; on Postgres only the known #124
+auto-translate cases fail, red on `main` as well.
 
 **Left open, deliberately.** `enqueue` cancels the old job and queues the new one without a
 transaction, so a batch spanning several documents can leave one document's old job deleted and its

@@ -19,10 +19,7 @@ export type ID = string;
  */
 export type JobHandle = string;
 
-/**
- * Status of a translation task
- */
-export type TaskStatus = "pending" | "running" | "completed" | "failed";
+export type TaskStatus = "pending" | "running" | "completed" | "failed" | "abandoned";
 
 /**
  * What a request asked a run to translate, for one target locale: the filters it carries, whose
@@ -121,13 +118,13 @@ export type QueuedWork = RunAsk & {
  * cancelled: cancelling does not stop work in flight, so it may be reported `cancelled` and still
  * settle `delivered`.
  *
- * For a locale a run never reached, `failed`'s `error` is the failure that ended the run, not its
- * own — nothing ran for it to throw.
+ * `abandoned` is a locale the run gave up before reaching, after another locale's failure ended it.
  */
 export type TaskEvent =
   | { state: "queued"; work: QueuedWork }
   | { state: "delivered" }
   | { state: "failed"; error: unknown }
+  | { state: "abandoned" }
   | { state: "cancelled" };
 
 /**

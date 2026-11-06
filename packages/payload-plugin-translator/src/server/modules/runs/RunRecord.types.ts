@@ -1,8 +1,8 @@
 import type { CollectionSlug } from "payload";
 
-import type { ID, JobHandle } from "../task-runner/types.js";
+import type { ID, JobHandle, TaskEvent } from "../task-runner/types.js";
 
-export type RunOutcome = "delivered" | "failed" | "cancelled";
+export type RunOutcome = Exclude<TaskEvent["state"], "queued">;
 
 export type RunIdentity = {
   handle: JobHandle;

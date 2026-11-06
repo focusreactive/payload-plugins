@@ -40,7 +40,7 @@ many are done", not a lifetime total. That requires a batch identity, which noth
 ## Why Stage B was withdrawn
 
 Built, reviewed, and taken back out. The reason is not that it failed — every criterion was met on
-three adapters — but that reviewing it exposed a design fault the Phase 2 gate had not seen.
+three adapters — but that reviewing it exposed a design fault the design review had not seen.
 
 **`TaskRunner.latestBatch?()` cannot be implemented from the contract that declares it.** A batch is
 a three-step protocol: the enqueue handler mints an id onto `RequestScope.batch`; `queueWorkflow`
@@ -52,9 +52,9 @@ follow-up says the interface should stop making
 (`2026-10-06-lifecycle-run-context.task.md`, "Rework `TaskRunner` into a small required core plus
 declared optional capabilities").
 
-**The root cause is placement, and it is mine.** A batch is the plugin's own notion — it exists so a
-progress panel can say "12 of 30". I stored it inside `payload-jobs`'s input shape, and everything
-downstream followed from that: a field in someone else's storage, a field on a public scope type, and
+**The root cause is placement.** A batch is the plugin's own notion — it exists so a progress panel
+can say "12 of 30". It was stored inside `payload-jobs`'s input shape, and everything downstream
+followed from that: a field in someone else's storage, a field on a public scope type, and
 a query that only one runner can answer.
 
 **Where it belongs instead:** the plugin keeps batches itself — `batch → the handles it covers` —
@@ -102,8 +102,8 @@ answers `batch: null`, which is honest there: that runner finishes every locale 
 
 ### D3 — the minted id is a server-side numeric timestamp
 
-**Chosen:** `String(Date.now())`, minted in `enqueue-translation/handler.ts`. **Decided by the owner
-at the gate**, against the recommendation below.
+**Chosen:** `String(Date.now())`, minted in `enqueue-translation/handler.ts`. **Decided by the owner**,
+against the recommendation below.
 
 **What lost, and why:** `crypto.randomUUID()` was recommended — ordering no longer needs to come
 from the id (D1 means no submission becomes the newest batch without creating a row, and the newest
@@ -136,7 +136,7 @@ step was a measurement correcting the one before.
 
 1. The research doc said matching the legacy `input.collection.value` fails on SQL and works on
    MongoDB.
-2. A Phase 3 probe corrected that: the failure depends on the **stored type**, not the adapter. The
+2. A probe during implementation corrected that: the failure depends on the **stored type**, not the adapter. The
    legacy relationship wrote a numeric collection's id as a **number**; comparing it against the
    string the plugin holds matches on **no** adapter, MongoDB included. On that reading the filter
    kept every legacy row and matched it in memory.
@@ -165,7 +165,7 @@ unit test of their own. Recorded so a later reviewer does not read the absence a
 
 ### D6 — "newest submission" is the greatest batch id, found over a bounded window
 
-**This overturns a decision taken at the Phase 2 gate.** That decision said the newest batch could be
+**This overturns a decision taken during design.** That decision said the newest batch could be
 read off the row with the greatest `createdAt`, justified by the append case: a submission that only
 appends creates no row, so it cannot displace the batch on show. That reasoning is sound and still
 holds — but it is not the whole case, and a reviewer found the half it missed.
@@ -183,9 +183,8 @@ earlier=1791884665909  later=1791884665930  shown=1791884665909   MongoDB
 ```
 
 **Chosen:** newest means the **greatest batch id** — the moment the submission was made — taken in
-memory over the newest `RECENT_BATCHED_ROWS` (500) rows that carry one. Decided by the owner: "Мы же
-пишем в качестве номера партии таймстемп. Ну вот по нему и брать все записи с самым свежим
-таймстемпом."
+memory over the newest `RECENT_BATCHED_ROWS` (500) rows that carry one. Decided by the owner: the
+batch id is a timestamp, so the newest submission is the rows carrying the most recent one.
 
 **What lost, and why.** Sorting on the id itself (`sort: '-input.batch'`) is the obvious answer and
 was **measured not to work**: PostgreSQL orders correctly, SQLite and MongoDB silently return the
@@ -209,7 +208,7 @@ collection's history, which is what #123 is about.
 | counting + visibility | `features/get-collection-status/handler.ts` |
 
 `store/` holds "the shape of what a framework stores and the readers that turn it into ours" per
-`CLAUDE.md`, which is what a `where` over two storage shapes is. `model/` must not import it back.
+the package conventions, which is what a `where` over two storage shapes is. `model/` must not import it back.
 
 ### New surface
 
@@ -223,7 +222,7 @@ collection's history, which is what #123 is about.
 
 ### Written contract?
 
-**Yes, three things no signature states**, so `latestBatch` takes the red-test path in Phase 3:
+**Yes, three things no signature states**, so `latestBatch` is tested contract-first:
 
 1. `latestBatch` returns `null` both when the runner has no notion of batches and when the
    collection has none — the caller cannot tell those apart and must not need to.
@@ -231,10 +230,10 @@ collection's history, which is what #123 is about.
 3. An append to a live run does not change that run's batch, so a submission that only appends
    leaves the newest batch where it was.
 
-### Escalate to /sp-architect?
+### Does this need a separate design?
 
 **No.** Stage B adds a field to an existing stored shape and an optional method to an existing
-interface; the placement is named above and follows `CLAUDE.md`'s `store/` vs `model/` split. No new
+interface; the placement is named above and follows the package's `store/` vs `model/` split. No new
 seam, no new dependency, no migration (the column is `json`).
 
 ## Acceptance Criteria
@@ -255,7 +254,7 @@ Run against the untouched tree on `feat/translator-bound-status-reads`, before a
 
 | AC | Command | Result | Classification |
 |---|---|---|---|
-| AC1–AC4 | the named tests | **do not exist yet** | change — each gets its red run in Phase 3, recorded with the failure reason |
+| AC1–AC4 | the named tests | **do not exist yet** | change — each gets its red run during implementation, recorded with the failure reason |
 | AC12 | `bun run check-types` | passes, 0 errors | invariant |
 | AC13 | `bunx oxlint .` | 47 warnings, 0 errors | invariant |
 | AC14 | `bunx vitest run` | 148 files, 2057 tests passed | invariant (baseline) |
@@ -271,9 +270,9 @@ Run against the untouched tree on `feat/translator-bound-status-reads`, before a
 - `findByCollection` is on the enqueue path as well as the status path, so Stage A's condition is
   load-bearing for cancellation and supersede logic, not only for display.
 
-What that binds downstream: a test is required before any part is called done; the Phase 4
-regression sweep is mandatory and must name what was grepped and how many call sites were read;
-Phase 5 runs three review angles rather than one.
+What that binds downstream: a test is required before any part is called done; the regression
+sweep is mandatory and must name what was grepped and how many call sites were read; review covers
+three angles rather than one.
 
 **Specific hazards:**
 
@@ -287,31 +286,29 @@ Phase 5 runs three review angles rather than one.
   (it shows the running batch, per AC6), but the returned id is inert. Recorded rather than fixed —
   nothing reads it today.
 
-## Human choices
+## Decisions by the owner
 
-- **2026-10-12** — "Я всё еще хочу показывать статус по всей коллекции а не тольк по дументам на
-  странице, это буде твводить в заблужение." Narrowing the panel to the admin list's current page is
-  rejected.
-- **2026-10-12** — "translated по идее должен показывать количество переведенных записей не вообще
-  за всё время, а за текущий run." The `Translated` figure is the current submission.
-- **2026-10-12** — "16. идет в текущую партию" — an append-only submission joins the batch the live
-  row already carries; the row is not re-stamped.
-- **2026-10-12** — "17. по нулям" — with no batch, the panel shows zeros; there is no fallback to
-  displaying live work.
-- **2026-10-12** — "18. это сейчас разве нужно?" — a global multi-collection dashboard is out of
-  scope; nothing is built for it.
+- **2026-10-12** — narrowing the panel to the admin list's current page is rejected: the status
+  covers the whole collection, because a page-only figure would mislead.
+- **2026-10-12** — the `Translated` figure is the current submission, not all history.
+- **2026-10-12** — an append-only submission joins the batch the live row already carries; the row
+  is not re-stamped.
+- **2026-10-12** — with no batch, the panel shows zeros; there is no fallback to displaying live
+  work.
+- **2026-10-12** — a global multi-collection dashboard is out of scope, not needed yet; nothing is
+  built for it.
 - **2026-10-12** — scope: both stages in one task rather than narrowing first. The whole diff is
   therefore graded at HIGH risk, including Stage A.
-- **2026-10-12** — the batch id is a numeric timestamp, not a UUID: "Числовой момент времени, как
-  решили раньше". See D3 for the cost that choice accepts.
+- **2026-10-12** — the batch id is a numeric timestamp, not a UUID, consistent with the earlier
+  decision. See D3 for the cost that choice accepts.
 - **2026-10-13** — `batch` accepts `boolean | string`, not `true | string`: `false` must mean "track
   nothing" rather than a 400, so a caller computing the flag is never rejected. Measured: the
   narrower schema rejected `false`.
 - **2026-10-13** — a batch with no visible documents keeps answering with its id; see D7.
-- **2026-10-13** — nothing goes in the README: "`batch: true` - это не публичный контракт как и
-  эндпоинты… Где у пользователя плагина доступ к этому свойству?" See D8.
-- **2026-10-12** — "контракт эндпоинтов не публичный. То, что кто-то строит на нем свою админку его
-  проблемы. Мы его полностью ломать не будем, но учитывать этот факт стоит."
+- **2026-10-13** — nothing goes in the README: `batch: true` is not a public contract, just like the
+  endpoints, and a plugin user has no way to reach it. See D8.
+- **2026-10-12** — the endpoints' HTTP contract is not public. A host that builds its own admin on it
+  carries that risk; the contract is not broken outright, and the fact is still weighed.
 
 ## Red runs and mutations
 
@@ -329,11 +326,11 @@ re-run rather than counted.
 | `ofDocuments` matches the legacy document id | "still finds a legacy row when asked about one document", on SQLite and PostgreSQL | D5 is guarded where the distinction exists; on MongoDB ids are not numeric, so the case cannot arise and the test says so |
 | `extendJob` re-stamps the appended row's batch | "leaves a running submission's id alone…", alone | the owner's append decision is guarded |
 
-The first run of the second mutation turned **nothing** red. That was the finding that sent me back
-to measure, and it is what corrected D5 — the fixture had to seed a number-stored id before the test
+The first run of the second mutation turned **nothing** red. That finding prompted the
+re-measurement that corrected D5 — the fixture had to seed a number-stored id before the test
 could discriminate.
 
-## Phase 4 — regression sweep
+## Regression sweep
 
 Every public surface this diff touches, and what was read:
 
@@ -353,9 +350,8 @@ documents, `GET /collection/:slug` still answers `batch: { id, 0, 0, 0, 0 }` rat
 that caller can tell "a submission happened, not for me" from "no submission happened" — and the id
 is a timestamp, so they learn when.
 
-**Decided: leave it.** "Если у пользователя есть как минимум права на чтения коллекции — то и
-количество тогда он сможет прочитать. Если прав нету — то пользователь просто не сможет открыть
-коллекцию."
+**Decided: leave it.** A user with read access to the collection may read the count too; a user
+without it cannot open the collection at all.
 
 **One correction to that reasoning, recorded because it is load-bearing if the decision is ever
 revisited.** The endpoint has **no collection-level read check of its own**. Two gates stand in
@@ -370,7 +366,7 @@ surface, not for this field.
 
 ### D8 — nothing from this work goes in the README
 
-`CLAUDE.md`'s "Documenting feature versions" asks for a `Since vX.Y.Z` note in the README beside new
+The package convention "Documenting feature versions" asks for a `Since vX.Y.Z` note in the README beside new
 **public API**, which it defines as anything re-exported from `src/index.ts`. Measured against that
 definition, this work adds none:
 
@@ -388,13 +384,13 @@ fires.
 
 ## Review log
 
-**2026-10-13 — three reviewers, one per angle (high risk).**
+**2026-10-13 — review, one pass per angle (high risk).**
 
 | Angle | Result |
 |---|---|
 | correctness of the narrowing | no findings. Traced every row shape through `ofCollection` / `ofDocuments` and the in-memory pass, confirmed `ownJobs()` is combined rather than replaced on all four query paths, and checked `exists` on a nested JSON path in the adapters' own source. |
-| the batch feature | **one major finding, confirmed and fixed** — see D6. One question raised and put to the owner: a caller who may read none of a batch's documents still receives the batch id with zero counts. |
-| contract and tests | contract clean: the optional method and optional field are additive, `src/index.ts` untouched, ADR-0002 satisfied. Five test gaps; two (AC11, AC8a) had already been closed while the reviewer ran, two more closed after it (`latestBatch` unit coverage; the join-by-id path, now covered by the D6 regression test). The fifth is the README note, which is the owner's to write. |
+| the batch feature | **one major finding, confirmed and fixed** — see D6. One question raised for the owner's decision: a caller who may read none of a batch's documents still receives the batch id with zero counts. |
+| contract and tests | contract clean: the optional method and optional field are additive, `src/index.ts` untouched, ADR-0002 satisfied. Five test gaps; two (AC11, AC8a) had already been closed during the review, two more closed after it (`latestBatch` unit coverage; the join-by-id path, now covered by the D6 regression test). The fifth is the README note, which is the owner's to write. |
 
 Mutations added for D6: restoring `limit: 1` turns "shows the submission made last, not the one whose
 row landed last" red, alone, and nothing else.

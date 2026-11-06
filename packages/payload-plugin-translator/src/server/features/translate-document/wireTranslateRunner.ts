@@ -1,5 +1,6 @@
 import type { Payload } from "payload";
 
+import { TranslatorBug } from "../../../core/errors/index.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
 import { LifecycleNotifier } from "../../modules/lifecycle/index.js";
 import type {
@@ -148,9 +149,16 @@ export function wireTranslateRunner({
         case "failed":
           await settle("failed", toClientErrorMessage(messageOf(event.error)));
           return await (task === null ? undefined : notifier.failed(task, event.error));
+        case "abandoned":
+          await settle("abandoned", null);
+          return await (task === null ? undefined : notifier.abandoned(task));
         case "cancelled":
           await settle("cancelled", null);
           return await (task === null ? undefined : notifier.cancelled(task));
+        default: {
+          const exhaustive: never = event;
+          throw new TranslatorBug(`unhandled run ending: ${String(exhaustive)}`);
+        }
       }
     },
   };

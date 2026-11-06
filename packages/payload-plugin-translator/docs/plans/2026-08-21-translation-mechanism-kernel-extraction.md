@@ -570,8 +570,8 @@ Publishing plumbing this repo already requires (root `CLAUDE.md`): `"private": f
 `publishConfig.access: "public"`; `repository.url` exactly
 `https://github.com/focusreactive/payload-plugins` or semantic-release fails with a git 128; **npm
 Trusted Publishing configured for the new package name** before the first CI publish, else
-`verifyConditions` fails with `ENONPMTOKEN`. The repo has a skill for adding a package, including the
-"cannot publish over previously published versions" first-publish trap.
+`verifyConditions` fails with `ENONPMTOKEN`. Also mind the "cannot publish over previously published
+versions" first-publish trap.
 
 ### 4.7 Implementation sketch — how an external language is passed in and driven
 

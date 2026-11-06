@@ -3,7 +3,7 @@ import {
   collectSerializedLexicalTextNodes,
   isSerializedLexicalRoot,
 } from "../../../kernel/lexical/index.js";
-import { serializeInlineMarks } from "../../../kernel/lexical/inlineMarks.js";
+import type { TranslatableValue } from "../../../domain/translation-providers/index.js";
 import type { FieldChunk, RichTextChunk, TextChunk } from "../../types/index.js";
 import { RichTextExpander } from "./RichTextExpander.js";
 import type { ExpansionResult, TextExpander } from "./TextExpander.interface.js";
@@ -12,10 +12,8 @@ import type { ExpansionResult, TextExpander } from "./TextExpander.interface.js"
  * Expands richText into one chunk per container, so a whole sentence reaches the model and its
  * pieces can come back reordered.
  *
- * Containers the marked format cannot serve — a mark-shaped sequence in the source, or a single
- * fragment with nothing to reorder — fall back to the per-node expander. The fallback is held
- * here rather than expressed as `canExpand: false` because deciding requires walking the tree,
- * and a second expander would walk it again.
+ * The fallback to the per-node expander is decided here rather than through `canExpand: false`:
+ * deciding needs the tree walk, and a second expander would repeat it.
  */
 export class RichContainerExpander implements TextExpander {
   private readonly perNode: TextExpander;
@@ -45,12 +43,12 @@ export class RichContainerExpander implements TextExpander {
       .chunks.filter((each): each is RichTextChunk => each.type === "richText");
 
     const chunks: TextChunk[] = [];
-    const textMap: Record<number, string> = {};
+    const textMap: ExpansionResult["textMap"] = {};
     let index = startIndex;
 
-    const emit = (text: string, chunkOf: (at: number) => TextChunk) => {
+    const emit = (translatable: TranslatableValue, chunkOf: (at: number) => TextChunk) => {
       chunks.push(chunkOf(index));
-      textMap[index] = text;
+      textMap[index] = translatable;
       index += 1;
     };
 
@@ -61,14 +59,17 @@ export class RichContainerExpander implements TextExpander {
         );
         for (const perNodeChunk of perNodeChunks) {
           if (!nodes.has(perNodeChunk.nodeRef)) continue;
-          emit(perNodeChunk.text, (at) => ({ ...perNodeChunk, index: at }));
+          emit({ kind: "text", text: perNodeChunk.text }, (at) => ({ ...perNodeChunk, index: at }));
         }
         continue;
       }
 
-      const text = serializeInlineMarks(container.fragments);
+      const segments = container.fragments.map((fragment) => ({
+        id: fragment.id,
+        text: fragment.text,
+      }));
 
-      emit(text, (at) => ({
+      emit({ kind: "segments", segments }, (at) => ({
         type: "richContainer",
         index: at,
         idPath: chunk.idPath,

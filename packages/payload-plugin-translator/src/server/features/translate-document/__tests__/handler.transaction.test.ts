@@ -9,12 +9,11 @@ import type { TranslateDocumentInput } from "../translateDocument.js";
 import type { ProvenanceServiceFactory } from "../../../modules/provenance/index.js";
 import { provenanceInAChain } from "../../../modules/provenance/__tests__/fixtures/inAChain.js";
 
-vi.mock("../../../../core/translation-pipeline/index.js", () => ({
-  translateContent: vi.fn().mockResolvedValue({
-    translatedData: { title: "Titel" },
-    leaves: [{ idPath: "title", answeredInFull: true }],
-  }),
-}));
+vi.mock("../../../../core/translation-pipeline/index.js", async () => {
+  const { pipelineResult } =
+    await import("../../../../core/translation-pipeline/__tests__/fixtures/pipelineResult.js");
+  return { translateContent: vi.fn().mockResolvedValue(pipelineResult({ title: "Titel" })) };
+});
 
 const TX = "tx-42";
 

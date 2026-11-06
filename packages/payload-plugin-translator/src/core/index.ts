@@ -1,5 +1,7 @@
 export type {
   TranslationProvider,
+  TranslationRequest,
+  TranslationFailureCode,
   TranslationInput,
   TranslationOutput,
   TranslationIndex,

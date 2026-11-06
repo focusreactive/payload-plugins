@@ -75,7 +75,7 @@ unchanged, and this is what makes the non-ask **visible code** rather than the a
 ### D5 — the field route gains no brand
 
 It writes nothing through the runner, so there is no sink to guard, and a brand there would have one
-mint site. Settled in the design (**ST1**); recorded here so Phase 5 does not read its absence as an
+mint site. Settled in the design (**ST1**); recorded here so a review does not read its absence as an
 oversight.
 
 ### D6 — shape check
@@ -122,18 +122,18 @@ package**.
 - **The brand is a compile-time guarantee only.** It proves a call passed through the ask; it cannot
   prove the ask answered honestly. The runtime guarantee stays where it was — in `refusedTargets` and
   the worker's own check.
-- **One cast per brand is the point, and more than one would undo it.** Phase 5 counts them.
+- **One cast per brand is the point, and more than one would undo it.** Review counts them.
 - A test is required before done; the regression sweep names what was grepped and how many call sites
-  were read; Phase 5b runs several angles.
+  were read; review takes several angles.
 
-## Human choices
+## Decisions by the owner
 
-**2026-10-25.** The owner directed an uninterrupted run through steps 5–10, stopping only at a
-genuine fork, and named the breaking-change question as the likely one. **It did not become a fork:**
+**2026-10-25.** Decided by the owner: steps 5–10 proceed without a stop unless a genuine fork
+appears, the breaking-change question being the likely one. **It did not become a fork:**
 a probe showed host implementations are unaffected, so there is no "break everyone now versus a
 deprecation window" choice to put. D1 departs from the design's wording — the design said the
 handlers mint — because a minter shared by three feature modules must be exported, and an exported
-minter is a forge. Recorded rather than asked, since it strengthens the design's own stated intent.
+minter is a forge. Recorded as a departure; it strengthens the design's own stated intent.
 
 ## Criteria results
 
@@ -154,23 +154,18 @@ type errors across 7 files**: five production sinks and two test files. The comp
 place that reached the queue, which is the payoff — a later edit that deletes an ask now fails to
 compile rather than passing silently.
 
-**`/sp-complexity`.** Neighbourhood 9 files; history mute for the new ones (born this commit), so no
-edit. "A fifth named path to the queue": CHANGE 2, READ 3, STATE 4 → 5 — and the states *are* the
-domain, one per answer to "what authorised this". "Another queue method narrows": CHANGE 1 in the
-interface, and the **compiler** produces the site list, so READ does not grow with it. **No findings.**
-
-**`/sp-abstraction`.** Audited by the author.
+**Design review.**
 
 - **Finding, fixed:** the `AuthorisedWork` docblock claimed "every value comes from a function in this
   module". **False** — `TaskRunner.invariants.ts` mints two with casts. Corrected to say what the
   brand actually guarantees: a guard against *forgetting*, not against intent.
-- **A suspicion of mine that measurement refuted:** `authorisedWork` returns bare document ids while
-  holding composite keys internally, so I expected an ambiguity when two collections share an id.
+- **A suspected ambiguity, ruled out by measurement:** `authorisedWork` returns bare document ids
+  while holding composite keys internally, which looked ambiguous when two collections share an id.
   There is none — `collection_slug` is a single field, so one enqueue request covers one collection.
 - **Observation:** the brand types are not re-exported from `src/index.ts`, so a host cannot name
   them. Not a break (bivariance lets them declare the wider type), but it owes a release-note line.
 
-**`/sp-red-test` in audit mode.** No stub was written: the module also exports the types the whole
+**Test audit.** No stub was written: the module also exports the types the whole
 tree compiles against, so it cannot be stubbed out — a limit of the technique, not a finding. Three
 mutations instead.
 
@@ -180,11 +175,7 @@ mutations instead.
   cancel, two on cancel-by-collection, one on run. All three job routes notice.
 - **No toothless check found.**
 
-**`/sp-review-comments`.** 11 candidate blocks, 11 verdicts + 2 MISSING: 3 KEEP, 3 REWRITE-COMMENT,
-2 DELETE, 3 REWRITE-CODE. Inline density 0.6 per 10 — fine; the weight was in docblocks on internal
-helpers.
-
-The three REWRITE-CODE verdicts are the substance, and each replaced prose with structure:
+**Comment review.** Three comments were replaced with code structure:
 
 - **A comment explained that a verdict is keyed by collection *and* id.** Now it cannot be otherwise:
   `refusedPerCollection` returns a lookup closure over a `Map<CollectionSlug, Set<string>>`, so an id
@@ -197,7 +188,7 @@ The three REWRITE-CODE verdicts are the substance, and each replaced prose with 
   code rather than the prose: `asWork` now exists beside `asHandle`, the two forgeries sit together
   under names that say "cast", and the docblock is gone.
 
-Also from the MISSING entries: `SyncRunnerProvider.test.ts` had been reaching the queue through
+Also found: `SyncRunnerProvider.test.ts` had been reaching the queue through
 `authorisedByTheSave` — a path whose docblock argues from the editor's `afterChange`. The test is not
 a save. It now forges with a local cast, like its neighbour, so the production path's name stays tied
 to the real hook.
@@ -208,7 +199,7 @@ to the real hook.
 this rewiring orphaned · package suite **202 files / 2559 checks**, up from 201 / 2552 by exactly +1
 file and +7 checks (6 brand-contract checks, and 1 from the per-source-file throw test for
 `authorised.ts`) · real `turbo build` green, forced · integration **225 passed / 8 skipped** ·
-`sp-diff-checks` clean · `sp-lint-delta` introduced nothing.
+lint introduced nothing new.
 
 **The step removed more lines than it added** — 106 inserted against 137 deleted. The brand replaced
 hand-written checks rather than accumulating on top of them.

@@ -28,6 +28,19 @@ describe("what a row of the run record means", () => {
     expect(statusOf(runRow({ outcome: "cancelled", settledAt: SOME_MOMENT }))).toBeNull();
   });
 
+  it("is abandoned when the run never reached the locale", () => {
+    expect(statusOf(runRow({ outcome: "abandoned", settledAt: SOME_MOMENT }))).toBe("abandoned");
+  });
+
+  it("keeps an abandoned locale in the report, unlike a cancelled one", () => {
+    const rows = [
+      runRow({ targetLng: "es", outcome: "abandoned", settledAt: SOME_MOMENT }),
+      runRow({ targetLng: "it", outcome: "cancelled", settledAt: SOME_MOMENT }),
+    ];
+
+    expect(reportedRuns(rows).map((r) => r.row.targetLng)).toEqual(["es"]);
+  });
+
   it("reads the outcome over the stamp, so a settled run is never reported as running", () => {
     const row = runRow({ startedAt: SOME_MOMENT, settledAt: SOME_MOMENT, outcome: "delivered" });
 

@@ -90,7 +90,7 @@ remembered by field name, not by block type", CONTEXT.md) disappears with the wa
 the actual block. That parked follow-up is closed by deletion rather than by a fix.
 
 **D5 — ask again with the payload each write actually sends.**
-Added after the complexity audit measured a hole the first three decisions opened. The pre-check is
+Added after a complexity review measured a hole the first three decisions opened. The pre-check is
 fed the **source** document; Payload evaluates the same collection rule at the write, where `data` is
 the **partial translated payload** (`updateByID`: `executeAccess({ id, data, req })`). A rule reading
 `data` answers differently to the two, and now that the inline write carries `overrideAccess: false`,
@@ -123,7 +123,7 @@ task beyond what it already carries.
 **Written contract owed:** `TranslationPermission` drops `deniedFields`, so the path-format contract
 ("dot-separated, no row indices") goes with it. Nothing new is owed.
 
-**Escalate to /sp-architect?** No. One module, no new seam, no data-model change — it removes a seam.
+**Does this need a separate design?** No. One module, no new seam, no data-model change — it removes a seam.
 
 ## What is deleted
 
@@ -170,7 +170,7 @@ Payload's own traversal — but see AC 4).
 | 5 | must FAIL now (the code is still there) | fails — all six symbols present |
 | 8 | must PASS now | pass — 1608 unit, lint 58 |
 
-## Human choices
+## Decisions by the owner
 
 - **Payload owns field-level enforcement; the plugin owns only the collection-level pre-check.**
   Chosen over keeping a plugin-side walk, after measuring that Payload's own traversal handles every
@@ -181,11 +181,12 @@ Payload's own traversal — but see AC 4).
 
 ## Review log
 
-- 2026-09-18 — contract written; gate approved (remove the walk, keep the collection-level check).
-- 2026-09-18 — `/sp-red-test` in audit mode: three mutations on PostgreSQL. The behaviour the 19
-  deleted checks held is now held by three integration checks, and mutation 2 proved the pre-check is
-  load-bearing by killing the editor's save. One `it.each` label had outlived its mechanism and was
+- 2026-09-18 — contract written; approved by the owner (remove the walk, keep the collection-level
+  check).
+- 2026-09-18 — test-suite review with mutations on PostgreSQL. The behaviour the deleted checks held
+  is now held by three integration checks, and a mutation proved the pre-check is load-bearing by
+  killing the editor's save. One `it.each` label had outlived its mechanism and was
   corrected. Artifact: `artifacts/2026-09-18-suite-audit-after-the-reduction.txt`.
-- 2026-09-18 — `/sp-complexity`: CHANGE 5 → 2, READ 5 → 3, and two enforcers that had to agree became
-  one. The audit also surfaced the `data`-keyed rule hole, which reopened the design and produced D5.
-  The half-identity proposal from the earlier run stands unchanged; this reduction did not touch it.
+- 2026-09-18 — complexity review: two enforcers that had to agree became one. The review also
+  surfaced the `data`-keyed rule hole, which reopened the design and produced D5. The half-identity
+  proposal from the earlier review stands unchanged; this reduction did not touch it.

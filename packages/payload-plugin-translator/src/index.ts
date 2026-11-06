@@ -3,7 +3,6 @@ export { translatorPlugin } from "./plugin.js";
 export type { TranslatorPluginConfig } from "./plugin.js";
 export type { TargetSelectionMode } from "./types/TargetSelection.js";
 
-// Lifecycle callbacks — the task descriptor passed to onQueued/onCompleted/onFailed
 export type {
   TranslationTask,
   TranslationLifecycleCallbacks,
@@ -18,19 +17,31 @@ export { AnyAccessGuard } from "./server/shared/access/AnyAccessGuard.js";
 
 // Translation provider port (from the dependency-free core)
 export type { TranslationProvider, TranslationInput, TranslationOutput } from "./core/index.js";
+/**
+ * Exported because a class under `implements` gets no contextual typing for its method parameters:
+ * a class-based provider must name this type.
+ *
+ * @since 1.0.0
+ */
+export type { TranslationRequest } from "./core/index.js";
 
-export { openAIComplete } from "./translation-providers/index.js";
+export { askOpenAI } from "./translation-providers/index.js";
 export type {
   OpenAIClientShape,
-  OpenAISamplingParams,
+  OpenAIParams,
   OpenAIStructuredOutput,
-  DryRunConfig,
 } from "./translation-providers/index.js";
 
-export { createTranslationProvider } from "./translation-providers/index.js";
+export {
+  createTranslationProvider,
+  inlineMarksInstruction,
+  canEncodeSegments,
+  decodeSegments,
+  encodeSegments,
+} from "./translation-providers/index.js";
 export type {
-  CompletionFn,
-  CompletionRequest,
+  AskModel,
+  ModelRequest,
   TranslationProviderConfig,
   JsonSchemaObject,
   SystemPromptBuilder,
@@ -55,6 +66,13 @@ export type {
   RunnerCapabilities,
 } from "./server/modules/task-runner/index.js";
 /**
+ * A class under `implements TaskRunnerProvider` gets no contextual typing for its method
+ * parameters, so it must name these two. Both built-in runners are classes.
+ *
+ * @since 1.0.0
+ */
+export type { TaskRunnerContext, TaskRunner } from "./server/modules/task-runner/index.js";
+/**
  * A third-party `TaskRunnerProvider` has always had to accept a `RequestScope` — it is the second
  * parameter of `TaskRunner.enqueue` and of the `TaskHandler` it is handed — but could not name the
  * type. Exported so an implementation outside this package can.
@@ -78,6 +96,3 @@ export type { FieldTranslationConfig } from "./field-config.js";
 // JSDoc for the Vercel/serverless caveat). Since v0.9.0.
 export { withAutoTranslate } from "./auto-translate-config.js";
 export type { AutoTranslateConfig } from "./auto-translate-config.js";
-
-export { createOpenAIProvider, OpenAITranslationProvider } from "./translation-providers/index.js";
-export type { OpenAIProviderConfig } from "./translation-providers/index.js";

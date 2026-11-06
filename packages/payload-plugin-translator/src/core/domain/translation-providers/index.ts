@@ -3,8 +3,15 @@
 export type {
   TranslationProvider,
   DocumentRef,
-  TranslationRequestOptions,
+  LanguageCode,
+  TranslationRequest,
+  TranslationFailureCode,
   TranslationInput,
   TranslationOutput,
   TranslationIndex,
+  TranslatableValue,
+  TranslatedValue,
+  Segment,
+  SegmentId,
+  ValueFailureCode,
 } from "./TranslationProvider.interface.js";

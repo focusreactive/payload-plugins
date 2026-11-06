@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import { applyTranslations } from "../../core/traversal/index.js";
+import type { TranslatableValue } from "../../core/domain/translation-providers/index.js";
 import type { BlockLike, FieldLike } from "../../core/kernel/field-traversal/index.js";
 import { FieldChunkCollector } from "../../core/translation-pipeline/stages/field-collector/index.js";
 import { projectTranslatableContent } from "../../core/domain/content-projection/contentProjector.js";
-import { defaultExpanders } from "../../core/translation-pipeline/stages/text-expander/index.js";
-import { TranslationMutator } from "../../core/translation-pipeline/stages/translation-applicator/index.js";
-import type { TextChunk } from "../../core/translation-pipeline/types/index.js";
+import {
+  PlainTextExpander,
+  RichTextExpander,
+} from "../../core/translation-pipeline/stages/text-expander/index.js";
+import { writeAnswers } from "../../core/translation-pipeline/stages/translation-applicator/index.js";
+import type { SettledAnswer, TextChunk } from "../../core/translation-pipeline/types/index.js";
 import { addressesOf } from "./addresses.js";
 import type { Doc } from "./fixtures/lexical.js";
 import {
@@ -25,11 +29,13 @@ import {
 
 type Compared = { texts: string[]; addresses: string[]; document: Doc };
 
-const textAt = (textMap: Record<number, string>, index: number): string => {
+const textAt = (textMap: Record<number, TranslatableValue>, index: number): string => {
   const found = textMap[index];
-  if (found === undefined) throw new Error(`the oracle produced no text for chunk ${index}`);
-  return found;
+  if (found?.kind !== "text") throw new Error(`the oracle produced no text for chunk ${index}`);
+  return found.text;
 };
+
+const perNode = [new RichTextExpander(), new PlainTextExpander()];
 
 const viaPipeline = (schema: FieldLike[], source: Doc): Compared => {
   const working = structuredClone(source);
@@ -43,12 +49,12 @@ const viaPipeline = (schema: FieldLike[], source: Doc): Compared => {
   const textChunks: TextChunk[] = [];
   const texts: string[] = [];
   const addresses: string[] = [];
-  const answers: Record<number, string> = {};
+  const answers: Record<number, SettledAnswer> = {};
   let next = 0;
 
   for (const fieldChunk of fieldChunks) {
     const value = fieldChunk.dataRef[fieldChunk.key];
-    const expander = defaultExpanders.find((candidate) => candidate.canExpand(fieldChunk, value));
+    const expander = perNode.find((candidate) => candidate.canExpand(fieldChunk, value));
     if (expander === undefined) continue;
 
     const expansion = expander.expand(fieldChunk, value, next);
@@ -58,11 +64,11 @@ const viaPipeline = (schema: FieldLike[], source: Doc): Compared => {
       textChunks.push(chunk);
       texts.push(sent);
       addresses.push(String(fieldChunk.idPath));
-      answers[chunk.index] = translated(sent);
+      answers[chunk.index] = { kind: "text", text: translated(sent) };
     }
   }
 
-  new TranslationMutator().apply(textChunks, answers);
+  writeAnswers(textChunks, answers);
   return { texts, addresses, document: working };
 };
 

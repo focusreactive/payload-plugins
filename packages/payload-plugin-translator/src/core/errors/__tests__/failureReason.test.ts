@@ -1,18 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { UserFacingFailureReason } from "../failureReason.js";
-import { markFailureReason, readFailureReason } from "../failureReason.js";
-
-/** A `Record`, not an array: the compiler fails this file until every reason is listed, and an array would accept any subset. */
-const EVERY_REASON: Record<UserFacingFailureReason, true> = {
-  "source-unreadable": true,
-  "model-unavailable": true,
-  "permission-denied": true,
-  "requester-missing": true,
-  "permission-check-failed": true,
-};
-
-const REASONS = Object.keys(EVERY_REASON) as UserFacingFailureReason[];
+import { REASONS, markFailureReason, readFailureReason } from "../failureReason.js";
 
 describe("markFailureReason / readFailureReason", () => {
   for (const reason of REASONS) {

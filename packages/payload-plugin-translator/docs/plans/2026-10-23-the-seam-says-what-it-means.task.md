@@ -4,7 +4,7 @@
 
 ## Requirements / Task restatement
 
-Three findings from today's complexity and abstraction audits over the module seam built in #198.
+Three findings from the 2026-10-23 complexity and abstraction reviews of the module seam built in #198.
 All three are about the same moment — step 9 (#202), when the seam opens and hosts write modules —
 and none of them breaks anything today.
 
@@ -55,8 +55,8 @@ makes the type honest by making the behaviour wrong.
 the four shape questions and it buys nothing: with the return type narrowed, a module already cannot
 change the run, so the second parameter adds a signature change for a guarantee D1 already gives.
 
-*Zero option — do nothing and record it for step 9.* Rejected by the owner, who asked for these
-fixed now rather than carried.
+*Zero option — do nothing and record it for step 9.* Rejected by the owner: fixed now rather than
+carried.
 
 **Supersedes D3 of `2026-10-18-the-rewiring.md`,** which reads "The first two take the state and
 return it." They take the state and return their contribution. The clause was written when positions
@@ -109,7 +109,7 @@ One shape survives. The two rejected alternatives are recorded under D1 with wha
 by key rather than replacing, and a module that fails contributes nothing. Both go in its docblock
 and both are pinned by a test.
 
-### Escalate to `/sp-architect`?
+### Does this need a separate design?
 
 No. One seam, four in-repo consumers, no new dependency, no stored data.
 
@@ -128,8 +128,7 @@ No. One seam, four in-repo consumers, no new dependency, no stored data.
 
 ## Pre-flight — each check run against the untouched tree
 
-Run against the untouched tree. The pins file was written, run, and parked in the scratchpad so the
-tree is not left red at the gate.
+Run against the untouched tree.
 
 | AC | Result on the base | Classification |
 |---|---|---|
@@ -161,28 +160,28 @@ Two things to watch:
 
 - `chainOrder.test.ts` currently proves threading by having a module return a changed
   `previousAttempts`. That field stops being returnable, so the check must be rewritten to prove the
-  same thing through `moduleState` — a rewrite, not a deletion, and the hygiene gate will see it.
+  same thing through `moduleState` — a rewrite, not a deletion, and the automated diff check will see it.
 - The `moduleState` merge moves from provenance to the chain. If the chain merged by replacement
   instead of by key, a second module would wipe the first's slot and no existing test would see it,
   because there is only one module today. AC2 exists for that.
 
-## Human choices
+## Decisions by the owner
 
-- **Fix now rather than record for step 9.** The owner's words: "Я не хочу держать это в голове —
-  если чиним, то давай сейчас."
+- **Fix now rather than record for step 9** — decided by the owner, 2026-10-23: known findings are
+  fixed while the change is open rather than carried.
 
 ## Open, not solved here
 
-- The second deleted test flagged by the hygiene gate — `"returns empty when provenance is
+- The second deleted test flagged by the automated diff check — `"returns empty when provenance is
   disabled"` in `staleness.test.ts` — still has no replacement. A symmetric type pin would close it;
   the owner has not decided.
 - `previousAttempts` still has no reader (D-f of the #198 contract).
 
 ## Review log
 
-### Fresh eyes over the twelve changed files — 2026-10-23
+### Review of the twelve changed files — 2026-10-23
 
-Verdict: the change itself is correct. The merge keeps a sibling's slot on every path, the name
+Result: the change itself is correct. The merge keeps a sibling's slot on every path, the name
 check runs on the fully assembled chain and nothing else builds one, and provenance writes and reads
 what it wrote and read before. The defects were all in what the tests prove, and three of them were
 confirmed by mutation before being fixed.
@@ -201,6 +200,3 @@ Two overclaims in this document, corrected above: D1 said a module can no longer
 another's slot (the merge protects against **dropping** one, not against overwriting it by name),
 and said `sourceChangedByLeaf` merges by replacement (it is replaced only when the contribution
 carries one, so no module can clear it).
-
-Final state: **183 files / 2445 checks**, 0 type errors, 44 lint warnings and 0 errors, build green,
-`apps/cms` and `apps/dev` type-check clean, integration **63 files, 236 passed / 8 skipped**.

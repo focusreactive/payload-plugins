@@ -26,7 +26,7 @@ Requirements:
 - R9 (out) `core/translation-pipeline`'s internals · the enqueue route · the stored job row ·
   auto-translate · everything in `src/client/`.
 
-**Vectors:** structure + security (leading: structure) — structure because the ask is literally
+**Design concerns:** structure + security (leading: structure) — structure because the ask is literally
 "where does each responsibility live and what shape is the run"; security because R1 is an
 `authz-placement` question and SC1 ("every path passes the same decision") is the invariant the
 current code fails. `contract` was considered and dropped: the module seam is not published
@@ -79,8 +79,8 @@ throw. Its *declaration* style is readable; its *typing* would fail R5.
   cannot be written against a run that translated nothing.
 - `ApprovedWrite` (existing, untouched).
 - **No step interface, no step array, no registry, no `.stage.ts` tag** — ST1, on the verified fact
-  that `translate-field` is not a second consumer. The package `CLAUDE.md` convention table is not
-  extended.
+  that `translate-field` is not a second consumer. The package's file-naming convention table is
+  not extended.
 - `TaskHandlerInput` (existing, adopted) — `model.ts` is deleted.
 
 **Dependency direction.** `plugin.ts` → `features/translate-document/index.ts` (one export,
@@ -144,7 +144,7 @@ server and no credential is created or moved.
 | R7 | the seam is **kept** — `ChainMember`, `BeforeTranslation`, `AfterSave`, `ModuleState` and `runChain.ts` unchanged — and called from the list through `runModules.ts`. Cost: it still hands a module a `Payload` (D6) |
 | R8 | behaviour-preserving except the two points named in D6 and D2's consequences |
 
-### Vector gates
+### Structure and security checks
 
 - **structure** — no gate beyond ST1–ST6; applied per decision below. ST1 is the binding one and it
   is what rules out a step framework.
@@ -170,7 +170,7 @@ server and no credential is created or moved.
   precedent types every stage `(ctx) => ctx` over a context whose products are optional — so
   misordering type-checks and a runtime throw is the only guard.
 - **Options considered:**
-  - an ordered array of step objects, the repo precedent — disqualified by all three candidates, because the registry would have one consumer (ST1) and copying its typing fails R5
+  - an ordered array of step objects, the repo precedent — disqualified by all three alternative designs, because the registry would have one consumer (ST1) and copying its typing fails R5
   - a plain sequence relying on data dependencies alone (`min-new-abstraction`)
   - a plain sequence **plus** branded hand-off values (`cleanest-boundaries`, agreed by `max-reuse`)
 - **Decision:** the third. Top-level `function` declarations in sibling files, listed in the entry's
@@ -182,7 +182,7 @@ server and no credential is created or moved.
   declarations in sibling modules.
 - **Consequences:** adding a step is one file plus one line. The order of `selectLeaves` relative to
   `runModulesBefore` stays list order plus tests, not types — forcing it would hand `translateOrWrap`
-  a parameter its answer does not depend on, which the owner's signature rule forbids. That is the
+  a parameter its answer does not depend on, which the project's signature rule forbids. That is the
   design's main residual stiffness and it is deliberate.
 
 #### D2. The read-side decision binds to the read
@@ -201,8 +201,8 @@ server and no credential is created or moved.
   **SC1**, **SC2**, **ST1** (three existing callers), **ST4**.
 - **Consequences:** an unapproved source becomes unrepresentable outside one file. The earlier
   sanctioned ground — *the list should show that a permission is asked* — is honoured by naming: the
-  line reads `readSourceIfAllowed` and the value is typed `ApprovedSource`. This is a real trade and
-  the owner reopened it deliberately: the ask is no longer a standalone greppable call.
+  line reads `readSourceIfAllowed` and the value is typed `ApprovedSource`. This is a real trade, and
+  it was reopened deliberately: the ask is no longer a standalone greppable call.
 
 #### D3. Module-level functions and a deps parameter; no class, no factory
 
@@ -211,7 +211,7 @@ server and no credential is created or moved.
 - **Options considered:**
   - the class (killed by R3)
   - a factory closing over deps (carries the "steps move to the bottom" objection)
-  - module-level functions taking `deps` first (all three candidates)
+  - module-level functions taking `deps` first (all three alternative designs)
 - **Decision:** the third. Clears **R6**, **ST6** (the entry owns orchestration only), **ST1**.
 - **Consequences:** `deps` is threaded explicitly into the three steps that need a slice of it, which
   is the honest cost and is also what makes each signature claim only what its answer depends on.
@@ -237,7 +237,7 @@ server and no credential is created or moved.
 - **Context:** a `Step` interface is the obvious move and ST1 is the test.
 - **Options considered:** a `PipelineStage`-like interface reused from `core/` · a new server-side
   step interface · none.
-- **Decision:** none. Re-checked at adjudication against `translate-field/handler.ts` and confirmed:
+- **Decision:** none. Re-checked during design against `translate-field/handler.ts` and confirmed:
   it returns `Response`, writes nothing, and has no scope, module chain, criteria or target layer, so
   a step interface would have one consumer. **ST1** disqualifies it; **ST5** holds because the reason
   is a verified fact rather than taste.
@@ -250,15 +250,15 @@ server and no credential is created or moved.
   typed `Payload`, so a module can `payload.update` the target document with nothing asked, and with
   Payload's local-API default `overrideAccess: true`. This is an **SC1** violation on a path the
   design otherwise closes.
-- **What was disproved:** all three candidates left it open citing "provenance needs the full
+- **What was disproved:** all three alternative designs left it open citing "provenance needs the full
   `Payload`". Verified false: every provenance write names `this.collection`, its own sidecar, and
   `refuseACollidingSlug` → `assertProvenanceSlugFree` guarantees that slug differs from every host
   collection. Provenance never writes the target document. A `.shapes.ts` slice would not close it
   either, because the hole is about *which record*, not *which method*.
 - **Options considered:**
-  - leave it open and record it (all three candidates; rejected — the justification was false)
+  - leave it open and record it (all three alternative designs; rejected — the justification was false)
   - a `Proxy` over `payload` in `runModules.ts` refusing `update`/`delete` addressed at the run's own
-    target (adjudication). Needs no assertion and no signature change, but it is runtime interception
+    target (added during design review). Needs no assertion and no signature change, but it is runtime interception
     of a framework object whose type still says `Payload`
   - hand modules a capability instead of a `Payload` — structural, and it changes
     `BeforeTranslation`, `AfterSave` and the provenance service factory
@@ -291,19 +291,19 @@ server and no credential is created or moved.
    `refuseUnlessTranslationAllowed`; keep the existing call sites. The minting function must carry an
    explicit return type, or `[approvedSource]: true` widens to `boolean` and the assertion comes back.
    Verify with the real `turbo build`, not only `check-types`. — establishes the type that makes D1
-   and D2 enforceable; unblocks 2 and 3 · covers: R1, R5 · via /sp-task · incremental
+   and D2 enforceable; unblocks 2 and 3 · covers: R1, R5 · incremental
 2. Extract the four parked concerns into `selectLeaves.ts`, `translateOrWrap.ts`,
    `reportNothingSent.ts`, `runModules.ts`, still called from the class's private methods — keeps
-   every check green at each commit; unblocks 3 · covers: R4, R8 · via /sp-task · incremental
+   every check green at each commit; unblocks 3 · covers: R4, R8 · incremental
 3. Delete the class — `translateDocument(deps, payload, input, scope)`; delete `Handler`,
    `shared/access/handler.ts` and its two barrel lines; delete `model.ts`; export `TaskHandler` and
    `TaskHandlerInput` from the task-runner barrel; drop the seven-field copy; prune the feature
-   barrel. · covers: R2, R3, R6, R7 · via /sp-task · big-bang within the package (29 construction
+   barrel. · covers: R2, R3, R6, R7 · big-bang within the package (29 construction
    sites move in one commit; a compatibility shim buys nothing for an internal rename)
-4. Close the module-seam hole, **blocked on D6's open question** · covers: R1 · via /sp-task · incremental
-5. Split lifecycle reporting out of the wire file · covers: R4 · via /sp-task · incremental
+4. Close the module-seam hole, **blocked on D6's open question** · covers: R1 · incremental
+5. Split lifecycle reporting out of the wire file · covers: R4 · incremental
 6. Move `PermissionCheckFailed` out of `features/`, so `shared/payload/__tests__/swallowOrThrow.test.ts`
-   stops importing upward across the gradient · covers: R8 · via /sp-task · incremental
+   stops importing upward across the gradient · covers: R8 · incremental
 
 **What in the test rewrite is not mechanical.** The rename at 29 sites is. What is not: `handler.test.ts`
 (five inline constructions) must be split once the four concerns are sibling files, and deciding what
@@ -337,8 +337,8 @@ None.
 - Keeping `readBothLocales` / `refuseUnlessTranslationAllowed` on the type (`max-reuse`) —
   disqualified: **SC1**; its cited justification was verified false.
 - Minting the brand with `as ApprovedSource` (`min-new-abstraction`, `max-reuse`) — disqualified by
-  the owner's binding "no type assertions to silence the checker". Both candidates flagged it
-  themselves and shipped it anyway. The runtime-`Symbol()` mint needs none.
+  the project's binding "no type assertions to silence the checker". Both designs flagged it
+  themselves and kept it anyway. The runtime-`Symbol()` mint needs none.
 - The `store/` folder (`cleanest-boundaries`) — rejected on the package's own role-folder test.
 - Seam plumbing inline in the entry (`min-new-abstraction`) — rejected: the entry would own a fifth
   concern, **ST6**.

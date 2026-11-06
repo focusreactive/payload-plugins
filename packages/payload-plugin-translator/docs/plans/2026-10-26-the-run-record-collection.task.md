@@ -39,8 +39,8 @@ this step it contributes only config modifiers, and in step 2 the write happens 
 Chosen: an option mirroring `provenance?: boolean | { slug?: string }`, defaulting to
 `translator-runs`. Lost: a fixed slug. The collection is **mandatory**, so a collision is a fatal
 config-time error with no way out; a host that already owns `translator-runs` could not install the
-plugin at all. Provenance carries the option for exactly this reason. Confirmed by the owner at the
-gate.
+plugin at all. Provenance carries the option for exactly this reason. Confirmed by the owner before
+implementation.
 
 **D3 — no port in `core/` yet.**
 Chosen: a concrete `PayloadRunRecordStore`. Lost: a port in `core/domain/runs/` mirroring
@@ -106,7 +106,7 @@ Run against the untouched tree on 2026-10-26.
 | MongoDB | 228 | 9 |
 
 The counts differ by adapter because suites skip themselves where a capability is absent; each is its
-own baseline, and Phase 5 compares like with like.
+own baseline, and verification compares like with like.
 
 ## Risk notes
 
@@ -119,11 +119,11 @@ own baseline, and Phase 5 compares like with like.
   transaction for exactly this reason (`Provenance.store.ts:141-150`); the same rule applies here,
   and it is the opposite of the write rule that arrives in step 2.
 
-## Human choices
+## Decisions by the owner
 
-- 2026-10-26 — *"В этом этапе"*: the `apps/dev` migration lands in this step rather than once at the
+- 2026-10-26 — decided by the owner: the `apps/dev` migration lands in this step rather than once at the
   end, so PostgreSQL and MongoDB are exercised before the shape is built on.
-- 2026-10-26 — *"Настраиваемый"*: the collection slug is configurable, accepting one new published
+- 2026-10-26 — decided by the owner: the collection slug is configurable, accepting one new published
   option.
 
 ## Review log

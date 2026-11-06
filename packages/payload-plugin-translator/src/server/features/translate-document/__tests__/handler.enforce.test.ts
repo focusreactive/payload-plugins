@@ -8,12 +8,11 @@ import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.
 import type { TranslateDocumentInput } from "../translateDocument.js";
 import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
 
-vi.mock("../../../../core/translation-pipeline/index.js", () => ({
-  translateContent: vi.fn().mockResolvedValue({
-    translatedData: { title: "Titel" },
-    leaves: [{ idPath: "title", answeredInFull: true }],
-  }),
-}));
+vi.mock("../../../../core/translation-pipeline/index.js", async () => {
+  const { pipelineResult } =
+    await import("../../../../core/translation-pipeline/__tests__/fixtures/pipelineResult.js");
+  return { translateContent: vi.fn().mockResolvedValue(pipelineResult({ title: "Titel" })) };
+});
 
 vi.mock("../../../shared/access/permission.js", () => ({
   rebuildRequester: vi.fn().mockResolvedValue(null),

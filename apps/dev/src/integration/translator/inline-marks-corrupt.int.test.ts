@@ -56,7 +56,6 @@ describe("a reply whose marks cannot be parsed", () => {
 
   beforeAll(async () => {
     ctx = await bootTestPayload({
-      declaresInlineMarks: true,
       collections: buildNestedCollections(),
       fake: { corrupt: "drop" },
     });

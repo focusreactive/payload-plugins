@@ -71,26 +71,57 @@ before implementation. Deprecations are tracked in
 
 ## Grouping files inside a module
 
+Three things name a file, and each answers a different question. Read together they are meant to
+tell you what a file holds before you open it.
+
+| Layer | Answers | Example |
+| ----- | ------- | ------- |
+| the folder | what role the file plays | `stages/`, `errors/`, `wire/` |
+| the filename | what it is about, and whether it is a thing or a doing | `TranslationMutator.ts` · `narrowSelection.ts` |
+| the role tag | what it plugs into outside itself | `.provider.ts`, `.stage.ts` — see the next section |
+
+### The folder names the role
+
 A module that outgrows a flat listing is split into **folders named by role**, the same vocabulary
 the client half already uses (`client/entities/translation/{api,model,ui}`), not by domain concept.
 A folder called `owed/` or `job-row/` has to be opened before it tells you anything; `model/` and
 `store/` do not.
 
-The roles that apply on the server:
-
 | Folder | Holds | Test |
 | ------ | ----- | ---- |
+| `domain/` | the rules that decide | does it decide something, reading shapes it does not define? |
+| `model/` | the same, one module or client slice down — budgets, plans, what is still owed | as above |
 | `store/` | the shape of what a framework or database stores, and the readers that turn it into ours | would it change if Payload changed its storage format? |
-| `model/` | the rules that decide — budgets, plans, what is still owed | does it decide something, reading shapes it does not define? |
+| `wire/` | the shape our values take to cross to someone else, and the reading back | would it change if the other side changed? |
+| `stages/` | translation-pipeline steps | does it have `execute(ctx)`? |
+| `errors/` | error classes, one per file — oxlint allows no more | — |
+| `types/` | shapes only | is there a single function in here? |
+| `api/` · `ui/` | client-side: talking to the server · React | — |
 | `config.ts` | the module's options and the config resolved from them | — |
 
-**The dependency runs one way: `model/` → `store/`, never back.** That is what makes the split worth
-having rather than two arbitrary piles, and it is checkable with one grep.
+**`shared/`, `utils/`, `lib/`, `helpers/` and `common/` are not roles.** A folder under one of those
+names may hold nothing but further role folders — `client/shared/ui/` is fine, because `ui` carries
+the role. A flat pile of behaviour under such a name is the defect this section exists to prevent:
+the folder stops answering, and each filename is left to carry the whole load alone.
+
+**The dependency runs one way: `model/` → `store/`, `domain/` → `wire/`, never back.** That is what
+makes the split worth having rather than two arbitrary piles, and it is checkable with one grep.
 
 Each folder carries an `index.ts`; cross-folder imports go through it, imports inside a folder and
 from a test to the unit it tests go direct. `server/modules/task-runner/payload-jobs-runner/` is the
 worked example. A module small enough to read at a glance stays flat — `sync-runner/` has four files
 and needs none of this.
+
+### The filename names the subject, its case names the shape
+
+- **`PascalCase.ts` holds a thing** — one class or one named type, exported under the file's own
+  name: `TranslationMutator.ts`, `PipelineContext.ts`, `SourceFingerprint.ts`.
+- **`camelCase.ts` holds doing** — either one function named exactly as the file
+  (`narrowSelection.ts`, `admitWork.ts`, `computeSourceFingerprint.ts`), or a few functions about
+  one subject, named for that subject (`staleness.ts`, `sections.ts`).
+
+A `camelCase.ts` whose functions are about two subjects is two files. A `PascalCase.ts` exporting
+several unrelated types is a `types.ts` in a role folder.
 
 ## File naming — role tags
 
@@ -113,7 +144,9 @@ inventing a parallel scheme.
 | Client RSC / admin boundary | `.export.tsx` · `.server.tsx` · `.client.ts` | `TranslateDocument.server.tsx` |
 
 Not everything is tagged: `index.ts` barrels, and small **pure helpers** named by topic
-(`slugGuard.ts`, `staleness.ts`) stay untagged. The tag is for role-bearing units, not every file.
+(`slugGuard.ts`, `staleness.ts`) stay untagged. The tag answers *what this file plugs into
+outside itself* — a framework, a named port, the admin boundary — so it lands on roughly one
+file in eight. Everything else is named by the section above.
 
 **Structural Payload-type slices (`.shapes.ts`).** Functions/classes must not depend on
 Payload's god types (`Config`, `CollectionConfig`, …). Define a narrow structural interface with

@@ -154,3 +154,25 @@ describe("STATE_DOT", () => {
     expect(animated).toEqual(["running"]);
   });
 });
+
+describe("a locale the run never attempted", () => {
+  it("is its own row state, not translated", () => {
+    const rows = buildTranslationStatusRows({
+      runs: [job(DocumentTranslationStatus.ABANDONED, "es")],
+    });
+
+    expect(rows[0].state).toBe("abandoned");
+  });
+
+  it("carries the run id, so the row can offer a retry", () => {
+    const rows = buildTranslationStatusRows({
+      runs: [job(DocumentTranslationStatus.ABANDONED, "es")],
+    });
+
+    expect(rows[0].jobId).toBe("job-es");
+  });
+
+  it("has a dot of its own", () => {
+    expect(STATE_DOT.abandoned).toBeDefined();
+  });
+});

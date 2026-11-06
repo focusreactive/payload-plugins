@@ -124,7 +124,7 @@ Run against the untouched tree on 2026-10-28.
 - **`apps/dev` consumes the built package.** Integration run without `turbo run build` first grades
   stale code and its numbers mean nothing.
 
-## Human choices
+## Decisions by the owner
 
 - The three comments removed from `OpenAITranslation.provider.ts` were removed by the owner on
   purpose. D4 reworks the code rather than restoring them; if a rework turns out to cost more than

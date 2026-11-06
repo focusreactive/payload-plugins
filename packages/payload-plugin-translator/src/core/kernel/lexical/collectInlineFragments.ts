@@ -15,7 +15,7 @@ import type { SerializedLexicalNode, SerializedTextNode } from "./types.js";
  * `children`. For a multi-leaf wrapper `top` is a copy holding only this leaf — pushing one
  * shared wrapper once per leaf would duplicate its whole text instead of reordering it.
  */
-export type InlineFragment = { markId: number; top: SerializedLexicalNode } & (
+export type InlineFragment = { id: number; top: SerializedLexicalNode } & (
   | { text: string; node: SerializedTextNode }
   | { text: null; node: null }
 );
@@ -24,9 +24,7 @@ export type InlineFragment = { markId: number; top: SerializedLexicalNode } & (
 type TextFragment = Extract<InlineFragment, { text: string }>;
 
 export type ContainerSkipReason =
-  /** Parsing the reply would be ambiguous — see `MARK_SHAPED`. */
-  | "mark-shaped-source"
-  /** Nothing to reorder, so marks would be pure cost — not a failure. */
+  /** Nothing to reorder, so sending segments would be pure cost — not a failure. */
   | "single-leaf"
   | "no-translatable-text"
   /**
@@ -44,9 +42,6 @@ export type InlineContainer = {
   fragments: InlineFragment[];
   skip?: ContainerSkipReason;
 };
-
-// Must stay as wide as MARK_TOKEN in ./inlineMarks — a source this misses is a reply that mis-parses.
-const MARK_SHAPED = /<\s*\/?\s*\d+\s*\/?\s*>/u;
 
 const isBlank = (text: string): boolean => text.trim().length === 0;
 
@@ -147,21 +142,19 @@ const glueWhitespace = (drafts: Draft[]): InlineFragment[] => {
       continue;
     }
 
-    const markId = fragments.length + 1;
+    const id = fragments.length + 1;
     if (draft.text === null) {
-      fragments.push({ markId, text: null, node: null, top: draft.top });
+      fragments.push({ id, text: null, node: null, top: draft.top });
       continue;
     }
 
     const text = carried.length > 0 ? carried.splice(0).join("") + draft.text : draft.text;
-    fragments.push({ markId, text, node: draft.node, top: draft.top });
+    fragments.push({ id, text, node: draft.node, top: draft.top });
   }
 
   return fragments;
 };
 
-// Ordered: an unsupported shape and an ambiguous source are correctness problems, so they outrank
-// the last two, which only decide whether marks would pay for themselves.
 const skipReasonFor = (
   drafts: Draft[],
   fragments: InlineFragment[]
@@ -170,7 +163,6 @@ const skipReasonFor = (
 
   const texts = fragments.flatMap((fragment) => (fragment.text === null ? [] : [fragment.text]));
 
-  if (texts.some((text) => MARK_SHAPED.test(text))) return "mark-shaped-source";
   if (!texts.some((text) => !isBlank(text))) return "no-translatable-text";
   if (fragments.length === 1) return "single-leaf";
   return undefined;
@@ -182,10 +174,7 @@ const skipReasonFor = (
  * A **container** is the nearest node with at least one direct text child; the walk stops there.
  * Naming no node types is deliberate — the rule holds for paragraphs, headings, list items and
  * whatever is added later. The cost: a node mixing its own inline text with a nested block is
- * treated as a container, and the block becomes content. Real Lexical trees do not mix the two.
- *
- * Fragments are numbered from 1 within each container — the container is one string, so the
- * numbering restarts.
+ * treated as a container, and the block becomes content; no node type this plugin handles does that.
  *
  * The input tree is not mutated, but a fragment's `node` may BE a source node: writing to it
  * writes into the caller's tree.

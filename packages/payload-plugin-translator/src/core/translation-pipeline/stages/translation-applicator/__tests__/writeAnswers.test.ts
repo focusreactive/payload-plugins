@@ -3,13 +3,14 @@ import type {
   PlainTextChunk,
   RichContainerChunk,
   RichTextChunk,
+  SettledAnswer,
   TextChunk,
 } from "../../../types/index.js";
 import type { InlineFragment } from "../../../../kernel/lexical/collectInlineFragments.js";
 import type { SerializedLexicalNode } from "../../../../kernel/lexical/index.js";
 import type { SerializedTextNode } from "../../../../kernel/lexical/index.js";
 import { makeIdPath } from "../../../../domain/content-projection/idPath.js";
-import { TranslationMutator } from "../TranslationMutator.js";
+import { writeAnswers } from "../writeAnswers.js";
 
 const anywhere = makeIdPath([{ kind: "key", name: "field" }]);
 
@@ -30,7 +31,7 @@ const paragraph = () => {
   const leaves = [createTextNode("a "), createTextNode("red"), createTextNode(" car")];
   const container = { type: "paragraph", children: [...leaves] } as SerializedLexicalNode;
   const fragments: InlineFragment[] = leaves.map((leaf, at) => ({
-    markId: at + 1,
+    id: at + 1,
     text: leaf.text,
     node: leaf,
     top: leaf,
@@ -40,23 +41,28 @@ const paragraph = () => {
 
 const chunkOf = (
   container: SerializedLexicalNode,
-  fragments: InlineFragment[],
-  reply?: { markId: number; text: string }[]
+  fragments: InlineFragment[]
 ): RichContainerChunk => ({
   type: "richContainer",
   idPath: anywhere,
   index: 0,
   containerRef: container,
   fragments,
-  ...(reply ? { reply } : {}),
+});
+
+const texts = (byIndex: Record<number, string>): Record<number, SettledAnswer> =>
+  Object.fromEntries(
+    Object.entries(byIndex).map(([index, text]) => [index, { kind: "text", text }])
+  ) as Record<number, SettledAnswer>;
+
+const segments = (answered: { id: number; text: string }[]): Record<number, SettledAnswer> => ({
+  0: { kind: "segments", segments: answered },
 });
 
 const textsOf = (container: SerializedLexicalNode) =>
   ((container as unknown as { children?: { text?: string }[] }).children ?? []).map((c) => c.text);
 
-describe("TranslationMutator", () => {
-  const mutator = new TranslationMutator();
-
+describe("writeAnswers", () => {
   describe("apply with PlainTextChunks", () => {
     it("mutates dataRef with translation", () => {
       const data = { title: "Hello" };
@@ -65,7 +71,7 @@ describe("TranslationMutator", () => {
       ];
       const translations = { 0: "Привет" };
 
-      mutator.apply(chunks, translations);
+      writeAnswers(chunks, texts(translations));
 
       expect(data.title).toBe("Привет");
     });
@@ -86,7 +92,7 @@ describe("TranslationMutator", () => {
       ];
       const translations = { 0: "Привет", 1: "Мир" };
 
-      mutator.apply(chunks, translations);
+      writeAnswers(chunks, texts(translations));
 
       expect(data1.title).toBe("Привет");
       expect(data2.description).toBe("Мир");
@@ -99,7 +105,7 @@ describe("TranslationMutator", () => {
       ];
       const translations = {}; // No translation for index 0
 
-      mutator.apply(chunks, translations);
+      writeAnswers(chunks, texts(translations));
 
       expect(data.title).toBe("Hello"); // Unchanged
     });
@@ -113,7 +119,7 @@ describe("TranslationMutator", () => {
       ];
       const translations = { 0: "Привет" };
 
-      mutator.apply(chunks, translations);
+      writeAnswers(chunks, texts(translations));
 
       expect(textNode.text).toBe("Привет");
     });
@@ -127,7 +133,7 @@ describe("TranslationMutator", () => {
       ];
       const translations = { 0: "Привет", 1: "Мир" };
 
-      mutator.apply(chunks, translations);
+      writeAnswers(chunks, texts(translations));
 
       expect(node1.text).toBe("Привет");
       expect(node2.text).toBe("Мир");
@@ -152,7 +158,7 @@ describe("TranslationMutator", () => {
       ];
       const translations = { 0: "Привет", 1: "Мир" };
 
-      mutator.apply(chunks, translations);
+      writeAnswers(chunks, texts(translations));
 
       expect(plainData.title).toBe("Привет");
       expect(richTextNode.text).toBe("Мир");
@@ -174,7 +180,7 @@ describe("TranslationMutator", () => {
       ];
       const translations = { 0: "Привет" }; // Only first chunk translated
 
-      mutator.apply(chunks, translations);
+      writeAnswers(chunks, texts(translations));
 
       expect(data1.title).toBe("Привет");
       expect(data2.subtitle).toBe("World"); // Unchanged
@@ -186,7 +192,7 @@ describe("TranslationMutator", () => {
       const translations = { 0: "Привет" };
 
       // Should not throw
-      expect(() => mutator.apply([], translations)).not.toThrow();
+      expect(() => writeAnswers([], texts(translations))).not.toThrow();
     });
 
     it("handles empty translations", () => {
@@ -195,7 +201,7 @@ describe("TranslationMutator", () => {
         { type: "plain", index: 0, idPath: anywhere, text: "Hello", dataRef: data, key: "title" },
       ];
 
-      mutator.apply(chunks, {});
+      writeAnswers(chunks, {});
 
       expect(data.title).toBe("Hello");
     });
@@ -207,7 +213,7 @@ describe("TranslationMutator", () => {
       ];
       const translations = { 0: "Привет" };
 
-      mutator.apply(chunks, translations);
+      writeAnswers(chunks, texts(translations));
 
       expect(data).toEqual({ title: "Привет", slug: "hello", count: 42 });
     });
@@ -216,42 +222,59 @@ describe("TranslationMutator", () => {
   describe("apply with a RichContainerChunk", () => {
     it("rebuilds children in the reply's order", () => {
       const { container, fragments } = paragraph();
-      const chunk = chunkOf(container, fragments, [
-        { markId: 1, text: "une " },
-        { markId: 3, text: "voiture " },
-        { markId: 2, text: "rouge" },
-      ]);
+      const chunk = chunkOf(container, fragments);
 
-      mutator.apply([chunk], {});
+      writeAnswers(
+        [chunk],
+        segments([
+          { id: 1, text: "une " },
+          { id: 3, text: "voiture " },
+          { id: 2, text: "rouge" },
+        ])
+      );
 
       expect(textsOf(container)).toEqual(["une ", "voiture ", "rouge"]);
     });
 
     it("drops the node of a mark that came back empty", () => {
       const { container, fragments } = paragraph();
-      const chunk = chunkOf(container, fragments, [
-        { markId: 1, text: "une voiture rouge" },
-        { markId: 2, text: "" },
-        { markId: 3, text: "" },
-      ]);
+      const chunk = chunkOf(container, fragments);
 
-      mutator.apply([chunk], {});
+      writeAnswers(
+        [chunk],
+        segments([
+          { id: 1, text: "une voiture rouge" },
+          { id: 2, text: "" },
+          { id: 3, text: "" },
+        ])
+      );
 
       expect(textsOf(container)).toEqual(["une voiture rouge"]);
     });
 
-    it("leaves the container untouched when no reply was parsed", () => {
+    it("leaves the container untouched when its answer failed", () => {
       const { container, fragments } = paragraph();
       const chunk = chunkOf(container, fragments);
 
-      mutator.apply([chunk], { 0: "<1>une </1><2>rouge</2><3> voiture</3>" });
+      writeAnswers([chunk], { 0: { kind: "failed", failure: { code: "malformed" } } });
 
       expect(textsOf(container)).toEqual(["a ", "red", " car"]);
+    });
+
+    it("stays silent about a chunk whose answer already failed, so one leaf is not named twice", () => {
+      const { container, fragments } = paragraph();
+      const chunk = chunkOf(container, fragments);
+
+      const notWritten = writeAnswers([chunk], {
+        0: { kind: "failed", failure: { code: "malformed" } },
+      });
+
+      expect(notWritten).toEqual(new Set());
     });
   });
 
   describe("what it reports back", () => {
-    it("returns the chunks it wrote, and leaves out the ones it did not", () => {
+    it("names the chunk it left unwritten, and not the one it wrote", () => {
       const data = { title: "Hello", subtitle: "World" };
       const chunks: TextChunk[] = [
         { type: "plain", index: 0, idPath: anywhere, text: "Hello", dataRef: data, key: "title" },
@@ -265,21 +288,21 @@ describe("TranslationMutator", () => {
         },
       ];
 
-      expect(mutator.apply(chunks, { 0: "Hallo" })).toEqual([chunks[0]]);
+      expect(writeAnswers(chunks, texts({ 0: "Hallo" }))).toEqual(new Set([1]));
     });
 
-    it("returns a container only once its reply has parsed", () => {
+    it("names a container that was never answered", () => {
       const { container, fragments } = paragraph();
 
-      expect(mutator.apply([chunkOf(container, fragments)], {})).toEqual([]);
+      expect(writeAnswers([chunkOf(container, fragments)], {})).toEqual(new Set([0]));
     });
 
-    it("leaves out a container it could not write into, though a reply had parsed", () => {
+    it("names a container it could not write into, though a reply had parsed", () => {
       const { fragments } = paragraph();
       const childless = { type: "paragraph", version: 1 } as SerializedLexicalNode;
-      const chunk = chunkOf(childless, fragments, [{ markId: 1, text: "Hallo " }]);
+      const chunk = chunkOf(childless, fragments);
 
-      expect(mutator.apply([chunk], {})).toEqual([]);
+      expect(writeAnswers([chunk], segments([{ id: 1, text: "Hallo " }]))).toEqual(new Set([0]));
     });
   });
 });

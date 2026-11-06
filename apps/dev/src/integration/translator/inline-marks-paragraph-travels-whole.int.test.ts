@@ -5,12 +5,8 @@ import { buildNestedCollections } from "./nestedCollections";
 import { callEndpoint } from "./callEndpoint";
 
 /**
- * The flag is on, the provider never declared it can keep marks.
- *
- * This is the gate that matters in production: a translation service that is not a language model
- * would translate or strip `<1>`, so the core must keep translating node by node whatever the
- * plugin config asks for. The evidence is the word order — per-node translation cannot change it,
- * and the fake reverses marks it never receives.
+ * The fake reverses the marks it receives, and per-node translation cannot reorder words, so a
+ * reversed order proves the paragraph travelled as one string.
  */
 
 const text = (value: string, format = 0) => ({
@@ -50,15 +46,12 @@ const textsOf = (value: unknown): (string | undefined)[] =>
       []) as Child[]
   ).map((c) => c.text);
 
-describe("a provider silent about marks", () => {
+describe("a formatted paragraph in a nested collection", () => {
   let ctx: TestPayload;
   let de: Record<string, unknown>;
 
   beforeAll(async () => {
-    ctx = await bootTestPayload({
-      declaresInlineMarks: false,
-      collections: buildNestedCollections(),
-    });
+    ctx = await bootTestPayload({ collections: buildNestedCollections() });
 
     const created = await ctx.payload.create({
       collection: "nested" as "pages",
@@ -89,8 +82,8 @@ describe("a provider silent about marks", () => {
     await ctx.cleanup();
   });
 
-  it("translates node by node, so the order is the source's", () => {
-    expect(textsOf(de.body)).toEqual(["de:one ", "de:two", "de: three"]);
+  it("receives the paragraph whole, so the reply's order is the one stored", () => {
+    expect(textsOf(de.body)).toEqual(["de: three", "de:two", "de:one "]);
   });
 
   it("translates the plain leaf as usual", () => {

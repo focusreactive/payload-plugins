@@ -45,7 +45,7 @@ through the whole of 1.x buys a future minor nothing it could not have anyway, a
 every reader of the public type a field with no legal content.
 *Constraint cited:* `resolveSettings` (`settings.ts:93`) is the only reader of
 `options.experimental`, and after this change it reads nothing from it.
-**This one is the owner's call and goes to the gate** — the ledger says the opposite, and
+**This one is the owner's call** — the ledger says the opposite, and
 a ledger entry is a recorded decision, not an oversight.
 
 **D2 — `TranslatorSettings.inlineMarks` goes too.** The resolved settings shape is read by
@@ -81,7 +81,7 @@ inlineMarks"). It is not a duplicate: :375 asserts *which path ran*, the baselin
 asserts *the exact bytes that path produces*, and the per-node path is still reachable
 three ways after this change.
 
-**Shape check:** not run — no trigger fires. No field is added to any type, no exported
+**Shape check:** not needed. No field is added to any type, no exported
 function gains a parameter, nothing optional is introduced. Every change is a deletion.
 
 **New surface:** none.
@@ -90,9 +90,9 @@ function gains a parameter, nothing optional is introduced. Every change is a de
 obligations are unchanged and already documented on `capabilities.inlineMarks`
 (`TranslationProvider.interface.ts:61`).
 
-**Escalate to a design pass?** No. The placement is settled by the step this implements,
-and D1 is the only decision with two defensible answers — which is why it goes to the gate
-rather than being taken here.
+**Does this need a separate design?** No. The placement is settled by the step this
+implements, and D1 is the only decision with two defensible answers — which is why the owner
+decides it.
 
 ## Acceptance Criteria
 
@@ -132,7 +132,7 @@ Full package baseline: `bunx vitest run` → 151 files, 2110 tests, all passing.
 
 ## Risk notes
 
-- **Risk: high**, and the classification changes what the later phases do. It is not the
+- **Risk: high**, and the classification changes how the work is verified. It is not the
   size of the diff — it is that this is the one part of step 2 that **changes what the
   plugin does**: a host with a capable provider and the flag off moves from node-by-node to
   container translation of rich text. It touches shared code (the pipeline), has multiple
@@ -152,19 +152,17 @@ Full package baseline: `bunx vitest run` → 151 files, 2110 tests, all passing.
   goes, the entry's *Scope* paragraph is edited to match, so the record does not keep
   asserting a decision that was reversed.
 
-## Human choices
+## Decisions by the owner
 
-- **2026-10-19** — the owner split step 2 in two, with this part separate "потому что это
-  единственное место с настоящим изменением поведения, и его стоит смотреть в отрыве от
-  механической уборки".
+- **2026-10-19** — step 2 is split in two, with this part separate because it is the only
+  place with a real behaviour change and deserves review apart from the mechanical cleanup.
 
-- **2026-10-19, at the gate** — D1 settled as written: `experimental` is deleted with its
+- **2026-10-19** — D1 settled as written: `experimental` is deleted with its
   only entry. The ledger's *Scope* paragraph, which said the option is permanent, is
   corrected in this change rather than left asserting a reversed decision.
-- **2026-10-19, at the gate** — the owner's uncommitted `jobs.runHooks` workaround in
-  `apps/dev/src/payload.config.ts` was reverted on their instruction ("там ничего не нужно
-  сохранять"), so this change owns that file cleanly. The reverted hunk is kept as a patch
-  at `<session scratchpad>/payload.config.runHooks.patch` in case it is wanted back.
+- **2026-10-19** — the owner's uncommitted `jobs.runHooks` workaround in
+  `apps/dev/src/payload.config.ts` was reverted, as nothing in it needed keeping, so this change
+  owns that file cleanly.
 
 ## Decisions taken during execution
 
@@ -190,16 +188,16 @@ surface by `inline-marks.int.test.ts` plus nesting, structure and corrupt (capab
 
 ### 2026-10-19 — three review angles, high risk
 
-**Angle 1, the removal itself.** No defects on the four points it was given: nothing load-bearing was
+**Angle 1, the removal itself.** No defects on the four points checked: nothing load-bearing was
 dropped at the ten threading sites, the `TranslateDocumentHandler` constructor and its one call site
 agree, the per-node path stays reachable, and nothing still reads `settings.inlineMarks` or
 `options.experimental`. Two findings:
 
 - **Accepted and fixed:** an orphaned docblock in `translate-field/model.ts` survived the field it
   described (`/** Not optional: an omitted flag would silently select per-node translation … */`).
-- **Carried to the owner:** the README still documents the removed option in four places.
+- **Left for the owner:** the README still documents the removed option in four places.
 
-**Angle 2, the tests.** No coverage lost. It confirmed D5 independently — both deleted files are
+**Angle 2, the tests.** No coverage lost. It confirmed D5 — both deleted files are
 redundant after the change and named the surviving file that covers each — and judged the
 `settings.test.ts` deletion legitimate: the removed assertions were about a field `resolveSettings`
 no longer returns. One formatting leftover, fixed with the formatter.
@@ -217,10 +215,9 @@ no longer returns. One formatting leftover, fixed with the formatter.
   key present the variable silently did nothing, where before the plugin flag applied to every
   provider. The toggle now wraps the real provider too, and its docblock says so.
 
-### 2026-10-19 — comment audit
+### 2026-10-19 — comment review
 
-Two docblocks added, no inline comments, over 19 added lines of code — density fine. Four blocks
-judged, five verdicts applied:
+Changes applied:
 
 - the sandbox toggle's docblock was over budget: history, motivation and a restatement of its own
   one-line body. Trimmed to the two facts the code cannot state — that the default is **on**, unlike
@@ -237,15 +234,12 @@ judged, five verdicts applied:
   `TranslationProvider.interface.ts` said the core keeps translating node by node "whatever the
   plugin config says". There is no plugin config any more. Corrected.
 
-One of the auditor's entries was stale on arrival: it reported that the toggle reaches only the fake
-provider, which angle 3 had already found and which was fixed between the two runs.
+### Checks
 
-### Gates
-
-- `sp-lint-delta` — no findings introduced, over 457 lines of analyzer output.
-- `sp-diff-checks` — **one FAIL, examined and accepted**: `test-integrity` reports "2 assertion
+- Lint: no findings introduced.
+- The diff check — **one failure, examined and accepted**: `test-integrity` reports "2 assertion
   line(s) removed from `settings.test.ts` with none added back". Both assertions were about
   `resolveSettings(...).inlineMarks`, a field this change deletes; the remaining settings keep their
-  assertions, and angle 2 reached the same verdict independently. The gate is right to demand the
+  assertions, and angle 2 reached the same verdict independently. The check is right to demand the
   justification rather than let a hollowed-out test pass quietly — it is recorded here rather than
   silenced.

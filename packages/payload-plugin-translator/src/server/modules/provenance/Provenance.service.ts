@@ -36,12 +36,12 @@ export type LocaleStaleness = {
  * translated. A half-answered one has source text seated in its target, so no hash describes it.
  */
 function claimToRecord(
-  answeredInFull: boolean | undefined,
+  answered: boolean | undefined,
   hash: SourceHash,
   alreadyClaimed: RecordedClaim | undefined
 ): RecordedClaim {
-  if (answeredInFull === undefined) return alreadyClaimed ?? UNANSWERED;
-  return answeredInFull ? hash : UNANSWERED;
+  if (answered === undefined) return alreadyClaimed ?? UNANSWERED;
+  return answered ? hash : UNANSWERED;
 }
 
 /**
@@ -125,7 +125,7 @@ export class ProvenanceService {
       async () => {
         const previous = await this.readFingerprintOrThrow(key);
         const alreadyClaimed = previous ?? {};
-        const sent = new Map(leaves.map((leaf) => [String(leaf.idPath), leaf.answeredInFull]));
+        const sent = new Map(leaves.map((leaf) => [String(leaf.idPath), leaf.answered]));
         const hashes: Record<string, RecordedClaim> = {};
         for (const [address, hash] of Object.entries(currentFields)) {
           hashes[address] = claimToRecord(sent.get(address), hash, alreadyClaimed[address]);

@@ -81,7 +81,6 @@ describe("container mode reaches rich text at every nesting depth", () => {
 
   beforeAll(async () => {
     ctx = await bootTestPayload({
-      declaresInlineMarks: true,
       collections: buildNestedCollections(),
     });
 

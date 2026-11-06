@@ -90,10 +90,3 @@ export const translateField = async (
   }
   return piecesOf(reply.value);
 };
-
-/** What every fall-back path returns here: the source order, each fragment translated in place. */
-export const SOURCE_ORDER: [string, number][] = [
-  ["de:a ", UNFORMATTED],
-  ["de:red", BOLD],
-  ["de: car", UNFORMATTED],
-];

@@ -41,7 +41,7 @@ describe("a run that spends its attempts across more than one locale", () => {
     await ctx?.cleanup();
   });
 
-  it("reports the locale it abandoned, not only the one that spent its own budget", async () => {
+  it("reports the locale that spent the run's attempts, even when another locale was delivered first", async () => {
     const made = await ctx.payload.create({
       collection: "docs",
       locale: "en",

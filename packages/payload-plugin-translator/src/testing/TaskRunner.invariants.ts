@@ -90,7 +90,6 @@ export function assertTaskRunnerContract(
   describe(name, () => {
     let runner: TaskRunner;
     let reported: Reported[] = [];
-    // A real database keeps what earlier checks queued.
     let checkNumber = 0;
     const documentForThisCheck = (n: number): string => `doc-${checkNumber}-${n}`;
 

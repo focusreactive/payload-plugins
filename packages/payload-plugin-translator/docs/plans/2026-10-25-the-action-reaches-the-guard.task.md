@@ -63,7 +63,7 @@ so the prefix is a constant repeated nine times. The package has no precedent fo
 **Constraint cited:** D8 fixes the union at the nine route actions and makes it plugin-owned and
 closed; the naming idiom is `src/types/TargetSelection.ts`.
 
-### D2 — where the strict reading lives  *(settled at the gate)*
+### D2 — where the strict reading lives  *(settled before implementation)*
 
 The answer must be read strictly in **three** places, not one: `withAccessCheck` and both widgets,
 which today each write their own `if (!hasAccess)` with no `catch`.
@@ -79,7 +79,7 @@ page render. Two readings of one answer is the drift this step exists to remove.
 **Constraint cited:** the probe above — the current widget code is `if (!hasAccess) return null` with
 no `catch`, measured at `TranslateDocument.server.tsx:19` and `BulkTranslationDashboard.server.tsx:18`.
 
-### D3 — what the two widgets pass  *(settled at the gate)*
+### D3 — what the two widgets pass  *(settled before implementation)*
 
 **Chosen — both pass `"enqueue"`**: it is the action each widget's primary control performs, so a
 host that hides enqueueing from a user also stops rendering the control that offers it.
@@ -91,7 +91,7 @@ actions*; a widget is not a route, and two UI-only members would make the union 
 start bulk translations; gating the whole widget on the read would leave it visible to someone who may
 never use it.
 
-### D4 — the dead second copy of `AccessGuard`  *(settled at the gate)*
+### D4 — the dead second copy of `AccessGuard`  *(settled before implementation)*
 
 `src/client/shared/types/AccessGuard.ts` declares `AccessGuard` and `AccessGuardRequest` a second
 time. **Measured: zero importers** — all four widget files import the root `src/types/AccessGuard.js`.
@@ -127,7 +127,7 @@ Adopted from the design's **D7** without re-litigation: fail closed on throw, st
 timeout**. The refusal is a `403`, and the original error is surfaced through the existing
 `console.error` channel so a host can still find a broken guard.
 
-### D7 — a framework navigation signal is not an answer *(added in Phase 5, after review)*
+### D7 — a framework navigation signal is not an answer *(added after review)*
 
 **Found in review, and it was a regression this step introduced.** Before this change neither widget
 caught anything, so a guard calling Next's `redirect()` or `notFound()` propagated and the navigation
@@ -148,7 +148,7 @@ places, which is what D2 was decided to avoid.
 exactly what *every* guard throw did before this step (measured in the pre-flight: `{"kind":"escaped"}`).
 So the narrow class is no worse than the baseline, and the broad class is now caught where it was not.
 
-### D8 — the asker is not generic *(corrected in Phase 5, after review)*
+### D8 — the asker is not generic *(corrected after review)*
 
 The first implementation declared `askTheGuard<R extends AccessGuardRequest>(…)`, justified as
 "so the host's guard still sees the caller's own request type". **That justification was wrong**, and
@@ -199,14 +199,13 @@ since 0.14.0) and the single chokepoint every HTTP route passes through.
 - **A guard returning a non-boolean today silently allows.** After this step it silently refuses. That
   is the intended direction, but it can turn a working host deployment into a 403, so it must be in
   the same release note.
-- **Three review angles are required** in Phase 5b, and a test is required before done.
+- **Three independent review angles are required**, and a test is required before done.
 - **The regression sweep is mandatory and evidenced**: it must name what was grepped and how many call
   sites were read.
 
-## Human choices
+## Decisions by the owner
 
-**2026-10-25, at the gate.** All three questions were put with a recommendation, and all three
-recommendations were taken.
+**2026-10-25.** Three decisions by the owner, each taking the recommended option.
 
 1. **One shared asker** (D2). `askTheGuard(access, req, action)` holds the strict `=== true` and the
    throw-is-refusal rule once, for the route wrapper and both widgets. The alternative — strictness in
@@ -221,12 +220,8 @@ recommendations were taken.
 
 ## Review log
 
-**2026-10-25 — comment audit (closing Phase 3).** 10 candidate blocks, 10 verdicts: 4 KEEP (the three
-compile-time pins, whose comments *are* the pin names, and the "written out, not derived" note in the
-union's type test), 5 REWRITE-COMMENT, 1 DELETE. The three docblocks it cut hardest were the new ones:
-`askTheGuard` 9 lines → 2, `TranslatorAction` 10 → 4, `AccessGuard.check` 8 → 3.
-
-Two of its cuts were substantive rather than stylistic:
+**2026-10-25 — comment review.** The new docblocks were shortened (`askTheGuard`, `TranslatorAction`,
+`AccessGuard.check`). Two of the changes were substantive rather than stylistic:
 - `{@link AccessGuard}` in `TranslatorAction.ts` had **no referent** — that file imports nothing, and
   adding a type-only import would have created a cycle, since `AccessGuard.ts` imports it. Replaced
   with backticks.
@@ -234,19 +229,15 @@ Two of its cuts were substantive rather than stylistic:
   answer now also hides the admin widgets. Both that docblock and the interface's own headline
   ("Gate for the translation API endpoints") were corrected to say so.
 
-It also raised three things outside its own remit, two of which were real and are fixed: `as never`
-casts in the new widget fixtures (the owner's rule forbids them — replaced with named
+The same review found two further defects, both fixed: `as never`
+casts in the new widget fixtures (the project rule forbids them — replaced with named
 `as unknown as <Props>` casts) and a `console.error` spy restored in the test body rather than in
-`afterEach`, so a failing assertion would have leaked it. The third led to D8 below.
+`afterEach`, so a failing assertion would have leaked it. A third finding led to D8 above.
 
-**2026-10-25 — Phase 5b, three independent angles**, run because the Risk notes classify this high
-risk: it changes a published, required interface.
-
-| Angle | Asked to break | Outcome |
-|---|---|---|
-| the published contract | every host implementer shape; the generic; strictness; the throw path | additive as claimed; **one unrecorded regression found** (R1) |
-| the tests | mock interception, revert-sensitivity, shared spies, compile-time checks | no toothless check; **one real gap** (R2) |
-| shape and placement | cycles, barrels, the `client/ → server/` edge, the published surface | no cycle; **barrel surplus found** (R3); the generic disproved (D8) |
+**2026-10-25 — review from three independent angles** (the published contract, the tests, shape and
+placement), run because the Risk notes classify this high risk: it changes a published, required
+interface. No cycle was found, and the host-facing change is additive as claimed; the findings below
+changed the code.
 
 ### R1 — a framework navigation signal was being swallowed (found, fixed; now D7)
 
@@ -265,7 +256,7 @@ positive case only inspected the guard call. Added "renders something when allow
 
 ### R3 — the change added four barrel re-exports with no importers (found, fixed)
 
-The package's `CLAUDE.md` makes this mechanical: find the files importing the barrel, collect the
+The package's barrel convention makes this mechanical: find the files importing the barrel, collect the
 names, subtract. `TranslatorAction` had been added to three barrels and `askTheGuard` to one, and
 nothing imported any of them through a barrel — both widgets and `withAccessCheck` import by path.
 All four removed. The published re-export from `src/index.ts` stays: a host writing a per-action
@@ -281,8 +272,8 @@ policy table needs to name the type, and the alternative is
   now refuses where it allowed; a guard that throws now refuses where it escaped; and the deep import
   `@focus-reactive/payload-plugin-translator/client/shared/types/AccessGuard`, undocumented but
   resolvable through the `./client/*` export, stops resolving. `README.md`'s "Access control" section
-  still says only "Return `false` and the request is rejected" — the README is the owner's, so the
-  text is proposed rather than written. Step #10.
+  still says only "Return `false` and the request is rejected"; its update is owed with the release
+  note. Step #10.
 - **The union's naming is not uniform** — `enqueue`/`run`/`cancel` are verbs, `document-status`/
   `collection-status`/`document-staleness` are noun phrases, and `dismiss-staleness`/`translate-field`
   are verb-plus-object. A host cannot guess a tenth name from the pattern. The names are settled (D1,
@@ -294,7 +285,7 @@ policy table needs to name the type, and the alternative is
 up from 193 / 2502 by exactly +3 files and +21 checks (5 asker + 1 navigation signal + 2 wrapper +
 10 widget + 2 type + 1 from the per-source-file throw test, since `askTheGuard.ts` is a new file under
 `src/server`) · real `turbo build` green, forced and uncached · integration **225 passed / 8 skipped**,
-unchanged · `sp-diff-checks` clean · `sp-lint-delta` introduced nothing.
+unchanged · lint introduced nothing new.
 
 **Out of scope and not caused here:** `apps/dev`'s own `build` script fails on a `SeoFieldPaths`
 mismatch from `packages/payload-plugin-seo` and a vitest config overload. Both files are untouched by

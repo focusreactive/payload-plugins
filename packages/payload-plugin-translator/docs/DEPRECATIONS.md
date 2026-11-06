@@ -130,21 +130,24 @@ the single source of truth — code annotations link here by anchor instead of d
 
 - **What:** `TranslationProvider.translate(input, sourceLng, targetLng, options?)` — the two language
   codes as adjacent positional strings, with everything else in a trailing optional bag.
-- **Status:** planned
-- **Deprecated:** not yet annotated — agreed 2026-10-15 while implementing #109.
-- **Replacement:** `translate(input, ctx)`, one object carrying the languages, the document and the
-  switches. `ctx` is **not** optional, so the document is required outright — today it is required
-  inside an optional parameter, which is as close to the truth as the current signature allows.
-- **Remove in:** next major
+- **Status:** removed
+- **Deprecated:** not annotated — agreed 2026-10-15 while implementing #109.
+- **Removed:** 2026-10-29, with the port's signature (step 2 of
+  `plans/2026-10-28-the-provider-port.design.md`). The entry was not updated at the time; the code
+  had already gone.
+- **Replacement:** `translate(input, request)`, one object carrying both language codes and the
+  document. It is not optional, so the document is required outright — under the old signature it
+  was required inside an optional parameter, which was as close to the truth as that shape allowed.
 - **Why:** two adjacent parameters of the same type can be swapped silently, and no test catches it.
   The trailing bag then forced a second mistake: `collection` and `documentId` arrived as *options*
   beside `inlineMarks`, mixing what is being translated with how. #109 fixed the second half by
   grouping them as `document: DocumentRef`; the first half cannot be fixed without breaking the
   signature.
 - **Migration:** mechanical, and narrower than it looks. The path the README recommends —
-  `createTranslationProvider({ complete })` — is unaffected: `CompletionFn` already takes a single
-  `CompletionRequest` object. Only a host that implements `TranslationProvider.translate` by hand has
-  to change, and `TranslationRequestOptions` disappears into `ctx` rather than being removed.
+  `createTranslationProvider({ askModel })` — is unaffected: `AskModel` already takes a single
+  `ModelRequest` object. Only a host that implements `TranslationProvider.translate` by hand has
+  to change. `TranslationRequestOptions` is gone: its `document` half is on `TranslationRequest`;
+  `inlineMarks` left with the experimental option.
 - **Note:** `docs/plans/2026-08-21-translation-mechanism-kernel-extraction.md` reshapes this port
   anyway. Doing it before that lands would be the same work twice, which is why it waits.
 
@@ -230,24 +233,29 @@ the single source of truth — code annotations link here by anchor instead of d
 ### openai-translation-provider-class
 
 - **What:** `OpenAITranslationProvider` class.
-- **Status:** live (already `@deprecated` in code)
+- **Status:** removed
 - **Deprecated:** pre-ledger
-- **Replacement:** `createOpenAIProvider()` factory.
-- **Remove in:** next major
-- **Code refs:** `src/translation-providers/openai/OpenAITranslationLegacy.provider.ts`
+- **Removed:** 2026-11-01, with the deprecation sweep (step 6 of
+  `plans/2026-10-28-the-provider-port.design.md`).
+- **Replacement:** the class delegated to `createOpenAIProvider`, which was removed in the same
+  step — so the replacement is the one that entry gives: construct the client yourself and pass it
+  to `askOpenAI`. See [openai-client-construction](#openai-client-construction).
+- **Code refs (at removal):** `src/translation-providers/openai/OpenAITranslationLegacy.provider.ts`
 
 ### provider-dry-run
 
 - **What:** the `dryRun` option on `TranslationProviderConfig` and `OpenAIProviderConfig`, and with
   it the exported `DryRunConfig` / `DryRunTransformer` types.
-- **Status:** live
+- **Status:** removed
 - **Deprecated:** 2026-08-28 / PR #101
+- **Removed:** 2026-10-30, with the provider port's segments (step 4 of
+  `plans/2026-10-28-the-provider-port.design.md`): the option could not read segments, and teaching
+  it to would have kept alive what this entry already scheduled for removal.
 - **Replacement:** supply your own fake request function —
-  `createTranslationProvider({ complete })`, or `createOpenAIProvider({ client })` with a stub
-  client. Both reach no network and need no API key. The README carries the recipe; the package
+  `createTranslationProvider({ askModel })`, which reaches no network and needs no API key. The
+  README carries the recipe; the package
   deliberately does **not** ship a ready-made fake, because that would be this option again under a
   new name.
-- **Remove in:** next major
 - **Why:** the name promises a rehearsal the option cannot deliver. It lives on the provider, so it
   can only skip the network call. Everything downstream runs as in a real translation: the
   transformed strings are written to the target locale, published when `publishOnTranslation` is
@@ -263,7 +271,7 @@ the single source of truth — code annotations link here by anchor instead of d
 
   Known wart, left as is for the same reason: the built-in transformer reverses by UTF-16 code unit
   (`split("")`), so text outside the basic plane comes back mangled.
-- **Code refs:** `src/translation-providers/shared/runDryRun.ts`,
+- **Code refs (at removal):** `src/translation-providers/shared/runDryRun.ts`,
   `src/translation-providers/shared/CompletionProvider.provider.ts`,
   `src/translation-providers/openai/OpenAITranslation.provider.ts`
 
@@ -273,18 +281,22 @@ the single source of truth — code annotations link here by anchor instead of d
   `OpenAIProviderConfig`, the `loadOpenAIClient` module behind them, and the already-deprecated
   `OpenAITranslationProvider` class that delegates to `createOpenAIProvider`. The `openai` entry in
   `optionalDependencies` goes with them.
-- **Status:** live
+- **Status:** removed
 - **Deprecated:** 2026-08-28 / PR #101
-- **Replacement:** construct the client yourself and hand it to `openAIComplete`, which stays:
+- **Removed:** 2026-11-01, with the deprecation sweep (step 6 of
+  `plans/2026-10-28-the-provider-port.design.md`). `openai` moved to `devDependencies` rather than
+  leaving the package.json: `__tests__/OpenAI.shapes.test.ts` imports the SDK **type** to assert
+  that `OpenAIClientShape` still accepts a real client, and the build excludes `__tests__`, so
+  nothing reaches `dist` and no consumer installs it.
+- **Replacement:** construct the client yourself and hand it to `askOpenAI`, which stays:
 
   ```ts
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 60_000 });
 
   translationProvider: createTranslationProvider({
-    complete: openAIComplete({ client, model: "gpt-4o" }),
+    askModel: askOpenAI({ client, params: { model: "gpt-4o" } }),
   }),
   ```
-- **Remove in:** next major
 - **Why:** what makes this layer expensive is not knowing how to call OpenAI — it is carrying the
   SDK as an *optional* dependency of ours. `loadOpenAIClient` imports it through a module-level
   specifier constant because deployment file-tracers resolve `import()` statically and silently
@@ -294,15 +306,48 @@ the single source of truth — code annotations link here by anchor instead of d
   consumer may not have can be absent safely. A consumer who imports the SDK they already chose
   needs none of it, and gains their own SDK version.
 
-  **What is *not* deprecated, and why the first cut of this entry was wrong:** `openAIComplete`,
+  **What is *not* deprecated, and why the first cut of this entry was wrong:** `askOpenAI`,
   `OpenAIClientShape` and the `OpenAI.shapes.ts` types stay. They carry vendor *knowledge* with no
-  vendor *dependency* — `OpenAI.shapes.ts` bans the import in its first line, and `openAIComplete`
+  vendor *dependency* — `OpenAI.shapes.ts` bans the import in its first line, and `askOpenAI`
   never names the package, taking a structural client slice instead. Deprecating them would have
   handed every consumer the request body, the envelope choice and the schema-rejection advice to
   maintain themselves, which is the opposite of the point.
-- **Code refs:** `src/translation-providers/openai/OpenAITranslation.provider.ts`,
+- **Code refs (at removal):** `src/translation-providers/openai/OpenAITranslation.provider.ts`,
   `src/translation-providers/openai/loadOpenAIClient.ts`,
   `src/translation-providers/openai/OpenAITranslationLegacy.provider.ts`
+
+### the-completion-vocabulary
+
+- **What:** the word "completion" across the provider surface — the `complete` key on
+  `TranslationProviderConfig`, the types `CompletionFn` and `CompletionRequest`, the OpenAI adapter
+  `openAIComplete`, and `OpenAISamplingParams` with the `model` / `sampling` argument pair it
+  belonged to.
+- **Status:** removed
+- **Deprecated:** not annotated — agreed and removed in one step, while the major was still
+  unreleased and the rename was free.
+- **Removed:** 2026-11-01, with step 7 of
+  [the provider port](./plans/2026-10-28-the-provider-port.design.md).
+- **Replacement:** `askModel`, `AskModel`, `ModelRequest`, `askOpenAI`, and one `params` object
+  carrying the whole OpenAI request body:
+
+  ```ts
+  translationProvider: createTranslationProvider({
+    askModel: askOpenAI({ client, params: { model: "gpt-4o", temperature: 0 } }),
+  }),
+  ```
+- **Why:** "completion" is a vendor word for a different API shape than the one this package calls,
+  and it said nothing about what the function does — it asks a language model one question and
+  returns the reply as text. Separately, `model` and `sampling` were two shapes for one request
+  body, split by how the adapter happened to use them rather than by anything the caller could see;
+  `sampling` was also a hand-curated list of four fields, so a fifth needed a code change here.
+  `OpenAIParams` is now derived as the body minus the two fields the plugin fills in (`messages`,
+  `response_format`), so the caller owns everything else.
+- **Migration:** mechanical and compile-time — every removed name fails the type-check at its call
+  site. `complete:` becomes `askModel:`; `openAIComplete({ client, model, sampling })` becomes
+  `askOpenAI({ client, params: { model, ...sampling } })`. A host that implements the ask function
+  by hand changes only the type's name; its shape is unchanged.
+- **Code refs (at removal):** `src/translation-providers/shared/CompletionProvider.provider.ts`,
+  `src/translation-providers/openai/openAIComplete.ts`
 
 ### experimental-inline-marks
 
@@ -310,6 +355,11 @@ the single source of truth — code annotations link here by anchor instead of d
 - **Status:** removed
 - **Deprecated:** 2026-09-11 / PR #139 (issue #134)
 - **Removed:** 2026-10-19 / PR #186
+- **Superseded by the provider-port design** (D2, D11 of
+  `plans/2026-10-28-the-provider-port.design.md`): `capabilities` is gone too. Every provider now
+  receives rich text by container; the per-node path is only the fallback for a container that
+  cannot be sent with marks, and a reply that cannot be used leaves the container in its source
+  language with the reason logged. The bullets below describe the state at the flag's removal.
 - **Replacement:** none for the host. What used to be two conditions is now one: a provider that
   declares `capabilities.inlineMarks` gets container-granular rich text, and one that does not keeps
   translating node by node. Nothing is configured.
@@ -379,11 +429,48 @@ the single source of truth — code annotations link here by anchor instead of d
   one as "this translation is dead", was reading a signal that did not mean that. Silently making it
   mean that is the fix, but an install that disabled retries *because* of the old behaviour should
   know it can turn them back on.
-- **What else moved with it:** a locale the run never reached is now reported too, with the error
-  that ended the run rather than one of its own — nothing ran for it to throw.
+- **What else moved with it:** a locale the run never reached started being reported too, with the
+  error that ended the run rather than one of its own. That stop-gap is itself superseded — see
+  [`on-failed-only-for-what-was-tried`](#on-failed-only-for-what-was-tried).
 - **Code refs:**
   - `src/server/features/translate-document/wireTranslateRunner.ts` (turns a reported event into a callback)
   - `src/server/modules/task-runner/payload-jobs-runner/model/owedIfGaveUp.ts` (when a run has stopped for good)
+  - `src/server/modules/lifecycle/types.ts` (`TranslationLifecycleCallbacks`)
+
+### on-failed-only-for-what-was-tried
+
+- **What:** `lifecycle.onFailed` firing for a target locale the run never attempted, carrying the
+  error that ended a *different* locale.
+- **Status:** removed (behaviour change, not an annotated symbol)
+- **Removed:** 2026-11-02, with step 9 of
+  [the provider port](./plans/2026-10-28-the-provider-port.design.md).
+- **Replacement:** `lifecycle.onAbandoned`, fired once per locale the run gave up before reaching.
+  It takes the task and no error, because none of them is its own:
+
+  ```ts
+  lifecycle: {
+    onFailed: (task, error) => report(task, error),  // tried, and it broke
+    onAbandoned: (task) => reschedule(task),         // never tried; nothing to report
+  },
+  ```
+- **Why:** a run walks a document's locales in order and stops at the one that throws. The locales
+  after it never start, and reporting them as failures told a person two untrue things at once —
+  that more translations failed than did, and that each failed for a reason that was in fact
+  another locale's. The same untruth reached a host counting failures, alerting on them, or
+  retrying from the callback.
+- **This break is silent, and that is the reason it is listed.** Nothing stops compiling. A host
+  that counted every unfinished locale through `onFailed` alone keeps building and quietly stops
+  hearing about the abandoned ones. Add `onAbandoned` wherever `onFailed` was used to mean "this
+  locale will not be translated".
+- **What else changed with it:** the run record stores `outcome: "abandoned"` with no error, the
+  status route answers `abandoned`, and the admin's per-locale list shows such a row as
+  "Not attempted" — with its Retry action, which is what a person looking at one wants. The
+  collection-wide progress counts do **not** yet carry it; they still report only queued, running
+  and recently failed work.
+- **Code refs:**
+  - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsRunnerProvider.ts` (which ending each owed locale gets)
+  - `src/server/modules/task-runner/types.ts` (`TaskEvent`, `TaskStatus`)
+  - `src/server/features/translate-document/wireTranslateRunner.ts` (turns a reported event into a callback)
   - `src/server/modules/lifecycle/types.ts` (`TranslationLifecycleCallbacks`)
 
 ### runner-create-takes-the-context

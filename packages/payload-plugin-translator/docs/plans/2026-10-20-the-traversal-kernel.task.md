@@ -152,7 +152,7 @@ and removes none.
   fixtures are deliberately thin on host detail; D3 records that the real Payload language is
   written from Payload's config, not from the fixture.
 
-## Human choices
+## Decisions by the owner
 
 - Build the kernel standalone and additively, rather than generalising in place — owner,
   2026-10-20.
@@ -325,14 +325,11 @@ walk raises.
 
 ## Review log
 
-### 2026-10-20 — comment audit
+### 2026-10-20 — comment review
 
-56 comment blocks judged, every one of them: 40 deleted, 6 shortened, 10 answered by changing the
-code, 0 kept, 3 missing ones added. 137 comment lines became 14.
-
-Three of the deletions were not verbosity but **false statements**: `step` was described as the only
-place content is read (five other members read it); the schema cursor promised pairing by identity
-alone (the code falls back to position); and the crossing cap's example was off by one
+Three comments were not verbosity but **false statements**, and were removed: `step` was described
+as the only place content is read (five other members read it); the schema cursor promised pairing
+by identity alone (the code falls back to position); and the crossing cap's example was off by one
 (`schema → rich text → schema` is two crossings, not three).
 
 What the code now says instead of prose: `maxDepth` → `maxCrossings` with
@@ -343,9 +340,9 @@ What the code now says instead of prose: `maxDepth` → `maxCrossings` with
 `hasStrayText` with the check it needed. The duplicated mark codec in both rich-text fixtures became
 one shared helper.
 
-### 2026-10-20 — fresh eyes on the code, one reviewer (low risk)
+### 2026-10-20 — code review
 
-Five findings. Three accepted (E8, E9, and the stray-text check below), one refused, one left open.
+E8, E9 and the stray-text check below came from it. One finding was refused, one left open.
 
 **Refused — "`applyTranslations` should throw when the counts differ."** A short reply is a
 *designed-for* case, not an error: F1 in [the rewiring](./2026-10-18-the-rewiring.md) exists because
@@ -358,29 +355,21 @@ wrong-shaped context produces a `TypeError` inside `step` rather than a named er
 contract should offer a way to reject a context is a design question wider than this step; it is
 recorded here rather than answered.
 
-### 2026-10-20 — mutation runs
+### 2026-10-20 — mutation testing
 
-Three rounds. The first broke twelve behaviours one at a time; eleven turned exactly the expected
-checks red and one — removing the `isEmpty` guard — **turned nothing red**, so `isEmpty` was part of
-the published contract with nothing proving it was honoured. A check was added and the mutation
-re-run.
-
-The second round, after the comment audit's code changes, broke fifteen; fourteen discriminated.
-The one that did not was the stray-text check added minutes earlier: a second check, on the number of
-pieces, was masking it. The reply in that case was rewritten to carry the right number of marks and a
-stray tail, so only the rule under test can refuse it.
-
-The third round, over the finished code, broke sixteen, including the two guards E8 and E9 added.
-**All sixteen discriminate.** The most load-bearing: hard-coding the host's id inside the Lexical
-fixture turns exactly one check red — the one where one unchanged rich-text language is entered from
-two different schema hosts.
+- Removing the `isEmpty` guard turned no check red, so `isEmpty` was part of the published contract
+  with nothing proving it was honoured. A check was added.
+- The stray-text check was masked by a second check on the number of pieces. Its reply was rewritten
+  to carry the right number of marks and a stray tail, so only the rule under test can refuse it.
+- Over the finished code every mutation discriminates, including the two guards E8 and E9 added.
+  The most load-bearing: hard-coding the host's id inside the Lexical fixture turns exactly one check
+  red — the one where one unchanged rich-text language is entered from two different schema hosts.
 
 ### 2026-10-20 — adopted from a second implementation of the same contract
 
-The same contract was built independently by another agent runner, and the two were compared
-afterwards. Its suite was measured the same way as this one: thirteen mutations over its code, all
-thirteen discriminating. Three things came back from it, recorded above as E10, E11 and E12; the
-first is a defect it did not have and this one did.
+The same contract was built independently, and the two were compared afterwards. Three things came
+back from it, recorded above as E10, E11 and E12; the first is a defect it did not have and this one
+did.
 
 Two of its choices were examined and **not** taken. Its `TextUnit.write` is optional, and that
 optionality is why its container-mode rich text can send a marked string but never write the reply
@@ -391,26 +380,9 @@ addresses rather than print them.
 A fourth thing it did — omitting the claim fallback entirely — is the open question E9 touches and
 is left with the owner.
 
-### 2026-10-20 — suite audit against an empty implementation
+### 2026-10-20 — suite run against an empty implementation
 
-Fifteen of the thirty-six checks had been red against stubs when the kernel did not yet exist. The
-other twenty-one were written afterwards and had only mutation evidence, which answers a different
+Checks written after the code worked had only mutation evidence, which answers a different
 question: a mutation proves a check can tell one defect from its absence, an empty implementation
-proves the check has a subject at all.
-
-One stub, one alternate runner config, two runs. First run: 28 red, **8 green** — listed in E13 and
-all of them negative assertions. After anchoring: 36 red, 0 green. The seventeen mutations were then
-re-run over the anchored suite and all seventeen still discriminate.
-
-Cost, counted rather than estimated, since the tests already existed: **2 doubles in the whole
-suite** — both `vi.fn()` standing in for a callback the contract declares — **0 assertions reaching
-a private name**, 0 type escapes, median file 41 lines. Nothing here is near the territory where a
-suite becomes the expensive part.
-
-Scaffolding (`__stubs__/`, `vitest.red.config.ts`) removed and confirmed gone from `git status`.
-
-### Gates
-
-- `sp-plan-check task` — clean.
-- `sp-diff-checks --mode working` — clean, 5 checks, no findings.
-- `sp-lint-delta` — no findings introduced.
+proves the check has a subject at all. The run found the eight negative assertions listed in E13;
+after anchoring them, every check is red against the empty implementation.

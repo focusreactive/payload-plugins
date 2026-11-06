@@ -1,19 +1,23 @@
 import { markFailureReason } from "../../core/errors/failureReason.js";
 import { isObject } from "../../core/kernel/utils/isObject.js";
-import type { CompletionFn } from "../shared/index.js";
+import type { AskModel, JsonSchemaObject } from "../shared/index.js";
 import { errorMessageLower, NoContentError, ProviderConfigurationError } from "../shared/index.js";
-import type { OpenAIChatParams, OpenAIChatResult, OpenAIClientShape } from "./OpenAI.shapes.js";
+import type {
+  OpenAIChatParams,
+  OpenAIChatResult,
+  OpenAIClientShape,
+  OpenAIResponseFormat,
+} from "./OpenAI.shapes.js";
 
 /**
- * Sampling parameters. Omitted from the request entirely unless set — several models reject them.
- * Unset means the model's own defaults; pass `{ temperature: 0 }` for deterministic output.
+ * OpenAI's request body, minus what {@link askOpenAI} fills in.
  *
- * @since 0.11.0
+ * Nothing is defaulted here: several models reject sampling parameters outright, so an unset field
+ * is left out of the request.
+ *
+ * @since 1.0.0
  */
-export type OpenAISamplingParams = Pick<
-  OpenAIChatParams,
-  "temperature" | "top_p" | "frequency_penalty" | "presence_penalty"
->;
+export type OpenAIParams = Omit<OpenAIChatParams, "messages" | "response_format">;
 
 /**
  * Which structured-output envelope to send.
@@ -46,12 +50,12 @@ function classifySchemaRejection(cause: unknown): SchemaRejection | null {
 
   if (!text.includes("response_format") && !text.includes("json_schema")) return null;
 
-  // "…'response_format' of type 'json_schema' is not supported with this model."
+  // Observed 2026-09: "…'response_format' of type 'json_schema' is not supported with this model."
   if (text.includes("not supported") || text.includes("unsupported")) {
     return "model-does-not-support";
   }
 
-  // "Invalid schema for response_format 'translation': object has too many properties."
+  // Observed 2026-09: "Invalid schema for response_format 'translation': object has too many properties."
   if (text.includes("invalid schema")) return "schema-rejected";
 
   return null;
@@ -73,77 +77,86 @@ function isModelAccessFailure(cause: unknown): boolean {
   return text !== null && text.includes(MODEL_ACCESS_PHRASE);
 }
 
+type ActionableFailure = "model-unavailable" | SchemaRejection;
+
+const ADVICE: Record<ActionableFailure, (model: string) => string> = {
+  "model-unavailable": (model) =>
+    markFailureReason(
+      "model-unavailable",
+      `The model "${model}" is not available to this API key. Pass a \`model\` your key can use in \`params\`.`
+    ),
+  "model-does-not-support": (model) =>
+    `The model "${model}" does not support the json_schema response format. Pass structuredOutput: "json_object", or choose a model that supports structured outputs.`,
+  "schema-rejected": () =>
+    'OpenAI rejected the generated response schema. This usually means the document has more translatable fields than a strict schema allows. Pass structuredOutput: "json_object", or translate a smaller subtree.',
+};
+
+function responseFormatFor(
+  structuredOutput: OpenAIStructuredOutput,
+  responseSchema: JsonSchemaObject
+): OpenAIResponseFormat {
+  if (structuredOutput === "json_object") return { type: "json_object" };
+
+  return {
+    type: "json_schema",
+    json_schema: { name: SCHEMA_NAME, strict: true, schema: responseSchema },
+  };
+}
+
 /**
- * The vendor boundary: the only place OpenAI's response shape is read.
+ * Model access is asked first: a model nobody can reach is the specific reason behind a rejection.
+ */
+function classifyFailure(
+  cause: unknown,
+  structuredOutput: OpenAIStructuredOutput
+): ActionableFailure | null {
+  if (isModelAccessFailure(cause)) return "model-unavailable";
+  if (structuredOutput !== "json_schema") return null;
+  return classifySchemaRejection(cause);
+}
+
+/**
+ * Asks OpenAI and returns the reply as raw text. The vendor boundary: nothing outside this file
+ * reads OpenAI's response shape.
  *
  * Takes a client you constructed — it never loads the `openai` package — so pair it with
  * `createTranslationProvider` to build a provider on an SDK version of your own choosing:
- * `createTranslationProvider({ complete: openAIComplete({ client, model }) })`.
+ * `createTranslationProvider({ askModel: askOpenAI({ client, params: { model } }) })`.
  *
- * @since 0.11.0
+ * @since 1.0.0
  */
-export function openAIComplete(args: {
+export function askOpenAI(args: {
   client: OpenAIClientShape;
-  model: string;
-  sampling?: OpenAISamplingParams;
+  params: OpenAIParams;
   structuredOutput?: OpenAIStructuredOutput;
-}): CompletionFn {
-  const { client, model, sampling, structuredOutput = "json_schema" } = args;
+}): AskModel {
+  const { client, params: requested, structuredOutput = "json_schema" } = args;
+  const { model } = requested;
 
-  return async ({ systemPrompt, userContent, responseSchema, signal }) => {
+  return async ({ systemPrompt, userContent, responseSchema }) => {
     if (structuredOutput === "json_object" && !/json/iu.test(systemPrompt)) {
       throw new ProviderConfigurationError(
         'With structuredOutput: "json_object", OpenAI requires the word "json" somewhere in the prompt. Your systemPrompt override does not contain it.'
       );
     }
 
-    const params: OpenAIChatParams = {
-      model,
+    const body: OpenAIChatParams = {
+      ...requested,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userContent },
       ],
-      response_format:
-        structuredOutput === "json_schema"
-          ? {
-              type: "json_schema",
-              json_schema: { name: SCHEMA_NAME, strict: true, schema: responseSchema },
-            }
-          : { type: "json_object" },
-      ...sampling,
+      response_format: responseFormatFor(structuredOutput, responseSchema),
     };
 
     let result: OpenAIChatResult;
     try {
-      result = await client.chat.completions.create(params, { signal });
+      result = await client.chat.completions.create(body);
     } catch (cause) {
-      if (isModelAccessFailure(cause)) {
-        throw new ProviderConfigurationError(
-          markFailureReason(
-            "model-unavailable",
-            `The model "${model}" is not available to this API key. Pass \`model\` in the provider configuration to pin one your key can use.`
-          ),
-          { cause }
-        );
-      }
+      const failure = classifyFailure(cause, structuredOutput);
+      if (failure === null) throw cause;
 
-      const rejection = structuredOutput === "json_schema" ? classifySchemaRejection(cause) : null;
-
-      if (rejection === "model-does-not-support") {
-        throw new ProviderConfigurationError(
-          `The model "${model}" does not support the json_schema response format. Pass structuredOutput: "json_object", or choose a model that supports structured outputs.`,
-          { cause }
-        );
-      }
-
-      if (rejection === "schema-rejected") {
-        throw new ProviderConfigurationError(
-          `OpenAI rejected the generated response schema. This usually means the document has more translatable fields than a strict schema allows. Pass structuredOutput: "json_object", or translate a smaller subtree.`,
-          { cause }
-        );
-      }
-
-      throw cause;
+      throw new ProviderConfigurationError(ADVICE[failure](model), { cause });
     }
 
     const content = result.choices[0]?.message?.content;

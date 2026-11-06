@@ -33,7 +33,7 @@ report(assignment: EnqueueAssignment, event: TaskEvent): Promise<void>
 cannot: the synchronous runner translates inside `enqueue`, so a `queued` raised after `enqueue`
 returns would arrive after `delivered`, and one raised before it would have to be duplicated at both
 call sites that enqueue (the HTTP route and the auto-translate hook). Only the runner knows the
-timeline of work it accepted. **Owner's choice, taken at the Phase 2 gate.**
+timeline of work it accepted. **Decided by the owner before implementation.**
 
 **D2 — four events, not five.**
 
@@ -70,7 +70,7 @@ and `configure` already hands over a context object. One object beats a growing 
 
 **D5 — `findByIds` leaves the contract.** Its only consumer was the plugin's cancellation
 announcement, which no longer exists: the runner knows what it still owed and reports `cancelled`
-itself. **Owner's choice, taken at the Phase 2 gate.**
+itself. **Decided by the owner before implementation.**
 
 **D6 — `report` is required on the context, not optional.** Optional would mean the plugin could
 ship a context without it and leave every host silent, with no compiler complaint. Required makes
@@ -81,14 +81,14 @@ called, and the `silent` fixture in `TaskRunner.conformance.types.ts` compiles w
 anything. The obligation to report lives in the contract prose and in the invariant suite, which is
 where a runner's behaviour can actually be held to it.
 
-**D7 — five sentences the first draft left out, added before any implementation.** A blind author
-writing the invariants against the contract alone found them, each as a question it could not answer
-without guessing: when a report is observable (before the causing call resolves); that the reported
+**D7 — five sentences the first draft left out, added before any implementation.** Writing the
+invariants against the contract alone surfaced them, each as a question it could not answer without
+guessing: when a report is observable (before the causing call resolves); that the reported
 assignment carries the handle the enqueue answer gave; that a locale an existing run already covers
 still earns its `queued`; that `cancelled` only ever follows a `cancel`; and that a locale already
 reported `failed` is not owed. All five are now in `TaskRunnerContext.report`.
 
-Two it raised are deliberately left unstated: the order within the cancelled-then-delivered
+Two questions it raised are deliberately left unstated: the order within the cancelled-then-delivered
 exception, and whether `sourceLng`/`strategy` on a reported assignment must equal the request's —
 the handle is the identity, and promising more would be promising what nothing needs.
 
@@ -137,17 +137,16 @@ the handle is the identity, and promising more would be promising what nothing n
 ## Risk
 
 **High.** A public contract implemented outside the package, two implementations, and every
-host-visible event flows through it. Consequences, per the workflow: the gate was taken with an
-explicit question, tests are required rather than optional, the Phase 4 sweep must name what was
-grepped, and Phase 5 uses three review angles.
+host-visible event flows through it. Consequences: tests are required rather than optional, the
+sweep for leftovers must name what was grepped, and review covers correctness, regression and
+intent.
 
-## Human choices
+## Decisions by the owner
 
-- **One channel including `queued`, not terminal-only** — D1, chosen at the gate over the plugin
+- **One channel including `queued`, not terminal-only** — D1, chosen over the plugin
   reporting `queued` itself.
-- **`findByIds` removed** — D5, chosen at the gate over keeping it as a capability.
-- Not changing the unit of work from document to locale: rejected for this iteration, recorded in
-  the conversation that produced this task.
+- **`findByIds` removed** — D5, chosen over keeping it as a capability.
+- Not changing the unit of work from document to locale: rejected for this iteration.
 - `README.md` is the owner's; this task does not touch it.
 - No tracker issues.
 
@@ -159,27 +158,22 @@ than pretending otherwise. Closing it means changing what cancellation does, whi
 
 ## Review log
 
-_(appended by each review pass)_
-
-### 2026-10-09 · phase 5 verification
+### 2026-10-09 · verification
 
 - **Checks:** unit `bunx vitest run` 2017/143 files · `turbo run check-types --force` 9/9 ·
   `bunx oxlint` 0 errors · `turbo run build --filter='./packages/*'` green, including the real
   `tsc` declaration build · integration six combinations, three adapters x Payload's exclusive queue on and off:
   SQLite 224/7 skipped, PostgreSQL 229/2, MongoDB 222/9 (231 each), no failures
-- **Gates:** `sp-diff-checks` clean over 67 files (+4020/−463), five checks, no findings;
-  `sp-lint-delta --base main` (mode=two-run) nothing introduced — one warning it did find, an unused
-  `assigned` binding in `SyncTaskRunner.test.ts`, was removed. oxlint's default output is not
-  parseable by the delta script; the gate was re-run with `--format=unix` to get a real subtraction.
-- **Reviewers:** correctness · regression · intent (three, as High risk requires; the catalog has no
-  `tests` vector, so its question — would these checks fail if the code were wrong — was folded into
-  the correctness brief). Five findings raised, five acted on.
+- **Lint against `main`:** nothing introduced — one warning, an unused `assigned` binding in
+  `SyncTaskRunner.test.ts`, was removed.
+- **Review:** correctness · regression · intent, including whether these checks would fail if the
+  code were wrong. Five findings, all acted on.
   1. *correctness* — `cancel` re-announced a locale the run had already reported `failed`.
      `stillOwed` keeps every locale that is not `completed`, and a run that gives up keeps
      `hasError` with no `completedAt`, so its settled locales still read as owed. Reproduced on
      SQLite before any edit. Fixed by `owedOnCancel`, which answers the cancel path's own question:
      a spent run owes nothing, a run waiting to retry owes its undelivered locales.
-     **Not taken: the reviewer's one-line fix** (`status !== "failed"`), which would have silenced
+     **Not taken: the proposed one-line fix** (`status !== "failed"`), which would have silenced
      the legitimate case — a job between attempts logs every locale as failed and those locales are
      genuinely still owed. `owedOnCancel.test.ts` pins both directions.
      **Not changed: `cancel-by-collection/handler.ts`**, named as a sibling. Its filter is right;

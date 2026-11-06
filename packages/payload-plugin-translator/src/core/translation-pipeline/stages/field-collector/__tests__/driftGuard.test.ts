@@ -108,15 +108,18 @@ const pipelineFieldTexts = (): string[] => {
     asTheProjectionNamesThem()
   ).collect();
 
-  // Per-node expanders only, deliberately: a container expander sends marked strings
-  // (`<1>a </1>`), and this guard compares source prose against the projection's source prose.
+  // Per-node expanders only, deliberately: a container expander sends a paragraph as segments,
+  // and this guard compares source prose against the projection's source prose.
   const expander = new TextChunkExpander([new RichTextExpander(), new PlainTextExpander()]);
 
   // Expand each field chunk independently, then join per field (richText spans multiple nodes).
   return chunks.map((chunk) => {
     const { textChunks, textMap } = expander.expand([chunk]);
     return textChunks
-      .map((tc) => textMap[tc.index] ?? "")
+      .map((tc) => {
+        const value = textMap[tc.index];
+        return value?.kind === "text" ? value.text : "";
+      })
       .join("")
       .trim();
   });

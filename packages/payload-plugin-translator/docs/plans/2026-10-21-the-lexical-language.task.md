@@ -1,6 +1,6 @@
 # The Lexical language, and the crossing into embedded blocks
 
-Design: `~/.claude/plans/goofy-fluttering-phoenix.md` (settled in conversation, 2026-10-21)
+Design: settled with the owner, 2026-10-21; its decisions are recorded below.
 Previous step: [the Payload field language](./2026-10-21-the-payload-field-language.task.md)
 
 ## Requirements / Task restatement
@@ -126,9 +126,9 @@ gap at zero.
 
 Yes — `EmbedResolver` owes its callers something its signature cannot state: which of
 `boundary` and `selects` owns which case, and that returning `null` means *skipped
-silently*, not *reported*. That is the `/sp-red-test` trigger for this step.
+silently*, not *reported*. That is why its tests are written against the contract first.
 
-### Escalate to `/sp-architect`?
+### Does this need a separate design?
 
 No. One module, no new dependency, no data-model change, and the seam — the `Language`
 port — already exists and is already in use.
@@ -170,8 +170,8 @@ reason: the thing under test does not exist.
 
 ## Risk notes
 
-**High risk**, and the classification changes what the later phases do: a mandatory
-evidenced regression sweep in Phase 4, and three review angles in Phase 5b.
+**High risk**, and the classification changes what follows: a mandatory evidenced regression
+sweep, and review from three angles.
 
 - **AC2 is the one that matters.** An address that differs by one escaped character makes
   every stored receipt miss at the swap. D1 is the whole defence, and the check must render
@@ -206,29 +206,27 @@ the swap, and it should live beside the grammar rather than beside the tests.
 
 **Container mode** (D2) and the **public `richTextEmbeds` option** — both deferred by decision.
 
-## Human choices
+## Decisions by the owner
 
-- **2026-10-21** — Route to the block schema: *"Да, похоже этот вариант будет самым лучшим.
-  Да, давай делать его"* — the host names the blocks (route 4), chosen over calling the
-  editor provider, reading the resolved adapter, or relying on Payload's in-place mutation.
-- **2026-10-21** — An unlisted block is skipped without a warning: *"Молча пропустить, если
-  пользователь ответственен за то чтобы добавлять блоки самостоятельно, то я рассчитываю на
-  то что он знает что делает… Некоторые блоки могут быть в целом непереводимыми и добавлять
-  их незачем."*
+- **2026-10-21** — Route to the block schema: the host names the blocks (route 4), chosen over
+  calling the editor provider, reading the resolved adapter, or relying on Payload's in-place
+  mutation.
+- **2026-10-21** — An unlisted block is skipped without a warning: the host is responsible for
+  listing its blocks and is trusted to know what it lists; some blocks are untranslatable
+  altogether and have no reason to be listed.
 - **2026-10-21** — Option name `richTextEmbeds`, not tied to blocks, because links and
-  uploads also carry host fields in Lexical: *"richTextEmbeds - отлично."*
+  uploads also carry host fields in Lexical.
 - **2026-10-21** — Scope of this PR: the languages only; the public option lands at the swap,
-  with working behaviour. (Chosen at the gate over shipping a dead public option.)
+  with working behaviour. (Chosen before implementation over shipping a dead public option.)
 - **2026-10-21** — `localized` inside an embed: no special rule. The plugin already
   snapshots the schema before Payload's sanitizer deletes the flag
-  (`projectFieldLike.ts`), and the owner recognised this from the existing design:
-  *"мы решали эту проблему копированием исходной схемы пока payload не затёр поля"*.
+  (`projectFieldLike.ts`), which the existing design already covers.
 
 ## Review log
 
-### 2026-10-21 — three review angles (high risk)
+### 2026-10-21 — review from three angles (high risk)
 
-**Traversal correctness: no findings.** The reviewer independently confirmed D6 is safe on every
+**Traversal correctness: no findings.** Review confirmed D6 is safe on every
 path the kernel can take — `boundary` runs once per leaf visit, every non-null return is crossed into
 immediately, and the only post-seating failures (`TooManyCrossingsError`, an unregistered language
 id) abort the whole walk, so no orphan clone is left behind. It also confirmed the prose path matches
@@ -254,10 +252,10 @@ guaranteed, and where the one re-admission happens.
 
 **The test suite — four findings, all applied.**
 
-*A whole node shape was unguarded* (major, and the most serious of the run). Nothing covered a node
+*A whole node shape was unguarded* (major, and the most serious found). Nothing covered a node
 that carries host `fields` **and** children with text — which is exactly what a Payload `link` node
-is. The reviewer made `step` skip any node with an object `fields`, dropping all link text from
-translation, and all 153 checks stayed green. A link case and an upload case were added to the
+is. A mutation making `step` skip any node with an object `fields`, dropping all link text from
+translation, left all 153 checks green. A link case and an upload case were added to the
 differential, where the old pipeline decides; that mutation now turns three checks red.
 
 *A blank node raised no alarm, and nothing said so* (major). `walkDocument` returns `reported`, and
@@ -276,19 +274,13 @@ the source are the same object leaves every check green — on the nested path t
 inside the seated clone, so the second clone changes nothing. The redundancy is noted; removing it
 would trade a cheap copy for a subtle precondition.
 
-**Totals after the review.** 165 checks in `src/languages`, 2367 in the package. 19 mutations run,
-18 discriminating, 1 behaviourally equivalent. Types 0, lint 45 warnings / 0 errors, both mechanical
-gates clean.
+### 2026-10-21 — comment review
 
-### 2026-10-21 — comment audit
+The docblocks were too dense — 4.3 lines per exported symbol on a module that `src/index.ts` does not
+export, so the usual "this is the public surface" defence did not apply. They were cut back, and the
+single inline comment is gone.
 
-26 blocks judged, 26 verdicts. 9 deleted, 13 shortened, 3 answered by changing the code, 1 kept
-with a named reason, 2 missing notes added. Comment lines over the change: **108 → 74**; the single
-inline comment is gone. The density verdict was *too dense* on the docblocks alone — 4.3 lines per
-exported symbol on a module that `src/index.ts` does not export, so the usual "this is the public
-surface" defence did not apply.
-
-Three verdicts changed code rather than prose:
+Three findings changed code rather than prose:
 
 - `twoLevels` renamed `embedInsideEmbed`; the comment that repaired the name is gone.
 - The differential oracle now imports `defaultExpanders` from the expander stage instead of
@@ -298,31 +290,22 @@ Three verdicts changed code rather than prose:
   **internal** barrel only; it is not reachable from `src/index.ts`.
 - `seatWritableTree` renamed `seatSourceClone`, so the name says where the copy comes from.
 
-**One verdict was taken in part, and the disagreement is recorded here.** The auditor proposed
+**One finding was taken in part, and the disagreement is recorded here.** The review proposed
 hoisting `isTranslatableLeaf` into a named binding shared by `selects` and `boundary`, to replace
 the inline comment explaining why `boundary` repeats the host's rule. The comment was deleted; the
 hoist was not. The sameness is already structural — the same function is the `selects` member and
 the call inside `boundary`, fifteen lines apart — so an alias would name nothing new, and the
 *reason* is written where an implementor of `boundary` must already read it
 (`core/traversal/contract.ts:188, 218-228`). The constraint is also test-guarded: removing the check
-turns four checks red (mutation M14).
+turns four checks red.
 
-### 2026-10-21 — stub audit and the mutation battery
+### 2026-10-21 — suite run against an empty implementation
 
-Against a Lexical language that enters and then walks nothing, **81 of the 165 checks in
-`src/languages` go red**. Of the 84 that survive, 82 exercise the field language or the old
-pipeline rather than this one. Two did not, and were a real gap: "an unlisted block is skipped
-silently, not reported" asserted an absence with no anchor, so a language that walked nothing
-satisfied it. Both now assert first that the walk produced targets.
+Against a Lexical language that enters and then walks nothing, two checks stayed green and were a
+real gap: "an unlisted block is skipped silently, not reported" asserted an absence with no anchor,
+so a language that walked nothing satisfied it. Both now assert first that the walk produced targets.
 
-22 mutations run in all; **21 discriminate**. The one that does not is behaviourally equivalent, not
-a hole: skipping the clone when the working copy and the source are the same object changes nothing,
-because on the nested path they already alias inside the seated clone.
-
-### 2026-10-21 — abstraction audit (judged by the author)
-
-Scope was derived from the target rather than taken from the brief, and the brief had omitted two
-boundaries — one of which carries the run's only finding.
+### 2026-10-21 — abstraction review
 
 **Finding — the host is compile-time coupled to the guest, while its own option says it is not.**
 `RichTextCrossing.languageId: string` exists so a different rich-text language can be configured.
@@ -344,13 +327,12 @@ exports five names (`EmbedKind`, `LexicalCursor`, `LexicalNode`, `RichTextCrossi
 not a published entry point — but the surplus is recorded for the swap, when the barrel gains its
 first caller and the question becomes real.
 
-### 2026-10-21 — complexity audit (assumption mode)
+### 2026-10-21 — complexity review
 
-History over `src/languages/` is mute — the whole directory is uncommitted — so no edits were made
-and every count is a proposal.
+Every count below is a proposal; nothing was changed by this review.
 
 Scenario: **add a second rich-text language** (Slate is the realistic one; Payload ships it).
-Neighbourhood, 8 files: the two languages, `contract.ts`, `collect.ts`, `walk.ts`, `idPath.ts`,
+Files in scope: the two languages, `contract.ts`, `collect.ts`, `walk.ts`, `idPath.ts`,
 `translatableLeaf.ts`, `kernel/lexical/guards.ts`.
 
 | Counter | Today | After the abstraction finding's proposal |
@@ -360,18 +342,18 @@ Neighbourhood, 8 files: the two languages, `contract.ts`, `collect.ts`, `walk.ts
 | STATE | 8 — 2 embed kinds × claimed/unclaimed × with/without `id` | 8 |
 
 CHANGE falls, READ does not rise, so the balance rule holds. **This is the same root cause the
-abstraction audit found, counted through a second lens — not a separate finding.**
+abstraction review found, counted through a second lens — not a separate finding.**
 
 Rules recovered, all essential, each with a source: the leaf-selection rule
 (`translatableLeaf.ts:28-31`); one address per rich-text field (D1, and
-`FieldChunkCollector.ts:122`); an unlisted embed is skipped without a warning (D7, the owner's own
-words in `## Human choices`); the crossing seats a clone taken from the source (D6, mirroring
+`FieldChunkCollector.ts:122`); an unlisted embed is skipped without a warning (D7, the owner's decision
+in `## Decisions by the owner`); the crossing seats a clone taken from the source (D6, mirroring
 `FieldChunkCollector.ts:157`); an embed's ordinal counts every embed, not only the id-less ones (the
 address review, above).
 
 ### 2026-10-21 — the abstraction finding, applied
 
-The owner asked for it. `EmbedKind`, `EmbedResolver` and the crossing's context shape moved out of
+By the owner's decision. `EmbedKind`, `EmbedResolver` and the crossing's context shape moved out of
 `Lexical.language.ts` into `src/languages/richTextCrossing.ts`, a module neither language owns.
 Both now depend on the convention; neither depends on the other, and `grep` over both files
 confirms the edge in each direction is gone.
@@ -400,14 +382,13 @@ Counters for the scenario that produced the finding, recounted on the code as it
 second rich-text language is **CHANGE 4 → 2** (the new language and the barrel; the host no longer
 changes), READ 7, STATE 8. The balance rule holds, and the promise matches the result.
 
-After the move: 177 files / 2367 checks passing, types 0, lint 45 warnings / 0 errors, both
-mechanical gates clean. The two headline mutations still discriminate — a descent that emits a token
+After the move the two headline mutations still discriminate — a descent that emits a token
 turns 49 checks red, a boundary that never crosses turns 28.
 
 ### 2026-10-21 — the address grammar's own tests, audited by mutation
 
-The owner asked whether `idPath.ts` is tested, especially its escaping, and whether those tests were
-written red.
+The question: is `idPath.ts` tested, especially its escaping, and were those tests written red
+first?
 
 **Red-first cannot be proven.** `idPath.test.ts` and `idPath.ts` landed in one commit — `6ae2f0c8`,
 2026-07-01, 127 lines of test beside 79 lines of implementation. The file's header comment says
@@ -428,7 +409,7 @@ written red.
 Both are closed, stated as collisions in the file's own idiom, and both now turn exactly one check
 red under the mutation that exposed them.
 
-**Two further mutations are caught only by a check added today.** Escaping just the first occurrence
+**Two further mutations are caught only by a check added in this change.** Escaping just the first occurrence
 in a token (dropping the `g` flag), and not escaping the `blockType`, both pass `idPath.test.ts`
 untouched and are caught solely by `Lexical.embeddedBlock.test.ts > addresses an embed through the
 plugin's address grammar, escaping included` — the `body.b\.1\#x:c\:ta.heading` case, which is the
@@ -436,11 +417,9 @@ only place in the repository that puts two escapes in one token and escapes a `b
 knowing: the grammar's own suite is thinner than it reads, and that case is now load-bearing for a
 module it does not belong to.
 
-After: 177 files / 2369 checks passing, types 0, lint 44 warnings / 0 errors.
+### 2026-10-21 — barrels re-checked against the package rule
 
-### 2026-10-21 — barrels re-checked against the owner's rule
-
-The owner stated it: an `index.ts` carries **only what is used outside its module**; everything
+The rule: an `index.ts` carries **only what is used outside its module**; everything
 else stays inside. Every barrel this change touches was measured by resolving real import
 statements — not by counting references, which matches the defining file, the barrel itself and
 every sibling that imports by path, and had produced a wholly false reading on the first attempt.

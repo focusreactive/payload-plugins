@@ -1,20 +1,23 @@
 import type { TaskStatus } from "../task-runner/types.js";
 
-import type { RunRecord } from "./RunRecord.types.js";
+import type { RunOutcome, RunRecord } from "./RunRecord.types.js";
 
 export type ReportedRun = {
   row: RunRecord;
   status: TaskStatus;
 };
 
-/**
- * What one row means in the vocabulary the panels speak. A cancelled row maps to `null` rather than
- * a word of its own — the admin has no word for it, and `reportedRuns` drops what maps to `null`.
- */
+/** A cancelled row has no word in the panels' vocabulary, so it maps to `null`. */
+const SETTLED_STATUS: Record<RunOutcome, TaskStatus | null> = {
+  delivered: "completed",
+  failed: "failed",
+  abandoned: "abandoned",
+  cancelled: null,
+};
+
 export function statusOf(record: RunRecord): TaskStatus | null {
-  if (record.outcome === "cancelled") return null;
-  if (record.outcome === "failed") return "failed";
-  if (record.outcome === "delivered") return "completed";
+  const settled = record.outcome === null ? undefined : SETTLED_STATUS[record.outcome];
+  if (settled !== undefined) return settled;
   return record.startedAt === null ? "pending" : "running";
 }
 

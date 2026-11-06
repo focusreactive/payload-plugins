@@ -2,30 +2,56 @@ import { describe, expect, it } from "vitest";
 
 import { buildResponseSchema } from "../buildResponseSchema.js";
 
+const closedSection = (keys: string[]) => ({
+  type: "object",
+  properties: Object.fromEntries(keys.map((key) => [key, { type: "string" }])),
+  required: keys,
+  additionalProperties: false,
+});
+
 describe("buildResponseSchema", () => {
-  it("requires exactly the input's keys and forbids extras", () => {
-    expect(buildResponseSchema({ 0: "Home", 2: "Contact" })).toEqual({
+  it("requires both sections, each with exactly the keys sent in it, and forbids extras", () => {
+    expect(
+      buildResponseSchema({
+        marked: { 1: "<1>a </1><2>red</2>" },
+        plain: { 0: "Home", 2: "Contact", "3.1": "Use <1> " },
+      })
+    ).toEqual({
       type: "object",
       properties: {
-        "0": { type: "string" },
-        "2": { type: "string" },
+        marked: {
+          type: "object",
+          properties: { "1": { type: "string" } },
+          required: ["1"],
+          additionalProperties: false,
+        },
+        plain: {
+          type: "object",
+          properties: {
+            "0": { type: "string" },
+            "2": { type: "string" },
+            "3.1": { type: "string" },
+          },
+          required: ["0", "2", "3.1"],
+          additionalProperties: false,
+        },
       },
-      required: ["0", "2"],
+      required: ["marked", "plain"],
       additionalProperties: false,
     });
   });
 
   it("keeps non-contiguous indices as they are, rather than renumbering", () => {
-    const schema = buildResponseSchema({ 5: "a", 9: "b" });
+    const schema = buildResponseSchema({ marked: {}, plain: { 5: "a", 9: "b" } });
 
-    expect(schema.required).toEqual(["5", "9"]);
+    expect(schema).toMatchObject({ properties: { plain: { required: ["5", "9"] } } });
   });
 
-  it("produces an empty but still closed schema for empty input", () => {
-    expect(buildResponseSchema({})).toEqual({
+  it("produces closed, empty sections for empty input", () => {
+    expect(buildResponseSchema({ marked: {}, plain: {} })).toEqual({
       type: "object",
-      properties: {},
-      required: [],
+      properties: { marked: closedSection([]), plain: closedSection([]) },
+      required: ["marked", "plain"],
       additionalProperties: false,
     });
   });

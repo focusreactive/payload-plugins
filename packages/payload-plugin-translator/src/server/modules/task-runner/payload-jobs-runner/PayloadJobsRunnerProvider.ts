@@ -227,7 +227,11 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
               ? owedIfGaveUp(job as PayloadJob, taskName, target, retryLimit, pointer.locales)
               : [];
             for (const dead of owed) {
-              await reportFor(dead, { state: "failed", error: thrown.get(job) });
+              const ending: TaskEvent =
+                dead === target
+                  ? { state: "failed", error: thrown.get(job) }
+                  : { state: "abandoned" };
+              await reportFor(dead, ending);
             }
             throw error;
           }

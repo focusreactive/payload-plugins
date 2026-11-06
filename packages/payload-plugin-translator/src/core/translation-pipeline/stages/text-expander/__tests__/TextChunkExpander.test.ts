@@ -6,6 +6,8 @@ import { PlainTextExpander } from "../PlainTextExpander.js";
 import { RichTextExpander } from "../RichTextExpander.js";
 import type { IdPath } from "../../../../domain/content-projection/idPath.js";
 
+const asText = (text: string) => ({ kind: "text", text });
+
 const createFieldChunk = (
   name: string,
   type: string,
@@ -73,7 +75,7 @@ describe("PlainTextExpander", () => {
 
       const result = expander.expand(chunk, "Hello", 5);
 
-      expect(result.textMap).toEqual({ 5: "Hello" });
+      expect(result.textMap).toEqual({ 5: asText("Hello") });
     });
 
     it("increments nextIndex", () => {
@@ -92,26 +94,26 @@ const createNode = (type: string, props?: Record<string, unknown>, children?: un
 
 const wrapInRoot = (children: unknown[]) => ({ root: createNode("root", {}, children) });
 
-describe("RichTextExpander", () => {
-  const expander = new RichTextExpander();
-
-  const createLexicalRoot = (textNodes: string[]) => ({
-    root: {
-      type: "root",
-      children: textNodes.map((text) => ({
-        type: "paragraph",
-        children: [{ type: "text", text, version: 1 }],
-        direction: "ltr",
-        format: "",
-        indent: 0,
-        version: 1,
-      })),
+const createLexicalRoot = (textNodes: string[]) => ({
+  root: {
+    type: "root",
+    children: textNodes.map((text) => ({
+      type: "paragraph",
+      children: [{ type: "text", text, version: 1 }],
       direction: "ltr",
       format: "",
       indent: 0,
       version: 1,
-    },
-  });
+    })),
+    direction: "ltr",
+    format: "",
+    indent: 0,
+    version: 1,
+  },
+});
+
+describe("RichTextExpander", () => {
+  const expander = new RichTextExpander();
 
   describe("canExpand", () => {
     it("returns true for richText field with Lexical root", () => {
@@ -139,8 +141,8 @@ describe("RichTextExpander", () => {
 
       expect(result.chunks).toHaveLength(2);
       expect(result.chunks[0].type).toBe("richText");
-      expect(result.textMap[0]).toBe("Hello");
-      expect(result.textMap[1]).toBe("World");
+      expect(result.textMap[0]).toEqual(asText("Hello"));
+      expect(result.textMap[1]).toEqual(asText("World"));
     });
 
     it("assigns sequential indices", () => {
@@ -160,7 +162,7 @@ describe("RichTextExpander", () => {
 
       const result = expander.expand(chunk, value, 0);
 
-      expect(result.textMap).toEqual({ 0: "Hello", 1: "World" });
+      expect(result.textMap).toEqual({ 0: asText("Hello"), 1: asText("World") });
     });
 
     it("stores nodeRef for mutation", () => {
@@ -192,7 +194,7 @@ describe("RichTextExpander", () => {
       const result = expander.expand(chunk, value, 0);
 
       expect(result.chunks).toHaveLength(1);
-      expect(result.textMap[0]).toBe("Title");
+      expect(result.textMap[0]).toEqual(asText("Title"));
     });
 
     it("expands list with multiple items", () => {
@@ -208,7 +210,11 @@ describe("RichTextExpander", () => {
       const result = expander.expand(chunk, value, 0);
 
       expect(result.chunks).toHaveLength(3);
-      expect(result.textMap).toEqual({ 0: "Item 1", 1: "Item 2", 2: "Item 3" });
+      expect(result.textMap).toEqual({
+        0: asText("Item 1"),
+        1: asText("Item 2"),
+        2: asText("Item 3"),
+      });
     });
 
     it("expands link with text inside", () => {
@@ -226,9 +232,9 @@ describe("RichTextExpander", () => {
       const result = expander.expand(chunk, value, 0);
 
       expect(result.chunks).toHaveLength(3);
-      expect(result.textMap[0]).toBe("Click ");
-      expect(result.textMap[1]).toBe("here");
-      expect(result.textMap[2]).toBe(" to continue");
+      expect(result.textMap[0]).toEqual(asText("Click "));
+      expect(result.textMap[1]).toEqual(asText("here"));
+      expect(result.textMap[2]).toEqual(asText(" to continue"));
     });
 
     it("expands quote with nested paragraph", () => {
@@ -242,7 +248,7 @@ describe("RichTextExpander", () => {
       const result = expander.expand(chunk, value, 0);
 
       expect(result.chunks).toHaveLength(1);
-      expect(result.textMap[0]).toBe("Famous quote");
+      expect(result.textMap[0]).toEqual(asText("Famous quote"));
     });
 
     it("expands paragraph with multiple formatted text nodes", () => {
@@ -260,10 +266,10 @@ describe("RichTextExpander", () => {
 
       expect(result.chunks).toHaveLength(4);
       expect(result.textMap).toEqual({
-        0: "Normal ",
-        1: "bold",
-        2: " and ",
-        3: "italic",
+        0: asText("Normal "),
+        1: asText("bold"),
+        2: asText(" and "),
+        3: asText("italic"),
       });
     });
 
@@ -285,9 +291,9 @@ describe("RichTextExpander", () => {
 
       expect(result.chunks).toHaveLength(3);
       expect(result.textMap).toEqual({
-        0: "Parent item",
-        1: "Nested 1",
-        2: "Nested 2",
+        0: asText("Parent item"),
+        1: asText("Nested 1"),
+        2: asText("Nested 2"),
       });
     });
 
@@ -322,11 +328,11 @@ describe("RichTextExpander", () => {
 
       expect(result.chunks).toHaveLength(5);
       expect(result.textMap).toEqual({
-        0: "Title",
-        1: "Introduction text.",
-        2: "Point one",
-        3: "Point two",
-        4: "Conclusion.",
+        0: asText("Title"),
+        1: asText("Introduction text."),
+        2: asText("Point one"),
+        3: asText("Point two"),
+        4: asText("Conclusion."),
       });
     });
   });
@@ -343,7 +349,7 @@ describe("RichTextExpander", () => {
       const result = expander.expand(chunk, value, 0);
 
       expect(result.chunks).toHaveLength(2);
-      expect(result.textMap).toEqual({ 0: "Before image", 1: "After image" });
+      expect(result.textMap).toEqual({ 0: asText("Before image"), 1: asText("After image") });
     });
 
     it("skips linebreak nodes", () => {
@@ -359,7 +365,7 @@ describe("RichTextExpander", () => {
       const result = expander.expand(chunk, value, 0);
 
       expect(result.chunks).toHaveLength(2);
-      expect(result.textMap).toEqual({ 0: "Line one", 1: "Line two" });
+      expect(result.textMap).toEqual({ 0: asText("Line one"), 1: asText("Line two") });
     });
 
     it("skips horizontalrule nodes", () => {
@@ -373,7 +379,7 @@ describe("RichTextExpander", () => {
       const result = expander.expand(chunk, value, 0);
 
       expect(result.chunks).toHaveLength(2);
-      expect(result.textMap).toEqual({ 0: "Above", 1: "Below" });
+      expect(result.textMap).toEqual({ 0: asText("Above"), 1: asText("Below") });
     });
 
     it("skips relationship/block nodes", () => {
@@ -387,7 +393,7 @@ describe("RichTextExpander", () => {
       const result = expander.expand(chunk, value, 0);
 
       expect(result.chunks).toHaveLength(1);
-      expect(result.textMap[0]).toBe("Text content");
+      expect(result.textMap[0]).toEqual(asText("Text content"));
     });
 
     it("only collects text nodes from mixed content", () => {
@@ -411,10 +417,10 @@ describe("RichTextExpander", () => {
 
       expect(result.chunks).toHaveLength(4);
       expect(result.textMap).toEqual({
-        0: "Title",
-        1: "Some ",
-        2: "text",
-        3: "Item",
+        0: asText("Title"),
+        1: asText("Some "),
+        2: asText("text"),
+        3: asText("Item"),
       });
     });
   });
@@ -447,7 +453,7 @@ describe("TextChunkExpander", () => {
       const result = expander.expand(chunks);
 
       expect(result.textChunks).toHaveLength(2);
-      expect(result.textMap).toEqual({ 0: "Hello", 1: "World" });
+      expect(result.textMap).toEqual({ 0: asText("Hello"), 1: asText("World") });
     });
 
     it("assigns unique indices across all chunks", () => {
@@ -492,7 +498,11 @@ describe("TextChunkExpander", () => {
       const result = expander.expand(chunks);
 
       expect(result.textChunks).toHaveLength(3);
-      expect(result.textMap).toEqual({ 0: "First", 1: "Second", 2: "Third" });
+      expect(result.textMap).toEqual({
+        0: asText("First"),
+        1: asText("Second"),
+        2: asText("Third"),
+      });
     });
 
     it("uses first matching expander", () => {

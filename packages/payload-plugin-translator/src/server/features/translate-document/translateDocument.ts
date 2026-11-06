@@ -6,12 +6,12 @@ import type { ID } from "../../modules/task-runner/index.js";
 import type { TranslationFilter } from "../../../core/domain/selection/index.js";
 import type { ChainMember, Criteria } from "../../modules/translation-run/index.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
-import { reportNothingSent } from "./reportNothingSent.js";
 import { openRun } from "./run.js";
 import type { Run } from "./run.js";
 import { runModulesAfter, runModulesBefore } from "./runModules.js";
 import { selectLeaves } from "./selectLeaves.js";
 import { translateOrWrap } from "./translateOrWrap.js";
+import { reportRunOutcome } from "../_lib/index.js";
 
 /**
  * What translating one locale needs to know. Assembled by the caller from the run's own record —
@@ -73,7 +73,8 @@ export async function translateDocument(
     selection: owed.addresses,
   });
 
-  if (translated?.translatedData) {
+  if (translated.sent) {
+    reportRunOutcome(run.payload.logger, run.target, translated);
     await run.doc.saveTranslation(translated.translatedData, run.layer.write);
     await runModulesAfter({
       modules,
@@ -82,7 +83,10 @@ export async function translateDocument(
       leaves: translated.leaves,
     });
   } else {
-    reportNothingSent(run, owed.emptyBecause);
+    reportRunOutcome(run.payload.logger, run.target, {
+      sent: false,
+      because: owed.emptyBecause ?? "collector-sent-nothing",
+    });
   }
 
   await publishIfAsked(run, input.publishOnTranslation);

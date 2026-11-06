@@ -13,6 +13,7 @@ import type {
 import { FieldTranslationInputSchema, MAX_FIELD_VALUE_BYTES } from "./model.js";
 import type { FieldTranslationConfig } from "./model.js";
 import { resolveFieldSubtree } from "./resolveFieldSubtree.js";
+import { reportRunOutcome } from "../_lib/index.js";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
 import { mayInitiate } from "../../shared/access/permission.js";
 
@@ -148,11 +149,17 @@ export class TranslateFieldHandler {
       translationProvider: this.config.translationProvider,
     });
 
-    if (!translated) {
+    if (!translated.sent) {
       return ServerResponse.success(
         noop("info", "nothing-translatable", "Nothing to translate in this field")
       );
     }
+
+    reportRunOutcome(
+      req.payload.logger,
+      { collection: collection_slug, documentId: doc_id, targetLocale: target_lng },
+      translated
+    );
 
     const result: FieldTranslationResult = {
       status: "translated",

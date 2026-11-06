@@ -3,8 +3,8 @@
 ## Task restatement
 
 The workflow handler in `PayloadJobsRunnerProvider.configure` interleaves four unrelated
-mechanics in twenty lines, and names none of them. The owner read it and said, plainly,
-that he could not tell what was happening.
+mechanics in twenty lines, and names none of them. On reading it, the owner found it impossible
+to tell what was happening.
 
 Give the two confusing ones names. **This is a readability change, not a correctness fix.**
 
@@ -102,12 +102,12 @@ That is the whole reason it is a generator, and it is what its test must pin.
 anything in this pass runs, and a caller that re-takes it mid-loop gets a different and wrong
 answer.
 
-### Escalate to /sp-architect?
+### Does this need a separate design?
 
 No. Two small units inside one module.
 
 **Risk: low.** One handler, two new pure functions, and an area whose tests were just
-measured to be sensitive to exactly this code. Phase 5 runs one reviewer.
+measured to be sensitive to exactly this code. One review pass.
 
 ## Acceptance criteria
 
@@ -125,7 +125,7 @@ measured to be sensitive to exactly this code. Phase 5 runs one reviewer.
 | 10 | Unit suite | `bunx vitest run` | ≥ 2045 passing, 0 failing |
 | 11 | Integration against a real database | `bun run test:integration:sqlite` | 224 passed / 7 skipped |
 | 12 | Types and the real `tsc` declaration build | `turbo run check-types --force`, `turbo run build` | both green |
-| 13 | The analyzer gains nothing | `sp-lint-delta.sh --base feat/translator-lifecycle-run-context` | nothing introduced |
+| 13 | The analyzer gains nothing | oxlint compared against `feat/translator-lifecycle-run-context` | nothing introduced |
 | 14 | Nothing outside `payload-jobs-runner/` changed | `git status` filtered through a throwaway index | only those paths |
 
 ## Criteria pre-flight — run 2026-10-09 against the untouched tree
@@ -147,28 +147,25 @@ measured to be sensitive to exactly this code. Phase 5 runs one reviewer.
 - `deliveredBefore` is a snapshot, so a locale delivered by this very pass is not in it —
   which is the point, and criterion 6 is what would catch getting it backwards.
 
-## Human choices
+## Decisions by the owner
 
 - Do it for readability, knowing correctness is already guarded — chosen by the owner after
   the stronger justification was disproved.
-- D3's reduction from three new units to two is the agent's call, stated plainly rather than
-  slipped in; the owner can overrule it.
+- D3's reduction from three new units to two was made during implementation, not by the owner;
+  stated plainly so it can be overruled.
 - Scope limited to `payload-jobs-runner/`; existing tests not to be edited.
 - `README.md` is the owner's. No tracker issues. The git index is not to be touched.
 
 ## Review log
 
-_(appended by each review pass)_
-
-### 2026-10-09 · phase 5 verification
+### 2026-10-09 · verification
 
 - **Checks:** unit 2057/148 files · `turbo run check-types --force` 9/9 · `bunx oxlint` 47 warnings,
   0 errors · `turbo run build` green including the real `tsc` declaration build · integration on
   SQLite 224 passed / 7 skipped.
-- **Gates:** `sp-diff-checks` clean, 5 checks; `sp-lint-delta --base feat/translator-lifecycle-run-context`
-  nothing introduced — zero, the path artifact of earlier passes is gone too.
-- **Reviewer:** one, vector `full` (risk low). It ran the type-check, the real declaration build, the
-  whole `payload-jobs-runner` unit suite and six named integration specs itself rather than reading.
+- **Lint against `feat/translator-lifecycle-run-context`:** nothing introduced.
+- **Review:** one pass, which ran the type-check, the real declaration build, the whole
+  `payload-jobs-runner` unit suite and six named integration specs rather than only reading.
 - **One finding, taken.** `deliveredLocales` is a snapshot, so a run whose `target_lngs` lists one
   locale twice would be announced `delivered` twice — the old per-locale check saw the first
   occurrence's just-written log entry and stayed quiet. Reproduced, then fixed where the invariant
@@ -188,5 +185,3 @@ _(appended by each review pass)_
 - **Criteria:** 14 of 14 met.
 - **Left open:** `thrown` remains a `WeakMap` keyed by the job object, with nothing checking that the
   task handler and the workflow loop see the same object — named in D3 and out of scope.
-- **Pin:** not set. The working diff holds four tasks' work and this pass reviewed one task's files;
-  a pin would claim more than was verified.

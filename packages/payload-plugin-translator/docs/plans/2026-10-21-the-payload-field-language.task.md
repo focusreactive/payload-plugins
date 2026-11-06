@@ -71,7 +71,7 @@ rich-text step cannot quietly inherit an unstated split.
 **Written contract?** Yes, and it is the whole point: the addresses this language emits must
 render identically to today's. AC2 is that contract.
 
-**Escalate?** No. One package, no new seam, no dependency.
+**Separate design needed?** No. One package, no new seam, no dependency.
 
 ## Acceptance Criteria
 
@@ -113,10 +113,9 @@ Against the untouched tree, 2026-10-21, branch `feat/translator-payload-fields-l
   from `FieldChunkCollector.test.ts` rather than inventing one, so the coverage it inherits is
   whatever that file already has.
 
-## Human choices
+## Decisions by the owner
 
-- Run unattended, no questions, no commits — owner, 2026-10-21, going to sleep.
-- **Forced at the gate, which the owner was not present for:** the scope split (field language
+- **Taken before implementation, without the owner (2026-10-21):** the scope split (field language
   now, rich text after a routing decision), N2's deferral of the target tree, and N3's
   deferral of seeding. Each is recorded above with what it costs. All three are reversible and
   none is visible outside this package.
@@ -166,7 +165,7 @@ the collector. Both are mutation-proven by their own breakages; neither has a su
 stub could touch. Forty-three of the forty-five checks do go red.
 
 **X5 — two of the comments this change wrote were false, and one of them had made a check false
-too.** The audit checked every behavioural claim against the code:
+too.** The comment review checked every behavioural claim against the code:
 
 - *"the copy being written does not carry it — which is what a filtered working copy looks like."*
   Not what one looks like. The only working copy in the pipeline comes from `DataReconciler`, whose
@@ -193,14 +192,10 @@ constructor of a branded type and then stripped the brand.
 
 ## Review log
 
-### 2026-10-21 — comment audit
+### 2026-10-21 — comment review
 
-6 blocks judged, every one: 4 deleted, 1 shortened, 1 answered by changing the code, plus 1 missing
-one added. 17 comment lines over 462 of code going in; 4 lines left.
-
-**Two carried false claims** (X5) — the class this audit's third check exists for, and the second
-time in three runs that a false comment had also made a *check* false. One block was answered by
-exporting the other half of the address grammar rather than by rewording it (X6).
+**Two comments carried false claims** (X5), and one of them had also made a *check* false. One block
+was answered by exporting the other half of the address grammar rather than by rewording it (X6).
 
 ### 2026-10-21 — code review
 
@@ -231,7 +226,7 @@ emits a chunk, the language reports the leaf through `onSelectedWithoutText` and
 alone. Pinned in `__tests__/PayloadFields.nonStringLeaf.test.ts`, and AC1 now states the exception
 rather than claiming agreement it does not have.
 
-Writing that pin surfaced a defect in a check written an hour earlier: it called
+Writing that pin surfaced a defect in a check written earlier in this change: it called
 `applyTranslations(targets, () => "translated")` — a function where the signature takes an array of
 translations — so nothing was written and the check passed for the wrong reason. The type-checker
 would have caught it; it was found by mutating the language and watching the check stay green. Fixed,
@@ -252,12 +247,12 @@ and all three checks in that file now discriminate.
 | AC9 | met | 174 files / 2268 checks, all passing; the baseline was 169 / 2202 before the kernel landed and 173 / 2247 at the start of this step |
 | AC10 | met | `check-types` 0 errors; `oxlint .` 45 warnings, 0 errors — the baseline |
 
-**Stub audit, re-run after the review.** Against a language that enters and then selects nothing,
+**Suite run against an empty implementation, after the review.** Against a language that enters and then selects nothing,
 60 of the 66 checks in `src/languages` go red. The six that stay green exercise something other
 than this language: three state what `DataReconciler` did to the working copy, one states that the
 old collector finds something in every shape, one states that the old collector hands over a
-non-string leaf, and one states that the language declares no boundary. The seventh survivor from
-the first audit — "the value survives the walk untouched" — was a claim about absence with no
+non-string leaf, and one states that the language declares no boundary. A seventh check that stayed
+green in the first run — "the value survives the walk untouched" — was a claim about absence with no
 anchor; it now asserts that the walk reached the leaf and reported it, and goes red on the stub.
 
-Nothing is wired. The working tree is left uncommitted.
+Nothing is wired.

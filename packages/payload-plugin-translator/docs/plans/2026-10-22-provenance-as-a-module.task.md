@@ -32,7 +32,7 @@ Nothing is invented. Every piece has a precedent in this package:
 
 ## Decisions
 
-Adopted from `2026-10-18-the-rewiring.md`: D1, D3–D10, D12–D14, D22. Settled in conversation and
+Adopted from `2026-10-18-the-rewiring.md`: D1, D3–D10, D12–D14, D22. Settled with the owner and
 recorded here because they depart from, or narrow, that plan.
 
 **D-a — two positions, not three.** D2 names three: before the translation, after it but before the
@@ -52,7 +52,7 @@ person pressing a button and asking for the drift-only kind, so a field naming t
 break that button.
 
 **D-c — one provenance module with two positions, not a recorder and a shortener.** *Reversed
-during Phase 3, in the open.* The split was recorded first, citing step 5 as its consumer. On
+during implementation.* The split was recorded first, citing step 5 as its consumer. On
 contact with the code it lost: the shortening half needs the fingerprints the recording half
 computes, so two chain entries would read each other's note under a foreign key and the document
 would be hashed twice. One module captures once at position one, uses it for the drift map there,
@@ -98,8 +98,8 @@ same treatment rather than a weaker one.
 (`translation-run/__tests__/moduleFailure.test.ts`).
 
 **D-h — an address a per-leaf receipt does not name means "translate"; a document with no per-leaf
-receipt at all still answers for nothing.** *Narrowed during Phase 3, with the owner, on measured
-evidence.*
+receipt at all still answers for nothing.** *Narrowed during implementation, with the owner, on
+measured evidence.*
 
 The rule as first written made no distinction, and that is right for the world after step 5. Applied
 now it collapses `skip_existing` into `overwrite` for every document the plugin has not yet
@@ -150,7 +150,7 @@ Acceptable on the major line; it gets a `DEPRECATIONS.md` entry alongside the `l
 `undefined`, and the chain must then keep the state it had rather than adopt `undefined`. Stated in
 the chain runner's docblock and pinned by AC5.
 
-### Escalate to `/sp-architect`?
+### Does this need a separate design?
 
 No. The design is `2026-10-18-the-rewiring.md`, which is the architecture document; this is one of
 its build steps.
@@ -183,7 +183,7 @@ its build steps.
 | AC8 | `levels` defaults silently to two surfaces (`plugin.ts:140`) | **change** |
 | AC9 | 180 files / 2405 checks green; baseline for types/lint/build carried from the previous task | **invariant** |
 
-### What the absent-address rule inverts — named, so Phase 5 cannot gloss it
+### What the absent-address rule inverts — named, so review cannot gloss it
 
 Four recorded expectations reverse, all in `staleness.test.ts`. Each is rewritten with its reason,
 not deleted.
@@ -198,8 +198,7 @@ not deleted.
 **Measured, not assumed.** The wider form of D-h — treating "no receipt at all" the same way —
 failed ten integration checks across four files, among them `strategies.int.test.ts:56`
 ("skip_existing keeps a filled target but fills an empty sibling"), which is the strategy's own
-definition. The narrowed rule fails none and still satisfies AC4. Both runs are in the Phase 5
-evidence.
+definition. The narrowed rule fails none and still satisfies AC4.
 
 ## Risk notes
 
@@ -217,18 +216,18 @@ documented protection.
 - `swallowOrThrow` returning `undefined` is easy to adopt into the state by accident, which would
   silently blank the run's fingerprints. Pinned by AC5.
 
-## Human choices
+## Decisions by the owner
 
 - **One pass, not two.** The run-time seam and the `levels` → `modules` rename ship together.
   *Rejected:* splitting at the config boundary — the owner chose the single pass knowing it touches
   the boot path of all 63 integration suites.
-- **The middle position is not built.** The owner's words: if nothing needs it, there is no reason
+- **The middle position is not built.** Decided by the owner: if nothing needs it, there is no reason
   to occupy it, and no interface requires a placeholder.
 - **The run-kind field is deferred to step 5.** Proposed, then withdrawn after checking that
   `strategy` still decides this at step 4; the owner accepted the withdrawal.
-- **The absent-address rule is narrowed to a receipt that exists.** Raised mid-build with both
-  variants measured against the integration suite. The owner's words: *"Ты предлагаешь уважать
-  стратегию пока она есть?"* — yes. While `skip_existing` exists, its promise is kept; the wider
+- **The absent-address rule is narrowed to a receipt that exists.** Raised during implementation
+  with both variants measured against the integration suite; the owner chose to respect the
+  strategy while it still exists. While `skip_existing` exists, its promise is kept; the wider
   rule lands at step 5, where the strategy is deleted and #48 gives the editor the replacement.
 
 ## Open, not solved here
@@ -246,13 +245,10 @@ documented protection.
 
 ## Review log
 
-### Comment audit over the whole change
+### Comment review over the whole change
 
-59 blocks collected · 58 verdicts · 1 declined as scheduled for deletion at step S1. Applied:
-16 deletions, 27 shortenings, 6 code rewrites, 9 kept with a named reason, 2 gaps closed.
-
-**Nine false statements it caught in comments written during this build**, each checked against the
-code rather than read:
+**Nine false statements in comments written during this change**, each checked against the code
+rather than read:
 
 | Where | Claimed | True |
 |---|---|---|
@@ -273,19 +269,19 @@ the class's docblock on the constant, leaving the class undocumented and the con
 reader), `ResolvedProvenance.serviceFactory` (no reader — `configureProvenance` now returns the
 module itself), and a `Record<string, Record<string, …>>` that became the named `TaskStatusByLocale`.
 
-**One owner rule broken and repaired:** `state.notes[PROVENANCE_MODULE] as FieldFingerprints` was a
+**One project rule broken and repaired:** `state.notes[PROVENANCE_MODULE] as FieldFingerprints` was a
 type assertion to quiet the checker. It is now the type predicate `isFingerprints`, the same idiom
 as `recordsEachLeaf`.
 
 **Declined:** the `sourceChangedByLeaf` docblock — step S1 deletes the field with the strategies.
 
-### Complexity audit of `staleness.ts`, and what the owner saw in it
+### Complexity review of `staleness.ts`
 
 Two changes, the second worth more than the first.
 
 **`leafChanged` dissolved into its two call sites.** It wrapped one comparison, and its signature
 admitted a pair — both arguments absent — that neither caller can produce. Applied at the owner's
-request; by this skill's own balance rule it is not a complexity finding, because nothing left the
+request; by the complexity review's own balance rule it is not a complexity finding, because nothing left the
 system: CHANGE 0 → 0, READ unchanged. What did change is that one impossible state stopped being
 expressible, and the file dropped two type imports it kept alive for that signature alone.
 
@@ -306,13 +302,12 @@ policy, not a comparison, and it now lives with the module that owns provenance 
 `server/modules/provenance/__tests__/Provenance.module.test.ts`, five checks, which the module did
 not have before.
 
-*Why neither audit caught it.* The abstraction audit's honesty measure is exactly the right
-instrument (3 forms admitted, 1 used), but the brief that scoped it was written by the author of the
-code and described this boundary by its return value. That is the failure its own Step 0 warns
-about. The complexity audit cannot see it at all: its counters price a future change, not a
+*Why neither review caught it.* The abstraction review's honesty measure is exactly the right
+instrument (3 forms admitted, 1 used), but its scope described this boundary by its return value.
+The complexity review cannot see it at all: its counters price a future change, not a
 signature that over-claims.
 
-### Fresh-eyes review of the whole change
+### Review of the whole change
 
 Three findings, one of them the serious kind.
 
@@ -329,7 +324,7 @@ a failure now ends the run, so there is no path where the note is lost while the
 **Checked and declined — the chain judges a failure against the run's own `scope`, not one a module
 returned.** Deliberate, and documented at the call site.
 
-The reviewer also walked the four shapes a stored fingerprint can take, the `previousAttempts` key
+Review also walked the four shapes a stored fingerprint can take, the `previousAttempts` key
 path, and what config-time work moved, and found each sound.
 
 **Fixed, not carried:** `useDocumentStaleness` requests the staleness route on every document mount,
@@ -338,6 +333,6 @@ error where it used to show nothing. The hook reads a 404 as "no locale is out o
 true however the plugin is configured and needs no flag in the browser. Telling the browser what the
 plugin can do is D20's ability set, which this step deliberately does not build.
 
-*Found by following the audit's note into `apps/cms`, which configures the plugin with provenance
+*Found by following a review note into `apps/cms`, which configures the plugin with provenance
 off.* The same read also caught that `apps/cms` relied on the removed `levels` default and would not
 have booted; it is migrated in this change.

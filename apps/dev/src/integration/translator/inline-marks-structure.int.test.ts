@@ -59,7 +59,6 @@ describe("every Lexical container shape, translated independently", () => {
 
   beforeAll(async () => {
     ctx = await bootTestPayload({
-      declaresInlineMarks: true,
       collections: buildNestedCollections(),
     });
 
