@@ -26,6 +26,7 @@ import { Posts } from "@/collections/Posts";
 import serverExtractPostContent from "@/collections/Posts/serverExtractPostContent";
 import { Testimonials } from "@/collections/Testimonials";
 import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
+import { buildDocHref, toResolvedLinkDoc } from "@/lib/contentExtraction/links";
 import { getMediaStoragePrefix } from "@/lib/storage/mediaStoragePrefix";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { abAdapter } from "@/lib/plugins/ab/abAdapter";
@@ -245,6 +246,7 @@ export const plugins: Plugin[] = [
         },
         extractContentPath: "@/collections/Page/extractPageContent#default",
         serverExtractContent: serverExtractPageContent,
+        resolveUrl: ({ doc, locale }) => buildDocHref("page", toResolvedLinkDoc(doc), locale),
       },
       {
         slug: "posts",
@@ -255,6 +257,7 @@ export const plugins: Plugin[] = [
         },
         extractContentPath: "@/collections/Posts/extractPostContent#default",
         serverExtractContent: serverExtractPostContent,
+        resolveUrl: ({ doc, locale }) => buildDocHref("posts", toResolvedLinkDoc(doc), locale),
       },
     ],
     site: {
@@ -262,6 +265,7 @@ export const plugins: Plugin[] = [
       faviconUrl: "/favicon.ico",
     },
     supportedLocales: I18N_CONFIG.locales.map((locale) => locale.code),
+    keyphraseIndex: true,
   }),
 
   nestedDocsPlugin({

@@ -9,6 +9,7 @@ import {
   isLinkValue,
   linkRefKey,
   linkToContentNode,
+  toResolvedLinkDoc,
 } from "@/lib/contentExtraction";
 import type { LinkResolveCtx, LinkValue, ResolvedLinkDoc } from "@/lib/contentExtraction";
 import { extractPageBlockContent } from "@/collections/Page/extractPageContent";
@@ -301,5 +302,33 @@ describe("testimonialsList resolves relation data via DocStore", () => {
     expect(nodes).toContainEqual({ type: "paragraph", text: "Great product" });
     expect(nodes).toContainEqual({ type: "paragraph", text: "Jane Roe" });
     expect(nodes).toContainEqual({ type: "paragraph", text: "CEO, Acme" });
+  });
+});
+
+describe("toResolvedLinkDoc", () => {
+  it("keeps the slug and breadcrumb urls of a loaded document", () => {
+    expect(
+      toResolvedLinkDoc({
+        id: 3,
+        slug: "child",
+        title: "Child",
+        breadcrumbs: [{ url: "/parent", label: "Parent" }, { url: "/parent/child" }],
+      })
+    ).toEqual({
+      id: 3,
+      slug: "child",
+      breadcrumbs: [{ url: "/parent" }, { url: "/parent/child" }],
+    });
+  });
+
+  it("drops values of the wrong shape", () => {
+    expect(toResolvedLinkDoc({ id: {}, slug: 5, breadcrumbs: "x" })).toEqual({
+      slug: null,
+      breadcrumbs: null,
+    });
+    expect(toResolvedLinkDoc({ breadcrumbs: [null, { url: 1 }] }).breadcrumbs).toEqual([
+      { url: null },
+      { url: null },
+    ]);
   });
 });

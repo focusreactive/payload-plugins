@@ -99,6 +99,48 @@ export function collectLinkRefs(value: unknown): LinkRef[] {
   return out;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function readBreadcrumbs(value: unknown): Page["breadcrumbs"] {
+  if (!Array.isArray(value)) return null;
+
+  return value.map((crumb: unknown) => ({
+    url: isRecord(crumb) && typeof crumb.url === "string" ? crumb.url : null,
+  }));
+}
+
+export function toResolvedLinkDoc(doc: Record<string, unknown>): ResolvedLinkDoc {
+  const { id, slug, breadcrumbs } = doc;
+
+  return {
+    ...(typeof id === "string" || typeof id === "number" ? { id } : {}),
+    slug: typeof slug === "string" ? slug : null,
+    breadcrumbs: readBreadcrumbs(breadcrumbs),
+  };
+}
+
+export function buildDocHref(
+  relationTo: LinkRelation,
+  doc: ResolvedLinkDoc,
+  locale: string
+): string {
+  if (relationTo === "page") {
+    return (
+      buildUrl({
+        collection: "page",
+        breadcrumbs: doc.breadcrumbs,
+        slug: doc.slug,
+        locale,
+        absolute: false,
+      }) || "/"
+    );
+  }
+
+  return buildUrl({ collection: "posts", slug: doc.slug, locale, absolute: false });
+}
+
 function resolveReferenceHref(reference: LinkReference, ctx: LinkResolveCtx): string {
   const { relationTo, value } = reference;
 
@@ -109,19 +151,7 @@ function resolveReferenceHref(reference: LinkReference, ctx: LinkResolveCtx): st
 
   if (!doc) return "";
 
-  if (relationTo === "page") {
-    return (
-      buildUrl({
-        collection: "page",
-        breadcrumbs: doc.breadcrumbs,
-        slug: doc.slug,
-        locale: ctx.locale,
-        absolute: false,
-      }) || "/"
-    );
-  }
-
-  return buildUrl({ collection: "posts", slug: doc.slug, locale: ctx.locale, absolute: false });
+  return buildDocHref(relationTo, doc, ctx.locale);
 }
 
 function resolveLinkHref(value: LinkValue, ctx: LinkResolveCtx): string {
