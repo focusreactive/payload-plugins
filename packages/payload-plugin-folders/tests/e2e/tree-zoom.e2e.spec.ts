@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { childrenOf, createFolder, createPage, removeFolderTree } from "./helpers/content.js";
 import { writeFolderPathDrift } from "./helpers/drift.js";
-import { dragRowTo, moveOver, startDrag } from "./helpers/drag.js";
+import { dragRowTo, moveOver, startDrag, waitForClicksAfterDrag } from "./helpers/drag.js";
 import { startStockServer, stockServerUrl, stopStockServer } from "./helpers/stockServer.js";
 import {
   breadcrumb,
@@ -82,6 +82,8 @@ const confirmDialog = (page: Page): Locator =>
 
 /** Confirms the move dialog a published page's URL change asks for. */
 const confirmMove = async (page: Page): Promise<void> => {
+  // The dialog a drop opens can be ready within the 50 ms dnd-kit swallows clicks after a drag.
+  await waitForClicksAfterDrag(page);
   await confirmDialog(page).getByRole("button", { exact: true, name: "Move" }).click();
   await expect(confirmDialog(page)).toHaveCount(0);
 };

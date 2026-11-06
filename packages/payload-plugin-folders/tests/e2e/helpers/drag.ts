@@ -1,3 +1,4 @@
+import { expect } from "@playwright/test";
 import type { Locator, Page } from "@playwright/test";
 
 /** Where on the row the pointer stops: the top, the middle or the bottom of it. */
@@ -84,3 +85,28 @@ export const rowTitlesIn = (page: Page, titles: readonly string[]): Promise<stri
           .filter((title) => wanted.includes(title)),
       [...titles]
     );
+
+/**
+ * Waits until a click reaches the page again after a drag. dnd-kit swallows every click on the
+ * document for 50 ms after a drag ends, and a dialog the drop opens can be clicked sooner than that
+ * when the preview answers fast. A person cannot click that fast, so a click on the dialog's button
+ * that lands inside the window is lost and the dialog never closes. The probe sends a click to the
+ * page's root element and checks that it arrives.
+ */
+export const waitForClicksAfterDrag = async (page: Page): Promise<void> => {
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        let hasArrived = false;
+        const markArrived = () => {
+          hasArrived = true;
+        };
+        document.documentElement.addEventListener("click", markArrived);
+        document.documentElement.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        document.documentElement.removeEventListener("click", markArrived);
+
+        return hasArrived;
+      })
+    )
+    .toBe(true);
+};
