@@ -1,6 +1,8 @@
 import { getPayload } from "payload";
+import type { Payload } from "payload";
 
 import config from "./payload.config";
+import { seedWithAudit } from "./seedWithAudit";
 
 // Seeds the dev SQLite DB with content in the `en` source locale only, so the translator
 // plugin has saved sources to translate FROM (de/fr/es stay empty on purpose). Run from apps/dev:
@@ -126,8 +128,7 @@ const contentBlock = (content: ReturnType<typeof doc>) => ({
   content,
 });
 
-const run = async () => {
-  const payload = await getPayload({ config });
+export const seed = async (payload: Payload) => {
   const wipe = (collection: "pages" | "articles" | "playground") =>
     payload.delete({ collection, where: { id: { exists: true } } });
 
@@ -491,11 +492,15 @@ const run = async () => {
   payload.logger.info("Seed complete.");
 };
 
-try {
-  await run();
-  process.exit(0);
-} catch (error) {
-  // biome-ignore lint/suspicious/noConsole: standalone script — payload logger may be unavailable on failure
-  console.error(error);
-  process.exit(1);
-}
+const run = async () => {
+  try {
+    const payload = await getPayload({ config });
+    await seedWithAudit(payload, seed);
+    process.exit(0);
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+};
+
+if (import.meta.main) await run();

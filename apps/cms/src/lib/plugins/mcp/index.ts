@@ -1,41 +1,12 @@
 import { mcpPlugin } from "@payloadcms/plugin-mcp";
-import type { PayloadRequest } from "payload";
 
 import { buildUrl } from "@/lib/utils/path/buildUrl";
 import type { Page } from "@/payload-types";
 
-import { LOCAL_DEV_MCP_USER, LOCAL_HOSTS } from "./constants/local";
+import { overrideAuth } from "./overrideAuth";
 import { createMcpTools } from "./tools";
 import type { McpToolsRegistry } from "./tools";
 import { uploadImage } from "./tools/uploadImage";
-
-function isLocalDevMcpRequest(req: PayloadRequest) {
-  if (process.env.NODE_ENV !== "development") {
-    return false;
-  }
-
-  if (process.env.PAYLOAD_MCP_LOCAL_AUTH_BYPASS === "false") {
-    return false;
-  }
-
-  try {
-    if (!req.url) {
-      return false;
-    }
-
-    const url = new URL(req.url);
-
-    return LOCAL_HOSTS.includes(url.hostname);
-  } catch {
-    const host = req.headers.get("host")?.split(":")[0];
-
-    if (!host) {
-      return false;
-    }
-
-    return LOCAL_HOSTS.includes(host);
-  }
-}
 
 const registry: McpToolsRegistry = {
   collections: {
@@ -223,30 +194,5 @@ export const mcpPluginConfig = mcpPlugin({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ] as any,
   },
-  overrideAuth: async (req, getDefaultMcpAccessSettings) => {
-    if (!isLocalDevMcpRequest(req)) {
-      return getDefaultMcpAccessSettings();
-    }
-
-    return {
-      authors: { create: true, delete: true, find: false, update: true },
-      categories: { create: true, delete: true, find: false, update: true },
-      footer: { create: true, delete: true, find: false, update: true },
-      header: { create: true, delete: true, find: false, update: true },
-      media: { create: true, delete: true, find: false, update: true },
-      page: { create: true, delete: true, find: false, update: true },
-      "payload-mcp-tool": {
-        getAllDocuments: true,
-        getDocument: true,
-        getField: true,
-        getGlobalDocument: true,
-        uploadImage: true,
-      },
-      posts: { create: true, delete: true, find: false, update: true },
-      siteSettings: { find: false, update: true },
-      testimonials: { create: true, delete: true, find: false, update: true },
-      users: { create: true, delete: true, find: false, update: true },
-      user: LOCAL_DEV_MCP_USER,
-    };
-  },
+  overrideAuth,
 });

@@ -77,6 +77,7 @@ export interface Config {
     comments: Comment;
     'comment-reads': CommentRead;
     'translator-provenance': TranslatorProvenance;
+    'audit-events': AuditEvent;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -95,6 +96,7 @@ export interface Config {
     comments: CommentsSelect<false> | CommentsSelect<true>;
     'comment-reads': CommentReadsSelect<false> | CommentReadsSelect<true>;
     'translator-provenance': TranslatorProvenanceSelect<false> | TranslatorProvenanceSelect<true>;
+    'audit-events': AuditEventsSelect<false> | AuditEventsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -716,7 +718,7 @@ export interface Comment {
         id?: string | null;
       }[]
     | null;
-  author: number | User;
+  author?: (number | null) | User;
   isResolved?: boolean | null;
   resolvedBy?: (number | null) | User;
   resolvedAt?: string | null;
@@ -750,6 +752,64 @@ export interface TranslatorProvenance {
   dismissedFingerprint?: string | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * Read-only journal of who changed what and when.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-events".
+ */
+export interface AuditEvent {
+  id: number;
+  occurredAt: string;
+  action: string;
+  status?: ('success' | 'failure') | null;
+  actor: {
+    type: 'user' | 'api_key' | 'agent' | 'seed' | 'migration' | 'system' | 'anonymous';
+    docId?: string | null;
+    collection?: string | null;
+    label?: string | null;
+    source?: ('context' | 'als' | 'auth' | 'inferred' | 'plugin') | null;
+  };
+  onBehalfOf?: {
+    collection?: string | null;
+    docId?: string | null;
+    label?: string | null;
+  };
+  agent?: {
+    keyId?: string | null;
+    name?: string | null;
+    model?: string | null;
+    tool?: string | null;
+  };
+  via?: ('admin' | 'rest' | 'graphql' | 'local' | 'mcp' | 'job') | null;
+  target?: {
+    kind?: ('collection' | 'global' | 'auth' | 'audit' | 'system') | null;
+    slug?: string | null;
+    docId?: string | null;
+    label?: string | null;
+    locale?: string | null;
+  };
+  changes?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  overrideAccess?: boolean | null;
+  requestId?: string | null;
+  metadata?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1301,6 +1361,53 @@ export interface TranslatorProvenanceSelect<T extends boolean = true> {
   dismissedFingerprint?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-events_select".
+ */
+export interface AuditEventsSelect<T extends boolean = true> {
+  occurredAt?: T;
+  action?: T;
+  status?: T;
+  actor?:
+    | T
+    | {
+        type?: T;
+        docId?: T;
+        collection?: T;
+        label?: T;
+        source?: T;
+      };
+  onBehalfOf?:
+    | T
+    | {
+        collection?: T;
+        docId?: T;
+        label?: T;
+      };
+  agent?:
+    | T
+    | {
+        keyId?: T;
+        name?: T;
+        model?: T;
+        tool?: T;
+      };
+  via?: T;
+  target?:
+    | T
+    | {
+        kind?: T;
+        slug?: T;
+        docId?: T;
+        label?: T;
+        locale?: T;
+      };
+  changes?: T;
+  overrideAccess?: T;
+  requestId?: T;
+  metadata?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
