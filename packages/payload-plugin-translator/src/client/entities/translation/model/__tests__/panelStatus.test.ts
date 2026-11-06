@@ -18,6 +18,12 @@ describe("derivePanelStatus", () => {
     ).toEqual({ kind: "failed" });
   });
 
+  it("a locale the run never reached wears the failed marker, not none", () => {
+    expect(
+      derivePanelStatus({ runStatus: DocumentTranslationStatus.ABANDONED, staleLocales: [] })
+    ).toEqual({ kind: "failed" });
+  });
+
   it("running/pending outranks stale", () => {
     expect(
       derivePanelStatus({ runStatus: DocumentTranslationStatus.RUNNING, staleLocales: ["de"] })
@@ -70,6 +76,24 @@ describe("deriveDocumentRunStatus", () => {
   it("returns undefined when there are no jobs", () => {
     expect(deriveDocumentRunStatus(undefined)).toBeUndefined();
     expect(deriveDocumentRunStatus([])).toBeUndefined();
+  });
+
+  it("an abandoned locale outranks a delivered one", () => {
+    expect(
+      deriveDocumentRunStatus([
+        jobWith(DocumentTranslationStatus.COMPLETED, "de"),
+        jobWith(DocumentTranslationStatus.ABANDONED, "es"),
+      ])
+    ).toBe(DocumentTranslationStatus.ABANDONED);
+  });
+
+  it("never reports a document as up to date while a locale was left untried", () => {
+    const runStatus = deriveDocumentRunStatus([
+      jobWith(DocumentTranslationStatus.COMPLETED, "de"),
+      jobWith(DocumentTranslationStatus.COMPLETED, "fr"),
+      jobWith(DocumentTranslationStatus.ABANDONED, "es"),
+    ]);
+    expect(derivePanelStatus({ runStatus, staleLocales: [] })).toEqual({ kind: "failed" });
   });
 
   it("picks the most urgent status across locales: failed > running > pending > completed", () => {

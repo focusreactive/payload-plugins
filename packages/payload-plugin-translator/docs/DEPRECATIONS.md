@@ -437,6 +437,42 @@ the single source of truth — code annotations link here by anchor instead of d
   - `src/server/modules/task-runner/payload-jobs-runner/model/owedIfGaveUp.ts` (when a run has stopped for good)
   - `src/server/modules/lifecycle/types.ts` (`TranslationLifecycleCallbacks`)
 
+### on-failed-only-for-what-was-tried
+
+- **What:** `lifecycle.onFailed` firing for a target locale the run never attempted, carrying the
+  error that ended a *different* locale.
+- **Status:** removed (behaviour change, not an annotated symbol)
+- **Removed:** 2026-11-02, with step 9 of
+  [the provider port](./plans/2026-10-28-the-provider-port.design.md).
+- **Replacement:** `lifecycle.onAbandoned`, fired once per locale the run gave up before reaching.
+  It takes the task and no error, because none of them is its own:
+
+  ```ts
+  lifecycle: {
+    onFailed: (task, error) => report(task, error),  // tried, and it broke
+    onAbandoned: (task) => reschedule(task),         // never tried; nothing to report
+  },
+  ```
+- **Why:** a run walks a document's locales in order and stops at the one that throws. The locales
+  after it never start, and reporting them as failures told a person two untrue things at once —
+  that more translations failed than did, and that each failed for a reason that was in fact
+  another locale's. The same untruth reached a host counting failures, alerting on them, or
+  retrying from the callback.
+- **This break is silent, and that is the reason it is listed.** Nothing stops compiling. A host
+  that counted every unfinished locale through `onFailed` alone keeps building and quietly stops
+  hearing about the abandoned ones. Add `onAbandoned` wherever `onFailed` was used to mean "this
+  locale will not be translated".
+- **What else changed with it:** the run record stores `outcome: "abandoned"` with no error, the
+  status route answers `abandoned`, and the admin's per-locale list shows such a row as
+  "Not attempted" — with its Retry action, which is what a person looking at one wants. The
+  collection-wide progress counts do **not** yet carry it; they still report only queued, running
+  and recently failed work.
+- **Code refs:**
+  - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsRunnerProvider.ts` (which ending each owed locale gets)
+  - `src/server/modules/task-runner/types.ts` (`TaskEvent`, `TaskStatus`)
+  - `src/server/features/translate-document/wireTranslateRunner.ts` (turns a reported event into a callback)
+  - `src/server/modules/lifecycle/types.ts` (`TranslationLifecycleCallbacks`)
+
 ### runner-create-takes-the-context
 
 - **What:** `TaskRunnerProvider.create(payload, handler)` — the second argument.

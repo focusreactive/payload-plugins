@@ -9,6 +9,7 @@ import type { QueuedWork } from "../../../modules/task-runner/types.js";
 import type { RequestScope } from "../../../shared/payload/RequestScope.shapes.js";
 import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
+import type { TranslationLifecycleCallbacks } from "../../../modules/lifecycle/index.js";
 import type { TranslationProvider } from "../../../../core/domain/translation-providers/index.js";
 
 const { translateDocument } = vi.hoisted(() => ({
@@ -220,5 +221,63 @@ describe("the plugin's own record of a run", () => {
         context.report(payload, theRun, { state: "delivered" }, { transactionID: "tx-9" })
       ).rejects.toBe(boom);
     });
+  });
+});
+
+describe("a locale the run never attempted", () => {
+  const wire = (lifecycle: TranslationLifecycleCallbacks, store: RunRecordStoreDouble) => {
+    let captured: TaskRunnerContext | undefined;
+    wireTranslateRunner({
+      translation: {
+        translationProvider: {} as TranslationProvider,
+        schemaMap: new Map() as CollectionSchemaMap,
+        modules: [],
+      },
+      runner: idleRunner((handed) => {
+        captured = handed;
+      }),
+      lifecycle,
+      storeFactory: () => store,
+    });
+    if (!captured) throw new Error("the runner was never handed a context");
+    return captured;
+  };
+
+  const payload = { logger: { error: vi.fn() } } as unknown as Payload;
+
+  it("settles the row with no reason at all", async () => {
+    const store = storeDouble({ find: vi.fn().mockResolvedValue(runRow({ handle: "job-7" })) });
+
+    await wire({}, store).report(payload, theRun, { state: "abandoned" });
+
+    expect(store.recordSettled).toHaveBeenCalledWith(
+      theRun,
+      expect.objectContaining({ outcome: "abandoned", error: null })
+    );
+  });
+
+  it("tells the host through onAbandoned, and not through onFailed", async () => {
+    const store = storeDouble({ find: vi.fn().mockResolvedValue(runRow({ handle: "job-7" })) });
+    const onAbandoned = vi.fn();
+    const onFailed = vi.fn();
+
+    await wire({ onAbandoned, onFailed }, store).report(payload, theRun, { state: "abandoned" });
+
+    expect(onAbandoned).toHaveBeenCalledTimes(1);
+    expect(onFailed).not.toHaveBeenCalled();
+  });
+
+  it("still tells the host about a locale that really failed", async () => {
+    const store = storeDouble({ find: vi.fn().mockResolvedValue(runRow({ handle: "job-7" })) });
+    const onAbandoned = vi.fn();
+    const onFailed = vi.fn();
+
+    await wire({ onAbandoned, onFailed }, store).report(payload, theRun, {
+      state: "failed",
+      error: new Error("the model refused"),
+    });
+
+    expect(onFailed).toHaveBeenCalledTimes(1);
+    expect(onAbandoned).not.toHaveBeenCalled();
   });
 });

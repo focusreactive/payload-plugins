@@ -3,7 +3,6 @@ export { translatorPlugin } from "./plugin.js";
 export type { TranslatorPluginConfig } from "./plugin.js";
 export type { TargetSelectionMode } from "./types/TargetSelection.js";
 
-// Lifecycle callbacks — the task descriptor passed to onQueued/onCompleted/onFailed
 export type {
   TranslationTask,
   TranslationLifecycleCallbacks,
@@ -66,6 +65,13 @@ export type {
   PayloadJobsRunnerOptions,
   RunnerCapabilities,
 } from "./server/modules/task-runner/index.js";
+/**
+ * A class under `implements TaskRunnerProvider` gets no contextual typing for its method
+ * parameters, so it must name these two. Both built-in runners are classes.
+ *
+ * @since 1.0.0
+ */
+export type { TaskRunnerContext, TaskRunner } from "./server/modules/task-runner/index.js";
 /**
  * A third-party `TaskRunnerProvider` has always had to accept a `RequestScope` — it is the second
  * parameter of `TaskRunner.enqueue` and of the `TaskHandler` it is handed — but could not name the

@@ -91,6 +91,10 @@ touch the same files:
   `systemPrompt` override returns, and the prompt builder does not change when the next such
   instruction is added. The mark instruction is the one that exists; the glossary and brand voice
   of R9 are the next. Added 2026-11-02, after the seam trace read the slot back.
+- R20 (in) A locale a run never attempted is not reported as a failure, and does not carry
+  another locale's reason. It has an ending of its own, the admin shows it, and the host is told
+  about it through a callback that means what it says. Added 2026-11-02, from the same seam
+  trace. Distinct from R15, which is about a locale that *was* translated, incompletely.
 
 ## Decision points
 
@@ -129,6 +133,7 @@ touch the same files:
 | R17 | the port carries segments; encoding and parsing marks are exported utilities (D11) |
 | R18 | the adapter takes `params`, derived as the request body minus what the plugin fills in; the ask function and its types are named for asking a model (step 7) |
 | R19 | `buildSystemPrompt` takes an ordered list of blocks to append and stops naming any of them; the provider decides membership (step 8) |
+| R20 | a fourth ending, `abandoned`, carried from the runner through the run record to the admin row, with `onAbandoned` beside `onFailed` (step 9) |
 
 ## The port, after
 
@@ -571,10 +576,19 @@ Step 7 was added on 2026-11-01, after step 6 landed and the surface it left was 
 this sequence rather than deferred because both repairs are free before the major ships and breaking
 after it.
 
+9. **A locale nobody tried** — a run that gives up settles the locales it never reached as
+   `abandoned` rather than `failed`, carrying no reason, shown as its own row in the admin and
+   announced to the host through `onAbandoned`. Breaking in effect: `onFailed` stops firing for
+   those locales. covers: R20
+
 Step 8 was added on 2026-11-02, after a seam trace of the plugin–provider boundary read the
 existing slot back. It is not breaking, so it does not have to ship in the major; it is taken here
 because R9 is the next step to touch that file and would otherwise add its branch to the shape
 being replaced.
+
+Step 9 was added on 2026-11-02, from the same trace. It is the one step of this design whose
+break is silent — a host counting closed locales through `onFailed` keeps compiling — which is
+why it ships in the major and carries a ledger entry rather than being deferred.
 
 Steps 2 to 5 were one step when this design was written; the scenario review split them, because each
 is breaking on its own and reviewing them together would hide the one that changes behaviour (3).
