@@ -1,5 +1,6 @@
 import type { Payload } from "payload";
 import type { DocQuery, DocStore } from "../../types/config";
+import { findDocsByIds } from "../findDocsByIds";
 
 type Doc = Record<string, unknown>;
 
@@ -12,28 +13,16 @@ async function runQuery(
   query: DocQuery,
   locale: string | undefined
 ): Promise<Array<[string, Doc]>> {
-  const ids = [...new Set(query.ids.map(String))];
-  if (ids.length === 0) return [];
-
-  const select = query.select ? Object.fromEntries(query.select.map((f) => [f, true])) : undefined;
-
-  const result = await payload.find({
-    collection: query.collection as never,
-    where: { id: { in: ids } },
-    depth: query.depth ?? 0,
-    limit: ids.length,
-    pagination: false,
+  const docs = await findDocsByIds(payload, {
+    collection: query.collection,
+    ids: [...new Set(query.ids.map(String))],
     overrideAccess: true,
-    ...(locale ? { locale: locale as never } : {}),
-    ...(select ? { select: select as never } : {}),
+    depth: query.depth ?? 0,
+    locale,
+    select: query.select ? Object.fromEntries(query.select.map((f) => [f, true])) : undefined,
   });
 
-  return (result.docs as Array<Doc & { id?: unknown }>)
-    .filter(
-      (d): d is Doc & { id: string | number } =>
-        typeof d.id === "string" || typeof d.id === "number"
-    )
-    .map((d) => [key(query.collection, d.id), d] as [string, Doc]);
+  return docs.map((d) => [key(query.collection, d.id), d]);
 }
 
 export function createServerResolveDocs(
