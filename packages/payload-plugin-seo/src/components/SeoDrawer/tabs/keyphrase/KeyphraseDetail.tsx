@@ -2,6 +2,7 @@
 
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useId, useState } from "react";
+import type { ReactNode } from "react";
 import type { CategoryResult } from "../../../../engine/types/analysis";
 import { CheckRow } from "../../../../ui/CheckRow";
 import type { Filter } from "../../../../ui/FilterPills";
@@ -30,6 +31,7 @@ export interface KeyphraseDetailProps {
   onRemoveSynonym: (index: number) => void;
   onSetFocus: () => void;
   onRemove: () => void;
+  usageNotice?: ReactNode;
 }
 
 interface AnalysisProps {
@@ -98,6 +100,7 @@ export function KeyphraseDetail({
   onRemoveSynonym,
   onSetFocus,
   onRemove,
+  usageNotice,
 }: KeyphraseDetailProps) {
   const textInputId = useId();
   const label = isFocus ? "Focus keyphrase" : "Related keyphrase";
@@ -154,6 +157,8 @@ export function KeyphraseDetail({
           &#8220;{entry.text.trim()}&#8221; is already in your keyphrase list.
         </div>
       )}
+
+      {!duplicate && usageNotice}
 
       <div className="mb-[9px]">
         <SynonymsField onAdd={onAddSynonym} onRemove={onRemoveSynonym} synonyms={entry.synonyms} />

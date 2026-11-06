@@ -1,12 +1,19 @@
 "use client";
 
-import { Button, useDocumentInfo, useLocale, useModal } from "@payloadcms/ui";
-import { Gauge } from "lucide-react";
+import { useDocumentInfo, useLocale, useModal } from "@payloadcms/ui";
 import { useCallback, useState } from "react";
 import { ScoreBadge } from "./ScoreBadge";
+import { SeoTriggerButton } from "./SeoTriggerButton";
 import { SeoDrawer } from "../SeoDrawer";
+import type { KeyphraseEntry } from "../SeoDrawer/keyphraseState";
+import {
+  LinkSuggestionsProvider,
+  renderLinksPanel,
+} from "../SeoDrawer/links/LinkSuggestionsProvider";
+import { KeyphraseUsage } from "../SeoDrawer/tabs/keyphrase/KeyphraseUsageNotice";
 import { useAnalysis } from "../SeoDrawer/useAnalysis";
 import { useKeyphrases } from "../SeoDrawer/useKeyphrases";
+import type { RemoteKeyphrases } from "../SeoDrawer/useKeyphrases";
 import { useLiveDocument } from "../SeoDrawer/useLiveDocument";
 
 export interface SeoButtonProps {
@@ -15,6 +22,11 @@ export interface SeoButtonProps {
   extractContentPath: string;
   site: { name: string; baseUrl: string; faviconUrl: string };
   supportedLocales: string[];
+  keyphraseIndex: boolean;
+}
+
+interface SeoButtonInnerProps extends SeoButtonProps {
+  remote?: RemoteKeyphrases;
 }
 
 const DRAWER_SLUG = "seo-analytics-drawer";
@@ -25,7 +37,8 @@ export function SeoButtonInner({
   site,
   supportedLocales,
   extractContentPath,
-}: SeoButtonProps) {
+  remote,
+}: SeoButtonInnerProps) {
   const { openModal } = useModal();
   const { id } = useDocumentInfo();
   const locale = useLocale();
@@ -41,8 +54,9 @@ export function SeoButtonInner({
     remove: removeKeyphrase,
     removeSynonym,
     setFocus,
+    syncOnOpen,
     updateText,
-  } = useKeyphrases({ collectionSlug, docId, localeCode });
+  } = useKeyphrases({ collectionSlug, docId, localeCode, remote });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { signature, getInput } = useLiveDocument({
     collectionSlug,
@@ -59,9 +73,10 @@ export function SeoButtonInner({
   const overall = result?.overall ?? null;
 
   const open = useCallback(() => {
+    syncOnOpen();
     analyzeNow();
     openModal(DRAWER_SLUG);
-  }, [analyzeNow, openModal]);
+  }, [analyzeNow, openModal, syncOnOpen]);
 
   const handleAddRelated = useCallback(() => {
     const newId = addRelated();
@@ -69,45 +84,62 @@ export function SeoButtonInner({
   }, [addRelated]);
 
   const handleRemove = useCallback(
-    (id: string) => {
-      removeKeyphrase(id);
-      setSelectedId((current) => (current === id ? null : current));
+    (keyphraseId: string) => {
+      removeKeyphrase(keyphraseId);
+      setSelectedId((current) => (current === keyphraseId ? null : current));
     },
     [removeKeyphrase]
   );
 
-  return (
-    <span className="relative inline-flex">
-      <Button
-        aria-label="SEO Analytics"
-        buttonStyle="none"
-        className="frseo-doc-btn m-0 w-[calc(var(--base)*1.6)] h-[calc(var(--base)*1.6)] inline-flex items-center justify-center border border-[var(--theme-elevation-100)] rounded-rs bg-transparent text-neutral-800 transition-[border-color,background-color] duration-100 hover:border-neutral-300 hover:bg-neutral-100"
-        extraButtonProps={{ title: undefined }}
-        icon={<Gauge />}
-        iconStyle="without-border"
-        margin={false}
-        onClick={open}
-        size="small"
-        tooltip="SEO Analytics"
+  const renderKeyphraseUsage = useCallback(
+    (entry: KeyphraseEntry) => (
+      <KeyphraseUsage
+        collectionSlug={collectionSlug}
+        docId={docId}
+        key={entry.id}
+        phrase={entry.text}
       />
+    ),
+    [collectionSlug, docId]
+  );
+
+  const drawer = (
+    <SeoDrawer
+      drawerSlug={DRAWER_SLUG}
+      keyphrases={keyphrases}
+      selectedId={selectedId}
+      onSelect={setSelectedId}
+      result={result}
+      analyzing={analyzing}
+      onAddRelated={handleAddRelated}
+      onTextChange={updateText}
+      onAddSynonym={addSynonym}
+      onRemoveSynonym={removeSynonym}
+      onRemove={handleRemove}
+      onSetFocus={setFocus}
+      isDuplicate={isDuplicate}
+      renderKeyphraseUsage={remote ? renderKeyphraseUsage : undefined}
+      renderLinks={remote ? renderLinksPanel : undefined}
+      site={site}
+    />
+  );
+
+  return (
+    <SeoTriggerButton onClick={open}>
       {overall && <ScoreBadge score={overall.seoScore} status={overall.status} />}
 
-      <SeoDrawer
-        drawerSlug={DRAWER_SLUG}
-        keyphrases={keyphrases}
-        selectedId={selectedId}
-        onSelect={setSelectedId}
-        result={result}
-        analyzing={analyzing}
-        onAddRelated={handleAddRelated}
-        onTextChange={updateText}
-        onAddSynonym={addSynonym}
-        onRemoveSynonym={removeSynonym}
-        onRemove={handleRemove}
-        onSetFocus={setFocus}
-        isDuplicate={isDuplicate}
-        site={site}
-      />
-    </span>
+      {remote ? (
+        <LinkSuggestionsProvider
+          collectionSlug={collectionSlug}
+          docId={docId}
+          getInput={getInput}
+          localeCode={localeCode}
+        >
+          {drawer}
+        </LinkSuggestionsProvider>
+      ) : (
+        drawer
+      )}
+    </SeoTriggerButton>
   );
 }

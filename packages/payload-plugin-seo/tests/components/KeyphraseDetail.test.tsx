@@ -41,6 +41,14 @@ describe("KeyphraseDetail", () => {
     expect(base.onTextChange).toHaveBeenCalledWith("x");
   });
 
+  it("shows the usage notice slot unless the keyphrase is a duplicate", () => {
+    const notice = <div data-testid="usage" />;
+    const { rerender } = render(<KeyphraseDetail {...base} isFocus usageNotice={notice} />);
+    expect(screen.getByTestId("usage")).toBeTruthy();
+    rerender(<KeyphraseDetail {...base} isFocus duplicate usageNotice={notice} />);
+    expect(screen.queryByTestId("usage")).toBeNull();
+  });
+
   it("renders the analyzing loader", () => {
     render(<KeyphraseDetail {...base} isFocus analysis={{ kind: "analyzing" }} />);
     expect(screen.getByText(/analyzing keyphrase/i)).toBeTruthy();

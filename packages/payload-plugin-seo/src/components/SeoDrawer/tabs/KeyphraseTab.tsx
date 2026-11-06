@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import type { ReactNode } from "react";
 import type { AnalysisResult, CategoryResult } from "../../../engine/types/analysis";
 import type { KeyphraseEntry } from "../keyphraseState";
 import type { CardState } from "./keyphrase/KeyphraseCard";
@@ -21,6 +22,7 @@ export interface KeyphraseTabProps {
   onRemove: (id: string) => void;
   onSetFocus: (id: string) => void;
   isDuplicate: (id: string, text: string) => boolean;
+  renderUsage?: (entry: KeyphraseEntry) => ReactNode;
 }
 
 function resultForEntry(
@@ -46,6 +48,7 @@ export function KeyphraseTab({
   onRemove,
   onSetFocus,
   isDuplicate,
+  renderUsage,
 }: KeyphraseTabProps) {
   const selectedId = selectedIdProp ?? keyphrases[0]?.id ?? null;
   const selected = keyphrases.find((k) => k.id === selectedId) ?? keyphrases[0] ?? null;
@@ -140,6 +143,7 @@ export function KeyphraseTab({
           onRemoveSynonym={(index) => onRemoveSynonym(selected.id, index)}
           onSetFocus={() => onSetFocus(selected.id)}
           onTextChange={(text) => onTextChange(selected.id, text)}
+          usageNotice={renderUsage?.(selected)}
         />
       )}
     </div>

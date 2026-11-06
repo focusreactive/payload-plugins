@@ -205,4 +205,18 @@ describe("KeyphraseTab", () => {
     const railCard = screen.getByRole("button", { name: /headless cms/i });
     expect(railCard).not.toHaveTextContent("58");
   });
+
+  it("renders the usage notice for the selected keyphrase", () => {
+    render(
+      <KeyphraseTab
+        keyphrases={entries}
+        selectedId="b"
+        result={result}
+        analyzing={false}
+        {...handlers}
+        renderUsage={(entry) => <div data-testid="usage">{entry.text}</div>}
+      />
+    );
+    expect(screen.getByTestId("usage")).toHaveTextContent("headless cms");
+  });
 });

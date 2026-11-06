@@ -1,0 +1,96 @@
+"use client";
+
+import { useConfig } from "@payloadcms/ui";
+import { Loader2 } from "lucide-react";
+import { docTargetKey } from "../../../keyphrases/docTarget";
+import { adminDocHref } from "../../../keyphrases/usage";
+import { SectionCard } from "../../../ui/SectionCard";
+import { cn } from "../../../utils/style";
+import { TabWrapper } from "../components/TabWrapper";
+import type { LinkSuggestionsState } from "../links/useLinkSuggestions";
+import { LinkSuggestionRow } from "./links/LinkSuggestionRow";
+
+const MESSAGE_CLASS = cn("px-[15px] py-[12px] text-[12px]");
+
+const FIND_BUTTON_CLASS = cn(
+  "inline-flex items-center rounded-rs border border-neutral-200 bg-transparent px-[9px] py-[4px] text-[12px] font-semibold text-neutral-800 transition-colors hover:border-neutral-300 hover:bg-neutral-100 cursor-pointer aria-disabled:cursor-default aria-disabled:text-neutral-400"
+);
+
+function SuggestionsBody({ state }: { state: LinkSuggestionsState }) {
+  const { config } = useConfig();
+
+  if (state.status === "loading") {
+    return (
+      <div className={cn(MESSAGE_CLASS, "flex items-center gap-[8px] text-neutral-500")}>
+        <Loader2 aria-hidden="true" className="w-[14px] h-[14px] animate-spin" />
+        Looking for opportunities…
+      </div>
+    );
+  }
+
+  if (state.status === "error") {
+    return (
+      <div className={cn(MESSAGE_CLASS, "text-seo-bad")} role="alert">
+        Could not load suggestions. Try again.
+      </div>
+    );
+  }
+
+  if (state.status === "idle") return null;
+
+  if (state.suggestions.length === 0) {
+    return (
+      <div className={cn(MESSAGE_CLASS, "text-neutral-500")}>
+        No opportunities found. Add keyphrases to other pages to get suggestions.
+      </div>
+    );
+  }
+
+  return (
+    <ul className="m-0 p-0 list-none">
+      {state.suggestions.map((suggestion) => (
+        <LinkSuggestionRow
+          adminHref={adminDocHref(config.routes.admin, suggestion)}
+          key={docTargetKey(suggestion.collection, suggestion.id)}
+          suggestion={suggestion}
+        />
+      ))}
+    </ul>
+  );
+}
+
+export interface LinksTabProps {
+  state: LinkSuggestionsState;
+  onFind: () => void;
+}
+
+export function LinksTab({ state, onFind }: LinksTabProps) {
+  const loading = state.status === "loading";
+
+  return (
+    <TabWrapper>
+      <section className="flex flex-col gap-[13px]">
+        <SectionCard
+          title="Internal link opportunities"
+          widget={
+            <button
+              aria-disabled={loading}
+              className={FIND_BUTTON_CLASS}
+              onClick={onFind}
+              type="button"
+            >
+              Find opportunities
+            </button>
+          }
+        >
+          <p className={cn(MESSAGE_CLASS, "m-0 text-neutral-500")}>
+            Pages whose keyphrases appear in this text but are not linked from it yet.
+          </p>
+          <div aria-busy={loading} aria-live="polite">
+            <SuggestionsBody state={state} />
+          </div>
+        </SectionCard>
+      </section>
+    </TabWrapper>
+  );
+}
