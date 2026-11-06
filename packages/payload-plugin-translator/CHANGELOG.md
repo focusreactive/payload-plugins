@@ -1,3 +1,48 @@
+# @focus-reactive/payload-plugin-translator [1.0.0-next.9](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.8...@focus-reactive/payload-plugin-translator@1.0.0-next.9) (2026-11-06)
+
+
+* feat!: a locale a run never attempted is not reported as failed ([53cf160](https://github.com/focusreactive/payload-plugins/commit/53cf1607e7e7192cb665e0b081ad7b5ae3abb4f7))
+* feat!: a provider's failure reaches a person as a reason, not one generic sentence ([5ce4d40](https://github.com/focusreactive/payload-plugins/commit/5ce4d40227c391cdd82efbac6eeef17b8e67d5cf))
+* feat!: every provider receives rich text by container ([082d177](https://github.com/focusreactive/payload-plugins/commit/082d17703a10108a812f74c26117937309f49895))
+* feat!: the deprecated provider surface leaves with the major ([6179d08](https://github.com/focusreactive/payload-plugins/commit/6179d0867b55ff8e00f079bb7524fee70cf7ae3f))
+* feat!: the OpenAI adapter asks a model, and takes the request body whole ([c21256d](https://github.com/focusreactive/payload-plugins/commit/c21256d75bd9d90e8c7fedd7cd2fc45010bf8208))
+* feat!: the port carries segments, and a value may fail on its own ([9e741ac](https://github.com/focusreactive/payload-plugins/commit/9e741ac8fcf1751fb8fcb0709eb65c6ef16ceda4))
+* feat!: the provider port takes one request, and failure is thrown ([fd2724a](https://github.com/focusreactive/payload-plugins/commit/fd2724af9729b67a788c4aa2066a46c284055c86))
+
+
+### BREAKING CHANGES
+
+* `onFailed` no longer fires for a locale a run never attempted;
+`onAbandoned` fires instead. A host counting closed locales through `onFailed`
+keeps compiling and will see fewer calls.
+* `openAIComplete` is now `askOpenAI`, `CompletionFn` is
+`AskModel`, `CompletionRequest` is `ModelRequest`, and `OpenAISamplingParams` is
+replaced by `OpenAIParams`, which carries the model alongside the sampling
+fields. `openAIComplete({ client, model, sampling })` becomes
+`askOpenAI({ client, params })`.
+* `createOpenAIProvider`, `OpenAITranslationProvider`,
+`OpenAIProviderConfig` and `loadOpenAIClient` are removed. Build a provider with
+`createTranslationProvider` over `openAIComplete` and a client you construct
+yourself. A positional language argument is no longer accepted. `sourceLng` must
+name a language; `''` no longer means auto-detect.
+* a provider failure that reaches a host through the pipeline is
+now a `TranslationFailed` carrying the same `code`, not the provider's own error
+class. `error instanceof TranslationProviderError` no longer matches it; the typed
+error travels on `cause`.
+* a provider no longer receives and returns plain strings. `TranslatableValue`
+arrives as `{ kind: "text" }` or `{ kind: "segments" }` and must be answered in the same kind;
+`TranslationInput` is `Readonly` and the stage hands over a copy. `ValueFailureCode` lets one value
+fail without failing the call. The `experimental.dryRun` option is removed. A provider that returned
+a marked string can keep doing so with the exported `encodeSegments`, `decodeSegments`,
+`canEncodeSegments` and `inlineMarksInstruction`.
+* `TranslationProvider.capabilities` and `TranslationProviderConfig.capabilities` are
+removed. A provider now receives every formatted paragraph as one marked string and must return each
+mark exactly once; a reply that does not is left in the source language and logged. Step 4 of the
+same release gives a provider without a language model a way to translate the pieces on its own.
+* a custom `TranslationProvider` implements `translate(input, request)` and reads
+the languages from `request.sourceLng` / `request.targetLng`. Returning `null` no longer reports a
+failure; throw instead.
+
 # @focus-reactive/payload-plugin-translator [1.0.0-next.8](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.7...@focus-reactive/payload-plugin-translator@1.0.0-next.8) (2026-11-01)
 
 
