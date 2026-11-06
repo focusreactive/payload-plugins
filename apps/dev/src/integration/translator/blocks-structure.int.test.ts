@@ -8,18 +8,24 @@ import { callEndpoint } from "./callEndpoint";
 // localized leaves — the recommended regime: block rows are SHARED across locales, paired by `id`
 // (not position) and re-emitted in SOURCE order. These specs pin that contract through the real
 // pipeline: same-type blocks each get their OWN translation, reordering the source re-mirrors order
-// without cross-contaminating leaves or corrupting an already-translated locale, and skip_existing
-// respects per-block edits — matched by id even when only some blocks are filled ("partially differ").
+// without cross-contaminating leaves or corrupting an already-translated locale, and a filter
+// naming one block's leaf leaves its siblings' target text where it stands — paired by id.
 
 const tr = (locale: string, s: string) => (s.trim() ? `${locale}:${s}` : s);
 
 type Block = { id?: string; blockType: string; heading?: string; caption?: string };
 
+const filtersFrom = (rules?: string[], addresses?: string[]) => [
+  ...(rules ?? []).map((name) => ({ kind: "rule", name })),
+  ...(addresses ? [{ kind: "leaves", addresses }] : []),
+];
+
 const enqueue = (
   ctx: TestPayload,
   id: string,
   target: string,
-  strategy: "overwrite" | "skip_existing" = "overwrite"
+  rules?: string[],
+  addresses?: string[]
 ) =>
   callEndpoint(ctx.payload, "post", "/translate/enqueue", {
     body: {
@@ -27,7 +33,7 @@ const enqueue = (
       target_lng: target,
       collection_slug: "docs",
       collection_id: [id],
-      strategy,
+      filters: filtersFrom(rules, addresses),
       publish_on_translation: true,
     },
   });
@@ -136,7 +142,7 @@ describe("blocks — id-based pairing, ordering, partial differences", () => {
     ]);
   });
 
-  it("skip_existing fills empty block leaves but keeps a manually-edited one (matched by id)", async () => {
+  it("pairs blocks by id when a run takes every leaf, keeping their order", async () => {
     const created = await ctx.payload.create({
       collection: "docs",
       locale: "en",
@@ -167,10 +173,53 @@ describe("blocks — id-based pairing, ordering, partial differences", () => {
       },
     });
 
-    await enqueue(ctx, id, "de", "skip_existing");
+    await enqueue(ctx, id, "de");
 
     const de = await sectionsOf(ctx, id, "de");
-    // Empty siblings filled from source; the manually-edited middle block kept — paired by id.
-    expect(de.map((b) => b.heading)).toEqual([tr("de", "Src A"), "MANUAL B", tr("de", "Src C")]);
+    expect(de.map((b) => b.heading)).toEqual([
+      tr("de", "Src A"),
+      tr("de", "Src B"),
+      tr("de", "Src C"),
+    ]);
+  });
+
+  it("sends one block's leaf and leaves its siblings' target text alone", async () => {
+    const created = await ctx.payload.create({
+      collection: "docs",
+      locale: "en",
+      data: {
+        _status: "published",
+        title: "Selected block",
+        sections: [
+          { blockType: "hero", heading: "Src A" },
+          { blockType: "hero", heading: "Src B" },
+        ],
+      },
+    });
+    const id = String(created.id);
+    const en = await sectionsOf(ctx, id, "en");
+
+    await enqueue(ctx, id, "de");
+    const first = await sectionsOf(ctx, id, "de");
+    expect(first.map((b) => b.heading)).toEqual([tr("de", "Src A"), tr("de", "Src B")]);
+
+    await ctx.payload.update({
+      collection: "docs",
+      id,
+      locale: "en",
+      data: {
+        _status: "published",
+        sections: [
+          { id: en[0].id, blockType: "hero", heading: "Src A, edited" },
+          { id: en[1].id, blockType: "hero", heading: "Src B, edited" },
+        ],
+      },
+    });
+
+    await enqueue(ctx, id, "de", undefined, [`sections.${en[1].id}:hero.heading`]);
+
+    const de = await sectionsOf(ctx, id, "de");
+    expect(de[0]?.heading, "its address was not named").toBe(tr("de", "Src A"));
+    expect(de[1]?.heading, "named by its own id, not its position").toBe(tr("de", "Src B, edited"));
   });
 });

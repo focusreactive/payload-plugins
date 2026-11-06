@@ -1,70 +1,52 @@
 import { elementSegment, makeIdPath } from "../../../domain/content-projection/idPath.js";
 import type { PathSegment } from "../../../domain/content-projection/idPath.js";
 import { isTranslatableLeaf } from "../../../domain/content-projection/translatableLeaf.js";
+import type { LeafAddress } from "../../../domain/content-projection/idPath.js";
 import type { ChildCursor, FieldLike, FieldWalker } from "../../../kernel/field-traversal/index.js";
-import {
-  matchElementById,
-  resolveBlockFields,
-  walkFields,
-} from "../../../kernel/field-traversal/index.js";
+import { resolveBlockFields, walkFields } from "../../../kernel/field-traversal/index.js";
+import { isEmpty } from "../../../kernel/utils/isEmpty.js";
 import { isObject } from "../../../kernel/utils/isObject.js";
-import type { ChangedLeaves } from "../../../domain/provenance/staleness.js";
-import type { TranslationStrategy } from "../../strategies/index.js";
 import type { FieldChunk } from "../../types/index.js";
 
-/** Data position for the collect walk: the three parallel trees plus the path from root. */
 type Cursor = {
   data: Record<string, unknown>;
   source: Record<string, unknown>;
-  target: Record<string, unknown>;
   segments: PathSegment[];
 };
 
 const asObject = (value: unknown): Record<string, unknown> => (isObject(value) ? value : {});
 
 /**
- * Collects FieldChunks by walking schema + data with the shared {@link walkFields} engine.
- * Iteration is driven by `filteredData`; each translatable, localized, non-excluded leaf that
- * the strategy approves is written with its source value and pushed as a chunk carrying a
- * mutable reference to its parent object (for later write-back). Collect-only — `combine` is a
- * no-op; results accumulate in a closure.
- *
- * Array/block elements pair their `source` by position (`filteredData` is built in source order)
- * but their `target` by `id` (see {@link matchElementById}) — the target locale's elements may be
- * independently ordered, so a positional target would feed `strategy.shouldTranslate` the wrong
- * element's value and skip/re-translate the wrong leaf.
+ * Collects the FieldChunks a run will send, walking `reconciledData` against the schema with the
+ * shared {@link walkFields} engine. `collect()` seats each chosen leaf's source value into
+ * `reconciledData` — an object value as a detached copy, because write-back mutates it in place and
+ * would otherwise translate the caller's own source — and each chunk points at that parent.
  *
  * IMPORTANT: Expects ORIGINAL collection schemas (before Payload sanitization). Original
  * schemas preserve `localized: true` on nested fields.
  */
 export class FieldChunkCollector {
   private readonly schema: FieldLike[];
-  private readonly filteredData: Record<string, unknown>;
+  private readonly reconciledData: Record<string, unknown>;
   private readonly sourceData: Record<string, unknown>;
-  private readonly targetData: Record<string, unknown>;
-  private readonly strategy: TranslationStrategy;
-  private readonly sourceChangedByLeaf?: ChangedLeaves;
+  private readonly selection: ReadonlySet<LeafAddress>;
 
   constructor(
     schema: FieldLike[],
-    filteredData: Record<string, unknown>,
+    reconciledData: Record<string, unknown>,
     sourceData: Record<string, unknown>,
-    targetData: Record<string, unknown>,
-    strategy: TranslationStrategy,
-    sourceChangedByLeaf?: ChangedLeaves
+    selection: readonly LeafAddress[]
   ) {
     this.schema = schema;
-    this.filteredData = filteredData;
+    this.reconciledData = reconciledData;
     this.sourceData = sourceData;
-    this.targetData = targetData;
-    this.strategy = strategy;
-    this.sourceChangedByLeaf = sourceChangedByLeaf;
+    this.selection = new Set(selection);
   }
 
   collect(): FieldChunk[] {
     const selected: { dataRef: Record<string, unknown>; key: string; sourceValue: unknown }[] = [];
     const chunks: FieldChunk[] = [];
-    const { strategy, sourceChangedByLeaf } = this;
+    const { selection } = this;
 
     const walker: FieldWalker<Cursor, unknown> = {
       enterObject(field, cursor) {
@@ -73,7 +55,6 @@ export class FieldChunkCollector {
         return {
           data: value,
           source: asObject(cursor.source[field.name]),
-          target: asObject(cursor.target[field.name]),
           segments: [...cursor.segments, { kind: "key", name: field.name }],
         };
       },
@@ -82,24 +63,20 @@ export class FieldChunkCollector {
         const value = cursor.data[field.name];
         if (!Array.isArray(value)) return "skip";
         const sourceValue = cursor.source[field.name];
-        const targetValue = cursor.target[field.name];
         const sourceArr: unknown[] = Array.isArray(sourceValue) ? sourceValue : [];
-        const targetArr: unknown[] = Array.isArray(targetValue) ? targetValue : [];
         const isBlocks = field.type === "blocks";
 
         const children: ChildCursor<Cursor>[] = [];
         value.forEach((item, index) => {
           if (!isObject(item)) return;
           const fields = isBlocks ? resolveBlockFields(field, item) : field.fields;
-          if (!fields) return; // unknown blockType → skip element
-          // source pairs by index (filteredData shares source order); target by the source
-          // element's id, since the target locale may be reordered independently.
+          if (!fields) return;
+
           const sourceItem = asObject(sourceArr[index]);
           children.push({
             cursor: {
               data: item,
               source: sourceItem,
-              target: matchElementById(targetArr, sourceItem, isBlocks),
               segments: [
                 ...cursor.segments,
                 { kind: "key", name: field.name },
@@ -118,16 +95,8 @@ export class FieldChunkCollector {
         if (value === undefined || value === null) return undefined;
 
         const sourceValue = cursor.source[field.name];
-        const targetValue = cursor.target[field.name];
         const idPath = makeIdPath([...cursor.segments, { kind: "key", name: field.name }]);
-        if (
-          isTranslatableLeaf(field) &&
-          strategy.shouldTranslate({
-            sourceValue,
-            targetValue,
-            sourceChanged: sourceChangedByLeaf?.[idPath],
-          })
-        ) {
+        if (isTranslatableLeaf(field) && selection.has(idPath) && !isEmpty(sourceValue)) {
           selected.push({ dataRef: cursor.data, key: field.name, sourceValue });
           chunks.push({
             schema: field,
@@ -140,19 +109,16 @@ export class FieldChunkCollector {
       },
 
       combine() {
-        return undefined; // collect-only — nothing to assemble
+        return undefined;
       },
     };
 
     walkFields(
       this.schema,
-      { data: this.filteredData, source: this.sourceData, target: this.targetData, segments: [] },
+      { data: this.reconciledData, source: this.sourceData, segments: [] },
       walker
     );
 
-    // A detached copy, because write-back mutates an object-valued leaf (a rich-text tree) in
-    // place: seating the caller's own object here would translate their source document. Scalars
-    // are immutable, so they are seated as they are.
     for (const { dataRef, key, sourceValue } of selected) {
       dataRef[key] = isObject(sourceValue) ? structuredClone(sourceValue) : sourceValue;
     }

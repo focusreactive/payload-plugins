@@ -5,9 +5,11 @@ import type { TranslationProvider } from "../../../../core/domain/translation-pr
 import { TranslateFieldHandler } from "../handler.js";
 import type { FieldTranslationConfig } from "../model.js";
 
-vi.mock("../../../../core/translation-pipeline/index.js", () => ({
-  translateContent: vi.fn().mockResolvedValue(null),
-}));
+vi.mock("../../../../core/translation-pipeline/index.js", async () => {
+  const { nothingSent } =
+    await import("../../../../core/translation-pipeline/__tests__/fixtures/pipelineResult.js");
+  return { translateContent: vi.fn().mockResolvedValue(nothingSent) };
+});
 
 const f = (config: Record<string, unknown>): Field => config as unknown as Field;
 

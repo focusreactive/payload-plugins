@@ -1,13 +1,10 @@
-import type { ChangedLeaves } from "../../domain/provenance/staleness.js";
-import type { DocumentRef } from "../../domain/translation-providers/index.js";
+import type { LeafAddress } from "../../domain/content-projection/idPath.js";
+import type { DocumentRef, TranslatableValue } from "../../domain/translation-providers/index.js";
 import type { FieldLike } from "../../kernel/field-traversal/index.js";
 import type { FieldChunk } from "./FieldChunk.js";
+import type { SettledAnswer } from "./Pipeline.js";
 import type { TextChunk } from "./TextChunk.js";
 
-/**
- * Pipeline context passed through all stages.
- * Each stage reads from context and writes its results back.
- */
 export type PipelineContext = {
   readonly schema: FieldLike[];
   readonly sourceData: Record<string, unknown>;
@@ -15,20 +12,16 @@ export type PipelineContext = {
   readonly sourceLng: string;
   readonly targetLng: string;
   readonly document: DocumentRef;
-  readonly sourceChangedByLeaf?: ChangedLeaves;
+  readonly selection: readonly LeafAddress[];
 
-  /** Full document shape with reconciled source/target values */
-  filteredData?: Record<string, unknown>;
+  reconciledData?: Record<string, unknown>;
   fieldChunks?: FieldChunk[];
   textChunks?: TextChunk[];
-  textMap?: Record<number, string>;
-  translations?: Record<number, string>;
+  textMap?: Record<number, TranslatableValue>;
+  answers?: Record<number, SettledAnswer>;
+  notWritten?: ReadonlySet<number>;
 };
 
-/**
- * Interface for pipeline stages.
- * Each stage transforms the context and returns updated context.
- */
 export interface PipelineStage {
   execute(ctx: PipelineContext): PipelineContext | Promise<PipelineContext>;
 }

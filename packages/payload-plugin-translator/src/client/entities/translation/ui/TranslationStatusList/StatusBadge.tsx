@@ -7,6 +7,7 @@ import styles from "./styles.module.scss";
 /** Human label per state — also the row's accessible name (state is not conveyed by colour alone). */
 export const STATE_LABEL: Record<TranslationRowState, string> = {
   failed: "Failed",
+  abandoned: "Not attempted",
   running: "Translating",
   pending: "Queued",
   stale: "Out of date",

@@ -2,14 +2,6 @@ import type { Field } from "payload";
 import { ZodArray, ZodBoolean, ZodDefault, ZodNullable, ZodOptional } from "zod";
 import type { ZodObject, ZodRawShape, ZodTypeAny } from "zod";
 
-/**
- * Turn a stored-input schema into the `Field[]` Payload registers for a task or a workflow.
- *
- * Only zod's public surface is read — `instanceof` against the exported classes, `.isOptional()`,
- * `.isNullable()`, `.maxLength`, and parsing `undefined` for a default. The private `_def` is
- * deliberately avoided: this repository already carries zod 3 and zod 4, and `_def.typeName` is
- * `undefined` on the latter, so a generator reading it would break on a version bump.
- */
 const unwrapped = (schema: ZodTypeAny): ZodTypeAny => {
   let current = schema;
   for (;;) {
@@ -48,29 +40,11 @@ const fieldFor = (name: string, schema: ZodTypeAny): Field => {
   return field as Field;
 };
 
+/**
+ * Turn a stored-input schema into the `Field[]` Payload registers for a task or a workflow.
+ *
+ * Reads only zod's public surface: `_def.typeName` is `undefined` on zod 4 and this repository
+ * carries both majors, so a generator reading `_def` would break on a version bump.
+ */
 export const toPayloadFields = (schema: ZodObject<ZodRawShape>): Field[] =>
   Object.entries(schema.shape).map(([name, member]) => fieldFor(name, member as ZodTypeAny));
-
-/**
- * Splice the deprecated relationship back in where it has always sat — directly after the flat pair
- * that replaced it.
- *
- * It is written by hand rather than generated because it is the one field with no counterpart in
- * the plugin's own types: nothing writes it, one reader falls back to it, and it leaves with the
- * next major. See docs/DEPRECATIONS.md#jobs-input-collection-field
- */
-export const withLegacyCollection = (fields: Field[], relationTo: string[]): Field[] => {
-  const legacy = {
-    type: "relationship",
-    name: "collection",
-    relationTo,
-    required: false,
-    admin: {
-      readOnly: true,
-      description: "Deprecated. See docs/DEPRECATIONS.md#jobs-input-collection-field",
-    },
-  } as unknown as Field;
-
-  const after = fields.findIndex((field) => "name" in field && field.name === "collection_id");
-  return [...fields.slice(0, after + 1), legacy, ...fields.slice(after + 1)];
-};

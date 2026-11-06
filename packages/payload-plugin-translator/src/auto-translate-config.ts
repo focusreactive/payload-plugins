@@ -4,7 +4,6 @@ import type { AutoTranslateConfig } from "./core/domain/auto-translate/index.js"
 import { AUTO_TRANSLATE_CUSTOM_KEY } from "./core/domain/auto-translate/index.js";
 
 export type { AutoTranslateConfig };
-export type { AutoTranslateStrategy } from "./core/domain/auto-translate/index.js";
 
 /**
  * Enable opt-in **auto-translate** for a collection: when a document's source-locale content changes
@@ -16,7 +15,8 @@ export type { AutoTranslateStrategy } from "./core/domain/auto-translate/index.j
  * Behaviour: fires only on a **published** source save (draft/autosave saves are ignored; a collection
  * without drafts treats every save as published); skips when no translatable content actually changed
  * (drift-gate); coalesces rapid edits via `debounceMs`; never re-triggers on its own translation
- * writes; and never fails the editor's save (best-effort).
+ * writes; and never fails the editor's save (best-effort). An automatic run translates the whole
+ * document — there is no way to narrow it.
  *
  * **Requires a working job runner.** Auto-translate only ENQUEUES jobs — they run via the plugin's
  * task runner (`createPayloadJobsRunner`) and its autorun loop. On serverless platforms such as
@@ -25,7 +25,7 @@ export type { AutoTranslateStrategy } from "./core/domain/auto-translate/index.j
  * self-hosted worker. Ensure your deployment actually executes queued jobs before relying on this.
  *
  * @param collection - The collection to opt in.
- * @param config - Target locales (+ optional strategy, debounce, source-locale override).
+ * @param config - The rule to stamp; see {@link AutoTranslateConfig}.
  * @returns A new collection with the auto-translate rule applied (the input is not mutated).
  *
  * @example

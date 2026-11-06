@@ -14,22 +14,23 @@ export class RichTextExpander implements TextExpander {
     return chunk.schema.type === "richText" && isSerializedLexicalRoot(value);
   }
 
-  expand(_chunk: FieldChunk, value: unknown, startIndex: number): ExpansionResult {
+  expand(chunk: FieldChunk, value: unknown, startIndex: number): ExpansionResult {
     const root = value as SerializedLexicalRoot;
     const textNodeRefs = collectSerializedLexicalTextNodes(root.root);
 
     const chunks: RichTextChunk[] = [];
-    const textMap: Record<number, string> = {};
+    const textMap: ExpansionResult["textMap"] = {};
     let index = startIndex;
 
     for (const ref of textNodeRefs) {
       chunks.push({
         type: "richText",
         index,
+        idPath: chunk.idPath,
         text: ref.node.text,
         nodeRef: ref.node,
       });
-      textMap[index] = ref.node.text;
+      textMap[index] = { kind: "text", text: ref.node.text };
       index++;
     }
 

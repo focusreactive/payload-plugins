@@ -38,7 +38,10 @@ describe("makeProvenanceCollection", () => {
     expect(byName.get("sourceLocale")).toBe("text");
     expect(byName.get("sourceFingerprint")).toBe("text");
     expect(byName.get("translatedAt")).toBe("date");
-    expect(byName.get("dismissedFingerprint")).toBe("text");
+    expect(
+      byName.has("dismissedFingerprint"),
+      "a receipt holds one fingerprint: the source it is considered current against"
+    ).toBe(false);
   });
 
   it("has a composite unique index on the upsert key", () => {

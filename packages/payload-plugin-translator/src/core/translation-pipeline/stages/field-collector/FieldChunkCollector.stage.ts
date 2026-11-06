@@ -1,28 +1,24 @@
 import { TranslatorBug } from "../../../errors/index.js";
 import type { PipelineContext, PipelineStage } from "../../types/index.js";
-import type { TranslationStrategy } from "../../strategies/index.js";
 import { FieldChunkCollector } from "./FieldChunkCollector.js";
 
 /**
- * Collects FieldChunks with schema metadata and data references.
- * Applies all filtering logic including strategy.shouldTranslate().
- * Stage 2 of the translation pipeline.
+ * Collects the FieldChunks the run will send: every leaf of the selection whose source is not
+ * empty. Stage 2 of the translation pipeline.
  */
 export class FieldChunkCollectorStage implements PipelineStage {
-  constructor(private readonly strategy: TranslationStrategy) {}
-
   execute(ctx: PipelineContext): PipelineContext {
-    if (!ctx.filteredData) {
-      throw new TranslatorBug("FieldChunkCollectorStage requires filteredData from previous stage");
+    if (!ctx.reconciledData) {
+      throw new TranslatorBug(
+        "FieldChunkCollectorStage requires reconciledData from previous stage"
+      );
     }
 
     const collector = new FieldChunkCollector(
       ctx.schema,
-      ctx.filteredData,
+      ctx.reconciledData,
       ctx.sourceData,
-      ctx.targetData,
-      this.strategy,
-      ctx.sourceChangedByLeaf
+      ctx.selection
     );
     return {
       ...ctx,

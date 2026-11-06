@@ -10,19 +10,32 @@ import { TranslatorBug } from "../../errors/index.js";
  * segments are unchanged; an element with no `id` falls back to a marked positional segment.
  *
  * `idPath` is *where* a piece lives (identity), never *what* it contains — so it can be compared
- * across time to detect content drift. The whole grammar (escaping, blockType folding, fallback)
- * lives in {@link makeIdPath}, the sole constructor, so it can never drift.
+ * across time to detect content drift. The whole grammar — escaping, blockType folding, fallback,
+ * and the separator — lives in this module: {@link makeIdPath} for callers holding segments,
+ * {@link renderSegment} and {@link joinRendered} for a caller whose segments arrive one at a time
+ * in someone else's shape. {@link joinRendered} takes only `RenderedSegment`, which nothing but
+ * {@link renderSegment} mints without a cast — so a caller holding its own segments cannot
+ * half-apply the grammar by accident. A walk whose address type is looser carries its tokens as
+ * plain strings; re-entering the grammar from such an address costs a cast, and a cast is not
+ * checked.
  */
 export type IdPath = string & { readonly __brand: "IdPath" };
+
+/**
+ * A leaf's address in the {@link IdPath} grammar, as a value that reached us unbranded — read from a
+ * request, a stored row or a receipt. Nothing turns one back into an `IdPath`: re-entering the
+ * grammar would need a parser this module does not have.
+ */
+export type LeafAddress = string;
 
 /**
  * One structural step of an {@link IdPath}. Callers push these while walking; only
  * {@link makeIdPath} renders them to a string, keeping the grammar in one place.
  */
 export type PathSegment =
-  | { kind: "key"; name: string } // a group/tab/leaf field name
-  | { kind: "element"; id: string; blockType?: string } // an array/blocks element, keyed by id
-  | { kind: "index"; index: number }; // fallback when an element has no id
+  | { kind: "key"; name: string }
+  | { kind: "element"; id: string; blockType?: string }
+  | { kind: "index"; index: number };
 
 const SEP = ".";
 
@@ -33,7 +46,13 @@ const SEP = ".";
  */
 const enc = (value: string): string => value.replace(/[\\#.:]/gu, (c) => `\\${c}`);
 
-const renderSegment = (segment: PathSegment): string => {
+/**
+ * A segment that has been through this module's grammar. {@link joinRendered} accepts nothing else,
+ * so an unescaped token cannot be assembled into an address that no stored receipt could match.
+ */
+export type RenderedSegment = string & { readonly __brand: "RenderedSegment" };
+
+const render = (segment: PathSegment): string => {
   switch (segment.kind) {
     case "key":
       return enc(segment.name);
@@ -50,11 +69,17 @@ const renderSegment = (segment: PathSegment): string => {
   }
 };
 
-/**
- * The sole constructor of an {@link IdPath}. Renders structural segments to the branded string.
- */
+export const renderSegment = (segment: PathSegment): RenderedSegment => {
+  return render(segment) as RenderedSegment;
+};
+
+export function joinRendered(tokens: readonly RenderedSegment[]): IdPath {
+  return tokens.join(SEP) as IdPath;
+}
+
+/** Renders structural segments through the grammar; {@link joinRendered} is the half that brands. */
 export function makeIdPath(segments: PathSegment[]): IdPath {
-  return segments.map(renderSegment).join(SEP) as IdPath;
+  return joinRendered(segments.map(renderSegment));
 }
 
 /**

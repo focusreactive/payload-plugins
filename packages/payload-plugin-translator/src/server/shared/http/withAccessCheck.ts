@@ -1,21 +1,17 @@
 import type { PayloadRequest } from "payload";
 
+import { askTheGuard } from "../access/askTheGuard.js";
+import type { TranslatorAction } from "../../../types/TranslatorAction.js";
 import type { AccessGuard } from "../access/types.js";
 import { ServerResponse } from "./ServerResponse.js";
 
-/**
- * Wraps handler with access check.
- * Returns 403 Forbidden if access guard denies the request.
- */
 export function withAccessCheck(
   handler: (req: PayloadRequest) => Promise<Response>,
-  access?: AccessGuard
+  access: AccessGuard,
+  action: TranslatorAction
 ): (req: PayloadRequest) => Promise<Response> {
-  if (!access) return handler;
-
   return async (req) => {
-    const hasAccess = await access.check({ req });
-    if (!hasAccess) return ServerResponse.forbidden();
+    if (!(await askTheGuard(access, req, action))) return ServerResponse.forbidden();
     return handler(req);
   };
 }

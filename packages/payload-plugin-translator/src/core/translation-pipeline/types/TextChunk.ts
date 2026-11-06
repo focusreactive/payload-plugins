@@ -1,5 +1,5 @@
+import type { IdPath } from "../../domain/content-projection/idPath.js";
 import type { InlineFragment } from "../../kernel/lexical/collectInlineFragments.js";
-import type { ParsedMark } from "../../kernel/lexical/inlineMarks.js";
 import type { SerializedLexicalNode, SerializedTextNode } from "../../kernel/lexical/index.js";
 
 /**
@@ -10,6 +10,7 @@ export type PlainTextChunk = {
   type: "plain";
   /** Unique index for translation mapping */
   index: number;
+  idPath: IdPath;
   /** Original text value */
   text: string;
   /** Reference to parent data object */
@@ -26,6 +27,7 @@ export type RichTextChunk = {
   type: "richText";
   /** Unique index for translation mapping */
   index: number;
+  idPath: IdPath;
   /** Original text value */
   text: string;
   /** Direct reference to SerializedTextNode for mutation */
@@ -41,21 +43,13 @@ export type RichTextChunk = {
 export type RichContainerChunk = {
   type: "richContainer";
   index: number;
-  /** The container whose `children` are rebuilt when the reply reorders marks */
+  idPath: IdPath;
   containerRef: SerializedLexicalNode;
-  /** Fragments in document order, as collected */
   fragments: InlineFragment[];
-  /**
-   * The reply's marks, once the translation stage has parsed a usable one. Absent means this
-   * container keeps its source text — the same outcome whether no reply came back or it could not
-   * be parsed, and the applicator must not tell the two apart.
-   */
-  reply?: ParsedMark[];
 };
 
 /**
- * Union type for all text chunks.
- * Schema-independent - contains only data references for mutation.
+ * Schema-independent: data references for mutation. Several chunks may share one leaf's `idPath`.
  */
 export type TextChunk = PlainTextChunk | RichTextChunk | RichContainerChunk;
 

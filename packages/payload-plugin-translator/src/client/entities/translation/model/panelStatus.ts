@@ -54,14 +54,18 @@ export function describePanelStatus(
   }
 }
 
-// The most-urgent job status wins the single aggregate marker, in the order `derivePanelStatus`
-// itself ranks them: a failure to surface, then in-flight work, then a queued job, then completed.
-const RUN_STATUS_PRIORITY: DocumentTranslationStatus[] = [
-  DocumentTranslationStatus.FAILED,
-  DocumentTranslationStatus.RUNNING,
-  DocumentTranslationStatus.PENDING,
-  DocumentTranslationStatus.COMPLETED,
-];
+/**
+ * How urgently each job status wants the single aggregate marker — lowest wins. `null` is a status
+ * the trigger deliberately does not surface. A total record rather than a list, so a status added
+ * later cannot be left out in silence.
+ */
+const RUN_STATUS_RANK: Record<DocumentTranslationStatus, number | null> = {
+  [DocumentTranslationStatus.FAILED]: 0,
+  [DocumentTranslationStatus.RUNNING]: 1,
+  [DocumentTranslationStatus.PENDING]: 2,
+  [DocumentTranslationStatus.ABANDONED]: 3,
+  [DocumentTranslationStatus.COMPLETED]: 4,
+};
 
 /**
  * Collapse the per-locale job feed into the single most-urgent run status for the trigger marker.
@@ -71,8 +75,16 @@ const RUN_STATUS_PRIORITY: DocumentTranslationStatus[] = [
 export function deriveDocumentRunStatus(
   runs: DocumentTranslation[] | undefined
 ): DocumentTranslationStatus | undefined {
-  const present = new Set(runs?.map((run) => run.status));
-  return RUN_STATUS_PRIORITY.find((status) => present.has(status));
+  let mostUrgent: DocumentTranslationStatus | undefined;
+  let bestRank = Number.POSITIVE_INFINITY;
+  for (const run of runs ?? []) {
+    const rank = RUN_STATUS_RANK[run.status];
+    if (rank !== null && rank < bestRank) {
+      bestRank = rank;
+      mostUrgent = run.status;
+    }
+  }
+  return mostUrgent;
 }
 
 type PanelStatusInput = {
@@ -87,9 +99,17 @@ type PanelStatusInput = {
  * `failed → running → stale → fresh → none`. A more urgent transient state (a failed or in-flight
  * job) outranks the durable "out of date" signal; `fresh` means a completed translation with nothing
  * stale; `none` means nothing has been translated yet.
+ *
+ * A locale the run gave up before reaching shares the `failed` marker: the run it belonged to did
+ * fail, and the locale needs the same attention as one that was tried and failed.
  */
 export function derivePanelStatus({ runStatus, staleLocales }: PanelStatusInput): PanelStatus {
-  if (runStatus === DocumentTranslationStatus.FAILED) return { kind: "failed" };
+  if (
+    runStatus === DocumentTranslationStatus.FAILED ||
+    runStatus === DocumentTranslationStatus.ABANDONED
+  ) {
+    return { kind: "failed" };
+  }
   if (
     runStatus === DocumentTranslationStatus.RUNNING ||
     runStatus === DocumentTranslationStatus.PENDING

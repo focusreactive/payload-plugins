@@ -6,28 +6,41 @@ import {
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 import { APIError } from "payload";
-import { TranslateDocumentHandler } from "../handler.js";
+import type { RecordedFingerprints } from "../../../../core/domain/provenance/index.js";
+import { translateDocument } from "../translateDocument.js";
+import type { TranslateDocumentDeps } from "../translateDocument.js";
 import type { TranslationProvider } from "../../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../../types/AutoTranslateContext.js";
-import type { ProvenanceStore } from "../../../../core/domain/provenance/index.js";
 import { ProvenanceService, provenanceIo } from "../../../modules/provenance/index.js";
 import type { ProvenanceServiceFactory } from "../../../modules/provenance/index.js";
-import type { TranslateDocumentInput } from "../model.js";
+import type { TranslateDocumentInput } from "../translateDocument.js";
+import { provenanceInAChain } from "../../../modules/provenance/__tests__/fixtures/inAChain.js";
+import { storeDouble } from "../../../../core/domain/provenance/__tests__/fixtures/provenanceStore.js";
+import type { ProvenanceStore } from "../../../../core/domain/provenance/index.js";
+import {
+  nothingSent,
+  pipelineResult,
+  unanswered,
+} from "../../../../core/translation-pipeline/__tests__/fixtures/pipelineResult.js";
 
-vi.mock("../../../../core/translation-pipeline/index.js", () => ({
-  translateContent: vi.fn().mockResolvedValue(null),
-}));
+vi.mock("../../../../core/translation-pipeline/index.js", async () => {
+  const fixture =
+    await import("../../../../core/translation-pipeline/__tests__/fixtures/pipelineResult.js");
+  return { translateContent: vi.fn().mockResolvedValue(fixture.nothingSent) };
+});
 
 vi.mock("../../../../core/domain/content-projection/computeFieldFingerprints.js", () => ({
   computeFieldFingerprints: vi.fn(() => ({ title: "fp-fixed" })),
+  HASH_LENGTH: 16,
+  SOURCE_HASH_PATTERN: /^[0-9a-f]{16}$/u,
 }));
 vi.mock("../../../../core/domain/content-projection/computeSourceFingerprint.js", () => ({
   computeSourceFingerprint: vi.fn(() => "fp-fixed"),
 }));
 
-describe("TranslateDocumentHandler", () => {
-  let handler: TranslateDocumentHandler;
+describe("translateDocument", () => {
+  let deps: TranslateDocumentDeps;
   let mockTranslationProvider: TranslationProvider;
   let mockSchemaMap: CollectionSchemaMap;
   let mockPayload: Payload;
@@ -41,8 +54,8 @@ describe("TranslateDocumentHandler", () => {
     collectionId: "doc-123",
     sourceLng: "en",
     targetLng: TARGET_LNG,
-    strategy: "overwrite",
     publishOnTranslation: false,
+    previousAttempts: 0,
     ...overrides,
   });
 
@@ -82,15 +95,42 @@ describe("TranslateDocumentHandler", () => {
       },
     } as unknown as Payload;
 
-    handler = new TranslateDocumentHandler(mockTranslationProvider, mockSchemaMap);
+    deps = {
+      translationProvider: mockTranslationProvider,
+      schemaMap: mockSchemaMap,
+    };
+  });
+
+  describe("a leaf whose value kept its source text", () => {
+    it("logs the document, the locale, the leaf and the failure code", async () => {
+      const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+        pipelineResult({ title: "Translated" }, [unanswered("title", "missing-segment")])
+      );
+
+      await translateDocument(deps, mockPayload, createInput(), {});
+
+      expect(mockPayload.logger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          collection: "posts",
+          documentId: "doc-123",
+          targetLocale: TARGET_LNG,
+          idPath: "title",
+          code: "missing-segment",
+          msg: expect.any(String),
+        })
+      );
+    });
   });
 
   describe("schema validation", () => {
     it("refuses a collection the schema map does not know", async () => {
       const input = createInput({ collection: "unknown" as CollectionSlug });
 
-      await expect(handler.handle(mockPayload, input)).rejects.toThrow(TranslatorConfigError);
-      await expect(handler.handle(mockPayload, input)).rejects.toThrow(
+      await expect(translateDocument(deps, mockPayload, input, {})).rejects.toThrow(
+        TranslatorConfigError
+      );
+      await expect(translateDocument(deps, mockPayload, input, {})).rejects.toThrow(
         'Collection "unknown" not found in schemaMap'
       );
     });
@@ -100,7 +140,7 @@ describe("TranslateDocumentHandler", () => {
     it("reads the source as the current version of that locale only", async () => {
       const input = createInput({ sourceLng: "en" });
 
-      await handler.handle(mockPayload, input);
+      await translateDocument(deps, mockPayload, input, {});
 
       expect(mockPayload.findByID).toHaveBeenCalledWith({
         req: {},
@@ -119,9 +159,12 @@ describe("TranslateDocumentHandler", () => {
         .mockResolvedValueOnce({ id: "doc-123", title: "Test" } as never)
         .mockResolvedValueOnce(null as never);
 
-      const thrown = await handler
-        .handle(mockPayload, createInput({ sourceLng: "en", targetLng: "de" }))
-        .catch((e: unknown) => e);
+      const thrown = await translateDocument(
+        deps,
+        mockPayload,
+        createInput({ sourceLng: "en", targetLng: "de" }),
+        {}
+      ).catch((e: unknown) => e);
 
       expect((thrown as Error).message).toContain('locale "de"');
       expect((thrown as Error).message).not.toContain('locale "en"');
@@ -130,7 +173,7 @@ describe("TranslateDocumentHandler", () => {
     it("fetches target document with target locale and no fallback", async () => {
       const input = createInput({ targetLng: "de" });
 
-      await handler.handle(mockPayload, input);
+      await translateDocument(deps, mockPayload, input, {});
 
       expect(mockPayload.findByID).toHaveBeenCalledWith({
         req: {},
@@ -147,7 +190,7 @@ describe("TranslateDocumentHandler", () => {
     it("reads the target exactly once, even on the publish path", async () => {
       enableDrafts();
 
-      await handler.handle(mockPayload, createInput({ publishOnTranslation: true }));
+      await translateDocument(deps, mockPayload, createInput({ publishOnTranslation: true }), {});
 
       const targetReads = vi
         .mocked(mockPayload.findByID)
@@ -159,15 +202,14 @@ describe("TranslateDocumentHandler", () => {
   describe("translateContent invocation", () => {
     it("forwards fetched docs, strategy and locales to translateContent", async () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(nothingSent);
 
       const input = createInput({
         sourceLng: "en",
         targetLng: "fr",
-        strategy: "overwrite",
       });
 
-      await handler.handle(mockPayload, input);
+      await translateDocument(deps, mockPayload, input, {});
 
       expect(translateContent).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -176,7 +218,6 @@ describe("TranslateDocumentHandler", () => {
           targetData: { id: "doc-123", title: "Test" },
           sourceLng: "en",
           targetLng: "fr",
-          strategy: "overwrite",
           translationProvider: mockTranslationProvider,
         })
       );
@@ -187,7 +228,9 @@ describe("TranslateDocumentHandler", () => {
       const fromHost = new Error("the host's own provider blew up");
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(fromHost);
 
-      const thrown = await handler.handle(mockPayload, createInput()).catch((e: unknown) => e);
+      const thrown = await translateDocument(deps, mockPayload, createInput(), {}).catch(
+        (e: unknown) => e
+      );
 
       expect(
         mustPropagate(thrown),
@@ -201,7 +244,9 @@ describe("TranslateDocumentHandler", () => {
       const fromPayload = new APIError("relation does not exist", 500);
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(fromPayload);
 
-      const thrown = await handler.handle(mockPayload, createInput()).catch((e: unknown) => e);
+      const thrown = await translateDocument(deps, mockPayload, createInput(), {}).catch(
+        (e: unknown) => e
+      );
 
       expect(
         mustPropagate(thrown),
@@ -211,45 +256,43 @@ describe("TranslateDocumentHandler", () => {
   });
 
   describe("success responses", () => {
-    it("returns success when no translation needed (pipeline returns null)", async () => {
+    it("returns success when no translation needed (nothing was sent)", async () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(nothingSent);
 
       const input = createInput();
 
-      const result = await handler.handle(mockPayload, input);
+      const result = await translateDocument(deps, mockPayload, input, {});
 
-      expect(result).toEqual({ success: true });
+      expect(result).toBeUndefined();
       expect(mockPayload.update).not.toHaveBeenCalled();
     });
 
     it("returns success after saving translated document", async () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-        translatedData: { title: "Übersetzter Titel" },
-        translatedPaths: ["title"],
-      });
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+        pipelineResult({ title: "Übersetzter Titel" })
+      );
 
       const input = createInput();
-      const result = await handler.handle(mockPayload, input);
+      const result = await translateDocument(deps, mockPayload, input, {});
 
-      expect(result).toEqual({ success: true });
+      expect(result).toBeUndefined();
     });
   });
 
   describe("saving translated documents", () => {
     beforeEach(async () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-        translatedData: { title: "Translated" },
-        translatedPaths: ["title"],
-      });
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+        pipelineResult({ title: "Translated" })
+      );
     });
 
     it("saves document with target locale and source as fallback", async () => {
       const input = createInput({ sourceLng: "en", targetLng: "fr" });
 
-      await handler.handle(mockPayload, input);
+      await translateDocument(deps, mockPayload, input, {});
 
       expect(mockPayload.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -264,7 +307,7 @@ describe("TranslateDocumentHandler", () => {
     it("marks its write with the auto-translate skip flag so the hook never re-triggers (loop guard set-side)", async () => {
       const input = createInput();
 
-      await handler.handle(mockPayload, input);
+      await translateDocument(deps, mockPayload, input, {});
 
       expect(mockPayload.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -276,7 +319,7 @@ describe("TranslateDocumentHandler", () => {
     it("saves document without autosave when versions not enabled", async () => {
       const input = createInput();
 
-      await handler.handle(mockPayload, input);
+      await translateDocument(deps, mockPayload, input, {});
 
       expect(mockPayload.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -288,7 +331,7 @@ describe("TranslateDocumentHandler", () => {
     it("spreads the draft-mode layer onto the update and sends no _status", async () => {
       enableDrafts();
 
-      await handler.handle(mockPayload, createInput());
+      await translateDocument(deps, mockPayload, createInput(), {});
 
       expect(mockPayload.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -301,7 +344,7 @@ describe("TranslateDocumentHandler", () => {
     it("spreads the publish-mode layer onto the update, target locale and status included", async () => {
       enableDrafts();
 
-      await handler.handle(mockPayload, createInput({ publishOnTranslation: true }));
+      await translateDocument(deps, mockPayload, createInput({ publishOnTranslation: true }), {});
 
       expect(mockPayload.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -315,7 +358,7 @@ describe("TranslateDocumentHandler", () => {
       enableDrafts({ autosave: true });
 
       const input = createInput();
-      await handler.handle(mockPayload, input);
+      await translateDocument(deps, mockPayload, input, {});
 
       expect(mockPayload.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -328,7 +371,7 @@ describe("TranslateDocumentHandler", () => {
       enableDrafts({ autosave: true });
 
       const input = createInput({ publishOnTranslation: true });
-      await handler.handle(mockPayload, input);
+      await translateDocument(deps, mockPayload, input, {});
 
       expect(mockPayload.update).toHaveBeenCalledWith(
         expect.objectContaining({ draft: true, autosave: true })
@@ -339,7 +382,7 @@ describe("TranslateDocumentHandler", () => {
   describe("publishing", () => {
     const nothingToTranslate = async () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(nothingSent);
     };
 
     const publishCalls = () =>
@@ -349,7 +392,7 @@ describe("TranslateDocumentHandler", () => {
       enableDrafts();
       await nothingToTranslate();
 
-      await handler.handle(mockPayload, createInput({ publishOnTranslation: true }));
+      await translateDocument(deps, mockPayload, createInput({ publishOnTranslation: true }), {});
 
       expect(publishCalls()).toHaveLength(1);
       expect(mockPayload.update).toHaveBeenCalledWith(
@@ -365,7 +408,7 @@ describe("TranslateDocumentHandler", () => {
       enableDrafts();
       await nothingToTranslate();
 
-      await handler.handle(mockPayload, createInput({ publishOnTranslation: true }));
+      await translateDocument(deps, mockPayload, createInput({ publishOnTranslation: true }), {});
 
       const [args] = publishCalls()[0];
       expect(args.context).toEqual({ [AUTO_TRANSLATE_SKIP_CONTEXT_KEY]: true });
@@ -374,45 +417,31 @@ describe("TranslateDocumentHandler", () => {
     it("does not publish when the flag is off", async () => {
       enableDrafts();
 
-      await handler.handle(mockPayload, createInput({ publishOnTranslation: false }));
+      await translateDocument(deps, mockPayload, createInput({ publishOnTranslation: false }), {});
 
       expect(publishCalls()).toHaveLength(0);
     });
 
     it("does not scope a publish on a collection without drafts", async () => {
-      await handler.handle(mockPayload, createInput({ publishOnTranslation: true }));
+      await translateDocument(deps, mockPayload, createInput({ publishOnTranslation: true }), {});
 
       expect(publishCalls()).toHaveLength(0);
     });
   });
 
   describe("provenance recording", () => {
-    let store: {
-      upsert: ReturnType<typeof vi.fn>;
-      find: ReturnType<typeof vi.fn>;
-      findByDocument: ReturnType<typeof vi.fn>;
-      dismiss: ReturnType<typeof vi.fn>;
-      deleteByDocument: ReturnType<typeof vi.fn>;
-    };
+    let store: ReturnType<typeof storeDouble>;
     let serviceFactory: ReturnType<typeof vi.fn>;
 
-    const makeHandlerWithProvenance = () =>
-      new TranslateDocumentHandler(
-        mockTranslationProvider,
-        mockSchemaMap,
-        serviceFactory as unknown as ProvenanceServiceFactory
-      );
+    const depsWithProvenance = (): TranslateDocumentDeps => ({
+      translationProvider: mockTranslationProvider,
+      schemaMap: mockSchemaMap,
+      modules: provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory),
+    });
 
     beforeEach(() => {
-      store = {
-        upsert: vi.fn(),
-        find: vi.fn(),
-        findByDocument: vi.fn(),
-        dismiss: vi.fn(),
-        deleteByDocument: vi.fn(),
-      };
-      // A real `ProvenanceService` over a mock store: the record's shape is the service's policy,
-      // not the handler's.
+      store = storeDouble();
+      // A real `ProvenanceService` over a mock store: the record's shape is the service's policy, not the run's.
       serviceFactory = vi.fn(
         (payload) =>
           new ProvenanceService(
@@ -424,12 +453,11 @@ describe("TranslateDocumentHandler", () => {
       );
     });
 
-    const withTranslatedData = async (translatedPaths: string[] = ["title"]) => {
+    const withTranslatedData = async () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-        translatedData: { title: "Hallo" },
-        translatedPaths,
-      });
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+        pipelineResult({ title: "Hallo" })
+      );
     };
 
     it("upserts a provenance record after a successful translation", async () => {
@@ -444,25 +472,34 @@ describe("TranslateDocumentHandler", () => {
               : { id: "doc-123", title: "Target" }
           )
       );
-      const handlerWithProvenance = makeHandlerWithProvenance();
+      const provenanceDeps = depsWithProvenance();
 
-      await handlerWithProvenance.handle(
+      await translateDocument(
+        provenanceDeps,
         mockPayload,
-        createInput({ collection: "posts" as CollectionSlug, sourceLng: "en", targetLng: "de" })
+        createInput({ collection: "posts" as CollectionSlug, sourceLng: "en", targetLng: "de" }),
+        {}
       );
 
       expect(computeFieldFingerprints).toHaveBeenCalledWith({ id: "doc-123", title: "Source" }, [
         { name: "title", type: "text", localized: true },
       ]);
-      expect(serviceFactory).toHaveBeenCalledWith(mockPayload, {});
+      const [given, scope] = (serviceFactory as ReturnType<typeof vi.fn>).mock.calls[0] as [
+        object,
+        object,
+      ];
+      expect(scope).toEqual({});
+      expect(
+        Object.getPrototypeOf(given),
+        "a module is handed a guarded view of the run's payload, not the payload itself"
+      ).toBe(mockPayload);
       expect(store.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
           collectionSlug: "posts",
           documentId: "doc-123",
           targetLocale: "de",
           sourceLocale: "en",
-          sourceFingerprint: { kind: "fields", hashes: { title: "fp-fixed" } },
-          dismissedFingerprint: null,
+          sourceFingerprint: { title: "fp-fixed" },
         })
       );
       const record = store.upsert.mock.calls[0][0] as { translatedAt: string };
@@ -473,8 +510,7 @@ describe("TranslateDocumentHandler", () => {
     });
 
     it("fingerprints the source document, not whatever the pipeline hands back", async () => {
-      // The real pipeline no longer mutates `sourceData` (it detaches object-valued leaves); the
-      // hostile stub below keeps a handler-level guard in case that regresses.
+      // The real pipeline does not mutate `sourceData`; the hostile stub guards against that regressing.
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
       const { computeFieldFingerprints } =
         await import("../../../../core/domain/content-projection/computeFieldFingerprints.js");
@@ -492,10 +528,7 @@ describe("TranslateDocumentHandler", () => {
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockImplementation(
         async ({ sourceData }: { sourceData: Record<string, unknown> }) => {
           sourceData.title = "TRANSLATED (pipeline mutation)";
-          return {
-            translatedData: { title: "TRANSLATED (pipeline mutation)" },
-            translatedPaths: ["title"],
-          };
+          return pipelineResult({ title: "TRANSLATED (pipeline mutation)" });
         }
       );
 
@@ -507,32 +540,33 @@ describe("TranslateDocumentHandler", () => {
         }
       );
 
-      await makeHandlerWithProvenance().handle(
+      await translateDocument(
+        depsWithProvenance(),
         mockPayload,
-        createInput({ collection: "posts" as CollectionSlug, sourceLng: "en", targetLng: "de" })
+        createInput({ collection: "posts" as CollectionSlug, sourceLng: "en", targetLng: "de" }),
+        {}
       );
 
       expect(fingerprintedDoc).toEqual({ id: "doc-123", title: "Original source" });
       expect(store.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          sourceFingerprint: { kind: "fields", hashes: { title: "fp-fixed" } },
+          sourceFingerprint: { title: "fp-fixed" },
         })
       );
     });
 
     it("does not record provenance when no store factory is supplied (disabled)", async () => {
       await withTranslatedData();
-      // handler built without the factory (default in beforeEach) — provenance off.
-      await handler.handle(mockPayload, createInput());
+      await translateDocument(deps, mockPayload, createInput(), {});
 
       expect(store.upsert).not.toHaveBeenCalled();
     });
 
-    it("does not record provenance when nothing was translated (pipeline returns null)", async () => {
+    it("does not record provenance when nothing was translated (nothing was sent)", async () => {
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(nothingSent);
 
-      await makeHandlerWithProvenance().handle(mockPayload, createInput());
+      await translateDocument(depsWithProvenance(), mockPayload, createInput(), {});
 
       // The service factory may be called (to attempt a fingerprint capture), but with nothing
       // translated there is no record — the store is never written.
@@ -543,19 +577,17 @@ describe("TranslateDocumentHandler", () => {
       await withTranslatedData();
       store.upsert.mockRejectedValue(new TranslatorBug("provenance table down"));
 
-      const result = await makeHandlerWithProvenance().handle(mockPayload, createInput());
+      const result = await translateDocument(depsWithProvenance(), mockPayload, createInput(), {});
 
-      expect(result).toEqual({ success: true });
+      expect(result).toBeUndefined();
       expect(
         (mockPayload as unknown as { logger: { error: ReturnType<typeof vi.fn> } }).logger.error
       ).toHaveBeenCalled();
     });
   });
 
-  describe("what the handler tells provenance about the run", () => {
-    it("claims the leaf the pipeline sent and marks the one it did not", async () => {
-      // The module mock returns a fixed map, so it has to name BOTH leaves — otherwise `tagline`
-      // could never reach the receipt whatever the merge rule did, and this would pass on the mock.
+  describe("what the run tells provenance", () => {
+    it("claims the leaf the pipeline sent and leaves the one it did not unanswered", async () => {
       const { computeFieldFingerprints } =
         await import("../../../../core/domain/content-projection/computeFieldFingerprints.js");
       (computeFieldFingerprints as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
@@ -563,13 +595,7 @@ describe("TranslateDocumentHandler", () => {
         tagline: "fp-tagline",
       });
 
-      const store = {
-        upsert: vi.fn(),
-        find: vi.fn().mockResolvedValue(null),
-        findByDocument: vi.fn(),
-        dismiss: vi.fn(),
-        deleteByDocument: vi.fn(),
-      };
+      const store = storeDouble();
       const serviceFactory = vi.fn(
         (payload) =>
           new ProvenanceService(
@@ -580,49 +606,40 @@ describe("TranslateDocumentHandler", () => {
           )
       );
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-        translatedData: { title: "Hallo" },
-        translatedPaths: ["title"],
-      });
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+        pipelineResult({ title: "Hallo" })
+      );
       (mockPayload.findByID as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: "doc-123",
         title: "Source",
         tagline: "Untouched",
       });
 
-      const underTest = new TranslateDocumentHandler(
-        mockTranslationProvider,
-        mockSchemaMap,
-        serviceFactory as unknown as ProvenanceServiceFactory
-      );
-      await underTest.handle(mockPayload, createInput({}));
+      const underTest: TranslateDocumentDeps = {
+        translationProvider: mockTranslationProvider,
+        schemaMap: mockSchemaMap,
+        modules: provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory),
+      };
+      await translateDocument(underTest, mockPayload, createInput({}), {});
 
       expect(store.upsert).toHaveBeenCalledTimes(1);
       const written = store.upsert.mock.calls[0][0] as {
-        sourceFingerprint: { kind: string; hashes: Record<string, string | null> };
+        sourceFingerprint: RecordedFingerprints;
       };
-      expect(written.sourceFingerprint).toEqual({
-        kind: "fields",
-        hashes: { title: "fp-title", tagline: null },
-      });
+      expect(written.sourceFingerprint).toEqual({ title: "fp-title", tagline: "!unanswered" });
     });
 
-    it("hands the pipeline the leaves the receipt can answer for, and no others", async () => {
-      const store = {
-        upsert: vi.fn(),
+    it("hands the pipeline every translatable leaf when the request named none", async () => {
+      const store = storeDouble({
         find: vi.fn().mockResolvedValue({
           collectionSlug: "pages",
           documentId: "doc-123",
           targetLocale: "de",
           sourceLocale: "en",
-          sourceFingerprint: { kind: "fields", hashes: { title: "stale-hash" } },
+          sourceFingerprint: { title: "stale-hash" },
           translatedAt: "2026-07-07T00:00:00.000Z",
-          dismissedFingerprint: null,
         }),
-        findByDocument: vi.fn(),
-        dismiss: vi.fn(),
-        deleteByDocument: vi.fn(),
-      };
+      });
       const serviceFactory = vi.fn(
         (payload) =>
           new ProvenanceService(
@@ -633,37 +650,32 @@ describe("TranslateDocumentHandler", () => {
           )
       );
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-        translatedData: { title: "Hallo" },
-        translatedPaths: ["title"],
-      });
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+        pipelineResult({ title: "Hallo" })
+      );
       (mockPayload.findByID as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: "doc-123",
         title: "Source",
       });
 
-      const underTest = new TranslateDocumentHandler(
-        mockTranslationProvider,
-        mockSchemaMap,
-        serviceFactory as unknown as ProvenanceServiceFactory
-      );
-      await underTest.handle(mockPayload, createInput({}));
+      const underTest: TranslateDocumentDeps = {
+        translationProvider: mockTranslationProvider,
+        schemaMap: mockSchemaMap,
+        modules: provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory),
+      };
+      await translateDocument(underTest, mockPayload, createInput({}), {});
 
       const passed = (translateContent as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0] as {
-        sourceChangedByLeaf?: Record<string, boolean>;
+        selection?: readonly string[];
       };
-      expect(passed.sourceChangedByLeaf).toEqual({ title: true });
+      expect(passed.selection).toEqual(["title"]);
     });
   });
 
   it("translates anyway when the prior receipt cannot be read", async () => {
-    const store = {
-      upsert: vi.fn(),
+    const store = storeDouble({
       find: vi.fn().mockRejectedValue(new Error("sidecar unavailable")),
-      findByDocument: vi.fn(),
-      dismiss: vi.fn(),
-      deleteByDocument: vi.fn(),
-    };
+    });
     const serviceFactory = vi.fn(
       (payload) =>
         new ProvenanceService(
@@ -674,24 +686,23 @@ describe("TranslateDocumentHandler", () => {
         )
     );
     const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-    (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-      translatedData: { title: "Hallo" },
-      translatedPaths: ["title"],
-    });
+    (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+      pipelineResult({ title: "Hallo" })
+    );
     (mockPayload.findByID as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: "doc-123",
       title: "Source",
     });
 
-    const underTest = new TranslateDocumentHandler(
-      mockTranslationProvider,
-      mockSchemaMap,
-      serviceFactory as unknown as ProvenanceServiceFactory
-    );
+    const underTest: TranslateDocumentDeps = {
+      translationProvider: mockTranslationProvider,
+      schemaMap: mockSchemaMap,
+      modules: provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory),
+    };
 
-    await expect(underTest.handle(mockPayload, createInput({}))).resolves.toEqual({
-      success: true,
-    });
+    await expect(
+      translateDocument(underTest, mockPayload, createInput({}), {})
+    ).resolves.toBeUndefined();
     expect(mockPayload.update, "the translation must still be saved").toHaveBeenCalled();
   });
 });

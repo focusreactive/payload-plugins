@@ -8,7 +8,7 @@ thing that pruned the job table, and closes #122 as *won't build*.
 ## Design decisions
 
 **D1 — retention stays out of the plugin.**
-The user's call. How long to keep translation history is the host's policy — the same class of decision
+Decided by the owner. How long to keep translation history is the host's policy — the same class of decision
 as the `jobs.deleteJobOnComplete: false` that creates the situation — and Payload already gives the host
 cron to act on it. Rejected: a `retention` option with a schedule. It needs a default nobody can pick
 well, and getting it wrong deletes history a host explicitly asked to keep.
@@ -31,7 +31,7 @@ D1 declined, under another name.
 It tells the reader to use the same value they passed as `taskName`, and states the default. Someone who
 customised it meets the requirement at the moment they copy the snippet.
 
-**New surface:** none. **Written contract owed:** none. **Escalate:** no.
+**New surface:** none. **Written contract owed:** none.
 
 ## Verified before writing the documentation
 
@@ -49,7 +49,7 @@ JSON-path traversal is involved — which is why the behaviour is identical ever
 
 ## Corrected during investigation
 
-**The polling worry was wrong.** The task brief said deleting a recently-completed job could pull a row
+**The polling worry was wrong.** The original concern was that deleting a recently-completed job could pull a row
 out from under a reader. `useCollectionTranslationStatus.ts:44-49` and `useDocumentTranslation.ts:49`
 set `refetchInterval` to `false` unless something is `PENDING` or `RUNNING`, so polling stops once work
 finishes. A time offset is still right, but for an ordinary reason — someone may open the panel to read
@@ -70,11 +70,10 @@ first draft would have documented both and implied the queue was needed for the 
 5. **Checks clean:** check-types both packages, unit tests, lint at the repo baseline.
 6. **#122 closed** with the reasoning and a pointer to the documentation.
 
-## Human choices
+## Decisions by the owner
 
-- **Do not build retention** (D1), and on the follow-up question **export nothing at all** (D2). The
-  user reframed it from "what is convenient to import" to "whose responsibility is this", which is what
-  settled it.
+- **Do not build retention** (D1), and on the follow-up question **export nothing at all** (D2).
+  Settled by asking whose responsibility retention is, rather than what is convenient to import.
 
 ## Risks
 
@@ -87,6 +86,4 @@ first draft would have documented both and implied the queue was needed for the 
 
 **2026-09-04 — verification.** All six criteria met. The pruning query was run against SQLite, Postgres
 and MongoDB before it was written down (table above), so criterion 2 compares the documented snippet to
-something that actually executed rather than to a plausible draft. `grep -rn "@since 0.12" src`
-returns nothing; `src/index.ts` is untouched, which is criterion 4 and also the whole of D2. Checks:
-1320 unit tests, check-types clean in both packages, lint at the 59-warning repo baseline.
+something that actually executed rather than to a plausible draft.

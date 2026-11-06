@@ -9,7 +9,7 @@
 
 ## 1. Parsing summary
 
-- **Source type:** GitHub issue (#99) authored in this repo + a verbal instruction to also review the
+- **Source type:** GitHub issue (#99) authored in this repo + a request to also review the
   `TranslationProvider` port itself, not just the adapter.
 - **Stakeholders:** plugin maintainers (own the API surface); plugin consumers on `0.10.x` (must not
   be broken); editors in the Payload admin (feel the failure modes today).
@@ -281,7 +281,7 @@ Numbered; each states how it is checked. Items marked ⚠ depend on an Open Ques
    Changing `gpt-4o` to a newer default changes cost, latency and output for every existing user who
    never set `model`, on a patch/minor upgrade.
    **Matters because:** it is not an API break but it is a behavior break, and the compatibility
-   constraint was stated in terms the user may well have meant to cover it. Options: (a) bump silently
+   constraint was stated in terms the owner may well have meant to cover it. Options: (a) bump silently
    and note it in the changelog; (b) keep `gpt-4o` and document a recommended value; (c) bump and
    deprecate the implicit default so the next major requires `model` explicitly.
 
@@ -292,7 +292,7 @@ Numbered; each states how it is checked. Items marked ⚠ depend on an Open Ques
    path) for a benefit that is real but separable. *Recommendation: note it, do it in its own issue —
    cancel-that-does-not-cancel deserves its own acceptance criteria.*
 
-### Non-blocking (defaults I will take unless told otherwise)
+### Non-blocking (defaults that stand unless overruled)
 
 5. **Responses API vs Chat Completions.** *[non-blocking]* Default: move to `client.responses.create`
    with a schema, and keep a `chat.completions` compatibility mode as a documented option — #100's
@@ -310,11 +310,11 @@ Numbered; each states how it is checked. Items marked ⚠ depend on an Open Ques
 
 ### Restate check
 
-- *"Backward compatible"* — I read this as: **no consumer's `payload.config.ts` needs editing, and no
+- *"Backward compatible"* — read as: **no consumer's `payload.config.ts` needs editing, and no
   custom `TranslationProvider` implementation stops compiling or working.** It does **not**
   automatically mean "identical runtime behavior" — Q2 and Q3 are exactly the places where those two
   readings diverge, which is why they are blocking.
-- *"Refresh the provider"* — I read this as correctness + failure visibility + removing upgrade
+- *"Refresh the provider"* — read as correctness + failure visibility + removing upgrade
   blockers, **not** as new capabilities (context, glossary, streaming, cost tracking).
 - *"Shared toolkit"* — vendor-neutral helpers **plus the enforced key-set guarantee**. If it were only
   helpers, each adapter in #100 could still ship the A1 defect.
@@ -341,7 +341,7 @@ Numbered; each states how it is checked. Items marked ⚠ depend on an Open Ques
 
 ---
 
-## 9. Consistency self-check
+## 9. Consistency check
 
 - Every IN-scope item has at least one acceptance criterion: 1→AC1, 2→AC3, 3→AC2, 4→AC4, 5→AC5,
   6→AC5/AC6, 7→AC2/4/5/7/8/9/10, 8→AC11/12, 9→AC12. **0 uncovered.**
@@ -374,18 +374,18 @@ work will describe different things.
 
 ## 11. Suggested next step
 
-**`/sp-architect`, then `/sp-task`.** Q1–Q4 are answered; the design questions that remain are
+**A design pass, then implementation.** Q1–Q4 are answered; the design questions that remain are
 structural, not product.
 
-Architecture vectors, in the order they matter here:
+Design concerns, in the order they matter here:
 
-| Vector | Why it applies |
+| Concern | Why it applies |
 | --- | --- |
-| `contract` | **Primary.** This is a third-party API boundary and an untrusted reply (a language model's JSON) crossing into a mutation path. The port is a published contract with unknown external implementers. |
-| `evolution` | **Secondary.** Everything here replaces something already in use, under a hard no-break constraint, with an in-flight refactor (the kernel extraction) alongside it. Two deprecations (`null` return, and the model-default policy note) are scheduled here, not performed. |
-| `concurrency` | **Added by C4.** Cancellation is a cross-process problem the moment more than one instance runs: the request that cancels and the process that translates need not be the same. The design must state what the in-process registry does and does not promise. |
+| Integration contract | **Primary.** This is a third-party API boundary and an untrusted reply (a language model's JSON) crossing into a mutation path. The port is a published contract with unknown external implementers. |
+| Evolution and migration | **Secondary.** Everything here replaces something already in use, under a hard no-break constraint, with an in-flight refactor (the kernel extraction) alongside it. Two deprecations (`null` return, and the model-default policy note) are scheduled here, not performed. |
+| Concurrency | **Added by C4.** Cancellation is a cross-process problem the moment more than one instance runs: the request that cancels and the process that translates need not be the same. The design must state what the in-process registry does and does not promise. |
 
-Not `structure` alone — placement (`shared/` vs `core/`) is the easy part and is already answered by
+Not structure alone — placement (`shared/` vs `core/`) is the easy part and is already answered by
 the layering rules. The hard questions are all about what the contract promises and how it changes.
 
 ---
@@ -504,8 +504,8 @@ the README, not left for a user to find via their bill. Cross-process cancellati
 flag the job polls between stages, or a shared registry) is explicitly **out of scope** and belongs to
 whoever takes on multi-instance job semantics.
 
-**This adds a vector to the design brief:** `concurrency`. Cancellation across processes is a
-correctness contract, not a plumbing detail, and `/sp-architect` should be told so.
+**This adds a concern to the design:** concurrency. Cancellation across processes is a
+correctness contract, not a plumbing detail, and the design must treat it as one.
 
 **AC:** 10b, 10c, 10d.
 
@@ -558,7 +558,7 @@ package stops being pinned to one SDK major — the consumer owns that version.
 layers 1 and 2, and it is public. Non-blocking default Q7 (keep it internal) is overturned. The code
 is much the same; what changes is what is exported and how the SDK is typed.
 
-**This is the question `/sp-architect` is being handed:** not "how do we refresh the provider" but
+**This is the question the design must answer:** not "how do we refresh the provider" but
 **"where exactly do the three seams fall, and what does each layer promise"**.
 
 **AC:** to be derived during design — layer boundaries are the design's output, not its input.

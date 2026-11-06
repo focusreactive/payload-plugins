@@ -13,7 +13,11 @@ const ONE_ATTEMPT_SO_THE_RUN_GIVES_UP_AT_ONCE = 1;
 const DRAIN = 8;
 
 const onFailed = vi.fn<(task: Seen, error: unknown) => void>();
+const onAbandoned = vi.fn<(task: Seen) => void>();
 const onCancelled = vi.fn<(task: Seen) => void>();
+
+const localesOf = (fn: typeof onFailed | typeof onAbandoned) =>
+  fn.mock.calls.map(([task]) => task.targetLng).sort();
 
 let ctx: TestPayload;
 
@@ -27,7 +31,7 @@ describe("cancelling a run that has already given up", () => {
           backoff: { type: "fixed", delay: 0 },
         },
       }),
-      lifecycle: { onFailed, onCancelled },
+      lifecycle: { onFailed, onAbandoned, onCancelled },
       onTranslate: () => {
         throw new Error("provider down");
       },
@@ -49,7 +53,7 @@ describe("cancelling a run that has already given up", () => {
         target_lng: ["de", "fr"],
         collection_slug: "docs",
         collection_id: [String(made.id)],
-        strategy: "overwrite",
+
         publish_on_translation: false,
       },
     });
@@ -59,15 +63,19 @@ describe("cancelling a run that has already given up", () => {
       await ctx.payload.jobs.run({ queue: "translations" });
     }
     expect(
-      onFailed.mock.calls.map(([task]) => task.targetLng).sort(),
-      "the run must be spent before the cancellation this check is about"
-    ).toEqual(["de", "fr"]);
+      localesOf(onFailed),
+      "the run must be spent before the cancellation this check is about: de is what it tried"
+    ).toEqual(["de"]);
+    expect(
+      localesOf(onAbandoned),
+      "...and fr is what it never reached, so both are settled and neither is owed"
+    ).toEqual(["fr"]);
 
     await callEndpoint(ctx.payload, "delete", "/translate/cancel", { body: { ids: [handle] } });
 
     expect(
       onCancelled.mock.calls.map(([task]) => task.targetLng),
-      "a locale already told it failed is settled; telling it again is a second ending"
+      "a locale already told how it ended is settled; telling it again is a second ending"
     ).toEqual([]);
   });
 
@@ -83,7 +91,7 @@ describe("cancelling a run that has already given up", () => {
         target_lng: ["de", "fr"],
         collection_slug: "docs",
         collection_id: [String(made.id)],
-        strategy: "overwrite",
+
         publish_on_translation: false,
       },
     });

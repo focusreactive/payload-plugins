@@ -53,7 +53,7 @@ describe("a host hears onQueued before any ending, with the runner that queues o
         target_lng: ["de", "fr"],
         collection_slug: "docs",
         collection_id: [String(made.id)],
-        strategy: "overwrite",
+
         publish_on_translation: false,
       },
     });

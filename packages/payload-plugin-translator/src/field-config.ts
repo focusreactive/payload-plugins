@@ -8,11 +8,7 @@ import { beforeInputPositioner } from "./field-actions.js";
 
 export type { FieldTranslationConfig };
 
-/**
- * Field types eligible for the per-field translate control — the same text-bearing
- * leaves the server's `TranslatableField` handles. `richText` writes back by re-mounting
- * the Lexical editor (see the control); `text` / `textarea` write straight to form state.
- */
+/** The text-bearing leaves the server's `TranslatableField` accepts — keep the two in step. */
 type FieldControlCandidate = TextField | TextareaField | RichTextField;
 
 /**
@@ -24,16 +20,11 @@ type FieldControlCandidate = TextField | TextareaField | RichTextField;
 const activeFieldControlPositioner: FieldControlPositioner = beforeInputPositioner;
 
 /**
- * @deprecated Use `FieldTranslationConfig` instead
- */
-export type { FieldTranslationConfig as TranslateKitFieldConfig };
-
-/**
  * Configure a Payload field for translation.
  *
  * - **Add a translate control** — wrap a `text` / `textarea` field with no second
  *   argument. A per-field Translate control is positioned on the field (today, just
- *   above the input). Requires `fieldLevel()` in the plugin's `levels` to register the
+ *   above the input). Requires `fieldTranslation()` in the plugin's `modules` to register the
  *   endpoint. Control-injection behavior is `@since 0.6.0`; field exclusion predates it.
  * - **Exclude from translation** — pass `{ exclude: true }` (any field type). The field
  *   value is never sent to the translation provider and no control is added.
@@ -74,8 +65,3 @@ export function withFieldTranslation(field: Field, config?: { exclude?: boolean 
     ? configured
     : activeFieldControlPositioner(configured, new TranslateFieldControlExport());
 }
-
-/**
- * @deprecated Use `withFieldTranslation` instead
- */
-export const translateKitField = withFieldTranslation;

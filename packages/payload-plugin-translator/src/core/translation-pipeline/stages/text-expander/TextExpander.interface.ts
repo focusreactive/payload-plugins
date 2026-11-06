@@ -1,3 +1,4 @@
+import type { TranslatableValue } from "../../../domain/translation-providers/index.js";
 import type { FieldChunk, TextChunk } from "../../types/index.js";
 
 /**
@@ -6,8 +7,7 @@ import type { FieldChunk, TextChunk } from "../../types/index.js";
 export type ExpansionResult = {
   /** Generated TextChunks */
   chunks: TextChunk[];
-  /** Map of index -> text for translation API */
-  textMap: Record<number, string>;
+  textMap: Record<number, TranslatableValue>;
   /** Next available index */
   nextIndex: number;
 };

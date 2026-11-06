@@ -6,12 +6,19 @@ import type { TranslationProvider } from "../../../../core/domain/translation-pr
 import { TranslateFieldHandler } from "../handler.js";
 import type { FieldTranslationConfig, FieldTranslationInput } from "../model.js";
 import { MAX_FIELD_VALUE_BYTES } from "../model.js";
+import {
+  nothingSent,
+  pipelineResult,
+  unanswered,
+} from "../../../../core/translation-pipeline/__tests__/fixtures/pipelineResult.js";
 
 // Isolate the handler's orchestration (read → resolve → translate → response mapping)
 // from the pipeline itself.
-vi.mock("../../../../core/translation-pipeline/index.js", () => ({
-  translateContent: vi.fn().mockResolvedValue(null),
-}));
+vi.mock("../../../../core/translation-pipeline/index.js", async () => {
+  const fixture =
+    await import("../../../../core/translation-pipeline/__tests__/fixtures/pipelineResult.js");
+  return { translateContent: vi.fn().mockResolvedValue(fixture.nothingSent) };
+});
 
 const f = (config: Record<string, unknown>): Field => config as unknown as Field;
 
@@ -22,12 +29,17 @@ const makeReq = (body: Partial<FieldTranslationInput> & Record<string, unknown>)
 // from-locale always reads the saved doc, so most requests need a `payload.findByID` mock.
 const makeReqWithPayload = (
   body: Partial<FieldTranslationInput> & Record<string, unknown>,
-  findByID: ReturnType<typeof vi.fn>
+  findByID: ReturnType<typeof vi.fn>,
+  logger: { warn: ReturnType<typeof vi.fn> } = { warn: vi.fn() }
 ): PayloadRequest =>
   ({
     json: () => Promise.resolve(body),
     // The endpoint now checks both locales against the project's own, so the fixture declares them.
-    payload: { findByID, config: { localization: { defaultLocale: "en", locales: ["en", "de"] } } },
+    payload: {
+      findByID,
+      logger,
+      config: { localization: { defaultLocale: "en", locales: ["en", "de"] } },
+    },
   }) as unknown as PayloadRequest;
 
 // Valid from-locale request: translate `posts.title` from `en` into `de`, reading doc `p1`.
@@ -90,7 +102,6 @@ beforeEach(() => {
   const config: FieldTranslationConfig = {
     schemaMap,
     translationProvider: provider,
-    inlineMarks: false,
   };
   handler = new TranslateFieldHandler(config);
 });
@@ -113,11 +124,29 @@ describe("what the translation is told about the request", () => {
 });
 
 describe("TranslateFieldHandler", () => {
+  it("logs a leaf whose value kept its source text, with the document, the locale, the leaf and the failure code", async () => {
+    (await importTranslateContent()).mockResolvedValue(
+      pipelineResult({ title: "Hello" }, [unanswered("title", "refused")])
+    );
+    const warn = vi.fn();
+    const findByID = vi.fn().mockResolvedValue({ id: "p1", title: "Hello" });
+
+    await handler.handle(makeReqWithPayload(baseBody, findByID, { warn }));
+
+    expect(warn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: "posts",
+        documentId: "p1",
+        targetLocale: "de",
+        idPath: "title",
+        code: "refused",
+        msg: expect.any(String),
+      })
+    );
+  });
+
   it("reads the source-locale value from the saved doc and translates a localized leaf", async () => {
-    (await importTranslateContent()).mockResolvedValue({
-      translatedData: { title: "Hallo" },
-      translatedPaths: ["title"],
-    });
+    (await importTranslateContent()).mockResolvedValue(pipelineResult({ title: "Hallo" }));
     const findByID = vi.fn().mockResolvedValue({ id: "p1", title: "Hello" });
 
     const res = await handler.handle(makeReqWithPayload(baseBody, findByID));
@@ -140,7 +169,7 @@ describe("TranslateFieldHandler", () => {
   });
 
   it("returns a 200 noop+info when there is nothing to translate", async () => {
-    (await importTranslateContent()).mockResolvedValue(null);
+    (await importTranslateContent()).mockResolvedValue(nothingSent);
 
     const res = await handler.handle(reqWithDoc({ id: "p1", title: "Hello" }));
     expect(res.status).toBe(200);
@@ -153,9 +182,9 @@ describe("TranslateFieldHandler", () => {
     );
   });
 
-  it("an empty source-locale value no-ops (translateContent gets undefined, returns null)", async () => {
+  it("an empty source-locale value no-ops (translateContent gets undefined, sends nothing)", async () => {
     const translateContent = await importTranslateContent();
-    (translateContent as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (translateContent as ReturnType<typeof vi.fn>).mockResolvedValue(nothingSent);
 
     const res = await handler.handle(reqWithDoc({ id: "p1" })); // no `title` in the source locale
     expect(res.status).toBe(200);
@@ -167,10 +196,9 @@ describe("TranslateFieldHandler", () => {
 
   it("resolves a field inside a block via the saved doc's blockType and translates it", async () => {
     const translateContent = await importTranslateContent();
-    (translateContent as ReturnType<typeof vi.fn>).mockResolvedValue({
-      translatedData: { headline: "Hallo" },
-      translatedPaths: ["headline"],
-    });
+    (translateContent as ReturnType<typeof vi.fn>).mockResolvedValue(
+      pipelineResult({ headline: "Hallo" })
+    );
 
     const res = await handler.handle(
       reqWithDoc(
@@ -253,7 +281,7 @@ describe("TranslateFieldHandler", () => {
     const wrongType = await handler.handle(
       reqWithDoc({ id: "p1", count: 5 }, { field_path: "count" })
     );
-    translateContent.mockResolvedValue(null);
+    translateContent.mockResolvedValue(nothingSent);
     const nothingInside = await handler.handle(reqWithDoc({ id: "p1", title: "Hello" }));
 
     const a = (await wrongType.json()).data.notice;
@@ -317,10 +345,9 @@ describe("TranslateFieldHandler", () => {
 
   it("never forwards a translate strategy (field translation always overwrites)", async () => {
     const translateContent = await importTranslateContent();
-    (translateContent as ReturnType<typeof vi.fn>).mockResolvedValue({
-      translatedData: { title: "Hallo" },
-      translatedPaths: ["title"],
-    });
+    (translateContent as ReturnType<typeof vi.fn>).mockResolvedValue(
+      pipelineResult({ title: "Hallo" })
+    );
 
     await handler.handle(reqWithDoc({ id: "p1", title: "Hello" }));
 

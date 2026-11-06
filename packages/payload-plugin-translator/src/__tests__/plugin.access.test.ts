@@ -23,6 +23,8 @@ const build = (extra: Record<string, unknown>) =>
     collections: [posts],
     translationProvider: provider,
     runner: createSyncRunner(),
+    modules: [],
+    components: [],
     ...extra,
   } as never)(baseConfig());
 

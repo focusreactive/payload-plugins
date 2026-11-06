@@ -2,7 +2,8 @@ import { z } from "zod";
 import type { CollectionSlug } from "payload";
 
 import { JobIdSchema } from "../../shared/index.js";
-import type { TranslationContext } from "../../modules/translation-levels/index.js";
+import type { LeafAddress } from "../../../core/domain/content-projection/idPath.js";
+import type { LocaleStaleness, ProvenanceServiceFactory } from "../../modules/provenance/index.js";
 
 /**
  * Route params for reading a document's per-locale staleness.
@@ -14,18 +15,30 @@ export const GetDocumentStalenessInputSchema = z.object({
   collection_slug: z.string().nonempty(),
 });
 
-/** Body for dismissing (acknowledging) staleness of one target locale. */
 export const DismissStalenessInputSchema = z.object({
   collection_id: JobIdSchema,
   collection_slug: z.string().nonempty(),
   target_lng: z.string().nonempty(),
 });
 
-/**
- * Handler configuration. `provenanceServiceFactory` is absent when provenance is disabled — the
- * handlers then report no staleness (empty), so the endpoint contract stays stable either way.
- * The fingerprint policy + schema live inside {@link ProvenanceService}, so no `schemaMap` here.
- */
-export type StalenessConfig = Pick<TranslationContext, "provenanceServiceFactory"> & {
+/** One locale's staleness on the wire. `changed_leaves` is absent, not empty, when nothing is known about which leaves moved. */
+export type StalenessLocaleBody = {
+  target_lng: string;
+  source_lng: string;
+  is_stale: boolean;
+  translated_at: string;
+  changed_leaves?: LeafAddress[];
+};
+
+export const asStalenessBody = (locale: LocaleStaleness): StalenessLocaleBody => ({
+  target_lng: locale.targetLocale,
+  source_lng: locale.sourceLocale,
+  is_stale: locale.isStale,
+  translated_at: locale.translatedAt,
+  ...(locale.changedLeaves === undefined ? {} : { changed_leaves: locale.changedLeaves }),
+});
+
+export type StalenessConfig = {
+  provenanceServiceFactory: ProvenanceServiceFactory;
   availableCollections: Set<CollectionSlug>;
 };

@@ -12,6 +12,7 @@ const TWO = ["admins", "editors"];
 describe("identityOf", () => {
   it("reads both halves when the request carries them", () => {
     expect(identityOf({ user: { id: "anna", collection: "editors" } }, TWO)).toEqual({
+      kind: "named",
       requester: { userId: "anna", userCollection: "editors" },
     });
   });
@@ -19,12 +20,15 @@ describe("identityOf", () => {
   it("completes a missing collection when the project has only one", () => {
     const identity = identityOf({ user: { id: "anna" } }, ONE);
 
-    expect(identity).toEqual({ requester: { userId: "anna", userCollection: "users" } });
-    expect(identity.requester, "a signed-in user must not read as anonymous").not.toBeNull();
+    expect(identity).toEqual({
+      kind: "named",
+      requester: { userId: "anna", userCollection: "users" },
+    });
+    expect(identity.kind, "a signed-in user must not read as anonymous").not.toBe("nobody");
   });
 
   it("refuses to guess when the project has more than one", () => {
-    expect(identityOf({ user: { id: "anna" } }, TWO)).toEqual({ requester: null });
+    expect(identityOf({ user: { id: "anna" } }, TWO)).toEqual({ kind: "unnameable" });
   });
 
   it("says in the log what a host has to fix for that case", () => {
@@ -38,19 +42,21 @@ describe("identityOf", () => {
   });
 
   it("names nobody for an anonymous request", () => {
-    expect(identityOf({ user: null }, ONE)).toEqual({ requester: null });
+    expect(identityOf({ user: null }, ONE)).toEqual({ kind: "nobody" });
   });
 
   it("names nobody when there is no user at all", () => {
-    expect(identityOf({}, ONE)).toEqual({ requester: null });
+    expect(identityOf({}, ONE)).toEqual({ kind: "nobody" });
   });
 
   it("keeps a zero id", () => {
-    expect(identityOf({ user: { id: 0, collection: "users" } }, ONE).requester?.userId).toBe(0);
+    const identity = identityOf({ user: { id: 0, collection: "users" } }, ONE);
+
+    expect(identity.kind === "named" && identity.requester.userId).toBe(0);
   });
 
-  it("names nobody when the project has no auth collection at all", () => {
-    expect(identityOf({ user: { id: "anna" } }, []).requester).toBeNull();
+  it("cannot name an actor when the project has no auth collection at all", () => {
+    expect(identityOf({ user: { id: "anna" } }, [])).toEqual({ kind: "unnameable" });
   });
 });
 

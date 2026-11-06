@@ -29,7 +29,6 @@ export function makeProvenanceCollection(slug: string = DEFAULT_PROVENANCE_SLUG)
       { name: "sourceLocale", type: "text", required: true },
       { name: "sourceFingerprint", type: "text", required: true },
       { name: "translatedAt", type: "date", required: true },
-      { name: "dismissedFingerprint", type: "text" },
     ],
     indexes: [{ fields: ["collectionSlug", "documentId", "targetLocale"], unique: true }],
   };

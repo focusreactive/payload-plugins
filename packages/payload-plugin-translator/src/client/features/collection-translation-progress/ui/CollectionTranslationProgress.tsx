@@ -20,6 +20,7 @@ type CollectionTranslationProgressProps = {
   collection: string;
   data: CollectionTranslationPanel | undefined;
   isPending: boolean;
+  canStop: boolean;
 };
 
 const ROWS: Array<{
@@ -55,6 +56,7 @@ export function CollectionTranslationProgress({
   collection,
   data,
   isPending,
+  canStop,
 }: CollectionTranslationProgressProps) {
   const cancelPendingTranslations = TranslationsApi.useCancelCollectionTranslations();
 
@@ -92,7 +94,7 @@ export function CollectionTranslationProgress({
               </span>
               <span className={styles.right}>
                 <span className={styles.count}>{count}</span>
-                {key === DocumentTranslationStatus.PENDING && (
+                {canStop && key === DocumentTranslationStatus.PENDING && (
                   <ActionButton
                     icon={<TrashIcon />}
                     title="Cancel translations"

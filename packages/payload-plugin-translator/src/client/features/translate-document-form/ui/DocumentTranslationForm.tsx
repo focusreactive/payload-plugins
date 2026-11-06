@@ -9,7 +9,6 @@ import { useLocaleOptions } from "../../../shared/lib/payload/hooks/useLocaleOpt
 import Button from "../../../shared/ui/Button/index.js";
 import FormSelect from "../../../shared/ui/form/FormSelect/index.js";
 import FormMultiSelect from "../../../shared/ui/form/FormMultiSelect/index.js";
-import { FormSelectStrategy } from "../../../shared/ui/form/FormSelectStrategy/index.js";
 import { FormCheckboxPublish } from "../../../shared/ui/form/FormCheckboxPublish/index.js";
 
 import { FORM_FIELDS } from "../model/constants.js";
@@ -72,7 +71,6 @@ export function DocumentTranslationForm({
             />
           )}
         </div>
-        <FormSelectStrategy size="sm" name={FORM_FIELDS.STRATEGY} />
         {hasDrafts && <FormCheckboxPublish name={FORM_FIELDS.PUBLISH_ON_TRANSLATION} />}
         <input {...form.register(FORM_FIELDS.HIDDEN_COLLECTION_SLUG)} type="hidden" />
         <input {...form.register(FORM_FIELDS.HIDDEN_COLLECTION_ID)} type="hidden" />

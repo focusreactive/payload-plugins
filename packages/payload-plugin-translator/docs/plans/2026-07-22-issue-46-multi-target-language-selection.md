@@ -1,7 +1,7 @@
 # Issue #46 — Configurable single/multi target-language selection
 
 **Status:** Research (pre-task investigation) · **Date:** 2026-07-22 · **Issue:** #46
-**Skill:** /sp-research output. Feeds /sp-task once the blocking questions are resolved.
+Input to the implementation once the blocking questions are resolved.
 
 ---
 
@@ -129,9 +129,9 @@ Coverage scan (each item → captured or confirmed answered):
 6. **[Localization off]** *[non-blocking]* — With localization disabled, `multi` has nothing
    to select. Default: fall back to single / hide (mirror `useLocaleOptions` returning `[]`).
 7. **[Multi-select primitive]** *[non-blocking]* — Reuse `@payloadcms/ui` `ReactSelect`
-   (`isMulti`); no in-package multi-select exists. Implementation detail for /sp-task.
+   (`isMulti`); no in-package multi-select exists. Implementation detail.
 
-**Restate check:**
+**Key terms:**
 - *"multi target selection"* = the editor picks several target locales and **one** submit
   queues them all (not sequential re-submits). Confirmed against issue + code.
 - *"single (default)"* = today's exact behaviour, scalar `target_lng`. Confirmed.
@@ -141,8 +141,8 @@ Coverage scan (each item → captured or confirmed answered):
 ## Clarifications
 
 Resolved 2026-07-22. The two blocking questions were answered with the **recommended defaults**
-(adopted in the absence of an explicit response — flagged so they are cheap to override before
-/sp-task starts).
+(adopted without an explicit answer from the owner — flagged so they are cheap to override before
+implementation starts).
 
 1. **API shape → widen `/enqueue`.** `target_lng` becomes `string | string[]` on the same
    endpoint; scalar keeps working (back-compat by construction). The dead
@@ -179,7 +179,7 @@ modes; **single mode is unchanged**. All three options build on the shipped `@pa
   for 2–6 locales and everything visible, but wraps and eats vertical space at 10+ — risky in the
   tight panel.
 
-**DECISION (2026-07-22, confirmed by user):** Option A, built as a **custom
+**DECISION (2026-07-22, decided by the owner):** Option A, built as a **custom
 `FormMultiSelectLocale`** — NOT react-select:
 - **Popover:** `@radix-ui/react-popover` (already a plugin dependency → zero new deps) wrapping
   an **inline checkbox list** with a "Select all" row.
@@ -205,23 +205,11 @@ modes; **single mode is unchanged**. All three options build on the shipped `@pa
 - **Back-compat is a hard constraint** — scalar `target_lng` must keep working end-to-end.
 - **No migration** — feature adds no persisted field.
 
-## Consistency self-check
+## Readiness
 
-- Every IN-scope item maps to an AC (fan-out→3, config→9, validation→4/6, schema→2, forms→9). ✓
-- No AC contradicts an OUT line or a constraint (back-compat AC1/2 vs constraint). ✓
-- All ACs are verifiable (test/manual noted). ✓
-- Coverage-scan items are each captured as an Open Question or an AC. ✓
-
-## Comprehension
-
-**8 / 10.** The technical surface is well understood and the multi-target infrastructure is
-proven (auto-translate already fans out). The two open items are **product decisions** (API
-shape, config granularity), not technical unknowns — hence blocking for a clean /sp-task, but
-low-risk to resolve.
-
-## Suggested Next Step
-
-**Ready for `/sp-task`.** Both blocking questions are resolved (see Clarifications — provisional
+The technical surface is well understood and the multi-target infrastructure is proven
+(auto-translate already fans out). The two open items were **product decisions** (API shape,
+config granularity), not technical unknowns; both are resolved (see Clarifications — provisional
 defaults, easy to override). No new data model, no migration; the change reuses an existing
 config→client seam and the proven auto-translate fan-out, so this is line-level implementation,
-not a system-design problem (no `/sp-architect` needed).
+not a system-design problem (no separate design needed).

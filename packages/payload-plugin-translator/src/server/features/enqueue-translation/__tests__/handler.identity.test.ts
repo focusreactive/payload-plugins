@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CollectionSlug, PayloadRequest } from "payload";
+import { storeDouble } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
 
-import { EnqueueTranslationHandler } from "../handler.js";
+vi.mock("../../../shared/access/refusedTargets.js", () => ({
+  refusedTargets: vi.fn().mockResolvedValue(new Set<string>()),
+}));
+
+const { EnqueueTranslationHandler } = await import("../handler.js");
 
 const LOCALIZATION = { defaultLocale: "en", locales: ["en", "de"] };
 
@@ -10,7 +15,6 @@ const body = {
   target_lng: ["de"],
   collection_slug: "posts",
   collection_id: ["doc-1"],
-  strategy: "overwrite",
   publish_on_translation: false,
 };
 
@@ -18,7 +22,8 @@ function setup(user: unknown) {
   const enqueue = vi.fn().mockResolvedValue(undefined);
   const handler = new EnqueueTranslationHandler(
     { availableCollections: new Set(["posts" as CollectionSlug]) } as never,
-    { create: vi.fn().mockReturnValue({ enqueue }) } as never
+    { create: vi.fn().mockReturnValue({ enqueue }) } as never,
+    () => storeDouble()
   );
 
   const req = {
