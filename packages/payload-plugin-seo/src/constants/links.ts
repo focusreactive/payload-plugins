@@ -1,0 +1,10 @@
+export const LINK_SUGGESTIONS_ENDPOINT_PATH = "/seo/link-suggestions";
+export const MAX_LINK_SUGGESTIONS = 10;
+export const LINK_SNIPPET_RADIUS = 60;
+export const MAX_LINK_TEXT_CHARS = 100_000;
+export const MAX_LINKED_HREFS = 500;
+export const MAX_LINKED_DOCS = 500;
+export const MAX_LINKED_HREF_LENGTH = 2048;
+export const LINK_RESOLVE_BATCH_SIZE = MAX_LINK_SUGGESTIONS * 2;
+export const MAX_LINK_RESOLVE_BATCHES = 3;
+export const LINK_COPY_FEEDBACK_MS = 2000;

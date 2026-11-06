@@ -5,6 +5,7 @@ import type { SeoPluginConfig } from "./types/config";
 import { overrideAdmin } from "./utils/config/overrideAdmin";
 import { mergeTranslations } from "./utils/config/mergeTranslations";
 import { en } from "./translations/en";
+import { withKeyphraseIndex } from "./server/keyphrases/withKeyphraseIndex";
 
 const PREFIX = `[${PLUGIN_NAME}]`;
 
@@ -50,5 +51,5 @@ export const seoPlugin =
       i18n: { ...incomingConfig.i18n, translations: merged as never },
     };
 
-    return overrideAdmin(withTranslations, effectiveConfig);
+    return withKeyphraseIndex(overrideAdmin(withTranslations, effectiveConfig), effectiveConfig);
   };

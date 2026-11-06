@@ -6,3 +6,5 @@ export const DEFAULT_LOCALES = ["en"] as const;
 export const MAX_KEYPHRASES = 5;
 
 export * from "./statuses";
+export * from "./keyphrases";
+export * from "./links";
