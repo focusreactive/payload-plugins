@@ -26,10 +26,10 @@ export type { TranslationProvider, TranslationInput, TranslationOutput } from ".
  */
 export type { TranslationRequest } from "./core/index.js";
 
-export { openAIComplete } from "./translation-providers/index.js";
+export { askOpenAI } from "./translation-providers/index.js";
 export type {
   OpenAIClientShape,
-  OpenAISamplingParams,
+  OpenAIParams,
   OpenAIStructuredOutput,
 } from "./translation-providers/index.js";
 
@@ -41,8 +41,8 @@ export {
   encodeSegments,
 } from "./translation-providers/index.js";
 export type {
-  CompletionFn,
-  CompletionRequest,
+  AskModel,
+  ModelRequest,
   TranslationProviderConfig,
   JsonSchemaObject,
   SystemPromptBuilder,

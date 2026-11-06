@@ -83,6 +83,10 @@ touch the same files:
   surface rather than the port.
 - R16 (in) The port states that the output may be a subset of the input, and that a missing key
   means "not translated" rather than "translated to nothing".
+- R18 (in) The built-in adapter's surface says what it is. The fields of one request body are
+  declared as one object the caller owns, derived from the body rather than curated by hand; and the
+  function that asks a language model is named for what it does, not after a vendor's word for a
+  different API shape. Added 2026-11-01, after step 6 left that surface in view.
 
 ## Decision points
 
@@ -119,6 +123,7 @@ touch the same files:
 | R15 | not built — its own step |
 | R16 | stated on `TranslationOutput` |
 | R17 | the port carries segments; encoding and parsing marks are exported utilities (D11) |
+| R18 | the adapter takes `params`, derived as the request body minus what the plugin fills in; the ask function and its types are named for asking a model (step 7) |
 
 ## The port, after
 
@@ -546,6 +551,15 @@ commit is reviewed and green on its own, and no release carries the state betwee
    construction (which takes the optional `openai` dependency with it while `openAIComplete` and the
    client shape stay), and `OpenAITranslationLegacy`. Also the built-in prompt's branch for an
    empty `sourceLng` in `buildSystemPrompt`, which the plugin never takes. Breaking. covers: R8, R10
+7. **Asking the model** — the surface step 6 leaves behind, repaired while the major is still
+   unreleased: the OpenAI adapter takes the request body as one derived object instead of a scalar
+   plus a curated bag, and the completion vocabulary (`complete`, `CompletionFn`,
+   `CompletionRequest`, `openAIComplete`) is renamed for what it does. No behaviour change.
+   Breaking. covers: R18
+
+Step 7 was added on 2026-11-01, after step 6 landed and the surface it left was read back. It is in
+this sequence rather than deferred because both repairs are free before the major ships and breaking
+after it.
 
 Steps 2 to 5 were one step when this design was written; the scenario review split them, because each
 is breaking on its own and reviewing them together would hide the one that changes behaviour (3).

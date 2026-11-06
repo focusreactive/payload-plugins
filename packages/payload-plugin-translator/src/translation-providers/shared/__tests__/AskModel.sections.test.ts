@@ -1,9 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { createTranslationProvider } from "../CompletionProvider.provider.js";
+import { createTranslationProvider } from "../AskModel.provider.js";
 import { KeySetMismatchError } from "../errors/index.js";
 import { inlineMarksInstruction } from "../wire/index.js";
-import type { CompletionRequest } from "../CompletionProvider.provider.js";
+import { recordingAsk } from "./fixtures/askModel.js";
+import type { ModelRequest } from "../AskModel.provider.js";
 import type {
   TranslationInput,
   TranslationRequest,
@@ -15,16 +16,9 @@ const request: TranslationRequest = {
   document: { collection: "docs", id: "1" },
 };
 
-const replying = (reply: unknown) => {
-  const seen: CompletionRequest[] = [];
-  const complete = vi.fn(async (sent: CompletionRequest) => {
-    seen.push(sent);
-    return JSON.stringify(reply);
-  });
-  return { complete, seen };
-};
+const replying = (reply: unknown) => recordingAsk(JSON.stringify(reply));
 
-const sentContent = (seen: CompletionRequest[]) =>
+const sentContent = (seen: ModelRequest[]) =>
   JSON.parse(seen[0]?.userContent ?? "{}") as {
     marked: Record<string, string>;
     plain: Record<string, string>;
@@ -51,9 +45,9 @@ const input: TranslationInput = {
 
 describe("the built-in provider sends marked and plain values apart", () => {
   it("puts an encodable paragraph under marked, and plain text — even text that looks like a mark — under plain", async () => {
-    const { complete, seen } = replying({ marked: {}, plain: { 0: "Vergleich" } });
+    const { askModel, seen } = replying({ marked: {}, plain: { 0: "Vergleich" } });
 
-    await createTranslationProvider({ complete }).translate(input, request);
+    await createTranslationProvider({ askModel }).translate(input, request);
 
     const content = sentContent(seen);
     expect(content.marked).toEqual({ 1: "<1>a </1><2>red</2><3> car</3>" });
@@ -65,17 +59,17 @@ describe("the built-in provider sends marked and plain values apart", () => {
   });
 
   it("tells the model that marks appear only in the marked section", async () => {
-    const { complete, seen } = replying({ marked: {}, plain: { 0: "Vergleich" } });
+    const { askModel, seen } = replying({ marked: {}, plain: { 0: "Vergleich" } });
 
-    await createTranslationProvider({ complete }).translate(input, request);
+    await createTranslationProvider({ askModel }).translate(input, request);
 
     expect(seen[0]?.systemPrompt).toContain(inlineMarksInstruction());
   });
 
   it("leaves the mark instruction out when nothing is sent marked", async () => {
-    const { complete, seen } = replying({ marked: {}, plain: { 0: "Vergleich" } });
+    const { askModel, seen } = replying({ marked: {}, plain: { 0: "Vergleich" } });
 
-    await createTranslationProvider({ complete }).translate(
+    await createTranslationProvider({ askModel }).translate(
       { 0: { kind: "text", text: "Compare" } },
       request
     );
@@ -84,24 +78,24 @@ describe("the built-in provider sends marked and plain values apart", () => {
   });
 
   it("leaves out a paragraph sent in pieces when one of its pieces was not answered", async () => {
-    const { complete } = replying({
+    const { askModel } = replying({
       marked: { 1: "<1>ein </1><2>rotes</2><3> Auto</3>" },
       plain: { 0: "Vergleich", "2.1": "Nutze <1> " },
     });
 
-    const output = await createTranslationProvider({ complete }).translate(input, request);
+    const output = await createTranslationProvider({ askModel }).translate(input, request);
 
     expect(2 in output).toBe(false);
     expect(output[1]?.kind).toBe("segments");
   });
 
   it("answers each value in its own kind, a paragraph it could not encode assembled from its pieces", async () => {
-    const { complete } = replying({
+    const { askModel } = replying({
       marked: { 1: "<2>rotes</2><1>ein </1><3> Auto</3>" },
       plain: { 0: "Vergleichen Sie <1> und <2>", "2.1": "Nutze <1> ", "2.2": "hier" },
     });
 
-    const output = await createTranslationProvider({ complete }).translate(input, request);
+    const output = await createTranslationProvider({ askModel }).translate(input, request);
 
     expect(output).toEqual({
       0: { kind: "text", text: "Vergleichen Sie <1> und <2>" },
@@ -124,12 +118,12 @@ describe("the built-in provider sends marked and plain values apart", () => {
   });
 
   it("answers failed for a marked reply it cannot read, and leaves out a key the model did not answer", async () => {
-    const { complete } = replying({
+    const { askModel } = replying({
       marked: { 1: "<1>ein <2>rotes</2></1>" },
       plain: { 0: "Vergleich" },
     });
 
-    const output = await createTranslationProvider({ complete }).translate(input, request);
+    const output = await createTranslationProvider({ askModel }).translate(input, request);
 
     expect(output[1]).toEqual({ kind: "failed", code: "malformed" });
     expect(output[0]).toEqual({ kind: "text", text: "Vergleich" });
@@ -137,10 +131,10 @@ describe("the built-in provider sends marked and plain values apart", () => {
   });
 
   it("fails the whole call when no value could be assembled, even though some piece came back", async () => {
-    const { complete } = replying({ marked: {}, plain: { "2.1": "Nutze <1> " } });
+    const { askModel } = replying({ marked: {}, plain: { "2.1": "Nutze <1> " } });
 
     await expect(
-      createTranslationProvider({ complete }).translate(
+      createTranslationProvider({ askModel }).translate(
         { 2: input[2] as TranslationInput[number] },
         request
       )

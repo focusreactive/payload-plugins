@@ -316,6 +316,39 @@ the single source of truth — code annotations link here by anchor instead of d
   `src/translation-providers/openai/loadOpenAIClient.ts`,
   `src/translation-providers/openai/OpenAITranslationLegacy.provider.ts`
 
+### the-completion-vocabulary
+
+- **What:** the word "completion" across the provider surface — the `complete` key on
+  `TranslationProviderConfig`, the types `CompletionFn` and `CompletionRequest`, the OpenAI adapter
+  `openAIComplete`, and `OpenAISamplingParams` with the `model` / `sampling` argument pair it
+  belonged to.
+- **Status:** removed
+- **Deprecated:** not annotated — agreed and removed in one step, while the major was still
+  unreleased and the rename was free.
+- **Removed:** 2026-11-01, with step 7 of
+  [the provider port](./plans/2026-10-28-the-provider-port.design.md).
+- **Replacement:** `askModel`, `AskModel`, `ModelRequest`, `askOpenAI`, and one `params` object
+  carrying the whole OpenAI request body:
+
+  ```ts
+  translationProvider: createTranslationProvider({
+    askModel: askOpenAI({ client, params: { model: "gpt-4o", temperature: 0 } }),
+  }),
+  ```
+- **Why:** "completion" is a vendor word for a different API shape than the one this package calls,
+  and it said nothing about what the function does — it asks a language model one question and
+  returns the reply as text. Separately, `model` and `sampling` were two shapes for one request
+  body, split by how the adapter happened to use them rather than by anything the caller could see;
+  `sampling` was also a hand-curated list of four fields, so a fifth needed a code change here.
+  `OpenAIParams` is now derived as the body minus the two fields the plugin fills in (`messages`,
+  `response_format`), so the caller owns everything else.
+- **Migration:** mechanical and compile-time — every removed name fails the type-check at its call
+  site. `complete:` becomes `askModel:`; `openAIComplete({ client, model, sampling })` becomes
+  `askOpenAI({ client, params: { model, ...sampling } })`. A host that implements the ask function
+  by hand changes only the type's name; its shape is unchanged.
+- **Code refs (at removal):** `src/translation-providers/shared/CompletionProvider.provider.ts`,
+  `src/translation-providers/openai/openAIComplete.ts`
+
 ### experimental-inline-marks
 
 - **What:** `translatorPlugin({ experimental: { inlineMarks } })`.

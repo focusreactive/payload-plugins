@@ -1,9 +1,5 @@
-export { createTranslationProvider } from "./CompletionProvider.provider.js";
-export type {
-  CompletionFn,
-  CompletionRequest,
-  TranslationProviderConfig,
-} from "./CompletionProvider.provider.js";
+export { createTranslationProvider } from "./AskModel.provider.js";
+export type { AskModel, ModelRequest, TranslationProviderConfig } from "./AskModel.provider.js";
 
 export type { JsonSchemaObject } from "./buildResponseSchema.js";
 export {

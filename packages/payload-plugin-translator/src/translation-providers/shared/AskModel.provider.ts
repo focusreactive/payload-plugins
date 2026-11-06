@@ -15,36 +15,30 @@ import {
   asTranslatorError,
 } from "./errors/index.js";
 import { parseAndValidateReply } from "./parseAndValidateReply.js";
-import { fromSections, toSections } from "./wire/index.js";
+import { fromSections, inlineMarksInstruction, toSections } from "./wire/index.js";
+import type { SectionsJson } from "./wire/index.js";
 
 /**
- * Everything a transport needs in order to make one translation request.
+ * One question for a language model. Every field is already built: send it as it is, never rebuild
+ * the prompt or the schema.
  *
- * @since 0.11.0
+ * @since 1.0.0
  */
-export type CompletionRequest = {
-  /** Already includes any `systemPrompt` override — send it verbatim, do not rebuild it. */
+export type ModelRequest = {
   systemPrompt: string;
-  /**
-   * The user message: JSON `{ marked, plain }` of strings. A paragraph that cannot be marked is sent
-   * as its pieces under `plain`, keyed `<index>.<segmentId>`.
-   */
-  userContent: string;
-  /** A strict JSON Schema: both sections, exactly the keys that were sent. */
+  userContent: SectionsJson;
   responseSchema: JsonSchemaObject;
-  /** Reserved: the port carries no cancellation yet, so this is always `undefined` today. */
-  signal?: AbortSignal;
 };
 
 /**
- * Sends one translation request and returns the service's reply as **raw text**.
+ * Asks a language model one question and returns its reply as **raw text**.
  *
  * Returning text rather than a parsed object is deliberate: parsing and key-set validation stay on
  * this side of the boundary, so a provider built on this factory cannot accidentally skip them.
  *
- * @since 0.11.0
+ * @since 1.0.0
  */
-export type CompletionFn = (request: CompletionRequest) => Promise<string>;
+export type AskModel = (request: ModelRequest) => Promise<string>;
 
 /**
  * Configuration for {@link createTranslationProvider}.
@@ -52,7 +46,7 @@ export type CompletionFn = (request: CompletionRequest) => Promise<string>;
  * @since 0.11.0
  */
 export type TranslationProviderConfig = {
-  complete: CompletionFn;
+  askModel: AskModel;
   systemPrompt?: SystemPromptBuilder;
 };
 
@@ -77,16 +71,15 @@ async function asConfigurationFailure<T>(what: string, run: () => T | Promise<T>
 }
 
 /**
- * Builds a complete {@link TranslationProvider} from a single request function.
+ * Builds a whole {@link TranslationProvider} from one function that asks a language model.
  *
  * Use it when you need a service this package does not ship an adapter for, or when you need full
- * control of the request body. For OpenAI, `openAIComplete({ client, model })` is a ready-made
- * `complete` — construct the client yourself.
+ * control of the request body.
  *
  * @example
  * ```ts
  * const provider = createTranslationProvider({
- *   complete: async ({ systemPrompt, userContent, responseSchema }) => {
+ *   askModel: async ({ systemPrompt, userContent, responseSchema }) => {
  *     const reply = await myService.chat({ systemPrompt, userContent, schema: responseSchema })
  *     return reply.text
  *   },
@@ -96,7 +89,7 @@ async function asConfigurationFailure<T>(what: string, run: () => T | Promise<T>
  * @since 0.11.0
  */
 export function createTranslationProvider(config: TranslationProviderConfig): TranslationProvider {
-  const { complete, systemPrompt } = config;
+  const { askModel, systemPrompt } = config;
 
   return {
     async translate(
@@ -106,17 +99,18 @@ export function createTranslationProvider(config: TranslationProviderConfig): Tr
       if (Object.keys(input).length === 0) return {};
 
       const sections = toSections(input);
+      const marked = Object.keys(sections.marked).length > 0;
       const systemPromptText = await asConfigurationFailure("systemPrompt builder", () =>
         buildSystemPrompt({
           sourceLng: request.sourceLng,
           targetLng: request.targetLng,
           override: systemPrompt,
-          hasInlineMarks: Object.keys(sections.marked).length > 0,
+          alwaysAppend: marked ? [inlineMarksInstruction()] : [],
           document: request.document,
         })
       );
 
-      const completion = await asConfigurationFailure("serialization of the input", () => ({
+      const question = await asConfigurationFailure("serialization of the input", () => ({
         systemPrompt: systemPromptText,
         userContent: JSON.stringify(sections),
         responseSchema: buildResponseSchema(sections),
@@ -124,7 +118,7 @@ export function createTranslationProvider(config: TranslationProviderConfig): Tr
 
       let raw: string;
       try {
-        raw = await complete(completion);
+        raw = await askModel(question);
       } catch (cause) {
         throw asTranslatorError(cause);
       }

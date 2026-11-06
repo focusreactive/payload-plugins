@@ -1,14 +1,13 @@
 import { decodeSegments, encodeSegments } from "@focus-reactive/payload-plugin-translator";
-import type { CompletionFn } from "@focus-reactive/payload-plugin-translator";
+import type { AskModel } from "@focus-reactive/payload-plugin-translator";
 
 /**
- * The prompt is the only place the target language reaches a completion function. Throwing rather
- * than defaulting is deliberate: a reworded prompt then breaks the suite loudly instead of
- * silently labelling every translation with the wrong locale.
+ * The system prompt is the only channel by which the target language reaches an `AskModel`, so a
+ * reworded prompt must break this suite loudly rather than mislabel every translation.
  */
 const targetLocaleOf = (systemPrompt: string): string => {
   const found = /\binto ([A-Za-z-]+)/u.exec(systemPrompt)?.[1];
-  if (!found) throw new Error(`fakeComplete: no target locale in the system prompt`);
+  if (!found) throw new Error(`fakeAsk: no target locale in the system prompt`);
   return found;
 };
 
@@ -19,7 +18,7 @@ type Mark = { id: number; text: string | null };
 
 const parseMarks = (value: string): Mark[] => {
   const decoded = decodeSegments(value);
-  if (!decoded.ok) throw new Error(`fakeComplete: a marked value did not decode — ${value}`);
+  if (!decoded.ok) throw new Error(`fakeAsk: a marked value did not decode — ${value}`);
   return decoded.segments;
 };
 
@@ -45,8 +44,8 @@ export type FakeTranslationOptions = {
  * Every value comes back prefixed with the target locale, so a spec can tell *which* locale's
  * translation landed and can never mistake a hand-typed value for a translated one.
  */
-export const fakeComplete =
-  (options?: FakeTranslationOptions): CompletionFn =>
+export const fakeAsk =
+  (options?: FakeTranslationOptions): AskModel =>
   ({ systemPrompt, userContent }) => {
     const locale = targetLocaleOf(systemPrompt);
     const input = JSON.parse(userContent) as {
@@ -73,6 +72,6 @@ export const fakeComplete =
     return Promise.resolve(JSON.stringify(out));
   };
 
-export const failingComplete: CompletionFn = () => {
+export const failingAsk: AskModel = () => {
   throw new Error("forced translation failure");
 };

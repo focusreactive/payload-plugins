@@ -1,38 +1,56 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
+  createTranslationProvider,
   KeySetMismatchError,
   NoContentError,
   ProviderConfigurationError,
   TransportError,
   UnparseableReplyError,
 } from "../../shared/index.js";
+import type { SystemPromptBuilder } from "../../shared/index.js";
 import { readFailureReason } from "../../../core/errors/failureReason.js";
-import { createOpenAIProvider } from "../OpenAITranslation.provider.js";
+import { askOpenAI } from "../askOpenAI.js";
+import type { OpenAIParams, OpenAIStructuredOutput } from "../askOpenAI.js";
 import type { OpenAIChatParams, OpenAIClientShape } from "../OpenAI.shapes.js";
-import { loadOpenAIClient } from "../loadOpenAIClient.js";
-import type { TranslationRequest } from "../../../core/domain/translation-providers/index.js";
+import type {
+  TranslationProvider,
+  TranslationRequest,
+} from "../../../core/domain/translation-providers/index.js";
 
-vi.mock("../loadOpenAIClient.js", () => ({
-  loadOpenAIClient: vi.fn(),
-}));
+const MODEL = "gpt-5.4-mini";
 
-const loadClient = vi.mocked(loadOpenAIClient);
+function openAIProvider(config: {
+  client: OpenAIClientShape;
+  params?: Partial<OpenAIParams>;
+  structuredOutput?: OpenAIStructuredOutput;
+  systemPrompt?: SystemPromptBuilder;
+}): TranslationProvider {
+  const { client, params, structuredOutput, systemPrompt } = config;
 
-function stubClient(reply: string | (() => never)) {
+  return createTranslationProvider({
+    systemPrompt,
+    askModel: askOpenAI({ client, params: { model: MODEL, ...params }, structuredOutput }),
+  });
+}
+
+function stubClient(reply: string) {
   const calls: OpenAIChatParams[] = [];
   const client: OpenAIClientShape = {
     chat: {
       completions: {
         create: async (params) => {
           calls.push(params);
-          if (typeof reply === "function") reply();
-          return { choices: [{ message: { content: reply as string } }] };
+          return { choices: [{ message: { content: reply } }] };
         },
       },
     },
   };
   return { client, calls };
+}
+
+function throwingClient(throws: () => never): OpenAIClientShape {
+  return { chat: { completions: { create: async () => throws() } } };
 }
 
 function emptyChoicesClient(): OpenAIClientShape {
@@ -56,32 +74,29 @@ const plainReply = (values: Record<string, string>): string =>
   JSON.stringify({ marked: {}, plain: values });
 const HALLO_REPLY = plainReply({ 0: "Hallo" });
 
-describe("createOpenAIProvider", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+async function failureOf(provider: TranslationProvider): Promise<Error> {
+  try {
+    await provider.translate(HELLO, aRequest());
+  } catch (cause) {
+    return cause as Error;
+  }
+  throw new Error("expected the translation to fail");
+}
 
+describe("askOpenAI", () => {
   describe("with an injected client", () => {
     it("translates, returning the parsed reply", async () => {
       const { client } = stubClient(HALLO_REPLY);
 
-      const result = await createOpenAIProvider({ client }).translate(HELLO, aRequest());
+      const result = await openAIProvider({ client }).translate(HELLO, aRequest());
 
       expect(result).toEqual(HALLO);
-    });
-
-    it("never loads the SDK", async () => {
-      const { client } = stubClient(HALLO_REPLY);
-
-      await createOpenAIProvider({ client }).translate(HELLO, aRequest());
-
-      expect(loadClient).not.toHaveBeenCalled();
     });
 
     it("sends a strict JSON schema requiring exactly the input's keys", async () => {
       const { client, calls } = stubClient(plainReply({ 0: "Hallo", 1: "Welt" }));
 
-      await createOpenAIProvider({ client }).translate(
+      await openAIProvider({ client }).translate(
         { ...HELLO, 1: { kind: "text", text: "World" } },
         aRequest()
       );
@@ -112,7 +127,7 @@ describe("createOpenAIProvider", () => {
     it("can fall back to the json_object envelope for gateways that reject a schema", async () => {
       const { client, calls } = stubClient(HALLO_REPLY);
 
-      await createOpenAIProvider({ client, structuredOutput: "json_object" }).translate(
+      await openAIProvider({ client, structuredOutput: "json_object" }).translate(
         HELLO,
         aRequest()
       );
@@ -123,48 +138,44 @@ describe("createOpenAIProvider", () => {
     it("refuses json_object when a systemPrompt override dropped the word json", async () => {
       const { client } = stubClient(HALLO_REPLY);
 
-      const failure = await createOpenAIProvider({
-        client,
-        structuredOutput: "json_object",
-        systemPrompt: () => "Translate everything into German.",
-      })
-        .translate(HELLO, aRequest())
-        .catch((e: unknown) => e);
+      const failure = await failureOf(
+        openAIProvider({
+          client,
+          structuredOutput: "json_object",
+          systemPrompt: () => "Translate everything into German.",
+        })
+      );
 
       expect(failure).toBeInstanceOf(ProviderConfigurationError);
-      expect((failure as Error).message).toContain("json");
+      expect(failure.message).toContain("json");
     });
 
     it("names the fix when the model rejects the schema envelope", async () => {
-      const { client } = stubClient(() => {
+      const client = throwingClient(() => {
         throw new Error(
           "400 Invalid parameter: 'response_format' of type 'json_schema' is not supported with this model."
         );
       });
 
-      const failure = await createOpenAIProvider({ client, model: "gpt-4-turbo" })
-        .translate(HELLO, aRequest())
-        .catch((e: unknown) => e);
+      const failure = await failureOf(openAIProvider({ client, params: { model: "gpt-4-turbo" } }));
 
       expect(failure).toBeInstanceOf(ProviderConfigurationError);
-      expect((failure as Error).message).toContain('structuredOutput: "json_object"');
-      expect((failure as Error).message).toContain("gpt-4-turbo");
+      expect(failure.message).toContain('structuredOutput: "json_object"');
+      expect(failure.message).toContain("gpt-4-turbo");
     });
 
     it("advises a smaller subtree when the schema itself is rejected", async () => {
-      const { client } = stubClient(() => {
+      const client = throwingClient(() => {
         throw new Error(
           "400 Invalid schema for response_format 'translation': object has too many properties."
         );
       });
 
-      const failure = await createOpenAIProvider({ client })
-        .translate(HELLO, aRequest())
-        .catch((e: unknown) => e);
+      const failure = await failureOf(openAIProvider({ client }));
 
       expect(failure).toBeInstanceOf(ProviderConfigurationError);
-      expect((failure as Error).message).toContain('structuredOutput: "json_object"');
-      expect((failure as Error).message).toContain("smaller subtree");
+      expect(failure.message).toContain('structuredOutput: "json_object"');
+      expect(failure.message).toContain("smaller subtree");
     });
 
     const ECHOED_ENVELOPE = [
@@ -186,13 +197,11 @@ describe("createOpenAIProvider", () => {
 
     for (const { case: label, message } of ECHOED_ENVELOPE) {
       it(`leaves ${label} that merely mentions the envelope as a transport failure`, async () => {
-        const { client } = stubClient(() => {
+        const client = throwingClient(() => {
           throw new Error(message);
         });
 
-        const failure = await createOpenAIProvider({ client })
-          .translate(HELLO, aRequest())
-          .catch((e: unknown) => e);
+        const failure = await failureOf(openAIProvider({ client }));
 
         expect(failure).toBeInstanceOf(TransportError);
         expect(failure).not.toBeInstanceOf(ProviderConfigurationError);
@@ -200,13 +209,11 @@ describe("createOpenAIProvider", () => {
     }
 
     it("does not reinterpret a rejection when json_object was configured", async () => {
-      const { client } = stubClient(() => {
+      const client = throwingClient(() => {
         throw new Error("400 Invalid schema for response_format 'translation'.");
       });
 
-      const failure = await createOpenAIProvider({ client, structuredOutput: "json_object" })
-        .translate(HELLO, aRequest())
-        .catch((e: unknown) => e);
+      const failure = await failureOf(openAIProvider({ client, structuredOutput: "json_object" }));
 
       expect(failure).toBeInstanceOf(TransportError);
     });
@@ -214,9 +221,7 @@ describe("createOpenAIProvider", () => {
     const MODEL_ACCESS = [
       {
         case: "the SDK's own error code, whatever the message says",
-        // The code is what the classifier must key on: OpenAI is free to reword `message`, and a
-        // non-English or future wording must not stop the reason reaching the admin.
-        throws: (): never => {
+        throws: () => {
           throw Object.assign(new Error("404 unrecognisable wording"), {
             code: "model_not_found",
             status: 404,
@@ -225,7 +230,7 @@ describe("createOpenAIProvider", () => {
       },
       {
         case: "a gateway that forwards only the text",
-        throws: (): never => {
+        throws: () => {
           throw new Error(
             "404 The model `gpt-5.4-mini` does not exist or you do not have access to it."
           );
@@ -235,15 +240,13 @@ describe("createOpenAIProvider", () => {
 
     for (const { case: label, throws } of MODEL_ACCESS) {
       it(`reports ${label} as a configuration failure naming the model option`, async () => {
-        const { client } = stubClient(throws);
+        const client = throwingClient(throws);
 
-        const failure = await createOpenAIProvider({ client, model: "gpt-5.4-mini" })
-          .translate(HELLO, aRequest())
-          .catch((e: unknown) => e);
+        const failure = await failureOf(openAIProvider({ client }));
 
         expect(failure).toBeInstanceOf(ProviderConfigurationError);
-        expect((failure as Error).message).toContain("gpt-5.4-mini");
-        expect((failure as Error).message).toContain("`model`");
+        expect(failure.message).toContain(MODEL);
+        expect(failure.message).toContain("`model`");
       });
     }
 
@@ -251,13 +254,11 @@ describe("createOpenAIProvider", () => {
 
     for (const code of OTHER_CODES) {
       it(`matches the code exactly — "${code}" stays a transport failure`, async () => {
-        const { client } = stubClient((): never => {
+        const client = throwingClient(() => {
           throw Object.assign(new Error("400 something about model gpt-5.4-mini"), { code });
         });
 
-        const failure = await createOpenAIProvider({ client })
-          .translate(HELLO, aRequest())
-          .catch((e: unknown) => e);
+        const failure = await failureOf(openAIProvider({ client }));
 
         expect(failure).toBeInstanceOf(TransportError);
         expect(failure).not.toBeInstanceOf(ProviderConfigurationError);
@@ -265,52 +266,44 @@ describe("createOpenAIProvider", () => {
     }
 
     it("classifies a model-access failure on the json_object path too", async () => {
-      const { client } = stubClient((): never => {
+      const client = throwingClient(() => {
         throw new Error("404 The model `x` does not exist or you do not have access to it.");
       });
 
-      const failure = await createOpenAIProvider({ client, structuredOutput: "json_object" })
-        .translate(HELLO, aRequest())
-        .catch((e: unknown) => e);
+      const failure = await failureOf(openAIProvider({ client, structuredOutput: "json_object" }));
 
       expect(failure).toBeInstanceOf(ProviderConfigurationError);
     });
 
     it("marks a model-access failure so the admin panel can name the reason", async () => {
-      const { client } = stubClient((): never => {
+      const client = throwingClient(() => {
         throw new Error("404 The model `x` does not exist or you do not have access to it.");
       });
 
-      const failure = (await createOpenAIProvider({ client })
-        .translate(HELLO, aRequest())
-        .catch((e: unknown) => e)) as Error;
+      const failure = await failureOf(openAIProvider({ client }));
 
       expect(readFailureReason(failure.message)).toBe("model-unavailable");
     });
 
     it("leaves the schema rejections unmarked — the panel has no copy for them", async () => {
-      const { client } = stubClient((): never => {
+      const client = throwingClient(() => {
         throw new Error(
           "400 'response_format' of type 'json_schema' is not supported with this model."
         );
       });
 
-      const failure = (await createOpenAIProvider({ client })
-        .translate(HELLO, aRequest())
-        .catch((e: unknown) => e)) as Error;
+      const failure = await failureOf(openAIProvider({ client }));
 
       expect(failure).toBeInstanceOf(ProviderConfigurationError);
       expect(readFailureReason(failure.message)).toBeNull();
     });
 
     it("still reports an ordinary API failure as transport", async () => {
-      const { client } = stubClient(() => {
+      const client = throwingClient(() => {
         throw new Error("429 rate limit exceeded");
       });
 
-      const failure = await createOpenAIProvider({ client })
-        .translate(HELLO, aRequest())
-        .catch((e: unknown) => e);
+      const failure = await failureOf(openAIProvider({ client }));
 
       expect(failure).toBeInstanceOf(TransportError);
     });
@@ -318,7 +311,7 @@ describe("createOpenAIProvider", () => {
     it("allows json_object when the prompt still mentions json", async () => {
       const { client } = stubClient(HALLO_REPLY);
 
-      const result = await createOpenAIProvider({
+      const result = await openAIProvider({
         client,
         structuredOutput: "json_object",
         systemPrompt: ({ defaultPrompt }) => `${defaultPrompt}\nBe formal.`,
@@ -327,20 +320,23 @@ describe("createOpenAIProvider", () => {
       expect(result).toEqual(HALLO);
     });
 
-    it("defaults the model to gpt-5.4-mini and honours an override", async () => {
+    it("sends the model it was given", async () => {
       const { client, calls } = stubClient(HALLO_REPLY);
 
-      await createOpenAIProvider({ client }).translate(HELLO, aRequest());
-      await createOpenAIProvider({ client, model: "gpt-4o-mini" }).translate(HELLO, aRequest());
+      await openAIProvider({ client }).translate(HELLO, aRequest());
+      await openAIProvider({ client, params: { model: "gpt-4o-mini" } }).translate(
+        HELLO,
+        aRequest()
+      );
 
-      expect(calls[0].model).toBe("gpt-5.4-mini");
+      expect(calls[0].model).toBe(MODEL);
       expect(calls[1].model).toBe("gpt-4o-mini");
     });
 
     it("omits sampling parameters unless they are configured", async () => {
       const { client, calls } = stubClient(HALLO_REPLY);
 
-      await createOpenAIProvider({ client }).translate(HELLO, aRequest());
+      await openAIProvider({ client }).translate(HELLO, aRequest());
 
       expect(calls[0]).not.toHaveProperty("temperature");
       expect(calls[0]).not.toHaveProperty("top_p");
@@ -348,21 +344,33 @@ describe("createOpenAIProvider", () => {
       expect(calls[0]).not.toHaveProperty("presence_penalty");
     });
 
-    it("sends sampling parameters when configured", async () => {
+    it("carries every field of the body it was given, not a chosen few", async () => {
       const { client, calls } = stubClient(HALLO_REPLY);
 
-      await createOpenAIProvider({ client, sampling: { temperature: 0 } }).translate(
-        HELLO,
-        aRequest()
-      );
+      await openAIProvider({
+        client,
+        params: {
+          model: "gpt-4o-mini",
+          temperature: 0,
+          top_p: 0.9,
+          frequency_penalty: 0.5,
+          presence_penalty: 0.75,
+        },
+      }).translate(HELLO, aRequest());
 
-      expect(calls[0].temperature).toBe(0);
+      expect(calls[0]).toMatchObject({
+        model: "gpt-4o-mini",
+        temperature: 0,
+        top_p: 0.9,
+        frequency_penalty: 0.5,
+        presence_penalty: 0.75,
+      });
     });
 
     it("sends the system prompt and the serialized input as the two messages", async () => {
       const { client, calls } = stubClient(HALLO_REPLY);
 
-      await createOpenAIProvider({ client }).translate(HELLO, aRequest());
+      await openAIProvider({ client }).translate(HELLO, aRequest());
 
       expect(calls[0].messages[0].role).toBe("system");
       expect(calls[0].messages[0].content).toContain("from en into de");
@@ -375,7 +383,7 @@ describe("createOpenAIProvider", () => {
     it("applies a systemPrompt override", async () => {
       const { client, calls } = stubClient(HALLO_REPLY);
 
-      await createOpenAIProvider({
+      await openAIProvider({
         client,
         systemPrompt: ({ defaultPrompt }) => `${defaultPrompt}\nBe formal.`,
       }).translate(HELLO, aRequest());
@@ -385,155 +393,56 @@ describe("createOpenAIProvider", () => {
   });
 
   describe("failures name their cause", () => {
-    it("throws NoContentError when the reply has no content", async () => {
-      const { client } = stubClient("");
+    const NO_CONTENT = [
+      { case: "the reply has no content", build: () => stubClient("").client },
+      { case: "choices is empty", build: emptyChoicesClient },
+    ];
 
-      await expect(createOpenAIProvider({ client }).translate(HELLO, aRequest())).rejects.toThrow(
-        NoContentError
-      );
-    });
+    for (const { case: label, build } of NO_CONTENT) {
+      it(`throws NoContentError when ${label}`, async () => {
+        const failure = await failureOf(openAIProvider({ client: build() }));
+
+        expect(failure).toBeInstanceOf(NoContentError);
+        expect(failure.message).toContain("OpenAI returned no content");
+      });
+    }
 
     it("throws UnparseableReplyError when the reply is not JSON", async () => {
       const { client } = stubClient("I cannot do that.");
 
-      await expect(createOpenAIProvider({ client }).translate(HELLO, aRequest())).rejects.toThrow(
+      await expect(openAIProvider({ client }).translate(HELLO, aRequest())).rejects.toThrow(
         UnparseableReplyError
-      );
-    });
-
-    it("throws NoContentError when choices is empty", async () => {
-      const client = emptyChoicesClient();
-
-      await expect(createOpenAIProvider({ client }).translate(HELLO, aRequest())).rejects.toThrow(
-        NoContentError
       );
     });
 
     it("throws KeySetMismatchError when the reply answers nothing", async () => {
       const { client } = stubClient(plainReply({ 9: "Hallo" }));
 
-      await expect(createOpenAIProvider({ client }).translate(HELLO, aRequest())).rejects.toThrow(
+      await expect(openAIProvider({ client }).translate(HELLO, aRequest())).rejects.toThrow(
         KeySetMismatchError
       );
     });
 
     it("wraps a thrown SDK error as TransportError, keeping the original on cause", async () => {
       const boom = new Error("429 rate limited");
-      const { client } = stubClient(() => {
+      const client = throwingClient(() => {
         throw boom;
       });
 
-      const failure = await createOpenAIProvider({ client })
-        .translate(HELLO, aRequest())
-        .catch((e: unknown) => e);
+      const failure = await failureOf(openAIProvider({ client }));
 
       expect(failure).toBeInstanceOf(TransportError);
       expect((failure as TransportError).cause).toBe(boom);
     });
 
     it("does not copy the SDK error's text into the message it surfaces", async () => {
-      const { client } = stubClient(() => {
+      const client = throwingClient(() => {
         throw new Error("401 — key sk-test-abcdef123456");
       });
 
-      const failure = (await createOpenAIProvider({ client })
-        .translate(HELLO, aRequest())
-        .catch((e: unknown) => e)) as Error;
+      const failure = await failureOf(openAIProvider({ client }));
 
       expect(failure.message).not.toContain("sk-test-abcdef123456");
-    });
-  });
-
-  describe("with an apiKey", () => {
-    it("loads the SDK on first use and passes a 60s default timeout", async () => {
-      const { client } = stubClient(HALLO_REPLY);
-      loadClient.mockResolvedValue(client);
-
-      await createOpenAIProvider({ apiKey: "sk-test" }).translate(HELLO, aRequest());
-
-      expect(loadClient).toHaveBeenCalledWith({
-        apiKey: "sk-test",
-        timeout: 60_000,
-        maxRetries: undefined,
-      });
-    });
-
-    it("lets an explicit timeout override the default", async () => {
-      const { client } = stubClient(HALLO_REPLY);
-      loadClient.mockResolvedValue(client);
-
-      await createOpenAIProvider({ apiKey: "sk-test", timeout: 5000 }).translate(HELLO, aRequest());
-
-      expect(loadClient).toHaveBeenCalledWith(expect.objectContaining({ timeout: 5000 }));
-    });
-
-    it("does not load the SDK at construction time — only on first translate", () => {
-      createOpenAIProvider({ apiKey: "sk-test" });
-
-      expect(loadClient).not.toHaveBeenCalled();
-    });
-
-    it("loads the SDK once even when two first calls run concurrently", async () => {
-      const { client } = stubClient(HALLO_REPLY);
-      loadClient.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve(client), 10))
-      );
-
-      const provider = createOpenAIProvider({ apiKey: "sk-test" });
-      await Promise.all([
-        provider.translate(HELLO, aRequest()),
-        provider.translate(HELLO, aRequest()),
-      ]);
-
-      expect(loadClient).toHaveBeenCalledTimes(1);
-    });
-
-    it("retries the load after a failure instead of caching the rejection", async () => {
-      const { client } = stubClient(HALLO_REPLY);
-      loadClient.mockRejectedValueOnce(new Error("transient")).mockResolvedValue(client);
-
-      const provider = createOpenAIProvider({ apiKey: "sk-test" });
-
-      await expect(provider.translate(HELLO, aRequest())).rejects.toThrow();
-      await expect(provider.translate(HELLO, aRequest())).resolves.toEqual(HALLO);
-      expect(loadClient).toHaveBeenCalledTimes(2);
-    });
-
-    it("passes a missing apiKey through as undefined rather than an empty string", async () => {
-      const { client } = stubClient(HALLO_REPLY);
-      loadClient.mockResolvedValue(client);
-
-      await createOpenAIProvider({ apiKey: undefined as unknown as string }).translate(
-        HELLO,
-        aRequest()
-      );
-
-      expect(loadClient).toHaveBeenCalledWith(expect.objectContaining({ apiKey: undefined }));
-    });
-
-    it("does not share a client between two providers", async () => {
-      const { client } = stubClient(HALLO_REPLY);
-      loadClient.mockResolvedValue(client);
-
-      await createOpenAIProvider({ apiKey: "sk-one" }).translate(HELLO, aRequest());
-      await createOpenAIProvider({ apiKey: "sk-two" }).translate(HELLO, aRequest());
-
-      expect(loadClient).toHaveBeenCalledTimes(2);
-      expect(loadClient).toHaveBeenNthCalledWith(1, expect.objectContaining({ apiKey: "sk-one" }));
-      expect(loadClient).toHaveBeenNthCalledWith(2, expect.objectContaining({ apiKey: "sk-two" }));
-    });
-  });
-
-  describe("configuration is exclusive", () => {
-    // The @ts-expect-error below is the assertion: if the union ever stops rejecting
-    // `{ apiKey, client }`, the unused directive fails the type-check.
-    it("rejects an object carrying both apiKey and client", () => {
-      const { client } = stubClient(HALLO_REPLY);
-
-      // @ts-expect-error apiKey and client are mutually exclusive
-      const build = () => createOpenAIProvider({ apiKey: "sk-test", client });
-
-      expect(build).toBeTypeOf("function");
     });
   });
 });
