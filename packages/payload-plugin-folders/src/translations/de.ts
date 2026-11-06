@@ -455,6 +455,8 @@ export const de: FoldersTranslations = {
     announceCut_other:
       "{{count}} Einträge ausgeschnitten. Wählen Sie einen Ordner oder eine Seite und fügen Sie sie dort ein",
     announceCutCancelled: "Ausschneiden abgebrochen",
+    announceMoveFolderNotInSearch:
+      "In den Suchergebnissen lässt sich nichts in einen Ordner oder aus einem Ordner verschieben",
     announceMoveInNoFolder:
       "Direkt über {{name}} gibt es keinen Ordner, in den es verschoben werden könnte",
     announceMoveOutTopLevel: "{{name}} liegt bereits auf der obersten Ebene",

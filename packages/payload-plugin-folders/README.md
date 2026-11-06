@@ -1319,7 +1319,8 @@ The tree view and the sidebar tab are each one tab stop (a roving tabindex) and 
 There is no keyboard dragging. Move mode, Alt+Up and Down, cut and paste, and Move to... reach every
 drop spot. Alt+Up and Down presses within 800 ms make one move. A press still waiting when the
 editor leaves the tree is sent, and a move that would need a confirmation is dropped and its rows
-are put back.
+are put back. In search results Alt+Left and Alt+Right do nothing and say so, because the folder
+above a hit is not on screen; Alt+Up and Down still work there.
 
 ### Banners
 

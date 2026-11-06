@@ -439,6 +439,8 @@ export const en = {
     announceCut_one: "{{count}} item cut. Choose a folder or a page and paste it there",
     announceCut_other: "{{count}} items cut. Choose a folder or a page and paste them there",
     announceCutCancelled: "Cut cancelled",
+    announceMoveFolderNotInSearch:
+      "Moving into or out of a folder is not available in search results",
     announceMoveInNoFolder: "There is no folder directly above {{name}} to move it into",
     announceMoveOutTopLevel: "{{name}} is already at the top level",
     announceMovePosition: "{{name}} is now number {{position}} of {{total}}",

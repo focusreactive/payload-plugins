@@ -365,6 +365,35 @@ test("Alt+Right moves a page into the folder above", async ({ page, request }) =
   );
 });
 
+test("Alt+Right and Alt+Left do nothing in search results and say why", async ({
+  page,
+  request,
+}) => {
+  const outer = await addFolder(request, "Kb find host");
+  await addPage(request, "Kb find mover", outer);
+  await addFolder(request, "Kb find above", outer);
+  await openZoomedTree(page, outer);
+  await expect(pageRow(page, "Kb find mover")).toBeVisible();
+  const requests = watchMoves(page);
+
+  await page.getByTestId("search-input").fill("find mover");
+  await expect(page.getByTestId("search-summary")).toBeVisible();
+  await expect(pageRow(page, "Kb find mover")).toBeVisible();
+  await expect(folderRow(page, "Kb find above")).toHaveCount(0);
+  const notAvailable = "Moving into or out of a folder is not available in search results";
+
+  // The folder above the hit in the tree is not on screen, and the hit must not go into it.
+  await pageRow(page, "Kb find mover").focus();
+  await page.keyboard.press("Alt+ArrowRight");
+  await expect(page.getByTestId("live-region")).toHaveText(notAvailable);
+  await page.keyboard.press("Alt+ArrowLeft");
+  await expect(page.getByTestId("live-region")).toHaveText(notAvailable);
+
+  expect(requests.previews()).toBe(0);
+  expect(requests.moves()).toBe(0);
+  expect(await titlesIn(request, outer)).toEqual(["Kb find above", "Kb find mover"]);
+});
+
 test("Cmd+X then Cmd+V on a folder moves to its top", async ({ page, request }) => {
   const outer = await addFolder(request, "Kb paste");
   const target = await addFolder(request, "Kb target", outer);

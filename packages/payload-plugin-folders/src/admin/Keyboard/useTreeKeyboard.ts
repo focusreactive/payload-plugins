@@ -544,6 +544,13 @@ export const useTreeKeyboard = (options: TreeKeyboardOptions): TreeKeyboard => {
           if (current.isBusy) {
             return;
           }
+          // The folder above a hit comes from the tree's own sibling list, not from the hits on
+          // screen, so the item would land in a folder the editor cannot see.
+          if (current.isSearching) {
+            announce(current.translate("announceMoveFolderNotInSearch"));
+
+            return;
+          }
           if (action === "moveOut") {
             if (item.parentId === null) {
               announce(current.translate("announceMoveOutTopLevel", { name: item.title }));
