@@ -1,5 +1,5 @@
 export { SECTION_NAMES, emptySections, fromSections, indexOfKey, toSections } from "./sections.js";
-export type { Sections } from "./sections.js";
+export type { Sections, SectionsJson } from "./sections.js";
 export {
   inlineMarksInstruction,
   canEncodeSegments,

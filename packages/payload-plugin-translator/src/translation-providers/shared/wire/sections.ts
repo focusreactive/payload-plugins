@@ -9,6 +9,12 @@ import { canEncodeSegments, decodeSegments, encodeSegments } from "./inlineMarks
 export const SECTION_NAMES = ["marked", "plain"] as const;
 export type Sections = Record<(typeof SECTION_NAMES)[number], Record<string, string>>;
 
+/**
+ * {@link Sections} as JSON. A paragraph that cannot be marked is split, its pieces landing under
+ * `plain` keyed `<index>.<segmentId>`.
+ */
+export type SectionsJson = string;
+
 const pieceKey = (key: string, id: number): string => `${key}.${id}`;
 export const emptySections = (): Sections => ({ marked: {}, plain: {} });
 export const indexOfKey = (key: string): number => Number(key.split(".")[0]);

@@ -87,6 +87,10 @@ touch the same files:
   declared as one object the caller owns, derived from the body rather than curated by hand; and the
   function that asks a language model is named for what it does, not after a vendor's word for a
   different API shape. Added 2026-11-01, after step 6 left that surface in view.
+- R19 (in) An instruction the plugin must deliver reaches the model whatever a host's
+  `systemPrompt` override returns, and the prompt builder does not change when the next such
+  instruction is added. The mark instruction is the one that exists; the glossary and brand voice
+  of R9 are the next. Added 2026-11-02, after the seam trace read the slot back.
 
 ## Decision points
 
@@ -124,6 +128,7 @@ touch the same files:
 | R16 | stated on `TranslationOutput` |
 | R17 | the port carries segments; encoding and parsing marks are exported utilities (D11) |
 | R18 | the adapter takes `params`, derived as the request body minus what the plugin fills in; the ask function and its types are named for asking a model (step 7) |
+| R19 | `buildSystemPrompt` takes an ordered list of blocks to append and stops naming any of them; the provider decides membership (step 8) |
 
 ## The port, after
 
@@ -557,9 +562,19 @@ commit is reviewed and green on its own, and no release carries the state betwee
    `CompletionRequest`, `openAIComplete`) is renamed for what it does. No behaviour change.
    Breaking. covers: R18
 
+8. **The append slot** — `buildSystemPrompt` takes an ordered list of text blocks to append after
+   any override, in place of the one boolean that names the mark instruction; the provider decides
+   membership, and the prompt builder stops importing the wire format. Not breaking — nothing here
+   is published. covers: R19
+
 Step 7 was added on 2026-11-01, after step 6 landed and the surface it left was read back. It is in
 this sequence rather than deferred because both repairs are free before the major ships and breaking
 after it.
+
+Step 8 was added on 2026-11-02, after a seam trace of the plugin–provider boundary read the
+existing slot back. It is not breaking, so it does not have to ship in the major; it is taken here
+because R9 is the next step to touch that file and would otherwise add its branch to the shape
+being replaced.
 
 Steps 2 to 5 were one step when this design was written; the scenario review split them, because each
 is breaking on its own and reviewing them together would hide the one that changes behaviour (3).

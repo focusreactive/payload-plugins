@@ -1,5 +1,6 @@
 import type { DocumentRef, LanguageCode } from "../../core/domain/translation-providers/index.js";
-import { inlineMarksInstruction } from "./wire/index.js";
+
+export type PromptAddition = string;
 
 /**
  * Context handed to a {@link SystemPromptBuilder}.
@@ -37,12 +38,12 @@ export async function buildSystemPrompt(args: {
   override?: SystemPromptBuilder;
   document: DocumentRef;
   /**
-   * The mark instruction is appended **after** whatever `override` returns: a builder may ignore
-   * `defaultPrompt`, and the wire format must not depend on it repeating this rule.
+   * Joined after the override's result, one blank line between: an override may ignore
+   * `defaultPrompt`, so a rule the plugin must deliver cannot ride inside it.
    */
-  hasInlineMarks?: boolean;
+  alwaysAppend?: readonly PromptAddition[];
 }): Promise<string> {
-  const { sourceLng, targetLng, override, hasInlineMarks, document } = args;
+  const { sourceLng, targetLng, override, alwaysAppend = [], document } = args;
 
   const defaultPrompt = `Translate the values from the JSON that the user will send you from ${sourceLng} into ${targetLng}. Keep all JSON keys exactly as they are, only translate the values.
 The response should be a valid JSON object with the same structure and keys as the input, but with translated values.
@@ -57,5 +58,5 @@ Maintain any special formatting, placeholders, or variables within the values if
       })
     : defaultPrompt;
 
-  return hasInlineMarks ? `${prompt}\n\n${inlineMarksInstruction()}` : prompt;
+  return [prompt, ...alwaysAppend].join("\n\n");
 }

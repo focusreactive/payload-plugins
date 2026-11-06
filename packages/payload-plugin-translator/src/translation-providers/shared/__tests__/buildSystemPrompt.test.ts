@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildSystemPrompt } from "../buildSystemPrompt.js";
+import { inlineMarksInstruction } from "../wire/index.js";
 
 const DOCUMENT = { collection: "docs", id: "1" };
 
@@ -9,20 +10,11 @@ const EXPECTED_EN_DE = `Translate the values from the JSON that the user will se
 The response should be a valid JSON object with the same structure and keys as the input, but with translated values.
 Maintain any special formatting, placeholders, or variables within the values if they exist.`;
 
-const SOURCE_LANGUAGE_CLAUSE = "send you from";
-
 describe("buildSystemPrompt", () => {
   it("produces the shipped default text unchanged", async () => {
     expect(await buildSystemPrompt({ sourceLng: "en", targetLng: "de", document: DOCUMENT })).toBe(
       EXPECTED_EN_DE
     );
-  });
-
-  it("omits the source clause when the source language is empty (auto-detect)", async () => {
-    const prompt = await buildSystemPrompt({ sourceLng: "", targetLng: "de", document: DOCUMENT });
-
-    expect(prompt).toContain("send you into de");
-    expect(prompt).not.toContain(SOURCE_LANGUAGE_CLAUSE);
   });
 
   it("hands the default to an override and returns what the override builds", async () => {
@@ -70,7 +62,7 @@ describe("buildSystemPrompt", () => {
       sourceLng: "en",
       targetLng: "fr",
       document: DOCUMENT,
-      hasInlineMarks: true,
+      alwaysAppend: [inlineMarksInstruction()],
       override: async ({ defaultPrompt }) => `${defaultPrompt}\nGlossary: ampere = Ampere.`,
     });
 
@@ -96,19 +88,48 @@ describe("buildSystemPrompt", () => {
     expect(seen).toEqual({ collection: "machines", id: "7" });
   });
 
-  describe("inline marks", () => {
-    it("appends the mark instruction when the values carry marks", async () => {
+  describe("always-appended blocks", () => {
+    it("appends one block after the default, separated by a blank line", async () => {
       const prompt = await buildSystemPrompt({
         sourceLng: "en",
         targetLng: "de",
         document: DOCUMENT,
-        hasInlineMarks: true,
+        alwaysAppend: [inlineMarksInstruction()],
       });
 
-      expect(prompt).toContain("Return every mark exactly once");
+      expect(prompt).toBe(`${EXPECTED_EN_DE}\n\n${inlineMarksInstruction()}`);
     });
 
-    it("says nothing about marks when no value carries one", async () => {
+    it("appends every block, in the order given, after an override that ignores defaultPrompt", async () => {
+      const prompt = await buildSystemPrompt({
+        sourceLng: "en",
+        targetLng: "de",
+        document: DOCUMENT,
+        alwaysAppend: ["First addition.", "Second addition."],
+        override: () => "Translate to German. Be formal.",
+      });
+
+      expect(prompt).toBe("Translate to German. Be formal.\n\nFirst addition.\n\nSecond addition.");
+    });
+
+    it("adds no separator when the list is empty", async () => {
+      expect(
+        await buildSystemPrompt({
+          sourceLng: "en",
+          targetLng: "de",
+          document: DOCUMENT,
+          alwaysAppend: [],
+        })
+      ).toBe(EXPECTED_EN_DE);
+    });
+
+    it("adds no separator when the list is omitted", async () => {
+      expect(
+        await buildSystemPrompt({ sourceLng: "en", targetLng: "de", document: DOCUMENT })
+      ).toBe(EXPECTED_EN_DE);
+    });
+
+    it("says nothing about marks unless the mark instruction is one of the blocks", async () => {
       const prompt = await buildSystemPrompt({
         sourceLng: "en",
         targetLng: "de",
@@ -116,19 +137,6 @@ describe("buildSystemPrompt", () => {
       });
 
       expect(prompt).not.toContain("mark");
-    });
-
-    it("appends the mark instruction after an override that ignores defaultPrompt", async () => {
-      const prompt = await buildSystemPrompt({
-        sourceLng: "en",
-        targetLng: "de",
-        document: DOCUMENT,
-        hasInlineMarks: true,
-        override: () => "Translate to German. Be formal.",
-      });
-
-      expect(prompt.startsWith("Translate to German. Be formal.")).toBe(true);
-      expect(prompt).toContain("Return every mark exactly once");
     });
   });
 });
