@@ -1,7 +1,7 @@
 import type { Crossing, Language, Step, TextLeaf, TextUnit } from "../../contract.js";
 import type { EmbedResolver } from "./embed.js";
 import type { UnitCut } from "./marks.js";
-import { serializeMarks, writeMarks } from "./marks.js";
+import { resolveMarks, serializeMarks } from "./marks.js";
 
 export type LexNode = {
   type: string;
@@ -32,12 +32,11 @@ const isContainer = (value: unknown): value is LexNode =>
   (value as LexNode).children?.every((child) => child.type === "text") === true;
 
 function unitsOf(leaf: TextLeaf): TextUnit[] {
-  const { value, setValue } = leaf;
+  const { value, slot } = leaf;
 
   if (typeof value === "string") {
-    if (value.trim() === "" || setValue === undefined) return [];
-    const write = setValue;
-    return [{ text: value, write: (translated) => write(translated) }];
+    if (value.trim() === "" || slot === undefined) return [];
+    return [{ text: value, resolve: (translated) => [{ slot, value: translated }] }];
   }
 
   if (!isContainer(value)) return [];
@@ -45,7 +44,7 @@ function unitsOf(leaf: TextLeaf): TextUnit[] {
   return [
     {
       text: serializeMarks(children),
-      write: (translated) => writeMarks(children, translated),
+      resolve: (translated) => resolveMarks(children, translated),
     },
   ];
 }
@@ -72,9 +71,7 @@ export function lexicalLanguage(options?: { cut?: UnitCut }): Language<LexNode, 
           kind: "value",
           value: node.text,
           segments: [],
-          setValue: (value) => {
-            if (typeof value === "string") node.text = value;
-          },
+          slot: { holder: node, key: "text" },
         };
       }
 

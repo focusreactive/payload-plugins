@@ -73,13 +73,13 @@ const viaPipeline = (schema: FieldLike[], source: Doc): Compared => {
 };
 
 const viaLanguage = (schema: FieldLike[], source: Doc, blocks: readonly BlockLike[]): Compared => {
-  const { targets, working } = walkDocument({ schema, source, blocks, inlineBlocks: blocks });
-  const texts = targets.map((target) => target.text);
+  const { collected, working } = walkDocument({ schema, source, blocks, inlineBlocks: blocks });
+  const texts = collected.targets.map((target) => target.text);
   applyTranslations(
-    targets,
-    targets.map((target) => translated(target.text))
+    collected,
+    collected.targets.map((target) => translated(target.text))
   );
-  return { texts, addresses: addressesOf(targets), document: working };
+  return { texts, addresses: addressesOf(collected.targets), document: working };
 };
 
 const body: FieldLike[] = [{ type: "richText", name: "body", localized: true }];
@@ -288,9 +288,7 @@ describe("the lexical language agrees with the per-node rich-text pipeline", () 
 describe("writing back", () => {
   it("same tree is written in place: the tree the context carries is the one that changes", () => {
     const handed = tree(paragraph(text("Hello")));
-    const targets = walkTree({ tree: handed, embed: claimsNothing });
-
-    applyTranslations(targets, ["Hallo"]);
+    applyTranslations(walkTree({ tree: handed, embed: claimsNothing }), ["Hallo"]);
 
     expect(dig(handed, "root", "children", 0, "children", 0, "text")).toBe("Hallo");
   });
@@ -299,10 +297,10 @@ describe("writing back", () => {
     const source: Doc = { body: tree(paragraph(text("Hello"), text("World"))) };
     const before = structuredClone(source);
 
-    const { targets } = walkDocument({ schema: body, source });
+    const { collected } = walkDocument({ schema: body, source });
     applyTranslations(
-      targets,
-      targets.map((target) => translated(target.text))
+      collected,
+      collected.targets.map((target) => translated(target.text))
     );
 
     expect(source).toEqual(before);
@@ -324,18 +322,18 @@ describe("writing back", () => {
     const source: Doc = { body: deep };
     const before = structuredClone(source);
 
-    const { targets } = walkDocument({
+    const { collected } = walkDocument({
       schema: body,
       source,
       blocks: [sectionBlock, ctaDefinition],
       inlineBlocks: [],
     });
     applyTranslations(
-      targets,
-      targets.map((target) => translated(target.text))
+      collected,
+      collected.targets.map((target) => translated(target.text))
     );
 
-    expect(targets.length).toBeGreaterThan(2);
+    expect(collected.targets.length).toBeGreaterThan(2);
     expect(source).toEqual(before);
   });
 });

@@ -20,7 +20,7 @@ describe("Payload fields → ProseMirror → Payload fields", () => {
       },
     };
 
-    const targets = fromPayload(postsSchema(PROSEMIRROR_ID), document, prosemirrorLanguage());
+    const { targets } = fromPayload(postsSchema(PROSEMIRROR_ID), document, prosemirrorLanguage());
 
     expect(targets.map((target) => target.text)).toEqual(["Intro", "Click me", "Please"]);
   });

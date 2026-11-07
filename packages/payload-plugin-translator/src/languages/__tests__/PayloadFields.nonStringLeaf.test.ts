@@ -22,7 +22,7 @@ describe("a selected leaf whose stored value is not a string", () => {
   it("the language selects it and then offers no text, so the walk reports it", () => {
     const working = structuredClone(source);
     const reported: { address: string; value: unknown }[] = [];
-    const targets = collectTranslationTargets({
+    const { targets } = collectTranslationTargets({
       languages: [payloadFieldsLanguage()],
       entry: {
         languageId: PAYLOAD_FIELDS_ID,
@@ -39,7 +39,7 @@ describe("a selected leaf whose stored value is not a string", () => {
   it("so the value survives a walk that did reach it", () => {
     const working = structuredClone(source);
     const reached: string[] = [];
-    const targets = collectTranslationTargets({
+    const collected = collectTranslationTargets({
       languages: [payloadFieldsLanguage()],
       entry: {
         languageId: PAYLOAD_FIELDS_ID,
@@ -51,8 +51,8 @@ describe("a selected leaf whose stored value is not a string", () => {
 
     expect(reached).toEqual(["tags"]);
     applyTranslations(
-      targets,
-      targets.map(() => "translated")
+      collected,
+      collected.targets.map(() => "translated")
     );
 
     expect(working.tags).toEqual(["one", "two"]);

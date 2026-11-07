@@ -55,7 +55,7 @@ describe("the cycle guard", () => {
     };
     selfReferential.fields?.push(selfReferential);
 
-    const targets = collectTranslationTargets({
+    const { targets } = collectTranslationTargets({
       languages: [payloadFieldsLanguage()],
       entry: {
         languageId: PAYLOAD_FIELDS_ID,
@@ -74,7 +74,7 @@ describe("the cycle guard", () => {
         blocks: [{ slug: "hero", fields: [{ type: "text", name: "heading", localized: true }] }],
       },
     ];
-    const targets = collectTranslationTargets({
+    const { targets } = collectTranslationTargets({
       languages: [payloadFieldsLanguage()],
       entry: {
         languageId: PAYLOAD_FIELDS_ID,

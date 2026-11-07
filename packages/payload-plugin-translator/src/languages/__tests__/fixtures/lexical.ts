@@ -1,16 +1,16 @@
 import type { BlockLike, FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { isObject } from "../../../core/kernel/utils/isObject.js";
 import type {
+  CollectedContent,
   IdPath,
   RegisteredLanguage,
-  TranslationTarget,
 } from "../../../core/traversal/index.js";
 import {
   CannotEnterLanguageError,
   collectTranslationTargets,
 } from "../../../core/traversal/index.js";
 import type { EmbedResolver } from "../../richTextCrossing.js";
-import { LEXICAL_ID, lexicalLanguage } from "../../Lexical.language.js";
+import { LEXICAL_ID, lexicalContent, lexicalLanguage } from "../../Lexical.language.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../../PayloadFields.language.js";
 
 export type Doc = Record<string, unknown>;
@@ -82,7 +82,7 @@ export function surfacingEnterCrash<T>(run: () => T): T {
 
 export type Reported = { idPath: IdPath; value: unknown };
 
-export type Walked = { targets: TranslationTarget[]; working: Doc; reported: Reported[] };
+export type Walked = { collected: CollectedContent; working: Doc; reported: Reported[] };
 
 /**
  * Mirrors the wiring the swap will install — change it with that wiring, not for one check.
@@ -96,11 +96,11 @@ export function walkDocument(options: {
   const working = structuredClone(options.source);
   const reported: Reported[] = [];
 
-  const targets = surfacingEnterCrash(() =>
+  const collected = surfacingEnterCrash(() =>
     collectTranslationTargets({
       languages: [
         payloadFieldsLanguage({
-          languageId: LEXICAL_ID,
+          crossings: [lexicalContent()],
           blocks: options.blocks ?? [],
           inlineBlocks: options.inlineBlocks ?? [],
         }),
@@ -114,13 +114,13 @@ export function walkDocument(options: {
     })
   );
 
-  return { targets, working, reported };
+  return { collected, working, reported };
 }
 
 export function walkTree(
   context: unknown,
   others: readonly RegisteredLanguage[] = []
-): TranslationTarget[] {
+): CollectedContent {
   return surfacingEnterCrash(() =>
     collectTranslationTargets({
       languages: [lexicalLanguage(), ...others],

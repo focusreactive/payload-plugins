@@ -1,4 +1,5 @@
 export type {
+  CollectedContent,
   Crossing,
   IdPath,
   Language,

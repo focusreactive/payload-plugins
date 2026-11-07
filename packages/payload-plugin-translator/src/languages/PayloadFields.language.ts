@@ -1,5 +1,9 @@
 import { elementSegment, renderSegment } from "../core/domain/content-projection/idPath.js";
-import { isTranslatableLeaf } from "../core/domain/content-projection/translatableLeaf.js";
+import {
+  isLocalizedFieldLike,
+  isTranslatableLeaf,
+} from "../core/domain/content-projection/translatableLeaf.js";
+import { isFieldExcludedFromTranslation } from "../core/domain/field-config/index.js";
 import type {
   ArrayFieldLike,
   BlockLike,
@@ -11,11 +15,10 @@ import {
   resolveBlockFields,
   tabScopes,
 } from "../core/kernel/field-traversal/index.js";
-import type { SerializedLexicalRoot } from "../core/kernel/lexical/index.js";
-import { isSerializedLexicalRoot } from "../core/kernel/lexical/index.js";
 import { isEmpty } from "../core/kernel/utils/isEmpty.js";
 import { isObject } from "../core/kernel/utils/isObject.js";
-import type { EmbedKind, EmbedResolver, RichTextContext } from "./richTextCrossing.js";
+import type { ContentCrossing } from "./contentCrossing.js";
+import type { EmbedKind, EmbedResolver } from "./richTextCrossing.js";
 import type {
   Crossing,
   Language,
@@ -84,44 +87,37 @@ const intoList = (
 };
 
 /**
- * Which rich-text language takes over at a `richText` field, and which blocks the host consents to
- * translate inside one.
- *
- * An unlisted block is skipped with no warning: absence is a statement, not an oversight.
+ * A block missing from `blocks` or `inlineBlocks` is skipped with no warning: absence is a
+ * statement, not an oversight.
  *
  * @public
  */
-export type RichTextCrossing = {
-  languageId: string;
-  blocks: readonly BlockLike[];
-  inlineBlocks: readonly BlockLike[];
+export type PayloadFieldsConfig = {
+  /**
+   * Asked in order; the first that does not answer `null` takes the value.
+   */
+  crossings?: readonly ContentCrossing[];
+  blocks?: readonly BlockLike[];
+  inlineBlocks?: readonly BlockLike[];
 };
+
+/**
+ * Weaker than {@link isTranslatableLeaf} on purpose: it omits the field-type rule, because which
+ * formats a value may be handed to is the crossing list's question, not the field type's.
+ */
+const isOfferable = (field: FieldLike): boolean =>
+  isLocalizedFieldLike(field) && !isFieldExcludedFromTranslation(field);
 
 const definitionsOf = (blocks: readonly BlockLike[]): Map<string, FieldLike[]> =>
   new Map(blocks.map((block) => [block.slug, block.fields]));
 
-/**
- * Write-back mutates a rich-text tree in place, so the host's own source object must never be the
- * one handed over. The clone is taken from `source`, not from whatever the reconciler left in
- * `data` — that is what makes the crossing an overwrite rather than a re-translation of the
- * previous translation.
- */
-const seatSourceClone = (
-  cursor: PayloadFieldsCursor,
-  name: string,
-  source: SerializedLexicalRoot
-): SerializedLexicalRoot => {
-  const seated = structuredClone(source);
-  cursor.data[name] = seated;
-  return seated;
-};
-
 export function payloadFieldsLanguage(
-  richText?: RichTextCrossing
+  config: PayloadFieldsConfig = {}
 ): Language<FieldLike, PayloadFieldsCursor> {
+  const crossings = config.crossings ?? [];
   const definitions: Record<EmbedKind, Map<string, FieldLike[]>> = {
-    block: definitionsOf(richText?.blocks ?? []),
-    inlineBlock: definitionsOf(richText?.inlineBlocks ?? []),
+    block: definitionsOf(config.blocks ?? []),
+    inlineBlock: definitionsOf(config.inlineBlocks ?? []),
   };
 
   const resolveEmbed: EmbedResolver = (kind, blockType, data) => {
@@ -182,9 +178,7 @@ export function payloadFieldsLanguage(
             kind: "value",
             value: cursor.source[name],
             segments: [key(name)],
-            setValue: (value) => {
-              cursor.data[name] = value;
-            },
+            slot: { holder: cursor.data, key: name },
           };
         }
 
@@ -200,23 +194,28 @@ export function payloadFieldsLanguage(
     isEmpty,
 
     textUnits: (leaf: TextLeaf): TextUnit[] => {
-      const { value, setValue } = leaf;
-      if (typeof value !== "string" || setValue === undefined) return [];
-      const write = setValue;
-      return [{ text: value, write: (translated) => write(translated) }];
+      const { value, slot } = leaf;
+      if (typeof value !== "string" || slot === undefined) return [];
+      return [{ text: value, resolve: (translated) => [{ slot, value: translated }] }];
     },
 
     boundary(field, cursor, value): Crossing | null {
-      if (richText === undefined || field.type !== "richText" || field.name === undefined) {
-        return null;
-      }
-      if (!isTranslatableLeaf(field) || !isSerializedLexicalRoot(value)) return null;
+      const { name } = field;
+      if (name === undefined || !isOfferable(field)) return null;
 
-      const context: RichTextContext = {
-        tree: seatSourceClone(cursor, field.name, value),
-        embed: resolveEmbed,
-      };
-      return { languageId: richText.languageId, context };
+      for (const crossing of crossings) {
+        const opened = crossing({ value, embed: resolveEmbed });
+        if (opened === null) continue;
+
+        const { languageId, context } = opened;
+        if (opened.workingCopy === undefined) return { languageId, context };
+        return {
+          languageId,
+          context,
+          placement: { slot: { holder: cursor.data, key: name }, value: opened.workingCopy },
+        };
+      }
+      return null;
     },
   };
 }

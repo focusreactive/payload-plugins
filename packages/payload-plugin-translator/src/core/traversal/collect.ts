@@ -1,4 +1,12 @@
-import type { Crossing, IdPath, RegisteredLanguage, TranslationTarget } from "./contract.js";
+import type {
+  CollectedContent,
+  Crossing,
+  IdPath,
+  RegisteredLanguage,
+  SlotWrite,
+  TranslationTarget,
+} from "./contract.js";
+import { WriteRefusedError } from "./errors/index.js";
 import { walkLanguages } from "./walk.js";
 
 /**
@@ -18,8 +26,8 @@ export type CollectOptions<
    */
   languages: L;
   /**
-   * Where the walk starts. Activated like any other crossing, with no value behind it; its id must
-   * be one of `languages`, and the compiler checks it.
+   * Where the walk starts: a crossing with no leaf behind it, its placement collected like any
+   * other.
    */
   entry: Crossing & { languageId: L[number]["id"] };
   /**
@@ -37,11 +45,24 @@ export type CollectOptions<
   maxCrossings?: number;
 };
 
+const assignWrites = (writes: readonly SlotWrite[]): void => {
+  for (const { slot, value } of writes) {
+    if (!Reflect.set(slot.holder, slot.key, value)) throw new WriteRefusedError(slot.key);
+  }
+};
+
 export function collectTranslationTargets<const L extends readonly RegisteredLanguage[]>(
   options: CollectOptions<L>
-): TranslationTarget[] {
+): CollectedContent {
   const targets: TranslationTarget[] = [];
   const { onSelectedWithoutText } = options;
+  const placements: SlotWrite[] = [];
+
+  const keepPlacement = (crossing: Crossing): void => {
+    if (crossing.placement !== undefined) placements.push(crossing.placement);
+  };
+
+  keepPlacement(options.entry);
 
   walkLanguages({
     languages: options.languages,
@@ -51,6 +72,7 @@ export function collectTranslationTargets<const L extends readonly RegisteredLan
       leaf(visit) {
         const crossing = visit.language.boundary(visit.node, visit.cursor, visit.value);
         if (crossing !== null) {
+          keepPlacement(crossing);
           visit.cross(crossing);
           return;
         }
@@ -58,38 +80,48 @@ export function collectTranslationTargets<const L extends readonly RegisteredLan
         if (!visit.language.selects(visit.node, visit.cursor)) return;
         if (visit.language.isEmpty(visit.value)) return;
 
-        const units = visit.language.textUnits({ value: visit.value, setValue: visit.setValue });
+        const units = visit.language.textUnits({ value: visit.value, slot: visit.slot });
         if (units.length === 0) {
           onSelectedWithoutText?.(visit.idPath, visit.value);
           return;
         }
 
         for (const unit of units) {
-          targets.push({ idPath: visit.idPath, text: unit.text, write: unit.write });
+          targets.push({
+            idPath: visit.idPath,
+            text: unit.text,
+            write: (translated) => {
+              assignWrites(unit.resolve(translated));
+            },
+          });
         }
       },
     },
   });
 
-  return targets;
+  return { targets, placements };
 }
 
 /**
- * Write answers back through the targets they belong to.
+ * Perform what one walk collected: every placement, then each answer. The walk itself writes
+ * nothing.
  *
- * @param targets - exactly what {@link collectTranslationTargets} returned, in that order.
- * @param translations - the answer for `targets[i]` at index `i`. A **shorter** list, or an
- *   `undefined` entry, leaves that target untouched — a translator answering with fewer values than
- *   it was sent is an ordinary outcome, not an error, and the untouched targets keep whatever they
- *   already held. Entries past the end of `targets` are ignored.
+ * A placement a holder refuses raises after the earlier placements were written and before any
+ * answer is. Placements run whatever the answers are, so a unit left unanswered inside a
+ * handed-over copy keeps the text that copy was made from.
+ *
+ * @param translations - the answer for `collected.targets[i]` at index `i`. A shorter list or an
+ *   `undefined` entry leaves that target as it is; entries past the end are ignored.
  *
  * @public
  */
 export function applyTranslations(
-  targets: readonly TranslationTarget[],
+  collected: CollectedContent,
   translations: ReadonlyArray<string | undefined>
 ): void {
-  for (const [index, target] of targets.entries()) {
+  assignWrites(collected.placements);
+
+  for (const [index, target] of collected.targets.entries()) {
     const translated = translations[index];
     if (translated !== undefined) target.write(translated);
   }

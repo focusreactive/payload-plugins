@@ -6,7 +6,7 @@ import { collect, paragraph } from "./fixtures/harness.js";
 describe("how a leaf is cut is the language's own choice", () => {
   it("gives one unit per text node when built that way", () => {
     const document = paragraph();
-    const targets = collect({
+    const { targets } = collect({
       fields: bodySchema(),
       source: document,
       target: document,
@@ -18,7 +18,7 @@ describe("how a leaf is cut is the language's own choice", () => {
 
   it("gives the whole container with its formatting numbered when built that way", () => {
     const document = paragraph();
-    const targets = collect({
+    const { targets } = collect({
       fields: bodySchema(),
       source: document,
       target: document,
@@ -32,18 +32,18 @@ describe("how a leaf is cut is the language's own choice", () => {
 
   it("refuses a reply carrying text outside its marks, rather than writing half of it", () => {
     const document = paragraph();
-    const targets = collect({
+    const collected = collect({
       fields: bodySchema(),
       source: document,
       target: document,
       cut: "whole-container",
     });
 
-    expect(targets).toHaveLength(1);
+    expect(collected.targets).toHaveLength(1);
 
     // Every mark is present and correctly numbered — only the trailing words sit outside one,
     // so nothing but the stray-text rule can refuse this reply.
-    applyTranslations(targets, ["<1>Я купил </1><2>красную</2><3> машину</3> и уехал"]);
+    applyTranslations(collected, ["<1>Я купил </1><2>красную</2><3> машину</3> и уехал"]);
 
     const content = document.body.content[0]?.content ?? [];
     expect(content.map((node) => node.text)).toEqual(["I bought a ", "red", " car"]);
@@ -51,14 +51,14 @@ describe("how a leaf is cut is the language's own choice", () => {
 
   it("puts a marked reply back on the pieces it came from", () => {
     const document = paragraph();
-    const targets = collect({
+    const collected = collect({
       fields: bodySchema(),
       source: document,
       target: document,
       cut: "whole-container",
     });
 
-    applyTranslations(targets, ["<1>Я купил </1><2>красную</2><3> машину</3>"]);
+    applyTranslations(collected, ["<1>Я купил </1><2>красную</2><3> машину</3>"]);
 
     const content = document.body.content[0]?.content ?? [];
     expect(content.map((node) => node.text)).toEqual(["Я купил ", "красную", " машину"]);

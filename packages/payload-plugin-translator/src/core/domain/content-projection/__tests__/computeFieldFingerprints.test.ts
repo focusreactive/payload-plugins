@@ -66,3 +66,53 @@ describe("computeFieldFingerprints", () => {
     expect(computeFieldFingerprints({ slug: "only-this" }, schema)).toEqual({});
   });
 });
+
+const richSchema: FieldLike[] = [
+  { name: "title", type: "text", localized: true },
+  { name: "body", type: "richText", localized: true },
+];
+
+const richDoc = () => ({
+  title: "Shop",
+  body: {
+    root: {
+      type: "root",
+      children: [
+        { type: "paragraph", children: [{ type: "text", text: "Buy now" }] },
+        { type: "block", fields: { blockType: "cta", heading: "Subscribe" } },
+      ],
+    },
+  },
+});
+
+const objectsByPath = (
+  value: unknown,
+  path: string,
+  into: Map<string, object>
+): Map<string, object> => {
+  if (typeof value !== "object" || value === null) return into;
+  into.set(path, value);
+  for (const [key, child] of Object.entries(value)) objectsByPath(child, `${path}.${key}`, into);
+  return into;
+};
+
+describe("computeFieldFingerprints — the document it is handed", () => {
+  it("is read, never rebuilt: every object in it is still the same object afterwards", () => {
+    const given = richDoc();
+    const before = objectsByPath(given, "", new Map());
+
+    computeFieldFingerprints(given, richSchema);
+
+    const after = objectsByPath(given, "", new Map());
+    expect([...after.keys()].sort()).toEqual([...before.keys()].sort());
+    for (const [path, object] of before) expect(after.get(path)).toBe(object);
+  });
+
+  it("is not merely equal to what it was — a replaced subtree would pass that test", () => {
+    const given = richDoc();
+    const rebuilt = { ...given, body: structuredClone(given.body) };
+
+    expect(rebuilt).toEqual(given);
+    expect(rebuilt.body).not.toBe(given.body);
+  });
+});

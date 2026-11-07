@@ -9,7 +9,7 @@ import {
 
 describe("a self-describing language reached across a boundary", () => {
   it("collects the prose and the text inside an embedded component", () => {
-    const targets = collect({
+    const { targets } = collect({
       fields: bodySchema(),
       source: bodyDocument(),
       target: bodyDocument(),
@@ -19,7 +19,7 @@ describe("a self-describing language reached across a boundary", () => {
   });
 
   it("addresses a leaf inside the embed, through the rich text", () => {
-    const targets = collect({
+    const { targets } = collect({
       fields: bodySchema(),
       source: bodyDocument(),
       target: bodyDocument(),
@@ -34,7 +34,7 @@ describe("a self-describing language reached across a boundary", () => {
 
   it("walks nesting five levels deep", () => {
     const { fields, document } = richTextNestedThroughEmbeds(LEVELS);
-    const targets = collect({
+    const { targets } = collect({
       fields,
       source: document,
       target: document,

@@ -35,14 +35,13 @@ export type EmbedResolver = (
 ) => Crossing | null;
 
 /**
- * What a host puts in the {@link Crossing} it makes at a rich-text field.
- *
- * `tree` is `unknown` because only the language that walks it knows which format it is in; it is
- * the working copy, and the walk writes into it.
- *
  * @public
  */
 export type RichTextContext = {
-  tree: unknown;
+  /**
+   * The tree to walk when nothing was crossed in, as at a walk's entry. A context that names it
+   * alongside a crossed-in value is refused.
+   */
+  tree?: unknown;
   embed: EmbedResolver;
 };

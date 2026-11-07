@@ -5,7 +5,7 @@ import { fromPayload, lexicalPost, postsSchema } from "./fixtures/harness.js";
 describe("Payload fields → Lexical → Payload fields", () => {
   it("collects the text inside a block embedded in a rich-text field", () => {
     const document = lexicalPost();
-    const targets = fromPayload(postsSchema(LEXICAL_ID), document, lexicalLanguage());
+    const { targets } = fromPayload(postsSchema(LEXICAL_ID), document, lexicalLanguage());
 
     expect(targets.map((target) => target.text)).toEqual([
       "Intro",
@@ -18,7 +18,7 @@ describe("Payload fields → Lexical → Payload fields", () => {
 
   it("addresses the embedded leaves inside the rich-text field", () => {
     const document = lexicalPost();
-    const targets = fromPayload(postsSchema(LEXICAL_ID), document, lexicalLanguage());
+    const { targets } = fromPayload(postsSchema(LEXICAL_ID), document, lexicalLanguage());
 
     expect(targets.map((target) => target.idPath)).toEqual([
       ["content", 0, 0],
@@ -31,7 +31,7 @@ describe("Payload fields → Lexical → Payload fields", () => {
 
   it("applies the host's own selection rule inside the embed", () => {
     const document = lexicalPost();
-    const targets = fromPayload(postsSchema(LEXICAL_ID), document, lexicalLanguage());
+    const { targets } = fromPayload(postsSchema(LEXICAL_ID), document, lexicalLanguage());
 
     const texts = targets.map((target) => target.text);
 

@@ -4,7 +4,7 @@ import { collect } from "./fixtures/harness.js";
 
 describe("a schema-outside language", () => {
   it("collects every selected leaf, in document order", () => {
-    const targets = collect({ fields: articleSchema, source: article(), target: article() });
+    const { targets } = collect({ fields: articleSchema, source: article(), target: article() });
 
     expect(targets.map((target) => target.text)).toEqual([
       "Hello",
@@ -17,7 +17,7 @@ describe("a schema-outside language", () => {
   });
 
   it("addresses each leaf by the segments its language contributed", () => {
-    const targets = collect({ fields: articleSchema, source: article(), target: article() });
+    const { targets } = collect({ fields: articleSchema, source: article(), target: article() });
 
     expect(targets.map((target) => target.idPath)).toEqual([
       ["title"],
@@ -30,9 +30,11 @@ describe("a schema-outside language", () => {
   });
 
   it("leaves out what the language does not select", () => {
-    const texts = collect({ fields: articleSchema, source: article(), target: article() }).map(
-      (target) => target.text
-    );
+    const texts = collect({
+      fields: articleSchema,
+      source: article(),
+      target: article(),
+    }).targets.map((target) => target.text);
 
     expect(texts).toContain("Hello");
     expect(texts).not.toContain("hello");

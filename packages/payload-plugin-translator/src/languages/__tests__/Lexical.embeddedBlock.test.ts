@@ -62,12 +62,12 @@ const body: FieldLike[] = [{ type: "richText", name: "body", localized: true }];
 const walk = (bodyTree: Tree, lists: Lists = LISTED): Walked =>
   walkDocument({ schema: body, source: { body: bodyTree }, ...lists });
 
-const textsOf = (walked: Walked): string[] => walked.targets.map((target) => target.text);
+const textsOf = (walked: Walked): string[] => walked.collected.targets.map((target) => target.text);
 
 const translateAll = (walked: Walked): Doc => {
   applyTranslations(
-    walked.targets,
-    walked.targets.map((target) => translated(target.text))
+    walked.collected,
+    walked.collected.targets.map((target) => translated(target.text))
   );
   return walked.working;
 };
@@ -161,7 +161,7 @@ describe("text inside an embed", () => {
 
 describe("where embedded text is said to live", () => {
   it("addresses a block's leaf as <field>.<id>:<blockType>.<leaf>", () => {
-    expect(addressesOf(walk(tree(ctaBlock("b1", "Click me"))).targets)).toEqual([
+    expect(addressesOf(walk(tree(ctaBlock("b1", "Click me"))).collected.targets)).toEqual([
       "body.b1:cta.heading",
     ]);
   });
@@ -169,11 +169,11 @@ describe("where embedded text is said to live", () => {
   it("addresses an inline block's leaf the same way", () => {
     const line = tree(paragraph(inlineBlock({ id: "i1", blockType: "mention", label: "Ada" })));
 
-    expect(addressesOf(walk(line).targets)).toEqual(["body.i1:mention.label"]);
+    expect(addressesOf(walk(line).collected.targets)).toEqual(["body.i1:mention.label"]);
   });
 
   it("addresses the prose around an embed with the field's own address", () => {
-    expect(addressesOf(walk(blockAmongProse()).targets)).toEqual([
+    expect(addressesOf(walk(blockAmongProse()).collected.targets)).toEqual([
       "body",
       "body.b1:cta.heading",
       "body",
@@ -183,13 +183,19 @@ describe("where embedded text is said to live", () => {
   it("addresses each of several embeds by its own id", () => {
     const two = tree(ctaBlock("b1", "First"), ctaBlock("b2", "Second"));
 
-    expect(addressesOf(walk(two).targets)).toEqual(["body.b1:cta.heading", "body.b2:cta.heading"]);
+    expect(addressesOf(walk(two).collected.targets)).toEqual([
+      "body.b1:cta.heading",
+      "body.b2:cta.heading",
+    ]);
   });
 
   it("addresses an embed that declares no id by its ordinal among the field's embeds", () => {
     const two = tree(anonymousCta("First"), anonymousCta("Second"));
 
-    expect(addressesOf(walk(two).targets)).toEqual(["body.#0.heading", "body.#1.heading"]);
+    expect(addressesOf(walk(two).collected.targets)).toEqual([
+      "body.#0.heading",
+      "body.#1.heading",
+    ]);
   });
 
   it("keeps two id-less embeds apart when they sit under different parents", () => {
@@ -198,13 +204,20 @@ describe("where embedded text is said to live", () => {
       paragraph(anonymousMention("Y"))
     );
 
-    expect(addressesOf(walk(apart).targets)).toEqual(["body", "body.#0.label", "body.#1.label"]);
+    expect(addressesOf(walk(apart).collected.targets)).toEqual([
+      "body",
+      "body.#0.label",
+      "body.#1.label",
+    ]);
   });
 
   it("counts every embed, so an id-less one is not renumbered by the ids around it", () => {
     const mixed = tree(ctaBlock("b1", "Named"), anonymousCta("Anonymous"));
 
-    expect(addressesOf(walk(mixed).targets)).toEqual(["body.b1:cta.heading", "body.#1.heading"]);
+    expect(addressesOf(walk(mixed).collected.targets)).toEqual([
+      "body.b1:cta.heading",
+      "body.#1.heading",
+    ]);
   });
 
   it("addresses two levels deep with one token per embed crossed", () => {
@@ -217,7 +230,7 @@ describe("where embedded text is said to live", () => {
       })
     );
 
-    expect(addressesOf(walk(nestedOnly).targets)).toEqual([
+    expect(addressesOf(walk(nestedOnly).collected.targets)).toEqual([
       "body.s1:section.title",
       "body.s1:section.content",
       "body.s1:section.content.c1:cta.heading",
@@ -228,9 +241,9 @@ describe("where embedded text is said to live", () => {
     const odd: BlockLike = { slug: "c:ta", fields: cta.fields };
     const oddTree = tree(block({ id: "b.1#x", blockType: "c:ta", heading: "Odd" }));
 
-    expect(addressesOf(walk(oddTree, { blocks: [odd], inlineBlocks: [] }).targets)).toEqual([
-      "body.b\\.1\\#x:c\\:ta.heading",
-    ]);
+    expect(
+      addressesOf(walk(oddTree, { blocks: [odd], inlineBlocks: [] }).collected.targets)
+    ).toEqual(["body.b\\.1\\#x:c\\:ta.heading"]);
   });
 
   it("addresses an embed in a rich-text field that itself sits inside a blocks-field element", () => {
@@ -245,7 +258,7 @@ describe("where embedded text is said to live", () => {
       sections: [{ id: "s1", blockType: "hero", copy: tree(ctaBlock("b1", "Click me")) }],
     };
 
-    expect(addressesOf(walkDocument({ schema, source, ...LISTED }).targets)).toEqual([
+    expect(addressesOf(walkDocument({ schema, source, ...LISTED }).collected.targets)).toEqual([
       "sections.s1:hero.copy.b1:cta.heading",
     ]);
   });
@@ -266,7 +279,7 @@ describe("an embed nobody listed", () => {
 
   it.each(UNLISTED)("an unlisted %s is skipped silently, not reported", (_k, embed) => {
     const walked = walk(between(embed));
-    expect(walked.targets.length).toBeGreaterThan(0);
+    expect(walked.collected.targets.length).toBeGreaterThan(0);
 
     expect(walked.reported).toEqual([]);
   });
@@ -342,7 +355,7 @@ const NOT_EMBEDS: readonly (readonly [string, Node])[] = [
 
 describe("a node that is not an embed", () => {
   it.each(NOT_EMBEDS)("%s yields no target, and its siblings still do", (_label, node) => {
-    const targets = walkTree({ tree: between(node), embed: claimsEverything }, [
+    const { targets } = walkTree({ tree: between(node), embed: claimsEverything }, [
       payloadFieldsLanguage(),
     ]);
 

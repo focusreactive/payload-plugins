@@ -30,7 +30,7 @@ const viaCollector = (schema: FieldLike[], document: Doc, data?: Doc): Walked =>
 
 const viaLanguage = (schema: FieldLike[], document: Doc, data?: Doc): Walked => {
   const working = data ?? structuredClone(document);
-  const targets = collectTranslationTargets({
+  const collected = collectTranslationTargets({
     languages: [payloadFieldsLanguage()],
     entry: {
       languageId: PAYLOAD_FIELDS_ID,
@@ -38,13 +38,13 @@ const viaLanguage = (schema: FieldLike[], document: Doc, data?: Doc): Walked => 
     },
   });
 
-  const texts = targets.map((target) => target.text);
+  const texts = collected.targets.map((target) => target.text);
   applyTranslations(
-    targets,
-    targets.map((target) => translated(target.text))
+    collected,
+    collected.targets.map((target) => translated(target.text))
   );
 
-  return { texts, addresses: addressesOf(targets), document: working };
+  return { texts, addresses: addressesOf(collected.targets), document: working };
 };
 
 const CASES: { name: string; schema: FieldLike[]; document: Doc }[] = [

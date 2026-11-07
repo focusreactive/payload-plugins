@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { CannotEnterLanguageError } from "../../core/traversal/index.js";
-import { LEXICAL_ID } from "../Lexical.language.js";
+import { CannotEnterLanguageError, collectTranslationTargets } from "../../core/traversal/index.js";
+import type { ContentCrossing } from "../contentCrossing.js";
+import { LEXICAL_ID, lexicalLanguage } from "../Lexical.language.js";
+import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
 import { claimsNothing, paragraph, text, tree, walkTree } from "./fixtures/lexical.js";
 
 const refusalFrom = (run: () => unknown): CannotEnterLanguageError => {
@@ -16,13 +18,37 @@ const refusalFrom = (run: () => unknown): CannotEnterLanguageError => {
 
 describe("the lexical language and the context it is handed", () => {
   it("walks a context carrying a lexical tree and a resolver", () => {
-    const targets = walkTree({ tree: tree(paragraph(text("Hello"))), embed: claimsNothing });
+    const { targets } = walkTree({ tree: tree(paragraph(text("Hello"))), embed: claimsNothing });
 
     expect(targets.map((target) => target.text)).toEqual(["Hello"]);
   });
 
   it("takes an empty tree as its own: nothing to walk is not a refusal", () => {
-    expect(walkTree({ tree: tree(), embed: claimsNothing })).toEqual([]);
+    expect(walkTree({ tree: tree(), embed: claimsNothing }).targets).toEqual([]);
+  });
+
+  it("refuses a context that names a tree when one was already crossed into it", () => {
+    const handed = tree(paragraph(text("Hello")));
+    const alsoNamed: ContentCrossing = () => ({
+      languageId: LEXICAL_ID,
+      context: { tree: handed, embed: claimsNothing },
+      workingCopy: structuredClone(handed),
+    });
+    const working = { body: tree(paragraph(text("Hallo"))) };
+
+    expect(() =>
+      collectTranslationTargets({
+        languages: [payloadFieldsLanguage({ crossings: [alsoNamed] }), lexicalLanguage()],
+        entry: {
+          languageId: PAYLOAD_FIELDS_ID,
+          context: {
+            fields: [{ type: "richText", name: "body", localized: true }],
+            data: working,
+            source: { body: handed },
+          },
+        },
+      })
+    ).toThrow(CannotEnterLanguageError);
   });
 
   it.each([

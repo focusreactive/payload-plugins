@@ -8,7 +8,8 @@ import {
 import { isEmpty } from "../core/kernel/utils/isEmpty.js";
 import { isObject } from "../core/kernel/utils/isObject.js";
 import type { Crossing, Language, Step, TextLeaf, TextUnit } from "../core/traversal/index.js";
-import type { EmbedKind, EmbedResolver } from "./richTextCrossing.js";
+import type { ContentCrossing } from "./contentCrossing.js";
+import type { EmbedKind, EmbedResolver, RichTextContext } from "./richTextCrossing.js";
 
 /**
  * A serialized Lexical node, widened with the two members this language reads.
@@ -70,16 +71,21 @@ export function lexicalLanguage(): Language<LexicalNode, LexicalCursor> {
   return {
     id: LEXICAL_ID,
 
-    enter({ context }) {
+    enter({ context, value }) {
       if (!isObject(context)) return null;
 
       const { tree, embed } = context;
-      if (!isSerializedLexicalRoot(tree) || typeof embed !== "function") return null;
+      // Either precedence loses silently: a stale `tree` keeps the translations nobody saves, a
+      // crossed-in value writes them into the locale they were read from.
+      if (tree !== undefined && value !== undefined) return null;
+
+      const root = tree ?? value;
+      if (!isSerializedLexicalRoot(root) || typeof embed !== "function") return null;
 
       let seen = 0;
       const position = () => seen++;
 
-      return { nodes: [tree.root], cursor: { embed: embed as EmbedResolver, position } };
+      return { nodes: [root.root], cursor: { embed: embed as EmbedResolver, position } };
     },
 
     step(node, cursor): Step<LexicalNode, LexicalCursor> {
@@ -98,9 +104,7 @@ export function lexicalLanguage(): Language<LexicalNode, LexicalCursor> {
           kind: "value",
           value: textNode.text,
           segments: [],
-          setValue: (value) => {
-            if (typeof value === "string") textNode.text = value;
-          },
+          slot: { holder: textNode, key: "text" },
         };
       }
 
@@ -123,10 +127,9 @@ export function lexicalLanguage(): Language<LexicalNode, LexicalCursor> {
     isEmpty,
 
     textUnits: (leaf: TextLeaf): TextUnit[] => {
-      const { value, setValue } = leaf;
-      if (typeof value !== "string" || setValue === undefined) return [];
-      const write = setValue;
-      return [{ text: value, write: (translated) => write(translated) }];
+      const { value, slot } = leaf;
+      if (typeof value !== "string" || slot === undefined) return [];
+      return [{ text: value, resolve: (translated) => [{ slot, value: translated }] }];
     },
 
     boundary(node, cursor): Crossing | null {
@@ -136,3 +139,14 @@ export function lexicalLanguage(): Language<LexicalNode, LexicalCursor> {
     },
   };
 }
+
+/**
+ * @public
+ */
+export const lexicalContent = (): ContentCrossing => {
+  return ({ value, embed }) => {
+    if (!isSerializedLexicalRoot(value)) return null;
+    const context: RichTextContext = { embed };
+    return { languageId: LEXICAL_ID, context, workingCopy: structuredClone(value) };
+  };
+};

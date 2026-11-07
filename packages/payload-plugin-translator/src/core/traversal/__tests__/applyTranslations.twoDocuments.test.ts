@@ -9,7 +9,7 @@ describe("two documents, not one", () => {
     const source = lexicalPost();
     const target = lexicalPost();
 
-    const targets = collectTranslationTargets({
+    const collected = collectTranslationTargets({
       languages: [payloadFieldsLanguage(), lexicalLanguage()],
       entry: {
         languageId: PAYLOAD_FIELDS_ID,
@@ -17,8 +17,8 @@ describe("two documents, not one", () => {
       },
     });
     applyTranslations(
-      targets,
-      targets.map((one) => `<${one.text}>`)
+      collected,
+      collected.targets.map((one) => `<${one.text}>`)
     );
 
     expect(embedOf(target)?.heading).toBe("<Click me>");

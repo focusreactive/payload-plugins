@@ -25,7 +25,7 @@ describe("the field language and the context it is handed", () => {
   it("walks a context carrying a field list and both documents", () => {
     const document = { title: "Hello" };
 
-    const targets = walk({ fields: schema, data: { ...document }, source: document });
+    const { targets } = walk({ fields: schema, data: { ...document }, source: document });
 
     expect(targets.map((target) => target.text)).toEqual(["Hello"]);
   });

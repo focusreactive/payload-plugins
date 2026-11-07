@@ -7,7 +7,7 @@ describe("a selected leaf that yields no text", () => {
     const onSelectedWithoutText = vi.fn();
     const source = { ...article(), title: 42 };
 
-    const targets = collect({
+    const { targets } = collect({
       fields: articleSchema,
       source,
       target: article(),
@@ -25,7 +25,7 @@ describe("a leaf the language calls empty", () => {
     const onSelectedWithoutText = vi.fn();
     const source = { ...article(), title: "   " };
 
-    const targets = collect({
+    const { targets } = collect({
       fields: articleSchema,
       source,
       target: article(),

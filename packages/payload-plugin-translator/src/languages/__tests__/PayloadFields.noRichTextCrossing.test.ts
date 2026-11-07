@@ -26,7 +26,7 @@ describe("rich text, with no crossing configured", () => {
     const onSelectedWithoutText = vi.fn();
     const source = document();
 
-    const targets = collectTranslationTargets({
+    const { targets } = collectTranslationTargets({
       languages: [payloadFieldsLanguage()],
       entry: {
         languageId: PAYLOAD_FIELDS_ID,

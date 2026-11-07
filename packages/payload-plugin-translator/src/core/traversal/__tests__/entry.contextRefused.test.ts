@@ -62,7 +62,7 @@ describe("a language handed a context that is not its own", () => {
   });
 
   it("still walks its own context, so refusing is not the same as never working", () => {
-    const targets = enterWith(refusesWithoutFieldList(), ownContext());
+    const { targets } = enterWith(refusesWithoutFieldList(), ownContext());
 
     expect(targets.map((target) => target.text)).toEqual(["Hi"]);
   });
@@ -122,21 +122,23 @@ describe("a language handed a context that is not its own", () => {
       },
     };
 
-    expect(enterWith(careless, { tree: "someone else's" })).toEqual([]);
-    expect(enterWith(careless, ownContext()).map((target) => target.text)).toEqual(["Hi"]);
+    expect(enterWith(careless, { tree: "someone else's" }).targets).toEqual([]);
+    expect(enterWith(careless, ownContext()).targets.map((target) => target.text)).toEqual(["Hi"]);
   });
 
   it("reads an empty node list as a valid answer, not a refusal", () => {
     // Both halves, because the subject is the difference between them: one of these must throw
     // and the other must not, and either alone is satisfied by a walk that does nothing.
-    expect(enterWith(sometimesEmpty(), { ...ownContext(), fields: [] })).toEqual([]);
+    expect(enterWith(sometimesEmpty(), { ...ownContext(), fields: [] }).targets).toEqual([]);
     expect(() => enterWith(sometimesEmpty(), { noFieldsAtAll: true })).toThrow(
       CannotEnterLanguageError
     );
   });
 
   it("still walks that same language when its context does have fields", () => {
-    expect(enterWith(sometimesEmpty(), ownContext()).map((one) => one.text)).toEqual(["Hi"]);
+    expect(enterWith(sometimesEmpty(), ownContext()).targets.map((one) => one.text)).toEqual([
+      "Hi",
+    ]);
   });
 });
 

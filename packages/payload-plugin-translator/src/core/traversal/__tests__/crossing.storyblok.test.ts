@@ -24,7 +24,7 @@ describe("Storyblok components → ProseMirror → Storyblok components", () => 
       },
     };
 
-    const targets = fromStoryblok(storyRegistry(PROSEMIRROR_ID), story, prosemirrorLanguage());
+    const { targets } = fromStoryblok(storyRegistry(PROSEMIRROR_ID), story, prosemirrorLanguage());
 
     expect(targets.map((target) => target.text)).toEqual(["Story title", "Prose", "Deal"]);
     expect(targets.map((target) => target.idPath)).toEqual([

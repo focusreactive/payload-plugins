@@ -23,7 +23,7 @@ const inner: Language<string, null> = {
   step: () => ({ kind: "value", value: "inner text", segments: [] }),
   selects: () => true,
   isEmpty: () => false,
-  textUnits: ({ value }) => [{ text: value as string, write: () => undefined }],
+  textUnits: ({ value }) => [{ text: value as string, resolve: () => [] }],
   boundary: () => null,
 };
 
@@ -58,6 +58,6 @@ describe("a crossing that hands over the wrong context", () => {
   });
 
   it("lets the same crossing through when the context is right", () => {
-    expect(walk({ mine: true }).map((target) => target.text)).toEqual(["inner text"]);
+    expect(walk({ mine: true }).targets.map((target) => target.text)).toEqual(["inner text"]);
   });
 });

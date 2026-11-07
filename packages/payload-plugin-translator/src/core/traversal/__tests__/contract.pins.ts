@@ -3,7 +3,7 @@
  * if any `@ts-expect-error` below stops being an error, which is what pins these guarantees.
  */
 
-import { collectTranslationTargets } from "../collect.js";
+import { applyTranslations, collectTranslationTargets } from "../collect.js";
 import type { Language } from "../contract.js";
 
 const named = <Id extends string>(id: Id): Language<string, null> & { id: Id } => ({
@@ -38,6 +38,17 @@ const _entryIdIsNarrowed = () => {
     // @ts-expect-error — the same, spread
     entry: { languageId: "payload-field", context: {} },
   });
+};
+
+const _answersTravelWithTheirPlacements = () => {
+  const collected = collectTranslationTargets({
+    languages: [fields],
+    entry: { languageId: "payload-fields", context: {} },
+  });
+
+  // @ts-expect-error — a bare list of targets is half of what the walk returned
+  applyTranslations(collected.targets, []);
+  applyTranslations(collected, []);
 };
 
 /** A language must say where its boundaries are, even when it has none. */

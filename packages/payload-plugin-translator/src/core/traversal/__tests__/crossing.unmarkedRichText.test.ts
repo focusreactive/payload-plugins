@@ -15,7 +15,7 @@ describe("a rich text the host did not mark for translation", () => {
   it("is not crossed into, so none of its prose is collected", () => {
     const unmarked = postsSchema(LEXICAL_ID).map((field) => ({ ...field, localized: undefined }));
 
-    const targets = fromPayload(withTitle(unmarked), postWithTitle(), lexicalLanguage());
+    const { targets } = fromPayload(withTitle(unmarked), postWithTitle(), lexicalLanguage());
 
     expect(targets.map((target) => target.text)).toEqual(["Keep me"]);
   });
@@ -23,7 +23,7 @@ describe("a rich text the host did not mark for translation", () => {
   it("is not crossed into when it is excluded, either", () => {
     const excluded = postsSchema(LEXICAL_ID).map((field) => ({ ...field, excluded: true }));
 
-    const targets = fromPayload(withTitle(excluded), postWithTitle(), lexicalLanguage());
+    const { targets } = fromPayload(withTitle(excluded), postWithTitle(), lexicalLanguage());
 
     expect(targets.map((target) => target.text)).toEqual(["Keep me"]);
   });

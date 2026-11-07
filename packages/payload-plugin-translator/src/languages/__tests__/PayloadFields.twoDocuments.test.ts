@@ -26,15 +26,14 @@ describe("the two documents are not interchangeable", () => {
     const source = { title: "from the source", items: [] };
     const data = { title: "from the copy", items: [] };
 
-    expect(walk(data, source).map((target) => target.text)).toEqual(["from the source"]);
+    expect(walk(data, source).targets.map((target) => target.text)).toEqual(["from the source"]);
   });
 
   it("writes into the copy and leaves the source untouched", () => {
     const source = { title: "Hello", items: [] };
     const data = { title: "Hello", items: [] };
 
-    const targets = walk(data, source);
-    applyTranslations(targets, ["translated"]);
+    applyTranslations(walk(data, source), ["translated"]);
 
     expect(data.title).toBe("translated");
     expect(source.title).toBe("Hello");
@@ -44,13 +43,13 @@ describe("the two documents are not interchangeable", () => {
     const source = { title: "Kept", dropped: "gone", items: [] };
     const data = { title: "Kept", items: [] };
 
-    expect(walk(data, source).map((target) => target.text)).toEqual(["Kept"]);
+    expect(walk(data, source).targets.map((target) => target.text)).toEqual(["Kept"]);
   });
 
   it("addresses a list element by the source element's id, not the copy's", () => {
     const source = { title: "T", items: [{ id: "from-source", label: "Label" }] };
     const data = { title: "T", items: [{ id: "from-copy", label: "Label" }] };
 
-    expect(addressesOf(walk(data, source))).toEqual(["title", "items.from-source.label"]);
+    expect(addressesOf(walk(data, source).targets)).toEqual(["title", "items.from-source.label"]);
   });
 });

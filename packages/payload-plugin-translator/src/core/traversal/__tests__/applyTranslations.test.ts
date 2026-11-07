@@ -9,10 +9,10 @@ describe("write-back", () => {
     const target = article();
     target.sections.reverse();
 
-    const targets = collect({ fields: articleSchema, source, target });
+    const collected = collect({ fields: articleSchema, source, target });
     applyTranslations(
-      targets,
-      targets.map((target_) => `<${target_.text}>`)
+      collected,
+      collected.targets.map((target_) => `<${target_.text}>`)
     );
 
     const sections = target.sections as Array<Record<string, unknown>>;
@@ -25,9 +25,9 @@ describe("write-back", () => {
     const source = article();
     const target = article();
 
-    const targets = collect({ fields: articleSchema, source, target });
+    const collected = collect({ fields: articleSchema, source, target });
     // First answered, second withheld: the pair is what separates "left alone" from "wrote nothing".
-    applyTranslations(targets, ["translated", undefined]);
+    applyTranslations(collected, ["translated", undefined]);
 
     expect(target.title).toBe("translated");
     expect(target.kicker).toBe("Kicker");
@@ -37,10 +37,10 @@ describe("write-back", () => {
     const source = article();
     const target = article();
 
-    const targets = collect({ fields: articleSchema, source, target });
+    const collected = collect({ fields: articleSchema, source, target });
     applyTranslations(
-      targets,
-      targets.map(() => "translated")
+      collected,
+      collected.targets.map(() => "translated")
     );
 
     expect(target.title).toBe("translated");
