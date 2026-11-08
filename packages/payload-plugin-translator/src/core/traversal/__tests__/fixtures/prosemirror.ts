@@ -1,5 +1,5 @@
 import type { Crossing, Language, Step, TextLeaf, TextUnit } from "../../contract.js";
-import type { EmbedResolver } from "./embed.js";
+import type { EmbedResolver } from "../../../../languages/embedCrossing.js";
 import type { UnitCut } from "./marks.js";
 import { resolveMarks, serializeMarks } from "./marks.js";
 
@@ -119,7 +119,12 @@ export function prosemirrorLanguage(options?: { cut?: UnitCut }): Language<Node,
 
     textUnits: (leaf: TextLeaf): TextUnit[] => unitsOf(leaf),
 
-    boundary: (node, cursor): Crossing | null =>
-      isComponentNode(node) ? cursor.embed(node.component.component, node.component) : null,
+    boundary: (node, cursor): Crossing | null => {
+      if (!isComponentNode(node)) return null;
+      const { component } = node;
+      return typeof component.component === "string"
+        ? cursor.embed({ name: component.component, data: component })
+        : null;
+    },
   };
 }

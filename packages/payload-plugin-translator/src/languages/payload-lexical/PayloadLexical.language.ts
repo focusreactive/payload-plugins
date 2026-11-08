@@ -1,15 +1,15 @@
-import { elementSegment, renderSegment } from "../core/domain/content-projection/idPath.js";
-import type { SerializedLexicalNode } from "../core/kernel/lexical/index.js";
+import { elementSegment, renderSegment } from "../../core/domain/content-projection/idPath.js";
+import type { SerializedLexicalNode } from "../../core/kernel/lexical/index.js";
 import {
   hasChildren,
   isSerializedLexicalRoot,
   isSerializedLexicalTextNode,
-} from "../core/kernel/lexical/index.js";
-import { isEmpty } from "../core/kernel/utils/isEmpty.js";
-import { isObject } from "../core/kernel/utils/isObject.js";
-import type { Crossing, Language, Step, TextLeaf, TextUnit } from "../core/traversal/index.js";
-import type { ContentCrossing } from "./contentCrossing.js";
-import type { EmbedKind, EmbedResolver, RichTextContext } from "./richTextCrossing.js";
+} from "../../core/kernel/lexical/index.js";
+import { isEmpty } from "../../core/kernel/utils/isEmpty.js";
+import { isObject } from "../../core/kernel/utils/isObject.js";
+import type { Crossing, Language, Step, TextLeaf, TextUnit } from "../../core/traversal/index.js";
+import type { ContentCrossing } from "../contentCrossing.js";
+import type { EmbedFlow, EmbedIdentity, EmbedResolver } from "../embedCrossing.js";
 
 /**
  * A serialized Lexical node, widened with the two members this language reads.
@@ -19,6 +19,21 @@ import type { EmbedKind, EmbedResolver, RichTextContext } from "./richTextCrossi
 export type LexicalNode = SerializedLexicalNode & {
   children?: SerializedLexicalNode[];
   fields?: unknown;
+};
+
+/**
+ * What {@link payloadLexicalLanguage}'s `enter` reads: built by {@link payloadLexicalContent} at a crossing, or
+ * by the caller at a walk's entry.
+ *
+ * @public
+ */
+export type RichTextContext = {
+  /**
+   * The tree to walk when nothing was crossed in, as at a walk's entry. A context that names it
+   * alongside a crossed-in value is refused.
+   */
+  tree?: unknown;
+  embed: EmbedResolver;
 };
 
 /**
@@ -36,26 +51,25 @@ export type LexicalCursor = {
   position: () => number;
 };
 
-export const LEXICAL_ID = "lexical";
-
-type Embed = {
-  kind: EmbedKind;
-  blockType: string;
-  data: Record<string, unknown>;
-};
-
-const isEmbedKind = (type: string): type is EmbedKind => type === "block" || type === "inlineBlock";
+export const PAYLOAD_LEXICAL_ID = "payload-lexical";
 
 /** An inline embed is addressed exactly like a standalone one, `id` and `blockType` folded alike. */
 const FOLD_BLOCK_TYPE = true;
 
-const embedOf = (node: LexicalNode): Embed | null => {
-  if (!isEmbedKind(node.type)) return null;
+const flowOf = (type: string): EmbedFlow | null => {
+  if (type === "block") return "block";
+  if (type === "inlineBlock") return "inline";
+  return null;
+};
+
+const embedOf = (node: LexicalNode): EmbedIdentity | null => {
+  const flow = flowOf(node.type);
+  if (flow === null) return null;
 
   const { fields } = node;
   if (!isObject(fields) || typeof fields.blockType !== "string") return null;
 
-  return { kind: node.type, blockType: fields.blockType, data: fields };
+  return { name: fields.blockType, flow, data: fields };
 };
 
 /**
@@ -67,9 +81,9 @@ const embedOf = (node: LexicalNode): Embed | null => {
  *
  * @public
  */
-export function lexicalLanguage(): Language<LexicalNode, LexicalCursor> {
+export function payloadLexicalLanguage(): Language<LexicalNode, LexicalCursor> {
   return {
-    id: LEXICAL_ID,
+    id: PAYLOAD_LEXICAL_ID,
 
     enter({ context, value }) {
       if (!isObject(context)) return null;
@@ -135,7 +149,7 @@ export function lexicalLanguage(): Language<LexicalNode, LexicalCursor> {
     boundary(node, cursor): Crossing | null {
       const embed = embedOf(node);
       if (embed === null) return null;
-      return cursor.embed(embed.kind, embed.blockType, embed.data);
+      return cursor.embed(embed);
     },
   };
 }
@@ -143,10 +157,12 @@ export function lexicalLanguage(): Language<LexicalNode, LexicalCursor> {
 /**
  * @public
  */
-export const lexicalContent = (): ContentCrossing => {
-  return ({ value, embed }) => {
+export const payloadLexicalContent = (): ContentCrossing => ({
+  languageId: PAYLOAD_LEXICAL_ID,
+
+  open: ({ value, embed }) => {
     if (!isSerializedLexicalRoot(value)) return null;
     const context: RichTextContext = { embed };
-    return { languageId: LEXICAL_ID, context, workingCopy: structuredClone(value) };
-  };
-};
+    return { context, workingCopy: structuredClone(value) };
+  },
+});

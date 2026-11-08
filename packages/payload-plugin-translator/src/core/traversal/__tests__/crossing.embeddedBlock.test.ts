@@ -2,6 +2,18 @@ import { describe, expect, it } from "vitest";
 import { LEXICAL_ID, lexicalLanguage } from "./fixtures/lexical.js";
 import { fromPayload, lexicalPost, postsSchema } from "./fixtures/harness.js";
 
+const postWithNamelessEmbed = () => ({
+  content: {
+    root: {
+      type: "root",
+      children: [
+        { type: "paragraph", children: [{ type: "text", text: "Intro" }] },
+        { type: "inlineBlock", fields: { heading: "Orphan" } },
+      ],
+    },
+  },
+});
+
 describe("Payload fields → Lexical → Payload fields", () => {
   it("collects the text inside a block embedded in a rich-text field", () => {
     const document = lexicalPost();
@@ -37,5 +49,15 @@ describe("Payload fields → Lexical → Payload fields", () => {
 
     expect(texts).toContain("Click me");
     expect(texts).not.toContain("/buy");
+  });
+
+  it("asks nothing for an embed its node cannot name, and keeps walking its siblings", () => {
+    const { targets } = fromPayload(
+      postsSchema(LEXICAL_ID),
+      postWithNamelessEmbed(),
+      lexicalLanguage()
+    );
+
+    expect(targets.map((target) => target.text)).toEqual(["Intro"]);
   });
 });

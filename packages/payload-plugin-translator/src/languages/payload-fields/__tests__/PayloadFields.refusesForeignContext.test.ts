@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { CannotEnterLanguageError, collectTranslationTargets } from "../../core/traversal/index.js";
-import type { FieldLike } from "../../core/kernel/field-traversal/index.js";
+import {
+  CannotEnterLanguageError,
+  collectTranslationTargets,
+} from "../../../core/traversal/index.js";
+import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
 
 const schema: FieldLike[] = [{ type: "text", name: "title", localized: true }];

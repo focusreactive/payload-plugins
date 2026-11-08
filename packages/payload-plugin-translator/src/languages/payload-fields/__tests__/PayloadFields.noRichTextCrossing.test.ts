@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { collectTranslationTargets } from "../../core/traversal/index.js";
-import type { FieldLike } from "../../core/kernel/field-traversal/index.js";
+import { collectTranslationTargets } from "../../../core/traversal/index.js";
+import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
 
 const schema: FieldLike[] = [

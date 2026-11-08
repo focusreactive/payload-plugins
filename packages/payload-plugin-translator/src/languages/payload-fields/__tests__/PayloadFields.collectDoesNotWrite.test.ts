@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 
-import type { FieldLike } from "../../core/kernel/field-traversal/index.js";
-import type { Language } from "../../core/traversal/index.js";
+import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
+import type { Language } from "../../../core/traversal/index.js";
 import {
   CannotEnterLanguageError,
   TooManyCrossingsError,
   applyTranslations,
   collectTranslationTargets,
-} from "../../core/traversal/index.js";
-import type { ContentCrossing } from "../contentCrossing.js";
-import { lexicalContent, lexicalLanguage } from "../Lexical.language.js";
+} from "../../../core/traversal/index.js";
+import type { ContentCrossing } from "../../contentCrossing.js";
+import { payloadLexicalContent, payloadLexicalLanguage } from "../../payload-lexical/index.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
-import type { Tree } from "./fixtures/lexical.js";
-import { dig, text, tree } from "./fixtures/lexical.js";
+import type { Tree } from "../../__tests__/fixtures/lexical.js";
+import { dig, text, tree } from "../../__tests__/fixtures/lexical.js";
 
 type Body = { body: Tree };
 
@@ -24,7 +24,10 @@ const german = (): Body => ({ body: tree(text("Jetzt kaufen")) });
 
 const walk = (working: Body, maxCrossings?: number) =>
   collectTranslationTargets({
-    languages: [payloadFieldsLanguage({ crossings: [lexicalContent()] }), lexicalLanguage()],
+    languages: [
+      payloadFieldsLanguage({ crossings: [payloadLexicalContent()] }),
+      payloadLexicalLanguage(),
+    ],
     entry: {
       languageId: PAYLOAD_FIELDS_ID,
       context: { fields: schema, data: working, source: english() },
@@ -91,11 +94,10 @@ const refuses: Language<never, never> = {
   boundary: () => null,
 };
 
-const handsOver: ContentCrossing = ({ value }) => ({
+const handsOver: ContentCrossing = {
   languageId: "refuses",
-  context: {},
-  workingCopy: structuredClone(value),
-});
+  open: ({ value }) => ({ context: {}, workingCopy: structuredClone(value) }),
+};
 
 describe("a walk that does not finish", () => {
   it("leaves the stored value alone when the receiving language refuses its context", () => {

@@ -1,24 +1,24 @@
-import { elementSegment, renderSegment } from "../core/domain/content-projection/idPath.js";
+import { elementSegment, renderSegment } from "../../core/domain/content-projection/idPath.js";
 import {
   isLocalizedFieldLike,
   isTranslatableLeaf,
-} from "../core/domain/content-projection/translatableLeaf.js";
-import { isFieldExcludedFromTranslation } from "../core/domain/field-config/index.js";
+} from "../../core/domain/content-projection/translatableLeaf.js";
+import { isFieldExcludedFromTranslation } from "../../core/domain/field-config/index.js";
 import type {
   ArrayFieldLike,
   BlockLike,
   BlocksFieldLike,
   FieldLike,
-} from "../core/kernel/field-traversal/index.js";
+} from "../../core/kernel/field-traversal/index.js";
 import {
   classifyField,
   resolveBlockFields,
   tabScopes,
-} from "../core/kernel/field-traversal/index.js";
-import { isEmpty } from "../core/kernel/utils/isEmpty.js";
-import { isObject } from "../core/kernel/utils/isObject.js";
-import type { ContentCrossing } from "./contentCrossing.js";
-import type { EmbedKind, EmbedResolver } from "./richTextCrossing.js";
+} from "../../core/kernel/field-traversal/index.js";
+import { isEmpty } from "../../core/kernel/utils/isEmpty.js";
+import { isObject } from "../../core/kernel/utils/isObject.js";
+import type { ContentCrossing } from "../contentCrossing.js";
+import type { EmbedResolver } from "../embedCrossing.js";
 import type {
   Crossing,
   Language,
@@ -26,7 +26,7 @@ import type {
   StepChild,
   TextLeaf,
   TextUnit,
-} from "../core/traversal/index.js";
+} from "../../core/traversal/index.js";
 
 /**
  * Two `Record<string, unknown>` the type cannot tell apart: `data` is the working copy — it decides
@@ -87,18 +87,19 @@ const intoList = (
 };
 
 /**
- * A block missing from `blocks` or `inlineBlocks` is skipped with no warning: absence is a
- * statement, not an oversight.
+ * A block missing from `blocks` is skipped with no warning: absence is a statement, not an
+ * oversight.
  *
  * @public
  */
 export type PayloadFieldsConfig = {
-  /**
-   * Asked in order; the first that does not answer `null` takes the value.
-   */
+  /** Asked in order; the first that does not answer `null` takes the value. */
   crossings?: readonly ContentCrossing[];
+  /**
+   * Every block that may be entered, by slug, whatever kind of embed carries it. One list rather
+   * than one per kind: this host needs a definition, and which kind is present comes from the data.
+   */
   blocks?: readonly BlockLike[];
-  inlineBlocks?: readonly BlockLike[];
 };
 
 /**
@@ -115,13 +116,10 @@ export function payloadFieldsLanguage(
   config: PayloadFieldsConfig = {}
 ): Language<FieldLike, PayloadFieldsCursor> {
   const crossings = config.crossings ?? [];
-  const definitions: Record<EmbedKind, Map<string, FieldLike[]>> = {
-    block: definitionsOf(config.blocks ?? []),
-    inlineBlock: definitionsOf(config.inlineBlocks ?? []),
-  };
+  const blocks = definitionsOf(config.blocks ?? []);
 
-  const resolveEmbed: EmbedResolver = (kind, blockType, data) => {
-    const fields = definitions[kind].get(blockType);
+  const resolveEmbed: EmbedResolver = ({ name, data }) => {
+    const fields = blocks.get(name);
     if (fields === undefined) return null;
     return { languageId: PAYLOAD_FIELDS_ID, context: { fields, data, source: data } };
   };
@@ -204,10 +202,11 @@ export function payloadFieldsLanguage(
       if (name === undefined || !isOfferable(field)) return null;
 
       for (const crossing of crossings) {
-        const opened = crossing({ value, embed: resolveEmbed });
+        const opened = crossing.open({ value, embed: resolveEmbed });
         if (opened === null) continue;
 
-        const { languageId, context } = opened;
+        const { languageId } = crossing;
+        const { context } = opened;
         if (opened.workingCopy === undefined) return { languageId, context };
         return {
           languageId,

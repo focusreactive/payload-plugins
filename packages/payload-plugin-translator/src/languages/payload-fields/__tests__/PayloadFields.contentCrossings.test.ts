@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { applyTranslations, collectTranslationTargets } from "../../core/traversal/index.js";
-import type { Language } from "../../core/traversal/index.js";
-import type { FieldLike } from "../../core/kernel/field-traversal/index.js";
-import { isEmpty } from "../../core/kernel/utils/isEmpty.js";
-import { isObject } from "../../core/kernel/utils/isObject.js";
-import type { ContentCrossing } from "../contentCrossing.js";
+import { applyTranslations, collectTranslationTargets } from "../../../core/traversal/index.js";
+import type { Language } from "../../../core/traversal/index.js";
+import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
+import { isEmpty } from "../../../core/kernel/utils/isEmpty.js";
+import { isObject } from "../../../core/kernel/utils/isObject.js";
+import type { ContentCrossing } from "../../contentCrossing.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
-import { text, tree, walkDocument } from "./fixtures/lexical.js";
+import { PAYLOAD_LEXICAL_ID, payloadLexicalContent } from "../../payload-lexical/index.js";
+import { text, tree, walkDocument } from "../../__tests__/fixtures/lexical.js";
 
 const NOTE_ID = "note";
 
@@ -44,9 +45,13 @@ const noteLanguage = (): Language<number, Note> => ({
   boundary: () => null,
 });
 
-const noteContent: ContentCrossing = ({ value }) => {
-  if (!isNote(value)) return null;
-  return { languageId: NOTE_ID, context: null, workingCopy: structuredClone(value) };
+const noteContent: ContentCrossing = {
+  languageId: NOTE_ID,
+
+  open: ({ value }) => {
+    if (!isNote(value)) return null;
+    return { context: null, workingCopy: structuredClone(value) };
+  },
 };
 
 const schema: FieldLike[] = [
@@ -112,5 +117,37 @@ describe("a host's content crossings", () => {
 
     expect(working.notes.lines).toEqual(["[de] Buy now", "[de] Thanks"]);
     expect(source.notes.lines).toEqual(["Buy now", "Thanks"]);
+  });
+});
+
+describe("a crossing entry declares the language it speaks", () => {
+  it("names it without being opened, so a host can narrow its list before offering anything", () => {
+    expect(payloadLexicalContent().languageId).toBe(PAYLOAD_LEXICAL_ID);
+  });
+
+  it("is the name the walk crosses by, when two languages would both take the value", () => {
+    const source = document();
+
+    // The twin accepts the same contexts and reads the same values; the only thing that tells the
+    // two apart is the text it reports, so the texts name which one the walk actually entered.
+    const twin: Language<number, Note> = {
+      ...noteLanguage(),
+      id: "note-twin",
+      textUnits: ({ value, slot }) =>
+        typeof value === "string" && slot !== undefined
+          ? [{ text: `twin:${value}`, resolve: (translated) => [{ slot, value: translated }] }]
+          : [],
+    };
+    const declaresTheTwin: ContentCrossing = { ...noteContent, languageId: "note-twin" };
+
+    const { targets } = collectTranslationTargets({
+      languages: [payloadFieldsLanguage({ crossings: [declaresTheTwin] }), noteLanguage(), twin],
+      entry: {
+        languageId: PAYLOAD_FIELDS_ID,
+        context: { fields: schema, data: structuredClone(source), source },
+      },
+    });
+
+    expect(targets.map((target) => target.text)).toEqual(["Shop", "twin:Buy now", "twin:Thanks"]);
   });
 });

@@ -9,9 +9,13 @@ import {
   CannotEnterLanguageError,
   collectTranslationTargets,
 } from "../../../core/traversal/index.js";
-import type { EmbedResolver } from "../../richTextCrossing.js";
-import { LEXICAL_ID, lexicalContent, lexicalLanguage } from "../../Lexical.language.js";
-import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../../PayloadFields.language.js";
+import type { EmbedResolver } from "../../embedCrossing.js";
+import {
+  PAYLOAD_LEXICAL_ID,
+  payloadLexicalContent,
+  payloadLexicalLanguage,
+} from "../../payload-lexical/index.js";
+import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../../payload-fields/index.js";
 
 export type Doc = Record<string, unknown>;
 
@@ -100,11 +104,12 @@ export function walkDocument(options: {
     collectTranslationTargets({
       languages: [
         payloadFieldsLanguage({
-          crossings: [lexicalContent()],
-          blocks: options.blocks ?? [],
-          inlineBlocks: options.inlineBlocks ?? [],
+          crossings: [payloadLexicalContent()],
+          // Kept as two parameters because that is how an author's editor configuration reads; the
+          // host takes one table, so the merge the plugin performs is exercised on every walk here.
+          blocks: [...(options.blocks ?? []), ...(options.inlineBlocks ?? [])],
         }),
-        lexicalLanguage(),
+        payloadLexicalLanguage(),
       ],
       entry: {
         languageId: PAYLOAD_FIELDS_ID,
@@ -123,8 +128,8 @@ export function walkTree(
 ): CollectedContent {
   return surfacingEnterCrash(() =>
     collectTranslationTargets({
-      languages: [lexicalLanguage(), ...others],
-      entry: { languageId: LEXICAL_ID, context },
+      languages: [payloadLexicalLanguage(), ...others],
+      entry: { languageId: PAYLOAD_LEXICAL_ID, context },
     })
   );
 }

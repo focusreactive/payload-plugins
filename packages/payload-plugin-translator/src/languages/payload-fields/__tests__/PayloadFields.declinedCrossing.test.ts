@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { collectTranslationTargets } from "../../core/traversal/index.js";
-import type { FieldLike } from "../../core/kernel/field-traversal/index.js";
-import type { ContentCrossing, ContentOffer } from "../contentCrossing.js";
+import { collectTranslationTargets } from "../../../core/traversal/index.js";
+import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
+import type { ContentCrossing, ContentOffer } from "../../contentCrossing.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
-import type { Tree } from "./fixtures/lexical.js";
-import { text, tree } from "./fixtures/lexical.js";
+import type { Tree } from "../../__tests__/fixtures/lexical.js";
+import { text, tree } from "../../__tests__/fixtures/lexical.js";
 
 type Body = { body: Tree };
 
@@ -27,9 +27,12 @@ const walk = (crossings: readonly ContentCrossing[], working: Body) =>
 describe("what a crossing is handed", () => {
   it("is a value and a way to ask about embeds, and nothing it could write with", () => {
     const seen: ContentOffer[] = [];
-    const records: ContentCrossing = (offer) => {
-      seen.push(offer);
-      return null;
+    const records: ContentCrossing = {
+      languageId: "records-the-offer",
+      open: (offer) => {
+        seen.push(offer);
+        return null;
+      },
     };
 
     walk([records], german());
@@ -39,22 +42,27 @@ describe("what a crossing is handed", () => {
   });
 });
 
+const declinesEverything: ContentCrossing = {
+  languageId: "declines-everything",
+  open: () => null,
+};
+
 describe("a crossing that does not take the value", () => {
   it("declining leaves the stored value exactly as it was", () => {
     const working = german();
     const before = working.body;
 
-    expect(walk([() => null], working).targets).toEqual([]);
+    expect(walk([declinesEverything], working).targets).toEqual([]);
     expect(working.body).toBe(before);
   });
 
   it("accepting without a working copy leaves the stored value exactly as it was", () => {
     const working = german();
     const before = working.body;
-    const keepsNothing: ContentCrossing = () => ({
+    const keepsNothing: ContentCrossing = {
       languageId: PAYLOAD_FIELDS_ID,
-      context: { fields: [], data: {}, source: {} },
-    });
+      open: () => ({ context: { fields: [], data: {}, source: {} } }),
+    };
 
     walk([keepsNothing], working);
 

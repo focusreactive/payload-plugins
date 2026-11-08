@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { applyTranslations, collectTranslationTargets } from "../../core/traversal/index.js";
-import type { FieldLike } from "../../core/kernel/field-traversal/index.js";
-import { addressesOf } from "./addresses.js";
-import { FieldChunkCollector } from "../../core/translation-pipeline/stages/field-collector/index.js";
-import { projectTranslatableContent } from "../../core/domain/content-projection/contentProjector.js";
-import { DataReconciler } from "../../core/translation-pipeline/stages/data-reconciler/index.js";
+import { applyTranslations, collectTranslationTargets } from "../../../core/traversal/index.js";
+import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
+import { addressesOf } from "../../__tests__/addresses.js";
+import { FieldChunkCollector } from "../../../core/translation-pipeline/stages/field-collector/index.js";
+import { projectTranslatableContent } from "../../../core/domain/content-projection/contentProjector.js";
+import { DataReconciler } from "../../../core/translation-pipeline/stages/data-reconciler/index.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
 
 type Doc = Record<string, unknown>;

@@ -1,4 +1,5 @@
 import type { Crossing, Language, Step, TextLeaf, TextUnit } from "../../contract.js";
+import type { EmbedIdentity } from "../../../../languages/embedCrossing.js";
 
 export type BlockLike = { slug: string; fields: FieldLike[] };
 
@@ -127,7 +128,7 @@ export function payloadFieldsLanguage(): Language<FieldLike, SchemaCursor> {
         languageId: field.richTextLanguage,
         context: {
           tree,
-          embed: (name: string, data: unknown): Crossing | null => {
+          embed: ({ name, data }: EmbedIdentity): Crossing | null => {
             const fields = definitions.get(name);
             const doc = asDoc(data);
             if (fields === undefined || doc === null) return null;

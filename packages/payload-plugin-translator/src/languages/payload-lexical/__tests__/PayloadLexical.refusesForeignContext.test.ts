@@ -1,10 +1,19 @@
 import { describe, expect, it } from "vitest";
 
-import { CannotEnterLanguageError, collectTranslationTargets } from "../../core/traversal/index.js";
-import type { ContentCrossing } from "../contentCrossing.js";
-import { LEXICAL_ID, lexicalLanguage } from "../Lexical.language.js";
-import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
-import { claimsNothing, paragraph, text, tree, walkTree } from "./fixtures/lexical.js";
+import {
+  CannotEnterLanguageError,
+  collectTranslationTargets,
+} from "../../../core/traversal/index.js";
+import type { ContentCrossing } from "../../contentCrossing.js";
+import { PAYLOAD_LEXICAL_ID, payloadLexicalLanguage } from "../PayloadLexical.language.js";
+import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../../payload-fields/index.js";
+import {
+  claimsNothing,
+  paragraph,
+  text,
+  tree,
+  walkTree,
+} from "../../__tests__/fixtures/lexical.js";
 
 const refusalFrom = (run: () => unknown): CannotEnterLanguageError => {
   try {
@@ -29,16 +38,18 @@ describe("the lexical language and the context it is handed", () => {
 
   it("refuses a context that names a tree when one was already crossed into it", () => {
     const handed = tree(paragraph(text("Hello")));
-    const alsoNamed: ContentCrossing = () => ({
-      languageId: LEXICAL_ID,
-      context: { tree: handed, embed: claimsNothing },
-      workingCopy: structuredClone(handed),
-    });
+    const alsoNamed: ContentCrossing = {
+      languageId: PAYLOAD_LEXICAL_ID,
+      open: () => ({
+        context: { tree: handed, embed: claimsNothing },
+        workingCopy: structuredClone(handed),
+      }),
+    };
     const working = { body: tree(paragraph(text("Hallo"))) };
 
     expect(() =>
       collectTranslationTargets({
-        languages: [payloadFieldsLanguage({ crossings: [alsoNamed] }), lexicalLanguage()],
+        languages: [payloadFieldsLanguage({ crossings: [alsoNamed] }), payloadLexicalLanguage()],
         entry: {
           languageId: PAYLOAD_FIELDS_ID,
           context: {
@@ -62,6 +73,6 @@ describe("the lexical language and the context it is handed", () => {
     ["the field language's own context", { fields: [], data: {}, source: {} }],
     ["a lexical root but no resolver", { tree: tree(paragraph(text("Hello"))) }],
   ])("refuses a context with %s", (_label, context) => {
-    expect(refusalFrom(() => walkTree(context)).languageId).toBe(LEXICAL_ID);
+    expect(refusalFrom(() => walkTree(context)).languageId).toBe(PAYLOAD_LEXICAL_ID);
   });
 });

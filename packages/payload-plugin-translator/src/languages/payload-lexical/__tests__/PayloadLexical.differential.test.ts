@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 
-import { applyTranslations } from "../../core/traversal/index.js";
-import type { TranslatableValue } from "../../core/domain/translation-providers/index.js";
-import type { BlockLike, FieldLike } from "../../core/kernel/field-traversal/index.js";
-import { FieldChunkCollector } from "../../core/translation-pipeline/stages/field-collector/index.js";
-import { projectTranslatableContent } from "../../core/domain/content-projection/contentProjector.js";
+import { applyTranslations } from "../../../core/traversal/index.js";
+import type { TranslatableValue } from "../../../core/domain/translation-providers/index.js";
+import type { BlockLike, FieldLike } from "../../../core/kernel/field-traversal/index.js";
+import { FieldChunkCollector } from "../../../core/translation-pipeline/stages/field-collector/index.js";
+import { projectTranslatableContent } from "../../../core/domain/content-projection/contentProjector.js";
 import {
   PlainTextExpander,
   RichTextExpander,
-} from "../../core/translation-pipeline/stages/text-expander/index.js";
-import { writeAnswers } from "../../core/translation-pipeline/stages/translation-applicator/index.js";
-import type { SettledAnswer, TextChunk } from "../../core/translation-pipeline/types/index.js";
-import { addressesOf } from "./addresses.js";
-import type { Doc } from "./fixtures/lexical.js";
+} from "../../../core/translation-pipeline/stages/text-expander/index.js";
+import { writeAnswers } from "../../../core/translation-pipeline/stages/translation-applicator/index.js";
+import type { SettledAnswer, TextChunk } from "../../../core/translation-pipeline/types/index.js";
+import { addressesOf } from "../../__tests__/addresses.js";
+import type { Doc } from "../../__tests__/fixtures/lexical.js";
 import {
   block,
   claimsNothing,
@@ -25,7 +25,7 @@ import {
   tree,
   walkDocument,
   walkTree,
-} from "./fixtures/lexical.js";
+} from "../../__tests__/fixtures/lexical.js";
 
 type Compared = { texts: string[]; addresses: string[]; document: Doc };
 

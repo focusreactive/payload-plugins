@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { applyTranslations } from "../../core/traversal/index.js";
-import type { Language } from "../../core/traversal/index.js";
-import type { BlockLike, FieldLike } from "../../core/kernel/field-traversal/index.js";
-import type { EmbedResolver } from "../richTextCrossing.js";
-import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
-import { addressesOf } from "./addresses.js";
-import type { Doc, Node, Tree, Walked } from "./fixtures/lexical.js";
+import { applyTranslations } from "../../../core/traversal/index.js";
+import type { Language } from "../../../core/traversal/index.js";
+import type { BlockLike, FieldLike } from "../../../core/kernel/field-traversal/index.js";
+import type { EmbedIdentity, EmbedResolver } from "../../embedCrossing.js";
+import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../../payload-fields/index.js";
+import { addressesOf } from "../../__tests__/addresses.js";
+import type { Doc, Node, Tree, Walked } from "../../__tests__/fixtures/lexical.js";
 import {
   block,
   dig,
@@ -17,7 +17,7 @@ import {
   tree,
   walkDocument,
   walkTree,
-} from "./fixtures/lexical.js";
+} from "../../__tests__/fixtures/lexical.js";
 
 const cta: BlockLike = {
   slug: "cta",
@@ -284,16 +284,18 @@ describe("an embed nobody listed", () => {
     expect(walked.reported).toEqual([]);
   });
 
-  it("a block whose slug is listed only for inline blocks is unlisted for a block node", () => {
+  it("a slug the host knows is entered whatever kind of node carries it", () => {
+    // `mention` reaches the host through the inline list, but the host keeps one table and a
+    // definition is a definition: the kind of node is the format's business, not the lookup's.
     const blockNode = block({ id: "m1", blockType: "mention", label: "Ada" });
 
-    expect(textsOf(walk(between(blockNode)))).toEqual(["Before", "After", "Next"]);
+    expect(textsOf(walk(between(blockNode)))).toEqual(["Before", "Ada", "After", "Next"]);
   });
 
-  it("an inline block whose slug is listed only for blocks is unlisted for an inline node", () => {
+  it("and the same the other way round, for a slug that reached it through the block list", () => {
     const inlineNode = inlineBlock({ id: "c1", blockType: "cta", heading: "Click me" });
 
-    expect(textsOf(walk(between(inlineNode)))).toEqual(["Before", "After", "Next"]);
+    expect(textsOf(walk(between(inlineNode)))).toEqual(["Before", "Click me", "After", "Next"]);
   });
 });
 
@@ -306,11 +308,15 @@ describe("one slug registered in both lists", () => {
   };
   const fields = { id: "q1", blockType: "quote", quoteText: "Quoted", attribution: "Someone" };
 
-  it("same slug in both lists: a block node takes its fields from the block list", () => {
-    expect(textsOf(walk(tree(block(fields)), both))).toEqual(["Quoted"]);
+  // One table cannot hold two definitions under one slug. The owner accepted this on 2026-11-08:
+  // Payload does not enforce slug uniqueness for blocks declared inside an editor, so the clash is
+  // possible, and it is the author's to avoid. These pin which one survives so it is a stated rule
+  // rather than an accident of ordering.
+  it("the later definition wins, whatever kind of node carries the slug", () => {
+    expect(textsOf(walk(tree(block(fields)), both))).toEqual(["Someone"]);
   });
 
-  it("same slug in both lists: an inline block node takes its fields from the inline list", () => {
+  it("and the inline node resolves to that same single definition", () => {
     expect(textsOf(walk(tree(paragraph(inlineBlock(fields))), both))).toEqual(["Someone"]);
   });
 });
@@ -336,12 +342,18 @@ describe("the host's own selection rule, inside an embed", () => {
 
 const headingOnly: FieldLike[] = [{ type: "text", name: "heading", localized: true }];
 
-const claimsEverything: EmbedResolver = (_kind, _blockType, data) => ({
+const claimsEverything: EmbedResolver = ({ data }) => ({
   languageId: PAYLOAD_FIELDS_ID,
   context: { fields: headingOnly, data, source: data },
 });
 
 const NOT_EMBEDS: readonly (readonly [string, Node])[] = [
+  // A node type is whatever the stored tree says, so a type named after an `Object.prototype`
+  // member is reachable, and matching one by indexing a lookup object would find a function.
+  [
+    "a node whose type names a member every object inherits",
+    { type: "constructor", version: 1, fields: { blockType: "cta", heading: "Orphan" } },
+  ],
   ["a block whose fields carry no blockType", block({ id: "x", heading: "Orphan" })],
   ["a block whose blockType is not a string", block({ id: "x", blockType: 7, heading: "Orphan" })],
   ["a block with no fields", { type: "block", version: 2 }],
@@ -364,12 +376,10 @@ describe("a node that is not an embed", () => {
 });
 
 describe("what the resolver is asked, and what is done with its answer", () => {
-  type Asked = Parameters<EmbedResolver>;
-
-  const askedFor = (embedTree: Tree): Asked[] => {
-    const asked: Asked[] = [];
-    const recording: EmbedResolver = (...args) => {
-      asked.push(args);
+  const askedFor = (embedTree: Tree): EmbedIdentity[] => {
+    const asked: EmbedIdentity[] = [];
+    const recording: EmbedResolver = (embed) => {
+      asked.push(embed);
       return null;
     };
     walkTree({ tree: embedTree, embed: recording });
@@ -378,13 +388,13 @@ describe("what the resolver is asked, and what is done with its answer", () => {
 
   it.each([
     ["block", tree(ctaBlock("b1", "Click me"))],
-    ["inlineBlock", tree(paragraph(inlineBlock({ id: "i1", blockType: "cta", heading: "Hi" })))],
-  ] as const)("asks with %s as the kind, taken from the node's own type", (kind, embedTree) => {
-    expect(askedFor(embedTree).map(([asked]) => asked)).toEqual([kind]);
+    ["inline", tree(paragraph(inlineBlock({ id: "i1", blockType: "cta", heading: "Hi" })))],
+  ] as const)("asks with %s as the flow, taken from the node's own type", (flow, embedTree) => {
+    expect(askedFor(embedTree).map((embed) => embed.flow)).toEqual([flow]);
   });
 
   it("asks with the slug the node declares", () => {
-    expect(askedFor(tree(ctaBlock("b1", "Click me"))).map(([, slug]) => slug)).toEqual(["cta"]);
+    expect(askedFor(tree(ctaBlock("b1", "Click me"))).map((embed) => embed.name)).toEqual(["cta"]);
   });
 
   it("hands over the node's own fields object, the one the walk writes into", () => {
@@ -392,7 +402,7 @@ describe("what the resolver is asked, and what is done with its answer", () => {
 
     const asked = askedFor(tree(block(fields)));
 
-    expect(asked[0]?.[2]).toBe(fields);
+    expect(asked[0]?.data).toBe(fields);
   });
 
   it("returns the resolver's crossing unchanged", () => {

@@ -1,4 +1,5 @@
 import type { Crossing, Language, Step, TextLeaf, TextUnit } from "../../contract.js";
+import type { EmbedIdentity } from "../../../../languages/embedCrossing.js";
 
 export type FieldDef = {
   type: string;
@@ -97,7 +98,7 @@ export function storyblokLanguage(): Language<Node, BlokCursor> {
         languageId: def.richTextLanguage,
         context: {
           tree,
-          embed: (embedName: string, data: unknown): Crossing | null => {
+          embed: ({ name: embedName, data }: EmbedIdentity): Crossing | null => {
             const blok = asBlok(data);
             if (blok === null || !allowed.has(embedName)) return null;
             return {

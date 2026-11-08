@@ -2,7 +2,7 @@
  * Owned by neither host nor format language, so neither has to import the other.
  */
 
-import type { EmbedResolver } from "./richTextCrossing.js";
+import type { EmbedResolver } from "./embedCrossing.js";
 
 /**
  * @public
@@ -21,7 +21,6 @@ export type ContentOffer = {
  * @public
  */
 export type OpenedCrossing = {
-  languageId: string;
   context: unknown;
   /**
    * The copy this format walks. The host places it where it keeps translations, which need not be
@@ -32,9 +31,13 @@ export type OpenedCrossing = {
 };
 
 /**
- * `null` means "not this format", never "skip": the value goes on to the next crossing, then to
- * the host.
- *
  * @public
  */
-export type ContentCrossing = (offer: ContentOffer) => OpenedCrossing | null;
+export type ContentCrossing = {
+  languageId: string;
+  /**
+   * `null` means "not this format", never "skip": the value goes on to the next entry, then to the
+   * host's own rules.
+   */
+  open: (offer: ContentOffer) => OpenedCrossing | null;
+};
