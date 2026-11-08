@@ -3,6 +3,7 @@ import { applyTranslations, collectTranslationTargets } from "../collect.js";
 import { LEXICAL_ID, lexicalLanguage } from "./fixtures/lexical.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "./fixtures/payloadFields.js";
 import { embedOf, lexicalPost, postsSchema } from "./fixtures/harness.js";
+import { sentTextOf } from "./fixtures/sentText.js";
 
 describe("two documents, not one", () => {
   it("reads the source's own text and writes only into the target", () => {
@@ -18,7 +19,7 @@ describe("two documents, not one", () => {
     });
     applyTranslations(
       collected,
-      collected.targets.map((one) => `<${one.text}>`)
+      collected.targets.map((t) => `<${sentTextOf(t)}>`)
     );
 
     expect(embedOf(target)?.heading).toBe("<Click me>");

@@ -4,6 +4,7 @@ import type {
   IdPath,
   RegisteredLanguage,
   SlotWrite,
+  TranslationAnswer,
   TranslationTarget,
 } from "./contract.js";
 import { WriteRefusedError } from "./errors/index.js";
@@ -86,14 +87,23 @@ export function collectTranslationTargets<const L extends readonly RegisteredLan
           return;
         }
 
+        const { idPath } = visit;
         for (const unit of units) {
-          targets.push({
-            idPath: visit.idPath,
-            text: unit.text,
-            write: (translated) => {
-              assignWrites(unit.resolve(translated));
-            },
-          });
+          targets.push(
+            unit.kind === "pieces"
+              ? {
+                  kind: "pieces",
+                  idPath,
+                  pieces: unit.pieces,
+                  write: (answer) => assignWrites(unit.resolve(answer)),
+                }
+              : {
+                  kind: "text",
+                  idPath,
+                  text: unit.text,
+                  write: (answer) => assignWrites(unit.resolve(answer)),
+                }
+          );
         }
       },
     },
@@ -117,12 +127,18 @@ export function collectTranslationTargets<const L extends readonly RegisteredLan
  */
 export function applyTranslations(
   collected: CollectedContent,
-  translations: ReadonlyArray<string | undefined>
+  translations: ReadonlyArray<TranslationAnswer | undefined>
 ): void {
   assignWrites(collected.placements);
 
   for (const [index, target] of collected.targets.entries()) {
     const translated = translations[index];
-    if (translated !== undefined) target.write(translated);
+    if (translated === undefined) continue;
+
+    if (target.kind === "pieces") {
+      if (typeof translated !== "string") target.write(translated);
+      continue;
+    }
+    if (typeof translated === "string") target.write(translated);
   }
 }

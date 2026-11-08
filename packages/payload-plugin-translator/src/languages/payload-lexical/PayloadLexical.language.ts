@@ -1,11 +1,15 @@
 import { elementSegment, renderSegment } from "../../core/domain/content-projection/idPath.js";
-import type { SerializedLexicalNode } from "../../core/kernel/lexical/index.js";
+import { carriesOwnText, checkSegments } from "../../core/kernel/lexical/checkSegments.js";
+import type { InlineFragment } from "../../core/kernel/lexical/collectInlineFragments.js";
+import { collectInlineFragments } from "../../core/kernel/lexical/collectInlineFragments.js";
+import { foldAnswerIntoContainer } from "../../core/kernel/lexical/foldAnswerIntoContainer.js";
+import type { SerializedLexicalNode, SerializedTextNode } from "../../core/kernel/lexical/index.js";
 import {
+  collectSerializedLexicalTextNodes,
   hasChildren,
   isSerializedLexicalRoot,
   isSerializedLexicalTextNode,
 } from "../../core/kernel/lexical/index.js";
-import { isEmpty } from "../../core/kernel/utils/isEmpty.js";
 import { isObject } from "../../core/kernel/utils/isObject.js";
 import type { Crossing, Language, Step, TextLeaf, TextUnit } from "../../core/traversal/index.js";
 import type { ContentCrossing } from "../contentCrossing.js";
@@ -62,6 +66,10 @@ const flowOf = (type: string): EmbedFlow | null => {
   return null;
 };
 
+/** Must stay identical to `hasDirectTextChild` in `collectInlineFragments.ts`, which is private there. */
+const isContainer = (node: LexicalNode): boolean =>
+  hasChildren(node) && node.children.some((child) => isSerializedLexicalTextNode(child));
+
 const embedOf = (node: LexicalNode): EmbedIdentity | null => {
   const flow = flowOf(node.type);
   if (flow === null) return null;
@@ -72,12 +80,69 @@ const embedOf = (node: LexicalNode): EmbedIdentity | null => {
   return { name: fields.blockType, flow, data: fields };
 };
 
+const embedsInside = (node: LexicalNode): LexicalNode[] => {
+  if (embedOf(node) !== null) return [node];
+  if (!hasChildren(node)) return [];
+  return node.children.flatMap((child) => embedsInside(child));
+};
+
 /**
- * The serialized Lexical tree as a traversal {@link Language}: one unit per non-blank text node,
- * a crossing at every embedded node whose content belongs to its host.
+ * A container answers "value", so a walk never descends into it and would never see the embeds
+ * inside it; they travel beside it instead, at the same address either way (see
+ * {@link LexicalCursor.position}).
  *
- * Emits no address token except at an embed: every unit of one rich-text field keeps that field's
- * own address, which is the key the stored provenance receipt already uses.
+ * Applied at `enter` too: a root that is itself a container has no parent to lift for it.
+ */
+const withEmbedsLifted = (nodes: readonly LexicalNode[]): LexicalNode[] =>
+  nodes.flatMap((node) => [node, ...(isContainer(node) ? embedsInside(node) : [])]);
+
+const writeText = (node: SerializedTextNode, text: string) => ({
+  slot: { holder: node, key: "text" },
+  value: text,
+});
+
+const cutPerTextNode = (node: LexicalNode): TextUnit[] =>
+  collectSerializedLexicalTextNodes(node).map(({ node: textNode }) => ({
+    kind: "text",
+    text: textNode.text,
+    resolve: (translated) => [writeText(textNode, translated)],
+  }));
+
+const cutAsOneUnit = (node: LexicalNode, fragments: InlineFragment[]): TextUnit[] => [
+  {
+    kind: "pieces",
+    pieces: fragments.map((fragment) => ({ id: fragment.id, text: fragment.text })),
+    resolve: (answered) => {
+      // A piece answered `null` that was sent carrying text would fold as an emptied mark:
+      // `foldAnswerIntoContainer` drops the run and its formatting.
+      const sentWithText = new Set(
+        fragments.flatMap((fragment) => (carriesOwnText(fragment.text) ? [fragment.id] : []))
+      );
+      if (answered.some((piece) => piece.text === null && sentWithText.has(piece.id))) return [];
+
+      const asAnsweredSegments = answered.map((piece) => ({
+        id: piece.id,
+        text: piece.text ?? "",
+      }));
+      const checked = checkSegments(asAnsweredSegments, fragments);
+      if (!checked.ok) return [];
+
+      const fold = foldAnswerIntoContainer(fragments, checked.segments);
+      return [
+        ...fold.texts.map(({ node: textNode, text }) => writeText(textNode, text)),
+        { slot: { holder: node, key: "children" }, value: fold.replacementChildren },
+      ];
+    },
+  },
+];
+
+/**
+ * The serialized Lexical tree as a traversal {@link Language}: one unit per container, carrying its
+ * runs as pieces so a reply may reorder them; one unit per text node where there is nothing to
+ * reorder; a crossing at every embedded node whose content belongs to its host.
+ *
+ * Emits no address token except at an embed, so every unit of a rich-text field keeps that field's
+ * own address — the key the stored provenance receipt uses.
  *
  * @public
  */
@@ -99,7 +164,10 @@ export function payloadLexicalLanguage(): Language<LexicalNode, LexicalCursor> {
       let seen = 0;
       const position = () => seen++;
 
-      return { nodes: [root.root], cursor: { embed: embed as EmbedResolver, position } };
+      return {
+        nodes: withEmbedsLifted([root.root]),
+        cursor: { embed: embed as EmbedResolver, position },
+      };
     },
 
     step(node, cursor): Step<LexicalNode, LexicalCursor> {
@@ -112,21 +180,13 @@ export function payloadLexicalLanguage(): Language<LexicalNode, LexicalCursor> {
         };
       }
 
-      if (isSerializedLexicalTextNode(node)) {
-        const textNode = node;
-        return {
-          kind: "value",
-          value: textNode.text,
-          segments: [],
-          slot: { holder: textNode, key: "text" },
-        };
-      }
+      if (isContainer(node)) return { kind: "value", value: node, segments: [] };
 
       if (hasChildren(node)) {
         return {
           kind: "children",
-          items: node.children.map((child) => ({
-            nodes: [child],
+          items: withEmbedsLifted(node.children).map((into) => ({
+            nodes: [into],
             cursor,
             segments: [],
           })),
@@ -136,14 +196,22 @@ export function payloadLexicalLanguage(): Language<LexicalNode, LexicalCursor> {
       return { kind: "skip" };
     },
 
-    selects: (node) => isSerializedLexicalTextNode(node),
+    selects: (node) => isContainer(node),
 
-    isEmpty,
+    /**
+     * Asked of the whole container, not of its fragments: a container the fragment collector
+     * refuses can still have text, and {@link cutPerTextNode} translates it.
+     */
+    isEmpty: (value) => collectSerializedLexicalTextNodes(value as LexicalNode).length === 0,
 
     textUnits: (leaf: TextLeaf): TextUnit[] => {
-      const { value, slot } = leaf;
-      if (typeof value !== "string" || slot === undefined) return [];
-      return [{ text: value, resolve: (translated) => [{ slot, value: translated }] }];
+      const node = leaf.value as LexicalNode;
+      const container = collectInlineFragments(node)[0];
+
+      // Not a cut rebuilt from the fragments: the two disagree on whitespace nodes.
+      if (container === undefined || container.skip !== undefined) return cutPerTextNode(node);
+
+      return cutAsOneUnit(node, container.fragments);
     },
 
     boundary(node, cursor): Crossing | null {

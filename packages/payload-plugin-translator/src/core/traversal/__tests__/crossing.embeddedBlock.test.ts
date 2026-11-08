@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { LEXICAL_ID, lexicalLanguage } from "./fixtures/lexical.js";
 import { fromPayload, lexicalPost, postsSchema } from "./fixtures/harness.js";
+import { sentTextsOf } from "./fixtures/sentText.js";
 
 const postWithNamelessEmbed = () => ({
   content: {
@@ -19,7 +20,7 @@ describe("Payload fields → Lexical → Payload fields", () => {
     const document = lexicalPost();
     const { targets } = fromPayload(postsSchema(LEXICAL_ID), document, lexicalLanguage());
 
-    expect(targets.map((target) => target.text)).toEqual([
+    expect(sentTextsOf(targets)).toEqual([
       "Intro",
       "Click me",
       "Please",
@@ -45,7 +46,7 @@ describe("Payload fields → Lexical → Payload fields", () => {
     const document = lexicalPost();
     const { targets } = fromPayload(postsSchema(LEXICAL_ID), document, lexicalLanguage());
 
-    const texts = targets.map((target) => target.text);
+    const texts = sentTextsOf(targets);
 
     expect(texts).toContain("Click me");
     expect(texts).not.toContain("/buy");
@@ -58,6 +59,6 @@ describe("Payload fields → Lexical → Payload fields", () => {
       lexicalLanguage()
     );
 
-    expect(targets.map((target) => target.text)).toEqual(["Intro"]);
+    expect(sentTextsOf(targets)).toEqual(["Intro"]);
   });
 });

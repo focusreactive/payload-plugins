@@ -1,13 +1,22 @@
 import { describe, expect, it } from "vitest";
 
+import {
+  UNWRITABLE_MARKERS,
+  answerInKind,
+  sentOf,
+  sentTextOf,
+} from "../../../core/traversal/__tests__/fixtures/sentText.js";
+import { checkSegments } from "../../../core/kernel/lexical/checkSegments.js";
+import type { SentSegment } from "../../../core/kernel/lexical/checkSegments.js";
 import { applyTranslations } from "../../../core/traversal/index.js";
+import type { TranslationTarget } from "../../../core/traversal/index.js";
 import type { TranslatableValue } from "../../../core/domain/translation-providers/index.js";
 import type { BlockLike, FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { FieldChunkCollector } from "../../../core/translation-pipeline/stages/field-collector/index.js";
 import { projectTranslatableContent } from "../../../core/domain/content-projection/contentProjector.js";
 import {
   PlainTextExpander,
-  RichTextExpander,
+  RichContainerExpander,
 } from "../../../core/translation-pipeline/stages/text-expander/index.js";
 import { writeAnswers } from "../../../core/translation-pipeline/stages/translation-applicator/index.js";
 import type { SettledAnswer, TextChunk } from "../../../core/translation-pipeline/types/index.js";
@@ -29,13 +38,42 @@ import {
 
 type Compared = { texts: string[]; addresses: string[]; document: Doc };
 
-const textAt = (textMap: Record<number, TranslatableValue>, index: number): string => {
+/**
+ * Must render in the same markers as {@link sentOf}, or the two sides could read alike without
+ * agreeing and the comparison could not fail.
+ */
+const sentAt = (textMap: Record<number, TranslatableValue>, index: number): string => {
   const found = textMap[index];
-  if (found?.kind !== "text") throw new Error(`the oracle produced no text for chunk ${index}`);
-  return found.text;
+  if (found === undefined) throw new Error(`the oracle produced nothing for chunk ${index}`);
+  return found.kind === "text"
+    ? found.text
+    : found.segments
+        .map((segment) => segment.text ?? UNWRITABLE_MARKERS.noText)
+        .join(UNWRITABLE_MARKERS.join);
 };
 
-const perNode = [new RichTextExpander(), new PlainTextExpander()];
+const sentBy = (target: TranslationTarget): string => sentOf(target, UNWRITABLE_MARKERS);
+
+/**
+ * Must go through `checkSegments` as `TranslationStage` does; without it the oracle is a pipeline
+ * missing a step production always runs. A piece with nothing to translate comes back as `""`, not
+ * absent — what the real decoder produces for `<2/>` (`wire/inlineMarks.ts`).
+ */
+const settleSegments = (sent: readonly SentSegment[]): SettledAnswer => {
+  const answered = sent.map((segment) => ({
+    id: segment.id,
+    text: segment.text === null ? "" : translated(segment.text),
+  }));
+  const checked = checkSegments(answered, sent);
+  return checked.ok
+    ? { kind: "segments", segments: checked.segments }
+    : { kind: "failed", failure: { code: checked.reason } };
+};
+
+const answerFor = (target: TranslationTarget) => answerInKind(target, translated);
+
+// Must stay in the order `TextChunkExpander.stage.ts` uses: the first expander that can wins.
+const production = [new RichContainerExpander(), new PlainTextExpander()];
 
 const viaPipeline = (schema: FieldLike[], source: Doc): Compared => {
   const working = structuredClone(source);
@@ -54,17 +92,21 @@ const viaPipeline = (schema: FieldLike[], source: Doc): Compared => {
 
   for (const fieldChunk of fieldChunks) {
     const value = fieldChunk.dataRef[fieldChunk.key];
-    const expander = perNode.find((candidate) => candidate.canExpand(fieldChunk, value));
+    const expander = production.find((candidate) => candidate.canExpand(fieldChunk, value));
     if (expander === undefined) continue;
 
     const expansion = expander.expand(fieldChunk, value, next);
     next = expansion.nextIndex;
     for (const chunk of expansion.chunks) {
-      const sent = textAt(expansion.textMap, chunk.index);
+      const sent = sentAt(expansion.textMap, chunk.index);
+      const asked = expansion.textMap[chunk.index];
       textChunks.push(chunk);
       texts.push(sent);
       addresses.push(String(fieldChunk.idPath));
-      answers[chunk.index] = { kind: "text", text: translated(sent) };
+      answers[chunk.index] =
+        asked?.kind === "segments"
+          ? settleSegments(asked.segments)
+          : { kind: "text", text: translated(sent) };
     }
   }
 
@@ -74,11 +116,8 @@ const viaPipeline = (schema: FieldLike[], source: Doc): Compared => {
 
 const viaLanguage = (schema: FieldLike[], source: Doc, blocks: readonly BlockLike[]): Compared => {
   const { collected, working } = walkDocument({ schema, source, blocks, inlineBlocks: blocks });
-  const texts = collected.targets.map((target) => target.text);
-  applyTranslations(
-    collected,
-    collected.targets.map((target) => translated(target.text))
-  );
+  const texts = collected.targets.map(sentBy);
+  applyTranslations(collected, collected.targets.map(answerFor));
   return { texts, addresses: addressesOf(collected.targets), document: working };
 };
 
@@ -256,7 +295,7 @@ const EMPTY: Case[] = [
 
 const ALL = [...CASES, ...EMPTY].map((testCase) => [testCase.name, testCase] as const);
 
-describe("the lexical language agrees with the per-node rich-text pipeline", () => {
+describe("the lexical language agrees with the rich-text pipeline production runs", () => {
   it.each(ALL)("%s — same text, in order", (_n, testCase) => {
     const old = viaPipeline(testCase.schema, testCase.document);
     const next = viaLanguage(testCase.schema, testCase.document, testCase.blocks ?? []);
@@ -298,10 +337,7 @@ describe("writing back", () => {
     const before = structuredClone(source);
 
     const { collected } = walkDocument({ schema: body, source });
-    applyTranslations(
-      collected,
-      collected.targets.map((target) => translated(target.text))
-    );
+    applyTranslations(collected, collected.targets.map(answerFor));
 
     expect(source).toEqual(before);
   });
@@ -330,7 +366,7 @@ describe("writing back", () => {
     });
     applyTranslations(
       collected,
-      collected.targets.map((target) => translated(target.text))
+      collected.targets.map((target) => translated(sentTextOf(target)))
     );
 
     expect(collected.targets.length).toBeGreaterThan(2);

@@ -36,13 +36,14 @@ function unitsOf(leaf: TextLeaf): TextUnit[] {
 
   if (typeof value === "string") {
     if (value.trim() === "" || slot === undefined) return [];
-    return [{ text: value, resolve: (translated) => [{ slot, value: translated }] }];
+    return [{ kind: "text", text: value, resolve: (translated) => [{ slot, value: translated }] }];
   }
 
   if (!isContainer(value)) return [];
   const children = value.children ?? [];
   return [
     {
+      kind: "text",
       text: serializeMarks(children),
       resolve: (translated) => resolveMarks(children, translated),
     },

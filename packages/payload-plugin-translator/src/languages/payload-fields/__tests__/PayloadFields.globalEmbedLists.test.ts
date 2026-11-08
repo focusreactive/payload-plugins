@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { BlockLike, FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { projectFieldsToFieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { block, paragraph, text, tree, walkDocument } from "../../__tests__/fixtures/lexical.js";
+import { sentTextsOf } from "../../../core/traversal/__tests__/fixtures/sentText.js";
 
 const cta: BlockLike = {
   slug: "cta",
@@ -17,11 +18,13 @@ const schema = (custom?: Record<string, unknown>): FieldLike[] =>
   ]);
 
 const textsFound = (fields: FieldLike[]): string[] =>
-  walkDocument({
-    schema: fields,
-    source: { body: bodyTree() },
-    blocks: [cta],
-  }).collected.targets.map((target) => target.text);
+  sentTextsOf(
+    walkDocument({
+      schema: fields,
+      source: { body: bodyTree() },
+      blocks: [cta],
+    }).collected.targets
+  );
 
 describe("the blocks a host may enter", () => {
   it("come from the plugin's own list for a field that declares nothing", () => {

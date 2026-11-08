@@ -194,7 +194,9 @@ export function payloadFieldsLanguage(
     textUnits: (leaf: TextLeaf): TextUnit[] => {
       const { value, slot } = leaf;
       if (typeof value !== "string" || slot === undefined) return [];
-      return [{ text: value, resolve: (translated) => [{ slot, value: translated }] }];
+      return [
+        { kind: "text", text: value, resolve: (translated) => [{ slot, value: translated }] },
+      ];
     },
 
     boundary(field, cursor, value): Crossing | null {

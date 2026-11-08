@@ -21,7 +21,7 @@ const holderLanguage = (): Language<Holder, null> => ({
   isEmpty: () => false,
   textUnits: ({ value, slot }) =>
     typeof value === "string" && slot !== undefined
-      ? [{ text: value, resolve: (translated) => [{ slot, value: translated }] }]
+      ? [{ kind: "text", text: value, resolve: (translated) => [{ slot, value: translated }] }]
       : [],
   boundary: () => null,
 });

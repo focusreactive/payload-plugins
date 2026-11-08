@@ -57,7 +57,9 @@ const format = (seen: unknown[]): Language<Held, null> => ({
   selects: () => true,
   isEmpty: () => false,
   textUnits: ({ value, slot }) =>
-    slot === undefined ? [] : [{ text: value as string, resolve: (t) => [{ slot, value: t }] }],
+    slot === undefined
+      ? []
+      : [{ kind: "text", text: value as string, resolve: (t) => [{ slot, value: t }] }],
   boundary: () => null,
 });
 

@@ -111,7 +111,9 @@ export function payloadFieldsLanguage(): Language<FieldLike, SchemaCursor> {
     textUnits: (leaf: TextLeaf): TextUnit[] => {
       const { value, slot } = leaf;
       if (typeof value !== "string" || value.trim() === "" || slot === undefined) return [];
-      return [{ text: value, resolve: (translated) => [{ slot, value: translated }] }];
+      return [
+        { kind: "text", text: value, resolve: (translated) => [{ slot, value: translated }] },
+      ];
     },
 
     boundary(field, cursor): Crossing | null {

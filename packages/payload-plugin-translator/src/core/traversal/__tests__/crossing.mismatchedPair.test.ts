@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PROSEMIRROR_ID, prosemirrorLanguage } from "./fixtures/prosemirror.js";
 import { fromPayload, postsSchema } from "./fixtures/harness.js";
+import { sentTextsOf } from "./fixtures/sentText.js";
 
 describe("Payload fields → ProseMirror → Payload fields", () => {
   it("crosses into a rich text from another product just the same", () => {
@@ -22,6 +23,6 @@ describe("Payload fields → ProseMirror → Payload fields", () => {
 
     const { targets } = fromPayload(postsSchema(PROSEMIRROR_ID), document, prosemirrorLanguage());
 
-    expect(targets.map((target) => target.text)).toEqual(["Intro", "Click me", "Please"]);
+    expect(sentTextsOf(targets)).toEqual(["Intro", "Click me", "Please"]);
   });
 });

@@ -122,19 +122,50 @@ export type TextLeaf = {
 };
 
 /**
- * One translatable piece of text, with the way to put its translation back.
+ * Sent for translation exactly as given — never trimmed, and never normalized.
  *
  * @public
  */
-export type TextUnit = {
-  /** Sent for translation exactly as given, including surrounding whitespace. */
-  text: string;
-  /**
-   * Returns the assignments and performs none of them. An empty list is a complete answer that
-   * writes nothing.
-   */
-  resolve: (translated: string) => readonly SlotWrite[];
+export type SentText = string;
+
+/**
+ * One piece of a unit. `text: null` holds a position with nothing to translate — not an empty
+ * string.
+ *
+ * Deliberately not the translation port's `Segment`: `src/core/traversal` imports nothing outside
+ * itself, and taking that type would make the walk depend on the provider layer.
+ *
+ * @public
+ */
+export type UnitPiece = {
+  id: number;
+  text: SentText | null;
 };
+
+/**
+ * One translatable piece of text, with the way to put its translation back.
+ *
+ * `resolve` returns the assignments and performs none of them; an empty list is a complete answer
+ * that writes nothing.
+ *
+ * @public
+ */
+export type TextUnit =
+  | {
+      kind: "text";
+      text: SentText;
+      resolve: (translated: string) => readonly SlotWrite[];
+    }
+  | {
+      kind: "pieces";
+      /** Sent together, in this order; the answer's order may differ. */
+      pieces: readonly UnitPiece[];
+      /**
+       * An empty list is how a reply that does not match what was sent leaves the value in its
+       * source language rather than written in part.
+       */
+      resolve: (translated: readonly UnitPiece[]) => readonly SlotWrite[];
+    };
 
 /**
  * How a language is activated — at the root of a walk and at every boundary alike.
@@ -277,10 +308,26 @@ export type TranslationTarget = {
    * unit, all carrying this same address.
    */
   idPath: IdPath;
-  /** The text to translate, exactly as its language produced it. */
-  text: string;
-  write: (translated: string) => void;
-};
+} & (
+  | {
+      kind: "text";
+      text: SentText;
+      write: (translated: string) => void;
+    }
+  | {
+      kind: "pieces";
+      pieces: readonly UnitPiece[];
+      write: (translated: readonly UnitPiece[]) => void;
+    }
+);
+
+/**
+ * What one {@link TranslationTarget} is answered with. The shape must match the target's `kind` —
+ * an answer in the other shape is left unwritten — and pieces may come back in any order.
+ *
+ * @public
+ */
+export type TranslationAnswer = string | readonly UnitPiece[];
 
 /**
  * One walk's findings together with the placements that keep them.

@@ -13,6 +13,7 @@ import { payloadLexicalContent, payloadLexicalLanguage } from "../../payload-lex
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
 import type { Tree } from "../../__tests__/fixtures/lexical.js";
 import { dig, text, tree } from "../../__tests__/fixtures/lexical.js";
+import { sentTextsOf } from "../../../core/traversal/__tests__/fixtures/sentText.js";
 
 type Body = { body: Tree };
 
@@ -50,7 +51,7 @@ describe("collecting translation targets", () => {
   });
 
   it("finds the text behind the crossing all the same", () => {
-    expect(walk(german()).targets.map((target) => target.text)).toEqual(["Buy now"]);
+    expect(sentTextsOf(walk(german()).targets)).toEqual(["Buy now"]);
   });
 });
 

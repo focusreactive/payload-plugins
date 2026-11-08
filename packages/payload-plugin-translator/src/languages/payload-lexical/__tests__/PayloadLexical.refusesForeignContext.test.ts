@@ -14,6 +14,7 @@ import {
   tree,
   walkTree,
 } from "../../__tests__/fixtures/lexical.js";
+import { sentTextsOf } from "../../../core/traversal/__tests__/fixtures/sentText.js";
 
 const refusalFrom = (run: () => unknown): CannotEnterLanguageError => {
   try {
@@ -29,7 +30,7 @@ describe("the lexical language and the context it is handed", () => {
   it("walks a context carrying a lexical tree and a resolver", () => {
     const { targets } = walkTree({ tree: tree(paragraph(text("Hello"))), embed: claimsNothing });
 
-    expect(targets.map((target) => target.text)).toEqual(["Hello"]);
+    expect(sentTextsOf(targets)).toEqual(["Hello"]);
   });
 
   it("takes an empty tree as its own: nothing to walk is not a refusal", () => {

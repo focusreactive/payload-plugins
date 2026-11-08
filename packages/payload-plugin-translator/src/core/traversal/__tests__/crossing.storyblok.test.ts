@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PROSEMIRROR_ID, prosemirrorLanguage } from "./fixtures/prosemirror.js";
 import type { Blok } from "./fixtures/storyblok.js";
 import { fromStoryblok, storyRegistry } from "./fixtures/harness.js";
+import { sentTextsOf } from "./fixtures/sentText.js";
 
 describe("Storyblok components → ProseMirror → Storyblok components", () => {
   it("collects the story's own text and the text inside an embedded component", () => {
@@ -26,7 +27,7 @@ describe("Storyblok components → ProseMirror → Storyblok components", () => 
 
     const { targets } = fromStoryblok(storyRegistry(PROSEMIRROR_ID), story, prosemirrorLanguage());
 
-    expect(targets.map((target) => target.text)).toEqual(["Story title", "Prose", "Deal"]);
+    expect(sentTextsOf(targets)).toEqual(["Story title", "Prose", "Deal"]);
     expect(targets.map((target) => target.idPath)).toEqual([
       ["title"],
       ["body", 0, 0],
@@ -50,6 +51,6 @@ describe("Storyblok components → ProseMirror → Storyblok components", () => 
 
     const { targets } = fromStoryblok(storyRegistry(PROSEMIRROR_ID), story, prosemirrorLanguage());
 
-    expect(targets.map((target) => target.text)).toEqual(["Story title", "Prose"]);
+    expect(sentTextsOf(targets)).toEqual(["Story title", "Prose"]);
   });
 });

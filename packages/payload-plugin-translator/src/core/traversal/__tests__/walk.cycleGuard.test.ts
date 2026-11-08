@@ -6,6 +6,7 @@ import type { FieldLike } from "./fixtures/payloadFields.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "./fixtures/payloadFields.js";
 import type { PmNode } from "./fixtures/prosemirror.js";
 import { PROSEMIRROR_ID, prosemirrorLanguage } from "./fixtures/prosemirror.js";
+import { sentTextsOf } from "./fixtures/sentText.js";
 
 /** Fails with whatever else was thrown — a stack overflow included. */
 const cycleErrorFrom = (run: () => unknown): TraversalCycleError => {
@@ -63,7 +64,7 @@ describe("the cycle guard", () => {
       },
     });
 
-    expect(targets.map((target) => target.text)).toEqual(["one", "two"]);
+    expect(sentTextsOf(targets)).toEqual(["one", "two"]);
   });
 
   it("does not mistake one schema node walked over many elements for a cycle", () => {
@@ -82,6 +83,6 @@ describe("the cycle guard", () => {
       },
     });
 
-    expect(targets.map((target) => target.text)).toEqual(["First", "Second"]);
+    expect(sentTextsOf(targets)).toEqual(["First", "Second"]);
   });
 });

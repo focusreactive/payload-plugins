@@ -4,6 +4,7 @@ import { applyTranslations, collectTranslationTargets } from "../../../core/trav
 import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { addressesOf } from "../../__tests__/addresses.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
+import { sentTextsOf } from "../../../core/traversal/__tests__/fixtures/sentText.js";
 
 const schema: FieldLike[] = [
   { type: "text", name: "title", localized: true },
@@ -26,7 +27,7 @@ describe("the two documents are not interchangeable", () => {
     const source = { title: "from the source", items: [] };
     const data = { title: "from the copy", items: [] };
 
-    expect(walk(data, source).targets.map((target) => target.text)).toEqual(["from the source"]);
+    expect(sentTextsOf(walk(data, source).targets)).toEqual(["from the source"]);
   });
 
   it("writes into the copy and leaves the source untouched", () => {
@@ -43,7 +44,7 @@ describe("the two documents are not interchangeable", () => {
     const source = { title: "Kept", dropped: "gone", items: [] };
     const data = { title: "Kept", items: [] };
 
-    expect(walk(data, source).targets.map((target) => target.text)).toEqual(["Kept"]);
+    expect(sentTextsOf(walk(data, source).targets)).toEqual(["Kept"]);
   });
 
   it("addresses a list element by the source element's id, not the copy's", () => {

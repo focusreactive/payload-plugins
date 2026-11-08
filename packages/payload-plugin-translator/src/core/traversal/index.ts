@@ -9,6 +9,8 @@ export type {
   StepChild,
   TextLeaf,
   TextUnit,
+  TranslationAnswer,
+  UnitPiece,
   TranslationTarget,
 } from "./contract.js";
 

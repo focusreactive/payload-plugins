@@ -9,6 +9,7 @@ import type { ContentCrossing } from "../../contentCrossing.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
 import { PAYLOAD_LEXICAL_ID, payloadLexicalContent } from "../../payload-lexical/index.js";
 import { text, tree, walkDocument } from "../../__tests__/fixtures/lexical.js";
+import { sentTextOf, sentTextsOf } from "../../../core/traversal/__tests__/fixtures/sentText.js";
 
 const NOTE_ID = "note";
 
@@ -39,7 +40,7 @@ const noteLanguage = (): Language<number, Note> => ({
 
   textUnits: ({ value, slot }) =>
     typeof value === "string" && slot !== undefined
-      ? [{ text: value, resolve: (translated) => [{ slot, value: translated }] }]
+      ? [{ kind: "text", text: value, resolve: (translated) => [{ slot, value: translated }] }]
       : [],
 
   boundary: () => null,
@@ -78,7 +79,7 @@ describe("a host's content crossings", () => {
   it("hands over a format the host language has never heard of, on a field type it does not translate", () => {
     const { targets } = walk(document());
 
-    expect(targets.map((target) => target.text)).toEqual(["Shop", "Buy now", "Thanks"]);
+    expect(sentTextsOf(targets)).toEqual(["Shop", "Buy now", "Thanks"]);
   });
 
   it("addresses the pieces of that format under the field that held it", () => {
@@ -96,7 +97,7 @@ describe("a host's content crossings", () => {
 
     const { collected } = walkDocument({ schema, source });
 
-    expect(collected.targets.map((target) => target.text)).toEqual(["Shop", "Buy now"]);
+    expect(sentTextsOf(collected.targets)).toEqual(["Shop", "Buy now"]);
   });
 
   it("leaves a value no crossing recognises to the host's own rules", () => {
@@ -112,7 +113,7 @@ describe("a host's content crossings", () => {
     const collected = walk(source, working);
     applyTranslations(
       collected,
-      collected.targets.map((target) => `[de] ${target.text}`)
+      collected.targets.map((target) => `[de] ${sentTextOf(target)}`)
     );
 
     expect(working.notes.lines).toEqual(["[de] Buy now", "[de] Thanks"]);
@@ -135,7 +136,13 @@ describe("a crossing entry declares the language it speaks", () => {
       id: "note-twin",
       textUnits: ({ value, slot }) =>
         typeof value === "string" && slot !== undefined
-          ? [{ text: `twin:${value}`, resolve: (translated) => [{ slot, value: translated }] }]
+          ? [
+              {
+                kind: "text",
+                text: `twin:${value}`,
+                resolve: (translated) => [{ slot, value: translated }],
+              },
+            ]
           : [],
     };
     const declaresTheTwin: ContentCrossing = { ...noteContent, languageId: "note-twin" };
@@ -148,6 +155,6 @@ describe("a crossing entry declares the language it speaks", () => {
       },
     });
 
-    expect(targets.map((target) => target.text)).toEqual(["Shop", "twin:Buy now", "twin:Thanks"]);
+    expect(sentTextsOf(targets)).toEqual(["Shop", "twin:Buy now", "twin:Thanks"]);
   });
 });

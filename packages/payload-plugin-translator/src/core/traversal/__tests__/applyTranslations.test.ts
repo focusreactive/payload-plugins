@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { applyTranslations } from "../collect.js";
 import { article, articleSchema } from "./fixtures/documents.js";
 import { collect } from "./fixtures/harness.js";
+import { sentTextOf } from "./fixtures/sentText.js";
 
 describe("write-back", () => {
   it("reaches the element with the matching id, not the one in that position", () => {
@@ -12,7 +13,7 @@ describe("write-back", () => {
     const collected = collect({ fields: articleSchema, source, target });
     applyTranslations(
       collected,
-      collected.targets.map((target_) => `<${target_.text}>`)
+      collected.targets.map((t) => `<${sentTextOf(t)}>`)
     );
 
     const sections = target.sections as Array<Record<string, unknown>>;

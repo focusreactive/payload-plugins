@@ -6,6 +6,7 @@ import {
 } from "../../../core/traversal/index.js";
 import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
+import { sentTextsOf } from "../../../core/traversal/__tests__/fixtures/sentText.js";
 
 const schema: FieldLike[] = [{ type: "text", name: "title", localized: true }];
 
@@ -30,7 +31,7 @@ describe("the field language and the context it is handed", () => {
 
     const { targets } = walk({ fields: schema, data: { ...document }, source: document });
 
-    expect(targets.map((target) => target.text)).toEqual(["Hello"]);
+    expect(sentTextsOf(targets)).toEqual(["Hello"]);
   });
 
   it.each([

@@ -7,6 +7,7 @@ import { FieldChunkCollector } from "../../../core/translation-pipeline/stages/f
 import { projectTranslatableContent } from "../../../core/domain/content-projection/contentProjector.js";
 import { DataReconciler } from "../../../core/translation-pipeline/stages/data-reconciler/index.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
+import { sentTextOf, sentTextsOf } from "../../../core/traversal/__tests__/fixtures/sentText.js";
 
 type Doc = Record<string, unknown>;
 type Walked = { texts: unknown[]; addresses: string[]; document: Doc };
@@ -38,10 +39,10 @@ const viaLanguage = (schema: FieldLike[], document: Doc, data?: Doc): Walked => 
     },
   });
 
-  const texts = collected.targets.map((target) => target.text);
+  const texts = sentTextsOf(collected.targets);
   applyTranslations(
     collected,
-    collected.targets.map((target) => translated(target.text))
+    collected.targets.map((target) => translated(sentTextOf(target)))
   );
 
   return { texts, addresses: addressesOf(collected.targets), document: working };

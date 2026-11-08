@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import {
+  READABLE_MARKERS,
+  answerInKind,
+  sentsOf,
+} from "../../../core/traversal/__tests__/fixtures/sentText.js";
 import { applyTranslations } from "../../../core/traversal/index.js";
 import type { Language } from "../../../core/traversal/index.js";
 import type { BlockLike, FieldLike } from "../../../core/kernel/field-traversal/index.js";
@@ -9,6 +14,7 @@ import { addressesOf } from "../../__tests__/addresses.js";
 import type { Doc, Node, Tree, Walked } from "../../__tests__/fixtures/lexical.js";
 import {
   block,
+  element,
   dig,
   inlineBlock,
   paragraph,
@@ -62,12 +68,13 @@ const body: FieldLike[] = [{ type: "richText", name: "body", localized: true }];
 const walk = (bodyTree: Tree, lists: Lists = LISTED): Walked =>
   walkDocument({ schema: body, source: { body: bodyTree }, ...lists });
 
-const textsOf = (walked: Walked): string[] => walked.collected.targets.map((target) => target.text);
+const sentWithMarkers = (walked: Walked): string[] =>
+  sentsOf(walked.collected.targets, READABLE_MARKERS);
 
 const translateAll = (walked: Walked): Doc => {
   applyTranslations(
     walked.collected,
-    walked.collected.targets.map((target) => translated(target.text))
+    walked.collected.targets.map((target) => answerInKind(target, translated))
   );
   return walked.working;
 };
@@ -109,19 +116,19 @@ const embedInsideEmbed = (): Tree =>
 
 describe("text inside an embed", () => {
   it("collects a block's leaf text, in document order among the prose", () => {
-    expect(textsOf(walk(blockAmongProse()))).toEqual(["Intro", "Click me", "Outro"]);
+    expect(sentWithMarkers(walk(blockAmongProse()))).toEqual(["Intro", "Click me", "Outro"]);
   });
 
   it("collects an inline block's leaf text where it sits in its line", () => {
-    expect(textsOf(walk(inlineInALine()))).toEqual(["Before ", "Ada", " after"]);
+    expect(sentWithMarkers(walk(inlineInALine()))).toEqual(["Before |~| after", "Ada"]);
   });
 
   it("collects from every embed when one field holds several", () => {
-    expect(textsOf(walk(severalEmbeds()))).toEqual(["First", "Between", "Second"]);
+    expect(sentWithMarkers(walk(severalEmbeds()))).toEqual(["First", "Between", "Second"]);
   });
 
   it("collects through two levels of nesting", () => {
-    expect(textsOf(walk(embedInsideEmbed()))).toEqual([
+    expect(sentWithMarkers(walk(embedInsideEmbed()))).toEqual([
       "Top",
       "Section title",
       "Inner prose",
@@ -274,7 +281,7 @@ const between = (embed: Node): Tree =>
 
 describe("an embed nobody listed", () => {
   it.each(UNLISTED)("an unlisted %s yields no target, and its siblings still do", (_k, embed) => {
-    expect(textsOf(walk(between(embed)))).toEqual(["Before", "After", "Next"]);
+    expect(sentWithMarkers(walk(between(embed)))).toEqual(["Before|~|After", "Next"]);
   });
 
   it.each(UNLISTED)("an unlisted %s is skipped silently, not reported", (_k, embed) => {
@@ -285,17 +292,19 @@ describe("an embed nobody listed", () => {
   });
 
   it("a slug the host knows is entered whatever kind of node carries it", () => {
-    // `mention` reaches the host through the inline list, but the host keeps one table and a
-    // definition is a definition: the kind of node is the format's business, not the lookup's.
     const blockNode = block({ id: "m1", blockType: "mention", label: "Ada" });
 
-    expect(textsOf(walk(between(blockNode)))).toEqual(["Before", "Ada", "After", "Next"]);
+    expect(sentWithMarkers(walk(between(blockNode)))).toEqual(["Before|~|After", "Ada", "Next"]);
   });
 
   it("and the same the other way round, for a slug that reached it through the block list", () => {
     const inlineNode = inlineBlock({ id: "c1", blockType: "cta", heading: "Click me" });
 
-    expect(textsOf(walk(between(inlineNode)))).toEqual(["Before", "Click me", "After", "Next"]);
+    expect(sentWithMarkers(walk(between(inlineNode)))).toEqual([
+      "Before|~|After",
+      "Click me",
+      "Next",
+    ]);
   });
 });
 
@@ -313,11 +322,11 @@ describe("one slug registered in both lists", () => {
   // possible, and it is the author's to avoid. These pin which one survives so it is a stated rule
   // rather than an accident of ordering.
   it("the later definition wins, whatever kind of node carries the slug", () => {
-    expect(textsOf(walk(tree(block(fields)), both))).toEqual(["Someone"]);
+    expect(sentWithMarkers(walk(tree(block(fields)), both))).toEqual(["Someone"]);
   });
 
   it("and the inline node resolves to that same single definition", () => {
-    expect(textsOf(walk(tree(paragraph(inlineBlock(fields))), both))).toEqual(["Someone"]);
+    expect(sentWithMarkers(walk(tree(paragraph(inlineBlock(fields))), both))).toEqual(["Someone"]);
   });
 });
 
@@ -325,7 +334,7 @@ describe("the host's own selection rule, inside an embed", () => {
   it("host rule: a non-localized field inside an embed yields no target", () => {
     const linkBlock = block({ id: "l1", blockType: "link", label: "Read more", href: "/more" });
 
-    expect(textsOf(walk(tree(linkBlock)))).toEqual(["Read more"]);
+    expect(sentWithMarkers(walk(tree(linkBlock)))).toEqual(["Read more"]);
   });
 
   it("host rule: a non-localized rich-text field inside an embed is not walked", () => {
@@ -336,7 +345,7 @@ describe("the host's own selection rule, inside an embed", () => {
       notes: tree(paragraph(text("Shared notes"))),
     });
 
-    expect(textsOf(walk(tree(asideBlock)))).toEqual(["Aside title"]);
+    expect(sentWithMarkers(walk(tree(asideBlock)))).toEqual(["Aside title"]);
   });
 });
 
@@ -371,7 +380,7 @@ describe("a node that is not an embed", () => {
       payloadFieldsLanguage(),
     ]);
 
-    expect(targets.map((target) => target.text)).toEqual(["Before", "After", "Next"]);
+    expect(sentsOf(targets, READABLE_MARKERS)).toEqual(["Before|~|After", "Next"]);
   });
 });
 
@@ -430,5 +439,19 @@ describe("what the resolver is asked, and what is done with its answer", () => {
     );
 
     expect(received[0]).toBe(handedOver);
+  });
+});
+
+describe("a tree whose root is itself a container", () => {
+  it("still reaches the embed inside it, having no parent to lift it", () => {
+    const rootAsContainer = {
+      root: element(
+        "root",
+        text("Before "),
+        inlineBlock({ id: "i1", blockType: "mention", label: "Ada" })
+      ),
+    } as Tree;
+
+    expect(addressesOf(walk(rootAsContainer).collected.targets)).toContain("body.i1:mention.label");
   });
 });

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { applyTranslations } from "../collect.js";
 import { bodySchema } from "./fixtures/documents.js";
 import { collect, paragraph } from "./fixtures/harness.js";
+import { sentTextsOf } from "./fixtures/sentText.js";
 
 describe("how a leaf is cut is the language's own choice", () => {
   it("gives one unit per text node when built that way", () => {
@@ -13,7 +14,7 @@ describe("how a leaf is cut is the language's own choice", () => {
       cut: "per-text-node",
     });
 
-    expect(targets.map((target) => target.text)).toEqual(["I bought a ", "red", " car"]);
+    expect(sentTextsOf(targets)).toEqual(["I bought a ", "red", " car"]);
   });
 
   it("gives the whole container with its formatting numbered when built that way", () => {
@@ -25,9 +26,7 @@ describe("how a leaf is cut is the language's own choice", () => {
       cut: "whole-container",
     });
 
-    expect(targets.map((target) => target.text)).toEqual([
-      "<1>I bought a </1><2>red</2><3> car</3>",
-    ]);
+    expect(sentTextsOf(targets)).toEqual(["<1>I bought a </1><2>red</2><3> car</3>"]);
   });
 
   it("refuses a reply carrying text outside its marks, rather than writing half of it", () => {
