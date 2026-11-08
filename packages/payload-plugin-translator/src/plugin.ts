@@ -1,4 +1,4 @@
-import type { CollectionConfig, Config } from "payload";
+import type { Block, CollectionConfig, Config } from "payload";
 
 import { CacheProviderExport } from "./client/app/cache/CacheProvider.export.js";
 import { configureAutoTranslate } from "./server/modules/auto-translate/index.js";
@@ -6,6 +6,7 @@ import { configureProvenance } from "./server/modules/provenance/index.js";
 import { configureRunRecord } from "./server/modules/runs/index.js";
 import type { AccessGuard } from "./types/AccessGuard.js";
 import type { CollectionSchemaMap } from "./types/CollectionSchemaMap.js";
+import type { BlockLike } from "./core/kernel/field-traversal/index.js";
 import { projectFieldsToFieldLike } from "./core/kernel/field-traversal/index.js";
 import type { TranslationProvider } from "./core/domain/translation-providers/index.js";
 import type { TaskRunnerProvider } from "./server/modules/task-runner/index.js";
@@ -62,6 +63,26 @@ export type TranslatorPluginConfig = TranslatorSettingsOptions & {
    * @since 1.0.0 — split out of `levels`.
    */
   components: TranslationComponent[];
+  /**
+   * Definitions for blocks this plugin cannot otherwise see, so their text is translated when they
+   * appear inside a rich text.
+   *
+   * Blocks declared in `buildConfig({ blocks })` are already known and need not be repeated here.
+   * A block written out as an object inside a rich-text editor's own configuration is not readable
+   * from this package at any point, so pass the same object here — one list, whatever kind of embed
+   * carries it:
+   *
+   * ```ts
+   * translatorPlugin({ embeds: [cta, mention] })
+   * ```
+   *
+   * This adds to what is translated and never narrows it; to keep something out of translation,
+   * mark the field inside the block with `withFieldTranslation(field, { exclude: true })`. A block
+   * declared in neither place is simply unknown, exactly as it is to Payload itself.
+   *
+   * @since 1.0.0
+   */
+  embeds?: Block[];
   /**
    * Opt-in translation provenance — a durable, per-locale record of what source state each
    * translation was derived from, stored in a plugin-managed sidecar collection. Set `true` (or `{}`)
@@ -144,6 +165,35 @@ function refuseDuplicateNames(chain: readonly TranslationModule[]): void {
 }
 
 /**
+ * Both sources of block definitions, projected by value and keyed by slug.
+ *
+ * Projected here rather than read later because `sanitizeFields` deletes `localized` in place on
+ * fields under a localized ancestor, and a rich-text field that embeds blocks is localized — by the
+ * time a walk runs, the originals no longer say what is translatable.
+ *
+ * A slug in both sources resolves to the option's definition: passing one is the more deliberate
+ * statement than having it in the config-wide list.
+ */
+function embedDefinitions(
+  configBlocks: readonly BlockLike[] | undefined,
+  embeds: readonly BlockLike[] | undefined
+): BlockLike[] {
+  // Deduplicated before anything is projected, and projected against itself: a block that reaches
+  // another by slug must resolve it against the same table a top-level lookup would, or one slug
+  // ends up meaning two things and a block reached only through a reference is dropped in silence.
+  const merged = [
+    ...new Map(
+      [...(configBlocks ?? []), ...(embeds ?? [])].map((block) => [block.slug, block])
+    ).values(),
+  ];
+
+  return merged.map((block) => ({
+    slug: block.slug,
+    fields: projectFieldsToFieldLike(block.fields, merged),
+  }));
+}
+
+/**
  * Creates a translation plugin for Payload CMS collections.
  *
  * @example
@@ -197,6 +247,7 @@ export function translatorPlugin(
       translation: {
         translationProvider,
         schemaMap,
+        embeds: embedDefinitions(payloadConfig.blocks, pluginConfig.embeds),
         modules: chain,
         criteria: provenanceParts?.criteria,
       },

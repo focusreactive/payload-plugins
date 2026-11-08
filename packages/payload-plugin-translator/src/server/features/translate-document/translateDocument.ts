@@ -1,6 +1,7 @@
 import type { CollectionSlug, Payload } from "payload";
 
 import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
+import type { BlockLike } from "../../../core/kernel/field-traversal/index.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { ID } from "../../modules/task-runner/index.js";
 import type { TranslationFilter } from "../../../core/domain/selection/index.js";
@@ -30,6 +31,12 @@ export type TranslateDocumentInput = {
 export type TranslateDocumentDeps = {
   readonly translationProvider: TranslationProvider;
   readonly schemaMap: CollectionSchemaMap;
+  /**
+   * Every block that may be entered inside a rich text, projected at config-build time for the same
+   * reason the schema map is. Optional because nothing reads it yet: the walk that will is build
+   * step 3, and a required member would demand what no answer here depends on.
+   */
+  readonly embeds?: readonly BlockLike[];
   readonly modules?: readonly ChainMember[];
   readonly criteria?: Criteria;
 };
