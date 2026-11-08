@@ -11,13 +11,19 @@ requirements describe that audit's own deliverables, so this design states its o
 its candidate changes is given per item.
 
 - R1 (in) One embed-resolution type replaces the two that exist, serving a host with two embed lists and a host with one. (audit C1, finding F1)
-- R2 (in) Which language may take over a field's value, and which embeds it may enter, are settable per field. (audit C2, finding F2)
+- R2 (**withdrawn 2026-11-08**) Which language may take over a field's value, and which embeds it may enter, are settable per field. (audit C2, finding F2) — see Withdrawal below.
 - R3 (in) The embed vocabulary's false claim is corrected, and the shipped rich-text language is either named for its host or made host-neutral. (audit C6, finding F6)
-- R4 (in) A field naming an unregistered language, and an embed naming a slug the field does not permit, each have a decided outcome. (NFR, failure semantics)
+- R4 (**withdrawn 2026-11-08**) A field naming an unregistered language, and an embed naming a slug the field does not permit, each have a decided outcome. (NFR, failure semantics) — with no field-level declaration there is no such naming to decide about.
 - R5 (in) A field's embed definitions become a lookup at most once per collection-and-field per process, never per crossing. (NFR, performance budget)
 - R6 (out) Whether a crossing hands over the source tree or the target tree. (audit F3, its own body of work)
 - R7 (out) Shared language helpers and `enter` refusal discipline. (audit F4, F5)
 - R8 (out) Container-mode units for the rich-text language — the swap's own build step.
+
+> **Read the Withdrawal section at the end before building from anything below.** Everything that
+> follows describes the per-field declaration as it was decided and as it was built. D1, D2, D5 and
+> D6, the `FieldCrossingDeclaration` / `FieldEmbeds` / `FieldContent` rows of the abstractions
+> table, and build steps 4, 5 and 6 are **superseded** — the declaration was removed on 2026-11-08.
+> The text is kept as the record of a decision taken and reversed, not as instructions.
 
 Contract versioning is deferred by the owner and recorded under Open questions. Security and
 migration are N/A: no identity crosses this seam and nothing is persisted.
@@ -481,3 +487,39 @@ into the translation pipeline yet, and no stored data has the old shape.
 languages ↔ the embed convention, the projection ↔ the host, the plugin boot check ↔ the schema map),
 and one of them is the seam whose earlier shape already produced a correctness hazard. Then `/sp-task`
 on build step 1.
+
+## Withdrawal — 2026-11-08
+
+R2 and R4 are withdrawn by the owner, and build steps 4, 5 and 6 are undone. R1, R3 and R5 stand and
+remain built — R5 now more strongly than it asked, and in a different unit: the embed lookup is
+built once per language instance rather than once per collection-and-field, because there is no
+longer a per-field list to build. Its wording still says the latter; it is left as written, since
+what it demanded (never a lookup per crossing) holds.
+
+What stands: the one embed-resolution type, the renamed rich-text language with its corrected
+vocabulary, and the self-identifying crossing entry.
+
+**What replaces them.** `PayloadFieldsConfig` — `crossings`, `blocks`, `inlineBlocks` — is the only
+place a crossing is configured. There is no field-level channel.
+
+**Why.** The formats half added no capability: a format recognises its own value by shape, so
+narrowing the iterated list per field cannot change which format takes a value, and the one state it
+could express — this format may not have this field — is the state `exclude: true` already names.
+
+The embeds half was answering a question the data had already answered. Resolution is by slug, and
+the slug is what Payload writes into the stored document, so a global list that is a superset is
+never consulted for a field whose data does not carry that slug. What differs often between fields
+is their editors' allowed blocks, and that difference never reaches the walk. What the per-field
+list alone could express — the same block translated in one field and not in another — is a property
+of the block rather than of its position, and `exclude: true` inside the block states it once.
+
+Decisively, the two failure directions are not symmetric. A global list that is too broad translates
+a block that is present, which is visible and correctable. A per-field list that is too narrow skips
+text in silence, which is the defect the audit behind this design was opened for.
+
+**What this costs.** Per-field narrowing is gone, with no replacement. A configuration that needs
+two different blocks under one slug in two different fields cannot be expressed; Payload does not
+enforce slug uniqueness for blocks defined inside an editor, so such a configuration is possible,
+and it is now a limitation rather than a thing the plugin resolves.
+
+The amendment is recorded in `2026-11-08-the-declaration-withdrawn.task.md`.

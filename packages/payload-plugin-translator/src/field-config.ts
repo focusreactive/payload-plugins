@@ -1,7 +1,10 @@
 import type { Field, RichTextField, TextareaField, TextField } from "payload";
 
 import type { FieldTranslationConfig } from "./core/domain/field-config/index.js";
-import { TRANSLATE_KIT_CUSTOM_KEY } from "./core/domain/field-config/index.js";
+import {
+  TRANSLATE_KIT_CUSTOM_KEY,
+  getFieldTranslationConfig,
+} from "./core/domain/field-config/index.js";
 import { TranslateFieldControlExport } from "./client/widgets/translate-field-control/ui/TranslateFieldControl.export.js";
 import type { FieldControlPositioner } from "./field-actions.js";
 import { beforeInputPositioner } from "./field-actions.js";
@@ -29,6 +32,9 @@ const activeFieldControlPositioner: FieldControlPositioner = beforeInputPosition
  * - **Exclude from translation** — pass `{ exclude: true }` (any field type). The field
  *   value is never sent to the translation provider and no control is added.
  *
+ * Composes per key: a second call keeps the keys a first one set and overwrites those it names, so
+ * wrapping an already-excluded field again leaves it excluded.
+ *
  * @param field - The Payload field to configure
  * @param config - Pass `{ exclude: true }` to exclude; omit to add a control
  * @returns A new field with the configuration applied (the input is not mutated)
@@ -51,17 +57,15 @@ export function withFieldTranslation<T extends Field>(
     : [config: { exclude: true }]
 ): T;
 export function withFieldTranslation(field: Field, config?: { exclude?: boolean }): Field {
+  const merged: FieldTranslationConfig = { ...getFieldTranslationConfig(field), ...config };
   const configured = {
     ...field,
-    custom: {
-      ...(field.custom ?? {}),
-      [TRANSLATE_KIT_CUSTOM_KEY]: (config ?? {}) satisfies FieldTranslationConfig,
-    },
+    custom: { ...(field.custom ?? {}), [TRANSLATE_KIT_CUSTOM_KEY]: merged },
   } as Field;
 
   // No `exclude` = control intent: position the control via the active positioner.
   // `exclude: true` = no control (the field is left out of translation entirely).
-  return config?.exclude
+  return merged.exclude === true
     ? configured
     : activeFieldControlPositioner(configured, new TranslateFieldControlExport());
 }
