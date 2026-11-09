@@ -716,7 +716,7 @@ export interface Comment {
         id?: string | null;
       }[]
     | null;
-  author: number | User;
+  author?: (number | null) | User;
   isResolved?: boolean | null;
   resolvedBy?: (number | null) | User;
   resolvedAt?: string | null;
