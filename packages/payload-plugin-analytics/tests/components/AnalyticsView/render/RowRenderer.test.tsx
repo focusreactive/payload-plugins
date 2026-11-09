@@ -37,7 +37,11 @@ describe("RowRenderer", () => {
     } as unknown as ResolvedRow;
 
     const { container } = renderWith(
-      <RowRenderer row={row} registry={{ "sessions-kpi": { component: "x" } }} {...baseProps} />
+      <RowRenderer
+        row={row}
+        clientRegistry={{ "sessions-kpi": { hasFetch: false } }}
+        {...baseProps}
+      />
     );
     const grid = container.firstChild as HTMLElement;
     expect(grid.style.gridTemplateColumns).toBe("repeat(3, minmax(0, 1fr))");
@@ -57,7 +61,10 @@ describe("RowRenderer", () => {
     const { container } = renderWith(
       <RowRenderer
         row={row}
-        registry={{ "devices-donut": { component: "x" }, "top-countries": { component: "x" } }}
+        clientRegistry={{
+          "devices-donut": { hasFetch: false },
+          "top-countries": { hasFetch: false },
+        }}
         {...baseProps}
       />
     );

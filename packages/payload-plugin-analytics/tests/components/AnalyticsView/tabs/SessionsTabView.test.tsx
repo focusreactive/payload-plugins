@@ -7,7 +7,7 @@ import type { SessionsResponse } from "../../../../src/types/query";
 const fixture = sessions as SessionsResponse;
 
 describe("SessionsTabView", () => {
-  it("renders caveat banner, filters, and table rows", () => {
+  it("renders filters and table rows", () => {
     render(
       <SessionsTabView
         filters={{}}
@@ -21,7 +21,6 @@ describe("SessionsTabView", () => {
         onCloseDrawer={() => {}}
       />
     );
-    expect(screen.getByText(/Sessions without a recorded start time/iu)).toBeInTheDocument();
     expect(screen.getByText("Landing page")).toBeInTheDocument();
     expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
   });

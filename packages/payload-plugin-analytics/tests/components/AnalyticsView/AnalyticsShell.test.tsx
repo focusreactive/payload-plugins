@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { AnalyticsShell } from "../../../src/components/AnalyticsView/AnalyticsShell";
-import { setPluginConfig, setResolvedLayout } from "../../../src/config";
 import { resolveLayout } from "../../../src/services/layout/resolveLayout";
 import type { AnalyticsPluginConfig } from "../../../src/types/config";
 
@@ -23,11 +22,10 @@ const baseConfig: AnalyticsPluginConfig = {
   },
 };
 
-beforeAll(() => {
-  setPluginConfig(baseConfig);
-  const { resolved, registry } = resolveLayout(baseConfig);
-  setResolvedLayout(resolved, registry);
-});
+const { resolved, registry } = resolveLayout(baseConfig);
+const clientRegistry = Object.fromEntries(
+  Object.entries(registry).map(([id, def]) => [id, { hasFetch: Boolean(def.fetch) }])
+);
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -43,7 +41,7 @@ describe("AnalyticsShell", () => {
         .mockResolvedValue(Response.json({}, { headers: { "Content-Type": "application/json" } }))
     );
 
-    render(<AnalyticsShell title="Analytics" />);
+    render(<AnalyticsShell title="Analytics" layout={resolved} clientRegistry={clientRegistry} />);
     expect(screen.getByRole("heading", { name: /Analytics/iu })).toBeInTheDocument();
     expect(screen.getByRole("tab", { selected: true })).toHaveTextContent("Overview");
     expect(screen.getByRole("button", { name: /Refresh/iu })).toBeInTheDocument();

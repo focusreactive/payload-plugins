@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { mockNextDynamic } from "../../../__helpers__/mockNextDynamic";
 import { TrendChart } from "../../../../src/components/AnalyticsView/ui/TrendChart";
+import "../../../../src/components/AnalyticsView/ui/TrendChartInner";
 
 vi.mock("next/dynamic", () => ({ default: mockNextDynamic }));
 
