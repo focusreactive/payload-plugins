@@ -2,7 +2,10 @@ import { createParentField, createBreadcrumbsField } from "@payloadcms/plugin-ne
 import type { CollectionConfig } from "payload";
 
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
-import { LIVE_PREVIEW_AUTOSAVE_INTERVAL_MS } from "@/lib/constants/livePreview";
+import {
+  LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
+  LIVE_PREVIEW_VERSIONS,
+} from "@/lib/config/livePreview";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
@@ -26,6 +29,7 @@ export const Page: CollectionConfig<"page"> = {
   admin: {
     components: {
       edit: {
+        beforeDocumentControls: LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
         PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
       },
     },
@@ -109,10 +113,5 @@ export const Page: CollectionConfig<"page"> = {
     },
   },
   slug: "page",
-  versions: {
-    drafts: {
-      autosave: { interval: LIVE_PREVIEW_AUTOSAVE_INTERVAL_MS },
-    },
-    maxPerDoc: 50,
-  },
+  versions: LIVE_PREVIEW_VERSIONS,
 };

@@ -6,7 +6,10 @@ import { CtaBannerInlineBlock } from "@/blocks/CtaBanner/inlineConfig";
 import { LogosInlineBlock } from "@/blocks/Logos/inlineConfig";
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
-import { LIVE_PREVIEW_AUTOSAVE_INTERVAL_MS } from "@/lib/constants/livePreview";
+import {
+  LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
+  LIVE_PREVIEW_VERSIONS,
+} from "@/lib/config/livePreview";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { anyone, author, or, user, superAdmin } from "@/lib/access";
 import {
@@ -36,6 +39,7 @@ export const Posts: CollectionConfig<"posts"> = {
   admin: {
     components: {
       edit: {
+        beforeDocumentControls: LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
         PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
       },
     },
@@ -331,10 +335,5 @@ export const Posts: CollectionConfig<"posts"> = {
     },
   },
   slug: BLOG_CONFIG.collection,
-  versions: {
-    drafts: {
-      autosave: { interval: LIVE_PREVIEW_AUTOSAVE_INTERVAL_MS },
-    },
-    maxPerDoc: 50,
-  },
+  versions: LIVE_PREVIEW_VERSIONS,
 };
