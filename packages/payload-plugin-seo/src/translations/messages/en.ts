@@ -61,7 +61,7 @@ export const en = {
     "Synonyms count as keyphrase matches in this keyphrase’s checks. One chip per synonym.",
 
   "inclusive.title": "Inclusive language",
-  "inclusive.subtitle": "{{flagged}} phrases flagged across {{categories}} categories",
+  "inclusive.subtitle": "Flagged phrases: {{flagged}} · categories: {{categories}}",
   "inclusive.flagged": "Marked by category",
   "inclusive.clean": "No issues found",
   "inclusive.category.age": "Age",
