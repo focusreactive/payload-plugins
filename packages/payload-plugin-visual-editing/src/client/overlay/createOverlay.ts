@@ -26,7 +26,9 @@ export type OverlayCtx = {
 const isPlainPrimaryClick = (event: MouseEvent) =>
   event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 
-const hasTextSelection = (node: Node) => node.ownerDocument?.getSelection()?.isCollapsed === false;
+const hasTextSelection = () => document.getSelection()?.isCollapsed === false;
+
+const isRepeatedClick = (event: MouseEvent) => event.detail > 1;
 
 // Wires every overlay submodule and returns a dispose that tears them down in reverse order.
 // `getCtx` is a getter so the callsite (the hook) can stabilize its useEffect dependency array
@@ -100,10 +102,16 @@ export function createOverlay(main: HTMLElement, getCtx: () => OverlayCtx): () =
   });
 
   const openFieldOnTargetClick = (event: MouseEvent) => {
-    if (!isPlainPrimaryClick(event) || hasTextSelection(main)) return;
+    if (!isPlainPrimaryClick(event)) return;
     const target = findTargetAncestor(event.target instanceof Element ? event.target : null);
     const config = target ? registry.get(target) : undefined;
     if (!config) return;
+    if (isRepeatedClick(event)) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    if (hasTextSelection()) return;
     event.stopPropagation();
     config.clickHandler(event);
   };

@@ -177,7 +177,7 @@ bunx payload generate:importmap
 
 ### Using it
 
-Open a document in the admin, open the **Live Preview** side panel (it loads the frontend in draft mode), then flip the floating toggle to **Always** or **Hover**. Editable text shows an outline and an **Edit** badge; clicking it focuses that field in the admin form. Clicking anywhere on a highlighted element opens its field too; hold a modifier key (or select text) to interact with the page normally. To leave draft mode when viewing the frontend directly, hit `/next/exit-preview`.
+Open a document in the admin, open the **Live Preview** side panel (it loads the frontend in draft mode), then flip the floating toggle to **Always** or **Hover**. Editable text shows an outline and an **Edit** badge; clicking it focuses that field in the admin form. A plain click anywhere on a highlighted element opens its field too; a modifier-click or a text selection keeps the page's normal behavior. To leave draft mode when viewing the frontend directly, hit `/next/exit-preview`.
 
 ## Editable richText and upload fields
 

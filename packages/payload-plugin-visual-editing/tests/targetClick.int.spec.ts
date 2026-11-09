@@ -88,6 +88,17 @@ describe("click on a highlighted target", () => {
     expect(event.defaultPrevented).toBe(false);
   });
 
+  it("keeps the second click of a double-click from following the link", () => {
+    click(label, { detail: 1 });
+    document.getSelection()?.selectAllChildren(label);
+
+    const secondClick = click(label, { detail: 2 });
+
+    expect(secondClick.defaultPrevented).toBe(true);
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(anchorClick).not.toHaveBeenCalled();
+  });
+
   it("ignores clicks outside any target", () => {
     const outside = document.createElement("p");
     main.append(outside);
