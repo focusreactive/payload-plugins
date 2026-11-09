@@ -52,8 +52,13 @@ export function extractCheckData(
 ): Record<string, unknown> | undefined {
   switch (id) {
     case "keyphraseDensity": {
-      const r = getResearch<{ density: number }>(researcher, "getKeyphraseDensity");
-      return r ? { densityPct: r.density } : undefined;
+      const r = getResearch<{ density: number; textLength: number }>(
+        researcher,
+        "getKeyphraseDensity"
+      );
+      if (!r) return undefined;
+      const occurrences = getResearch<{ count: number }>(researcher, "getKeyphraseCount");
+      return { densityPct: r.density, textLength: r.textLength, count: occurrences?.count };
     }
     case "imageKeyphrase": {
       const r = getResearch<{
@@ -137,7 +142,7 @@ export function extractCheckData(
         researcher,
         "matchKeywordInSubheadings"
       );
-      return r && r.count > 0 ? { matched: r.matches, total: r.count } : undefined;
+      return r ? { matched: r.matches, total: r.count } : undefined;
     }
     case "textCompetingLinks": {
       const r = getResearch<{
