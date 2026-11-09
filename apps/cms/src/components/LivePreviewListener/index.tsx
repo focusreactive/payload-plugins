@@ -11,11 +11,6 @@ export const LivePreviewListener: React.FC = () => {
   const [isRefreshing, startRefresh] = useTransition();
   const [refreshRequests, setRefreshRequests] = useState(0);
   const handledRefreshRequestsRef = useRef(0);
-  const hasMountedRef = useRef(false);
-
-  useEffect(() => {
-    hasMountedRef.current = true;
-  }, []);
 
   useEffect(() => {
     if (isRefreshing || refreshRequests === handledRefreshRequestsRef.current) return;
@@ -23,9 +18,9 @@ export const LivePreviewListener: React.FC = () => {
     startRefresh(() => router.refresh());
   }, [isRefreshing, refreshRequests, router]);
 
-  const requestRefreshAfterMount = useCallback(() => {
-    if (hasMountedRef.current) setRefreshRequests((count) => count + 1);
+  const requestRefresh = useCallback(() => {
+    setRefreshRequests((count) => count + 1);
   }, []);
 
-  return <PayloadLivePreview refresh={requestRefreshAfterMount} serverURL={getClientSideURL()} />;
+  return <PayloadLivePreview refresh={requestRefresh} serverURL={getClientSideURL()} />;
 };
