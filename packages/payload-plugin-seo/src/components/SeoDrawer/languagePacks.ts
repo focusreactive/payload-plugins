@@ -4,6 +4,11 @@ import { languageOf, registerResearcher } from "../../engine/researcherAdapter";
 
 const loaded = new Set<string>(["en"]);
 
+function researcherClassOf(mod: { default?: unknown }): unknown {
+  const exported = mod.default as { default?: unknown } | undefined;
+  return exported?.default ?? exported;
+}
+
 /**
  * Loads the Yoast language pack for `locale` and registers its Researcher, so
  * the next analysis of a paper in that language uses that language's
@@ -19,10 +24,7 @@ export async function ensureLanguagePack(locale: string, supported: string[]): P
       /* @vite-ignore */ `yoastseo/build/languageProcessing/languages/${lang}/Researcher`
     )) as { default?: unknown };
 
-    // The pack is CommonJS compiled from ESM: bundlers hand over the class as
-    // `default`, Node's ESM loader the whole `exports` object.
-    const def = mod.default as { default?: unknown } | undefined;
-    registerResearcher(lang, def?.default ?? def);
+    registerResearcher(lang, researcherClassOf(mod));
 
     loaded.add(lang);
   } catch {}

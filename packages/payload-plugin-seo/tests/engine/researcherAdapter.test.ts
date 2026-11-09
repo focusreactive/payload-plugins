@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 import { languageOf, makeResearcher, registerResearcher } from "../../src/engine/researcherAdapter";
 import { fakeResearcher } from "./fixtures/fakeResearchers";
 
-// Hoisted above the imports.
 vi.mock("yoastseo/build/languageProcessing/languages/en/Researcher", async () => {
   const { fakeEnglish } = await import("./fixtures/fakeResearchers");
   return { default: fakeEnglish };
