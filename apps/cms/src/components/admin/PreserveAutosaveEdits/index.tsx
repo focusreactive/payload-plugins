@@ -1,6 +1,12 @@
 "use client";
 
-import { useAllFormFields, useDocumentInfo, useForm, useFormModified } from "@payloadcms/ui";
+import {
+  useAllFormFields,
+  useDocumentInfo,
+  useForm,
+  useFormModified,
+  useLocale,
+} from "@payloadcms/ui";
 import { useLayoutEffect, useRef } from "react";
 
 import { editedPathsIn, fieldsMissingEditMark, hasUnsavedEdits } from "./editedFields";
@@ -10,7 +16,13 @@ export function PreserveAutosaveEdits() {
   const { data: savedDoc } = useDocumentInfo();
   const { setModified } = useForm();
   const modified = useFormModified();
+  const { code: localeCode } = useLocale();
   const editedPaths = useRef(new Set<string>());
+  const lastCheckedDoc = useRef(savedDoc);
+
+  useLayoutEffect(() => {
+    editedPaths.current.clear();
+  }, [localeCode]);
 
   useLayoutEffect(() => {
     for (const path of editedPathsIn(fields)) {
@@ -24,6 +36,11 @@ export function PreserveAutosaveEdits() {
   }, [fields, dispatchFields]);
 
   useLayoutEffect(() => {
+    if (savedDoc === lastCheckedDoc.current) {
+      return;
+    }
+    lastCheckedDoc.current = savedDoc;
+
     if (!modified && savedDoc && hasUnsavedEdits(fields, editedPaths.current, savedDoc)) {
       setModified(true);
     }
