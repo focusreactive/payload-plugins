@@ -1,5 +1,5 @@
 import type { Payload } from "payload";
-import { getPayload, ValidationError } from "payload";
+import { getPayload } from "payload";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { ALL_LOCALES, I18N_CONFIG } from "@/lib/config/i18n";
@@ -196,6 +196,8 @@ describe("slug while autosaving drafts", { timeout: 30_000 }, () => {
 
     await expect(
       publishPage(draft.id, { generateSlug: false, slug: null, title: `Unslugged ${suffix}` })
-    ).rejects.toBeInstanceOf(ValidationError);
+    ).rejects.toMatchObject({
+      data: { errors: [expect.objectContaining({ path: "slug" })] },
+    });
   });
 });
