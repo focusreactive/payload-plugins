@@ -3,7 +3,7 @@ import type { CollectionConfig } from "payload";
 
 import {
   LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
-  LIVE_PREVIEW_VERSIONS,
+  createLivePreviewVersions,
 } from "@/lib/config/livePreview";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
@@ -110,5 +110,5 @@ export const Page: CollectionConfig<"page"> = {
     },
   },
   slug: "page",
-  versions: LIVE_PREVIEW_VERSIONS,
+  versions: createLivePreviewVersions(),
 };

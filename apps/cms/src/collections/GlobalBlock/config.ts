@@ -4,7 +4,7 @@ import { contentBlocks } from "@/blocks/contentBlocks";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import {
   LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
-  LIVE_PREVIEW_VERSIONS,
+  createLivePreviewVersions,
 } from "@/lib/config/livePreview";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
@@ -87,5 +87,5 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
     singular: { en: "Global Block", es: "Bloque Global" },
   },
   slug: "globalBlock",
-  versions: LIVE_PREVIEW_VERSIONS,
+  versions: createLivePreviewVersions(),
 };
