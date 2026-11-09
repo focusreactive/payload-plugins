@@ -22,7 +22,7 @@ describe("isObject", () => {
     });
 
     it("returns true for RegExp", () => {
-      expect(isObject(/test/)).toBe(true);
+      expect(isObject(/test/u)).toBe(true);
     });
 
     it("returns true for object created with Object.create", () => {

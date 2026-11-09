@@ -12,7 +12,11 @@ import type { StalenessConfig } from "./model.js";
  * degrades to an empty result and a log line — it must never 500 the document panel.
  */
 export class GetDocumentStalenessHandler {
-  constructor(private readonly config: StalenessConfig) {}
+  private readonly config: StalenessConfig;
+
+  constructor(config: StalenessConfig) {
+    this.config = config;
+  }
 
   async handle(req: PayloadRequest): Promise<Response> {
     const validationResult = GetDocumentStalenessInputSchema.safeParse(req.routeParams);

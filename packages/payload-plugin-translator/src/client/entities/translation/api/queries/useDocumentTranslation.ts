@@ -46,8 +46,8 @@ export function useDocumentTranslation({ collection, id }: Props, options?: Opti
     },
     enabled: options?.enabled,
     // Keep polling while any locale's job is still in flight; stop once every job is terminal.
-    refetchInterval: (query) => {
-      const active = (query.state.data ?? []).some(
+    refetchInterval: (currentQuery) => {
+      const active = (currentQuery.state.data ?? []).some(
         (job) => job.status === "pending" || job.status === "running"
       );
       return active ? POLLING_INTERVAL_MILLISECONDS : false;

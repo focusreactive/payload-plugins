@@ -9,7 +9,11 @@ import { FieldChunkCollector } from "./FieldChunkCollector.js";
  * Stage 2 of the translation pipeline.
  */
 export class FieldChunkCollectorStage implements PipelineStage {
-  constructor(private readonly strategy: TranslationStrategy) {}
+  private readonly strategy: TranslationStrategy;
+
+  constructor(strategy: TranslationStrategy) {
+    this.strategy = strategy;
+  }
 
   execute(ctx: PipelineContext): PipelineContext {
     if (!ctx.filteredData) {

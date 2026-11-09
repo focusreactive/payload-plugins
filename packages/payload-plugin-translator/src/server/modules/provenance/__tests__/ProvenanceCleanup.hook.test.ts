@@ -52,12 +52,12 @@ describe("makeProvenanceCleanupHook", () => {
   });
 });
 
-describe("injectProvenanceCleanup", () => {
-  // No cast to Config: the narrow ManagedCollectionsConfig accepts a plain literal.
-  const config = (slugs: string[]): ManagedCollectionsConfig => ({
-    collections: slugs.map((slug) => ({ slug })),
-  });
+// No cast to Config: the narrow ManagedCollectionsConfig accepts a plain literal.
+const config = (slugs: string[]): ManagedCollectionsConfig => ({
+  collections: slugs.map((slug) => ({ slug })),
+});
 
+describe("injectProvenanceCleanup", () => {
   it("attaches the hook only to managed collections", () => {
     const store = makeStore();
     const cfg = config(["posts", "media"]);

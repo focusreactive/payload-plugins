@@ -15,10 +15,13 @@ import type { GetDocumentStatusConfig } from "./model.js";
  * Gets the translation status for a specific document
  */
 export class GetDocumentStatusHandler {
-  constructor(
-    private readonly config: GetDocumentStatusConfig,
-    private readonly taskRunnerFactory: TaskRunnerFactory
-  ) {}
+  private readonly config: GetDocumentStatusConfig;
+  private readonly taskRunnerFactory: TaskRunnerFactory;
+
+  constructor(config: GetDocumentStatusConfig, taskRunnerFactory: TaskRunnerFactory) {
+    this.config = config;
+    this.taskRunnerFactory = taskRunnerFactory;
+  }
 
   async handle(req: PayloadRequest): Promise<Response> {
     const validationResult = GetDocumentStatusInputSchema.safeParse(req.routeParams);

@@ -9,7 +9,11 @@ import { RunInputSchema } from "./model.js";
  * Runs a translation task by ID
  */
 export class RunTranslationHandler {
-  constructor(private readonly taskRunnerFactory: TaskRunnerFactory) {}
+  private readonly taskRunnerFactory: TaskRunnerFactory;
+
+  constructor(taskRunnerFactory: TaskRunnerFactory) {
+    this.taskRunnerFactory = taskRunnerFactory;
+  }
 
   async handle(req: PayloadRequest): Promise<Response> {
     const validationResult = RunInputSchema.safeParse(req.routeParams);

@@ -2,11 +2,13 @@ import { FetchError } from "ofetch";
 import type { ZodIssue } from "zod";
 
 export class NextApiError extends Error {
-  constructor(
-    readonly message: string,
-    readonly details?: ZodIssue[]
-  ) {
+  readonly message: string;
+  readonly details?: ZodIssue[];
+
+  constructor(message: string, details?: ZodIssue[]) {
     super(message);
+    this.message = message;
+    this.details = details;
   }
 }
 

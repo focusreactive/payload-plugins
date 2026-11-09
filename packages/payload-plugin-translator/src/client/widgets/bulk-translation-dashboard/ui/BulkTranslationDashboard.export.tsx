@@ -7,10 +7,15 @@ import { clientComponentPath } from "../../../shared/utils/componentPath.js";
 export class BulkDocumentTranslationDashboard implements RawPayloadComponentExport {
   serverProps?: object | Record<string, any> | undefined;
 
+  readonly access: AccessGuard;
+  readonly targetSelection: TargetSelectionMode;
+
   constructor(
-    readonly access: AccessGuard = new AnyAccessGuard(),
-    readonly targetSelection: TargetSelectionMode = "single"
+    access: AccessGuard = new AnyAccessGuard(),
+    targetSelection: TargetSelectionMode = "single"
   ) {
+    this.access = access;
+    this.targetSelection = targetSelection;
     this.serverProps = { access, targetSelection };
   }
   path = clientComponentPath(

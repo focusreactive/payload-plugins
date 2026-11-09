@@ -321,6 +321,16 @@ describe("translatorPlugin — auto-translate (opt-in wiring)", () => {
   });
 });
 
+const handlerInput = (overrides: Record<string, unknown> = {}) => ({
+  collection: "posts",
+  collectionId: "doc-1",
+  sourceLng: "en",
+  targetLng: "de",
+  strategy: "overwrite",
+  publishOnTranslation: false,
+  ...overrides,
+});
+
 describe("translatorPlugin — lifecycle callbacks", () => {
   // The runner's execution handler is what the plugin wraps for completed/failed. It is handed to
   // `runner.configure(context)` at init, so we capture it from the configure mock and invoke it.
@@ -329,16 +339,6 @@ describe("translatorPlugin — lifecycle callbacks", () => {
       payload: Payload,
       input: Record<string, unknown>
     ) => Promise<void>;
-
-  const handlerInput = (overrides: Record<string, unknown> = {}) => ({
-    collection: "posts",
-    collectionId: "doc-1",
-    sourceLng: "en",
-    targetLng: "de",
-    strategy: "overwrite",
-    publishOnTranslation: false,
-    ...overrides,
-  });
 
   const mockPayload = () =>
     ({

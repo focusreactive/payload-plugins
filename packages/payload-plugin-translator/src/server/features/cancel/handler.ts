@@ -9,7 +9,11 @@ import { CancelInputSchema } from "./model.js";
  * Cancels and deletes translation tasks by IDs
  */
 export class CancelHandler {
-  constructor(private readonly taskRunnerFactory: TaskRunnerFactory) {}
+  private readonly taskRunnerFactory: TaskRunnerFactory;
+
+  constructor(taskRunnerFactory: TaskRunnerFactory) {
+    this.taskRunnerFactory = taskRunnerFactory;
+  }
 
   async handle(req: PayloadRequest): Promise<Response> {
     const validationResult = CancelInputSchema.safeParse(await req.json?.());

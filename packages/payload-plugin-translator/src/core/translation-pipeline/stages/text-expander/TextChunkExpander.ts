@@ -16,7 +16,11 @@ export type TextExpansionResult = {
  * This is where schema dependency ends - TextChunks contain only data references.
  */
 export class TextChunkExpander {
-  constructor(private readonly expanders: TextExpander[]) {}
+  private readonly expanders: TextExpander[];
+
+  constructor(expanders: TextExpander[]) {
+    this.expanders = expanders;
+  }
 
   /**
    * Expands all FieldChunks into TextChunks.

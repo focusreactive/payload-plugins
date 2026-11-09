@@ -17,6 +17,6 @@ export function normalizePath(path: string): string {
   if (!trimmed) return "";
 
   // Remove leading/trailing slashes, then add single leading slash
-  const normalized = trimmed.replace(/^\/+|\/+$/g, "");
+  const normalized = trimmed.replace(/^\/+|\/+$/gu, "");
   return normalized ? `/${normalized}` : "";
 }

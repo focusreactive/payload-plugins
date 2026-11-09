@@ -91,26 +91,26 @@ const createNode = (type: string, props?: Record<string, unknown>, children?: un
 
 const wrapInRoot = (children: unknown[]) => ({ root: createNode("root", {}, children) });
 
-describe("RichTextExpander", () => {
-  const expander = new RichTextExpander();
-
-  const createLexicalRoot = (textNodes: string[]) => ({
-    root: {
-      type: "root",
-      children: textNodes.map((text) => ({
-        type: "paragraph",
-        children: [{ type: "text", text, version: 1 }],
-        direction: "ltr",
-        format: "",
-        indent: 0,
-        version: 1,
-      })),
+const createLexicalRoot = (textNodes: string[]) => ({
+  root: {
+    type: "root",
+    children: textNodes.map((text) => ({
+      type: "paragraph",
+      children: [{ type: "text", text, version: 1 }],
       direction: "ltr",
       format: "",
       indent: 0,
       version: 1,
-    },
-  });
+    })),
+    direction: "ltr",
+    format: "",
+    indent: 0,
+    version: 1,
+  },
+});
+
+describe("RichTextExpander", () => {
+  const expander = new RichTextExpander();
 
   describe("canExpand", () => {
     it("returns true for richText field with Lexical root", () => {

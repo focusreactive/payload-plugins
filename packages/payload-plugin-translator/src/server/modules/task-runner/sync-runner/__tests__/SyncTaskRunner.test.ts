@@ -320,15 +320,15 @@ describe("SyncTaskRunner", () => {
     it("returns empty array when no tasks match", async () => {
       await runner.enqueue([createInput()]);
 
-      const tasks = await runner.findByCollection("pages" as CollectionSlug);
-      expect(tasks).toEqual([]);
+      const found = await runner.findByCollection("pages" as CollectionSlug);
+      expect(found).toEqual([]);
     });
 
     it("returns empty array for empty documentIds", async () => {
       await runner.enqueue([createInput()]);
 
-      const tasks = await runner.findByCollection("posts" as CollectionSlug, []);
-      expect(tasks).toEqual([]);
+      const found = await runner.findByCollection("posts" as CollectionSlug, []);
+      expect(found).toEqual([]);
     });
   });
 });

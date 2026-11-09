@@ -9,10 +9,13 @@ import type { CancelConfig } from "./model.js";
 
 /** Cancels every queued job for a collection; jobs in flight are left alone. */
 export class CancelByCollectionHandler {
-  constructor(
-    private readonly config: CancelConfig,
-    private readonly taskRunnerFactory: TaskRunnerFactory
-  ) {}
+  private readonly config: CancelConfig;
+  private readonly taskRunnerFactory: TaskRunnerFactory;
+
+  constructor(config: CancelConfig, taskRunnerFactory: TaskRunnerFactory) {
+    this.config = config;
+    this.taskRunnerFactory = taskRunnerFactory;
+  }
 
   async handle(req: PayloadRequest): Promise<Response> {
     const validationResult = CancelByCollectionInputSchema.safeParse(req.routeParams);

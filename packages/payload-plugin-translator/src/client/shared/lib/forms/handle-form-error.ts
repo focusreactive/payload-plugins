@@ -8,9 +8,9 @@ export function handleFormError<D extends object>(
 ) {
   if (error instanceof NextApiError) {
     if (error.details) {
-      error.details?.forEach((error) => {
-        form.setError(error.path.join(".") as `root.${string}`, {
-          message: error.message,
+      error.details?.forEach((issue) => {
+        form.setError(issue.path.join(".") as `root.${string}`, {
+          message: issue.message,
         });
       });
     } else {

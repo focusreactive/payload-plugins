@@ -19,7 +19,7 @@ export function setByPath(obj: Record<string, unknown>, path: string, value: unk
 
     if (!isObject(current[key])) {
       // Create array if next key is numeric, otherwise object
-      current[key] = /^\d+$/.test(nextKey) ? [] : {};
+      current[key] = /^\d+$/u.test(nextKey) ? [] : {};
     }
 
     current = current[key] as Record<string, unknown>;

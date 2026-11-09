@@ -8,7 +8,11 @@ import type { StalenessConfig } from "./model.js";
 
 /** Dismisses (acknowledges) staleness of one target locale for a document. */
 export class DismissStalenessHandler {
-  constructor(private readonly config: StalenessConfig) {}
+  private readonly config: StalenessConfig;
+
+  constructor(config: StalenessConfig) {
+    this.config = config;
+  }
 
   async handle(req: PayloadRequest): Promise<Response> {
     const validationResult = DismissStalenessInputSchema.safeParse(await req.json?.());
