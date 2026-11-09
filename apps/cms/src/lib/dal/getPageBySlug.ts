@@ -37,7 +37,7 @@ export async function getPageBySlugQuery(
   return docs.find((p) => p?.breadcrumbs?.at(-1)?.url === targetUrl) ?? null;
 }
 
-const getPageBySegmentsKey = cache(
+const getPageBySlugCached = cache(
   async (
     segmentsKey: string,
     locale?: Locale
@@ -73,4 +73,4 @@ export const getPageBySlug = (
   pathSegments: string[],
   locale?: Locale
 ): Promise<RequiredDataFromCollectionSlug<"page"> | null> =>
-  getPageBySegmentsKey(JSON.stringify(pathSegments), locale);
+  getPageBySlugCached(JSON.stringify(pathSegments), locale);
