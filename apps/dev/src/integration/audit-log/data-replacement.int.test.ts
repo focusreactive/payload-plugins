@@ -38,8 +38,8 @@ describe("a beforeChange hook added after the audit plugin returns a new data ob
   });
 
   it("a password change over REST is still doc.update with password among the changes", async () => {
-    const user = await createUser(ctx.payload, "copy-password@x.io");
-    const headers = await loginHeaders(ctx.payload, "copy-password@x.io");
+    const user = await createUser(ctx.payload, "copy-password@example.com");
+    const headers = await loginHeaders(ctx.payload, "copy-password@example.com");
     const res = await rest(ctx.payload, "PATCH", `/users/${user.id}`, {
       headers,
       body: { password: "a-new-password-456" },

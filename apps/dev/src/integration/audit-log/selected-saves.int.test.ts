@@ -15,8 +15,8 @@ let ctx: AuditTestPayload;
 let signedInAdmin: Record<string, string>;
 beforeAll(async () => {
   ctx = await bootAuditPayload();
-  await createUser(ctx.payload, "select-admin@x.io", { role: "admin" });
-  signedInAdmin = await loginHeaders(ctx.payload, "select-admin@x.io");
+  await createUser(ctx.payload, "select-admin@example.com", { role: "admin" });
+  signedInAdmin = await loginHeaders(ctx.payload, "select-admin@example.com");
 });
 afterAll(async () => {
   await ctx?.cleanup();
@@ -95,7 +95,7 @@ describe("saves that select which fields they return", () => {
   });
 
   it("a user update that leaves the role out of the selection is no role change", async () => {
-    const user = await createUser(ctx.payload, "select-user@x.io", {
+    const user = await createUser(ctx.payload, "select-user@example.com", {
       role: "admin",
       name: "a",
       bio: "b",
@@ -115,7 +115,10 @@ describe("saves that select which fields they return", () => {
   });
 
   it("a role change the selection leaves out is still listed", async () => {
-    const user = await createUser(ctx.payload, "select-role@x.io", { role: "editor", name: "a" });
+    const user = await createUser(ctx.payload, "select-role@example.com", {
+      role: "editor",
+      name: "a",
+    });
     testStartedAt = await timestampAfterEverythingSoFar();
 
     await ctx.payload.update({
@@ -131,7 +134,7 @@ describe("saves that select which fields they return", () => {
   });
 
   it("a password change with a selection is logged by name only", async () => {
-    const user = await createUser(ctx.payload, "select-password@x.io", { name: "a" });
+    const user = await createUser(ctx.payload, "select-password@example.com", { name: "a" });
     testStartedAt = await timestampAfterEverythingSoFar();
 
     await ctx.payload.update({

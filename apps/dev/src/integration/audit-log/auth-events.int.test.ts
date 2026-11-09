@@ -41,8 +41,8 @@ const loginOverRest = (email: string, password = PASSWORD) =>
 
 describe("auth events in real flows", () => {
   it("login, refresh and logout over REST record login and logout of that user", async () => {
-    const user = await createUser(ctx.payload, "flow@x.io");
-    const login = await loginOverRest("flow@x.io");
+    const user = await createUser(ctx.payload, "flow@example.com");
+    const login = await loginOverRest("flow@example.com");
     expect(login.status).toBe(200);
     const cookie = authCookie(login);
     const refresh = await rest(ctx.payload, "POST", "/users/refresh-token", {
@@ -55,16 +55,16 @@ describe("auth events in real flows", () => {
     const log = ofThisTest(await targetEvents(ctx.payload, "users", user.id));
     expect(actionsOf(log)).toEqual(["doc.create", "auth.login", "auth.logout"]);
     expect(log[2]).toMatchObject({
-      actor: { type: "user", docId: String(user.id), label: "flow@x.io" },
+      actor: { type: "user", docId: String(user.id), label: "flow@example.com" },
       target: { kind: "auth", slug: "users", docId: String(user.id) },
     });
   });
 
   it("forgot password and reset password are recorded, the reset by the user who reset", async () => {
-    const user = await createUser(ctx.payload, "reset@x.io");
+    const user = await createUser(ctx.payload, "reset@example.com");
     const token = await ctx.payload.forgotPassword({
       collection: USERS,
-      data: { email: "reset@x.io" } as never,
+      data: { email: "reset@example.com" } as never,
       disableEmail: true,
     });
     await ctx.payload.resetPassword({
@@ -76,35 +76,45 @@ describe("auth events in real flows", () => {
     const [requested] = ofThisTest(
       await eventsWithAction(ctx.payload, "auth.password_reset_requested")
     );
-    expect(requested?.target).toMatchObject({ kind: "auth", slug: "users", label: "reset@x.io" });
+    expect(requested?.target).toMatchObject({
+      kind: "auth",
+      slug: "users",
+      label: "reset@example.com",
+    });
     const [reset] = ofThisTest(await eventsWithAction(ctx.payload, "auth.password_reset"));
     expect(reset).toMatchObject({
-      actor: { type: "user", docId: String(user.id), label: "reset@x.io" },
+      actor: { type: "user", docId: String(user.id), label: "reset@example.com" },
       target: { kind: "auth", slug: "users", docId: String(user.id) },
     });
     expect(JSON.stringify([requested, reset])).not.toContain(String(token));
   });
 
   it("the right password on a locked account is a failed login with reason locked", async () => {
-    await createUser(ctx.payload, "locked@x.io");
+    await createUser(ctx.payload, "locked@example.com");
     for (let attempt = 0; attempt < MAX_LOGIN_ATTEMPTS; attempt += 1) {
-      expect((await loginOverRest("locked@x.io", "wrong-password")).status).toBe(401);
+      expect((await loginOverRest("locked@example.com", "wrong-password")).status).toBe(401);
     }
-    expect((await loginOverRest("locked@x.io")).status).toBe(401);
+    expect((await loginOverRest("locked@example.com")).status).toBe(401);
 
     const failures = ofThisTest(await eventsWithAction(ctx.payload, "auth.login_failed"));
     expect(failures.map((event) => event.metadata?.reason)).toEqual([
       ...Array.from({ length: MAX_LOGIN_ATTEMPTS }, () => "invalid_credentials"),
       "locked",
     ]);
-    expect(failures.at(-1)?.actor).toMatchObject({ type: "anonymous", label: "locked@x.io" });
+    expect(failures.at(-1)?.actor).toMatchObject({
+      type: "anonymous",
+      label: "locked@example.com",
+    });
   });
 
   it("an SSO route that adds a session to a user through the database adapter records nothing", async () => {
-    await createUser(ctx.payload, "sso@x.io");
+    await createUser(ctx.payload, "sso@example.com");
     const {
       docs: [user],
-    } = await ctx.payload.find({ collection: USERS, where: { email: { equals: "sso@x.io" } } });
+    } = await ctx.payload.find({
+      collection: USERS,
+      where: { email: { equals: "sso@example.com" } },
+    });
     testStartedAt = await timestampAfterEverythingSoFar();
 
     await addSessionToUser({
@@ -120,12 +130,12 @@ describe("auth events in real flows", () => {
 
 describe("the client of the request", () => {
   it("stores the client IP and User-Agent of a REST login and of a failed one", async () => {
-    await createUser(ctx.payload, "client@x.io");
+    await createUser(ctx.payload, "client@example.com");
     const headers = {
       "x-forwarded-for": "203.0.113.7, 10.0.0.1",
       "user-agent": "Mozilla/5.0 (audit test)",
     };
-    const body = { email: "client@x.io", password: PASSWORD };
+    const body = { email: "client@example.com", password: PASSWORD };
     expect((await rest(ctx.payload, "POST", "/users/login", { body, headers })).status).toBe(200);
     expect(
       (
@@ -143,7 +153,7 @@ describe("the client of the request", () => {
   });
 
   it("stores null for both on a Local API call without headers", async () => {
-    const user = await createUser(ctx.payload, "local-client@x.io");
+    const user = await createUser(ctx.payload, "local-client@example.com");
     const [created] = ofThisTest(await targetEvents(ctx.payload, "users", user.id));
     expect(created).toMatchObject({ action: "doc.create", ip: null, userAgent: null });
   });

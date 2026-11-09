@@ -75,8 +75,8 @@ let ctx: AuditTestPayload;
 let signedIn: Record<string, string>;
 beforeAll(async () => {
   ctx = await bootAuditPayload({ collections: COLLECTIONS, globals: GLOBALS });
-  await createUser(ctx.payload, "saves-over-drafts@x.io", { role: "admin" });
-  signedIn = await loginHeaders(ctx.payload, "saves-over-drafts@x.io");
+  await createUser(ctx.payload, "saves-over-drafts@example.com", { role: "admin" });
+  signedIn = await loginHeaders(ctx.payload, "saves-over-drafts@example.com");
 });
 afterAll(async () => {
   await ctx?.cleanup();

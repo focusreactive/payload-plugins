@@ -105,8 +105,8 @@ export function describeLocalizedAutosavePublishes(localizationFallback: boolean
   let signedIn: Record<string, string>;
   beforeAll(async () => {
     ctx = await bootAuditPayload({ localizationFallback });
-    await createUser(ctx.payload, "locales@x.io", { role: "admin" });
-    signedIn = await loginHeaders(ctx.payload, "locales@x.io");
+    await createUser(ctx.payload, "locales@example.com", { role: "admin" });
+    signedIn = await loginHeaders(ctx.payload, "locales@example.com");
   });
   afterAll(async () => {
     await ctx?.cleanup();

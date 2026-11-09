@@ -16,8 +16,8 @@ let ctx: AuditTestPayload;
 let signedInAdmin: Record<string, string>;
 beforeAll(async () => {
   ctx = await bootAuditPayload();
-  await createUser(ctx.payload, "autosave-admin@x.io", { role: "admin" });
-  signedInAdmin = await loginHeaders(ctx.payload, "autosave-admin@x.io");
+  await createUser(ctx.payload, "autosave-admin@example.com", { role: "admin" });
+  signedInAdmin = await loginHeaders(ctx.payload, "autosave-admin@example.com");
 });
 afterAll(async () => {
   await ctx?.cleanup();
@@ -64,7 +64,7 @@ const createPublished = (collection: string, title: string) =>
 
 describe("the autosave argument only skips saves where Payload keeps the stored document", () => {
   it("a REST role change with autosave in a collection without drafts is logged with the role among its changes", async () => {
-    const user = await createUser(ctx.payload, "autosave-victim@x.io", { role: "editor" });
+    const user = await createUser(ctx.payload, "autosave-victim@example.com", { role: "editor" });
     await send("PATCH", `/users/${user.id}?autosave=true`, { role: "admin" });
 
     const stored = await ctx.payload.findByID({ collection: "users" as never, id: user.id });
@@ -77,7 +77,7 @@ describe("the autosave argument only skips saves where Payload keeps the stored 
 
   it("a REST create with autosave is logged", async () => {
     const { doc } = await send("POST", "/users?autosave=true", {
-      email: "autosave-created@x.io",
+      email: "autosave-created@example.com",
       password: PASSWORD,
       role: "admin",
     });

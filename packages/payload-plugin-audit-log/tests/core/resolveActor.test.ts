@@ -8,14 +8,14 @@ describe("resolveActor", () => {
     const r = resolveActor(
       {
         context: { auditActor: { type: "agent", agent: { keyId: "k1", model: "m" } } },
-        user: { id: 5, collection: "users", email: "a@x.io" },
+        user: { id: 5, collection: "users", email: "a@example.com" },
         payloadAPI: "MCP",
         headers: headers(),
       },
       undefined
     );
     expect(r.actor).toEqual({ type: "agent", source: "context" });
-    expect(r.onBehalfOf).toEqual({ collection: "users", docId: "5", label: "a@x.io" });
+    expect(r.onBehalfOf).toEqual({ collection: "users", docId: "5", label: "a@example.com" });
     expect(r.agent).toEqual({ keyId: "k1", model: "m" });
     expect(r.via).toBe("mcp");
   });
@@ -33,7 +33,7 @@ describe("resolveActor", () => {
     const r = resolveActor(
       {
         context: {},
-        user: { id: 1, collection: "users", email: "o@x.io", _strategy: "mcp-api-key" },
+        user: { id: 1, collection: "users", email: "o@example.com", _strategy: "mcp-api-key" },
         payloadAPI: "MCP",
         headers: headers(),
       },
@@ -69,7 +69,7 @@ describe("resolveActor", () => {
     const r = resolveActor(
       {
         context: {},
-        user: { id: 2, collection: "users", email: "e@x.io", _strategy: "local-jwt" },
+        user: { id: 2, collection: "users", email: "e@example.com", _strategy: "local-jwt" },
         payloadAPI: "REST",
         headers: headers("https://site.io/admin/collections/posts/1"),
       },
@@ -79,7 +79,7 @@ describe("resolveActor", () => {
       type: "user",
       docId: "2",
       collection: "users",
-      label: "e@x.io",
+      label: "e@example.com",
       source: "auth",
     });
     expect(r.via).toBe("admin");
@@ -97,17 +97,25 @@ describe("resolveActor", () => {
   });
 
   it("fills onBehalfOf from req.user for any explicit actor type", () => {
-    const user = { id: 5, collection: "users", email: "a@x.io" };
+    const user = { id: 5, collection: "users", email: "a@example.com" };
     const fromContext = resolveActor(
       { context: { auditActor: { type: "agent" } }, user, payloadAPI: "local", headers: headers() },
       undefined
     );
-    expect(fromContext.onBehalfOf).toEqual({ collection: "users", docId: "5", label: "a@x.io" });
+    expect(fromContext.onBehalfOf).toEqual({
+      collection: "users",
+      docId: "5",
+      label: "a@example.com",
+    });
     const fromScope = resolveActor(
       { context: {}, user, payloadAPI: "local", headers: headers() },
       { type: "system" }
     );
-    expect(fromScope.onBehalfOf).toEqual({ collection: "users", docId: "5", label: "a@x.io" });
+    expect(fromScope.onBehalfOf).toEqual({
+      collection: "users",
+      docId: "5",
+      label: "a@example.com",
+    });
     const given = resolveActor(
       { context: {}, user, payloadAPI: "local", headers: headers() },
       { type: "agent", onBehalfOf: { docId: "x" } }
@@ -116,7 +124,7 @@ describe("resolveActor", () => {
   });
 
   it("ignores an explicit actor with an unknown type", () => {
-    const user = { id: 2, collection: "users", email: "e@x.io" };
+    const user = { id: 2, collection: "users", email: "e@example.com" };
     const fromContext = resolveActor(
       { context: { auditActor: { type: "robot" } }, user, payloadAPI: "REST", headers: headers() },
       undefined
@@ -130,7 +138,7 @@ describe("resolveActor", () => {
   });
 
   it("matches the admin route by URL path, honouring a custom admin route", () => {
-    const user = { id: 2, collection: "users", email: "e@x.io" };
+    const user = { id: 2, collection: "users", email: "e@example.com" };
     const via = (referer: string, admin?: string) =>
       resolveActor(
         {

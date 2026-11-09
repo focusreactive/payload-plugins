@@ -9,7 +9,7 @@ export function fakeRequest(overrides: Record<string, unknown> = {}) {
   const db: Record<string, unknown> = { create };
   const req = {
     context: {} as Record<string, unknown>,
-    user: { id: 1, collection: "users", email: "e@x.io" } as unknown,
+    user: { id: 1, collection: "users", email: "e@example.com" } as unknown,
     payloadAPI: "local",
     headers: new Headers(),
     query: {},

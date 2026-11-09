@@ -45,7 +45,7 @@ vi.mock("@/lib/plugins/mcp/tools/uploadImage/resolveSource", () => ({
 const apiKey = {
   id: 12,
   label: "Claude",
-  user: { email: "editor@x.io", id: 3 },
+  user: { email: "editor@example.com", id: 3 },
 };
 
 const mcpRequest = (url: string) =>
@@ -77,7 +77,7 @@ describe("MCP overrideAuth", () => {
         collection: "payload-mcp-api-keys",
         docId: "12",
         label: "Claude",
-        onBehalfOf: { collection: "users", docId: "3", label: "editor@x.io" },
+        onBehalfOf: { collection: "users", docId: "3", label: "editor@example.com" },
         type: "agent",
         via: "mcp",
       },
@@ -110,11 +110,17 @@ describe("OIDC login", () => {
   it("records an admin login of the signed-in user through OIDC, with the headers of its request", async () => {
     const payload = {} as never;
     const headers = new Headers({ "user-agent": "Mozilla/5.0" });
-    await logOidcLogin(payload, { email: "sso@x.io", id: 8 }, headers);
+    await logOidcLogin(payload, { email: "sso@example.com", id: 8 }, headers);
     expect(logAuditEvent).toHaveBeenCalledWith(payload, {
       action: "auth.login",
       actorOverride: {
-        actor: { collection: "users", docId: "8", label: "sso@x.io", source: "auth", type: "user" },
+        actor: {
+          collection: "users",
+          docId: "8",
+          label: "sso@example.com",
+          source: "auth",
+          type: "user",
+        },
         via: "admin",
       },
       headers,
@@ -125,8 +131,8 @@ describe("OIDC login", () => {
 });
 
 describe("OIDC sign-in", () => {
-  const ssoUser = { email: "sso@x.io", id: 8 };
-  const claims = { displayName: "SSO", email: "sso@x.io" };
+  const ssoUser = { email: "sso@example.com", id: 8 };
+  const claims = { displayName: "SSO", email: "sso@example.com" };
 
   beforeEach(() => {
     steps.length = 0;
@@ -202,10 +208,13 @@ describe("MCP uploadImage", () => {
     const req = {
       context: { auditActor: actor, other: "not passed" },
       payload: { create },
-      user: { email: "editor@x.io", id: 3 },
+      user: { email: "editor@example.com", id: 3 },
     } as unknown as PayloadRequest;
 
-    await uploadImage.handler({ images: [{ alt: "A cat", source: "https://x.io/cat.png" }] }, req);
+    await uploadImage.handler(
+      { images: [{ alt: "A cat", source: "https://example.com/cat.png" }] },
+      req
+    );
 
     expect(create).toHaveBeenCalledTimes(1);
     const [args] = create.mock.calls[0] as unknown as [Record<string, unknown>];

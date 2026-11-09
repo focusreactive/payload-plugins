@@ -1,7 +1,7 @@
 {
   "name": "@focus-reactive/payload-plugin-audit-log",
   "version": "0.1.0",
-  "description": "Audit log for Payload CMS: who changed what and when, including API keys, AI agents, seeds and migrations",
+  "description": "Audit log for Payload CMS: document, global and auth changes, with API keys and AI agents (MCP) as actors, and CSV / NDJSON export",
   "keywords": [
     "payload-cms",
     "payload-plugin",

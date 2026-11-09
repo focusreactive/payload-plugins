@@ -100,8 +100,8 @@ beforeAll(async () => {
     collections: REINDEXED_COLLECTIONS,
     globals: REINDEXED_GLOBALS,
   });
-  await createUser(ctx.payload, "reindex-admin@x.io", { role: "admin" });
-  signedIn = await loginHeaders(ctx.payload, "reindex-admin@x.io");
+  await createUser(ctx.payload, "reindex-admin@example.com", { role: "admin" });
+  signedIn = await loginHeaders(ctx.payload, "reindex-admin@example.com");
 });
 afterAll(async () => {
   await ctx?.cleanup();

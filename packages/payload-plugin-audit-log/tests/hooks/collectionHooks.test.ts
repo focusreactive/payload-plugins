@@ -1328,7 +1328,7 @@ describe("collection hooks", () => {
     it("records a login in the locale it was made in", async () => {
       const { req, create } = await startedInEnglishThenReadInGerman("login");
       await runHooks(localizedMembers.hooks?.afterLogin, {
-        user: { id: 4, email: "m@x.io" },
+        user: { id: 4, email: "m@example.com" },
         req,
         collection: membersCollection,
         token: "t",
@@ -1391,15 +1391,15 @@ describe("collection hooks", () => {
 
     it("records a password reset request in the locale it was made in", async () => {
       const { req, create } = await startedInEnglishThenReadInGerman("forgotPassword", {
-        data: { email: "m@x.io" },
+        data: { email: "m@example.com" },
       });
       await runHooks(localizedMembers.hooks?.afterForgotPassword, {
-        args: { req, data: { email: "m@x.io" } },
+        args: { req, data: { email: "m@example.com" } },
         collection: membersCollection,
       });
       expect(firstEvent(create)).toMatchObject({
         action: "auth.password_reset_requested",
-        target: { kind: "auth", slug: "members", label: "m@x.io", locale: "en" },
+        target: { kind: "auth", slug: "members", label: "m@example.com", locale: "en" },
       });
     });
 
@@ -1410,7 +1410,7 @@ describe("collection hooks", () => {
       await runHooks(localizedMembers.hooks?.afterOperation, {
         operation: "resetPassword",
         req,
-        result: { token: "t", user: { id: 4, email: "m@x.io" } },
+        result: { token: "t", user: { id: 4, email: "m@example.com" } },
         collection: membersCollection,
       });
       expect(firstEvent(create)).toMatchObject({
@@ -1479,8 +1479,8 @@ describe("collection hooks", () => {
     it("records a role change as doc.update with the role among the changes", async () => {
       const { req, create } = fakeRequest();
       await runUpdate(users.hooks, req, {
-        previousDoc: { id: 2, email: "x@x.io", role: "editor" },
-        doc: { id: 2, email: "x@x.io", role: "admin" },
+        previousDoc: { id: 2, email: "x@example.com", role: "editor" },
+        doc: { id: 2, email: "x@example.com", role: "admin" },
         collection: { slug: "users", admin: { useAsTitle: "email" } },
       });
       expect(recordedEvents(create)).toEqual([
@@ -1495,10 +1495,10 @@ describe("collection hooks", () => {
     it("compares relationship roles by id, so a populated doc is not a role change", async () => {
       const { req, create } = fakeRequest();
       await runUpdate(users.hooks, req, {
-        previousDoc: { id: 2, email: "x@x.io", role: 3, roles: [1, 2] },
+        previousDoc: { id: 2, email: "x@example.com", role: 3, roles: [1, 2] },
         doc: {
           id: 2,
-          email: "y@x.io",
+          email: "y@example.com",
           role: { id: 3, name: "Editor", permissions: { publish: true } },
           roles: [
             { id: 1, name: "A" },
@@ -1530,7 +1530,7 @@ describe("collection hooks", () => {
 
     const saveUser = async (hooks: Hooks, submitted: Doc) => {
       const { req: callerReq, create } = fakeRequest();
-      const previousDoc = { id: 2, email: "x@x.io", name: "A" };
+      const previousDoc = { id: 2, email: "x@example.com", name: "A" };
       const req = await runBeforeOperation(hooks?.beforeOperation, {
         operation: "update",
         args: { id: 2, data: submitted },
@@ -1611,7 +1611,7 @@ describe("collection hooks", () => {
         fields: [],
       });
       const { req: callerReq, create } = fakeRequest();
-      const previousDoc = { id: 2, email: "x@x.io" };
+      const previousDoc = { id: 2, email: "x@example.com" };
       const data = { password: "p" };
       const req = await runBeforeOperation(draftUsers.hooks?.beforeOperation, {
         operation: "update",
@@ -1997,14 +1997,14 @@ describe("collection hooks", () => {
     it("records the logged-in user as the actor of auth.login", async () => {
       const { req, create } = fakeRequest({ user: null, payloadAPI: "REST" });
       await runHooks(users.hooks?.afterLogin, {
-        user: { id: 9, email: "l@x.io" },
+        user: { id: 9, email: "l@example.com" },
         req,
         collection: usersCollection,
         token: "t",
       });
       expect(firstEvent(create)).toMatchObject({
         action: "auth.login",
-        actor: { type: "user", docId: "9", collection: "users", label: "l@x.io" },
+        actor: { type: "user", docId: "9", collection: "users", label: "l@example.com" },
         target: { kind: "auth", slug: "users", docId: "9" },
       });
     });
@@ -2013,14 +2013,14 @@ describe("collection hooks", () => {
       const { req, create } = fakeRequest();
       await runHooks(users.hooks?.afterLogout, { req, collection: usersCollection });
       await runHooks(users.hooks?.afterForgotPassword, {
-        args: { req, data: { email: "f@x.io" } },
+        args: { req, data: { email: "f@example.com" } },
         collection: usersCollection,
       });
       await runHooks(users.hooks?.afterOperation, { operation: "login", req, result: {} });
       await runHooks(users.hooks?.afterOperation, {
         operation: "resetPassword",
         req,
-        result: { token: "t", user: { id: 4, email: "r@x.io" } },
+        result: { token: "t", user: { id: 4, email: "r@example.com" } },
       });
       const [logout, resetRequested, reset] = recordedEvents(create);
       expect(recordedActions(create)).toEqual([
@@ -2029,7 +2029,11 @@ describe("collection hooks", () => {
         "auth.password_reset",
       ]);
       expect(logout?.target).toEqual({ kind: "auth", slug: "users", docId: "1" });
-      expect(resetRequested?.target).toEqual({ kind: "auth", slug: "users", label: "f@x.io" });
+      expect(resetRequested?.target).toEqual({
+        kind: "auth",
+        slug: "users",
+        label: "f@example.com",
+      });
       expect(reset?.actor).toMatchObject({ type: "user", docId: "4" });
     });
 
@@ -2376,7 +2380,7 @@ describe("collection hooks", () => {
       await runHooks(users.hooks?.afterChange, {
         operation: "create",
         previousDoc: {},
-        doc: { id: 3, email: "n@x.io", role: "editor", collection: "users" },
+        doc: { id: 3, email: "n@example.com", role: "editor", collection: "users" },
         req,
         collection: sanitizedUsers,
       });

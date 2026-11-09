@@ -13,8 +13,8 @@ import {
 } from "./bootAuditPayload";
 import type { AuditEventRow, AuditTestPayload } from "./bootAuditPayload";
 
-const ADMIN_EMAIL = "a@x.io";
-const MEMBER_EMAIL = "member@x.io";
+const ADMIN_EMAIL = "a@example.com";
+const MEMBER_EMAIL = "member@example.com";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 let ctx: AuditTestPayload;
@@ -251,17 +251,17 @@ describe("list view", () => {
   };
 
   it("search matches the action, the actor label, the target label and the target id", async () => {
-    const searcher = await createUser(ctx.payload, "searcher@x.io");
+    const searcher = await createUser(ctx.payload, "searcher@example.com");
     const post = await ctx.payload.create({
       collection: "posts" as never,
       data: { title: "Findable headline" } as never,
       user: searcher,
     });
 
-    const byActor = await searchAsTheListView("searcher@x");
+    const byActor = await searchAsTheListView("searcher@ex");
     expect(byActor.map((event) => event.target.docId)).toContain(String(post.id));
     const byTarget = await searchAsTheListView("findable head");
-    expect(byTarget.map((event) => event.actor.label)).toEqual(["searcher@x.io"]);
+    expect(byTarget.map((event) => event.actor.label)).toEqual(["searcher@example.com"]);
     const byTargetId = await searchAsTheListView(String(post.id));
     expect(byTargetId.map((event) => event.target.docId)).toContain(String(post.id));
     const byAction = await searchAsTheListView("doc.create");

@@ -15,8 +15,8 @@ let ctx: AuditTestPayload;
 let signedIn: Record<string, string>;
 beforeAll(async () => {
   ctx = await bootAuditPayload();
-  await createUser(ctx.payload, "auth-drafts@x.io", { role: "admin" });
-  signedIn = await loginHeaders(ctx.payload, "auth-drafts@x.io");
+  await createUser(ctx.payload, "auth-drafts@example.com", { role: "admin" });
+  signedIn = await loginHeaders(ctx.payload, "auth-drafts@example.com");
 });
 afterAll(async () => {
   await ctx?.cleanup();
@@ -43,7 +43,7 @@ describe.each([
     const doc = (await ctx.payload.create({
       collection: slug as never,
       data: {
-        email: `${slug}-${emailCount}@x.io`,
+        email: `${slug}-${emailCount}@example.com`,
         password: PASSWORD,
         role: "editor",
         ...PUBLISHED,
@@ -124,7 +124,7 @@ describe("role changes in an auth collection with autosave", () => {
     const staff = (await ctx.payload.create({
       collection: "staff" as never,
       data: {
-        email: "autosaved-role@x.io",
+        email: "autosaved-role@example.com",
         password: PASSWORD,
         role: "editor",
         ...PUBLISHED,

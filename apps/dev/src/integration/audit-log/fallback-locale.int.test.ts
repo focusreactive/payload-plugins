@@ -61,8 +61,8 @@ beforeAll(async () => {
     localizationFallback: true,
     collections: FIELD_HOOKED_COLLECTIONS,
   });
-  await createUser(ctx.payload, "fallback-admin@x.io", { role: "admin" });
-  signedIn = await loginHeaders(ctx.payload, "fallback-admin@x.io");
+  await createUser(ctx.payload, "fallback-admin@example.com", { role: "admin" });
+  signedIn = await loginHeaders(ctx.payload, "fallback-admin@example.com");
 });
 afterAll(async () => {
   await ctx?.cleanup();
@@ -114,7 +114,7 @@ const storedInEveryLocale = async (read: () => Promise<unknown>) =>
 
 describe("localized saves read with a fallback locale", () => {
   it("clearing a localized field of a document in one locale is logged although another locale shows the same value", async () => {
-    const user = await createUser(ctx.payload, "fallback-clear@x.io", { nickname: "Brand" });
+    const user = await createUser(ctx.payload, "fallback-clear@example.com", { nickname: "Brand" });
     await updateUser(user.id, { nickname: "Brand" }, GERMAN);
     await startOfTheSavesUnderTest();
 
@@ -143,7 +143,7 @@ describe("localized saves read with a fallback locale", () => {
   });
 
   it("no-op saves in a locale that falls back are not logged", async () => {
-    const user = await createUser(ctx.payload, "fallback-no-op@x.io", { nickname: "Brand" });
+    const user = await createUser(ctx.payload, "fallback-no-op@example.com", { nickname: "Brand" });
     await updateLocalizedSettings({ motto: "Same" });
     await updateLocalizedSettings({ motto: "Gleich" }, GERMAN);
     await startOfTheSavesUnderTest();
@@ -282,7 +282,7 @@ const createArticleWithEnglishCaption = async () =>
 
 describe("documents with localized row fields saved in a locale that falls back", () => {
   it("saves of a user that submit no row leave a localized row field set only in English unlogged", async () => {
-    const user = (await createUser(ctx.payload, "fallback-rows@x.io", {
+    const user = (await createUser(ctx.payload, "fallback-rows@example.com", {
       badges: [{ blockType: "badge", label: "one", caption: "first" }],
     })) as unknown as RowsDoc;
     await startOfTheSavesUnderTest();
@@ -294,7 +294,7 @@ describe("documents with localized row fields saved in a locale that falls back"
   });
 
   it("setting a localized row field of a user in German is logged as that field", async () => {
-    const user = (await createUser(ctx.payload, "fallback-rows-change@x.io", {
+    const user = (await createUser(ctx.payload, "fallback-rows-change@example.com", {
       badges: [{ blockType: "badge", label: "one", caption: "first" }],
     })) as unknown as RowsDoc;
     const badgeId = user.badges?.[0]?.id;

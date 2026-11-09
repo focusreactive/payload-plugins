@@ -65,7 +65,7 @@ describe("actors", () => {
   });
 
   it("an agent acting for a user", async () => {
-    const owner = await createUser(ctx.payload, "owner@x.io");
+    const owner = await createUser(ctx.payload, "owner@example.com");
     const doc = await createPost("By agent", {
       user: owner,
       context: {
@@ -82,7 +82,10 @@ describe("actors", () => {
     });
     const event = await firstEventOfPost(doc.id);
     expect(event?.actor).toMatchObject({ type: "agent", source: "context" });
-    expect(event?.onBehalfOf).toMatchObject({ docId: String(owner.id), label: "owner@x.io" });
+    expect(event?.onBehalfOf).toMatchObject({
+      docId: String(owner.id),
+      label: "owner@example.com",
+    });
     expect(event?.agent).toEqual({
       name: "content-agent",
       model: "claude",
@@ -92,7 +95,7 @@ describe("actors", () => {
   });
 
   it("a user passed to the local API is the actor", async () => {
-    const user = await createUser(ctx.payload, "ed@x.io");
+    const user = await createUser(ctx.payload, "ed@example.com");
     const doc = await createPost("U", { user, overrideAccess: false });
     const event = await firstEventOfPost(doc.id);
     expect(event?.actor).toMatchObject({
@@ -125,21 +128,21 @@ describe("actors", () => {
 
   it("REST from the admin panel is via admin", async () => {
     const { doc } = await createPostOverRest("Via admin", {
-      ...(await loginHeaders(ctx.payload, "ed@x.io")),
+      ...(await loginHeaders(ctx.payload, "ed@example.com")),
       referer: "http://localhost:3000/admin/collections/posts/create",
     });
     const event = await firstEventOfPost(doc.id);
-    expect(event?.actor).toMatchObject({ type: "user", label: "ed@x.io", source: "auth" });
+    expect(event?.actor).toMatchObject({ type: "user", label: "ed@example.com", source: "auth" });
     expect(event?.via).toBe("admin");
   });
 });
 
 describe("failed logins over GraphQL", () => {
   it("are recorded with the auth collection, the reason and the submitted email", async () => {
-    await createUser(ctx.payload, "gql@x.io");
+    await createUser(ctx.payload, "gql@example.com");
     const failedBefore = await eventsWithAction(ctx.payload, "auth.login_failed");
 
-    const res = await graphqlLogin("gql@x.io", "wrong-password-1");
+    const res = await graphqlLogin("gql@example.com", "wrong-password-1");
     const body = (await res.json()) as { errors?: { extensions?: { name?: string } }[] };
     expect(body.errors?.[0]?.extensions?.name).toBe("AuthenticationError");
 
@@ -148,7 +151,7 @@ describe("failed logins over GraphQL", () => {
     expect(failedAfter.at(-1)).toMatchObject({
       status: "failure",
       via: "graphql",
-      actor: { type: "anonymous", label: "gql@x.io" },
+      actor: { type: "anonymous", label: "gql@example.com" },
       target: { kind: "auth", slug: "users" },
       metadata: { reason: "invalid_credentials" },
     });

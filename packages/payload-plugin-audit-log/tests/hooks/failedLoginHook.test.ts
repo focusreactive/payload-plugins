@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { buildFailedLoginHook } from "../../src/hooks/failedLoginHook";
 import { normalizeOptions } from "../../src/options";
 
-const setup = (errorName: string, url = "https://s.io/api/users/login") => {
+const setup = (errorName: string, url = "https://example.com/api/users/login") => {
   const create = vi.fn().mockResolvedValue({});
   const error = Object.assign(new Error("x"), { name: errorName });
   const req = {
@@ -11,7 +11,7 @@ const setup = (errorName: string, url = "https://s.io/api/users/login") => {
     payloadAPI: "REST",
     headers: new Headers(),
     url,
-    data: { email: "who@x.io", password: "secret" },
+    data: { email: "who@example.com", password: "secret" },
     payload: { db: { create } },
   };
   return { create, args: { error, req, collection: { slug: "users" }, context: {} } };
@@ -42,7 +42,7 @@ describe("failed login hook", () => {
     expect(call.data).toMatchObject({
       action: "auth.login_failed",
       status: "failure",
-      actor: { type: "anonymous", label: "who@x.io" },
+      actor: { type: "anonymous", label: "who@example.com" },
       target: { kind: "auth", slug: "users" },
       metadata: { reason: "invalid_credentials" },
     });
@@ -66,7 +66,7 @@ describe("failed login hook", () => {
     const a = setup("ValidationError");
     await hook(a.args as never);
     expect(a.create).not.toHaveBeenCalled();
-    const b = setup("AuthenticationError", "https://s.io/api/users/me");
+    const b = setup("AuthenticationError", "https://example.com/api/users/me");
     await hook(b.args as never);
     expect(b.create).not.toHaveBeenCalled();
   });
@@ -97,7 +97,7 @@ describe("failed login hook over GraphQL", () => {
       user: null,
       payloadAPI: "GraphQL",
       headers: new Headers(),
-      url: "https://s.io/api/graphql",
+      url: "https://example.com/api/graphql",
       data: { query: "mutation { ... }", variables },
       payload: { db: { create }, collections },
     };
@@ -106,7 +106,7 @@ describe("failed login hook over GraphQL", () => {
 
   it("maps login<Singular> to the auth collection and records the failure", async () => {
     const { create, args } = graphQLErrorWithoutCollection("loginUser", "AuthenticationError", {
-      email: "who@x.io",
+      email: "who@example.com",
       password: "secret",
     });
     await hook(args as never);
@@ -116,7 +116,7 @@ describe("failed login hook over GraphQL", () => {
       action: "auth.login_failed",
       status: "failure",
       via: "graphql",
-      actor: { type: "anonymous", label: "who@x.io" },
+      actor: { type: "anonymous", label: "who@example.com" },
       target: { kind: "auth", slug: "users" },
       metadata: { reason: "invalid_credentials" },
     });

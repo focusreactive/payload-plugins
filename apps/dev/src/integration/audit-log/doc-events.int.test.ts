@@ -102,7 +102,7 @@ describe("document events", () => {
   });
 
   it("relationship fields are not reported when unchanged", async () => {
-    const author = await createUser(ctx.payload, "author@x.io");
+    const author = await createUser(ctx.payload, "author@example.com");
     const doc = await createPost({ title: "R", author: author.id });
     await ctx.payload.create({
       collection: "comments" as never,
@@ -116,13 +116,13 @@ describe("document events", () => {
   });
 
   it("login is recorded", async () => {
-    await createUser(ctx.payload, "l@x.io");
+    await createUser(ctx.payload, "l@example.com");
     await ctx.payload.login({
       collection: "users" as never,
-      data: { email: "l@x.io", password: PASSWORD },
+      data: { email: "l@example.com", password: PASSWORD },
     });
     const [login] = await eventsWithAction(ctx.payload, "auth.login");
-    expect(login?.actor).toMatchObject({ type: "user", label: "l@x.io" });
+    expect(login?.actor).toMatchObject({ type: "user", label: "l@example.com" });
   });
 });
 
@@ -297,7 +297,7 @@ describe("trash", () => {
 
 describe("roles", () => {
   it("a role change is a doc.update of the user with only the role path", async () => {
-    const user = await createUser(ctx.payload, "r@x.io");
+    const user = await createUser(ctx.payload, "r@example.com");
     await updateDoc("users", user.id, { role: "admin" });
 
     const log = await eventsOfThisTest("users", user.id);
@@ -311,8 +311,10 @@ describe("roles", () => {
     const createRole = (name: string) =>
       ctx.payload.create({ collection: ACCESS_ROLES_SLUG as never, data: { name } as never });
     const [editors, admins] = await Promise.all([createRole("Editors"), createRole("Admins")]);
-    const user = await createUser(ctx.payload, "relation-role@x.io", { roles: [editors.id] });
-    const headers = await loginHeaders(ctx.payload, "relation-role@x.io");
+    const user = await createUser(ctx.payload, "relation-role@example.com", {
+      roles: [editors.id],
+    });
+    const headers = await loginHeaders(ctx.payload, "relation-role@example.com");
     const patchAtDepth2 = (body: Record<string, unknown>) =>
       rest(ctx.payload, "PATCH", `/users/${user.id}?depth=2`, { headers, body });
     const changesOfUser = async () =>
@@ -367,7 +369,7 @@ describe("request ids", () => {
 
 describe("auth secrets and unreadable fields", () => {
   const signInNewAdmin = async () => {
-    const email = `admin-${Date.now()}@x.io`;
+    const email = `admin-${Date.now()}@example.com`;
     await createUser(ctx.payload, email, { role: "admin" });
     return loginHeaders(ctx.payload, email);
   };
@@ -385,7 +387,7 @@ describe("auth secrets and unreadable fields", () => {
 
   it("an admin changing another user's password is logged by name, never by value, and the change goes through", async () => {
     const headers = await signInNewAdmin();
-    const user = await createUserWithHiddenNotes("pw@x.io");
+    const user = await createUserWithHiddenNotes("pw@example.com");
     const res = await rest(ctx.payload, "PATCH", `/users/${user.id}`, {
       headers,
       body: { password: "brand-new-secret-77" },
@@ -398,14 +400,14 @@ describe("auth secrets and unreadable fields", () => {
     expect(await everyRowOfThisTestAsStored()).not.toContain("brand-new-secret-77");
 
     const loginWithNewPassword = await rest(ctx.payload, "POST", "/users/login", {
-      body: { email: "pw@x.io", password: "brand-new-secret-77" },
+      body: { email: "pw@example.com", password: "brand-new-secret-77" },
     });
     expect(loginWithNewPassword.status).toBe(200);
   });
 
   it("hidden and read-restricted fields are not reported on a REST save", async () => {
     const headers = await signInNewAdmin();
-    const user = await createUserWithHiddenNotes("hidden@x.io");
+    const user = await createUserWithHiddenNotes("hidden@example.com");
     const res = await rest(ctx.payload, "PATCH", `/users/${user.id}`, {
       headers,
       body: { name: "Renamed" },

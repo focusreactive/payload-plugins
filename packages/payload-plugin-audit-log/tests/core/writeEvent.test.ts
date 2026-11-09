@@ -18,9 +18,9 @@ describe("buildEvent", () => {
     vi.setSystemTime(new Date("2026-11-04T10:00:00.000Z"));
     const req = {
       context: {} as Record<string, unknown>,
-      user: { id: 3, collection: "users", email: "u@x.io" },
+      user: { id: 3, collection: "users", email: "u@example.com" },
       payloadAPI: "REST",
-      headers: new Headers({ referer: "https://s.io/admin" }),
+      headers: new Headers({ referer: "https://example.com/admin" }),
       locale: "en",
     };
     const e = buildEvent(req, {
@@ -32,7 +32,7 @@ describe("buildEvent", () => {
       occurredAt: "2026-11-04T10:00:00.000Z",
       action: "doc.update",
       status: "success",
-      actor: { type: "user", docId: "3", label: "u@x.io", source: "auth" },
+      actor: { type: "user", docId: "3", label: "u@example.com", source: "auth" },
       via: "admin",
       target: { kind: "collection", slug: "posts", docId: "9", locale: "en" },
       changes: ["title"],

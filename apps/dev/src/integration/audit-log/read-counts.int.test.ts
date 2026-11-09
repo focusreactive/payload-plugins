@@ -47,8 +47,8 @@ function readRecorder(payload: Payload) {
 
 async function readsPerOperation(payload: Payload): Promise<ReadsPerOperation> {
   const readsOf = readRecorder(payload);
-  const user = await createUser(payload, "reads@x.io");
-  const signedIn = await loginHeaders(payload, "reads@x.io");
+  const user = await createUser(payload, "reads@example.com");
+  const signedIn = await loginHeaders(payload, "reads@example.com");
 
   const autosaveHeader = async (body: Record<string, unknown>) => {
     const res = await rest(payload, "POST", "/globals/header?draft=true&autosave=true", {
@@ -195,7 +195,7 @@ async function readsPerOperation(payload: Payload): Promise<ReadsPerOperation> {
       data: data as never,
       ...options,
     });
-  const contractor = await createPublishedAuthDoc("contractors", "reads-contractor@x.io");
+  const contractor = await createPublishedAuthDoc("contractors", "reads-contractor@example.com");
   await updateAuthDoc("contractors", contractor.id, { role: "admin" }, { draft: true });
   reads.authDraftsPublishOverDraft = await readsOf(() =>
     updateAuthDoc("contractors", contractor.id, { _status: "published" })
@@ -206,7 +206,7 @@ async function readsPerOperation(payload: Payload): Promise<ReadsPerOperation> {
   reads.authDraftsPlainSaveOverDraft = await readsOf(() =>
     updateAuthDoc("contractors", contractor.id, {})
   );
-  const staff = await createPublishedAuthDoc("staff", "reads-staff@x.io");
+  const staff = await createPublishedAuthDoc("staff", "reads-staff@example.com");
   await updateAuthDoc("staff", staff.id, { role: "admin" }, { draft: true, autosave: true });
   reads.authAutosavePublishAfterAutosave = await readsOf(() =>
     updateAuthDoc("staff", staff.id, { _status: "published" })

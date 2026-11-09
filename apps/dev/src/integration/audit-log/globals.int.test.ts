@@ -15,8 +15,8 @@ let ctx: AuditTestPayload;
 let signedInEditor: Record<string, string>;
 beforeAll(async () => {
   ctx = await bootAuditPayload();
-  await createUser(ctx.payload, "g@x.io");
-  signedInEditor = await loginHeaders(ctx.payload, "g@x.io");
+  await createUser(ctx.payload, "g@example.com");
+  signedInEditor = await loginHeaders(ctx.payload, "g@example.com");
 });
 afterAll(async () => {
   await ctx?.cleanup();

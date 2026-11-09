@@ -55,8 +55,8 @@ let ctx: AuditTestPayload;
 let signedIn: Record<string, string>;
 beforeAll(async () => {
   ctx = await bootAuditPayload({ collections: COLLECTIONS, globals: GLOBALS });
-  await createUser(ctx.payload, "publish-comparisons@x.io", { role: "admin" });
-  signedIn = await loginHeaders(ctx.payload, "publish-comparisons@x.io");
+  await createUser(ctx.payload, "publish-comparisons@example.com", { role: "admin" });
+  signedIn = await loginHeaders(ctx.payload, "publish-comparisons@example.com");
 });
 afterAll(async () => {
   await ctx?.cleanup();
@@ -122,7 +122,7 @@ describe("a publish after its previous publish was pruned from the versions", ()
     const member = (await ctx.payload.create({
       collection: collection as never,
       data: {
-        email: `${collection}@x.io`,
+        email: `${collection}@example.com`,
         password: PASSWORD,
         role: "editor",
         name: "n",

@@ -195,8 +195,8 @@ describe("a save that runs while a later bulk update on the same request is stil
   });
 
   it("records a password change and leaves no flags of it on the request", async () => {
-    const passwordChanged = await createMember("overlap-u@x.io");
-    const bulkUpdated = await createMember("overlap-v@x.io");
+    const passwordChanged = await createMember("overlap-u@example.com");
+    const bulkUpdated = await createMember("overlap-v@example.com");
     const req = await createLocalReq({}, ctx.payload);
     await startOfTheSavesUnderTest();
     await overlapping(

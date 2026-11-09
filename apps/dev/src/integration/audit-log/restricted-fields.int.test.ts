@@ -53,8 +53,8 @@ beforeAll(async () => {
   ctx = await bootAuditPayload({
     collections: [restrictedNotes],
   });
-  await createUser(ctx.payload, "restricted-admin@x.io", { role: "admin" });
-  signedInAdmin = await loginHeaders(ctx.payload, "restricted-admin@x.io");
+  await createUser(ctx.payload, "restricted-admin@example.com", { role: "admin" });
+  signedInAdmin = await loginHeaders(ctx.payload, "restricted-admin@example.com");
 });
 afterAll(async () => {
   await ctx?.cleanup();
@@ -109,7 +109,7 @@ const storedUser = (id: unknown) =>
 
 describe("writes to fields the caller cannot read", () => {
   it("a REST write to a read-restricted field is logged by name, never by value", async () => {
-    const user = await createUserWithRestrictedFields("read-restricted@x.io");
+    const user = await createUserWithRestrictedFields("read-restricted@example.com");
     await patchUser(user.id, { privateNote: "private-after" });
 
     expect((await storedUser(user.id)).privateNote).toBe("private-after");
@@ -118,7 +118,7 @@ describe("writes to fields the caller cannot read", () => {
   });
 
   it("a Local API write to a hidden field is logged by name, never by value", async () => {
-    const user = await createUserWithRestrictedFields("hidden@x.io");
+    const user = await createUserWithRestrictedFields("hidden@example.com");
     await updateUser(user.id, { profile: { headline: "h", taxId: "tax-after" } });
 
     expect((await storedUser(user.id)).profile.taxId).toBe("tax-after");
@@ -127,14 +127,14 @@ describe("writes to fields the caller cannot read", () => {
   });
 
   it("a change of a hidden role field is a doc.update that names it", async () => {
-    const user = await createUserWithRestrictedFields("hidden-role@x.io");
+    const user = await createUserWithRestrictedFields("hidden-role@example.com");
     await updateUser(user.id, { [HIDDEN_ROLE_FIELD]: "internal-after" });
 
     expect(await userEventsOfThisTest(user.id)).toEqual([["doc.update", [HIDDEN_ROLE_FIELD]]]);
   });
 
   it("no-op saves of hidden and read-restricted fields are not logged", async () => {
-    const user = await createUserWithRestrictedFields("restricted-no-op@x.io");
+    const user = await createUserWithRestrictedFields("restricted-no-op@example.com");
     await patchUser(user.id, { privateNote: "private-before" });
     await patchUser(user.id, { name: undefined });
     await updateUser(user.id, {
