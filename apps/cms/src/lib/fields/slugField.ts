@@ -1,10 +1,21 @@
 import { slugField as payloadSlugField } from "payload";
 import type { CheckboxField, FieldHook, PayloadRequest, TextField } from "payload";
 
+const isDefaultLocaleRequest = (req: PayloadRequest) => {
+  const { localization } = req.payload.config;
+
+  return !localization || req.locale === localization.defaultLocale;
+};
+
 const keepGeneratingWhileDrafting =
   (slugFieldName: string, generateSlug: FieldHook): FieldHook =>
   async (args) => {
-    const { data, operation, originalDoc, value: isGenerating } = args;
+    const { data, operation, originalDoc, req, value: isGenerating } = args;
+
+    if (operation === "update" && !isDefaultLocaleRequest(req)) {
+      return isGenerating;
+    }
+
     const slugEditedByUser = data?.[slugFieldName] !== originalDoc?.[slugFieldName];
     const keepsGenerating = await generateSlug(args);
 

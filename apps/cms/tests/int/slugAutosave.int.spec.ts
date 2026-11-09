@@ -2,6 +2,7 @@ import type { Payload } from "payload";
 import { getPayload } from "payload";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
+import { ALL_LOCALES, I18N_CONFIG } from "@/lib/config/i18n";
 import config from "@/payload.config";
 
 vi.mock("next/cache", async (importOriginal) => ({
@@ -14,6 +15,9 @@ vi.mock("next/cache", async (importOriginal) => ({
 const SLUGGED_COLLECTIONS = ["page", "posts"] as const;
 
 type SluggedCollection = (typeof SLUGGED_COLLECTIONS)[number];
+
+const defaultLocale = ALL_LOCALES.find((code) => code === I18N_CONFIG.defaultLocale)!;
+const translatedLocale = ALL_LOCALES.find((code) => code !== defaultLocale)!;
 
 let payload: Payload;
 const createdDocs: { collection: SluggedCollection; id: number }[] = [];
@@ -28,8 +32,35 @@ function findDraft<TCollection extends SluggedCollection>(collection: TCollectio
   return payload.findByID({ collection, depth: 0, draft: true, id });
 }
 
-function autosave(collection: SluggedCollection, id: number, data: Record<string, unknown>) {
-  return payload.update({ autosave: true, collection, data, depth: 0, draft: true, id });
+function autosave(
+  collection: SluggedCollection,
+  id: number,
+  data: Record<string, unknown>,
+  locale = defaultLocale
+) {
+  return payload.update({ autosave: true, collection, data, depth: 0, draft: true, id, locale });
+}
+
+async function autosaveTranslation(
+  collection: SluggedCollection,
+  id: number,
+  translation: Record<string, unknown>
+) {
+  const current = await payload.findByID({
+    collection,
+    depth: 0,
+    draft: true,
+    fallbackLocale: false,
+    id,
+    locale: translatedLocale,
+  });
+  await autosave(
+    collection,
+    id,
+    { ...current, ...translation, _status: "draft" },
+    translatedLocale
+  );
+  return findDraft(collection, id);
 }
 
 async function autosaveTitles<TCollection extends SluggedCollection>(
@@ -109,4 +140,23 @@ describe("slug while autosaving drafts", () => {
     expect(published.slug).toBe(`live-${suffix}-b`);
     expect(retitled.slug).toBe(`live-${suffix}-b`);
   });
+
+  it.each([
+    ["without", {}],
+    ["with", { title: "Traducido" }],
+  ])(
+    "keeps the slug when a translation %s its own title is autosaved",
+    async (_titleState, translation) => {
+      const draft = await createDraft("page");
+      const suffix = draft.id;
+
+      await autosaveTitles("page", draft.id, [`Locale ${suffix}`]);
+      const translated = await autosaveTranslation("page", draft.id, translation);
+      const retitled = await autosaveTitles("page", draft.id, [`Locale ${suffix} renamed`]);
+
+      expect(translated.slug).toBe(`locale-${suffix}`);
+      expect(translated.generateSlug).toBe(true);
+      expect(retitled.slug).toBe(`locale-${suffix}-renamed`);
+    }
+  );
 });
