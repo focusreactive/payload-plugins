@@ -17,31 +17,31 @@ export function PreserveAutosaveEdits() {
   const { setModified } = useForm();
   const modified = useFormModified();
   const { code: localeCode } = useLocale();
-  const editedPaths = useRef(new Set<string>());
-  const lastCheckedDoc = useRef(savedDoc);
+  const editedPathsRef = useRef(new Set<string>());
+  const lastCheckedDocRef = useRef(savedDoc);
 
   useLayoutEffect(() => {
-    editedPaths.current.clear();
+    editedPathsRef.current.clear();
   }, [localeCode]);
 
   useLayoutEffect(() => {
     for (const path of editedPathsIn(fields)) {
-      editedPaths.current.add(path);
+      editedPathsRef.current.add(path);
     }
 
-    const remarked = fieldsMissingEditMark(fields, editedPaths.current);
+    const remarked = fieldsMissingEditMark(fields, editedPathsRef.current);
     if (Object.keys(remarked).length > 0) {
       dispatchFields({ formState: remarked, type: "UPDATE_MANY" });
     }
   }, [fields, dispatchFields]);
 
   useLayoutEffect(() => {
-    if (savedDoc === lastCheckedDoc.current) {
+    if (savedDoc === lastCheckedDocRef.current) {
       return;
     }
-    lastCheckedDoc.current = savedDoc;
+    lastCheckedDocRef.current = savedDoc;
 
-    if (!modified && savedDoc && hasUnsavedEdits(fields, editedPaths.current, savedDoc)) {
+    if (!modified && savedDoc && hasUnsavedEdits(fields, editedPathsRef.current, savedDoc)) {
       setModified(true);
     }
   }, [fields, modified, savedDoc, setModified]);
