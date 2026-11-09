@@ -112,7 +112,6 @@ so a deeply nested field inside a block can overflow and make `payload migrate:c
 - `@focus-reactive/payload-plugin-translator` — AI translation (OpenAI provider)
 - `@focus-reactive/payload-plugin-ab` — A/B testing with middleware-driven variant rewrites
 - MCP plugin — exposes content tools to AI agents
-- `@focus-reactive/payload-plugin-audit-log` — read-only audit log of document, global and auth events with the acting user, API key or MCP agent (readable by super admins); the MCP actor is set in `lib/plugins/mcp/auditActor.ts`, SSO users are provisioned as the `oidc` system actor and their logins recorded by `lib/auth/oidc/signInOidcUser.ts`
 
 A plugin's **app-side wiring** (config, adapters, provider components) lives under `src/lib/plugins/<name>/` — e.g. `lib/plugins/ab/` (middleware adapter, cookies, variant data) and `lib/plugins/analytics/` (GA4 provider). The published feature itself lives in the monorepo `packages/payload-plugin-<name>/`.
 
