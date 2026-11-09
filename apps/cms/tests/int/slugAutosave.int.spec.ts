@@ -1,5 +1,5 @@
 import type { Payload } from "payload";
-import { getPayload } from "payload";
+import { getPayload, ValidationError } from "payload";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { ALL_LOCALES, I18N_CONFIG } from "@/lib/config/i18n";
@@ -61,6 +61,21 @@ async function autosaveTranslation(
     translatedLocale
   );
   return findDraft(collection, id);
+}
+
+function publishPage(id: number, data: Record<string, unknown>, locale = defaultLocale) {
+  return payload.update({
+    collection: "page",
+    data: {
+      ...data,
+      _status: "published",
+      blocks: [{ blockType: "testimonialsList" }],
+      hero: [{ blockType: "hero", variant: "showcase" }],
+    },
+    depth: 0,
+    id,
+    locale,
+  });
 }
 
 async function autosaveTitles<TCollection extends SluggedCollection>(
@@ -160,4 +175,36 @@ describe("slug while autosaving drafts", () => {
       expect(retitled.slug).toBe(`locale-${suffix}-renamed`);
     }
   );
+
+  it("stops following the title once the page is published in another locale", async () => {
+    const draft = await createDraft("page");
+    const suffix = draft.id;
+
+    await autosaveTitles("page", draft.id, [`Abroad ${suffix}`]);
+    await publishPage(draft.id, { title: `Extranjero ${suffix}` }, translatedLocale);
+    const retitled = await autosaveTitles("page", draft.id, [`Abroad ${suffix} renamed`]);
+
+    expect(retitled.slug).toBe(`abroad-${suffix}`);
+    expect(retitled.generateSlug).toBe(false);
+  });
+
+  it("generates the slug from the translated title when only a translation was autosaved", async () => {
+    const draft = await createDraft("page");
+    const suffix = draft.id;
+
+    const translated = await autosaveTranslation("page", draft.id, {
+      title: `Traducido ${suffix}`,
+    });
+
+    expect(translated.slug).toBe(`traducido-${suffix}`);
+  });
+
+  it("refuses to publish a page without a slug", async () => {
+    const draft = await createDraft("page");
+    const suffix = draft.id;
+
+    await expect(
+      publishPage(draft.id, { generateSlug: false, slug: null, title: `Unslugged ${suffix}` })
+    ).rejects.toBeInstanceOf(ValidationError);
+  });
 });

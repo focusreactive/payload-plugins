@@ -11,9 +11,14 @@ const keepGeneratingWhileDrafting =
   (slugFieldName: string, generateSlug: FieldHook): FieldHook =>
   async (args) => {
     const { data, operation, originalDoc, req, value: isGenerating } = args;
+    const isPublishing = data?._status === "published";
+    const isTranslatingSluggedDoc =
+      operation === "update" &&
+      !isDefaultLocaleRequest(req) &&
+      Boolean(originalDoc?.[slugFieldName]);
 
-    if (operation === "update" && !isDefaultLocaleRequest(req)) {
-      return isGenerating;
+    if (isTranslatingSluggedDoc) {
+      return isGenerating && !isPublishing;
     }
 
     const slugEditedByUser = data?.[slugFieldName] !== originalDoc?.[slugFieldName];
@@ -22,8 +27,6 @@ const keepGeneratingWhileDrafting =
     if (keepsGenerating || operation !== "update" || !isGenerating) {
       return keepsGenerating;
     }
-
-    const isPublishing = data?._status === "published";
 
     return !isPublishing && !slugEditedByUser;
   };
@@ -53,9 +56,13 @@ export const createSharedSlugField = (currentCollection: "page" | "posts") => {
         slugInput.unique = true;
         slugInput.validate = async (
           value: string | null | undefined,
-          { req }: { req: PayloadRequest }
+          { data, req }: { data: Partial<{ _status: string }>; req: PayloadRequest }
         ): Promise<string | true> => {
-          if (!value || !req?.payload) {
+          if (!value) {
+            return data?._status === "published" ? req.t("validation:required") : true;
+          }
+
+          if (!req?.payload) {
             return true;
           }
 
