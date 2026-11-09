@@ -51,6 +51,7 @@ describe("click on a highlighted target", () => {
   afterEach(() => {
     dispose();
     open.mockRestore();
+    document.getSelection()?.removeAllRanges();
   });
 
   it("opens the field instead of following the link", () => {
@@ -67,6 +68,24 @@ describe("click on a highlighted target", () => {
     expect(open).not.toHaveBeenCalled();
     expect(event.defaultPrevented).toBe(false);
     expect(anchorClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("lets a non-primary button click through to the page", () => {
+    const event = click(label, { button: 1 });
+
+    expect(open).not.toHaveBeenCalled();
+    expect(anchorClick).toHaveBeenCalledTimes(1);
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it("lets a click that ends a text selection through to the page", () => {
+    document.getSelection()?.selectAllChildren(label);
+
+    const event = click(label);
+
+    expect(open).not.toHaveBeenCalled();
+    expect(anchorClick).toHaveBeenCalledTimes(1);
+    expect(event.defaultPrevented).toBe(false);
   });
 
   it("ignores clicks outside any target", () => {
