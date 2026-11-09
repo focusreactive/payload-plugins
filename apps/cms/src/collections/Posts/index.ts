@@ -93,7 +93,6 @@ export const Posts: CollectionConfig<"posts"> = {
         {
           fields: [
             {
-              defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.posts.title),
               label: {
                 en: "Title",
                 es: "Título",
