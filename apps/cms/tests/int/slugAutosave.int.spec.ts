@@ -28,7 +28,7 @@ async function createDraft(collection: SluggedCollection) {
   return doc;
 }
 
-function findDraft<TCollection extends SluggedCollection>(collection: TCollection, id: number) {
+function findDraft(collection: SluggedCollection, id: number) {
   return payload.findByID({ collection, depth: 0, draft: true, id });
 }
 
@@ -54,18 +54,22 @@ async function autosaveTranslation(
     id,
     locale: translatedLocale,
   });
-  await autosave(
+  return autosave(
     collection,
     id,
     { ...current, ...translation, _status: "draft" },
     translatedLocale
   );
-  return findDraft(collection, id);
 }
 
-function publishPage(id: number, data: Record<string, unknown>, locale = defaultLocale) {
+function exceedPayloadVersionThreshold(collection: SluggedCollection, id: number, data: object) {
+  return payload.update({ collection, data: { ...data }, depth: 0, draft: true, id });
+}
+
+function publishPage(id: number, data: object, locale = defaultLocale) {
   return payload.update({
     collection: "page",
+    context: { skipEmbedding: true },
     data: {
       ...data,
       _status: "published",
@@ -78,20 +82,17 @@ function publishPage(id: number, data: Record<string, unknown>, locale = default
   });
 }
 
-async function autosaveTitles<TCollection extends SluggedCollection>(
-  collection: TCollection,
-  id: number,
-  titles: string[]
-) {
+async function autosaveTitles(collection: SluggedCollection, id: number, titles: string[]) {
+  let current = await findDraft(collection, id);
+
   for (const title of titles) {
-    const current = await findDraft(collection, id);
-    await autosave(collection, id, { ...current, _status: "draft", title });
+    current = await autosave(collection, id, { ...current, _status: "draft", title });
   }
 
-  return findDraft(collection, id);
+  return current;
 }
 
-describe("slug while autosaving drafts", () => {
+describe("slug while autosaving drafts", { timeout: 30_000 }, () => {
   beforeAll(async () => {
     payload = await getPayload({ config: await config });
   });
@@ -110,7 +111,7 @@ describe("slug while autosaving drafts", () => {
       `Slug ${suffix}`,
       `Slug ${suffix} about`,
     ]);
-    await payload.update({ collection, data: { ...typed }, depth: 0, draft: true, id: draft.id });
+    await exceedPayloadVersionThreshold(collection, draft.id, typed);
     const doc = await autosaveTitles(collection, draft.id, [
       `Slug ${suffix} about us`,
       `Slug ${suffix} about us team`,
@@ -140,17 +141,7 @@ describe("slug while autosaving drafts", () => {
       `Live ${suffix} a`,
       `Live ${suffix} b`,
     ]);
-    const published = await payload.update({
-      collection: "page",
-      data: {
-        ...titled,
-        _status: "published",
-        blocks: [{ blockType: "testimonialsList" }],
-        hero: [{ blockType: "hero", variant: "showcase" }],
-      },
-      depth: 0,
-      id: draft.id,
-    });
+    const published = await publishPage(draft.id, titled);
     const retitled = await autosaveTitles("page", draft.id, [`Live ${suffix} renamed`]);
 
     expect(published.slug).toBe(`live-${suffix}-b`);

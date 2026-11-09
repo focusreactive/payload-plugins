@@ -14,19 +14,18 @@ const preview = vi.hoisted(() => ({
 vi.mock("react", async (importOriginal) => {
   const react = await importOriginal<typeof import("react")>();
 
-  return {
-    ...react,
-    useTransition: () => {
-      const [isPending, setIsPending] = react.useState(false);
-      const startTransition = react.useCallback((action: () => void) => {
-        setIsPending(true);
-        action();
-        preview.pendingRefreshes.push(() => setIsPending(false));
-      }, []);
+  function useControllableTransition() {
+    const [isPending, setIsPending] = react.useState(false);
+    const startTransition = react.useCallback((action: () => void) => {
+      setIsPending(true);
+      action();
+      preview.pendingRefreshes.push(() => setIsPending(false));
+    }, []);
 
-      return [isPending, startTransition] as const;
-    },
-  };
+    return [isPending, startTransition] as const;
+  }
+
+  return { ...react, useTransition: useControllableTransition };
 });
 
 vi.mock("next/navigation", () => ({
