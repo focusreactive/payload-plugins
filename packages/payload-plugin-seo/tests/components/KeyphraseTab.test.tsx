@@ -61,7 +61,7 @@ describe("KeyphraseTab", () => {
         {...handlers}
       />
     );
-    expect((screen.getByLabelText(/focus keyphrase/i) as HTMLInputElement).value).toBe(
+    expect((screen.getByLabelText(/focus keyphrase/iu) as HTMLInputElement).value).toBe(
       "payload cms"
     );
   });
@@ -77,7 +77,7 @@ describe("KeyphraseTab", () => {
       />
     );
     expect(
-      (screen.getByRole("textbox", { name: /related keyphrase/i }) as HTMLInputElement).value
+      (screen.getByRole("textbox", { name: /related keyphrase/iu }) as HTMLInputElement).value
     ).toBe("headless cms");
   });
 
@@ -109,9 +109,9 @@ describe("KeyphraseTab", () => {
     // Previous metrics stay on screen (82) inside a dimmed container, no loader.
     expect(screen.getByText("82")).toBeInTheDocument();
     expect(container.querySelector(".opacity-40")).toBeTruthy();
-    expect(screen.queryByText(/analyzing keyphrase/i)).toBeNull();
+    expect(screen.queryByText(/analyzing keyphrase/iu)).toBeNull();
     // The rail card must not present the stale score as the current one.
-    expect(screen.getByRole("button", { name: /payloa/i })).not.toHaveTextContent("82");
+    expect(screen.getByRole("button", { name: /payloa/iu })).not.toHaveTextContent("82");
   });
 
   it("keeps a related keyphrase's previous metrics dimmed while re-analyzing (not stuck 'analyzing')", () => {
@@ -145,7 +145,7 @@ describe("KeyphraseTab", () => {
     // Previous related metrics stay dimmed — no "Analyzing keyphrase…" loader.
     expect(screen.getByText("58")).toBeInTheDocument();
     expect(container.querySelector(".opacity-40")).toBeTruthy();
-    expect(screen.queryByText(/analyzing keyphrase/i)).toBeNull();
+    expect(screen.queryByText(/analyzing keyphrase/iu)).toBeNull();
   });
 
   it("shows the analyzing loader (no stale score) when the focus keyphrase was previously empty", () => {
@@ -168,7 +168,7 @@ describe("KeyphraseTab", () => {
       />
     );
     const status = screen.getByRole("status");
-    expect(status).toHaveTextContent(/analyzing keyphrase/i);
+    expect(status).toHaveTextContent(/analyzing keyphrase/iu);
     expect(status.querySelector("svg")).toBeTruthy();
     expect(screen.queryByText("100")).toBeNull();
   });
@@ -187,7 +187,7 @@ describe("KeyphraseTab", () => {
         {...handlers}
       />
     );
-    const railCard = screen.getByRole("button", { name: /new keyphrase/i });
+    const railCard = screen.getByRole("button", { name: /new keyphrase/iu });
     expect(railCard).not.toHaveTextContent("100");
   });
 
@@ -202,7 +202,7 @@ describe("KeyphraseTab", () => {
         isDuplicate={(id) => id === "b"}
       />
     );
-    const railCard = screen.getByRole("button", { name: /headless cms/i });
+    const railCard = screen.getByRole("button", { name: /headless cms/iu });
     expect(railCard).not.toHaveTextContent("58");
   });
 });

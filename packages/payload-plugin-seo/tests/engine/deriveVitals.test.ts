@@ -8,11 +8,11 @@ import { deriveVitals } from "../../src/engine/runAnalysis/services/derive-vital
 //
 // deriveVitals now builds its researcher from the paper internally, so the
 // stubbed shapes are injected by mocking makeResearcher.
-const { researcher } = vi.hoisted(() => {
-  function word(w: string, occ: number) {
-    return { getWord: () => w, getOccurrences: () => occ };
-  }
+function word(w: string, occ: number) {
+  return { getWord: () => w, getOccurrences: () => occ };
+}
 
+const { researcher } = vi.hoisted(() => {
   return {
     researcher: {
       getResearch: (name: string) => {

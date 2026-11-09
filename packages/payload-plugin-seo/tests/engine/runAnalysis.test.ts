@@ -2,21 +2,26 @@ import { describe, expect, it, vi } from "vitest";
 import { runAnalysis } from "../../src/engine/runAnalysis";
 import type { AnalysisInput } from "../../src/engine/types/analysis";
 
+function res(id: string, score: number) {
+  return { getIdentifier: () => id, score };
+}
+
+function assessorReturning(results: ReturnType<typeof res>[]) {
+  return function FakeAssessor() {
+    return {
+      assess: () => undefined,
+      getValidResults: () => results,
+      addAssessment: () => undefined,
+    };
+  };
+}
+
 // Reconciled against the installed yoastseo@3.6.0 (Task 0.4): export names are
 // `SeoAssessor` / `ContentAssessor`, and the inclusive assessor lives on the
 // `assessors` namespace. The (English) researcher is a deep default export and
 // is mocked separately — `vi.mock("yoastseo")` does not cover that subpath, and
 // the real module loads `yoastseo`'s languageProcessing at import time.
 vi.mock("yoastseo", () => {
-  const res = (id: string, score: number) => ({ getIdentifier: () => id, score });
-  const assessorReturning = (results: ReturnType<typeof res>[]) =>
-    function FakeAssessor() {
-      return {
-        assess: () => undefined,
-        getValidResults: () => results,
-        addAssessment: () => undefined,
-      };
-    };
   return {
     Paper: function (text: string, attributes: Record<string, unknown>) {
       return { text, attributes };

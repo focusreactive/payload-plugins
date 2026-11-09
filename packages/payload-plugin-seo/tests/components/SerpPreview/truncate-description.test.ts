@@ -53,7 +53,7 @@ describe("truncateDescription", () => {
     // The cut must end at the 'a' word, not mid-way through 'b'-word
     // so the part before omission should end with 'aaa...a'
     const beforeOmission = result.slice(0, result.length - OMISSION.length);
-    expect(/b/.test(beforeOmission)).toBe(false);
+    expect(/b/u.test(beforeOmission)).toBe(false);
     expect(result.length).toBeLessThanOrEqual(156);
   });
 

@@ -11,5 +11,9 @@ export type ContentNode =
 const TYPES = new Set(["heading", "paragraph", "link", "image", "video", "html"]);
 
 export function isContentNode(value: unknown): value is ContentNode {
-  return typeof value === "object" && value !== null && TYPES.has((value as { type?: string }).type ?? "");
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    TYPES.has((value as { type?: string }).type ?? "")
+  );
 }

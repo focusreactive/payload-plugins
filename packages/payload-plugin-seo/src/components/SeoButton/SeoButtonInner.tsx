@@ -69,9 +69,9 @@ export function SeoButtonInner({
   }, [addRelated]);
 
   const handleRemove = useCallback(
-    (id: string) => {
-      removeKeyphrase(id);
-      setSelectedId((current) => (current === id ? null : current));
+    (keyphraseId: string) => {
+      removeKeyphrase(keyphraseId);
+      setSelectedId((current) => (current === keyphraseId ? null : current));
     },
     [removeKeyphrase]
   );

@@ -70,15 +70,15 @@ describe("related keyphrase — real engine flow", () => {
   it("resolves a related keyphrase to metrics after the analysis settles", async () => {
     render(<Harness />);
     await act(async () => {
-      fireEvent.change(screen.getByLabelText(/focus keyphrase/i), {
+      fireEvent.change(screen.getByLabelText(/focus keyphrase/iu), {
         target: { value: "running shoes" },
       });
     });
     await act(() => {
-      fireEvent.click(screen.getByRole("button", { name: /add related keyphrase/i }));
+      fireEvent.click(screen.getByRole("button", { name: /add related keyphrase/iu }));
     });
     await act(async () => {
-      fireEvent.change(screen.getByRole("textbox", { name: /related keyphrase/i }), {
+      fireEvent.change(screen.getByRole("textbox", { name: /related keyphrase/iu }), {
         target: { value: "trail shoes" },
       });
     });
@@ -87,8 +87,8 @@ describe("related keyphrase — real engine flow", () => {
     // not stay stuck on the analyzing loader.
     await waitFor(
       () => {
-        expect(screen.queryByText(/analyzing keyphrase/i)).toBeNull();
-        expect(screen.getByText(/checks passing/i)).toBeInTheDocument();
+        expect(screen.queryByText(/analyzing keyphrase/iu)).toBeNull();
+        expect(screen.getByText(/checks passing/iu)).toBeInTheDocument();
       },
       { timeout: 3000 }
     );

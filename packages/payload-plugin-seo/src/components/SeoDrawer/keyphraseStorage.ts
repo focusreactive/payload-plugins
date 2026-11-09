@@ -1,5 +1,5 @@
-import { createEntry, pruneEmpties } from './keyphraseState';
-import type { KeyphraseEntry } from './keyphraseState';
+import { createEntry, pruneEmpties } from "./keyphraseState";
+import type { KeyphraseEntry } from "./keyphraseState";
 
 const PREFIX = "seo-kw";
 

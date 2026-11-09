@@ -129,7 +129,7 @@ function Harness() {
 
 const typeFocus = (value: string) =>
   act(() => {
-    fireEvent.change(screen.getByLabelText(/focus keyphrase/i), { target: { value } });
+    fireEvent.change(screen.getByLabelText(/focus keyphrase/iu), { target: { value } });
   });
 
 beforeEach(() => {
@@ -146,7 +146,7 @@ describe("keyphrase analysis flow (real hooks)", () => {
     await typeFocus("a"); // a fresh analysis is now in flight; result is still the empty one
 
     // Transient: loader, not the empty-state score 100.
-    expect(screen.getByRole("status")).toHaveTextContent(/analyzing keyphrase/i);
+    expect(screen.getByRole("status")).toHaveTextContent(/analyzing keyphrase/iu);
     expect(screen.queryByText("100")).toBeNull();
 
     await flushAnalyses();
@@ -166,7 +166,7 @@ describe("keyphrase analysis flow (real hooks)", () => {
 
     // The previous metrics stay visible inside a dimmed container, and no
     // "Analyzing keyphrase…" loader is shown.
-    expect(screen.queryByText(/analyzing keyphrase/i)).toBeNull();
+    expect(screen.queryByText(/analyzing keyphrase/iu)).toBeNull();
     const dimmed = container.querySelector(".opacity-40");
     expect(dimmed).toBeTruthy();
     expect(dimmed).toHaveTextContent("77");
@@ -180,10 +180,10 @@ describe("keyphrase analysis flow (real hooks)", () => {
 
     // Add a related keyphrase (selects it) and type into it.
     await act(() => {
-      fireEvent.click(screen.getByRole("button", { name: /add related keyphrase/i }));
+      fireEvent.click(screen.getByRole("button", { name: /add related keyphrase/iu }));
     });
     await act(() => {
-      fireEvent.change(screen.getByRole("textbox", { name: /related keyphrase/i }), {
+      fireEvent.change(screen.getByRole("textbox", { name: /related keyphrase/iu }), {
         target: { value: "trail shoes" },
       });
     });

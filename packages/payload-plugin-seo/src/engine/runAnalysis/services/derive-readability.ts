@@ -11,6 +11,21 @@ import { enrich } from "../utils/enrich";
 import { toCategory } from "../utils/toCategory";
 import type { PaperLike } from "../../types/paper";
 
+function fleschCheck(researcher: YoastResearcher, ctx: RecoContext): CheckResult | undefined {
+  const r = getResearch<{ score: number }>(researcher, "getFleschReadingScore");
+  if (!r || r.score < 0) return undefined;
+
+  const status = fleschToStatus(r.score);
+
+  return {
+    id: "fleschReadingEase",
+    score: r.score,
+    status,
+    recommendation: getRecommendation("fleschReadingEase", status, ctx),
+    data: undefined,
+  };
+}
+
 export function deriveReadability(
   paper: InstanceType<typeof Paper>,
   keyphrase: string
@@ -27,19 +42,4 @@ export function deriveReadability(
   );
 
   return toCategory(readChecks);
-}
-
-function fleschCheck(researcher: YoastResearcher, ctx: RecoContext): CheckResult | undefined {
-  const r = getResearch<{ score: number }>(researcher, "getFleschReadingScore");
-  if (!r || r.score < 0) return undefined;
-
-  const status = fleschToStatus(r.score);
-
-  return {
-    id: "fleschReadingEase",
-    score: r.score,
-    status,
-    recommendation: getRecommendation("fleschReadingEase", status, ctx),
-    data: undefined,
-  };
 }

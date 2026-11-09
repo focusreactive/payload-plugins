@@ -25,9 +25,9 @@ describe("KeyphraseRail", () => {
         onAdd={vi.fn()}
       />
     );
-    expect(screen.getByText(/2\s*\/\s*5/)).toBeTruthy();
+    expect(screen.getByText(/2\s*\/\s*5/u)).toBeTruthy();
     expect(screen.getByText("Focus")).toBeTruthy();
-    expect(screen.getByText(/new keyphrase/i)).toBeTruthy();
+    expect(screen.getByText(/new keyphrase/iu)).toBeTruthy();
   });
 
   it("selects on click and keeps Add enabled below the cap, even with an empty entry", () => {
@@ -44,7 +44,8 @@ describe("KeyphraseRail", () => {
     fireEvent.click(screen.getByText("payload cms"));
     expect(onSelect).toHaveBeenCalledWith("a");
     expect(
-      (screen.getByRole("button", { name: /add related keyphrase/i }) as HTMLButtonElement).disabled
+      (screen.getByRole("button", { name: /add related keyphrase/iu }) as HTMLButtonElement)
+        .disabled
     ).toBe(false);
   });
 
@@ -64,7 +65,8 @@ describe("KeyphraseRail", () => {
       />
     );
     expect(
-      (screen.getByRole("button", { name: /add related keyphrase/i }) as HTMLButtonElement).disabled
+      (screen.getByRole("button", { name: /add related keyphrase/iu }) as HTMLButtonElement)
+        .disabled
     ).toBe(true);
   });
 });

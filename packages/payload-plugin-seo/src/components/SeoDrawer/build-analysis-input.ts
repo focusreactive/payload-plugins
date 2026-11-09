@@ -34,20 +34,6 @@ export interface BuildAnalysisInputArgs {
   extractor?: ContentExtractor;
 }
 
-export async function buildAnalysisInput(args: BuildAnalysisInputArgs): Promise<AnalysisInput> {
-  const ir = await extractIntermediateRepresentation(args);
-  const contentHtml = serialize(ir);
-
-  return buildInput({
-    values: args.values,
-    contentHtml,
-    locale: args.locale,
-    keyphrases: args.keyphrases,
-    fields: args.fields,
-    site: args.site,
-  });
-}
-
 async function extractIntermediateRepresentation(
   args: BuildAnalysisInputArgs
 ): Promise<ContentNode[]> {
@@ -64,4 +50,18 @@ async function extractIntermediateRepresentation(
   };
 
   return await args.extractor(args.values, ctx, toolkit);
+}
+
+export async function buildAnalysisInput(args: BuildAnalysisInputArgs): Promise<AnalysisInput> {
+  const ir = await extractIntermediateRepresentation(args);
+  const contentHtml = serialize(ir);
+
+  return buildInput({
+    values: args.values,
+    contentHtml,
+    locale: args.locale,
+    keyphrases: args.keyphrases,
+    fields: args.fields,
+    site: args.site,
+  });
 }

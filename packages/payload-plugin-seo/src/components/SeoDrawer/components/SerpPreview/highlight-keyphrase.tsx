@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
 
 function buildHighlightPattern(keyphrase: string, synonyms: string[]): string | null {
@@ -24,7 +24,7 @@ export function highlightKeyphrase(
   const pattern = buildHighlightPattern(keyphrase, synonyms);
   if (!pattern) return [text];
 
-  const segments = text.split(new RegExp(`(${pattern})`, "gi"));
+  const segments = text.split(new RegExp(`(${pattern})`, "giu"));
 
   return segments.map((segment, index) =>
     index % 2 === 1 ? <strong key={index}>{segment}</strong> : segment

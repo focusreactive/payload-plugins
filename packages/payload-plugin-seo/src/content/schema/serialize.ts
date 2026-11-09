@@ -5,7 +5,11 @@ function escapeText(s: string): string {
 }
 
 function escapeAttr(s: string): string {
-  return s.replace(/&/gu, "&amp;").replace(/</gu, "&lt;").replace(/>/gu, "&gt;").replace(/"/gu, "&quot;");
+  return s
+    .replace(/&/gu, "&amp;")
+    .replace(/</gu, "&lt;")
+    .replace(/>/gu, "&gt;")
+    .replace(/"/gu, "&quot;");
 }
 
 function serializeNode(node: ContentNode): string {
@@ -19,7 +23,9 @@ function serializeNode(node: ContentNode): string {
     case "image":
       return `<img src="${escapeAttr(node.src)}" alt="${escapeAttr(node.alt ?? "")}" />`;
     case "video":
-      return node.poster ? `<video src="${escapeAttr(node.src)}" poster="${escapeAttr(node.poster)}"></video>` : `<video src="${escapeAttr(node.src)}"></video>`;
+      return node.poster
+        ? `<video src="${escapeAttr(node.src)}" poster="${escapeAttr(node.poster)}"></video>`
+        : `<video src="${escapeAttr(node.src)}"></video>`;
     case "html":
       return node.html;
     default:

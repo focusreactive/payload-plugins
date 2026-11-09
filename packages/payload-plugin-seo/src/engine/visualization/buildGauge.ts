@@ -3,10 +3,10 @@ import type { Status } from "../types/analysis";
 import type { GaugeBand, GaugeModel, GaugeSpec, GaugeTickLabel } from "../types/visualization";
 import { formatGaugeValue } from "./formatGaugeValue";
 
+const clamp = (n: number, lo: number, hi: number): number => Math.min(Math.max(n, lo), hi);
+
 export function buildGauge(spec: GaugeSpec, markerValue: number, markerLabel: string): GaugeModel {
   const toPct = (v: number): number => ((v - spec.axisMin) / (spec.axisMax - spec.axisMin)) * 100;
-
-  const clamp = (n: number, lo: number, hi: number): number => Math.min(Math.max(n, lo), hi);
 
   const edges = [spec.axisMin, ...spec.thresholds, spec.axisMax];
 

@@ -6,11 +6,14 @@ export interface HeadingIssues {
   nodeIssues: (HeadingNodeIssue | undefined)[];
 }
 
-export function deriveHeadingIssues(flat: FlatHeading[]): HeadingIssues {
-  return {
-    docIssues: deriveDocIssues(flat),
-    nodeIssues: flat.map((_heading, index) => deriveNodeIssue(flat, index)),
-  };
+function levelsBetween(from: HeadingLevel, to: HeadingLevel): HeadingLevel[] {
+  const skipped: HeadingLevel[] = [];
+
+  for (let level = from + 1; level < to; level++) {
+    skipped.push(level as HeadingLevel);
+  }
+
+  return skipped;
 }
 
 function deriveDocIssues(flat: FlatHeading[]): HeadingDocIssue[] {
@@ -35,12 +38,9 @@ function deriveNodeIssue(flat: FlatHeading[], index: number): HeadingNodeIssue |
   };
 }
 
-function levelsBetween(from: HeadingLevel, to: HeadingLevel): HeadingLevel[] {
-  const skipped: HeadingLevel[] = [];
-
-  for (let level = from + 1; level < to; level++) {
-    skipped.push(level as HeadingLevel);
-  }
-
-  return skipped;
+export function deriveHeadingIssues(flat: FlatHeading[]): HeadingIssues {
+  return {
+    docIssues: deriveDocIssues(flat),
+    nodeIssues: flat.map((_heading, index) => deriveNodeIssue(flat, index)),
+  };
 }

@@ -16,7 +16,9 @@ export function registerContentExtractors(map: Record<string, ContentExtractor>)
   for (const [key, fn] of Object.entries(map)) s.set(key, fn);
 }
 
-export function resolveContentExtractor(key: string | null | undefined): ContentExtractor | undefined {
+export function resolveContentExtractor(
+  key: string | null | undefined
+): ContentExtractor | undefined {
   if (!key) return undefined;
 
   return store().get(key);
