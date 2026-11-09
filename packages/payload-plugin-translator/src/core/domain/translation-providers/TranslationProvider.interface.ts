@@ -31,7 +31,26 @@ export type TranslationOutput = Record<TranslationIndex, string>;
  *
  * @since 0.13.0
  */
+/**
+ * Which document is being translated. Identity, not a switch — the two halves never arrive apart,
+ * and neither tells a provider *how* to translate.
+ *
+ * @since 0.18.0
+ */
+export type DocumentRef = {
+  collection: string;
+  id: string;
+};
+
 export type TranslationRequestOptions = {
+  /**
+   * Required: describing a request without saying what it is about is not a state the core ever
+   * produces. The *parameter* stays optional — a provider called on its own is asked only to
+   * translate strings — but a half-description is not allowed.
+   *
+   * @since 0.18.0
+   */
+  document: DocumentRef;
   /**
    * The values carry numbered inline marks the provider must preserve.
    *

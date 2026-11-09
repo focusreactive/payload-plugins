@@ -1,4 +1,4 @@
-import { SectionHeader } from "@/components/SectionHeader";
+import { SectionHeading } from "@/components/SectionHeading";
 import { BlogPostCard } from "@/components/blog";
 import { getTranslations } from "next-intl/server";
 import NextImage from "next/image";
@@ -17,9 +17,7 @@ export async function RelatedPostsSection({ posts, relatedPostsLabel }: RelatedP
 
   return (
     <SectionContainer sectionData={{ theme: "light-gray" }}>
-      {relatedPostsLabel && (
-        <SectionHeader title={relatedPostsLabel} size="h-section" className="mb-[38px]" />
-      )}
+      <SectionHeading title={relatedPostsLabel} size="h-section" className="mb-[38px]" />
 
       <div className="grid grid-cols-1 gap-[22px] min-[621px]:grid-cols-2 min-[981px]:grid-cols-3">
         {posts.map((post) => {

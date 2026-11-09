@@ -18,7 +18,7 @@ import type {
   TranslationProvider,
 } from "@focus-reactive/payload-plugin-translator";
 import { buildConfig } from "payload";
-import type { CollectionConfig, Payload } from "payload";
+import type { Block, CollectionConfig, Payload } from "payload";
 import { getPayload } from "payload";
 
 import { createTestDatabase } from "../../lib/database/resolveAdapter";
@@ -69,6 +69,7 @@ export type TestPayload = {
  *   publish; the enqueue route still works.
  * @param opts.collections - replaces the shared fixture set entirely (not merged). The set must
  *   still contain a `docs` collection when `autoTranslate` is passed.
+ * @param opts.blocks - the config-level blocks a `blockReferences` slug points into.
  * @param opts.failFor - target locales the fake provider should throw for, so a spec can exercise a
  *   partial failure. Every other locale translates normally.
  * @param opts.runner - defaults to the sync runner. `createPayloadJobsRunner({ autoRun: false })`
@@ -82,10 +83,13 @@ export type TestPayload = {
 export async function bootTestPayload(opts?: {
   autoTranslate?: { targets: string[]; strategy?: "overwrite" | "skip_existing" };
   collections?: CollectionConfig[];
+  blocks?: Block[];
   fallback?: boolean;
   exclusiveQueue?: boolean;
   failFor?: string[];
   onTranslate?: (targetLng: string) => Promise<void> | void;
+  /** Sees the fourth argument the plugin hands the provider, request by request. */
+  onRequest?: (options?: { document?: { collection: string; id: string } }) => void;
   runner?: TaskRunnerProvider;
   lifecycle?: TranslationLifecycleCallbacks;
   failedWindowMs?: number;
@@ -124,6 +128,7 @@ export async function bootTestPayload(opts?: {
     ...(declaresMarks ? { capabilities: { inlineMarks: true } } : {}),
     translate: async (input, sourceLng, targetLng, options) => {
       translateCalls += 1;
+      opts?.onRequest?.(options);
       await opts?.onTranslate?.(targetLng);
       if (failFor.has(targetLng)) throw new Error(`provider unavailable for ${targetLng}`);
       return await baseProvider.translate(input, sourceLng, targetLng, options);
@@ -151,6 +156,7 @@ export async function bootTestPayload(opts?: {
       ],
     },
     collections,
+    ...(opts?.blocks ? { blocks: opts.blocks } : {}),
     jobs: {
       // Payload deletes completed jobs by default, leaving the status panels nothing to read.
       deleteJobOnComplete: false,

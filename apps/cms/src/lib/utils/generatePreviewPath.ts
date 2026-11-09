@@ -1,7 +1,7 @@
 import type { BLOG_CONFIG } from "@/lib/config/blog";
 
 interface Props {
-  collection: "page" | typeof BLOG_CONFIG.collection;
+  collection: "page" | "globalBlock" | typeof BLOG_CONFIG.collection;
   slug: string;
   path: string;
 }

@@ -99,6 +99,19 @@ const importTranslateContent = async () =>
   (await import("../../../../core/translation-pipeline/index.js"))
     .translateContent as unknown as ReturnType<typeof vi.fn>;
 
+describe("what the translation is told about the request", () => {
+  it("names the same document the document surface would", async () => {
+    const translateContent = await importTranslateContent();
+
+    await handler.handle(reqWithDoc({ id: "p1", title: "Title" }));
+
+    expect(
+      translateContent.mock.calls[0]?.[0],
+      "a prompt scoped to a collection must apply however the editor started the translation"
+    ).toMatchObject({ document: { collection: "posts", id: "p1" } });
+  });
+});
+
 describe("TranslateFieldHandler", () => {
   it("reads the source-locale value from the saved doc and translates a localized leaf", async () => {
     (await importTranslateContent()).mockResolvedValue({

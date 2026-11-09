@@ -17,9 +17,46 @@ const fakeProvider: TranslationProvider = {
   },
 };
 
+const recordingProvider = (): {
+  provider: TranslationProvider;
+  seen: Array<Record<string, unknown> | undefined>;
+} => {
+  const seen: Array<Record<string, unknown> | undefined> = [];
+
+  return {
+    seen,
+    provider: {
+      translate: async (input, _sourceLng, _targetLng, options) => {
+        seen.push(options as Record<string, unknown> | undefined);
+        return Object.fromEntries(Object.keys(input).map((key) => [key, "x"]));
+      },
+    },
+  };
+};
+
+describe("what the provider is told about the request", () => {
+  const schema = [{ name: "title", type: "text", localized: true }] as Field[];
+
+  it("names the document when the caller has one", async () => {
+    const { provider, seen } = recordingProvider();
+
+    await translateContent({
+      document: { collection: "machines", id: "7" },
+      schema,
+      sourceData: { title: "Home" },
+      sourceLng: "en",
+      targetLng: "de",
+      translationProvider: provider,
+    });
+
+    expect(seen[0]).toMatchObject({ document: { collection: "machines", id: "7" } });
+  });
+});
+
 const run = async (schema: Field[], sourceData: Record<string, unknown>) =>
   (
     await translateContent({
+      document: { collection: "docs", id: "1" },
       schema,
       sourceData,
       sourceLng: "en",
@@ -125,6 +162,7 @@ describe("translateContent", () => {
 
   it("respects skip_existing: keeps a non-empty target value", async () => {
     const result = await translateContent({
+      document: { collection: "docs", id: "1" },
       schema: [{ name: "title", type: "text", localized: true }],
       sourceData: { title: "hello" },
       targetData: { title: "bereits übersetzt" },
@@ -138,6 +176,7 @@ describe("translateContent", () => {
 
   it("respects skip_existing: translates when target is empty", async () => {
     const result = await translateContent({
+      document: { collection: "docs", id: "1" },
       schema: [{ name: "title", type: "text", localized: true }],
       sourceData: { title: "hello" },
       targetData: {},
@@ -181,6 +220,7 @@ describe("translateContent", () => {
       } as TranslationProvider;
 
       const result = await translateContent({
+        document: { collection: "docs", id: "1" },
         schema: richSchema,
         sourceData,
         sourceLng: "en",

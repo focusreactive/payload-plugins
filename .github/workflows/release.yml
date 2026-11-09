@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+      # Long-lived branches for a package's next major. A push here publishes a prerelease under
+      # the `next` dist-tag, so the unfinished major can be installed deliberately and never
+      # reaches anyone who installs the package normally. The branch is released from, not merged
+      # into: `main` keeps shipping while it lives.
+      - "major/*"
 
 permissions:
   contents: write

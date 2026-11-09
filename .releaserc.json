@@ -1,5 +1,5 @@
 {
-  "branches": ["main"],
+  "branches": ["main", { "name": "major/*", "prerelease": "next", "channel": "next" }],
   "plugins": [
     [
       "@semantic-release/commit-analyzer",

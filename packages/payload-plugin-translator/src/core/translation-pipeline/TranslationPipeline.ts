@@ -61,6 +61,7 @@ export class TranslationPipeline {
       targetData: config.targetData,
       sourceLng: config.sourceLng,
       targetLng: config.targetLng,
+      document: config.document,
       sourceChangedByLeaf: config.sourceChangedByLeaf,
     };
 

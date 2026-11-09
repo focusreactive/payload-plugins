@@ -78,6 +78,28 @@ the single source of truth — code annotations link here by anchor instead of d
   - `src/server/modules/task-runner/payload-jobs-runner/store/normalizeJob.ts` (`normalizeJobLocales`
     expands it to itself)
 
+### translate-positional-languages
+
+- **What:** `TranslationProvider.translate(input, sourceLng, targetLng, options?)` — the two language
+  codes as adjacent positional strings, with everything else in a trailing optional bag.
+- **Status:** planned
+- **Deprecated:** not yet annotated — agreed 2026-10-15 while implementing #109.
+- **Replacement:** `translate(input, ctx)`, one object carrying the languages, the document and the
+  switches. `ctx` is **not** optional, so the document is required outright — today it is required
+  inside an optional parameter, which is as close to the truth as the current signature allows.
+- **Remove in:** next major
+- **Why:** two adjacent parameters of the same type can be swapped silently, and no test catches it.
+  The trailing bag then forced a second mistake: `collection` and `documentId` arrived as *options*
+  beside `inlineMarks`, mixing what is being translated with how. #109 fixed the second half by
+  grouping them as `document: DocumentRef`; the first half cannot be fixed without breaking the
+  signature.
+- **Migration:** mechanical, and narrower than it looks. The path the README recommends —
+  `createTranslationProvider({ complete })` — is unaffected: `CompletionFn` already takes a single
+  `CompletionRequest` object. Only a host that implements `TranslationProvider.translate` by hand has
+  to change, and `TranslationRequestOptions` disappears into `ctx` rather than being removed.
+- **Note:** `docs/plans/2026-08-21-translation-mechanism-kernel-extraction.md` reshapes this port
+  anyway. Doing it before that lands would be the same work twice, which is why it waits.
+
 ### find-by-collection-document-ids-array
 
 - **What:** passing a bare `Array<string | number>` of document ids as the second argument to

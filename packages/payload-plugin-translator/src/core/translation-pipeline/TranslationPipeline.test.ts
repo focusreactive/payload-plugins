@@ -33,6 +33,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -42,7 +43,9 @@ describe("TranslationPipeline", () => {
 
       expect(result).not.toBeNull();
       expect(result!.translatedData).toEqual({ title: "TR_Hello" });
-      expect(provider.translate).toHaveBeenCalledWith({ 0: "Hello" }, "en", "ru");
+      expect(provider.translate).toHaveBeenCalledWith({ 0: "Hello" }, "en", "ru", {
+        document: { collection: "docs", id: "1" },
+      });
     });
 
     it("translates multiple fields", async () => {
@@ -60,6 +63,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -89,6 +93,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -123,6 +128,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -168,6 +174,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -227,6 +234,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -303,6 +311,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -351,6 +360,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -377,6 +387,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -403,6 +414,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -434,6 +446,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -457,6 +470,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -480,6 +494,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -507,6 +522,7 @@ describe("TranslationPipeline", () => {
 
       await expect(
         pipeline.execute({
+          document: { collection: "docs", id: "1" },
           schema,
           sourceData,
           targetData,
@@ -530,6 +546,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -561,6 +578,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -590,6 +608,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -619,6 +638,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -663,6 +683,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -698,6 +719,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -744,6 +766,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -780,6 +803,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -811,6 +835,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData,
@@ -846,6 +871,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData: {},
@@ -867,6 +893,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData: { body: "Welt", items: [{ id: "a1", label: "" }] },
@@ -884,6 +911,7 @@ describe("TranslationPipeline", () => {
       });
 
       const result = await pipeline.execute({
+        document: { collection: "docs", id: "1" },
         schema,
         sourceData,
         targetData: { title: "Hallo", body: "Welt", items: [{ id: "a1", label: "Erste" }] },

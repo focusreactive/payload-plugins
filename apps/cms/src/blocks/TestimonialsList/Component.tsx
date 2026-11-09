@@ -1,9 +1,8 @@
-import { SectionHeader } from "@/components/SectionHeader";
+import { SectionHeading, hasSectionHeading } from "@/components/SectionHeading";
 import { cn } from "@/components/utils";
 import React from "react";
 
 import { AnimatedCarousel } from "@/components/Testimonials";
-import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { Testimonial, TestimonialsListBlock } from "@/payload-types";
 import { Container } from "@/components/shared/Container";
 import { sectionVariants } from "@/components/shared/SectionContainer";
@@ -11,9 +10,7 @@ import { sectionVariants } from "@/components/shared/SectionContainer";
 type Props = TestimonialsListBlock;
 
 export const TestimonialsListBlockComponent: React.FC<Props> = ({
-  eyebrow,
   heading,
-  description,
   testimonialItems,
   showRating = true,
   showAvatar = true,
@@ -24,12 +21,6 @@ export const TestimonialsListBlockComponent: React.FC<Props> = ({
   const testimonials = (testimonialItems ?? [])
     .map((item) => item.testimonial)
     .filter((t): t is Testimonial => typeof t !== "number" && t !== null && t !== undefined);
-  const header = prepareSectionHeaderProps({
-    align: "center",
-    eyebrow,
-    description,
-    heading,
-  });
 
   const theme = section?.theme;
 
@@ -43,9 +34,9 @@ export const TestimonialsListBlockComponent: React.FC<Props> = ({
       )}
       {...(theme ? { "data-theme": theme } : {})}
     >
-      {header && (
+      {hasSectionHeading(heading) && (
         <Container containerData={{ maxWidth: section?.maxWidth, paddingX: section?.paddingX }}>
-          <SectionHeader {...header} className="mb-12 sm:mb-16" />
+          <SectionHeading {...heading} align="center" className="mb-12 sm:mb-16" />
         </Container>
       )}
 

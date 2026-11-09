@@ -10,7 +10,7 @@ import {
 import { generateRichText } from "@/lib/utils/generateRichText";
 import type { Locale } from "@/lib/types";
 import { injectSection } from "@/lib/fields/section/injectSection";
-import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
+import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 
 function buildFaqItems(locale: Locale) {
   const { question, answer } = DEFAULT_VALUES.blocks.faq;
@@ -21,7 +21,7 @@ function buildFaqItems(locale: Locale) {
 }
 
 const fields: Field[] = [
-  ...sectionHeaderFields({ headingDefault: DEFAULT_VALUES.blocks.faq.heading }),
+  sectionHeadingField({ title: DEFAULT_VALUES.blocks.faq.heading }),
   {
     admin: { initCollapsed: true },
     defaultValue: createLocalizedDefault({

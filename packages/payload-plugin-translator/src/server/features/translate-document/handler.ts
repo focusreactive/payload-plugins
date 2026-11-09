@@ -127,6 +127,7 @@ export class TranslateDocumentHandler implements Handler<
       targetData: currentTargetVersion,
       sourceLng,
       targetLng,
+      document: { collection, id: collectionId },
       translationProvider: this.translationProvider,
       strategy,
       inlineMarks: this.inlineMarks,

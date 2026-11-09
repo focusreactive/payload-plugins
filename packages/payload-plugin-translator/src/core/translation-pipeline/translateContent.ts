@@ -1,5 +1,5 @@
 import type { FieldLike } from "../kernel/field-traversal/index.js";
-import type { TranslationProvider } from "../domain/translation-providers/index.js";
+import type { DocumentRef, TranslationProvider } from "../domain/translation-providers/index.js";
 import { TranslationPipeline } from "./TranslationPipeline.js";
 import { PlainTextExpander, RichContainerExpander } from "./stages/index.js";
 import { createTranslationStrategy } from "./strategies/index.js";
@@ -21,6 +21,8 @@ export type TranslateContentArgs = {
   /** Source language code, or `''` for provider auto-detect. */
   sourceLng: string;
   targetLng: string;
+  /** Told to the provider so a `systemPrompt` builder can scope itself. */
+  document: DocumentRef;
   translationProvider: TranslationProvider;
   /** @default 'overwrite' */
   strategy?: TranslationStrategyName;
@@ -48,6 +50,7 @@ export async function translateContent({
   targetData = {},
   sourceLng,
   targetLng,
+  document,
   translationProvider,
   strategy = "overwrite",
   inlineMarks = false,
@@ -67,6 +70,7 @@ export async function translateContent({
     targetData,
     sourceLng,
     targetLng,
+    document,
     sourceChangedByLeaf,
   });
 }

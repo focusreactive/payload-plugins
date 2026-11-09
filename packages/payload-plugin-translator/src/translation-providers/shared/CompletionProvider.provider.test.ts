@@ -24,6 +24,56 @@ describe("createTranslationProvider", () => {
     vi.restoreAllMocks();
   });
 
+  it("tells a systemPrompt builder which document the request is for", async () => {
+    const { complete } = recordingComplete('{"0":"Startseite"}');
+    let seenDocument: { collection: string; id: string } | undefined;
+
+    await createTranslationProvider({
+      complete,
+      systemPrompt: ({ document, defaultPrompt }) => {
+        seenDocument = document;
+        return defaultPrompt;
+      },
+    }).translate({ 0: "Home" }, "en", "de", { document: { collection: "machines", id: "7" } });
+
+    expect(seenDocument).toEqual({ collection: "machines", id: "7" });
+  });
+
+  it("leaves the builder without a document when the caller named none", async () => {
+    const { complete } = recordingComplete('{"0":"Startseite"}');
+    let seenDocument: { collection: string; id: string } | undefined = {
+      collection: "unset",
+      id: "unset",
+    };
+
+    await createTranslationProvider({
+      complete,
+      systemPrompt: ({ document, defaultPrompt }) => {
+        seenDocument = document;
+        return defaultPrompt;
+      },
+    }).translate({ 0: "Home" }, "en", "de");
+
+    expect(
+      seenDocument,
+      "a provider driven directly has no document, and a builder must be able to tell"
+    ).toBeUndefined();
+  });
+
+  it("awaits a builder that reads something before it answers", async () => {
+    const { complete, seen } = recordingComplete('{"0":"Startseite"}');
+
+    await createTranslationProvider({
+      complete,
+      systemPrompt: async ({ defaultPrompt }) => {
+        await Promise.resolve();
+        return `${defaultPrompt}\nGlossary: ampere = Ampere.`;
+      },
+    }).translate({ 0: "Home" }, "en", "de");
+
+    expect(seen[0].systemPrompt).toContain("Glossary: ampere = Ampere.");
+  });
+
   it("hands the transport a built prompt, the serialized input and a schema", async () => {
     const { complete, seen } = recordingComplete('{"0":"Startseite"}');
 

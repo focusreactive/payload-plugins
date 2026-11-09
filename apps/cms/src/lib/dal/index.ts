@@ -8,7 +8,7 @@
 export { getPayloadClient } from "./payload-client";
 
 // Pages
-export { getPageBySlug } from "./getPageBySlug";
+export { getPageBySlug, PAGE_RENDER_DEPTH } from "./getPageBySlug";
 
 // Posts
 export { getPostBySlug } from "./getPostBySlug";

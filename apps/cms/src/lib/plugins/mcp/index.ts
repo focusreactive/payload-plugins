@@ -167,7 +167,7 @@ export const mcpPluginConfig = mcpPlugin({
     },
     page: {
       description:
-        "Website pages built with a block-based layout system. Each page has a title, URL slug, nested hierarchy (parent/breadcrumbs), and a flexible block editor for composing content sections such as Hero, Content, FAQ, and more. Supports draft/publish versioning and localization (en/es). Use this collection to read, create, update or delete site pages.",
+        "Website pages built with a block-based layout system. Each page has a title, URL slug, nested hierarchy (parent/breadcrumbs), a single hero (the page H1) and a flexible block editor for composing the sections below it, such as Content, FAQ, and more. Supports draft/publish versioning and localization (en/es). Use this collection to read, create, update or delete site pages.",
       enabled: {
         create: true,
         delete: true,
