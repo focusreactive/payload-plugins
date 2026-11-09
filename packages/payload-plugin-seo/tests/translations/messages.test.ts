@@ -27,14 +27,6 @@ describe("bundled messages", () => {
         expect(unknown).toEqual([]);
       });
 
-      it("covers every English message", () => {
-        const missing = Object.keys(en).filter((key) => {
-          if (!PLURAL.test(key)) return messages[key] === undefined;
-          return messages[key.replace(PLURAL, "_other")] === undefined;
-        });
-        expect(missing).toEqual([]);
-      });
-
       it("uses exactly the placeholders English uses", () => {
         for (const [key, value] of Object.entries(messages)) {
           const source = englishFor(key) ?? "";

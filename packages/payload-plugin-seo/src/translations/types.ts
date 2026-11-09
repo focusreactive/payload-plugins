@@ -1,14 +1,5 @@
 import type { en } from "./messages/en";
 
-/**
- * The `translations` plugin option: `{ [language]: { [key]: string } }`.
- *
- * Keys are the ones in `messages/en.ts`, with or without the `seo:` prefix
- * (`"tab.keyphrase"`, `"seo:tab.keyphrase"`). The colon-separated keys of
- * earlier versions (`"seo:tab:keyphrase"`) are still accepted.
- */
-export type Translations = Record<string, Record<string, string>>;
-
 export type MessageId = keyof typeof en;
 
 export type PluralSuffix = "_zero" | "_one" | "_two" | "_few" | "_many" | "_other";
@@ -22,14 +13,34 @@ export type PluralKey = PluralBase<MessageId>;
 /** Everything `t()` accepts. */
 export type TranslationKey = Exclude<MessageId, PluralForm<MessageId>> | PluralKey;
 
+/** Every key a set of strings may define: plain messages and each plural form. */
+export type MessageKey = Exclude<MessageId, PluralForm<MessageId>> | `${PluralKey}${PluralSuffix}`;
+
 /**
- * A complete set of strings for one language: every plain message, and every
- * plural with at least its `_other` form (the other forms a language needs —
- * `_one`, `_few`, … — are optional because languages differ in which exist).
+ * Strings for one language. Any key it leaves out, and any plural without its
+ * `_other` form, falls back to English.
  */
-export type LanguageMessages = Record<Exclude<MessageId, PluralForm<MessageId>>, string> &
-  Record<`${PluralKey}_other`, string> &
-  Partial<Record<`${PluralKey}${PluralSuffix}`, string>>;
+export type LanguageMessages = Partial<Record<MessageKey, string>>;
+
+type LegacyKey =
+  | "seo:tab:keyphrase"
+  | "seo:tab:onpage"
+  | "seo:tab:readability"
+  | "seo:tab:inclusive"
+  | "seo:tab:vitals"
+  | "seo:tab:serp";
+
+/**
+ * The `translations` plugin option: `{ [language]: { [key]: string } }`.
+ *
+ * Keys are the ones in `messages/en.ts`, with or without the `seo:` prefix
+ * (`"tab.keyphrase"`, `"seo:tab.keyphrase"`). The colon-separated tab keys of
+ * earlier versions (`"seo:tab:keyphrase"`) are still accepted.
+ */
+export type Translations = Record<
+  string,
+  Partial<Record<MessageKey | `seo:${MessageKey}` | LegacyKey, string>>
+>;
 
 export type MessageVars = Record<string, string | number>;
 

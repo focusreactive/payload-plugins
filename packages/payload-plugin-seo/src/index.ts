@@ -9,3 +9,4 @@ export type {
   SeoSiteConfig,
   SeoGenerationConfig,
 } from "./types/config";
+export type { MessageKey, Translations } from "./translations/types";
