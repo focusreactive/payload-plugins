@@ -21,7 +21,7 @@ const isSameRelation = (a: unknown, b: unknown): boolean =>
 export const isLexicalRichText = (value: unknown): boolean =>
   isObject(value) && isObject(value.root) && value.root.type === "root";
 
-export function hasLeafValue(value: unknown): boolean {
+function hasLeafValue(value: unknown): boolean {
   if (value === null || value === undefined) return false;
   if (typeof value !== "object" || value instanceof Date) return true;
   return Object.values(value).some(hasLeafValue);
@@ -72,24 +72,6 @@ export function diffPaths(
   walk(before ?? {}, after ?? {}, "", 0);
   if (truncated) paths.push(TRUNCATED_MARKER);
   return paths;
-}
-
-const NOTHING_IGNORED: ReadonlySet<string> = new Set();
-
-export const valuesDiffer = (before: unknown, after: unknown): boolean =>
-  diffPaths({ value: before }, { value: after }, { max: 1, ignore: NOTHING_IGNORED }).length > 0;
-
-const isEmptyValue = (value: unknown): boolean =>
-  value === null || value === undefined || (isContainer(value) && Object.keys(value).length === 0);
-
-export function withoutEmptyValues(value: unknown): unknown {
-  if (!isContainer(value)) return value;
-  if (Array.isArray(value)) return value.map(withoutEmptyValues);
-  return Object.fromEntries(
-    Object.entries(value)
-      .map(([key, child]) => [key, withoutEmptyValues(child)] as const)
-      .filter(([, child]) => !isEmptyValue(child))
-  );
 }
 
 export function createdPaths(

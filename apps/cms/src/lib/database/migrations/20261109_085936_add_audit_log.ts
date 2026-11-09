@@ -3,7 +3,7 @@ import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
    CREATE TYPE "public"."enum_audit_events_status" AS ENUM('success', 'failure');
-  CREATE TYPE "public"."enum_audit_events_actor_type" AS ENUM('user', 'api_key', 'agent', 'seed', 'migration', 'system', 'anonymous');
+  CREATE TYPE "public"."enum_audit_events_actor_type" AS ENUM('user', 'api_key', 'agent', 'system', 'anonymous');
   CREATE TYPE "public"."enum_audit_events_actor_source" AS ENUM('context', 'als', 'auth', 'inferred', 'plugin');
   CREATE TYPE "public"."enum_audit_events_via" AS ENUM('admin', 'rest', 'graphql', 'local', 'mcp', 'job');
   CREATE TYPE "public"."enum_audit_events_target_kind" AS ENUM('collection', 'global', 'auth', 'audit', 'system');
@@ -33,6 +33,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"changes" jsonb,
   	"override_access" boolean,
   	"request_id" varchar,
+  	"ip" varchar,
+  	"user_agent" varchar,
   	"metadata" jsonb
   );
   

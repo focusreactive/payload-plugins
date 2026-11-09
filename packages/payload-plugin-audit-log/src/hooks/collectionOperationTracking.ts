@@ -1,25 +1,18 @@
 import type {
-  CollectionAfterDeleteHook,
   CollectionBeforeChangeHook,
-  CollectionBeforeDeleteHook,
   CollectionBeforeOperationHook,
   CollectionConfig,
   PayloadRequest,
 } from "payload";
-import { hasLeafValue } from "../core/diffPaths";
 import { readForAudit } from "../core/failOpenInsert";
 import { stampOperationStart } from "../core/operationClock";
 import type { OpFlags } from "../core/requestState";
 import {
-  ensureActive,
   getOpFlags,
-  markActive,
-  newCreateKey,
   operationFlagsOf,
   pushOpFlags,
   startedAfter,
   takeOpFlags,
-  unmarkActive,
   withOperationFlags,
 } from "../core/requestState";
 import { submittedSecretFields } from "../core/secretFields";
@@ -35,7 +28,6 @@ type OperationArgs = {
   data?: unknown;
   draft?: boolean;
   autosave?: boolean;
-  duplicateFromID?: unknown;
   select?: unknown;
   publishSpecificLocale?: unknown;
 };
@@ -53,8 +45,7 @@ const OPERATIONS_RECORDED_IN_THEIR_LOCALE: ReadonlySet<string> = new Set([
 
 const CREATE_TAG = Symbol.for("payload-plugin-audit-log.create");
 
-type CreateTag = { flags: OpFlags; activeKey: string };
-type TaggedData = { [CREATE_TAG]?: CreateTag };
+type TaggedData = { [CREATE_TAG]?: OpFlags };
 
 const isPresent = (value: unknown): boolean => value !== undefined && value !== null;
 
@@ -68,11 +59,11 @@ const startedByOperation = (flags: OpFlags): boolean => flags.source === "operat
 
 const isTracked = (flags: OpFlags): boolean => flags.source !== undefined;
 
-const createTagOf = (data: unknown): CreateTag | undefined =>
+const createFlagsOf = (data: unknown): OpFlags | undefined =>
   isObject(data) ? data[CREATE_TAG] : undefined;
 
-function tagCreate(data: unknown, tag: CreateTag): void {
-  if (isObject(data)) data[CREATE_TAG] = tag;
+function tagCreate(data: unknown, flags: OpFlags): void {
+  if (isObject(data)) data[CREATE_TAG] = flags;
 }
 
 export function trackCollectionOperations(collection: CollectionConfig, localized: boolean) {
@@ -80,7 +71,6 @@ export function trackCollectionOperations(collection: CollectionConfig, localize
   const isAuth = Boolean(collection.auth);
   const drafts = hasDrafts(collection.versions);
   const autosaveEnabled = hasAutosave(collection.versions);
-  const comparesPublishWithLiveDoc = autosaveEnabled || (isAuth && drafts);
 
   const secretFieldsOf = (data: unknown, draft: unknown): string[] => {
     if (!isAuth || !isObject(data)) return [];
@@ -94,20 +84,13 @@ export function trackCollectionOperations(collection: CollectionConfig, localize
     return secretFields.length > 0 ? { ...flags, secretFields } : flags;
   };
 
-  const beginCreate = (req: PayloadRequest, data: unknown, flags: OpFlags) => {
-    const activeKey = newCreateKey();
-    markActive(req, slug, activeKey);
-    tagCreate(data, { flags, activeKey });
-  };
-
   const trackOperation = ({
     args,
     operation,
     req,
   }: Parameters<CollectionBeforeOperationHook>[0]) => {
     const runtimeOperation: string = operation;
-    const { id, data, draft, autosave, duplicateFromID, select, publishSpecificLocale } =
-      args as OperationArgs;
+    const { id, data, draft, autosave, select, publishSpecificLocale } = args as OperationArgs;
     const operationReq: PayloadRequest = args.req ?? req;
     const savedIn = {
       locale:
@@ -134,11 +117,7 @@ export function trackCollectionOperations(collection: CollectionConfig, localize
     };
 
     if (runtimeOperation === "create") {
-      if (isPresent(duplicateFromID)) {
-        flags.duplicate = true;
-        flags.duplicateFrom = String(duplicateFromID);
-      }
-      beginCreate(req, data, flags);
+      tagCreate(data, flags);
       return undefined;
     }
     if (runtimeOperation === "restoreVersion") {
@@ -219,15 +198,8 @@ export function trackCollectionOperations(collection: CollectionConfig, localize
     req,
     data,
   }: Parameters<CollectionBeforeChangeHook>[0]) => {
-    if (operation === "create") {
-      const tag = createTagOf(data);
-      if (tag) ensureActive(req, slug, tag.activeKey);
-      else beginCreate(req, data, { duplicate: hasLeafValue(originalDoc) });
-      return;
-    }
-    if (originalDoc?.id === undefined) return;
+    if (operation === "create" || originalDoc?.id === undefined) return;
     const id = String(originalDoc.id);
-    markActive(req, slug, id);
     if (req.context[PAYLOAD_RESTORING_VERSION_CONTEXT_KEY] === true) {
       moveRestoreFlagsToDocument(req, id);
     }
@@ -239,7 +211,7 @@ export function trackCollectionOperations(collection: CollectionConfig, localize
 
     const publishesOverDraft =
       drafts && data?._status === "published" && originalDoc._status !== "published";
-    if (publishesOverDraft && comparesPublishWithLiveDoc) {
+    if (publishesOverDraft && autosaveEnabled) {
       await rememberLiveDocBeforePublish(req, flags, originalDoc.id);
     }
 
@@ -257,39 +229,18 @@ export function trackCollectionOperations(collection: CollectionConfig, localize
     return args.data;
   };
 
-  const beforeDelete: CollectionBeforeDeleteHook = async ({ id, req }) => {
-    await failOpen(req.payload, TRACKING_FAILURE, () => markActive(req, slug, String(id)));
-  };
-
-  const afterDelete: CollectionAfterDeleteHook = async ({ id, req, doc }) => {
-    await failOpen(req.payload, TRACKING_FAILURE, () => unmarkActive(req, slug, String(id)));
-    return doc;
-  };
-
   const takeFlags = (
     req: PayloadRequest,
     operation: "create" | "update",
     id: string,
     data: unknown
   ): OpFlags => {
-    if (operation === "create") {
-      const tag = createTagOf(data);
-      if (tag) unmarkActive(req, slug, tag.activeKey);
-      return tag?.flags ?? {};
-    }
-    unmarkActive(req, slug, id);
+    if (operation === "create") return createFlagsOf(data) ?? {};
     return savesRestore(req, id) ? takeOpFlags(req, slug, id) : (operationFlagsOf(req, slug) ?? {});
   };
 
   const takeWrittenDocOfSave = (req: PayloadRequest, flags: OpFlags, docId: unknown) =>
     flags.writtenDocCaptures?.delete(String(docId)) ? takeWrittenDoc(req, slug, docId) : undefined;
 
-  return {
-    beforeOperation,
-    beforeChange,
-    beforeDelete,
-    afterDelete,
-    takeFlags,
-    takeWrittenDocOfSave,
-  };
+  return { beforeOperation, beforeChange, takeFlags, takeWrittenDocOfSave };
 }

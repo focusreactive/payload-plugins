@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  storedInLocaleOfWrite,
-  withStoredLocalizedValues,
-} from "../../src/core/storedLocalizedValues";
+import { withStoredLocalizedValues } from "../../src/core/storedLocalizedValues";
 
 const paths = [["motto"], ["seo", "description"], ["links", { rows: true }, "label"]] as const;
 
@@ -82,57 +79,5 @@ describe("stored localized values", () => {
     expect(
       withStoredLocalizedValues(doc, { links: [{ id: "a", label: { de: "A" } }] }, rowPaths, "de")
     ).toEqual(doc);
-  });
-});
-
-describe("stored values in the locale of a write", () => {
-  const stored = {
-    motto: { en: "hello", de: "hallo" },
-    seo: { description: { en: "d", de: "b" } },
-    links: [
-      { id: "a", label: { en: "A", de: "A-de" } },
-      { id: "b", label: { en: "B", de: "B-de" } },
-    ],
-    layout: [{ id: "q", blockType: "quote", text: { en: "Q", de: "Q-de" } }],
-  };
-
-  it("takes the stored value in the locale of the write, at any depth, matching rows by id", () => {
-    expect(
-      storedInLocaleOfWrite(
-        stored,
-        { links: [{ id: "b" }, { id: "a" }] },
-        [...paths, ...rowPaths],
-        "de"
-      )
-    ).toEqual({
-      motto: "hallo",
-      seo: { description: "b" },
-      links: [
-        { id: "a", label: "A-de" },
-        { id: "b", label: "B-de" },
-      ],
-      layout: [{ id: "q", blockType: "quote", text: "Q-de" }],
-    });
-  });
-
-  it("keeps every stored locale of a value the write sets for every locale", () => {
-    expect(
-      storedInLocaleOfWrite(
-        stored,
-        { motto: { en: "hello", de: "anders" }, links: [{ id: "a", label: { de: "x" } }] },
-        [...paths, ...rowPaths],
-        "de"
-      )
-    ).toMatchObject({
-      motto: { en: "hello", de: "hallo" },
-      links: [
-        { id: "a", label: { en: "A", de: "A-de" } },
-        { id: "b", label: "B-de" },
-      ],
-    });
-  });
-
-  it("keeps the stored values when the write has no locale", () => {
-    expect(storedInLocaleOfWrite(stored, {}, paths, undefined)).toBe(stored);
   });
 });

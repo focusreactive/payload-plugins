@@ -71,9 +71,17 @@ async function startAdminSession(payload: Payload, user: User, origin: string) {
   return adminRedirect;
 }
 
-async function signInWithAdminSession(payload: Payload, claims: SSOUserInput, origin: string) {
-  const { user, session } = await signInOidcUser(payload, claims, (provisioned) =>
-    startAdminSession(payload, provisioned, origin)
+async function signInWithAdminSession(
+  payload: Payload,
+  claims: SSOUserInput,
+  origin: string,
+  headers: Headers
+) {
+  const { user, session } = await signInOidcUser(
+    payload,
+    claims,
+    (provisioned) => startAdminSession(payload, provisioned, origin),
+    headers
   );
 
   payload.logger.info(`User ${user.email} logged in via OIDC SSO`);
@@ -234,7 +242,7 @@ export async function GET(request: Request) {
       );
     }
 
-    return await signInWithAdminSession(payload, claims, origin);
+    return await signInWithAdminSession(payload, claims, origin, request.headers);
   } catch (error) {
     payload?.logger?.error({ error }, "OIDC callback error");
     const msg = error instanceof Error ? error.message : "Authentication error";

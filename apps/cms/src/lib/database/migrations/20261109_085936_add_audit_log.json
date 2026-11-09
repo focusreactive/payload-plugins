@@ -33767,6 +33767,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "ip": {
+          "name": "ip",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "metadata": {
           "name": "metadata",
           "type": "jsonb",
@@ -40524,8 +40536,6 @@
         "user",
         "api_key",
         "agent",
-        "seed",
-        "migration",
         "system",
         "anonymous"
       ]
@@ -40681,6 +40691,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "c5b5c4e0-999d-47c3-8d34-251997a0f56a",
+  "id": "78564a94-7a7c-4b0f-a699-05342e9a6074",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

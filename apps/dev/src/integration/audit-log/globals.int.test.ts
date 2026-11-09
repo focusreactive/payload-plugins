@@ -8,7 +8,6 @@ import {
   loginHeaders,
   rest,
   timestampAfterEverythingSoFar,
-  unattributedEvents,
 } from "./bootAuditPayload";
 import type { AuditTestPayload } from "./bootAuditPayload";
 
@@ -181,9 +180,5 @@ describe("globals", () => {
       "global.update",
       "global.update",
     ]);
-  });
-
-  it("no global write above was reported as unattributed", async () => {
-    expect(await unattributedEvents(ctx.payload)).toEqual([]);
   });
 });

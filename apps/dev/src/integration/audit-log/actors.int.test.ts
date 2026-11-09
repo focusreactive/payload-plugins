@@ -56,12 +56,12 @@ describe("actors", () => {
     expect(event?.overrideAccess).toBe(true);
   });
 
-  it("withAuditActor marks seeds", async () => {
-    const doc = await withAuditActor({ type: "seed", label: "seed.ts" }, () =>
+  it("withAuditActor labels the Local API calls of a script", async () => {
+    const doc = await withAuditActor({ type: "system", label: "seed.ts" }, () =>
       createPost("Seeded")
     );
     const event = await firstEventOfPost(doc.id);
-    expect(event?.actor).toMatchObject({ type: "seed", label: "seed.ts", source: "als" });
+    expect(event?.actor).toMatchObject({ type: "system", label: "seed.ts", source: "als" });
   });
 
   it("an agent acting for a user", async () => {

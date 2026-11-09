@@ -23,9 +23,9 @@ describe("resolveActor", () => {
   it("uses the ALS scope when context is empty", () => {
     const r = resolveActor(
       { context: {}, user: null, payloadAPI: "local", headers: headers() },
-      { type: "seed", label: "seed.ts" }
+      { type: "system", label: "importer" }
     );
-    expect(r.actor).toEqual({ type: "seed", label: "seed.ts", source: "als" });
+    expect(r.actor).toEqual({ type: "system", label: "importer", source: "als" });
     expect(r.via).toBe("local");
   });
 
@@ -99,7 +99,7 @@ describe("resolveActor", () => {
   it("fills onBehalfOf from req.user for any explicit actor type", () => {
     const user = { id: 5, collection: "users", email: "a@x.io" };
     const fromContext = resolveActor(
-      { context: { auditActor: { type: "seed" } }, user, payloadAPI: "local", headers: headers() },
+      { context: { auditActor: { type: "agent" } }, user, payloadAPI: "local", headers: headers() },
       undefined
     );
     expect(fromContext.onBehalfOf).toEqual({ collection: "users", docId: "5", label: "a@x.io" });
@@ -152,8 +152,8 @@ describe("resolveActor", () => {
 
   it("stores the explicit actor docId as a string", () => {
     const req = { context: {}, payloadAPI: "local", headers: headers() };
-    expect(resolveActor(req, { type: "seed", docId: 5 }).actor).toEqual({
-      type: "seed",
+    expect(resolveActor(req, { type: "agent", docId: 5 }).actor).toEqual({
+      type: "agent",
       docId: "5",
       source: "als",
     });

@@ -92,7 +92,7 @@ describe("journal access", () => {
 
   it("the Local API cannot forge events even though it skips access control", async () => {
     const forged = {
-      action: "system.seed",
+      action: "doc.delete",
       occurredAt: new Date().toISOString(),
       requestId: "forged",
     } as never;
@@ -112,7 +112,7 @@ describe("journal access", () => {
       ctx.payload.update({
         collection: AUDIT_SLUG as never,
         where: byId,
-        data: { action: "system.seed" } as never,
+        data: { action: "doc.delete" } as never,
       })
     ).rejects.toThrow();
     await expect(
@@ -150,6 +150,7 @@ describe("journal access", () => {
     const [header, ...lines] = (await res.text()).trimEnd().split("\n");
     expect(header).toContain("occurredAt,action");
     expect(header).toContain("target.docId");
+    expect(header).toContain("via,ip,userAgent");
     expect(lines.some((line) => line.includes("doc.create"))).toBe(true);
 
     const exports = await eventsWithAction(ctx.payload, "audit.export");
@@ -182,7 +183,7 @@ describe("journal access", () => {
     for (let i = 0; i < bulkRows; i += 1) {
       await insertRawEvent({
         occurredAt: new Date(start + Math.floor(i / rowsPerMillisecond)).toISOString(),
-        action: "system.seed",
+        action: "doc.update",
         target: { kind: "audit", slug: AUDIT_SLUG, docId: String(i) },
         requestId: "bulk",
       });
@@ -204,7 +205,7 @@ describe("journal access", () => {
   it("the retention purge still deletes old events (it bypasses the operation hooks)", async () => {
     await insertRawEvent({
       occurredAt: "2001-01-01T00:00:00.000Z",
-      action: "system.seed",
+      action: "doc.update",
       target: { kind: "audit", slug: AUDIT_SLUG },
       requestId: "ancient",
     });

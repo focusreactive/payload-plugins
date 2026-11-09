@@ -59,6 +59,12 @@ describe("buildAuditCollection", () => {
     expect(call(c.access?.read, null)).toBe(false);
   });
 
+  it("stores the client IP and User-Agent as text fields", () => {
+    const byName = new Map(c.fields.map((f) => ["name" in f ? f.name : "", f]));
+    expect(byName.get("ip")).toMatchObject({ type: "text" });
+    expect(byName.get("userAgent")).toMatchObject({ type: "text" });
+  });
+
   it("has the fields the list view filters on", () => {
     const names = c.fields.map((f) => ("name" in f ? f.name : undefined));
     expect(names).toEqual(

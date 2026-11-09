@@ -107,15 +107,17 @@ describe("MCP overrideAuth", () => {
 });
 
 describe("OIDC login", () => {
-  it("records an admin login of the signed-in user through OIDC", async () => {
+  it("records an admin login of the signed-in user through OIDC, with the headers of its request", async () => {
     const payload = {} as never;
-    await logOidcLogin(payload, { email: "sso@x.io", id: 8 });
+    const headers = new Headers({ "user-agent": "Mozilla/5.0" });
+    await logOidcLogin(payload, { email: "sso@x.io", id: 8 }, headers);
     expect(logAuditEvent).toHaveBeenCalledWith(payload, {
       action: "auth.login",
       actorOverride: {
         actor: { collection: "users", docId: "8", label: "sso@x.io", source: "auth", type: "user" },
         via: "admin",
       },
+      headers,
       metadata: { method: "oidc" },
       target: { docId: "8", kind: "auth", slug: "users" },
     });
@@ -146,7 +148,9 @@ describe("OIDC sign-in", () => {
       return { redirectFor: user };
     });
 
-    const signedIn = await signInOidcUser(payload, claims, startSession);
+    const headers = new Headers({ "x-forwarded-for": "203.0.113.7" });
+
+    const signedIn = await signInOidcUser(payload, claims, startSession, headers);
 
     expect(findOrCreateAdminUser).toHaveBeenCalledWith(payload, claims);
     expect(startSession).toHaveBeenCalledWith(ssoUser);
@@ -158,16 +162,21 @@ describe("OIDC sign-in", () => {
     ]);
     expect(logAuditEvent).toHaveBeenCalledWith(
       payload,
-      expect.objectContaining({ action: "auth.login", metadata: { method: "oidc" } })
+      expect.objectContaining({ action: "auth.login", headers, metadata: { method: "oidc" } })
     );
   });
 
   it("records no login when the session cannot be started", async () => {
     const failure = new Error("Payload secret not configured");
     await expect(
-      signInOidcUser({} as never, claims, async () => {
-        throw failure;
-      })
+      signInOidcUser(
+        {} as never,
+        claims,
+        async () => {
+          throw failure;
+        },
+        new Headers()
+      )
     ).rejects.toBe(failure);
     expect(logAuditEvent).not.toHaveBeenCalled();
   });

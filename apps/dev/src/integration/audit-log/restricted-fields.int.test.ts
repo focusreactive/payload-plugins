@@ -51,7 +51,6 @@ let ctx: AuditTestPayload;
 let signedInAdmin: Record<string, string>;
 beforeAll(async () => {
   ctx = await bootAuditPayload({
-    plugin: { roleFields: ["role", "roles", HIDDEN_ROLE_FIELD] },
     collections: [restrictedNotes],
   });
   await createUser(ctx.payload, "restricted-admin@x.io", { role: "admin" });
@@ -127,14 +126,11 @@ describe("writes to fields the caller cannot read", () => {
     expect(await everyRowOfThisTestAsStored()).not.toContain("tax-after");
   });
 
-  it("a change of a hidden role field is a role change", async () => {
+  it("a change of a hidden role field is a doc.update that names it", async () => {
     const user = await createUserWithRestrictedFields("hidden-role@x.io");
     await updateUser(user.id, { [HIDDEN_ROLE_FIELD]: "internal-after" });
 
-    expect(await userEventsOfThisTest(user.id)).toEqual([
-      ["doc.update", [HIDDEN_ROLE_FIELD]],
-      ["user.role_changed", [HIDDEN_ROLE_FIELD]],
-    ]);
+    expect(await userEventsOfThisTest(user.id)).toEqual([["doc.update", [HIDDEN_ROLE_FIELD]]]);
   });
 
   it("no-op saves of hidden and read-restricted fields are not logged", async () => {

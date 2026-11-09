@@ -2,13 +2,6 @@ import { randomUUID } from "node:crypto";
 import type { Payload, PayloadRequest } from "payload";
 import { failOpen } from "../utils/failOpen";
 import { logError } from "../utils/logError";
-import type { CommandWrites } from "./commandWriteBuffer";
-import {
-  activeCommandWrites,
-  holdCommittedWrites,
-  writeHeldUntilFirstFailure,
-} from "./commandWriteBuffer";
-import { forgetCoverageOfSession, releaseCoverageOfSession } from "./requestState";
 
 type AuditWrite = (req?: PayloadRequest) => Promise<unknown>;
 
@@ -223,18 +216,6 @@ async function drainBeforeCommit(payload: Payload, queues: CommitQueues, session
 
 type AdapterCall = () => Promise<unknown>;
 
-async function commitIntoCommand(
-  queues: CommitQueues,
-  command: CommandWrites,
-  session: unknown,
-  commitByAdapter: AdapterCall
-): Promise<unknown> {
-  const committed = takeQueue(queues, session) ?? [];
-  const result = await commitByAdapter();
-  await holdCommittedWrites(command, committed);
-  return result;
-}
-
 async function settledTransactionID(incomingID: unknown): Promise<unknown> {
   try {
     return await incomingID;
@@ -303,18 +284,11 @@ export function deferAuditWritesToCommit(payload: Payload, adapter: unknown = pa
 
   db.commitTransaction = async function commitTransaction(this: unknown, incomingID?: unknown) {
     const session = sessionWithID(db, await settledTransactionID(incomingID));
-    const commitByAdapter = () => commit.call(this ?? db, incomingID);
-    const command = activeCommandWrites();
-    const result = command
-      ? await commitIntoCommand(queues, command, session, commitByAdapter)
-      : await handling.commit(session, commitByAdapter);
-    forgetCoverageOfSession(session);
-    return result;
+    return handling.commit(session, () => commit.call(this ?? db, incomingID));
   };
 
   db.rollbackTransaction = async function rollbackTransaction(this: unknown, incomingID?: unknown) {
     const session = sessionWithID(db, await settledTransactionID(incomingID));
-    releaseCoverageOfSession(session);
     return handling.rollback(session, () => rollback.call(this ?? db, incomingID));
   };
 }
@@ -345,28 +319,6 @@ async function insertAfterCommit(payload: Payload, session: object, insert: Inse
   await failOpen(payload, WRITE_FAILURE, insert);
 }
 
-function holdUntilCommitted(
-  payload: Payload,
-  command: CommandWrites,
-  transaction: OpenTransaction | undefined,
-  insert: Insert
-): void {
-  const queues = adapterOf(payload)[COMMIT_QUEUES];
-  if (transaction && queues) enqueue(queues, transaction.session, insert);
-  else command.held.push(insert);
-}
-
-export async function writeCommandEventsOnceCommitted(
-  payload: Payload,
-  req: RequestInTransaction | undefined
-): Promise<void> {
-  const command = activeCommandWrites();
-  if (!command) return;
-  const transaction = await findOpenTransaction(payload, req).catch(() => undefined);
-  if (transaction) command.writeAfterNextCommit = true;
-  else await writeHeldUntilFirstFailure(command);
-}
-
 export async function failOpenInsert(
   payload: Payload,
   req: PayloadRequest | undefined,
@@ -377,12 +329,6 @@ export async function failOpenInsert(
     transaction = await findOpenTransaction(payload, req);
   } catch (err) {
     logError(payload, "could not resolve the transaction for the audit event", err);
-    return;
-  }
-
-  const command = activeCommandWrites();
-  if (command) {
-    holdUntilCommitted(payload, command, transaction, () => write());
     return;
   }
 

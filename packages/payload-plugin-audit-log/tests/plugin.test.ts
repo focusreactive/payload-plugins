@@ -40,8 +40,6 @@ const relabelled: FolderOverride = ({ collection }) => ({
   labels: { plural: "Dirs" },
 });
 
-const WRAPPED = Symbol.for("payload-plugin-audit-log.dbWrapped");
-
 type Op = (args: Record<string, unknown>) => Promise<unknown>;
 
 const fakePayload = () => {
@@ -120,9 +118,14 @@ describe("auditLogPlugin", () => {
     const out = auditLogPlugin({ slug: "journal" })(cfg) as Config;
     expect(out.custom).toEqual({
       other: 1,
-      [CUSTOM_CONFIG_KEY]: { slug: "journal" },
+      [CUSTOM_CONFIG_KEY]: { slug: "journal", recordIpAndUserAgent: true },
     });
     expect(out.collections?.map((c) => c.slug)).toContain("journal");
+    const quiet = auditLogPlugin({ recordIpAndUserAgent: false })(base()) as Config;
+    expect(quiet.custom?.[CUSTOM_CONFIG_KEY]).toEqual({
+      slug: "audit-events",
+      recordIpAndUserAgent: false,
+    });
   });
 
   it("registers the purge task only with retention", () => {
@@ -139,13 +142,26 @@ describe("auditLogPlugin", () => {
     expect(out.jobs?.autoRun).toEqual([]);
   });
 
-  it("audits the adapter as soon as Payload creates it, before connect, migrations or onInit", () => {
-    const { payload, db } = fakePayload();
+  it("records nothing for database writes that bypass Payload's operations, including migrations", async () => {
+    const { payload, db, create } = fakePayload();
     const out = auditLogPlugin()(withDatabase(base(), db)) as Config;
     const adapter = createAdapter(out, payload);
     expect(adapter).toBe(db);
-    expect(db[WRAPPED]).toBe(true);
-    expect(db[Symbol.for("payload-plugin-audit-log.migrationsAudited")]).toBe(true);
+    const req = { context: {}, payloadAPI: "local" };
+
+    await (adapter.create as Op)({ collection: "posts", data: { title: "x" }, req });
+    await (adapter.updateOne as Op)({ collection: "posts", id: 5, data: { title: "y" }, req });
+    await (adapter.deleteOne as Op)({ collection: "posts", where: { id: { equals: 5 } }, req });
+    await (adapter.updateGlobal as Op)({ slug: "settings", data: { a: 1 }, req });
+    await (adapter.create as Op)({
+      collection: "payload-migrations",
+      data: { name: "m", batch: 1 },
+    });
+
+    const audited = create.mock.calls.filter(
+      ([args]) => (args as { collection: string }).collection === "audit-events"
+    );
+    expect(audited).toEqual([]);
   });
 
   it("keeps the database adapter's own settings and leaves onInit to the project", () => {
@@ -157,73 +173,28 @@ describe("auditLogPlugin", () => {
     expect(out.onInit).toBe(own);
   });
 
-  it("defers audit writes in SQL transactions to the commit, whatever trackUnattributedWrites is", () => {
-    for (const trackUnattributedWrites of [true, false]) {
-      const { payload, db } = fakePayload();
-      const commit = vi.fn();
-      Object.assign(db, {
-        execute: vi.fn(),
-        commitTransaction: commit,
-        rollbackTransaction: vi.fn(),
-      });
-      const out = auditLogPlugin({ trackUnattributedWrites })(withDatabase(base(), db)) as Config;
-      createAdapter(out, payload);
-      expect(db[Symbol.for("payload-plugin-audit-log.deferToCommit")]).toBeDefined();
-      expect(db.commitTransaction).not.toBe(commit);
-    }
-  });
-
-  it("captures the main global reads of updates whatever trackUnattributedWrites is", () => {
-    for (const trackUnattributedWrites of [true, false]) {
-      const { payload, db } = fakePayload();
-      const findGlobal = vi.fn(async () => ({}));
-      db.findGlobal = findGlobal;
-      const out = auditLogPlugin({ trackUnattributedWrites })(withDatabase(base(), db)) as Config;
-      createAdapter(out, payload);
-      expect(db[Symbol.for("payload-plugin-audit-log.mainGlobalReadsCaptured")]).toBe(true);
-      expect(db.findGlobal).not.toBe(findGlobal);
-    }
-  });
-
-  it("does not wrap writes for unattributed tracking when it is off, but still records migrations", async () => {
-    const { payload, db, create } = fakePayload();
-    const out = auditLogPlugin({ trackUnattributedWrites: false })(
-      withDatabase(base(), db)
-    ) as Config;
-    const adapter = createAdapter(out, payload);
-    expect(db[WRAPPED]).toBeUndefined();
-    await (adapter.create as Op)({
-      collection: "payload-migrations",
-      data: { name: "m", batch: 1 },
+  it("defers audit writes in SQL transactions to the commit", () => {
+    const { payload, db } = fakePayload();
+    const commit = vi.fn();
+    Object.assign(db, {
+      execute: vi.fn(),
+      commitTransaction: commit,
+      rollbackTransaction: vi.fn(),
     });
-    const audited = create.mock.calls.filter(
-      ([args]) => (args as { collection: string }).collection === "audit-events"
-    );
-    expect(audited).toHaveLength(1);
+    const out = auditLogPlugin()(withDatabase(base(), db)) as Config;
+    createAdapter(out, payload);
+    expect(db[Symbol.for("payload-plugin-audit-log.deferToCommit")]).toBeDefined();
+    expect(db.commitTransaction).not.toBe(commit);
   });
 
-  it("tracks raw writes only on the collections and globals it hooked, not excluded ones, its own or ones added by later plugins", async () => {
-    const { payload, db, create } = fakePayload();
-    const out = auditLogPlugin({
-      excludeCollections: ["secret-stuff"],
-      excludeGlobals: ["hidden"],
-    })(withDatabase(base(), db)) as Config;
+  it("captures the main global reads of updates", () => {
+    const { payload, db } = fakePayload();
+    const findGlobal = vi.fn(async () => ({}));
+    db.findGlobal = findGlobal;
+    const out = auditLogPlugin()(withDatabase(base(), db)) as Config;
     createAdapter(out, payload);
-    const req = { context: {}, payloadAPI: "local" };
-
-    await (db.updateOne as Op)({ collection: "posts", id: 5, data: { title: "x" }, req });
-    await (db.updateOne as Op)({ collection: "added-by-later-plugin", id: 5, data: { a: 1 }, req });
-    await (db.updateGlobal as Op)({ slug: "global-added-by-later-plugin", data: { a: 1 }, req });
-    await (db.updateGlobal as Op)({ slug: "settings", data: { a: 1 }, req });
-    await (db.updateOne as Op)({ collection: "secret-stuff", id: 5, data: { a: 1 }, req });
-    await (db.updateOne as Op)({ collection: "audit-events", id: 5, data: { a: 1 }, req });
-    await (db.updateGlobal as Op)({ slug: "hidden", data: { a: 1 }, req });
-
-    const auditedSlugs = create.mock.calls
-      .map(([args]) => args as { collection: string; data: { target: { slug: string } } })
-      .filter((args) => args.collection === "audit-events")
-      .map((args) => args.data.target.slug);
-    expect(auditedSlugs).toEqual(["posts", "settings"]);
+    expect(db[Symbol.for("payload-plugin-audit-log.mainGlobalReadsCaptured")]).toBe(true);
+    expect(db.findGlobal).not.toBe(findGlobal);
   });
 
   describe("the folder collection Payload adds after plugins run", () => {
@@ -234,21 +205,6 @@ describe("auditLogPlugin", () => {
       expect(folders.labels).toEqual({ plural: "Dirs" });
       expect(folders.hooks?.afterChange).toHaveLength(1);
       expect(folders.hooks?.afterDelete).toHaveLength(1);
-    });
-
-    it("tracks raw writes on the folder collection under its configured slug", async () => {
-      const { payload, db, create } = fakePayload();
-      const out = auditLogPlugin()(withDatabase(withFolders({ slug: "dirs" }), db)) as Config;
-      createAdapter(out, payload);
-      const req = { context: {}, payloadAPI: "local" };
-
-      await (db.updateOne as Op)({ collection: "dirs", id: 5, data: { name: "x" }, req });
-
-      const auditedSlugs = create.mock.calls
-        .map(([args]) => args as { collection: string; data: { target: { slug: string } } })
-        .filter((args) => args.collection === "audit-events")
-        .map((args) => args.data.target.slug);
-      expect(auditedSlugs).toEqual(["dirs"]);
     });
 
     it("is left alone when excluded or when folders are disabled", async () => {

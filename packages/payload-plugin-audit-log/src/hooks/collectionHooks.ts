@@ -10,21 +10,18 @@ import { auditTarget, inLocale } from "../core/auditTarget";
 import { configuredLocalesOf, createChangeDiff } from "../core/changeDiff";
 import type { ChangeDiff } from "../core/changeDiff";
 import { classifyCollectionChange } from "../core/classify";
-import { valuesDiffer } from "../core/diffPaths";
 import { operationFlagsOf } from "../core/requestState";
-import { labelOf } from "../core/resolveActor";
 import { usesApiKeys, withSecretFieldsFirst } from "../core/secretFields";
 import { withStoredLocalizedValues } from "../core/storedLocalizedValues";
 import type { OperationEventArgs } from "../core/writeEvent";
 import { recordAuditEvent } from "../core/writeEvent";
 import type { ResolvedOptions } from "../options";
 import { failOpen } from "../utils/failOpen";
-import { getNestedValue } from "../utils/getNestedValue";
 import { readsWithFallbackLocale } from "../utils/fallbackLocale";
 import type { LocaleOfRequest } from "../utils/fallbackLocale";
 import { localizedFieldPaths, readRestrictedFieldPaths, storedValuesOf } from "../utils/fields";
 import type { SanitizedFieldsShape } from "../utils/fields";
-import { hasAutosave, hasDrafts } from "../utils/versions";
+import { hasAutosave } from "../utils/versions";
 import { buildCollectionAuthHooks } from "./collectionAuthHooks";
 import { trackCollectionOperations } from "./collectionOperationTracking";
 
@@ -40,20 +37,13 @@ const ALL_LOCALES = "all";
 const publishedOnly = (doc: Doc): Doc | undefined =>
   doc._status === "published" ? doc : undefined;
 
-const changedRoleFields = (before: Doc | undefined, after: Doc, roleFields: readonly string[]) =>
-  roleFields.filter((field) =>
-    valuesDiffer(getNestedValue(before, field), getNestedValue(after, field))
-  );
-
 export function withCollectionAudit(
   collection: CollectionConfig,
   opts: ResolvedOptions,
   sharedBlocks: readonly Block[] = []
 ): CollectionConfig {
   const slug = collection.slug;
-  const isApiKeyCollection = opts.apiKeyCollections.has(slug);
   const isAuth = Boolean(collection.auth);
-  const drafts = hasDrafts(collection.versions);
   const autosave = hasAutosave(collection.versions);
   const localizedFields = localizedFieldPaths(collection.fields, sharedBlocks);
   const localized = localizedFields.length > 0;
@@ -82,7 +72,7 @@ export function withCollectionAudit(
     args: OperationEventArgs,
     savedIn: LocaleOfRequest = localeOfOperation(req)
   ) =>
-    recordAuditEvent(req, opts.slug, {
+    recordAuditEvent(req, opts, {
       ...args,
       target: localized ? inLocale(args.target, savedIn.locale) : args.target,
       localized,
@@ -131,30 +121,6 @@ export function withCollectionAudit(
     return diff.changedStoredFields(lastPublish, written, doc, localesOf(req));
   };
 
-  const recordRoleChange = async (
-    req: PayloadRequest,
-    savedIn: LocaleOfRequest,
-    diff: ChangeDiff,
-    liveDoc: Doc | undefined,
-    doc: Doc,
-    { overrideAccess, occurredAt }: { overrideAccess: boolean; occurredAt?: string }
-  ) => {
-    const { before, after } = diff.comparable(liveDoc, doc);
-    const roleFields = changedRoleFields(before, after, opts.roleFields);
-    if (roleFields.length === 0) return;
-    await record(
-      req,
-      {
-        action: "user.role_changed",
-        target: auditTarget("collection", slug, doc.id, titleOf(doc) ?? labelOf(doc)),
-        changes: roleFields,
-        overrideAccess,
-        occurredAt,
-      },
-      savedIn
-    );
-  };
-
   const recordChange = async ({
     operation,
     previousDoc,
@@ -178,23 +144,12 @@ export function withCollectionAudit(
     });
     const savedDoc = diff.savedDoc(doc);
     const docAsStored = withoutFallbackValues(savedIn, doc, written);
-    const savesDraft = drafts && flags.draft === true && savedDoc._status !== "published";
     const publishes =
       operation === "update" &&
       !flags.restore &&
       savedDoc._status === "published" &&
       previousDoc?._status !== "published";
-    const liveDoc = flags.liveDoc ? inLocaleOfSave(savedIn, flags.liveDoc) : previousDoc;
-    const action = classifyCollectionChange({
-      operation,
-      previousDoc,
-      liveDoc,
-      doc: savedDoc,
-      flags,
-      isApiKeyCollection,
-      usesApiKeys: usesApiKeys(collection.auth),
-      savesDraft,
-    });
+    const action = classifyCollectionChange({ operation, previousDoc, doc: savedDoc, flags });
     const comparesWithLiveDoc = action === "doc.unpublish" || (autosave && publishes);
     const secretFields = operation === "update" ? (flags.secretFields ?? []) : [];
     const changes = withSecretFieldsFirst(
@@ -219,19 +174,9 @@ export function withCollectionAudit(
         changes,
         overrideAccess: accessWasOverridden,
         occurredAt: flags.startedAt,
-        ...(action === "doc.duplicate" && flags.duplicateFrom
-          ? { metadata: { duplicateFrom: flags.duplicateFrom } }
-          : {}),
       },
       savedIn
     );
-
-    if (isAuth && operation === "update" && !savesDraft) {
-      await recordRoleChange(req, savedIn, diff, liveDoc, docAsStored, {
-        overrideAccess: accessWasOverridden,
-        occurredAt: flags.startedAt,
-      });
-    }
   };
 
   const afterChange: CollectionAfterChangeHook = async (args) => {
@@ -241,12 +186,10 @@ export function withCollectionAudit(
     return args.doc;
   };
 
-  const afterDelete: CollectionAfterDeleteHook = async (args) => {
-    const { id, doc, req } = args;
-    await tracking.afterDelete(args);
+  const afterDelete: CollectionAfterDeleteHook = async ({ id, doc, req }) => {
     await failOpen(req.payload, "could not record the document deletion", () =>
       record(req, {
-        action: isApiKeyCollection ? "apikey.revoked" : "doc.delete",
+        action: "doc.delete",
         target: auditTarget("collection", slug, id, titleOf(doc)),
       })
     );
@@ -259,13 +202,8 @@ export function withCollectionAudit(
     ...collection,
     hooks: {
       ...hooks,
-      beforeOperation: [
-        ...(hooks.beforeOperation ?? []),
-        tracking.beforeOperation,
-        ...(isAuth ? [authHooks.beforeOperation] : []),
-      ],
+      beforeOperation: [...(hooks.beforeOperation ?? []), tracking.beforeOperation],
       beforeChange: [...(hooks.beforeChange ?? []), tracking.beforeChange],
-      beforeDelete: [...(hooks.beforeDelete ?? []), tracking.beforeDelete],
       afterChange: [...(hooks.afterChange ?? []), afterChange],
       afterDelete: [...(hooks.afterDelete ?? []), afterDelete],
       ...(isAuth

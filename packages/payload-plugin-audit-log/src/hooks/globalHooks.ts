@@ -22,7 +22,7 @@ import {
 } from "../core/mainGlobalCapture";
 import type { CapturedMainGlobal } from "../core/mainGlobalCapture";
 import { stampOperationStart } from "../core/operationClock";
-import { markActive, pushOpFlags, takeOpFlags, unmarkActive } from "../core/requestState";
+import { pushOpFlags, takeOpFlags } from "../core/requestState";
 import { withStoredLocalizedValues } from "../core/storedLocalizedValues";
 import { recordAuditEvent } from "../core/writeEvent";
 import type { ResolvedOptions } from "../options";
@@ -75,7 +75,6 @@ export function withGlobalAudit(
 
   const trackOperation = ({ args, operation, req }: Parameters<GlobalBeforeOperationHook>[0]) => {
     if (operation !== "update" && operation !== "restoreVersion") return;
-    markActive(req, GLOBALS_NAMESPACE, slug);
     const capturesMainGlobal = operation === "update";
     if (capturesMainGlobal) openMainGlobalCapture(req, slug);
     const {
@@ -156,7 +155,7 @@ export function withGlobalAudit(
         : diff.changedFields(previousDoc, doc);
     if (action === "global.update" && changes.length === 0) return;
     const target = auditTarget("global", slug);
-    await recordAuditEvent(req, opts.slug, {
+    await recordAuditEvent(req, opts, {
       action,
       target: localized ? inLocale(target, savedIn.locale) : target,
       changes,
@@ -180,9 +179,6 @@ export function withGlobalAudit(
   };
 
   const afterChange: GlobalAfterChangeHook = async (args) => {
-    await failOpen(args.req.payload, "could not track the global change", () =>
-      unmarkActive(args.req, GLOBALS_NAMESPACE, slug)
-    );
     await failOpen(args.req.payload, "could not record the global change", () =>
       recordChange(args)
     );

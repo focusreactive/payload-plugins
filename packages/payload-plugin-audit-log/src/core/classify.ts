@@ -3,32 +3,19 @@ import type { OpFlags } from "./requestState";
 
 type Doc = Record<string, unknown> | undefined;
 
-function apiKeyChangeOf(liveDoc: Doc, doc: Doc): AuditAction | undefined {
-  if (liveDoc?.enableAPIKey === true && doc?.enableAPIKey === false) return "apikey.revoked";
-  if (liveDoc && liveDoc.enableAPIKey !== true && doc?.enableAPIKey === true)
-    return "apikey.created";
-  return undefined;
-}
-
-export function classifyCollectionChange(args: {
+export function classifyCollectionChange({
+  operation,
+  previousDoc,
+  doc,
+  flags,
+}: {
   operation: "create" | "update";
   previousDoc?: Doc;
-  liveDoc?: Doc;
   doc: Doc;
   flags: OpFlags;
-  isApiKeyCollection?: boolean;
-  usesApiKeys?: boolean;
-  savesDraft?: boolean;
 }): AuditAction {
-  const { operation, previousDoc, doc, flags, isApiKeyCollection, usesApiKeys, savesDraft } = args;
-  if (operation === "create") {
-    if (isApiKeyCollection) return "apikey.created";
-    return flags.duplicate ? "doc.duplicate" : "doc.create";
-  }
+  if (operation === "create") return "doc.create";
   if (flags.restore) return "doc.restore";
-  const apiKeyChange =
-    usesApiKeys && !savesDraft ? apiKeyChangeOf(args.liveDoc ?? previousDoc, doc) : undefined;
-  if (apiKeyChange) return apiKeyChange;
   const from = previousDoc?._status;
   const to = doc?._status;
   if (to === "published" && from !== "published") return "doc.publish";

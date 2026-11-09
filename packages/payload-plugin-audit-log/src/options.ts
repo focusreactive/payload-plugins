@@ -1,8 +1,6 @@
 import type { Access } from "payload";
 import {
-  DEFAULT_API_KEY_COLLECTIONS,
   DEFAULT_MAX_CHANGED_PATHS,
-  DEFAULT_ROLE_FIELDS,
   DEFAULT_SLUG,
   LOG_PREFIX,
   MAX_RETENTION_DAYS,
@@ -13,11 +11,9 @@ export type ResolvedOptions = {
   slug: string;
   excludedCollections: ReadonlySet<string>;
   excludedGlobals: ReadonlySet<string>;
-  apiKeyCollections: ReadonlySet<string>;
-  roleFields: readonly string[];
   retention?: AuditRetentionOptions;
   readAccess?: Access;
-  trackUnattributedWrites: boolean;
+  recordIpAndUserAgent: boolean;
   maxChangedPaths: number;
 };
 
@@ -49,11 +45,9 @@ export function normalizeOptions(options: AuditLogPluginOptions = {}): ResolvedO
     slug,
     excludedCollections: new Set([slug, ...(options.excludeCollections ?? [])]),
     excludedGlobals: new Set(options.excludeGlobals),
-    apiKeyCollections: new Set(options.apiKeyCollections ?? DEFAULT_API_KEY_COLLECTIONS),
-    roleFields: options.roleFields ?? DEFAULT_ROLE_FIELDS,
     retention: options.retention,
     readAccess: options.access?.read,
-    trackUnattributedWrites: options.trackUnattributedWrites ?? true,
+    recordIpAndUserAgent: options.recordIpAndUserAgent ?? true,
     maxChangedPaths: options.maxChangedPaths ?? DEFAULT_MAX_CHANGED_PATHS,
   };
 }

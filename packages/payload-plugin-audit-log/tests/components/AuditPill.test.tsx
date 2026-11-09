@@ -50,25 +50,25 @@ describe("audit pills", () => {
   });
 
   it("renders the action field read-only as its label and pill", () => {
-    formValues.set("action", "user.role_changed");
+    formValues.set("action", "auth.login_failed");
     const props = {
       path: "action",
       field: { name: "action", label: "Action" },
     } as ActionFieldProps;
     expect(renderToStaticMarkup(<AuditActionField {...props} />)).toBe(
       '<div class="field-type"><label for="action">Action</label>' +
-        '<div style="display:inline-flex" title="user.role_changed"><span class="pill--style-warning">Role changed</span></div></div>'
+        '<div style="display:inline-flex" title="auth.login_failed"><span class="pill--style-warning">Sign-in failed</span></div></div>'
     );
   });
 
   it("renders the actor type field from the form value at its path", () => {
-    formValues.set("actor.type", "migration");
+    formValues.set("actor.type", "system");
     const props = {
       path: "actor.type",
       field: { name: "type", label: "Type" },
     } as ActorTypeFieldProps;
     expect(renderToStaticMarkup(<AuditActorTypeField {...props} />)).toContain(
-      '<span class="pill--style-dark">Migration</span>'
+      '<span class="pill--style-dark">System</span>'
     );
   });
 });

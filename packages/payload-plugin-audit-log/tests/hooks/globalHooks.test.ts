@@ -1,7 +1,6 @@
 import type { GlobalConfig } from "payload";
 import { describe, expect, it, vi } from "vitest";
-import { CTX_MAIN_GLOBAL_READS, GLOBALS_NAMESPACE } from "../../src/constants";
-import { isActive } from "../../src/core/requestState";
+import { CTX_MAIN_GLOBAL_READS } from "../../src/constants";
 import { captureMainGlobalReads } from "../../src/db/captureMainGlobalReads";
 import { withGlobalAudit } from "../../src/hooks/globalHooks";
 import { normalizeOptions } from "../../src/options";
@@ -43,11 +42,10 @@ describe("global hooks", () => {
     expect(error).toHaveBeenCalledTimes(1);
   });
 
-  it("covers the global from beforeOperation until afterChange and writes global.update", async () => {
+  it("writes global.update for a save that runs beforeOperation, beforeChange and afterChange", async () => {
     const { req, create } = makeReq();
     await runHooks(settings.hooks?.beforeOperation, { operation: "update", args: {}, req });
     await runHooks(settings.hooks?.beforeChange, { data: {}, req, originalDoc: {} });
-    expect(isActive(req, GLOBALS_NAMESPACE, "settings")).toBe(true);
     await runHooks(settings.hooks?.afterChange, {
       doc: { siteName: "B" },
       previousDoc: { siteName: "A" },
@@ -55,7 +53,6 @@ describe("global hooks", () => {
       global: { slug: "settings" },
       overrideAccess: true,
     });
-    expect(isActive(req, GLOBALS_NAMESPACE, "settings")).toBe(false);
     expect(recordedEvents(create)[0]).toMatchObject({
       action: "global.update",
       target: { kind: "global", slug: "settings" },
@@ -86,10 +83,10 @@ describe("global hooks", () => {
     expect(recordedEvents(create)[0]?.action).toBe("global.publish");
   });
 
-  it("marks active in beforeOperation for update and restoreVersion, ignores reads", async () => {
+  it("tracks update and restoreVersion operations and leaves reads alone", async () => {
     const a = makeReq();
     await runHooks(settings.hooks?.beforeOperation, { operation: "read", args: {}, req: a.req });
-    expect(isActive(a.req, GLOBALS_NAMESPACE, undefined)).toBe(false);
+    expect(a.req.context).toEqual({});
 
     const b = makeReq();
     await runHooks(settings.hooks?.beforeOperation, {
@@ -97,17 +94,15 @@ describe("global hooks", () => {
       args: { id: "v1" },
       req: b.req,
     });
-    expect(isActive(b.req, GLOBALS_NAMESPACE, "settings")).toBe(true);
-    expect(isActive(b.req, GLOBALS_NAMESPACE, "other")).toBe(false);
     await runHooks(settings.hooks?.afterChange, {
       doc: { siteName: "A" },
       previousDoc: { siteName: "B" },
       req: b.req,
     });
-    expect(isActive(b.req, GLOBALS_NAMESPACE, "settings")).toBe(false);
+    expect(recordedEvents(b.create).map((event) => event.action)).toEqual(["global.update"]);
   });
 
-  it("keeps the global covered while a nested update of it starts and ends, and keeps the outer flags", async () => {
+  it("keeps the outer flags while a nested update of the global starts and ends", async () => {
     const { req, create } = makeReq();
     await runHooks(autosaveGlobal.hooks?.beforeOperation, {
       operation: "update",
@@ -120,13 +115,11 @@ describe("global hooks", () => {
       previousDoc: { title: "A" },
       req,
     });
-    expect(isActive(req, GLOBALS_NAMESPACE, "home")).toBe(true);
     await runHooks(autosaveGlobal.hooks?.afterChange, {
       doc: { title: "B" },
       previousDoc: { title: "A" },
       req,
     });
-    expect(isActive(req, GLOBALS_NAMESPACE, "home")).toBe(false);
     expect(recordedEvents(create).map((event) => event.changes)).toEqual([["title"]]);
   });
 

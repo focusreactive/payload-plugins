@@ -50,7 +50,7 @@ export const dbAdapterName = (): "sqlite" | "postgres" | "mongo" => {
   return "sqlite";
 };
 
-export const isoNow = () => new Date().toISOString();
+const isoNow = () => new Date().toISOString();
 
 export const timestampAfterEverythingSoFar = async () => {
   const startedAt = Date.now();
@@ -62,9 +62,6 @@ export const timestampAfterEverythingSoFar = async () => {
 
 export const POST_HOOK_FLAGS = {
   createNestedPostTitled: "testNestedCreateTitle",
-  rawUpdatePostWithId: "testRawUpdateOtherId",
-  rawCreatePostTitled: "testRawCreatePostTitle",
-  rawDeleteManyPostsTitled: "testRawDeleteManyPostsTitle",
   throwAfterAuditWrite: "testFailAfterAudit",
 } as const;
 
@@ -82,36 +79,6 @@ const createNestedPostWhenFlagged: CollectionAfterChangeHook = async ({ operatio
   const title = consumeContextFlag(req, POST_HOOK_FLAGS.createNestedPostTitled);
   if (operation === "create" && typeof title === "string") {
     await req.payload.create({ collection: "posts" as never, data: { title } as never, req });
-  }
-};
-
-const rawUpdateFlaggedPost: CollectionAfterChangeHook = async ({ req }) => {
-  const postId = consumeContextFlag(req, POST_HOOK_FLAGS.rawUpdatePostWithId);
-  if (postId !== undefined) {
-    await req.payload.db.updateOne({
-      collection: "posts",
-      id: postId as string | number,
-      data: { title: "side effect" },
-      req,
-    });
-  }
-};
-
-const rawCreatePostWhenFlagged: CollectionAfterChangeHook = async ({ req }) => {
-  const title = consumeContextFlag(req, POST_HOOK_FLAGS.rawCreatePostTitled);
-  if (typeof title === "string") {
-    await req.payload.db.create({ collection: "posts", data: { title }, req });
-  }
-};
-
-const rawDeleteManyPostsWhenFlagged: CollectionAfterChangeHook = async ({ req }) => {
-  const title = consumeContextFlag(req, POST_HOOK_FLAGS.rawDeleteManyPostsTitled);
-  if (typeof title === "string") {
-    await req.payload.db.deleteMany({
-      collection: "posts",
-      where: { title: { equals: title } },
-      req,
-    });
   }
 };
 
@@ -197,12 +164,7 @@ function buildCollections(staticDir: string): CollectionConfig[] {
         { name: "comments", type: "join", collection: "comments", on: "post" },
       ],
       hooks: {
-        afterChange: [
-          createNestedPostWhenFlagged,
-          rawUpdateFlaggedPost,
-          rawCreatePostWhenFlagged,
-          rawDeleteManyPostsWhenFlagged,
-        ],
+        afterChange: [createNestedPostWhenFlagged],
         afterOperation: [throwAfterAuditWriteWhenFlagged],
       },
     },
@@ -563,13 +525,7 @@ export async function bootAuditPayload(options?: {
       ...(options?.globals ?? []),
     ],
     blocks: options?.blocks,
-    plugins: [
-      auditLogPlugin({
-        apiKeyCollections: ["payload-mcp-api-keys", SERVICE_KEYS_SLUG],
-        ...options?.plugin,
-      }),
-      ...(options?.pluginsAfterAudit ?? []),
-    ],
+    plugins: [auditLogPlugin(options?.plugin), ...(options?.pluginsAfterAudit ?? [])],
   });
 
   const payload = await getPayload({ config, key: options?.key });
@@ -606,9 +562,6 @@ export async function events(
 
 export const eventsWithAction = (payload: Payload, action: string) =>
   events(payload, { action: { equals: action } });
-
-export const unattributedEvents = (payload: Payload) =>
-  eventsWithAction(payload, "system.unattributed_write");
 
 export const targetEvents = (payload: Payload, slug: string, id: unknown, occurredSince = "") =>
   events(payload, {
@@ -689,16 +642,15 @@ export const auditErrorMessages = (errorLog: MockInstance) =>
 export const mentionsAbortedTransaction = (errorLog: MockInstance) =>
   JSON.stringify(errorLog.mock.calls).includes("current transaction is aborted");
 
-async function rawSql(payload: Payload, sql: string, connection?: unknown): Promise<void> {
+async function rawSql(payload: Payload, sql: string): Promise<void> {
   const db = payload.db as unknown as {
     drizzle: unknown;
     execute: (args: { drizzle: unknown; raw: string }) => Promise<unknown>;
   };
-  await db.execute({ drizzle: connection ?? db.drizzle, raw: sql });
+  await db.execute({ drizzle: db.drizzle, raw: sql });
 }
 
 const AUDIT_TABLE = "audit_events";
-const HIDDEN_AUDIT_TABLE = "audit_events_not_migrated_yet";
 
 function tableName(payload: Payload, table: string): string {
   const schema = (payload.db as unknown as { schemaName?: string }).schemaName;
@@ -708,15 +660,6 @@ function tableName(payload: Payload, table: string): string {
 function auditTable(payload: Payload): string {
   return tableName(payload, AUDIT_TABLE);
 }
-
-const renameTable = (payload: Payload, from: string, to: string, connection?: unknown) =>
-  rawSql(payload, `ALTER TABLE ${tableName(payload, from)} RENAME TO "${to}"`, connection);
-
-export const hideAuditTable = (payload: Payload, connection?: unknown) =>
-  renameTable(payload, AUDIT_TABLE, HIDDEN_AUDIT_TABLE, connection);
-
-export const restoreAuditTable = (payload: Payload, connection?: unknown) =>
-  renameTable(payload, HIDDEN_AUDIT_TABLE, AUDIT_TABLE, connection);
 
 async function blockAuditInserts(
   payload: Payload,

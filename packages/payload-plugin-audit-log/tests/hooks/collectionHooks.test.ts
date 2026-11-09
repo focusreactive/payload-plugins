@@ -1,7 +1,5 @@
 import type { CollectionConfig } from "payload";
 import { describe, expect, it, vi } from "vitest";
-import { CTX_ACTIVE } from "../../src/constants";
-import { isActive, isInAuthOperation } from "../../src/core/requestState";
 import { captureWrittenDoc } from "../../src/core/writtenDocCapture";
 import { withCollectionAudit } from "../../src/hooks/collectionHooks";
 import { normalizeOptions } from "../../src/options";
@@ -32,11 +30,6 @@ const postsCollection = { slug: "posts", admin: { useAsTitle: "title" } };
 const usersCollection = { slug: "users" };
 
 const firstEvent = (create: ReturnType<typeof fakeRequest>["create"]) => recordedEvents(create)[0];
-
-const hasActiveCreate = (req: FakeRequest): boolean => {
-  const active = req.context[CTX_ACTIVE] as Map<string, Map<string, number>> | undefined;
-  return [...(active?.get("posts")?.keys() ?? [])].some((key) => key.startsWith("create:"));
-};
 
 const callHook = (hook: unknown, args: unknown) => (hook as (a: unknown) => unknown)(args);
 
@@ -424,14 +417,16 @@ describe("collection hooks", () => {
       return caller.create;
     };
 
-    it("logs an update with autosave in a collection without drafts, including its role change", async () => {
+    it("logs an update with autosave in a collection without drafts, with its role change among the changes", async () => {
       const create = await runSave(
         usersWithRoles.hooks,
         "update",
         { id: 1, autosave: true, data: { role: "admin" } },
         { previousDoc: { id: 1, role: "editor" }, doc: { id: 1, role: "admin" } }
       );
-      expect(recordedActions(create)).toEqual(["doc.update", "user.role_changed"]);
+      expect(recordedEvents(create).map((event) => [event.action, event.changes])).toEqual([
+        ["doc.update", ["role"]],
+      ]);
     });
 
     it("logs a create with autosave and draft, since Payload always writes a created document", async () => {
@@ -497,58 +492,22 @@ describe("collection hooks", () => {
     });
   });
 
-  it("marks the create active while it saves and logs a duplicate with its source id", async () => {
-    const { req, create } = fakeRequest();
-    const activeWhileSaving: boolean[] = [];
-    await runCreate(posts.hooks, req, {
-      duplicateFromID: 3,
-      duplicatedFromDoc: { title: "Orig" },
-      doc: { id: 4, title: "Copy" },
-      whileSaving: async () => {
-        activeWhileSaving.push(hasActiveCreate(req));
-      },
-    });
-    expect(activeWhileSaving).toEqual([true]);
-    expect(hasActiveCreate(req)).toBe(false);
-    expect(firstEvent(create)?.action).toBe("doc.duplicate");
-    expect(firstEvent(create)?.metadata).toEqual({ duplicateFrom: "3" });
-  });
-
-  it("keeps the duplicate source id when an upload collection copied the data object", async () => {
-    const { req, create } = fakeRequest();
-    await runCreate(posts.hooks, req, {
-      duplicateFromID: 3,
-      duplicatedFromDoc: { title: "Orig" },
-      doc: { id: 4, title: "Copy" },
-      uploadReplacesData: true,
-    });
-    expect(firstEvent(create)?.action).toBe("doc.duplicate");
-    expect(firstEvent(create)?.metadata).toEqual({ duplicateFrom: "3" });
-  });
-
-  it("logs a duplicate with its source id although a later beforeChange hook replaced the data object", async () => {
+  it("records a duplicate as doc.create of the copy, without metadata", async () => {
     const { req, create } = fakeRequest();
     await runCreate(withLaterHookCopyingData(posts).hooks, req, {
       duplicateFromID: 3,
       duplicatedFromDoc: { title: "Orig" },
+      data: { title: "Copy" },
       doc: { id: 4, title: "Copy" },
     });
-    expect(recordedActions(create)).toEqual(["doc.duplicate"]);
-    expect(firstEvent(create)?.metadata).toEqual({ duplicateFrom: "3" });
-  });
-
-  it("keeps a nested create of the same collection active until the outer create saves", async () => {
-    const { req } = fakeRequest();
-    const activeAfterNestedCreate: boolean[] = [];
-    await runCreate(posts.hooks, req, {
-      doc: { id: 4, title: "Outer" },
-      whileSaving: async () => {
-        await runCreate(posts.hooks, req, { doc: { id: 5, title: "Nested" } });
-        activeAfterNestedCreate.push(hasActiveCreate(req));
-      },
-    });
-    expect(activeAfterNestedCreate).toEqual([true]);
-    expect(hasActiveCreate(req)).toBe(false);
+    expect(recordedEvents(create)).toEqual([
+      expect.objectContaining({
+        action: "doc.create",
+        target: expect.objectContaining({ docId: "4", label: "Copy" }),
+        changes: ["title"],
+      }),
+    ]);
+    expect(firstEvent(create)).not.toHaveProperty("metadata");
   });
 
   it("keeps a plain create as doc.create although field hooks add empty groups to originalDoc", async () => {
@@ -566,22 +525,6 @@ describe("collection hooks", () => {
       uploadReplacesData: true,
     });
     expect(recordedActions(upload.create)).toEqual(["doc.create"]);
-  });
-
-  it("keeps the outer duplicate when a nested Local API call replaces req.context", async () => {
-    const { req, create } = fakeRequest();
-    await runCreate(posts.hooks, req, {
-      duplicateFromID: 3,
-      duplicatedFromDoc: { title: "Orig" },
-      doc: { id: 4, title: "Copy" },
-      whileSaving: async () => {
-        req.context = { ...req.context };
-        await runCreate(posts.hooks, req, { doc: { id: 5, title: "Nested" } });
-        req.context = { ...req.context };
-      },
-    });
-    expect(recordedActions(create)).toEqual(["doc.create", "doc.duplicate"]);
-    expect(recordedEvents(create)[1]?.metadata).toEqual({ duplicateFrom: "3" });
   });
 
   it("does not let nested operations on one req clobber the outer operation's flags", async () => {
@@ -624,7 +567,7 @@ describe("collection hooks", () => {
       "doc.create",
       "doc.unpublish",
       "doc.update",
-      "doc.duplicate",
+      "doc.create",
     ]);
   });
 
@@ -688,7 +631,7 @@ describe("collection hooks", () => {
     expect(recordedActions(create)).toEqual(["doc.update", "doc.update"]);
   });
 
-  describe("how long a document stays covered", () => {
+  describe("saves that run inside other saves", () => {
     const drafts = audited({ slug: "posts", versions: { drafts: true }, fields: [] });
     const runOperation = (hooks: Hooks, req: FakeRequest, operation: string, args: Doc) =>
       runBeforeOperation(hooks?.beforeOperation, {
@@ -706,36 +649,18 @@ describe("collection hooks", () => {
         collection: postsCollection,
       });
 
-    it("covers an updated document from its beforeChange until its afterChange", async () => {
+    it("leaves no flags on the request once an update by id is recorded", async () => {
       const { req } = fakeRequest();
       const saveReq = await runOperation(posts.hooks, req, "update", { id: 7 });
-      expect(isActive(req, "posts", "7")).toBe(false);
       await runBeforeChangeOf(posts.hooks, saveReq, { id: 7, title: "A" });
-      expect(isActive(req, "posts", "7")).toBe(true);
       await runUpdate(posts.hooks, saveReq, {
         previousDoc: { id: 7, title: "A" },
         doc: { id: 7, title: "B" },
       });
-      expect(isActive(req, "posts", "7")).toBe(false);
       expect(req.context.__auditOp).toBeUndefined();
     });
 
-    it("covers a deleted document from its beforeDelete until its afterDelete", async () => {
-      const { req } = fakeRequest();
-      await runOperation(posts.hooks, req, "delete", { id: 5 });
-      expect(isActive(req, "posts", "5")).toBe(false);
-      await runHooks(posts.hooks?.beforeDelete, { id: 5, req, collection: postsCollection });
-      expect(isActive(req, "posts", "5")).toBe(true);
-      await runHooks(posts.hooks?.afterDelete, {
-        id: 5,
-        doc: { id: 5 },
-        req,
-        collection: postsCollection,
-      });
-      expect(isActive(req, "posts", "5")).toBe(false);
-    });
-
-    it("ends the coverage of every document of a bulk update and leaves no flags on the request", async () => {
+    it("leaves no flags on the request once every document of a bulk update is recorded", async () => {
       const { req } = fakeRequest();
       const bulkReq = await runOperation(posts.hooks, req, "update", {
         where: { id: { in: [1, 2] } },
@@ -744,21 +669,8 @@ describe("collection hooks", () => {
       for (const id of [1, 2]) {
         await runBeforeChangeOf(posts.hooks, bulkReq, { id });
         await runUpdate(posts.hooks, bulkReq, { previousDoc: { id }, doc: { id, title: "T" } });
-        expect(isActive(req, "posts", String(id))).toBe(false);
       }
       expect(req.context.__auditOp).toBeUndefined();
-    });
-
-    it("keeps a document covered while a nested operation on it starts and ends", async () => {
-      const { req } = fakeRequest();
-      const outerReq = await runOperation(posts.hooks, req, "update", { id: 7 });
-      await runBeforeChangeOf(posts.hooks, outerReq, { id: 7 });
-      const nestedReq = await runOperation(posts.hooks, outerReq, "update", { id: 7 });
-      await runBeforeChangeOf(posts.hooks, nestedReq, { id: 7 });
-      await runUpdate(posts.hooks, nestedReq, { previousDoc: { id: 7 }, doc: { id: 7 } });
-      expect(isActive(req, "posts", "7")).toBe(true);
-      await runUpdate(posts.hooks, outerReq, { previousDoc: { id: 7 }, doc: { id: 7 } });
-      expect(isActive(req, "posts", "7")).toBe(false);
     });
 
     it("keeps the outer draft save a doc.update when an afterChange hook updates the same document", async () => {
@@ -997,7 +909,6 @@ describe("collection hooks", () => {
       expect(actionsWithChanges(create)).toEqual([
         ["doc.update", ["password"]],
         ["doc.update", ["role"]],
-        ["user.role_changed", ["role"]],
       ]);
       expect(req.context.__auditOp).toBeUndefined();
     });
@@ -1473,7 +1384,7 @@ describe("collection hooks", () => {
         collection: membersCollection,
       });
       expect(firstEvent(create)).toMatchObject({
-        action: "doc.duplicate",
+        action: "doc.create",
         target: { slug: "members", docId: "5", locale: "en" },
       });
     });
@@ -1523,7 +1434,7 @@ describe("collection hooks", () => {
     });
   });
 
-  it("writes apikey.created and apikey.revoked for API key collections", async () => {
+  it("records keys of an API key collection as documents of that collection", async () => {
     const keys = audited({ slug: "payload-mcp-api-keys", fields: [] });
     const { req, create } = fakeRequest();
     const collection = { slug: "payload-mcp-api-keys" };
@@ -1535,10 +1446,13 @@ describe("collection hooks", () => {
       collection,
     });
     await runHooks(keys.hooks?.afterDelete, { id: 1, doc: { id: 1 }, req, collection });
-    expect(recordedActions(create)).toEqual(["apikey.created", "apikey.revoked"]);
+    expect(recordedEvents(create).map((event) => [event.action, event.target.slug])).toEqual([
+      ["doc.create", "payload-mcp-api-keys"],
+      ["doc.delete", "payload-mcp-api-keys"],
+    ]);
   });
 
-  it("writes apikey.revoked and apikey.created when an auth collection disables or enables a document's API key", async () => {
+  it("records switching a document's API key on or off as doc.update of enableAPIKey", async () => {
     const bots = audited({ slug: "bots", auth: { useAPIKey: true }, fields: [] });
     const { req, create } = fakeRequest();
     const collection = { slug: "bots" };
@@ -1552,43 +1466,30 @@ describe("collection hooks", () => {
       { id: 1, enableAPIKey: false, name: "a" },
       { id: 1, enableAPIKey: true, name: "a" }
     );
-    await update(
-      { id: 1, enableAPIKey: true, name: "a" },
-      { id: 1, enableAPIKey: true, name: "b" }
-    );
-    expect(recordedActions(create)).toEqual(["apikey.revoked", "apikey.created", "doc.update"]);
-    expect(firstEvent(create)?.changes).toEqual(["enableAPIKey"]);
+    expect(recordedEvents(create).map((event) => [event.action, event.changes])).toEqual([
+      ["doc.update", ["enableAPIKey"]],
+      ["doc.update", ["enableAPIKey"]],
+    ]);
   });
 
   describe("role changes in auth collections", () => {
-    it("adds user.role_changed next to doc.update", async () => {
+    const actionsWithChangesOf = (create: ReturnType<typeof fakeRequest>["create"]) =>
+      recordedEvents(create).map((event) => [event.action, event.changes]);
+
+    it("records a role change as doc.update with the role among the changes", async () => {
       const { req, create } = fakeRequest();
       await runUpdate(users.hooks, req, {
         previousDoc: { id: 2, email: "x@x.io", role: "editor" },
         doc: { id: 2, email: "x@x.io", role: "admin" },
         collection: { slug: "users", admin: { useAsTitle: "email" } },
       });
-      expect(recordedActions(create)).toEqual(["doc.update", "user.role_changed"]);
-      expect(recordedEvents(create)[1]).toMatchObject({
-        target: { slug: "users", docId: "2", label: "x@x.io" },
-        changes: ["role"],
-      });
-    });
-
-    it("detects role changes even when changes are truncated", async () => {
-      const narrow = audited(
-        { slug: "users", auth: true, fields: [{ name: "role", type: "text" }] },
-        { maxChangedPaths: 1 }
-      );
-      const { req, create } = fakeRequest();
-      await runUpdate(narrow.hooks, req, {
-        previousDoc: { id: 2, a: 1, b: 1, c: 1, role: "editor" },
-        doc: { id: 2, a: 2, b: 2, c: 2, role: "admin" },
-        collection: usersCollection,
-      });
-      expect(firstEvent(create)?.changes).toEqual(["a", "…"]);
-      expect(recordedActions(create)).toEqual(["doc.update", "user.role_changed"]);
-      expect(recordedEvents(create)[1]?.changes).toEqual(["role"]);
+      expect(recordedEvents(create)).toEqual([
+        expect.objectContaining({
+          action: "doc.update",
+          target: expect.objectContaining({ slug: "users", docId: "2" }),
+          changes: ["role"],
+        }),
+      ]);
     });
 
     it("compares relationship roles by id, so a populated doc is not a role change", async () => {
@@ -1606,7 +1507,7 @@ describe("collection hooks", () => {
         },
         collection: usersCollection,
       });
-      expect(recordedActions(create)).toEqual(["doc.update"]);
+      expect(actionsWithChangesOf(create)).toEqual([["doc.update", ["email"]]]);
     });
 
     it("reports a relationship role that points to another document", async () => {
@@ -1616,18 +1517,7 @@ describe("collection hooks", () => {
         doc: { id: 2, role: { id: 4, name: "Admin" }, roles: [{ id: 1, name: "A" }] },
         collection: usersCollection,
       });
-      expect(recordedActions(create)).toEqual(["doc.update", "user.role_changed"]);
-      expect(recordedEvents(create)[1]?.changes).toEqual(["role"]);
-    });
-
-    it("does not report role changes when role fields are equal", async () => {
-      const { req, create } = fakeRequest();
-      await runUpdate(users.hooks, req, {
-        previousDoc: { id: 2, email: "x@x.io", roles: ["a", "b"] },
-        doc: { id: 2, email: "y@x.io", roles: ["a", "b"] },
-        collection: usersCollection,
-      });
-      expect(recordedActions(create)).toEqual(["doc.update"]);
+      expect(actionsWithChangesOf(create)).toEqual([["doc.update", ["role"]]]);
     });
   });
 
@@ -2047,8 +1937,8 @@ describe("collection hooks", () => {
         data: { title: "a", role: "admin" },
         doc: { id: 2, title: "a" },
       });
-      expect(recordedActions(create)).toEqual(["doc.update", "user.role_changed"]);
-      expect(recordedEvents(create).map((event) => event.changes)).toEqual([["role"], ["role"]]);
+      expect(recordedActions(create)).toEqual(["doc.update"]);
+      expect(recordedEvents(create).map((event) => event.changes)).toEqual([["role"]]);
     });
 
     it("reports nested hidden and read-restricted fields that the saved data changed", async () => {
@@ -2141,56 +2031,6 @@ describe("collection hooks", () => {
       expect(logout?.target).toEqual({ kind: "auth", slug: "users", docId: "1" });
       expect(resetRequested?.target).toEqual({ kind: "auth", slug: "users", label: "f@x.io" });
       expect(reset?.actor).toMatchObject({ type: "user", docId: "4" });
-    });
-
-    it("marks the request while Payload runs an auth operation that writes the whole user, until it ends", async () => {
-      for (const operation of ["login", "refresh", "resetPassword"]) {
-        const { req } = fakeRequest();
-        await runHooks(users.hooks?.beforeOperation, {
-          operation,
-          args: {},
-          req,
-          collection: usersCollection,
-        });
-        expect(isInAuthOperation(req, "users")).toBe(true);
-        expect(isInAuthOperation(req, "members")).toBe(false);
-        await runHooks(users.hooks?.afterOperation, {
-          operation,
-          args: {},
-          req,
-          collection: usersCollection,
-          result: {},
-        });
-        expect(isInAuthOperation(req, "users")).toBe(false);
-      }
-    });
-
-    it("does not mark the request for logout, whose write follows its last hook, nor for operations writing bookkeeping only", async () => {
-      const { req } = fakeRequest();
-      await runHooks(users.hooks?.afterLogout, { req, collection: usersCollection });
-      expect(isInAuthOperation(req, "users")).toBe(false);
-      for (const operation of ["forgotPassword", "unlock"]) {
-        await runHooks(users.hooks?.beforeOperation, {
-          operation,
-          args: {},
-          req,
-          collection: usersCollection,
-        });
-        expect(isInAuthOperation(req, "users")).toBe(false);
-      }
-    });
-
-    it("does not mark the request for ordinary operations", async () => {
-      for (const operation of ["create", "update", "delete", "read"]) {
-        const { req } = fakeRequest();
-        await runHooks(users.hooks?.beforeOperation, {
-          operation,
-          args: {},
-          req,
-          collection: usersCollection,
-        });
-        expect(isInAuthOperation(req, "users")).toBe(false);
-      }
     });
 
     it("are not hooked into non-auth collections", () => {
@@ -2308,7 +2148,9 @@ describe("collection hooks", () => {
           collection: usersCollection,
         }
       );
-      expect(recordedActions(create)).toEqual(["doc.update", "user.role_changed"]);
+      expect(recordedEvents(create).map((event) => [event.action, event.changes])).toEqual([
+        ["doc.update", ["role"]],
+      ]);
     });
 
     it("reports a submitted role change that the selection leaves out", async () => {
@@ -2324,8 +2166,9 @@ describe("collection hooks", () => {
           collection: usersCollection,
         }
       );
-      expect(recordedActions(create)).toEqual(["doc.update", "user.role_changed"]);
-      expect(recordedEvents(create).map((event) => event.changes)).toEqual([["role"], ["role"]]);
+      expect(recordedEvents(create).map((event) => [event.action, event.changes])).toEqual([
+        ["doc.update", ["role"]],
+      ]);
     });
 
     it("prefers the saved value of a selected field over the submitted one", async () => {
@@ -2373,7 +2216,7 @@ describe("collection hooks", () => {
       expect(firstEvent(create)).toMatchObject({ action: "doc.publish", changes: ["_status"] });
     });
 
-    it("classifies a submitted API key revocation that the selection leaves out", async () => {
+    it("reports a submitted API key switch that the selection leaves out", async () => {
       const bots = audited({ slug: "bots", auth: { useAPIKey: true }, fields: [] });
       const { req, create } = fakeRequest();
       await updateSelecting(
@@ -2388,7 +2231,7 @@ describe("collection hooks", () => {
         }
       );
       expect(firstEvent(create)).toMatchObject({
-        action: "apikey.revoked",
+        action: "doc.update",
         changes: ["enableAPIKey"],
       });
     });
@@ -2570,15 +2413,16 @@ describe("collection hooks", () => {
 });
 
 describe.each([
-  { versions: { drafts: true }, described: "drafts", publishChanges: ["_status"] },
+  { versions: { drafts: true }, described: "drafts", publishChanges: ["_status"], publishReads: 0 },
   {
     versions: { drafts: { autosave: true } },
     described: "autosave drafts",
     publishChanges: ["role"],
+    publishReads: 1,
   },
 ])(
-  "role and API key events of an auth collection with $described",
-  ({ versions, publishChanges }) => {
+  "saves over drafts of an auth collection with $described",
+  ({ versions, publishChanges, publishReads }) => {
     const contractors = audited({
       slug: "contractors",
       auth: { useAPIKey: true },
@@ -2621,7 +2465,7 @@ describe.each([
       return { actions: recordedActions(create), events: recordedEvents(create), findOne };
     };
 
-    it("records no role or API key change for a draft save, and reads nothing", async () => {
+    it("records a draft save as doc.update and reads nothing", async () => {
       const { actions, findOne } = await saveOverLatestDraft(
         { data: { role: "admin", enableAPIKey: true }, draft: true },
         liveDoc,
@@ -2631,7 +2475,7 @@ describe.each([
       expect(findOne).not.toHaveBeenCalled();
     });
 
-    it("compares a publish over a draft with the live document it reads once", async () => {
+    it("records a publish over a draft as doc.publish, reading the live document only with autosave", async () => {
       const latestDraft = { ...liveDoc, role: "admin", _status: "draft" };
       const { events, findOne } = await saveOverLatestDraft(
         { data: { _status: "published" } },
@@ -2640,12 +2484,11 @@ describe.each([
       );
       expect(events.map((event) => [event.action, event.changes])).toEqual([
         ["doc.publish", publishChanges],
-        ["user.role_changed", ["role"]],
       ]);
-      expect(findOne).toHaveBeenCalledTimes(1);
+      expect(findOne).toHaveBeenCalledTimes(publishReads);
     });
 
-    it("compares a save that writes the latest draft to the document with the live document it reads once", async () => {
+    it("records a save that writes the latest draft to the document as doc.unpublish, compared with the live document it reads once", async () => {
       const latestDraft = { ...liveDoc, role: "admin", enableAPIKey: true, _status: "draft" };
       const { events, findOne } = await saveOverLatestDraft(
         { data: { _status: "draft" } },
@@ -2656,23 +2499,9 @@ describe.each([
         }
       );
       expect(events.map((event) => [event.action, event.changes])).toEqual([
-        ["apikey.created", ["name"]],
-        ["user.role_changed", ["role"]],
+        ["doc.unpublish", ["role", "enableAPIKey", "_status", "name"]],
       ]);
       expect(findOne).toHaveBeenCalledTimes(1);
-    });
-
-    it("records apikey.created when a publish switches on the key the live document had off", async () => {
-      const latestDraft = { ...liveDoc, enableAPIKey: true, _status: "draft" };
-      const { actions } = await saveOverLatestDraft(
-        { data: { _status: "published" } },
-        latestDraft,
-        {
-          ...latestDraft,
-          _status: "published",
-        }
-      );
-      expect(actions).toEqual(["apikey.created"]);
     });
 
     it("does not read the live document for a publish over a published latest version", async () => {
@@ -2681,7 +2510,7 @@ describe.each([
         liveDoc,
         { ...liveDoc, role: "admin" }
       );
-      expect(actions).toEqual(["doc.update", "user.role_changed"]);
+      expect(actions).toEqual(["doc.update"]);
       expect(findOne).not.toHaveBeenCalled();
     });
 

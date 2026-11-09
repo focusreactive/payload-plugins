@@ -128,7 +128,7 @@ export function buildExportEndpoint(opts: ResolvedOptions): Endpoint {
         return firstPageFailureResponse(req, error);
       }
 
-      await recordAuditEvent(req, opts.slug, {
+      await recordAuditEvent(req, opts, {
         action: "audit.export",
         target: { kind: "audit", slug: opts.slug },
         metadata: {

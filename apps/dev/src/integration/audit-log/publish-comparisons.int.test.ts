@@ -142,14 +142,11 @@ describe("a publish after its previous publish was pruned from the versions", ()
     return docEventsOfThisTest(collection, member.id);
   };
 
-  it("still records the role and API key it makes live, as when it was kept", async () => {
+  it("still lists the role and API key it makes live, as when it was kept", async () => {
     const kept = await publishRoleAndKeyDrafts("kept-members");
     const pruned = await publishRoleAndKeyDrafts("pruned-members");
 
-    expect(pruned).toEqual([
-      ["apikey.created", ["role", "name", "enableAPIKey"]],
-      ["user.role_changed", ["role"]],
-    ]);
+    expect(pruned).toEqual([["doc.publish", ["role", "name", "enableAPIKey"]]]);
     expect(pruned).toEqual(kept);
   });
 });

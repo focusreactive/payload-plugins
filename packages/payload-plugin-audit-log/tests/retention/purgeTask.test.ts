@@ -28,7 +28,7 @@ describe("retention", () => {
 
   it("counts and deletes older events through the adapter and records how many it deleted", async () => {
     const { req, deleteMany, count, create } = makeReq(3);
-    const task = buildPurgeTask("audit-events", { days: 30 });
+    const task = buildPurgeTask(normalizeOptions(), { days: 30 });
     expect(task.slug).toBe("auditLogPurge");
     expect(task.schedule).toEqual([{ cron: "0 3 * * *", queue: "default" }]);
     await run(task, req);
@@ -48,14 +48,18 @@ describe("retention", () => {
 
   it("skips the delete when nothing is old enough, and still records the run", async () => {
     const { req, deleteMany, create } = makeReq(0);
-    await run(buildPurgeTask("audit-events", { days: 30 }), req);
+    await run(buildPurgeTask(normalizeOptions(), { days: 30 }), req);
     expect(deleteMany).not.toHaveBeenCalled();
     expect(create.mock.calls[0]?.[0].data.metadata).toMatchObject({ deleted: 0, days: 30 });
   });
 
   it("honours custom cron, queue and slug", async () => {
     const { req, deleteMany } = makeReq();
-    const task = buildPurgeTask("journal", { days: 7, cron: "0 1 * * 0", queue: "nightly" });
+    const task = buildPurgeTask(normalizeOptions({ slug: "journal" }), {
+      days: 7,
+      cron: "0 1 * * 0",
+      queue: "nightly",
+    });
     expect(task.schedule).toEqual([{ cron: "0 1 * * 0", queue: "nightly" }]);
     await run(task, req);
     expect(deleteMany.mock.calls[0]?.[0].collection).toBe("journal");
@@ -65,7 +69,7 @@ describe("retention", () => {
     const { req, create } = makeReq();
     create.mockRejectedValue(new Error("db down"));
     (req.payload as Record<string, unknown>).logger = { error: vi.fn() };
-    const task = buildPurgeTask("audit-events", { days: 1 });
+    const task = buildPurgeTask(normalizeOptions(), { days: 1 });
     await expect(run(task, req)).resolves.toEqual({ output: {} });
   });
 

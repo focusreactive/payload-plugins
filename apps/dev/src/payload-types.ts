@@ -765,7 +765,7 @@ export interface AuditEvent {
   action: string;
   status?: ('success' | 'failure') | null;
   actor: {
-    type: 'user' | 'api_key' | 'agent' | 'seed' | 'migration' | 'system' | 'anonymous';
+    type: 'user' | 'api_key' | 'agent' | 'system' | 'anonymous';
     docId?: string | null;
     collection?: string | null;
     label?: string | null;
@@ -801,6 +801,8 @@ export interface AuditEvent {
     | null;
   overrideAccess?: boolean | null;
   requestId?: string | null;
+  ip?: string | null;
+  userAgent?: string | null;
   metadata?:
     | {
         [k: string]: unknown;
@@ -1407,6 +1409,8 @@ export interface AuditEventsSelect<T extends boolean = true> {
   changes?: T;
   overrideAccess?: T;
   requestId?: T;
+  ip?: T;
+  userAgent?: T;
   metadata?: T;
 }
 /**

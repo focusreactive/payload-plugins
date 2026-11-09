@@ -114,7 +114,7 @@ describe("saves that select which fields they return", () => {
     ]);
   });
 
-  it("a role change the selection leaves out is still a role change", async () => {
+  it("a role change the selection leaves out is still listed", async () => {
     const user = await createUser(ctx.payload, "select-role@x.io", { role: "editor", name: "a" });
     testStartedAt = await timestampAfterEverythingSoFar();
 
@@ -127,7 +127,6 @@ describe("saves that select which fields they return", () => {
 
     expect(actionsAndChanges(await eventsOfThisTest("users", user.id))).toEqual([
       ["doc.update", ["role"]],
-      ["user.role_changed", ["role"]],
     ]);
   });
 
@@ -163,7 +162,7 @@ describe("saves that select which fields they return", () => {
     ]);
   });
 
-  it("switching an API key off with a selection that leaves it out is apikey.revoked", async () => {
+  it("switching an API key off with a selection that leaves it out is still listed", async () => {
     const integration = await ctx.payload.create({
       collection: "integrations" as never,
       data: { name: "bot", enableAPIKey: true, apiKey: "select-key-0123456789" } as never,
@@ -178,7 +177,7 @@ describe("saves that select which fields they return", () => {
     });
 
     const log = await eventsOfThisTest("integrations", integration.id);
-    expect(actionsAndChanges(log)).toEqual([["apikey.revoked", ["enableAPIKey"]]]);
+    expect(actionsAndChanges(log)).toEqual([["doc.update", ["enableAPIKey"]]]);
     expect(JSON.stringify(log)).not.toContain("select-key-0123456789");
   });
 

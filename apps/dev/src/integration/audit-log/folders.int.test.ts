@@ -1,12 +1,7 @@
 import type { CollectionConfig } from "payload";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import {
-  bootAuditPayload,
-  events,
-  timestampAfterEverythingSoFar,
-  unattributedEvents,
-} from "./bootAuditPayload";
+import { bootAuditPayload, events, timestampAfterEverythingSoFar } from "./bootAuditPayload";
 import type { AuditTestPayload } from "./bootAuditPayload";
 
 const FOLDERS = "payload-folders";
@@ -56,7 +51,6 @@ describe("folders", () => {
       ["doc.update", id, ["name"]],
       ["doc.delete", id, null],
     ]);
-    expect(await unattributedEvents(ctx.payload)).toEqual([]);
   });
 
   it("deleting a folder logs the subfolders Payload deletes with it", async () => {

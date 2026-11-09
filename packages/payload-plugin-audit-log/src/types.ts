@@ -65,6 +65,8 @@ export type AuditEvent = {
   changes?: string[];
   overrideAccess?: boolean;
   requestId?: string;
+  ip?: string | null;
+  userAgent?: string | null;
   metadata?: Record<string, unknown>;
 };
 
@@ -79,10 +81,8 @@ export type AuditLogPluginOptions = {
   slug?: string;
   excludeCollections?: string[];
   excludeGlobals?: string[];
-  apiKeyCollections?: string[];
-  roleFields?: string[];
   retention?: AuditRetentionOptions;
   access?: { read?: Access };
-  trackUnattributedWrites?: boolean;
+  recordIpAndUserAgent?: boolean;
   maxChangedPaths?: number;
 };

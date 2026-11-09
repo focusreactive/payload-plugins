@@ -36,7 +36,7 @@ const PUBLISHED = { _status: "published" } as const;
 describe.each([
   { slug: "staff", versions: "drafts with autosave" },
   { slug: "contractors", versions: "drafts without autosave" },
-])("role and API key events of an auth collection with $versions", ({ slug }) => {
+])("role and API key changes in an auth collection with $versions", ({ slug }) => {
   let emailCount = 0;
   const createPublished = async () => {
     emailCount += 1;
@@ -71,28 +71,28 @@ describe.each([
       .filter((event) => event.action === action)
       .map((event) => event.changes);
 
-  it("a role set in a draft is user.role_changed only when the draft is published", async () => {
+  it("a role set in a draft is a draft save, then a publish", async () => {
     const id = await createPublished();
 
     await draftSave(id, { role: "admin" });
     expect(await actionsSoFar(id)).toEqual(["doc.update"]);
+    expect(await changesOf(id, "doc.update")).toEqual([["role", "_status"]]);
 
     await publish(id);
-    expect(await actionsSoFar(id)).toEqual(["doc.update", "doc.publish", "user.role_changed"]);
-    expect(await changesOf(id, "user.role_changed")).toEqual([["role"]]);
+    expect(await actionsSoFar(id)).toEqual(["doc.update", "doc.publish"]);
   });
 
-  it("an API key switched on in a draft is apikey.created only when the draft is published", async () => {
+  it("an API key switched on in a draft is a draft save, then a publish", async () => {
     const id = await createPublished();
 
     await draftSave(id, { enableAPIKey: true, apiKey: `${slug}-key-${id}` });
     expect(await actionsSoFar(id)).toEqual(["doc.update"]);
 
     await publish(id);
-    expect(await actionsSoFar(id)).toEqual(["doc.update", "apikey.created"]);
+    expect(await actionsSoFar(id)).toEqual(["doc.update", "doc.publish"]);
   });
 
-  it("a save that is not a draft save writes the draft's role and API key to the live document: user.role_changed and apikey.created", async () => {
+  it("a save that is not a draft save writes the draft's role and API key to the live document as an unpublish that lists them", async () => {
     const id = await createPublished();
 
     await draftSave(id, { role: "admin", enableAPIKey: true, apiKey: `${slug}-plain-key-${id}` });
@@ -103,11 +103,13 @@ describe.each([
       where: { id: { equals: id } },
     })) as unknown as { role?: string; enableAPIKey?: boolean };
     expect(live).toMatchObject({ role: "admin", enableAPIKey: true });
-    expect(await actionsSoFar(id)).toEqual(["doc.update", "apikey.created", "user.role_changed"]);
-    expect(await changesOf(id, "user.role_changed")).toEqual([["role"]]);
+    expect(await actionsSoFar(id)).toEqual(["doc.update", "doc.unpublish"]);
+    expect(await changesOf(id, "doc.unpublish")).toEqual([
+      expect.arrayContaining(["role", "enableAPIKey"]),
+    ]);
   });
 
-  it("publishing a draft that keeps the live role and API key is neither a role nor an API key change", async () => {
+  it("publishing a draft that keeps the live role and API key is a plain publish", async () => {
     const id = await createPublished();
 
     await draftSave(id, { role: "editor" });
@@ -117,8 +119,8 @@ describe.each([
   });
 });
 
-describe("role events of an auth collection with autosave", () => {
-  it("a role set by an autosave is user.role_changed when it is published", async () => {
+describe("role changes in an auth collection with autosave", () => {
+  it("a role set by an autosave is listed by the publish", async () => {
     const staff = (await ctx.payload.create({
       collection: "staff" as never,
       data: {
@@ -142,9 +144,6 @@ describe("role events of an auth collection with autosave", () => {
     expect(published.status).toBe(200);
 
     const log = await targetEvents(ctx.payload, "staff", staff.id, testStartedAt);
-    expect(log.map((event) => [event.action, event.changes])).toEqual([
-      ["doc.publish", ["role"]],
-      ["user.role_changed", ["role"]],
-    ]);
+    expect(log.map((event) => [event.action, event.changes])).toEqual([["doc.publish", ["role"]]]);
   });
 });

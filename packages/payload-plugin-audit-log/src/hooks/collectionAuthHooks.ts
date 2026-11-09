@@ -3,11 +3,9 @@ import type {
   CollectionAfterLoginHook,
   CollectionAfterLogoutHook,
   CollectionAfterOperationHook,
-  CollectionBeforeOperationHook,
   PayloadRequest,
 } from "payload";
 import { auditTarget } from "../core/auditTarget";
-import { endAuthOperation, markAuthOperation } from "../core/requestState";
 import { labelOf } from "../core/resolveActor";
 import type { ResolvedActor } from "../core/resolveActor";
 import type { AuditEventArgs } from "../core/writeEvent";
@@ -17,12 +15,6 @@ import { failOpen } from "../utils/failOpen";
 type AuthUser = { id?: string | number; email?: unknown; name?: unknown; username?: unknown };
 type ForgotPasswordArgs = { req?: PayloadRequest; data?: { email?: unknown } };
 type RecordEvent = (req: PayloadRequest, args: AuditEventArgs) => Promise<void>;
-
-const OPERATIONS_WRITING_THE_WHOLE_USER: ReadonlySet<string> = new Set([
-  "login",
-  "refresh",
-  "resetPassword",
-]);
 
 const authenticatedAs = (slug: string, user: AuthUser): Pick<ResolvedActor, "actor"> => {
   const actor: AuditActor = {
@@ -39,12 +31,6 @@ const authenticatedAs = (slug: string, user: AuthUser): Pick<ResolvedActor, "act
 const AUTH_EVENT_FAILURE = "could not record the auth event";
 
 export function buildCollectionAuthHooks(slug: string, record: RecordEvent) {
-  const beforeOperation: CollectionBeforeOperationHook = async ({ operation, req }) => {
-    await failOpen(req.payload, AUTH_EVENT_FAILURE, () => {
-      if (OPERATIONS_WRITING_THE_WHOLE_USER.has(operation)) markAuthOperation(req, slug);
-    });
-  };
-
   const afterLogin: CollectionAfterLoginHook = async ({ user, req }) => {
     await failOpen(req.payload, AUTH_EVENT_FAILURE, () =>
       record(req, {
@@ -82,9 +68,6 @@ export function buildCollectionAuthHooks(slug: string, record: RecordEvent) {
   };
 
   const afterOperation: CollectionAfterOperationHook = async ({ operation, req, result }) => {
-    if (OPERATIONS_WRITING_THE_WHOLE_USER.has(operation)) {
-      await failOpen(req.payload, AUTH_EVENT_FAILURE, () => endAuthOperation(req, slug));
-    }
     if (operation !== "resetPassword") return result;
     await failOpen(req.payload, AUTH_EVENT_FAILURE, () => {
       const user = (result as { user?: AuthUser } | undefined)?.user;
@@ -97,5 +80,5 @@ export function buildCollectionAuthHooks(slug: string, record: RecordEvent) {
     return result;
   };
 
-  return { beforeOperation, afterLogin, afterLogout, afterForgotPassword, afterOperation };
+  return { afterLogin, afterLogout, afterForgotPassword, afterOperation };
 }

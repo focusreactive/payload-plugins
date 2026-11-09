@@ -19,6 +19,11 @@ describe("normalizeOptions", () => {
     }
   });
 
+  it("records the client IP and User-Agent unless recordIpAndUserAgent is false", () => {
+    expect(normalizeOptions().recordIpAndUserAgent).toBe(true);
+    expect(normalizeOptions({ recordIpAndUserAgent: false }).recordIpAndUserAgent).toBe(false);
+  });
+
   it("keeps a retention of up to MAX_RETENTION_DAYS days", () => {
     expect(normalizeOptions({ retention: { days: MAX_RETENTION_DAYS } }).retention?.days).toBe(
       MAX_RETENTION_DAYS

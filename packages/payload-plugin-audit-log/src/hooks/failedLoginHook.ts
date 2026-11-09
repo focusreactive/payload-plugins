@@ -104,7 +104,7 @@ export function buildFailedLoginHook(opts: ResolvedOptions): AfterErrorHook {
     const failure = detectFailedLogin(error, req, collectionSlug);
     if (!failure) return;
     const label = submittedLogin(req.data as LoginData | undefined);
-    await recordAuditEventOutsideTransaction(req, opts.slug, {
+    await recordAuditEventOutsideTransaction(req, opts, {
       action: "auth.login_failed",
       status: "failure",
       target: { kind: "auth", slug: failure.slug },

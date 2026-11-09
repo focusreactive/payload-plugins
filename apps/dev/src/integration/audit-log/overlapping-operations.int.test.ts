@@ -224,10 +224,7 @@ describe("a save that runs while a later bulk update on the same request is stil
     expect(await docEventsOfThisTest(MEMBERS, passwordChanged.id)).toEqual([
       ["doc.update", ["password"]],
     ]);
-    expect(await docEventsOfThisTest(MEMBERS, bulkUpdated.id)).toEqual([
-      ["doc.update", ["role"]],
-      ["user.role_changed", ["role"]],
-    ]);
+    expect(await docEventsOfThisTest(MEMBERS, bulkUpdated.id)).toEqual([["doc.update", ["role"]]]);
     expect(trackingLeftIn(req)).toEqual([]);
   });
 

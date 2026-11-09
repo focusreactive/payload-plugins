@@ -12,12 +12,13 @@ export const OIDC_PROVISIONING_ACTOR: AuditActorInput = { label: "oidc", type: "
 export async function signInOidcUser<Session>(
   payload: Payload,
   claims: SSOUserInput,
-  startSession: (user: User) => Promise<Session>
+  startSession: (user: User) => Promise<Session>,
+  headers: Headers
 ): Promise<{ user: User; session: Session }> {
   const signedIn = await withAuditActor(OIDC_PROVISIONING_ACTOR, async () => {
     const user = await findOrCreateAdminUser(payload, claims);
     return { user, session: await startSession(user) };
   });
-  await logOidcLogin(payload, signedIn.user);
+  await logOidcLogin(payload, signedIn.user, headers);
   return signedIn;
 }

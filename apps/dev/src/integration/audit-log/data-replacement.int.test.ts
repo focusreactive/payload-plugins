@@ -54,7 +54,7 @@ describe("a beforeChange hook added after the audit plugin returns a new data ob
     expect(JSON.stringify(updates)).not.toContain("a-new-password-456");
   });
 
-  it("a duplicate is still doc.duplicate with the id it was duplicated from", async () => {
+  it("a duplicate is doc.create of the copy", async () => {
     const original = await ctx.payload.create({
       collection: "posts" as never,
       data: { title: "Original" } as never,
@@ -62,9 +62,6 @@ describe("a beforeChange hook added after the audit plugin returns a new data ob
     const copy = await ctx.payload.duplicate({ collection: "posts" as never, id: original.id });
 
     const [created] = await targetEvents(ctx.payload, "posts", copy.id);
-    expect(created).toMatchObject({
-      action: "doc.duplicate",
-      metadata: { duplicateFrom: String(original.id) },
-    });
+    expect(created).toMatchObject({ action: "doc.create", target: { label: "Original" } });
   });
 });

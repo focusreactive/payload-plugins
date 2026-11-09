@@ -2,6 +2,7 @@ import type { Payload, PayloadRequest } from "payload";
 import { CUSTOM_CONFIG_KEY } from "../constants";
 import type { AuditAction, AuditEvent, AuditTarget } from "../types";
 import { logError } from "../utils/logError";
+import { clientInfoOf } from "./clientInfo";
 import { failOpenInsert } from "./failOpenInsert";
 import { getRequestId } from "./requestState";
 import type { ReqLike, ResolvedActor } from "./resolveActor";
@@ -18,11 +19,11 @@ export type AuditEventArgs = {
   localized?: boolean;
 };
 
-export type LogAuditEventArgs = AuditEventArgs & { req?: PayloadRequest };
+export type LogAuditEventArgs = AuditEventArgs & { req?: PayloadRequest; headers?: Headers };
 
 export type OperationEventArgs = AuditEventArgs & { occurredAt?: string };
 
-type PluginRuntimeSettings = { slug: string };
+export type EventSettings = { slug: string; recordIpAndUserAgent: boolean };
 
 export const standaloneLocalReq = (): ReqLike => ({ context: {}, payloadAPI: "local" });
 
@@ -54,10 +55,14 @@ export function buildEvent(
 function buildEventOrLog(
   payload: Payload,
   req: ReqLike & { locale?: unknown },
-  args: OperationEventArgs
+  args: OperationEventArgs,
+  settings: EventSettings,
+  headers?: Headers
 ): AuditEvent | undefined {
   try {
-    return buildEvent(req, args);
+    const event = buildEvent(req, args);
+    if (!settings.recordIpAndUserAgent) return event;
+    return { ...event, ...clientInfoOf(headers ?? req.headers) };
   } catch (err) {
     logError(payload, "could not build the audit event", err);
     return undefined;
@@ -77,25 +82,28 @@ export async function writeAuditEvent(
 
 export async function recordAuditEvent(
   req: PayloadRequest,
-  slug: string,
+  settings: EventSettings,
   args: OperationEventArgs
 ): Promise<void> {
-  const event = buildEventOrLog(req.payload, req, args);
-  if (event) await writeAuditEvent(req.payload, slug, event, req);
+  const event = buildEventOrLog(req.payload, req, args, settings);
+  if (event) await writeAuditEvent(req.payload, settings.slug, event, req);
 }
 
 export async function recordAuditEventOutsideTransaction(
   req: PayloadRequest,
-  slug: string,
+  settings: EventSettings,
   args: AuditEventArgs
 ): Promise<void> {
-  const event = buildEventOrLog(req.payload, req, args);
-  if (event) await writeAuditEvent(req.payload, slug, event);
+  const event = buildEventOrLog(req.payload, req, args, settings);
+  if (event) await writeAuditEvent(req.payload, settings.slug, event);
 }
 
-export async function logAuditEvent(payload: Payload, args: LogAuditEventArgs): Promise<void> {
-  const settings = payload.config?.custom?.[CUSTOM_CONFIG_KEY] as PluginRuntimeSettings | undefined;
+export async function logAuditEvent(
+  payload: Payload,
+  { req, headers, ...args }: LogAuditEventArgs
+): Promise<void> {
+  const settings = payload.config?.custom?.[CUSTOM_CONFIG_KEY] as EventSettings | undefined;
   if (!settings) return;
-  const event = buildEventOrLog(payload, args.req ?? standaloneLocalReq(), args);
-  if (event) await writeAuditEvent(payload, settings.slug, event, args.req);
+  const event = buildEventOrLog(payload, req ?? standaloneLocalReq(), args, settings, headers);
+  if (event) await writeAuditEvent(payload, settings.slug, event, req);
 }

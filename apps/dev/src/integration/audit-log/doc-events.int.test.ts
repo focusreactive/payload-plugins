@@ -127,13 +127,13 @@ describe("document events", () => {
 });
 
 describe("duplicate", () => {
-  it("is doc.duplicate with the source id", async () => {
+  it("is doc.create of the copy, without metadata", async () => {
     const doc = await createPost({ title: "Src" });
     const copy = await ctx.payload.duplicate({ collection: "posts" as never, id: doc.id });
 
     const [event] = await eventsOfThisTest("posts", copy.id);
-    expect(event?.action).toBe("doc.duplicate");
-    expect(event?.metadata).toEqual({ duplicateFrom: String(doc.id) });
+    expect(event?.action).toBe("doc.create");
+    expect(event?.metadata ?? null).toBeNull();
   });
 
   it("a nested create in a project afterChange stays doc.create", async () => {
@@ -145,20 +145,19 @@ describe("duplicate", () => {
     });
 
     const [outer] = await eventsOfThisTest("posts", copy.id);
-    expect(outer?.action).toBe("doc.duplicate");
-    expect(outer?.metadata).toEqual({ duplicateFrom: String(doc.id) });
+    expect(outer?.action).toBe("doc.create");
     const nested = await events(ctx.payload, { "target.label": { equals: "Nested" } });
     expect(actionsOf(nested)).toEqual(["doc.create"]);
     expect(nested[0]?.metadata ?? null).toBeNull();
   });
 
-  it("an upload doc is doc.duplicate", async () => {
+  it("an upload doc is doc.create of the copy", async () => {
     const media = await createTextUpload(ctx.payload);
     const copy = await ctx.payload.duplicate({ collection: "media" as never, id: media.id });
 
     expect(actionsOf(await eventsOfThisTest("media", media.id))[0]).toBe("doc.create");
     const [duplicated] = await eventsOfThisTest("media", copy.id);
-    expect(duplicated?.action).toBe("doc.duplicate");
+    expect(duplicated?.action).toBe("doc.create");
     expect(duplicated?.metadata ?? null).toBeNull();
   });
 });
@@ -297,21 +296,18 @@ describe("trash", () => {
 });
 
 describe("roles", () => {
-  it("role change is recorded with only the role path", async () => {
+  it("a role change is a doc.update of the user with only the role path", async () => {
     const user = await createUser(ctx.payload, "r@x.io");
     await updateDoc("users", user.id, { role: "admin" });
 
-    const roleEvents = await events(ctx.payload, {
-      and: [
-        { action: { equals: "user.role_changed" } },
-        { "target.docId": { equals: String(user.id) } },
-      ],
-    });
-    expect(roleEvents).toHaveLength(1);
-    expect(roleEvents[0]?.changes).toEqual(["role"]);
+    const log = await eventsOfThisTest("users", user.id);
+    expect(log.map((event) => [event.action, event.changes])).toEqual([
+      ["doc.create", expect.any(Array)],
+      ["doc.update", ["role"]],
+    ]);
   });
 
-  it("a relationship role populated by a REST read at depth 2 is not a role change; pointing it elsewhere is", async () => {
+  it("a relationship role populated by a REST read at depth 2 is not a change; pointing it elsewhere is", async () => {
     const createRole = (name: string) =>
       ctx.payload.create({ collection: ACCESS_ROLES_SLUG as never, data: { name } as never });
     const [editors, admins] = await Promise.all([createRole("Editors"), createRole("Admins")]);
@@ -321,7 +317,7 @@ describe("roles", () => {
       rest(ctx.payload, "PATCH", `/users/${user.id}?depth=2`, { headers, body });
     const changesOfUser = async () =>
       (await eventsOfThisTest("users", user.id))
-        .filter((event) => ["doc.update", "user.role_changed"].includes(event.action))
+        .filter((event) => event.action === "doc.update")
         .map((event) => [event.action, event.changes]);
 
     const renamed = await patchAtDepth2({ name: "Renamed" });
@@ -335,20 +331,7 @@ describe("roles", () => {
     expect(await changesOfUser()).toEqual([
       ["doc.update", ["name"]],
       ["doc.update", ["roles.0"]],
-      ["user.role_changed", ["roles"]],
     ]);
-  });
-
-  it("the update and the role change it carries share one requestId", async () => {
-    const user = await createUser(ctx.payload, "rid@x.io");
-    await updateDoc("users", user.id, { role: "admin", name: "Promoted" });
-
-    const log = await eventsOfThisTest("users", user.id);
-    expect(actionsOf(log)).toEqual(["doc.create", "doc.update", "user.role_changed"]);
-    const [created, updated, roleChanged] = log;
-    expect(updated?.requestId).toEqual(expect.any(String));
-    expect(roleChanged?.requestId).toBe(updated?.requestId);
-    expect(created?.requestId).not.toBe(updated?.requestId);
   });
 });
 
@@ -509,7 +492,7 @@ describe("auth secrets and unreadable fields", () => {
     expect(log[1]?.changes).toEqual(["layout.0.heading"]);
   });
 
-  it("switching an API key on is apikey.created and switching it off is apikey.revoked, both by name, never by value", async () => {
+  it("switching an API key on and off is doc.update by name, never by value", async () => {
     const integration = await ctx.payload.create({
       collection: "integrations" as never,
       data: { name: "bot" } as never,
@@ -521,7 +504,7 @@ describe("auth secrets and unreadable fields", () => {
     await updateDoc("integrations", integration.id, { enableAPIKey: false, apiKey: null });
 
     const log = await eventsOfThisTest("integrations", integration.id);
-    expect(actionsOf(log)).toEqual(["doc.create", "apikey.created", "apikey.revoked"]);
+    expect(actionsOf(log)).toEqual(["doc.create", "doc.update", "doc.update"]);
     expect(log[1]?.changes).toContain("apiKey");
     expect(log[2]?.changes).toContain("apiKey");
     expect(await everyRowOfThisTestAsStored()).not.toContain("key-0123456789abcdef");

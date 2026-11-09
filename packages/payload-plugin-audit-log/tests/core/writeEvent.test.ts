@@ -6,6 +6,8 @@ import {
   writeAuditEvent,
 } from "../../src/core/writeEvent";
 
+const SETTINGS = { slug: "audit-events", recordIpAndUserAgent: true };
+
 describe("buildEvent", () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -90,7 +92,7 @@ describe("recordAuditEvent", () => {
       }
     );
     await expect(
-      recordAuditEvent(req as never, "audit-events", {
+      recordAuditEvent(req as never, SETTINGS, {
         action: "doc.update",
         target: { kind: "collection", slug: "posts" },
       })
@@ -100,14 +102,50 @@ describe("recordAuditEvent", () => {
   });
 });
 
+const browser = () =>
+  new Headers({ "x-forwarded-for": "203.0.113.7, 10.0.0.1", "user-agent": "Mozilla/5.0" });
+
+describe("recordAuditEvent client", () => {
+  const recordWith = async (recordIpAndUserAgent: boolean, headers?: Headers) => {
+    const create = vi.fn().mockResolvedValue({});
+    const req = { context: {}, payloadAPI: "REST", headers, payload: { db: { create } } };
+    await recordAuditEvent(
+      req as never,
+      { slug: "audit-events", recordIpAndUserAgent },
+      {
+        action: "doc.update",
+        target: { kind: "collection", slug: "posts", docId: "1" },
+      }
+    );
+    return create.mock.calls[0]?.[0].data;
+  };
+
+  it("stores the client IP and User-Agent of the request", async () => {
+    expect(await recordWith(true, browser())).toMatchObject({
+      ip: "203.0.113.7",
+      userAgent: "Mozilla/5.0",
+    });
+  });
+
+  it("stores null for both when the request has no headers", async () => {
+    expect(await recordWith(true)).toMatchObject({ ip: null, userAgent: null });
+  });
+
+  it("stores neither when recordIpAndUserAgent is off", async () => {
+    const data = await recordWith(false, browser());
+    expect(data).not.toHaveProperty("ip");
+    expect(data).not.toHaveProperty("userAgent");
+  });
+});
+
 describe("logAuditEvent", () => {
   const payloadWith = (custom: Record<string, unknown> | undefined) => {
     const create = vi.fn().mockResolvedValue({});
     return { create, payload: { db: { create }, config: { custom } } as never };
   };
   const args = {
-    action: "system.migration" as const,
-    target: { kind: "audit" as const, slug: "migrations" },
+    action: "auth.login" as const,
+    target: { kind: "auth" as const, slug: "users" },
   };
 
   it("writes to the slug from the plugin config", async () => {
@@ -121,6 +159,34 @@ describe("logAuditEvent", () => {
     await logAuditEvent(payload, { ...args, slug: "users" } as never);
     expect(create).toHaveBeenCalledTimes(1);
     expect(create).toHaveBeenCalledWith(expect.objectContaining({ collection: "my-log" }));
+  });
+
+  it("stores the client of the given headers, or of the given req", async () => {
+    const settings = { auditLog: { slug: "my-log", recordIpAndUserAgent: true } };
+    const fromHeaders = payloadWith(settings);
+    await logAuditEvent(fromHeaders.payload, {
+      ...args,
+      headers: new Headers({ "x-real-ip": "198.51.100.4", "user-agent": "curl/8" }),
+    });
+    expect(fromHeaders.create.mock.calls[0]?.[0].data).toMatchObject({
+      ip: "198.51.100.4",
+      userAgent: "curl/8",
+    });
+    const fromReq = payloadWith(settings);
+    const req = { context: {}, headers: new Headers({ "user-agent": "Safari" }) };
+    await logAuditEvent(fromReq.payload, { ...args, req: req as never });
+    expect(fromReq.create.mock.calls[0]?.[0].data).toMatchObject({
+      ip: null,
+      userAgent: "Safari",
+    });
+  });
+
+  it("stores no client when recordIpAndUserAgent is off", async () => {
+    const { create, payload } = payloadWith({
+      auditLog: { slug: "my-log", recordIpAndUserAgent: false },
+    });
+    await logAuditEvent(payload, { ...args, headers: new Headers({ "user-agent": "curl/8" }) });
+    expect(create.mock.calls[0]?.[0].data).not.toHaveProperty("userAgent");
   });
 
   it("does nothing when the plugin is not installed or disabled", async () => {

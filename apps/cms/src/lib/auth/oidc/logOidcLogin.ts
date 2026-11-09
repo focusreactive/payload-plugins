@@ -1,7 +1,11 @@
 import { logAuditEvent } from "@focus-reactive/payload-plugin-audit-log";
 import type { Payload } from "payload";
 
-export const logOidcLogin = (payload: Payload, user: { id: string | number; email: string }) =>
+export const logOidcLogin = (
+  payload: Payload,
+  user: { id: string | number; email: string },
+  headers: Headers
+) =>
   logAuditEvent(payload, {
     action: "auth.login",
     actorOverride: {
@@ -14,6 +18,7 @@ export const logOidcLogin = (payload: Payload, user: { id: string | number; emai
       },
       via: "admin",
     },
+    headers,
     metadata: { method: "oidc" },
     target: { docId: String(user.id), kind: "auth", slug: "users" },
   });

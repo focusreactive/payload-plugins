@@ -30,11 +30,10 @@ describe("audit pill looks", () => {
     expect(actionLook("doc.create").pillStyle).toBe("success");
     expect(actionLook("doc.publish").pillStyle).toBe("success");
     expect(actionLook("doc.delete").pillStyle).toBe("error");
-    expect(actionLook("apikey.revoked").pillStyle).toBe("error");
-    expect(actionLook("user.role_changed").pillStyle).toBe("warning");
+    expect(actionLook("doc.unpublish").pillStyle).toBe("error");
     expect(actionLook("auth.login_failed").pillStyle).toBe("warning");
     expect(actionLook("doc.update").pillStyle).toBe("light");
-    expect(actionLook("system.migration").pillStyle).toBe("dark");
+    expect(actorTypeLook("system").pillStyle).toBe("dark");
     expect(actorTypeLook("agent")).toEqual({ label: "AI agent", pillStyle: "warning" });
   });
 

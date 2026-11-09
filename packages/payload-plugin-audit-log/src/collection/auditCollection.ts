@@ -150,6 +150,8 @@ export function buildAuditCollection(
       { name: "changes", type: "json" },
       { name: "overrideAccess", type: "checkbox" },
       text("requestId", { index: true }),
+      text("ip"),
+      text("userAgent"),
       { name: "metadata", type: "json" },
     ],
   };

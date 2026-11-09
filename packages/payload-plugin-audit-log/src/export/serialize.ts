@@ -16,6 +16,8 @@ export const CSV_COLUMNS = [
   "agent.model",
   "agent.tool",
   "via",
+  "ip",
+  "userAgent",
   "target.kind",
   "target.slug",
   "target.docId",

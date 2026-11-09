@@ -272,6 +272,7 @@ describe("database reads the plugin adds to an operation", () => {
     "updateWithAutosaveArgument",
     "localizedAutosaveGlobalPublish",
     "authDraftsDraftSave",
+    "authDraftsPublishOverDraft",
   ])("%s reads exactly what Payload reads without the plugin", (operation) => {
     expect(withoutPlugin[operation]?.length).toBeGreaterThan(0);
     expect(withPlugin[operation]).toEqual(withoutPlugin[operation]);
@@ -280,7 +281,6 @@ describe("database reads the plugin adds to an operation", () => {
   it.each([
     ["singlePublishAfterAutosave", "findOne:pages", 1],
     ["singleUnpublishBehindDraft", "findOne:pages", 1],
-    ["authDraftsPublishOverDraft", "findOne:contractors", 1],
     ["authDraftsPlainSaveOverDraft", "findOne:contractors", 1],
     ["authAutosavePublishAfterAutosave", "findOne:staff", 1],
   ] as const)("%s adds only %s, once per document", (operation, extraRead, documents) => {

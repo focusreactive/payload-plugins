@@ -48,9 +48,6 @@ const withLeafValuesAt = (
 const storedInLocale = (stored: unknown, locale: string): unknown =>
   isRecord(stored) ? stored[locale] : undefined;
 
-const isWrittenForEveryLocale = (written: unknown, locale: string): boolean =>
-  isRecord(written) && locale in written;
-
 export function withStoredLocalizedValues(
   doc: Doc,
   stored: Doc | null | undefined,
@@ -60,19 +57,5 @@ export function withStoredLocalizedValues(
   if (!stored) return doc;
   return withLeafValuesAt(doc, stored, localizedFields, (_shown, storedValue) =>
     storedInLocale(storedValue, locale)
-  );
-}
-
-export function storedInLocaleOfWrite(
-  stored: Doc,
-  written: Doc,
-  localizedFields: readonly FieldPathPattern[],
-  locale: string | undefined
-): Doc {
-  if (locale === undefined) return stored;
-  return withLeafValuesAt(stored, written, localizedFields, (storedValue, writtenValue) =>
-    isRecord(storedValue) && !isWrittenForEveryLocale(writtenValue, locale)
-      ? storedValue[locale]
-      : storedValue
   );
 }

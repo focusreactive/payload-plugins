@@ -10,6 +10,8 @@ const row = {
   via: "admin",
   target: { kind: "collection", slug: "posts", docId: "9", label: "=SUM(A1)" },
   changes: ["title", "seo.title"],
+  ip: "203.0.113.7",
+  userAgent: "Mozilla/5.0",
 };
 
 const toCsv = (rows: unknown[]) => csvHeader() + csvRows(rows);
@@ -21,6 +23,12 @@ describe("serialize", () => {
     expect(line).toContain('"Ann ""A"", Admin"');
     expect(line).toContain("'=SUM(A1)");
     expect(line).toContain("title;seo.title");
+  });
+
+  it("csv has the client IP and User-Agent columns", () => {
+    expect(CSV_COLUMNS).toEqual(expect.arrayContaining(["ip", "userAgent"]));
+    const [, line] = toCsv([row]).trimEnd().split("\n");
+    expect(line).toContain("203.0.113.7,Mozilla/5.0");
   });
 
   it.each(["=1+1", "+1", "-1", "@SUM(A1)", "\tcmd", "\rcmd"])("neutralizes %j", (label) => {

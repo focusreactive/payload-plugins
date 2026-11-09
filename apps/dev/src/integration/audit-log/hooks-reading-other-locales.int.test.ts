@@ -266,7 +266,7 @@ describe("saves whose own hooks read the document in other locales", () => {
 
     expect(
       (await pageEventsOfThisTest(copy.id)).map(([action, locale]) => [action, locale])
-    ).toEqual([["doc.duplicate", "en"]]);
+    ).toEqual([["doc.create", "en"]]);
   });
 
   it("a global save keeps the locale it was made in", async () => {

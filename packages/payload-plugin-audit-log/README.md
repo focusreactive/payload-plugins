@@ -1,6 +1,6 @@
 # @focus-reactive/payload-plugin-audit-log
 
-Audit log for [Payload CMS](https://payloadcms.com/) v3. It records who changed which document or global and when, plus sign-ins, API keys, AI agents, seeds and migrations, in a read-only collection with CSV / NDJSON export.
+Audit log for [Payload CMS](https://payloadcms.com/) v3. It records who changed which document or global and when, plus sign-ins and the AI agents and API keys that acted, in a read-only collection with CSV / NDJSON export. It records only what goes through Payload: operations, collection and global hooks, and auth hooks.
 
 Only the paths of changed fields are stored, never their values. An event is stored only when the change it describes is committed.
 
@@ -24,7 +24,7 @@ export default buildConfig({
 });
 ```
 
-Place the plugin after every plugin that adds collections or globals. Payload applies plugins in order, so anything added later is not audited. It sorts plugins by ascending `order` (unset counts as `0`, ties keep their listed order), so a plugin with a positive `order` runs after every plugin without one, wherever it is listed: `@payloadcms/plugin-mcp` has `order: 10`, so to audit its API keys give the audit plugin a higher order:
+Place the plugin after every plugin that adds collections or globals. Payload applies plugins in order, so anything added later is not audited. It sorts plugins by ascending `order` (unset counts as `0`, ties keep their listed order), so a plugin with a positive `order` runs after every plugin without one, wherever it is listed: `@payloadcms/plugin-mcp` has `order: 10`, so to audit its API key collection give the audit plugin a higher order:
 
 ```ts
 const mcp = mcpPlugin({ collections: { posts: { enabled: true } } });
@@ -42,34 +42,30 @@ payload migrate
 payload generate:importmap
 ```
 
-`status`, `actor.type`, `actor.source`, `via` and `target.kind` are select fields, which Postgres stores as enums. When an upgrade of the plugin adds values to them, create and run a migration again.
+`status`, `actor.type`, `actor.source`, `via` and `target.kind` are select fields, which Postgres stores as enums. When an upgrade of the plugin adds or removes values of them, create and run a migration again.
 
 ## Events
 
 | Action | When |
 | --- | --- |
-| `doc.create`, `doc.update`, `doc.delete` | A document is created, changed or deleted. In collections with `trash: true`, moving a document to the trash and restoring it are `doc.update` with `deletedAt` in `changes`; only deleting it for good is `doc.delete` |
+| `doc.create`, `doc.update`, `doc.delete` | A document is created (including by duplicating another), changed or deleted. In collections with `trash: true`, moving a document to the trash and restoring it are `doc.update` with `deletedAt` in `changes`; only deleting it for good is `doc.delete` |
 | `doc.publish`, `doc.unpublish` | A document's status changes to `published`, or from `published` back to `draft` |
 | `doc.restore` | A version is restored |
-| `doc.duplicate` | A document is duplicated (`metadata.duplicateFrom` holds the source id when known, see below) |
 | `global.update`, `global.publish`, `global.unpublish` | A global is changed, published, or turned from published back to draft by a save that is not a draft save |
 | `auth.login`, `auth.logout` | A login or logout through Payload |
 | `auth.login_failed` | A failed REST or GraphQL login (`metadata.reason`: `invalid_credentials` or `locked`) |
 | `auth.password_reset_requested`, `auth.password_reset` | Forgot-password and reset-password |
-| `user.role_changed` | A `roleFields` field changed on an auth collection. Relationship and upload roles are compared by id, so a role populated by a read at any `depth` is not a change. In an auth collection with drafts, a draft save changes no role: the role is compared when a save that is not a draft save, such as a publish, writes the draft to the document, with the document that was live before it |
-| `apikey.created`, `apikey.revoked` | A document is created or deleted in an `apiKeyCollections` collection. On an auth collection with `useAPIKey`, switching `enableAPIKey` on writes `apikey.created` and switching it off writes `apikey.revoked`. With drafts, only a save that is not a draft save, such as a publish, does, compared with the document that was live before it |
-| `system.unattributed_write` | A database write that no Payload operation accounts for (see below) |
-| `system.migration` | A migration ran up or down (see [Seeds and migrations](#seeds-and-migrations)) |
-| `system.seed` | Written by your seed script with `logAuditEvent` |
 | `audit.export`, `audit.retention_purge` | The log was exported or purged |
+
+A role change is a `doc.update` of the user with the role field in `changes`. API keys are documents too: a key in an API key collection such as `payload-mcp-api-keys` is a `doc.create`, `doc.update` or `doc.delete` of that collection, and switching `enableAPIKey` on an auth collection with `useAPIKey` is a `doc.update` with `enableAPIKey` in `changes`.
 
 In the admin, `action` and `actor.type` show as colored Payload pills with a readable label (for example `doc.delete` as "Deleted"); hover a pill to see the stored code, which is what search and filters match.
 
-Every event has `occurredAt`, `action`, `status`, `actor`, `onBehalfOf`, `agent`, `via`, `target` (`kind`, `slug`, `docId`, `label`, `locale`), `changes`, `overrideAccess`, `requestId` and `metadata`. Events of one request share a `requestId`. `occurredAt`, `action`, `actor.type`, `actor.docId`, `onBehalfOf.docId`, `target.slug`, `target.docId` and `requestId` are indexed.
+Every event has `occurredAt`, `action`, `status`, `actor`, `onBehalfOf`, `agent`, `via`, `target` (`kind`, `slug`, `docId`, `label`, `locale`), `changes`, `overrideAccess`, `requestId`, `ip`, `userAgent` and `metadata`. Events of one request share a `requestId`. `occurredAt`, `action`, `actor.type`, `actor.docId`, `onBehalfOf.docId`, `target.slug`, `target.docId` and `requestId` are indexed.
 
 - The events of a create, update or restore of a document or global have the `occurredAt` of the moment the operation started, taken in its `beforeOperation`, and operations that start in the same millisecond get consecutive milliseconds. So a save that a hook of the create runs on the same document, such as `@payloadcms/plugin-nested-docs` saving a new document again in `afterChange`, is listed after the create although its event is written first. The documents of one bulk update share the `occurredAt` of the bulk update. Other events have the time they are written.
 - On auth collections `changes` includes `password` and `apiKey` when they are set or removed, by name only. They are taken from the data submitted to the operation, which is also what Payload stores, so a `beforeChange` hook that returns a new data object does not hide them. A password sent with a draft save is not stored by Payload and not reported.
-- A create remembers whether it is a duplicate, and of which document, on the data object it starts with. A `beforeChange` hook that returns a copy made with spread (`{ ...data }`) or `Object.assign` keeps that; a hook that builds a new object field by field, or clones it with `structuredClone` or JSON, loses it, and the event falls back to telling a duplicate from the document Payload copied, without `metadata.duplicateFrom`.
+- `ip` is the first address in the request's `x-forwarded-for` header, otherwise its `x-real-ip` header, and `userAgent` is its `user-agent` header, capped at 64 and 512 characters. Both are `null` when the request does not send them, such as a Local API call without headers. These headers are set by the client or by your proxy, so trust `ip` only behind a proxy that sets `x-forwarded-for` itself. Turn both off with `recordIpAndUserAgent: false`.
 - Rows of array and blocks fields are compared by position. Their generated `id` is not reported, so inserting or moving a row lists the fields whose content changed at each position, not `blocks.N.id`.
 - `target.locale` is set only for localized collections and globals, those with a localized field at any depth, including a localized named tab. It is the locale the operation started in, taken in its `beforeOperation`, or the locale a by-ID save or a global save publishes with `publishSpecificLocale`. A bulk update keeps the request locale, since Payload writes that locale. Reads in other locales by the project's hooks during the operation do not change it. Logout has no earlier hook, so its locale is the request's after the project's own `afterLogout` hooks ran.
 - Autosave draft saves, which Payload keeps out of the stored document, are not logged: a save with `autosave` and `draft` that does not submit `_status: "published"`, in a collection or global whose drafts have autosave enabled (`versions.drafts.autosave`). Any other save that passes `autosave`, such as a create, a save without `draft`, a publish, or a save in a collection or global without drafts autosave (including one with `versions.drafts: true`), is logged like any save. In autosave collections and globals a publish is compared with the stored document it replaces, except a bulk publish with `draft: true`, which is compared with the latest draft (see [Database reads](#database-reads)). In a collection, that is the document live before the publish, so the comparison holds after `versions.maxPerDoc` removed the previous published version; a document that was not published before lists every field. Both are compared as stored, in every locale, so a publish in one locale also lists the localized fields an autosave changed in another locale, and only those. Hidden and read-restricted fields a publish submits are compared with the submitted values in the locale of the save only. In any collection or global with drafts, an unpublish, a save that is not a draft save and writes the latest draft over the published document or global, is compared with the published one it replaces, so it also lists what that draft changed.
@@ -83,13 +79,11 @@ Most events come from what Payload has already loaded for the operation. The plu
 
 | Operation | Read |
 | --- | --- |
-| Publish by id over a draft in an autosave collection or in an auth collection with drafts | One `findOne` of the stored document, the one live before the publish, to compare with it and to tell a role or API key change |
-| Save by id that is neither a draft save nor a publish, while the latest version is a draft | One `findOne` of the stored document, to tell an unpublish from a draft save, to compare an unpublish with it and, in an auth collection, to tell a role or API key change |
-| Raw adapter write to a user that carries login or session fields next to other data, with `trackUnattributedWrites` | One `findOne` of the stored user |
-| A migration rolled back (`migrate:down`, `migrate:refresh`, `migrate:reset`) | One `findOne` of each migration row before it is deleted |
+| Publish by id over a draft in an autosave collection | One `findOne` of the stored document, the one live before the publish, to compare with it |
+| Save by id that is neither a draft save nor a publish, while the latest version is a draft | One `findOne` of the stored document, to tell an unpublish from a draft save and to compare an unpublish with it |
 | Export | The exported events |
 
-Inside a Postgres or SQLite transaction each of these reads runs in a savepoint of its own, after the plugin's earlier statements on that transaction. A read that fails is rolled back to its savepoint and logged, so it never aborts the change's transaction, and the event falls back: a publish is compared with the document before the save, a role or API key change is taken from the latest draft, a save is not taken for an unpublish, a raw user write lists every submitted field, and a rolled-back migration is not recorded. Single-document reads take their savepoint on the request's transaction, so in the rare case that one fails while your code runs by-id writes in parallel on one shared `req`, a concurrent write's statement can be rolled back with the savepoint. Bulk operations never read this way.
+Inside a Postgres or SQLite transaction each of these reads runs in a savepoint of its own, after the plugin's earlier statements on that transaction. A read that fails is rolled back to its savepoint and logged, so it never aborts the change's transaction, and the event falls back: a publish is compared with the document before the save, and a save is not taken for an unpublish. Single-document reads take their savepoint on the request's transaction, so in the rare case that one fails while your code runs by-id writes in parallel on one shared `req`, a concurrent write's statement can be rolled back with the savepoint. Bulk operations never read this way.
 
 Everything else adds no read:
 
@@ -106,8 +100,7 @@ Everything else adds no read:
 | `user` | A signed-in user |
 | `api_key` | A request authenticated with a Payload API key |
 | `agent` | An MCP request, or code that labels itself as an agent |
-| `seed`, `migration` | Labelled scripts |
-| `system` | A Local API call without a user or label |
+| `system` | A Local API call without a user, such as a seed script or a migration that writes through the Local API |
 | `anonymous` | A request without a user |
 
 The actor is taken from the first match of: `req.context.auditActor`, a `withAuditActor` scope, an MCP request, an API key, `req.user`, the Local API (`system`), otherwise `anonymous`. `actor.source` tells which one it was: `context`, `als`, `auth` or `inferred`. Events the plugin writes for itself, such as `audit.retention_purge`, have the source `plugin`.
@@ -121,7 +114,7 @@ Labels every Local API call made inside the callback, including calls without `r
 ```ts
 import { withAuditActor } from "@focus-reactive/payload-plugin-audit-log";
 
-await withAuditActor({ type: "seed", label: "initial content" }, async () => {
+await withAuditActor({ type: "system", label: "initial content" }, async () => {
   await payload.create({ collection: "pages", data: { title: "Home" } });
 });
 ```
@@ -193,33 +186,7 @@ await logAuditEvent(payload, {
 });
 ```
 
-Optional arguments: `status`, `changes`, `overrideAccess`, `metadata`, `actorOverride`, and `req` to write inside the request's transaction. Events always go to the plugin's collection. The call does nothing when the plugin is not installed or disabled.
-
-## Seeds and migrations
-
-Migrations are recorded without any setup. The plugin wraps the database adapter as soon as Payload creates it, so this covers `payload migrate` and the other `migrate:*` commands, which run without `onInit`, and `prodMigrations`, which run while the adapter connects. Each command runs as an actor of type `migration` labelled with the command (`migrate`, `migrate:down`, `migrate:fresh`, `migrate:refresh`, `migrate:reset`), so the changes a migration makes through the Local API are attributed to it. When Payload records or removes a migration, a `system.migration` event is written with `metadata`: `name`, `batch` and `direction` (`up` or `down`). The row Payload keeps for dev schema pushes is not a migration and is ignored.
-
-The events of a migration, `system.migration` and everything it does, are written as soon as it commits, outside its transaction (right after Payload records it when the adapter runs it without a transaction), so a long command does not keep them in memory. On a new database the audit table is created by one of the migrations, so:
-
-- Events that cannot be written yet, because the migration creating the audit table has not run, are kept without a log entry and written after the next migration commits. Every migration a command runs is recorded, including the ones before the migration creating the audit table, as long as that table exists when the command finishes.
-- Events of a migration whose transaction rolls back are dropped with it. The SQL adapters stop the process when a migration fails; events of the migrations committed before it are already written.
-- If the audit table does not exist when the command finishes, for example after a `migrate:down`, `migrate:reset` or `migrate:refresh` that removes it, the events cannot be written. One warning says how many were dropped and why, with no error stack.
-
-Seeds are your own scripts, so label them and write the `system.seed` event yourself:
-
-```ts
-import { logAuditEvent, withAuditActor } from "@focus-reactive/payload-plugin-audit-log";
-
-await withAuditActor({ type: "seed", label: "initial content" }, async () => {
-  await seed(payload);
-  await logAuditEvent(payload, {
-    action: "system.seed",
-    target: { kind: "system", slug: "seed", label: "initial content" },
-  });
-});
-```
-
-SQL run by a migration's `db` directly is not seen by the plugin.
+Optional arguments: `status`, `changes`, `overrideAccess`, `metadata`, `actorOverride`, `req` to write inside the request's transaction, and `headers` to take `ip` and `userAgent` from when there is no `req`, such as the `Request` of a Next.js route. Events always go to the plugin's collection. The call does nothing when the plugin is not installed or disabled.
 
 ## Options
 
@@ -229,11 +196,9 @@ SQL run by a migration's `db` directly is not seen by the plugin.
 | `slug` | `"audit-events"` | Slug of the log collection |
 | `excludeCollections` | `[]` | Collections not to log. The log itself is always excluded. Payload adds its internal collections and globals (jobs, preferences, locks, migrations, key-value store, job stats) after plugins run, so they are never audited. The folder collection (`payload-folders` unless `folders.slug` says otherwise) is audited through `folders.collectionOverrides`; list its slug here to leave it out |
 | `excludeGlobals` | `[]` | Globals not to log |
-| `apiKeyCollections` | `["payload-mcp-api-keys"]` | Collections whose create / delete means issuing / revoking a key |
-| `roleFields` | `["role", "roles"]` | Auth collection fields reported as `user.role_changed` |
 | `retention` | not set | `{ days, queue?, cron? }`: delete events older than `days` (a positive integer, at most 36500). Recommended, see [Retention](#retention) |
 | `access.read` | signed-in users of the admin user collection | Who can read and export the log |
-| `trackUnattributedWrites` | `true` | Log database writes that bypass Payload operations |
+| `recordIpAndUserAgent` | `true` | Store the client `ip` and `userAgent` of the request on each event; `false` stores neither |
 | `maxChangedPaths` | `200` | Maximum entries in `changes` (a positive integer); a longer list ends with `…` |
 
 An invalid `retention.days` or `maxChangedPaths` throws when the config is built.
@@ -268,20 +233,6 @@ auditLogPlugin({ retention: { days: 365 } });
 
 This registers a scheduled job (queue `"default"`, daily at 03:00 unless `queue` / `cron` say otherwise). It counts the events older than `days` (by the indexed `occurredAt`), deletes them unless there are none, and writes `audit.retention_purge` with `metadata`: `deleted`, `days` and `before`. Something must run the jobs queue: `jobs.autoRun` in the Payload config, or an external cron calling `payload.jobs.handleSchedules()` and `payload.jobs.run()`.
 
-## Unattributed writes
-
-With `trackUnattributedWrites`, the plugin wraps the database adapter's write methods. A create, update or delete that reaches the adapter outside a Payload operation on that document, for example a script calling `payload.db.updateOne`, is logged as `system.unattributed_write`. Only collections and globals audited by the plugin are watched.
-
-- An update or delete by id is covered while a Payload operation on that document runs in the same request: an update from its `beforeChange` until its `afterChange`, a delete from its `beforeDelete` until its `afterDelete`, a global update or version restore from its `beforeOperation` until its `afterChange`. A raw write on the same document before or after that, even with the same `req`, is logged, for example a migration that updates a document through Payload and then calls `payload.db.updateOne` on it. Nested operations on one document keep it covered until the outer one ends.
-- Each running Payload create covers exactly one insert into its collection, its own. Another `payload.db.create` on that collection in the same request, for example in an `afterChange` hook, is logged.
-- Coverage follows the `req`, not the code that writes. Project hook code that runs inside an operation with the same `req` can write raw to the document that operation covers, or insert before the operation's own create and use up its coverage, without a separate `system.unattributed_write`; the operation's own event is still logged.
-- `updateMany` and `deleteMany` are always logged, whatever else runs in the request. Payload calls them only on its internal collections.
-- When an operation fails, Payload rolls back its transaction and every operation of that request stops covering its documents. Without transactions (SQLite without `transactionOptions`, MongoDB without a replica set) Payload gives no signal on failure, so a Local API operation that throws keeps its documents covered for the rest of that `req`. REST and GraphQL requests end with the error.
-
-Payload's own bookkeeping is ignored. Login, refresh and reset password write the whole user record, so their writes to that auth collection in the same request are ignored from the operation's `beforeOperation` until its `afterOperation`, which Payload runs after these writes. A raw write to that user with the same `req` after the operation, such as a role change, is logged. Logout, forgot password, unlock and email verification change only bookkeeping, and writes that only touch sessions, login attempts, locks, password hashes, reset and verification tokens, or job stats are ignored by content. A raw write to a user that carries such fields next to other data, such as a whole stored user written back, is compared with the stored user in the locale of the write, at any depth, and logged with the fields that changed, so a role changed this way is on record.
-
-Other plugins that write a whole stored document through `payload.db.*` outside a Payload operation, such as the A/B plugin publishing a variant percentage, are recorded as `system.unattributed_write` with every submitted key in `changes`. To attribute such a write, pass a `req` whose `context.auditActor` (see [`req.context.auditActor`](#reqcontextauditactor)) names the plugin, and submit only the fields that changed so `changes` lists just those.
-
 ## Reliability
 
 - Recording an event never fails the change. Errors in the plugin's hooks and adapter wrappers, such as a document value that cannot be serialized, are logged and the event is skipped.
@@ -297,11 +248,10 @@ Other plugins that write a whole stored document through `payload.db.*` outside 
 
 ## Not captured
 
-- Raw SQL and direct database access. Call `logAuditEvent` if you need a record.
+- Anything that bypasses Payload's operations, by design: raw SQL, calls to the database adapter (`payload.db.create`, `updateOne`, `updateGlobal`, version writes and the rest), and the SQL a migration runs on its `db`. What a migration or a seed script writes through the Local API is recorded like any Local API call, as the `system` actor unless it is labelled with `withAuditActor`. Running a migration or a seed is not an event of its own. Call `logAuditEvent` if you need a record.
 - Changes the database makes on its own, such as clearing a relationship or upload field (`ON DELETE SET NULL` on Postgres and SQLite) when the document it points to is deleted. The delete is logged, the cleared field of each referencing document is not, for example the `folder` of documents in a deleted folder.
-- Raw server-side version writes through the adapter: `payload.db.createVersion`, `updateVersion` and `deleteVersions`, and for globals `createGlobalVersion`, `updateGlobalVersion` and `deleteVersions` with `globalSlug`.
 - Failed logins through the Local API, and GraphQL logins that use an aliased mutation.
-- Field values, IP addresses and user agents.
+- Field values.
 - Rows changed by anyone with direct access to the database, including the audit rows themselves. The log is read-only through Payload, not in the database.
 
 ## License

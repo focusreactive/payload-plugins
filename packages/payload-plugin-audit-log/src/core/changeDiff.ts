@@ -11,7 +11,6 @@ export type ChangeDiff = {
   savedDoc: (doc: Doc) => Doc;
   createdFields: (doc: Doc) => string[];
   changedFields: (before: Doc | undefined, after: Doc) => string[];
-  comparable: (before: Doc | undefined, after: Doc) => { before: Doc | undefined; after: Doc };
   changedStoredFields: (
     storedBefore: Doc | undefined,
     storedAfter: Doc,
@@ -63,7 +62,7 @@ function withoutFieldMissingFromAfter(
   return stripped === before[segment] ? before : { ...before, [segment]: stripped };
 }
 
-export const withoutFieldsMissingFromAfter = (
+const withoutFieldsMissingFromAfter = (
   before: Doc | undefined,
   after: Doc,
   patterns: readonly FieldPathPattern[]
@@ -272,7 +271,6 @@ export function createChangeDiff({
         const pair = comparable(before, doc);
         return diffPaths(pair.before, pair.after, { max: maxChangedPaths });
       },
-      comparable,
     };
   };
 }

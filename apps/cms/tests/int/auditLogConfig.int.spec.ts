@@ -62,7 +62,7 @@ describe("apps/cms audit log config", () => {
     expect(await readAccessOf(null)).toBe(false);
   });
 
-  it("audits the MCP API keys collection, so the audit plugin runs after the MCP plugin", async () => {
+  it("audits the MCP API keys collection as documents, so the audit plugin runs after the MCP plugin", async () => {
     const { create, req } = requestOf({ collection: "users", email: "admin@x.io", id: 2 });
     const doc = { id: 5, label: "Claude" };
     for (const hook of collectionOf(MCP_API_KEYS_SLUG).hooks?.afterChange ?? []) {
@@ -80,7 +80,7 @@ describe("apps/cms audit log config", () => {
       expect.objectContaining({
         collection: AUDIT_SLUG,
         data: expect.objectContaining({
-          action: "apikey.created",
+          action: "doc.create",
           target: expect.objectContaining({ docId: "5", slug: MCP_API_KEYS_SLUG }),
         }),
       })

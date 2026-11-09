@@ -1,13 +1,18 @@
 import type { PayloadRequest, TaskConfig } from "payload";
 import { DEFAULT_PURGE_CRON, DEFAULT_PURGE_QUEUE, PURGE_TASK_SLUG } from "../constants";
 import { recordAuditEvent } from "../core/writeEvent";
+import type { EventSettings } from "../core/writeEvent";
 import type { AuditRetentionOptions } from "../types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export const cutoffDate = (now: Date, days: number) => new Date(now.getTime() - days * DAY_MS);
 
-export function buildPurgeTask(slug: string, retention: AuditRetentionOptions): TaskConfig {
+export function buildPurgeTask(
+  settings: EventSettings,
+  retention: AuditRetentionOptions
+): TaskConfig {
+  const { slug } = settings;
   return {
     slug: PURGE_TASK_SLUG,
     label: "Audit log retention purge",
@@ -23,7 +28,7 @@ export function buildPurgeTask(slug: string, retention: AuditRetentionOptions): 
       };
       const { totalDocs: deleted } = await req.payload.db.count(olderThanCutoff);
       if (deleted > 0) await req.payload.db.deleteMany(olderThanCutoff);
-      await recordAuditEvent(req, slug, {
+      await recordAuditEvent(req, settings, {
         action: "audit.retention_purge",
         target: { kind: "audit", slug },
         actorOverride: {
