@@ -40,12 +40,13 @@ describe("invariants", () => {
 describe("admin view invariants", () => {
   const COMPONENTS_DIR = "src/components/AnalyticsView";
 
-  it("no recharts imports outside TrendChartInner.tsx and DonutChartInner.tsx", async () => {
+  it("no recharts imports outside the lazily loaded chart inner components", async () => {
     const files = await glob(`${COMPONENTS_DIR}/**/*.{ts,tsx}`, {
       cwd: PKG,
       ignore: [
         `${COMPONENTS_DIR}/ui/TrendChartInner.tsx`,
         `${COMPONENTS_DIR}/ui/DonutChartInner.tsx`,
+        `${COMPONENTS_DIR}/tabs/ab/AbMultiLineChartInner.tsx`,
       ],
     });
     const offenders = files.filter((f) =>
