@@ -37,8 +37,6 @@ export async function getPageBySlugQuery(
   return docs.find((p) => p?.breadcrumbs?.at(-1)?.url === targetUrl) ?? null;
 }
 
-// React `cache()` compares arguments by reference, and every caller builds a new segments array,
-// so the page and its metadata each ran the query. The cache is keyed by a string instead.
 const getPageBySegmentsKey = cache(
   async (
     segmentsKey: string,

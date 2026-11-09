@@ -23,6 +23,9 @@ export type OverlayCtx = {
   mode: "always" | "hover";
 };
 
+const isPlainPrimaryClick = (event: MouseEvent) =>
+  event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
+
 // Wires every overlay submodule and returns a dispose that tears them down in reverse order.
 // `getCtx` is a getter so the callsite (the hook) can stabilize its useEffect dependency array
 // on just `[enabled]` while still seeing fresh ctx when a target is registered.
@@ -94,23 +97,18 @@ export function createOverlay(main: HTMLElement, getCtx: () => OverlayCtx): () =
     onTextReset: (node) => bookkeeper.forgetText(node),
   });
 
-  // A click on the highlighted element itself opens its field, same as the Edit badge.
-  // Capture phase, so a link or button target never navigates or runs its own handler first.
-  // A modifier click passes through, so the page stays usable without leaving edit mode.
-  const onTargetClick = (event: MouseEvent) => {
-    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-      return;
-    }
+  const openFieldOnTargetClick = (event: MouseEvent) => {
+    if (!isPlainPrimaryClick(event)) return;
     const target = findTargetAncestor(event.target instanceof Element ? event.target : null);
     const config = target ? registry.get(target) : undefined;
     if (!config) return;
     event.stopPropagation();
     config.clickHandler(event);
   };
-  main.addEventListener("click", onTargetClick, true);
+  main.addEventListener("click", openFieldOnTargetClick, true);
 
   return () => {
-    main.removeEventListener("click", onTargetClick, true);
+    main.removeEventListener("click", openFieldOnTargetClick, true);
     pipeline.dispose();
     hover.dispose();
     registry.disposeAll();

@@ -44,7 +44,6 @@ describe("click on a highlighted target", () => {
 
     anchorClick = vi.fn();
     anchor.addEventListener("click", anchorClick);
-    // Not framed in jsdom, so the shared click handler falls back to opening the admin URL.
     open = vi.spyOn(window, "open").mockImplementation(() => null);
     dispose = createOverlay(main, () => ctx);
   });
