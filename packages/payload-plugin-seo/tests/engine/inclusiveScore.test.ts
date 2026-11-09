@@ -23,7 +23,7 @@ describe("scoreInclusive", () => {
     const r = scoreInclusive(
       [
         {
-          category: "Gendered langkuage",
+          category: "Gendered language",
           term: "chairman",
           suggestion: "chair, chairperson",
           location: "Section 1, ¶3",

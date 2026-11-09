@@ -28,7 +28,7 @@ describe("ScoreBadge", () => {
     expect(screen.getByText("20")).toHaveClass("bg-seo-bad");
   });
 
-  it("uses UnreadBadge sizing/position and white text", () => {
+  it("uses UnreadBadge sizing/position and the badge foreground token", () => {
     render(<ScoreBadge score={42} status="good" />);
     const el = screen.getByText("42");
     expect(el).toHaveClass(
@@ -38,7 +38,7 @@ describe("ScoreBadge", () => {
       "min-w-[14px]",
       "h-[14px]",
       "rounded-full",
-      "text-white"
+      "text-seo-badge-fg"
     );
   });
 

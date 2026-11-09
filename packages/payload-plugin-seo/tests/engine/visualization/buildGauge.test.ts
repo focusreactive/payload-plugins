@@ -93,10 +93,10 @@ describe("buildGauge — direction shapes (band status order)", () => {
     expect(model.bands.map((band) => band.status)).toEqual(["bad", "warn", "good"]);
   });
 
-  it("orders metaDescriptionLength (band-in-the-middle) bands warn→good→warn", () => {
+  it("orders metaDescriptionLength (band-in-the-middle) bands bad→warn→good→warn", () => {
     const model = buildGauge(metaDescriptionLength, 130, "130");
 
-    expect(model.bands.map((band) => band.status)).toEqual(["warn", "good", "warn"]);
+    expect(model.bands.map((band) => band.status)).toEqual(["bad", "warn", "good", "warn"]);
   });
 });
 
