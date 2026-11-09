@@ -73,7 +73,7 @@ export const jsonFormPlugin =
 
     let library: JsonFormClientConfig["library"] = null;
 
-    const attach = (fields: Field[], global = "") => {
+    const attach = (fields: Field[], globalSlug = "") => {
       walk(fields, (field) => {
         const own = marked(field);
         if (!own) return;
@@ -82,8 +82,8 @@ export const jsonFormPlugin =
             console.warn(
               `[json-form-builder] the library field is mounted more than once; keeping global.${library.global}.${library.field}`
             );
-          } else if (global) {
-            library = { global, field: field.name };
+          } else if (globalSlug) {
+            library = { global: globalSlug, field: field.name };
           } else {
             console.warn(
               "[json-form-builder] the library field belongs in a global; this one is ignored"

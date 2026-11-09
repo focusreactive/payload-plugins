@@ -28,6 +28,11 @@ const each = (
 
 const LEAVES = TYPES.filter((type) => !HOLDER_TYPES.includes(type));
 
+const empty = (node: Leaf) =>
+  node.type === "checkbox"
+    ? node.value !== true
+    : node.value === undefined || node.value === null || node.value === "";
+
 export const nodeFault = (node: TypedNode): string => {
   if (node.hidden) return "";
   if (node.type === "array") {
@@ -66,11 +71,6 @@ export const faults = (root: TypedRoot): Fault[] => {
 export const problems = (root: TypedRoot): string[] =>
   faults(root).map((fault) => `${fault.path.join(" → ")}: ${fault.message}`);
 
-const empty = (node: Leaf) =>
-  node.type === "checkbox"
-    ? node.value !== true
-    : node.value === undefined || node.value === null || node.value === "";
-
 const sameNames = (fields: TypedNode[], path: string[], found: string[]) => {
   const seen = new Set<string>();
   for (const field of fields) {
@@ -86,19 +86,6 @@ const sameNames = (fields: TypedNode[], path: string[], found: string[]) => {
     const kids = (field as Container).fields;
     if (Array.isArray(kids)) sameNames(kids, here, found);
   }
-};
-
-// Two nodes under one parent with the same name flatten into one and the later silently wins, so
-// duplicates are named at every level.
-export const schemaErrors = (root: TypedRoot): string[] => {
-  const found: string[] = [];
-  sameNames(root, [], found);
-  each(root, (node, where, named) => {
-    const faults = nodeErrors(node, where, named);
-    found.push(...faults);
-    if (faults.length) return false;
-  });
-  return found;
 };
 
 type Rule = {
@@ -187,4 +174,17 @@ export const jsonErrors = (value: unknown, required?: boolean): string | true =>
   if (!isTyped(value)) return true;
   const found = problems(value);
   return found.length ? found.join("; ") : true;
+};
+
+// Two nodes under one parent with the same name flatten into one and the later silently wins, so
+// duplicates are named at every level.
+export const schemaErrors = (root: TypedRoot): string[] => {
+  const found: string[] = [];
+  sameNames(root, [], found);
+  each(root, (node, where, named) => {
+    const errors = nodeErrors(node, where, named);
+    found.push(...errors);
+    if (errors.length) return false;
+  });
+  return found;
 };

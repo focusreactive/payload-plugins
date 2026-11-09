@@ -1,6 +1,5 @@
 "use client";
 
-import { clsx as cn } from "clsx";
 import type { ComponentProps } from "react";
 import { Collapsible, FieldDescription } from "@payloadcms/ui";
 import { toWords } from "payload/shared";
@@ -44,43 +43,6 @@ export const hideItem = (node: TypedNode, onChange: (node: TypedNode) => void): 
   label: node.hidden ? "Show" : "Hide",
   onClick: () => onChange({ ...node, hidden: !node.hidden }),
 });
-
-export const JsonFields = ({
-  faults,
-  fields,
-  id,
-  onChange,
-  row,
-  readOnly,
-}: {
-  faults?: boolean;
-  fields: TypedNode[];
-  id: string;
-  onChange: (fields: TypedNode[]) => void;
-  row?: boolean;
-  readOnly?: boolean;
-}) => (
-  <div className="json-form__fields">
-    {fields.map((field, index) => {
-      const set = (next: TypedNode) =>
-        onChange(fields.map((entry, i) => (i === index ? next : entry)));
-      if (row && field.name === HIDDEN) return null;
-      if (!visible(field, fields)) return null;
-      return (
-        <JsonNode
-          faults={faults}
-          hidden={field.hidden}
-          id={`${id}.${field.name ?? index}`}
-          key={field.name ?? index}
-          label={labelOf(field)}
-          node={field}
-          onChange={set}
-          readOnly={readOnly}
-        />
-      );
-    })}
-  </div>
-);
 
 export const JsonNode = ({
   badge,
@@ -179,3 +141,40 @@ export const JsonNode = ({
     </Collapsible>
   );
 };
+
+export const JsonFields = ({
+  faults,
+  fields,
+  id,
+  onChange,
+  row,
+  readOnly,
+}: {
+  faults?: boolean;
+  fields: TypedNode[];
+  id: string;
+  onChange: (fields: TypedNode[]) => void;
+  row?: boolean;
+  readOnly?: boolean;
+}) => (
+  <div className="json-form__fields">
+    {fields.map((field, index) => {
+      const set = (next: TypedNode) =>
+        onChange(fields.map((entry, i) => (i === index ? next : entry)));
+      if (row && field.name === HIDDEN) return null;
+      if (!visible(field, fields)) return null;
+      return (
+        <JsonNode
+          faults={faults}
+          hidden={field.hidden}
+          id={`${id}.${field.name ?? index}`}
+          key={field.name ?? index}
+          label={labelOf(field)}
+          node={field}
+          onChange={set}
+          readOnly={readOnly}
+        />
+      );
+    })}
+  </div>
+);

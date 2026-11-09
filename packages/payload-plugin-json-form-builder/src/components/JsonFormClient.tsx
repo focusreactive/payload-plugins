@@ -29,7 +29,7 @@ import { hideItem, JsonNode, labelOf } from "./JsonNode.js";
 import { followed } from "../library/reconcileSection.js";
 import { useJsonFormConfig } from "../useJsonFormConfig.js";
 import { faults, jsonErrors, schemaErrors } from "../field/checks.js";
-import { isObject, isTyped, visible } from "../field/typedJson.js";
+import { isTyped, visible } from "../field/typedJson.js";
 import type { TypedNode, TypedRoot } from "../field/typedJson.js";
 
 type Props = ComponentProps<JSONFieldClientComponent> & {

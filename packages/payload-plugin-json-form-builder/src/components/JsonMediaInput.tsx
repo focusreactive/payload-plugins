@@ -53,13 +53,19 @@ export const JsonMediaInput = ({
   useEffect(() => {
     if (!(filename && uploads)) return setDoc(null);
     const request = new AbortController();
-    fetch(
-      `${api}/${uploads}?where[filename][equals]=${encodeURIComponent(filename)}&limit=1&depth=0`,
-      { credentials: "include", signal: request.signal }
-    )
-      .then((res) => res.json())
-      .then(({ docs }) => setDoc(docs?.[0]?.id ?? null))
-      .catch((error) => error?.name !== "AbortError" && setDoc(null));
+    const load = async () => {
+      try {
+        const res = await fetch(
+          `${api}/${uploads}?where[filename][equals]=${encodeURIComponent(filename)}&limit=1&depth=0`,
+          { credentials: "include", signal: request.signal }
+        );
+        const { docs } = await res.json();
+        setDoc(docs?.[0]?.id ?? null);
+      } catch (error) {
+        if ((error as Error)?.name !== "AbortError") setDoc(null);
+      }
+    };
+    load();
     return () => request.abort();
   }, [api, filename, uploads]);
 

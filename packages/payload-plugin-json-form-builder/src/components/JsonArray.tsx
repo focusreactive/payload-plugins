@@ -173,7 +173,7 @@ export const JsonArray = ({
         return (
           <DraggableSortableItem id={rowId} key={rowId}>
             {({ attributes, isDragging, listeners, setNodeRef, transform, transition }) => {
-              const drag = { id: rowId, attributes, listeners };
+              const rowDrag = { id: rowId, attributes, listeners };
               return (
                 <div
                   ref={setNodeRef}
@@ -181,7 +181,7 @@ export const JsonArray = ({
                 >
                   {row.length === 1 && !row[0].name ? (
                     <JsonNode
-                      drag={readOnly ? undefined : drag}
+                      drag={readOnly ? undefined : rowDrag}
                       faults={faults}
                       id={`${id}.${index}`}
                       isCollapsed={!open.includes(rowId)}
@@ -195,7 +195,7 @@ export const JsonArray = ({
                     <Collapsible
                       actions={readOnly ? undefined : <JsonRowMenu items={rowMenu(index, row)} />}
                       className={cn("array-field__row", isRowHidden(row) && "json-form__hidden")}
-                      dragHandleProps={readOnly ? undefined : drag}
+                      dragHandleProps={readOnly ? undefined : rowDrag}
                       header={<div className="array-field__row-header">{name}</div>}
                       isCollapsed={!open.includes(rowId)}
                       onToggle={toggle}

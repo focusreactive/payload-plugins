@@ -75,10 +75,14 @@ export const isTyped = (value: unknown): value is TypedRoot =>
 
 export type ResolveUpload = (url: string) => unknown;
 
+const blankValue = (type: LeafType | string) =>
+  type === "checkbox" ? false : type === "number" || type === "date" ? null : "";
+
 const fieldsOf = (fields: TypedNode[], resolve?: ResolveUpload) =>
   Object.fromEntries(
     fields
       .filter((field) => !field.hidden)
+      // oxlint-disable-next-line no-use-before-define
       .map((field) => [field.name, flattenNode(field, resolve)])
   );
 
@@ -114,9 +118,6 @@ export const uploadUrls = (value: unknown): string[] => {
   if (isTyped(value)) walk(value as TypedNode[]);
   return found;
 };
-
-const blankValue = (type: LeafType | string) =>
-  type === "checkbox" ? false : type === "number" || type === "date" ? null : "";
 
 export const flatten = (value: unknown, resolve?: ResolveUpload) =>
   isTyped(value) ? fieldsOf(value, resolve) : value;

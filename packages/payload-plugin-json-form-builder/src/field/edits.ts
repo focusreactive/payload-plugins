@@ -14,6 +14,7 @@ export const dressed = (shape: TypedNode[], row: TypedNode[]): TypedNode[] => {
   const worn = shape
     .filter((field) => field.name !== HIDDEN)
     .map((field) =>
+      // oxlint-disable-next-line no-use-before-define
       valued(field, field.name ? row.find((entry) => entry.name === field.name) : undefined)
     );
   const mark = row.find((field) => field.name === HIDDEN);
@@ -103,7 +104,7 @@ export const editAt = (
 export const keyFault = (key: string, taken: string[]): string => {
   if (!key) return "A key is needed.";
   if (key.length < 3) return "A key is three characters or more.";
-  if (!/^[A-Za-z][A-Za-z0-9]*$/.test(key))
+  if (!/^[A-Za-z][A-Za-z0-9]*$/u.test(key))
     return "A key is letters and digits, starting with a letter — no dashes, spaces or symbols.";
   return taken.includes(key) ? "Something beside this one already has that key." : "";
 };

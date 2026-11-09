@@ -98,20 +98,29 @@ export const JsonBuilder = ({
   useEffect(() => {
     if (!(showing && shares && held)) return;
     const request = new AbortController();
-    fetch(`${config.routes.api}/globals/${held.global}?depth=0`, {
-      credentials: "include",
-      signal: request.signal,
-    })
-      .then((answer) => answer.json())
-      .then((doc) => {
+    const load = async () => {
+      try {
+        const answer = await fetch(`${config.routes.api}/globals/${held.global}?depth=0`, {
+          credentials: "include",
+          signal: request.signal,
+        });
+        const doc = await answer.json();
         const value = (doc as Record<string, unknown>)?.[held.field];
         setShared(isTyped(value) ? (value as TypedRoot) : []);
-      })
-      .catch(() => setShared([]));
+      } catch {
+        setShared([]);
+      }
+    };
+    load();
     return () => request.abort();
   }, [held, config.routes.api, shares, showing]);
 
   const take = (node: TypedNode) => setDraft([...draft, following(node, node.name ?? "")]);
+
+  const remove = (spot: Spot) => {
+    setDraft(editAt(draft, spot, () => undefined));
+    setPicked(null);
+  };
 
   const dropSection = (spot: Spot) => {
     remove(spot);
@@ -160,12 +169,12 @@ export const JsonBuilder = ({
     openModal(formSlug);
   };
 
-  const addShape = (shape: string, fields: TypedNode[]) =>
+  const addShape = (shape: string, shapeFields: TypedNode[]) =>
     setDraft(
       addManyAt(
         draft,
         here,
-        fields.map((field) => ({ ...field, shape }))
+        shapeFields.map((field) => ({ ...field, shape }))
       )
     );
 
@@ -193,8 +202,8 @@ export const JsonBuilder = ({
       setAt([]);
     } else if (making === "field") setDraft(addAt(draft, here, { ...edited, name: key }));
     else if (picked && isSection) {
-      const kept = editAt(draft, picked, () => edited);
-      setDraft(key === current ? kept : renameSection(kept, current, key));
+      const updated = editAt(draft, picked, () => edited);
+      setDraft(key === current ? updated : renameSection(updated, current, key));
       setCurrent(key);
     } else if (picked) setDraft(editAt(draft, picked, () => ({ ...edited, name: key })));
     shut();
@@ -202,11 +211,6 @@ export const JsonBuilder = ({
 
   const reorder = (next: TypedNode[]) =>
     setDraft(editAt(draft, here, (node) => withShape(node, next)));
-
-  const remove = (spot: Spot) => {
-    setDraft(editAt(draft, spot, () => undefined));
-    setPicked(null);
-  };
 
   const leave = () => (dirty ? openModal(leaveSlug) : closeModal(slug));
 
@@ -246,9 +250,9 @@ export const JsonBuilder = ({
       <div className="json-builder">
         <aside className="json-builder__sections">
           <h5 className="json-builder__group">Sections</h5>
-          {sections.map((held, index) => {
-            const entry = held.name || `#${index + 1}`;
-            if (followed(held)) return null;
+          {sections.map((sectionNode, index) => {
+            const entry = sectionNode.name || `#${index + 1}`;
+            if (followed(sectionNode)) return null;
             return (
               <button
                 className={cn(
@@ -260,7 +264,7 @@ export const JsonBuilder = ({
                 onClick={() => walk(entry)}
                 type="button"
               >
-                <span className="json-builder__section-name">{held.label || entry}</span>
+                <span className="json-builder__section-name">{sectionNode.label || entry}</span>
               </button>
             );
           })}
@@ -392,11 +396,11 @@ export const JsonBuilder = ({
           {section && Object.keys(shapes).length > 0 && holder?.type !== "tabs" && (
             <div className="json-builder__palette">
               <h5 className="json-builder__group">Custom</h5>
-              {Object.entries(shapes).map(([name, fields]) => (
+              {Object.entries(shapes).map(([name, shapeFields]) => (
                 <button
                   className="json-builder__kind-card"
                   key={name}
-                  onClick={() => addShape(name, fields)}
+                  onClick={() => addShape(name, shapeFields)}
                   type="button"
                 >
                   <span className="json-builder__tile json-builder__tile--custom">◆</span>

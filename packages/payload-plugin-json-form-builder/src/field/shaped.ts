@@ -5,12 +5,19 @@ import type { ArrayNode, Container, TypedNode, TypedRoot } from "./typedJson.js"
 export type Shapes = Record<string, TypedNode[]>;
 
 const level = (nodes: TypedNode[], shapes: Shapes): TypedNode[] => {
+  const deep = (node: TypedNode): TypedNode => {
+    if (node.type === "array")
+      return { ...node, rows: ((node as ArrayNode).rows ?? []).map((row) => level(row, shapes)) };
+    if ("fields" in node) return { ...node, fields: level((node as Container).fields, shapes) };
+    return node;
+  };
+
   const out: TypedNode[] = [];
 
   for (let at = 0; at < nodes.length; ) {
     const shape = nodes[at].shape;
     if (!shape) {
-      out.push(deep(nodes[at], shapes));
+      out.push(deep(nodes[at]));
       at += 1;
       continue;
     }
@@ -34,13 +41,6 @@ const level = (nodes: TypedNode[], shapes: Shapes): TypedNode[] => {
   }
 
   return out;
-};
-
-const deep = (node: TypedNode, shapes: Shapes): TypedNode => {
-  if (node.type === "array")
-    return { ...node, rows: ((node as ArrayNode).rows ?? []).map((row) => level(row, shapes)) };
-  if ("fields" in node) return { ...node, fields: level((node as Container).fields, shapes) };
-  return node;
 };
 
 export const shaped = (value: unknown, shapes: Shapes): unknown =>

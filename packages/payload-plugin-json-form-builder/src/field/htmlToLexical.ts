@@ -1,11 +1,11 @@
 export const decode = (value: string) =>
   value
-    .replace(/&#x26;|&amp;/g, "&")
-    .replace(/&#x27;|&rsquo;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&nbsp;/g, " ");
+    .replace(/&#x26;|&amp;/gu, "&")
+    .replace(/&#x27;|&rsquo;/gu, "'")
+    .replace(/&lt;/gu, "<")
+    .replace(/&gt;/gu, ">")
+    .replace(/&quot;/gu, '"')
+    .replace(/&nbsp;/gu, " ");
 
 type Node = { tag?: string; attrs?: string; text?: string; children?: Node[] };
 
@@ -14,7 +14,7 @@ const VOID = new Set(["br", "img", "hr"]);
 const parseHtml = (html: string): Node[] => {
   const root: Node = { children: [] };
   const stack: Node[] = [root];
-  const re = /<\/([a-zA-Z0-9]+)\s*>|<([a-zA-Z0-9]+)([^>]*?)\/?>|([^<]+)/g;
+  const re = /<\/([a-zA-Z0-9]+)\s*>|<([a-zA-Z0-9]+)([^>]*?)\/?>|([^<]+)/gu;
   let m: RegExpExecArray | null;
 
   while ((m = re.exec(html))) {
@@ -49,7 +49,7 @@ export const textNode = (text: string, format: number) => ({
 });
 
 const attribute = (attrs = "", name: string) =>
-  attrs.match(new RegExp(`\\b${name}\\s*=\\s*"([^"]*)"`))?.[1];
+  attrs.match(new RegExp(`\\b${name}\\s*=\\s*"([^"]*)"`, "u"))?.[1];
 const href = (attrs = "") => attribute(attrs, "href") || "";
 
 const opensNewTab = (attrs?: string) => attribute(attrs, "target") === "_blank";
@@ -176,7 +176,7 @@ const BLOCK = new Set([
   "blockquote",
   "hr",
 ]);
-const HEADING = /^h[1-6]$/;
+const HEADING = /^h[1-6]$/u;
 
 const blank = (node: any) =>
   node.type === "linebreak" || (node.type === "text" && !node.text.trim());

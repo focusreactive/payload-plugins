@@ -41,7 +41,7 @@ export const JsonInput = ({
         <div className="field-type__wrap">
           <input
             disabled={readOnly}
-            id={`field-${id.replace(/\./g, "__")}`}
+            id={`field-${id.replace(/\./gu, "__")}`}
             max={max}
             min={min}
             name={id}
