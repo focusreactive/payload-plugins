@@ -1,13 +1,33 @@
-import { render } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import { useEffect } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { LivePreviewListener } from "@/components/LivePreviewListener";
 
 const preview = vi.hoisted(() => ({
+  pendingRefreshes: [] as (() => void)[],
   refreshesOnReady: 1,
+  requestRefresh: () => {},
   routerRefresh: vi.fn(),
 }));
+
+vi.mock("react", async (importOriginal) => {
+  const react = await importOriginal<typeof import("react")>();
+
+  return {
+    ...react,
+    useTransition: () => {
+      const [isPending, setIsPending] = react.useState(false);
+      const startTransition = react.useCallback((action: () => void) => {
+        setIsPending(true);
+        action();
+        preview.pendingRefreshes.push(() => setIsPending(false));
+      }, []);
+
+      return [isPending, startTransition] as const;
+    },
+  };
+});
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: preview.routerRefresh }),
@@ -16,6 +36,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@payloadcms/live-preview-react", () => ({
   RefreshRouteOnSave: ({ refresh }: { refresh: () => void }) => {
     useEffect(() => {
+      preview.requestRefresh = refresh;
       for (let request = 0; request < preview.refreshesOnReady; request += 1) {
         refresh();
       }
@@ -24,9 +45,14 @@ vi.mock("@payloadcms/live-preview-react", () => ({
   },
 }));
 
+function finishPendingRefresh() {
+  act(() => preview.pendingRefreshes.shift()?.());
+}
+
 describe("LivePreviewListener", () => {
   beforeEach(() => {
     preview.routerRefresh.mockClear();
+    preview.pendingRefreshes = [];
     preview.refreshesOnReady = 1;
   });
 
@@ -41,5 +67,22 @@ describe("LivePreviewListener", () => {
     render(<LivePreviewListener />);
 
     expect(preview.routerRefresh).toHaveBeenCalledOnce();
+  });
+
+  it("refreshes once more after the pending refresh when requests arrive meanwhile", () => {
+    render(<LivePreviewListener />);
+    act(() => {
+      preview.requestRefresh();
+      preview.requestRefresh();
+    });
+    const refreshesWhilePending = preview.routerRefresh.mock.calls.length;
+
+    finishPendingRefresh();
+    const refreshesAfterFirstSettles = preview.routerRefresh.mock.calls.length;
+    finishPendingRefresh();
+
+    expect(refreshesWhilePending).toBe(1);
+    expect(refreshesAfterFirstSettles).toBe(2);
+    expect(preview.routerRefresh).toHaveBeenCalledTimes(2);
   });
 });

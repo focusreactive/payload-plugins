@@ -130,7 +130,8 @@ describe("slug while autosaving drafts", () => {
       data: {
         ...titled,
         _status: "published",
-        blocks: titled.blocks.filter(({ blockType }) => blockType !== "content"),
+        blocks: [{ blockType: "testimonialsList" }],
+        hero: [{ blockType: "hero", variant: "showcase" }],
       },
       depth: 0,
       id: draft.id,

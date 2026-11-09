@@ -18,13 +18,13 @@ type AutosaveCollection = (typeof AUTOSAVE_COLLECTIONS)[number];
 let payload: Payload;
 const createdDrafts: { collection: AutosaveCollection; id: number }[] = [];
 
-async function openCreateView(collection: AutosaveCollection) {
+async function createEmptyDraft(collection: AutosaveCollection) {
   const doc = await payload.create({ collection, data: {}, depth: 0, draft: true });
   createdDrafts.push({ collection, id: doc.id });
   return doc;
 }
 
-describe("opening Create New with autosave", () => {
+describe("creating empty drafts in autosave collections", () => {
   beforeAll(async () => {
     payload = await getPayload({ config: await config });
   });
@@ -35,9 +35,9 @@ describe("opening Create New with autosave", () => {
     }
   });
 
-  it.each(AUTOSAVE_COLLECTIONS)("creates a new %s draft every time", async (collection) => {
-    const first = await openCreateView(collection);
-    const second = await openCreateView(collection);
+  it.each(AUTOSAVE_COLLECTIONS)("creates a separate %s draft on every call", async (collection) => {
+    const first = await createEmptyDraft(collection);
+    const second = await createEmptyDraft(collection);
 
     expect(second.id).not.toBe(first.id);
   });
