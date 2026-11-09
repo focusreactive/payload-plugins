@@ -1,5 +1,21 @@
 import { slugField as payloadSlugField } from "payload";
-import type { PayloadRequest } from "payload";
+import type { CheckboxField, FieldHook, PayloadRequest, TextField } from "payload";
+
+const keepGeneratingWhileDrafting =
+  (slugFieldName: string, generateSlug: FieldHook): FieldHook =>
+  async (args) => {
+    const { data, operation, originalDoc, value: isGenerating } = args;
+    const slugEditedByUser = data?.[slugFieldName] !== originalDoc?.[slugFieldName];
+    const keepsGenerating = await generateSlug(args);
+
+    if (keepsGenerating || operation !== "update" || !isGenerating) {
+      return keepsGenerating;
+    }
+
+    const isPublishing = data?._status === "published";
+
+    return !isPublishing && !slugEditedByUser;
+  };
 
 /**
  * Shared slug field for Pages and Posts.
@@ -13,7 +29,14 @@ export const createSharedSlugField = (currentCollection: "page" | "posts") => {
 
   return payloadSlugField({
     overrides: (field) => {
-      const slugInput = field.fields?.[1] as { unique?: boolean; validate?: unknown } | undefined;
+      const generateSlugCheckbox = field.fields?.[0] as CheckboxField | undefined;
+      const slugInput = field.fields?.[1] as TextField | undefined;
+
+      if (generateSlugCheckbox?.hooks?.beforeChange && slugInput) {
+        generateSlugCheckbox.hooks.beforeChange = generateSlugCheckbox.hooks.beforeChange.map(
+          (hook) => keepGeneratingWhileDrafting(slugInput.name, hook)
+        );
+      }
 
       if (slugInput) {
         slugInput.unique = true;
