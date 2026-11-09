@@ -34,7 +34,6 @@ describe("createTranslator", () => {
   });
 
   it("never mixes a language's plural with English forms", () => {
-    // German with only `_other`: 1 must not borrow English `_one`.
     const t = createTranslator("de", { "viz.show.link_other": "{{count}} Links anzeigen" });
     expect(t("viz.show.link", { count: 1 })).toBe("1 Links anzeigen");
   });

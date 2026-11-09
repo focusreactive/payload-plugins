@@ -23,7 +23,6 @@ describe("buildTranslations", () => {
   });
 
   it("resolves through Payload's own t() key walk", () => {
-    // Payload splits `seo:tab.keyphrase` on ":" and walks the objects.
     const out = buildTranslations();
     const [namespace, key] = "seo:tab.keyphrase".split(":") as [string, string];
     expect(out.en?.[namespace]?.[key]).toBe("Keyphrase");

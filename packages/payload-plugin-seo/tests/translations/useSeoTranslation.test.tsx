@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import { buildTranslations } from "../../src/translations";
 import { useSeoTranslation } from "../../src/translations/useSeoTranslation";
 
-// vi.unmock / vi.mock / vi.hoisted run before the imports above.
 vi.unmock("../../src/translations/useSeoTranslation");
 
 const i18n = vi.hoisted(() => ({
