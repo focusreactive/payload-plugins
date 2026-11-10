@@ -1,26 +1,14 @@
 "use client";
 
 import { RefreshRouteOnSave as PayloadLivePreview } from "@payloadcms/live-preview-react";
-import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import type React from "react";
 
 import { getClientSideURL } from "@/lib/utils/getURL";
 
+import { useCoalescedRouterRefresh } from "./useCoalescedRouterRefresh";
+
 export const LivePreviewListener: React.FC = () => {
-  const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
-  const [refreshRequests, setRefreshRequests] = useState(0);
-  const handledRefreshRequestsRef = useRef(0);
-
-  useEffect(() => {
-    if (isRefreshing || refreshRequests === handledRefreshRequestsRef.current) return;
-    handledRefreshRequestsRef.current = refreshRequests;
-    startRefresh(() => router.refresh());
-  }, [isRefreshing, refreshRequests, router]);
-
-  const requestRefresh = useCallback(() => {
-    setRefreshRequests((count) => count + 1);
-  }, []);
+  const requestRefresh = useCoalescedRouterRefresh();
 
   return <PayloadLivePreview refresh={requestRefresh} serverURL={getClientSideURL()} />;
 };

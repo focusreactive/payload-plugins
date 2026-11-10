@@ -1,5 +1,5 @@
 import { act, render } from "@testing-library/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { LivePreviewListener } from "@/components/LivePreviewListener";
@@ -34,8 +34,11 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@payloadcms/live-preview-react", () => ({
   RefreshRouteOnSave: ({ refresh }: { refresh: () => void }) => {
+    const hasSentReady = useRef(false);
     useEffect(() => {
       preview.requestRefresh = refresh;
+      if (hasSentReady.current) return;
+      hasSentReady.current = true;
       for (let request = 0; request < preview.refreshesOnReady; request += 1) {
         refresh();
       }
