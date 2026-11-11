@@ -427,6 +427,15 @@ export const normalizeOptions = (
     limits,
     localizeSegments,
     maxDepth,
+    mcp:
+      options.mcp === false
+        ? false
+        : {
+            disabledTools: Object.entries(options.mcp?.tools ?? {})
+              .filter(([, value]) => value === false)
+              .map(([name]) => name),
+            instructions: options.mcp?.instructions !== false,
+          },
     newItemPosition: options.newItemPosition ?? "top",
     redirects: {
       enabled: options.redirects?.enabled ?? true,

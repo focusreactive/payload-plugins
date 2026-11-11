@@ -297,6 +297,7 @@ export const options: FoldersPluginOptions = {
     previewUrl: ({ fullPath, locale }) =>
       `https://example.com${buildUrl(fullPath, locale, { defaultLocale: "en", trailingSlash: false })}`,
   },
+  mcp: { tools: { createFolder: false } },
   disabled: false,
 };
 ```
@@ -349,6 +350,7 @@ query read the folder with the requester's access. A reader who cannot read fold
 | `admin.confirmMoves` | `urlChange` | When the admin asks before a move: `urlChange` (a reorder inside one folder never asks), `always` or `never`. |
 | `admin.pageSize` | `100` | Rows per request in the tree. The maximum is 1000. A larger value is cut to 1000. |
 | `admin.previewUrl` | none | Builds the "View page" link. Without it the menu item is hidden. |
+| `mcp` | on | What the plugin adds to `@payloadcms/plugin-mcp` when that plugin is registered; nothing happens when it is not. The plugin finds plugin-mcp in `plugins` and merges its tools into plugin-mcp's options, whether the host passed options or none, and a tool the host defined under the same name wins. `false` adds nothing (the refusal of a structure change through the stock `updateDocument` stays, because it protects data). `{ tools: { createFolder: false } }` leaves one tool out, by the name the model sees. `{ instructions: false }` sends no server instructions. |
 | `disabled` | `false` | Keeps the schema and removes hooks, endpoints and admin UI. Run `repairTree` after turning the plugin back on. |
 
 `@payloadcms/ui` strings live under the `foldersTree` namespace of `config.i18n.translations`, in

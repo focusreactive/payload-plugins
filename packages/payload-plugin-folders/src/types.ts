@@ -45,6 +45,14 @@ export type FolderLabel = string | Record<string, string>;
 /** When the admin asks before a move (spec section 5.7). */
 export type ConfirmMoves = "always" | "never" | "urlChange";
 
+/** The tools the plugin adds to `@payloadcms/plugin-mcp`, by the name the model sees. */
+export type FoldersMcpToolName =
+  | "applyTreeChange"
+  | "browseTree"
+  | "createFolder"
+  | "previewMove"
+  | "previewRename";
+
 export type FoldersPluginOptions = {
   /** Opted-in page collections, keyed by slug. */
   collections: Partial<Record<CollectionSlug, true | PageCollectionOptions>>;
@@ -123,6 +131,19 @@ export type FoldersPluginOptions = {
     /** Builds the "View page" link. `fullPath` is in the `urls.trailingSlash` form, without a locale prefix. Default: none, the menu item is hidden. */
     previewUrl?: (args: { fullPath: string; locale: string | null; collection: string }) => string;
   };
+  /**
+   * What the plugin adds to `@payloadcms/plugin-mcp` when that plugin is registered. Absent: its
+   * tools and instructions. `false`: nothing; the refusal of a structure change through the stock
+   * `updateDocument` stays, because it protects data and not the tool list.
+   */
+  mcp?:
+    | false
+    | {
+        /** `false` sends no server instructions. */
+        instructions?: false;
+        /** A tool set to `false` is left out. */
+        tools?: Partial<Record<FoldersMcpToolName, false>>;
+      };
   /** Keeps the schema, removes hooks, endpoints and UI. Run repairTree() after turning it back on. */
   disabled?: boolean;
 };
@@ -183,6 +204,8 @@ export type ResolvedOptions = {
     repair: NonNullable<FoldersPluginOptions["access"]>["repair"];
   };
   hooks: { afterPathChange: NonNullable<FoldersPluginOptions["hooks"]>["afterPathChange"] };
+  /** False when the `mcp` option is false: the plugin adds nothing to plugin-mcp. */
+  mcp: false | { disabledTools: string[]; instructions: boolean };
   admin: {
     treeView: boolean;
     sidebarTab: false | { label: string };

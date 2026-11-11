@@ -11,6 +11,7 @@ import { pluginSlug } from "./constants.js";
 import { buildFoldersEndpoints } from "./endpoints/index.js";
 import { buildFoldersResolveQueries } from "./graphql/foldersResolve.js";
 import { addPageFields } from "./fields/pageFields.js";
+import { addToolsToMcpPlugin } from "./mcp/registerMcp.js";
 import { mergeFoldersTranslations } from "./translations/index.js";
 import { buildTreeStateGlobal } from "./globals/treeState.js";
 import {
@@ -54,8 +55,9 @@ const addGraphqlQueries =
 
 export const foldersPlugin = definePlugin<FoldersPluginOptions>({
   slug: pluginSlug,
-  plugin: ({ config, options }) => {
+  plugin: ({ config, options, plugins }) => {
     const resolved = normalizeOptions(options ?? { collections: {} }, config);
+    addToolsToMcpPlugin(plugins, resolved);
 
     const hostCollections = stripUniqueFromSegmentFields(config.collections ?? [], resolved);
     const pageCollections = hostCollections.map(

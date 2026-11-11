@@ -68,6 +68,7 @@ describe("normalizeOptions", () => {
       limits: { maxFoldersPerMove: 2000, maxItemsPerOperation: 500, maxSyncDocuments: 200 },
       localizeSegments: false,
       maxDepth: 20,
+      mcp: { disabledTools: [], instructions: true },
       newItemPosition: "top",
       redirects: { enabled: true, mirror: null, mirrorToRedirectsPlugin: false },
       urls: { localePrefix: "non-default", trailingSlash: false },
@@ -121,6 +122,19 @@ describe("normalizeOptions", () => {
     );
     expect(custom).not.toContain("admin");
     expect(custom).not.toContain("api");
+  });
+
+  it("resolves the mcp option: all on, off, one tool left out, no instructions", () => {
+    const resolve = (mcp: FoldersPluginOptions["mcp"]) =>
+      normalizeOptions(buildOptions({ mcp }), buildConfig()).mcp;
+
+    expect(resolve(undefined)).toEqual({ disabledTools: [], instructions: true });
+    expect(resolve(false)).toBe(false);
+    expect(resolve({ tools: { createFolder: false } })).toEqual({
+      disabledTools: ["createFolder"],
+      instructions: true,
+    });
+    expect(resolve({ instructions: false })).toEqual({ disabledTools: [], instructions: false });
   });
 
   it("takes urls.trailingSlash as a boolean and refuses anything else", () => {

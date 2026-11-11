@@ -29,3 +29,5 @@ export type PageStructureField = (typeof pageStructureFieldNames)[number];
 
 /** Segments the frontend or Payload itself owns, whatever the config says. */
 export const fixedReservedRootSegments = ["graphql", "graphql-playground", "_next"] as const;
+
+export const mcpPluginSlug = "@payloadcms/plugin-mcp";
