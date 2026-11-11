@@ -4,7 +4,7 @@ import { findUnreadableItems } from "../core/access.js";
 import { readFolderRecord } from "../core/folderRecords.js";
 import { itemKey } from "../core/itemKey.js";
 import { readTitles } from "../core/issueTitles.js";
-import { noLocaleKey } from "../core/locales.js";
+import { getDefaultLocaleKey, noLocaleKey } from "../core/locales.js";
 import { summarizePageChanges } from "../core/move.js";
 import type { MoveItemInput, MovePlan, MoveRequest } from "../core/move.js";
 import { readPageRow } from "../core/pageRecords.js";
@@ -231,7 +231,8 @@ export const buildMoveQuestions = async ({
   const where =
     languages.length > 0 ? ` in ${joinWords(languages.map((key) => languageName(key)))}` : "";
   const defaultFolderPath = plan.target
-    ? Object.values(plan.target.fullPath).find((path) => path !== "")
+    ? plan.target.fullPath[getDefaultLocaleKey(req.payload, options)] ||
+      Object.values(plan.target.fullPath).find(Boolean)
     : undefined;
   const target = plan.target ? (defaultFolderPath ?? "the target folder") : "the top level";
   const { total } = changes.publishedUrlChanges;

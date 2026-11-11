@@ -1,4 +1,5 @@
 import { noLocaleKey } from "../core/locales.js";
+import { buildApplyTreeChangeTool } from "./applyTreeChange.js";
 import { buildBrowseTreeTool } from "./browseTree.js";
 import { buildCreateFolderTool } from "./createFolder.js";
 import { describeLocales } from "./locales.js";
@@ -13,6 +14,7 @@ export const buildFoldersMcpTools: BuildFoldersMcpTools = (options, config) => {
   const collections = [options.folders.slug, ...Object.keys(options.collections)];
 
   return {
+    applyTreeChange: buildApplyTreeChangeTool(options),
     browseTree: buildBrowseTreeTool(options, collections),
     createFolder: buildCreateFolderTool(options, {
       defaultKey: areFolderTextsLocalized ? locales.defaultLocale : noLocaleKey,

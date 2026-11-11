@@ -118,6 +118,16 @@ const settleTypeLocks = async ({
   }
 };
 
+export type ApplyMoveSettings = {
+  /**
+   * Called with the plan made under the tree lock, once it is known to be allowed and before any
+   * write. A throw refuses the move and writes nothing. The lock is already held, so the callback
+   * must not take it again.
+   */
+  beforeWrite?: (plan: MovePlan) => Promise<void> | void;
+  options?: ResolvedOptions;
+} & PlanSettings;
+
 /**
  * Spec sections 5.2 and 5.3: one transaction under the tree lock. Re-plans after the lock is taken
  * (so a move committed a moment earlier is visible), refuses with a `MoveBlockedError` when any
@@ -136,15 +146,19 @@ export const applyMove = async (
   req: PayloadRequest,
   request: MoveRequest,
   {
+    beforeWrite,
     options = getResolvedOptions(req.payload),
     overrideAccess = false,
-  }: { options?: ResolvedOptions } & PlanSettings = {}
+  }: ApplyMoveSettings = {}
 ): Promise<MoveResult> =>
   withTreeLock(req, async () => {
     const plan = await buildMovePlan(req, options, request, { overrideAccess });
     if (!plan.preview.ok) {
       throw new MoveBlockedError(plan.preview.blocked);
     }
+    // After the lock and the re-plan, before the first write: a caller that confirmed a preview
+    // compares it with this plan, and throwing here rolls back with nothing written.
+    await beforeWrite?.(plan);
     const { payload } = req;
     const targetId: FolderId | null = plan.preview.targetFolderId;
     const updatedAt = new Date().toISOString();
