@@ -201,7 +201,7 @@ describe("previewRename plans several languages as one edit", () => {
         title: { de: "Start", en: "Start" },
       } as never,
       depth: 0,
-      locale: "all",
+      locale: "all" as never,
       overrideAccess: true,
     });
 

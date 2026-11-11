@@ -23,7 +23,7 @@ const createPage = (
     collection: "pages",
     data: { _status: "published", folder, slug: slugs, title: titles } as never,
     depth: 0,
-    locale: "all",
+    locale: "all" as never,
     overrideAccess: true,
   }) as unknown as Promise<Row>;
 
@@ -33,9 +33,9 @@ export const seedCompanyTree = async (payload: Payload): Promise<CompanyTree> =>
     data: {
       name: { de: "Unternehmen", en: "Company" },
       slug: { de: "unternehmen", en: "company" },
-    },
+    } as never,
     depth: 0,
-    locale: "all",
+    locale: "all" as never,
     overrideAccess: true,
   })) as unknown as Row;
 
