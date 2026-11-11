@@ -2,16 +2,21 @@
 
 This page is for a host developer who lets an AI agent edit their CMS through
 `@payloadcms/plugin-mcp`. It shows what an agent gets wrong today with only the stock MCP tools, and
-proposes what the folders plugin should add so an agent moves, renames and creates content the way an
+describes what the folders plugin adds so an agent moves, renames and creates content the way an
 editor in the admin does: with every language in view, and with a confirmation before a live URL
 changes.
 
-Status: section 1 describes a trial that was run. The loud refusal on the stock `updateDocument`
-(section 3, "The stock `updateDocument` path: refuse loudly") is built and tested. The rest of
-sections 2 to 5 is a proposal: the five tools (`browseTree`, `createFolder`, `previewMove`,
-`previewRename` and `applyTreeChange`), the options and the other hooks named there do not exist
-yet. Paths are relative to this package unless they start with `node_modules/`, which means this
-package's own `node_modules` (plugin-mcp 4.0.0-beta.5, payload 4.0.0-beta.5).
+Status: section 1 describes a trial that was run. Built and tested: the five tools (`browseTree`,
+`createFolder`, `previewMove`, `previewRename` and `applyTreeChange`); the confirmation token that
+binds a change to the user who previewed it for 15 minutes; the loud refusal on the stock
+`updateDocument`, whose message names the tools when they are on; the descriptions of the stock
+`updateDocument`, `createDocuments` and `findDocuments` on folders and page collections; the stock
+tools switched off on `folder-redirects`, `folder-operations` and the `folders-tree-state` global;
+the server instructions; and the folders plugin's `mcp` option, with the merge into plugin-mcp's
+options that it controls. Not built: a skill (section 4), a preview for a page's own slug, and tools
+for delete and duplicate (section 6). The three trial prompts have not been run again against the
+built tools. Paths are relative to this package unless they start with `node_modules/`, which means
+this package's own `node_modules` (plugin-mcp 4.0.0-beta.5, payload 4.0.0-beta.5).
 
 ## 1. What the trial showed
 
@@ -256,9 +261,11 @@ Boolean(req.user)`. Each returns a short text block for the model and the same d
 
 ### `previewRename`
 
-- **Input:** `folder` (id), optional `name` per locale, optional `slug` per locale. A parent change is
-  refused here with "Use previewMove", as `planFolderEdit` refuses a move and a rename in one edit
-  (`src/core/folderPreview.ts:96-105`).
+- **Input:** `folder` (id), optional `name` per locale, optional `slug` per locale, optional
+  `redirects` (default: the site's setting). A parent change is refused here with "Use previewMove",
+  as `planFolderEdit` refuses a move and a rename in one edit (`src/core/folderPreview.ts`). A name
+  or slug equal to what the folder has is dropped, and a request left empty answers
+  `nothingToChange` with no token. A folder the user cannot read is answered as a missing one.
 - **Returns:** the folder's current `name`, `slug` and `fullPath` per locale; then `asked`, the change
   as requested, with `summary`, `needsConfirmation` and a token; then, when `name` was given without
   `slug`, `alsoChangeUrl`, the same rename with the slugified name as the new slug in the same
@@ -279,7 +286,7 @@ Boolean(req.user)`. Each returns a short text block for the model and the same d
   },
   "alsoChangeUrl": {
     "slug": { "en": "team" },
-    "summary": "3 published URLs will change in English. The old URLs will redirect to the new ones.",
+    "summary": "The English name becomes Team and the English URL segment becomes team. 3 published URLs will change in English. The old URLs will redirect to the new ones.",
     "examples": [
       { "locale": "en", "from": "/company", "to": "/team" },
       { "locale": "en", "from": "/company/contact", "to": "/team/contact" },
@@ -289,21 +296,23 @@ Boolean(req.user)`. Each returns a short text block for the model and the same d
     "confirmationToken": "<opaque B>"
   },
   "askUser": [
-    "Change only the name, or the English URL too (/company becomes /team for 3 live pages)?",
+    "Change only the name, or the URL too (/company becomes /team, which changes 3 live URLs in English)?",
     "The German name stays Unternehmen and the German URLs stay /unternehmen. Rename those too?"
   ]
 }
 ```
 
-- **Calls:** `planFolderEdit(req, edit, { overrideAccess: false })` (`src/core/folderPreview.ts:69`),
-  the function behind `POST /folders-tree/folders/:id/preview`. It asks the folder's `update` access
-  and, when live URLs change, the publish question for the pages beneath (decision 23,
-  `src/core/folderPreview.ts:187-202`), and names a conflicting page only to a reader who may read
-  it (`createConflictNamer`, `src/core/uniqueness.ts:327`). One change to the core is needed:
-  `FolderEdit` takes one `locale` and one `slug` (`src/core/folderPreview.ts:29-38`, the write key at
-  line 136-137), and a rename of `en` and `de` together must be planned as one edit, not two previews
-  added up, because a default-locale change also moves the locales that fall back to it (README lines
-  1104-1106). `slug` becomes a per-locale map; the single-locale form stays for the REST endpoint.
+- **Calls:** `buildFolderEditPlan(req, edit, { overrideAccess: false })` (`src/core/folderPreview.ts`),
+  the plan behind `planFolderEdit` and `POST /folders-tree/folders/:id/preview`. It returns the
+  preview together with every path change, which the tool needs for the per-language counts, the
+  examples and the digest. It asks the folder's `update` access and, when live URLs change, the
+  publish question for the pages beneath (decision 23), and names a conflicting page only to a
+  reader who may read it (`createConflictNamer`, `src/core/uniqueness.ts`). A name change alone
+  moves no URL, so the plan has nothing to check and the tool asks the folder's `update` access
+  itself. `FolderEdit` also takes `slugs`, one segment per locale key, so a rename of `en` and `de`
+  together is planned as one edit, not two previews added up, because a default-locale change also
+  moves the locales that fall back to it (README lines 1104-1106), and `redirects`, which overrides
+  the site's setting for the count. The single `locale` and `slug` form stays for the REST endpoint.
 - **Why:** task 3. The model gets both meanings of "rename" with their costs, and the German side, in
   one call, and the user picks.
 
@@ -318,18 +327,26 @@ Boolean(req.user)`. Each returns a short text block for the model and the same d
      differ, nothing is written and the answer is the new summary with "The tree changed since the
      preview. Preview again and confirm with the user."
   3. A move: `applyMove(req, request, { overrideAccess: false })` (`src/core/applyMove.ts:136`), with
-     the `expected` state from the preview. A rename: one
+     the `expected` state from the preview. A rename: first the folder's name and slug in the touched
+     languages are compared with the ones the preview recorded as `expected`, so a folder edited in
+     between, or a token used a second time, is refused. Then one
      `payload.update({ collection: <folders slug>, id, locale: "all", data: { name, slug }, overrideAccess: false, req, context })`
-     inside the same lock, with `context.foldersRedirects` set from the preview's `redirects` choice
-     (README lines 902-904) and a marker that lets the write past the guard below. The plugin's own
-     save hook asks the publish question again (`src/hooks/folders/renamePublishRights.ts:33`).
+     inside the same lock. `data` carries every language the folder holds of its own, so a rename in
+     one language neither drops nor creates a row for another. `context.foldersRedirects` is set from
+     the preview's `redirects` choice (README lines 902-904), `context.foldersMcpRenameConfirmed` holds
+     the folder's id and lets this one write past the guard below, and `context.foldersSlugNotSent`
+     keeps the folder's `beforeValidate` from making a slug out of a name for a language that has none
+     of its own (a locale without a slug reaches that hook as null, which reads as "sent empty"). The
+     request's locale and context are put back after the write. The plugin's own save hook asks the
+     publish question again (`src/hooks/folders/renamePublishRights.ts:33`).
   4. When the redirects-plugin mirror was queued as a batch (more than `limits.maxSyncDocuments`
      rows, default 200, README lines 938-943), it steps the batch itself for up to about 20 seconds,
      because an MCP caller has no admin open to step it. Whatever is left is reported with its
      operation id.
-- **Returns:** `done: true`, the item's new `fullPath` per locale read back after the write, the
-  published URL changes per locale, the redirect rows written, and any mirror batch still running.
-  Reading the result back is what the task 2 agent said it had not done.
+- **Returns:** `done: true`, the item's new `fullPath` per locale read back after the write (`moved`
+  for a move, `folder` with the name, slug and `fullPath` for a rename), the published URL changes
+  per locale, the redirect rows written, and any mirror batch still running. Reading the result back
+  is what the task 2 agent said it had not done.
 - **Why:** tasks 2 and 3. It is the single write path for any change that can break a live URL, and
   it cannot run without a preview.
 
@@ -359,7 +376,7 @@ drop the value (see "The same hook for every other caller" below). Through MCP t
   A name-only change passes: it changes no URL.
 
 Decided (review finding P-36, a ruling reversible by the session owner): the folder slug refusal
-stays until the plugin's own agent tools with a preview exist. The spec allows a folder slug change
+stays, now that the plugin's own agent tools with a preview exist. The spec allows a folder slug change
 through a normal update and runs the subtree rewrite, and a REST `PATCH` still does exactly that.
 MCP is held to a stricter rule because of who is on the other end. A person saving in the admin sees
 the rename dialog first, with the live URLs that change and the redirect checkbox, and a developer
@@ -367,16 +384,21 @@ who writes a REST script chose the rename in code. An agent calling `updateDocum
 the stock tool answers `Document updated successfully` and nothing else, so the agent cannot tell
 the user how many live pages changed URL, in which languages, or that redirects were written. Task 3
 above shows the same agent offering the slug change in general terms, after the write. A slug
-change passed through would be a rename with no preview and no confirmation. Once `previewRename`
-and `applyTreeChange` are built, the refusal message names them, and the agent gets the preview it
-needs to ask first; whether the stock tool then accepts a slug change again is decided at that point.
+change passed through would be a rename with no preview and no confirmation. The refusal message
+now names `previewRename` and `applyTreeChange`, so the agent gets the preview it needs to ask
+first, and the stock tool keeps refusing a slug change: a slug change that reaches the folder through
+`applyTreeChange` is the one write that passes, because it carries a marker that only the tool sets.
 
-The message says what to do instead. The built message for a page move is: `"folder" cannot be
-changed through MCP updateDocument. Moving a page changes its live URL in every language, so it goes
-through the folder tree in the admin, POST /api/folders-tree/move (preview it with POST
-/api/folders-tree/move/preview) or moveItems(), which show the URL changes and write redirects.
-Nothing was saved.` It names only what exists today. The tool names `previewMove` and
-`applyTreeChange` come into the message when the tools are built. The refusal is an `APIError` 400
+The message says what to do instead. With the tools on, the message for a page move is: `"folder"
+cannot be changed through MCP updateDocument. Moving a page changes its live URL in every language,
+so it goes through the previewMove tool, which shows the URL changes and returns a confirmation
+token, and then the applyTreeChange tool, after the user confirms. Nothing was saved.` A folder slug
+names `previewRename` and `applyTreeChange`; a folder `parent`, an `orderKey` and a
+`structureRevision` name the move tools. When the tools are not all on (`mcp: false`, or `previewMove`,
+`previewRename` or `applyTreeChange` switched off), the message keeps its earlier text, which names
+the admin, `POST /api/folders-tree/move` (preview it with `POST /api/folders-tree/move/preview`) and
+`moveItems()`, because a model must not be sent to a tool that does not exist. Callers other than MCP
+always get that earlier text. The refusal is an `APIError` 400
 with `data.reason` set to `mcp-structure-change` or, for a folder slug, `mcp-slug-change`
 (`src/hooks/mcpStructureGuard.ts`). plugin-mcp turns the thrown error into `Error updating document in
 collection "pages": <message>` with `isError: true`
@@ -441,19 +463,26 @@ folders too.
 
 - The folders plugin sets the `description` of the stock `updateDocument`, `createDocuments` and
   `findDocuments` on folders and every page collection: what a folder is, that `folder` and `parent`
-  change only through `previewMove`, that a slug change of a folder goes through `previewRename`, and
-  that `locale: "all"` returns every language. plugin-mcp registers one MCP tool per wire name and
+  change only through `previewMove` and `applyTreeChange`, that a slug change of a folder goes through
+  `previewRename`, that `locale: "all"` returns every language, and that `updateDocument` publishes by
+  default (its `draft` argument defaults to false). plugin-mcp registers one MCP tool per wire name and
   takes its description from the first collection that has it
   (`node_modules/@payloadcms/plugin-mcp/dist/mcp/buildMcpServer.js:94-115`), so the text is written
-  for all collections at once and set on every one of them.
+  for all collections at once and set on every one of them (`src/mcp/instructions.ts`,
+  `src/mcp/registerMcp.ts`). A tool the host switched off on a collection stays off there. A
+  description the host wrote wins: the first one in config order is copied to the collections that
+  have none, so the model reads the host's text whichever collection plugin-mcp meets first. A rule
+  names a folders tool only when that tool is on.
 - It switches the stock tools off on `folder-redirects`, `folder-operations` and the
   `folders-tree-state` global, which plugin-mcp otherwise exposes by default because the folders
   plugin adds them before plugin-mcp runs (`node_modules/@payloadcms/plugin-mcp/dist/mcp/sanitizeMCPConfig.js:13-24`,
   `84-125`). Access already protects them; switching them off removes noise from the tool list. A
   value the host set for these collections wins.
-- It appends about 20 lines to the server `instructions`: the tree model in one paragraph, the
-  preview then confirm then apply rule, "ask for every language, or say the others fall back", and
-  "after a write, report the new URLs from the result, not from memory".
+- It appends about 20 lines to the server `instructions`, after any text the host set: the tree model
+  in one paragraph, the preview then confirm then apply rule, "ask for every language, or say the
+  others fall back", and "after a write, report the new URLs from the result, not from memory". The
+  text is one exported string, `foldersMcpInstructions` (`src/mcp/instructions.ts`), so a skill can
+  reuse it. `mcp: { instructions: false }` sends none.
 
 ## 4. The skill
 
@@ -479,9 +508,8 @@ The server instructions and the skill should be built from one source string so 
 
 Register both plugins, give the agent's user an API key, and keep the stock tools off on collections
 the agent should not touch. The folders plugin finds plugin-mcp in the config and adds its tools,
-descriptions and instructions to plugin-mcp's options itself. This config compiles today against
-payload 4.0.0-beta.5 and plugin-mcp 4.0.0-beta.5; the folders plugin's `mcp` option, which this page
-proposes, is not in it.
+descriptions and instructions to plugin-mcp's options itself. This config compiles against payload
+4.0.0-beta.5 and plugin-mcp 4.0.0-beta.5, with the folders plugin's `mcp` option left at its default.
 
 ```ts
 import { foldersPlugin } from "@focus-reactive/payload-plugin-folders";
@@ -535,14 +563,22 @@ export default buildConfig({
 The agent's client then connects to `POST /api/mcp` with the header
 `Authorization: users API-Key <key>` (not `Bearer`).
 
-The proposed folders option:
+The folders plugin's `mcp` option:
 
-- `mcp` absent: the tools, descriptions and instructions are added when plugin-mcp is registered,
-  and nothing happens when it is not.
+- `mcp` absent: the tools, stock tool descriptions, switch-offs and instructions are added when
+  plugin-mcp is registered, and nothing happens when it is not.
 - `mcp: false`: nothing is added. The loud refusal on `updateDocument` stays, because it protects
-  data, not the tool list.
-- `mcp: { tools: { createFolder: false } }`: leaves one tool out. `mcp: { instructions: false }`:
-  sends no server instructions.
+  data, not the tool list, and keeps the text that names the admin and REST.
+- `mcp: { tools: { createFolder: false } }`: leaves one tool out, by the name the model sees.
+  `mcp: { instructions: false }`: sends no server instructions of the plugin's own.
+
+```ts
+foldersPlugin({
+  collections: { pages: true },
+  // Leave one tool out, and send no server instructions of the plugin's own.
+  mcp: { instructions: false, tools: { createFolder: false } },
+}),
+```
 
 How the folders plugin reaches plugin-mcp's options: Payload 4 hands every plugin a map of the other
 plugins, typed by slug (`node_modules/payload/dist/config/types.d.ts:167-177`, marked experimental),
@@ -553,8 +589,11 @@ replace it, even when the plugin was registered without options"
 (`node_modules/@payloadcms/plugin-mcp/dist/index.js:5-7`) and the folders plugin has the default 0, so
 the folders plugin runs first and replaces `plugins["@payloadcms/plugin-mcp"].options` with a merged
 copy. The host's own entries win on every key. plugin-mcp's package augments that map with its
-options type (`node_modules/@payloadcms/plugin-mcp/dist/index.d.ts:2-10`). This path is read from the
-source and not yet run; the build plan tests it first.
+options type (`node_modules/@payloadcms/plugin-mcp/dist/index.d.ts:2-10`). The merge is run and
+tested in `tests/int/mcp-extension.int.test.ts`, which boots a site with plugin-mcp registered with
+options and with none, a host tool under the same name as a plugin tool, a host's other tools, no
+plugin-mcp at all, `mcp: false`, a tool left out, and the plugin disabled. The descriptions,
+switch-offs and instructions are tested in `tests/int/mcp-stock-tools.int.test.ts`.
 
 ## 6. Limits and open points
 
@@ -572,7 +611,8 @@ source and not yet run; the build plan tests it first.
   could follow the same pattern; it was not part of the trial.
 - **`updateDocument` publishes by default.** Its `draft` argument defaults to false, so an agent's
   edit of a page writes the published version: in task 2 the published row's `updatedBy` changed. The
-  stock description should say so; whether the folders plugin should do more is the host's call.
+  stock description and the server instructions now say so; whether the folders plugin should do more
+  is the host's call.
 - **Delete, duplicate and publish of a selection** have their own previews in the plugin (`delete/preview`,
   decision 32) and are left out to keep the set small. The stock `deleteDocuments` refuses a
   non-empty folder already (README line 1189).

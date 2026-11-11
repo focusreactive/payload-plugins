@@ -12,7 +12,8 @@ Contents: [Install](#install), [Install on existing content](#install-on-existin
 [Configuration reference](#configuration-reference), [Data model](#data-model),
 [Reading content](#reading-content), [Frontend recipes](#frontend-recipes),
 [Redirects and the mirror](#redirects-and-the-redirects-plugin-mirror), [Access](#access),
-[Locales](#locales), [The admin](#the-admin), [Verify and repair](#verify-and-repair),
+[Locales](#locales), [The admin](#the-admin), [AI agents (MCP)](#ai-agents-mcp),
+[Verify and repair](#verify-and-repair),
 [The tree lock](#the-tree-lock), [Limitations](#limitations),
 [Dev app, seed and tests](#dev-app-seed-and-tests).
 
@@ -1398,6 +1399,34 @@ access functions answer `true`. Beyond that:
   counted with one `count` query. Counts stay exact either way.
 - A page whose folder the user cannot read comes back with `fullPath: ""`, `depth: null` and no
   `ancestorIds`. Its place in the tree is not theirs to know, and none is invented.
+
+## AI agents (MCP)
+
+When `@payloadcms/plugin-mcp` is registered, the plugin gives an AI agent the same safeguards the
+admin gives a person: every language in view, and a confirmation before a live URL changes. Without
+them the stock MCP tools answer "success" for a move that never happened and rename a folder with no
+warning.
+
+The plugin finds plugin-mcp in your `plugins` and adds to its options, whether you passed options or
+none. It adds five tools: `browseTree` (the tree in every language), `createFolder` (a folder with a
+name in each language in one write), `previewMove` and `previewRename` (what a move or a rename does
+to the published URLs in each language, with a confirmation token; they write nothing) and
+`applyTreeChange` (applies a previewed change once the token, the user and the summary check out).
+It also rewrites the descriptions of the stock `updateDocument`, `createDocuments` and
+`findDocuments` on folders and page collections, switches the stock tools off on the plugin's own
+collections and global, and appends instructions to the MCP server's own. The stock `updateDocument`
+refuses a change of `folder`, `parent`, `orderKey` or a folder `slug`, and its message names the
+tools above. The refusal stays whatever the `mcp` option says, because it protects data.
+
+The `mcp` option controls what is added. `false` adds nothing. `{ tools: { createFolder: false } }`
+leaves one tool out, by the name the model sees. `{ instructions: false }` sends no instructions of
+the plugin's own. Whatever you set for plugin-mcp yourself (a tool under the same name, a stock tool
+description, the server instructions) wins.
+
+[docs/agents.md](docs/agents.md) has the trial that led to this, the full design of each tool, the
+confirmation token, the limits (a token proves the model saw the preview, not that a person agreed,
+so keep `applyTreeChange` off a client's auto-approve list when you need a hard gate), and a setup
+example.
 
 ## Verify and repair
 
