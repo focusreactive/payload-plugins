@@ -20,7 +20,7 @@ import {
   noLocaleKey,
 } from "./locales.js";
 import { pagePathIn } from "./pagePaths.js";
-import { effectiveSegmentsOf } from "./pageRecords.js";
+import { effectiveSegmentsOf, isLiveOnlyThroughFallback } from "./pageRecords.js";
 import { createNestedRequest } from "./nestedRequest.js";
 import { readLatestStatuses, resolveTreeStatus } from "./status.js";
 import { getPageDefaultLocale, pageDepthIn } from "./uniqueness.js";
@@ -454,6 +454,9 @@ const toPageItem = ({
       latestStatus: latestStatuses.get(itemKey({ collection: page.slug, id })),
       mainStatus: row._status,
     }),
+    ...(isLiveOnlyThroughFallback(row._status, view.pageKey, source.hasDrafts, fallbackKey)
+      ? { statusIsFallback: true }
+      : {}),
     structureRevision: typeof row.structureRevision === "number" ? row.structureRevision : 0,
     title: pickLocalized(row[page.titleField], view.pageKey, view.defaultPageKey) || untitledTitle,
     titleIsFallback:

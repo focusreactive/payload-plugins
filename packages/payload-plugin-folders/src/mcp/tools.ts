@@ -1,7 +1,10 @@
-import type { ResolvedOptions } from "../types.js";
-import type { FoldersMcpTool } from "./types.js";
+import { buildBrowseTreeTool } from "./browseTree.js";
+import type { BuildFoldersMcpTools } from "./types.js";
 
 /** Every tool the plugin offers to plugin-mcp, by the name the model sees. */
-export const buildFoldersMcpTools = (
-  _options: ResolvedOptions
-): Record<string, FoldersMcpTool> => ({});
+export const buildFoldersMcpTools: BuildFoldersMcpTools = (options) => ({
+  browseTree: buildBrowseTreeTool(options, [
+    options.folders.slug,
+    ...Object.keys(options.collections),
+  ]),
+});

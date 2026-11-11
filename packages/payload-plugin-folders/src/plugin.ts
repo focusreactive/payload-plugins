@@ -57,7 +57,7 @@ export const foldersPlugin = definePlugin<FoldersPluginOptions>({
   slug: pluginSlug,
   plugin: ({ config, options, plugins }) => {
     const resolved = normalizeOptions(options ?? { collections: {} }, config);
-    addToolsToMcpPlugin(plugins, resolved);
+    addToolsToMcpPlugin(plugins, resolved, config);
 
     const hostCollections = stripUniqueFromSegmentFields(config.collections ?? [], resolved);
     const pageCollections = hostCollections.map(

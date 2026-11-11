@@ -254,6 +254,8 @@ export type TreeItem = {
   slugIsFallback: boolean;
   /** Pages only. */
   status?: TreeStatus;
+  /** Pages only, present when true: the requested locale is live only because the default locale is. */
+  statusIsFallback?: true;
   structureRevision: number;
   title: string;
   /** True when the requested locale has no name or title of its own, so the default locale's is shown. */

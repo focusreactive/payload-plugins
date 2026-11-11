@@ -44,6 +44,28 @@ export const isPublishedInLocale = (
   return status === "published";
 };
 
+/**
+ * Whether locale `key` is live only because the fallback locale is: the status has a slot per
+ * locale, this locale has none of its own, and the fallback locale's is published.
+ */
+export const isLiveOnlyThroughFallback = (
+  status: unknown,
+  key: string,
+  hasDrafts: boolean,
+  fallbackKey: string | null
+): boolean => {
+  if (!hasDrafts || fallbackKey === null || key === fallbackKey) {
+    return false;
+  }
+  if (!status || typeof status !== "object") {
+    return false;
+  }
+  const byLocale = status as Record<string, unknown>;
+  const own = byLocale[key];
+
+  return (own === undefined || own === null) && byLocale[fallbackKey] === "published";
+};
+
 /** The locale slots a status leaves live: published themselves, or served through the fallback locale. */
 export const liveLocaleKeysOf = (
   status: unknown,

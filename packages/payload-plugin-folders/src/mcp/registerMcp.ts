@@ -1,4 +1,4 @@
-import type { Plugin, PluginsMap } from "payload";
+import type { Config, Plugin, PluginsMap } from "payload";
 
 import { mcpPluginSlug } from "../constants.js";
 import type { ResolvedOptions } from "../types.js";
@@ -27,12 +27,16 @@ export const selectFoldersMcpTools = (
  * reads `options` only when it runs, which also covers a host that registered plugin-mcp with none.
  * What the host set wins on every name.
  */
-export const addToolsToMcpPlugin = (plugins: PluginsMap, options: ResolvedOptions): void => {
+export const addToolsToMcpPlugin = (
+  plugins: PluginsMap,
+  options: ResolvedOptions,
+  config: Config
+): void => {
   const mcpPlugin: Plugin | undefined = plugins[mcpPluginSlug];
   if (!mcpPlugin || options.disabled) {
     return;
   }
-  const tools = selectFoldersMcpTools(options, buildFoldersMcpTools(options));
+  const tools = selectFoldersMcpTools(options, buildFoldersMcpTools(options, config));
   if (Object.keys(tools).length === 0) {
     return;
   }
