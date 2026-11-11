@@ -1,8 +1,13 @@
+import type { PayloadRequest } from "payload";
+
+import { findRefusedChecks } from "../core/access.js";
 import { badRequest } from "../core/badRequest.js";
+import { buildFolderEditPlan } from "../core/folderPreview.js";
 import type { FolderEditPlan } from "../core/folderPreview.js";
 import type { FolderRecord } from "../core/folderRecords.js";
 import { noLocaleKey } from "../core/locales.js";
-import type { FolderId } from "../types.js";
+import type { MoveBlock } from "../core/move.js";
+import type { FolderId, ResolvedOptions } from "../types.js";
 import { describeUrlChanges, joinWords, pluralize, urlSentence } from "./moveChanges.js";
 import type { UrlChange } from "./moveChanges.js";
 import { languageName } from "./locales.js";
@@ -147,3 +152,69 @@ export const pickStored = (
   keys: string[]
 ): Record<string, string | null> =>
   Object.fromEntries(keys.map((key) => [key, values[key] || null]));
+
+/**
+ * Plans a rename as the save would: a slug change through the folder edit plan, a name change by
+ * the folder's update access alone. The preview and the apply both plan through this.
+ */
+export const planRename = async ({
+  options,
+  req,
+  request,
+  stored,
+}: {
+  options: ResolvedOptions;
+  req: PayloadRequest;
+  request: RenameRequest;
+  stored: FolderRecord;
+}): Promise<FolderEditPlan> => {
+  if (Object.keys(request.slug).length > 0) {
+    return buildFolderEditPlan(
+      req,
+      { folder: request.folder, redirects: request.redirects, slugs: request.slug },
+      { overrideAccess: false }
+    );
+  }
+
+  // A name change moves no URL, so the folder edit plan has nothing to check; the save still asks
+  // the folder's update access, and the preview should say so before the user is asked.
+  const refused = await findRefusedChecks({
+    checks: [
+      {
+        collection: options.folders.slug,
+        data: { name: request.name },
+        id: stored.id,
+        key: "update",
+        operation: "update",
+      },
+    ],
+    req,
+  });
+  const blocked: MoveBlock[] = refused.has("update")
+    ? [
+        {
+          item: { collection: options.folders.slug, id: stored.id },
+          message: "You are not allowed to change this folder",
+          reason: "forbidden",
+        },
+      ]
+    : [];
+
+  return {
+    changes: [],
+    preview: {
+      blocked,
+      droppedItems: [],
+      foldersRewritten: 0,
+      mirrorRowsToWrite: 0,
+      ok: blocked.length === 0,
+      orderKeys: {},
+      redirectRowsToWrite: 0,
+      samples: [],
+      targetFolderId: stored.parent,
+      urlChanges: { draftOnly: 0, published: 0, publishedAcrossLocales: 0 },
+      warnings: [],
+    },
+    redirects: request.redirects,
+  };
+};

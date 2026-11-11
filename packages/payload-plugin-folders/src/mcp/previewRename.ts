@@ -1,7 +1,6 @@
 import type { PayloadRequest } from "payload";
 
-import { findRefusedChecks, findUnreadableItems } from "../core/access.js";
-import { buildFolderEditPlan } from "../core/folderPreview.js";
+import { findUnreadableItems } from "../core/access.js";
 import type { FolderEditPlan } from "../core/folderPreview.js";
 import { readFolderRecord } from "../core/folderRecords.js";
 import type { FolderRecord } from "../core/folderRecords.js";
@@ -11,7 +10,6 @@ import {
   getFolderLocaleKeys,
   noLocaleKey,
 } from "../core/locales.js";
-import type { MoveBlock } from "../core/move.js";
 import { slugify } from "../core/slugify.js";
 import { folderPathIn } from "../core/uniqueness.js";
 import { parseId } from "../endpoints/request.js";
@@ -26,7 +24,7 @@ import {
 } from "./moveChanges.js";
 import type { UrlChange } from "./moveChanges.js";
 import { languageName, readLocaleValues } from "./locales.js";
-import { describeRenameChanges, pickStored } from "./renameChanges.js";
+import { describeRenameChanges, pickStored, planRename } from "./renameChanges.js";
 import type { RenameChanges, RenameRequest } from "./renameChanges.js";
 import { runTool, toolRefusal } from "./toolResult.js";
 import type { FoldersMcpTool, FoldersMcpToolArguments } from "./types.js";
@@ -66,68 +64,6 @@ const toRequest = ({
   redirects,
   slug,
 });
-
-const planRename = async ({
-  options,
-  req,
-  request,
-  stored,
-}: {
-  options: ResolvedOptions;
-  req: PayloadRequest;
-  request: RenameRequest;
-  stored: FolderRecord;
-}): Promise<FolderEditPlan> => {
-  if (Object.keys(request.slug).length > 0) {
-    return buildFolderEditPlan(
-      req,
-      { folder: request.folder, redirects: request.redirects, slugs: request.slug },
-      { overrideAccess: false }
-    );
-  }
-
-  // A name change moves no URL, so the folder edit plan has nothing to check; the save still asks
-  // the folder's update access, and the preview should say so before the user is asked.
-  const refused = await findRefusedChecks({
-    checks: [
-      {
-        collection: options.folders.slug,
-        data: { name: request.name },
-        id: stored.id,
-        key: "update",
-        operation: "update",
-      },
-    ],
-    req,
-  });
-  const blocked: MoveBlock[] = refused.has("update")
-    ? [
-        {
-          item: { collection: options.folders.slug, id: stored.id },
-          message: "You are not allowed to change this folder",
-          reason: "forbidden",
-        },
-      ]
-    : [];
-
-  return {
-    changes: [],
-    preview: {
-      blocked,
-      droppedItems: [],
-      foldersRewritten: 0,
-      mirrorRowsToWrite: 0,
-      ok: blocked.length === 0,
-      orderKeys: {},
-      redirectRowsToWrite: 0,
-      samples: [],
-      targetFolderId: stored.parent,
-      urlChanges: { draftOnly: 0, published: 0, publishedAcrossLocales: 0 },
-      warnings: [],
-    },
-    redirects: request.redirects,
-  };
-};
 
 const describeOption = (planned: PlannedRename) => ({
   confirmationToken: planned.token,

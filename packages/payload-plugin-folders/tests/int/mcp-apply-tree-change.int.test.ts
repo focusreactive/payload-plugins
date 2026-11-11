@@ -3,10 +3,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { stepOperation } from "../../src/core/operations.js";
 import { createTestRequest } from "../helpers/treeFixtures.js";
-import {
-  issueConfirmationToken,
-  setConfirmationTokenClock,
-} from "../../src/mcp/confirmationToken.js";
+import { setConfirmationTokenClock } from "../../src/mcp/confirmationToken.js";
 import { setMirrorStepBudgetMs } from "../../src/mcp/stepMirror.js";
 import { moveItems } from "../../src/server/index.js";
 import { getTestPayload } from "../helpers/getTestPayload.js";
@@ -308,24 +305,6 @@ describe("applyTreeChange refuses before it writes", () => {
       setConfirmationTokenClock(realClock);
     }
     await expectNothingMoved(payload, tree);
-  });
-
-  it("answers a rename token that it is not available yet", async () => {
-    const { payload } = harness;
-    const [admin] = (await payload.find({ collection: "users", limit: 1, overrideAccess: true }))
-      .docs;
-    const token = issueConfirmationToken({
-      digest: "digest",
-      kind: "rename",
-      request: { folder: 1 },
-      secret: payload.secret,
-      user: { collection: "users", id: admin.id },
-    });
-
-    const result = await apply(harness, { confirmationToken: token });
-
-    expect(result.isError).toBe(true);
-    expect(result.text).toContain("not available yet");
   });
 });
 

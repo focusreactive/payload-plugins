@@ -4,18 +4,33 @@ import type { PayloadRequest } from "payload";
 import { toCollectionSlug } from "../collectionSlug.js";
 import { applyMove } from "../core/applyMove.js";
 import { readFolderRecord } from "../core/folderRecords.js";
+import type { FolderRecord } from "../core/folderRecords.js";
 import { itemKey } from "../core/itemKey.js";
 import { readTitles } from "../core/issueTitles.js";
-import { noLocaleKey } from "../core/locales.js";
+import {
+  effectiveSegment,
+  getDefaultLocaleKey,
+  getFolderLocaleKeys,
+  noLocaleKey,
+  withoutEmptyValues,
+} from "../core/locales.js";
 import { MoveBlockedError, summarizePageChanges } from "../core/move.js";
 import type { MoveRequest } from "../core/move.js";
+import { withTreeLock } from "../core/treeLock.js";
 import { folderPathIn, getPageLocaleKeys, queryLocaleOf } from "../core/uniqueness.js";
 import { parseMoveRequest } from "../endpoints/request.js";
+import {
+  mcpRenameConfirmedContextKey,
+  mirrorOperationContextKey,
+  slugNotSentContextKey,
+} from "../hooks/context.js";
 import type { FolderId, ItemRef, ResolvedOptions } from "../types.js";
 import { verifyConfirmationToken } from "./confirmationToken.js";
 import type { ConfirmationTokenBody } from "./confirmationToken.js";
 import { describeMoveChanges } from "./moveChanges.js";
 import type { MoveChanges } from "./moveChanges.js";
+import { describeRenameChanges, planRename, readRenameRequest } from "./renameChanges.js";
+import type { RenameChanges, RenameRequest } from "./renameChanges.js";
 import { stepQueuedOperation } from "./stepMirror.js";
 import { runTool, toolRefusal, toolSuccess } from "./toolResult.js";
 import type { FoldersMcpTool, FoldersMcpToolArguments, FoldersMcpToolResponse } from "./types.js";
@@ -93,17 +108,19 @@ const refuseUnlessConfirmed = ({
   body,
   confirmedSummary,
   fresh,
+  previewTool,
 }: {
   body: ConfirmationTokenBody;
   confirmedSummary: unknown;
-  fresh: MoveChanges;
+  fresh: { digest: string; needsConfirmation: boolean; summary: string };
+  previewTool: "previewMove" | "previewRename";
 }): void => {
   if (fresh.digest !== body.digest) {
     throw new RefusedBeforeWrite(`${treeChangedMessage} The change would now be: ${fresh.summary}`);
   }
   if (fresh.needsConfirmation && confirmedSummary !== fresh.summary) {
     throw new RefusedBeforeWrite(
-      "confirmedSummary must be the summary previewMove returned for this change, word for word, after the user has seen it and agreed. Nothing was written."
+      `confirmedSummary must be the summary ${previewTool} returned for this change, word for word, after the user has seen it and agreed. Nothing was written.`
     );
   }
 };
@@ -185,7 +202,7 @@ const applyMoveChange = async ({
     result = await applyMove(req, request, {
       beforeWrite: (plan) => {
         fresh = describeMoveChanges(plan);
-        refuseUnlessConfirmed({ body, confirmedSummary, fresh });
+        refuseUnlessConfirmed({ body, confirmedSummary, fresh, previewTool: "previewMove" });
       },
       options,
       overrideAccess: false,
@@ -249,6 +266,171 @@ const applyMoveChange = async ({
   });
 };
 
+const isStaleRename = (request: RenameRequest, stored: FolderRecord): boolean =>
+  Object.entries(request.expected.name).some(
+    ([key, text]) => (stored.name[key] || null) !== text
+  ) ||
+  Object.entries(request.expected.slug).some(([key, text]) => (stored.slug[key] || null) !== text);
+
+/** The values a rename writes: the touched languages over the ones the folder has of its own. */
+const buildRenameData = ({
+  isLocalized,
+  request,
+  stored,
+}: {
+  isLocalized: boolean;
+  request: RenameRequest;
+  stored: FolderRecord;
+}): Record<string, unknown> => {
+  const hasName = Object.keys(request.name).length > 0;
+  const hasSlug = Object.keys(request.slug).length > 0;
+  if (!isLocalized) {
+    return {
+      ...(hasName ? { name: request.name[noLocaleKey] } : {}),
+      ...(hasSlug ? { slug: request.slug[noLocaleKey] } : {}),
+    };
+  }
+
+  // The write carries every language the folder holds of its own, so a rename in one language
+  // neither drops nor creates a row for another.
+  return {
+    ...(hasName ? { name: { ...withoutEmptyValues(stored.name), ...request.name } } : {}),
+    ...(hasSlug ? { slug: { ...withoutEmptyValues(stored.slug), ...request.slug } } : {}),
+  };
+};
+
+const applyRenameChange = async ({
+  body,
+  confirmedSummary,
+  options,
+  req,
+}: {
+  body: ConfirmationTokenBody;
+  confirmedSummary: unknown;
+  options: ResolvedOptions;
+  req: PayloadRequest;
+}): Promise<FoldersMcpToolResponse> => {
+  const request = readRenameRequest(body.request);
+  const { payload } = req;
+  const keys = getFolderLocaleKeys(payload, options);
+  const defaultKey = getDefaultLocaleKey(payload, options);
+  const isLocalized = !(keys.length === 1 && keys[0] === noLocaleKey);
+  let fresh: RenameChanges | null = null;
+  let mirrorOperationId: FolderId | undefined;
+
+  await withTreeLock(req, async () => {
+    const stored = await readFolderRecord(req, options, request.folder);
+    if (!stored || isStaleRename(request, stored)) {
+      throw new RefusedBeforeWrite(treeChangedMessage);
+    }
+    const plan = await planRename({ options, req, request, stored });
+    if (!plan.preview.ok) {
+      const reasons = [...new Set(plan.preview.blocked.map(({ message }) => message))].join(". ");
+      throw new RefusedBeforeWrite(`${treeChangedMessage} It cannot be done now: ${reasons}.`);
+    }
+    fresh = describeRenameChanges({ keys, plan, request });
+    refuseUnlessConfirmed({ body, confirmedSummary, fresh, previewTool: "previewRename" });
+
+    // The save below shares this request. Payload writes the locale and the merged context into
+    // it, so they are put back afterwards and the marker that lets the slug through cannot reach a
+    // later call on the same request.
+    const { context, fallbackLocale, locale } = req;
+    try {
+      await payload.update({
+        collection: options.folders.slug,
+        context: {
+          foldersRedirects: request.redirects,
+          [mcpRenameConfirmedContextKey]: String(request.folder),
+          [slugNotSentContextKey]: true,
+        },
+        data: buildRenameData({ isLocalized, request, stored }),
+        depth: 0,
+        id: request.folder,
+        overrideAccess: false,
+        req,
+        ...(isLocalized ? { locale: "all" as never } : {}),
+      } as never);
+      const queued = req.context[mirrorOperationContextKey];
+      if (typeof queued === "number" || typeof queued === "string") {
+        mirrorOperationId = queued;
+      }
+    } finally {
+      req.context = context;
+      req.fallbackLocale = fallbackLocale;
+      req.locale = locale;
+    }
+  });
+  const applied = fresh as RenameChanges | null;
+  if (!applied) {
+    return toolRefusal("The rename was applied, but its plan was not kept to report on.");
+  }
+
+  const mirror =
+    mirrorOperationId === undefined
+      ? null
+      : await stepQueuedOperation({ operationId: mirrorOperationId, options, req });
+  const mirrorBatch =
+    mirror && mirrorOperationId !== undefined
+      ? {
+          done: mirror.done,
+          ...(mirror.error ? { error: mirror.error } : {}),
+          operationId: mirrorOperationId,
+          status: mirror.status,
+          total: mirror.total,
+        }
+      : null;
+
+  const storedNow = await readFolderRecord(req, options, request.folder);
+  const folder = {
+    fullPath: Object.fromEntries(
+      getPageLocaleKeys(payload).map((key) => [
+        key,
+        storedNow ? folderPathIn(storedNow, key, options, payload) : null,
+      ])
+    ),
+    id: request.folder,
+    name: Object.fromEntries(
+      keys.map((key) => [
+        key,
+        storedNow ? storedNow.name[key] || storedNow.name[defaultKey] || null : null,
+      ])
+    ),
+    slug: Object.fromEntries(
+      keys.map((key) => [key, storedNow ? effectiveSegment(storedNow.slug, key, defaultKey) : null])
+    ),
+  };
+
+  const where = Object.entries(folder.fullPath)
+    .map(([key, path]) => `${key === noLocaleKey ? "" : `${key} `}${path ?? "(not readable)"}`)
+    .join(", ");
+  const languages = Object.entries(applied.publishedUrlChanges.byLocale)
+    .map(([key, count]) => `${key} ${count}`)
+    .join(", ");
+  const text = [
+    "Done.",
+    `- The folder is now at ${where}`,
+    `Published URLs changed: ${applied.publishedUrlChanges.total}${languages ? ` (${languages})` : ""}. Redirect rows written: ${applied.redirects.rowsToWrite}.`,
+    "Tell the user these new URLs, read back from the site after the change.",
+  ];
+  if (mirrorBatch && mirrorBatch.status !== "done") {
+    text.push(
+      `The redirects plugin's rows are still being written: operation ${mirrorBatch.operationId}, ${mirrorBatch.done} of ${mirrorBatch.total} done${mirrorBatch.error ? `, last error: ${mirrorBatch.error}` : ""}. The admin finishes it when it steps that operation.`
+    );
+  }
+
+  return toolSuccess(text.join("\n"), {
+    done: true,
+    folder,
+    ...(mirrorBatch ? { mirrorBatch } : {}),
+    publishedUrlChanges: applied.publishedUrlChanges,
+    redirects: {
+      enabled: applied.redirects.enabled,
+      redirectsPluginRows: applied.redirects.redirectsPluginRows,
+      rowsWritten: applied.redirects.rowsToWrite,
+    },
+  });
+};
+
 const applyTreeChange = ({
   input,
   options,
@@ -260,7 +442,7 @@ const applyTreeChange = ({
     }
     if (typeof input.confirmationToken !== "string") {
       return toolRefusal(
-        "confirmationToken is required: the token previewMove returned. Preview the change first."
+        "confirmationToken is required: the token previewMove or previewRename returned. Preview the change first."
       );
     }
     const verdict = verifyConfirmationToken({
@@ -272,9 +454,12 @@ const applyTreeChange = ({
       return toolRefusal(verdict.message);
     }
     if (verdict.body.kind === "rename") {
-      return toolRefusal(
-        "Applying a rename is not available yet. Nothing was changed. Tell the user a rename has to be done in the admin for now."
-      );
+      return applyRenameChange({
+        body: verdict.body,
+        confirmedSummary: input.confirmedSummary,
+        options,
+        req,
+      });
     }
 
     return applyMoveChange({
@@ -294,20 +479,20 @@ export const buildApplyTreeChangeTool = (options: ResolvedOptions): FoldersMcpTo
     readOnlyHint: false,
     title: "Apply a previewed change to the content tree",
   },
-  description: `Applies a change that previewMove returned a confirmationToken for. It is the only tool that moves pages or folders, and it cannot run without a preview.
+  description: `Applies a change that previewMove or previewRename returned a confirmationToken for. It is the only tool that moves pages or folders or changes a folder's name or URL segment, and it cannot run without a preview.
 
-Before you call it, show the user the preview's summary and askUser questions and get their answer. When the preview said needsConfirmation is true, pass confirmedSummary: the preview's summary, word for word. When it said false (a reorder, or a move of draft pages only), the token alone is enough.
+Before you call it, show the user the preview's summary and askUser questions and get their answer. When the preview said needsConfirmation is true, pass confirmedSummary: the preview's summary, word for word. When it said false (a reorder, a move of draft pages only, or a name change that moves no URL), the token alone is enough. A rename preview returns one token for each option, so use the token of the option the user chose.
 
 The tool plans the change again and compares it with the preview. If the tree changed in between, or the token was used already, it writes nothing and tells you to preview again. Preview again and ask the user again; do not reuse the old answer for a different change. It also refuses a token from another user and one older than 15 minutes.
 
-On success it returns the new URL of every moved item in every language, read back after the write, the published URLs that changed, and the redirect rows written. Tell the user those URLs, not the ones you expected. If the redirects plugin's rows are still being written, the answer names the operation. You can only apply what your own account may do.`,
+On success it returns the new URL of every moved item, or of the renamed folder, in every language, read back after the write, the published URLs that changed, and the redirect rows written. Tell the user those URLs, not the ones you expected. If the redirects plugin's rows are still being written, the answer names the operation. You can only apply what your own account may do.`,
   handler: ({ input, req }) =>
     applyTreeChange({ input: input as Record<string, unknown>, options, req }),
   input: {
     additionalProperties: false,
     properties: {
       confirmationToken: {
-        description: "The confirmationToken from previewMove, unchanged.",
+        description: "The confirmationToken from previewMove or previewRename, unchanged.",
         type: "string",
       },
       confirmedSummary: {

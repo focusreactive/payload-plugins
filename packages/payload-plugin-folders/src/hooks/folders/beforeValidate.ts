@@ -31,7 +31,11 @@ export const buildFolderBeforeValidate =
     if (writeKey === "all") {
       const names = (data.name ?? {}) as Record<string, string | null>;
       const slugs = { ...((data.slug ?? {}) as Record<string, string | null>) };
-      for (const [localeKey, name] of Object.entries(names)) {
+      // Payload hands an update the stored slug of every locale, a locale without its own as
+      // null, which reads as "sent empty" below. A caller that names the slugs it wants set the
+      // marker, so a locale that falls back to the default slug does not get one made from its name.
+      const isDerivingSlugs = !req.context?.[slugNotSentContextKey];
+      for (const [localeKey, name] of isDerivingSlugs ? Object.entries(names) : []) {
         if (
           isEmptyText(slugs[localeKey]) &&
           !isEmptyText(name) &&
