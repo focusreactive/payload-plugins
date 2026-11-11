@@ -53,7 +53,7 @@ const refsOf = (issue: TreeIssue, foldersSlug: string): ItemRef[] => {
 };
 
 /** The title of every item named, in one query per collection and batch. */
-const readTitles = async (
+export const readTitles = async (
   req: PayloadRequest,
   options: ResolvedOptions,
   refs: ItemRef[]

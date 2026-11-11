@@ -30,3 +30,12 @@ export const describeLocales = (
 
 /** The locale a core read takes for a key: `null` on a site without localization. */
 export const toRequestLocale = (key: string): string | null => (key === noLocaleKey ? null : key);
+
+/** A language code as a person reads it ("de" is "German"); the code itself when the runtime has no name. */
+export const languageName = (code: string): string => {
+  try {
+    return new Intl.DisplayNames(["en"], { type: "language" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+};
