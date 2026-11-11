@@ -439,6 +439,16 @@ read both end to end first. Each item: what is wrong or missing, then the decisi
     work. The breadcrumb drop e2e flake was the test clicking Move within dnd-kit's own 50 ms
     click swallow after a drop (`@dnd-kit/core` `detach`), faster than a person can; the test now
     waits until a click reaches the page.
+49. **Agent tools (`docs/agents.md` sections 2, 3 and 5).** The merge into plugin-mcp's options
+    was run and tested before any tool was built. The five tools, the confirmation token, the stock
+    descriptions, the switch-offs, the server instructions and the `mcp` option are built. The
+    stock `updateDocument` keeps refusing a folder slug change (the lead's ruling), and its refusal
+    names `previewRename` and `applyTreeChange` when they are on. `applyMove` takes an optional
+    `beforeWrite(plan)` callback, so `applyTreeChange` compares the plan under the one lock
+    `applyMove` already takes. A `locale: "all"` folder write no longer gives a locale that falls
+    back a slug of its own. The trial rerun found that `createFolder` passed a string parent id to
+    `payload.create` unchanged. It now uses `parseId`. Not built: the skill, a page-slug preview,
+    and delete and duplicate tools.
 
 ### Owner decisions (from spec/review.md, the spec writer's pick applies)
 

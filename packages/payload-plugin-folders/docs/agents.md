@@ -6,7 +6,7 @@ describes what the folders plugin adds so an agent moves, renames and creates co
 editor in the admin does: with every language in view, and with a confirmation before a live URL
 changes.
 
-Status: section 1 describes a trial that was run. Built and tested: the five tools (`browseTree`,
+Status: section 1 describes a trial on the stock tools and its rerun on the built tools. Built and tested: the five tools (`browseTree`,
 `createFolder`, `previewMove`, `previewRename` and `applyTreeChange`); the confirmation token that
 binds a change to the user who previewed it for 15 minutes; the loud refusal on the stock
 `updateDocument`, whose message names the tools when they are on; the descriptions of the stock
@@ -14,8 +14,7 @@ binds a change to the user who previewed it for 15 minutes; the loud refusal on 
 tools switched off on `folder-redirects`, `folder-operations` and the `folders-tree-state` global;
 the server instructions; and the folders plugin's `mcp` option, with the merge into plugin-mcp's
 options that it controls. Not built: a skill (section 4), a preview for a page's own slug, and tools
-for delete and duplicate (section 6). The three trial prompts have not been run again against the
-built tools. Paths are relative to this package unless they start with `node_modules/`, which means
+for delete and duplicate (section 6). Paths are relative to this package unless they start with `node_modules/`, which means
 this package's own `node_modules` (plugin-mcp 4.0.0-beta.5, payload 4.0.0-beta.5).
 
 ## 1. What the trial showed
@@ -31,8 +30,12 @@ instructions, signed in through an API key as a user with the admin role. The pr
 2. "Using the Payload CMS tools, move the page Gift Cards into the Guides folder."
 3. "Using the Payload CMS tools, rename the folder Company to Team."
 
-No agent asked a question before a write. No agent passed a `locale` argument. No agent mentioned
-redirects, German, or which live pages a change touches. No tool returned an error.
+The first trial, on the stock tools only, is described first. The rerun on the built tools, with the
+same prompts and the same model, follows under "The rerun on the built tools".
+
+In the first trial, no agent asked a question before a write. No agent passed a `locale` argument.
+No agent mentioned redirects, German, or which live pages a change touches. No tool returned an
+error.
 
 ### Task 1: the folder was created in English only
 
@@ -128,6 +131,114 @@ The stock tools are generic create, read, update and delete. They do not know th
 tree, that structure changes only through a move, that a URL is per language, or that a URL change
 should be confirmed. The plugin has all of that on the server (`planMove`, `moveItems`,
 `planFolderEdit`, `checkSegment`, the access checks), but only the admin uses it.
+
+### The rerun on the built tools
+
+Run on 11 Nov 2026 on this branch, with the same three prompts, the same model
+(`claude -p --model sonnet`), the same two locales and seed, and the same admin user signed in
+through an API key. What differed:
+
+- The server listed ten tools: the five stock ones plus `browseTree`, `createFolder`, `previewMove`,
+  `previewRename` and `applyTreeChange`. The server instructions arrived in `initialize`.
+- The client ran with `--strict-mcp-config` (this server only), `--tools ""` (no built-in tools) and
+  `--setting-sources ""`, from an empty directory, so no other tools and no user instructions loaded.
+  That directory sat inside this repository's working tree, so Claude Code still attached its git
+  context, the branch and the last five commit subjects, to every session. One agent cited a commit
+  subject in an answer. The subjects name the tools but not what to ask the user. A rerun from a
+  directory outside any git repository would remove this.
+- Each task started from the seed. Task 2 started from a seed that already holds Guides (id 8 under
+  Products, English only), the state the first trial had after its task 1.
+- The first trial needed one prompt per task, because every agent wrote at once. In the rerun every
+  agent stopped and asked, so a second prompt answered it in the same session (`--resume`):
+  1. "Use Anleitungen as the German name, with the slug anleitungen."
+  2. "Yes, go ahead with the move, and keep the redirects."
+  3. "Change the URL too, in English only. Leave the German name and URL as they are."
+
+| Task | First trial, stock tools | Rerun, built tools |
+| --- | --- | --- |
+| 1. Create Guides | Created in English only, German empty | Asked for the German name, then created both languages (see below) |
+| 2. Move Gift Cards | Reported a move that did not happen | Showed both URL changes, asked, then moved and wrote redirects |
+| 3. Rename Company | Changed the label without asking, no URL | Asked label or URL and about German, then renamed the English URL only |
+
+In the first turn no agent wrote anything, and the database after each first turn equalled the seed.
+The first turn ran twice, with the same calls and questions both times.
+
+#### Task 1
+
+First turn: `browseTree {"collection":"folders","search":"Products"}`, then the answer: "The site
+has two languages, English and German, and I need your choice on the German name before I create
+the folder. ... If I leave it out, German will show "Guides" at `/produkte/guides`, which is the
+English fallback. Do you want to give me a German name and slug, for example "Anleitungen" /
+`anleitungen`? Or should I create it with the English fallback for German?"
+
+Second turn, first run: the agent called
+`createFolder {"name":{"de":"Anleitungen","en":"Guides"},"parent":"3","slug":{"de":"anleitungen","en":"guides"}}`
+three times. Each call was refused ("The following field is invalid: Parent", once "This folder no
+longer exists" when it sent `"\"3\""`). It checked the parent with `browseTree` and `findDocuments`,
+did not fall back to the stock `createDocuments` because that "skips the checks `createFolder`
+runs", wrote nothing, and asked the user what to do. The cause was in `createFolder`: its input
+allows a string id, the model sent `"3"`, and the tool passed it unchanged to `payload.create`,
+which refuses a string for a number id. Fixed in `src/mcp/createFolder.ts` (`readParent` now uses
+`parseId`), with a test for the string id in `tests/int/mcp-create-folder.int.test.ts`.
+
+Second turn after the fix (both turns run again in a new session, the first turn asking the same
+question): the first call sent `"parent":"\"3\""`, a string with quote characters inside it, and was
+refused with "parent must be a positive whole number". The second sent `"parent":"3"` and created
+folder 8: Guides, `guides`, `/products/guides` in English and Anleitungen, `anleitungen`,
+`/produkte/anleitungen` in German, with nothing falling back. The answer gave both URLs from the
+result in a table. It then misdescribed its own calls ("rejected the parent id when I passed it as
+the string `"3"`. It accepted the number `3`") and cited the latest commit message, which it could
+only see through the git context noted above. No redirect rows were written, as a create writes
+none.
+
+#### Task 2
+
+First turn: `browseTree {"search":"Gift Cards"}`, `browseTree {"search":"Guides","collection":"folders"}`,
+then `previewMove {"items":[{"collection":"pages","id":9}],"toFolder":"8"}`, then the answer: "I
+haven't moved anything yet. The move changes live URLs, so I need your OK first." It listed
+`/products/gift-cards` to `/products/guides/gift-cards` (en) and `/produkte/gift-cards` to
+`/produkte/guides/gift-cards` (de), said the redirects are on, and asked whether to go ahead and
+whether to keep the redirects.
+
+Second turn: one call,
+`applyTreeChange {"confirmationToken":"<token>","confirmedSummary":"2 published URLs will change across 2 languages. The old URLs will redirect to the new ones."}`,
+which returned `done: true` with no retry. The answer: "I moved Gift Cards into the Guides folder.
+The tool's result shows the new URLs: English: `/products/guides/gift-cards`, German:
+`/produkte/guides/gift-cards`. Two redirects were written ..."
+
+Database after: page 9 is in folder 8 at `/products/guides/gift-cards` and
+`/produkte/guides/gift-cards`. Two new `folder-redirects` rows (`en:/products/gift-cards`,
+`de:/produkte/gift-cards`) and two new redirects plugin rows (`/products/gift-cards`,
+`/de/produkte/gift-cards`), all pointing at page 9.
+
+#### Task 3
+
+First turn: `browseTree {"search":"Company","collection":"folders"}`, then
+`previewRename {"folder":"2","name":{"en":"Team"}}`, then two questions. "Name only, or the URL
+too?", with the label-only option changing no URL and the URL option changing 3 published URLs
+(`/company`, `/company/contact`, `/company/our-team` to `/team/...`) and 1 draft page, with
+redirects. And: "the German name is currently "Unternehmen" and the German URL is `/unternehmen`.
+Should they stay as they are, or be renamed too? ... I won't translate it myself."
+
+Second turn: one call, `applyTreeChange` with the token of the URL option and the summary "The
+English name becomes Team and the English URL segment becomes team. 3 published URLs will change in
+English. 1 draft page will also change URL. The old URLs will redirect to the new ones.", which
+returned `done: true` with no retry. The answer gave the new folder URL `/team` from the result,
+said German is unchanged, and listed the three child URLs from the preview, saying that the result
+gave only their count.
+
+Database after: folder 2 is Team, `team`, `/team` in English and still Unternehmen, `unternehmen`,
+`/unternehmen` in German. About Us, Contact and Our Team are at `/team`, `/team/contact` and
+`/team/our-team` in English and unchanged in German. One new `folder-redirects` row
+(`en:/company`, a folder prefix) and three new redirects plugin rows, one per live page.
+
+#### What the rerun leaves open
+
+- The rename result returns the number of changed URLs per language, not the URLs. The agent filled
+  them in from the preview and said so. Returning them would let it report what was written.
+- The rename result's `redirects.rowsWritten` counts the plugin's own redirect rows (1 folder prefix
+  row) next to `redirectsPluginRows` (3). The agent reported "1 redirect row written", which reads
+  as fewer redirects than there are.
 
 ## 2. The recommendation
 
