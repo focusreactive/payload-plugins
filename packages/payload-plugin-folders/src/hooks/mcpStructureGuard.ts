@@ -13,6 +13,7 @@ import {
   namesOtherOrderKey,
 } from "../core/structureGuard.js";
 import type { FolderId, ResolvedOptions, ResolvedPageCollection } from "../types.js";
+import { isFoldersMcpToolOn } from "../mcp/toolSwitch.js";
 import { isInternalWrite, mcpRenameConfirmedContextKey, slugNotSentContextKey } from "./context.js";
 import { pageStructureFieldNames } from "../constants.js";
 
@@ -42,6 +43,35 @@ const refusalAdvice: Record<RefusedField, string> = {
     "It counts the moves of a document and is raised only by a move, through the folder tree in the admin, POST /api/folders-tree/move or moveItems(). Nothing was saved.",
 };
 
+/**
+ * What to do instead, once the plugin's MCP tools are on: they show the URL changes and ask for a
+ * confirmation, which the admin and the REST endpoints do for a person.
+ */
+const toolAdvice: Record<RefusedField, string> = {
+  folder:
+    "Moving a page changes its live URL in every language, so it goes through the previewMove tool, which shows the URL changes and returns a confirmation token, and then the applyTreeChange tool, after the user confirms. Nothing was saved.",
+  orderKey:
+    "The position in the tree is set by a move or a reorder, which go through the previewMove tool and then the applyTreeChange tool, after the user confirms. Nothing was saved.",
+  parent:
+    "Moving a folder changes the live URL of every page beneath it, in every language, so it goes through the previewMove tool, which shows the URL changes and returns a confirmation token, and then the applyTreeChange tool, after the user confirms. Nothing was saved.",
+  slug: "A folder's slug is part of the live URL of every page beneath it, in every language, so a change goes through the previewRename tool, which shows which live pages change and offers redirects, and then the applyTreeChange tool, after the user confirms. Nothing was saved.",
+  structureRevision:
+    "It counts the moves of a document and is raised only by a move, through the previewMove tool and then the applyTreeChange tool. Nothing was saved.",
+};
+
+/** The tools that answer a refusal of `field`: a move for the structure fields, a rename for the slug. */
+const toolsFor = (field: RefusedField): string[] =>
+  field === "slug" ? ["previewRename", "applyTreeChange"] : ["previewMove", "applyTreeChange"];
+
+const adviceFor = (
+  field: RefusedField,
+  channel: RefusalChannel,
+  options: ResolvedOptions
+): string =>
+  channel === "mcp" && toolsFor(field).every((tool) => isFoldersMcpToolOn(options, tool))
+    ? toolAdvice[field]
+    : refusalAdvice[field];
+
 /** Who sent the update: the stock MCP tool, or any other caller whose field access drops structure values. */
 type RefusalChannel = "api" | "mcp";
 
@@ -50,9 +80,9 @@ const channelPhrases: Record<RefusalChannel, string> = {
   mcp: "through MCP updateDocument",
 };
 
-const refuse = (field: RefusedField, channel: RefusalChannel): never => {
+const refuse = (field: RefusedField, channel: RefusalChannel, options: ResolvedOptions): never => {
   throw new APIError(
-    `"${field}" cannot be changed ${channelPhrases[channel]}. ${refusalAdvice[field]}`,
+    `"${field}" cannot be changed ${channelPhrases[channel]}. ${adviceFor(field, channel, options)}`,
     400,
     {
       field,
@@ -90,7 +120,8 @@ type StoredStructure = {
 const refuseChangedStructure = (
   data: Record<string, unknown>,
   stored: StoredStructure,
-  parentFieldName: "folder" | "parent"
+  parentFieldName: "folder" | "parent",
+  options: ResolvedOptions
 ): void => {
   if (
     data[parentFieldName] !== undefined &&
@@ -99,16 +130,16 @@ const refuseChangedStructure = (
       stored[parentFieldName] ?? null
     )
   ) {
-    refuse(parentFieldName, "mcp");
+    refuse(parentFieldName, "mcp", options);
   }
   if (data.orderKey !== undefined && namesOtherOrderKey(data.orderKey, stored.orderKey)) {
-    refuse("orderKey", "mcp");
+    refuse("orderKey", "mcp", options);
   }
   if (
     data.structureRevision !== undefined &&
     !isSameRevision(data.structureRevision, stored.structureRevision)
   ) {
-    refuse("structureRevision", "mcp");
+    refuse("structureRevision", "mcp", options);
   }
 };
 
@@ -124,7 +155,8 @@ const refuseChangedStructure = (
 const refuseDeliberateStructure = (
   data: Record<string, unknown>,
   stored: StoredStructure,
-  parentFieldName: "folder" | "parent"
+  parentFieldName: "folder" | "parent",
+  options: ResolvedOptions
 ): void => {
   const requestedParent =
     data[parentFieldName] === undefined ? null : normalizeFolderReference(data[parentFieldName]);
@@ -138,7 +170,7 @@ const refuseDeliberateStructure = (
     storedRevision: stored.structureRevision,
   });
   if (edit === "deliberate") {
-    refuse(changesParent ? parentFieldName : "orderKey", "api");
+    refuse(changesParent ? parentFieldName : "orderKey", "api", options);
   }
 };
 
@@ -154,12 +186,13 @@ const refuseStructureEdit = (
   req: PayloadRequest,
   data: Record<string, unknown>,
   stored: StoredStructure,
-  parentFieldName: "folder" | "parent"
+  parentFieldName: "folder" | "parent",
+  options: ResolvedOptions
 ): void => {
   if (isMcpRequest(req)) {
-    refuseChangedStructure(data, stored, parentFieldName);
+    refuseChangedStructure(data, stored, parentFieldName, options);
   } else {
-    refuseDeliberateStructure(data, stored, parentFieldName);
+    refuseDeliberateStructure(data, stored, parentFieldName, options);
   }
 };
 
@@ -203,7 +236,7 @@ export const slugDiffersFromStored = (
  * is written.
  */
 export const buildMcpStructureGuard =
-  (page: ResolvedPageCollection): CollectionBeforeOperationHook =>
+  (page: ResolvedPageCollection, options: ResolvedOptions): CollectionBeforeOperationHook =>
   async ({ args, operation, req }) => {
     const update = args as UpdateArgs;
     if (
@@ -225,7 +258,7 @@ export const buildMcpStructureGuard =
     if (!stored) {
       return args;
     }
-    refuseStructureEdit(req, data, stored, "folder");
+    refuseStructureEdit(req, data, stored, "folder", options);
 
     return args;
   };
@@ -255,20 +288,20 @@ export const buildFolderMcpStructureGuard =
       return args;
     }
     if (update.id === undefined) {
-      return refuse(named[0], isMcp ? "mcp" : "api");
+      return refuse(named[0], isMcp ? "mcp" : "api", options);
     }
 
     const stored = await readFolderRecord(req, options, update.id);
     if (!stored) {
       return args;
     }
-    refuseStructureEdit(req, data, stored, "parent");
+    refuseStructureEdit(req, data, stored, "parent", options);
     const isConfirmedRename = req.context?.[mcpRenameConfirmedContextKey] === String(update.id);
     if (isMcp && data.slug !== undefined && !isConfirmedRename) {
       const writeKey = requestLocaleKey(req.payload, options, req.locale);
       const defaultLocaleKey = getDefaultLocaleKey(req.payload, options);
       if (slugDiffersFromStored(data.slug, stored.slug, writeKey, defaultLocaleKey)) {
-        refuse("slug", "mcp");
+        refuse("slug", "mcp", options);
       }
       // The agent read the default locale's slug as this locale's by fallback and sent it back.
       // Left in the update, the folder's `beforeChange` would store it as this locale's own and

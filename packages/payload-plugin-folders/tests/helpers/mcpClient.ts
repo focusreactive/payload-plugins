@@ -17,6 +17,7 @@ type McpResponseBody = {
   error?: { message: string };
   result?: {
     content?: Array<{ text: string }>;
+    instructions?: string;
     isError?: boolean;
     structuredContent?: unknown;
     tools?: McpToolListing[];
@@ -77,3 +78,17 @@ export const listMcpTools = async (
 /** The HTTP status of `POST /api/mcp`, for a site where the endpoint may not exist. */
 export const mcpEndpointStatus = async (harness: TestPayload): Promise<number> =>
   (await postToMcp(harness, "tools/list", {})).status;
+
+/** The `instructions` the server returns when a client connects, or undefined when it sends none. */
+export const readMcpInstructions = async (harness: TestPayload): Promise<string | undefined> => {
+  const { body } = await postToMcp(harness, "initialize", {
+    capabilities: {},
+    clientInfo: { name: "folders-tests", version: "1.0.0" },
+    protocolVersion: "2025-06-18",
+  });
+  if (!body?.result) {
+    throw new Error(`MCP answered initialize without a result: ${JSON.stringify(body)}`);
+  }
+
+  return body.result.instructions;
+};

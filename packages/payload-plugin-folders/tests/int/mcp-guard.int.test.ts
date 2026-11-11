@@ -107,12 +107,23 @@ const readFolder = async (payload: Payload, id: number): Promise<FolderState> =>
     overrideAccess: true,
   })) as unknown as FolderState;
 
+const toolsByField: Record<string, string[]> = {
+  folder: ["previewMove", "applyTreeChange"],
+  orderKey: ["previewMove", "applyTreeChange"],
+  parent: ["previewMove", "applyTreeChange"],
+  slug: ["previewRename", "applyTreeChange"],
+  structureRevision: ["previewMove", "applyTreeChange"],
+};
+
+/** The refusal names the folders MCP tools that do the change, not the admin or the REST routes. */
 const expectRefusal = (result: ToolResult, field: string) => {
   expect(result.isError).toBe(true);
   expect(result.text).toContain(`"${field}" cannot be changed through MCP updateDocument`);
   expect(result.text).toContain("Nothing was saved.");
-  expect(result.text).not.toContain("previewMove");
-  expect(result.text).not.toContain("applyTreeChange");
+  for (const tool of toolsByField[field]) {
+    expect(result.text).toContain(tool);
+  }
+  expect(result.text).not.toContain("POST /api/folders-tree");
 };
 
 describe("MCP updateDocument on a page", () => {
@@ -126,8 +137,8 @@ describe("MCP updateDocument on a page", () => {
     const result = await updatePage(page.id, { folder: guides.id }, { returning: false });
 
     expectRefusal(result, "folder");
-    expect(result.text).toContain("POST /api/folders-tree/move");
     expect(result.text).toContain("every language");
+    expect(result.text).toContain("after the user confirms");
     expect(await readPage(payload, page.id)).toEqual(before);
     expect(before.folder).toBe(products.id);
     expect(before.fullPath).toBe("/products/gift-cards");
@@ -266,7 +277,7 @@ describe("MCP updateDocument on a folder", () => {
     const result = await updateFolder(company.id, { slug: "team" });
 
     expectRefusal(result, "slug");
-    expect(result.text).toContain("/api/folders-tree/folders/:id/preview");
+    expect(result.text).toContain("which shows which live pages change");
     expect(await readFolder(payload, company.id)).toEqual(before);
   });
 

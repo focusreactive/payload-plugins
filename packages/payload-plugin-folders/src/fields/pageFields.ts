@@ -259,7 +259,7 @@ const addPageHooks = (
     ],
     beforeOperation: [
       ...(hooks.beforeOperation ?? []),
-      buildMcpStructureGuard(options.collections[collection.slug]),
+      buildMcpStructureGuard(options.collections[collection.slug], options),
       buildBulkUpdateGuard(options.collections[collection.slug]),
       buildAcquireTreeLockHook(["create", "update", "restoreVersion", "delete"]),
       selectFullPathInputsHook,
