@@ -14,7 +14,7 @@ import { popFolderSnapshot, rewriteFolderSubtree, writeFolderRow } from "../../c
 import { applyTypeLock, describeTypeLockChange, releaseTypeLock } from "../../core/typeLocks.js";
 import { bumpRevision } from "../../core/treeLock.js";
 import type { FolderId, ResolvedOptions } from "../../types.js";
-import { isInternalWrite } from "../context.js";
+import { isInternalWrite, mirrorOperationContextKey } from "../context.js";
 
 /**
  * The save wrote the request locale's path. Every other locale's path follows from the same
@@ -109,12 +109,15 @@ export const buildFolderAfterChange =
           (current.fullPath[key] || current.fullPath[defaultKey] || "")
       );
       if (hasPathChanged) {
-        const { changes } = await rewriteFolderSubtree({
+        const { changes, mirrorOperationId } = await rewriteFolderSubtree({
           options,
           previousRoot: previous,
           req,
           root: current,
         });
+        if (mirrorOperationId !== undefined) {
+          req.context[mirrorOperationContextKey] = mirrorOperationId;
+        }
         await queueAfterPathChange({ changes, options, reason: "folderUpdate", req });
       }
 

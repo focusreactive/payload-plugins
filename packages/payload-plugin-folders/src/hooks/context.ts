@@ -13,3 +13,15 @@ export const isInternalWrite = (req: PayloadRequest): boolean =>
  * would read as "the caller sent it empty" and derive a slug from the name.
  */
 export const slugNotSentContextKey = "foldersSlugNotSent";
+
+/**
+ * Set by the folder's save hook on the request context when the rename queued a batch of redirects
+ * plugin rows, so a caller that saved the folder can step the batch it started.
+ */
+export const mirrorOperationContextKey = "foldersMirrorOperationId";
+
+/**
+ * Set by `applyTreeChange` to the id of the folder whose rename the user previewed and confirmed,
+ * so the guard on the stock MCP update lets that one write change the slug.
+ */
+export const mcpRenameConfirmedContextKey = "foldersMcpRenameConfirmed";

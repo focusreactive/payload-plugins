@@ -4,6 +4,7 @@ import { buildBrowseTreeTool } from "./browseTree.js";
 import { buildCreateFolderTool } from "./createFolder.js";
 import { describeLocales } from "./locales.js";
 import { buildPreviewMoveTool } from "./previewMove.js";
+import { buildPreviewRenameTool } from "./previewRename.js";
 import type { BuildFoldersMcpTools } from "./types.js";
 
 /** Every tool the plugin offers to plugin-mcp, by the name the model sees. */
@@ -12,14 +13,16 @@ export const buildFoldersMcpTools: BuildFoldersMcpTools = (options, config) => {
   const areFolderTextsLocalized = locales.isLocalized && options.localizeSegments;
 
   const collections = [options.folders.slug, ...Object.keys(options.collections)];
+  const folderKeys = {
+    defaultKey: areFolderTextsLocalized ? locales.defaultLocale : noLocaleKey,
+    keys: areFolderTextsLocalized ? locales.codes : [noLocaleKey],
+  };
 
   return {
     applyTreeChange: buildApplyTreeChangeTool(options),
     browseTree: buildBrowseTreeTool(options, collections),
-    createFolder: buildCreateFolderTool(options, {
-      defaultKey: areFolderTextsLocalized ? locales.defaultLocale : noLocaleKey,
-      keys: areFolderTextsLocalized ? locales.codes : [noLocaleKey],
-    }),
+    createFolder: buildCreateFolderTool(options, folderKeys),
     previewMove: buildPreviewMoveTool(options, collections),
+    previewRename: buildPreviewRenameTool(options, folderKeys),
   };
 };

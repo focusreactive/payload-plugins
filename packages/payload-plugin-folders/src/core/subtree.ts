@@ -286,6 +286,8 @@ export const findPageChanges = async ({
 export type SubtreeRewrite = {
   /** Every full path that changed: the folder, its subfolders and the pages under them. */
   changes: PathChange[];
+  /** The queued batch that writes the redirects plugin's rows, when there were too many to write at once. */
+  mirrorOperationId?: FolderId;
   /** Folder rows written, not counting the root, which the caller saved. */
   rewrittenFolders: number;
 };
@@ -529,7 +531,16 @@ export const rewriteFolderSubtree = async ({
         })
       : [],
   });
-  await settleMirror({ changes, options, req, write: isWritingRows });
+  const { operationId: mirrorOperationId } = await settleMirror({
+    changes,
+    options,
+    req,
+    write: isWritingRows,
+  });
 
-  return { changes, rewrittenFolders };
+  return {
+    changes,
+    ...(mirrorOperationId === null ? {} : { mirrorOperationId }),
+    rewrittenFolders,
+  };
 };

@@ -1,38 +1,17 @@
 import { buildMovePlan } from "../core/move.js";
-import type { MovePlan } from "../core/move.js";
 import { parseMoveRequest } from "../endpoints/request.js";
 import type { ResolvedOptions } from "../types.js";
 import { confirmationTokenLifetimeSeconds, issueConfirmationToken } from "./confirmationToken.js";
 import {
   buildMoveQuestions,
+  describeBlockedPreview,
   describeMoveChanges,
   pickExamples,
   withExpectedState,
 } from "./moveChanges.js";
 import { noLocaleKey } from "../core/locales.js";
 import { runTool, toolRefusal } from "./toolResult.js";
-import type { FoldersMcpTool, FoldersMcpToolArguments, FoldersMcpToolResponse } from "./types.js";
-
-const describeBlocked = (plan: MovePlan): FoldersMcpToolResponse => {
-  const blocked = plan.preview.blocked.map(({ item, locale, message, reason }) => ({
-    item,
-    ...(locale === undefined ? {} : { locale }),
-    message,
-    reason,
-  }));
-  const messages = [...new Set(blocked.map(({ message }) => message))];
-
-  return {
-    content: [
-      {
-        text: `This move cannot be done: ${messages.join(". ")}. Nothing was changed and no confirmation token was issued. Tell the user why, and ask what they want instead.`,
-        type: "text",
-      },
-    ],
-    isError: true,
-    structuredContent: { blocked, ok: false },
-  };
-};
+import type { FoldersMcpTool, FoldersMcpToolArguments } from "./types.js";
 
 const previewMove = ({
   input,
@@ -47,7 +26,7 @@ const previewMove = ({
     const request = await withExpectedState({ options, req, request: requested });
     const plan = await buildMovePlan(req, options, request, { overrideAccess: false });
     if (!plan.preview.ok) {
-      return describeBlocked(plan);
+      return describeBlockedPreview(plan.preview.blocked, "move");
     }
 
     const changes = describeMoveChanges(plan);

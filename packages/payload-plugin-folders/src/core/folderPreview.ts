@@ -2,7 +2,7 @@ import { APIError } from "payload";
 import type { PayloadRequest } from "payload";
 
 import { toCollectionSlug } from "../collectionSlug.js";
-import type { FolderId, ItemRef } from "../types.js";
+import type { FolderId, ItemRef, PathChange } from "../types.js";
 import { findRefusedChecks, forbiddenRenameMessage, isPublishRefusedBeneath } from "./access.js";
 import { normalizeFolderReference, planFolderPaths, readFolderRecord } from "./folderRecords.js";
 import type { FolderRecord } from "./folderRecords.js";
@@ -35,8 +35,28 @@ export type FolderEdit = {
   locale?: string;
   /** `null` for the top level; absent leaves the parent as it is. */
   parent?: FolderId | null;
+  /**
+   * Whether redirect rows are counted. Absent: `context.foldersRedirects` of the request, else the
+   * plugin's `redirects.enabled`, as a save decides.
+   */
+  redirects?: boolean;
   /** The new segment in `locale`; absent leaves the slug as it is. */
   slug?: string;
+  /**
+   * New segments per locale key (a locale code, or `-` when folders are not localized), planned as
+   * one edit: a change of the default locale's segment also moves the locales that fall back to
+   * it, so several locales cannot be planned one at a time and added up. Not with `slug`.
+   */
+  slugs?: Record<string, string>;
+};
+
+/** What `planFolderEdit` answers, with the path changes and the redirect choice behind it. */
+export type FolderEditPlan = {
+  /** Every full path the edit changes: the folder, its subfolders and the pages beneath. */
+  changes: PathChange[];
+  preview: MovePreview;
+  /** Whether `folder-redirects` rows are written for this edit. */
+  redirects: boolean;
 };
 
 const emptyPreview = (blocked: MoveBlock[], targetFolderId: FolderId | null): MovePreview => ({
@@ -69,13 +89,36 @@ const emptyPreview = (blocked: MoveBlock[], targetFolderId: FolderId | null): Mo
 export const planFolderEdit = async (
   req: PayloadRequest,
   edit: FolderEdit,
+  settings: PlanSettings = {}
+): Promise<MovePreview> => (await buildFolderEditPlan(req, edit, settings)).preview;
+
+/** `planFolderEdit` with the path changes the preview counts, for a caller that describes them itself. */
+export const buildFolderEditPlan = async (
+  req: PayloadRequest,
+  edit: FolderEdit,
   { overrideAccess = false }: PlanSettings = {}
-): Promise<MovePreview> => {
+): Promise<FolderEditPlan> => {
   const { payload } = req;
   const options = getResolvedOptions(payload);
   const keys = getFolderLocaleKeys(payload, options);
   const defaultKey = getDefaultLocaleKey(payload, options);
   const folderRef: ItemRef = { collection: options.folders.slug, id: edit.folder };
+  const isWritingRows = edit.redirects ?? shouldWriteRedirects(req, options);
+  const finish = (preview: MovePreview, changes: PathChange[] = []): FolderEditPlan => ({
+    changes,
+    preview,
+    redirects: isWritingRows,
+  });
+
+  if (edit.slug !== undefined && edit.slugs !== undefined) {
+    throw badRequest("Send `slug` or `slugs`, not both");
+  }
+  for (const key of Object.keys(edit.slugs ?? {})) {
+    if (!keys.includes(key)) {
+      throw badRequest(`"${key}" is not a locale of this site`);
+    }
+  }
+  const hasSlugChange = edit.slug !== undefined || edit.slugs !== undefined;
 
   if (edit.locale !== undefined) {
     const locales = payload.config.localization ? payload.config.localization.localeCodes : [];
@@ -97,14 +140,16 @@ export const planFolderEdit = async (
     requestedParent !== null &&
     String(requestedParent.id ?? null) !== String(stored.parent ?? null);
   if (parentChanges) {
-    if (edit.slug !== undefined) {
+    if (hasSlugChange) {
       throw badRequest("Change the parent and the slug in two steps: a move and a rename");
     }
 
-    return planMove(req, { items: [folderRef], toFolder: requestedParent.id }, { overrideAccess });
+    return finish(
+      await planMove(req, { items: [folderRef], toFolder: requestedParent.id }, { overrideAccess })
+    );
   }
-  if (edit.slug === undefined) {
-    return emptyPreview([], stored.parent);
+  if (!hasSlugChange) {
+    return finish(emptyPreview([], stored.parent));
   }
 
   const blocked: MoveBlock[] = [];
@@ -117,7 +162,7 @@ export const planFolderEdit = async (
       checks: [
         {
           collection: options.folders.slug,
-          data: { slug: edit.slug },
+          data: { slug: edit.slugs ?? edit.slug },
           id: stored.id,
           key: "update",
           operation: "update",
@@ -128,12 +173,14 @@ export const planFolderEdit = async (
     if (refused.has("update")) {
       block("forbidden", "You are not allowed to change this folder");
 
-      return emptyPreview(blocked, stored.parent);
+      return finish(emptyPreview(blocked, stored.parent));
     }
   }
 
-  const writeKey = requestLocaleKey(payload, options, edit.locale);
-  const slug = { ...stored.slug, [writeKey]: edit.slug };
+  const slug =
+    edit.slugs === undefined
+      ? { ...stored.slug, [requestLocaleKey(payload, options, edit.locale)]: edit.slug }
+      : { ...stored.slug, ...edit.slugs };
   const parent: FolderRecord | null =
     stored.parent === null ? null : await readFolderRecord(req, options, stored.parent);
   const plan = planFolderPaths({ defaultLocaleKey: defaultKey, keys, parent, slug });
@@ -145,7 +192,7 @@ export const planFolderEdit = async (
   });
   const changedKeys = keys.filter((key) => plan.segments[key] !== previousPlan.segments[key]);
   if (changedKeys.length === 0) {
-    return emptyPreview([], stored.parent);
+    return finish(emptyPreview([], stored.parent));
   }
 
   const reservedRootSegments = new Set(options.reservedRootSegments);
@@ -166,7 +213,7 @@ export const planFolderEdit = async (
     );
   }
   if (blocked.length > 0) {
-    return emptyPreview(blocked, stored.parent);
+    return finish(emptyPreview(blocked, stored.parent));
   }
 
   const { totalDocs } = await payload.db.count({
@@ -180,7 +227,7 @@ export const planFolderEdit = async (
       `This rename would rewrite ${totalDocs + 1} folders; the limit is ${options.limits.maxFoldersPerMove}`
     );
 
-    return emptyPreview(blocked, stored.parent);
+    return finish(emptyPreview(blocked, stored.parent));
   }
 
   // A rename changes every live URL beneath the folder, so it needs the publish rights a move of
@@ -197,7 +244,7 @@ export const planFolderEdit = async (
   ) {
     block("forbidden", forbiddenRenameMessage);
 
-    return emptyPreview(blocked, stored.parent);
+    return finish(emptyPreview(blocked, stored.parent));
   }
 
   // Unlocalized folder segments apply in every locale a page can be read in.
@@ -229,7 +276,7 @@ export const planFolderEdit = async (
     }
   }
   if (blocked.length > 0) {
-    return emptyPreview(blocked, stored.parent);
+    return finish(emptyPreview(blocked, stored.parent));
   }
 
   const current: FolderRecord = {
@@ -257,19 +304,21 @@ export const planFolderEdit = async (
   ];
   const { urlChanges } = summarizePageChanges(changes);
   const samples = await pickSamples({ changes, overrideAccess, req });
-  const isWritingRows = shouldWriteRedirects(req, options);
 
-  return {
-    ...emptyPreview([], stored.parent),
-    foldersRewritten: 1 + descendants.length,
-    mirrorRowsToWrite: isWritingRows ? countMirrorRows(changes, options, req.payload) : 0,
-    redirectRowsToWrite: isWritingRows
-      ? planFolderPrefixRows({
-          changes,
-          folder: { collection: options.folders.slug, id: stored.id },
-        }).length
-      : 0,
-    samples,
-    urlChanges,
-  };
+  return finish(
+    {
+      ...emptyPreview([], stored.parent),
+      foldersRewritten: 1 + descendants.length,
+      mirrorRowsToWrite: isWritingRows ? countMirrorRows(changes, options, req.payload) : 0,
+      redirectRowsToWrite: isWritingRows
+        ? planFolderPrefixRows({
+            changes,
+            folder: { collection: options.folders.slug, id: stored.id },
+          }).length
+        : 0,
+      samples,
+      urlChanges,
+    },
+    changes
+  );
 };

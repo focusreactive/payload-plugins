@@ -6,7 +6,7 @@ import { itemKey } from "../core/itemKey.js";
 import { readTitles } from "../core/issueTitles.js";
 import { getDefaultLocaleKey, noLocaleKey } from "../core/locales.js";
 import { summarizePageChanges } from "../core/move.js";
-import type { MoveItemInput, MovePlan, MoveRequest } from "../core/move.js";
+import type { MoveBlock, MoveItemInput, MovePlan, MoveRequest } from "../core/move.js";
 import { readPageRow } from "../core/pageRecords.js";
 import type { FolderId, ItemRef, PathChange, ResolvedOptions } from "../types.js";
 import { buildPlanDigest } from "./confirmationToken.js";
@@ -32,7 +32,7 @@ export type MoveChanges = {
   summary: string;
 };
 
-const pluralize = (count: number, singular: string, plural: string): string =>
+export const pluralize = (count: number, singular: string, plural: string): string =>
   count === 1 ? singular : plural;
 
 const toUrlChange = (change: PathChange): UrlChange | null =>
@@ -40,7 +40,7 @@ const toUrlChange = (change: PathChange): UrlChange | null =>
     ? null
     : { from: change.from, locale: change.locale ?? noLocaleKey, to: change.to };
 
-const joinWords = (words: string[]): string => {
+export const joinWords = (words: string[]): string => {
   if (words.length <= 1) {
     return words.join("");
   }
@@ -48,7 +48,7 @@ const joinWords = (words: string[]): string => {
   return `${words.slice(0, -1).join(", ")} and ${words.at(-1)}`;
 };
 
-const urlSentence = ({
+export const urlSentence = ({
   byLocale,
   total,
 }: {
@@ -70,14 +70,30 @@ const urlSentence = ({
   return `${count} will change.`;
 };
 
+/** The counts of the published URL changes a plan makes and the digest a confirmation token binds. */
+export type UrlChangeFacts = {
+  byLocale: Record<string, number>;
+  counts: Record<string, number>;
+  digest: string;
+  published: UrlChange[];
+  redirects: MoveChanges["redirects"];
+  total: number;
+  urlChanges: ReturnType<typeof summarizePageChanges>["urlChanges"];
+};
+
 /**
- * The numbers and the one-line summary of a planned move, and the digest the confirmation token
- * binds. The same function reads the plan at preview time and again under the lock at apply time,
- * so both sides describe the change in the same words.
+ * The published URL changes among a plan's path changes, counted per language, with the redirect
+ * rows the plan writes. A move and a rename read their plans through this, so both bind the same
+ * numbers into the digest.
  */
-export const describeMoveChanges = (plan: MovePlan): MoveChanges => {
-  const allChanges = plan.items.flatMap((item) => item.changes);
-  const { publishedChanges, urlChanges } = summarizePageChanges(allChanges);
+export const describeUrlChanges = ({
+  changes,
+  redirects,
+}: {
+  changes: PathChange[];
+  redirects: MoveChanges["redirects"] & { enabled: boolean };
+}): UrlChangeFacts => {
+  const { publishedChanges, urlChanges } = summarizePageChanges(changes);
   const published = publishedChanges
     .map(toUrlChange)
     .filter((change): change is UrlChange => change !== null);
@@ -86,19 +102,41 @@ export const describeMoveChanges = (plan: MovePlan): MoveChanges => {
     byLocale[change.locale] = (byLocale[change.locale] ?? 0) + 1;
   }
   const total = urlChanges.publishedAcrossLocales;
-  const redirects = {
-    enabled: plan.redirects,
-    redirectsPluginRows: plan.preview.mirrorRowsToWrite,
-    rowsToWrite: plan.preview.redirectRowsToWrite,
-  };
   const counts = {
     draftOnly: urlChanges.draftOnly,
     published: urlChanges.published,
     publishedAcrossLocales: total,
-    redirectsEnabled: plan.redirects ? 1 : 0,
+    redirectsEnabled: redirects.enabled ? 1 : 0,
     redirectsPluginRows: redirects.redirectsPluginRows,
     redirectRowsToWrite: redirects.rowsToWrite,
   };
+
+  return {
+    byLocale,
+    counts,
+    digest: buildPlanDigest({ changes: published, counts }),
+    published,
+    redirects,
+    total,
+    urlChanges,
+  };
+};
+
+/**
+ * The numbers and the one-line summary of a planned move, and the digest the confirmation token
+ * binds. The same function reads the plan at preview time and again under the lock at apply time,
+ * so both sides describe the change in the same words.
+ */
+export const describeMoveChanges = (plan: MovePlan): MoveChanges => {
+  const facts = describeUrlChanges({
+    changes: plan.items.flatMap((item) => item.changes),
+    redirects: {
+      enabled: plan.redirects,
+      redirectsPluginRows: plan.preview.mirrorRowsToWrite,
+      rowsToWrite: plan.preview.redirectRowsToWrite,
+    },
+  });
+  const { byLocale, total, urlChanges } = facts;
 
   const isReorderOnly = plan.items.every((item) => !item.parentChanges);
   const sentences = [
@@ -120,14 +158,46 @@ export const describeMoveChanges = (plan: MovePlan): MoveChanges => {
   }
 
   return {
-    counts,
-    digest: buildPlanDigest({ changes: published, counts }),
+    counts: facts.counts,
+    digest: facts.digest,
     draftOnlyPages: urlChanges.draftOnly,
     needsConfirmation: total > 0,
-    publishedChanges: published,
+    publishedChanges: facts.published,
     publishedUrlChanges: { byLocale, total },
-    redirects,
+    redirects: facts.redirects,
     summary: sentences.join(" "),
+  };
+};
+
+/**
+ * The answer to a preview that was blocked: why, as the plugin words it, and no token. `action` is
+ * the noun the sentence names ("move", "rename").
+ */
+export const describeBlockedPreview = (
+  blocked: MoveBlock[],
+  action: string
+): {
+  content: Array<{ text: string; type: "text" }>;
+  isError: true;
+  structuredContent: Record<string, unknown>;
+} => {
+  const details = blocked.map(({ item, locale, message, reason }) => ({
+    item,
+    ...(locale === undefined ? {} : { locale }),
+    message,
+    reason,
+  }));
+  const messages = [...new Set(details.map(({ message }) => message))];
+
+  return {
+    content: [
+      {
+        text: `This ${action} cannot be done: ${messages.join(". ")}. Nothing was changed and no confirmation token was issued. Tell the user why, and ask what they want instead.`,
+        type: "text",
+      },
+    ],
+    isError: true,
+    structuredContent: { blocked: details, ok: false },
   };
 };
 
@@ -189,7 +259,7 @@ const itemsLabel = (titles: Map<string, string | null>, items: ItemRef[]): strin
   return `${names.length} items`;
 };
 
-const exampleSentence = (examples: UrlChange[], isLocalized: boolean): string => {
+export const exampleSentence = (examples: UrlChange[], isLocalized: boolean): string => {
   const parts = examples
     .slice(0, 3)
     .map(

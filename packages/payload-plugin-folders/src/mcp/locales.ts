@@ -1,5 +1,6 @@
 import type { Config, SanitizedConfig } from "payload";
 
+import { badRequest } from "../core/badRequest.js";
 import { noLocaleKey } from "../core/locales.js";
 
 export type McpLocales = {
@@ -38,4 +39,40 @@ export const languageName = (code: string): string => {
   } catch {
     return code;
   }
+};
+
+/** One text per language from a tool argument; a language left out or empty is not in the answer. */
+export const readLocaleValues = ({
+  field,
+  keys,
+  value,
+}: {
+  field: string;
+  keys: string[];
+  value: unknown;
+}): Record<string, string> => {
+  if (value === undefined || value === null) {
+    return {};
+  }
+  if (typeof value !== "object" || Array.isArray(value)) {
+    throw badRequest(
+      `${field} must be an object with one text per language, for example { "${keys[0]}": "Guides" }.`
+    );
+  }
+  const values: Record<string, string> = {};
+  for (const [key, text] of Object.entries(value)) {
+    if (!keys.includes(key)) {
+      throw badRequest(
+        `${field}: "${key}" is not a language of this site. The languages are ${keys.join(", ")}.`
+      );
+    }
+    if (typeof text !== "string") {
+      throw badRequest(`${field}.${key} must be text.`);
+    }
+    if (text.trim() !== "") {
+      values[key] = text.trim();
+    }
+  }
+
+  return values;
 };

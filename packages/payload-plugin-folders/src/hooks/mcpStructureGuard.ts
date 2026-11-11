@@ -13,7 +13,7 @@ import {
   namesOtherOrderKey,
 } from "../core/structureGuard.js";
 import type { FolderId, ResolvedOptions, ResolvedPageCollection } from "../types.js";
-import { isInternalWrite, slugNotSentContextKey } from "./context.js";
+import { isInternalWrite, mcpRenameConfirmedContextKey, slugNotSentContextKey } from "./context.js";
 import { pageStructureFieldNames } from "../constants.js";
 
 type UpdateArgs = {
@@ -263,7 +263,8 @@ export const buildFolderMcpStructureGuard =
       return args;
     }
     refuseStructureEdit(req, data, stored, "parent");
-    if (isMcp && data.slug !== undefined) {
+    const isConfirmedRename = req.context?.[mcpRenameConfirmedContextKey] === String(update.id);
+    if (isMcp && data.slug !== undefined && !isConfirmedRename) {
       const writeKey = requestLocaleKey(req.payload, options, req.locale);
       const defaultLocaleKey = getDefaultLocaleKey(req.payload, options);
       if (slugDiffersFromStored(data.slug, stored.slug, writeKey, defaultLocaleKey)) {

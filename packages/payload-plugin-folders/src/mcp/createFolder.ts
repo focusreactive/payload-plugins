@@ -7,6 +7,7 @@ import { getDefaultLocaleKey, getFolderLocaleKeys, noLocaleKey } from "../core/l
 import { slugify } from "../core/slugify.js";
 import { isEmptyText } from "../core/structureGuard.js";
 import type { FolderId, ResolvedOptions } from "../types.js";
+import { readLocaleValues } from "./locales.js";
 import { runTool, toolRefusal, toolSuccess } from "./toolResult.js";
 import type { FoldersMcpTool, FoldersMcpToolArguments } from "./types.js";
 
@@ -14,41 +15,6 @@ type ValuesByLocale = Record<string, string>;
 
 /** The locale a folder write is keyed by on this site, and the keys its name and slug take. */
 type FolderKeys = { defaultKey: string; keys: string[] };
-
-const readLocaleValues = ({
-  field,
-  keys,
-  value,
-}: {
-  field: string;
-  keys: string[];
-  value: unknown;
-}): ValuesByLocale => {
-  if (value === undefined || value === null) {
-    return {};
-  }
-  if (typeof value !== "object" || Array.isArray(value)) {
-    throw badRequest(
-      `${field} must be an object with one text per language, for example { "${keys[0]}": "Guides" }.`
-    );
-  }
-  const values: ValuesByLocale = {};
-  for (const [key, text] of Object.entries(value)) {
-    if (!keys.includes(key)) {
-      throw badRequest(
-        `${field}: "${key}" is not a language of this site. The languages are ${keys.join(", ")}.`
-      );
-    }
-    if (typeof text !== "string") {
-      throw badRequest(`${field}.${key} must be text.`);
-    }
-    if (text.trim() !== "") {
-      values[key] = text.trim();
-    }
-  }
-
-  return values;
-};
 
 /** The slug each language ends up with: its own, or one made from its name the way the plugin does. */
 const effectiveSlugs = ({
