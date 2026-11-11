@@ -5,6 +5,7 @@ import { badRequest } from "../core/badRequest.js";
 import { readFolderRecord } from "../core/folderRecords.js";
 import { getDefaultLocaleKey, getFolderLocaleKeys, noLocaleKey } from "../core/locales.js";
 import { slugify } from "../core/slugify.js";
+import { parseId } from "../endpoints/request.js";
 import { isEmptyText } from "../core/structureGuard.js";
 import type { FolderId, ResolvedOptions } from "../types.js";
 import { readLocaleValues } from "./locales.js";
@@ -35,15 +36,15 @@ const effectiveSlugs = ({
   return result;
 };
 
-const readParent = (value: unknown): FolderId | null => {
-  if (value === undefined || value === null) {
-    return null;
-  }
-  if (typeof value === "number" || typeof value === "string") {
-    return value;
-  }
-  throw badRequest("parent must be a folder id, or null for the top level.");
-};
+/** The input schema allows a string id, and models send "3" for a number id, which payload.create rejects. */
+const readParent = (
+  req: PayloadRequest,
+  options: ResolvedOptions,
+  value: unknown
+): FolderId | null =>
+  value === undefined || value === null
+    ? null
+    : parseId(req.payload, options.folders.slug, value, "parent");
 
 const refuseTakenPaths = async ({
   folderKeys,
@@ -104,7 +105,7 @@ const createFolder = ({
       );
     }
 
-    const parent = readParent(input.parent);
+    const parent = readParent(req, options, input.parent);
     await refuseTakenPaths({ folderKeys, parent, req, slugs: slugsInEffect });
 
     const created = await payload.create({

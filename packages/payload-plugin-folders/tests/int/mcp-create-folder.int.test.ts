@@ -92,6 +92,28 @@ describe("createFolder with every language given", () => {
 
     expect(createdFrom(result).fullPath).toEqual({ de: "/hilfe", en: "/help" });
   });
+
+  it("takes the parent id as a numeric string, the way a model sends it", async () => {
+    const { payload } = harness;
+    const products = await createFolder(payload, { name: "Products", slug: "products" });
+
+    const result = await create({ name: { en: "Guides" }, parent: String(products.id) });
+
+    const created = createdFrom(result);
+    expect(created.fullPath.en).toBe("/products/guides");
+    expect((await readStored(payload, created.id)).parent).toBe(products.id);
+  });
+
+  it("refuses a parent that is not a folder id and writes nothing", async () => {
+    const { payload } = harness;
+    const before = await countFolders(payload);
+
+    const result = await create({ name: { en: "Guides" }, parent: '"3"' });
+
+    expect(result.isError).toBe(true);
+    expect(result.text).toContain("parent must be a positive whole number");
+    expect(await countFolders(payload)).toBe(before);
+  });
 });
 
 describe("createFolder with the default language only", () => {
