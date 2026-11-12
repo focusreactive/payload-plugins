@@ -45,22 +45,22 @@ function internalSitesOf(req: PayloadRequest): (string | null)[] {
   return [siteOf(req.payload.config.serverURL ?? ""), siteOf(siteUrl), siteOf(req.origin ?? "")];
 }
 
-async function collectSuggestions(
-  search: SuggestionSearch,
-  start = 0,
-  batchSize = LINK_RESOLVE_BATCH_SIZE,
-  found: LinkSuggestion[] = []
-): Promise<LinkSuggestion[]> {
-  const end = Math.min(start + batchSize, MAX_RESOLVED_LINK_CANDIDATES);
-  const slice = search.candidates.slice(start, end);
-  if (found.length >= MAX_LINK_SUGGESTIONS || slice.length === 0) {
-    return found.slice(0, MAX_LINK_SUGGESTIONS);
+async function collectSuggestions(search: SuggestionSearch): Promise<LinkSuggestion[]> {
+  const candidates = search.candidates.slice(0, MAX_RESOLVED_LINK_CANDIDATES);
+  const found: LinkSuggestion[] = [];
+  let start = 0;
+  let batchSize = LINK_RESOLVE_BATCH_SIZE;
+
+  while (start < candidates.length && found.length < MAX_LINK_SUGGESTIONS) {
+    const batch = candidates.slice(start, start + batchSize);
+    const resolved = await resolveLinkTargets(search.req, batch, search.locale);
+
+    found.push(...resolved.filter((suggestion) => !isLinked(suggestion, search)));
+    start += batchSize;
+    batchSize *= 2;
   }
 
-  const resolved = await resolveLinkTargets(search.req, slice, search.locale);
-  const unlinked = resolved.filter((suggestion) => !isLinked(suggestion, search));
-
-  return collectSuggestions(search, end, batchSize * 2, [...found, ...unlinked]);
+  return found.slice(0, MAX_LINK_SUGGESTIONS);
 }
 
 function unlinkedCandidates(request: LinkRequest, rows: LinkSourceRow[]): LinkCandidate[] {
