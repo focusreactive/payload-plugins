@@ -5,17 +5,13 @@ import { Loader2 } from "lucide-react";
 import { docTargetKey } from "../../../keyphrases/docTarget";
 import { adminDocHref } from "../../../keyphrases/usage";
 import { SectionCard } from "../../../ui/SectionCard";
-import { cn } from "../../../utils/style";
+import { cn, OUTLINE_BUTTON_CLASS } from "../../../utils/style";
 import { useSeoTranslation } from "../../../translations/useSeoTranslation";
 import { TabWrapper } from "../components/TabWrapper";
 import type { LinkSuggestionsState } from "../links/useLinkSuggestions";
 import { LinkSuggestionRow } from "./links/LinkSuggestionRow";
 
 const MESSAGE_CLASS = cn("px-[15px] py-[12px] text-[12px]");
-
-const FIND_BUTTON_CLASS = cn(
-  "inline-flex items-center rounded-rs border border-neutral-200 bg-transparent px-[9px] py-[4px] text-[12px] font-semibold text-neutral-800 transition-colors hover:border-neutral-300 hover:bg-neutral-100 cursor-pointer aria-disabled:cursor-default aria-disabled:text-neutral-400"
-);
 
 function SuggestionsBody({ state }: { state: LinkSuggestionsState }) {
   const { config } = useConfig();
@@ -74,7 +70,7 @@ export function LinksTab({ state, onFind }: LinksTabProps) {
           widget={
             <button
               aria-disabled={loading}
-              className={FIND_BUTTON_CLASS}
+              className={OUTLINE_BUTTON_CLASS}
               onClick={onFind}
               type="button"
             >
