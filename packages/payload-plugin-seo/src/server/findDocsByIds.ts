@@ -33,8 +33,8 @@ export async function findDocsByIds(
     overrideAccess,
     disableErrors: true,
     req,
-    ...(locale ? { locale } : {}),
-    ...(select ? { select } : {}),
+    locale,
+    select,
   });
 
   return (docs as Array<Record<string, unknown>>).filter(hasId);

@@ -38,7 +38,7 @@ describe("findDocsByIds", () => {
     });
   });
 
-  it("passes locale, select, depth and req only when provided", async () => {
+  it("passes locale, select, depth and req through", async () => {
     const payload = fakePayload([]);
     const req = {} as never;
     await findDocsByIds(asPayload(payload), {
