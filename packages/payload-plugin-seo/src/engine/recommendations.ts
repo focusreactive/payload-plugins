@@ -57,7 +57,6 @@ const GENERIC: Record<Exclude<Status, "good">, TranslationKey> = {
   bad: "reco.generic.bad",
 };
 
-/** What to do about a failing check, as a message for the UI to translate. */
 export function getRecommendation(
   id: string,
   status: Status,

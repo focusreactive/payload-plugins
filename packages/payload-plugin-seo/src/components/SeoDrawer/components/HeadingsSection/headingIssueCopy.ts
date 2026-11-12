@@ -20,7 +20,6 @@ export function describeDocIssue(issue: HeadingDocIssue): { title: Message; body
   }
 }
 
-/** `[2, 3]` -> `"H2·H3"`; the sentence around it is translated by the caller. */
 export function formatSkippedLevels(skipped: HeadingLevel[]): string {
   return skipped.map((level) => `H${level}`).join("·");
 }

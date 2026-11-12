@@ -7,8 +7,7 @@ import type { InclusiveCategoryId } from "../../types/analysis";
 
 const { InclusiveLanguageAssessor } = assessors;
 
-/** Yoast's category ids, in display order. The UI names them. */
-const INCLUSIVE_CATEGORIES: InclusiveCategoryId[] = [
+const INCLUSIVE_CATEGORIES_IN_DISPLAY_ORDER: InclusiveCategoryId[] = [
   "age",
   "appearance",
   "culture",
@@ -20,7 +19,7 @@ const INCLUSIVE_CATEGORIES: InclusiveCategoryId[] = [
 ];
 
 function categoryOf(yoastCategory: string | undefined): InclusiveCategoryId {
-  return INCLUSIVE_CATEGORIES.find((id) => id === yoastCategory) ?? "other";
+  return INCLUSIVE_CATEGORIES_IN_DISPLAY_ORDER.find((id) => id === yoastCategory) ?? "other";
 }
 
 interface YoastInclusiveResult {
@@ -48,7 +47,7 @@ export function deriveInclusive(paper: InstanceType<typeof Paper>): InclusiveRes
   const assessor: YoastInclusiveAssessor = new InclusiveLanguageAssessor(makeResearcher(paper));
   assessor.assess(paper);
 
-  return scoreInclusive(extractInclusiveFlags(assessor), INCLUSIVE_CATEGORIES);
+  return scoreInclusive(extractInclusiveFlags(assessor), INCLUSIVE_CATEGORIES_IN_DISPLAY_ORDER);
 }
 
 function stripTags(html: string): string {

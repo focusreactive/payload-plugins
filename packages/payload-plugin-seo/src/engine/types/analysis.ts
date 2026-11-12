@@ -9,7 +9,6 @@ export interface CheckResult {
   id: string;
   status: Status;
   score: number;
-  /** What to do about it; absent when the check passes. */
   recommendation?: Message;
   data?: Record<string, unknown>;
   viz?: Visualization;
@@ -20,7 +19,7 @@ export interface InclusiveFlag {
   suggestion: string;
   location: string;
 }
-/** Yoast's inclusive-language categories; the UI names them (`inclusive.category.<id>`). */
+
 export type InclusiveCategoryId =
   | "age"
   | "appearance"

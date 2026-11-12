@@ -4,8 +4,7 @@ import { resolveVisualization } from "../../../src/engine/visualization/resolveV
 import { createTranslator } from "../../../src/translations";
 import type { DrilldownModel } from "../../../src/engine/types/visualization";
 
-/** The drilldown button as the English admin renders it. */
-const showLabel = (d: DrilldownModel) =>
+const englishShowButtonLabel = (d: DrilldownModel) =>
   createTranslator("en", undefined)(`viz.show.${d.noun}`, { count: d.items.length });
 
 const check = (id: string, status: Status = "good"): CheckResult => ({ id, status, score: 9 });
@@ -92,7 +91,7 @@ describe("resolveVisualization — count-drilldown labels", () => {
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
-    expect(showLabel(v.drilldown)).toBe("Show 1 link");
+    expect(englishShowButtonLabel(v.drilldown)).toBe("Show 1 link");
   });
 
   it("uses plural 'links' for three textCompetingLinks items", () => {
@@ -106,7 +105,7 @@ describe("resolveVisualization — count-drilldown labels", () => {
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
-    expect(showLabel(v.drilldown)).toBe("Show 3 links");
+    expect(englishShowButtonLabel(v.drilldown)).toBe("Show 3 links");
   });
 
   it("uses singular 'section' for one subheadingsTooLong item", () => {
@@ -116,7 +115,7 @@ describe("resolveVisualization — count-drilldown labels", () => {
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
-    expect(showLabel(v.drilldown)).toBe("Show 1 section");
+    expect(englishShowButtonLabel(v.drilldown)).toBe("Show 1 section");
   });
 
   it("uses plural 'sections' for two subheadingsTooLong items", () => {
@@ -129,7 +128,7 @@ describe("resolveVisualization — count-drilldown labels", () => {
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
-    expect(showLabel(v.drilldown)).toBe("Show 2 sections");
+    expect(englishShowButtonLabel(v.drilldown)).toBe("Show 2 sections");
   });
 
   it("reads the 'paragraphs' key for one textParagraphTooLong item", () => {
@@ -139,7 +138,7 @@ describe("resolveVisualization — count-drilldown labels", () => {
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
-    expect(showLabel(v.drilldown)).toBe("Show 1 paragraph");
+    expect(englishShowButtonLabel(v.drilldown)).toBe("Show 1 paragraph");
   });
 
   it("uses plural 'paragraphs' for two textParagraphTooLong items", () => {
@@ -152,7 +151,7 @@ describe("resolveVisualization — count-drilldown labels", () => {
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
-    expect(showLabel(v.drilldown)).toBe("Show 2 paragraphs");
+    expect(englishShowButtonLabel(v.drilldown)).toBe("Show 2 paragraphs");
   });
 
   it("uses singular 'group' for one sentenceBeginnings item", () => {
@@ -162,7 +161,7 @@ describe("resolveVisualization — count-drilldown labels", () => {
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
-    expect(showLabel(v.drilldown)).toBe("Show 1 group");
+    expect(englishShowButtonLabel(v.drilldown)).toBe("Show 1 group");
   });
 
   it("uses plural 'groups' for two sentenceBeginnings items", () => {
@@ -175,7 +174,7 @@ describe("resolveVisualization — count-drilldown labels", () => {
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
-    expect(showLabel(v.drilldown)).toBe("Show 2 groups");
+    expect(englishShowButtonLabel(v.drilldown)).toBe("Show 2 groups");
   });
 
   it("falls back to presence when a drilldown has no items", () => {

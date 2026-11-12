@@ -1,6 +1,5 @@
 import type { LanguageMessages } from "../types";
 
-/** Czech. Plurals: `_one` (1), `_few` (2–4), `_other` (0, 5+). */
 export const cs: LanguageMessages = {
   title: "SEO analýza",
   close: "Zavřít",

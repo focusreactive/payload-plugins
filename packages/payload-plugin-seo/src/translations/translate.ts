@@ -1,7 +1,6 @@
 import { en } from "./messages/en";
 import type { MessageVars, TranslationKey } from "./types";
 
-/** Payload custom-translation namespace the plugin's strings live under. */
 export const TRANSLATION_NAMESPACE = "seo";
 
 export type Messages = Readonly<Record<string, string>>;
@@ -24,10 +23,6 @@ function interpolate(template: string, vars: MessageVars | undefined): string {
   });
 }
 
-/**
- * The plural form of `key` for `count`, from one set of messages, or
- * `undefined` when that set has no plural for `key` at all.
- */
 function pluralFrom(
   messages: Messages | undefined,
   rules: Intl.PluralRules,
@@ -39,12 +34,6 @@ function pluralFrom(
   return messages[`${key}_${rules.select(count)}`] ?? messages[`${key}_other`];
 }
 
-/**
- * A `t()` over the strings of one language, falling back to English for any
- * key the language does not have. A plural is taken whole from one side —
- * the admin language with its own plural rules, or English with English
- * rules — never a mix of the two.
- */
 export function createTranslator(
   language: string,
   messages: Messages | undefined,
@@ -68,7 +57,6 @@ export function createTranslator(
   };
 }
 
-/** `"seo:tab:keyphrase"` / `"seo:tab.keyphrase"` / `"tab.keyphrase"` → `"tab.keyphrase"`. */
 export function normalizeMessageKey(key: string): string {
   const unprefixed = key.startsWith(`${TRANSLATION_NAMESPACE}:`)
     ? key.slice(TRANSLATION_NAMESPACE.length + 1)

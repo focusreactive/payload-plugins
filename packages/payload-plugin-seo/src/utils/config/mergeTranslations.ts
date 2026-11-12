@@ -4,11 +4,6 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/**
- * Merges two `{ [language]: { [namespace]: { [key]: string } } }` objects, one
- * namespace level deep, `extra` winning. A language's other namespaces — the
- * host app's own custom translations — are kept.
- */
 export function mergeTranslations(
   base: NamespacedTranslations,
   extra: NamespacedTranslations

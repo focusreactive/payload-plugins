@@ -52,7 +52,6 @@ export interface SegmentModel {
   legend?: { tone: SwatchTone; label: Message }[];
 }
 
-/** What a drilldown lists; the button reads "Show 3 links" in the admin language. */
 export type DrilldownNoun = "link" | "section" | "paragraph" | "group";
 
 export interface DrilldownModel {

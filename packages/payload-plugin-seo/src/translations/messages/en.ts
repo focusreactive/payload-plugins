@@ -1,12 +1,3 @@
-/**
- * English UI strings — the source of truth for which keys exist.
- *
- * Keys are flat and dotted; at registration they become Payload custom
- * translations under the `seo` namespace (`t("seo:tab.keyphrase")`).
- * `{{name}}` is interpolated. A key ending in `_one` / `_two` / `_few` /
- * `_many` / `_other` is a plural form, picked with `Intl.PluralRules` for the
- * admin language; every plural needs at least `_other`.
- */
 export const en = {
   title: "SEO Analytics",
   close: "Close",

@@ -35,5 +35,4 @@ export const CHECK_IDS = {
 export type CheckTab = keyof typeof CHECK_IDS;
 export type CheckId = (typeof CHECK_IDS)[CheckTab][number];
 
-/** Every check id the plugin names; a check Yoast adds later shows its raw id instead. */
 export const ALL_CHECK_IDS: ReadonlySet<CheckId> = new Set(Object.values(CHECK_IDS).flat());

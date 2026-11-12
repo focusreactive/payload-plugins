@@ -5,11 +5,6 @@ import { useMemo } from "react";
 import { createTranslator, TRANSLATION_NAMESPACE } from "./translate";
 import type { Messages, Translate } from "./translate";
 
-/**
- * `t()` for the plugin's strings in the admin's current language — the
- * strings the plugin registered under the `seo` namespace, English for any
- * that are missing.
- */
 export function useSeoTranslation(): { t: Translate; language: string } {
   const { i18n } = useTranslation();
   const language = i18n?.language ?? "en";
