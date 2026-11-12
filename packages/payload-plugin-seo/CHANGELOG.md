@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-seo [1.12.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.11.0...@focus-reactive/payload-plugin-seo@1.12.0) (2026-11-12)
+
+
+### Features
+
+* **seo:** opt-in keyphrase index with usage notice and internal link suggestions ([#230](https://github.com/focusreactive/payload-plugins/issues/230)) ([dd1a3a9](https://github.com/focusreactive/payload-plugins/commit/dd1a3a9d88e9b23496b8e149889858f53710fc53))
+
 # @focus-reactive/payload-plugin-seo [1.11.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.10.2...@focus-reactive/payload-plugin-seo@1.11.0) (2026-11-12)
 
 
