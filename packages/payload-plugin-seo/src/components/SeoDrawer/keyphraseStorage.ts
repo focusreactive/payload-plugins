@@ -4,9 +4,14 @@ import { sanitizeStoredKeyphrases } from "../../keyphrases/stored";
 import type { StoredKeyphrase } from "../../keyphrases/stored";
 
 const PREFIX = "seo-kw";
+const UNSAVED_PREFIX = "seo-kw-unsaved";
 
 export function storageKey(collectionSlug: string, docId: string, locale: string): string {
   return `${PREFIX}:${collectionSlug}:${docId}:${locale}`;
+}
+
+export function unsavedStorageKey(collectionSlug: string, docId: string, locale: string): string {
+  return `${UNSAVED_PREFIX}:${collectionSlug}:${docId}:${locale}`;
 }
 
 function store(): Storage | null {
@@ -26,21 +31,26 @@ export function toStored(list: KeyphraseEntry[]): StoredKeyphrase[] {
   return pruneEmpties(list).map(({ text, synonyms }) => ({ text, synonyms }));
 }
 
-export function loadKeyphrases(key: string): KeyphraseEntry[] {
-  const fallback = () => [createEntry()];
-  const s = store();
-  if (!s) return fallback();
-
+function readStored(key: string): StoredKeyphrase[] | null {
   try {
-    const raw = s.getItem(key);
-    if (!raw) return fallback();
+    const raw = store()?.getItem(key);
 
-    const list = toEntries(sanitizeStoredKeyphrases(JSON.parse(raw)));
-
-    return list.length ? list : fallback();
+    return raw ? sanitizeStoredKeyphrases(JSON.parse(raw)) : null;
   } catch {
-    return fallback();
+    return null;
   }
+}
+
+export function loadKeyphrases(key: string): KeyphraseEntry[] {
+  const list = toEntries(readStored(key) ?? []);
+
+  return list.length ? list : [createEntry()];
+}
+
+export function loadUnsavedKeyphrases(key: string): KeyphraseEntry[] | null {
+  const stored = readStored(key);
+
+  return stored?.length ? toEntries(stored) : null;
 }
 
 export function saveKeyphrases(key: string, list: KeyphraseEntry[]): void {

@@ -7,9 +7,11 @@ import type { KeyphraseEntry } from "./keyphraseState";
 import {
   clearKeyphrases,
   loadKeyphrases,
+  loadUnsavedKeyphrases,
   saveKeyphrases,
   storageKey,
   toEntries,
+  unsavedStorageKey,
 } from "./keyphraseStorage";
 import { createRemoteSaver } from "./remoteSaver";
 
@@ -37,14 +39,34 @@ export interface UseKeyphrasesApi {
   setFocus: (id: string) => void;
   isDuplicate: (id: string, text: string) => boolean;
   syncOnOpen: () => void;
+  saveFailed: boolean;
+}
+
+type PendingSync = "upload" | "retry" | null;
+
+interface InitialState {
+  entries: KeyphraseEntry[];
+  sync: PendingSync;
+}
+
+function entriesOrBlank(stored: StoredKeyphrase[]): KeyphraseEntry[] {
+  const entries = toEntries(stored);
+
+  return entries.length ? entries : [ops.createEntry()];
 }
 
 function initialList(key: string, remote?: RemoteKeyphrases): KeyphraseEntry[] {
-  if (!remote?.indexed) return loadKeyphrases(key);
+  return remote?.indexed ? entriesOrBlank(remote.initial) : loadKeyphrases(key);
+}
 
-  const entries = toEntries(remote.initial);
+function initialState(key: string, unsavedKey: string, remote?: RemoteKeyphrases): InitialState {
+  const unsaved = remote?.canUpdate ? loadUnsavedKeyphrases(unsavedKey) : null;
+  if (unsaved) return { entries: unsaved, sync: "retry" };
 
-  return entries.length ? entries : [ops.createEntry()];
+  const entries = initialList(key, remote);
+  const hasBrowserCopy = remote?.canUpdate && !remote.indexed && ops.pruneEmpties(entries).length;
+
+  return { entries, sync: hasBrowserCopy ? "upload" : null };
 }
 
 export function useKeyphrases({
@@ -54,27 +76,26 @@ export function useKeyphrases({
   remote,
 }: UseKeyphrasesArgs): UseKeyphrasesApi {
   const key = storageKey(collectionSlug, docId, localeCode);
-  const [initial] = useState(() => {
-    const entries = initialList(key, remote);
-    const pendingUpload = Boolean(
-      remote?.canUpdate && !remote.indexed && ops.pruneEmpties(entries).length > 0
-    );
-
-    return { entries, pendingUpload };
-  });
+  const [initial] = useState(() =>
+    initialState(key, unsavedStorageKey(collectionSlug, docId, localeCode), remote)
+  );
   const [list, setList] = useState<KeyphraseEntry[]>(initial.entries);
+  const [saveFailed, setSaveFailed] = useState(false);
 
   const persistLocally = !remote;
   const apiRoute = remote?.canUpdate ? remote.apiRoute : undefined;
   const saver = useMemo(
     () =>
       apiRoute
-        ? createRemoteSaver({ apiRoute, collection: collectionSlug, docId, locale: localeCode })
+        ? createRemoteSaver(
+            { apiRoute, collection: collectionSlug, docId, locale: localeCode },
+            { onOutcome: (outcome) => setSaveFailed(outcome.status === "failed") }
+          )
         : null,
     [apiRoute, collectionSlug, docId, localeCode]
   );
 
-  const pendingUploadRef = useRef(initial.pendingUpload);
+  const pendingSyncRef = useRef<PendingSync>(initial.sync);
 
   const keyRef = useRef(key);
 
@@ -92,17 +113,18 @@ export function useKeyphrases({
   useEffect(() => {
     if (!saver) return;
 
+    const flush = () => void saver.flush();
     const flushWhenHidden = () => {
-      if (document.visibilityState === "hidden") saver.flush();
+      if (document.visibilityState === "hidden") flush();
     };
 
-    window.addEventListener("pagehide", saver.flush);
+    window.addEventListener("pagehide", flush);
     document.addEventListener("visibilitychange", flushWhenHidden);
 
     return () => {
-      window.removeEventListener("pagehide", saver.flush);
+      window.removeEventListener("pagehide", flush);
       document.removeEventListener("visibilitychange", flushWhenHidden);
-      saver.flush();
+      flush();
     };
   }, [saver]);
 
@@ -118,20 +140,24 @@ export function useKeyphrases({
     [persistLocally]
   );
 
+  const replaceList = useCallback((next: KeyphraseEntry[]) => {
+    listRef.current = next;
+    setList(next);
+  }, []);
+
   const apply = useCallback(
     (op: (current: KeyphraseEntry[]) => KeyphraseEntry[]): KeyphraseEntry[] => {
       const current = listRef.current;
       const next = op(current);
       if (next === current) return current;
 
-      listRef.current = next;
-      setList(next);
+      replaceList(next);
       saver?.schedule(next);
-      pendingUploadRef.current = false;
+      pendingSyncRef.current = null;
 
       return next;
     },
-    [saver]
+    [replaceList, saver]
   );
 
   const addRelated = useCallback((): string | undefined => {
@@ -160,16 +186,26 @@ export function useKeyphrases({
   );
   const uploadBrowserCopy = useCallback(async () => {
     const uploadedKey = keyRef.current;
-    const saved = await saver?.save(listRef.current, { ifAbsent: true });
+    const uploaded = listRef.current;
+    const outcome = await saver?.save(uploaded, { ifAbsent: true });
+    if (!outcome || outcome.status === "failed") return;
 
-    if (saved) clearKeyphrases(uploadedKey);
+    clearKeyphrases(uploadedKey);
+    if (outcome.status === "exists" && listRef.current === uploaded) {
+      replaceList(entriesOrBlank(outcome.keyphrases));
+    }
+  }, [replaceList, saver]);
+  const retryUnsaved = useCallback(() => {
+    saver?.schedule(listRef.current);
+    void saver?.flush();
   }, [saver]);
   const syncOnOpen = useCallback(() => {
-    if (!pendingUploadRef.current) return;
+    const sync = pendingSyncRef.current;
+    pendingSyncRef.current = null;
 
-    pendingUploadRef.current = false;
-    void uploadBrowserCopy();
-  }, [uploadBrowserCopy]);
+    if (sync === "upload") void uploadBrowserCopy();
+    if (sync === "retry") retryUnsaved();
+  }, [retryUnsaved, uploadBrowserCopy]);
 
   return {
     keyphrases: list,
@@ -181,5 +217,6 @@ export function useKeyphrases({
     setFocus,
     isDuplicate,
     syncOnOpen,
+    saveFailed,
   };
 }
