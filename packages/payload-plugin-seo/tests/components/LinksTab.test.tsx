@@ -4,7 +4,6 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LinkSuggestionsState } from "../../src/components/SeoDrawer/links/useLinkSuggestions";
 import { LinksTab } from "../../src/components/SeoDrawer/tabs/LinksTab";
-import { LINK_COPY_FEEDBACK_MS } from "../../src/constants";
 
 vi.mock("@payloadcms/ui", () => ({
   useConfig: () => ({ config: { routes: { api: "/api", admin: "/admin" } } }),
@@ -108,7 +107,7 @@ describe("LinksTab", () => {
     expect(screen.getByRole("button", { name: /copied/iu })).toBeInTheDocument();
 
     act(() => {
-      vi.advanceTimersByTime(LINK_COPY_FEEDBACK_MS);
+      vi.runOnlyPendingTimers();
     });
     expect(screen.getByRole("button", { name: /copy link/iu })).toBeInTheDocument();
   });

@@ -3,7 +3,6 @@
 import { Check, Copy, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { LINK_COPY_FEEDBACK_MS } from "../../../../constants";
 import { IconButton } from "../../../../ui/IconButton";
 import { Pill } from "../../../../ui/Pill";
 import { cn, ROW_SEPARATOR } from "../../../../utils/style";
@@ -12,6 +11,8 @@ import { useSeoTranslation } from "../../../../translations/useSeoTranslation";
 import type { TranslationKey } from "../../../../translations/types";
 
 type CopyStatus = "idle" | "copied" | "failed";
+
+const COPY_FEEDBACK_MS = 2000;
 
 const COPY_FEEDBACK = {
   idle: { labelKey: "links.copy", Icon: Copy },
@@ -36,7 +37,7 @@ function CopyUrlButton({ url }: { url: string }) {
   const showFeedback = (next: CopyStatus) => {
     setStatus(next);
     if (resetRef.current) clearTimeout(resetRef.current);
-    resetRef.current = setTimeout(() => setStatus("idle"), LINK_COPY_FEEDBACK_MS);
+    resetRef.current = setTimeout(() => setStatus("idle"), COPY_FEEDBACK_MS);
   };
 
   const copy = async () => {

@@ -2,12 +2,14 @@
 
 import { useConfig, useDebounce, useDocumentInfo, usePayloadAPI } from "@payloadcms/ui";
 import { useState } from "react";
-import { KEYPHRASE_USAGE_DELAY_MS, KEYPHRASE_USAGE_ENDPOINT_PATH } from "../../../../constants";
+import { KEYPHRASE_USAGE_ENDPOINT_PATH } from "../../../../constants";
 import { docTargetKey } from "../../../../keyphrases/docTarget";
 import { adminDocHref } from "../../../../keyphrases/usage";
 import type { UsageDoc } from "../../../../keyphrases/usage";
 import { useSeoTranslation } from "../../../../translations/useSeoTranslation";
 import { Notice } from "../../../../ui/Notice";
+
+const USAGE_DEBOUNCE_MS = 400;
 
 export interface KeyphraseUsageProps {
   collectionSlug: string;
@@ -60,7 +62,7 @@ export function KeyphraseUsageNotice({ collectionSlug, docId, phrase }: Keyphras
 
 export function KeyphraseUsage({ phrase }: Pick<KeyphraseUsageProps, "phrase">) {
   const { collectionSlug, id } = useDocumentInfo();
-  const debounced = useDebounce(phrase.trim(), KEYPHRASE_USAGE_DELAY_MS);
+  const debounced = useDebounce(phrase.trim(), USAGE_DEBOUNCE_MS);
 
   if (!debounced || !collectionSlug) return null;
 
