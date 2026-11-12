@@ -142,7 +142,7 @@ The analysis runs on a ~1 second debounce as form values change. **No document d
 pnpm add @focus-reactive/payload-plugin-seo
 ```
 
-**Peer dependencies:** `payload ^3.0.0`, `@payloadcms/next ^3.0.0`, `@payloadcms/ui ^3.0.0`, `@payloadcms/richtext-lexical ^3.0.0`, `lucide-react ^0.469.0`. `next ^14 || ^15` and `react`/`react-dom ^18 || ^19` are optional peers.
+**Peer dependencies:** `payload ^3.30.0`, `@payloadcms/next ^3.30.0`, `@payloadcms/ui ^3.30.0`, `@payloadcms/richtext-lexical ^3.30.0`, `lucide-react ^0.469.0`. `next ^14 || ^15` and `react`/`react-dom ^18 || ^19` are optional peers.
 
 The Yoast engine (`yoastseo`, `@yoast/search-metadata-previews`) ships as a direct dependency — you don't install it yourself, but you do need to transpile the two UI packages (see Quick Start step 3).
 
@@ -707,8 +707,9 @@ seoPlugin({
 ```
 
 - Keyphrases and synonyms are saved per document and locale in a hidden `seo-keyphrases` collection (`docCollection`, `docId`, `locale`, `keyphrases`, `intents`, unique on `docCollection` + `docId` + `locale`). Up to 5 keyphrases per document, 10 synonyms each, 100 characters per entry.
-- With the index on, keyphrases are no longer kept in browser storage. If the server has never stored keyphrases for a document and locale, the ones saved in the browser before the index was enabled are uploaded the first time the drawer is opened. The upload never overwrites a row another tab or editor created in the meantime, and the browser copy is removed only after the server accepted it.
-- Editors who can read a document but not update it see its keyphrases and can edit them for analysis, but their edits stay in memory and are not saved.
+- With the index on, keyphrases are no longer kept in browser storage. If the server has never stored keyphrases for a document and locale, the ones saved in the browser before the index was enabled are uploaded the first time the drawer is opened. The upload never overwrites a row another tab or editor created in the meantime, and the browser copy is removed only after the server accepted it. When it already has keyphrases, the drawer switches to them.
+- An edit the server did not accept is kept in the browser and sent again with the next save, or when the drawer is next opened after a reload. The Keyphrase tab shows a notice until a save succeeds. Saves for one document are sent one at a time.
+- Editors who can read a document but not update it see its keyphrases read-only.
 - Removing every keyphrase keeps an empty row, so an old browser copy is never uploaded over it.
 - A pending edit is sent when the page is hidden or closed, so navigating away does not lose it.
 - Rows are deleted when their document is deleted.
@@ -732,7 +733,7 @@ The `seo-keyphrases` collection itself is closed: every operation is denied in i
 
 ### "Already used on" notice
 
-The Keyphrase tab shows **"This keyphrase is already used on:"** with links to the edit view of other documents that have the same keyphrase in the same locale. Word order, case and accents are ignored (`CMS Payload` = `payload cms`, `café` = `cafe`). Synonyms are not compared.
+The Keyphrase tab shows **"This keyphrase is already used on:"** with links to the edit view of other documents that have the same keyphrase in the same locale. Word order, case and accents on Latin letters are ignored (`CMS Payload` = `payload cms`, `café` = `cafe`). Synonyms are not compared.
 
 ### Internal links tab
 
@@ -763,15 +764,15 @@ seoPlugin({
 Matching rules:
 
 - Whole words only: `web` does not match `websites`.
-- Case and diacritics are ignored: `café` matches `cafe`.
+- Case and accents on Latin letters are ignored: `café` matches `cafe`. `ñ`, Cyrillic `й` and Japanese voiced kana such as `が` stay distinct letters.
 - A hyphen counts as a space: `e-commerce` matches `e commerce`.
-- Scripts written without spaces between words (Chinese, Japanese, Thai) are not matched.
+- Text in scripts written without spaces between words (Chinese, Japanese, Thai) is split into words with `Intl.Segmenter` where the runtime provides it.
 - Only documents that have keyphrases in the same locale can be suggested. In collections with drafts enabled only published documents are suggested.
 - A target is skipped when the text already links to it, either as a rich text internal link or by an `href` whose path equals its `resolveUrl` result.
 - Rich text internal links are read from the Lexical `LinkFeature` shape (`linkType: "internal"`, `doc: { relationTo, value }`) anywhere in the form data. Other link fields, such as custom link groups or relationship fields, are only detected through the `href` they render into the content.
-- An `href` counts only when it is relative, or when its origin equals the origin of `serverURL`, of the plugin's `site.baseUrl` or of an absolute `resolveUrl` result. Links to other sites are ignored, even when their path matches.
+- An `href` counts only when it is relative, or when its host equals the host of `serverURL`, of the plugin's `site.baseUrl`, of the request or of an absolute `resolveUrl` result. `http` and `https` and a leading `www.` are treated as the same site. Links to other sites are ignored, even when their path matches.
 - Paths are compared literally: `/en/alpha` and `/alpha` are different. If your site serves the default locale both with and without a prefix, return from `resolveUrl` the form your content links use.
-- Each request reads every index row of the locale (`docCollection`, `docId`, `keyphrases` only) and matches them in memory.
+- Each request reads the index rows of the locale 500 at a time (`docCollection`, `docId`, `keyphrases` only) and matches them in memory. Matching targets are then loaded in growing batches until 10 suggestions are found, at most 300 targets per request.
 - Limits: the text sent for matching is capped at 100,000 characters, at most 500 `href`s of up to 2,048 characters each and at most 500 rich text internal links are compared.
 
 ---
