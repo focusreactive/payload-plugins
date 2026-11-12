@@ -1,8 +1,8 @@
-import { LINK_SNIPPET_RADIUS } from "../../constants";
 import type { WordToken } from "../../keyphrases/text";
 import { foldText, tokenizeWords } from "../../keyphrases/text";
 import type { DocTarget } from "../../keyphrases/docTarget";
 import type { LinkMatch } from "../../links/types";
+import { snippetOf } from "./snippet";
 
 export interface LinkSource extends DocTarget {
   phrases: string[];
@@ -146,52 +146,6 @@ function scan(tokens: TextToken[], index: PhraseIndex): Map<PhraseEntry, PhraseH
   }
 
   return hits;
-}
-
-function widen(
-  tokens: TextToken[],
-  index: number,
-  edge: TextToken,
-  step: number,
-  within: (token: TextToken) => boolean
-): TextToken {
-  let widest = edge;
-
-  for (let i = index + step, next = tokens[i]; next && within(next); i += step, next = tokens[i]) {
-    widest = next;
-  }
-
-  return widest;
-}
-
-const SNIPPET_ELLIPSIS_START = "… ";
-const SNIPPET_ELLIPSIS_END = " …";
-
-function collapseSpaces(value: string): string {
-  return value.replace(/\s+/gu, " ");
-}
-
-function snippetOf(
-  text: string,
-  tokens: TextToken[],
-  hit: PhraseHit
-): Pick<LinkMatch, "snippet" | "snippetMatch"> {
-  const from = hit.first.start - LINK_SNIPPET_RADIUS;
-  const to = hit.last.end + LINK_SNIPPET_RADIUS;
-  const start = widen(tokens, hit.firstIndex, hit.first, -1, (token) => token.start >= from);
-  const end = widen(tokens, hit.lastIndex, hit.last, 1, (token) => token.end <= to);
-  const atStart = start === tokens[0];
-  const atEnd = end === tokens.at(-1);
-  const before = collapseSpaces(text.slice(atStart ? 0 : start.start, hit.first.start)).trimStart();
-  const matched = collapseSpaces(text.slice(hit.first.start, hit.last.end));
-  const after = collapseSpaces(text.slice(hit.last.end, atEnd ? text.length : end.end)).trimEnd();
-  const lead = atStart ? "" : SNIPPET_ELLIPSIS_START;
-  const matchStart = lead.length + before.length;
-
-  return {
-    snippet: `${lead}${before}${matched}${after}${atEnd ? "" : SNIPPET_ELLIPSIS_END}`,
-    snippetMatch: { start: matchStart, end: matchStart + matched.length },
-  };
 }
 
 function outranks(a: PhraseHit, b: PhraseHit): boolean {
