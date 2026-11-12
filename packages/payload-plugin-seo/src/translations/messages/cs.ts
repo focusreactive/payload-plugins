@@ -44,6 +44,8 @@ export const cs: LanguageMessages = {
   "keyphrase.analyzing": "Analyzuji klíčovou frázi…",
   "keyphrase.hintDuplicate": "Odstraňte duplicitu a fráze se začne analyzovat.",
   "keyphrase.hintEmpty": "Začněte psát klíčovou frázi a uvidíte její analýzu.",
+  "keyphrase.saveFailed":
+    "Klíčové fráze se nepodařilo uložit. Změny zůstávají v tomto prohlížeči a uloží se znovu.",
   "keyphrase.usedOn": "Tato klíčová fráze je už použita na:",
   "keyphrase.cannibalization":
     "Stránky cílící na stejnou klíčovou frázi si mohou ve vyhledávání konkurovat. Zvolte jinou frázi nebo stránky propojte odkazy.",

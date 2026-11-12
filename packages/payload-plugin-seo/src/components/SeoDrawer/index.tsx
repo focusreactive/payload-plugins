@@ -36,6 +36,7 @@ export interface SeoDrawerProps {
   site: { name: string; baseUrl: string; faviconUrl: string };
   renderKeyphraseUsage?: (entry: KeyphraseEntry) => ReactNode;
   renderLinks?: () => ReactNode;
+  keyphrasesSaveFailed?: boolean;
 }
 
 const TABS_WITHOUT_ANALYSIS = new Set<TabKey>(["keyphrase", "links"]);
@@ -47,6 +48,7 @@ export const SeoDrawer = memo(function SeoDrawer({
   analyzing,
   isDuplicate,
   keyphrases,
+  keyphrasesSaveFailed,
   onAddRelated,
   onAddSynonym,
   onRemove,
@@ -103,6 +105,7 @@ export const SeoDrawer = memo(function SeoDrawer({
                   onSetFocus={onSetFocus}
                   isDuplicate={isDuplicate}
                   renderUsage={renderKeyphraseUsage}
+                  saveFailed={keyphrasesSaveFailed}
                 />
               )}
               {tab === "onpage" && result && <OnPageTab data={result.onPage} />}

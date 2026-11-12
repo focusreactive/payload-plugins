@@ -42,6 +42,8 @@ export const en = {
   "keyphrase.analyzing": "Analyzing keyphrase…",
   "keyphrase.hintDuplicate": "Resolve the duplicate to analyse this keyphrase.",
   "keyphrase.hintEmpty": "Start typing a keyphrase to see its analysis.",
+  "keyphrase.saveFailed":
+    "Couldn’t save keyphrases. Your changes are kept in this browser and will be saved again.",
   "keyphrase.usedOn": "This keyphrase is already used on:",
   "keyphrase.cannibalization":
     "Pages that target one keyphrase can compete in search. Pick a different keyphrase or link the pages to each other.",

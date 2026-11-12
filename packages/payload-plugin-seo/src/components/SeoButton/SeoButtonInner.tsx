@@ -53,6 +53,7 @@ export function SeoButtonInner({
     keyphrases,
     remove: removeKeyphrase,
     removeSynonym,
+    saveFailed,
     setFocus,
     syncOnOpen,
     updateText,
@@ -118,6 +119,7 @@ export function SeoButtonInner({
       onRemove={handleRemove}
       onSetFocus={setFocus}
       isDuplicate={isDuplicate}
+      keyphrasesSaveFailed={saveFailed}
       renderKeyphraseUsage={remote ? renderKeyphraseUsage : undefined}
       renderLinks={remote ? renderLinksPanel : undefined}
       site={site}

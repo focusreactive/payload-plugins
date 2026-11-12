@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { AlertTriangle, Plus } from "lucide-react";
 import { MAX_KEYPHRASES } from "../../../../constants";
 import type { KeyphraseEntry } from "../../keyphraseState";
 import { KeyphraseCard } from "./KeyphraseCard";
@@ -13,6 +13,7 @@ interface KeyphraseRailProps {
   stateFor: (entry: KeyphraseEntry) => CardState;
   onSelect: (id: string) => void;
   onAdd: () => void;
+  saveFailed?: boolean;
 }
 
 export function KeyphraseRail({
@@ -21,6 +22,7 @@ export function KeyphraseRail({
   stateFor,
   onSelect,
   onAdd,
+  saveFailed = false,
 }: KeyphraseRailProps) {
   const { t } = useSeoTranslation();
   const atMax = entries.length >= MAX_KEYPHRASES;
@@ -55,6 +57,16 @@ export function KeyphraseRail({
             onSelect={onSelect}
           />
         ))}
+
+        {saveFailed && (
+          <div
+            className="mt-[6px] text-[11.5px] text-seo-bad bg-seo-bad-100 rounded-rs px-[10px] py-[8px] flex items-start gap-[7px]"
+            role="alert"
+          >
+            <AlertTriangle aria-hidden="true" className="w-[15px] h-[15px] flex-none" />
+            {t("keyphrase.saveFailed")}
+          </div>
+        )}
       </div>
     </aside>
   );

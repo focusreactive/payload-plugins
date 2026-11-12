@@ -23,6 +23,7 @@ export interface KeyphraseTabProps {
   onSetFocus: (id: string) => void;
   isDuplicate: (id: string, text: string) => boolean;
   renderUsage?: (entry: KeyphraseEntry) => ReactNode;
+  saveFailed?: boolean;
 }
 
 function resultForEntry(
@@ -49,6 +50,7 @@ export function KeyphraseTab({
   onSetFocus,
   isDuplicate,
   renderUsage,
+  saveFailed,
 }: KeyphraseTabProps) {
   const selectedId = selectedIdProp ?? keyphrases[0]?.id ?? null;
   const selected = keyphrases.find((k) => k.id === selectedId) ?? keyphrases[0] ?? null;
@@ -128,6 +130,7 @@ export function KeyphraseTab({
         entries={keyphrases}
         onAdd={onAddRelated}
         onSelect={onSelect}
+        saveFailed={saveFailed}
         selectedId={selectedId}
         stateFor={stateFor}
       />

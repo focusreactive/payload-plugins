@@ -219,4 +219,29 @@ describe("KeyphraseTab", () => {
     );
     expect(screen.getByTestId("usage")).toHaveTextContent("headless cms");
   });
+
+  it("tells the user when keyphrases could not be saved", () => {
+    const { rerender } = render(
+      <KeyphraseTab
+        keyphrases={entries}
+        selectedId={null}
+        result={result}
+        analyzing={false}
+        {...handlers}
+      />
+    );
+    expect(screen.queryByRole("alert")).toBeNull();
+
+    rerender(
+      <KeyphraseTab
+        keyphrases={entries}
+        selectedId={null}
+        result={result}
+        analyzing={false}
+        saveFailed
+        {...handlers}
+      />
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(/couldn.t save keyphrases/iu);
+  });
 });
