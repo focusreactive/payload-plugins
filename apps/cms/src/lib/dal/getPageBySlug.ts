@@ -37,11 +37,12 @@ export async function getPageBySlugQuery(
   return docs.find((p) => p?.breadcrumbs?.at(-1)?.url === targetUrl) ?? null;
 }
 
-export const getPageBySlug = cache(
+const getPageBySlugCached = cache(
   async (
-    pathSegments: string[],
+    segmentsKey: string,
     locale?: Locale
   ): Promise<RequiredDataFromCollectionSlug<"page"> | null> => {
+    const pathSegments = JSON.parse(segmentsKey) as string[];
     const { isEnabled: draft } = await draftMode();
     const resolvedLocale = await resolveLocale(locale);
     const pathSegmentsNorm = pathSegments.length === 0 ? ["home"] : [...pathSegments];
@@ -67,3 +68,9 @@ export const getPageBySlug = cache(
     )();
   }
 );
+
+export const getPageBySlug = (
+  pathSegments: string[],
+  locale?: Locale
+): Promise<RequiredDataFromCollectionSlug<"page"> | null> =>
+  getPageBySlugCached(JSON.stringify(pathSegments), locale);

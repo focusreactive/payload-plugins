@@ -1,3 +1,4 @@
+import type { Message } from "../../translations/types";
 import type { Visualization } from "./visualization";
 
 export type Status = "good" | "warn" | "bad";
@@ -8,7 +9,7 @@ export interface CheckResult {
   id: string;
   status: Status;
   score: number;
-  recommendation?: string;
+  recommendation?: Message;
   data?: Record<string, unknown>;
   viz?: Visualization;
 }
@@ -18,8 +19,19 @@ export interface InclusiveFlag {
   suggestion: string;
   location: string;
 }
+
+export type InclusiveCategoryId =
+  | "age"
+  | "appearance"
+  | "culture"
+  | "disability"
+  | "gender"
+  | "sexualOrientation"
+  | "ses"
+  | "other";
+
 export interface InclusiveCategory {
-  name: string;
+  id: InclusiveCategoryId;
   flags: InclusiveFlag[];
 }
 
@@ -110,7 +122,7 @@ export interface AnalysisResult {
     ringScore: number;
     status: Status;
     categories: InclusiveCategory[];
-    cleanCategories: string[];
+    cleanCategories: InclusiveCategoryId[];
   };
   vitals: VitalsResult;
   serp: SerpResult;

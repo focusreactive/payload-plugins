@@ -11,7 +11,7 @@ afterEach(() => {
 const base = {
   entry: { id: "a", text: "payload cms", synonyms: [] },
   duplicate: false,
-  analysis: { kind: "hint" as const, message: "…" },
+  analysis: { kind: "hint" as const, message: "keyphrase.hintEmpty" as const },
   onTextChange: vi.fn(),
   onAddSynonym: vi.fn(),
   onRemoveSynonym: vi.fn(),
@@ -39,6 +39,14 @@ describe("KeyphraseDetail", () => {
     expect(screen.getByText(/already in your keyphrase list/i)).toBeTruthy();
     fireEvent.change(screen.getByLabelText(/focus keyphrase/i), { target: { value: "x" } });
     expect(base.onTextChange).toHaveBeenCalledWith("x");
+  });
+
+  it("shows the usage notice slot unless the keyphrase is a duplicate", () => {
+    const notice = <div data-testid="usage" />;
+    const { rerender } = render(<KeyphraseDetail {...base} isFocus usageNotice={notice} />);
+    expect(screen.getByTestId("usage")).toBeTruthy();
+    rerender(<KeyphraseDetail {...base} isFocus duplicate usageNotice={notice} />);
+    expect(screen.queryByTestId("usage")).toBeNull();
   });
 
   it("renders the analyzing loader", () => {

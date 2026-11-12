@@ -5,6 +5,7 @@ import type { HeadingNode } from "../../../../../engine/types/analysis";
 import { cn } from "../../../../../utils/style";
 import { collectParentIds } from "./headingTreeView";
 import { HeadingTreeGroup } from "./HeadingTreeGroup";
+import { useSeoTranslation } from "../../../../../translations/useSeoTranslation";
 
 export interface HeadingTreeProps {
   tree: HeadingNode[];
@@ -13,6 +14,7 @@ export interface HeadingTreeProps {
 const SUB_LABEL = cn("text-[9.5px] font-semibold uppercase tracking-[0.05em] text-neutral-500");
 
 export function HeadingTree({ tree }: HeadingTreeProps) {
+  const { t } = useSeoTranslation();
   const parentIds = useMemo(() => collectParentIds(tree), [tree]);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
 
@@ -31,7 +33,7 @@ export function HeadingTree({ tree }: HeadingTreeProps) {
   return (
     <div className="px-[15px] pt-[11px] border-t border-neutral-150">
       <div className={cn(SUB_LABEL, "flex items-center justify-between")}>
-        <span>Structure</span>
+        <span>{t("headings.structure")}</span>
 
         {!empty && (
           <button
@@ -39,13 +41,13 @@ export function HeadingTree({ tree }: HeadingTreeProps) {
             onClick={toggleAll}
             className="text-[11px] font-medium normal-case tracking-normal text-neutral-600 hover:text-neutral-1000 hover:underline underline-offset-2 bg-transparent border-0 p-0 cursor-pointer"
           >
-            {allCollapsed ? "Expand all" : "Collapse all"}
+            {t(allCollapsed ? "headings.expandAll" : "headings.collapseAll")}
           </button>
         )}
       </div>
       {empty ? (
         <div className="px-[15px] pt-[20px] pb-[24px] text-center text-[12px] text-neutral-500">
-          No headings found in this content.
+          {t("headings.empty")}
         </div>
       ) : (
         <div className="relative pt-[5px] pb-[7px]">

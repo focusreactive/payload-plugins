@@ -7,10 +7,11 @@ import { measureDescription, measureTitle } from "../../measure/measure";
 import type { RangeOverride } from "../../measure/measure";
 import type { SeoFieldKind } from "../../server/generate/prompts";
 import { Tooltip, TooltipText, TooltipTitle } from "../../ui/Tooltip";
-import { cn } from "../../utils/style";
+import { cn, OUTLINE_BUTTON_CLASS } from "../../utils/style";
 import { AutoPublishIcon, ErrorIcon, GenerateIcon, SpinnerIcon } from "./icons";
 import { Meter } from "./Meter";
 import { useGenerate } from "./useGenerate";
+import { useSeoTranslation } from "../../translations/useSeoTranslation";
 
 interface SeoFieldProps {
   path: string;
@@ -26,10 +27,6 @@ interface SeoFieldProps {
   range?: RangeOverride;
 }
 
-const GEN_BTN_CLASS = cn(
-  "inline-flex items-center gap-[6px] rounded-rs border border-neutral-200 bg-transparent px-[9px] py-[4px] text-[12px] font-semibold text-neutral-800 transition-colors hover:border-neutral-300 hover:bg-neutral-100 disabled:cursor-default disabled:text-neutral-400 cursor-pointer"
-);
-
 interface InjectedComponents {
   Label?: ReactNode;
   Description?: ReactNode;
@@ -40,6 +37,7 @@ interface InjectedComponents {
 
 export function SeoField(props: SeoFieldProps) {
   const { path, field, readOnly, kind, showButton, generateOnPublish, range } = props;
+  const { t } = useSeoTranslation();
   const fieldState = useField<string>({ path });
   const { value, setValue, showError } = fieldState;
   const injected: InjectedComponents =
@@ -47,7 +45,6 @@ export function SeoField(props: SeoFieldProps) {
   const text = value ?? "";
   const measurement =
     kind === "title" ? measureTitle(text, range) : measureDescription(text, range);
-  const kindLabel = kind === "title" ? "title" : "description";
 
   const { generate, status, error } = useGenerate({ kind, measurement, setValue });
   const enabled = getSeoClientConfig().enabled;
@@ -63,15 +60,16 @@ export function SeoField(props: SeoFieldProps) {
             align="end"
             content={
               <>
-                <TooltipTitle>Generation failed</TooltipTitle>
-                <TooltipText>
-                  {error ?? "Your text is unchanged — press Generate to try again."}
-                </TooltipText>
+                <TooltipTitle>{t("field.generationFailed")}</TooltipTitle>
+                <TooltipText>{error ?? t("field.unchanged")}</TooltipText>
               </>
             }
             side="bottom"
           >
-            <ErrorIcon aria-label="Generation failed" className="size-[14px] text-seo-bad" />
+            <ErrorIcon
+              aria-label={t("field.generationFailed")}
+              className="size-[14px] text-seo-bad"
+            />
           </Tooltip>
         )}
 
@@ -80,17 +78,14 @@ export function SeoField(props: SeoFieldProps) {
             align="end"
             content={
               <>
-                <TooltipTitle>Generated automatically</TooltipTitle>
-                <TooltipText>
-                  Left empty, this {kindLabel} is generated from the page content when you publish.
-                  Type a value to keep your own.
-                </TooltipText>
+                <TooltipTitle>{t("field.auto.title")}</TooltipTitle>
+                <TooltipText>{t(`field.auto.body.${kind}`)}</TooltipText>
               </>
             }
             side="bottom"
           >
             <AutoPublishIcon
-              aria-label="Generated on publish"
+              aria-label={t("field.auto.label")}
               className="size-[14px] text-neutral-500"
             />
           </Tooltip>
@@ -98,7 +93,7 @@ export function SeoField(props: SeoFieldProps) {
 
         {showButton && enabled && (
           <button
-            className={GEN_BTN_CLASS}
+            className={OUTLINE_BUTTON_CLASS}
             disabled={loading || readOnly}
             onClick={generate}
             type="button"
@@ -109,7 +104,7 @@ export function SeoField(props: SeoFieldProps) {
               <GenerateIcon className="size-[14px]" />
             )}
 
-            {loading ? "Generating…" : "Generate"}
+            {t(loading ? "field.generating" : "field.generate")}
           </button>
         )}
       </span>
@@ -146,7 +141,7 @@ export function SeoField(props: SeoFieldProps) {
 
       <Meter
         hasText={text.trim().length > 0}
-        kindLabel={kindLabel}
+        kind={kind}
         loading={loading}
         measurement={measurement}
       />

@@ -1,5 +1,35 @@
 import { slugField as payloadSlugField } from "payload";
-import type { PayloadRequest } from "payload";
+import type { CheckboxField, FieldHook, PayloadRequest, TextField } from "payload";
+
+const isDefaultLocaleRequest = (req: PayloadRequest) => {
+  const { localization } = req.payload.config;
+
+  return !localization || req.locale === localization.defaultLocale;
+};
+
+const keepGeneratingWhileDrafting =
+  (slugFieldName: string, generateSlug: FieldHook): FieldHook =>
+  async (args) => {
+    const { data, operation, originalDoc, req, value: isGenerating } = args;
+    const isPublishing = data?._status === "published";
+    const isTranslatingSluggedDoc =
+      operation === "update" &&
+      !isDefaultLocaleRequest(req) &&
+      Boolean(originalDoc?.[slugFieldName]);
+
+    if (isTranslatingSluggedDoc) {
+      return isGenerating && !isPublishing;
+    }
+
+    const slugEditedByUser = data?.[slugFieldName] !== originalDoc?.[slugFieldName];
+    const keepsGenerating = await generateSlug(args);
+
+    if (keepsGenerating || operation !== "update" || !isGenerating) {
+      return keepsGenerating;
+    }
+
+    return !isPublishing && !slugEditedByUser;
+  };
 
 /**
  * Shared slug field for Pages and Posts.
@@ -13,15 +43,26 @@ export const createSharedSlugField = (currentCollection: "page" | "posts") => {
 
   return payloadSlugField({
     overrides: (field) => {
-      const slugInput = field.fields?.[1] as { unique?: boolean; validate?: unknown } | undefined;
+      const generateSlugCheckbox = field.fields?.[0] as CheckboxField | undefined;
+      const slugInput = field.fields?.[1] as TextField | undefined;
+
+      if (generateSlugCheckbox?.hooks?.beforeChange && slugInput) {
+        generateSlugCheckbox.hooks.beforeChange = generateSlugCheckbox.hooks.beforeChange.map(
+          (hook) => keepGeneratingWhileDrafting(slugInput.name, hook)
+        );
+      }
 
       if (slugInput) {
         slugInput.unique = true;
         slugInput.validate = async (
           value: string | null | undefined,
-          { req }: { req: PayloadRequest }
+          { data, req }: { data: Partial<{ _status: string }>; req: PayloadRequest }
         ): Promise<string | true> => {
-          if (!value || !req?.payload) {
+          if (!value) {
+            return data?._status === "published" ? req.t("validation:required") : true;
+          }
+
+          if (!req?.payload) {
             return true;
           }
 

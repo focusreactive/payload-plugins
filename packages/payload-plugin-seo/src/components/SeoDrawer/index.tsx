@@ -5,10 +5,12 @@ import { Loader2 } from "lucide-react";
 import { memo, useState } from "react";
 import type { AnalysisResult, TotalStatus } from "../../engine/types/analysis";
 import type { KeyphraseEntry } from "./keyphraseState";
+import type { LinkSuggestions } from "./links/useLinkSuggestions";
 import { Header } from "./components/Header";
-import { TabsNav } from "./TabsNav";
+import { TABS, TABS_WITH_LINKS, TabsNav } from "./TabsNav";
 import type { TabKey } from "./TabsNav";
 import { KeyphraseTab } from "./tabs/KeyphraseTab";
+import { LinksTab } from "./tabs/LinksTab";
 import { OnPageTab } from "./tabs/OnPageTab";
 import { ReadabilityTab } from "./tabs/ReadabilityTab";
 import { InclusiveTab } from "./tabs/InclusiveTab";
@@ -16,6 +18,7 @@ import { SerpTab } from "./tabs/SerpTab";
 import { VitalsTab } from "./tabs/VitalsTab";
 
 import "../../admin.css";
+import { useSeoTranslation } from "../../translations/useSeoTranslation";
 
 export interface SeoDrawerProps {
   drawerSlug: string;
@@ -32,7 +35,13 @@ export interface SeoDrawerProps {
   onSetFocus: (id: string) => void;
   isDuplicate: (id: string, text: string) => boolean;
   site: { name: string; baseUrl: string; faviconUrl: string };
+  showKeyphraseUsage?: boolean;
+  links?: LinkSuggestions;
+  keyphrasesSaveFailed?: boolean;
+  keyphrasesReadOnly?: boolean;
 }
+
+const TABS_WITHOUT_ANALYSIS = new Set<TabKey>(["keyphrase", "links"]);
 
 export const SeoDrawer = memo(function SeoDrawer({
   drawerSlug,
@@ -41,6 +50,8 @@ export const SeoDrawer = memo(function SeoDrawer({
   analyzing,
   isDuplicate,
   keyphrases,
+  keyphrasesReadOnly,
+  keyphrasesSaveFailed,
   onAddRelated,
   onAddSynonym,
   onRemove,
@@ -48,8 +59,11 @@ export const SeoDrawer = memo(function SeoDrawer({
   onSelect,
   onSetFocus,
   onTextChange,
+  showKeyphraseUsage,
+  links,
   selectedId,
 }: SeoDrawerProps) {
+  const { t } = useSeoTranslation();
   const [tab, setTab] = useState<TabKey>("keyphrase");
 
   const total = result?.overall.seoScore ?? 0;
@@ -65,17 +79,17 @@ export const SeoDrawer = memo(function SeoDrawer({
       Header={<Header drawerSlug={drawerSlug} total={total} totalStatus={totalStatus} />}
     >
       <div className="frseo-root relative text-neutral-800" data-status={totalStatus}>
-        <TabsNav active={tab} onChange={setTab} />
+        <TabsNav active={tab} onChange={setTab} tabs={links ? TABS_WITH_LINKS : TABS} />
 
         <div className="frseo-tabpanel">
-          {result === null && tab !== "keyphrase" ? (
+          {result === null && !TABS_WITHOUT_ANALYSIS.has(tab) ? (
             <div
               className="flex items-center gap-[8px] text-neutral-500 text-[13px]"
               role="status"
               aria-live="polite"
             >
               <Loader2 aria-hidden="true" className="w-[14px] h-[14px] animate-spin" />
-              Analyzing…
+              {t("analyzing")}
             </div>
           ) : (
             <>
@@ -93,6 +107,9 @@ export const SeoDrawer = memo(function SeoDrawer({
                   onRemove={onRemove}
                   onSetFocus={onSetFocus}
                   isDuplicate={isDuplicate}
+                  showUsage={showKeyphraseUsage}
+                  readOnly={keyphrasesReadOnly}
+                  saveFailed={keyphrasesSaveFailed}
                 />
               )}
               {tab === "onpage" && result && <OnPageTab data={result.onPage} />}
@@ -109,6 +126,7 @@ export const SeoDrawer = memo(function SeoDrawer({
                   faviconUrl={site.faviconUrl}
                 />
               )}
+              {tab === "links" && links && <LinksTab onFind={links.find} state={links.state} />}
             </>
           )}
         </div>

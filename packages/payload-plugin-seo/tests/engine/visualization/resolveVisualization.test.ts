@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { CheckResult, Status } from "../../../src/engine/types/analysis";
 import { resolveVisualization } from "../../../src/engine/visualization/resolveVisualization";
+import { createTranslator } from "../../../src/translations";
+import type { DrilldownModel } from "../../../src/engine/types/visualization";
+
+const englishShowButtonLabel = (d: DrilldownModel) =>
+  createTranslator("en", undefined)(`viz.show.${d.noun}`, { count: d.items.length });
 
 const check = (id: string, status: Status = "good"): CheckResult => ({ id, status, score: 9 });
 
@@ -50,8 +55,8 @@ describe("resolveVisualization — proportion (links)", () => {
     expect(v.segment.countLabel).toBe("3 / 5");
     expect(v.segment.filledStatus).toBe("good");
     expect(v.segment.legend).toEqual([
-      { tone: "good", label: "3 dofollow" },
-      { tone: "muted", label: "2 nofollow" },
+      { tone: "good", label: { key: "viz.dofollow", vars: { count: 3 } } },
+      { tone: "muted", label: { key: "viz.nofollow", vars: { count: 2 } } },
     ]);
   });
 
@@ -62,8 +67,8 @@ describe("resolveVisualization — proportion (links)", () => {
     if (v.type !== "proportion") return;
     expect(v.segment.filledStatus).toBe("warn");
     expect(v.segment.legend).toEqual([
-      { tone: "good", label: "1 dofollow" },
-      { tone: "muted", label: "3 nofollow" },
+      { tone: "good", label: { key: "viz.dofollow", vars: { count: 1 } } },
+      { tone: "muted", label: { key: "viz.nofollow", vars: { count: 3 } } },
     ]);
   });
 });
@@ -86,7 +91,7 @@ describe("resolveVisualization — count-drilldown labels", () => {
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
-    expect(v.drilldown.label).toBe("Show 1 link");
+    expect(englishShowButtonLabel(v.drilldown)).toBe("Show 1 link");
   });
 
   it("uses plural 'links' for three textCompetingLinks items", () => {
@@ -100,7 +105,7 @@ describe("resolveVisualization — count-drilldown labels", () => {
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
-    expect(v.drilldown.label).toBe("Show 3 links");
+    expect(englishShowButtonLabel(v.drilldown)).toBe("Show 3 links");
   });
 
   it("uses singular 'section' for one subheadingsTooLong item", () => {
@@ -110,7 +115,7 @@ describe("resolveVisualization — count-drilldown labels", () => {
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
-    expect(v.drilldown.label).toBe("Show 1 section");
+    expect(englishShowButtonLabel(v.drilldown)).toBe("Show 1 section");
   });
 
   it("uses plural 'sections' for two subheadingsTooLong items", () => {
@@ -123,7 +128,7 @@ describe("resolveVisualization — count-drilldown labels", () => {
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
-    expect(v.drilldown.label).toBe("Show 2 sections");
+    expect(englishShowButtonLabel(v.drilldown)).toBe("Show 2 sections");
   });
 
   it("reads the 'paragraphs' key for one textParagraphTooLong item", () => {
@@ -133,7 +138,7 @@ describe("resolveVisualization — count-drilldown labels", () => {
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
-    expect(v.drilldown.label).toBe("Show 1 paragraph");
+    expect(englishShowButtonLabel(v.drilldown)).toBe("Show 1 paragraph");
   });
 
   it("uses plural 'paragraphs' for two textParagraphTooLong items", () => {
@@ -146,7 +151,7 @@ describe("resolveVisualization — count-drilldown labels", () => {
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
-    expect(v.drilldown.label).toBe("Show 2 paragraphs");
+    expect(englishShowButtonLabel(v.drilldown)).toBe("Show 2 paragraphs");
   });
 
   it("uses singular 'group' for one sentenceBeginnings item", () => {
@@ -156,7 +161,7 @@ describe("resolveVisualization — count-drilldown labels", () => {
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
-    expect(v.drilldown.label).toBe("Show 1 group");
+    expect(englishShowButtonLabel(v.drilldown)).toBe("Show 1 group");
   });
 
   it("uses plural 'groups' for two sentenceBeginnings items", () => {
@@ -169,7 +174,7 @@ describe("resolveVisualization — count-drilldown labels", () => {
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
-    expect(v.drilldown.label).toBe("Show 2 groups");
+    expect(englishShowButtonLabel(v.drilldown)).toBe("Show 2 groups");
   });
 
   it("falls back to presence when a drilldown has no items", () => {

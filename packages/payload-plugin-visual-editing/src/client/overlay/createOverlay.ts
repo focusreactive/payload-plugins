@@ -11,7 +11,7 @@ import { createMutationPipeline } from "./mutationPipeline.js";
 import { createStegaBookkeeper } from "./stegaBookkeeper.js";
 import { collectAttrMatches, collectTextMatches } from "./stegaScanner.js";
 import { createTargetRegistry } from "./targetRegistry.js";
-import { pickTargetForGroup } from "./targetSelector.js";
+import { findTargetAncestor, pickTargetForGroup } from "./targetSelector.js";
 
 export type OverlayCtx = {
   buildAdminEditUrl: BuildAdminEditUrl;
@@ -22,6 +22,13 @@ export type OverlayCtx = {
    *  'off' is handled by not mounting the overlay at all, so it never reaches this module. */
   mode: "always" | "hover";
 };
+
+const isPlainPrimaryClick = (event: MouseEvent) =>
+  event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
+
+const hasTextSelection = () => document.getSelection()?.isCollapsed === false;
+
+const isRepeatedClick = (event: MouseEvent) => event.detail > 1;
 
 // Wires every overlay submodule and returns a dispose that tears them down in reverse order.
 // `getCtx` is a getter so the callsite (the hook) can stabilize its useEffect dependency array
@@ -94,7 +101,24 @@ export function createOverlay(main: HTMLElement, getCtx: () => OverlayCtx): () =
     onTextReset: (node) => bookkeeper.forgetText(node),
   });
 
+  const openFieldOnTargetClick = (event: MouseEvent) => {
+    if (!isPlainPrimaryClick(event)) return;
+    const target = findTargetAncestor(event.target instanceof Element ? event.target : null);
+    const config = target ? registry.get(target) : undefined;
+    if (!config) return;
+    if (isRepeatedClick(event)) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    if (hasTextSelection()) return;
+    event.stopPropagation();
+    config.clickHandler(event);
+  };
+  main.addEventListener("click", openFieldOnTargetClick, true);
+
   return () => {
+    main.removeEventListener("click", openFieldOnTargetClick, true);
     pipeline.dispose();
     hover.dispose();
     registry.disposeAll();

@@ -7,6 +7,7 @@ import { SectionCard } from "../../../ui/SectionCard";
 import { Pill } from "../../../ui/Pill";
 import { HeadingsSection } from "../components/HeadingsSection";
 import { TabWrapper } from "../components/TabWrapper";
+import { useSeoTranslation } from "../../../translations/useSeoTranslation";
 
 export interface VitalsTabProps {
   data: VitalsResult;
@@ -14,6 +15,7 @@ export interface VitalsTabProps {
 }
 
 export function VitalsTab({ data, onRequestKeyphrase }: VitalsTabProps) {
+  const { t } = useSeoTranslation();
   const max = Math.max(1, ...data.prominentWords.map((w) => w.count));
   const noKeyphraseMatch = data.prominentWords.every((w) => !w.isKeyphrase);
 
@@ -21,18 +23,22 @@ export function VitalsTab({ data, onRequestKeyphrase }: VitalsTabProps) {
     <TabWrapper>
       <section className="flex flex-col gap-[13px]">
         <div className="grid grid-cols-3 gap-[9px]">
-          <KpiCard label="Words" value={data.words.toLocaleString()} />
-          <KpiCard label="Sentences" value={data.sentences} />
-          <KpiCard label="Paragraphs" value={data.paragraphs} />
-          <KpiCard label="Images" value={data.images} />
-          <KpiCard label="Videos" value={data.videos} />
-          <KpiCard label="Reading time" value={data.readingTimeMinutes} suffix="min" />
+          <KpiCard label={t("vitals.words")} value={data.words.toLocaleString()} />
+          <KpiCard label={t("vitals.sentences")} value={data.sentences} />
+          <KpiCard label={t("vitals.paragraphs")} value={data.paragraphs} />
+          <KpiCard label={t("vitals.images")} value={data.images} />
+          <KpiCard label={t("vitals.videos")} value={data.videos} />
+          <KpiCard
+            label={t("vitals.readingTime")}
+            value={data.readingTimeMinutes}
+            suffix={t("vitals.minutes")}
+          />
         </div>
 
         <HeadingsSection data={data.headings} />
 
         <SectionCard
-          title="Prominent words"
+          title={t("vitals.prominentWords")}
           widget={<Pill variant="neutral">{data.prominentWords.length}</Pill>}
         >
           {data.prominentWords.map((w) => (
@@ -47,7 +53,7 @@ export function VitalsTab({ data, onRequestKeyphrase }: VitalsTabProps) {
                 {w.word}{" "}
                 {w.isKeyphrase && (
                   <span className="text-[9px] font-bold uppercase tracking-[0.04em] text-neutral-1000 bg-neutral-150 rounded-[3px] px-[5px] py-[1px]">
-                    Key
+                    {t("vitals.keyBadge")}
                   </span>
                 )}
               </div>
@@ -73,7 +79,7 @@ export function VitalsTab({ data, onRequestKeyphrase }: VitalsTabProps) {
             onClick={onRequestKeyphrase}
             className="self-start text-[12px] text-neutral-600 underline underline-offset-2 hover:text-neutral-800 cursor-pointer bg-transparent border-0 p-0"
           >
-            Set a focus keyphrase to see which prominent words match it
+            {t("vitals.setKeyphrase")}
           </button>
         )}
       </section>

@@ -80,6 +80,7 @@ export interface Config {
     globalBlock: GlobalBlock;
     'document-embeddings': DocumentEmbedding;
     redirects: Redirect;
+    'seo-keyphrases': SeoKeyphrase;
     presets: Preset;
     comments: Comment;
     'comment-reads': CommentRead;
@@ -110,6 +111,7 @@ export interface Config {
     globalBlock: GlobalBlockSelect<false> | GlobalBlockSelect<true>;
     'document-embeddings': DocumentEmbeddingsSelect<false> | DocumentEmbeddingsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
+    'seo-keyphrases': SeoKeyphrasesSelect<false> | SeoKeyphrasesSelect<true>;
     presets: PresetsSelect<false> | PresetsSelect<true>;
     comments: CommentsSelect<false> | CommentsSelect<true>;
     'comment-reads': CommentReadsSelect<false> | CommentReadsSelect<true>;
@@ -1455,6 +1457,28 @@ export interface Redirect {
   createdAt: string;
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "seo-keyphrases".
+ */
+export interface SeoKeyphrase {
+  id: number;
+  docCollection: string;
+  docId: string;
+  locale: string;
+  keyphrases:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  intents?: string[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * One preset = one block type. Add one block to store its field values.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2054,7 +2078,7 @@ export interface Comment {
         id?: string | null;
       }[]
     | null;
-  author: number | User;
+  author?: (number | null) | User;
   isResolved?: boolean | null;
   resolvedBy?: (number | null) | User;
   resolvedAt?: string | null;
@@ -2444,6 +2468,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'redirects';
         value: number | Redirect;
+      } | null)
+    | ({
+        relationTo: 'seo-keyphrases';
+        value: number | SeoKeyphrase;
       } | null)
     | ({
         relationTo: 'presets';
@@ -3435,6 +3463,19 @@ export interface RedirectsSelect<T extends boolean = true> {
       };
   type?: T;
   isActive?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "seo-keyphrases_select".
+ */
+export interface SeoKeyphrasesSelect<T extends boolean = true> {
+  docCollection?: T;
+  docId?: T;
+  locale?: T;
+  keyphrases?: T;
+  intents?: T;
   updatedAt?: T;
   createdAt?: T;
 }

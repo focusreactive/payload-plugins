@@ -1,10 +1,13 @@
 import { link } from "@focus-reactive/payload-plugin-seo/content";
 import type { ContentNode, DocStore } from "@focus-reactive/payload-plugin-seo/content";
+import type { ResolveUrl } from "@focus-reactive/payload-plugin-seo";
 
 import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
 import type { CustomPageKey } from "@/lib/config/customPages";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
 import type { Page } from "@/payload-types";
+
+import { isRecord } from "./richTextRefs";
 
 export type LinkRelation = "page" | "posts";
 
@@ -99,6 +102,44 @@ export function collectLinkRefs(value: unknown): LinkRef[] {
   return out;
 }
 
+function readBreadcrumbs(value: unknown): Page["breadcrumbs"] {
+  if (!Array.isArray(value)) return null;
+
+  return value.map((crumb: unknown) => ({
+    url: isRecord(crumb) && typeof crumb.url === "string" ? crumb.url : null,
+  }));
+}
+
+export function toResolvedLinkDoc(doc: Record<string, unknown>): ResolvedLinkDoc {
+  const { id, slug, breadcrumbs } = doc;
+
+  return {
+    ...(typeof id === "string" || typeof id === "number" ? { id } : {}),
+    slug: typeof slug === "string" ? slug : null,
+    breadcrumbs: readBreadcrumbs(breadcrumbs),
+  };
+}
+
+function buildDocHref(relationTo: LinkRelation, doc: ResolvedLinkDoc, locale: string): string {
+  if (relationTo === "page") {
+    return (
+      buildUrl({
+        collection: "page",
+        breadcrumbs: doc.breadcrumbs,
+        slug: doc.slug,
+        locale,
+        absolute: false,
+      }) || "/"
+    );
+  }
+
+  return buildUrl({ collection: "posts", slug: doc.slug, locale, absolute: false });
+}
+
+export function resolveDocUrl(relationTo: LinkRelation): ResolveUrl {
+  return ({ doc, locale }) => buildDocHref(relationTo, toResolvedLinkDoc(doc), locale);
+}
+
 function resolveReferenceHref(reference: LinkReference, ctx: LinkResolveCtx): string {
   const { relationTo, value } = reference;
 
@@ -109,19 +150,7 @@ function resolveReferenceHref(reference: LinkReference, ctx: LinkResolveCtx): st
 
   if (!doc) return "";
 
-  if (relationTo === "page") {
-    return (
-      buildUrl({
-        collection: "page",
-        breadcrumbs: doc.breadcrumbs,
-        slug: doc.slug,
-        locale: ctx.locale,
-        absolute: false,
-      }) || "/"
-    );
-  }
-
-  return buildUrl({ collection: "posts", slug: doc.slug, locale: ctx.locale, absolute: false });
+  return buildDocHref(relationTo, doc, ctx.locale);
 }
 
 function resolveLinkHref(value: LinkValue, ctx: LinkResolveCtx): string {

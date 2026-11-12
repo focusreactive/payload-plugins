@@ -48,15 +48,11 @@ export const DEFAULT_VALUES = {
     categories: {
       title: { en: "Title", es: "Título" },
     },
-    page: {
-      title: { en: "Page", es: "Página" },
-    },
     posts: {
       excerpt: {
         en: "Short description of the post",
         es: "Breve descripción de la publicación",
       },
-      title: { en: "Title", es: "Título" },
     },
     siteSettings: {
       blog: {

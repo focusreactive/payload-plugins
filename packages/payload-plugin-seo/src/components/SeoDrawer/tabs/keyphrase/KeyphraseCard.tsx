@@ -4,6 +4,7 @@ import type { Status } from "../../../../engine/types/analysis";
 import { ScoreRing } from "../../../../ui/ScoreRing";
 import { cn } from "../../../../utils/style";
 import type { KeyphraseEntry } from "../../keyphraseState";
+import { useSeoTranslation } from "../../../../translations/useSeoTranslation";
 
 export type CardState =
   | { kind: "score"; score: number; status: Status }
@@ -31,6 +32,7 @@ function MiniRing({ state }: { state: CardState }) {
 }
 
 export function KeyphraseCard({ entry, isFocus, selected, state, onSelect }: KeyphraseCardProps) {
+  const { t } = useSeoTranslation();
   return (
     <button
       type="button"
@@ -46,7 +48,7 @@ export function KeyphraseCard({ entry, isFocus, selected, state, onSelect }: Key
       <span className="flex-1 min-w-0 flex flex-col gap-[2px]">
         {isFocus && (
           <span className="self-start text-[7px] leading-none uppercase bg-neutral-1000 text-neutral-0 px-[6px] py-[2px] rounded-[7px] tracking-[0.06em] font-bold">
-            Focus
+            {t("keyphrase.focusBadge")}
           </span>
         )}
 
@@ -54,7 +56,7 @@ export function KeyphraseCard({ entry, isFocus, selected, state, onSelect }: Key
           <span className="text-[12px] font-semibold text-neutral-800 truncate">{entry.text}</span>
         ) : (
           <span className="text-[12px] font-medium italic text-neutral-300 truncate">
-            New keyphrase
+            {t("keyphrase.new")}
           </span>
         )}
       </span>

@@ -1,9 +1,11 @@
 import { createParentField, createBreadcrumbsField } from "@payloadcms/plugin-nested-docs";
 import type { CollectionConfig } from "payload";
 
-import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
+import {
+  LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
+  createLivePreviewVersions,
+} from "@/lib/config/livePreview";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
-import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { createSharedSlugField } from "@/lib/fields/slugField";
@@ -25,6 +27,7 @@ export const Page: CollectionConfig<"page"> = {
   admin: {
     components: {
       edit: {
+        beforeDocumentControls: LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
         PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
       },
     },
@@ -61,10 +64,9 @@ export const Page: CollectionConfig<"page"> = {
       admin: {
         description: {
           en: "The title of the page",
-          es: 'El título de la página (por defecto: "Page")',
+          es: "El título de la página",
         },
       },
-      defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.page.title),
       localized: true,
       name: "title",
       required: true,
@@ -108,8 +110,5 @@ export const Page: CollectionConfig<"page"> = {
     },
   },
   slug: "page",
-  versions: {
-    drafts: true,
-    maxPerDoc: 50,
-  },
+  versions: createLivePreviewVersions(),
 };
