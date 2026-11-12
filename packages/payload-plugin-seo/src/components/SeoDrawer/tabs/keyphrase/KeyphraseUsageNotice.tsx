@@ -1,7 +1,7 @@
 "use client";
 
 import { useConfig, useDebounce, useDocumentInfo, usePayloadAPI } from "@payloadcms/ui";
-import { useEffect } from "react";
+import { useState } from "react";
 import { KEYPHRASE_USAGE_DELAY_MS, KEYPHRASE_USAGE_ENDPOINT_PATH } from "../../../../constants";
 import { docTargetKey } from "../../../../keyphrases/docTarget";
 import { adminDocHref } from "../../../../keyphrases/usage";
@@ -18,14 +18,17 @@ export interface KeyphraseUsageProps {
 export function KeyphraseUsageNotice({ collectionSlug, docId, phrase }: KeyphraseUsageProps) {
   const { config } = useConfig();
   const { t } = useSeoTranslation();
+  const params = { collection: collectionSlug, docId, phrase };
   const [{ data, isError }, { setParams }] = usePayloadAPI(
     `${config.routes.api}${KEYPHRASE_USAGE_ENDPOINT_PATH}`,
-    { initialParams: { collection: collectionSlug, docId, phrase } }
+    { initialParams: params }
   );
+  const [requestedPhrase, setRequestedPhrase] = useState(phrase);
 
-  useEffect(() => {
-    setParams({ collection: collectionSlug, docId, phrase });
-  }, [collectionSlug, docId, phrase, setParams]);
+  if (requestedPhrase !== phrase) {
+    setRequestedPhrase(phrase);
+    setParams(params);
+  }
 
   const docs: UsageDoc[] = data?.docs ?? [];
 

@@ -98,6 +98,14 @@ describe("KeyphraseUsage", () => {
     rerender(<KeyphraseUsage phrase="ab" />);
 
     expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
+    expect(setParams).toHaveBeenCalledTimes(1);
     expect(setParams).toHaveBeenLastCalledWith({ collection: "posts", docId: "1", phrase: "ab" });
+  });
+
+  it("does not request again when re-rendered with the same phrase", () => {
+    const { rerender } = render(<KeyphraseUsage phrase="a" />);
+    rerender(<KeyphraseUsage phrase="a" />);
+
+    expect(setParams).not.toHaveBeenCalled();
   });
 });
