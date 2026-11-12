@@ -10,14 +10,15 @@ import { siteOf, toPath } from "../../links/toPath";
 import { docTargetKey } from "../../keyphrases/docTarget";
 import { readJsonBody } from "../http";
 import { readAuthorizedRef, rejectNonAdmin } from "../keyphrases/authorize";
-import { findLinkSourcePages } from "../keyphrases/rows";
-import type { DocRef, KeyphraseScope, LinkSourceRow } from "../keyphrases/types";
+import type { DocRef, KeyphraseScope } from "../keyphrases/types";
 import type { LinkCandidate } from "./findLinkCandidates";
 import { byRelevance, findLinkCandidates } from "./findLinkCandidates";
 import type { LinkRequest, LinkedHref } from "./request";
 import { readLinkRequest } from "./request";
 import type { LinkSuggestion } from "../../links/types";
 import { resolveLinkTargets } from "./resolveLinkTargets";
+import { findLinkSourcePages } from "./sourceRows";
+import type { LinkSourceRow } from "./sourceRows";
 import { toLinkSources } from "./toLinkSources";
 
 interface SuggestionSearch {

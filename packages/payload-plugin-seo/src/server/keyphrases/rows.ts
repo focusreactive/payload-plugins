@@ -1,7 +1,7 @@
 import type { PayloadRequest, Where } from "payload";
-import { KEYPHRASES_COLLECTION_SLUG, LINK_SOURCE_PAGE_SIZE } from "../../constants";
+import { KEYPHRASES_COLLECTION_SLUG } from "../../constants";
 import type { DocTarget } from "../../keyphrases/docTarget";
-import type { DocRef, KeyphraseRow, LinkSourceRow } from "./types";
+import type { DocRef, KeyphraseRow } from "./types";
 
 export function rowWhere(target: DocTarget): Where {
   return {
@@ -22,9 +22,7 @@ export async function findRow(req: PayloadRequest, ref: DocRef): Promise<Keyphra
   return docs[0] as KeyphraseRow | undefined;
 }
 
-const LINK_SOURCE_SELECT = { docCollection: true, docId: true, keyphrases: true } as const;
-
-function otherRowsWhere(self: DocRef, collections: string[], where: Where[] = []): Where {
+export function otherRowsWhere(self: DocRef, collections: string[], where: Where[] = []): Where {
   return {
     and: [
       { locale: { equals: self.locale } },
@@ -56,28 +54,4 @@ export async function findRowsSharingIntent(
   });
 
   return docs as KeyphraseRow[];
-}
-
-export async function* findLinkSourcePages(
-  req: PayloadRequest,
-  self: DocRef,
-  collections: string[]
-): AsyncGenerator<LinkSourceRow[]> {
-  let hasNextPage = true;
-
-  for (let page = 1; hasNextPage; page += 1) {
-    const result = await req.payload.find({
-      collection: KEYPHRASES_COLLECTION_SLUG,
-      where: otherRowsWhere(self, collections),
-      select: LINK_SOURCE_SELECT,
-      page,
-      limit: LINK_SOURCE_PAGE_SIZE,
-      depth: 0,
-      overrideAccess: true,
-      req,
-    });
-
-    hasNextPage = result.hasNextPage === true;
-    yield result.docs as LinkSourceRow[];
-  }
 }

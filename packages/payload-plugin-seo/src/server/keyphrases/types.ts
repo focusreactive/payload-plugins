@@ -16,5 +16,3 @@ export interface KeyphraseRow {
   locale: string;
   keyphrases: unknown;
 }
-
-export type LinkSourceRow = Pick<KeyphraseRow, "docCollection" | "docId" | "keyphrases">;

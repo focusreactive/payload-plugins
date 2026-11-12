@@ -1,5 +1,5 @@
 import { sanitizeStoredKeyphrases } from "../../keyphrases/stored";
-import type { LinkSourceRow } from "../keyphrases/types";
+import type { LinkSourceRow } from "./sourceRows";
 import type { LinkSource } from "./findLinkCandidates";
 
 function phrasesOf(row: LinkSourceRow): string[] {
