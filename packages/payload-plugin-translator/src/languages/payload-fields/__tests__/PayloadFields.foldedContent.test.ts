@@ -96,7 +96,8 @@ describe("a document with nothing embedded in its rich text", () => {
       const old = whatStalenessHashes(build());
 
       for (const field of fields(build())) {
-        expect(field.text).toBe(old.get(String(field.address)));
+        expect(field.ownText).toBe(old.get(String(field.address)));
+        expect(field.crossedIn, "nothing is embedded here, so nothing is carried").toEqual([]);
       }
     }
   );
@@ -111,13 +112,17 @@ describe("a document holding a block inside its rich text", () => {
     ).toEqual(["body", "sections.s1:cta.heading", "title"]);
   });
 
-  it("hashes the old text plus exactly the block's text, and nothing else moves", () => {
+  it("keeps the field's own text untouched and carries the block's text beside it", () => {
     const old = whatStalenessHashes(withBlock());
 
     for (const field of fields(withBlock())) {
       const address = String(field.address);
-      const before = old.get(address) ?? "";
-      expect(field.text).toBe(address === "body" ? `${before}Buy now` : before);
+      expect(field.ownText, "what the projector already produced for this field").toBe(
+        old.get(address) ?? ""
+      );
+      expect(field.crossedIn.map((piece) => piece.text)).toEqual(
+        address === "body" ? ["Buy now"] : []
+      );
     }
   });
 });

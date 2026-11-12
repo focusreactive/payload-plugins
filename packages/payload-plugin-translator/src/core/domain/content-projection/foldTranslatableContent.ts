@@ -3,12 +3,14 @@ import type { CollectOptions, TranslationTarget } from "../../traversal/index.js
 import type { IdPath } from "./idPath.js";
 import { walkAddress } from "./walkAddress.js";
 
+export type CrossedPiece = {
+  foundAt: IdPath;
+  text: string;
+};
+
 export type FoldedField = {
   address: IdPath;
-  /**
-   * Only the text found below a crossing at this address; the field's own text is not here.
-   */
-  crossedInText: string;
+  crossedIn: readonly CrossedPiece[];
 };
 
 const textOf = (target: TranslationTarget): string =>
@@ -30,9 +32,8 @@ export function foldTranslatableContent(options: CollectOptions): readonly Folde
 
   return [...byAddress].map(([address, targets]) => ({
     address,
-    crossedInText: targets
+    crossedIn: targets
       .filter((target) => crossedIntoThisField(target, address))
-      .map(textOf)
-      .join(""),
+      .map((target) => ({ foundAt: walkAddress(target.idPath), text: textOf(target) })),
   }));
 }

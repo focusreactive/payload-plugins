@@ -2,7 +2,6 @@ import { asHash } from "../../../../core/domain/provenance/__tests__/fixtures/cl
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Field, Payload, PayloadRequest } from "payload";
 
-import { computeFieldFingerprints } from "../../../../core/domain/content-projection/computeFieldFingerprints.js";
 import type {
   ProvenanceReceipt,
   ProvenanceStore,
@@ -19,7 +18,9 @@ import { fingerprintsOf } from "../../../modules/provenance/__tests__/fixtures/f
 const COLLECTION = "posts";
 const schema: Field[] = [{ name: "title", type: "text", localized: true }];
 const sourceDoc = { id: "1", title: "Hello" };
-const recordedFields = computeFieldFingerprints(sourceDoc, schema);
+const schemaMap = new Map([[COLLECTION, schema]]) as CollectionSchemaMap;
+const hashesOf = fingerprintsOf(schemaMap);
+const recordedFields = hashesOf(COLLECTION, sourceDoc);
 const recordedFingerprint = recordedFields;
 
 function makeRecord(overrides: Partial<ProvenanceReceipt> = {}): ProvenanceReceipt {
@@ -46,8 +47,6 @@ beforeEach(() => {
     logger,
   } as unknown as Payload;
 });
-
-const schemaMap = new Map([["posts", schema]]) as CollectionSchemaMap;
 
 function makeConfig(store: ProvenanceStore): StalenessConfig {
   return {
@@ -163,7 +162,7 @@ describe("DismissStalenessHandler", () => {
   it("re-bases the receipt on the source as it stands", async () => {
     const rebaseSourceFingerprint = vi.fn().mockResolvedValue(undefined);
     const drifted = makeRecord({
-      sourceFingerprint: computeFieldFingerprints({ title: "Gone" }, schema),
+      sourceFingerprint: hashesOf(COLLECTION, { title: "Gone" }),
     });
     const store = makeStore({
       find: vi.fn().mockResolvedValue(drifted),

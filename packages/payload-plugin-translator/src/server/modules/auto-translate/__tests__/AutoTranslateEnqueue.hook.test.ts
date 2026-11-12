@@ -17,6 +17,7 @@ import {
   makeAutoTranslateHook,
   propagateAutoTranslateCustom,
 } from "../AutoTranslateEnqueue.hook.js";
+import { fingerprintsOf } from "../../provenance/__tests__/fixtures/fingerprinter.js";
 import { storeDouble } from "../../runs/__tests__/fixtures/runRecordStore.js";
 
 const schema: Field[] = [{ name: "title", type: "text", localized: true }];
@@ -43,7 +44,7 @@ function setup(
   });
   const hook = makeAutoTranslateHook({
     resolvePolicy,
-    schemaMap,
+    fingerprintOf: fingerprintsOf(schemaMap),
     taskRunnerFactory: taskRunnerFactory as never,
     runRecordStoreFactory: () => runs,
   });

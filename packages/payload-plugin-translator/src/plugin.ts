@@ -239,7 +239,8 @@ export function translatorPlugin(
 
     const embeds = embedDefinitions(payloadConfig.blocks, pluginConfig.embeds);
     const walk = translationLanguages(embeds);
-    const provenanceParts = configureProvenance(provenance, sourceFingerprinter(schemaMap, walk));
+    const fingerprintOf = sourceFingerprinter(schemaMap, walk);
+    const provenanceParts = configureProvenance(provenance, fingerprintOf);
     const runRecord = configureRunRecord(runs);
 
     const chain: TranslationModule[] = provenanceParts
@@ -261,7 +262,7 @@ export function translatorPlugin(
     });
     const autoTranslateModule = configureAutoTranslate(
       collections,
-      schemaMap,
+      fingerprintOf,
       taskRunnerFactory,
       runRecord.storeFactory
     );

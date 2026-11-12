@@ -1,7 +1,6 @@
 import type { Field, Payload } from "payload";
 import { describe, expect, it, vi } from "vitest";
 
-import { computeFieldFingerprints } from "../../../../core/domain/content-projection/computeFieldFingerprints.js";
 import type {
   ProvenanceReceipt,
   ProvenanceStore,
@@ -31,7 +30,7 @@ const UNUSED_PAYLOAD = {} as Payload;
 const sourceWas = { id: "1", title: "Hello", body: "World" };
 const sourceNow = { id: "1", title: "Hello", body: "Moved on" };
 
-const hashesOf = (doc: Record<string, unknown>) => computeFieldFingerprints(doc, schema);
+const hashesOf = (doc: Record<string, unknown>) => fingerprintsOf(schemaMap)(COLLECTION, doc);
 
 const receiptFrom = (
   doc: Record<string, unknown>,

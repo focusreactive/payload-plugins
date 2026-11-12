@@ -59,7 +59,7 @@ describe("the stored receipt", () => {
     const hashShape = new RegExp(`^[0-9a-f]{${HASH_CHARS}}$`, "u");
     expect(
       Object.values(parsed).every((hash) => hashShape.test(hash)),
-      "computeFieldFingerprints owns the stored hash format"
+      "the fingerprinter owns the stored hash format"
     ).toBe(true);
   });
 

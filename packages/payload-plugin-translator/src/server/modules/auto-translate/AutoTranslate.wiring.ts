@@ -3,7 +3,7 @@ import {
   getAutoTranslateConfig,
 } from "../../../core/domain/auto-translate/index.js";
 import { Locales } from "../../../core/domain/locales/index.js";
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
+import type { SourceFingerprinter } from "../../../core/domain/content-projection/sourceFingerprinter.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
 import type { TaskRunnerFactory } from "../task-runner/index.js";
 import type { RunRecordStoreFactory } from "../runs/index.js";
@@ -101,7 +101,7 @@ function warnAboutTheRemovedStrategy(collections: ConfigurableCollection[]): voi
  */
 export function configureAutoTranslate(
   collections: ConfigurableCollection[],
-  schemaMap: CollectionSchemaMap,
+  fingerprintOf: SourceFingerprinter,
   taskRunnerFactory: TaskRunnerFactory,
   runRecordStoreFactory: RunRecordStoreFactory
 ): AutoTranslateModule {
@@ -118,7 +118,7 @@ export function configureAutoTranslate(
   const resolvePolicy = makeCollectionPolicyResolver(policies);
   const hook = makeAutoTranslateHook({
     resolvePolicy,
-    schemaMap,
+    fingerprintOf,
     taskRunnerFactory,
     runRecordStoreFactory,
   });
