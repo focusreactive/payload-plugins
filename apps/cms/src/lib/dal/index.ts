@@ -10,6 +10,9 @@ export { getPayloadClient } from "./payload-client";
 // Pages
 export { getPageBySlug, PAGE_RENDER_DEPTH } from "./getPageBySlug";
 
+// Rich text
+export { getUnsavedRichText } from "./getUnsavedRichText";
+
 // Posts
 export { getPostBySlug } from "./getPostBySlug";
 export { getPosts } from "./getPosts";

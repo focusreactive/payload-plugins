@@ -2,14 +2,15 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-import { STORAGE_KEY } from "../constants.js";
-import type { VisualEditingMode } from "../constants.js";
-import { defaultBuildAdminEditUrl } from "./buildAdminEditUrl.js";
-import type { BuildAdminEditUrl } from "./buildAdminEditUrl.js";
+import type { VisualEditingMode } from "./visualEditingMode.js";
+import { STORAGE_KEY } from "./visualEditingMode.js";
+import { defaultBuildAdminEditUrl } from "../shared/buildAdminEditUrl.js";
+import type { BuildAdminEditUrl } from "../shared/buildAdminEditUrl.js";
 
 type VisualEditingContextType = {
   available: boolean;
   enabled: boolean;
+  instantPreview: boolean;
   mode: VisualEditingMode;
   setMode: (mode: VisualEditingMode) => void;
   toggleEnabled: () => void;
@@ -23,6 +24,7 @@ const noop = (): void => undefined;
 const VisualEditingContext = createContext<VisualEditingContextType>({
   available: false,
   enabled: false,
+  instantPreview: false,
   mode: "off",
   setMode: noop,
   toggleEnabled: noop,
@@ -31,8 +33,6 @@ const VisualEditingContext = createContext<VisualEditingContextType>({
   adminBasePath: "/admin",
 });
 
-// Pre-3-state builds persisted `'true'` / `'false'` — promote them so existing
-// users keep their enabled state across this change.
 function readStoredMode(): VisualEditingMode {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (raw === "always" || raw === "hover" || raw === "off") return raw;
@@ -43,6 +43,7 @@ function readStoredMode(): VisualEditingMode {
 export function VisualEditingProvider({
   available: availableProp = false,
   framedOnly = false,
+  instantPreview = false,
   buildAdminEditUrl = defaultBuildAdminEditUrl,
   adminOrigin,
   adminBasePath = "/admin",
@@ -51,6 +52,7 @@ export function VisualEditingProvider({
   available?: boolean;
   /** Restrict the overlay to the CMS preview iframe — hidden when opened in a standalone tab. */
   framedOnly?: boolean;
+  instantPreview?: boolean;
   buildAdminEditUrl?: BuildAdminEditUrl;
   adminOrigin?: string;
   adminBasePath?: string;
@@ -58,7 +60,6 @@ export function VisualEditingProvider({
 }) {
   const [mode, setModeState] = useState<VisualEditingMode>("off");
   const [resolvedOrigin, setResolvedOrigin] = useState(adminOrigin ?? "");
-  // The CMS side preview renders us in an iframe; a separate tab is top-level.
   const [isFramed, setIsFramed] = useState(false);
 
   useEffect(() => {
@@ -81,6 +82,7 @@ export function VisualEditingProvider({
     () => ({
       available,
       enabled,
+      instantPreview,
       mode,
       setMode,
       toggleEnabled,
@@ -88,7 +90,7 @@ export function VisualEditingProvider({
       adminOrigin: resolvedOrigin,
       adminBasePath,
     }),
-    [available, enabled, mode, buildAdminEditUrl, resolvedOrigin, adminBasePath]
+    [available, enabled, instantPreview, mode, buildAdminEditUrl, resolvedOrigin, adminBasePath]
   );
 
   return <VisualEditingContext.Provider value={value}>{children}</VisualEditingContext.Provider>;

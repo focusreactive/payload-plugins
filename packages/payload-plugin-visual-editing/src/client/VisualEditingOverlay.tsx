@@ -1,7 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useContext, useRef, useState } from "react";
 
+import { createSavedRichTextShapes } from "./instantPreview/unsavedRender/savedShapes.js";
+import { OverlayLocaleContext, SavedRichTextShapesContext } from "./overlayContext.js";
 import { useVisualEditingOverlay } from "./useVisualEditingOverlay.js";
 import { useVisualEditing } from "./VisualEditingProvider.js";
 
@@ -12,22 +14,35 @@ export function VisualEditingOverlay({
   locale?: string;
   children: React.ReactNode;
 }) {
-  const { enabled, mode, buildAdminEditUrl, adminOrigin, adminBasePath } = useVisualEditing();
+  const {
+    available,
+    enabled,
+    instantPreview,
+    mode,
+    buildAdminEditUrl,
+    adminOrigin,
+    adminBasePath,
+  } = useVisualEditing();
   const rootRef = useRef<HTMLDivElement | null>(null);
-  // The overlay is never mounted in 'off' mode (enabled === false), so 'always'|'hover' is safe here.
-  useVisualEditingOverlay(enabled, rootRef, {
+  const outerSavedShapes = useContext(SavedRichTextShapesContext);
+  const [savedRichTextShapes] = useState(() => outerSavedShapes ?? createSavedRichTextShapes());
+  const isInstantPreviewOn = available && instantPreview;
+  useVisualEditingOverlay(enabled || isInstantPreviewOn, rootRef, {
     buildAdminEditUrl,
     adminOrigin,
     adminBasePath,
     locale,
-    mode: mode === "off" ? "hover" : mode,
+    mode: enabled ? mode : "off",
+    instantPreview: isInstantPreviewOn,
+    keepsRichTextShape: savedRichTextShapes.keeps,
   });
-  // `display: contents` keeps the wrapper in the DOM tree (so the overlay has a
-  // scan root that matches exactly what the caller chose to wrap) without
-  // introducing a layout/BFC boundary that could alter the child flow.
   return (
-    <div ref={rootRef} data-ve-root="" style={{ display: "contents" }}>
-      {children}
-    </div>
+    <OverlayLocaleContext.Provider value={locale}>
+      <SavedRichTextShapesContext.Provider value={savedRichTextShapes}>
+        <div ref={rootRef} data-ve-root="" style={{ display: "contents" }}>
+          {children}
+        </div>
+      </SavedRichTextShapesContext.Provider>
+    </OverlayLocaleContext.Provider>
   );
 }
