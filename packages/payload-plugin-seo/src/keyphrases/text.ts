@@ -5,12 +5,18 @@ export interface WordToken {
 }
 
 const WORD_PATTERN = /[\p{L}\p{N}\p{M}]+/gu;
+const ACCENTED_LATIN_LETTER = /(\p{Script=Latin})\p{M}+/gu;
+const DISTINCT_LATIN_LETTERS = new Set(["ñ"]);
+
+function stripLatinAccents(letter: string, base: string): string {
+  return DISTINCT_LATIN_LETTERS.has(letter.normalize("NFC")) ? letter : base;
+}
 
 export function foldText(value: string): string {
   return value
     .normalize("NFD")
     .toLowerCase()
-    .replace(/\p{Diacritic}/gu, "")
+    .replace(ACCENTED_LATIN_LETTER, stripLatinAccents)
     .normalize("NFC");
 }
 

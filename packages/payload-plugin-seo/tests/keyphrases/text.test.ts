@@ -9,6 +9,27 @@ describe("foldText", () => {
   it("lowercases and strips diacritics", () => {
     expect(foldText("Café")).toBe("cafe");
   });
+
+  it("strips accents from Latin letters", () => {
+    expect(foldText("Über")).toBe("uber");
+    expect(foldText("Příliš žluťoučký kůň")).toBe("prilis zlutoucky kun");
+    expect(foldText("canción")).toBe("cancion");
+  });
+
+  it("keeps the Spanish ñ apart from n", () => {
+    expect(foldText("Año")).toBe("año");
+    expect(foldText("año")).not.toBe(foldText("ano"));
+  });
+
+  it("keeps Cyrillic letters with marks apart", () => {
+    expect(foldText("Йод")).toBe("йод");
+    expect(foldText("йод")).not.toBe(foldText("иод"));
+  });
+
+  it("keeps Japanese voiced kana apart", () => {
+    expect(foldText("がっこう")).toBe("がっこう");
+    expect(foldText("がっこう")).not.toBe(foldText("かっこう"));
+  });
 });
 
 describe("tokenizeWords", () => {
