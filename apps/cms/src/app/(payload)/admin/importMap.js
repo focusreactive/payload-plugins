@@ -31,6 +31,7 @@ import { SeoField as SeoField_8b0de638b8c4dbaba7d1d35a3b22b14d } from '@focus-re
 import { SlugField as SlugField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
 import { VariantsField as VariantsField_1e5bf2338fb8c7d4f6284f3e67c93951 } from '@focus-reactive/payload-plugin-ab/admin/VariantsField'
 import { default as default_5a9e6bfe3379b31c0258f532ec5399fb } from '@focus-reactive/payload-plugin-translator/client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.server'
+import { PreserveAutosaveEdits as PreserveAutosaveEdits_39eb0920977e9164f764a165b8c797cc } from '../../../components/admin/PreserveAutosaveEdits'
 import { SeoButton as SeoButton_0275c4dc7702e5d88e7eb977a6a3d442 } from '@focus-reactive/payload-plugin-seo/components/SeoButton'
 import { default as default_587142b484744b5573788fdf4a68522a } from '@focus-reactive/payload-plugin-translator/client/widgets/translate-document/ui/TranslateDocument.server'
 import { VisualPreviewButton as VisualPreviewButton_809e4dae2cde944461a83ddb2ad7664d } from '../../../components/admin/VisualPreviewButton'
@@ -89,6 +90,7 @@ export const importMap = {
   "@payloadcms/next/client#SlugField": SlugField_2b8867833a34864a02ddf429b0728a40,
   "@focus-reactive/payload-plugin-ab/admin/VariantsField#VariantsField": VariantsField_1e5bf2338fb8c7d4f6284f3e67c93951,
   "@focus-reactive/payload-plugin-translator/client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.server#default": default_5a9e6bfe3379b31c0258f532ec5399fb,
+  "/components/admin/PreserveAutosaveEdits#PreserveAutosaveEdits": PreserveAutosaveEdits_39eb0920977e9164f764a165b8c797cc,
   "@focus-reactive/payload-plugin-seo/components/SeoButton#SeoButton": SeoButton_0275c4dc7702e5d88e7eb977a6a3d442,
   "@focus-reactive/payload-plugin-translator/client/widgets/translate-document/ui/TranslateDocument.server#default": default_587142b484744b5573788fdf4a68522a,
   "/components/admin/VisualPreviewButton#VisualPreviewButton": VisualPreviewButton_809e4dae2cde944461a83ddb2ad7664d,

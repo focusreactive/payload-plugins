@@ -33,24 +33,25 @@ async function getPostBySlugQuery(
   return (result.docs?.[0] as Post) || null;
 }
 
-export const getPostBySlug = cache(
-  async ({ slug, locale }: { slug: string; locale?: Locale }): Promise<Post | null> => {
-    const { isEnabled: draft } = await draftMode();
-    const resolvedLocale = await resolveLocale(locale);
+const getPostBySlugCached = cache(async (slug: string, locale?: Locale): Promise<Post | null> => {
+  const { isEnabled: draft } = await draftMode();
+  const resolvedLocale = await resolveLocale(locale);
 
-    if (draft) {
-      return getPostBySlugQuery(slug, resolvedLocale, true);
-    }
-
-    return scopedCache(
-      () => getPostBySlugQuery(slug, resolvedLocale, false),
-      [slug, resolvedLocale],
-      {
-        tags: [
-          cacheTag({ locale: resolvedLocale, slug, type: "post" }),
-          cacheTag({ locale: resolvedLocale, type: "postsList" }),
-        ],
-      }
-    )();
+  if (draft) {
+    return getPostBySlugQuery(slug, resolvedLocale, true);
   }
-);
+
+  return scopedCache(
+    () => getPostBySlugQuery(slug, resolvedLocale, false),
+    [slug, resolvedLocale],
+    {
+      tags: [
+        cacheTag({ locale: resolvedLocale, slug, type: "post" }),
+        cacheTag({ locale: resolvedLocale, type: "postsList" }),
+      ],
+    }
+  )();
+});
+
+export const getPostBySlug = ({ slug, locale }: { slug: string; locale?: Locale }) =>
+  getPostBySlugCached(slug, locale);
