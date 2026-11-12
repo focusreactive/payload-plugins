@@ -6,6 +6,7 @@ import { KEYPHRASE_USAGE_DELAY_MS, KEYPHRASE_USAGE_ENDPOINT_PATH } from "../../.
 import { docTargetKey } from "../../../../keyphrases/docTarget";
 import { adminDocHref, hasDocIdentity } from "../../../../keyphrases/usage";
 import type { UsageDoc } from "../../../../keyphrases/usage";
+import { useSeoTranslation } from "../../../../translations/useSeoTranslation";
 
 export interface KeyphraseUsageProps {
   collectionSlug: string;
@@ -15,6 +16,7 @@ export interface KeyphraseUsageProps {
 
 export function KeyphraseUsageNotice({ collectionSlug, docId, phrase }: KeyphraseUsageProps) {
   const { config } = useConfig();
+  const { t } = useSeoTranslation();
   const [{ data, isLoading, isError }] = usePayloadAPI(
     `${config.routes.api}${KEYPHRASE_USAGE_ENDPOINT_PATH}`,
     { initialParams: { collection: collectionSlug, docId, phrase } }
@@ -32,7 +34,7 @@ export function KeyphraseUsageNotice({ collectionSlug, docId, phrase }: Keyphras
     >
       <AlertTriangle aria-hidden="true" className="w-[15px] h-[15px] flex-none" />
       <div className="flex flex-col gap-[4px]">
-        <span>This keyphrase is already used on:</span>
+        <span>{t("keyphrase.usedOn")}</span>
         <ul className="m-0 pl-[16px]">
           {docs.map((doc) => (
             <li key={docTargetKey(doc.collection, doc.id)}>
@@ -47,10 +49,7 @@ export function KeyphraseUsageNotice({ collectionSlug, docId, phrase }: Keyphras
             </li>
           ))}
         </ul>
-        <span>
-          Pages that target one keyphrase can compete in search. Pick a different keyphrase or link
-          the pages to each other.
-        </span>
+        <span>{t("keyphrase.cannibalization")}</span>
       </div>
     </div>
   );

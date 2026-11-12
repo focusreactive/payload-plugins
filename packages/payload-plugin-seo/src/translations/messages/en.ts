@@ -42,6 +42,9 @@ export const en = {
   "keyphrase.analyzing": "Analyzing keyphrase…",
   "keyphrase.hintDuplicate": "Resolve the duplicate to analyse this keyphrase.",
   "keyphrase.hintEmpty": "Start typing a keyphrase to see its analysis.",
+  "keyphrase.usedOn": "This keyphrase is already used on:",
+  "keyphrase.cannibalization":
+    "Pages that target one keyphrase can compete in search. Pick a different keyphrase or link the pages to each other.",
 
   "synonyms.title": "Synonyms",
   "synonyms.add": "Add synonym",
@@ -100,6 +103,21 @@ export const en = {
   "serp.mobile": "Mobile",
   "serp.desktop": "Desktop",
   "serp.device": "Preview device",
+
+  "links.title": "Internal link opportunities",
+  "links.find": "Find opportunities",
+  "links.description": "Pages whose keyphrases appear in this text but are not linked from it yet.",
+  "links.loading": "Looking for opportunities…",
+  "links.error": "Could not load suggestions. Try again.",
+  "links.empty": "No opportunities found. Add keyphrases to other pages to get suggestions.",
+  "links.matches_one": "{{count}} match",
+  "links.matches_other": "{{count}} matches",
+  "links.matchedPhrase": "Matches",
+  "links.quotedPhrase": "“{{phrase}}”",
+  "links.noPublicUrl": "No public URL configured, open the page in the admin.",
+  "links.copy": "Copy link",
+  "links.copied": "Copied",
+  "links.copyFailed": "Copy failed",
 
   "viz.hide": "Hide",
   "viz.show.link_one": "Show {{count}} link",

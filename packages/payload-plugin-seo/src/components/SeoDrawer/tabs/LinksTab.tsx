@@ -6,6 +6,7 @@ import { docTargetKey } from "../../../keyphrases/docTarget";
 import { adminDocHref } from "../../../keyphrases/usage";
 import { SectionCard } from "../../../ui/SectionCard";
 import { cn } from "../../../utils/style";
+import { useSeoTranslation } from "../../../translations/useSeoTranslation";
 import { TabWrapper } from "../components/TabWrapper";
 import type { LinkSuggestionsState } from "../links/useLinkSuggestions";
 import { LinkSuggestionRow } from "./links/LinkSuggestionRow";
@@ -18,12 +19,13 @@ const FIND_BUTTON_CLASS = cn(
 
 function SuggestionsBody({ state }: { state: LinkSuggestionsState }) {
   const { config } = useConfig();
+  const { t } = useSeoTranslation();
 
   if (state.status === "loading") {
     return (
       <div className={cn(MESSAGE_CLASS, "flex items-center gap-[8px] text-neutral-500")}>
         <Loader2 aria-hidden="true" className="w-[14px] h-[14px] animate-spin" />
-        Looking for opportunities…
+        {t("links.loading")}
       </div>
     );
   }
@@ -31,7 +33,7 @@ function SuggestionsBody({ state }: { state: LinkSuggestionsState }) {
   if (state.status === "error") {
     return (
       <div className={cn(MESSAGE_CLASS, "text-seo-bad")} role="alert">
-        Could not load suggestions. Try again.
+        {t("links.error")}
       </div>
     );
   }
@@ -39,11 +41,7 @@ function SuggestionsBody({ state }: { state: LinkSuggestionsState }) {
   if (state.status === "idle") return null;
 
   if (state.suggestions.length === 0) {
-    return (
-      <div className={cn(MESSAGE_CLASS, "text-neutral-500")}>
-        No opportunities found. Add keyphrases to other pages to get suggestions.
-      </div>
-    );
+    return <div className={cn(MESSAGE_CLASS, "text-neutral-500")}>{t("links.empty")}</div>;
   }
 
   return (
@@ -65,13 +63,14 @@ export interface LinksTabProps {
 }
 
 export function LinksTab({ state, onFind }: LinksTabProps) {
+  const { t } = useSeoTranslation();
   const loading = state.status === "loading";
 
   return (
     <TabWrapper>
       <section className="flex flex-col gap-[13px]">
         <SectionCard
-          title="Internal link opportunities"
+          title={t("links.title")}
           widget={
             <button
               aria-disabled={loading}
@@ -79,13 +78,11 @@ export function LinksTab({ state, onFind }: LinksTabProps) {
               onClick={onFind}
               type="button"
             >
-              Find opportunities
+              {t("links.find")}
             </button>
           }
         >
-          <p className={cn(MESSAGE_CLASS, "m-0 text-neutral-500")}>
-            Pages whose keyphrases appear in this text but are not linked from it yet.
-          </p>
+          <p className={cn(MESSAGE_CLASS, "m-0 text-neutral-500")}>{t("links.description")}</p>
           <div aria-busy={loading} aria-live="polite">
             <SuggestionsBody state={state} />
           </div>

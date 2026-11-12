@@ -1,25 +1,30 @@
 "use client";
 
 import { Check, Copy, X } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { LINK_COPY_FEEDBACK_MS } from "../../../../constants";
 import { IconButton } from "../../../../ui/IconButton";
 import { Pill } from "../../../../ui/Pill";
 import { cn, ROW_SEPARATOR } from "../../../../utils/style";
 import type { LinkSuggestion, TextRange } from "../../../../links/types";
+import { useSeoTranslation } from "../../../../translations/useSeoTranslation";
+import type { TranslationKey } from "../../../../translations/types";
 
 type CopyStatus = "idle" | "copied" | "failed";
 
 const COPY_FEEDBACK = {
-  idle: { label: "Copy link", Icon: Copy },
-  copied: { label: "Copied", Icon: Check },
-  failed: { label: "Copy failed", Icon: X },
-} as const;
+  idle: { labelKey: "links.copy", Icon: Copy },
+  copied: { labelKey: "links.copied", Icon: Check },
+  failed: { labelKey: "links.copyFailed", Icon: X },
+} as const satisfies Record<CopyStatus, { labelKey: TranslationKey; Icon: LucideIcon }>;
 
 function CopyUrlButton({ url }: { url: string }) {
+  const { t } = useSeoTranslation();
   const [status, setStatus] = useState<CopyStatus>("idle");
   const resetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { label, Icon } = COPY_FEEDBACK[status];
+  const { labelKey, Icon } = COPY_FEEDBACK[status];
+  const label = t(labelKey);
 
   useEffect(
     () => () => {
@@ -68,16 +73,13 @@ function HighlightedSnippet({
   );
 }
 
-function matchesLabel(count: number): string {
-  return count === 1 ? "1 match" : `${count} matches`;
-}
-
 interface LinkSuggestionRowProps {
   suggestion: LinkSuggestion;
   adminHref: string;
 }
 
 export function LinkSuggestionRow({ suggestion, adminHref }: LinkSuggestionRowProps) {
+  const { t } = useSeoTranslation();
   return (
     <li className={cn("relative flex flex-col gap-[6px] px-[15px] py-[12px]", ROW_SEPARATOR)}>
       <div className="flex items-center gap-[8px]">
@@ -89,11 +91,14 @@ export function LinkSuggestionRow({ suggestion, adminHref }: LinkSuggestionRowPr
         >
           {suggestion.title}
         </a>
-        <Pill variant="neutral">{matchesLabel(suggestion.count)}</Pill>
+        <Pill variant="neutral">{t("links.matches", { count: suggestion.count })}</Pill>
       </div>
 
       <div className="text-[11.5px] text-neutral-500">
-        Matches <span className="font-medium text-neutral-800">“{suggestion.phrase}”</span>
+        {t("links.matchedPhrase")}{" "}
+        <span className="font-medium text-neutral-800">
+          {t("links.quotedPhrase", { phrase: suggestion.phrase })}
+        </span>
       </div>
 
       <p className="m-0 text-[12px] text-neutral-700">
@@ -108,9 +113,7 @@ export function LinkSuggestionRow({ suggestion, adminHref }: LinkSuggestionRowPr
           <CopyUrlButton url={suggestion.url} />
         </div>
       ) : (
-        <div className="text-[11.5px] text-neutral-500">
-          No public URL configured, open the page in the admin.
-        </div>
+        <div className="text-[11.5px] text-neutral-500">{t("links.noPublicUrl")}</div>
       )}
     </li>
   );
