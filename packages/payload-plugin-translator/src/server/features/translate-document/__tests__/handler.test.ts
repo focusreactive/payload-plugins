@@ -44,9 +44,6 @@ vi.mock("../../../../core/domain/content-projection/translatableFields.js", asyn
     >();
   return { ...actual, translatableFields: vi.fn(actual.translatableFields) };
 });
-vi.mock("../../../../core/domain/content-projection/computeSourceFingerprint.js", () => ({
-  computeSourceFingerprint: vi.fn(() => "fp-fixed"),
-}));
 
 describe("translateDocument", () => {
   let deps: TranslateDocumentDeps;

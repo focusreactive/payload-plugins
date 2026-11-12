@@ -2,7 +2,7 @@ import { translationLanguages } from "../../server/features/_lib/translationLang
 import { describe, it, expect, vi } from "vitest";
 import type { Field } from "payload";
 import { TranslationPipeline } from "../../core/translation-pipeline/TranslationPipeline.js";
-import { everyTranslatableLeaf } from "../../core/domain/content-projection/contentProjector.js";
+import { everySelectableAddress } from "./fixtures/selection.js";
 import type {
   TranslationInput,
   TranslationOutput,
@@ -44,7 +44,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
-        selection: everyTranslatableLeaf(sourceData, schema),
+        selection: everySelectableAddress(sourceData, schema),
         ...translationLanguages(),
       });
 
@@ -80,7 +80,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
-        selection: everyTranslatableLeaf(sourceData, schema),
+        selection: everySelectableAddress(sourceData, schema),
         ...translationLanguages(),
       });
 
@@ -111,7 +111,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
-        selection: everyTranslatableLeaf(sourceData, schema),
+        selection: everySelectableAddress(sourceData, schema),
         ...translationLanguages(),
       });
 
@@ -147,7 +147,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
-        selection: everyTranslatableLeaf(sourceData, schema),
+        selection: everySelectableAddress(sourceData, schema),
         ...translationLanguages(),
       });
 
@@ -194,7 +194,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
-        selection: everyTranslatableLeaf(sourceData, schema),
+        selection: everySelectableAddress(sourceData, schema),
         ...translationLanguages(),
       });
 
@@ -255,7 +255,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "es",
-        selection: everyTranslatableLeaf(sourceData, schema),
+        selection: everySelectableAddress(sourceData, schema),
         ...translationLanguages(),
       });
 
@@ -333,7 +333,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "es",
-        selection: everyTranslatableLeaf(sourceData, schema),
+        selection: everySelectableAddress(sourceData, schema),
         ...translationLanguages(),
       });
 
@@ -383,7 +383,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "es",
-        selection: everyTranslatableLeaf(sourceData, schema),
+        selection: everySelectableAddress(sourceData, schema),
         ...translationLanguages(),
       });
 
@@ -410,7 +410,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
-        selection: everyTranslatableLeaf(sourceData, schema),
+        selection: everySelectableAddress(sourceData, schema),
         ...translationLanguages(),
       });
 
@@ -468,7 +468,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
-        selection: everyTranslatableLeaf(sourceData, schema),
+        selection: everySelectableAddress(sourceData, schema),
         ...translationLanguages(),
       });
 
@@ -518,7 +518,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
-        selection: everyTranslatableLeaf(sourceData, schema),
+        selection: everySelectableAddress(sourceData, schema),
         ...translationLanguages(),
       });
 
@@ -544,7 +544,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
-        selection: everyTranslatableLeaf(sourceData, schema),
+        selection: everySelectableAddress(sourceData, schema),
         ...translationLanguages(),
       });
 
@@ -578,7 +578,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
-        selection: everyTranslatableLeaf(sourceData, schema),
+        selection: everySelectableAddress(sourceData, schema),
         ...translationLanguages(),
       });
 
@@ -610,7 +610,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
-        selection: everyTranslatableLeaf(sourceData, schema),
+        selection: everySelectableAddress(sourceData, schema),
         ...translationLanguages(),
       });
 
@@ -815,7 +815,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
-        selection: everyTranslatableLeaf(sourceData, schema),
+        selection: everySelectableAddress(sourceData, schema),
         ...translationLanguages(),
       });
 
@@ -849,7 +849,7 @@ describe("TranslationPipeline", () => {
         targetData,
         sourceLng: "en",
         targetLng: "ru",
-        selection: everyTranslatableLeaf(sourceData, schema),
+        selection: everySelectableAddress(sourceData, schema),
         ...translationLanguages(),
       });
 
@@ -887,7 +887,7 @@ describe("TranslationPipeline", () => {
         targetData: {},
         sourceLng: "en",
         targetLng: "de",
-        selection: everyTranslatableLeaf(sourceData, schema),
+        selection: everySelectableAddress(sourceData, schema),
         ...translationLanguages(),
       });
 

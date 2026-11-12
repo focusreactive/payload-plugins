@@ -2,7 +2,7 @@ import { translationLanguages } from "../../server/features/_lib/translationLang
 import type { Field } from "payload";
 import { describe, expect, it } from "vitest";
 
-import { everyTranslatableLeaf } from "../../core/domain/content-projection/contentProjector.js";
+import { everySelectableAddress } from "./fixtures/selection.js";
 import type {
   TranslatableValue,
   TranslatedValue,
@@ -58,7 +58,7 @@ const translate = async (
     document: { collection: "docs", id: "1" },
     schema,
     sourceData: source,
-    selection: everyTranslatableLeaf(source, schema),
+    selection: everySelectableAddress(source, schema),
     ...translationLanguages(),
     sourceLng: "en",
     targetLng: "fr",

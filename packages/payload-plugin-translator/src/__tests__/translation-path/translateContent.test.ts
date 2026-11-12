@@ -7,17 +7,17 @@ import type {
   TranslationProvider,
   TranslationRequest,
 } from "../../core/domain/translation-providers/index.js";
-import { computeSourceFingerprint } from "../../core/domain/content-projection/computeSourceFingerprint.js";
+import { fingerprintsOf } from "../../server/modules/provenance/__tests__/fixtures/fingerprinter.js";
 import { translateContent } from "../../core/translation-pipeline/translateContent.js";
 import type { TranslateContentArgs } from "../../core/translation-pipeline/translateContent.js";
-import { everyTranslatableLeaf } from "../../core/domain/content-projection/contentProjector.js";
+import { everySelectableAddress } from "./fixtures/selection.js";
 
 const translateAll = (
   args: Omit<TranslateContentArgs, "selection" | "languages" | "hostLanguageId">
 ) =>
   translateContent({
     ...args,
-    selection: everyTranslatableLeaf(args.sourceData, args.schema),
+    selection: everySelectableAddress(args.sourceData, args.schema),
     ...translationLanguages(),
   });
 
@@ -268,11 +268,12 @@ describe("translateContent", () => {
 
     it("leaves the source fingerprint identical either side of a translation", async () => {
       const sourceData = { body: richTextValue(["Hello ", "world"]) };
-      const before = computeSourceFingerprint(sourceData, richSchema);
+      const fingerprintOf = fingerprintsOf({ get: () => richSchema });
+      const before = fingerprintOf("posts", sourceData);
 
       await run(richSchema, sourceData);
 
-      expect(computeSourceFingerprint(sourceData, richSchema)).toBe(before);
+      expect(fingerprintOf("posts", sourceData)).toEqual(before);
     });
 
     it("shares no object with the translated result", async () => {

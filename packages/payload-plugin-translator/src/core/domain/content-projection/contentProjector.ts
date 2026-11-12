@@ -12,7 +12,6 @@ import { isObject } from "../../kernel/utils/isObject.js";
 import type { IdPath, PathSegment } from "./idPath.js";
 import { elementSegment, makeIdPath } from "./idPath.js";
 import { isTranslatableLeaf, leafSourceText } from "./translatableLeaf.js";
-import type { LeafAddress } from "./idPath.js";
 
 export interface ProjectionEntry {
   idPath: IdPath;
@@ -89,9 +88,3 @@ export function projectTranslatableContent(
 
   return entries;
 }
-
-/** Every translatable leaf of a document that holds text, by address — an empty one is not among them. */
-export const everyTranslatableLeaf = (
-  doc: Record<string, unknown>,
-  schema: FieldLike[]
-): LeafAddress[] => projectTranslatableContent(doc, schema).map((entry) => String(entry.idPath));
