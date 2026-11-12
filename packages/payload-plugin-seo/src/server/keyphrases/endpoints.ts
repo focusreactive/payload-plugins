@@ -1,4 +1,4 @@
-import type { Endpoint } from "payload";
+import type { Endpoint, PayloadRequest } from "payload";
 import {
   KEYPHRASES_COLLECTION_SLUG,
   KEYPHRASES_ENDPOINT_PATH,
@@ -11,10 +11,63 @@ import { jsonResponse, readJsonBody } from "../http";
 import { canUpdateDoc, readAuthorizedRef } from "./authorize";
 import { resolveTitles } from "./resolveTitles";
 import { findRow, findRowsSharingIntent } from "./rows";
-import type { KeyphraseScope } from "./types";
+import type { DocRef, KeyphraseRow, KeyphraseScope } from "./types";
 
 function intentsOf(keyphrases: StoredKeyphrase[]): string[] {
   return [...new Set(keyphrases.map((k) => canonicalIntent(k.text)).filter(Boolean))];
+}
+
+interface KeyphraseWrite {
+  keyphrases: StoredKeyphrase[];
+  ifAbsent: boolean;
+}
+
+async function writeToExistingRow(
+  req: PayloadRequest,
+  row: KeyphraseRow,
+  { keyphrases, ifAbsent }: KeyphraseWrite
+): Promise<Response> {
+  if (ifAbsent) {
+    return jsonResponse({ keyphrases: sanitizeStoredKeyphrases(row.keyphrases) }, 409);
+  }
+
+  await req.payload.update({
+    collection: KEYPHRASES_COLLECTION_SLUG,
+    id: row.id,
+    data: { keyphrases, intents: intentsOf(keyphrases) },
+    overrideAccess: true,
+    req,
+  });
+
+  return jsonResponse({ keyphrases }, 200);
+}
+
+async function createRow(
+  req: PayloadRequest,
+  ref: DocRef,
+  write: KeyphraseWrite
+): Promise<Response> {
+  try {
+    await req.payload.create({
+      collection: KEYPHRASES_COLLECTION_SLUG,
+      data: {
+        docCollection: ref.collection,
+        docId: ref.docId,
+        locale: ref.locale,
+        keyphrases: write.keyphrases,
+        intents: intentsOf(write.keyphrases),
+      },
+      overrideAccess: true,
+      req,
+    });
+  } catch (err) {
+    const createdMeanwhile = await findRow(req, ref);
+    if (!createdMeanwhile) throw err;
+
+    return writeToExistingRow(req, createdMeanwhile, write);
+  }
+
+  return jsonResponse({ keyphrases: write.keyphrases }, 200);
 }
 
 export function createKeyphraseEndpoints(scope: KeyphraseScope): Endpoint[] {
@@ -45,40 +98,16 @@ export function createKeyphraseEndpoints(scope: KeyphraseScope): Endpoint[] {
         return jsonResponse({ error: "Invalid request" }, 400);
       }
 
-      const keyphrases = sanitizeStoredKeyphrases(body.keyphrases);
+      const write = {
+        keyphrases: sanitizeStoredKeyphrases(body.keyphrases),
+        ifAbsent: body.ifAbsent === true,
+      };
       const row = await findRow(req, ref);
 
-      if (row && body.ifAbsent === true) {
-        return jsonResponse({ keyphrases: sanitizeStoredKeyphrases(row.keyphrases) }, 409);
-      }
-      if (keyphrases.length === 0 && !row) return jsonResponse({ keyphrases }, 200);
+      if (row) return writeToExistingRow(req, row, write);
+      if (write.keyphrases.length === 0) return jsonResponse({ keyphrases: [] }, 200);
 
-      const intents = intentsOf(keyphrases);
-
-      if (row) {
-        await req.payload.update({
-          collection: KEYPHRASES_COLLECTION_SLUG,
-          id: row.id,
-          data: { keyphrases, intents },
-          overrideAccess: true,
-          req,
-        });
-      } else {
-        await req.payload.create({
-          collection: KEYPHRASES_COLLECTION_SLUG,
-          data: {
-            docCollection: ref.collection,
-            docId: ref.docId,
-            locale: ref.locale,
-            keyphrases,
-            intents,
-          },
-          overrideAccess: true,
-          req,
-        });
-      }
-
-      return jsonResponse({ keyphrases }, 200);
+      return createRow(req, ref, write);
     },
   };
 

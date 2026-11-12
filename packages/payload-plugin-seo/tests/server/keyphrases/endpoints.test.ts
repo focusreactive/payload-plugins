@@ -371,6 +371,49 @@ describe("PUT /seo/keyphrases", () => {
     expect(payload.create).toHaveBeenCalledTimes(1);
   });
 
+  describe("when another request creates the row first", () => {
+    function racingPayload() {
+      const payload = fakePayload();
+      payload.create.mockImplementationOnce(async () => {
+        rows.push({ id: 9, ...rowRef("1"), keyphrases: [{ text: "first", synonyms: [] }] });
+        throw new Error("duplicate key value violates unique constraint");
+      });
+      return payload;
+    }
+
+    it("updates the row the other request created", async () => {
+      const payload = racingPayload();
+      const res = await putKeyphrases()(
+        putRequest({ ...ref, keyphrases: [{ text: "b" }] }, payload)
+      );
+      expect(res.status).toBe(200);
+      expect(payload.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 9,
+          data: { keyphrases: [{ text: "b", synonyms: [] }], intents: ["b"] },
+        })
+      );
+    });
+
+    it("returns the stored keyphrases with 409 when asked to create only", async () => {
+      const payload = racingPayload();
+      const res = await putKeyphrases()(
+        putRequest({ ...ref, ifAbsent: true, keyphrases: [{ text: "b" }] }, payload)
+      );
+      expect(res.status).toBe(409);
+      expect(await res.json()).toEqual({ keyphrases: [{ text: "first", synonyms: [] }] });
+      expect(payload.update).not.toHaveBeenCalled();
+    });
+
+    it("rethrows when the row still does not exist", async () => {
+      const payload = fakePayload();
+      payload.create.mockRejectedValueOnce(new Error("db down"));
+      await expect(
+        putKeyphrases()(putRequest({ ...ref, keyphrases: [{ text: "b" }] }, payload))
+      ).rejects.toThrow("db down");
+    });
+  });
+
   it("returns 400 for a bad body", async () => {
     expect((await putKeyphrases()(putRequest({ docId: "1" }))).status).toBe(400);
     expect((await putKeyphrases()(putRequest({ ...ref, keyphrases: "a" }))).status).toBe(400);
