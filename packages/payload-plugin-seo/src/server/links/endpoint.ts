@@ -3,17 +3,17 @@ import { getPluginConfig } from "../../config";
 import {
   LINK_RESOLVE_BATCH_SIZE,
   LINK_SUGGESTIONS_ENDPOINT_PATH,
-  MAX_LINK_RESOLVE_BATCHES,
   MAX_LINK_SUGGESTIONS,
+  MAX_RESOLVED_LINK_CANDIDATES,
 } from "../../constants";
 import { originOf, toPath } from "../../links/toPath";
 import { docTargetKey } from "../../keyphrases/docTarget";
 import { jsonResponse, readJsonBody } from "../http";
 import { readAuthorizedRef, rejectNonAdmin } from "../keyphrases/authorize";
-import { findLinkSourceRows } from "../keyphrases/rows";
-import type { KeyphraseScope, LinkSourceRow } from "../keyphrases/types";
+import { findLinkSourcePages } from "../keyphrases/rows";
+import type { DocRef, KeyphraseScope, LinkSourceRow } from "../keyphrases/types";
 import type { LinkCandidate } from "./findLinkCandidates";
-import { findLinkCandidates } from "./findLinkCandidates";
+import { byRelevance, findLinkCandidates } from "./findLinkCandidates";
 import type { LinkRequest, LinkedHref } from "./request";
 import { readLinkRequest } from "./request";
 import type { LinkSuggestion } from "../../links/types";
@@ -47,24 +47,41 @@ function siteOriginsOf(req: PayloadRequest): (string | null)[] {
 
 async function collectSuggestions(
   search: SuggestionSearch,
-  batch = 0,
+  start = 0,
+  batchSize = LINK_RESOLVE_BATCH_SIZE,
   found: LinkSuggestion[] = []
 ): Promise<LinkSuggestion[]> {
-  const start = batch * LINK_RESOLVE_BATCH_SIZE;
-  const slice = search.candidates.slice(start, start + LINK_RESOLVE_BATCH_SIZE);
-  const done = found.length >= MAX_LINK_SUGGESTIONS || batch >= MAX_LINK_RESOLVE_BATCHES;
-  if (done || slice.length === 0) return found.slice(0, MAX_LINK_SUGGESTIONS);
+  const end = Math.min(start + batchSize, MAX_RESOLVED_LINK_CANDIDATES);
+  const slice = search.candidates.slice(start, end);
+  if (found.length >= MAX_LINK_SUGGESTIONS || slice.length === 0) {
+    return found.slice(0, MAX_LINK_SUGGESTIONS);
+  }
 
   const resolved = await resolveLinkTargets(search.req, slice, search.locale);
   const unlinked = resolved.filter((suggestion) => !isLinked(suggestion, search));
 
-  return collectSuggestions(search, batch + 1, [...found, ...unlinked]);
+  return collectSuggestions(search, end, batchSize * 2, [...found, ...unlinked]);
 }
 
 function unlinkedCandidates(request: LinkRequest, rows: LinkSourceRow[]): LinkCandidate[] {
   return findLinkCandidates(request.text, toLinkSources(rows)).filter(
     (candidate) => !request.linkedDocs.has(docTargetKey(candidate.collection, candidate.docId))
   );
+}
+
+async function findUnlinkedCandidates(
+  req: PayloadRequest,
+  ref: DocRef,
+  collections: string[],
+  request: LinkRequest
+): Promise<LinkCandidate[]> {
+  const candidates: LinkCandidate[] = [];
+
+  for await (const rows of findLinkSourcePages(req, ref, collections)) {
+    candidates.push(...unlinkedCandidates(request, rows));
+  }
+
+  return candidates.sort(byRelevance);
 }
 
 export function createLinkSuggestionsEndpoint(scope: KeyphraseScope): Endpoint {
@@ -82,10 +99,9 @@ export function createLinkSuggestionsEndpoint(scope: KeyphraseScope): Endpoint {
       const ref = await readAuthorizedRef(req, body, scope);
       if (ref instanceof Response) return ref;
 
-      const rows = await findLinkSourceRows(req, ref, scope.collections);
       const suggestions = await collectSuggestions({
         req,
-        candidates: unlinkedCandidates(request, rows),
+        candidates: await findUnlinkedCandidates(req, ref, scope.collections, request),
         locale: ref.locale,
         linkedHrefs: request.linkedHrefs,
         siteOrigins: siteOriginsOf(req),

@@ -210,7 +210,7 @@ function bestHit(entries: PhraseEntry[], hits: Map<PhraseEntry, PhraseHit>): Phr
   return best;
 }
 
-function byRelevance(a: LinkCandidate, b: LinkCandidate): number {
+export function byRelevance(a: LinkCandidate, b: LinkCandidate): number {
   return b.count - a.count || b.phrase.length - a.phrase.length;
 }
 

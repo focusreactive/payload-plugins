@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setPluginConfig } from "../../../src/config";
 import {
   KEYPHRASES_COLLECTION_SLUG,
+  LINK_SOURCE_PAGE_SIZE,
   LINK_SUGGESTIONS_ENDPOINT_PATH,
   MAX_LINKED_DOCS,
   MAX_LINKED_HREFS,
@@ -31,20 +32,34 @@ function idsOf(where: IdWhere): string[] {
   return where.id?.in ?? where.and?.flatMap(idsOf) ?? [];
 }
 
+interface FindArgs {
+  collection: string;
+  where: Where & IdWhere;
+  page?: number;
+  limit?: number;
+}
+
 function fakePayload() {
   return {
     config: { localization: false, admin: { user: "users" }, serverURL: "https://site.com" },
     logger: { warn: vi.fn() },
     collections: { posts: { config: { admin: { useAsTitle: "title" } } } },
     findByID: vi.fn(async ({ id }: { id: string }): Promise<{ id: string } | null> => ({ id })),
-    find: vi.fn(async ({ collection, where }: { collection: string; where: Where & IdWhere }) => ({
-      docs:
-        collection === KEYPHRASES_COLLECTION_SLUG
-          ? indexRows.filter((row) => matchesWhere(row, where))
-          : idsOf(where)
-              .filter((id) => !unreadable.has(id))
-              .map((id) => ({ id: Number(id), title: `Post ${id}`, slug: `post-${id}` })),
-    })),
+    find: vi.fn(async ({ collection, where, page, limit }: FindArgs) => {
+      if (collection !== KEYPHRASES_COLLECTION_SLUG) {
+        return {
+          docs: idsOf(where)
+            .filter((id) => !unreadable.has(id))
+            .map((id) => ({ id: Number(id), title: `Post ${id}`, slug: `post-${id}` })),
+        };
+      }
+
+      const matching = indexRows.filter((row) => matchesWhere(row, where));
+      const start = ((page ?? 1) - 1) * (limit ?? matching.length);
+      const end = limit ? start + limit : matching.length;
+
+      return { docs: matching.slice(start, end), hasNextPage: end < matching.length };
+    }),
   };
 }
 
@@ -263,13 +278,40 @@ describe("POST /seo/link-suggestions", () => {
     expect(postLookups(payload)).toHaveLength(2);
   });
 
-  it("stops after the batch limit", async () => {
-    unreadable = new Set(range(2, 80).map(String));
-    const payload = fakePayload();
+  it("keeps resolving past many unreadable targets", async () => {
+    unreadable = new Set(range(2, 71).map(String));
     const text = range(2, 80).map(topic).join(" ");
+    const ids = await suggestionIds(await handler(fakeRequest(body({ text }))));
+    expect(ids).toEqual(range(72, 80).map(String));
+  });
+
+  it("stops after resolving a bounded number of targets", async () => {
+    indexRows = [indexRow(1, "self"), ...range(2, 400).map((n) => indexRow(n))];
+    unreadable = new Set(range(2, 400).map(String));
+    const payload = fakePayload();
+    const text = range(2, 400).map(topic).join(" ");
     const ids = await suggestionIds(await handler(fakeRequest(body({ text }), { payload })));
     expect(ids).toEqual([]);
-    expect(postLookups(payload)).toHaveLength(3);
+    expect(postLookups(payload).map(([args]) => idsOf(args.where).length)).toEqual([
+      20, 40, 80, 160,
+    ]);
+  });
+
+  it("reads the index page by page", async () => {
+    const lastPageRow = LINK_SOURCE_PAGE_SIZE + 50;
+    indexRows = [indexRow(1, "self"), ...range(2, lastPageRow).map((n) => indexRow(n))];
+    const payload = fakePayload();
+    const ids = await suggestionIds(
+      await handler(fakeRequest(body({ text: topic(lastPageRow) }), { payload }))
+    );
+    expect(ids).toEqual([String(lastPageRow)]);
+    const indexReads = payload.find.mock.calls.filter(
+      ([args]) => args.collection === KEYPHRASES_COLLECTION_SLUG
+    );
+    expect(indexReads.map(([args]) => [args.page, args.limit])).toEqual([
+      [1, LINK_SOURCE_PAGE_SIZE],
+      [2, LINK_SOURCE_PAGE_SIZE],
+    ]);
   });
 
   it("reads only the needed index fields unrestricted and the targets as the caller", async () => {
@@ -279,7 +321,7 @@ describe("POST /seo/link-suggestions", () => {
       expect.objectContaining({
         collection: KEYPHRASES_COLLECTION_SLUG,
         overrideAccess: true,
-        pagination: false,
+        limit: LINK_SOURCE_PAGE_SIZE,
         select: { docCollection: true, docId: true, keyphrases: true },
       })
     );

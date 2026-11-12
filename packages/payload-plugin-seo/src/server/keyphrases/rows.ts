@@ -1,5 +1,5 @@
-import type { PayloadRequest, SelectType, Where } from "payload";
-import { KEYPHRASES_COLLECTION_SLUG } from "../../constants";
+import type { PayloadRequest, Where } from "payload";
+import { KEYPHRASES_COLLECTION_SLUG, LINK_SOURCE_PAGE_SIZE } from "../../constants";
 import type { DocRef, KeyphraseRow, LinkSourceRow } from "./types";
 
 export async function findRow(req: PayloadRequest, ref: DocRef): Promise<KeyphraseRow | undefined> {
@@ -21,42 +21,22 @@ export async function findRow(req: PayloadRequest, ref: DocRef): Promise<Keyphra
   return docs[0] as KeyphraseRow | undefined;
 }
 
-interface OtherRowsOptions {
-  where?: Where[];
-  select?: SelectType;
-}
-
 const LINK_SOURCE_SELECT = { docCollection: true, docId: true, keyphrases: true } as const;
 
-async function findOtherRows(
-  req: PayloadRequest,
-  self: DocRef,
-  collections: string[],
-  { where = [], select }: OtherRowsOptions = {}
-): Promise<unknown[]> {
-  const { docs } = await req.payload.find({
-    collection: KEYPHRASES_COLLECTION_SLUG,
-    where: {
-      and: [
-        { locale: { equals: self.locale } },
-        { docCollection: { in: collections } },
-        {
-          or: [
-            { docCollection: { not_equals: self.collection } },
-            { docId: { not_equals: self.docId } },
-          ],
-        },
-        ...where,
-      ],
-    },
-    pagination: false,
-    depth: 0,
-    overrideAccess: true,
-    req,
-    ...(select ? { select } : {}),
-  });
-
-  return docs;
+function otherRowsWhere(self: DocRef, collections: string[], where: Where[] = []): Where {
+  return {
+    and: [
+      { locale: { equals: self.locale } },
+      { docCollection: { in: collections } },
+      {
+        or: [
+          { docCollection: { not_equals: self.collection } },
+          { docId: { not_equals: self.docId } },
+        ],
+      },
+      ...where,
+    ],
+  };
 }
 
 export async function findRowsSharingIntent(
@@ -65,19 +45,38 @@ export async function findRowsSharingIntent(
   intent: string,
   collections: string[]
 ): Promise<KeyphraseRow[]> {
-  const rows = await findOtherRows(req, self, collections, {
-    where: [{ intents: { equals: intent } }],
+  const { docs } = await req.payload.find({
+    collection: KEYPHRASES_COLLECTION_SLUG,
+    where: otherRowsWhere(self, collections, [{ intents: { equals: intent } }]),
+    pagination: false,
+    depth: 0,
+    overrideAccess: true,
+    req,
   });
 
-  return rows as KeyphraseRow[];
+  return docs as KeyphraseRow[];
 }
 
-export async function findLinkSourceRows(
+export async function* findLinkSourcePages(
   req: PayloadRequest,
   self: DocRef,
   collections: string[]
-): Promise<LinkSourceRow[]> {
-  const rows = await findOtherRows(req, self, collections, { select: LINK_SOURCE_SELECT });
+): AsyncGenerator<LinkSourceRow[]> {
+  let hasNextPage = true;
 
-  return rows as LinkSourceRow[];
+  for (let page = 1; hasNextPage; page += 1) {
+    const result = await req.payload.find({
+      collection: KEYPHRASES_COLLECTION_SLUG,
+      where: otherRowsWhere(self, collections),
+      select: LINK_SOURCE_SELECT,
+      page,
+      limit: LINK_SOURCE_PAGE_SIZE,
+      depth: 0,
+      overrideAccess: true,
+      req,
+    });
+
+    hasNextPage = result.hasNextPage === true;
+    yield result.docs as LinkSourceRow[];
+  }
 }
