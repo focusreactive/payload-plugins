@@ -144,23 +144,6 @@ describe("useLinkSuggestions", () => {
     expect(result.current.state).toEqual({ status: "done", suggestions: [suggestion] });
   });
 
-  it("drops suggestions with an unexpected shape", async () => {
-    const drifted = [
-      { ...suggestion, title: undefined },
-      { ...suggestion, count: "2" },
-      { ...suggestion, snippetMatch: undefined },
-      { ...suggestion, snippetMatch: { start: 5, end: 99 } },
-      { ...suggestion, snippetMatch: { start: 5, end: 2 } },
-      null,
-    ];
-    fetchMock.mockResolvedValue(Response.json({ suggestions: [...drifted, suggestion] }));
-    const { result } = renderHook(() => useLinkSuggestions(args));
-
-    await act(() => result.current.find());
-
-    expect(result.current.state).toEqual({ status: "done", suggestions: [suggestion] });
-  });
-
   it("aborts the request on unmount", async () => {
     fetchMock.mockReturnValue(new Promise(() => undefined));
     const { result, unmount } = renderHook(() => useLinkSuggestions(args));

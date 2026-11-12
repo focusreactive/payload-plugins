@@ -2,13 +2,19 @@
 
 import { useConfig, usePayloadAPI } from "@payloadcms/ui";
 import { KEYPHRASES_ENDPOINT_PATH } from "../../constants";
-import { sanitizeStoredKeyphrases } from "../../keyphrases/stored";
+import type { StoredKeyphrase } from "../../keyphrases/stored";
 import { SeoButtonInner } from "./SeoButtonInner";
 import { SeoTriggerButton } from "./SeoTriggerButton";
 import type { SeoButtonProps } from "./SeoButtonInner";
 
 interface RemoteKeyphrasesGateProps extends SeoButtonProps {
   docId: string;
+}
+
+interface KeyphrasesResponse {
+  keyphrases: StoredKeyphrase[];
+  indexed: boolean;
+  canUpdate: boolean;
 }
 
 export function RemoteKeyphrasesGate({ docId, ...props }: RemoteKeyphrasesGateProps) {
@@ -22,10 +28,9 @@ export function RemoteKeyphrasesGate({ docId, ...props }: RemoteKeyphrasesGatePr
   if (isLoading) return <SeoTriggerButton loading />;
   if (isError) return <SeoButtonInner {...props} />;
 
-  const initial = sanitizeStoredKeyphrases(data?.keyphrases);
+  const { keyphrases, indexed, canUpdate } = data as KeyphrasesResponse;
 
-  const indexed = data?.indexed === true;
-  const canUpdate = data?.canUpdate === true;
-
-  return <SeoButtonInner {...props} remote={{ apiRoute, initial, indexed, canUpdate }} />;
+  return (
+    <SeoButtonInner {...props} remote={{ apiRoute, initial: keyphrases, indexed, canUpdate }} />
+  );
 }

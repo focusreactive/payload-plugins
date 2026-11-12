@@ -4,7 +4,7 @@ import { useConfig, useDebounce, useDocumentInfo, usePayloadAPI } from "@payload
 import { useEffect } from "react";
 import { KEYPHRASE_USAGE_DELAY_MS, KEYPHRASE_USAGE_ENDPOINT_PATH } from "../../../../constants";
 import { docTargetKey } from "../../../../keyphrases/docTarget";
-import { adminDocHref, hasDocIdentity } from "../../../../keyphrases/usage";
+import { adminDocHref } from "../../../../keyphrases/usage";
 import type { UsageDoc } from "../../../../keyphrases/usage";
 import { useSeoTranslation } from "../../../../translations/useSeoTranslation";
 import { Notice } from "../../../../ui/Notice";
@@ -27,7 +27,7 @@ export function KeyphraseUsageNotice({ collectionSlug, docId, phrase }: Keyphras
     setParams({ collection: collectionSlug, docId, phrase });
   }, [collectionSlug, docId, phrase, setParams]);
 
-  const docs: UsageDoc[] = Array.isArray(data?.docs) ? data.docs.filter(hasDocIdentity) : [];
+  const docs: UsageDoc[] = data?.docs ?? [];
 
   if (isError || docs.length === 0) return null;
 

@@ -1,5 +1,4 @@
 import { KEYPHRASES_ENDPOINT_PATH, KEYPHRASE_SAVE_DELAY_MS } from "../../constants";
-import { sanitizeStoredKeyphrases } from "../../keyphrases/stored";
 import type { StoredKeyphrase } from "../../keyphrases/stored";
 import type { KeyphraseEntry } from "./keyphraseState";
 import { clearKeyphrases, saveKeyphrases, toStored, unsavedStorageKey } from "./keyphraseStorage";
@@ -33,16 +32,13 @@ export interface RemoteSaver {
   flush: () => Promise<void>;
 }
 
-async function readStoredKeyphrases(res: Response): Promise<StoredKeyphrase[]> {
-  const body: unknown = await res.json().catch(noop);
-  const { keyphrases } = (body ?? {}) as { keyphrases?: unknown };
-
-  return sanitizeStoredKeyphrases(keyphrases);
-}
-
 async function toOutcome(res: Response | undefined): Promise<SaveOutcome> {
   if (res?.ok) return { status: "saved" };
-  if (res?.status === 409) return { status: "exists", keyphrases: await readStoredKeyphrases(res) };
+  if (res?.status === 409) {
+    const { keyphrases } = (await res.json()) as { keyphrases: StoredKeyphrase[] };
+
+    return { status: "exists", keyphrases };
+  }
 
   return { status: "failed" };
 }

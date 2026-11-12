@@ -73,27 +73,6 @@ describe("KeyphraseUsageNotice", () => {
       "noopener noreferrer"
     );
   });
-
-  it("skips malformed documents and renders nothing when none are valid", () => {
-    api = {
-      isLoading: false,
-      isError: false,
-      data: {
-        docs: [
-          { collection: "page", id: 7, title: "Numeric id" },
-          null,
-          { collection: "page", id: "8", title: "About" },
-        ],
-      },
-    };
-    render(<KeyphraseUsageNotice {...props} />);
-    expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual(["About"]);
-    cleanup();
-
-    api = { isLoading: false, isError: false, data: { docs: "nope" } };
-    const { container } = render(<KeyphraseUsageNotice {...props} />);
-    expect(container).toBeEmptyDOMElement();
-  });
 });
 
 describe("KeyphraseUsage", () => {

@@ -4,7 +4,6 @@ import { useConfig, useForm } from "@payloadcms/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LINK_SUGGESTIONS_ENDPOINT_PATH } from "../../../constants";
 import type { AnalysisInput } from "../../../engine/types/analysis";
-import { hasDocIdentity } from "../../../keyphrases/usage";
 import type { LinkSuggestion } from "../../../links/types";
 import { readContent } from "./readContent";
 import { readInternalLinks } from "./readInternalLinks";
@@ -28,39 +27,7 @@ export interface LinkSuggestions {
 }
 
 interface LinkSuggestionsResponse {
-  suggestions?: unknown;
-}
-
-const MATCH_TEXT_KEYS = ["phrase", "snippet"] as const;
-
-function isRangeWithin(value: unknown, text: string): boolean {
-  if (typeof value !== "object" || value === null) return false;
-
-  const { start, end }: Record<string, unknown> = { ...value };
-
-  return (
-    Number.isInteger(start) &&
-    Number.isInteger(end) &&
-    Number(start) >= 0 &&
-    Number(start) <= Number(end) &&
-    Number(end) <= text.length
-  );
-}
-
-function isLinkSuggestion(value: unknown): value is LinkSuggestion {
-  if (!hasDocIdentity(value)) return false;
-
-  const item: Record<string, unknown> = { ...value };
-  const hasText = MATCH_TEXT_KEYS.every((key) => typeof item[key] === "string");
-  const hasUrl = item.url === null || typeof item.url === "string";
-  const hasMatch =
-    typeof item.snippet === "string" && isRangeWithin(item.snippetMatch, item.snippet);
-
-  return hasText && hasUrl && hasMatch && typeof item.count === "number";
-}
-
-function readSuggestions(body: LinkSuggestionsResponse): LinkSuggestion[] {
-  return Array.isArray(body.suggestions) ? body.suggestions.filter(isLinkSuggestion) : [];
+  suggestions?: LinkSuggestion[];
 }
 
 export function useLinkSuggestions({
@@ -99,9 +66,9 @@ export function useLinkSuggestions({
         });
         if (!res.ok) return { status: "error" };
 
-        const body: LinkSuggestionsResponse = await res.json();
+        const body = (await res.json()) as LinkSuggestionsResponse;
 
-        return { status: "done", suggestions: readSuggestions(body) };
+        return { status: "done", suggestions: body.suggestions ?? [] };
       } catch {
         return { status: "error" };
       }
