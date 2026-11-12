@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { setPluginConfig } from "../../../src/config";
 import {
   KEYPHRASES_COLLECTION_SLUG,
@@ -10,8 +10,9 @@ import {
   MAX_LINK_TEXT_CHARS,
 } from "../../../src/constants";
 import { createLinkSuggestionsEndpoint } from "../../../src/server/links/endpoint";
-import type { IndexRow, Where } from "../keyphrases/indexMatcher";
-import { matchesWhere } from "../keyphrases/indexMatcher";
+import { fakeIndexPayload } from "../fixtures/fakePayload";
+import type { IndexRow } from "../fixtures/indexMatcher";
+import { idsOf } from "../fixtures/indexMatcher";
 
 const topic = (n: number) => `topic${String(n).padStart(2, "0")}`;
 
@@ -26,41 +27,15 @@ const indexRow = (n: number, text = topic(n), locale = "en"): IndexRow => ({
 let indexRows: IndexRow[];
 let unreadable: Set<string>;
 
-type IdWhere = { id?: { in: string[] }; and?: IdWhere[] };
-
-function idsOf(where: IdWhere): string[] {
-  return where.id?.in ?? where.and?.flatMap(idsOf) ?? [];
-}
-
-interface FindArgs {
-  collection: string;
-  where: Where & IdWhere;
-  page?: number;
-  limit?: number;
-}
-
 function fakePayload() {
-  return {
-    config: { localization: false, admin: { user: "users" }, serverURL: "https://server.test" },
-    logger: { warn: vi.fn() },
-    collections: { posts: { config: { admin: { useAsTitle: "title" } } } },
-    findByID: vi.fn(async ({ id }: { id: string }): Promise<{ id: string } | null> => ({ id })),
-    find: vi.fn(async ({ collection, where, page, limit }: FindArgs) => {
-      if (collection !== KEYPHRASES_COLLECTION_SLUG) {
-        return {
-          docs: idsOf(where)
-            .filter((id) => !unreadable.has(id))
-            .map((id) => ({ id: Number(id), title: `Post ${id}`, slug: `post-${id}` })),
-        };
-      }
-
-      const matching = indexRows.filter((row) => matchesWhere(row, where));
-      const start = ((page ?? 1) - 1) * (limit ?? matching.length);
-      const end = limit ? start + limit : matching.length;
-
-      return { docs: matching.slice(start, end), hasNextPage: end < matching.length };
-    }),
-  };
+  return fakeIndexPayload({
+    rows: () => indexRows,
+    findDocs: (where) =>
+      idsOf(where)
+        .filter((id) => !unreadable.has(id))
+        .map((id) => ({ id: Number(id), title: `Post ${id}`, slug: `post-${id}` })),
+    serverURL: "https://server.test",
+  });
 }
 
 function fakeRequest(

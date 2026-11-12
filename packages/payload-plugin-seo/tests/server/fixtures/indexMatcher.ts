@@ -25,3 +25,9 @@ export function matchesWhere(row: IndexRow, where: Where): boolean {
     });
   });
 }
+
+export function idsOf(where: Where): string[] {
+  const ids = where.id?.in as string[] | undefined;
+
+  return ids ?? where.and?.flatMap(idsOf) ?? [];
+}

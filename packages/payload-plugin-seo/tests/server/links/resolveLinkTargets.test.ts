@@ -2,17 +2,13 @@ import type { PayloadRequest } from "payload";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setPluginConfig } from "../../../src/config";
 import { resolveLinkTargets } from "../../../src/server/links/resolveLinkTargets";
+import { idsOf } from "../fixtures/indexMatcher";
+import type { Where } from "../fixtures/indexMatcher";
 
 const docs: Record<string, Record<string, unknown>[]> = {
   posts: [{ id: 2, title: "Post two", slug: "post-two" }],
   page: [{ id: 7, title: "About", slug: "about" }],
 };
-
-type Where = { id?: { in: string[] }; and?: Where[] };
-
-function idsOf(where: Where): string[] {
-  return where.id?.in ?? where.and?.flatMap(idsOf) ?? [];
-}
 
 function fakeRequest() {
   const find = vi.fn(async ({ collection, where }: { collection: string; where: Where }) => ({

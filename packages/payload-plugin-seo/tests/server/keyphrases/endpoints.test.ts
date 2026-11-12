@@ -5,8 +5,8 @@ import {
   KEYPHRASE_USAGE_ENDPOINT_PATH,
 } from "../../../src/constants";
 import { createKeyphraseEndpoints } from "../../../src/server/keyphrases/endpoints";
-import type { IndexRow, Where } from "./indexMatcher";
-import { matchesWhere } from "./indexMatcher";
+import { fakeIndexPayload } from "../fixtures/fakePayload";
+import type { IndexRow } from "../fixtures/indexMatcher";
 
 const { docAccessOperation } = vi.hoisted(() => ({
   docAccessOperation: vi.fn<(args: object) => Promise<{ update?: unknown }>>(),
@@ -22,27 +22,11 @@ let rows: IndexRow[];
 const ADMIN_USER = { id: 1, collection: "users" };
 
 function fakePayload({ localeCodes }: { localeCodes?: string[] } = {}) {
-  return {
-    config: { localization: localeCodes ? { localeCodes } : false, admin: { user: "users" } },
-    logger: { warn: vi.fn() },
-    find: vi.fn(async ({ collection, where }: { collection: string; where: Where }) => {
-      if (collection === KEYPHRASES_COLLECTION_SLUG) {
-        return { docs: rows.filter((r) => matchesWhere(r, where)) };
-      }
-      return { docs: [{ id: 2, title: "Post two" }] };
-    }),
-    findByID: vi.fn(
-      async ({ id }: { id: string }): Promise<{ id: string | number } | null> => ({ id })
-    ),
-    create: vi.fn(async ({ data }: { data: Omit<IndexRow, "id"> }) => ({ id: 100, ...data })),
-    update: vi.fn(async ({ data }: { data: Partial<IndexRow> }) => data),
-    delete: vi.fn(async () => ({ docs: [] })),
-    collections: {
-      posts: {
-        config: { admin: { useAsTitle: "title" } },
-      },
-    },
-  };
+  return fakeIndexPayload({
+    rows: () => rows,
+    findDocs: () => [{ id: 2, title: "Post two" }],
+    localeCodes,
+  });
 }
 
 function handler(path: string, method: string, collections = ["posts"]) {
