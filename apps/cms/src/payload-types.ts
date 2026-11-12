@@ -85,6 +85,7 @@ export interface Config {
     'comment-reads': CommentRead;
     'ab-experiments': AbExperiment;
     'payload-mcp-api-keys': PayloadMcpApiKey;
+    'audit-events': AuditEvent;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-folders': FolderInterface;
@@ -115,6 +116,7 @@ export interface Config {
     'comment-reads': CommentReadsSelect<false> | CommentReadsSelect<true>;
     'ab-experiments': AbExperimentsSelect<false> | AbExperimentsSelect<true>;
     'payload-mcp-api-keys': PayloadMcpApiKeysSelect<false> | PayloadMcpApiKeysSelect<true>;
+    'audit-events': AuditEventsSelect<false> | AuditEventsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
@@ -2054,7 +2056,7 @@ export interface Comment {
         id?: string | null;
       }[]
     | null;
-  author: number | User;
+  author?: (number | null) | User;
   isResolved?: boolean | null;
   resolvedBy?: (number | null) | User;
   resolvedAt?: string | null;
@@ -2280,6 +2282,66 @@ export interface PayloadMcpApiKey {
   apiKeyIndex?: string | null;
   hasAPIKey?: boolean | null;
   collection: 'payload-mcp-api-keys';
+}
+/**
+ * Read-only journal of who changed what and when.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-events".
+ */
+export interface AuditEvent {
+  id: number;
+  occurredAt: string;
+  action: string;
+  status?: ('success' | 'failure') | null;
+  actor: {
+    type: 'user' | 'api_key' | 'agent' | 'system' | 'anonymous';
+    docId?: string | null;
+    collection?: string | null;
+    label?: string | null;
+    source?: ('context' | 'als' | 'auth' | 'inferred' | 'plugin') | null;
+  };
+  onBehalfOf?: {
+    collection?: string | null;
+    docId?: string | null;
+    label?: string | null;
+  };
+  agent?: {
+    keyId?: string | null;
+    name?: string | null;
+    model?: string | null;
+    tool?: string | null;
+  };
+  via?: ('admin' | 'rest' | 'graphql' | 'local' | 'mcp' | 'job') | null;
+  target?: {
+    kind?: ('collection' | 'global' | 'auth' | 'audit' | 'system') | null;
+    slug?: string | null;
+    docId?: string | null;
+    label?: string | null;
+    locale?: string | null;
+  };
+  changes?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  overrideAccess?: boolean | null;
+  requestId?: string | null;
+  ip?: string | null;
+  userAgent?: string | null;
+  metadata?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -4025,6 +4087,55 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
   apiKey?: T;
   apiKeyIndex?: T;
   hasAPIKey?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-events_select".
+ */
+export interface AuditEventsSelect<T extends boolean = true> {
+  occurredAt?: T;
+  action?: T;
+  status?: T;
+  actor?:
+    | T
+    | {
+        type?: T;
+        docId?: T;
+        collection?: T;
+        label?: T;
+        source?: T;
+      };
+  onBehalfOf?:
+    | T
+    | {
+        collection?: T;
+        docId?: T;
+        label?: T;
+      };
+  agent?:
+    | T
+    | {
+        keyId?: T;
+        name?: T;
+        model?: T;
+        tool?: T;
+      };
+  via?: T;
+  target?:
+    | T
+    | {
+        kind?: T;
+        slug?: T;
+        docId?: T;
+        label?: T;
+        locale?: T;
+      };
+  changes?: T;
+  overrideAccess?: T;
+  requestId?: T;
+  ip?: T;
+  userAgent?: T;
+  metadata?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

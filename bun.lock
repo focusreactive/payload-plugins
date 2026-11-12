@@ -27,6 +27,7 @@
         "@auth0/nextjs-auth0": "4.20.0",
         "@focus-reactive/payload-plugin-ab": "workspace:*",
         "@focus-reactive/payload-plugin-analytics": "workspace:*",
+        "@focus-reactive/payload-plugin-audit-log": "workspace:*",
         "@focus-reactive/payload-plugin-comments": "workspace:*",
         "@focus-reactive/payload-plugin-presets": "workspace:*",
         "@focus-reactive/payload-plugin-scheduling": "workspace:*",
@@ -132,6 +133,7 @@
       "dependencies": {
         "@focus-reactive/payload-plugin-ab": "workspace:*",
         "@focus-reactive/payload-plugin-analytics": "workspace:*",
+        "@focus-reactive/payload-plugin-audit-log": "workspace:*",
         "@focus-reactive/payload-plugin-comments": "workspace:*",
         "@focus-reactive/payload-plugin-presets": "workspace:*",
         "@focus-reactive/payload-plugin-scheduling": "workspace:*",
@@ -194,7 +196,7 @@
     },
     "packages/create-ideal-cms": {
       "name": "create-ideal-cms",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "bin": {
         "create-ideal-cms": "./dist/index.js",
       },
@@ -287,6 +289,27 @@
         "react-dom",
       ],
     },
+    "packages/payload-plugin-audit-log": {
+      "name": "@focus-reactive/payload-plugin-audit-log",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@payloadcms/ui": "3.90.1",
+        "@types/node": "22.19.9",
+        "@types/react": "19.2.9",
+        "@types/react-dom": "19.2.3",
+        "payload": "3.90.1",
+        "react": "19.2.1",
+        "react-dom": "19.2.1",
+        "tsup": "8.0.0",
+        "typescript": "5.0.2",
+        "vitest": "^2.1.8",
+      },
+      "peerDependencies": {
+        "@payloadcms/ui": "^3.90.0",
+        "payload": "^3.90.0",
+        "react": "^19.0.0",
+      },
+    },
     "packages/payload-plugin-comments": {
       "name": "@focus-reactive/payload-plugin-comments",
       "version": "1.11.3",
@@ -351,7 +374,7 @@
     },
     "packages/payload-plugin-json-form-builder": {
       "name": "@focus-reactive/payload-plugin-json-form-builder",
-      "version": "1.5.0",
+      "version": "1.6.0",
       "dependencies": {
         "clsx": "2.1.1",
       },
@@ -378,7 +401,7 @@
     },
     "packages/payload-plugin-netlify-deploy": {
       "name": "@focus-reactive/payload-plugin-netlify-deploy",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "devDependencies": {
         "@payloadcms/ui": "3.90.1",
         "@swc/cli": "0.4.0",
@@ -436,7 +459,7 @@
     },
     "packages/payload-plugin-seo": {
       "name": "@focus-reactive/payload-plugin-seo",
-      "version": "1.10.1",
+      "version": "1.10.2",
       "dependencies": {
         "@yoast/search-metadata-previews": "^3.0.0",
         "class-variance-authority": "0.7.1",
@@ -482,7 +505,7 @@
     },
     "packages/payload-plugin-translator": {
       "name": "@focus-reactive/payload-plugin-translator",
-      "version": "0.16.0",
+      "version": "0.18.1",
       "dependencies": {
         "@hookform/resolvers": "^3.9.0",
         "@radix-ui/react-popover": "^1.1.0",
@@ -842,6 +865,8 @@
     "@focus-reactive/payload-plugin-ab": ["@focus-reactive/payload-plugin-ab@workspace:packages/payload-plugin-ab"],
 
     "@focus-reactive/payload-plugin-analytics": ["@focus-reactive/payload-plugin-analytics@workspace:packages/payload-plugin-analytics"],
+
+    "@focus-reactive/payload-plugin-audit-log": ["@focus-reactive/payload-plugin-audit-log@workspace:packages/payload-plugin-audit-log"],
 
     "@focus-reactive/payload-plugin-comments": ["@focus-reactive/payload-plugin-comments@workspace:packages/payload-plugin-comments"],
 
@@ -3948,6 +3973,8 @@
     "@focus-reactive/payload-plugin-analytics/@types/node": ["@types/node@25.9.3", "", { "dependencies": { "undici-types": ">=7.24.0 <7.24.7" } }, "sha512-603BddQMv3pUcr4U2dhujk83N2tTDVr/34wII2B6bJy6g+8WD6yUb11jszNs0gdi4PesVWl7ABt8nYMVpnLUcg=="],
 
     "@focus-reactive/payload-plugin-analytics/typescript": ["typescript@5.7.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-84MVSjMEHP+FQRPy3pX9sTVV/INIex71s9TL2Gm5FG/WG1SqXeKyZ0k7/blY/4FdOzI12CBy1vGc4og/eus0fw=="],
+
+    "@focus-reactive/payload-plugin-audit-log/typescript": ["typescript@5.0.2", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-wVORMBGO/FAs/++blGNeAVdbNKtIh1rbBL2EyQ1+J9lClJ93KiiKe8PmFIVdXhHcyv44SL9oglmfeSsndo0jRw=="],
 
     "@focus-reactive/payload-plugin-comments/@tanstack/react-query": ["@tanstack/react-query@5.0.0", "", { "dependencies": { "@tanstack/query-core": "5.0.0" }, "peerDependencies": { "react": "^18.0.0", "react-dom": "^18.0.0", "react-native": "*" }, "optionalPeers": ["react-dom", "react-native"] }, "sha512-diQoC8FNBcO5Uf5yuaJlXthTtbO1xM8kzOX+pSBUMT9n/cqQ/u1wJGCtukvhDWA+6j07WmIj4bfqNbd2KOB6jQ=="],
 

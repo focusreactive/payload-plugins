@@ -39,6 +39,11 @@ import { RowLabelGroupName as RowLabelGroupName_7f4fa5fc68fb5a0a92393f6444a57fbd
 import { BlockNameCell as BlockNameCell_cc45cff47f16a104c7146a801d6e52ae } from '../../../components/admin/BlockNameCell'
 import { PresetAdminComponentPreview as PresetAdminComponentPreview_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { PresetAdminComponentCellWrapper as PresetAdminComponentCellWrapper_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
+import { AuditActionCell as AuditActionCell_ae17e35f4822061b0c53c889ebf392e3 } from '@focus-reactive/payload-plugin-audit-log/client'
+import { AuditActionField as AuditActionField_ae17e35f4822061b0c53c889ebf392e3 } from '@focus-reactive/payload-plugin-audit-log/client'
+import { AuditActorTypeCell as AuditActorTypeCell_ae17e35f4822061b0c53c889ebf392e3 } from '@focus-reactive/payload-plugin-audit-log/client'
+import { AuditActorTypeField as AuditActorTypeField_ae17e35f4822061b0c53c889ebf392e3 } from '@focus-reactive/payload-plugin-audit-log/client'
+import { AuditExportButton as AuditExportButton_ae17e35f4822061b0c53c889ebf392e3 } from '@focus-reactive/payload-plugin-audit-log/client'
 import { FolderTypeField as FolderTypeField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
 import { default as default_dfe4008080d895d460898c3a6155e9ba } from '../../../components/admin/Icon'
 import { default as default_91a09b539d3c86b0aebf520e7564ce08 } from '../../../components/admin/Logo'
@@ -97,6 +102,11 @@ export const importMap = {
   "/components/admin/BlockNameCell#BlockNameCell": BlockNameCell_cc45cff47f16a104c7146a801d6e52ae,
   "@focus-reactive/payload-plugin-presets/client#PresetAdminComponentPreview": PresetAdminComponentPreview_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-presets/client#PresetAdminComponentCellWrapper": PresetAdminComponentCellWrapper_f0a4a6f21f15d606fa328a5e35f17d11,
+  "@focus-reactive/payload-plugin-audit-log/client#AuditActionCell": AuditActionCell_ae17e35f4822061b0c53c889ebf392e3,
+  "@focus-reactive/payload-plugin-audit-log/client#AuditActionField": AuditActionField_ae17e35f4822061b0c53c889ebf392e3,
+  "@focus-reactive/payload-plugin-audit-log/client#AuditActorTypeCell": AuditActorTypeCell_ae17e35f4822061b0c53c889ebf392e3,
+  "@focus-reactive/payload-plugin-audit-log/client#AuditActorTypeField": AuditActorTypeField_ae17e35f4822061b0c53c889ebf392e3,
+  "@focus-reactive/payload-plugin-audit-log/client#AuditExportButton": AuditExportButton_ae17e35f4822061b0c53c889ebf392e3,
   "@payloadcms/next/client#FolderTypeField": FolderTypeField_2b8867833a34864a02ddf429b0728a40,
   "/components/admin/Icon#default": default_dfe4008080d895d460898c3a6155e9ba,
   "/components/admin/Logo#default": default_91a09b539d3c86b0aebf520e7564ce08,

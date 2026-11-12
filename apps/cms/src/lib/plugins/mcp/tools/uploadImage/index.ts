@@ -1,3 +1,4 @@
+import { CTX_ACTOR } from "@focus-reactive/payload-plugin-audit-log";
 import type { PayloadRequest } from "payload";
 import { z } from "zod";
 
@@ -23,6 +24,8 @@ interface ImageInput {
 interface Args {
   images: ImageInput[];
 }
+
+const auditActorOf = (req: PayloadRequest) => ({ [CTX_ACTOR]: req.context[CTX_ACTOR] });
 
 export const uploadImage = {
   description:
@@ -76,6 +79,7 @@ export const uploadImage = {
 
           const result = await req.payload.create({
             collection: "media",
+            context: auditActorOf(req),
             data: { alt },
             file,
             overrideAccess: true,
