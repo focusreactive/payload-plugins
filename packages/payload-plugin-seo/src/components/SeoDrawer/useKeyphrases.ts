@@ -39,6 +39,7 @@ export interface UseKeyphrasesApi {
   setFocus: (id: string) => void;
   isDuplicate: (id: string, text: string) => boolean;
   syncOnOpen: () => void;
+  readOnly: boolean;
   saveFailed: boolean;
 }
 
@@ -217,6 +218,7 @@ export function useKeyphrases({
     setFocus,
     isDuplicate,
     syncOnOpen,
+    readOnly: Boolean(remote && !remote.canUpdate),
     saveFailed,
   };
 }

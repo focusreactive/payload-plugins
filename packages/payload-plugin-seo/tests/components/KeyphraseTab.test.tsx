@@ -244,4 +244,23 @@ describe("KeyphraseTab", () => {
     );
     expect(screen.getByRole("alert")).toHaveTextContent(/couldn.t save keyphrases/iu);
   });
+
+  it("shows keyphrases read-only with a hint when they cannot be edited", () => {
+    render(
+      <KeyphraseTab
+        keyphrases={[{ ...entries[0] }, { ...entries[1], synonyms: ["cms"] }]}
+        selectedId="b"
+        result={result}
+        analyzing={false}
+        readOnly
+        {...handlers}
+      />
+    );
+    expect(screen.getByRole("textbox", { name: /^related keyphrase$/iu })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /add related keyphrase/iu })).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: /add a synonym/iu })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /set as focus/iu })).toBeNull();
+    expect(screen.queryByRole("button", { name: /remove/iu })).toBeNull();
+    expect(screen.getByText(/can.t edit this document/iu)).toBeInTheDocument();
+  });
 });

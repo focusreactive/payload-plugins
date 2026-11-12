@@ -34,6 +34,7 @@ export interface KeyphraseDetailProps {
   onSetFocus: () => void;
   onRemove: () => void;
   usageNotice?: ReactNode;
+  readOnly?: boolean;
 }
 
 interface AnalysisProps {
@@ -107,6 +108,7 @@ export function KeyphraseDetail({
   onSetFocus,
   onRemove,
   usageNotice,
+  readOnly = false,
 }: KeyphraseDetailProps) {
   const { t } = useSeoTranslation();
   const textInputId = useId();
@@ -122,7 +124,7 @@ export function KeyphraseDetail({
           >
             {label}
           </label>
-          {!isFocus && (
+          {!isFocus && !readOnly && (
             <div className="flex items-center gap-[6px]">
               <IconButton
                 aria-label={t("keyphrase.setFocus")}
@@ -145,13 +147,17 @@ export function KeyphraseDetail({
         </div>
         <input
           autoComplete="off"
-          className="w-full border border-neutral-200 rounded-rs px-[12px] py-[10px] text-[13px] text-neutral-800 bg-neutral-0 outline-none focus:border-neutral-800"
+          className="w-full border border-neutral-200 rounded-rs px-[12px] py-[10px] text-[13px] text-neutral-800 bg-neutral-0 outline-none focus:border-neutral-800 disabled:bg-neutral-50 disabled:cursor-not-allowed"
+          disabled={readOnly}
           id={textInputId}
           onChange={(e) => onTextChange(e.target.value)}
           placeholder={t(isFocus ? "keyphrase.focusPlaceholder" : "keyphrase.relatedPlaceholder")}
           type="text"
           value={entry.text}
         />
+        {readOnly && (
+          <p className="mt-[6px] mb-0 text-[11px] text-neutral-500">{t("keyphrase.readOnly")}</p>
+        )}
       </div>
 
       {duplicate && (
@@ -168,7 +174,12 @@ export function KeyphraseDetail({
       {!duplicate && usageNotice}
 
       <div className="mb-[9px]">
-        <SynonymsField onAdd={onAddSynonym} onRemove={onRemoveSynonym} synonyms={entry.synonyms} />
+        <SynonymsField
+          onAdd={onAddSynonym}
+          onRemove={onRemoveSynonym}
+          readOnly={readOnly}
+          synonyms={entry.synonyms}
+        />
       </div>
 
       <Analysis analysis={analysis} />

@@ -96,8 +96,18 @@ describe("useKeyphrases with a remote index", () => {
     expect(localStorage.getItem(localKey)).not.toBeNull();
   });
 
+  it("is editable with update access", () => {
+    const { result } = renderHook(() => useKeyphrases({ ...base, remote: editable }));
+    expect(result.current.readOnly).toBe(false);
+  });
+
   describe("without update access", () => {
     const readOnly = { apiRoute: "/api", initial: serverList, indexed: true, canUpdate: false };
+
+    it("is read-only", () => {
+      const { result } = renderHook(() => useKeyphrases({ ...base, remote: readOnly }));
+      expect(result.current.readOnly).toBe(true);
+    });
 
     it("ignores a list that was never saved", () => {
       saveKeyphrases(unsavedKey, [createEntry("unsaved")]);

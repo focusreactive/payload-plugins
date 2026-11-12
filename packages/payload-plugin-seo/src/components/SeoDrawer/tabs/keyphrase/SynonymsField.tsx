@@ -9,9 +9,10 @@ export interface SynonymsFieldProps {
   synonyms: string[];
   onAdd: (syn: string) => void;
   onRemove: (index: number) => void;
+  readOnly?: boolean;
 }
 
-export function SynonymsField({ synonyms, onAdd, onRemove }: SynonymsFieldProps) {
+export function SynonymsField({ synonyms, onAdd, onRemove, readOnly = false }: SynonymsFieldProps) {
   const { t } = useSeoTranslation();
   const [draft, setDraft] = useState("");
   const [focused, setFocused] = useState(false);
@@ -43,19 +44,21 @@ export function SynonymsField({ synonyms, onAdd, onRemove }: SynonymsFieldProps)
             >
               {synonym}
 
-              <button
-                type="button"
-                aria-label={t("synonyms.remove", { synonym, position: index + 1 })}
-                className="grid place-items-center p-0.5 text-neutral-400 rounded-full bg-transparent hover:text-neutral-0 hover:bg-neutral-800 [&_svg]:size-[1em] cursor-pointer"
-                onClick={() => onRemove(index)}
-              >
-                <X aria-hidden="true" />
-              </button>
+              {!readOnly && (
+                <button
+                  type="button"
+                  aria-label={t("synonyms.remove", { synonym, position: index + 1 })}
+                  className="grid place-items-center p-0.5 text-neutral-400 rounded-full bg-transparent hover:text-neutral-0 hover:bg-neutral-800 [&_svg]:size-[1em] cursor-pointer"
+                  onClick={() => onRemove(index)}
+                >
+                  <X aria-hidden="true" />
+                </button>
+              )}
             </span>
           ))}
           <button
             type="button"
-            disabled={!canAdd}
+            disabled={readOnly || !canAdd}
             onClick={commit}
             className={cn(
               "inline-flex items-center gap-[5px] rounded-[15px] px-[11px] py-[5px] text-[11.5px] font-semibold [&_svg]:size-[13px] not-disabled:cursor-pointer transition-colors duration-150",
@@ -82,6 +85,7 @@ export function SynonymsField({ synonyms, onAdd, onRemove }: SynonymsFieldProps)
             }}
             placeholder={t("synonyms.placeholder")}
             aria-label={t("synonyms.inputLabel")}
+            disabled={readOnly}
             className="flex-1 border-0 outline-none text-[12.5px] text-neutral-800 bg-transparent"
           />
           <span className="text-[9px] text-neutral-500 border border-neutral-200 rounded-[4px] px-[5px] py-[1px] font-semibold">

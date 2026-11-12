@@ -14,6 +14,7 @@ interface KeyphraseRailProps {
   onSelect: (id: string) => void;
   onAdd: () => void;
   saveFailed?: boolean;
+  readOnly?: boolean;
 }
 
 export function KeyphraseRail({
@@ -23,6 +24,7 @@ export function KeyphraseRail({
   onSelect,
   onAdd,
   saveFailed = false,
+  readOnly = false,
 }: KeyphraseRailProps) {
   const { t } = useSeoTranslation();
   const atMax = entries.length >= MAX_KEYPHRASES;
@@ -39,7 +41,7 @@ export function KeyphraseRail({
             type="button"
             aria-label={t("keyphrase.add")}
             title={atMax ? t("keyphrase.max", { max: MAX_KEYPHRASES }) : t("keyphrase.add")}
-            disabled={atMax}
+            disabled={readOnly || atMax}
             onClick={onAdd}
             className="w-[26px] h-[26px] rounded-rs border border-neutral-200 grid place-items-center text-neutral-600 bg-neutral-0 hover:border-neutral-800 hover:text-neutral-800 disabled:opacity-35 not-disabled:cursor-pointer disabled:cursor-not-allowed [&_svg]:size-[15px]"
           >

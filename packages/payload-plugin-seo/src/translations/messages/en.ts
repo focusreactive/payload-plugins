@@ -42,6 +42,7 @@ export const en = {
   "keyphrase.analyzing": "Analyzing keyphrase…",
   "keyphrase.hintDuplicate": "Resolve the duplicate to analyse this keyphrase.",
   "keyphrase.hintEmpty": "Start typing a keyphrase to see its analysis.",
+  "keyphrase.readOnly": "You can’t edit this document, so its keyphrases are read-only.",
   "keyphrase.saveFailed":
     "Couldn’t save keyphrases. Your changes are kept in this browser and will be saved again.",
   "keyphrase.usedOn": "This keyphrase is already used on:",

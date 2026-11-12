@@ -51,6 +51,7 @@ export function SeoButtonInner({
     addSynonym,
     isDuplicate,
     keyphrases,
+    readOnly,
     remove: removeKeyphrase,
     removeSynonym,
     saveFailed,
@@ -119,6 +120,7 @@ export function SeoButtonInner({
       onRemove={handleRemove}
       onSetFocus={setFocus}
       isDuplicate={isDuplicate}
+      keyphrasesReadOnly={readOnly}
       keyphrasesSaveFailed={saveFailed}
       renderKeyphraseUsage={remote ? renderKeyphraseUsage : undefined}
       renderLinks={remote ? renderLinksPanel : undefined}
