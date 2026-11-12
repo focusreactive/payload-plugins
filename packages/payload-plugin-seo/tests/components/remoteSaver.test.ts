@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createEntry } from "../../src/components/SeoDrawer/keyphraseState";
 import { unsavedStorageKey } from "../../src/components/SeoDrawer/keyphraseStorage";
 import { createRemoteSaver } from "../../src/components/SeoDrawer/remoteSaver";
+import { KEYPHRASE_SAVE_DELAY_MS } from "../../src/constants";
 
 const target = { apiRoute: "/api", collection: "posts", docId: "1", locale: "en" };
 const backupKey = unsavedStorageKey("posts", "1", "en");
@@ -43,11 +44,11 @@ function deferredResponse() {
 
 describe("createRemoteSaver", () => {
   it("sends one PUT with the last list after the delay", () => {
-    const saver = createRemoteSaver(target, { delay: 500 });
+    const saver = createRemoteSaver(target);
     saver.schedule([createEntry("a")]);
     saver.schedule([createEntry("ab", ["x"]), createEntry("")]);
 
-    vi.advanceTimersByTime(499);
+    vi.advanceTimersByTime(KEYPHRASE_SAVE_DELAY_MS - 1);
     expect(fetchMock).not.toHaveBeenCalled();
 
     vi.advanceTimersByTime(1);
@@ -67,20 +68,20 @@ describe("createRemoteSaver", () => {
   });
 
   it("flush sends the pending list immediately and only once", () => {
-    const saver = createRemoteSaver(target, { delay: 500 });
+    const saver = createRemoteSaver(target);
     saver.schedule([createEntry("a")]);
     saver.flush();
-    vi.advanceTimersByTime(1000);
+    vi.advanceTimersByTime(KEYPHRASE_SAVE_DELAY_MS * 2);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("flush without pending changes sends nothing", () => {
-    createRemoteSaver(target, { delay: 500 }).flush();
+    createRemoteSaver(target).flush();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("save resolves to the outcome of the request", async () => {
-    const saver = createRemoteSaver(target, { delay: 500 });
+    const saver = createRemoteSaver(target);
     expect(await saver.save([createEntry("a")])).toEqual({ status: "saved" });
 
     fetchMock.mockResolvedValueOnce(new Response("{}", { status: 403 }));
@@ -154,7 +155,7 @@ describe("createRemoteSaver", () => {
   });
 
   it("save asks the server to create only when told to", async () => {
-    const saver = createRemoteSaver(target, { delay: 500 });
+    const saver = createRemoteSaver(target);
     await saver.save([createEntry("a")], { ifAbsent: true });
     expect(sentBody()).toMatchObject({ ifAbsent: true });
 
@@ -163,7 +164,7 @@ describe("createRemoteSaver", () => {
   });
 
   it("save sends right away", () => {
-    createRemoteSaver(target, { delay: 500 }).save([createEntry("a")]);
+    createRemoteSaver(target).save([createEntry("a")]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

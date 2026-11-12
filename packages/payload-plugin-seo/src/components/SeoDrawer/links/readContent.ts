@@ -1,6 +1,6 @@
 import { MAX_LINKED_HREFS, MAX_LINKED_HREF_LENGTH, MAX_LINK_TEXT_CHARS } from "../../../constants";
 
-export interface DocumentContent {
+interface DocumentContent {
   text: string;
   hrefs: string[];
 }

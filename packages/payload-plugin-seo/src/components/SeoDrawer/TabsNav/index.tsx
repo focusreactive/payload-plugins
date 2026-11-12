@@ -1,20 +1,19 @@
 "use client";
 
-import { TABS } from "./constants";
 import type { Tab, TabKey } from "./types";
 import { tabVariants } from "./variants";
 import { useSeoTranslation } from "../../../translations/useSeoTranslation";
 
 export { TABS, TABS_WITH_LINKS } from "./constants";
-export type { Tab, TabKey } from "./types";
+export type { TabKey } from "./types";
 
 export interface TabsNavProps {
   active: TabKey;
   onChange: (next: TabKey) => void;
-  tabs?: readonly Tab[];
+  tabs: readonly Tab[];
 }
 
-export function TabsNav({ active, onChange, tabs = TABS }: TabsNavProps) {
+export function TabsNav({ active, onChange, tabs }: TabsNavProps) {
   const { t } = useSeoTranslation();
   return (
     <nav

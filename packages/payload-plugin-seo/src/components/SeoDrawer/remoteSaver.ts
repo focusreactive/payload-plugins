@@ -13,7 +13,6 @@ interface RemoteSaverTarget {
 }
 
 interface RemoteSaverOptions {
-  delay?: number;
   onOutcome?: (outcome: SaveOutcome) => void;
 }
 
@@ -21,7 +20,7 @@ interface SaveOptions {
   ifAbsent?: boolean;
 }
 
-export type SaveOutcome =
+type SaveOutcome =
   | { status: "saved" }
   | { status: "failed" }
   | { status: "exists"; keyphrases: StoredKeyphrase[] };
@@ -45,7 +44,7 @@ async function toOutcome(res: Response | undefined): Promise<SaveOutcome> {
 
 export function createRemoteSaver(
   target: RemoteSaverTarget,
-  { delay = KEYPHRASE_SAVE_DELAY_MS, onOutcome = noop }: RemoteSaverOptions = {}
+  { onOutcome = noop }: RemoteSaverOptions = {}
 ): RemoteSaver {
   const backupKey = unsavedStorageKey(target.collection, target.docId, target.locale);
   let timer: ReturnType<typeof setTimeout> | null = null;
@@ -119,7 +118,7 @@ export function createRemoteSaver(
     pending = list;
     saveKeyphrases(backupKey, list);
     if (timer) clearTimeout(timer);
-    timer = setTimeout(() => void flush(), delay);
+    timer = setTimeout(() => void flush(), KEYPHRASE_SAVE_DELAY_MS);
   };
 
   return { schedule, save, flush };
