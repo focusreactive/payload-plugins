@@ -52,7 +52,6 @@ const props = {
   extractContentPath: "@/x#default",
   site: { name: "Site", baseUrl: "https://example.com", faviconUrl: "" },
   supportedLocales: ["en"],
-  keyphraseIndex: false,
 };
 
 afterEach(() => {

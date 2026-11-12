@@ -22,7 +22,7 @@ export interface SeoButtonProps {
   extractContentPath: string;
   site: { name: string; baseUrl: string; faviconUrl: string };
   supportedLocales: string[];
-  keyphraseIndex: boolean;
+  keyphraseIndex?: boolean;
 }
 
 interface SeoButtonInnerProps extends SeoButtonProps {
