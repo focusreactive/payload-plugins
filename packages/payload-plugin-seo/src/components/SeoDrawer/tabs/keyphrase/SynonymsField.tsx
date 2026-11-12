@@ -3,6 +3,7 @@
 import { Plus, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "../../../../utils/style";
+import { useSeoTranslation } from "../../../../translations/useSeoTranslation";
 
 export interface SynonymsFieldProps {
   synonyms: string[];
@@ -11,6 +12,7 @@ export interface SynonymsFieldProps {
 }
 
 export function SynonymsField({ synonyms, onAdd, onRemove }: SynonymsFieldProps) {
+  const { t } = useSeoTranslation();
   const [draft, setDraft] = useState("");
   const [focused, setFocused] = useState(false);
   const canAdd = draft.trim().length > 0;
@@ -24,7 +26,7 @@ export function SynonymsField({ synonyms, onAdd, onRemove }: SynonymsFieldProps)
   return (
     <div>
       <span className="block text-[10px] uppercase tracking-[0.05em] text-neutral-500 mb-[6px]">
-        Synonyms
+        {t("synonyms.title")}
       </span>
 
       <div
@@ -43,7 +45,7 @@ export function SynonymsField({ synonyms, onAdd, onRemove }: SynonymsFieldProps)
 
               <button
                 type="button"
-                aria-label={`Remove synonym ${synonym} (${index + 1})`}
+                aria-label={t("synonyms.remove", { synonym, position: index + 1 })}
                 className="grid place-items-center p-0.5 text-neutral-400 rounded-full bg-transparent hover:text-neutral-0 hover:bg-neutral-800 [&_svg]:size-[1em] cursor-pointer"
                 onClick={() => onRemove(index)}
               >
@@ -61,7 +63,7 @@ export function SynonymsField({ synonyms, onAdd, onRemove }: SynonymsFieldProps)
               "disabled:bg-neutral-100 disabled:text-neutral-300 disabled:cursor-not-allowed disabled:transition-none"
             )}
           >
-            <Plus aria-hidden="true" /> Add synonym
+            <Plus aria-hidden="true" /> {t("synonyms.add")}
           </button>
         </div>
         <div className="border-t border-neutral-150" />
@@ -78,17 +80,17 @@ export function SynonymsField({ synonyms, onAdd, onRemove }: SynonymsFieldProps)
                 commit();
               }
             }}
-            placeholder="Add a synonym…"
-            aria-label="Add a synonym"
+            placeholder={t("synonyms.placeholder")}
+            aria-label={t("synonyms.inputLabel")}
             className="flex-1 border-0 outline-none text-[12.5px] text-neutral-800 bg-transparent"
           />
           <span className="text-[9px] text-neutral-500 border border-neutral-200 rounded-[4px] px-[5px] py-[1px] font-semibold">
-            Enter
+            {t("synonyms.enter")}
           </span>
         </div>
       </div>
       <div className="text-[11px] text-neutral-500 mt-[6px] leading-[1.45]">
-        Synonyms count as keyphrase matches in this keyphrase’s checks. One chip per synonym.
+        {t("synonyms.help")}
       </div>
     </div>
   );

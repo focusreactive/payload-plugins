@@ -5,6 +5,7 @@ import { MAX_KEYPHRASES } from "../../../../constants";
 import type { KeyphraseEntry } from "../../keyphraseState";
 import { KeyphraseCard } from "./KeyphraseCard";
 import type { CardState } from "./KeyphraseCard";
+import { useSeoTranslation } from "../../../../translations/useSeoTranslation";
 
 interface KeyphraseRailProps {
   entries: KeyphraseEntry[];
@@ -21,6 +22,7 @@ export function KeyphraseRail({
   onSelect,
   onAdd,
 }: KeyphraseRailProps) {
+  const { t } = useSeoTranslation();
   const atMax = entries.length >= MAX_KEYPHRASES;
 
   return (
@@ -28,13 +30,13 @@ export function KeyphraseRail({
       <div className="sticky top-0 px-[9px] py-[18px] flex flex-col gap-[5px]">
         <div className="flex items-center justify-between px-[7px] pt-[5px] pb-[3px]">
           <span className="text-[10px] uppercase tracking-[0.05em] text-neutral-500 font-bold">
-            Keyphrases · {entries.length}/{MAX_KEYPHRASES}
+            {t("keyphrase.rail", { count: entries.length, max: MAX_KEYPHRASES })}
           </span>
 
           <button
             type="button"
-            aria-label="Add related keyphrase"
-            title={atMax ? `Up to ${MAX_KEYPHRASES} keyphrases` : "Add related keyphrase"}
+            aria-label={t("keyphrase.add")}
+            title={atMax ? t("keyphrase.max", { max: MAX_KEYPHRASES }) : t("keyphrase.add")}
             disabled={atMax}
             onClick={onAdd}
             className="w-[26px] h-[26px] rounded-rs border border-neutral-200 grid place-items-center text-neutral-600 bg-neutral-0 hover:border-neutral-800 hover:text-neutral-800 disabled:opacity-35 not-disabled:cursor-pointer disabled:cursor-not-allowed [&_svg]:size-[15px]"

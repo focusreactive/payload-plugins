@@ -19,8 +19,8 @@ export const resolveLinks = (
       filledPct: total ? (follow / total) * 100 : 0,
       filledStatus: check.status === "good" ? "good" : "warn",
       legend: [
-        { tone: "good", label: `${follow} dofollow` },
-        { tone: "muted", label: `${total - follow} nofollow` },
+        { tone: "good", label: { key: "viz.dofollow", vars: { count: follow } } },
+        { tone: "muted", label: { key: "viz.nofollow", vars: { count: total - follow } } },
       ],
     },
   };

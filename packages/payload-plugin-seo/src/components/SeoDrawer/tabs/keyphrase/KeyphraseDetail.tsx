@@ -11,14 +11,16 @@ import { SectionCard } from "../../../../ui/SectionCard";
 import { IconButton } from "../../../../ui/IconButton";
 import { TabHeader } from "../../../../ui/TabHeader";
 import { cn } from "../../../../utils/style";
+import type { TranslationKey } from "../../../../translations/types";
 import type { KeyphraseEntry } from "../../keyphraseState";
 import { Target, Trash2 } from "./icons";
 import { SynonymsField } from "./SynonymsField";
+import { useSeoTranslation } from "../../../../translations/useSeoTranslation";
 
 export type DetailAnalysis =
   | { kind: "metrics"; result: CategoryResult; dim: boolean }
   | { kind: "analyzing" }
-  | { kind: "hint"; message: string };
+  | { kind: "hint"; message?: TranslationKey };
 
 export interface KeyphraseDetailProps {
   entry: KeyphraseEntry;
@@ -37,6 +39,7 @@ interface AnalysisProps {
 }
 
 function Analysis({ analysis }: AnalysisProps) {
+  const { t } = useSeoTranslation();
   const [filter, setFilter] = useState<Filter>("all");
 
   if (analysis.kind === "analyzing") {
@@ -47,13 +50,17 @@ function Analysis({ analysis }: AnalysisProps) {
         role="status"
       >
         <Loader2 aria-hidden="true" className="w-[15px] h-[15px] animate-spin" />
-        Analyzing keyphrase…
+        {t("keyphrase.analyzing")}
       </div>
     );
   }
 
   if (analysis.kind === "hint") {
-    return <div className="text-neutral-500 text-[12px] py-[6px]">{analysis.message}</div>;
+    return (
+      <div className="text-neutral-500 text-[12px] py-[6px]">
+        {analysis.message ? t(analysis.message) : null}
+      </div>
+    );
   }
 
   const { result, dim } = analysis;
@@ -70,15 +77,14 @@ function Analysis({ analysis }: AnalysisProps) {
       <TabHeader
         score={result.ringScore}
         status={result.status}
-        subtitle={
-          <>
-            {passing} / {result.checks.length} checks passing
-          </>
-        }
-        title="Keyphrase optimization"
+        subtitle={t("checks.passing", { passing, total: result.checks.length })}
+        title={t("keyphrase.optimization")}
       />
 
-      <SectionCard title="Checks" widget={<Pill variant="neutral">{result.checks.length}</Pill>}>
+      <SectionCard
+        title={t("checks.title")}
+        widget={<Pill variant="neutral">{result.checks.length}</Pill>}
+      >
         <FilterPills checks={result.checks} onChange={setFilter} value={filter} />
         {visible.map((check) => (
           <CheckRow check={check} key={check.id} />
@@ -99,8 +105,9 @@ export function KeyphraseDetail({
   onSetFocus,
   onRemove,
 }: KeyphraseDetailProps) {
+  const { t } = useSeoTranslation();
   const textInputId = useId();
-  const label = isFocus ? "Focus keyphrase" : "Related keyphrase";
+  const label = t(isFocus ? "keyphrase.focusLabel" : "keyphrase.relatedLabel");
 
   return (
     <section className="flex-1 min-w-0 px-[15px] py-[18px] flex flex-col gap-[13px] overflow-auto">
@@ -115,17 +122,17 @@ export function KeyphraseDetail({
           {!isFocus && (
             <div className="flex items-center gap-[6px]">
               <IconButton
-                aria-label="Set as focus"
+                aria-label={t("keyphrase.setFocus")}
                 onClick={onSetFocus}
-                title="Set as focus"
+                title={t("keyphrase.setFocus")}
                 variant="primary"
               >
                 <Target aria-hidden="true" />
               </IconButton>
               <IconButton
-                aria-label="Remove keyphrase"
+                aria-label={t("keyphrase.remove")}
                 onClick={onRemove}
-                title="Remove keyphrase"
+                title={t("keyphrase.remove")}
                 variant="error"
               >
                 <Trash2 aria-hidden="true" />
@@ -138,7 +145,7 @@ export function KeyphraseDetail({
           className="w-full border border-neutral-200 rounded-rs px-[12px] py-[10px] text-[13px] text-neutral-800 bg-neutral-0 outline-none focus:border-neutral-800"
           id={textInputId}
           onChange={(e) => onTextChange(e.target.value)}
-          placeholder={isFocus ? "Type your primary keyphrase" : "Type a related keyphrase"}
+          placeholder={t(isFocus ? "keyphrase.focusPlaceholder" : "keyphrase.relatedPlaceholder")}
           type="text"
           value={entry.text}
         />
@@ -151,7 +158,7 @@ export function KeyphraseDetail({
           role="status"
         >
           <AlertTriangle aria-hidden="true" className="w-[15px] h-[15px] flex-none" />
-          &#8220;{entry.text.trim()}&#8221; is already in your keyphrase list.
+          {t("keyphrase.duplicate", { text: entry.text.trim() })}
         </div>
       )}
 
