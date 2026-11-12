@@ -23,7 +23,7 @@ function store(): Storage | null {
   }
 }
 
-export function toEntries(stored: StoredKeyphrase[]): KeyphraseEntry[] {
+function toEntries(stored: StoredKeyphrase[]): KeyphraseEntry[] {
   return stored.map((k) => createEntry(k.text, k.synonyms));
 }
 
@@ -41,10 +41,14 @@ function readStored(key: string): StoredKeyphrase[] | null {
   }
 }
 
-export function loadKeyphrases(key: string): KeyphraseEntry[] {
-  const list = toEntries(readStored(key) ?? []);
+export function entriesOrBlank(stored: StoredKeyphrase[]): KeyphraseEntry[] {
+  const entries = toEntries(stored);
 
-  return list.length ? list : [createEntry()];
+  return entries.length ? entries : [createEntry()];
+}
+
+export function loadKeyphrases(key: string): KeyphraseEntry[] {
+  return entriesOrBlank(readStored(key) ?? []);
 }
 
 export function loadUnsavedKeyphrases(key: string): KeyphraseEntry[] | null {
