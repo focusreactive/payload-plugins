@@ -89,15 +89,17 @@ export type Reported = { idPath: IdPath; value: unknown };
 export type Walked = { collected: CollectedContent; working: Doc; reported: Reported[] };
 
 /**
- * Mirrors the wiring the swap will install — change it with that wiring, not for one check.
+ * Mirrors `server/features/_lib/translationLanguages.ts` — change it with that wiring, not for one
+ * check.
  */
 export function walkDocument(options: {
   schema: FieldLike[];
   source: Doc;
+  target?: Doc;
   blocks?: readonly BlockLike[];
   inlineBlocks?: readonly BlockLike[];
 }): Walked {
-  const working = structuredClone(options.source);
+  const working = structuredClone(options.target ?? options.source);
   const reported: Reported[] = [];
 
   const collected = surfacingEnterCrash(() =>

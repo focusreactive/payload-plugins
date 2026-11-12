@@ -1,32 +1,25 @@
 import type { IdPath } from "../domain/content-projection/idPath.js";
 import type { TranslationProvider } from "../domain/translation-providers/index.js";
-import type { LeafFailure, LeafOutcome, SettledAnswer, TextChunk } from "./types/index.js";
+import type { LeafFailure, LeafOutcome, SettledAnswer } from "./types/index.js";
 import type {
   PipelineConfig,
   PipelineResult,
   PipelineContext,
   PipelineStage,
 } from "./types/index.js";
-import {
-  DataReconcilerStage,
-  FieldChunkCollectorStage,
-  TranslationStage,
-  TextChunkExpanderStage,
-  TranslationMutatorStage,
-} from "./stages/index.js";
+import { DataReconcilerStage, TranslationStage, TranslationMutatorStage } from "./stages/index.js";
+import { WalkCollectorStage } from "./stages/walk-collector/WalkCollector.stage.js";
 
 function leafOutcomes(
-  sent: TextChunk[],
-  notWritten: ReadonlySet<number>,
+  sent: readonly IdPath[],
   answers: Record<number, SettledAnswer>
 ): LeafOutcome[] {
   const failed = new Map<IdPath, LeafFailure[]>();
-  for (const chunk of sent) {
-    const leaf = failed.get(chunk.idPath) ?? [];
-    const answer = answers[chunk.index];
+  for (const [index, idPath] of sent.entries()) {
+    const leaf = failed.get(idPath) ?? [];
+    const answer = answers[index];
     if (answer?.kind === "failed") leaf.push(answer.failure);
-    else if (notWritten.has(chunk.index)) leaf.push({ code: "not-written" });
-    failed.set(chunk.idPath, leaf);
+    failed.set(idPath, leaf);
   }
 
   return [...failed].map(([idPath, leafFailures]) =>
@@ -47,8 +40,7 @@ export class TranslationPipeline {
   constructor(options: TranslationPipelineOptions) {
     this.stages = [
       new DataReconcilerStage(),
-      new FieldChunkCollectorStage(),
-      new TextChunkExpanderStage(),
+      new WalkCollectorStage(),
       new TranslationStage(options.translationProvider),
       new TranslationMutatorStage(),
     ];
@@ -63,14 +55,13 @@ export class TranslationPipeline {
       targetLng: config.targetLng,
       document: config.document,
       selection: config.selection,
+      languages: config.languages,
+      hostLanguageId: config.hostLanguageId,
     };
 
     for (const stage of this.stages) {
       ctx = await stage.execute(ctx);
 
-      if (ctx.fieldChunks !== undefined && ctx.fieldChunks.length === 0) {
-        return { sent: false };
-      }
       if (ctx.textMap !== undefined && Object.keys(ctx.textMap).length === 0) {
         return { sent: false };
       }
@@ -83,7 +74,7 @@ export class TranslationPipeline {
     return {
       sent: true,
       translatedData: ctx.reconciledData,
-      leaves: leafOutcomes(ctx.textChunks ?? [], ctx.notWritten ?? new Set(), ctx.answers ?? {}),
+      leaves: leafOutcomes(ctx.sentAddresses ?? [], ctx.answers ?? {}),
     };
   }
 }

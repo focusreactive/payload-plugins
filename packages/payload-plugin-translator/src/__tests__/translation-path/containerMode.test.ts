@@ -1,3 +1,4 @@
+import { translationLanguages } from "../../server/features/_lib/translationLanguages.js";
 import type { Field } from "payload";
 import { describe, expect, it, vi } from "vitest";
 import type {
@@ -7,17 +8,20 @@ import type {
   TranslationInput,
   TranslationOutput,
   TranslationProvider,
-} from "../../domain/translation-providers/index.js";
+} from "../../core/domain/translation-providers/index.js";
 import { link, paragraph, richText, text } from "./fixtures/lexical.js";
-import { translateContent } from "../translateContent.js";
-import type { TranslateContentArgs } from "../translateContent.js";
-import type { PipelineResult } from "../types/index.js";
-import { everyTranslatableLeaf } from "../../domain/content-projection/contentProjector.js";
+import { translateContent } from "../../core/translation-pipeline/translateContent.js";
+import type { TranslateContentArgs } from "../../core/translation-pipeline/translateContent.js";
+import type { PipelineResult } from "../../core/translation-pipeline/types/index.js";
+import { everyTranslatableLeaf } from "../../core/domain/content-projection/contentProjector.js";
 
-const translateAll = (args: Omit<TranslateContentArgs, "selection">) =>
+const translateAll = (
+  args: Omit<TranslateContentArgs, "selection" | "languages" | "hostLanguageId">
+) =>
   translateContent({
     ...args,
     selection: everyTranslatableLeaf(args.sourceData, args.schema),
+    ...translationLanguages(),
   });
 
 const schema: Field[] = [{ name: "body", type: "richText", localized: true }];

@@ -15,6 +15,7 @@ import type { ProvenanceReceipt } from "../ProvenanceStore.interface.js";
 import type { RecordedFingerprints } from "../SourceFingerprint.js";
 import { asHash } from "./fixtures/claims.js";
 import { storeDouble } from "./fixtures/provenanceStore.js";
+import { fingerprintsOf } from "../../../../server/modules/provenance/__tests__/fixtures/fingerprinter.js";
 
 const receipt = (over: Partial<ProvenanceReceipt> = {}): ProvenanceReceipt => ({
   collectionSlug: "posts",
@@ -111,12 +112,11 @@ describe("the receipt a run leaves behind", () => {
         .fn()
         .mockResolvedValue(previous === null ? null : receipt({ sourceFingerprint: previous })),
     });
-    const service = new ProvenanceService(
-      store,
-      new Map([[COLLECTION, schema]]) as CollectionSchemaMap,
-      NOT_IN_A_TRANSACTION,
-      { logger: { error: vi.fn() }, readSource: vi.fn() }
-    );
+    const service = new ProvenanceService(store, NOT_IN_A_TRANSACTION, {
+      logger: { error: vi.fn() },
+      readSource: vi.fn(),
+      fingerprintOf: fingerprintsOf(new Map([[COLLECTION, schema]]) as CollectionSchemaMap),
+    });
 
     await service.record(
       { collectionSlug: COLLECTION, documentId: "1", targetLocale: "de", sourceLocale: "en" },

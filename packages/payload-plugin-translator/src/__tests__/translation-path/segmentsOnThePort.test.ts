@@ -1,16 +1,17 @@
+import { translationLanguages } from "../../server/features/_lib/translationLanguages.js";
 import type { Field } from "payload";
 import { describe, expect, it } from "vitest";
 
-import { everyTranslatableLeaf } from "../../domain/content-projection/contentProjector.js";
+import { everyTranslatableLeaf } from "../../core/domain/content-projection/contentProjector.js";
 import type {
   TranslatableValue,
   TranslatedValue,
   TranslationInput,
   TranslationOutput,
   TranslationProvider,
-} from "../../domain/translation-providers/index.js";
+} from "../../core/domain/translation-providers/index.js";
 import { paragraph, richText, text } from "./fixtures/lexical.js";
-import { translateContent } from "../translateContent.js";
+import { translateContent } from "../../core/translation-pipeline/translateContent.js";
 
 const schema: Field[] = [
   { name: "title", type: "text", localized: true },
@@ -58,6 +59,7 @@ const translate = async (
     schema,
     sourceData: source,
     selection: everyTranslatableLeaf(source, schema),
+    ...translationLanguages(),
     sourceLng: "en",
     targetLng: "fr",
     translationProvider,

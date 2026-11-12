@@ -10,6 +10,11 @@ import type {
 import { WriteRefusedError } from "./errors/index.js";
 import { walkLanguages } from "./walk.js";
 
+export type LanguageTable = {
+  languages: readonly RegisteredLanguage[];
+  hostLanguageId: string;
+};
+
 /**
  * What one walk needs.
  *
@@ -87,19 +92,21 @@ export function collectTranslationTargets<const L extends readonly RegisteredLan
           return;
         }
 
-        const { idPath } = visit;
+        const { idPath, foldPath } = visit;
         for (const unit of units) {
           targets.push(
             unit.kind === "pieces"
               ? {
                   kind: "pieces",
                   idPath,
+                  foldPath,
                   pieces: unit.pieces,
                   write: (answer) => assignWrites(unit.resolve(answer)),
                 }
               : {
                   kind: "text",
                   idPath,
+                  foldPath,
                   text: unit.text,
                   write: (answer) => assignWrites(unit.resolve(answer)),
                 }

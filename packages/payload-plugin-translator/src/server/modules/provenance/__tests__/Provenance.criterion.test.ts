@@ -11,6 +11,7 @@ import { TranslatorConfigError } from "../../../../core/errors/index.js";
 import { driftedLeaves } from "../Provenance.criterion.js";
 import { ProvenanceService } from "../Provenance.service.js";
 import { storeDouble } from "../../../../core/domain/provenance/__tests__/fixtures/provenanceStore.js";
+import { fingerprintsOf } from "./fixtures/fingerprinter.js";
 
 const COLLECTION = "posts";
 const schema: Field[] = [
@@ -36,9 +37,14 @@ const answering = (stored: RecordedFingerprints | null, collections = [COLLECTIO
     () =>
       new ProvenanceService(
         store,
-        new Map(collections.map((slug) => [slug, schema])) as CollectionSchemaMap,
         {},
-        { logger: { error: vi.fn() }, readSource: vi.fn() }
+        {
+          logger: { error: vi.fn() },
+          readSource: vi.fn(),
+          fingerprintOf: fingerprintsOf(
+            new Map(collections.map((slug) => [slug, schema])) as CollectionSchemaMap
+          ),
+        }
       )
   );
 };
@@ -60,9 +66,12 @@ const asTranslated = async () => {
   const everything = await answering(null)(ask());
   const service = new ProvenanceService(
     {} as unknown as ProvenanceStore,
-    new Map([[COLLECTION, schema]]) as CollectionSchemaMap,
     {},
-    { logger: { error: vi.fn() }, readSource: vi.fn() }
+    {
+      logger: { error: vi.fn() },
+      readSource: vi.fn(),
+      fingerprintOf: fingerprintsOf(new Map([[COLLECTION, schema]]) as CollectionSchemaMap),
+    }
   );
   expect(everything).toEqual(["title", "body"]);
   return service.captureFingerprint(COLLECTION, { title: "Hello", body: "World" }) ?? {};

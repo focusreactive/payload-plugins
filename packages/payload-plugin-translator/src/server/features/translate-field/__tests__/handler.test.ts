@@ -6,6 +6,7 @@ import type { TranslationProvider } from "../../../../core/domain/translation-pr
 import { TranslateFieldHandler } from "../handler.js";
 import type { FieldTranslationConfig, FieldTranslationInput } from "../model.js";
 import { MAX_FIELD_VALUE_BYTES } from "../model.js";
+import { translationLanguages } from "../../_lib/index.js";
 import {
   nothingSent,
   pipelineResult,
@@ -102,6 +103,7 @@ beforeEach(() => {
   const config: FieldTranslationConfig = {
     schemaMap,
     translationProvider: provider,
+    walk: translationLanguages(),
   };
   handler = new TranslateFieldHandler(config);
 });

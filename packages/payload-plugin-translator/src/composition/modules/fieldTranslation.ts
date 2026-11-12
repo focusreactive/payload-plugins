@@ -16,6 +16,7 @@ export function fieldTranslation(): TranslationModule {
         createFieldRoute({
           schemaMap: ctx.schemaMap,
           translationProvider: ctx.translationProvider,
+          walk: ctx.walk,
           access: ctx.access,
           basePath: ctx.settings.basePath,
         }),

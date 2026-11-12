@@ -3,6 +3,8 @@ import type { Block, CollectionConfig, Config } from "payload";
 import { CacheProviderExport } from "./client/app/cache/CacheProvider.export.js";
 import { configureAutoTranslate } from "./server/modules/auto-translate/index.js";
 import { configureProvenance } from "./server/modules/provenance/index.js";
+import { translationLanguages } from "./server/features/_lib/index.js";
+import { sourceFingerprinter } from "./core/domain/content-projection/sourceFingerprinter.js";
 import { configureRunRecord } from "./server/modules/runs/index.js";
 import type { AccessGuard } from "./types/AccessGuard.js";
 import type { CollectionSchemaMap } from "./types/CollectionSchemaMap.js";
@@ -235,7 +237,9 @@ export function translatorPlugin(
     );
     const collectionSlugs = new Set(schemaMap.keys());
 
-    const provenanceParts = configureProvenance(provenance, schemaMap);
+    const embeds = embedDefinitions(payloadConfig.blocks, pluginConfig.embeds);
+    const walk = translationLanguages(embeds);
+    const provenanceParts = configureProvenance(provenance, sourceFingerprinter(schemaMap, walk));
     const runRecord = configureRunRecord(runs);
 
     const chain: TranslationModule[] = provenanceParts
@@ -247,7 +251,7 @@ export function translatorPlugin(
       translation: {
         translationProvider,
         schemaMap,
-        embeds: embedDefinitions(payloadConfig.blocks, pluginConfig.embeds),
+        embeds,
         modules: chain,
         criteria: provenanceParts?.criteria,
       },
@@ -270,6 +274,7 @@ export function translatorPlugin(
       runRecordStoreFactory: runRecord.storeFactory,
       schemaMap,
       translationProvider,
+      walk,
     });
     for (const member of chain) member.setup?.(builder);
     for (const component of components) component.attach(builder);

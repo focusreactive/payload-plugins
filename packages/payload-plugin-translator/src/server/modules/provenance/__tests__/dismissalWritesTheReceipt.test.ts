@@ -11,6 +11,7 @@ import type { RequestScope } from "../../../shared/payload/RequestScope.shapes.j
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 import { driftedLeaves } from "../Provenance.criterion.js";
 import { ProvenanceService } from "../Provenance.service.js";
+import { fingerprintsOf } from "./fixtures/fingerprinter.js";
 
 const COLLECTION = "posts";
 const schema: Field[] = [
@@ -62,9 +63,10 @@ function storeHoldingOneRow(seed: ProvenanceReceipt) {
 }
 
 const serviceOver = (store: ProvenanceStore, source: Record<string, unknown> | null) =>
-  new ProvenanceService(store, schemaMap, NO_TRANSACTION, {
+  new ProvenanceService(store, NO_TRANSACTION, {
     logger: { error: vi.fn() },
     readSource: async () => source,
+    fingerprintOf: fingerprintsOf(schemaMap),
   });
 
 const ask = (sourceData: Record<string, unknown>) => ({

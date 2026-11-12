@@ -1,11 +1,10 @@
 import type { CollectionSlug } from "payload";
 
-import { computeFieldFingerprints } from "../../../core/domain/content-projection/computeFieldFingerprints.js";
 import type {
   FieldFingerprints,
   SourceHash,
 } from "../../../core/domain/content-projection/computeFieldFingerprints.js";
-import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
+import type { SourceFingerprinter } from "../../../core/domain/content-projection/sourceFingerprinter.js";
 import type { LeafAddress } from "../../../core/domain/content-projection/idPath.js";
 import { isRecordStale } from "../../../core/domain/provenance/index.js";
 import type {
@@ -18,7 +17,6 @@ import { driftedAddresses, UNANSWERED } from "../../../core/domain/provenance/in
 import type { LeafOutcome } from "../../../core/translation-pipeline/types/index.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import { swallowOrThrow } from "../../shared/payload/swallowOrThrow.js";
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { ProvenanceLogger, SourceDocumentReader } from "./Provenance.shapes.js";
 
 /** What one translated locale of a document is measured to be, as the domain says it. */
@@ -52,22 +50,25 @@ function claimToRecord(
  */
 export class ProvenanceService {
   private readonly store: ProvenanceStore;
-  private readonly schemaMap: CollectionSchemaMap;
   private readonly scope: RequestScope;
   private readonly logger: ProvenanceLogger;
   private readonly readSource: SourceDocumentReader;
+  private readonly fingerprintOf: SourceFingerprinter;
 
   constructor(
     store: ProvenanceStore,
-    schemaMap: CollectionSchemaMap,
     scope: RequestScope,
-    io: { logger: ProvenanceLogger; readSource: SourceDocumentReader }
+    io: {
+      logger: ProvenanceLogger;
+      readSource: SourceDocumentReader;
+      fingerprintOf: SourceFingerprinter;
+    }
   ) {
     this.store = store;
-    this.schemaMap = schemaMap;
     this.scope = scope;
     this.logger = io.logger;
     this.readSource = io.readSource;
+    this.fingerprintOf = io.fingerprintOf;
   }
 
   /** What a failed best-effort step names in the log, beyond the error and the message. */
@@ -82,17 +83,14 @@ export class ProvenanceService {
   /**
    * Hash the source a translation is made from — the baseline staleness is measured against.
    *
-   * `null` when the collection has no schema here or hashing fails; the caller decides what that
-   * costs — `Provenance.module` skips provenance, `driftedLeaves` refuses the run.
+   * A hashing failure is logged and returned as the same `null` as an untranslated collection.
    */
   captureFingerprint(
     collection: CollectionSlug,
     sourceData: Record<string, unknown>
   ): FieldFingerprints | null {
-    const schema = this.schemaMap.get(collection);
-    if (!schema) return null;
     try {
-      return computeFieldFingerprints(sourceData, schema);
+      return this.fingerprintOf(collection, sourceData);
     } catch (error) {
       this.logger.error({
         err: error,
@@ -177,9 +175,6 @@ export class ProvenanceService {
     documentId: string,
     user: Record<string, unknown> | null = null
   ): Promise<LocaleStaleness[]> {
-    const schema = this.schemaMap.get(collection);
-    if (!schema) return [];
-
     const records = await this.store.findByDocument(collection, documentId);
     if (records.length === 0) return [];
 
@@ -203,7 +198,6 @@ export class ProvenanceService {
             collection,
             documentId,
             sourceLocale: record.sourceLocale,
-            schema,
             user,
           });
           if (fresh !== null) seen.set(record.sourceLocale, fresh);
@@ -238,9 +232,6 @@ export class ProvenanceService {
    * reaches them rather than becoming a log line they will never see.
    */
   async dismiss(key: ProvenanceKey, user: Record<string, unknown> | null = null): Promise<void> {
-    const schema = this.schemaMap.get(key.collectionSlug);
-    if (!schema) return;
-
     const record = await this.store.find(key);
     if (!record) return;
 
@@ -248,7 +239,6 @@ export class ProvenanceService {
       collection: key.collectionSlug,
       documentId: key.documentId,
       sourceLocale: record.sourceLocale,
-      schema,
       user,
     });
     if (fingerprint === null) return;
@@ -256,12 +246,10 @@ export class ProvenanceService {
     await this.store.rebaseSourceFingerprint(key, fingerprint);
   }
 
-  /** `null` when the source document is not readable by this caller. */
   private async sourceAsItStands(where: {
     collection: CollectionSlug;
     documentId: string;
     sourceLocale: string;
-    schema: FieldLike[];
     user: Record<string, unknown> | null;
   }): Promise<FieldFingerprints | null> {
     const sourceData = await this.readSource({
@@ -272,6 +260,6 @@ export class ProvenanceService {
     });
     if (!sourceData) return null;
 
-    return computeFieldFingerprints(sourceData, where.schema);
+    return this.fingerprintOf(where.collection, sourceData);
   }
 }

@@ -90,16 +90,18 @@ export function storyblokLanguage(): Language<Node, BlokCursor> {
     boundary(node, cursor): Crossing | null {
       const { name, def } = node;
       if (def.type !== "richtext" || def.translatable !== true) return null;
-      const tree = cursor.target[name];
+      const tree = cursor.source[name];
       if (tree === undefined || tree === null) return null;
+      const workingCopy = structuredClone(tree);
 
       const allowed = new Set(def.allowedEmbeds);
       const { registry } = cursor;
       if (def.richTextLanguage === undefined) return null;
       return {
         languageId: def.richTextLanguage,
+        placement: { slot: { holder: cursor.target, key: name }, value: workingCopy },
         context: {
-          tree,
+          tree: workingCopy,
           embed: ({ name: embedName, data }: EmbedIdentity): Crossing | null => {
             const blok = asBlok(data);
             if (blok === null || !allowed.has(embedName)) return null;

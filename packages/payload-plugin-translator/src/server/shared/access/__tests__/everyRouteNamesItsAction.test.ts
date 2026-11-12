@@ -19,6 +19,7 @@ import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.
 import type { TranslatorAction } from "../../../../types/TranslatorAction.js";
 import type { AccessGuard } from "../types.js";
 import { storeDouble } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
+import { translationLanguages } from "../../../features/_lib/index.js";
 
 const unreachable = (): never => {
   throw new Error("the guard refuses first, so nothing behind it may run");
@@ -94,7 +95,8 @@ const routeForEveryAction: Record<TranslatorAction, RouteUnderTest> = {
   },
   "translate-field": {
     factory: "createFieldRoute",
-    build: (access) => createFieldRoute({ access, schemaMap, translationProvider }),
+    build: (access) =>
+      createFieldRoute({ access, schemaMap, translationProvider, walk: translationLanguages() }),
   },
 };
 

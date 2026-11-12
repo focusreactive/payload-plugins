@@ -7,6 +7,7 @@ import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.
 
 import { createFieldRoute } from "../route.js";
 import { AnyAccessGuard } from "../../../shared/access/AnyAccessGuard.js";
+import { translationLanguages } from "../../_lib/index.js";
 
 const OPEN_ON_PURPOSE = new AnyAccessGuard();
 // Route-contract tests: pin path + method + access-guard wiring. Handler logic
@@ -22,6 +23,7 @@ describe("createFieldRoute (contract)", () => {
     const endpoint = createFieldRoute({
       schemaMap,
       translationProvider: provider,
+      walk: translationLanguages(),
       access: OPEN_ON_PURPOSE,
     });
     expect(endpoint.path).toBe("/translate/field");
@@ -32,6 +34,7 @@ describe("createFieldRoute (contract)", () => {
     const endpoint = createFieldRoute({
       schemaMap,
       translationProvider: provider,
+      walk: translationLanguages(),
       access: OPEN_ON_PURPOSE,
       basePath: "/i18n",
     });
@@ -42,6 +45,7 @@ describe("createFieldRoute (contract)", () => {
     const endpoint = createFieldRoute({
       schemaMap,
       translationProvider: provider,
+      walk: translationLanguages(),
       access: denyAccess,
     });
 

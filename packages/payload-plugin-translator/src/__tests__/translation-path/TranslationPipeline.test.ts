@@ -1,12 +1,13 @@
+import { translationLanguages } from "../../server/features/_lib/translationLanguages.js";
 import { describe, it, expect, vi } from "vitest";
 import type { Field } from "payload";
-import { TranslationPipeline } from "../TranslationPipeline.js";
-import { everyTranslatableLeaf } from "../../domain/content-projection/contentProjector.js";
+import { TranslationPipeline } from "../../core/translation-pipeline/TranslationPipeline.js";
+import { everyTranslatableLeaf } from "../../core/domain/content-projection/contentProjector.js";
 import type {
   TranslationInput,
   TranslationOutput,
   TranslationProvider,
-} from "../../domain/translation-providers/index.js";
+} from "../../core/domain/translation-providers/index.js";
 
 const createMockProvider = (): TranslationProvider => ({
   translate: vi.fn().mockImplementation(async (input: TranslationInput) => {
@@ -44,6 +45,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: everyTranslatableLeaf(sourceData, schema),
+        ...translationLanguages(),
       });
 
       if (!result.sent) throw new Error("nothing was sent");
@@ -79,6 +81,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: everyTranslatableLeaf(sourceData, schema),
+        ...translationLanguages(),
       });
 
       if (!result.sent) throw new Error("nothing was sent");
@@ -109,6 +112,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: everyTranslatableLeaf(sourceData, schema),
+        ...translationLanguages(),
       });
 
       if (!result.sent) throw new Error("nothing was sent");
@@ -144,6 +148,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: everyTranslatableLeaf(sourceData, schema),
+        ...translationLanguages(),
       });
 
       if (!result.sent) throw new Error("nothing was sent");
@@ -190,6 +195,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: everyTranslatableLeaf(sourceData, schema),
+        ...translationLanguages(),
       });
 
       if (!result.sent) throw new Error("nothing was sent");
@@ -250,6 +256,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "es",
         selection: everyTranslatableLeaf(sourceData, schema),
+        ...translationLanguages(),
       });
 
       if (!result.sent) throw new Error("nothing was sent");
@@ -327,6 +334,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "es",
         selection: everyTranslatableLeaf(sourceData, schema),
+        ...translationLanguages(),
       });
 
       if (!result.sent) throw new Error("nothing was sent");
@@ -376,6 +384,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "es",
         selection: everyTranslatableLeaf(sourceData, schema),
+        ...translationLanguages(),
       });
 
       expect(result).toEqual({ sent: false });
@@ -402,6 +411,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: everyTranslatableLeaf(sourceData, schema),
+        ...translationLanguages(),
       });
 
       if (!result.sent) throw new Error("nothing was sent");
@@ -429,6 +439,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: ["description"],
+        ...translationLanguages(),
       });
 
       if (!result.sent) throw new Error("nothing was sent");
@@ -458,6 +469,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: everyTranslatableLeaf(sourceData, schema),
+        ...translationLanguages(),
       });
 
       expect(result).toEqual({ sent: false });
@@ -482,6 +494,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: [],
+        ...translationLanguages(),
       });
 
       expect(result).toEqual({ sent: false });
@@ -506,6 +519,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: everyTranslatableLeaf(sourceData, schema),
+        ...translationLanguages(),
       });
 
       expect(result).toEqual({ sent: false });
@@ -531,6 +545,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: everyTranslatableLeaf(sourceData, schema),
+        ...translationLanguages(),
       });
 
       // Result contains translated data
@@ -564,6 +579,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: everyTranslatableLeaf(sourceData, schema),
+        ...translationLanguages(),
       });
 
       if (!result.sent) throw new Error("nothing was sent");
@@ -595,6 +611,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: everyTranslatableLeaf(sourceData, schema),
+        ...translationLanguages(),
       });
 
       if (!result.sent) throw new Error("nothing was sent");
@@ -626,6 +643,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: ["description"],
+        ...translationLanguages(),
       });
 
       if (!result.sent) throw new Error("nothing was sent");
@@ -672,6 +690,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: ["items.2.label"],
+        ...translationLanguages(),
       });
 
       // Non-localized array → shared rows → id kept.
@@ -709,6 +728,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: ["meta.description"],
+        ...translationLanguages(),
       });
 
       if (!result.sent) throw new Error("nothing was sent");
@@ -757,6 +777,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: ["layout.2:text.content"],
+        ...translationLanguages(),
       });
 
       // Non-localized blocks → shared rows → id kept.
@@ -795,6 +816,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: everyTranslatableLeaf(sourceData, schema),
+        ...translationLanguages(),
       });
 
       if (!result.sent) throw new Error("nothing was sent");
@@ -828,6 +850,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "ru",
         selection: everyTranslatableLeaf(sourceData, schema),
+        ...translationLanguages(),
       });
 
       if (!result.sent) throw new Error("nothing was sent");
@@ -865,6 +888,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "de",
         selection: everyTranslatableLeaf(sourceData, schema),
+        ...translationLanguages(),
       });
 
       expect((result.sent ? result.leaves : []).map((leaf) => String(leaf.idPath)).sort()).toEqual([
@@ -887,6 +911,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "de",
         selection: ["title", "items.a1.label"],
+        ...translationLanguages(),
       });
 
       expect((result.sent ? result.leaves : []).map((leaf) => String(leaf.idPath)).sort()).toEqual([
@@ -908,6 +933,7 @@ describe("TranslationPipeline", () => {
         sourceLng: "en",
         targetLng: "de",
         selection: ["title"],
+        ...translationLanguages(),
       });
 
       expect(result.sent && result.leaves).toEqual([{ idPath: "title", answered: true }]);

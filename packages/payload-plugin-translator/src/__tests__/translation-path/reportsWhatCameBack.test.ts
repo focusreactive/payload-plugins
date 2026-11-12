@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
+
+import { translationLanguages } from "../../server/features/_lib/translationLanguages.js";
 import type { Field } from "payload";
 
-import type { ProvenanceStore } from "../../domain/provenance/index.js";
-import { UNANSWERED } from "../../domain/provenance/index.js";
-import { asHash } from "../../domain/provenance/__tests__/fixtures/claims.js";
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
-import { ProvenanceService } from "../../../server/modules/provenance/Provenance.service.js";
+import type { ProvenanceStore } from "../../core/domain/provenance/index.js";
+import { UNANSWERED } from "../../core/domain/provenance/index.js";
+import { asHash } from "../../core/domain/provenance/__tests__/fixtures/claims.js";
+import type { CollectionSchemaMap } from "../../types/CollectionSchemaMap.js";
+import { ProvenanceService } from "../../server/modules/provenance/Provenance.service.js";
 import type {
   SegmentId,
   TranslatableValue,
@@ -13,10 +15,11 @@ import type {
   TranslationInput,
   TranslationOutput,
   TranslationProvider,
-} from "../../domain/translation-providers/index.js";
-import { projectTranslatableContent } from "../../domain/content-projection/contentProjector.js";
-import { TranslationPipeline } from "../TranslationPipeline.js";
-import { storeDouble } from "../../domain/provenance/__tests__/fixtures/provenanceStore.js";
+} from "../../core/domain/translation-providers/index.js";
+import { projectTranslatableContent } from "../../core/domain/content-projection/contentProjector.js";
+import { TranslationPipeline } from "../../core/translation-pipeline/TranslationPipeline.js";
+import { storeDouble } from "../../core/domain/provenance/__tests__/fixtures/provenanceStore.js";
+import { fingerprintsOf } from "../../server/modules/provenance/__tests__/fixtures/fingerprinter.js";
 
 const hashed = (fields: Record<string, string>) =>
   Object.fromEntries(Object.entries(fields).map(([address, seed]) => [address, asHash(seed)]));
@@ -85,6 +88,7 @@ const run = async (args: { schema: Field[]; source: Record<string, unknown>; ans
     selection: projectTranslatableContent(args.source, args.schema).map((entry) =>
       String(entry.idPath)
     ),
+    ...translationLanguages(),
   });
 
 const leavesOf = (result: Awaited<ReturnType<typeof run>>) => (result.sent ? result.leaves : []);
@@ -236,9 +240,12 @@ describe("what the run reports is what the receipt claims", () => {
     const written = store();
     const service = new ProvenanceService(
       written,
-      new Map([["posts", twoTexts]]) as CollectionSchemaMap,
       {},
-      { logger: { error: vi.fn() }, readSource: vi.fn() }
+      {
+        logger: { error: vi.fn() },
+        readSource: vi.fn(),
+        fingerprintOf: fingerprintsOf(new Map([["posts", twoTexts]]) as CollectionSchemaMap),
+      }
     );
 
     await service.record(
@@ -274,9 +281,12 @@ describe("what the run reports is what the receipt claims", () => {
     });
     const service = new ProvenanceService(
       written,
-      new Map([["posts", twoTexts]]) as CollectionSchemaMap,
       {},
-      { logger: { error: vi.fn() }, readSource: vi.fn() }
+      {
+        logger: { error: vi.fn() },
+        readSource: vi.fn(),
+        fingerprintOf: fingerprintsOf(new Map([["posts", twoTexts]]) as CollectionSchemaMap),
+      }
     );
 
     await service.record(

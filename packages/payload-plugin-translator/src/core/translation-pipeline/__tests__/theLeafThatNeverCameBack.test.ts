@@ -9,6 +9,7 @@ import { ProvenanceService } from "../../../server/modules/provenance/Provenance
 import { makeIdPath } from "../../domain/content-projection/idPath.js";
 import type { LeafOutcome } from "../types/index.js";
 import { storeDouble } from "../../domain/provenance/__tests__/fixtures/provenanceStore.js";
+import { fingerprintsOf } from "../../../server/modules/provenance/__tests__/fixtures/fingerprinter.js";
 
 const sent = (name: string, answered: boolean): LeafOutcome => {
   const idPath = makeIdPath([{ kind: "key", name }]);
@@ -56,9 +57,12 @@ const storedClaims = async (args: {
   const store = storeHolding(args.previous);
   const service = new ProvenanceService(
     store,
-    new Map([[COLLECTION, schema]]) as CollectionSchemaMap,
     {},
-    { logger: { error: vi.fn() }, readSource: vi.fn() }
+    {
+      logger: { error: vi.fn() },
+      readSource: vi.fn(),
+      fingerprintOf: fingerprintsOf(new Map([[COLLECTION, schema]]) as CollectionSchemaMap),
+    }
   );
 
   await service.record(KEY, sourceHashes, args.leaves);

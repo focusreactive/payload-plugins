@@ -12,6 +12,7 @@ import { asHash } from "../../../../core/domain/provenance/__tests__/fixtures/cl
 import { makeIdPath } from "../../../../core/domain/content-projection/idPath.js";
 import { UNANSWERED } from "../../../../core/domain/provenance/SourceFingerprint.js";
 import { storeDouble } from "../../../../core/domain/provenance/__tests__/fixtures/provenanceStore.js";
+import { fingerprintsOf } from "./fixtures/fingerprinter.js";
 
 const answered = (name: string): LeafOutcome => ({
   idPath: makeIdPath([{ kind: "key", name }]),
@@ -38,6 +39,7 @@ function makeIo(read: (args: { locale: string }) => Promise<Record<string, unkno
   return {
     logger: { error: vi.fn() },
     readSource: vi.fn(({ locale }: { locale: string }) => read({ locale })),
+    fingerprintOf: fingerprintsOf(schemaMap),
   };
 }
 
@@ -55,7 +57,6 @@ describe("ProvenanceService", () => {
   it("captureFingerprint returns null for a collection with no schema", () => {
     const service = new ProvenanceService(
       makeStore(),
-      schemaMap,
       {},
       makeIo(async () => sourceDoc)
     );
@@ -65,7 +66,6 @@ describe("ProvenanceService", () => {
   it("write capture and read recompute hash identically — the one-owner invariant", async () => {
     const captureService = new ProvenanceService(
       makeStore(),
-      schemaMap,
       {},
       makeIo(async () => sourceDoc)
     );
@@ -77,7 +77,6 @@ describe("ProvenanceService", () => {
     });
     const freshService = new ProvenanceService(
       freshStore,
-      schemaMap,
       {},
       makeIo(async () => sourceDoc)
     );
@@ -97,7 +96,6 @@ describe("ProvenanceService", () => {
     });
     const driftService = new ProvenanceService(
       driftStore,
-      schemaMap,
       {},
       makeIo(async () => ({ id: "1", title: "Changed" }))
     );
@@ -115,7 +113,6 @@ describe("ProvenanceService", () => {
     });
     const service = new ProvenanceService(
       store,
-      schemaMap,
       {},
       makeIo(async () => ({ id: "1", title: "Moved on" }))
     );
@@ -129,7 +126,6 @@ describe("ProvenanceService", () => {
     });
     const service = new ProvenanceService(
       store,
-      schemaMap,
       {},
       makeIo(async () => sourceDoc)
     );
@@ -152,7 +148,7 @@ describe("ProvenanceService", () => {
     const io = makeIo(async ({ locale }) =>
       locale === "en" ? Promise.reject(new APIError("relation does not exist")) : sourceDoc
     );
-    const service = new ProvenanceService(store, schemaMap, {}, io);
+    const service = new ProvenanceService(store, {}, io);
 
     const locales = await service.getStaleness(COLLECTION, "1");
 
@@ -169,7 +165,7 @@ describe("ProvenanceService", () => {
     const io = makeIo(async () => {
       throw fromPayload;
     });
-    const service = new ProvenanceService(store, schemaMap, { transactionID: "tx-1" }, io);
+    const service = new ProvenanceService(store, { transactionID: "tx-1" }, io);
 
     await expect(
       service.getStaleness(COLLECTION, "1"),
@@ -182,7 +178,7 @@ describe("ProvenanceService", () => {
     const io = makeIo(async () => {
       throw new TranslatorBug("fingerprint blew up");
     });
-    const service = new ProvenanceService(store, schemaMap, { transactionID: "tx-1" }, io);
+    const service = new ProvenanceService(store, { transactionID: "tx-1" }, io);
 
     await expect(service.getStaleness(COLLECTION, "1")).resolves.toEqual([]);
   });
@@ -190,7 +186,7 @@ describe("ProvenanceService", () => {
   it("record is best-effort — a store failure of ours is caught and logged, not thrown", async () => {
     const io = makeIo(async () => sourceDoc);
     const store = makeStore({ upsert: vi.fn().mockRejectedValue(new TranslatorBug("table down")) });
-    const service = new ProvenanceService(store, schemaMap, {}, io);
+    const service = new ProvenanceService(store, {}, io);
 
     await expect(
       service.record(
@@ -205,7 +201,7 @@ describe("ProvenanceService", () => {
   it("record swallows a Payload failure when there is no transaction to lose", async () => {
     const io = makeIo(async () => sourceDoc);
     const store = makeStore({ upsert: vi.fn().mockRejectedValue(new APIError("rejected")) });
-    const service = new ProvenanceService(store, schemaMap, {}, io);
+    const service = new ProvenanceService(store, {}, io);
 
     await expect(
       service.record(
@@ -221,7 +217,7 @@ describe("ProvenanceService", () => {
   it("record rethrows a Payload failure raised inside the caller's transaction", async () => {
     const io = makeIo(async () => sourceDoc);
     const store = makeStore({ upsert: vi.fn().mockRejectedValue(new APIError("rejected")) });
-    const service = new ProvenanceService(store, schemaMap, { transactionID: "tx-1" }, io);
+    const service = new ProvenanceService(store, { transactionID: "tx-1" }, io);
 
     await expect(
       service.record(
@@ -235,7 +231,7 @@ describe("ProvenanceService", () => {
   it("record stays best-effort inside a transaction when the failure reached no Payload operation", async () => {
     const io = makeIo(async () => sourceDoc);
     const store = makeStore({ upsert: vi.fn().mockRejectedValue(new TranslatorBug("table down")) });
-    const service = new ProvenanceService(store, schemaMap, { transactionID: "tx-1" }, io);
+    const service = new ProvenanceService(store, { transactionID: "tx-1" }, io);
 
     await expect(
       service.record(
@@ -256,7 +252,6 @@ describe("ProvenanceService", () => {
     });
     const service = new ProvenanceService(
       store,
-      schemaMap,
       {},
       makeIo(async () => sourceDoc)
     );
@@ -290,7 +285,6 @@ describe("ProvenanceService", () => {
       const store = storedWith({ title: "dad", body: "dadbed" });
       const service = new ProvenanceService(
         store,
-        schemaMap,
         {},
         makeIo(async () => sourceDoc)
       );
@@ -308,7 +302,6 @@ describe("ProvenanceService", () => {
       const store = storedWith({ title: "dad" });
       const service = new ProvenanceService(
         store,
-        schemaMap,
         {},
         makeIo(async () => sourceDoc)
       );
@@ -324,7 +317,6 @@ describe("ProvenanceService", () => {
       const store = storedWith({ title: "dad", body: "dadbed" });
       const service = new ProvenanceService(
         store,
-        schemaMap,
         {},
         makeIo(async () => sourceDoc)
       );
@@ -342,7 +334,6 @@ describe("ProvenanceService", () => {
       const store = storedWith({ title: "dad", gone: "fade" });
       const service = new ProvenanceService(
         store,
-        schemaMap,
         {},
         makeIo(async () => sourceDoc)
       );
@@ -363,7 +354,6 @@ describe("ProvenanceService", () => {
       });
       const service = new ProvenanceService(
         store,
-        schemaMap,
         {},
         makeIo(async () => sourceDoc)
       );
@@ -384,7 +374,7 @@ describe("ProvenanceService", () => {
         upsert,
       });
       const io = makeIo(async () => sourceDoc);
-      const service = new ProvenanceService(store, schemaMap, {}, io);
+      const service = new ProvenanceService(store, {}, io);
 
       await expect(
         service.record(key, hashed({ title: "feed", body: "dad" }), [answered("title")])
@@ -404,7 +394,6 @@ describe("ProvenanceService", () => {
       });
       const service = new ProvenanceService(
         store,
-        schemaMap,
         { transactionID: "tx-1" },
         makeIo(async () => sourceDoc)
       );
@@ -421,7 +410,6 @@ describe("ProvenanceService", () => {
       });
       const service = new ProvenanceService(
         store,
-        schemaMap,
         {},
         makeIo(async () => sourceDoc)
       );
@@ -442,7 +430,6 @@ describe("ProvenanceService", () => {
       });
       const service = new ProvenanceService(
         store,
-        schemaMap,
         {},
         makeIo(async () => sourceDoc)
       );
@@ -467,7 +454,6 @@ describe("ProvenanceService", () => {
       });
       const service = new ProvenanceService(
         store,
-        schemaMap,
         {},
         makeIo(async () => sourceDoc)
       );
@@ -478,7 +464,7 @@ describe("ProvenanceService", () => {
     it("hands back nothing, and logs, when the sidecar cannot be reached", async () => {
       const io = makeIo(async () => sourceDoc);
       const store = makeStore({ find: vi.fn().mockRejectedValue(new TranslatorBug("table down")) });
-      const service = new ProvenanceService(store, schemaMap, {}, io);
+      const service = new ProvenanceService(store, {}, io);
 
       await expect(service.lastTranslatedFrom(key)).resolves.toBeNull();
       expect(io.logger.error as ReturnType<typeof vi.fn>).toHaveBeenCalled();
@@ -488,7 +474,6 @@ describe("ProvenanceService", () => {
       const store = makeStore({ find: vi.fn().mockRejectedValue(new APIError("rejected")) });
       const service = new ProvenanceService(
         store,
-        schemaMap,
         { transactionID: "tx-1" },
         makeIo(async () => sourceDoc)
       );

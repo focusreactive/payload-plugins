@@ -1,0 +1,270 @@
+{
+  "[[{\"type\":\"text\",\"name\":\"title\",\"localized\":true},{\"type\":\"textarea\",\"name\":\"body\",\"localized\":true},{\"type\":\"text\",\"name\":\"slug\"},{\"type\":\"text\",\"name\":\"blank\",\"localized\":true},{\"type\":\"number\",\"name\":\"count\",\"localized\":true}],{\"title\":\"Hello\",\"body\":\"World\",\"slug\":\"hello\",\"blank\":\"   \",\"count\":3},null,null]": {
+    "texts": ["Hello", "World"],
+    "addresses": ["title", "body"],
+    "document": {
+      "title": "[de] Hello",
+      "body": "[de] World",
+      "slug": "hello",
+      "blank": "   ",
+      "count": 3
+    }
+  },
+  "[[{\"type\":\"text\",\"name\":\"kept\",\"localized\":true},{\"type\":\"text\",\"name\":\"secret\",\"localized\":true,\"custom\":{\"translateKit\":{\"exclude\":true}}}],{\"kept\":\"Keep\",\"secret\":\"Hide\"},null,null]": {
+    "texts": ["Keep"],
+    "addresses": ["kept"],
+    "document": {
+      "kept": "[de] Keep",
+      "secret": "Hide"
+    }
+  },
+  "[[{\"type\":\"group\",\"name\":\"meta\",\"fields\":[{\"type\":\"text\",\"name\":\"caption\",\"localized\":true}]}],{\"meta\":{\"caption\":\"Caption\"}},null,null]": {
+    "texts": ["Caption"],
+    "addresses": ["meta.caption"],
+    "document": {
+      "meta": {
+        "caption": "[de] Caption"
+      }
+    }
+  },
+  "[[{\"type\":\"row\",\"fields\":[{\"type\":\"text\",\"name\":\"kicker\",\"localized\":true}]},{\"type\":\"text\",\"name\":\"after\",\"localized\":true}],{\"kicker\":\"Kicker\",\"after\":\"After\"},null,null]": {
+    "texts": ["Kicker", "After"],
+    "addresses": ["kicker", "after"],
+    "document": {
+      "kicker": "[de] Kicker",
+      "after": "[de] After"
+    }
+  },
+  "[[{\"type\":\"tabs\",\"tabs\":[{\"name\":\"seo\",\"fields\":[{\"type\":\"text\",\"name\":\"metaTitle\",\"localized\":true}]},{\"fields\":[{\"type\":\"text\",\"name\":\"loose\",\"localized\":true}]}]}],{\"seo\":{\"metaTitle\":\"Meta\"},\"loose\":\"Loose\"},null,null]": {
+    "texts": ["Meta", "Loose"],
+    "addresses": ["seo.metaTitle", "loose"],
+    "document": {
+      "seo": {
+        "metaTitle": "[de] Meta"
+      },
+      "loose": "[de] Loose"
+    }
+  },
+  "[[{\"type\":\"array\",\"name\":\"items\",\"fields\":[{\"type\":\"text\",\"name\":\"label\",\"localized\":true}]}],{\"items\":[{\"id\":\"a\",\"label\":\"First\"},{\"id\":\"b\",\"label\":\"Second\"}]},null,null]": {
+    "texts": ["First", "Second"],
+    "addresses": ["items.a.label", "items.b.label"],
+    "document": {
+      "items": [
+        {
+          "id": "a",
+          "label": "[de] First"
+        },
+        {
+          "id": "b",
+          "label": "[de] Second"
+        }
+      ]
+    }
+  },
+  "[[{\"type\":\"array\",\"name\":\"items\",\"fields\":[{\"type\":\"text\",\"name\":\"label\",\"localized\":true}]}],{\"items\":[{\"label\":\"First\"},{\"label\":\"Second\"}]},null,null]": {
+    "texts": ["First", "Second"],
+    "addresses": ["items.#0.label", "items.#1.label"],
+    "document": {
+      "items": [
+        {
+          "label": "[de] First"
+        },
+        {
+          "label": "[de] Second"
+        }
+      ]
+    }
+  },
+  "[[{\"type\":\"blocks\",\"name\":\"sections\",\"blocks\":[{\"slug\":\"hero\",\"fields\":[{\"type\":\"text\",\"name\":\"heading\",\"localized\":true}]},{\"slug\":\"quote\",\"fields\":[{\"type\":\"text\",\"name\":\"quote\",\"localized\":true}]}]}],{\"sections\":[{\"id\":\"s1\",\"blockType\":\"hero\",\"heading\":\"Hi\"},{\"id\":\"s2\",\"blockType\":\"quote\",\"quote\":\"Quoted\"}]},null,null]": {
+    "texts": ["Hi", "Quoted"],
+    "addresses": ["sections.s1:hero.heading", "sections.s2:quote.quote"],
+    "document": {
+      "sections": [
+        {
+          "id": "s1",
+          "blockType": "hero",
+          "heading": "[de] Hi"
+        },
+        {
+          "id": "s2",
+          "blockType": "quote",
+          "quote": "[de] Quoted"
+        }
+      ]
+    }
+  },
+  "[[{\"type\":\"blocks\",\"name\":\"sections\",\"blocks\":[{\"slug\":\"hero\",\"fields\":[{\"type\":\"text\",\"name\":\"heading\",\"localized\":true}]}]}],{\"sections\":[{\"id\":\"s1\",\"blockType\":\"hero\",\"heading\":\"Hi\"},{\"id\":\"s2\",\"blockType\":\"nobody-declared-this\",\"heading\":\"Lost\"}]},null,null]": {
+    "texts": ["Hi"],
+    "addresses": ["sections.s1:hero.heading"],
+    "document": {
+      "sections": [
+        {
+          "id": "s1",
+          "blockType": "hero",
+          "heading": "[de] Hi"
+        },
+        {
+          "id": "s2",
+          "blockType": "nobody-declared-this",
+          "heading": "Lost"
+        }
+      ]
+    }
+  },
+  "[[{\"type\":\"blocks\",\"name\":\"od.d:name\",\"blocks\":[{\"slug\":\"he#ro\",\"fields\":[{\"type\":\"text\",\"name\":\"head.ing\",\"localized\":true}]}]}],{\"od.d:name\":[{\"id\":\"a:b.c#d\",\"blockType\":\"he#ro\",\"head.ing\":\"Odd\"}]},null,null]": {
+    "texts": ["Odd"],
+    "addresses": ["od\\.d\\:name.a\\:b\\.c\\#d:he\\#ro.head\\.ing"],
+    "document": {
+      "od.d:name": [
+        {
+          "id": "a:b.c#d",
+          "blockType": "he#ro",
+          "head.ing": "[de] Odd"
+        }
+      ]
+    }
+  },
+  "[[{\"type\":\"array\",\"name\":\"rows\",\"fields\":[{\"type\":\"blocks\",\"name\":\"cells\",\"blocks\":[{\"slug\":\"box\",\"fields\":[{\"type\":\"group\",\"name\":\"inner\",\"fields\":[{\"type\":\"text\",\"name\":\"deep\",\"localized\":true}]}]}]}]}],{\"rows\":[{\"id\":\"r1\",\"cells\":[{\"id\":\"c1\",\"blockType\":\"box\",\"inner\":{\"deep\":\"Deep\"}}]}]},null,null]": {
+    "texts": ["Deep"],
+    "addresses": ["rows.r1.cells.c1:box.inner.deep"],
+    "document": {
+      "rows": [
+        {
+          "id": "r1",
+          "cells": [
+            {
+              "id": "c1",
+              "blockType": "box",
+              "inner": {
+                "deep": "[de] Deep"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "[[{\"type\":\"text\",\"name\":\"title\",\"localized\":true},{\"type\":\"text\",\"name\":\"subtitle\",\"localized\":true}],{\"title\":\"Hello\",\"subtitle\":\"World\"},{\"title\":\"Hallo\",\"subtitle\":\"World\"},null]": {
+    "texts": ["Hello", "World"],
+    "addresses": ["title", "subtitle"],
+    "document": {
+      "title": "[de] Hello",
+      "subtitle": "[de] World"
+    }
+  },
+  "[[{\"type\":\"array\",\"name\":\"items\",\"localized\":true,\"fields\":[{\"type\":\"text\",\"name\":\"label\",\"localized\":true}]}],{\"items\":[{\"id\":\"a\",\"label\":\"First\"},{\"id\":\"b\",\"label\":\"Second\"}]},{\"items\":[{\"label\":\"First\"},{\"label\":\"Second\"}]},null]": {
+    "texts": ["First", "Second"],
+    "addresses": ["items.a.label", "items.b.label"],
+    "document": {
+      "items": [
+        {
+          "label": "[de] First"
+        },
+        {
+          "label": "[de] Second"
+        }
+      ]
+    }
+  },
+  "[[{\"type\":\"array\",\"name\":\"items\",\"fields\":[{\"type\":\"text\",\"name\":\"label\",\"localized\":true}]}],{\"items\":[{\"id\":\"a\",\"label\":\"First\"},{\"id\":\"b\",\"label\":\"Second\"}]},{\"items\":[{\"label\":\"Erste\",\"id\":\"a\"},{\"label\":\"Second\",\"id\":\"b\"}]},null]": {
+    "texts": ["First", "Second"],
+    "addresses": ["items.a.label", "items.b.label"],
+    "document": {
+      "items": [
+        {
+          "label": "[de] First",
+          "id": "a"
+        },
+        {
+          "label": "[de] Second",
+          "id": "b"
+        }
+      ]
+    }
+  },
+  "[[{\"type\":\"tabs\",\"tabs\":[{\"name\":\"seo\",\"fields\":[{\"type\":\"text\",\"name\":\"metaTitle\",\"localized\":true}]}]}],{\"seo\":{\"metaTitle\":\"Meta\"}},{\"seo\":{\"metaTitle\":\"Meta\"}},null]": {
+    "texts": ["Meta"],
+    "addresses": ["seo.metaTitle"],
+    "document": {
+      "seo": {
+        "metaTitle": "[de] Meta"
+      }
+    }
+  },
+  "[[{\"type\":\"blocks\",\"name\":\"sections\",\"blocks\":[{\"slug\":\"hero\",\"fields\":[{\"type\":\"text\",\"name\":\"heading\",\"localized\":true}]}]}],{\"sections\":[{\"id\":\"s1\",\"blockType\":\"hero\",\"heading\":\"Hi\"},{\"id\":\"s2\",\"heading\":\"No type\"}]},{\"sections\":[{\"heading\":\"Hi\",\"blockType\":\"hero\",\"id\":\"s1\"},{\"id\":\"s2\",\"heading\":\"No type\"}]},null]": {
+    "texts": ["Hi"],
+    "addresses": ["sections.s1:hero.heading"],
+    "document": {
+      "sections": [
+        {
+          "heading": "[de] Hi",
+          "blockType": "hero",
+          "id": "s1"
+        },
+        {
+          "id": "s2",
+          "heading": "No type"
+        }
+      ]
+    }
+  },
+  "[[{\"type\":\"text\",\"name\":\"title\",\"localized\":true},{\"type\":\"text\",\"name\":\"subtitle\",\"localized\":true},{\"type\":\"textarea\",\"name\":\"body\",\"localized\":true}],{\"title\":\"Hello\",\"subtitle\":\"Second\",\"body\":\"World\"},{\"title\":\"Hallo\",\"subtitle\":\"Zweite\",\"body\":\"Welt\"},[\"body\"]]": {
+    "texts": ["World"],
+    "addresses": ["body"],
+    "document": {
+      "title": "Hallo",
+      "subtitle": "Zweite",
+      "body": "[de] World"
+    }
+  },
+  "[[{\"type\":\"text\",\"name\":\"title\",\"localized\":true}],{\"title\":\"Hello\"},{\"title\":\"Hallo\"},[]]": {
+    "texts": [],
+    "addresses": [],
+    "document": {
+      "title": "Hallo"
+    }
+  },
+  "[[{\"type\":\"array\",\"name\":\"items\",\"localized\":true,\"fields\":[{\"type\":\"text\",\"name\":\"label\",\"localized\":true}]}],{\"items\":[{\"id\":\"a\",\"label\":\"First\"},{\"id\":\"b\",\"label\":\"Second\"}]},{\"items\":[{\"id\":\"a\",\"label\":\"Erste\"},{\"id\":\"b\",\"label\":\"Zweite\"}]},[\"items.a.label\"]]": {
+    "texts": ["First"],
+    "addresses": ["items.a.label"],
+    "document": {
+      "items": [
+        {
+          "id": "a",
+          "label": "[de] First"
+        },
+        {
+          "id": "b",
+          "label": "Zweite"
+        }
+      ]
+    }
+  },
+  "[[{\"type\":\"blocks\",\"name\":\"sections\",\"localized\":true,\"blocks\":[{\"slug\":\"copy\",\"fields\":[{\"type\":\"text\",\"name\":\"heading\",\"localized\":true}]}]}],{\"sections\":[{\"id\":\"s1\",\"blockType\":\"copy\",\"heading\":\"One\"},{\"id\":\"s2\",\"blockType\":\"copy\",\"heading\":\"Two\"}]},{\"sections\":[{\"id\":\"s1\",\"blockType\":\"copy\",\"heading\":\"Eins\"},{\"id\":\"s2\",\"blockType\":\"copy\",\"heading\":\"Zwei\"}]},[\"sections.s2:copy.heading\"]]": {
+    "texts": ["Two"],
+    "addresses": ["sections.s2:copy.heading"],
+    "document": {
+      "sections": [
+        {
+          "id": "s1",
+          "blockType": "copy",
+          "heading": "Eins"
+        },
+        {
+          "id": "s2",
+          "blockType": "copy",
+          "heading": "[de] Two"
+        }
+      ]
+    }
+  },
+  "[[{\"type\":\"text\",\"name\":\"title\",\"localized\":true},{\"type\":\"text\",\"name\":\"subtitle\",\"localized\":true},{\"type\":\"textarea\",\"name\":\"body\",\"localized\":true}],{\"title\":\"Hello\",\"subtitle\":\"Second\",\"body\":\"World\"},{\"title\":\"Hallo\",\"subtitle\":\"Zweite\",\"body\":\"Welt\"},null]": {
+    "texts": ["Hello", "Second", "World"],
+    "addresses": ["title", "subtitle", "body"],
+    "document": {
+      "title": "[de] Hello",
+      "subtitle": "[de] Second",
+      "body": "[de] World"
+    }
+  }
+}

@@ -8,6 +8,7 @@ import { ProvenanceService, provenanceIo } from "../../../modules/provenance/ind
 
 import { DismissStalenessHandler } from "../dismissStaleness.handler.js";
 import type { StalenessConfig } from "../model.js";
+import { fingerprintsOf } from "../../../modules/provenance/__tests__/fixtures/fingerprinter.js";
 
 vi.mock("../../../shared/access/permission.js", () => ({
   mayInitiate: vi.fn(),
@@ -30,9 +31,8 @@ describe("POST /stale/dismiss — it asks before it re-bases", () => {
       provenanceServiceFactory: (p: Payload) =>
         new ProvenanceService(
           store,
-          new Map([["posts", schema]]) as CollectionSchemaMap,
           {},
-          provenanceIo(p)
+          provenanceIo(p, fingerprintsOf(new Map([["posts", schema]]) as CollectionSchemaMap))
         ),
     }) as unknown as StalenessConfig;
 

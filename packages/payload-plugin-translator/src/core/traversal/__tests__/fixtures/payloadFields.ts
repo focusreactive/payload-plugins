@@ -121,15 +121,17 @@ export function payloadFieldsLanguage(): Language<FieldLike, SchemaCursor> {
       // Crossing happens before `selects`, so a boundary that skipped this would translate a field
       // its own host never marked for translation.
       if (field.localized !== true || field.excluded === true) return null;
-      const tree = cursor.target[field.name];
+      const tree = cursor.source[field.name];
       if (tree === undefined || tree === null) return null;
+      const workingCopy = structuredClone(tree);
 
       const definitions = new Map(field.embeds?.map((embed) => [embed.slug, embed.fields]));
       if (field.richTextLanguage === undefined) return null;
       return {
         languageId: field.richTextLanguage,
+        placement: { slot: { holder: cursor.target, key: field.name }, value: workingCopy },
         context: {
-          tree,
+          tree: workingCopy,
           embed: ({ name, data }: EmbedIdentity): Crossing | null => {
             const fields = definitions.get(name);
             const doc = asDoc(data);

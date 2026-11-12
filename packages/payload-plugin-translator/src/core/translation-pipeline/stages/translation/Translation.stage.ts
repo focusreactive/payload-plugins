@@ -2,13 +2,8 @@ import { checkSegments } from "../../../kernel/lexical/checkSegments.js";
 import { isFailureCode, TranslationFailed } from "./TranslationFailed.js";
 import { isObject } from "../../../kernel/utils/isObject.js";
 import { readFailureReason } from "../../../errors/failureReason.js";
-import type {
-  PipelineContext,
-  PipelineStage,
-  SettledAnswer,
-  TextChunk,
-} from "../../types/index.js";
-import { isRichContainerChunk } from "../../types/index.js";
+import type { PipelineContext, PipelineStage, SettledAnswer } from "../../types/index.js";
+import type { TranslationTarget } from "../../../traversal/index.js";
 import type {
   TranslatedValue,
   TranslationProvider,
@@ -31,23 +26,32 @@ function translationRequest(ctx: PipelineContext): TranslationRequest {
 }
 
 /**
- * Judged against `chunk.fragments`, not against `ctx.textMap`: the stage hands the provider a
- * shallow copy, so `TranslationInput`'s `Readonly` stops nothing at run time.
+ * Judged against the target the walk recorded, never `ctx.textMap`: the provider is handed a
+ * shallow copy and nothing stops it writing through.
  */
-function settle(chunk: TextChunk, answer: TranslatedValue | undefined): SettledAnswer {
-  if (answer === undefined) return { kind: "failed", failure: { code: "not-answered" } };
+function settleTarget(
+  target: TranslationTarget,
+  answer: TranslatedValue | undefined
+): SettledAnswer {
+  if (answer === undefined) {
+    return { kind: "failed", failure: { code: "not-answered" } };
+  }
+
   if (answer.kind === "failed") {
     return { kind: "failed", failure: { code: answer.code, message: answer.message } };
   }
 
-  if (!isRichContainerChunk(chunk)) {
+  if (target.kind === "text") {
     return answer.kind === "text"
       ? { kind: "text", text: answer.text }
       : { kind: "failed", failure: { code: "wrong-kind" } };
   }
-  if (answer.kind !== "segments") return { kind: "failed", failure: { code: "wrong-kind" } };
 
-  const checked = checkSegments(answer.segments, chunk.fragments);
+  if (answer.kind !== "segments") {
+    return { kind: "failed", failure: { code: "wrong-kind" } };
+  }
+
+  const checked = checkSegments(answer.segments, target.pieces);
   return checked.ok
     ? { kind: "segments", segments: checked.segments }
     : { kind: "failed", failure: { code: checked.reason } };
@@ -71,8 +75,8 @@ export class TranslationStage implements PipelineStage {
       });
 
     const settled: Record<number, SettledAnswer> = {};
-    for (const chunk of ctx.textChunks ?? []) {
-      settled[chunk.index] = settle(chunk, answers[chunk.index]);
+    for (const [index, target] of (ctx.collected?.targets ?? []).entries()) {
+      settled[index] = settleTarget(target, answers[index]);
     }
 
     return { ...ctx, answers: settled };

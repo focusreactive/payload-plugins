@@ -14,6 +14,7 @@ import { GetDocumentStalenessHandler } from "../getDocumentStaleness.handler.js"
 import { DismissStalenessHandler } from "../dismissStaleness.handler.js";
 import type { StalenessConfig } from "../model.js";
 import { storeDouble } from "../../../../core/domain/provenance/__tests__/fixtures/provenanceStore.js";
+import { fingerprintsOf } from "../../../modules/provenance/__tests__/fixtures/fingerprinter.js";
 
 const COLLECTION = "posts";
 const schema: Field[] = [{ name: "title", type: "text", localized: true }];
@@ -51,7 +52,8 @@ const schemaMap = new Map([["posts", schema]]) as CollectionSchemaMap;
 function makeConfig(store: ProvenanceStore): StalenessConfig {
   return {
     availableCollections: new Set(["posts"]) as StalenessConfig["availableCollections"],
-    provenanceServiceFactory: (p) => new ProvenanceService(store, schemaMap, {}, provenanceIo(p)),
+    provenanceServiceFactory: (p) =>
+      new ProvenanceService(store, {}, provenanceIo(p, fingerprintsOf(schemaMap))),
   };
 }
 

@@ -2,7 +2,6 @@ import type { Payload } from "payload";
 import type { Criteria } from "../translation-run/index.js";
 import { DRIFT_CRITERION, driftedLeaves } from "./Provenance.criterion.js";
 
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
 import type { TranslationModule } from "../plugin-config/index.js";
 
@@ -14,6 +13,7 @@ import type { ProvenanceStoreFactory } from "./Provenance.store.js";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import type { SourceDocumentReader } from "./Provenance.shapes.js";
+import type { SourceFingerprinter } from "../../../core/domain/content-projection/sourceFingerprinter.js";
 import {
   DEFAULT_PROVENANCE_SLUG,
   ensureProvenanceCollectionRegistered,
@@ -37,7 +37,8 @@ function resolveProvenanceSlug(option: ProvenanceOption): string | null {
 
 const OUTSIDE_THE_CALLERS_TRANSACTION = undefined;
 
-export const provenanceIo = (payload: Payload) => ({
+export const provenanceIo = (payload: Payload, fingerprintOf: SourceFingerprinter) => ({
+  fingerprintOf,
   logger: payload.logger,
   readSource: ({ collection, id, locale, user }: Parameters<SourceDocumentReader>[0]) =>
     fetchSourceDocument({
@@ -62,7 +63,7 @@ export type ProvenanceContribution = {
 
 export function configureProvenance(
   option: ProvenanceOption,
-  schemaMap: CollectionSchemaMap
+  fingerprintOf: SourceFingerprinter
 ): ProvenanceContribution | undefined {
   const slug = resolveProvenanceSlug(option);
   if (!slug) return undefined;
@@ -73,8 +74,7 @@ export function configureProvenance(
 
   const serviceFactory: ProvenanceServiceFactory = (payload, scope = {}) => {
     const store = storeFactory(payload, scope);
-    const io = provenanceIo(payload);
-    return new ProvenanceService(store, schemaMap, scope, io);
+    return new ProvenanceService(store, scope, provenanceIo(payload, fingerprintOf));
   };
 
   const refuseACollidingSlug: ConfigModifier = (config) => {

@@ -3,7 +3,7 @@ import {
   TranslatorConfigError,
   mustPropagate,
 } from "../../../../core/errors/index.js";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, onTestFinished } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 import { APIError } from "payload";
 import type { RecordedFingerprints } from "../../../../core/domain/provenance/index.js";
@@ -18,6 +18,7 @@ import type { TranslateDocumentInput } from "../translateDocument.js";
 import { provenanceInAChain } from "../../../modules/provenance/__tests__/fixtures/inAChain.js";
 import { storeDouble } from "../../../../core/domain/provenance/__tests__/fixtures/provenanceStore.js";
 import type { ProvenanceStore } from "../../../../core/domain/provenance/index.js";
+import { fingerprintsOf } from "../../../modules/provenance/__tests__/fixtures/fingerprinter.js";
 import {
   nothingSent,
   pipelineResult,
@@ -31,10 +32,17 @@ vi.mock("../../../../core/translation-pipeline/index.js", async () => {
 });
 
 vi.mock("../../../../core/domain/content-projection/computeFieldFingerprints.js", () => ({
-  computeFieldFingerprints: vi.fn(() => ({ title: "fp-fixed" })),
+  fingerprintFieldContents: vi.fn(() => ({ title: "fp-fixed" })),
   HASH_LENGTH: 16,
   SOURCE_HASH_PATTERN: /^[0-9a-f]{16}$/u,
 }));
+vi.mock("../../../../core/domain/content-projection/translatableFields.js", async (original) => {
+  const actual =
+    await original<
+      typeof import("../../../../core/domain/content-projection/translatableFields.js")
+    >();
+  return { ...actual, translatableFields: vi.fn(actual.translatableFields) };
+});
 vi.mock("../../../../core/domain/content-projection/computeSourceFingerprint.js", () => ({
   computeSourceFingerprint: vi.fn(() => "fp-fixed"),
 }));
@@ -446,9 +454,8 @@ describe("translateDocument", () => {
         (payload) =>
           new ProvenanceService(
             store as unknown as ProvenanceStore,
-            mockSchemaMap,
             {},
-            provenanceIo(payload)
+            provenanceIo(payload, fingerprintsOf(mockSchemaMap))
           )
       );
     });
@@ -462,8 +469,8 @@ describe("translateDocument", () => {
 
     it("upserts a provenance record after a successful translation", async () => {
       await withTranslatedData();
-      const { computeFieldFingerprints } =
-        await import("../../../../core/domain/content-projection/computeFieldFingerprints.js");
+      const { translatableFields } =
+        await import("../../../../core/domain/content-projection/translatableFields.js");
       (mockPayload.findByID as ReturnType<typeof vi.fn>).mockImplementation(
         ({ locale }: { locale: string }) =>
           Promise.resolve(
@@ -481,9 +488,11 @@ describe("translateDocument", () => {
         {}
       );
 
-      expect(computeFieldFingerprints).toHaveBeenCalledWith({ id: "doc-123", title: "Source" }, [
-        { name: "title", type: "text", localized: true },
-      ]);
+      expect(translatableFields).toHaveBeenCalledWith(
+        { id: "doc-123", title: "Source" },
+        [{ name: "title", type: "text", localized: true }],
+        expect.anything()
+      );
       const [given, scope] = (serviceFactory as ReturnType<typeof vi.fn>).mock.calls[0] as [
         object,
         object,
@@ -512,8 +521,8 @@ describe("translateDocument", () => {
     it("fingerprints the source document, not whatever the pipeline hands back", async () => {
       // The real pipeline does not mutate `sourceData`; the hostile stub guards against that regressing.
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      const { computeFieldFingerprints } =
-        await import("../../../../core/domain/content-projection/computeFieldFingerprints.js");
+      const { translatableFields } =
+        await import("../../../../core/domain/content-projection/translatableFields.js");
 
       (mockPayload.findByID as ReturnType<typeof vi.fn>).mockImplementation(
         ({ locale }: { locale: string }) =>
@@ -533,12 +542,15 @@ describe("translateDocument", () => {
       );
 
       let fingerprintedDoc: unknown;
-      (computeFieldFingerprints as unknown as ReturnType<typeof vi.fn>).mockImplementation(
-        (doc: unknown) => {
-          fingerprintedDoc = structuredClone(doc);
-          return { title: "fp-fixed" };
-        }
-      );
+      const spy = vi.mocked(translatableFields);
+      const asItReallyIs = spy.getMockImplementation();
+      spy.mockImplementation((doc, schema, walk) => {
+        fingerprintedDoc = structuredClone(doc);
+        return asItReallyIs?.(doc, schema, walk) ?? [];
+      });
+      onTestFinished(() => {
+        if (asItReallyIs) spy.mockImplementation(asItReallyIs);
+      });
 
       await translateDocument(
         depsWithProvenance(),
@@ -588,9 +600,9 @@ describe("translateDocument", () => {
 
   describe("what the run tells provenance", () => {
     it("claims the leaf the pipeline sent and leaves the one it did not unanswered", async () => {
-      const { computeFieldFingerprints } =
+      const { fingerprintFieldContents } =
         await import("../../../../core/domain/content-projection/computeFieldFingerprints.js");
-      (computeFieldFingerprints as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      (fingerprintFieldContents as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
         title: "fp-title",
         tagline: "fp-tagline",
       });
@@ -600,9 +612,8 @@ describe("translateDocument", () => {
         (payload) =>
           new ProvenanceService(
             store as unknown as ProvenanceStore,
-            mockSchemaMap,
             {},
-            provenanceIo(payload)
+            provenanceIo(payload, fingerprintsOf(mockSchemaMap))
           )
       );
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
@@ -644,9 +655,8 @@ describe("translateDocument", () => {
         (payload) =>
           new ProvenanceService(
             store as unknown as ProvenanceStore,
-            mockSchemaMap,
             {},
-            provenanceIo(payload)
+            provenanceIo(payload, fingerprintsOf(mockSchemaMap))
           )
       );
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
@@ -680,9 +690,8 @@ describe("translateDocument", () => {
       (payload) =>
         new ProvenanceService(
           store as unknown as ProvenanceStore,
-          mockSchemaMap,
           {},
-          provenanceIo(payload)
+          provenanceIo(payload, fingerprintsOf(mockSchemaMap))
         )
     );
     const { translateContent } = await import("../../../../core/translation-pipeline/index.js");

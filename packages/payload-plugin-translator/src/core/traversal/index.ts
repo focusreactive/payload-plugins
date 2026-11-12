@@ -15,6 +15,7 @@ export type {
 } from "./contract.js";
 
 export { applyTranslations, collectTranslationTargets } from "./collect.js";
+export type { CollectOptions, LanguageTable } from "./collect.js";
 
 export {
   CannotEnterLanguageError,

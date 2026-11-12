@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import type { FieldLike } from "../../kernel/field-traversal/types.js";
 
 import { projectTranslatableContent } from "./contentProjector.js";
+import type { FieldContent } from "./translatableFields.js";
 import type { LeafAddress } from "./idPath.js";
 
 /**
@@ -32,6 +33,14 @@ export function computeFieldFingerprints(
   const hashes: Record<string, SourceHash> = {};
   for (const entry of projectTranslatableContent(doc, schema)) {
     hashes[entry.idPath] = hashText(entry.text);
+  }
+  return hashes;
+}
+
+export function fingerprintFieldContents(fields: readonly FieldContent[]): FieldFingerprints {
+  const hashes: Record<string, SourceHash> = {};
+  for (const field of fields) {
+    hashes[field.address] = hashText(field.text);
   }
   return hashes;
 }

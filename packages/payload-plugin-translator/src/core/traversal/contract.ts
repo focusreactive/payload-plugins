@@ -40,6 +40,17 @@ export type PathSegments = readonly PathSegment[];
 export type IdPath = readonly PathSegment[];
 
 /**
+ * An {@link IdPath} narrowed to one role: the address a piece of text is attributed to, taken from
+ * the **first** crossing on the way to it rather than the nearest, and from the leaf's own address
+ * where no crossing was taken.
+ *
+ * A leaf that took no crossing carries the very array its `idPath` is, so the two compare identical.
+ *
+ * @public
+ */
+export type FoldAddress = IdPath;
+
+/**
  * @public
  */
 export type Slot = {
@@ -308,6 +319,7 @@ export type TranslationTarget = {
    * unit, all carrying this same address.
    */
   idPath: IdPath;
+  foldPath: FoldAddress;
 } & (
   | {
       kind: "text";

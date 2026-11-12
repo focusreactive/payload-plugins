@@ -11,6 +11,7 @@ import { openRun } from "./run.js";
 import type { Run } from "./run.js";
 import { runModulesAfter, runModulesBefore } from "./runModules.js";
 import { selectLeaves } from "./selectLeaves.js";
+import { translationLanguages } from "../_lib/index.js";
 import { translateOrWrap } from "./translateOrWrap.js";
 import { reportRunOutcome } from "../_lib/index.js";
 
@@ -58,6 +59,8 @@ export async function translateDocument(
 ): Promise<void> {
   const modules = deps.modules ?? [];
 
+  const walk = translationLanguages(deps.embeds);
+
   const run = await openRun({ payload, taskInput: input, scope, schemaMap: deps.schemaMap });
   const source = await run.doc.readSourceIfAllowed();
 
@@ -66,6 +69,7 @@ export async function translateDocument(
     criteria: deps.criteria ?? {},
     filters: input.filters ?? [],
     source,
+    walk,
   });
   const joined = await runModulesBefore({
     modules,
@@ -78,6 +82,7 @@ export async function translateDocument(
     translationProvider: deps.translationProvider,
     source,
     selection: owed.addresses,
+    walk,
   });
 
   if (translated.sent) {

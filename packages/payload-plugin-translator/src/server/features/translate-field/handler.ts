@@ -2,7 +2,7 @@ import type { PayloadRequest } from "payload";
 
 import { getByPath, ServerResponse } from "../../shared/index.js";
 import { translateContent } from "../../../core/translation-pipeline/index.js";
-import { everyTranslatableLeaf } from "../../../core/domain/content-projection/contentProjector.js";
+import { translatableFields } from "../../../core/domain/content-projection/translatableFields.js";
 import { Locales } from "../../../core/domain/locales/index.js";
 
 import type {
@@ -139,14 +139,18 @@ export class TranslateFieldHandler {
       );
     }
 
+    const { walk } = this.config;
     const translated = await translateContent({
       schema: resolution.schema,
       sourceData: resolution.sourceData,
-      selection: everyTranslatableLeaf(resolution.sourceData, resolution.schema),
+      selection: translatableFields(resolution.sourceData, resolution.schema, walk).map(
+        (field) => field.address
+      ),
       sourceLng: source_lng,
       targetLng: target_lng,
       document: { collection: collection_slug, id: doc_id },
       translationProvider: this.config.translationProvider,
+      ...walk,
     });
 
     if (!translated.sent) {

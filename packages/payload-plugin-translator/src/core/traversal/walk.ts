@@ -1,4 +1,11 @@
-import type { Crossing, IdPath, PathSegments, RegisteredLanguage, Slot } from "./contract.js";
+import type {
+  Crossing,
+  FoldAddress,
+  IdPath,
+  PathSegments,
+  RegisteredLanguage,
+  Slot,
+} from "./contract.js";
 import {
   CannotEnterLanguageError,
   TooManyCrossingsError,
@@ -14,6 +21,7 @@ export type LeafVisit = {
   value: unknown;
   slot?: Slot;
   idPath: IdPath;
+  foldPath: FoldAddress;
   crossings: number;
   cross(crossing: Crossing): void;
 };
@@ -67,7 +75,8 @@ function activate(
   visit: Visitor,
   path: IdPath,
   crossings: number,
-  maxCrossings: number
+  maxCrossings: number,
+  foldPath: FoldAddress | null = null
 ): void {
   if (crossings > maxCrossings) throw new TooManyCrossingsError(path, maxCrossings);
 
@@ -96,6 +105,7 @@ function activate(
       }
 
       const idPath = extend(here, step.segments);
+      const folded = foldPath ?? idPath;
       visit.leaf({
         language,
         node,
@@ -103,9 +113,10 @@ function activate(
         value: step.value,
         slot: step.slot,
         idPath,
+        foldPath: folded,
         crossings,
         cross: (next) =>
-          activate(registry, next, step.value, visit, idPath, crossings + 1, maxCrossings),
+          activate(registry, next, step.value, visit, idPath, crossings + 1, maxCrossings, folded),
       });
     }
   };

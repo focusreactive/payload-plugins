@@ -4,6 +4,7 @@ import { asTranslatorError } from "../../../translation-providers/shared/errors/
 import type { LeafAddress } from "../../../core/domain/content-projection/idPath.js";
 import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
 import { translateContent } from "../../../core/translation-pipeline/index.js";
+import type { LanguageTable } from "../../../core/traversal/index.js";
 import type { Run } from "./run.js";
 import type { ApprovedSource } from "./targetDocument.js";
 
@@ -17,8 +18,9 @@ export async function translateOrWrap(args: {
   translationProvider: TranslationProvider;
   source: ApprovedSource;
   selection: readonly LeafAddress[];
+  walk: LanguageTable;
 }): Promise<Awaited<ReturnType<typeof translateContent>>> {
-  const { run, translationProvider, source, selection } = args;
+  const { run, translationProvider, source, selection, walk } = args;
 
   try {
     return await translateContent({
@@ -30,6 +32,7 @@ export async function translateOrWrap(args: {
       document: { collection: run.target.collection, id: run.target.documentId },
       translationProvider,
       selection,
+      ...walk,
     });
   } catch (error) {
     if (error instanceof APIError) throw error;

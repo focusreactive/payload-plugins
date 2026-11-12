@@ -4,6 +4,7 @@ import type { CollectionSlug, Field, PayloadRequest } from "payload";
 import type { TranslationProvider } from "../../../../core/domain/translation-providers/index.js";
 import { TranslateFieldHandler } from "../handler.js";
 import type { FieldTranslationConfig } from "../model.js";
+import { translationLanguages } from "../../_lib/index.js";
 
 vi.mock("../../../../core/translation-pipeline/index.js", async () => {
   const { nothingSent } =
@@ -52,6 +53,7 @@ beforeEach(() => {
     ],
   ]);
   handler = new TranslateFieldHandler({
+    walk: translationLanguages(),
     translationProvider: provider,
     schemaMap,
   } as unknown as FieldTranslationConfig);

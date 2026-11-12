@@ -1,3 +1,4 @@
+import { translationLanguages } from "../../server/features/_lib/translationLanguages.js";
 import { describe, it, expect } from "vitest";
 import type { Field } from "payload";
 
@@ -5,16 +6,19 @@ import type {
   TranslationOutput,
   TranslationProvider,
   TranslationRequest,
-} from "../../domain/translation-providers/index.js";
-import { computeSourceFingerprint } from "../../domain/content-projection/computeSourceFingerprint.js";
-import { translateContent } from "../translateContent.js";
-import type { TranslateContentArgs } from "../translateContent.js";
-import { everyTranslatableLeaf } from "../../domain/content-projection/contentProjector.js";
+} from "../../core/domain/translation-providers/index.js";
+import { computeSourceFingerprint } from "../../core/domain/content-projection/computeSourceFingerprint.js";
+import { translateContent } from "../../core/translation-pipeline/translateContent.js";
+import type { TranslateContentArgs } from "../../core/translation-pipeline/translateContent.js";
+import { everyTranslatableLeaf } from "../../core/domain/content-projection/contentProjector.js";
 
-const translateAll = (args: Omit<TranslateContentArgs, "selection">) =>
+const translateAll = (
+  args: Omit<TranslateContentArgs, "selection" | "languages" | "hostLanguageId">
+) =>
   translateContent({
     ...args,
     selection: everyTranslatableLeaf(args.sourceData, args.schema),
+    ...translationLanguages(),
   });
 
 const fakeProvider: TranslationProvider = {
@@ -188,6 +192,7 @@ describe("translateContent", () => {
       targetLng: "de",
       translationProvider: fakeProvider,
       selection: [],
+      ...translationLanguages(),
     });
     expect(result).toEqual({ sent: false });
   });
@@ -202,6 +207,7 @@ describe("translateContent", () => {
       targetLng: "de",
       translationProvider: fakeProvider,
       selection: ["title"],
+      ...translationLanguages(),
     });
     expect(result).toEqual({
       sent: true,

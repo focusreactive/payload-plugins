@@ -1,25 +1,16 @@
 import { describe, expect, it } from "vitest";
 
+import baseline from "./fixtures/lexical.baseline.json" with { type: "json" };
+
 import {
   UNWRITABLE_MARKERS,
   answerInKind,
   sentOf,
   sentTextOf,
 } from "../../../core/traversal/__tests__/fixtures/sentText.js";
-import { checkSegments } from "../../../core/kernel/lexical/checkSegments.js";
-import type { SentSegment } from "../../../core/kernel/lexical/checkSegments.js";
 import { applyTranslations } from "../../../core/traversal/index.js";
 import type { TranslationTarget } from "../../../core/traversal/index.js";
-import type { TranslatableValue } from "../../../core/domain/translation-providers/index.js";
 import type { BlockLike, FieldLike } from "../../../core/kernel/field-traversal/index.js";
-import { FieldChunkCollector } from "../../../core/translation-pipeline/stages/field-collector/index.js";
-import { projectTranslatableContent } from "../../../core/domain/content-projection/contentProjector.js";
-import {
-  PlainTextExpander,
-  RichContainerExpander,
-} from "../../../core/translation-pipeline/stages/text-expander/index.js";
-import { writeAnswers } from "../../../core/translation-pipeline/stages/translation-applicator/index.js";
-import type { SettledAnswer, TextChunk } from "../../../core/translation-pipeline/types/index.js";
 import { addressesOf } from "../../__tests__/addresses.js";
 import type { Doc } from "../../__tests__/fixtures/lexical.js";
 import {
@@ -38,84 +29,35 @@ import {
 
 type Compared = { texts: string[]; addresses: string[]; document: Doc };
 
-/**
- * Must render in the same markers as {@link sentOf}, or the two sides could read alike without
- * agreeing and the comparison could not fail.
- */
-const sentAt = (textMap: Record<number, TranslatableValue>, index: number): string => {
-  const found = textMap[index];
-  if (found === undefined) throw new Error(`the oracle produced nothing for chunk ${index}`);
-  return found.kind === "text"
-    ? found.text
-    : found.segments
-        .map((segment) => segment.text ?? UNWRITABLE_MARKERS.noText)
-        .join(UNWRITABLE_MARKERS.join);
-};
-
 const sentBy = (target: TranslationTarget): string => sentOf(target, UNWRITABLE_MARKERS);
-
-/**
- * Must go through `checkSegments` as `TranslationStage` does; without it the oracle is a pipeline
- * missing a step production always runs. A piece with nothing to translate comes back as `""`, not
- * absent — what the real decoder produces for `<2/>` (`wire/inlineMarks.ts`).
- */
-const settleSegments = (sent: readonly SentSegment[]): SettledAnswer => {
-  const answered = sent.map((segment) => ({
-    id: segment.id,
-    text: segment.text === null ? "" : translated(segment.text),
-  }));
-  const checked = checkSegments(answered, sent);
-  return checked.ok
-    ? { kind: "segments", segments: checked.segments }
-    : { kind: "failed", failure: { code: checked.reason } };
-};
 
 const answerFor = (target: TranslationTarget) => answerInKind(target, translated);
 
-// Must stay in the order `TextChunkExpander.stage.ts` uses: the first expander that can wins.
-const production = [new RichContainerExpander(), new PlainTextExpander()];
-
-const viaPipeline = (schema: FieldLike[], source: Doc): Compared => {
-  const working = structuredClone(source);
-  const fieldChunks = new FieldChunkCollector(
-    schema,
-    working,
-    source,
-    projectTranslatableContent(source, schema).map((entry) => String(entry.idPath))
-  ).collect();
-
-  const textChunks: TextChunk[] = [];
-  const texts: string[] = [];
-  const addresses: string[] = [];
-  const answers: Record<number, SettledAnswer> = {};
-  let next = 0;
-
-  for (const fieldChunk of fieldChunks) {
-    const value = fieldChunk.dataRef[fieldChunk.key];
-    const expander = production.find((candidate) => candidate.canExpand(fieldChunk, value));
-    if (expander === undefined) continue;
-
-    const expansion = expander.expand(fieldChunk, value, next);
-    next = expansion.nextIndex;
-    for (const chunk of expansion.chunks) {
-      const sent = sentAt(expansion.textMap, chunk.index);
-      const asked = expansion.textMap[chunk.index];
-      textChunks.push(chunk);
-      texts.push(sent);
-      addresses.push(String(fieldChunk.idPath));
-      answers[chunk.index] =
-        asked?.kind === "segments"
-          ? settleSegments(asked.segments)
-          : { kind: "text", text: translated(sent) };
-    }
-  }
-
-  writeAnswers(textChunks, answers);
-  return { texts, addresses, document: working };
+/**
+ * Recorded from the pipeline this language replaces, while it still existed: regenerating it from
+ * the walk would leave nothing to compare against.
+ */
+const viaPipeline = (schema: FieldLike[], source: Doc, target?: Doc): Compared => {
+  const recorded = (baseline as Record<string, Compared | undefined>)[
+    JSON.stringify([schema, source, target])
+  ];
+  if (recorded === undefined) throw new Error("no recorded baseline for this document");
+  return recorded;
 };
 
-const viaLanguage = (schema: FieldLike[], source: Doc, blocks: readonly BlockLike[]): Compared => {
-  const { collected, working } = walkDocument({ schema, source, blocks, inlineBlocks: blocks });
+const viaLanguage = (
+  schema: FieldLike[],
+  source: Doc,
+  blocks: readonly BlockLike[],
+  target?: Doc
+): Compared => {
+  const { collected, working } = walkDocument({
+    schema,
+    source,
+    target,
+    blocks,
+    inlineBlocks: blocks,
+  });
   const texts = collected.targets.map(sentBy);
   applyTranslations(collected, collected.targets.map(answerFor));
   return { texts, addresses: addressesOf(collected.targets), document: working };
@@ -388,5 +330,45 @@ describe("a value with nothing to read", () => {
     const source: Doc = { body: tree(paragraph(text("One"), text("   "), text("Two"))) };
 
     expect(walkDocument({ schema: body, source }).reported).toEqual([]);
+  });
+});
+
+describe("a second run replaces whatever the target already held", () => {
+  const schema: FieldLike[] = [{ type: "richText", name: "body", localized: true }];
+
+  const source: Doc = {
+    body: tree(paragraph(text("Intro")), paragraph(text("Outro"))),
+  };
+
+  const target: Doc = {
+    body: tree(
+      paragraph(text("Einleitung")),
+      paragraph(text("Nur hier")),
+      paragraph(text("Schluss"))
+    ),
+  };
+
+  it("sends the source's text, not the target's", () => {
+    const old = viaPipeline(schema, source, structuredClone(target));
+    const next = viaLanguage(schema, source, [], structuredClone(target));
+
+    expect(next.texts).toEqual(old.texts);
+    expect(next.texts.join("")).toContain("Intro");
+    expect(next.texts.join("")).not.toContain("Einleitung");
+  });
+
+  it("leaves the same tree behind, the target's own paragraph gone from both", () => {
+    const old = viaPipeline(schema, source, structuredClone(target));
+    const next = viaLanguage(schema, source, [], structuredClone(target));
+
+    expect(next.document).toEqual(old.document);
+    expect(JSON.stringify(next.document)).not.toContain("Nur hier");
+  });
+
+  it("does not touch the source the text was read from", () => {
+    const before = structuredClone(source);
+    viaLanguage(schema, source, [], structuredClone(target));
+
+    expect(source).toEqual(before);
   });
 });
