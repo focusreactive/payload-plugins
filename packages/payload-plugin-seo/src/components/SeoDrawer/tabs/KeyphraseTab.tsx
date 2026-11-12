@@ -7,6 +7,7 @@ import type { CardState } from "./keyphrase/KeyphraseCard";
 import { KeyphraseDetail } from "./keyphrase/KeyphraseDetail";
 import type { DetailAnalysis } from "./keyphrase/KeyphraseDetail";
 import { KeyphraseRail } from "./keyphrase/KeyphraseRail";
+import { KeyphraseUsage } from "./keyphrase/KeyphraseUsageNotice";
 
 export interface KeyphraseTabProps {
   keyphrases: KeyphraseEntry[];
@@ -21,6 +22,9 @@ export interface KeyphraseTabProps {
   onRemove: (id: string) => void;
   onSetFocus: (id: string) => void;
   isDuplicate: (id: string, text: string) => boolean;
+  showUsage?: boolean;
+  saveFailed?: boolean;
+  readOnly?: boolean;
 }
 
 function resultForEntry(
@@ -46,6 +50,9 @@ export function KeyphraseTab({
   onRemove,
   onSetFocus,
   isDuplicate,
+  showUsage = false,
+  saveFailed,
+  readOnly,
 }: KeyphraseTabProps) {
   const selectedId = selectedIdProp ?? keyphrases[0]?.id ?? null;
   const selected = keyphrases.find((k) => k.id === selectedId) ?? keyphrases[0] ?? null;
@@ -125,6 +132,8 @@ export function KeyphraseTab({
         entries={keyphrases}
         onAdd={onAddRelated}
         onSelect={onSelect}
+        readOnly={readOnly}
+        saveFailed={saveFailed}
         selectedId={selectedId}
         stateFor={stateFor}
       />
@@ -140,6 +149,8 @@ export function KeyphraseTab({
           onRemoveSynonym={(index) => onRemoveSynonym(selected.id, index)}
           onSetFocus={() => onSetFocus(selected.id)}
           onTextChange={(text) => onTextChange(selected.id, text)}
+          readOnly={readOnly}
+          usageNotice={showUsage && <KeyphraseUsage key={selected.id} phrase={selected.text} />}
         />
       )}
     </div>

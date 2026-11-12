@@ -2,6 +2,7 @@
 
 import { Plus } from "lucide-react";
 import { MAX_KEYPHRASES } from "../../../../constants";
+import { Notice } from "../../../../ui/Notice";
 import type { KeyphraseEntry } from "../../keyphraseState";
 import { KeyphraseCard } from "./KeyphraseCard";
 import type { CardState } from "./KeyphraseCard";
@@ -13,6 +14,8 @@ interface KeyphraseRailProps {
   stateFor: (entry: KeyphraseEntry) => CardState;
   onSelect: (id: string) => void;
   onAdd: () => void;
+  saveFailed?: boolean;
+  readOnly?: boolean;
 }
 
 export function KeyphraseRail({
@@ -21,6 +24,8 @@ export function KeyphraseRail({
   stateFor,
   onSelect,
   onAdd,
+  saveFailed = false,
+  readOnly = false,
 }: KeyphraseRailProps) {
   const { t } = useSeoTranslation();
   const atMax = entries.length >= MAX_KEYPHRASES;
@@ -37,7 +42,7 @@ export function KeyphraseRail({
             type="button"
             aria-label={t("keyphrase.add")}
             title={atMax ? t("keyphrase.max", { max: MAX_KEYPHRASES }) : t("keyphrase.add")}
-            disabled={atMax}
+            disabled={readOnly || atMax}
             onClick={onAdd}
             className="w-[26px] h-[26px] rounded-rs border border-neutral-200 grid place-items-center text-neutral-600 bg-neutral-0 hover:border-neutral-800 hover:text-neutral-800 disabled:opacity-35 not-disabled:cursor-pointer disabled:cursor-not-allowed [&_svg]:size-[15px]"
           >
@@ -55,6 +60,12 @@ export function KeyphraseRail({
             onSelect={onSelect}
           />
         ))}
+
+        {saveFailed && (
+          <Notice className="mt-[6px]" role="alert" variant="bad">
+            {t("keyphrase.saveFailed")}
+          </Notice>
+        )}
       </div>
     </aside>
   );

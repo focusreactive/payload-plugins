@@ -10,6 +10,7 @@ export const en = {
   "tab.inclusive": "Inclusive",
   "tab.vitals": "Content vitals",
   "tab.serp": "Search result preview",
+  "tab.links": "Internal links",
 
   "status.good": "Good",
   "status.warn": "Needs work",
@@ -41,6 +42,12 @@ export const en = {
   "keyphrase.analyzing": "Analyzing keyphrase…",
   "keyphrase.hintDuplicate": "Resolve the duplicate to analyse this keyphrase.",
   "keyphrase.hintEmpty": "Start typing a keyphrase to see its analysis.",
+  "keyphrase.readOnly": "You can’t edit this document, so its keyphrases are read-only.",
+  "keyphrase.saveFailed":
+    "Couldn’t save keyphrases. Your changes are kept in this browser and will be saved again.",
+  "keyphrase.usedOn": "This keyphrase is already used on:",
+  "keyphrase.cannibalization":
+    "Pages that target one keyphrase can compete in search. Pick a different keyphrase or link the pages to each other.",
 
   "synonyms.title": "Synonyms",
   "synonyms.add": "Add synonym",
@@ -99,6 +106,21 @@ export const en = {
   "serp.mobile": "Mobile",
   "serp.desktop": "Desktop",
   "serp.device": "Preview device",
+
+  "links.title": "Internal link opportunities",
+  "links.find": "Find opportunities",
+  "links.description": "Pages whose keyphrases appear in this text but are not linked from it yet.",
+  "links.loading": "Looking for opportunities…",
+  "links.error": "Could not load suggestions. Try again.",
+  "links.empty": "No opportunities found. Add keyphrases to other pages to get suggestions.",
+  "links.matches_one": "{{count}} match",
+  "links.matches_other": "{{count}} matches",
+  "links.matchedPhrase": "Matches",
+  "links.quotedPhrase": "“{{phrase}}”",
+  "links.noPublicUrl": "No public URL configured, open the page in the admin.",
+  "links.copy": "Copy link",
+  "links.copied": "Copied",
+  "links.copyFailed": "Copy failed",
 
   "viz.hide": "Hide",
   "viz.show.link_one": "Show {{count}} link",

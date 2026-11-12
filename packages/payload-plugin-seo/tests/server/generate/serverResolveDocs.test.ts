@@ -17,6 +17,9 @@ describe("createServerResolveDocs", () => {
       undefined
     )([{ collection: "media", ids: [1] }]);
     expect(store.get("media", 1)).toMatchObject({ url: "/a.jpg" });
+    expect((payload as { find: ReturnType<typeof vi.fn> }).find).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: "media", overrideAccess: true })
+    );
   });
   it("returns undefined for missing ids and skips empty queries", async () => {
     const payload = fakePayload({});

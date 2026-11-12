@@ -1,3 +1,4 @@
+import type { PayloadRequest } from "payload";
 import type { ContentNode, HeadingLevel } from "../content/schema/nodes";
 import type { Translations } from "../translations/types";
 
@@ -28,6 +29,14 @@ export interface SeoFieldPaths {
   slug?: string;
 }
 
+export interface ResolveUrlArgs {
+  doc: Record<string, unknown>;
+  locale: string;
+  req: PayloadRequest;
+}
+
+export type ResolveUrl = (args: ResolveUrlArgs) => string | null | Promise<string | null>;
+
 export interface SeoCollectionConfig {
   slug: string;
   fields?: SeoFieldPaths;
@@ -44,6 +53,7 @@ export interface SeoCollectionConfig {
    * it only reads ids + injected resolveDocs (it is runtime-agnostic).
    */
   serverExtractContent?: ContentExtractor;
+  resolveUrl?: ResolveUrl;
 }
 
 export interface SeoSiteConfig {
@@ -78,6 +88,7 @@ export interface SeoPluginConfig {
   supportedLocales?: string[];
   translations?: Translations;
   generation?: SeoGenerationConfig;
+  keyphraseIndex?: boolean;
 }
 
 export interface DocQuery {

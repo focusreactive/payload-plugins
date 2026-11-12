@@ -1,14 +1,15 @@
 "use client";
 
-import { Button, useDocumentInfo, useLocale, useModal } from "@payloadcms/ui";
-import { Gauge } from "lucide-react";
+import { useDocumentInfo, useLocale, useModal } from "@payloadcms/ui";
 import { useCallback, useState } from "react";
 import { ScoreBadge } from "./ScoreBadge";
+import { SeoTriggerButton } from "./SeoTriggerButton";
 import { SeoDrawer } from "../SeoDrawer";
+import { useLinkSuggestions } from "../SeoDrawer/links/useLinkSuggestions";
 import { useAnalysis } from "../SeoDrawer/useAnalysis";
 import { useKeyphrases } from "../SeoDrawer/useKeyphrases";
+import type { RemoteKeyphrases } from "../SeoDrawer/useKeyphrases";
 import { useLiveDocument } from "../SeoDrawer/useLiveDocument";
-import { useSeoTranslation } from "../../translations/useSeoTranslation";
 
 export interface SeoButtonProps {
   collectionSlug: string;
@@ -16,6 +17,11 @@ export interface SeoButtonProps {
   extractContentPath: string;
   site: { name: string; baseUrl: string; faviconUrl: string };
   supportedLocales: string[];
+  keyphraseIndex?: boolean;
+}
+
+interface SeoButtonInnerProps extends SeoButtonProps {
+  remote?: RemoteKeyphrases;
 }
 
 const DRAWER_SLUG = "seo-analytics-drawer";
@@ -26,8 +32,8 @@ export function SeoButtonInner({
   site,
   supportedLocales,
   extractContentPath,
-}: SeoButtonProps) {
-  const { t } = useSeoTranslation();
+  remote,
+}: SeoButtonInnerProps) {
   const { openModal } = useModal();
   const { id } = useDocumentInfo();
   const locale = useLocale();
@@ -40,11 +46,14 @@ export function SeoButtonInner({
     addSynonym,
     isDuplicate,
     keyphrases,
+    readOnly,
     remove: removeKeyphrase,
     removeSynonym,
+    saveFailed,
     setFocus,
+    syncOnOpen,
     updateText,
-  } = useKeyphrases({ collectionSlug, docId, localeCode });
+  } = useKeyphrases({ collectionSlug, docId, localeCode, remote });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { signature, getInput } = useLiveDocument({
     collectionSlug,
@@ -57,13 +66,15 @@ export function SeoButtonInner({
     extractContentPath,
   });
   const { result, analyzing, analyzeNow } = useAnalysis({ getInput, signature, supportedLocales });
+  const links = useLinkSuggestions({ collectionSlug, docId, localeCode, getInput });
 
   const overall = result?.overall ?? null;
 
   const open = useCallback(() => {
+    syncOnOpen();
     analyzeNow();
     openModal(DRAWER_SLUG);
-  }, [analyzeNow, openModal]);
+  }, [analyzeNow, openModal, syncOnOpen]);
 
   const handleAddRelated = useCallback(() => {
     const newId = addRelated();
@@ -71,27 +82,15 @@ export function SeoButtonInner({
   }, [addRelated]);
 
   const handleRemove = useCallback(
-    (id: string) => {
-      removeKeyphrase(id);
-      setSelectedId((current) => (current === id ? null : current));
+    (keyphraseId: string) => {
+      removeKeyphrase(keyphraseId);
+      setSelectedId((current) => (current === keyphraseId ? null : current));
     },
     [removeKeyphrase]
   );
 
   return (
-    <span className="relative inline-flex">
-      <Button
-        aria-label={t("title")}
-        buttonStyle="none"
-        className="frseo-doc-btn m-0 w-[calc(var(--base)*1.6)] h-[calc(var(--base)*1.6)] inline-flex items-center justify-center border border-[var(--theme-elevation-100)] rounded-rs bg-transparent text-neutral-800 transition-[border-color,background-color] duration-100 hover:border-neutral-300 hover:bg-neutral-100"
-        extraButtonProps={{ title: undefined }}
-        icon={<Gauge />}
-        iconStyle="without-border"
-        margin={false}
-        onClick={open}
-        size="small"
-        tooltip={t("title")}
-      />
+    <SeoTriggerButton onClick={open}>
       {overall && <ScoreBadge score={overall.seoScore} status={overall.status} />}
 
       <SeoDrawer
@@ -108,8 +107,12 @@ export function SeoButtonInner({
         onRemove={handleRemove}
         onSetFocus={setFocus}
         isDuplicate={isDuplicate}
+        keyphrasesReadOnly={readOnly}
+        keyphrasesSaveFailed={saveFailed}
+        showKeyphraseUsage={Boolean(remote)}
+        links={remote ? links : undefined}
         site={site}
       />
-    </span>
+    </SeoTriggerButton>
   );
 }

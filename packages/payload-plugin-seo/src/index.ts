@@ -8,5 +8,7 @@ export type {
   SeoFieldPaths,
   SeoSiteConfig,
   SeoGenerationConfig,
+  ResolveUrl,
+  ResolveUrlArgs,
 } from "./types/config";
 export type { MessageKey, Translations } from "./translations/types";

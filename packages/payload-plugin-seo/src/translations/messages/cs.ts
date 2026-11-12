@@ -12,6 +12,7 @@ export const cs: LanguageMessages = {
   "tab.inclusive": "Inkluzivní jazyk",
   "tab.vitals": "Obsah v číslech",
   "tab.serp": "Náhled ve vyhledávání",
+  "tab.links": "Interní odkazy",
 
   "status.good": "Dobré",
   "status.warn": "Ke zlepšení",
@@ -43,6 +44,13 @@ export const cs: LanguageMessages = {
   "keyphrase.analyzing": "Analyzuji klíčovou frázi…",
   "keyphrase.hintDuplicate": "Odstraňte duplicitu a fráze se začne analyzovat.",
   "keyphrase.hintEmpty": "Začněte psát klíčovou frázi a uvidíte její analýzu.",
+  "keyphrase.readOnly":
+    "Tento dokument nemůžete upravovat, proto jsou jeho klíčové fráze jen pro čtení.",
+  "keyphrase.saveFailed":
+    "Klíčové fráze se nepodařilo uložit. Změny zůstávají v tomto prohlížeči a uloží se znovu.",
+  "keyphrase.usedOn": "Tato klíčová fráze je už použita na:",
+  "keyphrase.cannibalization":
+    "Stránky cílící na stejnou klíčovou frázi si mohou ve vyhledávání konkurovat. Zvolte jinou frázi nebo stránky propojte odkazy.",
 
   "synonyms.title": "Synonyma",
   "synonyms.add": "Přidat synonymum",
@@ -102,6 +110,24 @@ export const cs: LanguageMessages = {
   "serp.mobile": "Mobil",
   "serp.desktop": "Počítač",
   "serp.device": "Zařízení náhledu",
+
+  "links.title": "Příležitosti pro interní odkazy",
+  "links.find": "Najít příležitosti",
+  "links.description":
+    "Stránky, jejichž klíčové fráze se v tomto textu objevují, ale zatím na ně z něj nevede odkaz.",
+  "links.loading": "Hledám příležitosti…",
+  "links.error": "Návrhy se nepodařilo načíst. Zkuste to znovu.",
+  "links.empty":
+    "Žádné příležitosti jsme nenašli. Přidejte klíčové fráze dalším stránkám a návrhy se objeví.",
+  "links.matches_one": "{{count}} shoda",
+  "links.matches_few": "{{count}} shody",
+  "links.matches_other": "{{count}} shod",
+  "links.matchedPhrase": "Odpovídá",
+  "links.quotedPhrase": "„{{phrase}}“",
+  "links.noPublicUrl": "Veřejná URL není nastavena, otevřete stránku v administraci.",
+  "links.copy": "Kopírovat odkaz",
+  "links.copied": "Zkopírováno",
+  "links.copyFailed": "Kopírování selhalo",
 
   "viz.hide": "Skrýt",
   "viz.show.link_one": "Zobrazit {{count}} odkaz",

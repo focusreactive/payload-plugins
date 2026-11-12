@@ -1,13 +1,10 @@
 import type { DocQuery, DocStore } from "../../types/config";
+import { docTargetKey } from "../../keyphrases/docTarget";
 
 type Doc = Record<string, unknown>;
 
 interface FindResponse {
   docs?: Array<Doc & { id?: unknown }>;
-}
-
-function key(collection: string, id: string | number): string {
-  return `${collection}:${id}`;
 }
 
 async function fetchQuery(
@@ -42,7 +39,7 @@ async function fetchQuery(
         (d): d is Doc & { id: string | number } =>
           typeof d.id === "string" || typeof d.id === "number"
       )
-      .map((d) => [key(query.collection, d.id), d] as [string, Doc]);
+      .map((d) => [docTargetKey(query.collection, d.id), d] as [string, Doc]);
   } catch {
     return [];
   }
@@ -62,7 +59,7 @@ export function createResolveDocs(
     }
 
     return {
-      get: (collection, id) => store.get(key(collection, id)),
+      get: (collection, id) => store.get(docTargetKey(collection, id)),
     };
   };
 }
