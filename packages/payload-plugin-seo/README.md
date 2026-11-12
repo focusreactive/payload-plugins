@@ -142,7 +142,7 @@ The analysis runs on a ~1 second debounce as form values change. **No document d
 pnpm add @focus-reactive/payload-plugin-seo
 ```
 
-**Peer dependencies:** `payload ^3.30.0`, `@payloadcms/next ^3.30.0`, `@payloadcms/ui ^3.30.0`, `@payloadcms/richtext-lexical ^3.30.0`, `lucide-react ^0.469.0`. `next ^14 || ^15` and `react`/`react-dom ^18 || ^19` are optional peers.
+**Peer dependencies:** `payload ^3.0.0`, `@payloadcms/next ^3.0.0`, `@payloadcms/ui ^3.0.0`, `@payloadcms/richtext-lexical ^3.0.0`, `lucide-react ^0.469.0`. `next ^14 || ^15` and `react`/`react-dom ^18 || ^19` are optional peers.
 
 The Yoast engine (`yoastseo`, `@yoast/search-metadata-previews`) ships as a direct dependency — you don't install it yourself, but you do need to transpile the two UI packages (see Quick Start step 3).
 

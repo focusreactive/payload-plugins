@@ -1,13 +1,15 @@
-import { formatAdminURL } from "payload/shared";
-
 export interface UsageDoc {
   collection: string;
   id: string;
   title: string;
 }
 
+function adminURL(adminRoute: string, path: string): string {
+  return adminRoute === "/" ? path : `${adminRoute}${path}`;
+}
+
 export function adminDocHref(adminRoute: string, doc: Pick<UsageDoc, "collection" | "id">): string {
-  return formatAdminURL({ adminRoute, path: `/collections/${doc.collection}/${doc.id}` });
+  return adminURL(adminRoute, `/collections/${doc.collection}/${doc.id}`);
 }
 
 const DOC_IDENTITY_KEYS = ["collection", "id", "title"] as const;

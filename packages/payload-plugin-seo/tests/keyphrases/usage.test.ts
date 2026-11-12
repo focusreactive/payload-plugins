@@ -11,6 +11,10 @@ describe("adminDocHref", () => {
   it("supports a custom admin route", () => {
     expect(adminDocHref("/cms", { collection: "pages", id: "1" })).toBe("/cms/collections/pages/1");
   });
+
+  it("does not double the slash when the admin is served from the root", () => {
+    expect(adminDocHref("/", { collection: "pages", id: "1" })).toBe("/collections/pages/1");
+  });
 });
 
 describe("hasDocIdentity", () => {
