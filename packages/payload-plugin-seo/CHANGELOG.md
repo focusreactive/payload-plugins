@@ -1,3 +1,24 @@
+# @focus-reactive/payload-plugin-seo [1.12.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.11.0...@focus-reactive/payload-plugin-seo@1.12.0) (2026-11-12)
+
+
+### Features
+
+* **seo:** opt-in keyphrase index with usage notice and internal link suggestions ([#230](https://github.com/focusreactive/payload-plugins/issues/230)) ([dd1a3a9](https://github.com/focusreactive/payload-plugins/commit/dd1a3a9d88e9b23496b8e149889858f53710fc53))
+
+# @focus-reactive/payload-plugin-seo [1.11.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.10.2...@focus-reactive/payload-plugin-seo@1.11.0) (2026-11-12)
+
+
+### Bug Fixes
+
+* **seo:** analyse non-English locales with their own Yoast researcher ([3394753](https://github.com/focusreactive/payload-plugins/commit/33947536b4c61f50d1a81d99d85ee288f389c590))
+* **seo:** keep the inclusive subtitle grammatical for any count ([17fe209](https://github.com/focusreactive/payload-plugins/commit/17fe2097ac4b02107e7d40fc2c85bcba9349293e))
+
+
+### Features
+
+* **seo:** translate the admin UI and ship Czech ([ffe098b](https://github.com/focusreactive/payload-plugins/commit/ffe098b215b92b7e67be38fac93bf31def080183))
+* **seo:** type the translations option and let bundled languages fall back to English ([85534e1](https://github.com/focusreactive/payload-plugins/commit/85534e104a28e6ab6aae5b532e3abe88d33d59dc))
+
 ## @focus-reactive/payload-plugin-seo [1.10.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.10.1...@focus-reactive/payload-plugin-seo@1.10.2) (2026-10-23)
 
 

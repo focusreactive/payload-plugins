@@ -25,6 +25,7 @@ export function overrideAdmin(incomingConfig: Config, config: SeoPluginConfig): 
           faviconUrl: site.faviconUrl ?? "",
         },
         supportedLocales: config.supportedLocales ?? ["en"],
+        keyphraseIndex: Boolean(config.keyphraseIndex),
       },
     };
 

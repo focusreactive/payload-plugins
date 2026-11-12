@@ -21,6 +21,7 @@ import { serialize } from "../../content/schema/serialize";
 import type { ContentHelpers } from "../../types/config";
 import type { Measurement } from "../../measure/measure";
 import type { SeoFieldKind } from "../../server/generate/prompts";
+import { useSeoTranslation } from "../../translations/useSeoTranslation";
 
 const helpers: ContentHelpers = {
   heading,
@@ -46,6 +47,7 @@ export function useGenerate({ kind, measurement, setValue }: UseGenerateProps) {
   const { config } = useConfig();
   const { collectionSlug } = useDocumentInfo();
   const locale = useLocale();
+  const { t } = useSeoTranslation();
 
   const [status, setStatus] = useState<GenerateStatus>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +74,7 @@ export function useGenerate({ kind, measurement, setValue }: UseGenerateProps) {
     const extractor = resolveContentExtractor(extractPath);
     if (!extractor) {
       setStatus("error");
-      setError("No content extractor is registered for this collection.");
+      setError(t("field.noExtractor"));
 
       return;
     }
@@ -110,9 +112,9 @@ export function useGenerate({ kind, measurement, setValue }: UseGenerateProps) {
       setStatus("idle");
     } catch (err) {
       setStatus("error");
-      setError((err as Error).message || "Generation failed");
+      setError((err as Error).message || t("field.generationFailed"));
     }
-  }, [kind, measurement.min, measurement.max, measurement.unit, setValue]);
+  }, [kind, measurement.min, measurement.max, measurement.unit, setValue, t]);
 
   return {
     generate,

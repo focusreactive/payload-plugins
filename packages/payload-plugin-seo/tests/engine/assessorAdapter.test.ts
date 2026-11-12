@@ -18,7 +18,10 @@ describe("runAssessor", () => {
         id: "introductionKeyword",
         score: 3,
         status: "bad",
-        recommendation: 'Add "running shoes" to your opening paragraph.',
+        recommendation: {
+          key: "reco.introductionKeyword.bad",
+          vars: { keyphrase: "running shoes" },
+        },
         data: undefined,
       },
       {

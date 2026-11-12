@@ -9,6 +9,7 @@ import { SegmentedControl } from "../../../ui/SegmentedControl";
 import { SerpPreview } from "../components/SerpPreview";
 import type { SerpMode } from "../components/SerpPreview";
 import { TabWrapper } from "../components/TabWrapper";
+import { useSeoTranslation } from "../../../translations/useSeoTranslation";
 
 export function SerpTab({
   data,
@@ -21,30 +22,31 @@ export function SerpTab({
   synonyms?: string[];
   faviconUrl: string;
 }) {
+  const { t } = useSeoTranslation();
   const [mode, setMode] = useState<SerpMode>("mobile");
 
   return (
     <TabWrapper>
       <section className="flex flex-col gap-[13px]">
         <SectionCard
-          title="Search result preview"
+          title={t("serp.title")}
           widget={
             <SegmentedControl
               options={[
                 {
                   value: "mobile",
-                  label: "Mobile",
+                  label: t("serp.mobile"),
                   icon: <Smartphone aria-hidden="true" className="w-[13px] h-[13px]" />,
                 },
                 {
                   value: "desktop",
-                  label: "Desktop",
+                  label: t("serp.desktop"),
                   icon: <Monitor aria-hidden="true" className="w-[13px] h-[13px]" />,
                 },
               ]}
               value={mode}
               onChange={setMode}
-              label="Preview device"
+              label={t("serp.device")}
             />
           }
         >

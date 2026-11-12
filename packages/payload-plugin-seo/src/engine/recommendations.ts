@@ -1,3 +1,4 @@
+import type { Message, TranslationKey } from "../translations/types";
 import type { Status } from "./types/analysis";
 
 export interface RecoContext {
@@ -5,60 +6,66 @@ export interface RecoContext {
   [k: string]: unknown;
 }
 
-type Builder = (ctx: RecoContext) => string;
+type Builder = (ctx: RecoContext) => Message;
+
+const key =
+  (k: TranslationKey): Builder =>
+  () => ({ key: k });
 
 const MAP: Record<string, Partial<Record<Status, Builder>>> = {
   introductionKeyword: {
-    bad: (c) => `Add "${c.keyphrase ?? "your keyphrase"}" to your opening paragraph.`,
+    bad: (c) =>
+      c.keyphrase
+        ? { key: "reco.introductionKeyword.bad", vars: { keyphrase: c.keyphrase } }
+        : { key: "reco.introductionKeyword.badNoKeyphrase" },
   },
   keyphraseDensity: {
-    bad: () => `Use the keyphrase a few more times to land in the ideal band.`,
-    warn: () => `Use the keyphrase ~2 more times to land in the ideal band.`,
+    bad: key("reco.keyphraseDensity.bad"),
+    warn: key("reco.keyphraseDensity.warn"),
   },
   metaDescriptionKeyword: {
-    bad: () => `Add the keyphrase to the meta description to improve click-through.`,
+    bad: key("reco.metaDescriptionKeyword.bad"),
   },
   imageKeyphrase: {
-    warn: () => `Add the keyphrase to the alt text of the remaining images.`,
-    bad: () => `Add the keyphrase to your image alt texts.`,
+    warn: key("reco.imageKeyphrase.warn"),
+    bad: key("reco.imageKeyphrase.bad"),
   },
   keyphraseDistribution: {
-    warn: () => `Occurrences are clustered — spread the keyphrase through the body.`,
-    bad: () => `Distribute the keyphrase more evenly through the text.`,
+    warn: key("reco.keyphraseDistribution.warn"),
+    bad: key("reco.keyphraseDistribution.bad"),
   },
   metaDescriptionLength: {
-    warn: () => `You're near the limit — trim a few characters to avoid truncation.`,
-    bad: () => `Adjust the meta description toward 120–158 characters.`,
+    warn: key("reco.metaDescriptionLength.warn"),
+    bad: key("reco.metaDescriptionLength.bad"),
   },
   internalLinks: {
-    warn: () => `Add a few internal links to related pages.`,
-    bad: () => `Add internal links to related pages.`,
+    warn: key("reco.internalLinks.warn"),
+    bad: key("reco.internalLinks.bad"),
   },
   textLength: {
-    bad: () => `Add more content — aim for at least 300 words.`,
-    warn: () => `Add more content to comfortably clear the minimum.`,
+    bad: key("reco.textLength.bad"),
+    warn: key("reco.textLength.warn"),
   },
   fleschReadingEase: {
-    warn: () => `Shorten sentences and prefer simpler words to make the text easier to read.`,
-    bad: () => `The text is hard to read — use shorter sentences and simpler words.`,
+    warn: key("reco.fleschReadingEase.warn"),
+    bad: key("reco.fleschReadingEase.bad"),
   },
 };
 
-const GENERIC: Record<Status, string> = {
-  good: "",
-  warn: "This check needs some attention.",
-  bad: "This check needs improvement.",
+const GENERIC: Record<Exclude<Status, "good">, TranslationKey> = {
+  warn: "reco.generic.warn",
+  bad: "reco.generic.bad",
 };
 
 export function getRecommendation(
   id: string,
   status: Status,
   ctx: RecoContext
-): string | undefined {
+): Message | undefined {
   if (status === "good") return undefined;
 
   const builder = MAP[id]?.[status];
   if (builder) return builder(ctx);
 
-  return GENERIC[status];
+  return { key: GENERIC[status] };
 }

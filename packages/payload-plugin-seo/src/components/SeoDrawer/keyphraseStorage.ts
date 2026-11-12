@@ -1,15 +1,17 @@
-import { createEntry, pruneEmpties } from './keyphraseState';
-import type { KeyphraseEntry } from './keyphraseState';
+import { createEntry, pruneEmpties } from "./keyphraseState";
+import type { KeyphraseEntry } from "./keyphraseState";
+import { sanitizeStoredKeyphrases } from "../../keyphrases/stored";
+import type { StoredKeyphrase } from "../../keyphrases/stored";
 
 const PREFIX = "seo-kw";
-
-interface StoredEntry {
-  text: string;
-  synonyms: string[];
-}
+const UNSAVED_PREFIX = "seo-kw-unsaved";
 
 export function storageKey(collectionSlug: string, docId: string, locale: string): string {
   return `${PREFIX}:${collectionSlug}:${docId}:${locale}`;
+}
+
+export function unsavedStorageKey(collectionSlug: string, docId: string, locale: string): string {
+  return `${UNSAVED_PREFIX}:${collectionSlug}:${docId}:${locale}`;
 }
 
 function store(): Storage | null {
@@ -21,31 +23,38 @@ function store(): Storage | null {
   }
 }
 
-export function loadKeyphrases(key: string): KeyphraseEntry[] {
-  const fallback = () => [createEntry()];
-  const s = store();
-  if (!s) return fallback();
+function toEntries(stored: StoredKeyphrase[]): KeyphraseEntry[] {
+  return stored.map((k) => createEntry(k.text, k.synonyms));
+}
 
+export function toStored(list: KeyphraseEntry[]): StoredKeyphrase[] {
+  return pruneEmpties(list).map(({ text, synonyms }) => ({ text, synonyms }));
+}
+
+function readStored(key: string): StoredKeyphrase[] | null {
   try {
-    const raw = s.getItem(key);
-    if (!raw) return fallback();
+    const raw = store()?.getItem(key);
 
-    const parsed = JSON.parse(raw) as StoredEntry[];
-    if (!Array.isArray(parsed) || parsed.length === 0) return fallback();
-
-    const list = parsed
-      .filter((e) => e && typeof e.text === "string")
-      .map((e) =>
-        createEntry(
-          e.text,
-          Array.isArray(e.synonyms) ? e.synonyms.filter((x) => typeof x === "string") : []
-        )
-      );
-
-    return list.length ? list : fallback();
+    return raw ? sanitizeStoredKeyphrases(JSON.parse(raw)) : null;
   } catch {
-    return fallback();
+    return null;
   }
+}
+
+export function entriesOrBlank(stored: StoredKeyphrase[]): KeyphraseEntry[] {
+  const entries = toEntries(stored);
+
+  return entries.length ? entries : [createEntry()];
+}
+
+export function loadKeyphrases(key: string): KeyphraseEntry[] {
+  return entriesOrBlank(readStored(key) ?? []);
+}
+
+export function loadUnsavedKeyphrases(key: string): KeyphraseEntry[] | null {
+  const stored = readStored(key);
+
+  return stored?.length ? toEntries(stored) : null;
 }
 
 export function saveKeyphrases(key: string, list: KeyphraseEntry[]): void {
@@ -53,10 +62,7 @@ export function saveKeyphrases(key: string, list: KeyphraseEntry[]): void {
   if (!s) return;
 
   try {
-    const persistable = pruneEmpties(list).map<StoredEntry>((k) => ({
-      text: k.text,
-      synonyms: k.synonyms,
-    }));
+    const persistable = toStored(list);
 
     if (persistable.length === 0) {
       s.removeItem(key);
@@ -65,6 +71,14 @@ export function saveKeyphrases(key: string, list: KeyphraseEntry[]): void {
 
     s.setItem(key, JSON.stringify(persistable));
   } catch {
-    // quota / serialization — fail soft
+    return;
+  }
+}
+
+export function clearKeyphrases(key: string): void {
+  try {
+    store()?.removeItem(key);
+  } catch {
+    return;
   }
 }

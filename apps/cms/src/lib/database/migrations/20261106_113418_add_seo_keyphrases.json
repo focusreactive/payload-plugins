@@ -11216,12 +11216,6 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": false
-        },
-        "autosave": {
-          "name": "autosave",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -11440,21 +11434,6 @@
           "columns": [
             {
               "expression": "latest",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "_page_v_autosave_idx": {
-          "name": "_page_v_autosave_idx",
-          "columns": [
-            {
-              "expression": "autosave",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -13385,12 +13364,6 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": false
-        },
-        "autosave": {
-          "name": "autosave",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -13564,21 +13537,6 @@
           "columns": [
             {
               "expression": "latest",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "_posts_v_autosave_idx": {
-          "name": "_posts_v_autosave_idx",
-          "columns": [
-            {
-              "expression": "autosave",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -26375,12 +26333,6 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": false
-        },
-        "autosave": {
-          "name": "autosave",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -26509,21 +26461,6 @@
           "columns": [
             {
               "expression": "latest",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "_gsec_v_autosave_idx": {
-          "name": "_gsec_v_autosave_idx",
-          "columns": [
-            {
-              "expression": "autosave",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -27279,6 +27216,215 @@
           "tableTo": "posts",
           "columnsFrom": [
             "posts_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.seo_keyphrases": {
+      "name": "seo_keyphrases",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "doc_collection": {
+          "name": "doc_collection",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "doc_id": {
+          "name": "doc_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "locale": {
+          "name": "locale",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "keyphrases": {
+          "name": "keyphrases",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "seo_keyphrases_updated_at_idx": {
+          "name": "seo_keyphrases_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "seo_keyphrases_created_at_idx": {
+          "name": "seo_keyphrases_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "docCollection_docId_locale_idx": {
+          "name": "docCollection_docId_locale_idx",
+          "columns": [
+            {
+              "expression": "doc_collection",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "doc_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "locale",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.seo_keyphrases_texts": {
+      "name": "seo_keyphrases_texts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "path": {
+          "name": "path",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "text": {
+          "name": "text",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "seo_keyphrases_texts_order_parent": {
+          "name": "seo_keyphrases_texts_order_parent",
+          "columns": [
+            {
+              "expression": "order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "seo_keyphrases_texts_text_idx": {
+          "name": "seo_keyphrases_texts_text_idx",
+          "columns": [
+            {
+              "expression": "text",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "seo_keyphrases_texts_parent_fk": {
+          "name": "seo_keyphrases_texts_parent_fk",
+          "tableFrom": "seo_keyphrases_texts",
+          "tableTo": "seo_keyphrases",
+          "columnsFrom": [
+            "parent_id"
           ],
           "columnsTo": [
             "id"
@@ -32855,7 +33001,7 @@
           "name": "author_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "is_resolved": {
           "name": "is_resolved",
@@ -34459,6 +34605,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "seo_keyphrases_id": {
+          "name": "seo_keyphrases_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "presets_id": {
           "name": "presets_id",
           "type": "integer",
@@ -34712,6 +34864,21 @@
           "columns": [
             {
               "expression": "redirects_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_seo_keyphrases_id_idx": {
+          "name": "payload_locked_documents_rels_seo_keyphrases_id_idx",
+          "columns": [
+            {
+              "expression": "seo_keyphrases_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -34976,6 +35143,19 @@
           "tableTo": "redirects",
           "columnsFrom": [
             "redirects_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_seo_keyphrases_fk": {
+          "name": "payload_locked_documents_rels_seo_keyphrases_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "seo_keyphrases",
+          "columnsFrom": [
+            "seo_keyphrases_id"
           ],
           "columnsTo": [
             "id"
@@ -40393,6 +40573,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "f11fd29f-e103-47be-a575-ec39bb426e31",
+  "id": "bb9c1a07-861f-4c1f-8ad2-0ab54d1562e4",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }
