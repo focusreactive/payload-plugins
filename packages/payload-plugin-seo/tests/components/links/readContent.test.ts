@@ -10,11 +10,11 @@ import {
 describe("readContent", () => {
   it("returns visible text and every href", () => {
     const html =
-      '<h2>Intro</h2><p>Read <a href="/blog/a">post A</a> and <a href="https://x.com/b/">B</a>.</p><p>Done</p>';
+      '<h2>Intro</h2><p>Read <a href="/blog/a">post A</a> and <a href="https://example.com/b/">B</a>.</p><p>Done</p>';
 
     expect(readContent(html)).toEqual({
       text: "Intro Read post A and B. Done",
-      hrefs: ["/blog/a", "https://x.com/b/"],
+      hrefs: ["/blog/a", "https://example.com/b/"],
     });
   });
 

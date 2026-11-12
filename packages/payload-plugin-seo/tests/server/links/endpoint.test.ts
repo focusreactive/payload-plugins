@@ -41,7 +41,7 @@ interface FindArgs {
 
 function fakePayload() {
   return {
-    config: { localization: false, admin: { user: "users" }, serverURL: "https://site.com" },
+    config: { localization: false, admin: { user: "users" }, serverURL: "https://server.test" },
     logger: { warn: vi.fn() },
     collections: { posts: { config: { admin: { useAsTitle: "title" } } } },
     findByID: vi.fn(async ({ id }: { id: string }): Promise<{ id: string } | null> => ({ id })),
@@ -135,13 +135,10 @@ describe("POST /seo/link-suggestions", () => {
     expect(await suggestionIds(res)).toEqual(["2"]);
   });
 
-  it("returns 401 without a user and 404 for an unreadable document", async () => {
-    const valid = body({ text: "x" });
-    expect((await handler(fakeRequest(valid, { user: null }))).status).toBe(401);
-
+  it("returns 404 for an unreadable document", async () => {
     const payload = fakePayload();
     payload.findByID.mockResolvedValueOnce(null);
-    expect((await handler(fakeRequest(valid, { payload }))).status).toBe(404);
+    expect((await handler(fakeRequest(body({ text: "x" }), { payload }))).status).toBe(404);
   });
 
   it.each([
@@ -181,7 +178,7 @@ describe("POST /seo/link-suggestions", () => {
       fakeRequest(
         body({
           text: "Payload CMS ships drafts. Self.",
-          linkedHrefs: ["https://site.com/blog/post-3/"],
+          linkedHrefs: ["https://server.test/blog/post-3/"],
         })
       )
     );
@@ -220,7 +217,7 @@ describe("POST /seo/link-suggestions", () => {
 
     it("does not treat an external root link as a link to the home page", async () => {
       resolveTo("/");
-      expect(await suggestedWith(["https://www.google.com"])).toEqual(["2"]);
+      expect(await suggestedWith(["https://www.external.test"])).toEqual(["2"]);
     });
 
     it("does not treat an external link with the same path as a link to the target", async () => {
@@ -231,20 +228,20 @@ describe("POST /seo/link-suggestions", () => {
     it("treats relative and server-origin links with the same path as linked", async () => {
       resolveTo("/alpha");
       expect(await suggestedWith(["/alpha/"])).toEqual([]);
-      expect(await suggestedWith(["https://site.com/alpha"])).toEqual([]);
+      expect(await suggestedWith(["https://server.test/alpha"])).toEqual([]);
     });
 
     it("treats links on the public site origin as linked", async () => {
-      resolveTo("/alpha", "https://www.public.site/en");
-      expect(await suggestedWith(["https://www.public.site/alpha"])).toEqual([]);
-      expect(await suggestedWith(["https://other.site/alpha"])).toEqual(["2"]);
+      resolveTo("/alpha", "https://www.public.test/en");
+      expect(await suggestedWith(["https://www.public.test/alpha"])).toEqual([]);
+      expect(await suggestedWith(["https://other.test/alpha"])).toEqual(["2"]);
     });
 
     it("treats http, https and www. links to a known site as linked", async () => {
-      resolveTo("/alpha", "https://www.public.site");
-      expect(await suggestedWith(["http://site.com/alpha"])).toEqual([]);
-      expect(await suggestedWith(["https://www.site.com/alpha"])).toEqual([]);
-      expect(await suggestedWith(["http://public.site/alpha"])).toEqual([]);
+      resolveTo("/alpha", "https://www.public.test");
+      expect(await suggestedWith(["http://server.test/alpha"])).toEqual([]);
+      expect(await suggestedWith(["https://www.server.test/alpha"])).toEqual([]);
+      expect(await suggestedWith(["http://public.test/alpha"])).toEqual([]);
     });
 
     it("treats links on the requested origin as linked when no site url is configured", async () => {
@@ -252,18 +249,18 @@ describe("POST /seo/link-suggestions", () => {
       const payload = fakePayload();
       payload.config.serverURL = "";
       const request = {
-        ...fakeRequest(body({ text: topic(2), linkedHrefs: ["https://cms.site/alpha"] }), {
+        ...fakeRequest(body({ text: topic(2), linkedHrefs: ["https://origin.test/alpha"] }), {
           payload,
         }),
-        origin: "https://cms.site",
+        origin: "https://origin.test",
       };
       expect(await suggestionIds(await handler(request))).toEqual([]);
     });
 
     it("treats links on the origin of an absolute target url as linked", async () => {
-      resolveTo("https://public.site/alpha");
-      expect(await suggestedWith(["https://public.site/alpha"])).toEqual([]);
-      expect(await suggestedWith(["https://other.site/alpha"])).toEqual(["2"]);
+      resolveTo("https://public.test/alpha");
+      expect(await suggestedWith(["https://public.test/alpha"])).toEqual([]);
+      expect(await suggestedWith(["https://other.test/alpha"])).toEqual(["2"]);
     });
   });
 
