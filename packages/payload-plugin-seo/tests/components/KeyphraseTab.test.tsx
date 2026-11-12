@@ -5,6 +5,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { KeyphraseTab } from "../../src/components/SeoDrawer/tabs/KeyphraseTab";
 import type { AnalysisResult } from "../../src/engine/types/analysis";
 
+vi.mock("../../src/components/SeoDrawer/tabs/keyphrase/KeyphraseUsageNotice", () => ({
+  KeyphraseUsage: ({ phrase }: { phrase: string }) => <div data-testid="usage">{phrase}</div>,
+}));
+
 afterEach(() => {
   cleanup();
 });
@@ -214,10 +218,23 @@ describe("KeyphraseTab", () => {
         result={result}
         analyzing={false}
         {...handlers}
-        renderUsage={(entry) => <div data-testid="usage">{entry.text}</div>}
+        showUsage
       />
     );
     expect(screen.getByTestId("usage")).toHaveTextContent("headless cms");
+  });
+
+  it("renders no usage notice unless asked to", () => {
+    render(
+      <KeyphraseTab
+        keyphrases={entries}
+        selectedId="b"
+        result={result}
+        analyzing={false}
+        {...handlers}
+      />
+    );
+    expect(screen.queryByTestId("usage")).toBeNull();
   });
 
   it("tells the user when keyphrases could not be saved", () => {

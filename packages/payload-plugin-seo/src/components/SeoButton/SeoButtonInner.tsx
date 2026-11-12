@@ -5,12 +5,7 @@ import { useCallback, useState } from "react";
 import { ScoreBadge } from "./ScoreBadge";
 import { SeoTriggerButton } from "./SeoTriggerButton";
 import { SeoDrawer } from "../SeoDrawer";
-import type { KeyphraseEntry } from "../SeoDrawer/keyphraseState";
-import {
-  LinkSuggestionsProvider,
-  renderLinksPanel,
-} from "../SeoDrawer/links/LinkSuggestionsProvider";
-import { KeyphraseUsage } from "../SeoDrawer/tabs/keyphrase/KeyphraseUsageNotice";
+import { useLinkSuggestions } from "../SeoDrawer/links/useLinkSuggestions";
 import { useAnalysis } from "../SeoDrawer/useAnalysis";
 import { useKeyphrases } from "../SeoDrawer/useKeyphrases";
 import type { RemoteKeyphrases } from "../SeoDrawer/useKeyphrases";
@@ -71,6 +66,7 @@ export function SeoButtonInner({
     extractContentPath,
   });
   const { result, analyzing, analyzeNow } = useAnalysis({ getInput, signature, supportedLocales });
+  const links = useLinkSuggestions({ collectionSlug, docId, localeCode, getInput });
 
   const overall = result?.overall ?? null;
 
@@ -93,57 +89,30 @@ export function SeoButtonInner({
     [removeKeyphrase]
   );
 
-  const renderKeyphraseUsage = useCallback(
-    (entry: KeyphraseEntry) => (
-      <KeyphraseUsage
-        collectionSlug={collectionSlug}
-        docId={docId}
-        key={entry.id}
-        phrase={entry.text}
-      />
-    ),
-    [collectionSlug, docId]
-  );
-
-  const drawer = (
-    <SeoDrawer
-      drawerSlug={DRAWER_SLUG}
-      keyphrases={keyphrases}
-      selectedId={selectedId}
-      onSelect={setSelectedId}
-      result={result}
-      analyzing={analyzing}
-      onAddRelated={handleAddRelated}
-      onTextChange={updateText}
-      onAddSynonym={addSynonym}
-      onRemoveSynonym={removeSynonym}
-      onRemove={handleRemove}
-      onSetFocus={setFocus}
-      isDuplicate={isDuplicate}
-      keyphrasesReadOnly={readOnly}
-      keyphrasesSaveFailed={saveFailed}
-      renderKeyphraseUsage={remote ? renderKeyphraseUsage : undefined}
-      renderLinks={remote ? renderLinksPanel : undefined}
-      site={site}
-    />
-  );
-
   return (
     <SeoTriggerButton onClick={open}>
       {overall && <ScoreBadge score={overall.seoScore} status={overall.status} />}
 
-      {remote ? (
-        <LinkSuggestionsProvider
-          collectionSlug={collectionSlug}
-          docId={docId}
-          getInput={getInput}
-          localeCode={localeCode}
-        >
-          {drawer}
-        </LinkSuggestionsProvider>
-      ) : (
-        drawer
-      )}
+      <SeoDrawer
+        drawerSlug={DRAWER_SLUG}
+        keyphrases={keyphrases}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+        result={result}
+        analyzing={analyzing}
+        onAddRelated={handleAddRelated}
+        onTextChange={updateText}
+        onAddSynonym={addSynonym}
+        onRemoveSynonym={removeSynonym}
+        onRemove={handleRemove}
+        onSetFocus={setFocus}
+        isDuplicate={isDuplicate}
+        keyphrasesReadOnly={readOnly}
+        keyphrasesSaveFailed={saveFailed}
+        showKeyphraseUsage={Boolean(remote)}
+        links={remote ? links : undefined}
+        site={site}
+      />
     </SeoTriggerButton>
   );
 }

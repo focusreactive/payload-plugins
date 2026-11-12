@@ -1,13 +1,13 @@
 "use client";
 
 import { useRef } from "react";
-import type { ReactNode } from "react";
 import type { AnalysisResult, CategoryResult } from "../../../engine/types/analysis";
 import type { KeyphraseEntry } from "../keyphraseState";
 import type { CardState } from "./keyphrase/KeyphraseCard";
 import { KeyphraseDetail } from "./keyphrase/KeyphraseDetail";
 import type { DetailAnalysis } from "./keyphrase/KeyphraseDetail";
 import { KeyphraseRail } from "./keyphrase/KeyphraseRail";
+import { KeyphraseUsage } from "./keyphrase/KeyphraseUsageNotice";
 
 export interface KeyphraseTabProps {
   keyphrases: KeyphraseEntry[];
@@ -22,7 +22,7 @@ export interface KeyphraseTabProps {
   onRemove: (id: string) => void;
   onSetFocus: (id: string) => void;
   isDuplicate: (id: string, text: string) => boolean;
-  renderUsage?: (entry: KeyphraseEntry) => ReactNode;
+  showUsage?: boolean;
   saveFailed?: boolean;
   readOnly?: boolean;
 }
@@ -50,7 +50,7 @@ export function KeyphraseTab({
   onRemove,
   onSetFocus,
   isDuplicate,
-  renderUsage,
+  showUsage = false,
   saveFailed,
   readOnly,
 }: KeyphraseTabProps) {
@@ -150,7 +150,7 @@ export function KeyphraseTab({
           onSetFocus={() => onSetFocus(selected.id)}
           onTextChange={(text) => onTextChange(selected.id, text)}
           readOnly={readOnly}
-          usageNotice={renderUsage?.(selected)}
+          usageNotice={showUsage && <KeyphraseUsage key={selected.id} phrase={selected.text} />}
         />
       )}
     </div>

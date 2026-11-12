@@ -7,6 +7,7 @@ import { SeoDrawer } from "../../src/components/SeoDrawer";
 
 vi.mock("@payloadcms/ui", () => ({
   Drawer: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  useConfig: () => ({ config: { routes: { api: "/api", admin: "/admin" } } }),
   useModal: () => ({ closeModal: () => undefined }),
   XIcon: () => null,
 }));
@@ -14,6 +15,18 @@ vi.mock("@payloadcms/ui", () => ({
 afterEach(() => cleanup());
 
 const noop = () => undefined;
+const find = vi.fn(async () => undefined);
+
+const suggestion = {
+  collection: "posts",
+  id: "2",
+  title: "Post two",
+  phrase: "payload cms",
+  count: 1,
+  snippet: "Payload CMS",
+  snippetMatch: { start: 0, end: 11 },
+  url: "/blog/two",
+};
 
 const props = {
   drawerSlug: "seo",
@@ -39,12 +52,31 @@ describe("SeoDrawer internal links tab", () => {
     expect(screen.queryByRole("tab", { name: /internal links/iu })).toBeNull();
   });
 
-  it("renders the links panel without waiting for the analysis", () => {
-    render(<SeoDrawer {...props} renderLinks={() => <div>links panel</div>} />);
+  it("renders the links tab without waiting for the analysis", () => {
+    render(<SeoDrawer {...props} links={{ state: { status: "idle" }, find }} />);
 
     fireEvent.click(screen.getByRole("tab", { name: /internal links/iu }));
+    fireEvent.click(screen.getByRole("button", { name: /find opportunities/iu }));
 
-    expect(screen.getByText("links panel")).toBeInTheDocument();
+    expect(find).toHaveBeenCalledTimes(1);
     expect(screen.queryByText(/analyzing/iu)).toBeNull();
+  });
+
+  it("keeps the found suggestions when switching tabs", () => {
+    render(
+      <SeoDrawer
+        {...props}
+        links={{ state: { status: "done", suggestions: [suggestion] }, find }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: /internal links/iu }));
+    expect(screen.getByRole("link", { name: "Post two" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: /keyphrase/iu }));
+    expect(screen.queryByRole("link", { name: "Post two" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("tab", { name: /internal links/iu }));
+    expect(screen.getByRole("link", { name: "Post two" })).toBeInTheDocument();
   });
 });

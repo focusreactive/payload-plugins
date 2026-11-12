@@ -1,6 +1,6 @@
 "use client";
 
-import { useConfig, useDebounce, usePayloadAPI } from "@payloadcms/ui";
+import { useConfig, useDebounce, useDocumentInfo, usePayloadAPI } from "@payloadcms/ui";
 import { useEffect } from "react";
 import { KEYPHRASE_USAGE_DELAY_MS, KEYPHRASE_USAGE_ENDPOINT_PATH } from "../../../../constants";
 import { docTargetKey } from "../../../../keyphrases/docTarget";
@@ -55,10 +55,13 @@ export function KeyphraseUsageNotice({ collectionSlug, docId, phrase }: Keyphras
   );
 }
 
-export function KeyphraseUsage({ collectionSlug, docId, phrase }: KeyphraseUsageProps) {
+export function KeyphraseUsage({ phrase }: Pick<KeyphraseUsageProps, "phrase">) {
+  const { collectionSlug, id } = useDocumentInfo();
   const debounced = useDebounce(phrase.trim(), KEYPHRASE_USAGE_DELAY_MS);
 
-  if (!debounced) return null;
+  if (!debounced || !collectionSlug) return null;
 
-  return <KeyphraseUsageNotice collectionSlug={collectionSlug} docId={docId} phrase={debounced} />;
+  return (
+    <KeyphraseUsageNotice collectionSlug={collectionSlug} docId={String(id)} phrase={debounced} />
+  );
 }

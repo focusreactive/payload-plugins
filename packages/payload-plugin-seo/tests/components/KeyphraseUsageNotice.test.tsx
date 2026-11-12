@@ -21,6 +21,7 @@ const usePayloadAPI = vi.fn((..._args: unknown[]) => {
 vi.mock("@payloadcms/ui", () => ({
   useConfig: () => ({ config: { routes: { api: "/api", admin: "/admin" } } }),
   useDebounce: <T,>(value: T) => value,
+  useDocumentInfo: () => ({ collectionSlug: "posts", id: 1 }),
   usePayloadAPI: (...args: unknown[]) => usePayloadAPI(...args),
 }));
 
@@ -97,10 +98,10 @@ describe("KeyphraseUsageNotice", () => {
 
 describe("KeyphraseUsage", () => {
   it("queries the trimmed phrase and skips blank ones", () => {
-    render(<KeyphraseUsage collectionSlug="posts" docId="1" phrase="  " />);
+    render(<KeyphraseUsage phrase="  " />);
     expect(usePayloadAPI).not.toHaveBeenCalled();
 
-    render(<KeyphraseUsage collectionSlug="posts" docId="1" phrase=" payload cms " />);
+    render(<KeyphraseUsage phrase=" payload cms " />);
     expect(usePayloadAPI.mock.calls.at(-1)?.[1]).toEqual({
       initialParams: { collection: "posts", docId: "1", phrase: "payload cms" },
     });
@@ -112,10 +113,10 @@ describe("KeyphraseUsage", () => {
       isError: false,
       data: { docs: [{ collection: "page", id: "7", title: "Home" }] },
     };
-    const { rerender } = render(<KeyphraseUsage collectionSlug="posts" docId="1" phrase="a" />);
+    const { rerender } = render(<KeyphraseUsage phrase="a" />);
 
     api = { isLoading: true, isError: false };
-    rerender(<KeyphraseUsage collectionSlug="posts" docId="1" phrase="ab" />);
+    rerender(<KeyphraseUsage phrase="ab" />);
 
     expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
     expect(setParams).toHaveBeenLastCalledWith({ collection: "posts", docId: "1", phrase: "ab" });

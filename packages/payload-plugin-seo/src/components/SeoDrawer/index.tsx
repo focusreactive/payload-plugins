@@ -3,13 +3,14 @@
 import { Drawer } from "@payloadcms/ui";
 import { Loader2 } from "lucide-react";
 import { memo, useState } from "react";
-import type { ReactNode } from "react";
 import type { AnalysisResult, TotalStatus } from "../../engine/types/analysis";
 import type { KeyphraseEntry } from "./keyphraseState";
+import type { LinkSuggestions } from "./links/useLinkSuggestions";
 import { Header } from "./components/Header";
 import { TABS, TABS_WITH_LINKS, TabsNav } from "./TabsNav";
 import type { TabKey } from "./TabsNav";
 import { KeyphraseTab } from "./tabs/KeyphraseTab";
+import { LinksTab } from "./tabs/LinksTab";
 import { OnPageTab } from "./tabs/OnPageTab";
 import { ReadabilityTab } from "./tabs/ReadabilityTab";
 import { InclusiveTab } from "./tabs/InclusiveTab";
@@ -34,8 +35,8 @@ export interface SeoDrawerProps {
   onSetFocus: (id: string) => void;
   isDuplicate: (id: string, text: string) => boolean;
   site: { name: string; baseUrl: string; faviconUrl: string };
-  renderKeyphraseUsage?: (entry: KeyphraseEntry) => ReactNode;
-  renderLinks?: () => ReactNode;
+  showKeyphraseUsage?: boolean;
+  links?: LinkSuggestions;
   keyphrasesSaveFailed?: boolean;
   keyphrasesReadOnly?: boolean;
 }
@@ -58,8 +59,8 @@ export const SeoDrawer = memo(function SeoDrawer({
   onSelect,
   onSetFocus,
   onTextChange,
-  renderKeyphraseUsage,
-  renderLinks,
+  showKeyphraseUsage,
+  links,
   selectedId,
 }: SeoDrawerProps) {
   const { t } = useSeoTranslation();
@@ -78,7 +79,7 @@ export const SeoDrawer = memo(function SeoDrawer({
       Header={<Header drawerSlug={drawerSlug} total={total} totalStatus={totalStatus} />}
     >
       <div className="frseo-root relative text-neutral-800" data-status={totalStatus}>
-        <TabsNav active={tab} onChange={setTab} tabs={renderLinks ? TABS_WITH_LINKS : TABS} />
+        <TabsNav active={tab} onChange={setTab} tabs={links ? TABS_WITH_LINKS : TABS} />
 
         <div className="frseo-tabpanel">
           {result === null && !TABS_WITHOUT_ANALYSIS.has(tab) ? (
@@ -106,7 +107,7 @@ export const SeoDrawer = memo(function SeoDrawer({
                   onRemove={onRemove}
                   onSetFocus={onSetFocus}
                   isDuplicate={isDuplicate}
-                  renderUsage={renderKeyphraseUsage}
+                  showUsage={showKeyphraseUsage}
                   readOnly={keyphrasesReadOnly}
                   saveFailed={keyphrasesSaveFailed}
                 />
@@ -125,7 +126,7 @@ export const SeoDrawer = memo(function SeoDrawer({
                   faviconUrl={site.faviconUrl}
                 />
               )}
-              {tab === "links" && renderLinks?.()}
+              {tab === "links" && links && <LinksTab onFind={links.find} state={links.state} />}
             </>
           )}
         </div>
