@@ -16,11 +16,11 @@ vi.mock("react", async (importOriginal) => {
 
   function useControllableTransition() {
     const [isPending, setIsPending] = react.useState(false);
-    const startTransition = react.useCallback((action: () => void) => {
+    const startTransition = (action: () => void) => {
       setIsPending(true);
       action();
       preview.pendingRefreshes.push(() => setIsPending(false));
-    }, []);
+    };
 
     return [isPending, startTransition] as const;
   }
