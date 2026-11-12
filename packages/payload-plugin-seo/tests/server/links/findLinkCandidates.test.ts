@@ -29,6 +29,17 @@ describe("findLinkCandidates", () => {
     expect(best.phrase).toBe("payload cms");
   });
 
+  it("matches a phrase listed in several spellings once, keeping the first spelling", () => {
+    const [hit] = findLinkCandidates("A café in town", [
+      {
+        collection: "posts",
+        docId: "3",
+        phrases: ["Café", "cafe", " CAFÉ ", "café".normalize("NFD")],
+      },
+    ]);
+    expect(hit).toMatchObject({ phrase: "Café", count: 1 });
+  });
+
   it("ranks by count, then by phrase length", () => {
     const result = findLinkCandidates(text, [
       { collection: "page", docId: "a", phrases: ["drafts"] },

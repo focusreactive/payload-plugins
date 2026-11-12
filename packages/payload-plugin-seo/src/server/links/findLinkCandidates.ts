@@ -81,14 +81,15 @@ function prefixKeys(phrase: string): string[] {
 }
 
 function toSourceEntries(source: LinkSource): SourceEntries {
-  const entries = source.phrases.flatMap((phrase) => {
+  const entries = new Map<string, PhraseEntry>();
+
+  for (const phrase of source.phrases) {
     const prefixes = prefixKeys(phrase);
     const key = prefixes.at(-1);
+    if (key && !entries.has(key)) entries.set(key, { phrase, key, prefixes });
+  }
 
-    return key ? [{ phrase, key, prefixes }] : [];
-  });
-
-  return { source, entries };
+  return { source, entries: [...entries.values()] };
 }
 
 function buildIndex(sources: SourceEntries[]): PhraseIndex {
