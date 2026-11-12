@@ -1,3 +1,12 @@
+## @focus-reactive/payload-plugin-visual-editing [1.1.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-visual-editing@1.1.0...@focus-reactive/payload-plugin-visual-editing@1.1.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **visual-editing:** keep double-clicks on highlighted links in the preview ([2d30946](https://github.com/focusreactive/payload-plugins/commit/2d30946d5f7cbe616979a1dd61f69305b3d4e2b6))
+* **visual-editing:** keep text selection working on highlighted elements ([423ad57](https://github.com/focusreactive/payload-plugins/commit/423ad57208e094c26eed91c0a26af0829b2a60fc))
+* **visual-editing:** open the field on a click on the highlighted element ([b743a5b](https://github.com/focusreactive/payload-plugins/commit/b743a5bae75c8f442473b20b8aed0b732d67ef5f))
+
 # @focus-reactive/payload-plugin-visual-editing [1.1.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-visual-editing@1.0.0...@focus-reactive/payload-plugin-visual-editing@1.1.0) (2026-10-05)
 
 
