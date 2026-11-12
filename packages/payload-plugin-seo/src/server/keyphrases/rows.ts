@@ -1,17 +1,18 @@
 import type { PayloadRequest, Where } from "payload";
 import { KEYPHRASES_COLLECTION_SLUG, LINK_SOURCE_PAGE_SIZE } from "../../constants";
+import type { DocTarget } from "../../keyphrases/docTarget";
 import type { DocRef, KeyphraseRow, LinkSourceRow } from "./types";
+
+export function rowWhere(target: DocTarget): Where {
+  return {
+    and: [{ docCollection: { equals: target.collection } }, { docId: { equals: target.docId } }],
+  };
+}
 
 export async function findRow(req: PayloadRequest, ref: DocRef): Promise<KeyphraseRow | undefined> {
   const { docs } = await req.payload.find({
     collection: KEYPHRASES_COLLECTION_SLUG,
-    where: {
-      and: [
-        { docCollection: { equals: ref.collection } },
-        { docId: { equals: ref.docId } },
-        { locale: { equals: ref.locale } },
-      ],
-    },
+    where: { and: [rowWhere(ref), { locale: { equals: ref.locale } }] },
     limit: 1,
     depth: 0,
     overrideAccess: true,

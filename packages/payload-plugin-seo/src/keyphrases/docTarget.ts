@@ -3,7 +3,7 @@ export interface DocTarget {
   docId: string;
 }
 
-export function docTargetKey(collection: string, id: string): string {
+export function docTargetKey(collection: string, id: string | number): string {
   return `${collection}:${id}`;
 }
 

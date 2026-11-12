@@ -1,12 +1,9 @@
 import type { Payload } from "payload";
 import type { DocQuery, DocStore } from "../../types/config";
+import { docTargetKey } from "../../keyphrases/docTarget";
 import { findDocsByIds } from "../findDocsByIds";
 
 type Doc = Record<string, unknown>;
-
-function key(collection: string, id: string | number): string {
-  return `${collection}:${id}`;
-}
 
 async function runQuery(
   payload: Payload,
@@ -22,7 +19,7 @@ async function runQuery(
     select: query.select ? Object.fromEntries(query.select.map((f) => [f, true])) : undefined,
   });
 
-  return docs.map((d) => [key(query.collection, d.id), d]);
+  return docs.map((d) => [docTargetKey(query.collection, d.id), d]);
 }
 
 export function createServerResolveDocs(
@@ -36,7 +33,7 @@ export function createServerResolveDocs(
     for (const entries of results) for (const [k, doc] of entries) store.set(k, doc);
 
     return {
-      get: (collection, id) => store.get(key(collection, id)),
+      get: (collection, id) => store.get(docTargetKey(collection, id)),
     };
   };
 }
