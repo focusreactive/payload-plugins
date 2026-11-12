@@ -11,7 +11,6 @@ import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { getBlogPageSettings } from "@/dal/getBlogPageSettings";
 import { getPostBySlug } from "@/dal/getPostBySlug";
 import { getSiteSettings } from "@/dal/getSiteSettings";
-import { getBlogPostStaticParams } from "@/dal/staticParams/posts";
 import { PayloadRedirects } from "@/components/PayloadRedirects";
 import type { Footer as FooterType, Header as HeaderType } from "@/payload-types";
 import { Footer } from "@/collections/Footer/Component";
@@ -89,8 +88,4 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
     doc: post,
     locale,
   });
-}
-
-export async function generateStaticParams() {
-  return getBlogPostStaticParams();
 }
