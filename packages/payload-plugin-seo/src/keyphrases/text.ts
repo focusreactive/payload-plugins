@@ -20,12 +20,27 @@ export function foldText(value: string): string {
     .normalize("NFC");
 }
 
-export function tokenizeWords(text: string): WordToken[] {
+const wordSegmenter =
+  typeof Intl.Segmenter === "function"
+    ? new Intl.Segmenter(undefined, { granularity: "word" })
+    : null;
+
+function matchWords(text: string, offset = 0): WordToken[] {
   return [...text.matchAll(WORD_PATTERN)].map((match) => ({
     word: match[0],
-    start: match.index,
-    end: match.index + match[0].length,
+    start: offset + match.index,
+    end: offset + match.index + match[0].length,
   }));
+}
+
+function segmentWords(text: string, segmenter: Intl.Segmenter): WordToken[] {
+  return [...segmenter.segment(text)].flatMap((segment) =>
+    segment.isWordLike ? matchWords(segment.segment, segment.index) : []
+  );
+}
+
+export function tokenizeWords(text: string): WordToken[] {
+  return wordSegmenter ? segmentWords(text, wordSegmenter) : matchWords(text);
 }
 
 export function foldedWords(text: string): string[] {

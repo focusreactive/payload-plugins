@@ -29,4 +29,9 @@ describe("canonicalIntent", () => {
   it("keeps combining marks that are part of a word", () => {
     expect(canonicalIntent("कि")).not.toBe(canonicalIntent("क"));
   });
+
+  it("splits text without spaces into words", () => {
+    expect(canonicalIntent("机器学习")).toBe(canonicalIntent("学习 机器"));
+    expect(canonicalIntent("ข้าวผัด")).not.toBe(canonicalIntent("ข้าว"));
+  });
 });

@@ -56,6 +56,18 @@ describe("findLinkCandidates", () => {
     ).toHaveLength(1);
   });
 
+  it.each([
+    ["Chinese", "我喜欢机器学习和数据科学", "机器学习"],
+    ["Japanese", "昨日は東京タワーに行きました", "東京タワー"],
+    ["Thai", "ฉันชอบกินข้าวผัดมาก", "ข้าวผัด"],
+  ])("finds a %s phrase inside text written without spaces", (_language, body, phrase) => {
+    const [hit] = findLinkCandidates(body, [
+      { collection: "posts", docId: "1", phrases: [phrase] },
+    ]);
+    expect(hit).toMatchObject({ phrase, count: 1 });
+    expect(hit.snippet.slice(hit.snippetMatch.start, hit.snippetMatch.end)).toBe(phrase);
+  });
+
   it("matches words in non-latin scripts", () => {
     expect(
       findLinkCandidates("Мы любим кофе и чай", [

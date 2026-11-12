@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { foldText, foldedWords, tokenizeWords } from "../../src/keyphrases/text";
 
 describe("foldText", () => {
@@ -39,6 +39,43 @@ describe("tokenizeWords", () => {
       { word: "e", start: 4, end: 5 },
       { word: "commerce", start: 6, end: 14 },
     ]);
+  });
+
+  it("splits text written without spaces into words", () => {
+    expect(tokenizeWords("我喜欢机器学习").map((t) => t.word)).toEqual([
+      "我",
+      "喜欢",
+      "机器",
+      "学习",
+    ]);
+    expect(tokenizeWords("ข้าวผัด")).toEqual([
+      { word: "ข้าว", start: 0, end: 4 },
+      { word: "ผัด", start: 4, end: 7 },
+    ]);
+  });
+
+  it("splits words at apostrophes and dots like before", () => {
+    expect(tokenizeWords("don’t 3.14").map((t) => t.word)).toEqual(["don", "t", "3", "14"]);
+  });
+
+  describe("without Intl.Segmenter", () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      vi.resetModules();
+    });
+
+    it("falls back to splitting on non-word characters", async () => {
+      vi.stubGlobal("Intl", { ...Intl, Segmenter: undefined });
+      vi.resetModules();
+      const text = await import("../../src/keyphrases/text");
+
+      expect(text.tokenizeWords("Hi, e-commerce! 机器学习").map((t) => t.word)).toEqual([
+        "Hi",
+        "e",
+        "commerce",
+        "机器学习",
+      ]);
+    });
   });
 
   it("keeps combining marks inside words", () => {
