@@ -7,9 +7,9 @@ import {
 import { canonicalIntent } from "../../keyphrases/canonicalIntent";
 import type { StoredKeyphrase } from "../../keyphrases/stored";
 import { sanitizeStoredKeyphrases } from "../../keyphrases/stored";
+import { findReadableDocs } from "../docTargets";
 import { readJsonBody } from "../http";
 import { canUpdateDoc, readAuthorizedRef } from "./authorize";
-import { resolveTitles } from "./resolveTitles";
 import { findRow, findRowsSharingIntent } from "./rows";
 import type { DocRef, KeyphraseRow, KeyphraseScope } from "./types";
 
@@ -125,9 +125,9 @@ export function createKeyphraseEndpoints(scope: KeyphraseScope): Endpoint[] {
 
       const rows = await findRowsSharingIntent(req, ref, intent, scope.collections);
       const targets = rows.map((row) => ({ collection: row.docCollection, docId: row.docId }));
-      const docs = await resolveTitles(req, targets, ref.locale);
+      const found = await findReadableDocs(req, targets, { locale: ref.locale, titleOnly: true });
 
-      return Response.json({ docs });
+      return Response.json({ docs: found.map(({ summary }) => summary) });
     },
   };
 
