@@ -3,23 +3,13 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-import type { VisualEditingMode } from "../constants.js";
+import type { VisualEditingMode } from "./visualEditingMode.js";
 
-import { VISUAL_EDITING_MODES } from "../constants.js";
+import { VISUAL_EDITING_MODES } from "./visualEditingMode.js";
 import { useVisualEditing } from "./VisualEditingProvider.js";
 
-// Pseudo-classes (:hover, :focus-visible) can't live on React style objects,
-// so the rules are injected once into <head> under a dedicated id. The
-// component reuses its own marker attribute to scope them without polluting
-// global selectors.
 const STYLE_ID = "ve-toggle-styles";
 
-// `body[data-ve-hovering='true']` is set by the overlay's hoverController
-// whenever an Edit badge is painted on a target. The badge sits at the target's
-// top-right (see `editBadge.ts` LABEL_STYLES), so for targets near the page
-// bottom it overlaps this toggle. Fading the toggle out during hover + a short
-// grace period on clearing activeTarget (CLEAR_GRACE_MS in hoverController)
-// keeps the toggle out of the way while the user navigates target → label.
 const SCOPED_STYLES = `
 [data-ve-toggle-root] {
 	transition: opacity 140ms ease, transform 140ms ease;

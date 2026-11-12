@@ -1,16 +1,18 @@
 "use client";
 
 import { useConfig } from "@payloadcms/ui";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-import { VE_MESSAGE_TYPE } from "../constants.js";
-import type { VeOpenFieldMessage } from "../constants.js";
+import { defaultBuildAdminEditUrl } from "../shared/buildAdminEditUrl.js";
+import { VE_FOCUS_PARAM, VE_MESSAGE_TYPE } from "../shared/protocol.js";
+import type { DocKind } from "../shared/protocol.js";
+import type { VeOpenFieldMessage } from "../shared/protocol.js";
 import { expandAndFocus } from "./expandAndFocus.js";
+import { currentFormPathOf, OpenFormsContext } from "./openField/openForms.js";
+import type { AnnounceOpenForm, OpenForm } from "./openField/openForms.js";
 import { parseFieldPath } from "./parseFieldPath.js";
 import { resolveContainerChain } from "./resolveContainerChain.js";
 import type { ContainerInstruction, ResolverField } from "./resolveContainerChain.js";
-
-const VE_FOCUS_PARAM = "veFocus";
 
 const escapeRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -38,20 +40,14 @@ const makeLocators = (adminBasePath: string) => {
   };
 
   const navigateAndFocus = (message: VeOpenFieldMessage): void => {
-    const target =
-      message.kind === "global"
-        ? `${adminBasePath}/globals/${message.collectionSlug}`
-        : `${adminBasePath}/collections/${message.collectionSlug}/${message.docId}`;
-    const params = new URLSearchParams();
-    if (message.path) params.set(VE_FOCUS_PARAM, message.path);
-    if (message.locale) params.set("locale", message.locale);
-    const qs = params.toString();
-    const url = qs ? `${target}?${qs}` : target;
-    // Different doc => new tab so the current admin context is preserved.
-    // Same-doc field focus goes through `focusFieldPath`, not this helper.
-    // `noopener` here would force the return value to null, defeating the
-    // popup-block detection below. We're same-origin (admin -> admin), so
-    // the retained opener reference isn't a security concern.
+    const url = defaultBuildAdminEditUrl({
+      adminBasePath,
+      collectionSlug: message.collectionSlug,
+      docId: message.docId,
+      kind: message.kind,
+      locale: message.locale,
+      path: message.path,
+    });
     const opened = window.open(url, "_blank");
     if (!opened) window.location.assign(url);
   };
@@ -59,8 +55,6 @@ const makeLocators = (adminBasePath: string) => {
   return { currentCollectionLocation, currentGlobalSlug, navigateAndFocus };
 };
 
-// If the schema walk fails (drift, malformed path), reconstruct a row-only
-// chain from numeric segments in the path — matches the pre-resolver behavior.
 const fallbackResolution = (
   path: string
 ): { chain: ContainerInstruction[]; fieldId: string | null } => {
@@ -71,11 +65,11 @@ const fallbackResolution = (
   };
 };
 
-type EntityFieldsLookup = (kind: "collection" | "global", slug: string) => ResolverField[] | null;
+type EntityFieldsLookup = (kind: DocKind, slug: string) => ResolverField[] | null;
 
 const focusFieldPath = async (
   path: string,
-  kind: "collection" | "global",
+  kind: DocKind,
   slug: string,
   getFields: EntityFieldsLookup
 ): Promise<void> => {
@@ -93,6 +87,17 @@ export function VisualEditingBridgeProvider({
   children: React.ReactNode;
 }) {
   const { getEntityConfig } = useConfig();
+  const [openForms] = useState(() => new Set<OpenForm>());
+
+  const announceOpenForm = useCallback<AnnounceOpenForm>(
+    (form) => {
+      openForms.add(form);
+      return () => {
+        openForms.delete(form);
+      };
+    },
+    [openForms]
+  );
 
   useEffect(() => {
     const { currentCollectionLocation, currentGlobalSlug, navigateAndFocus } =
@@ -110,8 +115,6 @@ export function VisualEditingBridgeProvider({
       }
     };
 
-    // URL-param activation: strip `veFocus` from URL, then defer to give the
-    // admin form time to paint.
     const url = new URL(window.location.href);
     const focusPath = url.searchParams.get(VE_FOCUS_PARAM);
     if (focusPath) {
@@ -133,10 +136,6 @@ export function VisualEditingBridgeProvider({
       const data = event.data as VeOpenFieldMessage | undefined;
       if (!data || data.type !== VE_MESSAGE_TYPE) return;
 
-      // Collection mismatch: navigate to the correct (collection, doc) pair —
-      // compare BOTH slug and id. Two collections can share an id (pages/1 vs
-      // forms/1), so matching on id alone would leave the user on the wrong
-      // edit view and every field lookup would fail.
       if (data.kind === "collection") {
         const current = currentCollectionLocation();
         const wrongCollection = current?.slug !== data.collectionSlug;
@@ -145,7 +144,12 @@ export function VisualEditingBridgeProvider({
           navigateAndFocus(data);
           return;
         }
-        void focusFieldPath(data.path, "collection", data.collectionSlug, getFields);
+        void focusFieldPath(
+          currentFormPathOf(data, openForms),
+          "collection",
+          data.collectionSlug,
+          getFields
+        );
         return;
       }
 
@@ -155,13 +159,18 @@ export function VisualEditingBridgeProvider({
           navigateAndFocus(data);
           return;
         }
-        void focusFieldPath(data.path, "global", data.collectionSlug, getFields);
+        void focusFieldPath(
+          currentFormPathOf(data, openForms),
+          "global",
+          data.collectionSlug,
+          getFields
+        );
       }
     };
 
     window.addEventListener("message", handle);
     return () => window.removeEventListener("message", handle);
-  }, [getEntityConfig, adminBasePath]);
+  }, [getEntityConfig, adminBasePath, openForms]);
 
-  return <>{children}</>;
+  return <OpenFormsContext.Provider value={announceOpenForm}>{children}</OpenFormsContext.Provider>;
 }
