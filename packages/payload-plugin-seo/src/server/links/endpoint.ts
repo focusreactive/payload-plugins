@@ -8,7 +8,7 @@ import {
 } from "../../constants";
 import { siteOf, toPath } from "../../links/toPath";
 import { docTargetKey } from "../../keyphrases/docTarget";
-import { jsonResponse, readJsonBody } from "../http";
+import { readJsonBody } from "../http";
 import { readAuthorizedRef, rejectNonAdmin } from "../keyphrases/authorize";
 import { findLinkSourcePages } from "../keyphrases/rows";
 import type { DocRef, KeyphraseScope, LinkSourceRow } from "../keyphrases/types";
@@ -94,7 +94,7 @@ export function createLinkSuggestionsEndpoint(scope: KeyphraseScope): Endpoint {
 
       const body = await readJsonBody(req);
       const request = readLinkRequest(body, scope.collections);
-      if (!request) return jsonResponse({ error: "Invalid request" }, 400);
+      if (!request) return Response.json({ error: "Invalid request" }, { status: 400 });
 
       const ref = await readAuthorizedRef(req, body, scope);
       if (ref instanceof Response) return ref;
@@ -107,7 +107,7 @@ export function createLinkSuggestionsEndpoint(scope: KeyphraseScope): Endpoint {
         sites: internalSitesOf(req),
       });
 
-      return jsonResponse({ suggestions }, 200);
+      return Response.json({ suggestions });
     },
   };
 }

@@ -1,7 +1,6 @@
 import { docAccessOperation } from "payload";
 import type { PayloadRequest } from "payload";
 import { PLUGIN_NAME } from "../../constants";
-import { jsonResponse } from "../http";
 import { readDocTarget } from "./docRef";
 import type { DocTarget } from "../../keyphrases/docTarget";
 import type { DocRef, KeyphraseScope } from "./types";
@@ -68,9 +67,9 @@ export async function canUpdateDoc(req: PayloadRequest, ref: DocRef): Promise<bo
 }
 
 export function rejectNonAdmin(req: PayloadRequest): Response | null {
-  if (!req.user) return jsonResponse({ error: "Unauthorized" }, 401);
+  if (!req.user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (req.user.collection !== req.payload.config.admin.user) {
-    return jsonResponse({ error: "Forbidden" }, 403);
+    return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
   return null;
@@ -86,18 +85,18 @@ export async function readAuthorizedRef(
   if (rejected) return rejected;
 
   const target = readDocTarget(source, scope.collections);
-  if (!target) return jsonResponse({ error: "Invalid request" }, 400);
+  if (!target) return Response.json({ error: "Invalid request" }, { status: 400 });
 
   const locale = resolveLocale(req, source, scope);
-  if (!locale) return jsonResponse({ error: "Invalid request" }, 400);
+  if (!locale) return Response.json({ error: "Invalid request" }, { status: 400 });
 
   const docId = await findReadableDocId(req, target);
-  if (!docId) return jsonResponse({ error: "Not found" }, 404);
+  if (!docId) return Response.json({ error: "Not found" }, { status: 404 });
 
   const ref = { collection: target.collection, docId, locale };
 
   if (operation === "update" && !(await canUpdateDoc(req, ref))) {
-    return jsonResponse({ error: "Forbidden" }, 403);
+    return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
   return ref;

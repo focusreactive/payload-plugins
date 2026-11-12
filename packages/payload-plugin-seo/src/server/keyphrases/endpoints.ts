@@ -7,7 +7,7 @@ import {
 import { canonicalIntent } from "../../keyphrases/canonicalIntent";
 import type { StoredKeyphrase } from "../../keyphrases/stored";
 import { sanitizeStoredKeyphrases } from "../../keyphrases/stored";
-import { jsonResponse, readJsonBody } from "../http";
+import { readJsonBody } from "../http";
 import { canUpdateDoc, readAuthorizedRef } from "./authorize";
 import { resolveTitles } from "./resolveTitles";
 import { findRow, findRowsSharingIntent } from "./rows";
@@ -28,7 +28,7 @@ async function writeToExistingRow(
   { keyphrases, ifAbsent }: KeyphraseWrite
 ): Promise<Response> {
   if (ifAbsent) {
-    return jsonResponse({ keyphrases: sanitizeStoredKeyphrases(row.keyphrases) }, 409);
+    return Response.json({ keyphrases: sanitizeStoredKeyphrases(row.keyphrases) }, { status: 409 });
   }
 
   await req.payload.update({
@@ -39,7 +39,7 @@ async function writeToExistingRow(
     req,
   });
 
-  return jsonResponse({ keyphrases }, 200);
+  return Response.json({ keyphrases });
 }
 
 async function createRow(
@@ -67,7 +67,7 @@ async function createRow(
     return writeToExistingRow(req, createdMeanwhile, write);
   }
 
-  return jsonResponse({ keyphrases: write.keyphrases }, 200);
+  return Response.json({ keyphrases: write.keyphrases });
 }
 
 export function createKeyphraseEndpoints(scope: KeyphraseScope): Endpoint[] {
@@ -80,10 +80,11 @@ export function createKeyphraseEndpoints(scope: KeyphraseScope): Endpoint[] {
 
       const [row, canUpdate] = await Promise.all([findRow(req, ref), canUpdateDoc(req, ref)]);
 
-      return jsonResponse(
-        { keyphrases: sanitizeStoredKeyphrases(row?.keyphrases), indexed: Boolean(row), canUpdate },
-        200
-      );
+      return Response.json({
+        keyphrases: sanitizeStoredKeyphrases(row?.keyphrases),
+        indexed: Boolean(row),
+        canUpdate,
+      });
     },
   };
 
@@ -95,7 +96,7 @@ export function createKeyphraseEndpoints(scope: KeyphraseScope): Endpoint[] {
       const ref = await readAuthorizedRef(req, body, scope, "update");
       if (ref instanceof Response) return ref;
       if (!Array.isArray(body.keyphrases)) {
-        return jsonResponse({ error: "Invalid request" }, 400);
+        return Response.json({ error: "Invalid request" }, { status: 400 });
       }
 
       const write = {
@@ -105,7 +106,7 @@ export function createKeyphraseEndpoints(scope: KeyphraseScope): Endpoint[] {
       const row = await findRow(req, ref);
 
       if (row) return writeToExistingRow(req, row, write);
-      if (write.keyphrases.length === 0) return jsonResponse({ keyphrases: [] }, 200);
+      if (write.keyphrases.length === 0) return Response.json({ keyphrases: [] });
 
       return createRow(req, ref, write);
     },
@@ -120,13 +121,13 @@ export function createKeyphraseEndpoints(scope: KeyphraseScope): Endpoint[] {
 
       const { phrase } = req.query;
       const intent = typeof phrase === "string" ? canonicalIntent(phrase) : "";
-      if (!intent) return jsonResponse({ docs: [] }, 200);
+      if (!intent) return Response.json({ docs: [] });
 
       const rows = await findRowsSharingIntent(req, ref, intent, scope.collections);
       const targets = rows.map((row) => ({ collection: row.docCollection, docId: row.docId }));
       const docs = await resolveTitles(req, targets, ref.locale);
 
-      return jsonResponse({ docs }, 200);
+      return Response.json({ docs });
     },
   };
 
