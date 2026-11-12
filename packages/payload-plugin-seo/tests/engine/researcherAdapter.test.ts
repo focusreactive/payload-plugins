@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { languageOf, makeResearcher, registerResearcher } from "../../src/engine/researcherAdapter";
-import { fakeResearcher } from "./fixtures/fakeResearchers";
+import {
+  languageCodeOf,
+  makeResearcher,
+  registerResearcher,
+} from "../../src/engine/researcherAdapter";
+import { fakeResearcherAnswering } from "./fixtures/fakeResearchers";
 
 vi.mock("yoastseo/build/languageProcessing/languages/en/Researcher", async () => {
   const { fakeEnglish } = await import("./fixtures/fakeResearchers");
@@ -9,7 +13,7 @@ vi.mock("yoastseo/build/languageProcessing/languages/en/Researcher", async () =>
 
 const paper = (locale?: string) => ({ getLocale: () => locale });
 
-describe("languageOf", () => {
+describe("languageCodeOf", () => {
   it.each([
     ["cs_CZ", "cs"],
     ["cs-CZ", "cs"],
@@ -18,7 +22,7 @@ describe("languageOf", () => {
     [undefined, "en"],
     ["", "en"],
   ])("%s -> %s", (locale, lang) => {
-    expect(languageOf(locale)).toBe(lang);
+    expect(languageCodeOf(locale)).toBe(lang);
   });
 });
 
@@ -28,7 +32,7 @@ describe("makeResearcher", () => {
   });
 
   it("uses the registered Researcher for the paper's language", () => {
-    registerResearcher("cs", fakeResearcher("cs"));
+    registerResearcher("cs", fakeResearcherAnswering("cs"));
     expect(makeResearcher(paper("cs_CZ")).getResearch("x")).toBe("cs");
     expect(makeResearcher(paper("en_US")).getResearch("x")).toBe("en");
   });
