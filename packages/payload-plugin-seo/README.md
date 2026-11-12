@@ -227,7 +227,7 @@ interface SeoPluginConfig {
   site?: SeoSiteConfig;
   /** Locale codes whose Yoast language packs may be loaded. Default: ['en'] */
   supportedLocales?: string[];
-  /** Override the English UI strings (merged with defaults). */
+  /** Override or add UI strings per admin language (see "Admin language"). */
   translations?: Translations;
   /** Store keyphrases on the server and enable the "already used on" notice and the
    *  Internal links tab. Adds the `seo-keyphrases` collection. Default: false */
@@ -795,13 +795,47 @@ seoPlugin({
 
 The active locale is taken from the admin and normalized to Yoast's `xx_XX` form (e.g. `en` → `en_EN`). The locale is passed to your extractor as `ctx.locale` and to `resolveDocs` (so projected fetches are locale-correct). A locale not listed in `supportedLocales` falls back to English processing.
 
+### Admin language
+
+The drawer and the generated fields speak the admin's language (Payload's `i18n`, the user's language switch), independently of the content locale above. English and Czech ship with the plugin; any other admin language falls back to English string by string.
+
+Payload only offers the admin languages your config enables, so add Czech to `i18n.supportedLanguages` to get the Czech UI:
+
+```ts
+import { cs } from "@payloadcms/translations/languages/cs";
+import { en } from "@payloadcms/translations/languages/en";
+
+export default buildConfig({
+  i18n: { supportedLanguages: { en, cs } },
+  // ...
+});
+```
+
+The strings are registered as Payload custom translations under the `seo` namespace, so they can be overridden — or a whole language added — with `translations`. Keys are the ones in [`src/translations/messages/en.ts`](./src/translations/messages/en.ts):
+
+```ts
+seoPlugin({
+  // ...
+  translations: {
+    de: {
+      title: "SEO-Analyse",
+      "tab.keyphrase": "Fokus-Keyphrase",
+      "viz.show.link_one": "{{count}} Link anzeigen",
+      "viz.show.link_other": "{{count}} Links anzeigen",
+    },
+  },
+});
+```
+
+`{{name}}` placeholders are interpolated. Plurals are separate keys suffixed `_zero`, `_one`, `_two`, `_few`, `_many` or `_other`, chosen with `Intl.PluralRules` for the admin language; `_other` is required, the rest only where the language has that form (Czech uses `_one`, `_few` and `_other`). Keys are type-checked against the English set (the `Translations` type is exported). The `seo:` prefix and the colon-separated tab keys of earlier versions (`"seo:tab:keyphrase"`) are still accepted. Strings from this option take precedence over `i18n.translations.<language>.seo` in your Payload config.
+
 ---
 
 ## Exports Reference
 
 | Import path                                                          | Exports                                                                                                                                                                                                                                              |
 | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@focus-reactive/payload-plugin-seo`                                 | `seoPlugin`, `seoTextField`; types `SeoPluginConfig`, `SeoCollectionConfig`, `SeoFieldPaths`, `SeoSiteConfig`, `ContentExtractor`, `SeoGenerationConfig`, `ResolveUrl`, `ResolveUrlArgs`                                                                                           |
+| `@focus-reactive/payload-plugin-seo`                                 | `seoPlugin`, `seoTextField`; types `SeoPluginConfig`, `SeoCollectionConfig`, `SeoFieldPaths`, `SeoSiteConfig`, `ContentExtractor`, `SeoGenerationConfig`, `ResolveUrl`, `ResolveUrlArgs`, `Translations`, `MessageKey` |
 | `@focus-reactive/payload-plugin-seo/content`                         | Builder helpers `heading`, `paragraph`, `link`, `image`, `video`, `richText`, `html`, `compact`; `registerContentExtractors`, `resolveContentExtractor`; types `ContentNode`, `HeadingLevel`, `ContentExtractor`, `ExtractContext`, `ExtractToolkit`, `DocQuery`, `DocStore`, `ContentHelpers` |
 | `@focus-reactive/payload-plugin-seo/fields`                          | `seoTextField`; type `SeoTextFieldOptions`                                                                                                                                                                                                           |
 | `@focus-reactive/payload-plugin-seo/admin.css`                       | Compiled admin styles for the drawer & button                                                                                                                                                                                                       |

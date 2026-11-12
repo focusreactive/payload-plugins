@@ -11,3 +11,4 @@ export type {
   ResolveUrl,
   ResolveUrlArgs,
 } from "./types/config";
+export type { MessageKey, Translations } from "./translations/types";

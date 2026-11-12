@@ -3,6 +3,7 @@
 import { Button } from "@payloadcms/ui";
 import { Gauge } from "lucide-react";
 import type { ReactNode } from "react";
+import { useSeoTranslation } from "../../translations/useSeoTranslation";
 
 interface SeoTriggerButtonProps {
   onClick?: () => void;
@@ -11,10 +12,11 @@ interface SeoTriggerButtonProps {
 }
 
 export function SeoTriggerButton({ onClick, loading = false, children }: SeoTriggerButtonProps) {
+  const { t } = useSeoTranslation();
   return (
     <span className="relative inline-flex">
       <Button
-        aria-label="SEO Analytics"
+        aria-label={t("title")}
         buttonStyle="none"
         className="frseo-doc-btn m-0 w-[calc(var(--base)*1.6)] h-[calc(var(--base)*1.6)] inline-flex items-center justify-center border border-[var(--theme-elevation-100)] rounded-rs bg-transparent text-neutral-800 transition-[border-color,background-color] duration-100 hover:border-neutral-300 hover:bg-neutral-100"
         disabled={loading}
@@ -24,7 +26,7 @@ export function SeoTriggerButton({ onClick, loading = false, children }: SeoTrig
         margin={false}
         onClick={onClick}
         size="small"
-        tooltip="SEO Analytics"
+        tooltip={t("title")}
       />
       {children}
     </span>

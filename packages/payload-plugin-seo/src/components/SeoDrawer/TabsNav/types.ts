@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import type { TranslationKey } from "../../../translations/types";
 
 export type TabKey =
   | "keyphrase"
@@ -11,6 +12,6 @@ export type TabKey =
 
 export interface Tab {
   key: TabKey;
-  label: string;
+  labelKey: TranslationKey;
   icon: LucideIcon;
 }

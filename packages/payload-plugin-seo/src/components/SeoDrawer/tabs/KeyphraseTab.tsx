@@ -83,19 +83,19 @@ export function KeyphraseTab({
   };
 
   const detailAnalysis = (): DetailAnalysis => {
-    if (!selected) return { kind: "hint", message: "" };
+    if (!selected) return { kind: "hint" };
 
     if (isDuplicate(selected.id, selected.text)) {
       return {
         kind: "hint",
-        message: "Resolve the duplicate to analyse this keyphrase.",
+        message: "keyphrase.hintDuplicate",
       };
     }
 
     if (!selected.text.trim()) {
       return {
         kind: "hint",
-        message: "Start typing a keyphrase to see its analysis.",
+        message: "keyphrase.hintEmpty",
       };
     }
 

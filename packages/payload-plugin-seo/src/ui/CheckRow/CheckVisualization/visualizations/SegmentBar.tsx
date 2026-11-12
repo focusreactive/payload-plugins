@@ -4,6 +4,7 @@ import { cva } from "class-variance-authority";
 import { cn } from "../../../../utils/style";
 import type { SegmentModel } from "../../../../engine/types/visualization";
 import { statusVar } from "../../../../components/SeoDrawer/variants";
+import { useSeoTranslation } from "../../../../translations/useSeoTranslation";
 
 const swatchVariants = cva("w-[8px] h-[8px] rounded-[2px] inline-block", {
   variants: {
@@ -17,6 +18,7 @@ const swatchVariants = cva("w-[8px] h-[8px] rounded-[2px] inline-block", {
 });
 
 export function SegmentBar({ countLabel, filledPct, filledStatus, legend }: SegmentModel) {
+  const { t } = useSeoTranslation();
   return (
     <>
       {countLabel && (
@@ -36,9 +38,9 @@ export function SegmentBar({ countLabel, filledPct, filledStatus, legend }: Segm
       {legend && (
         <div className="flex gap-[14px] text-[11px] mt-[6px]">
           {legend.map((l) => (
-            <span key={l.label} className="inline-flex items-center gap-[5px] text-neutral-700">
+            <span key={l.label.key} className="inline-flex items-center gap-[5px] text-neutral-700">
               <span className={swatchVariants({ tone: l.tone })} />
-              {l.label}
+              {t(l.label.key, l.label.vars)}
             </span>
           ))}
         </div>
