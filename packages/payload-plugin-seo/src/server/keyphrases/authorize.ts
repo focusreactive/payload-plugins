@@ -1,12 +1,12 @@
-import { executeAccess } from "payload";
-import type { PayloadRequest, Where } from "payload";
+import { docAccessOperation } from "payload";
+import type { PayloadRequest } from "payload";
 import { PLUGIN_NAME } from "../../constants";
 import { jsonResponse } from "../http";
 import { readDocTarget } from "./docRef";
 import type { DocTarget } from "../../keyphrases/docTarget";
 import type { DocRef, KeyphraseScope } from "./types";
 
-export type DocOperation = "read" | "update";
+type DocOperation = "read" | "update";
 
 function resolveLocale(req: PayloadRequest, source: unknown, scope: KeyphraseScope): string | null {
   const { localization } = req.payload.config;
@@ -17,9 +17,21 @@ function resolveLocale(req: PayloadRequest, source: unknown, scope: KeyphraseSco
   return typeof locale === "string" && localization.localeCodes.includes(locale) ? locale : null;
 }
 
-async function findReadableDocId(req: PayloadRequest, target: DocTarget): Promise<string | null> {
+async function attemptAccessCheck<T>(
+  req: PayloadRequest,
+  check: () => Promise<T>
+): Promise<T | null> {
   try {
-    const doc = await req.payload.findByID({
+    return await check();
+  } catch (err) {
+    req.payload.logger.warn({ err }, `[${PLUGIN_NAME}] keyphrase access check failed`);
+    return null;
+  }
+}
+
+async function findReadableDocId(req: PayloadRequest, target: DocTarget): Promise<string | null> {
+  const doc = await attemptAccessCheck(req, () =>
+    req.payload.findByID({
       collection: target.collection,
       id: target.docId,
       depth: 0,
@@ -27,50 +39,32 @@ async function findReadableDocId(req: PayloadRequest, target: DocTarget): Promis
       req,
       overrideAccess: false,
       disableErrors: true,
-    });
+    })
+  );
 
-    return doc ? String(doc.id) : null;
-  } catch (err) {
-    req.payload.logger.warn({ err }, `[${PLUGIN_NAME}] keyphrase access check failed`);
-    return null;
-  }
+  return doc ? String(doc.id) : null;
 }
 
-async function matchesConstraint(
-  req: PayloadRequest,
-  ref: DocRef,
-  constraint: Where
-): Promise<boolean> {
-  const { docs } = await req.payload.find({
-    collection: ref.collection,
-    where: { and: [{ id: { equals: ref.docId } }, constraint] },
-    limit: 1,
-    depth: 0,
-    pagination: false,
-    select: {},
-    overrideAccess: true,
-    req,
-    locale: ref.locale,
-  });
+function isGranted(grant: unknown): boolean {
+  if (grant === true) return true;
 
-  return docs.length > 0;
+  return (
+    typeof grant === "object" &&
+    grant !== null &&
+    "permission" in grant &&
+    grant.permission === true
+  );
 }
 
 export async function canUpdateDoc(req: PayloadRequest, ref: DocRef): Promise<boolean> {
-  const collectionConfig = req.payload.collections[ref.collection]?.config;
-  if (!collectionConfig) return false;
+  const collection = req.payload.collections[ref.collection];
+  if (!collection) return false;
 
-  try {
-    const access = await executeAccess(
-      { id: ref.docId, collectionConfig, disableErrors: true, req },
-      collectionConfig.access.update
-    );
+  const permissions = await attemptAccessCheck(req, () =>
+    docAccessOperation({ collection, id: ref.docId, req })
+  );
 
-    return typeof access === "object" ? await matchesConstraint(req, ref, access) : Boolean(access);
-  } catch (err) {
-    req.payload.logger.warn({ err }, `[${PLUGIN_NAME}] keyphrase access check failed`);
-    return false;
-  }
+  return isGranted(permissions?.update);
 }
 
 export function rejectNonAdmin(req: PayloadRequest): Response | null {

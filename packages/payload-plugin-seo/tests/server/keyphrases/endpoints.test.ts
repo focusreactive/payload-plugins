@@ -8,11 +8,18 @@ import { createKeyphraseEndpoints } from "../../../src/server/keyphrases/endpoin
 import type { IndexRow, Where } from "./indexMatcher";
 import { matchesWhere } from "./indexMatcher";
 
+const { docAccessOperation } = vi.hoisted(() => ({
+  docAccessOperation: vi.fn<(args: object) => Promise<{ update?: unknown }>>(),
+}));
+
+vi.mock("payload", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("payload")>()),
+  docAccessOperation,
+}));
+
 let rows: IndexRow[];
 
 const ADMIN_USER = { id: 1, collection: "users" };
-
-type UpdateAccess = (args: { id?: string | number }) => boolean | Where;
 
 function fakePayload({ localeCodes }: { localeCodes?: string[] } = {}) {
   return {
@@ -32,10 +39,7 @@ function fakePayload({ localeCodes }: { localeCodes?: string[] } = {}) {
     delete: vi.fn(async () => ({ docs: [] })),
     collections: {
       posts: {
-        config: {
-          admin: { useAsTitle: "title" },
-          access: { update: vi.fn<UpdateAccess>(() => true) },
-        },
+        config: { admin: { useAsTitle: "title" } },
       },
     },
   };
@@ -73,6 +77,8 @@ const putRequest = (body: unknown, payload = fakePayload()) => ({
 
 beforeEach(() => {
   rows = [];
+  docAccessOperation.mockReset();
+  docAccessOperation.mockResolvedValue({ update: true });
 });
 
 describe("request authorization", () => {
@@ -191,7 +197,7 @@ describe("update access", () => {
 
   it("returns 403 when the caller can read but not update the document", async () => {
     const payload = fakePayload();
-    payload.collections.posts.config.access.update.mockReturnValueOnce(false);
+    docAccessOperation.mockResolvedValueOnce({});
     const res = await putKeyphrases()(putRequest(putBody, payload));
     expect(res.status).toBe(403);
     expect(payload.create).not.toHaveBeenCalled();
@@ -202,40 +208,43 @@ describe("update access", () => {
     payload.findByID.mockResolvedValueOnce(null);
     const res = await putKeyphrases()(putRequest(putBody, payload));
     expect(res.status).toBe(404);
-    expect(payload.collections.posts.config.access.update).not.toHaveBeenCalled();
+    expect(docAccessOperation).not.toHaveBeenCalled();
   });
 
-  it("evaluates the collection update access for the target document", async () => {
+  it("asks Payload for the caller's permissions on the target document", async () => {
     const payload = fakePayload();
-    await putKeyphrases()(putRequest(putBody, payload));
-    expect(payload.collections.posts.config.access.update).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "1" })
+    const req = putRequest(putBody, payload);
+    await putKeyphrases()(req);
+    expect(docAccessOperation).toHaveBeenCalledWith({
+      collection: payload.collections.posts,
+      id: "1",
+      req,
+    });
+  });
+
+  it("accepts an update permission granted through a query constraint", async () => {
+    docAccessOperation.mockResolvedValueOnce({
+      update: { permission: true, where: { owner: { equals: 1 } } },
+    });
+    expect((await putKeyphrases()(putRequest(putBody))).status).toBe(200);
+  });
+
+  it("returns 403 when the query constraint excludes the document", async () => {
+    docAccessOperation.mockResolvedValueOnce({
+      update: { permission: false, where: { owner: { equals: 2 } } },
+    });
+    expect((await putKeyphrases()(putRequest(putBody))).status).toBe(403);
+  });
+
+  it("logs and returns 403 when the update access check throws", async () => {
+    const payload = fakePayload();
+    const error = new Error("access failed");
+    docAccessOperation.mockRejectedValueOnce(error);
+    expect((await putKeyphrases()(putRequest(putBody, payload))).status).toBe(403);
+    expect(payload.logger.warn).toHaveBeenCalledWith(
+      { err: error },
+      "[payload-plugin-seo] keyphrase access check failed"
     );
-  });
-
-  it("matches a query-based update access against the target document", async () => {
-    const payload = fakePayload();
-    const constraint: Where = { owner: { equals: 1 } };
-    payload.collections.posts.config.access.update.mockReturnValueOnce(constraint);
-    const res = await putKeyphrases()(putRequest(putBody, payload));
-    expect(res.status).toBe(200);
-    expect(payload.find).toHaveBeenCalledWith(
-      expect.objectContaining({
-        collection: "posts",
-        where: { and: [{ id: { equals: "1" } }, constraint] },
-        limit: 1,
-        overrideAccess: true,
-        locale: "en",
-      })
-    );
-  });
-
-  it("returns 403 when the query-based update access excludes the document", async () => {
-    const payload = fakePayload();
-    payload.collections.posts.config.access.update.mockReturnValueOnce({ owner: { equals: 2 } });
-    payload.find.mockResolvedValueOnce({ docs: [] });
-    const res = await putKeyphrases()(putRequest(putBody, payload));
-    expect(res.status).toBe(403);
   });
 
   it("reports whether the caller can update the document when reading keyphrases", async () => {
@@ -244,7 +253,7 @@ describe("update access", () => {
       canUpdate: true,
     });
 
-    payload.collections.posts.config.access.update.mockReturnValueOnce(false);
+    docAccessOperation.mockResolvedValueOnce({});
     expect(await (await getKeyphrases()(queryRequest(ref, payload))).json()).toMatchObject({
       canUpdate: false,
     });
@@ -252,7 +261,7 @@ describe("update access", () => {
 
   it("does not require update access to read keyphrases or usage", async () => {
     const payload = fakePayload();
-    payload.collections.posts.config.access.update.mockReturnValue(false);
+    docAccessOperation.mockResolvedValue({});
     expect((await getKeyphrases()(queryRequest(ref, payload))).status).toBe(200);
     expect((await getUsage()(queryRequest({ ...ref, phrase: "a" }, payload))).status).toBe(200);
   });

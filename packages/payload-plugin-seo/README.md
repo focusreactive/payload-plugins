@@ -728,7 +728,7 @@ The `seo-keyphrases` collection itself is closed: every operation is denied in i
 
 - Every request needs a logged-in user (otherwise `401`) from the admin user collection `admin.user` (otherwise `403`).
 - The user must be able to read the document the request is about, otherwise `404`.
-- `PUT /seo/keyphrases` also needs update access to that document, evaluated with the collection's `access.update` including query constraints, otherwise `403`. The access function is called with the document `id` but without `data`, and an error thrown while checking counts as no access.
+- `PUT /seo/keyphrases` also needs update access to that document, otherwise `403`. It is evaluated the way Payload's `GET /api/<collection>/access/<id>` endpoint does it, so the collection's `access.update` gets the document `id` and query constraints are matched against the document. An error thrown while checking counts as no access.
 - Every document returned is loaded with the user's read access, so editors never see titles or URLs they could not open themselves.
 
 ### "Already used on" notice
