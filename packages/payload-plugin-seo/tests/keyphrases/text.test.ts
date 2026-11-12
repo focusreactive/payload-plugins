@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { foldText, foldedWords, tokenizeWords } from "../../src/keyphrases/text";
+import { canonicalIntent, foldText, foldedWords, tokenizeWords } from "../../src/keyphrases/text";
 
 describe("foldText", () => {
   it("treats NFC and NFD forms alike", () => {
@@ -90,5 +90,40 @@ describe("foldedWords", () => {
 
   it("keeps distinct Devanagari syllables apart", () => {
     expect(foldedWords("कि")).not.toEqual(foldedWords("क"));
+  });
+});
+
+describe("canonicalIntent", () => {
+  it("ignores case and word order", () => {
+    expect(canonicalIntent("Payload CMS plugin")).toBe(canonicalIntent("plugin payload cms"));
+  });
+
+  it("ignores accents and punctuation", () => {
+    expect(canonicalIntent("Café, crème!")).toBe("cafe creme");
+  });
+
+  it("collapses whitespace", () => {
+    expect(canonicalIntent("  headless   cms ")).toBe("cms headless");
+  });
+
+  it("returns an empty string for blank input", () => {
+    expect(canonicalIntent("  ,. ")).toBe("");
+  });
+
+  it("keeps different phrases apart", () => {
+    expect(canonicalIntent("payload cms")).not.toBe(canonicalIntent("payload"));
+  });
+
+  it("matches NFC and NFD spellings", () => {
+    expect(canonicalIntent("café".normalize("NFD"))).toBe(canonicalIntent("cafe"));
+  });
+
+  it("keeps combining marks that are part of a word", () => {
+    expect(canonicalIntent("कि")).not.toBe(canonicalIntent("क"));
+  });
+
+  it("splits text without spaces into words", () => {
+    expect(canonicalIntent("机器学习")).toBe(canonicalIntent("学习 机器"));
+    expect(canonicalIntent("ข้าวผัด")).not.toBe(canonicalIntent("ข้าว"));
   });
 });

@@ -4,7 +4,7 @@ import {
   KEYPHRASES_ENDPOINT_PATH,
   KEYPHRASE_USAGE_ENDPOINT_PATH,
 } from "../../constants";
-import { canonicalIntent } from "../../keyphrases/canonicalIntent";
+import { canonicalIntent } from "../../keyphrases/text";
 import type { StoredKeyphrase } from "../../keyphrases/stored";
 import { sanitizeStoredKeyphrases } from "../../keyphrases/stored";
 import { findReadableDocs } from "../docTargets";

@@ -48,3 +48,7 @@ export function foldedWords(text: string): string[] {
     .map((token) => foldText(token.word))
     .filter(Boolean);
 }
+
+export function canonicalIntent(phrase: string): string {
+  return foldedWords(phrase).sort().join(" ");
+}
