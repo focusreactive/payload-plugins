@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-visual-editing [1.2.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-visual-editing@1.1.1...@focus-reactive/payload-plugin-visual-editing@1.2.0) (2026-11-12)
+
+
+### Features
+
+* **visual-editing:** instant live preview of text and rich text structure ([ed31d04](https://github.com/focusreactive/payload-plugins/commit/ed31d04da6a5948b4aacdb1315aaccfa301b283f))
+
 ## @focus-reactive/payload-plugin-visual-editing [1.1.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-visual-editing@1.1.0...@focus-reactive/payload-plugin-visual-editing@1.1.1) (2026-11-12)
 
 
