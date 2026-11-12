@@ -1,13 +1,13 @@
 "use client";
 
 import { useConfig, useDebounce, usePayloadAPI } from "@payloadcms/ui";
-import { AlertTriangle } from "lucide-react";
 import { useEffect } from "react";
 import { KEYPHRASE_USAGE_DELAY_MS, KEYPHRASE_USAGE_ENDPOINT_PATH } from "../../../../constants";
 import { docTargetKey } from "../../../../keyphrases/docTarget";
 import { adminDocHref, hasDocIdentity } from "../../../../keyphrases/usage";
 import type { UsageDoc } from "../../../../keyphrases/usage";
 import { useSeoTranslation } from "../../../../translations/useSeoTranslation";
+import { Notice } from "../../../../ui/Notice";
 
 export interface KeyphraseUsageProps {
   collectionSlug: string;
@@ -32,12 +32,7 @@ export function KeyphraseUsageNotice({ collectionSlug, docId, phrase }: Keyphras
   if (isError || docs.length === 0) return null;
 
   return (
-    <div
-      aria-live="polite"
-      className="text-[11.5px] text-seo-warn bg-seo-warn-100 rounded-rs px-[10px] py-[8px] flex items-start gap-[7px]"
-      role="status"
-    >
-      <AlertTriangle aria-hidden="true" className="w-[15px] h-[15px] flex-none" />
+    <Notice aria-live="polite" role="status" variant="warn">
       <div className="flex flex-col gap-[4px]">
         <span>{t("keyphrase.usedOn")}</span>
         <ul className="m-0 pl-[16px]">
@@ -56,7 +51,7 @@ export function KeyphraseUsageNotice({ collectionSlug, docId, phrase }: Keyphras
         </ul>
         <span>{t("keyphrase.cannibalization")}</span>
       </div>
-    </div>
+    </Notice>
   );
 }
 

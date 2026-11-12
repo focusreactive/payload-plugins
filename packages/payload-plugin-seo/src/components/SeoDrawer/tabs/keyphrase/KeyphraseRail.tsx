@@ -1,7 +1,8 @@
 "use client";
 
-import { AlertTriangle, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { MAX_KEYPHRASES } from "../../../../constants";
+import { Notice } from "../../../../ui/Notice";
 import type { KeyphraseEntry } from "../../keyphraseState";
 import { KeyphraseCard } from "./KeyphraseCard";
 import type { CardState } from "./KeyphraseCard";
@@ -61,13 +62,9 @@ export function KeyphraseRail({
         ))}
 
         {saveFailed && (
-          <div
-            className="mt-[6px] text-[11.5px] text-seo-bad bg-seo-bad-100 rounded-rs px-[10px] py-[8px] flex items-start gap-[7px]"
-            role="alert"
-          >
-            <AlertTriangle aria-hidden="true" className="w-[15px] h-[15px] flex-none" />
+          <Notice className="mt-[6px]" role="alert" variant="bad">
             {t("keyphrase.saveFailed")}
-          </div>
+          </Notice>
         )}
       </div>
     </aside>

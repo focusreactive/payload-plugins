@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useId, useState } from "react";
 import type { ReactNode } from "react";
 import type { CategoryResult } from "../../../../engine/types/analysis";
@@ -10,6 +10,7 @@ import { FilterPills } from "../../../../ui/FilterPills";
 import { Pill } from "../../../../ui/Pill";
 import { SectionCard } from "../../../../ui/SectionCard";
 import { IconButton } from "../../../../ui/IconButton";
+import { Notice } from "../../../../ui/Notice";
 import { TabHeader } from "../../../../ui/TabHeader";
 import { cn } from "../../../../utils/style";
 import type { TranslationKey } from "../../../../translations/types";
@@ -161,14 +162,9 @@ export function KeyphraseDetail({
       </div>
 
       {duplicate && (
-        <div
-          aria-live="polite"
-          className="text-[11.5px] text-seo-warn bg-seo-warn-100 rounded-rs px-[10px] py-[8px] flex items-center gap-[7px]"
-          role="status"
-        >
-          <AlertTriangle aria-hidden="true" className="w-[15px] h-[15px] flex-none" />
+        <Notice aria-live="polite" className="items-center" role="status" variant="warn">
           {t("keyphrase.duplicate", { text: entry.text.trim() })}
-        </div>
+        </Notice>
       )}
 
       {!duplicate && usageNotice}
