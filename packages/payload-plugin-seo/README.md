@@ -101,7 +101,8 @@ registerContentExtractors({ '@/seo/extractPageContent#default': extractPageConte
   docs/fields you need (one parallel request per collection), then read them with store.get().
 - Non-English analysis requires the locale code in `supportedLocales`; the matching Yoast
   language pack is dynamically imported on demand.
-- No GA4, no API keys, no server calls except the resolveDocs reads against your own Payload API.
+- No GA4, no API keys. Without keyphraseIndex there are no server calls except the resolveDocs reads
+  against your own Payload API.
 - Optional: `keyphraseIndex: true` stores keyphrases in a hidden `seo-keyphrases` collection,
   warns when a keyphrase is already used elsewhere, and adds an Internal links tab. It adds a
   collection, so SQL adapters need a migration (payload migrate:create). Add a per-collection
@@ -706,14 +707,16 @@ seoPlugin({
 });
 ```
 
-- Keyphrases and synonyms are saved per document and locale in a hidden `seo-keyphrases` collection (`docCollection`, `docId`, `locale`, `keyphrases`, `intents`, unique on `docCollection` + `docId` + `locale`). Up to 5 keyphrases per document, 10 synonyms each, 100 characters per entry.
+- Keyphrases and synonyms are saved per document and locale in a hidden `seo-keyphrases` collection (`docCollection`, `docId`, `locale`, `keyphrases`, `intents`, unique on `docCollection` + `docId` + `locale`). Up to 5 keyphrases per document, 10 synonyms each, 100 characters per entry. Longer input is cut to these limits when it is saved.
 - With the index on, keyphrases are no longer kept in browser storage. If the server has never stored keyphrases for a document and locale, the ones saved in the browser before the index was enabled are uploaded the first time the drawer is opened. The upload never overwrites a row another tab or editor created in the meantime, and the browser copy is removed only after the server accepted it. When it already has keyphrases, the drawer switches to them.
 - An edit the server did not accept is kept in the browser and sent again with the next save, or when the drawer is next opened after a reload. The Keyphrase tab shows a notice until a save succeeds. Saves for one document are sent one at a time.
 - Editors who can read a document but not update it see its keyphrases read-only.
+- If loading the keyphrases from the server fails, the drawer falls back to browser storage for that document, without the "already used on" notice and the Internal links tab.
 - Removing every keyphrase keeps an empty row, so an old browser copy is never uploaded over it.
 - A pending edit is sent when the page is hidden or closed, so navigating away does not lose it.
 - Rows are deleted when their document is deleted.
 - The option adds a collection. On SQL adapters (Postgres, SQLite) run `payload migrate:create` after enabling it and apply the migration.
+- Turning the option off again does not delete the stored rows. The drawer goes back to browser storage, which starts empty for documents whose keyphrases were moved to the server.
 
 ### Endpoints and access
 
