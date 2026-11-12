@@ -1,6 +1,7 @@
 import type { LeafAddress } from "../../domain/content-projection/idPath.js";
 import type { IdPath } from "../../domain/content-projection/idPath.js";
 import type { FieldLike } from "../../kernel/field-traversal/index.js";
+import type { RegisteredLanguage } from "../../traversal/index.js";
 import type { DocumentRef, ValueFailureCode } from "../../domain/translation-providers/index.js";
 import type { AnsweredSegment } from "../../kernel/lexical/checkSegments.js";
 
@@ -12,9 +13,11 @@ export type PipelineConfig = {
   targetLng: string;
   document: DocumentRef;
   selection: readonly LeafAddress[];
+  languages: readonly RegisteredLanguage[];
+  readonly hostLanguageId: string;
 };
 
-export type LeafFailureCode = ValueFailureCode | "not-answered" | "not-written";
+export type LeafFailureCode = ValueFailureCode | "not-answered";
 
 export type LeafFailure = { code: LeafFailureCode; message?: string };
 

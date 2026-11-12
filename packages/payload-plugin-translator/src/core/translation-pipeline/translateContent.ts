@@ -7,6 +7,7 @@ import type {
 import { TranslationPipeline } from "./TranslationPipeline.js";
 import type { LeafAddress } from "../domain/content-projection/idPath.js";
 import type { PipelineResult } from "./types/Pipeline.js";
+import type { RegisteredLanguage } from "../traversal/index.js";
 
 export type TranslateContentArgs = {
   schema: FieldLike[];
@@ -22,6 +23,8 @@ export type TranslateContentArgs = {
   translationProvider: TranslationProvider;
   /** The leaf addresses to translate, as {@link makeIdPath} mints them. */
   selection: readonly LeafAddress[];
+  languages: readonly RegisteredLanguage[];
+  hostLanguageId: string;
 };
 
 export type TranslatedContent = PipelineResult;
@@ -41,6 +44,8 @@ export async function translateContent({
   document,
   translationProvider,
   selection,
+  languages,
+  hostLanguageId,
 }: TranslateContentArgs): Promise<TranslatedContent> {
   const pipeline = new TranslationPipeline({ translationProvider });
 
@@ -52,5 +57,7 @@ export async function translateContent({
     targetLng,
     document,
     selection,
+    languages,
+    hostLanguageId,
   });
 }

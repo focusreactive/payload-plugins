@@ -19,10 +19,6 @@ export type {
 } from "./domain/provenance/index.js";
 export { parseSourceFingerprint } from "./domain/provenance/index.js";
 
-export { projectTranslatableContent } from "./domain/content-projection/contentProjector.js";
-export type { ProjectionEntry } from "./domain/content-projection/contentProjector.js";
-export { fingerprint } from "./domain/content-projection/fingerprinter.js";
-export { computeSourceFingerprint } from "./domain/content-projection/computeSourceFingerprint.js";
 export { makeIdPath } from "./domain/content-projection/idPath.js";
 export type { IdPath, PathSegment } from "./domain/content-projection/idPath.js";
 

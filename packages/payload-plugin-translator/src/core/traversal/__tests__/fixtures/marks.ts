@@ -1,3 +1,5 @@
+import type { SlotWrite } from "../../contract.js";
+
 /** How a leaf is cut into units. */
 export type UnitCut = "per-text-node" | "whole-container";
 
@@ -28,12 +30,11 @@ export const parseMarks = (reply: string): Map<number, string> | null => {
   return found;
 };
 
-/** Writes a parsed reply onto the pieces it came from, or nothing at all. */
-export const writeMarks = (pieces: readonly Piece[], translated: string): void => {
+export const resolveMarks = (pieces: readonly Piece[], translated: string): SlotWrite[] => {
   const parsed = parseMarks(translated);
-  if (parsed === null || parsed.size !== pieces.length) return;
-  pieces.forEach((piece, index) => {
+  if (parsed === null || parsed.size !== pieces.length) return [];
+  return pieces.flatMap((piece, index) => {
     const text = parsed.get(index + 1);
-    if (text !== undefined) piece.text = text;
+    return text === undefined ? [] : [{ slot: { holder: piece, key: "text" }, value: text }];
   });
 };

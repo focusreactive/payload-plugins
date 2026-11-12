@@ -676,7 +676,7 @@ keeps flagging until the source has text again.
 - **Code refs:**
   - `src/core/domain/provenance/ProvenanceStore.interface.ts`
   - `src/core/domain/provenance/staleness.ts` (`isRecordStale`)
-  - `src/server/modules/provenance/Provenance.service.ts` (`dismiss`)
+  - `src/server/modules/provenance/DocumentStaleness.service.ts` (`dismiss`)
   - `src/server/modules/provenance/Provenance.collection.ts`
 
 ## 2026-10-25 — the receipt holds one shape
@@ -832,3 +832,54 @@ other collection, and every read including of the document under translation, is
   intent.
 - **A host whose chain module writes the translated collection starts failing.** The error
   propagates rather than being swallowed, so the run fails loudly instead of half-writing.
+
+## 2026-11-09 — the translation walk replaces the field collector
+
+The pipeline translated through a collector that treated a rich-text field as one leaf, so text
+inside a block embedded in that field was never reached. It now translates through the traversal
+walk, which crosses into the rich text and back out into each embedded block.
+
+### the-field-collector-and-the-text-expanders-are-gone
+
+`FieldChunkCollector`, `FieldChunkCollectorStage`, `TextChunkExpander`, `TextChunkExpanderStage`,
+`PlainTextExpander`, `RichTextExpander`, `RichContainerExpander` and `writeAnswers`, with the
+`FieldChunk` and `TextChunk` types, are removed. None was exported from `src/index.ts`, so no
+consumer could name one.
+
+- **The pipeline context loses `fieldChunks` and `textChunks`** and carries `collected` and
+  `sentTargets` instead — what the walk found, and the subset the run asked for.
+- **`translateContent` requires `languages` and `hostLanguageId`.** `src/core` may not reach into
+  `src/languages`, so the walk is handed in rather than imported. The server layer builds it.
+
+### a-field-is-hashed-with-what-is-embedded-in-it
+
+The hash a run records for a field is now its own text plus the text of everything the walk found
+below a crossing at that address.
+
+- **A field with nothing embedded in it hashes exactly as before**, because the first term is the
+  unchanged projector.
+- **A rich text holding an embedded block hashes differently once**, and reads out of date one
+  time. That is the point: its embedded text was never translated and the receipt never said so.
+- **A rich text whose only text sits inside an embedded block gains an entry** it never had, its
+  own prose being empty.
+
+### the-admin-panel-and-the-run-measure-one-text
+
+`ProvenanceService` is constructed with one bound measurement of a source document, and both the
+hash a run records and the hash the panel recomputes go through it. Without that, a document holding
+an embedded block would have read out of date for ever: the panel hashed the prose, the receipt
+hashed prose plus block, and no run could settle it.
+
+- **`ProvenanceService` no longer takes the collection schema map.** It takes
+  `fingerprintOf(collection, doc)` instead, so it asks for a document's fingerprint rather than
+  holding the schema and the walk to compute one with.
+- **`provenanceIo(payload)` now takes that function as a second argument**, and
+  **`configureProvenance(option, fingerprintOf)` takes it in place of the schema map.** Both are
+  internal wiring; no consumer constructs them.
+- **A module's config-time context carries `walk`**, which the field-translation route hands to the
+  pipeline.
+
+### a-single-field-run-reaches-embedded-blocks-too
+
+`POST {basePath}/field` is given the same resolved embed table as a document run, so translating one
+rich-text field reaches the blocks inside it.

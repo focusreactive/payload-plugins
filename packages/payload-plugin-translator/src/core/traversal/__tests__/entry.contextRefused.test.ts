@@ -5,6 +5,7 @@ import type { Language } from "../contract.js";
 import { CannotEnterLanguageError } from "../errors/index.js";
 import type { Doc, FieldLike } from "./fixtures/payloadFields.js";
 import { payloadFieldsLanguage } from "./fixtures/payloadFields.js";
+import { sentTextsOf } from "./fixtures/sentText.js";
 
 const schema: FieldLike[] = [{ type: "text", name: "title", localized: true }];
 const UNREGISTERED_ID = "payload-field";
@@ -62,9 +63,9 @@ describe("a language handed a context that is not its own", () => {
   });
 
   it("still walks its own context, so refusing is not the same as never working", () => {
-    const targets = enterWith(refusesWithoutFieldList(), ownContext());
+    const { targets } = enterWith(refusesWithoutFieldList(), ownContext());
 
-    expect(targets.map((target) => target.text)).toEqual(["Hi"]);
+    expect(sentTextsOf(targets)).toEqual(["Hi"]);
   });
 
   it("leaves a refusal without a cause, so the two are told apart", () => {
@@ -122,21 +123,21 @@ describe("a language handed a context that is not its own", () => {
       },
     };
 
-    expect(enterWith(careless, { tree: "someone else's" })).toEqual([]);
-    expect(enterWith(careless, ownContext()).map((target) => target.text)).toEqual(["Hi"]);
+    expect(enterWith(careless, { tree: "someone else's" }).targets).toEqual([]);
+    expect(sentTextsOf(enterWith(careless, ownContext()).targets)).toEqual(["Hi"]);
   });
 
   it("reads an empty node list as a valid answer, not a refusal", () => {
     // Both halves, because the subject is the difference between them: one of these must throw
     // and the other must not, and either alone is satisfied by a walk that does nothing.
-    expect(enterWith(sometimesEmpty(), { ...ownContext(), fields: [] })).toEqual([]);
+    expect(enterWith(sometimesEmpty(), { ...ownContext(), fields: [] }).targets).toEqual([]);
     expect(() => enterWith(sometimesEmpty(), { noFieldsAtAll: true })).toThrow(
       CannotEnterLanguageError
     );
   });
 
   it("still walks that same language when its context does have fields", () => {
-    expect(enterWith(sometimesEmpty(), ownContext()).map((one) => one.text)).toEqual(["Hi"]);
+    expect(sentTextsOf(enterWith(sometimesEmpty(), ownContext()).targets)).toEqual(["Hi"]);
   });
 });
 

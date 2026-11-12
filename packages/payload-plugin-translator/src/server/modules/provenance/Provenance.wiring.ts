@@ -2,18 +2,21 @@ import type { Payload } from "payload";
 import type { Criteria } from "../translation-run/index.js";
 import { DRIFT_CRITERION, driftedLeaves } from "./Provenance.criterion.js";
 
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
 import type { TranslationModule } from "../plugin-config/index.js";
 
 import { provenanceModule } from "./Provenance.module.js";
 
-import { ProvenanceService } from "./Provenance.service.js";
+import { ProvenanceRecorder } from "./ProvenanceRecorder.service.js";
+import type { RecorderIo } from "./ProvenanceRecorder.service.js";
+import { DocumentStaleness } from "./DocumentStaleness.service.js";
+import type { DocumentStalenessIo } from "./DocumentStaleness.service.js";
 import { PayloadProvenanceStore } from "./Provenance.store.js";
 import type { ProvenanceStoreFactory } from "./Provenance.store.js";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import type { SourceDocumentReader } from "./Provenance.shapes.js";
+import type { SourceFingerprinter } from "../../../core/domain/content-projection/sourceFingerprinter.js";
 import {
   DEFAULT_PROVENANCE_SLUG,
   ensureProvenanceCollectionRegistered,
@@ -37,7 +40,16 @@ function resolveProvenanceSlug(option: ProvenanceOption): string | null {
 
 const OUTSIDE_THE_CALLERS_TRANSACTION = undefined;
 
-export const provenanceIo = (payload: Payload) => ({
+export const recorderIo = (payload: Payload, fingerprintOf: SourceFingerprinter): RecorderIo => ({
+  fingerprintOf,
+  logger: payload.logger,
+});
+
+export const documentStalenessIo = (
+  payload: Payload,
+  fingerprintOf: SourceFingerprinter
+): DocumentStalenessIo => ({
+  fingerprintOf,
   logger: payload.logger,
   readSource: ({ collection, id, locale, user }: Parameters<SourceDocumentReader>[0]) =>
     fetchSourceDocument({
@@ -50,10 +62,15 @@ export const provenanceIo = (payload: Payload) => ({
     }),
 });
 
-export type ProvenanceServiceFactory = (
+export type ProvenanceRecorderFactory = (
   payload: Payload,
   scope?: RequestScope
-) => ProvenanceService;
+) => ProvenanceRecorder;
+
+export type DocumentStalenessFactory = (
+  payload: Payload,
+  scope?: RequestScope
+) => DocumentStaleness;
 
 export type ProvenanceContribution = {
   module: TranslationModule;
@@ -62,7 +79,7 @@ export type ProvenanceContribution = {
 
 export function configureProvenance(
   option: ProvenanceOption,
-  schemaMap: CollectionSchemaMap
+  fingerprintOf: SourceFingerprinter
 ): ProvenanceContribution | undefined {
   const slug = resolveProvenanceSlug(option);
   if (!slug) return undefined;
@@ -71,10 +88,20 @@ export function configureProvenance(
     return new PayloadProvenanceStore(payload, slug, scope);
   };
 
-  const serviceFactory: ProvenanceServiceFactory = (payload, scope = {}) => {
-    const store = storeFactory(payload, scope);
-    const io = provenanceIo(payload);
-    return new ProvenanceService(store, schemaMap, scope, io);
+  const recorderFactory: ProvenanceRecorderFactory = (payload, scope = {}) => {
+    return new ProvenanceRecorder(
+      storeFactory(payload, scope),
+      scope,
+      recorderIo(payload, fingerprintOf)
+    );
+  };
+
+  const stalenessFactory: DocumentStalenessFactory = (payload, scope = {}) => {
+    return new DocumentStaleness(
+      storeFactory(payload, scope),
+      scope,
+      documentStalenessIo(payload, fingerprintOf)
+    );
   };
 
   const refuseACollidingSlug: ConfigModifier = (config) => {
@@ -99,11 +126,12 @@ export function configureProvenance(
 
   return {
     module: provenanceModule({
-      serviceFactory,
+      recorderFactory,
+      stalenessFactory,
       refuseACollidingSlug,
       addTheCollection,
       cleanUpOnDelete,
     }),
-    criteria: { [DRIFT_CRITERION]: driftedLeaves(serviceFactory) },
+    criteria: { [DRIFT_CRITERION]: driftedLeaves(recorderFactory) },
   };
 }

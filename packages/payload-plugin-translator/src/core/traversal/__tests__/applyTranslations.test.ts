@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { applyTranslations } from "../collect.js";
 import { article, articleSchema } from "./fixtures/documents.js";
 import { collect } from "./fixtures/harness.js";
+import { sentTextOf } from "./fixtures/sentText.js";
 
 describe("write-back", () => {
   it("reaches the element with the matching id, not the one in that position", () => {
@@ -9,10 +10,10 @@ describe("write-back", () => {
     const target = article();
     target.sections.reverse();
 
-    const targets = collect({ fields: articleSchema, source, target });
+    const collected = collect({ fields: articleSchema, source, target });
     applyTranslations(
-      targets,
-      targets.map((target_) => `<${target_.text}>`)
+      collected,
+      collected.targets.map((t) => `<${sentTextOf(t)}>`)
     );
 
     const sections = target.sections as Array<Record<string, unknown>>;
@@ -25,9 +26,9 @@ describe("write-back", () => {
     const source = article();
     const target = article();
 
-    const targets = collect({ fields: articleSchema, source, target });
+    const collected = collect({ fields: articleSchema, source, target });
     // First answered, second withheld: the pair is what separates "left alone" from "wrote nothing".
-    applyTranslations(targets, ["translated", undefined]);
+    applyTranslations(collected, ["translated", undefined]);
 
     expect(target.title).toBe("translated");
     expect(target.kicker).toBe("Kicker");
@@ -37,10 +38,10 @@ describe("write-back", () => {
     const source = article();
     const target = article();
 
-    const targets = collect({ fields: articleSchema, source, target });
+    const collected = collect({ fields: articleSchema, source, target });
     applyTranslations(
-      targets,
-      targets.map(() => "translated")
+      collected,
+      collected.targets.map(() => "translated")
     );
 
     expect(target.title).toBe("translated");

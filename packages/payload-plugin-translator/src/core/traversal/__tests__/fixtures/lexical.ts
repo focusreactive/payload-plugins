@@ -1,7 +1,7 @@
 import type { Crossing, Language, Step, TextLeaf, TextUnit } from "../../contract.js";
-import type { EmbedResolver } from "./embed.js";
+import type { EmbedResolver } from "../../../../languages/embedCrossing.js";
 import type { UnitCut } from "./marks.js";
-import { serializeMarks, writeMarks } from "./marks.js";
+import { resolveMarks, serializeMarks } from "./marks.js";
 
 export type LexNode = {
   type: string;
@@ -32,20 +32,20 @@ const isContainer = (value: unknown): value is LexNode =>
   (value as LexNode).children?.every((child) => child.type === "text") === true;
 
 function unitsOf(leaf: TextLeaf): TextUnit[] {
-  const { value, setValue } = leaf;
+  const { value, slot } = leaf;
 
   if (typeof value === "string") {
-    if (value.trim() === "" || setValue === undefined) return [];
-    const write = setValue;
-    return [{ text: value, write: (translated) => write(translated) }];
+    if (value.trim() === "" || slot === undefined) return [];
+    return [{ kind: "text", text: value, resolve: (translated) => [{ slot, value: translated }] }];
   }
 
   if (!isContainer(value)) return [];
   const children = value.children ?? [];
   return [
     {
+      kind: "text",
       text: serializeMarks(children),
-      write: (translated) => writeMarks(children, translated),
+      resolve: (translated) => resolveMarks(children, translated),
     },
   ];
 }
@@ -72,9 +72,7 @@ export function lexicalLanguage(options?: { cut?: UnitCut }): Language<LexNode, 
           kind: "value",
           value: node.text,
           segments: [],
-          setValue: (value) => {
-            if (typeof value === "string") node.text = value;
-          },
+          slot: { holder: node, key: "text" },
         };
       }
 
@@ -103,9 +101,11 @@ export function lexicalLanguage(options?: { cut?: UnitCut }): Language<LexNode, 
 
     textUnits: (leaf: TextLeaf): TextUnit[] => unitsOf(leaf),
 
-    boundary: (node, cursor): Crossing | null =>
-      EMBED_TYPES.has(node.type) && node.fields !== undefined
-        ? cursor.embed(node.fields.blockType, node.fields)
-        : null,
+    boundary: (node, cursor): Crossing | null => {
+      if (!EMBED_TYPES.has(node.type)) return null;
+      const { fields } = node;
+      if (fields === undefined || typeof fields.blockType !== "string") return null;
+      return cursor.embed({ name: fields.blockType, data: fields });
+    },
   };
 }

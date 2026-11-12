@@ -40,6 +40,37 @@ export type PathSegments = readonly PathSegment[];
 export type IdPath = readonly PathSegment[];
 
 /**
+ * An {@link IdPath} narrowed to one role: the address a piece of text is attributed to, taken from
+ * the **first** crossing on the way to it rather than the nearest, and from the leaf's own address
+ * where no crossing was taken.
+ *
+ * A leaf that took no crossing carries the very array its `idPath` is, so the two compare identical.
+ *
+ * @public
+ */
+export type FoldAddress = IdPath;
+
+/**
+ * @public
+ */
+export type Slot = {
+  /**
+   * Must be part of the caller's working content, or placed into it by a {@link Crossing}; a write
+   * into any other copy is lost.
+   */
+  holder: object;
+  key: string | number;
+};
+
+/**
+ * @public
+ */
+export type SlotWrite = {
+  slot: Slot;
+  value: unknown;
+};
+
+/**
  * One group of sibling nodes to descend into, with the cursor that goes with them.
  *
  * @template N - the language's node type.
@@ -80,11 +111,10 @@ export type Step<N, C> =
       /** What this leaf adds to its own address. */
       segments: PathSegments;
       /**
-       * How to put a value back where this one came from. Absent when the position cannot be
-       * written — a read-only walk, or a copy this language does not own — and a leaf with no
-       * `setValue` can still be crossed into, but yields no writable text.
+       * Absent where this language names no writable position for the value; such a leaf can
+       * still be crossed into.
        */
-      setValue?: (value: unknown) => void;
+      slot?: Slot;
     }
   | {
       /** This node holds nothing to walk and nothing to translate. Its siblings continue. */
@@ -99,24 +129,54 @@ export type Step<N, C> =
 export type TextLeaf = {
   /** The value this language's {@link Language.step} produced for the position. */
   value: unknown;
-  /** Present only when the position can be written; see {@link Step}. */
-  setValue?: (value: unknown) => void;
+  slot?: Slot;
+};
+
+/**
+ * Sent for translation exactly as given — never trimmed, and never normalized.
+ *
+ * @public
+ */
+export type SentText = string;
+
+/**
+ * One piece of a unit. `text: null` holds a position with nothing to translate — not an empty
+ * string.
+ *
+ * Deliberately not the translation port's `Segment`: `src/core/traversal` imports nothing outside
+ * itself, and taking that type would make the walk depend on the provider layer.
+ *
+ * @public
+ */
+export type UnitPiece = {
+  id: number;
+  text: SentText | null;
 };
 
 /**
  * One translatable piece of text, with the way to put its translation back.
  *
+ * `resolve` returns the assignments and performs none of them; an empty list is a complete answer
+ * that writes nothing.
+ *
  * @public
  */
-export type TextUnit = {
-  /** Sent for translation exactly as given, including surrounding whitespace. */
-  text: string;
-  /**
-   * Called by {@link applyTranslations}, at most once, with the answer for this unit. A unit whose
-   * answer is withheld is never called. The kernel never calls it for any other reason.
-   */
-  write: (translated: string) => void;
-};
+export type TextUnit =
+  | {
+      kind: "text";
+      text: SentText;
+      resolve: (translated: string) => readonly SlotWrite[];
+    }
+  | {
+      kind: "pieces";
+      /** Sent together, in this order; the answer's order may differ. */
+      pieces: readonly UnitPiece[];
+      /**
+       * An empty list is how a reply that does not match what was sent leaves the value in its
+       * source language rather than written in part.
+       */
+      resolve: (translated: readonly UnitPiece[]) => readonly SlotWrite[];
+    };
 
 /**
  * How a language is activated — at the root of a walk and at every boundary alike.
@@ -134,10 +194,18 @@ export type Crossing = {
    */
   languageId: string;
   /**
-   * Whatever that language needs to start. Opaque to the kernel, which neither reads nor copies it,
-   * and the **only** channel by which anything reaches {@link Language.enter}.
+   * Whatever that language needs to start, passed on as given: the kernel never copies it, so an
+   * object named here stays the same object.
    */
   context: unknown;
+  /**
+   * Where the content handed over must end up for this walk's writes to survive, when the
+   * receiving language walks a copy rather than something its host already keeps.
+   *
+   * Gathered by collection and performed only by `applyTranslations`. Its value, `null` included,
+   * is also what {@link Language.enter} receives as `value`.
+   */
+  placement?: SlotWrite;
 };
 
 /**
@@ -163,8 +231,8 @@ export type Language<N, C> = {
   /**
    * Build the nodes and cursor this activation walks — or refuse the context.
    *
-   * @param args.value - the value of the leaf that crossed into this language. Absent when this
-   *   language is the walk's entry point, because there is no leaf behind it.
+   * @param args.value - the crossing's placement value when it has one (`null` included),
+   *   otherwise the crossing leaf's own value; absent at an entry that placed nothing.
    * @param args.context - whatever the {@link Crossing} carried.
    * @returns the nodes to walk and the cursor to walk them with, or `null` to say the context is
    *   not this language's. The two are different answers: `null` raises
@@ -251,8 +319,37 @@ export type TranslationTarget = {
    * unit, all carrying this same address.
    */
   idPath: IdPath;
-  /** The text to translate, exactly as its language produced it. */
-  text: string;
-  /** This unit's {@link TextUnit.write}; calling it writes into the walked content. */
-  write: (translated: string) => void;
+  foldPath: FoldAddress;
+} & (
+  | {
+      kind: "text";
+      text: SentText;
+      write: (translated: string) => void;
+    }
+  | {
+      kind: "pieces";
+      pieces: readonly UnitPiece[];
+      write: (translated: readonly UnitPiece[]) => void;
+    }
+);
+
+/**
+ * What one {@link TranslationTarget} is answered with. The shape must match the target's `kind` —
+ * an answer in the other shape is left unwritten — and pieces may come back in any order.
+ *
+ * @public
+ */
+export type TranslationAnswer = string | readonly UnitPiece[];
+
+/**
+ * One walk's findings together with the placements that keep them.
+ *
+ * @public
+ */
+export type CollectedContent = {
+  targets: readonly TranslationTarget[];
+  /**
+   * One per crossing that named a placement, the entry's included — not one per target.
+   */
+  placements: readonly SlotWrite[];
 };

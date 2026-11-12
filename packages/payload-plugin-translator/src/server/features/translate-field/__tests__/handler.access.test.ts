@@ -5,6 +5,7 @@ import type { TranslationProvider } from "../../../../core/domain/translation-pr
 
 import { TranslateFieldHandler } from "../handler.js";
 import type { FieldTranslationConfig } from "../model.js";
+import { translationLanguages } from "../../_lib/index.js";
 
 vi.mock("../../../../core/translation-pipeline/index.js", async () => {
   const { pipelineResult } =
@@ -54,6 +55,7 @@ describe("POST /field — it asks before it spends", () => {
     findByID = vi.fn().mockResolvedValue({ id: "doc-123", title: "Saved title" });
     const translationProvider: TranslationProvider = { translate: vi.fn().mockResolvedValue({}) };
     handler = new TranslateFieldHandler({
+      walk: translationLanguages(),
       schemaMap: new Map([
         ["posts" as CollectionSlug, [field({ name: "title", type: "text", localized: true })]],
       ]),

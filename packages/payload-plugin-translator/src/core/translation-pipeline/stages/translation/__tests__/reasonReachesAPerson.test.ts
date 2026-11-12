@@ -16,7 +16,10 @@ const throwing = (error: unknown): TranslationProvider => ({
   },
 });
 
+const noWalkNeeded = { languages: [], hostLanguageId: "" };
+
 const aContext = (): PipelineContext => ({
+  ...noWalkNeeded,
   schema: [],
   sourceData: {},
   targetData: {},

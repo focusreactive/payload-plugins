@@ -1,6 +1,7 @@
 import type { CollectionSlug, Payload } from "payload";
 
 import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
+import type { BlockLike } from "../../../core/kernel/field-traversal/index.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { ID } from "../../modules/task-runner/index.js";
 import type { TranslationFilter } from "../../../core/domain/selection/index.js";
@@ -10,6 +11,7 @@ import { openRun } from "./run.js";
 import type { Run } from "./run.js";
 import { runModulesAfter, runModulesBefore } from "./runModules.js";
 import { selectLeaves } from "./selectLeaves.js";
+import { translationLanguages } from "../_lib/index.js";
 import { translateOrWrap } from "./translateOrWrap.js";
 import { reportRunOutcome } from "../_lib/index.js";
 
@@ -30,6 +32,12 @@ export type TranslateDocumentInput = {
 export type TranslateDocumentDeps = {
   readonly translationProvider: TranslationProvider;
   readonly schemaMap: CollectionSchemaMap;
+  /**
+   * Every block that may be entered inside a rich text, projected at config-build time for the same
+   * reason the schema map is. Optional because nothing reads it yet: the walk that will is build
+   * step 3, and a required member would demand what no answer here depends on.
+   */
+  readonly embeds?: readonly BlockLike[];
   readonly modules?: readonly ChainMember[];
   readonly criteria?: Criteria;
 };
@@ -51,6 +59,8 @@ export async function translateDocument(
 ): Promise<void> {
   const modules = deps.modules ?? [];
 
+  const walk = translationLanguages(deps.embeds);
+
   const run = await openRun({ payload, taskInput: input, scope, schemaMap: deps.schemaMap });
   const source = await run.doc.readSourceIfAllowed();
 
@@ -59,6 +69,7 @@ export async function translateDocument(
     criteria: deps.criteria ?? {},
     filters: input.filters ?? [],
     source,
+    walk,
   });
   const joined = await runModulesBefore({
     modules,
@@ -71,6 +82,7 @@ export async function translateDocument(
     translationProvider: deps.translationProvider,
     source,
     selection: owed.addresses,
+    walk,
   });
 
   if (translated.sent) {

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { JobIdSchema } from "../../shared/index.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
+import type { LanguageTable } from "../../../core/traversal/index.js";
 
 /**
  * Max serialized size of the value the endpoint will translate — the value read from the
@@ -35,4 +36,5 @@ export type FieldTranslationInput = z.infer<typeof FieldTranslationInputSchema>;
 export type FieldTranslationConfig = {
   schemaMap: CollectionSchemaMap;
   translationProvider: TranslationProvider;
+  walk: LanguageTable;
 };

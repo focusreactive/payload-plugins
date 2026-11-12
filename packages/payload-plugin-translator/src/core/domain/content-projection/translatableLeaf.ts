@@ -1,8 +1,8 @@
 /**
  * The single definition of "which leaf is translatable, and what its source text is" — shared by
- * the read-only {@link projectTranslatableContent} (for the provenance fingerprint) and the
- * translation pipeline's `FieldChunkCollector`, so the two can never disagree on the translatable
- * set (slice 6 design, option B, `docs/plans/2026-06-30-slice6-contentprojector-idpath-design.md`).
+ * {@link projectTranslatableContent} and the Payload-fields language's `selects`, so the hash and
+ * the walk cannot disagree (slice 6 design, option B,
+ * `docs/plans/2026-06-30-slice6-contentprojector-idpath-design.md`).
  *
  * Payload-free (structural {@link FieldLike} + owned `Serialized*` views only) so it can move to
  * `@repo/translator-core` unchanged.

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import type { FieldLike } from "../types.js";
+import type { BlockLike, FieldLike } from "../types.js";
 import { projectFieldsToFieldLike } from "../projectFieldLike.js";
 
 // Tests are derived from the projection CONTRACT (design doc + Payload field model), not from the
@@ -281,5 +281,38 @@ describe("projectFieldsToFieldLike — deep independence (the localized-strippin
     expect(projected[0]).not.toBe(source[0]);
     expect(projected[0].blocks?.[0]).not.toBe(source[0].blocks?.[0]);
     expect(projected[0].blocks?.[0]?.fields?.[0]).not.toBe(source[0].blocks?.[0]?.fields?.[0]);
+  });
+});
+
+const section = (): BlockLike => ({
+  slug: "section",
+  fields: [
+    { type: "text", name: "heading", localized: true },
+    { type: "blocks", name: "inner", blockReferences: ["section"] },
+  ],
+});
+
+const projectSelfReference = () =>
+  projectFieldsToFieldLike(
+    [{ type: "blocks", name: "body", blockReferences: ["section"] }],
+    [section()]
+  );
+
+describe("a shared block that references itself", () => {
+  it("terminates rather than recursing forever", () => {
+    expect(() => projectSelfReference()).not.toThrow();
+  });
+
+  it("resolves to the filled fields, not to the empty seed the cycle was registered with", () => {
+    const outer = projectSelfReference()[0]?.blocks?.[0];
+
+    expect(outer?.fields?.map((field) => field.name)).toEqual(["heading", "inner"]);
+  });
+
+  it("hands the inner reference the very same block, so filling it reaches both", () => {
+    const outer = projectSelfReference()[0]?.blocks?.[0];
+    const inner = outer?.fields?.[1]?.blocks?.[0];
+
+    expect(inner).toBe(outer);
   });
 });

@@ -7,6 +7,7 @@ import { resolveSettings } from "../../../../settings.js";
 import { PluginConfigBuilder } from "../PluginConfigBuilder.js";
 import { AnyAccessGuard } from "../../../shared/access/AnyAccessGuard.js";
 import { storeDouble } from "../../runs/__tests__/fixtures/runRecordStore.js";
+import { translationLanguages } from "../../../features/_lib/index.js";
 
 const deps = (collections: Array<{ slug: string }> = []) => ({
   collections: collections as unknown as CollectionConfig[],
@@ -16,6 +17,7 @@ const deps = (collections: Array<{ slug: string }> = []) => ({
   runRecordStoreFactory: () => storeDouble(),
   schemaMap: new Map(),
   translationProvider: { translate: vi.fn() },
+  walk: translationLanguages(),
 });
 
 const ep = (method: string, path: string): Endpoint =>

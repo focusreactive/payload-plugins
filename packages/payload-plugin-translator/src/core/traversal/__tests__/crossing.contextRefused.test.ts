@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { collectTranslationTargets } from "../collect.js";
 import type { Language } from "../contract.js";
 import { CannotEnterLanguageError } from "../errors/index.js";
+import { sentTextsOf } from "./fixtures/sentText.js";
 
 const outer = (context: unknown): Language<string, null> => ({
   id: "outer",
@@ -23,7 +24,7 @@ const inner: Language<string, null> = {
   step: () => ({ kind: "value", value: "inner text", segments: [] }),
   selects: () => true,
   isEmpty: () => false,
-  textUnits: ({ value }) => [{ text: value as string, write: () => undefined }],
+  textUnits: ({ value }) => [{ kind: "text", text: value as string, resolve: () => [] }],
   boundary: () => null,
 };
 
@@ -58,6 +59,6 @@ describe("a crossing that hands over the wrong context", () => {
   });
 
   it("lets the same crossing through when the context is right", () => {
-    expect(walk({ mine: true }).map((target) => target.text)).toEqual(["inner text"]);
+    expect(sentTextsOf(walk({ mine: true }).targets)).toEqual(["inner text"]);
   });
 });

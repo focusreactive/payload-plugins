@@ -4,6 +4,7 @@ import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../../core/domain/auto-translat
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 import type { TaskRunnerFactory } from "../../task-runner/index.js";
 import { configureAutoTranslate } from "../AutoTranslate.wiring.js";
+import { fingerprintsOf } from "../../provenance/__tests__/fixtures/fingerprinter.js";
 import { storeDouble } from "../../runs/__tests__/fixtures/runRecordStore.js";
 
 const runner = { create: vi.fn() } as unknown as TaskRunnerFactory;
@@ -21,7 +22,7 @@ describe("a collection still carrying the removed auto-translate option", () => 
 
     configureAutoTranslate(
       collection({ [AUTO_TRANSLATE_CUSTOM_KEY]: { targets: ["de"], strategy: "skip_existing" } }),
-      schemaMap,
+      fingerprintsOf(schemaMap),
       runner,
       () => storeDouble()
     );
@@ -34,7 +35,7 @@ describe("a collection still carrying the removed auto-translate option", () => 
 
     configureAutoTranslate(
       collection({ [AUTO_TRANSLATE_CUSTOM_KEY]: { targets: ["de"] } }),
-      schemaMap,
+      fingerprintsOf(schemaMap),
       runner,
       () => storeDouble()
     );

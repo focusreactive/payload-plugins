@@ -3,7 +3,8 @@ import {
   TranslatorConfigError,
   mustPropagate,
 } from "../../../../core/errors/index.js";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, onTestFinished } from "vitest";
+import type { Mock } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 import { APIError } from "payload";
 import type { RecordedFingerprints } from "../../../../core/domain/provenance/index.js";
@@ -12,12 +13,13 @@ import type { TranslateDocumentDeps } from "../translateDocument.js";
 import type { TranslationProvider } from "../../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../../types/AutoTranslateContext.js";
-import { ProvenanceService, provenanceIo } from "../../../modules/provenance/index.js";
-import type { ProvenanceServiceFactory } from "../../../modules/provenance/index.js";
+import { ProvenanceRecorder, recorderIo } from "../../../modules/provenance/index.js";
+import type { ProvenanceRecorderFactory } from "../../../modules/provenance/index.js";
 import type { TranslateDocumentInput } from "../translateDocument.js";
 import { provenanceInAChain } from "../../../modules/provenance/__tests__/fixtures/inAChain.js";
 import { storeDouble } from "../../../../core/domain/provenance/__tests__/fixtures/provenanceStore.js";
 import type { ProvenanceStore } from "../../../../core/domain/provenance/index.js";
+import { fingerprintsOf } from "../../../modules/provenance/__tests__/fixtures/fingerprinter.js";
 import {
   nothingSent,
   pipelineResult,
@@ -31,13 +33,17 @@ vi.mock("../../../../core/translation-pipeline/index.js", async () => {
 });
 
 vi.mock("../../../../core/domain/content-projection/computeFieldFingerprints.js", () => ({
-  computeFieldFingerprints: vi.fn(() => ({ title: "fp-fixed" })),
+  fingerprintFieldContents: vi.fn(() => ({ title: "fp-fixed" })),
   HASH_LENGTH: 16,
   SOURCE_HASH_PATTERN: /^[0-9a-f]{16}$/u,
 }));
-vi.mock("../../../../core/domain/content-projection/computeSourceFingerprint.js", () => ({
-  computeSourceFingerprint: vi.fn(() => "fp-fixed"),
-}));
+vi.mock("../../../../core/domain/content-projection/translatableFields.js", async (original) => {
+  const actual =
+    await original<
+      typeof import("../../../../core/domain/content-projection/translatableFields.js")
+    >();
+  return { ...actual, translatableFields: vi.fn(actual.translatableFields) };
+});
 
 describe("translateDocument", () => {
   let deps: TranslateDocumentDeps;
@@ -431,24 +437,22 @@ describe("translateDocument", () => {
 
   describe("provenance recording", () => {
     let store: ReturnType<typeof storeDouble>;
-    let serviceFactory: ReturnType<typeof vi.fn>;
+    let recorderFactory: Mock<ProvenanceRecorderFactory>;
 
     const depsWithProvenance = (): TranslateDocumentDeps => ({
       translationProvider: mockTranslationProvider,
       schemaMap: mockSchemaMap,
-      modules: provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory),
+      modules: provenanceInAChain(recorderFactory),
     });
 
     beforeEach(() => {
       store = storeDouble();
-      // A real `ProvenanceService` over a mock store: the record's shape is the service's policy, not the run's.
-      serviceFactory = vi.fn(
+      recorderFactory = vi.fn<ProvenanceRecorderFactory>(
         (payload) =>
-          new ProvenanceService(
+          new ProvenanceRecorder(
             store as unknown as ProvenanceStore,
-            mockSchemaMap,
             {},
-            provenanceIo(payload)
+            recorderIo(payload, fingerprintsOf(mockSchemaMap))
           )
       );
     });
@@ -462,8 +466,8 @@ describe("translateDocument", () => {
 
     it("upserts a provenance record after a successful translation", async () => {
       await withTranslatedData();
-      const { computeFieldFingerprints } =
-        await import("../../../../core/domain/content-projection/computeFieldFingerprints.js");
+      const { translatableFields } =
+        await import("../../../../core/domain/content-projection/translatableFields.js");
       (mockPayload.findByID as ReturnType<typeof vi.fn>).mockImplementation(
         ({ locale }: { locale: string }) =>
           Promise.resolve(
@@ -481,13 +485,12 @@ describe("translateDocument", () => {
         {}
       );
 
-      expect(computeFieldFingerprints).toHaveBeenCalledWith({ id: "doc-123", title: "Source" }, [
-        { name: "title", type: "text", localized: true },
-      ]);
-      const [given, scope] = (serviceFactory as ReturnType<typeof vi.fn>).mock.calls[0] as [
-        object,
-        object,
-      ];
+      expect(translatableFields).toHaveBeenCalledWith(
+        { id: "doc-123", title: "Source" },
+        [{ name: "title", type: "text", localized: true }],
+        expect.anything()
+      );
+      const [given, scope] = recorderFactory.mock.calls[0];
       expect(scope).toEqual({});
       expect(
         Object.getPrototypeOf(given),
@@ -512,8 +515,8 @@ describe("translateDocument", () => {
     it("fingerprints the source document, not whatever the pipeline hands back", async () => {
       // The real pipeline does not mutate `sourceData`; the hostile stub guards against that regressing.
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
-      const { computeFieldFingerprints } =
-        await import("../../../../core/domain/content-projection/computeFieldFingerprints.js");
+      const { translatableFields } =
+        await import("../../../../core/domain/content-projection/translatableFields.js");
 
       (mockPayload.findByID as ReturnType<typeof vi.fn>).mockImplementation(
         ({ locale }: { locale: string }) =>
@@ -533,12 +536,15 @@ describe("translateDocument", () => {
       );
 
       let fingerprintedDoc: unknown;
-      (computeFieldFingerprints as unknown as ReturnType<typeof vi.fn>).mockImplementation(
-        (doc: unknown) => {
-          fingerprintedDoc = structuredClone(doc);
-          return { title: "fp-fixed" };
-        }
-      );
+      const spy = vi.mocked(translatableFields);
+      const asItReallyIs = spy.getMockImplementation();
+      spy.mockImplementation((doc, schema, walk) => {
+        fingerprintedDoc = structuredClone(doc);
+        return asItReallyIs?.(doc, schema, walk) ?? [];
+      });
+      onTestFinished(() => {
+        if (asItReallyIs) spy.mockImplementation(asItReallyIs);
+      });
 
       await translateDocument(
         depsWithProvenance(),
@@ -568,8 +574,6 @@ describe("translateDocument", () => {
 
       await translateDocument(depsWithProvenance(), mockPayload, createInput(), {});
 
-      // The service factory may be called (to attempt a fingerprint capture), but with nothing
-      // translated there is no record — the store is never written.
       expect(store.upsert).not.toHaveBeenCalled();
     });
 
@@ -588,21 +592,20 @@ describe("translateDocument", () => {
 
   describe("what the run tells provenance", () => {
     it("claims the leaf the pipeline sent and leaves the one it did not unanswered", async () => {
-      const { computeFieldFingerprints } =
+      const { fingerprintFieldContents } =
         await import("../../../../core/domain/content-projection/computeFieldFingerprints.js");
-      (computeFieldFingerprints as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      (fingerprintFieldContents as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
         title: "fp-title",
         tagline: "fp-tagline",
       });
 
       const store = storeDouble();
-      const serviceFactory = vi.fn(
+      const recorderFactory = vi.fn<ProvenanceRecorderFactory>(
         (payload) =>
-          new ProvenanceService(
+          new ProvenanceRecorder(
             store as unknown as ProvenanceStore,
-            mockSchemaMap,
             {},
-            provenanceIo(payload)
+            recorderIo(payload, fingerprintsOf(mockSchemaMap))
           )
       );
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
@@ -618,7 +621,7 @@ describe("translateDocument", () => {
       const underTest: TranslateDocumentDeps = {
         translationProvider: mockTranslationProvider,
         schemaMap: mockSchemaMap,
-        modules: provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory),
+        modules: provenanceInAChain(recorderFactory),
       };
       await translateDocument(underTest, mockPayload, createInput({}), {});
 
@@ -640,13 +643,12 @@ describe("translateDocument", () => {
           translatedAt: "2026-07-07T00:00:00.000Z",
         }),
       });
-      const serviceFactory = vi.fn(
+      const recorderFactory = vi.fn<ProvenanceRecorderFactory>(
         (payload) =>
-          new ProvenanceService(
+          new ProvenanceRecorder(
             store as unknown as ProvenanceStore,
-            mockSchemaMap,
             {},
-            provenanceIo(payload)
+            recorderIo(payload, fingerprintsOf(mockSchemaMap))
           )
       );
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
@@ -661,7 +663,7 @@ describe("translateDocument", () => {
       const underTest: TranslateDocumentDeps = {
         translationProvider: mockTranslationProvider,
         schemaMap: mockSchemaMap,
-        modules: provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory),
+        modules: provenanceInAChain(recorderFactory),
       };
       await translateDocument(underTest, mockPayload, createInput({}), {});
 
@@ -676,13 +678,12 @@ describe("translateDocument", () => {
     const store = storeDouble({
       find: vi.fn().mockRejectedValue(new Error("sidecar unavailable")),
     });
-    const serviceFactory = vi.fn(
+    const recorderFactory = vi.fn<ProvenanceRecorderFactory>(
       (payload) =>
-        new ProvenanceService(
+        new ProvenanceRecorder(
           store as unknown as ProvenanceStore,
-          mockSchemaMap,
           {},
-          provenanceIo(payload)
+          recorderIo(payload, fingerprintsOf(mockSchemaMap))
         )
     );
     const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
@@ -697,7 +698,7 @@ describe("translateDocument", () => {
     const underTest: TranslateDocumentDeps = {
       translationProvider: mockTranslationProvider,
       schemaMap: mockSchemaMap,
-      modules: provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory),
+      modules: provenanceInAChain(recorderFactory),
     };
 
     await expect(

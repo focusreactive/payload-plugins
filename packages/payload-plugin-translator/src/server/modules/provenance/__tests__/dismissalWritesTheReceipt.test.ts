@@ -1,7 +1,6 @@
 import type { Field, Payload } from "payload";
 import { describe, expect, it, vi } from "vitest";
 
-import { computeFieldFingerprints } from "../../../../core/domain/content-projection/computeFieldFingerprints.js";
 import type {
   ProvenanceReceipt,
   ProvenanceStore,
@@ -10,7 +9,9 @@ import { UNANSWERED } from "../../../../core/domain/provenance/index.js";
 import type { RequestScope } from "../../../shared/payload/RequestScope.shapes.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 import { driftedLeaves } from "../Provenance.criterion.js";
-import { ProvenanceService } from "../Provenance.service.js";
+import { DocumentStaleness } from "../DocumentStaleness.service.js";
+import { ProvenanceRecorder } from "../ProvenanceRecorder.service.js";
+import { fingerprintsOf } from "./fixtures/fingerprinter.js";
 
 const COLLECTION = "posts";
 const schema: Field[] = [
@@ -24,13 +25,12 @@ const TRANSLATED_AT = "2026-07-15T00:00:00.000Z";
 
 /** `swallowOrThrow` reads `transactionID` alone, so an empty scope means no transaction to lose. */
 const NO_TRANSACTION: RequestScope = {};
-/** Threaded to the service factory by the criterion; nothing in these checks reads it. */
 const UNUSED_PAYLOAD = {} as Payload;
 
 const sourceWas = { id: "1", title: "Hello", body: "World" };
 const sourceNow = { id: "1", title: "Hello", body: "Moved on" };
 
-const hashesOf = (doc: Record<string, unknown>) => computeFieldFingerprints(doc, schema);
+const hashesOf = (doc: Record<string, unknown>) => fingerprintsOf(schemaMap)(COLLECTION, doc);
 
 const receiptFrom = (
   doc: Record<string, unknown>,
@@ -61,10 +61,17 @@ function storeHoldingOneRow(seed: ProvenanceReceipt) {
   return { store, row: () => row };
 }
 
-const serviceOver = (store: ProvenanceStore, source: Record<string, unknown> | null) =>
-  new ProvenanceService(store, schemaMap, NO_TRANSACTION, {
+const panelOver = (store: ProvenanceStore, source: Record<string, unknown> | null) =>
+  new DocumentStaleness(store, NO_TRANSACTION, {
     logger: { error: vi.fn() },
     readSource: async () => source,
+    fingerprintOf: fingerprintsOf(schemaMap),
+  });
+
+const recorderOver = (store: ProvenanceStore) =>
+  new ProvenanceRecorder(store, NO_TRANSACTION, {
+    logger: { error: vi.fn() },
+    fingerprintOf: fingerprintsOf(schemaMap),
   });
 
 const ask = (sourceData: Record<string, unknown>) => ({
@@ -84,7 +91,7 @@ const dismissedAgainst = async (
   seed: ProvenanceReceipt = receiptFrom(sourceWas)
 ) => {
   const kept = storeHoldingOneRow(seed);
-  await serviceOver(kept.store, source).dismiss(KEY);
+  await panelOver(kept.store, source).dismiss(KEY);
   return kept;
 };
 
@@ -92,7 +99,7 @@ describe("hiding the out-of-date mark", () => {
   it("leaves the locale reading as current, naming no moved leaves", async () => {
     const kept = await dismissedAgainst(sourceNow);
 
-    const [locale] = await serviceOver(kept.store, sourceNow).getStaleness(COLLECTION, "1");
+    const [locale] = await panelOver(kept.store, sourceNow).getStaleness(COLLECTION, "1");
 
     expect(locale?.isStale).toBe(false);
     expect(
@@ -103,7 +110,7 @@ describe("hiding the out-of-date mark", () => {
 
   it("keeps those leaves out of a run that narrows by the drift rule", async () => {
     const kept = await dismissedAgainst(sourceNow);
-    const rule = driftedLeaves(() => serviceOver(kept.store, sourceNow));
+    const rule = driftedLeaves(() => recorderOver(kept.store));
 
     await expect(
       rule(ask(sourceNow)),
@@ -146,11 +153,22 @@ describe("hiding the out-of-date mark", () => {
     expect(kept.row()).toEqual(seed);
   });
 
+  it("writes nothing, and does not throw, for a collection this plugin does not translate", async () => {
+    const foreign = "comments";
+    const seed = receiptFrom(sourceWas, { collectionSlug: foreign });
+    const kept = storeHoldingOneRow(seed);
+
+    await expect(
+      panelOver(kept.store, sourceNow).dismiss({ ...KEY, collectionSlug: foreign })
+    ).resolves.toBeUndefined();
+    expect(kept.row()).toEqual(seed);
+  });
+
   it("comes back when the source moves again", async () => {
     const kept = await dismissedAgainst(sourceNow);
     const movedTwice = { id: "1", title: "Hello", body: "Moved twice" };
 
-    const [locale] = await serviceOver(kept.store, movedTwice).getStaleness(COLLECTION, "1");
+    const [locale] = await panelOver(kept.store, movedTwice).getStaleness(COLLECTION, "1");
 
     expect(locale?.isStale).toBe(true);
     expect(locale?.changedLeaves).toEqual(["body"]);

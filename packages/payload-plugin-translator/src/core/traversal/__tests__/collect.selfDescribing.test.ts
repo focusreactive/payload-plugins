@@ -6,20 +6,21 @@ import {
   collect,
   richTextNestedThroughEmbeds,
 } from "./fixtures/harness.js";
+import { sentTextsOf } from "./fixtures/sentText.js";
 
 describe("a self-describing language reached across a boundary", () => {
   it("collects the prose and the text inside an embedded component", () => {
-    const targets = collect({
+    const { targets } = collect({
       fields: bodySchema(),
       source: bodyDocument(),
       target: bodyDocument(),
     });
 
-    expect(targets.map((target) => target.text)).toEqual(["Lead in", "Click me", "Please"]);
+    expect(sentTextsOf(targets)).toEqual(["Lead in", "Click me", "Please"]);
   });
 
   it("addresses a leaf inside the embed, through the rich text", () => {
-    const targets = collect({
+    const { targets } = collect({
       fields: bodySchema(),
       source: bodyDocument(),
       target: bodyDocument(),
@@ -34,19 +35,13 @@ describe("a self-describing language reached across a boundary", () => {
 
   it("walks nesting five levels deep", () => {
     const { fields, document } = richTextNestedThroughEmbeds(LEVELS);
-    const targets = collect({
+    const { targets } = collect({
       fields,
       source: document,
       target: document,
       maxCrossings: CROSSINGS_PER_LEVEL * LEVELS,
     });
 
-    expect(targets.map((target) => target.text)).toEqual([
-      "level 1",
-      "level 2",
-      "level 3",
-      "level 4",
-      "level 5",
-    ]);
+    expect(sentTextsOf(targets)).toEqual(["level 1", "level 2", "level 3", "level 4", "level 5"]);
   });
 });

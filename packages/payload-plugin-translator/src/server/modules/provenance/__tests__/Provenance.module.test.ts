@@ -10,8 +10,10 @@ import type {
 import type { BeforeTranslation, RunContribution } from "../../translation-run/index.js";
 import type { FieldFingerprints } from "../../../../core/domain/content-projection/computeFieldFingerprints.js";
 import { PROVENANCE_MODULE, provenanceModule } from "../Provenance.module.js";
-import { ProvenanceService } from "../Provenance.service.js";
+import { ProvenanceRecorder } from "../ProvenanceRecorder.service.js";
+import { NO_PANEL_IN_THESE_CHECKS } from "./fixtures/inAChain.js";
 import { storeDouble } from "../../../../core/domain/provenance/__tests__/fixtures/provenanceStore.js";
+import { fingerprintsOf } from "./fixtures/fingerprinter.js";
 
 const COLLECTION = "posts";
 const NOT_IN_A_TRANSACTION = {};
@@ -37,13 +39,12 @@ const moduleReading = (stored: RecordedFingerprints | null) => {
   });
 
   return provenanceModule({
-    serviceFactory: () =>
-      new ProvenanceService(
-        store,
-        new Map([[COLLECTION, schema]]) as CollectionSchemaMap,
-        NOT_IN_A_TRANSACTION,
-        { logger: { error: vi.fn() }, readSource: vi.fn() }
-      ),
+    recorderFactory: () =>
+      new ProvenanceRecorder(store, NOT_IN_A_TRANSACTION, {
+        logger: { error: vi.fn() },
+        fingerprintOf: fingerprintsOf(new Map([[COLLECTION, schema]]) as CollectionSchemaMap),
+      }),
+    stalenessFactory: NO_PANEL_IN_THESE_CHECKS,
     refuseACollidingSlug: UNCHANGED,
     addTheCollection: UNCHANGED,
     cleanUpOnDelete: () => UNCHANGED,

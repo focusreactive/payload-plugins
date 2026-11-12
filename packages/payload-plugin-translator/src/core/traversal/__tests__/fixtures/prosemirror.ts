@@ -1,7 +1,7 @@
 import type { Crossing, Language, Step, TextLeaf, TextUnit } from "../../contract.js";
-import type { EmbedResolver } from "./embed.js";
+import type { EmbedResolver } from "../../../../languages/embedCrossing.js";
 import type { UnitCut } from "./marks.js";
-import { serializeMarks, writeMarks } from "./marks.js";
+import { resolveMarks, serializeMarks } from "./marks.js";
 
 export type PmNode = {
   type: string;
@@ -38,20 +38,20 @@ const isContainer = (value: unknown): value is PmNode =>
   (value as PmNode).content?.every((child) => child.type === "text") === true;
 
 function unitsOf(leaf: TextLeaf): TextUnit[] {
-  const { value, setValue } = leaf;
+  const { value, slot } = leaf;
 
   if (typeof value === "string") {
-    if (value.trim() === "" || setValue === undefined) return [];
-    const write = setValue;
-    return [{ text: value, write: (translated) => write(translated) }];
+    if (value.trim() === "" || slot === undefined) return [];
+    return [{ kind: "text", text: value, resolve: (translated) => [{ slot, value: translated }] }];
   }
 
   if (!isContainer(value)) return [];
   const children = value.content ?? [];
   return [
     {
+      kind: "text",
       text: serializeMarks(children),
-      write: (translated) => writeMarks(children, translated),
+      resolve: (translated) => resolveMarks(children, translated),
     },
   ];
 }
@@ -78,9 +78,7 @@ export function prosemirrorLanguage(options?: { cut?: UnitCut }): Language<Node,
           kind: "value",
           value: node.text,
           segments: [],
-          setValue: (value) => {
-            if (typeof value === "string") node.text = value;
-          },
+          slot: { holder: node, key: "text" },
         };
       }
 
@@ -122,7 +120,12 @@ export function prosemirrorLanguage(options?: { cut?: UnitCut }): Language<Node,
 
     textUnits: (leaf: TextLeaf): TextUnit[] => unitsOf(leaf),
 
-    boundary: (node, cursor): Crossing | null =>
-      isComponentNode(node) ? cursor.embed(node.component.component, node.component) : null,
+    boundary: (node, cursor): Crossing | null => {
+      if (!isComponentNode(node)) return null;
+      const { component } = node;
+      return typeof component.component === "string"
+        ? cursor.embed({ name: component.component, data: component })
+        : null;
+    },
   };
 }

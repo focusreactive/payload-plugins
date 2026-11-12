@@ -1,4 +1,5 @@
 import type { Crossing, Language, Step, TextLeaf, TextUnit } from "../../contract.js";
+import type { EmbedIdentity } from "../../../../languages/embedCrossing.js";
 
 export type FieldDef = {
   type: string;
@@ -70,9 +71,7 @@ export function storyblokLanguage(): Language<Node, BlokCursor> {
         kind: "value",
         value: cursor.source[name],
         segments: [name],
-        setValue: (value) => {
-          cursor.target[name] = value;
-        },
+        slot: { holder: cursor.target, key: name },
       };
     },
 
@@ -81,26 +80,29 @@ export function storyblokLanguage(): Language<Node, BlokCursor> {
     isEmpty: (value) => (typeof value === "string" ? value.trim() === "" : value == null),
 
     textUnits: (leaf: TextLeaf): TextUnit[] => {
-      const { value, setValue } = leaf;
-      if (typeof value !== "string" || value.trim() === "" || setValue === undefined) return [];
-      const write = setValue;
-      return [{ text: value, write: (translated) => write(translated) }];
+      const { value, slot } = leaf;
+      if (typeof value !== "string" || value.trim() === "" || slot === undefined) return [];
+      return [
+        { kind: "text", text: value, resolve: (translated) => [{ slot, value: translated }] },
+      ];
     },
 
     boundary(node, cursor): Crossing | null {
       const { name, def } = node;
       if (def.type !== "richtext" || def.translatable !== true) return null;
-      const tree = cursor.target[name];
+      const tree = cursor.source[name];
       if (tree === undefined || tree === null) return null;
+      const workingCopy = structuredClone(tree);
 
       const allowed = new Set(def.allowedEmbeds);
       const { registry } = cursor;
       if (def.richTextLanguage === undefined) return null;
       return {
         languageId: def.richTextLanguage,
+        placement: { slot: { holder: cursor.target, key: name }, value: workingCopy },
         context: {
-          tree,
-          embed: (embedName: string, data: unknown): Crossing | null => {
+          tree: workingCopy,
+          embed: ({ name: embedName, data }: EmbedIdentity): Crossing | null => {
             const blok = asBlok(data);
             if (blok === null || !allowed.has(embedName)) return null;
             return {

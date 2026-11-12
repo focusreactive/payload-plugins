@@ -6,6 +6,7 @@ import type { TaskRunnerFactory } from "../../task-runner/TaskRunnerProvider.int
 import { makeCollectionPolicyResolver } from "../AutoTranslate.policy.js";
 import type { NormalizedAutoTranslatePolicy } from "../AutoTranslate.policy.js";
 import { makeAutoTranslateHook } from "../AutoTranslateEnqueue.hook.js";
+import { fingerprintsOf } from "../../provenance/__tests__/fixtures/fingerprinter.js";
 import { storeDouble } from "../../runs/__tests__/fixtures/runRecordStore.js";
 
 const schemaMap: CollectionSchemaMap = new Map([
@@ -25,7 +26,7 @@ function setup() {
   } as unknown as TaskRunnerFactory;
   const hook = makeAutoTranslateHook({
     resolvePolicy: makeCollectionPolicyResolver(new Map([["posts", policy]])),
-    schemaMap,
+    fingerprintOf: fingerprintsOf(schemaMap),
     taskRunnerFactory,
     runRecordStoreFactory: () => storeDouble(),
   });

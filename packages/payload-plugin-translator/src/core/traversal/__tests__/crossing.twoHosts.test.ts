@@ -8,13 +8,18 @@ import {
   postsSchema,
   storyRegistry,
 } from "./fixtures/harness.js";
+import { sentTextsOf } from "./fixtures/sentText.js";
 
 describe("one rich-text language, two hosts", () => {
   it("applies the entering host's selection rule to its embeds", () => {
     const lexical = lexicalLanguage();
 
     const payloadDocument = lexicalPost();
-    const fromPayloadTargets = fromPayload(postsSchema(LEXICAL_ID), payloadDocument, lexical);
+    const { targets: fromPayloadTargets } = fromPayload(
+      postsSchema(LEXICAL_ID),
+      payloadDocument,
+      lexical
+    );
 
     const story: Blok = {
       component: "page",
@@ -39,10 +44,14 @@ describe("one rich-text language, two hosts", () => {
         },
       },
     };
-    const fromStoryblokTargets = fromStoryblok(storyRegistry(LEXICAL_ID), story, lexical);
+    const { targets: fromStoryblokTargets } = fromStoryblok(
+      storyRegistry(LEXICAL_ID),
+      story,
+      lexical
+    );
 
-    const payloadTexts = fromPayloadTargets.map((target) => target.text);
-    const storyblokTexts = fromStoryblokTargets.map((target) => target.text);
+    const payloadTexts = sentTextsOf(fromPayloadTargets);
+    const storyblokTexts = sentTextsOf(fromStoryblokTargets);
 
     expect(payloadTexts).toEqual(["Intro", "Click me", "Please", "Get started", "Read the docs"]);
     expect(storyblokTexts).toEqual(["Story title", "Prose", "Deal"]);

@@ -9,8 +9,9 @@ import type {
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 import { TranslatorConfigError } from "../../../../core/errors/index.js";
 import { driftedLeaves } from "../Provenance.criterion.js";
-import { ProvenanceService } from "../Provenance.service.js";
+import { ProvenanceRecorder } from "../ProvenanceRecorder.service.js";
 import { storeDouble } from "../../../../core/domain/provenance/__tests__/fixtures/provenanceStore.js";
+import { fingerprintsOf } from "./fixtures/fingerprinter.js";
 
 const COLLECTION = "posts";
 const schema: Field[] = [
@@ -34,11 +35,15 @@ const answering = (stored: RecordedFingerprints | null, collections = [COLLECTIO
 
   return driftedLeaves(
     () =>
-      new ProvenanceService(
+      new ProvenanceRecorder(
         store,
-        new Map(collections.map((slug) => [slug, schema])) as CollectionSchemaMap,
         {},
-        { logger: { error: vi.fn() }, readSource: vi.fn() }
+        {
+          logger: { error: vi.fn() },
+          fingerprintOf: fingerprintsOf(
+            new Map(collections.map((slug) => [slug, schema])) as CollectionSchemaMap
+          ),
+        }
       )
   );
 };
@@ -58,14 +63,16 @@ const ask = (sourceData: Record<string, unknown> = { title: "Hello", body: "Worl
 /** What the receipt holds after a run over this source — the criterion's own "nothing moved" state. */
 const asTranslated = async () => {
   const everything = await answering(null)(ask());
-  const service = new ProvenanceService(
+  const recorder = new ProvenanceRecorder(
     {} as unknown as ProvenanceStore,
-    new Map([[COLLECTION, schema]]) as CollectionSchemaMap,
     {},
-    { logger: { error: vi.fn() }, readSource: vi.fn() }
+    {
+      logger: { error: vi.fn() },
+      fingerprintOf: fingerprintsOf(new Map([[COLLECTION, schema]]) as CollectionSchemaMap),
+    }
   );
   expect(everything).toEqual(["title", "body"]);
-  return service.captureFingerprint(COLLECTION, { title: "Hello", body: "World" }) ?? {};
+  return recorder.captureFingerprint(COLLECTION, { title: "Hello", body: "World" }) ?? {};
 };
 
 describe("the leaves provenance answers", () => {

@@ -27,8 +27,8 @@ export class GetDocumentStalenessHandler {
     }
 
     try {
-      const service = this.config.provenanceServiceFactory(req.payload);
-      const locales = await service.getStaleness(collectionSlug, collection_id, req.user);
+      const staleness = this.config.stalenessFactory(req.payload);
+      const locales = await staleness.getStaleness(collectionSlug, collection_id, req.user);
       return ServerResponse.success({ locales: locales.map(asStalenessBody) });
     } catch (error) {
       req.payload.logger.error({

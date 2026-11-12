@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Field } from "payload";
 
-import { ProvenanceService } from "../../../../server/modules/provenance/Provenance.service.js";
+import { ProvenanceRecorder } from "../../../../server/modules/provenance/ProvenanceRecorder.service.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 import { makeIdPath } from "../../content-projection/idPath.js";
 import type { FieldFingerprints } from "../../content-projection/computeFieldFingerprints.js";
@@ -15,6 +15,7 @@ import type { ProvenanceReceipt } from "../ProvenanceStore.interface.js";
 import type { RecordedFingerprints } from "../SourceFingerprint.js";
 import { asHash } from "./fixtures/claims.js";
 import { storeDouble } from "./fixtures/provenanceStore.js";
+import { fingerprintsOf } from "../../../../server/modules/provenance/__tests__/fixtures/fingerprinter.js";
 
 const receipt = (over: Partial<ProvenanceReceipt> = {}): ProvenanceReceipt => ({
   collectionSlug: "posts",
@@ -111,14 +112,12 @@ describe("the receipt a run leaves behind", () => {
         .fn()
         .mockResolvedValue(previous === null ? null : receipt({ sourceFingerprint: previous })),
     });
-    const service = new ProvenanceService(
-      store,
-      new Map([[COLLECTION, schema]]) as CollectionSchemaMap,
-      NOT_IN_A_TRANSACTION,
-      { logger: { error: vi.fn() }, readSource: vi.fn() }
-    );
+    const recorder = new ProvenanceRecorder(store, NOT_IN_A_TRANSACTION, {
+      logger: { error: vi.fn() },
+      fingerprintOf: fingerprintsOf(new Map([[COLLECTION, schema]]) as CollectionSchemaMap),
+    });
 
-    await service.record(
+    await recorder.record(
       { collectionSlug: COLLECTION, documentId: "1", targetLocale: "de", sourceLocale: "en" },
       sourceNow({ title: "ace", body: "beef" }),
       [{ idPath: makeIdPath([{ kind: "key", name: "title" }]), answered: true }]

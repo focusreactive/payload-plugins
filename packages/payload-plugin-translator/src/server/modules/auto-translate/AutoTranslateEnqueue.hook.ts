@@ -9,7 +9,7 @@ import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import { hasSourceContentChanged } from "../../../core/domain/auto-translate/index.js";
 import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../core/domain/auto-translate/index.js";
 import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext.js";
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
+import type { SourceFingerprinter } from "../../../core/domain/content-projection/sourceFingerprinter.js";
 import type { TaskRunnerFactory } from "../task-runner/index.js";
 import type { RunRecordStoreFactory } from "../runs/index.js";
 import { admitWork } from "../../../core/domain/runs/index.js";
@@ -26,14 +26,14 @@ type MarkedHook = CollectionAfterChangeHook & { __translatorAutoTranslate?: bool
 
 type AutoTranslateHookDeps = {
   resolvePolicy: AutoTranslatePolicyResolver;
-  schemaMap: CollectionSchemaMap;
+  fingerprintOf: SourceFingerprinter;
   taskRunnerFactory: TaskRunnerFactory;
   runRecordStoreFactory: RunRecordStoreFactory;
 };
 
 /** `afterChange` hook that enqueues translations when a document's source-locale content changes. */
 export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAfterChangeHook {
-  const { resolvePolicy, schemaMap, taskRunnerFactory, runRecordStoreFactory } = deps;
+  const { resolvePolicy, fingerprintOf, taskRunnerFactory, runRecordStoreFactory } = deps;
 
   const hook: MarkedHook = async ({ doc, previousDoc, req, collection }) => {
     const transactionID = await req.transactionID;
@@ -67,8 +67,7 @@ export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAf
         const hasDrafts = hasDraftsEnabled(collection);
         if (!passesPublishGate(doc, hasDrafts)) return;
 
-        const schema = schemaMap.get(collection.slug);
-        if (schema && !hasSourceContentChanged(previousDoc, doc, schema)) return;
+        if (!hasSourceContentChanged(previousDoc, doc, collection.slug, fingerprintOf)) return;
 
         const tasks = buildAutoTranslateTasks({
           policy,

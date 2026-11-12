@@ -1,0 +1,486 @@
+{
+  "documents": {
+    "plain text only": {
+      "title": "Pricing"
+    },
+    "rich text of prose only": {
+      "title": "Pricing",
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "Hello world"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "a non-translatable field present": {
+      "title": "Pricing",
+      "untranslated": "ignore me"
+    },
+    "rich text with punctuation and spacing": {
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "  Mind   the  gaps.  "
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "an array of rows": {
+      "title": "Pricing",
+      "sections": [
+        {
+          "id": "s1",
+          "caption": "First"
+        },
+        {
+          "id": "s2",
+          "caption": "Second"
+        }
+      ]
+    },
+    "payload blocks, not embedded in a rich text": {
+      "layout": [
+        {
+          "id": "q1",
+          "blockType": "quote",
+          "saying": "Measured, not argued"
+        }
+      ]
+    },
+    "empty document": {},
+    "text that looks like a serialization": {
+      "title": "4:body=7:Buy now"
+    },
+    "several paragraphs": {
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "One"
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "Two"
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "Three"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "a blank text node between two runs": {
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "Hello"
+                },
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "world"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "two runs with no blank between them": {
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "Hello"
+                },
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": " world"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "a heading and a list": {
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "heading",
+              "tag": "h2",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "Prices"
+                }
+              ]
+            },
+            {
+              "type": "list",
+              "listType": "bullet",
+              "version": 1,
+              "children": [
+                {
+                  "type": "listitem",
+                  "version": 1,
+                  "value": 1,
+                  "children": [
+                    {
+                      "type": "text",
+                      "version": 1,
+                      "text": "First"
+                    }
+                  ]
+                },
+                {
+                  "type": "listitem",
+                  "version": 1,
+                  "value": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "version": 1,
+                      "text": "Second"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "a link around text": {
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "link",
+                  "version": 1,
+                  "fields": {
+                    "url": "https://example.com"
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "version": 1,
+                      "text": "Click me"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "a linebreak between runs": {
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "Before"
+                },
+                {
+                  "type": "linebreak",
+                  "version": 1
+                },
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "After"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "an empty string field": {
+      "title": "",
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "Body"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "a group field": {
+      "meta": {
+        "summary": "A summary"
+      },
+      "title": "Pricing"
+    },
+    "non-ascii text": {
+      "title": "Цена — 100 ₽",
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "日本語とemoji 🙂"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "an empty rich text": {
+      "title": "Pricing",
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": []
+        }
+      }
+    },
+    "an array with no ids": {
+      "sections": [
+        {
+          "caption": "Nameless"
+        }
+      ]
+    }
+  },
+  "baseline": {
+    "no embeds registered": {
+      "plain text only": {
+        "title": "dfe95783edfef791"
+      },
+      "rich text of prose only": {
+        "title": "dfe95783edfef791",
+        "body": "64ec88ca00b268e5"
+      },
+      "a non-translatable field present": {
+        "title": "dfe95783edfef791"
+      },
+      "rich text with punctuation and spacing": {
+        "body": "d6156da01fd99ba7"
+      },
+      "an array of rows": {
+        "title": "dfe95783edfef791",
+        "sections.s1.caption": "a151ceb1711aad52",
+        "sections.s2.caption": "8b88a85089561b79"
+      },
+      "payload blocks, not embedded in a rich text": {
+        "layout.q1:quote.saying": "78137c55e46adf3d"
+      },
+      "empty document": {},
+      "text that looks like a serialization": {
+        "title": "35305ea299905f8f"
+      },
+      "several paragraphs": {
+        "body": "51122a65e52117c0"
+      },
+      "a blank text node between two runs": {
+        "body": "5ab92ff2e9e8e609"
+      },
+      "two runs with no blank between them": {
+        "body": "64ec88ca00b268e5"
+      },
+      "a heading and a list": {
+        "body": "9759f8bbc1f163fb"
+      },
+      "a link around text": {
+        "body": "5c9f15b52aa8207b"
+      },
+      "a linebreak between runs": {
+        "body": "4e7bd199fbaad654"
+      },
+      "an empty string field": {
+        "body": "6ccaa6415b5ee449"
+      },
+      "a group field": {
+        "title": "dfe95783edfef791",
+        "meta.summary": "ef776f4654db75c0"
+      },
+      "non-ascii text": {
+        "title": "d125c477268cf136",
+        "body": "132bfa002ae3dbf7"
+      },
+      "an empty rich text": {
+        "title": "dfe95783edfef791"
+      },
+      "an array with no ids": {
+        "sections.#0.caption": "229f55eea3dd717f"
+      }
+    },
+    "embeds registered, none used": {
+      "plain text only": {
+        "title": "dfe95783edfef791"
+      },
+      "rich text of prose only": {
+        "title": "dfe95783edfef791",
+        "body": "64ec88ca00b268e5"
+      },
+      "a non-translatable field present": {
+        "title": "dfe95783edfef791"
+      },
+      "rich text with punctuation and spacing": {
+        "body": "d6156da01fd99ba7"
+      },
+      "an array of rows": {
+        "title": "dfe95783edfef791",
+        "sections.s1.caption": "a151ceb1711aad52",
+        "sections.s2.caption": "8b88a85089561b79"
+      },
+      "payload blocks, not embedded in a rich text": {
+        "layout.q1:quote.saying": "78137c55e46adf3d"
+      },
+      "empty document": {},
+      "text that looks like a serialization": {
+        "title": "35305ea299905f8f"
+      },
+      "several paragraphs": {
+        "body": "51122a65e52117c0"
+      },
+      "a blank text node between two runs": {
+        "body": "5ab92ff2e9e8e609"
+      },
+      "two runs with no blank between them": {
+        "body": "64ec88ca00b268e5"
+      },
+      "a heading and a list": {
+        "body": "9759f8bbc1f163fb"
+      },
+      "a link around text": {
+        "body": "5c9f15b52aa8207b"
+      },
+      "a linebreak between runs": {
+        "body": "4e7bd199fbaad654"
+      },
+      "an empty string field": {
+        "body": "6ccaa6415b5ee449"
+      },
+      "a group field": {
+        "title": "dfe95783edfef791",
+        "meta.summary": "ef776f4654db75c0"
+      },
+      "non-ascii text": {
+        "title": "d125c477268cf136",
+        "body": "132bfa002ae3dbf7"
+      },
+      "an empty rich text": {
+        "title": "dfe95783edfef791"
+      },
+      "an array with no ids": {
+        "sections.#0.caption": "229f55eea3dd717f"
+      }
+    }
+  }
+}

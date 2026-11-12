@@ -1,4 +1,5 @@
 import type { Crossing, Language, Step, TextLeaf, TextUnit } from "../../contract.js";
+import type { EmbedIdentity } from "../../../../languages/embedCrossing.js";
 
 export type BlockLike = { slug: string; fields: FieldLike[] };
 
@@ -98,9 +99,7 @@ export function payloadFieldsLanguage(): Language<FieldLike, SchemaCursor> {
         kind: "value",
         value: cursor.source[name],
         segments: [name],
-        setValue: (value) => {
-          cursor.target[name] = value;
-        },
+        slot: { holder: cursor.target, key: name },
       };
     },
 
@@ -110,10 +109,11 @@ export function payloadFieldsLanguage(): Language<FieldLike, SchemaCursor> {
     isEmpty: (value) => (typeof value === "string" ? value.trim() === "" : value == null),
 
     textUnits: (leaf: TextLeaf): TextUnit[] => {
-      const { value, setValue } = leaf;
-      if (typeof value !== "string" || value.trim() === "" || setValue === undefined) return [];
-      const write = setValue;
-      return [{ text: value, write: (translated) => write(translated) }];
+      const { value, slot } = leaf;
+      if (typeof value !== "string" || value.trim() === "" || slot === undefined) return [];
+      return [
+        { kind: "text", text: value, resolve: (translated) => [{ slot, value: translated }] },
+      ];
     },
 
     boundary(field, cursor): Crossing | null {
@@ -121,16 +121,18 @@ export function payloadFieldsLanguage(): Language<FieldLike, SchemaCursor> {
       // Crossing happens before `selects`, so a boundary that skipped this would translate a field
       // its own host never marked for translation.
       if (field.localized !== true || field.excluded === true) return null;
-      const tree = cursor.target[field.name];
+      const tree = cursor.source[field.name];
       if (tree === undefined || tree === null) return null;
+      const workingCopy = structuredClone(tree);
 
       const definitions = new Map(field.embeds?.map((embed) => [embed.slug, embed.fields]));
       if (field.richTextLanguage === undefined) return null;
       return {
         languageId: field.richTextLanguage,
+        placement: { slot: { holder: cursor.target, key: field.name }, value: workingCopy },
         context: {
-          tree,
-          embed: (name: string, data: unknown): Crossing | null => {
+          tree: workingCopy,
+          embed: ({ name, data }: EmbedIdentity): Crossing | null => {
             const fields = definitions.get(name);
             const doc = asDoc(data);
             if (fields === undefined || doc === null) return null;
