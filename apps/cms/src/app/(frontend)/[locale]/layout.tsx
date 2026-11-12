@@ -64,7 +64,7 @@ export default async function RootLayout({ children, params }: Props) {
         <AnalyticsProviderClient measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID!}>
           <Providers locale={locale as Locale} messages={messages}>
             {draft ? (
-              <VisualEditing.Provider available adminBasePath="/admin">
+              <VisualEditing.Provider available instantPreview adminBasePath="/admin">
                 <VisualEditing.Toggle />
                 <VisualEditing.Overlay locale={locale}>{children}</VisualEditing.Overlay>
                 <LivePreviewListener />
