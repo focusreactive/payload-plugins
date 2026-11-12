@@ -1,10 +1,13 @@
 import { link } from "@focus-reactive/payload-plugin-seo/content";
 import type { ContentNode, DocStore } from "@focus-reactive/payload-plugin-seo/content";
+import type { ResolveUrl } from "@focus-reactive/payload-plugin-seo";
 
 import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
 import type { CustomPageKey } from "@/lib/config/customPages";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
 import type { Page } from "@/payload-types";
+
+import { isRecord } from "./richTextRefs";
 
 export type LinkRelation = "page" | "posts";
 
@@ -99,10 +102,6 @@ export function collectLinkRefs(value: unknown): LinkRef[] {
   return out;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
 function readBreadcrumbs(value: unknown): Page["breadcrumbs"] {
   if (!Array.isArray(value)) return null;
 
@@ -121,11 +120,7 @@ export function toResolvedLinkDoc(doc: Record<string, unknown>): ResolvedLinkDoc
   };
 }
 
-export function buildDocHref(
-  relationTo: LinkRelation,
-  doc: ResolvedLinkDoc,
-  locale: string
-): string {
+function buildDocHref(relationTo: LinkRelation, doc: ResolvedLinkDoc, locale: string): string {
   if (relationTo === "page") {
     return (
       buildUrl({
@@ -139,6 +134,10 @@ export function buildDocHref(
   }
 
   return buildUrl({ collection: "posts", slug: doc.slug, locale, absolute: false });
+}
+
+export function resolveDocUrl(relationTo: LinkRelation): ResolveUrl {
+  return ({ doc, locale }) => buildDocHref(relationTo, toResolvedLinkDoc(doc), locale);
 }
 
 function resolveReferenceHref(reference: LinkReference, ctx: LinkResolveCtx): string {
