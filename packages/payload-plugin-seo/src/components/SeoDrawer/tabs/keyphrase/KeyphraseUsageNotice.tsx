@@ -2,6 +2,7 @@
 
 import { useConfig, useDebounce, usePayloadAPI } from "@payloadcms/ui";
 import { AlertTriangle } from "lucide-react";
+import { useEffect } from "react";
 import { KEYPHRASE_USAGE_DELAY_MS, KEYPHRASE_USAGE_ENDPOINT_PATH } from "../../../../constants";
 import { docTargetKey } from "../../../../keyphrases/docTarget";
 import { adminDocHref, hasDocIdentity } from "../../../../keyphrases/usage";
@@ -17,14 +18,18 @@ export interface KeyphraseUsageProps {
 export function KeyphraseUsageNotice({ collectionSlug, docId, phrase }: KeyphraseUsageProps) {
   const { config } = useConfig();
   const { t } = useSeoTranslation();
-  const [{ data, isLoading, isError }] = usePayloadAPI(
+  const [{ data, isError }, { setParams }] = usePayloadAPI(
     `${config.routes.api}${KEYPHRASE_USAGE_ENDPOINT_PATH}`,
     { initialParams: { collection: collectionSlug, docId, phrase } }
   );
 
+  useEffect(() => {
+    setParams({ collection: collectionSlug, docId, phrase });
+  }, [collectionSlug, docId, phrase, setParams]);
+
   const docs: UsageDoc[] = Array.isArray(data?.docs) ? data.docs.filter(hasDocIdentity) : [];
 
-  if (isLoading || isError || docs.length === 0) return null;
+  if (isError || docs.length === 0) return null;
 
   return (
     <div
@@ -60,12 +65,5 @@ export function KeyphraseUsage({ collectionSlug, docId, phrase }: KeyphraseUsage
 
   if (!debounced) return null;
 
-  return (
-    <KeyphraseUsageNotice
-      collectionSlug={collectionSlug}
-      docId={docId}
-      key={debounced}
-      phrase={debounced}
-    />
-  );
+  return <KeyphraseUsageNotice collectionSlug={collectionSlug} docId={docId} phrase={debounced} />;
 }

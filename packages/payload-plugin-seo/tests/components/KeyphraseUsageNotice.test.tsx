@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   KeyphraseUsage,
@@ -11,7 +12,11 @@ let api: { data?: unknown; isLoading: boolean; isError: boolean } = {
   isLoading: false,
   isError: false,
 };
-const usePayloadAPI = vi.fn((..._args: unknown[]) => [api, { setParams: vi.fn() }]);
+const setParams = vi.fn();
+const usePayloadAPI = vi.fn((..._args: unknown[]) => {
+  const [state] = useState(() => api);
+  return [state, { setParams }];
+});
 
 vi.mock("@payloadcms/ui", () => ({
   useConfig: () => ({ config: { routes: { api: "/api", admin: "/admin" } } }),
@@ -22,6 +27,7 @@ vi.mock("@payloadcms/ui", () => ({
 afterEach(() => {
   cleanup();
   usePayloadAPI.mockClear();
+  setParams.mockClear();
   api = { isLoading: false, isError: false };
 });
 
@@ -98,5 +104,20 @@ describe("KeyphraseUsage", () => {
     expect(usePayloadAPI.mock.calls.at(-1)?.[1]).toEqual({
       initialParams: { collection: "posts", docId: "1", phrase: "payload cms" },
     });
+  });
+
+  it("keeps showing the previous documents while the next phrase loads", () => {
+    api = {
+      isLoading: false,
+      isError: false,
+      data: { docs: [{ collection: "page", id: "7", title: "Home" }] },
+    };
+    const { rerender } = render(<KeyphraseUsage collectionSlug="posts" docId="1" phrase="a" />);
+
+    api = { isLoading: true, isError: false };
+    rerender(<KeyphraseUsage collectionSlug="posts" docId="1" phrase="ab" />);
+
+    expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
+    expect(setParams).toHaveBeenLastCalledWith({ collection: "posts", docId: "1", phrase: "ab" });
   });
 });
