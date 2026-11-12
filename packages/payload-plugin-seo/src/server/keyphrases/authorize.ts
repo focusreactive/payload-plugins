@@ -17,7 +17,7 @@ function resolveLocale(req: PayloadRequest, source: unknown, scope: KeyphraseSco
   return typeof locale === "string" && localization.localeCodes.includes(locale) ? locale : null;
 }
 
-async function canReadDoc(req: PayloadRequest, target: DocTarget): Promise<boolean> {
+async function findReadableDocId(req: PayloadRequest, target: DocTarget): Promise<string | null> {
   try {
     const doc = await req.payload.findByID({
       collection: target.collection,
@@ -29,10 +29,10 @@ async function canReadDoc(req: PayloadRequest, target: DocTarget): Promise<boole
       disableErrors: true,
     });
 
-    return Boolean(doc);
+    return doc ? String(doc.id) : null;
   } catch (err) {
     req.payload.logger.warn({ err }, `[${PLUGIN_NAME}] keyphrase access check failed`);
-    return false;
+    return null;
   }
 }
 
@@ -97,9 +97,11 @@ export async function readAuthorizedRef(
   const locale = resolveLocale(req, source, scope);
   if (!locale) return jsonResponse({ error: "Invalid request" }, 400);
 
-  const ref = { ...target, locale };
+  const docId = await findReadableDocId(req, target);
+  if (!docId) return jsonResponse({ error: "Not found" }, 404);
 
-  if (!(await canReadDoc(req, ref))) return jsonResponse({ error: "Not found" }, 404);
+  const ref = { collection: target.collection, docId, locale };
+
   if (operation === "update" && !(await canUpdateDoc(req, ref))) {
     return jsonResponse({ error: "Forbidden" }, 403);
   }

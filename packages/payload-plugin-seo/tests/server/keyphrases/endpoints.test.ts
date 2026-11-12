@@ -24,7 +24,9 @@ function fakePayload({ localeCodes }: { localeCodes?: string[] } = {}) {
       }
       return { docs: [{ id: 2, title: "Post two" }] };
     }),
-    findByID: vi.fn(async ({ id }: { id: string }): Promise<{ id: string } | null> => ({ id })),
+    findByID: vi.fn(
+      async ({ id }: { id: string }): Promise<{ id: string | number } | null> => ({ id })
+    ),
     create: vi.fn(async ({ data }: { data: Omit<IndexRow, "id"> }) => ({ id: 100, ...data })),
     update: vi.fn(async ({ data }: { data: Partial<IndexRow> }) => data),
     delete: vi.fn(async () => ({ docs: [] })),
@@ -134,6 +136,18 @@ describe("request authorization", () => {
     expect(payload.logger.warn).toHaveBeenCalledWith(
       { err: error },
       "[payload-plugin-seo] keyphrase access check failed"
+    );
+  });
+
+  it("stores the id of the document found rather than the id as sent", async () => {
+    const payload = fakePayload();
+    payload.findByID.mockResolvedValueOnce({ id: 1 });
+    const res = await putKeyphrases()(
+      putRequest({ ...ref, docId: "01", keyphrases: [{ text: "a", synonyms: [] }] }, payload)
+    );
+    expect(res.status).toBe(200);
+    expect(payload.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ docId: "1" }) })
     );
   });
 
