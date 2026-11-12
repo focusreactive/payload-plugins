@@ -434,6 +434,7 @@ export const plugins: Plugin[] = [
       "comment-reads",
       "ab-experiments",
       "payload-mcp-api-keys",
+      "seo-keyphrases",
     ],
     skipGlobals: ["site-settings"],
   }),
