@@ -8,7 +8,7 @@ import type { ConfigModifier } from "../../../types/ConfigModifier.js";
 import type { ModuleContext, TranslationModule } from "../plugin-config/index.js";
 import type { BeforeTranslation, RunTarget } from "../translation-run/index.js";
 
-import type { ProvenanceServiceFactory } from "./Provenance.wiring.js";
+import type { DocumentStalenessFactory, ProvenanceRecorderFactory } from "./Provenance.wiring.js";
 
 export const PROVENANCE_MODULE = "provenance";
 
@@ -24,7 +24,8 @@ const receiptKey = (target: RunTarget): ProvenanceKey => ({
 });
 
 type ProvenanceModuleDeps = {
-  serviceFactory: ProvenanceServiceFactory;
+  recorderFactory: ProvenanceRecorderFactory;
+  stalenessFactory: DocumentStalenessFactory;
   refuseACollidingSlug: ConfigModifier;
   addTheCollection: ConfigModifier;
   cleanUpOnDelete: (managedSlugs: Set<string>) => ConfigModifier;
@@ -35,7 +36,8 @@ type ProvenanceModuleDeps = {
  * records, so a pipeline writing into the document it was handed cannot change the receipt.
  */
 export function provenanceModule({
-  serviceFactory,
+  recorderFactory,
+  stalenessFactory,
   refuseACollidingSlug,
   addTheCollection,
   cleanUpOnDelete,
@@ -47,7 +49,7 @@ export function provenanceModule({
       const managedSlugs = new Set(ctx.collections.map((collection) => collection.slug));
       const config = {
         availableCollections: managedSlugs,
-        provenanceServiceFactory: serviceFactory,
+        stalenessFactory,
       };
       ctx.addEndpoints([
         createGetDocumentStalenessRoute(config, ctx.access, ctx.settings.basePath),
@@ -60,8 +62,8 @@ export function provenanceModule({
     },
 
     async beforeTranslation(state: BeforeTranslation) {
-      const service = serviceFactory(state.payload, state.scope);
-      const currentFields = service.captureFingerprint(state.target.collection, state.sourceData);
+      const recorder = recorderFactory(state.payload, state.scope);
+      const currentFields = recorder.captureFingerprint(state.target.collection, state.sourceData);
       if (currentFields === null) return {};
 
       return { moduleState: { [PROVENANCE_MODULE]: currentFields } };
@@ -71,8 +73,8 @@ export function provenanceModule({
       const fingerprints = state.moduleState[PROVENANCE_MODULE];
       if (!isFingerprints(fingerprints)) return;
 
-      const service = serviceFactory(state.payload, state.scope);
-      await service.record(
+      const recorder = recorderFactory(state.payload, state.scope);
+      await recorder.record(
         { ...receiptKey(state.target), sourceLocale: state.target.sourceLocale },
         fingerprints,
         state.leaves

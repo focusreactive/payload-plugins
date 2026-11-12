@@ -676,7 +676,7 @@ keeps flagging until the source has text again.
 - **Code refs:**
   - `src/core/domain/provenance/ProvenanceStore.interface.ts`
   - `src/core/domain/provenance/staleness.ts` (`isRecordStale`)
-  - `src/server/modules/provenance/Provenance.service.ts` (`dismiss`)
+  - `src/server/modules/provenance/DocumentStaleness.service.ts` (`dismiss`)
   - `src/server/modules/provenance/Provenance.collection.ts`
 
 ## 2026-10-25 — the receipt holds one shape

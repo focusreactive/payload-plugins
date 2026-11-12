@@ -4,7 +4,7 @@ import type { Payload, PayloadRequest } from "payload";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 import type { FieldLike } from "../../../../core/kernel/field-traversal/index.js";
 import type { ProvenanceStore } from "../../../../core/domain/provenance/index.js";
-import { ProvenanceService, provenanceIo } from "../../../modules/provenance/index.js";
+import { DocumentStaleness, documentStalenessIo } from "../../../modules/provenance/index.js";
 
 import { DismissStalenessHandler } from "../dismissStaleness.handler.js";
 import type { StalenessConfig } from "../model.js";
@@ -28,11 +28,14 @@ describe("POST /stale/dismiss — it asks before it re-bases", () => {
   const config = (): StalenessConfig =>
     ({
       availableCollections: new Set(["posts"]),
-      provenanceServiceFactory: (p: Payload) =>
-        new ProvenanceService(
+      stalenessFactory: (p: Payload) =>
+        new DocumentStaleness(
           store,
           {},
-          provenanceIo(p, fingerprintsOf(new Map([["posts", schema]]) as CollectionSchemaMap))
+          documentStalenessIo(
+            p,
+            fingerprintsOf(new Map([["posts", schema]]) as CollectionSchemaMap)
+          )
         ),
     }) as unknown as StalenessConfig;
 

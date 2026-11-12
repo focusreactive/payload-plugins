@@ -7,7 +7,10 @@ import type { TranslationModule } from "../plugin-config/index.js";
 
 import { provenanceModule } from "./Provenance.module.js";
 
-import { ProvenanceService } from "./Provenance.service.js";
+import { ProvenanceRecorder } from "./ProvenanceRecorder.service.js";
+import type { RecorderIo } from "./ProvenanceRecorder.service.js";
+import { DocumentStaleness } from "./DocumentStaleness.service.js";
+import type { DocumentStalenessIo } from "./DocumentStaleness.service.js";
 import { PayloadProvenanceStore } from "./Provenance.store.js";
 import type { ProvenanceStoreFactory } from "./Provenance.store.js";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
@@ -37,7 +40,15 @@ function resolveProvenanceSlug(option: ProvenanceOption): string | null {
 
 const OUTSIDE_THE_CALLERS_TRANSACTION = undefined;
 
-export const provenanceIo = (payload: Payload, fingerprintOf: SourceFingerprinter) => ({
+export const recorderIo = (payload: Payload, fingerprintOf: SourceFingerprinter): RecorderIo => ({
+  fingerprintOf,
+  logger: payload.logger,
+});
+
+export const documentStalenessIo = (
+  payload: Payload,
+  fingerprintOf: SourceFingerprinter
+): DocumentStalenessIo => ({
   fingerprintOf,
   logger: payload.logger,
   readSource: ({ collection, id, locale, user }: Parameters<SourceDocumentReader>[0]) =>
@@ -51,10 +62,15 @@ export const provenanceIo = (payload: Payload, fingerprintOf: SourceFingerprinte
     }),
 });
 
-export type ProvenanceServiceFactory = (
+export type ProvenanceRecorderFactory = (
   payload: Payload,
   scope?: RequestScope
-) => ProvenanceService;
+) => ProvenanceRecorder;
+
+export type DocumentStalenessFactory = (
+  payload: Payload,
+  scope?: RequestScope
+) => DocumentStaleness;
 
 export type ProvenanceContribution = {
   module: TranslationModule;
@@ -72,9 +88,20 @@ export function configureProvenance(
     return new PayloadProvenanceStore(payload, slug, scope);
   };
 
-  const serviceFactory: ProvenanceServiceFactory = (payload, scope = {}) => {
-    const store = storeFactory(payload, scope);
-    return new ProvenanceService(store, scope, provenanceIo(payload, fingerprintOf));
+  const recorderFactory: ProvenanceRecorderFactory = (payload, scope = {}) => {
+    return new ProvenanceRecorder(
+      storeFactory(payload, scope),
+      scope,
+      recorderIo(payload, fingerprintOf)
+    );
+  };
+
+  const stalenessFactory: DocumentStalenessFactory = (payload, scope = {}) => {
+    return new DocumentStaleness(
+      storeFactory(payload, scope),
+      scope,
+      documentStalenessIo(payload, fingerprintOf)
+    );
   };
 
   const refuseACollidingSlug: ConfigModifier = (config) => {
@@ -99,11 +126,12 @@ export function configureProvenance(
 
   return {
     module: provenanceModule({
-      serviceFactory,
+      recorderFactory,
+      stalenessFactory,
       refuseACollidingSlug,
       addTheCollection,
       cleanUpOnDelete,
     }),
-    criteria: { [DRIFT_CRITERION]: driftedLeaves(serviceFactory) },
+    criteria: { [DRIFT_CRITERION]: driftedLeaves(recorderFactory) },
   };
 }

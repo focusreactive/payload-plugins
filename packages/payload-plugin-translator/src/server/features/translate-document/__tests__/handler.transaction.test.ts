@@ -6,7 +6,7 @@ import type { TranslateDocumentDeps } from "../translateDocument.js";
 import type { TranslationProvider } from "../../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 import type { TranslateDocumentInput } from "../translateDocument.js";
-import type { ProvenanceServiceFactory } from "../../../modules/provenance/index.js";
+import type { ProvenanceRecorderFactory } from "../../../modules/provenance/index.js";
 import { provenanceInAChain } from "../../../modules/provenance/__tests__/fixtures/inAChain.js";
 
 vi.mock("../../../../core/translation-pipeline/index.js", async () => {
@@ -88,8 +88,8 @@ describe("translateDocument — the caller's transaction", () => {
     expect(publishCall?.[0]).toMatchObject({ req: { transactionID: TX } });
   });
 
-  it("builds the provenance service on it, so the receipt rolls back with the translation", async () => {
-    const serviceFactory = vi.fn().mockReturnValue({
+  it("builds the provenance recorder on it, so the receipt rolls back with the translation", async () => {
+    const recorderFactory = vi.fn().mockReturnValue({
       captureFingerprint: vi.fn().mockReturnValue({ title: "fp" }),
       lastTranslatedFrom: vi.fn().mockResolvedValue(null),
       record: vi.fn(),
@@ -99,12 +99,12 @@ describe("translateDocument — the caller's transaction", () => {
       schemaMap: new Map([
         ["posts" as CollectionSlug, [{ name: "title", type: "text", localized: true }]],
       ]) as CollectionSchemaMap,
-      modules: provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory),
+      modules: provenanceInAChain(recorderFactory as unknown as ProvenanceRecorderFactory),
     };
 
     await translateDocument(provenanceDeps, payload, input(), { transactionID: TX });
 
-    const [given, scope] = (serviceFactory as ReturnType<typeof vi.fn>).mock.calls[0] as [
+    const [given, scope] = (recorderFactory as ReturnType<typeof vi.fn>).mock.calls[0] as [
       object,
       object,
     ];

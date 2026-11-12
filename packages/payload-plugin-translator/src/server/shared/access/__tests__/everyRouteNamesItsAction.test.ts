@@ -13,7 +13,7 @@ import {
 } from "../../../features/staleness/route.js";
 import { createFieldRoute } from "../../../features/translate-field/route.js";
 import type { TaskRunnerFactory } from "../../../modules/task-runner/index.js";
-import type { ProvenanceServiceFactory } from "../../../modules/provenance/index.js";
+import type { DocumentStalenessFactory } from "../../../modules/provenance/index.js";
 import type { TranslationProvider } from "../../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 import type { TranslatorAction } from "../../../../types/TranslatorAction.js";
@@ -30,7 +30,7 @@ const taskRunnerFactory: TaskRunnerFactory = {
   create: unreachable,
   capabilities: { stop: true, run: true },
 };
-const provenanceServiceFactory: ProvenanceServiceFactory = unreachable;
+const stalenessFactory: DocumentStalenessFactory = unreachable;
 const translationProvider: TranslationProvider = { translate: unreachable };
 const schemaMap: CollectionSchemaMap = new Map();
 const runRecordStoreFactory = () => storeDouble();
@@ -86,12 +86,12 @@ const routeForEveryAction: Record<TranslatorAction, RouteUnderTest> = {
   "document-staleness": {
     factory: "createGetDocumentStalenessRoute",
     build: (access) =>
-      createGetDocumentStalenessRoute({ availableCollections, provenanceServiceFactory }, access),
+      createGetDocumentStalenessRoute({ availableCollections, stalenessFactory }, access),
   },
   "dismiss-staleness": {
     factory: "createDismissStalenessRoute",
     build: (access) =>
-      createDismissStalenessRoute({ availableCollections, provenanceServiceFactory }, access),
+      createDismissStalenessRoute({ availableCollections, stalenessFactory }, access),
   },
   "translate-field": {
     factory: "createFieldRoute",

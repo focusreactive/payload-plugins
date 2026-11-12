@@ -3,7 +3,7 @@ import type { ProvenanceKey } from "../../../core/domain/provenance/index.js";
 import { TranslatorConfigError } from "../../../core/errors/index.js";
 import type { Criterion, RunTarget } from "../translation-run/index.js";
 
-import type { ProvenanceServiceFactory } from "./Provenance.wiring.js";
+import type { ProvenanceRecorderFactory } from "./Provenance.wiring.js";
 
 /**
  * The rule name a filter carries to ask for the leaves whose source has moved.
@@ -24,17 +24,17 @@ const receiptKey = (target: RunTarget): ProvenanceKey => ({
  * provenance late.
  */
 export const driftedLeaves =
-  (serviceFactory: ProvenanceServiceFactory): Criterion =>
+  (recorderFactory: ProvenanceRecorderFactory): Criterion =>
   async ({ payload, scope, target, sourceData }) => {
-    const service = serviceFactory(payload, scope);
-    const currentFields = service.captureFingerprint(target.collection, sourceData);
+    const recorder = recorderFactory(payload, scope);
+    const currentFields = recorder.captureFingerprint(target.collection, sourceData);
     if (currentFields === null) {
       throw new TranslatorConfigError(
         `Cannot tell what has moved in "${target.collection}": the collection has no schema here, so the run would translate the whole document instead.`
       );
     }
 
-    const previous = await service.lastTranslatedFrom(receiptKey(target));
+    const previous = await recorder.lastTranslatedFrom(receiptKey(target));
     if (previous === null) return Object.keys(currentFields);
     return driftedAddresses(previous, currentFields);
   };

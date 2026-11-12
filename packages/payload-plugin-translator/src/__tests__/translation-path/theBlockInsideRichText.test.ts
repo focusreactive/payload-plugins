@@ -4,7 +4,8 @@ import type { Block, CollectionSlug, Config, Field } from "payload";
 import { AnyAccessGuard } from "../../server/shared/access/AnyAccessGuard.js";
 import { documentTranslation } from "../../composition/modules/index.js";
 import { translateDocumentControl } from "../../composition/components/index.js";
-import { ProvenanceService } from "../../server/modules/provenance/Provenance.service.js";
+import { DocumentStaleness } from "../../server/modules/provenance/DocumentStaleness.service.js";
+import { ProvenanceRecorder } from "../../server/modules/provenance/ProvenanceRecorder.service.js";
 import type { ProvenanceStore } from "../../core/domain/provenance/index.js";
 import { UNANSWERED } from "../../core/domain/provenance/index.js";
 import { storeDouble } from "../../core/domain/provenance/__tests__/fixtures/provenanceStore.js";
@@ -102,17 +103,18 @@ const headingOf = (data: Record<string, unknown>): unknown => {
   return body.root.children[1]?.fields?.heading;
 };
 
-const serviceOver = (
+const provenanceOver = (
   store: ProvenanceStore,
   readSource: (args: { locale: string }) => Promise<Record<string, unknown> | null>,
   embeds: readonly BlockLike[]
 ) => {
   const schemaMap: CollectionSchemaMap = new Map([[COLLECTION, schema]]);
-  return new ProvenanceService(store, {}, {
-    logger: { error: vi.fn() },
-    readSource,
-    fingerprintOf: sourceFingerprinter(schemaMap, translationLanguages(embeds)),
-  } as unknown as ConstructorParameters<typeof ProvenanceService>[2]);
+  const logger = { error: vi.fn() };
+  const fingerprintOf = sourceFingerprinter(schemaMap, translationLanguages(embeds));
+  return {
+    recorder: new ProvenanceRecorder(store, {}, { logger, fingerprintOf }),
+    staleness: new DocumentStaleness(store, {}, { logger, readSource, fingerprintOf }),
+  };
 };
 
 describe("a block embedded in a rich text", () => {
@@ -166,13 +168,17 @@ describe("what a run records and what the panel recomputes", () => {
     answered?: boolean;
   }) => {
     const store = storeDouble();
-    const service = serviceOver(store, async () => args.asItStandsNow, args.embeds);
+    const { recorder, staleness } = provenanceOver(
+      store,
+      async () => args.asItStandsNow,
+      args.embeds
+    );
 
-    const fingerprint = service.captureFingerprint(COLLECTION, args.recorded);
+    const fingerprint = recorder.captureFingerprint(COLLECTION, args.recorded);
     expect(fingerprint).not.toBeNull();
     if (!fingerprint) throw new Error("no fingerprint");
 
-    await service.record(
+    await recorder.record(
       { collectionSlug: COLLECTION, documentId: DOCUMENT, targetLocale: "de", sourceLocale: "en" },
       fingerprint,
       Object.keys(fingerprint).map((address) =>
@@ -196,7 +202,7 @@ describe("what a run records and what the panel recomputes", () => {
 
     return {
       written: written.sourceFingerprint as Record<string, string>,
-      staleness: await service.getStaleness(COLLECTION, DOCUMENT),
+      staleness: await staleness.getStaleness(COLLECTION, DOCUMENT),
     };
   };
 
@@ -255,11 +261,11 @@ describe("every reader of an address agrees on the set", () => {
         translatedAt: "2026-11-09T00:00:00.000Z",
       }),
     });
-    const service = serviceOver(store, async () => document, embeds);
+    const { recorder, staleness } = provenanceOver(store, async () => document, embeds);
 
     const field = schema.filter((one) => "name" in one && one.name === "body");
 
-    await service.dismiss({
+    await staleness.dismiss({
       collectionSlug: COLLECTION,
       documentId: DOCUMENT,
       targetLocale: "de",
@@ -274,7 +280,7 @@ describe("every reader of an address agrees on the set", () => {
         translatableFields(document, field, walk).map((one) => String(one.address))
       ),
       theRunsFingerprint: sorted(
-        Object.keys(service.captureFingerprint(COLLECTION, document) ?? {})
+        Object.keys(recorder.captureFingerprint(COLLECTION, document) ?? {})
       ),
       thePanelsFingerprint: sorted(Object.keys(panel)),
     };

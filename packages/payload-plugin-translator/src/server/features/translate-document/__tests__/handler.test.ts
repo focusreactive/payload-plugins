@@ -4,6 +4,7 @@ import {
   mustPropagate,
 } from "../../../../core/errors/index.js";
 import { describe, it, expect, vi, beforeEach, onTestFinished } from "vitest";
+import type { Mock } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 import { APIError } from "payload";
 import type { RecordedFingerprints } from "../../../../core/domain/provenance/index.js";
@@ -12,8 +13,8 @@ import type { TranslateDocumentDeps } from "../translateDocument.js";
 import type { TranslationProvider } from "../../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../../types/AutoTranslateContext.js";
-import { ProvenanceService, provenanceIo } from "../../../modules/provenance/index.js";
-import type { ProvenanceServiceFactory } from "../../../modules/provenance/index.js";
+import { ProvenanceRecorder, recorderIo } from "../../../modules/provenance/index.js";
+import type { ProvenanceRecorderFactory } from "../../../modules/provenance/index.js";
 import type { TranslateDocumentInput } from "../translateDocument.js";
 import { provenanceInAChain } from "../../../modules/provenance/__tests__/fixtures/inAChain.js";
 import { storeDouble } from "../../../../core/domain/provenance/__tests__/fixtures/provenanceStore.js";
@@ -439,23 +440,22 @@ describe("translateDocument", () => {
 
   describe("provenance recording", () => {
     let store: ReturnType<typeof storeDouble>;
-    let serviceFactory: ReturnType<typeof vi.fn>;
+    let recorderFactory: Mock<ProvenanceRecorderFactory>;
 
     const depsWithProvenance = (): TranslateDocumentDeps => ({
       translationProvider: mockTranslationProvider,
       schemaMap: mockSchemaMap,
-      modules: provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory),
+      modules: provenanceInAChain(recorderFactory),
     });
 
     beforeEach(() => {
       store = storeDouble();
-      // A real `ProvenanceService` over a mock store: the record's shape is the service's policy, not the run's.
-      serviceFactory = vi.fn(
+      recorderFactory = vi.fn<ProvenanceRecorderFactory>(
         (payload) =>
-          new ProvenanceService(
+          new ProvenanceRecorder(
             store as unknown as ProvenanceStore,
             {},
-            provenanceIo(payload, fingerprintsOf(mockSchemaMap))
+            recorderIo(payload, fingerprintsOf(mockSchemaMap))
           )
       );
     });
@@ -493,10 +493,7 @@ describe("translateDocument", () => {
         [{ name: "title", type: "text", localized: true }],
         expect.anything()
       );
-      const [given, scope] = (serviceFactory as ReturnType<typeof vi.fn>).mock.calls[0] as [
-        object,
-        object,
-      ];
+      const [given, scope] = recorderFactory.mock.calls[0];
       expect(scope).toEqual({});
       expect(
         Object.getPrototypeOf(given),
@@ -580,8 +577,6 @@ describe("translateDocument", () => {
 
       await translateDocument(depsWithProvenance(), mockPayload, createInput(), {});
 
-      // The service factory may be called (to attempt a fingerprint capture), but with nothing
-      // translated there is no record — the store is never written.
       expect(store.upsert).not.toHaveBeenCalled();
     });
 
@@ -608,12 +603,12 @@ describe("translateDocument", () => {
       });
 
       const store = storeDouble();
-      const serviceFactory = vi.fn(
+      const recorderFactory = vi.fn<ProvenanceRecorderFactory>(
         (payload) =>
-          new ProvenanceService(
+          new ProvenanceRecorder(
             store as unknown as ProvenanceStore,
             {},
-            provenanceIo(payload, fingerprintsOf(mockSchemaMap))
+            recorderIo(payload, fingerprintsOf(mockSchemaMap))
           )
       );
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
@@ -629,7 +624,7 @@ describe("translateDocument", () => {
       const underTest: TranslateDocumentDeps = {
         translationProvider: mockTranslationProvider,
         schemaMap: mockSchemaMap,
-        modules: provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory),
+        modules: provenanceInAChain(recorderFactory),
       };
       await translateDocument(underTest, mockPayload, createInput({}), {});
 
@@ -651,12 +646,12 @@ describe("translateDocument", () => {
           translatedAt: "2026-07-07T00:00:00.000Z",
         }),
       });
-      const serviceFactory = vi.fn(
+      const recorderFactory = vi.fn<ProvenanceRecorderFactory>(
         (payload) =>
-          new ProvenanceService(
+          new ProvenanceRecorder(
             store as unknown as ProvenanceStore,
             {},
-            provenanceIo(payload, fingerprintsOf(mockSchemaMap))
+            recorderIo(payload, fingerprintsOf(mockSchemaMap))
           )
       );
       const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
@@ -671,7 +666,7 @@ describe("translateDocument", () => {
       const underTest: TranslateDocumentDeps = {
         translationProvider: mockTranslationProvider,
         schemaMap: mockSchemaMap,
-        modules: provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory),
+        modules: provenanceInAChain(recorderFactory),
       };
       await translateDocument(underTest, mockPayload, createInput({}), {});
 
@@ -686,12 +681,12 @@ describe("translateDocument", () => {
     const store = storeDouble({
       find: vi.fn().mockRejectedValue(new Error("sidecar unavailable")),
     });
-    const serviceFactory = vi.fn(
+    const recorderFactory = vi.fn<ProvenanceRecorderFactory>(
       (payload) =>
-        new ProvenanceService(
+        new ProvenanceRecorder(
           store as unknown as ProvenanceStore,
           {},
-          provenanceIo(payload, fingerprintsOf(mockSchemaMap))
+          recorderIo(payload, fingerprintsOf(mockSchemaMap))
         )
     );
     const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
@@ -706,7 +701,7 @@ describe("translateDocument", () => {
     const underTest: TranslateDocumentDeps = {
       translationProvider: mockTranslationProvider,
       schemaMap: mockSchemaMap,
-      modules: provenanceInAChain(serviceFactory as unknown as ProvenanceServiceFactory),
+      modules: provenanceInAChain(recorderFactory),
     };
 
     await expect(

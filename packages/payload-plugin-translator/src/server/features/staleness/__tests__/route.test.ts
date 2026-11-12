@@ -14,10 +14,10 @@ const OPEN_ON_PURPOSE = new AnyAccessGuard();
 const denyAccess: AccessGuard = { check: vi.fn().mockReturnValue(false) };
 
 const makeConfig = (): StalenessConfig & {
-  provenanceServiceFactory: ReturnType<typeof vi.fn>;
+  stalenessFactory: ReturnType<typeof vi.fn>;
 } => ({
   availableCollections: new Set(),
-  provenanceServiceFactory: vi.fn(),
+  stalenessFactory: vi.fn(),
 });
 
 describe("createGetDocumentStalenessRoute (contract)", () => {
@@ -42,7 +42,7 @@ describe("createGetDocumentStalenessRoute (contract)", () => {
     expect(denyAccess.check).toHaveBeenLastCalledWith(
       expect.objectContaining({ action: "document-staleness" })
     );
-    expect(config.provenanceServiceFactory).not.toHaveBeenCalled();
+    expect(config.stalenessFactory).not.toHaveBeenCalled();
   });
 });
 
@@ -68,6 +68,6 @@ describe("createDismissStalenessRoute (contract)", () => {
     expect(denyAccess.check).toHaveBeenLastCalledWith(
       expect.objectContaining({ action: "dismiss-staleness" })
     );
-    expect(config.provenanceServiceFactory).not.toHaveBeenCalled();
+    expect(config.stalenessFactory).not.toHaveBeenCalled();
   });
 });

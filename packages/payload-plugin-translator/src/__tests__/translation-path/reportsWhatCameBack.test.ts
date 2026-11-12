@@ -7,7 +7,7 @@ import type { ProvenanceStore } from "../../core/domain/provenance/index.js";
 import { UNANSWERED } from "../../core/domain/provenance/index.js";
 import { asHash } from "../../core/domain/provenance/__tests__/fixtures/claims.js";
 import type { CollectionSchemaMap } from "../../types/CollectionSchemaMap.js";
-import { ProvenanceService } from "../../server/modules/provenance/Provenance.service.js";
+import { ProvenanceRecorder } from "../../server/modules/provenance/ProvenanceRecorder.service.js";
 import type {
   SegmentId,
   TranslatableValue,
@@ -238,17 +238,16 @@ describe("what the run reports is what the receipt claims", () => {
     });
 
     const written = store();
-    const service = new ProvenanceService(
+    const recorder = new ProvenanceRecorder(
       written,
       {},
       {
         logger: { error: vi.fn() },
-        readSource: vi.fn(),
         fingerprintOf: fingerprintsOf(new Map([["posts", twoTexts]]) as CollectionSchemaMap),
       }
     );
 
-    await service.record(
+    await recorder.record(
       { collectionSlug: "posts", documentId: "1", targetLocale: "de", sourceLocale: "en" },
       hashed({ title: "aaaa", summary: "bbbb" }),
       leavesOf(result)
@@ -279,17 +278,16 @@ describe("what the run reports is what the receipt claims", () => {
       sourceFingerprint: hashed({ title: "0d", summary: "0dbb" }),
       translatedAt: "2026-01-01T00:00:00.000Z",
     });
-    const service = new ProvenanceService(
+    const recorder = new ProvenanceRecorder(
       written,
       {},
       {
         logger: { error: vi.fn() },
-        readSource: vi.fn(),
         fingerprintOf: fingerprintsOf(new Map([["posts", twoTexts]]) as CollectionSchemaMap),
       }
     );
 
-    await service.record(
+    await recorder.record(
       { collectionSlug: "posts", documentId: "1", targetLocale: "de", sourceLocale: "en" },
       hashed({ title: "aaaa", summary: "bbbb" }),
       leavesOf(result)

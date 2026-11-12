@@ -5,7 +5,7 @@ import type { ProvenanceStore, RecordedFingerprints } from "../../domain/provena
 import { changedLeaves, UNANSWERED } from "../../domain/provenance/index.js";
 import { asHash } from "../../domain/provenance/__tests__/fixtures/claims.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
-import { ProvenanceService } from "../../../server/modules/provenance/Provenance.service.js";
+import { ProvenanceRecorder } from "../../../server/modules/provenance/ProvenanceRecorder.service.js";
 import { makeIdPath } from "../../domain/content-projection/idPath.js";
 import type { LeafOutcome } from "../types/index.js";
 import { storeDouble } from "../../domain/provenance/__tests__/fixtures/provenanceStore.js";
@@ -55,17 +55,16 @@ const storedClaims = async (args: {
   leaves: LeafOutcome[];
 }): Promise<Recorded> => {
   const store = storeHolding(args.previous);
-  const service = new ProvenanceService(
+  const recorder = new ProvenanceRecorder(
     store,
     {},
     {
       logger: { error: vi.fn() },
-      readSource: vi.fn(),
       fingerprintOf: fingerprintsOf(new Map([[COLLECTION, schema]]) as CollectionSchemaMap),
     }
   );
 
-  await service.record(KEY, sourceHashes, args.leaves);
+  await recorder.record(KEY, sourceHashes, args.leaves);
 
   const written = store.upsert.mock.calls[0]?.[0] as { sourceFingerprint: Recorded };
   return written.sourceFingerprint;

@@ -30,8 +30,8 @@ export class DismissStalenessHandler {
     });
     if (!mayDismiss) return ServerResponse.forbidden();
 
-    const service = this.config.provenanceServiceFactory(req.payload);
-    await service.dismiss(
+    const staleness = this.config.stalenessFactory(req.payload);
+    await staleness.dismiss(
       {
         collectionSlug: collectionSlug,
         documentId: collection_id,

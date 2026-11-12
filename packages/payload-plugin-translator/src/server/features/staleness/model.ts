@@ -3,7 +3,7 @@ import type { CollectionSlug } from "payload";
 
 import { JobIdSchema } from "../../shared/index.js";
 import type { LeafAddress } from "../../../core/domain/content-projection/idPath.js";
-import type { LocaleStaleness, ProvenanceServiceFactory } from "../../modules/provenance/index.js";
+import type { DocumentStalenessFactory, LocaleStaleness } from "../../modules/provenance/index.js";
 
 /**
  * Route params for reading a document's per-locale staleness.
@@ -39,6 +39,6 @@ export const asStalenessBody = (locale: LocaleStaleness): StalenessLocaleBody =>
 });
 
 export type StalenessConfig = {
-  provenanceServiceFactory: ProvenanceServiceFactory;
+  stalenessFactory: DocumentStalenessFactory;
   availableCollections: Set<CollectionSlug>;
 };

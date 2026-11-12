@@ -7,7 +7,7 @@ import type {
   ProvenanceReceipt,
   ProvenanceStore,
 } from "../../../../core/domain/provenance/index.js";
-import { ProvenanceService, provenanceIo } from "../../../modules/provenance/index.js";
+import { DocumentStaleness, documentStalenessIo } from "../../../modules/provenance/index.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 
 import { GetDocumentStalenessHandler } from "../getDocumentStaleness.handler.js";
@@ -52,8 +52,8 @@ const schemaMap = new Map([["posts", schema]]) as CollectionSchemaMap;
 function makeConfig(store: ProvenanceStore): StalenessConfig {
   return {
     availableCollections: new Set(["posts"]) as StalenessConfig["availableCollections"],
-    provenanceServiceFactory: (p) =>
-      new ProvenanceService(store, {}, provenanceIo(p, fingerprintsOf(schemaMap))),
+    stalenessFactory: (p) =>
+      new DocumentStaleness(store, {}, documentStalenessIo(p, fingerprintsOf(schemaMap))),
   };
 }
 
