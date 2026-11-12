@@ -30,9 +30,9 @@ export function toPath(href: string): string | null {
   return path.replace(/\/+$/u, "") || "/";
 }
 
-export function originOf(href: string): string | null {
+export function siteOf(href: string): string | null {
   const url = parseUrl(href);
   if (!url || !WEB_PROTOCOLS.has(url.protocol) || url.origin === RELATIVE_ORIGIN) return null;
 
-  return url.origin;
+  return url.host.replace(/^www\./u, "");
 }

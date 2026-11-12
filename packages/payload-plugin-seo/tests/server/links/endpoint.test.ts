@@ -240,6 +240,26 @@ describe("POST /seo/link-suggestions", () => {
       expect(await suggestedWith(["https://other.site/alpha"])).toEqual(["2"]);
     });
 
+    it("treats http, https and www. links to a known site as linked", async () => {
+      resolveTo("/alpha", "https://www.public.site");
+      expect(await suggestedWith(["http://site.com/alpha"])).toEqual([]);
+      expect(await suggestedWith(["https://www.site.com/alpha"])).toEqual([]);
+      expect(await suggestedWith(["http://public.site/alpha"])).toEqual([]);
+    });
+
+    it("treats links on the requested origin as linked when no site url is configured", async () => {
+      resolveTo("/alpha", "");
+      const payload = fakePayload();
+      payload.config.serverURL = "";
+      const request = {
+        ...fakeRequest(body({ text: topic(2), linkedHrefs: ["https://cms.site/alpha"] }), {
+          payload,
+        }),
+        origin: "https://cms.site",
+      };
+      expect(await suggestionIds(await handler(request))).toEqual([]);
+    });
+
     it("treats links on the origin of an absolute target url as linked", async () => {
       resolveTo("https://public.site/alpha");
       expect(await suggestedWith(["https://public.site/alpha"])).toEqual([]);

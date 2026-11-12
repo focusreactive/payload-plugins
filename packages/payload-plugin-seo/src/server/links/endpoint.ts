@@ -6,7 +6,7 @@ import {
   MAX_LINK_SUGGESTIONS,
   MAX_RESOLVED_LINK_CANDIDATES,
 } from "../../constants";
-import { originOf, toPath } from "../../links/toPath";
+import { siteOf, toPath } from "../../links/toPath";
 import { docTargetKey } from "../../keyphrases/docTarget";
 import { jsonResponse, readJsonBody } from "../http";
 import { readAuthorizedRef, rejectNonAdmin } from "../keyphrases/authorize";
@@ -25,24 +25,24 @@ interface SuggestionSearch {
   candidates: LinkCandidate[];
   locale: string;
   linkedHrefs: LinkedHref[];
-  siteOrigins: (string | null)[];
+  sites: (string | null)[];
 }
 
 function isLinked(suggestion: LinkSuggestion, search: SuggestionSearch): boolean {
   const path = suggestion.url ? toPath(suggestion.url) : null;
   if (!suggestion.url || path === null) return false;
 
-  const internalOrigins = new Set([...search.siteOrigins, originOf(suggestion.url)]);
+  const internalSites = new Set([...search.sites, siteOf(suggestion.url)]);
 
   return search.linkedHrefs.some(
-    (href) => href.path === path && (href.origin === null || internalOrigins.has(href.origin))
+    (href) => href.path === path && (href.site === null || internalSites.has(href.site))
   );
 }
 
-function siteOriginsOf(req: PayloadRequest): (string | null)[] {
+function internalSitesOf(req: PayloadRequest): (string | null)[] {
   const siteUrl = getPluginConfig().site?.baseUrl ?? "";
 
-  return [originOf(req.payload.config.serverURL ?? ""), originOf(siteUrl)];
+  return [siteOf(req.payload.config.serverURL ?? ""), siteOf(siteUrl), siteOf(req.origin ?? "")];
 }
 
 async function collectSuggestions(
@@ -104,7 +104,7 @@ export function createLinkSuggestionsEndpoint(scope: KeyphraseScope): Endpoint {
         candidates: await findUnlinkedCandidates(req, ref, scope.collections, request),
         locale: ref.locale,
         linkedHrefs: request.linkedHrefs,
-        siteOrigins: siteOriginsOf(req),
+        sites: internalSitesOf(req),
       });
 
       return jsonResponse({ suggestions }, 200);

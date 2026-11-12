@@ -4,12 +4,12 @@ import {
   MAX_LINKED_HREF_LENGTH,
   MAX_LINK_TEXT_CHARS,
 } from "../../constants";
-import { originOf, toPath } from "../../links/toPath";
+import { siteOf, toPath } from "../../links/toPath";
 import { docTargetKey } from "../../keyphrases/docTarget";
 import { readDocTarget } from "../keyphrases/docRef";
 
 export interface LinkedHref {
-  origin: string | null;
+  site: string | null;
   path: string;
 }
 
@@ -50,7 +50,7 @@ function toLinkedHrefs(hrefs: string[]): LinkedHref[] {
   return hrefs.flatMap((href) => {
     const path = toPath(href);
 
-    return path === null ? [] : [{ origin: originOf(href), path }];
+    return path === null ? [] : [{ site: siteOf(href), path }];
   });
 }
 

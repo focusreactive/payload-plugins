@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { originOf, toPath } from "../../src/links/toPath";
+import { siteOf, toPath } from "../../src/links/toPath";
 
 describe("toPath", () => {
   it("strips origin, query, hash and the trailing slash", () => {
@@ -25,16 +25,21 @@ describe("toPath", () => {
   });
 });
 
-describe("originOf", () => {
-  it("returns the origin of an absolute url", () => {
-    expect(originOf("https://Example.com:443/a?b=1")).toBe("https://example.com");
-    expect(originOf("//cdn.example.com/a")).toBe("http://cdn.example.com");
+describe("siteOf", () => {
+  it("returns the host of an absolute url", () => {
+    expect(siteOf("https://Example.com:443/a?b=1")).toBe("example.com");
+    expect(siteOf("//cdn.example.com/a")).toBe("cdn.example.com");
+    expect(siteOf("https://example.com:8443/a")).toBe("example.com:8443");
+  });
+
+  it("treats http, https and the www. prefix as the same site", () => {
+    expect(siteOf("http://www.example.com/a")).toBe(siteOf("https://example.com/b"));
   });
 
   it("returns null for relative and unparsable urls", () => {
-    expect(originOf("/a")).toBeNull();
-    expect(originOf("a/b")).toBeNull();
-    expect(originOf("")).toBeNull();
-    expect(originOf("http://[")).toBeNull();
+    expect(siteOf("/a")).toBeNull();
+    expect(siteOf("a/b")).toBeNull();
+    expect(siteOf("")).toBeNull();
+    expect(siteOf("http://[")).toBeNull();
   });
 });
