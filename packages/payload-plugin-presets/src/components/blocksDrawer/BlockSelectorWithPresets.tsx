@@ -94,7 +94,7 @@ export const BlockSelectorWithPresets: React.FC<BlockSelectorWithPresetsProps> =
   };
 
   const handleBlockClick = (block: ClientBlock) => {
-    const hasPresets = presetTypes.includes(block.slug);
+    const hasPresets = presetTypes.includes(block.slug) && getBlockPresets(block.slug).length > 0;
 
     if (!hasPresets) {
       onSelect(block.slug);
@@ -176,10 +176,10 @@ export const BlockSelectorWithPresets: React.FC<BlockSelectorWithPresetsProps> =
             )}
             <ul className="blocks-drawer__blocks">
               {groupBlocks.map((block) => {
-                const hasPresets = presetTypes.includes(block.slug);
                 const isActive = activeBlockSlug === block.slug;
                 const label = getBlockLabel(block, i18n.language);
                 const blockPresets = getBlockPresets(block.slug);
+                const hasPresets = presetTypes.includes(block.slug) && blockPresets.length > 0;
 
                 return (
                   <li key={block.slug} className="blocks-drawer__block">
@@ -298,8 +298,11 @@ const BlockCard: React.FC<BlockCardProps> = ({
             onClick={onBlockClick}
           >
             <BlockThumbnail imageURL={block.imageURL} label={label} />
+            <span className="blocks-drawer__presets-badge">
+              {t("presetsPlugin:blocksDrawer:presetsCount" as never, { count: presets.length })}
+            </span>
             <div className="thumbnail-card__label">
-              {label} {presets.length > 0 ? `(${presets.length})` : ""}
+              {label}
               <ChevronIcon
                 className={`thumbnail-card__chevron ${isActive ? "thumbnail-card__chevron--open" : ""}`}
               />
@@ -327,6 +330,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
           >
             <PresetsList
               blockSlug={block.slug}
+              blockImageURL={block.imageURL}
               label={label}
               presets={presets}
               listRef={presetListRef}
@@ -374,20 +378,32 @@ type BlockThumbnailProps = {
   label: string;
 };
 
-const BlockThumbnail: React.FC<BlockThumbnailProps> = ({ imageURL, label }) => (
-  <div className="thumbnail-card__thumbnail">
-    {imageURL ? (
-      <Image src={imageURL} alt={label} width={231} height={151} unoptimized />
-    ) : (
-      <div className="blocks-drawer__default-image">
-        <DefaultBlockImage />
-      </div>
-    )}
-  </div>
-);
+const BlockThumbnail: React.FC<BlockThumbnailProps> = ({ imageURL, label }) => {
+  const [failed, setFailed] = useState(false);
+
+  return (
+    <div className="thumbnail-card__thumbnail">
+      {imageURL && !failed ? (
+        <Image
+          src={imageURL}
+          alt={label}
+          width={231}
+          height={151}
+          unoptimized
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <div className="blocks-drawer__default-image">
+          <DefaultBlockImage />
+        </div>
+      )}
+    </div>
+  );
+};
 
 type PresetsListProps = {
   blockSlug: string;
+  blockImageURL?: string | null;
   label: string;
   presets: Preset[];
   onSelect: (preset: Preset | null) => void;
@@ -399,6 +415,7 @@ type PresetsListProps = {
 
 const PresetsList: React.FC<PresetsListProps> = ({
   blockSlug,
+  blockImageURL,
   label,
   presets,
   onSelect,
@@ -422,7 +439,7 @@ const PresetsList: React.FC<PresetsListProps> = ({
 
   useEffect(() => {
     itemsRef.current = Array.from(
-      listRef.current?.querySelectorAll<HTMLElement>("button.preset-item") ?? []
+      listRef.current?.querySelectorAll<HTMLElement>("button.preset-item__main") ?? []
     );
   }, []);
 
@@ -502,6 +519,7 @@ const PresetsList: React.FC<PresetsListProps> = ({
         {/* Empty option — no delete on the null preset */}
         <PresetItem
           preset={null}
+          fallbackImageURL={blockImageURL}
           mediaCollection={mediaCollection}
           label={label}
           onSelect={onSelect}
@@ -515,6 +533,7 @@ const PresetsList: React.FC<PresetsListProps> = ({
             <PresetItem
               key={preset.id}
               preset={preset}
+              fallbackImageURL={blockImageURL}
               mediaCollection={mediaCollection}
               onSelect={onSelect}
               onDeleteRequest={onDeleteRequest}
