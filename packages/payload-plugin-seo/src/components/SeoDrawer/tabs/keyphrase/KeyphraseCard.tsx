@@ -47,7 +47,7 @@ export function KeyphraseCard({ entry, isFocus, selected, state, onSelect }: Key
 
       <span className="flex-1 min-w-0 flex flex-col gap-[2px]">
         {isFocus && (
-          <span className="self-start text-[7px] leading-none uppercase bg-neutral-1000 text-neutral-0 px-[6px] py-[2px] rounded-[7px] tracking-[0.06em] font-bold">
+          <span className="self-start text-[11px] leading-[16px] bg-neutral-800 text-neutral-0 px-[6px] rounded-rs font-medium">
             {t("keyphrase.focusBadge")}
           </span>
         )}

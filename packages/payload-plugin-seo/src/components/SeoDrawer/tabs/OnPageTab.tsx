@@ -1,5 +1,6 @@
 "use client";
 
+import { orderByUrgency } from "../../../utils/orderChecks";
 import { useState } from "react";
 import type { CategoryResult } from "../../../engine/types/analysis";
 import { TabHeader } from "../../../ui/TabHeader";
@@ -14,7 +15,9 @@ import { useSeoTranslation } from "../../../translations/useSeoTranslation";
 export function OnPageTab({ data }: { data: CategoryResult }) {
   const { t } = useSeoTranslation();
   const [filter, setFilter] = useState<Filter>("all");
-  const visible = data.checks.filter((c) => filter === "all" || c.status === filter);
+  const visible = orderByUrgency(
+    data.checks.filter((c) => filter === "all" || c.status === filter)
+  );
   const passing = data.checks.filter((c) => c.status === "good").length;
 
   return (

@@ -34,7 +34,7 @@ export function KeyphraseRail({
     <aside className="w-[264px] flex-none border-r border-neutral-200 bg-neutral-50">
       <div className="sticky top-0 px-[9px] py-[18px] flex flex-col gap-[5px]">
         <div className="flex items-center justify-between px-[7px] pt-[5px] pb-[3px]">
-          <span className="text-[10px] uppercase tracking-[0.05em] text-neutral-500 font-bold">
+          <span className="text-[12px] text-neutral-600 font-semibold">
             {t("keyphrase.rail", { count: entries.length, max: MAX_KEYPHRASES })}
           </span>
 

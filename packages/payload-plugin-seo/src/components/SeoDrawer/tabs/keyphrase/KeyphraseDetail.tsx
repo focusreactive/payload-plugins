@@ -1,5 +1,6 @@
 "use client";
 
+import { orderByUrgency } from "../../../../utils/orderChecks";
 import { Loader2 } from "lucide-react";
 import { useId, useState } from "react";
 import type { ReactNode } from "react";
@@ -69,7 +70,9 @@ function Analysis({ analysis }: AnalysisProps) {
 
   const { result, dim } = analysis;
   const passing = result.checks.filter((check) => check.status === "good").length;
-  const visible = result.checks.filter((check) => filter === "all" || check.status === filter);
+  const visible = orderByUrgency(
+    result.checks.filter((check) => filter === "all" || check.status === filter)
+  );
 
   return (
     <div
@@ -119,10 +122,7 @@ export function KeyphraseDetail({
     <section className="flex-1 min-w-0 px-[15px] py-[18px] flex flex-col gap-[13px] overflow-auto">
       <div className="mb-[9px]">
         <div className="flex items-center justify-between gap-[8px] mb-[6px]">
-          <label
-            className="text-[10px] uppercase tracking-[0.05em] text-neutral-500"
-            htmlFor={textInputId}
-          >
+          <label className="text-[13px] text-neutral-800" htmlFor={textInputId}>
             {label}
           </label>
           {!isFocus && !readOnly && (

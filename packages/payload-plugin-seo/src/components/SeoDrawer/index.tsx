@@ -79,7 +79,21 @@ export const SeoDrawer = memo(function SeoDrawer({
       Header={<Header drawerSlug={drawerSlug} total={total} totalStatus={totalStatus} />}
     >
       <div className="frseo-root relative text-neutral-800" data-status={totalStatus}>
-        <TabsNav active={tab} onChange={setTab} tabs={links ? TABS_WITH_LINKS : TABS} />
+        <TabsNav
+          active={tab}
+          onChange={setTab}
+          tabs={links ? TABS_WITH_LINKS : TABS}
+          statuses={
+            result
+              ? {
+                  keyphrase: result.keyphraseText ? result.keyphrase.status : undefined,
+                  onpage: result.onPage.status,
+                  readability: result.readability.status,
+                  inclusive: result.inclusive.status,
+                }
+              : undefined
+          }
+        />
 
         <div className="frseo-tabpanel">
           {result === null && !TABS_WITHOUT_ANALYSIS.has(tab) ? (
