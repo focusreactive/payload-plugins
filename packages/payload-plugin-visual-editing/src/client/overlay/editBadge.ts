@@ -6,36 +6,21 @@ import {
   OUTLINE_STYLE,
 } from "./constants.js";
 
-export type EditBadgeConfig = {
+type EditBadgeConfig = {
   href: string;
   clickHandler: (event: MouseEvent) => void;
   originalOutline: string;
-  /** Whether the badge should paint/restore the outline. False when the registry already painted
-   *  a persistent outline ('always' mode) — the badge only manages the Edit link then. */
   paintOutline: boolean;
 };
 
 export interface EditBadge {
-  /** The <a> label element — HoverController references it for the `relatedTarget === label` transition. */
   readonly labelElement: HTMLAnchorElement;
-  /** Show the badge anchored to `target`, set its href and click listener, paint the outline. */
   show(target: HTMLElement, config: EditBadgeConfig): void;
-  /** Hide the badge and restore the outline that was on the currently-shown target. */
   hide(): void;
-  /** Re-position the anchor to the given target's current bounding rect. */
   reposition(target: HTMLElement): void;
-  /** Remove the badge DOM and all internally-attached listeners. */
   dispose(): void;
 }
 
-// Portal-rendered Edit badge. We deliberately DO NOT append the badge into
-// the target's subtree: doing so changes the target's child count and can
-// trigger sibling-selector recalculation (Tailwind `space-y-*` / `:last-child`
-// margin resets / `* + *` spacing), causing visible layout jumps on hover.
-// The layer lives on <body>, uses `position: fixed` with `pointer-events: none`
-// (so it never blocks pointer events against real content), and an inner
-// `anchor` element is sized/translated to match the active target's
-// `getBoundingClientRect()` each time the active target changes.
 export function createEditBadge(): EditBadge {
   const layer = document.createElement("div");
   layer.dataset.veLayer = "true";

@@ -6,7 +6,14 @@ export {
   type BuildAdminEditUrl,
   type BuildAdminEditUrlArgs,
   defaultBuildAdminEditUrl,
-} from "./buildAdminEditUrl.js";
+} from "../shared/buildAdminEditUrl.js";
+export { LiveRichText, type LiveRichTextProps } from "./instantPreview/LiveRichText.js";
+export type {
+  LiveRichTextAction,
+  LiveRichTextRender,
+} from "./instantPreview/unsavedRender/useUnsavedRender.js";
+export { type LiveRichTextIdentity, liveRichTextOf } from "./instantPreview/liveRichTextOf.js";
+export type { LiveRichTextField, LiveRichTextRequest } from "../shared/protocol.js";
 export { useVisualEditing } from "./VisualEditingProvider.js";
 export { withVisualEditingPath } from "./withVisualEditingPath.js";
 

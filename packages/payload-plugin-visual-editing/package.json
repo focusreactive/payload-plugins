@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/payload-plugin-visual-editing",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Visual editing for Payload CMS — click-to-edit overlays on your frontend via Vercel stega and a postMessage bridge back to the admin.",
   "license": "MIT",
   "author": "FocusReactive <ship@focusreactive.com>",
@@ -28,6 +28,7 @@
   },
   "homepage": "https://github.com/focusreactive/payload-plugins/tree/main/packages/payload-plugin-visual-editing",
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
@@ -69,23 +70,21 @@
     "format:check": "ultracite check",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check-types": "tsgo --noEmit"
+    "check-types": "tsgo --noEmit && tsgo --noEmit -p tests/tsconfig.json"
   },
   "peerDependencies": {
     "@payloadcms/ui": "^3.79.0",
-    "next": "^14.0.0 || ^15.0.0 || ^16.0.0",
     "payload": "^3.79.0",
-    "react": "^18.0.0 || ^19.0.0"
-  },
-  "peerDependenciesMeta": {
-    "next": {
-      "optional": true
-    }
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "dependencies": {
     "@vercel/stega": "^1.1.0"
   },
   "devDependencies": {
+    "@payloadcms/db-sqlite": "3.90.1",
+    "@payloadcms/richtext-lexical": "3.90.1",
+    "@payloadcms/translations": "3.90.1",
     "@payloadcms/ui": "3.90.1",
     "@swc/cli": "0.4.0",
     "@swc/core": "1.7.0",

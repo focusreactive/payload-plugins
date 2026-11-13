@@ -457,6 +457,7 @@ export const plugins: Plugin[] = [
   visualEditingPlugin({
     adminBasePath: "/admin",
     enrichment: "explicit",
+    instantPreview: true,
     skipCollections: [
       "users",
       "media",
