@@ -4,14 +4,9 @@ import type { TargetRegistry } from "./targetRegistry.js";
 import { findTargetAncestor } from "./targetSelector.js";
 
 export interface HoverController {
-  /** Bind mouseenter/mouseleave listeners to `target`. Target must already be in the registry. */
   attach(target: HTMLElement): void;
-  /** Remove listeners from `target`; hides the badge if `target` was the active one. */
   detach(target: HTMLElement): void;
-  /** If `target` is currently active, re-show the badge with its latest registry config.
-   *  Called after a same-element marker change so the visible Edit link points at the new path. */
   refresh(target: HTMLElement): void;
-  /** Remove all global listeners (scroll/resize/label) and any remaining per-target listeners. */
   dispose(): void;
 }
 
@@ -23,13 +18,8 @@ const setHoverFlag = (on: boolean): void => {
   else body.removeAttribute(HOVER_FLAG_ATTR);
 };
 
-// Grace period on clearing `activeTarget`
 const CLEAR_GRACE_MS = 250;
 
-// Only the innermost target under the cursor shows an overlay. Nested targets would otherwise
-// all stay "hovered" simultaneously (mouseleave doesn't fire on an ancestor when the mouse
-// enters a descendant), which stacks outlines and overlaps Edit badges. We track a single
-// `activeTarget` and swap it on each mouseenter/mouseleave transition.
 export function createHoverController(badge: EditBadge, registry: TargetRegistry): HoverController {
   const label = badge.labelElement;
   let activeTarget: HTMLElement | null = null;
@@ -65,10 +55,6 @@ export function createHoverController(badge: EditBadge, registry: TargetRegistry
     }, CLEAR_GRACE_MS);
   };
 
-  // The Edit badge lives outside the target in the DOM, so moving the mouse from the target
-  // up onto the badge fires a mouseleave on the target. We intercept that specific transition
-  // (relatedTarget === label) to keep the overlay open, and rely on the label's own
-  // mouseleave to decide what to do next when the user leaves the badge.
   const onLabelLeave = (event: MouseEvent) => {
     if (!activeTarget) return;
     const related = event.relatedTarget as Element | null;
@@ -78,8 +64,6 @@ export function createHoverController(badge: EditBadge, registry: TargetRegistry
     else scheduleClear();
   };
   label.addEventListener("mouseleave", onLabelLeave);
-  // Cursor reaching the label via the dead-zone between target.top and the
-  // badge resolves the pending clear scheduled from target.mouseleave.
   const onLabelEnter = () => cancelPendingClear();
   label.addEventListener("mouseenter", onLabelEnter);
 
@@ -101,13 +85,8 @@ export function createHoverController(badge: EditBadge, registry: TargetRegistry
       const leave = (event: MouseEvent) => {
         if (activeTarget !== target) return;
         const related = event.relatedTarget as Element | null;
-        // Mouse crossed into our own Edit badge — keep the overlay open,
-        // the label's own mouseleave will take over from here.
         if (related === label) return;
         const nextTarget = related ? findTargetAncestor(related) : null;
-        // Committing null immediately is the dead-zone bug (see CLEAR_GRACE_MS):
-        // the cursor is often mid-transit to the Edit label and a label.mouseenter
-        // is about to cancel this. Schedule instead.
         if (nextTarget) setActive(nextTarget);
         else scheduleClear();
       };

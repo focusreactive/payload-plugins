@@ -1,9 +1,5 @@
 import { DATA_VE_TARGET_ATTR } from "./constants.js";
 
-// Shared ancestor walk used by all three target-selection helpers below.
-// Walks up from `start` calling `select` on each element; returns the first
-// non-null result. When `boundary` is provided, stops ascending once the
-// current element is no longer contained by (or equal to) the boundary.
 function walkAncestors<T>(
   start: Element | null,
   select: (el: Element) => T | null,
@@ -48,11 +44,6 @@ function lowestCommonAncestor(nodes: readonly Node[]): Element | null {
   return null;
 }
 
-// If the stega text lives inside a <label> whose associated form control is a
-// *sibling* (the common floating-label pattern: `<div><input/><label/></div>`),
-// the raw LCA is just the <label>. Hovering the input then never triggers
-// mouseenter on the label (events don't bubble across siblings). Climb to the
-// nearest ancestor that contains both so the whole field becomes the hover zone.
 function expandLabelToFormFieldContainer(lca: Element, boundary: Element): Element | null {
   if (lca.tagName !== "LABEL") return null;
   const label = lca as HTMLLabelElement;

@@ -1,8 +1,9 @@
-import type { VeIdentity } from "../internal/shared.js";
+import type { VeIdentity } from "../shared/shared.js";
 
-import { VE_MESSAGE_TYPE } from "../constants.js";
-import type { VeOpenFieldMessage } from "../constants.js";
-import { spreadVeIdentity } from "../internal/shared.js";
+import { VE_MESSAGE_TYPE } from "../shared/protocol.js";
+import type { VeOpenFieldMessage } from "../shared/protocol.js";
+import { veIdentityOf } from "../shared/shared.js";
+import { findAdminWindow } from "./adminWindow.js";
 
 export type OverlayClickContext = VeIdentity & {
   href: string;
@@ -17,18 +18,12 @@ export const buildOverlayClickHandler =
 
     const message: VeOpenFieldMessage = {
       type: VE_MESSAGE_TYPE,
-      ...spreadVeIdentity(ctx),
-      ...(ctx.locale !== undefined && { locale: ctx.locale }),
+      ...veIdentityOf(ctx),
     };
 
-    if (win.parent && win.parent !== win) {
-      win.parent.postMessage(message, ctx.adminOrigin || "*");
-      return;
-    }
-
-    const opener = win.opener as Window | null;
-    if (opener && !opener.closed) {
-      opener.postMessage(message, ctx.adminOrigin || "*");
+    const adminWindow = findAdminWindow(win);
+    if (adminWindow) {
+      adminWindow.postMessage(message, ctx.adminOrigin || "*");
       return;
     }
 

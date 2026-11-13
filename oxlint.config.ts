@@ -72,6 +72,12 @@ const TRANSLATOR_CORE_PATTERNS = [
   },
 ];
 
+const VISUAL_EDITING = "packages/payload-plugin-visual-editing/src";
+const REACT_FREE = {
+  message:
+    "The protocol, the server and the page core of visual editing stay free of React; only its React adapters import it.",
+};
+
 export default defineConfig({
   extends: [core, next],
   ignorePatterns: [
@@ -408,6 +414,34 @@ export default defineConfig({
     //      deliberately import payload types to assert structural compatibility.
     {
       files: [`${TRANSLATOR}/src/core/**/*.test.ts`],
+      rules: { "no-restricted-imports": "off" },
+    },
+    {
+      files: [
+        `${VISUAL_EDITING}/shared/**`,
+        `${VISUAL_EDITING}/server/**`,
+        `${VISUAL_EDITING}/client/overlay/**`,
+        `${VISUAL_EDITING}/client/instantPreview/**`,
+      ],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            paths: ["react", "react-dom", "@payloadcms/ui"].map((name) => ({
+              name,
+              ...REACT_FREE,
+            })),
+            patterns: [{ group: ["react/*", "react-dom/*", "@payloadcms/ui/*"], ...REACT_FREE }],
+          },
+        ],
+      },
+    },
+    {
+      files: [
+        `${VISUAL_EDITING}/client/instantPreview/LiveRichText.tsx`,
+        `${VISUAL_EDITING}/client/instantPreview/unsavedRender/useUnsavedRender.ts`,
+        `${VISUAL_EDITING}/client/instantPreview/unsavedRender/UnsavedRenderBoundary.tsx`,
+      ],
       rules: { "no-restricted-imports": "off" },
     },
   ],
