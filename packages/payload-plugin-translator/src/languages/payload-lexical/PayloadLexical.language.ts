@@ -1,4 +1,4 @@
-import { elementSegment, renderSegment } from "../../core/domain/content-projection/idPath.js";
+import { elementSegment } from "../../core/domain/content-projection/idPath.js";
 import { carriesOwnText, checkSegments } from "../../core/kernel/lexical/checkSegments.js";
 import type { InlineFragment } from "../../core/kernel/lexical/collectInlineFragments.js";
 import { collectInlineFragments } from "../../core/kernel/lexical/collectInlineFragments.js";
@@ -177,7 +177,7 @@ export function payloadLexicalLanguage(): Language<LexicalNode, LexicalCursor> {
         return {
           kind: "value",
           value: embed.data,
-          segments: [renderSegment(elementSegment(embed.data, FOLD_BLOCK_TYPE, cursor.position()))],
+          segments: [elementSegment(embed.data, FOLD_BLOCK_TYPE, cursor.position())],
         };
       }
 

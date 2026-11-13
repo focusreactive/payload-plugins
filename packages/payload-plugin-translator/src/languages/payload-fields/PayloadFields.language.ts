@@ -1,6 +1,7 @@
 import type { FieldWalkStart } from "../../core/domain/content-projection/fieldWalkStart.js";
 import { isFieldWalkStart } from "../../core/domain/content-projection/fieldWalkStart.js";
-import { elementSegment, renderSegment } from "../../core/domain/content-projection/idPath.js";
+import type { PathSegment } from "../../core/domain/content-projection/idPath.js";
+import { elementSegment } from "../../core/domain/content-projection/idPath.js";
 import {
   isLocalizedFieldLike,
   isTranslatableLeaf,
@@ -43,9 +44,7 @@ export const PAYLOAD_FIELDS_ID = "payload-fields";
 
 const asObject = (value: unknown): Record<string, unknown> => (isObject(value) ? value : {});
 
-const rendered = renderSegment;
-
-const key = (name: string): string => rendered({ kind: "key", name });
+const key = (name: string): PathSegment => ({ kind: "key", name });
 
 type Child = StepChild<FieldLike, PayloadFieldsCursor>;
 
@@ -82,7 +81,7 @@ const intoList = (
       {
         nodes: fields,
         cursor: { data: item, source: sourceItem },
-        segments: [key(name), rendered(elementSegment(sourceItem, isBlocks, index))],
+        segments: [key(name), elementSegment(sourceItem, isBlocks, index)],
       },
     ];
   });
