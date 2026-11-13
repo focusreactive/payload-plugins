@@ -1,0 +1,547 @@
+import { Button, CheckboxInput, Drawer, ShimmerEffect, toast, useModal } from "@payloadcms/ui";
+import { useId, useState } from "react";
+import type { FormEvent, ReactNode } from "react";
+
+import { useDialogSlug } from "../dialogScope.js";
+import { relationIdOf } from "../../core/relationId.js";
+import type { ConfirmMoves, FolderId, TreeItem } from "../../types.js";
+import {
+  fetchDocument,
+  fetchLatestStatus,
+  fetchVersionMarker,
+  isPageChangedError,
+  preconditionQueryOf,
+  writeDocument,
+} from "../api.js";
+import type { FoldersApiContext, MovePreview } from "../api.js";
+import { Link, editViewUrl } from "../compat.js";
+import type { Translate } from "../compat.js";
+import { existingRootIn, rootChangePreviewOf } from "../ContextMenu/rootPage.js";
+import { ParentField } from "../Create/ParentField.js";
+import { SlugField } from "../Create/SlugField.js";
+import { useSegmentCheck } from "../Create/useSegmentCheck.js";
+import type { FolderChoice } from "../Move/FolderPickerTree.js";
+import { refusalOf } from "../Move/folderPicker.js";
+import { refusalText } from "../Move/MoveDialog.js";
+import type { DropMove } from "../Move/useMoveFlow.js";
+import type { TreeStore } from "../store.js";
+import { useFormatUrl } from "../urlForm.js";
+import { useTreeStoreState } from "../useTreeStore.js";
+import { folderPathOfPage } from "./folderPath.js";
+import { pageBodyOf, planPageSettingsSave } from "./pageSettings.js";
+import { isValueAccepted, needsSegmentCheck } from "./segmentRules.js";
+import type { PageSaveStep, PageSettingsValues } from "./pageSettings.js";
+import type { UnrootRequest } from "./UnrootDialog.js";
+import type { Confirmations } from "./useConfirmations.js";
+import { useFolderName } from "./useFolderName.js";
+import { urlChangeOf } from "./urlHint.js";
+import { toText } from "../../core/text.js";
+import { useAsyncRead } from "../useAsyncRead.js";
+
+export const pageSettingsDrawerSlug = "fr-folders-page-settings";
+
+/** The page as Payload's REST route answers it at depth 0: the latest version, in the admin locale. */
+type PageDocument = Record<string, unknown> & {
+  _status?: string;
+  folder?: FolderId | { id: FolderId } | null;
+  isFolderRoot?: boolean | null;
+};
+
+export type PageFieldNames = { segmentField: string; titleField: string };
+
+export type PageSettingsRequest = { item: TreeItem; session: number };
+
+export type PageSettingsDrawerProps = {
+  adminRoute: string;
+  apiContext: FoldersApiContext;
+  /** Asks for the page's own segment when the root flag is unticked; `null` when cancelled. */
+  askUnroot: (request: Omit<UnrootRequest, "session">) => Promise<string | null>;
+  confirmations: Confirmations;
+  confirmMoves: ConfirmMoves;
+  /**
+   * The questions a save asks, rendered inside the drawer: a dialog outside it would sit behind it
+   * (Payload stacks a dialog by the drawer depth it is rendered at).
+   */
+  dialogs: ReactNode;
+  /** Page collections with drafts: title and segment are a draft edit there. */
+  draftCollections: readonly string[];
+  enforceAllowedTypes: boolean;
+  foldersSlug: string;
+  locale: string | null;
+  /** Moves the page to its new parent with the move's own preview, confirmation and Undo. */
+  onMove: (move: DropMove) => Promise<void>;
+  pageFields: Readonly<Record<string, PageFieldNames>>;
+  request: PageSettingsRequest | null;
+  store: TreeStore;
+  translate: Translate;
+  typeLabels: Readonly<Record<string, string>>;
+};
+
+type FormProps = Omit<PageSettingsDrawerProps, "dialogs" | "request"> & {
+  document: PageDocument;
+  /** The same page with the language fallback applied: what the empty fields show instead. */
+  fallbackDocument: PageDocument | null;
+  item: TreeItem;
+};
+
+const PageSettingsForm = ({
+  adminRoute,
+  apiContext,
+  askUnroot,
+  confirmations,
+  document: page,
+  fallbackDocument,
+  draftCollections,
+  enforceAllowedTypes,
+  foldersSlug,
+  item,
+  locale,
+  onMove,
+  pageFields,
+  store,
+  translate,
+  typeLabels,
+}: FormProps): ReactNode => {
+  const { closeModal } = useModal();
+  const formatUrl = useFormatUrl();
+  const drawerSlug = useDialogSlug(pageSettingsDrawerSlug);
+  const state = useTreeStoreState(store);
+  const formId = useId();
+  const names = pageFields[item.collection] ?? { segmentField: "slug", titleField: "title" };
+  const hasDrafts = draftCollections.includes(item.collection);
+
+  const storedParentId = relationIdOf(page.folder);
+  const stored: PageSettingsValues = {
+    isFolderRoot: Boolean(page.isFolderRoot),
+    parentId: storedParentId,
+    segment: toText(page[names.segmentField]),
+    title: toText(page[names.titleField]),
+  };
+
+  const [title, setTitle] = useState(stored.title);
+  const [segment, setSegment] = useState(stored.segment);
+  const [isRoot, setIsRoot] = useState(stored.isFolderRoot);
+  const [parent, setParent] = useState<FolderChoice | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [failure, setFailure] = useState<{ canSaveAsDraft: boolean; message: string } | null>(null);
+
+  const parentName = useFolderName({
+    apiContext,
+    foldersSlug,
+    id: storedParentId,
+    locale,
+    state,
+  });
+  const choice: FolderChoice = parent ?? {
+    id: storedParentId,
+    title: storedParentId === null ? translate("moveToRoot") : (parentName ?? "..."),
+  };
+  const folderPath = folderPathOfPage(item, state);
+  // Another page that is the folder's root page keeps this one from taking the place.
+  const existingRoot = existingRootIn(state, storedParentId, item);
+  const isRootBlocked = !stored.isFolderRoot && existingRoot !== null;
+
+  // A root page's segment is not part of its URL, so it is not checked while the page is root. It
+  // is checked in the folder the page is going to, before anything is written: a draft edit that
+  // saved and then met a clash in the new parent would leave the page half changed.
+  const isSegmentChecked =
+    !isRoot &&
+    needsSegmentCheck({
+      editedParentId: choice.id,
+      editedSegment: segment,
+      storedParentId,
+      storedSegment: stored.segment,
+    });
+  const segmentCheck = useSegmentCheck({
+    context: apiContext,
+    enabled: isSegmentChecked,
+    exclude: { collection: item.collection, id: item.id },
+    locale,
+    parent: choice.id,
+    segment,
+  });
+  const isSegmentOk = !isSegmentChecked || segmentCheck.state === "ok";
+  // A title or segment this language has no value of its own for may stay empty, because the
+  // default language's value shows through; one the editor emptied may not.
+  const canSave =
+    isValueAccepted(stored.title, title.trim()) &&
+    (isRoot || isValueAccepted(stored.segment, segment)) &&
+    isSegmentOk &&
+    !isSaving;
+
+  const edited: PageSettingsValues = {
+    isFolderRoot: isRoot,
+    parentId: choice.id,
+    segment,
+    title: title.trim(),
+  };
+  const urlChange = urlChangeOf(
+    { folderPath, isFolderRoot: stored.isFolderRoot, segment: item.slug ?? stored.segment },
+    { folderPath, isFolderRoot: isRoot, segment: segment === "" ? (item.slug ?? "") : segment }
+  );
+
+  const refusalFor = (target: TreeItem | null): string | null => {
+    const refusal = refusalOf([item], target, { enforceAllowedTypes, typeLabels });
+
+    return refusal === null ? null : refusalText(refusal, translate);
+  };
+
+  const toggleRoot = async () => {
+    if (!isRoot) {
+      if (!isRootBlocked) {
+        setIsRoot(true);
+      }
+
+      return;
+    }
+    // Unticking never just unticks: the page needs a segment of its own (spec section 4).
+    const chosen = await askUnroot({
+      collection: item.collection,
+      folderId: storedParentId,
+      folderPath,
+      id: item.id,
+      locale,
+      storedSlug: stored.segment === "" ? (item.slug ?? null) : stored.segment,
+      title: title.trim() === "" ? item.title : title.trim(),
+      willGoLive: hasDrafts ? !(page._status === "draft") : true,
+    });
+    if (chosen !== null) {
+      setSegment(chosen);
+      setIsRoot(false);
+    }
+  };
+
+  const runContentStep = async (
+    step: Extract<PageSaveStep, { kind: "content" }>,
+    marker: string | undefined
+  ): Promise<boolean> => {
+    if (step.needsConfirm) {
+      const isNewRoot = step.changes.isFolderRoot === true;
+      const preview: MovePreview = isNewRoot
+        ? rootChangePreviewOf(item, folderPath, storedParentId)
+        : {
+            ...rootChangePreviewOf(item, folderPath, storedParentId),
+            samples: [
+              {
+                collection: item.collection,
+                from: urlChange?.from ?? item.fullPath,
+                id: item.id,
+                locale: null,
+                to: urlChange?.to ?? item.fullPath,
+              },
+            ],
+          };
+      const answer = await confirmations.askUrlChange({
+        confirmingLabel: translate("rootConfirming"),
+        confirmLabel: translate(isNewRoot ? "menuSetAsRoot" : "settingsSave"),
+        items: [item],
+        preview,
+        targetTitle: folderPath,
+        title: isNewRoot
+          ? translate("rootConfirmTitle", { path: folderPath, title: item.title })
+          : translate("settingsLiveConfirmTitle", { title: item.title }),
+      });
+      if (answer === null) {
+        return false;
+      }
+    }
+    await writeDocument(apiContext, {
+      body: pageBodyOf({ ...names, changes: step.changes, hasDrafts, mode: step.mode }),
+      collection: item.collection,
+      id: item.id,
+      // A live save of the root flag carries the version it read, so the server refuses it when the
+      // page changed since (spec section 4), whichever way the flag flips.
+      query:
+        step.mode === "draft"
+          ? { draft: "true", locale }
+          : {
+              locale,
+              ...(step.changes.isFolderRoot === undefined ? {} : preconditionQueryOf(marker)),
+            },
+    });
+
+    return true;
+  };
+
+  const save = async (event: FormEvent | null, forceDraft = false) => {
+    event?.preventDefault();
+    if (!canSave) {
+      return;
+    }
+    setIsSaving(true);
+    setFailure(null);
+    try {
+      // The page's status was read when the drawer opened; a draft saved since would be published
+      // by a live save of the root flag, so it is read again right before. The version marker is
+      // read first and goes with that save, so a draft that lands after it makes the server refuse.
+      const marker =
+        forceDraft || stored.isFolderRoot === isRoot
+          ? undefined
+          : await fetchVersionMarker(apiContext, {
+              collection: item.collection,
+              hasDrafts,
+              id: item.id,
+            });
+      let hasNewerDraft = page._status === "draft" || forceDraft;
+      if (hasDrafts && !hasNewerDraft) {
+        hasNewerDraft = (await fetchLatestStatus(apiContext, item))._status === "draft";
+      }
+      const steps = planPageSettingsSave({ edited, hasDrafts, hasNewerDraft, stored });
+      let moveStep: Extract<PageSaveStep, { kind: "move" }> | null = null;
+      let wroteContent = false;
+      let wasDraftEdit = false;
+      for (const step of steps) {
+        if (step.kind === "move") {
+          moveStep = step;
+          continue;
+        }
+        if (!(await runContentStep(step, marker))) {
+          return;
+        }
+        wroteContent = true;
+        wasDraftEdit = step.mode === "draft";
+      }
+      if (wroteContent) {
+        await store.invalidate([item.parentId]);
+        toast.success(
+          wasDraftEdit && urlChange !== null
+            ? translate("settingsSavedDraftUrl", {
+                from: formatUrl(urlChange.from),
+                to: formatUrl(urlChange.to),
+              })
+            : translate(wasDraftEdit ? "settingsSavedDraft" : "settingsSaved", {
+                title: item.title,
+              })
+        );
+      }
+      closeModal(drawerSlug);
+      if (moveStep !== null) {
+        await onMove({
+          items: [item],
+          selection: null,
+          target: { position: "start", toFolder: moveStep.toFolder },
+          targetTitle: choice.title,
+        });
+      }
+    } catch (error) {
+      setFailure({
+        canSaveAsDraft: hasDrafts && isPageChangedError(error),
+        message:
+          error instanceof Error && error.message !== ""
+            ? error.message
+            : translate("settingsFailed"),
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const hintKey = hasDrafts ? "settingsUrlHint" : "settingsUrlHintLive";
+
+  return (
+    <form
+      className="fr-folders-form fr-folders-settings"
+      data-testid="page-settings-form"
+      id={formId}
+      onSubmit={(event) => void save(event)}
+    >
+      <div className="fr-folders-field">
+        <label className="fr-folders-field__label" htmlFor={`${formId}-title`}>
+          {translate("createTitle")}
+        </label>
+        <input
+          autoComplete="off"
+          className="fr-folders-input"
+          data-testid="title-input"
+          id={`${formId}-title`}
+          onChange={(event) => setTitle(event.target.value)}
+          placeholder={toText(fallbackDocument?.[names.titleField]) || undefined}
+          type="text"
+          value={title}
+        />
+      </div>
+      <SlugField
+        disabled={isRoot}
+        inputId={`${formId}-segment`}
+        isLinked={false}
+        linkable={false}
+        onChange={setSegment}
+        onRelink={() => undefined}
+        parentPath={folderPath}
+        placeholder={toText(fallbackDocument?.[names.segmentField]) || undefined}
+        status={segmentCheck}
+        translate={translate}
+        value={segment}
+      />
+      {isRoot ? (
+        <p className="fr-folders-field__hint" data-testid="root-url">
+          {translate("settingsRootUrl", { path: formatUrl(folderPath) })}
+        </p>
+      ) : null}
+      {urlChange === null || isRoot !== stored.isFolderRoot ? null : (
+        <p className="fr-folders-field__hint" data-testid="url-hint">
+          {translate(hintKey, { from: formatUrl(urlChange.from), to: formatUrl(urlChange.to) })}
+        </p>
+      )}
+      <div className="fr-folders-field" data-testid="root-field">
+        <CheckboxInput
+          checked={isRoot}
+          id={`${formId}-root`}
+          label={translate("createRootPage")}
+          onToggle={() => void toggleRoot()}
+          readOnly={isRootBlocked}
+        />
+        {isRootBlocked ? (
+          <p className="fr-folders-field__hint" data-testid="root-taken">
+            {existingRoot === "unknown"
+              ? translate("menuRootTakenUnknown")
+              : translate("menuRootTaken", { title: existingRoot.title })}
+          </p>
+        ) : null}
+      </div>
+      <ParentField
+        apiContext={apiContext}
+        choice={choice}
+        foldersSlug={foldersSlug}
+        onChoose={setParent}
+        refusalFor={refusalFor}
+        store={store}
+        translate={translate}
+      />
+      <p>
+        <Link
+          data-testid="open-full-editor"
+          href={editViewUrl(adminRoute, item.collection, item.id)}
+        >
+          {translate("settingsOpenEditor")}
+        </Link>
+      </p>
+      {failure === null ? null : (
+        <div className="fr-folders-error" data-testid="settings-failure" role="alert">
+          <p>{failure.message}</p>
+          {failure.canSaveAsDraft ? (
+            <Button
+              buttonStyle="secondary"
+              extraButtonProps={{ "data-testid": "save-as-draft-instead" }}
+              margin={false}
+              onClick={() => void save(null, true)}
+              size="medium"
+            >
+              {translate("saveAsDraftInstead")}
+            </Button>
+          ) : null}
+        </div>
+      )}
+      <div className="fr-folders-settings__actions">
+        <Button
+          buttonStyle="secondary"
+          margin={false}
+          onClick={() => closeModal(drawerSlug)}
+          size="medium"
+        >
+          {translate("actionCancel")}
+        </Button>
+        <Button disabled={!canSave} margin={false} size="medium" type="submit">
+          {translate(isSaving ? "settingsSaving" : "settingsSave")}
+        </Button>
+      </div>
+    </form>
+  );
+};
+
+type Loaded =
+  | { document: PageDocument; fallbackDocument: PageDocument | null; key: string }
+  | { error: string; key: string };
+
+const PageSettingsContent = ({
+  item,
+  session,
+  ...rest
+}: Omit<PageSettingsDrawerProps, "dialogs" | "request"> & {
+  item: TreeItem;
+  session: number;
+}): ReactNode => {
+  const { apiContext, locale, translate } = rest;
+  const key = `${session}`;
+  const [loaded, setLoaded] = useState<Loaded | null>(null);
+
+  useAsyncRead(
+    async (isCurrent) => {
+      try {
+        const [document, fallbackDocument] = await Promise.all([
+          fetchDocument<PageDocument>(apiContext, {
+            collection: item.collection,
+            id: item.id,
+            locale,
+          }),
+          // Only for the placeholders: a page that cannot be read with the fallback still edits.
+          fetchDocument<PageDocument>(apiContext, {
+            collection: item.collection,
+            fallback: true,
+            id: item.id,
+            locale,
+          }).catch(() => null),
+        ]);
+        if (isCurrent()) {
+          setLoaded({ document, fallbackDocument, key });
+        }
+      } catch (error) {
+        if (isCurrent()) {
+          setLoaded({ error: error instanceof Error ? error.message : "", key });
+        }
+      }
+    },
+    [apiContext, item.collection, item.id, key, locale]
+  );
+
+  const current = loaded?.key === key ? loaded : null;
+  if (current === null) {
+    return (
+      <div aria-busy="true" aria-label={translate("loading")} role="status">
+        <ShimmerEffect height="14px" width="60%" />
+      </div>
+    );
+  }
+  if ("error" in current) {
+    return (
+      <p className="fr-folders-error" role="alert">
+        {translate("settingsLoadFailed")}
+        {current.error === "" ? "" : `: ${current.error}`}
+      </p>
+    );
+  }
+
+  return (
+    <PageSettingsForm
+      document={current.document}
+      fallbackDocument={current.fallbackDocument}
+      item={item}
+      {...rest}
+    />
+  );
+};
+
+/**
+ * Page settings (spec section 7.8, Storyblok's story Settings): title, URL segment, folder root
+ * page and parent folder. Title and segment are a draft edit where the collection has drafts, with
+ * the hint of the URL change; the root flag follows Set as root page; a new parent is a move.
+ */
+export const PageSettingsDrawer = ({ dialogs, request, ...rest }: PageSettingsDrawerProps) => (
+  <Drawer
+    className="fr-folders-settings-drawer"
+    slug={useDialogSlug(pageSettingsDrawerSlug)}
+    title={
+      request === null ? "" : rest.translate("settingsPageTitle", { title: request.item.title })
+    }
+  >
+    {request === null ? null : (
+      <PageSettingsContent
+        item={request.item}
+        key={request.session}
+        session={request.session}
+        {...rest}
+      />
+    )}
+    {dialogs}
+  </Drawer>
+);

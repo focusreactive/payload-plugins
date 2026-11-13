@@ -1,0 +1,83 @@
+import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { createContext, useCallback, useContext } from "react";
+
+import type { TreeItem } from "../../types.js";
+import { crumbKeyOf } from "./dropTargets.js";
+import type { DropIndicator } from "./dropTargets.js";
+
+/** What the rows of the tree need to know about the drag in progress. */
+export type DragRowState = {
+  /** A move is in flight: no drag starts until it is done. */
+  disabled: boolean;
+  draggedKeys: ReadonlySet<string>;
+  /** The row the pointer picked up, whether or not it is still in the page; `null` when idle. */
+  grabbedKey: string | null;
+  /** Where the line or the highlight of the gap under the pointer is drawn. */
+  indicator: DropIndicator | null;
+  /** The gap under the pointer refuses the rows. */
+  isRefused: boolean;
+};
+
+const noDraggedKeys: ReadonlySet<string> = new Set();
+
+export const DragStateContext = createContext<DragRowState>({
+  disabled: false,
+  draggedKeys: noDraggedKeys,
+  grabbedKey: null,
+  indicator: null,
+  isRefused: false,
+});
+
+/**
+ * Makes one row a drag source and a drop target. The listeners go on the row, and the row is also
+ * the activator node.
+ */
+export const useRowDrag = (item: TreeItem, rowKey: string) => {
+  const { disabled, draggedKeys, indicator, isRefused } = useContext(DragStateContext);
+  const data = { item };
+  const {
+    listeners,
+    setActivatorNodeRef,
+    setNodeRef: setDraggableRef,
+  } = useDraggable({ data, disabled, id: rowKey });
+  const { setNodeRef: setDroppableRef } = useDroppable({ data, id: rowKey });
+
+  const setRowRef = useCallback(
+    (node: HTMLElement | null) => {
+      setDraggableRef(node);
+      setDroppableRef(node);
+      setActivatorNodeRef(node);
+    },
+    [setActivatorNodeRef, setDraggableRef, setDroppableRef]
+  );
+
+  // dnd-kit's listeners include a key handler for its keyboard sensor, which is not registered
+  // (see `DragAndDropProvider`); the row answers its own keys, so only the pointer's are kept.
+  const pointerListeners = listeners
+    ? Object.fromEntries(Object.entries(listeners).filter(([name]) => name !== "onKeyDown"))
+    : undefined;
+
+  return {
+    indicator: indicator?.rowKey === rowKey ? { ...indicator, isRefused } : null,
+    isDragged: draggedKeys.has(rowKey),
+    listeners: pointerListeners,
+    setRowRef,
+  };
+};
+
+/**
+ * Makes a breadcrumb, or the zoom header, a drop target (spec section 7.3): "inside" the folder it
+ * names, `null` being the "Content" crumb, the top level. It only takes drops; a crumb is a link,
+ * not something to drag.
+ */
+export const useCrumbDrop = (folder: TreeItem | null) => {
+  const { indicator, isRefused } = useContext(DragStateContext);
+  const key = crumbKeyOf(folder);
+  const { setNodeRef } = useDroppable({ data: { crumb: { folder } }, id: key });
+
+  return {
+    isOver: indicator?.rowKey === key,
+    isRefused: indicator?.rowKey === key && isRefused,
+    setNodeRef,
+  };
+};
