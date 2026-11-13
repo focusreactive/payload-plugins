@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import type { BlockLike, FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { isObject } from "../../../core/kernel/utils/isObject.js";
-import { collectTranslationTargets } from "../../../core/traversal/index.js";
-import type { Crossing, Language, Step } from "../../../core/traversal/index.js";
+import { collectTranslationTargets } from "../../../traversal/index.js";
+import type { Crossing, Language, Step } from "../../../traversal/index.js";
 import type { EmbedIdentity, EmbedResolver } from "../../embedCrossing.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
 

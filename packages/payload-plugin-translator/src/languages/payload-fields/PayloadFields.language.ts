@@ -26,7 +26,7 @@ import type {
   StepChild,
   TextLeaf,
   TextUnit,
-} from "../../core/traversal/index.js";
+} from "../../traversal/index.js";
 
 /**
  * Two `Record<string, unknown>` the type cannot tell apart: `data` is the working copy — it decides

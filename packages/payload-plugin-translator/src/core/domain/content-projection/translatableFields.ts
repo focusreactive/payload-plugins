@@ -1,5 +1,5 @@
 import type { FieldLike } from "../../kernel/field-traversal/types.js";
-import type { LanguageTable } from "../../traversal/index.js";
+import type { LanguageTable } from "../../../traversal/index.js";
 import { projectTranslatableContent } from "./contentProjector.js";
 import { foldTranslatableContent } from "./foldTranslatableContent.js";
 import type { CrossedPiece, FoldedField } from "./foldTranslatableContent.js";

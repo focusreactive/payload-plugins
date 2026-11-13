@@ -1,4 +1,4 @@
-import type { IdPath as WalkPath, PathSegment as WalkToken } from "../../traversal/index.js";
+import type { IdPath as WalkPath, PathSegment as WalkToken } from "../../../traversal/index.js";
 import { joinRendered, renderSegment } from "./idPath.js";
 import type { IdPath, RenderedSegment } from "./idPath.js";
 

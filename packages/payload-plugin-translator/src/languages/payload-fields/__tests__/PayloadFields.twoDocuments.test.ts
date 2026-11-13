@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { applyTranslations, collectTranslationTargets } from "../../../core/traversal/index.js";
+import { applyTranslations, collectTranslationTargets } from "../../../traversal/index.js";
 import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { addressesOf } from "../../__tests__/addresses.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
-import { sentTextsOf } from "../../../core/traversal/__tests__/fixtures/sentText.js";
+import { sentTextsOf } from "../../../traversal/__tests__/fixtures/sentText.js";
 
 const schema: FieldLike[] = [
   { type: "text", name: "title", localized: true },

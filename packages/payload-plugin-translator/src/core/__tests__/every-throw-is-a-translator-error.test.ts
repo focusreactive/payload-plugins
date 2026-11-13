@@ -4,12 +4,12 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const SRC = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const ROOTS = ["server", "core"];
+const ROOTS = ["server", "core", "traversal"];
 
 /**
- * Three roots, not one: the traversal kernel keeps its own because it depends on nothing, and an
- * error family of its reaching into this package is the first thing that would have to be unpicked
- * to move the kernel out of it.
+ * Four roots, not one: the traversal engine keeps its own family because it depends on nothing,
+ * and that family reaching into this package is the first thing that would have to be unpicked to
+ * move the engine out of it.
  */
 const DECLARES =
   /class ([A-Za-z_][A-Za-z0-9_]*) extends (TranslatorError|TranslationProviderError|TraversalError)\b/gu;

@@ -1,5 +1,5 @@
 import type { Crossing, Language, Step, TextLeaf, TextUnit } from "../../contract.js";
-import type { EmbedResolver } from "../../../../languages/embedCrossing.js";
+import type { EmbedResolver } from "../../../languages/embedCrossing.js";
 import type { UnitCut } from "./marks.js";
 import { resolveMarks, serializeMarks } from "./marks.js";
 

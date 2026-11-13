@@ -7,7 +7,7 @@ import type {
 import { TranslationPipeline } from "./TranslationPipeline.js";
 import type { LeafAddress } from "../domain/content-projection/idPath.js";
 import type { PipelineResult } from "./types/Pipeline.js";
-import type { RegisteredLanguage } from "../traversal/index.js";
+import type { RegisteredLanguage } from "../../traversal/index.js";
 
 export type TranslateContentArgs = {
   schema: FieldLike[];

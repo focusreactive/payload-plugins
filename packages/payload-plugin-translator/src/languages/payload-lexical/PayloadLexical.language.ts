@@ -11,7 +11,7 @@ import {
   isSerializedLexicalTextNode,
 } from "../../core/kernel/lexical/index.js";
 import { isObject } from "../../core/kernel/utils/isObject.js";
-import type { Crossing, Language, Step, TextLeaf, TextUnit } from "../../core/traversal/index.js";
+import type { Crossing, Language, Step, TextLeaf, TextUnit } from "../../traversal/index.js";
 import type { ContentCrossing } from "../contentCrossing.js";
 import type { EmbedFlow, EmbedIdentity, EmbedResolver } from "../embedCrossing.js";
 

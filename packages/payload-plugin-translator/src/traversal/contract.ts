@@ -143,8 +143,8 @@ export type SentText = string;
  * One piece of a unit. `text: null` holds a position with nothing to translate — not an empty
  * string.
  *
- * Deliberately not the translation port's `Segment`: `src/core/traversal` imports nothing outside
- * itself, and taking that type would make the walk depend on the provider layer.
+ * Deliberately not the translation port's `Segment`: this engine imports nothing outside itself,
+ * and taking that type would make the walk depend on the provider layer.
  *
  * @public
  */

@@ -1,5 +1,5 @@
 import { walkAddress } from "../../core/domain/content-projection/walkAddress.js";
-import type { IdPath, TranslationTarget } from "../../core/traversal/index.js";
+import type { IdPath, TranslationTarget } from "../../traversal/index.js";
 
 export const addressOf = (path: IdPath): string => String(walkAddress(path));
 

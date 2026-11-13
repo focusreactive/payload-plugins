@@ -1,5 +1,5 @@
 import type { FieldLike } from "../../kernel/field-traversal/types.js";
-import type { LanguageTable } from "../../traversal/index.js";
+import type { LanguageTable } from "../../../traversal/index.js";
 import { fingerprintFieldContents } from "./computeFieldFingerprints.js";
 import type { FieldFingerprints } from "./computeFieldFingerprints.js";
 import { translatableFields } from "./translatableFields.js";

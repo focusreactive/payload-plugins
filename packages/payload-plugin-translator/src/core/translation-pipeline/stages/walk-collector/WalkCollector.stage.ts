@@ -1,6 +1,6 @@
 import { TranslatorBug } from "../../../errors/index.js";
-import { collectTranslationTargets } from "../../../traversal/index.js";
-import type { TranslationTarget } from "../../../traversal/index.js";
+import { collectTranslationTargets } from "../../../../traversal/index.js";
+import type { TranslationTarget } from "../../../../traversal/index.js";
 import { walkAddress } from "../../../domain/content-projection/walkAddress.js";
 import type { IdPath } from "../../../domain/content-projection/idPath.js";
 import type { TranslatableValue } from "../../../domain/translation-providers/index.js";

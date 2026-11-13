@@ -4,9 +4,9 @@ import {
   READABLE_MARKERS,
   answerInKind,
   sentsOf,
-} from "../../../core/traversal/__tests__/fixtures/sentText.js";
-import { applyTranslations } from "../../../core/traversal/index.js";
-import type { Language } from "../../../core/traversal/index.js";
+} from "../../../traversal/__tests__/fixtures/sentText.js";
+import { applyTranslations } from "../../../traversal/index.js";
+import type { Language } from "../../../traversal/index.js";
 import type { BlockLike, FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import type { EmbedIdentity, EmbedResolver } from "../../embedCrossing.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../../payload-fields/index.js";

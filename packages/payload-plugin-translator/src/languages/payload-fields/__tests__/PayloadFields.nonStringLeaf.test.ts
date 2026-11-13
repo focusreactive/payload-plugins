@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { applyTranslations, collectTranslationTargets } from "../../../core/traversal/index.js";
+import { applyTranslations, collectTranslationTargets } from "../../../traversal/index.js";
 import { addressOf } from "../../__tests__/addresses.js";
 import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";

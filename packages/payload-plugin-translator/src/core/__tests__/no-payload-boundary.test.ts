@@ -3,10 +3,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-// Backstop for the payload/@payloadcms subset of the src/core import ban in root oxlint.config.ts.
+// Backstop for the payload/@payloadcms subset of the import ban in root oxlint.config.ts.
 // Matches import lines only — a framework type reached through another module's types passes.
-
-const CORE = join(dirname(fileURLToPath(import.meta.url)), "..");
+//
+// The engine's own scan is stronger on the files it ships, but it skips tests; a fixture there
+// reaching for Payload is how the engine would stop being able to model a second host, so this
+// is the zone's only guard over them.
+const SRC = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const ZONES = [join(SRC, "core"), join(SRC, "traversal")];
 
 // Matches `from "payload"`, `from "payload/shared"`, `from "@payloadcms/..."`
 // (single or double quotes).
@@ -30,8 +34,8 @@ const sourceFilesIn = (dir: string): string[] => {
   return out;
 };
 
-describe("src/core is free of payload / @payloadcms imports", () => {
-  const sourceFiles = sourceFilesIn(CORE);
+describe("the host-neutral code is free of payload / @payloadcms imports", () => {
+  const sourceFiles = ZONES.flatMap((zone) => sourceFilesIn(zone));
 
   it("has source files to check", () => {
     expect(sourceFiles.length).toBeGreaterThan(0);

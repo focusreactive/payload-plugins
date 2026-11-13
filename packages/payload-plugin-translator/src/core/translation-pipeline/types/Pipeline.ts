@@ -1,7 +1,7 @@
 import type { LeafAddress } from "../../domain/content-projection/idPath.js";
 import type { IdPath } from "../../domain/content-projection/idPath.js";
 import type { FieldLike } from "../../kernel/field-traversal/index.js";
-import type { RegisteredLanguage } from "../../traversal/index.js";
+import type { RegisteredLanguage } from "../../../traversal/index.js";
 import type { DocumentRef, ValueFailureCode } from "../../domain/translation-providers/index.js";
 import type { AnsweredSegment } from "../../kernel/lexical/checkSegments.js";
 

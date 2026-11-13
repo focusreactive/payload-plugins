@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { applyTranslations, collectTranslationTargets } from "../../../core/traversal/index.js";
-import type { Language } from "../../../core/traversal/index.js";
+import { applyTranslations, collectTranslationTargets } from "../../../traversal/index.js";
+import type { Language } from "../../../traversal/index.js";
 import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { isEmpty } from "../../../core/kernel/utils/isEmpty.js";
 import { isObject } from "../../../core/kernel/utils/isObject.js";
@@ -9,7 +9,7 @@ import type { ContentCrossing } from "../../contentCrossing.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
 import { PAYLOAD_LEXICAL_ID, payloadLexicalContent } from "../../payload-lexical/index.js";
 import { text, tree, walkDocument } from "../../__tests__/fixtures/lexical.js";
-import { sentTextOf, sentTextsOf } from "../../../core/traversal/__tests__/fixtures/sentText.js";
+import { sentTextOf, sentTextsOf } from "../../../traversal/__tests__/fixtures/sentText.js";
 
 const NOTE_ID = "note";
 
