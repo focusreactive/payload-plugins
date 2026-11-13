@@ -12,7 +12,6 @@ import { parseSlugToPath } from "@/lib/utils/parseSlugToPath";
 import { BreadcrumbsJsonLd } from "@/components/seo/components";
 import type { Locale } from "@/lib/types";
 import { getPageBySlug } from "@/dal/getPageBySlug";
-import { getMainSitePageStaticParams } from "@/dal/staticParams/pages";
 import { PayloadRedirects } from "@/components/PayloadRedirects";
 import { redirect } from "@/lib/i18n/navigation";
 import type { Footer as FooterType, Header as HeaderType } from "@/payload-types";
@@ -80,8 +79,4 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
     doc: page,
     locale,
   });
-}
-
-export async function generateStaticParams() {
-  return await getMainSitePageStaticParams();
 }

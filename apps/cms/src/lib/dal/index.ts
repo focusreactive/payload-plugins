@@ -41,7 +41,3 @@ export { getRedirects, getCachedRedirects } from "./getRedirects";
 
 // Localization
 export { getAlternateLocales } from "./getAlternateLocales";
-
-// Static params (route generation)
-export { getMainSitePageStaticParams } from "./staticParams/pages";
-export { getBlogPostStaticParams } from "./staticParams/posts";
