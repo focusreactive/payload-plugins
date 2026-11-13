@@ -1,5 +1,6 @@
 import type { Message, TranslationKey } from "../translations/types";
 import type { Status } from "./types/analysis";
+import { isDensityOverMaximum } from "./keyphraseDensity";
 
 export interface RecoContext {
   keyphrase?: string;
@@ -68,4 +69,15 @@ export function getRecommendation(
   if (builder) return builder(ctx);
 
   return { key: GENERIC[status] };
+}
+
+export function refineRecommendation(
+  check: { id: string; status: Status },
+  data: Record<string, unknown> | undefined
+): Message | undefined {
+  if (check.id !== "keyphraseDensity" || check.status === "good") return undefined;
+  const density = data?.densityPct;
+  const factor = data?.lengthFactor;
+  if (typeof density !== "number" || typeof factor !== "number") return undefined;
+  return isDensityOverMaximum(density, factor) ? { key: "reco.keyphraseDensity.over" } : undefined;
 }

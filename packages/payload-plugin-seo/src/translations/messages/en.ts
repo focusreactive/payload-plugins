@@ -192,6 +192,8 @@ export const en = {
   "reco.introductionKeyword.badNoKeyphrase": "Add your keyphrase to your opening paragraph.",
   "reco.keyphraseDensity.bad": "Use the keyphrase a few more times to land in the ideal band.",
   "reco.keyphraseDensity.warn": "Use the keyphrase ~2 more times to land in the ideal band.",
+  "reco.keyphraseDensity.over":
+    "The keyphrase appears too often for a text this long. Replace a few uses with synonyms.",
   "reco.metaDescriptionKeyword.bad":
     "Add the keyphrase to the meta description to improve click-through.",
   "reco.imageKeyphrase.warn": "Add the keyphrase to the alt text of the remaining images.",

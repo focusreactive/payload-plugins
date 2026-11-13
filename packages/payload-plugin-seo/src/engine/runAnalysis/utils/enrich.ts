@@ -4,6 +4,7 @@ import type { PaperLike } from "../../types/paper";
 
 import { extractCheckData } from "../../extractCheckData";
 import { resolveVisualization } from "../../visualization/resolveVisualization";
+import { refineRecommendation } from "../../recommendations";
 
 export function enrich(
   checks: CheckResult[],
@@ -15,6 +16,7 @@ export function enrich(
 
     return {
       ...check,
+      recommendation: refineRecommendation(check, data) ?? check.recommendation,
       data,
       viz: resolveVisualization(check, data),
     };

@@ -201,3 +201,18 @@ describe("resolveVisualization — distribution", () => {
     expect(resolveVisualization(check("keyphraseDistribution"), {})).toEqual({ type: "presence" });
   });
 });
+
+describe("resolveVisualization — keyphrase density weighting", () => {
+  it("lowers the density band for a multi-word keyphrase", () => {
+    const v = resolveVisualization(check("keyphraseDensity"), {
+      densityPct: 2.4,
+      lengthFactor: 1.7,
+    });
+
+    expect(v.type).toBe("value-range");
+    if (v.type !== "value-range") return;
+    const good = v.gauge.bands.find((band) => band.status === "good");
+    expect(good?.endPct).toBeCloseTo((1.8 / 5) * 100, 5);
+    expect(v.gauge.markerStatus).not.toBe("good");
+  });
+});

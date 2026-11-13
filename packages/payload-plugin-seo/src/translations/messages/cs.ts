@@ -206,6 +206,8 @@ export const cs: LanguageMessages = {
   "reco.keyphraseDensity.bad":
     "Použijte frázi ještě několikrát, abyste se dostali do ideálního pásma.",
   "reco.keyphraseDensity.warn": "Použijte frázi zhruba ještě dvakrát a budete v ideálním pásmu.",
+  "reco.keyphraseDensity.over":
+    "Fráze se v textu této délky opakuje příliš často. Několik výskytů nahraďte synonymy.",
   "reco.metaDescriptionKeyword.bad":
     "Přidejte klíčovou frázi do meta popisu, zvýšíte tím míru prokliku.",
   "reco.imageKeyphrase.warn": "Přidejte klíčovou frázi do alternativního textu zbylých obrázků.",

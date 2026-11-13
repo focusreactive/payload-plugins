@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { buildPaper } from "../../src/engine/buildPaper";
 import type { AnalysisInput } from "../../src/engine/types/analysis";
+import { getTitleProgressGuarded } from "../../src/engine/helpers/title-progress";
 
 vi.mock("yoastseo", () => ({
   Paper: class {
@@ -37,6 +38,13 @@ describe("buildPaper", () => {
     expect(paper.attributes.description).toBe("Discover the best running shoes.");
     expect(paper.attributes.slug).toBe("best-running-shoes");
     expect(paper.attributes.locale).toBe("en_US");
+  });
+
+  it("passes the measured SEO title width so Yoast doesn't read the title as missing", () => {
+    const paper = buildPaper(input) as unknown as { attributes: Record<string, unknown> };
+
+    expect(paper.attributes.titleWidth).toBe(getTitleProgressGuarded(input.title).actual);
+    expect(paper.attributes.titleWidth).toBeGreaterThan(0);
   });
 });
 

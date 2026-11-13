@@ -2,6 +2,7 @@ import { getResearch } from "./researcherAdapter";
 import type { YoastResearcher } from "./researcherAdapter";
 import { getTitleProgressGuarded } from "./helpers/title-progress";
 import type { PaperLike } from "./types/paper";
+import { keyphraseLengthFactor } from "./keyphraseDensity";
 
 const MAX_SENTENCE_WORDS = 20;
 const MAX_PARAGRAPH_WORDS = 150;
@@ -53,7 +54,15 @@ export function extractCheckData(
   switch (id) {
     case "keyphraseDensity": {
       const r = getResearch<{ density: number }>(researcher, "getKeyphraseDensity");
-      return r ? { densityPct: r.density } : undefined;
+      if (!r) return undefined;
+      const keyphraseWords = (paper.getKeyword?.() ?? "")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean).length;
+      return {
+        densityPct: r.density,
+        lengthFactor: keyphraseLengthFactor(Math.max(1, keyphraseWords)),
+      };
     }
     case "imageKeyphrase": {
       const r = getResearch<{
