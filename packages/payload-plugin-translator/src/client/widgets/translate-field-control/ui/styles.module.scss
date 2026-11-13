@@ -1,48 +1,121 @@
-.popup {
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-}
-
-.row {
+.control {
   display: flex;
   align-items: center;
-  gap: 0.375rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.375rem;
+  font-size: 0.75rem;
 }
 
-/* The from → to direction group; lays the source select, arrow and target chip out inline. */
-.direction {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
+.split {
+  display: inline-flex;
 }
 
-.arrow {
-  display: flex;
-  align-items: center;
-  color: var(--theme-elevation-400);
-}
-
-/* The fixed target locale — framed like the source Select (same border/radius/height/font) for
-   a consistent two-box "source → target" look, but with a muted bg to read as read-only. */
-.current {
+.part {
   display: inline-flex;
   align-items: center;
-  box-sizing: border-box;
   height: 24px;
+  border: 1px solid var(--theme-elevation-150);
+  background: var(--theme-elevation-0);
+  color: var(--theme-elevation-800);
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--theme-elevation-100);
+  }
+}
+
+.main {
+  gap: 0.375rem;
   padding-inline: 0.5rem;
+  border-radius: var(--style-radius-s);
+  font-size: 0.75rem;
+
+  &:not(:last-child) {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+  }
+}
+
+.caret {
+  padding-inline: 0.375rem;
+  border-inline-start: 0;
+  border-start-end-radius: var(--style-radius-s);
+  border-end-end-radius: var(--style-radius-s);
+  color: var(--theme-elevation-600);
+}
+
+.menu {
+  z-index: 10000;
+  min-width: 12rem;
+  padding: 0.25rem 0;
   border: 1px solid var(--theme-elevation-150);
   border-radius: var(--style-radius-s);
-  background: var(--theme-elevation-50);
-  font-size: 0.875rem;
-  font-weight: 500;
+  background: var(--theme-elevation-0);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  padding: 0.4375rem 0.75rem;
+  border: 0;
+  background: transparent;
+  color: var(--theme-text);
+  font-size: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--theme-elevation-100);
+  }
+}
+
+.panels {
+  font-weight: 600;
+}
+
+.panelsMark {
+  color: var(--theme-elevation-500);
+}
+
+.progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
   color: var(--theme-elevation-800);
 }
 
-.trigger {
-  /* inline-flex so the wrapper hugs the icon button — a block/flex div stretches full width,
-     which drags the popover anchor across the field. */
-  display: inline-flex;
-  width: fit-content;
-  margin-bottom: 0.25rem;
+.spinner {
+  width: 0.6875rem;
+  height: 0.6875rem;
+  border: 1.5px solid var(--theme-elevation-300);
+  border-top-color: var(--theme-elevation-800);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  color: var(--theme-error-500);
+
+  & > span {
+    font-weight: 700;
+  }
+}
+
+.notice {
+  color: var(--theme-elevation-600);
+}
+
+.warning {
+  color: var(--theme-warning-650, var(--theme-warning-500));
 }
