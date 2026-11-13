@@ -14,7 +14,7 @@ export type CollectionFacts = {
   autoTranslateTargets: readonly LocaleCode[];
 };
 
-/** Reaches the admin once, through the provider's server props. */
+/** Reaches the admin once, through the provider's client props. */
 export type TranslateKitConfig = {
   basePath: string;
   abilities: Abilities;

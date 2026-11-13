@@ -1,7 +1,6 @@
 // Main plugin
 export { translatorPlugin } from "./plugin.js";
 export type { TranslatorPluginConfig } from "./plugin.js";
-export type { TargetSelectionMode } from "./types/TargetSelection.js";
 
 export type {
   TranslationTask,

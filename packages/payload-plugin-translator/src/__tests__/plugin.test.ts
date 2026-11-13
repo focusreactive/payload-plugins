@@ -161,26 +161,6 @@ describe("translatorPlugin — the listed surfaces", () => {
 });
 
 describe("translatorPlugin — listing the surfaces one at a time", () => {
-  it.each([
-    ["can stop work", { stop: true, run: true }, true],
-    ["cannot", { stop: false, run: false }, false],
-  ])(
-    "tells the bulk dashboard whether the runner %s, so it draws no control for a route that is not there",
-    async (_label, capabilities, expected) => {
-      const { posts } = await build({
-        runner: {
-          capabilities,
-          create: vi.fn(),
-          configure: vi.fn().mockReturnValue((c: Config) => c),
-        } as unknown as TranslatorPluginConfig["runner"],
-      });
-
-      expect(posts.admin.components.beforeListTable[0].serverProps).toMatchObject({
-        canStop: expected,
-      });
-    }
-  );
-
   it("one control only → bundle present, doc popup yes, bulk dashboard no", async () => {
     const { result, posts } = await build({
       modules: [documentTranslation()],

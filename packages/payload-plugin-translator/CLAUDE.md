@@ -169,8 +169,7 @@ client zones in the repo's `oxlint.config.ts` and by `src/client/__tests__/layer
   and may also import `src/server/shared` and `src/core/domain`.
 - **An entity's `model/`, `api/`, `queries/` and `mutations/`** take only types from `payload` and
   `@payloadcms/*`, so their tests need no Payload mock.
-- **`ofetch` is imported only in `client/shared/api/`.** `entities/translation/api/` keeps a
-  temporary allowance until its legacy hooks are removed.
+- **`ofetch` is imported only in `client/shared/api/`.**
 - **Tests** under `__tests__/` are outside the zones.
 
 The admin config comes from `useTranslateKitConfig()` (`client/shared/config/`), which throws

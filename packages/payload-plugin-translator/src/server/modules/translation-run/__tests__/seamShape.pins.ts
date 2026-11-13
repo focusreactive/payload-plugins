@@ -13,7 +13,7 @@ import type { TranslationModule } from "../../../../index.js";
 import type { TranslationComponent } from "../../../../index.js";
 // The positive control. Without it a path that stops resolving would satisfy both directives above
 // with "cannot find module", and the two types could be published again unnoticed.
-import type { TargetSelectionMode } from "../../../../index.js";
+import type { TranslatorAction } from "../../../../index.js";
 import type { ChainMember } from "../index.js";
 
 const _contributesOnlyItsOwn: ChainMember = {
@@ -26,4 +26,4 @@ const _contributesNothing: ChainMember = {
   beforeTranslation: async () => ({}),
 };
 
-export type { TargetSelectionMode, TranslationComponent, TranslationModule };
+export type { TranslationComponent, TranslationModule, TranslatorAction };

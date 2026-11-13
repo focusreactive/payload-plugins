@@ -188,12 +188,6 @@ const TRANSLATOR_CLIENT_ZONES = [
     files: ENTITY_INTERNALS.flatMap(sourcesIn),
     rules: clientImportRules({ layer: "entities", payloadFree: true }),
   },
-  // TEMPORARY: today's hooks call ofetch inline. The legacy sweep (build step 12 of
-  // docs/plans/2026-11-13-admin-ui-on-stubs.design.md) deletes them and this zone with them.
-  {
-    files: sourcesIn(`${TRANSLATOR_CLIENT}/entities/translation/api`),
-    rules: clientImportRules({ layer: "entities", payloadFree: true, fetches: true }),
-  },
   ...CLIENT_LAYERS.map((layer) => ({
     files: boundaryFilesIn(`${TRANSLATOR_CLIENT}/${layer}`),
     rules: clientImportRules({ layer, boundary: true }),

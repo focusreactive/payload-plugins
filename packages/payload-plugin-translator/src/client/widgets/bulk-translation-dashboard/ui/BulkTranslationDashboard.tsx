@@ -6,7 +6,10 @@ import { useId, useMemo, useState } from "react";
 
 import type { LocaleCode } from "../../../../types/wire/primitives.js";
 import type { LocaleChoice } from "../../../entities/translation/index.js";
-import { TranslationsApi, useListTranslationState } from "../../../entities/translation/index.js";
+import {
+  useCancelCollectionTranslations,
+  useListTranslationState,
+} from "../../../entities/translation/index.js";
 import { useTranslateKitConfig } from "../../../shared/config/index.js";
 import { useListView } from "../../../shared/lib/payload/hooks/useListView.js";
 import { useActionError } from "../../../shared/lib/utils/react/useActionError.js";
@@ -29,7 +32,7 @@ type BulkTranslationDashboardProps = {
 type Stage = "closed" | "nothing-selected" | "selection" | "view";
 
 function CancelQueued({ collection }: { collection: string }) {
-  const cancel = TranslationsApi.useCancelCollectionTranslations();
+  const cancel = useCancelCollectionTranslations();
   const { error, run } = useActionError();
   return (
     <>

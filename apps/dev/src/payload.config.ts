@@ -100,7 +100,6 @@ export default buildConfig({
         withAutoTranslate(Articles, { targets: ["de", "fr", "es"], debounceMs: 2000 }),
         withAutoTranslate(Playground, { targets: ["de", "fr", "es"], debounceMs: 2000 }),
       ],
-      targetSelection: "multi",
       access: { check: ({ req }) => Boolean(req.user) },
       runner: resolveTranslatorRunner(),
       translationProvider: resolveTranslationProvider(),

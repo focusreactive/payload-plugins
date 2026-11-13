@@ -2,7 +2,10 @@
 
 import type { LocaleCode } from "../../../../types/wire/primitives.js";
 import type { DocumentAddress } from "../../../entities/translation/index.js";
-import { documentEnqueue, TranslationsApi } from "../../../entities/translation/index.js";
+import {
+  documentEnqueue,
+  useQueueDocumentTranslation,
+} from "../../../entities/translation/index.js";
 import { useTranslateKitConfig } from "../../../shared/config/index.js";
 import { useActionError } from "../../../shared/lib/utils/react/useActionError.js";
 import Button from "../../../shared/ui/Button/index.js";
@@ -25,7 +28,7 @@ export function TranslateAllLocales({
   startBlocked,
 }: TranslateAllLocalesProps) {
   const { abilities } = useTranslateKitConfig();
-  const queue = TranslationsApi.useQueueDocumentTranslation();
+  const queue = useQueueDocumentTranslation();
   const { error, run } = useActionError();
 
   if (!abilities.translate) return null;

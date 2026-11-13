@@ -13,7 +13,7 @@ import {
   initialSelection,
   selectedInTreeOrder,
   toggleNode,
-  TranslationsApi,
+  useQueueDocumentTranslation,
 } from "../../../entities/translation/index.js";
 import { useTranslateKitConfig } from "../../../shared/config/index.js";
 import { useActionError } from "../../../shared/lib/utils/react/useActionError.js";
@@ -49,7 +49,7 @@ const REQUIRED_REASON =
   "Payload will not save a locale with its required fields left empty, so a first translation cannot be partial.";
 
 function useTranslate({ document, source, locale }: Common) {
-  const queue = TranslationsApi.useQueueDocumentTranslation();
+  const queue = useQueueDocumentTranslation();
   const { error, run } = useActionError();
   const translate = (scope: TranslationScope) =>
     run(() => queue.mutateAsync(documentEnqueue({ document, source, targets: [locale], scope })));

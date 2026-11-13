@@ -9,7 +9,13 @@ import type {
   LocaleRow,
   TranslationScope,
 } from "../../../entities/translation/index.js";
-import { documentEnqueue, TranslationsApi } from "../../../entities/translation/index.js";
+import {
+  documentEnqueue,
+  useCancelDocumentTranslation,
+  useDismissStaleness,
+  useQueueDocumentTranslation,
+  useRunDocumentTranslation,
+} from "../../../entities/translation/index.js";
 import { useTranslateKitConfig } from "../../../shared/config/index.js";
 import { useActionError } from "../../../shared/lib/utils/react/useActionError.js";
 import Button from "../../../shared/ui/Button/index.js";
@@ -63,10 +69,10 @@ export function LocaleActions({
   startBlocked,
 }: LocaleActionsProps) {
   const { abilities } = useTranslateKitConfig();
-  const queue = TranslationsApi.useQueueDocumentTranslation();
-  const runNow = TranslationsApi.useRunDocumentTranslation();
-  const cancel = TranslationsApi.useCancelDocumentTranslation();
-  const dismiss = TranslationsApi.useDismissStaleness();
+  const queue = useQueueDocumentTranslation();
+  const runNow = useRunDocumentTranslation();
+  const cancel = useCancelDocumentTranslation();
+  const dismiss = useDismissStaleness();
   const { error, run } = useActionError();
 
   const pending = queue.isPending || runNow.isPending || cancel.isPending || dismiss.isPending;

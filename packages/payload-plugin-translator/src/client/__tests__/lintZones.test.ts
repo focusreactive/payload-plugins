@@ -190,7 +190,7 @@ const PROBES: Probe[] = [
     at: "entities/translation/api",
     file: "ofetch.ts",
     specifier: "ofetch",
-    refused: false,
+    refused: true,
   },
   {
     zone: "tests",
