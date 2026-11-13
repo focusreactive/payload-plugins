@@ -85,6 +85,7 @@ describe("the stub's reads", () => {
     const { status, body } = await call("listState", {
       params: { collection_slug: "posts" },
       search: "ids=1,2",
+      findByID: vi.fn().mockResolvedValue({ title: "Hello" }),
     });
 
     expect(status).toBe(200);
@@ -94,6 +95,18 @@ describe("the stub's reads", () => {
       content: { kind: "empty" },
       run: null,
     });
+  });
+
+  it("leaves out an id the host does not hold", async () => {
+    const held = vi.fn(async ({ id }: { id: string }) => (id === "2" ? null : { title: "Hello" }));
+
+    const { body } = await stubbed()("listState", {
+      params: { collection_slug: "posts" },
+      search: "ids=1,2,3",
+      findByID: held,
+    });
+
+    expect(body.data.docs.map((d: { id: string }) => d.id)).toEqual(["1", "3"]);
   });
 
   it("refuses a collection the plugin does not manage", async () => {

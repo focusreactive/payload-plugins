@@ -1,6 +1,7 @@
 import type { PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../../shared/index.js";
+import { fetchSourceDocument } from "../../../shared/payload/sourceDocument.js";
 import type { RouteHandler } from "../../../shared/http/withErrorHandler.js";
 import { GetDocumentStatusInputSchema } from "../../../features/get-document-status/model.js";
 import { GetCollectionStatusInputSchema } from "../../../features/get-collection-status/model.js";
@@ -14,6 +15,21 @@ import type { StubDeps } from "./StubDeps.js";
 
 const idsAsked = (req: PayloadRequest): DocumentId[] =>
   (req.searchParams.get("ids") ?? "").split(",").filter((id) => id !== "");
+
+/** The ids the host holds and the caller may read, through the same source read as the real routes. */
+async function heldIds(
+  req: PayloadRequest,
+  collection: string,
+  ids: readonly DocumentId[],
+  source: string
+): Promise<DocumentId[]> {
+  const found = await Promise.all(
+    ids.map((id) =>
+      fetchSourceDocument({ payload: req.payload, collection, id, locale: source, user: req.user })
+    )
+  );
+  return ids.filter((_, index) => found[index]);
+}
 
 export function readDocumentState({ world, managed }: StubDeps): RouteHandler {
   return async (req) => {
@@ -43,7 +59,8 @@ export function readListState({ world, managed }: StubDeps): RouteHandler {
     const locales = localesOf(req);
     if (!locales) return ServerResponse.badRequest(NO_LOCALIZATION);
 
-    const state: ListTranslationState = world.listState(collection_slug, idsAsked(req), locales);
+    const ids = await heldIds(req, collection_slug, idsAsked(req), locales.source);
+    const state: ListTranslationState = world.listState(collection_slug, ids, locales);
     return ServerResponse.success(state);
   };
 }
