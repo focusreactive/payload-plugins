@@ -2,7 +2,6 @@
 
 import type { VitalsResult } from "../../../engine/types/analysis";
 import { cn, ROW_SEPARATOR } from "../../../utils/style";
-import { KpiCard } from "../../../ui/KpiCard";
 import { SectionCard } from "../../../ui/SectionCard";
 import { Pill } from "../../../ui/Pill";
 import { HeadingsSection } from "../components/HeadingsSection";
@@ -22,18 +21,23 @@ export function VitalsTab({ data, onRequestKeyphrase }: VitalsTabProps) {
   return (
     <TabWrapper>
       <section className="flex flex-col gap-[13px]">
-        <div className="grid grid-cols-3 gap-[9px]">
-          <KpiCard label={t("vitals.words")} value={data.words.toLocaleString()} />
-          <KpiCard label={t("vitals.sentences")} value={data.sentences} />
-          <KpiCard label={t("vitals.paragraphs")} value={data.paragraphs} />
-          <KpiCard label={t("vitals.images")} value={data.images} />
-          <KpiCard label={t("vitals.videos")} value={data.videos} />
-          <KpiCard
-            label={t("vitals.readingTime")}
-            value={data.readingTimeMinutes}
-            suffix={t("vitals.minutes")}
-          />
-        </div>
+        <dl className="m-0 grid grid-cols-6 rounded-rm border border-neutral-150 bg-neutral-0 divide-x divide-neutral-150 max-[900px]:grid-cols-3">
+          {[
+            [t("vitals.words"), data.words.toLocaleString()],
+            [t("vitals.sentences"), data.sentences],
+            [t("vitals.paragraphs"), data.paragraphs],
+            [t("vitals.images"), data.images],
+            [t("vitals.videos"), data.videos],
+            [t("vitals.readingTime"), `${data.readingTimeMinutes} ${t("vitals.minutes")}`],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="flex flex-col gap-[4px] px-[16px] py-[14px]">
+              <dt className="text-[12px] text-neutral-500">{label}</dt>
+              <dd className="m-0 text-[20px] font-semibold tabular-nums text-neutral-800">
+                {value}
+              </dd>
+            </div>
+          ))}
+        </dl>
 
         <HeadingsSection data={data.headings} />
 
@@ -52,7 +56,7 @@ export function VitalsTab({ data, onRequestKeyphrase }: VitalsTabProps) {
               <div className="w-[120px] flex-none text-[12px] font-medium flex items-center gap-[6px]">
                 {w.word}{" "}
                 {w.isKeyphrase && (
-                  <span className="text-[9px] font-bold uppercase tracking-[0.04em] text-neutral-1000 bg-neutral-150 rounded-[3px] px-[5px] py-[1px]">
+                  <span className="text-[11px] font-medium text-neutral-800 bg-neutral-150 rounded-rs px-[5px]">
                     {t("vitals.keyBadge")}
                   </span>
                 )}

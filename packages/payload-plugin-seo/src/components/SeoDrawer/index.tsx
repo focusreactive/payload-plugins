@@ -11,11 +11,8 @@ import { TABS, TABS_WITH_LINKS, TabsNav } from "./TabsNav";
 import type { TabKey } from "./TabsNav";
 import { KeyphraseTab } from "./tabs/KeyphraseTab";
 import { LinksTab } from "./tabs/LinksTab";
-import { OnPageTab } from "./tabs/OnPageTab";
-import { ReadabilityTab } from "./tabs/ReadabilityTab";
-import { InclusiveTab } from "./tabs/InclusiveTab";
-import { SerpTab } from "./tabs/SerpTab";
 import { VitalsTab } from "./tabs/VitalsTab";
+import { OverviewView } from "./overview/OverviewView";
 
 import "../../admin.css";
 import { useSeoTranslation } from "../../translations/useSeoTranslation";
@@ -64,7 +61,7 @@ export const SeoDrawer = memo(function SeoDrawer({
   selectedId,
 }: SeoDrawerProps) {
   const { t } = useSeoTranslation();
-  const [tab, setTab] = useState<TabKey>("keyphrase");
+  const [tab, setTab] = useState<TabKey>("overview");
 
   const total = result?.overall.seoScore ?? 0;
   const totalStatus: TotalStatus = result ? result.overall.status : "idle";
@@ -87,9 +84,6 @@ export const SeoDrawer = memo(function SeoDrawer({
             result
               ? {
                   keyphrase: result.keyphraseText ? result.keyphrase.status : undefined,
-                  onpage: result.onPage.status,
-                  readability: result.readability.status,
-                  inclusive: result.inclusive.status,
                 }
               : undefined
           }
@@ -107,6 +101,15 @@ export const SeoDrawer = memo(function SeoDrawer({
             </div>
           ) : (
             <>
+              {tab === "overview" && result && (
+                <OverviewView
+                  result={result}
+                  keyphrase={focusKeyphrase}
+                  synonyms={focusSynonyms}
+                  faviconUrl={site.faviconUrl}
+                  onEditKeyphrases={() => setTab("keyphrase")}
+                />
+              )}
               {tab === "keyphrase" && (
                 <KeyphraseTab
                   keyphrases={keyphrases}
@@ -126,19 +129,8 @@ export const SeoDrawer = memo(function SeoDrawer({
                   saveFailed={keyphrasesSaveFailed}
                 />
               )}
-              {tab === "onpage" && result && <OnPageTab data={result.onPage} />}
-              {tab === "readability" && result && <ReadabilityTab data={result.readability} />}
-              {tab === "inclusive" && result && <InclusiveTab data={result.inclusive} />}
-              {tab === "vitals" && result && (
+              {tab === "content" && result && (
                 <VitalsTab data={result.vitals} onRequestKeyphrase={() => setTab("keyphrase")} />
-              )}
-              {tab === "serp" && result && (
-                <SerpTab
-                  data={result.serp}
-                  keyphrase={focusKeyphrase}
-                  synonyms={focusSynonyms}
-                  faviconUrl={site.faviconUrl}
-                />
               )}
               {tab === "links" && links && <LinksTab onFind={links.find} state={links.state} />}
             </>

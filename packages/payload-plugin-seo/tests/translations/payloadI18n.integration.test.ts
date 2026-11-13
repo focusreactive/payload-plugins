@@ -42,7 +42,7 @@ describe("plugin strings inside Payload i18n", () => {
     const i18n = await i18nFor("en");
     const t = createTranslator("en", seoStrings(i18n.translations));
 
-    expect(t("tab.keyphrase")).toBe("Keyphrase");
+    expect(t("tab.keyphrase")).toBe("Keyphrases");
     expect(i18n.t("seo:title" as never)).toBe("SEO Analytics");
   });
 

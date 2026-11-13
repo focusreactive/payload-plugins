@@ -1,23 +1,18 @@
 "use client";
 
-import { orderByUrgency } from "../../../../utils/orderChecks";
 import { Loader2 } from "lucide-react";
-import { useId, useState } from "react";
+import { useId } from "react";
 import type { ReactNode } from "react";
 import type { CategoryResult } from "../../../../engine/types/analysis";
-import { CheckRow } from "../../../../ui/CheckRow";
-import type { Filter } from "../../../../ui/FilterPills";
-import { FilterPills } from "../../../../ui/FilterPills";
-import { Pill } from "../../../../ui/Pill";
-import { SectionCard } from "../../../../ui/SectionCard";
 import { IconButton } from "../../../../ui/IconButton";
 import { Notice } from "../../../../ui/Notice";
-import { TabHeader } from "../../../../ui/TabHeader";
 import { cn } from "../../../../utils/style";
 import type { TranslationKey } from "../../../../translations/types";
 import type { KeyphraseEntry } from "../../keyphraseState";
 import { Target, Trash2 } from "./icons";
 import { SynonymsField } from "./SynonymsField";
+import { IssueList } from "../../overview/IssueList";
+import { splitChecks } from "../../overview/buildIssues";
 import { useSeoTranslation } from "../../../../translations/useSeoTranslation";
 
 export type DetailAnalysis =
@@ -45,7 +40,6 @@ interface AnalysisProps {
 
 function Analysis({ analysis }: AnalysisProps) {
   const { t } = useSeoTranslation();
-  const [filter, setFilter] = useState<Filter>("all");
 
   if (analysis.kind === "analyzing") {
     return (
@@ -69,34 +63,32 @@ function Analysis({ analysis }: AnalysisProps) {
   }
 
   const { result, dim } = analysis;
-  const passing = result.checks.filter((check) => check.status === "good").length;
-  const visible = orderByUrgency(
-    result.checks.filter((check) => filter === "all" || check.status === filter)
-  );
+  const { open, passed } = splitChecks("keyphrase", result.checks);
+  const scoreColor = {
+    bad: cn("text-seo-bad"),
+    warn: cn("text-seo-warn"),
+    good: cn("text-seo-good"),
+  }[result.status];
 
   return (
     <div
       className={cn(
-        "flex flex-col gap-[13px] transition-opacity",
+        "flex flex-col gap-[10px] transition-opacity",
         dim && "opacity-40 pointer-events-none"
       )}
     >
-      <TabHeader
-        score={result.ringScore}
-        status={result.status}
-        subtitle={t("checks.passing", { passing, total: result.checks.length })}
-        title={t("keyphrase.optimization")}
-      />
-
-      <SectionCard
-        title={t("checks.title")}
-        widget={<Pill variant="neutral">{result.checks.length}</Pill>}
-      >
-        <FilterPills checks={result.checks} onChange={setFilter} value={filter} />
-        {visible.map((check) => (
-          <CheckRow check={check} key={check.id} />
-        ))}
-      </SectionCard>
+      <div className="flex items-baseline gap-[8px]">
+        <h3 className="m-0 text-[15px] font-semibold text-neutral-800">
+          {t("keyphrase.optimization")}
+        </h3>
+        <span className={cn("text-[15px] font-semibold tabular-nums", scoreColor)}>
+          {result.ringScore}
+        </span>
+        <span className="ml-auto text-[12.5px] text-neutral-500">
+          {t("checks.passing", { passing: passed.length, total: result.checks.length })}
+        </span>
+      </div>
+      <IssueList open={open} passed={passed} showCategory={false} />
     </div>
   );
 }

@@ -11,7 +11,7 @@ export interface HeadingTreeProps {
   tree: HeadingNode[];
 }
 
-const SUB_LABEL = cn("text-[9.5px] font-semibold uppercase tracking-[0.05em] text-neutral-500");
+const SUB_LABEL = cn("text-[12px] font-medium text-neutral-600");
 
 export function HeadingTree({ tree }: HeadingTreeProps) {
   const { t } = useSeoTranslation();

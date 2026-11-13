@@ -28,7 +28,7 @@ export function HeadingsSection({ data }: HeadingsSectionProps) {
         <HeadingIssueBanner key={issue.type} issue={issue} />
       ))}
 
-      <div className="text-[9.5px] font-semibold uppercase tracking-[0.05em] text-neutral-500 px-[15px] pt-[11px]">
+      <div className="text-[12px] font-medium text-neutral-600 px-[15px] pt-[11px]">
         {t("headings.levels")}
       </div>
       <HeadingLevelTiles levels={data.levels} />
