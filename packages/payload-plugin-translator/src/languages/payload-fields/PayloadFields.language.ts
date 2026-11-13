@@ -1,3 +1,5 @@
+import type { FieldWalkStart } from "../../core/domain/content-projection/fieldWalkStart.js";
+import { isFieldWalkStart } from "../../core/domain/content-projection/fieldWalkStart.js";
 import { elementSegment, renderSegment } from "../../core/domain/content-projection/idPath.js";
 import {
   isLocalizedFieldLike,
@@ -121,20 +123,17 @@ export function payloadFieldsLanguage(
   const resolveEmbed: EmbedResolver = ({ name, data }) => {
     const fields = blocks.get(name);
     if (fields === undefined) return null;
-    return { languageId: PAYLOAD_FIELDS_ID, context: { fields, data, source: data } };
+    const context: FieldWalkStart = { fields, data, source: data };
+    return { languageId: PAYLOAD_FIELDS_ID, context };
   };
 
   return {
     id: PAYLOAD_FIELDS_ID,
 
     enter({ context }) {
-      const { fields, data, source } = context as {
-        fields?: unknown;
-        data?: unknown;
-        source?: unknown;
-      };
-      if (!Array.isArray(fields) || !isObject(data) || !isObject(source)) return null;
-      return { nodes: fields as FieldLike[], cursor: { data, source } };
+      if (!isFieldWalkStart(context)) return null;
+      const { fields, data, source } = context;
+      return { nodes: fields, cursor: { data, source } };
     },
 
     step(field, cursor): Step<FieldLike, PayloadFieldsCursor> {

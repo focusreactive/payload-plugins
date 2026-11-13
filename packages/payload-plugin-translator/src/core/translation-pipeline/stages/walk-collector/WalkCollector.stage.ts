@@ -2,6 +2,7 @@ import { TranslatorBug } from "../../../errors/index.js";
 import { collectTranslationTargets } from "../../../../traversal/index.js";
 import type { TranslationTarget } from "../../../../traversal/index.js";
 import { walkAddress } from "../../../domain/content-projection/walkAddress.js";
+import type { FieldWalkStart } from "../../../domain/content-projection/fieldWalkStart.js";
 import type { IdPath } from "../../../domain/content-projection/idPath.js";
 import type { TranslatableValue } from "../../../domain/translation-providers/index.js";
 import type { PipelineContext, PipelineStage } from "../../types/index.js";
@@ -24,12 +25,14 @@ export class WalkCollectorStage implements PipelineStage {
       throw new TranslatorBug("WalkCollectorStage requires reconciledData from previous stage");
     }
 
+    const context: FieldWalkStart = {
+      fields: ctx.schema,
+      data: ctx.reconciledData,
+      source: ctx.sourceData,
+    };
     const walked = collectTranslationTargets({
       languages: ctx.languages,
-      entry: {
-        languageId: ctx.hostLanguageId,
-        context: { fields: ctx.schema, data: ctx.reconciledData, source: ctx.sourceData },
-      },
+      entry: { languageId: ctx.hostLanguageId, context },
     });
 
     const wanted = new Set(ctx.selection);

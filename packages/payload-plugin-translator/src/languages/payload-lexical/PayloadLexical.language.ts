@@ -40,6 +40,9 @@ export type RichTextContext = {
   embed: EmbedResolver;
 };
 
+const isRichTextContext = (value: unknown): value is RichTextContext =>
+  isObject(value) && typeof value.embed === "function";
+
 /**
  * What a walk of one tree carries down to every node.
  *
@@ -151,22 +154,20 @@ export function payloadLexicalLanguage(): Language<LexicalNode, LexicalCursor> {
     id: PAYLOAD_LEXICAL_ID,
 
     enter({ context, value }) {
-      if (!isObject(context)) return null;
+      if (!isRichTextContext(context)) return null;
 
       const { tree, embed } = context;
-      // Either precedence loses silently: a stale `tree` keeps the translations nobody saves, a
-      // crossed-in value writes them into the locale they were read from.
       if (tree !== undefined && value !== undefined) return null;
 
       const root = tree ?? value;
-      if (!isSerializedLexicalRoot(root) || typeof embed !== "function") return null;
+      if (!isSerializedLexicalRoot(root)) return null;
 
       let seen = 0;
       const position = () => seen++;
 
       return {
         nodes: withEmbedsLifted([root.root]),
-        cursor: { embed: embed as EmbedResolver, position },
+        cursor: { embed, position },
       };
     },
 
@@ -180,7 +181,9 @@ export function payloadLexicalLanguage(): Language<LexicalNode, LexicalCursor> {
         };
       }
 
-      if (isContainer(node)) return { kind: "value", value: node, segments: [] };
+      if (isContainer(node)) {
+        return { kind: "value", value: node, segments: [] };
+      }
 
       if (hasChildren(node)) {
         return {
@@ -198,17 +201,11 @@ export function payloadLexicalLanguage(): Language<LexicalNode, LexicalCursor> {
 
     selects: (node) => isContainer(node),
 
-    /**
-     * Asked of the whole container, not of its fragments: a container the fragment collector
-     * refuses can still have text, and {@link cutPerTextNode} translates it.
-     */
     isEmpty: (value) => collectSerializedLexicalTextNodes(value as LexicalNode).length === 0,
 
     textUnits: (leaf: TextLeaf): TextUnit[] => {
       const node = leaf.value as LexicalNode;
       const container = collectInlineFragments(node)[0];
-
-      // Not a cut rebuilt from the fragments: the two disagree on whitespace nodes.
       if (container === undefined || container.skip !== undefined) return cutPerTextNode(node);
 
       return cutAsOneUnit(node, container.fragments);
