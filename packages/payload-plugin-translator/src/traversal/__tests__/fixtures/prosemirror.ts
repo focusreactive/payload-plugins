@@ -41,7 +41,7 @@ function unitsOf(leaf: TextLeaf): TextUnit[] {
   const { value, slot } = leaf;
 
   if (typeof value === "string") {
-    if (value.trim() === "" || slot === undefined) return [];
+    if (slot === undefined) return [];
     return [{ kind: "text", text: value, resolve: (translated) => [{ slot, value: translated }] }];
   }
 

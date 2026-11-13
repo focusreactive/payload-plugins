@@ -18,11 +18,11 @@ tag — is not here. That half genuinely needs publication and waits for it.
 
 | # | Question | Needs publishing? | Status |
 |---|---|---|---|
-| Q1 | What type is the context a language is entered with | no | **half done** 2026-11-13 |
-| Q2 | What type is an address part where the engine carries it | no | open |
+| Q1 | What type is the context a language is entered with | no | **closed** 2026-11-13 |
+| Q2 | What type is an address part where the engine carries it | no | **closed** 2026-11-13 |
 | Q3 | Which tree does a crossing hand over, the source or the target | no | **closed** 2026-11-13 |
-| Q4 | What must `enter` refuse, and who checks that it does | no | **moved to #203** |
-| Q5 | Where does "a plain string is one unit" live | no | open |
+| Q4 | What must `enter` refuse, and who checks that it does | no | **closed** 2026-11-13 — no defect |
+| Q5 | Where does "a plain string is one unit" live | no | **closed** 2026-11-13 |
 
 **Q1, half done.** Each shipped language's starting data now has one named type used at both the
 packing end and the reading end — `FieldWalkStart` for the Payload fields language,
@@ -55,8 +55,9 @@ saves re-reading the same code twice.
 
 ## Q1 — What type is the context a language is entered with
 
-**Status:** half done on 2026-11-13 — the type is named and used at both ends; the compulsory
-recogniser moved to #203. See the note under the table.
+**Status:** closed on 2026-11-13. Each shipped language's starting data has one named type used
+at both the packing end and the reading end, and a misspelled member at any packing site is a
+compile error. The compulsory recogniser that was to follow is dropped with Q4 below.
 
 **Where.** `src/traversal/contract.ts:200` and `:243`.
 
@@ -96,7 +97,11 @@ what a host has to write, which is why it is cheaper before a host exists.
 
 ## Q2 — What type is an address part where the engine carries it
 
-**Status:** open.
+**Status:** closed on 2026-11-13. A language now hands over a structural description of the
+position and the plugin writes the address once, at `walkAddress`, behind `isPathSegment`. The
+cast is gone, the engine's part is `unknown`, and the written string did not move — the frozen
+baseline stayed green and unmodified. Recorded in
+`2026-11-13-the-address-part-stops-being-a-string.task.md`.
 
 **Background, because the defect is invisible without it.** Every translatable piece of text gets
 an address, so a stored translation can be matched back to its source and an edit can be noticed.
@@ -173,8 +178,17 @@ existing file they happened to open.
 
 ## Q4 — What must `enter` refuse, and who checks that it does
 
-**Status:** moved to #203 on 2026-11-13. The behaviour below was verified against the code that
-same day and still holds.
+**Status:** closed on 2026-11-13. **The finding below does not hold, and is kept only as the
+record of a wrong reading.**
+
+It called `embed ?? (() => null)` in two fixtures a silent failure. It is not: `EmbedResolver`
+documents `null` as the way to skip an embed *silently*, the format then treating the node as
+none of its own. A resolver that always answers `null` is therefore the contract's own way of
+saying there are no embeds here, and defaulting to it is a default, not a loss. Telling
+"deliberately no embeds" from "the resolver was forgotten" would only be worth doing if it
+could be forgotten, and the shipped wiring always supplies one.
+
+No compulsory member is owed, here or in #203.
 
 **The rule as it stands.** `enter` may return `null`, meaning "this starting data is not mine". The
 engine turns that into `CannotEnterLanguageError`. That return is the only protection against a
@@ -206,7 +220,20 @@ demonstrate, given that they are the worked examples a host will copy.
 
 ## Q5 — Where does "a plain string is one unit" live
 
-**Status:** open. Verified against the code on 2026-11-13.
+**Status:** closed on 2026-11-13, and half of it was refused.
+
+**Done:** the blank-string test inside `textUnits` is gone from the three implementations that
+carried it. It was unreachable: `collect.ts:87` asks the language's own `isEmpty` and returns
+before line 89 calls `textUnits`, and each of those languages already answers `true` for a blank
+string. Measured after the removal — a document holding `"   "` beside `"Hello"` still yields one
+target, not two.
+
+**Refused: unifying the fixtures' `isEmpty` with the kernel helper the shipped languages use.**
+The engine's fixtures import nothing from `src/core` — only the engine, their own siblings and
+one type from `languages`. Importing the plugin's helper would make the hosts that exist to prove
+the engine works without the plugin depend on it. The four implementations are also not copies:
+lexical reads `children`, prosemirror reads `content`, and the other two take plain values. A
+host having its own notion of empty is the point, not the defect.
 
 **What `textUnits` answers.** How a value is cut into pieces for translation. For a plain string
 the answer never varies: the whole string is one piece.

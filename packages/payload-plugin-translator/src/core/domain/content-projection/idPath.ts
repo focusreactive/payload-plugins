@@ -66,7 +66,7 @@ const enc = (value: string): string => value.replace(/[\\#.:]/gu, (c) => `\\${c}
  * A segment that has been through this module's grammar. {@link joinRendered} accepts nothing else,
  * so an unescaped token cannot be assembled into an address that no stored receipt could match.
  */
-export type RenderedSegment = string & { readonly __brand: "RenderedSegment" };
+type RenderedSegment = string & { readonly __brand: "RenderedSegment" };
 
 const render = (segment: PathSegment): string => {
   switch (segment.kind) {
@@ -85,11 +85,11 @@ const render = (segment: PathSegment): string => {
   }
 };
 
-export const renderSegment = (segment: PathSegment): RenderedSegment => {
+const renderSegment = (segment: PathSegment): RenderedSegment => {
   return render(segment) as RenderedSegment;
 };
 
-export function joinRendered(tokens: readonly RenderedSegment[]): IdPath {
+function joinRendered(tokens: readonly RenderedSegment[]): IdPath {
   return tokens.join(SEP) as IdPath;
 }
 
