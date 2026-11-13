@@ -1,3 +1,26 @@
+# @focus-reactive/payload-plugin-translator [1.0.0-next.10](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.9...@focus-reactive/payload-plugin-translator@1.0.0-next.10) (2026-11-13)
+
+
+### Bug Fixes
+
+* configuring a field twice no longer undoes the first call ([a6f8163](https://github.com/focusreactive/payload-plugins/commit/a6f816357e301e61cb2e726af84520644cab3bcf))
+* the change gate and the stored hash measure the same content ([5fff038](https://github.com/focusreactive/payload-plugins/commit/5fff0383c40aa60a3fc623bb614de4c24bbda0ba))
+
+
+### Features
+
+* block definitions can be handed to the plugin for rich-text embeds ([9599484](https://github.com/focusreactive/payload-plugins/commit/9599484ece69c0d5c572ac374418b33c28304160))
+* text inside a block embedded in a rich text is translated ([5978a22](https://github.com/focusreactive/payload-plugins/commit/5978a2256d5f5a6b457e613e4bdee230a1979a89))
+* the rich-text language cuts a container, not a text node ([7ec05b6](https://github.com/focusreactive/payload-plugins/commit/7ec05b6fbaa96d29b641eb254f3e31126e208b33))
+
+
+### BREAKING CHANGES
+
+* a rich text holding an embedded block hashes differently and reads out of
+date once, because its embedded text was never translated and the receipt never said so. A
+rich text whose only text sits inside such a block gains a fingerprint entry it never had. A
+field with nothing embedded in it is unchanged.
+
 # @focus-reactive/payload-plugin-translator [1.0.0-next.10](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.9...@focus-reactive/payload-plugin-translator@1.0.0-next.10) (2026-11-12)
 
 
