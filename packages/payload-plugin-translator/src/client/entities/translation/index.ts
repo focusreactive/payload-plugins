@@ -10,6 +10,8 @@ import { useRunDocumentTranslation } from "./mutations/useRunDocumentTranslation
 export { HttpTranslationRepository } from "./api/HttpTranslationRepository.js";
 export { TranslationRepositoryProvider } from "./api/TranslationRepositoryContext.js";
 export { useTranslateField } from "./mutations/useTranslateField.js";
+export { useDocumentTranslationState } from "./queries/useDocumentTranslationState.js";
+export { useListTranslationState } from "./queries/useListTranslationState.js";
 
 export { TranslationStatusList } from "./ui/TranslationStatusList/index.js";
 export { AutoTranslateMarker } from "./ui/AutoTranslateMarker/index.js";
