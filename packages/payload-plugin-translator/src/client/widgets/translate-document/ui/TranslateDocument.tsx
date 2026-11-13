@@ -11,7 +11,7 @@ import {
   TranslationsApi,
   TranslationStatusList,
 } from "../../../entities/translation/index.js";
-import type { AutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary.js";
+import type { AutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary.server.js";
 import type { TargetSelectionMode } from "../../../../types/TargetSelection.js";
 import { OpenDocumentTranslationPopup } from "../../../features/open-document-translation-popup/index.js";
 import {

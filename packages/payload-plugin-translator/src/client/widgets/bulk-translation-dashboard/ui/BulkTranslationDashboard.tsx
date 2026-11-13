@@ -9,7 +9,7 @@ import {
   deriveCollectionPanelStatus,
   TranslationsApi,
 } from "../../../entities/translation/index.js";
-import type { AutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary.js";
+import type { AutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary.server.js";
 import type { TargetSelectionMode } from "../../../../types/TargetSelection.js";
 import {
   CollectionTranslationForm,

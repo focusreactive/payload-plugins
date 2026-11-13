@@ -3,8 +3,8 @@ import { ofetch } from "ofetch";
 import type { CollectionSlug } from "payload";
 import { useCallback } from "react";
 
-import { useTranslateKitConfig } from "../../../../app/config/index.js";
-import { handleNextApiError } from "../../../../shared/lib/errors/handleApiError.js";
+import { useTranslateKitConfig } from "../../../../shared/config/index.js";
+import { handleNextApiError } from "../../../../shared/api/handleApiError.js";
 import { DocumentTranslationStatus } from "../../model/enums.js";
 import type {
   CollectionTranslationPanel,

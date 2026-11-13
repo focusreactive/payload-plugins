@@ -5,7 +5,7 @@ import type { AccessGuard } from "../../../../types/AccessGuard.js";
 import { askTheGuard } from "../../../../server/shared/access/askTheGuard.js";
 import type { TargetSelectionMode } from "../../../../types/TargetSelection.js";
 import { hasDraftsEnabled } from "payload/shared";
-import { resolveAutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary.js";
+import { resolveAutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary.server.js";
 
 import TranslateDocument from "./TranslateDocument.js";
 

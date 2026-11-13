@@ -3,8 +3,8 @@ import { ofetch } from "ofetch";
 import type { CollectionSlug } from "payload";
 import { useCallback, useEffect, useRef } from "react";
 
-import { useTranslateKitConfig } from "../../../../app/config/index.js";
-import { handleNextApiError } from "../../../../shared/lib/errors/handleApiError.js";
+import { useTranslateKitConfig } from "../../../../shared/config/index.js";
+import { handleNextApiError } from "../../../../shared/api/handleApiError.js";
 import { DOCUMENT_STALENESS_QUERY_KEY } from "./useDocumentStaleness.js";
 import type { DocumentTranslation } from "../../model/types.js";
 

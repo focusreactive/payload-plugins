@@ -1,4 +1,4 @@
-import { resolveAutoTranslateSummary } from "../../entities/translation/model/autoTranslateSummary.js";
+import { resolveAutoTranslateSummary } from "../../entities/translation/model/autoTranslateSummary.server.js";
 import type { LocaleCode } from "../../../types/wire/primitives.js";
 import type { CollectionFacts } from "../../../types/wire/TranslateKitConfig.js";
 

@@ -3,14 +3,22 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import type { TranslateKitConfig } from "../../../../../types/wire/TranslateKitConfig.js";
 import { DocumentTranslationStatus } from "../../../../entities/translation/model/enums.js";
 import type { CollectionTranslationPanel } from "../../../../entities/translation/model/types.js";
 
+import { TranslateKitConfigProvider } from "../../../../shared/config/index.js";
 import { CollectionTranslationProgress } from "../CollectionTranslationProgress.js";
 
 // `@payloadcms/ui` ships CSS imports Vitest's resolver cannot load, so the two leaves used here are stubbed.
 vi.mock("@payloadcms/ui", () => ({ ShimmerEffect: () => null }));
 vi.mock("@payloadcms/ui/icons/Trash", () => ({ TrashIcon: () => null }));
+
+const config: TranslateKitConfig = {
+  basePath: "/translate",
+  abilities: { translate: true, cancel: true, runNow: true, staleness: true, translateField: true },
+  collections: {},
+};
 
 const panel = (
   over: Partial<Record<DocumentTranslationStatus, number>> = {}
@@ -32,14 +40,16 @@ const panelWithWindow = (ms: number): CollectionTranslationPanel => ({
 
 const show = (data: CollectionTranslationPanel, canStop = true) =>
   render(
-    <QueryClientProvider client={new QueryClient()}>
-      <CollectionTranslationProgress
-        collection="docs"
-        data={data}
-        isPending={false}
-        canStop={canStop}
-      />
-    </QueryClientProvider>
+    <TranslateKitConfigProvider config={config}>
+      <QueryClientProvider client={new QueryClient()}>
+        <CollectionTranslationProgress
+          collection="docs"
+          data={data}
+          isPending={false}
+          canStop={canStop}
+        />
+      </QueryClientProvider>
+    </TranslateKitConfigProvider>
   );
 
 describe("the collection progress panel", () => {

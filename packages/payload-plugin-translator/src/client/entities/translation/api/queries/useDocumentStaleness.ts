@@ -2,8 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { FetchError, ofetch } from "ofetch";
 import type { CollectionSlug } from "payload";
 
-import { useTranslateKitConfig } from "../../../../app/config/index.js";
-import { handleNextApiError } from "../../../../shared/lib/errors/handleApiError.js";
+import { useTranslateKitConfig } from "../../../../shared/config/index.js";
+import { handleNextApiError } from "../../../../shared/api/handleApiError.js";
 import type { DocumentStaleness } from "../../model/types.js";
 
 type Props = {
