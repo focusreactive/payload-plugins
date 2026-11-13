@@ -1,5 +1,8 @@
 import { StubWorld } from "../../../../server/modules/translation-stub/model/index.js";
-import type { WorldLocales } from "../../../../server/modules/translation-stub/model/index.js";
+import type {
+  WorldLocales,
+  WorldRules,
+} from "../../../../server/modules/translation-stub/model/index.js";
 import { SCENARIOS } from "../../../../server/modules/translation-stub/scenarios/index.js";
 import type {
   CancelResponse,
@@ -25,14 +28,19 @@ const keyOf = ({ collection, id }: DocumentAddress): string => `${collection}:${
 
 /**
  * The stub's world behind the repository interface, for tests. Only the given documents exist;
- * every one starts with its target locales empty and no run.
+ * by default every one starts with its target locales empty and no run.
  */
 export class InMemoryTranslationRepository implements TranslationRepository {
-  private readonly world = new StubWorld(SCENARIOS.empty);
+  private readonly world: StubWorld;
   private readonly known: ReadonlySet<string>;
   private readonly locales: WorldLocales;
 
-  constructor(documents: readonly DocumentAddress[], locales: WorldLocales) {
+  constructor(
+    documents: readonly DocumentAddress[],
+    locales: WorldLocales,
+    rules: WorldRules = SCENARIOS.empty
+  ) {
+    this.world = new StubWorld(rules);
     this.known = new Set(documents.map(keyOf));
     this.locales = locales;
   }

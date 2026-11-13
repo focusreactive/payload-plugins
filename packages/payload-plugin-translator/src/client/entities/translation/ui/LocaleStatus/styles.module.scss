@@ -1,0 +1,33 @@
+.status {
+  display: flex;
+  flex-grow: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4375rem;
+  min-width: 0;
+  font-size: 0.8125rem;
+  color: var(--theme-elevation-650, var(--theme-elevation-600));
+}
+
+.part {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+}
+
+.warning {
+  color: var(--theme-warning-650, var(--theme-warning-500));
+}
+
+.error {
+  color: var(--theme-error-600, var(--theme-error-500));
+}
+
+.when {
+  font-size: 0.75rem;
+  color: var(--theme-elevation-500);
+}
+
+.bang {
+  font-weight: 700;
+}

@@ -1,6 +1,4 @@
 import { useCollectionTranslationStatus } from "./api/queries/useCollectionTranslationStatus.js";
-import { useDocumentStaleness } from "./api/queries/useDocumentStaleness.js";
-import { useDocumentTranslation } from "./api/queries/useDocumentTranslation.js";
 import { useCancelCollectionTranslations } from "./mutations/useCancelCollectionTranslations.js";
 import { useCancelDocumentTranslation } from "./mutations/useCancelDocumentTranslation.js";
 import { useDismissStaleness } from "./mutations/useDismissStaleness.js";
@@ -13,14 +11,11 @@ export { useTranslateField } from "./mutations/useTranslateField.js";
 export { useDocumentTranslationState } from "./queries/useDocumentTranslationState.js";
 export { useListTranslationState } from "./queries/useListTranslationState.js";
 
-export { TranslationStatusList } from "./ui/TranslationStatusList/index.js";
 export { AutoTranslateMarker } from "./ui/AutoTranslateMarker/index.js";
 
 export const TranslationsApi = {
   useRunDocumentTranslation,
   useQueueDocumentTranslation,
-  useDocumentTranslation,
-  useDocumentStaleness,
   useCancelDocumentTranslation,
   useCollectionTranslationStatus,
   useCancelCollectionTranslations,
@@ -43,15 +38,23 @@ export type {
 
 export { DocumentTranslationStatus } from "./model/enums.js";
 
-export {
-  derivePanelStatus,
-  deriveCollectionPanelStatus,
-  deriveDocumentRunStatus,
-  describePanelStatus,
-} from "./model/panelStatus.js";
+export { deriveCollectionPanelStatus, describePanelStatus } from "./model/panelStatus.js";
 export type { PanelStatus, MarkerTone } from "./model/panelStatus.js";
 export { PanelStatusMarker } from "./ui/PanelStatusMarker/index.js";
 export { ActionButton } from "./ui/ActionButton/index.js";
 
-export { buildTranslationStatusRows } from "./model/statusRows.js";
-export type { TranslationStatusRow, TranslationRowState } from "./model/statusRows.js";
+export type { DocumentAddress } from "./model/TranslationRepository.js";
+export { localeRowOf, treeModeOf } from "./model/localeRow.js";
+export type { LocaleRow } from "./model/localeRow.js";
+export { documentPanelStatus, hasLiveRun } from "./model/documentPanelStatus.js";
+export { documentEnqueue } from "./model/documentEnqueue.js";
+export type { TranslationScope } from "./model/documentEnqueue.js";
+export {
+  allAddresses,
+  filterTree,
+  initialSelection,
+  selectedInTreeOrder,
+  toggleNode,
+} from "./model/fieldSelection.js";
+export { LocaleStatus } from "./ui/LocaleStatus/index.js";
+export { FieldTree } from "./ui/FieldTree/index.js";

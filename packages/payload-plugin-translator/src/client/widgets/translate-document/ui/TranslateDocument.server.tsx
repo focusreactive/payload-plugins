@@ -3,16 +3,13 @@ import type { BeforeDocumentControlsServerProps, CollectionConfig } from "payloa
 
 import type { AccessGuard } from "../../../../types/AccessGuard.js";
 import { askTheGuard } from "../../../../server/shared/access/askTheGuard.js";
-import type { TargetSelectionMode } from "../../../../types/TargetSelection.js";
-import { hasDraftsEnabled } from "payload/shared";
-import { resolveAutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary.server.js";
+import { localeChoicesOf } from "../model/localeChoices.js";
 
 import TranslateDocument from "./TranslateDocument.js";
 
 type TranslateDocumentServerProps = BeforeDocumentControlsServerProps & {
   collection: CollectionConfig;
   access: AccessGuard;
-  targetSelection: TargetSelectionMode;
 };
 
 async function TranslateDocumentServer(props: TranslateDocumentServerProps) {
@@ -26,17 +23,12 @@ async function TranslateDocumentServer(props: TranslateDocumentServerProps) {
   if (!mayEnqueue) return null;
   if (!props.id) return null;
 
-  const hasDrafts = hasDraftsEnabled(props.collection);
-  const autoTranslate = resolveAutoTranslateSummary(
-    props.collection,
-    props.payload.config.localization ? props.payload.config.localization.defaultLocale : undefined
-  );
-
+  const { localization } = props.payload.config;
   return (
     <TranslateDocument
-      hasDrafts={hasDrafts}
-      autoTranslate={autoTranslate}
-      targetSelection={props.targetSelection}
+      collection={props.collection.slug}
+      id={String(props.id)}
+      locales={localization ? localeChoicesOf(localization.locales) : []}
     />
   );
 }
