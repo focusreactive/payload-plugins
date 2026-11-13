@@ -1,5 +1,5 @@
 import type { Crossing, Language, Step, TextLeaf, TextUnit } from "../../contract.js";
-import type { EmbedResolver } from "../../../../languages/embedCrossing.js";
+import type { EmbedResolver } from "../../../languages/embedCrossing.js";
 import type { UnitCut } from "./marks.js";
 import { resolveMarks, serializeMarks } from "./marks.js";
 
@@ -41,7 +41,7 @@ function unitsOf(leaf: TextLeaf): TextUnit[] {
   const { value, slot } = leaf;
 
   if (typeof value === "string") {
-    if (value.trim() === "" || slot === undefined) return [];
+    if (slot === undefined) return [];
     return [{ kind: "text", text: value, resolve: (translated) => [{ slot, value: translated }] }];
   }
 

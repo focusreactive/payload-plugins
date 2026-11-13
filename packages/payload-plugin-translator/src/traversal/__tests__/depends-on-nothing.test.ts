@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -9,8 +9,9 @@ import { describe, expect, it } from "vitest";
  * boundary; here it is this scan, and losing it is how the kernel would quietly stop being
  * something that can be lifted out again.
  *
- * The surrounding `src/core` lint zone is a weaker rule: it bans Payload, React and Next, and
- * would let a dependency through.
+ * The lint zone beside it says the same thing one directory depth at a time, so it stops covering
+ * a folder nested deeper than the ones that exist today. This resolves each path instead, which is
+ * why both are kept.
  */
 const KERNEL = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -28,6 +29,12 @@ const shippedFilesIn = (dir: string): string[] => {
   return out;
 };
 
+const leavesTheKernel = (file: string, specifier: string): boolean => {
+  if (!specifier.startsWith(".")) return true;
+  const target = resolve(dirname(file), specifier);
+  return target !== KERNEL && !target.startsWith(KERNEL + sep);
+};
+
 describe("the traversal kernel depends on nothing", () => {
   const files = shippedFilesIn(KERNEL);
 
@@ -43,7 +50,7 @@ describe("the traversal kernel depends on nothing", () => {
         (m) => m[1] as string
       );
 
-      expect(specifiers.filter((s) => !s.startsWith("."))).toEqual([]);
+      expect(specifiers.filter((s) => leavesTheKernel(file, s))).toEqual([]);
     }
   );
 });

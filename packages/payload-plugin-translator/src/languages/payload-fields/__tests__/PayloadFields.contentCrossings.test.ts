@@ -1,15 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { applyTranslations, collectTranslationTargets } from "../../../core/traversal/index.js";
-import type { Language } from "../../../core/traversal/index.js";
+import { applyTranslations, collectTranslationTargets } from "../../../traversal/index.js";
+import type { Language } from "../../../traversal/index.js";
 import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { isEmpty } from "../../../core/kernel/utils/isEmpty.js";
 import { isObject } from "../../../core/kernel/utils/isObject.js";
 import type { ContentCrossing } from "../../contentCrossing.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
 import { PAYLOAD_LEXICAL_ID, payloadLexicalContent } from "../../payload-lexical/index.js";
+import type { PathSegment } from "../../../core/domain/content-projection/idPath.js";
+import { addressesOf } from "../../__tests__/addresses.js";
 import { text, tree, walkDocument } from "../../__tests__/fixtures/lexical.js";
-import { sentTextOf, sentTextsOf } from "../../../core/traversal/__tests__/fixtures/sentText.js";
+import { sentTextOf, sentTextsOf } from "../../../traversal/__tests__/fixtures/sentText.js";
 
 const NOTE_ID = "note";
 
@@ -30,7 +32,7 @@ const noteLanguage = (): Language<number, Note> => ({
     return {
       kind: "value",
       value: cursor.lines[node],
-      segments: [node],
+      segments: [{ kind: "index", index: node } satisfies PathSegment],
       slot: { holder: cursor.lines, key: node },
     };
   },
@@ -85,11 +87,7 @@ describe("a host's content crossings", () => {
   it("addresses the pieces of that format under the field that held it", () => {
     const { targets } = walk(document());
 
-    expect(targets.map((target) => target.idPath.join("."))).toEqual([
-      "title",
-      "notes.0",
-      "notes.1",
-    ]);
+    expect(addressesOf(targets)).toEqual(["title", "notes.#0", "notes.#1"]);
   });
 
   it("offers a field of a type the package does not translate, when a format claims the value", () => {
@@ -103,7 +101,7 @@ describe("a host's content crossings", () => {
   it("leaves a value no crossing recognises to the host's own rules", () => {
     const { targets } = walk(document());
 
-    expect(targets.some((target) => target.idPath.includes("config"))).toBe(false);
+    expect(addressesOf(targets)).not.toContain("config");
   });
 
   it("writes answers back through the crossing, into the working copy only", () => {

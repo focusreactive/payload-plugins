@@ -1,5 +1,5 @@
 import type { Crossing, Language, Step, TextLeaf, TextUnit } from "../../contract.js";
-import type { EmbedIdentity } from "../../../../languages/embedCrossing.js";
+import type { EmbedIdentity } from "../../../languages/embedCrossing.js";
 
 export type BlockLike = { slug: string; fields: FieldLike[] };
 
@@ -110,7 +110,7 @@ export function payloadFieldsLanguage(): Language<FieldLike, SchemaCursor> {
 
     textUnits: (leaf: TextLeaf): TextUnit[] => {
       const { value, slot } = leaf;
-      if (typeof value !== "string" || value.trim() === "" || slot === undefined) return [];
+      if (typeof value !== "string" || slot === undefined) return [];
       return [
         { kind: "text", text: value, resolve: (translated) => [{ slot, value: translated }] },
       ];

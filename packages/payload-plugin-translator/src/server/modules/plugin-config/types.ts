@@ -5,7 +5,7 @@ import type { ConfigModifier } from "../../../types/ConfigModifier.js";
 import type { RawPayloadComponentExport } from "../../../types/PayloadComponentExport.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
-import type { LanguageTable } from "../../../core/traversal/index.js";
+import type { LanguageTable } from "../../../traversal/index.js";
 import type { TaskRunnerFactory } from "../task-runner/index.js";
 import type { RunRecordStoreFactory } from "../runs/index.js";
 import type { ChainMember } from "../translation-run/index.js";

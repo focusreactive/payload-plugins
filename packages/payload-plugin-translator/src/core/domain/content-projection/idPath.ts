@@ -1,4 +1,5 @@
 import { TranslatorBug } from "../../errors/index.js";
+import { isObject } from "../../kernel/utils/isObject.js";
 
 /**
  * `IdPath` — the stable, location-based identity of a translatable leaf (slice 6 design,
@@ -11,13 +12,7 @@ import { TranslatorBug } from "../../errors/index.js";
  *
  * `idPath` is *where* a piece lives (identity), never *what* it contains — so it can be compared
  * across time to detect content drift. The whole grammar — escaping, blockType folding, fallback,
- * and the separator — lives in this module: {@link makeIdPath} for callers holding segments,
- * {@link renderSegment} and {@link joinRendered} for a caller whose segments arrive one at a time
- * in someone else's shape. {@link joinRendered} takes only `RenderedSegment`, which nothing but
- * {@link renderSegment} mints without a cast — so a caller holding its own segments cannot
- * half-apply the grammar by accident. A walk whose address type is looser carries its tokens as
- * plain strings; re-entering the grammar from such an address costs a cast, and a cast is not
- * checked.
+ * and the separator — lives in this module; {@link makeIdPath} applies all of it.
  */
 export type IdPath = string & { readonly __brand: "IdPath" };
 
@@ -37,6 +32,27 @@ export type PathSegment =
   | { kind: "element"; id: string; blockType?: string }
   | { kind: "index"; index: number };
 
+/**
+ * A tagged value with a missing member is not caught downstream: `{ kind: "index" }` renders as
+ * the address `#undefined`, and that address is what gets stored.
+ */
+export function isPathSegment(value: unknown): value is PathSegment {
+  if (!isObject(value)) return false;
+  switch (value.kind) {
+    case "key":
+      return typeof value.name === "string";
+    case "element":
+      return (
+        typeof value.id === "string" &&
+        (value.blockType === undefined || typeof value.blockType === "string")
+      );
+    case "index":
+      return typeof value.index === "number";
+    default:
+      return false;
+  }
+}
+
 const SEP = ".";
 
 /**
@@ -50,7 +66,7 @@ const enc = (value: string): string => value.replace(/[\\#.:]/gu, (c) => `\\${c}
  * A segment that has been through this module's grammar. {@link joinRendered} accepts nothing else,
  * so an unescaped token cannot be assembled into an address that no stored receipt could match.
  */
-export type RenderedSegment = string & { readonly __brand: "RenderedSegment" };
+type RenderedSegment = string & { readonly __brand: "RenderedSegment" };
 
 const render = (segment: PathSegment): string => {
   switch (segment.kind) {
@@ -69,11 +85,11 @@ const render = (segment: PathSegment): string => {
   }
 };
 
-export const renderSegment = (segment: PathSegment): RenderedSegment => {
+const renderSegment = (segment: PathSegment): RenderedSegment => {
   return render(segment) as RenderedSegment;
 };
 
-export function joinRendered(tokens: readonly RenderedSegment[]): IdPath {
+function joinRendered(tokens: readonly RenderedSegment[]): IdPath {
   return tokens.join(SEP) as IdPath;
 }
 

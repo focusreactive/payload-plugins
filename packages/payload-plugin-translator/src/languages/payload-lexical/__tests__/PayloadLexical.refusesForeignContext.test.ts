@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  CannotEnterLanguageError,
-  collectTranslationTargets,
-} from "../../../core/traversal/index.js";
+import { CannotEnterLanguageError, collectTranslationTargets } from "../../../traversal/index.js";
 import type { ContentCrossing } from "../../contentCrossing.js";
 import { PAYLOAD_LEXICAL_ID, payloadLexicalLanguage } from "../PayloadLexical.language.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../../payload-fields/index.js";
@@ -14,7 +11,7 @@ import {
   tree,
   walkTree,
 } from "../../__tests__/fixtures/lexical.js";
-import { sentTextsOf } from "../../../core/traversal/__tests__/fixtures/sentText.js";
+import { sentTextsOf } from "../../../traversal/__tests__/fixtures/sentText.js";
 
 const refusalFrom = (run: () => unknown): CannotEnterLanguageError => {
   try {

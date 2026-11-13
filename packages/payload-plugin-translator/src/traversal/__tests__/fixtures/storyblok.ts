@@ -1,5 +1,5 @@
 import type { Crossing, Language, Step, TextLeaf, TextUnit } from "../../contract.js";
-import type { EmbedIdentity } from "../../../../languages/embedCrossing.js";
+import type { EmbedIdentity } from "../../../languages/embedCrossing.js";
 
 export type FieldDef = {
   type: string;

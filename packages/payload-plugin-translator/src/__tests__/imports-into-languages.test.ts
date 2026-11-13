@@ -4,10 +4,15 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 /**
- * `depends-on-nothing.test.ts` rejects only non-relative specifiers, so a relative reach from
- * `src/core` into a sibling directory passes it. This is that edge's guard.
+ * Two zones are meant to work for any host: the traversal engine, and the core around it. The
+ * sibling that would quietly end that is `src/languages`, where a concrete format is decided —
+ * and neither zone's other guard covers this edge, since the lint bans frameworks rather than
+ * siblings and the engine's own scan skips its tests. A fixture naming a language as a type is
+ * how those tests say which format they stand in for, so the edge stays open and the two rules
+ * below are what hold it.
  */
-const CORE = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const SRC = dirname(dirname(fileURLToPath(import.meta.url)));
+const HOST_NEUTRAL = [join(SRC, "core"), join(SRC, "traversal")];
 
 const STATIC_REACH =
   /\b(?:import|export)\s+(?<type>type\s+)?[^;]*?from\s+["'][^"']*\/languages\/[^"']+["']/gu;
@@ -26,20 +31,22 @@ const filesIn = (dir: string): string[] => {
 type Reach = { file: string; typeOnly: boolean };
 
 const reaches = (): Reach[] =>
-  filesIn(CORE).flatMap((file) => {
-    const source = readFileSync(file, "utf-8");
-    const statik = [...source.matchAll(STATIC_REACH)].map((match) => ({
-      file: relative(CORE, file),
-      typeOnly: match.groups?.type !== undefined,
-    }));
-    const dynamic = [...source.matchAll(DYNAMIC_REACH)].map(() => ({
-      file: relative(CORE, file),
-      typeOnly: false,
-    }));
-    return [...statik, ...dynamic];
-  });
+  HOST_NEUTRAL.flatMap((zone) =>
+    filesIn(zone).flatMap((file) => {
+      const source = readFileSync(file, "utf-8");
+      const statik = [...source.matchAll(STATIC_REACH)].map((match) => ({
+        file: relative(SRC, file),
+        typeOnly: match.groups?.type !== undefined,
+      }));
+      const dynamic = [...source.matchAll(DYNAMIC_REACH)].map(() => ({
+        file: relative(SRC, file),
+        typeOnly: false,
+      }));
+      return [...statik, ...dynamic];
+    })
+  );
 
-describe("what the core reaches into the languages for", () => {
+describe("what the host-neutral code reaches into the languages for", () => {
   const found = reaches();
 
   it("reaches at all, so a moved file cannot make the rules below vacuous", () => {

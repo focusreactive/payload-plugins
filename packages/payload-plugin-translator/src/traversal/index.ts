@@ -1,9 +1,10 @@
 export type {
   CollectedContent,
   Crossing,
+  FoldAddress,
   IdPath,
   Language,
-  PathSegment,
+  PathSegments,
   RegisteredLanguage,
   Step,
   StepChild,

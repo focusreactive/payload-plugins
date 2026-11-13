@@ -1,4 +1,7 @@
-import { elementSegment, renderSegment } from "../../core/domain/content-projection/idPath.js";
+import type { FieldWalkStart } from "../../core/domain/content-projection/fieldWalkStart.js";
+import { isFieldWalkStart } from "../../core/domain/content-projection/fieldWalkStart.js";
+import type { PathSegment } from "../../core/domain/content-projection/idPath.js";
+import { elementSegment } from "../../core/domain/content-projection/idPath.js";
 import {
   isLocalizedFieldLike,
   isTranslatableLeaf,
@@ -26,7 +29,7 @@ import type {
   StepChild,
   TextLeaf,
   TextUnit,
-} from "../../core/traversal/index.js";
+} from "../../traversal/index.js";
 
 /**
  * Two `Record<string, unknown>` the type cannot tell apart: `data` is the working copy — it decides
@@ -41,9 +44,7 @@ export const PAYLOAD_FIELDS_ID = "payload-fields";
 
 const asObject = (value: unknown): Record<string, unknown> => (isObject(value) ? value : {});
 
-const rendered = renderSegment;
-
-const key = (name: string): string => rendered({ kind: "key", name });
+const key = (name: string): PathSegment => ({ kind: "key", name });
 
 type Child = StepChild<FieldLike, PayloadFieldsCursor>;
 
@@ -80,7 +81,7 @@ const intoList = (
       {
         nodes: fields,
         cursor: { data: item, source: sourceItem },
-        segments: [key(name), rendered(elementSegment(sourceItem, isBlocks, index))],
+        segments: [key(name), elementSegment(sourceItem, isBlocks, index)],
       },
     ];
   });
@@ -121,20 +122,17 @@ export function payloadFieldsLanguage(
   const resolveEmbed: EmbedResolver = ({ name, data }) => {
     const fields = blocks.get(name);
     if (fields === undefined) return null;
-    return { languageId: PAYLOAD_FIELDS_ID, context: { fields, data, source: data } };
+    const context: FieldWalkStart = { fields, data, source: data };
+    return { languageId: PAYLOAD_FIELDS_ID, context };
   };
 
   return {
     id: PAYLOAD_FIELDS_ID,
 
     enter({ context }) {
-      const { fields, data, source } = context as {
-        fields?: unknown;
-        data?: unknown;
-        source?: unknown;
-      };
-      if (!Array.isArray(fields) || !isObject(data) || !isObject(source)) return null;
-      return { nodes: fields as FieldLike[], cursor: { data, source } };
+      if (!isFieldWalkStart(context)) return null;
+      const { fields, data, source } = context;
+      return { nodes: fields, cursor: { data, source } };
     },
 
     step(field, cursor): Step<FieldLike, PayloadFieldsCursor> {

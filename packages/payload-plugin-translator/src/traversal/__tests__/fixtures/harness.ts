@@ -1,6 +1,6 @@
 /** The walks the suite drives, so each test file shows its own case and nothing else. */
 
-import type { RegisteredLanguage } from "../../contract.js";
+import type { IdPath, RegisteredLanguage } from "../../contract.js";
 import { collectTranslationTargets } from "../../collect.js";
 import type { Doc, FieldLike } from "./payloadFields.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "./payloadFields.js";
@@ -75,7 +75,7 @@ export const collect = (args: {
   source: Doc;
   target: Doc;
   maxCrossings?: number;
-  onSelectedWithoutText?: (idPath: readonly (string | number)[], value: unknown) => void;
+  onSelectedWithoutText?: (idPath: IdPath, value: unknown) => void;
   cut?: "per-text-node" | "whole-container";
 }) =>
   collectTranslationTargets({

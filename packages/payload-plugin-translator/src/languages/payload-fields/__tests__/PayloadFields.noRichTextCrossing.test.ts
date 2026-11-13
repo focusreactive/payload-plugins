@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { collectTranslationTargets } from "../../../core/traversal/index.js";
+import { collectTranslationTargets } from "../../../traversal/index.js";
 import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
+import { addressOf } from "../../__tests__/addresses.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
-import { sentTextsOf } from "../../../core/traversal/__tests__/fixtures/sentText.js";
+import { sentTextsOf } from "../../../traversal/__tests__/fixtures/sentText.js";
 
 const schema: FieldLike[] = [
   { type: "text", name: "title", localized: true },
@@ -38,6 +39,6 @@ describe("rich text, with no crossing configured", () => {
 
     expect(sentTextsOf(targets)).toEqual(["Hello"]);
     expect(onSelectedWithoutText).toHaveBeenCalledTimes(1);
-    expect(onSelectedWithoutText.mock.calls[0]?.[0]).toEqual(["body"]);
+    expect(addressOf(onSelectedWithoutText.mock.calls[0]?.[0] ?? [])).toBe("body");
   });
 });

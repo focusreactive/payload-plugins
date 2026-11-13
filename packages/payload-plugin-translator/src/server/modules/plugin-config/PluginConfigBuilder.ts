@@ -3,7 +3,7 @@ import type { CollectionConfig, Config, Endpoint } from "payload";
 import type { AccessGuard } from "../../../types/AccessGuard.js";
 import type { RawPayloadComponentExport } from "../../../types/PayloadComponentExport.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
-import type { LanguageTable } from "../../../core/traversal/index.js";
+import type { LanguageTable } from "../../../traversal/index.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
 import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
 import type { TaskRunnerFactory } from "../task-runner/index.js";

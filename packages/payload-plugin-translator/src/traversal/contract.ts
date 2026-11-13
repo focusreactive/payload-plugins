@@ -7,15 +7,12 @@
  */
 
 /**
- * One token of a leaf's address.
- *
- * A number is not necessarily a position: a language emits whatever identifies the node durably,
- * so an element may be addressed by its id (a string) or, when it has none, by where it sat (a
- * number). Do not read meaning into which one arrives.
+ * One token of a leaf's address; its shape belongs to the host that emitted it. The walk moves a
+ * token without interpreting it — an error message dumps one rather than reads it.
  *
  * @public
  */
-export type PathSegment = string | number;
+export type PathSegment = unknown;
 
 /**
  * What one node adds to a leaf's address, outermost first.
@@ -143,8 +140,8 @@ export type SentText = string;
  * One piece of a unit. `text: null` holds a position with nothing to translate — not an empty
  * string.
  *
- * Deliberately not the translation port's `Segment`: `src/core/traversal` imports nothing outside
- * itself, and taking that type would make the walk depend on the provider layer.
+ * Deliberately not the translation port's `Segment`: this engine imports nothing outside itself,
+ * and taking that type would make the walk depend on the provider layer.
  *
  * @public
  */
@@ -203,7 +200,7 @@ export type Crossing = {
    * receiving language walks a copy rather than something its host already keeps.
    *
    * Gathered by collection and performed only by `applyTranslations`. Its value, `null` included,
-   * is also what {@link Language.enter} receives as `value`.
+   * is also what {@link Language['enter']} receives as `value`.
    */
   placement?: SlotWrite;
 };

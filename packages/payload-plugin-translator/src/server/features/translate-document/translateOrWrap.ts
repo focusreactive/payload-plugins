@@ -4,7 +4,7 @@ import { asTranslatorError } from "../../../translation-providers/shared/errors/
 import type { LeafAddress } from "../../../core/domain/content-projection/idPath.js";
 import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
 import { translateContent } from "../../../core/translation-pipeline/index.js";
-import type { LanguageTable } from "../../../core/traversal/index.js";
+import type { LanguageTable } from "../../../traversal/index.js";
 import type { Run } from "./run.js";
 import type { ApprovedSource } from "./targetDocument.js";
 
