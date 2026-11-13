@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useState } from "react";
 
-import type { DocumentId, LocaleCode } from "../../../../types/wire/primitives.js";
+import type { DocumentId } from "../../../../types/wire/primitives.js";
 import {
   describePanelStatus,
   documentPanelStatus,
