@@ -2,14 +2,17 @@ import type { CategoryResult, CheckResult, Status } from "../../types/analysis";
 import type { PaperData, PaperLike } from "../../types/paper";
 
 import { SeoAssessor } from "yoastseo";
-import KeyphraseDistributionAssessment from "yoastseo/build/scoring/assessments/seo/KeyphraseDistributionAssessment";
+import keyphraseDistributionModule from "yoastseo/build/scoring/assessments/seo/KeyphraseDistributionAssessment";
 import { CHECK_IDS } from "../../../constants/checkIds";
 import { runAssessor } from "../../assessorAdapter";
+import { commonJsDefault } from "../../helpers/commonjs-default";
 import { hasKeyphrase } from "../../helpers/has-keyphrase";
 import { makeResearcher } from "../../researcherAdapter";
 import { scoreToStatus, statusToRing } from "../../scoreStatus";
 import { enrich } from "../utils/enrich";
 import { toCategory } from "../utils/toCategory";
+
+const KeyphraseDistributionAssessment = commonJsDefault(keyphraseDistributionModule);
 
 const KEYPHRASE = new Set<string>(CHECK_IDS.keyphrase);
 const ONPAGE = new Set<string>(CHECK_IDS.onPage);
