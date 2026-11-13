@@ -7,8 +7,6 @@ import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
 import {
   translatorPlugin,
-  documentTranslation,
-  fieldTranslation,
   translateDocumentControl,
   bulkTranslationDashboard,
   withAutoTranslate,
@@ -28,7 +26,11 @@ import { Header } from "./globals/Header";
 import { abAdapter } from "./lib/ab-testing/dbAdapter";
 import { resolveDbAdapter } from "./lib/database/resolveAdapter";
 import { loggingLifecycle } from "./lib/translator/lifecycleLogging";
-import { resolveTranslationProvider, resolveTranslatorRunner } from "./lib/translator/devToggles";
+import {
+  resolveTranslationProvider,
+  resolveTranslatorModules,
+  resolveTranslatorRunner,
+} from "./lib/translator/devToggles";
 
 const baseDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -101,9 +103,8 @@ export default buildConfig({
       access: { check: ({ req }) => Boolean(req.user) },
       runner: resolveTranslatorRunner(),
       translationProvider: resolveTranslationProvider(),
-      modules: [documentTranslation(), fieldTranslation()],
+      ...resolveTranslatorModules(),
       components: [translateDocumentControl(), bulkTranslationDashboard()],
-      provenance: true,
       lifecycle: loggingLifecycle,
     }),
     analyticsPlugin({

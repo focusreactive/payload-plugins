@@ -39,7 +39,7 @@ export type EnqueueResponse = {
 export type CancelRequest = { ids: RunHandle[] };
 export type CancelResponse = { refused: readonly RunHandle[] };
 
-/** `POST {basePath}/stale/dismiss` — answers 204. */
+/** `POST {basePath}/stale/dismiss` — answers 200 `{ success: true }`. */
 export type DismissStalenessRequest = {
   collection_slug: string;
   collection_id: DocumentId;

@@ -431,6 +431,28 @@ export default defineConfig({
         ],
       },
     },
+    // (T4) The stub's world and scenarios stay free of Payload, so a client test fake can run them:
+    //      they import only the wire contracts and each other.
+    {
+      files: [
+        `${TRANSLATOR}/src/server/modules/translation-stub/model/*.ts`,
+        `${TRANSLATOR}/src/server/modules/translation-stub/scenarios/*.ts`,
+      ],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            patterns: [
+              {
+                group: ["**", "!./*", "!../model/*", "!../scenarios/*", "!**/types/wire/*"],
+                message:
+                  "The stub's world and scenarios import only the wire contracts and each other.",
+              },
+            ],
+          },
+        ],
+      },
+    },
     {
       files: [
         `${VISUAL_EDITING}/shared/**`,

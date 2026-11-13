@@ -38,6 +38,10 @@
     "./testing": {
       "import": "./dist/testing/index.js",
       "types": "./dist/testing/index.d.ts"
+    },
+    "./stub": {
+      "import": "./dist/stub.js",
+      "types": "./dist/stub.d.ts"
     }
   },
   "files": [
