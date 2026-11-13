@@ -416,6 +416,21 @@ export default defineConfig({
       files: [`${TRANSLATOR}/src/core/**/*.test.ts`],
       rules: { "no-restricted-imports": "off" },
     },
+    // (T3) The wire contracts sit below the client and the server alike, so they import nothing
+    //      but each other: any other import would drag one side's code into the other.
+    {
+      files: [`${TRANSLATOR}/src/types/wire/*.ts`],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            patterns: [
+              { group: ["**", "!./*"], message: "Wire contracts import only each other." },
+            ],
+          },
+        ],
+      },
+    },
     {
       files: [
         `${VISUAL_EDITING}/shared/**`,
