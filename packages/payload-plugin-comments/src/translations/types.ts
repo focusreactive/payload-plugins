@@ -6,6 +6,7 @@ export interface CommentsTranslations {
   unreadMentionsAria_other: string;
   add: string;
   writeComment: string;
+  reply: string;
   comment: string;
   cancel: string;
   posting: string;

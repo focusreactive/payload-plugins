@@ -1,66 +1,71 @@
 "use client";
 
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { FilterIcon, CheckIcon } from "lucide-react";
-import { IconButton } from "../../IconButton";
+import { useAuth, useLocale, useTranslation } from "@payloadcms/ui";
+import { CheckIcon } from "lucide-react";
 import { useCommentsFilter } from "../../../providers/CommentsFilterProvider";
-import { useTranslation } from "@payloadcms/ui";
+import { useComments } from "../../../providers/CommentsProvider";
+import { useCommentsQuery } from "../../../api/queries/useCommentsQuery";
+import { filterCommentsByLocale } from "../../../utils/comment/filterCommentsByLocale";
+import { applyCommentFilters } from "../../../utils/comment/applyCommentFilters";
+import { cn } from "../../../utils/general/cn";
 
 export function CommentsFilter() {
-  const { filters, setFilter, isAnyFilterActive } = useCommentsFilter();
+  const { filters, setFilter } = useCommentsFilter();
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const { code: locale } = useLocale();
+  const { queryContext } = useComments();
+  const { data: allComments = [] } = useCommentsQuery(queryContext);
+
+  const inLocale = filterCommentsByLocale(allComments, locale);
+  const resolvedCount = applyCommentFilters(
+    inLocale,
+    { ...filters, showResolved: true },
+    (user?.id as number) ?? null
+  ).filter((c) => c.isResolved).length;
+
+  const options = [
+    { key: "onlyMyThreads" as const, label: t("comments:onlyMyThreads" as never), count: null },
+    { key: "showResolved" as const, label: t("comments:resolved" as never), count: resolvedCount },
+  ];
 
   return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>
-        <IconButton
-          title={t("comments:filterComments" as never)}
-          variant={"neutral"}
-          isActive={isAnyFilterActive}
-        >
-          <FilterIcon width={16} height={16} />
-        </IconButton>
-      </DropdownMenu.Trigger>
+    <div
+      className="flex items-center gap-2"
+      role="group"
+      aria-label={t("comments:filterComments" as never)}
+    >
+      {options.map(({ key, label, count }) => {
+        const active = filters[key];
 
-      <DropdownMenu.Content
-        align="end"
-        sideOffset={4}
-        onEscapeKeyDown={(e) => e.stopPropagation()}
-        className={`
-            flex flex-col min-w-55
-            z-50 bg-(--theme-bg) border border-(--theme-border-color) rounded shadow-lg p-2
-          `}
-      >
-        <DropdownMenu.CheckboxItem
-          className="flex items-center gap-2 cursor-pointer text-lg px-3 py-1.5 rounded outline-none hover:bg-(--theme-elevation-100) data-highlighted:bg-(--theme-elevation-100) select-none"
-          checked={filters.showResolved}
-          onCheckedChange={(checked) => setFilter("showResolved", checked)}
-          onSelect={(e) => e.preventDefault()}
-        >
-          <DropdownMenu.ItemIndicator className="w-5 h-5 flex items-center justify-center text-(--theme-text)">
-            <CheckIcon className="w-5 h-5" />
-          </DropdownMenu.ItemIndicator>
-
-          <span className={filters.showResolved ? "" : "pl-7"}>
-            {t("comments:showResolved" as never)}
-          </span>
-        </DropdownMenu.CheckboxItem>
-
-        <DropdownMenu.CheckboxItem
-          className="flex items-center gap-2 cursor-pointer text-lg px-3 py-1.5 rounded outline-none hover:bg-(--theme-elevation-100) data-highlighted:bg-(--theme-elevation-100) select-none"
-          checked={filters.onlyMyThreads}
-          onCheckedChange={(checked) => setFilter("onlyMyThreads", checked)}
-          onSelect={(e) => e.preventDefault()}
-        >
-          <DropdownMenu.ItemIndicator className="w-5 h-5 flex items-center justify-center text-(--theme-text)">
-            <CheckIcon className="w-5 h-5" />
-          </DropdownMenu.ItemIndicator>
-
-          <span className={filters.onlyMyThreads ? "" : "pl-7"}>
-            {t("comments:onlyMyThreads" as never)}
-          </span>
-        </DropdownMenu.CheckboxItem>
-      </DropdownMenu.Content>
-    </DropdownMenu.Root>
+        return (
+          <button
+            key={key}
+            type="button"
+            aria-pressed={active}
+            onClick={() => setFilter(key, !active)}
+            className={cn(
+              "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-(--style-radius-s) border border-solid text-[12px] font-[inherit] leading-none cursor-pointer select-none transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--theme-elevation-800)",
+              active
+                ? "border-(--theme-elevation-800) bg-(--theme-elevation-800) text-(--theme-elevation-0)"
+                : "border-(--theme-elevation-150) bg-(--theme-elevation-0) text-(--theme-elevation-800) hover:border-(--theme-elevation-250)"
+            )}
+          >
+            {active && <CheckIcon width={12} height={12} aria-hidden="true" />}
+            {label}
+            {count !== null && count > 0 && (
+              <span
+                className={cn(
+                  "tabular-nums",
+                  active ? "opacity-70" : "text-(--theme-elevation-500)"
+                )}
+              >
+                {count}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
   );
 }

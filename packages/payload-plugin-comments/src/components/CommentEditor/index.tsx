@@ -15,6 +15,7 @@ import { FALLBACK_USERNAME } from "../../constants";
 import { resolveUsername } from "../../utils/user/resolveUsername";
 import { ActionPanel } from "./ActionPanel";
 import { Avatar } from "../Avatar";
+import { cn } from "../../utils/general/cn";
 
 export interface CommentEditorHandle {
   getValue: () => string;
@@ -24,6 +25,7 @@ export interface CommentEditorHandle {
 }
 
 interface CommentEditorProps {
+  className?: string;
   disabled?: boolean;
   autoFocus?: boolean;
   placeholder?: string;
@@ -38,6 +40,7 @@ interface CommentEditorProps {
 }
 
 export function CommentEditor({
+  className,
   disabled,
   autoFocus,
   placeholder: placeholderProp,
@@ -303,7 +306,7 @@ export function CommentEditor({
   };
 
   return (
-    <div className="relative">
+    <div className={cn("relative", className)}>
       <div className="flex gap-2.5 items-start">
         <Avatar
           className="shrink-0"
@@ -314,7 +317,7 @@ export function CommentEditor({
 
         <div
           ref={editorWrapperRef}
-          className="relative flex-1 min-w-0 group px-2.5 py-2 rounded-md border border-transparent focus-within:border-(--theme-elevation-150) bg-transparent"
+          className="relative flex-1 min-w-0 group px-2.5 py-1.5 rounded-(--style-radius-m) border border-(--theme-elevation-150) hover:border-(--theme-elevation-250) focus-within:border-(--theme-elevation-600) bg-(--theme-input-bg,var(--theme-elevation-0)) transition-colors duration-150"
         >
           <div className="relative">
             <div

@@ -86,7 +86,7 @@ export function CommentItem({ comment, currentUserId }: Props) {
             {isResolved && (
               <CircleCheck
                 size={14}
-                className="text-green-500 shrink-0"
+                className="text-(--theme-success-500) shrink-0"
                 aria-label={t("comments:resolved" as never)}
               />
             )}
@@ -96,7 +96,7 @@ export function CommentItem({ comment, currentUserId }: Props) {
             </span>
             <span
               className={cn(
-                "block aspect-square w-2 bg-red-600 rounded-full opacity-0 transition-opacity duration-300 ease-in-out",
+                "block aspect-square w-2 bg-(--theme-success-500) rounded-full opacity-0 transition-opacity duration-300 ease-in-out",
                 isUnread && "opacity-100"
               )}
             ></span>

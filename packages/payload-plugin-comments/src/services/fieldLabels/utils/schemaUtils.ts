@@ -7,7 +7,18 @@ export function flattenFields(fields: Field[]) {
     if ("name" in field) {
       result.push(field);
     } else if (field.type === "tabs") {
-      result.push(...flattenFields((field as TabsField).tabs.flatMap((t) => t.fields ?? [])));
+      for (const tab of (field as TabsField).tabs) {
+        if ("name" in tab && tab.name) {
+          result.push({
+            type: "group",
+            name: tab.name,
+            label: tab.label,
+            fields: tab.fields,
+          } as GroupField);
+        } else {
+          result.push(...flattenFields(tab.fields ?? []));
+        }
+      }
     } else if (field.type === "collapsible" || field.type === "row") {
       result.push(...flattenFields((field as CollapsibleField | RowField).fields));
     }
