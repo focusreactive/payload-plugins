@@ -1,0 +1,15 @@
+Red run of describeTranslationRepositoryContract against ThrowingTranslationRepository,
+recorded 2026-11-13 before any implementation of TranslationRepository existed.
+Command (from packages/payload-plugin-translator):
+  TRANSLATOR_RED_RUN=1 bunx vitest run src/client/entities/translation/__tests__/ThrowingTranslationRepository.red.test.ts
+
+   × red run > TranslationRepository contract: throwing > reads a fresh document with every target locale empty and no run
+   × red run > TranslationRepository contract: throwing > shows an enqueued run on exactly the requested locales of that document only
+   × red run > TranslationRepository contract: throwing > rejects a second enqueue for a document with a live run as busy and keeps the run
+   × red run > TranslationRepository contract: throwing > cancels a run on every locale it covered
+   × red run > TranslationRepository contract: throwing > lists one entry per requested known id and leaves out an unknown one
+   × red run > TranslationRepository contract: throwing > rejects a field translation of a missing document as not found
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+ Test Files  1 failed (1)
+      Tests  6 failed (6)
+Each case failed with: Error: not implemented (thrown by the fixture).
