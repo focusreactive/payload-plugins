@@ -297,6 +297,17 @@ export const Posts: CollectionConfig<"posts"> = {
     },
     {
       admin: {
+        description:
+          "The doctor who medically reviewed the article. Shown with the doctor's photo on the article and its cards.",
+        position: "sidebar",
+      },
+      label: "Medically reviewed by",
+      name: "reviewedBy",
+      relationTo: "doctors",
+      type: "relationship",
+    },
+    {
+      admin: {
         description: {
           en: "Select up to 3 related posts. If fewer than 3 are selected, additional posts from the same categories will be shown automatically based on publish date.",
           es: "Selecciona hasta 3 publicaciones relacionadas. Si se seleccionan menos de 3, se mostrarán automáticamente publicaciones adicionales de las mismas categorías según la fecha de publicación.",

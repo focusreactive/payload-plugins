@@ -67,6 +67,35 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
       ],
     },
     {
+      admin: {
+        description:
+          "The clinic or place shown under the reviewer's name, for example Downtown. Empty uses the clinic picked below.",
+      },
+      label: "Place",
+      name: "place",
+      type: "text",
+    },
+    {
+      admin: {
+        description: "The clinic this review is about. The clinic's page shows its own reviews.",
+      },
+      index: true,
+      label: "Clinic",
+      name: "clinic",
+      relationTo: "clinics",
+      type: "relationship",
+    },
+    {
+      admin: {
+        description:
+          "The logo of the site the review was left on, for example Google. Empty shows no logo.",
+      },
+      label: "Review site logo",
+      name: "sourceLogo",
+      relationTo: "media",
+      type: "upload",
+    },
+    {
       label: {
         en: "Avatar",
         es: "Avatar",

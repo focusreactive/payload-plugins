@@ -2,7 +2,8 @@ import type { Field } from "payload";
 
 import { contentBlocks } from "@/blocks/contentBlocks";
 import { GlobalSectionSlotBlock } from "@/blocks/GlobalSectionSlot/config";
-import { heroBlocks } from "@/blocks/heroBlocks";
+import { heroBlocks, siteHeroBlockSlugs } from "@/blocks/heroBlocks";
+import { siteBlocks, siteBlockSlugs } from "@/blocks/siteBlocks";
 import { getSoleRelationId } from "@/dal/getSoleRelationId";
 import { generateSeoFields } from "@/lib/utils/seoFields";
 
@@ -33,6 +34,7 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
                 initCollapsed: true,
               },
               blocks: heroBlocks,
+              filterOptions: siteHeroBlockSlugs,
               label: { en: "Hero", es: "Hero" },
               localized: true,
               maxRows: 1,
@@ -41,7 +43,7 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
               required: true,
               type: "blocks",
               ...(withBlocksDefaultValue && {
-                defaultValue: () => [{ blockType: "hero" }],
+                defaultValue: () => [{ blockType: "heroBanner" }],
               }),
             },
             {
@@ -52,18 +54,14 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
                 },
                 initCollapsed: true,
               },
-              blocks: [...contentBlocks, GlobalSectionSlotBlock],
+              blocks: [...siteBlocks, ...contentBlocks, GlobalSectionSlotBlock],
+              // The site renders with its own stylesheet, so only the site's own sections are offered.
+              filterOptions: siteBlockSlugs,
               label: { en: "Sections", es: "Secciones" },
               localized: true,
               name: "blocks",
               required: true,
               type: "blocks",
-              ...(withBlocksDefaultValue && {
-                defaultValue: () =>
-                  ["content", "testimonialsList", "faq"].map((blockType) => ({
-                    blockType,
-                  })),
-              }),
             },
             {
               admin: {

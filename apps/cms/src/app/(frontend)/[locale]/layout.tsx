@@ -1,5 +1,4 @@
 import type { Viewport } from "next";
-import { Archivo, IBM_Plex_Mono, Newsreader } from "next/font/google";
 import { getMessages } from "next-intl/server";
 import { draftMode } from "next/headers";
 import React from "react";
@@ -11,28 +10,6 @@ import { AnalyticsProviderClient } from "@/lib/plugins/analytics/AnalyticsProvid
 import type { Locale } from "@/lib/types";
 import { LivePreviewListener } from "@/components/LivePreviewListener";
 import { VisualEditingEditRouter } from "@/components/VisualEditingEditRouter";
-
-const newsreader = Newsreader({
-  display: "swap",
-  style: ["normal", "italic"],
-  subsets: ["latin"],
-  variable: "--font-newsreader",
-  weight: ["400", "500", "600"],
-});
-
-const archivo = Archivo({
-  display: "swap",
-  subsets: ["latin"],
-  variable: "--font-archivo",
-  weight: ["400", "500", "600"],
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  display: "swap",
-  subsets: ["latin"],
-  variable: "--font-ibm-plex-mono",
-  weight: ["400", "500"],
-});
 
 export const viewport: Viewport = {
   initialScale: 1,
@@ -54,13 +31,9 @@ export default async function RootLayout({ children, params }: Props) {
   const messages = await getMessages();
 
   return (
-    <html
-      lang={locale}
-      data-theme="light"
-      className={`${newsreader.variable} ${archivo.variable} ${ibmPlexMono.variable}`}
-    >
+    <html lang={locale} data-theme="light">
       <head />
-      <body>
+      <body suppressHydrationWarning>
         <AnalyticsProviderClient measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID!}>
           <Providers locale={locale as Locale} messages={messages}>
             {draft ? (

@@ -5,11 +5,16 @@ export type CacheTagParams =
   | { type: "postsList"; locale: Locale }
   | { type: "page"; path: string; locale: Locale }
   | { type: "redirect"; locale: Locale }
-  | { type: "sitemap" };
+  | { type: "sitemap" }
+  | { type: "entities" };
 
 export function cacheTag(params: CacheTagParams): string {
   if (params.type === "sitemap") {
     return "sitemap";
+  }
+
+  if (params.type === "entities") {
+    return "entities";
   }
 
   const { type, locale } = params;

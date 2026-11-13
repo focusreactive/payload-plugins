@@ -63,7 +63,9 @@ const getPageBySlugCached = cache(
       () => getPageBySlugQuery(payload, pathSegmentsNorm, resolvedLocale, false),
       [pathKey, resolvedLocale],
       {
-        tags: [res],
+        // Sections on a page list clinics, doctors and treatments, so a change to any record
+        // must refresh the page as well.
+        tags: [res, cacheTag({ type: "entities" })],
       }
     )();
   }

@@ -1,4 +1,6 @@
 import type { CollectionConfig } from "payload";
+import { entityHooks } from "@/collections/entities/shared";
+import { siteFooterFields } from "@/collections/siteChrome/fields";
 
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { anyone, or, user, superAdmin } from "@/lib/access";
@@ -166,9 +168,10 @@ export const Footer: CollectionConfig<"footer"> = {
       name: "copyrightText",
       type: "text",
     },
+    ...siteFooterFields,
   ],
   hooks: {
-    afterChange: [revalidateResourcesUsingFooter],
+    afterChange: [revalidateResourcesUsingFooter, ...(entityHooks?.afterChange ?? [])],
   },
   labels: {
     plural: {

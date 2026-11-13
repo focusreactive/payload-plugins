@@ -3,21 +3,23 @@ import type { Metadata } from "next";
 import { draftMode } from "next/headers";
 import React from "react";
 
-import { RenderBlocks } from "@/blocks/RenderBlocks";
-import { RenderHero } from "@/blocks/RenderHero";
+import { RenderSiteBlock, RenderSiteBlocks } from "@/blocks/siteBlockComponents";
 import { SYNTHETIC_REFS } from "@/lib/plugins/analytics/SYNTHETIC_REFS";
 import { generateMeta } from "@/lib/utils/generateMeta";
 import { generateNotFoundMeta } from "@/lib/utils/generateNotFoundMeta";
 import { parseSlugToPath } from "@/lib/utils/parseSlugToPath";
 import { BreadcrumbsJsonLd } from "@/components/seo/components";
+import { SitePage } from "@/components/site/layout/SitePage";
+import { matchEntityRoute } from "@/lib/config/entityRoutes";
+import { filterHiddenBlocks } from "@/lib/fields/section/filterHiddenBlocks";
 import type { Locale } from "@/lib/types";
+import { getSiteChrome } from "@/dal/entities";
 import { getPageBySlug } from "@/dal/getPageBySlug";
 import { getMainSitePageStaticParams } from "@/dal/staticParams/pages";
 import { PayloadRedirects } from "@/components/PayloadRedirects";
 import { redirect } from "@/lib/i18n/navigation";
-import type { Footer as FooterType, Header as HeaderType } from "@/payload-types";
-import { Footer } from "@/collections/Footer/Component";
-import { Header } from "@/collections/Header/Component";
+import type { Page as PageDoc } from "@/payload-types";
+import { generateEntityMetadata, renderEntityPage, resolveEntity } from "@/templates";
 
 interface Args {
   params: Promise<{
@@ -34,6 +36,15 @@ export default async function Page({ params }: Args) {
     return redirect({ href: `/${decodedSegments.slice(1).join("/")}`, locale });
   }
 
+  // A URL under a record prefix (a state, clinic, doctor, treatment or condition) is answered by
+  // that record's template; everything else, the prefix's own index included, is a Page.
+  const entityMatch = matchEntityRoute(decodedSegments);
+  const entity = entityMatch ? await resolveEntity(entityMatch, locale) : null;
+
+  if (entity) {
+    return renderEntityPage(entity, locale);
+  }
+
   const page = await getPageBySlug(decodedSegments, locale);
   const { isEnabled: draft } = await draftMode();
 
@@ -41,33 +52,42 @@ export default async function Page({ params }: Args) {
     return <PayloadRedirects url={url} locale={locale} />;
   }
 
-  const pageRef =
-    decodedSegments[0] === "home" || decodedSegments.length === 0
-      ? SYNTHETIC_REFS.home
-      : `page:${page.id}`;
+  const isHome = decodedSegments.length === 0;
+  const pageRef = isHome ? SYNTHETIC_REFS.home : `page:${page.id}`;
+  const chrome = await getSiteChrome(locale);
+  const header = page.header && typeof page.header === "object" ? page.header : chrome.header;
+  const footer = page.footer && typeof page.footer === "object" ? page.footer : chrome.footer;
+  const [hero] = filterHiddenBlocks(page.hero);
+  const context = { collection: "page", doc: page as PageDoc } as const;
 
   return (
-    <>
+    <SitePage
+      bodyId={isHome ? "home" : page.slug}
+      footer={footer}
+      header={header}
+      hero={hero ? <RenderSiteBlock block={hero} context={context} locale={locale} /> : null}
+      locale={locale}
+      path={isHome ? "/" : `/${decodedSegments.join("/")}`}
+      template={isHome ? "home" : "default"}
+    >
       <TrackPage pageRef={pageRef} locale={locale} enabled={!draft} />
-      <Header data={page.header as HeaderType} />
-      <main>
-        <div>
-          <BreadcrumbsJsonLd items={page.breadcrumbs} locale={locale} />
-
-          <PayloadRedirects disableNotFound url={url} locale={locale} />
-
-          <RenderHero hero={page.hero} />
-          <RenderBlocks blocks={page.blocks} />
-        </div>
-      </main>
-      <Footer data={page.footer as FooterType} />
-    </>
+      <BreadcrumbsJsonLd items={page.breadcrumbs} locale={locale} />
+      <PayloadRedirects disableNotFound url={url} locale={locale} />
+      <RenderSiteBlocks blocks={page.blocks} context={context} locale={locale} />
+    </SitePage>
   );
 }
 
 export async function generateMetadata({ params }: Args): Promise<Metadata> {
   const { slug = [], locale } = await params;
   const { decodedSegments } = parseSlugToPath(slug);
+
+  const entityMatch = matchEntityRoute(decodedSegments);
+  const entity = entityMatch ? await resolveEntity(entityMatch, locale) : null;
+
+  if (entity) {
+    return generateEntityMetadata(entity, locale);
+  }
 
   const page = await getPageBySlug(decodedSegments, locale);
 
