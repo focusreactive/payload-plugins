@@ -10,7 +10,7 @@ import { TranslateAllLocales } from "../../../features/translate-all-locales/ind
 import { useTranslateKitConfig } from "../../../shared/config/index.js";
 import { CloseIcon } from "../../../shared/lib/assets/icons/CloseIcon.js";
 import Select from "../../../shared/ui/Select/index.js";
-import type { LocaleChoice } from "../model/localeChoices.js";
+import type { LocaleChoice } from "../../../entities/translation/index.js";
 import { LocaleRowView } from "./LocaleRowView.js";
 
 import styles from "./styles.module.scss";

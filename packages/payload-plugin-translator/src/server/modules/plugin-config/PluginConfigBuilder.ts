@@ -1,4 +1,4 @@
-import type { CollectionConfig, Config, Endpoint } from "payload";
+import type { CollectionConfig, Config, Endpoint, Field } from "payload";
 
 import type { AccessGuard } from "../../../types/AccessGuard.js";
 import type { RawPayloadComponentExport } from "../../../types/PayloadComponentExport.js";
@@ -10,6 +10,7 @@ import type { TaskRunnerFactory } from "../task-runner/index.js";
 import type { RunRecordStoreFactory } from "../runs/index.js";
 import type { TranslatorSettings } from "../../../settings.js";
 
+import { CollectionFieldClashError } from "./errors/CollectionFieldClashError.js";
 import { DuplicateEndpointError } from "./errors/DuplicateEndpointError.js";
 import { routeKey } from "./routeKey.js";
 import type { RouteKey } from "./routeKey.js";
@@ -64,6 +65,10 @@ function attachToSlot(
   slot satisfies never;
 }
 
+/** Top level only: a clash inside a row or an unnamed tab is refused by Payload's own sanitizing. */
+const hasFieldNamed = (collection: CollectionConfig, name: string): boolean =>
+  collection.fields.some((field) => "name" in field && field.name === name);
+
 /** The only place that mutates the Payload `config`; modules and components merely describe contributions. */
 export class PluginConfigBuilder implements ComponentContext, ModuleContext {
   readonly collections: CollectionConfig[];
@@ -78,6 +83,7 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
   private readonly endpoints: Endpoint[] = [];
   private readonly endpointKeys = new Set<RouteKey>();
   private readonly collectionComponents: CollectionComponent[] = [];
+  private readonly collectionFields: (() => Field)[] = [];
   private readonly adminProviders: MakeAdminProvider[] = [];
   private readonly configModifiers: ConfigModifier[] = [];
 
@@ -108,6 +114,10 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
     this.collectionComponents.push({ slot, make });
   }
 
+  addCollectionField(make: () => Field): void {
+    this.collectionFields.push(make);
+  }
+
   /** Register a global admin provider (e.g. the client cache provider). */
   addAdminProvider(make: MakeAdminProvider): void {
     this.adminProviders.push(make);
@@ -125,6 +135,7 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
 
     this.attachAdminProviders(result);
     this.attachCollectionComponents(result);
+    this.attachCollectionFields(result);
     this.registerEndpoints(result);
     return result;
   }
@@ -150,6 +161,21 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
         if (seenOnThisCollection.has(key)) continue;
         seenOnThisCollection.add(key);
         attachToSlot(collection, slot, component);
+      }
+    });
+  }
+
+  private attachCollectionFields(config: Config): void {
+    if (this.collectionFields.length === 0) return;
+    const managed = new Set(this.collections.map((collection) => collection.slug));
+    config.collections?.forEach((collection) => {
+      if (!managed.has(collection.slug)) return;
+      for (const make of this.collectionFields) {
+        const field = make();
+        if ("name" in field && hasFieldNamed(collection, field.name)) {
+          throw new CollectionFieldClashError(collection.slug, field.name);
+        }
+        collection.fields.push(field);
       }
     });
   }

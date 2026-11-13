@@ -3,7 +3,7 @@ import type { BeforeDocumentControlsServerProps, CollectionConfig } from "payloa
 
 import type { AccessGuard } from "../../../../types/AccessGuard.js";
 import { askTheGuard } from "../../../../server/shared/access/askTheGuard.js";
-import { localeChoicesOf } from "../model/localeChoices.js";
+import { localeChoicesOf } from "../../../entities/translation/model/localeChoices.js";
 
 import TranslateDocument from "./TranslateDocument.js";
 

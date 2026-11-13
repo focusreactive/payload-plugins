@@ -1,0 +1,56 @@
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 0.4375rem;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font-size: 0.6875rem;
+  line-height: 17px;
+  letter-spacing: 0.03em;
+}
+
+.translated {
+  background: var(--theme-elevation-100);
+  color: var(--theme-elevation-800);
+}
+
+.notTranslated {
+  border: 1px dashed var(--theme-elevation-300);
+  color: var(--theme-elevation-500);
+}
+
+.translating {
+  background: var(--theme-success-100);
+  color: var(--theme-success-750, var(--theme-success-700));
+}
+
+.queued {
+  border-color: var(--theme-elevation-150);
+  background: var(--theme-elevation-50);
+  color: var(--theme-elevation-650, var(--theme-elevation-600));
+}
+
+.failed {
+  background: var(--theme-error-100);
+  color: var(--theme-error-650, var(--theme-error-600));
+  font-weight: 600;
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

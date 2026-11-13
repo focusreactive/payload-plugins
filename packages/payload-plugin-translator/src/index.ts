@@ -85,6 +85,7 @@ export { documentTranslation, fieldTranslation } from "./composition/modules/ind
 export {
   bulkTranslationDashboard,
   translateDocumentControl,
+  translationStatusColumn,
 } from "./composition/components/index.js";
 
 // Field config

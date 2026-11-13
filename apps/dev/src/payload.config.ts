@@ -9,6 +9,7 @@ import {
   translatorPlugin,
   translateDocumentControl,
   bulkTranslationDashboard,
+  translationStatusColumn,
   withAutoTranslate,
 } from "@focus-reactive/payload-plugin-translator";
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
@@ -104,7 +105,11 @@ export default buildConfig({
       runner: resolveTranslatorRunner(),
       translationProvider: resolveTranslationProvider(),
       ...resolveTranslatorModules(),
-      components: [translateDocumentControl(), bulkTranslationDashboard()],
+      components: [
+        translateDocumentControl(),
+        bulkTranslationDashboard(),
+        translationStatusColumn(),
+      ],
       lifecycle: loggingLifecycle,
     }),
     analyticsPlugin({

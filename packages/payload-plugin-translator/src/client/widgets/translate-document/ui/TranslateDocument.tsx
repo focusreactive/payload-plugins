@@ -12,7 +12,7 @@ import {
 import { LanguageTranslateIcon } from "../../../shared/lib/assets/icons/LanguageTranslateIcon.js";
 import Button from "../../../shared/ui/Button/index.js";
 import SideDrawer from "../../../shared/ui/SideDrawer/index.js";
-import type { LocaleChoice } from "../model/localeChoices.js";
+import type { LocaleChoice } from "../../../entities/translation/index.js";
 import { TranslationsPanel } from "./TranslationsPanel.js";
 import { useRefetchOnSave } from "./useRefetchOnSave.js";
 

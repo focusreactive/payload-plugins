@@ -27,3 +27,10 @@ export const translationKeys = {
       [...legacyStaleness, collection, id] as const,
   },
 };
+
+/**
+ * The ids a collection list's query matches, read from Payload, not from the plugin. Spelled here so
+ * every key has one home; outside `all`, so a translation refresh does not read them again.
+ */
+export const viewIdsKey = (collection: CollectionSlug, locale: string, whereKey: string) =>
+  ["payload", "view-ids", collection, locale, whereKey] as const;
