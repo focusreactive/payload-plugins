@@ -1,7 +1,8 @@
 import type { BLOG_CONFIG } from "@/lib/config/blog";
+import type { EntityCollection } from "@/lib/config/entityRoutes";
 
 interface Props {
-  collection: "page" | "globalBlock" | typeof BLOG_CONFIG.collection;
+  collection: "page" | "globalBlock" | typeof BLOG_CONFIG.collection | EntityCollection;
   slug: string;
   path: string;
 }

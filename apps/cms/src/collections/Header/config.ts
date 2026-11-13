@@ -1,4 +1,6 @@
 import type { CollectionConfig, GroupField } from "payload";
+import { entityHooks } from "@/collections/entities/shared";
+import { siteHeaderFields } from "@/collections/siteChrome/fields";
 
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { anyone, or, user, superAdmin } from "@/lib/access";
@@ -201,9 +203,10 @@ export const Header: CollectionConfig<"header"> = {
       name: "actions",
       type: "array",
     },
+    ...siteHeaderFields,
   ],
   hooks: {
-    afterChange: [revalidateResourcesUsingHeader],
+    afterChange: [revalidateResourcesUsingHeader, ...(entityHooks?.afterChange ?? [])],
   },
   labels: {
     plural: {

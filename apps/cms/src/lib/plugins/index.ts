@@ -17,6 +17,11 @@ import type { Field, PayloadRequest, Plugin } from "payload";
 
 import { Authors } from "@/collections/Authors";
 import { Categories } from "@/collections/Categories";
+import { Clinics } from "@/collections/entities/Clinics";
+import { Conditions } from "@/collections/entities/Conditions";
+import { Doctors } from "@/collections/entities/Doctors";
+import { States } from "@/collections/entities/States";
+import { Treatments } from "@/collections/entities/Treatments";
 import { Footer } from "@/collections/Footer/config";
 import { GlobalBlock } from "@/collections/GlobalBlock/config";
 import { Header } from "@/collections/Header/config";
@@ -305,6 +310,11 @@ export const plugins: Plugin[] = [
       { slug: "header", titleField: "name" },
       { slug: "footer", titleField: "name" },
       { slug: "globalBlock", titleField: "title" },
+      { slug: "states", titleField: "name" },
+      { slug: "clinics", titleField: "name" },
+      { slug: "doctors", titleField: "name" },
+      { slug: "treatments", titleField: "title" },
+      { slug: "conditions", titleField: "title" },
     ],
 
     translations: {
@@ -357,6 +367,11 @@ export const plugins: Plugin[] = [
       Header,
       Footer,
       GlobalBlock,
+      States,
+      Clinics,
+      Doctors,
+      Treatments,
+      Conditions,
     ].map((col) =>
       JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
     ),
@@ -420,6 +435,8 @@ export const plugins: Plugin[] = [
     adminBasePath: "/admin",
     enrichment: "explicit",
     instantPreview: true,
+    // Values the site puts into an href, a src or a tel: link, where a marker would break them.
+    excludeFieldNames: ["path", "url", "videoUrl", "mapUrl", "phone", "profiles", "npi"],
     skipCollections: [
       "users",
       "media",

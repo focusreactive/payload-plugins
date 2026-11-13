@@ -1,0 +1,37 @@
+/* Additions for the CMS build of the site. Loaded after styles.css. */
+
+/* Carousel slide widths, set by the slider component through custom properties. */
+.site-slider {
+  --slides: var(--slides-desktop);
+}
+@media (max-width: 1199px) {
+  .site-slider {
+    --slides: var(--slides-medium);
+  }
+}
+@media (max-width: 1023px) {
+  .site-slider {
+    --slides: var(--slides-small);
+  }
+}
+@media (max-width: 767px) {
+  .site-slider {
+    --slides: var(--slides-mobile);
+  }
+}
+.site-slider .slick-track .slick-slide {
+  flex: 0 0 calc(100% / var(--slides));
+  float: none;
+  min-width: 0;
+}
+.site-slider .slick-arrow {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Images that the original site fills in from data attributes after load. */
+.bg-container[style*="background-image"] {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
