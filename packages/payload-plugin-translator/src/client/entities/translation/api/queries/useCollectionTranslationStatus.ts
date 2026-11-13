@@ -1,11 +1,11 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { ofetch } from "ofetch";
 import type { CollectionSlug } from "payload";
-import { useCallback } from "react";
 
 import { useTranslateKitConfig } from "../../../../shared/config/index.js";
 import { handleNextApiError } from "../../../../shared/api/handleApiError.js";
 import { DocumentTranslationStatus } from "../../model/enums.js";
+import { translationKeys } from "../../queries/translationKeys.js";
 import type {
   CollectionTranslationPanel,
   CollectionTranslationStatus,
@@ -20,18 +20,13 @@ type Options = {
   enabled?: boolean;
 };
 
-const getCollectionTranslationQueryKey = ({ collection }: Props) => {
-  return ["collection-translation-status", collection];
-};
-
 const POLLING_INTERVAL_MILLISECONDS = 20000; // 20 sec
 
 export function useCollectionTranslationStatus({ collection }: Props, options?: Options) {
-  const queryClient = useQueryClient();
   const { basePath } = useTranslateKitConfig();
 
-  const query = useQuery<CollectionTranslationStatus, Error, CollectionTranslationPanel>({
-    queryKey: getCollectionTranslationQueryKey({ collection }),
+  return useQuery<CollectionTranslationStatus, Error, CollectionTranslationPanel>({
+    queryKey: translationKeys.legacy.collectionStatus(collection),
     queryFn: async ({ signal }) => {
       return handleNextApiError(async () => {
         const response = await ofetch<{ data: CollectionTranslationStatus }>(
@@ -64,10 +59,4 @@ export function useCollectionTranslationStatus({ collection }: Props, options?: 
       return { counts, failedWindowMs: data.failed_window_ms };
     },
   });
-
-  const invalidate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: getCollectionTranslationQueryKey({ collection }) });
-  }, [collection, queryClient]);
-
-  return { ...query, invalidate };
 }

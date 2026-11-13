@@ -4,6 +4,8 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { TranslateKitConfig } from "../../../../../types/wire/TranslateKitConfig.js";
+import { InMemoryTranslationRepository } from "../../../../entities/translation/__tests__/InMemoryTranslationRepository.fixture.js";
+import { TranslationRepositoryProvider } from "../../../../entities/translation/index.js";
 import { DocumentTranslationStatus } from "../../../../entities/translation/model/enums.js";
 import type { CollectionTranslationPanel } from "../../../../entities/translation/model/types.js";
 
@@ -41,14 +43,18 @@ const panelWithWindow = (ms: number): CollectionTranslationPanel => ({
 const show = (data: CollectionTranslationPanel, canStop = true) =>
   render(
     <TranslateKitConfigProvider config={config}>
-      <QueryClientProvider client={new QueryClient()}>
-        <CollectionTranslationProgress
-          collection="docs"
-          data={data}
-          isPending={false}
-          canStop={canStop}
-        />
-      </QueryClientProvider>
+      <TranslationRepositoryProvider
+        repository={new InMemoryTranslationRepository([], { source: "en", targets: ["de"] })}
+      >
+        <QueryClientProvider client={new QueryClient()}>
+          <CollectionTranslationProgress
+            collection="docs"
+            data={data}
+            isPending={false}
+            canStop={canStop}
+          />
+        </QueryClientProvider>
+      </TranslationRepositoryProvider>
     </TranslateKitConfigProvider>
   );
 

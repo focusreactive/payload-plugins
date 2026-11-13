@@ -1,12 +1,13 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { ofetch } from "ofetch";
 import type { CollectionSlug } from "payload";
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import { useTranslateKitConfig } from "../../../../shared/config/index.js";
 import { handleNextApiError } from "../../../../shared/api/handleApiError.js";
-import { DOCUMENT_STALENESS_QUERY_KEY } from "./useDocumentStaleness.js";
 import type { DocumentTranslation } from "../../model/types.js";
+import { translationKeys } from "../../queries/translationKeys.js";
+import { useRefreshTranslation } from "../../queries/useRefreshTranslation.js";
 
 type Props = {
   collection: CollectionSlug;
@@ -17,18 +18,14 @@ type Options = {
   enabled?: boolean;
 };
 
-const getDocumentTranslationQueryKey = ({ collection, id }: Props) => {
-  return ["document-translation-status", collection, id];
-};
-
 const POLLING_INTERVAL_MILLISECONDS = 20000; // 20 sec
 
 export function useDocumentTranslation({ collection, id }: Props, options?: Options) {
-  const queryClient = useQueryClient();
+  const refresh = useRefreshTranslation();
   const { basePath } = useTranslateKitConfig();
 
   const query = useQuery<DocumentTranslation[], Error, DocumentTranslation[]>({
-    queryKey: getDocumentTranslationQueryKey({ collection, id }),
+    queryKey: translationKeys.legacy.documentStatus(collection, id),
     queryFn: async ({ signal }) => {
       return handleNextApiError(async () => {
         const response = await ofetch<{ data: DocumentTranslation[] }>(
@@ -54,10 +51,6 @@ export function useDocumentTranslation({ collection, id }: Props, options?: Opti
     },
   });
 
-  const invalidate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: getDocumentTranslationQueryKey({ collection, id }) });
-  }, [collection, id, queryClient]);
-
   // When a queued (async) translation transitions to "completed" in-session, the provenance
   // record's sourceFingerprint has just been updated server-side — invalidate staleness so the
   // "Out of date" notice clears without waiting for the next focus/remount refetch (#50).
@@ -78,10 +71,10 @@ export function useDocumentTranslation({ collection, id }: Props, options?: Opti
     const previous = previousCompletedRef.current;
     const sameDoc = previous?.docKey === docKey;
     if (sameDoc && [...completed].some((locale) => !previous.locales.has(locale))) {
-      queryClient.invalidateQueries({ queryKey: [DOCUMENT_STALENESS_QUERY_KEY] });
+      void refresh(translationKeys.legacy.everyStaleness);
     }
     previousCompletedRef.current = { docKey, locales: completed };
-  }, [query.data, queryClient, docKey]);
+  }, [query.data, refresh, docKey]);
 
-  return { ...query, invalidate };
+  return query;
 }

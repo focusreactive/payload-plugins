@@ -1,11 +1,15 @@
-import { useCancelCollectionTranslations } from "./api/mutations/useCancelCollectionTranslations.js";
-import { useCancelDocumentTranslation } from "./api/mutations/useCancelDocumentTranslation.js";
-import { useDismissStaleness } from "./api/mutations/useDismissStaleness.js";
-import { useQueueDocumentTranslation } from "./api/mutations/useQueueDocumentTranslation.js";
-import { useRunDocumentTranslation } from "./api/mutations/useRunDocumentTranslation.js";
 import { useCollectionTranslationStatus } from "./api/queries/useCollectionTranslationStatus.js";
 import { useDocumentStaleness } from "./api/queries/useDocumentStaleness.js";
 import { useDocumentTranslation } from "./api/queries/useDocumentTranslation.js";
+import { useCancelCollectionTranslations } from "./mutations/useCancelCollectionTranslations.js";
+import { useCancelDocumentTranslation } from "./mutations/useCancelDocumentTranslation.js";
+import { useDismissStaleness } from "./mutations/useDismissStaleness.js";
+import { useQueueDocumentTranslation } from "./mutations/useQueueDocumentTranslation.js";
+import { useRunDocumentTranslation } from "./mutations/useRunDocumentTranslation.js";
+
+export { HttpTranslationRepository } from "./api/HttpTranslationRepository.js";
+export { TranslationRepositoryProvider } from "./api/TranslationRepositoryContext.js";
+export { useTranslateField } from "./mutations/useTranslateField.js";
 
 export { TranslationStatusList } from "./ui/TranslationStatusList/index.js";
 export { AutoTranslateMarker } from "./ui/AutoTranslateMarker/index.js";

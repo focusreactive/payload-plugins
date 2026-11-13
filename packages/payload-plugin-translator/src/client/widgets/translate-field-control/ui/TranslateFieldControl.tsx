@@ -11,7 +11,7 @@ import {
 } from "@payloadcms/ui";
 import { useState } from "react";
 
-import { useTranslateField } from "../../../entities/translation/api/mutations/useTranslateField.js";
+import { useTranslateField } from "../../../entities/translation/index.js";
 import { LanguageTranslateIcon } from "../../../shared/lib/assets/icons/LanguageTranslateIcon.js";
 import { ReloadIcon } from "../../../shared/lib/assets/icons/ReloadIcon.js";
 import { SendIcon } from "../../../shared/lib/assets/icons/SendIcon.js";
@@ -83,7 +83,7 @@ const TranslateFieldControl = () => {
     const previous = value;
 
     try {
-      const { data } = await mutateAsync({
+      const result = await mutateAsync({
         collectionSlug,
         fieldPath: path,
         targetLng: targetCode,
@@ -91,15 +91,15 @@ const TranslateFieldControl = () => {
         docId: id,
       });
 
-      if (data.status === "translated") {
+      if (result.status === "translated") {
         setUndo({ value: previous });
-        writeFieldValue(data.value);
+        writeFieldValue(result.value);
         toast.success("Field translated");
         return;
       }
 
-      const notify = data.notice.level === "warning" ? toast.warning : toast.info;
-      notify(data.notice.message);
+      const notify = result.notice.level === "warning" ? toast.warning : toast.info;
+      notify(result.notice.message);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Translation failed");
     }

@@ -7,9 +7,9 @@ import { useState } from "react";
 import { CheckIcon } from "../../../../shared/lib/assets/icons/CheckIcon.js";
 import { CloseIcon } from "../../../../shared/lib/assets/icons/CloseIcon.js";
 import { ReloadIcon } from "../../../../shared/lib/assets/icons/ReloadIcon.js";
-import { useCancelDocumentTranslation } from "../../api/mutations/useCancelDocumentTranslation.js";
-import { useDismissStaleness } from "../../api/mutations/useDismissStaleness.js";
-import { useRunDocumentTranslation } from "../../api/mutations/useRunDocumentTranslation.js";
+import { useCancelDocumentTranslation } from "../../mutations/useCancelDocumentTranslation.js";
+import { useDismissStaleness } from "../../mutations/useDismissStaleness.js";
+import { useRunDocumentTranslation } from "../../mutations/useRunDocumentTranslation.js";
 import type { TranslationStatusRow } from "../../model/statusRows.js";
 import { ActionButton } from "../ActionButton/index.js";
 
