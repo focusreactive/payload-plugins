@@ -9,7 +9,6 @@ import { hasLiveRun } from "../../../entities/translation/index.js";
 import { TranslateAllLocales } from "../../../features/translate-all-locales/index.js";
 import { useTranslateKitConfig } from "../../../shared/config/index.js";
 import { CloseIcon } from "../../../shared/lib/assets/icons/CloseIcon.js";
-import Select from "../../../shared/ui/Select/index.js";
 import type { LocaleChoice } from "../../../entities/translation/index.js";
 import { LocaleRowView } from "./LocaleRowView.js";
 
@@ -21,7 +20,6 @@ type TranslationsPanelProps = {
   read: Pick<UseQueryResult<DocumentTranslationState>, "data" | "isError" | "refetch">;
   locales: readonly LocaleChoice[];
   source: LocaleCode;
-  onSourceChange: (source: LocaleCode) => void;
   onClose: () => void;
 };
 
@@ -108,7 +106,6 @@ export function TranslationsPanel({
   read,
   locales,
   source,
-  onSourceChange,
   onClose,
 }: TranslationsPanelProps) {
   const { collections } = useTranslateKitConfig();
@@ -127,26 +124,7 @@ export function TranslationsPanel({
         <h2 id={headingId} className={styles.heading}>
           Translations
         </h2>
-        {locales.length > 0 && (
-          <>
-            <label htmlFor={`${headingId}-from`} className={styles.from}>
-              From
-            </label>
-            <Select
-              id={`${headingId}-from`}
-              $size="md"
-              $fullWidth={false}
-              value={source}
-              onChange={(event) => onSourceChange(event.target.value)}
-            >
-              {locales.map(({ code, label }) => (
-                <option key={code} value={code}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-          </>
-        )}
+        {source !== "" && <span className={styles.from}>From {labelOf(source)}</span>}
         <button type="button" className={styles.close} aria-label="Close panel" onClick={onClose}>
           <CloseIcon />
         </button>

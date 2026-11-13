@@ -69,6 +69,14 @@ function attachToSlot(
 const hasFieldNamed = (collection: CollectionConfig, name: string): boolean =>
   collection.fields.some((field) => "name" in field && field.name === name);
 
+/** Stamped on every field the plugin adds, so a second application to the same collection objects recognises its own. */
+const PLUGIN_FIELD_MARK = "translatorKitField";
+
+const isPluginField = (collection: CollectionConfig, name: string): boolean =>
+  collection.fields.some(
+    (field) => "name" in field && field.name === name && field.custom?.[PLUGIN_FIELD_MARK] === true
+  );
+
 /** The only place that mutates the Payload `config`; modules and components merely describe contributions. */
 export class PluginConfigBuilder implements ComponentContext, ModuleContext {
   readonly collections: CollectionConfig[];
@@ -172,10 +180,14 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
       if (!managed.has(collection.slug)) return;
       for (const make of this.collectionFields) {
         const field = make();
+        if ("name" in field && isPluginField(collection, field.name)) continue;
         if ("name" in field && hasFieldNamed(collection, field.name)) {
           throw new CollectionFieldClashError(collection.slug, field.name);
         }
-        collection.fields.push(field);
+        collection.fields.push({
+          ...field,
+          custom: { ...field.custom, [PLUGIN_FIELD_MARK]: true },
+        });
       }
     });
   }

@@ -12,6 +12,6 @@ export function useRunDocumentTranslation() {
 
   return useMutation({
     mutationFn: ({ id }: Variables): Promise<void> => repository.runNow(id),
-    onSettled: () => void refresh(),
+    onSettled: () => refresh(),
   });
 }

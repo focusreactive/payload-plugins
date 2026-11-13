@@ -16,7 +16,7 @@ import { useActionError } from "../../../shared/lib/utils/react/useActionError.j
 import Button from "../../../shared/ui/Button/index.js";
 import SideDrawer from "../../../shared/ui/SideDrawer/index.js";
 import { CollectionPanel } from "./CollectionPanel.js";
-import { NothingSelected } from "./NothingSelected.js";
+import { NothingSelected, ViewCountError } from "./NothingSelected.js";
 import { useViewIds } from "./useViewIds.js";
 
 import styles from "./styles.module.scss";
@@ -81,6 +81,7 @@ export default function BulkTranslationDashboard({
     if (allAvailable) setStage("view");
     else setStage(selection.count === 0 ? "nothing-selected" : "selection");
   };
+  const viewFailed = stage === "view" && viewIds.isError && !viewIds.data;
   const selectedIds = selection.selectedIDs.map(String);
 
   return (
@@ -107,7 +108,15 @@ export default function BulkTranslationDashboard({
             onClose={close}
           />
         )}
-        {(stage === "selection" || stage === "view") && (
+        {viewFailed && (
+          <div className={styles.body}>
+            <h2 id={headingId} className={styles.heading}>
+              Translate {collection}
+            </h2>
+            <ViewCountError viewIds={viewIds} />
+          </div>
+        )}
+        {(stage === "selection" || (stage === "view" && !viewFailed)) && (
           <CollectionPanel
             headingId={headingId}
             collection={collection}

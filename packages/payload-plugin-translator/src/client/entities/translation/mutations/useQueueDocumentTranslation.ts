@@ -24,6 +24,6 @@ export function useQueueDocumentTranslation() {
   return useMutation({
     mutationFn: ({ collection_id, ...request }: Variables): Promise<EnqueueResponse> =>
       repository.enqueue({ ...request, collection_id: documentIdsOf(collection_id) }),
-    onSettled: () => void refresh(),
+    onSettled: () => refresh(),
   });
 }

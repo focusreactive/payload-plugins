@@ -19,6 +19,6 @@ export function useDismissStaleness() {
   return useMutation({
     mutationFn: ({ collection, id, target_lng }: Variables): Promise<void> =>
       repository.dismissStaleness({ collection_slug: collection, collection_id: id, target_lng }),
-    onSettled: () => void refresh(),
+    onSettled: () => refresh(),
   });
 }

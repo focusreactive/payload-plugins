@@ -16,17 +16,19 @@ type NothingSelectedProps = {
   onClose: () => void;
 };
 
+export function ViewCountError({ viewIds }: Pick<NothingSelectedProps, "viewIds">) {
+  return (
+    <p role="alert" className={styles.text}>
+      Couldn’t count the documents this view shows.{" "}
+      <button type="button" className={styles.link} onClick={() => void viewIds.refetch()}>
+        Try again
+      </button>
+    </p>
+  );
+}
+
 function ViewCount({ collection, viewIds }: Pick<NothingSelectedProps, "collection" | "viewIds">) {
-  if (viewIds.isError) {
-    return (
-      <p role="alert" className={styles.text}>
-        Couldn’t count the documents this view shows.{" "}
-        <button type="button" className={styles.link} onClick={() => void viewIds.refetch()}>
-          Try again
-        </button>
-      </p>
-    );
-  }
+  if (viewIds.isError) return <ViewCountError viewIds={viewIds} />;
   const count = viewIds.data ? String(viewIds.data.length) : "Counting";
   return (
     <p className={styles.text}>

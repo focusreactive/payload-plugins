@@ -31,10 +31,9 @@ const TranslateDocument = ({ collection, id, locales }: TranslateDocumentProps) 
   useRefetchOnSave(read.refetch);
 
   const [open, setOpen] = useState(false);
-  const [chosenSource, setChosenSource] = useState<LocaleCode | null>(null);
   const headingId = useId();
 
-  const source = chosenSource ?? read.data?.sourceLocale ?? locales[0]?.code ?? "";
+  const source = read.data?.sourceLocale ?? locales[0]?.code ?? "";
   const status = read.data ? documentPanelStatus(read.data.locales) : undefined;
   const { tone, title } = describePanelStatus(status, "Translate this document");
 
@@ -63,7 +62,6 @@ const TranslateDocument = ({ collection, id, locales }: TranslateDocumentProps) 
           read={read}
           locales={locales}
           source={source}
-          onSourceChange={setChosenSource}
           onClose={() => setOpen(false)}
         />
       </SideDrawer>

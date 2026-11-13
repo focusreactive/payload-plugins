@@ -13,6 +13,6 @@ export function useCancelCollectionTranslations() {
   return useMutation({
     mutationFn: ({ collection }: Variables): Promise<void> =>
       repository.cancelByCollection(collection),
-    onSettled: () => void refresh(),
+    onSettled: () => refresh(),
   });
 }

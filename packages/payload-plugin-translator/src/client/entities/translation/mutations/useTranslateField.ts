@@ -33,6 +33,6 @@ export function useTranslateField() {
         source_lng: variables.sourceLng,
         doc_id: String(variables.docId),
       }),
-    onSettled: () => void refresh(),
+    onSettled: () => refresh(),
   });
 }

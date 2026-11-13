@@ -13,6 +13,6 @@ export function useCancelDocumentTranslation() {
 
   return useMutation({
     mutationFn: ({ id }: Variables): Promise<CancelResponse> => repository.cancel([id]),
-    onSettled: () => void refresh(),
+    onSettled: () => refresh(),
   });
 }
