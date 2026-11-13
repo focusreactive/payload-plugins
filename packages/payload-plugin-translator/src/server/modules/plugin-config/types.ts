@@ -29,7 +29,10 @@ export type ConfigTimeContext = {
  * @internal
  */
 export interface ModuleContext extends ConfigTimeContext {
-  /** Deduplicated by method + path when applied. */
+  /**
+   * A method + path another of the plugin's contributions already claimed throws
+   * `DuplicateEndpointError`; one the host's own config already holds stays the host's.
+   */
   addEndpoints(endpoints: Endpoint[]): void;
   addConfigModifier(modifier: ConfigModifier): void;
 }

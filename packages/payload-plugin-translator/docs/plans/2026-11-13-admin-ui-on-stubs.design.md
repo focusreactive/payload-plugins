@@ -23,6 +23,7 @@ Requirements: 2026-11-13-admin-ui-on-stubs.research.md
   - Finding 4 (reopens D3): the API base stays relative — `routes.api + basePath` from Payload config, no `serverURL`; requests send `credentials: "include"`, as Payload's own admin does.
   - Finding 5 (reopens D6, D8): the contract suite holds only scenario-free invariants; stub scenarios are tested separately. The real-server check before stub removal runs in the `apps/dev` integration tests.
   - Finding 6 (reopens D7): no new `TranslatorAction` members. The document-state read is guarded by `document-status`, the list-state read by `collection-status`. Hosts change nothing.
+- 2026-11-13 — implementation finding (step 2): Payload passes `serverProps` only to server components, and `CacheProvider` is a client component, so the admin config travels in the provider's `clientProps`. Wherever this design says `serverProps` for `TranslateKitConfig`, read `clientProps`. The same defect meant a host's custom `basePath` never reached the browser before this change.
 
 ### Decision points
 - D1 [load-bearing] Client layer gradient, its written rules and its lint enforcement under the REPLACE semantics (axis: dependencies/placement · reversible; moving a public componentPath would not be, and none moves)

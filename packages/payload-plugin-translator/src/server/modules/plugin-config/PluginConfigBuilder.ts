@@ -10,6 +10,9 @@ import type { TaskRunnerFactory } from "../task-runner/index.js";
 import type { RunRecordStoreFactory } from "../runs/index.js";
 import type { TranslatorSettings } from "../../../settings.js";
 
+import { DuplicateEndpointError } from "./errors/DuplicateEndpointError.js";
+import { routeKey } from "./routeKey.js";
+import type { RouteKey } from "./routeKey.js";
 import type {
   CollectionAdminSlot,
   ComponentContext,
@@ -17,14 +20,20 @@ import type {
   ConfigTimeContext,
 } from "./types.js";
 
+/** What a provider made last may read: the config every modifier has written, and the plugin's own routes. */
+type AppliedConfig = {
+  config: Config;
+  endpoints: readonly Endpoint[];
+};
+
+type MakeAdminProvider = (applied: AppliedConfig) => RawPayloadComponentExport;
+
 type CollectionComponent = {
   slot: CollectionAdminSlot;
   make: (collection: CollectionConfig) => RawPayloadComponentExport;
 };
 
 export type PluginConfigBuilderDeps = ConfigTimeContext;
-
-const endpointKey = (endpoint: Endpoint): string => `${endpoint.method} ${endpoint.path}`;
 
 /** `serverProps` is left out, so the same control registered twice collapses to one. */
 const componentKey = (slot: CollectionAdminSlot, component: RawPayloadComponentExport): string =>
@@ -67,8 +76,9 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
   readonly walk: LanguageTable;
 
   private readonly endpoints: Endpoint[] = [];
+  private readonly endpointKeys = new Set<RouteKey>();
   private readonly collectionComponents: CollectionComponent[] = [];
-  private readonly adminProviders: RawPayloadComponentExport[] = [];
+  private readonly adminProviders: MakeAdminProvider[] = [];
   private readonly configModifiers: ConfigModifier[] = [];
 
   constructor(deps: PluginConfigBuilderDeps) {
@@ -83,7 +93,12 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
   }
 
   addEndpoints(endpoints: Endpoint[]): void {
-    this.endpoints.push(...endpoints);
+    for (const endpoint of endpoints) {
+      const key = routeKey(endpoint);
+      if (this.endpointKeys.has(key)) throw new DuplicateEndpointError(key);
+      this.endpointKeys.add(key);
+      this.endpoints.push(endpoint);
+    }
   }
 
   addCollectionComponent(
@@ -94,8 +109,8 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
   }
 
   /** Register a global admin provider (e.g. the client cache provider). */
-  addAdminProvider(provider: RawPayloadComponentExport): void {
-    this.adminProviders.push(provider);
+  addAdminProvider(make: MakeAdminProvider): void {
+    this.adminProviders.push(make);
   }
 
   /** Register a config modifier (e.g. the runner's jobs/autorun/onInit setup). */
@@ -119,7 +134,8 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
     if (!config.admin) config.admin = {};
     if (!config.admin.components) config.admin.components = {};
     if (!config.admin.components.providers) config.admin.components.providers = [];
-    config.admin.components.providers.push(...this.adminProviders);
+    const applied: AppliedConfig = { config, endpoints: this.endpoints };
+    config.admin.components.providers.push(...this.adminProviders.map((make) => make(applied)));
   }
 
   private attachCollectionComponents(config: Config): void {
@@ -142,11 +158,9 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
     if (this.endpoints.length === 0) return;
     if (!config.endpoints) config.endpoints = [];
 
-    const seen = new Set(config.endpoints.map(endpointKey));
+    const hostRoutes = new Set(config.endpoints.map(routeKey));
     for (const endpoint of this.endpoints) {
-      const key = endpointKey(endpoint);
-      if (seen.has(key)) continue;
-      seen.add(key);
+      if (hostRoutes.has(routeKey(endpoint))) continue;
       config.endpoints.push(endpoint);
     }
   }

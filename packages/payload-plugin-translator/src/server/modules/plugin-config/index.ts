@@ -4,3 +4,4 @@ export type {
   ConfigTimeContext,
   TranslationModule,
 } from "./types.js";
+export { deriveAbilities } from "./abilities.js";
