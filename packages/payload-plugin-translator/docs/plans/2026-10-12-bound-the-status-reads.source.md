@@ -1,10 +1,10 @@
 # Source
 
-## Owner's request, 2026-10-12 (chat, translated verbatim is not possible — recorded as asked, in Russian)
+## Original request, 2026-10-12
 
-> А почему мы не сужаем выборку сразу а делаем это вручную? Должна быть причина, посмотри предыдущие окммиты для этого места, может там есть объяснение
-
-> Окей. Давай теперь так: как мы можем исправить это? Так чтобы и не доставать все записи сразу и при этом чтобы работало на всех бд? ПЛюс ко всему я что-то припоминаю, мы вроде сузили окно поиска. Это не должно возвращат ьвсе записи теперь.
+The owner asked why the status query is narrowed in memory rather than in the database, and whether
+earlier commits explain it. The goal: stop fetching every job row at once, keep the fix working on
+every supported database, and check a recollection that the search window had already been narrowed.
 
 ## Issue #123, verbatim
 
@@ -51,14 +51,14 @@ Low, and deliberately so — the honest trigger for picking it up is a real proj
 
 ## Clarifications
 
-Owner, in chat, 2026-10-12, when asked what `get-collection-status` should return with no selection:
+Decided by the owner, 2026-10-12:
 
-> Нам же по сути надо просто посчитать количество сколько задач в каком статусе, для этого нам не нужно делать выборку ВСЕХ записей. Я всё еще хочу показывать статус по всей коллекции а не тольк по дументам на странице, это буде твводить в заблужение.
-
-Owner, in chat, 2026-10-12, on the weight issue #103's reporter carries:
-
-> контракт эндпоинтов не публичный. То, что кто-то строит на нем свою админку его проблемы. Мы его полностью ломать не будем, но учитывать этот факт стоит.
-
-Owner, in chat, 2026-10-12, deciding what the panel's `Translated` row counts:
-
-> Это и по смыслу и по функцоналу неверно. translated по идее должен показывать количество переведенных записей не вообще за всё время, а за текущий run, то есть сколько переведено записей за текущий запуск. Например если пользователь выбрал 10 записей и нажал перевести, то надо показывать сколько записей из этих 10 переведено, а не вообще.
+- **What `get-collection-status` should return with no selection:** the panel only needs a count of
+  tasks per status, which does not require fetching every row. The figures must still cover the whole
+  collection, not only the documents on the current page, because a page-only figure would mislead.
+- **How much weight the #103 reporter's use carries:** the endpoints' HTTP contract is not public. A
+  host that builds its own admin on it carries that risk; the contract may be narrowed but not broken
+  outright, and the fact is still weighed.
+- **What the panel's `Translated` row counts:** the current run, not all history. If an editor selects
+  ten documents and starts a translation, the row shows how many of those ten are translated. The
+  lifetime total was wrong both in meaning and in function.

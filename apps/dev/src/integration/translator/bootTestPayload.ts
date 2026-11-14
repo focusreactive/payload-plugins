@@ -7,8 +7,9 @@ import {
   AnyAccessGuard,
   createTranslationProvider,
   createSyncRunner,
-  documentLevel,
-  fieldLevel,
+  documentTranslation,
+  fieldTranslation,
+  translateDocumentControl,
   translatorPlugin,
   withAutoTranslate,
 } from "@focus-reactive/payload-plugin-translator";
@@ -16,14 +17,15 @@ import type {
   TaskRunnerProvider,
   TranslationLifecycleCallbacks,
   TranslationProvider,
+  TranslationRequest,
 } from "@focus-reactive/payload-plugin-translator";
 import { buildConfig } from "payload";
 import type { Block, CollectionConfig, Payload } from "payload";
 import { getPayload } from "payload";
 
 import { createTestDatabase } from "../../lib/database/resolveAdapter";
-import { fakeComplete } from "../../lib/translator/fakeComplete";
-import type { FakeTranslationOptions } from "../../lib/translator/fakeComplete";
+import { fakeAsk } from "../../lib/translator/fakeAsk";
+import type { FakeTranslationOptions } from "../../lib/translator/fakeAsk";
 import { buildTestCollections } from "./testCollections";
 
 /** Payload's `autoRun.limit` default — these specs reproduce the cron's batching, not a run of one. */
@@ -47,6 +49,103 @@ export type TestPayload = {
   translateCount: () => number;
 };
 
+/** What a spec may vary about a boot. */
+export type BootOptions = {
+  /**
+   * Stamped onto the `docs` collection. Omit it and nothing translates on publish; the enqueue route
+   * still works.
+   */
+  autoTranslate?: { targets: string[] };
+  /**
+   * Replaces the shared fixture set entirely (not merged). The set must still contain a `docs`
+   * collection when `autoTranslate` is passed.
+   */
+  collections?: CollectionConfig[];
+  /** Registered with Payload, but not handed to the plugin. */
+  unmanagedCollections?: CollectionConfig[];
+  /** The config-level blocks a `blockReferences` slug points into. */
+  blocks?: Block[];
+  /**
+   * Localization fallback, off by default: an unwritten locale reads as empty, not as the default
+   * locale's text. Localization-level, so it applies to the whole boot.
+   */
+  fallback?: boolean;
+  /**
+   * Payload's own option; Payload defaults it to `true`, this boot to `false` so the status panels
+   * have rows to read.
+   */
+  deleteJobOnComplete?: boolean;
+  /** Payload's `enableConcurrencyControl` for this boot; defaults to `EXCLUSIVE_QUEUE=1`. */
+  exclusiveQueue?: boolean;
+  /**
+   * Target locales the fake provider should throw for, so a spec can exercise a partial failure.
+   * Every other locale translates normally.
+   */
+  failFor?: string[];
+  /** Awaited before each provider call, so a spec can hold a locale mid-run. */
+  onTranslate?: (targetLng: string) => Promise<void> | void;
+  onRequest?: (request: TranslationRequest) => void;
+  /**
+   * Defaults to the sync runner. `createPayloadJobsRunner({ autoRun: false })` leaves queued jobs
+   * unprocessed in `payload-jobs`, so a spec can read the rows.
+   */
+  runner?: TaskRunnerProvider;
+  lifecycle?: TranslationLifecycleCallbacks;
+  failedWindowMs?: number;
+  fake?: FakeTranslationOptions;
+  /** Also register the synchronous per-field surface, `POST {basePath}/field`. */
+  fieldSurface?: boolean;
+};
+
+/** The options that steer the fake provider, rather than the Payload config. */
+type ProviderProbe = Pick<BootOptions, "fake" | "failFor" | "onRequest" | "onTranslate">;
+
+function countingProvider(probe: ProviderProbe): {
+  provider: TranslationProvider;
+  count: () => number;
+} {
+  const base = createTranslationProvider({ askModel: fakeAsk(probe.fake) });
+  const failFor = new Set(probe.failFor);
+  let calls = 0;
+
+  return {
+    provider: {
+      translate: async (input, request) => {
+        calls += 1;
+        probe.onRequest?.(request);
+        await probe.onTranslate?.(request.targetLng);
+        if (failFor.has(request.targetLng)) {
+          throw new Error(`provider unavailable for ${request.targetLng}`);
+        }
+        return await base.translate(input, request);
+      },
+    },
+    count: () => calls,
+  };
+}
+
+async function tearDown(
+  dir: string,
+  payload: Payload,
+  dropNamespace: () => Promise<void>
+): Promise<void> {
+  // Before `payload.db.destroy()` below: dropping the namespace needs the connection destroy closes.
+  try {
+    await dropNamespace();
+  } catch (error) {
+    // Loud on purpose. A silent failure here leaks a schema or database per boot, and with one
+    // boot per spec file that is invisible until the server is full of them.
+    const reason = error instanceof Error ? error.message : String(error);
+    console.warn(`[bootTestPayload] could not drop the test namespace: ${reason}`);
+  }
+  try {
+    await payload.db.destroy?.();
+  } catch {
+    /* best-effort */
+  }
+  rmSync(dir, { recursive: true, force: true });
+}
+
 /**
  * Boot a real Payload for integration tests — translator-scoped (one caller today; the headless boot
  * mechanics are structured to lift into a shared helper if a second plugin ever needs them).
@@ -62,49 +161,10 @@ export type TestPayload = {
  *   when the awaited `payload.update`/`create` resolves — no job autorun, no polling, no async race
  *   in the specs.
  * - **Two in-process triggers:** the `/translate/enqueue` route via `callEndpoint`, and — when
- *   `opts.autoTranslate` is set — a source-locale publish firing the plugin's `afterChange` hook.
+ *   `autoTranslate` is set — a source-locale publish firing the plugin's `afterChange` hook.
  *   Both run the real pipeline through the local API, with no HTTP layer.
- *
- * @param opts.autoTranslate - stamped onto the `docs` collection. Omit it and nothing translates on
- *   publish; the enqueue route still works.
- * @param opts.collections - replaces the shared fixture set entirely (not merged). The set must
- *   still contain a `docs` collection when `autoTranslate` is passed.
- * @param opts.blocks - the config-level blocks a `blockReferences` slug points into.
- * @param opts.failFor - target locales the fake provider should throw for, so a spec can exercise a
- *   partial failure. Every other locale translates normally.
- * @param opts.runner - defaults to the sync runner. `createPayloadJobsRunner({ autoRun: false })`
- *   leaves queued jobs unprocessed in `payload-jobs`, so a spec can read the rows.
- * @param opts.onTranslate - awaited before each provider call, so a spec can hold a locale mid-run.
- * @param opts.exclusiveQueue - Payload's `enableConcurrencyControl` for this boot; defaults to
- *   `EXCLUSIVE_QUEUE=1`.
- * @param opts.fallback - localization fallback, off by default: an unwritten locale reads as
- *   empty, not as the default locale's text. Localization-level, so it applies to the whole boot.
  */
-export async function bootTestPayload(opts?: {
-  autoTranslate?: { targets: string[]; strategy?: "overwrite" | "skip_existing" };
-  collections?: CollectionConfig[];
-  blocks?: Block[];
-  fallback?: boolean;
-  exclusiveQueue?: boolean;
-  failFor?: string[];
-  onTranslate?: (targetLng: string) => Promise<void> | void;
-  /** Sees the fourth argument the plugin hands the provider, request by request. */
-  onRequest?: (options?: { document?: { collection: string; id: string } }) => void;
-  runner?: TaskRunnerProvider;
-  lifecycle?: TranslationLifecycleCallbacks;
-  failedWindowMs?: number;
-  /** Turn on container-granular rich-text translation, and declare the provider able to keep marks. */
-  inlineMarks?: boolean;
-  /**
-   * Whether the provider declares `capabilities.inlineMarks`. Defaults to `inlineMarks`; set it to
-   * `false` with the flag on to stand in for a third-party provider that cannot keep marks.
-   */
-  declareCapability?: boolean;
-  /** How the fake answers a marked value — reorder by default, keep order, or corrupt it. */
-  fake?: FakeTranslationOptions;
-  /** Also register the synchronous per-field surface, `POST {basePath}/field`. */
-  fieldSurface?: boolean;
-}): Promise<TestPayload> {
+export async function bootTestPayload(opts?: BootOptions): Promise<TestPayload> {
   const dir = mkdtempSync(join(tmpdir(), "translator-int-"));
   const { db, drop } = createTestDatabase(join(dir, "test.db"));
 
@@ -117,23 +177,7 @@ export async function bootTestPayload(opts?: {
     ? collections.map((c) => (c.slug === "docs" ? withAutoTranslate(c, autoTranslate) : c))
     : collections;
 
-  const declaresMarks = opts?.declareCapability ?? opts?.inlineMarks ?? false;
-  const baseProvider = createTranslationProvider({
-    complete: fakeComplete(opts?.fake),
-    ...(declaresMarks ? { capabilities: { inlineMarks: true } } : {}),
-  });
-  const failFor = new Set(opts?.failFor);
-  let translateCalls = 0;
-  const countingProvider: TranslationProvider = {
-    ...(declaresMarks ? { capabilities: { inlineMarks: true } } : {}),
-    translate: async (input, sourceLng, targetLng, options) => {
-      translateCalls += 1;
-      opts?.onRequest?.(options);
-      await opts?.onTranslate?.(targetLng);
-      if (failFor.has(targetLng)) throw new Error(`provider unavailable for ${targetLng}`);
-      return await baseProvider.translate(input, sourceLng, targetLng, options);
-    },
-  };
+  const { provider, count } = countingProvider(opts ?? {});
 
   const config = await buildConfig({
     secret: "integration-test-secret",
@@ -155,48 +199,35 @@ export async function bootTestPayload(opts?: {
         { code: "es", label: "Español" },
       ],
     },
-    collections,
+    collections: [...collections, ...(opts?.unmanagedCollections ?? [])],
     ...(opts?.blocks ? { blocks: opts.blocks } : {}),
     jobs: {
       // Payload deletes completed jobs by default, leaving the status panels nothing to read.
-      deleteJobOnComplete: false,
+      deleteJobOnComplete: opts?.deleteJobOnComplete ?? false,
       enableConcurrencyControl: opts?.exclusiveQueue ?? process.env.EXCLUSIVE_QUEUE === "1",
     },
     plugins: [
       translatorPlugin({
         collections: managed,
         access: new AnyAccessGuard(),
-        translationProvider: countingProvider,
+        translationProvider: provider,
         runner: opts?.runner ?? createSyncRunner(),
-        levels: opts?.fieldSurface ? [documentLevel(), fieldLevel()] : [documentLevel()],
+        modules: opts?.fieldSurface
+          ? [documentTranslation(), fieldTranslation()]
+          : [documentTranslation()],
+        components: [translateDocumentControl()],
         provenance: true,
         ...(opts?.lifecycle ? { lifecycle: opts.lifecycle } : {}),
         ...(opts?.failedWindowMs === undefined ? {} : { failedWindowMs: opts.failedWindowMs }),
-        ...(opts?.inlineMarks ? { experimental: { inlineMarks: true } } : {}),
       }),
     ],
   });
 
   const payload = await getPayload({ config });
 
-  const cleanup = async () => {
-    // Before `payload.db.destroy()` below: dropping the namespace needs the connection destroy closes.
-    try {
-      await drop(payload);
-    } catch (error) {
-      // Loud on purpose. A silent failure here leaks a schema or database per boot, and with one
-      // boot per spec file that is invisible until the server is full of them.
-      console.warn(
-        `[bootTestPayload] could not drop the test namespace: ${(error as Error).message}`
-      );
-    }
-    try {
-      await payload.db.destroy?.();
-    } catch {
-      /* best-effort */
-    }
-    rmSync(dir, { recursive: true, force: true });
+  return {
+    payload,
+    cleanup: () => tearDown(dir, payload, () => drop(payload)),
+    translateCount: count,
   };
-
-  return { payload, cleanup, translateCount: () => translateCalls };
 }

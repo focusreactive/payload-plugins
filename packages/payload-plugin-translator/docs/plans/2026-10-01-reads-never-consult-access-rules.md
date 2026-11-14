@@ -1,7 +1,7 @@
 # Reads never consult the host's access rules
 
 Read against package **0.13.4** (the `@since 0.14.0` identity work is in the tree, unreleased),
-Payload **3.84.1**. Defensive audit requested by the maintainer. Supersedes the read-related parts
+Payload **3.84.1**. Defensive audit. Supersedes the read-related parts
 of `2026-09-15-access-control-surface-research.md` — two of its findings are now fixed, see below.
 
 ## Problem statement
@@ -129,9 +129,8 @@ no rule written by the host at all**, because of the last row.
 - R2 (`getAllCollectionIds`), so `select_all` cannot enqueue what the caller may not read.
 - Deciding, and writing down, on whose behalf each read is performed.
 
-**IN** — the report endpoints, under one rule stated by the owner:
-
-> If you may read the document, you may see its translation history. If you may not, you see nothing.
+**IN** — the report endpoints, under one rule decided by the owner: whoever may read the document
+may see its translation history; whoever may not sees nothing.
 
 No separate policy for reports, and nothing for the host to configure twice. Covers
 `get-document-status` and `stale/:slug/:id` (one document id, one check) and
@@ -224,7 +223,7 @@ Coverage scan, every item answered or raised.
 - Every IN-scope item has a criterion: R1/R3 → 1, 2, 3; R2 → 4; identity → 1, 7; messaging → 5.
 - No criterion contradicts an OUT line; criteria 1–4 are integration-checkable on a real adapter.
 - Criterion 6 is the regression guard, not a new behaviour.
-- `[inferred]`: criterion 7 (a guard test over read sites) is not something the maintainer asked for;
+- `[inferred]`: criterion 7 (a guard test over read sites) is not part of the original request;
   it rests on the package's existing habit of boundary guard tests.
 
 ## Readiness

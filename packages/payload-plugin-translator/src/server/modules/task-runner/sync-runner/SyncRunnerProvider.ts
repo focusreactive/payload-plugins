@@ -1,38 +1,19 @@
 import type { Config, Payload } from "payload";
 
 import type { TaskRunner } from "../TaskRunner.interface.js";
+import type { RunnerCapabilities } from "../RunnerCapabilities.js";
 import type { TaskRunnerContext, TaskRunnerProvider } from "../TaskRunnerProvider.interface.js";
-import type { Task } from "../types.js";
-import type { SyncRunnerOptions } from "./types.js";
 import { SyncTaskRunner } from "./SyncTaskRunner.js";
-import { LazyMap } from "../../../shared/utils/index.js";
 
-const DEFAULT_MAX_SIZE = 100;
-const DEFAULT_TTL_MS = 60 * 60 * 1000; // 1 hour
+const INLINE_LEAVES_NOTHING_TO_REACH: RunnerCapabilities = { stop: false, run: false };
 
 /**
- * Synchronous TaskRunnerProvider implementation.
- *
- * Executes translations immediately without Payload Jobs.
- * Useful for development, testing, or simple use cases.
  */
 export class SyncRunnerProvider implements TaskRunnerProvider {
-  private readonly tasks: LazyMap<string, Task>;
-
-  constructor(options?: SyncRunnerOptions) {
-    const maxSize = options?.maxSize ?? DEFAULT_MAX_SIZE;
-    const ttlMs = options?.ttlMs ?? DEFAULT_TTL_MS;
-
-    this.tasks = new LazyMap<string, Task>({
-      maxSize,
-      ttlMs,
-      isRemovable: (task) => task.status === "completed" || task.status === "failed",
-      getTimestamp: (task) => new Date(task.updatedAt).getTime(),
-    });
-  }
+  readonly capabilities = INLINE_LEAVES_NOTHING_TO_REACH;
 
   create(payload: Payload, context: TaskRunnerContext): TaskRunner {
-    return new SyncTaskRunner(payload, context, this.tasks);
+    return new SyncTaskRunner(payload, context);
   }
 
   configure(): (config: Config) => Config {
@@ -41,20 +22,22 @@ export class SyncRunnerProvider implements TaskRunnerProvider {
 }
 
 /**
- * Creates a synchronous task runner: translations execute inline on enqueue,
- * with no Payload Jobs queue. Status is kept in an in-memory map (bounded by
- * `maxSize`/`ttlMs`) and is **lost on server restart**, so this is best for
- * development, tests, or simple single-process setups — not serverless. Pass the
+ * Creates a synchronous task runner: translations run inline on enqueue, with no Payload Jobs
+ * queue — for development, tests and single-process hosts, not serverless.
  * result as `translatorPlugin({ runner })`.
  *
- * @param options - In-memory store bounds: `maxSize` (default 100) and `ttlMs`
- *   (default 1h) for completed/failed task records.
+ * The cancel and run-now routes are **not registered** with this runner, and the admin draws no
+ * control for them: a translation is already over by the time the request that asked for it answers.
+ * What became of each run is in the plugin's own record, so status survives a restart.
+ *
  * @returns A {@link TaskRunnerProvider} for the plugin's `runner` option.
+ * @since 1.0.0 — the `maxSize` / `ttlMs` options are gone; see
+ * docs/DEPRECATIONS.md#the-runner-only-accepts-work.
  * @example
  * ```ts
  * translatorPlugin({ collections, translationProvider, runner: createSyncRunner() })
  * ```
  */
-export function createSyncRunner(options?: SyncRunnerOptions): TaskRunnerProvider {
-  return new SyncRunnerProvider(options);
+export function createSyncRunner(): TaskRunnerProvider {
+  return new SyncRunnerProvider();
 }

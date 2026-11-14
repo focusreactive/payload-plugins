@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll } from "vitest";
 import type { Config } from "payload";
 import { createPayloadJobsRunner } from "../PayloadJobsRunnerProvider.js";
 import type { TaskRunnerContext } from "../../TaskRunnerProvider.interface.js";
@@ -6,7 +6,6 @@ import type { TaskRunnerContext } from "../../TaskRunnerProvider.interface.js";
 const minimalContext: TaskRunnerContext = {
   handler: vi.fn(),
   report: vi.fn().mockResolvedValue(undefined),
-  collections: ["pages"],
 };
 
 // The config modifier only reads/writes `jobs` and `onInit`; build a minimal
@@ -107,7 +106,7 @@ describe("PayloadJobsRunnerProvider", () => {
       expect(config.jobs?.enableConcurrencyControl).toBeUndefined();
     });
 
-    it("keys on the document when the host has enabled it", () => {
+    it("keys on the run when the host has enabled it", () => {
       const config = createPayloadJobsRunner().configure(minimalContext)(
         makeConfig({ jobs: { enableConcurrencyControl: true } })
       );
@@ -115,8 +114,129 @@ describe("PayloadJobsRunnerProvider", () => {
       const concurrency = workflowOf(config).concurrency;
       expect(concurrency?.exclusive).toBe(true);
       expect(
-        concurrency?.key({ input: { collection_slug: "posts", collection_id: "7" } } as never)
-      ).toBe("posts:7");
+        concurrency?.key({ input: { handle: "run-1" } } as never),
+        "one run per document is the plugin's rule now, so the queue only has to serialise a run"
+      ).toBe("run-1");
+    });
+  });
+
+  describe("the pointer the registered task hands on", () => {
+    const runTask = (handler: TaskRunnerContext["handler"], input: unknown) => {
+      const config = createPayloadJobsRunner().configure({ ...minimalContext, handler })(
+        makeConfig()
+      );
+      const task = (config.jobs?.tasks ?? []).find(
+        (candidate) => candidate.slug === "translate_document"
+      );
+      if (!task) throw new Error("the translate task was not registered");
+      return (task.handler as unknown as (args: unknown) => Promise<unknown>)({
+        req: { payload: {} },
+        job: { id: 42 },
+        input,
+      });
+    };
+
+    it("hands on the handle and the locale the job row names, and nothing else", async () => {
+      const handler = vi.fn().mockResolvedValue(undefined);
+
+      await runTask(handler, { handle: "run-1", target_lng: "de" });
+
+      expect(handler.mock.calls[0][1]).toEqual({
+        handle: "run-1",
+        targetLng: "de",
+        previousAttempts: 0,
+      });
+    });
+
+    it("names no document, because the record is where the run's facts live", async () => {
+      const handler = vi.fn().mockResolvedValue(undefined);
+
+      await runTask(handler, { handle: "run-1", target_lng: "de" });
+
+      expect(Object.keys(handler.mock.calls[0][1]).sort()).toEqual([
+        "handle",
+        "previousAttempts",
+        "targetLng",
+      ]);
+    });
+  });
+  describe("when the run gives up part-way down its locale list", () => {
+    const TASK = "translate_document";
+    const WORKFLOW = "translate_document_locales";
+    const RETRIES_EXHAUSTED = 3;
+
+    type Told = { targetLng: string; event: { state: string; error?: unknown } };
+
+    /**
+     * Runs the registered task and workflow handlers against each other: the give-up decision lives
+     * in the workflow's `catch`, and only a throw raised inside the real task reaches it.
+     */
+    const giveUpOn = async (args: { locales: string[]; failOn: string; delivered?: string[] }) => {
+      const refusal = new Error("the model refused");
+      const told: Told[] = [];
+      const context: TaskRunnerContext = {
+        handler: vi.fn(async (_payload: unknown, input: { targetLng: string }) => {
+          if (input.targetLng === args.failOn) throw refusal;
+        }),
+        report: vi.fn(
+          async (_payload: unknown, run: { targetLng: string }, event: Told["event"]) => {
+            told.push({ targetLng: run.targetLng, event });
+          }
+        ),
+      } as unknown as TaskRunnerContext;
+
+      const config = createPayloadJobsRunner().configure(context)(makeConfig());
+      const registered = config.jobs as unknown as {
+        tasks: { slug: string; handler: (a: unknown) => Promise<unknown> }[];
+        workflows: { slug: string; handler: (a: unknown) => Promise<unknown> }[];
+      };
+      const task = registered.tasks.find((t) => t.slug === TASK)!;
+      const workflow = registered.workflows.find((w) => w.slug === WORKFLOW)!;
+
+      const job = {
+        id: "job-1",
+        input: { handle: "run-1", locales: args.locales },
+        taskStatus: { [TASK]: { [args.failOn]: { totalTried: RETRIES_EXHAUSTED } } },
+        log: (args.delivered ?? []).map((locale) => ({
+          state: "succeeded",
+          input: { target_lng: locale },
+        })),
+      };
+      const req = { payload: makePayload() };
+      const tasks = {
+        [TASK]: async (_id: string, { input }: { input: unknown }) =>
+          await task.handler({ job, req, input }),
+      };
+
+      await expect(workflow.handler({ job, req, tasks })).rejects.toBe(refusal);
+      return { told, refusal };
+    };
+
+    let told: Told[];
+    let refusal: Error;
+
+    beforeAll(async () => {
+      ({ told, refusal } = await giveUpOn({
+        locales: ["de", "fr", "es"],
+        failOn: "fr",
+        delivered: ["de"],
+      }));
+    });
+
+    it("settles the locale that threw as failed, with its own error", () => {
+      expect(told.find((t) => t.targetLng === "fr")?.event).toEqual({
+        state: "failed",
+        error: refusal,
+      });
+    });
+
+    it("settles a locale it never reached as abandoned, not failed", () => {
+      expect(told.find((t) => t.targetLng === "es")?.event).toEqual({ state: "abandoned" });
+    });
+
+    it("gives an abandoned locale no reason, because nothing was asked about it", () => {
+      const es = told.find((t) => t.targetLng === "es")!;
+      expect(Object.keys(es.event)).toEqual(["state"]);
     });
   });
 });

@@ -1,10 +1,17 @@
-// The translation PORT (contract) only. The OpenAI implementation lives in
-// src/providers (outside core) so the core barrel stays dependency-free (no `openai`).
+// The translation PORT (contract) only. The implementation lives in src/translation-providers
+// (outside core) so the core barrel stays dependency-free (no `openai`).
 export type {
   TranslationProvider,
   DocumentRef,
-  TranslationRequestOptions,
+  LanguageCode,
+  TranslationRequest,
+  TranslationFailureCode,
   TranslationInput,
   TranslationOutput,
   TranslationIndex,
+  TranslatableValue,
+  TranslatedValue,
+  Segment,
+  SegmentId,
+  ValueFailureCode,
 } from "./TranslationProvider.interface.js";

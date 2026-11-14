@@ -20,7 +20,7 @@ const enqueue = async (id: string, locales: string[]): Promise<Assignment[]> => 
       target_lng: locales,
       collection_slug: "docs",
       collection_id: [id],
-      strategy: "overwrite",
+
       publish_on_translation: false,
     },
   });

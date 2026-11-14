@@ -1,5 +1,5 @@
 export { TranslationProviderError } from "./TranslationProviderError.js";
-export type { TranslationFailureCode } from "./TranslationProviderError.js";
+export type { TranslationFailureCode } from "../../../core/domain/translation-providers/index.js";
 export { NoContentError } from "./NoContentError.js";
 export { UnparseableReplyError } from "./UnparseableReplyError.js";
 export { KeySetMismatchError } from "./KeySetMismatchError.js";

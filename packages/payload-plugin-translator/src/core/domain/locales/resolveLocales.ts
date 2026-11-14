@@ -64,6 +64,17 @@ export type ResolvedTargets = {
   droppedSource: boolean;
 };
 
+/** The project's configured locales, in either form Payload accepts: `"en"` or `{ code: "en" }`. */
+export type LocalizationLike = false | { locales: Array<string | { code: string }> };
+
+/** The configured locale codes, or `null` when localization is off or absent. */
+export function knownCodes(localization: LocalizationLike | undefined): Set<string> | null {
+  if (!localization) return null;
+  return new Set(
+    localization.locales.map((locale) => (typeof locale === "string" ? locale : locale.code))
+  );
+}
+
 /**
  * One-shot resolution for the manual enqueue path: coerce scalar→array, then dedup → exclude source →
  * drop unknown, in that order. A pure composition of the primitives above.

@@ -1,10 +1,7 @@
-import type { Task } from "../../types.js";
+import { deliveredLocales } from "./deliveredLocales.js";
+import type { PayloadJob } from "../store/index.js";
 
-/**
- * Which of a run's locales it has not delivered; a locale it never reached is owed too.
- *
- * The caller passes one run's tasks, one per target locale.
- */
-export type StillOwed = (tasks: Task[]) => Task[];
-
-export const stillOwed: StillOwed = (tasks) => tasks.filter((task) => task.status !== "completed");
+export const stillOwed = (job: PayloadJob, locales: readonly string[]): string[] => {
+  const delivered = deliveredLocales(job);
+  return locales.filter((locale) => !delivered.has(locale));
+};

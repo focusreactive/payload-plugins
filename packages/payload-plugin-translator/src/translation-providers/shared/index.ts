@@ -1,13 +1,14 @@
-export { createTranslationProvider } from "./CompletionProvider.provider.js";
-export type {
-  CompletionFn,
-  CompletionRequest,
-  TranslationProviderConfig,
-} from "./CompletionProvider.provider.js";
+export { createTranslationProvider } from "./AskModel.provider.js";
+export type { AskModel, ModelRequest, TranslationProviderConfig } from "./AskModel.provider.js";
 
 export type { JsonSchemaObject } from "./buildResponseSchema.js";
+export {
+  inlineMarksInstruction,
+  canEncodeSegments,
+  decodeSegments,
+  encodeSegments,
+} from "./wire/index.js";
 export type { SystemPromptBuilder, SystemPromptContext } from "./buildSystemPrompt.js";
-export type { DryRunConfig, DryRunTransformer } from "./runDryRun.js";
 
 export { errorMessageLower } from "./errors/index.js";
 export {

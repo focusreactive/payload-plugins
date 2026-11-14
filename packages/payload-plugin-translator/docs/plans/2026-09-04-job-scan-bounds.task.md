@@ -27,7 +27,7 @@ three are equally cheap.
 `Array<string | number> | TaskFilter`, branching on `Array.isArray`. Rejected: replacing the array
 outright — `TaskRunner` is reachable through the exported `TaskRunnerProvider.create()`, whose own
 docblock anticipates third-party runners, and a removal would have to wait for the next major anyway.
-The user's reason for the object is flexibility independent of this fix: a positional argument cannot
+The owner's reason for the object is flexibility independent of this fix: a positional argument cannot
 grow, an options object can.
 
 **D5 — `cancel-by-collection` is deliberately not changed.**
@@ -42,7 +42,7 @@ contract and has no life without it. Both runners implement it; `withQueuedNotif
 **New surface:** `TaskFilter`. Callers: `PayloadJobsTaskRunner.enqueue` and — through the union —
 every existing caller of `findByCollection`. It is a type, not an abstraction over behaviour.
 
-**`@since`:** `TaskFilter` carries `@since 0.11.2`. The user's call: this ships as a patch, so the
+**`@since`:** `TaskFilter` carries `@since 0.11.2`. Decided by the owner: this ships as a patch, so the
 three commits stay `fix` / `docs` / `refactor` rather than being retyped to `feat` for the sake of the
 new export or the new deprecation entry. It is not re-exported from `src/index.ts`,
 but `TaskRunnerProvider.create(): TaskRunner` is, so a third-party runner must satisfy this type.
@@ -50,7 +50,7 @@ but `TaskRunnerProvider.create(): TaskRunner` is, so a third-party runner must s
 **Written contract owed:** yes — which fields reach the database and which are applied in memory, and
 what `excludeCompleted` includes (running and failed, not only pending). Stated in the type's docblock.
 
-**Escalate:** no. One module, no new dependency, no data-model change.
+**Scope:** one module, no new dependency, no data-model change.
 
 ## Acceptance criteria
 
@@ -74,14 +74,14 @@ what `excludeCompleted` includes (running and failed, not only pending). Stated 
    auto-translate cases of #124.*
 10. **Checks clean:** check-types both packages, unit tests, lint at the repo baseline.
 
-## Human choices
+## Decisions by the owner
 
-- **Stop deleting completed jobs on re-enqueue.** The user's call, made knowing the consequence: the
+- **Stop deleting completed jobs on re-enqueue.** Decided by the owner, knowing the consequence: the
   job table no longer self-prunes per (document, locale), which promotes #122 (retention) from low
   priority to needed. Rejected alternative: preserving today's behaviour by deleting duplicates with a
   where clause instead of loading them — which cannot express a numeric document id on SQLite.
 - **Introduce `TaskFilter` regardless of whether this fix needs it**, and deprecate the positional
-  array now. The user's reason is interface flexibility, not this optimisation.
+  array now. The owner's reason is interface flexibility, not this optimisation.
 
 ## Risks
 
@@ -95,8 +95,7 @@ what `excludeCompleted` includes (running and failed, not only pending). Stated 
 
 ## Review log
 
-**2026-09-04 — comment audit.** 67 comment lines over 155 of code (4.3 per 10) judged too dense.
-Deleted 6, rewrote 7. Caught a factual error: the rewritten rationale asserted a mechanism for the
+**2026-09-04 — comment review.** Caught a factual error: the rewritten rationale asserted a mechanism for the
 SQLite drizzle defect ("the value is inlined without quotes") that a read of `parseParams.js`
 contradicts for string values. Rather than adjudicate a mechanism that had already drifted within one
 Payload version, the whole drizzle paragraph was dropped — the docblock's own two-stored-shapes reason
@@ -104,9 +103,7 @@ settles the question, and #108 holds the detail. A dangling reference to it in `
 repointed. Verified and kept: `excludeCompleted` really is wider than the `pending` status, because a
 job that exhausts its retries keeps `completedAt` null.
 
-**2026-09-04 — whole-file comment audit of `PayloadJobsTaskRunner.ts`.** 88 comment lines over 147 of
-code — 6.0 per ten. Deleted 6, rewrote 8, rewrote code twice, kept 1, added 1; the file is now at 49.
-The diagnosis was not unreadable code but design-doc prose migrated into it: three of the four largest
+**2026-09-04 — whole-file comment review of `PayloadJobsTaskRunner.ts`.** The diagnosis was not unreadable code but design-doc prose migrated into it: three of the four largest
 blocks duplicated something with a canonical home (the deprecation ledger, issue #108, this file).
 
 Two code changes came out of it. `cancelInternal` is renamed `cancelAndDeleteJobs` — it calls
@@ -131,11 +128,11 @@ internals, and both aged silently within a single minor version. A comment that 
 package's implementation is a maintenance liability even when it is right on the day it is written.
 
 **2026-09-04 — reuse, simplification, altitude.** Nothing re-implemented; no existing normalizer fits.
-Five findings taken. `toTaskFilter` moved out of `TaskRunner.interface.ts` — five of the package's six
+`toTaskFilter` moved out of `TaskRunner.interface.ts` — five of the package's six
 `*.interface.ts` files are types-only, and it was the one carrying runtime code — and is now exported
 from `src/index.ts` beside `TaskRunnerProvider`, because the union puts the normalization obligation on
 every third-party runner and half-exporting the tool that discharges it is the worst of both. AC7 was
-reopened and met: a `@deprecated` tag *is* expressible as an overload pair, which my first pass wrongly
+reopened and met: a `@deprecated` tag *is* expressible as an overload pair, which an earlier draft wrongly
 recorded as impossible. `SyncTaskRunner` now keys `excludeCompleted` on `completedAt` rather than
 `status`: the two runners previously agreed only because `getJobStatus` happens to check `completedAt`
 before `error`. The new spec lost a dead union branch, a redundant `collections` option and a missing

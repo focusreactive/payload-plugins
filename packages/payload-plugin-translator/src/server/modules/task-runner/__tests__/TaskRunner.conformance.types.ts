@@ -7,24 +7,21 @@ import type { TaskRunnerProvider } from "../../../../index.js";
  *
  * It imports one name from the published barrel, which is all a third-party runner can reach.
  *
- * Two mutations must break it: narrowing `enqueue` to require assignments, and dropping `report`
- * from `TaskRunnerContext`. Neither obliges a runner to *call* `report` — `silent` below never does
- * and compiles, because no type can require that a function be called.
+ * `acceptsWorkAlone` compiles without ever calling `report`: no type can require that a function be
+ * called, so the obligation to report is the conformance suite's to assert, not this file's.
+ * require that a function be called.
  */
 
 const configure = () => (config: Config) => config;
 
-export const silent: TaskRunnerProvider = {
-  create: () => ({
-    enqueue: async () => undefined,
-    cancel: async (): Promise<void> => undefined,
-    run: async () => ({ success: false, error: "not_found" }) as const,
-    findByCollection: async () => [],
-  }),
+export const acceptsWorkAlone: TaskRunnerProvider = {
+  capabilities: { stop: false, run: false },
+  create: () => ({ enqueue: async () => [] }),
   configure,
 };
 
-export const answering: TaskRunnerProvider = {
+export const reports: TaskRunnerProvider = {
+  capabilities: { stop: true, run: true },
   create: (payload, context) => ({
     enqueue: async (tasks) => {
       const assigned = tasks.map((task) => ({
@@ -32,15 +29,34 @@ export const answering: TaskRunnerProvider = {
         collectionId: task.collectionId,
         sourceLng: task.sourceLng,
         targetLng: task.targetLng,
-        strategy: task.strategy,
         handle: "run-1",
       }));
-      for (const a of assigned) await context.report(payload, a, { state: "queued" });
+      for (const a of assigned) {
+        await context.report(
+          payload,
+          { handle: a.handle, targetLng: a.targetLng },
+          {
+            state: "queued",
+            work: {
+              collectionSlug: a.collectionSlug,
+              collectionId: a.collectionId,
+              sourceLng: a.sourceLng,
+              publishOnTranslation: false,
+            },
+          }
+        );
+      }
       return assigned;
     },
-    cancel: async (): Promise<void> => undefined,
+    stop: async (): Promise<void> => undefined,
     run: async () => ({ success: false, error: "not_found" }) as const,
-    findByCollection: async () => [],
   }),
+  configure,
+};
+
+/** A runner that does not say what it can do cannot have its routes registered. */
+// @ts-expect-error `capabilities` is required; this omits it
+export const saysNothingAboutItself: TaskRunnerProvider = {
+  create: () => ({ enqueue: async () => [] }),
   configure,
 };

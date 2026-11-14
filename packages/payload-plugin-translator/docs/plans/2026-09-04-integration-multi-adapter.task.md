@@ -46,8 +46,6 @@ it returns, so the pairing is what earns it rather than the count.
 **Written contract owed:** none. Both functions are named for what they do and take no ambiguous
 same-typed parameters.
 
-**Escalate:** no.
-
 ## Acceptance criteria
 
 1. **SQLite is unchanged.** `bun run test:integration` with no `DB_ADAPTER` set passes 70/70, as before.
@@ -69,9 +67,9 @@ same-typed parameters.
 
 Per-boot schema creation on Postgres costs nothing measurable against the fixed fork-and-boot overhead — the concern that motivated measuring it did not materialise.
 
-## Human choices
+## Decisions by the owner
 
-- **Run this before #108, as its own PR.** The user's call: mixing harness work into the fix would make the fix's diff mostly infrastructure.
+- **Run this before #108, as its own PR.** Decided by the owner: mixing harness work into the fix would make the fix's diff mostly infrastructure.
 - **Do not paper over the Postgres failures.** They are a real plugin defect (#124), found by this harness on its first run. Setting `transactionOptions: false` would turn the suite green and hide it; the suite reports it instead.
 
 ## Risks
@@ -81,12 +79,8 @@ Per-boot schema creation on Postgres costs nothing measurable against the fixed 
 
 ## Review log
 
-**2026-09-04 — comment audit.** 23 comment lines over 51 of code (4.5 per 10) judged too dense.
-Deleted or shortened 7, kept 2 with reasons (the `dropTestNamespace` contract; the loud `console.warn`
-that deliberately differs from the silent `destroy()` below it). Three MISSING entries closed: a bare
-`.slice(0, 20)`, an unexplained structural cast, and a connection default written twice. The stranded
-pre-existing docblock on `bootTestPayload` — which still claimed isolation came from a SQLite file —
-was rewritten; the diff had made it false.
+**2026-09-04 — comment review.** The pre-existing docblock on `bootTestPayload`, which still claimed
+isolation came from a SQLite file, was rewritten; the diff had made it false.
 
 **2026-09-04 — reuse and simplification.** No prior art to reuse: this is the repo's only multi-adapter
 resolver and the first namespace drop. Three outright defects found and fixed — `test:integration:all`
@@ -94,9 +88,9 @@ chained with `&&` so Postgres, knowingly red, stopped the run before Mongo ever 
 was imported but declared in no `package.json`, resolving only through the hoisted linker; and the doc
 pointed `docker compose up -d` at the repo root when the compose file lives in `apps/dev`.
 
-**2026-09-04 — altitude.** Confirmed per-boot teardown is the right depth and `globalSetup` would be
+**2026-09-04 — design review.** Confirmed per-boot teardown is the right depth and `globalSetup` would be
 wrong. Two findings taken: the `schemaName` experimental caveat (D1b above) and Payload's own
 `dropDatabase()` recreating the schema, now noted in code so nobody "simplifies" to it. One deferred
 with reasoning: a sweep of stale namespaces at run *start*, which would also cover a boot that throws
 before `cleanup()` exists and a killed process. Deferred because D1b moves the leftovers into a
-dedicated database where they are inert, and because it is new machinery the user has not seen.
+dedicated database where they are inert, and because it is new machinery the owner has not agreed to.

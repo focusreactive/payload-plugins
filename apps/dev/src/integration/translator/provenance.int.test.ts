@@ -18,7 +18,6 @@ type ProvRow = {
   sourceLocale: string;
   sourceFingerprint: string;
   translatedAt?: string;
-  dismissedFingerprint?: string | null;
 };
 
 const provRows = async (ctx: TestPayload, docId: string): Promise<ProvRow[]> => {
@@ -38,7 +37,7 @@ const enqueue = (ctx: TestPayload, id: string, target: string) =>
       target_lng: target,
       collection_slug: "docs",
       collection_id: [id],
-      strategy: "overwrite",
+
       publish_on_translation: true,
     },
   });
@@ -82,8 +81,6 @@ describe("provenance sidecar collection", () => {
       expect(row.sourceLocale).toBe("en");
       expect(row.sourceFingerprint).toBeTruthy();
       expect(row.translatedAt).toBeTruthy();
-      // A fresh receipt carries no dismissal.
-      expect(row.dismissedFingerprint ?? null).toBeNull();
     }
   });
 

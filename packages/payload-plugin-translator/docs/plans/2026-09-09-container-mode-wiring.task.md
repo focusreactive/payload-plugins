@@ -10,8 +10,8 @@
 
 `TranslationMutator` is the write path of **every** translation this plugin performs. A defect
 here does not fail loudly — it writes a wrong tree into a customer's document. Consequences
-downstream: three review angles instead of one (Phase 5b), an evidenced regression sweep
-(Phase 4), and a criterion proving byte-identical output while the flag is off.
+downstream: review from three angles instead of one, an evidenced regression sweep, and a
+criterion proving byte-identical output while the flag is off.
 
 ## What this step builds
 
@@ -48,10 +48,10 @@ the OpenAI provider and the core's mode decision). No speculative seams.
 
 **Written contract:** the applicator owes callers that a container's `children` end up in the
 reply's order, that the fast path leaves the original node objects in place, and that a corrupt
-reply leaves the tree untouched. That is what puts the new units on the red-test path.
+reply leaves the tree untouched. That is why the new units are tested from the contract first.
 
-**Escalate to /sp-architect?** No — the design is decided in the companion document and W3/W4 were
-settled by the owner at this gate.
+**Does this need a separate design?** No — the design is decided in the companion document and
+W3/W4 were settled by the owner before implementation.
 
 ## Acceptance criteria
 
@@ -75,7 +75,7 @@ settled by the owner at this gate.
 
 | # | Polarity | Result now |
 |---|---|---|
-| 1 | must PASS after the change; **baseline captured now** | Baseline recorded from the current code via scratchpad `baseline.ts`, output in `baseline-output.json` |
+| 1 | must PASS after the change; **baseline captured now** | Baseline recorded from the current code by a one-off script |
 | 2–9 | must FAIL now | FAIL — no container mode, no flag, no capability, no mark instruction |
 | 10 | must PASS now | PASS — empty diff |
 | 11 | must PASS now | PASS — 1442 tests green |
@@ -90,10 +90,10 @@ settled by the owner at this gate.
   object identity precisely to pin this.
 - A corrupt reply must never half-write a container. Criterion 7 is the one that would catch the
   data-loss shape of this change.
-- Three files on the write path are shared by every translation. The regression sweep in Phase 4
-  will name what was grepped and how many call sites were read.
+- Three files on the write path are shared by every translation. The regression sweep names
+  what was grepped and how many call sites were read.
 
-## Human choices
+## Decisions by the owner
 
 | Question | Chosen | Why |
 | --- | --- | --- |
@@ -102,16 +102,16 @@ settled by the owner at this gate.
 
 ## Review log
 
-### 2026-09-09 · sp-task step 2 (wiring)
+### 2026-09-09 · step 2 (wiring)
 
 **Four data-corruption defects were found by review, not by the tests written alongside the code.**
 Each got a red test first, then the fix, then the suite.
 
 1. **The flag leaked** (regression angle, critical). `hasInlineMarks` was inferred by regex-testing
    every value, so a customer field containing `<1>` — a footnote marker, a template placeholder,
-   an article about markup — would append the mark instruction with the flag **off**. My own
-   rejection of an explicit parameter ("marks are visible in the text") was the cause: customer
-   text is indistinguishable from a mark this pipeline emitted. Fixed by adding
+   an article about markup — would append the mark instruction with the flag **off**. The earlier
+   rejection of an explicit parameter, on the grounds that marks are visible in the text, was the
+   cause: customer text is indistinguishable from a mark this pipeline emitted. Fixed by adding
    `TranslationRequestOptions` as an optional 4th parameter, stated by the translation stage. The
    three-argument call is preserved when no marks were sent, so an existing test asserting the
    exact call still passes.
@@ -123,7 +123,7 @@ Each got a red test first, then the fix, then the suite.
    one leaf, so a line break sitting between two formatted words inside one link vanished from
    every copy, with no fragment and no warning. Such containers are now skipped
    (`unsupported-wrapper`).
-4. **A glued space was written twice** (found by the *comment* audit, in its out-of-scope notes).
+4. **A glued space was written twice** (found during comment review).
    A whitespace-only node is glued into a neighbour's text and only the rebuild branch drops it;
    the fast path left it in place, rendering `une  <link>`. Containers with glued whitespace now
    always rebuild.
@@ -140,17 +140,11 @@ found forwarding `translate` but not `capabilities`**, fixed and pinned by a tes
 `TranslationMutator.apply` — 1 caller; `buildSystemPrompt` — 1 caller; `translateContent` — 2
 callers; no import cycles; core boundary intact (71 tests).
 
-**Comment audit:** density was 6.7 per ten added code lines, verdict too-dense, dominant defect
-repetition — the same three sentences restated in 3–4 places. Applied: 47 contract-quote lines
-deleted from the two kernel test files, six member docblocks restating their own member names,
+**Comment review:** the dominant defect was repetition — the same three sentences restated in
+3–4 places. Applied: contract-quote lines deleted from the two kernel test files, six member docblocks restating their own member names,
 the repeated rationale in `plugin.ts` replaced by a link to the deprecation register, and two
-constants moved out from between a docblock and the function it documented. Kept with named
-reasons: the provider capability contract, the measured prompt wording, the `top`-may-be-a-copy
+constants moved out from between a docblock and the function it documented. Kept: the provider capability contract, the measured prompt wording, the `top`-may-be-a-copy
 rule, the backwards-glue note, and the frozen baseline marker.
-
-**Gates:** `sp-diff-checks` clean (5 checks); lint 58 warnings / 0 errors — the recorded baseline,
-after fixing one lint **error** and two warnings this change had introduced; `check-types` clean;
-full suite 1461 passed.
 
 **All 13 acceptance criteria met** by their declared checks.
 

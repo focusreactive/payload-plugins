@@ -2,12 +2,7 @@
  * `projectTranslatableContent` — the pure, read-only `ContentProjector` (slice 6 design,
  * `docs/plans/2026-06-30-slice6-contentprojector-idpath-design.md`).
  *
- * Produces one `{ idPath, text }` entry per translatable leaf of a document — the projection the
- * provenance fingerprint (#47) hashes. It reuses the SAME traversal engine ({@link walkFields}),
- * the SAME leaf-selection predicate + text notion ({@link isTranslatableLeaf} /
- * {@link leafSourceText}) as the translation pipeline's `FieldChunkCollector`, so projection and
- * translation can never disagree on which content is translatable. Payload-free and read-only:
- * it never mutates the document and never captures write handles.
+ * Payload-free and read-only: it never mutates the document and never captures write handles.
  */
 
 import type { ChildCursor, FieldWalker } from "../../kernel/field-traversal/index.js";
@@ -18,13 +13,11 @@ import type { IdPath, PathSegment } from "./idPath.js";
 import { elementSegment, makeIdPath } from "./idPath.js";
 import { isTranslatableLeaf, leafSourceText } from "./translatableLeaf.js";
 
-/** One translatable leaf of a document: WHERE it lives ({@link IdPath}) and WHAT text it holds. */
 export interface ProjectionEntry {
   idPath: IdPath;
   text: string;
 }
 
-/** The walk position: the current data object plus the accumulated location segments. */
 type Cursor = {
   data: Record<string, unknown>;
   segments: PathSegment[];

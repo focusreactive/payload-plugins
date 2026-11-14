@@ -33,7 +33,7 @@ const TEST_SEAM = {
 // src/core/** is the consolidated framework-agnostic surface (slice 7, Option C):
 // no Payload, no React/Next, and no downward edges into the plugin adapter
 // (src/server, src/client). The cheap in-repo backstop is
-// src/core/no-payload-boundary.test.ts; this lint makes the boundary fail at edit
+// src/core/__tests__/no-payload-boundary.test.ts; this lint makes the boundary fail at edit
 // time too. Test files in this zone are exempt (the conformance test deliberately
 // imports payload types to assert structural compatibility).
 const TRANSLATOR = "packages/payload-plugin-translator";
@@ -49,6 +49,21 @@ const TRANSLATOR_CORE_PATHS = [
   },
   { name: "next", message: "translator-core must stay framework-agnostic — no next import." },
 ];
+// ── The traversal engine (payload-plugin-translator/src/traversal) ────────
+// The engine depends on nothing: not a library, not the plugin wrapped around it. That is two
+// bans, and only one of them a glob can state at every depth. The framework ban can. The "nothing
+// above your own folder" ban cannot — `*` does not cross `/`, and no glob counts how far a `..`
+// climbs — so it is written one directory at a time, and what the depths miss is caught by
+// src/traversal/__tests__/depends-on-nothing.test.ts, which resolves each path over the files the
+// engine ships. Its tests and fixtures are exempt here and held by the two scans that read them.
+const ENGINE_ESCAPE = "The traversal engine imports nothing above its own folder.";
+const ENGINE_BARREL_ONLY = {
+  group: ["**/traversal/**", "!**/traversal/index.js"],
+  message: "Enter the traversal engine through traversal/index.js; its internals are its own.",
+};
+const ENGINE_ROOT_ESCAPE = { group: ["../**"], message: ENGINE_ESCAPE };
+const ENGINE_NESTED_ESCAPE = { group: ["../../**"], message: ENGINE_ESCAPE };
+
 const TRANSLATOR_CORE_PATTERNS = [
   {
     group: ["payload/*"],
@@ -396,7 +411,14 @@ export default defineConfig({
     // ── payload-plugin-translator: framework-agnostic core boundary ───────
     // Same last-match-wins / options-REPLACE semantics as the analytics zones
     // above: each region restates the full restriction set it needs.
-    // (T1) The consolidated payload-free core (slice 7, Option C): no payload /
+    // (T1) Everything in the package enters the traversal engine through its barrel.
+    {
+      files: [`${TRANSLATOR}/src/**/*.ts`, `${TRANSLATOR}/src/**/*.tsx`],
+      rules: {
+        "no-restricted-imports": ["error", { patterns: [ENGINE_BARREL_ONLY] }],
+      },
+    },
+    // (T2) The consolidated payload-free core (slice 7, Option C): no payload /
     //      react / next at all, and no downward edges into the plugin adapter
     //      (src/server, src/client). One zone now covers the whole surface —
     //      field-traversal, lexical, content-projection, field-config, utils,
@@ -406,14 +428,54 @@ export default defineConfig({
       rules: {
         "no-restricted-imports": [
           "error",
+          {
+            paths: TRANSLATOR_CORE_PATHS,
+            patterns: [...TRANSLATOR_CORE_PATTERNS, ENGINE_BARREL_ONLY],
+          },
+        ],
+      },
+    },
+    // (T3) The traversal engine at every depth: never a framework, never the plugin's own halves.
+    {
+      files: [`${TRANSLATOR}/src/traversal/**/*.ts`],
+      rules: {
+        "no-restricted-imports": [
+          "error",
           { paths: TRANSLATOR_CORE_PATHS, patterns: TRANSLATOR_CORE_PATTERNS },
         ],
       },
     },
-    // (T2) Test files in the core zone are exempt — the conformance/boundary tests
-    //      deliberately import payload types to assert structural compatibility.
+    // (T4) The engine's own files, at its root — and nothing above the folder.
     {
-      files: [`${TRANSLATOR}/src/core/**/*.test.ts`],
+      files: [`${TRANSLATOR}/src/traversal/*.ts`],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            paths: TRANSLATOR_CORE_PATHS,
+            patterns: [...TRANSLATOR_CORE_PATTERNS, ENGINE_ROOT_ESCAPE],
+          },
+        ],
+      },
+    },
+    // (T5) The same, one directory down.
+    {
+      files: [`${TRANSLATOR}/src/traversal/*/*.ts`],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            paths: TRANSLATOR_CORE_PATHS,
+            patterns: [...TRANSLATOR_CORE_PATTERNS, ENGINE_NESTED_ESCAPE],
+          },
+        ],
+      },
+    },
+    // (T6) Tests are exempt throughout: the conformance/boundary tests deliberately import
+    //      payload types to assert structural compatibility, and a language's tests read what
+    //      a walk collected through the engine's own fixtures.
+    {
+      files: [`${TRANSLATOR}/src/**/*.test.ts`, `${TRANSLATOR}/src/**/*.test.tsx`],
       rules: { "no-restricted-imports": "off" },
     },
     {

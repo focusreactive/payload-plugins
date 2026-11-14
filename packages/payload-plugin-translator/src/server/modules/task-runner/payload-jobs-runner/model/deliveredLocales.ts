@@ -1,4 +1,4 @@
-import { latestLogByLocale } from "../store/index.js";
+import { latestLogByLocale } from "../store/jobLog.js";
 import type { PayloadJob } from "../store/index.js";
 
 /**

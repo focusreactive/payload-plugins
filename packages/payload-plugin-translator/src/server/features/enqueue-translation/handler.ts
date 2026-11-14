@@ -1,24 +1,37 @@
 import type { PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared/index.js";
-import { authCollectionsOf, identityOf } from "../../shared/payload/identityOf.js";
-import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
-import { extractLocaleCodes } from "../../modules/auto-translate/index.js";
-import type { LocalizationLike } from "../../modules/auto-translate/index.js";
-import { isCollectionAvailable, getAllCollectionIds } from "../_lib/collection-utils.js";
+import { authCollectionsOf, identityOf, scopeOf } from "../../shared/payload/identityOf.js";
+import type { TaskInput, TaskRunnerFactory } from "../../modules/task-runner/index.js";
+import type { RunRecordStoreFactory } from "../../modules/runs/index.js";
+import { admitWork } from "../../../core/domain/runs/index.js";
+import { isCollectionAvailable } from "../_lib/collection-utils.js";
+import { getAllCollectionIds } from "../../shared/payload/collections.js";
+import { authorisedByTheReadFilter, authorisedWork } from "../../shared/access/authorised.js";
+import type { AuthorisedWork } from "../../shared/access/authorised.js";
 
 import { Locales } from "../../../core/domain/locales/index.js";
 
 import { EnqueueInputSchema, toAssignmentOutputs } from "./model.js";
 import type { EnqueueConfig } from "./model.js";
 
+const documentsIn = (work: readonly AuthorisedWork[]): string[] => [
+  ...new Set(work.map((item) => item.collectionId)),
+];
+
 export class EnqueueTranslationHandler {
   private readonly config: EnqueueConfig;
   private readonly taskRunnerFactory: TaskRunnerFactory;
+  private readonly runRecordStoreFactory: RunRecordStoreFactory;
 
-  constructor(config: EnqueueConfig, taskRunnerFactory: TaskRunnerFactory) {
+  constructor(
+    config: EnqueueConfig,
+    taskRunnerFactory: TaskRunnerFactory,
+    runRecordStoreFactory: RunRecordStoreFactory
+  ) {
     this.config = config;
     this.taskRunnerFactory = taskRunnerFactory;
+    this.runRecordStoreFactory = runRecordStoreFactory;
   }
 
   async handle(req: PayloadRequest): Promise<Response> {
@@ -32,9 +45,11 @@ export class EnqueueTranslationHandler {
       collection_slug,
       collection_id,
       select_all,
-      strategy,
+      filters,
       publish_on_translation,
     } = validationResult.data;
+
+    const asked = filters ?? [];
 
     const collectionSlug = isCollectionAvailable(collection_slug, this.config.availableCollections);
     if (!collectionSlug) {
@@ -43,9 +58,7 @@ export class EnqueueTranslationHandler {
       );
     }
 
-    const knownLocales = extractLocaleCodes(
-      req.payload.config?.localization as LocalizationLike | undefined
-    );
+    const knownLocales = Locales.knownCodes(req.payload.config?.localization);
     if (!knownLocales) {
       return ServerResponse.badRequest(
         "Localization is not enabled in this Payload config; there are no target locales to translate into"
@@ -77,30 +90,48 @@ export class EnqueueTranslationHandler {
       );
     }
 
-    const collectionIds = select_all
-      ? await getAllCollectionIds(req.payload, collectionSlug, req.user)
-      : collection_id;
+    const workFor = (ids: readonly string[]): TaskInput[] =>
+      ids.flatMap((id) =>
+        targets.map((targetLng) => ({
+          collectionSlug,
+          collectionId: id,
+          sourceLng: source_lng,
+          targetLng,
+          filters: asked,
+          publishOnTranslation: publish_on_translation,
+        }))
+      );
+
+    const identity = identityOf(req, authCollectionsOf(req.payload), req.payload.logger);
+    if (identity.kind === "unnameable") return ServerResponse.forbidden();
+
+    const runs = this.runRecordStoreFactory(req.payload);
+    const { authorised, refused } = select_all
+      ? {
+          authorised: authorisedByTheReadFilter(
+            workFor(await getAllCollectionIds(req.payload, collectionSlug, req.user))
+          ),
+          refused: [],
+        }
+      : await authorisedWork({
+          payload: req.payload,
+          user: req.user,
+          tasks: workFor(collection_id),
+        });
+
+    const inFlight = select_all
+      ? await runs.findLiveInCollection(collectionSlug)
+      : await runs.findLiveForDocuments(collectionSlug, documentsIn(authorised));
+    const { admitted, busyDocumentIds: busy } = admitWork({ work: authorised, inFlight });
 
     const runner = this.taskRunnerFactory.create(req.payload);
-    const tasks = collectionIds.flatMap((id) =>
-      targets.map((targetLng) => ({
-        collectionSlug,
-        collectionId: id,
-        sourceLng: source_lng,
-        targetLng,
-        strategy: strategy,
-        publishOnTranslation: publish_on_translation,
-      }))
-    );
-
-    const assigned = await runner.enqueue(
-      tasks,
-      identityOf(req, authCollectionsOf(req.payload), req.payload.logger)
-    );
+    const assigned = await runner.enqueue(admitted, scopeOf(identity));
 
     return ServerResponse.success({
       success: true,
-      queued: tasks.length,
+      queued: admitted.length,
+      ...(refused.length > 0 ? { refused } : {}),
+      ...(busy.length > 0 ? { busy } : {}),
       ...(assigned ? { assignments: toAssignmentOutputs(assigned) } : {}),
     });
   }

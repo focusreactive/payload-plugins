@@ -12,6 +12,7 @@ type Seen = { targetLng: string; handle?: string };
 
 const onCompleted = vi.fn<(task: Seen) => void>();
 const onFailed = vi.fn<(task: Seen) => void>();
+const onAbandoned = vi.fn<(task: Seen) => void>();
 
 const localesOf = (fn: typeof onFailed) => fn.mock.calls.map(([t]) => t.targetLng).sort();
 
@@ -27,7 +28,7 @@ describe("onFailed reports a final outcome, not an attempt", () => {
         // minutes of waiting.
         retries: { attempts: ATTEMPTS, backoff: { type: "fixed", delay: 0 } },
       }),
-      lifecycle: { onCompleted, onFailed },
+      lifecycle: { onCompleted, onFailed, onAbandoned },
       onTranslate: (targetLng) => {
         if (targetLng === "de" && providerIsDown) throw new Error("provider down");
       },
@@ -40,6 +41,7 @@ describe("onFailed reports a final outcome, not an attempt", () => {
   const run = async (title: string, locales: string[]) => {
     onCompleted.mockClear();
     onFailed.mockClear();
+    onAbandoned.mockClear();
     const made = await ctx.payload.create({
       collection: "docs",
       locale: "en",
@@ -51,7 +53,7 @@ describe("onFailed reports a final outcome, not an attempt", () => {
         target_lng: locales,
         collection_slug: "docs",
         collection_id: [String(made.id)],
-        strategy: "overwrite",
+
         publish_on_translation: false,
       },
     });
@@ -69,13 +71,14 @@ describe("onFailed reports a final outcome, not an attempt", () => {
     });
     onCompleted.mockClear();
     onFailed.mockClear();
+    onAbandoned.mockClear();
     await callEndpoint(ctx.payload, "post", "/translate/enqueue", {
       body: {
         source_lng: "en",
         target_lng: ["de"],
         collection_slug: "docs",
         collection_id: [String(made.id)],
-        strategy: "overwrite",
+
         publish_on_translation: false,
       },
     });
@@ -90,15 +93,16 @@ describe("onFailed reports a final outcome, not an attempt", () => {
     expect(localesOf(onCompleted)).toEqual(["de"]);
   });
 
-  it("reports every locale the run never got to, not just the one that broke", async () => {
+  it("reports the locale that broke as failed, and the one it never got to as abandoned", async () => {
     providerIsDown = true;
 
     await run("Abandoned", ["de", "fr"]);
 
+    expect(localesOf(onFailed), "de is the only locale anything was asked about").toEqual(["de"]);
     expect(
-      localesOf(onFailed),
+      localesOf(onAbandoned),
       "fr never started, because the run stopped at de — and it never will"
-    ).toEqual(["de", "fr"]);
+    ).toEqual(["fr"]);
   });
 
   it("does not report a locale the run had already translated", async () => {
@@ -107,6 +111,7 @@ describe("onFailed reports a final outcome, not an attempt", () => {
     await run("Partly done", ["fr", "de"]);
 
     expect(localesOf(onCompleted), "fr went first and worked").toEqual(["fr"]);
-    expect(localesOf(onFailed), "only de is owed").toEqual(["de"]);
+    expect(localesOf(onFailed), "de is the one that was tried and broke").toEqual(["de"]);
+    expect(localesOf(onAbandoned), "nothing was left un-attempted").toEqual([]);
   });
 });

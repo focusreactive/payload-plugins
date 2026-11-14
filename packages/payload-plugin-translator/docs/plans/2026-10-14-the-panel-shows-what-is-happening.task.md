@@ -87,7 +87,7 @@ both from one place makes the label unable to lie.
 The component had no test and the package had no way to write one: `vitest.config.ts` sets
 `environment: "node"` and nothing DOM-related was installed.
 
-**Chosen, by the owner at the gate:** add `jsdom`, `@testing-library/react` and
+**Chosen, by the owner before implementation:** add `jsdom`, `@testing-library/react` and
 `@testing-library/dom` as dev dependencies of **this package only**, and opt the one client test into
 `jsdom` with a per-file `@vitest-environment` docblock rather than switching the package's 148 other
 test files.
@@ -104,8 +104,8 @@ hazard worth not creating.
 
 ### D5 — a locale is failed only once its run has given up
 
-**Added mid-build, with the owner's approval, after a reviewer found that the window's safety
-argument did not survive contact with how a locale's status is derived.**
+**Added during implementation, with the owner's approval, after review found that the window's
+safety argument did not survive contact with how a locale's status is derived.**
 
 Payload appends a log entry with `state: 'failed'` on **every** failed attempt, and marks the job
 itself only when it gives up — `queues/errors/handleTaskError.js:110-119` pushes the entry while
@@ -146,8 +146,8 @@ lost, only moved: the job's own log still records which locale failed, and
 
 - One optional field on `TaskFilter` — callers: `get-collection-status/handler.ts`; implementers:
   both runners.
-- One optional setting on `TranslatorPluginConfig`, if the owner wants it configurable (gate
-  question 1).
+- One optional setting on `TranslatorPluginConfig`, if the window is to be configurable (an open
+  question for the owner; decided below).
 
 No new abstraction, no new file, no new module.
 
@@ -159,7 +159,7 @@ set only when a run has **finally** given up — a run still retrying does not c
 only when it is certain, which is the same moment `onFailed` fires. That belongs in the field's
 docblock; it is not something an implementer can infer from the name.
 
-### Escalate to /sp-architect?
+### Does this need a separate design?
 
 **No.** One optional field on an existing filter, one row removed from a list. No new seam, no
 dependency, no data-model change, no migration.
@@ -188,8 +188,8 @@ Run against the untouched tree on `feat/translator-bound-status-reads`, before a
 
 | AC | Command | Result | Classification |
 |---|---|---|---|
-| AC1–AC6, AC9 | the named tests | do not exist yet | change — each gets its red run in Phase 3 |
-| AC7, AC8 | the client panel test | **the component had no test and the package had no DOM environment** — both added at the gate, see D4 | change — the test is written in Phase 3 and goes red against the current `ROWS` list |
+| AC1–AC6, AC9 | the named tests | do not exist yet | change — each gets its red run during implementation |
+| AC7, AC8 | the client panel test | **the component had no test and the package had no DOM environment** — both added before implementation, see D4 | change — the test is written during implementation and goes red against the current `ROWS` list |
 | AC10 | `bunx vitest run src/server/features/cancel-by-collection src/server/features/get-document-status` | 32 passed | invariant |
 | AC11 | the three type-check commands | package **0**, `apps/dev` **0**, app project **2** | invariant |
 | AC12 | `bunx oxlint .` · `bunx oxlint src` | **47** · **5** | invariant |
@@ -199,8 +199,8 @@ Run against the untouched tree on `feat/translator-bound-status-reads`, before a
 
 **Risk classification: LOW.** One optional field on a filter that already exists and is already
 honoured by both runners; one row removed from a client list; no stored shape, no migration, no new
-method on any contract, no response-shape change. That buys: one reviewer rather than three in
-Phase 5, and a regression sweep over the three callers of `findByCollection` rather than an
+method on any contract, no response-shape change. That buys: one review pass rather than three, and
+a regression sweep over the three callers of `findByCollection` rather than an
 evidenced sweep of everything.
 
 **Hazards:**
@@ -214,25 +214,24 @@ evidenced sweep of everything.
   `updatedAt` directly is the only honest way to test the boundary, which means writing through the
   adapter rather than through the field.
 
-## Human choices
+## Decisions by the owner
 
-- **2026-10-14** — drop `Translated`, keep `Failed` windowed: "Уберем Translated и оставим failed."
-  The reasoning the owner accepted: the two rows are not equivalent — a failure is a call to action
+- **2026-10-14** — drop `Translated`, keep `Failed` windowed. The reasoning: the two rows are not equivalent — a failure is a call to action
   and an old one stops being one, while a translated count is a statistic nobody acts on.
-- **2026-10-14** — the collection panel is an aggregator with no life of its own: "если пользователь
-  запускает перевод в документе, то на уровне коллекции это тоже отобразится".
+- **2026-10-14** — the collection panel is an aggregator with no life of its own: a translation
+  started from a document shows at the collection level too.
 - **2026-10-14** — the window is a plugin setting defaulting to 3 days, not a constant.
 - **2026-10-14** — the `Failed` row keeps its heading and carries the window in the small line beneath
   it, where "Open a document to see why" already sits.
-- **2026-10-14** — add the DOM test setup rather than testing the panel's data: "давай добавим". See
+- **2026-10-14** — add the DOM test setup rather than testing the panel's data. See
   D4 for what that cost and why it is confined to this package.
-- **2026-10-14** — fix the status derivation rather than soften the row's wording: "Да, чинить
-  normalizeJob.ts", told beforehand that it changes what the document panel shows for a locale whose
-  attempt failed. See D5.
+- **2026-10-14** — fix the status derivation in `normalizeJob.ts` rather than soften the row's
+  wording, accepting that it changes what the document panel shows for a locale whose attempt
+  failed. See D5.
 
 ### D6 — the filter field is named for giving up, not for failing
 
-An abstraction audit measured the strongest thing a caller must agree with this boundary about, and
+An abstraction review measured the strongest thing a caller must agree with this boundary about, and
 it was **meaning**: `excludeFailedBefore` said "failed" while the rule is "gave up". A third-party
 runner reading the name alone would drop a run that failed one attempt and is still retrying, and
 work in flight would vanish from the panel. Only the docblock said otherwise.
@@ -243,7 +242,7 @@ citation. Free now: the field ships first in 0.17.0, so nobody outside has it ye
 
 ### D7 — the panel does not show locales finished inside work still in flight
 
-Measured during the same audit: a live run reports `de=completed fr=pending es=pending`, so the
+Measured during the same review: a live run reports `de=completed fr=pending es=pending`, so the
 response does carry completed locales — bounded ones, since they exist only inside runs that have
 not finished. The panel discards them.
 
@@ -255,12 +254,12 @@ from. The omission is now **structural rather than silent**: `ReportedStatus` ex
 
 ## Review log
 
-**2026-10-14 — one reviewer (low risk).** Confirmed clean: `hasError` really is final-only; the two
+**2026-10-14 — one review pass (low risk).** Confirmed clean: `hasError` really is final-only; the two
 other `findByCollection` callers are untouched; a long-quiet but still-pending run is not dropped,
 because the window applies only where `hasError` is true; the new DOM dependencies and the
 `*.test.tsx` include leave the other 148 test files on `node`.
 
-**One major finding, verified and fixed — D5.** The reviewer showed that the window's safety argument
+**One major finding, verified and fixed — D5.** The review showed that the window's safety argument
 held for the field being filtered on but not for the status being displayed. Reproduced it with a
 seeded row before acting, then fixed the derivation. The finding also exposed that AC6 asserted
 presence but not status; the criterion's own test was tightened before the fix, and went red.

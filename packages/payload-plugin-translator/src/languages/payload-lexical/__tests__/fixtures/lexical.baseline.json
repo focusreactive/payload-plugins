@@ -1,0 +1,672 @@
+{
+  "[[{\"type\":\"richText\",\"name\":\"body\",\"localized\":true}],{\"body\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Hello world\"}]}]}}},null]": {
+    "texts": ["Hello world"],
+    "addresses": ["body"],
+    "document": {
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] Hello world"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "[[{\"type\":\"richText\",\"name\":\"body\",\"localized\":true}],{\"body\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"  Leading\"},{\"type\":\"text\",\"version\":1,\"text\":\"trailing  \"},{\"type\":\"text\",\"version\":1,\"text\":\" both \"}]}]}}},null]": {
+    "texts": ["  Leading\u0001trailing  \u0001 both "],
+    "addresses": ["body"],
+    "document": {
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "  [de]   Leading"
+                },
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] trailing  "
+                },
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": " [de]  both "
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "[[{\"type\":\"richText\",\"name\":\"body\",\"localized\":true}],{\"body\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"One\"},{\"type\":\"text\",\"version\":1,\"text\":\"   \"},{\"type\":\"text\",\"version\":1,\"text\":\"\"},{\"type\":\"text\",\"version\":1,\"text\":\"Two\"}]}]}}},null]": {
+    "texts": ["One   \u0001Two"],
+    "addresses": ["body"],
+    "document": {
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] One   "
+                },
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] Two"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "[[{\"type\":\"richText\",\"name\":\"body\",\"localized\":true}],{\"body\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Read \"},{\"type\":\"link\",\"version\":1,\"fields\":{\"url\":\"/docs\",\"newTab\":false,\"linkType\":\"custom\"},\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"the docs\"}]},{\"type\":\"text\",\"version\":1,\"text\":\" today\"}]}]}}},null]": {
+    "texts": ["Read \u0001the docs\u0001 today"],
+    "addresses": ["body"],
+    "document": {
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] Read "
+                },
+                {
+                  "type": "link",
+                  "version": 1,
+                  "fields": {
+                    "url": "/docs",
+                    "newTab": false,
+                    "linkType": "custom"
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "version": 1,
+                      "text": "[de] the docs"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": " [de]  today"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "[[{\"type\":\"richText\",\"name\":\"body\",\"localized\":true}],{\"body\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Above\"}]},{\"type\":\"upload\",\"version\":3,\"fields\":{\"caption\":\"A photo\",\"value\":42}},{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Below\"}]}]}}},null]": {
+    "texts": ["Above", "Below"],
+    "addresses": ["body", "body"],
+    "document": {
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] Above"
+                }
+              ]
+            },
+            {
+              "type": "upload",
+              "version": 3,
+              "fields": {
+                "caption": "A photo",
+                "value": 42
+              }
+            },
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] Below"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "[[{\"type\":\"richText\",\"name\":\"body\",\"localized\":true}],{\"body\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"heading\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Title\"}]},{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"See \"},{\"type\":\"link\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"the docs\"}]},{\"type\":\"text\",\"version\":1,\"text\":\" now.\"}]},{\"type\":\"quote\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Quoted\"}]},{\"type\":\"list\",\"version\":1,\"children\":[{\"type\":\"listitem\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Outer\"}]},{\"type\":\"listitem\",\"version\":1,\"children\":[{\"type\":\"list\",\"version\":1,\"children\":[{\"type\":\"listitem\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Inner\"}]}]}]}]},{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"End\"}]}]}}},null]": {
+    "texts": ["Title", "See \u0001the docs\u0001 now.", "Quoted", "Outer", "Inner", "End"],
+    "addresses": ["body", "body", "body", "body", "body", "body"],
+    "document": {
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "heading",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] Title"
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] See "
+                },
+                {
+                  "type": "link",
+                  "version": 1,
+                  "children": [
+                    {
+                      "type": "text",
+                      "version": 1,
+                      "text": "[de] the docs"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": " [de]  now."
+                }
+              ]
+            },
+            {
+              "type": "quote",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] Quoted"
+                }
+              ]
+            },
+            {
+              "type": "list",
+              "version": 1,
+              "children": [
+                {
+                  "type": "listitem",
+                  "version": 1,
+                  "children": [
+                    {
+                      "type": "text",
+                      "version": 1,
+                      "text": "[de] Outer"
+                    }
+                  ]
+                },
+                {
+                  "type": "listitem",
+                  "version": 1,
+                  "children": [
+                    {
+                      "type": "list",
+                      "version": 1,
+                      "children": [
+                        {
+                          "type": "listitem",
+                          "version": 1,
+                          "children": [
+                            {
+                              "type": "text",
+                              "version": 1,
+                              "text": "[de] Inner"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] End"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "[[{\"type\":\"richText\",\"name\":\"body\",\"localized\":true}],{\"body\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Before\"},{\"type\":\"linebreak\",\"version\":1},{\"type\":\"text\",\"version\":1,\"text\":\"After\"}]},{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Indent\"},{\"type\":\"tab\",\"version\":1,\"text\":\"\\t\"}]},{\"type\":\"code\",\"version\":1,\"children\":[{\"type\":\"code-highlight\",\"version\":1,\"text\":\"const x = 1;\"}]}]}}},null]": {
+    "texts": ["Before\u0001\u0000\u0001After", "Indent\u0001\u0000"],
+    "addresses": ["body", "body"],
+    "document": {
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] Before"
+                },
+                {
+                  "type": "linebreak",
+                  "version": 1
+                },
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] After"
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] Indent"
+                },
+                {
+                  "type": "tab",
+                  "version": 1,
+                  "text": "\t"
+                }
+              ]
+            },
+            {
+              "type": "code",
+              "version": 1,
+              "children": [
+                {
+                  "type": "code-highlight",
+                  "version": 1,
+                  "text": "const x = 1;"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "[[{\"type\":\"richText\",\"name\":\"intro\",\"localized\":true},{\"type\":\"text\",\"name\":\"title\",\"localized\":true},{\"type\":\"richText\",\"name\":\"body\",\"localized\":true}],{\"intro\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Intro one\"},{\"type\":\"text\",\"version\":1,\"text\":\"Intro two\"}]}]}},\"title\":\"A title\",\"body\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Body\"}]}]}}},null]": {
+    "texts": ["Intro one\u0001Intro two", "A title", "Body"],
+    "addresses": ["intro", "title", "body"],
+    "document": {
+      "intro": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] Intro one"
+                },
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] Intro two"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "title": "[de] A title",
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] Body"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "[[{\"type\":\"group\",\"name\":\"meta\",\"fields\":[{\"type\":\"richText\",\"name\":\"summary\",\"localized\":true}]}],{\"meta\":{\"summary\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Summary\"}]}]}}}},null]": {
+    "texts": ["Summary"],
+    "addresses": ["meta.summary"],
+    "document": {
+      "meta": {
+        "summary": {
+          "root": {
+            "type": "root",
+            "version": 1,
+            "children": [
+              {
+                "type": "paragraph",
+                "version": 1,
+                "children": [
+                  {
+                    "type": "text",
+                    "version": 1,
+                    "text": "[de] Summary"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "[[{\"type\":\"blocks\",\"name\":\"sections\",\"blocks\":[{\"slug\":\"hero\",\"fields\":[{\"type\":\"richText\",\"name\":\"copy\",\"localized\":true}]}]}],{\"sections\":[{\"id\":\"s1\",\"blockType\":\"hero\",\"copy\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Hero copy\"}]}]}}}]},null]": {
+    "texts": ["Hero copy"],
+    "addresses": ["sections.s1:hero.copy"],
+    "document": {
+      "sections": [
+        {
+          "id": "s1",
+          "blockType": "hero",
+          "copy": {
+            "root": {
+              "type": "root",
+              "version": 1,
+              "children": [
+                {
+                  "type": "paragraph",
+                  "version": 1,
+                  "children": [
+                    {
+                      "type": "text",
+                      "version": 1,
+                      "text": "[de] Hero copy"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "[[{\"type\":\"richText\",\"name\":\"bo.dy#1:x\",\"localized\":true}],{\"bo.dy#1:x\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Odd name\"}]}]}}},null]": {
+    "texts": ["Odd name"],
+    "addresses": ["bo\\.dy\\#1\\:x"],
+    "document": {
+      "bo.dy#1:x": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] Odd name"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "[[{\"type\":\"richText\",\"name\":\"shared\",\"localized\":false},{\"type\":\"richText\",\"name\":\"body\",\"localized\":true}],{\"shared\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Not mine to translate\"}]}]}},\"body\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Mine\"}]}]}}},null]": {
+    "texts": ["Mine"],
+    "addresses": ["body"],
+    "document": {
+      "shared": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "Not mine to translate"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] Mine"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "[[{\"type\":\"richText\",\"name\":\"body\",\"localized\":true}],{\"body\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Before\"}]},{\"type\":\"block\",\"version\":2,\"fields\":{\"id\":\"b1\",\"blockType\":\"gallery\",\"caption\":\"Caption\"}},{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Inline \"},{\"type\":\"inlineBlock\",\"version\":1,\"fields\":{\"id\":\"i1\",\"blockType\":\"mention\",\"label\":\"Ada\"}},{\"type\":\"text\",\"version\":1,\"text\":\" after\"}]}]}}},null]": {
+    "texts": ["Before", "Inline \u0001\u0000\u0001 after"],
+    "addresses": ["body", "body"],
+    "document": {
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] Before"
+                }
+              ]
+            },
+            {
+              "type": "block",
+              "version": 2,
+              "fields": {
+                "id": "b1",
+                "blockType": "gallery",
+                "caption": "Caption"
+              }
+            },
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] Inline "
+                },
+                {
+                  "type": "inlineBlock",
+                  "version": 1,
+                  "fields": {
+                    "id": "i1",
+                    "blockType": "mention",
+                    "label": "Ada"
+                  }
+                },
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": " [de]  after"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "[[{\"type\":\"richText\",\"name\":\"body\",\"localized\":true}],{\"body\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[]}}},null]": {
+    "texts": [],
+    "addresses": [],
+    "document": {
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": []
+        }
+      }
+    }
+  },
+  "[[{\"type\":\"richText\",\"name\":\"body\",\"localized\":true}],{\"body\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"   \"}]},{\"type\":\"paragraph\",\"version\":1,\"children\":[]}]}}},null]": {
+    "texts": [],
+    "addresses": [],
+    "document": {
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "   "
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": []
+            }
+          ]
+        }
+      }
+    }
+  },
+  "[[{\"type\":\"richText\",\"name\":\"body\",\"localized\":true}],{\"body\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Intro\"}]},{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Outro\"}]}]}}},{\"body\":{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Einleitung\"}]},{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Nur hier\"}]},{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Schluss\"}]}]}}}]": {
+    "texts": ["Intro", "Outro"],
+    "addresses": ["body", "body"],
+    "document": {
+      "body": {
+        "root": {
+          "type": "root",
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] Intro"
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "version": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "version": 1,
+                  "text": "[de] Outro"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -6,13 +6,14 @@ import type { TaskRunnerFactory } from "../../task-runner/TaskRunnerProvider.int
 import { makeCollectionPolicyResolver } from "../AutoTranslate.policy.js";
 import type { NormalizedAutoTranslatePolicy } from "../AutoTranslate.policy.js";
 import { makeAutoTranslateHook } from "../AutoTranslateEnqueue.hook.js";
+import { fingerprintsOf } from "../../provenance/__tests__/fixtures/fingerprinter.js";
+import { storeDouble } from "../../runs/__tests__/fixtures/runRecordStore.js";
 
 const schemaMap: CollectionSchemaMap = new Map([
   ["posts" as CollectionSlug, [{ name: "title", type: "text", localized: true }] as Field[]],
 ]);
 const policy: NormalizedAutoTranslatePolicy = {
   targets: ["de"],
-  strategy: "overwrite",
   debounceMs: 0,
 };
 const logger = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() };
@@ -24,8 +25,9 @@ function setup() {
   } as unknown as TaskRunnerFactory;
   const hook = makeAutoTranslateHook({
     resolvePolicy: makeCollectionPolicyResolver(new Map([["posts", policy]])),
-    schemaMap,
+    fingerprintOf: fingerprintsOf(schemaMap),
     taskRunnerFactory,
+    runRecordStoreFactory: () => storeDouble(),
   });
   return { hook, enqueue };
 }
@@ -69,6 +71,55 @@ describe("auto-translate hook — whose identity reaches the runner", () => {
 
     const [, scope] = enqueue.mock.calls[0] as [unknown, Record<string, unknown> | undefined];
     expect(scope?.requester ?? null).toBeNull();
+  });
+
+  it("queues nothing for a saving user this project cannot name", async () => {
+    const { hook, enqueue } = setup();
+
+    await hook(
+      hookArgs({
+        user: { id: "anna" },
+        payload: {
+          logger,
+          config: {
+            localization: { defaultLocale: "en", locales: ["en", "de"] },
+            collections: [
+              { slug: "admins", auth: {} },
+              { slug: "editors", auth: {} },
+            ],
+          },
+        },
+      })
+    );
+
+    expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  it("says why it skipped, rather than failing the editor's save", async () => {
+    const { hook } = setup();
+
+    await expect(
+      hook(
+        hookArgs({
+          user: { id: "anna" },
+          payload: {
+            logger,
+            config: {
+              localization: { defaultLocale: "en", locales: ["en", "de"] },
+              collections: [
+                { slug: "admins", auth: {} },
+                { slug: "editors", auth: {} },
+              ],
+            },
+          },
+        })
+      )
+    ).resolves.toBeDefined();
+
+    // `identityOf` warns too, so this must name the hook's own line or it proves nothing.
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ msg: expect.stringContaining("cannot name") })
+    );
   });
 
   it("does not mutate the request a bulk update shares across every document", async () => {

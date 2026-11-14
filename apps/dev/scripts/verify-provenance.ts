@@ -27,7 +27,7 @@ try {
   process.exit(1);
 }
 
-// 2. dismissedFingerprint: null round-trips (the deferred cross-DB null check).
+// 2. A receipt round-trips through the active adapter.
 const created = await payload.create({
   collection: SLUG,
   data: {
@@ -37,14 +37,11 @@ const created = await payload.create({
     sourceLocale: "en",
     sourceFingerprint: "fp-verify",
     translatedAt: new Date().toISOString(),
-    dismissedFingerprint: null,
   },
 });
 const reread = await payload.findByID({ collection: SLUG, id: created.id });
-if (reread.dismissedFingerprint === null) ok("dismissedFingerprint: null round-trips");
-else fail(`dismissedFingerprint expected null, got ${JSON.stringify(reread.dismissedFingerprint)}`);
 if (reread.sourceFingerprint === "fp-verify" && reread.targetLocale === "de")
-  ok("other fields round-trip");
+  ok("receipt fields round-trip");
 else fail("field round-trip mismatch");
 
 // 3. Composite key (collectionSlug, documentId, targetLocale) uniqueness. Hard check on SQL; on Mongo
@@ -62,7 +59,6 @@ try {
       sourceLocale: "en",
       sourceFingerprint: "fp-dup",
       translatedAt: new Date().toISOString(),
-      dismissedFingerprint: null,
     },
   });
   duplicateAllowed = true;
@@ -92,7 +88,6 @@ for (const locale of ["de", "fr"]) {
       sourceLocale: "en",
       sourceFingerprint: "fp-doc",
       translatedAt: new Date().toISOString(),
-      dismissedFingerprint: null,
     },
   });
 }

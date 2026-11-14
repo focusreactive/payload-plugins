@@ -56,7 +56,7 @@ Safety net for any refactor: 33 test files, 425 cases in `core` alone.
 
 ## 3. The decisive experiment
 
-Rather than argue about it, I ran the unmodified core against synthetic Storyblok content.
+Rather than argue about it, the unmodified core was run against synthetic Storyblok content.
 
 **Setup.** A component registry (`page` / `hero` / `card`) with a keyed-map schema, a story whose
 bloks carry `_uid` + `component`, ProseMirror rich text with marks and a non-text image node, and one
@@ -218,7 +218,7 @@ adapter layer from a product that does not exist. That is the definition of spec
    reporting keeps a partial translation useful.
 3. **Second-consumer trigger** *[non-blocking]* — who re-opens the port question, and on what signal?
 
-## Comprehension: 9/10
+## Confidence
 
 The coupling surface is measured rather than estimated, and the central claim (normalization beats
 ports at current scale) is backed by an executed probe rather than reasoning. The missing point is
@@ -227,7 +227,7 @@ transcoder has not met Storyblok's full node vocabulary.
 
 ## Suggested next step
 
-Answer question 1, then `/sp-task` on §6 items 1, 3 and 4 — they are independent of each other and
+Answer question 1, then implement §6 items 1, 3 and 4 — they are independent of each other and
 each is small. Item 2 needs a design pass first if it turns out to be a fix rather than a doc entry.
 
 ---

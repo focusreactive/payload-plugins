@@ -33,6 +33,8 @@ export type TargetLayer =
       publish: PublishScope;
     };
 
+export type WriteLayer = TargetLayer["write"];
+
 export function resolveTargetLayer(args: {
   versions: VersionsSlice;
   targetLng: string;

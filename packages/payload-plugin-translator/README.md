@@ -92,16 +92,16 @@ npx payload generate:importmap
 Open a `posts` document. A Translate control now sits beside the document controls: choose `en` as the source and `de` as the target, and the German locale is filled in within a minute.
 
 > [!TIP]
-> Rerun `payload generate:importmap` after adding or removing `documentLevel()` or `collectionLevel()`, or the admin renders without their controls. `fieldLevel()` adds no admin component, so it needs no regeneration.
+> Rerun `payload generate:importmap` after changing `components`, or the admin renders without the controls you listed. `modules` adds no admin component, so it needs no regeneration.
 
 ## What you can do
 
-- **Translate one document** — the control on the edit view queues a job for the target locale you pick, choosing a strategy and whether to publish the locale once it is filled in.
+- **Translate one document** — the control on the edit view queues a job for the target locale you pick, and whether to publish the locale once it is filled in.
 - **Translate a whole collection** — a dashboard above the list view runs the selected documents, or all of them, and reports progress per locale.
 - **Translate into several locales at once** — `targetSelection: 'multi'` turns the target field on both the document and the collection surfaces into a multi-select, and every selected document is translated into every locale you picked. The default is one locale per run.
-- **Translate a single field** — a control on the field itself, answering in place without queueing anything. Needs both `fieldLevel()` in `levels` and `withFieldTranslation` on the field.
+- **Translate a single field** — a control on the field itself, answering in place without queueing anything. Needs both `fieldTranslation()` in `modules` and `withFieldTranslation` on the field.
 - **Auto-translate on save** — wrap a collection in `withAutoTranslate(collection, { targets })` and editing the source locale queues its own translations, with no one pressing anything. On a collection with drafts enabled it waits until the document is published; without drafts it fires on every save. Rapid edits are coalesced into one run.
-- **Protect hand-written copy** — the `skip_existing` strategy fills only empty target fields, and `withFieldTranslation(field, { exclude: true })` keeps a field out of translation entirely.
+- **Keep a field out of translation** — `withFieldTranslation(field, { exclude: true })` is the one way to say a field is never sent to the provider. Naming fields in a run's filters is about *this* run, not about authorship: a leaf nobody named is simply not sent this time, and nothing records that a person wrote the text that is there.
 - **Steer how it translates** — `systemPrompt` replaces the instruction sent with every request, so tone, register, a glossary, or brand names that must stay untranslated are yours to set.
 - **Bring any translation service** — an OpenAI-compatible adapter ships in the box; anything else is a single function you write, which receives the text and returns the reply. You do not parse it or check it back — that is the plugin's job.
 - **Run it in the background or inline** — Payload Jobs by default, so an editor is not left waiting and a run can be cancelled or retried. `createSyncRunner()` translates inline instead, for tests and scripts.
@@ -155,37 +155,52 @@ translatorPlugin(config: TranslatorPluginConfig)
 | `collections` | `CollectionConfig[]` | — | **Required.** Original collection configs to make translatable. |
 | `translationProvider` | `TranslationProvider` | — | **Required.** What actually translates the text. |
 | `runner` | `TaskRunnerProvider` | — | **Required.** What runs the translation — in the background, or inline. |
-| `levels` | `TranslationLevel[]` | `[documentLevel(), collectionLevel()]` | Which translation surfaces to enable. |
+| `modules` | `TranslationModule[]` | — | **Required.** Which server surfaces to enable. `[]` is allowed. |
+| `components` | `TranslationComponent[]` | — | **Required.** Which admin controls to attach. `[]` is allowed. |
 | `access` | `AccessGuard` | — | **Required.** Who may call the translation endpoints. `new AnyAccessGuard()` leaves them open on purpose. |
 | `basePath` | `string` | `'/translate'` | Base path for the plugin's endpoints. |
 | `targetSelection` | `'single' \| 'multi'` | `'single'` | `'multi'` lets an editor pick several target locales for one run. _Since v0.10.0._ |
 | `provenance` | `boolean \| { slug?: string }` | `false` | Adds a collection recording what each locale was translated from, so the admin can flag stale ones. Default slug `translator-provenance`. |
 | `lifecycle` | `TranslationLifecycleCallbacks` | `{}` | Server-side `onQueued` / `onCompleted` / `onFailed` callbacks. |
 
-### Translation levels
+### Modules and components
 
-_Since v0.5.0; `fieldLevel()` since v0.6.0._
+_Since v1.0.0; replaces `levels`._
 
-Levels are the surfaces the plugin adds. List the ones you want; each should appear at most once.
+A **module** is server wiring — routes, and the collections behind them. A **component** is an
+admin control, which runs in the browser and calls a module. Both lists are required, and `[]` is a
+real answer; each entry should appear at most once.
 
-| Level | What it adds |
+| Module | What it adds |
 | --- | --- |
-| `documentLevel()` | A Translate popup on the document edit view. |
-| `collectionLevel()` | A bulk translation dashboard above the list table. |
-| `fieldLevel()` | Turns on the per-field control. Not in the default set. |
+| `documentTranslation()` | The job API: queue a run, run it now, cancel it, read its progress. |
+| `fieldTranslation()` | The synchronous `POST /field` endpoint. |
+
+| Component | What it adds |
+| --- | --- |
+| `translateDocumentControl()` | A Translate popup on the document edit view. |
+| `bulkTranslationDashboard()` | A bulk translation dashboard above the list table. |
 
 ```ts
-import { documentLevel, collectionLevel, fieldLevel } from '@focus-reactive/payload-plugin-translator'
+import {
+  documentTranslation,
+  fieldTranslation,
+  translateDocumentControl,
+  bulkTranslationDashboard,
+} from '@focus-reactive/payload-plugin-translator'
 
 translatorPlugin({
   collections: [Posts],
   translationProvider,
   runner,
-  levels: [documentLevel(), collectionLevel(), fieldLevel()],
+  modules: [documentTranslation(), fieldTranslation()],
+  components: [translateDocumentControl(), bulkTranslationDashboard()],
 })
 ```
 
-`fieldLevel()` on its own shows nothing: the control appears only on the fields you wrap with `withFieldTranslation`.
+Both controls call `documentTranslation()`, so listing one without it leaves it calling nothing.
+`fieldTranslation()` shows nothing by itself: its control appears only on the fields you wrap with
+`withFieldTranslation`.
 
 ### Per-field control and exclusion
 
@@ -215,7 +230,7 @@ The control needs a saved document, so it stays hidden while you are creating on
 > [!WARNING]
 > **A localized `blocks` or `array` container has no per-field translation.** Wrap the leaves, not the container. When the container itself is localized, each locale holds its own order and content, so there is no single field to translate across them: the control answers with a notice telling you to translate the whole document instead, which handles this case.
 
-`{ exclude: true }` means *never send this field to the provider* — not *leave it untouched*. An excluded field keeps its target value when it has one, is filled from the source locale when the target is empty (so a required field does not fail validation on save), and is never sent for translation. Exclusion wins over the `overwrite` strategy.
+`{ exclude: true }` means *never send this field to the provider* — not *leave it untouched*. An excluded field keeps its target value when it has one, is filled from the source locale when the target is empty (so a required field does not fail validation on save), and is never sent for translation. Exclusion wins over a filter: naming an excluded field translates nothing.
 
 ### Auto-translate on source change
 
@@ -236,7 +251,6 @@ translatorPlugin({
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
 | `targets` | `string[]` | — | **Required.** Locales to translate into. The source locale is always excluded. |
-| `strategy` | `'overwrite' \| 'skip_existing'` | `'overwrite'` | Replace every target field, or only fill empty ones. |
 | `debounceMs` | `number` | `0` | Delay before the queued job runs, coalescing rapid edits. |
 | `sourceLocale` | `string` | `localization.defaultLocale` | Source locale override for this collection. |
 
@@ -261,7 +275,7 @@ The source is the source locale's **own current content** — the newer draft wh
 Two consequences worth knowing before relying on it:
 
 - **Publishing publishes the current draft, whatever is in it.** That includes pending edits nobody made for the translation's sake, and non-localized fields, which Payload stores once per document and cannot scope to a locale. Worth remembering before running translate-and-publish over a long list: every unpublished draft among them goes live.
-- **`skip_existing` counts anything non-empty as translated.** A translation waiting unpublished in a draft counts, so a reviewer's corrected text is published as it stands rather than re-translated. It has no notion of *reviewed*, and a locale the admin flags as out of date is still skipped ([#118](https://github.com/focusreactive/payload-plugins/issues/118)).
+- **The `stale` criterion refreshes on drift, and does not ask who wrote the target.** With `provenance` on and a receipt already written for that locale, a run naming the `stale` rule keeps the leaves whose source text has moved since that run and drops the rest — so a target whose source stands still is left alone, and one whose source moved is re-translated, including text a person typed or corrected. A leaf the record does not name — added later, or emptied and since refilled — counts as moved, because a run records the source as it stood and an empty field is not in it. With no receipt for that locale, or none written leaf by leaf, nothing is known to stand still and every leaf is taken. Nothing has a notion of *reviewed*; `withFieldTranslation(field, { exclude: true })` is what keeps a field out of a run altogether.
 
 ## Translation providers
 
@@ -377,6 +391,9 @@ const fake = createTranslationProvider({
 > [!IMPORTANT]
 > Cron autorun does not fire on serverless hosts such as Vercel, so jobs queue and wait. Pass `createPayloadJobsRunner({ autoRun: false })` and drive the queue from your own cron or worker via `POST {basePath}/run/:id`.
 
+> [!IMPORTANT]
+> Set `jobs: { enableConcurrencyControl: true }` in your **Payload** config. Payload's update reads the whole stored document, merges one locale's values into it and writes every locale back, so two runs over one document lose each other's work — even when they write different locales. The plugin keeps a document's locales in one run wherever it can, but a request asking for fields the live run was not asked for gets its own run, and that is when the two can overlap.
+
 `createSyncRunner` keeps the status of what it ran in memory — the last 100 tasks, for an hour, adjustable with `maxSize` and `ttlMs`. A restart forgets them. Nothing is lost but the reporting: the translations themselves are already written.
 
 ### Seeing finished jobs
@@ -417,7 +434,7 @@ translatorPlugin({
 })
 ```
 
-Each `task` carries `{ collection, id, sourceLng, targetLng, strategy, handle }`. `handle` names the run translating that locale — the value the enqueue answer gave, and the one `DELETE /translate/cancel` takes back. _Since v0.16.0._
+Each `task` carries `{ collection, id, sourceLng, targetLng, handle }`. `handle` names the run translating that locale — the value the enqueue answer gave, and the one `DELETE /translate/cancel` takes back. _Since v0.16.0._
 
 Each callback fires at most once per target locale, never per attempt: `onQueued` when the runner takes the work, then one of `onCompleted`, `onFailed` or `onCancelled`. **`onFailed` means the locale will not be translated** — retries are the runner's own business and are not reported, so there is no need to disable them. _Since v0.16.0; `onFailed` previously fired on every failed attempt._
 
@@ -433,6 +450,8 @@ Set `provenance: true` and the plugin adds a collection that records, for each d
 > On a SQL database this adds a table. Generate and run a migration (`payload migrate:create`, then `payload migrate`; dev push works in development). MongoDB infers it with no migration. Leaving `provenance` off means no collection, no migration and no behaviour change.
 
 > [!NOTE]
+> **Upgrading to 1.0.** A locale whose receipt was written before 1.0 flags as out of date once, with nothing actually changed: receipts written earlier recorded nothing for a leaf the run had skipped, and that leaf is now read as one to revisit. The next run settles it. Dismissing the flag hides it, but does not stop that run from re-translating the leaf.
+
 > **Upgrading from below 0.11.1.** A locale can read as out of date once after the upgrade with nothing actually needing re-translation. Dismissing the flag or re-translating settles it.
 
 ## HTTP endpoints you can call
@@ -443,9 +462,13 @@ Three endpoints are meant for you. They mount under your Payload API route plus 
 | --- | --- | --- |
 | `POST` | `/enqueue` | Start translations from your own code — a migration, an import, any script. |
 | `POST` | `/run/:id` | Run a queued job now. Required wherever cron autorun does not fire, such as Vercel. |
-| `POST` | `/field` | Translate one field and get the result back. Mounted only when `levels` includes `fieldLevel()`. |
+| `POST` | `/field` | Translate one field and get the result back. Mounted only when `modules` includes `fieldTranslation()`. |
 
-`POST /enqueue` takes `source_lng`, `target_lng` (one locale or a list), `collection_slug` and `collection_id[]`, plus optional `select_all`, `strategy` (`'overwrite' | 'skip_existing'`, default `'overwrite'`) and `publish_on_translation` (default `false`). Field names are snake_case.
+`POST /enqueue` takes `source_lng`, `target_lng` (one locale or a list), `collection_slug` and `collection_id[]`, plus optional `select_all`, `publish_on_translation` (default `false`) and `filters`. Field names are snake_case.
+
+`filters` says which leaves the run translates. A filter is either the addresses themselves — `{ kind: 'leaves', addresses: ['title'] }` — or the name of a rule that produces them — `{ kind: 'rule', name: 'stale' }`. The run translates the intersection of every filter's answer, so an empty list means every translatable leaf and two filters mean the leaves both accept.
+
+`filters` reach the stored job row as they were written, and are resolved against the document as it stands when the run happens. An address no longer in the document matches nothing, and an address naming an element by position (`content.#0.heading` — the fallback for an element carrying no `id`) resolves to whatever is in that position then. A `rule` is answered in the worker; with `provenance` on, `stale` keeps only the leaves whose source has moved since this locale was translated. If nothing answers to the rule's name, the run fails rather than translate the whole document.
 
 > [!NOTE]
 > The plugin mounts further routes under the same `basePath` to serve its own admin panels — status, cancel and staleness. They are not part of the published contract and may change in any release; drive the plugin through the three above.
@@ -455,7 +478,8 @@ Three endpoints are meant for you. They mount under your Payload API route plus 
 | Export | Kind | Purpose |
 | --- | --- | --- |
 | `translatorPlugin` | function | The plugin itself. |
-| `documentLevel`, `collectionLevel`, `fieldLevel` | functions | Translation surfaces for `levels`. |
+| `documentTranslation`, `fieldTranslation` | functions | Server surfaces for `modules`. |
+| `translateDocumentControl`, `bulkTranslationDashboard` | functions | Admin controls for `components`. |
 | `withFieldTranslation` | function | Attach a per-field control, or exclude a field. |
 | `withAutoTranslate` | function | Opt a collection into auto-translation. |
 | `createTranslationProvider` | function | Build a provider from one `complete` function. |
@@ -469,8 +493,8 @@ Three endpoints are meant for you. They mount under your Payload API route plus 
 | `SystemPromptBuilder`, `SystemPromptContext`, `JsonSchemaObject` | types | Prompt and schema customization. |
 | `OpenAIClientShape`, `OpenAISamplingParams`, `OpenAIStructuredOutput` | types | OpenAI adapter. |
 | `TaskRunnerProvider`, `PayloadJobsRunnerOptions`, `TaskFilter` | types | Task runners. |
-| `TranslationLevel`, `TargetSelectionMode` | types | Surfaces and target selection. |
-| `AutoTranslateConfig`, `AutoTranslateStrategy`, `FieldTranslationConfig` | types | Collection and field configuration. |
+| `TargetSelectionMode` | type | Single or multi target-language selection. |
+| `AutoTranslateConfig`, `FieldTranslationConfig` | types | Collection and field configuration. |
 | `TranslationTask`, `TranslationLifecycleCallbacks` | types | Lifecycle callbacks. |
 | `TranslationProvenanceRecord` | type | One stored provenance record. |
 

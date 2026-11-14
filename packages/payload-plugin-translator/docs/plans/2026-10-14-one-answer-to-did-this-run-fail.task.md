@@ -19,9 +19,9 @@ check that cannot fail.
 3. **`resolveSettings` accepts any number as `failedWindowMs`** (`settings.ts:80`).
 4. **The invariant that forbids defect 2 cannot fail.**
 
-### Correction to the brief this task was given
+### Correction to the original task description
 
-The brief said the shared conformance suite is not run for `PayloadJobsTaskRunner`. **That is
+The description said the shared conformance suite is not run for `PayloadJobsTaskRunner`. **That is
 wrong.** `apps/dev/src/integration/translator/task-runner-contract.int.test.ts` already calls
 `assertTaskRunnerContract("PayloadJobsTaskRunner", …)` against a real Payload, on all three
 adapters. The actual defect is narrower and worse: the case `"answers about no documents, not about
@@ -120,10 +120,10 @@ runners would still differ in shape, and the shared suite grades them against on
 ### Written contract?
 
 **None new.** `TaskFilter`'s docblock already states what `excludeGivenUpBefore` means; D1 makes the
-code agree with it rather than changing what is owed. No `/sp-red-test` path — this is a bug fix, so
-the failing test comes first against the broken code (Phase 3, path A).
+code agree with it rather than changing what is owed. This is a bug fix, so the failing test comes
+first against the broken code.
 
-### Escalate to /sp-architect?
+### Does this need a separate design?
 
 **No.** No new seam, no dependency, no data-model change. It makes two existing readers agree on one
 field.
@@ -167,9 +167,9 @@ thing it is meant to prove.
 consume, including the one that decides whether the admin panel keeps polling. The change is
 correct-by-measurement but its blast radius is the whole status surface.
 
-What that buys downstream, and will be honoured: `AskUserQuestion` at this gate; a failing test
-before the fix, not after; an **evidenced** regression sweep in Phase 4 naming what was grepped and
-how many call sites were read; three review angles in Phase 5b.
+What that buys downstream, and will be honoured: the owner confirms the behaviour change before
+implementation; a failing test before the fix, not after; an **evidenced** regression sweep naming
+what was grepped and how many call sites were read; three review angles.
 
 **Hazards:**
 
@@ -185,19 +185,19 @@ how many call sites were read; three review angles in Phase 5b.
   Teaching it `error` must not route the row back through `payload.update`, or every window test
   starts passing for the wrong reason.
 
-## Human choices
+## Decisions by the owner
 
-- **2026-10-14** — change the behaviour rather than leave the mismatch: the owner answered "да" to
-  changing what every reader of `Task.status` sees, after being shown that the panel reports a false
-  alarm and that such a row never ages out of the window.
+- **2026-10-14** — change the behaviour rather than leave the mismatch: what every reader of
+  `Task.status` sees changes, because the panel reports a false alarm and such a row never ages out
+  of the window.
 - **2026-10-14** — scope held to four defects. The audits also found: the client widget chain
   relaying `targetSelection` through 20 sites, `PayloadJobsTaskRunner.test.ts` holding 18 doubles
-  over 887 lines, `GetCollectionStatusOutput` bound to nothing, 24 comment verdicts, and a missing
+  over 887 lines, `GetCollectionStatusOutput` bound to nothing, 24 comment findings, and a missing
   README line. All deliberately left out as separate passes.
 
-- **2026-10-14** — the lost error text is accepted rather than compensated. Offered the alternative
-  of also showing `run.error?.message` on a `pending` run in `statusRows.ts`; the owner chose to keep
-  the scope at four defects and leave the client untouched. The transient error text disappears from
+- **2026-10-14** — the lost error text is accepted rather than compensated. Rejected: also showing
+  `run.error?.message` on a `pending` run in `statusRows.ts`; the scope stays at four defects and the
+  client is untouched. The transient error text disappears from
   the document panel; it is shown today only under a label (`Failed`) that is itself the false alarm
   this task removes.
 
@@ -213,7 +213,7 @@ how many call sites were read; three review angles in Phase 5b.
 | AC6 | met | `"keeps a window of zero instead of reading it as unset"` unchanged and green |
 | AC7 | met | `grep -c` → `0` |
 | AC8 | met | package 0 · `apps/dev` check-types 0 · `apps/dev` tsconfig.json 2 (`payload.config.ts:166`, `vitest.integration.config.ts:21`, both pre-existing) |
-| AC9 | met | `Found 46 warnings and 0 errors` · `apps/dev` 5 warnings. `sp-lint-delta` two-run: *No findings introduced by this change* |
+| AC9 | met | `Found 46 warnings and 0 errors` · `apps/dev` 5 warnings. Lint against the base: nothing introduced |
 | AC10 | met | package **2103** passed / 151 files; sqlite 236 · postgres 241 · mongo 234, all above baseline |
 
 ### Two corrections to this contract's own pre-flight
@@ -251,21 +251,21 @@ Two greps over `src`, every match read:
   unrelated. The rest were read individually: `normalizeJob.ts:43,83` carry the error *text* (correct
   to key on `error` — the message exists from the first failed attempt), `normalizeJob.ts:44` and
   `planEnqueue.ts:41` read cancellation out of the error payload, and `statusRows.ts:94` plus
-  `TranslationStatusList.tsx:189` are the accepted loss recorded under Human choices.
+  `TranslationStatusList.tsx:189` are the accepted loss recorded under Decisions by the owner.
 
 Guardrails left behind: the moved invariant now holds **both** runners to the empty-list rule on three
 adapters, and `"reads a run that failed an attempt but will retry as pending"` pins the status rule at
 the unit level.
 
-### Comment gate
+### Comments
 
 One comment added by this task — the docblock on `failureShape` naming the two shapes Payload writes,
 with its citation. Kept: the constraint itself is structural (the union `"gave-up" | "retrying"` makes
 the invalid combination unexpressible), so the prose carries only the external fact.
 
-### Standing gate failure, unchanged
+### A pre-existing check failure, unchanged
 
-`sp-diff-checks` reports one FAIL on `apps/dev/src/integration/translator/locale-workflow-failure.int.test.ts`
+The diff check reports one failure on `apps/dev/src/integration/translator/locale-workflow-failure.int.test.ts`
 — one assertion line replaced (`["fr", "failed"]` → `["fr", "pending"]`). It predates this task and
 belongs to the panel work; this task did not touch that file. After this change the assertion holds
 for a second, better reason: the run-level rule now agrees with the locale-level one.
@@ -296,7 +296,7 @@ for a second, better reason: the run-level rule now agrees with the locale-level
   by reading `collection-utils.ts:43` (`if (ids.length === 0) return new Set();`). Also confirmed
   `resolveSettings` is the only production route to `failedWindowMs`, so a bad value cannot reach the
   date arithmetic another way.
-- **Whether the new tests discriminate.** **One finding, applied, and it was mine.** The case this
+- **Whether the new tests discriminate.** **One finding, applied, in a case this task added.** The case this
   task added to the shared suite — then named *"keeps work still in flight however old the cutoff
   makes it"* — is a real check under `PayloadJobsTaskRunner` (with `autoRun: false` the row stays
   `pending`, so removing the `{ hasError: { not_equals: true } }` branch of `settledSince` would fail
@@ -317,7 +317,7 @@ for a second, better reason: the run-level rule now agrees with the locale-level
   | the whole cutoff branch deleted | *"drops a run that gave up before the cutoff"* only |
   | `<` inverted to `>` in the comparison | both cases |
 
-  The reviewer also noted the `log` entry in *"treats a run that is still retrying…"* does not affect
+  The review also noted the `log` entry in *"treats a run that is still retrying…"* does not affect
   the outcome for a single-locale run — harmless surplus in the fixture, left as is — and that
   `toThrow(/failedWindowMs/u)` pins the setting's name but not the message's wording. Both recorded,
   neither acted on.

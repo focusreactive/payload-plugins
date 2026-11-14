@@ -18,13 +18,21 @@ the single source of truth — code annotations link here by anchor instead of d
    */
   ```
 
-- **Removal policy.** Deprecations ship as `feat:` (minor). All removals land together in a single
-  `feat!:` (major) release — no drip-feed of breaking changes.
+- **Removal policy.** Deprecations ship as `feat:` (minor). Removals land in the next major, grouped
+  rather than drip-fed — each one in the step of the major that rewrites its area.
+- **How a removal is committed.** An ordinary `feat(scope): …` header plus a `BREAKING CHANGE:`
+  footer in the body. **Never a `!` in the header.** `.releaserc.json` sets no `preset`, so the
+  `angular` one is used, and its header pattern has no place for `!` — such a header fails to parse
+  and the commit may not be read as a release at all. The footer is what the preset's
+  `noteKeywords` reads, and it is the only thing that produces a major. Same reasoning as
+  [runner-create-takes-the-context](#runner-create-takes-the-context).
 
 ## Status legend
 
 - `live` — annotated and in use as a fallback / alias; safe to remove in the next major.
 - `planned` — agreed to deprecate, not yet annotated in code.
+- `removed` — gone from the code. The entry stays, because it is what tells an upgrading host
+  what used to be there and what replaced it; the `Removed:` line says when.
 
 ---
 
@@ -51,11 +59,16 @@ the single source of truth — code annotations link here by anchor instead of d
 - **Migration:** expand/contract. New jobs write text fields; the relationship field stays as a
   read-only fallback (`required: false`, `admin.readOnly: true`) so jobs queued before the change
   remain readable. Removed (along with the fallback read path) in the next major.
+- **Where the fallback lives now:** one folder —
+  `src/server/modules/task-runner/payload-jobs-runner/legacy/` — reached from two call sites, the
+  boot backfill and the workflow handler. A job carrying any pre-1.0 shape is **adopted** on first
+  encounter: its rows are written into `translator-runs` from what the old row said, its input is
+  replaced by the pointer a job carries now, and nothing downstream learns the old shape existed.
+  Deleting that folder, its two call sites and the `withoutAHandle()` query drops the compatibility
+  outright — the cost is that a job queued before the upgrade and never adopted stops running.
 - **Code refs:**
-  - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsRunnerProvider.ts` (inputSchema, handler input type/unpacking)
-  - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsTaskRunner.ts` (enqueue write, `findByCollection` / `findRawJobs` query + in-memory filter)
-  - `src/server/modules/task-runner/payload-jobs-runner/store/normalizeJob.ts` (read fallback)
-  - `src/server/modules/task-runner/payload-jobs-runner/store/types.ts` (`PayloadJob.input` shape)
+  - `src/server/modules/task-runner/payload-jobs-runner/legacy/legacyInput.ts` (the only reader)
+  - `src/server/modules/task-runner/payload-jobs-runner/legacy/adoptLegacyJob.ts`
 
 ### jobs-per-locale-task-shape
 
@@ -69,34 +82,72 @@ the single source of truth — code annotations link here by anchor instead of d
 - **Why:** a job per locale meant Payload ran a document's locales through `Promise.all`, and every
   write it makes is a whole-document version snapshot — so the second locale's snapshot dropped the
   first's work. See [locale workflow](./plans/2026-09-04-locale-workflow.task.md).
-- **Migration:** expand/contract. Nothing writes the task shape any more, but rows queued before the
-  upgrade are still in `payload-jobs`, so every read keeps a fallback for them. Removing the fallback
-  strands those rows: cancel, stale-lock reclaim and the status panels stop finding them, silently.
+- **Migration:** expand/contract. Nothing writes the task shape any more, and a row queued before the
+  upgrade is adopted rather than read in parallel — see the entry above for where that lives.
+- **Where the fallback lives now:** one folder —
+  `src/server/modules/task-runner/payload-jobs-runner/legacy/` — reached from two call sites, the
+  boot backfill and the workflow handler. A job carrying any pre-1.0 shape is **adopted** on first
+  encounter: its rows are written into `translator-runs` from what the old row said, its input is
+  replaced by the pointer a job carries now, and nothing downstream learns the old shape existed.
+  Deleting that folder, its two call sites and the `withoutAHandle()` query drops the compatibility
+  outright — the cost is that a job queued before the upgrade and never adopted stops running.
 - **Code refs:**
   - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsTaskRunner.ts` (`ownJobs()`)
-  - `src/server/modules/task-runner/payload-jobs-runner/model/planEnqueue.ts` (`pickHost` skips it)
-  - `src/server/modules/task-runner/payload-jobs-runner/store/normalizeJob.ts` (`normalizeJobLocales`
-    expands it to itself)
+  - `src/server/modules/task-runner/payload-jobs-runner/legacy/legacyInput.ts`
+
+### the-runner-only-accepts-work
+
+- **What:** `TaskRunner.assignmentsOf` and `TaskRunner.findByCollection`, with `TaskFilter` and
+  `toTaskFilter`; `TaskRunner.cancel` and `TaskRunner.run` as required members;
+  `createSyncRunner`'s `maxSize` / `ttlMs` options and the `SyncRunnerOptions` type.
+- **Status:** removed
+- **Deprecated:** not annotated — agreed and removed in one step, because the replacement had to
+  exist first.
+- **Removed:** 2026-10-27
+- **Replacement:** nothing on the runner. The plugin keeps its own record of every run
+  (`translator-runs`) and answers from it: which runs a document has, which document a handle names,
+  and what each locale is doing. `cancel` becomes the optional `stop`; `run` becomes optional; a
+  provider declares which of the two it has through the required `capabilities: RunnerCapabilities`.
+- **Why:** every fact the plugin needed about a run lived in the runner, so each new need became a
+  new port member and a new demand on every runner author — `assignmentsOf` arrived that way. Status
+  also could not survive Payload's own `deleteJobOnComplete: true`, because the job row was the
+  record. See [the plugin keeps its own record](./plans/2026-10-26-the-plugin-keeps-its-own-record.design.md).
+- **Migration:** implement `enqueue` and declare `capabilities`. A runner that can stop work renames
+  `cancel` to `stop` and declares `stop: true`; one that can process a queued job on demand keeps
+  `run` and declares `run: true`. Delete `assignmentsOf` and `findByCollection` — nothing calls
+  them. `assertTaskRunnerContract` now takes the declared capabilities as its third argument and
+  asserts that what a provider declares, its runner implements.
+- **What removal takes with it:** a route whose capability is absent is **not registered**, so a
+  host's own client calling `/translate/cancel` against an enqueue-only runner gets a 404 rather
+  than a 501. The plugin's own admin draws no control for it.
+- **Code refs:**
+  - `src/server/modules/task-runner/TaskRunner.interface.ts`
+  - `src/server/modules/task-runner/RunnerCapabilities.ts`
+  - `src/server/features/createTranslationRoutes.ts` (registration by capability)
+  - `src/testing/TaskRunner.invariants.ts`
 
 ### translate-positional-languages
 
 - **What:** `TranslationProvider.translate(input, sourceLng, targetLng, options?)` — the two language
   codes as adjacent positional strings, with everything else in a trailing optional bag.
-- **Status:** planned
-- **Deprecated:** not yet annotated — agreed 2026-10-15 while implementing #109.
-- **Replacement:** `translate(input, ctx)`, one object carrying the languages, the document and the
-  switches. `ctx` is **not** optional, so the document is required outright — today it is required
-  inside an optional parameter, which is as close to the truth as the current signature allows.
-- **Remove in:** next major
+- **Status:** removed
+- **Deprecated:** not annotated — agreed 2026-10-15 while implementing #109.
+- **Removed:** 2026-10-29, with the port's signature (step 2 of
+  `plans/2026-10-28-the-provider-port.design.md`). The entry was not updated at the time; the code
+  had already gone.
+- **Replacement:** `translate(input, request)`, one object carrying both language codes and the
+  document. It is not optional, so the document is required outright — under the old signature it
+  was required inside an optional parameter, which was as close to the truth as that shape allowed.
 - **Why:** two adjacent parameters of the same type can be swapped silently, and no test catches it.
   The trailing bag then forced a second mistake: `collection` and `documentId` arrived as *options*
   beside `inlineMarks`, mixing what is being translated with how. #109 fixed the second half by
   grouping them as `document: DocumentRef`; the first half cannot be fixed without breaking the
   signature.
 - **Migration:** mechanical, and narrower than it looks. The path the README recommends —
-  `createTranslationProvider({ complete })` — is unaffected: `CompletionFn` already takes a single
-  `CompletionRequest` object. Only a host that implements `TranslationProvider.translate` by hand has
-  to change, and `TranslationRequestOptions` disappears into `ctx` rather than being removed.
+  `createTranslationProvider({ askModel })` — is unaffected: `AskModel` already takes a single
+  `ModelRequest` object. Only a host that implements `TranslationProvider.translate` by hand has
+  to change. `TranslationRequestOptions` is gone: its `document` half is on `TranslationRequest`;
+  `inlineMarks` left with the experimental option.
 - **Note:** `docs/plans/2026-08-21-translation-mechanism-kernel-extraction.md` reshapes this port
   anyway. Doing it before that lands would be the same work twice, which is why it waits.
 
@@ -104,9 +155,11 @@ the single source of truth — code annotations link here by anchor instead of d
 
 - **What:** passing a bare `Array<string | number>` of document ids as the second argument to
   `TaskRunner.findByCollection`.
-- **Status:** live
+- **Status:** removed
 - **Deprecated:** 2026-09-04 / PR #126
-- **Replacement:** `TaskFilter` — `findByCollection(slug, { documentIds })`.
+- **Removed:** 2026-10-27 — with `findByCollection` itself; see
+  [the-runner-only-accepts-work](#the-runner-only-accepts-work).
+- **Replacement:** nothing on the runner. The plugin answers about a collection from its own record.
 - **Remove in:** next major
 - **Why:** a positional argument cannot grow. The second filter this method needed —
   `excludeCompleted`, which bounds the read on the enqueue path (#108) — had nowhere to go without
@@ -137,61 +190,72 @@ the single source of truth — code annotations link here by anchor instead of d
 
 ### translate-collection-plugin-class
 
-- **What:** `TranslateCollectionPlugin` class.
-- **Status:** live (already `@deprecated` in code)
+- **What:** `TranslateCollectionPlugin` class, and the `TranslateCollectionPluginConfig` type
+  alias beside it.
+- **Status:** removed
 - **Deprecated:** pre-ledger (annotated before this registry existed)
-- **Replacement:** `translatorPlugin()` function.
-- **Remove in:** next major
-- **Code refs:** `src/plugin.ts`
+- **Removed:** 2026-10-19 / PR #184
+- **Replacement:** `translatorPlugin()` function, and `TranslatorPluginConfig`.
+- **What moved with it:** the class held the whole plugin body and `translatorPlugin` only
+  constructed it. The body now lives in the function, which is where a host's configuration
+  file expects it — Payload's own config API is functions and plain objects, and this class
+  was the only `new` a host had to write.
+- **Code refs:** `src/plugin.ts` (`translatorPlugin`)
 
 ### create-translate-plugin
 
 - **What:** `createTranslatePlugin` alias.
-- **Status:** live (already `@deprecated` in code)
+- **Status:** removed
 - **Deprecated:** pre-ledger
+- **Removed:** 2026-10-19 / PR #184
 - **Replacement:** `translatorPlugin()`.
-- **Remove in:** next major
 - **Code refs:** `src/plugin.ts`
 
 ### translate-kit-field
 
 - **What:** `translateKitField` alias.
-- **Status:** live (already `@deprecated` in code)
+- **Status:** removed
 - **Deprecated:** pre-ledger
+- **Removed:** 2026-10-19 / PR #184
 - **Replacement:** `withFieldTranslation()`.
-- **Remove in:** next major
 - **Code refs:** `src/field-config.ts`
 
 ### translate-kit-field-config-type
 
-- **What:** `TranslateKitFieldConfig` type alias.
-- **Status:** live (already `@deprecated` in code)
+- **What:** `TranslateKitFieldConfig` type alias, both the public one and the internal copy in
+  `core/domain/field-config/`, along with the `getTranslateKitFieldConfig` alias that read it.
+- **Status:** removed
 - **Deprecated:** pre-ledger
-- **Replacement:** `FieldTranslationConfig`.
-- **Remove in:** next major
-- **Code refs:** `src/field-config.ts`
+- **Removed:** 2026-10-19 / PR #184
+- **Replacement:** `FieldTranslationConfig`, and `getFieldTranslationConfig` internally.
+- **Code refs:** `src/field-config.ts`, `src/core/domain/field-config/`
 
 ### openai-translation-provider-class
 
 - **What:** `OpenAITranslationProvider` class.
-- **Status:** live (already `@deprecated` in code)
+- **Status:** removed
 - **Deprecated:** pre-ledger
-- **Replacement:** `createOpenAIProvider()` factory.
-- **Remove in:** next major
-- **Code refs:** `src/translation-providers/openai/OpenAITranslationLegacy.provider.ts`
+- **Removed:** 2026-11-01, with the deprecation sweep (step 6 of
+  `plans/2026-10-28-the-provider-port.design.md`).
+- **Replacement:** the class delegated to `createOpenAIProvider`, which was removed in the same
+  step — so the replacement is the one that entry gives: construct the client yourself and pass it
+  to `askOpenAI`. See [openai-client-construction](#openai-client-construction).
+- **Code refs (at removal):** `src/translation-providers/openai/OpenAITranslationLegacy.provider.ts`
 
 ### provider-dry-run
 
 - **What:** the `dryRun` option on `TranslationProviderConfig` and `OpenAIProviderConfig`, and with
   it the exported `DryRunConfig` / `DryRunTransformer` types.
-- **Status:** live
+- **Status:** removed
 - **Deprecated:** 2026-08-28 / PR #101
+- **Removed:** 2026-10-30, with the provider port's segments (step 4 of
+  `plans/2026-10-28-the-provider-port.design.md`): the option could not read segments, and teaching
+  it to would have kept alive what this entry already scheduled for removal.
 - **Replacement:** supply your own fake request function —
-  `createTranslationProvider({ complete })`, or `createOpenAIProvider({ client })` with a stub
-  client. Both reach no network and need no API key. The README carries the recipe; the package
+  `createTranslationProvider({ askModel })`, which reaches no network and needs no API key. The
+  README carries the recipe; the package
   deliberately does **not** ship a ready-made fake, because that would be this option again under a
   new name.
-- **Remove in:** next major
 - **Why:** the name promises a rehearsal the option cannot deliver. It lives on the provider, so it
   can only skip the network call. Everything downstream runs as in a real translation: the
   transformed strings are written to the target locale, published when `publishOnTranslation` is
@@ -207,7 +271,7 @@ the single source of truth — code annotations link here by anchor instead of d
 
   Known wart, left as is for the same reason: the built-in transformer reverses by UTF-16 code unit
   (`split("")`), so text outside the basic plane comes back mangled.
-- **Code refs:** `src/translation-providers/shared/runDryRun.ts`,
+- **Code refs (at removal):** `src/translation-providers/shared/runDryRun.ts`,
   `src/translation-providers/shared/CompletionProvider.provider.ts`,
   `src/translation-providers/openai/OpenAITranslation.provider.ts`
 
@@ -217,18 +281,22 @@ the single source of truth — code annotations link here by anchor instead of d
   `OpenAIProviderConfig`, the `loadOpenAIClient` module behind them, and the already-deprecated
   `OpenAITranslationProvider` class that delegates to `createOpenAIProvider`. The `openai` entry in
   `optionalDependencies` goes with them.
-- **Status:** live
+- **Status:** removed
 - **Deprecated:** 2026-08-28 / PR #101
-- **Replacement:** construct the client yourself and hand it to `openAIComplete`, which stays:
+- **Removed:** 2026-11-01, with the deprecation sweep (step 6 of
+  `plans/2026-10-28-the-provider-port.design.md`). `openai` moved to `devDependencies` rather than
+  leaving the package.json: `__tests__/OpenAI.shapes.test.ts` imports the SDK **type** to assert
+  that `OpenAIClientShape` still accepts a real client, and the build excludes `__tests__`, so
+  nothing reaches `dist` and no consumer installs it.
+- **Replacement:** construct the client yourself and hand it to `askOpenAI`, which stays:
 
   ```ts
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 60_000 });
 
   translationProvider: createTranslationProvider({
-    complete: openAIComplete({ client, model: "gpt-4o" }),
+    askModel: askOpenAI({ client, params: { model: "gpt-4o" } }),
   }),
   ```
-- **Remove in:** next major
 - **Why:** what makes this layer expensive is not knowing how to call OpenAI — it is carrying the
   SDK as an *optional* dependency of ours. `loadOpenAIClient` imports it through a module-level
   specifier constant because deployment file-tracers resolve `import()` statically and silently
@@ -238,46 +306,98 @@ the single source of truth — code annotations link here by anchor instead of d
   consumer may not have can be absent safely. A consumer who imports the SDK they already chose
   needs none of it, and gains their own SDK version.
 
-  **What is *not* deprecated, and why the first cut of this entry was wrong:** `openAIComplete`,
+  **What is *not* deprecated, and why the first cut of this entry was wrong:** `askOpenAI`,
   `OpenAIClientShape` and the `OpenAI.shapes.ts` types stay. They carry vendor *knowledge* with no
-  vendor *dependency* — `OpenAI.shapes.ts` bans the import in its first line, and `openAIComplete`
+  vendor *dependency* — `OpenAI.shapes.ts` bans the import in its first line, and `askOpenAI`
   never names the package, taking a structural client slice instead. Deprecating them would have
   handed every consumer the request body, the envelope choice and the schema-rejection advice to
   maintain themselves, which is the opposite of the point.
-- **Code refs:** `src/translation-providers/openai/OpenAITranslation.provider.ts`,
+- **Code refs (at removal):** `src/translation-providers/openai/OpenAITranslation.provider.ts`,
   `src/translation-providers/openai/loadOpenAIClient.ts`,
   `src/translation-providers/openai/OpenAITranslationLegacy.provider.ts`
+
+### the-completion-vocabulary
+
+- **What:** the word "completion" across the provider surface — the `complete` key on
+  `TranslationProviderConfig`, the types `CompletionFn` and `CompletionRequest`, the OpenAI adapter
+  `openAIComplete`, and `OpenAISamplingParams` with the `model` / `sampling` argument pair it
+  belonged to.
+- **Status:** removed
+- **Deprecated:** not annotated — agreed and removed in one step, while the major was still
+  unreleased and the rename was free.
+- **Removed:** 2026-11-01, with step 7 of
+  [the provider port](./plans/2026-10-28-the-provider-port.design.md).
+- **Replacement:** `askModel`, `AskModel`, `ModelRequest`, `askOpenAI`, and one `params` object
+  carrying the whole OpenAI request body:
+
+  ```ts
+  translationProvider: createTranslationProvider({
+    askModel: askOpenAI({ client, params: { model: "gpt-4o", temperature: 0 } }),
+  }),
+  ```
+- **Why:** "completion" is a vendor word for a different API shape than the one this package calls,
+  and it said nothing about what the function does — it asks a language model one question and
+  returns the reply as text. Separately, `model` and `sampling` were two shapes for one request
+  body, split by how the adapter happened to use them rather than by anything the caller could see;
+  `sampling` was also a hand-curated list of four fields, so a fifth needed a code change here.
+  `OpenAIParams` is now derived as the body minus the two fields the plugin fills in (`messages`,
+  `response_format`), so the caller owns everything else.
+- **Migration:** mechanical and compile-time — every removed name fails the type-check at its call
+  site. `complete:` becomes `askModel:`; `openAIComplete({ client, model, sampling })` becomes
+  `askOpenAI({ client, params: { model, ...sampling } })`. A host that implements the ask function
+  by hand changes only the type's name; its shape is unchanged.
+- **Code refs (at removal):** `src/translation-providers/shared/CompletionProvider.provider.ts`,
+  `src/translation-providers/openai/openAIComplete.ts`
 
 ### experimental-inline-marks
 
 - **What:** `translatorPlugin({ experimental: { inlineMarks } })`.
-- **Status:** live (`@deprecated` in code from the day it shipped)
+- **Status:** removed
 - **Deprecated:** 2026-09-11 / PR #139 (issue #134)
-- **Replacement:** none — the behaviour becomes the only mode, so the switch simply goes away.
-- **Scope:** this entry only. The `experimental` option itself is permanent — it is where the
-  next transitional switch will live, so removing `inlineMarks` does not remove the object.
-- **Remove in:** next major
+- **Removed:** 2026-10-19 / PR #186
+- **Superseded by the provider-port design** (D2, D11 of
+  `plans/2026-10-28-the-provider-port.design.md`): `capabilities` is gone too. Every provider now
+  receives rich text by container; the per-node path is only the fallback for a container that
+  cannot be sent with marks, and a reply that cannot be used leaves the container in its source
+  language with the reason logged. The bullets below describe the state at the flag's removal.
+- **Replacement:** none for the host. What used to be two conditions is now one: a provider that
+  declares `capabilities.inlineMarks` gets container-granular rich text, and one that does not keeps
+  translating node by node. Nothing is configured.
+- **Scope, revised when it was removed.** This entry said the `experimental` option itself was
+  permanent, being where the next transitional switch would live. That was reversed by the owner on
+  2026-10-19: `inlineMarks` was its only entry, so keeping it would have published an option that
+  accepts nothing for the whole of 1.x — and adding an option back is additive and ships in a minor,
+  while removing one is breaking and can only ship in a major. The object went with its entry.
+- **Who this changes, and how to keep the old behaviour.** Every host whose provider declares
+  `capabilities.inlineMarks` **and** that had the flag off or never set it. That is not a corner: the
+  bundled OpenAI provider declares it (`OpenAITranslation.provider.ts:134`), so an install that never
+  opted in moves from node-by-node to container-at-a-time rich text on upgrade — which may reorder
+  the pieces of a paragraph and changes the shape that gets saved. There is no flag to pin the old
+  behaviour any more; the only way back is a provider that does not declare the capability, which a
+  host can arrange by wrapping theirs. Ships in a major, by itself.
 - **Why:** a transitional switch, not a supported choice. Translating rich text node by node pins
   every word to its source position, which is a defect, not a preference — so there is nothing to
   keep choosing between. The flag exists only so an install can adopt the change on its own
-  schedule and step back if its provider misbehaves. The next major removes **the flag**, not the
+  schedule and step back if its provider misbehaved. This major removed **the flag**, not the
   per-node code: that stays as the internal fallback for a mark-shaped source, a single-fragment
-  container, and a corrupt reply.
+  container, and a corrupt reply — and it is what a provider silent about marks still gets.
 - **After removal, a provider still decides:** `capabilities.inlineMarks` is core logic, not part of
   the flag, and survives it. A third-party `TranslationProvider` that never declares the capability
   therefore keeps translating node by node indefinitely — the mode this entry calls a defect — with
   no warning surface. Provider authors need telling, separately from this flag's own removal.
 - **Code refs:**
-  - `src/plugin.ts` (the option)
-  - `src/core/translation-pipeline/translateContent.ts` (the single switch between the two paths)
+  - `src/core/translation-pipeline/translateContent.ts` (the one condition that now decides)
   - `src/core/translation-pipeline/stages/text-expander/RichContainerExpander.ts`
   - `docs/plans/2026-09-08-richtext-container-granularity-design.md` (D8, D8a)
 
 ### enqueue-void-return
 
 - **What:** `TaskRunner.enqueue` resolving with nothing.
-- **Status:** live
+- **Status:** removed
 - **Deprecated:** 2026-10-07 / PR pending (issues #107, #110)
+- **Removed:** 2026-10-27 — `enqueue` now answers `EnqueueAssignment[]`, and the plugin writes a
+  row of its own against each handle, so a runner that answered with nothing would leave work it
+  accepted unrecorded.
 - **Replacement:** resolve with one assignment per requested locale — the shape `TaskRunnerProvider`
   infers for `enqueue`; an implementation returns it as an object literal and needs no import.
 - **Remove in:** next major
@@ -309,11 +429,48 @@ the single source of truth — code annotations link here by anchor instead of d
   one as "this translation is dead", was reading a signal that did not mean that. Silently making it
   mean that is the fix, but an install that disabled retries *because* of the old behaviour should
   know it can turn them back on.
-- **What else moved with it:** a locale the run never reached is now reported too, with the error
-  that ended the run rather than one of its own — nothing ran for it to throw.
+- **What else moved with it:** a locale the run never reached started being reported too, with the
+  error that ended the run rather than one of its own. That stop-gap is itself superseded — see
+  [`on-failed-only-for-what-was-tried`](#on-failed-only-for-what-was-tried).
 - **Code refs:**
   - `src/server/features/translate-document/wireTranslateRunner.ts` (turns a reported event into a callback)
   - `src/server/modules/task-runner/payload-jobs-runner/model/owedIfGaveUp.ts` (when a run has stopped for good)
+  - `src/server/modules/lifecycle/types.ts` (`TranslationLifecycleCallbacks`)
+
+### on-failed-only-for-what-was-tried
+
+- **What:** `lifecycle.onFailed` firing for a target locale the run never attempted, carrying the
+  error that ended a *different* locale.
+- **Status:** removed (behaviour change, not an annotated symbol)
+- **Removed:** 2026-11-02, with step 9 of
+  [the provider port](./plans/2026-10-28-the-provider-port.design.md).
+- **Replacement:** `lifecycle.onAbandoned`, fired once per locale the run gave up before reaching.
+  It takes the task and no error, because none of them is its own:
+
+  ```ts
+  lifecycle: {
+    onFailed: (task, error) => report(task, error),  // tried, and it broke
+    onAbandoned: (task) => reschedule(task),         // never tried; nothing to report
+  },
+  ```
+- **Why:** a run walks a document's locales in order and stops at the one that throws. The locales
+  after it never start, and reporting them as failures told a person two untrue things at once —
+  that more translations failed than did, and that each failed for a reason that was in fact
+  another locale's. The same untruth reached a host counting failures, alerting on them, or
+  retrying from the callback.
+- **This break is silent, and that is the reason it is listed.** Nothing stops compiling. A host
+  that counted every unfinished locale through `onFailed` alone keeps building and quietly stops
+  hearing about the abandoned ones. Add `onAbandoned` wherever `onFailed` was used to mean "this
+  locale will not be translated".
+- **What else changed with it:** the run record stores `outcome: "abandoned"` with no error, the
+  status route answers `abandoned`, and the admin's per-locale list shows such a row as
+  "Not attempted" — with its Retry action, which is what a person looking at one wants. The
+  collection-wide progress counts do **not** yet carry it; they still report only queued, running
+  and recently failed work.
+- **Code refs:**
+  - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsRunnerProvider.ts` (which ending each owed locale gets)
+  - `src/server/modules/task-runner/types.ts` (`TaskEvent`, `TaskStatus`)
+  - `src/server/features/translate-document/wireTranslateRunner.ts` (turns a reported event into a callback)
   - `src/server/modules/lifecycle/types.ts` (`TranslationLifecycleCallbacks`)
 
 ### runner-create-takes-the-context
@@ -342,3 +499,387 @@ the single source of truth — code annotations link here by anchor instead of d
     runner, compiled against the published barrel)
   - `src/server/features/translate-document/wireTranslateRunner.ts` (the one place that builds a
     context)
+
+## 2026-10-22 — `skip_existing` refreshes on drift, whoever wrote the target
+
+**Status:** live · **Removal target:** next major (this one)
+
+A run used to record `null` against every leaf it saw and did not send, and both readers took that
+as *claim nothing*. The leaf then never read as out of date and `skip_existing` never selected it
+again, however far its source drifted. The receipt now records where each leaf's source stood when
+the run ended, whether the run translated that leaf or left it alone.
+
+**What changes for a host.** `skip_existing` re-translates a non-empty target once its own source
+text moves — including text a person typed or corrected. It never asked who wrote the target; it
+simply had no way to tell a leaf it had skipped from one it had never seen.
+
+**Why this is listed although nothing was renamed.** `README.md` promised "Protect hand-written
+copy — the `skip_existing` strategy fills only empty target fields", and a host reading that was
+relying on a guarantee the plugin no longer makes. Same precedent as `on-failed-per-attempt`.
+
+**What to do instead.** `withFieldTranslation(field, { exclude: true })` keeps a field out of every
+run. Per-document, per-field control arrives with the field picker (#48).
+
+**Stored receipts** written before this date are read leaf by leaf as before; a `null` in one is
+taken as *revisit this leaf*, and the first run that translates that leaf records a hash in its
+place. A leaf whose source is empty is never sent, so its `null` is carried forward and the locale
+keeps flagging until the source has text again.
+
+### levels-become-modules-and-components
+
+- **What:** the `levels` plugin option and the four names it needed — `documentLevel()`,
+  `collectionLevel()`, `fieldLevel()` and the `TranslationLevel` type.
+- **Status:** removed
+- **Changed:** 2026-10-22 / #198
+- **Replacement:** two required lists, `modules` and `components`. Either may be `[]`.
+
+  | Was | Becomes |
+  | --- | --- |
+  | `levels: [documentLevel()]` | `modules: [documentTranslation()]` · `components: [translateDocumentControl()]` |
+  | `levels: [collectionLevel()]` | `modules: [documentTranslation()]` · `components: [bulkTranslationDashboard()]` |
+  | `levels: [fieldLevel()]` | `modules: [fieldTranslation()]` |
+  | omitted (the old default) | `modules: [documentTranslation()]` · `components: [translateDocumentControl(), bulkTranslationDashboard()]` |
+
+- **Why:** a level was a server surface and an admin control welded together, and the two have
+  nothing to do with each other — a control runs in the browser and is loaded by path, while the
+  routes behind it are server wiring. Separating them is what lets provenance, which contributes
+  routes and a collection but no control, be listed the same way everything else is. The document
+  and collection levels registered the *same* route bundle, which is the only reason endpoints are
+  deduplicated at all; once the controls moved out, the two were indistinguishable and collapsed
+  into one module.
+- **No default:** an omitted option used to mean two surfaces, silently. Both lists are now
+  required, and omitting either fails at boot with the table above in the message. `[]` is a real
+  answer: auto-translate runs from a save hook and needs no route.
+- **Who this breaks:** every host. A plugin config that sets `levels`, or relies on its default,
+  does not compile and does not boot.
+- **Code refs:**
+  - `src/plugin.ts` (`modules`, `components`, and the refusal)
+  - `src/composition/modules/`, `src/composition/components/`
+  - `src/server/modules/plugin-config/types.ts` (`TranslationModule`, `TranslationComponent`)
+
+### runner-context-carries-the-attempt-count
+
+- **What:** `TaskHandlerInput` gains a required `previousAttempts: number`.
+- **Status:** removed (the old shape)
+- **Changed:** 2026-10-22 / #198
+- **Replacement:** a runner supplies the number of times this locale was tried before the attempt
+  now running — zero on the first, and zero always for a runner that never retries.
+- **Why:** a module joining a translation run may need to behave differently on a replay, and the
+  count already exists on the job row. Reading it in the runner, where it lives, is cheaper and
+  more honest than every module guessing.
+- **Who this breaks:** only a `TaskRunnerProvider` implemented outside this package. The built-in
+  runners both supply it; a host that merely configures the plugin sees no change.
+- **Code refs:**
+  - `src/server/modules/task-runner/TaskRunnerProvider.interface.ts`
+  - `src/server/modules/task-runner/payload-jobs-runner/model/attemptsBefore.ts`
+
+### the-strategy-leaves-the-run
+
+- **What:** the translation strategy, everywhere it appeared — the `strategy` field of `POST /enqueue`,
+  the stored run row, the host-facing lifecycle task, the status response, the `TaskHandlerInput` a
+  third-party runner implements, `AutoTranslateConfig.strategy`, the exported `AutoTranslateStrategy`
+  type, the `TranslationStrategy` port and both its implementations, and the "Update mode" select in
+  both admin forms.
+- **Status:** removed
+- **Changed:** 2026-10-23 / #208
+- **Replacement:** a run carries, per target locale, a list of **filters**. A filter is either the
+  leaf addresses themselves or the name of a rule that produces them, and the run translates the
+  intersection of every filter's answer.
+
+  | Was | Becomes |
+  | --- | --- |
+  | `strategy: "overwrite"` (the default) | `filters: []` — a run with no filters translates every translatable leaf |
+  | `strategy: "skip_existing"` | `filters: [{ kind: "rule", name: "stale" }]`, which keeps the leaves whose source has moved |
+  | a selection of fields | `filters: [{ kind: "leaves", addresses: ["title", "layout.b1:text.content"] }]` |
+
+- **Why:** the strategy answered "what do we translate" with a rule, because nobody had asked. Two of
+  its clauses guessed at state the caller never stated — whether the target was empty, and whether the
+  source had moved — and `skip_existing` meant something different again when `provenance` was off.
+  A run now carries the answer rather than a rule for inferring it.
+- **Who this breaks:** every host. A plugin config setting `AutoTranslateConfig.strategy`, a caller
+  posting `strategy` to `/enqueue`, a lifecycle callback reading `task.strategy`, and a third-party
+  `TaskRunnerProvider` typed against `TaskHandlerInput` all change.
+- **Neither removal is silent.** `POST /enqueue` refuses a body still carrying `strategy` with a 400
+  naming the replacement, and the plugin warns at boot for each collection whose auto-translate
+  config still carries one. A removed option that had been protecting something must not become a
+  no-op that quietly overwrites it.
+- **Auto-translate loses the choice, for now.** It names no filters, so an automatic run covers the
+  whole document. A host that set `"skip_existing"` was getting only the drifted fields and now gets
+  all of them, at the provider's price and over reviewed text. External control over what an
+  automatic run covers is the next piece of work on that module.
+- **Code refs:**
+  - `src/server/features/enqueue-translation/model.ts` (`filters` and the refusals)
+  - `src/core/domain/selection/TranslationFilter.ts`
+  - `src/server/modules/translation-run/Criterion.interface.ts`
+  - `src/core/domain/selection/narrowSelection.ts`
+  - `src/server/modules/provenance/Provenance.criterion.ts`
+
+### the-strategy-leaves-the-stored-run
+
+- **What:** reading `target_lngs` and `strategy` off a run row written before 1.0.
+- **Status:** read-only shim, written nowhere, and since 2026-10-27 confined to
+  `payload-jobs-runner/legacy/` — a row carrying this shape is adopted on first encounter and is a
+  pointer from that moment on.
+- **Changed:** 2026-10-23 / #208
+- **Replacement:** `targets: [{ lng, filters }]`. A legacy row is read as one target per listed
+  locale, and a row that named `skip_existing` is read as carrying one `rule` filter named `stale`.
+- **That is the nearest meaning, not the same one.** `skip_existing` promised two things and `stale`
+  keeps one. A queued row therefore behaves differently in three cases, all of them confined to the
+  rows already in flight when this ships:
+
+  | The queued row | What it did | What it does now |
+  | --- | --- | --- |
+  | with `provenance` on and a per-leaf receipt | filled empty targets, refreshed what drifted | refreshes what drifted; an empty target whose source stands still is left empty |
+  | with `provenance` on and no per-leaf receipt for that locale | left a filled target alone | translates every leaf, reviewed text included |
+  | with `provenance` **off** | filled empty targets only | **fails**: nothing answers `stale`, so the run throws and spends its retries |
+
+  The last one is deliberate. Translating the whole document instead would overwrite text the row
+  was queued to protect, and a run that fails loudly can be queued again.
+- **Removal condition, not a version:** drop the legacy branch of `store/runTargets.ts` once no row
+  written before 1.0 can still be in flight. That is the queue's drain time — hours — not a release
+  cycle, so it does not need to wait for the next major.
+
+## 2026-10-24 — hiding the out-of-date mark writes the receipt
+
+### the-dismissed-fingerprint-leaves-the-receipt
+
+- **What:** the `dismissedFingerprint` column of the provenance sidecar, the field of the same name
+  on `ProvenanceReceipt`, and `ProvenanceStore.dismiss`.
+- **Status:** removed
+- **Changed:** 2026-10-24
+- **Replacement:** none — hiding the mark now writes `sourceFingerprint` through
+  `ProvenanceStore.rebaseSourceFingerprint`, so a receipt names one source: the one this translation
+  is considered current against.
+- **Why:** a receipt held two fingerprints and three readers asked whether a locale was out of date.
+  Only the admin panel consulted both, so hiding the mark quieted the lamp and nothing else: the
+  staleness response still named the field as moved, and a run narrowing by `stale` still
+  re-translated it over the text the editor had chosen to keep.
+- **Every mark an editor hid before this ships comes back once.** Those rows carry a non-null
+  `dismissedFingerprint` and nothing reads it any more, so each of those locales reads as out of date
+  again and a run narrowing by `stale` selects its fields again. A host that wants to keep them
+  copies `dismissedFingerprint` into `sourceFingerprint` wherever the first is not null, once, before
+  upgrading; a host that does not care lets the editors press the button again.
+- **An existing database keeps the column.** Nothing reads or writes it; the plugin no longer
+  declares it. A consumer on Postgres or SQLite with migrations drops it in a migration of their own,
+  at whatever moment suits them.
+- **On schema push the drop is an interactive prompt.** It appears whenever the table holds **any**
+  row, even though every value in the column may be null, and it blocks when standard input is not a
+  terminal — a process manager or CI will appear to hang rather than fail. Declining is safe: the
+  column is nullable and the plugin ignores it.
+- **Who this breaks:** nobody outside the package in TypeScript terms — `ProvenanceStore`,
+  `ProvenanceReceipt` and `ProvenanceKey` are internal, and `TranslationProvenanceRecord`, the only
+  provenance type the package exports, never carried a fingerprint.
+- **What a person will notice.** Hiding the mark used to quiet the panel alone. It now also keeps
+  those fields out of the next run that narrows by `stale`. **A field no run ever translated is
+  re-based too** — the button speaks for the whole document and locale — so such a field is treated
+  as current until its source moves again.
+- **Code refs:**
+  - `src/core/domain/provenance/ProvenanceStore.interface.ts`
+  - `src/core/domain/provenance/staleness.ts` (`isRecordStale`)
+  - `src/server/modules/provenance/DocumentStaleness.service.ts` (`dismiss`)
+  - `src/server/modules/provenance/Provenance.collection.ts`
+
+## 2026-10-25 — the receipt holds one shape
+
+### the-document-wide-digest-stops-being-read
+
+- **What:** the `document` member of `SourceFingerprint` — the single sha256 the plugin wrote into
+  the sidecar's `sourceFingerprint` column until per-leaf fingerprints shipped on 2026-10-05. The
+  union is gone with it; a receipt now holds a map of leaf address to hash, or nothing.
+- **Status:** removed
+- **Changed:** 2026-10-25
+- **Replacement:** none. A stored value that is not a per-leaf map now reads as *no receipt* —
+  exactly what an empty column has always read as.
+- **Why:** nothing had written that shape for twenty days, and keeping its reader cost a second hash
+  of the whole source document on every staleness read, since the whole-document hash existed only
+  to compare against it.
+- **What a host sees.** A target locale whose receipt was written before 0.15.0, and whose source
+  has not moved since, flips from up to date to **out of date**. It clears when that locale is
+  translated **in full**, or when an editor hides the mark. A narrowed run does not clear it: the row
+  carries no earlier claims to keep, so every leaf the run did not send is recorded as unanswered and
+  keeps reading as moved. A
+  locale whose source *had* moved already read as out of date and is unaffected, as is every locale
+  translated by 0.15.0 or later. The direction is a false alarm, never a false all-clear: nothing
+  reads as current that is not.
+- **Nothing to migrate.** The column keeps whatever it holds; the plugin overwrites it on the next
+  write to that row. A host that wants the marks gone without re-translating can press the hide
+  button on each affected locale.
+- **This narrows the workaround in #the-dismissed-fingerprint-leaves-the-receipt.** That entry tells
+  a host to copy `dismissedFingerprint` into `sourceFingerprint` wherever the first is not null, to
+  keep marks their editors had hidden. Copy only values that are JSON maps: a mark hidden before
+  0.15.0 stored a bare sha256 there, and copying one now writes a value that reads as no receipt, so
+  that mark comes back anyway. Those locales need the hide button pressed again.
+
+## 2026-10-25 — one permission decision point
+
+**Status:** live · **Removal target:** n/a — nothing is named for removal, but one name is newly
+**required**: `TaskRunner.assignmentsOf`, below.
+
+The plugin stopped deciding who has access. It now asks twice, and never answers itself: the host's
+`AccessGuard` is asked whether this **kind** of request is allowed at all, and Payload's own
+`access.update` rule on the collection is asked about **each document**. Nine routes, the queue, the
+admin widgets and the translation chain are all behind one or both of those asks.
+
+What follows is every place a host can notice it.
+
+### The guard is asked about an action, and only `true` allows
+
+`AccessGuard.check` receives `{ req, action }` where it used to receive `{ req }`. `action` is a
+`TranslatorAction` — one of `enqueue`, `run`, `cancel`, `cancel-by-collection`, `document-status`,
+`collection-status`, `document-staleness`, `dismiss-staleness`, `translate-field`. The name is the
+action, not the route, so moving an endpoint does not change it.
+
+- **A guard returning a truthy non-boolean now refuses where it allowed.** The old code tested
+  `if (!hasAccess)`, so a guard answering with a user object, a non-empty string or `1` let the
+  request through. Only `true` allows now.
+- **A guard that throws now refuses.** The throw used to escape into the error envelope, which
+  answered `500` — a failure a host could mistake for a bug in the plugin. It is now a `403`, and
+  the error is logged. One exception, so that a guard may still redirect from an admin widget: an
+  error carrying a `digest` property — what `redirect()` and `notFound()` throw — is re-thrown
+  untouched.
+- **The guard is asked more than once for one thing a person does.** Each admin widget asks at
+  render to decide whether to offer the action; the endpoint asks again when the button is pressed.
+  A guard that counts, bills or rate-limits on being asked was always wrong and is now visibly so.
+- **A deep import stops resolving.** `@focus-reactive/payload-plugin-translator/client/shared/types/AccessGuard`
+  was undocumented but reachable through the `./client/*` export. It is gone; `AccessGuard`,
+  `AccessGuardRequest` and `TranslatorAction` come from the package root.
+- **Implementing `AccessGuard` does not break.** A `check` that destructures only `req` still
+  satisfies the interface, and so does one whose parameter type names only `req`.
+
+### Enqueue drops the documents the caller may not change
+
+`POST {basePath}/enqueue` asks the collection's `access.update` rule about every id in
+`collection_id`, as the caller, and queues only the ones it allows. Ids it refuses are reported back
+under `refused`, which is present **only when it is non-empty** — an answer with no `refused` key
+means nothing was dropped. A request whose ids are **all** refused still answers `200` with
+`success: true`; what says so is `queued: 0` and every id listed under `refused`. The refusal is in
+the body, not the status.
+
+`select_all` is unchanged: it already listed only what the caller may read, and that filter stays
+the one that decides.
+
+`collection_id` now rejects an empty array and an empty-string id, which used to be accepted and
+then either queued nothing or queued a job naming no document.
+
+### A job is resolved to its document before anyone may touch it
+
+`POST {basePath}/run/:id`, `DELETE {basePath}/cancel` and
+`DELETE {basePath}/cancel-by-collection/:collection_slug` used to act on a handle without ever
+asking what document was behind it.
+
+- **`DELETE /cancel` can now answer `200`.** It still answers `204` when every handle was cancelled.
+  When some were refused it answers `200` with `{ refused: [...] }` naming them. A client that treats
+  any 2xx as success needs no change; one that asserts `204` does.
+- **`POST /run/:id` answers `403` for a job whose row recorded no requester.** Letting the queue
+  drain such a job is unchanged — it was always going to run. Asking for it to run **now** is a
+  second person's request, and the row names nobody to check it against.
+- **A handle the runner cannot place** is a `404` on run, and is left alone by cancel rather than
+  cancelled unasked.
+- **Cancel reports a handle it could not place as neither cancelled nor refused.** It is dropped,
+  and a request whose handles were *all* unplaceable answers `204` — "nothing left to cancel" —
+  rather than naming them. Pre-existing behaviour, now reachable by one more route: a runner whose
+  `assignmentsOf` answers `[]` for everything satisfies the contract and makes every cancel a silent
+  success. Known, and left as it is: saying so would need a third category beside cancelled and
+  refused, which is an endpoint-contract change rather than part of this one. Omitting is for a
+  handle the runner does not have; a lookup it cannot perform **at all** is a failure and should be
+  thrown, not answered as `[]`.
+- **A custom `TaskRunner` must implement `assignmentsOf`.** It is a required member, so an existing
+  runner stops compiling until it is added. That is the point: a runner that cannot say which
+  document a handle names cannot be asked about it, and an optional member would have moved the
+  failure from the compiler to a `403` in production, where nothing names the cause.
+  `cancel-by-collection` does not need it — it already knows the collection it was called for.
+  The method takes `readonly JobHandle[]` and answers a `JobAssignment` per handle it can place,
+  omitting the rest; neither type is published, and neither needs naming to implement the method.
+
+### The queue takes only work the rules were asked about
+
+`TaskRunner.enqueue`, `cancel` and `run` no longer accept plain tasks and handles. Their parameters
+carry a type-level brand that only the plugin's own handlers can produce, so work that reached the
+queue without an ask does not compile.
+
+- **A host that implements `TaskRunner` is unaffected** — a method declared with the wider parameter
+  type still satisfies the narrowed one.
+- **A host that calls a runner directly**, rather than going through the endpoints, no longer
+  compiles. The brands are deliberately not exported: an exported minter would be a way to put
+  unasked work on the queue, which is the thing being prevented. Go through the endpoints.
+
+### An actor we cannot name stops being read as no actor
+
+A request whose user carries no `collection` — which only a custom auth strategy or a hand-made
+local-API user produces, since Payload's own JWT strategy always stamps it — used to be read as *no
+user*, and a write with no user runs with Payload's access checks off.
+
+- The endpoints answer `403` for such a request.
+- Auto-translate skips the document and logs a warning, rather than queueing an unchecked run. It
+  skips rather than throws because the hook runs inside the editor's save transaction, where a throw
+  would roll the editor's save back.
+- **A request with no user at all is unchanged** and still trusted. That is a deliberate, pinned
+  decision: in-process callers — a seed script, a local-API call, a webhook handler — have always
+  been trusted, and making them fail closed would strand them.
+
+### A chain module can no longer write the document being translated
+
+A member of the translation chain used to receive the whole `payload` and could write the very
+document the run was translating, past every ask above. It now receives a guarded view: `create`,
+`update`, `delete`, `duplicate` and `restoreVersion` **on the run's own collection** throw. Every
+other collection, and every read including of the document under translation, is untouched.
+
+- **This is a runtime refusal, not a compile-time one.** The view's type is still `Payload`. The
+  run's collection is a value, not a literal, so there is no type that admits every collection but
+  that one.
+- **It does not cover `payload.db`**, nor a method reached through the prototype rather than off the
+  object. A module determined to write anyway can still do so; the guard stops the accident, not the
+  intent.
+- **A host whose chain module writes the translated collection starts failing.** The error
+  propagates rather than being swallowed, so the run fails loudly instead of half-writing.
+
+## 2026-11-09 — the translation walk replaces the field collector
+
+The pipeline translated through a collector that treated a rich-text field as one leaf, so text
+inside a block embedded in that field was never reached. It now translates through the traversal
+walk, which crosses into the rich text and back out into each embedded block.
+
+### the-field-collector-and-the-text-expanders-are-gone
+
+`FieldChunkCollector`, `FieldChunkCollectorStage`, `TextChunkExpander`, `TextChunkExpanderStage`,
+`PlainTextExpander`, `RichTextExpander`, `RichContainerExpander` and `writeAnswers`, with the
+`FieldChunk` and `TextChunk` types, are removed. None was exported from `src/index.ts`, so no
+consumer could name one.
+
+- **The pipeline context loses `fieldChunks` and `textChunks`** and carries `collected` and
+  `sentTargets` instead — what the walk found, and the subset the run asked for.
+- **`translateContent` requires `languages` and `hostLanguageId`.** `src/core` may not reach into
+  `src/languages`, so the walk is handed in rather than imported. The server layer builds it.
+
+### a-field-is-hashed-with-what-is-embedded-in-it
+
+The hash a run records for a field is now its own text plus the text of everything the walk found
+below a crossing at that address.
+
+- **A field with nothing embedded in it hashes exactly as before**, because the first term is the
+  unchanged projector.
+- **A rich text holding an embedded block hashes differently once**, and reads out of date one
+  time. That is the point: its embedded text was never translated and the receipt never said so.
+- **A rich text whose only text sits inside an embedded block gains an entry** it never had, its
+  own prose being empty.
+
+### the-admin-panel-and-the-run-measure-one-text
+
+`ProvenanceService` is constructed with one bound measurement of a source document, and both the
+hash a run records and the hash the panel recomputes go through it. Without that, a document holding
+an embedded block would have read out of date for ever: the panel hashed the prose, the receipt
+hashed prose plus block, and no run could settle it.
+
+- **`ProvenanceService` no longer takes the collection schema map.** It takes
+  `fingerprintOf(collection, doc)` instead, so it asks for a document's fingerprint rather than
+  holding the schema and the walk to compute one with.
+- **`provenanceIo(payload)` now takes that function as a second argument**, and
+  **`configureProvenance(option, fingerprintOf)` takes it in place of the schema map.** Both are
+  internal wiring; no consumer constructs them.
+- **A module's config-time context carries `walk`**, which the field-translation route hands to the
+  pipeline.
+
+### a-single-field-run-reaches-embedded-blocks-too
+
+`POST {basePath}/field` is given the same resolved embed table as a document run, so translating one
+rich-text field reaches the blocks inside it.
