@@ -363,6 +363,29 @@ export interface Playground {
                 };
                 [k: string]: unknown;
               } | null;
+              callouts?:
+                | {
+                    title?: string | null;
+                    body?: {
+                      root: {
+                        type: string;
+                        children: {
+                          type: any;
+                          version: number;
+                          [k: string]: unknown;
+                        }[];
+                        direction: ('ltr' | 'rtl') | null;
+                        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                        indent: number;
+                        version: number;
+                      };
+                      [k: string]: unknown;
+                    } | null;
+                    id?: string | null;
+                    blockName?: string | null;
+                    blockType: 'callout';
+                  }[]
+                | null;
               id?: string | null;
             }[]
           | null;
@@ -557,6 +580,29 @@ export interface Preset {
                 };
                 [k: string]: unknown;
               } | null;
+              callouts?:
+                | {
+                    title?: string | null;
+                    body?: {
+                      root: {
+                        type: string;
+                        children: {
+                          type: any;
+                          version: number;
+                          [k: string]: unknown;
+                        }[];
+                        direction: ('ltr' | 'rtl') | null;
+                        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                        indent: number;
+                        version: number;
+                      };
+                      [k: string]: unknown;
+                    } | null;
+                    id?: string | null;
+                    blockName?: string | null;
+                    blockType: 'callout';
+                  }[]
+                | null;
               id?: string | null;
             }[]
           | null;
@@ -610,6 +656,27 @@ export interface Preset {
         id?: string | null;
         blockName?: string | null;
         blockType: 'deepNest';
+      }
+    | {
+        title?: string | null;
+        body?: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        } | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'callout';
       }
     | {
         innerText?: string | null;
@@ -1081,6 +1148,18 @@ export interface PlaygroundSelect<T extends boolean = true> {
                 | {
                     label?: T;
                     richBody?: T;
+                    callouts?:
+                      | T
+                      | {
+                          callout?:
+                            | T
+                            | {
+                                title?: T;
+                                body?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
                     id?: T;
                   };
               nested?:
@@ -1187,6 +1266,18 @@ export interface PresetsSelect<T extends boolean = true> {
                 | {
                     label?: T;
                     richBody?: T;
+                    callouts?:
+                      | T
+                      | {
+                          callout?:
+                            | T
+                            | {
+                                title?: T;
+                                body?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
                     id?: T;
                   };
               nested?:
@@ -1214,6 +1305,14 @@ export interface PresetsSelect<T extends boolean = true> {
                           blockName?: T;
                         };
                   };
+              id?: T;
+              blockName?: T;
+            };
+        callout?:
+          | T
+          | {
+              title?: T;
+              body?: T;
               id?: T;
               blockName?: T;
             };

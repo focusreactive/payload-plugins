@@ -14,6 +14,7 @@ import {
 } from "@focus-reactive/payload-plugin-translator";
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { seoPlugin } from "@focus-reactive/payload-plugin-seo";
+import { stackedEditingPlugin } from "@focus-reactive/payload-plugin-stacked-editing";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { buildConfig } from "payload";
 import sharp from "sharp";
@@ -81,6 +82,8 @@ export default buildConfig({
       storage: abAdapter,
     }),
     presetsPlugin(),
+    // Array/blocks rows open as stacked drawers with breadcrumbs (Alt-click keeps inline expand).
+    stackedEditingPlugin({ collections: ["pages", "playground"] }),
     schedulePublicationPlugin({
       collections: ["pages", "users"],
       secret: "secret",

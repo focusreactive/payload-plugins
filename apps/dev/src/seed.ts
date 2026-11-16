@@ -417,6 +417,25 @@ const run = async () => {
                   "Point B (en)"
                 )
               ),
+              // blocks inside the array row → layout → items → callouts, three panels deep
+              callouts: [
+                {
+                  blockType: "callout",
+                  title: "Callout inside item one (en)",
+                  body: doc(
+                    para(
+                      txt("A callout block nested in an "),
+                      txt("array row", BOLD),
+                      txt(" of a block (en).")
+                    )
+                  ),
+                },
+                {
+                  blockType: "callout",
+                  title: "Second callout (en)",
+                  body: doc(para(txt("Another nested callout (en)."))),
+                },
+              ],
             },
             {
               label: "Item two label (en)",
