@@ -7,6 +7,7 @@ import { LinksTab } from "../../src/components/SeoDrawer/tabs/LinksTab";
 
 vi.mock("@payloadcms/ui", () => ({
   useConfig: () => ({ config: { routes: { api: "/api", admin: "/admin" } } }),
+  useLocale: () => ({ code: "en" }),
 }));
 
 const find = vi.fn(async () => undefined);
@@ -68,7 +69,7 @@ describe("LinksTab", () => {
     });
 
     const [link] = screen.getAllByRole("link", { name: "Post two" });
-    expect(link).toHaveAttribute("href", "/admin/collections/posts/2");
+    expect(link).toHaveAttribute("href", "/admin/collections/posts/2?locale=en");
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
     expect(screen.getAllByText("/blog/post-two")).toHaveLength(2);
@@ -146,12 +147,12 @@ describe("LinksTab", () => {
 
       expect(screen.getByText("Already linked")).toBeInTheDocument();
       const link = screen.getByRole("link", { name: "Linked post" });
-      expect(link).toHaveAttribute("href", "/admin/collections/posts/5");
+      expect(link).toHaveAttribute("href", "/admin/collections/posts/5?locale=en");
       expect(link).toHaveAttribute("target", "_blank");
       expect(link).toHaveAttribute("rel", "noopener noreferrer");
       expect(screen.getByRole("link", { name: "Linked page" })).toHaveAttribute(
         "href",
-        "/admin/collections/pages/6"
+        "/admin/collections/pages/6?locale=en"
       );
       expect(screen.getByRole("link", { name: "Post two" })).toBeInTheDocument();
     });

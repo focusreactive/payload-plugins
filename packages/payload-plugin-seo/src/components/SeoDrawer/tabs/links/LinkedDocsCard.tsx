@@ -1,6 +1,6 @@
 "use client";
 
-import { useConfig } from "@payloadcms/ui";
+import { useConfig, useLocale } from "@payloadcms/ui";
 import { docTargetKey } from "../../../../keyphrases/docTarget";
 import { adminDocHref } from "../../../../keyphrases/usage";
 import type { UsageDoc } from "../../../../keyphrases/usage";
@@ -11,6 +11,7 @@ import { cn, ROW_SEPARATOR } from "../../../../utils/style";
 
 export function LinkedDocsCard({ docs }: { docs: UsageDoc[] }) {
   const { config } = useConfig();
+  const locale = useLocale();
   const { t } = useSeoTranslation();
 
   return (
@@ -26,7 +27,7 @@ export function LinkedDocsCard({ docs }: { docs: UsageDoc[] }) {
           >
             <a
               className="font-semibold text-[12.5px] text-neutral-800 underline"
-              href={adminDocHref(config.routes.admin, doc)}
+              href={adminDocHref(config.routes.admin, doc, locale?.code)}
               rel="noopener noreferrer"
               target="_blank"
             >

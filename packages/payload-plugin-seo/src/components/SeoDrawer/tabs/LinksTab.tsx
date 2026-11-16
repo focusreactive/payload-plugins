@@ -1,6 +1,6 @@
 "use client";
 
-import { useConfig } from "@payloadcms/ui";
+import { useConfig, useLocale } from "@payloadcms/ui";
 import { Loader2 } from "lucide-react";
 import { docTargetKey } from "../../../keyphrases/docTarget";
 import { adminDocHref } from "../../../keyphrases/usage";
@@ -16,6 +16,7 @@ const MESSAGE_CLASS = cn("px-[15px] py-[12px] text-[12px]");
 
 function SuggestionsBody({ state }: { state: LinkSuggestionsState }) {
   const { config } = useConfig();
+  const locale = useLocale();
   const { t } = useSeoTranslation();
 
   if (state.status === "loading") {
@@ -47,7 +48,7 @@ function SuggestionsBody({ state }: { state: LinkSuggestionsState }) {
     <ul className="m-0 p-0 list-none">
       {state.suggestions.map((suggestion) => (
         <LinkSuggestionRow
-          adminHref={adminDocHref(config.routes.admin, suggestion)}
+          adminHref={adminDocHref(config.routes.admin, suggestion, locale?.code)}
           key={docTargetKey(suggestion.collection, suggestion.id)}
           suggestion={suggestion}
         />
