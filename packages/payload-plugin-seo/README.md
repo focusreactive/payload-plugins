@@ -2,7 +2,7 @@
 
 Live SEO analysis for [Payload CMS](https://payloadcms.com/) v3 + Next.js, powered by [Yoast](https://github.com/Yoast/wordpress-seo). Adds a real-time SEO drawer to the document editor — keyphrase optimization, on-page checks, readability, inclusive language, content vitals, and a Google SERP preview — without adding a single field to your documents.
 
-The plugin injects a button into the editor toolbar of each configured collection. Clicking it opens a drawer that reads the current (unsaved) form values, derives the title, meta description, and slug from dot-path config, runs **your** registered content extractor to build the body content, and runs the Yoast analysis engine **entirely in the browser**. By default nothing is persisted — there are zero new collections, globals, or fields. The opt-in [keyphrase index](#keyphrase-index) adds one hidden collection.
+The plugin injects a button into the editor toolbar of each configured collection. Clicking it opens a drawer that reads the current (unsaved) form values, derives the title, meta description, and slug from dot-path config, runs **your** registered content extractor to build the body content, and runs the Yoast analysis engine **entirely in the browser**. Your documents get no new fields. Keyphrases are stored in one hidden collection by the [keyphrase index](#keyphrase-index), which is on by default; set `keyphraseIndex: false` to keep them in the browser instead.
 
 ---
 
@@ -101,11 +101,13 @@ registerContentExtractors({ '@/seo/extractPageContent#default': extractPageConte
   docs/fields you need (one parallel request per collection), then read them with store.get().
 - Non-English analysis requires the locale code in `supportedLocales`; the matching Yoast
   language pack is dynamically imported on demand.
-- No GA4, no API keys. Without keyphraseIndex there are no server calls except the resolveDocs reads
-  against your own Payload API.
-- Optional: `keyphraseIndex: true` stores keyphrases in a hidden `seo-keyphrases` collection,
+- No GA4, no API keys. By default the drawer loads and saves keyphrases through the plugin's
+  endpoints on your Payload server. With keyphraseIndex: false the only server calls are the
+  resolveDocs reads against your own Payload API.
+- The keyphrase index (on by default) stores keyphrases in a hidden `seo-keyphrases` collection,
   warns when a keyphrase is already used elsewhere, and adds an Internal links tab. It adds a
-  collection, so SQL adapters need a migration (payload migrate:create). Add a per-collection
+  collection, so SQL adapters need a migration (payload migrate:create); set
+  `keyphraseIndex: false` to keep keyphrases in the browser instead. Add a per-collection
   `resolveUrl: ({ doc, locale, req }) => string | null` to show public URLs in link suggestions.
 ```
 
@@ -133,7 +135,7 @@ Document editor (configured collection)
    Tabs: Keyphrase · On-page SEO · Readability · Inclusive · Content vitals · SERP preview
 ```
 
-The analysis runs on a ~1 second debounce as form values change. **No document data is written** — the drawer is a read-only overlay on top of the editor's current state. Keyphrases are kept in the browser, or on the server with [`keyphraseIndex`](#keyphrase-index).
+The analysis runs on a ~1 second debounce as form values change. **No document data is written** — the drawer is a read-only overlay on top of the editor's current state. Keyphrases are stored on the server by the [keyphrase index](#keyphrase-index), or kept in the browser with `keyphraseIndex: false`.
 
 ---
 
@@ -231,7 +233,8 @@ interface SeoPluginConfig {
   /** Override or add UI strings per admin language (see "Admin language"). */
   translations?: Translations;
   /** Store keyphrases on the server and enable the "already used on" notice and the
-   *  Internal links tab. Adds the `seo-keyphrases` collection. Default: false */
+   *  Internal links tab. Adds the `seo-keyphrases` collection. Set to false to keep
+   *  keyphrases in the browser (localStorage) only. Default: true */
   keyphraseIndex?: boolean;
 }
 ```
@@ -692,30 +695,30 @@ The **Keyphrase** tab is a master–detail workspace: a rail lists all configure
 - **Synonyms** — each keyphrase (focus or related) can have its own synonym list; synonyms are folded into that keyphrase's own analysis pass, the same way they would be for a single Yoast focus keyphrase.
 - **SERP highlighting** — the search-result preview bolds only the focus keyphrase and its synonyms; related keyphrases are not highlighted there.
 
-**Persistence:** by default keyphrases are **not stored in the database** — there are no new fields, collections, or globals. The full list (text + synonyms per entry) is kept in the browser's `localStorage`, keyed per collection + document + locale, and is pruned of empty entries on save. Switching documents or locales loads (or starts) a separate list; clearing browser storage resets it. With [`keyphraseIndex`](#keyphrase-index) the list is stored on the server instead.
+**Persistence:** keyphrases are never written to your documents — there are no new fields. By default the [keyphrase index](#keyphrase-index) stores the full list (text + synonyms per entry) on the server, per collection + document + locale. With `keyphraseIndex: false` the list is kept in the browser's `localStorage` under the same key instead and is pruned of empty entries on save. Switching documents or locales loads (or starts) a separate list; clearing browser storage resets a browser-only list.
 
 ---
 
 ## Keyphrase index
 
-Set `keyphraseIndex: true` to store keyphrases on the server, so every editor sees the same set:
+The keyphrase index is on by default. It stores keyphrases on the server, so every editor sees the same set. Set `keyphraseIndex: false` to keep them in the browser only:
 
 ```ts
 seoPlugin({
   collections: [/* … */],
-  keyphraseIndex: true,
+  keyphraseIndex: false,
 });
 ```
 
 - Keyphrases and synonyms are saved per document and locale in a hidden `seo-keyphrases` collection (`docCollection`, `docId`, `locale`, `keyphrases`, `intents`, unique on `docCollection` + `docId` + `locale`). Up to 5 keyphrases per document, 10 synonyms each, 100 characters per entry. Longer input is cut to these limits when it is saved.
-- With the index on, keyphrases are no longer kept in browser storage. If the server has never stored keyphrases for a document and locale, the ones saved in the browser before the index was enabled are uploaded the first time the drawer is opened. The upload never overwrites a row another tab or editor created in the meantime, and the browser copy is removed only after the server accepted it. When it already has keyphrases, the drawer switches to them.
+- With the index on, the browser keeps no copy of the list. Browser storage holds only an edit the server has not accepted yet and a list saved in the browser while the index was off. If the server has never stored keyphrases for a document and locale, that list is uploaded the first time the drawer is opened. The upload never overwrites a row another tab or editor created in the meantime. The browser copy is removed once the server accepted a list for the document or already has one; in that case the drawer switches to the server list.
 - An edit the server did not accept is kept in the browser and sent again with the next save, or when the drawer is next opened after a reload. The Keyphrase tab shows a notice until a save succeeds. Saves for one document are sent one at a time.
 - Editors who can read a document but not update it see its keyphrases read-only.
 - If loading the keyphrases from the server fails, the drawer falls back to browser storage for that document, without the "already used on" notice and the Internal links tab.
 - Removing every keyphrase keeps an empty row, so an old browser copy is never uploaded over it.
 - A pending edit is sent when the page is hidden or closed, so navigating away does not lose it.
 - Rows are deleted when their document is deleted.
-- The option adds a collection. On SQL adapters (Postgres, SQLite) run `payload migrate:create` after enabling it and apply the migration.
+- The index adds a collection. On SQL adapters (Postgres, SQLite) run `payload migrate:create` and apply the migration, or set `keyphraseIndex: false`.
 - Turning the option off again does not delete the stored rows. The drawer goes back to browser storage, which starts empty for documents whose keyphrases were moved to the server.
 
 ### Endpoints and access
@@ -751,7 +754,6 @@ const resolvePostUrl: ResolveUrl = ({ doc, locale }) =>
   typeof doc.slug === "string" ? `/${locale}/blog/${doc.slug}` : null;
 
 seoPlugin({
-  keyphraseIndex: true,
   collections: [
     {
       slug: "posts",
@@ -777,6 +779,10 @@ Matching rules:
 - Paths are compared literally: `/en/alpha` and `/alpha` are different. If your site serves the default locale both with and without a prefix, return from `resolveUrl` the form your content links use.
 - Each request reads the index rows of the locale 500 at a time (`docCollection`, `docId`, `keyphrases` only) and matches them in memory. Matching targets are then loaded in growing batches until 10 suggestions are found, at most 300 targets per request.
 - Limits: the text sent for matching is capped at 100,000 characters, at most 500 `href`s of up to 2,048 characters each and at most 500 rich text internal links are compared.
+
+### Upgrading from 1.x
+
+`keyphraseIndex` now defaults to `true`. If you never set it, the plugin now adds the hidden `seo-keyphrases` collection, its endpoints and the Internal links tab. On SQL adapters (Postgres, SQLite) run `payload migrate:create` and then `payload migrate`, or set `keyphraseIndex: false` to keep the browser-only behavior. Keyphrases saved in the browser are uploaded the first time the drawer is opened for each document and locale.
 
 ---
 

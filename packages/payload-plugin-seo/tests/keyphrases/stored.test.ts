@@ -42,11 +42,18 @@ describe("sanitizeStoredKeyphrases", () => {
   });
 
   it("caps the number and length of synonyms", () => {
-    const synonyms = Array.from({ length: MAX_SYNONYMS + 3 }, () =>
-      "s".repeat(MAX_SYNONYM_LENGTH + 5)
+    const synonyms = Array.from(
+      { length: MAX_SYNONYMS + 3 },
+      (_, i) => `${i}${"s".repeat(MAX_SYNONYM_LENGTH + 5)}`
     );
     const [entry] = sanitizeStoredKeyphrases([{ text: "a", synonyms }]);
     expect(entry?.synonyms).toHaveLength(MAX_SYNONYMS);
     for (const synonym of entry?.synonyms ?? []) expect(synonym).toHaveLength(MAX_SYNONYM_LENGTH);
+  });
+
+  it("drops blank and duplicate synonyms", () => {
+    expect(
+      sanitizeStoredKeyphrases([{ text: "a", synonyms: ["", "  ", " cms ", "CMS", "headless"] }])
+    ).toEqual([{ text: "a", synonyms: ["cms", "headless"] }]);
   });
 });

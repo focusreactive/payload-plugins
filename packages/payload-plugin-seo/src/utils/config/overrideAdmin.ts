@@ -1,5 +1,6 @@
 import type { Config } from "payload";
 import { getComponentPath } from "./getComponentPath";
+import { isKeyphraseIndexEnabled } from "./isKeyphraseIndexEnabled";
 import { resolveApiKey } from "../../server/generate/apiKey";
 import { createGenerateEndpoint } from "../../server/generate/endpoint";
 import type { SeoClientConfig } from "../../client-config/registry";
@@ -25,7 +26,7 @@ export function overrideAdmin(incomingConfig: Config, config: SeoPluginConfig): 
           faviconUrl: site.faviconUrl ?? "",
         },
         supportedLocales: config.supportedLocales ?? ["en"],
-        keyphraseIndex: Boolean(config.keyphraseIndex),
+        keyphraseIndex: isKeyphraseIndexEnabled(config),
       },
     };
 

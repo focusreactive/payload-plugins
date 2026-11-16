@@ -56,7 +56,8 @@ describe("overrideAdmin", () => {
       });
       return beforeDocumentControls(result, "pages")?.[0]?.clientProps?.keyphraseIndex;
     };
-    expect(read()).toBe(false);
+    expect(read()).toBe(true);
     expect(read(true)).toBe(true);
+    expect(read(false)).toBe(false);
   });
 });

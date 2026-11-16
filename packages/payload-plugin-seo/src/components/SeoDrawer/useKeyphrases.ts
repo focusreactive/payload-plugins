@@ -5,6 +5,7 @@ import type { StoredKeyphrase } from "../../keyphrases/stored";
 import * as ops from "./keyphraseState";
 import type { KeyphraseEntry } from "./keyphraseState";
 import {
+  clearKeyphrases,
   entriesOrBlank,
   loadKeyphrases,
   loadUnsavedKeyphrases,
@@ -78,6 +79,7 @@ export function useKeyphrases({
   const [saveFailed, setSaveFailed] = useState(false);
 
   const persistLocally = !remote;
+  const serverHasList = Boolean(remote?.indexed);
   const apiRoute = remote?.canUpdate ? remote.apiRoute : undefined;
   const saver = useMemo(
     () =>
@@ -103,6 +105,10 @@ export function useKeyphrases({
     if (persistLocally) saveKeyphrases(key, list);
   }, [key, list, persistLocally]);
 
+  useEffect(() => {
+    if (serverHasList) clearKeyphrases(key);
+  }, [key, serverHasList]);
+
   useFlushOnHide(saver);
 
   const listRef = useRef(list);
@@ -125,7 +131,6 @@ export function useKeyphrases({
   const { syncOnOpen, cancelSync } = useRemoteSync({
     saver,
     pending: initial.sync,
-    browserKey: key,
     listRef,
     replaceList,
   });

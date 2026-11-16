@@ -88,6 +88,12 @@ export interface SeoPluginConfig {
   supportedLocales?: string[];
   translations?: Translations;
   generation?: SeoGenerationConfig;
+  /**
+   * Store keyphrases on the server in the hidden `seo-keyphrases` collection and enable the
+   * "already used on" notice and the Internal links tab. Set to false to keep keyphrases in the
+   * browser (localStorage) only.
+   * @default true
+   */
   keyphraseIndex?: boolean;
 }
 

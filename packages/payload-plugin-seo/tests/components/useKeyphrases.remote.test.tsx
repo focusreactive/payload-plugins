@@ -127,6 +127,12 @@ describe("useKeyphrases with a remote index", () => {
       expect(localStorage.getItem(localKey)).toBeNull();
     });
 
+    it("drops a stale browser copy when the server has the list", () => {
+      saveKeyphrases(localKey, [createEntry("stale")]);
+      renderHook(() => useKeyphrases({ ...base, remote: readOnly }));
+      expect(localStorage.getItem(localKey)).toBeNull();
+    });
+
     it("neither uploads nor clears the browser copy on open", async () => {
       saveKeyphrases(localKey, [createEntry("local")]);
       const { result } = renderHook(() =>
@@ -152,6 +158,44 @@ describe("useKeyphrases with a remote index", () => {
     expect(result.current.keyphrases.map((k) => k.text)).toEqual([""]);
     act(() => result.current.syncOnOpen());
     expect(fetchMock).not.toHaveBeenCalled();
+    expect(localStorage.getItem(localKey)).toBeNull();
+  });
+
+  it("drops a stale browser copy once the list was loaded from the server", () => {
+    saveKeyphrases(localKey, [createEntry("stale")]);
+    renderHook(() => useKeyphrases({ ...base, remote: editable }));
+    expect(localStorage.getItem(localKey)).toBeNull();
+  });
+
+  it("drops the browser copy once an edit made before the first open is saved", async () => {
+    saveKeyphrases(localKey, [createEntry("local")]);
+    const { result } = renderHook(() =>
+      useKeyphrases({
+        ...base,
+        remote: { apiRoute: "/api", initial: [], indexed: false, canUpdate: true },
+      })
+    );
+
+    act(() => result.current.updateText(result.current.keyphrases[0].id, "edited"));
+    await act(() => vi.advanceTimersByTimeAsync(KEYPHRASE_SAVE_DELAY_MS));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(localStorage.getItem(localKey)).toBeNull();
+  });
+
+  it("keeps the browser copy while the edit could not be saved", async () => {
+    fetchMock.mockRejectedValueOnce(new Error("offline"));
+    saveKeyphrases(localKey, [createEntry("local")]);
+    const { result, unmount } = renderHook(() =>
+      useKeyphrases({
+        ...base,
+        remote: { apiRoute: "/api", initial: [], indexed: false, canUpdate: true },
+      })
+    );
+
+    act(() => result.current.updateText(result.current.keyphrases[0].id, "edited"));
+    await act(() => vi.advanceTimersByTimeAsync(KEYPHRASE_SAVE_DELAY_MS));
+    expect(localStorage.getItem(localKey)).not.toBeNull();
+    unmount();
   });
 
   it("keeps no browser copy once the edits are saved", async () => {
