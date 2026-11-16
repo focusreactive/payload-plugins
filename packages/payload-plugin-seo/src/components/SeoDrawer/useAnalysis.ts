@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { runAnalysis } from "../../engine/runAnalysis";
 import type { AnalysisInput, AnalysisResult } from "../../engine/types/analysis";
+import type { ResolvedSeoThresholds } from "../../types/config";
 import { decideAutoAction } from "./analysisDecision";
 import { ensureLanguagePack } from "./languagePacks";
 
@@ -10,6 +11,7 @@ export interface UseAnalysisArgs {
   getInput: (opts?: { live?: boolean }) => Promise<AnalysisInput>;
   signature: string;
   supportedLocales: string[];
+  thresholds?: ResolvedSeoThresholds;
   enabled?: boolean;
 }
 
@@ -23,6 +25,7 @@ export function useAnalysis({
   getInput,
   signature,
   supportedLocales,
+  thresholds,
   enabled = true,
 }: UseAnalysisArgs): UseAnalysisResult {
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -34,6 +37,8 @@ export function useAnalysis({
   signatureRef.current = signature;
   const localesRef = useRef(supportedLocales);
   localesRef.current = supportedLocales;
+  const thresholdsRef = useRef(thresholds);
+  thresholdsRef.current = thresholds;
 
   const lastSignature = useRef<string | null>(null);
   const runSeq = useRef(0);
@@ -49,7 +54,7 @@ export function useAnalysis({
       await ensureLanguagePack(input.locale, localesRef.current);
       if (runId !== runSeq.current) return;
 
-      setResult(runAnalysis(input));
+      setResult(runAnalysis(input, thresholdsRef.current));
     } finally {
       if (runId === runSeq.current) setAnalyzing(false);
     }

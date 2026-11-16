@@ -7,6 +7,7 @@ import { SeoTriggerButton } from "./SeoTriggerButton";
 import { SeoDrawer } from "../SeoDrawer";
 import { useLinkSuggestions } from "../SeoDrawer/links/useLinkSuggestions";
 import { useAnalysis } from "../SeoDrawer/useAnalysis";
+import type { ResolvedSeoThresholds } from "../../types/config";
 import { useKeyphrases } from "../SeoDrawer/useKeyphrases";
 import type { RemoteKeyphrases } from "../SeoDrawer/useKeyphrases";
 import { useLiveDocument } from "../SeoDrawer/useLiveDocument";
@@ -18,6 +19,7 @@ export interface SeoButtonProps {
   site: { name: string; baseUrl: string; faviconUrl: string };
   supportedLocales: string[];
   keyphraseIndex?: boolean;
+  thresholds?: ResolvedSeoThresholds;
 }
 
 interface SeoButtonInnerProps extends SeoButtonProps {
@@ -32,6 +34,7 @@ export function SeoButtonInner({
   site,
   supportedLocales,
   extractContentPath,
+  thresholds,
   remote,
 }: SeoButtonInnerProps) {
   const { openModal } = useModal();
@@ -65,7 +68,12 @@ export function SeoButtonInner({
     keyphrases,
     extractContentPath,
   });
-  const { result, analyzing, analyzeNow } = useAnalysis({ getInput, signature, supportedLocales });
+  const { result, analyzing, analyzeNow } = useAnalysis({
+    getInput,
+    signature,
+    supportedLocales,
+    thresholds,
+  });
   const links = useLinkSuggestions({ collectionSlug, docId, localeCode, getInput });
 
   const overall = result?.overall ?? null;

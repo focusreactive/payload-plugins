@@ -8,6 +8,15 @@ describe("createTranslator", () => {
     expect(t("greet" as never, { name: "Ada" })).toBe("Hi Ada, {{missing}}");
   });
 
+  it("writes numbers the way the language does, without grouping", () => {
+    expect(createTranslator("cs", cs)("check.keyphraseDensity.tip", { min: 0.5, max: 2.5 })).toBe(
+      "Výskyty vůči celkovému počtu slov. Ideálně 0,5–2,5 %."
+    );
+    expect(createTranslator("en", undefined)("check.textLength.tip", { min: 1500 })).toBe(
+      "Total words vs the recommended minimum (1500)."
+    );
+  });
+
   it("falls back to English for a key the language lacks", () => {
     const t = createTranslator("de", { title: "SEO-Analyse" });
     expect(t("title")).toBe("SEO-Analyse");

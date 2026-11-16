@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { DEFAULT_SEO_THRESHOLDS } from "../../src/constants";
 import { deriveRelatedKeyphrase } from "../../src/engine/runAnalysis/services/derive-related";
 
 vi.mock("yoastseo/build/scoring/assessors/relatedKeywordAssessor", () => ({
@@ -25,7 +26,7 @@ vi.mock("yoastseo/build/languageProcessing/languages/en/Researcher", () => ({
 describe("deriveRelatedKeyphrase", () => {
   it("returns a CategoryResult built from the RelatedKeywordAssessor results", () => {
     const paper = { getKeyword: () => "headless cms" } as never;
-    const cat = deriveRelatedKeyphrase(paper, "headless cms");
+    const cat = deriveRelatedKeyphrase(paper, "headless cms", DEFAULT_SEO_THRESHOLDS);
     expect(cat.checks.map((c) => c.id)).toEqual(["introductionKeyword", "keywordDensity"]);
     expect(typeof cat.ringScore).toBe("number");
     expect(["good", "warn", "bad"]).toContain(cat.status);

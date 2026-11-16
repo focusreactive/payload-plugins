@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scoreToStatus, statusToRing } from "../../src/engine/scoreStatus";
+import { fleschToStatus, scoreToStatus, statusToRing } from "../../src/engine/scoreStatus";
 
 describe("scoreToStatus", () => {
   it("maps yoast scores to traffic-light status", () => {
@@ -30,5 +30,20 @@ describe("statusToRing", () => {
 
   it("returns 100 for an empty set", () => {
     expect(statusToRing([])).toBe(100);
+  });
+});
+
+describe("fleschToStatus", () => {
+  it("uses the Yoast bands by default", () => {
+    expect(fleschToStatus(60)).toBe("good");
+    expect(fleschToStatus(55)).toBe("warn");
+    expect(fleschToStatus(49)).toBe("bad");
+  });
+
+  it("uses the configured bands", () => {
+    const bands = { min: 40, acceptableMin: 30 };
+    expect(fleschToStatus(40, bands)).toBe("good");
+    expect(fleschToStatus(35, bands)).toBe("warn");
+    expect(fleschToStatus(29, bands)).toBe("bad");
   });
 });

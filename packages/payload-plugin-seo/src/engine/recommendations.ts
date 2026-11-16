@@ -1,9 +1,12 @@
+import { DEFAULT_SEO_THRESHOLDS } from "../constants";
 import type { Message, TranslationKey } from "../translations/types";
+import type { ResolvedSeoThresholds } from "../types/config";
+import { thresholdVars } from "./thresholds/thresholdVars";
 import type { Status } from "./types/analysis";
 
 export interface RecoContext {
   keyphrase?: string;
-  [k: string]: unknown;
+  thresholds?: ResolvedSeoThresholds;
 }
 
 type Builder = (ctx: RecoContext) => Message;
@@ -11,6 +14,10 @@ type Builder = (ctx: RecoContext) => Message;
 const key =
   (k: TranslationKey): Builder =>
   () => ({ key: k });
+
+const withThresholds =
+  (k: TranslationKey, checkId: string): Builder =>
+  (c) => ({ key: k, vars: thresholdVars(checkId, c.thresholds ?? DEFAULT_SEO_THRESHOLDS) });
 
 const MAP: Record<string, Partial<Record<Status, Builder>>> = {
   introductionKeyword: {
@@ -36,14 +43,14 @@ const MAP: Record<string, Partial<Record<Status, Builder>>> = {
   },
   metaDescriptionLength: {
     warn: key("reco.metaDescriptionLength.warn"),
-    bad: key("reco.metaDescriptionLength.bad"),
+    bad: withThresholds("reco.metaDescriptionLength.bad", "metaDescriptionLength"),
   },
   internalLinks: {
     warn: key("reco.internalLinks.warn"),
     bad: key("reco.internalLinks.bad"),
   },
   textLength: {
-    bad: key("reco.textLength.bad"),
+    bad: withThresholds("reco.textLength.bad", "textLength"),
     warn: key("reco.textLength.warn"),
   },
   fleschReadingEase: {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getRecommendation } from "../../src/engine/recommendations";
 import { createTranslator } from "../../src/translations";
+import { resolveThresholds } from "../../src/utils/config/resolveThresholds";
 
 const t = createTranslator("en", undefined);
 
@@ -28,5 +29,20 @@ describe("getRecommendation", () => {
 
   it("falls back to a generic message for unmapped ids", () => {
     expect(getRecommendation("somethingNew", "warn", {})).toEqual({ key: "reco.generic.warn" });
+  });
+
+  it("states the configured numbers", () => {
+    const thresholds = resolveThresholds({ metaDescriptionLength: { min: 100, max: 140 } });
+    const reco = getRecommendation("metaDescriptionLength", "bad", { thresholds });
+    expect(reco && t(reco.key, reco.vars)).toBe(
+      "Adjust the meta description toward 100–140 characters."
+    );
+  });
+
+  it("states the default numbers without configuration", () => {
+    const reco = getRecommendation("metaDescriptionLength", "bad", {});
+    expect(reco && t(reco.key, reco.vars)).toBe(
+      "Adjust the meta description toward 120–156 characters."
+    );
   });
 });

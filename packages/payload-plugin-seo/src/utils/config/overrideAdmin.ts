@@ -1,6 +1,7 @@
 import type { Config } from "payload";
 import { getComponentPath } from "./getComponentPath";
 import { isKeyphraseIndexEnabled } from "./isKeyphraseIndexEnabled";
+import { resolveThresholds } from "./resolveThresholds";
 import { resolveApiKey } from "../../server/generate/apiKey";
 import { createGenerateEndpoint } from "../../server/generate/endpoint";
 import type { SeoClientConfig } from "../../client-config/registry";
@@ -8,6 +9,7 @@ import type { SeoPluginConfig, SeoSiteConfig } from "../../types/config";
 
 export function overrideAdmin(incomingConfig: Config, config: SeoPluginConfig): Config {
   const bySlug = new Map(config.collections.map((c) => [c.slug, c]));
+  const thresholds = resolveThresholds(config.thresholds);
   const site: SeoSiteConfig = config.site ?? {};
 
   const collections = (incomingConfig.collections ?? []).map((collection) => {
@@ -27,6 +29,7 @@ export function overrideAdmin(incomingConfig: Config, config: SeoPluginConfig): 
         },
         supportedLocales: config.supportedLocales ?? ["en"],
         keyphraseIndex: isKeyphraseIndexEnabled(config),
+        thresholds,
       },
     };
 

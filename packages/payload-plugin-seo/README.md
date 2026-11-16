@@ -236,6 +236,8 @@ interface SeoPluginConfig {
    *  Internal links tab. Adds the `seo-keyphrases` collection. Set to false to keep
    *  keyphrases in the browser (localStorage) only. Default: true */
   keyphraseIndex?: boolean;
+  /** Bands of the checks that show a gauge (see "Thresholds"). Default: the Yoast values. */
+  thresholds?: SeoThresholds;
 }
 ```
 
@@ -786,6 +788,39 @@ Matching rules:
 
 ---
 
+## Thresholds
+
+`thresholds` sets the bands of the checks that show a gauge, in the units the drawer shows. Every number is optional and defaults to the Yoast value, so leaving the option out changes nothing.
+
+```ts
+seoPlugin({
+  collections: [/* … */],
+  thresholds: {
+    keyphraseDensity: { min: 0.5, max: 2.5 },
+    textLength: { min: 600, acceptableMin: 450 },
+  },
+});
+```
+
+| Check                   | Numbers (default)                                                 | Unit                                     |
+| ----------------------- | ----------------------------------------------------------------- | ---------------------------------------- |
+| `keyphraseLength`       | `max` good up to (4), `acceptableMax` okay up to (8)              | words                                    |
+| `keyphraseDensity`      | `min` (0.5) to `max` (3) is good                                  | % of the text, texts of 100+ words       |
+| `metaDescriptionLength` | `min` too short up to (120), `max` too long over (156)            | characters                               |
+| `titleWidth`            | `max` too wide over (600); up to 400 px is short, fixed by Yoast  | pixels                                   |
+| `textLength`            | `min` good from (300), `acceptableMin` okay from (250)            | words                                    |
+| `textSentenceLength`    | `maxSentenceWords` (20), `max` good up to (25), `acceptableMax` okay up to (30) | words; % of sentences longer than `maxSentenceWords` |
+| `fleschReadingEase`     | `min` good from (60), `acceptableMin` okay from (50)              | score 0–100                              |
+
+- The same numbers drive the Yoast check, the gauge bands and the numbers in the check tips and recommendations.
+- The plugin validates the option when Payload starts and throws on an unknown check or number, a negative or non-numeric value, a percentage or score over 100, a `titleWidth.max` of 400 or less, or bands in the wrong order (for example `min` not below `max`).
+- Transition words and passive voice keep the Yoast bands: Yoast hardcodes them instead of reading them from its assessment config.
+- Language-specific Yoast settings still win in their languages, for example character-based text length in Japanese.
+- Yoast compares keyphrase density after weighting it by the keyphrase length (`0.7 + words / 3`), the gauge shows the plain density.
+- The length meters of [generated SEO fields](#generated-seo-fields) keep their own `range` option.
+
+---
+
 ## Localization
 
 `supportedLocales` lists which locale codes the drawer may load Yoast language packs for. English is built in; other languages are dynamically imported on demand the first time the document is edited in that locale:
@@ -845,7 +880,7 @@ seoPlugin({
 
 | Import path                                                          | Exports                                                                                                                                                                                                                                              |
 | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@focus-reactive/payload-plugin-seo`                                 | `seoPlugin`, `seoTextField`; types `SeoPluginConfig`, `SeoCollectionConfig`, `SeoFieldPaths`, `SeoSiteConfig`, `ContentExtractor`, `SeoGenerationConfig`, `ResolveUrl`, `ResolveUrlArgs`, `Translations`, `MessageKey` |
+| `@focus-reactive/payload-plugin-seo`                                 | `seoPlugin`, `seoTextField`; types `SeoPluginConfig`, `SeoCollectionConfig`, `SeoFieldPaths`, `SeoSiteConfig`, `ContentExtractor`, `SeoGenerationConfig`, `SeoThresholds`, `ResolveUrl`, `ResolveUrlArgs`, `Translations`, `MessageKey` |
 | `@focus-reactive/payload-plugin-seo/content`                         | Builder helpers `heading`, `paragraph`, `link`, `image`, `video`, `richText`, `html`, `compact`; `registerContentExtractors`, `resolveContentExtractor`; types `ContentNode`, `HeadingLevel`, `ContentExtractor`, `ExtractContext`, `ExtractToolkit`, `DocQuery`, `DocStore`, `ContentHelpers` |
 | `@focus-reactive/payload-plugin-seo/fields`                          | `seoTextField`; type `SeoTextFieldOptions`                                                                                                                                                                                                           |
 | `@focus-reactive/payload-plugin-seo/admin.css`                       | Compiled admin styles for the drawer & button                                                                                                                                                                                                       |

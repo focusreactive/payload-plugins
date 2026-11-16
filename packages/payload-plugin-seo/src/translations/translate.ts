@@ -15,11 +15,25 @@ function pluralRules(language: string): Intl.PluralRules {
   }
 }
 
-function interpolate(template: string, vars: MessageVars | undefined): string {
+function numberFormat(language: string): Intl.NumberFormat {
+  try {
+    return new Intl.NumberFormat(language, { useGrouping: false });
+  } catch {
+    return new Intl.NumberFormat("en", { useGrouping: false });
+  }
+}
+
+function interpolate(
+  template: string,
+  vars: MessageVars | undefined,
+  numbers: Intl.NumberFormat
+): string {
   if (!vars) return template;
   return template.replace(/\{\{\s*(\w+)\s*\}\}/gu, (match, name: string) => {
     const value = vars[name];
-    return value === undefined ? match : String(value);
+    if (value === undefined) return match;
+
+    return typeof value === "number" ? numbers.format(value) : value;
   });
 }
 
@@ -41,6 +55,7 @@ export function createTranslator(
 ): Translate {
   const rules = pluralRules(language);
   const fallbackRules = pluralRules("en");
+  const numbers = numberFormat(language);
 
   return (key, vars) => {
     const count = vars?.count;
@@ -53,7 +68,7 @@ export function createTranslator(
       fallback[key] ??
       key;
 
-    return interpolate(template, vars);
+    return interpolate(template, vars, numbers);
   };
 }
 

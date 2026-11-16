@@ -1,4 +1,6 @@
+import { DEFAULT_SEO_THRESHOLDS } from "../../../constants";
 import type { CheckId } from "../../../constants/checkIds";
+import type { ResolvedSeoThresholds } from "../../../types/config";
 import type { CheckResult } from "../../types/analysis";
 import type { Visualization } from "../../types/visualization";
 import { gaugeKeyByCheck, PRESENCE_CHECKS } from "./constants";
@@ -11,12 +13,13 @@ import { readPositions } from "./utils/readPositions";
 
 export function resolveVisualization(
   check: CheckResult,
-  data: Record<string, unknown> | undefined
+  data: Record<string, unknown> | undefined,
+  thresholds: ResolvedSeoThresholds = DEFAULT_SEO_THRESHOLDS
 ): Visualization {
   const id = check.id as CheckId;
 
   if (PRESENCE_CHECKS.has(id)) return resolvePresence();
-  if (gaugeKeyByCheck[id]) return resolveValueRange(check, data);
+  if (gaugeKeyByCheck[id]) return resolveValueRange(check, data, thresholds);
 
   switch (id) {
     case "subheadingsKeyword":

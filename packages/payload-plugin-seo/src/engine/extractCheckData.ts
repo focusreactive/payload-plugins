@@ -1,9 +1,10 @@
+import { DEFAULT_SEO_THRESHOLDS } from "../constants";
+import type { ResolvedSeoThresholds } from "../types/config";
 import { getResearch } from "./researcherAdapter";
 import type { YoastResearcher } from "./researcherAdapter";
 import { getTitleProgressGuarded } from "./helpers/title-progress";
 import type { PaperLike } from "./types/paper";
 
-const MAX_SENTENCE_WORDS = 20;
 const MAX_PARAGRAPH_WORDS = 150;
 const SNIPPET_MAX = 64;
 
@@ -18,11 +19,11 @@ function splitSentences(text: string): string[] {
     .filter(Boolean);
 }
 
-function sentenceLengthPct(text: string): { pct: number } | undefined {
+function sentenceLengthPct(text: string, maxSentenceWords: number): { pct: number } | undefined {
   const sentences = splitSentences(text);
   if (!sentences.length) return undefined;
   const long = sentences.filter(
-    (s) => s.split(/\s+/u).filter(Boolean).length > MAX_SENTENCE_WORDS
+    (s) => s.split(/\s+/u).filter(Boolean).length > maxSentenceWords
   ).length;
   return { pct: Math.round((long / sentences.length) * 100) };
 }
@@ -48,7 +49,8 @@ function snippet(text: string): string {
 export function extractCheckData(
   id: string,
   paper: PaperLike,
-  researcher: YoastResearcher
+  researcher: YoastResearcher,
+  thresholds: ResolvedSeoThresholds = DEFAULT_SEO_THRESHOLDS
 ): Record<string, unknown> | undefined {
   switch (id) {
     case "keyphraseDensity": {
@@ -107,7 +109,10 @@ export function extractCheckData(
       };
     }
     case "textSentenceLength":
-      return sentenceLengthPct(paper.getText?.() ?? "");
+      return sentenceLengthPct(
+        paper.getText?.() ?? "",
+        thresholds.textSentenceLength.maxSentenceWords
+      );
     case "keyphraseDistribution": {
       const positions = keyphrasePositions(paper.getText?.() ?? "", paper.getKeyword?.() ?? "");
       return positions.length ? { positions } : undefined;

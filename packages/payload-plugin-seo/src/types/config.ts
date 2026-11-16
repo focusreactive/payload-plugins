@@ -81,6 +81,109 @@ export interface SeoGenerationConfig {
   descriptionPrompt?: string;
 }
 
+/**
+ * Bands of the analysis checks that show a gauge, in the units the editor sees. Every number is
+ * optional; a missing one keeps the Yoast default. Language-specific Yoast settings (for example
+ * character counts in Japanese) still take precedence in the languages they belong to.
+ */
+export interface SeoThresholds {
+  /** Keyphrase length in words. */
+  keyphraseLength?: {
+    /**
+     * Longest good keyphrase.
+     * @default 4
+     */
+    max?: number;
+    /**
+     * Longest acceptable keyphrase; longer ones are bad.
+     * @default 8
+     */
+    acceptableMax?: number;
+  };
+  /** Keyphrase density in percent of the text, for texts of at least 100 words. */
+  keyphraseDensity?: {
+    /**
+     * Lowest good density.
+     * @default 0.5
+     */
+    min?: number;
+    /**
+     * Highest good density.
+     * @default 3
+     */
+    max?: number;
+  };
+  /** Meta description length in characters. */
+  metaDescriptionLength?: {
+    /**
+     * Descriptions up to this length are too short.
+     * @default 120
+     */
+    min?: number;
+    /**
+     * Descriptions over this length are too long.
+     * @default 156
+     */
+    max?: number;
+  };
+  /** SEO title width in pixels. Titles up to 400px are short; that bound is fixed by Yoast. */
+  titleWidth?: {
+    /**
+     * Titles wider than this are too long. Must be greater than 400.
+     * @default 600
+     */
+    max?: number;
+  };
+  /** Text length in words. */
+  textLength?: {
+    /**
+     * Texts with at least this many words are good.
+     * @default 300
+     */
+    min?: number;
+    /**
+     * Texts with at least this many words are acceptable; shorter ones are bad.
+     * @default 250
+     */
+    acceptableMin?: number;
+  };
+  /** Sentence length: the share of sentences longer than `maxSentenceWords`, in percent. */
+  textSentenceLength?: {
+    /**
+     * Sentences with more words than this count as long.
+     * @default 20
+     */
+    maxSentenceWords?: number;
+    /**
+     * Highest good share of long sentences.
+     * @default 25
+     */
+    max?: number;
+    /**
+     * Highest acceptable share of long sentences; more is bad.
+     * @default 30
+     */
+    acceptableMax?: number;
+  };
+  /** Flesch reading ease score (0–100, higher is easier). */
+  fleschReadingEase?: {
+    /**
+     * Lowest good score.
+     * @default 60
+     */
+    min?: number;
+    /**
+     * Lowest acceptable score; lower is bad.
+     * @default 50
+     */
+    acceptableMin?: number;
+  };
+}
+
+export type ResolvedSeoThresholds = {
+  [Check in keyof SeoThresholds]-?: Required<NonNullable<SeoThresholds[Check]>>;
+};
+
 export interface SeoPluginConfig {
   disabled?: boolean;
   collections: SeoCollectionConfig[];
@@ -95,6 +198,8 @@ export interface SeoPluginConfig {
    * @default true
    */
   keyphraseIndex?: boolean;
+  /** Bands of the analysis checks that show a gauge. Defaults to the Yoast values. */
+  thresholds?: SeoThresholds;
 }
 
 export interface DocQuery {
