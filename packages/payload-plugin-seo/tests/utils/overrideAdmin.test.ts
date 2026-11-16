@@ -1,6 +1,8 @@
 import type { CollectionConfig, Config } from "payload";
 import { describe, expect, it } from "vitest";
+import type { SeoPluginConfig } from "../../src/types/config";
 import { overrideAdmin } from "../../src/utils/config/overrideAdmin";
+import { resolveThresholds } from "../../src/utils/config/resolveThresholds";
 
 const incoming = {
   collections: [
@@ -21,9 +23,12 @@ function beforeDocumentControls(config: Config, slug: string): ComponentEntry[] 
     | undefined;
 }
 
+const override = (config: SeoPluginConfig) =>
+  overrideAdmin(incoming, config, resolveThresholds(config.thresholds));
+
 describe("overrideAdmin", () => {
   it("adds a beforeDocumentControls component only to configured collections", () => {
-    const result = overrideAdmin(incoming, {
+    const result = override({
       collections: [{ slug: "pages", fields: { slug: "slug" }, extractContentPath: "@/x#default" }],
       site: { name: "RunShop" },
     });
@@ -33,7 +38,7 @@ describe("overrideAdmin", () => {
   });
 
   it("forwards collectionSlug, fields, site, and extractContentPath as clientProps", () => {
-    const result = overrideAdmin(incoming, {
+    const result = override({
       collections: [
         { slug: "pages", fields: { slug: "slug" }, extractContentPath: "@/page#default" },
       ],
@@ -50,7 +55,7 @@ describe("overrideAdmin", () => {
 
   it("tells the button whether the keyphrase index is on", () => {
     const read = (keyphraseIndex?: boolean) => {
-      const result = overrideAdmin(incoming, {
+      const result = override({
         collections: [{ slug: "pages", extractContentPath: "@/x#default" }],
         keyphraseIndex,
       });
@@ -62,7 +67,7 @@ describe("overrideAdmin", () => {
   });
 
   it("passes the configured thresholds to the button", () => {
-    const result = overrideAdmin(incoming, {
+    const result = override({
       collections: [{ slug: "pages", extractContentPath: "@/x#default" }],
       thresholds: { textLength: { min: 600 } },
     });
@@ -73,7 +78,7 @@ describe("overrideAdmin", () => {
   });
 
   it("gives the field meters the ranges of the configured thresholds", () => {
-    const result = overrideAdmin(incoming, {
+    const result = override({
       collections: [{ slug: "pages", extractContentPath: "@/x#default" }],
       thresholds: { metaDescriptionLength: { min: 100, max: 140 } },
     });

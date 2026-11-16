@@ -1,5 +1,5 @@
 import type { FieldHook } from "payload";
-import { getPluginConfig } from "../config";
+import { getPluginConfig, getResolvedThresholds } from "../config";
 import { PLUGIN_NAME } from "../constants";
 import {
   compact,
@@ -12,19 +12,13 @@ import {
   video,
 } from "../content/schema/helpers";
 import { serialize } from "../content/schema/serialize";
-import type {
-  ContentHelpers,
-  ExtractToolkit,
-  SeoCollectionConfig,
-  SeoThresholds,
-} from "../types/config";
+import type { ContentHelpers, ExtractToolkit, SeoCollectionConfig } from "../types/config";
 import { fieldRangeOf, fieldRangesFor } from "../measure/fieldRanges";
 import type { RangeOverride } from "../measure/measure";
 import { resolveApiKey } from "../server/generate/apiKey";
 import { createServerResolveDocs } from "../server/generate/serverResolveDocs";
 import { generateForField } from "../server/generate/generateForField";
 import type { SeoFieldKind } from "../server/generate/prompts";
-import { resolveThresholds } from "../utils/config/resolveThresholds";
 
 const helpers: ContentHelpers = {
   heading,
@@ -43,12 +37,8 @@ function isEmpty(v: unknown): boolean {
   return typeof v !== "string" || v.trim().length === 0;
 }
 
-function rangeFor(
-  kind: SeoFieldKind,
-  override: RangeOverride | undefined,
-  thresholds: SeoThresholds | undefined
-) {
-  const base = fieldRangesFor(resolveThresholds(thresholds))[kind];
+function rangeFor(kind: SeoFieldKind, override: RangeOverride | undefined) {
+  const base = fieldRangesFor(getResolvedThresholds())[kind];
 
   return {
     ...fieldRangeOf(base, override),
@@ -99,7 +89,7 @@ export function makeGenerateOnPublishHook(args: {
       return await generateForField({
         kind: args.kind,
         contentHtml,
-        range: rangeFor(args.kind, args.range, config.thresholds),
+        range: rangeFor(args.kind, args.range),
         locale: localeCode,
         config: config.generation ?? {},
         apiKey,

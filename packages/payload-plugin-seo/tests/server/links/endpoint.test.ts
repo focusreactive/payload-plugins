@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { setPluginConfig } from "../../../src/config";
 import {
+  DEFAULT_SEO_THRESHOLDS,
   KEYPHRASES_COLLECTION_SLUG,
   LINK_SOURCE_PAGE_SIZE,
   LINK_SUGGESTIONS_ENDPOINT_PATH,
@@ -76,16 +77,19 @@ const range = (from: number, to: number) =>
 beforeEach(() => {
   indexRows = [indexRow(1, "self"), ...range(2, 80).map((n) => indexRow(n))];
   unreadable = new Set();
-  setPluginConfig({
-    collections: [
-      {
-        slug: "posts",
-        extractContentPath: "@/x#default",
-        resolveUrl: ({ doc }) => `/blog/${String(doc.slug)}`,
-      },
-    ],
-    keyphraseIndex: true,
-  });
+  setPluginConfig(
+    {
+      collections: [
+        {
+          slug: "posts",
+          extractContentPath: "@/x#default",
+          resolveUrl: ({ doc }) => `/blog/${String(doc.slug)}`,
+        },
+      ],
+      keyphraseIndex: true,
+    },
+    DEFAULT_SEO_THRESHOLDS
+  );
 });
 
 describe("POST /seo/link-suggestions", () => {
@@ -181,17 +185,20 @@ describe("POST /seo/link-suggestions", () => {
 
   describe("linked hrefs", () => {
     const resolveTo = (url: string, baseUrl?: string) =>
-      setPluginConfig({
-        site: { baseUrl },
-        collections: [
-          {
-            slug: "posts",
-            extractContentPath: "@/x#default",
-            resolveUrl: ({ doc }) => (doc.id === 2 ? url : `/blog/${String(doc.slug)}`),
-          },
-        ],
-        keyphraseIndex: true,
-      });
+      setPluginConfig(
+        {
+          site: { baseUrl },
+          collections: [
+            {
+              slug: "posts",
+              extractContentPath: "@/x#default",
+              resolveUrl: ({ doc }) => (doc.id === 2 ? url : `/blog/${String(doc.slug)}`),
+            },
+          ],
+          keyphraseIndex: true,
+        },
+        DEFAULT_SEO_THRESHOLDS
+      );
 
     const suggestedWith = async (linkedHrefs: string[]) =>
       suggestionIds(await handler(fakeRequest(body({ text: topic(2), linkedHrefs }))));

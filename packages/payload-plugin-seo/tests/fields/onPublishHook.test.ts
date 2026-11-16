@@ -1,12 +1,18 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DEFAULT_SEO_THRESHOLDS } from "../../src/constants";
 import { makeGenerateOnPublishHook } from "../../src/fields/onPublishHook";
+import { resolveThresholds } from "../../src/utils/config/resolveThresholds";
 
 const generateForField = vi.hoisted(() => vi.fn());
 vi.mock("../../src/server/generate/generateForField", () => ({
   generateForField: (...a: unknown[]) => generateForField(...a),
 }));
 const getPluginConfig = vi.hoisted(() => vi.fn());
-vi.mock("../../src/config", () => ({ getPluginConfig: () => getPluginConfig() }));
+const getResolvedThresholds = vi.hoisted(() => vi.fn());
+vi.mock("../../src/config", () => ({
+  getPluginConfig: () => getPluginConfig(),
+  getResolvedThresholds: () => getResolvedThresholds(),
+}));
 
 function ctx(over: Record<string, unknown> = {}) {
   return {
@@ -24,6 +30,10 @@ function ctx(over: Record<string, unknown> = {}) {
 }
 
 describe("makeGenerateOnPublishHook", () => {
+  beforeEach(() => {
+    getResolvedThresholds.mockReturnValue(DEFAULT_SEO_THRESHOLDS);
+  });
+
   const hook = makeGenerateOnPublishHook({ kind: "title", range: undefined });
 
   it("returns existing value untouched", async () => {
@@ -69,8 +79,8 @@ describe("makeGenerateOnPublishHook", () => {
     getPluginConfig.mockReturnValue({
       generation: { apiKey: "k" },
       collections: [{ slug: "page", serverExtractContent: vi.fn(async () => []) }],
-      thresholds: { titleWidth: { max: 650 } },
     });
+    getResolvedThresholds.mockReturnValue(resolveThresholds({ titleWidth: { max: 650 } }));
     generateForField.mockResolvedValueOnce("Generated Title");
     await hook(ctx());
 
@@ -83,8 +93,10 @@ describe("makeGenerateOnPublishHook", () => {
     getPluginConfig.mockReturnValue({
       generation: { apiKey: "k" },
       collections: [{ slug: "page", serverExtractContent: vi.fn(async () => []) }],
-      thresholds: { metaDescriptionLength: { min: 100, max: 140 } },
     });
+    getResolvedThresholds.mockReturnValue(
+      resolveThresholds({ metaDescriptionLength: { min: 100, max: 140 } })
+    );
     generateForField.mockResolvedValueOnce("Generated description");
     await makeGenerateOnPublishHook({ kind: "description", range: { max: 150 } })(ctx());
 
