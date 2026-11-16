@@ -576,9 +576,11 @@ interface SeoTextFieldOptions {
 The field renders identically to a native Payload text field, with two additions below
 the input: a length meter (pixels for title, characters for description) and a status
 pill showing **Too short**, **Good**, or **Too long** the way the drawer scores it. A description
-of `min` characters or fewer is too short and one over `max` is too long. A title is only ever too
-long (over `max`); the title `min` is just the lower end of the generation target, because Yoast
-scores narrower titles as good.
+of `min` characters or fewer is too short and one over `max` is too long. A title is too long over
+`max` and too short only below a `min` the field sets in its own `range`; otherwise the title
+`min` is just the lower end of the generation target, because Yoast scores narrower titles as good.
+The plugin throws when Payload starts if a field's `range`, filled in from `thresholds`, ends up
+with `min` not below `max`.
 
 ### Generation endpoint and OpenAI config
 

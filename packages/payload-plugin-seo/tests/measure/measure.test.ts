@@ -36,6 +36,10 @@ describe("measureTitle", () => {
     expect(m.value).toBeLessThan(m.min);
     expect(m.status).toBe("good");
   });
+  it("calls a title too short only below a min the field sets itself", () => {
+    expect(measureTitle("Hi", { min: 200 }).status).toBe("short");
+    expect(measureTitle("Hi", undefined, { min: 200, max: 600 }).status).toBe("good");
+  });
   it("flags titles over the maximum as long", () => {
     expect(measureTitle("Hello world", { max: 50 }).status).toBe("long");
   });
