@@ -15,8 +15,8 @@ describe("gaugeSpecsFor", () => {
       resolveThresholds({ metaDescriptionLength: { min: 100, max: 140 }, titleWidth: { max: 650 } })
     );
 
-    expect(specs.metaDescriptionLength?.thresholds).toEqual([0, 100, 140]);
-    expect(specs.titleWidth?.thresholds).toEqual([400, 650]);
+    expect(specs.metaDescriptionLength?.thresholds).toEqual([100, 140]);
+    expect(specs.titleWidth?.thresholds).toEqual([650]);
   });
 
   it("widens the axis when a threshold reaches its end", () => {

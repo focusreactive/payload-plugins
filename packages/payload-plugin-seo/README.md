@@ -807,7 +807,7 @@ seoPlugin({
 | `keyphraseLength`       | `max` good up to (4), `acceptableMax` okay up to (8)              | words                                    |
 | `keyphraseDensity`      | `min` (0.5) to `max` (3) is good                                  | % of the text weighted by keyphrase length, texts of 100+ words |
 | `metaDescriptionLength` | `min` too short up to (120), `max` too long over (156)            | characters                               |
-| `titleWidth`            | `max` too wide over (600); up to 400 px is short, fixed by Yoast  | pixels                                   |
+| `titleWidth`            | `max` too wide over (600); narrower titles are good, `max` must be over 400 | pixels                                   |
 | `textLength`            | `min` good from (300), `acceptableMin` okay from (250)            | words                                    |
 | `textSentenceLength`    | `maxSentenceWords` (20), `max` good up to (25), `acceptableMax` okay up to (30) | words; % of sentences longer than `maxSentenceWords` |
 | `fleschReadingEase`     | `min` good from (60), `acceptableMin` okay from (50)              | score 0–100                              |

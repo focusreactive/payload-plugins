@@ -72,6 +72,16 @@ describe("gauges", () => {
     }
   });
 
+  it("band the meta description and title width the way Yoast scores them", () => {
+    const result = analyze();
+    const bandStatuses = (id: string) =>
+      gaugeOf(checkOf(result, id)).bands.map((band) => band.status);
+
+    expect(bandStatuses("metaDescriptionLength")).toEqual(["warn", "good", "warn"]);
+    expect(bandStatuses("titleWidth")).toEqual(["good", "bad"]);
+    expect(goodLabel(checkOf(result, "titleWidth"))).toBe("0px–600px");
+  });
+
   it("show the keyphrase density Yoast scores", () => {
     const check = checkOf(analyze(undefined, withFocus(fiveWordKeyphrase)), "keyphraseDensity");
     expect(check.status).toBe("bad");

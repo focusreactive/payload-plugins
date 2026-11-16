@@ -1,4 +1,4 @@
-import { DEFAULT_SEO_THRESHOLDS, MAX_PERCENT, SHORT_TITLE_WIDTH_PX } from "../../constants";
+import { DEFAULT_SEO_THRESHOLDS, MAX_PERCENT } from "../../constants";
 import type { CheckId } from "../../constants/checkIds";
 import type { ResolvedSeoThresholds } from "../../types/config";
 import type { GaugeSpec } from "../types/visualization";
@@ -45,16 +45,16 @@ export function gaugeSpecsFor({
       statusSource: "yoast",
       axisMin: 0,
       axisMax: axisMaxFor(180, metaDescriptionLength.max),
-      thresholds: [0, metaDescriptionLength.min, metaDescriptionLength.max],
-      scores: [3, 6, 9, 6],
+      thresholds: [metaDescriptionLength.min, metaDescriptionLength.max],
+      scores: [6, 9, 6],
       unit: "chars",
     },
     titleWidth: {
       statusSource: "yoast",
       axisMin: 0,
       axisMax: axisMaxFor(700, titleWidth.max),
-      thresholds: [SHORT_TITLE_WIDTH_PX, titleWidth.max],
-      scores: [6, 9, 3],
+      thresholds: [titleWidth.max],
+      scores: [9, 3],
       unit: "px",
     },
     textLength: {

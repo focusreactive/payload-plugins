@@ -129,7 +129,10 @@ export interface SeoThresholds {
      */
     max?: number;
   };
-  /** SEO title width in pixels. Titles up to 400px are short; that bound is fixed by Yoast. */
+  /**
+   * SEO title width in pixels. Narrower titles score good. Yoast scores every title up to 400px
+   * as short-but-good with a fixed bound, so the maximum must be above it.
+   */
   titleWidth?: {
     /**
      * Titles wider than this are too long. Must be greater than 400.
