@@ -2,6 +2,7 @@ import type { CollectionConfig } from "payload";
 import { withFieldTranslation } from "@focus-reactive/payload-plugin-translator";
 
 import { ContentBlock } from "../blocks/Content";
+import { FeaturesBlock } from "../blocks/Features";
 import { HeroBlock } from "../blocks/Hero";
 
 export const Pages: CollectionConfig = {
@@ -27,7 +28,7 @@ export const Pages: CollectionConfig = {
     { name: "seoTitle", type: "text", localized: true },
     { name: "metaDescription", type: "textarea", localized: true },
     {
-      blocks: [HeroBlock, ContentBlock],
+      blocks: [HeroBlock, ContentBlock, FeaturesBlock],
       localized: true,
       name: "sections",
       type: "blocks",

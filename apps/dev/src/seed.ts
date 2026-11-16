@@ -191,6 +191,24 @@ const run = async () => {
             )
           )
         ),
+        // blocks → array → blocks: sections → features → items[n] → points[n]
+        {
+          blockType: "features" as const,
+          heading: "Why editors like it",
+          items: [
+            {
+              title: "Stacked panels",
+              points: [
+                { blockType: "point" as const, text: "Open a block, then a row inside it" },
+                { blockType: "point" as const, text: "Breadcrumbs jump between levels" },
+              ],
+            },
+            {
+              title: "Live preview",
+              points: [{ blockType: "point" as const, text: "Changes show up as you type" }],
+            },
+          ],
+        },
       ],
     },
     {
@@ -224,7 +242,12 @@ const run = async () => {
     },
   ];
   for (const data of pages) {
-    const created = await payload.create({ collection: "pages", locale: "en", data });
+    // Published, so the frontend route (and Live Preview, which loads it) can render the page.
+    const created = await payload.create({
+      collection: "pages",
+      locale: "en",
+      data: { ...data, _status: "published" },
+    });
     payload.logger.info(`Seeded page "${data.title}" id=${created.id}`);
   }
 

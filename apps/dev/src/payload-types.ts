@@ -254,6 +254,27 @@ export interface Page {
             blockName?: string | null;
             blockType: 'content';
           }
+        | {
+            heading?: string | null;
+            items?:
+              | {
+                  title: string;
+                  points?:
+                    | {
+                        text: string;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'point';
+                      }[]
+                    | null;
+                  id?: string | null;
+                }[]
+              | null;
+            _hidden?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'features';
+          }
       )[]
     | null;
   /**
@@ -522,6 +543,33 @@ export interface Preset {
         id?: string | null;
         blockName?: string | null;
         blockType: 'content';
+      }
+    | {
+        heading?: string | null;
+        items?:
+          | {
+              title: string;
+              points?:
+                | {
+                    text: string;
+                    id?: string | null;
+                    blockName?: string | null;
+                    blockType: 'point';
+                  }[]
+                | null;
+              id?: string | null;
+            }[]
+          | null;
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'features';
+      }
+    | {
+        text: string;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'point';
       }
     | {
         panel?: {
@@ -1100,6 +1148,31 @@ export interface PagesSelect<T extends boolean = true> {
               id?: T;
               blockName?: T;
             };
+        features?:
+          | T
+          | {
+              heading?: T;
+              items?:
+                | T
+                | {
+                    title?: T;
+                    points?:
+                      | T
+                      | {
+                          point?:
+                            | T
+                            | {
+                                text?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
+                    id?: T;
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
       };
   _abVariantOf?: T;
   _abPendingPercentages?: T;
@@ -1241,6 +1314,38 @@ export interface PresetsSelect<T extends boolean = true> {
               content?: T;
               image?: T;
               _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        features?:
+          | T
+          | {
+              heading?: T;
+              items?:
+                | T
+                | {
+                    title?: T;
+                    points?:
+                      | T
+                      | {
+                          point?:
+                            | T
+                            | {
+                                text?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
+                    id?: T;
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        point?:
+          | T
+          | {
+              text?: T;
               id?: T;
               blockName?: T;
             };
