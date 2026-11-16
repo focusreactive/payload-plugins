@@ -71,4 +71,18 @@ describe("overrideAdmin", () => {
       textLength: { min: 600 },
     });
   });
+
+  it("gives the field meters the ranges of the configured thresholds", () => {
+    const result = overrideAdmin(incoming, {
+      collections: [{ slug: "pages", extractContentPath: "@/x#default" }],
+      thresholds: { metaDescriptionLength: { min: 100, max: 140 } },
+    });
+    expect(result.admin?.components?.providers?.at(-1)).toMatchObject({
+      clientProps: {
+        config: {
+          fieldRanges: { description: { min: 100, max: 140 }, title: { min: 400, max: 600 } },
+        },
+      },
+    });
+  });
 });

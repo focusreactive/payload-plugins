@@ -2,6 +2,7 @@ import type { Config } from "payload";
 import { getComponentPath } from "./getComponentPath";
 import { isKeyphraseIndexEnabled } from "./isKeyphraseIndexEnabled";
 import { resolveThresholds } from "./resolveThresholds";
+import { fieldRangesFor } from "../../measure/fieldRanges";
 import { resolveApiKey } from "../../server/generate/apiKey";
 import { createGenerateEndpoint } from "../../server/generate/endpoint";
 import type { SeoClientConfig } from "../../client-config/registry";
@@ -9,7 +10,7 @@ import type { SeoPluginConfig, SeoSiteConfig } from "../../types/config";
 
 export function overrideAdmin(incomingConfig: Config, config: SeoPluginConfig): Config {
   const bySlug = new Map(config.collections.map((c) => [c.slug, c]));
-  resolveThresholds(config.thresholds);
+  const resolvedThresholds = resolveThresholds(config.thresholds);
   const thresholds = config.thresholds ?? {};
   const site: SeoSiteConfig = config.site ?? {};
 
@@ -56,6 +57,7 @@ export function overrideAdmin(incomingConfig: Config, config: SeoPluginConfig): 
     extractByCollection: Object.fromEntries(
       config.collections.map((c) => [c.slug, c.extractContentPath])
     ),
+    fieldRanges: fieldRangesFor(resolvedThresholds),
   };
 
   const providerEntry = {

@@ -19,7 +19,10 @@ export interface SeoTextFieldOptions {
    * @default false
    */
   generateOnPublish?: boolean;
-  /** Length range override in the kind's unit (px for title, chars for description). */
+  /**
+   * Length range override in the kind's unit (px for title, chars for description). Missing
+   * numbers follow the plugin `thresholds` (`titleWidth.max`, `metaDescriptionLength`).
+   */
   range?: RangeOverride;
 }
 

@@ -1,7 +1,6 @@
 import type { FieldHook } from "payload";
 import { getPluginConfig } from "../config";
 import { PLUGIN_NAME } from "../constants";
-import { DESCRIPTION_RANGE, TITLE_RANGE } from "../constants/generation";
 import {
   compact,
   heading,
@@ -13,12 +12,19 @@ import {
   video,
 } from "../content/schema/helpers";
 import { serialize } from "../content/schema/serialize";
-import type { ContentHelpers, ExtractToolkit, SeoCollectionConfig } from "../types/config";
+import type {
+  ContentHelpers,
+  ExtractToolkit,
+  SeoCollectionConfig,
+  SeoThresholds,
+} from "../types/config";
+import { fieldRangeOf, fieldRangesFor } from "../measure/fieldRanges";
 import type { RangeOverride } from "../measure/measure";
 import { resolveApiKey } from "../server/generate/apiKey";
 import { createServerResolveDocs } from "../server/generate/serverResolveDocs";
 import { generateForField } from "../server/generate/generateForField";
 import type { SeoFieldKind } from "../server/generate/prompts";
+import { resolveThresholds } from "../utils/config/resolveThresholds";
 
 const helpers: ContentHelpers = {
   heading,
@@ -37,12 +43,15 @@ function isEmpty(v: unknown): boolean {
   return typeof v !== "string" || v.trim().length === 0;
 }
 
-function rangeFor(kind: SeoFieldKind, override: RangeOverride | undefined) {
-  const base = kind === "title" ? TITLE_RANGE : DESCRIPTION_RANGE;
+function rangeFor(
+  kind: SeoFieldKind,
+  override: RangeOverride | undefined,
+  thresholds: SeoThresholds | undefined
+) {
+  const base = fieldRangesFor(resolveThresholds(thresholds))[kind];
 
   return {
-    min: override?.min ?? base.min,
-    max: override?.max ?? base.max,
+    ...fieldRangeOf(base, override),
     unit: (kind === "title" ? "px" : "char") as "px" | "char",
   };
 }
@@ -90,7 +99,7 @@ export function makeGenerateOnPublishHook(args: {
       return await generateForField({
         kind: args.kind,
         contentHtml,
-        range: rangeFor(args.kind, args.range),
+        range: rangeFor(args.kind, args.range, config.thresholds),
         locale: localeCode,
         config: config.generation ?? {},
         apiKey,

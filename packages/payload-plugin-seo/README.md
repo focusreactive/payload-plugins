@@ -566,8 +566,8 @@ interface SeoTextFieldOptions {
    */
   generateOnPublish?: boolean;
   /**
-   * Override the target length window.
-   * Defaults: title → 400–600 px; description → 120–156 chars.
+   * Override the target length window. Missing numbers follow the plugin `thresholds`:
+   * title → 400 px to `titleWidth.max` (600); description → `metaDescriptionLength` (120–156 chars).
    */
   range?: { min?: number; max?: number };
 }
@@ -817,7 +817,7 @@ seoPlugin({
 - Transition words and passive voice keep the Yoast bands: Yoast hardcodes them instead of reading them from its assessment config.
 - A number you set wins over Yoast's language-specific settings too. Numbers you leave out keep them, for example character-based text length in Japanese. The gauges always show the configured or default numbers above.
 - Keyphrase density is the value Yoast scores: the share of words, weighted by the keyphrase length (`0.7 + words / 3`). The gauge shows the same value.
-- The length meters of [generated SEO fields](#generated-seo-fields) keep their own `range` option.
+- [Generated SEO fields](#generated-seo-fields) use `titleWidth.max` and `metaDescriptionLength` for their length meters and generation targets, unless the field sets its own `range`.
 
 ---
 

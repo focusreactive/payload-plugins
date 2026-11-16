@@ -65,6 +65,34 @@ describe("makeGenerateOnPublishHook", () => {
     expect(extractor).toHaveBeenCalledTimes(1);
   });
 
+  it("targets the configured thresholds when the field has no range", async () => {
+    getPluginConfig.mockReturnValue({
+      generation: { apiKey: "k" },
+      collections: [{ slug: "page", serverExtractContent: vi.fn(async () => []) }],
+      thresholds: { titleWidth: { max: 650 } },
+    });
+    generateForField.mockResolvedValueOnce("Generated Title");
+    await hook(ctx());
+
+    expect(generateForField).toHaveBeenLastCalledWith(
+      expect.objectContaining({ range: { min: 400, max: 650, unit: "px" } })
+    );
+  });
+
+  it("keeps the field's own range over the thresholds", async () => {
+    getPluginConfig.mockReturnValue({
+      generation: { apiKey: "k" },
+      collections: [{ slug: "page", serverExtractContent: vi.fn(async () => []) }],
+      thresholds: { metaDescriptionLength: { min: 100, max: 140 } },
+    });
+    generateForField.mockResolvedValueOnce("Generated description");
+    await makeGenerateOnPublishHook({ kind: "description", range: { max: 150 } })(ctx());
+
+    expect(generateForField).toHaveBeenLastCalledWith(
+      expect.objectContaining({ range: { min: 100, max: 150, unit: "char" } })
+    );
+  });
+
   it("falls back to original value on generation error", async () => {
     getPluginConfig.mockReturnValue({
       generation: { apiKey: "k" },
