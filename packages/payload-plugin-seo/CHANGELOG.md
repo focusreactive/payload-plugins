@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-seo [1.12.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.12.0...@focus-reactive/payload-plugin-seo@1.12.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* **seo:** unwrap yoastseo CommonJS default exports under webpack ([bdd7191](https://github.com/focusreactive/payload-plugins/commit/bdd71910ba7698d5013641425340cd676a40950a))
+
 # @focus-reactive/payload-plugin-seo [1.12.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.11.0...@focus-reactive/payload-plugin-seo@1.12.0) (2026-11-12)
 
 
