@@ -12,17 +12,24 @@
   color: var(--theme-elevation-800);
   font-size: var(--font-size, 1rem);
   flex-shrink: 0;
+  font-family: var(--font-body);
+  box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: border-color 100ms cubic-bezier(0, 0.2, 0.2, 1);
 
   appearance: none;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='currentColor' viewBox='0 0 20 20' %3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20' %3e%3cpath stroke='%23777777' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
   background-position: right var(--padding-inline, 0.75rem) center;
   background-repeat: no-repeat;
   background-size: 16px 16px;
 
   &:focus {
-    outline: 2px solid var(--theme-success-200);
-    outline-offset: -1px;
-    border-color: var(--theme-success-500);
+    outline: 0;
+    border-color: var(--theme-elevation-400);
+  }
+
+  &:hover:not(:disabled) {
+    border-color: var(--theme-elevation-250);
   }
 
   &:disabled {

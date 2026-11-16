@@ -95,7 +95,7 @@ const TranslateDocument = ({
       {({ close }) => (
         <>
           <div className={styles.header}>
-            <h4 className={styles.title}>Document translation</h4>
+            <h4 className={styles.title}>Translate document</h4>
             {autoTranslate && (
               <AutoTranslateMarker
                 targets={autoTranslate.targets}
@@ -105,7 +105,6 @@ const TranslateDocument = ({
           </div>
 
           <section className={styles.section}>
-            <h5 className={styles.eyebrow}>Translate</h5>
             <DocumentTranslationForm
               form={form}
               onSubmit={(formData) => handleSubmit(formData, close)}

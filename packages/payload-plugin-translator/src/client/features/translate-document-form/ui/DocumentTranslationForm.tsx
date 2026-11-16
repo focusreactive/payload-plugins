@@ -49,30 +49,30 @@ export function DocumentTranslationForm({
       <fieldset className={styles.fieldset}>
         <div className={styles.row}>
           <FormSelect
-            size="sm"
+            size="md"
             label="From"
             name={FORM_FIELDS.SOURCE_LNG}
             options={localeOptions}
-            placeholder="-"
+            placeholder="Select…"
           />
           {targetSelection === "multi" ? (
             <FormMultiSelect
-              size="sm"
+              size="md"
               label="To"
               name={FORM_FIELDS.TARGET_LNG}
               options={targetOptions}
             />
           ) : (
             <FormSelect
-              size="sm"
+              size="md"
               label="To"
               name={FORM_FIELDS.TARGET_LNG}
               options={targetOptions}
-              placeholder="-"
+              placeholder="Select…"
             />
           )}
         </div>
-        <FormSelectStrategy size="sm" name={FORM_FIELDS.STRATEGY} />
+        <FormSelectStrategy size="md" name={FORM_FIELDS.STRATEGY} />
         {hasDrafts && <FormCheckboxPublish name={FORM_FIELDS.PUBLISH_ON_TRANSLATION} />}
         <input {...form.register(FORM_FIELDS.HIDDEN_COLLECTION_SLUG)} type="hidden" />
         <input {...form.register(FORM_FIELDS.HIDDEN_COLLECTION_ID)} type="hidden" />
@@ -82,7 +82,7 @@ export function DocumentTranslationForm({
           className={styles["submit-button"]}
           onClick={form.handleSubmit(onSubmit)}
           type="submit"
-          $size="sm"
+          $size="md"
           $isLoading={form.formState.isSubmitting}
           $startContent={<SendIcon />}
         >

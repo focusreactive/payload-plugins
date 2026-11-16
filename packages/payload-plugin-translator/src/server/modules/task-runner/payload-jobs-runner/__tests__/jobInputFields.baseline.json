@@ -13,10 +13,7 @@
     {
       "type": "relationship",
       "name": "collection",
-      "relationTo": [
-        "posts",
-        "docs"
-      ],
+      "relationTo": ["posts", "docs"],
       "required": false,
       "admin": {
         "readOnly": true,
@@ -61,10 +58,7 @@
     {
       "type": "relationship",
       "name": "collection",
-      "relationTo": [
-        "posts",
-        "docs"
-      ],
+      "relationTo": ["posts", "docs"],
       "required": false,
       "admin": {
         "readOnly": true,

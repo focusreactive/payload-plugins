@@ -50,8 +50,8 @@ type MultiSelectProps = Omit<ComponentPropsWithRef<"button">, "value" | "onChang
 // to an identical footprint.
 const sizes = {
   sm: { height: "24px", paddingInline: "0.5rem", fontSize: "0.875rem" },
-  md: { height: "32px", paddingInline: "0.5rem", fontSize: "1rem" },
-  lg: { height: "40px", paddingInline: "0.75rem", fontSize: "1rem" },
+  md: { height: "36px", paddingInline: "10px", fontSize: "13px" },
+  lg: { height: "40px", paddingInline: "15px", fontSize: "13px" },
 };
 
 /**

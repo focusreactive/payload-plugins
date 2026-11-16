@@ -51,30 +51,30 @@ export function CollectionTranslationForm({
       <fieldset className={styles.fieldset}>
         <div className={styles.row}>
           <FormSelect
-            size="sm"
+            size="md"
             label="From"
             name={FORM_FIELDS.SOURCE_LNG}
             options={localeOptions}
-            placeholder="-"
+            placeholder="Select…"
           />
           {targetSelection === "multi" ? (
             <FormMultiSelect
-              size="sm"
+              size="md"
               label="To"
               name={FORM_FIELDS.TARGET_LNG}
               options={targetOptions}
             />
           ) : (
             <FormSelect
-              size="sm"
+              size="md"
               label="To"
               name={FORM_FIELDS.TARGET_LNG}
               options={targetOptions}
-              placeholder="-"
+              placeholder="Select…"
             />
           )}
         </div>
-        <FormSelectStrategy size="sm" name={FORM_FIELDS.STRATEGY} />
+        <FormSelectStrategy size="md" name={FORM_FIELDS.STRATEGY} />
         {hasDrafts && <FormCheckboxPublish name={FORM_FIELDS.PUBLISH_ON_TRANSLATION} />}
         <input {...form.register(FORM_FIELDS.HIDDEN_COLLECTION_SLUG)} type="hidden" />
         <Button
@@ -83,11 +83,13 @@ export function CollectionTranslationForm({
           className={styles["submit-button"]}
           onClick={form.handleSubmit(onSubmit)}
           type="submit"
-          $size="sm"
+          $size="md"
           $isLoading={form.formState.isSubmitting}
           $startContent={<SendIcon />}
         >
-          {selectedCount ? `Queue ${selectedCount} translations` : "Queue translations"}
+          {selectedCount
+            ? `Queue ${selectedCount} ${selectedCount === 1 ? "translation" : "translations"}`
+            : "Queue translations"}
         </Button>
         {selectedCount === 0 && (
           <p className={styles.caption}>Select rows in the list to translate.</p>

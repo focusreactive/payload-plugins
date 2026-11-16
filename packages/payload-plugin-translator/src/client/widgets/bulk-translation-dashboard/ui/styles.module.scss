@@ -7,9 +7,11 @@
   gap: 0.5rem;
 }
 
+// Admin rem is 13px, so sizes are in px to match Payload's own popups exactly.
 .title {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 15px;
+  line-height: 20px;
   font-weight: 600;
   color: var(--theme-text, #222);
 }
@@ -17,20 +19,19 @@
 .section {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 12px;
 }
 
 // One eyebrow style shared by every section header, so the sections read as one system.
 .eyebrow {
   margin: 0;
-  font-size: 0.6875rem;
+  font-size: 13px;
+  line-height: 20px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--theme-elevation-500, #8c8c8c);
+  color: var(--theme-text, #222);
 }
 
 .section--status {
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--theme-elevation-100, #e6e6e6);
+  padding-top: 16px;
+  border-top: 1px solid var(--theme-elevation-150, #ddd);
 }
