@@ -1,8 +1,3 @@
-/**
- * Drives the real deriveSeo (no yoastseo mocking) to verify empty-keyphrase
- * exclusion: with a populated keyphrase the full seoChecks are scored; with an
- * empty/whitespace keyphrase only on-page checks contribute to the ring.
- */
 import { describe, expect, it } from "vitest";
 import { CHECK_IDS } from "../../../../src/constants/checkIds";
 import { buildPaper } from "../../../../src/engine/buildPaper";

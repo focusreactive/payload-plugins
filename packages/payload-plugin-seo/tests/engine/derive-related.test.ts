@@ -30,7 +30,6 @@ describe("deriveRelatedKeyphrase", () => {
     expect(cat.checks.map((c) => c.id)).toEqual(["introductionKeyword", "keywordDensity"]);
     expect(typeof cat.ringScore).toBe("number");
     expect(["good", "warn", "bad"]).toContain(cat.status);
-    // enrich attaches data to every check
     for (const c of cat.checks) expect(Object.hasOwn(c, "data")).toBe(true);
   });
 });

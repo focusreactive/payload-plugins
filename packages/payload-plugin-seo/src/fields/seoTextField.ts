@@ -11,18 +11,8 @@ export interface SeoTextFieldOptions {
   required?: boolean;
   localized?: boolean;
   admin?: TextField["admin"];
-  /** Show the manual Generate button.
-   * @default false
-   */
   showButton?: boolean;
-  /** Generate on publish when the field is empty
-   * @default false
-   */
   generateOnPublish?: boolean;
-  /**
-   * Length range override in the kind's unit (px for title, chars for description). Missing
-   * numbers follow the plugin `thresholds` (`titleWidth.max`, `metaDescriptionLength`).
-   */
   range?: RangeOverride;
 }
 

@@ -4,7 +4,6 @@ import { extractCheckData } from "../../src/engine/extractCheckData";
 import type { PaperLike } from "../../src/engine/types/paper";
 import type { YoastResearcher } from "../../src/engine/researcherAdapter";
 
-// Mirrors verified yoastseo@3.6.0 research return shapes.
 function makeResearcher(map: Record<string, unknown>): YoastResearcher {
   return { getResearch: (name: string) => map[name] };
 }
@@ -19,7 +18,6 @@ function makePaper(over: Partial<Record<keyof PaperLike, () => string>> = {}): P
 }
 
 describe("extractCheckData", () => {
-  // Task 1: keyphraseDensity + unknown id
   it("maps keyphraseDensity to densityPct, textLength and count", () => {
     const r = makeResearcher({
       getKeyphraseDensity: { density: 1.8, textLength: 250 },
@@ -46,7 +44,6 @@ describe("extractCheckData", () => {
     expect(extractCheckData("slugKeyword", makePaper(), makeResearcher({}))).toBeUndefined();
   });
 
-  // Task 2: imageKeyphrase + externalLinks / internalLinks
   it("maps altTagCount to total + matched images", () => {
     const r = makeResearcher({
       altTagCount: { noAlt: 1, withAlt: 2, withAltKeyword: 3, withAltNonKeyword: 4 },
@@ -82,7 +79,6 @@ describe("extractCheckData", () => {
     expect(extractCheckData("externalLinks", makePaper(), makeResearcher({}))).toBeUndefined();
   });
 
-  // Task 3: metaDescriptionLength + textLength + fleschReadingEase
   it("maps metaDescriptionLength to chars", () => {
     const r = makeResearcher({ metaDescriptionLength: 142 });
     expect(extractCheckData("metaDescriptionLength", makePaper(), r)).toEqual({ chars: 142 });
@@ -103,9 +99,7 @@ describe("extractCheckData", () => {
     expect(extractCheckData("fleschReadingEase", makePaper(), r)).toBeUndefined();
   });
 
-  // Task 4: titleWidth + textTransitionWords + textSentenceLength
   it("approximates titleWidth px through the title helper", () => {
-    // "Best Running Shoes for Trail" = 28 chars; Node fallback = Math.round(28 * 8.5) = 238
     expect(extractCheckData("titleWidth", makePaper(), makeResearcher({}))).toEqual({ px: 238 });
   });
 
@@ -169,15 +163,11 @@ describe("extractCheckData", () => {
   });
 
   it("returns undefined for textParagraphTooLong when getParagraphLength returns an empty array", () => {
-    // Empty array [] means research ran but found no paragraphs — distinct from research missing (null/undefined).
     const r = makeResearcher({ getParagraphLength: [] });
     expect(extractCheckData("textParagraphTooLong", makePaper(), r)).toBeUndefined();
   });
 
-  // Task 5: keyphraseDistribution + textParagraphTooLong
   it("recounts keyphrase positions as percentages through the document", () => {
-    // 4 sentences; keyphrase "running shoes" in sentences 0 and 2.
-    // midpoints: (0+0.5)/4=12.5→13 ; (2+0.5)/4=62.5→63
     const paper = makePaper({
       getText: () => "<p>Running shoes rock. Nothing here. Buy running shoes now. The end.</p>",
       getKeyword: () => "running shoes",
@@ -225,7 +215,6 @@ describe("extractCheckData", () => {
     expect(extractCheckData("textParagraphTooLong", makePaper(), r)).toBeUndefined();
   });
 
-  // ── New richer-type extractions ─────────────────────────────────────────
   it("maps keyphraseLength research to word count", () => {
     const r = makeResearcher({ keyphraseLength: { keyphraseLength: 2, functionWords: [] } });
     expect(extractCheckData("keyphraseLength", makePaper(), r)).toEqual({ words: 2 });
@@ -242,8 +231,6 @@ describe("extractCheckData", () => {
   });
 
   it("emits a real { matched: 0, total: 0 } for subheadingsKeyword when there are no subheadings", () => {
-    // count 0 means the research ran but found no H2/H3 — distinct from research missing.
-    // Emit data so the proportion bar renders (parity with imageKeyphrase) instead of degrading to presence.
     const r = makeResearcher({
       matchKeywordInSubheadings: { count: 0, matches: 0, percentReflectingTopic: 0 },
     });
