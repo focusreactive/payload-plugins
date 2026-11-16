@@ -136,8 +136,9 @@ export const StickyMediaBlock: Block = {
     label: "Article with sticky pictures",
     slug: "stickyMedia",
   }),
-  // The slug-derived table names push nested enum names past Postgres's 63-character limit.
-  dbName: "stky",
+  // The slug-derived table names push nested enum names past Postgres's 63-character limit;
+  // the name must stay per parent table, because a plain string is one table shared by every collection.
+  dbName: ({ tableName }) => `${tableName}_stky`,
   labels: {
     plural: { en: "Article with sticky pictures", es: "Artículo con imágenes fijas" },
     singular: { en: "Article with sticky pictures", es: "Artículo con imágenes fijas" },
