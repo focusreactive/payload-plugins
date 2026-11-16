@@ -4,6 +4,7 @@ import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
 import { seoPlugin as seoAnalysisPlugin } from "@focus-reactive/payload-plugin-seo";
+import { stackedEditingPlugin } from "@focus-reactive/payload-plugin-stacked-editing";
 import {
   translatorPlugin,
   createOpenAIProvider,
@@ -441,6 +442,9 @@ export const plugins: Plugin[] = [
   }),
 
   mcpPluginConfig,
+
+  // Page-builder rows open as stacked drawers with breadcrumbs (Alt-click keeps inline expand).
+  stackedEditingPlugin({ collections: ["page", "posts"], globals: [] }),
 
   // Must stay last so it also protects collections and globals added by the plugins above.
   restrictApiAccess({
