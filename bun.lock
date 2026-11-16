@@ -31,6 +31,7 @@
         "@focus-reactive/payload-plugin-presets": "workspace:*",
         "@focus-reactive/payload-plugin-scheduling": "workspace:*",
         "@focus-reactive/payload-plugin-seo": "workspace:*",
+        "@focus-reactive/payload-plugin-stacked-editing": "workspace:*",
         "@focus-reactive/payload-plugin-translator": "workspace:*",
         "@focus-reactive/payload-plugin-visual-editing": "workspace:*",
         "@payloadcms/db-postgres": "3.90.1",
@@ -138,6 +139,7 @@
         "@focus-reactive/payload-plugin-presets": "workspace:*",
         "@focus-reactive/payload-plugin-scheduling": "workspace:*",
         "@focus-reactive/payload-plugin-seo": "workspace:*",
+        "@focus-reactive/payload-plugin-stacked-editing": "workspace:*",
         "@focus-reactive/payload-plugin-translator": "workspace:*",
         "@google-analytics/data": "^5.2.2",
         "@grpc/grpc-js": "^1.14.3",
@@ -481,6 +483,26 @@
         "react",
         "react-dom",
       ],
+    },
+    "packages/payload-plugin-stacked-editing": {
+      "name": "@focus-reactive/payload-plugin-stacked-editing",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@payloadcms/ui": "3.90.1",
+        "@swc/cli": "0.4.0",
+        "@swc/core": "1.7.0",
+        "@types/react": "19.2.9",
+        "jsdom": "^25.0.0",
+        "payload": "3.90.1",
+        "react": "19.2.1",
+        "typescript": "5.9.2",
+        "vitest": "^2.1.0",
+      },
+      "peerDependencies": {
+        "@payloadcms/ui": "^3.84.0",
+        "payload": "^3.84.0",
+        "react": "^19.0.0",
+      },
     },
     "packages/payload-plugin-translator": {
       "name": "@focus-reactive/payload-plugin-translator",
@@ -858,6 +880,8 @@
     "@focus-reactive/payload-plugin-scheduling": ["@focus-reactive/payload-plugin-scheduling@workspace:packages/payload-plugin-scheduling"],
 
     "@focus-reactive/payload-plugin-seo": ["@focus-reactive/payload-plugin-seo@workspace:packages/payload-plugin-seo"],
+
+    "@focus-reactive/payload-plugin-stacked-editing": ["@focus-reactive/payload-plugin-stacked-editing@workspace:packages/payload-plugin-stacked-editing"],
 
     "@focus-reactive/payload-plugin-translator": ["@focus-reactive/payload-plugin-translator@workspace:packages/payload-plugin-translator"],
 
