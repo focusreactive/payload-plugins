@@ -19,7 +19,7 @@ async function fetchGlobal(
     overrideAccess: false,
     req,
     slug,
-  }) as Promise<BaseDocument>;
+  }) as unknown as Promise<BaseDocument>;
 }
 
 export function createGetGlobalDocumentTool(

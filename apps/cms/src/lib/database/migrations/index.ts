@@ -45,6 +45,7 @@ import * as migration_20261116_141546_sticky_media_tables from './20261116_14154
 import * as migration_20261116_154652_state_hero_button_localized from './20261116_154652_state_hero_button_localized';
 import * as migration_20261116_160051_mcp_record_collections from './20261116_160051_mcp_record_collections';
 import * as migration_20261116_163741_admin_polish from './20261116_163741_admin_polish';
+import * as migration_20261116_171431_remove_ab_testing from './20261116_171431_remove_ab_testing';
 
 export const migrations = [
   {
@@ -280,6 +281,11 @@ export const migrations = [
   {
     up: migration_20261116_163741_admin_polish.up,
     down: migration_20261116_163741_admin_polish.down,
-    name: '20261116_163741_admin_polish'
+    name: '20261116_163741_admin_polish',
+  },
+  {
+    up: migration_20261116_171431_remove_ab_testing.up,
+    down: migration_20261116_171431_remove_ab_testing.down,
+    name: '20261116_171431_remove_ab_testing'
   },
 ];
