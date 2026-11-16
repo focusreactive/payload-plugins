@@ -25,6 +25,7 @@ import type { FieldsPermissions, RowChain, RowLevel } from "../lib/resolveRowCha
 import { refreshDetachedEditors } from "../lib/staleEditors.js";
 import { OWNER_ATTRIBUTE, STACKED_EDITING_CSS } from "./styles.js";
 import { Panel } from "./Panel.js";
+import { useConfinedToEditor } from "./useConfinedToEditor.js";
 
 type OpenRows = {
   /** Data path of the deepest open row; every row above it has a panel too. */
@@ -277,6 +278,8 @@ export const StackedEditing = () => {
     translate((entity as { labels?: { singular?: unknown } } | null)?.labels?.singular) ||
     "Document";
 
+  const confined = useConfinedToEditor({ active: levels.length > 0, markerRef });
+
   return (
     <>
       <span hidden ref={markerRef} />
@@ -285,6 +288,7 @@ export const StackedEditing = () => {
       </style>
       {levels.length > 0 ? (
         <Panel
+          confined={confined}
           crumbLevels={crumbLevels}
           depth={0}
           documentTitle={documentTitle}

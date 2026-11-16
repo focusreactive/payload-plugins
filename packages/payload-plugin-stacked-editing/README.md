@@ -92,6 +92,20 @@ The plugin makes no schema changes. It adds no fields, hooks or endpoints.
 5. **Reactivity**: if a row is moved, deleted or changes block type while its panel is open, that
    panel and every panel above it close.
 
+### Live Preview
+
+When Live Preview is open beside the editor (`useLivePreviewContext()`: previewing, iframe mode),
+the panels stay in the **editor column**. They run from the column's left edge to the preview's left
+edge, start below the document controls, and get a smaller `--gutter-h`, so each level is offset by
+about one `--base` instead of a full gutter. The modal container stops catching pointer events, so
+the preview can still be scrolled and clicked. The column is measured from Payload's DOM
+(`.collection-edit__main` / `.global-edit__main`, `.live-preview-window`) and measured again on
+resize and scroll. It is published as CSS variables on `<html>`.
+
+The panels' fields belong to the document form, so Live Preview's form-state subscription sends
+every keystroke typed in a panel to the preview. This works at any depth. With the preview closed,
+or in popup mode, the panels are the usual full-height drawers.
+
 ### Fields mounted twice
 
 Payload keeps collapsed rows mounted, so while a panel is open its fields also exist (hidden) in

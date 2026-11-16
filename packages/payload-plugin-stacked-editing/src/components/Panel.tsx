@@ -11,6 +11,8 @@ import { OWNER_ATTRIBUTE } from "./styles.js";
 const BASE = "stacked-editing";
 
 type PanelProps = {
+  /** Live Preview is open: stay inside the editor column. */
+  readonly confined: boolean;
   readonly depth: number;
   readonly levels: readonly RowLevel[];
   readonly crumbLevels: readonly CrumbLevel[];
@@ -57,6 +59,7 @@ const Breadcrumbs = ({
  * inside it, so Payload's `DrawerDepthProvider` offsets and narrows each drawer above the last.
  */
 export const Panel = ({
+  confined,
   crumbLevels,
   depth,
   documentTitle,
@@ -124,7 +127,13 @@ export const Panel = ({
   );
 
   return (
-    <Drawer className={`${BASE}__drawer`} Header={header} slug={slug}>
+    <Drawer
+      className={[`${BASE}__drawer`, confined && `${BASE}__drawer--confined`]
+        .filter(Boolean)
+        .join(" ")}
+      Header={header}
+      slug={slug}
+    >
       <div className={`${BASE}__body`} key={level.rowPath} {...{ [OWNER_ATTRIBUTE]: ownerId }}>
         <RenderFields
           fields={level.fields}
@@ -139,6 +148,7 @@ export const Panel = ({
       </div>
       {depth + 1 < levels.length ? (
         <Panel
+          confined={confined}
           crumbLevels={crumbLevels}
           depth={depth + 1}
           documentTitle={documentTitle}

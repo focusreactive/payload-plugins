@@ -1,6 +1,9 @@
 /** Set on the document form and on every panel body, holding the id of the instance that owns it. */
 export const OWNER_ATTRIBUTE = "data-stacked-editing-owner";
 
+/** Set on <html> while panels are confined to the editor column (Live Preview open). */
+export const CONFINED_ATTRIBUTE = "data-stacked-editing-confined";
+
 const BASE = "stacked-editing";
 
 /**
@@ -127,5 +130,27 @@ export const STACKED_EDITING_CSS = `
 [${OWNER_ATTRIBUTE}] :is(.blocks-field__row, .array-field__row).collapsible--collapsed
   > .collapsible__toggle-wrap .collapsible__indicator {
   transform: rotate(-90deg);
+}
+/*
+ * Live Preview open: the drawers sit over the editor column only. Payload's drawer derives both
+ * its padding and its per-level offset from --gutter-h, so a smaller one keeps deep stacks usable
+ * in a narrow column. The modal container stops swallowing clicks so the preview stays usable.
+ */
+.${BASE}__drawer--confined {
+  --gutter-h: calc(var(--base) * 1.2);
+  left: var(--stacked-editing-left, 0) !important;
+  right: auto !important;
+  width: var(--stacked-editing-width, 100vw) !important;
+  top: var(--stacked-editing-top, 0) !important;
+  height: calc(100vh - var(--stacked-editing-top, 0px)) !important;
+}
+.${BASE}__drawer--confined .${BASE}__header {
+  margin-top: calc(var(--base) * 1.2);
+}
+html[${CONFINED_ATTRIBUTE}] .payload__modal-container {
+  pointer-events: none !important;
+}
+html[${CONFINED_ATTRIBUTE}] .payload__modal-container > * {
+  pointer-events: auto;
 }
 `;
