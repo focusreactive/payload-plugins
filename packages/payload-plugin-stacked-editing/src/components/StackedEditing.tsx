@@ -19,11 +19,19 @@ import {
   rowLabelOf,
 } from "../lib/breadcrumbs.js";
 import type { CrumbLevel } from "../lib/breadcrumbs.js";
-import { TOGGLE_SELECTOR, rowPathFromToggle } from "../lib/domPath.js";
+import { rowsSignature, rowsToCollapse } from "../lib/collapseRows.js";
+import {
+  FIELD_ID_PREFIX,
+  TOGGLE_SELECTOR,
+  fieldPathFromDomId,
+  rowPathFromToggle,
+} from "../lib/domPath.js";
+import { classifyHeaderClick } from "../lib/headerClick.js";
+import type { DefaultMode } from "../lib/headerClick.js";
 import { resolveRowChain } from "../lib/resolveRowChain.js";
 import type { FieldsPermissions, RowChain, RowLevel } from "../lib/resolveRowChain.js";
 import { refreshDetachedEditors } from "../lib/staleEditors.js";
-import { OWNER_ATTRIBUTE, STACKED_EDITING_CSS } from "./styles.js";
+import { MODE_ATTRIBUTE, OWNER_ATTRIBUTE, STACKED_EDITING_CSS } from "./styles.js";
 import { Panel } from "./Panel.js";
 import { useConfinedToEditor } from "./useConfinedToEditor.js";
 
@@ -102,6 +110,11 @@ const focusLabelTarget = (event: MouseEvent, target: Element, ownerId: string) =
   }
 };
 
+/** How long an inline toggle waits to be read back before it is forgotten. */
+const PENDING_TOGGLE_MS = 1500;
+/** Frames to keep re-checking after rows change (see the collapse effect). */
+const COLLAPSE_RECHECKS = 10;
+
 const useLatest = <T,>(value: T) => {
   const ref = useRef(value);
   ref.current = value;
@@ -112,8 +125,12 @@ const useLatest = <T,>(value: T) => {
  * Mounted once per edit view (in `beforeDocumentControls`, i.e. inside the document form). Turns a
  * click on an array/blocks row header into a stack of drawers — one per level down to that row —
  * each rendering the row's fields with Payload's own `RenderFields`, bound to the same form.
+ *
+ * In `panel` mode (default) every row starts as a collapsed card and a click on its header opens
+ * the panel; the chevron still expands inline. In `inline` mode rows keep Payload's behaviour and
+ * only the "open" icon in the header opens a panel.
  */
-export const StackedEditing = () => {
+export const StackedEditing = ({ defaultMode = "panel" }: { defaultMode?: DefaultMode }) => {
   const ownerId = useId().replaceAll(/[^a-zA-Z0-9]/gu, "");
   const markerRef = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState<OpenRows | null>(null);
@@ -125,6 +142,40 @@ export const StackedEditing = () => {
   const { i18n, t } = useTranslation();
   const { disabled, dispatchFields, getFields } = useForm();
   const signature = useFormFields(([fields]) => chainSignature(fields, open?.target));
+  const collapseByDefault = defaultMode === "panel";
+  const allRows = useFormFields(([fields]) => (collapseByDefault ? rowsSignature(fields) : ""));
+  const collapseMemory = useRef({
+    pendingFields: new Set<string>(),
+    userExpanded: new Set<string>(),
+  });
+
+  // Rows are collapsed cards unless the editor expanded them inline — on load, for rows added later
+  // and after Payload replaces form state (save). Form state only: no preferences are written, no
+  // data changes and the form is not marked modified.
+  useEffect(() => {
+    if (!collapseByDefault || !allRows) {
+      return;
+    }
+    // Payload may replace form state right after this runs (the Form's initial-state effect), which
+    // can land on the same signature string and not re-trigger the effect — so check again on the
+    // next frames until nothing is left to collapse.
+    let frame = 0;
+    let attempts = COLLAPSE_RECHECKS;
+    const apply = () => {
+      const actions = rowsToCollapse(getFields(), collapseMemory.current);
+      for (const { path, updatedRows } of actions) {
+        dispatchFields({ type: "SET_ROW_COLLAPSED", path, updatedRows } as Parameters<
+          typeof dispatchFields
+        >[0]);
+      }
+      attempts -= 1;
+      if (attempts > 0) {
+        frame = requestAnimationFrame(apply);
+      }
+    };
+    apply();
+    return () => cancelAnimationFrame(frame);
+  }, [allRows, collapseByDefault, dispatchFields, getFields]);
 
   const entity = getEntityConfig({ collectionSlug, globalSlug });
   const documentFields = (entity?.fields ?? []) as ClientField[];
@@ -207,6 +258,7 @@ export const StackedEditing = () => {
           return false;
         }
         rowIds.push(row.id);
+        collapseMemory.current.userExpanded.delete(row.id);
         // Collapse the inline row: its fields stay mounted (Payload keeps collapsed rows mounted)
         // but hidden, so only the panel copy is visible and focusable.
         if (!row.collapsed) {
@@ -226,14 +278,32 @@ export const StackedEditing = () => {
   );
 
   const openRowRef = useLatest(openRow);
+  const modeRef = useLatest(defaultMode);
 
   useEffect(() => {
     const form = markerRef.current?.closest("form");
     form?.setAttribute(OWNER_ATTRIBUTE, ownerId);
+    form?.setAttribute(MODE_ATTRIBUTE, modeRef.current);
 
     const isOwn = (element: Element): boolean => {
       const scope = element.closest(`form, [${OWNER_ATTRIBUTE}]`);
       return scope !== null && scope.getAttribute(OWNER_ATTRIBUTE) === ownerId;
+    };
+
+    // The editor toggling rows inline (chevron, "Show All" / "Collapse All") is their choice: the
+    // field's rows are read back once after Payload applied it instead of being collapsed again.
+    const rememberToggle = (fieldPath: string) => {
+      const { pendingFields } = collapseMemory.current;
+      pendingFields.add(fieldPath);
+      setTimeout(() => pendingFields.delete(fieldPath), PENDING_TOGGLE_MS);
+    };
+    const rememberHeaderAction = (target: Element) => {
+      const action = target.closest(".blocks-field__header-actions, .array-field__header-actions");
+      const wrapper = action?.closest(`.field-type[id^="${FIELD_ID_PREFIX}"]`);
+      const fieldPath = wrapper && isOwn(wrapper) ? fieldPathFromDomId(wrapper.id) : null;
+      if (fieldPath) {
+        rememberToggle(fieldPath);
+      }
     };
 
     const onClick = (event: MouseEvent) => {
@@ -243,15 +313,34 @@ export const StackedEditing = () => {
       const { target } = event;
       const toggle = target.closest(TOGGLE_SELECTOR);
       if (!toggle) {
+        rememberHeaderAction(target);
         focusLabelTarget(event, target, ownerId);
         return;
       }
-      // Alt/Option-click keeps Payload's inline expand/collapse.
-      if (event.altKey || !isOwn(toggle)) {
+      if (!isOwn(toggle)) {
         return;
       }
       const rowPath = rowPathFromToggle(toggle);
-      if (rowPath && openRowRef.current(rowPath)) {
+      if (!rowPath) {
+        return;
+      }
+      const actionsWrap = toggle.parentElement?.querySelector(
+        ":scope > .collapsible__actions-wrap"
+      );
+      const chevron = actionsWrap?.querySelector(":scope > .collapsible__indicator");
+      const action = classifyHeaderClick({
+        actionsWrap: actionsWrap?.getBoundingClientRect(),
+        chevron: chevron?.getBoundingClientRect(),
+        mode: modeRef.current,
+        // `detail` is 0 for clicks synthesized from Enter/Space.
+        point: event.detail === 0 ? null : { x: event.clientX, y: event.clientY },
+      });
+      // Alt/Option-click still keeps Payload's inline expand/collapse.
+      if (action === "inline" || event.altKey) {
+        rememberToggle(rowPath.slice(0, rowPath.lastIndexOf(".")));
+        return;
+      }
+      if (openRowRef.current(rowPath)) {
         event.preventDefault();
         event.stopPropagation();
       }
@@ -261,8 +350,9 @@ export const StackedEditing = () => {
     return () => {
       document.removeEventListener("click", onClick, true);
       form?.removeAttribute(OWNER_ATTRIBUTE);
+      form?.removeAttribute(MODE_ATTRIBUTE);
     };
-  }, [openRowRef, ownerId]);
+  }, [modeRef, openRowRef, ownerId]);
 
   const getValue = useCallback((path: string) => getFields()[path]?.value, [getFields]);
   const crumbLevels: CrumbLevel[] = levels.map((level) => {
@@ -293,6 +383,7 @@ export const StackedEditing = () => {
           depth={0}
           documentTitle={documentTitle}
           levels={levels}
+          mode={defaultMode}
           onNavigate={navigate}
           ownerId={ownerId}
           translate={translate}

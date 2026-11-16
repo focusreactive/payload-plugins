@@ -1,5 +1,13 @@
 export type StackedEditingOptions = {
   /**
+   * How rows behave when the document opens.
+   * - `"panel"` (default): every array/blocks row starts as a collapsed card; a click on its header
+   *   opens it in a panel, the chevron still expands it inline.
+   * - `"inline"`: Payload's own behaviour (rows expand inline); the "open" icon in a row header
+   *   opens the row in a panel.
+   */
+  defaultMode?: "panel" | "inline";
+  /**
    * Turn the plugin off without removing it from the config (the admin goes back to Payload's
    * inline collapsibles). Default: `true`.
    */

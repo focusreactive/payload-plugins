@@ -3,13 +3,21 @@ import type { CollectionConfig, Config, GlobalConfig, Plugin } from "payload";
 import { STACKED_EDITING_COMPONENT } from "./lib/constants.js";
 import type { StackedEditingOptions } from "./types.js";
 
+const outletFor = (options: StackedEditingOptions) => ({
+  path: STACKED_EDITING_COMPONENT,
+  clientProps: { defaultMode: options.defaultMode ?? "panel" },
+});
+
 const includes = (allowList: string[] | undefined, slug: string): boolean =>
   allowList === undefined || allowList.includes(slug);
 
 // `beforeDocumentControls` renders inside the document's <Form>, which is what lets the panels
 // render the document's own fields (bound to the same form state) from there. A root provider
 // (`admin.components.providers`) would sit outside the form and could not.
-const withCollectionOutlet = (collection: CollectionConfig): CollectionConfig => ({
+const withCollectionOutlet = (
+  collection: CollectionConfig,
+  outlet: ReturnType<typeof outletFor>
+): CollectionConfig => ({
   ...collection,
   admin: {
     ...collection.admin,
@@ -19,14 +27,17 @@ const withCollectionOutlet = (collection: CollectionConfig): CollectionConfig =>
         ...collection.admin?.components?.edit,
         beforeDocumentControls: [
           ...(collection.admin?.components?.edit?.beforeDocumentControls ?? []),
-          STACKED_EDITING_COMPONENT,
+          outlet,
         ],
       },
     },
   },
 });
 
-const withGlobalOutlet = (global: GlobalConfig): GlobalConfig => ({
+const withGlobalOutlet = (
+  global: GlobalConfig,
+  outlet: ReturnType<typeof outletFor>
+): GlobalConfig => ({
   ...global,
   admin: {
     ...global.admin,
@@ -36,7 +47,7 @@ const withGlobalOutlet = (global: GlobalConfig): GlobalConfig => ({
         ...global.admin?.components?.elements,
         beforeDocumentControls: [
           ...(global.admin?.components?.elements?.beforeDocumentControls ?? []),
-          STACKED_EDITING_COMPONENT,
+          outlet,
         ],
       },
     },
@@ -57,11 +68,13 @@ export const stackedEditingPlugin =
       ...config,
       collections: config.collections?.map((collection) =>
         includes(options.collections, collection.slug)
-          ? withCollectionOutlet(collection)
+          ? withCollectionOutlet(collection, outletFor(options))
           : collection
       ),
       globals: config.globals?.map((global) =>
-        includes(options.globals, global.slug) ? withGlobalOutlet(global) : global
+        includes(options.globals, global.slug)
+          ? withGlobalOutlet(global, outletFor(options))
+          : global
       ),
     };
   };

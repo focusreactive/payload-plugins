@@ -5,8 +5,9 @@ import { useEffect, useRef } from "react";
 
 import { buildBreadcrumbs } from "../lib/breadcrumbs.js";
 import type { CrumbLevel, Translate } from "../lib/breadcrumbs.js";
+import type { DefaultMode } from "../lib/headerClick.js";
 import type { RowLevel } from "../lib/resolveRowChain.js";
-import { OWNER_ATTRIBUTE } from "./styles.js";
+import { MODE_ATTRIBUTE, OWNER_ATTRIBUTE } from "./styles.js";
 
 const BASE = "stacked-editing";
 
@@ -15,6 +16,7 @@ type PanelProps = {
   readonly confined: boolean;
   readonly depth: number;
   readonly levels: readonly RowLevel[];
+  readonly mode: DefaultMode;
   readonly crumbLevels: readonly CrumbLevel[];
   readonly documentTitle: string;
   readonly ownerId: string;
@@ -64,6 +66,7 @@ export const Panel = ({
   depth,
   documentTitle,
   levels,
+  mode,
   onNavigate,
   ownerId,
   translate,
@@ -134,7 +137,11 @@ export const Panel = ({
       Header={header}
       slug={slug}
     >
-      <div className={`${BASE}__body`} key={level.rowPath} {...{ [OWNER_ATTRIBUTE]: ownerId }}>
+      <div
+        className={`${BASE}__body`}
+        key={level.rowPath}
+        {...{ [MODE_ATTRIBUTE]: mode, [OWNER_ATTRIBUTE]: ownerId }}
+      >
         <RenderFields
           fields={level.fields}
           forceRender
@@ -153,6 +160,7 @@ export const Panel = ({
           depth={depth + 1}
           documentTitle={documentTitle}
           levels={levels}
+          mode={mode}
           onNavigate={onNavigate}
           ownerId={ownerId}
           translate={translate}

@@ -45,16 +45,29 @@ Then regenerate the import map: `payload generate:importmap`.
 | `collections` | `string[]` | all collections  | Collection slugs that get stacked editing.          |
 | `globals`     | `string[]` | all globals      | Global slugs that get stacked editing.              |
 | `enabled`     | `boolean`  | `true`           | `false` leaves the config untouched (inline rows).  |
+| `defaultMode` | `"panel" \| "inline"` | `"panel"` | How rows behave (see below).               |
+
+**`defaultMode: "panel"`** (default): every array/blocks row, in the document and in each panel,
+starts as a **collapsed card**, rows added later included. A click on the card's header opens it in
+a panel. The **chevron** on the right still expands it inline, as in plain Payload. Collapsing is
+done in form state only: it writes no preferences, changes no data and does not mark the document
+modified. Rows the editor expands themselves (chevron, "Show All") stay expanded. Rows that Payload
+expands again after a save are collapsed back into cards.
+
+**`defaultMode: "inline"`**: rows behave as in plain Payload: they keep their saved expanded or
+collapsed state and a header click toggles inline. A row opens in a panel only through the "open
+in panel" icon in its header, shown faintly next to the `…` menu.
 
 ## Using it
 
-- **Click a row header** (blocks or array) to open the row in a panel. A click on a row inside a
-  panel stacks another panel on top.
+- **Click a row card's header** (blocks or array) to open the row in a panel. A click on a row
+  inside a panel stacks another panel on top. Hovering a header shows the "open in panel" icon.
+- **Click the chevron** to expand or collapse the row inline instead (Alt/Option-click anywhere on
+  the header does the same).
 - **Breadcrumbs** read `Document / Field / Row / Field / Row …`. A row crumb goes back to that
   row's panel. A field crumb goes back to the panel that contains the field. The document crumb
   closes every panel.
 - **Escape**, the close button or the strip to the left closes the top panel.
-- **Alt/Option-click** a row header to expand or collapse it inline, the way Payload does it.
 - Row actions (the `…` menu, drag handle, block name input) work as before.
 - Row titles come from the block name, or else from a `title`/`name`/`label`/`heading`/`headline`
   field. Otherwise the crumb reads like Payload's own row label, for example `Hero 01`.
@@ -135,7 +148,10 @@ the inline row, and in a parent panel. The plugin handles that as follows:
   `blocks-field__row`, `array-field__row`, `field-…`, `…-row-N`). A Payload release that changes
   them disables the plugin: clicks fall through to the inline behaviour. It does not break editing.
 - Blocks inside Lexical rich text (the Lexical `BlocksFeature`) are not opened in panels.
-- A newly added row still opens inline, as Payload does it. Click its header to open it in a panel.
+- A newly added row appears as a collapsed card (in `panel` mode). It does not open in a panel by
+  itself.
+- The header is a single Payload button, so the plugin tells "label" from "chevron" from "open icon"
+  by where the click lands. The icon is drawn with CSS on `.collapsible__actions-wrap`.
 
 ## Development
 

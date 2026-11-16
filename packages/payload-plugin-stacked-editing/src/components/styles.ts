@@ -1,10 +1,18 @@
 /** Set on the document form and on every panel body, holding the id of the instance that owns it. */
 export const OWNER_ATTRIBUTE = "data-stacked-editing-owner";
 
+/** Set next to OWNER_ATTRIBUTE: the `defaultMode` the rows in that scope follow. */
+export const MODE_ATTRIBUTE = "data-stacked-editing-mode";
+
 /** Set on <html> while panels are confined to the editor column (Live Preview open). */
 export const CONFINED_ATTRIBUTE = "data-stacked-editing-confined";
 
 const BASE = "stacked-editing";
+
+// Arrow into a side panel (16×16, stroked), used as a CSS mask so it takes the theme colour.
+const OPEN_ICON = `url("data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1.75" y="2.25" width="12.5" height="11.5" rx="1.5"/><path d="M9.75 2.25v11.5"/><path d="M4 8h3.5M5.75 6.25 7.5 8l-1.75 1.75"/></svg>'
+)}")`;
 
 /**
  * Only Payload's theme variables, so light and dark admin themes both work. Shipped as a string
@@ -126,10 +134,33 @@ export const STACKED_EDITING_CSS = `
   font-size: 12px;
   color: var(--theme-elevation-400);
 }
-/* Rows open a panel: point the chevron of collapsed rows to the side, like a link. */
-[${OWNER_ATTRIBUTE}] :is(.blocks-field__row, .array-field__row).collapsible--collapsed
-  > .collapsible__toggle-wrap .collapsible__indicator {
-  transform: rotate(-90deg);
+/*
+ * "Open in panel" icon: the first item of the row header's actions, left of the "…" menu. It is
+ * paint only (the actions wrap ignores pointer events); clicks land on Payload's toggle button and
+ * are classified by position (see classifyHeaderClick). Panel mode shows it on hover, inline mode
+ * always (faintly), since there it is the only way into a panel.
+ */
+[${OWNER_ATTRIBUTE}] :is(.blocks-field__row, .array-field__row)
+  > .collapsible__toggle-wrap > .collapsible__actions-wrap::before {
+  content: "";
+  flex-shrink: 0;
+  align-self: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--style-radius-s, 3px);
+  background-color: var(--theme-elevation-800);
+  -webkit-mask: ${OPEN_ICON} center / 16px 16px no-repeat;
+  mask: ${OPEN_ICON} center / 16px 16px no-repeat;
+  opacity: 0;
+  transition: opacity 120ms linear;
+}
+[${MODE_ATTRIBUTE}="inline"] :is(.blocks-field__row, .array-field__row)
+  > .collapsible__toggle-wrap > .collapsible__actions-wrap::before {
+  opacity: 0.35;
+}
+[${OWNER_ATTRIBUTE}] :is(.blocks-field__row, .array-field__row)
+  > .collapsible__toggle-wrap:hover > .collapsible__actions-wrap::before {
+  opacity: 0.85;
 }
 /*
  * Live Preview open: the drawers sit over the editor column only. Payload's drawer derives both
