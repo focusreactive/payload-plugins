@@ -494,6 +494,8 @@ A `beforeChange` hook removes intact markers from every write. It cannot recogni
 |---|---|---|
 | `available` | `false` | Turns the overlay on. Pass the draft mode flag. |
 | `framedOnly` | `false` | Only run inside an iframe, that is the Live Preview. |
+| `accentColor` | `#7c3aed` (violet) | Colour of the frames, the **Edit** badge and the toggle's "on" dot. Pick one the site does not use, so the frames never blend into the page; a violet brand might take `#ea580c`. Any CSS colour. |
+| `accentTextColor` | `#ffffff` | Text on the **Edit** badge. Use a dark colour with a light `accentColor`. |
 | `adminBasePath` | `/admin` | Must match the plugin option. |
 | `adminOrigin` | the page's origin | Origin of the admin window. |
 | `instantPreview` | `false` | See [Instant preview](#instant-preview). |
@@ -509,6 +511,7 @@ When the clicked document is already open in the admin, the bridge focuses the f
 
 No config change is needed. What looks different:
 
+- **A violet accent instead of green.** Frames, the badge and the toggle use `accentColor`, violet by default. Pass `accentColor` (and `accentTextColor` for a light one) to the provider when the site itself is violet.
 - **Frames instead of outlines.** The overlay no longer sets `outline` on the page's elements. It draws one rectangle per editable element in a layer above the page. A page style that relied on the overlay's inline `outline` has nothing to read any more; `[data-ve-target]` is still set on every edit target.
 - **The toggle starts in the top right corner** instead of the bottom right, so a page that scrolls inside Live Preview cannot push it out of view, and it can be dragged. Its place is kept in `localStorage` under `visual-editing-toggle-position`.
 - **The focused field in the admin** is shown by its own border, which turns blue and pulses, instead of an overlay drawn around the label and the field.

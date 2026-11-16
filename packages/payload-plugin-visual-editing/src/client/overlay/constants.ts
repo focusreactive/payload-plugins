@@ -7,9 +7,16 @@ export const LABEL_CLASS = "ve-edit-label";
 export const isOverlayLabel = (node: Node): boolean =>
   node instanceof Element && node.classList.contains(LABEL_CLASS);
 
-// Payload admin palette: blue-550 for the active frame and badge (white text keeps AA
-// contrast), a translucent blue-400 for the quiet resting frame in "always" mode.
-const ACCENT_STRONG = "rgb(12, 121, 168)";
+// The accent comes from the `--ve-accent` custom property, which the provider sets from its
+// `accentColor` prop. The default violet is rare in page content (links, buttons and brand
+// colours are mostly blue or teal), so the frames read as the editor's, not the site's, and it
+// keeps white badge text at AA contrast. A project whose brand is violet passes another colour.
+export const ACCENT_VAR = "--ve-accent";
+export const ACCENT_TEXT_VAR = "--ve-accent-text";
+export const DEFAULT_ACCENT = "#7c3aed";
+export const DEFAULT_ACCENT_TEXT = "#ffffff";
+const ACCENT_STRONG = `var(${ACCENT_VAR}, ${DEFAULT_ACCENT})`;
+const ACCENT_TEXT = `var(${ACCENT_TEXT_VAR}, ${DEFAULT_ACCENT_TEXT})`;
 const FONT_STACK =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -25,7 +32,7 @@ export const FRAME_ACTIVE_WIDTH = 2;
 export const FRAME_ACTIVE_BORDER = `${FRAME_ACTIVE_WIDTH}px solid ${ACCENT_STRONG}`;
 /** Resting frame in "always" mode: present but quiet, so the page stays readable. */
 export const FRAME_IDLE_WIDTH = 1.5;
-export const FRAME_IDLE_BORDER = `${FRAME_IDLE_WIDTH}px dashed rgba(36, 164, 223, 0.75)`;
+export const FRAME_IDLE_BORDER = `${FRAME_IDLE_WIDTH}px dashed color-mix(in srgb, ${ACCENT_STRONG} 65%, transparent)`;
 export const DATA_VE_FRAME_ATTR = "data-ve-frame";
 
 export const STEGA_ATTRS = new Set(["alt", "title", "aria-label", "placeholder"]);
@@ -42,7 +49,7 @@ export const LABEL_STYLES: Partial<CSSStyleDeclaration> = {
   alignItems: "center",
   gap: "5px",
   background: ACCENT_STRONG,
-  color: "#fff",
+  color: ACCENT_TEXT,
   padding: "4px 8px 4px 7px",
   fontSize: "12px",
   fontFamily: FONT_STACK,

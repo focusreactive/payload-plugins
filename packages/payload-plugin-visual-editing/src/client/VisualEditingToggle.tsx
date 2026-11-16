@@ -18,7 +18,7 @@ type TogglePosition = { top: number; right: number };
 const DEFAULT_POSITION: TogglePosition = { top: 16, right: 16 };
 
 // Mirrors the Payload admin: neutral elevation surfaces, 4px radii, system font,
-// sentence-case labels, and the admin's blue for the "on" indicator.
+// sentence-case labels, and the overlay's violet for the "on" indicator.
 const SCOPED_STYLES = `
 .ve-toggle {
   --ve-surface: #ffffff;
@@ -28,7 +28,7 @@ const SCOPED_STYLES = `
   --ve-muted: #6b6b6b;
   --ve-thumb: #ffffff;
   --ve-thumb-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.1);
-  --ve-on: rgb(36, 164, 223);
+  --ve-on: var(--ve-accent, #7c3aed);
   --ve-focus: #141414;
   position: fixed;
   z-index: 2147483646;
@@ -101,7 +101,7 @@ body[data-ve-hovering='true'] .ve-toggle:not([data-ve-dragging='true']) {
 .ve-toggle[data-ve-on='true'] .ve-toggle__dot {
   background: var(--ve-on);
   opacity: 1;
-  box-shadow: 0 0 0 3px rgba(36, 164, 223, 0.18);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ve-on) 22%, transparent);
 }
 .ve-toggle__track {
   display: inline-flex;

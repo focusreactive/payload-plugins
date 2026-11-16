@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import type { VisualEditingMode } from "./visualEditingMode.js";
 import { STORAGE_KEY } from "./visualEditingMode.js";
+import { ACCENT_TEXT_VAR, ACCENT_VAR } from "./overlay/constants.js";
 import { defaultBuildAdminEditUrl } from "../shared/buildAdminEditUrl.js";
 import type { BuildAdminEditUrl } from "../shared/buildAdminEditUrl.js";
 
@@ -47,6 +48,8 @@ export function VisualEditingProvider({
   buildAdminEditUrl = defaultBuildAdminEditUrl,
   adminOrigin,
   adminBasePath = "/admin",
+  accentColor,
+  accentTextColor,
   children,
 }: {
   available?: boolean;
@@ -56,6 +59,13 @@ export function VisualEditingProvider({
   buildAdminEditUrl?: BuildAdminEditUrl;
   adminOrigin?: string;
   adminBasePath?: string;
+  /**
+   * Colour of the frames, the Edit badge and the toggle's "on" dot. Pick one that stands apart
+   * from the site's own palette. Defaults to violet.
+   */
+  accentColor?: string;
+  /** Text colour on the Edit badge. Defaults to white; use a dark one with a light accent. */
+  accentTextColor?: string;
   children: React.ReactNode;
 }) {
   const [mode, setModeState] = useState<VisualEditingMode>("off");
@@ -67,6 +77,16 @@ export function VisualEditingProvider({
     setIsFramed(window.self !== window.top);
     if (!adminOrigin) setResolvedOrigin(window.location.origin);
   }, [adminOrigin]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (accentColor) root.style.setProperty(ACCENT_VAR, accentColor);
+    if (accentTextColor) root.style.setProperty(ACCENT_TEXT_VAR, accentTextColor);
+    return () => {
+      root.style.removeProperty(ACCENT_VAR);
+      root.style.removeProperty(ACCENT_TEXT_VAR);
+    };
+  }, [accentColor, accentTextColor]);
 
   const setMode = (next: VisualEditingMode) => {
     setModeState(next);
