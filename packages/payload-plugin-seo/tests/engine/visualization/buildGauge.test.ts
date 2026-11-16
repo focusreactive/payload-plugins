@@ -9,6 +9,7 @@ const metaDescriptionLength = GAUGE_SPECS.metaDescriptionLength as GaugeSpec;
 const passiveVoice = GAUGE_SPECS.passiveVoice as GaugeSpec;
 const textTransitionWords = GAUGE_SPECS.textTransitionWords as GaugeSpec;
 const fleschReadingEase = GAUGE_SPECS.fleschReadingEase as GaugeSpec;
+const textLength = GAUGE_SPECS.textLength as GaugeSpec;
 
 describe("buildGauge — boundary landing (keyphraseLength)", () => {
   it("places a marker on a threshold exactly on the GOOD band end with good status", () => {
@@ -108,5 +109,21 @@ describe("buildGauge — direct statuses (fleschReadingEase)", () => {
     expect(statuses).toEqual(["bad", "warn", "good"]);
     expect(model.bands[0]?.endPct).toBe(50);
     expect(model.bands[1]?.endPct).toBe(60);
+  });
+});
+
+describe("buildGauge — open-ended minimum checks (textLength)", () => {
+  it("labels the good band as a minimum without an upper end", () => {
+    const model = buildGauge(textLength, 320, "320");
+
+    expect(model.labels.map((label) => label.text)).toEqual(["0", "≥ 300"]);
+  });
+
+  it("widens the axis so a long text is not pinned to the end", () => {
+    const model = buildGauge(textLength, 700, "700");
+
+    expect(model.markerPct).toBeLessThan(100);
+    expect(model.markerStatus).toBe("good");
+    expect(model.bands.at(-1)?.status).toBe("good");
   });
 });

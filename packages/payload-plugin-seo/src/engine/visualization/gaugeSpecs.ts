@@ -3,7 +3,7 @@ import type { CheckId } from "../../constants/checkIds";
 import type { ResolvedSeoThresholds } from "../../types/config";
 import type { GaugeSpec } from "../types/visualization";
 
-const AXIS_HEADROOM = 1.25;
+export const AXIS_HEADROOM = 1.25;
 
 function axisMaxFor(defaultAxisMax: number, highestThreshold: number): number {
   return highestThreshold < defaultAxisMax
@@ -64,6 +64,7 @@ export function gaugeSpecsFor({
       thresholds: [textLength.acceptableMin, textLength.min],
       scores: [3, 6, 9],
       unit: "words",
+      openEnded: true,
     },
     fleschReadingEase: {
       statusSource: "direct",
@@ -96,6 +97,7 @@ export function gaugeSpecsFor({
       thresholds: [20, 30],
       statuses: ["bad", "warn", "good"],
       unit: "percent",
+      openEnded: true,
     },
   };
 }
