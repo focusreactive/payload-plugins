@@ -4,11 +4,11 @@ import type { PaperData, PaperLike } from "../../types/paper";
 import { SeoAssessor } from "yoastseo";
 import keyphraseDistributionModule from "yoastseo/build/scoring/assessments/seo/KeyphraseDistributionAssessment";
 import { CHECK_IDS } from "../../../constants/checkIds";
-import type { ResolvedSeoThresholds } from "../../../types/config";
 import { runAssessor } from "../../assessorAdapter";
 import { commonJsDefault } from "../../helpers/commonjs-default";
 import { hasKeyphrase } from "../../helpers/has-keyphrase";
 import { makeResearcher } from "../../researcherAdapter";
+import type { AnalysisThresholds } from "../../thresholds/analysisThresholds";
 import { configureSeoAssessor } from "../../thresholds/configureAssessors";
 import { scoreToStatus, statusToRing } from "../../scoreStatus";
 import { enrich } from "../utils/enrich";
@@ -43,20 +43,20 @@ interface DeriveSeoResult {
 export function deriveSeo(
   paper: PaperData,
   keyphrase: string,
-  thresholds: ResolvedSeoThresholds
+  { values, configured }: AnalysisThresholds
 ): DeriveSeoResult {
-  const ctx = { keyphrase, thresholds };
+  const ctx = { keyphrase, thresholds: values };
   const researcher = makeResearcher(paper);
 
   const seoAssessor = new SeoAssessor(makeResearcher(paper));
   seoAssessor.addAssessment("keyphraseDistribution", new KeyphraseDistributionAssessment());
-  configureSeoAssessor(seoAssessor, thresholds);
+  configureSeoAssessor(seoAssessor, configured);
 
   const seoChecks = enrich(
     runAssessor(seoAssessor, ctx, paper),
     paper as PaperLike,
     researcher,
-    thresholds
+    values
   );
 
   const { keyphrase: keyphraseChecks, onPage } = partitionSeo(seoChecks);

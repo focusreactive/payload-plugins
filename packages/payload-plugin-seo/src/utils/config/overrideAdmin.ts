@@ -9,7 +9,8 @@ import type { SeoPluginConfig, SeoSiteConfig } from "../../types/config";
 
 export function overrideAdmin(incomingConfig: Config, config: SeoPluginConfig): Config {
   const bySlug = new Map(config.collections.map((c) => [c.slug, c]));
-  const thresholds = resolveThresholds(config.thresholds);
+  resolveThresholds(config.thresholds);
+  const thresholds = config.thresholds ?? {};
   const site: SeoSiteConfig = config.site ?? {};
 
   const collections = (incomingConfig.collections ?? []).map((collection) => {

@@ -1,6 +1,5 @@
 import type { CollectionConfig, Config } from "payload";
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SEO_THRESHOLDS } from "../../src/constants";
 import { overrideAdmin } from "../../src/utils/config/overrideAdmin";
 
 const incoming = {
@@ -62,15 +61,14 @@ describe("overrideAdmin", () => {
     expect(read(false)).toBe(false);
   });
 
-  it("passes the resolved thresholds to the button", () => {
+  it("passes the configured thresholds to the button", () => {
     const result = overrideAdmin(incoming, {
       collections: [{ slug: "pages", extractContentPath: "@/x#default" }],
       thresholds: { textLength: { min: 600 } },
     });
 
     expect(beforeDocumentControls(result, "pages")?.[0]?.clientProps?.thresholds).toEqual({
-      ...DEFAULT_SEO_THRESHOLDS,
-      textLength: { min: 600, acceptableMin: 250 },
+      textLength: { min: 600 },
     });
   });
 });

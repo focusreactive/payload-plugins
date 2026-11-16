@@ -4,7 +4,6 @@ import type { AnalysisInput, AnalysisResult, CheckResult } from "../../src/engin
 import type { GaugeModel } from "../../src/engine/types/visualization";
 import { createTranslator } from "../../src/translations";
 import type { SeoThresholds } from "../../src/types/config";
-import { resolveThresholds } from "../../src/utils/config/resolveThresholds";
 
 const sentence =
   "Payload makes structured content easy to manage for editors and developers alike.";
@@ -32,7 +31,7 @@ function allChecks(result: AnalysisResult): CheckResult[] {
 }
 
 function analyze(thresholds?: SeoThresholds, analysisInput = input): AnalysisResult {
-  return runAnalysis(analysisInput, thresholds && resolveThresholds(thresholds));
+  return runAnalysis(analysisInput, thresholds);
 }
 
 function checkOf(result: AnalysisResult, id: string): CheckResult {
@@ -90,9 +89,12 @@ describe("gauges", () => {
 });
 
 describe("configured thresholds", () => {
-  it("change nothing when they equal the defaults", () => {
+  it("score like the defaults when they repeat the default numbers", () => {
+    const scores = (result: AnalysisResult) =>
+      Object.fromEntries(allChecks(result).map((check) => [check.id, check.score]));
+
     const configured = analyze({ textLength: { min: 300 }, keyphraseDensity: { max: 3 } });
-    expect(configured).toEqual(analyze());
+    expect(scores(configured)).toEqual(scores(analyze()));
   });
 
   it("drive the keyphrase length check and its gauge", () => {

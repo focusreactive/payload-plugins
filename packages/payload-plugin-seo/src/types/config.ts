@@ -83,8 +83,8 @@ export interface SeoGenerationConfig {
 
 /**
  * Bands of the analysis checks that show a gauge, in the units the editor sees. Every number is
- * optional; a missing one keeps the Yoast default. Language-specific Yoast settings (for example
- * character counts in Japanese) still take precedence in the languages they belong to.
+ * optional. A number you set also wins over Yoast's language-specific settings; a missing one keeps
+ * the Yoast default, including those language settings (for example character counts in Japanese).
  */
 export interface SeoThresholds {
   /** Keyphrase length in words. */

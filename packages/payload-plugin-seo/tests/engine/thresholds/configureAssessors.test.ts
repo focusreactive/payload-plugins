@@ -1,38 +1,51 @@
 import { Paper, SeoAssessor } from "yoastseo";
-import { describe, expect, it, vi } from "vitest";
-import { DEFAULT_SEO_THRESHOLDS } from "../../../src/constants";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+import { ensureLanguagePack } from "../../../src/components/SeoDrawer/languagePacks";
 import { makeResearcher } from "../../../src/engine/researcherAdapter";
 import {
   configureReadabilityAssessor,
   configureRelatedKeyphraseAssessor,
   configureSeoAssessor,
 } from "../../../src/engine/thresholds/configureAssessors";
-import { resolveThresholds } from "../../../src/utils/config/resolveThresholds";
+import type { SeoThresholds } from "../../../src/types/config";
 
 interface AssessmentResult {
   getIdentifier: () => string;
   getScore: () => number;
 }
 
-function titleWidthScore(titleWidth: number, maxTitleWidth?: number): number | undefined {
-  const paper = new Paper("<p>Text.</p>", { title: "Title", titleWidth, locale: "en_US" });
+type PaperAttributes = Record<string, unknown>;
+
+function scoreOf(
+  identifier: string,
+  text: string,
+  attributes: PaperAttributes,
+  configured: SeoThresholds = {}
+): number | undefined {
+  const paper = new Paper(text, attributes);
   const assessor = new SeoAssessor(makeResearcher(paper));
-  if (maxTitleWidth) {
-    configureSeoAssessor(assessor, resolveThresholds({ titleWidth: { max: maxTitleWidth } }));
-  }
+  configureSeoAssessor(assessor, configured);
   assessor.assess(paper);
 
   const results: AssessmentResult[] = assessor.getValidResults();
-  return results.find((result) => result.getIdentifier() === "titleWidth")?.getScore();
+  return results.find((result) => result.getIdentifier() === identifier)?.getScore();
 }
 
+const english = { title: "Title", locale: "en_US" };
+const japanese = { title: "タイトル", locale: "ja_JP" };
+const japaneseText = (characters: number) => `<p>${"あ".repeat(characters)}</p>`;
+
 describe("configureAssessors", () => {
-  it("keeps the Yoast assessments when the thresholds are the defaults", () => {
+  beforeAll(async () => {
+    await ensureLanguagePack("ja_JP", ["en", "ja"]);
+  });
+
+  it("keeps the Yoast assessments without configured thresholds", () => {
     const addAssessment = vi.fn((_identifier: string, _assessment: unknown) => true);
 
-    configureSeoAssessor({ addAssessment }, DEFAULT_SEO_THRESHOLDS);
-    configureRelatedKeyphraseAssessor({ addAssessment }, DEFAULT_SEO_THRESHOLDS);
-    configureReadabilityAssessor({ addAssessment }, DEFAULT_SEO_THRESHOLDS);
+    configureSeoAssessor({ addAssessment }, {});
+    configureRelatedKeyphraseAssessor({ addAssessment }, {});
+    configureReadabilityAssessor({ addAssessment }, {});
 
     expect(addAssessment).not.toHaveBeenCalled();
   });
@@ -40,14 +53,30 @@ describe("configureAssessors", () => {
   it("replaces only the assessments of configured checks", () => {
     const addAssessment = vi.fn((_identifier: string, _assessment: unknown) => true);
 
-    configureSeoAssessor({ addAssessment }, resolveThresholds({ textLength: { min: 500 } }));
+    configureSeoAssessor({ addAssessment }, { textLength: { min: 500 } });
 
     expect(addAssessment.mock.calls.map(([identifier]) => identifier)).toEqual(["textLength"]);
   });
 
   it("scores the title width against the configured maximum", () => {
-    expect(titleWidthScore(650)).toBe(3);
-    expect(titleWidthScore(650, 700)).toBe(9);
-    expect(titleWidthScore(300, 700)).toBe(9);
+    const titleWidth = (width: number, configured?: SeoThresholds) =>
+      scoreOf("titleWidth", "<p>Text.</p>", { ...english, titleWidth: width }, configured);
+
+    expect(titleWidth(650)).toBe(3);
+    expect(titleWidth(650, { titleWidth: { max: 700 } })).toBe(9);
+    expect(titleWidth(300, { titleWidth: { max: 700 } })).toBe(9);
+  });
+
+  it("lets a configured number win over the language default", () => {
+    const text = japaneseText(450);
+
+    expect(scoreOf("textLength", text, japanese)).toBe(3);
+    expect(scoreOf("textLength", text, japanese, { textLength: { min: 400 } })).toBe(9);
+  });
+
+  it("keeps the language default for a number that is not configured", () => {
+    const text = japaneseText(450);
+
+    expect(scoreOf("textLength", text, japanese, { textLength: { acceptableMin: 100 } })).toBe(6);
   });
 });

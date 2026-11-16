@@ -7,7 +7,7 @@ import { SeoTriggerButton } from "./SeoTriggerButton";
 import { SeoDrawer } from "../SeoDrawer";
 import { useLinkSuggestions } from "../SeoDrawer/links/useLinkSuggestions";
 import { useAnalysis } from "../SeoDrawer/useAnalysis";
-import type { ResolvedSeoThresholds } from "../../types/config";
+import type { SeoThresholds } from "../../types/config";
 import { useKeyphrases } from "../SeoDrawer/useKeyphrases";
 import type { RemoteKeyphrases } from "../SeoDrawer/useKeyphrases";
 import { useLiveDocument } from "../SeoDrawer/useLiveDocument";
@@ -19,7 +19,7 @@ export interface SeoButtonProps {
   site: { name: string; baseUrl: string; faviconUrl: string };
   supportedLocales: string[];
   keyphraseIndex?: boolean;
-  thresholds?: ResolvedSeoThresholds;
+  thresholds?: SeoThresholds;
 }
 
 interface SeoButtonInnerProps extends SeoButtonProps {

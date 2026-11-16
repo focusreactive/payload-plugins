@@ -1,111 +1,114 @@
-import KeyphraseLengthAssessment from "yoastseo/build/scoring/assessments/seo/KeyphraseLengthAssessment";
 import KeyphraseDensityAssessment from "yoastseo/build/scoring/assessments/seo/KeywordDensityAssessment";
-import MetaDescriptionLengthAssessment from "yoastseo/build/scoring/assessments/seo/MetaDescriptionLengthAssessment";
 import PageTitleWidthAssessment from "yoastseo/build/scoring/assessments/seo/PageTitleWidthAssessment";
-import TextLengthAssessment from "yoastseo/build/scoring/assessments/seo/TextLengthAssessment";
-import SentenceLengthInTextAssessment from "yoastseo/build/scoring/assessments/readability/SentenceLengthInTextAssessment";
-import { DEFAULT_SEO_THRESHOLDS } from "../../constants";
-import type { ResolvedSeoThresholds } from "../../types/config";
+import type { SeoThresholds } from "../../types/config";
+import { ConfiguredKeyphraseLengthAssessment } from "./assessments/ConfiguredKeyphraseLengthAssessment";
+import { ConfiguredMetaDescriptionLengthAssessment } from "./assessments/ConfiguredMetaDescriptionLengthAssessment";
+import { ConfiguredSentenceLengthAssessment } from "./assessments/ConfiguredSentenceLengthAssessment";
+import { ConfiguredTextLengthAssessment } from "./assessments/ConfiguredTextLengthAssessment";
 
 interface ConfigurableAssessor {
   addAssessment: (identifier: string, assessment: unknown) => boolean;
 }
 
-type ThresholdCheck = keyof ResolvedSeoThresholds;
-
 const YOAST_DENSITY_OVER_MAXIMUM = 4;
-const YOAST_TEXT_LENGTH_BELOW_MINIMUM = 200;
-const YOAST_TEXT_LENGTH_VERY_FAR_BELOW_MINIMUM = 100;
 const SEO_ASSESSOR_SHORT_TITLE_SCORE = 9;
 
-function isConfigured(check: ThresholdCheck, thresholds: ResolvedSeoThresholds): boolean {
-  const defaults: Readonly<Record<string, number>> = DEFAULT_SEO_THRESHOLDS[check];
-  const configured: Readonly<Record<string, number>> = thresholds[check];
+function definedOnly(values: Record<string, number | undefined>): Record<string, number> {
+  const defined: Record<string, number> = {};
 
-  return Object.keys(defaults).some((field) => defaults[field] !== configured[field]);
+  for (const [key, value] of Object.entries(values)) {
+    if (value !== undefined) defined[key] = value;
+  }
+
+  return defined;
 }
 
 function keyphraseLengthAssessment(
-  { keyphraseLength }: ResolvedSeoThresholds,
+  { keyphraseLength }: SeoThresholds,
   isRelatedKeyphrase: boolean
 ): unknown {
-  const bounds = {
-    recommendedMaximum: keyphraseLength.max,
-    acceptableMaximum: keyphraseLength.acceptableMax,
-  };
-
-  return new KeyphraseLengthAssessment({
-    parameters: bounds,
-    parametersNoFunctionWordSupport: bounds,
-    isRelatedKeyphrase,
-  });
+  return new ConfiguredKeyphraseLengthAssessment(
+    definedOnly({
+      recommendedMaximum: keyphraseLength?.max,
+      acceptableMaximum: keyphraseLength?.acceptableMax,
+    }),
+    isRelatedKeyphrase
+  );
 }
 
-function keyphraseDensityAssessment({ keyphraseDensity }: ResolvedSeoThresholds): unknown {
-  const bounds = {
-    minimum: keyphraseDensity.min,
-    maximum: keyphraseDensity.max,
-    overMaximum: Math.max(YOAST_DENSITY_OVER_MAXIMUM, keyphraseDensity.max),
-  };
+function keyphraseDensityAssessment({ keyphraseDensity }: SeoThresholds): unknown {
+  const max = keyphraseDensity?.max;
+  const bounds = definedOnly({
+    minimum: keyphraseDensity?.min,
+    maximum: max,
+    overMaximum: max === undefined ? undefined : Math.max(YOAST_DENSITY_OVER_MAXIMUM, max),
+  });
 
   return new KeyphraseDensityAssessment({
     parameters: { noWordForms: bounds, multipleWordForms: bounds },
   });
 }
 
-function metaDescriptionLengthAssessment({
-  metaDescriptionLength,
-}: ResolvedSeoThresholds): unknown {
-  return new MetaDescriptionLengthAssessment({
-    recommendedMaximumLength: metaDescriptionLength.min,
-    maximumLength: metaDescriptionLength.max,
-  });
+function metaDescriptionLengthAssessment({ metaDescriptionLength }: SeoThresholds): unknown {
+  return new ConfiguredMetaDescriptionLengthAssessment(
+    definedOnly({
+      recommendedMaximumLength: metaDescriptionLength?.min,
+      maximumLength: metaDescriptionLength?.max,
+    })
+  );
 }
 
-function titleWidthAssessment({ titleWidth }: ResolvedSeoThresholds): unknown {
+function titleWidthAssessment({ titleWidth }: SeoThresholds): unknown {
   return new PageTitleWidthAssessment(
-    { maxLength: titleWidth.max, scores: { widthTooShort: SEO_ASSESSOR_SHORT_TITLE_SCORE } },
+    {
+      ...definedOnly({ maxLength: titleWidth?.max }),
+      scores: { widthTooShort: SEO_ASSESSOR_SHORT_TITLE_SCORE },
+    },
     true
   );
 }
 
-function textLengthAssessment({ textLength }: ResolvedSeoThresholds): unknown {
-  const belowMinimum = Math.min(YOAST_TEXT_LENGTH_BELOW_MINIMUM, textLength.acceptableMin);
-
-  return new TextLengthAssessment({
-    recommendedMinimum: textLength.min,
-    slightlyBelowMinimum: textLength.acceptableMin,
-    belowMinimum,
-    veryFarBelowMinimum: Math.min(YOAST_TEXT_LENGTH_VERY_FAR_BELOW_MINIMUM, belowMinimum),
-  });
+function textLengthAssessment({ textLength }: SeoThresholds): unknown {
+  return new ConfiguredTextLengthAssessment(
+    definedOnly({
+      recommendedMinimum: textLength?.min,
+      slightlyBelowMinimum: textLength?.acceptableMin,
+    })
+  );
 }
 
-function sentenceLengthAssessment({ textSentenceLength }: ResolvedSeoThresholds): unknown {
-  return new SentenceLengthInTextAssessment({
-    recommendedLength: textSentenceLength.maxSentenceWords,
-    slightlyTooMany: textSentenceLength.max,
-    farTooMany: textSentenceLength.acceptableMax,
-  });
+function sentenceLengthAssessment({ textSentenceLength }: SeoThresholds): unknown {
+  return new ConfiguredSentenceLengthAssessment(
+    definedOnly({
+      recommendedLength: textSentenceLength?.maxSentenceWords,
+      slightlyTooMany: textSentenceLength?.max,
+      farTooMany: textSentenceLength?.acceptableMax,
+    })
+  );
 }
 
-type AssessmentFactory = readonly [ThresholdCheck, (thresholds: ResolvedSeoThresholds) => unknown];
+type AssessmentFactory = readonly [keyof SeoThresholds, (configured: SeoThresholds) => unknown];
+
+function isConfigured(bands: Record<string, number | undefined> | undefined): boolean {
+  return Object.values(bands ?? {}).some((value) => value !== undefined);
+}
 
 function replaceConfigured(
   assessor: ConfigurableAssessor,
-  thresholds: ResolvedSeoThresholds,
+  configured: SeoThresholds,
   factories: readonly AssessmentFactory[]
 ): void {
   for (const [check, create] of factories) {
-    if (isConfigured(check, thresholds)) assessor.addAssessment(check, create(thresholds));
+    if (isConfigured(configured[check])) assessor.addAssessment(check, create(configured));
   }
 }
 
 export function configureSeoAssessor(
   assessor: ConfigurableAssessor,
-  thresholds: ResolvedSeoThresholds
+  configured: SeoThresholds
 ): void {
-  replaceConfigured(assessor, thresholds, [
-    ["keyphraseLength", (configured) => keyphraseLengthAssessment(configured, false)],
+  replaceConfigured(assessor, configured, [
+    ["keyphraseLength", (thresholds) => keyphraseLengthAssessment(thresholds, false)],
     ["keyphraseDensity", keyphraseDensityAssessment],
     ["metaDescriptionLength", metaDescriptionLengthAssessment],
     ["titleWidth", titleWidthAssessment],
@@ -115,17 +118,17 @@ export function configureSeoAssessor(
 
 export function configureRelatedKeyphraseAssessor(
   assessor: ConfigurableAssessor,
-  thresholds: ResolvedSeoThresholds
+  configured: SeoThresholds
 ): void {
-  replaceConfigured(assessor, thresholds, [
-    ["keyphraseLength", (configured) => keyphraseLengthAssessment(configured, true)],
+  replaceConfigured(assessor, configured, [
+    ["keyphraseLength", (thresholds) => keyphraseLengthAssessment(thresholds, true)],
     ["keyphraseDensity", keyphraseDensityAssessment],
   ]);
 }
 
 export function configureReadabilityAssessor(
   assessor: ConfigurableAssessor,
-  thresholds: ResolvedSeoThresholds
+  configured: SeoThresholds
 ): void {
-  replaceConfigured(assessor, thresholds, [["textSentenceLength", sentenceLengthAssessment]]);
+  replaceConfigured(assessor, configured, [["textSentenceLength", sentenceLengthAssessment]]);
 }

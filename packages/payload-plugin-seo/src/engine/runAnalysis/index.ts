@@ -1,6 +1,6 @@
-import { DEFAULT_SEO_THRESHOLDS } from "../../constants";
-import type { ResolvedSeoThresholds } from "../../types/config";
+import type { SeoThresholds } from "../../types/config";
 import { buildPaper } from "../buildPaper";
+import { analysisThresholds } from "../thresholds/analysisThresholds";
 import type { AnalysisInput, AnalysisResult, RelatedKeyphraseResult } from "../types/analysis";
 import { deriveInclusive } from "./services/derive-inclusive";
 import { deriveReadability } from "./services/derive-readability";
@@ -9,10 +9,8 @@ import { deriveSeo } from "./services/derive-seo";
 import { deriveSerp } from "./services/derive-serp";
 import { deriveVitals } from "./services/derive-vitals";
 
-export function runAnalysis(
-  input: AnalysisInput,
-  thresholds: ResolvedSeoThresholds = DEFAULT_SEO_THRESHOLDS
-): AnalysisResult {
+export function runAnalysis(input: AnalysisInput, configured: SeoThresholds = {}): AnalysisResult {
+  const thresholds = analysisThresholds(configured);
   const paper = buildPaper(input);
   const { keyphrase } = input;
 

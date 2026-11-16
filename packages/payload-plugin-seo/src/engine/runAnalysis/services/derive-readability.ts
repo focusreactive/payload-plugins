@@ -4,6 +4,7 @@ import { runAssessor } from "../../assessorAdapter";
 import { getRecommendation } from "../../recommendations";
 import type { RecoContext } from "../../recommendations";
 import { getResearch, makeResearcher } from "../../researcherAdapter";
+import type { AnalysisThresholds } from "../../thresholds/analysisThresholds";
 import { configureReadabilityAssessor } from "../../thresholds/configureAssessors";
 import type { YoastResearcher } from "../../researcherAdapter";
 import { fleschToStatus } from "../../scoreStatus";
@@ -35,20 +36,20 @@ function fleschCheck(
 export function deriveReadability(
   paper: InstanceType<typeof Paper>,
   keyphrase: string,
-  thresholds: ResolvedSeoThresholds
+  { values, configured }: AnalysisThresholds
 ): CategoryResult {
-  const ctx = { keyphrase, thresholds };
+  const ctx = { keyphrase, thresholds: values };
   const researcher = makeResearcher(paper);
 
   const assessor = new ContentAssessor(makeResearcher(paper));
-  configureReadabilityAssessor(assessor, thresholds);
+  configureReadabilityAssessor(assessor, configured);
   const readRaw = runAssessor(assessor, ctx, paper);
-  const flesch = fleschCheck(researcher, ctx, thresholds);
+  const flesch = fleschCheck(researcher, ctx, values);
   const readChecks = enrich(
     flesch ? [...readRaw, flesch] : readRaw,
     paper as PaperLike,
     researcher,
-    thresholds
+    values
   );
 
   return toCategory(readChecks);

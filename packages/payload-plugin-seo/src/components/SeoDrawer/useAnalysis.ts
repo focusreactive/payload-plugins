@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { runAnalysis } from "../../engine/runAnalysis";
 import type { AnalysisInput, AnalysisResult } from "../../engine/types/analysis";
-import type { ResolvedSeoThresholds } from "../../types/config";
+import type { SeoThresholds } from "../../types/config";
 import { decideAutoAction } from "./analysisDecision";
 import { ensureLanguagePack } from "./languagePacks";
 
@@ -11,7 +11,7 @@ export interface UseAnalysisArgs {
   getInput: (opts?: { live?: boolean }) => Promise<AnalysisInput>;
   signature: string;
   supportedLocales: string[];
-  thresholds?: ResolvedSeoThresholds;
+  thresholds?: SeoThresholds;
   enabled?: boolean;
 }
 
