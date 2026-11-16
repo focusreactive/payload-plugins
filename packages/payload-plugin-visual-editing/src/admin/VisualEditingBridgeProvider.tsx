@@ -4,6 +4,7 @@ import { useConfig } from "@payloadcms/ui";
 import { useCallback, useEffect, useState } from "react";
 
 import { defaultBuildAdminEditUrl } from "../shared/buildAdminEditUrl.js";
+import { announceOpenField } from "../shared/openFieldEvent.js";
 import { VE_FOCUS_PARAM, VE_MESSAGE_TYPE } from "../shared/protocol.js";
 import type { DocKind } from "../shared/protocol.js";
 import type { VeOpenFieldMessage } from "../shared/protocol.js";
@@ -67,12 +68,23 @@ const fallbackResolution = (
 
 type EntityFieldsLookup = (kind: DocKind, slug: string) => ResolverField[] | null;
 
+type FocusTarget = { docId?: string; locale?: string };
+
 const focusFieldPath = async (
   path: string,
   kind: DocKind,
   slug: string,
-  getFields: EntityFieldsLookup
+  getFields: EntityFieldsLookup,
+  target: FocusTarget = {}
 ): Promise<void> => {
+  // Another admin component (e.g. stacked editing panels) may open the field its own way.
+  const takenOver = announceOpenField({
+    path,
+    ...(kind === "collection" ? { collectionSlug: slug } : { globalSlug: slug }),
+    ...(target.docId === undefined ? {} : { docId: target.docId }),
+    ...(target.locale === undefined ? {} : { locale: target.locale }),
+  });
+  if (takenOver) return;
   const fields = getFields(kind, slug);
   const chainResult = fields !== null ? resolveContainerChain(path, fields) : null;
   const resolved = chainResult ?? fallbackResolution(path);
@@ -124,7 +136,9 @@ export function VisualEditingBridgeProvider({
       const globalSlug = currentGlobalSlug();
       setTimeout(() => {
         if (collection) {
-          void focusFieldPath(focusPath, "collection", collection.slug, getFields);
+          void focusFieldPath(focusPath, "collection", collection.slug, getFields, {
+            docId: collection.id,
+          });
         } else if (globalSlug) {
           void focusFieldPath(focusPath, "global", globalSlug, getFields);
         }
@@ -148,7 +162,8 @@ export function VisualEditingBridgeProvider({
           currentFormPathOf(data, openForms),
           "collection",
           data.collectionSlug,
-          getFields
+          getFields,
+          { docId: current.id, locale: data.locale }
         );
         return;
       }
@@ -163,7 +178,8 @@ export function VisualEditingBridgeProvider({
           currentFormPathOf(data, openForms),
           "global",
           data.collectionSlug,
-          getFields
+          getFields,
+          { locale: data.locale }
         );
       }
     };

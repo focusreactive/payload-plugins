@@ -27,6 +27,11 @@ export {
 } from "./excludeValues.js";
 
 export { stripMarkers } from "./stripMarkers.js";
+export {
+  OPEN_FIELD_EVENT,
+  announceOpenField,
+  type OpenFieldEventDetail,
+} from "./shared/openFieldEvent.js";
 
 export {
   DEFAULT_MAX_UNSAVED_STATE_LENGTH,
