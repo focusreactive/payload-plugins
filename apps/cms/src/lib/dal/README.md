@@ -35,8 +35,7 @@ src/lib/dal/                  (import root: @/dal)
 ├── getDocument.ts · getAllDocuments.ts                   ← generic find / findByID
 ├── getUnsavedRichText.ts     ← unsaved rich text of the open draft, read as the signed-in editor
 ├── getRedirects.ts · getAlternateLocales.ts · getDefaultMediaId.ts
-├── searchPosts.ts · runPostSemanticSearch.ts             ← search-backed reads
-└── staticParams/             ← generateStaticParams helpers (pages, posts)
+└── searchPosts.ts · runPostSemanticSearch.ts             ← search-backed reads
 ```
 
 ## Where the DAL applies — and where it doesn't
