@@ -2,12 +2,12 @@
 
 import { useTranslation } from "@payloadcms/ui";
 import { useMemo } from "react";
-import { createTranslator, TRANSLATION_NAMESPACE } from "./translate";
+import { createTranslator, FALLBACK_LANGUAGE, TRANSLATION_NAMESPACE } from "./translate";
 import type { Messages, Translate } from "./translate";
 
 export function useSeoTranslation(): { t: Translate; language: string } {
   const { i18n } = useTranslation();
-  const language = i18n?.language ?? "en";
+  const language = i18n?.language ?? FALLBACK_LANGUAGE;
   const messages = (i18n?.translations as Record<string, unknown> | undefined)?.[
     TRANSLATION_NAMESPACE
   ] as Messages | undefined;

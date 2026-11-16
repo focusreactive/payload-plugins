@@ -3,6 +3,8 @@ import type { MessageVars, TranslationKey } from "./types";
 
 export const TRANSLATION_NAMESPACE = "seo";
 
+export const FALLBACK_LANGUAGE = "en";
+
 export type Messages = Readonly<Record<string, string>>;
 
 export type Translate = (key: TranslationKey, vars?: MessageVars) => string;
@@ -11,7 +13,7 @@ function pluralRules(language: string): Intl.PluralRules {
   try {
     return new Intl.PluralRules(language);
   } catch {
-    return new Intl.PluralRules("en");
+    return new Intl.PluralRules(FALLBACK_LANGUAGE);
   }
 }
 
@@ -19,7 +21,7 @@ function numberFormat(language: string): Intl.NumberFormat {
   try {
     return new Intl.NumberFormat(language, { useGrouping: false });
   } catch {
-    return new Intl.NumberFormat("en", { useGrouping: false });
+    return new Intl.NumberFormat(FALLBACK_LANGUAGE, { useGrouping: false });
   }
 }
 
@@ -54,7 +56,7 @@ export function createTranslator(
   fallback: Messages = en
 ): Translate {
   const rules = pluralRules(language);
-  const fallbackRules = pluralRules("en");
+  const fallbackRules = pluralRules(FALLBACK_LANGUAGE);
   const numbers = numberFormat(language);
 
   return (key, vars) => {
