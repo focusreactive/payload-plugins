@@ -376,6 +376,23 @@ describe("useKeyphrases with a remote index", () => {
     expect(sentBody()).toMatchObject({ keyphrases: [{ text: "pay", synonyms: [] }] });
   });
 
+  it("saves a failed edit again when the browser comes back online", async () => {
+    fetchMock.mockRejectedValueOnce(new Error("offline"));
+    const { result, unmount } = renderHook(() => useKeyphrases({ ...base, remote: editable }));
+
+    act(() => result.current.updateText(result.current.keyphrases[0].id, "offline edit"));
+    await act(() => vi.advanceTimersByTimeAsync(KEYPHRASE_SAVE_DELAY_MS));
+    expect(result.current.saveFailed).toBe(true);
+    expect(localStorage.getItem(unsavedKey)).not.toBeNull();
+
+    await act(async () => window.dispatchEvent(new Event("online")));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(sentBody()).toMatchObject({ keyphrases: [{ text: "offline edit", synonyms: [] }] });
+    expect(result.current.saveFailed).toBe(false);
+    expect(localStorage.getItem(unsavedKey)).toBeNull();
+    unmount();
+  });
+
   it("does not flush when the page becomes visible", () => {
     const { result } = renderHook(() =>
       useKeyphrases({

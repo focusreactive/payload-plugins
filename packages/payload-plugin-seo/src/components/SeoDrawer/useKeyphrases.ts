@@ -14,7 +14,7 @@ import {
   unsavedStorageKey,
 } from "./keyphraseStorage";
 import { createRemoteSaver } from "./remoteSaver";
-import { useFlushOnHide } from "./useFlushOnHide";
+import { useFlushPendingSave } from "./useFlushPendingSave";
 import { useRemoteSync } from "./useRemoteSync";
 import type { PendingSync } from "./useRemoteSync";
 
@@ -109,7 +109,7 @@ export function useKeyphrases({
     if (serverHasList) clearKeyphrases(key);
   }, [key, serverHasList]);
 
-  useFlushOnHide(saver);
+  useFlushPendingSave(saver);
 
   const listRef = useRef(list);
   listRef.current = list;
