@@ -1,4 +1,6 @@
 import { TrackPage } from "@focus-reactive/payload-plugin-analytics/client";
+import { VisualEditing } from "@focus-reactive/payload-plugin-visual-editing/client";
+import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
 import { getPayload } from "payload";
 import React from "react";
@@ -7,6 +9,7 @@ import config from "@/payload.config";
 
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { isLocale } from "./locales";
+import { RenderBlocks } from "../../../components/RenderBlocks";
 import { PageClient } from "./PageClient";
 
 interface Props {
@@ -19,15 +22,19 @@ export default async function Page({ params, searchParams }: Props) {
   const { locale: requested } = await searchParams;
   const locale = isLocale(requested) ? requested : "en";
   const payload = await getPayload({ config });
+  const { isEnabled: draft } = await draftMode();
 
   const { docs } = await payload.find({
     collection: "pages",
+    // Draft mode (Live Preview): the latest draft, with visual-editing markers.
+    context: { visualEditing: draft },
     depth: 1,
+    draft,
     limit: 1,
     locale,
-    where: {
-      and: [{ slug: { equals: slug } }, { _status: { equals: "published" } }],
-    },
+    where: draft
+      ? { slug: { equals: slug } }
+      : { and: [{ slug: { equals: slug } }, { _status: { equals: "published" } }] },
   });
 
   const page = docs[0];
@@ -41,11 +48,18 @@ export default async function Page({ params, searchParams }: Props) {
       <TrackPage collection="pages" id={page.id} locale={locale} />
       {/* Keyed by locale: `useLivePreview` snapshots `initialData` on mount, so without a remount
           the previous locale's content would survive the switch. */}
-      <PageClient
-        key={locale}
-        initialData={page as any}
-        serverURL={process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4040"}
-      />
+      {draft ? (
+        // Rendered on the server from the marked draft; instant preview keeps it live while typing.
+        <VisualEditing.Overlay locale={locale}>
+          <RenderBlocks blocks={(page.sections ?? []) as never[]} />
+        </VisualEditing.Overlay>
+      ) : (
+        <PageClient
+          key={locale}
+          initialData={page as any}
+          serverURL={process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4040"}
+        />
+      )}
     </>
   );
 }

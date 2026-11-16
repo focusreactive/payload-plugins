@@ -15,6 +15,7 @@ import {
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { seoPlugin } from "@focus-reactive/payload-plugin-seo";
 import { stackedEditingPlugin } from "@focus-reactive/payload-plugin-stacked-editing";
+import { visualEditingPlugin } from "@focus-reactive/payload-plugin-visual-editing";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { buildConfig } from "payload";
 import sharp from "sharp";
@@ -84,6 +85,14 @@ export default buildConfig({
     presetsPlugin(),
     // Array/blocks rows open as stacked drawers with breadcrumbs (Alt-click keeps inline expand).
     stackedEditingPlugin({ collections: ["pages", "playground"] }),
+    // Click-to-edit in Live Preview (Pages only). A click on a nested element opens the matching
+    // stacked panels: the bridge's `payload:open-field` event is taken over by stacked editing.
+    visualEditingPlugin({
+      enrichment: "explicit",
+      instantPreview: true,
+      skipCollections: ["users", "media", "articles", "playground"],
+      skipGlobals: ["header"],
+    }),
     schedulePublicationPlugin({
       collections: ["pages", "users"],
       secret: "secret",

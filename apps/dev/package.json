@@ -44,6 +44,7 @@
     "@focus-reactive/payload-plugin-seo": "workspace:*",
     "@focus-reactive/payload-plugin-stacked-editing": "workspace:*",
     "@focus-reactive/payload-plugin-translator": "workspace:*",
+    "@focus-reactive/payload-plugin-visual-editing": "workspace:*",
     "@google-analytics/data": "^5.2.2",
     "@grpc/grpc-js": "^1.14.3",
     "@payloadcms/db-mongodb": "3.90.1",
