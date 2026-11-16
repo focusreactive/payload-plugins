@@ -20,7 +20,7 @@ export function buildPageTitle(
   baseTitle: string,
   { separator, siteName, suffix }: TitleParts
 ): string {
-  if (baseTitle.includes(suffix) || baseTitle.includes(siteName)) {
+  if (baseTitle === suffix || baseTitle === siteName) {
     return baseTitle;
   }
 

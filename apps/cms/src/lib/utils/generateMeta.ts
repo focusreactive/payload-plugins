@@ -60,10 +60,11 @@ export const generateMeta = async (args: {
   const slug = doc?.slug;
   const breadcrumbs = pathBreadcrumbsOf((doc as Page)?.breadcrumbs);
 
-  const baseTitle =
-    stripMarkers(doc?.meta?.title || doc?.title || settings?.seo?.og?.title) || siteName;
+  const seoTitle = stripMarkers(doc?.meta?.title);
+  const baseTitle = stripMarkers(doc?.title || settings?.seo?.og?.title) || siteName;
 
-  const title = buildPageTitle(baseTitle, titleParts);
+  // An SEO title the editor wrote is the whole title, as on an imported site; only the fallback gets the suffix.
+  const title = seoTitle || buildPageTitle(baseTitle, titleParts);
 
   const description = metaDescription || defaultDescription || settingsOgDescription || "";
 
@@ -73,7 +74,7 @@ export const generateMeta = async (args: {
     (doc?.meta?.image || settings?.seo?.og?.image) as Parameters<typeof getImageURL>[0]
   );
 
-  const ogTitle = baseTitle;
+  const ogTitle = seoTitle || baseTitle;
 
   let canonical: string;
   if (collection === "posts") {
