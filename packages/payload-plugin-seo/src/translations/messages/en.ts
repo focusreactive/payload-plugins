@@ -144,7 +144,8 @@ export const en = {
   "check.keyphraseLength.name": "Keyphrase length",
   "check.keyphraseLength.tip": "Word count of the keyphrase itself.",
   "check.keyphraseDensity.name": "Keyphrase density",
-  "check.keyphraseDensity.tip": "Occurrences relative to total words. Ideal {{min}}–{{max}}%.",
+  "check.keyphraseDensity.tip":
+    "Occurrences relative to total words, weighted up for longer keyphrases. Ideal {{min}}–{{max}}%.",
   "check.metaDescriptionKeyword.name": "Keyphrase in meta description",
   "check.metaDescriptionKeyword.tip": "Whether the keyphrase appears in the meta description.",
   "check.subheadingsKeyword.name": "Keyphrase in subheadings",

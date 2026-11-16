@@ -30,6 +30,9 @@ export const resolveValueRange = (
 
   return {
     type: "value-range",
-    gauge: buildGauge(spec, markerValue, formatGaugeValue(markerValue, spec.unit)),
+    gauge: {
+      ...buildGauge(spec, markerValue, formatGaugeValue(markerValue, spec.unit)),
+      markerStatus: check.status,
+    },
   };
 };

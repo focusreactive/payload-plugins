@@ -155,7 +155,8 @@ export const cs: LanguageMessages = {
   "check.keyphraseLength.name": "Délka fráze",
   "check.keyphraseLength.tip": "Počet slov samotné klíčové fráze.",
   "check.keyphraseDensity.name": "Hustota fráze",
-  "check.keyphraseDensity.tip": "Výskyty vůči celkovému počtu slov. Ideálně {{min}}–{{max}} %.",
+  "check.keyphraseDensity.tip":
+    "Výskyty vůči celkovému počtu slov, u delších frází navýšené. Ideálně {{min}}–{{max}} %.",
   "check.metaDescriptionKeyword.name": "Fráze v meta popisu",
   "check.metaDescriptionKeyword.tip": "Zda klíčová fráze zazní v meta popisu.",
   "check.subheadingsKeyword.name": "Fráze v podnadpisech",

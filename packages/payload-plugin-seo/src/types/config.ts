@@ -100,7 +100,10 @@ export interface SeoThresholds {
      */
     acceptableMax?: number;
   };
-  /** Keyphrase density in percent of the text, for texts of at least 100 words. */
+  /**
+   * Keyphrase density in percent of the text, weighted by keyphrase length the way Yoast scores it
+   * (`0.7 + words / 3`), for texts of at least 100 words.
+   */
   keyphraseDensity?: {
     /**
      * Lowest good density.

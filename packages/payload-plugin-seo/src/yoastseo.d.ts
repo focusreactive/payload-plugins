@@ -8,6 +8,7 @@ declare module "yoastseo/build/scoring/assessments/seo/PageTitleWidthAssessment"
 declare module "yoastseo/build/scoring/assessments/seo/TextLengthAssessment";
 declare module "yoastseo/build/scoring/assessments/readability/SentenceLengthInTextAssessment";
 declare module "yoastseo/build/scoring/assessors/relatedKeywordAssessor";
+declare module "yoastseo/build/scoring/helpers/assessments/keyphraseLengthFactor";
 declare module "@yoast/search-metadata-previews/build/helpers/progress" {
   export interface LengthProgress {
     actual: number;

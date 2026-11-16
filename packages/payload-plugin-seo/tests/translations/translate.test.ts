@@ -10,7 +10,7 @@ describe("createTranslator", () => {
 
   it("writes numbers the way the language does, without grouping", () => {
     expect(createTranslator("cs", cs)("check.keyphraseDensity.tip", { min: 0.5, max: 2.5 })).toBe(
-      "Výskyty vůči celkovému počtu slov. Ideálně 0,5–2,5 %."
+      "Výskyty vůči celkovému počtu slov, u delších frází navýšené. Ideálně 0,5–2,5 %."
     );
     expect(createTranslator("en", undefined)("check.textLength.tip", { min: 1500 })).toBe(
       "Total words vs the recommended minimum (1500)."

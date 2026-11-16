@@ -31,6 +31,15 @@ describe("extractCheckData", () => {
     });
   });
 
+  it("weights the density by the keyphrase length the way Yoast scores it", () => {
+    const r = makeResearcher({
+      getKeyphraseDensity: { density: 1.5, textLength: 300 },
+      getKeyphraseCount: { count: 4, keyphraseLength: 2 },
+    });
+    const data = extractCheckData("keyphraseDensity", makePaper(), r);
+    expect(data?.densityPct).toBeCloseTo(1.5 * (0.7 + 2 / 3));
+  });
+
   it("returns undefined for an unknown id", () => {
     expect(extractCheckData("slugKeyword", makePaper(), makeResearcher({}))).toBeUndefined();
   });

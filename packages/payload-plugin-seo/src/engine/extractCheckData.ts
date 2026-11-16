@@ -1,5 +1,6 @@
 import { DEFAULT_SEO_THRESHOLDS } from "../constants";
 import type { ResolvedSeoThresholds } from "../types/config";
+import keyphraseLengthFactor from "yoastseo/build/scoring/helpers/assessments/keyphraseLengthFactor";
 import { getResearch } from "./researcherAdapter";
 import type { YoastResearcher } from "./researcherAdapter";
 import { getTitleProgressGuarded } from "./helpers/title-progress";
@@ -54,8 +55,21 @@ export function extractCheckData(
 ): Record<string, unknown> | undefined {
   switch (id) {
     case "keyphraseDensity": {
-      const r = getResearch<{ density: number }>(researcher, "getKeyphraseDensity");
-      return r ? { densityPct: r.density } : undefined;
+      const r = getResearch<{ density: number; textLength: number }>(
+        researcher,
+        "getKeyphraseDensity"
+      );
+      if (!r) return undefined;
+
+      const keyphrase = getResearch<{ count: number; keyphraseLength?: number }>(
+        researcher,
+        "getKeyphraseCount"
+      );
+      const weight = keyphrase?.keyphraseLength
+        ? keyphraseLengthFactor(keyphrase.keyphraseLength)
+        : 1;
+
+      return { densityPct: r.density * weight, textLength: r.textLength, count: keyphrase?.count };
     }
     case "imageKeyphrase": {
       const r = getResearch<{

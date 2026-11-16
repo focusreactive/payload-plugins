@@ -60,6 +60,25 @@ const withFocus = (keyphrase: string): AnalysisInput => ({
   keyphrases: [{ text: keyphrase, synonyms: [] }],
 });
 
+describe("gauges", () => {
+  it.each([
+    ["a one-word keyphrase", input],
+    ["a five-word keyphrase", withFocus(fiveWordKeyphrase)],
+  ])("colour the marker with the check status for %s", (_name, analysisInput) => {
+    for (const check of allChecks(analyze(undefined, analysisInput))) {
+      if (check.viz?.type === "value-range") {
+        expect(check.viz.gauge.markerStatus, check.id).toBe(check.status);
+      }
+    }
+  });
+
+  it("show the keyphrase density Yoast scores", () => {
+    const check = checkOf(analyze(undefined, withFocus(fiveWordKeyphrase)), "keyphraseDensity");
+    expect(check.status).toBe("bad");
+    expect(gaugeOf(check).markerLabel).toBe("19.7%");
+  });
+});
+
 describe("configured thresholds", () => {
   it("change nothing when they equal the defaults", () => {
     const configured = analyze({ textLength: { min: 300 }, keyphraseDensity: { max: 3 } });

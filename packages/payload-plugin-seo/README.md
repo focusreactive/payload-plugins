@@ -805,7 +805,7 @@ seoPlugin({
 | Check                   | Numbers (default)                                                 | Unit                                     |
 | ----------------------- | ----------------------------------------------------------------- | ---------------------------------------- |
 | `keyphraseLength`       | `max` good up to (4), `acceptableMax` okay up to (8)              | words                                    |
-| `keyphraseDensity`      | `min` (0.5) to `max` (3) is good                                  | % of the text, texts of 100+ words       |
+| `keyphraseDensity`      | `min` (0.5) to `max` (3) is good                                  | % of the text weighted by keyphrase length, texts of 100+ words |
 | `metaDescriptionLength` | `min` too short up to (120), `max` too long over (156)            | characters                               |
 | `titleWidth`            | `max` too wide over (600); up to 400 px is short, fixed by Yoast  | pixels                                   |
 | `textLength`            | `min` good from (300), `acceptableMin` okay from (250)            | words                                    |
@@ -816,7 +816,7 @@ seoPlugin({
 - The plugin validates the option when Payload starts and throws on an unknown check or number, a negative or non-numeric value, a percentage or score over 100, a `titleWidth.max` of 400 or less, or bands in the wrong order (for example `min` not below `max`).
 - Transition words and passive voice keep the Yoast bands: Yoast hardcodes them instead of reading them from its assessment config.
 - Language-specific Yoast settings still win in their languages, for example character-based text length in Japanese.
-- Yoast compares keyphrase density after weighting it by the keyphrase length (`0.7 + words / 3`), the gauge shows the plain density.
+- Keyphrase density is the value Yoast scores: the share of words, weighted by the keyphrase length (`0.7 + words / 3`). The gauge shows the same value.
 - The length meters of [generated SEO fields](#generated-seo-fields) keep their own `range` option.
 
 ---
