@@ -1,10 +1,13 @@
-import RelatedKeywordAssessor from "yoastseo/build/scoring/assessors/relatedKeywordAssessor";
+import relatedKeywordAssessorModule from "yoastseo/build/scoring/assessors/relatedKeywordAssessor";
 import { runAssessor } from "../../assessorAdapter";
+import { commonJsDefault } from "../../helpers/commonjs-default";
 import { makeResearcher } from "../../researcherAdapter";
 import type { CategoryResult } from "../../types/analysis";
 import type { PaperData, PaperLike } from "../../types/paper";
 import { enrich } from "../utils/enrich";
 import { toCategory } from "../utils/toCategory";
+
+const RelatedKeywordAssessor = commonJsDefault(relatedKeywordAssessorModule);
 
 export function deriveRelatedKeyphrase(paper: PaperData, keyphrase: string): CategoryResult {
   const ctx = { keyphrase };

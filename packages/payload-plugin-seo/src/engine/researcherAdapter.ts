@@ -1,4 +1,5 @@
 import EnglishResearcher from "yoastseo/build/languageProcessing/languages/en/Researcher";
+import { commonJsDefault } from "./helpers/commonjs-default";
 
 export interface YoastResearcher {
   getResearch: (name: string) => unknown;
@@ -6,7 +7,7 @@ export interface YoastResearcher {
 
 export type ResearcherConstructor = new (paper: unknown) => YoastResearcher;
 
-const fallbackEnglishResearcher = EnglishResearcher as ResearcherConstructor;
+const fallbackEnglishResearcher: ResearcherConstructor = commonJsDefault(EnglishResearcher);
 
 const researchersByLanguageCode = new Map<string, ResearcherConstructor>([
   ["en", fallbackEnglishResearcher],
@@ -16,7 +17,8 @@ export function languageCodeOf(locale: string | undefined): string {
   return (locale || "en").split(/[_-]/u)[0]?.toLowerCase() || "en";
 }
 
-export function registerResearcher(lang: string, Researcher: unknown): void {
+export function registerResearcher(lang: string, researcherModule: unknown): void {
+  const Researcher = commonJsDefault(researcherModule);
   if (typeof Researcher === "function")
     researchersByLanguageCode.set(lang, Researcher as ResearcherConstructor);
 }
