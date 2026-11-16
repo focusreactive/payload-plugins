@@ -1,7 +1,11 @@
-import { DEFAULT_SEO_THRESHOLDS } from "../constants";
+import {
+  DEFAULT_SEO_THRESHOLDS,
+  DENSITY_MIN_TEXT_WORDS,
+  TRANSITION_WORDS_MIN_TEXT_WORDS,
+} from "../constants";
 import type { ResolvedSeoThresholds } from "../types/config";
 import keyphraseLengthFactor from "yoastseo/build/scoring/helpers/assessments/keyphraseLengthFactor";
-import { getResearch } from "./researcherAdapter";
+import { getResearch, getResearcherConfig } from "./researcherAdapter";
 import type { YoastResearcher } from "./researcherAdapter";
 import { getTitleProgressGuarded } from "./helpers/title-progress";
 import type { PaperLike } from "./types/paper";
@@ -69,7 +73,12 @@ export function extractCheckData(
         ? keyphraseLengthFactor(keyphrase.keyphraseLength)
         : 1;
 
-      return { densityPct: r.density * weight, textLength: r.textLength, count: keyphrase?.count };
+      return {
+        densityPct: r.density * weight,
+        textLength: r.textLength,
+        minTextLength: DENSITY_MIN_TEXT_WORDS,
+        count: keyphrase?.count,
+      };
     }
     case "imageKeyphrase": {
       const r = getResearch<{
@@ -116,10 +125,22 @@ export function extractCheckData(
       const r = getResearch<{
         totalSentences: number;
         transitionWordSentences: number;
+        textLength?: number;
       }>(researcher, "findTransitionWords");
       if (!r || !r.totalSentences) return undefined;
+
+      const pct = Math.round((r.transitionWordSentences / r.totalSentences) * 100);
+      if (typeof r.textLength !== "number") return { pct };
+
+      const applicability = getResearcherConfig<{ transitionWords?: number }>(
+        researcher,
+        "assessmentApplicability"
+      );
+
       return {
-        pct: Math.round((r.transitionWordSentences / r.totalSentences) * 100),
+        pct,
+        textLength: r.textLength,
+        minTextLength: applicability?.transitionWords ?? TRANSITION_WORDS_MIN_TEXT_WORDS,
       };
     }
     case "textSentenceLength":

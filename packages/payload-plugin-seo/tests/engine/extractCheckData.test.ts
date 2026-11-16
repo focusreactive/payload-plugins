@@ -27,6 +27,7 @@ describe("extractCheckData", () => {
     expect(extractCheckData("keyphraseDensity", makePaper(), r)).toEqual({
       densityPct: 1.8,
       textLength: 250,
+      minTextLength: 100,
       count: 5,
     });
   });
@@ -117,6 +118,27 @@ describe("extractCheckData", () => {
       findTransitionWords: { totalSentences: 8, transitionWordSentences: 2 },
     });
     expect(extractCheckData("textTransitionWords", makePaper(), r)).toEqual({ pct: 25 });
+  });
+
+  it("adds the text length Yoast needs before it scores transition words", () => {
+    const r = makeResearcher({
+      findTransitionWords: { totalSentences: 8, transitionWordSentences: 2, textLength: 150 },
+    });
+    expect(extractCheckData("textTransitionWords", makePaper(), r)).toEqual({
+      pct: 25,
+      textLength: 150,
+      minTextLength: 200,
+    });
+  });
+
+  it("uses the language's own minimum text length for transition words", () => {
+    const r = {
+      getResearch: () => ({ totalSentences: 4, transitionWordSentences: 1, textLength: 500 }),
+      getConfig: () => ({ transitionWords: 600 }),
+    };
+    expect(extractCheckData("textTransitionWords", makePaper(), r)).toMatchObject({
+      minTextLength: 600,
+    });
   });
 
   it("derives sentence-length percentage from the paper text", () => {

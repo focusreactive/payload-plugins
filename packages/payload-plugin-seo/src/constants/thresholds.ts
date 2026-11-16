@@ -12,4 +12,5 @@ export const DEFAULT_SEO_THRESHOLDS: ResolvedSeoThresholds = {
 
 export const SHORT_TITLE_WIDTH_PX = 400;
 export const DENSITY_MIN_TEXT_WORDS = 100;
+export const TRANSITION_WORDS_MIN_TEXT_WORDS = 200;
 export const MAX_PERCENT = 100;
