@@ -21,7 +21,7 @@ import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 import { revalidateScopedTag } from "@/lib/utils/scopedCache";
 import { generateSeoFields } from "@/lib/utils/seoFields";
 
-export const ENTITY_ADMIN_GROUP = "Directory";
+export const ENTITY_ADMIN_GROUP = { en: "Medical", es: "Médico" };
 
 export const entityAccess: CollectionConfig["access"] = {
   create: or(superAdmin, user, author),

@@ -33,6 +33,10 @@ const baseDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default buildConfig({
   admin: {
+    meta: {
+      // The tab icon follows the admin icon set in Site Settings.
+      icons: [{ rel: "icon", url: "/api/site/admin-icon" }],
+    },
     components: {
       afterLogin: ["/components/admin/SSOButtons"],
       graphics: {
