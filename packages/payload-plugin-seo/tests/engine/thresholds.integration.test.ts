@@ -143,8 +143,16 @@ describe("configured thresholds", () => {
     expect(t("check.fleschReadingEase.tip", check.tipVars)).toContain("Aim for 30+.");
   });
 
-  it("move the title width gauge", () => {
-    const check = checkOf(analyze({ titleWidth: { max: 650 } }), "titleWidth");
-    expect(goodLabel(check)).toBe("400px–650px");
+  it("drive the title width check and its gauge", () => {
+    const longTitle = {
+      ...input,
+      title: "A very long SEO title that runs well past the width a search result shows",
+    };
+    expect(checkOf(analyze(), "titleWidth").status).toBe("good");
+    expect(checkOf(analyze(undefined, longTitle), "titleWidth").status).toBe("bad");
+
+    const check = checkOf(analyze({ titleWidth: { max: 700 } }, longTitle), "titleWidth");
+    expect(check.status).toBe("good");
+    expect(gaugeOf(check).markerStatus).toBe("good");
   });
 });
