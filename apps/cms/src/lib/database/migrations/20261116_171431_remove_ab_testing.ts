@@ -4,22 +4,22 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "ab_experiments" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "abmanifest" DISABLE ROW LEVEL SECURITY;
-  DROP TABLE "ab_experiments" CASCADE;
-  DROP TABLE "abmanifest" CASCADE;
-  ALTER TABLE "page" DROP CONSTRAINT "page__abvariantof_id_page_id_fk";
+  DROP TABLE IF EXISTS "ab_experiments" CASCADE;
+  DROP TABLE IF EXISTS "abmanifest" CASCADE;
+  ALTER TABLE "page" DROP CONSTRAINT IF EXISTS "page__abvariantof_id_page_id_fk";
   
-  ALTER TABLE "_page_v" DROP CONSTRAINT "_page_v_version__abvariantof_id_page_id_fk";
+  ALTER TABLE "_page_v" DROP CONSTRAINT IF EXISTS "_page_v_version__abvariantof_id_page_id_fk";
   
-  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT "payload_locked_documents_rels_ab_experiments_fk";
+  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_ab_experiments_fk";
   
-  DROP INDEX "page__abvariantof_idx";
-  DROP INDEX "_page_v_version_version__abvariantof_idx";
-  DROP INDEX "payload_locked_documents_rels_ab_experiments_id_idx";
-  ALTER TABLE "page" DROP COLUMN "_abpasspercentage";
-  ALTER TABLE "page" DROP COLUMN "_abvariantof_id";
-  ALTER TABLE "_page_v" DROP COLUMN "version__abpasspercentage";
-  ALTER TABLE "_page_v" DROP COLUMN "version__abvariantof_id";
-  ALTER TABLE "payload_locked_documents_rels" DROP COLUMN "ab_experiments_id";`)
+  DROP INDEX IF EXISTS "page__abvariantof_idx";
+  DROP INDEX IF EXISTS "_page_v_version_version__abvariantof_idx";
+  DROP INDEX IF EXISTS "payload_locked_documents_rels_ab_experiments_id_idx";
+  ALTER TABLE "page" DROP COLUMN IF EXISTS "_abpasspercentage";
+  ALTER TABLE "page" DROP COLUMN IF EXISTS "_abvariantof_id";
+  ALTER TABLE "_page_v" DROP COLUMN IF EXISTS "version__abpasspercentage";
+  ALTER TABLE "_page_v" DROP COLUMN IF EXISTS "version__abvariantof_id";
+  ALTER TABLE "payload_locked_documents_rels" DROP COLUMN IF EXISTS "ab_experiments_id";`)
 }
 
 export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
