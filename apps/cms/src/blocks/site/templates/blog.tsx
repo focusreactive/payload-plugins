@@ -11,18 +11,6 @@ export const BlogHeroBlock: Block = siteBlock({
     {
       admin: {
         description: {
-          en: "The blog's logo above its name. Also shown under the articles list and on every article.",
-          es: "El logotipo del blog sobre su nombre. También se muestra bajo la lista de artículos y en cada artículo.",
-        },
-      },
-      label: { en: "Blog logo", es: "Logotipo del blog" },
-      name: "logo",
-      relationTo: "media",
-      type: "upload",
-    },
-    {
-      admin: {
-        description: {
           en: "The blog's name, shown as the page's main heading and in every article's breadcrumbs.",
           es: "El nombre del blog, mostrado como encabezado principal y en las migas de pan de cada artículo.",
         },
@@ -46,43 +34,62 @@ export const BlogHeroBlock: Block = siteBlock({
     {
       admin: {
         description: {
-          en: "The article featured beside the heading. Empty features the newest article.",
-          es: "El artículo destacado junto al encabezado. Vacío destaca el artículo más reciente.",
+          en: "The blog's logo above its name. Also shown under the articles list and on every article.",
+          es: "El logotipo del blog sobre su nombre. También se muestra bajo la lista de artículos y en cada artículo.",
         },
       },
-      label: { en: "Featured article", es: "Artículo destacado" },
-      name: "post",
-      relationTo: "posts",
-      type: "relationship",
+      label: { en: "Blog logo", es: "Logotipo del blog" },
+      name: "logo",
+      relationTo: "media",
+      type: "upload",
     },
     {
+      admin: { initCollapsed: false },
       fields: [
         {
           admin: {
             description: {
-              en: "The badge on the featured article's picture, for example New. Empty hides it.",
-              es: "La etiqueta sobre la imagen del artículo destacado, por ejemplo Nuevo. Vacío la oculta.",
+              en: "The article featured beside the heading. Empty features the newest article.",
+              es: "El artículo destacado junto al encabezado. Vacío destaca el artículo más reciente.",
             },
-            width: "50%",
           },
-          label: { en: "Badge", es: "Etiqueta" },
-          name: "badge",
-          type: "text",
+          label: { en: "Featured article", es: "Artículo destacado" },
+          name: "post",
+          relationTo: "posts",
+          type: "relationship",
         },
         {
-          admin: {
-            description: {
-              en: "The words on the featured article's button, for example Read More.",
-              es: "El texto del botón del artículo destacado, por ejemplo Leer más.",
+          fields: [
+            {
+              admin: {
+                description: {
+                  en: "The badge on the featured article's picture, for example New. Empty hides it.",
+                  es: "La etiqueta sobre la imagen del artículo destacado, por ejemplo Nuevo. Vacío la oculta.",
+                },
+                width: "50%",
+              },
+              label: { en: "Badge", es: "Etiqueta" },
+              name: "badge",
+              type: "text",
             },
-            width: "50%",
-          },
-          label: { en: "Button text", es: "Texto del botón" },
-          name: "buttonText",
-          type: "text",
+            {
+              admin: {
+                description: {
+                  en: "The words on the featured article's button, for example Read More.",
+                  es: "El texto del botón del artículo destacado, por ejemplo Leer más.",
+                },
+                width: "50%",
+              },
+              label: { en: "Button text", es: "Texto del botón" },
+              name: "buttonText",
+              type: "text",
+            },
+          ],
+          type: "row",
         },
       ],
-      type: "row",
+      label: { en: "Featured article", es: "Artículo destacado" },
+      type: "collapsible",
     },
   ],
   interfaceName: "BlogHeroBlock",
@@ -175,7 +182,7 @@ export const BlogListBlock: Block = siteBlock({
               en: "The heading over the list, for example Latest Articles.",
               es: "El encabezado sobre la lista, por ejemplo Últimos artículos.",
             },
-            width: "50%",
+            width: "34%",
           },
           label: { en: "List heading", es: "Encabezado de la lista" },
           name: "heading",
@@ -187,28 +194,29 @@ export const BlogListBlock: Block = siteBlock({
               en: "The words on the button that loads more articles, for example Show More.",
               es: "El texto del botón que carga más artículos, por ejemplo Ver más.",
             },
-            width: "50%",
+            width: "33%",
           },
           label: { en: "More button text", es: "Texto del botón Ver más" },
           name: "moreText",
           type: "text",
         },
+        {
+          admin: {
+            description: {
+              en: "How many articles show before the more button is pressed, and how many each press adds.",
+              es: "Cuántos artículos se muestran antes de pulsar el botón Ver más, y cuántos añade cada pulsación.",
+            },
+            width: "33%",
+          },
+          defaultValue: 8,
+          label: { en: "Articles per step", es: "Artículos por paso" },
+          max: 24,
+          min: 1,
+          name: "pageSize",
+          type: "number",
+        },
       ],
       type: "row",
-    },
-    {
-      admin: {
-        description: {
-          en: "How many articles show before the more button is pressed, and how many each press adds.",
-          es: "Cuántos artículos se muestran antes de pulsar el botón Ver más, y cuántos añade cada pulsación.",
-        },
-      },
-      defaultValue: 8,
-      label: { en: "Articles per step", es: "Artículos por paso" },
-      max: 24,
-      min: 1,
-      name: "pageSize",
-      type: "number",
     },
   ],
   interfaceName: "BlogListBlock",

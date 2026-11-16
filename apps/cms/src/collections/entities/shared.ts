@@ -112,6 +112,8 @@ interface EntityAdminOptions {
   collection: EntityCollection;
   defaultColumns: string[];
   useAsTitle: string;
+  /** Fields the list search box matches; Payload stops searching the title once this is set, so include it. */
+  listSearchableFields?: string[];
   /** Clinics only: finds the slug of the clinic's state, which is part of its URL. */
   resolveStateSlug?: StateSlugResolver;
 }
@@ -120,6 +122,7 @@ export function entityAdmin({
   collection,
   defaultColumns,
   useAsTitle,
+  listSearchableFields,
   resolveStateSlug,
 }: EntityAdminOptions): CollectionConfig["admin"] {
   const previewUrl = async (
@@ -142,6 +145,7 @@ export function entityAdmin({
     },
     defaultColumns,
     group: ENTITY_ADMIN_GROUP,
+    listSearchableFields,
     livePreview: {
       url: ({ data, locale, req }) =>
         previewUrl(data, locale?.code ?? locale?.fallbackLocale ?? "en", req),

@@ -7,24 +7,44 @@ import { siteBlocks, siteBlockSlugs } from "@/blocks/siteBlocks";
 import { getSoleRelationId } from "@/dal/getSoleRelationId";
 import { generateSeoFields } from "@/lib/utils/seoFields";
 
+/** The header and footer a page uses: set once, so they sit in the sidebar beside the slug. */
+export function createPageChromeFields(): Field[] {
+  return [
+    {
+      admin: {
+        description: {
+          en: "The header to display on the page",
+          es: "El header a mostrar en la página",
+        },
+        position: "sidebar",
+      },
+      defaultValue: async () => getSoleRelationId("header"),
+      name: "header",
+      relationTo: "header",
+      type: "relationship",
+    },
+    {
+      admin: {
+        description: {
+          en: "The footer to display on the page",
+          es: "El footer a mostrar en la página",
+        },
+        position: "sidebar",
+      },
+      defaultValue: async () => getSoleRelationId("footer"),
+      name: "footer",
+      relationTo: "footer",
+      type: "relationship",
+    },
+  ];
+}
+
 export function createBasePageFields({ withBlocksDefaultValue = false } = {}): Field[] {
   return [
     {
       tabs: [
         {
           fields: [
-            {
-              admin: {
-                description: {
-                  en: "The header to display on the page",
-                  es: "El header a mostrar en la página",
-                },
-              },
-              defaultValue: async () => getSoleRelationId("header"),
-              name: "header",
-              relationTo: "header",
-              type: "relationship",
-            },
             {
               admin: {
                 description: {
@@ -62,18 +82,6 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
               name: "blocks",
               required: true,
               type: "blocks",
-            },
-            {
-              admin: {
-                description: {
-                  en: "The footer to display on the page",
-                  es: "El footer a mostrar en la página",
-                },
-              },
-              defaultValue: async () => getSoleRelationId("footer"),
-              name: "footer",
-              relationTo: "footer",
-              type: "relationship",
             },
           ],
           label: { en: "Content", es: "Contenido" },

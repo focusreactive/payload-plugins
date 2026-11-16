@@ -4,6 +4,7 @@ import { CardsGridInlineBlock } from "@/blocks/CardsGrid/inlineConfig";
 import { CodeInlineBlock } from "@/blocks/Code/inlineConfig";
 import { CtaBannerInlineBlock } from "@/blocks/CtaBanner/inlineConfig";
 import { LogosInlineBlock } from "@/blocks/Logos/inlineConfig";
+import { rowTitle } from "@/blocks/site/shared";
 import { siteBlocks } from "@/blocks/siteBlocks";
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
@@ -45,7 +46,7 @@ export const Posts: CollectionConfig<"posts"> = {
         PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
       },
     },
-    defaultColumns: ["title", "slug", "heroImage", "updatedAt"],
+    defaultColumns: ["title", "categories", "publishedAt", "_status"],
     group: "Blog",
     livePreview: {
       url: ({ data, locale: localeProp }) => {
@@ -63,6 +64,7 @@ export const Posts: CollectionConfig<"posts"> = {
         });
       },
     },
+    listSearchableFields: ["title", "slug"],
     pagination: {
       limits: [20, 50, 100],
     },
@@ -146,6 +148,14 @@ export const Posts: CollectionConfig<"posts"> = {
               required: true,
               type: "richText",
             },
+          ],
+          label: {
+            en: "Content",
+            es: "Contenido",
+          },
+        },
+        {
+          fields: [
             {
               admin: {
                 description: {
@@ -156,7 +166,7 @@ export const Posts: CollectionConfig<"posts"> = {
               fields: [
                 sectionHeadingField(),
                 {
-                  admin: { initCollapsed: true },
+                  admin: rowTitle("question", "Question"),
                   fields: [
                     {
                       label: { en: "Question", es: "Pregunta" },
@@ -193,7 +203,7 @@ export const Posts: CollectionConfig<"posts"> = {
               fields: [
                 sectionHeadingField(),
                 {
-                  admin: { initCollapsed: true },
+                  admin: rowTitle("label", "Button"),
                   fields: (link() as GroupField).fields,
                   label: { en: "Actions", es: "Acciones" },
                   localized: true,
@@ -226,8 +236,8 @@ export const Posts: CollectionConfig<"posts"> = {
             },
           ],
           label: {
-            en: "Content",
-            es: "Contenido",
+            en: "Below the article",
+            es: "Bajo el artículo",
           },
         },
         {
@@ -246,75 +256,6 @@ export const Posts: CollectionConfig<"posts"> = {
       type: "tabs",
     },
     createSharedSlugField("posts"),
-    {
-      admin: {
-        date: {
-          pickerAppearance: "dayAndTime",
-        },
-        position: "sidebar",
-      },
-      hooks: {
-        beforeChange: [
-          ({ siblingData, value }) => {
-            if (siblingData._status === "published" && !value) {
-              return new Date();
-            }
-            return value;
-          },
-        ],
-      },
-      index: true,
-      label: {
-        en: "Published At",
-        es: "Publicado el",
-      },
-      name: "publishedAt",
-      type: "date",
-    },
-    {
-      admin: {
-        position: "sidebar",
-        readOnly: true,
-        description: {
-          en: "Estimated reading time in minutes. Auto-calculated from the content on save.",
-          es: "Tiempo de lectura estimado en minutos. Se calcula automáticamente al guardar.",
-        },
-      },
-      label: {
-        en: "Reading Time (min)",
-        es: "Tiempo de lectura (min)",
-      },
-      localized: true,
-      name: "readingTime",
-      type: "number",
-    },
-    {
-      admin: {
-        description: {
-          en: "The reading time shown on the article and its cards, in minutes. Empty shows the estimate above.",
-          es: "El tiempo de lectura que se muestra en el artículo y sus tarjetas, en minutos. Vacío muestra la estimación de arriba.",
-        },
-        position: "sidebar",
-      },
-      label: { en: "Reading time shown (min)", es: "Tiempo de lectura mostrado (min)" },
-      localized: true,
-      min: 1,
-      name: "readingTimeOverride",
-      type: "number",
-    },
-    {
-      admin: {
-        date: { pickerAppearance: "dayOnly" },
-        description: {
-          en: "The date of the last review of the article. When set, the article shows Updated with this date instead of the publish date.",
-          es: "La fecha de la última revisión del artículo. Si se indica, el artículo muestra Actualizado con esta fecha en lugar de la fecha de publicación.",
-        },
-        position: "sidebar",
-      },
-      label: { en: "Updated on", es: "Actualizado el" },
-      name: "updatedDate",
-      type: "date",
-    },
     {
       admin: {
         position: "sidebar",
@@ -353,6 +294,75 @@ export const Posts: CollectionConfig<"posts"> = {
       name: "reviewedBy",
       relationTo: "doctors",
       type: "relationship",
+    },
+    {
+      admin: {
+        date: {
+          pickerAppearance: "dayAndTime",
+        },
+        position: "sidebar",
+      },
+      hooks: {
+        beforeChange: [
+          ({ siblingData, value }) => {
+            if (siblingData._status === "published" && !value) {
+              return new Date();
+            }
+            return value;
+          },
+        ],
+      },
+      index: true,
+      label: {
+        en: "Published At",
+        es: "Publicado el",
+      },
+      name: "publishedAt",
+      type: "date",
+    },
+    {
+      admin: {
+        date: { pickerAppearance: "dayOnly" },
+        description: {
+          en: "The date of the last review of the article. When set, the article shows Updated with this date instead of the publish date.",
+          es: "La fecha de la última revisión del artículo. Si se indica, el artículo muestra Actualizado con esta fecha en lugar de la fecha de publicación.",
+        },
+        position: "sidebar",
+      },
+      label: { en: "Updated on", es: "Actualizado el" },
+      name: "updatedDate",
+      type: "date",
+    },
+    {
+      admin: {
+        position: "sidebar",
+        readOnly: true,
+        description: {
+          en: "Estimated reading time in minutes. Auto-calculated from the content on save.",
+          es: "Tiempo de lectura estimado en minutos. Se calcula automáticamente al guardar.",
+        },
+      },
+      label: {
+        en: "Reading Time (min)",
+        es: "Tiempo de lectura (min)",
+      },
+      localized: true,
+      name: "readingTime",
+      type: "number",
+    },
+    {
+      admin: {
+        description: {
+          en: "The reading time shown on the article and its cards, in minutes. Empty shows the estimate above.",
+          es: "El tiempo de lectura que se muestra en el artículo y sus tarjetas, en minutos. Vacío muestra la estimación de arriba.",
+        },
+        position: "sidebar",
+      },
+      label: { en: "Reading time shown (min)", es: "Tiempo de lectura mostrado (min)" },
+      localized: true,
+      min: 1,
+      name: "readingTimeOverride",
+      type: "number",
     },
     {
       admin: {

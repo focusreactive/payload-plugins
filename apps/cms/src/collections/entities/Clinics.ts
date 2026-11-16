@@ -61,7 +61,8 @@ export const Clinics: CollectionConfig<"clinics"> = {
   access: entityAccess,
   admin: entityAdmin({
     collection: "clinics",
-    defaultColumns: ["name", "state", "phone", "updatedAt"],
+    defaultColumns: ["name", "state", "phone", "_status", "updatedAt"],
+    listSearchableFields: ["name", "address.city", "phone"],
     resolveStateSlug,
     useAsTitle: "name",
   }),
@@ -83,99 +84,120 @@ export const Clinics: CollectionConfig<"clinics"> = {
               type: "text",
             },
             {
-              admin: {
-                description: {
-                  en: "The big heading at the top of the clinic's page. Empty uses the clinic's name.",
-                  es: "El encabezado grande en la parte superior de la página de la clínica. Vacío usa el nombre de la clínica.",
-                },
-              },
-              label: { en: "Page heading", es: "Encabezado de la página" },
-              localized: true,
-              name: "heroTitle",
-              type: "text",
-            },
-            {
-              admin: {
-                description: {
-                  en: "The smaller line under the page heading. Empty hides it.",
-                  es: "La línea más pequeña bajo el encabezado de la página. Vacío la oculta.",
-                },
-              },
-              label: { en: "Page subheading", es: "Subtítulo de la página" },
-              localized: true,
-              name: "heroSubtitle",
-              type: "text",
-            },
-            {
-              admin: {
-                description: {
-                  en: "The words and the button at the top of the clinic's page, around the address and the phone number, which come from Clinic details.",
-                  es: "Los textos y el botón en la parte superior de la página de la clínica, alrededor de la dirección y el teléfono, que vienen de Datos de la clínica.",
-                },
-                hideGutter: true,
-              },
+              admin: { initCollapsed: false },
               fields: [
-                bilingual(
-                  siteButton(),
-                  { en: "Button", es: "Botón" },
-                  {
-                    en: "The button under the address, for example Book Your Free Evaluation. Empty text hides it.",
-                    es: "El botón bajo la dirección, por ejemplo Programe su evaluación gratuita. Sin texto no se muestra.",
-                  }
-                ),
+                {
+                  fields: [
+                    {
+                      admin: {
+                        description: {
+                          en: "The big heading at the top of the clinic's page. Empty uses the clinic's name.",
+                          es: "El encabezado grande en la parte superior de la página de la clínica. Vacío usa el nombre de la clínica.",
+                        },
+                        width: "50%",
+                      },
+                      label: { en: "Page heading", es: "Encabezado de la página" },
+                      localized: true,
+                      name: "heroTitle",
+                      type: "text",
+                    },
+                    {
+                      admin: {
+                        description: {
+                          en: "The smaller line under the page heading. Empty hides it.",
+                          es: "La línea más pequeña bajo el encabezado de la página. Vacío la oculta.",
+                        },
+                        width: "50%",
+                      },
+                      label: { en: "Page subheading", es: "Subtítulo de la página" },
+                      localized: true,
+                      name: "heroSubtitle",
+                      type: "text",
+                    },
+                  ],
+                  type: "row",
+                },
                 {
                   admin: {
                     description: {
-                      en: "The words before the clinic's phone number, for example Or Call:.",
-                      es: "El texto antes del teléfono de la clínica, por ejemplo O llame al:.",
+                      en: "The photo at the top of the clinic's page and on its cards.",
+                      es: "La foto en la parte superior de la página de la clínica y en sus tarjetas.",
                     },
                   },
-                  label: { en: "Phone line text", es: "Texto de la línea del teléfono" },
-                  name: "phoneLabel",
+                  label: { en: "Photo", es: "Foto" },
+                  name: "photo",
+                  relationTo: "media",
+                  type: "upload",
+                },
+                {
+                  admin: {
+                    description: {
+                      en: "The words and the button at the top of the clinic's page, around the address and the phone number, which come from Clinic details.",
+                      es: "Los textos y el botón en la parte superior de la página de la clínica, alrededor de la dirección y el teléfono, que vienen de Datos de la clínica.",
+                    },
+                    hideGutter: true,
+                  },
+                  fields: [
+                    bilingual(
+                      siteButton(),
+                      { en: "Button", es: "Botón" },
+                      {
+                        en: "The button under the address, for example Book Your Free Evaluation. Empty text hides it.",
+                        es: "El botón bajo la dirección, por ejemplo Programe su evaluación gratuita. Sin texto no se muestra.",
+                      }
+                    ),
+                    {
+                      admin: {
+                        description: {
+                          en: "The words before the clinic's phone number, for example Or Call:.",
+                          es: "El texto antes del teléfono de la clínica, por ejemplo O llame al:.",
+                        },
+                      },
+                      label: { en: "Phone line text", es: "Texto de la línea del teléfono" },
+                      name: "phoneLabel",
+                      type: "text",
+                    },
+                  ],
+                  label: { en: "Page top", es: "Parte superior de la página" },
+                  localized: true,
+                  name: "hero",
+                  type: "group",
+                },
+              ],
+              label: { en: "Top of the page", es: "Parte superior de la página" },
+              type: "collapsible",
+            },
+            {
+              admin: { initCollapsed: true },
+              fields: [
+                {
+                  admin: {
+                    description: {
+                      en: "A paragraph about this clinic, sent to search engines with the page.",
+                      es: "Un párrafo sobre esta clínica, que se envía a los buscadores con la página.",
+                    },
+                  },
+                  label: { en: "About this clinic", es: "Sobre esta clínica" },
+                  localized: true,
+                  name: "description",
+                  type: "textarea",
+                },
+                {
+                  admin: {
+                    description: {
+                      en: "Neighbourhoods and towns this clinic serves, one per entry, for example Plano. Shown under Located Near on the clinic's page.",
+                      es: "Barrios y ciudades que atiende esta clínica, uno por entrada, por ejemplo Plano. Se muestran en Ubicado cerca de en la página de la clínica.",
+                    },
+                  },
+                  hasMany: true,
+                  label: { en: "Located near", es: "Ubicado cerca de" },
+                  localized: true,
+                  name: "locatedNear",
                   type: "text",
                 },
               ],
-              label: { en: "Page top", es: "Parte superior de la página" },
-              localized: true,
-              name: "hero",
-              type: "group",
-            },
-            {
-              admin: {
-                description: {
-                  en: "A paragraph about this clinic, sent to search engines with the page.",
-                  es: "Un párrafo sobre esta clínica, que se envía a los buscadores con la página.",
-                },
-              },
-              label: { en: "About this clinic", es: "Sobre esta clínica" },
-              localized: true,
-              name: "description",
-              type: "textarea",
-            },
-            {
-              admin: {
-                description: {
-                  en: "Neighbourhoods and towns this clinic serves, one per entry, for example Plano. Shown under Located Near on the clinic's page.",
-                  es: "Barrios y ciudades que atiende esta clínica, uno por entrada, por ejemplo Plano. Se muestran en Ubicado cerca de en la página de la clínica.",
-                },
-              },
-              hasMany: true,
-              label: { en: "Located near", es: "Ubicado cerca de" },
-              localized: true,
-              name: "locatedNear",
-              type: "text",
-            },
-            {
-              admin: {
-                description: {
-                  en: "The photo at the top of the clinic's page and on its cards.",
-                  es: "La foto en la parte superior de la página de la clínica y en sus tarjetas.",
-                },
-              },
-              label: { en: "Photo", es: "Foto" },
-              name: "photo",
-              relationTo: "media",
-              type: "upload",
+              label: { en: "About and nearby areas", es: "Sobre la clínica y zonas cercanas" },
+              type: "collapsible",
             },
             bilingual(
               entitySectionsField(
@@ -193,15 +215,33 @@ export const Clinics: CollectionConfig<"clinics"> = {
         {
           fields: [
             {
-              admin: {
-                description: {
-                  en: "The clinic's own phone number, for example 469-555-0100.",
-                  es: "El teléfono propio de la clínica, por ejemplo 469-555-0100.",
+              fields: [
+                {
+                  admin: {
+                    description: {
+                      en: "The clinic's own phone number, for example 469-555-0100.",
+                      es: "El teléfono propio de la clínica, por ejemplo 469-555-0100.",
+                    },
+                    width: "50%",
+                  },
+                  label: { en: "Phone", es: "Teléfono" },
+                  name: "phone",
+                  type: "text",
                 },
-              },
-              label: { en: "Phone", es: "Teléfono" },
-              name: "phone",
-              type: "text",
+                {
+                  admin: {
+                    description: {
+                      en: "The Google Maps link that directions open, for example https://maps.app.goo.gl/abc. Also sent to search engines.",
+                      es: "El enlace de Google Maps que abren las indicaciones, por ejemplo https://maps.app.goo.gl/abc. También se envía a los buscadores.",
+                    },
+                    width: "50%",
+                  },
+                  label: { en: "Map URL", es: "URL del mapa" },
+                  name: "mapUrl",
+                  type: "text",
+                },
+              ],
+              type: "row",
             },
             {
               admin: {
@@ -263,17 +303,6 @@ export const Clinics: CollectionConfig<"clinics"> = {
               label: { en: "Address", es: "Dirección" },
               name: "address",
               type: "group",
-            },
-            {
-              admin: {
-                description: {
-                  en: "The Google Maps link that directions open, for example https://maps.app.goo.gl/abc. Also sent to search engines.",
-                  es: "El enlace de Google Maps que abren las indicaciones, por ejemplo https://maps.app.goo.gl/abc. También se envía a los buscadores.",
-                },
-              },
-              label: { en: "Map URL", es: "URL del mapa" },
-              name: "mapUrl",
-              type: "text",
             },
             {
               admin: {

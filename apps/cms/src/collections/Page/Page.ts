@@ -12,7 +12,7 @@ import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { createSharedSlugField } from "@/lib/fields/slugField";
 import type { Page as PageType } from "@/payload-types";
 
-import { createBasePageFields } from "./basePageFields";
+import { createBasePageFields, createPageChromeFields } from "./basePageFields";
 import { fixBreadcrumbDocIds } from "./hooks/fixBreadcrumbDocIds";
 import { indexPageEmbedding, deletePageEmbedding } from "./hooks/indexEmbedding";
 import { revalidateDelete, revalidatePage } from "./hooks/revalidatePage";
@@ -32,7 +32,7 @@ export const Page: CollectionConfig<"page"> = {
         PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
       },
     },
-    defaultColumns: ["title", "slug", "updatedAt"],
+    defaultColumns: ["title", "slug", "_status", "updatedAt"],
     group: "Content",
     livePreview: {
       url: ({ data, locale }) =>
@@ -58,6 +58,7 @@ export const Page: CollectionConfig<"page"> = {
         }),
         slug: data?.slug as string,
       }),
+    listSearchableFields: ["title", "slug"],
     useAsTitle: "title",
   },
   fields: [
@@ -98,8 +99,11 @@ export const Page: CollectionConfig<"page"> = {
       options: SITE_TEMPLATES.map((template) => ({ label: template, value: template })),
       type: "select",
     },
+    ...createPageChromeFields(),
     createBreadcrumbsField("page", {
+      // Filled from the parent pages on save; the editor sets the parent, never the trail.
       admin: {
+        hidden: true,
         position: "sidebar",
       },
       label: {

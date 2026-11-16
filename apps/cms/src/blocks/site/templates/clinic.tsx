@@ -12,18 +12,6 @@ export const ClinicInfoBlock: Block = bilingualBlock(
       {
         admin: {
           description: {
-            en: "The clinic whose doctors, map, hours and nearby areas the section shows. Empty shows the clinic whose page this is.",
-            es: "La clínica cuyos médicos, mapa, horario y zonas cercanas muestra la sección. Vacío muestra la clínica de esta página.",
-          },
-        },
-        label: { en: "Clinic", es: "Clínica" },
-        name: "clinic",
-        relationTo: "clinics",
-        type: "relationship",
-      },
-      {
-        admin: {
-          description: {
             en: "The callout at the top of the section. It shows only while the clinic is marked Accredited clinic.",
             es: "El aviso en la parte superior de la sección. Solo se muestra mientras la clínica está marcada como Clínica acreditada.",
           },
@@ -61,15 +49,45 @@ export const ClinicInfoBlock: Block = bilingualBlock(
         type: "group",
       },
       {
-        admin: {
-          description: {
-            en: "The words before the doctor's name on each doctor's button, for example Meet. The doctors themselves come from the clinic.",
-            es: "El texto antes del nombre del médico en el botón de cada médico, por ejemplo Conozca al. Los médicos vienen de la clínica.",
+        fields: [
+          {
+            admin: {
+              description: {
+                en: "The words before the doctor's name on each doctor's button, for example Meet. The doctors themselves come from the clinic.",
+                es: "El texto antes del nombre del médico en el botón de cada médico, por ejemplo Conozca al. Los médicos vienen de la clínica.",
+              },
+              width: "33%",
+            },
+            label: { en: "Doctor button text", es: "Texto del botón del médico" },
+            name: "doctorButton",
+            type: "text",
           },
-        },
-        label: { en: "Doctor button text", es: "Texto del botón del médico" },
-        name: "doctorButton",
-        type: "text",
+          {
+            admin: {
+              description: {
+                en: "The heading over the opening hours, for example Clinic Hours. The hours come from the clinic.",
+                es: "El encabezado sobre el horario, por ejemplo Horarios de la clínica. El horario viene de la clínica.",
+              },
+              width: "33%",
+            },
+            label: { en: "Hours heading", es: "Encabezado del horario" },
+            name: "hoursHeading",
+            type: "text",
+          },
+          {
+            admin: {
+              description: {
+                en: "The heading over the nearby areas, for example Located Near. The areas come from the clinic's Located near list.",
+                es: "El encabezado sobre las zonas cercanas, por ejemplo Ubicado cerca de. Las zonas vienen de la lista Ubicado cerca de de la clínica.",
+              },
+              width: "34%",
+            },
+            label: { en: "Nearby heading", es: "Encabezado de zonas cercanas" },
+            name: "nearHeading",
+            type: "text",
+          },
+        ],
+        type: "row",
       },
       bilingual(
         bodyRichText({ description: "The section's text.", label: "Text", name: "text" }),
@@ -79,17 +97,6 @@ export const ClinicInfoBlock: Block = bilingualBlock(
           es: "El encabezado y los párrafos bajo los médicos, sobre el mapa.",
         }
       ),
-      {
-        admin: {
-          description: {
-            en: "The heading over the opening hours, for example Clinic Hours. The hours come from the clinic.",
-            es: "El encabezado sobre el horario, por ejemplo Horarios de la clínica. El horario viene de la clínica.",
-          },
-        },
-        label: { en: "Hours heading", es: "Encabezado del horario" },
-        name: "hoursHeading",
-        type: "text",
-      },
       {
         admin: {
           description: {
@@ -116,13 +123,14 @@ export const ClinicInfoBlock: Block = bilingualBlock(
       {
         admin: {
           description: {
-            en: "The heading over the nearby areas, for example Located Near. The areas come from the clinic's Located near list.",
-            es: "El encabezado sobre las zonas cercanas, por ejemplo Ubicado cerca de. Las zonas vienen de la lista Ubicado cerca de de la clínica.",
+            en: "The clinic whose doctors, map, hours and nearby areas the section shows. Empty shows the clinic whose page this is.",
+            es: "La clínica cuyos médicos, mapa, horario y zonas cercanas muestra la sección. Vacío muestra la clínica de esta página.",
           },
         },
-        label: { en: "Nearby heading", es: "Encabezado de zonas cercanas" },
-        name: "nearHeading",
-        type: "text",
+        label: { en: "Clinic", es: "Clínica" },
+        name: "clinic",
+        relationTo: "clinics",
+        type: "relationship",
       },
     ],
     interfaceName: "ClinicInfoBlock",

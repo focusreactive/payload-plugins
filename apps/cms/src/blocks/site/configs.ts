@@ -1,4 +1,4 @@
-import type { Block, Condition, Field, TextFieldSingleValidation } from "payload";
+import type { Block, Condition, Field, TextField, TextFieldSingleValidation } from "payload";
 
 import { bodyRichText, headingRichText } from "@/lib/fields/site/richText";
 import { siteButton } from "@/lib/fields/site/siteLink";
@@ -22,7 +22,7 @@ const validateAnchor: TextFieldSingleValidation = (value) =>
     ? true
     : "Use lowercase letters, digits and hyphens, starting with a letter, for example as-seen-in.";
 
-const sectionAnchor: Field = {
+const sectionAnchor: TextField = {
   admin: {
     description: {
       en: "The section's name in links that jump to it, for example as-seen-in. Some names carry their own style on the site. Empty leaves it out.",
@@ -34,6 +34,16 @@ const sectionAnchor: Field = {
   type: "text",
   validate: validateAnchor,
 };
+
+const withWidth = (field: Field, width: string): Field =>
+  ({ ...field, admin: { ...("admin" in field ? field.admin : {}), width } }) as Field;
+
+const row = (...fields: Field[]): Field => ({ fields, type: "row" });
+
+const noneSelected =
+  (relationName: string): Condition =>
+  (_data, siblingData) =>
+    !(siblingData as Record<string, unknown[] | undefined>)?.[relationName]?.length;
 
 const withIconListImage: Condition = (_data, siblingData) =>
   (siblingData as { layout?: string })?.layout === "image";
@@ -48,36 +58,46 @@ export const HeroVideoBlock: Block = siteBlock({
     }),
     sectionText("The paragraph under the heading."),
     siteButton(),
-    {
-      admin: {
-        description:
-          "The phone number under the button, for example 888-555-0100. Empty hides the line.",
+    row(
+      {
+        admin: {
+          description: "The words before the phone number, for example Or Call:.",
+          width: "50%",
+        },
+        label: "Phone line text",
+        name: "phoneLabel",
+        type: "text",
       },
-      label: "Phone",
-      name: "phone",
-      type: "text",
-    },
-    {
-      admin: {
-        description: "The words before the phone number, for example Or Call:.",
+      {
+        admin: {
+          description:
+            "The phone number under the button, for example 888-555-0100. Empty hides the line.",
+          width: "50%",
+        },
+        label: "Phone",
+        name: "phone",
+        type: "text",
+      }
+    ),
+    row(
+      {
+        admin: {
+          description:
+            "The full URL of the looping video beside the heading (an .mp4 file). After the migration this becomes a video stored in the CMS.",
+          width: "50%",
+        },
+        label: "Video URL",
+        name: "videoUrl",
+        type: "text",
       },
-      label: "Phone line text",
-      name: "phoneLabel",
-      type: "text",
-    },
-    {
-      admin: {
-        description:
-          "The full URL of the looping video beside the heading (an .mp4 file). After the migration this becomes a video stored in the CMS.",
-      },
-      label: "Video URL",
-      name: "videoUrl",
-      type: "text",
-    },
-    imageField(
-      "poster",
-      "Video still",
-      "Shown while the video loads, and instead of it when no video is set."
+      withWidth(
+        imageField(
+          "poster",
+          "Video still",
+          "Shown while the video loads, and instead of it when no video is set."
+        ),
+        "50%"
+      )
     ),
   ],
   interfaceName: "HeroVideoBlock",
@@ -96,25 +116,28 @@ export const LogoStripBlock: Block = siteBlock({
       name: "logos",
       type: "array",
     },
-    backgroundField(),
-    {
-      admin: {
-        description: {
-          en: "How the logos sit on small screens. Rotate shows one logo at a time on phones; Wrap puts them in rows of three on phones and centred rows on small tablets; Wrap on tablets keeps the rotation on phones and centres the rows on small tablets.",
-          es: "Cómo se colocan los logotipos en pantallas pequeñas. Rotar muestra un logotipo a la vez en móviles; Filas los coloca en filas de tres en móviles y en filas centradas en tabletas pequeñas; Filas en tabletas mantiene la rotación en móviles y centra las filas en tabletas pequeñas.",
+    row(
+      withWidth(backgroundField(), "33%"),
+      {
+        admin: {
+          width: "33%",
+          description: {
+            en: "How the logos sit on small screens. Rotate shows one logo at a time on phones; Wrap puts them in rows of three on phones and centred rows on small tablets; Wrap on tablets keeps the rotation on phones and centres the rows on small tablets.",
+            es: "Cómo se colocan los logotipos en pantallas pequeñas. Rotar muestra un logotipo a la vez en móviles; Filas los coloca en filas de tres en móviles y en filas centradas en tabletas pequeñas; Filas en tabletas mantiene la rotación en móviles y centra las filas en tabletas pequeñas.",
+          },
         },
+        defaultValue: "rotate",
+        label: { en: "On small screens", es: "En pantallas pequeñas" },
+        name: "arrangement",
+        options: [
+          { label: { en: "Rotate", es: "Rotar" }, value: "rotate" },
+          { label: { en: "Wrap", es: "Filas" }, value: "wrap" },
+          { label: { en: "Wrap on tablets", es: "Filas en tabletas" }, value: "wrapTablet" },
+        ],
+        type: "select",
       },
-      defaultValue: "rotate",
-      label: { en: "On small screens", es: "En pantallas pequeñas" },
-      name: "arrangement",
-      options: [
-        { label: { en: "Rotate", es: "Rotar" }, value: "rotate" },
-        { label: { en: "Wrap", es: "Filas" }, value: "wrap" },
-        { label: { en: "Wrap on tablets", es: "Filas en tabletas" }, value: "wrapTablet" },
-      ],
-      type: "select",
-    },
-    sectionAnchor,
+      withWidth(sectionAnchor, "34%")
+    ),
   ],
   interfaceName: "LogoStripBlock",
   label: "Logo strip",
@@ -185,14 +208,16 @@ export const IconListBlock: Block = siteBlock({
         description: "The points listed beside the heading.",
       },
       fields: [
-        imageField("icon", "Icon", "The round drawing beside the point."),
-        {
-          admin: { description: "The point's name, for example Patient-Centered Care." },
+        row(withWidth(imageField("icon", "Icon", "The round drawing beside the point."), "40%"), {
+          admin: {
+            description: "The point's name, for example Patient-Centered Care.",
+            width: "60%",
+          },
           label: "Title",
           name: "title",
           required: true,
           type: "text",
-        },
+        }),
         {
           ...headingRichText({
             description: "The title with accent words.",
@@ -241,10 +266,46 @@ export const MediaTextBlock: Block = siteBlock({
     sectionHeading(),
     sectionText(),
     siteButton(),
+    row(
+      withWidth(
+        imageField(
+          "image",
+          "Picture",
+          "The picture beside the text. With a video set, it is the still shown before play."
+        ),
+        "50%"
+      ),
+      {
+        admin: {
+          width: "50%",
+          description: {
+            en: "Framed fills a rounded frame and crops the picture. Whole picture shows all of it at its own shape, for logos and badges, and shows the button once, under the text.",
+            es: "Enmarcada llena un marco redondeado y recorta la imagen. Imagen completa la muestra entera con su forma, para logotipos e insignias, y muestra el botón una vez, bajo el texto.",
+          },
+        },
+        defaultValue: "framed",
+        label: { en: "Picture style", es: "Estilo de imagen" },
+        name: "imageStyle",
+        options: [
+          { label: { en: "Framed", es: "Enmarcada" }, value: "framed" },
+          { label: { en: "Whole picture", es: "Imagen completa" }, value: "plain" },
+        ],
+        type: "select",
+      }
+    ),
+    {
+      admin: {
+        description:
+          "The full URL of a video (an .mp4 file) played when the picture is clicked. Empty shows the picture only. After the migration this becomes a video stored in the CMS.",
+      },
+      label: "Video URL",
+      name: "videoUrl",
+      type: "text",
+    },
     {
       fields: [
         {
-          admin: { description: "Which side the picture or video sits on.", width: "50%" },
+          admin: { description: "Which side the picture or video sits on.", width: "25%" },
           defaultValue: "left",
           label: "Text side",
           name: "side",
@@ -255,7 +316,7 @@ export const MediaTextBlock: Block = siteBlock({
           type: "select",
         },
         {
-          admin: { description: "How much room the section takes.", width: "50%" },
+          admin: { description: "How much room the section takes.", width: "25%" },
           defaultValue: "regular",
           label: "Size",
           name: "size",
@@ -266,41 +327,11 @@ export const MediaTextBlock: Block = siteBlock({
           ],
           type: "select",
         },
+        withWidth(backgroundField(), "25%"),
+        withWidth(sectionAnchor, "25%"),
       ],
       type: "row",
     },
-    backgroundField(),
-    imageField(
-      "image",
-      "Picture",
-      "The picture beside the text. With a video set, it is the still shown before play."
-    ),
-    {
-      admin: {
-        description: {
-          en: "Framed fills a rounded frame and crops the picture. Whole picture shows all of it at its own shape, for logos and badges, and shows the button once, under the text.",
-          es: "Enmarcada llena un marco redondeado y recorta la imagen. Imagen completa la muestra entera con su forma, para logotipos e insignias, y muestra el botón una vez, bajo el texto.",
-        },
-      },
-      defaultValue: "framed",
-      label: { en: "Picture style", es: "Estilo de imagen" },
-      name: "imageStyle",
-      options: [
-        { label: { en: "Framed", es: "Enmarcada" }, value: "framed" },
-        { label: { en: "Whole picture", es: "Imagen completa" }, value: "plain" },
-      ],
-      type: "select",
-    },
-    {
-      admin: {
-        description:
-          "The full URL of a video (an .mp4 file) played when the picture is clicked. Empty shows the picture only. After the migration this becomes a video stored in the CMS.",
-      },
-      label: "Video URL",
-      name: "videoUrl",
-      type: "text",
-    },
-    sectionAnchor,
   ],
   interfaceName: "MediaTextBlock",
   label: "Media and text",
@@ -333,6 +364,17 @@ export const DoctorSliderBlock: Block = siteBlock({
   fields: [
     sectionHeading(),
     sectionText(),
+    {
+      admin: {
+        description:
+          "The doctors in the slider, in this order. Empty shows the doctors of the page's own clinic or state, or every doctor on other pages.",
+      },
+      hasMany: true,
+      label: "Doctors",
+      name: "doctors",
+      relationTo: "doctors",
+      type: "relationship",
+    },
     siteButton(),
     {
       admin: {
@@ -349,17 +391,6 @@ export const DoctorSliderBlock: Block = siteBlock({
       name: "bottomButton",
     }),
     imageField("image", "Background picture", "The wide picture behind the section."),
-    {
-      admin: {
-        description:
-          "The doctors in the slider, in this order. Empty shows the doctors of the page's own clinic or state, or every doctor on other pages.",
-      },
-      hasMany: true,
-      label: "Doctors",
-      name: "doctors",
-      relationTo: "doctors",
-      type: "relationship",
-    },
   ],
   interfaceName: "DoctorSliderBlock",
   label: "Doctors slider",
@@ -370,14 +401,13 @@ export const ReviewSliderBlock: Block = siteBlock({
   fields: [
     sectionEyebrow,
     sectionHeading(),
-    siteButton(),
     {
       admin: {
         description:
-          "The words on the last slide, which links where the button does, for example See All Reviews. Empty leaves that slide out.",
+          "A small italic line under the heading, for example Individual results may vary. Empty hides it.",
       },
-      label: "Last slide text",
-      name: "seeAllText",
+      label: "Small print",
+      name: "note",
       type: "text",
     },
     {
@@ -391,38 +421,44 @@ export const ReviewSliderBlock: Block = siteBlock({
       relationTo: "testimonials",
       type: "relationship",
     },
+    row(
+      {
+        admin: {
+          condition: noneSelected("reviews"),
+          width: "50%",
+          description:
+            "How many reviews show when none are picked. Empty shows 12 on a clinic or doctor page and 8 elsewhere.",
+        },
+        label: "Number of reviews",
+        min: 1,
+        name: "limit",
+        type: "number",
+      },
+      {
+        admin: {
+          width: "50%",
+          description:
+            "The heading's level: large on a clinic or doctor page, smaller on the homepage.",
+        },
+        defaultValue: "h3",
+        label: "Heading size",
+        name: "headingLevel",
+        options: [
+          { label: "Large (h2)", value: "h2" },
+          { label: "Smaller (h3)", value: "h3" },
+        ],
+        type: "select",
+      }
+    ),
+    siteButton(),
     {
       admin: {
         description:
-          "A small italic line under the heading, for example Individual results may vary. Empty hides it.",
+          "The words on the last slide, which links where the button does, for example See All Reviews. Empty leaves that slide out.",
       },
-      label: "Small print",
-      name: "note",
+      label: "Last slide text",
+      name: "seeAllText",
       type: "text",
-    },
-    {
-      admin: {
-        description:
-          "How many reviews show when none are picked. Empty shows 12 on a clinic or doctor page and 8 elsewhere.",
-      },
-      label: "Number of reviews",
-      min: 1,
-      name: "limit",
-      type: "number",
-    },
-    {
-      admin: {
-        description:
-          "The heading's level: large on a clinic or doctor page, smaller on the homepage.",
-      },
-      defaultValue: "h3",
-      label: "Heading size",
-      name: "headingLevel",
-      options: [
-        { label: "Large (h2)", value: "h2" },
-        { label: "Smaller (h3)", value: "h3" },
-      ],
-      type: "select",
     },
   ],
   interfaceName: "ReviewSliderBlock",
@@ -434,30 +470,34 @@ export const ConditionGridBlock: Block = siteBlock({
   fields: [
     sectionHeading(),
     sectionText(),
-    {
-      admin: {
-        description: "The small heading above the conditions, for example Symptoms We Treat.",
-      },
-      label: "List heading",
-      name: "listHeading",
-      type: "text",
-    },
-    {
-      admin: {
-        description: {
-          en: "The size of the list heading. Small (H3) on the homepage, the H2 style on treatment pages.",
-          es: "El tamaño del título de la lista. Pequeño (H3) en la página de inicio, el estilo H2 en las páginas de tratamientos.",
+    row(
+      {
+        admin: {
+          width: "60%",
+          description: "The small heading above the conditions, for example Symptoms We Treat.",
         },
+        label: "List heading",
+        name: "listHeading",
+        type: "text",
       },
-      defaultValue: "h3",
-      label: { en: "List heading size", es: "Tamaño del título de la lista" },
-      name: "listHeadingLevel",
-      options: [
-        { label: { en: "Small (H3)", es: "Pequeño (H3)" }, value: "h3" },
-        { label: { en: "Section heading (H2)", es: "Título de sección (H2)" }, value: "h2" },
-      ],
-      type: "select",
-    },
+      {
+        admin: {
+          width: "40%",
+          description: {
+            en: "The size of the list heading. Small (H3) on the homepage, the H2 style on treatment pages.",
+            es: "El tamaño del título de la lista. Pequeño (H3) en la página de inicio, el estilo H2 en las páginas de tratamientos.",
+          },
+        },
+        defaultValue: "h3",
+        label: { en: "List heading size", es: "Tamaño del título de la lista" },
+        name: "listHeadingLevel",
+        options: [
+          { label: { en: "Small (H3)", es: "Pequeño (H3)" }, value: "h3" },
+          { label: { en: "Section heading (H2)", es: "Título de sección (H2)" }, value: "h2" },
+        ],
+        type: "select",
+      }
+    ),
     {
       admin: {
         description: {
@@ -471,31 +511,35 @@ export const ConditionGridBlock: Block = siteBlock({
       relationTo: "conditions",
       type: "relationship",
     },
-    {
-      admin: {
-        description:
-          "The words shown when a visitor points at a condition, for example Learn More.",
-      },
-      label: "Link text",
-      name: "linkText",
-      type: "text",
-    },
-    {
-      admin: {
-        description: {
-          en: "The size of each condition's name. Small suits the homepage, large the vein disease guide.",
-          es: "El tamaño del nombre de cada condición. Pequeño conviene a la página de inicio, grande a la guía de enfermedades venosas.",
+    row(
+      {
+        admin: {
+          width: "50%",
+          description:
+            "The words shown when a visitor points at a condition, for example Learn More.",
         },
+        label: "Link text",
+        name: "linkText",
+        type: "text",
       },
-      defaultValue: "h5",
-      label: { en: "Name size", es: "Tamaño del nombre" },
-      name: "titleLevel",
-      options: [
-        { label: { en: "Small (H5)", es: "Pequeño (H5)" }, value: "h5" },
-        { label: { en: "Large (H3)", es: "Grande (H3)" }, value: "h3" },
-      ],
-      type: "select",
-    },
+      {
+        admin: {
+          width: "50%",
+          description: {
+            en: "The size of each condition's name. Small suits the homepage, large the vein disease guide.",
+            es: "El tamaño del nombre de cada condición. Pequeño conviene a la página de inicio, grande a la guía de enfermedades venosas.",
+          },
+        },
+        defaultValue: "h5",
+        label: { en: "Name size", es: "Tamaño del nombre" },
+        name: "titleLevel",
+        options: [
+          { label: { en: "Small (H5)", es: "Pequeño (H5)" }, value: "h5" },
+          { label: { en: "Large (H3)", es: "Grande (H3)" }, value: "h3" },
+        ],
+        type: "select",
+      }
+    ),
     {
       fields: [
         {
@@ -537,60 +581,68 @@ export const ConditionGridBlock: Block = siteBlock({
         initCollapsed: true,
       },
       fields: [
-        {
-          admin: {
-            description: {
-              en: "The video's YouTube address, for example https://www.youtube.com/watch?v=abc123.",
-              es: "La dirección del video en YouTube, por ejemplo https://www.youtube.com/watch?v=abc123.",
+        row(
+          {
+            admin: {
+              width: "60%",
+              description: {
+                en: "The video's YouTube address, for example https://www.youtube.com/watch?v=abc123.",
+                es: "La dirección del video en YouTube, por ejemplo https://www.youtube.com/watch?v=abc123.",
+              },
             },
+            label: { en: "YouTube URL", es: "URL de YouTube" },
+            name: "videoUrl",
+            type: "text",
           },
-          label: { en: "YouTube URL", es: "URL de YouTube" },
-          name: "videoUrl",
-          type: "text",
-        },
-        {
-          admin: {
-            description: {
-              en: "Under the text, the video sits behind a still with a play button and its own small heading. Under the list, it plays in place without a still.",
-              es: "Bajo el texto, el video está detrás de una imagen con botón de reproducir y su propio título pequeño. Bajo la lista, se reproduce en su sitio sin imagen.",
+          {
+            admin: {
+              width: "40%",
+              description: {
+                en: "Under the text, the video sits behind a still with a play button and its own small heading. Under the list, it plays in place without a still.",
+                es: "Bajo el texto, el video está detrás de una imagen con botón de reproducir y su propio título pequeño. Bajo la lista, se reproduce en su sitio sin imagen.",
+              },
             },
-          },
-          defaultValue: "afterText",
-          label: { en: "Video position", es: "Posición del video" },
-          name: "videoPosition",
-          options: [
-            { label: { en: "Under the text", es: "Bajo el texto" }, value: "afterText" },
-            { label: { en: "Under the list", es: "Bajo la lista" }, value: "afterList" },
-          ],
-          type: "select",
-        },
-        {
-          admin: {
-            condition: (_data, siblingData) =>
-              (siblingData as { videoPosition?: string })?.videoPosition !== "afterList",
-            description: {
-              en: "The small heading above the video, for example See It in Action. Empty hides it.",
-              es: "El título pequeño sobre el video, por ejemplo Véalo en acción. Vacío no se muestra.",
+            defaultValue: "afterText",
+            label: { en: "Video position", es: "Posición del video" },
+            name: "videoPosition",
+            options: [
+              { label: { en: "Under the text", es: "Bajo el texto" }, value: "afterText" },
+              { label: { en: "Under the list", es: "Bajo la lista" }, value: "afterList" },
+            ],
+            type: "select",
+          }
+        ),
+        row(
+          {
+            admin: {
+              width: "50%",
+              condition: (_data, siblingData) =>
+                (siblingData as { videoPosition?: string })?.videoPosition !== "afterList",
+              description: {
+                en: "The small heading above the video, for example See It in Action. Empty hides it.",
+                es: "El título pequeño sobre el video, por ejemplo Véalo en acción. Vacío no se muestra.",
+              },
             },
+            label: { en: "Video heading", es: "Título del video" },
+            name: "videoHeading",
+            type: "text",
           },
-          label: { en: "Video heading", es: "Título del video" },
-          name: "videoHeading",
-          type: "text",
-        },
-        {
-          admin: {
-            condition: (_data, siblingData) =>
-              (siblingData as { videoPosition?: string })?.videoPosition !== "afterList",
-            description: {
-              en: "The still shown over the video until the visitor presses play.",
-              es: "La imagen que se muestra sobre el video hasta que el visitante pulsa reproducir.",
+          {
+            admin: {
+              width: "50%",
+              condition: (_data, siblingData) =>
+                (siblingData as { videoPosition?: string })?.videoPosition !== "afterList",
+              description: {
+                en: "The still shown over the video until the visitor presses play.",
+                es: "La imagen que se muestra sobre el video hasta que el visitante pulsa reproducir.",
+              },
             },
-          },
-          label: { en: "Video still", es: "Imagen del video" },
-          name: "videoCover",
-          relationTo: "media",
-          type: "upload",
-        },
+            label: { en: "Video still", es: "Imagen del video" },
+            name: "videoCover",
+            relationTo: "media",
+            type: "upload",
+          }
+        ),
       ],
       label: { en: "Video", es: "Video" },
       type: "collapsible",
@@ -645,8 +697,16 @@ export const BeforeAfterBlock: Block = siteBlock({
         description: "One row per patient result.",
       },
       fields: [
-        imageField("before", "Before picture", "The picture taken before treatment.", true),
-        imageField("after", "After picture", "The picture taken after treatment.", true),
+        row(
+          withWidth(
+            imageField("before", "Before picture", "The picture taken before treatment.", true),
+            "50%"
+          ),
+          withWidth(
+            imageField("after", "After picture", "The picture taken after treatment.", true),
+            "50%"
+          )
+        ),
       ],
       label: "Results",
       labels: { plural: "Results", singular: "Result" },
@@ -737,7 +797,10 @@ export const PostSliderBlock: Block = siteBlock({
       type: "relationship",
     },
     {
-      admin: { description: "How many of the newest articles to show when none are picked." },
+      admin: {
+        condition: noneSelected("posts"),
+        description: "How many of the newest articles to show when none are picked.",
+      },
       defaultValue: 6,
       label: "Number of articles",
       max: 12,

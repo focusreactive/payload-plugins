@@ -19,7 +19,8 @@ export const States: CollectionConfig<"states"> = {
   access: entityAccess,
   admin: entityAdmin({
     collection: "states",
-    defaultColumns: ["name", "abbreviation", "slug", "updatedAt"],
+    defaultColumns: ["name", "abbreviation", "phone", "_status", "updatedAt"],
+    listSearchableFields: ["name", "abbreviation"],
     useAsTitle: "name",
   }),
   fields: [
@@ -59,96 +60,111 @@ export const States: CollectionConfig<"states"> = {
               ],
               type: "row",
             },
-            bilingual(
-              headingRichText({
-                description: "The large line at the top of the page.",
-                label: "Tagline",
-                localized: true,
-                name: "heroTagline",
-              }),
-              { en: "Tagline", es: "Lema" },
-              {
-                en: "The large line at the top of the page, for example Texas, Meet Healthy Legs. Set words in italics to put them on their own underlined line. Empty hides it.",
-                es: "La línea grande en la parte superior de la página, por ejemplo Texas, Meet Healthy Legs. Ponga palabras en cursiva para mostrarlas en su propia línea subrayada. Vacío la oculta.",
-              }
-            ),
-            bilingual(
-              { ...siteButton({ name: "heroButton" }), localized: true } as Field,
-              { en: "Top button", es: "Botón superior" },
-              {
-                en: "The button under the tagline. Empty text hides it.",
-                es: "El botón bajo el lema. Sin texto se oculta.",
-              }
-            ),
             {
-              admin: {
-                description: {
-                  en: "The heading under the tagline. Empty uses the state's name.",
-                  es: "El encabezado bajo el lema. Vacío usa el nombre del estado.",
-                },
-              },
-              label: { en: "Page heading", es: "Encabezado de la página" },
-              localized: true,
-              name: "heroTitle",
-              type: "text",
-            },
-            bilingual(
-              bodyRichText({
-                description: "The paragraphs under the page heading.",
-                label: "Introduction",
-                localized: true,
-                name: "heroIntro",
-              }),
-              { en: "Introduction", es: "Introducción" },
-              {
-                en: "The paragraphs under the page heading. Links to pages are allowed.",
-                es: "Los párrafos bajo el encabezado de la página. Admite enlaces a páginas.",
-              }
-            ),
-            {
+              admin: { initCollapsed: false },
               fields: [
+                bilingual(
+                  headingRichText({
+                    description: "The large line at the top of the page.",
+                    label: "Tagline",
+                    localized: true,
+                    name: "heroTagline",
+                  }),
+                  { en: "Tagline", es: "Lema" },
+                  {
+                    en: "The large line at the top of the page, for example Texas, Meet Healthy Legs. Set words in italics to put them on their own underlined line. Empty hides it.",
+                    es: "La línea grande en la parte superior de la página, por ejemplo Texas, Meet Healthy Legs. Ponga palabras en cursiva para mostrarlas en su propia línea subrayada. Vacío la oculta.",
+                  }
+                ),
+                bilingual(
+                  { ...siteButton({ name: "heroButton" }), localized: true } as Field,
+                  { en: "Top button", es: "Botón superior" },
+                  {
+                    en: "The button under the tagline. Empty text hides it.",
+                    es: "El botón bajo el lema. Sin texto se oculta.",
+                  }
+                ),
                 {
                   admin: {
                     description: {
-                      en: "The wide picture behind the top of the page on computers.",
-                      es: "La imagen ancha detrás de la parte superior de la página en ordenadores.",
+                      en: "The heading under the tagline. Empty uses the state's name.",
+                      es: "El encabezado bajo el lema. Vacío usa el nombre del estado.",
                     },
-                    width: "50%",
                   },
-                  label: { en: "Top image", es: "Imagen superior" },
-                  name: "heroImage",
-                  relationTo: "media",
-                  type: "upload",
+                  label: { en: "Page heading", es: "Encabezado de la página" },
+                  localized: true,
+                  name: "heroTitle",
+                  type: "text",
+                },
+                bilingual(
+                  bodyRichText({
+                    description: "The paragraphs under the page heading.",
+                    label: "Introduction",
+                    localized: true,
+                    name: "heroIntro",
+                  }),
+                  { en: "Introduction", es: "Introducción" },
+                  {
+                    en: "The paragraphs under the page heading. Links to pages are allowed.",
+                    es: "Los párrafos bajo el encabezado de la página. Admite enlaces a páginas.",
+                  }
+                ),
+                {
+                  fields: [
+                    {
+                      admin: {
+                        description: {
+                          en: "The wide picture behind the top of the page on computers.",
+                          es: "La imagen ancha detrás de la parte superior de la página en ordenadores.",
+                        },
+                        width: "50%",
+                      },
+                      label: { en: "Top image", es: "Imagen superior" },
+                      name: "heroImage",
+                      relationTo: "media",
+                      type: "upload",
+                    },
+                    {
+                      admin: {
+                        description: {
+                          en: "The same picture cut for phones. Empty uses the top image.",
+                          es: "La misma imagen recortada para móviles. Vacío usa la imagen superior.",
+                        },
+                        width: "50%",
+                      },
+                      label: { en: "Top image on phones", es: "Imagen superior en móviles" },
+                      name: "heroMobileImage",
+                      relationTo: "media",
+                      type: "upload",
+                    },
+                  ],
+                  type: "row",
                 },
                 {
                   admin: {
                     description: {
-                      en: "The same picture cut for phones. Empty uses the top image.",
-                      es: "La misma imagen recortada para móviles. Vacío usa la imagen superior.",
+                      en: "The round badge beside the heading, for example a satisfaction score. Each language can have its own. Empty hides it.",
+                      es: "La insignia redonda junto al encabezado, por ejemplo una puntuación de satisfacción. Cada idioma puede tener la suya. Vacío la oculta.",
                     },
-                    width: "50%",
                   },
-                  label: { en: "Top image on phones", es: "Imagen superior en móviles" },
-                  name: "heroMobileImage",
+                  label: { en: "Badge", es: "Insignia" },
+                  localized: true,
+                  name: "heroBadge",
                   relationTo: "media",
                   type: "upload",
                 },
               ],
-              type: "row",
+              label: { en: "Top of the page", es: "Parte superior de la página" },
+              type: "collapsible",
             },
-            {
-              admin: {
-                description: {
-                  en: "The round badge beside the heading, for example a satisfaction score. Each language can have its own. Empty hides it.",
-                  es: "La insignia redonda junto al encabezado, por ejemplo una puntuación de satisfacción. Cada idioma puede tener la suya. Vacío la oculta.",
-                },
-              },
-              label: { en: "Badge", es: "Insignia" },
-              localized: true,
-              name: "heroBadge",
-              relationTo: "media",
-              type: "upload",
-            },
+            entitySectionsField(
+              "The sections of the state's page under its heading, top to bottom."
+            ),
+          ],
+          label: { en: "Content", es: "Contenido" },
+        },
+        {
+          fields: [
             {
               admin: {
                 description: {
@@ -175,11 +191,8 @@ export const States: CollectionConfig<"states"> = {
               on: "state",
               type: "join",
             },
-            entitySectionsField(
-              "The sections of the state's page under its heading, top to bottom."
-            ),
           ],
-          label: { en: "Content", es: "Contenido" },
+          label: { en: "State details", es: "Datos del estado" },
         },
         entitySeoTab,
       ],

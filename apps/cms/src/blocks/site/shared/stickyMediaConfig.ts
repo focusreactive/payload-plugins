@@ -42,28 +42,35 @@ export const StickyMediaBlock: Block = {
         },
         fields: [
           {
-            admin: {
-              description: {
-                en: "The picture of this chapter. Phones show it above the text.",
-                es: "La imagen de este capítulo. En el móvil aparece sobre el texto.",
+            fields: [
+              {
+                admin: {
+                  width: "50%",
+                  description: {
+                    en: "The picture of this chapter. Phones show it above the text.",
+                    es: "La imagen de este capítulo. En el móvil aparece sobre el texto.",
+                  },
+                },
+                label: { en: "Picture", es: "Imagen" },
+                name: "image",
+                relationTo: "media",
+                type: "upload",
               },
-            },
-            label: { en: "Picture", es: "Imagen" },
-            name: "image",
-            relationTo: "media",
-            type: "upload",
-          },
-          {
-            admin: {
-              description: {
-                en: "Leaves the picture out on phones, for example when it repeats the one above.",
-                es: "Oculta la imagen en el móvil, por ejemplo cuando repite la anterior.",
+              {
+                admin: {
+                  width: "50%",
+                  description: {
+                    en: "Leaves the picture out on phones, for example when it repeats the one above.",
+                    es: "Oculta la imagen en el móvil, por ejemplo cuando repite la anterior.",
+                  },
+                },
+                defaultValue: false,
+                label: { en: "Hide the picture on phones", es: "Ocultar la imagen en el móvil" },
+                name: "hideOnMobile",
+                type: "checkbox",
               },
-            },
-            defaultValue: false,
-            label: { en: "Hide the picture on phones", es: "Ocultar la imagen en el móvil" },
-            name: "hideOnMobile",
-            type: "checkbox",
+            ],
+            type: "row",
           },
           {
             admin: {

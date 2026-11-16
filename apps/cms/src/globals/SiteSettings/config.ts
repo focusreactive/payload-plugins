@@ -21,30 +21,37 @@ export const SiteSettings: GlobalConfig = {
         {
           fields: [
             {
-              name: "siteName",
-              type: "text",
-              defaultValue: createLocalizedDefault(
-                DEFAULT_VALUES.collections.siteSettings.siteName
-              ),
-              admin: {
-                description: {
-                  en: "The name of your website",
-                  es: "El nombre de tu sitio web",
+              type: "row",
+              fields: [
+                {
+                  name: "siteName",
+                  type: "text",
+                  defaultValue: createLocalizedDefault(
+                    DEFAULT_VALUES.collections.siteSettings.siteName
+                  ),
+                  admin: {
+                    description: {
+                      en: "The name of your website",
+                      es: "El nombre de tu sitio web",
+                    },
+                    width: "50%",
+                  },
+                  localized: true,
                 },
-              },
-              localized: true,
-            },
-            {
-              admin: {
-                description: {
-                  en: "The small icon in the browser tab of the website. A square PNG or SVG.",
-                  es: "El icono pequeño en la pestaña del navegador del sitio web. Un PNG o SVG cuadrado.",
+                {
+                  admin: {
+                    description: {
+                      en: "The small icon in the browser tab of the website. A square PNG or SVG.",
+                      es: "El icono pequeño en la pestaña del navegador del sitio web. Un PNG o SVG cuadrado.",
+                    },
+                    width: "50%",
+                  },
+                  label: { en: "Browser tab icon", es: "Icono de la pestaña" },
+                  name: "favicon",
+                  relationTo: "media",
+                  type: "upload",
                 },
-              },
-              label: { en: "Browser tab icon", es: "Icono de la pestaña" },
-              name: "favicon",
-              relationTo: "media",
-              type: "upload",
+              ],
             },
           ],
           label: {
@@ -355,11 +362,6 @@ export const SiteSettings: GlobalConfig = {
         {
           fields: [
             {
-              name: "header",
-              type: "relationship",
-              relationTo: "header",
-            },
-            {
               name: "title",
               type: "text",
               label: {
@@ -384,9 +386,21 @@ export const SiteSettings: GlobalConfig = {
               localized: true,
             },
             {
-              name: "footer",
-              type: "relationship",
-              relationTo: "footer",
+              type: "row",
+              fields: [
+                {
+                  admin: { width: "50%" },
+                  name: "header",
+                  type: "relationship",
+                  relationTo: "header",
+                },
+                {
+                  admin: { width: "50%" },
+                  name: "footer",
+                  type: "relationship",
+                  relationTo: "footer",
+                },
+              ],
             },
           ],
           label: {
@@ -403,11 +417,6 @@ export const SiteSettings: GlobalConfig = {
                 {
                   label: { en: "Content", es: "Contenido" },
                   fields: [
-                    {
-                      name: "header",
-                      type: "relationship",
-                      relationTo: "header",
-                    },
                     {
                       type: "row",
                       fields: [
@@ -455,7 +464,7 @@ export const SiteSettings: GlobalConfig = {
                       type: "row",
                       fields: [
                         {
-                          admin: { width: "50%" },
+                          admin: { width: "33%" },
                           defaultValue: createLocalizedDefault({
                             en: "Search articles…",
                             es: "Buscar artículos…",
@@ -466,7 +475,7 @@ export const SiteSettings: GlobalConfig = {
                           type: "text",
                         },
                         {
-                          admin: { width: "50%" },
+                          admin: { width: "33%" },
                           name: "readMoreLabel",
                           type: "text",
                           required: true,
@@ -479,25 +488,38 @@ export const SiteSettings: GlobalConfig = {
                             DEFAULT_VALUES.collections.siteSettings.blog.readMoreLabel
                           ),
                         },
+                        {
+                          admin: { width: "34%" },
+                          name: "relatedPostsLabel",
+                          type: "text",
+                          required: true,
+                          label: {
+                            en: "Related Posts Label",
+                            es: "Etiqueta de publicaciones relacionadas",
+                          },
+                          localized: true,
+                          defaultValue: createLocalizedDefault(
+                            DEFAULT_VALUES.collections.siteSettings.blog.relatedPostsLabel
+                          ),
+                        },
                       ],
                     },
                     {
-                      name: "relatedPostsLabel",
-                      type: "text",
-                      required: true,
-                      label: {
-                        en: "Related Posts Label",
-                        es: "Etiqueta de publicaciones relacionadas",
-                      },
-                      localized: true,
-                      defaultValue: createLocalizedDefault(
-                        DEFAULT_VALUES.collections.siteSettings.blog.relatedPostsLabel
-                      ),
-                    },
-                    {
-                      name: "footer",
-                      type: "relationship",
-                      relationTo: "footer",
+                      type: "row",
+                      fields: [
+                        {
+                          admin: { width: "50%" },
+                          name: "header",
+                          type: "relationship",
+                          relationTo: "header",
+                        },
+                        {
+                          admin: { width: "50%" },
+                          name: "footer",
+                          type: "relationship",
+                          relationTo: "footer",
+                        },
+                      ],
                     },
                   ],
                 },

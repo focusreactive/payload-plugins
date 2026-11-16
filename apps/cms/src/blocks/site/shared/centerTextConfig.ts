@@ -25,43 +25,6 @@ const showFor =
 export const CenterTextBlock: Block = bilingualBlock(
   siteBlock({
     fields: [
-      {
-        fields: [
-          {
-            admin: {
-              description: {
-                en: "The colour behind the section.",
-                es: "El color detrás de la sección.",
-              },
-              width: "50%",
-            },
-            defaultValue: "bg",
-            label: { en: "Background", es: "Fondo" },
-            name: "background",
-            options: [
-              { label: { en: "Page tint", es: "Tono de página" }, value: "bg" },
-              { label: { en: "White", es: "Blanco" }, value: "white" },
-              { label: { en: "Light blue", es: "Azul claro" }, value: "light-blue" },
-              { label: { en: "Yellow", es: "Amarillo" }, value: "yellow" },
-            ],
-            type: "select",
-          },
-          {
-            admin: {
-              description: {
-                en: "The section's name in links that jump to it, for example faqs. The site gives insurance-center its large centred style and faqs a compact list on the vein disease guide.",
-                es: "El nombre de la sección en los enlaces que saltan a ella, por ejemplo faqs. El sitio da a insurance-center su estilo grande centrado y a faqs una lista compacta en la guía de enfermedades venosas.",
-              },
-              width: "50%",
-            },
-            label: { en: "Anchor", es: "Ancla" },
-            name: "anchor",
-            type: "text",
-            validate: validateAnchor,
-          },
-        ],
-        type: "row",
-      },
       bilingual(
         sectionEyebrow,
         { en: "Eyebrow", es: "Antetítulo" },
@@ -82,22 +45,6 @@ export const CenterTextBlock: Block = bilingualBlock(
           es: "El encabezado de la sección. Subraye una palabra para darle el estilo de acento. Vacío lo oculta.",
         }
       ),
-      {
-        admin: {
-          description: {
-            en: "Large for a main section heading, small for a heading inside a longer page.",
-            es: "Grande para un encabezado principal, pequeño para uno dentro de una página larga.",
-          },
-        },
-        defaultValue: "h2",
-        label: { en: "Heading size", es: "Tamaño del encabezado" },
-        name: "headingLevel",
-        options: [
-          { label: { en: "Large (H2)", es: "Grande (H2)" }, value: "h2" },
-          { label: { en: "Small (H3)", es: "Pequeño (H3)" }, value: "h3" },
-        ],
-        type: "select",
-      },
       bilingual(
         bodyRichText({ description: "The text under the heading.", label: "Text", name: "text" }),
         { en: "Text", es: "Texto" },
@@ -282,6 +229,60 @@ export const CenterTextBlock: Block = bilingualBlock(
           { label: { en: "Outlined", es: "Con borde" }, value: "outline" },
         ],
         type: "select",
+      },
+      {
+        fields: [
+          {
+            admin: {
+              width: "33%",
+              description: {
+                en: "Large for a main section heading, small for a heading inside a longer page.",
+                es: "Grande para un encabezado principal, pequeño para uno dentro de una página larga.",
+              },
+            },
+            defaultValue: "h2",
+            label: { en: "Heading size", es: "Tamaño del encabezado" },
+            name: "headingLevel",
+            options: [
+              { label: { en: "Large (H2)", es: "Grande (H2)" }, value: "h2" },
+              { label: { en: "Small (H3)", es: "Pequeño (H3)" }, value: "h3" },
+            ],
+            type: "select",
+          },
+          {
+            admin: {
+              description: {
+                en: "The colour behind the section.",
+                es: "El color detrás de la sección.",
+              },
+              width: "33%",
+            },
+            defaultValue: "bg",
+            label: { en: "Background", es: "Fondo" },
+            name: "background",
+            options: [
+              { label: { en: "Page tint", es: "Tono de página" }, value: "bg" },
+              { label: { en: "White", es: "Blanco" }, value: "white" },
+              { label: { en: "Light blue", es: "Azul claro" }, value: "light-blue" },
+              { label: { en: "Yellow", es: "Amarillo" }, value: "yellow" },
+            ],
+            type: "select",
+          },
+          {
+            admin: {
+              description: {
+                en: "The section's name in links that jump to it, for example faqs. The site gives insurance-center its large centred style and faqs a compact list on the vein disease guide.",
+                es: "El nombre de la sección en los enlaces que saltan a ella, por ejemplo faqs. El sitio da a insurance-center su estilo grande centrado y a faqs una lista compacta en la guía de enfermedades venosas.",
+              },
+              width: "34%",
+            },
+            label: { en: "Anchor", es: "Ancla" },
+            name: "anchor",
+            type: "text",
+            validate: validateAnchor,
+          },
+        ],
+        type: "row",
       },
     ],
     interfaceName: "CenterTextBlock",

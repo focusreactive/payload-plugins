@@ -17,7 +17,8 @@ export const Treatments: CollectionConfig<"treatments"> = {
   access: entityAccess,
   admin: entityAdmin({
     collection: "treatments",
-    defaultColumns: ["title", "summary", "slug", "updatedAt"],
+    defaultColumns: ["title", "conditions", "_status", "updatedAt"],
+    listSearchableFields: ["title", "summary"],
     useAsTitle: "title",
   }),
   fields: [
@@ -39,65 +40,86 @@ export const Treatments: CollectionConfig<"treatments"> = {
               type: "text",
             },
             {
-              admin: {
-                description: {
-                  en: "One line under the name on treatment cards, for example A vein treatment using an injectable medicine.",
-                  es: "Una línea bajo el nombre en las tarjetas, por ejemplo Un tratamiento de venas con un medicamento inyectable.",
+              admin: { initCollapsed: false },
+              fields: [
+                {
+                  admin: {
+                    description: {
+                      en: "The big heading at the top of the treatment's page. Empty uses the name.",
+                      es: "El encabezado grande de la página del tratamiento. Vacío usa el nombre.",
+                    },
+                  },
+                  label: { en: "Page heading", es: "Encabezado de la página" },
+                  localized: true,
+                  name: "heroTitle",
+                  type: "text",
                 },
-              },
-              label: { en: "Card text", es: "Texto de la tarjeta" },
-              localized: true,
-              name: "summary",
-              type: "text",
+                bilingual(
+                  bodyRichText({
+                    description: "The paragraphs under the page heading.",
+                    label: "Introduction",
+                    localized: true,
+                    name: "heroIntro",
+                  }),
+                  { en: "Introduction", es: "Introducción" },
+                  {
+                    en: "The paragraphs under the page heading, beside the top picture.",
+                    es: "Los párrafos bajo el encabezado, junto a la imagen superior.",
+                  }
+                ),
+                {
+                  admin: {
+                    description: {
+                      en: "The picture beside the heading at the top of the treatment's page.",
+                      es: "La imagen junto al encabezado, arriba en la página del tratamiento.",
+                    },
+                  },
+                  label: { en: "Top picture", es: "Imagen superior" },
+                  name: "heroImage",
+                  relationTo: "media",
+                  type: "upload",
+                },
+              ],
+              label: { en: "Top of the page", es: "Parte superior de la página" },
+              type: "collapsible",
             },
             {
-              admin: {
-                description: {
-                  en: "The picture on the treatment's card in sliders and lists.",
-                  es: "La imagen de la tarjeta del tratamiento en carruseles y listas.",
+              admin: { initCollapsed: true },
+              fields: [
+                {
+                  fields: [
+                    {
+                      admin: {
+                        description: {
+                          en: "One line under the name on treatment cards, for example A vein treatment using an injectable medicine.",
+                          es: "Una línea bajo el nombre en las tarjetas, por ejemplo Un tratamiento de venas con un medicamento inyectable.",
+                        },
+                        width: "60%",
+                      },
+                      label: { en: "Card text", es: "Texto de la tarjeta" },
+                      localized: true,
+                      name: "summary",
+                      type: "text",
+                    },
+                    {
+                      admin: {
+                        description: {
+                          en: "The picture on the treatment's card in sliders and lists.",
+                          es: "La imagen de la tarjeta del tratamiento en carruseles y listas.",
+                        },
+                        width: "40%",
+                      },
+                      label: { en: "Card image", es: "Imagen de la tarjeta" },
+                      name: "cardImage",
+                      relationTo: "media",
+                      type: "upload",
+                    },
+                  ],
+                  type: "row",
                 },
-              },
-              label: { en: "Card image", es: "Imagen de la tarjeta" },
-              name: "cardImage",
-              relationTo: "media",
-              type: "upload",
-            },
-            {
-              admin: {
-                description: {
-                  en: "The big heading at the top of the treatment's page. Empty uses the name.",
-                  es: "El encabezado grande de la página del tratamiento. Vacío usa el nombre.",
-                },
-              },
-              label: { en: "Page heading", es: "Encabezado de la página" },
-              localized: true,
-              name: "heroTitle",
-              type: "text",
-            },
-            bilingual(
-              bodyRichText({
-                description: "The paragraphs under the page heading.",
-                label: "Introduction",
-                localized: true,
-                name: "heroIntro",
-              }),
-              { en: "Introduction", es: "Introducción" },
-              {
-                en: "The paragraphs under the page heading, beside the top picture.",
-                es: "Los párrafos bajo el encabezado, junto a la imagen superior.",
-              }
-            ),
-            {
-              admin: {
-                description: {
-                  en: "The picture beside the heading at the top of the treatment's page.",
-                  es: "La imagen junto al encabezado, arriba en la página del tratamiento.",
-                },
-              },
-              label: { en: "Top picture", es: "Imagen superior" },
-              name: "heroImage",
-              relationTo: "media",
-              type: "upload",
+              ],
+              label: { en: "Card in lists", es: "Tarjeta en listas" },
+              type: "collapsible",
             },
             entitySectionsField(
               "The sections of the treatment's page under its heading, top to bottom. A conditions grid with no conditions picked shows the ones set under Treats."

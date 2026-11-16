@@ -47,11 +47,11 @@ const stateField = (description: { en: string; es: string }): Field => ({
 export const StateSitesBlock: Block = bilingualBlock(
   siteBlock({
     fields: [
+      { fields: [reviewsLabelField, clinicLinkTextField], type: "row" },
       stateField({
         en: "The state whose clinics are shown. Empty uses the state whose page this is. Clinics come from the clinic records, so an edited address, rating or new clinic shows here.",
         es: "El estado cuyas clínicas se muestran. Vacío usa el estado de esta página. Las clínicas salen de sus fichas, así que una dirección, valoración o clínica nueva se muestra aquí.",
       }),
-      { fields: [reviewsLabelField, clinicLinkTextField], type: "row" },
     ],
     interfaceName: "StateSitesBlock",
     label: "State clinics and map",
@@ -83,22 +83,29 @@ export const StateDoctorsBlock: Block = bilingualBlock(
           es: "El párrafo bajo el encabezado. Admite enlaces a páginas.",
         }
       ),
-      stateField({
-        en: "The state whose doctors are shown, each with the state's clinics they work at. Empty uses the state whose page this is.",
-        es: "El estado cuyos médicos se muestran, cada uno con las clínicas del estado donde trabaja. Vacío usa el estado de esta página.",
-      }),
       {
-        admin: {
-          description: {
-            en: "The doctors shown, in this order. Empty shows every doctor with a clinic in the state, by name.",
-            es: "Los médicos mostrados, en este orden. Vacío muestra todos los médicos con una clínica en el estado, por nombre.",
+        admin: { initCollapsed: true },
+        fields: [
+          stateField({
+            en: "The state whose doctors are shown, each with the state's clinics they work at. Empty uses the state whose page this is.",
+            es: "El estado cuyos médicos se muestran, cada uno con las clínicas del estado donde trabaja. Vacío usa el estado de esta página.",
+          }),
+          {
+            admin: {
+              description: {
+                en: "The doctors shown, in this order. Empty shows every doctor with a clinic in the state, by name.",
+                es: "Los médicos mostrados, en este orden. Vacío muestra todos los médicos con una clínica en el estado, por nombre.",
+              },
+            },
+            hasMany: true,
+            label: { en: "Doctors", es: "Médicos" },
+            name: "doctors",
+            relationTo: "doctors",
+            type: "relationship",
           },
-        },
-        hasMany: true,
-        label: { en: "Doctors", es: "Médicos" },
-        name: "doctors",
-        relationTo: "doctors",
-        type: "relationship",
+        ],
+        label: { en: "Which doctors", es: "Qué médicos" },
+        type: "collapsible",
       },
       {
         admin: {

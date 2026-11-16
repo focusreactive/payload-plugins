@@ -35,8 +35,9 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
     components: {
       edit: { beforeDocumentControls: createLiveBeforeDocumentControls() },
     },
-    defaultColumns: ["title", "block", "updatedAt"],
+    defaultColumns: ["title", "block", "_status", "updatedAt"],
     group: VISUAL_SECTIONS_GROUP,
+    listSearchableFields: ["title"],
     livePreview: {
       url: ({ data, locale }) =>
         globalBlockPreviewPath(data?.id, locale.code ?? locale.fallbackLocale),

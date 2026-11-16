@@ -14,7 +14,7 @@ export const Conditions: CollectionConfig<"conditions"> = {
   access: entityAccess,
   admin: entityAdmin({
     collection: "conditions",
-    defaultColumns: ["title", "slug", "updatedAt"],
+    defaultColumns: ["title", "_status", "updatedAt"],
     useAsTitle: "title",
   }),
   fields: [
@@ -23,29 +23,36 @@ export const Conditions: CollectionConfig<"conditions"> = {
         {
           fields: [
             {
-              admin: {
-                description: {
-                  en: "The condition's name in every list of conditions, for example Spider Veins.",
-                  es: "El nombre de la condición en todas las listas de condiciones, por ejemplo Arañas vasculares.",
+              fields: [
+                {
+                  admin: {
+                    description: {
+                      en: "The condition's name in every list of conditions, for example Spider Veins.",
+                      es: "El nombre de la condición en todas las listas de condiciones, por ejemplo Arañas vasculares.",
+                    },
+                    width: "60%",
+                  },
+                  label: { en: "Name", es: "Nombre" },
+                  localized: true,
+                  name: "title",
+                  required: true,
+                  type: "text",
                 },
-              },
-              label: { en: "Name", es: "Nombre" },
-              localized: true,
-              name: "title",
-              required: true,
-              type: "text",
-            },
-            {
-              admin: {
-                description: {
-                  en: "The round drawing shown wherever conditions are listed. An SVG file is drawn into the page, so the menu at the top of condition pages can recolour it.",
-                  es: "El dibujo redondo que aparece donde se listan las condiciones. Un archivo SVG se dibuja dentro de la página, para que el menú superior de las páginas de condiciones pueda cambiar su color.",
+                {
+                  admin: {
+                    description: {
+                      en: "The round drawing shown wherever conditions are listed. An SVG file is drawn into the page, so the menu at the top of condition pages can recolour it.",
+                      es: "El dibujo redondo que aparece donde se listan las condiciones. Un archivo SVG se dibuja dentro de la página, para que el menú superior de las páginas de condiciones pueda cambiar su color.",
+                    },
+                    width: "40%",
+                  },
+                  label: { en: "Icon", es: "Icono" },
+                  name: "icon",
+                  relationTo: "media",
+                  type: "upload",
                 },
-              },
-              label: { en: "Icon", es: "Icono" },
-              name: "icon",
-              relationTo: "media",
-              type: "upload",
+              ],
+              type: "row",
             },
             {
               admin: {

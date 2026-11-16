@@ -382,10 +382,6 @@ export interface Page {
    */
   title: string;
   /**
-   * The header to display on the page
-   */
-  header?: (number | null) | Header;
-  /**
    * The page's main heading (H1). Every page has exactly one hero.
    */
   hero: (HeroVideoBlock | HeroBannerBlock | ImageHeroBlock | SimpleHeroBlock | BlogHeroBlock | HeroBlock)[];
@@ -427,10 +423,6 @@ export interface Page {
     | RawHtmlBlock
     | GlobalSectionSlotBlock
   )[];
-  /**
-   * The footer to display on the page
-   */
-  footer?: (number | null) | Footer;
   meta?: {
     title?: string | null;
     /**
@@ -455,6 +447,14 @@ export interface Page {
   template?:
     | ('blog' | 'default' | 'doctor' | 'home' | 'location' | 'locations' | 'post' | 'region' | 'symptom' | 'treatment')
     | null;
+  /**
+   * The header to display on the page
+   */
+  header?: (number | null) | Header;
+  /**
+   * The footer to display on the page
+   */
+  footer?: (number | null) | Footer;
   breadcrumbs?:
     | {
         doc?: (number | null) | Page;
@@ -483,119 +483,51 @@ export interface Page {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "header".
+ * via the `definition` "HeroVideoBlock".
  */
-export interface Header {
-  id: number;
+export interface HeroVideoBlock {
   /**
-   * The name of the header
+   * The page's main heading. Set words in italics to give them the accent style.
    */
-  name?: string | null;
+  heading: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
   /**
-   * The logo to display in the header
+   * The paragraph under the heading.
    */
-  logo: number | Media;
-  navItems?:
-    | {
-        label: string;
-        type: 'link' | 'dropdown';
-        link?: {
-          type?: ('reference' | 'custom' | 'customPage') | null;
-          newTab?: boolean | null;
-          reference?:
-            | ({
-                relationTo: 'page';
-                value: number | Page;
-              } | null)
-            | ({
-                relationTo: 'posts';
-                value: number | Post;
-              } | null);
-          url?: string | null;
-          customPage?: ('blog' | 'search') | null;
-        };
-        dropdown?: {
-          featured?: {
-            enabled?: boolean | null;
-            eyebrow?: string | null;
-            title?: string | null;
-            description?: string | null;
-            link?: {
-              type?: ('reference' | 'custom' | 'customPage') | null;
-              newTab?: boolean | null;
-              reference?:
-                | ({
-                    relationTo: 'page';
-                    value: number | Page;
-                  } | null)
-                | ({
-                    relationTo: 'posts';
-                    value: number | Post;
-                  } | null);
-              url?: string | null;
-              customPage?: ('blog' | 'search') | null;
-              label?: string | null;
-            };
-          };
-          links?:
-            | {
-                title: string;
-                description?: string | null;
-                link?: {
-                  type?: ('reference' | 'custom' | 'customPage') | null;
-                  newTab?: boolean | null;
-                  reference?:
-                    | ({
-                        relationTo: 'page';
-                        value: number | Page;
-                      } | null)
-                    | ({
-                        relationTo: 'posts';
-                        value: number | Post;
-                      } | null);
-                  url?: string | null;
-                  customPage?: ('blog' | 'search') | null;
-                };
-                id?: string | null;
-              }[]
-            | null;
-        };
-        id?: string | null;
-      }[]
-    | null;
-  actions?:
-    | {
-        type?: ('reference' | 'custom' | 'customPage') | null;
-        newTab?: boolean | null;
-        reference?:
-          | ({
-              relationTo: 'page';
-              value: number | Page;
-            } | null)
-          | ({
-              relationTo: 'posts';
-              value: number | Post;
-            } | null);
-        url?: string | null;
-        customPage?: ('blog' | 'search') | null;
-        label: string;
-        /**
-         * Choose how the link should be rendered.
-         */
-        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
-        id?: string | null;
-      }[]
-    | null;
+  text?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
   /**
-   * A smaller logo for phones. Empty uses the main logo.
+   * Empty text hides the button.
    */
-  mobileLogo?: (number | null) | Media;
-  /**
-   * The thin bar above the menu. Empty text hides it.
-   */
-  announcement?: {
+  button?: {
     /**
-     * The bar's words, for example Take the Vein Health Quiz.
+     * The words on the button, for example Book Now.
      */
     text?: string | null;
     link?: {
@@ -644,76 +576,25 @@ export interface Header {
     };
   };
   /**
-   * The phone number in the phone menu, for example 888-555-0100.
-   */
-  phone?: string | null;
-  /**
    * The words before the phone number, for example Or Call:.
    */
   phoneLabel?: string | null;
   /**
-   * The link to the clinics list in the phone header, for example See Locations. The number of clinics is added automatically.
+   * The phone number under the button, for example 888-555-0100. Empty hides the line.
    */
-  locationsLabel?: string | null;
+  phone?: string | null;
   /**
-   * The second list of links in the phone menu, under the main menu.
+   * The full URL of the looping video beside the heading (an .mp4 file). After the migration this becomes a video stored in the CMS.
    */
-  moreLinks?:
-    | {
-        /**
-         * The link's words, for example Our Story.
-         */
-        label: string;
-        link?: {
-          kind?: ('internal' | 'relative' | 'external') | null;
-          newTab?: boolean | null;
-          /**
-           * Keeps working if the page is renamed or moved.
-           */
-          page?:
-            | ({
-                relationTo: 'page';
-                value: number | Page;
-              } | null)
-            | ({
-                relationTo: 'posts';
-                value: number | Post;
-              } | null)
-            | ({
-                relationTo: 'states';
-                value: number | State;
-              } | null)
-            | ({
-                relationTo: 'clinics';
-                value: number | Clinic;
-              } | null)
-            | ({
-                relationTo: 'doctors';
-                value: number | Doctor;
-              } | null)
-            | ({
-                relationTo: 'treatments';
-                value: number | Treatment;
-              } | null)
-            | ({
-                relationTo: 'conditions';
-                value: number | Condition;
-              } | null);
-          /**
-           * For pages that are not in the CMS. Starts with a slash, for example /contact.
-           */
-          path?: string | null;
-          /**
-           * A full URL (https://example.com), an email (mailto:hello@example.com) or a phone number (tel:+18005550100).
-           */
-          url?: string | null;
-        };
-        id?: string | null;
-      }[]
-    | null;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
+  videoUrl?: string | null;
+  /**
+   * Shown while the video loads, and instead of it when no video is set.
+   */
+  poster?: (number | null) | Media;
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'heroVideo';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -840,7 +721,17 @@ export interface Post {
    */
   generateSlug?: boolean | null;
   slug: string;
+  categories: (number | Category)[];
+  authors: (number | Author)[];
+  /**
+   * The doctor who medically reviewed the article. Shown with the doctor's photo on the article and its cards.
+   */
+  reviewedBy?: (number | null) | Doctor;
   publishedAt?: string | null;
+  /**
+   * The date of the last review of the article. When set, the article shows Updated with this date instead of the publish date.
+   */
+  updatedDate?: string | null;
   /**
    * Estimated reading time in minutes. Auto-calculated from the content on save.
    */
@@ -849,16 +740,6 @@ export interface Post {
    * The reading time shown on the article and its cards, in minutes. Empty shows the estimate above.
    */
   readingTimeOverride?: number | null;
-  /**
-   * The date of the last review of the article. When set, the article shows Updated with this date instead of the publish date.
-   */
-  updatedDate?: string | null;
-  categories: (number | Category)[];
-  authors: (number | Author)[];
-  /**
-   * The doctor who medically reviewed the article. Shown with the doctor's photo on the article and its cards.
-   */
-  reviewedBy?: (number | null) | Doctor;
   /**
    * Select up to 3 related posts. If fewer than 3 are selected, additional posts from the same categories will be shown automatically based on publish date.
    */
@@ -1186,31 +1067,6 @@ export interface State {
    */
   heroBadge?: (number | null) | Media;
   /**
-   * The number visitors call for clinics in this state, for example 888-555-0100.
-   */
-  phone?: string | null;
-  /**
-   * Shown next to the stars and sent to search engines with the page.
-   */
-  rating?: {
-    /**
-     * Average score out of 5, for example 4.9.
-     */
-    value?: number | null;
-    /**
-     * How many reviews the average is built from.
-     */
-    count?: number | null;
-  };
-  /**
-   * Every clinic whose State is this one. Add a clinic to the state by editing the clinic.
-   */
-  clinics?: {
-    docs?: (number | Clinic)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  /**
    * The sections of the state's page under its heading, top to bottom.
    */
   blocks?:
@@ -1238,6 +1094,31 @@ export interface State {
         | BlogListBlock
       )[]
     | null;
+  /**
+   * The number visitors call for clinics in this state, for example 888-555-0100.
+   */
+  phone?: string | null;
+  /**
+   * Shown next to the stars and sent to search engines with the page.
+   */
+  rating?: {
+    /**
+     * Average score out of 5, for example 4.9.
+     */
+    value?: number | null;
+    /**
+     * How many reviews the average is built from.
+     */
+    count?: number | null;
+  };
+  /**
+   * Every clinic whose State is this one. Add a clinic to the state by editing the clinic.
+   */
+  clinics?: {
+    docs?: (number | Clinic)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   meta?: {
     title?: string | null;
     /**
@@ -1276,6 +1157,10 @@ export interface Clinic {
    * The smaller line under the page heading. Empty hides it.
    */
   heroSubtitle?: string | null;
+  /**
+   * The photo at the top of the clinic's page and on its cards.
+   */
+  photo?: (number | null) | Media;
   /**
    * The words and the button at the top of the clinic's page, around the address and the phone number, which come from Clinic details.
    */
@@ -1347,10 +1232,6 @@ export interface Clinic {
    */
   locatedNear?: string[] | null;
   /**
-   * The photo at the top of the clinic's page and on its cards.
-   */
-  photo?: (number | null) | Media;
-  /**
    * The sections of the clinic's page under its heading, top to bottom.
    */
   blocks?:
@@ -1383,6 +1264,10 @@ export interface Clinic {
    */
   phone?: string | null;
   /**
+   * The Google Maps link that directions open, for example https://maps.app.goo.gl/abc. Also sent to search engines.
+   */
+  mapUrl?: string | null;
+  /**
    * Shown at the top of the clinic's page, on its state's page and sent to search engines.
    */
   address?: {
@@ -1403,10 +1288,6 @@ export interface Clinic {
      */
     postalCode?: string | null;
   };
-  /**
-   * The Google Maps link that directions open, for example https://maps.app.goo.gl/abc. Also sent to search engines.
-   */
-  mapUrl?: string | null;
   /**
    * Where the pin sits on the map of the clinic's page. Copy both numbers from Google Maps. Empty places the pin by the address.
    */
@@ -1706,18 +1587,6 @@ export interface MediaTextBlock {
     };
   };
   /**
-   * Which side the picture or video sits on.
-   */
-  side?: ('left' | 'right') | null;
-  /**
-   * How much room the section takes.
-   */
-  size?: ('regular' | 'full' | 'small') | null;
-  /**
-   * The colour behind the section.
-   */
-  background?: ('none' | 'white' | 'bg' | 'light-blue' | 'lightest-blue' | 'tertiary-blue' | 'yellow') | null;
-  /**
    * The picture beside the text. With a video set, it is the still shown before play.
    */
   image?: (number | null) | Media;
@@ -1729,6 +1598,18 @@ export interface MediaTextBlock {
    * The full URL of a video (an .mp4 file) played when the picture is clicked. Empty shows the picture only. After the migration this becomes a video stored in the CMS.
    */
   videoUrl?: string | null;
+  /**
+   * Which side the picture or video sits on.
+   */
+  side?: ('left' | 'right') | null;
+  /**
+   * How much room the section takes.
+   */
+  size?: ('regular' | 'full' | 'small') | null;
+  /**
+   * The colour behind the section.
+   */
+  background?: ('none' | 'white' | 'bg' | 'light-blue' | 'lightest-blue' | 'tertiary-blue' | 'yellow') | null;
   /**
    * The section's name in links that jump to it, for example as-seen-in. Some names carry their own style on the site. Empty leaves it out.
    */
@@ -1748,14 +1629,6 @@ export interface Treatment {
    * The treatment's name, for example Sclerotherapy. Cards, lists and the search trail show it.
    */
   title: string;
-  /**
-   * One line under the name on treatment cards, for example A vein treatment using an injectable medicine.
-   */
-  summary?: string | null;
-  /**
-   * The picture on the treatment's card in sliders and lists.
-   */
-  cardImage?: (number | null) | Media;
   /**
    * The big heading at the top of the treatment's page. Empty uses the name.
    */
@@ -1782,6 +1655,14 @@ export interface Treatment {
    * The picture beside the heading at the top of the treatment's page.
    */
   heroImage?: (number | null) | Media;
+  /**
+   * One line under the name on treatment cards, for example A vein treatment using an injectable medicine.
+   */
+  summary?: string | null;
+  /**
+   * The picture on the treatment's card in sliders and lists.
+   */
+  cardImage?: (number | null) | Media;
   /**
    * The sections of the treatment's page under its heading, top to bottom. A conditions grid with no conditions picked shows the ones set under Treats.
    */
@@ -2085,6 +1966,10 @@ export interface DoctorSliderBlock {
     [k: string]: unknown;
   } | null;
   /**
+   * The doctors in the slider, in this order. Empty shows the doctors of the page's own clinic or state, or every doctor on other pages.
+   */
+  doctors?: (number | Doctor)[] | null;
+  /**
    * Empty text hides the button.
    */
   button?: {
@@ -2198,10 +2083,6 @@ export interface DoctorSliderBlock {
    * The wide picture behind the section.
    */
   image?: (number | null) | Media;
-  /**
-   * The doctors in the slider, in this order. Empty shows the doctors of the page's own clinic or state, or every doctor on other pages.
-   */
-  doctors?: (number | Doctor)[] | null;
   _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
@@ -2234,6 +2115,22 @@ export interface ReviewSliderBlock {
     };
     [k: string]: unknown;
   } | null;
+  /**
+   * A small italic line under the heading, for example Individual results may vary. Empty hides it.
+   */
+  note?: string | null;
+  /**
+   * The reviews in the slider, in this order. Empty shows the reviews of the page's own clinic or doctor, or the newest reviews on other pages.
+   */
+  reviews?: (number | Testimonial)[] | null;
+  /**
+   * How many reviews show when none are picked. Empty shows 12 on a clinic or doctor page and 8 elsewhere.
+   */
+  limit?: number | null;
+  /**
+   * The heading's level: large on a clinic or doctor page, smaller on the homepage.
+   */
+  headingLevel?: ('h2' | 'h3') | null;
   /**
    * Empty text hides the button.
    */
@@ -2291,22 +2188,6 @@ export interface ReviewSliderBlock {
    * The words on the last slide, which links where the button does, for example See All Reviews. Empty leaves that slide out.
    */
   seeAllText?: string | null;
-  /**
-   * The reviews in the slider, in this order. Empty shows the reviews of the page's own clinic or doctor, or the newest reviews on other pages.
-   */
-  reviews?: (number | Testimonial)[] | null;
-  /**
-   * A small italic line under the heading, for example Individual results may vary. Empty hides it.
-   */
-  note?: string | null;
-  /**
-   * How many reviews show when none are picked. Empty shows 12 on a clinic or doctor page and 8 elsewhere.
-   */
-  limit?: number | null;
-  /**
-   * The heading's level: large on a clinic or doctor page, smaller on the homepage.
-   */
-  headingLevel?: ('h2' | 'h3') | null;
   _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
@@ -2319,13 +2200,19 @@ export interface ReviewSliderBlock {
 export interface Testimonial {
   id: number;
   author: string;
-  company?: string | null;
-  position?: string | null;
   rating?: number | null;
+  content: string;
   /**
-   * The clinic or place shown under the reviewer's name, for example Downtown. Empty uses the clinic picked below.
+   * The clinic or place shown under the reviewer's name, for example Downtown. Empty uses the clinic this review is about.
    */
   place?: string | null;
+  /**
+   * The logo of the site the review was left on, for example Google. Empty shows no logo.
+   */
+  sourceLogo?: (number | null) | Media;
+  company?: string | null;
+  position?: string | null;
+  avatar?: (number | null) | Media;
   /**
    * The clinic this review is about. The clinic's page shows its own reviews.
    */
@@ -2334,12 +2221,6 @@ export interface Testimonial {
    * The doctor this review is about. The doctor's page shows their own reviews.
    */
   doctor?: (number | null) | Doctor;
-  /**
-   * The logo of the site the review was left on, for example Google. Empty shows no logo.
-   */
-  sourceLogo?: (number | null) | Media;
-  avatar?: (number | null) | Media;
-  content: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -2902,14 +2783,6 @@ export interface SiteCtaBlock {
  */
 export interface CenterTextBlock {
   /**
-   * The colour behind the section.
-   */
-  background?: ('bg' | 'white' | 'light-blue' | 'yellow') | null;
-  /**
-   * The section's name in links that jump to it, for example faqs. The site gives insurance-center its large centred style and faqs a compact list on the vein disease guide.
-   */
-  anchor?: string | null;
-  /**
    * The small capitals line above the heading. Empty hides it.
    */
   eyebrow?: string | null;
@@ -2931,10 +2804,6 @@ export interface CenterTextBlock {
     };
     [k: string]: unknown;
   } | null;
-  /**
-   * Large for a main section heading, small for a heading inside a longer page.
-   */
-  headingLevel?: ('h2' | 'h3') | null;
   /**
    * The paragraphs under the heading.
    */
@@ -3086,6 +2955,18 @@ export interface CenterTextBlock {
    * Filled for the usual button, outlined on a yellow section.
    */
   buttonStyle?: ('filled' | 'outline') | null;
+  /**
+   * Large for a main section heading, small for a heading inside a longer page.
+   */
+  headingLevel?: ('h2' | 'h3') | null;
+  /**
+   * The colour behind the section.
+   */
+  background?: ('bg' | 'white' | 'light-blue' | 'yellow') | null;
+  /**
+   * The section's name in links that jump to it, for example faqs. The site gives insurance-center its large centred style and faqs a compact list on the vein disease guide.
+   */
+  anchor?: string | null;
   _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
@@ -3373,10 +3254,6 @@ export interface ResultsSliderBlock {
  */
 export interface StateSitesBlock {
   /**
-   * The state whose clinics are shown. Empty uses the state whose page this is. Clinics come from the clinic records, so an edited address, rating or new clinic shows here.
-   */
-  state?: (number | null) | State;
-  /**
    * The word after each clinic's number of reviews, for example Reviews.
    */
   reviewsLabel?: string | null;
@@ -3384,6 +3261,10 @@ export interface StateSitesBlock {
    * The words on each clinic's button, for example Learn More. Empty hides the buttons.
    */
   linkText?: string | null;
+  /**
+   * The state whose clinics are shown. Empty uses the state whose page this is. Clinics come from the clinic records, so an edited address, rating or new clinic shows here.
+   */
+  state?: (number | null) | State;
   _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
@@ -3545,10 +3426,6 @@ export interface LocationsAccordionBlock {
  */
 export interface ClinicInfoBlock {
   /**
-   * The clinic whose doctors, map, hours and nearby areas the section shows. Empty shows the clinic whose page this is.
-   */
-  clinic?: (number | null) | Clinic;
-  /**
    * The callout at the top of the section. It shows only while the clinic is marked Accredited clinic.
    */
   accredit?: {
@@ -3598,6 +3475,14 @@ export interface ClinicInfoBlock {
    */
   doctorButton?: string | null;
   /**
+   * The heading over the opening hours, for example Clinic Hours. The hours come from the clinic.
+   */
+  hoursHeading?: string | null;
+  /**
+   * The heading over the nearby areas, for example Located Near. The areas come from the clinic's Located near list.
+   */
+  nearHeading?: string | null;
+  /**
    * The heading and paragraphs under the doctors, above the map.
    */
   text?: {
@@ -3615,10 +3500,6 @@ export interface ClinicInfoBlock {
     };
     [k: string]: unknown;
   } | null;
-  /**
-   * The heading over the opening hours, for example Clinic Hours. The hours come from the clinic.
-   */
-  hoursHeading?: string | null;
   /**
    * The heading over the directions, for example Getting To Our Vein Clinic. Empty hides it.
    */
@@ -3642,9 +3523,9 @@ export interface ClinicInfoBlock {
     [k: string]: unknown;
   } | null;
   /**
-   * The heading over the nearby areas, for example Located Near. The areas come from the clinic's Located near list.
+   * The clinic whose doctors, map, hours and nearby areas the section shows. Empty shows the clinic whose page this is.
    */
-  nearHeading?: string | null;
+  clinic?: (number | null) | Clinic;
   _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
@@ -3820,128 +3701,13 @@ export interface Author {
    * The name of the author
    */
   name: string;
-  avatar?: (number | null) | Media;
   /**
    * The name printed after Written by on articles and cards, per language. Empty uses the name above.
    */
   bylineName?: string | null;
+  avatar?: (number | null) | Media;
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "HeroVideoBlock".
- */
-export interface HeroVideoBlock {
-  /**
-   * The page's main heading. Set words in italics to give them the accent style.
-   */
-  heading: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  };
-  /**
-   * The paragraph under the heading.
-   */
-  text?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  /**
-   * Empty text hides the button.
-   */
-  button?: {
-    /**
-     * The words on the button, for example Book Now.
-     */
-    text?: string | null;
-    link?: {
-      kind?: ('internal' | 'relative' | 'external') | null;
-      newTab?: boolean | null;
-      /**
-       * Keeps working if the page is renamed or moved.
-       */
-      page?:
-        | ({
-            relationTo: 'page';
-            value: number | Page;
-          } | null)
-        | ({
-            relationTo: 'posts';
-            value: number | Post;
-          } | null)
-        | ({
-            relationTo: 'states';
-            value: number | State;
-          } | null)
-        | ({
-            relationTo: 'clinics';
-            value: number | Clinic;
-          } | null)
-        | ({
-            relationTo: 'doctors';
-            value: number | Doctor;
-          } | null)
-        | ({
-            relationTo: 'treatments';
-            value: number | Treatment;
-          } | null)
-        | ({
-            relationTo: 'conditions';
-            value: number | Condition;
-          } | null);
-      /**
-       * For pages that are not in the CMS. Starts with a slash, for example /contact.
-       */
-      path?: string | null;
-      /**
-       * A full URL (https://example.com), an email (mailto:hello@example.com) or a phone number (tel:+18005550100).
-       */
-      url?: string | null;
-    };
-  };
-  /**
-   * The phone number under the button, for example 888-555-0100. Empty hides the line.
-   */
-  phone?: string | null;
-  /**
-   * The words before the phone number, for example Or Call:.
-   */
-  phoneLabel?: string | null;
-  /**
-   * The full URL of the looping video beside the heading (an .mp4 file). After the migration this becomes a video stored in the CMS.
-   */
-  videoUrl?: string | null;
-  /**
-   * Shown while the video loads, and instead of it when no video is set.
-   */
-  poster?: (number | null) | Media;
-  _hidden?: boolean | null;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'heroVideo';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -4247,10 +4013,6 @@ export interface SimpleHeroBlock {
  */
 export interface BlogHeroBlock {
   /**
-   * The blog's logo above its name. Also shown under the articles list and on every article.
-   */
-  logo?: (number | null) | Media;
-  /**
    * The blog's name, shown as the page's main heading and in every article's breadcrumbs.
    */
   heading: string;
@@ -4258,6 +4020,10 @@ export interface BlogHeroBlock {
    * One sentence about the blog. Shown under the heading on phones, under the articles list and on every article.
    */
   text?: string | null;
+  /**
+   * The blog's logo above its name. Also shown under the articles list and on every article.
+   */
+  logo?: (number | null) | Media;
   /**
    * The article featured beside the heading. Empty features the newest article.
    */
@@ -4906,6 +4672,240 @@ export interface GlobalBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header".
+ */
+export interface Header {
+  id: number;
+  /**
+   * The name of the header
+   */
+  name?: string | null;
+  navItems?:
+    | {
+        label: string;
+        type: 'link' | 'dropdown';
+        link?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+        };
+        dropdown?: {
+          featured?: {
+            enabled?: boolean | null;
+            eyebrow?: string | null;
+            title?: string | null;
+            description?: string | null;
+            link?: {
+              type?: ('reference' | 'custom' | 'customPage') | null;
+              newTab?: boolean | null;
+              reference?:
+                | ({
+                    relationTo: 'page';
+                    value: number | Page;
+                  } | null)
+                | ({
+                    relationTo: 'posts';
+                    value: number | Post;
+                  } | null);
+              url?: string | null;
+              customPage?: ('blog' | 'search') | null;
+              label?: string | null;
+            };
+          };
+          links?:
+            | {
+                title: string;
+                description?: string | null;
+                link?: {
+                  type?: ('reference' | 'custom' | 'customPage') | null;
+                  newTab?: boolean | null;
+                  reference?:
+                    | ({
+                        relationTo: 'page';
+                        value: number | Page;
+                      } | null)
+                    | ({
+                        relationTo: 'posts';
+                        value: number | Post;
+                      } | null);
+                  url?: string | null;
+                  customPage?: ('blog' | 'search') | null;
+                };
+                id?: string | null;
+              }[]
+            | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  actions?:
+    | {
+        type?: ('reference' | 'custom' | 'customPage') | null;
+        newTab?: boolean | null;
+        reference?:
+          | ({
+              relationTo: 'page';
+              value: number | Page;
+            } | null)
+          | ({
+              relationTo: 'posts';
+              value: number | Post;
+            } | null);
+        url?: string | null;
+        customPage?: ('blog' | 'search') | null;
+        label: string;
+        /**
+         * Choose how the link should be rendered.
+         */
+        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * The second list of links in the phone menu, under the main menu.
+   */
+  moreLinks?:
+    | {
+        /**
+         * The link's words, for example Our Story.
+         */
+        label: string;
+        link?: {
+          kind?: ('internal' | 'relative' | 'external') | null;
+          newTab?: boolean | null;
+          /**
+           * Keeps working if the page is renamed or moved.
+           */
+          page?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null)
+            | ({
+                relationTo: 'states';
+                value: number | State;
+              } | null)
+            | ({
+                relationTo: 'clinics';
+                value: number | Clinic;
+              } | null)
+            | ({
+                relationTo: 'doctors';
+                value: number | Doctor;
+              } | null)
+            | ({
+                relationTo: 'treatments';
+                value: number | Treatment;
+              } | null)
+            | ({
+                relationTo: 'conditions';
+                value: number | Condition;
+              } | null);
+          /**
+           * For pages that are not in the CMS. Starts with a slash, for example /contact.
+           */
+          path?: string | null;
+          /**
+           * A full URL (https://example.com), an email (mailto:hello@example.com) or a phone number (tel:+18005550100).
+           */
+          url?: string | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * The thin bar above the menu. Empty text hides it.
+   */
+  announcement?: {
+    /**
+     * The bar's words, for example Take the Vein Health Quiz.
+     */
+    text?: string | null;
+    link?: {
+      kind?: ('internal' | 'relative' | 'external') | null;
+      newTab?: boolean | null;
+      /**
+       * Keeps working if the page is renamed or moved.
+       */
+      page?:
+        | ({
+            relationTo: 'page';
+            value: number | Page;
+          } | null)
+        | ({
+            relationTo: 'posts';
+            value: number | Post;
+          } | null)
+        | ({
+            relationTo: 'states';
+            value: number | State;
+          } | null)
+        | ({
+            relationTo: 'clinics';
+            value: number | Clinic;
+          } | null)
+        | ({
+            relationTo: 'doctors';
+            value: number | Doctor;
+          } | null)
+        | ({
+            relationTo: 'treatments';
+            value: number | Treatment;
+          } | null)
+        | ({
+            relationTo: 'conditions';
+            value: number | Condition;
+          } | null);
+      /**
+       * For pages that are not in the CMS. Starts with a slash, for example /contact.
+       */
+      path?: string | null;
+      /**
+       * A full URL (https://example.com), an email (mailto:hello@example.com) or a phone number (tel:+18005550100).
+       */
+      url?: string | null;
+    };
+  };
+  /**
+   * The words before the phone number, for example Or Call:.
+   */
+  phoneLabel?: string | null;
+  /**
+   * The phone number in the phone menu, for example 888-555-0100.
+   */
+  phone?: string | null;
+  /**
+   * The link to the clinics list in the phone header, for example See Locations. The number of clinics is added automatically.
+   */
+  locationsLabel?: string | null;
+  /**
+   * The logo to display in the header
+   */
+  logo: number | Media;
+  /**
+   * A smaller logo for phones. Empty uses the main logo.
+   */
+  mobileLogo?: (number | null) | Media;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "footer".
  */
 export interface Footer {
@@ -4914,11 +4914,6 @@ export interface Footer {
    * The name of the footer
    */
   name: string;
-  /**
-   * The logo to display in the footer
-   */
-  logo: number | Media;
-  description?: string | null;
   linkGroups?:
     | {
         label: string;
@@ -4966,13 +4961,18 @@ export interface Footer {
       }[]
     | null;
   /**
-   * Copyright text shown at the bottom
+   * The social media icons in the footer and the phone menu.
    */
-  copyrightText?: string | null;
-  /**
-   * The phone number in the footer, for example 888-555-0100.
-   */
-  phone?: string | null;
+  social?:
+    | {
+        network: 'facebook' | 'youtube' | 'instagram' | 'tiktok' | 'pinterest' | 'twitter' | 'linkedin';
+        /**
+         * The profile's full URL, for example https://www.instagram.com/yourclinic.
+         */
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
   /**
    * The heading above the list of states and clinics, for example Find a clinic. The list itself is built from the States and Clinics.
    */
@@ -5005,19 +5005,6 @@ export interface Footer {
     } | null;
   };
   /**
-   * The social media icons in the footer and the phone menu.
-   */
-  social?:
-    | {
-        network: 'facebook' | 'youtube' | 'instagram' | 'tiktok' | 'pinterest' | 'twitter' | 'linkedin';
-        /**
-         * The profile's full URL, for example https://www.instagram.com/yourclinic.
-         */
-        url: string;
-        id?: string | null;
-      }[]
-    | null;
-  /**
    * The note at the very bottom of every page.
    */
   disclaimer?: {
@@ -5030,6 +5017,11 @@ export interface Footer {
      */
     text?: string | null;
   };
+  /**
+   * Copyright text shown at the bottom
+   */
+  copyrightText?: string | null;
+  description?: string | null;
   /**
    * The newsletter band above the footer on every page. Empty title hides it.
    */
@@ -5069,6 +5061,14 @@ export interface Footer {
      */
     mobileImage?: (number | null) | Media;
   };
+  /**
+   * The logo to display in the footer
+   */
+  logo: number | Media;
+  /**
+   * The phone number in the footer, for example 888-555-0100.
+   */
+  phone?: string | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -5246,13 +5246,13 @@ export interface Preset {
           };
         };
         /**
-         * The phone number under the button, for example 888-555-0100. Empty hides the line.
-         */
-        phone?: string | null;
-        /**
          * The words before the phone number, for example Or Call:.
          */
         phoneLabel?: string | null;
+        /**
+         * The phone number under the button, for example 888-555-0100. Empty hides the line.
+         */
+        phone?: string | null;
         /**
          * The full URL of the looping video beside the heading (an .mp4 file). After the migration this becomes a video stored in the CMS.
          */
@@ -5554,10 +5554,6 @@ export interface Preset {
       }
     | {
         /**
-         * The blog's logo above its name. Also shown under the articles list and on every article.
-         */
-        logo?: (number | null) | Media;
-        /**
          * The blog's name, shown as the page's main heading and in every article's breadcrumbs.
          */
         heading: string;
@@ -5565,6 +5561,10 @@ export interface Preset {
          * One sentence about the blog. Shown under the heading on phones, under the articles list and on every article.
          */
         text?: string | null;
+        /**
+         * The blog's logo above its name. Also shown under the articles list and on every article.
+         */
+        logo?: (number | null) | Media;
         /**
          * The article featured beside the heading. Empty features the newest article.
          */
@@ -5908,18 +5908,6 @@ export interface Preset {
           };
         };
         /**
-         * Which side the picture or video sits on.
-         */
-        side?: ('left' | 'right') | null;
-        /**
-         * How much room the section takes.
-         */
-        size?: ('regular' | 'full' | 'small') | null;
-        /**
-         * The colour behind the section.
-         */
-        background?: ('none' | 'white' | 'bg' | 'light-blue' | 'lightest-blue' | 'tertiary-blue' | 'yellow') | null;
-        /**
          * The picture beside the text. With a video set, it is the still shown before play.
          */
         image?: (number | null) | Media;
@@ -5931,6 +5919,18 @@ export interface Preset {
          * The full URL of a video (an .mp4 file) played when the picture is clicked. Empty shows the picture only. After the migration this becomes a video stored in the CMS.
          */
         videoUrl?: string | null;
+        /**
+         * Which side the picture or video sits on.
+         */
+        side?: ('left' | 'right') | null;
+        /**
+         * How much room the section takes.
+         */
+        size?: ('regular' | 'full' | 'small') | null;
+        /**
+         * The colour behind the section.
+         */
+        background?: ('none' | 'white' | 'bg' | 'light-blue' | 'lightest-blue' | 'tertiary-blue' | 'yellow') | null;
         /**
          * The section's name in links that jump to it, for example as-seen-in. Some names carry their own style on the site. Empty leaves it out.
          */
@@ -6085,6 +6085,10 @@ export interface Preset {
           [k: string]: unknown;
         } | null;
         /**
+         * The doctors in the slider, in this order. Empty shows the doctors of the page's own clinic or state, or every doctor on other pages.
+         */
+        doctors?: (number | Doctor)[] | null;
+        /**
          * Empty text hides the button.
          */
         button?: {
@@ -6198,10 +6202,6 @@ export interface Preset {
          * The wide picture behind the section.
          */
         image?: (number | null) | Media;
-        /**
-         * The doctors in the slider, in this order. Empty shows the doctors of the page's own clinic or state, or every doctor on other pages.
-         */
-        doctors?: (number | Doctor)[] | null;
         _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
@@ -6230,6 +6230,22 @@ export interface Preset {
           };
           [k: string]: unknown;
         } | null;
+        /**
+         * A small italic line under the heading, for example Individual results may vary. Empty hides it.
+         */
+        note?: string | null;
+        /**
+         * The reviews in the slider, in this order. Empty shows the reviews of the page's own clinic or doctor, or the newest reviews on other pages.
+         */
+        reviews?: (number | Testimonial)[] | null;
+        /**
+         * How many reviews show when none are picked. Empty shows 12 on a clinic or doctor page and 8 elsewhere.
+         */
+        limit?: number | null;
+        /**
+         * The heading's level: large on a clinic or doctor page, smaller on the homepage.
+         */
+        headingLevel?: ('h2' | 'h3') | null;
         /**
          * Empty text hides the button.
          */
@@ -6287,22 +6303,6 @@ export interface Preset {
          * The words on the last slide, which links where the button does, for example See All Reviews. Empty leaves that slide out.
          */
         seeAllText?: string | null;
-        /**
-         * The reviews in the slider, in this order. Empty shows the reviews of the page's own clinic or doctor, or the newest reviews on other pages.
-         */
-        reviews?: (number | Testimonial)[] | null;
-        /**
-         * A small italic line under the heading, for example Individual results may vary. Empty hides it.
-         */
-        note?: string | null;
-        /**
-         * How many reviews show when none are picked. Empty shows 12 on a clinic or doctor page and 8 elsewhere.
-         */
-        limit?: number | null;
-        /**
-         * The heading's level: large on a clinic or doctor page, smaller on the homepage.
-         */
-        headingLevel?: ('h2' | 'h3') | null;
         _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
@@ -6843,14 +6843,6 @@ export interface Preset {
       }
     | {
         /**
-         * The colour behind the section.
-         */
-        background?: ('bg' | 'white' | 'light-blue' | 'yellow') | null;
-        /**
-         * The section's name in links that jump to it, for example faqs. The site gives insurance-center its large centred style and faqs a compact list on the vein disease guide.
-         */
-        anchor?: string | null;
-        /**
          * The small capitals line above the heading. Empty hides it.
          */
         eyebrow?: string | null;
@@ -6872,10 +6864,6 @@ export interface Preset {
           };
           [k: string]: unknown;
         } | null;
-        /**
-         * Large for a main section heading, small for a heading inside a longer page.
-         */
-        headingLevel?: ('h2' | 'h3') | null;
         /**
          * The paragraphs under the heading.
          */
@@ -7027,6 +7015,18 @@ export interface Preset {
          * Filled for the usual button, outlined on a yellow section.
          */
         buttonStyle?: ('filled' | 'outline') | null;
+        /**
+         * Large for a main section heading, small for a heading inside a longer page.
+         */
+        headingLevel?: ('h2' | 'h3') | null;
+        /**
+         * The colour behind the section.
+         */
+        background?: ('bg' | 'white' | 'light-blue' | 'yellow') | null;
+        /**
+         * The section's name in links that jump to it, for example faqs. The site gives insurance-center its large centred style and faqs a compact list on the vein disease guide.
+         */
+        anchor?: string | null;
         _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
@@ -7302,10 +7302,6 @@ export interface Preset {
       }
     | {
         /**
-         * The state whose clinics are shown. Empty uses the state whose page this is. Clinics come from the clinic records, so an edited address, rating or new clinic shows here.
-         */
-        state?: (number | null) | State;
-        /**
          * The word after each clinic's number of reviews, for example Reviews.
          */
         reviewsLabel?: string | null;
@@ -7313,6 +7309,10 @@ export interface Preset {
          * The words on each clinic's button, for example Learn More. Empty hides the buttons.
          */
         linkText?: string | null;
+        /**
+         * The state whose clinics are shown. Empty uses the state whose page this is. Clinics come from the clinic records, so an edited address, rating or new clinic shows here.
+         */
+        state?: (number | null) | State;
         _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
@@ -7462,10 +7462,6 @@ export interface Preset {
       }
     | {
         /**
-         * The clinic whose doctors, map, hours and nearby areas the section shows. Empty shows the clinic whose page this is.
-         */
-        clinic?: (number | null) | Clinic;
-        /**
          * The callout at the top of the section. It shows only while the clinic is marked Accredited clinic.
          */
         accredit?: {
@@ -7515,6 +7511,14 @@ export interface Preset {
          */
         doctorButton?: string | null;
         /**
+         * The heading over the opening hours, for example Clinic Hours. The hours come from the clinic.
+         */
+        hoursHeading?: string | null;
+        /**
+         * The heading over the nearby areas, for example Located Near. The areas come from the clinic's Located near list.
+         */
+        nearHeading?: string | null;
+        /**
          * The heading and paragraphs under the doctors, above the map.
          */
         text?: {
@@ -7532,10 +7536,6 @@ export interface Preset {
           };
           [k: string]: unknown;
         } | null;
-        /**
-         * The heading over the opening hours, for example Clinic Hours. The hours come from the clinic.
-         */
-        hoursHeading?: string | null;
         /**
          * The heading over the directions, for example Getting To Our Vein Clinic. Empty hides it.
          */
@@ -7559,9 +7559,9 @@ export interface Preset {
           [k: string]: unknown;
         } | null;
         /**
-         * The heading over the nearby areas, for example Located Near. The areas come from the clinic's Located near list.
+         * The clinic whose doctors, map, hours and nearby areas the section shows. Empty shows the clinic whose page this is.
          */
-        nearHeading?: string | null;
+        clinic?: (number | null) | Clinic;
         _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
@@ -8924,7 +8924,6 @@ export interface MediaSelect<T extends boolean = true> {
 export interface PageSelect<T extends boolean = true> {
   _abPassPercentage?: T;
   title?: T;
-  header?: T;
   hero?:
     | T
     | {
@@ -8972,7 +8971,6 @@ export interface PageSelect<T extends boolean = true> {
         rawHtml?: T | RawHtmlBlockSelect<T>;
         globalSectionSlot?: T | GlobalSectionSlotBlockSelect<T>;
       };
-  footer?: T;
   meta?:
     | T
     | {
@@ -8985,6 +8983,8 @@ export interface PageSelect<T extends boolean = true> {
   slug?: T;
   parent?: T;
   template?: T;
+  header?: T;
+  footer?: T;
   breadcrumbs?:
     | T
     | {
@@ -9021,8 +9021,8 @@ export interface HeroVideoBlockSelect<T extends boolean = true> {
               url?: T;
             };
       };
-  phone?: T;
   phoneLabel?: T;
+  phone?: T;
   videoUrl?: T;
   poster?: T;
   _hidden?: T;
@@ -9105,9 +9105,9 @@ export interface SimpleHeroBlockSelect<T extends boolean = true> {
  * via the `definition` "BlogHeroBlock_select".
  */
 export interface BlogHeroBlockSelect<T extends boolean = true> {
-  logo?: T;
   heading?: T;
   text?: T;
+  logo?: T;
   post?: T;
   badge?: T;
   buttonText?: T;
@@ -9246,12 +9246,12 @@ export interface MediaTextBlockSelect<T extends boolean = true> {
               url?: T;
             };
       };
-  side?: T;
-  size?: T;
-  background?: T;
   image?: T;
   imageStyle?: T;
   videoUrl?: T;
+  side?: T;
+  size?: T;
+  background?: T;
   anchor?: T;
   _hidden?: T;
   id?: T;
@@ -9295,6 +9295,7 @@ export interface InsuranceBlockSelect<T extends boolean = true> {
 export interface DoctorSliderBlockSelect<T extends boolean = true> {
   heading?: T;
   text?: T;
+  doctors?: T;
   button?:
     | T
     | {
@@ -9325,7 +9326,6 @@ export interface DoctorSliderBlockSelect<T extends boolean = true> {
             };
       };
   image?: T;
-  doctors?: T;
   _hidden?: T;
   id?: T;
   blockName?: T;
@@ -9337,6 +9337,10 @@ export interface DoctorSliderBlockSelect<T extends boolean = true> {
 export interface ReviewSliderBlockSelect<T extends boolean = true> {
   eyebrow?: T;
   heading?: T;
+  note?: T;
+  reviews?: T;
+  limit?: T;
+  headingLevel?: T;
   button?:
     | T
     | {
@@ -9352,10 +9356,6 @@ export interface ReviewSliderBlockSelect<T extends boolean = true> {
             };
       };
   seeAllText?: T;
-  reviews?: T;
-  note?: T;
-  limit?: T;
-  headingLevel?: T;
   _hidden?: T;
   id?: T;
   blockName?: T;
@@ -9518,11 +9518,8 @@ export interface SiteCtaBlockSelect<T extends boolean = true> {
  * via the `definition` "CenterTextBlock_select".
  */
 export interface CenterTextBlockSelect<T extends boolean = true> {
-  background?: T;
-  anchor?: T;
   eyebrow?: T;
   heading?: T;
-  headingLevel?: T;
   text?: T;
   kind?: T;
   faqs?:
@@ -9554,6 +9551,9 @@ export interface CenterTextBlockSelect<T extends boolean = true> {
             };
       };
   buttonStyle?: T;
+  headingLevel?: T;
+  background?: T;
+  anchor?: T;
   _hidden?: T;
   id?: T;
   blockName?: T;
@@ -9645,9 +9645,9 @@ export interface ResultsSliderBlockSelect<T extends boolean = true> {
  * via the `definition` "StateSitesBlock_select".
  */
 export interface StateSitesBlockSelect<T extends boolean = true> {
-  state?: T;
   reviewsLabel?: T;
   linkText?: T;
+  state?: T;
   _hidden?: T;
   id?: T;
   blockName?: T;
@@ -9705,7 +9705,6 @@ export interface LocationsAccordionBlockSelect<T extends boolean = true> {
  * via the `definition` "ClinicInfoBlock_select".
  */
 export interface ClinicInfoBlockSelect<T extends boolean = true> {
-  clinic?: T;
   accredit?:
     | T
     | {
@@ -9714,11 +9713,12 @@ export interface ClinicInfoBlockSelect<T extends boolean = true> {
         image?: T;
       };
   doctorButton?: T;
-  text?: T;
   hoursHeading?: T;
+  nearHeading?: T;
+  text?: T;
   directionsHeading?: T;
   directions?: T;
-  nearHeading?: T;
+  clinic?: T;
   _hidden?: T;
   id?: T;
   blockName?: T;
@@ -10217,14 +10217,6 @@ export interface StatesSelect<T extends boolean = true> {
   heroImage?: T;
   heroMobileImage?: T;
   heroBadge?: T;
-  phone?: T;
-  rating?:
-    | T
-    | {
-        value?: T;
-        count?: T;
-      };
-  clinics?: T;
   blocks?:
     | T
     | {
@@ -10250,6 +10242,14 @@ export interface StatesSelect<T extends boolean = true> {
         trending?: T | TrendingBlockSelect<T>;
         blogList?: T | BlogListBlockSelect<T>;
       };
+  phone?: T;
+  rating?:
+    | T
+    | {
+        value?: T;
+        count?: T;
+      };
+  clinics?: T;
   meta?:
     | T
     | {
@@ -10271,6 +10271,7 @@ export interface ClinicsSelect<T extends boolean = true> {
   name?: T;
   heroTitle?: T;
   heroSubtitle?: T;
+  photo?: T;
   hero?:
     | T
     | {
@@ -10292,7 +10293,6 @@ export interface ClinicsSelect<T extends boolean = true> {
       };
   description?: T;
   locatedNear?: T;
-  photo?: T;
   blocks?:
     | T
     | {
@@ -10319,6 +10319,7 @@ export interface ClinicsSelect<T extends boolean = true> {
         blogList?: T | BlogListBlockSelect<T>;
       };
   phone?: T;
+  mapUrl?: T;
   address?:
     | T
     | {
@@ -10327,7 +10328,6 @@ export interface ClinicsSelect<T extends boolean = true> {
         region?: T;
         postalCode?: T;
       };
-  mapUrl?: T;
   geo?:
     | T
     | {
@@ -10432,11 +10432,11 @@ export interface DoctorsSelect<T extends boolean = true> {
  */
 export interface TreatmentsSelect<T extends boolean = true> {
   title?: T;
-  summary?: T;
-  cardImage?: T;
   heroTitle?: T;
   heroIntro?: T;
   heroImage?: T;
+  summary?: T;
+  cardImage?: T;
   blocks?:
     | T
     | {
@@ -10546,8 +10546,8 @@ export interface CategoriesSelect<T extends boolean = true> {
  */
 export interface AuthorsSelect<T extends boolean = true> {
   name?: T;
-  avatar?: T;
   bylineName?: T;
+  avatar?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -10624,13 +10624,13 @@ export interface PostsSelect<T extends boolean = true> {
       };
   generateSlug?: T;
   slug?: T;
-  publishedAt?: T;
-  readingTime?: T;
-  readingTimeOverride?: T;
-  updatedDate?: T;
   categories?: T;
   authors?: T;
   reviewedBy?: T;
+  publishedAt?: T;
+  updatedDate?: T;
+  readingTime?: T;
+  readingTimeOverride?: T;
   relatedPosts?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -10642,15 +10642,15 @@ export interface PostsSelect<T extends boolean = true> {
  */
 export interface TestimonialsSelect<T extends boolean = true> {
   author?: T;
+  rating?: T;
+  content?: T;
+  place?: T;
+  sourceLogo?: T;
   company?: T;
   position?: T;
-  rating?: T;
-  place?: T;
+  avatar?: T;
   clinic?: T;
   doctor?: T;
-  sourceLogo?: T;
-  avatar?: T;
-  content?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -10660,7 +10660,6 @@ export interface TestimonialsSelect<T extends boolean = true> {
  */
 export interface HeaderSelect<T extends boolean = true> {
   name?: T;
-  logo?: T;
   navItems?:
     | T
     | {
@@ -10727,24 +10726,6 @@ export interface HeaderSelect<T extends boolean = true> {
         appearance?: T;
         id?: T;
       };
-  mobileLogo?: T;
-  announcement?:
-    | T
-    | {
-        text?: T;
-        link?:
-          | T
-          | {
-              kind?: T;
-              newTab?: T;
-              page?: T;
-              path?: T;
-              url?: T;
-            };
-      };
-  phone?: T;
-  phoneLabel?: T;
-  locationsLabel?: T;
   moreLinks?:
     | T
     | {
@@ -10760,6 +10741,25 @@ export interface HeaderSelect<T extends boolean = true> {
             };
         id?: T;
       };
+  announcement?:
+    | T
+    | {
+        text?: T;
+        link?:
+          | T
+          | {
+              kind?: T;
+              newTab?: T;
+              page?: T;
+              path?: T;
+              url?: T;
+            };
+      };
+  phoneLabel?: T;
+  phone?: T;
+  locationsLabel?: T;
+  logo?: T;
+  mobileLogo?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -10770,8 +10770,6 @@ export interface HeaderSelect<T extends boolean = true> {
  */
 export interface FooterSelect<T extends boolean = true> {
   name?: T;
-  logo?: T;
-  description?: T;
   linkGroups?:
     | T
     | {
@@ -10808,15 +10806,6 @@ export interface FooterSelect<T extends boolean = true> {
             };
         id?: T;
       };
-  copyrightText?: T;
-  phone?: T;
-  locationsHeading?: T;
-  about?:
-    | T
-    | {
-        heading?: T;
-        text?: T;
-      };
   social?:
     | T
     | {
@@ -10824,12 +10813,21 @@ export interface FooterSelect<T extends boolean = true> {
         url?: T;
         id?: T;
       };
+  locationsHeading?: T;
+  about?:
+    | T
+    | {
+        heading?: T;
+        text?: T;
+      };
   disclaimer?:
     | T
     | {
         heading?: T;
         text?: T;
       };
+  copyrightText?: T;
+  description?: T;
   newsletter?:
     | T
     | {
@@ -10839,6 +10837,8 @@ export interface FooterSelect<T extends boolean = true> {
         image?: T;
         mobileImage?: T;
       };
+  logo?: T;
+  phone?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -10939,8 +10939,8 @@ export interface PresetsSelect<T extends boolean = true> {
                           url?: T;
                         };
                   };
-              phone?: T;
               phoneLabel?: T;
+              phone?: T;
               videoUrl?: T;
               poster?: T;
               _hidden?: T;
@@ -11015,9 +11015,9 @@ export interface PresetsSelect<T extends boolean = true> {
         blogHero?:
           | T
           | {
-              logo?: T;
               heading?: T;
               text?: T;
+              logo?: T;
               post?: T;
               badge?: T;
               buttonText?: T;
@@ -11139,12 +11139,12 @@ export interface PresetsSelect<T extends boolean = true> {
                           url?: T;
                         };
                   };
-              side?: T;
-              size?: T;
-              background?: T;
               image?: T;
               imageStyle?: T;
               videoUrl?: T;
+              side?: T;
+              size?: T;
+              background?: T;
               anchor?: T;
               _hidden?: T;
               id?: T;
@@ -11184,6 +11184,7 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               heading?: T;
               text?: T;
+              doctors?: T;
               button?:
                 | T
                 | {
@@ -11214,7 +11215,6 @@ export interface PresetsSelect<T extends boolean = true> {
                         };
                   };
               image?: T;
-              doctors?: T;
               _hidden?: T;
               id?: T;
               blockName?: T;
@@ -11224,6 +11224,10 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               eyebrow?: T;
               heading?: T;
+              note?: T;
+              reviews?: T;
+              limit?: T;
+              headingLevel?: T;
               button?:
                 | T
                 | {
@@ -11239,10 +11243,6 @@ export interface PresetsSelect<T extends boolean = true> {
                         };
                   };
               seeAllText?: T;
-              reviews?: T;
-              note?: T;
-              limit?: T;
-              headingLevel?: T;
               _hidden?: T;
               id?: T;
               blockName?: T;
@@ -11393,11 +11393,8 @@ export interface PresetsSelect<T extends boolean = true> {
         centerText?:
           | T
           | {
-              background?: T;
-              anchor?: T;
               eyebrow?: T;
               heading?: T;
-              headingLevel?: T;
               text?: T;
               kind?: T;
               faqs?:
@@ -11429,6 +11426,9 @@ export interface PresetsSelect<T extends boolean = true> {
                         };
                   };
               buttonStyle?: T;
+              headingLevel?: T;
+              background?: T;
+              anchor?: T;
               _hidden?: T;
               id?: T;
               blockName?: T;
@@ -11514,9 +11514,9 @@ export interface PresetsSelect<T extends boolean = true> {
         stateSites?:
           | T
           | {
-              state?: T;
               reviewsLabel?: T;
               linkText?: T;
+              state?: T;
               _hidden?: T;
               id?: T;
               blockName?: T;
@@ -11568,7 +11568,6 @@ export interface PresetsSelect<T extends boolean = true> {
         clinicInfo?:
           | T
           | {
-              clinic?: T;
               accredit?:
                 | T
                 | {
@@ -11577,11 +11576,12 @@ export interface PresetsSelect<T extends boolean = true> {
                     image?: T;
                   };
               doctorButton?: T;
-              text?: T;
               hoursHeading?: T;
+              nearHeading?: T;
+              text?: T;
               directionsHeading?: T;
               directions?: T;
-              nearHeading?: T;
+              clinic?: T;
               _hidden?: T;
               id?: T;
               blockName?: T;
@@ -12360,19 +12360,19 @@ export interface SiteSetting {
     };
   };
   notFound?: {
-    header?: (number | null) | Header;
     title?: string | null;
     description?: string | null;
+    header?: (number | null) | Header;
     footer?: (number | null) | Footer;
   };
   blog: {
-    header?: (number | null) | Header;
     eyebrow?: string | null;
     title: string;
     description: string;
     searchPlaceholder?: string | null;
     readMoreLabel: string;
     relatedPostsLabel: string;
+    header?: (number | null) | Header;
     footer?: (number | null) | Footer;
     meta?: {
       title?: string | null;
@@ -12454,21 +12454,21 @@ export interface SiteSettingsSelect<T extends boolean = true> {
   notFound?:
     | T
     | {
-        header?: T;
         title?: T;
         description?: T;
+        header?: T;
         footer?: T;
       };
   blog?:
     | T
     | {
-        header?: T;
         eyebrow?: T;
         title?: T;
         description?: T;
         searchPlaceholder?: T;
         readMoreLabel?: T;
         relatedPostsLabel?: T;
+        header?: T;
         footer?: T;
         meta?:
           | T
