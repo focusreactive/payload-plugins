@@ -27,6 +27,8 @@ const SentenceLengthInTextAssessment = commonJsDefault(sentenceLengthInTextAsses
 
 const SEO_ASSESSOR_SHORT_TITLE_SCORE = YOAST_GOOD_SCORE;
 
+const ALLOW_SHORT_TITLE = true;
+
 const DENSITY_OVER_MAXIMUM_MARGIN =
   YOAST_DENSITY_OVER_MAXIMUM - DEFAULT_SEO_THRESHOLDS.keyphraseDensity.max;
 
@@ -89,7 +91,7 @@ function titleWidthAssessment({ titleWidth }: SeoThresholds): unknown {
       ...definedOnly({ maxLength: titleWidth?.max }),
       scores: { widthTooShort: SEO_ASSESSOR_SHORT_TITLE_SCORE },
     },
-    true
+    ALLOW_SHORT_TITLE
   );
 }
 
