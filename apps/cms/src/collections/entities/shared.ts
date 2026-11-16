@@ -9,7 +9,7 @@ import type {
 } from "payload";
 
 import { siteBlocks } from "@/blocks/siteBlocks";
-import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import { anyone, authorDraft, or, superAdmin, user } from "@/lib/access";
 import { entityPath, withLocalePrefix } from "@/lib/config/entityRoutes";
 import type { EntityCollection } from "@/lib/config/entityRoutes";
 import {
@@ -24,10 +24,10 @@ import { generateSeoFields } from "@/lib/utils/seoFields";
 export const ENTITY_ADMIN_GROUP = "Directory";
 
 export const entityAccess: CollectionConfig["access"] = {
-  create: or(superAdmin, user, author),
+  create: or(superAdmin, user, authorDraft),
   delete: or(superAdmin, user),
   read: anyone,
-  update: or(superAdmin, user, author),
+  update: or(superAdmin, user, authorDraft),
 };
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;

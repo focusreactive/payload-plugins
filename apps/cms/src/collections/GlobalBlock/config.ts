@@ -1,7 +1,7 @@
 import type { CollectionConfig } from "payload";
 
 import { contentBlocks } from "@/blocks/contentBlocks";
-import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import { anyone, authorDraft, or, superAdmin, user } from "@/lib/access";
 import {
   createLiveBeforeDocumentControls,
   createLivePreviewVersions,
@@ -25,10 +25,10 @@ const globalBlockPreviewPath = (id: unknown, locale: string): string => {
 
 export const GlobalBlock: CollectionConfig<"globalBlock"> = {
   access: {
-    create: or(superAdmin, user, author),
-    delete: or(superAdmin, user, author),
+    create: or(superAdmin, user, authorDraft),
+    delete: or(superAdmin, user),
     read: anyone,
-    update: or(superAdmin, user, author),
+    update: or(superAdmin, user, authorDraft),
   },
   admin: {
     components: {

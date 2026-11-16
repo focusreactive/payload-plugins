@@ -6,7 +6,7 @@ import {
   createLiveBeforeDocumentControls,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
-import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import { anyone, authorDraft, or, superAdmin, user } from "@/lib/access";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { createSharedSlugField } from "@/lib/fields/slugField";
@@ -20,10 +20,10 @@ import { validateReservedSlug, validateReservedPath } from "./hooks/validateRese
 
 export const Page: CollectionConfig<"page"> = {
   access: {
-    create: or(superAdmin, user, author),
-    delete: or(superAdmin, user, author),
+    create: or(superAdmin, user, authorDraft),
+    delete: or(superAdmin, user),
     read: anyone,
-    update: or(superAdmin, user, author),
+    update: or(superAdmin, user, authorDraft),
   },
   admin: {
     components: {
