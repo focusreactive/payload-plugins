@@ -12,17 +12,12 @@ import type { CategoryResult, CheckResult } from "../../types/analysis";
 import { enrich } from "../utils/enrich";
 import { toCategory } from "../utils/toCategory";
 import type { PaperLike } from "../../types/paper";
-import type { ResolvedSeoThresholds } from "../../../types/config";
 
-function fleschCheck(
-  researcher: YoastResearcher,
-  ctx: RecoContext,
-  thresholds: ResolvedSeoThresholds
-): CheckResult | undefined {
+function fleschCheck(researcher: YoastResearcher, ctx: RecoContext): CheckResult | undefined {
   const r = getResearch<{ score: number }>(researcher, "getFleschReadingScore");
   if (!r || r.score < 0) return undefined;
 
-  const status = fleschToStatus(r.score, thresholds.fleschReadingEase);
+  const status = fleschToStatus(r.score, ctx.thresholds?.fleschReadingEase);
 
   return {
     id: "fleschReadingEase",
@@ -44,7 +39,7 @@ export function deriveReadability(
   const assessor = new ContentAssessor(makeResearcher(paper));
   configureReadabilityAssessor(assessor, thresholds);
   const readRaw = runAssessor(assessor, ctx, paper);
-  const flesch = fleschCheck(researcher, ctx, thresholds.values);
+  const flesch = fleschCheck(researcher, ctx);
   const readChecks = enrich(
     flesch ? [...readRaw, flesch] : readRaw,
     paper as PaperLike,

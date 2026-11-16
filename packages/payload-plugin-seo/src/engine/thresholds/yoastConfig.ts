@@ -1,10 +1,8 @@
+import { isRecord } from "../../utils/isRecord";
+
 export type YoastConfig = Record<string, unknown>;
 
 type ConfigAdjustment = (config: YoastConfig) => YoastConfig;
-
-function isRecord(value: unknown): value is YoastConfig {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 export function applyOverrides(config: YoastConfig, overrides: YoastConfig): YoastConfig {
   for (const [key, value] of Object.entries(overrides)) {

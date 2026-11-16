@@ -5,6 +5,7 @@ import {
   SHORT_TITLE_WIDTH_PX,
 } from "../../constants";
 import type { ResolvedSeoThresholds, SeoThresholds } from "../../types/config";
+import { isRecord } from "../isRecord";
 
 type ThresholdCheck = keyof ResolvedSeoThresholds;
 
@@ -44,10 +45,6 @@ function fail(message: string): never {
 
 function pathOf(...parts: string[]): string {
   return ["thresholds", ...parts].join(".");
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function assertKnown(input: unknown): void {

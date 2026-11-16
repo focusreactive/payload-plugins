@@ -4,12 +4,11 @@ import { fieldRangeOf, fieldRangesFor } from "../../measure/fieldRanges";
 import type { RangeOverride } from "../../measure/measure";
 import type { SeoFieldKind } from "../../server/generate/prompts";
 import type { ResolvedSeoThresholds } from "../../types/config";
+import { isRecord } from "../isRecord";
 import { readNumber } from "../readNumber";
 import { getComponentPath } from "./getComponentPath";
 
 const SEO_FIELD_PATH = getComponentPath("components/SeoField", "SeoField");
-
-type UnknownRecord = Record<string, unknown>;
 
 interface SeoFieldRange {
   path: string;
@@ -17,15 +16,11 @@ interface SeoFieldRange {
   range: RangeOverride | undefined;
 }
 
-function isRecord(value: unknown): value is UnknownRecord {
-  return typeof value === "object" && value !== null;
-}
-
-function recordsIn(value: unknown): UnknownRecord[] {
+function recordsIn(value: unknown): Record<string, unknown>[] {
   return Array.isArray(value) ? value.filter(isRecord) : [];
 }
 
-function seoFieldOf(field: UnknownRecord, path: string): SeoFieldRange | undefined {
+function seoFieldOf(field: Record<string, unknown>, path: string): SeoFieldRange | undefined {
   const admin = isRecord(field.admin) ? field.admin : {};
   const components = isRecord(admin.components) ? admin.components : {};
   const component = isRecord(components.Field) ? components.Field : {};

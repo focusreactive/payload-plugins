@@ -7,7 +7,7 @@ import SentenceLengthInTextAssessment from "yoastseo/build/scoring/assessments/r
 import {
   DEFAULT_SEO_THRESHOLDS,
   YOAST_DENSITY_OVER_MAXIMUM,
-  YOAST_SEO_ASSESSOR_SHORT_TITLE_SCORE,
+  YOAST_GOOD_SCORE,
   YOAST_TEXT_LENGTH_BELOW_MINIMUM,
   YOAST_TEXT_LENGTH_VERY_FAR_BELOW_MINIMUM,
 } from "../../constants";
@@ -16,6 +16,8 @@ import { definedOnly } from "../../utils/definedOnly";
 import type { AnalysisThresholds } from "./analysisThresholds";
 import { adjustLanguageConfig, applyOverrides } from "./yoastConfig";
 import type { YoastConfig } from "./yoastConfig";
+
+const SEO_ASSESSOR_SHORT_TITLE_SCORE = YOAST_GOOD_SCORE;
 
 const DENSITY_OVER_MAXIMUM_MARGIN =
   YOAST_DENSITY_OVER_MAXIMUM - DEFAULT_SEO_THRESHOLDS.keyphraseDensity.max;
@@ -77,7 +79,7 @@ function titleWidthAssessment({ titleWidth }: SeoThresholds): unknown {
   return new PageTitleWidthAssessment(
     {
       ...definedOnly({ maxLength: titleWidth?.max }),
-      scores: { widthTooShort: YOAST_SEO_ASSESSOR_SHORT_TITLE_SCORE },
+      scores: { widthTooShort: SEO_ASSESSOR_SHORT_TITLE_SCORE },
     },
     true
   );
