@@ -156,7 +156,7 @@ export function extractCheckData(
         researcher,
         "matchKeywordInSubheadings"
       );
-      return r && r.count > 0 ? { matched: r.matches, total: r.count } : undefined;
+      return r ? { matched: r.matches, total: r.count } : undefined;
     }
     case "textCompetingLinks": {
       const r = getResearch<{
