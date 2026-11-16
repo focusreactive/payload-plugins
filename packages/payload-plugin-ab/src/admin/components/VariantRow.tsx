@@ -1,14 +1,10 @@
 import type { VariantData } from "./VariantsField";
 
-import { ConfirmationModal, useDocumentDrawer, useModal } from "@payloadcms/ui";
-import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@ui-sdk/react/menu";
-import {
-  NumberInput,
-  NumberInputControl,
-  NumberInputDecrement,
-  NumberInputGroup,
-  NumberInputIncrement,
-} from "@ui-sdk/react/number-input";
+import { ConfirmationModal, Popup, PopupList, useDocumentDrawer, useModal } from "@payloadcms/ui";
+
+import { useState } from "react";
+
+import { PercentInput } from "./PercentInput";
 
 interface VariantRowProps {
   variant: VariantData;
@@ -34,6 +30,7 @@ export function VariantRow({
     id: variant.id,
   });
   const { openModal } = useModal();
+  const [menuOpen, setMenuOpen] = useState(false);
   const deleteModalSlug = `ab-delete-variant-${variant.id}`;
   const name = variant.title ?? variant.id;
 
@@ -49,56 +46,54 @@ export function VariantRow({
         {name}
       </button>
 
-      <NumberInput
-        className="ab-percent"
+      <PercentInput
         value={variant.passPercentage}
         min={1}
         max={max}
-        step={1}
-        onValueChange={(value) => {
-          if (value !== null) onPercentageChange(value);
-        }}
-      >
-        <NumberInputGroup className="ab-percent__group">
-          <NumberInputDecrement className="ab-percent__step" aria-label={`Less traffic to ${name}`}>
-            −
-          </NumberInputDecrement>
-          <NumberInputControl
-            className="ab-percent__input"
-            aria-label={`Traffic to ${name}, percent`}
-          />
-          <span className="ab-percent__unit" aria-hidden="true">
-            %
-          </span>
-          <NumberInputIncrement className="ab-percent__step" aria-label={`More traffic to ${name}`}>
-            +
-          </NumberInputIncrement>
-        </NumberInputGroup>
-      </NumberInput>
+        label={name}
+        onChange={onPercentageChange}
+      />
 
-      <Menu
-        onAction={(value) => {
-          if (value === "edit") openDrawer();
-          if (value === "delete") openModal(deleteModalSlug);
-        }}
-      >
-        <MenuTrigger className="ab-row__menu-trigger" aria-label={`Actions for ${name}`}>
-          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-            <circle cx="3.5" cy="8" r="1.25" />
-            <circle cx="8" cy="8" r="1.25" />
-            <circle cx="12.5" cy="8" r="1.25" />
-          </svg>
-        </MenuTrigger>
-        <MenuContent className="ab-menu" align="end" sideOffset={4}>
-          <MenuItem className="ab-menu__item" value="edit">
-            Edit variant
-          </MenuItem>
-          <MenuSeparator className="ab-menu__separator" />
-          <MenuItem className="ab-menu__item ab-menu__item--danger" value="delete">
-            Delete variant
-          </MenuItem>
-        </MenuContent>
-      </Menu>
+      <Popup
+        className={menuOpen ? "ab-row__menu ab-row__menu--open" : "ab-row__menu"}
+        onToggleOpen={setMenuOpen}
+        buttonClassName="ab-row__menu-trigger"
+        horizontalAlign="right"
+        verticalAlign="bottom"
+        size="fit-content"
+        caret={false}
+        button={
+          <>
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="3.5" cy="8" r="1.25" />
+              <circle cx="8" cy="8" r="1.25" />
+              <circle cx="12.5" cy="8" r="1.25" />
+            </svg>
+            <span className="ab-sr-only">Actions for {name}</span>
+          </>
+        }
+        render={({ close }) => (
+          <PopupList.ButtonGroup>
+            <PopupList.Button
+              onClick={() => {
+                close();
+                openDrawer();
+              }}
+            >
+              Edit variant
+            </PopupList.Button>
+            <PopupList.Button
+              className="ab-menu__item--danger"
+              onClick={() => {
+                close();
+                openModal(deleteModalSlug);
+              }}
+            >
+              Delete variant
+            </PopupList.Button>
+          </PopupList.ButtonGroup>
+        )}
+      />
 
       <ConfirmationModal
         modalSlug={deleteModalSlug}

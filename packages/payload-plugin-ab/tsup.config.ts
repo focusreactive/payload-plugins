@@ -15,6 +15,6 @@ export default defineConfig({
   sourcemap: true,
   splitting: false,
   clean: true,
-  external: ["payload", "react", "next", "@vercel/edge-config", "@payloadcms/ui", /^@ui-sdk\//],
+  external: ["payload", "react", "next", "@vercel/edge-config", "@payloadcms/ui"],
   injectStyle: true,
 });
