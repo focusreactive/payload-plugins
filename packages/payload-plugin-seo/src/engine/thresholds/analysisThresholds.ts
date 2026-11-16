@@ -1,7 +1,7 @@
 import type { ResolvedSeoThresholds, SeoThresholds } from "../../types/config";
-import { mergeThresholds } from "../../utils/config/resolveThresholds";
 import type { YoastResearcher } from "../researcherAdapter";
 import { languageThresholds } from "./languageThresholds";
+import { mergeThresholds } from "./mergeThresholds";
 
 export interface AnalysisThresholds {
   values: ResolvedSeoThresholds;
