@@ -17,9 +17,13 @@ export interface RangeOverride {
   max?: number;
 }
 
-function statusFor(value: number, min: number, max: number): LengthStatus {
+function titleStatus(value: number, max: number): LengthStatus {
+  return value > max ? "long" : "good";
+}
+
+function descriptionStatus(value: number, min: number, max: number): LengthStatus {
   if (value > max) return "long";
-  if (value < min) return "short";
+  if (value <= min) return "short";
   return "good";
 }
 
@@ -33,7 +37,7 @@ export function measureTitle(text: string, range?: RangeOverride): Measurement {
     value: progress.actual,
     min,
     max,
-    status: statusFor(progress.actual, min, max),
+    status: titleStatus(progress.actual, max),
   };
 }
 
@@ -47,6 +51,6 @@ export function measureDescription(text: string, range?: RangeOverride): Measure
     value,
     min,
     max,
-    status: statusFor(value, min, max),
+    status: descriptionStatus(value, min, max),
   };
 }
