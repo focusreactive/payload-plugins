@@ -4,12 +4,16 @@ import {
   TRANSITION_WORDS_MIN_TEXT_WORDS,
 } from "../constants";
 import type { ResolvedSeoThresholds } from "../types/config";
-import formatNumber from "yoastseo/build/helpers/formatNumber";
-import keyphraseLengthFactor from "yoastseo/build/scoring/helpers/assessments/keyphraseLengthFactor";
+import formatNumberModule from "yoastseo/build/helpers/formatNumber";
+import keyphraseLengthFactorModule from "yoastseo/build/scoring/helpers/assessments/keyphraseLengthFactor";
+import { commonJsDefault } from "./helpers/commonjs-default";
 import { getResearch, getResearcherConfig } from "./researcherAdapter";
 import type { YoastResearcher } from "./researcherAdapter";
 import { getTitleProgressGuarded } from "./helpers/title-progress";
 import type { PaperLike } from "./types/paper";
+
+const formatNumber = commonJsDefault(formatNumberModule);
+const keyphraseLengthFactor = commonJsDefault(keyphraseLengthFactorModule);
 
 const MAX_PARAGRAPH_WORDS = 150;
 const SNIPPET_MAX = 64;

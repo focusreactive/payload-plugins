@@ -1,9 +1,9 @@
-import KeyphraseLengthAssessment from "yoastseo/build/scoring/assessments/seo/KeyphraseLengthAssessment";
-import KeyphraseDensityAssessment from "yoastseo/build/scoring/assessments/seo/KeywordDensityAssessment";
-import MetaDescriptionLengthAssessment from "yoastseo/build/scoring/assessments/seo/MetaDescriptionLengthAssessment";
-import PageTitleWidthAssessment from "yoastseo/build/scoring/assessments/seo/PageTitleWidthAssessment";
-import TextLengthAssessment from "yoastseo/build/scoring/assessments/seo/TextLengthAssessment";
-import SentenceLengthInTextAssessment from "yoastseo/build/scoring/assessments/readability/SentenceLengthInTextAssessment";
+import keyphraseLengthAssessmentModule from "yoastseo/build/scoring/assessments/seo/KeyphraseLengthAssessment";
+import keyphraseDensityAssessmentModule from "yoastseo/build/scoring/assessments/seo/KeywordDensityAssessment";
+import metaDescriptionLengthAssessmentModule from "yoastseo/build/scoring/assessments/seo/MetaDescriptionLengthAssessment";
+import pageTitleWidthAssessmentModule from "yoastseo/build/scoring/assessments/seo/PageTitleWidthAssessment";
+import textLengthAssessmentModule from "yoastseo/build/scoring/assessments/seo/TextLengthAssessment";
+import sentenceLengthInTextAssessmentModule from "yoastseo/build/scoring/assessments/readability/SentenceLengthInTextAssessment";
 import {
   DEFAULT_SEO_THRESHOLDS,
   YOAST_DENSITY_OVER_MAXIMUM,
@@ -11,11 +11,19 @@ import {
   YOAST_TEXT_LENGTH_BELOW_MINIMUM,
   YOAST_TEXT_LENGTH_VERY_FAR_BELOW_MINIMUM,
 } from "../../constants";
+import { commonJsDefault } from "../helpers/commonjs-default";
 import type { SeoThresholds } from "../../types/config";
 import { definedOnly } from "../../utils/definedOnly";
 import type { AnalysisThresholds } from "./analysisThresholds";
 import { adjustLanguageConfig, applyOverrides } from "./yoastConfig";
 import type { YoastConfig } from "./yoastConfig";
+
+const KeyphraseLengthAssessment = commonJsDefault(keyphraseLengthAssessmentModule);
+const KeyphraseDensityAssessment = commonJsDefault(keyphraseDensityAssessmentModule);
+const MetaDescriptionLengthAssessment = commonJsDefault(metaDescriptionLengthAssessmentModule);
+const PageTitleWidthAssessment = commonJsDefault(pageTitleWidthAssessmentModule);
+const TextLengthAssessment = commonJsDefault(textLengthAssessmentModule);
+const SentenceLengthInTextAssessment = commonJsDefault(sentenceLengthInTextAssessmentModule);
 
 const SEO_ASSESSOR_SHORT_TITLE_SCORE = YOAST_GOOD_SCORE;
 

@@ -1,10 +1,11 @@
-import japaneseMetaDescriptionLength from "yoastseo/build/languageProcessing/languages/ja/config/metaDescriptionLength";
+import japaneseMetaDescriptionLengthModule from "yoastseo/build/languageProcessing/languages/ja/config/metaDescriptionLength";
 import {
   YOAST_JAPANESE_LANGUAGE,
   YOAST_KEYPHRASE_LENGTH_WITHOUT_FUNCTION_WORDS,
 } from "../../constants";
 import type { SeoThresholds } from "../../types/config";
 import { definedOnly } from "../../utils/definedOnly";
+import { commonJsDefault } from "../helpers/commonjs-default";
 import { getResearcherConfig } from "../researcherAdapter";
 import type { YoastResearcher } from "../researcherAdapter";
 
@@ -48,7 +49,9 @@ function metaDescriptionLengthOf(
 ): SeoThresholds["metaDescriptionLength"] {
   if (getResearcherConfig(researcher, "language") !== YOAST_JAPANESE_LANGUAGE) return undefined;
 
-  const japanese: MetaDescriptionLengthConfig = japaneseMetaDescriptionLength;
+  const japanese: MetaDescriptionLengthConfig = commonJsDefault(
+    japaneseMetaDescriptionLengthModule
+  );
 
   return { min: japanese.recommendedMaximumLength, max: japanese.maximumLength };
 }
