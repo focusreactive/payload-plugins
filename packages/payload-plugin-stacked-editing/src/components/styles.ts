@@ -4,6 +4,9 @@ export const OWNER_ATTRIBUTE = "data-stacked-editing-owner";
 /** Set next to OWNER_ATTRIBUTE: the `defaultMode` the rows in that scope follow. */
 export const MODE_ATTRIBUTE = "data-stacked-editing-mode";
 
+/** Briefly set on a field opened from the preview (Live Preview click). */
+export const FLASH_CLASS = "stacked-editing__flash";
+
 /** Set on <html> while panels are confined to the editor column (Live Preview open). */
 export const CONFINED_ATTRIBUTE = "data-stacked-editing-confined";
 
@@ -183,5 +186,21 @@ html[${CONFINED_ATTRIBUTE}] .payload__modal-container {
 }
 html[${CONFINED_ATTRIBUTE}] .payload__modal-container > * {
   pointer-events: auto;
+}
+/* A field opened from a click in the preview: a pulsing ring, as the visual-editing bridge does. */
+@keyframes stacked-editing-flash {
+  0% { box-shadow: 0 0 0 0 hsla(189, 85%, 53%, 0.55), 0 0 0 0 hsla(189, 85%, 53%, 0.22); }
+  50% { box-shadow: 0 0 0 4px hsla(189, 85%, 53%, 0.3), 0 0 0 14px hsla(189, 85%, 53%, 0.06); }
+  100% { box-shadow: 0 0 0 0 hsla(189, 85%, 53%, 0), 0 0 0 0 hsla(189, 85%, 53%, 0); }
+}
+.${FLASH_CLASS} {
+  border-radius: var(--style-radius-m, 4px);
+  animation: stacked-editing-flash 0.7s cubic-bezier(0.4, 0, 0.2, 1) 120ms 2;
+}
+@media (prefers-reduced-motion: reduce) {
+  .${FLASH_CLASS} {
+    animation: none;
+    box-shadow: 0 0 0 2px hsla(189, 85%, 53%, 0.6);
+  }
 }
 `;

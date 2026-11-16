@@ -28,10 +28,12 @@ import {
 } from "../lib/domPath.js";
 import { classifyHeaderClick } from "../lib/headerClick.js";
 import type { DefaultMode } from "../lib/headerClick.js";
+import { OPEN_FIELD_EVENT, isForDocument, rowPathCandidates } from "../lib/openField.js";
 import { resolveRowChain } from "../lib/resolveRowChain.js";
 import type { FieldsPermissions, RowChain, RowLevel } from "../lib/resolveRowChain.js";
 import { refreshDetachedEditors } from "../lib/staleEditors.js";
 import { MODE_ATTRIBUTE, OWNER_ATTRIBUTE, STACKED_EDITING_CSS } from "./styles.js";
+import { focusFieldInTopPanel } from "./focusField.js";
 import { Panel } from "./Panel.js";
 import { useConfinedToEditor } from "./useConfinedToEditor.js";
 
@@ -136,7 +138,7 @@ export const StackedEditing = ({ defaultMode = "panel" }: { defaultMode?: Defaul
   const [open, setOpen] = useState<OpenRows | null>(null);
 
   const { config, getEntityConfig } = useConfig();
-  const { collectionSlug, docPermissions, globalSlug } = useDocumentInfo();
+  const { collectionSlug, docPermissions, globalSlug, id } = useDocumentInfo();
   const { title } = useDocumentTitle();
   const operation = useOperation() ?? "update";
   const { i18n, t } = useTranslation();
@@ -278,6 +280,39 @@ export const StackedEditing = ({ defaultMode = "panel" }: { defaultMode?: Defaul
   );
 
   const openRowRef = useLatest(openRow);
+  const documentRef = useLatest({ collectionSlug, globalSlug, id });
+
+  // A click in the Live Preview (visual-editing bridge): open the panels down to the field — a new
+  // stack replaces the open one, levels both share stay mounted — and focus it in the top panel.
+  useEffect(() => {
+    let cancelFocus: (() => void) | undefined;
+    const onOpenField = (event: Event) => {
+      const { detail } = event as CustomEvent<unknown>;
+      if (!isForDocument(detail as Record<string, string>, documentRef.current)) {
+        return;
+      }
+      const { path } = detail as { path: string };
+      for (const rowPath of rowPathCandidates(path)) {
+        if (openRowRef.current(rowPath)) {
+          event.preventDefault();
+          cancelFocus?.();
+          cancelFocus = focusFieldInTopPanel({
+            depth: rowPath.split(".").filter((segment) => /^\d+$/u.test(segment)).length,
+            ownerId,
+            path,
+          });
+          return;
+        }
+      }
+      // A field outside any row: close the panels so the bridge's inline focus is visible.
+      setOpen(null);
+    };
+    window.addEventListener(OPEN_FIELD_EVENT, onOpenField);
+    return () => {
+      cancelFocus?.();
+      window.removeEventListener(OPEN_FIELD_EVENT, onOpenField);
+    };
+  }, [documentRef, openRowRef, ownerId]);
   const modeRef = useLatest(defaultMode);
 
   useEffect(() => {

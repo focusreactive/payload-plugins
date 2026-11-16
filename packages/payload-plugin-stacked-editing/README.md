@@ -119,6 +119,20 @@ The panels' fields belong to the document form, so Live Preview's form-state sub
 every keystroke typed in a panel to the preview. This works at any depth. With the preview closed,
 or in popup mode, the panels are the usual full-height drawers.
 
+### Click in the Live Preview (with visual editing)
+
+The plugin works with `@focus-reactive/payload-plugin-visual-editing` without either package
+depending on the other. When the editor clicks an element in the preview, the visual-editing
+bridge dispatches a cancelable `payload:open-field` event on `window`, with
+`detail: { path, collectionSlug | globalSlug, docId?, locale? }`.
+
+If the event is about the document this edit view has open and the path lies inside an array or
+blocks row (for example `sections.2.items.0.points.1.text`), stacked editing cancels the event,
+opens one panel per row on the way down, scrolls to the field in the top panel, focuses it and
+flashes a highlight ring. A later click replaces the open stack with the new chain; levels both
+chains share stay mounted, so they do not flicker. For a top-level field the plugin closes its
+panels and leaves the event alone, so the bridge focuses the field inline as before.
+
 ### Fields mounted twice
 
 Payload keeps collapsed rows mounted, so while a panel is open its fields also exist (hidden) in
