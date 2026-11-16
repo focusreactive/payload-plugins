@@ -113,8 +113,8 @@ export const Users: CollectionConfig<"users"> = {
         },
         {
           label: {
-            en: "Editor (drafts only, cannot publish)",
-            es: "Editor (solo borradores, no publica)",
+            en: "Blog editor",
+            es: "Editor del blog",
           },
           value: "author",
         },

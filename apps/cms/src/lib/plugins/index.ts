@@ -38,6 +38,7 @@ import { abAdapter } from "@/lib/plugins/ab/abAdapter";
 import { buildVariantData } from "@/lib/plugins/ab/buildVariantData";
 import type { ABVariantData } from "@/lib/plugins/ab/types";
 import { superAdmin, or, authenticated, user } from "@/lib/access";
+import { roleScopePlugin } from "@/lib/plugins/roleScope";
 import { getServerSideURL } from "@/lib/utils/getURL";
 import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 import { validateRedirectPath } from "@/lib/utils/redirectUrl";
@@ -458,6 +459,12 @@ export const plugins: Plugin[] = [
   }),
 
   mcpPluginConfig,
+
+  // After every plugin that adds collections, so the blog editor is kept out of those too.
+  roleScopePlugin({
+    collections: ["posts", "categories", "authors", "media", "users"],
+    role: "author",
+  }),
 
   // Must stay last so it also protects collections and globals added by the plugins above.
   restrictApiAccess({

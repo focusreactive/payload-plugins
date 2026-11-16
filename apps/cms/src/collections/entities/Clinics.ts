@@ -426,7 +426,7 @@ export const Clinics: CollectionConfig<"clinics"> = {
           ],
           label: { en: "Clinic details", es: "Datos de la clínica" },
         },
-        { ...entitySeoTab, label: { en: "SEO & Search", es: "SEO y buscadores" } },
+        { ...entitySeoTab, label: { en: "SEO", es: "SEO" } },
       ],
       type: "tabs",
     },

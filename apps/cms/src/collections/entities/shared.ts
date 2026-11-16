@@ -9,7 +9,7 @@ import type {
 } from "payload";
 
 import { siteBlocks } from "@/blocks/siteBlocks";
-import { anyone, authorDraft, or, superAdmin, user } from "@/lib/access";
+import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { entityPath, withLocalePrefix } from "@/lib/config/entityRoutes";
 import type { EntityCollection } from "@/lib/config/entityRoutes";
 import {
@@ -24,10 +24,10 @@ import { generateSeoFields } from "@/lib/utils/seoFields";
 export const ENTITY_ADMIN_GROUP = "Directory";
 
 export const entityAccess: CollectionConfig["access"] = {
-  create: or(superAdmin, user, authorDraft),
+  create: or(superAdmin, user, author),
   delete: or(superAdmin, user),
   read: anyone,
-  update: or(superAdmin, user, authorDraft),
+  update: or(superAdmin, user, author),
 };
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
@@ -66,7 +66,7 @@ export function entitySectionsField(description: string): Field {
 
 export const entitySeoTab: Tab = {
   fields: generateSeoFields(),
-  label: "SEO & Search",
+  label: "SEO",
   localized: true,
   name: "meta",
 };
