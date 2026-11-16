@@ -99,24 +99,53 @@ function assertBands(check: string, bands: Record<string, unknown>, rule: Thresh
   });
 }
 
+function layered<Bands extends object>(
+  defaults: Bands,
+  under: Partial<Bands> | undefined,
+  over: Partial<Bands> | undefined
+): Bands {
+  return { ...defaults, ...under, ...over };
+}
+
+export function mergeThresholds(
+  under: SeoThresholds,
+  over: SeoThresholds = {}
+): ResolvedSeoThresholds {
+  return {
+    keyphraseLength: layered(
+      DEFAULT_SEO_THRESHOLDS.keyphraseLength,
+      under.keyphraseLength,
+      over.keyphraseLength
+    ),
+    keyphraseDensity: layered(
+      DEFAULT_SEO_THRESHOLDS.keyphraseDensity,
+      under.keyphraseDensity,
+      over.keyphraseDensity
+    ),
+    metaDescriptionLength: layered(
+      DEFAULT_SEO_THRESHOLDS.metaDescriptionLength,
+      under.metaDescriptionLength,
+      over.metaDescriptionLength
+    ),
+    titleWidth: layered(DEFAULT_SEO_THRESHOLDS.titleWidth, under.titleWidth, over.titleWidth),
+    textLength: layered(DEFAULT_SEO_THRESHOLDS.textLength, under.textLength, over.textLength),
+    textSentenceLength: layered(
+      DEFAULT_SEO_THRESHOLDS.textSentenceLength,
+      under.textSentenceLength,
+      over.textSentenceLength
+    ),
+    fleschReadingEase: layered(
+      DEFAULT_SEO_THRESHOLDS.fleschReadingEase,
+      under.fleschReadingEase,
+      over.fleschReadingEase
+    ),
+  };
+}
+
 export function resolveThresholds(input: SeoThresholds = {}): ResolvedSeoThresholds {
   assertKnown(input);
 
-  const resolved: ResolvedSeoThresholds = {
-    keyphraseLength: { ...DEFAULT_SEO_THRESHOLDS.keyphraseLength, ...input.keyphraseLength },
-    keyphraseDensity: { ...DEFAULT_SEO_THRESHOLDS.keyphraseDensity, ...input.keyphraseDensity },
-    metaDescriptionLength: {
-      ...DEFAULT_SEO_THRESHOLDS.metaDescriptionLength,
-      ...input.metaDescriptionLength,
-    },
-    titleWidth: { ...DEFAULT_SEO_THRESHOLDS.titleWidth, ...input.titleWidth },
-    textLength: { ...DEFAULT_SEO_THRESHOLDS.textLength, ...input.textLength },
-    textSentenceLength: {
-      ...DEFAULT_SEO_THRESHOLDS.textSentenceLength,
-      ...input.textSentenceLength,
-    },
-    fleschReadingEase: { ...DEFAULT_SEO_THRESHOLDS.fleschReadingEase, ...input.fleschReadingEase },
-  };
+  const resolved = mergeThresholds(input);
 
   for (const check of Object.keys(RULES) as ThresholdCheck[]) {
     assertBands(check, resolved[check], RULES[check]);

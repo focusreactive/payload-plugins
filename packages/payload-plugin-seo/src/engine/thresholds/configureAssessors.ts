@@ -12,6 +12,7 @@ import {
   YOAST_TEXT_LENGTH_VERY_FAR_BELOW_MINIMUM,
 } from "../../constants";
 import type { SeoThresholds } from "../../types/config";
+import { definedOnly } from "../../utils/definedOnly";
 import type { AnalysisThresholds } from "./analysisThresholds";
 import { adjustLanguageConfig, applyOverrides } from "./yoastConfig";
 import type { YoastConfig } from "./yoastConfig";
@@ -21,16 +22,6 @@ const DENSITY_OVER_MAXIMUM_MARGIN =
 
 interface ConfigurableAssessor {
   addAssessment: (identifier: string, assessment: unknown) => boolean;
-}
-
-function definedOnly(values: Record<string, number | undefined>): Record<string, number> {
-  const defined: Record<string, number> = {};
-
-  for (const [key, value] of Object.entries(values)) {
-    if (value !== undefined) defined[key] = value;
-  }
-
-  return defined;
 }
 
 function reapplying(overrides: YoastConfig) {

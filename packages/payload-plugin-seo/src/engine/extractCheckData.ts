@@ -4,6 +4,7 @@ import {
   TRANSITION_WORDS_MIN_TEXT_WORDS,
 } from "../constants";
 import type { ResolvedSeoThresholds } from "../types/config";
+import formatNumber from "yoastseo/build/helpers/formatNumber";
 import keyphraseLengthFactor from "yoastseo/build/scoring/helpers/assessments/keyphraseLengthFactor";
 import { getResearch, getResearcherConfig } from "./researcherAdapter";
 import type { YoastResearcher } from "./researcherAdapter";
@@ -24,13 +25,16 @@ function splitSentences(text: string): string[] {
     .filter(Boolean);
 }
 
-function sentenceLengthPct(text: string, maxSentenceWords: number): { pct: number } | undefined {
-  const sentences = splitSentences(text);
-  if (!sentences.length) return undefined;
-  const long = sentences.filter(
-    (s) => s.split(/\s+/u).filter(Boolean).length > maxSentenceWords
-  ).length;
-  return { pct: Math.round((long / sentences.length) * 100) };
+function longSentenceShare(
+  researcher: YoastResearcher,
+  maxSentenceWords: number
+): { pct: number } | undefined {
+  const sentences = getResearch<{ sentenceLength: number }[]>(researcher, "countSentencesFromText");
+  if (!sentences?.length) return undefined;
+
+  const long = sentences.filter(({ sentenceLength }) => sentenceLength > maxSentenceWords).length;
+
+  return { pct: formatNumber((long / sentences.length) * 100) };
 }
 
 function keyphrasePositions(text: string, keyphrase: string): number[] {
@@ -144,10 +148,7 @@ export function extractCheckData(
       };
     }
     case "textSentenceLength":
-      return sentenceLengthPct(
-        paper.getText?.() ?? "",
-        thresholds.textSentenceLength.maxSentenceWords
-      );
+      return longSentenceShare(researcher, thresholds.textSentenceLength.maxSentenceWords);
     case "keyphraseDistribution": {
       const positions = keyphrasePositions(paper.getText?.() ?? "", paper.getKeyword?.() ?? "");
       return positions.length ? { positions } : undefined;

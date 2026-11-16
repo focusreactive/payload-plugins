@@ -1,5 +1,6 @@
 import type { SeoThresholds } from "../../types/config";
 import { buildPaper } from "../buildPaper";
+import { makeResearcher } from "../researcherAdapter";
 import { analysisThresholds } from "../thresholds/analysisThresholds";
 import type { AnalysisInput, AnalysisResult, RelatedKeyphraseResult } from "../types/analysis";
 import { deriveInclusive } from "./services/derive-inclusive";
@@ -10,8 +11,8 @@ import { deriveSerp } from "./services/derive-serp";
 import { deriveVitals } from "./services/derive-vitals";
 
 export function runAnalysis(input: AnalysisInput, configured: SeoThresholds = {}): AnalysisResult {
-  const thresholds = analysisThresholds(configured);
   const paper = buildPaper(input);
+  const thresholds = analysisThresholds(configured, makeResearcher(paper));
   const { keyphrase } = input;
 
   const seo = deriveSeo(paper, keyphrase, thresholds);

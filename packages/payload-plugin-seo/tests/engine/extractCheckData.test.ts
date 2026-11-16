@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_SEO_THRESHOLDS } from "../../src/constants";
 import { extractCheckData } from "../../src/engine/extractCheckData";
 import type { PaperLike } from "../../src/engine/types/paper";
 import type { YoastResearcher } from "../../src/engine/researcherAdapter";
@@ -141,19 +142,30 @@ describe("extractCheckData", () => {
     });
   });
 
-  it("derives sentence-length percentage from the paper text", () => {
-    // One short sentence, one 21-word (long, > 20) sentence => 1/2 = 50%.
-    const longSentence = `${"word ".repeat(21).trim()}.`;
-    const paper = makePaper({ getText: () => `<p>Short one. ${longSentence}</p>` });
-    expect(extractCheckData("textSentenceLength", paper, makeResearcher({}))).toEqual({ pct: 50 });
+  it("derives the share of sentences Yoast counts as too long", () => {
+    const r = makeResearcher({
+      countSentencesFromText: [
+        { sentenceLength: 4 },
+        { sentenceLength: 21 },
+        { sentenceLength: 20 },
+      ],
+    });
+    expect(extractCheckData("textSentenceLength", makePaper(), r)).toEqual({ pct: 33.3 });
   });
 
-  it("emits a real { pct: 0 } for textSentenceLength when no sentence exceeds 20 words", () => {
-    // Default makePaper text: "Running shoes are great." (4 words) + "Buy running shoes today." (4 words)
-    // Neither exceeds MAX_SENTENCE_WORDS=20, so pct must be 0 — not undefined.
-    expect(extractCheckData("textSentenceLength", makePaper(), makeResearcher({}))).toEqual({
-      pct: 0,
+  it("measures sentence length against the given maximum", () => {
+    const r = makeResearcher({
+      countSentencesFromText: [{ sentenceLength: 4 }, { sentenceLength: 21 }],
     });
+    const thresholds = {
+      ...DEFAULT_SEO_THRESHOLDS,
+      textSentenceLength: { maxSentenceWords: 25, max: 25, acceptableMax: 30 },
+    };
+    expect(extractCheckData("textSentenceLength", makePaper(), r, thresholds)).toEqual({ pct: 0 });
+  });
+
+  it("returns undefined for textSentenceLength when there are no sentences", () => {
+    expect(extractCheckData("textSentenceLength", makePaper(), makeResearcher({}))).toBeUndefined();
   });
 
   it("returns undefined for textParagraphTooLong when getParagraphLength returns an empty array", () => {
