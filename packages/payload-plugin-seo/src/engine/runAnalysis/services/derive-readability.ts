@@ -17,7 +17,7 @@ function fleschCheck(researcher: YoastResearcher, ctx: RecoContext): CheckResult
   const r = getResearch<{ score: number }>(researcher, "getFleschReadingScore");
   if (!r || r.score < 0) return undefined;
 
-  const status = fleschToStatus(r.score, ctx.thresholds?.fleschReadingEase);
+  const status = fleschToStatus(r.score, ctx.thresholds.fleschReadingEase);
 
   return {
     id: "fleschReadingEase",

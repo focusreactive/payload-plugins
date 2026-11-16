@@ -1,4 +1,3 @@
-import { DEFAULT_SEO_THRESHOLDS } from "../constants";
 import type { ResolvedSeoThresholds } from "../types/config";
 import type { Status } from "./types/analysis";
 
@@ -11,10 +10,7 @@ export function scoreToStatus(score: number): Status {
 
 export function fleschToStatus(
   score: number,
-  {
-    min,
-    acceptableMin,
-  }: ResolvedSeoThresholds["fleschReadingEase"] = DEFAULT_SEO_THRESHOLDS.fleschReadingEase
+  { min, acceptableMin }: ResolvedSeoThresholds["fleschReadingEase"]
 ): Status {
   if (score >= min) return "good";
   if (score >= acceptableMin) return "warn";

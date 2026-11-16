@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_SEO_THRESHOLDS } from "../../../src/constants";
 import type { CheckResult, Status } from "../../../src/engine/types/analysis";
 import { resolveVisualization } from "../../../src/engine/visualization/resolveVisualization";
 import { createTranslator } from "../../../src/translations";
@@ -13,14 +14,16 @@ describe("resolveVisualization — presence", () => {
   it.each(["introductionKeyword", "keyphraseInSEOTitle", "images", "singleH1"])(
     "resolves %s to presence",
     (id) => {
-      expect(resolveVisualization(check(id), undefined)).toEqual({ type: "presence" });
+      expect(resolveVisualization(check(id), undefined, DEFAULT_SEO_THRESHOLDS)).toEqual({
+        type: "presence",
+      });
     }
   );
 });
 
 describe("resolveVisualization — value-range", () => {
   it("resolves keyphraseLength with words to a value-range gauge", () => {
-    const v = resolveVisualization(check("keyphraseLength"), { words: 4 });
+    const v = resolveVisualization(check("keyphraseLength"), { words: 4 }, DEFAULT_SEO_THRESHOLDS);
 
     expect(v.type).toBe("value-range");
     if (v.type !== "value-range") return;
@@ -30,30 +33,43 @@ describe("resolveVisualization — value-range", () => {
   });
 
   it("resolves keyphraseDensity with densityPct to a value-range", () => {
-    const v = resolveVisualization(check("keyphraseDensity"), { densityPct: 1.5 });
+    const v = resolveVisualization(
+      check("keyphraseDensity"),
+      { densityPct: 1.5 },
+      DEFAULT_SEO_THRESHOLDS
+    );
 
     expect(v.type).toBe("value-range");
   });
 
   it("falls back to presence when keyphraseLength has no numeric words", () => {
-    expect(resolveVisualization(check("keyphraseLength"), {})).toEqual({ type: "presence" });
+    expect(resolveVisualization(check("keyphraseLength"), {}, DEFAULT_SEO_THRESHOLDS)).toEqual({
+      type: "presence",
+    });
   });
 
   it("falls back to presence when Yoast does not score transition words in a short text", () => {
     const status = (textLength: number) =>
-      resolveVisualization(check("textTransitionWords"), { pct: 0, textLength, minTextLength: 200 })
-        .type;
+      resolveVisualization(
+        check("textTransitionWords"),
+        { pct: 0, textLength, minTextLength: 200 },
+        DEFAULT_SEO_THRESHOLDS
+      ).type;
 
     expect(status(150)).toBe("presence");
     expect(status(250)).toBe("value-range");
   });
 
   it("falls back to presence when keyphraseDensity textLength is below 100", () => {
-    const v = resolveVisualization(check("keyphraseDensity"), {
-      densityPct: 1.5,
-      textLength: 50,
-      minTextLength: 100,
-    });
+    const v = resolveVisualization(
+      check("keyphraseDensity"),
+      {
+        densityPct: 1.5,
+        textLength: 50,
+        minTextLength: 100,
+      },
+      DEFAULT_SEO_THRESHOLDS
+    );
 
     expect(v).toEqual({ type: "presence" });
   });
@@ -61,7 +77,11 @@ describe("resolveVisualization — value-range", () => {
 
 describe("resolveVisualization — proportion (links)", () => {
   it("resolves externalLinks to a proportion segment with legend", () => {
-    const v = resolveVisualization(check("externalLinks", "good"), { total: 5, follow: 3 });
+    const v = resolveVisualization(
+      check("externalLinks", "good"),
+      { total: 5, follow: 3 },
+      DEFAULT_SEO_THRESHOLDS
+    );
 
     expect(v.type).toBe("proportion");
     if (v.type !== "proportion") return;
@@ -74,7 +94,11 @@ describe("resolveVisualization — proportion (links)", () => {
   });
 
   it("resolves internalLinks with warn status and inverse legend", () => {
-    const v = resolveVisualization(check("internalLinks", "warn"), { total: 4, follow: 1 });
+    const v = resolveVisualization(
+      check("internalLinks", "warn"),
+      { total: 4, follow: 1 },
+      DEFAULT_SEO_THRESHOLDS
+    );
 
     expect(v.type).toBe("proportion");
     if (v.type !== "proportion") return;
@@ -88,7 +112,11 @@ describe("resolveVisualization — proportion (links)", () => {
 
 describe("resolveVisualization — proportion (imageKeyphrase)", () => {
   it("forces warn status regardless of a good check status", () => {
-    const v = resolveVisualization(check("imageKeyphrase", "good"), { total: 2, matched: 1 });
+    const v = resolveVisualization(
+      check("imageKeyphrase", "good"),
+      { total: 2, matched: 1 },
+      DEFAULT_SEO_THRESHOLDS
+    );
 
     expect(v.type).toBe("proportion");
     if (v.type !== "proportion") return;
@@ -98,9 +126,13 @@ describe("resolveVisualization — proportion (imageKeyphrase)", () => {
 
 describe("resolveVisualization — count-drilldown labels", () => {
   it("uses singular 'link' for one textCompetingLinks item", () => {
-    const v = resolveVisualization(check("textCompetingLinks"), {
-      items: [{ left: "a", right: "x" }],
-    });
+    const v = resolveVisualization(
+      check("textCompetingLinks"),
+      {
+        items: [{ left: "a", right: "x" }],
+      },
+      DEFAULT_SEO_THRESHOLDS
+    );
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
@@ -108,13 +140,17 @@ describe("resolveVisualization — count-drilldown labels", () => {
   });
 
   it("uses plural 'links' for three textCompetingLinks items", () => {
-    const v = resolveVisualization(check("textCompetingLinks"), {
-      items: [
-        { left: "a", right: "x" },
-        { left: "b", right: "y" },
-        { left: "c", right: "z" },
-      ],
-    });
+    const v = resolveVisualization(
+      check("textCompetingLinks"),
+      {
+        items: [
+          { left: "a", right: "x" },
+          { left: "b", right: "y" },
+          { left: "c", right: "z" },
+        ],
+      },
+      DEFAULT_SEO_THRESHOLDS
+    );
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
@@ -122,9 +158,13 @@ describe("resolveVisualization — count-drilldown labels", () => {
   });
 
   it("uses singular 'section' for one subheadingsTooLong item", () => {
-    const v = resolveVisualization(check("subheadingsTooLong"), {
-      items: [{ left: "a", right: "x" }],
-    });
+    const v = resolveVisualization(
+      check("subheadingsTooLong"),
+      {
+        items: [{ left: "a", right: "x" }],
+      },
+      DEFAULT_SEO_THRESHOLDS
+    );
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
@@ -132,12 +172,16 @@ describe("resolveVisualization — count-drilldown labels", () => {
   });
 
   it("uses plural 'sections' for two subheadingsTooLong items", () => {
-    const v = resolveVisualization(check("subheadingsTooLong"), {
-      items: [
-        { left: "a", right: "x" },
-        { left: "b", right: "y" },
-      ],
-    });
+    const v = resolveVisualization(
+      check("subheadingsTooLong"),
+      {
+        items: [
+          { left: "a", right: "x" },
+          { left: "b", right: "y" },
+        ],
+      },
+      DEFAULT_SEO_THRESHOLDS
+    );
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
@@ -145,9 +189,13 @@ describe("resolveVisualization — count-drilldown labels", () => {
   });
 
   it("reads the 'paragraphs' key for one textParagraphTooLong item", () => {
-    const v = resolveVisualization(check("textParagraphTooLong"), {
-      paragraphs: [{ left: "a", right: "x" }],
-    });
+    const v = resolveVisualization(
+      check("textParagraphTooLong"),
+      {
+        paragraphs: [{ left: "a", right: "x" }],
+      },
+      DEFAULT_SEO_THRESHOLDS
+    );
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
@@ -155,12 +203,16 @@ describe("resolveVisualization — count-drilldown labels", () => {
   });
 
   it("uses plural 'paragraphs' for two textParagraphTooLong items", () => {
-    const v = resolveVisualization(check("textParagraphTooLong"), {
-      paragraphs: [
-        { left: "a", right: "x" },
-        { left: "b", right: "y" },
-      ],
-    });
+    const v = resolveVisualization(
+      check("textParagraphTooLong"),
+      {
+        paragraphs: [
+          { left: "a", right: "x" },
+          { left: "b", right: "y" },
+        ],
+      },
+      DEFAULT_SEO_THRESHOLDS
+    );
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
@@ -168,9 +220,13 @@ describe("resolveVisualization — count-drilldown labels", () => {
   });
 
   it("uses singular 'group' for one sentenceBeginnings item", () => {
-    const v = resolveVisualization(check("sentenceBeginnings"), {
-      items: [{ left: "a", right: "x" }],
-    });
+    const v = resolveVisualization(
+      check("sentenceBeginnings"),
+      {
+        items: [{ left: "a", right: "x" }],
+      },
+      DEFAULT_SEO_THRESHOLDS
+    );
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
@@ -178,12 +234,16 @@ describe("resolveVisualization — count-drilldown labels", () => {
   });
 
   it("uses plural 'groups' for two sentenceBeginnings items", () => {
-    const v = resolveVisualization(check("sentenceBeginnings"), {
-      items: [
-        { left: "a", right: "x" },
-        { left: "b", right: "y" },
-      ],
-    });
+    const v = resolveVisualization(
+      check("sentenceBeginnings"),
+      {
+        items: [
+          { left: "a", right: "x" },
+          { left: "b", right: "y" },
+        ],
+      },
+      DEFAULT_SEO_THRESHOLDS
+    );
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
@@ -191,16 +251,24 @@ describe("resolveVisualization — count-drilldown labels", () => {
   });
 
   it("falls back to presence when a drilldown has no items", () => {
-    expect(resolveVisualization(check("textCompetingLinks"), { items: [] })).toEqual({
+    expect(
+      resolveVisualization(check("textCompetingLinks"), { items: [] }, DEFAULT_SEO_THRESHOLDS)
+    ).toEqual({
       type: "presence",
     });
-    expect(resolveVisualization(check("textCompetingLinks"), {})).toEqual({ type: "presence" });
+    expect(resolveVisualization(check("textCompetingLinks"), {}, DEFAULT_SEO_THRESHOLDS)).toEqual({
+      type: "presence",
+    });
   });
 });
 
 describe("resolveVisualization — distribution", () => {
   it("resolves keyphraseDistribution positions", () => {
-    const v = resolveVisualization(check("keyphraseDistribution"), { positions: [10, 50, 90] });
+    const v = resolveVisualization(
+      check("keyphraseDistribution"),
+      { positions: [10, 50, 90] },
+      DEFAULT_SEO_THRESHOLDS
+    );
 
     expect(v.type).toBe("distribution");
     if (v.type !== "distribution") return;
@@ -208,9 +276,17 @@ describe("resolveVisualization — distribution", () => {
   });
 
   it("falls back to presence when positions are empty or missing", () => {
-    expect(resolveVisualization(check("keyphraseDistribution"), { positions: [] })).toEqual({
+    expect(
+      resolveVisualization(
+        check("keyphraseDistribution"),
+        { positions: [] },
+        DEFAULT_SEO_THRESHOLDS
+      )
+    ).toEqual({
       type: "presence",
     });
-    expect(resolveVisualization(check("keyphraseDistribution"), {})).toEqual({ type: "presence" });
+    expect(
+      resolveVisualization(check("keyphraseDistribution"), {}, DEFAULT_SEO_THRESHOLDS)
+    ).toEqual({ type: "presence" });
   });
 });

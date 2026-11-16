@@ -1,4 +1,3 @@
-import { DEFAULT_SEO_THRESHOLDS } from "../../../constants";
 import type { CheckId } from "../../../constants/checkIds";
 import type { ResolvedSeoThresholds } from "../../../types/config";
 import type { CheckResult } from "../../types/analysis";
@@ -14,7 +13,7 @@ import { readPositions } from "./utils/readPositions";
 export function resolveVisualization(
   check: CheckResult,
   data: Record<string, unknown> | undefined,
-  thresholds: ResolvedSeoThresholds = DEFAULT_SEO_THRESHOLDS
+  thresholds: ResolvedSeoThresholds
 ): Visualization {
   const id = check.id as CheckId;
 

@@ -1,8 +1,4 @@
-import {
-  DEFAULT_SEO_THRESHOLDS,
-  DENSITY_MIN_TEXT_WORDS,
-  TRANSITION_WORDS_MIN_TEXT_WORDS,
-} from "../constants";
+import { DENSITY_MIN_TEXT_WORDS, MAX_PERCENT, TRANSITION_WORDS_MIN_TEXT_WORDS } from "../constants";
 import type { ResolvedSeoThresholds } from "../types/config";
 import formatNumberModule from "yoastseo/build/helpers/formatNumber";
 import keyphraseLengthFactorModule from "yoastseo/build/scoring/helpers/assessments/keyphraseLengthFactor";
@@ -38,7 +34,7 @@ function longSentenceShare(
 
   const long = sentences.filter(({ sentenceLength }) => sentenceLength > maxSentenceWords).length;
 
-  return { pct: formatNumber((long / sentences.length) * 100) };
+  return { pct: formatNumber((long / sentences.length) * MAX_PERCENT) };
 }
 
 function keyphrasePositions(text: string, keyphrase: string): number[] {
@@ -49,7 +45,7 @@ function keyphrasePositions(text: string, keyphrase: string): number[] {
   if (!n) return [];
   const positions: number[] = [];
   sentences.forEach((s, i) => {
-    if (s.toLowerCase().includes(kp)) positions.push(Math.round(((i + 0.5) / n) * 100));
+    if (s.toLowerCase().includes(kp)) positions.push(Math.round(((i + 0.5) / n) * MAX_PERCENT));
   });
   return positions;
 }
@@ -63,7 +59,7 @@ export function extractCheckData(
   id: string,
   paper: PaperLike,
   researcher: YoastResearcher,
-  thresholds: ResolvedSeoThresholds = DEFAULT_SEO_THRESHOLDS
+  thresholds: ResolvedSeoThresholds
 ): Record<string, unknown> | undefined {
   switch (id) {
     case "keyphraseDensity": {
@@ -137,7 +133,7 @@ export function extractCheckData(
       }>(researcher, "findTransitionWords");
       if (!r || !r.totalSentences) return undefined;
 
-      const pct = Math.round((r.transitionWordSentences / r.totalSentences) * 100);
+      const pct = Math.round((r.transitionWordSentences / r.totalSentences) * MAX_PERCENT);
       if (typeof r.textLength !== "number") return { pct };
 
       const applicability = getResearcherConfig<{ transitionWords?: number }>(
@@ -204,7 +200,7 @@ export function extractCheckData(
         "getPassiveVoiceResult"
       );
       if (!r || !r.total) return undefined;
-      return { pct: Math.round((r.passives.length / r.total) * 100) };
+      return { pct: Math.round((r.passives.length / r.total) * MAX_PERCENT) };
     }
     case "sentenceBeginnings": {
       const r = getResearch<{ word: string; count: number }[]>(researcher, "getSentenceBeginnings");

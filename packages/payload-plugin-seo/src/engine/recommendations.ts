@@ -1,4 +1,3 @@
-import { DEFAULT_SEO_THRESHOLDS } from "../constants";
 import type { Message, TranslationKey } from "../translations/types";
 import type { ResolvedSeoThresholds } from "../types/config";
 import { thresholdVars } from "./thresholds/thresholdVars";
@@ -7,7 +6,7 @@ import { readNumber } from "../utils/readNumber";
 
 export interface RecoContext {
   keyphrase?: string;
-  thresholds?: ResolvedSeoThresholds;
+  thresholds: ResolvedSeoThresholds;
 }
 
 type Builder = (ctx: RecoContext) => Message;
@@ -18,7 +17,7 @@ const key =
 
 const withThresholds =
   (k: TranslationKey, checkId: string): Builder =>
-  (c) => ({ key: k, vars: thresholdVars(checkId, c.thresholds ?? DEFAULT_SEO_THRESHOLDS) });
+  (c) => ({ key: k, vars: thresholdVars(checkId, c.thresholds) });
 
 const MAP: Record<string, Partial<Record<Status, Builder>>> = {
   introductionKeyword: {

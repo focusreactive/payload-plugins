@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_SEO_THRESHOLDS } from "../../src/constants";
 import { fleschToStatus, scoreToStatus, statusToRing } from "../../src/engine/scoreStatus";
 
 describe("scoreToStatus", () => {
@@ -31,10 +32,10 @@ describe("statusToRing", () => {
 });
 
 describe("fleschToStatus", () => {
-  it("uses the Yoast bands by default", () => {
-    expect(fleschToStatus(60)).toBe("good");
-    expect(fleschToStatus(55)).toBe("warn");
-    expect(fleschToStatus(49)).toBe("bad");
+  it("uses the Yoast bands", () => {
+    expect(fleschToStatus(60, DEFAULT_SEO_THRESHOLDS.fleschReadingEase)).toBe("good");
+    expect(fleschToStatus(55, DEFAULT_SEO_THRESHOLDS.fleschReadingEase)).toBe("warn");
+    expect(fleschToStatus(49, DEFAULT_SEO_THRESHOLDS.fleschReadingEase)).toBe("bad");
   });
 
   it("uses the configured bands", () => {

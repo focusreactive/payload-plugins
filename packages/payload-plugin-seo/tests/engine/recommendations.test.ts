@@ -8,12 +8,15 @@ const t = createTranslator("en", undefined);
 
 describe("getRecommendation", () => {
   it("returns undefined for good status", () => {
-    expect(getRecommendation("keyphraseDensity", "good", {})).toBeUndefined();
+    expect(
+      getRecommendation("keyphraseDensity", "good", { thresholds: DEFAULT_SEO_THRESHOLDS })
+    ).toBeUndefined();
   });
 
   it("returns a message carrying the keyphrase for a known id + bad status", () => {
     const reco = getRecommendation("introductionKeyword", "bad", {
       keyphrase: "best running shoes",
+      thresholds: DEFAULT_SEO_THRESHOLDS,
     });
     expect(reco).toEqual({
       key: "reco.introductionKeyword.bad",
@@ -23,13 +26,17 @@ describe("getRecommendation", () => {
   });
 
   it("does not leave a placeholder behind when there is no keyphrase", () => {
-    const reco = getRecommendation("introductionKeyword", "bad", {});
+    const reco = getRecommendation("introductionKeyword", "bad", {
+      thresholds: DEFAULT_SEO_THRESHOLDS,
+    });
     expect(reco?.key).toBe("reco.introductionKeyword.badNoKeyphrase");
     expect(reco && t(reco.key, reco.vars)).not.toContain("{{");
   });
 
   it("falls back to a generic message for unmapped ids", () => {
-    expect(getRecommendation("somethingNew", "warn", {})).toEqual({ key: "reco.generic.warn" });
+    expect(
+      getRecommendation("somethingNew", "warn", { thresholds: DEFAULT_SEO_THRESHOLDS })
+    ).toEqual({ key: "reco.generic.warn" });
   });
 
   it("states the configured numbers", () => {
@@ -40,8 +47,10 @@ describe("getRecommendation", () => {
     );
   });
 
-  it("states the default numbers without configuration", () => {
-    const reco = getRecommendation("metaDescriptionLength", "bad", {});
+  it("states the default numbers", () => {
+    const reco = getRecommendation("metaDescriptionLength", "bad", {
+      thresholds: DEFAULT_SEO_THRESHOLDS,
+    });
     expect(reco && t(reco.key, reco.vars)).toBe(
       "Write a meta description longer than 120 and up to 156 characters."
     );

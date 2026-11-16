@@ -4,7 +4,6 @@ import type { GaugeSpec, Visualization } from "../../../types/visualization";
 import { buildGauge } from "../../buildGauge";
 import { formatMarkerValue } from "../../formatGaugeValue";
 import { gaugeSpecsFor } from "../../gaugeSpecs";
-import { DEFAULT_SEO_THRESHOLDS } from "../../../../constants";
 import type { ResolvedSeoThresholds } from "../../../../types/config";
 import { gaugeKeyByCheck } from "../constants";
 import { readNumber } from "../../../../utils/readNumber";
@@ -13,7 +12,7 @@ import { PRESENCE } from "./resolvePresence";
 export const resolveValueRange = (
   check: CheckResult,
   data: Record<string, unknown> | undefined,
-  thresholds: ResolvedSeoThresholds = DEFAULT_SEO_THRESHOLDS
+  thresholds: ResolvedSeoThresholds
 ): Visualization => {
   const spec: GaugeSpec | undefined = gaugeSpecsFor(thresholds)[check.id as CheckId];
   const markerKey = gaugeKeyByCheck[check.id as CheckId];
