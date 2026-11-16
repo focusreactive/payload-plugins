@@ -161,7 +161,17 @@ export function ClinicMap({ points, selectedKey, onSelect }: Props) {
             height={TILE_SIZE}
             key={tile.key}
             src={tile.src}
-            style={{ left: tile.x, maxWidth: "none", position: "absolute", top: tile.y }}
+            // The site stylesheet stretches images to their container; tiles must stay exactly one tile wide.
+            style={{
+              height: TILE_SIZE,
+              left: tile.x,
+              maxHeight: "none",
+              maxWidth: "none",
+              minWidth: TILE_SIZE,
+              position: "absolute",
+              top: tile.y,
+              width: TILE_SIZE,
+            }}
             width={TILE_SIZE}
           />
         ))}

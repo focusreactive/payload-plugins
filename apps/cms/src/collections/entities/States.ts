@@ -1,4 +1,4 @@
-import type { CollectionConfig } from "payload";
+import type { CollectionConfig, Field } from "payload";
 
 import { bilingual } from "@/blocks/site/shared/fieldText";
 import { bodyRichText, headingRichText } from "@/lib/fields/site/richText";
@@ -73,7 +73,7 @@ export const States: CollectionConfig<"states"> = {
               }
             ),
             bilingual(
-              siteButton({ name: "heroButton" }),
+              { ...siteButton({ name: "heroButton" }), localized: true } as Field,
               { en: "Top button", es: "Botón superior" },
               {
                 en: "The button under the tagline. Empty text hides it.",
