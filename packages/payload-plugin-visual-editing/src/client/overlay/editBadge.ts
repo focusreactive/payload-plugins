@@ -2,6 +2,7 @@ import {
   DATA_VE_FOR_ATTR,
   DATA_VE_TARGET_ATTR,
   LABEL_CLASS,
+  LABEL_ICON_SVG,
   LABEL_STYLES,
   OUTLINE_STYLE,
 } from "./constants.js";
@@ -10,6 +11,8 @@ type EditBadgeConfig = {
   href: string;
   clickHandler: (event: MouseEvent) => void;
   originalOutline: string;
+  /** Outline to put back when the pointer leaves (the idle outline in "always" mode). */
+  restingOutline: string;
   paintOutline: boolean;
 };
 
@@ -47,7 +50,7 @@ export function createEditBadge(): EditBadge {
   } as Partial<CSSStyleDeclaration>);
 
   const label = document.createElement("a");
-  label.textContent = "Edit";
+  label.innerHTML = `${LABEL_ICON_SVG}<span>Edit</span>`;
   label.className = LABEL_CLASS;
   label.target = "_blank";
   label.rel = "noopener noreferrer";
@@ -87,7 +90,7 @@ export function createEditBadge(): EditBadge {
       label.addEventListener("click", config.clickHandler);
       currentClickHandler = config.clickHandler;
       currentTarget = target;
-      currentOriginalOutline = config.originalOutline;
+      currentOriginalOutline = config.restingOutline;
       layer.style.visibility = "visible";
     },
     hide() {

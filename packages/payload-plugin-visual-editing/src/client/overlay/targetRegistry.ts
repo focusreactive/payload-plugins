@@ -4,7 +4,7 @@ import type { Marker } from "./markerExtractor.js";
 import { spreadVeIdentity } from "../../shared/shared.js";
 import { documentAddressOf } from "../../shared/veDocument.js";
 import { buildOverlayClickHandler } from "../overlayClickHandler.js";
-import { DATA_VE_TARGET_ATTR, OUTLINE_STYLE } from "./constants.js";
+import { DATA_VE_TARGET_ATTR, OUTLINE_IDLE_STYLE } from "./constants.js";
 
 export type TargetConfig = {
   path: string;
@@ -14,6 +14,7 @@ export type TargetConfig = {
   href: string;
   clickHandler: (event: MouseEvent) => void;
   originalOutline: string;
+  restingOutline: string;
   paintOutline: boolean;
 };
 
@@ -67,7 +68,7 @@ export function createTargetRegistry(): TargetRegistry {
       const originalOutline = existing?.originalOutline ?? target.style.outline;
       const isFirstBinding = !existing;
       if (ctx.mode === "always" && isFirstBinding) {
-        target.style.outline = OUTLINE_STYLE;
+        target.style.outline = OUTLINE_IDLE_STYLE;
       }
       const next: TargetConfig = {
         path: marker.path,
@@ -77,7 +78,8 @@ export function createTargetRegistry(): TargetRegistry {
         href,
         clickHandler,
         originalOutline,
-        paintOutline: ctx.mode === "hover",
+        restingOutline: ctx.mode === "always" ? OUTLINE_IDLE_STYLE : originalOutline,
+        paintOutline: true,
       };
       configs.set(target, next);
       return next;
