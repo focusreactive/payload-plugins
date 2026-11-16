@@ -816,7 +816,7 @@ seoPlugin({
 | `fleschReadingEase`     | `min` good from (60), `acceptableMin` okay from (50)              | score 0–100                              |
 
 - The same numbers drive the Yoast check, the gauge bands and the numbers in the check tips and recommendations.
-- The plugin validates the option when Payload starts and throws on an unknown check or number, a negative or non-numeric value, a percentage or score over 100, a `titleWidth.max` of 400 or less, or bands in the wrong order (for example `min` not below `max`).
+- The plugin validates the option when Payload starts and throws on an unknown check or number, a negative or non-numeric value, 0 for `keyphraseLength.max`, `textLength.acceptableMin` or `textSentenceLength.maxSentenceWords`, a percentage or score over 100, a `titleWidth.max` of 400 or less, or bands in the wrong order (for example `min` not below `max`).
 - Transition words and passive voice keep the Yoast bands: Yoast hardcodes them instead of reading them from its assessment config.
 - A number you set wins over Yoast's language-specific settings too. Numbers you leave out keep them, for example character-based text length in Japanese. The gauges always show the configured or default numbers above.
 - Keyphrase density is the value Yoast scores: the share of words, weighted by the keyphrase length (`0.7 + words / 3`). The gauge shows the same value.

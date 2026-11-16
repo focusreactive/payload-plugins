@@ -10,6 +10,7 @@ type ThresholdCheck = keyof ResolvedSeoThresholds;
 
 interface ThresholdRule<Field extends string> {
   ascending: readonly Field[];
+  positive?: readonly Field[];
   percent?: readonly Field[];
   greaterThan?: number;
 }
@@ -19,13 +20,14 @@ type ThresholdRules = {
 };
 
 const RULES: ThresholdRules = {
-  keyphraseLength: { ascending: ["max", "acceptableMax"] },
+  keyphraseLength: { ascending: ["max", "acceptableMax"], positive: ["max"] },
   keyphraseDensity: { ascending: ["min", "max"], percent: ["min", "max"] },
   metaDescriptionLength: { ascending: ["min", "max"] },
   titleWidth: { ascending: ["max"], greaterThan: SHORT_TITLE_WIDTH_PX },
-  textLength: { ascending: ["acceptableMin", "min"] },
+  textLength: { ascending: ["acceptableMin", "min"], positive: ["acceptableMin"] },
   textSentenceLength: {
     ascending: ["max", "acceptableMax"],
+    positive: ["maxSentenceWords"],
     percent: ["max", "acceptableMax"],
   },
   fleschReadingEase: {
@@ -75,6 +77,9 @@ function assertBands(check: string, bands: Record<string, unknown>, rule: Thresh
   for (const [field, value] of Object.entries(bands)) {
     if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
       fail(`${pathOf(check, field)} must be a number of at least 0, got ${String(value)}`);
+    }
+    if (rule.positive?.includes(field) && value === 0) {
+      fail(`${pathOf(check, field)} must be greater than 0`);
     }
     if (rule.percent?.includes(field) && value > MAX_PERCENT) {
       fail(`${pathOf(check, field)} must be at most ${MAX_PERCENT}`);

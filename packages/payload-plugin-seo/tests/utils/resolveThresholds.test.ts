@@ -96,6 +96,14 @@ describe("resolveThresholds", () => {
     expect(resolving(input)).toThrow(message);
   });
 
+  it.each<[SeoThresholds, string]>([
+    [{ keyphraseLength: { max: 0 } }, "keyphraseLength.max"],
+    [{ textLength: { acceptableMin: 0 } }, "textLength.acceptableMin"],
+    [{ textSentenceLength: { maxSentenceWords: 0 } }, "textSentenceLength.maxSentenceWords"],
+  ])("rejects 0 where it has no meaning", (input, field) => {
+    expect(resolving(input)).toThrow(`thresholds.${field} must be greater than 0`);
+  });
+
   it("rejects a title width the fixed short-title band already covers", () => {
     expect(resolving({ titleWidth: { max: 400 } })).toThrow(
       /thresholds\.titleWidth\.max must be greater than 400/u
