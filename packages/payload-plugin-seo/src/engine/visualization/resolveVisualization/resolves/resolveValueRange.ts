@@ -2,7 +2,7 @@ import type { CheckId } from "../../../../constants/checkIds";
 import type { CheckResult } from "../../../types/analysis";
 import type { GaugeSpec, Visualization } from "../../../types/visualization";
 import { buildGauge } from "../../buildGauge";
-import { formatGaugeValue } from "../../formatGaugeValue";
+import { formatMarkerValue } from "../../formatGaugeValue";
 import { gaugeSpecsFor } from "../../gaugeSpecs";
 import { DEFAULT_SEO_THRESHOLDS } from "../../../../constants";
 import type { ResolvedSeoThresholds } from "../../../../types/config";
@@ -31,7 +31,7 @@ export const resolveValueRange = (
   return {
     type: "value-range",
     gauge: {
-      ...buildGauge(spec, markerValue, formatGaugeValue(markerValue, spec.unit)),
+      ...buildGauge(spec, markerValue, formatMarkerValue(markerValue, spec)),
       markerStatus: check.status,
     },
   };
