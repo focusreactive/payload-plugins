@@ -36,20 +36,20 @@ function fleschCheck(
 export function deriveReadability(
   paper: InstanceType<typeof Paper>,
   keyphrase: string,
-  { values, configured }: AnalysisThresholds
+  thresholds: AnalysisThresholds
 ): CategoryResult {
-  const ctx = { keyphrase, thresholds: values };
+  const ctx = { keyphrase, thresholds: thresholds.values };
   const researcher = makeResearcher(paper);
 
   const assessor = new ContentAssessor(makeResearcher(paper));
-  configureReadabilityAssessor(assessor, configured);
+  configureReadabilityAssessor(assessor, thresholds);
   const readRaw = runAssessor(assessor, ctx, paper);
-  const flesch = fleschCheck(researcher, ctx, values);
+  const flesch = fleschCheck(researcher, ctx, thresholds.values);
   const readChecks = enrich(
     flesch ? [...readRaw, flesch] : readRaw,
     paper as PaperLike,
     researcher,
-    values
+    thresholds
   );
 
   return toCategory(readChecks);

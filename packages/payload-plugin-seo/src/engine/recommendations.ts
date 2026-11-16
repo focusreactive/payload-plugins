@@ -1,9 +1,9 @@
-import { DEFAULT_SEO_THRESHOLDS, DENSITY_MIN_TEXT_WORDS } from "../constants";
+import { DEFAULT_SEO_THRESHOLDS } from "../constants";
 import type { Message, TranslationKey } from "../translations/types";
 import type { ResolvedSeoThresholds } from "../types/config";
 import { thresholdVars } from "./thresholds/thresholdVars";
 import type { Status } from "./types/analysis";
-import { readNumber } from "./visualization/resolveVisualization/utils/readNumber";
+import { readNumber } from "../utils/readNumber";
 
 export interface RecoContext {
   keyphrase?: string;
@@ -71,10 +71,18 @@ function densityKey(data: CheckData, { keyphraseDensity }: ResolvedSeoThresholds
   const count = readNumber(data, "count");
   const density = readNumber(data, "densityPct");
   const textLength = readNumber(data, "textLength");
-  if (count === undefined || density === undefined || textLength === undefined) return undefined;
+  const minTextLength = readNumber(data, "minTextLength");
+  if (
+    count === undefined ||
+    density === undefined ||
+    textLength === undefined ||
+    minTextLength === undefined
+  ) {
+    return undefined;
+  }
 
   const tooMany =
-    textLength < DENSITY_MIN_TEXT_WORDS ? count > 1 : count > 1 && density > keyphraseDensity.max;
+    textLength < minTextLength ? count > 1 : count > 1 && density > keyphraseDensity.max;
 
   return tooMany ? "reco.keyphraseDensity.tooMany" : "reco.keyphraseDensity.tooFew";
 }

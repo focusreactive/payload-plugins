@@ -9,3 +9,4 @@ export * from "./statuses";
 export * from "./keyphrases";
 export * from "./links";
 export * from "./thresholds";
+export * from "./yoast";

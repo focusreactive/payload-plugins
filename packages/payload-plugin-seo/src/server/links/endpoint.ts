@@ -108,19 +108,17 @@ export function createLinkSuggestionsEndpoint(scope: KeyphraseScope): Endpoint {
       const ref = await readAuthorizedRef(req, body, scope);
       if (ref instanceof Response) return ref;
 
-      const findSuggestions = async () =>
-        collectSuggestions({
-          req,
-          candidates: await findUnlinkedCandidates(req, ref, scope.collections, request),
-          locale: ref.locale,
-          linkedHrefs: request.linkedHrefs,
-          sites: internalSitesOf(req),
-        });
-
-      const [suggestions, linked] = await Promise.all([
-        findSuggestions(),
+      const [candidates, linked] = await Promise.all([
+        findUnlinkedCandidates(req, ref, scope.collections, request),
         resolveLinkedDocs(req, request.linkedDocs, ref.locale),
       ]);
+      const suggestions = await collectSuggestions({
+        req,
+        candidates,
+        locale: ref.locale,
+        linkedHrefs: request.linkedHrefs,
+        sites: internalSitesOf(req),
+      });
 
       return Response.json({ suggestions, linked });
     },

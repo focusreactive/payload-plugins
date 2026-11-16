@@ -1,9 +1,28 @@
-import { DEFAULT_SEO_THRESHOLDS, MAX_PERCENT } from "../../constants";
+import {
+  FLESCH_SCORE_MAX,
+  MAX_PERCENT,
+  YOAST_BAD_SCORE,
+  YOAST_DENSITY_OVER_MAXIMUM_SCORE,
+  YOAST_DENSITY_UNDER_MINIMUM_SCORE,
+  YOAST_GOOD_SCORE,
+  YOAST_OKAY_SCORE,
+  YOAST_PASSIVE_VOICE_BANDS,
+  YOAST_TRANSITION_WORDS_BANDS,
+} from "../../constants";
 import type { CheckId } from "../../constants/checkIds";
 import type { ResolvedSeoThresholds } from "../../types/config";
 import type { GaugeSpec } from "../types/visualization";
 
 export const AXIS_HEADROOM = 1.25;
+
+const DEFAULT_AXIS_MAX = {
+  keyphraseLength: 12,
+  keyphraseDensity: 5,
+  metaDescriptionLength: 180,
+  titleWidth: 700,
+  textLength: 350,
+  readabilityShare: 50,
+} as const;
 
 function axisMaxFor(defaultAxisMax: number, highestThreshold: number): number {
   return highestThreshold < defaultAxisMax
@@ -28,48 +47,52 @@ export function gaugeSpecsFor({
     keyphraseLength: {
       statusSource: "yoast",
       axisMin: 0,
-      axisMax: axisMaxFor(12, keyphraseLength.acceptableMax),
+      axisMax: axisMaxFor(DEFAULT_AXIS_MAX.keyphraseLength, keyphraseLength.acceptableMax),
       thresholds: [keyphraseLength.max, keyphraseLength.acceptableMax],
-      scores: [9, 6, 3],
+      scores: [YOAST_GOOD_SCORE, YOAST_OKAY_SCORE, YOAST_BAD_SCORE],
       unit: "words",
     },
     keyphraseDensity: {
       statusSource: "yoast",
       axisMin: 0,
-      axisMax: percentAxisMaxFor(5, keyphraseDensity.max),
+      axisMax: percentAxisMaxFor(DEFAULT_AXIS_MAX.keyphraseDensity, keyphraseDensity.max),
       thresholds: [keyphraseDensity.min, keyphraseDensity.max],
-      scores: [4, 9, -10],
+      scores: [
+        YOAST_DENSITY_UNDER_MINIMUM_SCORE,
+        YOAST_GOOD_SCORE,
+        YOAST_DENSITY_OVER_MAXIMUM_SCORE,
+      ],
       unit: "percent",
     },
     metaDescriptionLength: {
       statusSource: "yoast",
       axisMin: 0,
-      axisMax: axisMaxFor(180, metaDescriptionLength.max),
+      axisMax: axisMaxFor(DEFAULT_AXIS_MAX.metaDescriptionLength, metaDescriptionLength.max),
       thresholds: [metaDescriptionLength.min, metaDescriptionLength.max],
-      scores: [6, 9, 6],
+      scores: [YOAST_OKAY_SCORE, YOAST_GOOD_SCORE, YOAST_OKAY_SCORE],
       unit: "chars",
     },
     titleWidth: {
       statusSource: "yoast",
       axisMin: 0,
-      axisMax: axisMaxFor(700, titleWidth.max),
+      axisMax: axisMaxFor(DEFAULT_AXIS_MAX.titleWidth, titleWidth.max),
       thresholds: [titleWidth.max],
-      scores: [9, 3],
+      scores: [YOAST_GOOD_SCORE, YOAST_BAD_SCORE],
       unit: "px",
     },
     textLength: {
       statusSource: "yoast",
       axisMin: 0,
-      axisMax: axisMaxFor(350, textLength.min),
+      axisMax: axisMaxFor(DEFAULT_AXIS_MAX.textLength, textLength.min),
       thresholds: [textLength.acceptableMin, textLength.min],
-      scores: [3, 6, 9],
+      scores: [YOAST_BAD_SCORE, YOAST_OKAY_SCORE, YOAST_GOOD_SCORE],
       unit: "words",
       openEnded: true,
     },
     fleschReadingEase: {
       statusSource: "direct",
       axisMin: 0,
-      axisMax: 100,
+      axisMax: FLESCH_SCORE_MAX,
       thresholds: [fleschReadingEase.acceptableMin, fleschReadingEase.min],
       statuses: ["bad", "warn", "good"],
       unit: "score",
@@ -77,7 +100,10 @@ export function gaugeSpecsFor({
     textSentenceLength: {
       statusSource: "direct",
       axisMin: 0,
-      axisMax: percentAxisMaxFor(50, textSentenceLength.acceptableMax),
+      axisMax: percentAxisMaxFor(
+        DEFAULT_AXIS_MAX.readabilityShare,
+        textSentenceLength.acceptableMax
+      ),
       thresholds: [textSentenceLength.max, textSentenceLength.acceptableMax],
       statuses: ["good", "warn", "bad"],
       unit: "percent",
@@ -85,21 +111,19 @@ export function gaugeSpecsFor({
     passiveVoice: {
       statusSource: "direct",
       axisMin: 0,
-      axisMax: 50,
-      thresholds: [10, 15],
+      axisMax: DEFAULT_AXIS_MAX.readabilityShare,
+      thresholds: [...YOAST_PASSIVE_VOICE_BANDS],
       statuses: ["good", "warn", "bad"],
       unit: "percent",
     },
     textTransitionWords: {
       statusSource: "direct",
       axisMin: 0,
-      axisMax: 50,
-      thresholds: [20, 30],
+      axisMax: DEFAULT_AXIS_MAX.readabilityShare,
+      thresholds: [...YOAST_TRANSITION_WORDS_BANDS],
       statuses: ["bad", "warn", "good"],
       unit: "percent",
       openEnded: true,
     },
   };
 }
-
-export const GAUGE_SPECS = gaugeSpecsFor(DEFAULT_SEO_THRESHOLDS);

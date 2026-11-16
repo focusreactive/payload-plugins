@@ -55,21 +55,21 @@ describe("directionalRecommendation", () => {
   };
 
   it("asks for more keyphrases below the band and fewer above it", () => {
-    expect(text("keyphraseDensity", { densityPct: 0.3, textLength: 300, count: 1 })).toMatch(
-      /a few more times/u
-    );
-    expect(text("keyphraseDensity", { densityPct: 3.3, textLength: 300, count: 12 })).toMatch(
-      /less often/u
-    );
+    expect(
+      text("keyphraseDensity", { densityPct: 0.3, textLength: 300, minTextLength: 100, count: 1 })
+    ).toMatch(/a few more times/u);
+    expect(
+      text("keyphraseDensity", { densityPct: 3.3, textLength: 300, minTextLength: 100, count: 12 })
+    ).toMatch(/less often/u);
   });
 
   it("counts matches instead of the density in short texts", () => {
-    expect(text("keyphraseDensity", { densityPct: 9, textLength: 60, count: 3 })).toMatch(
-      /less often/u
-    );
-    expect(text("keyphraseDensity", { densityPct: 0, textLength: 60, count: 0 })).toMatch(
-      /a few more times/u
-    );
+    expect(
+      text("keyphraseDensity", { densityPct: 9, textLength: 60, minTextLength: 100, count: 3 })
+    ).toMatch(/less often/u);
+    expect(
+      text("keyphraseDensity", { densityPct: 0, textLength: 60, minTextLength: 100, count: 0 })
+    ).toMatch(/a few more times/u);
   });
 
   it("asks to lengthen a short meta description and trim a long one", () => {

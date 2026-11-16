@@ -2,6 +2,7 @@ import { Paper, SeoAssessor } from "yoastseo";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { ensureLanguagePack } from "../../../src/components/SeoDrawer/languagePacks";
 import { makeResearcher } from "../../../src/engine/researcherAdapter";
+import { analysisThresholds } from "../../../src/engine/thresholds/analysisThresholds";
 import {
   configureReadabilityAssessor,
   configureRelatedKeyphraseAssessor,
@@ -24,7 +25,7 @@ function scoreOf(
 ): number | undefined {
   const paper = new Paper(text, attributes);
   const assessor = new SeoAssessor(makeResearcher(paper));
-  configureSeoAssessor(assessor, configured);
+  configureSeoAssessor(assessor, analysisThresholds(configured));
   assessor.assess(paper);
 
   const results: AssessmentResult[] = assessor.getValidResults();
@@ -43,9 +44,9 @@ describe("configureAssessors", () => {
   it("keeps the Yoast assessments without configured thresholds", () => {
     const addAssessment = vi.fn((_identifier: string, _assessment: unknown) => true);
 
-    configureSeoAssessor({ addAssessment }, {});
-    configureRelatedKeyphraseAssessor({ addAssessment }, {});
-    configureReadabilityAssessor({ addAssessment }, {});
+    configureSeoAssessor({ addAssessment }, analysisThresholds());
+    configureRelatedKeyphraseAssessor({ addAssessment }, analysisThresholds());
+    configureReadabilityAssessor({ addAssessment }, analysisThresholds());
 
     expect(addAssessment).not.toHaveBeenCalled();
   });
@@ -53,7 +54,7 @@ describe("configureAssessors", () => {
   it("replaces only the assessments of configured checks", () => {
     const addAssessment = vi.fn((_identifier: string, _assessment: unknown) => true);
 
-    configureSeoAssessor({ addAssessment }, { textLength: { min: 500 } });
+    configureSeoAssessor({ addAssessment }, analysisThresholds({ textLength: { min: 500 } }));
 
     expect(addAssessment.mock.calls.map(([identifier]) => identifier)).toEqual(["textLength"]);
   });

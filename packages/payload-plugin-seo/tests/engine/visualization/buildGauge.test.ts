@@ -1,15 +1,18 @@
 import { describe, expect, it } from "vitest";
 import type { GaugeSpec } from "../../../src/engine/types/visualization";
+import { DEFAULT_SEO_THRESHOLDS } from "../../../src/constants";
 import { buildGauge } from "../../../src/engine/visualization/buildGauge";
-import { GAUGE_SPECS } from "../../../src/engine/visualization/gaugeSpecs";
+import { gaugeSpecsFor } from "../../../src/engine/visualization/gaugeSpecs";
 
-const keyphraseLength = GAUGE_SPECS.keyphraseLength as GaugeSpec;
-const keyphraseDensity = GAUGE_SPECS.keyphraseDensity as GaugeSpec;
-const metaDescriptionLength = GAUGE_SPECS.metaDescriptionLength as GaugeSpec;
-const passiveVoice = GAUGE_SPECS.passiveVoice as GaugeSpec;
-const textTransitionWords = GAUGE_SPECS.textTransitionWords as GaugeSpec;
-const fleschReadingEase = GAUGE_SPECS.fleschReadingEase as GaugeSpec;
-const textLength = GAUGE_SPECS.textLength as GaugeSpec;
+const defaultSpecs = gaugeSpecsFor(DEFAULT_SEO_THRESHOLDS);
+
+const keyphraseLength = defaultSpecs.keyphraseLength as GaugeSpec;
+const keyphraseDensity = defaultSpecs.keyphraseDensity as GaugeSpec;
+const metaDescriptionLength = defaultSpecs.metaDescriptionLength as GaugeSpec;
+const passiveVoice = defaultSpecs.passiveVoice as GaugeSpec;
+const textTransitionWords = defaultSpecs.textTransitionWords as GaugeSpec;
+const fleschReadingEase = defaultSpecs.fleschReadingEase as GaugeSpec;
+const textLength = defaultSpecs.textLength as GaugeSpec;
 
 describe("buildGauge — boundary landing (keyphraseLength)", () => {
   it("places a marker on a threshold exactly on the GOOD band end with good status", () => {

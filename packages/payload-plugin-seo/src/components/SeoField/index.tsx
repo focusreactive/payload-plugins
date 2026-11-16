@@ -5,7 +5,6 @@ import type { ChangeEvent, ReactNode } from "react";
 import { getSeoClientConfig } from "../../client-config/registry";
 import { measureDescription, measureTitle } from "../../measure/measure";
 import type { RangeOverride } from "../../measure/measure";
-import { fieldRangeOf } from "../../measure/fieldRanges";
 import type { SeoFieldKind } from "../../server/generate/prompts";
 import { Tooltip, TooltipText, TooltipTitle } from "../../ui/Tooltip";
 import { cn, OUTLINE_BUTTON_CLASS } from "../../utils/style";
@@ -45,9 +44,10 @@ export function SeoField(props: SeoFieldProps) {
     (fieldState as { customComponents?: InjectedComponents }).customComponents ?? {};
   const text = value ?? "";
   const { enabled, fieldRanges } = getSeoClientConfig();
-  const fieldRange = fieldRangeOf(fieldRanges[kind], range);
   const measurement =
-    kind === "title" ? measureTitle(text, fieldRange) : measureDescription(text, fieldRange);
+    kind === "title"
+      ? measureTitle(text, range, fieldRanges.title)
+      : measureDescription(text, range, fieldRanges.description);
 
   const { generate, status, error } = useGenerate({ kind, measurement, setValue });
   const loading = status === "loading";

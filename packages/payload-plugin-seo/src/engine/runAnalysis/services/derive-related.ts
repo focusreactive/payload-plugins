@@ -14,13 +14,18 @@ const RelatedKeywordAssessor = commonJsDefault(relatedKeywordAssessorModule);
 export function deriveRelatedKeyphrase(
   paper: PaperData,
   keyphrase: string,
-  { values, configured }: AnalysisThresholds
+  thresholds: AnalysisThresholds
 ): CategoryResult {
-  const ctx = { keyphrase, thresholds: values };
+  const ctx = { keyphrase, thresholds: thresholds.values };
   const researcher = makeResearcher(paper);
   const assessor = new RelatedKeywordAssessor(makeResearcher(paper));
-  configureRelatedKeyphraseAssessor(assessor, configured);
-  const checks = enrich(runAssessor(assessor, ctx, paper), paper as PaperLike, researcher, values);
+  configureRelatedKeyphraseAssessor(assessor, thresholds);
+  const checks = enrich(
+    runAssessor(assessor, ctx, paper),
+    paper as PaperLike,
+    researcher,
+    thresholds
+  );
 
   return toCategory(checks);
 }

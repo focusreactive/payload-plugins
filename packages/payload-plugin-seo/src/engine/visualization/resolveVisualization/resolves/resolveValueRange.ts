@@ -6,8 +6,8 @@ import { formatMarkerValue } from "../../formatGaugeValue";
 import { gaugeSpecsFor } from "../../gaugeSpecs";
 import { DEFAULT_SEO_THRESHOLDS } from "../../../../constants";
 import type { ResolvedSeoThresholds } from "../../../../types/config";
-import { gaugeKeyByCheck, minTextLengthByCheck } from "../constants";
-import { readNumber } from "../utils/readNumber";
+import { gaugeKeyByCheck } from "../constants";
+import { readNumber } from "../../../../utils/readNumber";
 import { PRESENCE } from "./resolvePresence";
 
 export const resolveValueRange = (
@@ -21,8 +21,7 @@ export const resolveValueRange = (
   if (!spec || !markerKey) return PRESENCE;
 
   const textLength = readNumber(data, "textLength");
-  const minTextLength =
-    readNumber(data, "minTextLength") ?? minTextLengthByCheck[check.id as CheckId];
+  const minTextLength = readNumber(data, "minTextLength");
   if (textLength !== undefined && minTextLength !== undefined && textLength < minTextLength) {
     return PRESENCE;
   }

@@ -43,20 +43,20 @@ interface DeriveSeoResult {
 export function deriveSeo(
   paper: PaperData,
   keyphrase: string,
-  { values, configured }: AnalysisThresholds
+  thresholds: AnalysisThresholds
 ): DeriveSeoResult {
-  const ctx = { keyphrase, thresholds: values };
+  const ctx = { keyphrase, thresholds: thresholds.values };
   const researcher = makeResearcher(paper);
 
   const seoAssessor = new SeoAssessor(makeResearcher(paper));
   seoAssessor.addAssessment("keyphraseDistribution", new KeyphraseDistributionAssessment());
-  configureSeoAssessor(seoAssessor, configured);
+  configureSeoAssessor(seoAssessor, thresholds);
 
   const seoChecks = enrich(
     runAssessor(seoAssessor, ctx, paper),
     paper as PaperLike,
     researcher,
-    values
+    thresholds
   );
 
   const { keyphrase: keyphraseChecks, onPage } = partitionSeo(seoChecks);

@@ -1,17 +1,23 @@
+import KeyphraseLengthAssessment from "yoastseo/build/scoring/assessments/seo/KeyphraseLengthAssessment";
 import KeyphraseDensityAssessment from "yoastseo/build/scoring/assessments/seo/KeywordDensityAssessment";
+import MetaDescriptionLengthAssessment from "yoastseo/build/scoring/assessments/seo/MetaDescriptionLengthAssessment";
 import PageTitleWidthAssessment from "yoastseo/build/scoring/assessments/seo/PageTitleWidthAssessment";
+import TextLengthAssessment from "yoastseo/build/scoring/assessments/seo/TextLengthAssessment";
+import SentenceLengthInTextAssessment from "yoastseo/build/scoring/assessments/readability/SentenceLengthInTextAssessment";
+import {
+  YOAST_DENSITY_OVER_MAXIMUM,
+  YOAST_SEO_ASSESSOR_SHORT_TITLE_SCORE,
+  YOAST_TEXT_LENGTH_BELOW_MINIMUM,
+  YOAST_TEXT_LENGTH_VERY_FAR_BELOW_MINIMUM,
+} from "../../constants";
 import type { SeoThresholds } from "../../types/config";
-import { ConfiguredKeyphraseLengthAssessment } from "./assessments/ConfiguredKeyphraseLengthAssessment";
-import { ConfiguredMetaDescriptionLengthAssessment } from "./assessments/ConfiguredMetaDescriptionLengthAssessment";
-import { ConfiguredSentenceLengthAssessment } from "./assessments/ConfiguredSentenceLengthAssessment";
-import { ConfiguredTextLengthAssessment } from "./assessments/ConfiguredTextLengthAssessment";
+import type { AnalysisThresholds } from "./analysisThresholds";
+import { adjustLanguageConfig, applyOverrides } from "./yoastConfig";
+import type { YoastConfig } from "./yoastConfig";
 
 interface ConfigurableAssessor {
   addAssessment: (identifier: string, assessment: unknown) => boolean;
 }
-
-const YOAST_DENSITY_OVER_MAXIMUM = 4;
-const SEO_ASSESSOR_SHORT_TITLE_SCORE = 9;
 
 function definedOnly(values: Record<string, number | undefined>): Record<string, number> {
   const defined: Record<string, number> = {};
@@ -23,17 +29,25 @@ function definedOnly(values: Record<string, number | undefined>): Record<string,
   return defined;
 }
 
+function reapplying(overrides: YoastConfig) {
+  return (languageConfig: YoastConfig) => applyOverrides(languageConfig, overrides);
+}
+
 function keyphraseLengthAssessment(
   { keyphraseLength }: SeoThresholds,
   isRelatedKeyphrase: boolean
 ): unknown {
-  return new ConfiguredKeyphraseLengthAssessment(
-    definedOnly({
-      recommendedMaximum: keyphraseLength?.max,
-      acceptableMaximum: keyphraseLength?.acceptableMax,
-    }),
-    isRelatedKeyphrase
-  );
+  const parameters = definedOnly({
+    recommendedMaximum: keyphraseLength?.max,
+    acceptableMaximum: keyphraseLength?.acceptableMax,
+  });
+  const assessment = new KeyphraseLengthAssessment({
+    parameters,
+    parametersNoFunctionWordSupport: parameters,
+    isRelatedKeyphrase,
+  });
+
+  return adjustLanguageConfig(assessment, "getCustomConfig", reapplying({ parameters }));
 }
 
 function keyphraseDensityAssessment({ keyphraseDensity }: SeoThresholds): unknown {
@@ -50,11 +64,17 @@ function keyphraseDensityAssessment({ keyphraseDensity }: SeoThresholds): unknow
 }
 
 function metaDescriptionLengthAssessment({ metaDescriptionLength }: SeoThresholds): unknown {
-  return new ConfiguredMetaDescriptionLengthAssessment(
-    definedOnly({
-      recommendedMaximumLength: metaDescriptionLength?.min,
-      maximumLength: metaDescriptionLength?.max,
-    })
+  const tooShortUpTo = metaDescriptionLength?.min;
+  const longestGood = metaDescriptionLength?.max;
+  const lengths = definedOnly({
+    recommendedMaximumLength: tooShortUpTo,
+    maximumLength: longestGood,
+  });
+
+  return adjustLanguageConfig(
+    new MetaDescriptionLengthAssessment(lengths),
+    "getConfig",
+    reapplying(lengths)
   );
 }
 
@@ -62,28 +82,54 @@ function titleWidthAssessment({ titleWidth }: SeoThresholds): unknown {
   return new PageTitleWidthAssessment(
     {
       ...definedOnly({ maxLength: titleWidth?.max }),
-      scores: { widthTooShort: SEO_ASSESSOR_SHORT_TITLE_SCORE },
+      scores: { widthTooShort: YOAST_SEO_ASSESSOR_SHORT_TITLE_SCORE },
     },
     true
   );
 }
 
+function belowBandsUnderAcceptable(config: YoastConfig): YoastConfig {
+  const belowMinimum = Math.min(Number(config.belowMinimum), Number(config.slightlyBelowMinimum));
+
+  return {
+    ...config,
+    belowMinimum,
+    veryFarBelowMinimum: Math.min(Number(config.veryFarBelowMinimum), belowMinimum),
+  };
+}
+
 function textLengthAssessment({ textLength }: SeoThresholds): unknown {
-  return new ConfiguredTextLengthAssessment(
-    definedOnly({
-      recommendedMinimum: textLength?.min,
-      slightlyBelowMinimum: textLength?.acceptableMin,
-    })
+  const bands = definedOnly({
+    recommendedMinimum: textLength?.min,
+    slightlyBelowMinimum: textLength?.acceptableMin,
+  });
+  const initialBands =
+    bands.slightlyBelowMinimum === undefined
+      ? bands
+      : belowBandsUnderAcceptable({
+          belowMinimum: YOAST_TEXT_LENGTH_BELOW_MINIMUM,
+          veryFarBelowMinimum: YOAST_TEXT_LENGTH_VERY_FAR_BELOW_MINIMUM,
+          ...bands,
+        });
+
+  return adjustLanguageConfig(
+    new TextLengthAssessment(initialBands),
+    "getLanguageSpecificConfig",
+    (languageConfig) => belowBandsUnderAcceptable(applyOverrides(languageConfig, bands))
   );
 }
 
 function sentenceLengthAssessment({ textSentenceLength }: SeoThresholds): unknown {
-  return new ConfiguredSentenceLengthAssessment(
-    definedOnly({
-      recommendedLength: textSentenceLength?.maxSentenceWords,
-      slightlyTooMany: textSentenceLength?.max,
-      farTooMany: textSentenceLength?.acceptableMax,
-    })
+  const bands = definedOnly({
+    recommendedLength: textSentenceLength?.maxSentenceWords,
+    slightlyTooMany: textSentenceLength?.max,
+    farTooMany: textSentenceLength?.acceptableMax,
+  });
+
+  return adjustLanguageConfig(
+    new SentenceLengthInTextAssessment(bands),
+    "getLanguageSpecificConfig",
+    reapplying(bands)
   );
 }
 
@@ -95,7 +141,7 @@ function isConfigured(bands: Record<string, number | undefined> | undefined): bo
 
 function replaceConfigured(
   assessor: ConfigurableAssessor,
-  configured: SeoThresholds,
+  { configured }: AnalysisThresholds,
   factories: readonly AssessmentFactory[]
 ): void {
   for (const [check, create] of factories) {
@@ -105,10 +151,10 @@ function replaceConfigured(
 
 export function configureSeoAssessor(
   assessor: ConfigurableAssessor,
-  configured: SeoThresholds
+  thresholds: AnalysisThresholds
 ): void {
-  replaceConfigured(assessor, configured, [
-    ["keyphraseLength", (thresholds) => keyphraseLengthAssessment(thresholds, false)],
+  replaceConfigured(assessor, thresholds, [
+    ["keyphraseLength", (configured) => keyphraseLengthAssessment(configured, false)],
     ["keyphraseDensity", keyphraseDensityAssessment],
     ["metaDescriptionLength", metaDescriptionLengthAssessment],
     ["titleWidth", titleWidthAssessment],
@@ -118,17 +164,17 @@ export function configureSeoAssessor(
 
 export function configureRelatedKeyphraseAssessor(
   assessor: ConfigurableAssessor,
-  configured: SeoThresholds
+  thresholds: AnalysisThresholds
 ): void {
-  replaceConfigured(assessor, configured, [
-    ["keyphraseLength", (thresholds) => keyphraseLengthAssessment(thresholds, true)],
+  replaceConfigured(assessor, thresholds, [
+    ["keyphraseLength", (configured) => keyphraseLengthAssessment(configured, true)],
     ["keyphraseDensity", keyphraseDensityAssessment],
   ]);
 }
 
 export function configureReadabilityAssessor(
   assessor: ConfigurableAssessor,
-  configured: SeoThresholds
+  thresholds: AnalysisThresholds
 ): void {
-  replaceConfigured(assessor, configured, [["textSentenceLength", sentenceLengthAssessment]]);
+  replaceConfigured(assessor, thresholds, [["textSentenceLength", sentenceLengthAssessment]]);
 }

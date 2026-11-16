@@ -41,14 +41,19 @@ describe("resolveVisualization — value-range", () => {
 
   it("falls back to presence when Yoast does not score transition words in a short text", () => {
     const status = (textLength: number) =>
-      resolveVisualization(check("textTransitionWords"), { pct: 0, textLength }).type;
+      resolveVisualization(check("textTransitionWords"), { pct: 0, textLength, minTextLength: 200 })
+        .type;
 
     expect(status(150)).toBe("presence");
     expect(status(250)).toBe("value-range");
   });
 
   it("falls back to presence when keyphraseDensity textLength is below 100", () => {
-    const v = resolveVisualization(check("keyphraseDensity"), { densityPct: 1.5, textLength: 50 });
+    const v = resolveVisualization(check("keyphraseDensity"), {
+      densityPct: 1.5,
+      textLength: 50,
+      minTextLength: 100,
+    });
 
     expect(v).toEqual({ type: "presence" });
   });
