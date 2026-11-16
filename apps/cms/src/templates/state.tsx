@@ -1,7 +1,9 @@
+import { stripMarkers } from "@focus-reactive/payload-plugin-visual-editing";
 import React from "react";
 
 import { RenderSiteBlocks } from "@/blocks/siteBlockComponents";
 import { SitePage } from "@/components/site/layout/SitePage";
+import { StateHero } from "@/components/site/state/StateHero";
 import type { State } from "@/payload-types";
 
 import type { EntityTemplateProps } from "./types";
@@ -10,18 +12,10 @@ import type { EntityTemplateProps } from "./types";
 export function StateTemplate({ doc, locale, path, header, footer }: EntityTemplateProps<State>) {
   return (
     <SitePage
-      bodyId={doc.slug}
+      bodyId={stripMarkers(doc.slug) ?? doc.slug}
       footer={footer}
       header={header}
-      hero={
-        <section className="simple" id="hero">
-          <div className="container">
-            <div className="text-container">
-              <h1>{doc.heroTitle || doc.name}</h1>
-            </div>
-          </div>
-        </section>
-      }
+      hero={<StateHero doc={doc} locale={locale} />}
       locale={locale}
       path={path}
       template="region"

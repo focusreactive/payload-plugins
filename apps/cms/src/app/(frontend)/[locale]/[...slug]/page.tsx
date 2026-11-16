@@ -1,3 +1,4 @@
+import { isSiteTemplate } from "@/lib/site/templates";
 import { TrackPage } from "@focus-reactive/payload-plugin-analytics/client";
 import type { Metadata } from "next";
 import { draftMode } from "next/headers";
@@ -68,7 +69,7 @@ export default async function Page({ params }: Args) {
       hero={hero ? <RenderSiteBlock block={hero} context={context} locale={locale} /> : null}
       locale={locale}
       path={isHome ? "/" : `/${decodedSegments.join("/")}`}
-      template={isHome ? "home" : "default"}
+      template={isHome ? "home" : isSiteTemplate(page.template) ? page.template : "default"}
     >
       <TrackPage pageRef={pageRef} locale={locale} enabled={!draft} />
       <BreadcrumbsJsonLd items={page.breadcrumbs} locale={locale} />

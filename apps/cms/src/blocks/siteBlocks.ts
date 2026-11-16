@@ -13,6 +13,9 @@ import {
   SiteCtaBlock,
   TreatmentCardsBlock,
 } from "./site/configs";
+import { CenterTextBlock } from "./site/shared/centerTextConfig";
+import { ResultsSliderBlock } from "./site/shared/resultsConfig";
+import { StickyMediaBlock } from "./site/shared/stickyMediaConfig";
 import { blogBlocks } from "./site/templates/blog";
 import { clinicBlocks } from "./site/templates/clinic";
 import { conditionBlocks } from "./site/templates/condition";
@@ -36,6 +39,9 @@ export const siteBlocks: Block[] = [
   TreatmentCardsBlock,
   PostSliderBlock,
   SiteCtaBlock,
+  CenterTextBlock,
+  StickyMediaBlock,
+  ResultsSliderBlock,
   ...stateBlocks,
   ...clinicBlocks,
   ...treatmentBlocks,

@@ -3,11 +3,11 @@ import type {
   SerializedLexicalNode,
 } from "@payloadcms/richtext-lexical/lexical";
 import { LinkJSXConverter, RichText } from "@payloadcms/richtext-lexical/react";
-import type { JSXConvertersFunction } from "@payloadcms/richtext-lexical/react";
+import type { JSXConverters, JSXConvertersFunction } from "@payloadcms/richtext-lexical/react";
 import React from "react";
 
 import { withLocalePrefix } from "@/lib/config/entityRoutes";
-import { routedDocPath } from "@/lib/site/links";
+import { localizeHref, routedDocPath } from "@/lib/site/links";
 import type { RoutedDocRef } from "@/lib/site/links";
 
 type RichTextValue =
@@ -45,20 +45,75 @@ function renderText(node: TextNode): React.ReactNode {
   return element;
 }
 
+interface ListNode extends SerializedLexicalNode {
+  children: SerializedLexicalNode[];
+  listType?: string;
+  tag?: string;
+}
+
+type Converter = JSXConverters[string];
+type ConverterArgs = Parameters<Extract<Converter, (...args: never[]) => unknown>>[0];
+
+const runConverter = (converter: Converter, args: ConverterArgs): React.ReactNode =>
+  typeof converter === "function" ? converter(args) : (converter as React.ReactNode);
+
+const isPlainList = (node: SerializedLexicalNode | undefined): boolean =>
+  (node as ListNode | undefined)?.listType !== "check";
+
+/**
+ * Bare `ul`, `ol` and `li` as the site's stylesheet expects, and a path on this site typed as a URL
+ * gets the page's locale, as a link field does.
+ */
 const buildConverters =
   (locale: string): JSXConvertersFunction =>
-  ({ defaultConverters }) => ({
-    ...defaultConverters,
-    ...LinkJSXConverter({
+  ({ defaultConverters }) => {
+    const linkConverters = LinkJSXConverter({
       internalDocToHref: ({ linkNode }) => {
         const { relationTo, value } = linkNode.fields.doc ?? {};
         const path = routedDocPath({ relationTo, value } as RoutedDocRef);
 
         return path ? withLocalePrefix(path, locale) : "#";
       },
-    }),
-    text: ({ node }) => renderText(node as TextNode),
-  });
+    });
+
+    return {
+      ...defaultConverters,
+      ...linkConverters,
+      link: (args) => {
+        const element = runConverter(linkConverters.link, args);
+        const { fields } = args.node as { fields?: { linkType?: string; url?: string } };
+        const url = fields?.linkType === "internal" ? undefined : fields?.url;
+
+        return url?.startsWith("/") && React.isValidElement(element)
+          ? React.cloneElement(element as React.ReactElement<{ href?: string }>, {
+              href: localizeHref(url, locale),
+            })
+          : element;
+      },
+      list: (args) => {
+        const node = args.node as ListNode;
+
+        if (!isPlainList(node)) {
+          return runConverter(defaultConverters.list, args);
+        }
+
+        const ListTag = node.tag === "ol" ? "ol" : "ul";
+
+        return <ListTag>{args.nodesToJSX({ nodes: node.children })}</ListTag>;
+      },
+      listitem: (args) => {
+        const node = args.node as ListNode;
+        const hasSubList = node.children.some((child) => child.type === "list");
+
+        if (hasSubList || !isPlainList(args.parent)) {
+          return runConverter(defaultConverters.listitem, args);
+        }
+
+        return <li>{args.nodesToJSX({ nodes: node.children })}</li>;
+      },
+      text: ({ node }) => renderText(node as TextNode),
+    };
+  };
 
 export function hasRichText(data: RichTextValue): data is SerializedEditorState {
   const root = (data as SerializedEditorState | null | undefined)?.root;

@@ -1,4 +1,5 @@
 import { createParentField, createBreadcrumbsField } from "@payloadcms/plugin-nested-docs";
+import { SITE_TEMPLATES } from "@/lib/site/templates";
 import type { CollectionConfig } from "payload";
 
 import {
@@ -83,6 +84,20 @@ export const Page: CollectionConfig<"page"> = {
         slug: { not_equals: "home" },
       }),
     }),
+    {
+      admin: {
+        description: {
+          en: "The page design: which of the site's stylesheets the page loads.",
+          es: "El diseño de la página: qué hojas de estilo del sitio carga.",
+        },
+        position: "sidebar",
+      },
+      defaultValue: "default",
+      label: { en: "Page design", es: "Diseño de página" },
+      name: "template",
+      options: SITE_TEMPLATES.map((template) => ({ label: template, value: template })),
+      type: "select",
+    },
     createBreadcrumbsField("page", {
       admin: {
         position: "sidebar",

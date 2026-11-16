@@ -436,7 +436,7 @@ export const plugins: Plugin[] = [
     enrichment: "explicit",
     instantPreview: true,
     // Values the site puts into an href, a src or a tel: link, where a marker would break them.
-    excludeFieldNames: ["path", "url", "videoUrl", "mapUrl", "phone", "profiles", "npi"],
+    excludeFieldNames: ["path", "url", "videoUrl", "mapUrl", "phone", "profiles", "npi", "anchor"],
     skipCollections: [
       "users",
       "media",

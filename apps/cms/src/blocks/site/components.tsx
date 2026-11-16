@@ -1,18 +1,24 @@
 import React from "react";
 
+import { PostCard } from "@/components/site/blog/PostCard";
+import { SmallPrint } from "@/blocks/site/shared/stickyMediaSmallPrint";
+
 import { SiteButton } from "@/components/site/SiteButton";
+import { ShowMoreButton } from "@/components/site/condition/ShowMoreButton";
+import { YouTubeCover, YouTubeFrame } from "@/components/site/condition/YouTubeVideo";
+import { youTubeEmbedUrl } from "@/components/site/condition/youTubeEmbed";
 import { SiteBackground, SiteImage, mediaOf, mediaUrl } from "@/components/site/SiteImage";
 import { InlineRichText, SiteRichText, hasRichText } from "@/components/site/SiteRichText";
 import { SiteSlider } from "@/components/site/SiteSlider";
 import { SiteVideo } from "@/components/site/SiteVideo";
 import { findEntities, idOf, orderByIds } from "@/dal/entities";
-import { BLOG_CONFIG } from "@/lib/config/blog";
 import { withLocalePrefix } from "@/lib/config/entityRoutes";
 import { entityDocPath, siteLinkHref, siteLinkTarget } from "@/lib/site/links";
 import { stripMarkers } from "@focus-reactive/payload-plugin-visual-editing";
 import type {
   BeforeAfterBlock,
   Clinic,
+  Condition,
   ConditionGridBlock,
   Doctor,
   DoctorSliderBlock,
@@ -32,6 +38,9 @@ import type { SiteBlockProps } from "./types";
 
 const classNames = (...names: (string | false | null | undefined)[]): string =>
   names.filter(Boolean).join(" ");
+
+const sectionId = (anchor: string | null | undefined): string | undefined =>
+  stripMarkers(anchor)?.trim() || undefined;
 
 /** The last slide of a slider, which repeats the section's link as a tile. */
 function SeeAllLink({
@@ -60,13 +69,27 @@ export function LogoStripComponent({
   eyebrow,
   logos,
   background,
+  arrangement,
+  anchor,
   locale: _locale,
 }: SiteBlockProps<LogoStripBlock>) {
   return (
-    <section className={classNames("trustlogos center", backgroundClass(background))}>
+    <section
+      className={classNames(
+        "trustlogos center",
+        backgroundClass(background),
+        arrangement === "wrap" && "no-rotate"
+      )}
+      id={sectionId(anchor)}
+    >
       <div className="container">
         {eyebrow && <h2 className="small">{eyebrow}</h2>}
-        <div className="trustlogos-container">
+        <div
+          className={classNames(
+            "trustlogos-container",
+            (arrangement === "wrap" || arrangement === "wrapTablet") && "rotate-mobile"
+          )}
+        >
           {(logos ?? []).map((logo) => (
             <figure className="trustlogo" key={logo.id}>
               <SiteImage media={logo.image} />
@@ -78,13 +101,100 @@ export function LogoStripComponent({
   );
 }
 
-export function IconListComponent({
+type IconListItem = NonNullable<IconListBlock["items"]>[number];
+
+const ITALIC_FORMAT = 2;
+
+/** A point's title; italic words in the accent title render as the `span` the stylesheet accents. */
+function IconListTitle({ item }: { item: IconListItem }) {
+  if (!hasRichText(item.accentTitle)) {
+    return item.title;
+  }
+
+  const paragraphs = (item.accentTitle?.root.children ?? []) as {
+    children?: { type?: string; text?: string; format?: number }[];
+  }[];
+  const textNodes = paragraphs.flatMap((paragraph) => paragraph.children ?? []);
+
+  return (
+    <>
+      {textNodes.map((node, index) =>
+        (node.format ?? 0) & ITALIC_FORMAT ? (
+          <span key={index}>{node.text}</span>
+        ) : (
+          <React.Fragment key={index}>{node.text}</React.Fragment>
+        )
+      )}
+    </>
+  );
+}
+
+function IconListImageLayout({
   eyebrow,
   heading,
+  intro,
+  image,
   button,
   items,
   locale,
 }: SiteBlockProps<IconListBlock>) {
+  const points = items ?? [];
+  const hasButton = Boolean(button?.text && siteLinkHref(button.link, locale));
+
+  return (
+    <section className="vertical_icons">
+      <div className="container">
+        <div className="left has-image">
+          <figure className="vertical-icons-image">
+            <SiteImage media={image} />
+          </figure>
+        </div>
+        <div className="right">
+          {eyebrow && <h2 className="small">{eyebrow}</h2>}
+          {hasRichText(heading) && (
+            <h2>
+              <InlineRichText data={heading} />
+            </h2>
+          )}
+          <SiteRichText data={intro} locale={locale} />
+          {mediaOf(image) && (
+            <figure className="mobile">
+              <SiteImage media={image} />
+            </figure>
+          )}
+          <ul className="icons-list">
+            {points.map((item, index) => (
+              <li key={item.id}>
+                <figure className="circle">
+                  <SiteImage height={80} media={item.icon} width={80} />
+                </figure>
+                <div className="text-container">
+                  <h3>
+                    <IconListTitle item={item} />
+                  </h3>
+                  {item.text && <p>{item.text}</p>}
+                  {hasButton && index === points.length - 1 && (
+                    <p>
+                      <SiteButton button={button} locale={locale} />
+                    </p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function IconListComponent(props: SiteBlockProps<IconListBlock>) {
+  if (props.layout === "image") {
+    return <IconListImageLayout {...props} />;
+  }
+
+  const { eyebrow, heading, button, items, locale } = props;
+
   return (
     <section className="vertical_icons">
       <div className="container">
@@ -105,7 +215,9 @@ export function IconListComponent({
                   <SiteImage height={80} media={item.icon} width={80} />
                 </figure>
                 <div className="text-container">
-                  <h4>{item.title}</h4>
+                  <h4>
+                    <IconListTitle item={item} />
+                  </h4>
                   {item.text && <p>{item.text}</p>}
                 </div>
               </li>
@@ -118,7 +230,24 @@ export function IconListComponent({
   );
 }
 
+function MediaTextPicture({ image, imageStyle }: Pick<MediaTextBlock, "image" | "imageStyle">) {
+  if (imageStyle === "plain") {
+    return (
+      <div className="bg-wrapper">
+        <SiteImage className="bg-container" media={image} />
+      </div>
+    );
+  }
+
+  return (
+    <figure className="image-container">
+      <SiteImage media={image} />
+    </figure>
+  );
+}
+
 export function MediaTextComponent({
+  eyebrow,
   heading,
   text,
   button,
@@ -126,10 +255,14 @@ export function MediaTextComponent({
   size,
   background,
   image,
+  imageStyle,
   videoUrl,
+  anchor,
   locale,
 }: SiteBlockProps<MediaTextBlock>) {
   const video = stripMarkers(videoUrl);
+  const buttonInText = imageStyle === "plain" && !video;
+  const hasButton = Boolean(button?.text && siteLinkHref(button.link, locale));
 
   return (
     <section
@@ -139,27 +272,39 @@ export function MediaTextComponent({
         size !== "regular" && size,
         backgroundClass(background)
       )}
+      id={sectionId(anchor)}
     >
       <div className="container">
         <div className="text-container">
+          {eyebrow && (
+            <h6>
+              <strong>{eyebrow}</strong>
+            </h6>
+          )}
           {hasRichText(heading) && (
             <h2>
               <InlineRichText data={heading} />
             </h2>
           )}
           <SiteRichText data={text} locale={locale} />
-          <SiteButton button={button} locale={locale} />
+          {buttonInText ? (
+            hasButton && (
+              <p>
+                <SiteButton button={button} locale={locale} />
+              </p>
+            )
+          ) : (
+            <SiteButton button={button} locale={locale} />
+          )}
         </div>
         {video ? (
           <div className="video-container">
             <SiteVideo poster={mediaUrl(image)} src={video} />
           </div>
         ) : (
-          <figure className="image-container">
-            <SiteImage media={image} />
-          </figure>
+          <MediaTextPicture image={image} imageStyle={imageStyle} />
         )}
-        <SiteButton button={button} locale={locale} />
+        {!buttonInText && <SiteButton button={button} locale={locale} />}
       </div>
     </section>
   );
@@ -342,7 +487,11 @@ export function ReviewCard({ review }: { review: Testimonial }) {
 
 async function resolveReviews(
   picked: ReviewSliderBlock["reviews"],
-  { context, locale }: Pick<SiteBlockProps<ReviewSliderBlock>, "context" | "locale">
+  {
+    context,
+    limit,
+    locale,
+  }: Pick<SiteBlockProps<ReviewSliderBlock>, "context" | "locale"> & { limit?: number | null }
 ): Promise<Testimonial[]> {
   if (picked?.length) {
     const ids = picked.map(idOf);
@@ -351,16 +500,18 @@ async function resolveReviews(
     return orderByIds(docs, ids);
   }
 
-  if (context?.collection === "clinics") {
+  if (context?.collection === "clinics" || context?.collection === "doctors") {
+    const field = context.collection === "clinics" ? "clinic" : "doctor";
+
     return findEntities("testimonials", {
-      limit: 12,
+      limit: limit ?? 12,
       locale,
-      sort: "-createdAt",
-      where: { clinic: { equals: context.doc.id } },
+      sort: "createdAt",
+      where: { [field]: { equals: context.doc.id } },
     });
   }
 
-  return findEntities("testimonials", { limit: 8, locale, sort: "-createdAt" });
+  return findEntities("testimonials", { limit: limit ?? 8, locale, sort: "-createdAt" });
 }
 
 export async function ReviewSliderComponent({
@@ -369,10 +520,14 @@ export async function ReviewSliderComponent({
   button,
   seeAllText,
   reviews,
+  headingLevel,
+  limit,
+  note,
   locale,
   context,
 }: SiteBlockProps<ReviewSliderBlock>) {
-  const reviewDocs = await resolveReviews(reviews, { context, locale });
+  const reviewDocs = await resolveReviews(reviews, { context, limit, locale });
+  const HeadingTag = headingLevel === "h2" ? "h2" : "h3";
   const seeAll = SeeAllLink({ button, locale, text: seeAllText });
 
   return (
@@ -381,9 +536,14 @@ export async function ReviewSliderComponent({
         <div className="text-container">
           {eyebrow && <h2 className="small">{eyebrow}</h2>}
           {hasRichText(heading) && (
-            <h3>
+            <HeadingTag>
               <InlineRichText data={heading} />
-            </h3>
+            </HeadingTag>
+          )}
+          {note && (
+            <SmallPrint>
+              <em>{note}</em>
+            </SmallPrint>
           )}
           <SiteButton button={button} locale={locale} />
         </div>
@@ -404,23 +564,52 @@ export async function ReviewSliderComponent({
   );
 }
 
+async function resolveConditions(
+  picked: ConditionGridBlock["conditions"],
+  { context, locale }: Pick<SiteBlockProps<ConditionGridBlock>, "context" | "locale">
+): Promise<Condition[]> {
+  const pickedIds = (picked ?? []).map(idOf);
+  const ids =
+    pickedIds.length === 0 && context?.collection === "treatments"
+      ? (context.doc.conditions ?? []).map(idOf)
+      : pickedIds;
+
+  if (ids.length === 0) {
+    return context?.collection === "treatments"
+      ? []
+      : findEntities("conditions", { locale, sort: "listOrder" });
+  }
+
+  const docs = await findEntities("conditions", { locale, where: { id: { in: ids } } });
+
+  return orderByIds(docs, ids);
+}
+
 export async function ConditionGridComponent({
   heading,
   text,
   listHeading,
+  listHeadingLevel,
   conditions,
   linkText,
+  titleLevel,
+  showMoreText,
+  showLessText,
   button,
+  videoUrl,
+  videoPosition,
+  videoHeading,
+  videoCover,
   background,
   locale,
+  context,
 }: SiteBlockProps<ConditionGridBlock>) {
-  const ids = (conditions ?? []).map(idOf);
-  const docs = await findEntities("conditions", {
-    locale,
-    sort: "listOrder",
-    where: ids.length > 0 ? { id: { in: ids } } : undefined,
-  });
-  const conditionDocs = ids.length > 0 ? orderByIds(docs, ids) : docs;
+  const conditionDocs = await resolveConditions(conditions, { context, locale });
+  const TitleTag = titleLevel === "h3" ? "h3" : "h5";
+  const ListHeadingTag = listHeadingLevel === "h2" ? "h2" : "h3";
+  const hasButton = Boolean(button?.text && siteLinkHref(button.link, locale));
+  const embedUrl = youTubeEmbedUrl(stripMarkers(videoUrl));
+  const videoAfterList = videoPosition === "afterList";
 
   return (
     <section className={classNames("center_text", backgroundClass(background))}>
@@ -431,7 +620,15 @@ export async function ConditionGridComponent({
           </h2>
         )}
         <SiteRichText data={text} locale={locale} />
-        {listHeading && <h3 className="small small-mobile">{listHeading}</h3>}
+        {embedUrl && !videoAfterList && (
+          <>
+            {videoHeading && <h2 className="small">{videoHeading}</h2>}
+            <YouTubeCover cover={mediaUrl(videoCover)} embedUrl={embedUrl} />
+          </>
+        )}
+        {listHeading && (
+          <ListHeadingTag className="small small-mobile">{listHeading}</ListHeadingTag>
+        )}
         <ul className="circle-images-container symptoms">
           {conditionDocs.map((condition) => {
             const path = entityDocPath("conditions", condition);
@@ -447,16 +644,22 @@ export async function ConditionGridComponent({
                       width={100}
                     />
                   </figure>
-                  <h5>{condition.title}</h5>
+                  <TitleTag>{condition.title}</TitleTag>
                   <span className="icon-svg-content" />
                 </a>
               </li>
             );
           })}
         </ul>
-        <div className="symptoms-button">
-          <SiteButton button={button} locale={locale} />
-        </div>
+        {showMoreText && (
+          <ShowMoreButton showLessText={showLessText ?? ""} showMoreText={showMoreText} />
+        )}
+        {embedUrl && videoAfterList && <YouTubeFrame embedUrl={embedUrl} />}
+        {hasButton && (
+          <div className="symptoms-button">
+            <SiteButton button={button} locale={locale} />
+          </div>
+        )}
       </div>
     </section>
   );
@@ -514,6 +717,8 @@ export function BeforeAfterComponent({
 
 export async function TreatmentCardsComponent({
   heading,
+  headingAlign,
+  text,
   checklist,
   treatments,
   linkText,
@@ -532,9 +737,14 @@ export async function TreatmentCardsComponent({
     <section className="treatment_cards">
       <div className="container">
         {hasRichText(heading) && (
-          <h2 className="left">
+          <h2 className={headingAlign === "center" ? undefined : "left"}>
             <InlineRichText data={heading} />
           </h2>
+        )}
+        {hasRichText(text) && (
+          <div className="text-container">
+            <SiteRichText data={text} locale={locale} />
+          </div>
         )}
         {(checklist?.length ?? 0) > 0 && (
           <ul className="checklist">
@@ -599,38 +809,7 @@ export async function PostSliderComponent({
   const postDocs = ids.length > 0 ? orderByIds(docs, ids) : docs;
   const blogHref = siteLinkHref(button?.link, locale);
 
-  const cards = postDocs.map((post) => {
-    const reviewer = typeof post.reviewedBy === "object" ? post.reviewedBy : null;
-
-    return (
-      <a
-        className="snippet-link"
-        href={withLocalePrefix(`${BLOG_CONFIG.basePath}/${stripMarkers(post.slug)}`, locale)}
-        key={post.id}
-      >
-        <div className="bg-wrapper">
-          <SiteImage className="bg-container" height={440} media={post.heroImage} width={440} />
-        </div>
-        <div className="content-wrapper">
-          <div className="tag-and-time-wrapper">
-            {post.readingTime ? <div className="read-time">{post.readingTime} Min Read</div> : null}
-          </div>
-          <h4>{post.title}</h4>
-          {reviewer && (
-            <div className="reviewer">
-              <figure className="circle">
-                <SiteImage media={reviewer.photo} />
-              </figure>
-              <p>
-                <span className="snippet-author">Medically reviewed by </span>
-                {reviewer.name}
-              </p>
-            </div>
-          )}
-        </div>
-      </a>
-    );
-  });
+  const cards = postDocs.map((post) => <PostCard key={post.id} locale={locale} post={post} />);
 
   return (
     <section className="blog_slider">

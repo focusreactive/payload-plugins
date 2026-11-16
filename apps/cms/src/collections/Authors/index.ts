@@ -39,6 +39,18 @@ export const Authors: CollectionConfig<"authors"> = {
       relationTo: "media",
       type: "upload",
     },
+    {
+      admin: {
+        description: {
+          en: "The name printed after Written by on articles and cards, per language. Empty uses the name above.",
+          es: "El nombre que aparece tras Escrito por en artículos y tarjetas, por idioma. Vacío usa el nombre de arriba.",
+        },
+      },
+      label: { en: "Byline name", es: "Nombre en la firma" },
+      localized: true,
+      name: "bylineName",
+      type: "text",
+    },
   ],
   labels: {
     plural: {

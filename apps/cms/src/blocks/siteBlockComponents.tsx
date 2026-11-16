@@ -16,6 +16,11 @@ import {
   TreatmentCardsComponent,
 } from "./site/components";
 import { HeroBannerComponent, HeroVideoComponent } from "./site/HeroVideo";
+import { CenterText } from "./site/shared/CenterText";
+import { ImageHero } from "./site/shared/ImageHero";
+import { SimpleHero } from "./site/shared/SimpleHero";
+import { ResultsSliderComponent } from "./site/shared/resultsComponent";
+import { StickyMediaComponent } from "./site/shared/stickyMediaComponent";
 import { blogBlockComponents } from "./site/templates/blog";
 import { clinicBlockComponents } from "./site/templates/clinic";
 import { conditionBlockComponents } from "./site/templates/condition";
@@ -36,9 +41,14 @@ export const siteBlockComponents: SiteBlockComponents = {
   logoStrip: LogoStripComponent,
   mediaText: MediaTextComponent,
   postSlider: PostSliderComponent,
+  results: ResultsSliderComponent,
   revSlider: ReviewSliderComponent,
   siteCta: SiteCtaComponent,
+  stickyMedia: StickyMediaComponent,
   treatCards: TreatmentCardsComponent,
+  centerText: CenterText,
+  imageHero: ImageHero,
+  simpleHero: SimpleHero,
   ...stateBlockComponents,
   ...clinicBlockComponents,
   ...treatmentBlockComponents,

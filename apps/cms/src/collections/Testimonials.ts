@@ -87,6 +87,16 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
     },
     {
       admin: {
+        description: "The doctor this review is about. The doctor's page shows their own reviews.",
+      },
+      index: true,
+      label: "Doctor",
+      name: "doctor",
+      relationTo: "doctors",
+      type: "relationship",
+    },
+    {
+      admin: {
         description:
           "The logo of the site the review was left on, for example Google. Empty shows no logo.",
       },

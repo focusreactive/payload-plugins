@@ -2,6 +2,8 @@ import React from "react";
 
 import { withLocalePrefix } from "@/lib/config/entityRoutes";
 import { ENTITY_ROUTE_PREFIXES } from "@/lib/config/entityRoutes";
+import { SITE_TEMPLATE_STYLES } from "@/lib/site/templates";
+import type { SiteTemplate } from "@/lib/site/templates";
 import type { Locale } from "@/lib/types";
 import type { Footer, Header } from "@/payload-types";
 
@@ -10,21 +12,8 @@ import { BodyAttributes } from "./SiteChromeClient";
 import { SiteFooter, SiteNewsletter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
 
-/** The stylesheets a page type loads on top of the base one, as on the original site. */
-export const SITE_TEMPLATE_STYLES = {
-  blog: ["default", "blog"],
-  default: ["default"],
-  doctor: ["default", "doctor"],
-  home: ["home"],
-  location: ["default", "location"],
-  locations: ["default", "locations"],
-  post: ["default", "blog"],
-  region: ["default", "region"],
-  symptom: ["default"],
-  treatment: ["default"],
-} as const;
-
-export type SiteTemplate = keyof typeof SITE_TEMPLATE_STYLES;
+export { SITE_TEMPLATE_STYLES } from "@/lib/site/templates";
+export type { SiteTemplate } from "@/lib/site/templates";
 
 const FONTS_URL =
   "https://fonts.googleapis.com/css2?family=Lora:ital@0;1&family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,500;1,700&display=swap";

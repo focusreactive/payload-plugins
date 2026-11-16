@@ -4,6 +4,7 @@ import { CardsGridInlineBlock } from "@/blocks/CardsGrid/inlineConfig";
 import { CodeInlineBlock } from "@/blocks/Code/inlineConfig";
 import { CtaBannerInlineBlock } from "@/blocks/CtaBanner/inlineConfig";
 import { LogosInlineBlock } from "@/blocks/Logos/inlineConfig";
+import { siteBlocks } from "@/blocks/siteBlocks";
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
 import {
@@ -25,6 +26,7 @@ import { link } from "@/lib/fields/link";
 import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 import { createSharedSlugField } from "@/lib/fields/slugField";
 
+import { ArticleButtonBlock } from "./ArticleButtonBlock";
 import { computeReadingTime } from "./hooks/computeReadingTime";
 import { indexPostEmbedding, deletePostEmbedding } from "./hooks/indexEmbedding";
 import { revalidateDelete, revalidatePost } from "./hooks/revalidatePost";
@@ -132,6 +134,7 @@ export const Posts: CollectionConfig<"posts"> = {
                   LogosInlineBlock,
                   CodeInlineBlock,
                   CtaBannerInlineBlock,
+                  ArticleButtonBlock,
                 ],
               }),
               label: {
@@ -203,6 +206,24 @@ export const Posts: CollectionConfig<"posts"> = {
               name: "cta",
               type: "group",
             },
+            {
+              admin: {
+                description: {
+                  en: "The sections under the article, top to bottom, for example a call to action band or an articles slider.",
+                  es: "Las secciones bajo el artículo, de arriba abajo, por ejemplo una banda de llamada a la acción o un carrusel de artículos.",
+                },
+                initCollapsed: true,
+              },
+              blocks: siteBlocks,
+              label: { en: "Sections", es: "Secciones" },
+              labels: {
+                plural: { en: "Sections", es: "Secciones" },
+                singular: { en: "Section", es: "Sección" },
+              },
+              localized: true,
+              name: "blocks",
+              type: "blocks",
+            },
           ],
           label: {
             en: "Content",
@@ -266,6 +287,33 @@ export const Posts: CollectionConfig<"posts"> = {
       localized: true,
       name: "readingTime",
       type: "number",
+    },
+    {
+      admin: {
+        description: {
+          en: "The reading time shown on the article and its cards, in minutes. Empty shows the estimate above.",
+          es: "El tiempo de lectura que se muestra en el artículo y sus tarjetas, en minutos. Vacío muestra la estimación de arriba.",
+        },
+        position: "sidebar",
+      },
+      label: { en: "Reading time shown (min)", es: "Tiempo de lectura mostrado (min)" },
+      localized: true,
+      min: 1,
+      name: "readingTimeOverride",
+      type: "number",
+    },
+    {
+      admin: {
+        date: { pickerAppearance: "dayOnly" },
+        description: {
+          en: "The date of the last review of the article. When set, the article shows Updated with this date instead of the publish date.",
+          es: "La fecha de la última revisión del artículo. Si se indica, el artículo muestra Actualizado con esta fecha en lugar de la fecha de publicación.",
+        },
+        position: "sidebar",
+      },
+      label: { en: "Updated on", es: "Actualizado el" },
+      name: "updatedDate",
+      type: "date",
     },
     {
       admin: {

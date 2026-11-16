@@ -42,7 +42,7 @@ interface SeedStep {
   /** Drafts are skipped for collections without versions. Defaults to true. */
   publish?: boolean;
   docs: SeedDoc[];
-  /** Page steps only: unpublish every page whose slug is not listed in this step. */
+  /** Collections with drafts only: unpublish every document this step does not list. */
   unpublishOthers?: boolean;
 }
 
@@ -123,6 +123,37 @@ async function resolveTokens(payload: Payload, value: Json): Promise<Json> {
   return Object.fromEntries(entries);
 }
 
+async function unpublishOthers(
+  payload: Payload,
+  collectionSlug: string,
+  matchField: string,
+  keptDocs: SeedDoc[]
+): Promise<void> {
+  const collection = collectionSlug as CollectionSlug;
+  const keep = keptDocs.map((doc) => doc.match);
+  const { docs } = await payload.find({
+    collection,
+    depth: 0,
+    limit: 0,
+    overrideAccess: true,
+    pagination: false,
+    where: { and: [{ [matchField]: { not_in: keep } }, { _status: { equals: "published" } }] },
+  });
+
+  for (const doc of docs) {
+    await payload.update({
+      collection,
+      context: seedContext,
+      data: { _status: "draft" } as never,
+      id: doc.id,
+      overrideAccess: true,
+    });
+    payload.logger.info(
+      `unpublished ${collectionSlug} ${String((doc as unknown as Record<string, unknown>)[matchField])}`
+    );
+  }
+}
+
 async function applyStep(payload: Payload, step: SeedStep): Promise<void> {
   const collection = step.collection as CollectionSlug;
   const matchField = step.matchField ?? "slug";
@@ -189,27 +220,8 @@ async function applyStep(payload: Payload, step: SeedStep): Promise<void> {
     }
   }
 
-  if (step.unpublishOthers && step.collection === "page") {
-    const keep = step.docs.map((doc) => doc.match);
-    const { docs } = await payload.find({
-      collection: "page",
-      depth: 0,
-      limit: 0,
-      overrideAccess: true,
-      pagination: false,
-      where: { and: [{ slug: { not_in: keep } }, { _status: { equals: "published" } }] },
-    });
-
-    for (const page of docs) {
-      await payload.update({
-        collection: "page",
-        context: seedContext,
-        data: { _status: "draft" },
-        id: page.id,
-        overrideAccess: true,
-      });
-      payload.logger.info(`unpublished page ${page.slug}`);
-    }
+  if (step.unpublishOthers && hasDrafts) {
+    await unpublishOthers(payload, step.collection, matchField, step.docs);
   }
 }
 
