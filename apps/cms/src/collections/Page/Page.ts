@@ -3,7 +3,7 @@ import { SITE_TEMPLATES } from "@/lib/site/templates";
 import type { CollectionConfig } from "payload";
 
 import {
-  LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
+  createLiveBeforeDocumentControls,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
@@ -28,7 +28,7 @@ export const Page: CollectionConfig<"page"> = {
   admin: {
     components: {
       edit: {
-        beforeDocumentControls: LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
+        beforeDocumentControls: createLiveBeforeDocumentControls(),
         PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
       },
     },

@@ -11,6 +11,6 @@ export const createLivePreviewVersions = () =>
     maxPerDoc: 50,
   }) satisfies CollectionConfig["versions"];
 
-export const LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS = PRESERVE_AUTOSAVE_EDITS
-  ? ["/components/admin/PreserveAutosaveEdits#PreserveAutosaveEdits"]
-  : [];
+// A new array per collection: plugins push their own buttons into it, and a shared array shows every collection's button on every document.
+export const createLiveBeforeDocumentControls = (): string[] =>
+  PRESERVE_AUTOSAVE_EDITS ? ["/components/admin/PreserveAutosaveEdits#PreserveAutosaveEdits"] : [];

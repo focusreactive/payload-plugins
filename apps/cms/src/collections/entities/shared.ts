@@ -13,7 +13,7 @@ import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { entityPath, withLocalePrefix } from "@/lib/config/entityRoutes";
 import type { EntityCollection } from "@/lib/config/entityRoutes";
 import {
-  LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
+  createLiveBeforeDocumentControls,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
 import { cacheTag } from "@/lib/utils/cacheTags";
@@ -137,7 +137,7 @@ export function entityAdmin({
   return {
     components: {
       edit: {
-        beforeDocumentControls: LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
+        beforeDocumentControls: createLiveBeforeDocumentControls(),
       },
     },
     defaultColumns,
