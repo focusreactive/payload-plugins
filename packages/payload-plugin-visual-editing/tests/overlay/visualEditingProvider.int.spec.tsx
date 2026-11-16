@@ -77,10 +77,10 @@ describe("VisualEditingProvider — framedOnly", () => {
   });
 });
 
-describe("VisualEditingProvider — accent", () => {
-  const accentOf = () => document.documentElement.style.getPropertyValue("--ve-accent");
-  const accentTextOf = () => document.documentElement.style.getPropertyValue("--ve-accent-text");
+const accentOf = () => document.documentElement.style.getPropertyValue("--ve-accent");
+const accentTextOf = () => document.documentElement.style.getPropertyValue("--ve-accent-text");
 
+describe("VisualEditingProvider — accent", () => {
   it("sets the accent the overlay draws with, and takes it away on unmount", () => {
     renderProvider({ available: true, accentColor: "#ea580c", accentTextColor: "#111111" });
 
