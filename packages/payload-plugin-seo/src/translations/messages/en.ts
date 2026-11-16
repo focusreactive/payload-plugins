@@ -113,6 +113,8 @@ export const en = {
   "links.loading": "Looking for opportunities…",
   "links.error": "Could not load suggestions. Try again.",
   "links.empty": "No opportunities found. Add keyphrases to other pages to get suggestions.",
+  "links.allLinked": "No new opportunities. This text already links to the pages below.",
+  "links.linkedTitle": "Already linked",
   "links.matches_one": "{{count}} match",
   "links.matches_other": "{{count}} matches",
   "links.matchedPhrase": "Matches",

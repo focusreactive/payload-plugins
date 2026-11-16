@@ -17,6 +17,7 @@ import type { LinkRequest, LinkedHref } from "./request";
 import { readLinkRequest } from "./request";
 import type { LinkSuggestion } from "../../links/types";
 import { resolveLinkTargets } from "./resolveLinkTargets";
+import { resolveLinkedDocs } from "./resolveLinkedDocs";
 import { findLinkSourcePages } from "./sourceRows";
 import type { LinkSourceRow } from "./sourceRows";
 import { toLinkSources } from "./toLinkSources";
@@ -64,9 +65,13 @@ async function collectSuggestions(search: SuggestionSearch): Promise<LinkSuggest
   return found.slice(0, MAX_LINK_SUGGESTIONS);
 }
 
-function unlinkedCandidates(request: LinkRequest, rows: LinkSourceRow[]): LinkCandidate[] {
-  return findLinkCandidates(request.text, toLinkSources(rows)).filter(
-    (candidate) => !request.linkedDocs.has(docTargetKey(candidate.collection, candidate.docId))
+function unlinkedCandidates(
+  text: string,
+  linkedKeys: Set<string>,
+  rows: LinkSourceRow[]
+): LinkCandidate[] {
+  return findLinkCandidates(text, toLinkSources(rows)).filter(
+    (candidate) => !linkedKeys.has(docTargetKey(candidate.collection, candidate.docId))
   );
 }
 
@@ -76,10 +81,13 @@ async function findUnlinkedCandidates(
   collections: string[],
   request: LinkRequest
 ): Promise<LinkCandidate[]> {
+  const linkedKeys = new Set(
+    request.linkedDocs.map(({ collection, docId }) => docTargetKey(collection, docId))
+  );
   const candidates: LinkCandidate[] = [];
 
   for await (const rows of findLinkSourcePages(req, ref, collections)) {
-    candidates.push(...unlinkedCandidates(request, rows));
+    candidates.push(...unlinkedCandidates(request.text, linkedKeys, rows));
   }
 
   return candidates.sort(byRelevance);
@@ -100,15 +108,21 @@ export function createLinkSuggestionsEndpoint(scope: KeyphraseScope): Endpoint {
       const ref = await readAuthorizedRef(req, body, scope);
       if (ref instanceof Response) return ref;
 
-      const suggestions = await collectSuggestions({
-        req,
-        candidates: await findUnlinkedCandidates(req, ref, scope.collections, request),
-        locale: ref.locale,
-        linkedHrefs: request.linkedHrefs,
-        sites: internalSitesOf(req),
-      });
+      const findSuggestions = async () =>
+        collectSuggestions({
+          req,
+          candidates: await findUnlinkedCandidates(req, ref, scope.collections, request),
+          locale: ref.locale,
+          linkedHrefs: request.linkedHrefs,
+          sites: internalSitesOf(req),
+        });
 
-      return Response.json({ suggestions });
+      const [suggestions, linked] = await Promise.all([
+        findSuggestions(),
+        resolveLinkedDocs(req, request.linkedDocs, ref.locale),
+      ]);
+
+      return Response.json({ suggestions, linked });
     },
   };
 }

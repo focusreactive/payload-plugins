@@ -9,6 +9,7 @@ import { cn, OUTLINE_BUTTON_CLASS } from "../../../utils/style";
 import { useSeoTranslation } from "../../../translations/useSeoTranslation";
 import { TabWrapper } from "../components/TabWrapper";
 import type { LinkSuggestionsState } from "../links/useLinkSuggestions";
+import { LinkedDocsCard } from "./links/LinkedDocsCard";
 import { LinkSuggestionRow } from "./links/LinkSuggestionRow";
 
 const MESSAGE_CLASS = cn("px-[15px] py-[12px] text-[12px]");
@@ -37,7 +38,9 @@ function SuggestionsBody({ state }: { state: LinkSuggestionsState }) {
   if (state.status === "idle") return null;
 
   if (state.suggestions.length === 0) {
-    return <div className={cn(MESSAGE_CLASS, "text-neutral-500")}>{t("links.empty")}</div>;
+    const message = state.linked.length > 0 ? t("links.allLinked") : t("links.empty");
+
+    return <div className={cn(MESSAGE_CLASS, "text-neutral-500")}>{message}</div>;
   }
 
   return (
@@ -83,6 +86,9 @@ export function LinksTab({ state, onFind }: LinksTabProps) {
             <SuggestionsBody state={state} />
           </div>
         </SectionCard>
+        {state.status === "done" && state.linked.length > 0 && (
+          <LinkedDocsCard docs={state.linked} />
+        )}
       </section>
     </TabWrapper>
   );

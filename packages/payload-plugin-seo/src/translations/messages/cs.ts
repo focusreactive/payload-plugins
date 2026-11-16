@@ -119,6 +119,8 @@ export const cs: LanguageMessages = {
   "links.error": "Návrhy se nepodařilo načíst. Zkuste to znovu.",
   "links.empty":
     "Žádné příležitosti jsme nenašli. Přidejte klíčové fráze dalším stránkám a návrhy se objeví.",
+  "links.allLinked": "Žádné nové příležitosti. Tento text už odkazuje na stránky níže.",
+  "links.linkedTitle": "Už odkazované",
   "links.matches_one": "{{count}} shoda",
   "links.matches_few": "{{count}} shody",
   "links.matches_other": "{{count}} shod",

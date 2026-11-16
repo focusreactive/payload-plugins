@@ -66,7 +66,7 @@ describe("SeoDrawer internal links tab", () => {
     render(
       <SeoDrawer
         {...props}
-        links={{ state: { status: "done", suggestions: [suggestion] }, find }}
+        links={{ state: { status: "done", suggestions: [suggestion], linked: [] }, find }}
       />
     );
 

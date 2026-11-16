@@ -728,7 +728,7 @@ The plugin registers four endpoints under your API route. `locale` is required w
 - `GET /seo/keyphrases?collection=&docId=&locale=` returns `{ keyphrases, indexed, canUpdate }`, where `indexed` says whether the server has a row for the document and locale and `canUpdate` whether the user may change it.
 - `PUT /seo/keyphrases` with body `{ collection, docId, locale, keyphrases: [{ text, synonyms }], ifAbsent?: boolean }` replaces the keyphrases and returns `{ keyphrases }`. With `ifAbsent: true` it only creates a missing row and answers `409` with the stored keyphrases when one exists.
 - `GET /seo/keyphrase-usage?collection=&docId=&locale=&phrase=` returns `{ docs: [{ collection, id, title }] }`, the other documents that use the same keyphrase.
-- `POST /seo/link-suggestions` with body `{ collection, docId, locale, text, linkedHrefs?: string[], linkedDocs?: [{ collection, docId }] }` returns `{ suggestions }`.
+- `POST /seo/link-suggestions` with body `{ collection, docId, locale, text, linkedHrefs?: string[], linkedDocs?: [{ collection, docId }] }` returns `{ suggestions, linked }`. `linked` lists the `linkedDocs` the user can read as `[{ collection, id, title }]`, in the order they were sent.
 
 The `seo-keyphrases` collection itself is closed: every operation is denied in its access control, it is hidden from the admin and not exposed over GraphQL. Only these endpoints read or write it.
 
@@ -743,7 +743,7 @@ The Keyphrase tab shows **"This keyphrase is already used on:"** with links to t
 
 ### Internal links tab
 
-The drawer gets an **Internal links** tab. **Find opportunities** lists up to 10 other documents whose keyphrases or synonyms appear in this document's text and are not linked from it yet, with the matched phrase, the number of matches, a snippet with the matched text highlighted and the target link to copy.
+The drawer gets an **Internal links** tab. **Find opportunities** lists up to 10 other documents whose keyphrases or synonyms appear in this document's text and are not linked from it yet, with the matched phrase, the number of matches, a snippet with the matched text highlighted and the target link to copy. Below it, **Already linked** lists the documents this text already links to with rich text internal links, each linking to its edit view. When every match is already linked, the tab says so instead of reporting that nothing was found.
 
 Give each collection a `resolveUrl` so suggestions show public URLs and targets already linked by URL are skipped. Without it, suggestions only link to the admin edit view.
 

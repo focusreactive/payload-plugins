@@ -61,7 +61,11 @@ describe("LinksTab", () => {
   });
 
   it("lists suggestions with a new-tab admin link and the match count", () => {
-    renderTab({ status: "done", suggestions: [suggestion, { ...suggestion, id: "3", count: 1 }] });
+    renderTab({
+      status: "done",
+      suggestions: [suggestion, { ...suggestion, id: "3", count: 1 }],
+      linked: [],
+    });
 
     const [link] = screen.getAllByRole("link", { name: "Post two" });
     expect(link).toHaveAttribute("href", "/admin/collections/posts/2");
@@ -87,6 +91,7 @@ describe("LinksTab", () => {
           snippetMatch: { start: 12, end: 15 },
         },
       ],
+      linked: [],
     });
 
     const highlighted = screen.getAllByText("art").filter((el) => el.tagName === "STRONG");
@@ -97,7 +102,7 @@ describe("LinksTab", () => {
 
   it("copies the url and resets the feedback after a delay", async () => {
     vi.useFakeTimers();
-    renderTab({ status: "done", suggestions: [suggestion] });
+    renderTab({ status: "done", suggestions: [suggestion], linked: [] });
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /copy link/iu }));
@@ -114,7 +119,7 @@ describe("LinksTab", () => {
 
   it("reports a failed copy", async () => {
     writeText.mockRejectedValue(new Error("denied"));
-    renderTab({ status: "done", suggestions: [suggestion] });
+    renderTab({ status: "done", suggestions: [suggestion], linked: [] });
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /copy link/iu }));
@@ -124,14 +129,54 @@ describe("LinksTab", () => {
   });
 
   it("explains a missing url and hides Copy", () => {
-    renderTab({ status: "done", suggestions: [{ ...suggestion, url: null }] });
+    renderTab({ status: "done", suggestions: [{ ...suggestion, url: null }], linked: [] });
 
     expect(screen.getByText(/no public url configured/iu)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /copy link/iu })).toBeNull();
   });
 
+  describe("already linked documents", () => {
+    const linked = [
+      { collection: "posts", id: "5", title: "Linked post" },
+      { collection: "pages", id: "6", title: "Linked page" },
+    ];
+
+    it("lists them with a new-tab admin link next to the opportunities", () => {
+      renderTab({ status: "done", suggestions: [suggestion], linked });
+
+      expect(screen.getByText("Already linked")).toBeInTheDocument();
+      const link = screen.getByRole("link", { name: "Linked post" });
+      expect(link).toHaveAttribute("href", "/admin/collections/posts/5");
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", "noopener noreferrer");
+      expect(screen.getByRole("link", { name: "Linked page" })).toHaveAttribute(
+        "href",
+        "/admin/collections/pages/6"
+      );
+      expect(screen.getByRole("link", { name: "Post two" })).toBeInTheDocument();
+    });
+
+    it("explains that every found page is linked instead of reporting nothing found", () => {
+      renderTab({ status: "done", suggestions: [], linked });
+
+      expect(screen.queryByText(/no opportunities found/iu)).toBeNull();
+      expect(screen.getByText(/no new opportunities/iu)).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Linked post" })).toBeInTheDocument();
+    });
+
+    it("is not shown before the search or without linked documents", () => {
+      const { rerender } = renderTab({ status: "idle" });
+      expect(screen.queryByText("Already linked")).toBeNull();
+
+      rerender(
+        <LinksTab onFind={find} state={{ status: "done", suggestions: [suggestion], linked: [] }} />
+      );
+      expect(screen.queryByText("Already linked")).toBeNull();
+    });
+  });
+
   it("shows empty and error states", () => {
-    const { rerender } = renderTab({ status: "done", suggestions: [] });
+    const { rerender } = renderTab({ status: "done", suggestions: [], linked: [] });
     expect(screen.getByText(/no opportunities found/iu)).toBeInTheDocument();
 
     rerender(<LinksTab onFind={find} state={{ status: "error" }} />);
