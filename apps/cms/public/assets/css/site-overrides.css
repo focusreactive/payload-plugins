@@ -35,3 +35,10 @@
   background-repeat: no-repeat;
   background-size: cover;
 }
+
+/* The original site reveals lazy images and backgrounds by adding .loaded from its own script, which this build does not ship. */
+footer img:not(.not-lazy):not(.first),
+main img:not(.not-lazy):not(.first),
+.bg-container:not(.first) {
+  opacity: 1;
+}
