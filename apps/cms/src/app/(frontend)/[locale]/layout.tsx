@@ -1,4 +1,4 @@
-import type { Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import { getMessages } from "next-intl/server";
 import { draftMode } from "next/headers";
 import React from "react";
@@ -10,6 +10,11 @@ import { AnalyticsProviderClient } from "@/lib/plugins/analytics/AnalyticsProvid
 import type { Locale } from "@/lib/types";
 import { LivePreviewListener } from "@/components/LivePreviewListener";
 import { VisualEditingEditRouter } from "@/components/VisualEditingEditRouter";
+
+// The tab icon follows the one set in Site Settings.
+export const metadata: Metadata = {
+  icons: { icon: "/api/site/site-icon" },
+};
 
 export const viewport: Viewport = {
   initialScale: 1,

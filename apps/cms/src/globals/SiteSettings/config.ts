@@ -34,6 +34,18 @@ export const SiteSettings: GlobalConfig = {
               },
               localized: true,
             },
+            {
+              admin: {
+                description: {
+                  en: "The small icon in the browser tab of the website. A square PNG or SVG.",
+                  es: "El icono pequeño en la pestaña del navegador del sitio web. Un PNG o SVG cuadrado.",
+                },
+              },
+              label: { en: "Browser tab icon", es: "Icono de la pestaña" },
+              name: "favicon",
+              relationTo: "media",
+              type: "upload",
+            },
           ],
           label: {
             en: "General",

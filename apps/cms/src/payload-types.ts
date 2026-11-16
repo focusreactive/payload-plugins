@@ -1281,10 +1281,6 @@ export interface Clinic {
    */
   hero?: {
     /**
-     * The first step of the trail above the heading, which links to the locations page, for example Locations.
-     */
-    crumb?: string | null;
-    /**
      * The button under the address, for example Book Your Free Evaluation. Empty text hides it.
      */
     button?: {
@@ -4064,65 +4060,6 @@ export interface ImageHeroBlock {
    */
   size?: ('regular' | 'large') | null;
   /**
-   * The trail above the heading, for example Locations / Texas / Allen. The last step usually has no link. Empty hides the trail.
-   */
-  crumbs?:
-    | {
-        /**
-         * The words of this step.
-         */
-        text: string;
-        /**
-         * Where this step leads. Without a link the step shows as plain text.
-         */
-        link?: {
-          kind?: ('internal' | 'relative' | 'external') | null;
-          newTab?: boolean | null;
-          /**
-           * Keeps working if the page is renamed or moved.
-           */
-          page?:
-            | ({
-                relationTo: 'page';
-                value: number | Page;
-              } | null)
-            | ({
-                relationTo: 'posts';
-                value: number | Post;
-              } | null)
-            | ({
-                relationTo: 'states';
-                value: number | State;
-              } | null)
-            | ({
-                relationTo: 'clinics';
-                value: number | Clinic;
-              } | null)
-            | ({
-                relationTo: 'doctors';
-                value: number | Doctor;
-              } | null)
-            | ({
-                relationTo: 'treatments';
-                value: number | Treatment;
-              } | null)
-            | ({
-                relationTo: 'conditions';
-                value: number | Condition;
-              } | null);
-          /**
-           * For pages that are not in the CMS. Starts with a slash, for example /contact.
-           */
-          path?: string | null;
-          /**
-           * A full URL (https://example.com), an email (mailto:hello@example.com) or a phone number (tel:+18005550100).
-           */
-          url?: string | null;
-        };
-        id?: string | null;
-      }[]
-    | null;
-  /**
    * The page's main heading.
    */
   heading: {
@@ -5437,65 +5374,6 @@ export interface Preset {
          * Regular puts the picture beside the text. Large centres the text over a wide picture.
          */
         size?: ('regular' | 'large') | null;
-        /**
-         * The trail above the heading, for example Locations / Texas / Allen. The last step usually has no link. Empty hides the trail.
-         */
-        crumbs?:
-          | {
-              /**
-               * The words of this step.
-               */
-              text: string;
-              /**
-               * Where this step leads. Without a link the step shows as plain text.
-               */
-              link?: {
-                kind?: ('internal' | 'relative' | 'external') | null;
-                newTab?: boolean | null;
-                /**
-                 * Keeps working if the page is renamed or moved.
-                 */
-                page?:
-                  | ({
-                      relationTo: 'page';
-                      value: number | Page;
-                    } | null)
-                  | ({
-                      relationTo: 'posts';
-                      value: number | Post;
-                    } | null)
-                  | ({
-                      relationTo: 'states';
-                      value: number | State;
-                    } | null)
-                  | ({
-                      relationTo: 'clinics';
-                      value: number | Clinic;
-                    } | null)
-                  | ({
-                      relationTo: 'doctors';
-                      value: number | Doctor;
-                    } | null)
-                  | ({
-                      relationTo: 'treatments';
-                      value: number | Treatment;
-                    } | null)
-                  | ({
-                      relationTo: 'conditions';
-                      value: number | Condition;
-                    } | null);
-                /**
-                 * For pages that are not in the CMS. Starts with a slash, for example /contact.
-                 */
-                path?: string | null;
-                /**
-                 * A full URL (https://example.com), an email (mailto:hello@example.com) or a phone number (tel:+18005550100).
-                 */
-                url?: string | null;
-              };
-              id?: string | null;
-            }[]
-          | null;
         /**
          * The page's main heading.
          */
@@ -9184,21 +9062,6 @@ export interface HeroBannerBlockSelect<T extends boolean = true> {
  */
 export interface ImageHeroBlockSelect<T extends boolean = true> {
   size?: T;
-  crumbs?:
-    | T
-    | {
-        text?: T;
-        link?:
-          | T
-          | {
-              kind?: T;
-              newTab?: T;
-              page?: T;
-              path?: T;
-              url?: T;
-            };
-        id?: T;
-      };
   heading?: T;
   subheading?: T;
   reviewer?: T;
@@ -10411,7 +10274,6 @@ export interface ClinicsSelect<T extends boolean = true> {
   hero?:
     | T
     | {
-        crumb?: T;
         button?:
           | T
           | {
@@ -11114,21 +10976,6 @@ export interface PresetsSelect<T extends boolean = true> {
           | T
           | {
               size?: T;
-              crumbs?:
-                | T
-                | {
-                    text?: T;
-                    link?:
-                      | T
-                      | {
-                          kind?: T;
-                          newTab?: T;
-                          page?: T;
-                          path?: T;
-                          url?: T;
-                        };
-                    id?: T;
-                  };
               heading?: T;
               subheading?: T;
               reviewer?: T;
@@ -12451,6 +12298,10 @@ export interface SiteSetting {
      * The name of your website
      */
     siteName?: string | null;
+    /**
+     * The small icon in the browser tab of the website. A square PNG or SVG.
+     */
+    favicon?: (number | null) | Media;
   };
   adminPanel?: {
     /**
@@ -12570,6 +12421,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
     | T
     | {
         siteName?: T;
+        favicon?: T;
       };
   adminPanel?:
     | T

@@ -1,3 +1,4 @@
+import { VISUAL_SECTIONS_GROUP } from "@/lib/config/adminGroups";
 import type { CollectionConfig, GroupField } from "payload";
 import { entityHooks } from "@/collections/entities/shared";
 import { siteHeaderFields } from "@/collections/siteChrome/fields";
@@ -19,7 +20,7 @@ export const Header: CollectionConfig<"header"> = {
   },
   admin: {
     defaultColumns: ["name", "logo"],
-    group: "Global Components",
+    group: VISUAL_SECTIONS_GROUP,
     useAsTitle: "name",
   },
   fields: [

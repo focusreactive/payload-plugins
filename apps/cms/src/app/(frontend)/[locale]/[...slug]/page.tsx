@@ -1,11 +1,8 @@
 import { isSiteTemplate } from "@/lib/site/templates";
-import { TrackPage } from "@focus-reactive/payload-plugin-analytics/client";
 import type { Metadata } from "next";
-import { draftMode } from "next/headers";
 import React from "react";
 
 import { RenderSiteBlock, RenderSiteBlocks } from "@/blocks/siteBlockComponents";
-import { SYNTHETIC_REFS } from "@/lib/plugins/analytics/SYNTHETIC_REFS";
 import { generateMeta } from "@/lib/utils/generateMeta";
 import { generateNotFoundMeta } from "@/lib/utils/generateNotFoundMeta";
 import { parseSlugToPath } from "@/lib/utils/parseSlugToPath";
@@ -47,14 +44,12 @@ export default async function Page({ params }: Args) {
   }
 
   const page = await getPageBySlug(decodedSegments, locale);
-  const { isEnabled: draft } = await draftMode();
 
   if (!page) {
     return <PayloadRedirects url={url} locale={locale} />;
   }
 
   const isHome = decodedSegments.length === 0;
-  const pageRef = isHome ? SYNTHETIC_REFS.home : `page:${page.id}`;
   const chrome = await getSiteChrome(locale);
   const header = page.header && typeof page.header === "object" ? page.header : chrome.header;
   const footer = page.footer && typeof page.footer === "object" ? page.footer : chrome.footer;
@@ -71,7 +66,6 @@ export default async function Page({ params }: Args) {
       path={isHome ? "/" : `/${decodedSegments.join("/")}`}
       template={isHome ? "home" : isSiteTemplate(page.template) ? page.template : "default"}
     >
-      <TrackPage pageRef={pageRef} locale={locale} enabled={!draft} />
       <BreadcrumbsJsonLd items={page.breadcrumbs} locale={locale} />
       <PayloadRedirects disableNotFound url={url} locale={locale} />
       <RenderSiteBlocks blocks={page.blocks} context={context} locale={locale} />

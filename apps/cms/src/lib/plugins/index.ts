@@ -1,5 +1,5 @@
+import { VISUAL_SECTIONS_GROUP } from "@/lib/config/adminGroups";
 import { abTestingPlugin } from "@focus-reactive/payload-plugin-ab";
-import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
@@ -13,7 +13,7 @@ import { visualEditingPlugin } from "@focus-reactive/payload-plugin-visual-editi
 import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
 import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";
-import type { Field, PayloadRequest, Plugin } from "payload";
+import type { Field, Plugin } from "payload";
 
 import { Authors } from "@/collections/Authors";
 import { Categories } from "@/collections/Categories";
@@ -30,7 +30,6 @@ import serverExtractPageContent from "@/collections/Page/serverExtractPageConten
 import { Posts } from "@/collections/Posts";
 import serverExtractPostContent from "@/collections/Posts/serverExtractPostContent";
 import { Testimonials } from "@/collections/Testimonials";
-import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
 import { resolveDocUrl } from "@/lib/contentExtraction/links";
 import { getMediaStoragePrefix } from "@/lib/storage/mediaStoragePrefix";
 import { I18N_CONFIG } from "@/lib/config/i18n";
@@ -43,7 +42,6 @@ import { getServerSideURL } from "@/lib/utils/getURL";
 import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 import { validateRedirectPath } from "@/lib/utils/redirectUrl";
 import { isDev } from "@/lib/utils/isDev";
-import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { normalizeRedirectFields } from "@/lib/hooks/normalizeRedirectFields";
 import { revalidateRedirects } from "@/lib/hooks/revalidateRedirects";
 import type { Page } from "@/payload-types";
@@ -68,60 +66,6 @@ const withBlockNameCell = (field: Field): Field => {
       es: "Bloque",
     },
   };
-};
-
-const resolveAnalyticsPagePath = async (ref: string, req: PayloadRequest): Promise<string> => {
-  const { defaultLocale } = I18N_CONFIG;
-
-  if (ref === "__home") return "/";
-  if (ref === "__blog-index") return CUSTOM_PAGES_CONFIG.blog.resolver(defaultLocale);
-  if (ref === "__search") return CUSTOM_PAGES_CONFIG.search.resolver(defaultLocale);
-
-  const idx = ref.indexOf(":");
-  if (idx <= 0) return "";
-
-  const collection = ref.slice(0, idx);
-  const id = ref.slice(idx + 1);
-
-  if (collection === "page") {
-    const doc = await req.payload
-      .findByID({
-        collection: "page",
-        id,
-        depth: 0,
-        overrideAccess: true,
-      })
-      .catch(() => null);
-
-    return (
-      buildUrl({
-        collection: "page",
-        breadcrumbs: doc?.breadcrumbs,
-        absolute: false,
-        locale: defaultLocale,
-      }) || "/"
-    );
-  }
-
-  if (collection === "posts") {
-    const doc = await req.payload
-      .findByID({
-        collection: "posts",
-        id,
-        depth: 0,
-        overrideAccess: true,
-      })
-      .catch(() => null);
-
-    return buildUrl({
-      collection: "posts",
-      slug: doc?.slug,
-      absolute: false,
-      locale: defaultLocale,
-    });
-  }
-
-  return "";
 };
 
 const ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
@@ -294,7 +238,7 @@ export const plugins: Plugin[] = [
       },
       admin: {
         defaultColumns: ["name", "preview", "presetBlock", "updatedAt"],
-        group: "Settings",
+        group: VISUAL_SECTIONS_GROUP,
       },
       fields: (defaultFields: Field[]) => defaultFields.map(withBlockNameCell),
     },
@@ -408,28 +352,6 @@ export const plugins: Plugin[] = [
     },
     debug: isDev(),
     storage: abAdapter,
-  }),
-
-  analyticsPlugin({
-    ga4: {
-      measurementId: process.env.GA4_MEASUREMENT_ID!,
-      propertyId: process.env.GA4_PROPERTY_ID!,
-      serviceAccount: {
-        clientEmail: process.env.GA4_CLIENT_EMAIL!,
-        privateKey: (process.env.GA4_PRIVATE_KEY ?? "").replace(/\\n/gu, "\n"),
-      },
-    },
-    leadActions: {
-      types: ["cta_click", "newsletter_signup"],
-    },
-    ab: {
-      experimentsCollectionSlug: "ab-experiments",
-    },
-    pages: {
-      collections: ["page", "posts"],
-      syntheticRefs: ["__home", "__blog-index", "__search"],
-      resolvePagePath: resolveAnalyticsPagePath,
-    },
   }),
 
   visualEditingPlugin({

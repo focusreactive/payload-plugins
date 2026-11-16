@@ -7,17 +7,19 @@ import { RenderSiteBlocks } from "@/blocks/siteBlockComponents";
 import { ClinicJsonLd } from "@/components/site/clinic/ClinicJsonLd";
 import { clinicAddressLines } from "@/components/site/clinic/clinicData";
 import { SitePage } from "@/components/site/layout/SitePage";
+import { getPageBySlug } from "@/dal/getPageBySlug";
 import { ENTITY_ROUTE_PREFIXES } from "@/lib/config/entityRoutes";
 import type { Clinic } from "@/payload-types";
 
 import type { EntityTemplateProps } from "./types";
 
-function clinicCrumbs(doc: Clinic): ImageHeroCrumb[] {
+/** Locations index / state / clinic, from the route: the trail is never typed in the CMS. */
+function clinicCrumbs(doc: Clinic, locationsTitle: string | null | undefined): ImageHeroCrumb[] {
   const state = typeof doc.state === "object" ? doc.state : null;
   const crumbs: ImageHeroCrumb[] = [
     {
       link: { kind: "relative", path: `/${ENTITY_ROUTE_PREFIXES.locations}` },
-      text: doc.hero?.crumb,
+      text: locationsTitle,
     },
   ];
 
@@ -34,7 +36,15 @@ function clinicCrumbs(doc: Clinic): ImageHeroCrumb[] {
 }
 
 /** The clinic page: its top section from the record's own fields, then the record's sections. */
-export function ClinicTemplate({ doc, locale, path, header, footer }: EntityTemplateProps<Clinic>) {
+export async function ClinicTemplate({
+  doc,
+  locale,
+  path,
+  header,
+  footer,
+}: EntityTemplateProps<Clinic>) {
+  const locationsPage = await getPageBySlug([ENTITY_ROUTE_PREFIXES.locations], locale);
+
   return (
     <SitePage
       bodyId={stripMarkers(doc.slug) ?? doc.slug}
@@ -44,7 +54,7 @@ export function ClinicTemplate({ doc, locale, path, header, footer }: EntityTemp
         <ImageHero
           address={clinicAddressLines(doc).join("\n")}
           button={doc.hero?.button}
-          crumbs={clinicCrumbs(doc)}
+          crumbs={clinicCrumbs(doc, locationsPage?.title)}
           heading={doc.heroTitle || doc.name}
           image={doc.photo}
           locale={locale}

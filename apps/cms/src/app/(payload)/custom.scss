@@ -13,3 +13,8 @@
 .LexicalEditorTheme__table {
   width: 100%;
 }
+
+// Field help text stays in the config, where MCP reads it, but is not shown to editors.
+.field-description {
+  display: none;
+}

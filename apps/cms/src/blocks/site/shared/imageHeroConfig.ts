@@ -1,9 +1,9 @@
 import type { Block } from "payload";
 
 import { bodyRichText, headingRichText } from "@/lib/fields/site/richText";
-import { siteButton, siteLink } from "@/lib/fields/site/siteLink";
+import { siteButton } from "@/lib/fields/site/siteLink";
 
-import { rowTitle, siteBlock } from "../shared";
+import { siteBlock } from "../shared";
 import { bilingual, bilingualBlock, mediaField } from "./fieldText";
 
 export const IMAGE_HERO_SIZES = ["regular", "large"] as const;
@@ -31,41 +31,6 @@ export const ImageHeroBlock: Block = bilingualBlock(
           { label: { en: "Large, centred", es: "Grande, centrado" }, value: "large" },
         ],
         type: "select",
-      },
-      {
-        admin: {
-          ...rowTitle("text", "Step"),
-          description: {
-            en: "The trail above the heading, for example Locations / Texas / Allen. The last step usually has no link. Empty hides the trail.",
-            es: "La ruta sobre el encabezado, por ejemplo Ubicaciones / Texas / Allen. El último paso no suele llevar enlace. Vacío la oculta.",
-          },
-        },
-        fields: [
-          {
-            admin: {
-              description: { en: "The words of this step.", es: "El texto de este paso." },
-            },
-            label: { en: "Text", es: "Texto" },
-            name: "text",
-            required: true,
-            type: "text",
-          },
-          bilingual(
-            siteLink({ label: "Links to", name: "link" }),
-            { en: "Links to", es: "Enlaza a" },
-            {
-              en: "Where this step leads. Without a link the step shows as plain text.",
-              es: "Adónde lleva este paso. Sin enlace se muestra como texto.",
-            }
-          ),
-        ],
-        label: { en: "Breadcrumbs", es: "Migas de pan" },
-        labels: {
-          plural: { en: "Steps", es: "Pasos" },
-          singular: { en: "Step", es: "Paso" },
-        },
-        name: "crumbs",
-        type: "array",
       },
       bilingual(
         headingRichText({

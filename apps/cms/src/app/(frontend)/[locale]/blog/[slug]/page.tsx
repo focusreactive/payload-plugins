@@ -1,7 +1,5 @@
-import { TrackPage } from "@focus-reactive/payload-plugin-analytics/client";
 import { stripMarkers } from "@focus-reactive/payload-plugin-visual-editing";
 import type { Metadata } from "next";
-import { draftMode } from "next/headers";
 import React from "react";
 
 import { RenderSiteBlocks } from "@/blocks/siteBlockComponents";
@@ -44,7 +42,6 @@ export default async function Page({ params }: Args) {
     return <PayloadRedirects url={url} locale={locale} />;
   }
 
-  const { isEnabled: draft } = await draftMode();
   const postSlug = stripMarkers(post.slug) ?? decodedSlug;
 
   return (
@@ -57,7 +54,6 @@ export default async function Page({ params }: Args) {
       path={`${BLOG_CONFIG.basePath}/${postSlug}`}
       template="post"
     >
-      <TrackPage collection="posts" enabled={!draft} id={post.id} locale={locale} />
       <ArticleJsonLd
         locale={locale}
         post={post}

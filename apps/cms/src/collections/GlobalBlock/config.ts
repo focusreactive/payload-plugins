@@ -1,3 +1,4 @@
+import { VISUAL_SECTIONS_GROUP } from "@/lib/config/adminGroups";
 import type { CollectionConfig } from "payload";
 
 import { contentBlocks } from "@/blocks/contentBlocks";
@@ -35,7 +36,7 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
       edit: { beforeDocumentControls: createLiveBeforeDocumentControls() },
     },
     defaultColumns: ["title", "block", "updatedAt"],
-    group: "Global Components",
+    group: VISUAL_SECTIONS_GROUP,
     livePreview: {
       url: ({ data, locale }) =>
         globalBlockPreviewPath(data?.id, locale.code ?? locale.fallbackLocale),
@@ -83,8 +84,8 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
     beforeDelete: [preventDeleteIfReferenced],
   },
   labels: {
-    plural: { en: "Global Blocks", es: "Bloques Globales" },
-    singular: { en: "Global Block", es: "Bloque Global" },
+    plural: { en: "Global sections", es: "Secciones globales" },
+    singular: { en: "Global section", es: "Sección global" },
   },
   slug: "globalBlock",
   versions: createLivePreviewVersions(),

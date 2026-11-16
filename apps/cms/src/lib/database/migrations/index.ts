@@ -44,6 +44,7 @@ import * as migration_20261116_123706_site_page_types from './20261116_123706_si
 import * as migration_20261116_141546_sticky_media_tables from './20261116_141546_sticky_media_tables';
 import * as migration_20261116_154652_state_hero_button_localized from './20261116_154652_state_hero_button_localized';
 import * as migration_20261116_160051_mcp_record_collections from './20261116_160051_mcp_record_collections';
+import * as migration_20261116_163741_admin_polish from './20261116_163741_admin_polish';
 
 export const migrations = [
   {
@@ -274,6 +275,11 @@ export const migrations = [
   {
     up: migration_20261116_160051_mcp_record_collections.up,
     down: migration_20261116_160051_mcp_record_collections.down,
-    name: '20261116_160051_mcp_record_collections'
+    name: '20261116_160051_mcp_record_collections',
+  },
+  {
+    up: migration_20261116_163741_admin_polish.up,
+    down: migration_20261116_163741_admin_polish.down,
+    name: '20261116_163741_admin_polish'
   },
 ];

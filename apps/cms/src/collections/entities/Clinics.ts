@@ -115,17 +115,6 @@ export const Clinics: CollectionConfig<"clinics"> = {
                 hideGutter: true,
               },
               fields: [
-                {
-                  admin: {
-                    description: {
-                      en: "The first step of the trail above the heading, which links to the locations page, for example Locations.",
-                      es: "El primer paso de la ruta sobre el encabezado, que enlaza a la página de ubicaciones, por ejemplo Ubicaciones.",
-                    },
-                  },
-                  label: { en: "Locations step text", es: "Texto del paso Ubicaciones" },
-                  name: "crumb",
-                  type: "text",
-                },
                 bilingual(
                   siteButton(),
                   { en: "Button", es: "Botón" },

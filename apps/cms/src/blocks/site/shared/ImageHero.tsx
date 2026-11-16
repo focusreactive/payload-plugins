@@ -7,6 +7,8 @@ import { siteLinkHref, siteLinkTarget, telHref } from "@/lib/site/links";
 import type { SiteLinkValue } from "@/lib/site/links";
 import type { Locale } from "@/lib/types";
 
+import type { SiteBlockContext } from "../types";
+
 import type { ImageHeroSize } from "./imageHeroConfig";
 import { BodyText, HeadingText, LineBreaks } from "./content";
 import type { MediaValue, RichTextData, SiteButtonValue, TextOrRichText } from "./content";
@@ -38,6 +40,26 @@ export interface ImageHeroProps {
   phoneLabel?: string | null;
   image?: MediaValue;
   mobileImage?: MediaValue;
+  context?: SiteBlockContext;
+}
+
+/** A Page's trail comes from its parents (the nested-docs breadcrumbs); a top-level page shows none. */
+function pageCrumbs(context: SiteBlockContext | undefined): ImageHeroCrumb[] {
+  if (context?.collection !== "page") {
+    return [];
+  }
+
+  const trail = context.doc.breadcrumbs ?? [];
+
+  if (trail.length < 2) {
+    return [];
+  }
+
+  return trail.map((step, index) =>
+    index === trail.length - 1 || !step.url
+      ? { text: step.label }
+      : { link: { kind: "relative", path: step.url }, text: step.label }
+  );
 }
 
 function Breadcrumbs({ crumbs, locale }: { crumbs: ImageHeroCrumb[]; locale: string }) {
@@ -77,8 +99,9 @@ export function ImageHero({
   phoneLabel,
   image,
   mobileImage,
+  context,
 }: ImageHeroProps) {
-  const visibleCrumbs = (crumbs ?? []).filter((crumb) => crumb.text);
+  const visibleCrumbs = (crumbs ?? pageCrumbs(context)).filter((crumb) => crumb.text);
   const phoneHref = telHref(phone);
   const hasMobileImage = Boolean(mediaOf(mobileImage));
 
