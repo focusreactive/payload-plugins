@@ -36,7 +36,7 @@ export function deriveReadability(
   const ctx = { keyphrase, thresholds: thresholds.values };
   const researcher = makeResearcher(paper);
 
-  const assessor = new ContentAssessor(makeResearcher(paper));
+  const assessor = new ContentAssessor(researcher);
   configureReadabilityAssessor(assessor, thresholds);
   const readRaw = runAssessor(assessor, ctx, paper);
   const flesch = fleschCheck(researcher, ctx);

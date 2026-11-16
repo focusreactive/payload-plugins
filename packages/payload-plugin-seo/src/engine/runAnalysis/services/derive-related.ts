@@ -18,7 +18,7 @@ export function deriveRelatedKeyphrase(
 ): CategoryResult {
   const ctx = { keyphrase, thresholds: thresholds.values };
   const researcher = makeResearcher(paper);
-  const assessor = new RelatedKeywordAssessor(makeResearcher(paper));
+  const assessor = new RelatedKeywordAssessor(researcher);
   configureRelatedKeyphraseAssessor(assessor, thresholds);
   const checks = enrich(
     runAssessor(assessor, ctx, paper),

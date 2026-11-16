@@ -48,7 +48,7 @@ export function deriveSeo(
   const ctx = { keyphrase, thresholds: thresholds.values };
   const researcher = makeResearcher(paper);
 
-  const seoAssessor = new SeoAssessor(makeResearcher(paper));
+  const seoAssessor = new SeoAssessor(researcher);
   seoAssessor.addAssessment("keyphraseDistribution", new KeyphraseDistributionAssessment());
   configureSeoAssessor(seoAssessor, thresholds);
 
