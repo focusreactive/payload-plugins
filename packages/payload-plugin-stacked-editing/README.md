@@ -66,7 +66,13 @@ in panel" icon in its header, shown faintly next to the `…` menu.
   the header does the same).
 - **Breadcrumbs** read `Document / Field / Row / Field / Row …`. A row crumb goes back to that
   row's panel. A field crumb goes back to the panel that contains the field. The document crumb
-  closes every panel.
+  closes every panel. The trail always stays on one line. When it is too wide for the panel, the
+  middle folds into a `…` button: `Document / … / parent / current`, or `Document / … / current`
+  in a very narrow panel. If even that does not fit, the current crumb is cut with an ellipsis and
+  shows its full text on hover. Hovering the `…` button (or clicking it, or pressing Enter on it)
+  opens a menu of the hidden levels, indented by depth and labelled with their type (Blocks,
+  Array, or the block or item label). Escape closes the menu without closing the panel. The fold
+  follows the measured width of the real labels, not a fixed number of levels.
 - **Escape**, the close button or the strip to the left closes the top panel.
 - Row actions (the `…` menu, drag handle, block name input) work as before.
 - Row titles come from the block name, or else from a `title`/`name`/`label`/`heading`/`headline`

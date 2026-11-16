@@ -392,10 +392,15 @@ export const StackedEditing = ({ defaultMode = "panel" }: { defaultMode?: Defaul
   const getValue = useCallback((path: string) => getFields()[path]?.value, [getFields]);
   const crumbLevels: CrumbLevel[] = levels.map((level) => {
     const row = rowLabelOf(level, translate, getValue);
+    const rowHint = level.block
+      ? translate(level.block.labels?.singular) || level.block.slug
+      : translate(level.field.labels?.singular);
     return {
+      fieldHint: level.field.type === "blocks" ? "Blocks" : "Array",
       fieldLabel: fieldLabelOf(level, translate),
       rowLabel: row.title ?? row.label,
       rowPath: level.rowPath,
+      ...(rowHint ? { rowHint } : {}),
     };
   });
   const documentTitle =

@@ -96,3 +96,34 @@ describe("buildBreadcrumbs", () => {
     expect(crumbs.at(-1)?.current).toBe(true);
   });
 });
+
+describe("buildBreadcrumbs hints and levels", () => {
+  it("carries the type hint and nesting level of each crumb for the hidden-levels menu", () => {
+    const crumbs = buildBreadcrumbs({
+      documentTitle: "Home",
+      levels: [
+        {
+          rowPath: "s.0",
+          fieldLabel: "Sections",
+          rowLabel: "Features 03",
+          fieldHint: "Blocks",
+          rowHint: "Features",
+        },
+        {
+          rowPath: "s.0.i.1",
+          fieldLabel: "Items",
+          rowLabel: "Feature 02",
+          fieldHint: "Array",
+          rowHint: "Feature",
+        },
+      ],
+    });
+    expect(crumbs.map((crumb) => [crumb.label, crumb.level, crumb.hint])).toEqual([
+      ["Home", 0, undefined],
+      ["Sections", 1, "Blocks"],
+      ["Features 03", 2, "Features"],
+      ["Items", 3, "Array"],
+      ["Feature 02", 4, "Feature"],
+    ]);
+  });
+});

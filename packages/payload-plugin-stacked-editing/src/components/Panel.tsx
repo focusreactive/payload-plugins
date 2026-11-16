@@ -7,6 +7,7 @@ import { buildBreadcrumbs } from "../lib/breadcrumbs.js";
 import type { CrumbLevel, Translate } from "../lib/breadcrumbs.js";
 import type { DefaultMode } from "../lib/headerClick.js";
 import type { RowLevel } from "../lib/resolveRowChain.js";
+import { Breadcrumbs } from "./Breadcrumbs.js";
 import { MODE_ATTRIBUTE, OWNER_ATTRIBUTE } from "./styles.js";
 
 const BASE = "stacked-editing";
@@ -24,37 +25,6 @@ type PanelProps = {
   /** Keep the first `keep` panels open and close the rest. */
   readonly onNavigate: (keep: number) => void;
 };
-
-const Breadcrumbs = ({
-  crumbs,
-  onNavigate,
-}: {
-  crumbs: ReturnType<typeof buildBreadcrumbs>;
-  onNavigate: (keep: number) => void;
-}) => (
-  <nav aria-label="Breadcrumbs">
-    <ol className={`${BASE}__crumbs`}>
-      {crumbs.map((crumb) => (
-        <li className={`${BASE}__crumb ${BASE}__crumb--${crumb.kind}`} key={crumb.key}>
-          {crumb.current ? (
-            <span aria-current="page" className={`${BASE}__crumb--current`}>
-              {crumb.label}
-            </span>
-          ) : (
-            <button
-              className={`${BASE}__crumb-button`}
-              onClick={() => onNavigate(crumb.keep)}
-              title={crumb.label}
-              type="button"
-            >
-              {crumb.label}
-            </button>
-          )}
-        </li>
-      ))}
-    </ol>
-  </nav>
-);
 
 /**
  * One level of the stack: a Payload `Drawer` showing one row's fields. The next level renders

@@ -5,6 +5,7 @@ const FOCUSABLE = '[data-lexical-editor="true"], input:not([type="hidden"]), tex
 const POLL_MS = 60;
 const BUDGET_MS = 3000;
 const FLASH_MS = 1800;
+const REFOCUS_MS = 400;
 
 /** The field's element inside the top (last opened) panel of this instance, once it rendered. */
 const fieldInTopPanel = (ownerId: string, path: string, depth: number): HTMLElement | null => {
@@ -49,6 +50,18 @@ export const focusFieldInTopPanel = ({
       ? field
       : field.querySelector<HTMLElement>(FOCUSABLE);
     focusable?.focus({ preventScroll: true });
+    // The click that started this happened in the preview iframe, which may take focus back once
+    // the click finishes; claim it again for the field.
+    window.setTimeout(() => {
+      const active = document.activeElement;
+      if (
+        focusable &&
+        active !== focusable &&
+        (active === document.body || active?.tagName === "IFRAME")
+      ) {
+        focusable.focus({ preventScroll: true });
+      }
+    }, REFOCUS_MS);
     field.classList.remove(FLASH_CLASS);
     // Restart the animation when the same field is opened twice in a row.
     void field.offsetWidth;

@@ -96,12 +96,20 @@ export type Crumb = {
   /** How many panels stay open when this crumb is clicked (`0` closes them all). */
   readonly keep: number;
   readonly current: boolean;
+  /** Nesting level (0 = document), for indenting the hidden-levels menu. */
+  readonly level: number;
+  /** A short type hint for the hidden-levels menu: "Blocks", "Array", a block or item label. */
+  readonly hint?: string;
 };
 
 export type CrumbLevel = {
   readonly rowPath: string;
   readonly fieldLabel: string;
   readonly rowLabel: string;
+  /** "Blocks" or "Array". */
+  readonly fieldHint?: string;
+  /** The block label ("Hero") or the array's item label ("Feature"). */
+  readonly rowHint?: string;
 };
 
 /**
@@ -120,7 +128,7 @@ export const buildBreadcrumbs = ({
   depth?: number;
 }): Crumb[] => {
   const crumbs: Crumb[] = [
-    { key: "document", label: documentTitle, kind: "document", keep: 0, current: false },
+    { key: "document", label: documentTitle, kind: "document", keep: 0, current: false, level: 0 },
   ];
   for (const [index, level] of levels.slice(0, depth + 1).entries()) {
     crumbs.push(
@@ -130,6 +138,8 @@ export const buildBreadcrumbs = ({
         kind: "field",
         keep: index,
         current: false,
+        level: index * 2 + 1,
+        ...(level.fieldHint ? { hint: level.fieldHint } : {}),
       },
       {
         key: `${level.rowPath}:row`,
@@ -137,8 +147,50 @@ export const buildBreadcrumbs = ({
         kind: "row",
         keep: index + 1,
         current: index === depth,
+        level: index * 2 + 2,
+        ...(level.rowHint ? { hint: level.rowHint } : {}),
       }
     );
   }
   return crumbs;
+};
+
+export type CrumbFit = {
+  /** Indices of the crumbs shown in the row, in order; an ellipsis goes after the first. */
+  readonly visible: number[];
+  /** Indices folded into the "…" menu, top to bottom. */
+  readonly hidden: number[];
+};
+
+const range = (from: number, to: number): number[] =>
+  Array.from({ length: Math.max(0, to - from) }, (_, offset) => from + offset);
+
+/**
+ * Which crumbs fit on one line. Every crumb's width includes its separator. When the whole trail
+ * does not fit, the first crumb stays, an ellipsis replaces the middle and as many trailing crumbs
+ * as fit are kept (`first / … / parent / current`, then `first / … / current`). The current crumb
+ * is always kept; if even that does not fit it truncates with an ellipsis (CSS).
+ */
+export const fitCrumbs = ({
+  available,
+  ellipsisWidth,
+  widths,
+}: {
+  available: number;
+  ellipsisWidth: number;
+  widths: readonly number[];
+}): CrumbFit => {
+  const count = widths.length;
+  const total = widths.reduce((sum, width) => sum + width, 0);
+  if (count <= 2 || total <= available) {
+    return { visible: range(0, count), hidden: [] };
+  }
+  const first = widths[0] ?? 0;
+  for (let kept = count - 2; kept >= 1; kept -= 1) {
+    const trailing = widths.slice(count - kept).reduce((sum, width) => sum + width, 0);
+    if (first + ellipsisWidth + trailing <= available) {
+      return { visible: [0, ...range(count - kept, count)], hidden: range(1, count - kept) };
+    }
+  }
+  return { visible: [0, count - 1], hidden: range(1, count - 1) };
 };
