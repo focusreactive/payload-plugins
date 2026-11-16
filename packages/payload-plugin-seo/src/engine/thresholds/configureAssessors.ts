@@ -5,6 +5,7 @@ import PageTitleWidthAssessment from "yoastseo/build/scoring/assessments/seo/Pag
 import TextLengthAssessment from "yoastseo/build/scoring/assessments/seo/TextLengthAssessment";
 import SentenceLengthInTextAssessment from "yoastseo/build/scoring/assessments/readability/SentenceLengthInTextAssessment";
 import {
+  DEFAULT_SEO_THRESHOLDS,
   YOAST_DENSITY_OVER_MAXIMUM,
   YOAST_SEO_ASSESSOR_SHORT_TITLE_SCORE,
   YOAST_TEXT_LENGTH_BELOW_MINIMUM,
@@ -14,6 +15,9 @@ import type { SeoThresholds } from "../../types/config";
 import type { AnalysisThresholds } from "./analysisThresholds";
 import { adjustLanguageConfig, applyOverrides } from "./yoastConfig";
 import type { YoastConfig } from "./yoastConfig";
+
+const DENSITY_OVER_MAXIMUM_MARGIN =
+  YOAST_DENSITY_OVER_MAXIMUM - DEFAULT_SEO_THRESHOLDS.keyphraseDensity.max;
 
 interface ConfigurableAssessor {
   addAssessment: (identifier: string, assessment: unknown) => boolean;
@@ -55,7 +59,7 @@ function keyphraseDensityAssessment({ keyphraseDensity }: SeoThresholds): unknow
   const bounds = definedOnly({
     minimum: keyphraseDensity?.min,
     maximum: max,
-    overMaximum: max === undefined ? undefined : Math.max(YOAST_DENSITY_OVER_MAXIMUM, max),
+    overMaximum: max === undefined ? undefined : max + DENSITY_OVER_MAXIMUM_MARGIN,
   });
 
   return new KeyphraseDensityAssessment({

@@ -68,6 +68,21 @@ describe("configureAssessors", () => {
     expect(titleWidth(300, { titleWidth: { max: 700 } })).toBe(9);
   });
 
+  it("keeps Yoast's over-maximum density band above a configured maximum", () => {
+    const densityScore = (matches: number, configured?: SeoThresholds) =>
+      scoreOf(
+        "keyphraseDensity",
+        `<p>${Array.from({ length: 200 }, (_, i) => (i < matches ? "payload" : "filler")).join(" ")}.</p>`,
+        { ...english, keyword: "payload" },
+        configured
+      );
+    const maxFive = { keyphraseDensity: { max: 5 } };
+
+    expect(densityScore(9, maxFive)).toBe(9);
+    expect(densityScore(11, maxFive)).toBe(-10);
+    expect(densityScore(14, maxFive)).toBe(-50);
+  });
+
   it("lets a configured number win over the language default", () => {
     const text = japaneseText(450);
 
