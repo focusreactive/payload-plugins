@@ -20,6 +20,7 @@ import path from "node:path";
 import config from "@payload-config";
 import { getPayload } from "payload";
 import type { CollectionSlug, Payload, Where } from "payload";
+import type { Pool } from "pg";
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 type JsonObject = { [key: string]: Json };
@@ -140,14 +141,12 @@ async function unpublishOthers(
     where: { and: [{ [matchField]: { not_in: keep } }, { _status: { equals: "published" } }] },
   });
 
+  const { pool } = payload.db as unknown as { pool: Pool };
+  const table = payload.collections[collection]?.config.dbName ?? collectionSlug;
+
   for (const doc of docs) {
-    await payload.update({
-      collection,
-      context: seedContext,
-      data: { _status: "draft" } as never,
-      id: doc.id,
-      overrideAccess: true,
-    });
+    // A save would re-validate the stock sections, which the site layer no longer offers, so only the status changes.
+    await pool.query(`UPDATE "${String(table)}" SET "_status" = 'draft' WHERE "id" = $1`, [doc.id]);
     payload.logger.info(
       `unpublished ${collectionSlug} ${String((doc as unknown as Record<string, unknown>)[matchField])}`
     );
