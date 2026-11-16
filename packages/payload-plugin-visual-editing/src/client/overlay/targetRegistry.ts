@@ -4,7 +4,7 @@ import type { Marker } from "./markerExtractor.js";
 import { spreadVeIdentity } from "../../shared/shared.js";
 import { documentAddressOf } from "../../shared/veDocument.js";
 import { buildOverlayClickHandler } from "../overlayClickHandler.js";
-import { DATA_VE_TARGET_ATTR, OUTLINE_IDLE_STYLE } from "./constants.js";
+import { DATA_VE_TARGET_ATTR } from "./constants.js";
 
 export type TargetConfig = {
   path: string;
@@ -13,9 +13,6 @@ export type TargetConfig = {
   documentAddress: string;
   href: string;
   clickHandler: (event: MouseEvent) => void;
-  originalOutline: string;
-  restingOutline: string;
-  paintOutline: boolean;
 };
 
 export type TargetRegistryCtx = {
@@ -55,21 +52,14 @@ export function createTargetRegistry(): TargetRegistry {
     return { href, clickHandler };
   };
 
-  const clearTarget = (target: HTMLElement, originalOutline: string) => {
-    target.style.outline = originalOutline;
+  const clearTarget = (target: HTMLElement) => {
     target.removeAttribute(DATA_VE_TARGET_ATTR);
   };
 
   return {
     upsert(target, marker, ctx) {
-      const existing = configs.get(target);
       const { href, clickHandler } = buildBindings(marker, ctx);
       target.setAttribute(DATA_VE_TARGET_ATTR, marker.path);
-      const originalOutline = existing?.originalOutline ?? target.style.outline;
-      const isFirstBinding = !existing;
-      if (ctx.mode === "always" && isFirstBinding) {
-        target.style.outline = OUTLINE_IDLE_STYLE;
-      }
       const next: TargetConfig = {
         path: marker.path,
         key: marker.key,
@@ -77,9 +67,6 @@ export function createTargetRegistry(): TargetRegistry {
         documentAddress: documentAddressOf(marker),
         href,
         clickHandler,
-        originalOutline,
-        restingOutline: ctx.mode === "always" ? OUTLINE_IDLE_STYLE : originalOutline,
-        paintOutline: true,
       };
       configs.set(target, next);
       return next;
@@ -92,15 +79,12 @@ export function createTargetRegistry(): TargetRegistry {
     },
     targets: () => [...configs.keys()],
     remove(target) {
-      const config = configs.get(target);
-      if (!config) return;
-      clearTarget(target, config.originalOutline);
+      if (!configs.has(target)) return;
+      clearTarget(target);
       configs.delete(target);
     },
     disposeAll() {
-      for (const [target, config] of configs) {
-        clearTarget(target, config.originalOutline);
-      }
+      for (const target of configs.keys()) clearTarget(target);
       configs.clear();
     },
   };

@@ -283,7 +283,7 @@ describe("expandAndFocus — end-to-end", () => {
     );
     await new Promise((resolve) => setTimeout(resolve, 500));
     expect(document.activeElement?.id).toBe("layout.0.blockName");
-    expect(document.querySelector(".ve-sweep-wrap")).not.toBeNull();
+    expect(document.activeElement?.hasAttribute("data-ve-reveal")).toBe(true);
   });
 
   it("returns cleanly when a chain step times out", async () => {

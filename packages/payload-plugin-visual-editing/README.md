@@ -1,6 +1,6 @@
 # @focus-reactive/payload-plugin-visual-editing
 
-Click-to-edit for Payload CMS. On draft reads the plugin writes an invisible marker into every text value. The frontend overlay finds those markers in the rendered page, outlines the elements and adds an **Edit** badge. A click focuses the field in the Payload admin. With the optional instant preview, text typed in the admin form appears in the Live Preview before it is saved.
+Click-to-edit for Payload CMS. On draft reads the plugin writes an invisible marker into every text value. The frontend overlay finds those markers in the rendered page, frames the elements and adds an **Edit** badge. A click focuses the field in the Payload admin. With the optional instant preview, text typed in the admin form appears in the Live Preview before it is saved.
 
 ## Installation
 
@@ -136,7 +136,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
 }
 ```
 
-- `VisualEditing.Toggle` is the floating Off / Hover / Always control. The chosen mode is kept in `localStorage`.
+- `VisualEditing.Toggle` is the floating Off / Hover / Always control. It starts in the top right corner and can be dragged anywhere in the window; the chosen mode and the place it was dropped are kept in `localStorage`.
 - `VisualEditing.Overlay` scans its children for markers. Content outside it is not touched.
 
 ### 7. Mark rich text, uploads and relationships
@@ -151,7 +151,7 @@ bunx payload generate:importmap
 
 ### Using it
 
-Open a document in the admin, open **Live Preview** and set the toggle to **Always** or **Hover**. Editable text gets an outline and an **Edit** badge. A click on the badge or anywhere on the outlined element focuses the field in the admin form. A click with a modifier key and a text selection keep the page's own behaviour; a double click does nothing. A click on text of another document opens that document in a new admin tab.
+Open a document in the admin, open **Live Preview** and set the toggle to **Always** or **Hover**. Editable text gets a frame and an **Edit** badge. The frame is one rectangle around the element, also when its text wraps, and it is drawn above the page, so the page's own styles are not changed. A click on the badge or anywhere inside the frame focuses the field in the admin form; the field's border turns blue and pulses briefly, then the field keeps Payload's normal focus style. A click with a modifier key and a text selection keep the page's own behaviour; a double click does nothing. A click on text of another document opens that document in a new admin tab.
 
 To leave draft mode in a normal browser tab, open `/next/exit-preview`.
 
@@ -259,7 +259,7 @@ export const RefreshOnSave = () => {
 - Text typed, deleted or replaced inside existing text of a Lexical rich text field: in paragraphs, headings, list items, quotes, links and formatted text.
 - With [`LiveRichText`](#unsaved-rich-text-structure): every edit that changes the structure of a Lexical rich text field, such as a new paragraph, a list, a heading, bold on a part of a text, a link, an upload or a new block, and the text typed after it.
 - Only where the page renders the stored value unchanged.
-- In every toggle position, also **Off**. The toggle controls outlines, badges and click-to-edit only.
+- In every toggle position, also **Off**. The toggle controls frames, badges and click-to-edit only.
 
 ### What waits for the save
 
@@ -505,6 +505,14 @@ A draft read with `locale: 'all'` returns localized values keyed by locale (`tit
 
 When the clicked document is already open in the admin, the bridge focuses the field in the locale the admin is showing. It does not switch the admin locale.
 
+## Upgrading from 1.2.0
+
+No config change is needed. What looks different:
+
+- **Frames instead of outlines.** The overlay no longer sets `outline` on the page's elements. It draws one rectangle per editable element in a layer above the page. A page style that relied on the overlay's inline `outline` has nothing to read any more; `[data-ve-target]` is still set on every edit target.
+- **The toggle starts in the top right corner** instead of the bottom right, so a page that scrolls inside Live Preview cannot push it out of view, and it can be dragged. Its place is kept in `localStorage` under `visual-editing-toggle-position`.
+- **The focused field in the admin** is shown by its own border, which turns blue and pulses, instead of an overlay drawn around the label and the field.
+
 ## Upgrading from 1.1.1
 
 No config change is needed. Regenerate the import map when you turn `instantPreview` on: it adds `InstantPreviewBroadcaster` and `OpenFormAnnouncer`.
@@ -540,7 +548,7 @@ Markers:
 
 Overlay:
 
-- **Edit targets follow the page.** A target is bound again when React renders another field or document into the same element. An element that leaves the overlay, or a wrapper that loses its `data-ve-*` attributes, loses its outline and badge.
+- **Edit targets follow the page.** A target is bound again when React renders another field or document into the same element. An element that leaves the overlay, or a wrapper that loses its `data-ve-*` attributes, loses its frame and badge.
 - **Click-to-edit after a row move** (with `instantPreview`): between a move in the form and the refresh, a click opens the row that was clicked, not the row that now has its index. A rich text wrapper does the same through its `data-ve-key`. For this the plugin adds an `OpenFormAnnouncer` to the document controls of every collection and global it marks, with or without Live Preview; it renders nothing and tells the bridge which row ids the open form has.
 
 ## Caveats

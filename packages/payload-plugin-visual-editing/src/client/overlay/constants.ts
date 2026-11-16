@@ -7,16 +7,26 @@ export const LABEL_CLASS = "ve-edit-label";
 export const isOverlayLabel = (node: Node): boolean =>
   node instanceof Element && node.classList.contains(LABEL_CLASS);
 
-// Payload admin palette: blue-550 for the active outline and badge (white text keeps AA
-// contrast), a translucent blue-400 for the quiet resting outline in "always" mode.
+// Payload admin palette: blue-550 for the active frame and badge (white text keeps AA
+// contrast), a translucent blue-400 for the quiet resting frame in "always" mode.
 const ACCENT_STRONG = "rgb(12, 121, 168)";
 const FONT_STACK =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
-/** Outline painted on the element under the pointer. */
-export const OUTLINE_STYLE = `1.5px solid ${ACCENT_STRONG}`;
-/** Resting outline in "always" mode: present but quiet, so the page stays readable. */
-export const OUTLINE_IDLE_STYLE = "1px dashed rgba(36, 164, 223, 0.55)";
+/**
+ * Frames are drawn in a layer above the page as one rectangle around the element's box, so text
+ * that wraps gets a single frame instead of one outline per line, and the page's own styles are
+ * never touched. The border lies just outside the box, so the frame is exactly the area a click
+ * opens.
+ */
+export const FRAME_RADIUS = "4px";
+/** Frame of the element under the pointer. */
+export const FRAME_ACTIVE_WIDTH = 2;
+export const FRAME_ACTIVE_BORDER = `${FRAME_ACTIVE_WIDTH}px solid ${ACCENT_STRONG}`;
+/** Resting frame in "always" mode: present but quiet, so the page stays readable. */
+export const FRAME_IDLE_WIDTH = 1.5;
+export const FRAME_IDLE_BORDER = `${FRAME_IDLE_WIDTH}px dashed rgba(36, 164, 223, 0.75)`;
+export const DATA_VE_FRAME_ATTR = "data-ve-frame";
 
 export const STEGA_ATTRS = new Set(["alt", "title", "aria-label", "placeholder"]);
 
