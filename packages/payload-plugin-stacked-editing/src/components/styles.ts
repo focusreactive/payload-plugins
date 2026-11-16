@@ -101,6 +101,7 @@ export const STACKED_EDITING_CSS = `
 }
 .${BASE}__crumb-more {
   min-width: 24px;
+  background: var(--theme-elevation-50);
   text-align: center;
   letter-spacing: 1px;
 }
