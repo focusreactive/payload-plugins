@@ -206,18 +206,23 @@ export const cs: LanguageMessages = {
 
   "reco.introductionKeyword.bad": "Přidejte „{{keyphrase}}“ do úvodního odstavce.",
   "reco.introductionKeyword.badNoKeyphrase": "Přidejte klíčovou frázi do úvodního odstavce.",
-  "reco.keyphraseDensity.bad":
+  "reco.keyphraseDensity.tooFew":
     "Použijte frázi ještě několikrát, abyste se dostali do ideálního pásma.",
-  "reco.keyphraseDensity.warn": "Použijte frázi zhruba ještě dvakrát a budete v ideálním pásmu.",
+  "reco.keyphraseDensity.tooMany":
+    "Používejte frázi méně často, abyste se dostali do ideálního pásma a text nebyl přeplněný.",
   "reco.metaDescriptionKeyword.bad":
     "Přidejte klíčovou frázi do meta popisu, zvýšíte tím míru prokliku.",
   "reco.imageKeyphrase.warn": "Přidejte klíčovou frázi do alternativního textu zbylých obrázků.",
   "reco.imageKeyphrase.bad": "Přidejte klíčovou frázi do alternativních textů obrázků.",
   "reco.keyphraseDistribution.warn": "Výskyty jsou nahromaděné — rozložte frázi do celého textu.",
   "reco.keyphraseDistribution.bad": "Rozložte klíčovou frázi rovnoměrněji do celého textu.",
-  "reco.metaDescriptionLength.warn":
-    "Jste blízko limitu — zkraťte popis o pár znaků, ať se neořízne.",
-  "reco.metaDescriptionLength.bad": "Upravte délku meta popisu na {{min}}–{{max}} znaků.",
+  "reco.metaDescriptionLength.missing":
+    "Napište meta popis delší než {{min}} a nejvýše o {{max}} znacích.",
+  "reco.metaDescriptionLength.tooShort": "Prodlužte meta popis na více než {{min}} znaků.",
+  "reco.metaDescriptionLength.tooLong":
+    "Zkraťte meta popis nejvýše na {{max}} znaků, ať se ve výsledcích neořízne.",
+  "reco.titleWidth.tooLong":
+    "Zkraťte SEO titulek nejvýše na {{max}} px, ať se ve výsledcích neořízne.",
   "reco.internalLinks.warn": "Přidejte několik odkazů na související stránky webu.",
   "reco.internalLinks.bad": "Přidejte odkazy na související stránky webu.",
   "reco.textLength.bad": "Přidejte obsah — cílem je alespoň {{min}} slov.",

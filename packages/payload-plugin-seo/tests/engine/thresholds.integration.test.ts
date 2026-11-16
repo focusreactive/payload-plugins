@@ -113,7 +113,9 @@ describe("configured thresholds", () => {
   });
 
   it("drive the keyphrase density check and its gauge", () => {
-    expect(checkOf(analyze(), "keyphraseDensity").status).toBe("bad");
+    const overused = checkOf(analyze(), "keyphraseDensity");
+    expect(overused.status).toBe("bad");
+    expect(overused.recommendation?.key).toBe("reco.keyphraseDensity.tooMany");
 
     const check = checkOf(analyze({ keyphraseDensity: { max: 10 } }), "keyphraseDensity");
     expect(check.status).toBe("good");

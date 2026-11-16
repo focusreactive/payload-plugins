@@ -4,6 +4,7 @@ import type { PaperLike } from "../../types/paper";
 import type { ResolvedSeoThresholds } from "../../../types/config";
 
 import { extractCheckData } from "../../extractCheckData";
+import { directionalRecommendation } from "../../recommendations";
 import { thresholdVars } from "../../thresholds/thresholdVars";
 import { resolveVisualization } from "../../visualization/resolveVisualization";
 
@@ -19,6 +20,8 @@ export function enrich(
     return {
       ...check,
       data,
+      recommendation:
+        directionalRecommendation(check.id, check.status, data, thresholds) ?? check.recommendation,
       tipVars: thresholdVars(check.id, thresholds),
       viz: resolveVisualization(check, data, thresholds),
     };

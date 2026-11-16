@@ -1,8 +1,9 @@
-import { DEFAULT_SEO_THRESHOLDS } from "../constants";
+import { DEFAULT_SEO_THRESHOLDS, DENSITY_MIN_TEXT_WORDS } from "../constants";
 import type { Message, TranslationKey } from "../translations/types";
 import type { ResolvedSeoThresholds } from "../types/config";
 import { thresholdVars } from "./thresholds/thresholdVars";
 import type { Status } from "./types/analysis";
+import { readNumber } from "./visualization/resolveVisualization/utils/readNumber";
 
 export interface RecoContext {
   keyphrase?: string;
@@ -26,10 +27,6 @@ const MAP: Record<string, Partial<Record<Status, Builder>>> = {
         ? { key: "reco.introductionKeyword.bad", vars: { keyphrase: c.keyphrase } }
         : { key: "reco.introductionKeyword.badNoKeyphrase" },
   },
-  keyphraseDensity: {
-    bad: key("reco.keyphraseDensity.bad"),
-    warn: key("reco.keyphraseDensity.warn"),
-  },
   metaDescriptionKeyword: {
     bad: key("reco.metaDescriptionKeyword.bad"),
   },
@@ -42,8 +39,7 @@ const MAP: Record<string, Partial<Record<Status, Builder>>> = {
     bad: key("reco.keyphraseDistribution.bad"),
   },
   metaDescriptionLength: {
-    warn: key("reco.metaDescriptionLength.warn"),
-    bad: withThresholds("reco.metaDescriptionLength.bad", "metaDescriptionLength"),
+    bad: withThresholds("reco.metaDescriptionLength.missing", "metaDescriptionLength"),
   },
   internalLinks: {
     warn: key("reco.internalLinks.warn"),
@@ -63,6 +59,62 @@ const GENERIC: Record<Exclude<Status, "good">, TranslationKey> = {
   warn: "reco.generic.warn",
   bad: "reco.generic.bad",
 };
+
+type CheckData = Record<string, unknown> | undefined;
+
+type DirectionKey = (
+  data: CheckData,
+  thresholds: ResolvedSeoThresholds
+) => TranslationKey | undefined;
+
+function densityKey(data: CheckData, { keyphraseDensity }: ResolvedSeoThresholds) {
+  const count = readNumber(data, "count");
+  const density = readNumber(data, "densityPct");
+  const textLength = readNumber(data, "textLength");
+  if (count === undefined || density === undefined || textLength === undefined) return undefined;
+
+  const tooMany =
+    textLength < DENSITY_MIN_TEXT_WORDS ? count > 1 : count > 1 && density > keyphraseDensity.max;
+
+  return tooMany ? "reco.keyphraseDensity.tooMany" : "reco.keyphraseDensity.tooFew";
+}
+
+function metaDescriptionLengthKey(
+  data: CheckData,
+  { metaDescriptionLength }: ResolvedSeoThresholds
+) {
+  const chars = readNumber(data, "chars");
+  if (!chars) return undefined;
+  if (chars <= metaDescriptionLength.min) return "reco.metaDescriptionLength.tooShort";
+  if (chars > metaDescriptionLength.max) return "reco.metaDescriptionLength.tooLong";
+
+  return undefined;
+}
+
+function titleWidthKey(data: CheckData, { titleWidth }: ResolvedSeoThresholds) {
+  const px = readNumber(data, "px");
+
+  return px !== undefined && px > titleWidth.max ? "reco.titleWidth.tooLong" : undefined;
+}
+
+const DIRECTION_KEYS: Record<string, DirectionKey> = {
+  keyphraseDensity: densityKey,
+  metaDescriptionLength: metaDescriptionLengthKey,
+  titleWidth: titleWidthKey,
+};
+
+export function directionalRecommendation(
+  id: string,
+  status: Status,
+  data: CheckData,
+  thresholds: ResolvedSeoThresholds
+): Message | undefined {
+  if (status === "good") return undefined;
+
+  const directionKey = DIRECTION_KEYS[id]?.(data, thresholds);
+
+  return directionKey ? { key: directionKey, vars: thresholdVars(id, thresholds) } : undefined;
+}
 
 export function getRecommendation(
   id: string,

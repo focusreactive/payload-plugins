@@ -193,8 +193,9 @@ export const en = {
 
   "reco.introductionKeyword.bad": "Add “{{keyphrase}}” to your opening paragraph.",
   "reco.introductionKeyword.badNoKeyphrase": "Add your keyphrase to your opening paragraph.",
-  "reco.keyphraseDensity.bad": "Use the keyphrase a few more times to land in the ideal band.",
-  "reco.keyphraseDensity.warn": "Use the keyphrase ~2 more times to land in the ideal band.",
+  "reco.keyphraseDensity.tooFew": "Use the keyphrase a few more times to land in the ideal band.",
+  "reco.keyphraseDensity.tooMany":
+    "Use the keyphrase less often to land in the ideal band and avoid keyword stuffing.",
   "reco.metaDescriptionKeyword.bad":
     "Add the keyphrase to the meta description to improve click-through.",
   "reco.imageKeyphrase.warn": "Add the keyphrase to the alt text of the remaining images.",
@@ -202,10 +203,13 @@ export const en = {
   "reco.keyphraseDistribution.warn":
     "Occurrences are clustered — spread the keyphrase through the body.",
   "reco.keyphraseDistribution.bad": "Distribute the keyphrase more evenly through the text.",
-  "reco.metaDescriptionLength.warn":
-    "You're near the limit — trim a few characters to avoid truncation.",
-  "reco.metaDescriptionLength.bad":
-    "Adjust the meta description toward {{min}}–{{max}} characters.",
+  "reco.metaDescriptionLength.missing":
+    "Write a meta description longer than {{min}} and up to {{max}} characters.",
+  "reco.metaDescriptionLength.tooShort":
+    "Lengthen the meta description to more than {{min}} characters.",
+  "reco.metaDescriptionLength.tooLong":
+    "Trim the meta description to {{max}} characters or fewer to avoid truncation.",
+  "reco.titleWidth.tooLong": "Shorten the SEO title to {{max}}px or less to avoid truncation.",
   "reco.internalLinks.warn": "Add a few internal links to related pages.",
   "reco.internalLinks.bad": "Add internal links to related pages.",
   "reco.textLength.bad": "Add more content — aim for at least {{min}} words.",
