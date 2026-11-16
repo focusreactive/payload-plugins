@@ -66,3 +66,15 @@ export function mergeThresholds(
 ): ResolvedSeoThresholds {
   return eachCheck((check) => layered(check, under, over));
 }
+
+export function mergeOrderedThresholds(
+  language: SeoThresholds,
+  configured: SeoThresholds
+): ResolvedSeoThresholds {
+  return eachCheck((check) => {
+    const merged = layered(check, language, configured);
+    return findUnorderedBands(ASCENDING_BANDS[check], merged)
+      ? layered(check, {}, configured)
+      : merged;
+  });
+}

@@ -1,7 +1,7 @@
 import type { ResolvedSeoThresholds, SeoThresholds } from "../../types/config";
 import type { YoastResearcher } from "../researcherAdapter";
 import { languageThresholds } from "./languageThresholds";
-import { mergeThresholds } from "./mergeThresholds";
+import { mergeOrderedThresholds } from "./mergeThresholds";
 
 export interface AnalysisThresholds {
   values: ResolvedSeoThresholds;
@@ -14,5 +14,5 @@ export function analysisThresholds(
 ): AnalysisThresholds {
   const language = researcher ? languageThresholds(researcher) : {};
 
-  return { values: mergeThresholds(language, configured), configured };
+  return { values: mergeOrderedThresholds(language, configured), configured };
 }

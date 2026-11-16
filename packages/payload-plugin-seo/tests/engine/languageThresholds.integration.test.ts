@@ -7,6 +7,8 @@ import type { SeoThresholds } from "../../src/types/config";
 
 const t = createTranslator("en", undefined);
 
+const LANGUAGES = ["en", "es", "ja", "ca", "de", "pl"];
+
 function inputFor(locale: string, keyphrase: string, contentHtml: string): AnalysisInput {
   return {
     title: "Title",
@@ -53,15 +55,22 @@ const german = inputFor(
   `<p>${"Gute leichte Schuhe zum Laufen kaufen ist wichtig für alle Läufer. ".repeat(30)}</p>`
 );
 
+const polish = inputFor(
+  "pl_PL",
+  "buty",
+  `<p>${"Dobre buty do biegania są ważne dla każdego biegacza. ".repeat(30)}</p>`
+);
+
 const analyze = (input: AnalysisInput, configured?: SeoThresholds) =>
   runAnalysis(input, configured);
 
 describe("thresholds of the analysis language", () => {
   beforeAll(async () => {
-    await ensureLanguagePack("es_ES", ["en", "es", "ja", "ca", "de"]);
-    await ensureLanguagePack("ja_JP", ["en", "es", "ja", "ca", "de"]);
-    await ensureLanguagePack("ca_ES", ["en", "es", "ja", "ca", "de"]);
-    await ensureLanguagePack("de_DE", ["en", "es", "ja", "ca", "de"]);
+    await ensureLanguagePack("es_ES", LANGUAGES);
+    await ensureLanguagePack("ja_JP", LANGUAGES);
+    await ensureLanguagePack("ca_ES", LANGUAGES);
+    await ensureLanguagePack("de_DE", LANGUAGES);
+    await ensureLanguagePack("pl_PL", LANGUAGES);
   });
 
   it("states the Spanish sentence length in the tip", () => {
@@ -82,9 +91,12 @@ describe("thresholds of the analysis language", () => {
   });
 
   it("lets a configured number win over the Japanese one", () => {
-    const check = checkOf(analyze(japanese, { textLength: { min: 450 } }), "textLength");
+    const check = checkOf(
+      analyze(japanese, { textLength: { min: 450, acceptableMin: 400 } }),
+      "textLength"
+    );
 
-    expect(check.tipVars).toEqual({ min: 450, acceptableMin: 500 });
+    expect(check.tipVars).toEqual({ min: 450, acceptableMin: 400 });
     expect(check.status).toBe("good");
   });
 
@@ -102,5 +114,36 @@ describe("thresholds of the analysis language", () => {
 
     expect(check.tipVars).toEqual({ max: 4, acceptableMax: 8 });
     expect(check.viz?.type === "value-range" && check.viz.gauge.markerStatus).toBe(check.status);
+  });
+
+  it("keeps the configured meta description band when the Japanese maximum is below it", () => {
+    const check = checkOf(
+      analyze(japanese, { metaDescriptionLength: { min: 130 } }),
+      "metaDescriptionLength"
+    );
+
+    expect(check.tipVars).toEqual({ min: 130, max: 156 });
+  });
+
+  it("keeps the configured text length band when the Japanese minimum would invert it", () => {
+    const check = checkOf(analyze(japanese, { textLength: { min: 450 } }), "textLength");
+
+    expect(check.tipVars).toEqual({ min: 450, acceptableMin: 250 });
+    expect(check.status).toBe("good");
+  });
+
+  it("keeps the configured sentence length band when the Polish share is below it", () => {
+    const check = checkOf(
+      analyze(polish, { textSentenceLength: { max: 22 } }),
+      "textSentenceLength"
+    );
+
+    expect(check.tipVars).toEqual({ maxSentenceWords: 20, max: 22, acceptableMax: 30 });
+  });
+
+  it("keeps the Polish sentence length band while it stays in order", () => {
+    const check = checkOf(analyze(polish), "textSentenceLength");
+
+    expect(check.tipVars).toEqual({ maxSentenceWords: 20, max: 15, acceptableMax: 20 });
   });
 });
