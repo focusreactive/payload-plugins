@@ -1,9 +1,11 @@
 "use client";
 
-import { useModal, XIcon } from "@payloadcms/ui";
+import { useModal } from "@payloadcms/ui";
+import { XIcon } from "lucide-react";
 import type { TotalStatus } from "../../../engine/types/analysis";
 import { cn } from "../../../utils/style";
 import { statusVar } from "../variants";
+import { IconButton } from "../../../ui/IconButton";
 import { Pill } from "../../../ui/Pill";
 import { useSeoTranslation } from "../../../translations/useSeoTranslation";
 
@@ -25,14 +27,14 @@ export function Header({ drawerSlug, total, totalStatus }: HeaderProps) {
         {totalStatus === "idle" ? null : <Pill variant={totalStatus}>{total}</Pill>}
       </div>
 
-      <button
+      <IconButton
+        variant="ghost"
         aria-label={t("close")}
-        className="drawer__header__close"
+        title={t("close")}
         onClick={() => closeModal(drawerSlug)}
-        type="button"
       >
-        <XIcon />
-      </button>
+        <XIcon aria-hidden="true" width={16} height={16} style={{ width: 16, height: 16 }} />
+      </IconButton>
 
       <div className="absolute inset-x-0 bottom-0 h-[2px] bg-neutral-150">
         <i

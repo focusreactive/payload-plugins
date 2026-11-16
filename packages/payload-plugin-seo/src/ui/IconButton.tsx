@@ -10,6 +10,8 @@ const iconButtonVariants = cva(
       variant: {
         primary: "text-neutral-0 bg-neutral-1000 hover:bg-neutral-800",
         error: "text-seo-bad bg-seo-bad-100 hover:bg-seo-bad-200",
+        ghost:
+          "size-[24px] p-0 border-0 text-neutral-500 bg-transparent hover:bg-neutral-50 hover:text-neutral-1000",
       },
     },
     defaultVariants: {
@@ -19,7 +21,7 @@ const iconButtonVariants = cva(
 );
 
 interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "error";
+  variant?: "primary" | "error" | "ghost";
   "aria-label": string;
   children: ReactNode;
 }
