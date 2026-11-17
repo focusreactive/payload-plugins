@@ -518,6 +518,53 @@ A render can transform a value and still output the stored text for some inputs,
 - The popup keeps unsaved text on screen after you leave the document without saving. It shows the saved content again when it reloads.
 - While the preview shows fields of the open document, every change in the form reads the whole form state before the admin paints. On a form with several thousand fields this costs a few milliseconds per keystroke. With Live Preview closed it costs nothing.
 
+## Editing on the page
+
+With it the editor types into plain text on the page itself. The text goes into the draft; the published document changes only on publish. It needs [instant preview](#instant-preview) and is off by default.
+
+Turn it on in the plugin, regenerate the import map, and offer it on the page:
+
+```ts
+// payload.config.ts
+visualEditingPlugin({ instantPreview: true, inlineEditing: true })
+```
+
+```tsx
+<VisualEditing.Provider available={isEnabled} inlineEditing adminBasePath="/admin">
+```
+
+Without React pass `inlineEditing: true` to `mountVisualEditing`.
+
+The toggle then shows an **Edit on page** switch next to its modes. It starts off, so a click still opens the field in the admin. The choice is kept in `localStorage` under `visual-editing-inline`, per origin. Turning it on while the outlines are **Off** sets them to **Hover**.
+
+### Using it
+
+- A click on plain text puts the caret into it. Enter ends the edit, Shift+Enter starts a new line, Escape brings back the text the edit began with. A click elsewhere ends the edit.
+- The **Edit** badge still opens the field in the admin form.
+- A pasted text arrives without its formatting.
+- A status in the bottom right corner says **Unsaved changes**, **Saving…**, **Saved** or **Not saved** with a **Retry** button.
+
+### Where the text is saved
+
+| The page is | The edit goes to | Saved by |
+|---|---|---|
+| in Live Preview, and the form of the document is open | the admin form, as if the editor had typed there | Payload: autosave, or the editor's own save |
+| in a tab of its own, in draft mode | `POST <payloadApi>/visual-editing/field-edit` with the editor's session | the endpoint, into the latest draft |
+
+The endpoint reads the latest draft with the user's access, changes the one field and saves a draft with `overrideAccess: false`. It answers `409` for a collection or global without `versions.drafts`, and `422` for a field the editor cannot reach. It never publishes.
+
+In a tab of its own the request carries the editor's cookie. When the site and Payload are on different origins, list the origin of the site in `cors` and `csrf` of the Payload config, and the cookie must be sent cross-site.
+
+### What can be edited on the page
+
+- `text`, `textarea` and `email` fields, also in arrays, groups, tabs and blocks. A line break in a `text` or `email` field is saved as a space.
+- Only text that fills its element. Text rendered next to other text in the same element opens the field in the admin.
+- In Live Preview, only fields of the document whose form is open. Text of another document, such as a header or a related page, opens that document as before.
+
+Rich text, uploads, relationships, numbers and selects open the field in the admin. So do values read with `locale: 'all'`. An empty field has no element on the page and is filled in the form.
+
+While a field is edited the page sets `contenteditable`, `spellcheck` and `data-ve-editing` on its element and removes them when the edit ends. `[data-ve-editing]` gets an outline in the accent colour while the pointer is not over it.
+
 ## Pages without React
 
 `./dom` runs the same overlay, mode toggle and instant preview on a page that has no React: a static site generator, server templates, Vue, Svelte. It does not import React. The server half and the admin are the same as above.
@@ -564,6 +611,7 @@ mountVisualEditing({
 | `framedOnly` | `false` | Only run inside the Live Preview: its iframe or the window it opens. Elsewhere it only removes the markers from `root` and `<head>`. |
 | `instantPreview` | `true` | Text typed in the admin appears on the page, once the plugin option is on. `false` keeps the page from listening. |
 | `locale` | none | Locale of the page, see [Requirements](#requirements). |
+| `inlineEditing` | `false` | Offers the **Edit on page** switch, see [Editing on the page](#editing-on-the-page). |
 | `toggle` | `true` | Shows the Off / Hover / Always toggle. |
 | `accentColor`, `accentTextColor` | violet, white | Colour of the frames, the **Edit** badge and the toggle's "on" dot, and of the badge text. Same as on `VisualEditing.Provider`. |
 | `onSave` | none | Called after the admin saves the document, autosave included. |
@@ -687,6 +735,7 @@ A `beforeChange` hook removes intact markers from every write. It cannot recogni
 | `adminBasePath` | `string` | `/admin` | Admin base path. Reads from below it are not marked; the bridge uses it to recognise the open document. A slash at its end is ignored. |
 | `enrichment` | `'auto' \| 'explicit'` | `'auto'` | See [Enrichment modes](#enrichment-modes). |
 | `instantPreview` | `boolean` | `false` | See [Instant preview](#instant-preview). |
+| `inlineEditing` | `boolean` | `false` | Adds the receiver of edits to the admin and the `field-edit` endpoint, see [Editing on the page](#editing-on-the-page). Needs `instantPreview`. |
 | `renderHtml` | `({ value, field, locale, req }) => string \| Promise<string>` | none | Renders unsaved rich text to HTML for a page without React, see [Pages without React](#unsaved-rich-text-on-a-page-without-react). |
 | `readWholeDocument` | `boolean` | `false` | The `unsaved-rich-text` endpoint reads every field of the document instead of the top-level field that holds the rich text. For `afterRead` hooks that need other fields, see [Upgrading from 1.2.0](#upgrading-from-120). |
 
@@ -711,8 +760,9 @@ A `beforeChange` hook removes intact markers from every write. It cannot recogni
 | `adminBasePath` | `/admin` | Must match the plugin option. |
 | `adminOrigin` | the page's origin | Origin of the admin window, with its scheme: `https://cms.example.com`. A value that is no `http` or `https` URL is ignored: the page then talks to its own origin and asks no `payloadApi`. |
 | `instantPreview` | `true` | See [Instant preview](#instant-preview). `false` keeps the page from listening to the admin. |
+| `inlineEditing` | `false` | Offers the **Edit on page** switch, see [Editing on the page](#editing-on-the-page). |
 | `buildAdminEditUrl` | built in | Builds the link used when the page was not opened from the admin. A link without an origin opens on `adminOrigin`. |
-| `payloadApi` | `<adminOrigin>/api` when `adminOrigin` is set | URL of the Payload REST API, such as `https://cms.example.com/api`. With `renderValue` on `LiveRichText`, unsaved rich text is checked through the `unsaved-rich-text` endpoint instead of the action. |
+| `payloadApi` | `<adminOrigin>/api` when `adminOrigin` is set | URL of the Payload REST API, such as `https://cms.example.com/api`. With `renderValue` on `LiveRichText`, unsaved rich text is checked through the `unsaved-rich-text` endpoint instead of the action. With `inlineEditing`, a page in a tab of its own saves edits there; without the option it uses `/api` of the page's own origin. |
 
 ## Reads with every locale
 

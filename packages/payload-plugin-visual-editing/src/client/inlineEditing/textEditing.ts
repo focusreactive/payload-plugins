@@ -36,7 +36,7 @@ const PLAIN_TEXT_ONLY = "plaintext-only";
 const RICH_TEXT = "true";
 const LINE_BREAK_TAG = "BR";
 const STYLE_ID = "ve-inline-editing-style";
-const EDITING_STYLE = `[${DATA_VE_EDITING_ATTR}]{outline:2px solid var(${ACCENT_VAR}, ${DEFAULT_ACCENT}) !important;outline-offset:2px !important;cursor:text !important}`;
+const EDITING_STYLE = `[${DATA_VE_EDITING_ATTR}]{cursor:text !important}[${DATA_VE_EDITING_ATTR}]:not(:hover){outline:2px solid var(${ACCENT_VAR}, ${DEFAULT_ACCENT}) !important;outline-offset:2px !important}`;
 
 const takesPlainTextOnly = (doc: Document): boolean => {
   const probe = doc.createElement("div");

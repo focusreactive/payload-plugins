@@ -96,8 +96,7 @@ const saveDraft = (
 };
 
 const statusOfFailure = (error: unknown): number => {
-  const status =
-    isPlainObject(error) || error instanceof Error ? (error as { status?: unknown }).status : null;
+  const status = error instanceof Error && "status" in error ? error.status : undefined;
   return typeof status === "number" ? status : REFUSED;
 };
 
