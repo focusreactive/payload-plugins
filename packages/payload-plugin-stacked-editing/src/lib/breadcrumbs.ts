@@ -1,14 +1,10 @@
-import type { ClientField } from "payload";
-
+import { previewConfigOf, resolvePreview } from "./preview.js";
 import type { RowLevel } from "./resolveRowChain.js";
 
 /** Payload client labels: a string, a per-language record, a `({ t, i18n }) => string`, or `false`. */
 export type LabelValue = unknown;
 
 export type Translate = (label: LabelValue) => string;
-
-/** Fields whose value reads like a row title, checked in order when a row has no block name. */
-export const TITLE_FIELD_NAMES = ["title", "name", "label", "heading", "headline"] as const;
 
 const MAX_TITLE_LENGTH = 48;
 
@@ -58,35 +54,33 @@ const truncate = (text: string): string =>
 export const fieldLabelOf = (level: RowLevel, translate: Translate): string =>
   translate(level.field.label) || humanize(level.field.name);
 
-const hasNamedField = (fields: ClientField[], name: string): boolean =>
-  fields.some((field) => "name" in field && field.name === name);
+/** The block label ("Hero") or the array's item label ("Item"). */
+export const kindLabelOf = (level: RowLevel, translate: Translate): string =>
+  level.block
+    ? translate(level.block.labels?.singular) || humanize(level.block.slug)
+    : translate(level.field.labels?.singular) || "Row";
 
 /**
- * How a row is called in the breadcrumbs: the block (or array item) label and its 1-based number —
- * the same `Hero 01` Payload shows in the row header — plus a title when the row has one: the
- * block's `blockName`, or the value of a title-like text field (`title`, `name`, `label`, …).
+ * How a row is called in panel titles and breadcrumbs: the same `Hero 01` Payload shows in the row
+ * header, plus the title of the row's preview card (`admin.custom.preview`, else the block name or
+ * the first text field with a value — see `resolvePreview`).
  */
 export const rowLabelOf = (
   level: RowLevel,
   translate: Translate,
-  getValue: (path: string) => unknown
+  getValue: (path: string) => unknown,
+  getRowCount?: (path: string) => number | undefined
 ): { label: string; title?: string } => {
-  const kind = level.block
-    ? translate(level.block.labels?.singular) || humanize(level.block.slug)
-    : translate(level.field.labels?.singular) || "Row";
-  const label = `${kind} ${pad(level.rowIndex)}`;
-
-  const candidates = [
-    ...(level.block ? ["blockName"] : []),
-    ...TITLE_FIELD_NAMES.filter((name) => hasNamedField(level.fields, name)),
-  ];
-  for (const name of candidates) {
-    const value = getValue(`${level.rowPath}.${name}`);
-    if (typeof value === "string" && value.trim()) {
-      return { label, title: truncate(value.trim()) };
-    }
-  }
-  return { label };
+  const label = `${kindLabelOf(level, translate)} ${pad(level.rowIndex)}`;
+  const { title } = resolvePreview({
+    fields: level.fields,
+    getRowCount: (relative) => getRowCount?.(`${level.rowPath}.${relative}`),
+    getValue: (relative) => getValue(`${level.rowPath}.${relative}`),
+    translate,
+    withBlockName: Boolean(level.block),
+    ...(previewConfigOf(level) ? { select: previewConfigOf(level)?.select } : {}),
+  });
+  return title ? { label, title: truncate(title) } : { label };
 };
 
 export type Crumb = {

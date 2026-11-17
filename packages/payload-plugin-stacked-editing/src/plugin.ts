@@ -1,6 +1,7 @@
-import type { CollectionConfig, Config, GlobalConfig, Plugin } from "payload";
+import type { CollectionConfig, Config, Field, GlobalConfig, Plugin } from "payload";
 
 import { STACKED_EDITING_COMPONENT } from "./lib/constants.js";
+import { withCardLabelBlock, withCardLabelFields } from "./lib/withCardLabels.js";
 import type { StackedEditingOptions } from "./types.js";
 
 const outletFor = (options: StackedEditingOptions) => ({
@@ -56,7 +57,8 @@ const withGlobalOutlet = (
 
 /**
  * Opens array and blocks rows in stacked drawers with breadcrumbs instead of expanding them inline.
- * Adds one client component per edit view; no fields, hooks or endpoints.
+ * Adds one client component per edit view and, unless `cards: false`, a row card label to arrays
+ * and blocks that have no label of their own. No fields, hooks or endpoints.
  */
 export const stackedEditingPlugin =
   (options: StackedEditingOptions = {}): Plugin =>
@@ -64,16 +66,21 @@ export const stackedEditingPlugin =
     if (options.enabled === false) {
       return config;
     }
+    const cards = options.cards !== false;
+    const withCards = <T extends { fields: Field[] }>(entity: T): T =>
+      cards ? { ...entity, fields: withCardLabelFields(entity.fields) } : entity;
     return {
       ...config,
+      // Config-level blocks (used through `blockReferences`) are shared, so all of them get cards.
+      ...(cards && config.blocks ? { blocks: config.blocks.map(withCardLabelBlock) } : {}),
       collections: config.collections?.map((collection) =>
         includes(options.collections, collection.slug)
-          ? withCollectionOutlet(collection, outletFor(options))
+          ? withCollectionOutlet(withCards(collection), outletFor(options))
           : collection
       ),
       globals: config.globals?.map((global) =>
         includes(options.globals, global.slug)
-          ? withGlobalOutlet(global, outletFor(options))
+          ? withGlobalOutlet(withCards(global), outletFor(options))
           : global
       ),
     };

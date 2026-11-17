@@ -46,6 +46,7 @@ Then regenerate the import map: `payload generate:importmap`.
 | `globals`     | `string[]` | all globals      | Global slugs that get stacked editing.              |
 | `enabled`     | `boolean`  | `true`           | `false` leaves the config untouched (inline rows).  |
 | `defaultMode` | `"panel" \| "inline"` | `"panel"` | How rows behave (see below).               |
+| `cards`       | `boolean`  | `true`           | Row preview cards in row headers (see [Row preview cards](#row-preview-cards)). |
 
 **`defaultMode: "panel"`** (default): every array/blocks row, in the document and in each panel,
 starts as a **collapsed card**, rows added later included. A click on the card's header opens it in
@@ -75,8 +76,69 @@ in panel" icon in its header, shown faintly next to the `…` menu.
   follows the measured width of the real labels, not a fixed number of levels.
 - **Escape**, the close button or the strip to the left closes the top panel.
 - Row actions (the `…` menu, drag handle, block name input) work as before.
-- Row titles come from the block name, or else from a `title`/`name`/`label`/`heading`/`headline`
-  field. Otherwise the crumb reads like Payload's own row label, for example `Hero 01`.
+- Panel titles, breadcrumbs and the `…` menu use the title of the row's preview card (see below),
+  next to Payload's own row label, for example `Hero 01`.
+
+## Row preview cards
+
+Rows show as Sanity-style cards instead of `Item 01` / `Untitled`: a 34px thumbnail, a title and a
+muted subtitle, all updated live from the form. The plugin sets its `CardLabel` as the
+`admin.components.RowLabel` of every managed array field and the `admin.components.Label` of every
+managed block (including config-level `blocks` used through `blockReferences`). It never replaces
+a label you set yourself. Turn the cards off with `stackedEditingPlugin({ cards: false })`.
+
+Configure a card on the block, or on the array field, with `admin.custom.preview`. This is plain
+data, so it reaches the admin through the client config:
+
+```ts
+import { definePreview } from '@focus-reactive/payload-plugin-stacked-editing'
+
+const Features: Block = {
+  slug: 'features',
+  fields: [
+    {
+      name: 'items',
+      type: 'array',
+      admin: {
+        custom: {
+          preview: definePreview({ title: 'title', subtitle: 'points.length', media: 'image' }),
+        },
+      },
+      fields: [/* title, image, points … */],
+    },
+  ],
+}
+
+const Hero: Block = {
+  slug: 'hero',
+  admin: { custom: { preview: definePreview({ subtitle: 'description' }) } },
+  fields: [/* … */],
+}
+```
+
+`select` paths are relative to the row. Dot paths reach into groups (`cta.label`). A path ending in
+`.length` counts the rows of an array or blocks field and uses its labels (`2 Points`). Select
+fields show their option label, dates are formatted, and rich text shows its first paragraph.
+
+Without a config, or when a selected value is empty:
+
+| Part | Default |
+| --- | --- |
+| title | the block's `blockName` if the editor set one; else the first `text`, `textarea`, `email`, `select` or `radio` field with a value at the row's own level (rows, collapsibles, unnamed groups and unnamed tabs are seen through); else the first paragraph of a rich text field; else Payload's label (`Hero 01`) |
+| subtitle | the block label or the array's item label |
+| media | the first `upload` field into an upload collection; else the block's `imageURL`; else a neutral icon |
+
+Uploads given as an id are resolved once per page through the REST API
+(`/api/<collection>/<id>?depth=0`). The card shows `sizes.thumbnail` when the collection has that
+size, and the file itself otherwise. Files that are not images get the icon.
+
+A custom label can show the same card: render `CardLabel` from
+`@focus-reactive/payload-plugin-stacked-editing/client` inside it. It reads Payload's row label
+context.
+
+**Plugin order.** Put `stackedEditingPlugin` before plugins that wrap existing block labels
+(`@focus-reactive/payload-plugin-presets` does this). Those plugins then keep the card and add their
+own actions next to it.
 
 ## How it works
 
@@ -168,6 +230,12 @@ the inline row, and in a parent panel. The plugin handles that as follows:
   `blocks-field__row`, `array-field__row`, `field-…`, `…-row-N`). A Payload release that changes
   them disables the plugin: clicks fall through to the inline behaviour. It does not break editing.
 - Blocks inside Lexical rich text (the Lexical `BlocksFeature`) are not opened in panels.
+- The card replaces Payload's whole block header label, including the inline `blockName` input. A
+  block name you set still shows as the card's title, but it can no longer be edited from the
+  header. A custom label that needs it can render Payload's `SectionTitle` next to `CardLabel`.
+- A card's title follows the form live. Its thumbnail follows a changed upload as soon as the new
+  id is in the form. Text in the panel titles and breadcrumbs only updates when it comes from a
+  text or number field directly in the row.
 - A newly added row appears as a collapsed card (in `panel` mode). It does not open in a panel by
   itself.
 - The header is a single Payload button, so the plugin tells "label" from "chevron" from "open icon"

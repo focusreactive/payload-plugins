@@ -12,12 +12,7 @@ import {
 import type { ClientField, FormState } from "payload";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
-import {
-  TITLE_FIELD_NAMES,
-  createTranslate,
-  fieldLabelOf,
-  rowLabelOf,
-} from "../lib/breadcrumbs.js";
+import { createTranslate, fieldLabelOf, rowLabelOf } from "../lib/breadcrumbs.js";
 import type { CrumbLevel } from "../lib/breadcrumbs.js";
 import { rowsSignature, rowsToCollapse } from "../lib/collapseRows.js";
 import {
@@ -54,12 +49,10 @@ const pathPrefixes = (path: string): string[] => {
   return segments.map((_, index) => segments.slice(0, index + 1).join("."));
 };
 
-const LABEL_FIELDS = ["blockName", ...TITLE_FIELD_NAMES];
-
 /**
  * A string that changes whenever something the open chain depends on changes: the rows (ids and
- * block types) of every array/blocks field on the way to the target, and the title-like values the
- * breadcrumbs show. Selecting a string keeps `useFormFields` from re-rendering on every keystroke
+ * block types) of every array/blocks field on the way to the target, and the text values the
+ * breadcrumbs' row titles are made from. Selecting a string keeps `useFormFields` from re-rendering on every keystroke
  * elsewhere in the document.
  */
 const chainSignature = (fields: FormState, target: string | undefined): string => {
@@ -72,10 +65,16 @@ const chainSignature = (fields: FormState, target: string | undefined): string =
     if (rows) {
       parts.push(`${prefix}=${rows.map((row) => `${row.id}:${row.blockType ?? ""}`).join(",")}`);
     }
-    for (const name of LABEL_FIELDS) {
-      const value = fields[`${prefix}.${name}`]?.value;
-      if (typeof value === "string") {
-        parts.push(`${prefix}.${name}=${value}`);
+    // Text values directly in each row: what the panel titles and crumbs (row previews) read.
+    if (/\.\d+$/u.test(prefix)) {
+      const childPrefix = `${prefix}.`;
+      for (const [path, field] of Object.entries(fields)) {
+        const { value } = field as { value?: unknown };
+        const isOwnChild =
+          path.startsWith(childPrefix) && !path.slice(childPrefix.length).includes(".");
+        if (isOwnChild && (typeof value === "string" || typeof value === "number")) {
+          parts.push(`${path}=${value}`);
+        }
       }
     }
   }
@@ -390,8 +389,12 @@ export const StackedEditing = ({ defaultMode = "panel" }: { defaultMode?: Defaul
   }, [modeRef, openRowRef, ownerId]);
 
   const getValue = useCallback((path: string) => getFields()[path]?.value, [getFields]);
+  const getRowCount = useCallback(
+    (path: string) => (getFields()[path]?.rows as unknown[] | undefined)?.length,
+    [getFields]
+  );
   const crumbLevels: CrumbLevel[] = levels.map((level) => {
-    const row = rowLabelOf(level, translate, getValue);
+    const row = rowLabelOf(level, translate, getValue, getRowCount);
     const rowHint = level.block
       ? translate(level.block.labels?.singular) || level.block.slug
       : translate(level.field.labels?.singular);

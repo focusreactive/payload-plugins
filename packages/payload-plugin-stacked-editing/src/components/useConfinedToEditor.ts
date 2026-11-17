@@ -16,7 +16,7 @@ const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : us
 /**
  * While Live Preview is open beside the editor, keep the panels inside the editor column so the
  * preview stays visible and clickable. Publishes the column's bounds as CSS variables on <html>
- * (re-measured on resize and scroll) for the drawers' `--confined` class; returns whether that mode is on.
+ * (re-measured every frame while open) for the drawers' `--confined` class; returns whether that mode is on.
  */
 export const useConfinedToEditor = ({
   active,
@@ -29,33 +29,43 @@ export const useConfinedToEditor = ({
   const confined = active && isLivePreviewing && previewWindowType === "iframe";
 
   useIsomorphicLayoutEffect(() => {
-    const form = markerRef.current?.closest("form");
-    const editor = form?.querySelector<HTMLElement>(EDITOR_COLUMN_SELECTOR);
-    if (!confined || !form || !editor) {
+    if (!confined) {
       return;
     }
     const root = document.documentElement;
+    let last = "";
+    let frame = 0;
+    // Re-measured every frame while panels are open: the sticky preview moves when the page
+    // scrolls, and other modals (an upload picker) lock and restore the body's scroll, which no
+    // resize or scroll event reports. Two rects per frame; styles change only when they differ.
     const measure = () => {
-      const preview = form.querySelector<HTMLElement>(PREVIEW_COLUMN_SELECTOR);
+      frame = requestAnimationFrame(measure);
+      // Looked up every time: Payload re-mounts the document form (e.g. after a save).
+      const form = markerRef.current?.closest("form");
+      const editor = form?.querySelector<HTMLElement>(EDITOR_COLUMN_SELECTOR);
+      if (!editor) {
+        return;
+      }
+      const view = form?.closest(".collection-edit, .global-edit") ?? document;
+      const preview =
+        form?.querySelector<HTMLElement>(PREVIEW_COLUMN_SELECTOR) ??
+        view.querySelector<HTMLElement>(PREVIEW_COLUMN_SELECTOR);
       const { left, top, width } = editorColumnBounds({
         editor: editor.getBoundingClientRect(),
         preview: preview?.getBoundingClientRect(),
       });
-      root.style.setProperty("--stacked-editing-left", `${left}px`);
-      root.style.setProperty("--stacked-editing-width", `${width}px`);
-      root.style.setProperty("--stacked-editing-top", `${top}px`);
+      const next = `${left}|${top}|${width}`;
+      if (next !== last) {
+        last = next;
+        root.style.setProperty("--stacked-editing-left", `${left}px`);
+        root.style.setProperty("--stacked-editing-width", `${width}px`);
+        root.style.setProperty("--stacked-editing-top", `${top}px`);
+      }
     };
     measure();
     root.setAttribute(CONFINED_ATTRIBUTE, "");
-    const observer = new ResizeObserver(measure);
-    observer.observe(editor);
-    window.addEventListener("resize", measure);
-    // The preview column is sticky: its top changes while the page scrolls past the header.
-    window.addEventListener("scroll", measure, { capture: true, passive: true });
     return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", measure, { capture: true });
+      cancelAnimationFrame(frame);
       root.removeAttribute(CONFINED_ATTRIBUTE);
       root.style.removeProperty("--stacked-editing-left");
       root.style.removeProperty("--stacked-editing-width");

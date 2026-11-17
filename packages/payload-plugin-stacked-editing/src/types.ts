@@ -8,6 +8,12 @@ export type StackedEditingOptions = {
    */
   defaultMode?: "panel" | "inline";
   /**
+   * Show rows as preview cards (thumbnail, title, subtitle) in their headers: sets the plugin's
+   * `CardLabel` as `RowLabel` of array fields and `Label` of blocks that have no label of their
+   * own. Configure a card with `admin.custom.preview` (see `definePreview`). Default: `true`.
+   */
+  cards?: boolean;
+  /**
    * Turn the plugin off without removing it from the config (the admin goes back to Payload's
    * inline collapsibles). Default: `true`.
    */
