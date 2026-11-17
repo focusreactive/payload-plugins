@@ -65,13 +65,15 @@ const saveDraft = (
     : payload.update({ ...options, collection: document.collection, id: document.id });
 };
 
-const valueOf = (document: unknown, key: string): string | null => {
+const comparableAt = (document: unknown, key: string): string | null => {
   const value = valueAtKey(document, key)?.value;
   return typeof value === "string" || typeof value === "number" ? String(value) : null;
 };
 
-const holdsSameValue = (saved: unknown, data: unknown, key: string): boolean =>
-  valueOf(saved, key) !== null && valueOf(saved, key) === valueOf(data, key);
+const isLeftAsItWas = (stored: unknown, saved: unknown, sent: unknown, key: string): boolean => {
+  const before = comparableAt(stored, key);
+  return comparableAt(saved, key) === before && comparableAt(sent, key) !== before;
+};
 
 const editedOf = async (
   payload: Payload,
@@ -115,7 +117,9 @@ export const fieldEditEndpoint: Endpoint = {
         locale: edit.locale,
         user,
       });
-      if (!holdsSameValue(saved, data, edit.key)) return answer(false, FIELD_NOT_EDITABLE, req);
+      if (isLeftAsItWas(stored, saved, data, edit.key)) {
+        return answer(false, FIELD_NOT_EDITABLE, req);
+      }
     } catch (error) {
       return answer(false, statusOfFailure(error), req);
     }

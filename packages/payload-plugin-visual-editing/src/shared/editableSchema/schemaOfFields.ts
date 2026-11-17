@@ -58,10 +58,15 @@ const rememberUploadCollection = (
   uploadCollectionsBySchema.set(schema, collections);
 };
 
-const collectionOfSingleUpload = ({ hasMany, relationTo, type }: PlainObject): string | null =>
-  type === UPLOAD_FIELD_TYPE && typeof relationTo === "string" && hasMany !== true
-    ? relationTo
-    : null;
+const takesEveryDocument = ({ filterOptions }: PlainObject): boolean =>
+  filterOptions === undefined || filterOptions === null;
+
+const collectionOfSingleUpload = (field: PlainObject): string | null => {
+  const { hasMany, relationTo, type } = field;
+  const holdsOneOfOneCollection =
+    type === UPLOAD_FIELD_TYPE && typeof relationTo === "string" && hasMany !== true;
+  return holdsOneOfOneCollection && takesEveryDocument(field) ? (relationTo as string) : null;
+};
 
 const listOf = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
 

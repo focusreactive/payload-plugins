@@ -14,6 +14,13 @@ const schema = buildEditableSchema([
   { name: "eitherFile", type: "upload", relationTo: ["media", "documents"] },
   { name: "related", type: "relationship", relationTo: "pages" },
   { name: "cover", type: "upload", relationTo: "media", hidden: true },
+  {
+    filterOptions: { alt: { exists: true } },
+    name: "filtered",
+    relationTo: "media",
+    type: "upload",
+  },
+  { filterOptions: () => true, name: "filteredByCall", relationTo: "media", type: "upload" },
   { name: "stamp", type: "upload", relationTo: "media", admin: { readOnly: true } },
   { name: "seo", type: "group", fields: [{ name: "image", type: "upload", relationTo: "media" }] },
   {
@@ -41,6 +48,11 @@ describe("uploadCollectionAt", () => {
 
   it("answers nothing for an upload field of several collections", () => {
     expect(uploadCollectionAt(schema, [{ name: "eitherFile" }])).toBeNull();
+  });
+
+  it("answers nothing for an upload field that filters what it takes", () => {
+    expect(uploadCollectionAt(schema, [{ name: "filtered" }])).toBeNull();
+    expect(uploadCollectionAt(schema, [{ name: "filteredByCall" }])).toBeNull();
   });
 
   it("answers nothing for a field that is not an upload", () => {

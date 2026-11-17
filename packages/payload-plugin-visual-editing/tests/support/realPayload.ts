@@ -108,6 +108,17 @@ const pageFields: Field[] = [
   { name: "brochure", type: "upload", relationTo: "documents" },
   { name: "localizedImage", type: "upload", relationTo: "media", localized: true },
   { name: "hiddenImage", type: "upload", relationTo: "media", hidden: true },
+  {
+    filterOptions: { alt: { not_equals: "Forbidden" } },
+    name: "filteredImage",
+    relationTo: "media",
+    type: "upload",
+  },
+  {
+    hooks: { beforeChange: [({ value }) => (typeof value === "string" ? value.trim() : value)] },
+    name: "trimmed",
+    type: "text",
+  },
 ];
 
 const settings: GlobalConfig = {

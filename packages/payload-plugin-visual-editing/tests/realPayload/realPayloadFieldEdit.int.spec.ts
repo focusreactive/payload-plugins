@@ -153,6 +153,24 @@ describe("the field edit endpoint", () => {
     expect((await read(docId, true)).label).toBe("New");
   });
 
+  it("counts a text a hook of the field changed on the way in as saved", async () => {
+    const docId = await publish({ trimmed: "Old" });
+
+    const answer = await edit({ ...page(docId), key: "trimmed", value: "  New  " });
+
+    expect(answer).toEqual({ saved: true, status: 200 });
+    expect((await read(docId, true)).trimmed).toBe("New");
+  });
+
+  it("counts an edit that sends the text the field holds as saved", async () => {
+    const docId = await publish({ label: "Same" });
+
+    expect(await edit({ ...page(docId), key: "label", value: "Same" })).toEqual({
+      saved: true,
+      status: 200,
+    });
+  });
+
   describe("saves nothing", () => {
     let docId: string;
 
