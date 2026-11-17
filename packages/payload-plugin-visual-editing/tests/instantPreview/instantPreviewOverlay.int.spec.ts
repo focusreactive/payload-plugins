@@ -302,7 +302,9 @@ describe("instant preview in the overlay", () => {
   it("announces nothing after it stopped, also for a field it was about to announce", async () => {
     let fieldListener: FieldListener | undefined;
     const tracker: FieldTracker = {
+      beginEdit: vi.fn(() => false),
       dispose: vi.fn(),
+      endEdit: vi.fn(),
       showText: vi.fn(),
       showTextInHolder: vi.fn(() => false),
       subscribe: (listener) => {
@@ -310,7 +312,7 @@ describe("instant preview in the overlay", () => {
         return vi.fn();
       },
     };
-    const stop = createInstantPreview(tracker, () => ctx);
+    const { stop } = createInstantPreview(tracker, () => ctx);
     postToAdmin.mockClear();
     const summary = document.createElement("p");
     summary.textContent = "Summary";

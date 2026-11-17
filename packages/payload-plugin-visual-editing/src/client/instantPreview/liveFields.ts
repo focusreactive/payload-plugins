@@ -26,6 +26,7 @@ export interface LiveFields {
   apply(message: VeFieldSnapshotMessage | VeFieldPatchMessage): void;
   takeNewlyRendered(): VeRenderedFields[];
   takeAllRendered(): VeRenderedFields[];
+  holdsValueOf(document: VeDocument, key: string): boolean;
 }
 
 type KnownValues = { unsaved: string; saved: readonly string[] };
@@ -216,6 +217,9 @@ export function createLiveFields(
     takeAllRendered() {
       unannounced.clear();
       return renderedByDocument(fieldsOf(fieldsOnPage.keys()));
+    },
+    holdsValueOf(document, key) {
+      return Boolean(fieldsOnPage.get(fieldAddressOf(document, key))?.values);
     },
   };
 }

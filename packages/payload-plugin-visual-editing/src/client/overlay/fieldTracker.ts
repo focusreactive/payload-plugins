@@ -32,10 +32,17 @@ export type FieldListener = {
   onContentRemoved?(): void;
 };
 
+export type FieldEdit = {
+  shownText(): string;
+  onShownAgain(): void;
+};
+
 export interface FieldTracker {
   subscribe(listener: FieldListener): () => void;
   showText(node: Text, text: string): void;
   showTextInHolder(match: FieldMatch, text: string): boolean;
+  beginEdit(match: FieldMatch, edit: FieldEdit): boolean;
+  endEdit(match: FieldMatch, text: string): void;
   dispose(): void;
 }
 
@@ -102,6 +109,18 @@ const showOnlyText = (holder: Element, textNode: Text): void => {
   for (const child of rest) child.remove();
 };
 
+const LINE_BREAK_TAG = "BR";
+
+const isLeftByAnEdit = (child: ChildNode): boolean =>
+  child instanceof Text || (child instanceof Element && child.tagName === LINE_BREAK_TAG);
+
+const showOnlyEditedText = (holder: Element, textNode: Text): void => {
+  for (const child of Array.from(holder.childNodes)) {
+    if (child !== textNode && isLeftByAnEdit(child)) child.remove();
+  }
+  if (textNode.parentNode !== holder) holder.prepend(textNode);
+};
+
 const holderCandidateOf = (textNode: Text): Element | null => {
   const parent = textNode.parentElement;
   return parent?.closest(CLICKABLE) ?? parent;
@@ -116,6 +135,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
   const holders = new Map<Element, HeldField>();
   const ownAttributeWrites = new Map<Element, number>();
   const listeners = new Set<FieldListener>();
+  const edits = new Map<Text, FieldEdit>();
 
   const writeIdentityAttr = (element: Element, attr: string, value: string | null) => {
     if (element.getAttribute(attr) === value) return;
@@ -265,24 +285,45 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     for (const listener of listeners) listener.onContentRemoved?.();
   };
 
-  const forgetUnlessOwnWrite = (textNode: Text) => {
+  const isOwnWrite = (textNode: Text): boolean => {
     const tracked = texts.get(textNode);
-    if (tracked && tracked.ownWritesToObserve > 0) {
-      tracked.ownWritesToObserve -= 1;
-      return;
-    }
+    if (!tracked || tracked.ownWritesToObserve === 0) return false;
+    tracked.ownWritesToObserve -= 1;
+    return true;
+  };
+
+  const forgetUnlessEdited = (textNode: Text) => {
+    if (isOwnWrite(textNode) || edits.has(textNode)) return;
     forget(textNode);
+  };
+
+  const showEditedTextAgain = (textNode: Text, tracked: TrackedText, edit: FieldEdit) => {
+    tracked.original = textNode.data;
+    const holder = tracked.match?.holder;
+    if (holder && tracked.match)
+      holders.set(holder, { match: tracked.match, original: textNode.data });
+    tracked.ownWritesToObserve += 1;
+    textNode.data = edit.shownText();
+    edit.onShownAgain();
+  };
+
+  const forgetUnlessEditedOrOwnWrite = (textNode: Text) => {
+    if (isOwnWrite(textNode)) return;
+    const tracked = texts.get(textNode);
+    const edit = edits.get(textNode);
+    if (tracked && edit) showEditedTextAgain(textNode, tracked, edit);
+    else forget(textNode);
   };
 
   const pipeline = createMutationPipeline(main, {
     isOwnAttributeWrite,
     onMarkedAttribute: recordAttr,
     onNodesRemoved: releaseDetachedNodes,
-    onPlainTextWritten: forgetUnlessOwnWrite,
+    onPlainTextWritten: forgetUnlessEdited,
     onRoots: (roots) => {
       for (const root of roots) scan(root);
     },
-    onTextReset: forgetUnlessOwnWrite,
+    onTextReset: forgetUnlessEditedOrOwnWrite,
   });
 
   scan(main);
@@ -322,9 +363,38 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       for (const listener of listeners) listener.onFields(holder, [shown]);
       return true;
     },
+    beginEdit(match, edit) {
+      const { holder, textNode } = match;
+      const isHeld = holder !== undefined && holders.get(holder)?.match === match;
+      if (!isHeld || texts.get(textNode)?.match !== match) return false;
+      edits.set(textNode, edit);
+      return true;
+    },
+    endEdit(match, text) {
+      const { holder, textNode } = match;
+      const held = holder && holders.get(holder);
+      if (!edits.delete(textNode) || !holder || !held || !main.contains(holder)) return;
+      showOnlyEditedText(holder, textNode);
+      const known = texts.get(textNode);
+      const tracked = known ?? {
+        match,
+        nodeMarker: null,
+        original: held.original,
+        ownWritesToObserve: 0,
+      };
+      if (textNode.data !== text) {
+        tracked.ownWritesToObserve += 1;
+        textNode.data = text;
+      }
+      if (known) return;
+      texts.set(textNode, tracked);
+      holders.set(holder, { match, original: held.original });
+      for (const listener of listeners) listener.onFields(holder, [match]);
+    },
     dispose() {
       pipeline.dispose();
       listeners.clear();
+      edits.clear();
       for (const [textNode, { original }] of texts) {
         if (textNode.isConnected) textNode.data = original;
       }

@@ -17,7 +17,12 @@ import { flushMutations } from "../support/time";
 const PAGE = { collectionSlug: "page", docId: "1", kind: "collection" } as const;
 const MARKED_TITLE = markedText("Hello", { ...PAGE, path: "title" });
 const SITE_ORIGIN = "https://site.example";
-const FRAMED: PageState = { isFramed: true, mode: "off", pageOrigin: SITE_ORIGIN };
+const FRAMED: PageState = {
+  editsInPlace: false,
+  isFramed: true,
+  mode: "off",
+  pageOrigin: SITE_ORIGIN,
+};
 const STANDALONE: PageState = { ...FRAMED, isFramed: false };
 const DRAFT: SessionOptions = { adminOrigin: ADMIN_ORIGIN, available: true };
 
@@ -211,6 +216,7 @@ describe("the session of a page, followed", () => {
 
   describe("by the toggle", () => {
     const setMode = vi.fn();
+    const setEditsInPlace = vi.fn();
 
     const host = () => document.querySelector<HTMLElement>(`[${DATA_VE_TOGGLE_ATTR}]`);
 
@@ -222,7 +228,7 @@ describe("the session of a page, followed", () => {
         .map((button) => button.textContent);
 
     const start = () => {
-      following = startSessionToggle(document, session, setMode);
+      following = startSessionToggle(document, session, { setEditsInPlace, setMode });
       return following;
     };
 
@@ -271,6 +277,20 @@ describe("the session of a page, followed", () => {
       following = null;
 
       expect(host()).toBeNull();
+    });
+
+    it("offers editing on the page where the site turned it on, and reports the choice", () => {
+      const editsInPlaceSwitch = () =>
+        host()?.shadowRoot?.querySelector<HTMLButtonElement>('[role="switch"]') ?? null;
+      const toggle = start();
+      expect(editsInPlaceSwitch()).toBeNull();
+
+      options = { ...DRAFT, inlineEditing: true };
+      toggle.sync();
+      editsInPlaceSwitch()?.click();
+
+      expect(editsInPlaceSwitch()?.getAttribute("aria-checked")).toBe("false");
+      expect(setEditsInPlace).toHaveBeenCalledWith(true);
     });
   });
 });
