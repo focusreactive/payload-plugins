@@ -12,7 +12,7 @@ import { EDITOR, OUTSIDER, WRITER, signIn } from "../support/unsavedRichTextRequ
 
 type Saved = { status: number; saved: unknown };
 
-type Valued = { status: number; value: unknown };
+type Valued = { status: number; value: unknown; formats?: unknown };
 
 type Node = Record<string, unknown> & { children?: Node[] };
 
@@ -74,6 +74,8 @@ const SAVED_CALLOUT = {
 
 const callout = (fields: object): Node => ({ fields, format: "", type: "block", version: 2 });
 
+const inlineBlock = (fields: object): Node => ({ fields, type: "inlineBlock", version: 1 });
+
 const horizontalRule = (): Node => ({ type: "horizontalrule", version: 1 });
 
 describe("editing rich text through the endpoints", () => {
@@ -103,8 +105,10 @@ describe("editing rich text through the endpoints", () => {
 
   const valueOf = async (body: unknown, headers = editor): Promise<Valued> => {
     const response = await post(VE_RICH_TEXT_VALUE_PATH, body, headers);
-    const { value } = (await response.json()) as { value: unknown };
-    return { status: response.status, value };
+    const { formats, value } = (await response.json()) as { formats: unknown; value: unknown };
+    return formats === null
+      ? { status: response.status, value }
+      : { formats, status: response.status, value };
   };
 
   const create = async (data: Record<string, unknown>) => {
@@ -137,6 +141,9 @@ describe("editing rich text through the endpoints", () => {
     value: photoId,
     version: 3,
   });
+
+  const storedStory = async (docId: string): Promise<State> =>
+    structuredClone((await read(docId)).story) as State;
 
   const story = (): State =>
     stateOf(
@@ -178,6 +185,13 @@ describe("editing rich text through the endpoints", () => {
       const answer = await valueOf({ ...page(docId), key: "story" });
 
       expect(answer.status).toBe(200);
+      expect(answer.formats).toEqual({
+        hasLinks: true,
+        hasQuotes: true,
+        headings: ["h1", "h2", "h3", "h4", "h5", "h6"],
+        lists: ["bullet", "number", "check"],
+        textFormats: 127,
+      });
       expect(answer.value).toEqual((await read(docId)).story);
       expect((answer.value as State).root.children[1]).toMatchObject({ value: photoId });
     });
@@ -202,7 +216,7 @@ describe("editing rich text through the endpoints", () => {
 
       const answer = await valueOf({ ...page(docId), key: `list.${row!.id}.note` });
 
-      expect(answer).toEqual({ status: 200, value: richText("Note") });
+      expect(answer).toMatchObject({ status: 200, value: richText("Note") });
     });
 
     it("leaves out the fields of a block the user may not read", async () => {
@@ -312,48 +326,82 @@ describe("editing rich text through the endpoints", () => {
 
     it("takes the fields of a block from the draft when the page sends none", async () => {
       const docId = await create({ story: story() });
-      const posted = callout({ blockType: "callout", id: SAVED_CALLOUT.id });
+      const state = await storedStory(docId);
+      state.root.children[3] = callout({ blockType: "callout", id: SAVED_CALLOUT.id });
 
-      const answer = await edit({
-        ...page(docId),
-        key: "story",
-        state: stateOf(element("paragraph", [text("Rewritten")]), posted),
-      });
+      const answer = await edit({ ...page(docId), key: "story", state });
 
-      const edited = (await read(docId)).story as State;
       expect(answer.saved).toBe(true);
-      expect(edited.root.children[1]!.fields).toEqual({ ...SAVED_CALLOUT, image: photoId });
+      expect((await storedStory(docId)).root.children[3]!.fields).toEqual({
+        ...SAVED_CALLOUT,
+        image: photoId,
+      });
     });
 
     it("takes the fields of a block from the draft when the page sends others", async () => {
       const docId = await create({ story: story() });
-      const posted = callout({ ...SAVED_CALLOUT, note: "Forged", text: "Forged" });
+      const state = await storedStory(docId);
+      state.root.children[3] = callout({ ...SAVED_CALLOUT, note: "Forged", text: "Forged" });
 
-      await edit({ ...page(docId), key: "story", state: stateOf(posted) }, writer);
+      const answer = await edit({ ...page(docId), key: "story", state }, writer);
 
-      const edited = (await read(docId)).story as State;
-      expect(edited.root.children[0]!.fields).toEqual({ ...SAVED_CALLOUT, image: photoId });
+      expect(answer.saved).toBe(true);
+      expect((await storedStory(docId)).root.children[3]!.fields).toEqual({
+        ...SAVED_CALLOUT,
+        image: photoId,
+      });
     });
 
-    it("takes the fields of an upload and of a link from the draft", async () => {
+    it("keeps the fields of a block the user may not read when that user saves what they were shown", async () => {
       const docId = await create({ story: story() });
-      const forgedUpload = { ...savedUpload(), fields: { credit: authorId + 1 } };
-      const movedLink = link("https://moved.example", "link-saved", { credit: authorId + 1 });
+      const shown = (await valueOf({ ...page(docId), key: "story" }, writer)).value as State;
+      shown.root.children[0] = element("paragraph", [text("Rewritten")]);
 
-      await edit({
-        ...page(docId),
-        key: "story",
-        state: stateOf(forgedUpload, element("paragraph", [movedLink])),
-      });
+      const answer = await edit({ ...page(docId), key: "story", state: shown }, writer);
 
-      const [upload, paragraph] = ((await read(docId)).story as State).root.children;
-      expect(upload!.fields).toEqual({ credit: authorId });
+      const edited = await storedStory(docId);
+      expect(answer.saved).toBe(true);
+      expect(edited.root.children[0]!.children).toMatchObject([{ text: "Rewritten" }]);
+      expect(edited.root.children[3]!.fields).toMatchObject({ note: "Internal" });
+    });
+
+    it("takes the fields of a link the page cannot change from the draft and its address from the page", async () => {
+      const docId = await create({ story: story() });
+      const state = await storedStory(docId);
+      state.root.children[2] = element("paragraph", [
+        link("https://moved.example", "link-saved", { credit: authorId + 1 }),
+      ]);
+
+      await edit({ ...page(docId), key: "story", state });
+
+      const paragraph = (await storedStory(docId)).root.children[2];
       expect(paragraph!.children![0]!.fields).toEqual({
         credit: authorId,
         linkType: "custom",
         newTab: false,
         url: "https://moved.example",
       });
+    });
+
+    it("keeps a node the page cannot edit inside a list item and inside a link", async () => {
+      const nested = (label: string) =>
+        stateOf(
+          element("list", [element("listitem", [text(label), horizontalRule()], { value: 1 })], {
+            listType: "bullet",
+            start: 1,
+            tag: "ul",
+          }),
+          element("paragraph", [link("https://saved.example", "link-saved")])
+        );
+      const docId = await create({ story: nested("One") });
+
+      const answer = await edit({ ...page(docId), key: "story", state: nested("Changed") });
+
+      expect(answer.saved).toBe(true);
+      expect((await storedStory(docId)).root.children[0]!.children![0]!.children).toMatchObject([
+        { text: "Changed" },
+        { type: "horizontalrule" },
+      ]);
     });
 
     it("writes one row of a list and keeps the other rows", async () => {
@@ -397,7 +445,7 @@ describe("editing rich text through the endpoints", () => {
       expect(answer).toEqual({ saved: true, status: 200 });
     });
 
-    it("keeps a link address the draft already holds, whatever its scheme", async () => {
+    it("keeps a link address the draft already holds on that link, whatever its scheme", async () => {
       const kept = element("paragraph", [link("ftp://files.example", "link-kept")]);
       const docId = await create({ body: stateOf(kept) });
 
@@ -408,6 +456,104 @@ describe("editing rich text through the endpoints", () => {
       });
 
       expect(answer.saved).toBe(true);
+    });
+
+    it.each([
+      ["on another link", "link-other", "link-kept"],
+      ["on a second link of the same id", "link-kept", "link-kept"],
+    ])("refuses such an address %s", async (_name, addedId, keptId) => {
+      const stored = stateOf(element("paragraph", [link("ftp://files.example", "link-kept")]));
+      const docId = await create({ body: stored });
+
+      const answer = await edit({
+        ...page(docId),
+        key: "body",
+        state: stateOf(
+          element("paragraph", [
+            link("ftp://files.example", keptId),
+            link("ftp://files.example", addedId),
+          ])
+        ),
+      });
+
+      expect(answer).toEqual({ saved: false, status: 422 });
+      expect((await read(docId)).body).toEqual(stored);
+    });
+
+    it("keeps a text style and a node state the draft already holds", async () => {
+      const styled = (label: string) =>
+        stateOf({
+          ...element("paragraph", [{ ...text(label), $: { color: "red" }, style: "color: red" }]),
+          textStyle: "color: red",
+        });
+      const docId = await create({ body: styled("Red") });
+
+      const answer = await edit({ ...page(docId), key: "body", state: styled("Still red") });
+
+      expect(answer.saved).toBe(true);
+    });
+
+    describe("of a field whose editor allows bold and one heading size", () => {
+      const plain = (...children: Node[]) => ({ key: "plainStory", state: stateOf(...children) });
+
+      it("is told which formats the field allows", async () => {
+        const docId = await create({ plainStory: richText("Plain") });
+
+        const answer = await valueOf({ ...page(docId), key: "plainStory" });
+
+        expect(answer.formats).toEqual({
+          hasLinks: false,
+          hasQuotes: false,
+          headings: ["h2"],
+          lists: [],
+          textFormats: BOLD,
+        });
+      });
+
+      it("is told a format the field already holds too", async () => {
+        const docId = await create({ plainStory: stateOf(element("quote", [text("Said", 2)])) });
+
+        const answer = await valueOf({ ...page(docId), key: "plainStory" });
+
+        expect(answer.formats).toMatchObject({ hasQuotes: true, textFormats: 3 });
+      });
+
+      it("saves what the field allows", async () => {
+        const docId = await create({ plainStory: richText("Plain") });
+
+        const answer = await edit({
+          ...page(docId),
+          ...plain(element("heading", [text("Bold", BOLD)], { tag: "h2" })),
+        });
+
+        expect(answer).toEqual({ saved: true, status: 200 });
+      });
+
+      it.each<[string, Node]>([
+        ["a heading of another size", element("heading", [text("Big")], { tag: "h1" })],
+        ["a quote", element("quote", [text("Said")])],
+        [
+          "a list",
+          element("list", [element("listitem", [text("One")], { value: 1 })], {
+            listType: "bullet",
+            start: 1,
+            tag: "ul",
+          }),
+        ],
+        ["an italic text", element("paragraph", [text("Slanted", 2)])],
+        ["a link", element("paragraph", [link("/about", "link-new")])],
+        [
+          "a paragraph format the field does not allow",
+          { ...element("paragraph", []), textFormat: 2 },
+        ],
+      ])("refuses %s", async (_name, node) => {
+        const docId = await create({ plainStory: richText("Plain") });
+
+        const answer = await edit({ ...page(docId), ...plain(node) });
+
+        expect(answer).toEqual({ saved: false, status: 422 });
+        expect((await read(docId)).plainStory).toEqual(richText("Plain"));
+      });
     });
 
     describe("saves nothing", () => {
@@ -476,21 +622,147 @@ describe("editing rich text through the endpoints", () => {
         expect(await refused({ state })).toEqual({ saved: false, status: 400 });
       });
 
-      it("for a block the draft does not hold", async () => {
-        const invented = callout({ blockType: "callout", id: "callout-new", text: "Invented" });
+      const changedStory = async (change: (children: Node[]) => Node[]) => {
+        const state = await storedStory(docId);
+        return { key: "story", state: stateOf(...change(state.root.children)) };
+      };
 
-        const answer = await refused({ key: "story", state: stateOf(invented) });
-
-        expect(answer).toEqual({ saved: false, status: 422 });
+      it.each<[string, (children: Node[]) => Node[]]>([
+        [
+          "a block the draft does not hold",
+          (children) => [...children, callout({ blockType: "callout", id: "callout-new" })],
+        ],
+        [
+          "a block without an id",
+          (children) => children.map((node) => (node.type === "block" ? callout({}) : node)),
+        ],
+        ["a block that was removed", (children) => children.filter(({ type }) => type !== "block")],
+        [
+          "an upload that was removed",
+          (children) => children.filter(({ type }) => type !== "upload"),
+        ],
+        [
+          "a block posted twice",
+          (children) => [...children, children.find(({ type }) => type === "block") as Node],
+        ],
+        [
+          "two nodes the page cannot edit in another order",
+          ([first, upload, linked, block, rule]) => [first!, block!, linked!, upload!, rule!],
+        ],
+        [
+          "an inline block that carries the id of a stored block",
+          (children) =>
+            children.map((node) =>
+              node.type === "block"
+                ? element("paragraph", [
+                    inlineBlock({ blockType: "callout", id: SAVED_CALLOUT.id }),
+                  ])
+                : node
+            ),
+        ],
+        [
+          "a block of another type under the id of a stored block",
+          (children) =>
+            children.map((node) =>
+              node.type === "block" ? callout({ blockType: "hero", id: SAVED_CALLOUT.id }) : node
+            ),
+        ],
+        [
+          "an upload that names another file",
+          (children) =>
+            children.map((node) => (node.type === "upload" ? { ...node, value: 999 } : node)),
+        ],
+        [
+          "an upload that names another collection",
+          (children) =>
+            children.map((node) =>
+              node.type === "upload" ? { ...node, relationTo: "documents" } : node
+            ),
+        ],
+        [
+          "an upload with other fields",
+          (children) =>
+            children.map((node) =>
+              node.type === "upload" ? { ...node, fields: { credit: 999 } } : node
+            ),
+        ],
+        [
+          "a node the page cannot edit moved into a list item",
+          ([first, upload, linked, block, rule]) => [
+            first!,
+            upload!,
+            linked!,
+            block!,
+            element("list", [element("listitem", [rule!], { value: 1 })], {
+              listType: "bullet",
+              start: 1,
+              tag: "ul",
+            }),
+          ],
+        ],
+        [
+          "a node of a type no editor of the field knows",
+          (children) => [...children, { type: "mystery", version: 1 }],
+        ],
+      ])("for %s", async (_name, change) => {
+        expect(await refused(await changedStory(change))).toEqual({ saved: false, status: 422 });
       });
 
-      it("for a block without an id", async () => {
-        const answer = await refused({
-          key: "story",
-          state: stateOf(callout({ blockType: "callout", text: "Invented" })),
-        });
+      const validParagraph = () => element("paragraph", [text("Changed")]);
 
-        expect(answer).toEqual({ saved: false, status: 422 });
+      it.each<[string, Node[]]>([
+        ["a key the node does not have", [{ ...validParagraph(), onclick: "alert(1)" }]],
+        ["a node without its keys", [{ children: [], type: "paragraph", version: 1 }]],
+        ["a text node under the root", [text("Loose")]],
+        ["a list item outside a list", [element("listitem", [text("Loose")], { value: 1 })]],
+        ["a paragraph inside a paragraph", [element("paragraph", [validParagraph()])]],
+        [
+          "a style the draft does not hold",
+          [element("paragraph", [{ ...text("Red"), style: "color: red" }])],
+        ],
+        ["a text format that is no format", [element("paragraph", [text("Odd", 4096)])]],
+        ["a text mode that is no mode", [element("paragraph", [{ ...text("Odd"), mode: "odd" }])]],
+        ["a version that is no number", [{ ...validParagraph(), version: "1" }]],
+        ["an indent out of range", [{ ...validParagraph(), indent: 100_000 }]],
+        ["a direction that is no direction", [{ ...validParagraph(), direction: "up" }]],
+        [
+          "a heading of a size that does not exist",
+          [element("heading", [text("Big")], { tag: "h7" })],
+        ],
+        [
+          "a list whose tag is not the tag of its type",
+          [
+            element("list", [element("listitem", [text("One")], { value: 1 })], {
+              listType: "bullet",
+              start: 1,
+              tag: "script",
+            }),
+          ],
+        ],
+        ["a key of the prototype", [{ ...validParagraph(), constructor: { prototype: {} } }]],
+        [
+          "a state of the node the draft does not hold",
+          [{ ...validParagraph(), $: { color: "red" } }],
+        ],
+      ])("for %s", async (_name, children) => {
+        expect(await refused({ state: stateOf(...children) })).toEqual({
+          saved: false,
+          status: 422,
+        });
+      });
+
+      it("for a key beside the root", async () => {
+        const state = { ...richText("Changed"), extra: true };
+
+        expect(await refused({ state })).toEqual({ saved: false, status: 422 });
+      });
+
+      it("for a key named __proto__ anywhere in the state", async () => {
+        const state = JSON.parse(
+          '{"root":{"children":[],"direction":null,"format":"","indent":0,"type":"root","version":1,"__proto__":{"polluted":true}}}'
+        ) as State;
+
+        expect(await refused({ state })).toEqual({ saved: false, status: 422 });
       });
 
       it.each(FORBIDDEN_URLS)(
@@ -501,6 +773,22 @@ describe("editing rich text through the endpoints", () => {
           expect(await refused({ state })).toEqual({ saved: false, status: 422 });
         }
       );
+
+      it.each<[string, object]>([
+        ["an address that is a list", { linkType: "custom", url: [`${SCRIPT}:alert(1)`] }],
+        ["an empty address on a custom link", { linkType: "custom", url: "" }],
+        ["no address on a custom link", { linkType: "custom" }],
+        ["a link type that does not exist", { linkType: "odd", url: "/about" }],
+        ["a linked document that is no reference", { doc: { value: {} }, linkType: "internal" }],
+        ["a flag that is no flag", { linkType: "custom", newTab: "yes", url: "/about" }],
+      ])("for a link with %s", async (_name, fields) => {
+        const posted = element("link", [text("Credits")], { fields, id: "link-new", version: 3 });
+
+        expect(await refused({ state: stateOf(element("paragraph", [posted])) })).toEqual({
+          saved: false,
+          status: 422,
+        });
+      });
 
       it("for a locale the project does not have", async () => {
         expect(await refused({ locale: "fr" })).toEqual({ saved: false, status: 400 });

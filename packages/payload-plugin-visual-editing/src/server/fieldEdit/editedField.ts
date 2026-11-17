@@ -11,11 +11,11 @@ import {
 import { editedTextOf } from "../../shared/fieldEdit.js";
 import { FIELD_PATH_SEPARATOR } from "../../shared/fieldKey.js";
 import { isPlainObject } from "../../shared/plainObject.js";
-import { holdsEveryBlockOf, withBlockFieldsOf } from "../../shared/richText/blockNodes.js";
+import type { VeRichTextFormats } from "../../shared/richText/formats.js";
+
+import { editedStateOf } from "../../shared/richText/editedState.js";
 import { rootOf } from "../../shared/richText/editorNodes.js";
 import { isEditorStateTree } from "../../shared/richText/editorStateTree.js";
-import { addsOnlyAllowedLinkUrls } from "../../shared/richText/linkUrls.js";
-import { withSavedNodeFieldsOf } from "../../shared/richText/savedNodeFields.js";
 import { idOf } from "../../shared/veDocument.js";
 
 export type EditedField = { name: string; value: unknown };
@@ -124,32 +124,32 @@ export const replacedUploadOf = (
 const mayHoldRichText = (value: unknown): boolean =>
   rootOf(value) !== null || value === null || value === undefined;
 
+export type ShownRichText = { steps: readonly FieldStep[]; value: VeEditorState };
+
 export const shownRichTextOf = (
   document: unknown,
   schema: EditableSchema,
   key: string
-): VeEditorState | null => {
+): ShownRichText | null => {
   const walked = walkTo(document, key);
   if (!walked || !isRichTextAt(schema, walked.steps)) return null;
-  return isEditorStateTree(walked.value) ? walked.value : null;
+  return isEditorStateTree(walked.value) ? { steps: walked.steps, value: walked.value } : null;
 };
 
-const takesStateOfThePage = (stored: unknown, state: VeEditorState): boolean =>
-  holdsEveryBlockOf(stored, state) && addsOnlyAllowedLinkUrls(stored, state);
+export type RichTextEdit = {
+  key: string;
+  state: VeEditorState;
+  shown: VeEditorState;
+  formats: VeRichTextFormats;
+};
 
 export const editedRichTextOf = (
   document: unknown,
   schema: EditableSchema,
-  key: string,
-  state: VeEditorState
+  { formats, key, shown, state }: RichTextEdit
 ): EditedField | null => {
   const walked = walkTo(document, key);
   if (!walked || !isRichTextAt(schema, walked.steps) || !mayHoldRichText(walked.value)) return null;
-  const stored = walked.value;
-  if (!takesStateOfThePage(stored, state)) return null;
-  return fieldWith(
-    document,
-    walked,
-    withSavedNodeFieldsOf(withBlockFieldsOf(state, stored), stored)
-  );
+  const edited = editedStateOf(state, { formats, shown, stored: walked.value });
+  return edited && fieldWith(document, walked, edited);
 };

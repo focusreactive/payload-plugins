@@ -42,14 +42,3 @@ export const withBlockFieldsOf = (state: VeEditorState, stored: unknown): VeEdit
   const storedFieldsById = blockFieldsByIdOf(stored);
   return mapBlockFields(state, (identity) => storedFieldsById.get(String(identity.id)) ?? identity);
 };
-
-export const holdsEveryBlockOf = (stored: unknown, state: VeEditorState): boolean => {
-  const storedFieldsById = blockFieldsByIdOf(stored);
-  let holdsEveryBlock = true;
-  forEachEditorNode(rootOf(state), (node) => {
-    if (!isBlockNode(node)) return;
-    const { id } = identityOf(node.fields);
-    holdsEveryBlock &&= id !== undefined && storedFieldsById.has(String(id));
-  });
-  return holdsEveryBlock;
-};

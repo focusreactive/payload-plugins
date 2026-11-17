@@ -11,6 +11,8 @@ import { isRichTextEdit, readFieldEdit, readRichTextEdit } from "../../shared/fi
 import { valueAtKey } from "../../shared/fieldKey.js";
 import { VE_FIELD_EDIT_PATH } from "../../shared/protocol.js";
 import { rootOf } from "../../shared/richText/editorNodes.js";
+import { NO_FORMATS } from "../../shared/richText/formats.js";
+import { isSameValue } from "../../shared/sameValue.js";
 import { bodyOf } from "../endpointJson.js";
 import {
   ANSWERED,
@@ -33,6 +35,7 @@ import {
   shownUploadCollectionOf,
 } from "./editedField.js";
 import { readableMediaIdOf } from "./readableMedia.js";
+import { formatsOfField } from "./richTextFormats.js";
 
 type Edited = (stored: unknown) => EditedField | null;
 
@@ -68,15 +71,22 @@ const saveDraft = (
     : payload.update({ ...options, collection: document.collection, id: document.id });
 };
 
-const comparableAt = (document: unknown, key: string): string | null => {
+const comparableAt = (document: unknown, key: string): unknown => {
   const value = valueAtKey(document, key)?.value;
   if (typeof value === "string" || typeof value === "number") return String(value);
-  return rootOf(value) ? JSON.stringify(value) : null;
+  return rootOf(value) ? value : null;
 };
 
-const isLeftAsItWas = (stored: unknown, saved: unknown, sent: unknown, key: string): boolean => {
+export const isLeftAsItWas = (
+  stored: unknown,
+  saved: unknown,
+  sent: unknown,
+  key: string
+): boolean => {
   const before = comparableAt(stored, key);
-  return comparableAt(saved, key) === before && comparableAt(sent, key) !== before;
+  return (
+    isSameValue(comparableAt(saved, key), before) && !isSameValue(comparableAt(sent, key), before)
+  );
 };
 
 const readEdit = (body: unknown): VeEdit | null => readFieldEdit(body) ?? readRichTextEdit(body);
@@ -84,14 +94,20 @@ const readEdit = (body: unknown): VeEdit | null => readFieldEdit(body) ?? readRi
 const editedOf = async (
   payload: Payload,
   user: User,
-  { schema, shown }: DraftField,
+  { document, schema, shown }: DraftField,
   edit: VeEdit
 ): Promise<Edited | null> => {
   const { key } = edit;
   if (isRichTextEdit(edit)) {
-    return shownRichTextOf(shown, schema, key)
-      ? (stored) => editedRichTextOf(stored, schema, key, edit.state)
-      : null;
+    const shownRichText = shownRichTextOf(shown, schema, key);
+    if (!shownRichText) return null;
+    const richTextEdit = {
+      formats: formatsOfField(payload, document, shownRichText.steps) ?? NO_FORMATS,
+      key,
+      shown: shownRichText.value,
+      state: edit.state,
+    };
+    return (stored) => editedRichTextOf(stored, schema, richTextEdit);
   }
   const { value } = edit;
   const uploadCollection = shownUploadCollectionOf(shown, schema, key);

@@ -1,3 +1,5 @@
+import type { VeRichTextFormats } from "./richText/formats.js";
+
 export const DATA_VE_PATH_ATTR = "data-ve-path";
 export const DATA_VE_DOC_ID_ATTR = "data-ve-doc-id";
 export const DATA_VE_COLLECTION_ATTR = "data-ve-collection";
@@ -196,6 +198,7 @@ export const VE_RICH_TEXT_VALUE_PATH = "/visual-editing/rich-text-value";
 
 export type VeRichTextValue = {
   value: VeEditorState | null;
+  formats: VeRichTextFormats | null;
 };
 
 export type VeRichTextEdit = VeEditedField & {
@@ -214,6 +217,13 @@ export const VE_RICH_TEXT_STATE_TYPE = "ve:rich-text-state";
 
 export type VeRichTextStateMessage = VeRichTextEdit & {
   type: typeof VE_RICH_TEXT_STATE_TYPE;
+  formats: VeRichTextFormats;
+};
+
+export const VE_RICH_TEXT_STATE_REFUSED_TYPE = "ve:rich-text-state-refused";
+
+export type VeRichTextStateRefusedMessage = VeEditedField & {
+  type: typeof VE_RICH_TEXT_STATE_REFUSED_TYPE;
 };
 
 export const VE_RICH_TEXT_EDIT_TYPE = "ve:rich-text-edit";

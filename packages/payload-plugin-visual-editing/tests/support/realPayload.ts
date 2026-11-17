@@ -11,7 +11,10 @@ import type {
 import { sqliteAdapter } from "@payloadcms/db-sqlite";
 import {
   BlocksFeature,
+  BoldFeature,
+  HeadingFeature,
   LinkFeature,
+  ParagraphFeature,
   UploadFeature,
   lexicalEditor,
 } from "@payloadcms/richtext-lexical";
@@ -192,6 +195,17 @@ export async function startRealPayload({
             ],
           }),
           name: "story",
+          type: "richText",
+        },
+        {
+          editor: lexicalEditor({
+            features: [
+              ParagraphFeature(),
+              BoldFeature(),
+              HeadingFeature({ enabledHeadingSizes: ["h2"] }),
+            ],
+          }),
+          name: "plainStory",
           type: "richText",
         },
       ]

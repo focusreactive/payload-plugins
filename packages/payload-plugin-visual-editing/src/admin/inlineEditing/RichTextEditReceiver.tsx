@@ -7,15 +7,21 @@ import type {
   VeEditedField,
   VeFieldEditRefusedMessage,
   VeRichTextStateMessage,
+  VeRichTextStateRefusedMessage,
 } from "../../shared/protocol.js";
 import type { OpenForm } from "./formEdit.js";
 
 import { isMessageFrom } from "../../shared/messageSource.js";
-import { VE_FIELD_EDIT_REFUSED_TYPE, VE_RICH_TEXT_STATE_TYPE } from "../../shared/protocol.js";
+import {
+  VE_FIELD_EDIT_REFUSED_TYPE,
+  VE_RICH_TEXT_STATE_REFUSED_TYPE,
+  VE_RICH_TEXT_STATE_TYPE,
+} from "../../shared/protocol.js";
 import { useEditableSchema } from "../instantPreview/useEditableSchema.js";
 import { usePreviewWindow } from "../instantPreview/usePreviewWindow.js";
 import { openDocumentOf } from "../openField/openDocument.js";
 import {
+  formatsForThePage,
   richTextEditOfDocument,
   richTextFormEditOf,
   richTextOfForm,
@@ -38,8 +44,16 @@ export function RichTextEditReceiver({ excludeFieldNames }: { excludeFieldNames?
     const openForm = (): OpenForm | null =>
       isFormDisabled ? null : { document: openDocument, editableSchema, formState: getFields() };
 
-    const refuse = (field: VeEditedField) => {
+    const refuseEdit = (field: VeEditedField) => {
       const message: VeFieldEditRefusedMessage = { ...field, type: VE_FIELD_EDIT_REFUSED_TYPE };
+      getWindow()?.postMessage(message, origin);
+    };
+
+    const refuseStateRequest = (field: VeEditedField) => {
+      const message: VeRichTextStateRefusedMessage = {
+        ...field,
+        type: VE_RICH_TEXT_STATE_REFUSED_TYPE,
+      };
       getWindow()?.postMessage(message, origin);
     };
 
@@ -47,11 +61,12 @@ export function RichTextEditReceiver({ excludeFieldNames }: { excludeFieldNames?
       const form = openForm();
       const held = form && richTextOfForm(field, form);
       if (!held) {
-        refuse(field);
+        refuseStateRequest(field);
         return;
       }
       const message: VeRichTextStateMessage = {
         ...field,
+        formats: formatsForThePage(held),
         state: stateForThePage(held),
         type: VE_RICH_TEXT_STATE_TYPE,
       };
@@ -62,7 +77,7 @@ export function RichTextEditReceiver({ excludeFieldNames }: { excludeFieldNames?
       const form = openForm();
       const formEdit = form && richTextFormEditOf(edit, form);
       if (!formEdit) {
-        refuse(edit.field);
+        refuseEdit(edit.field);
         return;
       }
       const { path, value } = formEdit;

@@ -8,30 +8,68 @@ import { RichTextEditReceiver } from "../../src/admin/inlineEditing/RichTextEdit
 import {
   VE_FIELD_EDIT_REFUSED_TYPE,
   VE_RICH_TEXT_EDIT_TYPE,
+  VE_RICH_TEXT_STATE_REFUSED_TYPE,
   VE_RICH_TEXT_STATE_REQUEST_TYPE,
   VE_RICH_TEXT_STATE_TYPE,
 } from "../../src/shared/protocol";
 import { MAX_POSTED_EDITOR_STATE_LENGTH } from "../../src/shared/richText/postedEditorState";
 
-import { editorState, paragraph, textNode } from "../support/editorState";
-
 const PREVIEW_ORIGIN = "http://localhost:3333";
 
 const SCRIPT = "javascript";
 
+const BOLD = 1;
+const ITALIC = 2;
+
+const text = (value: string, format = 0) => ({
+  detail: 0,
+  format,
+  mode: "normal",
+  style: "",
+  text: value,
+  type: "text",
+  version: 1,
+});
+
+const element = (type: string, children: object[], extra: object = {}) => ({
+  children,
+  direction: null,
+  format: "",
+  indent: 0,
+  type,
+  version: 1,
+  ...extra,
+});
+
+const paragraphOf = (...children: object[]) => element("paragraph", children);
+
+const stateOf = (...children: object[]) => ({ root: element("root", children) });
+
 const block = (fields: object) => ({ fields, format: "", type: "block", version: 2 });
 
-const link = (url: string) => ({
-  children: [textNode("Docs")],
-  fields: { linkType: "custom", newTab: false, url },
-  id: "link-1",
-  type: "link",
-  version: 3,
-});
+const inlineBlock = (fields: object) => ({ fields, type: "inlineBlock", version: 1 });
+
+const link = (url: unknown, id = "link-new") =>
+  element("link", [text("Docs")], {
+    fields: { linkType: "custom", newTab: false, url },
+    id,
+    version: 3,
+  });
 
 const HELD_BLOCK = { blockType: "callout", id: "callout-1", note: "Internal", text: "Held" };
 
-const heldState = () => editorState(paragraph(textNode("Body")), block(HELD_BLOCK));
+const HELD_LINK = link("ftp://held.example", "link-held");
+
+const heldState = () =>
+  stateOf(paragraphOf(text("Body", BOLD)), block(HELD_BLOCK), paragraphOf(HELD_LINK));
+
+const HELD_FORMATS = {
+  hasLinks: true,
+  hasQuotes: false,
+  headings: [],
+  lists: [],
+  textFormats: BOLD,
+};
 
 const admin = vi.hoisted(() => {
   const postMessage = vi.fn();
@@ -90,6 +128,8 @@ const REQUEST = { ...FIELD, type: VE_RICH_TEXT_STATE_REQUEST_TYPE };
 
 const REFUSED = { ...FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE };
 
+const REQUEST_REFUSED = { ...FIELD, type: VE_RICH_TEXT_STATE_REFUSED_TYPE };
+
 const editOf = (state: unknown) => ({ ...FIELD, state, type: VE_RICH_TEXT_EDIT_TYPE });
 
 const post = ({
@@ -137,9 +177,11 @@ describe("RichTextEditReceiver", () => {
       expect(admin.postToPreview).toHaveBeenCalledWith(
         {
           ...FIELD,
-          state: editorState(
-            paragraph(textNode("Body")),
-            block({ blockType: "callout", id: "callout-1" })
+          formats: HELD_FORMATS,
+          state: stateOf(
+            paragraphOf(text("Body", BOLD)),
+            block({ blockType: "callout", id: "callout-1" }),
+            paragraphOf(HELD_LINK)
           ),
           type: VE_RICH_TEXT_STATE_TYPE,
         },
@@ -172,7 +214,7 @@ describe("RichTextEditReceiver", () => {
     ])("refuses %s", (_name, key) => {
       post({ data: { ...REQUEST, key } });
 
-      expect(admin.postToPreview).toHaveBeenCalledWith({ ...REFUSED, key }, PREVIEW_ORIGIN);
+      expect(admin.postToPreview).toHaveBeenCalledWith({ ...REQUEST_REFUSED, key }, PREVIEW_ORIGIN);
     });
 
     it("refuses a field that holds no editor state", () => {
@@ -180,14 +222,14 @@ describe("RichTextEditReceiver", () => {
 
       post();
 
-      expect(admin.postToPreview).toHaveBeenCalledWith(REFUSED, PREVIEW_ORIGIN);
+      expect(admin.postToPreview).toHaveBeenCalledWith(REQUEST_REFUSED, PREVIEW_ORIGIN);
     });
 
     it("refuses a request of another locale", () => {
       post({ data: { ...REQUEST, locale: "de" } });
 
       expect(admin.postToPreview).toHaveBeenCalledWith(
-        { ...REFUSED, locale: "de" },
+        { ...REQUEST_REFUSED, locale: "de" },
         PREVIEW_ORIGIN
       );
     });
@@ -198,22 +240,24 @@ describe("RichTextEditReceiver", () => {
 
       post();
 
-      expect(admin.postToPreview).toHaveBeenCalledWith(REFUSED, PREVIEW_ORIGIN);
+      expect(admin.postToPreview).toHaveBeenCalledWith(REQUEST_REFUSED, PREVIEW_ORIGIN);
     });
   });
 
   describe("sent an edited state", () => {
-    const edited = (...extra: object[]) =>
-      editorState(
-        paragraph(textNode("Changed", 1)),
-        block({ blockType: "callout", id: "callout-1" }),
-        ...extra
-      );
+    const HELD_IDENTITY = block({ blockType: "callout", id: "callout-1" });
+
+    const edited = (first: object = paragraphOf(text("Changed", BOLD)), ...last: object[]) =>
+      stateOf(first, HELD_IDENTITY, paragraphOf(HELD_LINK), ...last);
 
     it("writes it into the form with the fields of its blocks put back, as value and initial value", () => {
       post({ data: editOf(edited()) });
 
-      const value = editorState(paragraph(textNode("Changed", 1)), block(HELD_BLOCK));
+      const value = stateOf(
+        paragraphOf(text("Changed", BOLD)),
+        block(HELD_BLOCK),
+        paragraphOf(HELD_LINK)
+      );
       expect(admin.dispatchFields).toHaveBeenCalledWith({
         initialValue: value,
         path: "body",
@@ -225,23 +269,75 @@ describe("RichTextEditReceiver", () => {
     });
 
     it("keeps the fields the form holds when the page sends others", () => {
-      const forged = editorState(block({ ...HELD_BLOCK, note: "Forged", text: "Forged" }));
+      const forged = stateOf(
+        paragraphOf(text("Body", BOLD)),
+        block({ ...HELD_BLOCK, note: "Forged", text: "Forged" }),
+        paragraphOf(HELD_LINK)
+      );
 
       post({ data: editOf(forged) });
 
       expect(admin.dispatchFields).toHaveBeenCalledWith(
-        expect.objectContaining({ value: editorState(block(HELD_BLOCK)) })
+        expect.objectContaining({ value: heldState() })
       );
     });
 
-    it.each([
-      ["a block the form does not hold", edited(block({ blockType: "callout", id: "new" }))],
-      ["a block without an id", edited(block({ blockType: "callout" }))],
-      ["a link to a script", edited(paragraph(link(`${SCRIPT}:alert(1)`)))],
+    it.each<[string, unknown]>([
+      [
+        "a block the form does not hold",
+        edited(undefined, block({ blockType: "callout", id: "new" })),
+      ],
+      ["a block posted twice", edited(undefined, HELD_IDENTITY)],
+      ["a block that was removed", stateOf(paragraphOf(text("Changed")), paragraphOf(HELD_LINK))],
+      [
+        "a block in another place among the nodes the page cannot edit",
+        stateOf({ type: "horizontalrule", version: 1 }, HELD_IDENTITY, paragraphOf(HELD_LINK)),
+      ],
+      [
+        "an inline block that carries the id of a held block",
+        stateOf(
+          paragraphOf(inlineBlock({ blockType: "callout", id: "callout-1" })),
+          paragraphOf(HELD_LINK)
+        ),
+      ],
+      [
+        "a block of another type under the id of a held block",
+        stateOf(
+          paragraphOf(text("Changed")),
+          block({ blockType: "hero", id: "callout-1" }),
+          paragraphOf(HELD_LINK)
+        ),
+      ],
+      ["a link to a script", edited(paragraphOf(link(`${SCRIPT}:alert(1)`)))],
+      ["a link whose address is a list", edited(paragraphOf(link([`${SCRIPT}:alert(1)`])))],
+      ["a link without an address", edited(paragraphOf(link("")))],
+      [
+        "an address the form holds on another link",
+        edited(paragraphOf(link("ftp://held.example", "link-other"))),
+      ],
+      ["a key the node does not have", edited({ ...paragraphOf(text("Changed")), onclick: "x" })],
+      [
+        "a style the form does not hold",
+        edited(paragraphOf({ ...text("Red"), style: "color: red" })),
+      ],
+      ["a text format the form does not hold", edited(paragraphOf(text("Slanted", ITALIC)))],
+      ["a heading, which the form does not hold", edited(element("heading", [], { tag: "h2" }))],
+      ["a quote, which the form does not hold", edited(element("quote", []))],
+      [
+        "a list, which the form does not hold",
+        edited(
+          element("list", [element("listitem", [], { value: 1 })], {
+            listType: "bullet",
+            start: 1,
+            tag: "ul",
+          })
+        ),
+      ],
+      ["a key of the prototype", edited({ ...paragraphOf(), constructor: {} })],
       ["a state without a root", { children: [] }],
       [
         "a state longer than a posted state may be",
-        editorState(paragraph(textNode("a".repeat(MAX_POSTED_EDITOR_STATE_LENGTH)))),
+        stateOf(paragraphOf(text("a".repeat(MAX_POSTED_EDITOR_STATE_LENGTH)))),
       ],
     ])("refuses %s", (_name, state) => {
       post({ data: editOf(state) });
@@ -252,7 +348,7 @@ describe("RichTextEditReceiver", () => {
     });
 
     it("takes a link with an address a page may write", () => {
-      post({ data: editOf(edited(paragraph(link("/docs")))) });
+      post({ data: editOf(edited(paragraphOf(link("/docs")))) });
 
       expect(admin.dispatchFields).toHaveBeenCalledTimes(1);
     });

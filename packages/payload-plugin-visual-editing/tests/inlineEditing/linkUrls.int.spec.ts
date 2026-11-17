@@ -1,17 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { addsOnlyAllowedLinkUrls, isAllowedLinkUrl } from "../../src/shared/richText/linkUrls";
-
-import { editorState, paragraph, textNode } from "../support/editorState";
+import { isAllowedLinkUrl } from "../../src/shared/richText/linkUrls";
 
 const SCRIPT = "javascript";
-
-const link = (url: string) => ({
-  children: [textNode("Docs")],
-  fields: { linkType: "custom", url },
-  type: "link",
-  version: 3,
-});
 
 describe("the address of a link written on the page", () => {
   it.each([
@@ -44,15 +35,5 @@ describe("the address of a link written on the page", () => {
     "blob:https://example.com/id",
   ])("may not be %j", (url) => {
     expect(isAllowedLinkUrl(url)).toBe(false);
-  });
-
-  it("is refused in a posted state unless the stored state already holds it", () => {
-    const stored = editorState(paragraph(link("ftp://files.example.com")));
-    const kept = editorState(paragraph(link("ftp://files.example.com"), link("/about")));
-    const added = editorState(paragraph(link("ftp://other.example.com")));
-
-    expect(addsOnlyAllowedLinkUrls(stored, kept)).toBe(true);
-    expect(addsOnlyAllowedLinkUrls(stored, added)).toBe(false);
-    expect(addsOnlyAllowedLinkUrls(null, kept)).toBe(false);
   });
 });

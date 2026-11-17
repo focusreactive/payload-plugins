@@ -5,13 +5,12 @@ import { isRichTextAt } from "../../shared/editableSchema/editableSchema.js";
 import { readEditedField, readRichTextEdit } from "../../shared/fieldEdit.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import { VE_RICH_TEXT_EDIT_TYPE, VE_RICH_TEXT_STATE_REQUEST_TYPE } from "../../shared/protocol.js";
-import {
-  holdsEveryBlockOf,
-  withBlockFieldsOf,
-  withoutBlockFields,
-} from "../../shared/richText/blockNodes.js";
+import type { VeRichTextFormats } from "../../shared/richText/formats.js";
+
+import { withoutBlockFields } from "../../shared/richText/blockNodes.js";
+import { editedStateOf } from "../../shared/richText/editedState.js";
 import { isEditorStateTree } from "../../shared/richText/editorStateTree.js";
-import { addsOnlyAllowedLinkUrls } from "../../shared/richText/linkUrls.js";
+import { formatsIn } from "../../shared/richText/formats.js";
 import { documentAddressOf } from "../../shared/veDocument.js";
 import { readFormFields } from "../instantPreview/formFields.js";
 import { isOfAnotherLocale } from "./formEdit.js";
@@ -59,14 +58,18 @@ export function richTextOfForm(
 export const stateForThePage = ({ value }: RichTextOfForm): VeEditorState =>
   withoutBlockFields(value);
 
+export const formatsForThePage = ({ value }: RichTextOfForm): VeRichTextFormats => formatsIn(value);
+
 export function richTextFormEditOf(
   { field, state }: PostedRichTextEdit,
   openForm: OpenForm
 ): RichTextOfForm | null {
   const held = richTextOfForm(field, openForm);
   if (!held || !state) return null;
-  if (!holdsEveryBlockOf(held.value, state) || !addsOnlyAllowedLinkUrls(held.value, state)) {
-    return null;
-  }
-  return { path: held.path, value: withBlockFieldsOf(state, held.value) };
+  const value = editedStateOf(state, {
+    formats: formatsIn(held.value),
+    shown: held.value,
+    stored: held.value,
+  });
+  return value && { path: held.path, value };
 }
