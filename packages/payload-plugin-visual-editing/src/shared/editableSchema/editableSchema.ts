@@ -78,13 +78,26 @@ const stepInto = (schemaNode: PlainObject, step: FieldStep): unknown => {
   return step.blockType === undefined ? schemaNode : ownField(schemaNode, step.blockType);
 };
 
-export const isMarkable = (schema: EditableSchema, steps: readonly FieldStep[]): boolean => {
+const schemaNodeAt = (schema: EditableSchema, steps: readonly FieldStep[]): unknown => {
   let schemaNode: unknown = schema;
   for (const step of steps) {
-    if (!isPlainObject(schemaNode)) return false;
+    if (!isPlainObject(schemaNode)) return undefined;
     schemaNode = stepInto(schemaNode, step);
   }
+  return schemaNode;
+};
+
+export const isMarkable = (schema: EditableSchema, steps: readonly FieldStep[]): boolean => {
+  const schemaNode = schemaNodeAt(schema, steps);
   return isText(schemaNode) || isRichText(schemaNode);
+};
+
+export const textFieldTypeAt = (
+  schema: EditableSchema,
+  steps: readonly FieldStep[]
+): string | null => {
+  const schemaNode = schemaNodeAt(schema, steps);
+  return typeof schemaNode === "string" && isText(schemaNode) ? schemaNode : null;
 };
 
 export const holderFieldAt = (

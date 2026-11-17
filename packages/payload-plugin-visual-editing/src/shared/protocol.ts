@@ -118,6 +118,19 @@ export type VeFieldPatchMessage = VeLiveDocument & {
   patches: VeFieldPatch[];
 };
 
+export const VE_FIELD_EDIT_PATH = "/visual-editing/field-edit";
+
+export const VE_FIELD_EDIT_TYPE = "ve:field-edit";
+
+export type VeFieldEdit = VeLiveDocument & {
+  key: string;
+  value: string;
+};
+
+export type VeFieldEditMessage = VeFieldEdit & {
+  type: typeof VE_FIELD_EDIT_TYPE;
+};
+
 export const VE_RICH_TEXT_STRUCTURE_TYPE = "ve:rich-text-structure";
 
 export type VeEditorState = Record<string, unknown>;
