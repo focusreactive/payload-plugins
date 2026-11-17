@@ -29,15 +29,22 @@ const ctx = { adminOrigin: ADMIN_ORIGIN, onEdited, payloadApi: PAYLOAD_API };
 const answerOf = (saved: boolean, ok = true) =>
   ({ json: () => Promise.resolve({ saved }), ok }) as Response;
 
+const refusalOf = (reason: unknown) =>
+  ({ json: () => Promise.resolve({ reason, saved: false }), ok: false }) as Response;
+
 describe("the transport of an edit", () => {
   let transport: EditTransport;
   let statuses: string[];
+  let refusals: (string | undefined)[];
   let fetchEndpoint: ReturnType<typeof vi.fn>;
 
   const start = () => {
     transport = createEditTransport(
       () => ctx,
-      (status) => statuses.push(status)
+      (status, refusal) => {
+        statuses.push(status);
+        refusals.push(refusal);
+      }
     );
   };
 
@@ -46,6 +53,7 @@ describe("the transport of an edit", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     statuses = [];
+    refusals = [];
     onEdited.mockClear();
     fetchEndpoint = vi.fn(() => Promise.resolve(answerOf(true)));
     vi.stubGlobal("fetch", fetchEndpoint);
@@ -123,8 +131,34 @@ describe("the transport of an edit", () => {
       transport.refuse(TITLE);
       transport.retry();
 
-      expect(statuses).toEqual(["unsaved", "failed"]);
+      expect(statuses).toEqual(["unsaved", "failed", "unsaved"]);
       expect(postToAdmin).toHaveBeenCalledTimes(2);
+    });
+
+    it("gives a refusal of the form no reason of its own", () => {
+      transport.send({ ...TITLE, value: "Hello" });
+      vi.advanceTimersByTime(EDIT_SEND_PAUSE_MS);
+
+      transport.refuse(TITLE);
+
+      expect(refusals.at(-1)).toBe("failed");
+    });
+
+    it("keeps saying an edit the form refused is not saved when the admin saved the document", () => {
+      transport.send({ ...TITLE, value: "Title" });
+      transport.send({ ...TITLE, key: "lead", value: "Lead" });
+      vi.advanceTimersByTime(EDIT_SEND_PAUSE_MS);
+      transport.refuse(TITLE);
+
+      transport.settle(TITLE);
+
+      expect(statuses.at(-1)).toBe("failed");
+    });
+
+    it("says nothing about a save of the admin while the form holds no edit of the page", () => {
+      transport.settle(TITLE);
+
+      expect(statuses).toEqual([]);
     });
 
     it("says the edits are saved when the admin saved the document", () => {
@@ -284,6 +318,69 @@ describe("the transport of an edit", () => {
       await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
 
       expect(statuses.at(-1)).toBe("failed");
+    });
+
+    it("keeps saying an edit is not saved while the editor types in another field", async () => {
+      fetchEndpoint.mockImplementationOnce(() => Promise.resolve(refusalOf("locked")));
+      transport.send({ ...TITLE, value: "Title" });
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+
+      transport.send({ ...TITLE, key: "lead", value: "Lead" });
+
+      expect(statuses.at(-1)).toBe("failed");
+      expect(refusals.at(-1)).toBe("locked");
+    });
+
+    it("says changes are unsaved as soon as the editor types in the field that failed", async () => {
+      fetchEndpoint.mockImplementationOnce(() => Promise.resolve(answerOf(false)));
+      transport.send({ ...TITLE, value: "First" });
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+
+      transport.send({ ...TITLE, value: "Second" });
+
+      expect(statuses.at(-1)).toBe("unsaved");
+      expect(refusals.at(-1)).toBeUndefined();
+    });
+
+    it.each(["locked", "no-drafts", "not-editable", "signed-out", "failed"])(
+      "tells why the endpoint refused an edit: %s",
+      async (reason) => {
+        fetchEndpoint.mockImplementationOnce(() => Promise.resolve(refusalOf(reason)));
+
+        transport.sendNow({ ...TITLE, value: "Hello" });
+        await settle();
+
+        expect(statuses.at(-1)).toBe("failed");
+        expect(refusals.at(-1)).toBe(reason);
+      }
+    );
+
+    it.each([
+      ["a reason it does not know", () => Promise.resolve(refusalOf("on-fire"))],
+      ["no reason", () => Promise.resolve(answerOf(false))],
+      ["no answer", () => Promise.reject(new Error("offline"))],
+    ])("says no more than that the edit is not saved for %s", async (_name, answer) => {
+      fetchEndpoint.mockImplementationOnce(answer);
+
+      transport.sendNow({ ...TITLE, value: "Hello" });
+      await settle();
+
+      expect(statuses.at(-1)).toBe("failed");
+      expect(refusals.at(-1)).toBe("failed");
+    });
+
+    it("tells the sender of a waiting value when it is delivered, and not when it is dropped", async () => {
+      const onDelivered = vi.fn();
+      transport.send({ ...TITLE, value: "Dropped" }, onDelivered);
+      transport.drop(TITLE);
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+      expect(onDelivered).not.toHaveBeenCalled();
+
+      transport.send({ ...TITLE, value: "Delivered" }, onDelivered);
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+
+      expect(onDelivered).toHaveBeenCalledTimes(1);
+      expect(fetchEndpoint).toHaveBeenCalledTimes(1);
     });
 
     it("sends every edit that failed again", async () => {

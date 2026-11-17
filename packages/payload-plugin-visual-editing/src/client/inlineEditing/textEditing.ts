@@ -8,7 +8,8 @@ export const DATA_VE_EDITING_ATTR = "data-ve-editing";
 
 export type TextEditingDeps = {
   tracker: FieldTracker;
-  send(match: FieldMatch, text: string): void;
+  send(match: FieldMatch, text: string, onDelivered?: () => void): void;
+  dropWaiting(match: FieldMatch): void;
   flush(): void;
 };
 
@@ -26,7 +27,7 @@ type Edit = {
   initialText: string;
   text: string;
   caret: number;
-  wasSent: boolean;
+  wasDelivered: boolean;
   restored: ReadonlyMap<string, string | null>;
   stopListening(): void;
 };
@@ -90,7 +91,12 @@ const setAttributes = (
   }
 };
 
-export function createTextEditing({ flush, send, tracker }: TextEditingDeps): TextEditing {
+export function createTextEditing({
+  dropWaiting,
+  flush,
+  send,
+  tracker,
+}: TextEditingDeps): TextEditing {
   let editing: Edit | null = null;
 
   const end = (text: string) => {
@@ -111,15 +117,17 @@ export function createTextEditing({ flush, send, tracker }: TextEditingDeps): Te
 
   const cancel = () => {
     if (!editing) return;
-    if (editing.wasSent) send(editing.match, editing.initialText);
+    dropWaiting(editing.match);
+    if (editing.wasDelivered) send(editing.match, editing.initialText);
     end(editing.initialText);
   };
 
   const followTyping = (edit: Edit) => {
     edit.text = textOf(edit.editedElement);
     edit.caret = caretOffsetIn(edit.editedElement) ?? edit.caret;
-    edit.wasSent = true;
-    send(edit.match, edit.text);
+    send(edit.match, edit.text, () => {
+      edit.wasDelivered = true;
+    });
   };
 
   const followCaret = (edit: Edit) => {
@@ -193,7 +201,7 @@ export function createTextEditing({ flush, send, tracker }: TextEditingDeps): Te
         restored: new Map(EDITING_ATTRS.map((name) => [name, editedElement.getAttribute(name)])),
         stopListening: () => undefined,
         text,
-        wasSent: false,
+        wasDelivered: false,
       };
       addEditingStyle(doc);
       editedElement.setAttribute(EDITABLE_ATTR, isPlainTextOnly ? PLAIN_TEXT_ONLY : RICH_TEXT);

@@ -1,3 +1,4 @@
+import type { SaveRefusal } from "../../shared/fieldEdit.js";
 import type {
   VeEdit,
   VeEditedField,
@@ -6,7 +7,7 @@ import type {
   VeRichTextEditMessage,
 } from "../../shared/protocol.js";
 
-import { isRichTextEdit } from "../../shared/fieldEdit.js";
+import { isRichTextEdit, readSaveRefusal, SAVE_FAILED } from "../../shared/fieldEdit.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import {
   VE_FIELD_EDIT_PATH,
@@ -24,8 +25,12 @@ export type EditedField = VeEditedField;
 
 export type OnSaveEnded = (isSaved: boolean) => void;
 
+export type OnStatus = (status: EditStatus, refusal?: SaveRefusal) => void;
+
+export type OnDelivered = () => void;
+
 export interface EditTransport {
-  send(edit: VeEdit): void;
+  send(edit: VeEdit, onDelivered?: OnDelivered): void;
   hold(edit: VeEdit): void;
   drop(field: EditedField): void;
   sendNow(edit: VeEdit, onSaveEnded?: OnSaveEnded): void;
@@ -42,7 +47,13 @@ export const EDIT_SEND_PAUSE_MS = 400;
 
 export const EDIT_SAVE_PAUSE_MS = 2000;
 
-type WaitingEdit = { edit: VeEdit; timer: ReturnType<typeof setTimeout> | null };
+type WaitingEdit = {
+  edit: VeEdit;
+  timer: ReturnType<typeof setTimeout> | null;
+  onDelivered?: OnDelivered;
+};
+
+type FailedEdit = { edit: VeEdit; refusal: SaveRefusal };
 
 const addressOf = (field: EditedField): string =>
   JSON.stringify([keyedFieldAddressOf(field), field.locale ?? null]);
@@ -58,7 +69,14 @@ const messageOf = (edit: VeEdit): VeFieldEditMessage | VeRichTextEditMessage =>
     ? { ...edit, type: VE_RICH_TEXT_EDIT_TYPE }
     : { ...edit, type: VE_FIELD_EDIT_TYPE };
 
-const postToEndpoint = async (win: Window, url: string, edit: VeEdit): Promise<boolean> => {
+const isSavedBy = (response: Response, answer: unknown): boolean =>
+  response.ok && isPlainObject(answer) && answer.saved === true;
+
+const postToEndpoint = async (
+  win: Window,
+  url: string,
+  edit: VeEdit
+): Promise<SaveRefusal | null> => {
   try {
     const body = JSON.stringify(edit);
     const response = await win.fetch(url, {
@@ -68,20 +86,20 @@ const postToEndpoint = async (win: Window, url: string, edit: VeEdit): Promise<b
       keepalive: body.length <= KEEPALIVE_BODY_LIMIT,
       method: "POST",
     });
-    const answer: unknown = response.ok ? await response.json() : null;
-    return isPlainObject(answer) && answer.saved === true;
+    const answer: unknown = await response.json();
+    return isSavedBy(response, answer) ? null : readSaveRefusal(answer);
   } catch {
-    return false;
+    return SAVE_FAILED;
   }
 };
 
 export function createEditTransport(
   getCtx: () => EditTransportCtx,
-  onStatus: (status: EditStatus) => void,
+  onStatus: OnStatus,
   win: Window = window
 ): EditTransport {
   const waiting = new Map<string, WaitingEdit>();
-  const failed = new Map<string, VeEdit>();
+  const failed = new Map<string, FailedEdit>();
   const postedToAdmin = new Map<string, VeEdit>();
   const unsavedInForm = new Map<string, EditedField>();
   const watchedSaves = new Map<string, OnSaveEnded>();
@@ -89,11 +107,21 @@ export function createEditTransport(
   let saves: Promise<void> = Promise.resolve();
   let isDisposed = false;
 
+  const latestRefusal = (): SaveRefusal | undefined => [...failed.values()].at(-1)?.refusal;
+
   const report = (status: EditStatus) => {
-    if (!isDisposed) onStatus(status);
+    if (isDisposed) return;
+    const refusal = latestRefusal();
+    if (refusal === undefined) onStatus(status);
+    else onStatus("failed", refusal);
   };
 
-  const settle = () => report(failed.size > 0 ? "failed" : "saved");
+  const settle = () => report("saved");
+
+  const fail = (edit: VeEdit, refusal: SaveRefusal) => {
+    failed.delete(addressOf(edit));
+    failed.set(addressOf(edit), { edit, refusal });
+  };
 
   const countSaveOnTheWay = (address: string, change: number) => {
     const onTheWay = (savesOnTheWay.get(address) ?? 0) + change;
@@ -104,10 +132,11 @@ export function createEditTransport(
   const saveThroughEndpoint = async (edit: VeEdit) => {
     report("saving");
     countSaveOnTheWay(addressOf(edit), 1);
-    const isSaved = await postToEndpoint(win, `${getCtx().payloadApi}${VE_FIELD_EDIT_PATH}`, edit);
+    const refusal = await postToEndpoint(win, `${getCtx().payloadApi}${VE_FIELD_EDIT_PATH}`, edit);
+    const isSaved = refusal === null;
     countSaveOnTheWay(addressOf(edit), -1);
     if (isSaved) failed.delete(addressOf(edit));
-    else failed.set(addressOf(edit), edit);
+    else fail(edit, refusal);
     settle();
     if (isDisposed) return;
     watchedSaves.get(addressOf(edit))?.(isSaved);
@@ -145,7 +174,14 @@ export function createEditTransport(
 
   const deliverWaiting = (address: string) => {
     const held = stopWaiting(address);
-    if (held) deliver(held.edit);
+    if (!held) return;
+    held.onDelivered?.();
+    deliver(held.edit);
+  };
+
+  const supersede = (address: string) => {
+    stopWaiting(address);
+    failed.delete(address);
   };
 
   const flush = () => {
@@ -162,7 +198,7 @@ export function createEditTransport(
     },
     hold(edit) {
       const address = addressOf(edit);
-      stopWaiting(address);
+      supersede(address);
       watchedSaves.delete(address);
       waiting.set(address, { edit, timer: null });
       report("unsaved");
@@ -171,26 +207,27 @@ export function createEditTransport(
     refuse(field) {
       const edit = postedToAdmin.get(addressOf(field));
       if (!edit) return;
-      failed.set(addressOf(field), edit);
+      fail(edit, SAVE_FAILED);
       report("failed");
     },
     retry() {
       const edits = [...failed.values()];
       failed.clear();
-      for (const edit of edits) deliver(edit);
+      for (const { edit } of edits) deliver(edit);
+      if (unsavedInForm.size > 0) report("unsaved");
     },
-    send(edit) {
+    send(edit, onDelivered) {
       const address = addressOf(edit);
-      stopWaiting(address);
+      supersede(address);
       watchedSaves.delete(address);
       const pause = findAdminWindow(win) ? EDIT_SEND_PAUSE_MS : EDIT_SAVE_PAUSE_MS;
       const timer = setTimeout(deliverWaiting, pause, address);
-      waiting.set(address, { edit, timer });
+      waiting.set(address, { edit, onDelivered, timer });
       report("unsaved");
     },
     sendNow(edit, onSaveEnded) {
       const address = addressOf(edit);
-      stopWaiting(address);
+      supersede(address);
       if (onSaveEnded) watchedSaves.set(address, onSaveEnded);
       else watchedSaves.delete(address);
       report("unsaved");
@@ -205,6 +242,7 @@ export function createEditTransport(
       report("unsaved");
     },
     settle(saved) {
+      if (unsavedInForm.size === 0) return;
       for (const [address, field] of unsavedInForm) {
         if (saved && !isSavedWith(field, saved)) continue;
         unsavedInForm.delete(address);

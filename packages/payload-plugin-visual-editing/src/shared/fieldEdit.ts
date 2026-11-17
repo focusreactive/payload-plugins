@@ -7,6 +7,23 @@ import { isVeDocument, veDocumentOf } from "./veDocument.js";
 
 const MULTILINE_FIELD_TYPE = "textarea";
 
+export const SAVE_REFUSALS = [
+  "locked",
+  "no-drafts",
+  "not-editable",
+  "signed-out",
+  "failed",
+] as const;
+
+export type SaveRefusal = (typeof SAVE_REFUSALS)[number];
+
+export const SAVE_FAILED: SaveRefusal = "failed";
+
+export const readSaveRefusal = (answer: unknown): SaveRefusal => {
+  const reason = isPlainObject(answer) ? answer.reason : undefined;
+  return SAVE_REFUSALS.find((refusal) => refusal === reason) ?? SAVE_FAILED;
+};
+
 const LINE_BREAKS = /\s*[\n\r]+\s*/gu;
 
 export const editedTextOf = (fieldType: string, value: string): string => {

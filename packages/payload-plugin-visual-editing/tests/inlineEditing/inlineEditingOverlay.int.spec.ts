@@ -200,7 +200,7 @@ describe("editing text on the page", () => {
       expect(sentToEndpoint()).toHaveLength(1);
     });
 
-    it("shows the text the edit began with on Escape and saves nothing", async () => {
+    it("shows the text the edit began with on Escape and sends nothing when nothing was sent yet", async () => {
       click(heading);
       type(heading, "Changed");
 
@@ -209,7 +209,35 @@ describe("editing text on the page", () => {
 
       expect(heading.textContent).toBe("Hello");
       expect(heading.hasAttribute("contenteditable")).toBe(false);
-      expect(sentToEndpoint().at(-1)).toMatchObject({ value: "Hello" });
+      expect(fetchEndpoint).not.toHaveBeenCalled();
+    });
+
+    it("sends the text the edit began with on Escape once a typed text was sent", async () => {
+      click(heading);
+      type(heading, "Changed");
+      await pause();
+      type(heading, "Changed again");
+
+      press(heading, "Escape");
+      await pause();
+
+      expect(heading.textContent).toBe("Hello");
+      expect(sentToEndpoint().map(({ value }) => value)).toEqual(["Changed", "Hello"]);
+    });
+
+    it("says why the endpoint refused the edit", async () => {
+      fetchEndpoint.mockImplementationOnce(() =>
+        Promise.resolve({
+          json: () => Promise.resolve({ reason: "locked", saved: false }),
+          ok: false,
+        } as Response)
+      );
+      click(heading);
+      type(heading, "Changed");
+
+      await pause();
+
+      expect(statusLabel()).toBe("Locked by another editor");
     });
 
     it("sends nothing on Escape when the editor typed nothing", async () => {

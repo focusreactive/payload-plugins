@@ -22,6 +22,7 @@ import {
   inLocaleOfProject,
   isRefusal,
   readDraft,
+  refusalOfStatus,
   SIGNED_OUT,
   statusOfFailure,
   UNREADABLE_REQUEST,
@@ -40,13 +41,10 @@ import { formatsOfField } from "./richTextFormats.js";
 type Edited = (stored: unknown) => EditedField | null;
 
 const answer = (saved: boolean, status: number, req: PayloadRequest): Response =>
-  Response.json(
-    { saved },
-    {
-      headers: headersWithCors({ headers: new Headers({ "Cache-Control": "no-store" }), req }),
-      status,
-    }
-  );
+  Response.json(saved ? { saved } : { reason: refusalOfStatus(status), saved }, {
+    headers: headersWithCors({ headers: new Headers({ "Cache-Control": "no-store" }), req }),
+    status,
+  });
 
 const saveDraft = (
   payload: Payload,

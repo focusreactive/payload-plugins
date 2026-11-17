@@ -1,8 +1,9 @@
+import type { SaveRefusal } from "../../shared/fieldEdit.js";
 import type { VeDocument, VeOpenFieldMessage } from "../../shared/protocol.js";
 import type { VeIdentity } from "../../shared/shared.js";
 import type { BadgeAction } from "../overlay/editBadge.js";
 import type { FieldMatch, FieldTracker } from "../overlay/fieldTracker.js";
-import type { EditStatus } from "./editTransport.js";
+import type { EditStatus, OnDelivered } from "./editTransport.js";
 import type { RichTextEditorLoader } from "./richTextEditor.js";
 import type { SaveStatus } from "./saveStatus.js";
 
@@ -35,7 +36,6 @@ export type OpenForms = {
   holdsFormOf(document: VeDocument): boolean;
 };
 
-const UNSAVED: EditStatus = "unsaved";
 const PAGE_LEFT_EVENT = "pagehide";
 const VISIBILITY_EVENT = "visibilitychange";
 const HIDDEN = "hidden";
@@ -56,12 +56,10 @@ export function createInlineEditing(
   openForms: OpenForms | null
 ): InlineEditing {
   const fields = new Map<Element, FieldMatch>();
-  let shownStatus: EditStatus | null = null;
   let saveStatus: SaveStatus | null = null;
 
-  const showStatus = (status: EditStatus) => {
-    shownStatus = status;
-    saveStatus?.show(status);
+  const showStatus = (status: EditStatus, refusal?: SaveRefusal) => {
+    saveStatus?.show(status, refusal);
   };
 
   const transport = createEditTransport(getCtx, showStatus);
@@ -77,14 +75,25 @@ export function createInlineEditing(
     findAdminWindow(window)?.postMessage(message, adminOriginOf(adminOrigin));
   };
 
-  const send = (match: FieldMatch, value: string) => {
+  const editedFieldOf = (match: FieldMatch) => {
     const key = fieldKeyOfMarker(match);
     const { locale } = getCtx();
-    if (key === null) return;
-    transport.send({ ...veDocumentOf(match), key, value, ...(locale !== undefined && { locale }) });
+    return key === null
+      ? null
+      : { ...veDocumentOf(match), key, ...(locale !== undefined && { locale }) };
   };
 
-  const textEditing = createTextEditing({ flush: transport.flush, send, tracker });
+  const send = (match: FieldMatch, value: string, onDelivered?: OnDelivered) => {
+    const field = editedFieldOf(match);
+    if (field) transport.send({ ...field, value }, onDelivered);
+  };
+
+  const dropWaiting = (match: FieldMatch) => {
+    const field = editedFieldOf(match);
+    if (field) transport.drop(field);
+  };
+
+  const textEditing = createTextEditing({ dropWaiting, flush: transport.flush, send, tracker });
 
   const richTextEditing = createRichTextEditing({
     dropUnsaved: transport.drop,
@@ -153,9 +162,7 @@ export function createInlineEditing(
 
   const stopListeningToSaves = listenToSaves(
     () => getCtx().adminOrigin,
-    (saved) => {
-      if (shownStatus === UNSAVED) transport.settle(saved);
-    }
+    (saved) => transport.settle(saved)
   );
 
   const endEdits = () => {
