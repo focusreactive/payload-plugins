@@ -1,3 +1,4 @@
+import type { VeRichTextFormats } from "../protocol.js";
 import type { EditorNode } from "./editorNodes.js";
 
 import {
@@ -11,13 +12,7 @@ import {
   TEXT_NODE_TYPE,
 } from "./editableNodes.js";
 
-export type VeRichTextFormats = {
-  textFormats: number;
-  headings: string[];
-  lists: string[];
-  hasLinks: boolean;
-  hasQuotes: boolean;
-};
+export type { VeRichTextFormats } from "../protocol.js";
 
 export const BOLD_FORMAT = 1;
 export const ITALIC_FORMAT = 2;

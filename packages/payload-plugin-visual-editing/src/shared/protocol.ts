@@ -1,5 +1,3 @@
-import type { VeRichTextFormats } from "./richText/formats.js";
-
 export const DATA_VE_PATH_ATTR = "data-ve-path";
 export const DATA_VE_DOC_ID_ATTR = "data-ve-doc-id";
 export const DATA_VE_COLLECTION_ATTR = "data-ve-collection";
@@ -193,6 +191,14 @@ export type VeMediaPickedMessage = VeEditedField &
 export const VE_RICH_TEXT_STRUCTURE_TYPE = "ve:rich-text-structure";
 
 export type VeEditorState = Record<string, unknown>;
+
+export type VeRichTextFormats = {
+  textFormats: number;
+  headings: string[];
+  lists: string[];
+  hasLinks: boolean;
+  hasQuotes: boolean;
+};
 
 export const VE_RICH_TEXT_VALUE_PATH = "/visual-editing/rich-text-value";
 
