@@ -275,6 +275,10 @@ export const plugins: Plugin[] = [
     generateURL: (docs) => docs.reduce((url, doc) => `${url}/${doc.slug}`, ""),
   }),
 
+  // Page-builder rows open as stacked drawers with breadcrumbs and show preview cards.
+  // Must run before presetsPlugin, which wraps existing row labels.
+  stackedEditingPlugin({ collections: ["page", "posts"], globals: [] }),
+
   presetsPlugin({
     labels: {
       plural: { en: "Presets", es: "Presets" },
@@ -442,9 +446,6 @@ export const plugins: Plugin[] = [
   }),
 
   mcpPluginConfig,
-
-  // Page-builder rows open as stacked drawers with breadcrumbs (Alt-click keeps inline expand).
-  stackedEditingPlugin({ collections: ["page", "posts"], globals: [] }),
 
   // Must stay last so it also protects collections and globals added by the plugins above.
   restrictApiAccess({
