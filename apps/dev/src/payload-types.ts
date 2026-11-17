@@ -259,6 +259,7 @@ export interface Page {
             items?:
               | {
                   title: string;
+                  image?: (number | null) | Media;
                   points?:
                     | {
                         text: string;
@@ -549,6 +550,7 @@ export interface Preset {
         items?:
           | {
               title: string;
+              image?: (number | null) | Media;
               points?:
                 | {
                     text: string;
@@ -1156,6 +1158,7 @@ export interface PagesSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    image?: T;
                     points?:
                       | T
                       | {
@@ -1325,6 +1328,7 @@ export interface PresetsSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    image?: T;
                     points?:
                       | T
                       | {

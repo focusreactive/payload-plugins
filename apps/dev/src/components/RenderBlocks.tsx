@@ -28,7 +28,13 @@ type Block =
   | {
       blockType: "features";
       heading?: string | null;
-      items?: { title: string; points?: { text: string }[] | null }[] | null;
+      items?:
+        | {
+            title: string;
+            image?: MediaImage | number | string | null;
+            points?: { text: string }[] | null;
+          }[]
+        | null;
       _hidden?: boolean | null;
     };
 

@@ -1,3 +1,4 @@
+import { definePreview } from "@focus-reactive/payload-plugin-stacked-editing";
 import type { Block, Field } from "payload";
 import { withSectionVisibility } from "../lib/section-visibility/withSectionVisibility";
 
@@ -16,8 +17,15 @@ const featuresFields: Field[] = [
     name: "items",
     type: "array",
     labels: { plural: "Features", singular: "Feature" },
+    // Explicit row card (stacked-editing): title, a count as subtitle and the image as thumbnail.
+    admin: {
+      custom: {
+        preview: definePreview({ title: "title", subtitle: "points.length", media: "image" }),
+      },
+    },
     fields: [
       { name: "title", required: true, type: "text" },
+      { name: "image", relationTo: "media", type: "upload" },
       { name: "points", type: "blocks", blocks: [PointBlock] },
     ],
   },

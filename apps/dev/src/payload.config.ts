@@ -82,9 +82,14 @@ export default buildConfig({
       },
       storage: abAdapter,
     }),
+    // Before presetsPlugin: it wraps the block labels it finds, so the row cards set here keep
+    // the preset actions next to them. Rows open as stacked panels with breadcrumbs.
+    // STACKED_EDITING_CARDS=off shows the plain Payload headers (for comparison).
+    stackedEditingPlugin({
+      cards: process.env.STACKED_EDITING_CARDS !== "off",
+      collections: ["pages", "playground"],
+    }),
     presetsPlugin(),
-    // Array/blocks rows open as stacked drawers with breadcrumbs (Alt-click keeps inline expand).
-    stackedEditingPlugin({ collections: ["pages", "playground"] }),
     // Click-to-edit in Live Preview (Pages only). A click on a nested element opens the matching
     // stacked panels: the bridge's `payload:open-field` event is taken over by stacked editing.
     visualEditingPlugin({
