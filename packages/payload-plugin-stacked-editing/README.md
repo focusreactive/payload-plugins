@@ -55,6 +55,12 @@ done in form state only: it writes no preferences, changes no data and does not 
 modified. Rows the editor expands themselves (chevron, "Show All") stay expanded. Rows that Payload
 expands again after a save are collapsed back into cards.
 
+To avoid a flash of expanded rows before the admin hydrates, `panel` mode also sets Payload's own
+`admin.initCollapsed: true` on every array and blocks field that doesn't set it, so the server
+already renders rows collapsed. An explicit `initCollapsed` on a field is kept. Payload still
+prefers an editor's saved collapse preferences over `initCollapsed`; the client-side collapse covers
+that case.
+
 **`defaultMode: "inline"`**: rows behave as in plain Payload: they keep their saved expanded or
 collapsed state and a header click toggles inline. A row opens in a panel only through the "open
 in panel" icon in its header, shown faintly next to the `…` menu.

@@ -1,7 +1,8 @@
-import type { CollectionConfig, Config, Field, GlobalConfig, Plugin } from "payload";
+import type { Block, CollectionConfig, Config, Field, GlobalConfig, Plugin } from "payload";
 
 import { STACKED_EDITING_COMPONENT } from "./lib/constants.js";
 import { withCardLabelBlock, withCardLabelFields } from "./lib/withCardLabels.js";
+import { withInitCollapsedBlock, withInitCollapsedFields } from "./lib/withInitCollapsed.js";
 import type { StackedEditingOptions } from "./types.js";
 
 const outletFor = (options: StackedEditingOptions) => ({
@@ -67,20 +68,33 @@ export const stackedEditing =
       return config;
     }
     const cards = options.cards !== false;
-    const withCards = <T extends { fields: Field[] }>(entity: T): T =>
-      cards ? { ...entity, fields: withCardLabelFields(entity.fields) } : entity;
+    // In panel mode rows start collapsed on the server (Payload's `admin.initCollapsed`), so the
+    // document never flashes expanded rows before the client collapses them.
+    const collapsed = (options.defaultMode ?? "panel") === "panel";
+    const withFields = <T extends { fields: Field[] }>(entity: T): T => {
+      let fields = entity.fields;
+      if (cards) fields = withCardLabelFields(fields);
+      if (collapsed) fields = withInitCollapsedFields(fields);
+      return { ...entity, fields };
+    };
+    const withBlock = (block: Block): Block => {
+      let next = block;
+      if (cards) next = withCardLabelBlock(next);
+      if (collapsed) next = withInitCollapsedBlock(next);
+      return next;
+    };
     return {
       ...config,
-      // Config-level blocks (used through `blockReferences`) are shared, so all of them get cards.
-      ...(cards && config.blocks ? { blocks: config.blocks.map(withCardLabelBlock) } : {}),
+      // Config-level blocks (used through `blockReferences`) are shared, so all of them are handled.
+      ...((cards || collapsed) && config.blocks ? { blocks: config.blocks.map(withBlock) } : {}),
       collections: config.collections?.map((collection) =>
         includes(options.collections, collection.slug)
-          ? withCollectionOutlet(withCards(collection), outletFor(options))
+          ? withCollectionOutlet(withFields(collection), outletFor(options))
           : collection
       ),
       globals: config.globals?.map((global) =>
         includes(options.globals, global.slug)
-          ? withGlobalOutlet(withCards(global), outletFor(options))
+          ? withGlobalOutlet(withFields(global), outletFor(options))
           : global
       ),
     };

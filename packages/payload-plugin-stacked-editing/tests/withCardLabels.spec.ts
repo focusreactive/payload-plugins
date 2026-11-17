@@ -92,7 +92,9 @@ describe("stackedEditing cards option", () => {
 
   it("can be turned off", async () => {
     const result = await stackedEditing({ cards: false })(config);
-    expect(at(result.collections, 0, "fields", 3, "fields", 0, "admin")).toBeUndefined();
-    expect(at(result.blocks, 0, "admin")).toBeUndefined();
+    expect(
+      at(result.collections, 0, "fields", 3, "fields", 0, "admin", "components")
+    ).toBeUndefined();
+    expect(at(result.blocks, 0, "admin", "components")).toBeUndefined();
   });
 });
