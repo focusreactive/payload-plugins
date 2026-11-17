@@ -5,7 +5,11 @@ import type { ReactNode } from "react";
 import { Fragment, useContext } from "react";
 
 import type { LiveRichTextIdentity } from "./liveRichTextOf.js";
-import type { LiveRichTextAction, LiveRichTextRender } from "./unsavedRender/useUnsavedRender.js";
+import type {
+  LiveRichTextAction,
+  LiveRichTextRender,
+  LiveRichTextRenderValue,
+} from "./unsavedRender/useUnsavedRender.js";
 
 import { keyedFieldAddressOf } from "../../shared/veDocument.js";
 import { OverlayScopeContext } from "../overlayContext.js";
@@ -16,15 +20,24 @@ type RenderedByAction = { action: LiveRichTextAction; render?: never };
 
 type RenderedByCall = { action?: never; render: LiveRichTextRender };
 
-export type LiveRichTextProps = LiveRichTextIdentity &
-  (RenderedByAction | RenderedByCall) & { children: ReactNode };
+export type LiveRichTextProps<Value = unknown> = LiveRichTextIdentity &
+  (RenderedByAction | RenderedByCall) & {
+    children: ReactNode;
+    renderValue?: LiveRichTextRenderValue<Value>;
+  };
 
-function LiveRichTextOfField({ action, children, field, render, shape }: LiveRichTextProps) {
+function LiveRichTextOfField({
+  action,
+  children,
+  render,
+  renderValue,
+  ...identity
+}: LiveRichTextProps) {
   const renderUnsaved: LiveRichTextRender = render ?? ((request) => action(request));
   const { dropUnsavedRender, shown } = useUnsavedRender(
-    field,
-    { node: children, shape },
-    renderUnsaved
+    identity,
+    { node: children, shape: identity.shape },
+    { render: renderUnsaved, renderValue }
   );
 
   return (
@@ -34,11 +47,14 @@ function LiveRichTextOfField({ action, children, field, render, shape }: LiveRic
   );
 }
 
-export function LiveRichText(props: LiveRichTextProps): ReactNode {
+export function LiveRichText<Value = unknown>(props: LiveRichTextProps<Value>): ReactNode {
   const locale = useContext(OverlayScopeContext)?.locale;
   return (
     <Fragment key={locale}>
-      <LiveRichTextOfField key={keyedFieldAddressOf(props.field)} {...props} />
+      <LiveRichTextOfField
+        key={keyedFieldAddressOf(props.field)}
+        {...(props as LiveRichTextProps)}
+      />
     </Fragment>
   );
 }

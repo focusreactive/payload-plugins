@@ -1,12 +1,12 @@
-import type { VeEditorState } from "../../shared/protocol.js";
-import type { EditorNode } from "../../shared/richText/editorNodes.js";
-import type { PlainObject } from "../../shared/plainObject.js";
+import type { VeEditorState } from "../protocol.js";
+import type { EditorNode } from "./editorNodes.js";
+import type { PlainObject } from "../plainObject.js";
 
-import { LINK_NODE_TYPES, UPLOAD_NODE_TYPE } from "../../shared/richText/nodeTypes.js";
-import { forEachEditorNode, mapEditorNodes, rootOf } from "../../shared/richText/editorNodes.js";
-import { isPlainObject } from "../../shared/plainObject.js";
+import { LINK_NODE_TYPES, UPLOAD_NODE_TYPE } from "./nodeTypes.js";
+import { forEachEditorNode, mapEditorNodes, rootOf } from "./editorNodes.js";
+import { isPlainObject } from "../plainObject.js";
 
-const TARGET_FIELDS_OF_A_LINK = ["doc", "linkType", "newTab", "url"];
+export const TARGET_FIELDS_OF_A_LINK: readonly string[] = ["doc", "linkType", "newTab", "url"];
 
 type SavedFields = Map<string, PlainObject>;
 

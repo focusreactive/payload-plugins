@@ -9,7 +9,12 @@ import type { LiveRichTextField, LiveRichTextRequest } from "../../src/shared/pr
 
 import { createLiveRichText } from "../../src/client/instantPreview/unsavedRender/liveRichText";
 import { createSavedRichTextShapes } from "../../src/client/instantPreview/unsavedRender/savedShapes";
-import { VE_RICH_TEXT_RENDERED_TYPE, VE_RICH_TEXT_STRUCTURE_TYPE } from "../../src/shared/protocol";
+import { STRUCTURE_SETTLE_MS } from "../../src/client/instantPreview/unsavedRender/unsavedRender";
+import {
+  VE_DOCUMENT_SAVED_TYPE,
+  VE_RICH_TEXT_RENDERED_TYPE,
+  VE_RICH_TEXT_STRUCTURE_TYPE,
+} from "../../src/shared/protocol";
 import { keyedFieldAddressOf } from "../../src/shared/veDocument";
 
 import {
@@ -116,6 +121,7 @@ describe("live rich text", () => {
 
   it("asks for a render of a structure the admin holds and shows it once it is rendered", async () => {
     postFromAdmin(structureOf("unsaved", "Typed"));
+    await vi.advanceTimersByTimeAsync(STRUCTURE_SETTLE_MS);
 
     expect(renders.map(({ request }) => request)).toEqual([
       { field: BODY, locale: "en", state: stateOf("Typed") },
@@ -135,6 +141,7 @@ describe("live rich text", () => {
 
   it("shows the saved render again when the editor returns to the saved structure", async () => {
     postFromAdmin(structureOf("unsaved", "Typed"));
+    await vi.advanceTimersByTimeAsync(STRUCTURE_SETTLE_MS);
     await renders[0]?.finishWith("Unsaved render");
 
     postFromAdmin(structureOf(SAVED.shape, null));
@@ -144,6 +151,7 @@ describe("live rich text", () => {
 
   it("keeps the unsaved render until a saved render of that structure arrives", async () => {
     postFromAdmin(structureOf("unsaved", "Typed"));
+    await vi.advanceTimersByTimeAsync(STRUCTURE_SETTLE_MS);
     await renders[0]?.finishWith("Unsaved render");
 
     screen.save({ node: "Saved again", shape: SAVED.shape });
@@ -165,10 +173,75 @@ describe("live rich text", () => {
     expect(savedShapes.keeps(address, "next-saved")).toBe(false);
   });
 
-  it("stops listening to the admin when it stops", () => {
+  describe("after a save the page does not render again", () => {
+    const showRenderOf = async (shape: string, text: string, node: string) => {
+      postFromAdmin(structureOf(shape, text));
+      await vi.advanceTimersByTimeAsync(STRUCTURE_SETTLE_MS);
+      await renders.at(-1)?.finishWith(node);
+    };
+
+    const saveDocument = () => postFromAdmin({ type: VE_DOCUMENT_SAVED_TYPE });
+
+    it("shows the render of the saved structure when the editor returns to it", async () => {
+      await showRenderOf("unsaved", "Typed", "Unsaved render");
+      saveDocument();
+      await showRenderOf("later", "More", "Later render");
+
+      postFromAdmin(structureOf("unsaved", null));
+
+      expect(screen.shown()).toBe("Unsaved render");
+    });
+
+    it("renders the structure saved before as an unsaved one", async () => {
+      await showRenderOf("unsaved", "Typed", "Unsaved render");
+      saveDocument();
+
+      await showRenderOf(SAVED.shape, "Typed before", "Render of the structure saved before");
+
+      expect(renders.map(({ request }) => request.state)).toEqual([
+        stateOf("Typed"),
+        stateOf("Typed before"),
+      ]);
+      expect(screen.shown()).toBe("Render of the structure saved before");
+    });
+
+    it("takes a render of the saved structure that arrives after the save", async () => {
+      postFromAdmin(structureOf("unsaved", "Typed"));
+      await vi.advanceTimersByTimeAsync(STRUCTURE_SETTLE_MS);
+      saveDocument();
+      await renders[0]?.finishWith("Unsaved render");
+      await showRenderOf("later", "More", "Later render");
+
+      postFromAdmin(structureOf("unsaved", null));
+
+      expect(screen.shown()).toBe("Unsaved render");
+    });
+
+    it("names the saved structure for the overlay", async () => {
+      await showRenderOf("unsaved", "Typed", "Unsaved render");
+
+      saveDocument();
+
+      const address = keyedFieldAddressOf(BODY);
+      expect(savedShapes.keeps(address, "unsaved")).toBe(true);
+      expect(savedShapes.keeps(address, SAVED.shape)).toBe(false);
+    });
+
+    it("shows the saved render of the page once the page renders again", async () => {
+      await showRenderOf("unsaved", "Typed", "Unsaved render");
+      saveDocument();
+
+      screen.save({ node: "Saved render of the page", shape: "unsaved" });
+
+      expect(screen.shown()).toBe("Saved render of the page");
+    });
+  });
+
+  it("stops listening to the admin when it stops", async () => {
     live.stop();
 
     postFromAdmin(structureOf("unsaved", "Typed"));
+    await vi.advanceTimersByTimeAsync(STRUCTURE_SETTLE_MS);
 
     expect(renders).toHaveLength(0);
   });

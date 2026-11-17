@@ -3,8 +3,11 @@ export {
   type MountVisualEditingOptions,
   type VisualEditing,
 } from "./mountVisualEditing.js";
-export { type RenderRichTextHtml, richTextAttributes } from "./liveRichTextElements.js";
-export type { RenderRichTextValue } from "./unsavedFromPayload.js";
+export {
+  type RenderRichTextHtml,
+  type RenderRichTextValue,
+  richTextAttributes,
+} from "./liveRichTextElements.js";
 export { withVisualEditingPath } from "../client/withVisualEditingPath.js";
 export { stripMarkers } from "../stripMarkers.js";
 export {

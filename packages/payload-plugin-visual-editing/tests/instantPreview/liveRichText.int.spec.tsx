@@ -29,7 +29,7 @@ import {
   restorePreviewWindow,
   stubAdminWindow,
 } from "../support/previewWindow";
-import { flushMutations } from "../support/time";
+import { flushMutations, settleStructure } from "../support/time";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -106,8 +106,12 @@ describe("LiveRichText", () => {
   const renderPage = ({ locale = "en", ...props }: PageProps = {}) =>
     renderLive(<VisualEditingOverlay locale={locale}>{liveBody()}</VisualEditingOverlay>, props);
 
-  const postFromAdmin = (data: unknown, options?: AdminMessageOptions) =>
-    act(() => dispatchFromAdmin(data, options));
+  const tellFromAdmin = (data: unknown) => act(() => dispatchFromAdmin(data));
+
+  const postFromAdmin = async (data: unknown, options?: AdminMessageOptions) => {
+    await act(() => dispatchFromAdmin(data, options));
+    await act(settleStructure);
+  };
 
   const liveRichTextAnnouncements = () =>
     postToAdmin.mock.calls
@@ -324,7 +328,7 @@ describe("LiveRichText", () => {
 
       expect(shownText()).toBe(SAVED_RENDER);
 
-      await postFromAdmin(structureOf("second", "Two"));
+      await tellFromAdmin(structureOf("second", "Two"));
       await act(() => vi.advanceTimersByTimeAsync(COMMIT_WAIT_MS));
       await renders[1]?.finishWith(<p>Second render</p>);
 
@@ -334,9 +338,9 @@ describe("LiveRichText", () => {
     it("shows a render of a structure the editor left while its own one never got ready", async () => {
       vi.useFakeTimers();
       await renders[0]?.finishWith(<NeverReady />);
-      await postFromAdmin(structureOf("second", "Two"));
+      await tellFromAdmin(structureOf("second", "Two"));
       await act(() => vi.advanceTimersByTimeAsync(COMMIT_WAIT_MS));
-      await postFromAdmin(structureOf("first", "One again"));
+      await tellFromAdmin(structureOf("first", "One again"));
       await renders[1]?.finishWith(<p>Second render</p>);
 
       expect(shownText()).toBe("Second render");

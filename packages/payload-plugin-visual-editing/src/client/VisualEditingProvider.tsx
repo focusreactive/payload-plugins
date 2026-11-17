@@ -5,15 +5,19 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
 
 import type { BuildAdminEditUrl } from "../shared/buildAdminEditUrl.js";
+import type { PayloadValues } from "./instantPreview/unsavedRender/renderValue.js";
 import type { Session } from "./session.js";
 import type { VisualEditingMode } from "./visualEditingMode.js";
 
+import { listenToPayloadValues } from "./instantPreview/unsavedRender/renderValue.js";
 import { createPageStore, DETACHED_PAGE, sessionOf, toggledMode } from "./session.js";
+import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect.js";
 
 type VisualEditingContextType = Session & {
   setMode: (mode: VisualEditingMode) => void;
@@ -28,6 +32,8 @@ const VisualEditingContext = createContext<VisualEditingContextType>({
   toggleEnabled: noop,
 });
 
+const PayloadValuesContext = createContext<PayloadValues | null>(null);
+
 const readDetachedPage = () => DETACHED_PAGE;
 
 export function VisualEditingProvider({
@@ -37,6 +43,7 @@ export function VisualEditingProvider({
   buildAdminEditUrl,
   adminOrigin,
   adminBasePath,
+  payloadApi,
   children,
 }: {
   available?: boolean;
@@ -45,6 +52,7 @@ export function VisualEditingProvider({
   buildAdminEditUrl?: BuildAdminEditUrl;
   adminOrigin?: string;
   adminBasePath?: string;
+  payloadApi?: string;
   children: React.ReactNode;
 }) {
   const [pageStore] = useState(createPageStore);
@@ -75,7 +83,33 @@ export function VisualEditingProvider({
     pageStore,
   ]);
 
-  return <VisualEditingContext.Provider value={value}>{children}</VisualEditingContext.Provider>;
+  const [payloadValues, setPayloadValues] = useState<PayloadValues | null>(null);
+  const latestAdminOrigin = useRef(value.adminOrigin);
+  const isInstantPreviewOn = value.available && value.instantPreview;
+
+  useIsomorphicLayoutEffect(() => {
+    latestAdminOrigin.current = value.adminOrigin;
+  });
+
+  useIsomorphicLayoutEffect(() => {
+    if (!isInstantPreviewOn || !payloadApi) return;
+    const listening = listenToPayloadValues(() => latestAdminOrigin.current, payloadApi);
+    setPayloadValues(listening);
+    return () => {
+      listening.stop();
+      setPayloadValues(null);
+    };
+  }, [isInstantPreviewOn, payloadApi]);
+
+  return (
+    <VisualEditingContext.Provider value={value}>
+      <PayloadValuesContext.Provider value={payloadValues}>
+        {children}
+      </PayloadValuesContext.Provider>
+    </VisualEditingContext.Provider>
+  );
 }
 
 export const useVisualEditing = () => useContext(VisualEditingContext);
+
+export const usePayloadValues = () => useContext(PayloadValuesContext);

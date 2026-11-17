@@ -288,7 +288,7 @@ Rule 3 is the boundary you control. The list in rule 2 comes from the preview pa
 
 For a rich text field that passes these rules the admin sends the saved and the current text of single text nodes the page announced. It sends the editor state of the field only to a page that renders it in [`LiveRichText`](#unsaved-rich-text-structure), and only when the structure changes. While the editor holds another structure than the saved one it sends, in place of the current text, the last text those nodes had under the saved structure while this preview page was listening, or else their saved text.
 
-The editor state of a rich text field holds its text, the ids of uploads, relationships and linked documents, and the fields of link and upload nodes. The admin posts it when the structure of the field changes, and only for a field the page announced as rendered in `LiveRichText`. That announcement also comes from the page, so the boundary is again rule 3 for the rich text field itself. Blocks in the state are posted with their id and type and without the values of their fields. The page hands the state to your Server Action, which answers only to a signed-in user who may read the document.
+The editor state of a rich text field holds its text, the ids of uploads, relationships and linked documents, and the fields of link and upload nodes. The admin posts it when the structure of the field changes, and only for a field the page announced as rendered in `LiveRichText`. That announcement also comes from the page, so the boundary is again rule 3 for the rich text field itself. Blocks in the state are posted with their id and type and without the values of their fields. The page hands the state to your Server Action, which answers only to a signed-in user who may read the document. A page that renders rich text in the browser, with `renderValue` on `LiveRichText` or `renderRichTextValue` without React, also renders the posted state itself, with data Payload already gave that page, see [Rendering on the page with `renderValue`](#rendering-on-the-page-with-rendervalue) and [Rendered on the page first](#rendered-on-the-page-first).
 
 A page states the locale of its overlay when it reports its fields. The admin sends nothing to a page that states another locale than the one the form is in. A page whose overlay has no `locale` states none and is answered in every locale.
 
@@ -368,19 +368,19 @@ export const RichText = ({ content }: { content: SerializedEditorState }) => {
 }
 ```
 
-- `liveRichTextOf(content)` returns the identity of the field and the structure of the saved value, about 150 bytes, or `null` for a value that is not a marked rich text: every published read, a read with `locale: 'all'`, a row without an `id`. A published page therefore gets no client component and no extra payload, and the value itself is never passed to the client.
+- `liveRichTextOf(content)` returns the identity of the field, the structure of the saved value, its `_meta` and whether it holds blocks, uploads, relationships or links to documents, about 300 bytes, or `null` for a value that is not a marked rich text: every published read, a read with `locale: 'all'`, a row without an `id`. A published page therefore gets no client component and no extra payload, and the value itself is never passed to the client.
 - The action must render through the component the page uses, with the same wrapper element. React then swaps the two renders in place, and the text typed after the structural edit keeps updating through the markers.
 - Props the renderer needs (a variant, a class name) can be bound: `action={renderUnsavedRichText.bind(null, { variant })}`. They arrive as the first argument of the action.
 - `LiveRichText` renders no element of its own. Outside draft mode or with `instantPreview` off it only renders its children.
 - Put it inside `VisualEditing.Overlay`. The overlay passes its `locale` on, and `LiveRichText` ignores the admin while it edits another locale.
 
-`LiveRichText` makes one call at a time and only the latest state waits. When a call fails, takes longer than ten seconds or returns `null`, and when the returned elements throw while rendering, the preview shows the saved render, as it does without `LiveRichText`, and asks again a few times per structure, for about half a minute. A call that hangs is never joined by a second one.
+`LiveRichText` makes one call at a time and only the latest state waits. It starts a call 200 ms after the first new structure, so the structures of one edit (Enter, then the first character of the new paragraph) make one call. When a call fails, takes longer than ten seconds or returns `null`, and when the returned elements throw while rendering, the preview shows the saved render, as it does without `LiveRichText`, and asks again a few times per structure, for about half a minute. A call that hangs is never joined by a second one.
 
 **A Server Action shares a queue with `router.refresh()`.** While a render call is out, the refresh that brings the saved render waits for it. `readUnsavedRichText` answers `null` after `timeLimitMs` (three seconds by default), which bounds that wait per call within one server process. A slow server delays the saved render by up to one call; it never shows a wrong frame.
 
 **Another transport.** Pass `render` in place of `action` to make the call yourself: `render(request, signal)` returns a promise of React nodes and gets an `AbortSignal` that `LiveRichText` aborts when it stops waiting. A route handler can answer a `fetch` with that signal with `readUnsavedRichText({ payload, request })` as JSON; that call stays off the router's queue and can be cancelled, but the page then renders the marked editor state in the browser, so your renderer and everything it renders for uploads, links and blocks must work as Client Components.
 
-`readUnsavedRichText` is the only safe way to turn the posted state into something to render. Hand it the argument of the action untouched. It guarantees:
+`readUnsavedRichText` is the only safe way to turn the posted state into something to render on the server. Hand it the argument of the action untouched. It guarantees:
 
 - **Nothing from the request is trusted.** It accepts a document of the config, a key that names a rich text field the plugin marks, a locale of the project and a Lexical editor state of at most `maxStateLength` characters of JSON (`DEFAULT_MAX_UNSAVED_STATE_LENGTH`, one million). The fields of blocks, uploads and links come from the saved document by node id, and related documents are reduced to their ids.
 - **It reads as the signed-in user.** The user comes from the request headers through `payload.auth`. The argument of an action is checked before anyone is signed in; the body of a `Request` is read only for a signed-in user, with a size limit. The document is read as a draft, in the locale of the request, with `overrideAccess: false`, and Payload populates uploads, relationships and links with that user's access. Nothing is written.
@@ -396,10 +396,75 @@ Two cases never reach it: Next.js answers 500 itself for an action body over its
 | `depth` | The `depth` your page reads the document with, so populated documents have the same shape: a number, or a function of the validated field (`{ collectionSlug, kind, docId?, key }`). Payload's default when omitted. |
 | `maxStateLength` | Longest accepted editor state, in characters of JSON. |
 | `timeLimitMs` | How long reading the body of a `Request`, signing in and reading may take before the answer is `null`. `DEFAULT_UNSAVED_READ_TIME_LIMIT_MS`, 3000. |
+| `readWholeDocument` | `true` reads every field of the document, as 1.2.0 did. By default only the top-level field that holds the rich text is read, see [Upgrading from 1.2.0](#upgrading-from-120). |
 
-During that read your own hooks and access functions see the unsaved state as if it were stored: collection and field `afterRead` hooks, anything that caches by document id inside the read. `isUnsavedRichTextRead(req)`, exported from the main entry, tells such code that the read is one of these.
+During that read your own hooks and access functions see the unsaved state as if it were stored: collection and field `afterRead` hooks, anything that caches by document id inside the read. `isUnsavedRichTextRead(req)`, exported from the main entry, tells such code that the read is one of these. The read selects only the top-level field that holds the rich text (`layout` for a rich text in a block of `layout`), so a hook that reads other fields of the document sees them missing; pass `readWholeDocument: true` for such a hook.
 
-What this costs: one Server Action call per structural edit, never one per keystroke. Each call posts the editor state of that field and reads the document once. The draft mode check stays in your action because it is specific to Next.js; `readUnsavedRichText` does not depend on Next.
+What this costs: one Server Action call per structural edit, never one per keystroke. Each call posts the editor state of that field and reads the top-level field that holds it once. The draft mode check stays in your action because it is specific to Next.js; `readUnsavedRichText` does not depend on Next.
+
+#### Rendering on the page with `renderValue`
+
+With a Server Action alone a structural edit shows one round trip after the admin posts it. When your rich text renderer can run as a Client Component, pass it as `renderValue` and the page shows the structure as it arrives: it builds the value Payload would answer from the posted editor state and data Payload already gave the page, with the same markers and `_meta`, and renders it with your function. A function cannot cross from a Server Component to a Client Component, so `renderValue` is set in a client module of your site:
+
+```tsx
+// components/RichText/LiveBody.tsx
+'use client'
+
+import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
+import type { ReactNode } from 'react'
+
+import {
+  LiveRichText,
+  type LiveRichTextIdentity,
+} from '@focus-reactive/payload-plugin-visual-editing/client'
+
+import { RichTextBody } from './Body'
+import { renderUnsavedRichText } from './renderUnsavedRichText'
+
+export const LiveBody = (props: LiveRichTextIdentity & { children: ReactNode }) => (
+  <LiveRichText
+    {...props}
+    action={renderUnsavedRichText}
+    renderValue={(value: SerializedEditorState) => <RichTextBody content={value} />}
+  />
+)
+```
+
+```tsx
+// components/RichText/index.tsx
+import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
+
+import { liveRichTextOf } from '@focus-reactive/payload-plugin-visual-editing/client'
+
+import { RichTextBody } from './Body'
+import { LiveBody } from './LiveBody'
+
+export const RichText = ({ content }: { content: SerializedEditorState }) => {
+  const body = <RichTextBody content={content} />
+  const liveRichText = liveRichTextOf(content)
+  return liveRichText ? <LiveBody {...liveRichText}>{body}</LiveBody> : body
+}
+```
+
+Where the check with the server goes depends on `payloadApi` of `VisualEditing.Provider`:
+
+| Setup | On the page | Check with the server |
+|---|---|---|
+| `action` | nothing | 200 ms after the first new structure, as above |
+| `action`, `renderValue` | at once | the action, 350 ms after the last structure; its result replaces the render on the page |
+| `action`, `renderValue`, `payloadApi` | at once | the `unsaved-rich-text` endpoint, 350 ms after the last structure, rendered with `renderValue` |
+
+```tsx
+<VisualEditing.Provider available={isEnabled} instantPreview payloadApi="https://cms.example.com/api">
+```
+
+- **With `payloadApi`** the page asks the endpoint with the preview grant the admin posts, as a page without React does, see [How the page is allowed to read the unsaved value](#how-the-page-is-allowed-to-read-the-unsaved-value). The answer goes through the same `renderValue`, so React updates the elements in place and nothing changes on screen when Payload agrees. The call is a `fetch`: it can be cancelled and does not hold `router.refresh()` back. While the page holds no grant, the action is called.
+- **With the action alone** its result replaces the render on the page after the pause. It renders on the server, so React mounts its elements anew: the page looks the same, but an `iframe` in a block loads again. An action that returns `null` leaves the render on the page.
+- **A field with blocks, uploads, relationships or links to documents** needs its saved value for the fields of saved blocks and the documents Payload populated. With `payloadApi` the page asks the endpoint for the saved value of that field once the editor types in it or changes its structure, and adds every answer Payload gives; when the saved value arrives, the structure the editor holds renders on the page. Without `payloadApi`, such a field waits for the action. A save forgets every saved value; the page asks again when a structure with blocks, uploads, relationships or links to documents needs it. A structure without them never needs one. A newly inserted upload or relationship appears with the answer of the server, a new link to a document links to its id until then, and a new block shows only its id and type.
+- **The same renderer on the client and on the server.** `renderValue` must render the same markup for the same value as the component your page and your action render with, best the very same component. Markup that differs swaps once the server answers.
+- **`renderValue` runs in the browser** with a value that did not pass through your Payload hooks. When it throws, or the elements it returns throw while rendering, that structure shows the saved render and waits for the server.
+- An identity printed by `liveRichTextOf` of 1.2.0, without `meta` and `hasReferences`, waits for the server.
+- **After a save that renders the page again**, the children you pass are the saved render. Until they change, for example in a popup preview that does not refresh, `LiveRichText` takes the render it showed for the structure the editor saved as the saved render.
 
 ### Markers in rich text
 
@@ -436,7 +501,7 @@ A render can transform a value and still output the stored text for some inputs,
   - The reference setup needs the App Router and a Server Action. The Pages Router and frontends that are not Next.js can use `render` with their own transport, or keep the behaviour above.
   - While a Server Action call is out, `router.refresh()` waits for it, see [Unsaved rich text structure](#unsaved-rich-text-structure).
   - The call is made with the cookies of the preview page. A preview on another origin than the admin has no Payload session there; the answer is `null` and the structure appears with the save.
-  - A structural edit is on screen one round trip after the admin sees it. Until then, and after a failed call, the preview shows the saved render. Text typed meanwhile is painted into the new render when it arrives.
+  - Without `renderValue`, a structural edit is on screen one round trip after the admin sees it. Until then, and after a failed call, the preview shows the saved render. Text typed meanwhile is painted into the new render when it arrives.
   - The fields of a block inside rich text are never posted: the admin has no schema of the blocks of an editor, so it cannot tell which of their fields may leave the form. A block that is already saved is rendered with its saved fields, a new block with none, and an edit of a block's fields shows with the save.
   - The unsaved state is rendered as the editor holds it. Hooks that change a value on save (`beforeValidate`, `beforeChange`) have not run yet; their effect shows with the save. Hooks that run on read see the unsaved state, see `isUnsavedRichTextRead` above.
   - An editor state longer than `maxStateLength` is not rendered before the save.
@@ -490,6 +555,7 @@ mountVisualEditing({
 | `toggle` | `true` | Shows the Off / Hover / Always toggle. |
 | `onSave` | none | Called after the admin saves the document, autosave included. |
 | `payloadApi`, `renderRichTextValue`, `renderRichText` | none | Unsaved rich text structure, see below. |
+| `optimistic` | `true` | With `payloadApi` and `renderRichTextValue`, render a new structure on the page before Payload answers, see [Rendered on the page first](#rendered-on-the-page-first). `false` waits for Payload. |
 | `adminBasePath`, `buildAdminEditUrl` | as for `VisualEditing.Provider` | |
 
 It returns `{ destroy }`.
@@ -510,7 +576,7 @@ A marked text carries invisible characters. Where a template turns text into an 
 
 ### Unsaved rich text on a page without React
 
-Text typed inside existing text of a rich text field updates through the markers, as on a React page. A new paragraph, a list or a bold word needs your renderer. `./dom` replaces the content of the element that carries `data-ve-live-rich-text` with the HTML of the unsaved value, and puts the saved HTML back when the editor returns to the saved structure. Choose where that HTML is made:
+Text typed inside existing text of a rich text field updates through the markers, as on a React page. A new paragraph, a list or a bold word needs your renderer. `./dom` replaces the content of the element that carries `data-ve-live-rich-text` with the HTML of the unsaved value, and puts the saved HTML back when the editor returns to the saved structure. After a save without a reload, the HTML it shows for the structure the editor saved becomes the saved HTML, so the page shows what was saved when the editor returns to it and renders the structure it loaded with as unsaved. Choose where that HTML is made:
 
 | | Where the HTML is made | Plugin | `mountVisualEditing` |
 |---|---|---|---|
@@ -535,12 +601,24 @@ mountVisualEditing({
 
 `renderRichTextValue(value, signal)` gets the same value on the page and returns HTML, or a promise of it. `renderRichText(request, signal)` gets the request itself; hand it to `readUnsavedRichText` on your own server.
 
+#### Rendered on the page first
+
+With `payloadApi` and `renderRichTextValue`, the page does not wait for Payload. When the admin posts a new structure, the page builds the value Payload would answer from the posted editor state and data Payload already gave this page, with the same markers and `_meta`, renders it with `renderRichTextValue` and shows it at once. Payload is asked once the editor pauses, 350 ms after the last structure, and its answer replaces the HTML only when it renders differently. Enter followed by the first letter of a new paragraph renders twice on the page and asks Payload once.
+
+- **A field of paragraphs, headings, lists and links to URLs** needs nothing else: no request until the pause.
+- **A field with blocks, uploads, relationships or links to documents** needs the saved value of the field, the base, for the fields of saved blocks, uploads and links and for the documents Payload populated. The page asks the `unsaved-rich-text` endpoint for it, without a state, once the editor types in that field or changes its structure, and adds every answer Payload gives for a structure to it. Until the base arrives, a structure of that field goes through Payload as without this option; when it arrives, the structure renders on the page. A base that did not arrive is asked for again. A save forgets every base; the page asks again when a structure with blocks, uploads, relationships or links to documents needs it. A structure without them renders on the page without a base, also after a save.
+- **What only Payload knows appears with its answer.** A newly inserted upload or relationship is left out until then, a new link to a document links to its id, and a new block shows only its id and type, as it does in Payload's answer before the save.
+- **`renderRichTextValue` runs in the browser** with a value that did not pass through your Payload hooks. It must render the same markup for the same value as the build of the site does, or the page swaps the HTML once Payload answers. When it throws for a structure, that structure goes through Payload. It may return a promise; the HTML is shown when it resolves.
+- **Pass `optimistic: false`** to wait for Payload for every structure, as 1.2.0 did. A page whose `data-ve-live-rich-text` was printed by `richTextAttributes` of 1.2.0 has no `_meta` in it and waits for Payload too; build it again.
+
+`renderHtml` in Payload and your own `renderRichText` cannot render on the page. They start a call 200 ms after the first new structure, as `LiveRichText` does, and gain from the read of one field described in [Upgrading from 1.2.0](#upgrading-from-120).
+
 #### How the page is allowed to read the unsaved value
 
 The admin and the page often run on different origins, so the page cannot send the admin's session cookie. With `instantPreview` on, the plugin adds two endpoints:
 
 - `POST /api/visual-editing/preview-grant`. The admin asks it, with the editor's session, for a grant of the document open in the form. The grant names the user and the document, expires after ten minutes and is signed with the Payload secret. The admin posts it to the preview window, only to the origin of the Live Preview URL, when the page reports its fields and every four minutes while the form is open.
-- `POST /api/visual-editing/unsaved-rich-text`. The page posts the grant and the request as `text/plain`, which needs no CORS preflight. The endpoint reads the posted state through `readUnsavedRichText` with the access of the user in the grant and only for the document in the grant, and answers the origin of the request. It waits up to eight seconds for the read, longer than the three seconds `readUnsavedRichText` allows by default, because no router queue waits behind a `fetch`. It writes nothing.
+- `POST /api/visual-editing/unsaved-rich-text`. The page posts the grant and the request as `text/plain`, which needs no CORS preflight. The endpoint reads the posted state through `readUnsavedRichText` with the access of the user in the grant and only for the document in the grant, and answers the origin of the request. A request without `state` gets the saved value of the field, read the same way. It waits up to eight seconds for the read, longer than the three seconds `readUnsavedRichText` allows by default, because no router queue waits behind a `fetch`. It writes nothing.
 
 A grant is a bearer token: a script on the preview page can read it, as it can read every value the admin posts there. It only lets the holder read unsaved rich text of one document with the access of the user who opened it, for ten minutes.
 
@@ -578,6 +656,7 @@ A `beforeChange` hook removes intact markers from every write. It cannot recogni
 | `enrichment` | `'auto' \| 'explicit'` | `'auto'` | See [Enrichment modes](#enrichment-modes). |
 | `instantPreview` | `boolean` | `false` | See [Instant preview](#instant-preview). |
 | `renderHtml` | `({ value, field, locale, req }) => string \| Promise<string>` | none | Renders unsaved rich text to HTML for a page without React, see [Pages without React](#unsaved-rich-text-on-a-page-without-react). |
+| `readWholeDocument` | `boolean` | `false` | The `unsaved-rich-text` endpoint reads every field of the document instead of the top-level field that holds the rich text. For `afterRead` hooks that need other fields, see [Upgrading from 1.2.0](#upgrading-from-120). |
 
 `LiveRichText` props:
 
@@ -586,6 +665,7 @@ A `beforeChange` hook removes intact markers from every write. It cannot recogni
 | `field`, `shape` | From `liveRichTextOf(value)`: spread its result. |
 | `action` | A Server Action that renders the unsaved state. It is called with the request only. |
 | `render` | In place of `action`: `(request, signal) => Promise<ReactNode>`, a call you make yourself. |
+| `renderValue` | `(value) => ReactNode`, your rich text renderer as a Client Component. Renders a structure on the page as it arrives, see [Rendering on the page with `renderValue`](#rendering-on-the-page-with-rendervalue). |
 | `children` | The saved render. |
 
 `VisualEditing.Provider` props:
@@ -598,6 +678,7 @@ A `beforeChange` hook removes intact markers from every write. It cannot recogni
 | `adminOrigin` | the page's origin | Origin of the admin window. |
 | `instantPreview` | `false` | See [Instant preview](#instant-preview). |
 | `buildAdminEditUrl` | built in | Builds the link used when the page was not opened from the admin. |
+| `payloadApi` | none | URL of the Payload API, such as `https://cms.example.com/api`. With `renderValue` on `LiveRichText`, unsaved rich text is checked through the `unsaved-rich-text` endpoint instead of the action. |
 
 ## Reads with every locale
 
@@ -615,6 +696,10 @@ Regenerate the import map. The plugin adds `PreviewPageBridge` to every collecti
 - **With `instantPreview` on, the plugin adds two endpoints** under `/api/visual-editing/`, see [How the page is allowed to read the unsaved value](#how-the-page-is-allowed-to-read-the-unsaved-value).
 - **A draft page without the overlay loses its markers.** With the toggle on **Off** and instant preview off, or with `framedOnly` in a normal tab, the page used to keep every marker, and a script that splits text into characters rendered them as empty boxes. `VisualEditing.Overlay` and `mountVisualEditing` now remove them from the text, every attribute, the title and `<head>`, and put them back when they unmount. A script that reads marked text from the page after that sees clean text.
 - **The meta tags of `<head>` lose their markers while the overlay runs**, like the title already did.
+- **A structural rich text edit makes one render call, not one per structure.** `LiveRichText` and the rich text of `mountVisualEditing` wait 200 ms after a new structure before they start a call. Enter followed by typing used to start two calls in a row and showed the new text only after both.
+- **A page without React renders a structural edit itself.** With `payloadApi` and `renderRichTextValue`, `mountVisualEditing` shows the new structure as the admin posts it and asks Payload 350 ms after the last one, see [Rendered on the page first](#rendered-on-the-page-first). Your `renderRichTextValue` now also runs on every structure, in the browser. Print `richTextAttributes` again: its attribute now carries the `_meta` of the value and whether it holds references. Pass `optimistic: false` to keep the old behaviour.
+- **An unsaved rich text read reads one field, not the whole document.** `readUnsavedRichText` and the `unsaved-rich-text` endpoint pass `select` with the top-level field that holds the rich text, so Payload no longer reads and populates every other field of the document for each structural edit. Collection and field `afterRead` hooks of your project see only that field during the read. A hook that needs another field (a slug, a sibling value) should pass `readWholeDocument: true` to `readUnsavedRichText` and set the plugin option `readWholeDocument: true` for the endpoint.
+- **`LiveRichText` can render a structural edit on the page.** Pass your renderer as `renderValue` from a client module, and `payloadApi` to `VisualEditing.Provider` to check it through the endpoint instead of the action, see [Rendering on the page with `renderValue`](#rendering-on-the-page-with-rendervalue). Without `renderValue` nothing changes. `liveRichTextOf` now also returns the `_meta` of the value and whether it holds references; spread its whole result into `LiveRichText`.
 - **All peers are optional, and `react` and `react-dom` accept `^18.2.0` again.** The Payload app still needs `payload`, `@payloadcms/ui` and React 19. A site that installs the package only for `./dom` gets none of them, and a site that keeps React 18 for something else can install it.
 
 ## Upgrading from 1.1.1

@@ -192,4 +192,46 @@ describe("a page without React that reads Payload over HTTP", () => {
     expect(paragraphsOn(body)).toEqual([...savedParagraphs, savedParagraphs[0]]);
     await waitFor(0);
   });
+
+  it("shows a paragraph added in the admin as it arrives, rendered by the site, and asks Payload once after a pause", async () => {
+    const { body, main } = await renderPage(pages.article);
+    const saved = (await readStored(payload, pages.article)).body as EditorState;
+    const asked = vi.fn((url: string, init: RequestInit) =>
+      askEndpoint(url.slice(PAYLOAD_API.length), init)
+    );
+    vi.stubGlobal("fetch", asked);
+    mounted = mountVisualEditing({
+      adminOrigin: ADMIN_ORIGIN,
+      instantPreview: true,
+      locale: "en",
+      payloadApi: PAYLOAD_API,
+      renderRichTextValue: siteHtmlOf,
+      root: main,
+    });
+    const savedParagraphs = paragraphsOn(body);
+    const edited = structuredClone(saved);
+    edited.root.children.push(structuredClone(edited.root.children[0] as EditorNode));
+    const field = { ...page(pages.article), key: "body" };
+    await grantFromAdmin(pages.article);
+
+    postFromAdmin({
+      ...field,
+      locale: "en",
+      shape: shapeOf(edited, keyedFieldAddressOf(field)),
+      state: edited,
+      type: VE_RICH_TEXT_STRUCTURE_TYPE,
+    });
+
+    expect(paragraphsOn(body)).toEqual([...savedParagraphs, savedParagraphs[0]]);
+    expect(asked).not.toHaveBeenCalled();
+    await waitFor(0);
+    const writes = new MutationObserver(() => undefined);
+    writes.observe(body, { characterData: true, childList: true, subtree: true });
+
+    await vi.waitFor(() => expect(asked).toHaveBeenCalledTimes(1), { timeout: 5000 });
+    await waitFor(100);
+
+    expect(writes.takeRecords()).toEqual([]);
+    writes.disconnect();
+  });
 });

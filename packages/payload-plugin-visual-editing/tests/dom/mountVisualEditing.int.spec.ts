@@ -21,7 +21,7 @@ import {
   restorePreviewWindow,
   stubAdminWindow,
 } from "../support/previewWindow";
-import { flushMutations } from "../support/time";
+import { flushMutations, settleStructure } from "../support/time";
 
 const PAGE = { collectionSlug: "page", docId: "1", kind: "collection" } as const;
 const BODY = { ...PAGE, key: "body" };
@@ -215,7 +215,7 @@ describe("mountVisualEditing", () => {
     });
 
     postFromAdmin(structureOf("unsaved", "Typed"));
-    await flushMutations();
+    await settleStructure();
 
     expect(requests).toEqual([{ field: BODY, locale: "en", state: stateOf("Typed") }]);
     expect(body.innerHTML).toBe("<p>Unsaved <strong>body</strong></p>");
@@ -252,7 +252,7 @@ describe("mountVisualEditing", () => {
 
       postFromAdmin(grantMessage());
       postFromAdmin(structureOf("unsaved", "Typed"));
-      await flushMutations();
+      await settleStructure();
 
       expect(askPayload.mock.calls[0]![0]).toBe(
         "https://cms.example/api/visual-editing/unsaved-rich-text"
@@ -273,7 +273,7 @@ describe("mountVisualEditing", () => {
 
       postFromAdmin(grantMessage());
       postFromAdmin(structureOf("unsaved", "Typed"));
-      await flushMutations();
+      await settleStructure();
 
       expect(sentBody().format).toBe("json");
       expect(renderRichTextValue).toHaveBeenCalledWith(
@@ -301,7 +301,7 @@ describe("mountVisualEditing", () => {
       postFromAdmin(grantMessage(Date.now() - 1));
       postFromAdmin(grantMessage(), { origin: "https://elsewhere.example" });
       postFromAdmin(structureOf("unsaved", "Typed"));
-      await flushMutations();
+      await settleStructure();
 
       expect(askPayload).not.toHaveBeenCalled();
       expect(body.innerHTML).toBe("<p>Saved body</p>");
@@ -312,7 +312,7 @@ describe("mountVisualEditing", () => {
     mount({ instantPreview: true });
 
     postFromAdmin(structureOf("unsaved", "Typed"));
-    await flushMutations();
+    await settleStructure();
 
     expect(body.innerHTML).toBe("<p>Saved body</p>");
   });
@@ -327,6 +327,20 @@ describe("mountVisualEditing", () => {
 
     postFromAdmin({ type: VE_DOCUMENT_SAVED_TYPE });
     expect(onSave).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls onSave without arguments for a save of any document the admin names", () => {
+    const onSave = vi.fn();
+    mount({ onSave });
+
+    postFromAdmin({
+      collectionSlug: "media",
+      docId: "9",
+      kind: "collection",
+      type: VE_DOCUMENT_SAVED_TYPE,
+    });
+
+    expect(onSave.mock.calls).toEqual([[]]);
   });
 
   it("removes its toggle and stops listening when it is destroyed", () => {

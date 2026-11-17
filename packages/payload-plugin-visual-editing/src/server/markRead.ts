@@ -20,7 +20,7 @@ import { isRichTextNodeKey } from "../shared/richText/nodeKey.js";
 import { fieldReferenceOf, META_KEY, veIdentityOf } from "../shared/shared.js";
 import { withMarker } from "../shared/stegaText.js";
 import { fieldAddressOf, idOf } from "../shared/veDocument.js";
-import { markTextLeaves } from "./richText/markTextLeaves.js";
+import { markTextLeaves } from "../shared/richText/markTextLeaves.js";
 
 export type ReadOfDocument = {
   identity: VeDocument;

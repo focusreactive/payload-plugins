@@ -89,7 +89,7 @@ export type VeAnnounceRequestMessage = {
 
 export const VE_DOCUMENT_SAVED_TYPE = "ve:document-saved";
 
-export type VeDocumentSavedMessage = {
+export type VeDocumentSavedMessage = Partial<VeLiveDocument> & {
   type: typeof VE_DOCUMENT_SAVED_TYPE;
 };
 

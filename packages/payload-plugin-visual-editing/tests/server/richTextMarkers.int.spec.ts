@@ -7,7 +7,7 @@ import type { SchemaField } from "../../src/shared/editableSchema/editableSchema
 import { defaultExcludeValues } from "../../src/excludeValues";
 import { buildEditableSchema } from "../../src/shared/editableSchema/editableSchema";
 import { markRead } from "../../src/server/markRead";
-import { markTextLeaves } from "../../src/server/richText/markTextLeaves";
+import { markTextLeaves } from "../../src/shared/richText/markTextLeaves";
 import { shapeOf } from "../../src/shared/richText/shapeOf";
 import { textLeavesOf } from "../../src/shared/richText/textLeaves";
 import { META_KEY } from "../../src/shared/shared";

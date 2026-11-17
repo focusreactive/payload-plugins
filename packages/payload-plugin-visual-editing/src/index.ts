@@ -68,6 +68,7 @@ export type VisualEditingPluginConfig = {
   enrichment?: Enrichment;
   instantPreview?: boolean;
   renderHtml?: RenderHtml;
+  readWholeDocument?: boolean;
 };
 
 export type { RenderHtml } from "./server/endpoints.js";
@@ -107,7 +108,10 @@ export const visualEditingPlugin =
       endpoints: instantPreview
         ? [
             ...(config.endpoints ?? []),
-            ...visualEditingEndpoints({ renderHtml: pluginConfig.renderHtml }),
+            ...visualEditingEndpoints({
+              readWholeDocument: pluginConfig.readWholeDocument,
+              renderHtml: pluginConfig.renderHtml,
+            }),
           ]
         : config.endpoints,
       custom: instantPreview ? withSchemaCache(config.custom, schemaCache) : config.custom,

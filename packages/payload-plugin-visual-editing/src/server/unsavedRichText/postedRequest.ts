@@ -29,7 +29,7 @@ export type Unsaved = {
   field: LiveRichTextField;
   fieldPath: string;
   locale: string | undefined;
-  state: VeEditorState;
+  state: VeEditorState | null;
 };
 
 export type User = Awaited<ReturnType<Payload["auth"]>>["user"];
@@ -84,6 +84,17 @@ const fieldPathOf = (payload: Payload, { collectionSlug, key }: LiveRichTextFiel
   return schema && schemaPathOfRichText(schema, key);
 };
 
+const SAVED_VALUE = { state: null };
+
+const postedStateOf = (
+  posted: unknown,
+  maxStateLength: number
+): { state: VeEditorState | null } | null => {
+  if (posted === undefined) return SAVED_VALUE;
+  const state = readPostedEditorState(posted, maxStateLength);
+  return state && { state };
+};
+
 export const readUnsaved = (
   payload: Payload,
   body: unknown,
@@ -93,9 +104,10 @@ export const readUnsaved = (
   const field = readField(body.field);
   const document = field && documentOf(payload, field);
   const fieldPath = document && fieldPathOf(payload, field);
-  const state = fieldPath && readPostedEditorState(body.state, maxStateLength);
-  if (!field || !document || !fieldPath || !state || !isLocaleOf(payload, body.locale)) return null;
-  return { document, field, fieldPath, locale: body.locale, state };
+  const posted = fieldPath && postedStateOf(body.state, maxStateLength);
+  if (!field || !document || !fieldPath || !posted || !isLocaleOf(payload, body.locale))
+    return null;
+  return { document, field, fieldPath, locale: body.locale, state: posted.state };
 };
 
 const userOf = async (payload: Payload, headers: Headers): Promise<User> =>

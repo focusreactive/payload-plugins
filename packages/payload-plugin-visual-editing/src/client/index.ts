@@ -11,6 +11,7 @@ export { LiveRichText, type LiveRichTextProps } from "./instantPreview/LiveRichT
 export type {
   LiveRichTextAction,
   LiveRichTextRender,
+  LiveRichTextRenderValue,
 } from "./instantPreview/unsavedRender/useUnsavedRender.js";
 export { type LiveRichTextIdentity, liveRichTextOf } from "./instantPreview/liveRichTextOf.js";
 export type { LiveRichTextField, LiveRichTextRequest } from "../shared/protocol.js";

@@ -8,6 +8,9 @@ export type RichTextNodeMarker = { node: string; shape: string };
 
 export const isRichTextNodeKey = (key: string): boolean => key.includes(RICH_TEXT_NODE_SEPARATOR);
 
+export const fieldKeyOfRichTextNode = (key: string): string | null =>
+  isRichTextNodeKey(key) ? (key.split(RICH_TEXT_NODE_SEPARATOR)[0] ?? null) : null;
+
 export const richTextNodeKeyOf = ({ address, fieldKey, shape }: RichTextNodeAddress): string =>
   [fieldKey, shape, address].join(RICH_TEXT_NODE_SEPARATOR);
 

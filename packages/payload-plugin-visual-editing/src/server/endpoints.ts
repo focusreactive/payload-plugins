@@ -19,6 +19,7 @@ export type RenderHtml = (args: {
 
 export type UnsavedRichTextEndpointOptions = {
   depth?: UnsavedRichTextDepth;
+  readWholeDocument?: boolean;
   renderHtml?: RenderHtml;
 };
 
@@ -96,6 +97,7 @@ const grantedUserOf = async (req: PayloadRequest, token: unknown) => {
 
 const unsavedRichTextEndpoint = ({
   depth,
+  readWholeDocument,
   renderHtml,
 }: UnsavedRichTextEndpointOptions): Endpoint => ({
   handler: async (req) => {
@@ -109,6 +111,7 @@ const unsavedRichTextEndpoint = ({
       allows: ({ field }) => documentAddressOf(field) === granted.document,
       depth,
       payload: req.payload,
+      readWholeDocument,
       request: body.request,
       timeLimitMs: ENDPOINT_READ_TIME_LIMIT_MS,
       user: granted.user as Parameters<typeof readUnsavedRichTextFor>[0]["user"],

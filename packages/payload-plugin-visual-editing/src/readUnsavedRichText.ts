@@ -7,7 +7,10 @@ import type {
   SignedIn,
   Unsaved,
 } from "./server/unsavedRichText/postedRequest.js";
-import type { UnsavedRichTextDepth } from "./server/unsavedRichText/readAsUser.js";
+import type {
+  ReadAsUserOptions,
+  UnsavedRichTextDepth,
+} from "./server/unsavedRichText/readAsUser.js";
 
 import { createLatestReads } from "./server/unsavedRichText/latestReads.js";
 import {
@@ -30,6 +33,7 @@ export type ReadUnsavedRichTextArgs = PostedRequest & {
   depth?: UnsavedRichTextDepth;
   maxStateLength?: number;
   timeLimitMs?: number;
+  readWholeDocument?: boolean;
 };
 
 const latestReadsByPayload = new WeakMap<Payload, LatestReads>();
@@ -51,10 +55,10 @@ const deadlineAfter = (timeLimitMs: number, requestSignal: AbortSignal | undefin
   return { nothing, signal, stop: () => clearTimeout(timer) };
 };
 
-type ReadOptions = PostedReadLimits & {
-  depth: UnsavedRichTextDepth | undefined;
-  timeLimitMs: number;
-};
+type ReadOptions = PostedReadLimits &
+  ReadAsUserOptions & {
+    timeLimitMs: number;
+  };
 
 const ignoreFailure = (): void => undefined;
 
@@ -84,7 +88,7 @@ const readSignedInAsUser = async <Content>(
   const logFailure = (err: unknown) =>
     payload.logger.error({ err, msg: UNSAVED_READ_FAILURE_MESSAGE });
   const readOnce = () =>
-    nullOnFailure(() => readAsUser<Content>(payload, user, unsaved, options.depth), logFailure);
+    nullOnFailure(() => readAsUser<Content>(payload, user, unsaved, options), logFailure);
   return latestReadsOf(payload).read(readKeyOf(user, unsaved), readOnce, {
     signal: options.signal,
     staleAfterMs: options.timeLimitMs * RUNNING_READ_STALE_AFTER_TIME_LIMITS,
@@ -102,7 +106,10 @@ type ReadLimits = {
   depth?: UnsavedRichTextDepth;
   maxStateLength?: number;
   timeLimitMs?: number;
+  readWholeDocument?: boolean;
 };
+
+type ReadRules = ReadLimits & { savedReferencesOnly: boolean };
 
 const readWithinLimits = async <Content>(
   payload: Payload,
@@ -110,12 +117,21 @@ const readWithinLimits = async <Content>(
   {
     depth,
     maxStateLength = DEFAULT_MAX_UNSAVED_STATE_LENGTH,
+    readWholeDocument = false,
+    savedReferencesOnly,
     timeLimitMs = DEFAULT_UNSAVED_READ_TIME_LIMIT_MS,
-  }: ReadLimits,
+  }: ReadRules,
   requestSignal: AbortSignal | undefined
 ): Promise<Content | null> => {
   const { nothing, signal, stop } = deadlineAfter(timeLimitMs, requestSignal);
-  const options = { depth, maxStateLength, signal, timeLimitMs };
+  const options = {
+    depth,
+    maxStateLength,
+    readWholeDocument,
+    savedReferencesOnly,
+    signal,
+    timeLimitMs,
+  };
   try {
     return await Promise.race([readSignedInAsUser<Content>(payload, signIn, options), nothing]);
   } finally {
@@ -143,7 +159,7 @@ export const readUnsavedRichTextFor = <Content = unknown>({
       const unsaved = readUnsaved(payload, request, maxStateLength);
       return unsaved && allows(unsaved) ? { unsaved, user } : null;
     },
-    limits,
+    { ...limits, savedReferencesOnly: true },
     undefined
   );
 
@@ -151,12 +167,13 @@ export const readUnsavedRichText = <Content = unknown>({
   depth,
   maxStateLength,
   payload,
+  readWholeDocument,
   timeLimitMs,
   ...posted
 }: ReadUnsavedRichTextArgs): Promise<Content | null> =>
   readWithinLimits<Content>(
     payload,
     signInFromPosted(payload, posted),
-    { depth, maxStateLength, timeLimitMs },
+    { depth, maxStateLength, readWholeDocument, savedReferencesOnly: false, timeLimitMs },
     posted.request instanceof Request ? posted.request.signal : undefined
   );
