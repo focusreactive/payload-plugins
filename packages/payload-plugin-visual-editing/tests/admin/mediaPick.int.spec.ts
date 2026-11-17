@@ -83,6 +83,16 @@ describe("a request of the preview page to pick media", () => {
     expect(picked(request({ key }))).toBeNull();
   });
 
+  it("takes no request for a field whose form entry filters what it takes", () => {
+    const filtered = {
+      ...formState,
+      image: { filterOptions: { media: { alt: { exists: true } } }, value: 3 },
+    } as unknown as FormState;
+    const field = pickOfDocument(request(), openForm.document);
+
+    expect(field && mediaPickOf(field, { ...openForm, formState: filtered })).toBeNull();
+  });
+
   it("takes no request of another locale than the form is in", () => {
     expect(picked(request({ locale: "de" }))).toBeNull();
     expect(picked(request({ locale: undefined }))).toBeNull();

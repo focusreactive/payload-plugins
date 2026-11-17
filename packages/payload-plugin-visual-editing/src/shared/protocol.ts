@@ -175,6 +175,12 @@ export type VePickMediaMessage = VeEditedField & {
   type: typeof VE_PICK_MEDIA_TYPE;
 };
 
+export const VE_MEDIA_PICK_CANCELLED_TYPE = "ve:media-pick-cancelled";
+
+export type VeMediaPickCancelledMessage = VeEditedField & {
+  type: typeof VE_MEDIA_PICK_CANCELLED_TYPE;
+};
+
 export const VE_MEDIA_PICKED_TYPE = "ve:media-picked";
 
 export type VeMediaPickedMessage = VeEditedField &

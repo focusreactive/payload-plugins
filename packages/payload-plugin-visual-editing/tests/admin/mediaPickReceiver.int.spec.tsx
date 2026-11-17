@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MediaPickReceiver } from "../../src/admin/inlineEditing/MediaPickReceiver";
 import {
   VE_FIELD_EDIT_REFUSED_TYPE,
+  VE_MEDIA_PICK_CANCELLED_TYPE,
   VE_MEDIA_PICKED_TYPE,
   VE_PICK_MEDIA_TYPE,
 } from "../../src/shared/protocol";
@@ -211,8 +212,60 @@ describe("MediaPickReceiver", () => {
     postRequest();
 
     expect(admin.dispatchFields).not.toHaveBeenCalled();
-    expect(admin.postToPreview).not.toHaveBeenCalled();
     expect(admin.openDrawer).toHaveBeenCalledTimes(2);
+  });
+
+  it("tells the preview page when the drawer is closed without a selection", async () => {
+    postRequest();
+
+    await act(async () => {
+      admin.dismissDrawer();
+      await flushMutations();
+    });
+
+    expect(admin.postToPreview).toHaveBeenCalledTimes(1);
+    expect(admin.postToPreview).toHaveBeenCalledWith(
+      { ...FIELD, type: VE_MEDIA_PICK_CANCELLED_TYPE },
+      PREVIEW_ORIGIN
+    );
+  });
+
+  it("calls a pick that was made no cancelled one", async () => {
+    postRequest();
+
+    await select({ id: 9 });
+
+    const types = admin.postToPreview.mock.calls.map(
+      ([message]) => (message as { type: string }).type
+    );
+    expect(types).toEqual([VE_MEDIA_PICKED_TYPE]);
+  });
+
+  it("calls the pick cancelled when it cannot tell the page what to show", async () => {
+    fetchMedia.mockRejectedValue(new Error("offline"));
+    postRequest();
+
+    await select({ id: 9 });
+
+    expect(admin.dispatchFields).toHaveBeenCalled();
+    expect(admin.postToPreview).toHaveBeenCalledWith(
+      { ...FIELD, type: VE_MEDIA_PICK_CANCELLED_TYPE },
+      PREVIEW_ORIGIN
+    );
+  });
+
+  it("refuses a second request while the drawer is open and keeps the drawer", () => {
+    postRequest();
+    const openDrawer = admin.drawer;
+
+    postRequest({ data: { ...REQUEST, key: "image" } });
+
+    expect(admin.openDrawer).toHaveBeenCalledTimes(1);
+    expect(admin.drawer).toBe(openDrawer);
+    expect(admin.postToPreview).toHaveBeenCalledWith(
+      { ...FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE },
+      PREVIEW_ORIGIN
+    );
   });
 
   it("opens the drawer again for a second request", async () => {

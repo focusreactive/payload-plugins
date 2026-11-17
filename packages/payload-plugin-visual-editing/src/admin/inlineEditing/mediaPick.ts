@@ -1,3 +1,5 @@
+import type { FormState } from "payload";
+
 import type { VeEditedField, VeLiveDocument } from "../../shared/protocol.js";
 import type { OpenForm } from "./formEdit.js";
 
@@ -21,6 +23,9 @@ export function pickOfDocument(data: unknown, document: VeLiveDocument): VeEdite
   return field && documentAddressOf(field) === documentAddressOf(document) ? field : null;
 }
 
+const filtersWhatItTakes = (formState: FormState, formPath: string): boolean =>
+  formState[formPath]?.filterOptions !== undefined;
+
 export function mediaPickOf(
   field: VeEditedField,
   { document, editableSchema, formState }: OpenForm
@@ -33,7 +38,8 @@ export function mediaPickOf(
     ({ key }) => key === field.key
   );
   const collection = formField && uploadCollectionAt(editableSchema, formField.steps);
-  return formField && collection ? { collection, field, path: formField.formPath } : null;
+  if (!formField || !collection || filtersWhatItTakes(formState, formField.formPath)) return null;
+  return { collection, field, path: formField.formPath };
 }
 
 export async function fetchPickedMedia(
