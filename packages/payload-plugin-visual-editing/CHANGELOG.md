@@ -1,3 +1,12 @@
+# @focus-reactive/payload-plugin-visual-editing [1.4.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-visual-editing@1.3.0...@focus-reactive/payload-plugin-visual-editing@1.4.0) (2026-11-17)
+
+
+### Features
+
+* **visual-editing:** frame targets as one box, move the toggle to the top and let it be dragged, reveal the admin field by its own border ([f17e341](https://github.com/focusreactive/payload-plugins/commit/f17e34120c48ffe06cb2a03c828c49bd74494ea6))
+* **visual-editing:** restyle the mode toggle and edit badge to match the Payload admin ([125d67c](https://github.com/focusreactive/payload-plugins/commit/125d67c2b22c3dfaf4a5e27775681e4c1644e403))
+* **visual-editing:** violet accent by default, configurable with accentColor ([1215730](https://github.com/focusreactive/payload-plugins/commit/1215730a7f4714d8abd3dc345612f4253428b806))
+
 # @focus-reactive/payload-plugin-visual-editing [1.3.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-visual-editing@1.2.0...@focus-reactive/payload-plugin-visual-editing@1.3.0) (2026-11-17)
 
 
