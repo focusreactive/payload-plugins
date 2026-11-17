@@ -36,6 +36,7 @@ import { DATA_VE_ACTION_ATTR } from "../../src/client/overlay/constants";
 import { identityAttrsOf } from "../../src/client/withVisualEditingPath";
 import {
   DATA_VE_LOCALE_ATTR,
+  DATA_VE_PATH_ATTR,
   VE_FIELD_EDIT_PATH,
   VE_FIELD_EDIT_REFUSED_TYPE,
   VE_FIELD_SNAPSHOT_TYPE,
@@ -517,6 +518,132 @@ describe("editing rich text on the page", () => {
       expect(open).toHaveBeenCalledTimes(1);
       expect(event.defaultPrevented).toBe(true);
       expect(kept.nextElementSibling?.hasAttribute(DATA_VE_EDITING_ATTR) ?? false).toBe(false);
+    });
+
+    describe("of a wrapper that holds the rendered nodes in an element of its own", () => {
+      const UPLOAD = { format: "", relationTo: "media", type: "upload", value: 3, version: 3 };
+
+      const NESTED_STATE = stateOf(
+        element("heading", [text("A heading")], { tag: "h2" }),
+        paragraph(text("Hello world")),
+        UPLOAD
+      );
+
+      const renderNested = (nodes: string) => {
+        wrapper.className = "";
+        wrapper.innerHTML = `<div class="prose max-w-full" id="prose">${nodes}</div>`;
+        return wrapper.firstElementChild as HTMLElement;
+      };
+
+      const renderNestedStory = async () => {
+        const prose = renderNested(
+          '<h2 class="title"></h2><p class="lead"></p><figure class="media" id="figure"><img alt="Photo"></figure>'
+        );
+        prose.querySelector("h2")!.textContent = markedTextNode("A heading", "0.0", SHAPE);
+        prose.querySelector("p")!.textContent = markedTextNode("Hello world", "1.0", SHAPE);
+        storedState = NESTED_STATE;
+        await settle();
+        return prose;
+      };
+
+      afterEach(() => Reflect.deleteProperty(document, "caretPositionFromPoint"));
+
+      it("edits in a copy of the chain of elements down to the one that holds the nodes", async () => {
+        await renderNestedStory();
+        const twin = await beginEdit();
+        const content = twin.firstElementChild as HTMLElement;
+
+        expect([twin.tagName, twin.className, twin.childElementCount]).toEqual(["SECTION", "", 1]);
+        expect([content.tagName, content.className]).toEqual(["DIV", "prose max-w-full"]);
+        expect(content.hasAttribute("id")).toBe(false);
+        expect(content.hasAttribute(DATA_VE_PATH_ATTR)).toBe(false);
+        expect(twin.hasAttribute(DATA_VE_EDITING_ATTR)).toBe(false);
+        expect(content.hasAttribute(DATA_VE_EDITING_ATTR)).toBe(true);
+        expect(content.getAttribute("contenteditable")).toBe("true");
+        expect(content.querySelectorAll(":scope > h2, :scope > p")).toHaveLength(2);
+        expect(content.querySelectorAll(`:scope > [${DATA_VE_OPAQUE_ATTR}]`)).toHaveLength(1);
+        expect(isShown(wrapper)).toBe(false);
+      });
+
+      it("takes the classes of the nodes and the copy of a node it cannot edit from that element", async () => {
+        await renderNestedStory();
+        const twin = await beginEdit();
+
+        const placeholder = twin.querySelector(`[${DATA_VE_OPAQUE_ATTR}]`) as HTMLElement;
+        expect(twin.querySelector("h2")?.className).toBe("title");
+        expect(twin.querySelector("p")?.className).toBe("lead");
+        expect(placeholder.firstElementChild?.tagName).toBe("FIGURE");
+        expect(placeholder.firstElementChild?.className).toBe("media");
+        expect(placeholder.querySelector("img")?.getAttribute("alt")).toBe("Photo");
+        expect(placeholder.querySelector("[id]")).toBeNull();
+      });
+
+      it("puts the caret where the click hit the text inside that element", async () => {
+        const prose = await renderNestedStory();
+        await hoverUntilReady();
+        hitBy(() => ({ offset: 5, offsetNode: prose.querySelector("p")!.firstChild as Text }));
+
+        click(wrapper);
+
+        expect(caretOf(twinOf(wrapper).firstElementChild!)).toEqual({
+          offset: 5,
+          text: "Hello world",
+        });
+      });
+
+      it("leaves the page as it was rendered after Escape", async () => {
+        await renderNestedStory();
+        const rendered = main.innerHTML;
+        const twin = await beginEdit();
+
+        press(twin.firstElementChild!, "Escape");
+
+        expect(main.innerHTML).toBe(rendered);
+      });
+
+      it("keeps the chain in the read-only twin and edits it again in a copy of the same chain", async () => {
+        await renderNestedStory();
+        const twin = await beginEdit();
+        typeInto(twin.firstElementChild!, "Another heading");
+        pressOutside();
+        await settle();
+        const kept = twinOf(wrapper);
+        const keptContent = kept.firstElementChild as HTMLElement;
+
+        expect(kept.hasAttribute(DATA_VE_EDITED_ATTR)).toBe(true);
+        expect(keptContent.className).toBe("prose max-w-full");
+        expect(keptContent.hasAttribute("contenteditable")).toBe(false);
+        expect(keptContent.hasAttribute(DATA_VE_EDITING_ATTR)).toBe(false);
+        expect(keptContent.querySelector("figure.media")).not.toBeNull();
+        expect([...keptContent.children].map(({ tagName }) => tagName)).toEqual(["H2", "P", "DIV"]);
+
+        click(kept);
+        const second = kept.nextElementSibling as HTMLElement;
+
+        expect(second.firstElementChild?.className).toBe("prose max-w-full");
+        expect(second.querySelector("h2")?.className).toBe("title");
+        expect(second.querySelector("figure.media")).not.toBeNull();
+        expect(isShown(kept)).toBe(false);
+      });
+
+      it("finds that element for a rich text of one paragraph", async () => {
+        const prose = renderNested('<p class="lead"></p>');
+        prose.querySelector("p")!.textContent = markedTextNode("Hello world", "0.0", SHAPE);
+        storedState = stateOf(paragraph(text("Hello world")));
+        await settle();
+
+        const twin = await beginEdit();
+
+        expect(twin.firstElementChild?.className).toBe("prose max-w-full");
+        expect(twin.querySelector(".prose > p")?.className).toBe("lead");
+      });
+
+      it("edits in a twin of the wrapper alone when its one element is a rendered node", async () => {
+        const twin = await beginEdit();
+
+        expect(twin.hasAttribute(DATA_VE_EDITING_ATTR)).toBe(true);
+        expect(twin.firstElementChild?.tagName).toBe("P");
+      });
     });
 
     it("asks again on a pointer move once the state it held was used", async () => {

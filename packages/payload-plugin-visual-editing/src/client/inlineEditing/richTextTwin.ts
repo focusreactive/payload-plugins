@@ -1,3 +1,7 @@
+import type { VeEditorState } from "../../shared/protocol.js";
+
+import { isEditableNode } from "../../shared/richText/editableNodes.js";
+import { childrenOf, rootOf } from "../../shared/richText/editorNodes.js";
 import { ACCENT_VAR, DEFAULT_ACCENT } from "../overlay/constants.js";
 import { DATA_VE_EDITING_ATTR } from "./textEditing.js";
 
@@ -14,6 +18,8 @@ const STYLE_ATTR = "style";
 const DISPLAY = "display";
 const NOT_DISPLAYED = "none";
 const IMPORTANT = "important";
+const CARETS_OF_THE_EDITOR = "[data-lexical-cursor], [data-lexical-decorator-boundary]";
+const EDITED_ELEMENT = `[${DATA_VE_EDITING_ATTR}]`;
 const ATTRS_OF_AN_EDITOR = [
   DATA_VE_EDITING_ATTR,
   "contenteditable",
@@ -24,10 +30,75 @@ const ATTRS_OF_AN_EDITOR = [
   "data-lexical-editor",
 ];
 
-export const twinOf = (wrapper: HTMLElement): HTMLElement => {
-  const twin = wrapper.ownerDocument.createElement(wrapper.tagName);
-  twin.className = wrapper.className;
-  return twin;
+const TAGS_OF_A_NODE: ReadonlySet<string> = new Set([
+  "P",
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "H5",
+  "H6",
+  "UL",
+  "OL",
+  "BLOCKQUOTE",
+]);
+
+export type Twin = { root: HTMLElement; content: HTMLElement };
+
+const hasTextOfItsOwn = (element: Element): boolean =>
+  [...element.childNodes].some(
+    (child) => child.nodeType === Node.TEXT_NODE && (child.textContent ?? "").trim() !== ""
+  );
+
+const onlyElementIn = (element: HTMLElement): HTMLElement | null => {
+  const [only, ...others] = element.children;
+  const isAlone = only instanceof HTMLElement && others.length === 0 && !hasTextOfItsOwn(element);
+  return isAlone ? only : null;
+};
+
+const isRenderedNode = (element: Element): boolean =>
+  TAGS_OF_A_NODE.has(element.tagName) || hasTextOfItsOwn(element);
+
+const isEmpty = (element: Element): boolean =>
+  element.children.length === 0 && !hasTextOfItsOwn(element);
+
+const isTheOnlyNodeFixed = (state: VeEditorState): boolean => {
+  const [first, ...others] = childrenOf(rootOf(state) ?? {});
+  return first !== undefined && others.length === 0 && !isEditableNode(first);
+};
+
+const holdsNodes = (state: VeEditorState): boolean => childrenOf(rootOf(state) ?? {}).length > 0;
+
+const chainOf = (shown: HTMLElement, state: VeEditorState): HTMLElement[] => {
+  const chain = [shown];
+  if (isTheOnlyNodeFixed(state)) return chain;
+  for (let only = onlyElementIn(shown); only; only = onlyElementIn(only)) {
+    if (isRenderedNode(only) || (holdsNodes(state) && isEmpty(only))) return chain;
+    chain.push(only);
+  }
+  return chain;
+};
+
+export const contentOf = (shown: HTMLElement, state: VeEditorState): HTMLElement =>
+  chainOf(shown, state).at(-1) ?? shown;
+
+const emptyCopyOf = (element: HTMLElement): HTMLElement => {
+  const copy = element.ownerDocument.createElement(element.tagName);
+  copy.className = element.className;
+  return copy;
+};
+
+export const twinOf = (wrapper: HTMLElement, state: VeEditorState): Twin => {
+  const [root, ...inner] = chainOf(wrapper, state).map(emptyCopyOf) as [
+    HTMLElement,
+    ...HTMLElement[],
+  ];
+  let content = root;
+  for (const copy of inner) {
+    content.append(copy);
+    content = copy;
+  }
+  return { content, root };
 };
 
 export const hide = (element: HTMLElement): (() => void) => {
@@ -67,7 +138,11 @@ export const editableTextsIn = (shown: HTMLElement, leaves: ReadonlySet<Text>): 
 
 export const readOnlyCopyOf = (twin: HTMLElement): HTMLElement => {
   const copy = twin.cloneNode(true) as HTMLElement;
-  for (const attr of ATTRS_OF_AN_EDITOR) copy.removeAttribute(attr);
+  const edited = copy.matches(EDITED_ELEMENT)
+    ? copy
+    : (copy.querySelector<HTMLElement>(EDITED_ELEMENT) ?? copy);
+  for (const attr of ATTRS_OF_AN_EDITOR) edited.removeAttribute(attr);
+  for (const caret of copy.querySelectorAll(CARETS_OF_THE_EDITOR)) caret.remove();
   copy.setAttribute(DATA_VE_EDITED_ATTR, "");
   return copy;
 };

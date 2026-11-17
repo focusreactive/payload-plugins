@@ -41,7 +41,14 @@ import {
 import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 import { readMarkerFromAttrs } from "../overlay/markerExtractor.js";
 import { textPositionAtPoint } from "./caret.js";
-import { editableTextsIn, hide, readOnlyCopyOf, showAsStarting, twinOf } from "./richTextTwin.js";
+import {
+  contentOf,
+  editableTextsIn,
+  hide,
+  readOnlyCopyOf,
+  showAsStarting,
+  twinOf,
+} from "./richTextTwin.js";
 
 export type RichTextEditingCtx = {
   adminOrigin: string;
@@ -301,6 +308,7 @@ export function createRichTextEditing({
 
   const startSession = (
     twin: HTMLElement,
+    content: HTMLElement,
     { formats, state }: Held,
     rendered: HTMLElement,
     caret: TextPosition | null
@@ -317,7 +325,7 @@ export function createRichTextEditing({
           onCommit: commit,
           rendered,
           state,
-          twin,
+          twin: content,
         }) ?? null
       );
     } catch {
@@ -338,10 +346,10 @@ export function createRichTextEditing({
     forget(addressOf(ready.field));
 
     const shown = previous?.twin ?? wrapper;
-    const twin = twinOf(wrapper);
+    const { content, root: twin } = twinOf(wrapper, ready.state);
     shown.after(twin);
     const showAgain = hide(shown);
-    const session = startSession(twin, ready, shown, caret);
+    const session = startSession(twin, content, ready, contentOf(shown, ready.state), caret);
     if (!session) {
       twin.remove();
       showAgain();
