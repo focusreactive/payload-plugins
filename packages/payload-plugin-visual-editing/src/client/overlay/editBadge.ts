@@ -2,15 +2,17 @@ import {
   DATA_VE_FOR_ATTR,
   DATA_VE_TARGET_ATTR,
   LABEL_CLASS,
+  LABEL_ICON_SVG,
   LABEL_STYLES,
-  OUTLINE_STYLE,
+  FRAME_ACTIVE_BORDER,
+  FRAME_ACTIVE_WIDTH,
+  FRAME_RADIUS,
 } from "./constants.js";
+import { placeFrame } from "./frameLayer.js";
 
 type EditBadgeConfig = {
   href: string;
   clickHandler: (event: MouseEvent) => void;
-  originalOutline: string;
-  paintOutline: boolean;
 };
 
 export interface EditBadge {
@@ -35,6 +37,7 @@ export function createEditBadge(): EditBadge {
     visibility: "hidden",
   } as Partial<CSSStyleDeclaration>);
 
+  // The anchor is the active frame; the badge sits on its top right corner like a tab.
   const anchor = document.createElement("div");
   Object.assign(anchor.style, {
     position: "absolute",
@@ -42,31 +45,29 @@ export function createEditBadge(): EditBadge {
     left: "0",
     width: "0",
     height: "0",
+    boxSizing: "border-box",
+    border: FRAME_ACTIVE_BORDER,
+    borderRadius: FRAME_RADIUS,
+    borderTopRightRadius: "0",
     pointerEvents: "none",
     transform: "translate(0, 0)",
   } as Partial<CSSStyleDeclaration>);
 
   const label = document.createElement("a");
-  label.textContent = "Edit";
+  label.innerHTML = `${LABEL_ICON_SVG}<span>Edit</span>`;
   label.className = LABEL_CLASS;
   label.target = "_blank";
   label.rel = "noopener noreferrer";
-  Object.assign(label.style, LABEL_STYLES);
+  Object.assign(label.style, LABEL_STYLES, { right: `-${FRAME_ACTIVE_WIDTH}px` });
 
   anchor.append(label);
   layer.append(anchor);
   document.body.append(layer);
 
   let currentClickHandler: ((event: MouseEvent) => void) | null = null;
-  let currentTarget: HTMLElement | null = null;
-  let currentOriginalOutline = "";
-  let currentPaintedOutline = false;
 
   const reposition = (target: HTMLElement) => {
-    const rect = target.getBoundingClientRect();
-    anchor.style.transform = `translate(${rect.left}px, ${rect.top}px)`;
-    anchor.style.width = `${rect.width}px`;
-    anchor.style.height = `${rect.height}px`;
+    placeFrame(anchor, target.getBoundingClientRect(), FRAME_ACTIVE_WIDTH);
   };
 
   return {
@@ -74,31 +75,15 @@ export function createEditBadge(): EditBadge {
       return label;
     },
     show(target, config) {
-      if (config.paintOutline) {
-        target.style.outline = OUTLINE_STYLE;
-        currentPaintedOutline = true;
-      } else {
-        currentPaintedOutline = false;
-      }
       reposition(target);
       label.href = config.href;
       label.setAttribute(DATA_VE_FOR_ATTR, target.getAttribute(DATA_VE_TARGET_ATTR) ?? "");
       if (currentClickHandler) label.removeEventListener("click", currentClickHandler);
       label.addEventListener("click", config.clickHandler);
       currentClickHandler = config.clickHandler;
-      currentTarget = target;
-      currentOriginalOutline = config.originalOutline;
       layer.style.visibility = "visible";
     },
     hide() {
-      if (currentTarget) {
-        if (currentPaintedOutline) {
-          currentTarget.style.outline = currentOriginalOutline;
-        }
-        currentTarget = null;
-        currentOriginalOutline = "";
-        currentPaintedOutline = false;
-      }
       layer.style.visibility = "hidden";
       if (currentClickHandler) {
         label.removeEventListener("click", currentClickHandler);

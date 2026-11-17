@@ -1,14 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import type { TranslationKey } from "../../../translations/types";
 
-export type TabKey =
-  | "keyphrase"
-  | "onpage"
-  | "readability"
-  | "inclusive"
-  | "vitals"
-  | "serp"
-  | "links";
+export type TabKey = "overview" | "keyphrase" | "content" | "links";
 
 export interface Tab {
   key: TabKey;

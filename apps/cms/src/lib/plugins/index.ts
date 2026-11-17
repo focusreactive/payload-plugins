@@ -266,7 +266,6 @@ export const plugins: Plugin[] = [
       faviconUrl: "/favicon.ico",
     },
     supportedLocales: I18N_CONFIG.locales.map((locale) => locale.code),
-    keyphraseIndex: true,
   }),
 
   nestedDocsPlugin({

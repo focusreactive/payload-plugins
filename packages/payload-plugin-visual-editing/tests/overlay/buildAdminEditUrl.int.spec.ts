@@ -45,6 +45,50 @@ describe("defaultBuildAdminEditUrl", () => {
   });
 });
 
+describe("defaultBuildAdminEditUrl — parts of the address", () => {
+  it("encodes the slug and the id, so neither adds a path segment or a query", () => {
+    const url = defaultBuildAdminEditUrl({
+      collectionSlug: "pages/../users",
+      docId: "7?veFocus=email#x",
+      kind: "collection",
+      path: "title",
+    });
+    expect(url).toBe("/admin/collections/pages%2F..%2Fusers/7%3FveFocus%3Demail%23x?veFocus=title");
+  });
+
+  it("encodes the slug of a global", () => {
+    const url = defaultBuildAdminEditUrl({
+      collectionSlug: "site settings",
+      docId: undefined,
+      kind: "global",
+      path: "",
+    });
+    expect(url).toBe("/admin/globals/site%20settings");
+  });
+
+  it("builds one slash after an admin that is served from the root", () => {
+    const url = defaultBuildAdminEditUrl({
+      adminBasePath: "/",
+      collectionSlug: "pages",
+      docId: "abc",
+      kind: "collection",
+      path: "title",
+    });
+    expect(url).toBe("/collections/pages/abc?veFocus=title");
+  });
+
+  it("drops a slash the admin path ends with", () => {
+    const url = defaultBuildAdminEditUrl({
+      adminBasePath: "/cms/",
+      collectionSlug: "header",
+      docId: undefined,
+      kind: "global",
+      path: "",
+    });
+    expect(url).toBe("/cms/globals/header");
+  });
+});
+
 describe("defaultBuildAdminEditUrl — empty path", () => {
   it("omits veFocus when path is empty", () => {
     const url = defaultBuildAdminEditUrl({

@@ -12,10 +12,12 @@ import {
 } from "./server/unsavedRichText/hooks.js";
 import { createSchemaCache, withSchemaCache } from "./server/schemaCache.js";
 import { createStripStegaHook } from "./server/hooks/stripStegaHook.js";
+import { visualEditingEndpoints } from "./server/endpoints.js";
+import type { RenderHtml } from "./server/endpoints.js";
 import {
-  withInstantPreviewCollection,
-  withInstantPreviewGlobal,
-} from "./server/withInstantPreview.js";
+  withDocumentControlsCollection,
+  withDocumentControlsGlobal,
+} from "./server/withDocumentControls.js";
 
 export {
   defaultExcludeValues,
@@ -70,7 +72,11 @@ export type VisualEditingPluginConfig = {
    *  `'explicit'` enriches only reads that pass `context: { visualEditing: true }`. */
   enrichment?: Enrichment;
   instantPreview?: boolean;
+  renderHtml?: RenderHtml;
+  readWholeDocument?: boolean;
 };
+
+export type { RenderHtml } from "./server/endpoints.js";
 
 export const visualEditingPlugin =
   (pluginConfig: VisualEditingPluginConfig = {}): Plugin =>
@@ -82,8 +88,9 @@ export const visualEditingPlugin =
     const enrichment = pluginConfig.enrichment ?? "auto";
     const instantPreview = pluginConfig.instantPreview ?? false;
     const excludeFieldNames = pluginConfig.excludeFieldNames ?? [];
-    const instantPreviewOptions = {
+    const documentControlsOptions = {
       excludeFieldNames,
+      instantPreview,
       rootLivePreview: config.admin?.livePreview,
     };
 
@@ -103,6 +110,15 @@ export const visualEditingPlugin =
 
     return {
       ...config,
+      endpoints: instantPreview
+        ? [
+            ...(config.endpoints ?? []),
+            ...visualEditingEndpoints({
+              readWholeDocument: pluginConfig.readWholeDocument,
+              renderHtml: pluginConfig.renderHtml,
+            }),
+          ]
+        : config.endpoints,
       custom: instantPreview ? withSchemaCache(config.custom, schemaCache) : config.custom,
       collections: config.collections?.map((collection) => {
         if (skipCols.has(collection.slug)) return collection;
@@ -115,9 +131,7 @@ export const visualEditingPlugin =
             afterOperation: [...(collection.hooks?.afterOperation ?? []), collectionAfterOperation],
           },
         };
-        return instantPreview
-          ? withInstantPreviewCollection(withHooks, instantPreviewOptions)
-          : withHooks;
+        return withDocumentControlsCollection(withHooks, documentControlsOptions);
       }),
       globals: config.globals?.map((global) => {
         if (skipGlobals.has(global.slug)) return global;
@@ -131,9 +145,7 @@ export const visualEditingPlugin =
             afterRead: [...(global.hooks?.afterRead ?? []), globalAfterRead],
           },
         };
-        return instantPreview
-          ? withInstantPreviewGlobal(withHooks, instantPreviewOptions)
-          : withHooks;
+        return withDocumentControlsGlobal(withHooks, documentControlsOptions);
       }),
       admin: {
         ...config.admin,

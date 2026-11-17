@@ -12,6 +12,12 @@ describe("adminDocHref", () => {
     expect(adminDocHref("/cms", { collection: "pages", id: "1" })).toBe("/cms/collections/pages/1");
   });
 
+  it("keeps the locale in the link", () => {
+    expect(adminDocHref("/admin", { collection: "posts", id: "7" }, "es")).toBe(
+      "/admin/collections/posts/7?locale=es"
+    );
+  });
+
   it("does not double the slash when the admin is served from the root", () => {
     expect(adminDocHref("/", { collection: "pages", id: "1" })).toBe("/collections/pages/1");
   });

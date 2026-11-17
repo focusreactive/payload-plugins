@@ -1,14 +1,18 @@
 import { describe, expect, it } from "vitest";
 import type { GaugeSpec } from "../../../src/engine/types/visualization";
+import { DEFAULT_SEO_THRESHOLDS } from "../../../src/constants";
 import { buildGauge } from "../../../src/engine/visualization/buildGauge";
-import { GAUGE_SPECS } from "../../../src/engine/visualization/gaugeSpecs";
+import { gaugeSpecsFor } from "../../../src/engine/visualization/gaugeSpecs";
 
-const keyphraseLength = GAUGE_SPECS.keyphraseLength as GaugeSpec;
-const keyphraseDensity = GAUGE_SPECS.keyphraseDensity as GaugeSpec;
-const metaDescriptionLength = GAUGE_SPECS.metaDescriptionLength as GaugeSpec;
-const passiveVoice = GAUGE_SPECS.passiveVoice as GaugeSpec;
-const textTransitionWords = GAUGE_SPECS.textTransitionWords as GaugeSpec;
-const fleschReadingEase = GAUGE_SPECS.fleschReadingEase as GaugeSpec;
+const defaultSpecs = gaugeSpecsFor(DEFAULT_SEO_THRESHOLDS);
+
+const keyphraseLength = defaultSpecs.keyphraseLength as GaugeSpec;
+const keyphraseDensity = defaultSpecs.keyphraseDensity as GaugeSpec;
+const metaDescriptionLength = defaultSpecs.metaDescriptionLength as GaugeSpec;
+const passiveVoice = defaultSpecs.passiveVoice as GaugeSpec;
+const textTransitionWords = defaultSpecs.textTransitionWords as GaugeSpec;
+const fleschReadingEase = defaultSpecs.fleschReadingEase as GaugeSpec;
+const textLength = defaultSpecs.textLength as GaugeSpec;
 
 describe("buildGauge — boundary landing (keyphraseLength)", () => {
   it("places a marker on a threshold exactly on the GOOD band end with good status", () => {
@@ -108,5 +112,21 @@ describe("buildGauge — direct statuses (fleschReadingEase)", () => {
     expect(statuses).toEqual(["bad", "warn", "good"]);
     expect(model.bands[0]?.endPct).toBe(50);
     expect(model.bands[1]?.endPct).toBe(60);
+  });
+});
+
+describe("buildGauge — open-ended minimum checks (textLength)", () => {
+  it("labels the good band as a minimum without an upper end", () => {
+    const model = buildGauge(textLength, 320, "320");
+
+    expect(model.labels.map((label) => label.text)).toEqual(["0", "≥ 300"]);
+  });
+
+  it("widens the axis so a long text is not pinned to the end", () => {
+    const model = buildGauge(textLength, 700, "700");
+
+    expect(model.markerPct).toBeLessThan(100);
+    expect(model.markerStatus).toBe("good");
+    expect(model.bands.at(-1)?.status).toBe("good");
   });
 });

@@ -44,13 +44,16 @@ describe("isSlug", () => {
     "hello--world",
     "80%",
     "/relative",
+    "8-10",
+    "24-7",
+    "2020-2026",
   ])("rejects %s", (value) => {
     expect(isSlug(value)).toBe(false);
   });
 });
 
 describe("isHash", () => {
-  it.each(["#", "#demo", "#section-1", "#1a", "#2 seed"])("matches %s", (value) => {
+  it.each(["#", "#demo", "#section-1", "#1a"])("matches %s", (value) => {
     expect(isHash(value)).toBe(true);
   });
 
@@ -61,6 +64,13 @@ describe("isHash", () => {
   it.each(["hello", "hello#world", "80%"])("rejects non-hash-prefixed %s", (value) => {
     expect(isHash(value)).toBe(false);
   });
+
+  it.each(["#2 seed", "#1 in Top Sanity Developers in UK 2026", "#hashtag and words"])(
+    "rejects a hash followed by words %s",
+    (value) => {
+      expect(isHash(value)).toBe(false);
+    }
+  );
 });
 
 describe("isIsoDate", () => {
@@ -101,7 +111,15 @@ describe("defaultExcludeValues", () => {
     }
   );
 
-  it.each(["80%", "Career Advancement", "hello", "#1", "2024"])("lets %s through", (value) => {
+  it.each([
+    "80%",
+    "Career Advancement",
+    "hello",
+    "#1",
+    "2024",
+    "8-10",
+    "#1 in Top Sanity Developers in UK 2026",
+  ])("lets %s through", (value) => {
     expect(matches(value)).toBe(false);
   });
 });

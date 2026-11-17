@@ -1,4 +1,3 @@
-import { vercelStegaDecode } from "@vercel/stega";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import type { PayloadConfigs } from "../support/payloadConfig";
@@ -6,6 +5,7 @@ import type { PayloadConfigs } from "../support/payloadConfig";
 import { buildEditableSchema } from "../../src/shared/editableSchema/editableSchema";
 import { markRead } from "../../src/server/markRead";
 import { buildPayloadConfigs, fieldsOfCollection } from "../support/payloadConfig";
+import { markerIn } from "../support/markedData";
 
 describe("fields Payload adds to a config", () => {
   let configs: PayloadConfigs;
@@ -53,7 +53,7 @@ describe("fields Payload adds to a config", () => {
       schema: serverSchema("pages"),
     }).layout;
 
-    expect(vercelStegaDecode(hero?.blockName ?? "")).toEqual({
+    expect(markerIn(hero?.blockName ?? "")).toEqual({
       collectionSlug: "pages",
       docId: "page-1",
       kind: "collection",

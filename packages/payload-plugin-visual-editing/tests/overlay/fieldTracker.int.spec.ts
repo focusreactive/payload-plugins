@@ -98,6 +98,7 @@ describe("createFieldTracker", () => {
         [
           {
             textNode: heading.firstChild,
+            holder: heading,
             path: "title",
             collectionSlug: "page",
             kind: "collection",
@@ -184,20 +185,80 @@ describe("createFieldTracker", () => {
     );
   });
 
-  it("strips markers only from the attributes that show text", async () => {
-    const form = document.createElement("form");
-    const input = document.createElement("input");
-    for (const attr of ["placeholder", "aria-label", "data-custom"]) {
-      input.setAttribute(attr, stega("Ask", attr));
-    }
-    input.setAttribute("title", "Plain");
-    form.append(input);
-    main.append(form);
+  it("strips markers from every attribute a value was rendered into", async () => {
+    const link = document.createElement("a");
+    link.setAttribute("href", `tel:${stega("+31 970", "phone")}`);
+    link.setAttribute("id", stega("anchor", "anchor"));
+    link.setAttribute("style", `--percent: ${stega("98", "value")};`);
+    link.setAttribute("data-action", stega("basic", "plan"));
+    link.setAttribute("aria-label", stega("Call us", "label"));
+    main.append(link);
     await flushMutations();
 
     expect(
-      ["placeholder", "aria-label", "title", "data-custom"].map((attr) => input.getAttribute(attr))
-    ).toEqual(["Ask", "Ask", "Plain", stega("Ask", "data-custom")]);
+      ["href", "id", "style", "data-action", "aria-label"].map((attr) => link.getAttribute(attr))
+    ).toEqual(["tel:+31 970", "anchor", "--percent: 98;", "basic", "Call us"]);
+  });
+
+  it("makes an image the edit target of the field its description comes from", async () => {
+    const logo = document.createElement("img");
+    logo.setAttribute("alt", stega("Logo", "logo"));
+    main.append(logo);
+    await flushMutations();
+
+    expect(logo.getAttribute("data-ve-path")).toBe("logo");
+    expect(logo.getAttribute("data-ve-collection")).toBe("page");
+  });
+
+  it("leaves an image that already names its field as it is", async () => {
+    const photo = document.createElement("img");
+    photo.setAttribute("data-ve-path", "gallery");
+    photo.setAttribute("data-ve-collection", "page");
+    photo.setAttribute("alt", stega("Photo", "alt"));
+    main.append(photo);
+    await flushMutations();
+
+    expect(photo.getAttribute("data-ve-path")).toBe("gallery");
+  });
+
+  describe("when the page renders an attribute again", () => {
+    it("strips the markers of the new value", async () => {
+      await flushMutations();
+
+      image.setAttribute("alt", stega("New logo", "logo"));
+      await flushMutations();
+
+      expect(image.getAttribute("alt")).toBe("New logo");
+    });
+
+    it("puts the new value back when disposed, not the one it found first", async () => {
+      image.setAttribute("alt", stega("New logo", "logo"));
+      await flushMutations();
+
+      tracker.dispose();
+
+      expect(image.getAttribute("alt")).toBe(stega("New logo", "logo"));
+    });
+
+    it("makes the image the edit target of the field its new description comes from", async () => {
+      image.setAttribute("alt", stega("Mark", "brand.mark"));
+      await flushMutations();
+
+      expect(image.getAttribute("data-ve-path")).toBe("brand.mark");
+
+      tracker.dispose();
+
+      expect(image.hasAttribute("data-ve-path")).toBe(false);
+    });
+
+    it("leaves a plain value the page wrote over a cleaned one when disposed", async () => {
+      image.setAttribute("alt", "Written by the page");
+      await flushMutations();
+
+      tracker.dispose();
+
+      expect(image.getAttribute("alt")).toBe("Written by the page");
+    });
   });
 
   describe("when a node leaves the page", () => {

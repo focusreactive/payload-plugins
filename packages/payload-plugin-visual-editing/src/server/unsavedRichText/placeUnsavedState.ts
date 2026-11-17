@@ -3,7 +3,7 @@ import type { VeEditorState } from "../../shared/protocol.js";
 import { richTextValueAt } from "../../shared/editableSchema/editableSchema.js";
 import type { EditableSchema } from "../../shared/editableSchema/editableSchema.js";
 import { withBlockFieldsOf } from "../../shared/richText/blockNodes.js";
-import { withSavedNodeFieldsOf } from "./savedNodeFields.js";
+import { withSavedNodeFieldsOf } from "../../shared/richText/savedNodeFields.js";
 
 export type UnsavedPlacement = {
   fieldKey: string;

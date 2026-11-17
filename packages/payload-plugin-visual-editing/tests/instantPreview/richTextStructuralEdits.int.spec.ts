@@ -18,7 +18,7 @@ import {
   VE_ANNOUNCE_REQUEST_TYPE,
 } from "../../src/shared/protocol";
 import { buildEditableSchema } from "../../src/shared/editableSchema/editableSchema";
-import { markTextLeaves } from "../../src/server/richText/markTextLeaves";
+import { markTextLeaves } from "../../src/shared/richText/markTextLeaves";
 import { richTextNodeKeyOf } from "../../src/shared/richText/nodeKey";
 import { shapeOf } from "../../src/shared/richText/shapeOf";
 import { textLeavesOf } from "../../src/shared/richText/textLeaves";

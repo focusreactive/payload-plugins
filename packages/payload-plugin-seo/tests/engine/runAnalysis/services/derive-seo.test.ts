@@ -1,12 +1,8 @@
-/**
- * Drives the real deriveSeo (no yoastseo mocking) to verify empty-keyphrase
- * exclusion: with a populated keyphrase the full seoChecks are scored; with an
- * empty/whitespace keyphrase only on-page checks contribute to the ring.
- */
 import { describe, expect, it } from "vitest";
 import { CHECK_IDS } from "../../../../src/constants/checkIds";
 import { buildPaper } from "../../../../src/engine/buildPaper";
 import { deriveSeo } from "../../../../src/engine/runAnalysis/services/derive-seo";
+import { analysisThresholds } from "../../../../src/engine/thresholds/analysisThresholds";
 import { scoreToStatus, statusToRing } from "../../../../src/engine/scoreStatus";
 import type { AnalysisInput } from "../../../../src/engine/types/analysis";
 
@@ -52,7 +48,7 @@ const KEYPHRASE_IDS = new Set<string>(CHECK_IDS.keyphrase);
 describe("deriveSeo — populated keyphrase", () => {
   const keyphrase = "running shoes";
   const paper = buildPaper(makeInput(keyphrase));
-  const result = deriveSeo(paper, keyphrase);
+  const result = deriveSeo(paper, keyphrase, analysisThresholds());
 
   it("emits keyphrase checks", () => {
     expect(result.keyphrase.checks.length).toBeGreaterThan(0);
@@ -72,7 +68,7 @@ describe("deriveSeo — populated keyphrase", () => {
 describe("deriveSeo — empty keyphrase", () => {
   const keyphrase = "";
   const paper = buildPaper(makeInput(keyphrase));
-  const result = deriveSeo(paper, keyphrase);
+  const result = deriveSeo(paper, keyphrase, analysisThresholds());
 
   it("returns no keyphrase checks", () => {
     expect(result.keyphrase.checks).toEqual([]);
@@ -97,7 +93,7 @@ describe("deriveSeo — empty keyphrase", () => {
 describe("deriveSeo — whitespace keyphrase behaves like empty", () => {
   const keyphrase = "   ";
   const paper = buildPaper(makeInput(keyphrase));
-  const result = deriveSeo(paper, keyphrase);
+  const result = deriveSeo(paper, keyphrase, analysisThresholds());
 
   it("returns no keyphrase checks", () => {
     expect(result.keyphrase.checks).toEqual([]);

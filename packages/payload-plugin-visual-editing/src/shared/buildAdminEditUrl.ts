@@ -9,6 +9,11 @@ export type BuildAdminEditUrlArgs = Omit<VeIdentity, "key"> & {
 
 export type BuildAdminEditUrl = (args: BuildAdminEditUrlArgs) => string;
 
+const TRAILING_SLASHES = /\/+$/u;
+
+export const adminBaseOf = (adminBasePath: string): string =>
+  adminBasePath.replace(TRAILING_SLASHES, "");
+
 export const defaultBuildAdminEditUrl: BuildAdminEditUrl = ({
   docId,
   collectionSlug,
@@ -17,10 +22,12 @@ export const defaultBuildAdminEditUrl: BuildAdminEditUrl = ({
   locale,
   adminBasePath = "/admin",
 }) => {
+  const admin = adminBaseOf(adminBasePath);
+  const slug = encodeURIComponent(collectionSlug);
   const base =
     kind === "global"
-      ? `${adminBasePath}/globals/${collectionSlug}`
-      : `${adminBasePath}/collections/${collectionSlug}/${docId}`;
+      ? `${admin}/globals/${slug}`
+      : `${admin}/collections/${slug}/${encodeURIComponent(String(docId))}`;
   const parts: string[] = [];
   if (path) parts.push(`${VE_FOCUS_PARAM}=${encodeURIComponent(path)}`);
   if (locale) parts.push(`locale=${encodeURIComponent(locale)}`);

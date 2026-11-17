@@ -31,7 +31,7 @@ describe("createTargetRegistry", () => {
     buildAdminEditUrl.mockClear();
   });
 
-  it("sets data-ve-target and caches the original outline on first upsert", () => {
+  it("sets data-ve-target and leaves the page's own outline alone", () => {
     const el = document.createElement("div");
     el.style.outline = "2px dashed red";
     document.body.append(el);
@@ -42,7 +42,7 @@ describe("createTargetRegistry", () => {
     expect(el.getAttribute("data-ve-target")).toBe("hero.title");
     expect(config.path).toBe("hero.title");
     expect(config.href).toBe("/admin/edit?path=hero.title");
-    expect(config.originalOutline).toBe("2px dashed red");
+    expect(el.style.outline).toBe("2px dashed red");
   });
 
   it("re-upsert with a new marker path produces a fresh href and click handler (regression #8)", () => {
@@ -57,12 +57,11 @@ describe("createTargetRegistry", () => {
     expect(second.path).toBe("hero.subtitle");
     expect(second.href).toBe("/admin/edit?path=hero.subtitle");
     expect(second.clickHandler).not.toBe(first.clickHandler);
-    expect(second.originalOutline).toBe(first.originalOutline);
     expect(el.getAttribute(DATA_VE_PATH_ATTR)).toBeNull();
     expect(el.getAttribute("data-ve-target")).toBe("hero.subtitle");
   });
 
-  it("remove() restores the outline and drops the attribute", () => {
+  it("remove() drops the attribute and keeps the page's outline", () => {
     const el = document.createElement("div");
     el.style.outline = "1px solid blue";
     document.body.append(el);

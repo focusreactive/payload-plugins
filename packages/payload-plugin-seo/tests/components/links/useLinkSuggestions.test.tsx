@@ -81,7 +81,17 @@ describe("useLinkSuggestions", () => {
       linkedHrefs: ["/x"],
       linkedDocs: [{ collection: "pages", docId: "4" }],
     });
-    expect(result.current.state).toEqual({ status: "done", suggestions: [suggestion] });
+    expect(result.current.state).toEqual({ status: "done", suggestions: [suggestion], linked: [] });
+  });
+
+  it("exposes the linked documents next to the suggestions", async () => {
+    const linked = [{ collection: "pages", id: "4", title: "Pricing" }];
+    fetchMock.mockResolvedValue(Response.json({ suggestions: [], linked }));
+    const { result } = renderHook(() => useLinkSuggestions(args));
+
+    await act(() => result.current.find());
+
+    expect(result.current.state).toEqual({ status: "done", suggestions: [], linked });
   });
 
   it("treats a response without a list as no suggestions", async () => {
@@ -90,7 +100,7 @@ describe("useLinkSuggestions", () => {
 
     await act(() => result.current.find());
 
-    expect(result.current.state).toEqual({ status: "done", suggestions: [] });
+    expect(result.current.state).toEqual({ status: "done", suggestions: [], linked: [] });
   });
 
   it("reports an error for a failed request", async () => {
@@ -117,7 +127,7 @@ describe("useLinkSuggestions", () => {
       response.resolve(Response.json({ suggestions: [] }));
       await pending;
     });
-    expect(result.current.state).toEqual({ status: "done", suggestions: [] });
+    expect(result.current.state).toEqual({ status: "done", suggestions: [], linked: [] });
   });
 
   it("ignores clicks while a request is in flight and allows a new one afterwards", async () => {
@@ -138,10 +148,10 @@ describe("useLinkSuggestions", () => {
     });
 
     expect(getInput).toHaveBeenCalledTimes(1);
-    expect(result.current.state).toEqual({ status: "done", suggestions: [] });
+    expect(result.current.state).toEqual({ status: "done", suggestions: [], linked: [] });
 
     await act(() => result.current.find());
-    expect(result.current.state).toEqual({ status: "done", suggestions: [suggestion] });
+    expect(result.current.state).toEqual({ status: "done", suggestions: [suggestion], linked: [] });
   });
 
   it("aborts the request on unmount", async () => {

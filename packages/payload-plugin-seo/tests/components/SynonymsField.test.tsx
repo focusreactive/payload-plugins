@@ -19,21 +19,21 @@ describe("SynonymsField", () => {
     expect(onRemove).toHaveBeenCalledWith(0);
   });
 
-  it("Add button opts out of color transitions while disabled so it can never freeze mid-fade looking idle", () => {
+  it("shows no Add button until the input has text", () => {
     render(<SynonymsField synonyms={[]} onAdd={vi.fn()} onRemove={vi.fn()} />);
-    const addBtn = screen.getByRole("button", { name: /add synonym/iu });
-    expect(addBtn.className).toContain("disabled:transition-none");
+    expect(screen.queryByRole("button", { name: /add synonym/iu })).toBeNull();
   });
 
-  it("Add button is disabled until input has text; Enter and click both commit", () => {
+  it("commits a typed synonym with Enter or the Add button", () => {
     const onAdd = vi.fn();
     render(<SynonymsField synonyms={[]} onAdd={onAdd} onRemove={vi.fn()} />);
     const input = screen.getByPlaceholderText(/add a synonym/iu);
-    const addBtn = screen.getByRole("button", { name: /add synonym/iu }) as HTMLButtonElement;
-    expect(addBtn.disabled).toBe(true);
     fireEvent.change(input, { target: { value: "node cms" } });
-    expect(addBtn.disabled).toBe(false);
     fireEvent.keyDown(input, { key: "Enter" });
     expect(onAdd).toHaveBeenCalledWith("node cms");
+
+    fireEvent.change(input, { target: { value: "typed cms" } });
+    fireEvent.click(screen.getByRole("button", { name: /add synonym/iu }));
+    expect(onAdd).toHaveBeenCalledWith("typed cms");
   });
 });

@@ -182,6 +182,7 @@ export default buildConfig({
         baseUrl: process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4040",
       },
       supportedLocales: ["en", "de", "fr", "es"],
+      keyphraseIndex: false,
     }),
   ],
   secret: process.env.PAYLOAD_SECRET || "",

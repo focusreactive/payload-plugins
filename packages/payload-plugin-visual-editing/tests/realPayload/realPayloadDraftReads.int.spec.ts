@@ -5,6 +5,7 @@ import { buildConfig, createLocalReq, getPayload } from "payload";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { visualEditingPlugin } from "../../src/index";
+import { VE_READ_HEADER } from "../../src/shared/protocol";
 import { everyMarkedTextIn, everyMetaIn } from "../support/markedData";
 import { START_TIMEOUT_MS } from "../support/realPayload";
 
@@ -144,6 +145,24 @@ describe("whether a read through Payload is marked", () => {
 
   afterEach(() => {
     expect(nestedReads).toEqual({ pages: null, posts: null, settings: null });
+  });
+
+  describe("a read over HTTP", () => {
+    const httpRequest = (headers: HeadersInit, user: PayloadRequest["user"]) =>
+      ({ headers: new Headers(headers), payloadAPI: "REST", user }) as Partial<PayloadRequest>;
+    const editor = { collection: "users", id: 1 } as unknown as PayloadRequest["user"];
+    const askingForMarkers = { [VE_READ_HEADER]: "1" };
+
+    it("marks a draft read that asks for markers for a signed-in user", async () => {
+      expectMarked(await readPage({ draft: true, req: httpRequest(askingForMarkers, editor) }));
+      expectMarked(await readSettings({ draft: true, req: httpRequest(askingForMarkers, editor) }));
+    });
+
+    it("marks nothing without the header, without a user, or in a published read", async () => {
+      expectUnmarked(await readPage({ draft: true, req: httpRequest({}, editor) }));
+      expectUnmarked(await readPage({ draft: true, req: httpRequest(askingForMarkers, null) }));
+      expectUnmarked(await readPage({ req: httpRequest(askingForMarkers, editor) }));
+    });
   });
 
   describe("one read at a time", () => {

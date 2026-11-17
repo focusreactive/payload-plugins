@@ -1,6 +1,7 @@
 import type { PayloadRequest } from "payload";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setPluginConfig } from "../../../src/config";
+import { DEFAULT_SEO_THRESHOLDS } from "../../../src/constants";
 import { resolveLinkTargets } from "../../../src/server/links/resolveLinkTargets";
 import { idsOf } from "../fixtures/indexMatcher";
 import type { Where } from "../fixtures/indexMatcher";
@@ -46,17 +47,20 @@ const suggestion = (collection: string, id: string) => ({
 });
 
 beforeEach(() => {
-  setPluginConfig({
-    collections: [
-      {
-        slug: "posts",
-        extractContentPath: "@/x#default",
-        resolveUrl: ({ doc, locale }) => `/${locale}/blog/${String(doc.slug)}`,
-      },
-      { slug: "page", extractContentPath: "@/y#default" },
-    ],
-    keyphraseIndex: true,
-  });
+  setPluginConfig(
+    {
+      collections: [
+        {
+          slug: "posts",
+          extractContentPath: "@/x#default",
+          resolveUrl: ({ doc, locale }) => `/${locale}/blog/${String(doc.slug)}`,
+        },
+        { slug: "page", extractContentPath: "@/y#default" },
+      ],
+      keyphraseIndex: true,
+    },
+    DEFAULT_SEO_THRESHOLDS
+  );
 });
 
 describe("resolveLinkTargets", () => {
@@ -91,18 +95,21 @@ describe("resolveLinkTargets", () => {
   });
 
   it("treats a throwing resolveUrl as no url and logs it", async () => {
-    setPluginConfig({
-      collections: [
-        {
-          slug: "posts",
-          extractContentPath: "@/x#default",
-          resolveUrl: () => {
-            throw new Error("x");
+    setPluginConfig(
+      {
+        collections: [
+          {
+            slug: "posts",
+            extractContentPath: "@/x#default",
+            resolveUrl: () => {
+              throw new Error("x");
+            },
           },
-        },
-      ],
-      keyphraseIndex: true,
-    });
+        ],
+        keyphraseIndex: true,
+      },
+      DEFAULT_SEO_THRESHOLDS
+    );
     const { req, warn } = fakeRequest();
     const [hit] = await resolveLinkTargets(req, [candidate("posts", "2")], "en");
     expect(hit.url).toBeNull();

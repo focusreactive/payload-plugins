@@ -11,6 +11,9 @@ export type OverlayClickContext = VeIdentity & {
   locale?: string;
 };
 
+const adminUrlOf = ({ adminOrigin, href }: OverlayClickContext): string =>
+  adminOrigin ? new URL(href, adminOrigin).href : href;
+
 export const buildOverlayClickHandler =
   (ctx: OverlayClickContext, win: Window = window) =>
   (event: MouseEvent) => {
@@ -23,9 +26,9 @@ export const buildOverlayClickHandler =
 
     const adminWindow = findAdminWindow(win);
     if (adminWindow) {
-      adminWindow.postMessage(message, ctx.adminOrigin || "*");
+      adminWindow.postMessage(message, ctx.adminOrigin || win.location.origin);
       return;
     }
 
-    win.open(ctx.href, "_blank");
+    win.open(adminUrlOf(ctx), "_blank");
   };

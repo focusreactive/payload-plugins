@@ -1,6 +1,7 @@
 import type { EditBadge } from "./editBadge.js";
 import type { TargetRegistry } from "./targetRegistry.js";
 
+import { DATA_VE_HOVERING_ATTR } from "./constants.js";
 import { findTargetAncestor } from "./targetSelector.js";
 
 export interface HoverController {
@@ -10,12 +11,11 @@ export interface HoverController {
   dispose(): void;
 }
 
-const HOVER_FLAG_ATTR = "data-ve-hovering";
 const setHoverFlag = (on: boolean): void => {
   const body = typeof document === "undefined" ? null : document.body;
   if (!body) return;
-  if (on) body.setAttribute(HOVER_FLAG_ATTR, "true");
-  else body.removeAttribute(HOVER_FLAG_ATTR);
+  if (on) body.setAttribute(DATA_VE_HOVERING_ATTR, "true");
+  else body.removeAttribute(DATA_VE_HOVERING_ATTR);
 };
 
 const CLEAR_GRACE_MS = 250;
@@ -85,7 +85,7 @@ export function createHoverController(badge: EditBadge, registry: TargetRegistry
       const leave = (event: MouseEvent) => {
         if (activeTarget !== target) return;
         const related = event.relatedTarget as Element | null;
-        if (related === label) return;
+        if (related && (related === label || label.contains(related))) return;
         const nextTarget = related ? findTargetAncestor(related) : null;
         if (nextTarget) setActive(nextTarget);
         else scheduleClear();

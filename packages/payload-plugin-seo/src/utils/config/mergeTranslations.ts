@@ -1,8 +1,6 @@
-type NamespacedTranslations = Record<string, Record<string, unknown>>;
+import { isRecord } from "../isRecord";
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+type NamespacedTranslations = Record<string, Record<string, unknown>>;
 
 export function mergeTranslations(
   base: NamespacedTranslations,
@@ -14,8 +12,7 @@ export function mergeTranslations(
     const merged: Record<string, unknown> = { ...out[language] };
     for (const [namespace, value] of Object.entries(namespaces)) {
       const existing = merged[namespace];
-      merged[namespace] =
-        isPlainObject(existing) && isPlainObject(value) ? { ...existing, ...value } : value;
+      merged[namespace] = isRecord(existing) && isRecord(value) ? { ...existing, ...value } : value;
     }
     out[language] = merged;
   }

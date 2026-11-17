@@ -1,11 +1,10 @@
-import { vercelStegaDecode } from "@vercel/stega";
 import { describe, expect, it } from "vitest";
 
 import { createReadHooks } from "../../src/server/hooks/readHooks";
 import { isPlainObject } from "../../src/shared/plainObject";
 import { META_KEY } from "../../src/shared/shared";
 
-import { valueAt } from "../support/markedData";
+import { markerIn, valueAt } from "../support/markedData";
 
 const pagesSchema = {
   body: "richText",
@@ -51,8 +50,7 @@ const afterOperation = (
     result,
   } as unknown as CollectionReadArgs);
 
-const markerAt = (data: unknown, dataPath: string) =>
-  vercelStegaDecode(String(valueAt(data, dataPath)));
+const markerAt = (data: unknown, dataPath: string) => markerIn(String(valueAt(data, dataPath)));
 
 const fieldReferenceOf = (value: unknown) => (isPlainObject(value) ? value[META_KEY] : undefined);
 

@@ -1,4 +1,4 @@
-import { vercelStegaDecode, vercelStegaSplit } from "@vercel/stega";
+import { vercelStegaSplit } from "@vercel/stega";
 import { describe, expect, it } from "vitest";
 
 import type { SchemaField } from "../../src/shared/editableSchema/editableSchema";
@@ -6,6 +6,7 @@ import type { SchemaField } from "../../src/shared/editableSchema/editableSchema
 import { buildEditableSchema } from "../../src/shared/editableSchema/editableSchema";
 import { markRead } from "../../src/server/markRead";
 import { isPlainObject } from "../../src/shared/plainObject";
+import { markerIn } from "../support/markedData";
 
 const pageFields = [
   { name: "title", type: "text" },
@@ -53,7 +54,7 @@ type MarkedText = { marker: unknown; text: string };
 
 const markedTextsIn = (value: unknown): MarkedText[] => {
   if (typeof value === "string") {
-    const marker = vercelStegaDecode(value);
+    const marker = markerIn(value);
     return marker ? [{ marker, text: vercelStegaSplit(value).cleaned }] : [];
   }
   if (Array.isArray(value)) return value.flatMap(markedTextsIn);
@@ -82,19 +83,19 @@ describe("markers of a populated document", () => {
   it("names a block field of the populated document, not its title", () => {
     const home = readAsDraft({ id: "A", related: readAsDraft(newsletterPage()), title: "Home" });
 
-    expect(vercelStegaDecode(home.related.layout[0]?.title ?? "")).toEqual({
+    expect(markerIn(home.related.layout[0]?.title ?? "")).toEqual({
       ...inPage,
       docId: "B",
       key: "layout.cards-1.title",
       path: "layout.0.title",
     });
-    expect(vercelStegaDecode(home.related.title)).toEqual({ ...inPage, docId: "B", path: "title" });
+    expect(markerIn(home.related.title)).toEqual({ ...inPage, docId: "B", path: "title" });
   });
 
   it("names a row of an array nested in a block of the populated document", () => {
     const home = readAsDraft({ id: "A", related: readAsDraft(newsletterPage()), title: "Home" });
 
-    expect(vercelStegaDecode(home.related.layout[0]?.items[1]?.label ?? "")).toEqual({
+    expect(markerIn(home.related.layout[0]?.items[1]?.label ?? "")).toEqual({
       ...inPage,
       docId: "B",
       key: "layout.cards-1.items.item-2.label",
@@ -128,7 +129,7 @@ describe("markers of a populated document", () => {
     expect(markedTextsIn(home.layout[1]?.related)).toEqual(
       markedTextsIn(readAsDraft(newsletterPage()))
     );
-    expect(vercelStegaDecode(home.layout[1]?.title ?? "")).toEqual({
+    expect(markerIn(home.layout[1]?.title ?? "")).toEqual({
       ...inPage,
       docId: "A",
       key: "layout.cards-9.title",
