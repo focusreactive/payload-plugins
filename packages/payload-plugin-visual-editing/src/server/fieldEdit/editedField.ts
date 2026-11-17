@@ -2,10 +2,11 @@ import type { EditableSchema } from "../../shared/editableSchema/editableSchema.
 import type { FieldStep } from "../../shared/fieldKey.js";
 import type { PlainObject } from "../../shared/plainObject.js";
 
-import { textFieldTypeAt } from "../../shared/editableSchema/editableSchema.js";
+import { textFieldTypeAt, uploadCollectionAt } from "../../shared/editableSchema/editableSchema.js";
 import { editedTextOf } from "../../shared/fieldEdit.js";
 import { FIELD_PATH_SEPARATOR } from "../../shared/fieldKey.js";
 import { isPlainObject } from "../../shared/plainObject.js";
+import { idOf } from "../../shared/veDocument.js";
 
 export type EditedField = { name: string; value: unknown };
 
@@ -68,6 +69,12 @@ export const showsText = (document: unknown, schema: EditableSchema, key: string
   );
 };
 
+const fieldWith = (document: unknown, { path }: Walked, value: unknown): EditedField | null => {
+  const [name, ...rest] = path;
+  if (typeof name !== "string" || !isPlainObject(document)) return null;
+  return { name, value: withValueAt(document[name], rest, value) };
+};
+
 export const editedFieldOf = (
   document: unknown,
   schema: EditableSchema,
@@ -77,7 +84,29 @@ export const editedFieldOf = (
   const walked = walkTo(document, key);
   const fieldType = walked && textFieldTypeAt(schema, walked.steps);
   if (!walked || !fieldType || !mayHoldText(walked.value)) return null;
-  const [name, ...rest] = walked.path;
-  if (typeof name !== "string" || !isPlainObject(document)) return null;
-  return { name, value: withValueAt(document[name], rest, editedTextOf(fieldType, value)) };
+  return fieldWith(document, walked, editedTextOf(fieldType, value));
+};
+
+const mayHoldOneDocument = (value: unknown): boolean =>
+  idOf(value) !== null || value === null || value === undefined;
+
+export const shownUploadCollectionOf = (
+  document: unknown,
+  schema: EditableSchema,
+  key: string
+): string | null => {
+  const walked = walkTo(document, key);
+  return walked && idOf(walked.value) !== null ? uploadCollectionAt(schema, walked.steps) : null;
+};
+
+export const replacedUploadOf = (
+  document: unknown,
+  schema: EditableSchema,
+  key: string,
+  mediaId: number | string
+): EditedField | null => {
+  const walked = walkTo(document, key);
+  const collection = walked && uploadCollectionAt(schema, walked.steps);
+  if (!walked || !collection || !mayHoldOneDocument(walked.value)) return null;
+  return fieldWith(document, walked, mediaId);
 };

@@ -106,6 +106,7 @@ const pageFields: Field[] = [
   { name: "eitherFile", type: "upload", relationTo: ["media", "documents"] },
   { name: "brochure", type: "upload", relationTo: "documents" },
   { name: "localizedImage", type: "upload", relationTo: "media", localized: true },
+  { name: "hiddenImage", type: "upload", relationTo: "media", hidden: true },
 ];
 
 const settings: GlobalConfig = {

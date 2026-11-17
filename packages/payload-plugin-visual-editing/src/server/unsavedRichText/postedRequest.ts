@@ -46,7 +46,7 @@ const readField = (field: unknown): LiveRichTextField | null => {
   return { ...veDocumentOf(field as LiveRichTextField), key: field.key };
 };
 
-const idOfCollection = (payload: Payload, collection: string, docId: string) => {
+export const idOfCollection = (payload: Payload, collection: string, docId: string) => {
   const idType = payload.collections[collection]?.customIDType ?? payload.db.defaultIDType;
   if (idType !== NUMBER_ID_TYPE) return docId === "" ? null : docId;
   const id = Number(docId);
