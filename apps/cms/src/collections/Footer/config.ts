@@ -27,7 +27,7 @@ export const Footer: CollectionConfig<"footer"> = {
     defaultColumns: ["name", "logo"],
     group: "Global Components",
     useAsTitle: "name",
-    ...createStandalonePreview("footer", "footer"),
+    ...createStandalonePreview("footer"),
   },
   fields: [
     {

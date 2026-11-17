@@ -27,7 +27,7 @@ export const Header: CollectionConfig<"header"> = {
     defaultColumns: ["name", "logo"],
     group: "Global Components",
     useAsTitle: "name",
-    ...createStandalonePreview("header", "header"),
+    ...createStandalonePreview("header"),
   },
   fields: [
     {

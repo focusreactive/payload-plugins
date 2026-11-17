@@ -1,21 +1,21 @@
-import { draftMode } from "next/headers";
+import { draftMode, headers } from "next/headers";
 
 import { getPayloadClient } from "@/dal/payload-client";
 import type { Locale } from "@/lib/types";
+import type { StandalonePreviewCollection } from "@/lib/utils/standalonePreview";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
-import type { Footer, Header } from "@/payload-types";
+import type { Config } from "@/payload-types";
 
-interface PreviewDocuments {
-  footer: Footer;
-  header: Header;
-}
+import { PAGE_RENDER_DEPTH } from "./getPageBySlug";
 
 /**
- * Reads a header/footer for its standalone preview page. In draft mode (entered through
- * `/next/preview`, which requires an admin session) the latest draft is returned;
- * otherwise only a published document is.
+ * Reads the latest draft of a header, footer or global block for its standalone preview page.
+ *
+ * Only an editor gets it: the request must be in draft mode (entered through `/next/preview`,
+ * which checks the preview secret and the admin session) and carry a signed-in user, whose
+ * access the read goes through. Anyone else gets `null`, so the preview URL is a 404 to them.
  */
-export async function getPreviewDocument<TCollection extends keyof PreviewDocuments>({
+export async function getPreviewDocument<TCollection extends StandalonePreviewCollection>({
   collection,
   id,
   locale,
@@ -23,22 +23,25 @@ export async function getPreviewDocument<TCollection extends keyof PreviewDocume
   collection: TCollection;
   id: number;
   locale?: Locale;
-}): Promise<PreviewDocuments[TCollection] | null> {
+}): Promise<Config["collections"][TCollection] | null> {
   const { isEnabled: draft } = await draftMode();
-  const payload = await getPayloadClient();
+  if (!draft) return null;
 
-  const doc = (await payload.findByID({
+  const payload = await getPayloadClient();
+  const { user } = await payload.auth({ headers: await headers() });
+  if (!user) return null;
+
+  const doc = await payload.findByID({
     collection,
-    context: { visualEditing: draft },
-    depth: 2,
+    context: { visualEditing: true },
+    depth: collection === "globalBlock" ? PAGE_RENDER_DEPTH : 2,
     disableErrors: true,
-    draft,
+    draft: true,
     id,
     locale: await resolveLocale(locale),
-  })) as PreviewDocuments[TCollection] | null;
+    overrideAccess: false,
+    user,
+  });
 
-  if (!doc) return null;
-  if (!draft && doc._status !== "published") return null;
-
-  return doc;
+  return doc as Config["collections"][TCollection] | null;
 }

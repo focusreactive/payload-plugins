@@ -3,13 +3,30 @@ import type { CollectionConfig } from "payload";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 
-type StandalonePreviewCollection = "globalBlock" | "header" | "footer";
+/**
+ * Documents that have no URL of their own and are previewed on
+ * `/[locale]/preview/<segment>/<id>`, keyed by that URL segment.
+ */
+export const STANDALONE_PREVIEW_COLLECTIONS = {
+  footer: "footer",
+  "global-block": "globalBlock",
+  header: "header",
+} as const;
 
-type AdminConfig = NonNullable<CollectionConfig["admin"]>;
+export type StandalonePreviewSegment = keyof typeof STANDALONE_PREVIEW_COLLECTIONS;
+export type StandalonePreviewCollection =
+  (typeof STANDALONE_PREVIEW_COLLECTIONS)[StandalonePreviewSegment];
+
+export const isStandalonePreviewSegment = (segment: string): segment is StandalonePreviewSegment =>
+  Object.hasOwn(STANDALONE_PREVIEW_COLLECTIONS, segment);
+
+const segmentOf = (collection: StandalonePreviewCollection): StandalonePreviewSegment =>
+  (Object.keys(STANDALONE_PREVIEW_COLLECTIONS) as StandalonePreviewSegment[]).find(
+    (segment) => STANDALONE_PREVIEW_COLLECTIONS[segment] === collection
+  )!;
 
 const standalonePreviewPath = (
   collection: StandalonePreviewCollection,
-  segment: string,
   id: unknown,
   locale: string
 ): string => {
@@ -17,22 +34,20 @@ const standalonePreviewPath = (
 
   return generatePreviewPath({
     collection,
-    path: `${prefix}/preview/${segment}/${id}`,
+    path: `${prefix}/preview/${segmentOf(collection)}/${id}`,
     slug: String(id ?? ""),
   });
 };
 
-/**
- * Live preview + preview button config for documents that have no URL of their own
- * (header, footer, global block). They render on `/[locale]/preview/<segment>/<id>`.
- */
+type AdminConfig = NonNullable<CollectionConfig["admin"]>;
+
+/** Live preview + preview button config for a standalone preview collection. */
 export const createStandalonePreview = (
-  collection: StandalonePreviewCollection,
-  segment: string
+  collection: StandalonePreviewCollection
 ): Required<Pick<AdminConfig, "livePreview" | "preview">> => ({
   livePreview: {
     url: ({ data, locale }) =>
-      standalonePreviewPath(collection, segment, data?.id, locale.code ?? locale.fallbackLocale),
+      standalonePreviewPath(collection, data?.id, locale.code ?? locale.fallbackLocale),
   },
-  preview: (data, { locale }) => standalonePreviewPath(collection, segment, data?.id, locale),
+  preview: (data, { locale }) => standalonePreviewPath(collection, data?.id, locale),
 });
