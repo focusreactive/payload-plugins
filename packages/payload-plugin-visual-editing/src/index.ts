@@ -13,9 +13,9 @@ import {
 import { createSchemaCache, withSchemaCache } from "./server/schemaCache.js";
 import { createStripStegaHook } from "./server/hooks/stripStegaHook.js";
 import {
-  withInstantPreviewCollection,
-  withInstantPreviewGlobal,
-} from "./server/withInstantPreview.js";
+  withDocumentControlsCollection,
+  withDocumentControlsGlobal,
+} from "./server/withDocumentControls.js";
 
 export {
   defaultExcludeValues,
@@ -77,8 +77,9 @@ export const visualEditingPlugin =
     const enrichment = pluginConfig.enrichment ?? "auto";
     const instantPreview = pluginConfig.instantPreview ?? false;
     const excludeFieldNames = pluginConfig.excludeFieldNames ?? [];
-    const instantPreviewOptions = {
+    const documentControlsOptions = {
       excludeFieldNames,
+      instantPreview,
       rootLivePreview: config.admin?.livePreview,
     };
 
@@ -110,9 +111,7 @@ export const visualEditingPlugin =
             afterOperation: [...(collection.hooks?.afterOperation ?? []), collectionAfterOperation],
           },
         };
-        return instantPreview
-          ? withInstantPreviewCollection(withHooks, instantPreviewOptions)
-          : withHooks;
+        return withDocumentControlsCollection(withHooks, documentControlsOptions);
       }),
       globals: config.globals?.map((global) => {
         if (skipGlobals.has(global.slug)) return global;
@@ -126,9 +125,7 @@ export const visualEditingPlugin =
             afterRead: [...(global.hooks?.afterRead ?? []), globalAfterRead],
           },
         };
-        return instantPreview
-          ? withInstantPreviewGlobal(withHooks, instantPreviewOptions)
-          : withHooks;
+        return withDocumentControlsGlobal(withHooks, documentControlsOptions);
       }),
       admin: {
         ...config.admin,

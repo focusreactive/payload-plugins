@@ -40,6 +40,25 @@ describe("overlay click handler", () => {
     );
   });
 
+  it("posts to its own origin, never to any origin, when the admin origin is not known", () => {
+    const postMessage = vi.fn();
+    const win = {
+      parent: { postMessage },
+      opener: null,
+      open: vi.fn(),
+      location: { origin: "https://site.example" },
+    } as unknown as Window;
+
+    buildOverlayClickHandler(
+      { ...ctx, adminOrigin: "" },
+      win
+    )({
+      preventDefault: vi.fn(),
+    } as unknown as MouseEvent);
+
+    expect(postMessage).toHaveBeenCalledWith(expect.anything(), "https://site.example");
+  });
+
   it("posts to opener when opener is present and not iframe", () => {
     const postMessage = vi.fn();
     const opener = { postMessage, closed: false };

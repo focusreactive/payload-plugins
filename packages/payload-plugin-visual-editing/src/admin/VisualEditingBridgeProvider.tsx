@@ -11,15 +11,12 @@ import { expandAndFocus } from "./expandAndFocus.js";
 import { currentFormPathOf, OpenFormsContext } from "./openField/openForms.js";
 import type { AnnounceOpenForm, OpenForm } from "./openField/openForms.js";
 import { parseFieldPath } from "./parseFieldPath.js";
+import { isFromAdminOrPreviewPage, PreviewPagesContext } from "./previewPages.js";
+import type { AnnouncePreviewPage, PreviewPage } from "./previewPages.js";
 import { resolveContainerChain } from "./resolveContainerChain.js";
 import type { ContainerInstruction, ResolverField } from "./resolveContainerChain.js";
 
 const escapeRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-const isSameOrigin = (eventOrigin: string): boolean => {
-  if (typeof window === "undefined") return false;
-  return eventOrigin === window.location.origin;
-};
 
 const makeLocators = (adminBasePath: string) => {
   const base = escapeRegex(adminBasePath);
@@ -88,6 +85,7 @@ export function VisualEditingBridgeProvider({
 }) {
   const { getEntityConfig } = useConfig();
   const [openForms] = useState(() => new Set<OpenForm>());
+  const [previewPages] = useState(() => new Set<PreviewPage>());
 
   const announceOpenForm = useCallback<AnnounceOpenForm>(
     (form) => {
@@ -97,6 +95,16 @@ export function VisualEditingBridgeProvider({
       };
     },
     [openForms]
+  );
+
+  const announcePreviewPage = useCallback<AnnouncePreviewPage>(
+    (page) => {
+      previewPages.add(page);
+      return () => {
+        previewPages.delete(page);
+      };
+    },
+    [previewPages]
   );
 
   useEffect(() => {
@@ -132,7 +140,7 @@ export function VisualEditingBridgeProvider({
     }
 
     const handle = (event: MessageEvent) => {
-      if (!isSameOrigin(event.origin)) return;
+      if (!isFromAdminOrPreviewPage(event, window.location.origin, previewPages)) return;
       const data = event.data as VeOpenFieldMessage | undefined;
       if (!data || data.type !== VE_MESSAGE_TYPE) return;
 
@@ -170,7 +178,11 @@ export function VisualEditingBridgeProvider({
 
     window.addEventListener("message", handle);
     return () => window.removeEventListener("message", handle);
-  }, [getEntityConfig, adminBasePath, openForms]);
+  }, [getEntityConfig, adminBasePath, openForms, previewPages]);
 
-  return <OpenFormsContext.Provider value={announceOpenForm}>{children}</OpenFormsContext.Provider>;
+  return (
+    <PreviewPagesContext.Provider value={announcePreviewPage}>
+      <OpenFormsContext.Provider value={announceOpenForm}>{children}</OpenFormsContext.Provider>
+    </PreviewPagesContext.Provider>
+  );
 }

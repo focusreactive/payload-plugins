@@ -18,6 +18,8 @@ export const VE_FOCUS_PARAM = "veFocus";
 
 export type DocKind = "collection" | "global";
 
+export const VE_READ_HEADER = "x-visual-editing";
+
 export const VE_MESSAGE_TYPE = "ve:open-field";
 
 export type VeOpenFieldMessage = {

@@ -23,7 +23,7 @@ export const buildOverlayClickHandler =
 
     const adminWindow = findAdminWindow(win);
     if (adminWindow) {
-      adminWindow.postMessage(message, ctx.adminOrigin || "*");
+      adminWindow.postMessage(message, ctx.adminOrigin || win.location.origin);
       return;
     }
 

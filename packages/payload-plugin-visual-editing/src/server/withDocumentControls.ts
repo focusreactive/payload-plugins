@@ -2,14 +2,16 @@ import type { CollectionConfig, Config, CustomComponent, GlobalConfig } from "pa
 
 import { PACKAGE_NAME } from "../shared/packageName.js";
 
+const PREVIEW_PAGE_ANNOUNCER_PATH = `${PACKAGE_NAME}/admin#PreviewPageAnnouncer`;
 const INSTANT_PREVIEW_COMPONENT_PATH = `${PACKAGE_NAME}/admin#InstantPreviewBroadcaster`;
 const OPEN_FORM_ANNOUNCER_PATH = `${PACKAGE_NAME}/admin#OpenFormAnnouncer`;
 
 type RootLivePreview = NonNullable<Config["admin"]>["livePreview"];
 
-export type InstantPreviewOptions = {
+export type DocumentControlsOptions = {
   rootLivePreview: RootLivePreview;
   excludeFieldNames: string[];
+  instantPreview: boolean;
 };
 
 type SlotName = "edit" | "elements";
@@ -26,23 +28,30 @@ const hasLivePreview = (
   slugsPreviewedByRoot: readonly string[] | undefined
 ): boolean => Boolean(admin?.livePreview) || Boolean(slugsPreviewedByRoot?.includes(slug));
 
-const instantPreviewControlsOf = (
+const documentControlsOf = (
   entity: PreviewableEntity,
   slugsPreviewedByRoot: readonly string[] | undefined,
-  { excludeFieldNames }: InstantPreviewOptions
-): CustomComponent[] => [
-  { path: OPEN_FORM_ANNOUNCER_PATH },
-  ...(hasLivePreview(entity, slugsPreviewedByRoot)
-    ? [{ clientProps: { excludeFieldNames }, path: INSTANT_PREVIEW_COMPONENT_PATH }]
-    : []),
-];
+  { excludeFieldNames, instantPreview }: DocumentControlsOptions
+): CustomComponent[] => {
+  const isPreviewed = hasLivePreview(entity, slugsPreviewedByRoot);
+  return [
+    ...(isPreviewed ? [{ path: PREVIEW_PAGE_ANNOUNCER_PATH }] : []),
+    ...(instantPreview ? [{ path: OPEN_FORM_ANNOUNCER_PATH }] : []),
+    ...(instantPreview && isPreviewed
+      ? [{ clientProps: { excludeFieldNames }, path: INSTANT_PREVIEW_COMPONENT_PATH }]
+      : []),
+  ];
+};
 
-const withInstantPreviewIn = <Entity extends PreviewableEntity>(
+const withDocumentControlsIn = <Entity extends PreviewableEntity>(
   entity: Entity,
   slotName: SlotName,
   slugsPreviewedByRoot: readonly string[] | undefined,
-  options: InstantPreviewOptions
+  options: DocumentControlsOptions
 ): Entity => {
+  const controls = documentControlsOf(entity, slugsPreviewedByRoot, options);
+  if (controls.length === 0) return entity;
+
   const components = entity.admin?.components;
   const slot = components?.[slotName];
   return {
@@ -53,24 +62,21 @@ const withInstantPreviewIn = <Entity extends PreviewableEntity>(
         ...components,
         [slotName]: {
           ...slot,
-          beforeDocumentControls: [
-            ...(slot?.beforeDocumentControls ?? []),
-            ...instantPreviewControlsOf(entity, slugsPreviewedByRoot, options),
-          ],
+          beforeDocumentControls: [...(slot?.beforeDocumentControls ?? []), ...controls],
         },
       },
     },
   };
 };
 
-export const withInstantPreviewCollection = (
+export const withDocumentControlsCollection = (
   collection: CollectionConfig,
-  options: InstantPreviewOptions
+  options: DocumentControlsOptions
 ): CollectionConfig =>
-  withInstantPreviewIn(collection, "edit", options.rootLivePreview?.collections, options);
+  withDocumentControlsIn(collection, "edit", options.rootLivePreview?.collections, options);
 
-export const withInstantPreviewGlobal = (
+export const withDocumentControlsGlobal = (
   global: GlobalConfig,
-  options: InstantPreviewOptions
+  options: DocumentControlsOptions
 ): GlobalConfig =>
-  withInstantPreviewIn(global, "elements", options.rootLivePreview?.globals, options);
+  withDocumentControlsIn(global, "elements", options.rootLivePreview?.globals, options);
