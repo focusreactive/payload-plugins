@@ -3,7 +3,10 @@ import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { useVisualEditing, VisualEditingProvider } from "../../src/client/VisualEditingProvider";
+import {
+  useVisualEditing,
+  VisualEditingProvider,
+} from "../../src/client/react/VisualEditingProvider";
 
 let container: HTMLDivElement;
 let root: Root;

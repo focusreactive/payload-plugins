@@ -19,6 +19,7 @@ export type Session = {
   isDraft: boolean;
   enabled: boolean;
   instantPreview: boolean;
+  isInstantPreviewOn: boolean;
   mode: VisualEditingMode;
   buildAdminEditUrl: BuildAdminEditUrl;
   adminOrigin: string;
@@ -126,14 +127,16 @@ export function createPageStore(): PageStore {
 export const sessionOf = (options: SessionOptions, page: PageState): Session => {
   const isDraft = Boolean(options.available);
   const available = isDraft && (!options.framedOnly || page.isFramed);
+  const instantPreview = options.instantPreview ?? true;
   return {
     adminBasePath: options.adminBasePath ?? DEFAULT_ADMIN_BASE_PATH,
     adminOrigin: originOf(options.adminOrigin) ?? page.pageOrigin,
     available,
     buildAdminEditUrl: options.buildAdminEditUrl ?? defaultBuildAdminEditUrl,
     enabled: available && page.mode !== "off",
-    instantPreview: options.instantPreview ?? true,
+    instantPreview,
     isDraft,
+    isInstantPreviewOn: available && instantPreview,
     mode: page.mode,
   };
 };

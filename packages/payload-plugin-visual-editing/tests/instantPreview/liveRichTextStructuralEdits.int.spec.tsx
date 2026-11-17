@@ -6,14 +6,14 @@ import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AdminState, PreviewMessage } from "../../src/admin/instantPreview/previewSession";
-import type { LiveRichTextRender } from "../../src/client/instantPreview/unsavedRender/useUnsavedRender";
+import type { LiveRichTextRender } from "../../src/client/react/useUnsavedRender";
 import type { VeDocument } from "../../src/shared/protocol";
 
 import { createPreviewSession } from "../../src/admin/instantPreview/previewSession";
-import { LiveRichText } from "../../src/client/instantPreview/LiveRichText";
+import { LiveRichText } from "../../src/client/react/LiveRichText";
 import { liveRichTextOf } from "../../src/client/instantPreview/liveRichTextOf";
-import { VisualEditingOverlay } from "../../src/client/VisualEditingOverlay";
-import { VisualEditingProvider } from "../../src/client/VisualEditingProvider";
+import { VisualEditingOverlay } from "../../src/client/react/VisualEditingOverlay";
+import { VisualEditingProvider } from "../../src/client/react/VisualEditingProvider";
 import { withVisualEditingPath } from "../../src/client/withVisualEditingPath";
 import { VE_RICH_TEXT_RENDERED_TYPE, VE_RICH_TEXT_STRUCTURE_TYPE } from "../../src/shared/protocol";
 import { buildEditableSchema } from "../../src/shared/editableSchema/editableSchema";

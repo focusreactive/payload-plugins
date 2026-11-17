@@ -2,19 +2,24 @@ import type { ReactNode } from "react";
 
 import { startTransition, useContext, useRef, useState } from "react";
 
-import type { LiveRichTextRequest } from "../../../shared/protocol.js";
-import type { LiveRichTextIdentity } from "../liveRichTextOf.js";
-import type { LiveRichText } from "./liveRichText.js";
-import type { RenderedOnThePage } from "./renderValue.js";
-import type { RenderOfShape, UnsavedRenderState } from "./unsavedRender.js";
+import type { LiveRichTextRequest } from "../../shared/protocol.js";
+import type { LiveRichTextIdentity } from "../instantPreview/liveRichTextOf.js";
+import type { LiveRichText } from "../instantPreview/unsavedRender/liveRichText.js";
+import type {
+  RenderedOnThePage,
+  RichTextRenders,
+} from "../instantPreview/unsavedRender/renderSources.js";
+import type {
+  RenderOfShape,
+  UnsavedRenderState,
+} from "../instantPreview/unsavedRender/unsavedRender.js";
 
-import { OverlayScopeContext } from "../../overlayContext.js";
-import { startLiveRichText } from "../../overlayScope.js";
-import { useIsomorphicLayoutEffect } from "../../useIsomorphicLayoutEffect.js";
-import { usePayloadValues, useVisualEditing } from "../../VisualEditingProvider.js";
-import { shownWithoutLiveRichText } from "./liveRichText.js";
-import { renderedOnThePage, renderedThroughPayload } from "./renderValue.js";
-import { NOTHING_TOLD } from "./unsavedRender.js";
+import { OverlayScopeContext } from "./overlayContext.js";
+import { startLiveRichText } from "../overlayScope.js";
+import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect.js";
+import { useRenderSources, useVisualEditing } from "./VisualEditingProvider.js";
+import { shownWithoutLiveRichText } from "../instantPreview/unsavedRender/liveRichText.js";
+import { NOTHING_TOLD } from "../instantPreview/unsavedRender/unsavedRender.js";
 
 export type LiveRichTextRender = (
   request: LiveRichTextRequest,
@@ -40,10 +45,9 @@ export function useUnsavedRender(
   saved: RenderOfShape<ReactNode>,
   { render, renderValue }: UnsavedRenders
 ): UnsavedRenderOfField {
-  const { adminOrigin, available, instantPreview } = useVisualEditing();
-  const payloadValues = usePayloadValues();
+  const { adminOrigin, isInstantPreviewOn: isLive } = useVisualEditing();
+  const sources = useRenderSources();
   const scope = useContext(OverlayScopeContext);
-  const isLive = available && instantPreview;
   const isRenderedOnThePage = renderValue !== undefined;
   const [state, setState] = useState<UnsavedRenderState<ReactNode>>(NOTHING_TOLD);
   const live = useRef<LiveRichText<ReactNode> | null>(null);
@@ -51,10 +55,10 @@ export function useUnsavedRender(
   const latest = useRef({
     adminOrigin,
     identity,
-    payloadValues,
     render,
     renderValue,
     savedShape: saved.shape,
+    sources,
     state,
   });
 
@@ -62,10 +66,10 @@ export function useUnsavedRender(
     latest.current = {
       adminOrigin,
       identity,
-      payloadValues,
       render,
       renderValue,
       savedShape: saved.shape,
+      sources,
       state,
     };
   });
@@ -79,21 +83,14 @@ export function useUnsavedRender(
     shownNow.commit();
   });
 
-  const renderValueNow = (value: unknown) => latest.current.renderValue?.(value);
-
-  const renderUnsaved: LiveRichTextRender = (request, signal) => {
-    const { payloadValues: values, render: renderCall } = latest.current;
-    if (!latest.current.renderValue || !values?.source.canAsk()) {
-      return renderCall(request, signal);
-    }
-    return renderedThroughPayload({ ...values, renderValue: renderValueNow })(request, signal);
-  };
-
-  const bases = payloadValues?.bases ?? null;
+  const rendersNow = (): RichTextRenders<ReactNode> => ({
+    render: latest.current.render,
+    renderValue: latest.current.renderValue && ((value) => latest.current.renderValue?.(value)),
+  });
 
   useIsomorphicLayoutEffect(() => {
     if (!isLive || !isRenderedOnThePage) return;
-    const rendered = renderedOnThePage(latest.current.identity, bases, renderValueNow, () =>
+    const rendered = sources.onThePage(latest.current.identity, rendersNow(), () =>
       live.current?.renderOnThePageAgain()
     );
     onThePage.current = rendered;
@@ -101,7 +98,7 @@ export function useUnsavedRender(
       onThePage.current = null;
       rendered?.stop();
     };
-  }, [isLive, isRenderedOnThePage, bases, identity.hasReferences]);
+  }, [isLive, isRenderedOnThePage, sources, identity.hasReferences]);
 
   useIsomorphicLayoutEffect(() => {
     if (!isLive) return;
@@ -114,7 +111,7 @@ export function useUnsavedRender(
         else show();
       },
       optimistic: (request) => onThePage.current?.optimistic(request) ?? null,
-      render: renderUnsaved,
+      render: (request, signal) => latest.current.sources.render(rendersNow(), request, signal),
       savedShape: latest.current.savedShape,
       shown: latest.current.state,
     });

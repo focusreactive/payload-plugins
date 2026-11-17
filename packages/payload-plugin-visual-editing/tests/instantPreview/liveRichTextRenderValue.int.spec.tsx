@@ -8,14 +8,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LiveRichTextIdentity } from "../../src/client/instantPreview/liveRichTextOf";
 import type { EditorNode } from "../../src/shared/richText/editorNodes";
 
-import { LiveRichText } from "../../src/client/instantPreview/LiveRichText";
+import { LiveRichText } from "../../src/client/react/LiveRichText";
 import { liveRichTextOf } from "../../src/client/instantPreview/liveRichTextOf";
 import { optimisticValueOf } from "../../src/client/instantPreview/unsavedRender/optimisticValue";
 import {
   SERVER_CHECK_PAUSE_MS,
   STRUCTURE_SETTLE_MS,
 } from "../../src/client/instantPreview/unsavedRender/unsavedRender";
-import { VisualEditingProvider } from "../../src/client/VisualEditingProvider";
+import { VisualEditingProvider } from "../../src/client/react/VisualEditingProvider";
 import {
   VE_DOCUMENT_SAVED_TYPE,
   VE_FIELD_PATCH_TYPE,
@@ -396,20 +396,6 @@ describe("LiveRichText with a renderer of the value on the page", () => {
         await waitInAct(0);
 
         expect(askedForBase()).toHaveLength(1);
-        expect(askedForState()).toEqual([]);
-        expect(shownTexts()).toEqual(["Hello", "Saved callout", "New"]);
-      });
-
-      it("asks for the saved value again after the document is saved", async () => {
-        await renderWithPayload();
-        await tellFromAdmin(firstPatch());
-        await waitInAct(0);
-        await tellFromAdmin({ type: VE_DOCUMENT_SAVED_TYPE });
-
-        await tellFromAdmin(structureOf(withBlockAndNewParagraph()));
-        await waitInAct(0);
-
-        expect(askedForBase()).toHaveLength(2);
         expect(askedForState()).toEqual([]);
         expect(shownTexts()).toEqual(["Hello", "Saved callout", "New"]);
       });

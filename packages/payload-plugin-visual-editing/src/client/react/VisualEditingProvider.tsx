@@ -10,13 +10,22 @@ import {
   useSyncExternalStore,
 } from "react";
 
-import type { BuildAdminEditUrl } from "../shared/buildAdminEditUrl.js";
-import type { PayloadValues } from "./instantPreview/unsavedRender/renderValue.js";
-import type { Session } from "./session.js";
-import type { VisualEditingMode } from "./visualEditingMode.js";
+import type { BuildAdminEditUrl } from "../../shared/buildAdminEditUrl.js";
+import type { RenderSources } from "../instantPreview/unsavedRender/renderSources.js";
+import type { Session } from "../session.js";
+import type { VisualEditingMode } from "../visualEditingMode.js";
 
-import { listenToPayloadValues } from "./instantPreview/unsavedRender/renderValue.js";
-import { createPageStore, DETACHED_PAGE, payloadApiOf, sessionOf, toggledMode } from "./session.js";
+import {
+  listenToRenderSources,
+  RENDER_SOURCES_OF_THE_PAGE_ALONE,
+} from "../instantPreview/unsavedRender/renderSources.js";
+import {
+  createPageStore,
+  DETACHED_PAGE,
+  payloadApiOf,
+  sessionOf,
+  toggledMode,
+} from "../session.js";
 import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect.js";
 
 type VisualEditingContextType = Session & {
@@ -32,7 +41,7 @@ const VisualEditingContext = createContext<VisualEditingContextType>({
   toggleEnabled: noop,
 });
 
-const PayloadValuesContext = createContext<PayloadValues | null>(null);
+const RenderSourcesContext = createContext<RenderSources>(RENDER_SOURCES_OF_THE_PAGE_ALONE);
 
 const readDetachedPage = () => DETACHED_PAGE;
 
@@ -84,9 +93,9 @@ export function VisualEditingProvider({
   ]);
 
   const payloadApi = payloadApiOf({ adminOrigin, payloadApi: namedPayloadApi });
-  const [payloadValues, setPayloadValues] = useState<PayloadValues | null>(null);
+  const [renderSources, setRenderSources] = useState(RENDER_SOURCES_OF_THE_PAGE_ALONE);
   const latestAdminOrigin = useRef(value.adminOrigin);
-  const isInstantPreviewOn = value.available && value.instantPreview;
+  const { isInstantPreviewOn } = value;
 
   useIsomorphicLayoutEffect(() => {
     latestAdminOrigin.current = value.adminOrigin;
@@ -94,23 +103,26 @@ export function VisualEditingProvider({
 
   useIsomorphicLayoutEffect(() => {
     if (!isInstantPreviewOn || !payloadApi) return;
-    const listening = listenToPayloadValues(() => latestAdminOrigin.current, payloadApi);
-    setPayloadValues(listening);
+    const listening = listenToRenderSources({
+      adminOrigin: () => latestAdminOrigin.current,
+      payloadApi,
+    });
+    setRenderSources(listening);
     return () => {
       listening.stop();
-      setPayloadValues(null);
+      setRenderSources(RENDER_SOURCES_OF_THE_PAGE_ALONE);
     };
   }, [isInstantPreviewOn, payloadApi]);
 
   return (
     <VisualEditingContext.Provider value={value}>
-      <PayloadValuesContext.Provider value={payloadValues}>
+      <RenderSourcesContext.Provider value={renderSources}>
         {children}
-      </PayloadValuesContext.Provider>
+      </RenderSourcesContext.Provider>
     </VisualEditingContext.Provider>
   );
 }
 
 export const useVisualEditing = () => useContext(VisualEditingContext);
 
-export const usePayloadValues = () => useContext(PayloadValuesContext);
+export const useRenderSources = () => useContext(RenderSourcesContext);

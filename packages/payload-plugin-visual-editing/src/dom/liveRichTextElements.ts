@@ -1,13 +1,15 @@
 import type { LiveRichTextIdentity } from "../client/instantPreview/liveRichTextOf.js";
-import type { BaseValues } from "../client/instantPreview/unsavedRender/baseValues.js";
 import type {
   LiveRichText,
   RenderUnsavedRichText,
 } from "../client/instantPreview/unsavedRender/liveRichText.js";
+import type {
+  RenderSources,
+  RichTextRenders,
+} from "../client/instantPreview/unsavedRender/renderSources.js";
 import type { OverlayScope } from "../client/overlayScope.js";
 
 import { liveRichTextOf } from "../client/instantPreview/liveRichTextOf.js";
-import { renderedOnThePage } from "../client/instantPreview/unsavedRender/renderValue.js";
 import { startLiveRichText } from "../client/overlayScope.js";
 import { withVisualEditingPath } from "../client/withVisualEditingPath.js";
 import { isPlainObject } from "../shared/plainObject.js";
@@ -21,9 +23,7 @@ export type RenderRichTextValue = (
   signal: AbortSignal
 ) => string | null | Promise<string | null>;
 
-export type RenderOnThePage = { bases: BaseValues; renderValue: RenderRichTextValue };
-
-type LiveRichTextRenders = { render: RenderRichTextHtml; onThePage: RenderOnThePage | null };
+const stopNothing = (): void => undefined;
 
 const identityOf = (element: Element): LiveRichTextIdentity | null => {
   try {
@@ -51,15 +51,12 @@ const startElement = (
   identity: LiveRichTextIdentity,
   scope: OverlayScope,
   adminOrigin: () => string,
-  { onThePage, render }: LiveRichTextRenders
+  sources: RenderSources,
+  renders: RichTextRenders<string>
 ): (() => void) => {
   const saved = { node: element.innerHTML, shape: identity.shape };
   let live: LiveRichText<string> | null = null;
-  const local =
-    onThePage &&
-    renderedOnThePage(identity, onThePage.bases, onThePage.renderValue, () =>
-      live?.renderOnThePageAgain()
-    );
+  const local = sources.onThePage(identity, renders, () => live?.renderOnThePageAgain());
   let inserted = saved.node;
   const started = startLiveRichText<string>(scope, {
     adminOrigin,
@@ -73,7 +70,7 @@ const startElement = (
       shown.commit();
     },
     optimistic: local?.optimistic,
-    render,
+    render: (request, signal) => sources.render(renders, request, signal),
     savedShape: identity.shape,
   });
   live = started;
@@ -87,12 +84,16 @@ export function startLiveRichTextElements(
   root: HTMLElement,
   scope: OverlayScope,
   adminOrigin: () => string,
-  renders: LiveRichTextRenders
+  sources: RenderSources,
+  renders: RichTextRenders<string>
 ): () => void {
+  if (!sources.canShow(renders)) return stopNothing;
   const stops = [...root.querySelectorAll(`[${DATA_VE_LIVE_RICH_TEXT_ATTR}]`)].flatMap(
     (element) => {
       const identity = identityOf(element);
-      return identity ? [startElement(element, identity, scope, adminOrigin, renders)] : [];
+      return identity
+        ? [startElement(element, identity, scope, adminOrigin, sources, renders)]
+        : [];
     }
   );
   return () => {

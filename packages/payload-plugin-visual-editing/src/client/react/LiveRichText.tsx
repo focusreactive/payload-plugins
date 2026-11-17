@@ -4,17 +4,17 @@ import type { ReactNode } from "react";
 
 import { Fragment, useContext } from "react";
 
-import type { LiveRichTextIdentity } from "./liveRichTextOf.js";
+import type { LiveRichTextIdentity } from "../instantPreview/liveRichTextOf.js";
 import type {
   LiveRichTextAction,
   LiveRichTextRender,
   LiveRichTextRenderValue,
-} from "./unsavedRender/useUnsavedRender.js";
+} from "./useUnsavedRender.js";
 
 import { keyedFieldAddressOf } from "../../shared/veDocument.js";
-import { OverlayScopeContext } from "../overlayContext.js";
-import { UnsavedRenderBoundary } from "./unsavedRender/UnsavedRenderBoundary.js";
-import { useUnsavedRender } from "./unsavedRender/useUnsavedRender.js";
+import { OverlayScopeContext } from "./overlayContext.js";
+import { UnsavedRenderBoundary } from "./UnsavedRenderBoundary.js";
+import { useUnsavedRender } from "./useUnsavedRender.js";
 
 type RenderedByAction = { action: LiveRichTextAction; render?: never };
 

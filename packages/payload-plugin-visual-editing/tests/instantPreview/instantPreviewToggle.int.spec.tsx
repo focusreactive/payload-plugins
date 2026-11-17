@@ -6,8 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { VisualEditingMode } from "../../src/client/visualEditingMode";
 
 import { DATA_VE_TARGET_ATTR } from "../../src/client/overlay/constants";
-import { VisualEditingOverlay } from "../../src/client/VisualEditingOverlay";
-import { useVisualEditing, VisualEditingProvider } from "../../src/client/VisualEditingProvider";
+import { VisualEditingOverlay } from "../../src/client/react/VisualEditingOverlay";
+import {
+  useVisualEditing,
+  VisualEditingProvider,
+} from "../../src/client/react/VisualEditingProvider";
 import { STORAGE_KEY } from "../../src/client/visualEditingMode";
 import { VE_FIELD_SNAPSHOT_TYPE, VE_FIELDS_RENDERED_TYPE } from "../../src/shared/protocol";
 

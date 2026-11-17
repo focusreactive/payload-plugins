@@ -5,15 +5,15 @@ import { act, startTransition, use, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { LiveRichTextRender } from "../../src/client/instantPreview/unsavedRender/useUnsavedRender";
+import type { LiveRichTextRender } from "../../src/client/react/useUnsavedRender";
 import type { LiveRichTextField, LiveRichTextRequest } from "../../src/shared/protocol";
 
-import { LiveRichText } from "../../src/client/instantPreview/LiveRichText";
+import { LiveRichText } from "../../src/client/react/LiveRichText";
 import { createSavedRichTextShapes } from "../../src/client/instantPreview/unsavedRender/savedShapes";
 import { COMMIT_WAIT_MS } from "../../src/client/instantPreview/unsavedRender/unsavedRender";
-import { OverlayScopeContext } from "../../src/client/overlayContext";
-import { VisualEditingOverlay } from "../../src/client/VisualEditingOverlay";
-import { VisualEditingProvider } from "../../src/client/VisualEditingProvider";
+import { OverlayScopeContext } from "../../src/client/react/overlayContext";
+import { VisualEditingOverlay } from "../../src/client/react/VisualEditingOverlay";
+import { VisualEditingProvider } from "../../src/client/react/VisualEditingProvider";
 import {
   VE_ANNOUNCE_REQUEST_TYPE,
   VE_RICH_TEXT_RENDERED_TYPE,

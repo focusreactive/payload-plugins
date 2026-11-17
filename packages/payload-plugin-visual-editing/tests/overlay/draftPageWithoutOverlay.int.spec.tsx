@@ -4,8 +4,8 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { DATA_VE_TARGET_ATTR } from "../../src/client/overlay/constants";
-import { VisualEditingOverlay } from "../../src/client/VisualEditingOverlay";
-import { VisualEditingProvider } from "../../src/client/VisualEditingProvider";
+import { VisualEditingOverlay } from "../../src/client/react/VisualEditingOverlay";
+import { VisualEditingProvider } from "../../src/client/react/VisualEditingProvider";
 import { markedText } from "../support/markedData";
 import { flushMutations } from "../support/time";
 

@@ -6,8 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TypographicCard } from "../support/typographicText";
 
 import { DATA_VE_TARGET_ATTR } from "../../src/client/overlay/constants";
-import { VisualEditingOverlay } from "../../src/client/VisualEditingOverlay";
-import { VisualEditingProvider } from "../../src/client/VisualEditingProvider";
+import { VisualEditingOverlay } from "../../src/client/react/VisualEditingOverlay";
+import { VisualEditingProvider } from "../../src/client/react/VisualEditingProvider";
 import { STORAGE_KEY } from "../../src/client/visualEditingMode";
 import { ADMIN_ORIGIN, restorePreviewWindow, stubAdminWindow } from "../support/previewWindow";
 import { flushMutations } from "../support/time";

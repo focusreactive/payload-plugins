@@ -301,6 +301,49 @@ describe("a rich text structure rendered on a page without React", () => {
       expect(visibleText(body)).toEqual(["Hello"]);
     });
 
+    it("renders on the page without the API of Payload and checks with the call of the site", async () => {
+      const renderRichText = vi.fn(async () => "<p>Hello</p><p>From the site</p>");
+      mount({ payloadApi: "", renderRichText });
+
+      postFromAdmin(
+        structureOf(editorState(paragraph(textNode("Hello")), paragraph(textNode("New"))))
+      );
+
+      expect(visibleText(body)).toEqual(["Hello", "New"]);
+      expect(renderRichText).not.toHaveBeenCalled();
+      await waitFor(SERVER_CHECK_PAUSE_MS);
+      await flushMutations();
+
+      expect(renderRichText).toHaveBeenCalledTimes(1);
+      expect(visibleText(body)).toEqual(["Hello", "From the site"]);
+      expect(asked).toEqual([]);
+    });
+
+    it("renders on the page with a renderer of the value alone", () => {
+      mount({ payloadApi: "" });
+
+      postFromAdmin(
+        structureOf(editorState(paragraph(textNode("Hello")), paragraph(textNode("New"))))
+      );
+
+      expect(visibleText(body)).toEqual(["Hello", "New"]);
+    });
+
+    it("checks through Payload with a grant, and leaves the call of the site alone", async () => {
+      const renderRichText = vi.fn(async () => "<p>From the site</p>");
+      mount({ renderRichText });
+
+      postFromAdmin(
+        structureOf(editorState(paragraph(textNode("Hello")), paragraph(textNode("New"))))
+      );
+      await waitFor(SERVER_CHECK_PAUSE_MS);
+      await flushMutations();
+
+      expect(askedForState()).toHaveLength(1);
+      expect(renderRichText).not.toHaveBeenCalled();
+      expect(visibleText(body)).toEqual(["Hello", "New"]);
+    });
+
     it("goes on rendering on the page after a save, without asking for the saved value", async () => {
       mount();
       postFromAdmin({ type: VE_DOCUMENT_SAVED_TYPE });
@@ -404,18 +447,6 @@ describe("a rich text structure rendered on a page without React", () => {
       showPage(editorState(paragraph(textNode("Hello")), callout(SAVED_CALLOUT)));
     });
 
-    it("asks Payload for the saved value once the editor starts typing, and only once", async () => {
-      mount();
-
-      postFromAdmin(firstPatch());
-      postFromAdmin(firstPatch());
-      await flushMutations();
-
-      expect(asked).toEqual([
-        { format: "json", grant: "signed", request: { field: BODY, locale: "en" } },
-      ]);
-    });
-
     it("renders a structure on the page with the fields of the block from the saved value", async () => {
       mount();
       postFromAdmin(firstPatch());
@@ -425,6 +456,17 @@ describe("a rich text structure rendered on a page without React", () => {
 
       expect(visibleText(body)).toEqual(["Hello", "Saved callout", "New"]);
       expect(askedForState()).toEqual([]);
+    });
+
+    it("waits for the call of the site without the API of Payload, which gives the saved value", async () => {
+      mount({ payloadApi: "", renderRichText: async () => "<p>From the site</p>" });
+
+      postFromAdmin(structureOf(withNewParagraph()));
+
+      expect(visibleText(body)).toEqual(["Hello", "Saved callout"]);
+      await settleStructure();
+      await flushMutations();
+      expect(visibleText(body)).toEqual(["From the site"]);
     });
 
     it("renders through Payload until it has the saved value", async () => {
@@ -464,35 +506,6 @@ describe("a rich text structure rendered on a page without React", () => {
       expect(visibleText(body)).toEqual(["Hello", "Saved callout", "New"]);
       expect(askedForBase()).toHaveLength(1);
       expect(askedForState()).toEqual([]);
-    });
-
-    it("asks for the saved value again after the document is saved", async () => {
-      mount();
-      postFromAdmin(firstPatch());
-      await flushMutations();
-      postFromAdmin({ type: VE_DOCUMENT_SAVED_TYPE });
-
-      postFromAdmin(structureOf(withNewParagraph()));
-      expect(visibleText(body)).toEqual(["Hello", "Saved callout"]);
-      await flushMutations();
-
-      expect(askedForBase()).toHaveLength(2);
-      expect(visibleText(body)).toEqual(["Hello", "Saved callout", "New"]);
-    });
-
-    it("asks again for a saved value that did not arrive", async () => {
-      answerOf = (sent) => (sent.request.state === undefined ? null : serverAnswerOf(sent));
-      mount();
-      postFromAdmin(firstPatch());
-      await flushMutations();
-      answerOf = serverAnswerOf;
-
-      postFromAdmin(firstPatch());
-      await flushMutations();
-      postFromAdmin(structureOf(withNewParagraph()));
-
-      expect(askedForBase()).toHaveLength(2);
-      expect(visibleText(body)).toEqual(["Hello", "Saved callout", "New"]);
     });
   });
 });

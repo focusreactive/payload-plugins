@@ -187,6 +187,19 @@ describe("session", () => {
     expect(sessionOf({ instantPreview: false }, framedPage).instantPreview).toBe(false);
   });
 
+  it("runs instant preview only where visual editing is available", () => {
+    const standalonePage = { ...framedPage, isFramed: false };
+
+    expect(sessionOf({ available: true }, framedPage).isInstantPreviewOn).toBe(true);
+    expect(sessionOf({ available: false }, framedPage).isInstantPreviewOn).toBe(false);
+    expect(
+      sessionOf({ available: true, instantPreview: false }, framedPage).isInstantPreviewOn
+    ).toBe(false);
+    expect(
+      sessionOf({ available: true, framedOnly: true }, standalonePage).isInstantPreviewOn
+    ).toBe(false);
+  });
+
   it("finds the API of Payload below the admin origin the site names", () => {
     expect(payloadApiOf({ adminOrigin: "https://cms.example" })).toBe("https://cms.example/api");
     expect(payloadApiOf({ adminOrigin: "https://cms.example/" })).toBe("https://cms.example/api");
