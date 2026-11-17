@@ -6,7 +6,7 @@ import type {
   SerializedElementNode,
 } from "lexical";
 
-import { $applyNodeReplacement, ElementNode } from "lexical";
+import { $applyNodeReplacement, addClassNamesToElement, ElementNode } from "lexical";
 
 import { isPlainObject } from "../../../shared/plainObject.js";
 import { isAllowedLinkUrl } from "../../../shared/richText/linkUrls.js";
@@ -94,8 +94,9 @@ export class PageLinkNode extends ElementNode {
     };
   }
 
-  override createDOM(_config: EditorConfig): HTMLElement {
+  override createDOM(config: EditorConfig): HTMLElement {
     const anchor = document.createElement("a");
+    addClassNamesToElement(anchor, config.theme.link);
     showAddress(anchor, this.__fields);
     return anchor;
   }

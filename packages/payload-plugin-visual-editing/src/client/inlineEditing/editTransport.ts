@@ -26,6 +26,8 @@ export type OnSaveEnded = (isSaved: boolean) => void;
 
 export interface EditTransport {
   send(edit: VeEdit): void;
+  hold(edit: VeEdit): void;
+  drop(field: EditedField): void;
   sendNow(edit: VeEdit, onSaveEnded?: OnSaveEnded): void;
   holdInForm(field: EditedField): void;
   isUnsaved(field: EditedField): boolean;
@@ -40,7 +42,7 @@ export const EDIT_SEND_PAUSE_MS = 400;
 
 export const EDIT_SAVE_PAUSE_MS = 2000;
 
-type WaitingEdit = { edit: VeEdit; timer: ReturnType<typeof setTimeout> };
+type WaitingEdit = { edit: VeEdit; timer: ReturnType<typeof setTimeout> | null };
 
 const addressOf = (field: EditedField): string =>
   JSON.stringify([keyedFieldAddressOf(field), field.locale ?? null]);
@@ -131,12 +133,19 @@ export function createEditTransport(
     adminWindow.postMessage(messageOf(edit), adminOriginOf(getCtx().adminOrigin));
   };
 
-  const deliverWaiting = (address: string) => {
-    const held = waiting.get(address);
-    if (!held) return;
-    clearTimeout(held.timer);
+  const stopWaiting = (address: string): WaitingEdit | null => {
+    const held = waiting.get(address) ?? null;
+    if (held?.timer) clearTimeout(held.timer);
     waiting.delete(address);
-    deliver(held.edit);
+    return held;
+  };
+
+  const isIdle = (): boolean =>
+    waiting.size === 0 && savesOnTheWay.size === 0 && unsavedInForm.size === 0;
+
+  const deliverWaiting = (address: string) => {
+    const held = stopWaiting(address);
+    if (held) deliver(held.edit);
   };
 
   const flush = () => {
@@ -147,6 +156,16 @@ export function createEditTransport(
     dispose() {
       flush();
       isDisposed = true;
+    },
+    drop(field) {
+      if (stopWaiting(addressOf(field)) && isIdle()) settle();
+    },
+    hold(edit) {
+      const address = addressOf(edit);
+      stopWaiting(address);
+      watchedSaves.delete(address);
+      waiting.set(address, { edit, timer: null });
+      report("unsaved");
     },
     flush,
     refuse(field) {
@@ -162,8 +181,7 @@ export function createEditTransport(
     },
     send(edit) {
       const address = addressOf(edit);
-      const held = waiting.get(address);
-      if (held) clearTimeout(held.timer);
+      stopWaiting(address);
       watchedSaves.delete(address);
       const pause = findAdminWindow(win) ? EDIT_SEND_PAUSE_MS : EDIT_SAVE_PAUSE_MS;
       const timer = setTimeout(deliverWaiting, pause, address);
@@ -172,9 +190,7 @@ export function createEditTransport(
     },
     sendNow(edit, onSaveEnded) {
       const address = addressOf(edit);
-      const held = waiting.get(address);
-      if (held) clearTimeout(held.timer);
-      waiting.delete(address);
+      stopWaiting(address);
       if (onSaveEnded) watchedSaves.set(address, onSaveEnded);
       else watchedSaves.delete(address);
       report("unsaved");

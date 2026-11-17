@@ -3,12 +3,13 @@ import type {
   VeEditedField,
   VeEditorState,
   VeRichTextEdit,
+  VeRichTextEditEndedMessage,
   VeRichTextStateRequestMessage,
 } from "../../shared/protocol.js";
 import type { VeRichTextFormats } from "../../shared/richText/formats.js";
 import type { VeIdentity } from "../../shared/shared.js";
 import type { FieldTracker } from "../overlay/fieldTracker.js";
-import type { Point } from "./caret.js";
+import type { Point, TextPosition } from "./caret.js";
 import type { EditSession, RichTextEditor, RichTextEditorLoader } from "./richTextEditor.js";
 
 import { readEditedField, readRichTextEdit } from "../../shared/fieldEdit.js";
@@ -21,6 +22,7 @@ import {
   VE_DOCUMENT_SAVED_TYPE,
   VE_FIELD_PATCH_TYPE,
   VE_FIELD_SNAPSHOT_TYPE,
+  VE_RICH_TEXT_EDIT_ENDED_TYPE,
   VE_RICH_TEXT_STATE_REFUSED_TYPE,
   VE_RICH_TEXT_STATE_REQUEST_TYPE,
   VE_RICH_TEXT_STATE_TYPE,
@@ -38,7 +40,8 @@ import {
 } from "../../shared/veDocument.js";
 import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 import { readMarkerFromAttrs } from "../overlay/markerExtractor.js";
-import { hide, readOnlyCopyOf, twinOf } from "./richTextTwin.js";
+import { textPositionAtPoint } from "./caret.js";
+import { editableTextsIn, hide, readOnlyCopyOf, showAsStarting, twinOf } from "./richTextTwin.js";
 
 export type RichTextEditingCtx = {
   adminOrigin: string;
@@ -53,6 +56,8 @@ export type RichTextEditingDeps = {
   getCtx: () => RichTextEditingCtx;
   holdsFormOf: ((document: VeDocument) => boolean) | null;
   send(edit: VeRichTextEdit): void;
+  holdUnsaved(edit: VeRichTextEdit): void;
+  dropUnsaved(field: VeEditedField): void;
   isUnsaved(field: VeEditedField): boolean;
   flush(): void;
   showInForm(field: VeIdentity): void;
@@ -63,6 +68,7 @@ export interface RichTextEditing {
   editInPlace(target: HTMLElement, event: MouseEvent, openField: () => void): boolean;
   isInsideRichText(target: Element): boolean;
   commit(): void;
+  commitBeforeThePageIsHidden(): void;
   endIfRemoved(): void;
   dispose(): void;
 }
@@ -85,20 +91,19 @@ type Edit = {
   twin: HTMLElement;
   held: Held;
   latest: VeEditorState;
-  wasSent: boolean;
-  isWrapperRenderedAgain: boolean;
+  wasChanged: boolean;
   previous: ReadOnlyTwin | null;
   session: EditSession;
   showAgain(): void;
-  stopWatching(): void;
 };
 
 type WaitingClick = {
   wrapper: HTMLElement;
   field: VeEditedField;
   address: string;
-  point: Point;
+  caret: TextPosition | null;
   openField(): void;
+  showAsWaited(): void;
   timer: ReturnType<typeof setTimeout>;
 };
 
@@ -130,10 +135,18 @@ const heldOf = (field: VeEditedField, answer: unknown): Held | null => {
   return state && formats ? { field, formats, state } : null;
 };
 
+const clickWrapperInstead = (wrapper: HTMLElement, event: MouseEvent) => {
+  const { clientX, clientY } = event;
+  const click = new MouseEvent("click", { bubbles: true, cancelable: true, clientX, clientY });
+  if (!wrapper.dispatchEvent(click)) event.preventDefault();
+};
+
 export function createRichTextEditing({
+  dropUnsaved,
   endOtherEdits,
   flush,
   getCtx,
+  holdUnsaved,
   holdsFormOf,
   isUnsaved,
   send,
@@ -194,6 +207,7 @@ export function createRichTextEditing({
     const waited = waitingClick;
     waitingClick = null;
     if (waited) clearTimeout(waited.timer);
+    waited?.showAsWaited();
     return waited;
   };
 
@@ -238,9 +252,15 @@ export function createRichTextEditing({
 
   const followTyping = (edit: Edit, state: VeEditorState) => {
     edit.latest = state;
-    edit.wasSent = true;
-    edit.isWrapperRenderedAgain = false;
-    send({ ...edit.held.field, state });
+    edit.wasChanged = true;
+    const change = { ...edit.held.field, state };
+    if (findAdminWindow(window)) send(change);
+    else holdUnsaved(change);
+  };
+
+  const tellAdminTheEditEnded = (field: VeEditedField) => {
+    const message: VeRichTextEditEndedMessage = { ...field, type: VE_RICH_TEXT_EDIT_ENDED_TYPE };
+    findAdminWindow(window)?.postMessage(message, adminOriginOf(getCtx().adminOrigin));
   };
 
   const end = (keepsWhatWasTyped: boolean) => {
@@ -249,11 +269,9 @@ export function createRichTextEditing({
     editing = null;
     forget(addressOf(ended.held.field));
     const isOnThePage = ended.twin.isConnected && ended.wrapper.isConnected;
-    const isShownByThePage = !ended.wasSent || ended.isWrapperRenderedAgain;
     const keepsTwin =
-      keepsWhatWasTyped && isOnThePage && !isShownByThePage && !findAdminWindow(window);
+      keepsWhatWasTyped && isOnThePage && ended.wasChanged && !findAdminWindow(window);
     const copy = keepsTwin ? readOnlyCopyOf(ended.twin) : null;
-    ended.stopWatching();
     ended.session.end();
     if (copy) {
       ended.twin.replaceWith(copy);
@@ -261,29 +279,43 @@ export function createRichTextEditing({
     } else {
       ended.twin.remove();
       ended.showAgain();
-      if (keepsWhatWasTyped && ended.isWrapperRenderedAgain) dropReadOnlyTwin(ended.wrapper);
     }
     flush();
+    tellAdminTheEditEnded(ended.held.field);
   };
 
   const commit = () => end(true);
 
+  const takeBack = ({ held: { field, state } }: Edit) => {
+    if (findAdminWindow(window)) send({ ...field, state });
+    else dropUnsaved(field);
+  };
+
   const cancel = () => {
-    if (editing?.wasSent) send({ ...editing.held.field, state: editing.held.state });
+    if (editing?.wasChanged) takeBack(editing);
     end(false);
   };
 
-  const startSession = (twin: HTMLElement, { formats, state }: Held, point: Point) => {
+  const caretAt = (shown: HTMLElement, point: Point): TextPosition | null =>
+    textPositionAtPoint(shown.ownerDocument, editableTextsIn(shown, richTextLeaves), point);
+
+  const startSession = (
+    twin: HTMLElement,
+    { formats, state }: Held,
+    rendered: HTMLElement,
+    caret: TextPosition | null
+  ) => {
     try {
       return (
         editor?.startEditSession({
+          caret,
           formats,
           onCancel: cancel,
           onChange: (changed) => {
             if (editing?.twin === twin) followTyping(editing, changed);
           },
           onCommit: commit,
-          point,
+          rendered,
           state,
           twin,
         }) ?? null
@@ -296,7 +328,7 @@ export function createRichTextEditing({
   const begin = (
     wrapper: HTMLElement,
     ready: Held,
-    point: Point,
+    caret: TextPosition | null,
     previous: ReadOnlyTwin | null
   ): boolean => {
     const marker = readMarkerFromAttrs(wrapper);
@@ -309,28 +341,20 @@ export function createRichTextEditing({
     const twin = twinOf(wrapper);
     shown.after(twin);
     const showAgain = hide(shown);
-    const session = startSession(twin, ready, point);
+    const session = startSession(twin, ready, shown, caret);
     if (!session) {
       twin.remove();
       showAgain();
       return false;
     }
-    const renderedAgain = new MutationObserver(() => {
-      if (editing?.twin === twin && editing.wasSent && !isUnsaved(ready.field)) {
-        editing.isWrapperRenderedAgain = true;
-      }
-    });
-    renderedAgain.observe(wrapper, WRAPPER_CONTENT);
     editing = {
       held: ready,
-      isWrapperRenderedAgain: false,
       latest: ready.state,
       previous,
       session,
       showAgain,
-      stopWatching: () => renderedAgain.disconnect(),
       twin,
-      wasSent: false,
+      wasChanged: false,
       wrapper,
     };
     showInForm({ ...marker, locale: marker.locale ?? getCtx().locale });
@@ -340,9 +364,9 @@ export function createRichTextEditing({
   const beginWaitingEdit = () => {
     const ready = waitingClick && held.get(waitingClick.address);
     if (!waitingClick || !ready || !editor) return;
-    const { openField, point, wrapper } = waitingClick;
+    const { caret, openField, wrapper } = waitingClick;
     stopWaiting();
-    if (!wrapper.isConnected || !begin(wrapper, ready, point, null)) openField();
+    if (!wrapper.isConnected || !begin(wrapper, ready, caret, null)) openField();
   };
 
   const takeLoadedEditor = async (load: RichTextEditorLoader) => {
@@ -414,6 +438,9 @@ export function createRichTextEditing({
     if (waitingClick) askUnlessHeld(waitingClick.field);
   };
 
+  const isEdited = (field: VeEditedField): boolean =>
+    editing !== null && addressOf(editing.held.field) === addressOf(field);
+
   const isCheckedLately = (wrapper: HTMLElement): boolean => {
     const checked = checkedAt.get(wrapper);
     return checked !== undefined && Date.now() - checked < RICH_TEXT_CHECK_PAUSE_MS;
@@ -429,7 +456,7 @@ export function createRichTextEditing({
       if (editing?.wrapper === wrapper || isCheckedLately(wrapper)) continue;
       checkedAt.set(wrapper, Date.now());
       const field = fieldOf(wrapper);
-      if (field) askUnlessHeld(field);
+      if (field && !isEdited(field)) askUnlessHeld(field);
     }
   };
 
@@ -451,7 +478,7 @@ export function createRichTextEditing({
   const editAgain = (wrapper: HTMLElement, event: MouseEvent): boolean => {
     const readOnly = readOnlyTwins.get(wrapper);
     if (!readOnly || !isOffered() || !isPlainPrimaryClick(event)) return false;
-    return begin(wrapper, readOnly.held, pointOf(event), readOnly);
+    return begin(wrapper, readOnly.held, caretAt(readOnly.twin, pointOf(event)), readOnly);
   };
 
   const readOnlyWrapperAt = (target: EventTarget | null): HTMLElement | null => {
@@ -470,9 +497,10 @@ export function createRichTextEditing({
   ) => {
     waitingClick = {
       address: addressOf(field),
+      caret: caretAt(wrapper, pointOf(event)),
       field,
       openField,
-      point: pointOf(event),
+      showAsWaited: showAsStarting(wrapper),
       timer: setTimeout(openFieldInstead, RICH_TEXT_STATE_TIME_LIMIT_MS),
       wrapper,
     };
@@ -493,9 +521,13 @@ export function createRichTextEditing({
 
   const editClickedTwinAgain = (event: MouseEvent) => {
     const editedBefore = readOnlyWrapperAt(event.target);
-    if (!editedBefore || !editAgain(editedBefore, event)) return;
-    event.preventDefault();
-    event.stopPropagation();
+    if (!editedBefore) return;
+    if (editAgain(editedBefore, event)) {
+      event.preventDefault();
+      event.stopPropagation();
+    } else if (!isOffered() && isPlainPrimaryClick(event)) {
+      clickWrapperInstead(editedBefore, event);
+    }
   };
 
   for (const name of POINTER_EVENTS) document.addEventListener(name, askForRichTextUnderThePointer);
@@ -504,6 +536,9 @@ export function createRichTextEditing({
 
   return {
     commit,
+    commitBeforeThePageIsHidden() {
+      if (!findAdminWindow(window)) commit();
+    },
     dispose() {
       commit();
       stopWaiting();
@@ -524,7 +559,7 @@ export function createRichTextEditing({
       if (!field) return false;
       if (waitingClick) return true;
       const ready = held.get(addressOf(field));
-      if (ready && editor) return begin(target, ready, pointOf(event), null);
+      if (ready && editor) return begin(target, ready, caretAt(target, pointOf(event)), null);
       waitForState(target, field, event, openField);
       return true;
     },

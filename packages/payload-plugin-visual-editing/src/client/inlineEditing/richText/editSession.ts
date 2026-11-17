@@ -3,7 +3,6 @@ import type { EditorSelection } from "./pageEditor.js";
 import type { Toolbar } from "./toolbar.js";
 
 import { ACCENT_VAR, DEFAULT_ACCENT } from "../../overlay/constants.js";
-import { placeCaretAtPoint } from "../caret.js";
 import { addEditingStyle, DATA_VE_EDITING_ATTR } from "../textEditing.js";
 import {
   createPageEditor,
@@ -12,6 +11,7 @@ import {
   UNDERLINE_STRIKETHROUGH_CLASS,
 } from "./pageEditor.js";
 import { DATA_VE_OPAQUE_SELECTED_ATTR } from "./opaqueNode.js";
+import { lookOf } from "./renderedLook.js";
 import { createToolbar } from "./toolbar.js";
 
 const STYLE_ID = "ve-rich-text-editing-style";
@@ -24,6 +24,7 @@ const ATTRS_OF_AN_EDITOR: Readonly<Record<string, string>> = {
   "aria-multiline": "true",
   contenteditable: "true",
   role: EDITOR_ROLE,
+  spellcheck: "false",
   [DATA_VE_EDITING_ATTR]: "",
 };
 
@@ -47,11 +48,12 @@ const rectOfSelectionIn = (twin: HTMLElement): DOMRect => {
 };
 
 export function startEditSession({
+  caret,
   formats,
   onCancel,
   onChange,
   onCommit,
-  point,
+  rendered,
   state,
   twin,
 }: EditSessionOptions): EditSession | null {
@@ -83,13 +85,19 @@ export function startEditSession({
     toolbar.editLink();
   };
 
-  const editor = createPageEditor(twin, state, formats, {
-    onCancel,
-    onChange,
-    onError: onCancel,
-    onLinkKey: editLink,
-    onSelection: showSelection,
-  });
+  const editor = createPageEditor(
+    twin,
+    state,
+    formats,
+    {
+      onCancel,
+      onChange,
+      onError: onCancel,
+      onLinkKey: editLink,
+      onSelection: showSelection,
+    },
+    lookOf(rendered, state)
+  );
   if (!editor) {
     for (const [name, value] of editedAttrs) {
       if (value === null) twin.removeAttribute(name);
@@ -102,6 +110,7 @@ export function startEditSession({
     onLink: (url) => editor.setLink(url),
     onLinkClosed: () => {
       twin.focus({ preventScroll: true });
+      editor.restoreSelection();
       if (shownSelection) showSelection(shownSelection);
     },
     onToggle: (action) => editor.toggle(action),
@@ -131,7 +140,7 @@ export function startEditSession({
   win.addEventListener("scroll", followSelection, IN_CAPTURE_PHASE);
   win.addEventListener("resize", followSelection);
   twin.focus({ preventScroll: true });
-  if (point) placeCaretAtPoint(twin, point);
+  editor.placeCaret(caret);
 
   return {
     end() {

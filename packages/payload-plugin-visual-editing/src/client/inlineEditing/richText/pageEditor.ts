@@ -1,5 +1,6 @@
 import type {
   EditorState,
+  EditorThemeClasses,
   ElementNode,
   LexicalEditor,
   LexicalNode,
@@ -27,7 +28,11 @@ import {
 import { $setBlocksType } from "@lexical/selection";
 import { $getNearestNodeOfType, mergeRegister } from "@lexical/utils";
 import {
+  $addUpdateTag,
+  $createNodeSelection,
   $createParagraphNode,
+  $getNearestNodeFromDOMNode,
+  $getNodeByKey,
   $getRoot,
   $getSelection,
   $isElementNode,
@@ -37,6 +42,7 @@ import {
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
+  CLICK_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_HIGH,
   CONTROLLED_TEXT_INSERTION_COMMAND,
@@ -46,6 +52,7 @@ import {
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
   FORMAT_TEXT_COMMAND,
+  HISTORIC_TAG,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   KEY_BACKSPACE_COMMAND,
@@ -62,11 +69,18 @@ import {
 import type { VeEditorState } from "../../../shared/protocol.js";
 import type { EditorNode } from "../../../shared/richText/editorNodes.js";
 import type { VeRichTextFormats } from "../../../shared/richText/formats.js";
+import type { TextPosition } from "../caret.js";
 
 import { forEachEditableNode } from "../../../shared/richText/editableNodes.js";
 import { rootOf } from "../../../shared/richText/editorNodes.js";
 import { stateForEditor, stateOfEditor } from "./editableState.js";
-import { $isOpaqueNode, DATA_VE_OPAQUE_SELECTED_ATTR, OpaqueNode } from "./opaqueNode.js";
+import {
+  $isOpaqueNode,
+  DATA_VE_OPAQUE_ATTR,
+  DATA_VE_OPAQUE_SELECTED_ATTR,
+  OpaqueNode,
+  showAs,
+} from "./opaqueNode.js";
 import { PageAutoLinkNode } from "./pageAutoLinkNode.js";
 import { PageLinkNode } from "./pageLinkNode.js";
 import { $linkAround, $removeLinks, $setLink, $unwrapLink } from "./pageLinks.js";
@@ -95,8 +109,15 @@ export interface PageEditor {
   state(): VeEditorState;
   toggle(action: ToolbarAction): void;
   setLink(url: string | null): void;
+  placeCaret(position: TextPosition | null): void;
+  restoreSelection(): void;
   destroy(): void;
 }
+
+export type RenderedLook = {
+  theme: EditorThemeClasses;
+  fixedNodes: readonly (HTMLElement | null)[] | null;
+};
 
 export const UNDERLINE_CLASS = "ve-rich-text-underline";
 export const STRIKETHROUGH_CLASS = "ve-rich-text-strikethrough";
@@ -104,6 +125,8 @@ export const UNDERLINE_STRIKETHROUGH_CLASS = "ve-rich-text-underline-strikethrou
 
 const NAMESPACE = "visual-editing";
 const HISTORY_MERGE_PAUSE_MS = 1000;
+const OPAQUE_REMOVAL_TAG = "ve-opaque-removal";
+const PLACEHOLDER = `[${DATA_VE_OPAQUE_ATTR}]`;
 const LINK_KEY = "k";
 const PLAIN_TEXT = "text/plain";
 const TEXT_FORMATS: readonly TextFormat[] = ["bold", "italic", "underline"];
@@ -190,26 +213,33 @@ const $toggleList = (selection: RangeSelection, kind: ListKind): void => {
 };
 
 const $isAtEdge = (point: PointType, node: LexicalNode, isBackward: boolean): boolean => {
-  if (!$isTextNode(node)) return true;
-  return isBackward ? point.offset === 0 : point.offset === node.getTextContentSize();
+  if ($isTextNode(node)) {
+    return isBackward ? point.offset === 0 : point.offset === node.getTextContentSize();
+  }
+  if (!$isElementNode(node)) return true;
+  return isBackward ? point.offset === 0 : point.offset === node.getChildrenSize();
 };
 
 const $childBeside = (point: PointType, node: LexicalNode, isBackward: boolean) =>
   $isElementNode(node) ? node.getChildAtIndex(isBackward ? point.offset - 1 : point.offset) : null;
 
+const $edgeOf = (node: LexicalNode, isBackward: boolean): LexicalNode => {
+  if (!$isElementNode(node)) return node;
+  return (isBackward ? node.getLastDescendant() : node.getFirstDescendant()) ?? node;
+};
+
 const $nodeBeside = (point: PointType, isBackward: boolean): LexicalNode | null => {
   const node = point.getNode();
-  if (!$isAtEdge(point, node, isBackward)) return null;
   const child = $childBeside(point, node, isBackward);
-  if (child) return child;
-  if ($isElementNode(node) && !node.isEmpty()) return null;
+  if (child) return $edgeOf(child, isBackward);
+  if (!$isAtEdge(point, node, isBackward)) return null;
   for (
     let ancestor: LexicalNode | null = node;
     ancestor && !$isRootOrShadowRoot(ancestor);
     ancestor = ancestor.getParent()
   ) {
     const sibling = isBackward ? ancestor.getPreviousSibling() : ancestor.getNextSibling();
-    if (sibling) return sibling;
+    if (sibling) return $edgeOf(sibling, isBackward);
   }
   return null;
 };
@@ -231,21 +261,82 @@ const $removeTextAroundOpaqueNodes = (): boolean => {
   return true;
 };
 
-const $isBesideOpaqueNode = (isBackward: boolean): boolean => {
+const $startParagraphIfEmpty = (): void => {
+  const root = $getRoot();
+  if (root.isEmpty()) root.append($createParagraphNode());
+};
+
+const $selectedOpaqueNodes = (): OpaqueNode[] => {
   const selection = $getSelection();
-  if ($isNodeSelection(selection)) return selection.getNodes().some($isOpaqueNode);
+  return $isNodeSelection(selection) ? selection.getNodes().filter($isOpaqueNode) : [];
+};
+
+const $selectOpaqueNode = (node: OpaqueNode): void => {
+  const selection = $createNodeSelection();
+  selection.add(node.getKey());
+  $setSelection(selection);
+};
+
+const $removeEmptyBlockOf = (point: PointType): void => {
+  const block = point.getNode();
+  if ($isElementNode(block) && block.isEmpty() && $isRootOrShadowRoot(block.getParent())) {
+    block.remove();
+  }
+};
+
+const $selectOpaqueNodeBeside = (isBackward: boolean): boolean => {
+  const selection = $getSelection();
   if (!$isRangeSelection(selection) || !selection.isCollapsed()) return false;
-  return $isOpaqueNode($nodeBeside(selection.anchor, isBackward));
+  const beside = $nodeBeside(selection.anchor, isBackward);
+  if (!$isOpaqueNode(beside)) return false;
+  $removeEmptyBlockOf(selection.anchor);
+  $selectOpaqueNode(beside);
+  return true;
+};
+
+const $removeOpaqueNode = (node: OpaqueNode): void => {
+  const before = node.getPreviousSibling();
+  const after = node.getNextSibling();
+  const parent = node.getParent();
+  node.remove(true);
+  $startParagraphIfEmpty();
+  if (before) before.selectEnd();
+  else if (after) after.selectStart();
+  else (parent?.isAttached() ? parent : $getRoot()).selectStart();
+};
+
+const $removeSelectedOpaqueNodes = (): boolean => {
+  const selected = $selectedOpaqueNodes();
+  if (selected.length === 0) return false;
+  $addUpdateTag(OPAQUE_REMOVAL_TAG);
+  for (const node of selected) $removeOpaqueNode(node);
+  return true;
 };
 
 const $deleteAroundOpaqueNodes = (isBackward: boolean, event: Event | null): boolean => {
-  const isKept = $isBesideOpaqueNode(isBackward) || $removeTextAroundOpaqueNodes();
-  if (isKept) event?.preventDefault();
-  return isKept;
+  const isHandled =
+    $removeSelectedOpaqueNodes() ||
+    $selectOpaqueNodeBeside(isBackward) ||
+    $removeTextAroundOpaqueNodes();
+  if (isHandled) event?.preventDefault();
+  return isHandled;
+};
+
+const $selectClickedOpaqueNode = (event: MouseEvent): boolean => {
+  const placeholder = event.target instanceof Element ? event.target.closest(PLACEHOLDER) : null;
+  const node = placeholder && $getNearestNodeFromDOMNode(placeholder);
+  if (!$isOpaqueNode(node)) return false;
+  event.preventDefault();
+  $selectOpaqueNode(node);
+  return true;
 };
 
 const $cutAroundOpaqueNodes = (event: ClipboardEvent | KeyboardEvent | null): boolean => {
   const selection = $getSelection();
+  if ($selectedOpaqueNodes().length > 0) {
+    event?.preventDefault();
+    return true;
+  }
   if (!$isRangeSelection(selection) || !$holdsOpaqueNode(selection)) return false;
   if (event && "clipboardData" in event) {
     event.clipboardData?.setData(PLAIN_TEXT, selection.getTextContent());
@@ -259,14 +350,7 @@ const $insertAroundOpaqueNodes = (): boolean => {
   return false;
 };
 
-const $selectedOpaqueKeys = (): string[] => {
-  const selection = $getSelection();
-  if (!$isNodeSelection(selection)) return [];
-  return selection
-    .getNodes()
-    .filter($isOpaqueNode)
-    .map((node) => node.getKey());
-};
+const $selectedOpaqueKeys = (): string[] => $selectedOpaqueNodes().map((node) => node.getKey());
 
 const $opaqueNodesIn = (node: LexicalNode): EditorNode[] => {
   if ($isOpaqueNode(node)) return [node.__kept];
@@ -278,9 +362,14 @@ const $keptNodes = (): EditorNode[] => $opaqueNodesIn($getRoot());
 const isSameSequence = (one: readonly EditorNode[], other: readonly EditorNode[]): boolean =>
   one.length === other.length && one.every((kept, position) => kept === other[position]);
 
-const $startParagraphIfEmpty = (): void => {
-  const root = $getRoot();
-  if (root.isEmpty()) root.append($createParagraphNode());
+const isPartOfSequence = (part: readonly EditorNode[], whole: readonly EditorNode[]): boolean => {
+  let next = 0;
+  for (const kept of part) {
+    const found = whole.indexOf(kept, next);
+    if (found === -1) return false;
+    next = found + 1;
+  }
+  return true;
 };
 
 const $asParagraph = (block: ElementNode): void => {
@@ -316,6 +405,34 @@ const isLinkKey = (event: KeyboardEvent): boolean =>
 const hasContent = (state: VeEditorState): boolean => {
   const root = rootOf(state);
   return root !== null && Array.isArray(root.children) && root.children.length > 0;
+};
+
+const $positionOf = ({ isAtStart, offset }: TextPosition): [TextNodeOfLexical, number] | null => {
+  let before = 0;
+  let found: [TextNodeOfLexical, number] | null = null;
+  for (const node of $getRoot().getAllTextNodes()) {
+    const size = node.getTextContentSize();
+    if (isAtStart && before === offset && size > 0) return [node, 0];
+    if (!found && offset >= before && offset <= before + size) found = [node, offset - before];
+    if (found && !isAtStart) return found;
+    before += size;
+  }
+  return found;
+};
+
+const $placeCaret = (position: TextPosition | null): void => {
+  const found = position && $positionOf(position);
+  if (found) found[0].select(found[1], found[1]);
+  else $getRoot().selectEnd();
+};
+
+const $showFixedNodesAs = (elements: readonly (HTMLElement | null)[]): void => {
+  const topLevel = $getRoot().getChildren();
+  if (topLevel.length !== elements.length) return;
+  for (const [position, node] of topLevel.entries()) {
+    const element = elements[position];
+    if ($isOpaqueNode(node) && element) showAs(node.__kept, element);
+  }
 };
 
 const loadState = (editor: LexicalEditor, state: VeEditorState): void => {
@@ -420,7 +537,8 @@ const registerKeptOpaqueNodes = (editor: LexicalEditor, kept: readonly EditorNod
       $insertAroundOpaqueNodes,
       COMMAND_PRIORITY_CRITICAL
     ),
-    editor.registerCommand(PASTE_COMMAND, $insertAroundOpaqueNodes, COMMAND_PRIORITY_CRITICAL)
+    editor.registerCommand(PASTE_COMMAND, $insertAroundOpaqueNodes, COMMAND_PRIORITY_CRITICAL),
+    editor.registerCommand(CLICK_COMMAND, $selectClickedOpaqueNode, COMMAND_PRIORITY_CRITICAL)
   );
 };
 
@@ -428,7 +546,8 @@ export function createPageEditor(
   twin: HTMLElement,
   state: VeEditorState,
   formats: VeRichTextFormats,
-  events: PageEditorEvents
+  events: PageEditorEvents,
+  look: RenderedLook = { fixedNodes: null, theme: {} }
 ): PageEditor | null {
   let isLoaded = false;
   let hasFailedToLoad = false;
@@ -448,15 +567,11 @@ export function createPageEditor(
       if (isLoaded) events.onError();
       else hasFailedToLoad = true;
     },
-    theme: {
-      text: {
-        strikethrough: STRIKETHROUGH_CLASS,
-        underline: UNDERLINE_CLASS,
-        underlineStrikethrough: UNDERLINE_STRIKETHROUGH_CLASS,
-      },
-    },
+    theme: look.theme,
   });
   loadState(editor, state);
+  const { fixedNodes } = look;
+  if (fixedNodes) editor.getEditorState().read(() => $showFixedNodesAs(fixedNodes));
   if (!hasFailedToLoad) editor.setRootElement(twin);
   if (hasFailedToLoad) {
     editor.setRootElement(null);
@@ -513,8 +628,22 @@ export function createPageEditor(
     );
   };
 
-  const holdsItsOpaqueNodes = (editorState: EditorState): boolean =>
-    isSameSequence(editorState.read($keptNodes), kept);
+  const holdsItsOpaqueNodes = (
+    editorState: EditorState,
+    prevEditorState: EditorState,
+    tags: ReadonlySet<string>
+  ): boolean => {
+    const held = editorState.read($keptNodes);
+    if (isSameSequence(held, prevEditorState.read($keptNodes))) return true;
+    const isMeant = tags.has(OPAQUE_REMOVAL_TAG) || tags.has(HISTORIC_TAG);
+    return isMeant && isPartOfSequence(held, kept);
+  };
+
+  const $restoreSelection = (): void => {
+    if (!lastRange) return;
+    const { anchor, focus } = lastRange;
+    if ($getNodeByKey(anchor.key) && $getNodeByKey(focus.key)) $setSelection(lastRange.clone());
+  };
 
   const stopListening = mergeRegister(
     registerKeptOpaqueNodes(editor, kept),
@@ -523,8 +652,8 @@ export function createPageEditor(
     registerList(editor),
     registerHistory(editor, createEmptyHistoryState(), HISTORY_MERGE_PAUSE_MS),
     editor.registerUpdateListener(
-      ({ dirtyElements, dirtyLeaves, editorState, prevEditorState }) => {
-        if (!holdsItsOpaqueNodes(editorState)) {
+      ({ dirtyElements, dirtyLeaves, editorState, prevEditorState, tags }) => {
+        if (!holdsItsOpaqueNodes(editorState, prevEditorState, tags)) {
           editor.setEditorState(prevEditorState);
           return;
         }
@@ -559,6 +688,12 @@ export function createPageEditor(
     destroy() {
       stopListening();
       editor.setRootElement(null);
+    },
+    placeCaret(position) {
+      editor.update(() => $placeCaret(position), { discrete: true });
+    },
+    restoreSelection() {
+      editor.update($restoreSelection, { discrete: true });
     },
     setLink(url) {
       updateSelection((selection) => {

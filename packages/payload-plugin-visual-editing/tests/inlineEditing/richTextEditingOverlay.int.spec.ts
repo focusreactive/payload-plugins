@@ -1,7 +1,16 @@
 import type { LexicalEditor } from "lexical";
 import type { MockInstance } from "vitest";
 
-import { $getRoot, $isTextNode } from "lexical";
+import {
+  $createNodeSelection,
+  $getRoot,
+  $getSelection,
+  $isRangeSelection,
+  $isTextNode,
+  $setSelection,
+  KEY_BACKSPACE_COMMAND,
+  UNDO_COMMAND,
+} from "lexical";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Overlay, OverlayCtx } from "../../src/client/createOverlay";
@@ -17,7 +26,10 @@ import {
   RICH_TEXT_CHECK_PAUSE_MS,
   RICH_TEXT_STATE_TIME_LIMIT_MS,
 } from "../../src/client/inlineEditing/richTextEditing";
-import { DATA_VE_EDITED_ATTR } from "../../src/client/inlineEditing/richTextTwin";
+import {
+  DATA_VE_EDIT_STARTING_ATTR,
+  DATA_VE_EDITED_ATTR,
+} from "../../src/client/inlineEditing/richTextTwin";
 import { DATA_VE_SAVE_STATUS_ATTR } from "../../src/client/inlineEditing/saveStatus";
 import { DATA_VE_EDITING_ATTR } from "../../src/client/inlineEditing/textEditing";
 import { DATA_VE_ACTION_ATTR } from "../../src/client/overlay/constants";
@@ -30,6 +42,7 @@ import {
   VE_MESSAGE_TYPE,
   VE_DOCUMENT_SAVED_TYPE,
   VE_FIELD_PATCH_TYPE,
+  VE_RICH_TEXT_EDIT_ENDED_TYPE,
   VE_RICH_TEXT_EDIT_TYPE,
   VE_RICH_TEXT_STATE_REFUSED_TYPE,
   VE_RICH_TEXT_STRUCTURE_TYPE,
@@ -41,6 +54,7 @@ import {
 import { markedText, markedTextNode } from "../support/markedData";
 import { click, overlayCtx } from "../support/overlay";
 import { postFromAdmin, restorePreviewWindow, stubAdminWindow } from "../support/previewWindow";
+import { measureSelectionsAsEmpty } from "../support/selectionRects";
 
 const PAYLOAD_API = "https://cms.example.com/api";
 
@@ -110,6 +124,36 @@ const typeInto = (twin: Element, typed: string) =>
     { discrete: true }
   );
 
+const selectTheBlock = (twin: Element) =>
+  lexicalOf(twin).update(
+    () => {
+      const selection = $createNodeSelection();
+      selection.add($getRoot().getLastChildOrThrow().getKey());
+      $setSelection(selection);
+    },
+    { discrete: true }
+  );
+
+const pressBackspace = (twin: Element) =>
+  lexicalOf(twin).update(
+    () =>
+      lexicalOf(twin).dispatchCommand(
+        KEY_BACKSPACE_COMMAND,
+        new KeyboardEvent("keydown", { cancelable: true })
+      ),
+    { discrete: true }
+  );
+
+const caretOf = (twin: Element) =>
+  lexicalOf(twin)
+    .getEditorState()
+    .read(() => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) return null;
+      const { anchor } = selection;
+      return { offset: anchor.offset, text: anchor.getNode().getTextContent() };
+    });
+
 const hover = (target: Element) =>
   target.dispatchEvent(new MouseEvent("pointerover", { bubbles: true }));
 
@@ -132,6 +176,14 @@ const statusLabel = () =>
 
 const messagesOfType = (post: ReturnType<typeof vi.fn>, type: string) =>
   post.mock.calls.map(([message]) => message as { type: string }).filter((m) => m.type === type);
+
+type Hit = { offset: number; offsetNode: Node } | null;
+
+const hitBy = (hitAt: (x: number, y: number) => Hit) =>
+  Object.assign(document, { caretPositionFromPoint: hitAt });
+
+const lineOf = (target: HTMLElement, index = 0) =>
+  target.querySelectorAll("p")[index]!.firstChild as Text;
 
 describe("editing rich text on the page", () => {
   let main: HTMLElement;
@@ -195,6 +247,7 @@ describe("editing rich text on the page", () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    measureSelectionsAsEmpty();
     document.body.innerHTML = "";
     main = document.createElement("main");
     document.body.append(main);
@@ -336,6 +389,136 @@ describe("editing rich text on the page", () => {
       expect(open).toHaveBeenCalledTimes(1);
     });
 
+    describe("the caret", () => {
+      const addLine = () => {
+        const line = document.createElement("p");
+        line.textContent = markedTextNode("Second line", "1.0", SHAPE);
+        wrapper.append(line);
+        storedState = stateOf(paragraph(text("Hello world")), paragraph(text("Second line")));
+      };
+
+      afterEach(() => {
+        Reflect.deleteProperty(document, "caretPositionFromPoint");
+        Reflect.deleteProperty(Range.prototype, "getClientRects");
+      });
+
+      it("is put where the click hit the text of the wrapper", async () => {
+        await hoverUntilReady();
+        hitBy(() => ({ offset: 5, offsetNode: lineOf(wrapper) }));
+
+        click(wrapper);
+
+        expect(caretOf(twinOf(wrapper))).toEqual({ offset: 5, text: "Hello world" });
+      });
+
+      it("is put where the click was when the state arrives later and the page has moved since", async () => {
+        hitBy(() => ({ offset: 3, offsetNode: lineOf(wrapper) }));
+        click(wrapper);
+        hitBy(() => ({ offset: 9, offsetNode: lineOf(wrapper) }));
+
+        await settle();
+
+        expect(caretOf(twinOf(wrapper))).toEqual({ offset: 3, text: "Hello world" });
+      });
+
+      it("counts the text before the paragraph that was clicked", async () => {
+        addLine();
+        await hoverUntilReady();
+        hitBy(() => ({ offset: 6, offsetNode: lineOf(wrapper, 1) }));
+
+        click(wrapper);
+
+        expect(caretOf(twinOf(wrapper))).toEqual({ offset: 6, text: "Second line" });
+      });
+
+      it("is put at the nearest text when the click hit none", async () => {
+        addLine();
+        await hoverUntilReady();
+        const rects = new Map([
+          [lineOf(wrapper), new DOMRect(0, 0, 100, 20)],
+          [lineOf(wrapper, 1), new DOMRect(0, 40, 100, 20)],
+        ]);
+        Object.assign(Range.prototype, {
+          getClientRects(this: Range) {
+            const rect = rects.get(this.startContainer as Text);
+            return rect ? [rect] : [];
+          },
+        });
+        hitBy((x, y) =>
+          y >= 40 && y <= 60 && x <= 100
+            ? { offset: 11, offsetNode: lineOf(wrapper, 1) }
+            : { offset: 0, offsetNode: wrapper }
+        );
+
+        click(wrapper, { clientX: 300, clientY: 70 });
+
+        expect(caretOf(twinOf(wrapper))).toEqual({ offset: 11, text: "Second line" });
+      });
+
+      it("is put where the read-only twin was clicked when it is edited again", async () => {
+        const first = await beginEdit();
+        typeInto(first, "Hello there");
+        pressOutside();
+        await settle();
+        const kept = twinOf(wrapper);
+        hitBy(() => ({ offset: 4, offsetNode: kept.querySelector("p span")!.firstChild as Text }));
+
+        click(kept);
+
+        expect(caretOf(kept.nextElementSibling as HTMLElement)).toEqual({
+          offset: 4,
+          text: "Hello there",
+        });
+      });
+    });
+
+    describe("a click that waits for the state", () => {
+      it("shows on the wrapper that the edit is starting, until it starts", async () => {
+        click(wrapper);
+        expect(wrapper.hasAttribute(DATA_VE_EDIT_STARTING_ATTR)).toBe(true);
+
+        await settle();
+
+        expect(wrapper.hasAttribute(DATA_VE_EDIT_STARTING_ATTR)).toBe(false);
+        expect(twinOf(wrapper).hasAttribute(DATA_VE_EDIT_STARTING_ATTR)).toBe(false);
+      });
+
+      it("shows it until the wait ends without an edit", async () => {
+        fetchApi.mockImplementationOnce(() => new Promise(() => undefined));
+        click(wrapper);
+
+        await vi.advanceTimersByTimeAsync(RICH_TEXT_STATE_TIME_LIMIT_MS - 1);
+        expect(wrapper.hasAttribute(DATA_VE_EDIT_STARTING_ATTR)).toBe(true);
+
+        await vi.advanceTimersByTimeAsync(1);
+        expect(wrapper.hasAttribute(DATA_VE_EDIT_STARTING_ATTR)).toBe(false);
+      });
+
+      it("shows nothing for a click that starts the edit at once", async () => {
+        await hoverUntilReady();
+
+        click(wrapper);
+
+        expect(wrapper.hasAttribute(DATA_VE_EDIT_STARTING_ATTR)).toBe(false);
+      });
+    });
+
+    it("does for a click on the read-only twin what a click on its wrapper does, once the switch is off", async () => {
+      const twin = await beginEdit();
+      typeInto(twin, "Hello there");
+      pressOutside();
+      await settle();
+      const kept = twinOf(wrapper);
+      ctx = { ...ctx, inlineEditing: false };
+      overlay.applyMode();
+
+      const event = click(kept);
+
+      expect(open).toHaveBeenCalledTimes(1);
+      expect(event.defaultPrevented).toBe(true);
+      expect(kept.nextElementSibling?.hasAttribute(DATA_VE_EDITING_ATTR) ?? false).toBe(false);
+    });
+
     it("asks again on a pointer move once the state it held was used", async () => {
       const twin = await beginEdit();
       press(twin, "Escape");
@@ -387,16 +570,89 @@ describe("editing rich text on the page", () => {
       expect(open).not.toHaveBeenCalled();
     });
 
-    it("saves the state the editor typed once the typing pauses, with every other node as it was", async () => {
+    it("saves nothing while the edit runs and says that the changes are unsaved", async () => {
       const twin = await beginEdit();
 
       typeInto(twin, "Hello there");
-      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS * 2);
+
+      expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([]);
+      expect(statusLabel()).toBe("Unsaved changes");
+      expect(twin.hasAttribute(DATA_VE_EDITING_ATTR)).toBe(true);
+    });
+
+    it("saves the state the editor typed once, when the edit is committed, with every other node as it was", async () => {
+      const twin = await beginEdit();
+      typeInto(twin, "Hello");
+      typeInto(twin, "Hello there");
+
+      pressOutside();
+      await settle();
 
       expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([
         { ...BODY, state: stateOf(paragraph(text("Hello there")), CALLOUT) },
       ]);
       expect(onEdited).toHaveBeenCalledTimes(1);
+    });
+
+    it("ends the edit and saves it when the tab is hidden", async () => {
+      const twin = await beginEdit();
+      typeInto(twin, "Hello there");
+      vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+
+      document.dispatchEvent(new Event("visibilitychange"));
+      await settle();
+
+      expect(twin.isConnected).toBe(false);
+      expect(twinOf(wrapper).hasAttribute(DATA_VE_EDITED_ATTR)).toBe(true);
+      expect(requestsTo(VE_FIELD_EDIT_PATH)).toHaveLength(1);
+    });
+
+    describe("with a node the page cannot edit", () => {
+      const removeTheBlock = (twin: HTMLElement) => {
+        selectTheBlock(twin);
+        pressBackspace(twin);
+      };
+
+      it("saves the state without it after it was selected and removed", async () => {
+        const twin = await beginEdit();
+
+        removeTheBlock(twin);
+        expect(twin.querySelector(`[${DATA_VE_OPAQUE_ATTR}]`)).toBeNull();
+        expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([]);
+        pressOutside();
+        await settle();
+
+        expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([
+          { ...BODY, state: stateOf(paragraph(text("Hello world"))) },
+        ]);
+      });
+
+      it("saves it as it was shown when the removal was undone", async () => {
+        const twin = await beginEdit();
+        removeTheBlock(twin);
+
+        lexicalOf(twin).update(() => lexicalOf(twin).dispatchCommand(UNDO_COMMAND, undefined), {
+          discrete: true,
+        });
+        pressOutside();
+        await settle();
+
+        expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([{ ...BODY, state: STATE }]);
+      });
+
+      it("saves nothing and shows the wrapper when Escape follows the removal", async () => {
+        const twin = await beginEdit();
+        removeTheBlock(twin);
+
+        press(twin, "Escape");
+        await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+
+        expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([]);
+        expect(isShown(wrapper)).toBe(true);
+        expect(twinOf(wrapper)).toBeNull();
+        expect(statusLabel()).not.toBe("Unsaved changes");
+      });
     });
 
     it("saves at once when the page is left before the pause ends", async () => {
@@ -421,19 +677,16 @@ describe("editing rich text on the page", () => {
       expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([]);
     });
 
-    it("sends the stored state again on Escape when an edit was already sent", async () => {
+    it("saves nothing on Escape after something was typed", async () => {
       const twin = await beginEdit();
       typeInto(twin, "Hello there");
-      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
 
       press(twin, "Escape");
-      await settle();
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
 
-      expect(requestsTo(VE_FIELD_EDIT_PATH).map(({ state }) => state)).toEqual([
-        stateOf(paragraph(text("Hello there")), CALLOUT),
-        STATE,
-      ]);
+      expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([]);
       expect(isShown(wrapper)).toBe(true);
+      expect(statusLabel()).not.toBe("Unsaved changes");
     });
 
     it("commits on a press outside and keeps a read-only twin of what was saved", async () => {
@@ -500,20 +753,6 @@ describe("editing rich text on the page", () => {
       expect(isShown(wrapper)).toBe(false);
     });
 
-    it("shows the wrapper at once when the site rendered the saved edit before the commit", async () => {
-      const twin = await beginEdit();
-      typeInto(twin, "Hello there");
-      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
-      wrapper.querySelector("p")!.textContent = "Hello there";
-      await settle();
-
-      pressOutside();
-
-      expect(twin.isConnected).toBe(false);
-      expect(twinOf(wrapper)).toBeNull();
-      expect(isShown(wrapper)).toBe(true);
-    });
-
     it("drops the read-only twin when the overlay is disposed", async () => {
       const twin = await beginEdit();
       typeInto(twin, "Hello there");
@@ -536,10 +775,11 @@ describe("editing rich text on the page", () => {
       click(kept);
       const second = kept.nextElementSibling as HTMLElement;
       typeInto(second, "Hello again");
-      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
-
       expect(second.hasAttribute(DATA_VE_EDITING_ATTR)).toBe(true);
       expect(isShown(kept)).toBe(false);
+      pressOutside();
+      await settle();
+
       expect(requestsTo(VE_FIELD_EDIT_PATH).at(-1)).toEqual({
         ...BODY,
         state: stateOf(paragraph(text("Hello again")), CALLOUT),
@@ -848,6 +1088,85 @@ describe("editing rich text on the page", () => {
       expect(twinOf(wrapper)?.hasAttribute(DATA_VE_EDITED_ATTR) ?? false).toBe(false);
       expect(isShown(wrapper)).toBe(true);
       expect(messagesOfType(postToAdmin, VE_RICH_TEXT_EDIT_TYPE)).toHaveLength(1);
+    });
+
+    describe("with a node the page cannot edit", () => {
+      const ENDED = { ...BODY, type: VE_RICH_TEXT_EDIT_ENDED_TYPE };
+
+      const typesPosted = () =>
+        postToAdmin.mock.calls
+          .map(([message]) => (message as { type: string }).type)
+          .filter(
+            (type) => type === VE_RICH_TEXT_EDIT_TYPE || type === VE_RICH_TEXT_EDIT_ENDED_TYPE
+          );
+
+      const statesPosted = () =>
+        messagesOfType(postToAdmin, VE_RICH_TEXT_EDIT_TYPE).map(
+          (message) => (message as unknown as { state: unknown }).state
+        );
+
+      const beginNextToTheAdmin = async () => {
+        await hoverUntilReady();
+        answerState();
+        click(wrapper);
+        return twinOf(wrapper);
+      };
+
+      it("posts the state without it while the edit runs, and with it again after an undo", async () => {
+        const twin = await beginNextToTheAdmin();
+
+        selectTheBlock(twin);
+        pressBackspace(twin);
+        await vi.advanceTimersByTimeAsync(EDIT_SEND_PAUSE_MS);
+        lexicalOf(twin).update(() => lexicalOf(twin).dispatchCommand(UNDO_COMMAND, undefined), {
+          discrete: true,
+        });
+        await vi.advanceTimersByTimeAsync(EDIT_SEND_PAUSE_MS);
+
+        expect(statesPosted()).toEqual([stateOf(paragraph(text("Hello world"))), STATE]);
+        expect(messagesOfType(postToAdmin, VE_RICH_TEXT_EDIT_ENDED_TYPE)).toEqual([]);
+      });
+
+      it("tells the admin that the edit ended after the last state of a commit", async () => {
+        const twin = await beginNextToTheAdmin();
+        typeInto(twin, "Hello there");
+
+        pressOutside();
+
+        expect(typesPosted()).toEqual([VE_RICH_TEXT_EDIT_TYPE, VE_RICH_TEXT_EDIT_ENDED_TYPE]);
+        expect(messagesOfType(postToAdmin, VE_RICH_TEXT_EDIT_ENDED_TYPE)).toEqual([ENDED]);
+      });
+
+      it("posts the state the edit began with on Escape, and then that the edit ended", async () => {
+        const twin = await beginNextToTheAdmin();
+        selectTheBlock(twin);
+        pressBackspace(twin);
+        await vi.advanceTimersByTimeAsync(EDIT_SEND_PAUSE_MS);
+
+        press(twin, "Escape");
+
+        expect(statesPosted()).toEqual([stateOf(paragraph(text("Hello world"))), STATE]);
+        expect(typesPosted().at(-1)).toBe(VE_RICH_TEXT_EDIT_ENDED_TYPE);
+      });
+
+      it("tells the admin that an edit without a change ended", async () => {
+        await beginNextToTheAdmin();
+
+        pressOutside();
+
+        expect(typesPosted()).toEqual([VE_RICH_TEXT_EDIT_ENDED_TYPE]);
+      });
+
+      it("asks for no state of the field while it is edited, so the admin keeps what the edit began with", async () => {
+        const second = renderRichText();
+        await settle();
+        await beginNextToTheAdmin();
+
+        await vi.advanceTimersByTimeAsync(RICH_TEXT_CHECK_PAUSE_MS);
+        movePointerOver(second);
+
+        expect(messagesOfType(postToAdmin, VE_RICH_TEXT_STATE_REQUEST_TYPE)).toHaveLength(1);
+      });
     });
 
     it("says that an edit the form refused is not saved", async () => {

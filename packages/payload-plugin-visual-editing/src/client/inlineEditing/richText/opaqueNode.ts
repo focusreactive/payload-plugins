@@ -7,9 +7,10 @@ import type { OpaqueNodeJson } from "./editableState.js";
 
 import { isPlainObject } from "../../../shared/plainObject.js";
 import { ACCENT_VAR, DEFAULT_ACCENT } from "../../overlay/constants.js";
+import { DATA_VE_OPAQUE_ATTR } from "../richTextTwin.js";
 import { OPAQUE_NODE_TYPE, OPAQUE_NODE_VERSION } from "./editableState.js";
 
-export const DATA_VE_OPAQUE_ATTR = "data-ve-opaque";
+export { DATA_VE_OPAQUE_ATTR };
 
 export const DATA_VE_OPAQUE_SELECTED_ATTR = "data-ve-opaque-selected";
 
@@ -29,6 +30,20 @@ const OPAQUE_STYLES: Partial<CSSStyleDeclaration> = {
 };
 
 const BLOCK_OPAQUE_STYLES: Partial<CSSStyleDeclaration> = { display: "block", margin: "8px 0" };
+
+const RENDERED_OPAQUE_STYLES: Partial<CSSStyleDeclaration> = {
+  cursor: "default",
+  display: "block",
+  userSelect: "none",
+};
+
+const INERT_ATTR = "inert";
+
+const shownElements = new WeakMap<EditorNode, HTMLElement>();
+
+export const showAs = (kept: EditorNode, element: HTMLElement): void => {
+  shownElements.set(kept, element);
+};
 
 const INLINE_OPAQUE_STYLES: Partial<CSSStyleDeclaration> = {
   display: "inline-block",
@@ -78,6 +93,14 @@ export class OpaqueNode extends DecoratorNode<null> {
     const placeholder = document.createElement(this.__isInline ? "span" : "div");
     placeholder.setAttribute(DATA_VE_OPAQUE_ATTR, nameOf(this.__kept));
     placeholder.contentEditable = NOT_EDITABLE;
+    const shown = shownElements.get(this.__kept);
+    if (shown) {
+      const copy = shown.cloneNode(true) as HTMLElement;
+      copy.setAttribute(INERT_ATTR, "");
+      placeholder.append(copy);
+      Object.assign(placeholder.style, RENDERED_OPAQUE_STYLES);
+      return placeholder;
+    }
     placeholder.textContent = nameOf(this.__kept);
     Object.assign(
       placeholder.style,

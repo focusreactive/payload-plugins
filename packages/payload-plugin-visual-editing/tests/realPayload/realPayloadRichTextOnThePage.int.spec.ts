@@ -1,7 +1,14 @@
 import type { LexicalEditor } from "lexical";
 import type { FieldAccess, Payload, PayloadRequest } from "payload";
 
-import { $getRoot, $isTextNode } from "lexical";
+import {
+  $createNodeSelection,
+  $getRoot,
+  $isTextNode,
+  $setSelection,
+  KEY_BACKSPACE_COMMAND,
+  UNDO_COMMAND,
+} from "lexical";
 import { createLocalReq } from "payload";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -218,6 +225,110 @@ describe("rich text edited on a page that saves through Payload", () => {
     restorePreviewWindow();
     window.localStorage.clear();
     document.body.innerHTML = "";
+  });
+
+  const BLOCK_POSITION = 6;
+
+  const notEditableIn = (state: State) =>
+    state.root.children.filter(({ type }) => NOT_EDITABLE_TYPES.includes(type as string));
+
+  const beginEditOf = async (docId: string) => {
+    const { main, wrapper } = await renderPage(docId);
+    mounted = mountVisualEditing({
+      available: true,
+      inlineEditing: true,
+      instantPreview: true,
+      locale: "en",
+      onEdited: () => {
+        saves += 1;
+      },
+      payloadApi: PAYLOAD_API,
+      richTextEditor: () => import("../../src/rich-text"),
+      root: main,
+      toggle: false,
+    });
+    await waitFor(0);
+    click(wrapper);
+    await until(() => wrapper.nextElementSibling?.hasAttribute(DATA_VE_EDITING_ATTR) ?? false);
+    return wrapper.nextElementSibling as HTMLElement;
+  };
+
+  const removeTheBlock = (twin: HTMLElement) => {
+    const lexical = lexicalOf(twin);
+    lexical.update(
+      () => {
+        const selection = $createNodeSelection();
+        selection.add($getRoot().getChildAtIndex(BLOCK_POSITION)!.getKey());
+        $setSelection(selection);
+      },
+      { discrete: true }
+    );
+    lexical.update(
+      () =>
+        lexical.dispatchCommand(
+          KEY_BACKSPACE_COMMAND,
+          new KeyboardEvent("keydown", { cancelable: true })
+        ),
+      { discrete: true }
+    );
+  };
+
+  const commit = async () => {
+    document.body.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
+    await until(() => saves > 0);
+  };
+
+  const createStory = async () => {
+    const created = await payload.create({
+      collection: "pages",
+      data: { story: story() },
+      draft: true,
+    });
+    return String(created.id);
+  };
+
+  it("removes a block that was selected and deleted on the page and leaves every other node of the draft as it was", async () => {
+    const docId = await createStory();
+    const before = await readStory(docId);
+    const twin = await beginEditOf(docId);
+
+    removeTheBlock(twin);
+    await commit();
+
+    const after = await readStory(docId);
+    const kept = before.root.children.filter((_node, position) => position !== BLOCK_POSITION);
+    expect(before.root.children[BLOCK_POSITION]!.type).toBe("block");
+    expect(after.root.children.map(({ type }) => type)).toEqual(kept.map(({ type }) => type));
+    expect(JSON.stringify(notEditableIn(after))).toBe(
+      JSON.stringify(notEditableIn({ root: { ...before.root, children: kept } }))
+    );
+    expect(after.root.children).toMatchObject(kept);
+    expect(saves).toBe(1);
+  });
+
+  it("saves a block with the fields the draft stores when its removal was undone before the edit ended", async () => {
+    const docId = await createStory();
+    const before = await readStory(docId);
+    const twin = await beginEditOf(docId);
+
+    removeTheBlock(twin);
+    lexicalOf(twin).update(() => lexicalOf(twin).dispatchCommand(UNDO_COMMAND, undefined), {
+      discrete: true,
+    });
+    lexicalOf(twin).update(
+      () => {
+        const first = $getRoot().getFirstDescendant();
+        if ($isTextNode(first)) first.setTextContent("Goodbye ");
+      },
+      { discrete: true }
+    );
+    await commit();
+
+    const after = await readStory(docId);
+    expect(after.root.children[0]!.children![0]).toMatchObject({ text: "Goodbye " });
+    expect(JSON.stringify(notEditableIn(after))).toBe(JSON.stringify(notEditableIn(before)));
+    expect(after.root.children.slice(1)).toMatchObject(before.root.children.slice(1));
+    expect(after.root.children[BLOCK_POSITION]!.fields).toMatchObject({ note: "Internal" });
   });
 
   it("saves what was typed and formatted and leaves every other node of the draft as it was", async () => {

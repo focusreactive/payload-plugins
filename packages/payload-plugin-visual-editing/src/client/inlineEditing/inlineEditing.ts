@@ -87,9 +87,11 @@ export function createInlineEditing(
   const textEditing = createTextEditing({ flush: transport.flush, send, tracker });
 
   const richTextEditing = createRichTextEditing({
+    dropUnsaved: transport.drop,
     endOtherEdits: () => textEditing.commit(),
     flush: transport.flush,
     getCtx,
+    holdUnsaved: transport.hold,
     holdsFormOf,
     isUnsaved: transport.isUnsaved,
     send: transport.send,
@@ -139,10 +141,14 @@ export function createInlineEditing(
   };
   window.addEventListener("message", refuseEditTheFormDidNotTake);
 
-  const saveBeforeThePageIsHidden = () => {
-    if (document.visibilityState === HIDDEN) transport.flush();
+  const saveBeforeThePageIsLeft = () => {
+    richTextEditing.commitBeforeThePageIsHidden();
+    transport.flush();
   };
-  window.addEventListener(PAGE_LEFT_EVENT, transport.flush);
+  const saveBeforeThePageIsHidden = () => {
+    if (document.visibilityState === HIDDEN) saveBeforeThePageIsLeft();
+  };
+  window.addEventListener(PAGE_LEFT_EVENT, saveBeforeThePageIsLeft);
   document.addEventListener(VISIBILITY_EVENT, saveBeforeThePageIsHidden);
 
   const stopListeningToSaves = listenToSaves(
@@ -184,7 +190,7 @@ export function createInlineEditing(
       transport.dispose();
       stopListeningToSaves();
       window.removeEventListener("message", refuseEditTheFormDidNotTake);
-      window.removeEventListener(PAGE_LEFT_EVENT, transport.flush);
+      window.removeEventListener(PAGE_LEFT_EVENT, saveBeforeThePageIsLeft);
       document.removeEventListener(VISIBILITY_EVENT, saveBeforeThePageIsHidden);
       stopTracking();
       saveStatus?.remove();

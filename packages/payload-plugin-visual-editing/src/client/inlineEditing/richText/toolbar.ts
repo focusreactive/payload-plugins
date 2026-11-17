@@ -37,6 +37,10 @@ const INVALID_ATTR = "aria-invalid";
 const APPLY_KEY = "Enter";
 const CLOSE_KEY = "Escape";
 const GAP_PX = 8;
+const VIEWPORT_MARGIN_PX = 8;
+const LINK_PROBLEM_ID = "ve-link-problem";
+const LINK_PROBLEM =
+  "Use an address that starts with http:, https:, mailto: or tel:, or a relative one.";
 const HIDDEN_DISPLAY = "none";
 const SHOWN_DISPLAY = "block";
 const TOGGLES: readonly ToolbarAction[] = [
@@ -57,6 +61,8 @@ const TEMPLATE = `
     top: 0;
     left: 0;
     z-index: 2147483647;
+    box-sizing: border-box;
+    max-width: calc(100vw - ${2 * VIEWPORT_MARGIN_PX}px);
     --ve-surface: #ffffff;
     --ve-border: rgba(0, 0, 0, 0.12);
     --ve-track: rgba(0, 0, 0, 0.06);
@@ -75,9 +81,11 @@ const TEMPLATE = `
     }
   }
   [role="toolbar"] {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-sizing: border-box;
+    max-width: 100%;
     padding: 4px;
     background: var(--ve-surface);
     border: 1px solid var(--ve-border);
@@ -86,6 +94,12 @@ const TEMPLATE = `
     color: var(--ve-text);
     font: 500 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     white-space: nowrap;
+  }
+  [role="group"] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
   }
   button {
     appearance: none;
@@ -116,7 +130,9 @@ const TEMPLATE = `
   [${ACTION_ATTR}="underline"] { text-decoration: underline; }
   input {
     box-sizing: border-box;
-    width: 220px;
+    width: 0;
+    min-width: 100%;
+    flex: none;
     height: 28px;
     margin: 0;
     padding: 0 8px;
@@ -129,20 +145,34 @@ const TEMPLATE = `
   input[${INVALID_ATTR}="true"] {
     border-color: var(--ve-danger);
   }
+  [role="alert"] {
+    width: 0;
+    min-width: 100%;
+    margin: 0;
+    padding: 0 4px 2px;
+    box-sizing: border-box;
+    color: var(--ve-danger);
+    font-weight: 500;
+    line-height: 1.3;
+    white-space: normal;
+  }
   [hidden] {
     display: none;
   }
 </style>
 <div role="toolbar" aria-label="Text formatting">
-  <button type="button" ${ACTION_ATTR}="bold" ${PRESSED_ATTR}="false" aria-label="Bold" title="Bold">B</button>
-  <button type="button" ${ACTION_ATTR}="italic" ${PRESSED_ATTR}="false" aria-label="Italic" title="Italic">I</button>
-  <button type="button" ${ACTION_ATTR}="underline" ${PRESSED_ATTR}="false" aria-label="Underline" title="Underline">U</button>
-  <button type="button" ${ACTION_ATTR}="${LINK_ACTION}" ${PRESSED_ATTR}="false" aria-label="Link" title="Link">Link</button>
-  <input type="text" inputmode="url" aria-label="Link address" placeholder="https://" hidden>
-  <button type="button" ${ACTION_ATTR}="h2" ${PRESSED_ATTR}="false" aria-label="Heading 2" title="Heading 2">H2</button>
-  <button type="button" ${ACTION_ATTR}="h3" ${PRESSED_ATTR}="false" aria-label="Heading 3" title="Heading 3">H3</button>
-  <button type="button" ${ACTION_ATTR}="bullet" ${PRESSED_ATTR}="false" aria-label="Bullet list" title="Bullet list">&bull; List</button>
-  <button type="button" ${ACTION_ATTR}="number" ${PRESSED_ATTR}="false" aria-label="Numbered list" title="Numbered list">1. List</button>
+  <div role="group">
+    <button type="button" ${ACTION_ATTR}="bold" ${PRESSED_ATTR}="false" aria-label="Bold" title="Bold">B</button>
+    <button type="button" ${ACTION_ATTR}="italic" ${PRESSED_ATTR}="false" aria-label="Italic" title="Italic">I</button>
+    <button type="button" ${ACTION_ATTR}="underline" ${PRESSED_ATTR}="false" aria-label="Underline" title="Underline">U</button>
+    <button type="button" ${ACTION_ATTR}="${LINK_ACTION}" ${PRESSED_ATTR}="false" aria-label="Link" title="Link">Link</button>
+    <button type="button" ${ACTION_ATTR}="h2" ${PRESSED_ATTR}="false" aria-label="Heading 2" title="Heading 2">H2</button>
+    <button type="button" ${ACTION_ATTR}="h3" ${PRESSED_ATTR}="false" aria-label="Heading 3" title="Heading 3">H3</button>
+    <button type="button" ${ACTION_ATTR}="bullet" ${PRESSED_ATTR}="false" aria-label="Bullet list" title="Bullet list">&bull; List</button>
+    <button type="button" ${ACTION_ATTR}="number" ${PRESSED_ATTR}="false" aria-label="Numbered list" title="Numbered list">1. List</button>
+  </div>
+  <input type="text" inputmode="url" aria-label="Link address" aria-describedby="${LINK_PROBLEM_ID}" placeholder="https://" hidden>
+  <p role="alert" id="${LINK_PROBLEM_ID}" hidden></p>
 </div>
 `;
 
@@ -162,13 +192,18 @@ const actionSelector = (action: string) => `[${ACTION_ATTR}="${action}"]`;
 const isToggle = (action: string | null): action is ToolbarAction =>
   (TOGGLES as readonly string[]).includes(action ?? "");
 
+const within = (value: number, min: number, max: number): number =>
+  Math.max(min, Math.min(value, max));
+
 const positionOf = (host: HTMLElement, selection: DOMRect, win: Window) => {
   const { height, width } = host.getBoundingClientRect();
   const above = selection.top - height - GAP_PX;
-  const top = above >= 0 ? above : selection.bottom + GAP_PX;
+  const besideSelection = above >= VIEWPORT_MARGIN_PX ? above : selection.bottom + GAP_PX;
   const centred = selection.left + selection.width / 2 - width / 2;
-  const left = Math.max(GAP_PX, Math.min(centred, win.innerWidth - width - GAP_PX));
-  return { left, top };
+  return {
+    left: within(centred, VIEWPORT_MARGIN_PX, win.innerWidth - width - VIEWPORT_MARGIN_PX),
+    top: within(besideSelection, VIEWPORT_MARGIN_PX, win.innerHeight - height - VIEWPORT_MARGIN_PX),
+  };
 };
 
 export function createToolbar(
@@ -189,11 +224,28 @@ export function createToolbar(
   }
   const hasControls = Object.values(allowedActions).includes(true);
   const linkInput = shadow.querySelector("input");
+  const linkProblem = shadow.querySelector<HTMLElement>(`#${LINK_PROBLEM_ID}`);
   let shownLink: string | null = null;
+  let placedAt: DOMRect | null = null;
 
   const place = (selection: DOMRect) => {
+    placedAt = selection;
     const { left, top } = positionOf(host, selection, doc.defaultView ?? window);
     host.style.transform = `translate(${left}px, ${top}px)`;
+  };
+
+  const placeAgain = () => {
+    if (placedAt) place(placedAt);
+  };
+
+  const sayLinkProblem = (problem: string | null) => {
+    if (linkInput && problem) linkInput.setAttribute(INVALID_ATTR, "true");
+    else linkInput?.removeAttribute(INVALID_ATTR);
+    if (linkProblem) {
+      linkProblem.textContent = problem ?? "";
+      linkProblem.hidden = problem === null;
+    }
+    placeAgain();
   };
 
   const press = (action: string, isPressed: boolean) => {
@@ -205,7 +257,7 @@ export function createToolbar(
   const closeLink = () => {
     if (!linkInput || linkInput.hidden) return;
     linkInput.hidden = true;
-    linkInput.removeAttribute(INVALID_ATTR);
+    sayLinkProblem(null);
     events.onLinkClosed();
   };
 
@@ -213,6 +265,7 @@ export function createToolbar(
     if (!linkInput || !formats.hasLinks) return;
     linkInput.hidden = false;
     linkInput.value = shownLink ?? "";
+    placeAgain();
     linkInput.focus();
     linkInput.select();
   };
@@ -221,7 +274,7 @@ export function createToolbar(
     if (!linkInput) return;
     const url = linkUrlOf(linkInput.value);
     if (url !== "" && !isAllowedLinkUrl(url)) {
-      linkInput.setAttribute(INVALID_ATTR, "true");
+      sayLinkProblem(LINK_PROBLEM);
       return;
     }
     events.onLink(url === "" ? null : url);
@@ -251,7 +304,7 @@ export function createToolbar(
   shadow.addEventListener("click", runAction);
   shadow.addEventListener("mousedown", keepSelectionOfThePage);
   linkInput?.addEventListener("keydown", handleLinkKey);
-  linkInput?.addEventListener("input", () => linkInput.removeAttribute(INVALID_ATTR));
+  linkInput?.addEventListener("input", () => sayLinkProblem(null));
 
   return {
     editLink,
@@ -261,6 +314,7 @@ export function createToolbar(
     hasControls,
     hide() {
       if (linkInput) linkInput.hidden = true;
+      if (linkProblem) linkProblem.hidden = true;
       host.style.display = HIDDEN_DISPLAY;
     },
     host,

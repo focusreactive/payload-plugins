@@ -1,12 +1,13 @@
 import type { VeEditorState } from "../../shared/protocol.js";
 import type { VeRichTextFormats } from "../../shared/richText/formats.js";
-import type { Point } from "./caret.js";
+import type { TextPosition } from "./caret.js";
 
 export type EditSessionOptions = {
   twin: HTMLElement;
   state: VeEditorState;
   formats: VeRichTextFormats;
-  point: Point | null;
+  rendered: HTMLElement | null;
+  caret: TextPosition | null;
   onChange(state: VeEditorState): void;
   onCancel(): void;
   onCommit(): void;

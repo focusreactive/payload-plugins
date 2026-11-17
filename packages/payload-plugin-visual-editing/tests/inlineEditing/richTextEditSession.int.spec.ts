@@ -1,4 +1,4 @@
-import type { LexicalEditor, LexicalNode } from "lexical";
+import type { ElementNode, LexicalEditor, LexicalNode } from "lexical";
 
 import {
   $getRoot,
@@ -22,7 +22,10 @@ import { $createListItemNode, $createListNode } from "@lexical/list";
 import { $createHeadingNode, $createQuoteNode } from "@lexical/rich-text";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { EditSession } from "../../src/client/inlineEditing/richTextEditor";
+import type {
+  EditSession,
+  EditSessionOptions,
+} from "../../src/client/inlineEditing/richTextEditor";
 import type { VeRichTextFormats } from "../../src/shared/richText/formats";
 
 import { startEditSession } from "../../src/client/inlineEditing/richText/editSession";
@@ -154,6 +157,13 @@ const textNodesIn = (node: LexicalNode): LexicalNode[] => {
   return $isElementNode(node) ? node.getChildren().flatMap(textNodesIn) : [];
 };
 
+const renderedBy = (html: string) => {
+  const rendered = document.createElement("section");
+  rendered.innerHTML = html;
+  document.body.append(rendered);
+  return rendered;
+};
+
 describe("one edit of rich text", () => {
   let twin: HTMLElement;
   let session: EditSession | null;
@@ -161,20 +171,28 @@ describe("one edit of rich text", () => {
   let onCancel: ReturnType<typeof vi.fn>;
   let onCommit: ReturnType<typeof vi.fn>;
 
-  const start = (state: State, formats: VeRichTextFormats = EVERY_FORMAT) => {
+  const start = (
+    state: State,
+    formats: VeRichTextFormats = EVERY_FORMAT,
+    shown: Partial<Pick<EditSessionOptions, "caret" | "rendered">> = {}
+  ) => {
     session = startEditSession({
+      caret: null,
       formats,
       onCancel,
       onChange: (changed) => changes.push(changed as State),
       onCommit,
-      point: null,
+      rendered: null,
       state,
       twin,
+      ...shown,
     });
     return session;
   };
 
   const latest = () => changes.at(-1) as State;
+
+  const lexicalStateOf = () => lexicalOf(twin).getEditorState().toJSON() as unknown as State;
 
   const update = (change: () => void) => lexicalOf(twin).update(change, { discrete: true });
 
@@ -239,6 +257,20 @@ describe("one edit of rich text", () => {
     update(() => lexicalOf(twin).dispatchCommand(command, event));
     return event;
   };
+
+  const selectedText = () =>
+    lexicalOf(twin)
+      .getEditorState()
+      .read(() => $getSelection()?.getTextContent());
+
+  const caret = () =>
+    lexicalOf(twin)
+      .getEditorState()
+      .read(() => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) return null;
+        return [selection.anchor.getNode().getTextContent(), selection.anchor.offset];
+      });
 
   const placeholders = () =>
     [...twin.querySelectorAll(`[${DATA_VE_OPAQUE_ATTR}]`)].map((placeholder) => ({
@@ -319,57 +351,135 @@ describe("one edit of rich text", () => {
       expect(twin.textContent).not.toContain("Kept");
     });
 
-    describe("cannot be taken away", () => {
-      const BLOCK = OPAQUE_BLOCKS[0]![1];
+    const BLOCK = OPAQUE_BLOCKS[0]![1];
 
-      const typesOfRoot = () =>
-        lexicalOf(twin)
-          .getEditorState()
-          .read(() =>
-            $getRoot()
-              .getChildren()
-              .map((node) => node.getType())
-          );
+    const typesOfRoot = () =>
+      lexicalOf(twin)
+        .getEditorState()
+        .read(() =>
+          $getRoot()
+            .getChildren()
+            .map((node) => node.getType())
+        );
 
-      const shownBlocks = () => placeholders().map(({ name }) => name);
+    const shownBlocks = () => placeholders().map(({ name }) => name);
 
-      it("by a Backspace right after it", () => {
+    const selectedBlocks = () =>
+      [...twin.querySelectorAll(`[${DATA_VE_OPAQUE_SELECTED_ATTR}]`)].map((placeholder) =>
+        placeholder.getAttribute(DATA_VE_OPAQUE_ATTR)
+      );
+
+    const selectNode = (index: number) =>
+      update(() => {
+        const selection = $createNodeSelection();
+        selection.add(($getRoot().getChildAtIndex(index) as LexicalNode).getKey());
+        $setSelection(selection);
+      });
+
+    const undo = () => update(() => lexicalOf(twin).dispatchCommand(UNDO_COMMAND, undefined));
+
+    describe("is removed by one deliberate action", () => {
+      it("a Backspace right after it selects it and the next one removes it", () => {
         start(stateOf(paragraph(text("Before")), BLOCK, paragraph(text("After"))));
         select(1, 0, 0);
 
         const pressed = deleteWith(KEY_BACKSPACE_COMMAND);
-        deleteWith(KEY_BACKSPACE_COMMAND);
-
         expect(pressed.defaultPrevented).toBe(true);
         expect(changes).toEqual([]);
-        expect(shownBlocks()).toEqual(["block: callout"]);
+        expect(selectedBlocks()).toEqual(["block: callout"]);
+
+        deleteWith(KEY_BACKSPACE_COMMAND);
+        expect(latest().root.children).toEqual([
+          paragraph(text("Before")),
+          paragraph(text("After")),
+        ]);
+        expect(shownBlocks()).toEqual([]);
       });
 
-      it("by a Delete right before it", () => {
+      it("a Delete right before it selects it and the next one removes it", () => {
         start(stateOf(paragraph(text("Before"), INLINE_BLOCK, text("after"))));
         select(0, 6, 6);
 
         deleteWith(KEY_DELETE_COMMAND);
-        deleteWith(KEY_DELETE_COMMAND);
-
         expect(changes).toEqual([]);
-        expect(shownBlocks()).toEqual(["inlineBlock: badge"]);
+        expect(selectedBlocks()).toEqual(["inlineBlock: badge"]);
+
+        deleteWith(KEY_DELETE_COMMAND);
+        expect(shownBlocks()).toEqual([]);
+        expect(twin.textContent).toBe("Beforeafter");
       });
 
-      it("by a Backspace while it is selected", () => {
+      it("a click on its placeholder selects it and a Backspace removes it", async () => {
         start(stateOf(paragraph(text("Before")), BLOCK));
-        update(() => {
-          const selection = $createNodeSelection();
-          selection.add($getRoot().getLastChildOrThrow().getKey());
-          $setSelection(selection);
-        });
+
+        const clicked = new MouseEvent("click", { bubbles: true, cancelable: true });
+        twin.querySelector(`[${DATA_VE_OPAQUE_ATTR}]`)?.dispatchEvent(clicked);
+        await flushMutations();
+        expect(selectedBlocks()).toEqual(["block: callout"]);
+        expect(changes).toEqual([]);
+
+        deleteWith(KEY_BACKSPACE_COMMAND);
+        expect(latest().root.children).toEqual([paragraph(text("Before"))]);
+      });
+
+      it("a Backspace at the start of the paragraph after it never deletes the text before it", () => {
+        start(stateOf(paragraph(text("Before")), BLOCK, paragraph(text("After"))));
+        update(() => ($getRoot().getLastChildOrThrow() as ElementNode).select(0, 0));
 
         deleteWith(KEY_BACKSPACE_COMMAND);
 
-        expect(twin.querySelector(`[${DATA_VE_OPAQUE_SELECTED_ATTR}]`)).not.toBeNull();
+        expect(selectedBlocks()).toEqual(["block: callout"]);
         expect(changes).toEqual([]);
       });
 
+      it("a Backspace in an empty paragraph after it removes the paragraph and selects it", () => {
+        start(stateOf(paragraph(text("Before")), BLOCK, paragraph()));
+        update(() => ($getRoot().getLastChildOrThrow() as ElementNode).select(0, 0));
+
+        deleteWith(KEY_BACKSPACE_COMMAND);
+
+        expect(latest().root.children).toEqual([paragraph(text("Before")), BLOCK]);
+        expect(selectedBlocks()).toEqual(["block: callout"]);
+      });
+
+      it("leaves a paragraph for the caret when it was all the rich text held", () => {
+        start(stateOf(BLOCK));
+        selectNode(0);
+
+        deleteWith(KEY_BACKSPACE_COMMAND);
+
+        expect(typesOfRoot()).toEqual(["paragraph"]);
+        expect(latest().root.children).toHaveLength(1);
+      });
+
+      it("comes back as it is stored on undo, and leaves again on redo", () => {
+        start(stateOf(paragraph(text("Before")), BLOCK, OPAQUE_BLOCKS[3]![1]));
+        selectNode(1);
+        deleteWith(KEY_BACKSPACE_COMMAND);
+        expect(shownBlocks()).toEqual(["horizontalrule"]);
+
+        undo();
+        expect(shownBlocks()).toEqual(["block: callout", "horizontalrule"]);
+        expect(JSON.stringify(latest().root.children[1])).toBe(JSON.stringify(BLOCK));
+
+        update(() => lexicalOf(twin).dispatchCommand(REDO_COMMAND, undefined));
+        expect(shownBlocks()).toEqual(["horizontalrule"]);
+      });
+
+      it("is not removed by a cut while it is selected", () => {
+        start(stateOf(paragraph(text("Before")), BLOCK));
+        selectNode(1);
+        const cut = new Event("cut", { cancelable: true }) as ClipboardEvent;
+
+        update(() => lexicalOf(twin).dispatchCommand(CUT_COMMAND, cut));
+
+        expect(cut.defaultPrevented).toBe(true);
+        expect(shownBlocks()).toEqual(["block: callout"]);
+        expect(changes).toEqual([]);
+      });
+    });
+
+    describe("cannot be taken away", () => {
       it("by a Backspace over a selection that spans it, which removes the text alone", () => {
         start(stateOf(paragraph(text("Before")), BLOCK, paragraph(text("After"))));
         selectAcross(0, 1);
@@ -446,6 +556,192 @@ describe("one edit of rich text", () => {
 
         expect(shownBlocks()).toEqual(["block: callout"]);
       });
+    });
+  });
+
+  describe("the caret", () => {
+    const TWO_PARAGRAPHS = stateOf(
+      paragraph(text("Hello "), text("world", BOLD)),
+      OPAQUE_BLOCKS[0]![1],
+      paragraph(text("After"))
+    );
+
+    it.each<[string, number, boolean, [string, number]]>([
+      ["inside a text", 3, false, ["Hello ", 3]],
+      ["inside a later text of the paragraph", 8, false, ["world", 2]],
+      ["below a node the page cannot edit, whose text is not counted", 13, false, ["After", 2]],
+      ["at the end of a paragraph", 11, false, ["world", 5]],
+      ["at the start of the next paragraph", 11, true, ["After", 0]],
+      ["at the very start", 0, true, ["Hello ", 0]],
+      ["past the end of the text", 99, false, ["After", 5]],
+    ])("is placed %s", (_name, offset, isAtStart, expected) => {
+      start(TWO_PARAGRAPHS, EVERY_FORMAT, { caret: { isAtStart, offset } });
+
+      expect(caret()).toEqual(expected);
+    });
+
+    it("is placed at the end when the click named no text", () => {
+      start(TWO_PARAGRAPHS);
+
+      expect(caret()).toEqual(["After", 5]);
+    });
+  });
+
+  describe("the look of what the site rendered", () => {
+    const RENDERED = `
+      <h2 class="title">A heading</h2>
+      <p class="lead">Hello <strong class="strong">world</strong> <em class="em">and</em>
+        <u class="under">more</u> <a class="link" href="/docs">docs</a></p>
+      <aside class="callout" id="callout" data-ve-path="blocks.0"><p class="inner">Rendered by the site</p></aside>
+      <ul class="bullets"><li class="item">One</li><li class="item wrap"><ul class="nested"><li class="item">Deep</li></ul></li></ul>
+      <blockquote class="quote">Said</blockquote>
+    `;
+
+    const STATE_OF_RENDERED = stateOf(
+      heading("h2", text("A heading")),
+      paragraph(
+        text("Hello "),
+        text("world", BOLD),
+        text("and", 2),
+        text("more", 8),
+        storedLink("/docs", text("docs"))
+      ),
+      OPAQUE_BLOCKS[0]![1],
+      element(
+        "list",
+        [
+          element("listitem", [text("One")], { value: 1 }),
+          element(
+            "listitem",
+            [
+              element("list", [element("listitem", [text("Deep")], { value: 1 })], {
+                listType: "bullet",
+                start: 1,
+                tag: "ul",
+              }),
+            ],
+            { value: 2 }
+          ),
+        ],
+        { listType: "bullet", start: 1, tag: "ul" }
+      ),
+      element("quote", [text("Said")])
+    );
+
+    const classIn = (selector: string) => twin.querySelector(selector)?.className;
+
+    it("gives every kind of element the class the site gave the first one of that kind", () => {
+      start(STATE_OF_RENDERED, EVERY_FORMAT, { rendered: renderedBy(RENDERED) });
+
+      expect(
+        ["h2", "p", "strong", "em", "a", "ul", "li", "li + li", "li ul", "blockquote"].map(classIn)
+      ).toEqual([
+        "title",
+        "lead",
+        "strong",
+        "em",
+        "link",
+        "bullets",
+        "item",
+        "item wrap",
+        "nested",
+        "quote",
+      ]);
+      expect(twin.querySelector(".ve-rich-text-underline")?.className).toBe(
+        "ve-rich-text-underline under"
+      );
+    });
+
+    it("gives no class to a kind the site did not render", () => {
+      start(STATE_OF_RENDERED, EVERY_FORMAT, { rendered: renderedBy("<p>Plain</p>") });
+
+      expect(["h2", "p", "strong", "a", "ul", "li", "blockquote"].map(classIn)).toEqual([
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+      ]);
+    });
+
+    it("never takes a class from inside what the site rendered for a node the page cannot edit", () => {
+      const rendered = renderedBy(RENDERED);
+      rendered.querySelector("h2")?.remove();
+      rendered.querySelector("p.lead")?.remove();
+
+      start(stateOf(OPAQUE_BLOCKS[0]![1], paragraph(text("Next"))), EVERY_FORMAT, {
+        rendered: renderedBy('<aside><p class="inner">Block</p></aside><p class="outer">Next</p>'),
+      });
+
+      expect(classIn(":scope > p")).toBe("outer");
+    });
+
+    it("shows a node the page cannot edit as an inert copy of what the site rendered for it", () => {
+      start(STATE_OF_RENDERED, EVERY_FORMAT, { rendered: renderedBy(RENDERED) });
+
+      const placeholder = twin.querySelector(`[${DATA_VE_OPAQUE_ATTR}]`) as HTMLElement;
+      const copy = placeholder.firstElementChild as HTMLElement;
+      expect(placeholder.contentEditable).toBe("false");
+      expect(copy.tagName).toBe("ASIDE");
+      expect(copy.className).toBe("callout");
+      expect(copy.hasAttribute("inert")).toBe(true);
+      expect(copy.textContent).toBe("Rendered by the site");
+      expect(placeholder.querySelectorAll("[id], [data-ve-path]")).toHaveLength(0);
+      expect(JSON.stringify(lexicalStateOf().root.children[2])).toContain('"kept"');
+    });
+
+    it("keeps the copy when the node is removed and comes back on undo", () => {
+      start(STATE_OF_RENDERED, EVERY_FORMAT, { rendered: renderedBy(RENDERED) });
+      update(() => {
+        const selection = $createNodeSelection();
+        selection.add(($getRoot().getChildAtIndex(2) as LexicalNode).getKey());
+        $setSelection(selection);
+      });
+      deleteWith(KEY_BACKSPACE_COMMAND);
+      expect(twin.querySelector("aside")).toBeNull();
+
+      update(() => lexicalOf(twin).dispatchCommand(UNDO_COMMAND, undefined));
+
+      expect(twin.querySelector("aside.callout")?.textContent).toBe("Rendered by the site");
+    });
+
+    it("shows the labelled box when the site rendered another number of elements than the state holds", () => {
+      start(STATE_OF_RENDERED, EVERY_FORMAT, {
+        rendered: renderedBy(`${RENDERED}<p>One more</p>`),
+      });
+
+      expect(placeholders()).toEqual([
+        { isEditable: "false", name: "block: callout", shown: "block: callout" },
+      ]);
+    });
+
+    it("measures as the rendered rich text does", () => {
+      const HEIGHTS: Record<string, number> = {
+        "ASIDE.callout": 84,
+        "BLOCKQUOTE.quote": 40,
+        "H2.title": 48,
+        "LI.item": 28,
+        "P.lead": 30,
+      };
+      const heightOf = (shown: Element): number => {
+        const own = HEIGHTS[`${shown.tagName}.${shown.className}`];
+        if (own !== undefined && shown.querySelector("li") === null) return own;
+        return [...shown.children].reduce((height, child) => height + heightOf(child), own ?? 0);
+      };
+      const rendered = renderedBy(RENDERED);
+
+      start(STATE_OF_RENDERED, EVERY_FORMAT, { rendered });
+
+      expect(heightOf(rendered)).toBeGreaterThan(0);
+      expect(Math.abs(heightOf(twin) - heightOf(rendered))).toBeLessThanOrEqual(1);
+    });
+
+    it("turns the spelling check off, as a text edit does", () => {
+      start(STATE_OF_RENDERED);
+
+      expect(twin.getAttribute("spellcheck")).toBe("false");
     });
   });
 
@@ -574,6 +870,51 @@ describe("one edit of rich text", () => {
 
       select(0, 2, 2);
       expect(isToolbarShown()).toBe(false);
+    });
+
+    describe("on a narrow screen", () => {
+      const VIEWPORT = { innerHeight: 600, innerWidth: 390 };
+      const TOOLBAR = { height: 90, width: 300 };
+      const real = { innerHeight: window.innerHeight, innerWidth: window.innerWidth };
+
+      const selectAt = (rect: DOMRect) => {
+        vi.spyOn(Range.prototype, "getBoundingClientRect").mockReturnValue(rect);
+        vi.spyOn(toolbarHost(), "getBoundingClientRect").mockReturnValue(
+          new DOMRect(0, 0, TOOLBAR.width, TOOLBAR.height)
+        );
+        select(0, 0, 5);
+      };
+
+      beforeEach(() => Object.assign(window, VIEWPORT));
+
+      afterEach(() => {
+        Object.assign(window, real);
+        vi.restoreAllMocks();
+      });
+
+      it.each<[string, DOMRect, string]>([
+        ["a selection at the right edge", new DOMRect(380, 300, 10, 20), "translate(82px, 202px)"],
+        ["a selection at the left edge", new DOMRect(0, 300, 10, 20), "translate(8px, 202px)"],
+        ["a selection at the top", new DOMRect(100, 4, 10, 20), "translate(8px, 32px)"],
+        [
+          "a selection that leaves no room above or below",
+          new DOMRect(100, 4, 10, 590),
+          "translate(8px, 502px)",
+        ],
+      ])("stays inside the viewport for %s", (_name, rect, transform) => {
+        selectAt(rect);
+
+        expect(toolbarHost().style.transform).toBe(transform);
+      });
+
+      it("is never wider than the viewport less its margin, and wraps its buttons", () => {
+        const styles = toolbar().querySelector("style")?.textContent ?? "";
+
+        expect(styles).toContain("max-width: calc(100vw - 16px)");
+        expect(styles).toContain("flex-wrap: wrap");
+        expect(linkInput().parentElement?.getAttribute("role")).toBe("toolbar");
+        expect(button("bold").parentElement?.getAttribute("role")).toBe("group");
+      });
     });
 
     it("holds a labelled toggle button for every format", () => {
@@ -744,6 +1085,38 @@ describe("one edit of rich text", () => {
           expect(linkInput().hidden).toBe(false);
           expect(linkInput().getAttribute("aria-invalid")).toBe("true");
           expect(twin.querySelectorAll("a")).toHaveLength(1);
+        }
+      );
+
+      it("says in words why an address is refused, where assistive technology announces it", () => {
+        select(0, 0, 5);
+        applyLink("ftp://files.example.com");
+
+        const problem = toolbar().querySelector('[role="alert"]') as HTMLElement;
+        expect(problem.hidden).toBe(false);
+        expect(problem.textContent).toBe(
+          "Use an address that starts with http:, https:, mailto: or tel:, or a relative one."
+        );
+        expect(linkInput().getAttribute("aria-describedby")).toBe(problem.id);
+
+        linkInput().dispatchEvent(new Event("input"));
+
+        expect(problem.hidden).toBe(true);
+        expect(problem.textContent).toBe("");
+        expect(linkInput().hasAttribute("aria-invalid")).toBe(false);
+      });
+
+      it.each(["Escape", "Enter"])(
+        "puts the selection back that was there when the field opened, on %s",
+        (key) => {
+          select(0, 0, 5);
+          button("link").click();
+          linkInput().value = "/docs";
+          update(() => $setSelection(null));
+
+          pressInLinkInput(key);
+
+          expect(selectedText()).toBe("Hello");
         }
       );
 

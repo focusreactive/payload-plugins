@@ -322,6 +322,43 @@ describe("the transport of an edit", () => {
       expect(fetchEndpoint).toHaveBeenCalledTimes(1);
     });
 
+    it("holds an edit unsaved for as long as it takes, and saves it when the edit ends", async () => {
+      transport.hold({ ...BODY, state: STATE });
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS * 10);
+
+      expect(fetchEndpoint).not.toHaveBeenCalled();
+      expect(statuses).toEqual(["unsaved"]);
+      expect(transport.isUnsaved(BODY)).toBe(true);
+
+      transport.flush();
+      await settle();
+
+      expect(fetchEndpoint).toHaveBeenCalledTimes(1);
+      expect(statuses.at(-1)).toBe("saved");
+      expect(transport.isUnsaved(BODY)).toBe(false);
+    });
+
+    it("drops an edit it holds without saving it", async () => {
+      transport.hold({ ...BODY, state: STATE });
+
+      transport.drop(BODY);
+      transport.flush();
+      await settle();
+
+      expect(fetchEndpoint).not.toHaveBeenCalled();
+      expect(statuses).toEqual(["unsaved", "saved"]);
+      expect(transport.isUnsaved(BODY)).toBe(false);
+    });
+
+    it("keeps saying that changes are unsaved when it drops one edit while another waits", () => {
+      transport.send({ ...TITLE, value: "Hello" });
+      transport.hold({ ...BODY, state: STATE });
+
+      transport.drop(BODY);
+
+      expect(statuses.at(-1)).toBe("unsaved");
+    });
+
     it("delivers one edit at once and leaves the waiting ones waiting", async () => {
       transport.send({ ...TITLE, value: "Hello" });
 
