@@ -141,6 +141,8 @@ export const en = {
   "links.loading": "Looking for opportunities…",
   "links.error": "Could not load suggestions. Try again.",
   "links.empty": "No opportunities found. Add keyphrases to other pages to get suggestions.",
+  "links.allLinked": "No new opportunities. This text already links to the pages below.",
+  "links.linkedTitle": "Already linked",
   "links.matches_one": "{{count}} match",
   "links.matches_other": "{{count}} matches",
   "links.matchedPhrase": "Matches",
@@ -170,7 +172,8 @@ export const en = {
   "check.keyphraseLength.name": "Keyphrase length",
   "check.keyphraseLength.tip": "Word count of the keyphrase itself.",
   "check.keyphraseDensity.name": "Keyphrase density",
-  "check.keyphraseDensity.tip": "Occurrences relative to total words. Ideal 0.5–2.5%.",
+  "check.keyphraseDensity.tip":
+    "Occurrences relative to total words, weighted up for longer keyphrases. Ideal {{min}}–{{max}}%.",
   "check.metaDescriptionKeyword.name": "Keyphrase in meta description",
   "check.metaDescriptionKeyword.tip": "Whether the keyphrase appears in the meta description.",
   "check.subheadingsKeyword.name": "Keyphrase in subheadings",
@@ -188,11 +191,11 @@ export const en = {
   "check.keyphraseDistribution.name": "Keyphrase distribution",
   "check.keyphraseDistribution.tip": "Where the keyphrase occurs across the document.",
   "check.textLength.name": "Total word count",
-  "check.textLength.tip": "Total words vs the recommended minimum (300).",
+  "check.textLength.tip": "Total words vs the recommended minimum ({{min}}).",
   "check.metaDescriptionLength.name": "Meta description length",
-  "check.metaDescriptionLength.tip": "Ideal 120–158 characters.",
+  "check.metaDescriptionLength.tip": "Ideal {{min}}–{{max}} characters.",
   "check.titleWidth.name": "SEO title width",
-  "check.titleWidth.tip": "Pixel width; over ~580px truncates.",
+  "check.titleWidth.tip": "Pixel width; titles over {{max}}px get truncated.",
   "check.images.name": "Images",
   "check.images.tip": "Whether the text contains images.",
   "check.externalLinks.name": "Outbound links",
@@ -206,7 +209,7 @@ export const en = {
   "check.textParagraphTooLong.name": "Paragraph length",
   "check.textParagraphTooLong.tip": "Paragraphs over the recommended length.",
   "check.textSentenceLength.name": "Sentence length",
-  "check.textSentenceLength.tip": "Share of sentences over the recommended length.",
+  "check.textSentenceLength.tip": "Share of sentences longer than {{maxSentenceWords}} words.",
   "check.textTransitionWords.name": "Transition words",
   "check.textTransitionWords.tip": "Share of sentences using transition words.",
   "check.passiveVoice.name": "Passive voice",
@@ -214,14 +217,13 @@ export const en = {
   "check.sentenceBeginnings.name": "Consecutive sentences",
   "check.sentenceBeginnings.tip": "Repetitive sentence beginnings.",
   "check.fleschReadingEase.name": "Reading ease",
-  "check.fleschReadingEase.tip": "Flesch Reading Ease (0–100); higher is easier. Aim for 60+.",
+  "check.fleschReadingEase.tip": "Flesch Reading Ease (0–100); higher is easier. Aim for {{min}}+.",
 
   "reco.introductionKeyword.bad": "Add “{{keyphrase}}” to your opening paragraph.",
   "reco.introductionKeyword.badNoKeyphrase": "Add your keyphrase to your opening paragraph.",
-  "reco.keyphraseDensity.bad": "Use the keyphrase a few more times to land in the ideal band.",
-  "reco.keyphraseDensity.warn": "Use the keyphrase ~2 more times to land in the ideal band.",
-  "reco.keyphraseDensity.over":
-    "The keyphrase appears too often for a text this long. Replace a few uses with synonyms.",
+  "reco.keyphraseDensity.tooFew": "Use the keyphrase a few more times to land in the ideal band.",
+  "reco.keyphraseDensity.tooMany":
+    "Use the keyphrase less often to land in the ideal band and avoid keyword stuffing.",
   "reco.metaDescriptionKeyword.bad":
     "Add the keyphrase to the meta description to improve click-through.",
   "reco.imageKeyphrase.warn": "Add the keyphrase to the alt text of the remaining images.",
@@ -229,12 +231,16 @@ export const en = {
   "reco.keyphraseDistribution.warn":
     "Occurrences are clustered — spread the keyphrase through the body.",
   "reco.keyphraseDistribution.bad": "Distribute the keyphrase more evenly through the text.",
-  "reco.metaDescriptionLength.warn":
-    "You're near the limit — trim a few characters to avoid truncation.",
-  "reco.metaDescriptionLength.bad": "Adjust the meta description toward 120–158 characters.",
+  "reco.metaDescriptionLength.missing":
+    "Write a meta description longer than {{min}} and up to {{max}} characters.",
+  "reco.metaDescriptionLength.tooShort":
+    "Lengthen the meta description to more than {{min}} characters.",
+  "reco.metaDescriptionLength.tooLong":
+    "Trim the meta description to {{max}} characters or fewer to avoid truncation.",
+  "reco.titleWidth.tooLong": "Shorten the SEO title to {{max}}px or less to avoid truncation.",
   "reco.internalLinks.warn": "Add a few internal links to related pages.",
   "reco.internalLinks.bad": "Add internal links to related pages.",
-  "reco.textLength.bad": "Add more content — aim for at least 300 words.",
+  "reco.textLength.bad": "Add more content — aim for at least {{min}} words.",
   "reco.textLength.warn": "Add more content to comfortably clear the minimum.",
   "reco.fleschReadingEase.warn":
     "Shorten sentences and prefer simpler words to make the text easier to read.",

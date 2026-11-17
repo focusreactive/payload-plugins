@@ -1,7 +1,13 @@
 import { KEYPHRASES_ENDPOINT_PATH, KEYPHRASE_SAVE_DELAY_MS } from "../../constants";
 import type { StoredKeyphrase } from "../../keyphrases/stored";
 import type { KeyphraseEntry } from "./keyphraseState";
-import { clearKeyphrases, saveKeyphrases, toStored, unsavedStorageKey } from "./keyphraseStorage";
+import {
+  clearKeyphrases,
+  saveKeyphrases,
+  storageKey,
+  toStored,
+  unsavedStorageKey,
+} from "./keyphraseStorage";
 
 const noop = () => undefined;
 
@@ -47,6 +53,7 @@ export function createRemoteSaver(
   { onOutcome = noop }: RemoteSaverOptions = {}
 ): RemoteSaver {
   const backupKey = unsavedStorageKey(target.collection, target.docId, target.locale);
+  const browserKey = storageKey(target.collection, target.docId, target.locale);
   let timer: ReturnType<typeof setTimeout> | null = null;
   let pending: KeyphraseEntry[] | null = null;
   let inFlight: Promise<SaveOutcome> | null = null;
@@ -67,6 +74,7 @@ export function createRemoteSaver(
     }).catch(noop);
     const outcome = await toOutcome(res);
 
+    if (outcome.status !== "failed") clearKeyphrases(browserKey);
     onOutcome(outcome);
     return outcome;
   };

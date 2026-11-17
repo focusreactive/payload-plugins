@@ -7,7 +7,9 @@ import {
   fieldDomIdOf,
 } from "./fieldDomId.js";
 
-const FOCUS_SELECTOR = '[data-lexical-editor="true"], input:not([type="hidden"]), textarea';
+const RICH_TEXT_EDITOR_SELECTOR = '[data-lexical-editor="true"]';
+const FOCUS_SELECTOR = `${RICH_TEXT_EDITOR_SELECTOR}, input:not([type="hidden"]), textarea`;
+const RICH_TEXT_FIELD_SELECTOR = ".rich-text-lexical";
 
 const FIELD_WRAPPER_SELECTOR = ".field-type";
 const BLOCK_NAME_INPUT_SELECTOR = ".section-title__input";
@@ -16,9 +18,10 @@ const FOCUSED_FIELD_FRAME_SELECTOR = ".section-title, .field-type";
 const REVEAL_STYLE_ID = "ve-reveal-styles";
 // An attribute, not a class: React rewrites `className` when a focused field re-renders.
 const REVEAL_ATTR = "data-ve-reveal";
-const POLL_INTERVAL_MS = 60;
-const STEP_BUDGET_MS = 1500;
+const POLL_INTERVAL_MS = 20;
+export const WALK_BUDGET_MS = 20_000;
 const POST_SCROLL_DELAY_MS = 500;
+const DOCUMENT_HEADER_SELECTOR = ".doc-controls";
 
 /** How long the field keeps the accent border before it settles into Payload's own focus style. */
 const REVEAL_TOTAL_MS = 1600;
@@ -117,37 +120,105 @@ export const findFieldElement = (fieldId: string): HTMLElement | null => {
   return wrapper ?? blockNameInputOf(fieldId);
 };
 
-export const scrollNearestAncestorIntoView = (fieldId: string): void => {
-  if (!fieldId.startsWith(FIELD_ID_PREFIX)) return;
+const nearestRenderedAncestorOf = (fieldId: string): HTMLElement | null => {
+  if (!fieldId.startsWith(FIELD_ID_PREFIX)) return null;
   const segments = fieldId.slice(FIELD_ID_PREFIX.length).split(FIELD_ID_SEPARATOR);
   for (let i = segments.length; i > 0; i--) {
     const ancestorId = `${FIELD_ID_PREFIX}${segments.slice(0, i).join(FIELD_ID_SEPARATOR)}`;
     // oxlint-disable-next-line unicorn/prefer-query-selector -- ids are not guaranteed to be valid CSS selectors
     const el = document.getElementById(ancestorId);
-    if (el && typeof el.scrollIntoView === "function") {
-      el.scrollIntoView({ behavior: "auto", block: "center" });
-      return;
-    }
+    if (el) return el;
+  }
+  return null;
+};
+
+const scrollIntoViewAtOnce = (el: HTMLElement | null): void => {
+  if (el && typeof el.scrollIntoView === "function") {
+    el.scrollIntoView({ behavior: "auto", block: "center" });
   }
 };
 
-const waitFor = (predicate: () => boolean, budgetMs: number): Promise<boolean> => {
-  return new Promise((resolve) => {
-    const deadline = Date.now() + budgetMs;
+const isOutOfView = (el: HTMLElement): boolean => {
+  const rect = el.getBoundingClientRect();
+  return rect.bottom <= 0 || rect.top >= window.innerHeight;
+};
+
+const isWhollyInView = (el: HTMLElement): boolean => {
+  const rect = el.getBoundingClientRect();
+  const header = document.querySelector<HTMLElement>(DOCUMENT_HEADER_SELECTOR);
+  const top = header?.getBoundingClientRect().bottom ?? 0;
+  return rect.height > 0 && rect.top >= top && rect.bottom <= window.innerHeight;
+};
+
+export const scrollNearestAncestorIntoView = (fieldId: string): void =>
+  scrollIntoViewAtOnce(nearestRenderedAncestorOf(fieldId));
+
+const nearestRenderedContainerOf = (fieldId: string, scope: ParentNode): HTMLElement | null => {
+  const ancestor = nearestRenderedAncestorOf(fieldId);
+  if (!(scope instanceof HTMLElement)) return ancestor;
+  return !ancestor || ancestor.contains(scope) ? scope : ancestor;
+};
+
+type Walk = { isOver: () => boolean };
+
+let latestWalk = 0;
+
+const startWalk = (budgetMs: number): Walk => {
+  latestWalk += 1;
+  const walk = latestWalk;
+  const deadline = Date.now() + budgetMs;
+  return { isOver: () => walk !== latestWalk || Date.now() >= deadline };
+};
+
+const waitFor = (predicate: () => boolean, walk: Walk): Promise<boolean> =>
+  new Promise((resolve) => {
     const tick = () => {
       if (predicate()) return resolve(true);
-      if (Date.now() >= deadline) return resolve(false);
+      if (walk.isOver()) return resolve(false);
       setTimeout(tick, POLL_INTERVAL_MS);
     };
     tick();
   });
+
+const waitForRendered = <Found extends HTMLElement>(
+  find: () => Found | null,
+  fieldId: string,
+  scope: ParentNode,
+  walk: Walk
+): Promise<Found | null> => {
+  let scrolledTo: HTMLElement | null = null;
+  const isRendered = (): boolean => {
+    if (find() !== null) return true;
+    const container = nearestRenderedContainerOf(fieldId, scope);
+    const isPushedOutOfView = container !== null && isOutOfView(container);
+    if (container !== scrolledTo || isPushedOutOfView) scrollIntoViewAtOnce(container);
+    scrolledTo = container;
+    return false;
+  };
+  return waitFor(isRendered, walk).then((rendered) => (rendered ? find() : null));
 };
+
+const pause = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 
 const collapsibleDomId = (path: string): string => fieldDomIdOf(`collapsible-${path}`);
 
+const TOGGLE_SELECTOR = ".collapsible__toggle";
+const COLLAPSED_TOGGLE_CLASS = "collapsible__toggle--collapsed";
+
+const expand = async (container: HTMLElement, walk: Walk): Promise<boolean> => {
+  const toggle = container.querySelector<HTMLButtonElement>(TOGGLE_SELECTOR);
+  if (!toggle?.classList.contains(COLLAPSED_TOGGLE_CLASS)) return true;
+  toggle.click();
+  return waitFor(() => !toggle.classList.contains(COLLAPSED_TOGGLE_CLASS), walk);
+};
+
 const runInstruction = async (
   instruction: ContainerInstruction,
-  scope: ParentNode
+  scope: ParentNode,
+  walk: Walk
 ): Promise<{ ok: boolean; nextScope: ParentNode }> => {
   switch (instruction.kind) {
     case "tab": {
@@ -158,99 +229,91 @@ const runInstruction = async (
       const isActive = () =>
         getButton()?.classList.contains("tabs-field__tab-button--active") ?? false;
 
-      const ready = await waitFor(() => getButton() !== null, STEP_BUDGET_MS);
+      const ready = await waitFor(() => getButton() !== null, walk);
       if (!ready) return { ok: false, nextScope: scope };
-      if (!isActive()) getButton()!.click();
-      const activated = await waitFor(isActive, STEP_BUDGET_MS);
+      if (!isActive()) getButton()?.click();
+      const activated = await waitFor(isActive, walk);
       return { ok: activated, nextScope: scope };
     }
     case "collapsible": {
       const id = collapsibleDomId(instruction.path);
       // oxlint-disable-next-line unicorn/prefer-query-selector -- ids are not guaranteed to be valid CSS selectors
-      const ready = await waitFor(() => document.getElementById(id) !== null, STEP_BUDGET_MS);
-      if (!ready) return { ok: false, nextScope: scope };
-      // oxlint-disable-next-line unicorn/prefer-query-selector -- ids are not guaranteed to be valid CSS selectors
-      const wrapper = document.getElementById(id)!;
-      const toggle = wrapper.querySelector<HTMLButtonElement>(".collapsible__toggle");
-      if (!toggle) return { ok: true, nextScope: wrapper };
-      if (toggle.classList.contains("collapsible__toggle--collapsed")) {
-        toggle.click();
-        const opened = await waitFor(
-          () => !toggle.classList.contains("collapsible__toggle--collapsed"),
-          STEP_BUDGET_MS
-        );
-        return { ok: opened, nextScope: wrapper };
-      }
-      return { ok: true, nextScope: wrapper };
+      const wrapper = await waitForRendered(() => document.getElementById(id), id, scope, walk);
+      if (!wrapper) return { ok: false, nextScope: scope };
+      return { ok: await expand(wrapper, walk), nextScope: wrapper };
     }
     case "row": {
-      scrollNearestAncestorIntoView(arrayFieldIdOfRow(instruction.rowContainerId));
-      const ready = await waitFor(
+      const row = await waitForRendered(
         // oxlint-disable-next-line unicorn/prefer-query-selector -- ids are not guaranteed to be valid CSS selectors
-        () => document.getElementById(instruction.rowContainerId) !== null,
-        STEP_BUDGET_MS
+        () => document.getElementById(instruction.rowContainerId),
+        arrayFieldIdOfRow(instruction.rowContainerId),
+        scope,
+        walk
       );
-      if (!ready) return { ok: false, nextScope: scope };
-      // oxlint-disable-next-line unicorn/prefer-query-selector -- ids are not guaranteed to be valid CSS selectors
-      const row = document.getElementById(instruction.rowContainerId)!;
-      const toggle = row.querySelector<HTMLButtonElement>(".collapsible__toggle");
-      if (!toggle) return { ok: true, nextScope: row };
-      if (toggle.classList.contains("collapsible__toggle--collapsed")) {
-        toggle.click();
-        const opened = await waitFor(
-          () => !toggle.classList.contains("collapsible__toggle--collapsed"),
-          STEP_BUDGET_MS
-        );
-        return { ok: opened, nextScope: row };
-      }
-      return { ok: true, nextScope: row };
+      if (!row) return { ok: false, nextScope: scope };
+      return { ok: await expand(row, walk), nextScope: row };
     }
   }
+};
+
+type WalkedChain = { ok: boolean; scope: ParentNode };
+
+const walkContainerChain = async (
+  chain: readonly ContainerInstruction[],
+  walk: Walk
+): Promise<WalkedChain> => {
+  let scope: ParentNode = document;
+  for (const instruction of chain) {
+    const result = await runInstruction(instruction, scope, walk);
+    if (!result.ok) return { ok: false, scope };
+    scope = result.nextScope;
+  }
+  return { ok: true, scope };
 };
 
 export const applyContainerChain = async (
   chain: readonly ContainerInstruction[]
 ): Promise<boolean> => {
-  let scope: ParentNode = document;
-  for (const instruction of chain) {
-    const result = await runInstruction(instruction, scope);
-    if (!result.ok) return false;
-    scope = result.nextScope;
-  }
-  return true;
+  const { ok } = await walkContainerChain(chain, startWalk(WALK_BUDGET_MS));
+  return ok;
 };
 
-const focusAndReveal = (fieldEl: HTMLElement): void => {
-  if (typeof fieldEl.scrollIntoView === "function") {
-    fieldEl.scrollIntoView({ behavior: "smooth", block: "center" });
+const focusableOf = async (fieldEl: HTMLElement, walk: Walk): Promise<HTMLElement | null> => {
+  if (fieldEl.matches(FOCUS_SELECTOR)) return fieldEl;
+  if (!fieldEl.matches(RICH_TEXT_FIELD_SELECTOR)) {
+    return fieldEl.querySelector<HTMLElement>(FOCUS_SELECTOR);
+  }
+  const editorOf = () => fieldEl.querySelector<HTMLElement>(RICH_TEXT_EDITOR_SELECTOR);
+  await waitFor(() => editorOf() !== null, walk);
+  return editorOf();
+};
+
+const scrollSmoothlyIntoView = (el: HTMLElement): void => {
+  if (typeof el.scrollIntoView === "function") {
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+};
+
+const focusAndReveal = async (fieldEl: HTMLElement, walk: Walk): Promise<void> => {
+  if (!isWhollyInView(fieldEl)) {
+    scrollSmoothlyIntoView(fieldEl);
+    await pause(POST_SCROLL_DELAY_MS);
   }
 
-  setTimeout(() => {
-    const focusable = fieldEl.matches(FOCUS_SELECTOR)
-      ? fieldEl
-      : fieldEl.querySelector<HTMLElement>(FOCUS_SELECTOR);
-    focusable?.focus({ preventScroll: true });
-    if (typeof fieldEl.scrollIntoView === "function") {
-      const rect = fieldEl.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const outOfView = rect.bottom <= 0 || rect.top >= viewportHeight;
-      if (outOfView) {
-        fieldEl.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-    }
-    revealField(focusable ?? fieldEl);
-  }, POST_SCROLL_DELAY_MS);
+  const focusable = await focusableOf(fieldEl, walk);
+  focusable?.focus({ preventScroll: true });
+  if (isOutOfView(fieldEl)) scrollSmoothlyIntoView(fieldEl);
+
+  revealField(focusable ?? fieldEl);
 };
 
 export const expandAndFocus = async (
   chain: readonly ContainerInstruction[],
   fieldId: string | null
 ): Promise<void> => {
-  await applyContainerChain(chain);
+  const walk = startWalk(WALK_BUDGET_MS);
+  const { scope } = await walkContainerChain(chain, walk);
   if (!fieldId) return;
-  scrollNearestAncestorIntoView(fieldId);
-  const ready = await waitFor(() => findFieldElement(fieldId) !== null, STEP_BUDGET_MS);
-  if (!ready) return;
-  const fieldEl = findFieldElement(fieldId);
-  if (fieldEl) focusAndReveal(fieldEl);
+  const fieldEl = await waitForRendered(() => findFieldElement(fieldId), fieldId, scope, walk);
+  if (fieldEl) await focusAndReveal(fieldEl, walk);
 };

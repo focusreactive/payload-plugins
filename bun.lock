@@ -529,6 +529,7 @@
       },
       "devDependencies": {
         "@payloadcms/db-sqlite": "3.90.1",
+        "@payloadcms/graphql": "3.90.1",
         "@payloadcms/richtext-lexical": "3.90.1",
         "@payloadcms/translations": "3.90.1",
         "@payloadcms/ui": "3.90.1",
@@ -550,9 +551,15 @@
       "peerDependencies": {
         "@payloadcms/ui": "^3.79.0",
         "payload": "^3.79.0",
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0",
+        "react": "^18.2.0 || ^19.0.0",
+        "react-dom": "^18.2.0 || ^19.0.0",
       },
+      "optionalPeers": [
+        "@payloadcms/ui",
+        "payload",
+        "react",
+        "react-dom",
+      ],
     },
     "packages/tailwind-config": {
       "name": "@repo/tailwind-config",

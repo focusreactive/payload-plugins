@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { deriveRelatedKeyphrase } from "../../src/engine/runAnalysis/services/derive-related";
+import { analysisThresholds } from "../../src/engine/thresholds/analysisThresholds";
 
 vi.mock("yoastseo/build/scoring/assessors/relatedKeywordAssessor", () => ({
   default: function () {
@@ -25,11 +26,10 @@ vi.mock("yoastseo/build/languageProcessing/languages/en/Researcher", () => ({
 describe("deriveRelatedKeyphrase", () => {
   it("returns a CategoryResult built from the RelatedKeywordAssessor results", () => {
     const paper = { getKeyword: () => "headless cms" } as never;
-    const cat = deriveRelatedKeyphrase(paper, "headless cms");
+    const cat = deriveRelatedKeyphrase(paper, "headless cms", analysisThresholds());
     expect(cat.checks.map((c) => c.id)).toEqual(["introductionKeyword", "keywordDensity"]);
     expect(typeof cat.ringScore).toBe("number");
     expect(["good", "warn", "bad"]).toContain(cat.status);
-    // enrich attaches data to every check
     for (const c of cat.checks) expect(Object.hasOwn(c, "data")).toBe(true);
   });
 });

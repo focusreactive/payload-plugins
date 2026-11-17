@@ -133,6 +133,7 @@ export type RealPayloadOptions = {
   canRead?: Access;
   canReadMedia?: Access;
   canReadGuardedBody?: FieldAccess;
+  userDepth?: number;
 };
 
 const ignoreReadPage: ReadPage = () => undefined;
@@ -144,6 +145,7 @@ export async function startRealPayload({
   canReadMedia,
   onPageReadBeforeThePlugin = ignoreReadPage,
   plugin = {},
+  userDepth,
 }: RealPayloadOptions): Promise<Payload> {
   const access = canRead && { read: canRead };
   const mediaAccess = canReadMedia && { read: canReadMedia };
@@ -184,7 +186,14 @@ export async function startRealPayload({
     blocks: [quoteBlock],
     collections: [
       pages,
-      { slug: "users", auth: true, fields: [{ name: "bio", type: "richText" }] },
+      {
+        slug: "users",
+        auth: userDepth === undefined ? true : { depth: userDepth },
+        fields: [
+          { name: "bio", type: "richText" },
+          { name: "team", type: "relationship", relationTo: "authors" },
+        ],
+      },
       { slug: "authors", fields: authorFields },
       { slug: "plainAuthors", fields: authorFields },
       {

@@ -16,6 +16,8 @@ import {
   NOTHING_TOLD,
   RENDER_TIMEOUT_MS,
   RETRY_AFTER_MS,
+  SERVER_CHECK_PAUSE_MS,
+  STRUCTURE_SETTLE_MS,
 } from "../../src/client/instantPreview/unsavedRender/unsavedRender";
 
 const SAVED_SHAPE = "saved-shape";
@@ -37,7 +39,17 @@ const wait = async (ms = 0) => {
 
 const LONGEST_RETRY_AFTER_MS = RETRY_AFTER_MS * 2 ** (MOST_RETRIES_OF_A_STRUCTURE - 1);
 
-function liveRichText({ commitsRenders = true } = {}) {
+type LocalRender = (structure: UnsavedStructure) => string | null | Promise<string | null>;
+
+const textOfStructure = ({ state }: UnsavedStructure) =>
+  (state as ReturnType<typeof stateOf>).root.children[0]?.text;
+
+const renderedHere: LocalRender = (structure) => `Local ${textOfStructure(structure)}`;
+
+function liveRichText({
+  commitsRenders = true,
+  optimistic,
+}: { commitsRenders?: boolean; optimistic?: LocalRender } = {}) {
   const calls: Call[] = [];
   let state: UnsavedRenderState<string> = NOTHING_TOLD;
   let saved: RenderOfShape<string> = { node: SAVED_RENDER, shape: SAVED_SHAPE };
@@ -64,6 +76,7 @@ function liveRichText({ commitsRenders = true } = {}) {
           structure,
         });
       }),
+    optimistic,
     savedShape: saved.shape,
     shown: state,
   });
@@ -103,6 +116,7 @@ describe("the unsaved render of a live rich text", () => {
 
   it("keeps the saved render while the unsaved one is on its way, then shows it", async () => {
     field.tell("unsaved", "Typed");
+    await wait(STRUCTURE_SETTLE_MS);
 
     expect(field.calls.map(({ structure }) => structure)).toEqual([
       { locale: "en", shape: "unsaved", state: stateOf("Typed") },
@@ -114,8 +128,49 @@ describe("the unsaved render of a live rich text", () => {
     expect(field.shown()).toBe("Unsaved render");
   });
 
+  describe("waits a moment for the next structure before it starts a call", () => {
+    it("and starts one call for the structures told within it", async () => {
+      field.tell("paragraph", "");
+      await wait(STRUCTURE_SETTLE_MS - 1);
+      field.tell("paragraph-with-text", "T");
+
+      expect(field.calls).toHaveLength(0);
+
+      await wait(1);
+
+      expect(field.renderedTexts()).toEqual([stateOf("T")]);
+    });
+
+    it("and starts a second call for a structure told after it", async () => {
+      field.tell("paragraph", "");
+      await wait(STRUCTURE_SETTLE_MS);
+      field.tell("paragraph-with-text", "T");
+      await field.calls[0]?.finishWith("Paragraph render");
+
+      expect(field.renderedTexts()).toEqual([stateOf(""), stateOf("T")]);
+    });
+
+    it("and starts no call once the editor is back on the saved structure within it", async () => {
+      field.tell("paragraph", "");
+      field.tell(SAVED_SHAPE, null);
+      await wait(STRUCTURE_SETTLE_MS);
+
+      expect(field.calls).toHaveLength(0);
+      expect(field.shown()).toBe(SAVED_RENDER);
+    });
+
+    it("and starts no call once it stopped within it", async () => {
+      field.tell("paragraph", "");
+      field.stop();
+      await wait(STRUCTURE_SETTLE_MS);
+
+      expect(field.calls).toHaveLength(0);
+    });
+  });
+
   it("has one call out at a time and renders only the latest state told meanwhile", async () => {
     field.tell("first", "One");
+    await wait(STRUCTURE_SETTLE_MS);
     field.tell("second", "Two");
     field.tell("third", "Three");
 
@@ -134,6 +189,7 @@ describe("the unsaved render of a live rich text", () => {
 
   it("cancels the call and renders no waiting state once the editor is back on the saved structure", async () => {
     field.tell("first", "One");
+    await wait(STRUCTURE_SETTLE_MS);
     field.tell("second", "Two");
     field.tell(SAVED_SHAPE, null);
 
@@ -148,6 +204,7 @@ describe("the unsaved render of a live rich text", () => {
   describe("chooses between the saved and the unsaved render", () => {
     beforeEach(async () => {
       field.tell("unsaved", "Typed");
+      await wait(STRUCTURE_SETTLE_MS);
       await field.calls[0]?.finishWith("Unsaved render");
     });
 
@@ -177,6 +234,7 @@ describe("the unsaved render of a live rich text", () => {
 
       expect(field.shown()).toBe(SAVED_RENDER);
 
+      await wait(STRUCTURE_SETTLE_MS);
       await field.calls[1]?.finishWith("Editor render");
 
       expect(field.shown()).toBe("Editor render");
@@ -189,8 +247,10 @@ describe("the unsaved render of a live rich text", () => {
   ])("when a call %s", (_name, answer) => {
     beforeEach(async () => {
       field.tell("first", "One");
+      await wait(STRUCTURE_SETTLE_MS);
       await field.calls[0]?.finishWith("First render");
       field.tell("second", "Two");
+      await wait(STRUCTURE_SETTLE_MS);
     });
 
     it("shows the saved render", async () => {
@@ -211,6 +271,7 @@ describe("the unsaved render of a live rich text", () => {
     it("renders the next structure told after it", async () => {
       await field.calls[1]?.finishWith(answer);
       field.tell("third", "Three");
+      await wait(STRUCTURE_SETTLE_MS);
       await field.calls[2]?.finishWith("Third render");
 
       expect(field.shown()).toBe("Third render");
@@ -220,8 +281,10 @@ describe("the unsaved render of a live rich text", () => {
   describe("a render of a structure the editor left", () => {
     it("is not shown while the page shows the editor's structure", async () => {
       field.tell("second", "Two");
+      await wait(STRUCTURE_SETTLE_MS);
       await field.calls[0]?.finishWith("Second render");
       field.tell("third", "Three");
+      await wait(STRUCTURE_SETTLE_MS);
       field.tell("second", "Two again");
 
       await field.calls[1]?.finishWith("Third render");
@@ -235,6 +298,7 @@ describe("the unsaved render of a live rich text", () => {
 
     it("leaves the saved render of the editor's structure on screen", async () => {
       field.tell("unsaved", "Typed");
+      await wait(STRUCTURE_SETTLE_MS);
       field.save("unsaved", SAVED_RENDER);
       field.tell("left", "Left");
       field.tell("unsaved", "Typed again");
@@ -247,9 +311,10 @@ describe("the unsaved render of a live rich text", () => {
   });
 
   describe("waits for the commit of a render before the next call", () => {
-    beforeEach(() => {
+    beforeEach(async () => {
       field = liveRichText({ commitsRenders: false });
       field.tell("first", "One");
+      await wait(STRUCTURE_SETTLE_MS);
       field.tell("second", "Two");
     });
 
@@ -279,6 +344,7 @@ describe("the unsaved render of a live rich text", () => {
   describe("asks again for the editor's structure when a call had nothing to render", () => {
     beforeEach(async () => {
       field.tell("unsaved", "Typed");
+      await wait(STRUCTURE_SETTLE_MS);
       await field.calls[0]?.finishWith(null);
     });
 
@@ -318,6 +384,7 @@ describe("the unsaved render of a live rich text", () => {
     it("and again for the next structure after giving up on one", async () => {
       await giveUpEachRetry(MOST_RETRIES_OF_A_STRUCTURE);
       field.tell("edited", "Edited");
+      await wait(STRUCTURE_SETTLE_MS);
       await field.calls.at(-1)?.finishWith(null);
       await wait(RETRY_AFTER_MS);
 
@@ -338,8 +405,10 @@ describe("the unsaved render of a live rich text", () => {
   describe("when a render does not return in time", () => {
     beforeEach(async () => {
       field.tell("first", "One");
+      await wait(STRUCTURE_SETTLE_MS);
       await field.calls[0]?.finishWith("First render");
       field.tell("second", "Two");
+      await wait(STRUCTURE_SETTLE_MS);
       field.tell("third", "Three");
       await wait(RENDER_TIMEOUT_MS);
     });
@@ -371,11 +440,163 @@ describe("the unsaved render of a live rich text", () => {
 
   it("cancels its call when it stops and ignores what it returns", async () => {
     field.tell("unsaved", "Typed");
+    await wait(STRUCTURE_SETTLE_MS);
 
     field.stop();
     await field.calls[0]?.finishWith("Unsaved render");
 
     expect(field.calls[0]?.signal.aborted).toBe(true);
     expect(field.shown()).toBe(SAVED_RENDER);
+  });
+
+  describe("with a render on the page", () => {
+    beforeEach(() => {
+      field = liveRichText({ optimistic: renderedHere });
+    });
+
+    it("shows the structure rendered on the page as it is told, before any call", () => {
+      field.tell("unsaved", "Typed");
+
+      expect(field.shown()).toBe("Local Typed");
+      expect(field.calls).toHaveLength(0);
+    });
+
+    it("starts one call a pause after the last structure", async () => {
+      field.tell("paragraph", "");
+      await wait(SERVER_CHECK_PAUSE_MS - 1);
+      field.tell("paragraph-with-text", "T");
+      await wait(SERVER_CHECK_PAUSE_MS - 1);
+
+      expect(field.calls).toHaveLength(0);
+      expect(field.shown()).toBe("Local T");
+
+      await wait(1);
+
+      expect(field.renderedTexts()).toEqual([stateOf("T")]);
+    });
+
+    it("shows the answer of the call in place of the render on the page", async () => {
+      field.tell("unsaved", "Typed");
+      await wait(SERVER_CHECK_PAUSE_MS);
+
+      await field.calls[0]?.finishWith("Server Typed");
+
+      expect(field.shown()).toBe("Server Typed");
+    });
+
+    it("keeps the render on the page when the call answers nothing", async () => {
+      field.tell("unsaved", "Typed");
+      await wait(SERVER_CHECK_PAUSE_MS);
+
+      await field.calls[0]?.finishWith(null);
+
+      expect(field.shown()).toBe("Local Typed");
+    });
+
+    it("keeps the render on the page when the call does not return in time", async () => {
+      field.tell("unsaved", "Typed");
+      await wait(SERVER_CHECK_PAUSE_MS + RENDER_TIMEOUT_MS);
+
+      expect(field.calls[0]?.signal.aborted).toBe(true);
+      expect(field.shown()).toBe("Local Typed");
+    });
+
+    it("drops the answer for a structure the editor left", async () => {
+      field.tell("first", "One");
+      await wait(SERVER_CHECK_PAUSE_MS);
+      field.tell("second", "Two");
+
+      await field.calls[0]?.finishWith("Server One");
+
+      expect(field.shown()).toBe("Local Two");
+    });
+
+    describe("never has two calls out", () => {
+      it("and starts the next one once the first returned and the pause passed", async () => {
+        field.tell("first", "One");
+        await wait(SERVER_CHECK_PAUSE_MS);
+        field.tell("second", "Two");
+        await wait(SERVER_CHECK_PAUSE_MS);
+
+        expect(field.calls).toHaveLength(1);
+
+        await field.calls[0]?.finishWith("Server One");
+
+        expect(field.renderedTexts()).toEqual([stateOf("One"), stateOf("Two")]);
+      });
+
+      it("and waits for the pause after a call that returned within it", async () => {
+        field.tell("first", "One");
+        await wait(SERVER_CHECK_PAUSE_MS);
+        field.tell("second", "Two");
+        await field.calls[0]?.finishWith("Server One");
+
+        expect(field.calls).toHaveLength(1);
+
+        await wait(SERVER_CHECK_PAUSE_MS);
+
+        expect(field.renderedTexts()).toEqual([stateOf("One"), stateOf("Two")]);
+      });
+    });
+
+    it("starts no call once the editor is back on the saved structure within the pause", async () => {
+      field.tell("unsaved", "Typed");
+      field.tell(SAVED_SHAPE, null);
+      await wait(SERVER_CHECK_PAUSE_MS);
+
+      expect(field.calls).toHaveLength(0);
+      expect(field.shown()).toBe(SAVED_RENDER);
+    });
+
+    it("renders through the call alone when the page cannot render the structure", async () => {
+      field = liveRichText({ optimistic: () => null });
+      field.tell("unsaved", "Typed");
+
+      expect(field.shown()).toBe(SAVED_RENDER);
+
+      await wait(STRUCTURE_SETTLE_MS);
+
+      expect(field.calls).toHaveLength(1);
+    });
+
+    it("renders through the call alone when the render on the page throws", async () => {
+      field = liveRichText({
+        optimistic: () => {
+          throw FAILURE;
+        },
+      });
+      field.tell("unsaved", "Typed");
+
+      expect(field.shown()).toBe(SAVED_RENDER);
+
+      await wait(STRUCTURE_SETTLE_MS);
+      await field.calls[0]?.finishWith("Server Typed");
+
+      expect(field.shown()).toBe("Server Typed");
+    });
+
+    describe("that returns a promise", () => {
+      beforeEach(() => {
+        field = liveRichText({ optimistic: async (structure) => renderedHere(structure) });
+      });
+
+      it("shows it once it is ready", async () => {
+        field.tell("unsaved", "Typed");
+
+        expect(field.shown()).toBe(SAVED_RENDER);
+
+        await wait();
+
+        expect(field.shown()).toBe("Local Typed");
+      });
+
+      it("drops it once the editor left its structure", async () => {
+        field.tell("first", "One");
+        field.tell(SAVED_SHAPE, null);
+        await wait();
+
+        expect(field.shown()).toBe(SAVED_RENDER);
+      });
+    });
   });
 });

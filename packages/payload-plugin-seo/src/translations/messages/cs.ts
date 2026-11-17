@@ -150,6 +150,8 @@ export const cs: LanguageMessages = {
   "links.error": "Návrhy se nepodařilo načíst. Zkuste to znovu.",
   "links.empty":
     "Žádné příležitosti jsme nenašli. Přidejte klíčové fráze dalším stránkám a návrhy se objeví.",
+  "links.allLinked": "Žádné nové příležitosti. Tento text už odkazuje na stránky níže.",
+  "links.linkedTitle": "Už odkazované",
   "links.matches_one": "{{count}} shoda",
   "links.matches_few": "{{count}} shody",
   "links.matches_other": "{{count}} shod",
@@ -184,7 +186,8 @@ export const cs: LanguageMessages = {
   "check.keyphraseLength.name": "Délka fráze",
   "check.keyphraseLength.tip": "Počet slov samotné klíčové fráze.",
   "check.keyphraseDensity.name": "Hustota fráze",
-  "check.keyphraseDensity.tip": "Výskyty vůči celkovému počtu slov. Ideálně 0,5–2,5 %.",
+  "check.keyphraseDensity.tip":
+    "Výskyty vůči celkovému počtu slov, u delších frází navýšené. Ideálně {{min}}–{{max}} %.",
   "check.metaDescriptionKeyword.name": "Fráze v meta popisu",
   "check.metaDescriptionKeyword.tip": "Zda klíčová fráze zazní v meta popisu.",
   "check.subheadingsKeyword.name": "Fráze v podnadpisech",
@@ -203,11 +206,11 @@ export const cs: LanguageMessages = {
   "check.keyphraseDistribution.name": "Rozložení fráze",
   "check.keyphraseDistribution.tip": "Kde v textu se klíčová fráze vyskytuje.",
   "check.textLength.name": "Počet slov",
-  "check.textLength.tip": "Počet slov vůči doporučenému minimu (300).",
+  "check.textLength.tip": "Počet slov vůči doporučenému minimu ({{min}}).",
   "check.metaDescriptionLength.name": "Délka meta popisu",
-  "check.metaDescriptionLength.tip": "Ideálně 120–158 znaků.",
+  "check.metaDescriptionLength.tip": "Ideálně {{min}}–{{max}} znaků.",
   "check.titleWidth.name": "Šířka SEO titulku",
-  "check.titleWidth.tip": "Šířka v pixelech; nad ~580 px se zkracuje.",
+  "check.titleWidth.tip": "Šířka v pixelech; titulky nad {{max}} px se zkracují.",
   "check.images.name": "Obrázky",
   "check.images.tip": "Zda text obsahuje obrázky.",
   "check.externalLinks.name": "Odchozí odkazy",
@@ -221,7 +224,7 @@ export const cs: LanguageMessages = {
   "check.textParagraphTooLong.name": "Délka odstavců",
   "check.textParagraphTooLong.tip": "Odstavce delší, než je doporučeno.",
   "check.textSentenceLength.name": "Délka vět",
-  "check.textSentenceLength.tip": "Podíl vět delších, než je doporučeno.",
+  "check.textSentenceLength.tip": "Podíl vět delších než {{maxSentenceWords}} slov.",
   "check.textTransitionWords.name": "Přechodová slova",
   "check.textTransitionWords.tip": "Podíl vět s přechodovými slovy.",
   "check.passiveVoice.name": "Trpný rod",
@@ -230,27 +233,30 @@ export const cs: LanguageMessages = {
   "check.sentenceBeginnings.tip": "Po sobě jdoucí věty, které začínají stejně.",
   "check.fleschReadingEase.name": "Snadnost čtení",
   "check.fleschReadingEase.tip":
-    "Index Flesch Reading Ease (0–100); vyšší je snazší. Cílem je 60 a více.",
+    "Index Flesch Reading Ease (0–100); vyšší je snazší. Cílem je {{min}} a více.",
 
   "reco.introductionKeyword.bad": "Přidejte „{{keyphrase}}“ do úvodního odstavce.",
   "reco.introductionKeyword.badNoKeyphrase": "Přidejte klíčovou frázi do úvodního odstavce.",
-  "reco.keyphraseDensity.bad":
+  "reco.keyphraseDensity.tooFew":
     "Použijte frázi ještě několikrát, abyste se dostali do ideálního pásma.",
-  "reco.keyphraseDensity.warn": "Použijte frázi zhruba ještě dvakrát a budete v ideálním pásmu.",
-  "reco.keyphraseDensity.over":
-    "Fráze se v textu této délky opakuje příliš často. Několik výskytů nahraďte synonymy.",
+  "reco.keyphraseDensity.tooMany":
+    "Používejte frázi méně často, abyste se dostali do ideálního pásma a text nebyl přeplněný.",
   "reco.metaDescriptionKeyword.bad":
     "Přidejte klíčovou frázi do meta popisu, zvýšíte tím míru prokliku.",
   "reco.imageKeyphrase.warn": "Přidejte klíčovou frázi do alternativního textu zbylých obrázků.",
   "reco.imageKeyphrase.bad": "Přidejte klíčovou frázi do alternativních textů obrázků.",
   "reco.keyphraseDistribution.warn": "Výskyty jsou nahromaděné — rozložte frázi do celého textu.",
   "reco.keyphraseDistribution.bad": "Rozložte klíčovou frázi rovnoměrněji do celého textu.",
-  "reco.metaDescriptionLength.warn":
-    "Jste blízko limitu — zkraťte popis o pár znaků, ať se neořízne.",
-  "reco.metaDescriptionLength.bad": "Upravte délku meta popisu na 120–158 znaků.",
+  "reco.metaDescriptionLength.missing":
+    "Napište meta popis delší než {{min}} a nejvýše o {{max}} znacích.",
+  "reco.metaDescriptionLength.tooShort": "Prodlužte meta popis na více než {{min}} znaků.",
+  "reco.metaDescriptionLength.tooLong":
+    "Zkraťte meta popis nejvýše na {{max}} znaků, ať se ve výsledcích neořízne.",
+  "reco.titleWidth.tooLong":
+    "Zkraťte SEO titulek nejvýše na {{max}} px, ať se ve výsledcích neořízne.",
   "reco.internalLinks.warn": "Přidejte několik odkazů na související stránky webu.",
   "reco.internalLinks.bad": "Přidejte odkazy na související stránky webu.",
-  "reco.textLength.bad": "Přidejte obsah — cílem je alespoň 300 slov.",
+  "reco.textLength.bad": "Přidejte obsah — cílem je alespoň {{min}} slov.",
   "reco.textLength.warn": "Přidejte trochu obsahu, ať minimum bezpečně překročíte.",
   "reco.fleschReadingEase.warn": "Zkraťte věty a volte jednodušší slova, text se bude číst snáz.",
   "reco.fleschReadingEase.bad": "Text se čte obtížně — používejte kratší věty a jednodušší slova.",

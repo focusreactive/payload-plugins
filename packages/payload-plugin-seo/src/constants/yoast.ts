@@ -1,0 +1,20 @@
+export const YOAST_GOOD_SCORE = 9;
+export const YOAST_OKAY_SCORE = 6;
+export const YOAST_BAD_SCORE = 3;
+export const YOAST_DENSITY_UNDER_MINIMUM_SCORE = 4;
+export const YOAST_DENSITY_OVER_MAXIMUM_SCORE = -10;
+
+export const SHORT_TITLE_WIDTH_PX = 400;
+export const DENSITY_MIN_TEXT_WORDS = 100;
+export const TRANSITION_WORDS_MIN_TEXT_WORDS = 200;
+export const YOAST_DENSITY_OVER_MAXIMUM = 4;
+export const YOAST_TEXT_LENGTH_BELOW_MINIMUM = 200;
+export const YOAST_TEXT_LENGTH_VERY_FAR_BELOW_MINIMUM = 100;
+
+export const YOAST_KEYPHRASE_LENGTH_WITHOUT_FUNCTION_WORDS = { max: 6, acceptableMax: 9 };
+export const YOAST_JAPANESE_LANGUAGE = "ja";
+
+export const YOAST_PASSIVE_VOICE_BANDS = [10, 15];
+export const YOAST_TRANSITION_WORDS_BANDS = [20, 30];
+
+export const FLESCH_SCORE_MAX = 100;

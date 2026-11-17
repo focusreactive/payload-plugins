@@ -2,33 +2,27 @@ import type { CheckId } from "../../../../constants/checkIds";
 import type { CheckResult } from "../../../types/analysis";
 import type { GaugeSpec, Visualization } from "../../../types/visualization";
 import { buildGauge } from "../../buildGauge";
-import { formatGaugeValue } from "../../formatGaugeValue";
-import { GAUGE_SPECS } from "../../gaugeSpecs";
+import { formatMarkerValue } from "../../formatGaugeValue";
+import { gaugeSpecsFor } from "../../gaugeSpecs";
+import type { ResolvedSeoThresholds } from "../../../../types/config";
 import { gaugeKeyByCheck } from "../constants";
-import { readNumber } from "../utils/readNumber";
+import { readNumber } from "../../../../utils/readNumber";
 import { PRESENCE } from "./resolvePresence";
 
 export const resolveValueRange = (
   check: CheckResult,
-  data: Record<string, unknown> | undefined
+  data: Record<string, unknown> | undefined,
+  thresholds: ResolvedSeoThresholds
 ): Visualization => {
-  const baseSpec: GaugeSpec | undefined = GAUGE_SPECS[check.id as CheckId];
+  const spec: GaugeSpec | undefined = gaugeSpecsFor(thresholds)[check.id as CheckId];
   const markerKey = gaugeKeyByCheck[check.id as CheckId];
 
-  if (!baseSpec || !markerKey) return PRESENCE;
+  if (!spec || !markerKey) return PRESENCE;
 
-  const lengthFactor = readNumber(data, "lengthFactor");
-  const spec: GaugeSpec =
-    check.id === "keyphraseDensity" && lengthFactor
-      ? {
-          ...baseSpec,
-          thresholds: baseSpec.thresholds.map((t) => Math.round((t / lengthFactor) * 10) / 10),
-        }
-      : baseSpec;
-
-  if (check.id === "keyphraseDensity") {
-    const textLength = readNumber(data, "textLength");
-    if (textLength != null && textLength < 100) return PRESENCE;
+  const textLength = readNumber(data, "textLength");
+  const minTextLength = readNumber(data, "minTextLength");
+  if (textLength !== undefined && minTextLength !== undefined && textLength < minTextLength) {
+    return PRESENCE;
   }
 
   const markerValue = readNumber(data, markerKey);
@@ -36,6 +30,9 @@ export const resolveValueRange = (
 
   return {
     type: "value-range",
-    gauge: buildGauge(spec, markerValue, formatGaugeValue(markerValue, spec.unit)),
+    gauge: {
+      ...buildGauge(spec, markerValue, formatMarkerValue(markerValue, spec)),
+      markerStatus: check.status,
+    },
   };
 };

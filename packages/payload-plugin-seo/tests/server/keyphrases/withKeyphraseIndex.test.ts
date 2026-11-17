@@ -17,11 +17,15 @@ function findCollection(config: Config, slug: string): CollectionConfig | undefi
   return config.collections?.find((c) => c.slug === slug);
 }
 
-const enabled = () => withKeyphraseIndex(incoming, { ...pluginConfig, keyphraseIndex: true });
+const enabled = () => withKeyphraseIndex(incoming, pluginConfig);
 
 describe("withKeyphraseIndex", () => {
   it("changes nothing when the option is off", () => {
-    expect(withKeyphraseIndex(incoming, pluginConfig)).toBe(incoming);
+    expect(withKeyphraseIndex(incoming, { ...pluginConfig, keyphraseIndex: false })).toBe(incoming);
+  });
+
+  it("is on by default", () => {
+    expect(findCollection(enabled(), KEYPHRASES_COLLECTION_SLUG)).toBeDefined();
   });
 
   it("adds the collection, endpoints and an afterDelete hook on indexed collections", () => {

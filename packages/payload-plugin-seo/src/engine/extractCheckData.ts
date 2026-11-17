@@ -1,10 +1,16 @@
-import { getResearch } from "./researcherAdapter";
+import { DENSITY_MIN_TEXT_WORDS, MAX_PERCENT, TRANSITION_WORDS_MIN_TEXT_WORDS } from "../constants";
+import type { ResolvedSeoThresholds } from "../types/config";
+import formatNumberModule from "yoastseo/build/helpers/formatNumber";
+import keyphraseLengthFactorModule from "yoastseo/build/scoring/helpers/assessments/keyphraseLengthFactor";
+import { commonJsDefault } from "./helpers/commonjs-default";
+import { getResearch, getResearcherConfig } from "./researcherAdapter";
 import type { YoastResearcher } from "./researcherAdapter";
 import { getTitleProgressGuarded } from "./helpers/title-progress";
 import type { PaperLike } from "./types/paper";
-import { keyphraseLengthFactor } from "./keyphraseDensity";
 
-const MAX_SENTENCE_WORDS = 20;
+const formatNumber = commonJsDefault(formatNumberModule);
+const keyphraseLengthFactor = commonJsDefault(keyphraseLengthFactorModule);
+
 const MAX_PARAGRAPH_WORDS = 150;
 const SNIPPET_MAX = 64;
 
@@ -19,13 +25,16 @@ function splitSentences(text: string): string[] {
     .filter(Boolean);
 }
 
-function sentenceLengthPct(text: string): { pct: number } | undefined {
-  const sentences = splitSentences(text);
-  if (!sentences.length) return undefined;
-  const long = sentences.filter(
-    (s) => s.split(/\s+/u).filter(Boolean).length > MAX_SENTENCE_WORDS
-  ).length;
-  return { pct: Math.round((long / sentences.length) * 100) };
+function longSentenceShare(
+  researcher: YoastResearcher,
+  maxSentenceWords: number
+): { pct: number } | undefined {
+  const sentences = getResearch<{ sentenceLength: number }[]>(researcher, "countSentencesFromText");
+  if (!sentences?.length) return undefined;
+
+  const long = sentences.filter(({ sentenceLength }) => sentenceLength > maxSentenceWords).length;
+
+  return { pct: formatNumber((long / sentences.length) * MAX_PERCENT) };
 }
 
 function keyphrasePositions(text: string, keyphrase: string): number[] {
@@ -36,7 +45,7 @@ function keyphrasePositions(text: string, keyphrase: string): number[] {
   if (!n) return [];
   const positions: number[] = [];
   sentences.forEach((s, i) => {
-    if (s.toLowerCase().includes(kp)) positions.push(Math.round(((i + 0.5) / n) * 100));
+    if (s.toLowerCase().includes(kp)) positions.push(Math.round(((i + 0.5) / n) * MAX_PERCENT));
   });
   return positions;
 }
@@ -49,19 +58,30 @@ function snippet(text: string): string {
 export function extractCheckData(
   id: string,
   paper: PaperLike,
-  researcher: YoastResearcher
+  researcher: YoastResearcher,
+  thresholds: ResolvedSeoThresholds
 ): Record<string, unknown> | undefined {
   switch (id) {
     case "keyphraseDensity": {
-      const r = getResearch<{ density: number }>(researcher, "getKeyphraseDensity");
+      const r = getResearch<{ density: number; textLength: number }>(
+        researcher,
+        "getKeyphraseDensity"
+      );
       if (!r) return undefined;
-      const keyphraseWords = (paper.getKeyword?.() ?? "")
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean).length;
+
+      const keyphrase = getResearch<{ count: number; keyphraseLength?: number }>(
+        researcher,
+        "getKeyphraseCount"
+      );
+      const weight = keyphrase?.keyphraseLength
+        ? keyphraseLengthFactor(keyphrase.keyphraseLength)
+        : 1;
+
       return {
-        densityPct: r.density,
-        lengthFactor: keyphraseLengthFactor(Math.max(1, keyphraseWords)),
+        densityPct: r.density * weight,
+        textLength: r.textLength,
+        minTextLength: DENSITY_MIN_TEXT_WORDS,
+        count: keyphrase?.count,
       };
     }
     case "imageKeyphrase": {
@@ -109,14 +129,26 @@ export function extractCheckData(
       const r = getResearch<{
         totalSentences: number;
         transitionWordSentences: number;
+        textLength?: number;
       }>(researcher, "findTransitionWords");
       if (!r || !r.totalSentences) return undefined;
+
+      const pct = Math.round((r.transitionWordSentences / r.totalSentences) * MAX_PERCENT);
+      if (typeof r.textLength !== "number") return { pct };
+
+      const applicability = getResearcherConfig<{ transitionWords?: number }>(
+        researcher,
+        "assessmentApplicability"
+      );
+
       return {
-        pct: Math.round((r.transitionWordSentences / r.totalSentences) * 100),
+        pct,
+        textLength: r.textLength,
+        minTextLength: applicability?.transitionWords ?? TRANSITION_WORDS_MIN_TEXT_WORDS,
       };
     }
     case "textSentenceLength":
-      return sentenceLengthPct(paper.getText?.() ?? "");
+      return longSentenceShare(researcher, thresholds.textSentenceLength.maxSentenceWords);
     case "keyphraseDistribution": {
       const positions = keyphrasePositions(paper.getText?.() ?? "", paper.getKeyword?.() ?? "");
       return positions.length ? { positions } : undefined;
@@ -146,7 +178,7 @@ export function extractCheckData(
         researcher,
         "matchKeywordInSubheadings"
       );
-      return r && r.count > 0 ? { matched: r.matches, total: r.count } : undefined;
+      return r ? { matched: r.matches, total: r.count } : undefined;
     }
     case "textCompetingLinks": {
       const r = getResearch<{
@@ -168,7 +200,7 @@ export function extractCheckData(
         "getPassiveVoiceResult"
       );
       if (!r || !r.total) return undefined;
-      return { pct: Math.round((r.passives.length / r.total) * 100) };
+      return { pct: Math.round((r.passives.length / r.total) * MAX_PERCENT) };
     }
     case "sentenceBeginnings": {
       const r = getResearch<{ word: string; count: number }[]>(researcher, "getSentenceBeginnings");

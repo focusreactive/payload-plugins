@@ -33,13 +33,13 @@ function setLocation(pathname: string, search = ""): void {
   });
 }
 
-function mountBridge(): Root {
+function mountBridge(adminBasePath?: string): Root {
   const container = document.createElement("div");
   document.body.append(container);
   const root = createRoot(container);
   act(() => {
     root.render(
-      <VisualEditingBridgeProvider>
+      <VisualEditingBridgeProvider adminBasePath={adminBasePath}>
         <div />
       </VisualEditingBridgeProvider>
     );
@@ -107,6 +107,34 @@ describe("VisualEditingBridgeProvider — collection routing", () => {
     });
     expect(openSpy).not.toHaveBeenCalled();
     expect(assignSpy).not.toHaveBeenCalled();
+  });
+
+  it("finds the open document of an admin that is served from the root", () => {
+    setLocation("/collections/pages/1");
+    document.body.innerHTML = '<div id="field-title"></div>';
+    mountBridge("/");
+    postMessageAct({
+      type: VE_MESSAGE_TYPE,
+      path: "title",
+      docId: "1",
+      collectionSlug: "pages",
+      kind: "collection",
+    });
+    expect(openSpy).not.toHaveBeenCalled();
+  });
+
+  it("finds the open document under an id the address encodes", () => {
+    setLocation("/admin/collections/pages/a%20b");
+    document.body.innerHTML = '<div id="field-title"></div>';
+    mountBridge();
+    postMessageAct({
+      type: VE_MESSAGE_TYPE,
+      path: "title",
+      docId: "a b",
+      collectionSlug: "pages",
+      kind: "collection",
+    });
+    expect(openSpy).not.toHaveBeenCalled();
   });
 
   it("opens a new tab when admin is not on a collection page", () => {

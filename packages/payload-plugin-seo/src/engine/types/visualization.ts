@@ -23,22 +23,22 @@ export interface GaugeModel {
 
 export type GaugeUnit = "words" | "chars" | "px" | "percent" | "score";
 
-interface YoastScoredSpec {
-  statusSource: "yoast";
+interface GaugeSpecBase {
   axisMin: number;
   axisMax: number;
   thresholds: number[];
-  scores: number[];
   unit: GaugeUnit;
+  openEnded?: boolean;
 }
 
-interface DirectStatusSpec {
+interface YoastScoredSpec extends GaugeSpecBase {
+  statusSource: "yoast";
+  scores: number[];
+}
+
+interface DirectStatusSpec extends GaugeSpecBase {
   statusSource: "direct";
-  axisMin: number;
-  axisMax: number;
-  thresholds: number[];
   statuses: Status[];
-  unit: GaugeUnit;
 }
 
 export type GaugeSpec = YoastScoredSpec | DirectStatusSpec;

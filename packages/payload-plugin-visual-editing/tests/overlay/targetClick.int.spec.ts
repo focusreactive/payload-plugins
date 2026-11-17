@@ -10,6 +10,7 @@ import {
 } from "../../src/shared/protocol";
 
 import { click, overlayCtx } from "../support/overlay";
+import { ADMIN_ORIGIN } from "../support/previewWindow";
 
 const buildAdminEditUrl = vi.fn(({ path }: { path: string }) => `/admin/edit?path=${path}`);
 
@@ -52,7 +53,10 @@ describe("click on a highlighted target", () => {
   it("opens the field instead of following the link", () => {
     const event = click(label);
 
-    expect(open).toHaveBeenCalledWith("/admin/edit?path=hero.0.actions.0.label", "_blank");
+    expect(open).toHaveBeenCalledWith(
+      `${ADMIN_ORIGIN}/admin/edit?path=hero.0.actions.0.label`,
+      "_blank"
+    );
     expect(event.defaultPrevented).toBe(true);
     expect(anchorClick).not.toHaveBeenCalled();
   });

@@ -29,8 +29,12 @@ function str(v: unknown): string {
   return typeof v === "string" ? v : "";
 }
 
+function recordsOf(v: unknown): Record<string, unknown>[] {
+  return Array.isArray(v) ? v.filter(isRecord) : [];
+}
+
 function childrenOf(node: LexNode): LexNode[] {
-  return Array.isArray(node.children) ? (node.children.filter(isRecord) as LexNode[]) : [];
+  return recordsOf(node.children);
 }
 
 function escapeText(s: string): string {
@@ -144,18 +148,16 @@ function expandBlock(
 
   switch (fields.blockType) {
     case "cardsGridInline":
-      return ((fields.items as Array<Record<string, unknown>> | undefined) ?? []).flatMap(
-        (item) => [
-          heading(3, str(item.title)),
-          paragraph(str(item.description)),
-          groupImage(item.image as ImageGroup, ctx.docs),
-          linkToContentNode(item.link as LinkValue, linkCtx),
-        ]
-      );
+      return recordsOf(fields.items).flatMap((item) => [
+        heading(3, str(item.title)),
+        paragraph(str(item.description)),
+        groupImage(item.image as ImageGroup, ctx.docs),
+        linkToContentNode(item.link as LinkValue, linkCtx),
+      ]);
     case "logosInline":
       return [
         paragraph(str(fields.label)),
-        ...((fields.items as Array<Record<string, unknown>> | undefined) ?? []).flatMap((item) => [
+        ...recordsOf(fields.items).flatMap((item) => [
           groupImage(item.image as ImageGroup, ctx.docs),
           linkToContentNode(item.link as LinkValue, linkCtx),
         ]),
@@ -173,7 +175,7 @@ function expandBlock(
         paragraph(str(fields.description)),
       ];
 
-      for (const action of (fields.actions as Array<Record<string, unknown>> | undefined) ?? []) {
+      for (const action of recordsOf(fields.actions)) {
         nodes.push(linkToContentNode(action as LinkValue, linkCtx));
       }
 

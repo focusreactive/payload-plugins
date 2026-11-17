@@ -3,19 +3,28 @@ import type { VeIdentity } from "../../shared/shared.js";
 
 import { vercelStegaDecode } from "@vercel/stega";
 
-import { DATA_VE_LOCALE_ATTR, DATA_VE_PATH_ATTR } from "../../shared/protocol.js";
+import {
+  DATA_VE_LOCALE_ATTR,
+  DATA_VE_PATH_ATTR,
+  VE_IDENTITY_ATTRS,
+} from "../../shared/protocol.js";
 import { fieldKeyOfMarker } from "../../shared/fieldKey.js";
 import { fromRichTextNodeMarker, richTextNodeKeyOf } from "../../shared/richText/nodeKey.js";
 import { fromStegaPayload } from "../../shared/shared.js";
-import { withoutMarker } from "../../shared/stegaText.js";
+import { hasMarker, withoutMarker } from "../../shared/stegaText.js";
 import { documentAddressOf } from "../../shared/veDocument.js";
-import { STEGA_ATTRS, STEGA_PREFILTER } from "./constants.js";
+import { identityAttrsOf } from "../withVisualEditingPath.js";
 import { readMarkerFromAttrs } from "./markerExtractor.js";
 import { createMutationPipeline } from "./mutationPipeline.js";
+import { markedAttributesIn, visibleTextNodesIn } from "./pageNodes.js";
 
 export type RichTextShape = { fieldKey: string; shape: string };
 
-export type FieldMatch = VeIdentity & { textNode: Text; richText?: RichTextShape };
+export type FieldMatch = VeIdentity & {
+  textNode: Text;
+  richText?: RichTextShape;
+  holder?: Element;
+};
 
 export type FieldListener = {
   onFields(root: Element, matches: readonly FieldMatch[]): void;
@@ -26,6 +35,7 @@ export type FieldListener = {
 export interface FieldTracker {
   subscribe(listener: FieldListener): () => void;
   showText(node: Text, text: string): void;
+  showTextInHolder(match: FieldMatch, text: string): boolean;
   dispose(): void;
 }
 
@@ -36,33 +46,14 @@ type TrackedText = {
   match: FieldMatch | null;
 };
 
-const SKIP_TEXT_PARENT_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE"]);
+type HeldField = { match: FieldMatch; original: string };
+
+const CLICKABLE = "a, button";
 
 const RICH_TEXT_WRAPPER = `[${DATA_VE_PATH_ATTR}]`;
 
-function* visibleTextNodesIn(root: Element): Generator<Text> {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-    acceptNode: (node) => {
-      const parent = node.parentElement;
-      if (parent && SKIP_TEXT_PARENT_TAGS.has(parent.tagName)) return NodeFilter.FILTER_REJECT;
-      return NodeFilter.FILTER_ACCEPT;
-    },
-  });
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) yield node as Text;
-}
-
-function* markedAttributesIn(root: Element): Generator<[Element, Attr]> {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    const element = node as Element;
-    for (const attr of Array.from(element.attributes)) {
-      if (STEGA_ATTRS.has(attr.name) && STEGA_PREFILTER.test(attr.value)) yield [element, attr];
-    }
-  }
-}
-
 const payloadIn = (text: string): unknown =>
-  STEGA_PREFILTER.test(text) ? vercelStegaDecode(text) : undefined;
+  hasMarker(text) ? vercelStegaDecode(text) : undefined;
 
 const richTextMatchOf = (
   textNode: Text,
@@ -82,14 +73,64 @@ const isSameNodeKey = (known: FieldMatch | null, match: FieldMatch) =>
   known.key === match.key &&
   documentAddressOf(known) === documentAddressOf(match);
 
-const restoreAttrs = (element: Element, originals: ReadonlyMap<string, string>) => {
-  for (const [attr, value] of originals) element.setAttribute(attr, value);
+const IMAGE_DESCRIPTION_ATTR = "alt";
+
+const isWrittenByThePage = (element: Element, attr: string, original: string): boolean =>
+  hasMarker(original) && element.getAttribute(attr) !== withoutMarker(original);
+
+const restoreAttrs = (element: Element, originals: ReadonlyMap<string, string | null>) => {
+  for (const [attr, value] of originals) {
+    if (value === null) element.removeAttribute(attr);
+    else if (!isWrittenByThePage(element, attr, value)) element.setAttribute(attr, value);
+  }
 };
+
+const identityOfDescription = (value: string): Record<string, string | undefined> => {
+  const field = fromStegaPayload(payloadIn(value));
+  return field ? identityAttrsOf(field) : {};
+};
+
+const textBearingChildrenOf = (element: Element): ChildNode[] =>
+  Array.from(element.childNodes).filter((child) =>
+    child instanceof Element ? child.textContent !== "" : child instanceof Text
+  );
+
+const showOnlyText = (holder: Element, textNode: Text): void => {
+  const [first, ...rest] = textBearingChildrenOf(holder);
+  if (first) first.replaceWith(textNode);
+  else holder.prepend(textNode);
+  for (const child of rest) child.remove();
+};
+
+const holderCandidateOf = (textNode: Text): Element | null => {
+  const parent = textNode.parentElement;
+  return parent?.closest(CLICKABLE) ?? parent;
+};
+
+const showsOnlyText = (element: Element, text: string) =>
+  withoutMarker(element.textContent ?? "") === text;
 
 export function createFieldTracker(main: HTMLElement): FieldTracker {
   const texts = new Map<Text, TrackedText>();
-  const attrOriginals = new Map<Element, Map<string, string>>();
+  const attrOriginals = new Map<Element, Map<string, string | null>>();
+  const holders = new Map<Element, HeldField>();
+  const ownAttributeWrites = new Map<Element, number>();
   const listeners = new Set<FieldListener>();
+
+  const writeIdentityAttr = (element: Element, attr: string, value: string | null) => {
+    if (element.getAttribute(attr) === value) return;
+    ownAttributeWrites.set(element, (ownAttributeWrites.get(element) ?? 0) + 1);
+    if (value === null) element.removeAttribute(attr);
+    else element.setAttribute(attr, value);
+  };
+
+  const isOwnAttributeWrite = (element: Element) => {
+    const writes = ownAttributeWrites.get(element) ?? 0;
+    if (writes === 0) return false;
+    if (writes === 1) ownAttributeWrites.delete(element);
+    else ownAttributeWrites.set(element, writes - 1);
+    return true;
+  };
 
   const release = (matches: readonly FieldMatch[]) => {
     if (matches.length === 0) return;
@@ -103,28 +144,82 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     if (tracked.match) release([tracked.match]);
   };
 
+  const unstamp = (holder: Element) => {
+    const originals = attrOriginals.get(holder);
+    holders.delete(holder);
+    if (!originals) return;
+    for (const attr of VE_IDENTITY_ATTRS) {
+      const value = originals.get(attr);
+      if (value === undefined) continue;
+      writeIdentityAttr(holder, attr, value);
+      originals.delete(attr);
+    }
+  };
+
+  const stamp = (holder: Element, held: HeldField) => {
+    const originals = attrOriginals.get(holder) ?? new Map<string, string | null>();
+    const identity: Record<string, string | undefined> = identityAttrsOf(held.match);
+    for (const attr of VE_IDENTITY_ATTRS) {
+      if (!originals.has(attr)) originals.set(attr, holder.getAttribute(attr));
+      writeIdentityAttr(holder, attr, identity[attr] ?? null);
+    }
+    attrOriginals.set(holder, originals);
+    holders.set(holder, held);
+  };
+
+  const holderOf = (textNode: Text): Element | null => {
+    const candidate = holderCandidateOf(textNode);
+    if (!candidate || candidate === main || !main.contains(candidate)) return null;
+    const isStampedHere = holders.has(candidate);
+    if (!isStampedHere && candidate.hasAttribute(DATA_VE_PATH_ATTR)) return null;
+    if (showsOnlyText(candidate, textNode.data)) return candidate;
+    if (isStampedHere) unstamp(candidate);
+    return null;
+  };
+
   const record = (textNode: Text): TrackedText | null => {
-    const payload = payloadIn(textNode.data);
+    const original = textNode.data;
+    const payload = payloadIn(original);
     const field = fromStegaPayload(payload);
     const nodeMarker = fromRichTextNodeMarker(payload);
     if (!field && !nodeMarker) return null;
-    const tracked = {
-      match: field && { ...field, textNode },
-      original: textNode.data,
-      ownWritesToObserve: 1,
-      nodeMarker,
-    };
+    textNode.data = withoutMarker(original);
+    const holder = field && !nodeMarker ? holderOf(textNode) : null;
+    const match = field && { ...field, textNode, ...(holder && { holder }) };
+    if (holder && match) stamp(holder, { match, original });
+    const tracked = { match, original, ownWritesToObserve: 1, nodeMarker };
     texts.set(textNode, tracked);
-    textNode.data = withoutMarker(tracked.original);
     return tracked;
   };
 
+  const identifyImage = (
+    element: Element,
+    originals: Map<string, string | null>,
+    value: string
+  ) => {
+    const isIdentifiedHere = originals.get(DATA_VE_PATH_ATTR) === null && !holders.has(element);
+    if (!isIdentifiedHere && element.hasAttribute(DATA_VE_PATH_ATTR)) return;
+    const identity = identityOfDescription(value);
+    for (const attr of VE_IDENTITY_ATTRS) {
+      const shown = identity[attr];
+      if (shown !== undefined) {
+        originals.set(attr, null);
+        element.setAttribute(attr, shown);
+      } else if (originals.get(attr) === null) {
+        originals.delete(attr);
+        element.removeAttribute(attr);
+      }
+    }
+  };
+
   const recordAttr = (element: Element, { name, value }: Attr) => {
-    const originals = attrOriginals.get(element) ?? new Map<string, string>();
-    if (originals.has(name)) return;
+    const cleaned = withoutMarker(value);
+    if (cleaned === value) return;
+    const originals = attrOriginals.get(element) ?? new Map<string, string | null>();
+    if (name === IMAGE_DESCRIPTION_ATTR) identifyImage(element, originals, value);
     originals.set(name, value);
     attrOriginals.set(element, originals);
-    element.setAttribute(name, withoutMarker(value));
+    element.setAttribute(name, cleaned);
   };
 
   const identify = (textNode: Text, released: FieldMatch[], found: FieldMatch[]) => {
@@ -163,6 +258,8 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       if (main.contains(element)) continue;
       restoreAttrs(element, originals);
       attrOriginals.delete(element);
+      holders.delete(element);
+      ownAttributeWrites.delete(element);
     }
     release(released);
     for (const listener of listeners) listener.onContentRemoved?.();
@@ -178,6 +275,8 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
   };
 
   const pipeline = createMutationPipeline(main, {
+    isOwnAttributeWrite,
+    onMarkedAttribute: recordAttr,
     onNodesRemoved: releaseDetachedNodes,
     onPlainTextWritten: forgetUnlessOwnWrite,
     onRoots: (roots) => {
@@ -204,6 +303,24 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       if (!tracked || node.data === text) return;
       tracked.ownWritesToObserve += 1;
       node.data = text;
+    },
+    showTextInHolder(match, text) {
+      const { holder, textNode: _textNode, ...field } = match;
+      const held = holder && holders.get(holder);
+      if (!holder || !held || held.match !== match) return false;
+      if (main.contains(match.textNode) || !main.contains(holder)) return false;
+      const textNode = document.createTextNode(text);
+      const shown = { ...field, holder, textNode };
+      showOnlyText(holder, textNode);
+      texts.set(textNode, {
+        match: shown,
+        nodeMarker: null,
+        original: held.original,
+        ownWritesToObserve: 0,
+      });
+      holders.set(holder, { match: shown, original: held.original });
+      for (const listener of listeners) listener.onFields(holder, [shown]);
+      return true;
     },
     dispose() {
       pipeline.dispose();

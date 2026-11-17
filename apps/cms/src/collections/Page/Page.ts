@@ -13,6 +13,7 @@ import type { Page as PageType } from "@/payload-types";
 
 import { createBasePageFields } from "./basePageFields";
 import { fixBreadcrumbDocIds } from "./hooks/fixBreadcrumbDocIds";
+import { syncCurrentBreadcrumbUrl } from "./hooks/syncCurrentBreadcrumbUrl";
 import { indexPageEmbedding, deletePageEmbedding } from "./hooks/indexEmbedding";
 import { revalidateDelete, revalidatePage } from "./hooks/revalidatePage";
 import { validateReservedSlug, validateReservedPath } from "./hooks/validateReservedSlug";
@@ -86,6 +87,9 @@ export const Page: CollectionConfig<"page"> = {
     createBreadcrumbsField("page", {
       admin: {
         position: "sidebar",
+      },
+      hooks: {
+        beforeChange: [syncCurrentBreadcrumbUrl],
       },
       label: {
         en: "Page Breadcrumbs",

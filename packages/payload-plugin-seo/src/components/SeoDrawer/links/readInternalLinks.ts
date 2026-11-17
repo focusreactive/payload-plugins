@@ -1,11 +1,12 @@
 import { MAX_LINKED_DOCS } from "../../../constants";
 import type { DocTarget } from "../../../keyphrases/docTarget";
 import { docTargetKey, readDocId } from "../../../keyphrases/docTarget";
+import { isRecord } from "../../../utils/isRecord";
 
 type UnknownRecord = Record<string, unknown>;
 
-function isRecord(value: unknown): value is UnknownRecord {
-  return typeof value === "object" && value !== null;
+function pushInOrder(pending: unknown[], children: unknown[]): void {
+  for (let index = children.length - 1; index >= 0; index -= 1) pending.push(children[index]);
 }
 
 function isRelation(node: UnknownRecord): boolean {
@@ -27,13 +28,16 @@ export function readInternalLinks(values: unknown): DocTarget[] {
 
   while (pending.length > 0 && targets.size < MAX_LINKED_DOCS) {
     const node = pending.pop();
+    if (Array.isArray(node)) {
+      pushInOrder(pending, node);
+      continue;
+    }
     if (!isRecord(node) || isRelation(node)) continue;
 
     const target = readInternalTarget(node);
     if (target) targets.set(docTargetKey(target.collection, target.docId), target);
 
-    const nested = Object.values(node);
-    for (let index = nested.length - 1; index >= 0; index -= 1) pending.push(nested[index]);
+    pushInOrder(pending, Object.values(node));
   }
 
   return [...targets.values()];

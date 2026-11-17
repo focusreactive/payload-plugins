@@ -3,7 +3,7 @@
 import { useCallback, useRef } from "react";
 import type { RefObject } from "react";
 import type { KeyphraseEntry } from "./keyphraseState";
-import { clearKeyphrases, entriesOrBlank } from "./keyphraseStorage";
+import { entriesOrBlank } from "./keyphraseStorage";
 import type { RemoteSaver } from "./remoteSaver";
 
 export type PendingSync = "upload" | "retry" | null;
@@ -11,7 +11,6 @@ export type PendingSync = "upload" | "retry" | null;
 interface RemoteSyncArgs {
   saver: RemoteSaver | null;
   pending: PendingSync;
-  browserKey: string;
   listRef: RefObject<KeyphraseEntry[]>;
   replaceList: (next: KeyphraseEntry[]) => void;
 }
@@ -24,7 +23,6 @@ export interface RemoteSync {
 export function useRemoteSync({
   saver,
   pending,
-  browserKey,
   listRef,
   replaceList,
 }: RemoteSyncArgs): RemoteSync {
@@ -37,13 +35,10 @@ export function useRemoteSync({
   const uploadBrowserCopy = useCallback(async () => {
     const uploaded = listRef.current;
     const outcome = await saver?.save(uploaded, { ifAbsent: true });
-    if (!outcome || outcome.status === "failed") return;
-
-    clearKeyphrases(browserKey);
-    if (outcome.status === "exists" && listRef.current === uploaded) {
+    if (outcome?.status === "exists" && listRef.current === uploaded) {
       replaceList(entriesOrBlank(outcome.keyphrases));
     }
-  }, [browserKey, listRef, replaceList, saver]);
+  }, [listRef, replaceList, saver]);
 
   const retryUnsaved = useCallback(() => {
     saver?.schedule(listRef.current);

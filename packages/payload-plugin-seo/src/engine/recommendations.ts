@@ -1,10 +1,12 @@
 import type { Message, TranslationKey } from "../translations/types";
+import type { ResolvedSeoThresholds } from "../types/config";
+import { thresholdVars } from "./thresholds/thresholdVars";
 import type { Status } from "./types/analysis";
-import { isDensityOverMaximum } from "./keyphraseDensity";
+import { readNumber } from "../utils/readNumber";
 
 export interface RecoContext {
   keyphrase?: string;
-  [k: string]: unknown;
+  thresholds: ResolvedSeoThresholds;
 }
 
 type Builder = (ctx: RecoContext) => Message;
@@ -13,16 +15,16 @@ const key =
   (k: TranslationKey): Builder =>
   () => ({ key: k });
 
+const withThresholds =
+  (k: TranslationKey, checkId: string): Builder =>
+  (c) => ({ key: k, vars: thresholdVars(checkId, c.thresholds) });
+
 const MAP: Record<string, Partial<Record<Status, Builder>>> = {
   introductionKeyword: {
     bad: (c) =>
       c.keyphrase
         ? { key: "reco.introductionKeyword.bad", vars: { keyphrase: c.keyphrase } }
         : { key: "reco.introductionKeyword.badNoKeyphrase" },
-  },
-  keyphraseDensity: {
-    bad: key("reco.keyphraseDensity.bad"),
-    warn: key("reco.keyphraseDensity.warn"),
   },
   metaDescriptionKeyword: {
     bad: key("reco.metaDescriptionKeyword.bad"),
@@ -36,15 +38,14 @@ const MAP: Record<string, Partial<Record<Status, Builder>>> = {
     bad: key("reco.keyphraseDistribution.bad"),
   },
   metaDescriptionLength: {
-    warn: key("reco.metaDescriptionLength.warn"),
-    bad: key("reco.metaDescriptionLength.bad"),
+    bad: withThresholds("reco.metaDescriptionLength.missing", "metaDescriptionLength"),
   },
   internalLinks: {
     warn: key("reco.internalLinks.warn"),
     bad: key("reco.internalLinks.bad"),
   },
   textLength: {
-    bad: key("reco.textLength.bad"),
+    bad: withThresholds("reco.textLength.bad", "textLength"),
     warn: key("reco.textLength.warn"),
   },
   fleschReadingEase: {
@@ -58,6 +59,70 @@ const GENERIC: Record<Exclude<Status, "good">, TranslationKey> = {
   bad: "reco.generic.bad",
 };
 
+type CheckData = Record<string, unknown> | undefined;
+
+type DirectionKey = (
+  data: CheckData,
+  thresholds: ResolvedSeoThresholds
+) => TranslationKey | undefined;
+
+function densityKey(data: CheckData, { keyphraseDensity }: ResolvedSeoThresholds) {
+  const count = readNumber(data, "count");
+  const density = readNumber(data, "densityPct");
+  const textLength = readNumber(data, "textLength");
+  const minTextLength = readNumber(data, "minTextLength");
+  if (
+    count === undefined ||
+    density === undefined ||
+    textLength === undefined ||
+    minTextLength === undefined
+  ) {
+    return undefined;
+  }
+
+  const tooMany =
+    textLength < minTextLength ? count > 1 : count > 1 && density > keyphraseDensity.max;
+
+  return tooMany ? "reco.keyphraseDensity.tooMany" : "reco.keyphraseDensity.tooFew";
+}
+
+function metaDescriptionLengthKey(
+  data: CheckData,
+  { metaDescriptionLength }: ResolvedSeoThresholds
+) {
+  const chars = readNumber(data, "chars");
+  if (!chars) return undefined;
+  if (chars <= metaDescriptionLength.min) return "reco.metaDescriptionLength.tooShort";
+  if (chars > metaDescriptionLength.max) return "reco.metaDescriptionLength.tooLong";
+
+  return undefined;
+}
+
+function titleWidthKey(data: CheckData, { titleWidth }: ResolvedSeoThresholds) {
+  const px = readNumber(data, "px");
+
+  return px !== undefined && px > titleWidth.max ? "reco.titleWidth.tooLong" : undefined;
+}
+
+const DIRECTION_KEYS: Record<string, DirectionKey> = {
+  keyphraseDensity: densityKey,
+  metaDescriptionLength: metaDescriptionLengthKey,
+  titleWidth: titleWidthKey,
+};
+
+export function directionalRecommendation(
+  id: string,
+  status: Status,
+  data: CheckData,
+  thresholds: ResolvedSeoThresholds
+): Message | undefined {
+  if (status === "good") return undefined;
+
+  const directionKey = DIRECTION_KEYS[id]?.(data, thresholds);
+
+  return directionKey ? { key: directionKey, vars: thresholdVars(id, thresholds) } : undefined;
+}
+
 export function getRecommendation(
   id: string,
   status: Status,
@@ -69,15 +134,4 @@ export function getRecommendation(
   if (builder) return builder(ctx);
 
   return { key: GENERIC[status] };
-}
-
-export function refineRecommendation(
-  check: { id: string; status: Status },
-  data: Record<string, unknown> | undefined
-): Message | undefined {
-  if (check.id !== "keyphraseDensity" || check.status === "good") return undefined;
-  const density = data?.densityPct;
-  const factor = data?.lengthFactor;
-  if (typeof density !== "number" || typeof factor !== "number") return undefined;
-  return isDensityOverMaximum(density, factor) ? { key: "reco.keyphraseDensity.over" } : undefined;
 }

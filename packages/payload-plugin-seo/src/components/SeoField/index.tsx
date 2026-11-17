@@ -43,11 +43,13 @@ export function SeoField(props: SeoFieldProps) {
   const injected: InjectedComponents =
     (fieldState as { customComponents?: InjectedComponents }).customComponents ?? {};
   const text = value ?? "";
+  const { enabled, fieldRanges } = getSeoClientConfig();
   const measurement =
-    kind === "title" ? measureTitle(text, range) : measureDescription(text, range);
+    kind === "title"
+      ? measureTitle(text, range, fieldRanges.title)
+      : measureDescription(text, range, fieldRanges.description);
 
   const { generate, status, error } = useGenerate({ kind, measurement, setValue });
-  const enabled = getSeoClientConfig().enabled;
   const loading = status === "loading";
 
   const labelRow = (

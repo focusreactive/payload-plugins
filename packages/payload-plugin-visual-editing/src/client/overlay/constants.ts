@@ -1,6 +1,5 @@
-export const STEGA_PREFILTER = /[\u200B-\u202F\uFEFF]/;
-
 export const DATA_VE_TARGET_ATTR = "data-ve-target";
+export const DATA_VE_HOVERING_ATTR = "data-ve-hovering";
 export const DATA_VE_FOR_ATTR = "data-ve-for";
 export const LABEL_CLASS = "ve-edit-label";
 
@@ -34,8 +33,6 @@ export const FRAME_ACTIVE_BORDER = `${FRAME_ACTIVE_WIDTH}px solid ${ACCENT_STRON
 export const FRAME_IDLE_WIDTH = 1.5;
 export const FRAME_IDLE_BORDER = `${FRAME_IDLE_WIDTH}px dashed color-mix(in srgb, ${ACCENT_STRONG} 65%, transparent)`;
 export const DATA_VE_FRAME_ATTR = "data-ve-frame";
-
-export const STEGA_ATTRS = new Set(["alt", "title", "aria-label", "placeholder"]);
 
 export const LABEL_ICON_SVG =
   '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none"><path d="M11.2 2.2l2.6 2.6-8.5 8.5L1.5 14l.7-3.8z"/><path d="M10 3.4l2.6 2.6"/></svg>';

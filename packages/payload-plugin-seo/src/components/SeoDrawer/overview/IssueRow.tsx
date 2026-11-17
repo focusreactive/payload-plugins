@@ -104,7 +104,7 @@ export function IssueRow({ issue, compact = false, showCategory = true }: IssueR
   const { check } = issue;
   const known = ALL_CHECK_IDS.has(check.id as CheckId);
   const name = known ? t(`check.${check.id as CheckId}.name`) : check.id;
-  const tip = known ? t(`check.${check.id as CheckId}.tip`) : "";
+  const tip = known ? t(`check.${check.id as CheckId}.tip`, check.tipVars) : "";
   const advice =
     check.recommendation && !check.recommendation.key.startsWith("reco.generic")
       ? t(check.recommendation.key, check.recommendation.vars)

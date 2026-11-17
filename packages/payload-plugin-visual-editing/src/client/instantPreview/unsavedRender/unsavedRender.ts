@@ -17,8 +17,13 @@ export type UnsavedRenderState<Node> = {
   unsaved: RenderOfShape<Node> | null;
 };
 
+export type RenderOnThePage<Node> = (
+  structure: UnsavedStructure
+) => Node | null | PromiseLike<Node | null>;
+
 export type UnsavedRenderOptions<Node> = {
   render: (structure: UnsavedStructure, signal: AbortSignal) => Promise<Node | null | undefined>;
+  optimistic?: RenderOnThePage<Node>;
   shown: UnsavedRenderState<Node>;
   savedShape: string;
   onChange: (change: Partial<UnsavedRenderState<Node>>, isRender: boolean) => void;
@@ -27,6 +32,7 @@ export type UnsavedRenderOptions<Node> = {
 export interface UnsavedRender<Node> {
   tell(structure: ToldStructure): void;
   committed(shown: UnsavedRenderState<Node>, savedShape: string): void;
+  renderOnThePageAgain(): void;
   dropUnsaved(): void;
   stop(): void;
 }
@@ -35,6 +41,8 @@ export const RENDER_TIMEOUT_MS = 10_000;
 export const RETRY_AFTER_MS = 1000;
 export const MOST_RETRIES_OF_A_STRUCTURE = 5;
 export const COMMIT_WAIT_MS = 1000;
+export const STRUCTURE_SETTLE_MS = 200;
+export const SERVER_CHECK_PAUSE_MS = 350;
 
 export const NOTHING_TOLD: UnsavedRenderState<never> = {
   editorShape: null,
@@ -66,6 +74,17 @@ export const inPlaceOfSaved = <Node>(
 
 type Call = { abort: AbortController; isAbandoned: boolean };
 
+const nodeOrNothing = async <Node>(rendering: PromiseLike<Node | null>): Promise<Node | null> => {
+  try {
+    return await rendering;
+  } catch {
+    return null;
+  }
+};
+
+const isPromiseLike = <Value>(value: unknown): value is PromiseLike<Value> =>
+  typeof (value as PromiseLike<Value> | null)?.then === "function";
+
 const abandon = (call: Call) => {
   call.isAbandoned = true;
   call.abort.abort();
@@ -73,6 +92,7 @@ const abandon = (call: Call) => {
 
 export function createUnsavedRender<Node>({
   onChange,
+  optimistic,
   render,
   savedShape,
   shown,
@@ -82,6 +102,10 @@ export function createUnsavedRender<Node>({
   let unsettled: Call | null = null;
   let isStopped = false;
   let retryTimer: ReturnType<typeof setTimeout> | undefined;
+  let startTimer: ReturnType<typeof setTimeout> | undefined;
+  let toldShape: string | null = null;
+  let toldUnsaved: UnsavedStructure | null = null;
+  let shownOnThePage: RenderOfShape<Node> | null = null;
   let retryAfterMs = RETRY_AFTER_MS;
   let retriesLeft = MOST_RETRIES_OF_A_STRUCTURE;
   let awaitedCommit: { continueWithNextCall: () => void; settledCall: object } | null = null;
@@ -101,6 +125,9 @@ export function createUnsavedRender<Node>({
       change({ ...next, settledCall }, true);
     });
 
+  const renderedOnThePageAs = (shape: string) =>
+    shownOnThePage?.shape === shape ? shownOnThePage : null;
+
   const settle = (shape: string, node: Node | null, isAnotherWaiting: boolean) => {
     if (shape !== committed.shown.editorShape && showsEditorShape()) {
       change({ isAwaitingRender: isAnotherWaiting });
@@ -108,7 +135,7 @@ export function createUnsavedRender<Node>({
     }
     return showAfterCommit({
       isAwaitingRender: isAnotherWaiting,
-      unsaved: node === null ? null : { node, shape },
+      unsaved: node === null ? renderedOnThePageAs(shape) : { node, shape },
     });
   };
 
@@ -158,20 +185,73 @@ export function createUnsavedRender<Node>({
     if (!call.isAbandoned) await settle(structure.shape, node, waiting !== null);
     unsettled = null;
     if (!isRendered && !waiting) retryLater(structure, renderWaiting);
-    await renderWaiting();
+    if (startTimer === undefined) await renderWaiting();
   };
 
   const cancel = () => {
     waiting = null;
     clearTimeout(retryTimer);
+    clearTimeout(startTimer);
+    startTimer = undefined;
     if (unsettled) abandon(unsettled);
   };
 
-  const request = (structure: UnsavedStructure) => {
+  const startAfter = (delayMs: number) => {
+    startTimer = setTimeout(() => {
+      startTimer = undefined;
+      if (!unsettled) void renderWaiting();
+    }, delayMs);
+  };
+
+  const wait = (structure: UnsavedStructure) => {
     waiting = structure;
     clearTimeout(retryTimer);
     resetRetries();
-    if (!unsettled) void renderWaiting();
+  };
+
+  const request = (structure: UnsavedStructure) => {
+    wait(structure);
+    if (unsettled || startTimer !== undefined) return;
+    startAfter(STRUCTURE_SETTLE_MS);
+  };
+
+  const checkAfterPause = (structure: UnsavedStructure) => {
+    wait(structure);
+    clearTimeout(startTimer);
+    startAfter(SERVER_CHECK_PAUSE_MS);
+  };
+
+  const renderedOnThePage = (structure: UnsavedStructure) => {
+    try {
+      return optimistic?.(structure) ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  const showWhenRendered = async (shape: string, rendering: PromiseLike<Node | null>) => {
+    const node = await nodeOrNothing(rendering);
+    if (node === null || isStopped || toldShape !== shape) return;
+    shownOnThePage = { node, shape };
+    change({ unsaved: shownOnThePage });
+  };
+
+  const isRenderedAs = (shape: string) =>
+    shownOnThePage?.shape === shape || committed.shown.unsaved?.shape === shape;
+
+  const tellUnsaved = (structure: UnsavedStructure) => {
+    const { shape } = structure;
+    toldUnsaved = structure;
+    const rendered = renderedOnThePage(structure);
+    if (rendered === null || isPromiseLike<Node | null>(rendered)) {
+      request(structure);
+      change({ editorShape: shape, isAwaitingRender: true });
+      if (rendered !== null) void showWhenRendered(shape, rendered);
+      return;
+    }
+    checkAfterPause(structure);
+    shownOnThePage = { node: rendered, shape };
+    change({ editorShape: shape, isAwaitingRender: true, unsaved: shownOnThePage });
   };
 
   return {
@@ -182,19 +262,36 @@ export function createUnsavedRender<Node>({
       awaitedCommit = null;
       continueWithNextCall();
     },
-    dropUnsaved: () => change({ unsaved: null }),
+    renderOnThePageAgain() {
+      const structure = toldUnsaved;
+      if (!structure || isStopped || isRenderedAs(structure.shape)) return;
+      const rendered = renderedOnThePage(structure);
+      if (rendered === null) return;
+      if (isPromiseLike<Node | null>(rendered)) {
+        void showWhenRendered(structure.shape, rendered);
+        return;
+      }
+      shownOnThePage = { node: rendered, shape: structure.shape };
+      change({ unsaved: shownOnThePage });
+    },
+    dropUnsaved() {
+      shownOnThePage = null;
+      change({ unsaved: null });
+    },
     stop() {
       isStopped = true;
       cancel();
     },
     tell({ locale, shape, state: editorState }) {
-      if (editorState === null) cancel();
-      else request({ locale, shape, state: editorState });
-      change({
-        editorShape: shape,
-        isAwaitingRender: editorState !== null,
-        ...(editorState === null && { unsaved: null }),
-      });
+      toldShape = shape;
+      if (editorState !== null) {
+        tellUnsaved({ locale, shape, state: editorState });
+        return;
+      }
+      cancel();
+      toldUnsaved = null;
+      shownOnThePage = null;
+      change({ editorShape: shape, isAwaitingRender: false, unsaved: null });
     },
   };
 }
