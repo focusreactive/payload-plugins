@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-translator [0.19.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.18.1...@focus-reactive/payload-plugin-translator@0.19.0) (2026-11-17)
+
+
+### Features
+
+* **translator:** bring the translation popups in line with the Payload admin ([23a5109](https://github.com/focusreactive/payload-plugins/commit/23a51093bd9c77f384989f1604d397b286916fe6))
+
 ## @focus-reactive/payload-plugin-translator [0.18.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.18.0...@focus-reactive/payload-plugin-translator@0.18.1) (2026-10-29)
 
 
