@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createPageStore, DETACHED_PAGE, sessionOf, toggledMode } from "../../src/client/session";
+import {
+  createPageStore,
+  DETACHED_PAGE,
+  payloadApiOf,
+  sessionOf,
+  toggledMode,
+} from "../../src/client/session";
 import { STORAGE_KEY } from "../../src/client/visualEditingMode";
 
 const originalTop = window.top;
@@ -9,6 +15,14 @@ const setFramed = (framed: boolean) =>
   Object.defineProperty(window, "top", {
     configurable: true,
     value: framed ? ({} as Window) : window,
+  });
+
+const pageWithBlockedStorage = (): Window =>
+  new Proxy(window, {
+    get: (page, property) => {
+      if (property === "localStorage") throw new DOMException("denied", "SecurityError");
+      return Reflect.get(page, property) as unknown;
+    },
   });
 
 afterEach(() => {
@@ -74,6 +88,36 @@ describe("page store", () => {
     expect(listener).toHaveBeenCalledTimes(2);
   });
 
+  it("reads the mode as off on a page whose storage is blocked", () => {
+    const store = createPageStore();
+
+    expect(() => store.attach(pageWithBlockedStorage())).not.toThrow();
+
+    expect(store.read().mode).toBe("off");
+  });
+
+  it("keeps a chosen mode for the page when its storage is blocked", () => {
+    const store = createPageStore();
+    store.attach(pageWithBlockedStorage());
+
+    expect(() => store.setMode("always")).not.toThrow();
+
+    expect(store.read().mode).toBe("always");
+  });
+
+  it("keeps a chosen mode for the page when its storage is full", () => {
+    const store = createPageStore();
+    store.attach(window);
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("full", "QuotaExceededError");
+    });
+
+    expect(() => store.setMode("hover")).not.toThrow();
+    setItem.mockRestore();
+
+    expect(store.read().mode).toBe("hover");
+  });
+
   it("stops telling a subscriber that unsubscribed", () => {
     const store = createPageStore();
     const listener = vi.fn();
@@ -84,6 +128,8 @@ describe("page store", () => {
     expect(listener).not.toHaveBeenCalled();
   });
 });
+
+const NO_ORIGINS = ["cms.example.com", "localhost:3000", "//cms.example.com", "file:///cms"];
 
 describe("session", () => {
   const framedPage = {
@@ -114,6 +160,47 @@ describe("session", () => {
     expect(sessionOf({ adminOrigin: "https://cms.example" }, framedPage).adminOrigin).toBe(
       "https://cms.example"
     );
+  });
+
+  it("takes the origin out of an admin address that names more than the origin", () => {
+    expect(sessionOf({ adminOrigin: "https://cms.example/admin/" }, framedPage).adminOrigin).toBe(
+      "https://cms.example"
+    );
+  });
+
+  it.each(NO_ORIGINS)(
+    "takes the origin of the page for the admin origin %s, which is no origin",
+    (adminOrigin) => {
+      expect(sessionOf({ adminOrigin }, framedPage).adminOrigin).toBe("https://site.example");
+    }
+  );
+
+  it.each(NO_ORIGINS)(
+    "knows no API of Payload below the admin origin %s, which is no origin",
+    (adminOrigin) => {
+      expect(payloadApiOf({ adminOrigin })).toBeUndefined();
+    }
+  );
+
+  it("has instant preview on unless the site turns it off", () => {
+    expect(sessionOf({}, framedPage).instantPreview).toBe(true);
+    expect(sessionOf({ instantPreview: false }, framedPage).instantPreview).toBe(false);
+  });
+
+  it("finds the API of Payload below the admin origin the site names", () => {
+    expect(payloadApiOf({ adminOrigin: "https://cms.example" })).toBe("https://cms.example/api");
+    expect(payloadApiOf({ adminOrigin: "https://cms.example/" })).toBe("https://cms.example/api");
+  });
+
+  it("takes the API of Payload the site names before the one below the admin origin", () => {
+    const payloadApi = "https://api.example/payload";
+
+    expect(payloadApiOf({ adminOrigin: "https://cms.example", payloadApi })).toBe(payloadApi);
+    expect(payloadApiOf({ adminOrigin: "https://cms.example", payloadApi: "" })).toBe("");
+  });
+
+  it("knows no API of Payload for a site that names neither", () => {
+    expect(payloadApiOf({})).toBeUndefined();
   });
 
   it("toggles between off and always", () => {

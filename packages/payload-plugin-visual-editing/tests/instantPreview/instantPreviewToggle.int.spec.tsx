@@ -108,8 +108,16 @@ describe("instant preview and the visual editing toggle", () => {
     expect(heading().hasAttribute(DATA_VE_TARGET_ATTR)).toBe(false);
   });
 
-  it("only cleans the markers while the toggle is off and instant preview is not enabled", () => {
+  it("patches text while the toggle is off unless the site turns instant preview off", () => {
     renderPreview({});
+
+    postInPreview(snapshotWithTypedTitle);
+
+    expect(heading().textContent).toBe("Hello");
+  });
+
+  it("only cleans the markers while the toggle is off and instant preview is turned off", () => {
+    renderPreview({ instantPreview: false });
 
     postInPreview(snapshotWithTypedTitle);
 
@@ -135,7 +143,7 @@ describe("instant preview and the visual editing toggle", () => {
 
   it("still draws edit targets without instant preview", () => {
     localStorage.setItem(STORAGE_KEY, "always");
-    renderPreview({});
+    renderPreview({ instantPreview: false });
 
     expect(heading().textContent).toBe("Hell");
     expect(heading().getAttribute(DATA_VE_TARGET_ATTR)).toBe("title");
@@ -144,7 +152,7 @@ describe("instant preview and the visual editing toggle", () => {
 
   it("drops the edit targets but keeps the text clean when the toggle is switched off without instant preview", () => {
     localStorage.setItem(STORAGE_KEY, "always");
-    renderPreview({});
+    renderPreview({ instantPreview: false });
 
     act(() => setMode("off"));
 

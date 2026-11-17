@@ -4,7 +4,10 @@ import type { MountVisualEditingOptions, VisualEditing } from "../../src/dom";
 import type { EditorNode } from "../../src/shared/richText/editorNodes";
 
 import { optimisticValueOf } from "../../src/client/instantPreview/unsavedRender/optimisticValue";
-import { SERVER_CHECK_PAUSE_MS } from "../../src/client/instantPreview/unsavedRender/unsavedRender";
+import {
+  SERVER_CHECK_PAUSE_MS,
+  STRUCTURE_SETTLE_MS,
+} from "../../src/client/instantPreview/unsavedRender/unsavedRender";
 import { mountVisualEditing, richTextAttributes, stripMarkers } from "../../src/dom";
 import {
   VE_DOCUMENT_SAVED_TYPE,
@@ -29,7 +32,12 @@ import {
   restorePreviewWindow,
   stubAdminWindow,
 } from "../support/previewWindow";
-import { flushMutations, settleStructure, waitFor } from "../support/time";
+
+const waitFor = (ms: number) => vi.advanceTimersByTimeAsync(ms);
+
+const flushMutations = () => waitFor(0);
+
+const settleStructure = () => waitFor(STRUCTURE_SETTLE_MS);
 
 const PAYLOAD_API = "https://cms.example/api";
 const PAGE = { collectionSlug: "pages", docId: "1", kind: "collection" } as const;
@@ -126,6 +134,7 @@ describe("a rich text structure rendered on a page without React", () => {
   };
 
   beforeEach(() => {
+    vi.useFakeTimers();
     mounted = null;
     asked = [];
     answerOf = serverAnswerOf;
@@ -147,6 +156,7 @@ describe("a rich text structure rendered on a page without React", () => {
     vi.unstubAllGlobals();
     restorePreviewWindow();
     document.body.innerHTML = "";
+    vi.useRealTimers();
   });
 
   describe("for a field without blocks, uploads or links to documents", () => {

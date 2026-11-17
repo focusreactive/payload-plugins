@@ -38,11 +38,53 @@ export const DETACHED_PAGE: PageState = { isFramed: false, mode: "off", pageOrig
 
 const DEFAULT_ADMIN_BASE_PATH = "/admin";
 
-const readStoredMode = (storage: Storage): VisualEditingMode => {
-  const stored = storage.getItem(STORAGE_KEY);
+const DEFAULT_API_PATH = "/api";
+
+const WEB_PROTOCOLS: ReadonlySet<string> = new Set(["http:", "https:"]);
+
+const originOf = (adminOrigin: string | undefined): string | undefined => {
+  if (!adminOrigin) return undefined;
+  try {
+    const { origin, protocol } = new URL(adminOrigin);
+    return WEB_PROTOCOLS.has(protocol) ? origin : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+export const payloadApiOf = ({
+  adminOrigin,
+  payloadApi,
+}: {
+  adminOrigin?: string;
+  payloadApi?: string;
+}): string | undefined => {
+  if (payloadApi !== undefined) return payloadApi;
+  const origin = originOf(adminOrigin);
+  return origin && new URL(DEFAULT_API_PATH, origin).href;
+};
+
+const storedModeOf = (win: Window): string | null => {
+  try {
+    return win.localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+};
+
+const readStoredMode = (win: Window): VisualEditingMode => {
+  const stored = storedModeOf(win);
   if (stored === "always" || stored === "hover" || stored === "off") return stored;
   if (stored === "true") return "always";
   return "off";
+};
+
+const storeMode = (win: Window, mode: VisualEditingMode): void => {
+  try {
+    win.localStorage.setItem(STORAGE_KEY, mode);
+  } catch {
+    return;
+  }
 };
 
 export const toggledMode = (mode: VisualEditingMode): VisualEditingMode =>
@@ -70,13 +112,13 @@ export function createPageStore(): PageStore {
       attachedWindow = win;
       change({
         isFramed: win.self !== win.top || findAdminWindow(win) !== null,
-        mode: readStoredMode(win.localStorage),
+        mode: readStoredMode(win),
         pageOrigin: win.location.origin,
       });
     },
     setMode(mode) {
       change({ ...state, mode });
-      attachedWindow?.localStorage.setItem(STORAGE_KEY, mode);
+      if (attachedWindow) storeMode(attachedWindow, mode);
     },
   };
 }
@@ -86,11 +128,11 @@ export const sessionOf = (options: SessionOptions, page: PageState): Session => 
   const available = isDraft && (!options.framedOnly || page.isFramed);
   return {
     adminBasePath: options.adminBasePath ?? DEFAULT_ADMIN_BASE_PATH,
-    adminOrigin: options.adminOrigin || page.pageOrigin,
+    adminOrigin: originOf(options.adminOrigin) ?? page.pageOrigin,
     available,
     buildAdminEditUrl: options.buildAdminEditUrl ?? defaultBuildAdminEditUrl,
     enabled: available && page.mode !== "off",
-    instantPreview: Boolean(options.instantPreview),
+    instantPreview: options.instantPreview ?? true,
     isDraft,
     mode: page.mode,
   };

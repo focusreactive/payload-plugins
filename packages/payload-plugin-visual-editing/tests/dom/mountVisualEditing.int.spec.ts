@@ -185,8 +185,21 @@ describe("mountVisualEditing", () => {
     });
   });
 
+  it("shows text typed in the admin unless instant preview is turned off", async () => {
+    mount({ instantPreview: false });
+
+    postFromAdmin({
+      ...PAGE,
+      fields: [{ key: "title", saved: "Hello", value: "Hello there" }],
+      locale: "en",
+      type: VE_FIELD_SNAPSHOT_TYPE,
+    });
+
+    expect(heading.textContent).toBe("Hello");
+  });
+
   it("shows text typed in the admin with instant preview", async () => {
-    mount({ instantPreview: true });
+    mount();
 
     postFromAdmin({
       ...PAGE,
@@ -293,6 +306,20 @@ describe("mountVisualEditing", () => {
         { pageId: expect.any(String), type: VE_PREVIEW_GRANT_REQUEST_TYPE },
         ADMIN_ORIGIN
       );
+    });
+
+    it("asks the API below the admin origin when the site names no other", async () => {
+      askPayload.mockResolvedValue(Response.json({ html: "<p>From Payload</p>" }));
+      mount();
+
+      postFromAdmin(grantMessage());
+      postFromAdmin(structureOf("unsaved", "Typed"));
+      await settleStructure();
+
+      expect(askPayload.mock.calls[0]![0]).toBe(
+        `${ADMIN_ORIGIN}/api/visual-editing/unsaved-rich-text`
+      );
+      expect(body.innerHTML).toBe("<p>From Payload</p>");
     });
 
     it("asks nothing without a fresh grant from the admin", async () => {

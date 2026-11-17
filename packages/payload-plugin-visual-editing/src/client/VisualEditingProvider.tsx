@@ -16,7 +16,7 @@ import type { Session } from "./session.js";
 import type { VisualEditingMode } from "./visualEditingMode.js";
 
 import { listenToPayloadValues } from "./instantPreview/unsavedRender/renderValue.js";
-import { createPageStore, DETACHED_PAGE, sessionOf, toggledMode } from "./session.js";
+import { createPageStore, DETACHED_PAGE, payloadApiOf, sessionOf, toggledMode } from "./session.js";
 import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect.js";
 
 type VisualEditingContextType = Session & {
@@ -39,11 +39,11 @@ const readDetachedPage = () => DETACHED_PAGE;
 export function VisualEditingProvider({
   available = false,
   framedOnly = false,
-  instantPreview = false,
+  instantPreview = true,
   buildAdminEditUrl,
   adminOrigin,
   adminBasePath,
-  payloadApi,
+  payloadApi: namedPayloadApi,
   children,
 }: {
   available?: boolean;
@@ -83,6 +83,7 @@ export function VisualEditingProvider({
     pageStore,
   ]);
 
+  const payloadApi = payloadApiOf({ adminOrigin, payloadApi: namedPayloadApi });
   const [payloadValues, setPayloadValues] = useState<PayloadValues | null>(null);
   const latestAdminOrigin = useRef(value.adminOrigin);
   const isInstantPreviewOn = value.available && value.instantPreview;

@@ -11,7 +11,7 @@ import { cleanPageAround } from "../client/overlay/markerCleaner.js";
 import { savedShapesWithin, startOverlay } from "../client/overlayScope.js";
 import { listenToPreviewGrants } from "../client/previewGrant.js";
 import { listenToSaves } from "../client/saveEvents.js";
-import { createPageStore, sessionOf } from "../client/session.js";
+import { createPageStore, payloadApiOf, sessionOf } from "../client/session.js";
 import { createToggle } from "../client/toggle.js";
 import { startLiveRichTextElements } from "./liveRichTextElements.js";
 import { renderInPayload } from "./unsavedFromPayload.js";
@@ -36,12 +36,16 @@ export function mountVisualEditing({
   locale,
   toggle: showsToggle = true,
   renderRichText,
-  payloadApi,
+  payloadApi: namedPayloadApi,
   renderRichTextValue,
   optimistic = true,
   onSave,
   ...sessionOptions
 }: MountVisualEditingOptions = {}): VisualEditing {
+  const payloadApi = payloadApiOf({
+    adminOrigin: sessionOptions.adminOrigin,
+    payloadApi: namedPayloadApi,
+  });
   const pageStore = createPageStore();
   pageStore.attach(window);
   const session = () => sessionOf({ available: true, ...sessionOptions }, pageStore.read());
