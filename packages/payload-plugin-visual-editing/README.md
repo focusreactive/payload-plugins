@@ -481,7 +481,7 @@ mountVisualEditing({
 |---|---|---|
 | `root` | `document.body` | Element the overlay scans for markers. |
 | `adminOrigin` | the page's origin | Origin of the admin window. Required when the admin runs on another origin. |
-| `framedOnly` | `false` | Only run inside an iframe, that is the Live Preview. |
+| `framedOnly` | `false` | Only run inside the Live Preview: its iframe or the window it opens. |
 | `instantPreview` | `false` | Text typed in the admin appears on the page. Needs the plugin option too. |
 | `locale` | none | Locale of the page, see [Requirements](#requirements). |
 | `toggle` | `true` | Shows the Off / Hover / Always toggle. |
@@ -588,7 +588,7 @@ A `beforeChange` hook removes intact markers from every write. It cannot recogni
 | Prop | Default | Purpose |
 |---|---|---|
 | `available` | `false` | Turns the overlay on. Pass the draft mode flag. |
-| `framedOnly` | `false` | Only run inside an iframe, that is the Live Preview. |
+| `framedOnly` | `false` | Only run inside the Live Preview: its iframe or the window it opens. |
 | `adminBasePath` | `/admin` | Must match the plugin option. |
 | `adminOrigin` | the page's origin | Origin of the admin window. |
 | `instantPreview` | `false` | See [Instant preview](#instant-preview). |

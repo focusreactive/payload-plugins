@@ -37,6 +37,17 @@ describe("page store", () => {
     });
   });
 
+  it("counts a window the admin opened as a preview, as Payload does with its popup", () => {
+    setFramed(false);
+    Object.defineProperty(window, "opener", { configurable: true, value: { closed: false } });
+    const store = createPageStore();
+
+    store.attach(window);
+    Object.defineProperty(window, "opener", { configurable: true, value: null });
+
+    expect(store.read().isFramed).toBe(true);
+  });
+
   it.each([
     ["true", "always"],
     ["nonsense", "off"],

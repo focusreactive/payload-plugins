@@ -112,6 +112,7 @@ describe("mountVisualEditing", () => {
   });
 
   it("does nothing in a standalone tab when it is framed only", async () => {
+    restorePreviewWindow();
     localStorage.setItem(STORAGE_KEY, "always");
 
     mount({ framedOnly: true });

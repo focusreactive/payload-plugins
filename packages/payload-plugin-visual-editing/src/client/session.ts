@@ -2,6 +2,7 @@ import type { BuildAdminEditUrl } from "../shared/buildAdminEditUrl.js";
 import type { VisualEditingMode } from "./visualEditingMode.js";
 
 import { defaultBuildAdminEditUrl } from "../shared/buildAdminEditUrl.js";
+import { findAdminWindow } from "./adminWindow.js";
 import { STORAGE_KEY } from "./visualEditingMode.js";
 
 export type SessionOptions = {
@@ -67,7 +68,7 @@ export function createPageStore(): PageStore {
     attach(win) {
       attachedWindow = win;
       change({
-        isFramed: win.self !== win.top,
+        isFramed: win.self !== win.top || findAdminWindow(win) !== null,
         mode: readStoredMode(win.localStorage),
         pageOrigin: win.location.origin,
       });
