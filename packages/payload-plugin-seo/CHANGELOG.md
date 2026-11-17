@@ -1,3 +1,28 @@
+# @focus-reactive/payload-plugin-seo [3.0.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@2.0.0...@focus-reactive/payload-plugin-seo@3.0.0) (2026-11-17)
+
+
+* feat(seo)!: replace the seven analysis tabs with an overview and one fix list ([0643353](https://github.com/focusreactive/payload-plugins/commit/06433539737b745d909a572daf95b5acf6fef3ab))
+
+
+### Bug Fixes
+
+* **seo:** score the SEO title width and advise on keyphrase overuse correctly ([7bc269a](https://github.com/focusreactive/payload-plugins/commit/7bc269a7411c2410482c68cdf705907b5855e09d))
+* **seo:** style the drawer close button like the comments drawer ([ba7d92d](https://github.com/focusreactive/payload-plugins/commit/ba7d92d572d9a62e7ddb725fe6f6491c5c626839))
+
+
+### Features
+
+* **seo:** put problems first and collapse passed checks ([371922c](https://github.com/focusreactive/payload-plugins/commit/371922cd72afc59f9013757c5ef1c0cf1421333a))
+
+
+### BREAKING CHANGES
+
+* the drawer tabs onpage, readability, inclusive, vitals and serp
+were removed; tab.keyphrase and tab.vitals now read Keyphrases and Content.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_0166RzeQmSr5hMBDP9ZbQNAZ
+
 # @focus-reactive/payload-plugin-seo [2.0.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.12.1...@focus-reactive/payload-plugin-seo@2.0.0) (2026-11-17)
 
 
