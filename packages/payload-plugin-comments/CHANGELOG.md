@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-comments [1.12.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.11.3...@focus-reactive/payload-plugin-comments@1.12.0) (2026-11-17)
+
+
+### Features
+
+* **comments:** show every thread by default and group them as field cards ([1783884](https://github.com/focusreactive/payload-plugins/commit/17838848026d5c5286c3b2233b5748718085bc9b))
+
 ## @focus-reactive/payload-plugin-comments [1.11.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.11.2...@focus-reactive/payload-plugin-comments@1.11.3) (2026-10-12)
 
 
