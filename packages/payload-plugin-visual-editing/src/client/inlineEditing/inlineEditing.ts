@@ -1,11 +1,13 @@
-import type { VeDocument } from "../../shared/protocol.js";
+import type { VeDocument, VeOpenFieldMessage } from "../../shared/protocol.js";
 import type { FieldMatch, FieldTracker } from "../overlay/fieldTracker.js";
 import type { EditStatus } from "./editTransport.js";
 import type { SaveStatus } from "./saveStatus.js";
 
 import { fieldKeyOfMarker } from "../../shared/fieldKey.js";
+import { VE_MESSAGE_TYPE } from "../../shared/protocol.js";
+import { veIdentityOf } from "../../shared/shared.js";
 import { veDocumentOf } from "../../shared/veDocument.js";
-import { findAdminWindow } from "../adminWindow.js";
+import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 import { listenToSaves } from "../saveEvents.js";
 import { createEditTransport } from "./editTransport.js";
 import { createSaveStatus } from "./saveStatus.js";
@@ -55,6 +57,16 @@ export function createInlineEditing(
 
   const textEditing = createTextEditing({ flush: transport.flush, send, tracker });
 
+  const showInForm = (match: FieldMatch) => {
+    const { adminOrigin, locale } = getCtx();
+    const message: VeOpenFieldMessage = {
+      ...veIdentityOf({ ...match, locale: match.locale ?? locale }),
+      focus: false,
+      type: VE_MESSAGE_TYPE,
+    };
+    findAdminWindow(window)?.postMessage(message, adminOriginOf(adminOrigin));
+  };
+
   const isWrittenSomewhere = (match: FieldMatch, key: string): boolean => {
     if (!findAdminWindow(window)) return true;
     return holdsValueOf?.(veDocumentOf(match), key) ?? false;
@@ -94,7 +106,9 @@ export function createInlineEditing(
       const match = fields.get(target);
       const key = match && fieldKeyOfMarker(match);
       if (!match || !key || !isWrittenSomewhere(match, key)) return false;
-      return textEditing.begin(match, { x: event.clientX, y: event.clientY });
+      const isEditing = textEditing.begin(match, { x: event.clientX, y: event.clientY });
+      if (isEditing) showInForm(match);
+      return isEditing;
     },
     sync() {
       if (!getCtx().inlineEditing) textEditing.commit();

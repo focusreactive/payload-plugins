@@ -343,7 +343,16 @@ describe("editing text on the page", () => {
       expect(messagesOfType(postToAdmin, VE_FIELD_EDIT_TYPE)).toEqual([
         { ...PAGE, key: "title", locale: "en", type: VE_FIELD_EDIT_TYPE, value: "Hello world" },
       ]);
-      expect(messagesOfType(postToAdmin, VE_MESSAGE_TYPE)).toHaveLength(0);
+      expect(messagesOfType(postToAdmin, VE_MESSAGE_TYPE)).toEqual([
+        {
+          ...PAGE,
+          focus: false,
+          key: undefined,
+          locale: "en",
+          path: "title",
+          type: VE_MESSAGE_TYPE,
+        },
+      ]);
       expect(fetchEndpoint).not.toHaveBeenCalled();
     });
 

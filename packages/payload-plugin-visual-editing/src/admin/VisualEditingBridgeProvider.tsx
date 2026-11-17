@@ -9,7 +9,7 @@ import { adminBaseOf, defaultBuildAdminEditUrl } from "../shared/buildAdminEditU
 import { VE_FOCUS_PARAM, VE_MESSAGE_TYPE } from "../shared/protocol.js";
 import type { DocKind } from "../shared/protocol.js";
 import type { VeOpenFieldMessage } from "../shared/protocol.js";
-import { expandAndFocus } from "./expandAndFocus.js";
+import { expandAndFocus, expandAndShow } from "./expandAndFocus.js";
 import { openDocumentOf } from "./openField/openDocument.js";
 import { createOpenForms, currentFormPathOf, OpenFormsContext } from "./openField/openForms.js";
 import type { OpenForms } from "./openField/openForms.js";
@@ -79,12 +79,14 @@ const focusFieldPath = async (
   path: string,
   kind: DocKind,
   slug: string,
-  getFields: EntityFieldsLookup
+  getFields: EntityFieldsLookup,
+  takesFocus = true
 ): Promise<void> => {
   const fields = getFields(kind, slug);
   const chainResult = fields !== null ? resolveContainerChain(path, fields) : null;
   const resolved = chainResult ?? fallbackResolution(path);
-  await expandAndFocus(resolved.chain, resolved.fieldId);
+  const reveal = takesFocus ? expandAndFocus : expandAndShow;
+  await reveal(resolved.chain, resolved.fieldId);
 };
 
 const forgetFocusParam = (): void => {
@@ -165,20 +167,25 @@ export function VisualEditingBridgeProvider({
       if (!isFromAdminOrPreviewPage(event, window.location.origin, previewPages)) return;
       const data = event.data as VeOpenFieldMessage | undefined;
       if (!data || data.type !== VE_MESSAGE_TYPE) return;
+      const takesFocus = data.focus !== false;
+      const openElsewhere = () => {
+        if (takesFocus) navigateAndFocus(data);
+      };
 
       if (data.kind === "collection") {
         const current = currentCollectionLocation();
         const wrongCollection = current?.slug !== data.collectionSlug;
         const wrongDoc = data.docId !== undefined && current?.id !== data.docId;
         if (!current || wrongCollection || wrongDoc) {
-          navigateAndFocus(data);
+          openElsewhere();
           return;
         }
         void focusFieldPath(
           currentFormPathOf(data, openForms.forms),
           "collection",
           data.collectionSlug,
-          getFields
+          getFields,
+          takesFocus
         );
         return;
       }
@@ -186,14 +193,15 @@ export function VisualEditingBridgeProvider({
       if (data.kind === "global") {
         const slug = currentGlobalSlug();
         if (slug !== data.collectionSlug) {
-          navigateAndFocus(data);
+          openElsewhere();
           return;
         }
         void focusFieldPath(
           currentFormPathOf(data, openForms.forms),
           "global",
           data.collectionSlug,
-          getFields
+          getFields,
+          takesFocus
         );
       }
     };

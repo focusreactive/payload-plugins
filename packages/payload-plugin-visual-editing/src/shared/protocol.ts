@@ -49,6 +49,7 @@ export type VeOpenFieldMessage = {
   collectionSlug: string;
   kind: DocKind;
   locale?: string;
+  focus?: false;
 };
 
 export const DATA_VE_LIVE_ATTR = "data-ve-live";
