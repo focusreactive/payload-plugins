@@ -11,6 +11,10 @@ const BROADCASTER = {
   path: "@focus-reactive/payload-plugin-visual-editing/admin#InstantPreviewBroadcaster",
 };
 
+const PREVIEW_PAGE_BRIDGE = {
+  path: "@focus-reactive/payload-plugin-visual-editing/admin#PreviewPageBridge",
+};
+
 const OPEN_FORM_ANNOUNCER = {
   path: "@focus-reactive/payload-plugin-visual-editing/admin#OpenFormAnnouncer",
 };
@@ -49,19 +53,35 @@ const globalControls = (config: Config, slug: string) =>
   config.globals?.find((global) => global.slug === slug)?.admin?.components?.elements
     ?.beforeDocumentControls;
 
-describe("instantPreview option", () => {
+describe("document controls", () => {
   it("adds the broadcaster where the collection or global configures live preview", () => {
     const config = build(true);
 
-    expect(collectionControls(config, "page")).toEqual([OPEN_FORM_ANNOUNCER, BROADCASTER]);
-    expect(globalControls(config, "nav")).toEqual([OPEN_FORM_ANNOUNCER, BROADCASTER]);
+    expect(collectionControls(config, "page")).toEqual([
+      PREVIEW_PAGE_BRIDGE,
+      OPEN_FORM_ANNOUNCER,
+      BROADCASTER,
+    ]);
+    expect(globalControls(config, "nav")).toEqual([
+      PREVIEW_PAGE_BRIDGE,
+      OPEN_FORM_ANNOUNCER,
+      BROADCASTER,
+    ]);
   });
 
   it("adds the broadcaster where the root config enables live preview", () => {
     const config = build(true);
 
-    expect(collectionControls(config, "post")).toEqual([OPEN_FORM_ANNOUNCER, BROADCASTER]);
-    expect(globalControls(config, "footer")).toEqual([OPEN_FORM_ANNOUNCER, BROADCASTER]);
+    expect(collectionControls(config, "post")).toEqual([
+      PREVIEW_PAGE_BRIDGE,
+      OPEN_FORM_ANNOUNCER,
+      BROADCASTER,
+    ]);
+    expect(globalControls(config, "footer")).toEqual([
+      PREVIEW_PAGE_BRIDGE,
+      OPEN_FORM_ANNOUNCER,
+      BROADCASTER,
+    ]);
   });
 
   it("announces the open form, for click-to-edit by key, where live preview is not configured", () => {
@@ -100,11 +120,13 @@ describe("instantPreview option", () => {
 
     expect(collectionControls(config, "page")).toEqual([
       "/existing#Collection",
+      PREVIEW_PAGE_BRIDGE,
       OPEN_FORM_ANNOUNCER,
       BROADCASTER,
     ]);
     expect(globalControls(config, "nav")).toEqual([
       "/existing#Global",
+      PREVIEW_PAGE_BRIDGE,
       OPEN_FORM_ANNOUNCER,
       BROADCASTER,
     ]);
@@ -114,8 +136,19 @@ describe("instantPreview option", () => {
     expect(collectionControls(build(true), "users")).toBeUndefined();
   });
 
-  it("adds nothing when the option is off", () => {
-    expect(collectionControls(build(), "page")).toBeUndefined();
+  it("announces the preview page and the open form, for a link with a field to focus, when the option is off", () => {
+    const config = build();
+
+    expect(collectionControls(config, "page")).toEqual([PREVIEW_PAGE_BRIDGE, OPEN_FORM_ANNOUNCER]);
+    expect(collectionControls(config, "post")).toEqual([PREVIEW_PAGE_BRIDGE, OPEN_FORM_ANNOUNCER]);
+    expect(globalControls(config, "footer")).toEqual([PREVIEW_PAGE_BRIDGE, OPEN_FORM_ANNOUNCER]);
+  });
+
+  it("announces the open form where live preview is not configured and the option is off", () => {
+    const config = build();
+
+    expect(collectionControls(config, "category")).toEqual([OPEN_FORM_ANNOUNCER]);
+    expect(globalControls(config, "settings")).toEqual([OPEN_FORM_ANNOUNCER]);
   });
 
   it("keeps the schema cache for readUnsavedRichText in config.custom next to existing keys when the option is on", () => {

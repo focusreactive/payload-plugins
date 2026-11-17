@@ -13,7 +13,7 @@ import type { EditorNode } from "../../src/shared/richText/editorNodes";
 import type { Pages } from "../support/richTextPages";
 
 import { createPreviewSession } from "../../src/admin/instantPreview/previewSession";
-import { STEGA_PREFILTER } from "../../src/client/overlay/constants";
+import { hasMarker } from "../../src/shared/stegaText";
 import { createOverlay } from "../../src/client/createOverlay";
 import { withVisualEditingPath } from "../../src/client/withVisualEditingPath";
 import { VE_FIELD_PATCH_TYPE, VE_FIELD_SNAPSHOT_TYPE } from "../../src/shared/protocol";
@@ -144,7 +144,7 @@ describe("a rich text edit from a draft read through Payload to the preview", ()
     const savedTexts = ARTICLE_TEXT_NODES.map(({ text }) => text);
 
     expect(textsOf(body)).toEqual(savedTexts);
-    expect(STEGA_PREFILTER.test(body.textContent ?? "")).toBe(false);
+    expect(hasMarker(body.textContent ?? "")).toBe(false);
     expect(announcement().rendered).toEqual([
       {
         collectionSlug: "pages",

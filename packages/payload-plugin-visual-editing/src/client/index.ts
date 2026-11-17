@@ -1,20 +1,21 @@
-import { VisualEditingOverlay } from "./VisualEditingOverlay.js";
-import { VisualEditingProvider } from "./VisualEditingProvider.js";
-import { VisualEditingToggle } from "./VisualEditingToggle.js";
+import { VisualEditingOverlay } from "./react/VisualEditingOverlay.js";
+import { VisualEditingProvider } from "./react/VisualEditingProvider.js";
+import { VisualEditingToggle } from "./react/VisualEditingToggle.js";
 
 export {
   type BuildAdminEditUrl,
   type BuildAdminEditUrlArgs,
   defaultBuildAdminEditUrl,
 } from "../shared/buildAdminEditUrl.js";
-export { LiveRichText, type LiveRichTextProps } from "./instantPreview/LiveRichText.js";
+export { LiveRichText, type LiveRichTextProps } from "./react/LiveRichText.js";
 export type {
   LiveRichTextAction,
   LiveRichTextRender,
-} from "./instantPreview/unsavedRender/useUnsavedRender.js";
+  LiveRichTextRenderValue,
+} from "./react/useUnsavedRender.js";
 export { type LiveRichTextIdentity, liveRichTextOf } from "./instantPreview/liveRichTextOf.js";
 export type { LiveRichTextField, LiveRichTextRequest } from "../shared/protocol.js";
-export { useVisualEditing } from "./VisualEditingProvider.js";
+export { useVisualEditing } from "./react/VisualEditingProvider.js";
 export { withVisualEditingPath } from "./withVisualEditingPath.js";
 
 export const VisualEditing = {

@@ -438,7 +438,7 @@
     },
     "packages/payload-plugin-seo": {
       "name": "@focus-reactive/payload-plugin-seo",
-      "version": "1.10.2",
+      "version": "1.12.0",
       "dependencies": {
         "@yoast/search-metadata-previews": "^3.0.0",
         "class-variance-authority": "0.7.1",
@@ -523,12 +523,13 @@
     },
     "packages/payload-plugin-visual-editing": {
       "name": "@focus-reactive/payload-plugin-visual-editing",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "dependencies": {
         "@vercel/stega": "^1.1.0",
       },
       "devDependencies": {
         "@payloadcms/db-sqlite": "3.90.1",
+        "@payloadcms/graphql": "3.90.1",
         "@payloadcms/richtext-lexical": "3.90.1",
         "@payloadcms/translations": "3.90.1",
         "@payloadcms/ui": "3.90.1",
@@ -550,9 +551,15 @@
       "peerDependencies": {
         "@payloadcms/ui": "^3.79.0",
         "payload": "^3.79.0",
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0",
+        "react": "^18.2.0 || ^19.0.0",
+        "react-dom": "^18.2.0 || ^19.0.0",
       },
+      "optionalPeers": [
+        "@payloadcms/ui",
+        "payload",
+        "react",
+        "react-dom",
+      ],
     },
     "packages/tailwind-config": {
       "name": "@repo/tailwind-config",

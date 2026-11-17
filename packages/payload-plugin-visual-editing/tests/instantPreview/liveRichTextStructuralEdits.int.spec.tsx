@@ -6,18 +6,18 @@ import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AdminState, PreviewMessage } from "../../src/admin/instantPreview/previewSession";
-import type { LiveRichTextRender } from "../../src/client/instantPreview/unsavedRender/useUnsavedRender";
+import type { LiveRichTextRender } from "../../src/client/react/useUnsavedRender";
 import type { VeDocument } from "../../src/shared/protocol";
 
 import { createPreviewSession } from "../../src/admin/instantPreview/previewSession";
-import { LiveRichText } from "../../src/client/instantPreview/LiveRichText";
+import { LiveRichText } from "../../src/client/react/LiveRichText";
 import { liveRichTextOf } from "../../src/client/instantPreview/liveRichTextOf";
-import { VisualEditingOverlay } from "../../src/client/VisualEditingOverlay";
-import { VisualEditingProvider } from "../../src/client/VisualEditingProvider";
+import { VisualEditingOverlay } from "../../src/client/react/VisualEditingOverlay";
+import { VisualEditingProvider } from "../../src/client/react/VisualEditingProvider";
 import { withVisualEditingPath } from "../../src/client/withVisualEditingPath";
 import { VE_RICH_TEXT_RENDERED_TYPE, VE_RICH_TEXT_STRUCTURE_TYPE } from "../../src/shared/protocol";
 import { buildEditableSchema } from "../../src/shared/editableSchema/editableSchema";
-import { markTextLeaves } from "../../src/server/richText/markTextLeaves";
+import { markTextLeaves } from "../../src/shared/richText/markTextLeaves";
 import { fieldAddressOf } from "../../src/shared/veDocument";
 
 import type { EditorState } from "../support/editorState";
@@ -29,7 +29,7 @@ import {
   restorePreviewWindow,
   stubAdminWindow,
 } from "../support/previewWindow";
-import { flushMutations } from "../support/time";
+import { flushMutations, settleStructure } from "../support/time";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -75,8 +75,12 @@ describe("unsaved rich text structure from the admin to the page of a live rich 
     savedDocument,
   });
 
-  const postFromAdmin = (messages: readonly PreviewMessage[]) =>
-    act(() => postAllFromAdmin(messages));
+  const postFromAdmin = async (messages: readonly PreviewMessage[]) => {
+    await act(() => postAllFromAdmin(messages));
+    if (messages.some(({ type }) => type === VE_RICH_TEXT_STRUCTURE_TYPE)) {
+      await act(settleStructure);
+    }
+  };
 
   const answerOf = (announcement: { type?: string }): PreviewMessage[] => {
     if (announcement.type === VE_RICH_TEXT_RENDERED_TYPE) liveRichTextAnnouncement = announcement;

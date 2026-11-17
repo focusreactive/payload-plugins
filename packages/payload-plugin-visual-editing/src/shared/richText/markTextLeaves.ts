@@ -1,8 +1,8 @@
-import { withMarker } from "../../shared/stegaText.js";
-import { toRichTextNodeMarker } from "../../shared/richText/nodeKey.js";
-import { shapeOf } from "../../shared/richText/shapeOf.js";
-import { addressOf, forEachTextLeaf } from "../../shared/richText/textLeaves.js";
-import { rootOf } from "../../shared/richText/editorNodes.js";
+import { withMarker } from "../stegaText.js";
+import { toRichTextNodeMarker } from "./nodeKey.js";
+import { shapeOf } from "./shapeOf.js";
+import { addressOf, forEachTextLeaf } from "./textLeaves.js";
+import { rootOf } from "./editorNodes.js";
 
 export const markTextLeaves = (editorState: unknown, fieldAddress: string): void => {
   const root = rootOf(editorState);

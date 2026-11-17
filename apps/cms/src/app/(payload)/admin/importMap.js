@@ -34,6 +34,7 @@ import { default as default_5a9e6bfe3379b31c0258f532ec5399fb } from '@focus-reac
 import { PreserveAutosaveEdits as PreserveAutosaveEdits_39eb0920977e9164f764a165b8c797cc } from '../../../components/admin/PreserveAutosaveEdits'
 import { SeoButton as SeoButton_0275c4dc7702e5d88e7eb977a6a3d442 } from '@focus-reactive/payload-plugin-seo/components/SeoButton'
 import { default as default_587142b484744b5573788fdf4a68522a } from '@focus-reactive/payload-plugin-translator/client/widgets/translate-document/ui/TranslateDocument.server'
+import { PreviewPageBridge as PreviewPageBridge_ec3bc0b0b5b9a6c0c60998da34f40f5d } from '@focus-reactive/payload-plugin-visual-editing/admin'
 import { OpenFormAnnouncer as OpenFormAnnouncer_ec3bc0b0b5b9a6c0c60998da34f40f5d } from '@focus-reactive/payload-plugin-visual-editing/admin'
 import { InstantPreviewBroadcaster as InstantPreviewBroadcaster_ec3bc0b0b5b9a6c0c60998da34f40f5d } from '@focus-reactive/payload-plugin-visual-editing/admin'
 import { VisualPreviewButton as VisualPreviewButton_809e4dae2cde944461a83ddb2ad7664d } from '../../../components/admin/VisualPreviewButton'
@@ -95,6 +96,7 @@ export const importMap = {
   "/components/admin/PreserveAutosaveEdits#PreserveAutosaveEdits": PreserveAutosaveEdits_39eb0920977e9164f764a165b8c797cc,
   "@focus-reactive/payload-plugin-seo/components/SeoButton#SeoButton": SeoButton_0275c4dc7702e5d88e7eb977a6a3d442,
   "@focus-reactive/payload-plugin-translator/client/widgets/translate-document/ui/TranslateDocument.server#default": default_587142b484744b5573788fdf4a68522a,
+  "@focus-reactive/payload-plugin-visual-editing/admin#PreviewPageBridge": PreviewPageBridge_ec3bc0b0b5b9a6c0c60998da34f40f5d,
   "@focus-reactive/payload-plugin-visual-editing/admin#OpenFormAnnouncer": OpenFormAnnouncer_ec3bc0b0b5b9a6c0c60998da34f40f5d,
   "@focus-reactive/payload-plugin-visual-editing/admin#InstantPreviewBroadcaster": InstantPreviewBroadcaster_ec3bc0b0b5b9a6c0c60998da34f40f5d,
   "/components/admin/VisualPreviewButton#VisualPreviewButton": VisualPreviewButton_809e4dae2cde944461a83ddb2ad7664d,

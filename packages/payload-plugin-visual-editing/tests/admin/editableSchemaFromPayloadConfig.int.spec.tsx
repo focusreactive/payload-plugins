@@ -1,4 +1,3 @@
-import { vercelStegaDecode } from "@vercel/stega";
 import { renderHook } from "@testing-library/react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -8,6 +7,7 @@ import { useEditableSchema } from "../../src/admin/instantPreview/useEditableSch
 import { markRead } from "../../src/server/markRead";
 import { createSchemaCache } from "../../src/server/schemaCache";
 import { buildPayloadConfigs } from "../support/payloadConfig";
+import { markerIn } from "../support/markedData";
 
 type EntityLookup = { collectionSlug?: string; globalSlug?: string };
 
@@ -88,7 +88,7 @@ describe("the editable schema of a Payload config", () => {
       schema: serverSchema("pages"),
     }).sections;
 
-    expect(vercelStegaDecode(quote?.quote ?? "")).toMatchObject({ path: "sections.0.quote" });
+    expect(markerIn(quote?.quote ?? "")).toMatchObject({ path: "sections.0.quote" });
   });
 
   describe("with a referenced block nested in itself", () => {
@@ -133,7 +133,7 @@ describe("the editable schema of a Payload config", () => {
     it("marks the text of a block that comes back through another block", () => {
       const [section] = markedSections();
 
-      expect(vercelStegaDecode(section?.rows?.[0]?.cells[0]?.heading ?? "")).toMatchObject({
+      expect(markerIn(section?.rows?.[0]?.cells[0]?.heading ?? "")).toMatchObject({
         key: "sections.row-a.rows.row-b.cells.row-c.heading",
         path: "sections.0.rows.0.cells.0.heading",
       });
@@ -142,7 +142,7 @@ describe("the editable schema of a Payload config", () => {
     it("marks the text of a block on every level it contains itself", () => {
       const [, columns] = markedSections();
 
-      expect(vercelStegaDecode(columns?.columns?.[0]?.columns[0]?.caption ?? "")).toMatchObject({
+      expect(markerIn(columns?.columns?.[0]?.columns[0]?.caption ?? "")).toMatchObject({
         path: "sections.1.columns.0.columns.0.caption",
       });
     });

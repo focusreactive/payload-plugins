@@ -3,13 +3,30 @@ import { describe, expect, it } from "vitest";
 import type { Enrichment, MarkedReadRequest } from "../../src/server/markedReads";
 
 import { createMarkedReads } from "../../src/server/markedReads";
+import { VE_READ_HEADER } from "../../src/shared/protocol";
+
+const EDITOR = { collection: "users", id: 1 } as unknown as MarkedReadRequest["user"];
 
 const requestOf = (overrides: Partial<MarkedReadRequest> = {}): MarkedReadRequest => ({
   context: {},
+  headers: new Headers(),
   pathname: "/",
   payloadAPI: "local",
+  user: null,
   ...overrides,
 });
+
+const httpRequestOf = (
+  payloadAPI: MarkedReadRequest["payloadAPI"],
+  overrides: Partial<MarkedReadRequest> = {}
+): MarkedReadRequest =>
+  requestOf({
+    headers: new Headers({ [VE_READ_HEADER]: "1" }),
+    pathname: "/api/pages/2",
+    payloadAPI,
+    user: EDITOR,
+    ...overrides,
+  });
 
 const decisionOf = (enrichment: Enrichment = "auto", adminBasePath = "/admin") =>
   createMarkedReads({ adminBasePath, enrichment });
@@ -43,6 +60,23 @@ describe("a collection read", () => {
   it("is not marked when it is published or comes through REST", () => {
     expect(isFindByIdMarked(requestOf(), { draft: false })).toBe(false);
     expect(isFindByIdMarked(requestOf({ payloadAPI: "REST" }))).toBe(false);
+  });
+
+  it.each(["REST", "GraphQL"] as const)(
+    "is marked when it is a %s draft read that asks for markers for a signed-in user",
+    (payloadAPI) => {
+      expect(isFindByIdMarked(httpRequestOf(payloadAPI))).toBe(true);
+      expect(isFindByIdMarked(httpRequestOf(payloadAPI), { enrichment: "explicit" })).toBe(true);
+    }
+  );
+
+  it("is not marked through HTTP without the header, without a user, or when it is published", () => {
+    expect(isFindByIdMarked(httpRequestOf("REST", { headers: new Headers() }))).toBe(false);
+    expect(isFindByIdMarked(httpRequestOf("REST", { user: null }))).toBe(false);
+    expect(isFindByIdMarked(httpRequestOf("REST"), { draft: false })).toBe(false);
+    expect(
+      isFindByIdMarked(httpRequestOf("REST", { pathname: "/admin/collections/pages/2" }))
+    ).toBe(false);
   });
 
   it("follows context.visualEditing in both modes, whatever the read", () => {
