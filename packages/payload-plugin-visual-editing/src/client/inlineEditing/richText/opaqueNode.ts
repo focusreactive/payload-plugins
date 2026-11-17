@@ -11,6 +11,8 @@ import { OPAQUE_NODE_TYPE, OPAQUE_NODE_VERSION } from "./editableState.js";
 
 export const DATA_VE_OPAQUE_ATTR = "data-ve-opaque";
 
+export const DATA_VE_OPAQUE_SELECTED_ATTR = "data-ve-opaque-selected";
+
 const NOT_EDITABLE = "false";
 
 const OPAQUE_STYLES: Partial<CSSStyleDeclaration> = {

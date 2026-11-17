@@ -6,8 +6,11 @@ import {
   createEditTransport,
   EDIT_SAVE_PAUSE_MS,
   EDIT_SEND_PAUSE_MS,
+  KEEPALIVE_BODY_LIMIT,
 } from "../../src/client/inlineEditing/editTransport";
-import { VE_FIELD_EDIT_TYPE } from "../../src/shared/protocol";
+import { VE_FIELD_EDIT_TYPE, VE_RICH_TEXT_EDIT_TYPE } from "../../src/shared/protocol";
+
+import { editorState, paragraph, textNode } from "../support/editorState";
 
 import { ADMIN_ORIGIN, restorePreviewWindow, stubAdminWindow } from "../support/previewWindow";
 
@@ -15,7 +18,13 @@ const PAYLOAD_API = "https://cms.example.com/api";
 
 const TITLE = { collectionSlug: "page", docId: "1", key: "title", kind: "collection" } as const;
 
-const ctx = { adminOrigin: ADMIN_ORIGIN, payloadApi: PAYLOAD_API };
+const BODY = { ...TITLE, key: "body" };
+
+const STATE = editorState(paragraph(textNode("Hello")));
+
+const onEdited = vi.fn();
+
+const ctx = { adminOrigin: ADMIN_ORIGIN, onEdited, payloadApi: PAYLOAD_API };
 
 const answerOf = (saved: boolean, ok = true) =>
   ({ json: () => Promise.resolve({ saved }), ok }) as Response;
@@ -37,6 +46,7 @@ describe("the transport of an edit", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     statuses = [];
+    onEdited.mockClear();
     fetchEndpoint = vi.fn(() => Promise.resolve(answerOf(true)));
     vi.stubGlobal("fetch", fetchEndpoint);
   });
@@ -71,6 +81,17 @@ describe("the transport of an edit", () => {
         ADMIN_ORIGIN
       );
       expect(fetchEndpoint).not.toHaveBeenCalled();
+    });
+
+    it("posts an edited rich text state as a message of its own", () => {
+      transport.send({ ...BODY, state: STATE });
+      vi.advanceTimersByTime(EDIT_SEND_PAUSE_MS);
+
+      expect(postToAdmin).toHaveBeenCalledWith(
+        { ...BODY, state: STATE, type: VE_RICH_TEXT_EDIT_TYPE },
+        ADMIN_ORIGIN
+      );
+      expect(onEdited).not.toHaveBeenCalled();
     });
 
     it("keeps the edits of two fields apart", () => {
@@ -175,6 +196,40 @@ describe("the transport of an edit", () => {
         method: "POST",
       });
       expect(statuses).toEqual(["unsaved", "saving", "saved"]);
+    });
+
+    it("posts an edited rich text state to the same endpoint and says when it is saved", async () => {
+      transport.send({ ...BODY, state: STATE });
+      expect(transport.isUnsaved(BODY)).toBe(true);
+
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+
+      const [url, init] = fetchEndpoint.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${PAYLOAD_API}/visual-editing/field-edit`);
+      expect(JSON.parse(init.body as string)).toEqual({ ...BODY, state: STATE });
+      expect(init.keepalive).toBe(true);
+      expect(onEdited).toHaveBeenCalledTimes(1);
+      expect(transport.isUnsaved(BODY)).toBe(false);
+    });
+
+    it("does not ask the browser to keep a request alive that is too long for it", async () => {
+      const long = editorState(paragraph(textNode("a".repeat(KEEPALIVE_BODY_LIMIT))));
+
+      transport.sendNow({ ...BODY, state: long });
+      await settle();
+
+      const [, init] = fetchEndpoint.mock.calls[0] as [string, RequestInit];
+      expect(init.keepalive).toBe(false);
+    });
+
+    it("counts an edit the endpoint refused as unsaved and tells no one that it was saved", async () => {
+      fetchEndpoint.mockImplementationOnce(() => Promise.resolve(answerOf(false)));
+
+      transport.sendNow({ ...BODY, state: STATE });
+      await settle();
+
+      expect(transport.isUnsaved(BODY)).toBe(true);
+      expect(onEdited).not.toHaveBeenCalled();
     });
 
     it("saves one edit after the other", async () => {

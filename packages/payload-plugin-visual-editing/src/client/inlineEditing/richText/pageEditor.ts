@@ -1,4 +1,11 @@
-import type { ElementNode, LexicalEditor, LexicalNode, PointType, RangeSelection } from "lexical";
+import type {
+  ElementNode,
+  LexicalEditor,
+  LexicalNode,
+  PointType,
+  RangeSelection,
+  TextNode,
+} from "lexical";
 
 import { createEmptyHistoryState, registerHistory } from "@lexical/history";
 import { $insertList, $removeList, ListItemNode, ListNode, registerList } from "@lexical/list";
@@ -35,7 +42,7 @@ import type { VeEditorState } from "../../../shared/protocol.js";
 
 import { rootOf } from "../../../shared/richText/editorNodes.js";
 import { stateForEditor, stateOfEditor } from "./editableState.js";
-import { $isOpaqueNode, OpaqueNode } from "./opaqueNode.js";
+import { $isOpaqueNode, DATA_VE_OPAQUE_SELECTED_ATTR, OpaqueNode } from "./opaqueNode.js";
 import { PageAutoLinkNode } from "./pageAutoLinkNode.js";
 import { PageLinkNode } from "./pageLinkNode.js";
 import { $linkAround, $removeLinks, $setLink } from "./pageLinks.js";
@@ -110,19 +117,33 @@ const $linkOf = (selection: RangeSelection): string | null => {
   return null;
 };
 
+const $firstSelectedText = (selection: RangeSelection): TextNode | null => {
+  const [first, second] = selection.getNodes().filter($isTextNode);
+  if (!first) return null;
+  const start = selection.isBackward() ? selection.focus : selection.anchor;
+  const startsAfterFirst =
+    start.key === first.getKey() && start.offset === first.getTextContentSize();
+  return startsAfterFirst && second ? second : first;
+};
+
+const $hasFormat = (selection: RangeSelection, format: TextFormat): boolean => {
+  const first = selection.isCollapsed() ? null : $firstSelectedText(selection);
+  return first ? first.hasFormat(format) : selection.hasFormat(format);
+};
+
 const $formatsOf = (selection: RangeSelection): ShownFormats => {
   const block = $blockOf(selection);
   const headingTag = $isHeadingNode(block) ? block.getTag() : null;
   const listKind = $listKindOf(selection);
   return {
-    bold: selection.hasFormat("bold"),
+    bold: $hasFormat(selection, "bold"),
     bullet: listKind === "bullet",
     h2: headingTag === "h2",
     h3: headingTag === "h3",
-    italic: selection.hasFormat("italic"),
+    italic: $hasFormat(selection, "italic"),
     link: $linkOf(selection),
     number: listKind === "number",
-    underline: selection.hasFormat("underline"),
+    underline: $hasFormat(selection, "underline"),
   };
 };
 
@@ -202,6 +223,15 @@ const $deleteDeliberately = (event: KeyboardEvent, isBackward: boolean): boolean
   return isHandled;
 };
 
+const $selectedOpaqueKeys = (): string[] => {
+  const selection = $getSelection();
+  if (!$isNodeSelection(selection)) return [];
+  return selection
+    .getNodes()
+    .filter($isOpaqueNode)
+    .map((node) => node.getKey());
+};
+
 const $startParagraphIfEmpty = (): void => {
   const root = $getRoot();
   if (root.isEmpty()) root.append($createParagraphNode());
@@ -276,6 +306,17 @@ export function createPageEditor(
     stateOfEditor(editor.getEditorState().toJSON() as unknown as VeEditorState);
 
   let reported = JSON.stringify(stateNow());
+  let selectedPlaceholders: HTMLElement[] = [];
+
+  const showSelectedPlaceholders = (keys: readonly string[]) => {
+    for (const placeholder of selectedPlaceholders) {
+      placeholder.removeAttribute(DATA_VE_OPAQUE_SELECTED_ATTR);
+    }
+    selectedPlaceholders = keys.flatMap((key) => editor.getElementByKey(key) ?? []);
+    for (const placeholder of selectedPlaceholders) {
+      placeholder.setAttribute(DATA_VE_OPAQUE_SELECTED_ATTR, "");
+    }
+  };
 
   const reportChange = () => {
     const changed = stateNow();
@@ -302,6 +343,7 @@ export function createPageEditor(
     editor.registerUpdateListener(({ dirtyElements, dirtyLeaves, editorState }) => {
       if (dirtyElements.size > 0 || dirtyLeaves.size > 0) reportChange();
       editorState.read($rememberRange);
+      showSelectedPlaceholders(editorState.read($selectedOpaqueKeys));
       events.onSelection(editorState.read($shownSelection));
     }),
     editor.registerCommand(
@@ -349,7 +391,7 @@ export function createPageEditor(
     state: stateNow,
     toggle(action) {
       if (isTextFormat(action)) {
-        editor.dispatchCommand(FORMAT_TEXT_COMMAND, action);
+        updateSelection(() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, action));
       } else if (isHeadingTag(action)) {
         updateSelection((selection) => $toggleHeading(selection, action));
       } else {

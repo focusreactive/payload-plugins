@@ -3,6 +3,7 @@ import type { Point } from "../caret.js";
 import type { EditorSelection } from "./pageEditor.js";
 import type { Toolbar } from "./toolbar.js";
 
+import { ACCENT_VAR, DEFAULT_ACCENT } from "../../overlay/constants.js";
 import { placeCaretAtPoint } from "../caret.js";
 import { addEditingStyle, DATA_VE_EDITING_ATTR } from "../textEditing.js";
 import {
@@ -11,6 +12,7 @@ import {
   UNDERLINE_CLASS,
   UNDERLINE_STRIKETHROUGH_CLASS,
 } from "./pageEditor.js";
+import { DATA_VE_OPAQUE_SELECTED_ATTR } from "./opaqueNode.js";
 import { createToolbar } from "./toolbar.js";
 
 export type EditSessionOptions = {
@@ -27,6 +29,7 @@ export interface EditSession {
 }
 
 const STYLE_ID = "ve-rich-text-editing-style";
+const SELECTED_PLACEHOLDER_STYLE = `[${DATA_VE_EDITING_ATTR}] [${DATA_VE_OPAQUE_SELECTED_ATTR}]{outline:2px solid var(${ACCENT_VAR}, ${DEFAULT_ACCENT});outline-offset:1px}`;
 const FORMAT_STYLE = `[${DATA_VE_EDITING_ATTR}] .${UNDERLINE_CLASS}{text-decoration:underline}[${DATA_VE_EDITING_ATTR}] .${STRIKETHROUGH_CLASS}{text-decoration:line-through}[${DATA_VE_EDITING_ATTR}] .${UNDERLINE_STRIKETHROUGH_CLASS}{text-decoration:underline line-through}`;
 const IN_CAPTURE_PHASE = true;
 const ATTRS_OF_AN_EDITOR: Readonly<Record<string, string>> = {
@@ -40,7 +43,7 @@ const addFormatStyle = (doc: Document): void => {
   if (doc.querySelector(`#${STYLE_ID}`)) return;
   const style = doc.createElement("style");
   style.id = STYLE_ID;
-  style.textContent = FORMAT_STYLE;
+  style.textContent = `${FORMAT_STYLE}${SELECTED_PLACEHOLDER_STYLE}`;
   doc.head.append(style);
 };
 
