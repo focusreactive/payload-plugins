@@ -1,0 +1,72 @@
+import type { VeEditedField, VeEditorState, VeLiveDocument } from "../../shared/protocol.js";
+import type { OpenForm } from "./formEdit.js";
+
+import { isRichTextAt } from "../../shared/editableSchema/editableSchema.js";
+import { readEditedField, readRichTextEdit } from "../../shared/fieldEdit.js";
+import { isPlainObject } from "../../shared/plainObject.js";
+import { VE_RICH_TEXT_EDIT_TYPE, VE_RICH_TEXT_STATE_REQUEST_TYPE } from "../../shared/protocol.js";
+import {
+  holdsEveryBlockOf,
+  withBlockFieldsOf,
+  withoutBlockFields,
+} from "../../shared/richText/blockNodes.js";
+import { isEditorStateTree } from "../../shared/richText/editorStateTree.js";
+import { addsOnlyAllowedLinkUrls } from "../../shared/richText/linkUrls.js";
+import { documentAddressOf } from "../../shared/veDocument.js";
+import { readFormFields } from "../instantPreview/formFields.js";
+import { isOfAnotherLocale } from "./formEdit.js";
+
+export type RichTextOfForm = { path: string; value: VeEditorState };
+
+export type PostedRichTextEdit = { field: VeEditedField; state: VeEditorState | null };
+
+const fieldOfDocument = (
+  data: unknown,
+  type: string,
+  document: VeLiveDocument
+): VeEditedField | null => {
+  if (!isPlainObject(data) || data.type !== type) return null;
+  const field = readEditedField(data);
+  return field && documentAddressOf(field) === documentAddressOf(document) ? field : null;
+};
+
+export const stateRequestOfDocument = (
+  data: unknown,
+  document: VeLiveDocument
+): VeEditedField | null => fieldOfDocument(data, VE_RICH_TEXT_STATE_REQUEST_TYPE, document);
+
+export function richTextEditOfDocument(
+  data: unknown,
+  document: VeLiveDocument
+): PostedRichTextEdit | null {
+  const field = fieldOfDocument(data, VE_RICH_TEXT_EDIT_TYPE, document);
+  return field && { field, state: readRichTextEdit(data)?.state ?? null };
+}
+
+export function richTextOfForm(
+  field: VeEditedField,
+  { document, editableSchema, formState }: OpenForm
+): RichTextOfForm | null {
+  if (isOfAnotherLocale(field.locale, document.locale)) return null;
+
+  const formField = readFormFields(formState, editableSchema, isRichTextAt).find(
+    ({ key }) => key === field.key
+  );
+  if (!formField || !isEditorStateTree(formField.value)) return null;
+  return { path: formField.formPath, value: formField.value };
+}
+
+export const stateForThePage = ({ value }: RichTextOfForm): VeEditorState =>
+  withoutBlockFields(value);
+
+export function richTextFormEditOf(
+  { field, state }: PostedRichTextEdit,
+  openForm: OpenForm
+): RichTextOfForm | null {
+  const held = richTextOfForm(field, openForm);
+  if (!held || !state) return null;
+  if (!holdsEveryBlockOf(held.value, state) || !addsOnlyAllowedLinkUrls(held.value, state)) {
+    return null;
+  }
+  return { path: held.path, value: withBlockFieldsOf(state, held.value) };
+}

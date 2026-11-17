@@ -181,6 +181,11 @@ describe("inline editing", () => {
     clientProps: { excludeFieldNames: ["tenant"] },
     path: "@focus-reactive/payload-plugin-visual-editing/admin#MediaPickReceiver",
   };
+  const RICH_TEXT_EDIT_RECEIVER = {
+    clientProps: { excludeFieldNames: ["tenant"] },
+    path: "@focus-reactive/payload-plugin-visual-editing/admin#RichTextEditReceiver",
+  };
+  const RICH_TEXT_VALUE_PATH = "/visual-editing/rich-text-value";
   const FIELD_EDIT_PATH = "/visual-editing/field-edit";
   const MEDIA_OPTIONS_PATH = "/visual-editing/media-options";
 
@@ -193,6 +198,9 @@ describe("inline editing", () => {
   const hasMediaOptionsEndpoint = (config: Config) =>
     (config.endpoints ?? []).some(({ path }) => path === MEDIA_OPTIONS_PATH);
 
+  const hasRichTextValueEndpoint = (config: Config) =>
+    (config.endpoints ?? []).some(({ path }) => path === RICH_TEXT_VALUE_PATH);
+
   it("adds the receiver of edits and the endpoint where live preview is configured", () => {
     const config = buildWith({ inlineEditing: true, instantPreview: true });
 
@@ -202,6 +210,7 @@ describe("inline editing", () => {
       BROADCASTER,
       RECEIVER,
       MEDIA_PICK_RECEIVER,
+      RICH_TEXT_EDIT_RECEIVER,
     ]);
     expect(collectionControls(config, "category")).toEqual([OPEN_FORM_ANNOUNCER]);
     expect(hasFieldEditEndpoint(config)).toBe(true);
@@ -213,9 +222,17 @@ describe("inline editing", () => {
     );
   });
 
+  it("adds the endpoint that answers the state of a rich text field", () => {
+    expect(hasRichTextValueEndpoint(buildWith({ inlineEditing: true, instantPreview: true }))).toBe(
+      true
+    );
+  });
+
   it("stays off unless the project turns it on", () => {
     const config = buildWith({ instantPreview: true });
 
+    expect(collectionControls(config, "page")).not.toContainEqual(RICH_TEXT_EDIT_RECEIVER);
+    expect(hasRichTextValueEndpoint(config)).toBe(false);
     expect(collectionControls(config, "page")).not.toContainEqual(RECEIVER);
     expect(collectionControls(config, "page")).not.toContainEqual(MEDIA_PICK_RECEIVER);
     expect(hasFieldEditEndpoint(config)).toBe(false);
