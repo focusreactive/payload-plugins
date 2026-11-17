@@ -1,11 +1,21 @@
 import type { EditableSchema } from "../../shared/editableSchema/editableSchema.js";
 import type { FieldStep } from "../../shared/fieldKey.js";
 import type { PlainObject } from "../../shared/plainObject.js";
+import type { VeEditorState } from "../../shared/protocol.js";
 
-import { textFieldTypeAt, uploadCollectionAt } from "../../shared/editableSchema/editableSchema.js";
+import {
+  isRichTextAt,
+  textFieldTypeAt,
+  uploadCollectionAt,
+} from "../../shared/editableSchema/editableSchema.js";
 import { editedTextOf } from "../../shared/fieldEdit.js";
 import { FIELD_PATH_SEPARATOR } from "../../shared/fieldKey.js";
 import { isPlainObject } from "../../shared/plainObject.js";
+import { holdsEveryBlockOf, withBlockFieldsOf } from "../../shared/richText/blockNodes.js";
+import { rootOf } from "../../shared/richText/editorNodes.js";
+import { isEditorStateTree } from "../../shared/richText/editorStateTree.js";
+import { addsOnlyAllowedLinkUrls } from "../../shared/richText/linkUrls.js";
+import { withSavedNodeFieldsOf } from "../../shared/richText/savedNodeFields.js";
 import { idOf } from "../../shared/veDocument.js";
 
 export type EditedField = { name: string; value: unknown };
@@ -109,4 +119,37 @@ export const replacedUploadOf = (
   const collection = walked && uploadCollectionAt(schema, walked.steps);
   if (!walked || !collection || !mayHoldOneDocument(walked.value)) return null;
   return fieldWith(document, walked, mediaId);
+};
+
+const mayHoldRichText = (value: unknown): boolean =>
+  rootOf(value) !== null || value === null || value === undefined;
+
+export const shownRichTextOf = (
+  document: unknown,
+  schema: EditableSchema,
+  key: string
+): VeEditorState | null => {
+  const walked = walkTo(document, key);
+  if (!walked || !isRichTextAt(schema, walked.steps)) return null;
+  return isEditorStateTree(walked.value) ? walked.value : null;
+};
+
+const takesStateOfThePage = (stored: unknown, state: VeEditorState): boolean =>
+  holdsEveryBlockOf(stored, state) && addsOnlyAllowedLinkUrls(stored, state);
+
+export const editedRichTextOf = (
+  document: unknown,
+  schema: EditableSchema,
+  key: string,
+  state: VeEditorState
+): EditedField | null => {
+  const walked = walkTo(document, key);
+  if (!walked || !isRichTextAt(schema, walked.steps) || !mayHoldRichText(walked.value)) return null;
+  const stored = walked.value;
+  if (!takesStateOfThePage(stored, state)) return null;
+  return fieldWith(
+    document,
+    walked,
+    withSavedNodeFieldsOf(withBlockFieldsOf(state, stored), stored)
+  );
 };

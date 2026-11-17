@@ -7,6 +7,7 @@ import { readUnsavedRichTextFor } from "../readUnsavedRichText.js";
 import { bodyOf, json } from "./endpointJson.js";
 import { fieldEditEndpoint } from "./fieldEdit/fieldEditEndpoint.js";
 import { mediaOptionsEndpoint } from "./fieldEdit/mediaOptionsEndpoint.js";
+import { richTextValueEndpoint } from "./fieldEdit/richTextValueEndpoint.js";
 import { isPlainObject } from "../shared/plainObject.js";
 import { VE_PREVIEW_GRANT_PATH, VE_UNSAVED_RICH_TEXT_PATH } from "../shared/protocol.js";
 import { documentAddressOf, isVeDocument, veDocumentOf } from "../shared/veDocument.js";
@@ -117,5 +118,5 @@ export const visualEditingEndpoints = ({
 }: UnsavedRichTextEndpointOptions): Endpoint[] => [
   grantEndpoint,
   unsavedRichTextEndpoint(options),
-  ...(inlineEditing ? [fieldEditEndpoint, mediaOptionsEndpoint] : []),
+  ...(inlineEditing ? [fieldEditEndpoint, mediaOptionsEndpoint, richTextValueEndpoint] : []),
 ];

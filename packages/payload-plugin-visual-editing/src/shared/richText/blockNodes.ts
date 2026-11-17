@@ -28,12 +28,28 @@ const mapBlockFields = (state: VeEditorState, fieldsOfBlock: FieldsOfBlock): VeE
 export const withoutBlockFields = (state: VeEditorState): VeEditorState =>
   mapBlockFields(state, (identity) => identity);
 
-export const withBlockFieldsOf = (state: VeEditorState, stored: unknown): VeEditorState => {
+const blockFieldsByIdOf = (stored: unknown): Map<string, BlockFields> => {
   const storedFieldsById = new Map<string, BlockFields>();
   forEachEditorNode(rootOf(stored), (node) => {
     if (isBlockNode(node) && isPlainObject(node.fields) && node.fields.id !== undefined) {
       storedFieldsById.set(String(node.fields.id), node.fields);
     }
   });
+  return storedFieldsById;
+};
+
+export const withBlockFieldsOf = (state: VeEditorState, stored: unknown): VeEditorState => {
+  const storedFieldsById = blockFieldsByIdOf(stored);
   return mapBlockFields(state, (identity) => storedFieldsById.get(String(identity.id)) ?? identity);
+};
+
+export const holdsEveryBlockOf = (stored: unknown, state: VeEditorState): boolean => {
+  const storedFieldsById = blockFieldsByIdOf(stored);
+  let holdsEveryBlock = true;
+  forEachEditorNode(rootOf(state), (node) => {
+    if (!isBlockNode(node)) return;
+    const { id } = identityOf(node.fields);
+    holdsEveryBlock &&= id !== undefined && storedFieldsById.has(String(id));
+  });
+  return holdsEveryBlock;
 };

@@ -192,6 +192,36 @@ export const VE_RICH_TEXT_STRUCTURE_TYPE = "ve:rich-text-structure";
 
 export type VeEditorState = Record<string, unknown>;
 
+export const VE_RICH_TEXT_VALUE_PATH = "/visual-editing/rich-text-value";
+
+export type VeRichTextValue = {
+  value: VeEditorState | null;
+};
+
+export type VeRichTextEdit = VeEditedField & {
+  state: VeEditorState;
+};
+
+export type VeEdit = VeFieldEdit | VeRichTextEdit;
+
+export const VE_RICH_TEXT_STATE_REQUEST_TYPE = "ve:rich-text-state-request";
+
+export type VeRichTextStateRequestMessage = VeEditedField & {
+  type: typeof VE_RICH_TEXT_STATE_REQUEST_TYPE;
+};
+
+export const VE_RICH_TEXT_STATE_TYPE = "ve:rich-text-state";
+
+export type VeRichTextStateMessage = VeRichTextEdit & {
+  type: typeof VE_RICH_TEXT_STATE_TYPE;
+};
+
+export const VE_RICH_TEXT_EDIT_TYPE = "ve:rich-text-edit";
+
+export type VeRichTextEditMessage = VeRichTextEdit & {
+  type: typeof VE_RICH_TEXT_EDIT_TYPE;
+};
+
 export type VeRichTextStructureMessage = VeLiveDocument & {
   type: typeof VE_RICH_TEXT_STRUCTURE_TYPE;
   key: string;

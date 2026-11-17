@@ -2,14 +2,15 @@ import type { Endpoint, Payload, PayloadRequest } from "payload";
 
 import { headersWithCors } from "payload";
 
-import type { VeFieldEdit } from "../../shared/protocol.js";
+import type { VeEdit } from "../../shared/protocol.js";
 import type { DocumentToRead } from "../unsavedRichText/postedRequest.js";
 import type { DraftField, User } from "./draftField.js";
 import type { EditedField } from "./editedField.js";
 
-import { readFieldEdit } from "../../shared/fieldEdit.js";
+import { isRichTextEdit, readFieldEdit, readRichTextEdit } from "../../shared/fieldEdit.js";
 import { valueAtKey } from "../../shared/fieldKey.js";
 import { VE_FIELD_EDIT_PATH } from "../../shared/protocol.js";
+import { rootOf } from "../../shared/richText/editorNodes.js";
 import { bodyOf } from "../endpointJson.js";
 import {
   ANSWERED,
@@ -25,8 +26,10 @@ import {
 } from "./draftField.js";
 import {
   editedFieldOf,
+  editedRichTextOf,
   replacedUploadOf,
   showsText,
+  shownRichTextOf,
   shownUploadCollectionOf,
 } from "./editedField.js";
 import { readableMediaIdOf } from "./readableMedia.js";
@@ -67,7 +70,8 @@ const saveDraft = (
 
 const comparableAt = (document: unknown, key: string): string | null => {
   const value = valueAtKey(document, key)?.value;
-  return typeof value === "string" || typeof value === "number" ? String(value) : null;
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  return rootOf(value) ? JSON.stringify(value) : null;
 };
 
 const isLeftAsItWas = (stored: unknown, saved: unknown, sent: unknown, key: string): boolean => {
@@ -75,12 +79,21 @@ const isLeftAsItWas = (stored: unknown, saved: unknown, sent: unknown, key: stri
   return comparableAt(saved, key) === before && comparableAt(sent, key) !== before;
 };
 
+const readEdit = (body: unknown): VeEdit | null => readFieldEdit(body) ?? readRichTextEdit(body);
+
 const editedOf = async (
   payload: Payload,
   user: User,
   { schema, shown }: DraftField,
-  { key, value }: VeFieldEdit
+  edit: VeEdit
 ): Promise<Edited | null> => {
+  const { key } = edit;
+  if (isRichTextEdit(edit)) {
+    return shownRichTextOf(shown, schema, key)
+      ? (stored) => editedRichTextOf(stored, schema, key, edit.state)
+      : null;
+  }
+  const { value } = edit;
   const uploadCollection = shownUploadCollectionOf(shown, schema, key);
   if (uploadCollection === null) {
     return showsText(shown, schema, key)
@@ -96,7 +109,7 @@ export const fieldEditEndpoint: Endpoint = {
     const { payload, user } = req;
     if (!user) return answer(false, SIGNED_OUT, req);
 
-    const posted = readFieldEdit(await bodyOf(req));
+    const posted = readEdit(await bodyOf(req));
     if (!posted) return answer(false, UNREADABLE_REQUEST, req);
     const edit = inLocaleOfProject(payload, posted);
 
@@ -117,7 +130,10 @@ export const fieldEditEndpoint: Endpoint = {
         locale: edit.locale,
         user,
       });
-      if (isLeftAsItWas(stored, saved, data, edit.key)) {
+      const written = isRichTextEdit(edit)
+        ? await readDraft(payload, field.document, edit, { ...AS_IT_IS_STORED, user })
+        : saved;
+      if (isLeftAsItWas(stored, written, data, edit.key)) {
         return answer(false, FIELD_NOT_EDITABLE, req);
       }
     } catch (error) {

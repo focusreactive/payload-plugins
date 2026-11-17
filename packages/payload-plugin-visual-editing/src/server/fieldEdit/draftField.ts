@@ -64,9 +64,8 @@ const namesLocaleOf = (payload: Payload, locale: string | undefined): boolean =>
 
 export const inLocaleOfProject = <Field extends VeEditedField>(
   payload: Payload,
-  { locale, ...field }: Field
-): Omit<Field, "locale"> & { locale?: string } =>
-  payload.config.localization && locale !== undefined ? { ...field, locale } : field;
+  field: Field
+): Field => (payload.config.localization ? field : { ...field, locale: undefined });
 
 const selectOf = (key: string): SelectType => ({
   [key.split(FIELD_PATH_SEPARATOR)[0] ?? key]: true,

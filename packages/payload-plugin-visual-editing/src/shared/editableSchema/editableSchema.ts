@@ -101,6 +101,9 @@ export const textFieldTypeAt = (
   return typeof schemaNode === "string" && isText(schemaNode) ? schemaNode : null;
 };
 
+export const isRichTextAt = (schema: EditableSchema, steps: readonly FieldStep[]): boolean =>
+  isRichText(schemaNodeAt(schema, steps));
+
 export const uploadCollectionAt = (
   schema: EditableSchema,
   steps: readonly FieldStep[]
