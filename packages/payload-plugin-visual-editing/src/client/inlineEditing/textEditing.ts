@@ -16,12 +16,13 @@ export interface TextEditing {
   begin(match: FieldMatch, point: Point): boolean;
   isEditing(holder: Element): boolean;
   commit(): void;
+  endIfRemoved(): void;
   dispose(): void;
 }
 
 type Edit = {
   match: FieldMatch;
-  holder: HTMLElement;
+  editedElement: HTMLElement;
   initialText: string;
   text: string;
   caret: number;
@@ -34,6 +35,13 @@ const EDITABLE_ATTR = "contenteditable";
 const SPELLCHECK_ATTR = "spellcheck";
 const PLAIN_TEXT_ONLY = "plaintext-only";
 const RICH_TEXT = "true";
+const SPELLCHECK_OFF = "false";
+const CANCEL_KEY = "Escape";
+const COMMIT_KEY = "Enter";
+const SPACE_KEY = " ";
+const INSERT_TEXT_COMMAND = "insertText";
+const PLAIN_TEXT_FORMAT = "text/plain";
+const EDITING_ATTRS = [EDITABLE_ATTR, SPELLCHECK_ATTR, DATA_VE_EDITING_ATTR];
 const LINE_BREAK_TAG = "BR";
 const STYLE_ID = "ve-inline-editing-style";
 const EDITING_STYLE = `[${DATA_VE_EDITING_ATTR}]{cursor:text !important}[${DATA_VE_EDITING_ATTR}]:not(:hover){outline:2px solid var(${ACCENT_VAR}, ${DEFAULT_ACCENT}) !important;outline-offset:2px !important}`;
@@ -54,13 +62,15 @@ const textOfNode = (node: ChildNode): string => {
   return node.textContent ?? "";
 };
 
-const textOf = (holder: Element): string => Array.from(holder.childNodes).map(textOfNode).join("");
+const textOf = (element: Element): string =>
+  Array.from(element.childNodes).map(textOfNode).join("");
 
 const insertText = (doc: Document, text: string): void => {
-  if (typeof doc.execCommand === "function") doc.execCommand("insertText", false, text);
+  if (typeof doc.execCommand === "function") doc.execCommand(INSERT_TEXT_COMMAND, false, text);
 };
 
-const isInsideButton = (holder: Element): boolean => holder.closest("button") !== null;
+const isInsideButton = (editedElement: Element): boolean =>
+  editedElement.closest("button") !== null;
 
 const addEditingStyle = (doc: Document): void => {
   if (doc.querySelector(`#${STYLE_ID}`)) return;
@@ -71,12 +81,12 @@ const addEditingStyle = (doc: Document): void => {
 };
 
 const setAttributes = (
-  holder: HTMLElement,
+  element: HTMLElement,
   attributes: ReadonlyMap<string, string | null>
 ): void => {
   for (const [name, value] of attributes) {
-    if (value === null) holder.removeAttribute(name);
-    else holder.setAttribute(name, value);
+    if (value === null) element.removeAttribute(name);
+    else element.setAttribute(name, value);
   }
 };
 
@@ -88,10 +98,11 @@ export function createTextEditing({ flush, send, tracker }: TextEditingDeps): Te
     if (!ended) return;
     editing = null;
     ended.stopListening();
-    setAttributes(ended.holder, ended.restored);
+    setAttributes(ended.editedElement, ended.restored);
     tracker.endEdit(ended.match, text);
     flush();
-    if (ended.holder.ownerDocument.activeElement === ended.holder) ended.holder.blur();
+    if (ended.editedElement.ownerDocument.activeElement === ended.editedElement)
+      ended.editedElement.blur();
   };
 
   const commit = () => {
@@ -105,95 +116,93 @@ export function createTextEditing({ flush, send, tracker }: TextEditingDeps): Te
   };
 
   const followTyping = (edit: Edit) => {
-    edit.text = textOf(edit.holder);
-    edit.caret = caretOffsetIn(edit.holder) ?? edit.caret;
+    edit.text = textOf(edit.editedElement);
+    edit.caret = caretOffsetIn(edit.editedElement) ?? edit.caret;
     edit.wasSent = true;
     send(edit.match, edit.text);
   };
 
   const followCaret = (edit: Edit) => {
-    edit.caret = caretOffsetIn(edit.holder) ?? edit.caret;
+    edit.caret = caretOffsetIn(edit.editedElement) ?? edit.caret;
   };
 
   const handleKey = (edit: Edit, isPlainTextOnly: boolean, event: KeyboardEvent) => {
-    const doc = edit.holder.ownerDocument;
-    if (event.key === "Escape") {
+    if (event.isComposing) return;
+    if (event.key === CANCEL_KEY) {
       event.preventDefault();
       cancel();
-    } else if (event.key === "Enter" && (!event.shiftKey || !isPlainTextOnly)) {
+    } else if (event.key === COMMIT_KEY && (!event.shiftKey || !isPlainTextOnly)) {
       event.preventDefault();
       commit();
-    } else if (event.key === " " && isInsideButton(edit.holder)) {
+    } else if (event.key === SPACE_KEY && isInsideButton(edit.editedElement)) {
       event.preventDefault();
-      insertText(doc, " ");
+      insertText(edit.editedElement.ownerDocument, SPACE_KEY);
     }
   };
 
   const pastePlainText = (edit: Edit, event: ClipboardEvent) => {
     event.preventDefault();
-    insertText(edit.holder.ownerDocument, event.clipboardData?.getData("text/plain") ?? "");
+    insertText(
+      edit.editedElement.ownerDocument,
+      event.clipboardData?.getData(PLAIN_TEXT_FORMAT) ?? ""
+    );
   };
 
   const listen = (edit: Edit, isPlainTextOnly: boolean): (() => void) => {
-    const { holder } = edit;
-    const doc = holder.ownerDocument;
+    const { editedElement } = edit;
+    const doc = editedElement.ownerDocument;
     const onInput = () => followTyping(edit);
     const onKey = (event: KeyboardEvent) => handleKey(edit, isPlainTextOnly, event);
     const onPaste = (event: ClipboardEvent) => pastePlainText(edit, event);
     const onSelection = () => followCaret(edit);
-    holder.addEventListener("input", onInput);
-    holder.addEventListener("keydown", onKey);
-    holder.addEventListener("blur", commit);
-    if (!isPlainTextOnly) holder.addEventListener("paste", onPaste);
+    editedElement.addEventListener("input", onInput);
+    editedElement.addEventListener("keydown", onKey);
+    editedElement.addEventListener("blur", commit);
+    if (!isPlainTextOnly) editedElement.addEventListener("paste", onPaste);
     doc.addEventListener("selectionchange", onSelection);
     return () => {
-      holder.removeEventListener("input", onInput);
-      holder.removeEventListener("keydown", onKey);
-      holder.removeEventListener("blur", commit);
-      holder.removeEventListener("paste", onPaste);
+      editedElement.removeEventListener("input", onInput);
+      editedElement.removeEventListener("keydown", onKey);
+      editedElement.removeEventListener("blur", commit);
+      editedElement.removeEventListener("paste", onPaste);
       doc.removeEventListener("selectionchange", onSelection);
     };
   };
 
   return {
     begin(match, point) {
-      const { holder } = match;
-      if (!(holder instanceof HTMLElement)) return false;
       if (editing?.match === match) return true;
       commit();
 
-      const text = textOf(holder);
+      const editedElement = tracker.beginEdit(match, {
+        onShownAgain: () => {
+          if (editing) placeCaret(editing.editedElement, editing.caret);
+        },
+        shownText: () => editing?.text ?? "",
+      });
+      if (!editedElement) return false;
+
+      const doc = editedElement.ownerDocument;
+      const isPlainTextOnly = takesPlainTextOnly(doc);
+      const text = textOf(editedElement);
       const edit: Edit = {
         caret: text.length,
-        holder,
+        editedElement,
         initialText: text,
         match,
-        restored: new Map(
-          [EDITABLE_ATTR, SPELLCHECK_ATTR, DATA_VE_EDITING_ATTR].map((name) => [
-            name,
-            holder.getAttribute(name),
-          ])
-        ),
+        restored: new Map(EDITING_ATTRS.map((name) => [name, editedElement.getAttribute(name)])),
         stopListening: () => undefined,
         text,
         wasSent: false,
       };
-      const isTracked = tracker.beginEdit(match, {
-        onShownAgain: () => placeCaret(holder, edit.caret),
-        shownText: () => edit.text,
-      });
-      if (!isTracked) return false;
-
-      const doc = holder.ownerDocument;
-      const isPlainTextOnly = takesPlainTextOnly(doc);
       addEditingStyle(doc);
-      holder.setAttribute(EDITABLE_ATTR, isPlainTextOnly ? PLAIN_TEXT_ONLY : RICH_TEXT);
-      holder.setAttribute(SPELLCHECK_ATTR, "false");
-      holder.setAttribute(DATA_VE_EDITING_ATTR, "");
+      editedElement.setAttribute(EDITABLE_ATTR, isPlainTextOnly ? PLAIN_TEXT_ONLY : RICH_TEXT);
+      editedElement.setAttribute(SPELLCHECK_ATTR, SPELLCHECK_OFF);
+      editedElement.setAttribute(DATA_VE_EDITING_ATTR, "");
       edit.stopListening = listen(edit, isPlainTextOnly);
       editing = edit;
-      holder.focus();
-      placeCaretAtPoint(holder, point);
+      editedElement.focus();
+      placeCaretAtPoint(editedElement, point);
       followCaret(edit);
       return true;
     },
@@ -201,6 +210,9 @@ export function createTextEditing({ flush, send, tracker }: TextEditingDeps): Te
     dispose() {
       commit();
     },
-    isEditing: (holder) => editing?.holder === holder,
+    endIfRemoved() {
+      if (editing && !editing.editedElement.isConnected) commit();
+    },
+    isEditing: (holder) => editing?.match.holder === holder,
   };
 }

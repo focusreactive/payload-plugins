@@ -56,8 +56,17 @@ const withValueAt = (holder: unknown, path: readonly Segment[], value: unknown):
   return { ...fields, [segment]: withValueAt(fields[segment], rest, value) };
 };
 
-const holdsText = (value: unknown): boolean =>
+const mayHoldText = (value: unknown): boolean =>
   typeof value === "string" || value === null || value === undefined;
+
+export const showsText = (document: unknown, schema: EditableSchema, key: string): boolean => {
+  const walked = walkTo(document, key);
+  return (
+    walked !== null &&
+    typeof walked.value === "string" &&
+    textFieldTypeAt(schema, walked.steps) !== null
+  );
+};
 
 export const editedFieldOf = (
   document: unknown,
@@ -67,7 +76,7 @@ export const editedFieldOf = (
 ): EditedField | null => {
   const walked = walkTo(document, key);
   const fieldType = walked && textFieldTypeAt(schema, walked.steps);
-  if (!walked || !fieldType || !holdsText(walked.value)) return null;
+  if (!walked || !fieldType || !mayHoldText(walked.value)) return null;
   const [name, ...rest] = walked.path;
   if (typeof name !== "string" || !isPlainObject(document)) return null;
   return { name, value: withValueAt(document[name], rest, editedTextOf(fieldType, value)) };

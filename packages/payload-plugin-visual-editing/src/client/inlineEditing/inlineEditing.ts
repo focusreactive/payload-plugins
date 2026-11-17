@@ -4,7 +4,10 @@ import type { EditStatus } from "./editTransport.js";
 import type { SaveStatus } from "./saveStatus.js";
 
 import { fieldKeyOfMarker } from "../../shared/fieldKey.js";
-import { VE_MESSAGE_TYPE } from "../../shared/protocol.js";
+import { readFieldEdit } from "../../shared/fieldEdit.js";
+import { isMessageFrom } from "../../shared/messageSource.js";
+import { isPlainObject } from "../../shared/plainObject.js";
+import { VE_FIELD_EDIT_REFUSED_TYPE, VE_MESSAGE_TYPE } from "../../shared/protocol.js";
 import { veIdentityOf } from "../../shared/shared.js";
 import { veDocumentOf } from "../../shared/veDocument.js";
 import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
@@ -78,6 +81,7 @@ export function createInlineEditing(
         if (match.holder && isPlainTextOfOneLocale(match)) fields.set(match.holder, match);
       }
     },
+    onContentRemoved: () => textEditing.endIfRemoved(),
     onNodesReleased: (matches) => {
       for (const match of matches) {
         if (match.holder && fields.get(match.holder) === match) fields.delete(match.holder);
@@ -85,10 +89,20 @@ export function createInlineEditing(
     },
   });
 
+  const refuseEditTheFormDidNotTake = (event: MessageEvent) => {
+    const { adminOrigin } = getCtx();
+    if (!isMessageFrom(event, adminOriginOf(adminOrigin), findAdminWindow(window))) return;
+    const { data } = event;
+    if (!isPlainObject(data) || data.type !== VE_FIELD_EDIT_REFUSED_TYPE) return;
+    const refused = readFieldEdit({ ...data, value: "" });
+    if (refused) transport.refuse(refused);
+  };
+  window.addEventListener("message", refuseEditTheFormDidNotTake);
+
   const stopListeningToSaves = listenToSaves(
     () => getCtx().adminOrigin,
     () => {
-      if (shownStatus === "unsaved") showStatus("saved");
+      if (shownStatus === "unsaved") transport.settle();
     }
   );
 
@@ -97,6 +111,7 @@ export function createInlineEditing(
       textEditing.dispose();
       transport.dispose();
       stopListeningToSaves();
+      window.removeEventListener("message", refuseEditTheFormDidNotTake);
       stopTracking();
       saveStatus?.remove();
     },

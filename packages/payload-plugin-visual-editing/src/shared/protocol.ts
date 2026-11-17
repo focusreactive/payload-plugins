@@ -132,6 +132,13 @@ export type VeFieldEditMessage = VeFieldEdit & {
   type: typeof VE_FIELD_EDIT_TYPE;
 };
 
+export const VE_FIELD_EDIT_REFUSED_TYPE = "ve:field-edit-refused";
+
+export type VeFieldEditRefusedMessage = VeLiveDocument & {
+  type: typeof VE_FIELD_EDIT_REFUSED_TYPE;
+  key: string;
+};
+
 export const VE_RICH_TEXT_STRUCTURE_TYPE = "ve:rich-text-structure";
 
 export type VeEditorState = Record<string, unknown>;

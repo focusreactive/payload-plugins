@@ -50,7 +50,7 @@ describe("a field the editor types into", () => {
   });
 
   it("stays the same field while the editor types", async () => {
-    expect(begin()).toBe(true);
+    expect(begin()).toBe(heading);
 
     await type("Hello world");
 
@@ -99,6 +99,36 @@ describe("a field the editor types into", () => {
 
     expect(heading.textContent).toBe("Hello");
     expect(listener.onNodesReleased).not.toHaveBeenCalled();
+  });
+
+  it("is not written by the tracker while the editor types", async () => {
+    begin();
+    await type("Hello world");
+
+    tracker.showText(textNode(), "From the form");
+
+    expect(heading.textContent).toBe("Hello world");
+  });
+
+  it("is edited in the element that wraps its text, so a link keeps its markup", async () => {
+    const link = document.createElement("a");
+    const label = document.createElement("span");
+    const icon = document.createElement("svg");
+    label.textContent = stega("Label", "cta");
+    link.append(label, icon);
+    main.append(link);
+    await flushMutations();
+    const [[, [cta]]] = listener.onFields.mock.calls as [[Element, [FieldMatch]]];
+
+    const editedElement = tracker.beginEdit(cta, { onShownAgain, shownText: () => shown });
+    (label.firstChild as Text).data = "Changed";
+    await flushMutations();
+    tracker.endEdit(cta, "Changed");
+
+    expect(cta.holder).toBe(link);
+    expect(editedElement).toBe(label);
+    expect(Array.from(link.children)).toEqual([label, icon]);
+    expect(label.textContent).toBe("Changed");
   });
 
   it("can be written by the tracker again after the edit", async () => {
@@ -174,6 +204,6 @@ describe("a field the editor types into", () => {
     const [[, matches]] = onFields.mock.calls as [[Element, FieldMatch[]]];
     const body = matches.find(({ path }) => path === "body")!;
 
-    expect(tracker.beginEdit(body, { onShownAgain, shownText: () => shown })).toBe(false);
+    expect(tracker.beginEdit(body, { onShownAgain, shownText: () => shown })).toBeNull();
   });
 });

@@ -9,9 +9,13 @@ export type EditStatus = "failed" | "saved" | "saving" | "unsaved";
 
 export type EditTransportCtx = { adminOrigin: string; payloadApi: string };
 
+export type EditedField = Omit<VeFieldEdit, "value">;
+
 export interface EditTransport {
   send(edit: VeFieldEdit): void;
   flush(): void;
+  refuse(field: EditedField): void;
+  settle(): void;
   retry(): void;
   dispose(): void;
 }
@@ -20,8 +24,8 @@ export const EDIT_SEND_PAUSE_MS = 400;
 
 type WaitingEdit = { edit: VeFieldEdit; timer: ReturnType<typeof setTimeout> };
 
-const addressOf = (edit: VeFieldEdit): string =>
-  JSON.stringify([keyedFieldAddressOf(edit), edit.locale ?? null]);
+const addressOf = (field: EditedField): string =>
+  JSON.stringify([keyedFieldAddressOf(field), field.locale ?? null]);
 
 const postToEndpoint = async (win: Window, url: string, edit: VeFieldEdit): Promise<boolean> => {
   try {
@@ -29,6 +33,7 @@ const postToEndpoint = async (win: Window, url: string, edit: VeFieldEdit): Prom
       body: JSON.stringify(edit),
       credentials: "include",
       headers: { "Content-Type": "application/json" },
+      keepalive: true,
       method: "POST",
     });
     const answer: unknown = response.ok ? await response.json() : null;
@@ -44,19 +49,23 @@ export function createEditTransport(
   win: Window = window
 ): EditTransport {
   const waiting = new Map<string, WaitingEdit>();
+  const failed = new Map<string, VeFieldEdit>();
+  const postedToAdmin = new Map<string, VeFieldEdit>();
   let saves: Promise<void> = Promise.resolve();
-  let failed: VeFieldEdit | null = null;
   let isDisposed = false;
 
   const report = (status: EditStatus) => {
     if (!isDisposed) onStatus(status);
   };
 
+  const settle = () => report(failed.size > 0 ? "failed" : "saved");
+
   const saveThroughEndpoint = async (edit: VeFieldEdit) => {
     report("saving");
     const isSaved = await postToEndpoint(win, `${getCtx().payloadApi}${VE_FIELD_EDIT_PATH}`, edit);
-    failed = isSaved ? null : edit;
-    report(isSaved ? "saved" : "failed");
+    if (isSaved) failed.delete(addressOf(edit));
+    else failed.set(addressOf(edit), edit);
+    settle();
   };
 
   const saveAfter = async (earlierSaves: Promise<void>, edit: VeFieldEdit) => {
@@ -71,6 +80,8 @@ export function createEditTransport(
       return;
     }
     const message: VeFieldEditMessage = { ...edit, type: VE_FIELD_EDIT_TYPE };
+    failed.delete(addressOf(edit));
+    postedToAdmin.set(addressOf(edit), edit);
     adminWindow.postMessage(message, adminOriginOf(getCtx().adminOrigin));
   };
 
@@ -92,11 +103,16 @@ export function createEditTransport(
       isDisposed = true;
     },
     flush,
+    refuse(field) {
+      const edit = postedToAdmin.get(addressOf(field));
+      if (!edit) return;
+      failed.set(addressOf(field), edit);
+      report("failed");
+    },
     retry() {
-      if (!failed) return;
-      const edit = failed;
-      failed = null;
-      deliver(edit);
+      const edits = [...failed.values()];
+      failed.clear();
+      for (const edit of edits) deliver(edit);
     },
     send(edit) {
       const address = addressOf(edit);
@@ -105,6 +121,10 @@ export function createEditTransport(
       const timer = setTimeout(deliverWaiting, EDIT_SEND_PAUSE_MS, address);
       waiting.set(address, { edit, timer });
       report("unsaved");
+    },
+    settle() {
+      postedToAdmin.clear();
+      settle();
     },
   };
 }

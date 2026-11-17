@@ -3,11 +3,14 @@
 import { useDocumentInfo, useForm, useLocale } from "@payloadcms/ui";
 import { useEffect } from "react";
 
+import type { VeFieldEditRefusedMessage } from "../../shared/protocol.js";
+
 import { isMessageFrom } from "../../shared/messageSource.js";
+import { VE_FIELD_EDIT_REFUSED_TYPE } from "../../shared/protocol.js";
 import { useEditableSchema } from "../instantPreview/useEditableSchema.js";
 import { usePreviewWindow } from "../instantPreview/usePreviewWindow.js";
 import { openDocumentOf } from "../openField/openDocument.js";
-import { formEditOf } from "./formEdit.js";
+import { editOfDocument, formEditOf } from "./formEdit.js";
 
 export function InlineEditReceiver({ excludeFieldNames }: { excludeFieldNames?: string[] }) {
   const { dispatchFields, getFields, setModified } = useForm();
@@ -22,13 +25,21 @@ export function InlineEditReceiver({ excludeFieldNames }: { excludeFieldNames?: 
 
     const writeEditIntoForm = (event: MessageEvent) => {
       if (!isMessageFrom(event, origin, getWindow())) return;
-      const edit = formEditOf(event.data, {
-        document: { ...document, locale },
+      const openDocument = { ...document, locale };
+      const edit = editOfDocument(event.data, openDocument);
+      if (!edit) return;
+      const formEdit = formEditOf(edit, {
+        document: openDocument,
         editableSchema,
         formState: getFields(),
       });
-      if (!edit) return;
-      dispatchFields({ path: edit.path, type: "UPDATE", value: edit.value });
+      if (!formEdit) {
+        const { value: _value, ...refused } = edit;
+        const message: VeFieldEditRefusedMessage = { ...refused, type: VE_FIELD_EDIT_REFUSED_TYPE };
+        getWindow()?.postMessage(message, origin);
+        return;
+      }
+      dispatchFields({ path: formEdit.path, type: "UPDATE", value: formEdit.value });
       setModified(true);
     };
 

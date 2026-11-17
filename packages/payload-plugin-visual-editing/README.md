@@ -551,7 +551,11 @@ The toggle then shows an **Edit on page** switch next to its modes. It starts of
 | in Live Preview, and the form of the document is open | the admin form, as if the editor had typed there | Payload: autosave, or the editor's own save |
 | in a tab of its own, in draft mode | `POST <payloadApi>/visual-editing/field-edit` with the editor's session | the endpoint, into the latest draft |
 
-The endpoint reads the latest draft with the user's access, changes the one field and saves a draft with `overrideAccess: false`. It answers `409` for a collection or global without `versions.drafts`, and `422` for a field the editor cannot reach. It never publishes.
+The endpoint reads the latest draft with the user's access, changes the one field and saves a draft with `overrideAccess: false`. It answers `409` for a collection or global without `versions.drafts`, and `422` for a field the editor cannot reach. It never publishes, and it refuses a document another editor holds a lock on.
+
+On a project with locales the page must name its locale: pass `locale` to `VisualEditing.Overlay` or `mountVisualEditing`. An edit without a locale is refused, by the form and by the endpoint, so it never lands in the default locale by accident. Text shown from a fallback locale is saved into the locale of the page.
+
+When the form cannot take an edit, for example because the row was removed in the admin meanwhile, the status says **Not saved**.
 
 In a tab of its own the request carries the editor's cookie. When the site and Payload are on different origins, list the origin of the site in `cors` and `csrf` of the Payload config, and the cookie must be sent cross-site.
 

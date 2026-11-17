@@ -226,6 +226,30 @@ describe("editing text on the page", () => {
       expect(statusLabel()).toBe("Saved");
     });
 
+    it("leaves Enter to the input method while it composes a character", () => {
+      click(heading);
+
+      const enter = press(heading, "Enter", { isComposing: true });
+
+      expect(enter.defaultPrevented).toBe(false);
+      expect(heading.hasAttribute(DATA_VE_EDITING_ATTR)).toBe(true);
+    });
+
+    it("ends the edit of a text the page removed", async () => {
+      click(heading);
+      type(heading, "Hello world");
+
+      heading.remove();
+      await flushMutations();
+      await pause();
+
+      expect(sentToEndpoint()).toEqual([expect.objectContaining({ value: "Hello world" })]);
+      const lead = render(stega("Lead", "lead"));
+      await flushMutations();
+      click(lead);
+      expect(lead.hasAttribute(DATA_VE_EDITING_ATTR)).toBe(true);
+    });
+
     it("says when the save failed", async () => {
       fetchEndpoint.mockImplementationOnce(() => Promise.resolve({ ok: false } as Response));
       click(heading);
@@ -395,6 +419,17 @@ describe("editing text on the page", () => {
       await flushMutations();
 
       expect(heading.textContent).toBe("Typed in the form");
+    });
+
+    it("says the edit is not saved when the form did not take it", async () => {
+      postFromAdmin(snapshot("Hello"));
+      click(heading);
+      type(heading, "Hello world");
+      await pause();
+
+      postFromAdmin({ ...PAGE, key: "title", locale: "en", type: "ve:field-edit-refused" });
+
+      expect(statusLabel()).toBe("Not saved");
     });
 
     it("says the edit is saved when the admin saved the document", async () => {

@@ -5,13 +5,15 @@ import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { InlineEditReceiver } from "../../src/admin/inlineEditing/InlineEditReceiver";
-import { VE_FIELD_EDIT_TYPE } from "../../src/shared/protocol";
+import { VE_FIELD_EDIT_REFUSED_TYPE, VE_FIELD_EDIT_TYPE } from "../../src/shared/protocol";
 
 const PREVIEW_ORIGIN = "http://localhost:3333";
 
 const admin = vi.hoisted(() => {
-  const frame = { contentWindow: {} };
+  const postMessage = vi.fn();
+  const frame = { contentWindow: { postMessage } };
   return {
+    postToPreview: postMessage,
     dispatchFields: vi.fn(),
     fields: { title: { value: "Title" } } as Record<string, { value: unknown }>,
     frame,
@@ -48,6 +50,7 @@ const EDIT = {
   docId: "7",
   key: "title",
   kind: "collection",
+  locale: "en",
   type: VE_FIELD_EDIT_TYPE,
   value: "New title",
 };
@@ -103,11 +106,29 @@ describe("InlineEditReceiver", () => {
     expect(admin.dispatchFields).not.toHaveBeenCalled();
   });
 
-  it("ignores an edit of a field the form does not have", () => {
+  it("tells the preview page when it cannot write an edit of its document", () => {
     postEdit({ data: { ...EDIT, key: "missing" } });
 
     expect(admin.dispatchFields).not.toHaveBeenCalled();
     expect(admin.setModified).not.toHaveBeenCalled();
+    expect(admin.postToPreview).toHaveBeenCalledWith(
+      {
+        collectionSlug: "page",
+        docId: "7",
+        key: "missing",
+        kind: "collection",
+        locale: "en",
+        type: VE_FIELD_EDIT_REFUSED_TYPE,
+      },
+      PREVIEW_ORIGIN
+    );
+  });
+
+  it("says nothing about an edit of another document, which another form may take", () => {
+    postEdit({ data: { ...EDIT, docId: "8" } });
+
+    expect(admin.dispatchFields).not.toHaveBeenCalled();
+    expect(admin.postToPreview).not.toHaveBeenCalled();
   });
 
   it("stops listening when it unmounts", () => {

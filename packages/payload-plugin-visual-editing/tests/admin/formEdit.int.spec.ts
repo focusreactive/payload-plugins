@@ -2,7 +2,7 @@ import type { Field, FormState } from "payload";
 
 import { describe, expect, it } from "vitest";
 
-import { formEditOf } from "../../src/admin/inlineEditing/formEdit";
+import { editOfDocument, formEditOf } from "../../src/admin/inlineEditing/formEdit";
 import { buildEditableSchema } from "../../src/shared/editableSchema/editableSchema";
 import { VE_FIELD_EDIT_TYPE } from "../../src/shared/protocol";
 
@@ -11,6 +11,7 @@ const editableSchema = buildEditableSchema([
   { name: "summary", type: "textarea" },
   { name: "body", type: "richText" },
   { name: "secret", type: "text", hidden: true },
+  { hasMany: true, name: "tags", type: "text" },
   {
     name: "layout",
     type: "blocks",
@@ -30,6 +31,7 @@ const formState = {
   "layout.1.heading": { value: "Second" },
   secret: { value: "Secret" },
   summary: { value: "Summary" },
+  tags: { value: ["one", "two"] },
   title: { value: "Title" },
 } as unknown as FormState;
 
@@ -45,44 +47,61 @@ const edit = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-describe("formEditOf", () => {
+const written = (data: unknown) => {
+  const edited = editOfDocument(data, openForm.document);
+  return edited && formEditOf(edited, openForm);
+};
+
+describe("an edit of the preview page, written into the form", () => {
   it("names the form path and the value of an edit of the open document", () => {
-    expect(formEditOf(edit(), openForm)).toEqual({ path: "title", value: "New title" });
+    expect(written(edit({ locale: "en" }))).toEqual({ path: "title", value: "New title" });
   });
 
   it("finds the row of a block by its id, wherever the row is now", () => {
-    const moved = edit({ key: "layout.row-b.heading", value: "Changed" });
+    const moved = edit({ key: "layout.row-b.heading", locale: "en", value: "Changed" });
 
-    expect(formEditOf(moved, openForm)).toEqual({ path: "layout.1.heading", value: "Changed" });
+    expect(written(moved)).toEqual({ path: "layout.1.heading", value: "Changed" });
   });
 
   it("joins the lines of a single-line field and keeps those of a textarea", () => {
-    expect(formEditOf(edit({ value: "One\nTwo" }), openForm)?.value).toBe("One Two");
-    expect(formEditOf(edit({ key: "summary", value: "One\nTwo" }), openForm)?.value).toBe(
+    expect(written(edit({ locale: "en", value: "One\nTwo" }))?.value).toBe("One Two");
+    expect(written(edit({ key: "summary", locale: "en", value: "One\nTwo" }))?.value).toBe(
       "One\nTwo"
     );
   });
 
-  it("takes an edit that names no locale", () => {
-    expect(formEditOf(edit({ locale: undefined }), openForm)).not.toBeNull();
+  it("takes an edit without a locale when the admin has none", () => {
+    const edited = editOfDocument(edit(), PAGE);
+
+    expect(edited && formEditOf(edited, { ...openForm, document: PAGE })).not.toBeNull();
+  });
+
+  it.each([
+    ["another locale", { locale: "de" }],
+    ["no locale while the admin has one", {}],
+    ["a rich text field", { key: "body", locale: "en" }],
+    ["a hidden field", { key: "secret", locale: "en" }],
+    ["a field the form does not have", { key: "missing", locale: "en" }],
+    ["a row that is gone", { key: "layout.row-z.heading", locale: "en" }],
+    ["a list", { key: "layout", locale: "en" }],
+    ["a field that holds no text", { key: "tags", locale: "en" }],
+  ])("writes nothing for %s", (_name, overrides) => {
+    const edited = editOfDocument(edit(overrides), openForm.document);
+
+    expect(edited).not.toBeNull();
+    expect(edited && formEditOf(edited, openForm)).toBeNull();
   });
 
   it.each([
     ["another document", { docId: "8" }],
     ["another collection", { collectionSlug: "post" }],
-    ["another locale", { locale: "de" }],
-    ["a rich text field", { key: "body" }],
-    ["a hidden field", { key: "secret" }],
-    ["a field the form does not have", { key: "missing" }],
-    ["a row that is gone", { key: "layout.row-z.heading" }],
-    ["a list", { key: "layout" }],
     ["a value that is not text", { value: 3 }],
     ["another message", { type: "ve:open-field" }],
-  ])("writes nothing for %s", (_name, overrides) => {
-    expect(formEditOf(edit(overrides), openForm)).toBeNull();
+  ])("is not an edit of the open document for %s", (_name, overrides) => {
+    expect(editOfDocument(edit(overrides), openForm.document)).toBeNull();
   });
 
-  it("writes nothing for a message that is no object", () => {
-    expect(formEditOf("ve:field-edit", openForm)).toBeNull();
+  it("is not an edit when the message is no object", () => {
+    expect(editOfDocument("ve:field-edit", openForm.document)).toBeNull();
   });
 });

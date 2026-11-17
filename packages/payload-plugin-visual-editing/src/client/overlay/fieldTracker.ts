@@ -41,7 +41,7 @@ export interface FieldTracker {
   subscribe(listener: FieldListener): () => void;
   showText(node: Text, text: string): void;
   showTextInHolder(match: FieldMatch, text: string): boolean;
-  beginEdit(match: FieldMatch, edit: FieldEdit): boolean;
+  beginEdit(match: FieldMatch, edit: FieldEdit): HTMLElement | null;
   endEdit(match: FieldMatch, text: string): void;
   dispose(): void;
 }
@@ -114,11 +114,11 @@ const LINE_BREAK_TAG = "BR";
 const isLeftByAnEdit = (child: ChildNode): boolean =>
   child instanceof Text || (child instanceof Element && child.tagName === LINE_BREAK_TAG);
 
-const showOnlyEditedText = (holder: Element, textNode: Text): void => {
-  for (const child of Array.from(holder.childNodes)) {
+const showOnlyEditedText = (editedElement: Element, textNode: Text): void => {
+  for (const child of Array.from(editedElement.childNodes)) {
     if (child !== textNode && isLeftByAnEdit(child)) child.remove();
   }
-  if (textNode.parentNode !== holder) holder.prepend(textNode);
+  if (textNode.parentNode !== editedElement) editedElement.prepend(textNode);
 };
 
 const holderCandidateOf = (textNode: Text): Element | null => {
@@ -135,7 +135,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
   const holders = new Map<Element, HeldField>();
   const ownAttributeWrites = new Map<Element, number>();
   const listeners = new Set<FieldListener>();
-  const edits = new Map<Text, FieldEdit>();
+  const edits = new Map<Text, FieldEdit & { editedElement: HTMLElement }>();
 
   const writeIdentityAttr = (element: Element, attr: string, value: string | null) => {
     if (element.getAttribute(attr) === value) return;
@@ -341,14 +341,14 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     },
     showText(node, text) {
       const tracked = texts.get(node);
-      if (!tracked || node.data === text) return;
+      if (!tracked || node.data === text || edits.has(node)) return;
       tracked.ownWritesToObserve += 1;
       node.data = text;
     },
     showTextInHolder(match, text) {
       const { holder, textNode: _textNode, ...field } = match;
       const held = holder && holders.get(holder);
-      if (!holder || !held || held.match !== match) return false;
+      if (!holder || !held || held.match !== match || edits.has(match.textNode)) return false;
       if (main.contains(match.textNode) || !main.contains(holder)) return false;
       const textNode = document.createTextNode(text);
       const shown = { ...field, holder, textNode };
@@ -366,15 +366,18 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     beginEdit(match, edit) {
       const { holder, textNode } = match;
       const isHeld = holder !== undefined && holders.get(holder)?.match === match;
-      if (!isHeld || texts.get(textNode)?.match !== match) return false;
-      edits.set(textNode, edit);
-      return true;
+      const editedElement = textNode.parentElement;
+      if (!isHeld || !editedElement || texts.get(textNode)?.match !== match) return null;
+      edits.set(textNode, { ...edit, editedElement });
+      return editedElement;
     },
     endEdit(match, text) {
       const { holder, textNode } = match;
       const held = holder && holders.get(holder);
-      if (!edits.delete(textNode) || !holder || !held || !main.contains(holder)) return;
-      showOnlyEditedText(holder, textNode);
+      const edit = edits.get(textNode);
+      edits.delete(textNode);
+      if (!edit || !holder || !held || !main.contains(edit.editedElement)) return;
+      showOnlyEditedText(edit.editedElement, textNode);
       const known = texts.get(textNode);
       const tracked = known ?? {
         match,

@@ -13,7 +13,7 @@ import { bodyOf } from "../endpointJson.js";
 import { isLocaleOf } from "../localeCodesKeyingValues.js";
 import { schemaCacheOf } from "../schemaCache.js";
 import { documentOf } from "../unsavedRichText/postedRequest.js";
-import { editedFieldOf } from "./editedField.js";
+import { editedFieldOf, showsText } from "./editedField.js";
 
 type User = NonNullable<PayloadRequest["user"]>;
 
@@ -24,7 +24,7 @@ const UNREADABLE_EDIT = 400;
 const UNKNOWN_DOCUMENT = 404;
 const WITHOUT_DRAFTS = 409;
 const FIELD_NOT_EDITABLE = 422;
-const REFUSED = 403;
+const FAILED = 500;
 const SAVED = 200;
 
 const answer = (saved: boolean, status: number, req: PayloadRequest): Response =>
@@ -49,23 +49,40 @@ const draftsOf = (payload: Payload, document: DocumentToRead): Drafts | null => 
   return { autosave: isPlainObject(drafts) && Boolean(drafts.autosave) };
 };
 
+const namesLocaleOf = (payload: Payload, locale: string | undefined): boolean =>
+  isLocaleOf(payload, locale) && (locale !== undefined || !payload.config.localization);
+
 const selectOf = (key: string): SelectType => ({
   [key.split(FIELD_PATH_SEPARATOR)[0] ?? key]: true,
 });
+
+type DraftRead = {
+  fallbackLocale?: false;
+  overrideAccess: boolean;
+  showHiddenFields: boolean;
+  user: User;
+};
+
+const AS_THE_EDITOR_SEES_IT = { overrideAccess: false, showHiddenFields: false };
+
+const AS_IT_IS_STORED = {
+  fallbackLocale: false,
+  overrideAccess: true,
+  showHiddenFields: true,
+} as const;
 
 const readDraft = (
   payload: Payload,
   document: DocumentToRead,
   { key, locale }: VeFieldEdit,
-  access: { overrideAccess: false; user: User } | { overrideAccess: true; showHiddenFields: true }
+  read: DraftRead
 ): Promise<unknown> => {
   const options = {
-    ...access,
+    ...read,
     context: { visualEditing: false },
     depth: 0,
     disableErrors: true,
     draft: true,
-    fallbackLocale: false as const,
     locale,
     select: selectOf(key),
   };
@@ -88,6 +105,7 @@ const saveDraft = (
     draft: true,
     locale,
     overrideAccess: false,
+    overrideLock: false,
     user,
   };
   return document.kind === "global"
@@ -97,7 +115,7 @@ const saveDraft = (
 
 const statusOfFailure = (error: unknown): number => {
   const status = error instanceof Error && "status" in error ? error.status : undefined;
-  return typeof status === "number" ? status : REFUSED;
+  return typeof status === "number" ? status : FAILED;
 };
 
 export const fieldEditEndpoint: Endpoint = {
@@ -106,7 +124,7 @@ export const fieldEditEndpoint: Endpoint = {
     if (!user) return answer(false, SIGNED_OUT, req);
 
     const edit = readFieldEdit(await bodyOf(req));
-    if (!edit || !isLocaleOf(payload, edit.locale)) return answer(false, UNREADABLE_EDIT, req);
+    if (!edit || !namesLocaleOf(payload, edit.locale)) return answer(false, UNREADABLE_EDIT, req);
 
     const document = documentOf(payload, edit);
     if (!document) return answer(false, UNKNOWN_DOCUMENT, req);
@@ -115,16 +133,13 @@ export const fieldEditEndpoint: Endpoint = {
     if (!drafts) return answer(false, WITHOUT_DRAFTS, req);
 
     const schema = schemaCacheOf(payload)?.get(edit.collectionSlug, payload);
-    const visible = await readDraft(payload, document, edit, { overrideAccess: false, user });
-    if (!schema || !editedFieldOf(visible, schema, edit.key, edit.value)) {
+    const shown = await readDraft(payload, document, edit, { ...AS_THE_EDITOR_SEES_IT, user });
+    if (!schema || !showsText(shown, schema, edit.key)) {
       return answer(false, FIELD_NOT_EDITABLE, req);
     }
 
-    const whole = await readDraft(payload, document, edit, {
-      overrideAccess: true,
-      showHiddenFields: true,
-    });
-    const edited = editedFieldOf(whole, schema, edit.key, edit.value);
+    const stored = await readDraft(payload, document, edit, { ...AS_IT_IS_STORED, user });
+    const edited = editedFieldOf(stored, schema, edit.key, edit.value);
     if (!edited) return answer(false, FIELD_NOT_EDITABLE, req);
 
     try {

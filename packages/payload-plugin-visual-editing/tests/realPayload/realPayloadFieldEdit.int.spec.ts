@@ -28,7 +28,7 @@ describe("the field edit endpoint", () => {
       { req: { headers } as Partial<PayloadRequest>, user: user ?? undefined },
       payload
     );
-    req.text = async () => JSON.stringify(body);
+    req.text = async () => JSON.stringify({ locale: "en", ...(body as object) });
     const response = (await endpoint!.handler(req)) as Response;
     const { saved } = (await response.json()) as { saved: unknown };
     return { saved, status: response.status };
@@ -179,6 +179,33 @@ describe("the field edit endpoint", () => {
       });
     });
 
+    it("for an edit that names no locale, in a project with locales", async () => {
+      expect(await refused({ key: "label", locale: undefined })).toEqual({
+        saved: false,
+        status: 400,
+      });
+    });
+
+    it("for a document another editor has open", async () => {
+      const [other] = (
+        await payload.find({ collection: "users", where: { email: { equals: OUTSIDER.email } } })
+      ).docs;
+      const lock = await payload.create({
+        collection: "payload-locked-documents",
+        data: {
+          document: { relationTo: "pages", value: Number(docId) },
+          user: { relationTo: "users", value: other!.id },
+        },
+      });
+
+      const answer = await refused({ key: "label" });
+      const locks = await payload.find({ collection: "payload-locked-documents" });
+      await payload.delete({ collection: "payload-locked-documents", id: lock.id });
+
+      expect(answer.saved).toBe(false);
+      expect(locks.docs.map(({ id }) => id)).toEqual([lock.id]);
+    });
+
     it("for a locale the project does not have", async () => {
       expect(await refused({ key: "label", locale: "fr" })).toEqual({ saved: false, status: 400 });
     });
@@ -203,6 +230,7 @@ describe("the field edit endpoint", () => {
       ["a field the schema does not have", "missing"],
       ["a row that is gone", "list.gone.label"],
       ["a list", "list"],
+      ["a field that holds no text yet", "seo.description"],
     ])("for %s", async (_name, key) => {
       expect(await refused({ key })).toEqual({ saved: false, status: 422 });
     });

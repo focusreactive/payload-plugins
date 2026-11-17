@@ -302,7 +302,7 @@ describe("instant preview in the overlay", () => {
   it("announces nothing after it stopped, also for a field it was about to announce", async () => {
     let fieldListener: FieldListener | undefined;
     const tracker: FieldTracker = {
-      beginEdit: vi.fn(() => false),
+      beginEdit: vi.fn(() => null),
       dispose: vi.fn(),
       endEdit: vi.fn(),
       showText: vi.fn(),
