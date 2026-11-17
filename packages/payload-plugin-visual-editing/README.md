@@ -161,7 +161,7 @@ On a draft page where the overlay does not run (the toggle is **Off** without in
 
 - Fields of type `text`, `textarea` and `email`, at any depth: in groups, tabs, rows, collapsibles, array rows and blocks (declared inline or through `blockReferences`).
 - The name of a block (`blockName`), unless the block sets `admin.disableBlockName`. A click on a rendered block name focuses the name input in the block header.
-- Not: empty values, and values that match `excludeValues` (by default URLs, slugs like `hello-world`, `#fragments` and ISO dates).
+- Not: empty values, and values that match `excludeValues` (by default URLs, slugs like `hello-world`, `#fragments` and ISO dates). A range of numbers such as `8-10` and a text that starts with a hash, such as `#1 in the ranking`, are marked.
 - Not: fields named `slug`, `folder`, `_status`, `apiKey` or anything in `excludeFieldNames`.
 - Not: fields the editor cannot change in the admin, that is `hidden: true`, `admin.hidden`, `admin.readOnly` or `admin.disabled`, and everything inside a group, array or blocks field that has one of them.
 - Not: `text` fields with `hasMany`, numbers, selects, dates and other non-text fields.
