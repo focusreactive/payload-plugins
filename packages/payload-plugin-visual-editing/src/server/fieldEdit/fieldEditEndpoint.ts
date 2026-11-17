@@ -2,12 +2,18 @@ import type { Endpoint, Payload, PayloadRequest } from "payload";
 
 import { headersWithCors } from "payload";
 
+import type { SaveRefusal } from "../../shared/fieldEdit.js";
 import type { VeEdit } from "../../shared/protocol.js";
 import type { DocumentToRead } from "../unsavedRichText/postedRequest.js";
 import type { DraftField, User } from "./draftField.js";
 import type { EditedField } from "./editedField.js";
 
-import { isRichTextEdit, readFieldEdit, readRichTextEdit } from "../../shared/fieldEdit.js";
+import {
+  isRichTextEdit,
+  readFieldEdit,
+  readRichTextEdit,
+  REQUEST_UNREADABLE,
+} from "../../shared/fieldEdit.js";
 import { valueAtKey } from "../../shared/fieldKey.js";
 import { VE_FIELD_EDIT_PATH } from "../../shared/protocol.js";
 import { rootOf } from "../../shared/richText/editorNodes.js";
@@ -40,8 +46,13 @@ import { formatsOfField } from "./richTextFormats.js";
 
 type Edited = (stored: unknown) => EditedField | null;
 
-const answer = (saved: boolean, status: number, req: PayloadRequest): Response =>
-  Response.json(saved ? { saved } : { reason: refusalOfStatus(status), saved }, {
+const answer = (
+  saved: boolean,
+  status: number,
+  req: PayloadRequest,
+  reason: SaveRefusal = refusalOfStatus(status)
+): Response =>
+  Response.json(saved ? { saved } : { reason, saved }, {
     headers: headersWithCors({ headers: new Headers({ "Cache-Control": "no-store" }), req }),
     status,
   });
@@ -124,7 +135,7 @@ export const fieldEditEndpoint: Endpoint = {
     if (!user) return answer(false, SIGNED_OUT, req);
 
     const posted = readEdit(await bodyOf(req));
-    if (!posted) return answer(false, UNREADABLE_REQUEST, req);
+    if (!posted) return answer(false, UNREADABLE_REQUEST, req, REQUEST_UNREADABLE);
     const edit = inLocaleOfProject(payload, posted);
 
     const field = await draftFieldOf(payload, user, edit);

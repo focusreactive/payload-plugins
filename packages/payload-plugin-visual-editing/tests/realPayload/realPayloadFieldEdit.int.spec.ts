@@ -302,7 +302,7 @@ describe("the field edit endpoint", () => {
       });
 
       it("for a request it cannot read", async () => {
-        expect(await reasonOf({ ...page(docId), key: "label" })).toBe("failed");
+        expect(await reasonOf({ ...page(docId), key: "label" })).toBe("unreadable");
       });
 
       it("and names no reason when the text the field holds is saved", async () => {

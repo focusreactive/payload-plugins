@@ -720,6 +720,17 @@ describe("editing rich text through the endpoints", () => {
         expect(await refused({ state })).toEqual({ saved: false, status: 400 });
       });
 
+      it("and says that it could not read a state that arrives as a JSON string", async () => {
+        const response = await post(
+          VE_FIELD_EDIT_PATH,
+          { ...page(docId), key: "body", state: JSON.stringify(richText("Changed")) },
+          editor
+        );
+
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({ reason: "unreadable", saved: false });
+      });
+
       it("for a state longer than a posted state may be", async () => {
         const state = richText("a".repeat(MAX_POSTED_EDITOR_STATE_LENGTH));
 

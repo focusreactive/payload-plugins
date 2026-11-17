@@ -49,6 +49,7 @@ describe("the save status", () => {
     ["no-drafts", "This content has no drafts"],
     ["not-editable", "This field cannot be edited here"],
     ["signed-out", "Sign in to the admin to edit"],
+    ["unreadable", "Not saved"],
     ["failed", "Not saved"],
   ] as const)("says why a save was refused: %s", (refusal, words) => {
     saveStatus.show("failed", refusal);

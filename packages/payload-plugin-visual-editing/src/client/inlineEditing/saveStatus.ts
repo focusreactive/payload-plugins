@@ -25,6 +25,7 @@ export const REFUSAL_LABELS: Record<SaveRefusal, string> = {
   "no-drafts": "This content has no drafts",
   "not-editable": "This field cannot be edited here",
   "signed-out": "Sign in to the admin to edit",
+  unreadable: LABELS.failed,
 };
 
 const labelOf = (status: EditStatus, refusal: SaveRefusal): string =>

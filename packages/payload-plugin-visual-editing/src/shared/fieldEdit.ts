@@ -12,12 +12,15 @@ export const SAVE_REFUSALS = [
   "no-drafts",
   "not-editable",
   "signed-out",
+  "unreadable",
   "failed",
 ] as const;
 
 export type SaveRefusal = (typeof SAVE_REFUSALS)[number];
 
 export const SAVE_FAILED: SaveRefusal = "failed";
+
+export const REQUEST_UNREADABLE: SaveRefusal = "unreadable";
 
 export const readSaveRefusal = (answer: unknown): SaveRefusal => {
   const reason = isPlainObject(answer) ? answer.reason : undefined;
