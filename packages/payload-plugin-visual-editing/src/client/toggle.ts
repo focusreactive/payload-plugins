@@ -19,7 +19,7 @@ const MODES: Record<VisualEditingMode, { label: string; description: string }> =
 };
 
 const modeButton = (mode: VisualEditingMode) =>
-  `<button type="button" role="radio" data-mode="${mode}" title="${MODES[mode].description}" aria-label="${MODES[mode].description}">${MODES[mode].label}</button>`;
+  `<button type="button" role="radio" tabindex="-1" data-mode="${mode}" title="${MODES[mode].description}" aria-label="${MODES[mode].description}">${MODES[mode].label}</button>`;
 
 const TEMPLATE = `
 <style>
@@ -100,6 +100,20 @@ const TEMPLATE = `
 </div>
 `;
 
+type Step = (index: number, count: number) => number;
+
+const toNext: Step = (index, count) => (index + 1) % count;
+const toPrevious: Step = (index, count) => (index - 1 + count) % count;
+
+const STEP_OF_KEY: Readonly<Record<string, Step | undefined>> = {
+  ArrowDown: toNext,
+  ArrowLeft: toPrevious,
+  ArrowRight: toNext,
+  ArrowUp: toPrevious,
+  End: (_index, count) => count - 1,
+  Home: () => 0,
+};
+
 const isMode = (value: string | undefined): value is VisualEditingMode =>
   VISUAL_EDITING_MODES.some((mode) => mode === value);
 
@@ -116,6 +130,18 @@ export function createToggle(doc: Document, onSelect: (mode: VisualEditingMode) 
     if (isMode(mode)) onSelect(mode);
   });
 
+  shadow.addEventListener("keydown", (event) => {
+    const step = event instanceof KeyboardEvent ? STEP_OF_KEY[event.key] : undefined;
+    const index = event.target instanceof HTMLButtonElement ? buttons.indexOf(event.target) : -1;
+    if (!step || index === -1) return;
+    const button = buttons[step(index, buttons.length)];
+    const mode = button?.dataset.mode;
+    if (!button || !isMode(mode)) return;
+    event.preventDefault();
+    button.focus();
+    onSelect(mode);
+  });
+
   const followHovering = () =>
     host.toggleAttribute(HIDDEN_ATTR, doc.body.hasAttribute(DATA_VE_HOVERING_ATTR));
   const hovering = new MutationObserver(followHovering);
@@ -129,7 +155,9 @@ export function createToggle(doc: Document, onSelect: (mode: VisualEditingMode) 
     },
     show(shownMode) {
       for (const button of buttons) {
-        button.setAttribute("aria-checked", String(button.dataset.mode === shownMode));
+        const isShown = button.dataset.mode === shownMode;
+        button.setAttribute("aria-checked", String(isShown));
+        button.tabIndex = isShown ? 0 : -1;
       }
     },
   };

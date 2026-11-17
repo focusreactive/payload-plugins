@@ -61,6 +61,79 @@ describe("toggle", () => {
     expect(host()?.hasAttribute("data-hidden")).toBe(false);
   });
 
+  describe("as a radio group on the keyboard", () => {
+    const tabStops = () =>
+      buttons()
+        .filter((button) => button.tabIndex === 0)
+        .map((button) => button.textContent);
+
+    const focusedLabel = () => host()?.shadowRoot?.activeElement?.textContent;
+
+    const pressOn = (label: string, key: string) => {
+      const button = buttons().find(({ textContent }) => textContent === label);
+      button?.focus();
+      const event = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key });
+      button?.dispatchEvent(event);
+      return event;
+    };
+
+    const showingWhatIsPicked = () => {
+      const onSelect = vi.fn((mode) => toggle?.show(mode));
+      toggle = createToggle(document, onSelect);
+      toggle.show("always");
+      return onSelect;
+    };
+
+    it("is one tab stop, on the mode it shows", () => {
+      toggle = createToggle(document, vi.fn());
+
+      toggle.show("always");
+      expect(tabStops()).toEqual(["Always"]);
+
+      toggle.show("off");
+      expect(tabStops()).toEqual(["Off"]);
+    });
+
+    it.each([
+      ["ArrowRight", "Hover", "hover"],
+      ["ArrowDown", "Hover", "hover"],
+      ["ArrowLeft", "Off", "off"],
+      ["ArrowUp", "Off", "off"],
+      ["Home", "Off", "off"],
+      ["End", "Hover", "hover"],
+    ])("moves to and picks the mode %s leads to", (key, label, mode) => {
+      const onSelect = showingWhatIsPicked();
+
+      const event = pressOn("Always", key);
+
+      expect(onSelect).toHaveBeenCalledWith(mode);
+      expect(focusedLabel()).toBe(label);
+      expect(tabStops()).toEqual([label]);
+      expect(event.defaultPrevented).toBe(true);
+    });
+
+    it("goes round from the last mode to the first and back", () => {
+      const onSelect = showingWhatIsPicked();
+
+      pressOn("Hover", "ArrowRight");
+      expect(onSelect).toHaveBeenLastCalledWith("off");
+      expect(focusedLabel()).toBe("Off");
+
+      pressOn("Off", "ArrowLeft");
+      expect(onSelect).toHaveBeenLastCalledWith("hover");
+      expect(focusedLabel()).toBe("Hover");
+    });
+
+    it("leaves every other key to the page", () => {
+      const onSelect = showingWhatIsPicked();
+
+      const event = pressOn("Always", "Tab");
+
+      expect(onSelect).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    });
+  });
+
   it("leaves the page when it is removed", () => {
     toggle = createToggle(document, vi.fn());
 
