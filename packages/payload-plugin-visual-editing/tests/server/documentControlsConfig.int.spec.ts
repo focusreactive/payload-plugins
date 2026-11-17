@@ -171,3 +171,44 @@ describe("document controls", () => {
     expect(build().custom).toBeUndefined();
   });
 });
+
+describe("inline editing", () => {
+  const RECEIVER = {
+    clientProps: { excludeFieldNames: ["tenant"] },
+    path: "@focus-reactive/payload-plugin-visual-editing/admin#InlineEditReceiver",
+  };
+  const FIELD_EDIT_PATH = "/visual-editing/field-edit";
+
+  const buildWith = (options: { inlineEditing?: boolean; instantPreview?: boolean }) =>
+    visualEditingPlugin({ excludeFieldNames: ["tenant"], ...options })(baseConfig) as Config;
+
+  const hasFieldEditEndpoint = (config: Config) =>
+    (config.endpoints ?? []).some(({ path }) => path === FIELD_EDIT_PATH);
+
+  it("adds the receiver of edits and the endpoint where live preview is configured", () => {
+    const config = buildWith({ inlineEditing: true, instantPreview: true });
+
+    expect(collectionControls(config, "page")).toEqual([
+      PREVIEW_PAGE_BRIDGE,
+      OPEN_FORM_ANNOUNCER,
+      BROADCASTER,
+      RECEIVER,
+    ]);
+    expect(collectionControls(config, "category")).toEqual([OPEN_FORM_ANNOUNCER]);
+    expect(hasFieldEditEndpoint(config)).toBe(true);
+  });
+
+  it("stays off unless the project turns it on", () => {
+    const config = buildWith({ instantPreview: true });
+
+    expect(collectionControls(config, "page")).not.toContainEqual(RECEIVER);
+    expect(hasFieldEditEndpoint(config)).toBe(false);
+  });
+
+  it("stays off without instant preview", () => {
+    const config = buildWith({ inlineEditing: true });
+
+    expect(collectionControls(config, "page")).not.toContainEqual(RECEIVER);
+    expect(hasFieldEditEndpoint(config)).toBe(false);
+  });
+});
