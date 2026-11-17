@@ -45,7 +45,11 @@ export function createEditTargets(
 
   const registry = createTargetRegistry();
   const badge = createEditBadge();
-  const hover = createHoverController(badge, registry);
+  const hover = createHoverController(
+    badge,
+    registry,
+    (target) => getCtx().actionOf?.(target) ?? null
+  );
   const frames = getCtx().mode === "always" ? createFrameLayer() : null;
   const wrapperTargets = new Set<HTMLElement>();
 

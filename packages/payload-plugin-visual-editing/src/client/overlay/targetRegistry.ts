@@ -1,4 +1,5 @@
 import type { BuildAdminEditUrl } from "../../shared/buildAdminEditUrl.js";
+import type { ActionOf } from "./editBadge.js";
 import type { Marker } from "./markerExtractor.js";
 
 import { spreadVeIdentity } from "../../shared/shared.js";
@@ -22,6 +23,7 @@ export type TargetRegistryCtx = {
   locale?: string;
   mode: "always" | "hover";
   editInPlace?: (target: HTMLElement, event: MouseEvent) => boolean;
+  actionOf?: ActionOf;
 };
 
 export interface TargetRegistry {
