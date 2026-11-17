@@ -13,6 +13,7 @@ Peer dependencies, all optional: `payload ^3.79`, `@payloadcms/ui ^3.79`, `react
 - The Payload app (the plugin and its admin components) needs `payload`, `@payloadcms/ui` and React 19, which Payload 3 requires anyway.
 - A React frontend that imports `./client` needs `react` and `react-dom` 18.2 or newer.
 - A site that imports only `./dom` needs none of them.
+- A page that offers [editing on the page](#editing-on-the-page) loads Lexical for rich text: `lexical`, `@lexical/rich-text`, `@lexical/list`, `@lexical/history`, `@lexical/selection` and `@lexical/utils`, all `0.50.0`, the version `@payloadcms/richtext-lexical` 3.90 uses. They are optional peers too, but `./client` and `./dom` name them in a dynamic `import()`, so the bundler of the frontend must be able to resolve them, see [The Lexical packages](#the-lexical-packages).
 
 The plugin does not import `next`; the setup below uses Next.js because the Payload admin runs on it. It is built and tested against Payload `3.90.1`.
 
@@ -520,7 +521,7 @@ A render can transform a value and still output the stored text for some inputs,
 
 ## Editing on the page
 
-With it the editor types into plain text on the page itself and replaces an image from the page. The text and the image go into the draft; the published document changes only on publish. It needs [instant preview](#instant-preview) and is off by default.
+With it the editor types into plain text on the page itself, writes and formats rich text in place and replaces an image from the page. The text, the rich text and the image go into the draft; the published document changes only on publish. It needs [instant preview](#instant-preview) and is off by default.
 
 Turn it on in the plugin, regenerate the import map, and offer it on the page:
 
@@ -540,6 +541,9 @@ The toggle then shows an **Edit on page** switch next to its modes. It starts of
 ### Using it
 
 - A click on plain text puts the caret into it. Enter ends the edit, Escape brings back the text the edit began with, and a click elsewhere ends the edit. Shift+Enter starts a new line in a browser that supports `contenteditable="plaintext-only"`; elsewhere it ends the edit.
+- A click into rich text puts the caret into it, once the page holds the state of the field: it asks for it when the pointer enters the rich text, so a click right after the page loaded, or on a field the editor may not edit, still opens the field in the admin. The text is edited in the styles of the site. Enter starts a paragraph, Escape brings back the state the edit began with, a click outside the rich text and its toolbar ends the edit, and Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z undo and redo inside the edit.
+- Selected rich text shows a toolbar above it: **Bold**, **Italic**, **Underline**, **Link**, **H2**, **H3**, **Bullet list** and **Numbered list**. Each button shows whether the selection has the format and turns it on or off. Cmd/Ctrl+B, I and U do the same from the keyboard. **Link**, or Cmd/Ctrl+K, opens an address field in the toolbar: Enter links the selection, an empty address removes the link, Escape closes the field. An address must start with `http:`, `https:`, `mailto:` or `tel:` or be relative; anything else is refused.
+- A block, an inline block, an upload, a relationship, a horizontal rule, a table and every other node the page cannot edit shows inside the edited rich text as a dashed placeholder with the name of its type, and is saved exactly as it was stored. Backspace or Delete next to a placeholder selects it first; the same key again removes it.
 - The **Edit** badge still opens the field in the admin form.
 - A pasted text arrives without its formatting.
 - An image that names a single upload field shows a **Replace image** button while the pointer is over it. The button opens a list of the media of that field's collection, where a new file can be uploaded too. The picked image shows on the page at once; when its save fails, the page shows the image it had again, and a **Retry** that saves shows the picked one. A click on the image itself still opens the field in the admin form, and so does the button when the field turns out to take no media from the page.
@@ -552,7 +556,26 @@ The toggle then shows an **Edit on page** switch next to its modes. It starts of
 | in Live Preview, and the form of the document is open | the admin form, as if the editor had typed there or picked the image there | Payload: autosave, or the editor's own save |
 | in a tab of its own, in draft mode | `POST <payloadApi>/visual-editing/field-edit` with the editor's session | the endpoint, into the latest draft |
 
-The endpoint reads the latest draft with the user's access, changes the one field and saves a draft with `overrideAccess: false`. It answers `409` for a collection or global without `versions.drafts`, and `422` for a field the editor cannot reach. It never publishes, and it refuses a document another editor holds a lock on. For an upload field the value is the id of a media document; the endpoint takes it only when the user can read that document in the collection of the field.
+The endpoint takes `{ collectionSlug, kind, docId, key, locale, value }` for text and for an image, and `{ …, state }` with a serialised Lexical editor state for rich text. It reads the latest draft with the user's access, changes the one field and saves a draft with `overrideAccess: false`. It answers `409` for a collection or global without `versions.drafts`, and `422` for a field the editor cannot reach. It never publishes, and it refuses a document another editor holds a lock on. For an upload field the value is the id of a media document; the endpoint takes it only when the user can read that document in the collection of the field.
+
+Rich text needs the stored state of the field before it can be edited, and where it comes from depends on the page as well:
+
+| The page is | The state comes from | With |
+|---|---|---|
+| in Live Preview, and the form of the document is open | the form: the page posts `ve:rich-text-state-request`, the admin answers `ve:rich-text-state` | the fields of blocks left out, as in [what is sent to the preview](#what-is-sent-to-the-preview) |
+| in a tab of its own, in draft mode | `POST <payloadApi>/visual-editing/rich-text-value` with the editor's session | the value of the draft, read with the user's access at depth 0 |
+
+`rich-text-value` takes the document, the field and the locale, runs the checks of `field-edit` and answers `{ value }`, or `{ value: null }` with the status `field-edit` would answer. Neither path trusts what the page sends back. The state is validated and may be at most 1,000,000 characters long as JSON. The fields of a block are taken from the form or from the stored draft by the `id` of the block, never from the page, and a block whose `id` the form or the draft does not hold is refused. The fields of an upload node and the extra fields of a link come from the stored draft too. A link whose address is not one of the kinds above is refused unless the stored value already holds that address. The admin writes the state into the form as its value and its initial value, so Payload's editor shows it; the endpoint writes it only into a field the plugin lists as rich text.
+
+After an edit in a tab of its own nothing renders the page again by itself. The page keeps what the editor typed on screen, as a read-only copy in place of the rich text the site rendered, until the site renders that rich text again. Pass `onEdited` to render it: it is called after every save of an edit made on the page in a tab of its own, of text, rich text or an image.
+
+```tsx
+'use client'
+const router = useRouter()
+return <VisualEditing.Provider available inlineEditing onEdited={() => router.refresh()}>{children}</VisualEditing.Provider>
+```
+
+In Live Preview `onEdited` is not called: the admin saves, and the page follows it as it does for an edit made in the form. There a new paragraph, list or format shows on the page before the save only for rich text rendered through [`LiveRichText`](#unsaved-rich-text-structure) or `renderRichTextValue`; other rich text shows the typed text and gets its new structure with the render after the save.
 
 Where the image is picked depends on the page too:
 
@@ -578,13 +601,35 @@ In a tab of its own the request carries the editor's cookie. When the site and P
 - `text`, `textarea` and `email` fields, also in arrays, groups, tabs and blocks. A line break in a `text` or `email` field is saved as a space.
 - Only text that fills its element. Text rendered next to other text or next to an icon in the same element opens the field in the admin; wrap the text in its own element to edit it in place.
 - An `upload` field of one collection that holds one document, also in arrays, groups, tabs and blocks, where the page marks its image: an `<img>` or a `<picture>` that carries `withVisualEditingPath(value)`, or an element that carries it around exactly one `<img>` and no marked text. The field must hold a document already.
+- A `richText` field, also in arrays, groups, tabs and blocks of the document, where the page marks its wrapper with `withVisualEditingPath(value)` or `richTextAttributes(value)`. Paragraphs, headings, quotes, lists, links, line breaks and text with its formats are edited; every other node is kept as it is.
 - In Live Preview, only fields of the document whose form is open. Text or an image of another document, such as a header or a related page, opens that document as before.
 
 The new image is shown by its `url`, resolved against the origin of `payloadApi`. The page sets `src`, removes `srcset` and `sizes` from the `<img>` and points every `<source>` of a `<picture>` around it at the same file, so the browser cannot keep an old variant; when the `<img>` has `width` and `height` attributes, `height` follows the proportions of the new file. The variants of the site and the `alt` of the new document come with the next render of the page from the server: after a save in Live Preview where the site reloads on it, or on a reload.
 
-Rich text, uploads with `hasMany` or several collections, uploads with `filterOptions`, uploads inside rich text, relationships, numbers and selects open the field in the admin. A draft save runs no validation, so an image picked on the page for a field with `filterOptions` could be one the field forbids, and publishing would fail. So do values read with `locale: 'all'`. An empty field has no element on the page and is filled in the form.
+Uploads with `hasMany` or several collections, uploads with `filterOptions`, uploads inside rich text, relationships, numbers and selects open the field in the admin. A draft save runs no validation, so an image picked on the page for a field with `filterOptions` could be one the field forbids, and publishing would fail. So do values read with `locale: 'all'`. An empty field has no element on the page and is filled in the form.
+
+Rich text is not edited on the page, and a click on it opens the field in the admin, when:
+
+- it was read with `locale: 'all'`;
+- its wrapper carries no `data-ve-*` attributes, so the page cannot tell which field it is;
+- the plugin does not list the field as rich text: a hidden, read-only or excluded field, or one the user may not read;
+- the stored state is not a valid editor state, or holds a node where Lexical cannot hold it;
+- it is the rich text of a block inside another rich text: that block is a placeholder of the outer one;
+- it holds no value yet in any locale, or it shows a fallback locale that holds blocks: the locale of the page has no block of that `id`, so the save is refused.
 
 While a field is edited the page sets `contenteditable`, `spellcheck` and `data-ve-editing` on its element and removes them when the edit ends. `[data-ve-editing]` gets an outline in the accent colour while the pointer is not over it.
+
+Rich text is never edited in the element the site rendered, which React or your renderer owns. The page hides that element with an inline `display: none`, puts a twin after it, with the same tag and the same `class`, and edits there; the twin carries `data-ve-editing`, and the read-only copy a tab of its own keeps after the edit carries `data-ve-edited`. Styles that reach the rich text through its class apply to the twin; styles that reach it through an `id`, or through `:first-child` and the like on the wrapper, do not. Underline and strikethrough get the classes `ve-rich-text-underline` and `ve-rich-text-strikethrough` and a style of the plugin.
+
+### The Lexical packages
+
+The editor is Lexical without React, the same version Payload's own rich text field uses, so the state is edited in the format it is stored in. The page loads it with a dynamic `import()` when the pointer first enters rich text that can be edited: about 82 kB gzipped (250 kB minified) once, and nothing for a page where no rich text is edited.
+
+A bundler resolves a dynamic import when it builds, also for code that never runs. A frontend in the same project as Payload usually resolves `lexical` through `@payloadcms/richtext-lexical`. A frontend of its own, or a package manager that does not hoist, needs them installed:
+
+```bash
+bun add lexical@0.50.0 @lexical/rich-text@0.50.0 @lexical/list@0.50.0 @lexical/history@0.50.0 @lexical/selection@0.50.0 @lexical/utils@0.50.0
+```
 
 ## Pages without React
 
@@ -636,6 +681,7 @@ mountVisualEditing({
 | `toggle` | `true` | Shows the Off / Hover / Always toggle. |
 | `accentColor`, `accentTextColor` | violet, white | Colour of the frames, the **Edit** badge and the toggle's "on" dot, and of the badge text. Same as on `VisualEditing.Provider`. |
 | `onSave` | none | Called after the admin saves the document, autosave included. |
+| `onEdited` | none | Called after an edit made on the page in a tab of its own was saved, see [Where an edit is saved](#where-an-edit-is-saved). |
 | `payloadApi` | `<adminOrigin>/api` when `adminOrigin` is set | URL of the Payload REST API, where the page asks the `unsaved-rich-text` endpoint for unsaved rich text. Set it when `routes.api` of your Payload config is not `/api` or the API is served from another origin than the admin; an empty string keeps the page from asking. |
 | `renderRichTextValue`, `renderRichText` | none | Unsaved rich text structure, see below. |
 | `optimistic` | `true` | With `renderRichTextValue`, render a new structure on the page before the server answers, see [Rendered on the page first](#rendered-on-the-page-first). `false` waits for the server. |
@@ -756,7 +802,7 @@ A `beforeChange` hook removes intact markers from every write. It cannot recogni
 | `adminBasePath` | `string` | `/admin` | Admin base path. Reads from below it are not marked; the bridge uses it to recognise the open document. A slash at its end is ignored. |
 | `enrichment` | `'auto' \| 'explicit'` | `'auto'` | See [Enrichment modes](#enrichment-modes). |
 | `instantPreview` | `boolean` | `false` | See [Instant preview](#instant-preview). |
-| `inlineEditing` | `boolean` | `false` | Adds the receivers of edits and of media picks to the admin and the `field-edit` and `media-options` endpoints, see [Editing on the page](#editing-on-the-page). Needs `instantPreview`. |
+| `inlineEditing` | `boolean` | `false` | Adds the receivers of edits, of media picks and of rich text edits to the admin and the `field-edit`, `media-options` and `rich-text-value` endpoints, see [Editing on the page](#editing-on-the-page). Needs `instantPreview`. |
 | `renderHtml` | `({ value, field, locale, req }) => string \| Promise<string>` | none | Renders unsaved rich text to HTML for a page without React, see [Pages without React](#unsaved-rich-text-on-a-page-without-react). |
 | `readWholeDocument` | `boolean` | `false` | The `unsaved-rich-text` endpoint reads every field of the document instead of the top-level field that holds the rich text. For `afterRead` hooks that need other fields, see [Upgrading from 1.2.0](#upgrading-from-120). |
 
@@ -782,6 +828,7 @@ A `beforeChange` hook removes intact markers from every write. It cannot recogni
 | `adminOrigin` | the page's origin | Origin of the admin window, with its scheme: `https://cms.example.com`. A value that is no `http` or `https` URL is ignored: the page then talks to its own origin and asks no `payloadApi`. |
 | `instantPreview` | `true` | See [Instant preview](#instant-preview). `false` keeps the page from listening to the admin. |
 | `inlineEditing` | `false` | Offers the **Edit on page** switch, see [Editing on the page](#editing-on-the-page). |
+| `onEdited` | none | Called after an edit made on the page in a tab of its own was saved, see [Where an edit is saved](#where-an-edit-is-saved). The latest function passed is the one called. |
 | `buildAdminEditUrl` | built in | Builds the link used when the page was not opened from the admin. A link without an origin opens on `adminOrigin`. |
 | `payloadApi` | `<adminOrigin>/api` when `adminOrigin` is set | URL of the Payload REST API, such as `https://cms.example.com/api`. With `renderValue` on `LiveRichText`, unsaved rich text is checked through the `unsaved-rich-text` endpoint instead of the action. With `inlineEditing`, a page in a tab of its own saves edits there; without the option it uses `/api` of the page's own origin. |
 
@@ -790,6 +837,12 @@ A `beforeChange` hook removes intact markers from every write. It cannot recogni
 A draft read with `locale: 'all'` returns localized values keyed by locale (`title: { en, de }`). Each value is marked with the path of its field and its locale, so a click on the German title opens `title` in German when it opens a new admin tab. The `_meta` of a localized rich text, upload or relationship sits on the value of each locale: `withVisualEditingPath(page.content.en)`. Instant preview does not touch these values.
 
 When the clicked document is already open in the admin, the bridge focuses the field in the locale the admin is showing. It does not switch the admin locale.
+
+## Upgrading from 1.4.0
+
+- **`./client` and `./dom` name the Lexical packages in a dynamic `import()`**, for [rich text edited on the page](#the-lexical-packages). Nothing of them is loaded until rich text is edited, but a bundler that cannot resolve `lexical` fails the build of the frontend, also when `inlineEditing` is off. Install the six packages where that happens.
+- **Regenerate the import map** when `inlineEditing` is on: the admin gets a `RichTextEditReceiver`.
+- **With `inlineEditing` on, a click into rich text edits it in place** instead of opening the field in the admin, once the page holds its state. The **Edit** badge still opens the field.
 
 ## Upgrading from 1.3.0
 
