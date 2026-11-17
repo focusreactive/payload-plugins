@@ -1,11 +1,13 @@
 import { useEffect } from "react";
 
 import type { VeAnnounceRequestMessage } from "../../shared/protocol.js";
+import type { GrantedPage } from "./previewGrants.js";
 import type { PreviewSession } from "./previewSession.js";
 import type { PreviewWindow } from "./usePreviewWindow.js";
 
-import { VE_ANNOUNCE_REQUEST_TYPE } from "../../shared/protocol.js";
+import { VE_ANNOUNCE_REQUEST_TYPE, VE_PREVIEW_GRANT_REQUEST_TYPE } from "../../shared/protocol.js";
 import { isMessageFrom } from "../../shared/messageSource.js";
+import { isPlainObject } from "../../shared/plainObject.js";
 
 const BLANK_PAGE_URL = "about:blank";
 const FRAME_LOAD_EVENT = "load";
@@ -19,9 +21,15 @@ const isOnBlankPage = (previewWindow: Window): boolean => {
   }
 };
 
+const grantedPageOf = (message: unknown): GrantedPage | null =>
+  isPlainObject(message) && typeof message.pageId === "string"
+    ? { asksForGrant: message.type === VE_PREVIEW_GRANT_REQUEST_TYPE, pageId: message.pageId }
+    : null;
+
 export function usePreviewPage(
   { getFrame, getWindow, origin, post }: PreviewWindow,
-  session: PreviewSession
+  session: PreviewSession,
+  onPageAnnounced: (page: GrantedPage) => void
 ): void {
   useEffect(() => {
     session.pageLeft();
@@ -38,7 +46,10 @@ export function usePreviewPage(
     };
 
     const answerAnnouncement = (event: MessageEvent) => {
-      if (isMessageFrom(event, origin, getWindow())) post(session.pageAnnounced(event.data));
+      if (!isMessageFrom(event, origin, getWindow())) return;
+      post(session.pageAnnounced(event.data));
+      const page = grantedPageOf(event.data);
+      if (page) onPageAnnounced(page);
     };
 
     const frame = getFrame();
@@ -50,5 +61,5 @@ export function usePreviewPage(
       window.removeEventListener("message", answerAnnouncement);
       frame?.removeEventListener(FRAME_LOAD_EVENT, startOverWithLoadedPage);
     };
-  }, [getFrame, getWindow, origin, post, session]);
+  }, [getFrame, getWindow, onPageAnnounced, origin, post, session]);
 }

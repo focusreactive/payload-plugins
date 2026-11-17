@@ -426,6 +426,7 @@ export default defineConfig({
         `${VISUAL_EDITING}/client/overlayScope.ts`,
         `${VISUAL_EDITING}/client/toggle.ts`,
         `${VISUAL_EDITING}/client/saveEvents.ts`,
+        `${VISUAL_EDITING}/client/previewGrant.ts`,
         `${VISUAL_EDITING}/dom/**`,
       ],
       rules: {

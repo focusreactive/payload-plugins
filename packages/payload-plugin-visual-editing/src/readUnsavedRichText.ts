@@ -1,11 +1,20 @@
 import type { Payload } from "payload";
 
 import type { LatestReads } from "./server/unsavedRichText/latestReads.js";
-import type { PostedReadLimits, PostedRequest } from "./server/unsavedRichText/postedRequest.js";
+import type {
+  PostedReadLimits,
+  PostedRequest,
+  SignedIn,
+  Unsaved,
+} from "./server/unsavedRichText/postedRequest.js";
 import type { UnsavedRichTextDepth } from "./server/unsavedRichText/readAsUser.js";
 
 import { createLatestReads } from "./server/unsavedRichText/latestReads.js";
-import { checkAndSignIn, signInAndReadBody } from "./server/unsavedRichText/postedRequest.js";
+import {
+  checkAndSignIn,
+  readUnsaved,
+  signInAndReadBody,
+} from "./server/unsavedRichText/postedRequest.js";
 import { readAsUser, readKeyOf } from "./server/unsavedRichText/readAsUser.js";
 
 export type { UnsavedRichTextDepth } from "./server/unsavedRichText/readAsUser.js";
@@ -61,17 +70,16 @@ const nullOnFailure = async <Value>(
   }
 };
 
-const readPostedAsUser = async <Content>(
+type SignIn = (options: ReadOptions) => Promise<SignedIn | null>;
+
+const readSignedInAsUser = async <Content>(
   payload: Payload,
-  { headers, request }: PostedRequest,
+  signIn: SignIn,
   options: ReadOptions
 ): Promise<Content | null> => {
-  const signedIn = await nullOnFailure(() =>
-    request instanceof Request
-      ? signInAndReadBody(payload, request, options)
-      : checkAndSignIn(payload, request, headers, options)
-  );
+  const signedIn = await nullOnFailure(() => signIn(options));
   if (!signedIn || options.signal.aborted) return null;
+
   const { unsaved, user } = signedIn;
   const logFailure = (err: unknown) =>
     payload.logger.error({ err, msg: UNSAVED_READ_FAILURE_MESSAGE });
@@ -83,19 +91,72 @@ const readPostedAsUser = async <Content>(
   });
 };
 
-export const readUnsavedRichText = async <Content = unknown>({
-  depth,
-  maxStateLength = DEFAULT_MAX_UNSAVED_STATE_LENGTH,
-  payload,
-  timeLimitMs = DEFAULT_UNSAVED_READ_TIME_LIMIT_MS,
-  ...posted
-}: ReadUnsavedRichTextArgs): Promise<Content | null> => {
-  const requestSignal = posted.request instanceof Request ? posted.request.signal : undefined;
+const signInFromPosted =
+  (payload: Payload, { headers, request }: PostedRequest): SignIn =>
+  (options) =>
+    request instanceof Request
+      ? signInAndReadBody(payload, request, options)
+      : checkAndSignIn(payload, request, headers, options);
+
+type ReadLimits = {
+  depth?: UnsavedRichTextDepth;
+  maxStateLength?: number;
+  timeLimitMs?: number;
+};
+
+const readWithinLimits = async <Content>(
+  payload: Payload,
+  signIn: SignIn,
+  {
+    depth,
+    maxStateLength = DEFAULT_MAX_UNSAVED_STATE_LENGTH,
+    timeLimitMs = DEFAULT_UNSAVED_READ_TIME_LIMIT_MS,
+  }: ReadLimits,
+  requestSignal: AbortSignal | undefined
+): Promise<Content | null> => {
   const { nothing, signal, stop } = deadlineAfter(timeLimitMs, requestSignal);
   const options = { depth, maxStateLength, signal, timeLimitMs };
   try {
-    return await Promise.race([readPostedAsUser<Content>(payload, posted, options), nothing]);
+    return await Promise.race([readSignedInAsUser<Content>(payload, signIn, options), nothing]);
   } finally {
     stop();
   }
 };
+
+export type ReadUnsavedRichTextForArgs = ReadLimits & {
+  payload: Payload;
+  request: unknown;
+  user: SignedIn["user"];
+  allows: (unsaved: Unsaved) => boolean;
+};
+
+export const readUnsavedRichTextFor = <Content = unknown>({
+  allows,
+  payload,
+  request,
+  user,
+  ...limits
+}: ReadUnsavedRichTextForArgs): Promise<Content | null> =>
+  readWithinLimits<Content>(
+    payload,
+    async ({ maxStateLength }) => {
+      const unsaved = readUnsaved(payload, request, maxStateLength);
+      return unsaved && allows(unsaved) ? { unsaved, user } : null;
+    },
+    limits,
+    undefined
+  );
+
+export const readUnsavedRichText = <Content = unknown>({
+  depth,
+  maxStateLength,
+  payload,
+  timeLimitMs,
+  ...posted
+}: ReadUnsavedRichTextArgs): Promise<Content | null> =>
+  readWithinLimits<Content>(
+    payload,
+    signInFromPosted(payload, posted),
+    { depth, maxStateLength, timeLimitMs },
+    posted.request instanceof Request ? posted.request.signal : undefined
+  );

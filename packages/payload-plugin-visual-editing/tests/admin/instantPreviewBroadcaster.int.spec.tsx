@@ -4,11 +4,14 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { InstantPreviewBroadcaster } from "../../src/admin/InstantPreviewBroadcaster";
+import { GRANT_RENEWAL_MARGIN_MS } from "../../src/admin/instantPreview/previewGrants";
 import {
   VE_ANNOUNCE_REQUEST_TYPE,
   VE_FIELD_PATCH_TYPE,
   VE_FIELD_SNAPSHOT_TYPE,
   VE_FIELDS_RENDERED_TYPE,
+  VE_PREVIEW_GRANT_REQUEST_TYPE,
+  VE_PREVIEW_GRANT_TYPE,
 } from "../../src/shared/protocol";
 
 const PREVIEW_ORIGIN = "http://localhost:3333";
@@ -50,7 +53,7 @@ const admin = vi.hoisted(() => {
 vi.mock("@payloadcms/ui", () => ({
   useAllFormFields: () => [admin.fields, vi.fn()],
   useConfig: () => ({
-    config: { blocksMap: {} },
+    config: { blocksMap: {}, routes: { api: "/api" }, serverURL: "" },
     getEntityConfig: ({ collectionSlug, globalSlug }: EntityLookup) =>
       ENTITIES[collectionSlug ?? globalSlug ?? ""] ?? null,
   }),
@@ -302,5 +305,115 @@ describe("InstantPreviewBroadcaster", () => {
     announcePreview();
 
     expect(admin.postMessage).not.toHaveBeenCalled();
+  });
+
+  describe("the preview grant", () => {
+    const EXPIRES_AT = Date.now() + 10 * 60 * 1000;
+    const fetchGrant = vi.fn();
+
+    beforeEach(() => {
+      fetchGrant.mockReset();
+      fetchGrant.mockResolvedValue(Response.json({ expiresAt: EXPIRES_AT, grant: "signed" }));
+      vi.stubGlobal("fetch", fetchGrant);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    const grantMessages = () =>
+      admin.postMessage.mock.calls.filter(([message]) => message.type === VE_PREVIEW_GRANT_TYPE);
+
+    it("asks Payload for a grant of the open document and sends it to the page that announced itself", async () => {
+      announcePreview();
+      await act(async () => undefined);
+
+      expect(fetchGrant).toHaveBeenCalledWith(
+        "/api/visual-editing/preview-grant",
+        expect.objectContaining({
+          body: JSON.stringify({ collectionSlug: "page", kind: "collection", docId: "7" }),
+          credentials: "include",
+          method: "POST",
+        })
+      );
+      expect(grantMessages()).toEqual([
+        [{ expiresAt: EXPIRES_AT, grant: "signed", type: VE_PREVIEW_GRANT_TYPE }, PREVIEW_ORIGIN],
+      ]);
+    });
+
+    it("asks once while the grant it holds is fresh", async () => {
+      announcePreview();
+      await act(async () => undefined);
+      announcePreview({ pageId: "page-load-2" });
+      await act(async () => undefined);
+
+      expect(fetchGrant).toHaveBeenCalledTimes(1);
+      expect(grantMessages()).toHaveLength(2);
+    });
+
+    it("sends the grant once to a page that keeps announcing what it renders", async () => {
+      announcePreview();
+      await act(async () => undefined);
+      announcePreview();
+      announcePreview();
+      await act(async () => undefined);
+
+      expect(grantMessages()).toHaveLength(1);
+    });
+
+    it("sends the grant again to a page that loaded after it", async () => {
+      announcePreview();
+      await act(async () => undefined);
+      announcePreview({ pageId: "page-load-2" });
+      announcePreview({ pageId: "page-load-2" });
+      await act(async () => undefined);
+
+      expect(grantMessages()).toHaveLength(2);
+    });
+
+    it("sends the grant again to a page that asks for it", async () => {
+      announcePreview();
+      await act(async () => undefined);
+      act(() => {
+        const request = new MessageEvent("message", {
+          data: { pageId: "page-load-1", type: VE_PREVIEW_GRANT_REQUEST_TYPE },
+          origin: PREVIEW_ORIGIN,
+        });
+        Object.defineProperty(request, "source", { value: admin.frame.contentWindow });
+        window.dispatchEvent(request);
+      });
+      await act(async () => undefined);
+
+      expect(fetchGrant).toHaveBeenCalledTimes(1);
+      expect(grantMessages()).toHaveLength(2);
+    });
+
+    it("sends a renewed grant to the page that has the one before it", async () => {
+      const answerWith = (grant: string, expiresAt: number) =>
+        fetchGrant.mockImplementation(async () => Response.json({ expiresAt, grant }));
+
+      answerWith("about to expire", Date.now() + GRANT_RENEWAL_MARGIN_MS / 2);
+      announcePreview();
+      await act(async () => undefined);
+      answerWith("renewed", EXPIRES_AT);
+      announcePreview();
+      await act(async () => undefined);
+      announcePreview();
+      await act(async () => undefined);
+
+      expect(grantMessages().map(([message]) => message.grant)).toEqual([
+        "about to expire",
+        "renewed",
+      ]);
+    });
+
+    it("sends no grant when Payload refuses one", async () => {
+      fetchGrant.mockResolvedValue(new Response(null, { status: 401 }));
+
+      announcePreview();
+      await act(async () => undefined);
+
+      expect(grantMessages()).toEqual([]);
+    });
   });
 });

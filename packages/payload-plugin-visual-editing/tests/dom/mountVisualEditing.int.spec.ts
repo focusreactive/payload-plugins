@@ -8,6 +8,8 @@ import { STORAGE_KEY } from "../../src/client/visualEditingMode";
 import { mountVisualEditing, richTextAttributes, stripMarkers } from "../../src/dom";
 import {
   VE_DOCUMENT_SAVED_TYPE,
+  VE_PREVIEW_GRANT_REQUEST_TYPE,
+  VE_PREVIEW_GRANT_TYPE,
   VE_FIELD_PATCH_TYPE,
   VE_FIELD_SNAPSHOT_TYPE,
   VE_RICH_TEXT_STRUCTURE_TYPE,
@@ -158,6 +160,88 @@ describe("mountVisualEditing", () => {
     await flushMutations();
 
     expect(body.innerHTML).toBe("<p>Saved body</p>");
+  });
+
+  describe("with the unsaved rich text from Payload", () => {
+    const PAYLOAD_API = "https://cms.example/api";
+    const askPayload = vi.fn();
+    const grantMessage = (expiresAt = Date.now() + 60_000) => ({
+      expiresAt,
+      grant: "signed",
+      type: VE_PREVIEW_GRANT_TYPE,
+    });
+
+    beforeEach(() => {
+      askPayload.mockReset();
+      vi.stubGlobal("fetch", askPayload);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    const sentBody = () => JSON.parse(askPayload.mock.calls[0]![1].body as string);
+
+    it("shows the HTML Payload renders, asked for with the grant from the admin", async () => {
+      askPayload.mockResolvedValue(Response.json({ html: "<p>From Payload</p>" }));
+      mount({ instantPreview: true, payloadApi: PAYLOAD_API });
+
+      postFromAdmin(grantMessage());
+      postFromAdmin(structureOf("unsaved", "Typed"));
+      await flushMutations();
+
+      expect(askPayload.mock.calls[0]![0]).toBe(
+        "https://cms.example/api/visual-editing/unsaved-rich-text"
+      );
+      expect(askPayload.mock.calls[0]![1].headers).toEqual({ "Content-Type": "text/plain" });
+      expect(sentBody()).toEqual({
+        format: "html",
+        grant: "signed",
+        request: { field: BODY, locale: "en", state: stateOf("Typed") },
+      });
+      expect(body.innerHTML).toBe("<p>From Payload</p>");
+    });
+
+    it("renders the value Payload reads with the renderer of the site", async () => {
+      askPayload.mockResolvedValue(Response.json({ value: { root: "unsaved value" } }));
+      const renderRichTextValue = vi.fn(() => "<p>Rendered by the site</p>");
+      mount({ instantPreview: true, payloadApi: PAYLOAD_API, renderRichTextValue });
+
+      postFromAdmin(grantMessage());
+      postFromAdmin(structureOf("unsaved", "Typed"));
+      await flushMutations();
+
+      expect(sentBody().format).toBe("json");
+      expect(renderRichTextValue).toHaveBeenCalledWith(
+        { root: "unsaved value" },
+        expect.anything()
+      );
+      expect(body.innerHTML).toBe("<p>Rendered by the site</p>");
+    });
+
+    it("asks the admin for the grant when it starts, with the id of this page load", () => {
+      const postToAdmin = vi.fn();
+      stubAdminWindow({ postMessage: postToAdmin });
+
+      mount({ instantPreview: true, payloadApi: PAYLOAD_API });
+
+      expect(postToAdmin).toHaveBeenCalledWith(
+        { pageId: expect.any(String), type: VE_PREVIEW_GRANT_REQUEST_TYPE },
+        ADMIN_ORIGIN
+      );
+    });
+
+    it("asks nothing without a fresh grant from the admin", async () => {
+      mount({ instantPreview: true, payloadApi: PAYLOAD_API });
+
+      postFromAdmin(grantMessage(Date.now() - 1));
+      postFromAdmin(grantMessage(), { origin: "https://elsewhere.example" });
+      postFromAdmin(structureOf("unsaved", "Typed"));
+      await flushMutations();
+
+      expect(askPayload).not.toHaveBeenCalled();
+      expect(body.innerHTML).toBe("<p>Saved body</p>");
+    });
   });
 
   it("leaves rich text alone without a renderer", async () => {

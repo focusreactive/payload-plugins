@@ -12,6 +12,8 @@ import {
 } from "./server/unsavedRichText/hooks.js";
 import { createSchemaCache, withSchemaCache } from "./server/schemaCache.js";
 import { createStripStegaHook } from "./server/hooks/stripStegaHook.js";
+import { visualEditingEndpoints } from "./server/endpoints.js";
+import type { RenderHtml } from "./server/endpoints.js";
 import {
   withDocumentControlsCollection,
   withDocumentControlsGlobal,
@@ -65,7 +67,10 @@ export type VisualEditingPluginConfig = {
    *  `'explicit'` enriches only reads that pass `context: { visualEditing: true }`. */
   enrichment?: Enrichment;
   instantPreview?: boolean;
+  renderHtml?: RenderHtml;
 };
+
+export type { RenderHtml } from "./server/endpoints.js";
 
 export const visualEditingPlugin =
   (pluginConfig: VisualEditingPluginConfig = {}): Plugin =>
@@ -99,6 +104,12 @@ export const visualEditingPlugin =
 
     return {
       ...config,
+      endpoints: instantPreview
+        ? [
+            ...(config.endpoints ?? []),
+            ...visualEditingEndpoints({ renderHtml: pluginConfig.renderHtml }),
+          ]
+        : config.endpoints,
       custom: instantPreview ? withSchemaCache(config.custom, schemaCache) : config.custom,
       collections: config.collections?.map((collection) => {
         if (skipCols.has(collection.slug)) return collection;

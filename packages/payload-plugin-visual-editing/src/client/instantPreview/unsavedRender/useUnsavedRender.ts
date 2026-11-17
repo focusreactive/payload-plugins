@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { startTransition, useContext, useEffect, useRef, useState } from "react";
+import { startTransition, useContext, useRef, useState } from "react";
 
 import type { LiveRichTextField, LiveRichTextRequest } from "../../../shared/protocol.js";
 import type { LiveRichText } from "./liveRichText.js";
@@ -50,7 +50,7 @@ export function useUnsavedRender(
     shownNow.commit();
   });
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (!isLive) return;
     const created = startLiveRichText<ReactNode>(scope, {
       adminOrigin: () => latest.current.adminOrigin,

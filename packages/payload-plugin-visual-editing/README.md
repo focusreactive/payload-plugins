@@ -445,6 +445,100 @@ A render can transform a value and still output the stored text for some inputs,
 - The popup keeps unsaved text on screen after you leave the document without saving. It shows the saved content again when it reloads.
 - While the preview shows fields of the open document, every change in the form reads the whole form state before the admin paints. On a form with several thousand fields this costs a few milliseconds per keystroke. With Live Preview closed it costs nothing.
 
+## Pages without React
+
+`./dom` runs the same overlay, mode toggle and instant preview on a page that has no React: a static site generator, server templates, Vue, Svelte. It does not import React. The server half and the admin are the same as above.
+
+### 1. Read drafts over HTTP with the header
+
+A page that reads Payload through REST or GraphQL asks for markers with the `x-visual-editing` header on a draft read. The read is marked only for a signed-in user, so send the session of a Payload user with it.
+
+```ts
+const response = await fetch(`${CMS_URL}/api/pages?where[slug][equals]=home&draft=true`, {
+  headers: { Cookie: session, 'x-visual-editing': '1' },
+})
+```
+
+A published read, a read without the header and an anonymous read get no markers. Leave the header out of production builds.
+
+### 2. Mount it on the page
+
+Load this only in the preview, after the page has rendered:
+
+```ts
+import { mountVisualEditing } from '@focus-reactive/payload-plugin-visual-editing/dom'
+
+mountVisualEditing({
+  adminOrigin: 'https://cms.example.com',
+  framedOnly: true,
+  instantPreview: true,
+  locale: 'en',
+  onSave: () => location.reload(),
+})
+```
+
+| Option | Default | Purpose |
+|---|---|---|
+| `root` | `document.body` | Element the overlay scans for markers. |
+| `adminOrigin` | the page's origin | Origin of the admin window. Required when the admin runs on another origin. |
+| `framedOnly` | `false` | Only run inside an iframe, that is the Live Preview. |
+| `instantPreview` | `false` | Text typed in the admin appears on the page. Needs the plugin option too. |
+| `locale` | none | Locale of the page, see [Requirements](#requirements). |
+| `toggle` | `true` | Shows the Off / Hover / Always toggle. |
+| `onSave` | none | Called after the admin saves the document, autosave included. |
+| `payloadApi`, `renderRichTextValue`, `renderRichText` | none | Unsaved rich text structure, see below. |
+| `adminBasePath`, `buildAdminEditUrl` | as for `VisualEditing.Provider` | |
+
+It returns `{ destroy }`.
+
+`onSave` follows a message the plugin's admin sends after Payload reports a save. Payload's own `payload-document-event` is also sent once right after the page reports that it is ready, without a save; a page that reloads on it reloads once for nothing.
+
+### 3. Mark rich text, uploads and relationships
+
+`withVisualEditingPath(value)` returns the attributes as an object. Print them on the element in your template. For a rich text field that should update its structure before the save, print `richTextAttributes(value)` instead: it adds `data-ve-live-rich-text`, the identity and shape of the saved value. Both functions run in Node, at build time.
+
+```njk
+<div {% for name, value in richTextAttributes(page.content) %}{{ name }}="{{ value }}" {% endfor %}>
+  {{ page.content | richTextHtml | safe }}
+</div>
+```
+
+### Unsaved rich text on a page without React
+
+Text typed inside existing text of a rich text field updates through the markers, as on a React page. A new paragraph, a list or a bold word needs your renderer. `./dom` replaces the content of the element that carries `data-ve-live-rich-text` with the HTML of the unsaved value, and puts the saved HTML back when the editor returns to the saved structure. Choose where that HTML is made:
+
+| | Where the HTML is made | Plugin | `mountVisualEditing` |
+|---|---|---|---|
+| In Payload | `renderHtml` in the plugin config | `instantPreview: true, renderHtml` | `payloadApi` |
+| On the site | your function, from the value Payload reads | `instantPreview: true` | `payloadApi`, `renderRichTextValue` |
+| Anywhere | your own call | as you need | `renderRichText` |
+
+```ts
+visualEditingPlugin({
+  instantPreview: true,
+  renderHtml: ({ value }) => toSiteHtml(value),
+})
+
+mountVisualEditing({
+  adminOrigin: 'https://cms.example.com',
+  instantPreview: true,
+  payloadApi: 'https://cms.example.com/api',
+})
+```
+
+`renderHtml` gets the value with the markers of a draft read, the field, the locale and the request. Render it with the same converter the site uses: the HTML replaces the saved HTML in place, and markup that differs flickers when the saved render comes back. There is no default converter for that reason.
+
+`renderRichTextValue(value, signal)` gets the same value on the page and returns HTML, or a promise of it. `renderRichText(request, signal)` gets the request itself; hand it to `readUnsavedRichText` on your own server.
+
+#### How the page is allowed to read the unsaved value
+
+The admin and the page often run on different origins, so the page cannot send the admin's session cookie. With `instantPreview` on, the plugin adds two endpoints:
+
+- `POST /api/visual-editing/preview-grant`. The admin asks it, with the editor's session, for a grant of the document open in the form. The grant names the user and the document, expires after ten minutes and is signed with the Payload secret. The admin posts it to the preview window, only to the origin of the Live Preview URL, when the page reports its fields and every four minutes while the form is open.
+- `POST /api/visual-editing/unsaved-rich-text`. The page posts the grant and the request as `text/plain`, which needs no CORS preflight. The endpoint reads the posted state through `readUnsavedRichText` with the access of the user in the grant and only for the document in the grant, and answers the origin of the request. It waits up to eight seconds for the read, longer than the three seconds `readUnsavedRichText` allows by default, because no router queue waits behind a `fetch`. It writes nothing.
+
+A grant is a bearer token: a script on the preview page can read it, as it can read every value the admin posts there. It only lets the holder read unsaved rich text of one document with the access of the user who opened it, for ten minutes.
+
 ## Enrichment modes
 
 `enrichment` decides which reads get markers.
@@ -478,6 +572,7 @@ A `beforeChange` hook removes intact markers from every write. It cannot recogni
 | `adminBasePath` | `string` | `/admin` | Admin base path. Reads from below it are not marked; the bridge uses it to recognise the open document. |
 | `enrichment` | `'auto' \| 'explicit'` | `'auto'` | See [Enrichment modes](#enrichment-modes). |
 | `instantPreview` | `boolean` | `false` | See [Instant preview](#instant-preview). |
+| `renderHtml` | `({ value, field, locale, req }) => string \| Promise<string>` | none | Renders unsaved rich text to HTML for a page without React, see [Pages without React](#unsaved-rich-text-on-a-page-without-react). |
 
 `LiveRichText` props:
 
@@ -504,6 +599,16 @@ A `beforeChange` hook removes intact markers from every write. It cannot recogni
 A draft read with `locale: 'all'` returns localized values keyed by locale (`title: { en, de }`). Each value is marked with the path of its field and its locale, so a click on the German title opens `title` in German when it opens a new admin tab. The `_meta` of a localized rich text, upload or relationship sits on the value of each locale: `withVisualEditingPath(page.content.en)`. Instant preview does not touch these values.
 
 When the clicked document is already open in the admin, the bridge focuses the field in the locale the admin is showing. It does not switch the admin locale.
+
+## Upgrading from 1.2.0
+
+Regenerate the import map. The plugin adds `PreviewPageBridge` to every collection and global with Live Preview, also with `instantPreview` off.
+
+- **A click on a page served from another origin than the admin opens the field.** The admin used to accept clicks only from its own origin. It now also accepts them from the Live Preview window, on the origin of its URL.
+- **The page no longer posts a click to any origin.** Without `adminOrigin` it posts to its own origin, as instant preview already did.
+- **Draft reads over REST and GraphQL can be marked.** Only with the `x-visual-editing` header and a signed-in user, see [Pages without React](#pages-without-react). Reads that do not send the header are unchanged.
+- **With `instantPreview` on, the plugin adds two endpoints** under `/api/visual-editing/`, see [How the page is allowed to read the unsaved value](#how-the-page-is-allowed-to-read-the-unsaved-value).
+- **`react` and `react-dom` are optional peers.** The admin of Payload still needs them; a site that imports only `./dom` does not.
 
 ## Upgrading from 1.1.1
 

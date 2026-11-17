@@ -84,7 +84,11 @@ const fieldPathOf = (payload: Payload, { collectionSlug, key }: LiveRichTextFiel
   return schema && schemaPathOfRichText(schema, key);
 };
 
-const readUnsaved = (payload: Payload, body: unknown, maxStateLength: number): Unsaved | null => {
+export const readUnsaved = (
+  payload: Payload,
+  body: unknown,
+  maxStateLength: number
+): Unsaved | null => {
   if (!isPlainObject(body)) return null;
   const field = readField(body.field);
   const document = field && documentOf(payload, field);

@@ -8,16 +8,18 @@ Payload v3 plugin: click-to-edit overlays on server-rendered draft content throu
 
 | Part | Code |
 |---|---|
-| Public entries | `src/index.ts` (plugin, `readUnsavedRichText`, `stripMarkers`, `excludeValues`), `src/client/index.ts`, `src/admin/index.ts` |
+| Public entries | `src/index.ts` (plugin, `readUnsavedRichText`, `stripMarkers`, `excludeValues`), `src/client/index.ts` (React), `src/dom/index.ts` (no React), `src/admin/index.ts` |
+| Endpoints and preview grants | `src/server/endpoints.ts` (`preview-grant`, `unsaved-rich-text`, added with `instantPreview`), `src/server/previewGrant.ts` (signs and checks a grant), `src/admin/instantPreview/previewGrants.ts` (asks for one and keeps it fresh) |
 | Server hooks and marking | `src/server/markRead.ts` (marks a read), `src/server/markedReads.ts` (decides whether a read is marked), `src/server/hooks/*` (Payload adapters), `src/server/richText/*` |
 | Unsaved rich text on the server | `src/readUnsavedRichText.ts`, `src/server/unsavedRichText/*` |
 | Shared by server, admin and page | `src/shared/*`: `protocol.ts` (messages, `data-ve-*` attributes), `shared.ts`, `veDocument.ts`, `fieldKey.ts`, `editableSchema/*`, `richText/*` |
-| Admin bridge (click-to-edit) | `src/admin/VisualEditingBridgeProvider.tsx`, `src/admin/openField/*`, `resolveContainerChain.ts`, `expandAndFocus.ts` |
+| Admin bridge (click-to-edit) | `src/admin/VisualEditingBridgeProvider.tsx`, `src/admin/previewPages.ts` (which windows it accepts clicks from), `src/admin/PreviewPageBridge.tsx` (announces the Live Preview window, posts `ve:document-saved`), `src/admin/openField/*`, `resolveContainerChain.ts`, `expandAndFocus.ts` |
 | Instant preview in the admin | `src/admin/instantPreview/previewSession.ts` (decides what the preview page is sent), `src/admin/InstantPreviewBroadcaster.tsx`, `src/admin/instantPreview/usePreviewPage.ts`, `src/admin/instantPreview/usePreviewWindow.ts` (React adapters) |
+| Page session and adapters | `src/client/session.ts` (mode, storage, frame, admin origin), `src/client/overlayScope.ts` (locale and saved shapes of one overlay), `src/client/toggle.ts`, `src/client/saveEvents.ts`, `src/client/previewGrant.ts`; React adapters `src/client/*.tsx`, DOM adapter `src/dom/*` |
 | Overlay on the page | `src/client/overlay/fieldTracker.ts` (one record per marked text node: markers stripped and restored, own writes counted, fields and rich text nodes reported and released), `src/client/overlay/editTargets.ts`, `src/client/createOverlay.ts`, `src/client/*` |
-| Instant preview on the page | `src/client/instantPreview/liveFields.ts` (what each live field shows and announces), `src/client/instantPreview/instantPreview.ts` (routes tracker and admin events to it), `src/client/instantPreview/unsavedRender/unsavedRender.ts` (what a live rich text shows and which render call it starts), `LiveRichText.tsx` and `unsavedRender/useUnsavedRender.ts` (React adapters) |
+| Instant preview on the page | `src/client/instantPreview/liveFields.ts` (what each live field shows and announces), `src/client/instantPreview/instantPreview.ts` (routes tracker and admin events to it), `src/client/instantPreview/unsavedRender/liveRichText.ts` (one live rich text: admin channel, announce, saved shape, held saved render), `unsavedRender.ts` behind it (which render call it starts), `LiveRichText.tsx` and `unsavedRender/useUnsavedRender.ts` (React adapters), `src/dom/liveRichTextElements.ts` (DOM adapter) |
 
-`admin` and `client` never import `server`; `shared` imports none of them; `client/overlay` never imports `client/instantPreview`. Check with `bunx madge --circular --extensions ts,tsx src`. `shared`, `server`, `client/overlay` and `client/instantPreview` never import React or `@payloadcms/ui`, except the React adapters of the live rich text; the rule in the root `oxlint.config.ts` checks it on commit.
+`admin` and `client` never import `server`; `shared` imports none of them; `client/overlay` never imports `client/instantPreview`. Check with `bunx madge --circular --extensions ts,tsx src`. `shared`, `server`, `client/overlay`, `client/instantPreview`, the React-free modules of `client` and `dom` never import React or `@payloadcms/ui`, except the React adapters of the live rich text; the rule in the root `oxlint.config.ts` checks it on commit. Add a new React-free module of `client` to that rule.
 
 ## Things that are easy to break
 
@@ -30,6 +32,9 @@ Payload v3 plugin: click-to-edit overlays on server-rendered draft content throu
 - **The editor state leaves the admin only in `src/admin/instantPreview/unsavedStructures.ts`**, for a field the page announced with `ve:rich-text-rendered`, when the shape changes. Never per keystroke, never in a snapshot or a patch.
 - **`readUnsavedRichText` trusts nothing in the request.** The document is read with the user's access, the state is validated and placed only into a field the editable schema lists as `richText`, block fields come from the saved document, and the `_meta` of the result comes from the read. Do not render a posted state that did not go through it.
 - **The field tracker releases a node before it reports it again.** `liveFields` keeps no node map: it releases a node by the address of the match it was given. A node reported with a new field before its old match was released would be patched as both fields.
+- **An adapter of a live rich text shows what `shownFor` returns and calls its `commit` once that is on screen, after every render.** The module waits for that commit before it starts the next render call; nothing else of its timing belongs in an adapter.
+- **A grant is the only way a request without a session reads unsaved rich text.** `unsaved-rich-text` checks its signature and expiry, loads the user it names and reads only the document it names, with that user's access. The admin posts a grant only to the origin of the Live Preview URL.
+- **The admin accepts a click from another origin only from the Live Preview window, on the origin of its URL** (`previewPages.ts`). The page never posts to `"*"`.
 - **Never two render calls out.** A Server Action occupies the router's queue until it returns; `unsavedRender.ts` starts the next call only when the previous one has settled, whatever the component shows meanwhile.
 - **The fields of a block never leave the admin.** `unsavedStructures.ts` posts `withoutBlockFields(state)`.
 - **`LiveRichText` never gets the value.** Its props are the field identity and a shape. Passing the value would serialise it into every draft page.

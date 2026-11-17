@@ -5,16 +5,21 @@ import type { Toggle } from "../client/toggle.js";
 import type { RenderRichTextHtml } from "./liveRichTextElements.js";
 
 import { savedShapesWithin, startOverlay } from "../client/overlayScope.js";
+import { listenToPreviewGrants } from "../client/previewGrant.js";
 import { listenToSaves } from "../client/saveEvents.js";
 import { createPageStore, sessionOf } from "../client/session.js";
 import { createToggle } from "../client/toggle.js";
 import { startLiveRichTextElements } from "./liveRichTextElements.js";
+import { renderInPayload } from "./unsavedFromPayload.js";
+import type { RenderRichTextValue } from "./unsavedFromPayload.js";
 
 export type MountVisualEditingOptions = SessionOptions & {
   root?: HTMLElement;
   locale?: string;
   toggle?: boolean;
   renderRichText?: RenderRichTextHtml;
+  payloadApi?: string;
+  renderRichTextValue?: RenderRichTextValue;
   onSave?: () => void;
 };
 
@@ -27,6 +32,8 @@ export function mountVisualEditing({
   locale,
   toggle: showsToggle = true,
   renderRichText,
+  payloadApi,
+  renderRichTextValue,
   onSave,
   ...sessionOptions
 }: MountVisualEditingOptions = {}): VisualEditing {
@@ -38,9 +45,15 @@ export function mountVisualEditing({
   const { available, instantPreview } = session();
   const isInstantPreviewOn = available && instantPreview;
 
+  const grants = isInstantPreviewOn && payloadApi ? listenToPreviewGrants(adminOrigin) : null;
+  const render =
+    renderRichText ??
+    (grants && payloadApi
+      ? renderInPayload({ grants, payloadApi, renderValue: renderRichTextValue })
+      : null);
   const stopLiveRichTexts =
-    isInstantPreviewOn && renderRichText
-      ? startLiveRichTextElements(root, scope, adminOrigin, renderRichText)
+    isInstantPreviewOn && render
+      ? startLiveRichTextElements(root, scope, adminOrigin, render)
       : null;
 
   const toggle: Toggle | null =
@@ -81,6 +94,7 @@ export function mountVisualEditing({
       stopFollowing();
       stopListeningToSaves?.();
       stopLiveRichTexts?.();
+      grants?.stop();
       overlay?.dispose();
       overlay = null;
       toggle?.remove();

@@ -20,6 +20,25 @@ export type DocKind = "collection" | "global";
 
 export const VE_READ_HEADER = "x-visual-editing";
 
+export const VE_PREVIEW_GRANT_PATH = "/visual-editing/preview-grant";
+
+export const VE_UNSAVED_RICH_TEXT_PATH = "/visual-editing/unsaved-rich-text";
+
+export const VE_PREVIEW_GRANT_TYPE = "ve:preview-grant";
+
+export type VePreviewGrantMessage = {
+  type: typeof VE_PREVIEW_GRANT_TYPE;
+  grant: string;
+  expiresAt: number;
+};
+
+export const VE_PREVIEW_GRANT_REQUEST_TYPE = "ve:preview-grant-request";
+
+export type VePreviewGrantRequestMessage = {
+  type: typeof VE_PREVIEW_GRANT_REQUEST_TYPE;
+  pageId: string;
+};
+
 export const VE_MESSAGE_TYPE = "ve:open-field";
 
 export type VeOpenFieldMessage = {
