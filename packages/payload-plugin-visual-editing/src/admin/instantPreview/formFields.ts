@@ -27,7 +27,13 @@ const stepInto = ({ entry }: WalkedPath, segment: string): FieldStep | null => {
   return { rowId: row.id, ...(row.blockType !== undefined && { blockType: row.blockType }) };
 };
 
-export function readFormFields(formState: FormState, editableSchema: EditableSchema): FormField[] {
+type ListsField = (editableSchema: EditableSchema, steps: readonly FieldStep[]) => boolean;
+
+export function readFormFields(
+  formState: FormState,
+  editableSchema: EditableSchema,
+  lists: ListsField = isMarkable
+): FormField[] {
   const walkedPaths = new Map<string, WalkedPath | null>();
 
   const walk = (formPath: string): WalkedPath | null => {
@@ -47,7 +53,7 @@ export function readFormFields(formState: FormState, editableSchema: EditableSch
   return Object.keys(formState).flatMap((formPath) => {
     const walked = walk(formPath);
     if (!walked?.entry || walked.entry.rows !== undefined) return [];
-    if (!isMarkable(editableSchema, walked.steps)) return [];
+    if (!lists(editableSchema, walked.steps)) return [];
     return [
       {
         formPath,

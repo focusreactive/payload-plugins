@@ -18,7 +18,7 @@ export type OpenForm = {
   formState: FormState;
 };
 
-const isOfAnotherLocale = (editLocale: string | undefined, formLocale: string | undefined) =>
+export const isOfAnotherLocale = (editLocale: string | undefined, formLocale: string | undefined) =>
   Boolean(formLocale) && editLocale !== formLocale;
 
 export function editOfDocument(data: unknown, document: VeLiveDocument): VeFieldEdit | null {
