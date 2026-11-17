@@ -89,6 +89,36 @@ describe("overlay click handler", () => {
 
     const handler = buildOverlayClickHandler(ctx, win);
     handler({ preventDefault: vi.fn() } as unknown as MouseEvent);
-    expect(open).toHaveBeenCalledWith(ctx.href, "_blank");
+    expect(open).toHaveBeenCalledWith(`http://localhost:3000${ctx.href}`, "_blank");
+  });
+
+  const openedWithoutAdminWindow = (context: OverlayClickContext) => {
+    const open = vi.fn();
+    const win = { opener: null, open, location: { origin: "https://site.example" } };
+    Object.assign(win, { parent: win });
+
+    buildOverlayClickHandler(
+      context,
+      win as unknown as Window
+    )({ preventDefault: vi.fn() } as unknown as MouseEvent);
+    return open.mock.calls[0]?.[0];
+  };
+
+  it("opens the field on the origin of the admin when the site runs on another one", () => {
+    expect(openedWithoutAdminWindow({ ...ctx, adminOrigin: "https://cms.example" })).toBe(
+      "https://cms.example/admin/collections/pages/p-1?veFocus=hero.title"
+    );
+  });
+
+  it("keeps a link that names its own origin", () => {
+    const href = "https://admin.example/edit/p-1";
+
+    expect(openedWithoutAdminWindow({ ...ctx, adminOrigin: "https://cms.example", href })).toBe(
+      href
+    );
+  });
+
+  it("opens the link as it is when the admin origin is not known", () => {
+    expect(openedWithoutAdminWindow({ ...ctx, adminOrigin: "" })).toBe(ctx.href);
   });
 });

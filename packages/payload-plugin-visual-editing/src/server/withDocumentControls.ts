@@ -36,7 +36,7 @@ const documentControlsOf = (
   const isPreviewed = hasLivePreview(entity, slugsPreviewedByRoot);
   return [
     ...(isPreviewed ? [{ path: PREVIEW_PAGE_BRIDGE_PATH }] : []),
-    ...(instantPreview ? [{ path: OPEN_FORM_ANNOUNCER_PATH }] : []),
+    { path: OPEN_FORM_ANNOUNCER_PATH },
     ...(instantPreview && isPreviewed
       ? [{ clientProps: { excludeFieldNames }, path: INSTANT_PREVIEW_COMPONENT_PATH }]
       : []),
@@ -50,8 +50,6 @@ const withDocumentControlsIn = <Entity extends PreviewableEntity>(
   options: DocumentControlsOptions
 ): Entity => {
   const controls = documentControlsOf(entity, slugsPreviewedByRoot, options);
-  if (controls.length === 0) return entity;
-
   const components = entity.admin?.components;
   const slot = components?.[slotName];
   return {

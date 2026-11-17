@@ -136,19 +136,19 @@ describe("document controls", () => {
     expect(collectionControls(build(true), "users")).toBeUndefined();
   });
 
-  it("announces only the preview page, for click-to-edit from another origin, when the option is off", () => {
+  it("announces the preview page and the open form, for a link with a field to focus, when the option is off", () => {
     const config = build();
 
-    expect(collectionControls(config, "page")).toEqual([PREVIEW_PAGE_BRIDGE]);
-    expect(collectionControls(config, "post")).toEqual([PREVIEW_PAGE_BRIDGE]);
-    expect(globalControls(config, "footer")).toEqual([PREVIEW_PAGE_BRIDGE]);
+    expect(collectionControls(config, "page")).toEqual([PREVIEW_PAGE_BRIDGE, OPEN_FORM_ANNOUNCER]);
+    expect(collectionControls(config, "post")).toEqual([PREVIEW_PAGE_BRIDGE, OPEN_FORM_ANNOUNCER]);
+    expect(globalControls(config, "footer")).toEqual([PREVIEW_PAGE_BRIDGE, OPEN_FORM_ANNOUNCER]);
   });
 
-  it("adds nothing where live preview is not configured and the option is off", () => {
+  it("announces the open form where live preview is not configured and the option is off", () => {
     const config = build();
 
-    expect(collectionControls(config, "category")).toBeUndefined();
-    expect(globalControls(config, "settings")).toBeUndefined();
+    expect(collectionControls(config, "category")).toEqual([OPEN_FORM_ANNOUNCER]);
+    expect(globalControls(config, "settings")).toEqual([OPEN_FORM_ANNOUNCER]);
   });
 
   it("keeps the schema cache for readUnsavedRichText in config.custom next to existing keys when the option is on", () => {

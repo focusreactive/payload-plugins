@@ -678,7 +678,7 @@ A `beforeChange` hook removes intact markers from every write. It cannot recogni
 | `adminBasePath` | `/admin` | Must match the plugin option. |
 | `adminOrigin` | the page's origin | Origin of the admin window. |
 | `instantPreview` | `false` | See [Instant preview](#instant-preview). |
-| `buildAdminEditUrl` | built in | Builds the link used when the page was not opened from the admin. |
+| `buildAdminEditUrl` | built in | Builds the link used when the page was not opened from the admin. A link without an origin opens on `adminOrigin`. |
 | `payloadApi` | none | URL of the Payload API, such as `https://cms.example.com/api`. With `renderValue` on `LiveRichText`, unsaved rich text is checked through the `unsaved-rich-text` endpoint instead of the action. |
 
 ## Reads with every locale
@@ -689,7 +689,7 @@ When the clicked document is already open in the admin, the bridge focuses the f
 
 ## Upgrading from 1.2.0
 
-Regenerate the import map. The plugin adds `PreviewPageBridge` to every collection and global with Live Preview, also with `instantPreview` off.
+Regenerate the import map. The plugin adds `PreviewPageBridge` to every collection and global with Live Preview, and `OpenFormAnnouncer` to every collection and global it marks, both also with `instantPreview` off. Without `OpenFormAnnouncer` in the import map a link with `?veFocus` waits 15 seconds before it focuses the field.
 
 - **A click on a page served from another origin than the admin opens the field.** The admin used to accept clicks only from its own origin. It now also accepts them from the Live Preview window, on the origin of its URL.
 - **The page no longer posts a click to any origin.** Without `adminOrigin` it posts to its own origin, as instant preview already did.
@@ -741,7 +741,7 @@ Markers:
 Overlay:
 
 - **Edit targets follow the page.** A target is bound again when React renders another field or document into the same element. An element that leaves the overlay, or a wrapper that loses its `data-ve-*` attributes, loses its outline and badge.
-- **Click-to-edit after a row move** (with `instantPreview`): between a move in the form and the refresh, a click opens the row that was clicked, not the row that now has its index. A rich text wrapper does the same through its `data-ve-key`. For this the plugin adds an `OpenFormAnnouncer` to the document controls of every collection and global it marks, with or without Live Preview; it renders nothing and tells the bridge which row ids the open form has.
+- **Click-to-edit after a row move** (with `instantPreview`): between a move in the form and the refresh, a click opens the row that was clicked, not the row that now has its index. A rich text wrapper does the same through its `data-ve-key`. For this the plugin adds an `OpenFormAnnouncer` to the document controls of every collection and global it marks, with or without Live Preview; it renders nothing and tells the bridge which row ids the open form has. It is now added with `instantPreview` off as well, because a link with `?veFocus` waits for it.
 
 ## Caveats
 

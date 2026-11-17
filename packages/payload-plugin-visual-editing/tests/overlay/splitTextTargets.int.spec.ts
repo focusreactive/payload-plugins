@@ -14,6 +14,7 @@ import {
 
 import { markedText, markedTextNode } from "../support/markedData";
 import { click, overlayCtx } from "../support/overlay";
+import { ADMIN_ORIGIN } from "../support/previewWindow";
 import { flushMutations } from "../support/time";
 
 const buildAdminEditUrl = vi.fn(({ path }: { path: string }) => `/admin/edit?path=${path}`);
@@ -77,7 +78,7 @@ describe("a heading a site script splits into words after the overlay found it",
 
     click(firstWord!);
 
-    expect(open).toHaveBeenCalledWith("/admin/edit?path=title", "_blank");
+    expect(open).toHaveBeenCalledWith(`${ADMIN_ORIGIN}/admin/edit?path=title`, "_blank");
   });
 
   it("is a target again when the edit targets are switched off and on after the split", async () => {
@@ -102,7 +103,7 @@ describe("a heading a site script splits into words after the overlay found it",
 
     click(secondWord!);
 
-    expect(open).toHaveBeenCalledWith("/admin/edit?path=title", "_blank");
+    expect(open).toHaveBeenCalledWith(`${ADMIN_ORIGIN}/admin/edit?path=title`, "_blank");
   });
 
   it("leaves no identity attribute on the heading once disposed", async () => {
