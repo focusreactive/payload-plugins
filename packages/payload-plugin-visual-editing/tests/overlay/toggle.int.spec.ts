@@ -8,6 +8,7 @@ import {
   DATA_VE_TOGGLE_ATTR,
   TOGGLE_POSITION_STORAGE_KEY,
 } from "../../src/client/toggle";
+import { declarationsFor } from "../support/shadowStyles";
 import { flushMutations } from "../support/time";
 
 const host = () => document.querySelector<HTMLElement>(`[${DATA_VE_TOGGLE_ATTR}]`);
@@ -219,6 +220,27 @@ describe("toggle", () => {
       toggle.show("hover");
 
       expect(editsInPlaceSwitch()).toBeNull();
+    });
+
+    it("moves to a row of its own where the window is too narrow for one row", () => {
+      toggle = createToggle(document, vi.fn(), vi.fn());
+      toggle.show("hover", true);
+
+      const card = declarationsFor(host(), ".card");
+
+      expect(card).toContain("flex-wrap: wrap");
+      expect(card).toContain("max-width: calc(100vw - 24px)");
+    });
+
+    it("shows that it is on by a dot in the accent colour, and keeps the colour of its text", () => {
+      toggle = createToggle(document, vi.fn(), vi.fn());
+      toggle.show("hover", true);
+
+      const whenOn = declarationsFor(host(), '[role="switch"][aria-checked="true"]');
+      const dotWhenOn = declarationsFor(host(), '[role="switch"][aria-checked="true"]::before');
+
+      expect(whenOn.filter((declaration) => declaration.startsWith("color:"))).toEqual([]);
+      expect(dotWhenOn).toContain("background: var(--ve-on)");
     });
 
     it("stays out of the arrow keys of the modes", () => {
