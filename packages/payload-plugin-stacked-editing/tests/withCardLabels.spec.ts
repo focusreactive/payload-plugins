@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { CARD_LABEL_COMPONENT } from "../src/lib/constants.js";
 import { withCardLabelFields } from "../src/lib/withCardLabels.js";
-import { stackedEditingPlugin } from "../src/plugin.js";
+import { stackedEditing } from "../src/plugin.js";
 
 const leaf: Block = { slug: "leaf", fields: [{ name: "text", type: "text" }] };
 const custom: Block = {
@@ -72,7 +72,7 @@ describe("withCardLabelFields", () => {
   });
 });
 
-describe("stackedEditingPlugin cards option", () => {
+describe("stackedEditing cards option", () => {
   const config = {
     blocks: [leaf],
     collections: [
@@ -82,7 +82,7 @@ describe("stackedEditingPlugin cards option", () => {
   } as unknown as Config;
 
   it("adds cards to managed collections and config-level blocks only", async () => {
-    const result = await stackedEditingPlugin({ collections: ["pages"] })(config);
+    const result = await stackedEditing({ collections: ["pages"] })(config);
     expect(
       at(result.collections, 0, "fields", 3, "fields", 0, "admin", "components", "RowLabel")
     ).toBe(CARD_LABEL_COMPONENT);
@@ -91,7 +91,7 @@ describe("stackedEditingPlugin cards option", () => {
   });
 
   it("can be turned off", async () => {
-    const result = await stackedEditingPlugin({ cards: false })(config);
+    const result = await stackedEditing({ cards: false })(config);
     expect(at(result.collections, 0, "fields", 3, "fields", 0, "admin")).toBeUndefined();
     expect(at(result.blocks, 0, "admin")).toBeUndefined();
   });

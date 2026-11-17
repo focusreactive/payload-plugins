@@ -60,7 +60,7 @@ const withGlobalOutlet = (
  * Adds one client component per edit view and, unless `cards: false`, a row card label to arrays
  * and blocks that have no label of their own. No fields, hooks or endpoints.
  */
-export const stackedEditingPlugin =
+export const stackedEditing =
   (options: StackedEditingOptions = {}): Plugin =>
   (config: Config): Config => {
     if (options.enabled === false) {

@@ -1,7 +1,7 @@
 import type { Config } from "payload";
 import { describe, expect, it } from "vitest";
 
-import { stackedEditingPlugin } from "../src/plugin.js";
+import { stackedEditing } from "../src/plugin.js";
 
 const config = {
   collections: [
@@ -18,9 +18,9 @@ const config = {
 const outletsOf = (result: Config) =>
   result.collections?.map((c) => c.admin?.components?.edit?.beforeDocumentControls ?? []);
 
-describe("stackedEditingPlugin", () => {
+describe("stackedEditing", () => {
   it("adds the outlet with the default mode to every collection and global", async () => {
-    const result = await stackedEditingPlugin()(config);
+    const result = await stackedEditing()(config);
     const outlet = {
       path: "@focus-reactive/payload-plugin-stacked-editing/client#StackedEditing",
       clientProps: { defaultMode: "panel" },
@@ -32,7 +32,7 @@ describe("stackedEditingPlugin", () => {
   });
 
   it("passes defaultMode and honours the allow-lists", async () => {
-    const result = await stackedEditingPlugin({
+    const result = await stackedEditing({
       collections: ["posts"],
       defaultMode: "inline",
       globals: [],
@@ -53,6 +53,6 @@ describe("stackedEditingPlugin", () => {
   });
 
   it("does nothing when disabled", async () => {
-    expect(await stackedEditingPlugin({ enabled: false })(config)).toBe(config);
+    expect(await stackedEditing({ enabled: false })(config)).toBe(config);
   });
 });

@@ -4,7 +4,7 @@ import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
 import { seoPlugin as seoAnalysisPlugin } from "@focus-reactive/payload-plugin-seo";
-import { stackedEditingPlugin } from "@focus-reactive/payload-plugin-stacked-editing";
+import { stackedEditing } from "@focus-reactive/payload-plugin-stacked-editing";
 import {
   translatorPlugin,
   createOpenAIProvider,
@@ -277,7 +277,7 @@ export const plugins: Plugin[] = [
 
   // Page-builder rows open as stacked drawers with breadcrumbs and show preview cards.
   // Must run before presetsPlugin, which wraps existing row labels.
-  stackedEditingPlugin({ collections: ["page", "posts"], globals: [] }),
+  stackedEditing({ collections: ["page", "posts"], globals: [] }),
 
   presetsPlugin({
     labels: {

@@ -26,12 +26,12 @@ shown.
 
 ```ts
 // payload.config.ts
-import { stackedEditingPlugin } from "@focus-reactive/payload-plugin-stacked-editing";
+import { stackedEditing } from "@focus-reactive/payload-plugin-stacked-editing";
 
 export default buildConfig({
   plugins: [
-    stackedEditingPlugin(), // every collection and global
-    // or: stackedEditingPlugin({ collections: ["pages"], globals: [] })
+    stackedEditing(), // every collection and global
+    // or: stackedEditing({ collections: ["pages"], globals: [] })
   ],
 });
 ```
@@ -85,7 +85,7 @@ Rows show as Sanity-style cards instead of `Item 01` / `Untitled`: a 34px thumbn
 muted subtitle, all updated live from the form. The plugin sets its `CardLabel` as the
 `admin.components.RowLabel` of every managed array field and the `admin.components.Label` of every
 managed block (including config-level `blocks` used through `blockReferences`). It never replaces
-a label you set yourself. Turn the cards off with `stackedEditingPlugin({ cards: false })`.
+a label you set yourself. Turn the cards off with `stackedEditing({ cards: false })`.
 
 Configure a card on the block, or on the array field, with `admin.custom.preview`. This is plain
 data, so it reaches the admin through the client config:
@@ -136,7 +136,7 @@ A custom label can show the same card: render `CardLabel` from
 `@focus-reactive/payload-plugin-stacked-editing/client` inside it. It reads Payload's row label
 context.
 
-**Plugin order.** Put `stackedEditingPlugin` before plugins that wrap existing block labels
+**Plugin order.** Put `stackedEditing` before plugins that wrap existing block labels
 (`@focus-reactive/payload-plugin-presets` does this). Those plugins then keep the card and add their
 own actions next to it.
 

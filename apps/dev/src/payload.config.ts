@@ -14,7 +14,7 @@ import {
 } from "@focus-reactive/payload-plugin-translator";
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { seoPlugin } from "@focus-reactive/payload-plugin-seo";
-import { stackedEditingPlugin } from "@focus-reactive/payload-plugin-stacked-editing";
+import { stackedEditing } from "@focus-reactive/payload-plugin-stacked-editing";
 import { visualEditingPlugin } from "@focus-reactive/payload-plugin-visual-editing";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { buildConfig } from "payload";
@@ -84,7 +84,7 @@ export default buildConfig({
     }),
     // Before presetsPlugin: it wraps the block labels it finds, so the row cards set here keep
     // the preset actions next to them. Rows open as stacked panels with breadcrumbs.
-    stackedEditingPlugin({ collections: ["pages", "playground"] }),
+    stackedEditing({ collections: ["pages", "playground"] }),
     presetsPlugin(),
     // Click-to-edit in Live Preview (Pages only). A click on a nested element opens the matching
     // stacked panels: the bridge's `payload:open-field` event is taken over by stacked editing.
