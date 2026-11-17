@@ -6,13 +6,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { VeFieldEditRefusedMessage, VeMediaPickedMessage } from "../../shared/protocol.js";
 import type { MediaPick } from "./mediaPick.js";
 
+import { shownMediaOf } from "../../shared/mediaOption.js";
 import { isMessageFrom } from "../../shared/messageSource.js";
 import { VE_FIELD_EDIT_REFUSED_TYPE, VE_MEDIA_PICKED_TYPE } from "../../shared/protocol.js";
 import { idOf } from "../../shared/veDocument.js";
 import { useEditableSchema } from "../instantPreview/useEditableSchema.js";
 import { usePreviewWindow } from "../instantPreview/usePreviewWindow.js";
 import { openDocumentOf } from "../openField/openDocument.js";
-import { mediaPickOf, pickOfDocument, readPickedMedia, shownMediaOf } from "./mediaPick.js";
+import { fetchPickedMedia, mediaPickOf, pickOfDocument } from "./mediaPick.js";
 
 type AskedPick = MediaPick & { request: number };
 
@@ -97,7 +98,7 @@ export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: s
       if (mediaId === null || !origin) return;
       dispatchFields({ path, type: "UPDATE", value: mediaId });
       setModified(true);
-      const media = (await readPickedMedia(apiUrl, collection, mediaId)) ?? listed;
+      const media = (await fetchPickedMedia(apiUrl, collection, mediaId)) ?? listed;
       const shown = shownMediaOf(media);
       if (!shown) return;
       const message: VeMediaPickedMessage = { ...field, ...shown, type: VE_MEDIA_PICKED_TYPE };

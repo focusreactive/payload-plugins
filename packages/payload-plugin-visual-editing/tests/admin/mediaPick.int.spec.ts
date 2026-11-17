@@ -3,12 +3,12 @@ import type { Field, FormState } from "payload";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  fetchPickedMedia,
   mediaPickOf,
   pickOfDocument,
-  readPickedMedia,
-  shownMediaOf,
 } from "../../src/admin/inlineEditing/mediaPick";
 import { buildEditableSchema } from "../../src/shared/editableSchema/editableSchema";
+import { shownMediaOf } from "../../src/shared/mediaOption";
 import { VE_PICK_MEDIA_TYPE } from "../../src/shared/protocol";
 
 const editableSchema = buildEditableSchema([
@@ -127,7 +127,7 @@ describe("reading the picked media", () => {
       Promise.resolve({ json: () => Promise.resolve(MEDIA), ok: true } as Response)
     );
 
-    const media = await readPickedMedia("https://cms.example.com/api", "media", 3, fetchMedia);
+    const media = await fetchPickedMedia("https://cms.example.com/api", "media", 3, fetchMedia);
 
     expect(media).toEqual(MEDIA);
     expect(fetchMedia).toHaveBeenCalledWith("https://cms.example.com/api/media/3?depth=0", {
@@ -139,7 +139,7 @@ describe("reading the picked media", () => {
     const refuse = vi.fn(() => Promise.resolve({ ok: false } as Response));
     const fail = vi.fn(() => Promise.reject(new Error("offline")));
 
-    expect(await readPickedMedia("/api", "media", 3, refuse)).toBeNull();
-    expect(await readPickedMedia("/api", "media", 3, fail)).toBeNull();
+    expect(await fetchPickedMedia("/api", "media", 3, refuse)).toBeNull();
+    expect(await fetchPickedMedia("/api", "media", 3, fail)).toBeNull();
   });
 });

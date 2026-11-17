@@ -1,4 +1,5 @@
 import type { VeDocument, VeOpenFieldMessage } from "../../shared/protocol.js";
+import type { BadgeAction } from "../overlay/editBadge.js";
 import type { FieldMatch, FieldTracker } from "../overlay/fieldTracker.js";
 import type { EditStatus } from "./editTransport.js";
 import type { SaveStatus } from "./saveStatus.js";
@@ -13,6 +14,7 @@ import { veDocumentOf } from "../../shared/veDocument.js";
 import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 import { listenToSaves } from "../saveEvents.js";
 import { createEditTransport } from "./editTransport.js";
+import { createImageReplacement } from "./imageReplacement.js";
 import { createSaveStatus } from "./saveStatus.js";
 import { createTextEditing } from "./textEditing.js";
 
@@ -23,10 +25,14 @@ export type InlineEditingCtx = {
   inlineEditing: boolean;
 };
 
-export type HoldsValueOf = (document: VeDocument, key: string) => boolean;
+export type OpenForms = {
+  holdsValueOf(document: VeDocument, key: string): boolean;
+  holdsFormOf(document: VeDocument): boolean;
+};
 
 export interface InlineEditing {
   editInPlace(target: HTMLElement, event: MouseEvent): boolean;
+  actionOf(target: HTMLElement): BadgeAction | null;
   sync(): void;
   dispose(): void;
 }
@@ -37,7 +43,7 @@ const isPlainTextOfOneLocale = ({ holder, locale, richText }: FieldMatch): boole
 export function createInlineEditing(
   tracker: FieldTracker,
   getCtx: () => InlineEditingCtx,
-  holdsValueOf: HoldsValueOf | null
+  openForms: OpenForms | null
 ): InlineEditing {
   const fields = new Map<Element, FieldMatch>();
   let shownStatus: EditStatus | null = null;
@@ -49,7 +55,20 @@ export function createInlineEditing(
   };
 
   const transport = createEditTransport(getCtx, showStatus);
-  saveStatus = createSaveStatus(document, transport.retry);
+  const imageReplacement = createImageReplacement({
+    getCtx,
+    holdsFormOf: openForms && ((document) => openForms.holdsFormOf(document)),
+    save: (edit) => {
+      transport.send(edit);
+      transport.flush();
+    },
+    showStatus,
+    tracker,
+  });
+  saveStatus = createSaveStatus(document, () => {
+    transport.retry();
+    imageReplacement.retry();
+  });
 
   const send = (match: FieldMatch, value: string) => {
     const key = fieldKeyOfMarker(match);
@@ -72,7 +91,7 @@ export function createInlineEditing(
 
   const isWrittenSomewhere = (match: FieldMatch, key: string): boolean => {
     if (!findAdminWindow(window)) return true;
-    return holdsValueOf?.(veDocumentOf(match), key) ?? false;
+    return openForms?.holdsValueOf(veDocumentOf(match), key) ?? false;
   };
 
   const stopTracking = tracker.subscribe({
@@ -107,7 +126,9 @@ export function createInlineEditing(
   );
 
   return {
+    actionOf: imageReplacement.actionOf,
     dispose() {
+      imageReplacement.dispose();
       textEditing.dispose();
       transport.dispose();
       stopListeningToSaves();

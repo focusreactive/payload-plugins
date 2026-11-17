@@ -2,17 +2,13 @@ import type { Endpoint, Payload, PayloadRequest, Where } from "payload";
 
 import { headersWithCors } from "payload";
 
-import type {
-  VeMediaOption,
-  VeMediaOptions,
-  VeMediaOptionsRequest,
-} from "../../shared/protocol.js";
+import type { VeMediaOptions, VeMediaOptionsRequest } from "../../shared/protocol.js";
 import type { User } from "./draftField.js";
 
 import { readEditedField } from "../../shared/fieldEdit.js";
+import { mediaOptionOf } from "../../shared/mediaOption.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import { VE_MEDIA_OPTIONS_PATH } from "../../shared/protocol.js";
-import { idOf } from "../../shared/veDocument.js";
 import { bodyOf } from "../endpointJson.js";
 import {
   ANSWERED,
@@ -64,26 +60,6 @@ const describesItsFiles = (payload: Payload, collection: string): boolean =>
 const filesNamedLike = (search: string): Where | undefined =>
   search === "" ? undefined : { filename: { contains: search } };
 
-const sizeOf = (size: unknown): number | undefined => (typeof size === "number" ? size : undefined);
-
-const optionOf = (media: unknown, hasDescription: boolean): VeMediaOption | null => {
-  if (!isPlainObject(media)) return null;
-  const { alt, filename, height, thumbnailURL, url, width } = media;
-  const id = idOf(media.id);
-  if (id === null || typeof url !== "string") return null;
-  const shownWidth = sizeOf(width);
-  const shownHeight = sizeOf(height);
-  return {
-    filename: typeof filename === "string" ? filename : "",
-    id,
-    thumbnailUrl: typeof thumbnailURL === "string" ? thumbnailURL : url,
-    url,
-    ...(shownWidth !== undefined && { width: shownWidth }),
-    ...(shownHeight !== undefined && { height: shownHeight }),
-    ...(hasDescription && typeof alt === "string" && { alt }),
-  };
-};
-
 const listMedia = async (
   payload: Payload,
   user: User,
@@ -105,7 +81,7 @@ const listMedia = async (
   const hasDescription = describesItsFiles(payload, collection);
   return {
     collection,
-    documents: found.docs.flatMap((media: unknown) => optionOf(media, hasDescription) ?? []),
+    documents: found.docs.flatMap((media: unknown) => mediaOptionOf(media, hasDescription) ?? []),
     hasNextPage: found.hasNextPage,
   };
 };

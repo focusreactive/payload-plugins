@@ -1,4 +1,4 @@
-import type { VeEditedField, VeLiveDocument, VeShownMedia } from "../../shared/protocol.js";
+import type { VeEditedField, VeLiveDocument } from "../../shared/protocol.js";
 import type { OpenForm } from "./formEdit.js";
 
 import { uploadCollectionAt } from "../../shared/editableSchema/editableSchema.js";
@@ -36,20 +36,7 @@ export function mediaPickOf(
   return formField && collection ? { collection, field, path: formField.formPath } : null;
 }
 
-const sizeOf = (size: unknown): number | undefined => (typeof size === "number" ? size : undefined);
-
-export function shownMediaOf(media: unknown): VeShownMedia | null {
-  if (!isPlainObject(media) || typeof media.url !== "string") return null;
-  const width = sizeOf(media.width);
-  const height = sizeOf(media.height);
-  return {
-    url: media.url,
-    ...(width !== undefined && { width }),
-    ...(height !== undefined && { height }),
-  };
-}
-
-export async function readPickedMedia(
+export async function fetchPickedMedia(
   apiUrl: string,
   collection: string,
   id: number | string,

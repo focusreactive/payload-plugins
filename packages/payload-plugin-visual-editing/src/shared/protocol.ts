@@ -52,6 +52,8 @@ export type VeOpenFieldMessage = {
   focus?: false;
 };
 
+export const DATA_VE_LIVE_RICH_TEXT_ATTR = "data-ve-live-rich-text";
+
 export const DATA_VE_LIVE_ATTR = "data-ve-live";
 export const VE_LIVE_OFF = "off";
 
