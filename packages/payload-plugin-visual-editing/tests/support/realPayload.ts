@@ -68,6 +68,7 @@ const uploadFields: Field[] = [
 const pageFields: Field[] = [
   { name: "title", type: "text", localized: true },
   { name: "label", type: "text" },
+  { access: { update: () => false }, name: "sealed", type: "text" },
   { name: "secret", type: "text", hidden: true },
   { name: "reference", type: "text", admin: { readOnly: true } },
   { name: "legacy", type: "text", admin: { disabled: true } },
@@ -123,6 +124,21 @@ const settings: GlobalConfig = {
       ],
     },
   ],
+};
+
+const notice: GlobalConfig = {
+  slug: "notice",
+  fields: [
+    {
+      name: "banner",
+      type: "group",
+      fields: [
+        { localized: true, name: "title", type: "text" },
+        { localized: true, name: "subtitle", type: "text" },
+      ],
+    },
+  ],
+  versions: { drafts: true },
 };
 
 type ReadPage = (page: Record<string, unknown>) => void;
@@ -207,7 +223,7 @@ export async function startRealPayload({
     ],
     db: sqliteAdapter({ client: { url: IN_MEMORY_DATABASE } }),
     editor: lexicalEditor(),
-    globals: [{ ...settings, access }],
+    globals: [{ ...settings, access }, notice],
     localization: { defaultLocale: "en", fallback: true, locales: ["en", "de"] },
     plugins: [
       visualEditingPlugin({

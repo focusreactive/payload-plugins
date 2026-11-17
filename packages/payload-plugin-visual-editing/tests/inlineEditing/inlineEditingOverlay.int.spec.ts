@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Overlay, OverlayCtx } from "../../src/client/createOverlay";
 
 import { createOverlay } from "../../src/client/createOverlay";
-import { EDIT_SEND_PAUSE_MS } from "../../src/client/inlineEditing/editTransport";
+import { EDIT_SAVE_PAUSE_MS } from "../../src/client/inlineEditing/editTransport";
 import { DATA_VE_SAVE_STATUS_ATTR } from "../../src/client/inlineEditing/saveStatus";
 import { DATA_VE_EDITING_ATTR } from "../../src/client/inlineEditing/textEditing";
 import {
@@ -18,7 +18,6 @@ import {
 import { markedText, markedTextNode } from "../support/markedData";
 import { click, overlayCtx } from "../support/overlay";
 import { postFromAdmin, restorePreviewWindow, stubAdminWindow } from "../support/previewWindow";
-import { flushMutations, waitFor } from "../support/time";
 
 const PAYLOAD_API = "https://cms.example.com/api";
 
@@ -44,6 +43,10 @@ const press = (element: HTMLElement, key: string, init: KeyboardEventInit = {}) 
   element.dispatchEvent(event);
   return event;
 };
+
+const flushMutations = () => vi.advanceTimersByTimeAsync(0);
+
+const pause = () => vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
 
 describe("editing text on the page", () => {
   let main: HTMLElement;
@@ -75,9 +78,8 @@ describe("editing text on the page", () => {
   const sentToEndpoint = () =>
     fetchEndpoint.mock.calls.map(([, init]) => JSON.parse((init as RequestInit).body as string));
 
-  const pause = () => waitFor(EDIT_SEND_PAUSE_MS + 20);
-
   beforeEach(() => {
+    vi.useFakeTimers();
     document.body.innerHTML = "";
     main = document.createElement("main");
     document.body.append(main);
@@ -95,6 +97,7 @@ describe("editing text on the page", () => {
     vi.unstubAllGlobals();
     open.mockRestore();
     document.getSelection()?.removeAllRanges();
+    vi.useRealTimers();
   });
 
   describe("on a page of its own", () => {

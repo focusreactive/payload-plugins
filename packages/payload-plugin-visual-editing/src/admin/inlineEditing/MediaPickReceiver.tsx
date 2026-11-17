@@ -53,7 +53,7 @@ function MediaDrawer({ collection, onClosed, onPicked }: MediaDrawerProps) {
 }
 
 export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: string[] }) {
-  const { dispatchFields, getFields, setModified } = useForm();
+  const { disabled: isFormDisabled, dispatchFields, getFields, setModified } = useForm();
   const { id, collectionSlug, globalSlug } = useDocumentInfo();
   const editableSchema = useEditableSchema({ collectionSlug, globalSlug }, excludeFieldNames);
   const { code: locale } = useLocale();
@@ -72,11 +72,9 @@ export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: s
       const openDocument = { ...document, locale };
       const field = pickOfDocument(event.data, openDocument);
       if (!field) return;
-      const pick = mediaPickOf(field, {
-        document: openDocument,
-        editableSchema,
-        formState: getFields(),
-      });
+      const pick = isFormDisabled
+        ? null
+        : mediaPickOf(field, { document: openDocument, editableSchema, formState: getFields() });
       if (!pick) {
         const message: VeFieldEditRefusedMessage = { ...field, type: VE_FIELD_EDIT_REFUSED_TYPE };
         getWindow()?.postMessage(message, origin);
@@ -88,7 +86,17 @@ export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: s
 
     window.addEventListener("message", openDrawerForPick);
     return () => window.removeEventListener("message", openDrawerForPick);
-  }, [collectionSlug, editableSchema, getFields, getWindow, globalSlug, id, locale, origin]);
+  }, [
+    collectionSlug,
+    editableSchema,
+    getFields,
+    getWindow,
+    globalSlug,
+    id,
+    isFormDisabled,
+    locale,
+    origin,
+  ]);
 
   const forgetPick = useCallback(() => setAsked(null), []);
 

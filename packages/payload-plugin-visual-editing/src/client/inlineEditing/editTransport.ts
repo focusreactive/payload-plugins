@@ -1,8 +1,8 @@
-import type { VeFieldEdit, VeFieldEditMessage } from "../../shared/protocol.js";
+import type { VeFieldEdit, VeFieldEditMessage, VeLiveDocument } from "../../shared/protocol.js";
 
 import { isPlainObject } from "../../shared/plainObject.js";
 import { VE_FIELD_EDIT_PATH, VE_FIELD_EDIT_TYPE } from "../../shared/protocol.js";
-import { keyedFieldAddressOf } from "../../shared/veDocument.js";
+import { documentAddressOf, keyedFieldAddressOf } from "../../shared/veDocument.js";
 import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 
 export type EditStatus = "failed" | "saved" | "saving" | "unsaved";
@@ -15,17 +15,23 @@ export interface EditTransport {
   send(edit: VeFieldEdit): void;
   flush(): void;
   refuse(field: EditedField): void;
-  settle(): void;
+  settle(saved: VeLiveDocument | null): void;
   retry(): void;
   dispose(): void;
 }
 
 export const EDIT_SEND_PAUSE_MS = 400;
 
+export const EDIT_SAVE_PAUSE_MS = 2000;
+
 type WaitingEdit = { edit: VeFieldEdit; timer: ReturnType<typeof setTimeout> };
 
 const addressOf = (field: EditedField): string =>
   JSON.stringify([keyedFieldAddressOf(field), field.locale ?? null]);
+
+const isSavedWith = (edit: VeFieldEdit, saved: VeLiveDocument): boolean =>
+  documentAddressOf(edit) === documentAddressOf(saved) &&
+  (!edit.locale || !saved.locale || edit.locale === saved.locale);
 
 const postToEndpoint = async (win: Window, url: string, edit: VeFieldEdit): Promise<boolean> => {
   try {
@@ -118,13 +124,16 @@ export function createEditTransport(
       const address = addressOf(edit);
       const held = waiting.get(address);
       if (held) clearTimeout(held.timer);
-      const timer = setTimeout(deliverWaiting, EDIT_SEND_PAUSE_MS, address);
+      const pause = findAdminWindow(win) ? EDIT_SEND_PAUSE_MS : EDIT_SAVE_PAUSE_MS;
+      const timer = setTimeout(deliverWaiting, pause, address);
       waiting.set(address, { edit, timer });
       report("unsaved");
     },
-    settle() {
-      postedToAdmin.clear();
-      settle();
+    settle(saved) {
+      for (const [address, edit] of postedToAdmin) {
+        if (!saved || isSavedWith(edit, saved)) postedToAdmin.delete(address);
+      }
+      if (postedToAdmin.size === 0) settle();
     },
   };
 }

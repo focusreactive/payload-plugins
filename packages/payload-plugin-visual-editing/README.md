@@ -539,7 +539,7 @@ The toggle then shows an **Edit on page** switch next to its modes. It starts of
 
 ### Using it
 
-- A click on plain text puts the caret into it. Enter ends the edit, Shift+Enter starts a new line, Escape brings back the text the edit began with. A click elsewhere ends the edit.
+- A click on plain text puts the caret into it. Enter ends the edit, Escape brings back the text the edit began with, and a click elsewhere ends the edit. Shift+Enter starts a new line in a browser that supports `contenteditable="plaintext-only"`; elsewhere it ends the edit.
 - The **Edit** badge still opens the field in the admin form.
 - A pasted text arrives without its formatting.
 - An image that names a single upload field shows a **Replace image** button while the pointer is over it. The button opens a list of the media of that field's collection, where a new file can be uploaded too. The picked image shows on the page at once. A click on the image itself still opens the field in the admin form.
@@ -563,6 +563,8 @@ Where the image is picked depends on the page too:
 
 `media-options` takes the document, the field, the locale, a search and a page number. It checks the field as `field-edit` does, lists the collection of the field with the user's access (`overrideAccess: false`), 24 documents a page, and answers `{ collection, documents, hasNextPage }`; a document is `{ id, filename, url, thumbnailUrl, width, height, alt }`, with `alt` only when the collection has a text field of that name. It answers the same statuses as `field-edit`. **Upload new** posts the file to Payload's own REST API, `POST <payloadApi>/<collection>`, so the access, the hooks and the validation of the collection apply; when Payload refuses the file, for example because the collection requires an `alt`, the picker shows its message and the file is uploaded in the admin instead.
 
+In a tab of its own an edit is saved two seconds after the last keystroke and when the edit ends. Each save of a collection or global without `versions.drafts.autosave` adds a version, as a save in the admin does; turn autosave on to keep one version per editing session. A field whose `access.update` refuses the user is answered `422`. The value of the top-level field is read through its `afterRead` hooks and written back, so a hook that masks or reformats a sibling value there has that result saved.
+
 On a project with locales the page must name its locale: pass `locale` to `VisualEditing.Overlay` or `mountVisualEditing`. An edit without a locale is refused, by the form and by the endpoint, so it never lands in the default locale by accident. Text shown from a fallback locale is saved into the locale of the page.
 
 When the form cannot take an edit, for example because the row was removed in the admin meanwhile, the status says **Not saved**.
@@ -572,7 +574,7 @@ In a tab of its own the request carries the editor's cookie. When the site and P
 ### What can be edited on the page
 
 - `text`, `textarea` and `email` fields, also in arrays, groups, tabs and blocks. A line break in a `text` or `email` field is saved as a space.
-- Only text that fills its element. Text rendered next to other text in the same element opens the field in the admin.
+- Only text that fills its element. Text rendered next to other text or next to an icon in the same element opens the field in the admin; wrap the text in its own element to edit it in place.
 - An `upload` field of one collection that holds one document, also in arrays, groups, tabs and blocks, where the page marks its image: an `<img>` or a `<picture>` that carries `withVisualEditingPath(value)`, or an element that carries it around exactly one `<img>` and no marked text. The field must hold a document already.
 - In Live Preview, only fields of the document whose form is open. Text or an image of another document, such as a header or a related page, opens that document as before.
 

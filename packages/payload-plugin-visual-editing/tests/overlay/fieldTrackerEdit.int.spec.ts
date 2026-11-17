@@ -171,15 +171,10 @@ describe("a field the editor types into", () => {
     expect(listener.onFields).toHaveBeenCalledWith(heading, [match]);
   });
 
-  it("keeps an icon next to the text", async () => {
-    const icon = document.createElement("svg");
-    heading.append(icon);
-    begin();
-    await type("Hello world");
+  it("does not start an edit of a text that sits next to an icon, which a select-all would delete", () => {
+    heading.append(document.createElement("svg"));
 
-    tracker.endEdit(match, "Hello world");
-
-    expect(Array.from(heading.childNodes)).toEqual([textNode(), icon]);
+    expect(begin()).toBeNull();
   });
 
   it("restores the marker of the latest render when the overlay stops", async () => {

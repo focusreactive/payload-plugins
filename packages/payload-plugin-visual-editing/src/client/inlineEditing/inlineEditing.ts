@@ -30,6 +30,8 @@ export type OpenForms = {
   holdsFormOf(document: VeDocument): boolean;
 };
 
+const UNSAVED: EditStatus = "unsaved";
+
 export interface InlineEditing {
   editInPlace(target: HTMLElement, event: MouseEvent): boolean;
   actionOf(target: HTMLElement): BadgeAction | null;
@@ -120,8 +122,8 @@ export function createInlineEditing(
 
   const stopListeningToSaves = listenToSaves(
     () => getCtx().adminOrigin,
-    () => {
-      if (shownStatus === "unsaved") transport.settle();
+    (saved) => {
+      if (shownStatus === UNSAVED) transport.settle(saved);
     }
   );
 

@@ -13,6 +13,7 @@ import { bodyOf } from "../endpointJson.js";
 import {
   ANSWERED,
   draftFieldOf,
+  inLocaleOfProject,
   FIELD_NOT_EDITABLE,
   isRefusal,
   SIGNED_OUT,
@@ -95,8 +96,9 @@ export const mediaOptionsEndpoint: Endpoint = {
     const { payload, user } = req;
     if (!user) return answer(NOTHING_LISTED, SIGNED_OUT, req);
 
-    const request = readRequest(await bodyOf(req));
-    if (!request) return answer(NOTHING_LISTED, UNREADABLE_REQUEST, req);
+    const posted = readRequest(await bodyOf(req));
+    if (!posted) return answer(NOTHING_LISTED, UNREADABLE_REQUEST, req);
+    const request = inLocaleOfProject(payload, posted);
 
     const field = await draftFieldOf(payload, user, request);
     if (isRefusal(field)) return answer(NOTHING_LISTED, field.status, req);

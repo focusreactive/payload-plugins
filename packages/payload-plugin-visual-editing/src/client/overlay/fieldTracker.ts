@@ -369,6 +369,7 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       const isHeld = holder !== undefined && holders.get(holder)?.match === match;
       const editedElement = textNode.parentElement;
       if (!isHeld || !editedElement || texts.get(textNode)?.match !== match) return null;
+      if (editedElement.childElementCount > 0) return null;
       edits.set(textNode, { ...edit, editedElement });
       return editedElement;
     },
