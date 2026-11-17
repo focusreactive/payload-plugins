@@ -11,10 +11,12 @@ import {
 } from "react";
 
 import type { BuildAdminEditUrl } from "../../shared/buildAdminEditUrl.js";
+import type { AccentOptions } from "../accent.js";
 import type { RenderSources } from "../instantPreview/unsavedRender/renderSources.js";
 import type { Session } from "../session.js";
 import type { VisualEditingMode } from "../visualEditingMode.js";
 
+import { applyAccent } from "../accent.js";
 import {
   listenToRenderSources,
   RENDER_SOURCES_OF_THE_PAGE_ALONE,
@@ -53,8 +55,10 @@ export function VisualEditingProvider({
   adminOrigin,
   adminBasePath,
   payloadApi: namedPayloadApi,
+  accentColor,
+  accentTextColor,
   children,
-}: {
+}: AccentOptions & {
   available?: boolean;
   framedOnly?: boolean;
   instantPreview?: boolean;
@@ -70,6 +74,11 @@ export function VisualEditingProvider({
   useEffect(() => {
     pageStore.attach(window);
   }, [pageStore]);
+
+  useEffect(
+    () => applyAccent(document, { accentColor, accentTextColor }),
+    [accentColor, accentTextColor]
+  );
 
   const value = useMemo((): VisualEditingContextType => {
     const session = sessionOf(

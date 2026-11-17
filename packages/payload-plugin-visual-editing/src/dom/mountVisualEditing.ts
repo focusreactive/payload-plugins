@@ -1,7 +1,9 @@
+import type { AccentOptions } from "../client/accent.js";
 import type { OverlayScope } from "../client/overlayScope.js";
 import type { SessionOptions } from "../client/session.js";
 import type { RenderRichTextHtml, RenderRichTextValue } from "./liveRichTextElements.js";
 
+import { applyAccent } from "../client/accent.js";
 import { listenToRenderSources } from "../client/instantPreview/unsavedRender/renderSources.js";
 import { savedShapesWithin } from "../client/overlayScope.js";
 import { listenToSaves } from "../client/saveEvents.js";
@@ -9,16 +11,17 @@ import { createPageStore, payloadApiOf, sessionOf } from "../client/session.js";
 import { startSessionOverlay, startSessionToggle } from "../client/sessionOverlay.js";
 import { startLiveRichTextElements } from "./liveRichTextElements.js";
 
-export type MountVisualEditingOptions = SessionOptions & {
-  root?: HTMLElement;
-  locale?: string;
-  toggle?: boolean;
-  renderRichText?: RenderRichTextHtml;
-  payloadApi?: string;
-  renderRichTextValue?: RenderRichTextValue;
-  optimistic?: boolean;
-  onSave?: () => void;
-};
+export type MountVisualEditingOptions = SessionOptions &
+  AccentOptions & {
+    root?: HTMLElement;
+    locale?: string;
+    toggle?: boolean;
+    renderRichText?: RenderRichTextHtml;
+    payloadApi?: string;
+    renderRichTextValue?: RenderRichTextValue;
+    optimistic?: boolean;
+    onSave?: () => void;
+  };
 
 export interface VisualEditing {
   destroy(): void;
@@ -33,8 +36,11 @@ export function mountVisualEditing({
   renderRichTextValue,
   optimistic = true,
   onSave,
+  accentColor,
+  accentTextColor,
   ...sessionOptions
 }: MountVisualEditingOptions = {}): VisualEditing {
+  const removeAccent = applyAccent(document, { accentColor, accentTextColor });
   const payloadApi = payloadApiOf({
     adminOrigin: sessionOptions.adminOrigin,
     payloadApi: namedPayloadApi,
@@ -68,6 +74,7 @@ export function mountVisualEditing({
 
   return {
     destroy() {
+      removeAccent();
       stopFollowing();
       stopListeningToSaves?.();
       stopLiveRichTexts?.();

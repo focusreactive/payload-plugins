@@ -39,13 +39,11 @@ function CollectionTranslationPopup({
           onClick={popupOpen.setTrue}
         >
           <LanguageTranslateIcon />
+          <span>Translate</span>
           {selectedCount > 0 && (
-            <>
-              <span className={styles.arrow} aria-hidden="true">
-                →
-              </span>
+            <span className={styles.count} aria-label={`${selectedCount} selected`}>
               {selectedCount}
-            </>
+            </span>
           )}
           <PanelStatusMarker tone={tone} />
         </Button>

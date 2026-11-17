@@ -15,146 +15,93 @@ const FIELD_WRAPPER_SELECTOR = ".field-type";
 const BLOCK_NAME_INPUT_SELECTOR = ".section-title__input";
 const FOCUSED_FIELD_FRAME_SELECTOR = ".section-title, .field-type";
 
-const SWEEP_STYLE_ID = "ve-sweep-styles";
+const REVEAL_STYLE_ID = "ve-reveal-styles";
+// An attribute, not a class: React rewrites `className` when a focused field re-renders.
+const REVEAL_ATTR = "data-ve-reveal";
 const POLL_INTERVAL_MS = 20;
 export const WALK_BUDGET_MS = 20_000;
 const POST_SCROLL_DELAY_MS = 500;
+const DOCUMENT_HEADER_SELECTOR = ".doc-controls";
 
-const REVEAL_TOTAL_MS = 1800;
+/** How long the field keeps the accent border before it settles into Payload's own focus style. */
+const REVEAL_TOTAL_MS = 1600;
 
-const FOCUS_HSL = { h: 189, s: 85, l: 53 } as const;
-const focusColor = (alpha: number): string =>
-  `hsla(${FOCUS_HSL.h}, ${FOCUS_HSL.s}%, ${FOCUS_HSL.l}%, ${alpha})`;
+// The reveal restyles the field's own frame, so it reads as Payload's focus state turned up:
+// the border takes the admin's blue and a soft ring pulses out of it twice. Fields without a
+// border of their own (the Lexical editor) get the same ring drawn with a box-shadow.
+// The doubled selector outranks react-select's emotion styles, which are not in a cascade layer.
+const REVEAL_STYLES = `
+@keyframes ve-field-reveal-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(21, 135, 186, 0.45); }
+  70%  { box-shadow: 0 0 0 5px rgba(21, 135, 186, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(21, 135, 186, 0); }
+}
+@keyframes ve-field-reveal-ring {
+  0%   { box-shadow: 0 0 0 1px var(--color-blue-500, rgb(21, 135, 186)), 0 0 0 1px rgba(21, 135, 186, 0.45); }
+  70%  { box-shadow: 0 0 0 1px var(--color-blue-500, rgb(21, 135, 186)), 0 0 0 6px rgba(21, 135, 186, 0); }
+  100% { box-shadow: 0 0 0 1px var(--color-blue-500, rgb(21, 135, 186)), 0 0 0 1px rgba(21, 135, 186, 0); }
+}
+[${REVEAL_ATTR}][${REVEAL_ATTR}] {
+  border-color: var(--color-blue-500, rgb(21, 135, 186));
+  animation: ve-field-reveal-pulse 750ms cubic-bezier(0.2, 0, 0.2, 1) 2;
+}
+[${REVEAL_ATTR}="ring"][${REVEAL_ATTR}="ring"] {
+  border-radius: var(--style-radius-s, 3px);
+  box-shadow: 0 0 0 1px var(--color-blue-500, rgb(21, 135, 186));
+  animation-name: ve-field-reveal-ring;
+}
+@media (prefers-reduced-motion: reduce) {
+  [${REVEAL_ATTR}][${REVEAL_ATTR}] { animation: none; }
+}
+`;
 
-const ensureSweepStyles = (): void => {
+const ensureRevealStyles = (): void => {
   // oxlint-disable-next-line unicorn/prefer-query-selector -- ids are not guaranteed to be valid CSS selectors
-  if (document.getElementById(SWEEP_STYLE_ID)) return;
+  if (document.getElementById(REVEAL_STYLE_ID)) return;
   const style = document.createElement("style");
-  style.id = SWEEP_STYLE_ID;
-  style.textContent = `
-		@keyframes ve-focus-corner-in {
-			0%   { transform: scale(1.35); opacity: 0; }
-			60%  { opacity: 1; }
-			100% { transform: scale(1);   opacity: 1; }
-		}
-		@keyframes ve-focus-ring-pulse {
-			0%   { box-shadow: 0 0 0 0 ${focusColor(0.55)}, 0 0 0 0 ${focusColor(0.22)}; border-color: ${focusColor(0.95)}; }
-			50%  { box-shadow: 0 0 0 4px ${focusColor(0.3)}, 0 0 0 14px ${focusColor(0.06)}; border-color: ${focusColor(0.95)}; }
-			100% { box-shadow: 0 0 0 0 ${focusColor(0)}, 0 0 0 0 ${focusColor(0)}; border-color: ${focusColor(0)}; }
-		}
-		@keyframes ve-focus-sweep {
-			0%   { transform: translateY(-100%); opacity: 0; }
-			18%  { opacity: 1; }
-			100% { transform: translateY(100%);  opacity: 0; }
-		}
-		@keyframes ve-focus-fadeout {
-			to { opacity: 0; }
-		}
-		.ve-sweep-wrap {
-			pointer-events: none;
-			position: fixed;
-			z-index: 9999;
-		}
-		.ve-sweep-ring {
-			position: absolute;
-			inset: -2px;
-			border: 2px solid transparent;
-			border-radius: 6px;
-			animation: ve-focus-ring-pulse 0.7s cubic-bezier(0.4, 0, 0.2, 1) 120ms 2 forwards;
-		}
-		.ve-sweep-corner {
-			position: absolute;
-			width: 14px;
-			height: 14px;
-			border-color: ${focusColor(0.95)};
-			border-style: solid;
-			border-width: 0;
-			animation:
-				ve-focus-corner-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) 0ms both,
-				ve-focus-fadeout 300ms ease 1400ms forwards;
-		}
-		.ve-sweep-corner.tl { top: -4px; left: -4px; border-width: 2px 0 0 2px; border-top-left-radius: 4px; }
-		.ve-sweep-corner.tr { top: -4px; right: -4px; border-width: 2px 2px 0 0; border-top-right-radius: 4px; }
-		.ve-sweep-corner.bl { bottom: -4px; left: -4px; border-width: 0 0 2px 2px; border-bottom-left-radius: 4px; }
-		.ve-sweep-corner.br { bottom: -4px; right: -4px; border-width: 0 2px 2px 0; border-bottom-right-radius: 4px; }
-		.ve-sweep-clip {
-			position: absolute;
-			inset: 0;
-			overflow: hidden;
-			border-radius: 4px;
-		}
-		.ve-sweep-overlay {
-			position: absolute;
-			inset: 0;
-			background: linear-gradient(
-				to bottom,
-				transparent 0%,
-				${focusColor(0.06)} 22%,
-				${focusColor(0.22)} 50%,
-				${focusColor(0.06)} 78%,
-				transparent 100%
-			);
-			animation: ve-focus-sweep 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-		}
-		@media (prefers-reduced-motion: reduce) {
-			.ve-sweep-ring { animation: none; border-color: ${focusColor(0.9)}; box-shadow: 0 0 0 2px ${focusColor(0.22)}, 0 0 0 6px ${focusColor(0.08)}; }
-			.ve-sweep-corner { animation: ve-focus-fadeout 300ms ease 1400ms forwards; }
-			.ve-sweep-overlay { animation: none; opacity: 0; }
-		}
-	`;
+  style.id = REVEAL_STYLE_ID;
+  style.textContent = REVEAL_STYLES;
   document.head.append(style);
 };
 
-const SWEEP_DECORATION_PAD = 24;
+const hasOwnBorder = (el: HTMLElement): boolean => {
+  const style = getComputedStyle(el);
+  return (
+    Number.parseFloat(style.borderTopWidth) >= 1 && Number.parseFloat(style.borderLeftWidth) >= 1
+  );
+};
 
-const DOCUMENT_HEADER_SELECTOR = ".doc-controls";
+/**
+ * The element that draws the field's box: the input itself, react-select's control, the
+ * stepper group around a number. Walks up from the focused element, staying inside the field.
+ */
+const frameOf = (focused: HTMLElement): HTMLElement | null => {
+  const field = focused.closest<HTMLElement>(FOCUSED_FIELD_FRAME_SELECTOR);
+  for (let el: HTMLElement | null = focused; el && el !== field; el = el.parentElement) {
+    if (hasOwnBorder(el)) return el;
+  }
+  return null;
+};
 
-const playSweep = (el: HTMLElement): void => {
-  ensureSweepStyles();
-  const wrap = document.createElement("div");
-  wrap.className = "ve-sweep-wrap";
+const revealTimers = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
 
-  const docHeader = document.querySelector<HTMLElement>(DOCUMENT_HEADER_SELECTOR);
-
-  const ring = document.createElement("div");
-  ring.className = "ve-sweep-ring";
-
-  const corners = (["tl", "tr", "bl", "br"] as const).map((pos) => {
-    const corner = document.createElement("div");
-    corner.className = `ve-sweep-corner ${pos}`;
-    return corner;
-  });
-
-  const clip = document.createElement("div");
-  clip.className = "ve-sweep-clip";
-  const overlay = document.createElement("div");
-  overlay.className = "ve-sweep-overlay";
-  clip.append(overlay);
-
-  wrap.append(ring, ...corners, clip);
-  document.body.append(wrap);
-
-  let rafId = 0;
-  const pad = SWEEP_DECORATION_PAD;
-  const track = () => {
-    const rect = el.getBoundingClientRect();
-    wrap.style.top = `${rect.top}px`;
-    wrap.style.left = `${rect.left}px`;
-    wrap.style.width = `${rect.width}px`;
-    wrap.style.height = `${rect.height}px`;
-
-    const headerBottom = docHeader?.getBoundingClientRect().bottom ?? 0;
-    const topClip = Math.max(headerBottom - rect.top, -pad);
-    wrap.style.clipPath = `polygon(${-pad}px ${topClip}px, calc(100% + ${pad}px) ${topClip}px, calc(100% + ${pad}px) calc(100% + ${pad}px), ${-pad}px calc(100% + ${pad}px))`;
-
-    rafId = requestAnimationFrame(track);
-  };
-  track();
-
-  setTimeout(() => {
-    cancelAnimationFrame(rafId);
-    wrap.remove();
-  }, REVEAL_TOTAL_MS);
+const revealField = (focused: HTMLElement): void => {
+  ensureRevealStyles();
+  const frame = frameOf(focused);
+  const target = frame ?? focused;
+  const previous = revealTimers.get(target);
+  if (previous) clearTimeout(previous);
+  target.removeAttribute(REVEAL_ATTR);
+  // Restart the animation when the same field is revealed twice in a row.
+  void target.offsetWidth;
+  target.setAttribute(REVEAL_ATTR, frame ? "border" : "ring");
+  revealTimers.set(
+    target,
+    setTimeout(() => {
+      target.removeAttribute(REVEAL_ATTR);
+      revealTimers.delete(target);
+    }, REVEAL_TOTAL_MS)
+  );
 };
 
 const blockNameInputOf = (fieldId: string): HTMLElement | null => {
@@ -347,7 +294,7 @@ const scrollSmoothlyIntoView = (el: HTMLElement): void => {
   }
 };
 
-const focusAndSweep = async (fieldEl: HTMLElement, walk: Walk): Promise<void> => {
+const focusAndReveal = async (fieldEl: HTMLElement, walk: Walk): Promise<void> => {
   if (!isWhollyInView(fieldEl)) {
     scrollSmoothlyIntoView(fieldEl);
     await pause(POST_SCROLL_DELAY_MS);
@@ -357,9 +304,7 @@ const focusAndSweep = async (fieldEl: HTMLElement, walk: Walk): Promise<void> =>
   focusable?.focus({ preventScroll: true });
   if (isOutOfView(fieldEl)) scrollSmoothlyIntoView(fieldEl);
 
-  const frame =
-    focusable === fieldEl ? fieldEl.closest<HTMLElement>(FOCUSED_FIELD_FRAME_SELECTOR) : null;
-  playSweep(frame ?? fieldEl);
+  revealField(focusable ?? fieldEl);
 };
 
 export const expandAndFocus = async (
@@ -370,5 +315,5 @@ export const expandAndFocus = async (
   const { scope } = await walkContainerChain(chain, walk);
   if (!fieldId) return;
   const fieldEl = await waitForRendered(() => findFieldElement(fieldId), fieldId, scope, walk);
-  if (fieldEl) await focusAndSweep(fieldEl, walk);
+  if (fieldEl) await focusAndReveal(fieldEl, walk);
 };

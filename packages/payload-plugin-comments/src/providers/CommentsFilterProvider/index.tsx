@@ -18,15 +18,18 @@ interface Props {
 
 export function CommentsFilterProvider({ children }: Props) {
   const [filters, setFilters] = useState<CommentsFilters>({
-    showResolved: true,
-    onlyMyThreads: true,
+    showResolved: false,
+    onlyMyThreads: false,
   });
 
   const setFilter = (key: keyof CommentsFilters, value: boolean) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
-  const isAnyFilterActive = useMemo(() => filters.showResolved || filters.onlyMyThreads, [filters]);
+  const isAnyFilterActive = useMemo(
+    () => !filters.showResolved || filters.onlyMyThreads,
+    [filters]
+  );
 
   return (
     <CommentsFilterContext.Provider value={{ filters, isAnyFilterActive, setFilter }}>

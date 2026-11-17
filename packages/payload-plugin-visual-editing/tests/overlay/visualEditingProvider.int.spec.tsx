@@ -17,7 +17,12 @@ function Probe() {
   return <span data-testid="available">{String(available)}</span>;
 }
 
-function renderProvider(props: { available?: boolean; framedOnly?: boolean }) {
+function renderProvider(props: {
+  available?: boolean;
+  framedOnly?: boolean;
+  accentColor?: string;
+  accentTextColor?: string;
+}) {
   act(() => {
     root.render(
       <VisualEditingProvider {...props}>
@@ -72,5 +77,29 @@ describe("VisualEditingProvider — framedOnly", () => {
     setFramed(true);
     renderProvider({ available: false, framedOnly: true });
     expect(availableText()).toBe("false");
+  });
+});
+
+const accentOf = () => document.documentElement.style.getPropertyValue("--ve-accent");
+const accentTextOf = () => document.documentElement.style.getPropertyValue("--ve-accent-text");
+
+describe("VisualEditingProvider — accent", () => {
+  it("sets the accent the overlay draws with, and takes it away on unmount", () => {
+    renderProvider({ available: true, accentColor: "#ea580c", accentTextColor: "#111111" });
+
+    expect(accentOf()).toBe("#ea580c");
+    expect(accentTextOf()).toBe("#111111");
+
+    act(() => root.unmount());
+    root = createRoot(container);
+
+    expect(accentOf()).toBe("");
+    expect(accentTextOf()).toBe("");
+  });
+
+  it("leaves the default to the overlay when no accent is passed", () => {
+    renderProvider({ available: true });
+
+    expect(accentOf()).toBe("");
   });
 });

@@ -122,8 +122,10 @@
   min-height: 0;
 }
 
-.frseo-root button {
-  border: none;
+@layer base {
+  .frseo-root button:not(.btn) {
+    border: none;
+  }
 }
 
 .frseo-root [role="tab"] {

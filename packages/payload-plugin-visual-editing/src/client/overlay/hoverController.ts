@@ -85,7 +85,7 @@ export function createHoverController(badge: EditBadge, registry: TargetRegistry
       const leave = (event: MouseEvent) => {
         if (activeTarget !== target) return;
         const related = event.relatedTarget as Element | null;
-        if (related === label) return;
+        if (related && (related === label || label.contains(related))) return;
         const nextTarget = related ? findTargetAncestor(related) : null;
         if (nextTarget) setActive(nextTarget);
         else scheduleClear();

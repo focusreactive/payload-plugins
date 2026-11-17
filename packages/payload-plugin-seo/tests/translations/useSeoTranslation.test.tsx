@@ -19,12 +19,12 @@ describe("useSeoTranslation", () => {
     i18n.current = { language: "cs", translations: buildTranslations().cs ?? {} };
     const { result } = renderHook(() => useSeoTranslation());
     expect(result.current.language).toBe("cs");
-    expect(result.current.t("tab.keyphrase")).toBe("Klíčová fráze");
+    expect(result.current.t("tab.keyphrase")).toBe("Klíčové fráze");
   });
 
   it("falls back to English when Payload has none of the plugin's strings", () => {
     i18n.current = { language: "fr", translations: {} };
     const { result } = renderHook(() => useSeoTranslation());
-    expect(result.current.t("tab.keyphrase")).toBe("Keyphrase");
+    expect(result.current.t("tab.keyphrase")).toBe("Keyphrases");
   });
 });

@@ -3,7 +3,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Toggle } from "../../src/client/toggle";
 
 import { DATA_VE_HOVERING_ATTR } from "../../src/client/overlay/constants";
-import { createToggle, DATA_VE_TOGGLE_ATTR } from "../../src/client/toggle";
+import {
+  createToggle,
+  DATA_VE_TOGGLE_ATTR,
+  TOGGLE_POSITION_STORAGE_KEY,
+} from "../../src/client/toggle";
 import { flushMutations } from "../support/time";
 
 const host = () => document.querySelector<HTMLElement>(`[${DATA_VE_TOGGLE_ATTR}]`);
@@ -29,7 +33,7 @@ describe("toggle", () => {
 
     toggle.show("hover");
 
-    expect(buttons().map((button) => button.textContent)).toEqual(["Off", "Always", "Hover"]);
+    expect(buttons().map((button) => button.textContent)).toEqual(["Off", "Hover", "Always"]);
     expect(checkedLabels()).toEqual(["Hover"]);
   });
 
@@ -37,7 +41,7 @@ describe("toggle", () => {
     const onSelect = vi.fn();
     toggle = createToggle(document, onSelect);
 
-    buttons()[1]?.click();
+    buttons()[2]?.click();
 
     expect(onSelect).toHaveBeenCalledWith("always");
   });
@@ -80,7 +84,7 @@ describe("toggle", () => {
     const showingWhatIsPicked = () => {
       const onSelect = vi.fn((mode) => toggle?.show(mode));
       toggle = createToggle(document, onSelect);
-      toggle.show("always");
+      toggle.show("hover");
       return onSelect;
     };
 
@@ -95,16 +99,16 @@ describe("toggle", () => {
     });
 
     it.each([
-      ["ArrowRight", "Hover", "hover"],
-      ["ArrowDown", "Hover", "hover"],
+      ["ArrowRight", "Always", "always"],
+      ["ArrowDown", "Always", "always"],
       ["ArrowLeft", "Off", "off"],
       ["ArrowUp", "Off", "off"],
       ["Home", "Off", "off"],
-      ["End", "Hover", "hover"],
+      ["End", "Always", "always"],
     ])("moves to and picks the mode %s leads to", (key, label, mode) => {
       const onSelect = showingWhatIsPicked();
 
-      const event = pressOn("Always", key);
+      const event = pressOn("Hover", key);
 
       expect(onSelect).toHaveBeenCalledWith(mode);
       expect(focusedLabel()).toBe(label);
@@ -115,13 +119,13 @@ describe("toggle", () => {
     it("goes round from the last mode to the first and back", () => {
       const onSelect = showingWhatIsPicked();
 
-      pressOn("Hover", "ArrowRight");
+      pressOn("Always", "ArrowRight");
       expect(onSelect).toHaveBeenLastCalledWith("off");
       expect(focusedLabel()).toBe("Off");
 
       pressOn("Off", "ArrowLeft");
-      expect(onSelect).toHaveBeenLastCalledWith("hover");
-      expect(focusedLabel()).toBe("Hover");
+      expect(onSelect).toHaveBeenLastCalledWith("always");
+      expect(focusedLabel()).toBe("Always");
     });
 
     it("leaves every other key to the page", () => {
@@ -132,6 +136,29 @@ describe("toggle", () => {
       expect(onSelect).not.toHaveBeenCalled();
       expect(event.defaultPrevented).toBe(false);
     });
+  });
+
+  it("starts in the top right corner and comes back where it was dropped", () => {
+    toggle = createToggle(document, vi.fn());
+    expect(host()?.style.top).toBe("");
+    toggle.remove();
+
+    localStorage.setItem(TOGGLE_POSITION_STORAGE_KEY, JSON.stringify({ right: 40, top: 60 }));
+    toggle = createToggle(document, vi.fn());
+
+    expect(host()?.style.top).toBe("60px");
+    expect(host()?.style.right).toBe("40px");
+    localStorage.removeItem(TOGGLE_POSITION_STORAGE_KEY);
+  });
+
+  it("lights its dot while visual editing is on", () => {
+    toggle = createToggle(document, vi.fn());
+
+    toggle.show("off");
+    expect(host()?.hasAttribute("data-on")).toBe(false);
+
+    toggle.show("hover");
+    expect(host()?.hasAttribute("data-on")).toBe(true);
   });
 
   it("leaves the page when it is removed", () => {
