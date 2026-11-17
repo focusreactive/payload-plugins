@@ -3,6 +3,7 @@ import { commonJsDefault } from "./helpers/commonjs-default";
 
 export interface YoastResearcher {
   getResearch: (name: string) => unknown;
+  getConfig?: (name: string) => unknown;
 }
 
 export type ResearcherConstructor = new (paper: unknown) => YoastResearcher;
@@ -33,6 +34,17 @@ export function makeResearcher(paper: unknown): YoastResearcher {
 export function getResearch<T = unknown>(researcher: YoastResearcher, name: string): T | undefined {
   try {
     return researcher.getResearch(name) as T;
+  } catch {
+    return undefined;
+  }
+}
+
+export function getResearcherConfig<T = unknown>(
+  researcher: YoastResearcher,
+  name: string
+): T | undefined {
+  try {
+    return researcher.getConfig?.(name) as T | undefined;
   } catch {
     return undefined;
   }

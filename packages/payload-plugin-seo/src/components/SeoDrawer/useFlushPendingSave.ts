@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import type { RemoteSaver } from "./remoteSaver";
 
-export function useFlushOnHide(saver: RemoteSaver | null): void {
+export function useFlushPendingSave(saver: RemoteSaver | null): void {
   useEffect(() => {
     if (!saver) return;
 
@@ -13,10 +13,12 @@ export function useFlushOnHide(saver: RemoteSaver | null): void {
     };
 
     window.addEventListener("pagehide", flush);
+    window.addEventListener("online", flush);
     document.addEventListener("visibilitychange", flushWhenHidden);
 
     return () => {
       window.removeEventListener("pagehide", flush);
+      window.removeEventListener("online", flush);
       document.removeEventListener("visibilitychange", flushWhenHidden);
       flush();
     };

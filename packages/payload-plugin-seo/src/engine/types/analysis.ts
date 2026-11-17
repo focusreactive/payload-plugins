@@ -1,4 +1,4 @@
-import type { Message } from "../../translations/types";
+import type { Message, MessageVars } from "../../translations/types";
 import type { Visualization } from "./visualization";
 
 export type Status = "good" | "warn" | "bad";
@@ -10,6 +10,7 @@ export interface CheckResult {
   status: Status;
   score: number;
   recommendation?: Message;
+  tipVars?: MessageVars;
   data?: Record<string, unknown>;
   viz?: Visualization;
 }

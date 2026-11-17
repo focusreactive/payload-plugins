@@ -8,6 +8,8 @@ import { runAssessor } from "../../assessorAdapter";
 import { commonJsDefault } from "../../helpers/commonjs-default";
 import { hasKeyphrase } from "../../helpers/has-keyphrase";
 import { makeResearcher } from "../../researcherAdapter";
+import type { AnalysisThresholds } from "../../thresholds/analysisThresholds";
+import { configureSeoAssessor } from "../../thresholds/configureAssessors";
 import { scoreToStatus, statusToRing } from "../../scoreStatus";
 import { enrich } from "../utils/enrich";
 import { toCategory } from "../utils/toCategory";
@@ -38,14 +40,24 @@ interface DeriveSeoResult {
   onPage: CategoryResult;
 }
 
-export function deriveSeo(paper: PaperData, keyphrase: string): DeriveSeoResult {
-  const ctx = { keyphrase };
+export function deriveSeo(
+  paper: PaperData,
+  keyphrase: string,
+  thresholds: AnalysisThresholds
+): DeriveSeoResult {
+  const ctx = { keyphrase, thresholds: thresholds.values };
   const researcher = makeResearcher(paper);
 
-  const seoAssessor = new SeoAssessor(makeResearcher(paper));
+  const seoAssessor = new SeoAssessor(researcher);
   seoAssessor.addAssessment("keyphraseDistribution", new KeyphraseDistributionAssessment());
+  configureSeoAssessor(seoAssessor, thresholds);
 
-  const seoChecks = enrich(runAssessor(seoAssessor, ctx, paper), paper as PaperLike, researcher);
+  const seoChecks = enrich(
+    runAssessor(seoAssessor, ctx, paper),
+    paper as PaperLike,
+    researcher,
+    thresholds
+  );
 
   const { keyphrase: keyphraseChecks, onPage } = partitionSeo(seoChecks);
 

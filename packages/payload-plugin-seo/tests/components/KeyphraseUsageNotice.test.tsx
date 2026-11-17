@@ -22,6 +22,7 @@ vi.mock("@payloadcms/ui", () => ({
   useConfig: () => ({ config: { routes: { api: "/api", admin: "/admin" } } }),
   useDebounce: <T,>(value: T) => value,
   useDocumentInfo: () => ({ collectionSlug: "posts", id: 1 }),
+  useLocale: () => ({ code: "es" }),
   usePayloadAPI: (...args: unknown[]) => usePayloadAPI(...args),
 }));
 
@@ -65,7 +66,7 @@ describe("KeyphraseUsageNotice", () => {
     expect(screen.getByText(/already used on/iu)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute(
       "href",
-      "/admin/collections/page/7"
+      "/admin/collections/page/7?locale=es"
     );
     expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("target", "_blank");
     expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute(

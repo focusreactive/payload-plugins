@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { setPluginConfig } from "../../../src/config";
 import {
+  DEFAULT_SEO_THRESHOLDS,
   KEYPHRASES_COLLECTION_SLUG,
   LINK_SOURCE_PAGE_SIZE,
   LINK_SUGGESTIONS_ENDPOINT_PATH,
@@ -59,6 +60,11 @@ async function suggestionIds(res: Response): Promise<string[]> {
   return suggestions.map((s) => s.id);
 }
 
+async function linkedOf(res: Response): Promise<unknown> {
+  const { linked } = (await res.json()) as { linked: unknown };
+  return linked;
+}
+
 function postLookups(payload: ReturnType<typeof fakePayload>) {
   return payload.find.mock.calls.filter(([args]) => args.collection === "posts");
 }
@@ -71,16 +77,19 @@ const range = (from: number, to: number) =>
 beforeEach(() => {
   indexRows = [indexRow(1, "self"), ...range(2, 80).map((n) => indexRow(n))];
   unreadable = new Set();
-  setPluginConfig({
-    collections: [
-      {
-        slug: "posts",
-        extractContentPath: "@/x#default",
-        resolveUrl: ({ doc }) => `/blog/${String(doc.slug)}`,
-      },
-    ],
-    keyphraseIndex: true,
-  });
+  setPluginConfig(
+    {
+      collections: [
+        {
+          slug: "posts",
+          extractContentPath: "@/x#default",
+          resolveUrl: ({ doc }) => `/blog/${String(doc.slug)}`,
+        },
+      ],
+      keyphraseIndex: true,
+    },
+    DEFAULT_SEO_THRESHOLDS
+  );
 });
 
 describe("POST /seo/link-suggestions", () => {
@@ -170,22 +179,26 @@ describe("POST /seo/link-suggestions", () => {
           snippetMatch: { start: 0, end: 11 },
         },
       ],
+      linked: [],
     });
   });
 
   describe("linked hrefs", () => {
     const resolveTo = (url: string, baseUrl?: string) =>
-      setPluginConfig({
-        site: { baseUrl },
-        collections: [
-          {
-            slug: "posts",
-            extractContentPath: "@/x#default",
-            resolveUrl: ({ doc }) => (doc.id === 2 ? url : `/blog/${String(doc.slug)}`),
-          },
-        ],
-        keyphraseIndex: true,
-      });
+      setPluginConfig(
+        {
+          site: { baseUrl },
+          collections: [
+            {
+              slug: "posts",
+              extractContentPath: "@/x#default",
+              resolveUrl: ({ doc }) => (doc.id === 2 ? url : `/blog/${String(doc.slug)}`),
+            },
+          ],
+          keyphraseIndex: true,
+        },
+        DEFAULT_SEO_THRESHOLDS
+      );
 
     const suggestedWith = async (linkedHrefs: string[]) =>
       suggestionIds(await handler(fakeRequest(body({ text: topic(2), linkedHrefs }))));
@@ -251,7 +264,48 @@ describe("POST /seo/link-suggestions", () => {
       )
     );
     expect(await suggestionIds(res)).toEqual(["3"]);
-    expect(postLookups(payload).map(([args]) => idsOf(args.where))).toEqual([["3"]]);
+    const suggestionLookups = postLookups(payload).filter(([args]) => !args.select);
+    expect(suggestionLookups.map(([args]) => idsOf(args.where))).toEqual([["3"]]);
+  });
+
+  describe("linked documents", () => {
+    const linkedTo = (...ids: string[]) =>
+      body({ text: topic(2), linkedDocs: ids.map((docId) => ({ collection: "posts", docId })) });
+
+    it("lists the readable linked documents with their titles in link order", async () => {
+      unreadable = new Set(["4"]);
+      const res = await handler(fakeRequest(linkedTo("5", "4", "3")));
+      expect(await linkedOf(res)).toEqual([
+        { collection: "posts", id: "5", title: "Post 5" },
+        { collection: "posts", id: "3", title: "Post 3" },
+      ]);
+    });
+
+    it("lists them even when nothing new can be suggested", async () => {
+      const res = await handler(fakeRequest(linkedTo("2")));
+      expect(await suggestionIds(res.clone())).toEqual([]);
+      expect(await linkedOf(res)).toEqual([{ collection: "posts", id: "2", title: "Post 2" }]);
+    });
+
+    it("loads only their titles, with the caller's read access", async () => {
+      const payload = fakePayload();
+      await handler(fakeRequest(linkedTo("5"), { payload }));
+      expect(payload.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          collection: "posts",
+          overrideAccess: false,
+          select: { title: true },
+        })
+      );
+    });
+
+    it("returns none without linked documents", async () => {
+      const payload = fakePayload();
+      expect(await linkedOf(await handler(fakeRequest(body({ text: "x" }), { payload })))).toEqual(
+        []
+      );
+      expect(postLookups(payload)).toHaveLength(0);
+    });
   });
 
   it("drops an unreadable target and still returns ten suggestions", async () => {

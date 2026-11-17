@@ -19,7 +19,7 @@ export function CheckRow({ check }: CheckRowProps) {
   const { t } = useSeoTranslation();
   const id = ALL_CHECK_IDS.has(check.id as CheckId) ? (check.id as CheckId) : undefined;
   const meta = id
-    ? { name: t(`check.${id}.name`), tip: t(`check.${id}.tip`) }
+    ? { name: t(`check.${id}.name`), tip: t(`check.${id}.tip`, check.tipVars) }
     : { name: check.id, tip: "" };
   const Icon = CHECK_ICONS[check.id] ?? CHECK_ICONS._default;
 

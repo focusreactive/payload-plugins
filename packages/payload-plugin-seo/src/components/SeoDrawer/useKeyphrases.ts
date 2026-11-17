@@ -5,6 +5,7 @@ import type { StoredKeyphrase } from "../../keyphrases/stored";
 import * as ops from "./keyphraseState";
 import type { KeyphraseEntry } from "./keyphraseState";
 import {
+  clearKeyphrases,
   entriesOrBlank,
   loadKeyphrases,
   loadUnsavedKeyphrases,
@@ -13,7 +14,7 @@ import {
   unsavedStorageKey,
 } from "./keyphraseStorage";
 import { createRemoteSaver } from "./remoteSaver";
-import { useFlushOnHide } from "./useFlushOnHide";
+import { useFlushPendingSave } from "./useFlushPendingSave";
 import { useRemoteSync } from "./useRemoteSync";
 import type { PendingSync } from "./useRemoteSync";
 
@@ -78,6 +79,7 @@ export function useKeyphrases({
   const [saveFailed, setSaveFailed] = useState(false);
 
   const persistLocally = !remote;
+  const serverHasList = Boolean(remote?.indexed);
   const apiRoute = remote?.canUpdate ? remote.apiRoute : undefined;
   const saver = useMemo(
     () =>
@@ -103,7 +105,11 @@ export function useKeyphrases({
     if (persistLocally) saveKeyphrases(key, list);
   }, [key, list, persistLocally]);
 
-  useFlushOnHide(saver);
+  useEffect(() => {
+    if (serverHasList) clearKeyphrases(key);
+  }, [key, serverHasList]);
+
+  useFlushPendingSave(saver);
 
   const listRef = useRef(list);
   listRef.current = list;
@@ -125,7 +131,6 @@ export function useKeyphrases({
   const { syncOnOpen, cancelSync } = useRemoteSync({
     saver,
     pending: initial.sync,
-    browserKey: key,
     listRef,
     replaceList,
   });

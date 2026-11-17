@@ -1,6 +1,6 @@
 "use client";
 
-import { useConfig, useDebounce, useDocumentInfo, usePayloadAPI } from "@payloadcms/ui";
+import { useConfig, useDebounce, useDocumentInfo, useLocale, usePayloadAPI } from "@payloadcms/ui";
 import { useState } from "react";
 import { KEYPHRASE_USAGE_ENDPOINT_PATH } from "../../../../constants";
 import { docTargetKey } from "../../../../keyphrases/docTarget";
@@ -19,6 +19,7 @@ export interface KeyphraseUsageProps {
 
 export function KeyphraseUsageNotice({ collectionSlug, docId, phrase }: KeyphraseUsageProps) {
   const { config } = useConfig();
+  const locale = useLocale();
   const { t } = useSeoTranslation();
   const params = { collection: collectionSlug, docId, phrase };
   const [{ data, isError }, { setParams }] = usePayloadAPI(
@@ -45,7 +46,7 @@ export function KeyphraseUsageNotice({ collectionSlug, docId, phrase }: Keyphras
             <li key={docTargetKey(doc.collection, doc.id)}>
               <a
                 className="text-inherit underline"
-                href={adminDocHref(config.routes.admin, doc)}
+                href={adminDocHref(config.routes.admin, doc, locale?.code)}
                 rel="noopener noreferrer"
                 target="_blank"
               >

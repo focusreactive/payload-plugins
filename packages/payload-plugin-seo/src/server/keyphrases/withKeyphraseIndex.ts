@@ -1,6 +1,7 @@
 import type { Config } from "payload";
 import { DEFAULT_LOCALES } from "../../constants";
 import type { SeoPluginConfig } from "../../types/config";
+import { isKeyphraseIndexEnabled } from "../../utils/config/isKeyphraseIndexEnabled";
 import { createLinkSuggestionsEndpoint } from "../links/endpoint";
 import { createKeyphraseCleanupHook } from "./cleanupHook";
 import { createKeyphraseCollection } from "./collection";
@@ -8,7 +9,7 @@ import { createKeyphraseEndpoints } from "./endpoints";
 import type { KeyphraseScope } from "./types";
 
 export function withKeyphraseIndex(incoming: Config, config: SeoPluginConfig): Config {
-  if (!config.keyphraseIndex) return incoming;
+  if (!isKeyphraseIndexEnabled(config)) return incoming;
 
   const indexedSlugs = config.collections.map((c) => c.slug);
   const scope: KeyphraseScope = {
