@@ -2,32 +2,38 @@
 
 import type { RefObject } from "react";
 
-import type { Overlay, OverlayCtx } from "./createOverlay.js";
+import type { Overlay } from "./createOverlay.js";
+import type { OverlayScope, ScopedOverlayCtx } from "./overlayScope.js";
 
 import { useEffect, useRef } from "react";
 
-import { createOverlay } from "./createOverlay.js";
+import { startOverlay } from "./overlayScope.js";
 import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect.js";
-
-export type { OverlayCtx };
 
 export function useVisualEditingOverlay(
   active: boolean,
   rootRef: RefObject<HTMLElement | null>,
-  ctx: OverlayCtx
+  scope: OverlayScope,
+  ctx: ScopedOverlayCtx
 ): void {
   const ctxRef = useRef(ctx);
+  const scopeRef = useRef(scope);
   const overlayRef = useRef<Overlay | null>(null);
 
   useIsomorphicLayoutEffect(() => {
     ctxRef.current = ctx;
+    scopeRef.current = scope;
   });
 
   useEffect(() => {
     if (!active) return;
     const root = rootRef.current;
     if (!root) return;
-    const overlay = createOverlay(root, () => ctxRef.current);
+    const overlay = startOverlay(
+      () => scopeRef.current,
+      root,
+      () => ctxRef.current
+    );
     overlayRef.current = overlay;
     return () => {
       overlayRef.current = null;

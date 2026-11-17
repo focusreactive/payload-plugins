@@ -68,6 +68,12 @@ export type VeAnnounceRequestMessage = {
   type: typeof VE_ANNOUNCE_REQUEST_TYPE;
 };
 
+export const VE_DOCUMENT_SAVED_TYPE = "ve:document-saved";
+
+export type VeDocumentSavedMessage = {
+  type: typeof VE_DOCUMENT_SAVED_TYPE;
+};
+
 export const VE_FIELD_SNAPSHOT_TYPE = "ve:field-snapshot";
 
 export type VeFieldSnapshotEntry = {

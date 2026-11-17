@@ -1,5 +1,3 @@
-import type { CollectionSlug } from "payload";
-
 import type { DocKind } from "./protocol.js";
 
 import { isPlainObject } from "./plainObject.js";
@@ -9,7 +7,7 @@ export const META_KEY = "_meta";
 
 export type VeIdentity = {
   path: string;
-  collectionSlug: CollectionSlug;
+  collectionSlug: string;
   kind: DocKind;
   docId?: string;
   key?: string;

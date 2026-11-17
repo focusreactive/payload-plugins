@@ -2,7 +2,7 @@ import type { CollectionConfig, Config, CustomComponent, GlobalConfig } from "pa
 
 import { PACKAGE_NAME } from "../shared/packageName.js";
 
-const PREVIEW_PAGE_ANNOUNCER_PATH = `${PACKAGE_NAME}/admin#PreviewPageAnnouncer`;
+const PREVIEW_PAGE_BRIDGE_PATH = `${PACKAGE_NAME}/admin#PreviewPageBridge`;
 const INSTANT_PREVIEW_COMPONENT_PATH = `${PACKAGE_NAME}/admin#InstantPreviewBroadcaster`;
 const OPEN_FORM_ANNOUNCER_PATH = `${PACKAGE_NAME}/admin#OpenFormAnnouncer`;
 
@@ -35,7 +35,7 @@ const documentControlsOf = (
 ): CustomComponent[] => {
   const isPreviewed = hasLivePreview(entity, slugsPreviewedByRoot);
   return [
-    ...(isPreviewed ? [{ path: PREVIEW_PAGE_ANNOUNCER_PATH }] : []),
+    ...(isPreviewed ? [{ path: PREVIEW_PAGE_BRIDGE_PATH }] : []),
     ...(instantPreview ? [{ path: OPEN_FORM_ANNOUNCER_PATH }] : []),
     ...(instantPreview && isPreviewed
       ? [{ clientProps: { excludeFieldNames }, path: INSTANT_PREVIEW_COMPONENT_PATH }]

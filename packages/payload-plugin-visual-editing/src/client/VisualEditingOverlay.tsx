@@ -1,9 +1,11 @@
 "use client";
 
-import { useContext, useRef, useState } from "react";
+import { useContext, useMemo, useRef, useState } from "react";
 
-import { createSavedRichTextShapes } from "./instantPreview/unsavedRender/savedShapes.js";
-import { OverlayLocaleContext, SavedRichTextShapesContext } from "./overlayContext.js";
+import type { OverlayScope } from "./overlayScope.js";
+
+import { OverlayScopeContext } from "./overlayContext.js";
+import { savedShapesWithin } from "./overlayScope.js";
 import { useVisualEditingOverlay } from "./useVisualEditingOverlay.js";
 import { useVisualEditing } from "./VisualEditingProvider.js";
 
@@ -24,25 +26,22 @@ export function VisualEditingOverlay({
     adminBasePath,
   } = useVisualEditing();
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const outerSavedShapes = useContext(SavedRichTextShapesContext);
-  const [savedRichTextShapes] = useState(() => outerSavedShapes ?? createSavedRichTextShapes());
+  const outerScope = useContext(OverlayScopeContext);
+  const [savedShapes] = useState(() => savedShapesWithin(outerScope));
+  const scope = useMemo((): OverlayScope => ({ locale, savedShapes }), [locale, savedShapes]);
   const isInstantPreviewOn = available && instantPreview;
-  useVisualEditingOverlay(enabled || isInstantPreviewOn, rootRef, {
+  useVisualEditingOverlay(enabled || isInstantPreviewOn, rootRef, scope, {
     buildAdminEditUrl,
     adminOrigin,
     adminBasePath,
-    locale,
     mode: enabled ? mode : "off",
     instantPreview: isInstantPreviewOn,
-    keepsRichTextShape: savedRichTextShapes.keeps,
   });
   return (
-    <OverlayLocaleContext.Provider value={locale}>
-      <SavedRichTextShapesContext.Provider value={savedRichTextShapes}>
-        <div ref={rootRef} data-ve-root="" style={{ display: "contents" }}>
-          {children}
-        </div>
-      </SavedRichTextShapesContext.Provider>
-    </OverlayLocaleContext.Provider>
+    <OverlayScopeContext.Provider value={scope}>
+      <div ref={rootRef} data-ve-root="" style={{ display: "contents" }}>
+        {children}
+      </div>
+    </OverlayScopeContext.Provider>
   );
 }

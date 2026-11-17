@@ -11,7 +11,7 @@ import type { LiveRichTextField, LiveRichTextRequest } from "../../src/shared/pr
 import { LiveRichText } from "../../src/client/instantPreview/LiveRichText";
 import { createSavedRichTextShapes } from "../../src/client/instantPreview/unsavedRender/savedShapes";
 import { COMMIT_WAIT_MS } from "../../src/client/instantPreview/unsavedRender/unsavedRender";
-import { SavedRichTextShapesContext } from "../../src/client/overlayContext";
+import { OverlayScopeContext } from "../../src/client/overlayContext";
 import { VisualEditingOverlay } from "../../src/client/VisualEditingOverlay";
 import { VisualEditingProvider } from "../../src/client/VisualEditingProvider";
 import {
@@ -148,13 +148,13 @@ describe("LiveRichText", () => {
     const savedShapes = createSavedRichTextShapes();
     const renderInOverlay = (shape: string) =>
       renderLive(
-        <SavedRichTextShapesContext.Provider value={savedShapes}>
+        <OverlayScopeContext.Provider value={{ locale: "en", savedShapes }}>
           <VisualEditingOverlay locale="en">
             <LiveRichText field={BODY} render={render} shape={shape}>
               <p>{SAVED_RENDER}</p>
             </LiveRichText>
           </VisualEditingOverlay>
-        </SavedRichTextShapesContext.Provider>
+        </OverlayScopeContext.Provider>
       );
     const namesShape = (shape: string) => savedShapes.keeps(keyedFieldAddressOf(BODY), shape);
 

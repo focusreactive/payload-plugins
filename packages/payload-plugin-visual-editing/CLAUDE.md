@@ -68,4 +68,4 @@ Hard-refresh the preview tab or restart `next dev` if the client bundle does not
 
 ## Publishing
 
-Public package, released by semantic-release through the monorepo flow. The peer range for `payload` and `@payloadcms/ui` is `^3.79.0`, because the bridge depends on `useConfig().getEntityConfig`; widen it only after testing against the lower bound. `react` and `react-dom` are `^19`, which `@payloadcms/ui` 3.79 requires; `next` is not a peer because nothing imports it. Do not bump `version` by hand.
+Public package, released by semantic-release through the monorepo flow. The peer range for `payload` and `@payloadcms/ui` is `^3.79.0`, because the bridge depends on `useConfig().getEntityConfig`; widen it only after testing against the lower bound. All peers are optional, because a site that uses only `./dom` needs none of them. `react` and `react-dom` are `^18.2.0 || ^19.0.0`: the page adapters use nothing newer than `useSyncExternalStore`, and the admin gets React 19 from Payload. `next` is not a peer because nothing imports it. Do not bump `version` by hand.

@@ -422,6 +422,11 @@ export default defineConfig({
         `${VISUAL_EDITING}/server/**`,
         `${VISUAL_EDITING}/client/overlay/**`,
         `${VISUAL_EDITING}/client/instantPreview/**`,
+        `${VISUAL_EDITING}/client/session.ts`,
+        `${VISUAL_EDITING}/client/overlayScope.ts`,
+        `${VISUAL_EDITING}/client/toggle.ts`,
+        `${VISUAL_EDITING}/client/saveEvents.ts`,
+        `${VISUAL_EDITING}/dom/**`,
       ],
       rules: {
         "no-restricted-imports": [

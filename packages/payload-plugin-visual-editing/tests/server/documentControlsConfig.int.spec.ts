@@ -11,8 +11,8 @@ const BROADCASTER = {
   path: "@focus-reactive/payload-plugin-visual-editing/admin#InstantPreviewBroadcaster",
 };
 
-const PREVIEW_PAGE_ANNOUNCER = {
-  path: "@focus-reactive/payload-plugin-visual-editing/admin#PreviewPageAnnouncer",
+const PREVIEW_PAGE_BRIDGE = {
+  path: "@focus-reactive/payload-plugin-visual-editing/admin#PreviewPageBridge",
 };
 
 const OPEN_FORM_ANNOUNCER = {
@@ -58,12 +58,12 @@ describe("document controls", () => {
     const config = build(true);
 
     expect(collectionControls(config, "page")).toEqual([
-      PREVIEW_PAGE_ANNOUNCER,
+      PREVIEW_PAGE_BRIDGE,
       OPEN_FORM_ANNOUNCER,
       BROADCASTER,
     ]);
     expect(globalControls(config, "nav")).toEqual([
-      PREVIEW_PAGE_ANNOUNCER,
+      PREVIEW_PAGE_BRIDGE,
       OPEN_FORM_ANNOUNCER,
       BROADCASTER,
     ]);
@@ -73,12 +73,12 @@ describe("document controls", () => {
     const config = build(true);
 
     expect(collectionControls(config, "post")).toEqual([
-      PREVIEW_PAGE_ANNOUNCER,
+      PREVIEW_PAGE_BRIDGE,
       OPEN_FORM_ANNOUNCER,
       BROADCASTER,
     ]);
     expect(globalControls(config, "footer")).toEqual([
-      PREVIEW_PAGE_ANNOUNCER,
+      PREVIEW_PAGE_BRIDGE,
       OPEN_FORM_ANNOUNCER,
       BROADCASTER,
     ]);
@@ -120,13 +120,13 @@ describe("document controls", () => {
 
     expect(collectionControls(config, "page")).toEqual([
       "/existing#Collection",
-      PREVIEW_PAGE_ANNOUNCER,
+      PREVIEW_PAGE_BRIDGE,
       OPEN_FORM_ANNOUNCER,
       BROADCASTER,
     ]);
     expect(globalControls(config, "nav")).toEqual([
       "/existing#Global",
-      PREVIEW_PAGE_ANNOUNCER,
+      PREVIEW_PAGE_BRIDGE,
       OPEN_FORM_ANNOUNCER,
       BROADCASTER,
     ]);
@@ -139,9 +139,9 @@ describe("document controls", () => {
   it("announces only the preview page, for click-to-edit from another origin, when the option is off", () => {
     const config = build();
 
-    expect(collectionControls(config, "page")).toEqual([PREVIEW_PAGE_ANNOUNCER]);
-    expect(collectionControls(config, "post")).toEqual([PREVIEW_PAGE_ANNOUNCER]);
-    expect(globalControls(config, "footer")).toEqual([PREVIEW_PAGE_ANNOUNCER]);
+    expect(collectionControls(config, "page")).toEqual([PREVIEW_PAGE_BRIDGE]);
+    expect(collectionControls(config, "post")).toEqual([PREVIEW_PAGE_BRIDGE]);
+    expect(globalControls(config, "footer")).toEqual([PREVIEW_PAGE_BRIDGE]);
   });
 
   it("adds nothing where live preview is not configured and the option is off", () => {

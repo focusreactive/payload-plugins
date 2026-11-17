@@ -1,6 +1,7 @@
 export const STEGA_PREFILTER = /[\u200B-\u202F\uFEFF]/;
 
 export const DATA_VE_TARGET_ATTR = "data-ve-target";
+export const DATA_VE_HOVERING_ATTR = "data-ve-hovering";
 export const DATA_VE_FOR_ATTR = "data-ve-for";
 export const LABEL_CLASS = "ve-edit-label";
 
