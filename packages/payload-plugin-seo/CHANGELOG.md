@@ -1,3 +1,46 @@
+# @focus-reactive/payload-plugin-seo [2.0.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.12.1...@focus-reactive/payload-plugin-seo@2.0.0) (2026-11-17)
+
+
+* feat(seo)!: store keyphrases on the server by default ([7a11270](https://github.com/focusreactive/payload-plugins/commit/7a11270625add98109a96c018b28c326364cbbf4))
+
+
+### Bug Fixes
+
+* **seo:** band the meta description and title width gauges like Yoast ([d86c14b](https://github.com/focusreactive/payload-plugins/commit/d86c14b8a2b8d63b70ef0926d423ea970a8455d5))
+* **seo:** hide the transition words gauge where Yoast does not score it ([1bbbf90](https://github.com/focusreactive/payload-plugins/commit/1bbbf9010091f951dfe724f910cd5efb54aa301e))
+* **seo:** keep the language bands valid when a threshold is configured ([aa6d534](https://github.com/focusreactive/payload-plugins/commit/aa6d534b5b5abdda3b85decc01721786437e5f3e))
+* **seo:** keep the over-maximum density band for a configured maximum ([28b20fd](https://github.com/focusreactive/payload-plugins/commit/28b20fd7954dccb0b46c3d58d6d6160c03b1acc1))
+* **seo:** let configured thresholds win over Yoast language settings ([56ac134](https://github.com/focusreactive/payload-plugins/commit/56ac134d6e4f45e8cbde878c5b6b4890853d81d7))
+* **seo:** make SEO field meters follow the configured thresholds ([5064264](https://github.com/focusreactive/payload-plugins/commit/5064264a9e107e86bf3f8d83f0f3f2d394709cd5))
+* **seo:** measure the SEO title width for the title width check ([10b793c](https://github.com/focusreactive/payload-plugins/commit/10b793cb9edf620f6a4451907ece565d45d0d1ef))
+* **seo:** never round a gauge value across a band edge ([8d69293](https://github.com/focusreactive/payload-plugins/commit/8d69293fed2a3ce7ef90192434b9fd9eac42e745))
+* **seo:** open already-used keyphrase links in the current locale ([80fbae8](https://github.com/focusreactive/payload-plugins/commit/80fbae8f67721ef875e15be7014bd23438033b22))
+* **seo:** open internal link admin links in the current locale ([59b7c17](https://github.com/focusreactive/payload-plugins/commit/59b7c17f413931d5d8f3c18295af94c564a3e7cb))
+* **seo:** reject zero where a threshold needs a positive number ([3f07b08](https://github.com/focusreactive/payload-plugins/commit/3f07b08aea451ce5c82975c42d1b52602e545ef9))
+* **seo:** respect a field's own title minimum and validate field ranges ([1d03ed8](https://github.com/focusreactive/payload-plugins/commit/1d03ed8be34dfc0f2ee6f9f07423dd448997e145))
+* **seo:** retry unsaved keyphrases when the browser comes back online ([a4f608e](https://github.com/focusreactive/payload-plugins/commit/a4f608e28043d99e0d4dc1b6818bd23c987716ba))
+* **seo:** score the SEO field meters like the drawer ([a2646ea](https://github.com/focusreactive/payload-plugins/commit/a2646ea6bb86c62cf958c25846d61fc3b64e3b27))
+* **seo:** show minimum-only gauges without an upper bound ([689b4e1](https://github.com/focusreactive/payload-plugins/commit/689b4e1ba3d3136833cefbcd18b4782c5b6ca73a))
+* **seo:** show the keyphrase density Yoast scores in its gauge ([b893eb5](https://github.com/focusreactive/payload-plugins/commit/b893eb5c1a6ac216181efe192a24c19f0fa6c527))
+* **seo:** show the numbers of the analysis language ([4d032dc](https://github.com/focusreactive/payload-plugins/commit/4d032dc4096e6f3cf10009723b1e1d90d71b9295))
+* **seo:** show the subheading keyphrase bar when there are no subheadings ([a045fb9](https://github.com/focusreactive/payload-plugins/commit/a045fb908547b89e668cbfff7efedc4a887d01d9))
+* **seo:** unwrap CommonJS defaults of the threshold assessments under webpack ([307f043](https://github.com/focusreactive/payload-plugins/commit/307f043ae2716a96a670244cfa72151c3a0ccb96))
+* **seo:** word recommendations by the side of the band ([c09fe54](https://github.com/focusreactive/payload-plugins/commit/c09fe540b9a8ef57c1164c69a5c132212645813e))
+
+
+### Features
+
+* **seo:** configurable analysis thresholds ([3aee676](https://github.com/focusreactive/payload-plugins/commit/3aee6763fa0d6f13d8069903ea2d6f43988138ad))
+* **seo:** list already linked documents in the internal links tab ([f3c84c4](https://github.com/focusreactive/payload-plugins/commit/f3c84c4d60d7c0ed0d07d663bb0cf5447f04f6d1))
+
+
+### BREAKING CHANGES
+
+* consumers that never set keyphraseIndex now get the
+hidden seo-keyphrases collection. On SQL adapters run
+`payload migrate:create` and `payload migrate`, or set
+`keyphraseIndex: false` to keep the previous behavior.
+
 ## @focus-reactive/payload-plugin-seo [1.12.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.12.0...@focus-reactive/payload-plugin-seo@1.12.1) (2026-11-16)
 
 
