@@ -98,32 +98,35 @@ describe("buildBreadcrumbs", () => {
 });
 
 describe("buildBreadcrumbs hints and levels", () => {
-  it("carries the type hint and nesting level of each crumb for the hidden-levels menu", () => {
+  it("hints only the block type, never Payload field types or array item labels", () => {
     const crumbs = buildBreadcrumbs({
       documentTitle: "Home",
       levels: [
         {
           rowPath: "s.0",
           fieldLabel: "Sections",
-          rowLabel: "Features 03",
-          fieldHint: "Blocks",
+          rowLabel: "Why editors like it",
           rowHint: "Features",
         },
-        {
-          rowPath: "s.0.i.1",
-          fieldLabel: "Items",
-          rowLabel: "Feature 02",
-          fieldHint: "Array",
-          rowHint: "Feature",
-        },
+        { rowPath: "s.0.i.1", fieldLabel: "Items", rowLabel: "Stacked panels" },
       ],
     });
     expect(crumbs.map((crumb) => [crumb.label, crumb.level, crumb.hint])).toEqual([
       ["Home", 0, undefined],
-      ["Sections", 1, "Blocks"],
-      ["Features 03", 2, "Features"],
-      ["Items", 3, "Array"],
-      ["Feature 02", 4, "Feature"],
+      ["Sections", 1, undefined],
+      ["Why editors like it", 2, "Features"],
+      ["Items", 3, undefined],
+      ["Stacked panels", 4, undefined],
     ]);
+  });
+
+  it("drops the block type when the row label already says it", () => {
+    const crumbs = buildBreadcrumbs({
+      documentTitle: "Home",
+      levels: [
+        { rowPath: "s.0", fieldLabel: "Sections", rowLabel: "Features 03", rowHint: "Features" },
+      ],
+    });
+    expect(crumbs.at(-1)?.hint).toBeUndefined();
   });
 });

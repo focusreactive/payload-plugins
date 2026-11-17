@@ -92,7 +92,7 @@ export type Crumb = {
   readonly current: boolean;
   /** Nesting level (0 = document), for indenting the hidden-levels menu. */
   readonly level: number;
-  /** A short type hint for the hidden-levels menu: "Blocks", "Array", a block or item label. */
+  /** The block type ("Hero") of a block row, for the hidden-levels menu. */
   readonly hint?: string;
 };
 
@@ -100,11 +100,15 @@ export type CrumbLevel = {
   readonly rowPath: string;
   readonly fieldLabel: string;
   readonly rowLabel: string;
-  /** "Blocks" or "Array". */
-  readonly fieldHint?: string;
-  /** The block label ("Hero") or the array's item label ("Feature"). */
+  /** The block label ("Hero") of a block row. Array rows have none: their field already names them. */
   readonly rowHint?: string;
 };
+
+/** The block label, unless the row's own label already says it ("Hero 01", a block named "Hero"). */
+const hintFor = (level: CrumbLevel): string | undefined =>
+  level.rowHint && !level.rowLabel.toLowerCase().includes(level.rowHint.toLowerCase())
+    ? level.rowHint
+    : undefined;
 
 /**
  * `Document › Layout › Deep Nest 01 › Nested › Inner 02 …` for the panel at `depth`.
@@ -133,7 +137,6 @@ export const buildBreadcrumbs = ({
         keep: index,
         current: false,
         level: index * 2 + 1,
-        ...(level.fieldHint ? { hint: level.fieldHint } : {}),
       },
       {
         key: `${level.rowPath}:row`,
@@ -142,7 +145,7 @@ export const buildBreadcrumbs = ({
         keep: index + 1,
         current: index === depth,
         level: index * 2 + 2,
-        ...(level.rowHint ? { hint: level.rowHint } : {}),
+        ...(hintFor(level) ? { hint: hintFor(level) } : {}),
       }
     );
   }

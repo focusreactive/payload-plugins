@@ -397,9 +397,8 @@ export const StackedEditing = ({ defaultMode = "panel" }: { defaultMode?: Defaul
     const row = rowLabelOf(level, translate, getValue, getRowCount);
     const rowHint = level.block
       ? translate(level.block.labels?.singular) || level.block.slug
-      : translate(level.field.labels?.singular);
+      : undefined;
     return {
-      fieldHint: level.field.type === "blocks" ? "Blocks" : "Array",
       fieldLabel: fieldLabelOf(level, translate),
       rowLabel: row.title ?? row.label,
       rowPath: level.rowPath,
