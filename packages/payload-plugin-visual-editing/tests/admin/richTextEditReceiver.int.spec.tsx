@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RichTextEditReceiver } from "../../src/admin/inlineEditing/RichTextEditReceiver";
 import {
   VE_FIELD_EDIT_REFUSED_TYPE,
+  VE_RICH_TEXT_EDIT_ENDED_TYPE,
   VE_RICH_TEXT_EDIT_TYPE,
   VE_RICH_TEXT_STATE_REFUSED_TYPE,
   VE_RICH_TEXT_STATE_REQUEST_TYPE,
@@ -55,6 +56,17 @@ const link = (url: unknown, id = "link-new") =>
     id,
     version: 3,
   });
+
+const upload = (extra: object = {}) => ({
+  fields: null,
+  format: "",
+  id: "upload-1",
+  relationTo: "media",
+  type: "upload",
+  value: 3,
+  version: 3,
+  ...extra,
+});
 
 const HELD_BLOCK = { blockType: "callout", id: "callout-1", note: "Internal", text: "Held" };
 
@@ -288,7 +300,6 @@ describe("RichTextEditReceiver", () => {
         edited(undefined, block({ blockType: "callout", id: "new" })),
       ],
       ["a block posted twice", edited(undefined, HELD_IDENTITY)],
-      ["a block that was removed", stateOf(paragraphOf(text("Changed")), paragraphOf(HELD_LINK))],
       [
         "a block in another place among the nodes the page cannot edit",
         stateOf({ type: "horizontalrule", version: 1 }, HELD_IDENTITY, paragraphOf(HELD_LINK)),
@@ -345,6 +356,107 @@ describe("RichTextEditReceiver", () => {
       expect(admin.dispatchFields).not.toHaveBeenCalled();
       expect(admin.setModified).not.toHaveBeenCalled();
       expect(admin.postToPreview).toHaveBeenCalledWith(REFUSED, PREVIEW_ORIGIN);
+    });
+
+    describe("without a node the page cannot edit", () => {
+      const WITHOUT_THE_BLOCK = stateOf(paragraphOf(text("Body", BOLD)), paragraphOf(HELD_LINK));
+
+      const ENDED = { ...FIELD, type: VE_RICH_TEXT_EDIT_ENDED_TYPE };
+
+      const writtenValue = () => admin.dispatchFields.mock.lastCall?.[0].value as object;
+
+      const removeTheBlock = () => {
+        post();
+        post({ data: editOf(WITHOUT_THE_BLOCK) });
+        admin.fields.body = { value: writtenValue() };
+        vi.clearAllMocks();
+      };
+
+      it("writes the state without it", () => {
+        post({ data: editOf(WITHOUT_THE_BLOCK) });
+
+        expect(writtenValue()).toEqual(WITHOUT_THE_BLOCK);
+        expect(admin.postToPreview).not.toHaveBeenCalled();
+      });
+
+      it("puts it back with its fields when the same edit posts it again", () => {
+        removeTheBlock();
+
+        post({ data: editOf(edited(paragraphOf(text("Body", BOLD)))) });
+
+        expect(writtenValue()).toEqual(heldState());
+        expect(admin.postToPreview).not.toHaveBeenCalled();
+      });
+
+      it("puts it back with the fields the form holds now when it still holds it", () => {
+        post();
+        const changed = { ...HELD_BLOCK, text: "Changed in the form" };
+        admin.fields.body = {
+          value: stateOf(paragraphOf(text("Body", BOLD)), block(changed), paragraphOf(HELD_LINK)),
+        };
+
+        post({ data: editOf(edited()) });
+
+        expect(writtenValue()).toEqual(
+          stateOf(paragraphOf(text("Changed", BOLD)), block(changed), paragraphOf(HELD_LINK))
+        );
+      });
+
+      it("refuses to put it back once the page said the edit ended", () => {
+        removeTheBlock();
+        post({ data: ENDED });
+
+        post({ data: editOf(edited(paragraphOf(text("Body", BOLD)))) });
+
+        expect(admin.dispatchFields).not.toHaveBeenCalled();
+        expect(admin.postToPreview).toHaveBeenCalledWith(REFUSED, PREVIEW_ORIGIN);
+      });
+
+      it("refuses to put it back after the form showed another locale", () => {
+        removeTheBlock();
+        admin.locale = "de";
+        render();
+        admin.locale = "en";
+        render();
+
+        post({ data: editOf(edited(paragraphOf(text("Body", BOLD)))) });
+
+        expect(admin.dispatchFields).not.toHaveBeenCalled();
+        expect(admin.postToPreview).toHaveBeenCalledWith(REFUSED, PREVIEW_ORIGIN);
+      });
+
+      it("refuses a block the edit never held, also while the edit runs", () => {
+        removeTheBlock();
+
+        post({ data: editOf(edited(undefined, block({ blockType: "callout", id: "new" }))) });
+
+        expect(admin.dispatchFields).not.toHaveBeenCalled();
+        expect(admin.postToPreview).toHaveBeenCalledWith(REFUSED, PREVIEW_ORIGIN);
+      });
+    });
+
+    describe("of a form whose upload node carries a key without a value", () => {
+      const typedInTheAdmin = upload({ nested: { pending: undefined }, pending: undefined });
+
+      beforeEach(() => {
+        admin.fields.body = { value: stateOf(paragraphOf(text("Body", BOLD)), typedInTheAdmin) };
+      });
+
+      it("takes an edit that posts the node as it was serialised, and keeps the node of the form", () => {
+        post({ data: editOf(stateOf(paragraphOf(text("Changed", BOLD)), upload({ nested: {} }))) });
+
+        const [written] = admin.dispatchFields.mock.lastCall ?? [];
+        const { value } = written as { value: { root: { children: object[] } } };
+        expect(value.root.children[1]).toBe(typedInTheAdmin);
+        expect(admin.postToPreview).not.toHaveBeenCalled();
+      });
+
+      it("still refuses a node that names another file", () => {
+        post({ data: editOf(stateOf(paragraphOf(text("Changed", BOLD)), upload({ value: 4 }))) });
+
+        expect(admin.dispatchFields).not.toHaveBeenCalled();
+        expect(admin.postToPreview).toHaveBeenCalledWith(REFUSED, PREVIEW_ORIGIN);
+      });
     });
 
     it("takes a link with an address a page may write", () => {

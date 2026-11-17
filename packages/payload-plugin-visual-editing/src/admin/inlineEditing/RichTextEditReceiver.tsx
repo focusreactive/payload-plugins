@@ -1,7 +1,7 @@
 "use client";
 
 import { useDocumentInfo, useForm, useLocale } from "@payloadcms/ui";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import type {
   VeEditedField,
@@ -21,6 +21,8 @@ import { useEditableSchema } from "../instantPreview/useEditableSchema.js";
 import { usePreviewWindow } from "../instantPreview/usePreviewWindow.js";
 import { openDocumentOf } from "../openField/openDocument.js";
 import {
+  createRunningEdits,
+  endedEditOfDocument,
   formatsForThePage,
   richTextEditOfDocument,
   richTextFormEditOf,
@@ -35,6 +37,12 @@ export function RichTextEditReceiver({ excludeFieldNames }: { excludeFieldNames?
   const editableSchema = useEditableSchema({ collectionSlug, globalSlug }, excludeFieldNames);
   const { code: locale } = useLocale();
   const { getWindow, origin } = usePreviewWindow();
+  const runningEdits = useRef(createRunningEdits()).current;
+
+  useEffect(
+    () => () => runningEdits.forget(),
+    [collectionSlug, globalSlug, id, locale, runningEdits]
+  );
 
   useEffect(() => {
     const document = openDocumentOf({ collectionSlug, globalSlug, id });
@@ -64,6 +72,7 @@ export function RichTextEditReceiver({ excludeFieldNames }: { excludeFieldNames?
         refuseStateRequest(field);
         return;
       }
+      runningEdits.answered(field, held.value);
       const message: VeRichTextStateMessage = {
         ...field,
         formats: formatsForThePage(held),
@@ -75,7 +84,8 @@ export function RichTextEditReceiver({ excludeFieldNames }: { excludeFieldNames?
 
     const writeEditIntoForm = (edit: NonNullable<ReturnType<typeof richTextEditOfDocument>>) => {
       const form = openForm();
-      const formEdit = form && richTextFormEditOf(edit, form);
+      const begunWith = runningEdits.stateAtTheBeginningOf(edit.field);
+      const formEdit = form && richTextFormEditOf(edit, form, begunWith);
       if (!formEdit) {
         refuseEdit(edit.field);
         return;
@@ -91,6 +101,8 @@ export function RichTextEditReceiver({ excludeFieldNames }: { excludeFieldNames?
       if (asked) answerStateRequest(asked);
       const edit = richTextEditOfDocument(event.data, openDocument);
       if (edit) writeEditIntoForm(edit);
+      const ended = endedEditOfDocument(event.data, openDocument);
+      if (ended) runningEdits.ended(ended);
     };
 
     window.addEventListener("message", hearPreviewPage);
@@ -106,6 +118,7 @@ export function RichTextEditReceiver({ excludeFieldNames }: { excludeFieldNames?
     isFormDisabled,
     locale,
     origin,
+    runningEdits,
     setModified,
   ]);
 

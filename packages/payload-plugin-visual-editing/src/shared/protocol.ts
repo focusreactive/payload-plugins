@@ -238,6 +238,12 @@ export type VeRichTextEditMessage = VeRichTextEdit & {
   type: typeof VE_RICH_TEXT_EDIT_TYPE;
 };
 
+export const VE_RICH_TEXT_EDIT_ENDED_TYPE = "ve:rich-text-edit-ended";
+
+export type VeRichTextEditEndedMessage = VeEditedField & {
+  type: typeof VE_RICH_TEXT_EDIT_ENDED_TYPE;
+};
+
 export type VeRichTextStructureMessage = VeLiveDocument & {
   type: typeof VE_RICH_TEXT_STRUCTURE_TYPE;
   key: string;
