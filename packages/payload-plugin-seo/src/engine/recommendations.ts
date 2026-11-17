@@ -52,6 +52,38 @@ const MAP: Record<string, Partial<Record<Status, Builder>>> = {
     warn: key("reco.fleschReadingEase.warn"),
     bad: key("reco.fleschReadingEase.bad"),
   },
+  keyphraseInSEOTitle: {
+    warn: key("reco.keyphraseInSEOTitle.warn"),
+    bad: key("reco.keyphraseInSEOTitle.bad"),
+  },
+  slugKeyword: {
+    warn: key("reco.slugKeyword.warn"),
+    bad: key("reco.slugKeyword.bad"),
+  },
+  subheadingsKeyword: {
+    warn: key("reco.subheadingsKeyword.warn"),
+    bad: key("reco.subheadingsKeyword.bad"),
+  },
+  subheadingsTooLong: {
+    warn: key("reco.subheadingsTooLong.warn"),
+    bad: key("reco.subheadingsTooLong.bad"),
+  },
+  textParagraphTooLong: {
+    warn: key("reco.textParagraphTooLong.warn"),
+    bad: key("reco.textParagraphTooLong.bad"),
+  },
+  textSentenceLength: {
+    warn: withThresholds("reco.textSentenceLength.warn", "textSentenceLength"),
+    bad: withThresholds("reco.textSentenceLength.bad", "textSentenceLength"),
+  },
+  sentenceBeginnings: {
+    warn: key("reco.sentenceBeginnings.warn"),
+    bad: key("reco.sentenceBeginnings.bad"),
+  },
+  textTransitionWords: {
+    warn: key("reco.textTransitionWords.warn"),
+    bad: key("reco.textTransitionWords.bad"),
+  },
 };
 
 const GENERIC: Record<Exclude<Status, "good">, TranslationKey> = {

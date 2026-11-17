@@ -218,6 +218,29 @@ export const en = {
     "Shorten sentences and prefer simpler words to make the text easier to read.",
   "reco.fleschReadingEase.bad":
     "The text is hard to read — use shorter sentences and simpler words.",
+  "reco.keyphraseInSEOTitle.warn": "Put the exact keyphrase at the start of the SEO title.",
+  "reco.keyphraseInSEOTitle.bad": "Add the keyphrase to the SEO title, ideally at the start.",
+  "reco.slugKeyword.warn": "Use more words from the keyphrase in the slug.",
+  "reco.slugKeyword.bad": "Add the keyphrase to the slug.",
+  "reco.subheadingsKeyword.warn":
+    "Use the keyphrase or a synonym in some of your subheadings, but not in nearly all of them.",
+  "reco.subheadingsKeyword.bad":
+    "Use the keyphrase or a synonym in some of your subheadings, but not in nearly all of them.",
+  "reco.subheadingsTooLong.warn": "Add a subheading to break up the longest section.",
+  "reco.subheadingsTooLong.bad": "Add subheadings to break up long sections of text.",
+  "reco.textParagraphTooLong.warn": "Split the longest paragraph into shorter ones.",
+  "reco.textParagraphTooLong.bad": "Split long paragraphs into shorter ones.",
+  "reco.textSentenceLength.warn":
+    "Shorten a few sentences so that no more than {{max}}% are longer than {{maxSentenceWords}} words.",
+  "reco.textSentenceLength.bad":
+    "Too many long sentences — shorten them until no more than {{max}}% are longer than {{maxSentenceWords}} words.",
+  "reco.sentenceBeginnings.warn": "Vary how consecutive sentences start.",
+  "reco.sentenceBeginnings.bad":
+    "Several sentences in a row start with the same word — vary how they begin.",
+  "reco.textTransitionWords.warn":
+    "Use a few more transition words, such as “however” or “therefore”.",
+  "reco.textTransitionWords.bad":
+    "Connect your sentences with transition words, such as “however”, “because” or “therefore”.",
   "reco.generic.warn": "This check needs some attention.",
   "reco.generic.bad": "This check needs improvement.",
 
