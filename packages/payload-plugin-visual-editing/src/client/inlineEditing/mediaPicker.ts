@@ -70,7 +70,7 @@ const TEMPLATE = `
     gap: 12px;
     box-sizing: border-box;
     width: min(760px, calc(100vw - 32px));
-    max-height: min(640px, calc(100vh - 32px));
+    height: min(640px, calc(100vh - 32px));
     padding: 16px;
     background: var(--ve-surface);
     border: 1px solid var(--ve-border);
@@ -104,6 +104,8 @@ const TEMPLATE = `
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    align-content: start;
+    flex: 1;
     gap: 8px;
     min-height: 120px;
     overflow-y: auto;
@@ -307,9 +309,31 @@ export function createMediaPicker(
     return option;
   };
 
-  const showDocuments = (open: OpenPick) => {
+  const focusableIn = (open: OpenPick): HTMLElement[] =>
+    Array.from(open.host.shadowRoot?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []);
+
+  const takeFocusBack = (open: OpenPick): boolean => {
+    const focusable = focusableIn(open);
+    const focused = open.host.shadowRoot?.activeElement;
+    if (focused && focusable.includes(focused as HTMLElement)) return false;
+    focusable.at(0)?.focus();
+    return true;
+  };
+
+  const optionIn = (open: OpenPick, mediaId: VeMediaOption["id"] | null): HTMLElement | null => {
+    if (mediaId === null) return null;
+    const options = Array.from(open.parts.grid.querySelectorAll<HTMLElement>(`[${MEDIA_ID_ATTR}]`));
+    return options.find((option) => option.getAttribute(MEDIA_ID_ATTR) === String(mediaId)) ?? null;
+  };
+
+  const focusedMediaIdOf = (open: OpenPick): string | null =>
+    open.host.shadowRoot?.activeElement?.getAttribute(MEDIA_ID_ATTR) ?? null;
+
+  const showDocuments = (open: OpenPick, focused?: VeMediaOption["id"]) => {
+    const toFocus = focused ?? focusedMediaIdOf(open);
     open.parts.grid.replaceChildren(...open.documents.map((media) => optionOf(open, media)));
     open.parts.note.textContent = open.documents.length === 0 ? NO_MEDIA_FOUND : "";
+    optionIn(open, toFocus)?.focus();
   };
 
   const list = async (open: OpenPick, page: number) => {
@@ -325,12 +349,20 @@ export function createMediaPicker(
     open.parts.alert.textContent = options ? "" : MEDIA_NOT_LOADED;
     if (!options) return;
     const earlier = page === FIRST_PAGE ? [] : open.documents;
+    const firstAdded = options.documents.find(
+      ({ id }) => !earlier.some((media) => media.id === id)
+    );
     open.page = page;
     open.collection = options.collection;
     open.documents = withSelectedListed([...earlier, ...options.documents], open.selected);
     open.parts.more.hidden = !options.hasNextPage;
     open.parts.upload.disabled = options.collection === null;
-    showDocuments(open);
+    if (page === FIRST_PAGE) {
+      showDocuments(open);
+      return;
+    }
+    showDocuments(open, firstAdded?.id);
+    takeFocusBack(open);
   };
 
   const listAfterPause = (open: OpenPick) => {
@@ -352,20 +384,10 @@ export function createMediaPicker(
     open.parts.search.value = "";
     open.selected = answer.media;
     open.documents = withSelectedListed(open.documents, answer.media);
-    showDocuments(open);
+    showDocuments(open, answer.media.id);
     select(open, answer.media);
     await list(open, FIRST_PAGE);
-  };
-
-  const focusableIn = (open: OpenPick): HTMLElement[] =>
-    Array.from(open.host.shadowRoot?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []);
-
-  const takeFocusBack = (open: OpenPick): boolean => {
-    const focusable = focusableIn(open);
-    const focused = open.host.shadowRoot?.activeElement;
-    if (focused && focusable.includes(focused as HTMLElement)) return false;
-    focusable.at(0)?.focus();
-    return true;
+    if (pick === open) takeFocusBack(open);
   };
 
   const keepFocusInside = (open: OpenPick, event: KeyboardEvent) => {

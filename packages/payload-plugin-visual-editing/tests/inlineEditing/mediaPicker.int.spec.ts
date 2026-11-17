@@ -14,6 +14,7 @@ import {
   SEARCH_PAUSE_MS,
 } from "../../src/client/inlineEditing/mediaPicker";
 
+import { declarationsFor } from "../support/shadowStyles";
 import { flushMutations, waitFor } from "../support/time";
 
 const CMS = "https://cms.example.com";
@@ -54,6 +55,9 @@ const button = (action: string) => part<HTMLButtonElement>(`[data-action="${acti
 const options = () => Array.from(part(".grid").querySelectorAll<HTMLButtonElement>("button"));
 
 const names = () => options().map((option) => option.querySelector("span")?.textContent);
+
+const focusedName = () =>
+  host()?.shadowRoot?.activeElement?.querySelector("span")?.textContent ?? null;
 
 const alertText = () => part('[role="alert"]').textContent;
 
@@ -313,6 +317,50 @@ describe("the media picker of a page of its own", () => {
     expect(button("more").hidden).toBe(true);
   });
 
+  it("puts the focus on the first document Load more added", async () => {
+    list.mockResolvedValueOnce(listed([HARBOUR], true));
+    await open();
+    list.mockResolvedValueOnce(listed([LIGHTHOUSE, PIER]));
+    button("more").focus();
+
+    button("more").click();
+    await flushMutations();
+
+    expect(focusedName()).toBe("lighthouse.jpg");
+  });
+
+  it("keeps the focus inside the dialog when Load more added nothing", async () => {
+    list.mockResolvedValueOnce(listed([HARBOUR], true));
+    await open();
+    list.mockResolvedValueOnce(listed([]));
+    button("more").focus();
+
+    button("more").click();
+    button("more").blur();
+    await flushMutations();
+
+    expect(host()?.shadowRoot?.activeElement).toBe(part('input[type="search"]'));
+  });
+
+  it("leaves the focus in the search while its answers arrive", async () => {
+    await open();
+    list.mockResolvedValueOnce(listed([LIGHTHOUSE]));
+
+    search("light");
+    await waitFor(SEARCH_PAUSE_MS + 20);
+
+    expect(host()?.shadowRoot?.activeElement).toBe(part('input[type="search"]'));
+  });
+
+  it("keeps its size whatever it lists", async () => {
+    await open();
+
+    expect(declarationsFor(host(), '[role="dialog"]')).toContain(
+      "height: min(640px, calc(100vh - 32px))"
+    );
+    expect(declarationsFor(host(), ".grid")).toContain("flex: 1");
+  });
+
   it("shows the answer of the search the editor typed last, whichever arrives last", async () => {
     const firstList = heldAnswer<VeMediaOptions>();
     list.mockReturnValueOnce(firstList.promise);
@@ -362,6 +410,25 @@ describe("the media picker of a page of its own", () => {
 
       button("use").click();
       expect(onUse).toHaveBeenCalledWith(PIER);
+    });
+
+    it("puts the focus on the uploaded document, and keeps it there when the list arrives", async () => {
+      const uploaded = heldAnswer<UploadAnswer>();
+      const listedAgain = heldAnswer<VeMediaOptions>();
+      upload.mockReturnValue(uploaded.promise);
+      await open();
+      list.mockReturnValueOnce(listedAgain.promise);
+      button("upload").focus();
+      chooseFile(file);
+      button("upload").blur();
+
+      uploaded.answer({ media: PIER });
+      await flushMutations();
+      expect(focusedName()).toBe("pier.jpg");
+
+      listedAgain.answer(listed([PIER, HARBOUR, LIGHTHOUSE]));
+      await flushMutations();
+      expect(focusedName()).toBe("pier.jpg");
     });
 
     it("lists from the first page again after an upload, so Load more repeats nothing", async () => {
