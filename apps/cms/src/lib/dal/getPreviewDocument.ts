@@ -29,6 +29,7 @@ export async function getPreviewDocument<TCollection extends keyof PreviewDocume
 
   const doc = (await payload.findByID({
     collection,
+    context: { visualEditing: draft },
     depth: 2,
     disableErrors: true,
     draft,

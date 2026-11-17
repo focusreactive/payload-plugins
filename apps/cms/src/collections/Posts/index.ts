@@ -7,7 +7,7 @@ import { LogosInlineBlock } from "@/blocks/Logos/inlineConfig";
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
 import {
-  LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
+  createLivePreviewEditComponents,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
@@ -38,10 +38,7 @@ export const Posts: CollectionConfig<"posts"> = {
   },
   admin: {
     components: {
-      edit: {
-        beforeDocumentControls: LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
-        PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
-      },
+      edit: createLivePreviewEditComponents(),
     },
     defaultColumns: ["title", "slug", "heroImage", "updatedAt"],
     group: "Blog",

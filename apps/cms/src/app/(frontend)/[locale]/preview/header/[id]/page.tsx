@@ -33,7 +33,7 @@ export default async function HeaderPreviewPage({ params }: Args) {
 
   return (
     <>
-      <Header data={header} disableActive />
+      <Header data={header} disableActive editable />
       {/* Room below the header so dropdown menus open over a page-like canvas. */}
       <main className="min-h-[70vh]" />
     </>

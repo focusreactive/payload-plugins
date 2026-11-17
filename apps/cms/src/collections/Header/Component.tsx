@@ -9,6 +9,7 @@ import type {
 import React from "react";
 
 import { resolveLocale } from "@/lib/utils/resolveLocale";
+import { withoutVisualEditing } from "@/lib/utils/withoutVisualEditing";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { Header as HeaderType, Media } from "@/payload-types";
@@ -17,6 +18,11 @@ import { HeaderClient } from "./HeaderClient";
 
 interface Props {
   data: HeaderType;
+  /**
+   * Keeps the visual editing markers of a draft read. Only the header's own preview sets it:
+   * on a page the header is a separate document, so only the page's own fields stay editable.
+   */
+  editable?: boolean;
   disableActive?: boolean;
 }
 
@@ -116,10 +122,12 @@ function mapAction(action: PayloadAction, locale: string): HeaderAction | null {
   };
 }
 
-export async function Header({ data, disableActive }: Props) {
-  if (!data) {
+export async function Header({ data: rawData, disableActive, editable = false }: Props) {
+  if (!rawData) {
     return null;
   }
+
+  const data = editable ? rawData : withoutVisualEditing(rawData);
 
   const locale = await resolveLocale();
 

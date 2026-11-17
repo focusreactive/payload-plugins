@@ -425,8 +425,6 @@ export const plugins: Plugin[] = [
       "categories",
       "authors",
       "testimonials",
-      "header",
-      "footer",
       "document-embeddings",
       "redirects",
       "presets",

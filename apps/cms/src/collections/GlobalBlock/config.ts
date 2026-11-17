@@ -3,7 +3,7 @@ import type { CollectionConfig } from "payload";
 import { contentBlocks } from "@/blocks/contentBlocks";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import {
-  LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
+  createLivePreviewEditComponents,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
@@ -21,7 +21,7 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
   },
   admin: {
     components: {
-      edit: { beforeDocumentControls: LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS },
+      edit: createLivePreviewEditComponents(),
     },
     defaultColumns: ["title", "block", "updatedAt"],
     group: "Global Components",

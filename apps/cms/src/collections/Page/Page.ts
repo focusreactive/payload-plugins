@@ -2,7 +2,7 @@ import { createParentField, createBreadcrumbsField } from "@payloadcms/plugin-ne
 import type { CollectionConfig } from "payload";
 
 import {
-  LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
+  createLivePreviewEditComponents,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
@@ -27,10 +27,7 @@ export const Page: CollectionConfig<"page"> = {
   },
   admin: {
     components: {
-      edit: {
-        beforeDocumentControls: LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
-        PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
-      },
+      edit: createLivePreviewEditComponents(),
     },
     defaultColumns: ["title", "slug", "updatedAt"],
     group: "Content",

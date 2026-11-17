@@ -26,7 +26,7 @@ export default async function GlobalBlockPreviewPage({ params }: Args) {
 
   return (
     <main>
-      <GlobalBlockRenderer locale={locale} referenceId={referenceId} />
+      <GlobalBlockRenderer editable locale={locale} referenceId={referenceId} />
     </main>
   );
 }

@@ -31,5 +31,5 @@ export default async function FooterPreviewPage({ params }: Args) {
     notFound();
   }
 
-  return <Footer data={footer} />;
+  return <Footer data={footer} editable />;
 }

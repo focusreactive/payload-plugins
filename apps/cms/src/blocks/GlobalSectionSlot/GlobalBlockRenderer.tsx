@@ -8,10 +8,14 @@ import type { Locale } from "@/lib/types";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 
 // Re-fetched because the page query spends one depth level on the slot, and inner blocks need the full depth.
+// `editable` marks the block for visual editing; only its own preview sets it, so on a page the
+// shared block stays clean and only the page's own fields are editable.
 export const GlobalBlockRenderer = async ({
+  editable = false,
   locale,
   referenceId,
 }: {
+  editable?: boolean;
   locale?: Locale;
   referenceId: number;
 }) => {
@@ -21,6 +25,7 @@ export const GlobalBlockRenderer = async ({
 
   const globalBlock = await payload.findByID({
     collection: "globalBlock",
+    context: { visualEditing: draft && editable },
     depth: PAGE_RENDER_DEPTH,
     disableErrors: true,
     draft,

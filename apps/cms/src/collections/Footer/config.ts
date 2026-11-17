@@ -6,7 +6,7 @@ import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
 import {
-  LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
+  createLivePreviewEditComponents,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
 import { createStandalonePreview } from "@/lib/utils/standalonePreview";
@@ -22,7 +22,7 @@ export const Footer: CollectionConfig<"footer"> = {
   },
   admin: {
     components: {
-      edit: { beforeDocumentControls: LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS },
+      edit: createLivePreviewEditComponents(),
     },
     defaultColumns: ["name", "logo"],
     group: "Global Components",
