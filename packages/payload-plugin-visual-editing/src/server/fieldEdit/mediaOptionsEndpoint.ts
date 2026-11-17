@@ -25,7 +25,8 @@ export const MEDIA_PAGE_SIZE = 24;
 
 const MAX_SEARCH_LENGTH = 200;
 const FIRST_PAGE = 1;
-const NEWEST_FIRST = ["-createdAt", "-id"];
+const LATEST_ID_FIRST = "-id";
+const NEWEST_FIRST = ["-createdAt", LATEST_ID_FIRST];
 const DESCRIPTION_FIELD = "alt";
 const DESCRIPTION_FIELD_TYPE = "text";
 
@@ -57,6 +58,9 @@ const describesItsFiles = (payload: Payload, collection: string): boolean =>
     )
   );
 
+const orderOf = (payload: Payload, collection: string): string[] =>
+  payload.collections[collection]?.config.timestamps === false ? [LATEST_ID_FIRST] : NEWEST_FIRST;
+
 const filesNamedLike = (search: string): Where | undefined =>
   search === "" ? undefined : { filename: { contains: search } };
 
@@ -74,7 +78,7 @@ const listMedia = async (
     locale,
     overrideAccess: false,
     page,
-    sort: NEWEST_FIRST,
+    sort: orderOf(payload, collection),
     user,
     where: filesNamedLike(search),
   });
