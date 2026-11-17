@@ -18,6 +18,7 @@ export type OverlayCtx = {
   inlineEditing?: boolean;
   payloadApi?: string;
   keepsRichTextShape?: KeepsShape;
+  onEdited?: () => void;
 };
 
 export interface Overlay {
@@ -32,8 +33,14 @@ export function createOverlay(main: HTMLElement, getCtx: () => OverlayCtx): Over
   const inlineEditing = createInlineEditing(
     tracker,
     () => {
-      const { adminOrigin, inlineEditing: isOn = false, locale, payloadApi = "" } = getCtx();
-      return { adminOrigin, inlineEditing: isOn, locale, payloadApi };
+      const {
+        adminOrigin,
+        inlineEditing: isOn = false,
+        locale,
+        onEdited,
+        payloadApi = "",
+      } = getCtx();
+      return { adminOrigin, inlineEditing: isOn, locale, onEdited, payloadApi };
     },
     instantPreview
   );

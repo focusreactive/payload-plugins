@@ -1,11 +1,12 @@
 import type { VeDocument, VeOpenFieldMessage } from "../../shared/protocol.js";
+import type { VeIdentity } from "../../shared/shared.js";
 import type { BadgeAction } from "../overlay/editBadge.js";
 import type { FieldMatch, FieldTracker } from "../overlay/fieldTracker.js";
 import type { EditStatus } from "./editTransport.js";
 import type { SaveStatus } from "./saveStatus.js";
 
 import { fieldKeyOfMarker } from "../../shared/fieldKey.js";
-import { readFieldEdit } from "../../shared/fieldEdit.js";
+import { readEditedField } from "../../shared/fieldEdit.js";
 import { isMessageFrom } from "../../shared/messageSource.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import { VE_FIELD_EDIT_REFUSED_TYPE, VE_MESSAGE_TYPE } from "../../shared/protocol.js";
@@ -15,6 +16,7 @@ import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 import { listenToSaves } from "../saveEvents.js";
 import { createEditTransport } from "./editTransport.js";
 import { createImageReplacement } from "./imageReplacement.js";
+import { createRichTextEditing } from "./richTextEditing.js";
 import { createSaveStatus } from "./saveStatus.js";
 import { createTextEditing } from "./textEditing.js";
 
@@ -23,6 +25,7 @@ export type InlineEditingCtx = {
   payloadApi: string;
   locale?: string;
   inlineEditing: boolean;
+  onEdited?: () => void;
 };
 
 export type OpenForms = {
@@ -60,15 +63,17 @@ export function createInlineEditing(
   };
 
   const transport = createEditTransport(getCtx, showStatus);
-  const imageReplacement = createImageReplacement({
-    getCtx,
-    holdsFormOf: openForms && ((document) => openForms.holdsFormOf(document)),
-    holdInForm: transport.holdInForm,
-    save: transport.sendNow,
-    showStatus,
-    tracker,
-  });
-  saveStatus = createSaveStatus(document, transport.retry);
+  const holdsFormOf = openForms && ((document: VeDocument) => openForms.holdsFormOf(document));
+
+  const showInForm = (field: VeIdentity) => {
+    const { adminOrigin, locale } = getCtx();
+    const message: VeOpenFieldMessage = {
+      ...veIdentityOf({ ...field, locale: field.locale ?? locale }),
+      focus: false,
+      type: VE_MESSAGE_TYPE,
+    };
+    findAdminWindow(window)?.postMessage(message, adminOriginOf(adminOrigin));
+  };
 
   const send = (match: FieldMatch, value: string) => {
     const key = fieldKeyOfMarker(match);
@@ -79,15 +84,26 @@ export function createInlineEditing(
 
   const textEditing = createTextEditing({ flush: transport.flush, send, tracker });
 
-  const showInForm = (match: FieldMatch) => {
-    const { adminOrigin, locale } = getCtx();
-    const message: VeOpenFieldMessage = {
-      ...veIdentityOf({ ...match, locale: match.locale ?? locale }),
-      focus: false,
-      type: VE_MESSAGE_TYPE,
-    };
-    findAdminWindow(window)?.postMessage(message, adminOriginOf(adminOrigin));
-  };
+  const richTextEditing = createRichTextEditing({
+    endOtherEdits: () => textEditing.commit(),
+    flush: transport.flush,
+    getCtx,
+    holdsFormOf,
+    isUnsaved: transport.isUnsaved,
+    send: transport.send,
+    showInForm,
+    tracker,
+  });
+  const imageReplacement = createImageReplacement({
+    getCtx,
+    holdsFormOf,
+    isInsideRichText: richTextEditing.isInsideRichText,
+    holdInForm: transport.holdInForm,
+    save: transport.sendNow,
+    showStatus,
+    tracker,
+  });
+  saveStatus = createSaveStatus(document, transport.retry);
 
   const isWrittenSomewhere = (match: FieldMatch, key: string): boolean => {
     if (!findAdminWindow(window)) return true;
@@ -100,7 +116,10 @@ export function createInlineEditing(
         if (match.holder && isPlainTextOfOneLocale(match)) fields.set(match.holder, match);
       }
     },
-    onContentRemoved: () => textEditing.endIfRemoved(),
+    onContentRemoved: () => {
+      textEditing.endIfRemoved();
+      richTextEditing.endIfRemoved();
+    },
     onNodesReleased: (matches) => {
       for (const match of matches) {
         if (match.holder && fields.get(match.holder) === match) fields.delete(match.holder);
@@ -113,7 +132,7 @@ export function createInlineEditing(
     if (!isMessageFrom(event, adminOriginOf(adminOrigin), findAdminWindow(window))) return;
     const { data } = event;
     if (!isPlainObject(data) || data.type !== VE_FIELD_EDIT_REFUSED_TYPE) return;
-    const refused = readFieldEdit({ ...data, value: "" });
+    const refused = readEditedField(data);
     if (refused) transport.refuse(refused);
   };
   window.addEventListener("message", refuseEditTheFormDidNotTake);
@@ -131,10 +150,34 @@ export function createInlineEditing(
     }
   );
 
+  const endEdits = () => {
+    textEditing.commit();
+    richTextEditing.commit();
+  };
+
+  const editTextInPlace = (match: FieldMatch, event: MouseEvent): boolean => {
+    richTextEditing.commit();
+    const isEditing = textEditing.begin(match, { x: event.clientX, y: event.clientY });
+    if (isEditing) showInForm(match);
+    return isEditing;
+  };
+
   return {
-    actionOf: imageReplacement.actionOf,
+    actionOf(target) {
+      const action = imageReplacement.actionOf(target);
+      return (
+        action && {
+          label: action.label,
+          run: (openField) => {
+            endEdits();
+            action.run(openField);
+          },
+        }
+      );
+    },
     dispose() {
       imageReplacement.dispose();
+      richTextEditing.dispose();
       textEditing.dispose();
       transport.dispose();
       stopListeningToSaves();
@@ -149,13 +192,11 @@ export function createInlineEditing(
       if (textEditing.isEditing(target)) return true;
       const match = fields.get(target);
       const key = match && fieldKeyOfMarker(match);
-      if (!match || !key || !isWrittenSomewhere(match, key)) return false;
-      const isEditing = textEditing.begin(match, { x: event.clientX, y: event.clientY });
-      if (isEditing) showInForm(match);
-      return isEditing;
+      if (match && key && isWrittenSomewhere(match, key)) return editTextInPlace(match, event);
+      return richTextEditing.editInPlace(target, event);
     },
     sync() {
-      if (!getCtx().inlineEditing) textEditing.commit();
+      if (!getCtx().inlineEditing) endEdits();
     },
   };
 }

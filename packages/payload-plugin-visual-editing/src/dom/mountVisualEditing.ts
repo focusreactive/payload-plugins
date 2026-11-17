@@ -21,6 +21,7 @@ export type MountVisualEditingOptions = SessionOptions &
     renderRichTextValue?: RenderRichTextValue;
     optimistic?: boolean;
     onSave?: () => void;
+    onEdited?: () => void;
   };
 
 export interface VisualEditing {
@@ -36,6 +37,7 @@ export function mountVisualEditing({
   renderRichTextValue,
   optimistic = true,
   onSave,
+  onEdited,
   accentColor,
   accentTextColor,
   ...sessionOptions
@@ -65,7 +67,7 @@ export function mountVisualEditing({
       renderValue: renderRichTextValue,
     });
 
-  const overlay = startSessionOverlay(root, () => scope, session);
+  const overlay = startSessionOverlay(root, () => scope, session, onEdited);
   const toggle = showsToggle
     ? startSessionToggle(document, session, {
         setEditsInPlace: pageStore.setEditsInPlace,

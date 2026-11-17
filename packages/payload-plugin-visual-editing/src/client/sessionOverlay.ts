@@ -16,20 +16,24 @@ export interface FollowingSession {
 
 type RunningOverlay = { overlay: Overlay; hasInstantPreview: boolean };
 
-const overlayCtxOf = (session: Session): ScopedOverlayCtx => ({
+export type OnEdited = () => void;
+
+const overlayCtxOf = (session: Session, onEdited: OnEdited | undefined): ScopedOverlayCtx => ({
   adminBasePath: session.adminBasePath,
   adminOrigin: session.adminOrigin,
   buildAdminEditUrl: session.buildAdminEditUrl,
   inlineEditing: session.isInlineEditingOn,
   instantPreview: session.isInstantPreviewOn,
   mode: session.enabled ? session.mode : "off",
+  onEdited,
   payloadApi: session.payloadApi,
 });
 
 export function startSessionOverlay(
   root: HTMLElement,
   scope: () => OverlayScope,
-  session: () => Session
+  session: () => Session,
+  onEdited?: OnEdited
 ): FollowingSession {
   let running: RunningOverlay | null = null;
   let cleaner: MarkerCleaner | null = null;
@@ -48,7 +52,7 @@ export function startSessionOverlay(
     if (running?.hasInstantPreview === hasInstantPreview) return;
     stopCleaner();
     stopOverlay();
-    const overlay = startOverlay(scope, root, () => overlayCtxOf(session()));
+    const overlay = startOverlay(scope, root, () => overlayCtxOf(session(), onEdited));
     running = { hasInstantPreview, overlay };
   };
 

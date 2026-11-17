@@ -72,7 +72,7 @@ const insertText = (doc: Document, text: string): void => {
 const isInsideButton = (editedElement: Element): boolean =>
   editedElement.closest("button") !== null;
 
-const addEditingStyle = (doc: Document): void => {
+export const addEditingStyle = (doc: Document): void => {
   if (doc.querySelector(`#${STYLE_ID}`)) return;
   const style = doc.createElement("style");
   style.id = STYLE_ID;

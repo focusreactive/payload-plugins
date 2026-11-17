@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -7,24 +7,32 @@ const SOURCE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../src"
 const DOM_ENTRY = resolve(SOURCE_ROOT, "dom/index.ts");
 const PEERS = /^(?:payload|react|react-dom|next|@payloadcms\/[^/]+)(?:\/|$)/u;
 const IMPORTED_MODULE = /(?:\bfrom|\bimport)\s*\(?\s*["']([^"']+)["']/gu;
+const STATICALLY_IMPORTED_MODULE =
+  /\b(?:import|export)\s+(?!type\b)(?:[^"';]*?\bfrom\s*)?["']([^"']+)["']/gu;
+const LEXICAL = /^(?:lexical|@lexical\/[^/]+)$/u;
+const CLIENT_ENTRY = resolve(SOURCE_ROOT, "client/index.ts");
+const SOURCE_EXTENSIONS = [".ts", ".tsx"];
 const COMPILED_EXTENSION = /\.js$/u;
 
-const importsOf = (file: string): string[] =>
-  [...readFileSync(file, "utf-8").matchAll(IMPORTED_MODULE)].map(
-    ([, specifier]) => specifier ?? ""
+const importsOf = (file: string, imported: RegExp): string[] =>
+  [...readFileSync(file, "utf-8").matchAll(imported)].map(([, specifier]) => specifier ?? "");
+
+const sourceOf = (importer: string, specifier: string): string => {
+  const compiled = resolve(dirname(importer), specifier);
+  const sources = SOURCE_EXTENSIONS.map((extension) =>
+    compiled.replace(COMPILED_EXTENSION, extension)
   );
+  return sources.find((source) => existsSync(source)) ?? compiled;
+};
 
-const sourceOf = (importer: string, specifier: string): string =>
-  resolve(dirname(importer), specifier.replace(COMPILED_EXTENSION, ".ts"));
-
-const packagesImportedFrom = (entry: string): Map<string, string> => {
+const packagesImportedFrom = (entry: string, imported = IMPORTED_MODULE): Map<string, string> => {
   const packages = new Map<string, string>();
   const seen = new Set<string>();
   const queue = [entry];
   for (const file of queue) {
     if (seen.has(file)) continue;
     seen.add(file);
-    for (const specifier of importsOf(file)) {
+    for (const specifier of importsOf(file, imported)) {
       if (specifier.startsWith(".")) queue.push(sourceOf(file, specifier));
       else packages.set(specifier, file.slice(SOURCE_ROOT.length + 1));
     }
@@ -45,5 +53,16 @@ describe("the modules the entry without React loads", () => {
     const packages = packagesImportedFrom(DOM_ENTRY);
 
     expect([...packages.keys()]).toContain("@vercel/stega");
+  });
+
+  it.each([
+    ["without React", DOM_ENTRY],
+    ["for React", CLIENT_ENTRY],
+  ])("load nothing of Lexical until rich text is edited, in the entry %s", (_name, entry) => {
+    const loadedWithThePage = [...packagesImportedFrom(entry, STATICALLY_IMPORTED_MODULE).keys()];
+    const loadedAtSomePoint = [...packagesImportedFrom(entry).keys()];
+
+    expect(loadedWithThePage.filter((specifier) => LEXICAL.test(specifier))).toEqual([]);
+    expect(loadedAtSomePoint).toContain("lexical");
   });
 });

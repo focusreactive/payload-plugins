@@ -40,6 +40,7 @@ export type ImageReplacementOptions = {
   tracker: FieldTracker;
   getCtx: () => ImageReplacementCtx;
   holdsFormOf: ((document: VeDocument) => boolean) | null;
+  isInsideRichText: (target: Element) => boolean;
   save: (edit: VeFieldEdit, onSaveEnded: OnSaveEnded) => void;
   holdInForm: (field: VeEditedField) => void;
   showStatus: (status: EditStatus) => void;
@@ -73,6 +74,7 @@ export function createImageReplacement({
   getCtx,
   holdInForm,
   holdsFormOf,
+  isInsideRichText,
   save,
   showStatus,
   tracker,
@@ -103,7 +105,7 @@ export function createImageReplacement({
     const key = marker && fieldKeyOfMarker(marker);
     if (!marker || !key || marker.locale !== undefined) return null;
     if (!tracker.isIdentifiedByThePage(target)) return null;
-    if (target.hasAttribute(DATA_VE_LIVE_RICH_TEXT_ATTR)) return null;
+    if (target.hasAttribute(DATA_VE_LIVE_RICH_TEXT_ATTR) || isInsideRichText(target)) return null;
     const image = onlyImageOf(target);
     if (!image || showsTrackedText(target)) return null;
     const { locale } = getCtx();

@@ -36,7 +36,8 @@ export function VisualEditingOverlay({
     const started = startSessionOverlay(
       root,
       () => latest.current.scope,
-      () => latest.current.session
+      () => latest.current.session,
+      () => latest.current.session.onEdited?.()
     );
     overlay.current = started;
     return () => {

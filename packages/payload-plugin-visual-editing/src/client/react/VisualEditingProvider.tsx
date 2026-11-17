@@ -34,6 +34,7 @@ type VisualEditingContextType = Session & {
   setMode: (mode: VisualEditingMode) => void;
   setEditsInPlace: (editsInPlace: boolean) => void;
   toggleEnabled: () => void;
+  onEdited?: () => void;
 };
 
 const noop = (): void => undefined;
@@ -60,6 +61,7 @@ export function VisualEditingProvider({
   payloadApi: namedPayloadApi,
   accentColor,
   accentTextColor,
+  onEdited,
   children,
 }: AccentOptions & {
   available?: boolean;
@@ -70,6 +72,7 @@ export function VisualEditingProvider({
   adminOrigin?: string;
   adminBasePath?: string;
   payloadApi?: string;
+  onEdited?: () => void;
   children: React.ReactNode;
 }) {
   const [pageStore] = useState(createPageStore);
@@ -83,6 +86,12 @@ export function VisualEditingProvider({
     () => applyAccent(document, { accentColor, accentTextColor }),
     [accentColor, accentTextColor]
   );
+
+  const latestOnEdited = useRef(onEdited);
+
+  useIsomorphicLayoutEffect(() => {
+    latestOnEdited.current = onEdited;
+  });
 
   const value = useMemo((): VisualEditingContextType => {
     const session = sessionOf(
@@ -100,6 +109,7 @@ export function VisualEditingProvider({
     );
     return {
       ...session,
+      onEdited: () => latestOnEdited.current?.(),
       setEditsInPlace: pageStore.setEditsInPlace,
       setMode: pageStore.setMode,
       toggleEnabled: () => pageStore.setMode(toggledMode(session.mode)),
