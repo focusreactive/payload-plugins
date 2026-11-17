@@ -6,6 +6,8 @@ import { VisualEditing } from "@focus-reactive/payload-plugin-visual-editing/cli
 
 import { useCoalescedRouterRefresh } from "@/components/LivePreviewListener/useCoalescedRouterRefresh";
 
+const loadRichTextEditor = () => import("@focus-reactive/payload-plugin-visual-editing/rich-text");
+
 export const VisualEditingSession: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const requestRefresh = useCoalescedRouterRefresh();
 
@@ -16,6 +18,7 @@ export const VisualEditingSession: React.FC<{ children: React.ReactNode }> = ({ 
       inlineEditing
       adminBasePath="/admin"
       onEdited={requestRefresh}
+      richTextEditor={loadRichTextEditor}
     >
       {children}
     </VisualEditing.Provider>
