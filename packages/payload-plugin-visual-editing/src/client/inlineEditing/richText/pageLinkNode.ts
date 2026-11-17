@@ -6,7 +6,7 @@ import type {
   SerializedElementNode,
 } from "lexical";
 
-import { $applyNodeReplacement, $isElementNode, ElementNode } from "lexical";
+import { $applyNodeReplacement, ElementNode } from "lexical";
 
 import { isPlainObject } from "../../../shared/plainObject.js";
 import { isAllowedLinkUrl } from "../../../shared/richText/linkUrls.js";
@@ -136,12 +136,16 @@ export class PageLinkNode extends ElementNode {
     return true;
   }
 
-  override insertNewAfter(selection: RangeSelection, restoreSelection = true): ElementNode | null {
-    const inserted = this.getParentOrThrow().insertNewAfter(selection, restoreSelection);
-    if (!$isElementNode(inserted)) return null;
-    const link = PageLinkNode.$create(this.getUrl());
-    inserted.append(link);
+  override insertNewAfter(_selection: RangeSelection, restoreSelection = true): ElementNode {
+    const link = this.$copyWithoutChildren();
+    this.insertAfter(link, restoreSelection);
     return link;
+  }
+
+  $copyWithoutChildren(): PageLinkNode {
+    return $applyNodeReplacement(
+      new PageLinkNode(this.getFields(), newLinkId(), this.getLatest().__version)
+    );
   }
 
   override extractWithChild(): boolean {

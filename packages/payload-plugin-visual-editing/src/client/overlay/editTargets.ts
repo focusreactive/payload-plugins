@@ -111,7 +111,7 @@ export function createEditTargets(
     const target = findTargetAncestor(event.target instanceof Element ? event.target : null);
     const config = target ? registry.get(target) : undefined;
     if (!target || !config) return;
-    if (getCtx().editInPlace?.(target, event)) {
+    if (getCtx().editInPlace?.(target, event, () => config.clickHandler(event))) {
       event.preventDefault();
       event.stopPropagation();
       return;

@@ -6,14 +6,24 @@ import {
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
+  $createNodeSelection,
+  $createTextNode,
+  $parseSerializedNode,
+  $setSelection,
+  CONTROLLED_TEXT_INSERTION_COMMAND,
+  CUT_COMMAND,
+  INSERT_PARAGRAPH_COMMAND,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
   REDO_COMMAND,
   UNDO_COMMAND,
 } from "lexical";
+import { $createListItemNode, $createListNode } from "@lexical/list";
+import { $createHeadingNode, $createQuoteNode } from "@lexical/rich-text";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { EditSession } from "../../src/client/inlineEditing/richText/editSession";
+import type { EditSession } from "../../src/client/inlineEditing/richTextEditor";
+import type { VeRichTextFormats } from "../../src/shared/richText/formats";
 
 import { startEditSession } from "../../src/client/inlineEditing/richText/editSession";
 import {
@@ -113,6 +123,29 @@ const INLINE_BLOCK: Node = {
   version: 1,
 };
 
+const EVERY_FORMAT: VeRichTextFormats = {
+  hasLinks: true,
+  hasQuotes: true,
+  headings: ["h1", "h2", "h3", "h4", "h5", "h6"],
+  lists: ["bullet", "number", "check"],
+  textFormats: 2047,
+};
+
+const ONLY_BOLD: VeRichTextFormats = {
+  hasLinks: false,
+  hasQuotes: false,
+  headings: [],
+  lists: [],
+  textFormats: BOLD,
+};
+
+const textsOf = (block: Node) =>
+  (block.children ?? []).map((child) =>
+    child.type === "link"
+      ? (child.children ?? []).map(({ text: part }) => `[${String(part)}]`)
+      : child.text
+  );
+
 const lexicalOf = (twin: Element): LexicalEditor =>
   (twin as unknown as { __lexicalEditor: LexicalEditor }).__lexicalEditor;
 
@@ -128,8 +161,9 @@ describe("one edit of rich text", () => {
   let onCancel: ReturnType<typeof vi.fn>;
   let onCommit: ReturnType<typeof vi.fn>;
 
-  const start = (state: State) => {
+  const start = (state: State, formats: VeRichTextFormats = EVERY_FORMAT) => {
     session = startEditSession({
+      formats,
       onCancel,
       onChange: (changed) => changes.push(changed as State),
       onCommit,
@@ -285,43 +319,223 @@ describe("one edit of rich text", () => {
       expect(twin.textContent).not.toContain("Kept");
     });
 
-    it("is selected by the first Backspace after it and removed by the second", () => {
-      start(stateOf(paragraph(text("Before")), OPAQUE_BLOCKS[0]![1], paragraph(text("After"))));
-      select(1, 0, 0);
+    describe("cannot be taken away", () => {
+      const BLOCK = OPAQUE_BLOCKS[0]![1];
 
-      const first = deleteWith(KEY_BACKSPACE_COMMAND);
+      const typesOfRoot = () =>
+        lexicalOf(twin)
+          .getEditorState()
+          .read(() =>
+            $getRoot()
+              .getChildren()
+              .map((node) => node.getType())
+          );
 
-      expect(first.defaultPrevented).toBe(true);
-      expect(changes).toEqual([]);
-      expect(twin.querySelector(`[${DATA_VE_OPAQUE_SELECTED_ATTR}]`)?.textContent).toBe(
-        "block: callout"
-      );
+      const shownBlocks = () => placeholders().map(({ name }) => name);
 
-      deleteWith(KEY_BACKSPACE_COMMAND);
+      it("by a Backspace right after it", () => {
+        start(stateOf(paragraph(text("Before")), BLOCK, paragraph(text("After"))));
+        select(1, 0, 0);
 
-      expect(latest().root.children).toEqual([paragraph(text("Before")), paragraph(text("After"))]);
+        const pressed = deleteWith(KEY_BACKSPACE_COMMAND);
+        deleteWith(KEY_BACKSPACE_COMMAND);
+
+        expect(pressed.defaultPrevented).toBe(true);
+        expect(changes).toEqual([]);
+        expect(shownBlocks()).toEqual(["block: callout"]);
+      });
+
+      it("by a Delete right before it", () => {
+        start(stateOf(paragraph(text("Before"), INLINE_BLOCK, text("after"))));
+        select(0, 6, 6);
+
+        deleteWith(KEY_DELETE_COMMAND);
+        deleteWith(KEY_DELETE_COMMAND);
+
+        expect(changes).toEqual([]);
+        expect(shownBlocks()).toEqual(["inlineBlock: badge"]);
+      });
+
+      it("by a Backspace while it is selected", () => {
+        start(stateOf(paragraph(text("Before")), BLOCK));
+        update(() => {
+          const selection = $createNodeSelection();
+          selection.add($getRoot().getLastChildOrThrow().getKey());
+          $setSelection(selection);
+        });
+
+        deleteWith(KEY_BACKSPACE_COMMAND);
+
+        expect(twin.querySelector(`[${DATA_VE_OPAQUE_SELECTED_ATTR}]`)).not.toBeNull();
+        expect(changes).toEqual([]);
+      });
+
+      it("by a Backspace over a selection that spans it, which removes the text alone", () => {
+        start(stateOf(paragraph(text("Before")), BLOCK, paragraph(text("After"))));
+        selectAcross(0, 1);
+
+        deleteWith(KEY_BACKSPACE_COMMAND);
+
+        expect(latest().root.children).toEqual([paragraph(), BLOCK, paragraph()]);
+      });
+
+      it("by text typed over a selection that spans it", () => {
+        start(stateOf(paragraph(text("Before")), BLOCK, paragraph(text("After"))));
+        selectAcross(0, 1);
+
+        update(() => lexicalOf(twin).dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, "X"));
+
+        expect(JSON.stringify(latest().root.children[1])).toBe(JSON.stringify(BLOCK));
+        expect(twin.textContent).toContain("X");
+        expect(twin.textContent).not.toContain("Before");
+      });
+
+      it("by a cut of a selection that spans it", () => {
+        start(stateOf(paragraph(text("Before")), BLOCK, paragraph(text("After"))));
+        selectAcross(0, 1);
+
+        update(() => lexicalOf(twin).dispatchCommand(CUT_COMMAND, null));
+
+        expect(latest().root.children).toEqual([paragraph(), BLOCK, paragraph()]);
+      });
+
+      it("by a new paragraph started over a selection that spans it", () => {
+        start(stateOf(paragraph(text("Before")), BLOCK, paragraph(text("After"))));
+        selectAcross(0, 1);
+
+        update(() => lexicalOf(twin).dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined));
+
+        expect(shownBlocks()).toEqual(["block: callout"]);
+      });
+
+      it("by anything else that removes it: the change is taken back", async () => {
+        start(stateOf(paragraph(text("Before")), BLOCK));
+
+        update(() => $getRoot().getLastChildOrThrow().remove());
+        await flushMutations();
+
+        expect(typesOfRoot()).toEqual(["paragraph", "ve-opaque"]);
+        expect(changes).toEqual([]);
+      });
+
+      it("and cannot be moved before another one", async () => {
+        start(stateOf(BLOCK, paragraph(text("Between")), OPAQUE_BLOCKS[3]![1]));
+
+        update(() => {
+          const root = $getRoot();
+          root.getFirstChildOrThrow().insertBefore(root.getLastChildOrThrow());
+        });
+        await flushMutations();
+
+        expect(shownBlocks()).toEqual(["block: callout", "horizontalrule"]);
+        expect(changes).toEqual([]);
+      });
+
+      it("and a copy of it that is pasted is dropped", () => {
+        start(stateOf(paragraph(text("Before")), BLOCK));
+
+        update(() => {
+          const copy = $parseSerializedNode({
+            isInline: false,
+            kept: BLOCK,
+            type: "ve-opaque",
+            version: 1,
+          } as never);
+          $getRoot().append(copy);
+        });
+
+        expect(shownBlocks()).toEqual(["block: callout"]);
+      });
+    });
+  });
+
+  describe("a link that is split by Enter", () => {
+    const internal = (...children: Node[]) =>
+      element("link", children, {
+        fields: {
+          credit: 7,
+          doc: { relationTo: "pages", value: 3 },
+          linkType: "internal",
+          newTab: true,
+        },
+        id: "link-internal",
+        version: 3,
+      });
+
+    it("keeps the order of the text and gives the second half the fields of the first", () => {
+      start(stateOf(paragraph(text("Hello "), internal(text("internal")), text(" tail"))));
+      select(1, 5, 5);
+
+      update(() => lexicalOf(twin).dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined));
+
+      const [first, second] = latest().root.children;
+      expect(latest().root.children).toHaveLength(2);
+      expect(textsOf(first!).flat().join("")).toBe("Hello [inter]");
+      expect(textsOf(second!).flat().join("")).toBe("[nal] tail");
+      const [, kept] = first!.children as Node[];
+      const [added] = second!.children as Node[];
+      expect(kept).toMatchObject({ fields: internal().fields, id: "link-internal" });
+      expect(added!.fields).toEqual(internal().fields);
+      expect(added!.id).toMatch(LINK_ID);
+      expect(added!.id).not.toBe("link-internal");
+    });
+  });
+
+  describe("a field that allows bold alone", () => {
+    const visibleActions = () =>
+      [...toolbar().querySelectorAll("button")]
+        .filter((control) => !control.hidden)
+        .map((control) => control.getAttribute("data-action"));
+
+    beforeEach(() => {
+      start(stateOf(paragraph(text("Hello world"))), ONLY_BOLD);
     });
 
-    it("is selected by the first Delete before it and removed by the second", () => {
-      start(stateOf(paragraph(text("Before"), INLINE_BLOCK, text("after"))));
-      select(0, 6, 6);
+    it("offers the bold button alone", () => {
+      select(0, 0, 5);
 
-      deleteWith(KEY_DELETE_COMMAND);
-      expect(changes).toEqual([]);
-
-      deleteWith(KEY_DELETE_COMMAND);
-      expect(latest().root.children[0]!.children).toEqual([text("Beforeafter")]);
+      expect(visibleActions()).toEqual(["bold"]);
     });
 
-    it("is left alone by a Backspace in the middle of a text", async () => {
-      start(stateOf(paragraph(text("Before")), OPAQUE_BLOCKS[0]![1]));
-      select(0, 3, 3);
+    it("ignores the keys of the other formats and of the link", async () => {
+      select(0, 0, 5);
 
-      deleteWith(KEY_BACKSPACE_COMMAND);
+      pressInTwin("i", { ctrlKey: true });
+      pressInTwin("u", { ctrlKey: true });
+      pressInTwin("k", { ctrlKey: true });
       await flushMutations();
 
-      expect(twin.querySelector(`[${DATA_VE_OPAQUE_SELECTED_ATTR}]`)).toBeNull();
-      expect(placeholders()).toHaveLength(1);
+      expect(changes).toEqual([]);
+      expect(linkInput().hidden).toBe(true);
+    });
+
+    it("turns what a paste brings in and the field does not allow into paragraphs of plain text", () => {
+      update(() => {
+        const slanted = $createTextNode("Heading").toggleFormat("italic").setStyle("color: red");
+        const quoted = $createTextNode("Quote").toggleFormat("bold");
+        const listed = $createListItemNode().append($createTextNode("Item"));
+        $getRoot().append(
+          $createHeadingNode("h1").append(slanted),
+          $createQuoteNode().append(quoted),
+          $createListNode("bullet").append(listed)
+        );
+      });
+
+      expect(latest().root.children).toEqual([
+        paragraph(text("Hello world")),
+        paragraph(text("Heading")),
+        { ...paragraph(text("Quote", BOLD)), textFormat: BOLD },
+        paragraph(text("Item")),
+      ]);
+    });
+
+    it("shows no toolbar at all for a field that allows no format", () => {
+      session?.end();
+      start(stateOf(paragraph(text("Hello world"))), { ...ONLY_BOLD, textFormats: 0 });
+
+      select(0, 0, 5);
+
+      expect(isToolbarShown()).toBe(false);
     });
   });
 
@@ -477,6 +691,16 @@ describe("one edit of rich text", () => {
         expect(linkInput().hidden).toBe(false);
         expect(linkInput().getAttribute("aria-label")).toBe("Link address");
         expect(toolbar().activeElement).toBe(linkInput());
+      });
+
+      it("does nothing without a selected range, by key or by button", () => {
+        select(0, 2, 2);
+
+        pressInTwin("k", { ctrlKey: true });
+
+        expect(linkInput().hidden).toBe(true);
+        expect(isToolbarShown()).toBe(false);
+        expect(changes).toEqual([]);
       });
 
       it("links the selected text on Enter, in the shape Payload stores", () => {

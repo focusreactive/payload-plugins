@@ -238,16 +238,14 @@ describe("rich text edited on a page that saves through Payload", () => {
         saves += 1;
       },
       payloadApi: PAYLOAD_API,
+      richTextEditor: () => import("../../src/rich-text"),
       root: main,
       toggle: false,
     });
     await waitFor(0);
 
-    wrapper.dispatchEvent(new MouseEvent("pointerover", { bubbles: true }));
-    await until(() => {
-      click(wrapper);
-      return wrapper.nextElementSibling?.hasAttribute(DATA_VE_EDITING_ATTR) ?? false;
-    });
+    click(wrapper);
+    await until(() => wrapper.nextElementSibling?.hasAttribute(DATA_VE_EDITING_ATTR) ?? false);
     const twin = wrapper.nextElementSibling as HTMLElement;
     const shownAsPlaceholders = [...twin.querySelectorAll(`[${DATA_VE_OPAQUE_ATTR}]`)].map(
       (placeholder) => placeholder.getAttribute(DATA_VE_OPAQUE_ATTR)

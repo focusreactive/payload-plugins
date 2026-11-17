@@ -3,6 +3,7 @@ import type { VeIdentity } from "../../shared/shared.js";
 import type { BadgeAction } from "../overlay/editBadge.js";
 import type { FieldMatch, FieldTracker } from "../overlay/fieldTracker.js";
 import type { EditStatus } from "./editTransport.js";
+import type { RichTextEditorLoader } from "./richTextEditor.js";
 import type { SaveStatus } from "./saveStatus.js";
 
 import { fieldKeyOfMarker } from "../../shared/fieldKey.js";
@@ -26,6 +27,7 @@ export type InlineEditingCtx = {
   locale?: string;
   inlineEditing: boolean;
   onEdited?: () => void;
+  richTextEditor?: RichTextEditorLoader;
 };
 
 export type OpenForms = {
@@ -39,7 +41,7 @@ const VISIBILITY_EVENT = "visibilitychange";
 const HIDDEN = "hidden";
 
 export interface InlineEditing {
-  editInPlace(target: HTMLElement, event: MouseEvent): boolean;
+  editInPlace(target: HTMLElement, event: MouseEvent, openField: () => void): boolean;
   actionOf(target: HTMLElement): BadgeAction | null;
   sync(): void;
   dispose(): void;
@@ -187,13 +189,13 @@ export function createInlineEditing(
       stopTracking();
       saveStatus?.remove();
     },
-    editInPlace(target, event) {
+    editInPlace(target, event, openField) {
       if (!getCtx().inlineEditing) return false;
       if (textEditing.isEditing(target)) return true;
       const match = fields.get(target);
       const key = match && fieldKeyOfMarker(match);
       if (match && key && isWrittenSomewhere(match, key)) return editTextInPlace(match, event);
-      return richTextEditing.editInPlace(target, event);
+      return richTextEditing.editInPlace(target, event, openField);
     },
     sync() {
       if (!getCtx().inlineEditing) endEdits();

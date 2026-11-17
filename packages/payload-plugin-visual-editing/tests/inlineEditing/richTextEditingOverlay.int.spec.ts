@@ -13,6 +13,10 @@ import {
 } from "../../src/client/inlineEditing/editTransport";
 import { DATA_VE_OPAQUE_ATTR } from "../../src/client/inlineEditing/richText/opaqueNode";
 import { DATA_VE_RICH_TEXT_TOOLBAR_ATTR } from "../../src/client/inlineEditing/richText/toolbar";
+import {
+  RICH_TEXT_CHECK_PAUSE_MS,
+  RICH_TEXT_STATE_TIME_LIMIT_MS,
+} from "../../src/client/inlineEditing/richTextEditing";
 import { DATA_VE_EDITED_ATTR } from "../../src/client/inlineEditing/richTextTwin";
 import { DATA_VE_SAVE_STATUS_ATTR } from "../../src/client/inlineEditing/saveStatus";
 import { DATA_VE_EDITING_ATTR } from "../../src/client/inlineEditing/textEditing";
@@ -24,7 +28,11 @@ import {
   VE_FIELD_EDIT_REFUSED_TYPE,
   VE_FIELD_SNAPSHOT_TYPE,
   VE_MESSAGE_TYPE,
+  VE_DOCUMENT_SAVED_TYPE,
+  VE_FIELD_PATCH_TYPE,
   VE_RICH_TEXT_EDIT_TYPE,
+  VE_RICH_TEXT_STATE_REFUSED_TYPE,
+  VE_RICH_TEXT_STRUCTURE_TYPE,
   VE_RICH_TEXT_STATE_REQUEST_TYPE,
   VE_RICH_TEXT_STATE_TYPE,
   VE_RICH_TEXT_VALUE_PATH,
@@ -76,6 +84,20 @@ const CALLOUT = {
 
 const STATE = stateOf(paragraph(text("Hello world")), CALLOUT);
 
+const FORMATS = {
+  hasLinks: true,
+  hasQuotes: true,
+  headings: ["h2", "h3"],
+  lists: ["bullet", "number"],
+  textFormats: 11,
+};
+
+const BROKEN_EDITOR = {
+  startEditSession: () => {
+    throw new Error("broken");
+  },
+};
+
 const lexicalOf = (twin: Element): LexicalEditor =>
   (twin as unknown as { __lexicalEditor: LexicalEditor }).__lexicalEditor;
 
@@ -90,6 +112,9 @@ const typeInto = (twin: Element, typed: string) =>
 
 const hover = (target: Element) =>
   target.dispatchEvent(new MouseEvent("pointerover", { bubbles: true }));
+
+const movePointerOver = (target: Element) =>
+  target.dispatchEvent(new MouseEvent("pointermove", { bubbles: true }));
 
 const press = (target: Element, key: string) =>
   target.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key }));
@@ -141,6 +166,7 @@ describe("editing rich text on the page", () => {
       mode: "hover",
       onEdited,
       payloadApi: PAYLOAD_API,
+      richTextEditor: () => import("../../src/rich-text"),
       ...overrides,
     });
     overlay = createOverlay(main, () => ctx);
@@ -180,7 +206,7 @@ describe("editing rich text on the page", () => {
     fetchApi = vi.fn((url: string) => {
       const isValue = url.endsWith(VE_RICH_TEXT_VALUE_PATH);
       const body = isValue
-        ? { value: valueStatus === 200 ? storedState : null }
+        ? { formats: FORMATS, value: valueStatus === 200 ? storedState : null }
         : { saved: isSaved };
       const ok = isValue ? valueStatus === 200 : true;
       return Promise.resolve({ json: () => Promise.resolve(body), ok } as Response);
@@ -207,33 +233,144 @@ describe("editing rich text on the page", () => {
       expect(requestsTo(VE_RICH_TEXT_VALUE_PATH)).toEqual([BODY]);
     });
 
-    it("opens the field in the admin while the state has not arrived", () => {
-      hover(wrapper);
-      click(wrapper);
+    it("takes a click before the state arrived and starts the edit when it arrives", async () => {
+      const event = click(wrapper);
 
+      expect(event.defaultPrevented).toBe(true);
       expect(twinOf(wrapper)).toBeNull();
-      expect(open).toHaveBeenCalledTimes(1);
+      expect(open).not.toHaveBeenCalled();
+
+      await settle();
+
+      expect(twinOf(wrapper).hasAttribute(DATA_VE_EDITING_ATTR)).toBe(true);
+      expect(requestsTo(VE_RICH_TEXT_VALUE_PATH)).toEqual([BODY]);
+      expect(open).not.toHaveBeenCalled();
+    });
+
+    it("asks once for a click that is repeated while the state is on its way", async () => {
+      click(wrapper);
+      click(wrapper);
+      await settle();
+
+      expect(requestsTo(VE_RICH_TEXT_VALUE_PATH)).toHaveLength(1);
+      expect(open).not.toHaveBeenCalled();
     });
 
     it("opens the field in the admin when the state is refused", async () => {
       valueStatus = 422;
-      await hoverUntilReady();
 
       click(wrapper);
+      await settle();
 
       expect(twinOf(wrapper)).toBeNull();
       expect(open).toHaveBeenCalledTimes(1);
     });
 
-    it("opens the field in the admin when the stored state cannot be edited", async () => {
-      storedState = stateOf(text("A text node the root cannot hold"));
-      await hoverUntilReady();
+    it("opens the field in the admin when the answer names no formats", async () => {
+      fetchApi.mockImplementationOnce(() =>
+        Promise.resolve({ json: () => Promise.resolve({ value: STATE }), ok: true } as Response)
+      );
 
       click(wrapper);
+      await settle();
+
+      expect(twinOf(wrapper)).toBeNull();
+      expect(open).toHaveBeenCalledTimes(1);
+    });
+
+    it("opens the field in the admin when the state does not arrive in time", async () => {
+      fetchApi.mockImplementationOnce(() => new Promise(() => undefined));
+      click(wrapper);
+
+      await vi.advanceTimersByTimeAsync(RICH_TEXT_STATE_TIME_LIMIT_MS - 1);
+      expect(open).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(1);
+      expect(open).toHaveBeenCalledTimes(1);
+      expect(twinOf(wrapper)).toBeNull();
+    });
+
+    it("opens the field in the admin when the stored state cannot be edited", async () => {
+      storedState = stateOf(text("A text node the root cannot hold"));
+
+      click(wrapper);
+      await settle();
+
+      expect(twinOf(wrapper)).toBeNull();
+      expect(isShown(wrapper)).toBe(true);
+      expect(wrapper.hasAttribute("style")).toBe(false);
+      expect(open).toHaveBeenCalledTimes(1);
+    });
+
+    it("opens the field in the admin when the editor cannot be loaded", async () => {
+      ctx = { ...ctx, richTextEditor: () => Promise.reject(new Error("offline")) };
+
+      click(wrapper);
+      await settle();
+
+      expect(twinOf(wrapper)).toBeNull();
+      expect(open).toHaveBeenCalledTimes(1);
+    });
+
+    it("puts the wrapper back and opens the field in the admin when the editor throws as it starts", async () => {
+      ctx = { ...ctx, richTextEditor: () => Promise.resolve(BROKEN_EDITOR) };
+
+      click(wrapper);
+      await settle();
 
       expect(twinOf(wrapper)).toBeNull();
       expect(isShown(wrapper)).toBe(true);
       expect(open).toHaveBeenCalledTimes(1);
+    });
+
+    it("leaves rich text to the admin on a page that was given no editor", async () => {
+      ctx = { ...ctx, richTextEditor: undefined };
+
+      await hoverUntilReady();
+      const event = click(wrapper);
+      await settle();
+
+      expect(requestsTo(VE_RICH_TEXT_VALUE_PATH)).toEqual([]);
+      expect(twinOf(wrapper)).toBeNull();
+      expect(event.defaultPrevented).toBe(true);
+      expect(open).toHaveBeenCalledTimes(1);
+    });
+
+    it("asks again on a pointer move once the state it held was used", async () => {
+      const twin = await beginEdit();
+      press(twin, "Escape");
+
+      await vi.advanceTimersByTimeAsync(RICH_TEXT_CHECK_PAUSE_MS);
+      movePointerOver(wrapper);
+      await settle();
+
+      expect(requestsTo(VE_RICH_TEXT_VALUE_PATH)).toHaveLength(2);
+    });
+
+    it("edits a second wrapper of the same field from the state the first one asked for", async () => {
+      const second = renderRichText();
+      await settle();
+      await hoverUntilReady();
+
+      click(second);
+
+      expect(twinOf(second).hasAttribute(DATA_VE_EDITING_ATTR)).toBe(true);
+      expect(requestsTo(VE_RICH_TEXT_VALUE_PATH)).toHaveLength(1);
+    });
+
+    it("ends the edit and removes the twin when the site replaces the wrapper", async () => {
+      const twin = await beginEdit();
+      typeInto(twin, "Hello there");
+
+      wrapper.remove();
+      const replaced = renderRichText();
+      await settle();
+
+      expect(twin.isConnected).toBe(false);
+      expect(main.querySelector(`[${DATA_VE_EDITING_ATTR}]`)).toBeNull();
+      expect(main.querySelector(`[${DATA_VE_EDITED_ATTR}]`)).toBeNull();
+      expect(isShown(replaced)).toBe(true);
+      expect(requestsTo(VE_FIELD_EDIT_PATH)).toHaveLength(1);
     });
 
     it("edits in a twin of the wrapper and hides the wrapper the page rendered", async () => {
@@ -458,8 +595,8 @@ describe("editing rich text on the page", () => {
       expect(twin.isConnected).toBe(false);
       expect(heading.hasAttribute(DATA_VE_EDITING_ATTR)).toBe(true);
 
-      await hoverUntilReady();
       click(wrapper);
+      await settle();
       expect(heading.hasAttribute(DATA_VE_EDITING_ATTR)).toBe(false);
       expect(twinOf(wrapper).hasAttribute(DATA_VE_EDITING_ATTR)).toBe(true);
     });
@@ -542,7 +679,7 @@ describe("editing rich text on the page", () => {
     };
 
     const answerState = () =>
-      postFromAdmin({ ...BODY, state: STATE, type: VE_RICH_TEXT_STATE_TYPE });
+      postFromAdmin({ ...BODY, formats: FORMATS, state: STATE, type: VE_RICH_TEXT_STATE_TYPE });
 
     beforeEach(async () => {
       postToAdmin.mockClear();
@@ -570,23 +707,95 @@ describe("editing rich text on the page", () => {
       expect(messagesOfType(postToAdmin, VE_RICH_TEXT_STATE_REQUEST_TYPE)).toEqual([]);
     });
 
-    it("opens the field in the form until the state arrived, and when it is refused", async () => {
-      await hoverUntilReady();
-      click(wrapper);
-      postFromAdmin({ ...BODY, type: VE_FIELD_EDIT_REFUSED_TYPE });
-      click(wrapper);
+    it("takes the click, and opens the field in the form when the state is refused", async () => {
+      const event = click(wrapper);
+      await settle();
+      expect(event.defaultPrevented).toBe(true);
+      expect(messagesOfType(postToAdmin, VE_MESSAGE_TYPE)).toEqual([]);
+
+      postFromAdmin({ ...BODY, type: VE_RICH_TEXT_STATE_REFUSED_TYPE });
 
       expect(twinOf(wrapper)?.hasAttribute(DATA_VE_EDITING_ATTR) ?? false).toBe(false);
-      expect(messagesOfType(postToAdmin, VE_MESSAGE_TYPE)).toHaveLength(2);
+      expect(messagesOfType(postToAdmin, VE_MESSAGE_TYPE)).toHaveLength(1);
+    });
+
+    it("starts the edit of a click that waited once the form answers", async () => {
+      click(wrapper);
+      await settle();
+
+      answerState();
+
+      expect(twinOf(wrapper).hasAttribute(DATA_VE_EDITING_ATTR)).toBe(true);
+    });
+
+    it("opens the field in the form when the form does not answer in time", async () => {
+      click(wrapper);
+
+      await vi.advanceTimersByTimeAsync(RICH_TEXT_STATE_TIME_LIMIT_MS);
+
+      expect(messagesOfType(postToAdmin, VE_MESSAGE_TYPE)).toHaveLength(1);
     });
 
     it("ignores a state from a window that is not the admin", async () => {
       await hoverUntilReady();
-      postFromAdmin({ ...BODY, state: STATE, type: VE_RICH_TEXT_STATE_TYPE }, { source: {} });
+      postFromAdmin(
+        { ...BODY, formats: FORMATS, state: STATE, type: VE_RICH_TEXT_STATE_TYPE },
+        { source: {} }
+      );
 
       click(wrapper);
 
       expect(twinOf(wrapper)?.hasAttribute(DATA_VE_EDITING_ATTR) ?? false).toBe(false);
+    });
+
+    it.each([
+      [
+        "a structure of the field",
+        { ...BODY, shape: "s", state: null, type: VE_RICH_TEXT_STRUCTURE_TYPE },
+      ],
+      [
+        "a patch of its document",
+        { ...PAGE, locale: "en", patches: [], type: VE_FIELD_PATCH_TYPE },
+      ],
+      ["a save of its document", { ...PAGE, locale: "en", type: VE_DOCUMENT_SAVED_TYPE }],
+      ["a save that names no document", { type: VE_DOCUMENT_SAVED_TYPE }],
+    ])(
+      "forgets the state it holds when the admin tells of %s, and asks again",
+      async (_name, news) => {
+        await hoverUntilReady();
+        answerState();
+
+        postFromAdmin(news);
+        await vi.advanceTimersByTimeAsync(RICH_TEXT_CHECK_PAUSE_MS);
+        movePointerOver(wrapper);
+
+        expect(messagesOfType(postToAdmin, VE_RICH_TEXT_STATE_REQUEST_TYPE)).toHaveLength(2);
+        click(wrapper);
+        expect(twinOf(wrapper)?.hasAttribute(DATA_VE_EDITING_ATTR) ?? false).toBe(false);
+      }
+    );
+
+    it("keeps the state it holds when the admin tells of another document", async () => {
+      await hoverUntilReady();
+      answerState();
+
+      postFromAdmin({ ...PAGE, docId: "2", locale: "en", type: VE_DOCUMENT_SAVED_TYPE });
+      click(wrapper);
+
+      expect(twinOf(wrapper).hasAttribute(DATA_VE_EDITING_ATTR)).toBe(true);
+    });
+
+    it("keeps an unsaved edit of the field as it is when a later request for its state is refused", async () => {
+      await hoverUntilReady();
+      answerState();
+      click(wrapper);
+      typeInto(twinOf(wrapper), "Hello there");
+      pressOutside();
+      expect(statusLabel()).toBe("Unsaved changes");
+
+      postFromAdmin({ ...BODY, type: VE_RICH_TEXT_STATE_REFUSED_TYPE });
+
+      expect(statusLabel()).toBe("Unsaved changes");
     });
 
     it("edits once the state arrived and shows the field in the form without taking the focus", async () => {

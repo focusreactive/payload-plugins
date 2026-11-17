@@ -5,10 +5,11 @@ import type {
   VeRichTextEdit,
   VeRichTextStateRequestMessage,
 } from "../../shared/protocol.js";
+import type { VeRichTextFormats } from "../../shared/richText/formats.js";
 import type { VeIdentity } from "../../shared/shared.js";
 import type { FieldTracker } from "../overlay/fieldTracker.js";
 import type { Point } from "./caret.js";
-import type { EditSession } from "./richText/editSession.js";
+import type { EditSession, RichTextEditor, RichTextEditorLoader } from "./richTextEditor.js";
 
 import { readEditedField, readRichTextEdit } from "../../shared/fieldEdit.js";
 import { fieldKeyOfMarker } from "../../shared/fieldKey.js";
@@ -17,14 +18,24 @@ import { isPlainObject } from "../../shared/plainObject.js";
 import {
   DATA_VE_LIVE_RICH_TEXT_ATTR,
   DATA_VE_PATH_ATTR,
-  VE_FIELD_EDIT_REFUSED_TYPE,
+  VE_DOCUMENT_SAVED_TYPE,
+  VE_FIELD_PATCH_TYPE,
+  VE_FIELD_SNAPSHOT_TYPE,
+  VE_RICH_TEXT_STATE_REFUSED_TYPE,
   VE_RICH_TEXT_STATE_REQUEST_TYPE,
   VE_RICH_TEXT_STATE_TYPE,
+  VE_RICH_TEXT_STRUCTURE_TYPE,
   VE_RICH_TEXT_VALUE_PATH,
 } from "../../shared/protocol.js";
+import { readFormats } from "../../shared/richText/formats.js";
 import { isRichTextNodeKey } from "../../shared/richText/nodeKey.js";
 import { readPostedEditorState } from "../../shared/richText/postedEditorState.js";
-import { keyedFieldAddressOf, veDocumentOf } from "../../shared/veDocument.js";
+import {
+  documentAddressOf,
+  isVeDocument,
+  keyedFieldAddressOf,
+  veDocumentOf,
+} from "../../shared/veDocument.js";
 import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 import { readMarkerFromAttrs } from "../overlay/markerExtractor.js";
 import { hide, readOnlyCopyOf, twinOf } from "./richTextTwin.js";
@@ -34,6 +45,7 @@ export type RichTextEditingCtx = {
   payloadApi: string;
   locale?: string;
   inlineEditing: boolean;
+  richTextEditor?: RichTextEditorLoader;
 };
 
 export type RichTextEditingDeps = {
@@ -48,16 +60,18 @@ export type RichTextEditingDeps = {
 };
 
 export interface RichTextEditing {
-  editInPlace(target: HTMLElement, event: MouseEvent): boolean;
+  editInPlace(target: HTMLElement, event: MouseEvent, openField: () => void): boolean;
   isInsideRichText(target: Element): boolean;
   commit(): void;
   endIfRemoved(): void;
   dispose(): void;
 }
 
-type SessionModule = typeof import("./richText/editSession.js");
+export const RICH_TEXT_STATE_TIME_LIMIT_MS = 4000;
 
-type Held = { field: VeEditedField; state: VeEditorState };
+export const RICH_TEXT_CHECK_PAUSE_MS = 200;
+
+type Held = { field: VeEditedField; state: VeEditorState; formats: VeRichTextFormats };
 
 type ReadOnlyTwin = {
   twin: HTMLElement;
@@ -69,8 +83,7 @@ type ReadOnlyTwin = {
 type Edit = {
   wrapper: HTMLElement;
   twin: HTMLElement;
-  field: VeEditedField;
-  initial: VeEditorState;
+  held: Held;
   latest: VeEditorState;
   wasSent: boolean;
   isWrapperRenderedAgain: boolean;
@@ -80,9 +93,24 @@ type Edit = {
   stopWatching(): void;
 };
 
+type WaitingClick = {
+  wrapper: HTMLElement;
+  field: VeEditedField;
+  address: string;
+  point: Point;
+  openField(): void;
+  timer: ReturnType<typeof setTimeout>;
+};
+
 const WRAPPER = `[${DATA_VE_PATH_ATTR}]`;
-const POINTER_ENTERED = "pointerover";
+const POINTER_EVENTS = ["pointerover", "pointermove"] as const;
 const WRAPPER_CONTENT = { characterData: true, childList: true, subtree: true };
+const NEWS_OF_A_DOCUMENT: ReadonlySet<unknown> = new Set([
+  VE_RICH_TEXT_STRUCTURE_TYPE,
+  VE_FIELD_PATCH_TYPE,
+  VE_FIELD_SNAPSHOT_TYPE,
+  VE_DOCUMENT_SAVED_TYPE,
+]);
 
 const addressOf = (field: VeEditedField): string =>
   JSON.stringify([keyedFieldAddressOf(field), field.locale ?? null]);
@@ -90,15 +118,16 @@ const addressOf = (field: VeEditedField): string =>
 const isPlainPrimaryClick = (event: MouseEvent): boolean =>
   event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 
+const pointOf = ({ clientX, clientY }: MouseEvent): Point => ({ x: clientX, y: clientY });
+
 const wrapperAround = (element: Element | null): HTMLElement | null =>
   element?.closest<HTMLElement>(WRAPPER) ?? null;
 
-const isEntered = (wrapper: HTMLElement, event: MouseEvent): boolean =>
-  !(event.relatedTarget instanceof Node && wrapper.contains(event.relatedTarget));
-
-const stateOfAnswer = async (response: Response): Promise<VeEditorState | null> => {
-  const answer: unknown = response.ok ? await response.json() : null;
-  return isPlainObject(answer) ? readPostedEditorState(answer.value) : null;
+const heldOf = (field: VeEditedField, answer: unknown): Held | null => {
+  if (!isPlainObject(answer)) return null;
+  const state = readPostedEditorState(answer.state ?? answer.value);
+  const formats = readFormats(answer.formats);
+  return state && formats ? { field, formats, state } : null;
 };
 
 export function createRichTextEditing({
@@ -112,20 +141,19 @@ export function createRichTextEditing({
   tracker,
 }: RichTextEditingDeps): RichTextEditing {
   const richTextLeaves = new Set<Text>();
-  const held = new WeakMap<HTMLElement, Held>();
-  const askedOfAdmin = new Map<string, HTMLElement>();
-  const askedOfEndpoint = new WeakSet<HTMLElement>();
+  const held = new Map<string, Held>();
+  const askedAt = new Map<string, number>();
+  const checkedAt = new WeakMap<HTMLElement, number>();
   const readOnlyTwins = new Map<HTMLElement, ReadOnlyTwin>();
-  let sessionModule: SessionModule | null = null;
+  let editor: RichTextEditor | null = null;
+  let editorLoad: Promise<void> | null = null;
   let editing: Edit | null = null;
+  let waitingClick: WaitingClick | null = null;
   let isDisposed = false;
 
-  const loadSessionModule = async () => {
-    try {
-      sessionModule ??= await import("./richText/editSession.js");
-    } catch {
-      sessionModule = null;
-    }
+  const isOffered = (): boolean => {
+    const { inlineEditing, richTextEditor } = getCtx();
+    return inlineEditing && richTextEditor !== undefined;
   };
 
   const showsRichText = (wrapper: HTMLElement): boolean =>
@@ -143,6 +171,9 @@ export function createRichTextEditing({
     return false;
   };
 
+  const isWrittenSomewhere = (field: VeEditedField): boolean =>
+    !findAdminWindow(window) || (holdsFormOf?.(veDocumentOf(field)) ?? false);
+
   const fieldOf = (wrapper: HTMLElement): VeEditedField | null => {
     const marker = readMarkerFromAttrs(wrapper);
     const key = marker && fieldKeyOfMarker(marker);
@@ -150,84 +181,34 @@ export function createRichTextEditing({
     if (!tracker.isIdentifiedByThePage(wrapper) || !showsRichText(wrapper)) return null;
     if (isInsideRichText(wrapper)) return null;
     const { locale } = getCtx();
-    return { ...veDocumentOf(marker), key, ...(locale !== undefined && { locale }) };
+    const field = { ...veDocumentOf(marker), key, ...(locale !== undefined && { locale }) };
+    return isWrittenSomewhere(field) ? field : null;
   };
 
-  const askAdmin = (adminWindow: Window, wrapper: HTMLElement, field: VeEditedField) => {
-    if (!holdsFormOf?.(veDocumentOf(field))) return;
-    const message: VeRichTextStateRequestMessage = {
-      ...field,
-      type: VE_RICH_TEXT_STATE_REQUEST_TYPE,
-    };
-    askedOfAdmin.set(addressOf(field), wrapper);
-    adminWindow.postMessage(message, adminOriginOf(getCtx().adminOrigin));
+  const isBeingAsked = (address: string): boolean => {
+    const asked = askedAt.get(address);
+    return asked !== undefined && Date.now() - asked < RICH_TEXT_STATE_TIME_LIMIT_MS;
   };
 
-  const fetchState = async (field: VeEditedField): Promise<VeEditorState | null> => {
-    try {
-      const response = await window.fetch(`${getCtx().payloadApi}${VE_RICH_TEXT_VALUE_PATH}`, {
-        body: JSON.stringify(field),
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
-      return await stateOfAnswer(response);
-    } catch {
-      return null;
-    }
+  const stopWaiting = (): WaitingClick | null => {
+    const waited = waitingClick;
+    waitingClick = null;
+    if (waited) clearTimeout(waited.timer);
+    return waited;
   };
 
-  const askEndpoint = async (wrapper: HTMLElement, field: VeEditedField) => {
-    if (askedOfEndpoint.has(wrapper)) return;
-    askedOfEndpoint.add(wrapper);
-    const state = await fetchState(field);
-    askedOfEndpoint.delete(wrapper);
-    if (state && !isDisposed) held.set(wrapper, { field, state });
+  const openFieldInstead = () => {
+    stopWaiting()?.openField();
   };
 
-  const ask = (wrapper: HTMLElement, field: VeEditedField) => {
-    held.delete(wrapper);
-    void loadSessionModule();
-    const adminWindow = findAdminWindow(window);
-    if (adminWindow) askAdmin(adminWindow, wrapper, field);
-    else void askEndpoint(wrapper, field);
+  const forget = (address: string) => {
+    held.delete(address);
+    askedAt.delete(address);
   };
 
-  const askForEnteredRichText = (event: MouseEvent) => {
-    if (!getCtx().inlineEditing || !(event.target instanceof Element)) return;
-    for (
-      let wrapper = wrapperAround(event.target);
-      wrapper && isEntered(wrapper, event);
-      wrapper = wrapperAround(wrapper.parentElement)
-    ) {
-      const field = editing?.wrapper === wrapper ? null : fieldOf(wrapper);
-      if (field) ask(wrapper, field);
-    }
-  };
-
-  const takeAsked = (data: unknown): HTMLElement | null => {
-    const field = readEditedField(data);
-    const wrapper = field && askedOfAdmin.get(addressOf(field));
-    if (!field || !wrapper) return null;
-    askedOfAdmin.delete(addressOf(field));
-    return wrapper;
-  };
-
-  const holdStateOfForm = (data: unknown) => {
-    const answer = readRichTextEdit(data);
-    const wrapper = takeAsked(data);
-    if (!answer || !wrapper) return;
-    const { state, ...field } = answer;
-    held.set(wrapper, { field, state });
-  };
-
-  const hearAdmin = (event: MessageEvent) => {
-    const { adminOrigin } = getCtx();
-    if (!isMessageFrom(event, adminOriginOf(adminOrigin), findAdminWindow(window))) return;
-    const { data } = event;
-    if (!isPlainObject(data)) return;
-    if (data.type === VE_RICH_TEXT_STATE_TYPE) holdStateOfForm(data);
-    if (data.type === VE_FIELD_EDIT_REFUSED_TYPE) takeAsked(data);
+  const refuse = (address: string) => {
+    forget(address);
+    if (waitingClick?.address === address) openFieldInstead();
   };
 
   const dropReadOnlyTwin = (wrapper: HTMLElement) => {
@@ -244,11 +225,11 @@ export function createRichTextEditing({
     previous?.stopWatching();
     previous?.twin.remove();
     const shownAgain = new MutationObserver(() => {
-      if (editing?.wrapper !== wrapper && !isUnsaved(ended.field)) dropReadOnlyTwin(wrapper);
+      if (editing?.wrapper !== wrapper && !isUnsaved(ended.held.field)) dropReadOnlyTwin(wrapper);
     });
     shownAgain.observe(wrapper, WRAPPER_CONTENT);
     readOnlyTwins.set(wrapper, {
-      held: { field: ended.field, state: ended.latest },
+      held: { ...ended.held, state: ended.latest },
       showWrapper: previous?.showWrapper ?? ended.showAgain,
       stopWatching: () => shownAgain.disconnect(),
       twin,
@@ -259,16 +240,19 @@ export function createRichTextEditing({
     edit.latest = state;
     edit.wasSent = true;
     edit.isWrapperRenderedAgain = false;
-    send({ ...edit.field, state });
+    send({ ...edit.held.field, state });
   };
 
   const end = (keepsWhatWasTyped: boolean) => {
     const ended = editing;
     if (!ended) return;
     editing = null;
+    forget(addressOf(ended.held.field));
+    const isOnThePage = ended.twin.isConnected && ended.wrapper.isConnected;
     const isShownByThePage = !ended.wasSent || ended.isWrapperRenderedAgain;
-    const keepsTwin = keepsWhatWasTyped && !isShownByThePage && !findAdminWindow(window);
-    const copy = keepsTwin && ended.twin.isConnected ? readOnlyCopyOf(ended.twin) : null;
+    const keepsTwin =
+      keepsWhatWasTyped && isOnThePage && !isShownByThePage && !findAdminWindow(window);
+    const copy = keepsTwin ? readOnlyCopyOf(ended.twin) : null;
     ended.stopWatching();
     ended.session.end();
     if (copy) {
@@ -285,52 +269,62 @@ export function createRichTextEditing({
   const commit = () => end(true);
 
   const cancel = () => {
-    if (editing?.wasSent) send({ ...editing.field, state: editing.initial });
+    if (editing?.wasSent) send({ ...editing.held.field, state: editing.held.state });
     end(false);
+  };
+
+  const startSession = (twin: HTMLElement, { formats, state }: Held, point: Point) => {
+    try {
+      return (
+        editor?.startEditSession({
+          formats,
+          onCancel: cancel,
+          onChange: (changed) => {
+            if (editing?.twin === twin) followTyping(editing, changed);
+          },
+          onCommit: commit,
+          point,
+          state,
+          twin,
+        }) ?? null
+      );
+    } catch {
+      return null;
+    }
   };
 
   const begin = (
     wrapper: HTMLElement,
-    { field, state }: Held,
+    ready: Held,
     point: Point,
     previous: ReadOnlyTwin | null
   ): boolean => {
     const marker = readMarkerFromAttrs(wrapper);
-    if (!sessionModule || !marker) return false;
+    if (!marker) return false;
     endOtherEdits();
     commit();
-    held.delete(wrapper);
+    forget(addressOf(ready.field));
 
     const shown = previous?.twin ?? wrapper;
     const twin = twinOf(wrapper);
     shown.after(twin);
     const showAgain = hide(shown);
-    const session = sessionModule.startEditSession({
-      onCancel: cancel,
-      onChange: (changed) => {
-        if (editing?.twin === twin) followTyping(editing, changed);
-      },
-      onCommit: commit,
-      point,
-      state,
-      twin,
-    });
+    const session = startSession(twin, ready, point);
     if (!session) {
       twin.remove();
       showAgain();
       return false;
     }
     const renderedAgain = new MutationObserver(() => {
-      if (editing?.twin === twin && editing.wasSent && !isUnsaved(field)) {
+      if (editing?.twin === twin && editing.wasSent && !isUnsaved(ready.field)) {
         editing.isWrapperRenderedAgain = true;
       }
     });
     renderedAgain.observe(wrapper, WRAPPER_CONTENT);
     editing = {
-      field,
-      initial: state,
+      held: ready,
       isWrapperRenderedAgain: false,
-      latest: state,
+      latest: ready.state,
       previous,
       session,
       showAgain,
@@ -343,10 +337,121 @@ export function createRichTextEditing({
     return true;
   };
 
+  const beginWaitingEdit = () => {
+    const ready = waitingClick && held.get(waitingClick.address);
+    if (!waitingClick || !ready || !editor) return;
+    const { openField, point, wrapper } = waitingClick;
+    stopWaiting();
+    if (!wrapper.isConnected || !begin(wrapper, ready, point, null)) openField();
+  };
+
+  const takeLoadedEditor = async (load: RichTextEditorLoader) => {
+    try {
+      editor = await load();
+      beginWaitingEdit();
+    } catch {
+      editorLoad = null;
+      openFieldInstead();
+    }
+  };
+
+  const loadEditor = () => {
+    const { richTextEditor } = getCtx();
+    if (!editor && !editorLoad && richTextEditor) editorLoad = takeLoadedEditor(richTextEditor);
+  };
+
+  const hold = (address: string, answer: Held | null) => {
+    if (isDisposed) return;
+    if (!answer) {
+      refuse(address);
+      return;
+    }
+    askedAt.delete(address);
+    held.set(address, answer);
+    beginWaitingEdit();
+  };
+
+  const askAdmin = (adminWindow: Window, field: VeEditedField) => {
+    const message: VeRichTextStateRequestMessage = {
+      ...field,
+      type: VE_RICH_TEXT_STATE_REQUEST_TYPE,
+    };
+    adminWindow.postMessage(message, adminOriginOf(getCtx().adminOrigin));
+  };
+
+  const askEndpoint = async (field: VeEditedField) => {
+    try {
+      const response = await window.fetch(`${getCtx().payloadApi}${VE_RICH_TEXT_VALUE_PATH}`, {
+        body: JSON.stringify(field),
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      const answer: unknown = response.ok ? await response.json() : null;
+      hold(addressOf(field), heldOf(field, answer));
+    } catch {
+      hold(addressOf(field), null);
+    }
+  };
+
+  const ask = (field: VeEditedField) => {
+    askedAt.set(addressOf(field), Date.now());
+    loadEditor();
+    const adminWindow = findAdminWindow(window);
+    if (adminWindow) askAdmin(adminWindow, field);
+    else void askEndpoint(field);
+  };
+
+  const askUnlessHeld = (field: VeEditedField) => {
+    const address = addressOf(field);
+    if (!held.has(address) && !isBeingAsked(address)) ask(field);
+  };
+
+  const forgetDocument = (document: VeDocument | null) => {
+    for (const [address, { field }] of held) {
+      if (!document || documentAddressOf(field) === documentAddressOf(document)) forget(address);
+    }
+    if (waitingClick) askUnlessHeld(waitingClick.field);
+  };
+
+  const isCheckedLately = (wrapper: HTMLElement): boolean => {
+    const checked = checkedAt.get(wrapper);
+    return checked !== undefined && Date.now() - checked < RICH_TEXT_CHECK_PAUSE_MS;
+  };
+
+  const askForRichTextUnderThePointer = (event: MouseEvent) => {
+    if (!isOffered() || !(event.target instanceof Element)) return;
+    for (
+      let wrapper = wrapperAround(event.target);
+      wrapper;
+      wrapper = wrapperAround(wrapper.parentElement)
+    ) {
+      if (editing?.wrapper === wrapper || isCheckedLately(wrapper)) continue;
+      checkedAt.set(wrapper, Date.now());
+      const field = fieldOf(wrapper);
+      if (field) askUnlessHeld(field);
+    }
+  };
+
+  const hearAdmin = (event: MessageEvent) => {
+    const { adminOrigin } = getCtx();
+    if (!isMessageFrom(event, adminOriginOf(adminOrigin), findAdminWindow(window))) return;
+    const { data } = event;
+    if (!isPlainObject(data)) return;
+    const field = readEditedField(data);
+    if (data.type === VE_RICH_TEXT_STATE_TYPE && field) {
+      hold(addressOf(field), readRichTextEdit(data) && heldOf(field, data));
+    } else if (data.type === VE_RICH_TEXT_STATE_REFUSED_TYPE && field) {
+      refuse(addressOf(field));
+    } else if (NEWS_OF_A_DOCUMENT.has(data.type)) {
+      forgetDocument(isVeDocument(data) ? veDocumentOf(data) : null);
+    }
+  };
+
   const editAgain = (wrapper: HTMLElement, event: MouseEvent): boolean => {
     const readOnly = readOnlyTwins.get(wrapper);
-    if (!readOnly || !getCtx().inlineEditing || !isPlainPrimaryClick(event)) return false;
-    return begin(wrapper, readOnly.held, { x: event.clientX, y: event.clientY }, readOnly);
+    if (!readOnly || !isOffered() || !isPlainPrimaryClick(event)) return false;
+    return begin(wrapper, readOnly.held, pointOf(event), readOnly);
   };
 
   const readOnlyWrapperAt = (target: EventTarget | null): HTMLElement | null => {
@@ -355,6 +460,24 @@ export function createRichTextEditing({
       if (twin.contains(target)) return wrapper;
     }
     return null;
+  };
+
+  const waitForState = (
+    wrapper: HTMLElement,
+    field: VeEditedField,
+    event: MouseEvent,
+    openField: () => void
+  ) => {
+    waitingClick = {
+      address: addressOf(field),
+      field,
+      openField,
+      point: pointOf(event),
+      timer: setTimeout(openFieldInstead, RICH_TEXT_STATE_TIME_LIMIT_MS),
+      wrapper,
+    };
+    askUnlessHeld(field);
+    loadEditor();
   };
 
   const stopTracking = tracker.subscribe({
@@ -375,7 +498,7 @@ export function createRichTextEditing({
     event.stopPropagation();
   };
 
-  document.addEventListener(POINTER_ENTERED, askForEnteredRichText);
+  for (const name of POINTER_EVENTS) document.addEventListener(name, askForRichTextUnderThePointer);
   document.addEventListener("click", editClickedTwinAgain);
   window.addEventListener("message", hearAdmin);
 
@@ -383,23 +506,30 @@ export function createRichTextEditing({
     commit,
     dispose() {
       commit();
+      stopWaiting();
       isDisposed = true;
       for (const wrapper of [...readOnlyTwins.keys()]) dropReadOnlyTwin(wrapper);
-      document.removeEventListener(POINTER_ENTERED, askForEnteredRichText);
+      for (const name of POINTER_EVENTS) {
+        document.removeEventListener(name, askForRichTextUnderThePointer);
+      }
       document.removeEventListener("click", editClickedTwinAgain);
       window.removeEventListener("message", hearAdmin);
       stopTracking();
     },
-    editInPlace(target, event) {
+    editInPlace(target, event, openField) {
       if (editing?.twin.contains(event.target as Node | null)) return true;
       const editedBefore = readOnlyWrapperAt(event.target);
       if (editedBefore) return editAgain(editedBefore, event);
-      const ready = held.get(target);
-      if (!ready || !fieldOf(target)) return false;
-      return begin(target, ready, { x: event.clientX, y: event.clientY }, null);
+      const field = isOffered() ? fieldOf(target) : null;
+      if (!field) return false;
+      if (waitingClick) return true;
+      const ready = held.get(addressOf(field));
+      if (ready && editor) return begin(target, ready, pointOf(event), null);
+      waitForState(target, field, event, openField);
+      return true;
     },
     endIfRemoved() {
-      if (editing && !editing.twin.isConnected) commit();
+      if (editing && !(editing.twin.isConnected && editing.wrapper.isConnected)) commit();
       for (const wrapper of [...readOnlyTwins.keys()]) {
         if (!wrapper.isConnected) dropReadOnlyTwin(wrapper);
       }

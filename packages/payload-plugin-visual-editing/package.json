@@ -50,6 +50,10 @@
     "./dom": {
       "import": "./dist/dom/index.js",
       "types": "./dist/dom/index.d.ts"
+    },
+    "./rich-text": {
+      "import": "./dist/rich-text/index.js",
+      "types": "./dist/rich-text/index.d.ts"
     }
   },
   "typesVersions": {
@@ -62,6 +66,9 @@
       ],
       "dom": [
         "./dist/dom/index.d.ts"
+      ],
+      "rich-text": [
+        "./dist/rich-text/index.d.ts"
       ]
     }
   },

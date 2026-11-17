@@ -1,5 +1,4 @@
-import type { VeEditorState } from "../../../shared/protocol.js";
-import type { Point } from "../caret.js";
+import type { EditSession, EditSessionOptions } from "../richTextEditor.js";
 import type { EditorSelection } from "./pageEditor.js";
 import type { Toolbar } from "./toolbar.js";
 
@@ -14,19 +13,6 @@ import {
 } from "./pageEditor.js";
 import { DATA_VE_OPAQUE_SELECTED_ATTR } from "./opaqueNode.js";
 import { createToolbar } from "./toolbar.js";
-
-export type EditSessionOptions = {
-  twin: HTMLElement;
-  state: VeEditorState;
-  point: Point | null;
-  onChange(state: VeEditorState): void;
-  onCancel(): void;
-  onCommit(): void;
-};
-
-export interface EditSession {
-  end(): void;
-}
 
 const STYLE_ID = "ve-rich-text-editing-style";
 const EDITOR_ROLE = "textbox";
@@ -61,6 +47,7 @@ const rectOfSelectionIn = (twin: HTMLElement): DOMRect => {
 };
 
 export function startEditSession({
+  formats,
   onCancel,
   onChange,
   onCommit,
@@ -70,11 +57,13 @@ export function startEditSession({
 }: EditSessionOptions): EditSession | null {
   const doc = twin.ownerDocument;
   const win = doc.defaultView ?? window;
+  const editedAttrs = new Map(
+    Object.keys(ATTRS_OF_AN_EDITOR).map((name) => [name, twin.getAttribute(name)])
+  );
   let shownSelection: EditorSelection | null = null;
   let selectionRect = twin.getBoundingClientRect();
-  for (const [name, value] of Object.entries(ATTRS_OF_AN_EDITOR)) twin.setAttribute(name, value);
-
   let toolbar: Toolbar | null = null;
+  for (const [name, value] of Object.entries(ATTRS_OF_AN_EDITOR)) twin.setAttribute(name, value);
 
   const showSelection = (selection: EditorSelection) => {
     shownSelection = selection;
@@ -88,22 +77,28 @@ export function startEditSession({
   };
 
   const editLink = () => {
-    if (!shownSelection || !toolbar) return;
+    if (!shownSelection?.isRange || !toolbar) return;
     selectionRect = rectOfSelectionIn(twin);
     toolbar.show(shownSelection.formats, selectionRect);
     toolbar.editLink();
   };
 
-  const editor = createPageEditor(twin, state, {
+  const editor = createPageEditor(twin, state, formats, {
     onCancel,
     onChange,
     onError: onCancel,
     onLinkKey: editLink,
     onSelection: showSelection,
   });
-  if (!editor) return null;
+  if (!editor) {
+    for (const [name, value] of editedAttrs) {
+      if (value === null) twin.removeAttribute(name);
+      else twin.setAttribute(name, value);
+    }
+    return null;
+  }
 
-  const shownToolbar = createToolbar(doc, {
+  const shownToolbar = createToolbar(doc, formats, {
     onLink: (url) => editor.setLink(url),
     onLinkClosed: () => {
       twin.focus({ preventScroll: true });

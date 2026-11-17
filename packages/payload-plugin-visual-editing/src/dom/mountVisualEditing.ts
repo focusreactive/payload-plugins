@@ -1,4 +1,5 @@
 import type { AccentOptions } from "../client/accent.js";
+import type { RichTextEditorLoader } from "../client/inlineEditing/richTextEditor.js";
 import type { OverlayScope } from "../client/overlayScope.js";
 import type { SessionOptions } from "../client/session.js";
 import type { RenderRichTextHtml, RenderRichTextValue } from "./liveRichTextElements.js";
@@ -22,6 +23,7 @@ export type MountVisualEditingOptions = SessionOptions &
     optimistic?: boolean;
     onSave?: () => void;
     onEdited?: () => void;
+    richTextEditor?: RichTextEditorLoader;
   };
 
 export interface VisualEditing {
@@ -38,6 +40,7 @@ export function mountVisualEditing({
   optimistic = true,
   onSave,
   onEdited,
+  richTextEditor,
   accentColor,
   accentTextColor,
   ...sessionOptions
@@ -67,7 +70,13 @@ export function mountVisualEditing({
       renderValue: renderRichTextValue,
     });
 
-  const overlay = startSessionOverlay(root, () => scope, session, onEdited);
+  const pageEditing = { onEdited, richTextEditor };
+  const overlay = startSessionOverlay(
+    root,
+    () => scope,
+    session,
+    () => pageEditing
+  );
   const toggle = showsToggle
     ? startSessionToggle(document, session, {
         setEditsInPlace: pageStore.setEditsInPlace,

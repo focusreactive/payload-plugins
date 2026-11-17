@@ -24,4 +24,10 @@ export class PageAutoLinkNode extends PageLinkNode {
     );
     return $applyNodeReplacement(node).updateFromJSON(serialized);
   }
+
+  override $copyWithoutChildren(): PageAutoLinkNode {
+    return $applyNodeReplacement(
+      new PageAutoLinkNode(this.getFields(), undefined, this.getLatest().__version)
+    );
+  }
 }

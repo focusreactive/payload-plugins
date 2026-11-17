@@ -22,7 +22,7 @@ export type TargetRegistryCtx = {
   adminBasePath: string;
   locale?: string;
   mode: "always" | "hover";
-  editInPlace?: (target: HTMLElement, event: MouseEvent) => boolean;
+  editInPlace?: (target: HTMLElement, event: MouseEvent, openField: () => void) => boolean;
   actionOf?: ActionOf;
 };
 

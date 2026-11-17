@@ -1,5 +1,13 @@
+import type { VeRichTextFormats } from "../../../shared/richText/formats.js";
 import type { ShownFormats, ToolbarAction } from "./pageEditor.js";
 
+import {
+  BOLD_FORMAT,
+  BULLET_LIST,
+  ITALIC_FORMAT,
+  NUMBERED_LIST,
+  UNDERLINE_FORMAT,
+} from "../../../shared/richText/formats.js";
 import { isAllowedLinkUrl, linkUrlOf } from "../../../shared/richText/linkUrls.js";
 
 export type ToolbarEvents = {
@@ -10,6 +18,7 @@ export type ToolbarEvents = {
 
 export interface Toolbar {
   readonly host: HTMLElement;
+  readonly hasControls: boolean;
   show(formats: ShownFormats, selection: DOMRect): void;
   follow(selection: DOMRect): void;
   hide(): void;
@@ -137,6 +146,17 @@ const TEMPLATE = `
 </div>
 `;
 
+const allowedActionsOf = (formats: VeRichTextFormats): Record<string, boolean> => ({
+  bold: (formats.textFormats & BOLD_FORMAT) !== 0,
+  bullet: formats.lists.includes(BULLET_LIST),
+  h2: formats.headings.includes("h2"),
+  h3: formats.headings.includes("h3"),
+  italic: (formats.textFormats & ITALIC_FORMAT) !== 0,
+  [LINK_ACTION]: formats.hasLinks,
+  number: formats.lists.includes(NUMBERED_LIST),
+  underline: (formats.textFormats & UNDERLINE_FORMAT) !== 0,
+});
+
 const actionSelector = (action: string) => `[${ACTION_ATTR}="${action}"]`;
 
 const isToggle = (action: string | null): action is ToolbarAction =>
@@ -151,7 +171,11 @@ const positionOf = (host: HTMLElement, selection: DOMRect, win: Window) => {
   return { left, top };
 };
 
-export function createToolbar(doc: Document, events: ToolbarEvents): Toolbar {
+export function createToolbar(
+  doc: Document,
+  formats: VeRichTextFormats,
+  events: ToolbarEvents
+): Toolbar {
   const host = doc.createElement("div");
   host.setAttribute(DATA_VE_RICH_TEXT_TOOLBAR_ATTR, "");
   host.style.display = HIDDEN_DISPLAY;
@@ -159,6 +183,11 @@ export function createToolbar(doc: Document, events: ToolbarEvents): Toolbar {
   shadow.innerHTML = TEMPLATE;
   doc.body.append(host);
 
+  const allowedActions = allowedActionsOf(formats);
+  for (const button of shadow.querySelectorAll("button")) {
+    button.hidden = allowedActions[button.getAttribute(ACTION_ATTR) ?? ""] !== true;
+  }
+  const hasControls = Object.values(allowedActions).includes(true);
   const linkInput = shadow.querySelector("input");
   let shownLink: string | null = null;
 
@@ -181,7 +210,7 @@ export function createToolbar(doc: Document, events: ToolbarEvents): Toolbar {
   };
 
   const editLink = () => {
-    if (!linkInput) return;
+    if (!linkInput || !formats.hasLinks) return;
     linkInput.hidden = false;
     linkInput.value = shownLink ?? "";
     linkInput.focus();
@@ -229,6 +258,7 @@ export function createToolbar(doc: Document, events: ToolbarEvents): Toolbar {
     follow(selection) {
       if (host.style.display === SHOWN_DISPLAY) place(selection);
     },
+    hasControls,
     hide() {
       if (linkInput) linkInput.hidden = true;
       host.style.display = HIDDEN_DISPLAY;
@@ -238,10 +268,11 @@ export function createToolbar(doc: Document, events: ToolbarEvents): Toolbar {
     remove() {
       host.remove();
     },
-    show(formats, selection) {
-      for (const action of TOGGLES) press(action, formats[action]);
-      press(LINK_ACTION, formats.link !== null);
-      shownLink = formats.link;
+    show(shown, selection) {
+      if (!hasControls) return;
+      for (const action of TOGGLES) press(action, shown[action]);
+      press(LINK_ACTION, shown.link !== null);
+      shownLink = shown.link;
       host.style.display = SHOWN_DISPLAY;
       place(selection);
     },

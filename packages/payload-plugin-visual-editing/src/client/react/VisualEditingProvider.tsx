@@ -12,6 +12,7 @@ import {
 
 import type { BuildAdminEditUrl } from "../../shared/buildAdminEditUrl.js";
 import type { AccentOptions } from "../accent.js";
+import type { RichTextEditorLoader } from "../inlineEditing/richTextEditor.js";
 import type { RenderSources } from "../instantPreview/unsavedRender/renderSources.js";
 import type { Session } from "../session.js";
 import type { VisualEditingMode } from "../visualEditingMode.js";
@@ -35,9 +36,12 @@ type VisualEditingContextType = Session & {
   setEditsInPlace: (editsInPlace: boolean) => void;
   toggleEnabled: () => void;
   onEdited?: () => void;
+  richTextEditor?: RichTextEditorLoader;
 };
 
 const noop = (): void => undefined;
+
+const NO_EDITOR = "The rich text editor of the page was taken away";
 
 const VisualEditingContext = createContext<VisualEditingContextType>({
   ...sessionOf({}, DETACHED_PAGE),
@@ -62,6 +66,7 @@ export function VisualEditingProvider({
   accentColor,
   accentTextColor,
   onEdited,
+  richTextEditor,
   children,
 }: AccentOptions & {
   available?: boolean;
@@ -73,6 +78,7 @@ export function VisualEditingProvider({
   adminBasePath?: string;
   payloadApi?: string;
   onEdited?: () => void;
+  richTextEditor?: RichTextEditorLoader;
   children: React.ReactNode;
 }) {
   const [pageStore] = useState(createPageStore);
@@ -88,9 +94,12 @@ export function VisualEditingProvider({
   );
 
   const latestOnEdited = useRef(onEdited);
+  const latestRichTextEditor = useRef(richTextEditor);
+  const hasRichTextEditor = richTextEditor !== undefined;
 
   useIsomorphicLayoutEffect(() => {
     latestOnEdited.current = onEdited;
+    latestRichTextEditor.current = richTextEditor;
   });
 
   const value = useMemo((): VisualEditingContextType => {
@@ -110,6 +119,9 @@ export function VisualEditingProvider({
     return {
       ...session,
       onEdited: () => latestOnEdited.current?.(),
+      richTextEditor: hasRichTextEditor
+        ? () => latestRichTextEditor.current?.() ?? Promise.reject(new Error(NO_EDITOR))
+        : undefined,
       setEditsInPlace: pageStore.setEditsInPlace,
       setMode: pageStore.setMode,
       toggleEnabled: () => pageStore.setMode(toggledMode(session.mode)),
@@ -122,6 +134,7 @@ export function VisualEditingProvider({
     framedOnly,
     inlineEditing,
     instantPreview,
+    hasRichTextEditor,
     namedPayloadApi,
     page,
     pageStore,

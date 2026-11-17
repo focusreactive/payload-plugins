@@ -11,14 +11,14 @@ export const $linkAround = (node: LexicalNode): PageLinkNode | null => {
   return null;
 };
 
-const $unwrap = (link: PageLinkNode): void => {
+export const $unwrapLink = (link: PageLinkNode): void => {
   for (const child of link.getChildren()) link.insertBefore(child);
   link.remove();
 };
 
 export const $removeLinks = (selection: RangeSelection): void => {
   const links = new Set(selection.getNodes().flatMap((node) => $linkAround(node) ?? []));
-  for (const link of links) $unwrap(link);
+  for (const link of links) $unwrapLink(link);
 };
 
 export const $setLink = (selection: RangeSelection, url: string): void => {
