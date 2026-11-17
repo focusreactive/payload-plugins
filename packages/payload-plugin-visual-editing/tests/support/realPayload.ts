@@ -110,6 +110,17 @@ const pageFields: Field[] = [
   { name: "eitherFile", type: "upload", relationTo: ["media", "documents"] },
   { name: "brochure", type: "upload", relationTo: "documents" },
   { name: "localizedImage", type: "upload", relationTo: "media", localized: true },
+  { name: "card", type: "group", fields: [{ name: "image", type: "upload", relationTo: "media" }] },
+  {
+    name: "slides",
+    type: "array",
+    fields: [
+      { name: "image", type: "upload", relationTo: "media" },
+      { name: "files", type: "upload", relationTo: "media", hasMany: true },
+      { name: "eitherFile", type: "upload", relationTo: ["media", "documents"] },
+      { name: "author", type: "relationship", relationTo: "authors" },
+    ],
+  },
   { name: "hiddenImage", type: "upload", relationTo: "media", hidden: true },
   {
     filterOptions: { alt: { not_equals: "Forbidden" } },
