@@ -1,10 +1,10 @@
 import type { Payload } from "payload";
 
-import { vercelStegaDecodeAll, vercelStegaSplit } from "@vercel/stega";
+import { vercelStegaSplit } from "@vercel/stega";
 
 import { textLeavesOf } from "../../src/shared/richText/textLeaves";
 
-import { valueAt } from "./markedData";
+import { markersIn, valueAt } from "./markedData";
 import { richText } from "./realPayload";
 
 const FIRST_TEXT_NODE = "root.children.0.children.0.text";
@@ -113,7 +113,7 @@ export const seedPages = async (payload: Payload): Promise<Pages> => {
 export const nodeMarkersOf = (richTextValue: unknown) =>
   textLeavesOf(richTextValue).map(({ address, text }) => ({
     address,
-    markers: vercelStegaDecodeAll(text) ?? [],
+    markers: markersIn(text),
     text: vercelStegaSplit(text).cleaned,
   }));
 

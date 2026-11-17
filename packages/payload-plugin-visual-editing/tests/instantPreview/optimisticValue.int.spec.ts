@@ -1,4 +1,3 @@
-import { vercelStegaDecode } from "@vercel/stega";
 import { describe, expect, it } from "vitest";
 
 import type { EditorNode } from "../../src/shared/richText/editorNodes";
@@ -9,7 +8,7 @@ import { shapeOf } from "../../src/shared/richText/shapeOf";
 import { META_KEY } from "../../src/shared/shared";
 import { fieldAddressOf } from "../../src/shared/veDocument";
 
-import { valueAt } from "../support/markedData";
+import { markerIn, valueAt } from "../support/markedData";
 import { editorState, paragraph, textNode } from "../support/editorState";
 
 const PAGE = { collectionSlug: "pages", docId: "1", kind: "collection" } as const;
@@ -56,8 +55,7 @@ const externalLink = (fields: object = {}) => ({
 
 const block = (fields: object) => ({ fields, format: "", type: "block", version: 2 });
 
-const markerAt = (value: unknown, path: string) =>
-  vercelStegaDecode(valueAt(value, path) as string);
+const markerAt = (value: unknown, path: string) => markerIn(valueAt(value, path) as string);
 
 describe("whether a rich text value refers to data outside its editor state", () => {
   it.each([

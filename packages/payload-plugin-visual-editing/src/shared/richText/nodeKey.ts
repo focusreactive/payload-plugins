@@ -14,13 +14,17 @@ export const fieldKeyOfRichTextNode = (key: string): string | null =>
 export const richTextNodeKeyOf = ({ address, fieldKey, shape }: RichTextNodeAddress): string =>
   [fieldKey, shape, address].join(RICH_TEXT_NODE_SEPARATOR);
 
-export const toRichTextNodeMarker = (address: string, shape: string): RichTextNodeMarker => ({
-  node: address,
-  shape,
-});
+export const toRichTextNodeMarker = (address: string, shape: string): string =>
+  [shape, address].join(RICH_TEXT_NODE_SEPARATOR);
 
-export const fromRichTextNodeMarker = (decoded: unknown): RichTextNodeMarker | null => {
-  if (!isPlainObject(decoded)) return null;
-  const { node, shape } = decoded;
+const nodeMarkerOfText = (payload: string): RichTextNodeMarker | null => {
+  const [shape, node, ...rest] = payload.split(RICH_TEXT_NODE_SEPARATOR);
+  return shape && node && rest.length === 0 ? { node, shape } : null;
+};
+
+export const fromRichTextNodeMarker = (payload: unknown): RichTextNodeMarker | null => {
+  if (typeof payload === "string") return nodeMarkerOfText(payload);
+  if (!isPlainObject(payload)) return null;
+  const { node, shape } = payload;
   return typeof node === "string" && typeof shape === "string" ? { node, shape } : null;
 };

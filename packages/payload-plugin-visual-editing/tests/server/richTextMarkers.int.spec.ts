@@ -1,4 +1,4 @@
-import { vercelStegaDecode, vercelStegaDecodeAll, vercelStegaSplit } from "@vercel/stega";
+import { vercelStegaSplit } from "@vercel/stega";
 import { describe, expect, it } from "vitest";
 
 import type { ValueExcludePredicate } from "../../src/excludeValues";
@@ -13,7 +13,7 @@ import { textLeavesOf } from "../../src/shared/richText/textLeaves";
 import { META_KEY } from "../../src/shared/shared";
 import { fieldAddressOf } from "../../src/shared/veDocument";
 
-import { everyMarkedTextIn } from "../support/markedData";
+import { everyMarkedTextIn, markerIn, markersIn } from "../support/markedData";
 import { paragraphsOf, textNode } from "../support/editorState";
 
 const inPage = (docId: string) => ({ collectionSlug: "pages", docId, kind: "collection" }) as const;
@@ -24,6 +24,8 @@ const state = () => paragraphsOf(["Hello ", "world"], [""]);
 const leafText = (value: ReturnType<typeof state>, paragraph: number, leaf: number) =>
   value.root.children[paragraph]?.children[leaf]?.text ?? "";
 
+const shapeIn = (text: string) => (markerIn(text) as { shape?: string }).shape;
+
 describe("markTextLeaves", () => {
   it("stamps each text leaf with its address and the shape of the tree", () => {
     const value = state();
@@ -32,8 +34,8 @@ describe("markTextLeaves", () => {
     markTextLeaves(value, BODY_OF_A);
 
     expect(vercelStegaSplit(leafText(value, 0, 1)).cleaned).toBe("world");
-    expect(vercelStegaDecode(leafText(value, 0, 0))).toEqual({ node: "0.0", shape });
-    expect(vercelStegaDecode(leafText(value, 0, 1))).toEqual({ node: "0.1", shape });
+    expect(markerIn(leafText(value, 0, 0))).toEqual({ node: "0.0", shape });
+    expect(markerIn(leafText(value, 0, 1))).toEqual({ node: "0.1", shape });
   });
 
   it("leaves empty text without a marker", () => {
@@ -57,7 +59,7 @@ describe("markTextLeaves", () => {
     markTextLeaves(value, BODY_OF_A);
 
     expect(value.root.children[0]?.children[1]).toEqual(mention);
-    expect(vercelStegaDecode(value.root.children[0]?.children[0]?.text ?? "")).toMatchObject({
+    expect(markerIn(value.root.children[0]?.children[0]?.text ?? "")).toMatchObject({
       node: "0.0",
     });
   });
@@ -68,7 +70,7 @@ describe("markTextLeaves", () => {
 
     markTextLeaves(value, BODY_OF_A);
 
-    expect(vercelStegaDecode<{ shape: string }>(leafText(value, 0, 0))?.shape).toBe(shape);
+    expect(shapeIn(leafText(value, 0, 0))).toBe(shape);
   });
 
   it("leaves a value that is not an editor state as it is", () => {
@@ -164,7 +166,7 @@ describe("the rich text of a draft read with instant preview", () => {
 
     const page = readAsDraft({ body: richText(["Hello ", "world"], ["Second"]), id: "A" });
 
-    expect(textLeavesOf(page.body).map(({ text: leaf }) => vercelStegaDecodeAll(leaf))).toEqual([
+    expect(textLeavesOf(page.body).map(({ text: leaf }) => markersIn(leaf))).toEqual([
       [{ node: "0.0", shape }],
       [{ node: "0.1", shape }],
       [{ node: "1.0", shape }],
@@ -184,9 +186,7 @@ describe("the rich text of a draft read with instant preview", () => {
       path: "layout.0.body",
       terminal: true,
     });
-    expect(
-      textLeavesOf(page.layout[0]?.body).map(({ text: leaf }) => vercelStegaDecode(leaf))
-    ).toEqual([
+    expect(textLeavesOf(page.layout[0]?.body).map(({ text: leaf }) => markerIn(leaf))).toEqual([
       {
         node: "0.0",
         shape: shapeOf(richText(["In a block"]), fieldAddressOf(inPage("A"), "layout.row-1.body")),
@@ -241,7 +241,7 @@ describe("the rich text of a draft read with instant preview", () => {
     );
 
     expect(page.title).toBe("terms-of-use");
-    expect(textLeavesOf(page.body).map(({ text: leaf }) => vercelStegaDecode(leaf))).toEqual([
+    expect(textLeavesOf(page.body).map(({ text: leaf }) => markerIn(leaf))).toEqual([
       { node: "0.0", shape },
       { node: "0.1", shape },
       { node: "1.0", shape },
@@ -308,10 +308,7 @@ describe("the rich text of a draft read with instant preview", () => {
       related: linked,
     });
 
-    const shapesOf = (value: unknown) =>
-      textLeavesOf(value).map(
-        ({ text: leaf }) => vercelStegaDecode<{ shape: string }>(leaf)?.shape
-      );
+    const shapesOf = (value: unknown) => textLeavesOf(value).map(({ text: leaf }) => shapeIn(leaf));
     expect(shapesOf(page.body)).toEqual([shapeOf(sameTree(), BODY_OF_A)]);
     expect(shapesOf(page.related.body)).toEqual([
       shapeOf(sameTree(), fieldAddressOf(inPage("B"), "body")),
