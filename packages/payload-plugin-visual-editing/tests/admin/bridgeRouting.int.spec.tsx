@@ -205,7 +205,6 @@ describe("VisualEditingBridgeProvider — payload:open-field", () => {
     await act(async () => {});
     stop();
     expect(seen).toHaveLength(1);
-    // the bridge did not expand the row itself
     expect(clicks).not.toHaveBeenCalled();
   });
 

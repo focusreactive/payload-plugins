@@ -77,14 +77,13 @@ const focusFieldPath = async (
   getFields: EntityFieldsLookup,
   target: FocusTarget = {}
 ): Promise<void> => {
-  // Another admin component (e.g. stacked editing panels) may open the field its own way.
-  const takenOver = announceOpenField({
+  const openedByAnotherComponent = announceOpenField({
     path,
     ...(kind === "collection" ? { collectionSlug: slug } : { globalSlug: slug }),
     ...(target.docId === undefined ? {} : { docId: target.docId }),
     ...(target.locale === undefined ? {} : { locale: target.locale }),
   });
-  if (takenOver) return;
+  if (openedByAnotherComponent) return;
   const fields = getFields(kind, slug);
   const chainResult = fields !== null ? resolveContainerChain(path, fields) : null;
   const resolved = chainResult ?? fallbackResolution(path);
