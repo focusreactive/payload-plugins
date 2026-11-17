@@ -5,6 +5,11 @@ import { anyone, or, user, superAdmin } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
+import {
+  LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
+  createLivePreviewVersions,
+} from "@/lib/config/livePreview";
+import { createStandalonePreview } from "@/lib/utils/standalonePreview";
 
 import { revalidateResourcesUsingHeader } from "./hooks/revalidateResourcesUsingHeader";
 
@@ -16,9 +21,13 @@ export const Header: CollectionConfig<"header"> = {
     update: or(superAdmin, user),
   },
   admin: {
+    components: {
+      edit: { beforeDocumentControls: LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS },
+    },
     defaultColumns: ["name", "logo"],
     group: "Global Components",
     useAsTitle: "name",
+    ...createStandalonePreview("header", "header"),
   },
   fields: [
     {
@@ -216,8 +225,5 @@ export const Header: CollectionConfig<"header"> = {
     },
   },
   slug: "header",
-  versions: {
-    drafts: true,
-    maxPerDoc: 50,
-  },
+  versions: createLivePreviewVersions(),
 };
