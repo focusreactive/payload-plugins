@@ -155,6 +155,8 @@ Open a document in the admin, open **Live Preview** and set the toggle to **Alwa
 
 To leave draft mode in a normal browser tab, open `/next/exit-preview`.
 
+On a draft page where the overlay does not run (the toggle is **Off** without instant preview, or `framedOnly` outside the Live Preview), the markers are still removed from the text, every attribute, the title and the meta tags of `<head>`, also from content rendered later. There are no outlines and no instant preview there.
+
 ## What gets a marker
 
 - Fields of type `text`, `textarea` and `email`, at any depth: in groups, tabs, rows, collapsibles, array rows and blocks (declared inline or through `blockReferences`).
@@ -167,7 +169,7 @@ To leave draft mode in a normal browser tab, open `/next/exit-preview`.
 
 A populated document (a relationship or an upload read with `depth ≥ 1`) is marked as itself: its text carries its own collection, id and paths, wherever it appears. A populated document of a collection listed in `skipCollections` gets no markers.
 
-If you render a marked value into an attribute, the overlay removes the marker from `alt`, `title`, `aria-label` and `placeholder`. In any other attribute (an anchor `id`, a `data-*` attribute) it stays, so exclude such a field with `excludeFieldNames`.
+If you render a marked value into an attribute, the overlay removes the marker from it: `alt`, `aria-label`, an `href`, a `style`, an `id`, a `data-*` attribute. It also cleans `document.title`. An image whose `alt` carries the marker of a field becomes the edit target of that field, usually the `alt` of the media document, unless the image already names its field with `withVisualEditingPath`. The overlay cleans the page in the browser, so a value the template transforms before the browser sees it (a slug, a hash, a number it parses) keeps the invisible characters inside the transform: clean it first with `stripMarkers` or keep the field away with `excludeFieldNames`.
 
 ## Rich text, uploads and relationships
 
@@ -480,8 +482,9 @@ mountVisualEditing({
 | Option | Default | Purpose |
 |---|---|---|
 | `root` | `document.body` | Element the overlay scans for markers. |
+| `available` | `true` | `false` leaves the page alone, for a page read without drafts. |
 | `adminOrigin` | the page's origin | Origin of the admin window. Required when the admin runs on another origin. |
-| `framedOnly` | `false` | Only run inside the Live Preview: its iframe or the window it opens. |
+| `framedOnly` | `false` | Only run inside the Live Preview: its iframe or the window it opens. Elsewhere it only removes the markers from `root` and `<head>`. |
 | `instantPreview` | `false` | Text typed in the admin appears on the page. Needs the plugin option too. |
 | `locale` | none | Locale of the page, see [Requirements](#requirements). |
 | `toggle` | `true` | Shows the Off / Hover / Always toggle. |
@@ -496,6 +499,8 @@ It returns `{ destroy }`.
 ### 3. Mark rich text, uploads and relationships
 
 `withVisualEditingPath(value)` returns the attributes as an object. Print them on the element in your template. For a rich text field that should update its structure before the save, print `richTextAttributes(value)` instead: it adds `data-ve-live-rich-text`, the identity and shape of the saved value. Both functions run in Node, at build time.
+
+A marked text carries invisible characters. Where a template turns text into an `id`, an anchor, a CSS selector or a value it compares, clean it first with `stripMarkers(value)`, also exported from `./dom`: `{{ service.title | stripMarkers | slugify }}`.
 
 ```njk
 <div {% for name, value in richTextAttributes(page.content) %}{{ name }}="{{ value }}" {% endfor %}>
@@ -588,7 +593,7 @@ A `beforeChange` hook removes intact markers from every write. It cannot recogni
 | Prop | Default | Purpose |
 |---|---|---|
 | `available` | `false` | Turns the overlay on. Pass the draft mode flag. |
-| `framedOnly` | `false` | Only run inside the Live Preview: its iframe or the window it opens. |
+| `framedOnly` | `false` | Only run inside the Live Preview: its iframe or the window it opens. Elsewhere a draft page only loses its markers. |
 | `adminBasePath` | `/admin` | Must match the plugin option. |
 | `adminOrigin` | the page's origin | Origin of the admin window. |
 | `instantPreview` | `false` | See [Instant preview](#instant-preview). |
@@ -608,7 +613,9 @@ Regenerate the import map. The plugin adds `PreviewPageBridge` to every collecti
 - **The page no longer posts a click to any origin.** Without `adminOrigin` it posts to its own origin, as instant preview already did.
 - **Draft reads over REST and GraphQL can be marked.** Only with the `x-visual-editing` header and a signed-in user, see [Pages without React](#pages-without-react). Reads that do not send the header are unchanged.
 - **With `instantPreview` on, the plugin adds two endpoints** under `/api/visual-editing/`, see [How the page is allowed to read the unsaved value](#how-the-page-is-allowed-to-read-the-unsaved-value).
-- **`react` and `react-dom` are optional peers.** The admin of Payload still needs them; a site that imports only `./dom` does not.
+- **A draft page without the overlay loses its markers.** With the toggle on **Off** and instant preview off, or with `framedOnly` in a normal tab, the page used to keep every marker, and a script that splits text into characters rendered them as empty boxes. `VisualEditing.Overlay` and `mountVisualEditing` now remove them from the text, every attribute, the title and `<head>`, and put them back when they unmount. A script that reads marked text from the page after that sees clean text.
+- **The meta tags of `<head>` lose their markers while the overlay runs**, like the title already did.
+- **All peers are optional, and `react` and `react-dom` accept `^18.2.0` again.** The Payload app still needs `payload`, `@payloadcms/ui` and React 19. A site that installs the package only for `./dom` gets none of them, and a site that keeps React 18 for something else can install it.
 
 ## Upgrading from 1.1.1
 

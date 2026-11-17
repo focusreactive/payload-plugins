@@ -1,9 +1,11 @@
 import type { Overlay } from "../client/createOverlay.js";
 import type { OverlayScope } from "../client/overlayScope.js";
 import type { SessionOptions } from "../client/session.js";
+import type { MarkerCleaner } from "../client/overlay/markerCleaner.js";
 import type { Toggle } from "../client/toggle.js";
 import type { RenderRichTextHtml } from "./liveRichTextElements.js";
 
+import { cleanPageAround } from "../client/overlay/markerCleaner.js";
 import { savedShapesWithin, startOverlay } from "../client/overlayScope.js";
 import { listenToPreviewGrants } from "../client/previewGrant.js";
 import { listenToSaves } from "../client/saveEvents.js";
@@ -42,7 +44,7 @@ export function mountVisualEditing({
   const session = () => sessionOf({ available: true, ...sessionOptions }, pageStore.read());
   const adminOrigin = () => session().adminOrigin;
   const scope: OverlayScope = { locale, savedShapes: savedShapesWithin(null) };
-  const { available, instantPreview } = session();
+  const { available, instantPreview, isDraft } = session();
   const isInstantPreviewOn = available && instantPreview;
 
   const grants = isInstantPreviewOn && payloadApi ? listenToPreviewGrants(adminOrigin) : null;
@@ -59,11 +61,14 @@ export function mountVisualEditing({
   const toggle: Toggle | null =
     showsToggle && available ? createToggle(document, pageStore.setMode) : null;
   let overlay: Overlay | null = null;
+  let cleaner: MarkerCleaner | null = null;
   const followSession = () => {
     const { enabled, mode } = session();
     const isActive = enabled || isInstantPreviewOn;
-    if (isActive && !overlay) {
-      overlay = startOverlay(
+    if (isActive) {
+      cleaner?.dispose();
+      cleaner = null;
+      overlay ??= startOverlay(
         () => scope,
         root,
         () => {
@@ -77,9 +82,10 @@ export function mountVisualEditing({
           };
         }
       );
-    } else if (!isActive && overlay) {
-      overlay.dispose();
+    } else {
+      overlay?.dispose();
       overlay = null;
+      if (isDraft) cleaner ??= cleanPageAround(root);
     }
     overlay?.applyMode();
     toggle?.show(mode);
@@ -97,6 +103,8 @@ export function mountVisualEditing({
       grants?.stop();
       overlay?.dispose();
       overlay = null;
+      cleaner?.dispose();
+      cleaner = null;
       toggle?.remove();
     },
   };

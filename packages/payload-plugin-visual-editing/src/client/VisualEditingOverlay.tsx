@@ -20,6 +20,7 @@ export function VisualEditingOverlay({
     available,
     enabled,
     instantPreview,
+    isDraft,
     mode,
     buildAdminEditUrl,
     adminOrigin,
@@ -30,7 +31,7 @@ export function VisualEditingOverlay({
   const [savedShapes] = useState(() => savedShapesWithin(outerScope));
   const scope = useMemo((): OverlayScope => ({ locale, savedShapes }), [locale, savedShapes]);
   const isInstantPreviewOn = available && instantPreview;
-  useVisualEditingOverlay(enabled || isInstantPreviewOn, rootRef, scope, {
+  useVisualEditingOverlay(enabled || isInstantPreviewOn, isDraft, rootRef, scope, {
     buildAdminEditUrl,
     adminOrigin,
     adminBasePath,

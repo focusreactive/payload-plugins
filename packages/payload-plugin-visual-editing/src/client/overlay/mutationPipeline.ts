@@ -1,5 +1,6 @@
 import { VE_IDENTITY_ATTRS } from "../../shared/protocol.js";
-import { isOverlayLabel, STEGA_PREFILTER } from "./constants.js";
+import { hasMarker } from "../../shared/stegaText.js";
+import { isOverlayLabel } from "./constants.js";
 
 export type MutationPipelineCallbacks = {
   onRoots(roots: Element[]): void;
@@ -12,11 +13,9 @@ export interface MutationPipeline {
   dispose(): void;
 }
 
-const hasMarkerCharacters = (node: Text) => STEGA_PREFILTER.test(node.data);
-
 const rescanRootOf = (added: Node): Element | null => {
   if (added instanceof Element) return isOverlayLabel(added) ? null : added;
-  if (added instanceof Text && hasMarkerCharacters(added)) return added.parentElement;
+  if (added instanceof Text && hasMarker(added.data)) return added.parentElement;
   return null;
 };
 
@@ -31,7 +30,7 @@ const inDocumentOrder = (a: Element, b: Element) => {
   return 0;
 };
 
-const withoutNestedRoots = (roots: Element[]): Element[] => {
+export const withoutNestedRoots = (roots: Element[]): Element[] => {
   const outermost: Element[] = [];
   for (const root of [...roots].sort(inDocumentOrder)) {
     const lastKept = outermost.at(-1);
@@ -82,7 +81,7 @@ export function createMutationPipeline(
       } else if (mutation.type === "characterData") {
         const textNode = mutation.target;
         if (!(textNode instanceof Text)) continue;
-        if (!hasMarkerCharacters(textNode)) {
+        if (!hasMarker(textNode.data)) {
           callbacks.onPlainTextWritten(textNode);
           continue;
         }

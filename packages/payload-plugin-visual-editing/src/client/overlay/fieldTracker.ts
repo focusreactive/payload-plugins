@@ -7,11 +7,12 @@ import { DATA_VE_LOCALE_ATTR, DATA_VE_PATH_ATTR } from "../../shared/protocol.js
 import { fieldKeyOfMarker } from "../../shared/fieldKey.js";
 import { fromRichTextNodeMarker, richTextNodeKeyOf } from "../../shared/richText/nodeKey.js";
 import { fromStegaPayload } from "../../shared/shared.js";
-import { withoutMarker } from "../../shared/stegaText.js";
+import { hasMarker, withoutMarker } from "../../shared/stegaText.js";
 import { documentAddressOf } from "../../shared/veDocument.js";
-import { STEGA_ATTRS, STEGA_PREFILTER } from "./constants.js";
+import { identityAttrsOf } from "../withVisualEditingPath.js";
 import { readMarkerFromAttrs } from "./markerExtractor.js";
 import { createMutationPipeline } from "./mutationPipeline.js";
+import { markedAttributesIn, visibleTextNodesIn } from "./pageNodes.js";
 
 export type RichTextShape = { fieldKey: string; shape: string };
 
@@ -36,33 +37,10 @@ type TrackedText = {
   match: FieldMatch | null;
 };
 
-const SKIP_TEXT_PARENT_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE"]);
-
 const RICH_TEXT_WRAPPER = `[${DATA_VE_PATH_ATTR}]`;
 
-function* visibleTextNodesIn(root: Element): Generator<Text> {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-    acceptNode: (node) => {
-      const parent = node.parentElement;
-      if (parent && SKIP_TEXT_PARENT_TAGS.has(parent.tagName)) return NodeFilter.FILTER_REJECT;
-      return NodeFilter.FILTER_ACCEPT;
-    },
-  });
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) yield node as Text;
-}
-
-function* markedAttributesIn(root: Element): Generator<[Element, Attr]> {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    const element = node as Element;
-    for (const attr of Array.from(element.attributes)) {
-      if (STEGA_ATTRS.has(attr.name) && STEGA_PREFILTER.test(attr.value)) yield [element, attr];
-    }
-  }
-}
-
 const payloadIn = (text: string): unknown =>
-  STEGA_PREFILTER.test(text) ? vercelStegaDecode(text) : undefined;
+  hasMarker(text) ? vercelStegaDecode(text) : undefined;
 
 const richTextMatchOf = (
   textNode: Text,
@@ -82,13 +60,24 @@ const isSameNodeKey = (known: FieldMatch | null, match: FieldMatch) =>
   known.key === match.key &&
   documentAddressOf(known) === documentAddressOf(match);
 
-const restoreAttrs = (element: Element, originals: ReadonlyMap<string, string>) => {
-  for (const [attr, value] of originals) element.setAttribute(attr, value);
+const IMAGE_DESCRIPTION_ATTR = "alt";
+
+const restoreAttrs = (element: Element, originals: ReadonlyMap<string, string | null>) => {
+  for (const [attr, value] of originals) {
+    if (value === null) element.removeAttribute(attr);
+    else element.setAttribute(attr, value);
+  }
+};
+
+const identityAttrsOfImage = (element: Element, { name, value }: Attr) => {
+  if (name !== IMAGE_DESCRIPTION_ATTR || element.hasAttribute(DATA_VE_PATH_ATTR)) return {};
+  const field = fromStegaPayload(payloadIn(value));
+  return field ? identityAttrsOf(field) : {};
 };
 
 export function createFieldTracker(main: HTMLElement): FieldTracker {
   const texts = new Map<Text, TrackedText>();
-  const attrOriginals = new Map<Element, Map<string, string>>();
+  const attrOriginals = new Map<Element, Map<string, string | null>>();
   const listeners = new Set<FieldListener>();
 
   const release = (matches: readonly FieldMatch[]) => {
@@ -119,12 +108,18 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
     return tracked;
   };
 
-  const recordAttr = (element: Element, { name, value }: Attr) => {
-    const originals = attrOriginals.get(element) ?? new Map<string, string>();
+  const recordAttr = (element: Element, attr: Attr) => {
+    const { name, value } = attr;
+    const originals = attrOriginals.get(element) ?? new Map<string, string | null>();
     if (originals.has(name)) return;
+    const identity = identityAttrsOfImage(element, attr);
     originals.set(name, value);
     attrOriginals.set(element, originals);
     element.setAttribute(name, withoutMarker(value));
+    for (const [identityAttr, identityValue] of Object.entries(identity)) {
+      originals.set(identityAttr, null);
+      element.setAttribute(identityAttr, identityValue);
+    }
   };
 
   const identify = (textNode: Text, released: FieldMatch[], found: FieldMatch[]) => {

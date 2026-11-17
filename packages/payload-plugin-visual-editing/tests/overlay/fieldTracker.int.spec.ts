@@ -184,20 +184,40 @@ describe("createFieldTracker", () => {
     );
   });
 
-  it("strips markers only from the attributes that show text", async () => {
-    const form = document.createElement("form");
-    const input = document.createElement("input");
-    for (const attr of ["placeholder", "aria-label", "data-custom"]) {
-      input.setAttribute(attr, stega("Ask", attr));
-    }
-    input.setAttribute("title", "Plain");
-    form.append(input);
-    main.append(form);
+  it("strips markers from every attribute a value was rendered into", async () => {
+    const link = document.createElement("a");
+    link.setAttribute("href", `tel:${stega("+31 970", "phone")}`);
+    link.setAttribute("id", stega("anchor", "anchor"));
+    link.setAttribute("style", `--percent: ${stega("98", "value")};`);
+    link.setAttribute("data-action", stega("basic", "plan"));
+    link.setAttribute("aria-label", stega("Call us", "label"));
+    main.append(link);
     await flushMutations();
 
     expect(
-      ["placeholder", "aria-label", "title", "data-custom"].map((attr) => input.getAttribute(attr))
-    ).toEqual(["Ask", "Ask", "Plain", stega("Ask", "data-custom")]);
+      ["href", "id", "style", "data-action", "aria-label"].map((attr) => link.getAttribute(attr))
+    ).toEqual(["tel:+31 970", "anchor", "--percent: 98;", "basic", "Call us"]);
+  });
+
+  it("makes an image the edit target of the field its description comes from", async () => {
+    const logo = document.createElement("img");
+    logo.setAttribute("alt", stega("Logo", "logo"));
+    main.append(logo);
+    await flushMutations();
+
+    expect(logo.getAttribute("data-ve-path")).toBe("logo");
+    expect(logo.getAttribute("data-ve-collection")).toBe("page");
+  });
+
+  it("leaves an image that already names its field as it is", async () => {
+    const photo = document.createElement("img");
+    photo.setAttribute("data-ve-path", "gallery");
+    photo.setAttribute("data-ve-collection", "page");
+    photo.setAttribute("alt", stega("Photo", "alt"));
+    main.append(photo);
+    await flushMutations();
+
+    expect(photo.getAttribute("data-ve-path")).toBe("gallery");
   });
 
   describe("when a node leaves the page", () => {

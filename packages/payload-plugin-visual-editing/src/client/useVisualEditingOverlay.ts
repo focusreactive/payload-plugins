@@ -7,11 +7,13 @@ import type { OverlayScope, ScopedOverlayCtx } from "./overlayScope.js";
 
 import { useEffect, useRef } from "react";
 
+import { cleanPageAround } from "./overlay/markerCleaner.js";
 import { startOverlay } from "./overlayScope.js";
 import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect.js";
 
 export function useVisualEditingOverlay(
   active: boolean,
+  isDraft: boolean,
   rootRef: RefObject<HTMLElement | null>,
   scope: OverlayScope,
   ctx: ScopedOverlayCtx
@@ -24,6 +26,14 @@ export function useVisualEditingOverlay(
     ctxRef.current = ctx;
     scopeRef.current = scope;
   });
+
+  useEffect(() => {
+    if (active || !isDraft) return;
+    const root = rootRef.current;
+    if (!root) return;
+    const cleaner = cleanPageAround(root);
+    return () => cleaner.dispose();
+  }, [active, isDraft, rootRef]);
 
   useEffect(() => {
     if (!active) return;

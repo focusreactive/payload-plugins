@@ -37,6 +37,11 @@ const structureOf = (shape: string, text: string | null) => ({
   type: VE_RICH_TEXT_STRUCTURE_TYPE,
 });
 
+const MARKED_TITLE = markedText("Hello", { ...PAGE, path: "title" });
+
+const description = () =>
+  document.head.querySelector('meta[name="description"]')?.getAttribute("content");
+
 const targets = () => document.querySelectorAll(`[${DATA_VE_TARGET_ATTR}]`);
 
 const toggleButton = (label: string) =>
@@ -111,7 +116,7 @@ describe("mountVisualEditing", () => {
     expect(document.querySelector("[data-ve-toggle]")).toBeNull();
   });
 
-  it("does nothing in a standalone tab when it is framed only", async () => {
+  it("shows no outlines and no toggle in a standalone tab when it is framed only", async () => {
     restorePreviewWindow();
     localStorage.setItem(STORAGE_KEY, "always");
 
@@ -120,6 +125,64 @@ describe("mountVisualEditing", () => {
 
     expect(targets()).toHaveLength(0);
     expect(document.querySelector("[data-ve-toggle]")).toBeNull();
+  });
+
+  describe("without an overlay", () => {
+    beforeEach(() => {
+      document.title = MARKED_TITLE;
+      document.head.insertAdjacentHTML(
+        "beforeend",
+        `<meta name="description" content="${MARKED_TITLE}">`
+      );
+      heading.setAttribute("data-text", MARKED_TITLE);
+    });
+
+    it.each([
+      ["in a standalone tab when it is framed only", { framedOnly: true }],
+      ["while the toggle is off and instant preview is not on", {}],
+    ])("cleans the markers of the page %s", async (_name, options) => {
+      restorePreviewWindow();
+
+      mount(options);
+      const added = document.createElement("h2");
+      added.textContent = MARKED_TITLE;
+      main.append(added);
+      await flushMutations();
+
+      expect(heading.textContent).toBe("Hello");
+      expect(heading.getAttribute("data-text")).toBe("Hello");
+      expect(added.textContent).toBe("Hello");
+      expect(document.title).toBe("Hello");
+      expect(description()).toBe("Hello");
+      expect(targets()).toHaveLength(0);
+    });
+
+    it("gives the markers back when it is destroyed", () => {
+      restorePreviewWindow();
+      mount({ framedOnly: true }).destroy();
+      mounted = null;
+
+      expect(heading.textContent).toBe(MARKED_TITLE);
+      expect(document.title).toBe(MARKED_TITLE);
+      expect(description()).toBe(MARKED_TITLE);
+    });
+
+    it("hands the page to the overlay when the toggle turns it on", async () => {
+      mount();
+      toggleButton("Always")?.click();
+      await flushMutations();
+
+      expect(targets()).toHaveLength(1);
+      expect(heading.textContent).toBe("Hello");
+    });
+
+    it("leaves a page read without drafts alone", () => {
+      restorePreviewWindow();
+
+      mount({ available: false });
+
+      expect(heading.textContent).toBe(MARKED_TITLE);
+    });
   });
 
   it("shows text typed in the admin with instant preview", async () => {

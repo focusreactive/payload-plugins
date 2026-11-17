@@ -108,13 +108,13 @@ describe("instant preview and the visual editing toggle", () => {
     expect(heading().hasAttribute(DATA_VE_TARGET_ATTR)).toBe(false);
   });
 
-  it("leaves the page untouched while the toggle is off and instant preview is not enabled", () => {
+  it("only cleans the markers while the toggle is off and instant preview is not enabled", () => {
     renderPreview({});
 
     postInPreview(snapshotWithTypedTitle);
 
     expect(postToAdmin).not.toHaveBeenCalled();
-    expect(heading().textContent).toBe(SAVED_TITLE);
+    expect(heading().textContent).toBe("Hell");
   });
 
   it("keeps the typed text when the toggle is switched on and off again", () => {
@@ -142,13 +142,14 @@ describe("instant preview and the visual editing toggle", () => {
     expect(postToAdmin).not.toHaveBeenCalled();
   });
 
-  it("puts the markers back when the toggle is switched off without instant preview", () => {
+  it("drops the edit targets but keeps the text clean when the toggle is switched off without instant preview", () => {
     localStorage.setItem(STORAGE_KEY, "always");
     renderPreview({});
 
     act(() => setMode("off"));
 
-    expect(heading().textContent).toBe(SAVED_TITLE);
+    expect(heading().textContent).toBe("Hell");
+    expect(heading().hasAttribute(DATA_VE_TARGET_ATTR)).toBe(false);
   });
 
   it("follows the locale the overlay is rendered with later", () => {
