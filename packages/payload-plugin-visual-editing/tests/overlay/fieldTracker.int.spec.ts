@@ -98,6 +98,7 @@ describe("createFieldTracker", () => {
         [
           {
             textNode: heading.firstChild,
+            holder: heading,
             path: "title",
             collectionSlug: "page",
             kind: "collection",
@@ -218,6 +219,46 @@ describe("createFieldTracker", () => {
     await flushMutations();
 
     expect(photo.getAttribute("data-ve-path")).toBe("gallery");
+  });
+
+  describe("when the page renders an attribute again", () => {
+    it("strips the markers of the new value", async () => {
+      await flushMutations();
+
+      image.setAttribute("alt", stega("New logo", "logo"));
+      await flushMutations();
+
+      expect(image.getAttribute("alt")).toBe("New logo");
+    });
+
+    it("puts the new value back when disposed, not the one it found first", async () => {
+      image.setAttribute("alt", stega("New logo", "logo"));
+      await flushMutations();
+
+      tracker.dispose();
+
+      expect(image.getAttribute("alt")).toBe(stega("New logo", "logo"));
+    });
+
+    it("makes the image the edit target of the field its new description comes from", async () => {
+      image.setAttribute("alt", stega("Mark", "brand.mark"));
+      await flushMutations();
+
+      expect(image.getAttribute("data-ve-path")).toBe("brand.mark");
+
+      tracker.dispose();
+
+      expect(image.hasAttribute("data-ve-path")).toBe(false);
+    });
+
+    it("leaves a plain value the page wrote over a cleaned one when disposed", async () => {
+      image.setAttribute("alt", "Written by the page");
+      await flushMutations();
+
+      tracker.dispose();
+
+      expect(image.getAttribute("alt")).toBe("Written by the page");
+    });
   });
 
   describe("when a node leaves the page", () => {

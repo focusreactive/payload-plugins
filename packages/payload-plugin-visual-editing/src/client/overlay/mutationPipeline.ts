@@ -7,6 +7,8 @@ export type MutationPipelineCallbacks = {
   onTextReset(node: Text): void;
   onPlainTextWritten(node: Text): void;
   onNodesRemoved(): void;
+  isOwnAttributeWrite(element: Element): boolean;
+  onMarkedAttribute(element: Element, attr: Attr): void;
 };
 
 export interface MutationPipeline {
@@ -89,13 +91,21 @@ export function createMutationPipeline(
         const parent = textNode.parentElement;
         if (parent) pending.add(parent);
       } else if (mutation.type === "attributes" && mutation.target instanceof Element) {
-        pending.add(mutation.target);
+        const { attributeName, oldValue, target } = mutation;
+        if (attributeName !== null && !VE_IDENTITY_ATTRS.includes(attributeName)) {
+          const attr = target.getAttributeNode(attributeName);
+          if (attr && attr.value !== oldValue && hasMarker(attr.value)) {
+            callbacks.onMarkedAttribute(target, attr);
+          }
+          continue;
+        }
+        if (!callbacks.isOwnAttributeWrite(target)) pending.add(target);
       }
     }
     if (pending.size > 0 || nodesRemoved) schedule();
   });
   observer.observe(root, {
-    attributeFilter: [...VE_IDENTITY_ATTRS],
+    attributeOldValue: true,
     attributes: true,
     characterData: true,
     childList: true,
