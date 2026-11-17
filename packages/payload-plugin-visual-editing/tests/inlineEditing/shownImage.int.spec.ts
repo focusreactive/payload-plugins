@@ -4,6 +4,11 @@ import { absoluteUrlOf, showMedia } from "../../src/client/inlineEditing/shownIm
 
 const NEW_URL = "https://cms.example.com/api/media/file/lighthouse.jpg";
 
+const attributesIn = (root: Element) =>
+  [root, ...Array.from(root.querySelectorAll("*"))].map((element) =>
+    Object.fromEntries(Array.from(element.attributes, ({ name, value }) => [name, value]))
+  );
+
 describe("the address of media on the page", () => {
   it("is resolved against the origin of the Payload API", () => {
     expect(absoluteUrlOf("/api/media/file/a.jpg", "https://cms.example.com/api")).toBe(
@@ -83,6 +88,17 @@ describe("showing the picked media in an image of the page", () => {
     image.removeAttribute("height");
     showMedia(image, { height: 1000, url: NEW_URL, width: 1000 }, NEW_URL);
     expect(image.hasAttribute("height")).toBe(false);
+  });
+
+  it("puts back everything it changed when asked to", () => {
+    const before = attributesIn(picture);
+
+    const putBack = showMedia(image, { height: 1000, url: NEW_URL, width: 1000 }, NEW_URL);
+    expect(attributesIn(picture)).not.toEqual(before);
+    putBack();
+
+    expect(attributesIn(picture)).toEqual(before);
+    expect(picture.querySelectorAll("source")).toHaveLength(2);
   });
 
   it("shows the new file in an image without a picture around it", () => {

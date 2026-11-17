@@ -126,6 +126,46 @@ describe("editing text on the page", () => {
       expect(heading.textContent).toBe("Hello world");
     });
 
+    it("saves at once when the page is left before the pause ends", async () => {
+      click(heading);
+      type(heading, "Hello world");
+
+      window.dispatchEvent(new Event("pagehide"));
+      await flushMutations();
+
+      expect(sentToEndpoint()).toHaveLength(1);
+    });
+
+    it("saves at once when the tab is hidden, and not when it is shown", async () => {
+      const visibility = vi.spyOn(document, "visibilityState", "get");
+      click(heading);
+      type(heading, "Hello world");
+
+      visibility.mockReturnValue("visible");
+      document.dispatchEvent(new Event("visibilitychange"));
+      await flushMutations();
+      expect(sentToEndpoint()).toHaveLength(0);
+
+      visibility.mockReturnValue("hidden");
+      document.dispatchEvent(new Event("visibilitychange"));
+      await flushMutations();
+      visibility.mockRestore();
+
+      expect(sentToEndpoint()).toHaveLength(1);
+    });
+
+    it("stops watching the page being left when the overlay stops", async () => {
+      overlay.dispose();
+      const removed = vi.spyOn(window, "removeEventListener");
+      start();
+
+      overlay.dispose();
+
+      expect(removed.mock.calls.map(([name]) => name)).toContain("pagehide");
+      removed.mockRestore();
+      start();
+    });
+
     it("ends the edit and saves at once on Enter", async () => {
       click(heading);
       type(heading, "Hello world");

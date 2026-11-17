@@ -1,3 +1,5 @@
+import type { MockInstance } from "vitest";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Overlay, OverlayCtx } from "../../src/client/createOverlay";
@@ -17,6 +19,7 @@ import {
   VE_DOCUMENT_SAVED_TYPE,
   VE_FIELD_EDIT_REFUSED_TYPE,
   VE_FIELD_SNAPSHOT_TYPE,
+  VE_MEDIA_PICK_CANCELLED_TYPE,
   VE_MEDIA_PICKED_TYPE,
   VE_MESSAGE_TYPE,
   VE_PICK_MEDIA_TYPE,
@@ -88,6 +91,8 @@ describe("replacing an image on the page", () => {
   let ctx: OverlayCtx;
   let fetchApi: ReturnType<typeof vi.fn>;
   let isSaved: boolean;
+  let optionsStatus: number;
+  let open: MockInstance<typeof window.open>;
 
   const mark = <Target extends HTMLElement>(target: Target, path = "image", key?: string) => {
     target.setAttribute(DATA_VE_PATH_ATTR, path);
@@ -139,19 +144,25 @@ describe("replacing an image on the page", () => {
     image = mark(renderImage());
     main.append(heading, image);
     isSaved = true;
+    optionsStatus = 200;
     fetchApi = vi.fn((url: string) => {
-      const body = url.endsWith("/media-options")
+      const isListing = url.endsWith("/media-options");
+      const body = isListing
         ? { collection: "media", documents: [LIGHTHOUSE], hasNextPage: false }
         : { saved: isSaved };
-      return Promise.resolve({ json: () => Promise.resolve(body), ok: true } as Response);
+      const status = isListing ? optionsStatus : 200;
+      const response = { json: () => Promise.resolve(body), ok: status === 200, status };
+      return Promise.resolve(response as Response);
     });
     vi.stubGlobal("fetch", fetchApi);
+    open = vi.spyOn(window, "open").mockImplementation(() => null);
   });
 
   afterEach(() => {
     overlay.dispose();
     restorePreviewWindow();
     vi.unstubAllGlobals();
+    open.mockRestore();
   });
 
   describe("on a page of its own", () => {
@@ -273,6 +284,39 @@ describe("replacing an image on the page", () => {
       expect(statusLabel()).toBe("Saved");
     });
 
+    it("puts the image of the page back when the save is refused", async () => {
+      isSaved = false;
+
+      await useLighthouse();
+
+      expect(image.getAttribute("src")).toBe("/old.jpg");
+      expect(image.getAttribute("srcset")).toBe("/old.jpg 1x, /old@2x.jpg 2x");
+    });
+
+    it("shows the picked image again once a Retry saved it", async () => {
+      isSaved = false;
+      await useLighthouse();
+      isSaved = true;
+
+      retry();
+      await flushMutations();
+
+      expect(image.getAttribute("src")).toBe(`${CMS}/api/media/file/lighthouse.jpg`);
+      expect(image.hasAttribute("srcset")).toBe(false);
+    });
+
+    it("opens the field in the admin when the endpoint says the field takes no media from the page", async () => {
+      optionsStatus = 422;
+      offersReplacement(image);
+
+      click(actionButton());
+      await flushMutations();
+
+      expect(picker()).toBeNull();
+      expect(open).toHaveBeenCalledTimes(1);
+      expect(statusLabel()).toBeUndefined();
+    });
+
     it("saves nothing when the picker is dismissed", async () => {
       offersReplacement(image);
       click(actionButton());
@@ -372,6 +416,38 @@ describe("replacing an image on the page", () => {
       expect(statusLabel()).toBe("Unsaved changes");
     });
 
+    it("asks once for a field whose pick is still open in the admin", () => {
+      formOfThePage();
+      ask();
+
+      ask();
+      postFromAdmin(picked());
+
+      expect(messagesOfType(postToAdmin, VE_PICK_MEDIA_TYPE)).toHaveLength(1);
+      expect(image.getAttribute("src")).toBe(`${CMS}/api/media/file/lighthouse.jpg`);
+    });
+
+    it("keeps saying unsaved when the admin saved another document", () => {
+      formOfThePage();
+      ask();
+      postFromAdmin(picked());
+
+      postFromAdmin({ ...PAGE, docId: "2", locale: "en", type: VE_DOCUMENT_SAVED_TYPE });
+
+      expect(statusLabel()).toBe("Unsaved changes");
+    });
+
+    it("forgets a pick the editor cancelled in the admin and says nothing about it", () => {
+      formOfThePage();
+      ask();
+
+      postFromAdmin({ ...IMAGE_FIELD, type: VE_MEDIA_PICK_CANCELLED_TYPE });
+      postFromAdmin(picked());
+
+      expect(image.getAttribute("src")).toBe("/old.jpg");
+      expect(statusLabel()).toBeUndefined();
+    });
+
     it("says the image is saved once the admin saved the document", () => {
       formOfThePage();
       ask();
@@ -412,7 +488,7 @@ describe("replacing an image on the page", () => {
       expect(image.getAttribute("src")).toBe(`${CMS}/api/media/file/lighthouse.jpg`);
     });
 
-    it("says so when the form cannot take the request, and asks again on Retry", () => {
+    it("says so when the form cannot take the request, and opens the field instead", () => {
       formOfThePage();
       ask();
 
@@ -420,10 +496,19 @@ describe("replacing an image on the page", () => {
 
       expect(statusLabel()).toBe("Not saved");
       expect(image.getAttribute("src")).toBe("/old.jpg");
+      expect(messagesOfType(postToAdmin, VE_MESSAGE_TYPE)).toMatchObject([{ path: "image" }]);
+    });
+
+    it("asks the admin for no drawer again on Retry after a refusal", () => {
+      formOfThePage();
+      ask();
+      postFromAdmin({ ...IMAGE_FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE });
 
       retry();
+      postFromAdmin({ ...IMAGE_FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE });
 
-      expect(messagesOfType(postToAdmin, VE_PICK_MEDIA_TYPE)).toHaveLength(2);
+      expect(messagesOfType(postToAdmin, VE_PICK_MEDIA_TYPE)).toHaveLength(1);
+      expect(messagesOfType(postToAdmin, VE_MESSAGE_TYPE)).toHaveLength(1);
     });
   });
 });

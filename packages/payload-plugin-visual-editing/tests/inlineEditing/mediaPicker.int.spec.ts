@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { MediaLibrary, UploadAnswer } from "../../src/client/inlineEditing/mediaLibrary";
+
+import { FIELD_REFUSED } from "../../src/client/inlineEditing/mediaLibrary";
 import type { MediaPicker } from "../../src/client/inlineEditing/mediaPicker";
 import type { VeMediaOption, VeMediaOptions } from "../../src/shared/protocol";
 
@@ -89,14 +91,26 @@ const chooseFile = (file: File) => {
   input.dispatchEvent(new Event("change"));
 };
 
+const pressOnPage = (key: string) => {
+  const event = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key });
+  document.body.dispatchEvent(event);
+  return event;
+};
+
+const loseFocus = () => {
+  (host()?.shadowRoot?.activeElement as HTMLElement | null)?.blur();
+  expect(host()?.shadowRoot?.activeElement).toBeNull();
+};
+
 describe("the media picker of a page of its own", () => {
   let list: ReturnType<typeof vi.fn<MediaLibrary["list"]>>;
   let upload: ReturnType<typeof vi.fn<MediaLibrary["upload"]>>;
   let picker: MediaPicker;
   let onUse: ReturnType<typeof vi.fn>;
+  let onRefused: ReturnType<typeof vi.fn>;
 
   const open = async () => {
-    picker.open(FIELD, onUse);
+    picker.open(FIELD, onUse, onRefused);
     await flushMutations();
   };
 
@@ -105,6 +119,7 @@ describe("the media picker of a page of its own", () => {
     list = vi.fn<MediaLibrary["list"]>(() => Promise.resolve(listed([HARBOUR, LIGHTHOUSE])));
     upload = vi.fn<MediaLibrary["upload"]>();
     onUse = vi.fn();
+    onRefused = vi.fn();
     picker = createMediaPicker(document, { list, upload }, (url) => `${CMS}${url}`);
   });
 
@@ -217,6 +232,52 @@ describe("the media picker of a page of its own", () => {
     expect(host()?.shadowRoot?.activeElement).toBe(last);
   });
 
+  it("closes on Escape also after the focus fell out of the dialog", async () => {
+    await open();
+    loseFocus();
+
+    pressOnPage("Escape");
+
+    expect(host()).toBeNull();
+  });
+
+  it("takes the focus back into the dialog on a key pressed outside it", async () => {
+    await open();
+    loseFocus();
+
+    const tab = pressOnPage("Tab");
+
+    expect(tab.defaultPrevented).toBe(true);
+    expect(host()?.shadowRoot?.activeElement).toBe(part('input[type="search"]'));
+  });
+
+  it("takes the focus back on any key, and leaves the key to the control", async () => {
+    await open();
+    loseFocus();
+
+    const letter = pressOnPage("a");
+
+    expect(letter.defaultPrevented).toBe(false);
+    expect(host()?.shadowRoot?.activeElement).toBe(part('input[type="search"]'));
+  });
+
+  it("listens to no key of the page once it is closed", async () => {
+    await open();
+    press("Escape");
+
+    expect(pressOnPage("Tab").defaultPrevented).toBe(false);
+  });
+
+  it("closes and says so when the field takes no media from the page", async () => {
+    list.mockResolvedValue(FIELD_REFUSED);
+
+    await open();
+
+    expect(host()).toBeNull();
+    expect(onRefused).toHaveBeenCalledTimes(1);
+    expect(onUse).not.toHaveBeenCalled();
+  });
+
   it("searches by file name once the typing pauses", async () => {
     await open();
     list.mockResolvedValue(listed([LIGHTHOUSE]));
@@ -255,7 +316,7 @@ describe("the media picker of a page of its own", () => {
   it("shows the answer of the search the editor typed last, whichever arrives last", async () => {
     const firstList = heldAnswer<VeMediaOptions>();
     list.mockReturnValueOnce(firstList.promise);
-    picker.open(FIELD, onUse);
+    picker.open(FIELD, onUse, onRefused);
     list.mockResolvedValueOnce(listed([LIGHTHOUSE]));
 
     search("light");
@@ -290,6 +351,7 @@ describe("the media picker of a page of its own", () => {
     it("uploads the chosen file to the collection of the field and selects the new document", async () => {
       upload.mockResolvedValue({ media: PIER });
       await open();
+      list.mockResolvedValue(listed([PIER, HARBOUR, LIGHTHOUSE]));
 
       chooseFile(file);
       await flushMutations();
@@ -300,6 +362,42 @@ describe("the media picker of a page of its own", () => {
 
       button("use").click();
       expect(onUse).toHaveBeenCalledWith(PIER);
+    });
+
+    it("lists from the first page again after an upload, so Load more repeats nothing", async () => {
+      upload.mockResolvedValue({ media: PIER });
+      list.mockResolvedValueOnce(listed([HARBOUR], true));
+      await open();
+      button("more").click();
+      await flushMutations();
+      search("har");
+      list.mockClear();
+      list.mockResolvedValueOnce(listed([PIER, HARBOUR], true));
+
+      chooseFile(file);
+      await flushMutations();
+
+      expect(list).toHaveBeenCalledTimes(1);
+      expect(list).toHaveBeenCalledWith({ ...FIELD, page: 1, search: "" });
+      expect(names()).toEqual(["pier.jpg", "harbour.jpg"]);
+
+      list.mockResolvedValueOnce(listed([LIGHTHOUSE]));
+      button("more").click();
+      await flushMutations();
+
+      expect(list).toHaveBeenLastCalledWith({ ...FIELD, page: 2, search: "" });
+      expect(names()).toEqual(["pier.jpg", "harbour.jpg", "lighthouse.jpg"]);
+    });
+
+    it("keeps the uploaded file first when the list does not hold it", async () => {
+      upload.mockResolvedValue({ media: PIER });
+      await open();
+
+      chooseFile(file);
+      await flushMutations();
+
+      expect(names()).toEqual(["pier.jpg", "harbour.jpg", "lighthouse.jpg"]);
+      expect(button("use").disabled).toBe(false);
     });
 
     it("shows the message of the server when the upload is refused", async () => {

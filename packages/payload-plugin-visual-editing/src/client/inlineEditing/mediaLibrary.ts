@@ -10,13 +10,18 @@ import { VE_MEDIA_OPTIONS_PATH } from "../../shared/protocol.js";
 
 export type UploadAnswer = { media: VeMediaOption } | { error: string };
 
+export const FIELD_REFUSED = "refused";
+
+export type MediaListing = VeMediaOptions | typeof FIELD_REFUSED | null;
+
 export interface MediaLibrary {
-  list(request: VeMediaOptionsRequest): Promise<VeMediaOptions | null>;
+  list(request: VeMediaOptionsRequest): Promise<MediaListing>;
   upload(collection: string, file: File): Promise<UploadAnswer>;
 }
 
 export const UPLOAD_REFUSED = "The file could not be uploaded";
 
+const FIELD_NOT_EDITABLE = 422;
 const UPLOADED_FILE_FIELD = "file";
 const WITHOUT_RELATED_DOCUMENTS = "depth=0";
 
@@ -50,6 +55,7 @@ export function createMediaLibrary(
           headers: { "Content-Type": "application/json" },
           method: "POST",
         });
+        if (response.status === FIELD_NOT_EDITABLE) return FIELD_REFUSED;
         return response.ok ? readMediaOptions(await jsonOf(response)) : null;
       } catch {
         return null;

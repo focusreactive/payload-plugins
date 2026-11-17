@@ -1,8 +1,10 @@
 import type { VeEditedField, VeMediaOption } from "../../shared/protocol.js";
 import type { MediaLibrary } from "./mediaLibrary.js";
 
+import { FIELD_REFUSED } from "./mediaLibrary.js";
+
 export interface MediaPicker {
-  open(field: VeEditedField, onUse: (media: VeMediaOption) => void): void;
+  open(field: VeEditedField, onUse: (media: VeMediaOption) => void, onRefused: () => void): void;
   remove(): void;
 }
 
@@ -18,6 +20,14 @@ const SELECTED_ATTR = "aria-pressed";
 const MEDIA_ID_ATTR = "data-media-id";
 const UPLOADED_FILE_TYPES = "image/*";
 const FOCUSABLE = "input:not([type='file']), button:not([disabled]):not([hidden])";
+const KEY_PRESSED = "keydown";
+const IN_CAPTURE_PHASE = true;
+const LOAD_MORE = "more";
+const UPLOAD_NEW = "upload";
+const CANCEL = "cancel";
+const USE_SELECTED = "use";
+
+const actionSelector = (action: string) => `[data-action="${action}"]`;
 
 const TEMPLATE = `
 <style>
@@ -150,12 +160,12 @@ const TEMPLATE = `
     font-weight: 500;
     cursor: pointer;
   }
-  button[data-action="use"] {
+  button${actionSelector(USE_SELECTED)} {
     background: var(--ve-on);
     border-color: var(--ve-on);
     color: var(--ve-on-text);
   }
-  button[data-action="more"] {
+  button${actionSelector(LOAD_MORE)} {
     align-self: center;
   }
   button:disabled {
@@ -177,15 +187,15 @@ const TEMPLATE = `
     <input type="search" placeholder="Search by file name" aria-label="Search by file name">
   </header>
   <div class="grid" role="group" aria-label="Media"></div>
-  <button type="button" data-action="more" hidden>Load more</button>
+  <button type="button" data-action="${LOAD_MORE}" hidden>Load more</button>
   <p role="status"></p>
   <p role="alert"></p>
   <footer>
     <input type="file" accept="${UPLOADED_FILE_TYPES}" hidden>
-    <button type="button" data-action="upload" disabled>Upload new</button>
+    <button type="button" data-action="${UPLOAD_NEW}" disabled>Upload new</button>
     <span class="spacer"></span>
-    <button type="button" data-action="cancel">Cancel</button>
-    <button type="button" data-action="use" disabled>Use selected</button>
+    <button type="button" data-action="${CANCEL}">Cancel</button>
+    <button type="button" data-action="${USE_SELECTED}" disabled>Use selected</button>
   </footer>
 </div>
 `;
@@ -210,11 +220,13 @@ type OpenPick = {
   focusedBefore: Element | null;
   host: HTMLElement;
   listing: number;
+  onRefused: () => void;
   onUse: (media: VeMediaOption) => void;
   page: number;
   parts: Parts;
   searchPause: ReturnType<typeof setTimeout> | null;
   selected: VeMediaOption | null;
+  stopListeningToKeys: () => void;
 };
 
 const partsOf = (shadow: ShadowRoot): Parts => {
@@ -223,19 +235,26 @@ const partsOf = (shadow: ShadowRoot): Parts => {
   return {
     alert: part('[role="alert"]'),
     backdrop: part(".backdrop"),
-    cancel: part('[data-action="cancel"]'),
+    cancel: part(actionSelector(CANCEL)),
     file: part('input[type="file"]'),
     grid: part(".grid"),
-    more: part('[data-action="more"]'),
+    more: part(actionSelector(LOAD_MORE)),
     note: part('[role="status"]'),
     search: part('input[type="search"]'),
-    upload: part('[data-action="upload"]'),
-    use: part('[data-action="use"]'),
+    upload: part(actionSelector(UPLOAD_NEW)),
+    use: part(actionSelector(USE_SELECTED)),
   };
 };
 
-const withoutMedia = (documents: readonly VeMediaOption[], { id }: VeMediaOption) =>
-  documents.filter((listed) => listed.id !== id);
+const stopNothing = (): void => undefined;
+
+const withSelectedListed = (
+  documents: readonly VeMediaOption[],
+  selected: VeMediaOption | null
+): VeMediaOption[] => {
+  const isListed = selected === null || documents.some(({ id }) => id === selected.id);
+  return isListed ? [...documents] : [selected, ...documents];
+};
 
 export function createMediaPicker(
   doc: Document,
@@ -246,8 +265,9 @@ export function createMediaPicker(
 
   const close = () => {
     if (!pick) return;
-    const { focusedBefore, host, searchPause } = pick;
+    const { focusedBefore, host, searchPause, stopListeningToKeys } = pick;
     if (searchPause !== null) clearTimeout(searchPause);
+    stopListeningToKeys();
     pick = null;
     host.remove();
     if (focusedBefore instanceof HTMLElement) focusedBefore.focus();
@@ -297,12 +317,17 @@ export function createMediaPicker(
     const { listing } = open;
     const options = await library.list({ ...open.field, page, search: open.parts.search.value });
     if (pick !== open || open.listing !== listing) return;
+    if (options === FIELD_REFUSED) {
+      close();
+      open.onRefused();
+      return;
+    }
     open.parts.alert.textContent = options ? "" : MEDIA_NOT_LOADED;
     if (!options) return;
     const earlier = page === FIRST_PAGE ? [] : open.documents;
     open.page = page;
     open.collection = options.collection;
-    open.documents = [...earlier, ...options.documents];
+    open.documents = withSelectedListed([...earlier, ...options.documents], open.selected);
     open.parts.more.hidden = !options.hasNextPage;
     open.parts.upload.disabled = options.collection === null;
     showDocuments(open);
@@ -324,18 +349,30 @@ export function createMediaPicker(
     open.parts.upload.disabled = false;
     open.parts.alert.textContent = "error" in answer ? answer.error : "";
     if ("error" in answer) return;
-    open.documents = [answer.media, ...withoutMedia(open.documents, answer.media)];
+    open.parts.search.value = "";
     open.selected = answer.media;
+    open.documents = withSelectedListed(open.documents, answer.media);
     showDocuments(open);
     select(open, answer.media);
+    await list(open, FIRST_PAGE);
+  };
+
+  const focusableIn = (open: OpenPick): HTMLElement[] =>
+    Array.from(open.host.shadowRoot?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []);
+
+  const takeFocusBack = (open: OpenPick): boolean => {
+    const focusable = focusableIn(open);
+    const focused = open.host.shadowRoot?.activeElement;
+    if (focused && focusable.includes(focused as HTMLElement)) return false;
+    focusable.at(0)?.focus();
+    return true;
   };
 
   const keepFocusInside = (open: OpenPick, event: KeyboardEvent) => {
-    const shadow = open.host.shadowRoot;
-    const focusable = Array.from(shadow?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []);
+    const focusable = focusableIn(open);
     const first = focusable.at(0);
     const last = focusable.at(-1);
-    const focused = shadow?.activeElement;
+    const focused = open.host.shadowRoot?.activeElement;
     if (!first || !last) return;
     if (event.shiftKey && focused === first) {
       event.preventDefault();
@@ -346,16 +383,24 @@ export function createMediaPicker(
     }
   };
 
-  const onKey = (open: OpenPick, event: KeyboardEvent) => {
+  const onKeyOfThePage = (open: OpenPick, event: KeyboardEvent) => {
     if (event.key === "Escape") {
       event.preventDefault();
+      event.stopPropagation();
       close();
-    } else if (event.key === "Tab") {
-      keepFocusInside(open, event);
+      return;
     }
+    const wasOutside = takeFocusBack(open);
+    if (event.key !== "Tab") return;
+    if (wasOutside) event.preventDefault();
+    else keepFocusInside(open, event);
   };
 
-  const mount = (field: VeEditedField, onUse: OpenPick["onUse"]): OpenPick => {
+  const mount = (
+    field: VeEditedField,
+    onUse: OpenPick["onUse"],
+    onRefused: OpenPick["onRefused"]
+  ): OpenPick => {
     const host = doc.createElement("div");
     host.setAttribute(DATA_VE_MEDIA_PICKER_ATTR, "");
     const shadow = host.attachShadow({ mode: "open" });
@@ -367,12 +412,17 @@ export function createMediaPicker(
       focusedBefore: doc.activeElement,
       host,
       listing: 0,
+      onRefused,
       onUse,
       page: FIRST_PAGE,
       parts: partsOf(shadow),
       searchPause: null,
       selected: null,
+      stopListeningToKeys: stopNothing,
     };
+    const hearKey = (event: KeyboardEvent) => onKeyOfThePage(open, event);
+    open.stopListeningToKeys = () =>
+      doc.removeEventListener(KEY_PRESSED, hearKey, IN_CAPTURE_PHASE);
     const { backdrop, cancel, file, more, search, upload, use: useSelected } = open.parts;
     backdrop.addEventListener("click", close);
     cancel.addEventListener("click", close);
@@ -381,16 +431,16 @@ export function createMediaPicker(
     search.addEventListener("input", () => listAfterPause(open));
     upload.addEventListener("click", () => file.click());
     file.addEventListener("change", () => void uploadChosenFile(open));
-    shadow.addEventListener("keydown", (event) => onKey(open, event as KeyboardEvent));
+    doc.addEventListener(KEY_PRESSED, hearKey, IN_CAPTURE_PHASE);
     doc.body.append(host);
     search.focus();
     return open;
   };
 
   return {
-    open(field, onUse) {
+    open(field, onUse, onRefused) {
       close();
-      pick = mount(field, onUse);
+      pick = mount(field, onUse, onRefused);
       void list(pick, FIRST_PAGE);
     },
     remove: close,

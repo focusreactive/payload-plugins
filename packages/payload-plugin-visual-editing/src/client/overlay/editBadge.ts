@@ -21,7 +21,7 @@ type EditBadgeConfig = {
 
 export type BadgeAction = {
   label: string;
-  run: () => void;
+  run: (openField: () => void) => void;
 };
 
 export type ActionOf = (target: HTMLElement) => BadgeAction | null;
@@ -83,6 +83,7 @@ export function createEditBadge(): EditBadge {
 
   let currentClickHandler: ((event: MouseEvent) => void) | null = null;
   let offeredAction: BadgeAction | null = null;
+  let openFieldOfTarget: ((event: MouseEvent) => void) | null = null;
 
   const offer = (offered: BadgeAction | null) => {
     offeredAction = offered;
@@ -93,7 +94,8 @@ export function createEditBadge(): EditBadge {
   const runOfferedAction = (event: MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    offeredAction?.run();
+    const openField = openFieldOfTarget;
+    offeredAction?.run(() => openField?.(event));
   };
   action.addEventListener("click", runOfferedAction);
 
@@ -111,6 +113,7 @@ export function createEditBadge(): EditBadge {
     show(target, config, offered = null) {
       reposition(target);
       offer(offered);
+      openFieldOfTarget = config.clickHandler;
       label.href = config.href;
       label.setAttribute(DATA_VE_FOR_ATTR, target.getAttribute(DATA_VE_TARGET_ATTR) ?? "");
       if (currentClickHandler) label.removeEventListener("click", currentClickHandler);
@@ -121,6 +124,7 @@ export function createEditBadge(): EditBadge {
     hide() {
       layer.style.visibility = "hidden";
       offer(null);
+      openFieldOfTarget = null;
       if (currentClickHandler) {
         label.removeEventListener("click", currentClickHandler);
         currentClickHandler = null;

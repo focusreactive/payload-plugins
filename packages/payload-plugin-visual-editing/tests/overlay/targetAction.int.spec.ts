@@ -109,6 +109,15 @@ describe("the action the overlay offers for a target", () => {
     expect(postToAdmin).not.toHaveBeenCalled();
   });
 
+  it("hands the action a way to open the field after all", () => {
+    run.mockImplementationOnce((openField: () => void) => openField());
+    pointerOver(photo);
+
+    click(actionButton());
+
+    expect(postToAdmin).toHaveBeenCalledTimes(1);
+  });
+
   it("leaves the click on the target itself to open the field", () => {
     pointerOver(photo);
 

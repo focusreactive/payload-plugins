@@ -31,6 +31,9 @@ export type OpenForms = {
 };
 
 const UNSAVED: EditStatus = "unsaved";
+const PAGE_LEFT_EVENT = "pagehide";
+const VISIBILITY_EVENT = "visibilitychange";
+const HIDDEN = "hidden";
 
 export interface InlineEditing {
   editInPlace(target: HTMLElement, event: MouseEvent): boolean;
@@ -60,17 +63,12 @@ export function createInlineEditing(
   const imageReplacement = createImageReplacement({
     getCtx,
     holdsFormOf: openForms && ((document) => openForms.holdsFormOf(document)),
-    save: (edit) => {
-      transport.send(edit);
-      transport.flush();
-    },
+    holdInForm: transport.holdInForm,
+    save: transport.sendNow,
     showStatus,
     tracker,
   });
-  saveStatus = createSaveStatus(document, () => {
-    transport.retry();
-    imageReplacement.retry();
-  });
+  saveStatus = createSaveStatus(document, transport.retry);
 
   const send = (match: FieldMatch, value: string) => {
     const key = fieldKeyOfMarker(match);
@@ -120,6 +118,12 @@ export function createInlineEditing(
   };
   window.addEventListener("message", refuseEditTheFormDidNotTake);
 
+  const saveBeforeThePageIsHidden = () => {
+    if (document.visibilityState === HIDDEN) transport.flush();
+  };
+  window.addEventListener(PAGE_LEFT_EVENT, transport.flush);
+  document.addEventListener(VISIBILITY_EVENT, saveBeforeThePageIsHidden);
+
   const stopListeningToSaves = listenToSaves(
     () => getCtx().adminOrigin,
     (saved) => {
@@ -135,6 +139,8 @@ export function createInlineEditing(
       transport.dispose();
       stopListeningToSaves();
       window.removeEventListener("message", refuseEditTheFormDidNotTake);
+      window.removeEventListener(PAGE_LEFT_EVENT, transport.flush);
+      document.removeEventListener(VISIBILITY_EVENT, saveBeforeThePageIsHidden);
       stopTracking();
       saveStatus?.remove();
     },

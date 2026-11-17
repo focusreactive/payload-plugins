@@ -2,7 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { MediaLibrary } from "../../src/client/inlineEditing/mediaLibrary";
 
-import { createMediaLibrary, UPLOAD_REFUSED } from "../../src/client/inlineEditing/mediaLibrary";
+import {
+  createMediaLibrary,
+  FIELD_REFUSED,
+  UPLOAD_REFUSED,
+} from "../../src/client/inlineEditing/mediaLibrary";
 
 const PAYLOAD_API = "https://cms.example.com/api";
 
@@ -26,8 +30,8 @@ const LIGHTHOUSE = {
   width: 800,
 };
 
-const answerOf = (body: unknown, ok = true) =>
-  Promise.resolve({ json: () => Promise.resolve(body), ok } as Response);
+const answerOf = (body: unknown, ok = true, status = ok ? 200 : 500) =>
+  Promise.resolve({ json: () => Promise.resolve(body), ok, status } as Response);
 
 describe("the media library of a page of its own", () => {
   let fetchApi: ReturnType<typeof vi.fn>;
@@ -69,7 +73,13 @@ describe("the media library of a page of its own", () => {
         answerOf({ collection: "media", documents: [{ id: 1 }, LIGHTHOUSE, null] })
       );
 
-      expect((await library.list(REQUEST))?.documents).toEqual([LIGHTHOUSE]);
+      expect(await library.list(REQUEST)).toMatchObject({ documents: [LIGHTHOUSE] });
+    });
+
+    it("says so when the endpoint answers that the field takes no media from the page", async () => {
+      fetchApi.mockReturnValue(answerOf({ collection: null, documents: [] }, false, 422));
+
+      expect(await library.list(REQUEST)).toBe(FIELD_REFUSED);
     });
 
     it("answers nothing when the endpoint refuses, answers no list or cannot be reached", async () => {

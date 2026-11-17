@@ -34,7 +34,28 @@ const keepWidthWithProportionsOf = (image: HTMLImageElement, { height, width }: 
   image.setAttribute(HEIGHT_ATTR, String(Math.round((shownWidth * height) / width)));
 };
 
-export const showMedia = (image: HTMLImageElement, media: VeShownMedia, url: string): void => {
+const SHOWN_BY_IMAGE = [SOURCE_ATTR, VARIANTS_ATTR, VARIANT_SIZES_ATTR, HEIGHT_ATTR];
+const SHOWN_BY_SOURCE = [VARIANTS_ATTR, VARIANT_SIZES_ATTR];
+
+const rememberedAttrsOf = (element: Element, attrs: readonly string[]): (() => void) => {
+  const remembered = attrs.map((attr) => [attr, element.getAttribute(attr)] as const);
+  return () => {
+    for (const [attr, value] of remembered) {
+      if (value === null) element.removeAttribute(attr);
+      else element.setAttribute(attr, value);
+    }
+  };
+};
+
+export const showMedia = (
+  image: HTMLImageElement,
+  media: VeShownMedia,
+  url: string
+): (() => void) => {
+  const putBack = [
+    rememberedAttrsOf(image, SHOWN_BY_IMAGE),
+    ...sourcesAround(image).map((source) => rememberedAttrsOf(source, SHOWN_BY_SOURCE)),
+  ];
   for (const source of sourcesAround(image)) {
     source.setAttribute(VARIANTS_ATTR, url);
     source.removeAttribute(VARIANT_SIZES_ATTR);
@@ -43,4 +64,7 @@ export const showMedia = (image: HTMLImageElement, media: VeShownMedia, url: str
   image.removeAttribute(VARIANT_SIZES_ATTR);
   image.setAttribute(SOURCE_ATTR, url);
   keepWidthWithProportionsOf(image, media);
+  return () => {
+    for (const putBackOne of putBack) putBackOne();
+  };
 };

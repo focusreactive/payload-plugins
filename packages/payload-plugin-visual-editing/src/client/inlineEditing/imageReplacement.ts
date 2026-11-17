@@ -8,7 +8,7 @@ import type {
 } from "../../shared/protocol.js";
 import type { BadgeAction } from "../overlay/editBadge.js";
 import type { FieldTracker } from "../overlay/fieldTracker.js";
-import type { EditStatus } from "./editTransport.js";
+import type { EditStatus, OnSaveEnded } from "./editTransport.js";
 
 import { readEditedField } from "../../shared/fieldEdit.js";
 import { fieldKeyOfMarker } from "../../shared/fieldKey.js";
@@ -18,6 +18,7 @@ import { isPlainObject } from "../../shared/plainObject.js";
 import {
   DATA_VE_LIVE_RICH_TEXT_ATTR,
   VE_FIELD_EDIT_REFUSED_TYPE,
+  VE_MEDIA_PICK_CANCELLED_TYPE,
   VE_MEDIA_PICKED_TYPE,
   VE_PICK_MEDIA_TYPE,
 } from "../../shared/protocol.js";
@@ -39,19 +40,23 @@ export type ImageReplacementOptions = {
   tracker: FieldTracker;
   getCtx: () => ImageReplacementCtx;
   holdsFormOf: ((document: VeDocument) => boolean) | null;
-  save: (edit: VeFieldEdit) => void;
+  save: (edit: VeFieldEdit, onSaveEnded: OnSaveEnded) => void;
+  holdInForm: (field: VeEditedField) => void;
   showStatus: (status: EditStatus) => void;
 };
 
 export interface ImageReplacement {
   actionOf(target: HTMLElement): BadgeAction | null;
-  retry(): void;
   dispose(): void;
 }
 
 export const REPLACE_IMAGE_LABEL = "Replace image";
 
 type ReplaceableImage = { field: VeEditedField; image: HTMLImageElement };
+
+type AskedOfAdmin = ReplaceableImage & { openField: () => void };
+
+const NOT_SAVED: EditStatus = "failed";
 
 const IMAGES = "img";
 
@@ -66,14 +71,14 @@ const onlyImageOf = (target: HTMLElement): HTMLImageElement | null => {
 
 export function createImageReplacement({
   getCtx,
+  holdInForm,
   holdsFormOf,
   save,
   showStatus,
   tracker,
 }: ImageReplacementOptions): ImageReplacement {
   const trackedTexts = new Set<Text>();
-  const askedOfAdmin = new Map<string, ReplaceableImage>();
-  const refusedByAdmin = new Map<string, ReplaceableImage>();
+  const askedOfAdmin = new Map<string, AskedOfAdmin>();
   const urlOf = (url: string) => absoluteUrlOf(url, getCtx().payloadApi);
   const picker = createMediaPicker(
     document,
@@ -108,27 +113,33 @@ export function createImageReplacement({
     };
   };
 
-  const show = ({ image }: ReplaceableImage, media: VeShownMedia) => {
-    if (image.isConnected) showMedia(image, media, urlOf(media.url));
-  };
+  const show = ({ image }: ReplaceableImage, media: VeShownMedia): (() => void) | null =>
+    image.isConnected ? showMedia(image, media, urlOf(media.url)) : null;
 
-  const askAdmin = (adminWindow: Window, replaceable: ReplaceableImage) => {
-    const address = addressOf(replaceable.field);
-    const message: VePickMediaMessage = { ...replaceable.field, type: VE_PICK_MEDIA_TYPE };
-    refusedByAdmin.delete(address);
-    askedOfAdmin.set(address, replaceable);
+  const askAdmin = (adminWindow: Window, asked: AskedOfAdmin) => {
+    if (askedOfAdmin.has(addressOf(asked.field))) return;
+    const message: VePickMediaMessage = { ...asked.field, type: VE_PICK_MEDIA_TYPE };
+    askedOfAdmin.set(addressOf(asked.field), asked);
     adminWindow.postMessage(message, adminOriginOf(getCtx().adminOrigin));
   };
 
   const saveThroughEndpoint = (replaceable: ReplaceableImage, media: VeMediaOption) => {
-    show(replaceable, media);
-    save({ ...replaceable.field, value: String(media.id) });
+    let putBack = show(replaceable, media);
+    const followTheSave = (isSaved: boolean) => {
+      if (isSaved) putBack ??= show(replaceable, media);
+      else putBack?.();
+      if (!isSaved) putBack = null;
+    };
+    save({ ...replaceable.field, value: String(media.id) }, followTheSave);
   };
 
-  const replace = (replaceable: ReplaceableImage) => {
+  const replace = (replaceable: ReplaceableImage, openField: () => void) => {
     const adminWindow = findAdminWindow(window);
-    if (adminWindow) askAdmin(adminWindow, replaceable);
-    else picker.open(replaceable.field, (media) => saveThroughEndpoint(replaceable, media));
+    if (adminWindow) {
+      askAdmin(adminWindow, { ...replaceable, openField });
+      return;
+    }
+    picker.open(replaceable.field, (media) => saveThroughEndpoint(replaceable, media), openField);
   };
 
   const isOffered = ({ field }: ReplaceableImage): boolean => {
@@ -137,22 +148,30 @@ export function createImageReplacement({
     return holdsFormOf?.(veDocumentOf(field)) ?? false;
   };
 
-  const showPickedMedia = (data: unknown) => {
-    const picked = readPickedMedia(data);
-    const asked = picked && askedOfAdmin.get(addressOf(picked));
-    if (!picked || !asked) return;
-    askedOfAdmin.delete(addressOf(picked));
-    show(asked, picked);
-    showStatus("unsaved");
+  const takeAsked = (field: VeEditedField | null): AskedOfAdmin | null => {
+    const asked = field && askedOfAdmin.get(addressOf(field));
+    if (!field || !asked) return null;
+    askedOfAdmin.delete(addressOf(field));
+    return asked;
   };
 
-  const rememberRefusedPick = (data: unknown) => {
-    const refused = readEditedField(data);
-    const asked = refused && askedOfAdmin.get(addressOf(refused));
-    if (!refused || !asked) return;
-    askedOfAdmin.delete(addressOf(refused));
-    refusedByAdmin.set(addressOf(refused), asked);
-    showStatus("failed");
+  const showPickedMedia = (data: unknown) => {
+    const picked = readPickedMedia(data);
+    const asked = takeAsked(picked);
+    if (!picked || !asked) return;
+    show(asked, picked);
+    holdInForm(asked.field);
+  };
+
+  const showRefusalAndOpenField = (data: unknown) => {
+    const asked = takeAsked(readEditedField(data));
+    if (!asked) return;
+    showStatus(NOT_SAVED);
+    asked.openField();
+  };
+
+  const forgetCancelledPick = (data: unknown) => {
+    takeAsked(readEditedField(data));
   };
 
   const hearAdmin = (event: MessageEvent) => {
@@ -161,7 +180,8 @@ export function createImageReplacement({
     const { data } = event;
     if (!isPlainObject(data)) return;
     if (data.type === VE_MEDIA_PICKED_TYPE) showPickedMedia(data);
-    if (data.type === VE_FIELD_EDIT_REFUSED_TYPE) rememberRefusedPick(data);
+    if (data.type === VE_FIELD_EDIT_REFUSED_TYPE) showRefusalAndOpenField(data);
+    if (data.type === VE_MEDIA_PICK_CANCELLED_TYPE) forgetCancelledPick(data);
   };
   window.addEventListener("message", hearAdmin);
 
@@ -169,19 +189,15 @@ export function createImageReplacement({
     actionOf(target) {
       const replaceable = replaceableImageOf(target);
       if (!replaceable || !isOffered(replaceable)) return null;
-      return { label: REPLACE_IMAGE_LABEL, run: () => replace(replaceable) };
+      return {
+        label: REPLACE_IMAGE_LABEL,
+        run: (openField) => replace(replaceable, openField),
+      };
     },
     dispose() {
       window.removeEventListener("message", hearAdmin);
       stopTracking();
       picker.remove();
-    },
-    retry() {
-      const adminWindow = findAdminWindow(window);
-      const refused = [...refusedByAdmin.values()];
-      refusedByAdmin.clear();
-      if (!adminWindow) return;
-      for (const replaceable of refused) askAdmin(adminWindow, replaceable);
     },
   };
 }

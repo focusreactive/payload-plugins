@@ -133,6 +133,18 @@ describe("the transport of an edit", () => {
       expect(statuses).toEqual(["unsaved", "saved"]);
     });
 
+    it("counts a pick the form holds as unsaved until the admin saved its document", () => {
+      transport.holdInForm({ ...TITLE, key: "image" });
+      expect(statuses).toEqual(["unsaved"]);
+
+      transport.settle({ ...TITLE, docId: "2" });
+      expect(statuses).toEqual(["unsaved"]);
+
+      transport.settle({ ...TITLE });
+      expect(statuses).toEqual(["unsaved", "saved"]);
+      expect(postToAdmin).not.toHaveBeenCalled();
+    });
+
     it("ignores a refusal of an edit it did not post", () => {
       transport.refuse(TITLE);
 
@@ -253,6 +265,36 @@ describe("the transport of an edit", () => {
       await settle();
 
       expect(fetchEndpoint).toHaveBeenCalledTimes(1);
+    });
+
+    it("delivers one edit at once and leaves the waiting ones waiting", async () => {
+      transport.send({ ...TITLE, value: "Hello" });
+
+      transport.sendNow({ ...TITLE, key: "image", value: "9" });
+      await settle();
+
+      expect(fetchEndpoint).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(fetchEndpoint.mock.calls[0]![1].body as string)).toMatchObject({
+        key: "image",
+      });
+
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+      expect(fetchEndpoint).toHaveBeenCalledTimes(2);
+    });
+
+    it("tells the sender of an edit delivered at once how each save of it ended", async () => {
+      const outcomes: boolean[] = [];
+      fetchEndpoint.mockImplementationOnce(() => Promise.resolve(answerOf(false)));
+
+      transport.sendNow({ ...TITLE, key: "image", value: "9" }, (isSaved) =>
+        outcomes.push(isSaved)
+      );
+      await settle();
+      expect(outcomes).toEqual([false]);
+
+      transport.retry();
+      await settle();
+      expect(outcomes).toEqual([false, true]);
     });
 
     it("sends what is waiting when it is disposed and reports nothing after", async () => {
