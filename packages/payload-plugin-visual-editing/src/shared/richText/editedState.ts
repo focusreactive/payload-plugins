@@ -42,6 +42,7 @@ export type EditedStateSources = {
   shown: unknown;
   stored: unknown;
   formats: VeRichTextFormats;
+  remembered?: readonly FixedNode[];
 };
 
 type Known = {
@@ -316,30 +317,64 @@ const identityOf = ({ fields, id, type }: EditorNode): unknown[] => {
   return [type, id ?? null, block.id ?? null, block.blockType ?? null];
 };
 
-const withoutFieldsOfBlocks = (node: EditorNode): unknown =>
-  withoutBlockFields({ root: { children: [node], type: ROOT_NODE_TYPE } }).root;
+const asItIsSerialised = (value: unknown): unknown => JSON.parse(JSON.stringify(value)) as unknown;
 
-const isSameFixedNode = (posted: FixedNode, shown: FixedNode, stored: FixedNode): boolean =>
-  posted.parentType === shown.parentType &&
-  isSameValue(withoutFieldsOfBlocks(posted.node), withoutFieldsOfBlocks(shown.node)) &&
-  isSameValue(identityOf(shown.node), identityOf(stored.node));
+const comparableOf = ({ node, parentType }: FixedNode): unknown =>
+  asItIsSerialised([
+    parentType ?? null,
+    withoutBlockFields({ root: { children: [node], type: ROOT_NODE_TYPE } }).root,
+  ]);
+
+type KeptNode = { comparable: unknown; stored: EditorNode };
+
+const keptNodesOfTheDraft = (shown: unknown, stored: unknown): KeptNode[] | null => {
+  const shownNodes = fixedNodesOf(shown);
+  const storedNodes = fixedNodesOf(stored);
+  if (shownNodes.length !== storedNodes.length) return null;
+  const kept: KeptNode[] = [];
+  for (const [position, fixed] of shownNodes.entries()) {
+    const { node } = storedNodes[position] as FixedNode;
+    if (
+      !isSameValue(asItIsSerialised(identityOf(fixed.node)), asItIsSerialised(identityOf(node)))
+    ) {
+      return null;
+    }
+    kept.push({ comparable: comparableOf(fixed), stored: node });
+  }
+  return kept;
+};
+
+const keptNodesOfTheEdit = (remembered: readonly FixedNode[], stored: unknown): KeptNode[] => {
+  const held = fixedNodesOf(stored).map((fixed) => ({ comparable: comparableOf(fixed), fixed }));
+  return remembered.map((fixed) => {
+    const comparable = comparableOf(fixed);
+    const heldNow = held.find((candidate) => isSameValue(candidate.comparable, comparable));
+    return { comparable, stored: (heldNow?.fixed ?? fixed).node };
+  });
+};
+
+const storedNodesOf = (posted: readonly FixedNode[], kept: readonly KeptNode[]) => {
+  const storedNodes: EditorNode[] = [];
+  let next = 0;
+  for (const fixed of posted) {
+    const comparable = comparableOf(fixed);
+    const found = kept.findIndex(
+      (candidate, position) => position >= next && isSameValue(candidate.comparable, comparable)
+    );
+    if (found === -1) return null;
+    storedNodes.push((kept[found] as KeptNode).stored);
+    next = found + 1;
+  }
+  return storedNodes;
+};
 
 const withStoredFixedNodes = (
   posted: VeEditorState,
-  shown: unknown,
-  stored: unknown
+  kept: readonly KeptNode[] | null
 ): VeEditorState | null => {
-  const postedNodes = fixedNodesOf(posted);
-  const shownNodes = fixedNodesOf(shown);
-  const storedNodes = fixedNodesOf(stored);
-  const isSameSequence =
-    postedNodes.length === shownNodes.length &&
-    postedNodes.length === storedNodes.length &&
-    postedNodes.every((fixed, position) =>
-      isSameFixedNode(fixed, shownNodes[position] as FixedNode, storedNodes[position] as FixedNode)
-    );
-  if (!isSameSequence) return null;
-  return withFixedNodes(posted, (fixed, position) => storedNodes[position]?.node ?? fixed.node);
+  const storedNodes = kept && storedNodesOf(fixedNodesOf(posted), kept);
+  if (!storedNodes) return null;
+  return withFixedNodes(posted, (fixed, position) => storedNodes[position] ?? fixed.node);
 };
 
 const isLink = ({ type }: EditorNode): boolean =>
@@ -386,11 +421,14 @@ const hasOnlyARoot = (state: VeEditorState): boolean =>
 
 export const editedStateOf = (
   posted: VeEditorState,
-  { formats, shown, stored }: EditedStateSources
+  { formats, remembered, shown, stored }: EditedStateSources
 ): VeEditorState | null => {
   const root = rootOf(posted);
   if (!root || !hasOnlyARoot(posted) || hasForbiddenKey(posted)) return null;
   const allowed = withFormats(formats, formatsIn(shown));
   if (!isEditableTree(root, knownIn([shown, stored], allowed))) return null;
-  return withStoredFixedNodes(withStoredLinkFields(posted, stored), shown, stored);
+  const kept = remembered
+    ? keptNodesOfTheEdit(remembered, stored)
+    : keptNodesOfTheDraft(shown, stored);
+  return withStoredFixedNodes(withStoredLinkFields(posted, stored), kept);
 };

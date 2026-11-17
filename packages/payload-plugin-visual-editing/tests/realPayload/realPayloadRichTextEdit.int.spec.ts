@@ -315,6 +315,110 @@ describe("editing rich text through the endpoints", () => {
       );
     });
 
+    describe("that leaves out nodes the page cannot edit", () => {
+      const FIRST = 0;
+      const LINKED = 2;
+      const RELATED = 5;
+      const LAST = 6;
+
+      const relationship = (): Node => ({
+        format: "",
+        relationTo: "authors",
+        type: "relationship",
+        value: authorId,
+        version: 2,
+      });
+
+      const storyWithARelationship = (): State =>
+        stateOf(...story().root.children, relationship(), element("paragraph", [text("End")]));
+
+      it("removes the one that is missing and keeps the others as they are stored", async () => {
+        const docId = await create({ story: storyWithARelationship() });
+        const stored = await storedStory(docId);
+        const [first, , linked, block, rule, related, last] = stored.root.children;
+
+        const answer = await edit({
+          ...page(docId),
+          key: "story",
+          state: stateOf(first!, linked!, block!, rule!, related!, last!),
+        });
+
+        const edited = await storedStory(docId);
+        expect(answer).toEqual({ saved: true, status: 200 });
+        expect(edited.root.children.map(({ type }) => type)).toEqual([
+          "paragraph",
+          "paragraph",
+          "block",
+          "horizontalrule",
+          "relationship",
+          "paragraph",
+        ]);
+        expect(JSON.stringify(edited.root.children.slice(2, 5))).toBe(
+          JSON.stringify([block, rule, related])
+        );
+      });
+
+      it("keeps the fields of a block that stays when the page sends none of them", async () => {
+        const docId = await create({ story: storyWithARelationship() });
+        const { children } = (await storedStory(docId)).root;
+
+        const answer = await edit({
+          ...page(docId),
+          key: "story",
+          state: stateOf(
+            children[FIRST]!,
+            children[LINKED]!,
+            callout({ blockType: "callout", id: SAVED_CALLOUT.id }),
+            children[RELATED]!
+          ),
+        });
+
+        const edited = await storedStory(docId);
+        expect(answer.saved).toBe(true);
+        expect(edited.root.children.map(({ type }) => type)).toEqual([
+          "paragraph",
+          "paragraph",
+          "block",
+          "relationship",
+        ]);
+        expect(edited.root.children[2]!.fields).toEqual({ ...SAVED_CALLOUT, image: photoId });
+      });
+
+      it("removes every one of them", async () => {
+        const docId = await create({ story: storyWithARelationship() });
+        const { children } = (await storedStory(docId)).root;
+        const edited = [children[FIRST]!, children[LINKED]!, children[LAST]!];
+
+        const answer = await edit({ ...page(docId), key: "story", state: stateOf(...edited) });
+
+        expect(answer).toEqual({ saved: true, status: 200 });
+        expect((await storedStory(docId)).root.children).toEqual(edited);
+      });
+
+      it.each<[string, (related: Node) => Node]>([
+        ["names another collection", (related) => ({ ...related, relationTo: "pages" })],
+        ["names another document", (related) => ({ ...related, value: 999 })],
+      ])("saves nothing when a relationship that stays %s", async (_name, change) => {
+        const docId = await create({ story: storyWithARelationship() });
+        const before = await storedStory(docId);
+        const { children } = before.root;
+
+        const answer = await edit({
+          ...page(docId),
+          key: "story",
+          state: stateOf(
+            children[FIRST]!,
+            children[LINKED]!,
+            change(children[RELATED]!),
+            children[LAST]!
+          ),
+        });
+
+        expect(answer).toEqual({ saved: false, status: 422 });
+        expect(await storedStory(docId)).toEqual(before);
+      });
+    });
+
     it("writes the draft and leaves the published document as it is", async () => {
       const docId = await create({ body: richText("Published") });
 
@@ -636,10 +740,23 @@ describe("editing rich text through the endpoints", () => {
           "a block without an id",
           (children) => children.map((node) => (node.type === "block" ? callout({}) : node)),
         ],
-        ["a block that was removed", (children) => children.filter(({ type }) => type !== "block")],
         [
-          "an upload that was removed",
-          (children) => children.filter(({ type }) => type !== "upload"),
+          "a node posted twice after another one was removed",
+          ([first, , linked, block, rule]) => [first!, linked!, block!, rule!, rule!],
+        ],
+        [
+          "a block that carries the id of a removed upload",
+          ([first, , linked, block, rule]) => [
+            first!,
+            callout({ blockType: "callout", id: "upload-saved" }),
+            linked!,
+            block!,
+            rule!,
+          ],
+        ],
+        [
+          "a block posted before a node that was stored before it, after another one was removed",
+          ([first, upload, linked, block]) => [first!, block!, linked!, upload!],
         ],
         [
           "a block posted twice",
