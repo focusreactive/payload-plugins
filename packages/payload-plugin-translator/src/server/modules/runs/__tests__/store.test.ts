@@ -97,7 +97,7 @@ describe("the run record store", () => {
 
       expect(
         spies.update,
-        "a SQL store hands a deleted job's id back out, and an adopted run is named by it"
+        "a SQL store hands a deleted row's id back out, so a later run can be named by it"
       ).toHaveBeenCalledWith(
         expect.objectContaining({
           id: "row-9",

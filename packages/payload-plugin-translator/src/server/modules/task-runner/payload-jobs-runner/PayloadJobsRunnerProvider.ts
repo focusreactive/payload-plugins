@@ -1,22 +1,14 @@
 import { TranslatorConfigError } from "../../../../core/errors/index.js";
-import type { CollectionSlug, Config, Payload, WorkflowConfig } from "payload";
+import type { Config, Payload, WorkflowConfig } from "payload";
 
 import type { TaskRunner } from "../TaskRunner.interface.js";
 import type { PayloadJobsRunnerOptions, PayloadJobsRunnerConfig, AutoRunConfig } from "./config.js";
 import type { StoredTaskInput } from "./store/index.js";
 import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner.js";
 import { chain, contribute } from "../../../shared/payload/contribute.js";
-import {
-  pointerOf,
-  TaskInputSchema,
-  toPayloadFields,
-  withoutAHandle,
-  WorkflowInputSchema,
-} from "./store/index.js";
+import { pointerOf, TaskInputSchema, toPayloadFields, WorkflowInputSchema } from "./store/index.js";
 import type { PayloadJob, StoredWorkflowInput, TaskStatusByLocale } from "./store/index.js";
 import { attemptsBefore, deliveredLocales, owedIfGaveUp, retryLimitOf } from "./model/index.js";
-import { adoptLegacyJob } from "./legacy/index.js";
-import type { AdoptionDeps } from "./legacy/index.js";
 import type { TaskRunnerContext, TaskRunnerProvider } from "../TaskRunnerProvider.interface.js";
 import type { RunnerCapabilities } from "../RunnerCapabilities.js";
 import type { TaskEvent } from "../types.js";
@@ -64,35 +56,6 @@ type TranslateLocaleTask = {
 };
 
 const A_QUEUE_CAN_BE_REACHED: RunnerCapabilities = { stop: true, run: true };
-
-/**
- * Gives every job queued before the upgrade its pointer. Completed rows are skipped: their work is
- * over, and Payload may already have deleted them.
- */
-async function adoptQueuedBeforeTheUpgrade(
-  deps: AdoptionDeps,
-  names: { workflowName: string; taskName: string }
-): Promise<void> {
-  const { docs } = await deps.payload.find({
-    collection: deps.jobsCollection as CollectionSlug,
-    depth: 0,
-    pagination: false,
-    where: {
-      and: [
-        {
-          or: [
-            { workflowSlug: { equals: names.workflowName } },
-            { taskSlug: { equals: names.taskName } },
-          ],
-        },
-        { completedAt: { exists: false } },
-        withoutAHandle(),
-      ],
-    },
-  });
-
-  for (const job of docs as unknown as PayloadJob[]) await adoptLegacyJob(deps, job);
-}
 
 export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
   readonly capabilities = A_QUEUE_CAN_BE_REACHED;
@@ -151,7 +114,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
         );
       }
 
-      config.onInit = chain(config.onInit, this.reclaimAndAdopt(context));
+      config.onInit = chain(config.onInit, this.reclaimWithoutBlockingBoot(context));
 
       return config;
     };
@@ -188,7 +151,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
     thrown: WeakMap<object, unknown>,
     exclusivePerRun: boolean
   ): WorkflowConfig<StoredJobInput> {
-    const { taskName, workflowName, jobsCollection, retries } = this.config;
+    const { taskName, workflowName, retries } = this.config;
     const retryLimit = retryLimitOf(retries);
     const { report } = context;
 
@@ -206,13 +169,14 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
         : {}),
       handler: async ({ job, req, tasks }) => {
         const runLocale = tasks[taskName];
-        const pointer =
-          pointerOf(job as PayloadJob) ??
-          (await adoptLegacyJob(
-            { payload: req.payload, jobsCollection, report },
-            job as PayloadJob
-          ));
-        if (pointer === null) return;
+        const pointer = pointerOf(job as PayloadJob);
+        if (pointer === null) {
+          req.payload.logger?.error?.({
+            jobId: (job as PayloadJob).id,
+            msg: "[translator] a queued translation names no run and was skipped; it was queued before 1.0, or its input is damaged",
+          });
+          return;
+        }
 
         const reportFor = (targetLng: string, event: TaskEvent) =>
           report(req.payload, { handle: pointer.handle, targetLng }, event);
@@ -240,11 +204,9 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
     };
   }
 
-  /** Both halves are best-effort: a host whose queue cannot be tidied still boots. */
-  private reclaimAndAdopt(context: TaskRunnerContext): (payload: Payload) => Promise<void> {
-    const { jobsCollection, workflowName, taskName } = this.config;
-    const { report } = context;
-
+  private reclaimWithoutBlockingBoot(
+    context: TaskRunnerContext
+  ): (payload: Payload) => Promise<void> {
     return async (payload) => {
       try {
         await new PayloadJobsTaskRunner(payload, this.config, context).reclaimStaleJobs();
@@ -252,17 +214,6 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
         payload.logger?.error?.({
           err,
           msg: "[translator] failed to reclaim stale translation jobs",
-        });
-      }
-      try {
-        await adoptQueuedBeforeTheUpgrade(
-          { payload, jobsCollection, report },
-          { workflowName, taskName }
-        );
-      } catch (err) {
-        payload.logger?.error?.({
-          err,
-          msg: "[translator] failed to adopt translation jobs queued before the upgrade",
         });
       }
     };

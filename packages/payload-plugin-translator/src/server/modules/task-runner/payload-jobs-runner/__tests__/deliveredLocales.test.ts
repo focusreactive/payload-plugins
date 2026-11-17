@@ -8,15 +8,7 @@ const jobWith = (log: PayloadJob["log"]): PayloadJob => ({
   createdAt: "2026-10-09T10:00:00Z",
   updatedAt: "2026-10-09T10:01:00Z",
   log,
-  input: {
-    collection_slug: "docs",
-    collection_id: "1",
-    targets: [
-      { lng: "de", filters: [] },
-      { lng: "fr", filters: [] },
-      { lng: "es", filters: [] },
-    ],
-  },
+  input: { handle: "run-1", locales: ["de", "fr", "es"] },
 });
 
 describe("deliveredLocales", () => {

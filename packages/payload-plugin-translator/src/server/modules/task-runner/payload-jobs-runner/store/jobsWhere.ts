@@ -7,6 +7,3 @@ import type { Where } from "payload";
 export const ofHandles = (handles: readonly string[]): Where => ({
   "input.handle": { in: [...handles] },
 });
-
-/** A job queued before 1.0, which has no handle of its own until it is adopted. */
-export const withoutAHandle = (): Where => ({ "input.handle": { exists: false } });

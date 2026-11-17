@@ -21,10 +21,6 @@ export type JobLogEntry = {
   completedAt?: string;
 };
 
-/**
- * A `payload-jobs` row as this plugin reads it. `input` is left open because a row queued before 1.0
- * carries the whole run where a new one carries a pointer; only `legacy/` looks at the difference.
- */
 export type PayloadJob = {
   /** Payload sets this once a run's retries are spent, and never clears it. */
   hasError?: boolean;
@@ -38,5 +34,5 @@ export type PayloadJob = {
   error?: unknown;
   processing?: boolean | null;
   waitUntil?: string | null;
-  input?: Record<string, unknown>;
+  input?: StoredWorkflowInput;
 };

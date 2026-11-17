@@ -7,8 +7,6 @@ import type { ProvenanceRecorderFactory } from "./Provenance.wiring.js";
 
 /**
  * The rule name a filter carries to ask for the leaves whose source has moved.
- *
- * `store/runTargets.ts` spells the same literal, for rows written before 1.0 — keep the two equal.
  */
 export const DRIFT_CRITERION = "stale";
 
