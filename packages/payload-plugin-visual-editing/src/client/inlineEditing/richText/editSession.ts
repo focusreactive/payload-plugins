@@ -29,13 +29,15 @@ export interface EditSession {
 }
 
 const STYLE_ID = "ve-rich-text-editing-style";
+const EDITOR_ROLE = "textbox";
 const SELECTED_PLACEHOLDER_STYLE = `[${DATA_VE_EDITING_ATTR}] [${DATA_VE_OPAQUE_SELECTED_ATTR}]{outline:2px solid var(${ACCENT_VAR}, ${DEFAULT_ACCENT});outline-offset:1px}`;
+const TWIN_STYLE = `[${DATA_VE_EDITING_ATTR}][role="${EDITOR_ROLE}"]{outline:2px solid var(${ACCENT_VAR}, ${DEFAULT_ACCENT}) !important;outline-offset:2px !important}`;
 const FORMAT_STYLE = `[${DATA_VE_EDITING_ATTR}] .${UNDERLINE_CLASS}{text-decoration:underline}[${DATA_VE_EDITING_ATTR}] .${STRIKETHROUGH_CLASS}{text-decoration:line-through}[${DATA_VE_EDITING_ATTR}] .${UNDERLINE_STRIKETHROUGH_CLASS}{text-decoration:underline line-through}`;
 const IN_CAPTURE_PHASE = true;
 const ATTRS_OF_AN_EDITOR: Readonly<Record<string, string>> = {
   "aria-multiline": "true",
   contenteditable: "true",
-  role: "textbox",
+  role: EDITOR_ROLE,
   [DATA_VE_EDITING_ATTR]: "",
 };
 
@@ -43,7 +45,7 @@ const addFormatStyle = (doc: Document): void => {
   if (doc.querySelector(`#${STYLE_ID}`)) return;
   const style = doc.createElement("style");
   style.id = STYLE_ID;
-  style.textContent = `${FORMAT_STYLE}${SELECTED_PLACEHOLDER_STYLE}`;
+  style.textContent = `${TWIN_STYLE}${FORMAT_STYLE}${SELECTED_PLACEHOLDER_STYLE}`;
   doc.head.append(style);
 };
 
