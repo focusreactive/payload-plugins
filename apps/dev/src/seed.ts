@@ -123,7 +123,6 @@ const heroBlock = (title: string, description: string, ctaLabel: string, image?:
   cta: [{ label: ctaLabel, url: "#" }],
 });
 
-// Generated images (no network): a gradient with a few shapes, for row-card thumbnails.
 const artwork = (from: string, to: string, accent: string) =>
   sharp(
     Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400">
@@ -168,7 +167,6 @@ const run = async () => {
   // --- Header global (upsert) ----------------------------------------------------------------
   await payload.updateGlobal({ slug: "header", data: { name: "Dev Site" } });
 
-  // --- Media (wipe + recreate): images for the row-card thumbnails ---------------------------
   await payload.delete({ collection: "media", where: { id: { exists: true } } });
   const images: Record<string, number> = {};
   for (const [name, from, to, accent, alt] of [
@@ -227,7 +225,6 @@ const run = async () => {
             )
           )
         ),
-        // blocks → array → blocks: sections → features → items[n] → points[n]
         {
           blockType: "features" as const,
           heading: "Why editors like it",
@@ -280,7 +277,7 @@ const run = async () => {
     },
   ];
   for (const data of pages) {
-    // Published, so the frontend route (and Live Preview, which loads it) can render the page.
+    // The frontend route serves published pages only.
     const created = await payload.create({
       collection: "pages",
       locale: "en",
@@ -478,7 +475,6 @@ const run = async () => {
                   "Point B (en)"
                 )
               ),
-              // blocks inside the array row → layout → items → callouts, three panels deep
               callouts: [
                 {
                   blockType: "callout",

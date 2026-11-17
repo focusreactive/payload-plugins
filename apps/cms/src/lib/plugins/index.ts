@@ -275,8 +275,7 @@ export const plugins: Plugin[] = [
     generateURL: (docs) => docs.reduce((url, doc) => `${url}/${doc.slug}`, ""),
   }),
 
-  // Page-builder rows open as stacked drawers with breadcrumbs and show preview cards.
-  // Must run before presetsPlugin, which wraps existing row labels.
+  // Before presetsPlugin, which wraps existing row labels.
   stackedEditing({ collections: ["page", "posts"], globals: [] }),
 
   presetsPlugin({

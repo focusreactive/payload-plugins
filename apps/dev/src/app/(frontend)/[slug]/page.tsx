@@ -26,7 +26,6 @@ export default async function Page({ params, searchParams }: Props) {
 
   const { docs } = await payload.find({
     collection: "pages",
-    // Draft mode (Live Preview): the latest draft, with visual-editing markers.
     context: { visualEditing: draft },
     depth: 1,
     draft,
@@ -49,7 +48,6 @@ export default async function Page({ params, searchParams }: Props) {
       {/* Keyed by locale: `useLivePreview` snapshots `initialData` on mount, so without a remount
           the previous locale's content would survive the switch. */}
       {draft ? (
-        // Rendered on the server from the marked draft; instant preview keeps it live while typing.
         <VisualEditing.Overlay locale={locale}>
           <RenderBlocks blocks={(page.sections ?? []) as never[]} />
         </VisualEditing.Overlay>

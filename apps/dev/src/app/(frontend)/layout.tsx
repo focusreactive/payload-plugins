@@ -19,7 +19,6 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
     <html lang="en">
       <body>
         <AnalyticsProviderClient measurementId={measurementId}>
-          {/* Click-to-edit in Live Preview: draft mode only, inside the admin's preview iframe. */}
           <VisualEditing.Provider
             adminBasePath="/admin"
             available={draft}

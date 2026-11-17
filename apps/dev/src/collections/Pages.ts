@@ -8,7 +8,6 @@ import { HeroBlock } from "../blocks/Hero";
 export const Pages: CollectionConfig = {
   admin: {
     livePreview: {
-      // Through the draft-mode route, so the preview shows the draft with click-to-edit markers.
       url: ({ data }) =>
         `${process.env.NEXT_PUBLIC_SERVER_URL}/next/preview?path=${encodeURIComponent(`/${data.slug}`)}`,
     },

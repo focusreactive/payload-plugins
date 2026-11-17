@@ -120,7 +120,6 @@ export function SectionVisibilityLabel() {
 
   return (
     <span ref={anchorRef} style={{ display: "contents" }}>
-      {/* The stacked-editing row card (thumbnail, title, subtitle) in place of number / pill / block name. */}
       <CardLabel />
 
       {portalContainer &&

@@ -41,7 +41,6 @@ const heroFields: Field[] = [
 ];
 
 export const HeroBlock: Block = withSectionVisibility({
-  // Row card (stacked-editing): the description as subtitle; title and image are the defaults.
   admin: { custom: { preview: definePreview({ subtitle: "description" }) } },
   fields: heroFields,
   labels: { plural: "Heroes", singular: "Hero" },
