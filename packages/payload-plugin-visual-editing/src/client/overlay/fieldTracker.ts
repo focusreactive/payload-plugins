@@ -43,6 +43,7 @@ export interface FieldTracker {
   showTextInHolder(match: FieldMatch, text: string): boolean;
   beginEdit(match: FieldMatch, edit: FieldEdit): HTMLElement | null;
   endEdit(match: FieldMatch, text: string): void;
+  isIdentifiedByThePage(element: Element): boolean;
   dispose(): void;
 }
 
@@ -393,6 +394,10 @@ export function createFieldTracker(main: HTMLElement): FieldTracker {
       texts.set(textNode, tracked);
       holders.set(holder, { match, original: held.original });
       for (const listener of listeners) listener.onFields(holder, [match]);
+    },
+    isIdentifiedByThePage(element) {
+      const isWrittenHere = attrOriginals.get(element)?.get(DATA_VE_PATH_ATTR) === null;
+      return element.hasAttribute(DATA_VE_PATH_ATTR) && !isWrittenHere;
     },
     dispose() {
       pipeline.dispose();
