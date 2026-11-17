@@ -66,7 +66,7 @@
     }
   },
   "scripts": {
-    "build": "bun run build:swc && bun run build:types",
+    "build": "bun run clean && bun run build:swc && bun run build:types",
     "build:swc": "swc ./src -d ./dist --config-file .swcrc --strip-leading-paths",
     "build:types": "tsc --emitDeclarationOnly --outDir dist",
     "clean": "rm -rf dist",
