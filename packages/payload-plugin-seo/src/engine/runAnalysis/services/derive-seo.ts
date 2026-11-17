@@ -3,6 +3,7 @@ import type { PaperData, PaperLike } from "../../types/paper";
 
 import { SeoAssessor } from "yoastseo";
 import keyphraseDistributionModule from "yoastseo/build/scoring/assessments/seo/KeyphraseDistributionAssessment";
+import keyphraseDistributionResearchModule from "yoastseo/build/languageProcessing/researches/keyphraseDistribution";
 import { CHECK_IDS } from "../../../constants/checkIds";
 import { runAssessor } from "../../assessorAdapter";
 import { commonJsDefault } from "../../helpers/commonjs-default";
@@ -15,6 +16,7 @@ import { enrich } from "../utils/enrich";
 import { toCategory } from "../utils/toCategory";
 
 const KeyphraseDistributionAssessment = commonJsDefault(keyphraseDistributionModule);
+const keyphraseDistributionResearch = commonJsDefault(keyphraseDistributionResearchModule);
 
 const KEYPHRASE = new Set<string>(CHECK_IDS.keyphrase);
 const ONPAGE = new Set<string>(CHECK_IDS.onPage);
@@ -47,6 +49,7 @@ export function deriveSeo(
 ): DeriveSeoResult {
   const ctx = { keyphrase, thresholds: thresholds.values };
   const researcher = makeResearcher(paper);
+  researcher.addResearch("keyphraseDistribution", keyphraseDistributionResearch);
 
   const seoAssessor = new SeoAssessor(researcher);
   seoAssessor.addAssessment("keyphraseDistribution", new KeyphraseDistributionAssessment());

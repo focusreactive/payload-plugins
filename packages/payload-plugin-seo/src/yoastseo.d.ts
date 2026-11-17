@@ -1,5 +1,6 @@
 declare module "yoastseo";
 declare module "yoastseo/build/languageProcessing/languages/en/Researcher";
+declare module "yoastseo/build/languageProcessing/researches/keyphraseDistribution";
 declare module "yoastseo/build/scoring/assessments/seo/KeyphraseDistributionAssessment";
 declare module "yoastseo/build/scoring/assessments/seo/KeyphraseLengthAssessment";
 declare module "yoastseo/build/scoring/assessments/seo/KeywordDensityAssessment";
