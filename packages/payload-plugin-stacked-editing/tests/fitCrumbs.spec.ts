@@ -2,9 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { fitCrumbs } from "../src/lib/breadcrumbs.js";
 
-// Home / Sections / Why editors like it / Items / Stacked panels / Points / Point 02
 const widths = [50, 70, 140, 50, 110, 60, 70];
-const total = widths.reduce((sum, width) => sum + width, 0); // 550
+const total = widths.reduce((sum, width) => sum + width, 0);
 
 describe("fitCrumbs", () => {
   it("shows the whole trail when it fits", () => {
@@ -15,7 +14,6 @@ describe("fitCrumbs", () => {
   });
 
   it("folds the middle and keeps as many trailing crumbs as fit", () => {
-    // first + … + (110 + 60 + 70) = 50 + 30 + 240 = 320
     expect(fitCrumbs({ available: 330, ellipsisWidth: 30, widths })).toEqual({
       visible: [0, 4, 5, 6],
       hidden: [1, 2, 3],
@@ -23,7 +21,6 @@ describe("fitCrumbs", () => {
   });
 
   it("first / … / parent / current, then first / … / current", () => {
-    // first + … + parent + current = 50 + 30 + 60 + 70 = 210
     expect(fitCrumbs({ available: 215, ellipsisWidth: 30, widths })).toEqual({
       visible: [0, 5, 6],
       hidden: [1, 2, 3, 4],

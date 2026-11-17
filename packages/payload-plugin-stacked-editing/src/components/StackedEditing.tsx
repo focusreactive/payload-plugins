@@ -23,7 +23,12 @@ import {
 } from "../lib/domPath.js";
 import { classifyHeaderClick } from "../lib/headerClick.js";
 import type { DefaultMode } from "../lib/headerClick.js";
-import { OPEN_FIELD_EVENT, isForDocument, rowPathCandidates } from "../lib/openField.js";
+import {
+  OPEN_FIELD_EVENT,
+  isForDocument,
+  rowDepthOf,
+  rowPathCandidates,
+} from "../lib/openField.js";
 import { resolveRowChain } from "../lib/resolveRowChain.js";
 import type { FieldsPermissions, RowChain, RowLevel } from "../lib/resolveRowChain.js";
 import { refreshDetachedEditors } from "../lib/staleEditors.js";
@@ -33,10 +38,8 @@ import { Panel } from "./Panel.js";
 import { useConfinedToEditor } from "./useConfinedToEditor.js";
 
 type OpenRows = {
-  /** Data path of the deepest open row; every row above it has a panel too. */
-  readonly target: string;
-  /** Row ids along the chain when it was opened — a row that moved or was removed closes its panel. */
-  readonly rowIds: readonly string[];
+  readonly deepestRowPath: string;
+  readonly rowIdsAtOpen: readonly string[];
 };
 
 type RowState = { id?: string; blockType?: string; collapsed?: boolean };
@@ -49,44 +52,48 @@ const pathPrefixes = (path: string): string[] => {
   return segments.map((_, index) => segments.slice(0, index + 1).join("."));
 };
 
-/**
- * A string that changes whenever something the open chain depends on changes: the rows (ids and
- * block types) of every array/blocks field on the way to the target, and the text values the
- * breadcrumbs' row titles are made from. Selecting a string keeps `useFormFields` from re-rendering on every keystroke
- * elsewhere in the document.
- */
-const chainSignature = (fields: FormState, target: string | undefined): string => {
-  if (!target) {
+const ROW_PATH = /\.\d+$/u;
+
+const ownTextValues = (fields: FormState, rowPath: string): string[] => {
+  const childPrefix = `${rowPath}.`;
+  const values: string[] = [];
+  for (const [path, field] of Object.entries(fields)) {
+    const { value } = field as { value?: unknown };
+    const isDirectChild =
+      path.startsWith(childPrefix) && !path.slice(childPrefix.length).includes(".");
+    if (isDirectChild && (typeof value === "string" || typeof value === "number")) {
+      values.push(`${path}=${value}`);
+    }
+  }
+  return values;
+};
+
+const chainSignature = (fields: FormState, deepestRowPath: string | undefined): string => {
+  if (!deepestRowPath) {
     return "";
   }
   const parts: string[] = [];
-  for (const prefix of pathPrefixes(target)) {
+  for (const prefix of pathPrefixes(deepestRowPath)) {
     const rows = rowsOf(fields, prefix);
     if (rows) {
       parts.push(`${prefix}=${rows.map((row) => `${row.id}:${row.blockType ?? ""}`).join(",")}`);
     }
-    // Text values directly in each row: what the panel titles and crumbs (row previews) read.
-    if (/\.\d+$/u.test(prefix)) {
-      const childPrefix = `${prefix}.`;
-      for (const [path, field] of Object.entries(fields)) {
-        const { value } = field as { value?: unknown };
-        const isOwnChild =
-          path.startsWith(childPrefix) && !path.slice(childPrefix.length).includes(".");
-        if (isOwnChild && (typeof value === "string" || typeof value === "number")) {
-          parts.push(`${path}=${value}`);
-        }
-      }
+    if (ROW_PATH.test(prefix)) {
+      parts.push(...ownTextValues(fields, prefix));
     }
   }
   return parts.join("|");
 };
 
-/** The open chain, cut at the first row that no longer is the row that was opened. */
-const stillOpen = (chain: RowChain, open: OpenRows, fields: FormState): RowLevel[] => {
+const levelsWithUnchangedRows = (
+  chain: RowChain,
+  open: OpenRows,
+  fields: FormState
+): RowLevel[] => {
   const levels: RowLevel[] = [];
   for (const [index, level] of chain.levels.entries()) {
     const id = rowsOf(fields, level.fieldPath)?.[level.rowIndex]?.id;
-    if (id === undefined || id !== open.rowIds[index]) {
+    if (id === undefined || id !== open.rowIdsAtOpen[index]) {
       break;
     }
     levels.push(level);
@@ -94,11 +101,8 @@ const stillOpen = (chain: RowChain, open: OpenRows, fields: FormState): RowLevel
   return levels;
 };
 
-/**
- * Inline copies of a row's fields stay mounted (hidden) under an open panel, so a `<label for>` in
- * the panel would focus the hidden twin, which comes first in the document. Focus the panel's own.
- */
-const focusLabelTarget = (event: MouseEvent, target: Element, ownerId: string) => {
+// The row's hidden inline copy comes first in the DOM, so a panel label would focus that twin.
+const focusPanelInputOfLabel = (event: MouseEvent, target: Element, ownerId: string) => {
   const label = target.closest("label[for]");
   const panel = label?.closest(`[${OWNER_ATTRIBUTE}="${ownerId}"]`);
   if (!(label instanceof HTMLLabelElement) || !panel || panel.tagName === "FORM") {
@@ -111,10 +115,8 @@ const focusLabelTarget = (event: MouseEvent, target: Element, ownerId: string) =
   }
 };
 
-/** How long an inline toggle waits to be read back before it is forgotten. */
 const PENDING_TOGGLE_MS = 1500;
-/** Frames to keep re-checking after rows change (see the collapse effect). */
-const COLLAPSE_RECHECKS = 10;
+const COLLAPSE_RECHECK_FRAMES = 10;
 
 const useLatest = <T,>(value: T) => {
   const ref = useRef(value);
@@ -122,15 +124,6 @@ const useLatest = <T,>(value: T) => {
   return ref;
 };
 
-/**
- * Mounted once per edit view (in `beforeDocumentControls`, i.e. inside the document form). Turns a
- * click on an array/blocks row header into a stack of drawers — one per level down to that row —
- * each rendering the row's fields with Payload's own `RenderFields`, bound to the same form.
- *
- * In `panel` mode (default) every row starts as a collapsed card and a click on its header opens
- * the panel; the chevron still expands inline. In `inline` mode rows keep Payload's behaviour and
- * only the "open" icon in the header opens a panel.
- */
 export const StackedEditing = ({ defaultMode = "panel" }: { defaultMode?: DefaultMode }) => {
   const ownerId = useId().replaceAll(/[^a-zA-Z0-9]/gu, "");
   const markerRef = useRef<HTMLSpanElement>(null);
@@ -142,26 +135,21 @@ export const StackedEditing = ({ defaultMode = "panel" }: { defaultMode?: Defaul
   const operation = useOperation() ?? "update";
   const { i18n, t } = useTranslation();
   const { disabled, dispatchFields, getFields } = useForm();
-  const signature = useFormFields(([fields]) => chainSignature(fields, open?.target));
+  const signature = useFormFields(([fields]) => chainSignature(fields, open?.deepestRowPath));
   const collapseByDefault = defaultMode === "panel";
   const allRows = useFormFields(([fields]) => (collapseByDefault ? rowsSignature(fields) : ""));
   const collapseMemory = useRef({
-    pendingFields: new Set<string>(),
-    userExpanded: new Set<string>(),
+    fieldsJustToggledByEditor: new Set<string>(),
+    rowsExpandedByEditor: new Set<string>(),
   });
 
-  // Rows are collapsed cards unless the editor expanded them inline — on load, for rows added later
-  // and after Payload replaces form state (save). Form state only: no preferences are written, no
-  // data changes and the form is not marked modified.
   useEffect(() => {
     if (!collapseByDefault || !allRows) {
       return;
     }
-    // Payload may replace form state right after this runs (the Form's initial-state effect), which
-    // can land on the same signature string and not re-trigger the effect — so check again on the
-    // next frames until nothing is left to collapse.
+    // Payload's initial REPLACE_STATE can land on an identical signature, so re-check for a few frames.
     let frame = 0;
-    let attempts = COLLAPSE_RECHECKS;
+    let attempts = COLLAPSE_RECHECK_FRAMES;
     const apply = () => {
       const actions = rowsToCollapse(getFields(), collapseMemory.current);
       for (const { path, updatedRows } of actions) {
@@ -209,17 +197,15 @@ export const StackedEditing = ({ defaultMode = "panel" }: { defaultMode?: Defaul
     [config.blocksMap, disabled, docPermissions, documentFields, getFields, operation]
   );
 
-  // `signature` is read so the chain is re-resolved when rows move, change type or get renamed.
   const levels = useMemo(() => {
     if (!open || signature === undefined) {
       return [];
     }
-    return stillOpen(resolve(open.target), open, getFields());
+    return levelsWithUnchangedRows(resolve(open.deepestRowPath), open, getFields());
   }, [getFields, open, resolve, signature]);
 
   const levelsRef = useLatest(levels);
 
-  /** Keep the first `keep` panels and close the rest; `0` closes them all. */
   const navigate = useCallback(
     (keep: number) => {
       const current = levelsRef.current;
@@ -230,17 +216,25 @@ export const StackedEditing = ({ defaultMode = "panel" }: { defaultMode?: Defaul
       refreshDetachedEditors({ dispatchFields, getFields, rowPath: firstClosed.rowPath });
       const last = current[keep - 1];
       setOpen((previous) =>
-        last && previous ? { target: last.rowPath, rowIds: previous.rowIds.slice(0, keep) } : null
+        last && previous
+          ? { deepestRowPath: last.rowPath, rowIdsAtOpen: previous.rowIdsAtOpen.slice(0, keep) }
+          : null
       );
     },
     [dispatchFields, getFields, levelsRef]
   );
 
-  // A row that was moved, removed or changed block type while its panel was open closes the panel.
   useEffect(() => {
-    if (open && levels.length < open.rowIds.length) {
+    if (open && levels.length < open.rowIdsAtOpen.length) {
       const last = levels.at(-1);
-      setOpen(last ? { target: last.rowPath, rowIds: open.rowIds.slice(0, levels.length) } : null);
+      setOpen(
+        last
+          ? {
+              deepestRowPath: last.rowPath,
+              rowIdsAtOpen: open.rowIdsAtOpen.slice(0, levels.length),
+            }
+          : null
+      );
     }
   }, [levels, open]);
 
@@ -259,9 +253,7 @@ export const StackedEditing = ({ defaultMode = "panel" }: { defaultMode?: Defaul
           return false;
         }
         rowIds.push(row.id);
-        collapseMemory.current.userExpanded.delete(row.id);
-        // Collapse the inline row: its fields stay mounted (Payload keeps collapsed rows mounted)
-        // but hidden, so only the panel copy is visible and focusable.
+        collapseMemory.current.rowsExpandedByEditor.delete(row.id);
         if (!row.collapsed) {
           dispatchFields({
             type: "SET_ROW_COLLAPSED",
@@ -272,7 +264,7 @@ export const StackedEditing = ({ defaultMode = "panel" }: { defaultMode?: Defaul
           } as Parameters<typeof dispatchFields>[0]);
         }
       }
-      setOpen({ target: rowPath, rowIds });
+      setOpen({ deepestRowPath: rowPath, rowIdsAtOpen: rowIds });
       return true;
     },
     [dispatchFields, getFields, resolve]
@@ -281,8 +273,6 @@ export const StackedEditing = ({ defaultMode = "panel" }: { defaultMode?: Defaul
   const openRowRef = useLatest(openRow);
   const documentRef = useLatest({ collectionSlug, globalSlug, id });
 
-  // A click in the Live Preview (visual-editing bridge): open the panels down to the field — a new
-  // stack replaces the open one, levels both share stay mounted — and focus it in the top panel.
   useEffect(() => {
     let cancelFocus: (() => void) | undefined;
     const onOpenField = (event: Event) => {
@@ -296,14 +286,13 @@ export const StackedEditing = ({ defaultMode = "panel" }: { defaultMode?: Defaul
           event.preventDefault();
           cancelFocus?.();
           cancelFocus = focusFieldInTopPanel({
-            depth: rowPath.split(".").filter((segment) => /^\d+$/u.test(segment)).length,
+            depth: rowDepthOf(rowPath),
             ownerId,
             path,
           });
           return;
         }
       }
-      // A field outside any row: close the panels so the bridge's inline focus is visible.
       setOpen(null);
     };
     window.addEventListener(OPEN_FIELD_EVENT, onOpenField);
@@ -312,6 +301,7 @@ export const StackedEditing = ({ defaultMode = "panel" }: { defaultMode?: Defaul
       window.removeEventListener(OPEN_FIELD_EVENT, onOpenField);
     };
   }, [documentRef, openRowRef, ownerId]);
+
   const modeRef = useLatest(defaultMode);
 
   useEffect(() => {
@@ -324,12 +314,10 @@ export const StackedEditing = ({ defaultMode = "panel" }: { defaultMode?: Defaul
       return scope !== null && scope.getAttribute(OWNER_ATTRIBUTE) === ownerId;
     };
 
-    // The editor toggling rows inline (chevron, "Show All" / "Collapse All") is their choice: the
-    // field's rows are read back once after Payload applied it instead of being collapsed again.
     const rememberToggle = (fieldPath: string) => {
-      const { pendingFields } = collapseMemory.current;
-      pendingFields.add(fieldPath);
-      setTimeout(() => pendingFields.delete(fieldPath), PENDING_TOGGLE_MS);
+      const { fieldsJustToggledByEditor } = collapseMemory.current;
+      fieldsJustToggledByEditor.add(fieldPath);
+      setTimeout(() => fieldsJustToggledByEditor.delete(fieldPath), PENDING_TOGGLE_MS);
     };
     const rememberHeaderAction = (target: Element) => {
       const action = target.closest(".blocks-field__header-actions, .array-field__header-actions");
@@ -348,7 +336,7 @@ export const StackedEditing = ({ defaultMode = "panel" }: { defaultMode?: Defaul
       const toggle = target.closest(TOGGLE_SELECTOR);
       if (!toggle) {
         rememberHeaderAction(target);
-        focusLabelTarget(event, target, ownerId);
+        focusPanelInputOfLabel(event, target, ownerId);
         return;
       }
       if (!isOwn(toggle)) {
@@ -362,14 +350,13 @@ export const StackedEditing = ({ defaultMode = "panel" }: { defaultMode?: Defaul
         ":scope > .collapsible__actions-wrap"
       );
       const chevron = actionsWrap?.querySelector(":scope > .collapsible__indicator");
+      const isKeyboardActivation = event.detail === 0;
       const action = classifyHeaderClick({
         actionsWrap: actionsWrap?.getBoundingClientRect(),
         chevron: chevron?.getBoundingClientRect(),
         mode: modeRef.current,
-        // `detail` is 0 for clicks synthesized from Enter/Space.
-        point: event.detail === 0 ? null : { x: event.clientX, y: event.clientY },
+        point: isKeyboardActivation ? null : { x: event.clientX, y: event.clientY },
       });
-      // Alt/Option-click still keeps Payload's inline expand/collapse.
       if (action === "inline" || event.altKey) {
         rememberToggle(rowPath.slice(0, rowPath.lastIndexOf(".")));
         return;

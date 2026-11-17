@@ -49,7 +49,6 @@ describe("refreshDetachedEditors", () => {
       initialValue: edited,
     });
 
-    // A late write from the unmounted panel editor is caught by the second pass.
     const late = editor("late");
     fields = { "layout.0.rich": { value: late, initialValue: edited } } as unknown as FormState;
     vi.runAllTimers();

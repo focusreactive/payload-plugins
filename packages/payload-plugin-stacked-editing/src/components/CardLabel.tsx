@@ -11,7 +11,7 @@ import {
 import type { ClientField } from "payload";
 import { useMemo } from "react";
 
-import { createTranslate, kindLabelOf } from "../lib/breadcrumbs.js";
+import { createTranslate, rowTypeLabelOf } from "../lib/breadcrumbs.js";
 import { previewConfigOf, resolvePreview } from "../lib/preview.js";
 import type { Preview } from "../lib/preview.js";
 import { resolveRowChain } from "../lib/resolveRowChain.js";
@@ -42,8 +42,7 @@ const Thumbnail = ({
   if (src) {
     return (
       <span aria-hidden className={`${BASE}__thumb`}>
-        {/* A 34px admin thumbnail, not page content: next/image would add nothing here. */}
-        {/* oxlint-disable-next-line next/no-img-element */}
+        {/* oxlint-disable-next-line next/no-img-element -- a 34px admin thumbnail, next/image adds nothing */}
         <img alt="" className={`${BASE}__image`} loading="lazy" src={src} />
       </span>
     );
@@ -65,13 +64,7 @@ const Thumbnail = ({
 
 const pad = (index: number): string => String(index + 1).padStart(2, "0");
 
-/**
- * A Sanity-style card for an array or blocks row header: thumbnail, title, subtitle. Read from the
- * row's `admin.custom.preview` (see `definePreview`) or the defaults, live from form state.
- *
- * The plugin sets it as the `RowLabel` of array fields and the `Label` of blocks that have none of
- * their own. Custom labels can render it too: it only needs Payload's row label context.
- */
+// Reads Payload's row-label context, not props: label wrappers (e.g. the presets plugin) drop field props.
 export const CardLabel = () => {
   const { data, path: rowPath, rowNumber } = useRowLabel<{ blockType?: string }>();
   const { config, getEntityConfig } = useConfig();
@@ -116,7 +109,6 @@ export const CardLabel = () => {
     [config.collections]
   );
 
-  // Re-rendered only when the card's own text changes, not on every keystroke in the document.
   const serialized = useFormFields(([fields]) => {
     if (!level) {
       return "";
@@ -127,7 +119,7 @@ export const CardLabel = () => {
         (fields[`${rowPath}.${relative}`]?.rows as unknown[] | undefined)?.length,
       getValue: (relative) => fields[`${rowPath}.${relative}`]?.value,
       isImageCollection: (slug) => imageCollections.has(slug),
-      kindLabel: kindLabelOf(level, translate),
+      defaultSubtitle: rowTypeLabelOf(level, translate),
       translate,
       withBlockName: Boolean(level.block),
       ...(previewConfigOf(level) ? { select: previewConfigOf(level)?.select } : {}),
@@ -137,7 +129,7 @@ export const CardLabel = () => {
 
   const preview: Preview = serialized ? (JSON.parse(serialized) as Preview) : {};
   const index = typeof rowNumber === "number" ? rowNumber : (level?.rowIndex ?? 0);
-  const fallback = level ? `${kindLabelOf(level, translate)} ${pad(index)}` : pad(index);
+  const fallback = level ? `${rowTypeLabelOf(level, translate)} ${pad(index)}` : pad(index);
 
   return (
     <span className={BASE}>

@@ -4,16 +4,11 @@ import { CARD_LABEL_COMPONENT } from "./constants.js";
 
 type Tab = { fields: Field[] };
 
-/**
- * Gives every array field without its own `admin.components.RowLabel`, and every block without its
- * own `admin.components.Label`, the plugin's row card. Labels set by the user (or by a plugin that
- * ran earlier) are left alone. Walks into blocks, arrays, groups, rows, collapsibles and tabs.
- */
-const cards = {
+const cardLabelTransform = {
   block(block: Block): Block {
     return {
       ...block,
-      fields: cards.fields(block.fields),
+      fields: cardLabelTransform.fields(block.fields),
       ...(block.admin?.components?.Label
         ? {}
         : {
@@ -25,14 +20,14 @@ const cards = {
     };
   },
   fields(fields: Field[]): Field[] {
-    return fields.map((field) => cards.field(field));
+    return fields.map((field) => cardLabelTransform.field(field));
   },
   field(field: Field): Field {
     switch (field.type) {
       case "array": {
         return {
           ...field,
-          fields: cards.fields(field.fields),
+          fields: cardLabelTransform.fields(field.fields),
           ...(field.admin?.components?.RowLabel
             ? {}
             : {
@@ -44,19 +39,21 @@ const cards = {
         };
       }
       case "blocks": {
-        // Blocks referenced by slug (`blockReferences`) live in `config.blocks`, handled there.
-        return { ...field, blocks: field.blocks.map((block) => cards.block(block)) };
+        return { ...field, blocks: field.blocks.map((block) => cardLabelTransform.block(block)) };
       }
       case "tabs": {
         return {
           ...field,
-          tabs: field.tabs.map((tab) => ({ ...tab, fields: cards.fields((tab as Tab).fields) })),
+          tabs: field.tabs.map((tab) => ({
+            ...tab,
+            fields: cardLabelTransform.fields((tab as Tab).fields),
+          })),
         };
       }
       case "group":
       case "row":
       case "collapsible": {
-        return { ...field, fields: cards.fields(field.fields) } as Field;
+        return { ...field, fields: cardLabelTransform.fields(field.fields) } as Field;
       }
       default: {
         return field;
@@ -65,5 +62,5 @@ const cards = {
   },
 };
 
-export const withCardLabelFields = (fields: Field[]): Field[] => cards.fields(fields);
-export const withCardLabelBlock = (block: Block): Block => cards.block(block);
+export const withCardLabelFields = (fields: Field[]): Field[] => cardLabelTransform.fields(fields);
+export const withCardLabelBlock = (block: Block): Block => cardLabelTransform.block(block);

@@ -2,11 +2,6 @@ import type { ClientField } from "payload";
 
 import type { Translate } from "./breadcrumbs.js";
 
-/**
- * Sanity-style row preview: which of the row's fields make up its card. Paths are relative to the
- * row, dot paths allowed (`cta.label`, `image`); a path ending in `.length` counts the rows of an
- * array or blocks field (`points.length` → "2 Points").
- */
 export type PreviewSelect = {
   title?: string;
   subtitle?: string;
@@ -15,18 +10,9 @@ export type PreviewSelect = {
 
 export type PreviewConfig = { select: PreviewSelect };
 
-/**
- * Builds the value for `admin.custom.preview` on an array field or a block:
- *
- * ```ts
- * { name: 'items', type: 'array', admin: { custom: { preview: definePreview({ title: 'title', media: 'image' }) } } }
- * ```
- *
- * Plain data only — it travels to the admin inside the client config.
- */
+/** Row card config for `admin.custom.preview` on a block or array field: `{ title, subtitle, media }` paths relative to the row. */
 export const definePreview = (select: PreviewSelect): PreviewConfig => ({ select });
 
-/** `admin.custom.preview` of the block (blocks rows) or of the array field (array rows). */
 export const previewConfigOf = (owner: {
   field: { admin?: unknown };
   block?: { admin?: unknown };
@@ -49,25 +35,18 @@ export type Preview = {
 };
 
 export type PreviewInput = {
-  /** The row's own fields (block fields or array fields), client config. */
   fields: readonly ClientField[];
   select?: PreviewSelect;
-  /** Value at a path relative to the row (from form state). */
   getValue: (relativePath: string) => unknown;
-  /** Number of rows of the array/blocks field at a path relative to the row. */
   getRowCount?: (relativePath: string) => number | undefined;
   translate: Translate;
-  /** Block label or the array's item label: the default subtitle. */
-  kindLabel?: string;
-  /** Whether a collection holds uploads that can be shown as a thumbnail. */
+  defaultSubtitle?: string;
   isImageCollection?: (slug: string) => boolean;
-  /** Blocks only: the row's `blockName`, which wins as the title when set. */
   withBlockName?: boolean;
 };
 
-const MAX_TEXT = 120;
-/** Field types whose value can be a default title. */
-const TEXT_TYPES = new Set(["text", "textarea", "email", "select", "radio"]);
+const MAX_PREVIEW_TEXT_LENGTH = 120;
+const DEFAULT_TITLE_FIELD_TYPES = new Set(["text", "textarea", "email", "select", "radio"]);
 
 type AnyField = {
   name?: string;
@@ -82,12 +61,13 @@ type AnyField = {
   hidden?: boolean;
 };
 
-const clip = (text: string): string =>
-  text.length > MAX_TEXT ? `${text.slice(0, MAX_TEXT - 1).trimEnd()}…` : text;
+const truncateText = (text: string): string =>
+  text.length > MAX_PREVIEW_TEXT_LENGTH
+    ? `${text.slice(0, MAX_PREVIEW_TEXT_LENGTH - 1).trimEnd()}…`
+    : text;
 
 type LexicalNode = { text?: unknown; children?: unknown; type?: unknown };
 
-/** Plain text of the first block of a Lexical editor state that has any text. */
 export const richTextToPlain = (value: unknown): string | undefined => {
   const root = (value as { root?: LexicalNode } | null | undefined)?.root;
   if (!root || !Array.isArray(root.children)) {
@@ -107,7 +87,7 @@ export const richTextToPlain = (value: unknown): string | undefined => {
   for (const block of root.children as LexicalNode[]) {
     const text = collect(block).replaceAll(/\s+/gu, " ").trim();
     if (text) {
-      return clip(text);
+      return truncateText(text);
     }
   }
   return undefined;
@@ -116,8 +96,7 @@ export const richTextToPlain = (value: unknown): string | undefined => {
 const isEditorState = (value: unknown): boolean =>
   typeof value === "object" && value !== null && "root" in value;
 
-/** Children of a field that sit at the same data level (unnamed containers). */
-const transparentChildren = (field: AnyField): readonly ClientField[] | null => {
+const childrenAtSameDataLevel = (field: AnyField): readonly ClientField[] | null => {
   if (field.type === "row" || field.type === "collapsible") {
     return field.fields ?? [];
   }
@@ -130,11 +109,10 @@ const transparentChildren = (field: AnyField): readonly ClientField[] | null => 
   return null;
 };
 
-/** Every named field at the row's own level, in order, seeing through unnamed containers. */
 export const topLevelFields = (fields: readonly ClientField[]): AnyField[] => {
   const result: AnyField[] = [];
   for (const field of fields as unknown as AnyField[]) {
-    const children = transparentChildren(field);
+    const children = childrenAtSameDataLevel(field);
     if (children) {
       result.push(...topLevelFields(children));
     } else if (field.name) {
@@ -144,7 +122,6 @@ export const topLevelFields = (fields: readonly ClientField[]): AnyField[] => {
   return result;
 };
 
-/** The field at a dot path relative to the row (array indexes are skipped). */
 export const fieldAtPath = (fields: readonly ClientField[], path: string): AnyField | undefined => {
   const [head, ...rest] = path.split(".").filter((segment) => !/^\d+$/u.test(segment));
   const field = topLevelFields(fields).find((candidate) => candidate.name === head);
@@ -171,7 +148,6 @@ const optionLabel = (field: AnyField | undefined, value: string, translate: Tran
   return value;
 };
 
-/** A field value as one line of text, or `undefined` when it has none. */
 export const valueToText = (
   value: unknown,
   field: AnyField | undefined,
@@ -186,20 +162,20 @@ export const valueToText = (
       return undefined;
     }
     if (field?.type === "select" || field?.type === "radio") {
-      return clip(optionLabel(field, trimmed, translate));
+      return truncateText(optionLabel(field, trimmed, translate));
     }
     if (field?.type === "date") {
       const date = new Date(trimmed);
       return Number.isNaN(date.getTime()) ? trimmed : date.toLocaleDateString();
     }
-    return clip(trimmed);
+    return truncateText(trimmed);
   }
   if (typeof value === "number") {
     return String(value);
   }
   if (Array.isArray(value) && value.every((item) => typeof item === "string")) {
     const labels = (value as string[]).map((item) => optionLabel(field, item, translate));
-    return labels.length > 0 ? clip(labels.join(", ")) : undefined;
+    return labels.length > 0 ? truncateText(labels.join(", ")) : undefined;
   }
   if (isEditorState(value)) {
     return richTextToPlain(value);
@@ -234,13 +210,11 @@ const idOf = (value: unknown): number | string | undefined => {
   return undefined;
 };
 
-/** An upload field's value as something a thumbnail can be made from. */
 export const mediaOf = (value: unknown, field: AnyField | undefined): PreviewMedia | undefined => {
   if (value === null || value === undefined || value === "") {
     return undefined;
   }
   const relationTo = field?.relationTo;
-  // Polymorphic upload: { relationTo, value }
   if (typeof value === "object" && value !== null && "relationTo" in value && "value" in value) {
     const poly = value as { relationTo: string; value: unknown };
     const id = idOf(poly.value);
@@ -260,15 +234,8 @@ export const mediaOf = (value: unknown, field: AnyField | undefined): PreviewMed
   return { kind: "doc", relationTo, id };
 };
 
-const TITLE_FALLBACK_TYPES = new Set(["richText"]);
+const FALLBACK_TITLE_FIELD_TYPES = new Set(["richText"]);
 
-/**
- * The card of a row: `select` paths where given, otherwise the defaults —
- * title = the block name, else the first text-like field with a value (rich text as a last
- * resort); subtitle = the block or item label; media = the first upload field into an image
- * collection. A missing value falls through to the default, an empty title leaves it undefined
- * (the caller shows its own label then).
- */
 export const resolvePreview = (input: PreviewInput): Preview => {
   const { fields, select = {}, translate } = input;
   const named = topLevelFields(fields).filter((field) => !(field.admin?.hidden || field.hidden));
@@ -282,7 +249,7 @@ export const resolvePreview = (input: PreviewInput): Preview => {
   }
   if (!title) {
     for (const field of named) {
-      if (TEXT_TYPES.has(field.type) && field.name) {
+      if (DEFAULT_TITLE_FIELD_TYPES.has(field.type) && field.name) {
         title = valueToText(input.getValue(field.name), field, translate);
         if (title) {
           break;
@@ -292,7 +259,7 @@ export const resolvePreview = (input: PreviewInput): Preview => {
   }
   if (!title) {
     for (const field of named) {
-      if (TITLE_FALLBACK_TYPES.has(field.type) && field.name) {
+      if (FALLBACK_TITLE_FIELD_TYPES.has(field.type) && field.name) {
         title = valueToText(input.getValue(field.name), field, translate);
         if (title) {
           break;
@@ -302,7 +269,7 @@ export const resolvePreview = (input: PreviewInput): Preview => {
   }
 
   const subtitle =
-    (select.subtitle ? selectedText(input, select.subtitle) : undefined) ?? input.kindLabel;
+    (select.subtitle ? selectedText(input, select.subtitle) : undefined) ?? input.defaultSubtitle;
 
   let media: PreviewMedia | undefined;
   if (select.media) {

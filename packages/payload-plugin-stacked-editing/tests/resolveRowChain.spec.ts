@@ -27,7 +27,6 @@ describe("resolveRowChain", () => {
     expect(chain.complete).toBe(true);
     expect(chain.levels).toHaveLength(1);
     expect(chain.levels[0]?.block?.slug).toBe("deepNest");
-    // Payload's Blocks field: `schemaPath + blockConfig.slug`.
     expect(chain.levels[0]?.schemaPath).toBe("layoutdeepNest");
   });
 
@@ -60,7 +59,6 @@ describe("resolveRowChain", () => {
       rowPath: "layout.0.meta.links.0",
       fieldPath: "layout.0.meta.links",
       block: undefined,
-      // The tabs field is unnamed, so it contributes an `_index-` segment to the schema path only.
       schemaPath: "layoutdeepNest._index-1.meta.links",
     });
     expect(summary("layout.0.items.2").at(-1)?.schemaPath).toBe("layoutdeepNest._index-1-1.items");
@@ -109,7 +107,6 @@ describe("resolveRowChain", () => {
     expect(chain.levels[0]?.permissions).toEqual(permissions.layout.blocks.deepNest.fields);
     expect(chain.levels[0]?.readOnly).toBe(false);
     expect(chain.levels[1]?.permissions).toBe(true);
-    // No update permission on `nested` → its rows render read-only.
     expect(chain.levels[1]?.readOnly).toBe(true);
   });
 

@@ -7,58 +7,38 @@ import type {
 } from "payload";
 import { getFieldPaths, getFieldPermissions } from "payload/shared";
 
-/**
- * The permissions object Payload hands to `RenderFields` — a map of field name to permissions, or
- * `true` for "everything allowed". Kept loose on purpose: Payload's own containers index into it
- * with a few shapes (`fields`, `blocks[slug].fields`) that its public types do not all spell out.
- */
 export type FieldsPermissions = SanitizedFieldsPermissions | undefined;
 
 export type CollectionField = ArrayFieldClient | BlocksFieldClient;
 
-/** One editable row on the way from the document root down to the row a panel shows. */
 export type RowLevel = {
-  /** The array or blocks field that owns the row. */
   readonly field: CollectionField;
-  /** Data path of that field, e.g. `layout.0.nested`. */
   readonly fieldPath: string;
   readonly rowIndex: number;
-  /** Data path of the row, e.g. `layout.0.nested.1`. Children render under it. */
   readonly rowPath: string;
-  /** The block the row is an instance of (blocks fields only). */
   readonly block?: ClientBlock;
-  /** The row's own fields — what Payload's `BlockRow` / `ArrayRow` render inside the row. */
   readonly fields: ClientField[];
-  /** `parentSchemaPath` for the row's fields, computed exactly the way Payload computes it. */
   readonly schemaPath: string;
-  /** Permissions for the row's fields, computed the way `BlockRow` / `ArrayRow` compute them. */
   readonly permissions: SanitizedFieldsPermissions;
   readonly readOnly: boolean;
 };
 
 export type ResolveRowChainArgs = {
-  /** Top-level fields of the collection or global (client config). */
   readonly fields: ClientField[];
-  /** `docPermissions.fields` — what `DocumentFields` passes to the top-level `RenderFields`. */
   readonly permissions: FieldsPermissions;
-  /** Data path of the row to reach, e.g. `layout.0.nested.1`. */
   readonly rowPath: string;
-  /** Block slug of the row at `rowPath` in the blocks field at `fieldPath`, read from form state. */
   readonly getBlockType: (args: {
     fieldPath: string;
     rowIndex: number;
     rowPath: string;
   }) => string | undefined;
-  /** `config.blocksMap` — where `blockReferences` resolve to. */
   readonly blocksMap?: Record<string, ClientBlock>;
   readonly operation?: "create" | "update";
   readonly readOnly?: boolean;
 };
 
 export type RowChain = {
-  /** Every row from the outermost to the target, one entry per panel. */
   readonly levels: RowLevel[];
-  /** `false` when the walk stopped early (unknown block type, row gone, path not in the schema). */
   readonly complete: boolean;
 };
 
@@ -81,7 +61,6 @@ const lastSegment = (path: string): string => {
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
-/** `ArrayRow`: `permissions === true ? permissions : permissions?.fields`. */
 const childPermissions = (permissions: unknown): FieldsPermissions => {
   if (permissions === true) {
     return true;
@@ -89,7 +68,6 @@ const childPermissions = (permissions: unknown): FieldsPermissions => {
   return isObject(permissions) ? (permissions.fields as FieldsPermissions) : undefined;
 };
 
-/** Mirrors the permission branch at the top of Payload's `BlockRow`. */
 export const blockRowPermissions = (permissions: unknown, blockSlug: string): FieldsPermissions => {
   if (permissions === true) {
     return true;
@@ -116,7 +94,6 @@ export const blockRowPermissions = (permissions: unknown, blockSlug: string): Fi
   return isObject(specific) ? (specific.fields as FieldsPermissions) : undefined;
 };
 
-/** `blockReferences` (slugs into `config.blocksMap`) or inline `blocks` — as Payload's Blocks field does. */
 export const blocksOf = (
   field: BlocksFieldClient,
   blocksMap: Record<string, ClientBlock> = {}
@@ -134,7 +111,6 @@ export const blocksOf = (
   return resolved;
 };
 
-/** Same lookup order as Payload's Blocks field: the config-level map first, then the field's own blocks. */
 export const findBlock = (
   field: BlocksFieldClient,
   blockType: string,
@@ -193,8 +169,7 @@ const rowLevelOf = (
       rowPath,
       block,
       fields: block.fields,
-      // Payload's Blocks field passes `schemaPath + blockConfig.slug` (no separator) to BlockRow.
-      // Mirrored verbatim so a row rendered in a panel is indistinguishable from the inline one.
+      // Payload's Blocks field joins these without a dot; mirrored so panel rows match inline rows.
       schemaPath: `${paths.schemaPath}${block.slug}`,
       permissions: blockRowPermissions(fieldPermissions, block.slug) ?? true,
       readOnly,
@@ -202,11 +177,6 @@ const rowLevelOf = (
   };
 };
 
-/**
- * Walks a field list the way `RenderFields` renders it — same paths, schema paths, index paths and
- * permissions — looking for the array/blocks field that owns the next row on the way to
- * `args.rowPath`.
- */
 const findRowIn = (args: ResolveRowChainArgs, scope: Scope): Found => {
   const target = args.rowPath;
   const operation = args.operation ?? "update";
@@ -271,7 +241,6 @@ const findRowIn = (args: ResolveRowChainArgs, scope: Scope): Found => {
           if (named && !target.startsWith(`${tabPaths.path}.`)) {
             continue;
           }
-          // Payload's Tabs field: a named tab gets `permissions[tab.name].fields` (or the entry itself).
           let tabPermissions: unknown = fieldPermissions;
           const tabsPermissions: unknown = fieldPermissions;
           if (named && isObject(tabsPermissions)) {
@@ -310,10 +279,6 @@ const findRowIn = (args: ResolveRowChainArgs, scope: Scope): Found => {
   return NONE;
 };
 
-/**
- * Resolves a row data path (`layout.0.nested.1`) to the chain of rows that lead to it, each with the
- * client fields, schema path and permissions Payload itself would render that row's fields with.
- */
 export const resolveRowChain = (args: ResolveRowChainArgs): RowChain => {
   const levels: RowLevel[] = [];
   let scope: Scope = {
@@ -325,8 +290,8 @@ export const resolveRowChain = (args: ResolveRowChainArgs): RowChain => {
     readOnly: Boolean(args.readOnly),
   };
 
-  // Each iteration descends exactly one row; a path cannot hold more rows than it has segments.
-  for (let guard = args.rowPath.split(".").length; guard > 0; guard -= 1) {
+  const maxDepth = args.rowPath.split(".").length;
+  for (let depth = 0; depth < maxDepth; depth += 1) {
     const found = findRowIn(args, scope);
     if (found.kind !== "found") {
       return { levels, complete: false };

@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 
 import type { PreviewMedia } from "../lib/preview.js";
 
-/** Resolved thumbnail URLs by `collection/id`, shared by every card on the page. */
 const cache = new Map<string, Promise<string | null>>();
 
 type UploadDoc = {
@@ -40,10 +39,6 @@ const fetchThumbnail = (apiBase: string, relationTo: string, id: number | string
   return pending;
 };
 
-/**
- * The thumbnail URL for a card's media: given as a URL, or an upload id resolved through the REST
- * API (`sizes.thumbnail` when the collection has it). `undefined` while loading, `null` for none.
- */
 export const useThumbnail = (media: PreviewMedia | undefined): string | null | undefined => {
   const {
     config: { routes, serverURL },
@@ -75,8 +70,7 @@ export const useThumbnail = (media: PreviewMedia | undefined): string | null | u
     return () => {
       active = false;
     };
-    // `key` identifies `media`.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- `key` identifies `media`
   }, [apiBase, key]);
 
   return state.key === key ? state.url : media ? undefined : null;

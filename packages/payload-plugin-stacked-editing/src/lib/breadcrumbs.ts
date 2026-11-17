@@ -1,7 +1,6 @@
 import { previewConfigOf, resolvePreview } from "./preview.js";
 import type { RowLevel } from "./resolveRowChain.js";
 
-/** Payload client labels: a string, a per-language record, a `({ t, i18n }) => string`, or `false`. */
 export type LabelValue = unknown;
 
 export type Translate = (label: LabelValue) => string;
@@ -15,10 +14,6 @@ export const humanize = (name: string): string =>
     .trim()
     .replace(/^./u, (first) => first.toUpperCase());
 
-/**
- * Turns any Payload label shape into a string. `language` / `fallbackLanguage` pick from a
- * per-language record; `t` is passed through to label functions.
- */
 export const createTranslate =
   ({
     fallbackLanguage = "en",
@@ -54,24 +49,18 @@ const truncate = (text: string): string =>
 export const fieldLabelOf = (level: RowLevel, translate: Translate): string =>
   translate(level.field.label) || humanize(level.field.name);
 
-/** The block label ("Hero") or the array's item label ("Item"). */
-export const kindLabelOf = (level: RowLevel, translate: Translate): string =>
+export const rowTypeLabelOf = (level: RowLevel, translate: Translate): string =>
   level.block
     ? translate(level.block.labels?.singular) || humanize(level.block.slug)
     : translate(level.field.labels?.singular) || "Row";
 
-/**
- * How a row is called in panel titles and breadcrumbs: the same `Hero 01` Payload shows in the row
- * header, plus the title of the row's preview card (`admin.custom.preview`, else the block name or
- * the first text field with a value — see `resolvePreview`).
- */
 export const rowLabelOf = (
   level: RowLevel,
   translate: Translate,
   getValue: (path: string) => unknown,
   getRowCount?: (path: string) => number | undefined
 ): { label: string; title?: string } => {
-  const label = `${kindLabelOf(level, translate)} ${pad(level.rowIndex)}`;
+  const label = `${rowTypeLabelOf(level, translate)} ${pad(level.rowIndex)}`;
   const { title } = resolvePreview({
     fields: level.fields,
     getRowCount: (relative) => getRowCount?.(`${level.rowPath}.${relative}`),
@@ -87,12 +76,9 @@ export type Crumb = {
   readonly key: string;
   readonly label: string;
   readonly kind: "document" | "field" | "row";
-  /** How many panels stay open when this crumb is clicked (`0` closes them all). */
   readonly keep: number;
   readonly current: boolean;
-  /** Nesting level (0 = document), for indenting the hidden-levels menu. */
   readonly level: number;
-  /** The block type ("Hero") of a block row, for the hidden-levels menu. */
   readonly hint?: string;
 };
 
@@ -100,22 +86,14 @@ export type CrumbLevel = {
   readonly rowPath: string;
   readonly fieldLabel: string;
   readonly rowLabel: string;
-  /** The block label ("Hero") of a block row. Array rows have none: their field already names them. */
   readonly rowHint?: string;
 };
 
-/** The block label, unless the row's own label already says it ("Hero 01", a block named "Hero"). */
 const hintFor = (level: CrumbLevel): string | undefined =>
   level.rowHint && !level.rowLabel.toLowerCase().includes(level.rowHint.toLowerCase())
     ? level.rowHint
     : undefined;
 
-/**
- * `Document › Layout › Deep Nest 01 › Nested › Inner 02 …` for the panel at `depth`.
- *
- * A row crumb reopens that row's panel (closing everything above it); a field crumb goes back to
- * the panel the field lives in — the row above it, or the document for a top-level field.
- */
 export const buildBreadcrumbs = ({
   documentTitle,
   levels,
@@ -153,21 +131,13 @@ export const buildBreadcrumbs = ({
 };
 
 export type CrumbFit = {
-  /** Indices of the crumbs shown in the row, in order; an ellipsis goes after the first. */
   readonly visible: number[];
-  /** Indices folded into the "…" menu, top to bottom. */
   readonly hidden: number[];
 };
 
 const range = (from: number, to: number): number[] =>
   Array.from({ length: Math.max(0, to - from) }, (_, offset) => from + offset);
 
-/**
- * Which crumbs fit on one line. Every crumb's width includes its separator. When the whole trail
- * does not fit, the first crumb stays, an ellipsis replaces the middle and as many trailing crumbs
- * as fit are kept (`first / … / parent / current`, then `first / … / current`). The current crumb
- * is always kept; if even that does not fit it truncates with an ellipsis (CSS).
- */
 export const fitCrumbs = ({
   available,
   ellipsisWidth,

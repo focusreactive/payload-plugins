@@ -33,11 +33,6 @@ const CrumbContent = ({
     </button>
   );
 
-/**
- * One line of breadcrumbs that folds its middle into a "…" menu when it does not fit. Widths come
- * from an invisible copy of the full trail, so the decision follows the real labels and fonts and
- * the visible row never wraps or shifts.
- */
 export const Breadcrumbs = ({
   crumbs,
   onNavigate,
@@ -102,7 +97,6 @@ export const Breadcrumbs = ({
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
-  // While the menu is open: Escape closes the menu (and not the panel); a click outside closes it.
   useEffect(() => {
     if (!open) {
       return;
@@ -121,6 +115,7 @@ export const Breadcrumbs = ({
         setOpen(false);
       }
     };
+    // Capture phase on window, ahead of faceless-ui's document listener that would close the panel.
     window.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("pointerdown", onPointerDown, true);
     return () => {
@@ -209,7 +204,6 @@ export const Breadcrumbs = ({
           ))}
         </div>
       ) : null}
-      {/* Invisible full trail: what the fit is measured from. */}
       <ol aria-hidden className={`${BASE}__crumbs ${BASE}__crumbs--measure`} ref={measureRef}>
         {crumbs.map((crumb) => (
           <li className={`${BASE}__crumb ${BASE}__crumb--${crumb.kind}`} key={crumb.key}>

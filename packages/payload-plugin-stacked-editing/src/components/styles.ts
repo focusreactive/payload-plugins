@@ -1,27 +1,17 @@
-/** Set on the document form and on every panel body, holding the id of the instance that owns it. */
 export const OWNER_ATTRIBUTE = "data-stacked-editing-owner";
 
-/** Set next to OWNER_ATTRIBUTE: the `defaultMode` the rows in that scope follow. */
 export const MODE_ATTRIBUTE = "data-stacked-editing-mode";
 
-/** Briefly set on a field opened from the preview (Live Preview click). */
 export const FLASH_CLASS = "stacked-editing__flash";
 
-/** Set on <html> while panels are confined to the editor column (Live Preview open). */
 export const CONFINED_ATTRIBUTE = "data-stacked-editing-confined";
 
 const BASE = "stacked-editing";
 
-// Arrow into a side panel (16×16, stroked), used as a CSS mask so it takes the theme colour.
-const OPEN_ICON = `url("data:image/svg+xml,${encodeURIComponent(
+const OPEN_PANEL_ICON_MASK = `url("data:image/svg+xml,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1.75" y="2.25" width="12.5" height="11.5" rx="1.5"/><path d="M9.75 2.25v11.5"/><path d="M4 8h3.5M5.75 6.25 7.5 8l-1.75 1.75"/></svg>'
 )}")`;
 
-/**
- * Only Payload's theme variables, so light and dark admin themes both work. Shipped as a string
- * rendered in a hoisted <style> (React 19 dedupes it by `href`) — no stylesheet import for the
- * host app's bundler to deal with.
- */
 export const STACKED_EDITING_CSS = `
 .${BASE}__header {
   display: flex;
@@ -228,12 +218,7 @@ export const STACKED_EDITING_CSS = `
   font-size: 12px;
   color: var(--theme-elevation-400);
 }
-/*
- * "Open in panel" icon: the first item of the row header's actions, left of the "…" menu. It is
- * paint only (the actions wrap ignores pointer events); clicks land on Payload's toggle button and
- * are classified by position (see classifyHeaderClick). Panel mode shows it on hover, inline mode
- * always (faintly), since there it is the only way into a panel.
- */
+/* Paint only: clicks land on Payload's toggle button and are classified by position. */
 [${OWNER_ATTRIBUTE}] :is(.blocks-field__row, .array-field__row)
   > .collapsible__toggle-wrap > .collapsible__actions-wrap::before {
   content: "";
@@ -243,8 +228,8 @@ export const STACKED_EDITING_CSS = `
   height: 24px;
   border-radius: var(--style-radius-s, 3px);
   background-color: var(--theme-elevation-800);
-  -webkit-mask: ${OPEN_ICON} center / 16px 16px no-repeat;
-  mask: ${OPEN_ICON} center / 16px 16px no-repeat;
+  -webkit-mask: ${OPEN_PANEL_ICON_MASK} center / 16px 16px no-repeat;
+  mask: ${OPEN_PANEL_ICON_MASK} center / 16px 16px no-repeat;
   opacity: 0;
   transition: opacity 120ms linear;
 }
@@ -256,15 +241,7 @@ export const STACKED_EDITING_CSS = `
   > .collapsible__toggle-wrap:hover > .collapsible__actions-wrap::before {
   opacity: 0.85;
 }
-/*
- * Live Preview open: the drawers sit over the editor column only. Payload's drawer derives both
- * its padding and its per-level offset from --gutter-h, so a smaller one keeps deep stacks usable
- * in a narrow column. The modal container stops swallowing clicks so the preview stays usable.
- */
-/*
- * Pinned to the viewport. faceless-ui positions modal items absolutely inside its fixed container,
- * and that container can be left offset after another modal (an upload picker) has closed.
- */
+/* faceless-ui's modal container can stay offset after another modal closes. */
 .${BASE}__drawer {
   position: fixed !important;
   top: 0;
@@ -272,6 +249,7 @@ export const STACKED_EDITING_CSS = `
   right: 0;
 }
 .${BASE}__drawer--confined {
+  /* Payload derives both the drawer padding and the per-level offset from --gutter-h. */
   --gutter-h: calc(var(--base) * 1.2);
   left: var(--stacked-editing-left, 0) !important;
   right: auto !important;
@@ -282,13 +260,13 @@ export const STACKED_EDITING_CSS = `
 .${BASE}__drawer--confined .${BASE}__header {
   margin-top: calc(var(--base) * 1.2);
 }
+/* The open modal container would otherwise swallow clicks meant for the preview. */
 html[${CONFINED_ATTRIBUTE}] .payload__modal-container {
   pointer-events: none !important;
 }
 html[${CONFINED_ATTRIBUTE}] .payload__modal-container > * {
   pointer-events: auto;
 }
-/* A field opened from a click in the preview: a pulsing ring, as the visual-editing bridge does. */
 @keyframes stacked-editing-flash {
   0% { box-shadow: 0 0 0 0 hsla(189, 85%, 53%, 0.55), 0 0 0 0 hsla(189, 85%, 53%, 0.22); }
   50% { box-shadow: 0 0 0 4px hsla(189, 85%, 53%, 0.3), 0 0 0 14px hsla(189, 85%, 53%, 0.06); }
@@ -304,7 +282,6 @@ html[${CONFINED_ATTRIBUTE}] .payload__modal-container > * {
     box-shadow: 0 0 0 2px hsla(189, 85%, 53%, 0.6);
   }
 }
-/* Row preview cards (CardLabel) in array/blocks row headers. */
 .stacked-editing-card {
   display: flex;
   align-items: center;

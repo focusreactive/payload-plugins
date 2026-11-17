@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import { TOGGLE_SELECTOR, rowPathFromToggle } from "../src/lib/domPath.js";
 
-// The markup Payload 3.90 renders for a blocks field with one row (trimmed to what is read).
 const blocksField = (path: string, rowClass = "blocks-field__row") => `
   <div class="field-type blocks-field" id="field-${path.replaceAll(".", "__")}">
     <div class="blocks-field__rows">

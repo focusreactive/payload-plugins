@@ -1,8 +1,5 @@
 import type { ClientBlock, ClientField } from "payload";
 
-// Client-config shaped fixtures (what `useConfig().getEntityConfig()` returns): every container
-// kind the walker has to see through or into, three levels of rows, and a block by reference.
-
 export const leafBlock = {
   slug: "leaf",
   labels: { singular: "Leaf", plural: "Leaves" },
@@ -113,7 +110,6 @@ export const documentFields = [
 
 export const blocksMap: Record<string, ClientBlock> = { callout: calloutBlock };
 
-/** Block types by row path, standing in for the form state. */
 export const blockTypes: Record<string, string> = {
   "layout.0": "deepNest",
   "layout.0.nested.1": "inner",

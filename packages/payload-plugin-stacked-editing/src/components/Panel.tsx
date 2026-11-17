@@ -13,7 +13,6 @@ import { MODE_ATTRIBUTE, OWNER_ATTRIBUTE } from "./styles.js";
 const BASE = "stacked-editing";
 
 type PanelProps = {
-  /** Live Preview is open: stay inside the editor column. */
   readonly confined: boolean;
   readonly depth: number;
   readonly levels: readonly RowLevel[];
@@ -22,14 +21,9 @@ type PanelProps = {
   readonly documentTitle: string;
   readonly ownerId: string;
   readonly translate: Translate;
-  /** Keep the first `keep` panels open and close the rest. */
   readonly onNavigate: (keep: number) => void;
 };
 
-/**
- * One level of the stack: a Payload `Drawer` showing one row's fields. The next level renders
- * inside it, so Payload's `DrawerDepthProvider` offsets and narrows each drawer above the last.
- */
 export const Panel = ({
   confined,
   crumbLevels,
@@ -49,8 +43,7 @@ export const Panel = ({
   const navigateRef = useRef(onNavigate);
   navigateRef.current = onNavigate;
 
-  // Opened a frame after mount: every level opens after its parent, so each gets a later
-  // `openedOn` and Escape (which closes the most recently opened modal) closes the top panel.
+  // One frame later than the parent, so Escape (closes the latest `openedOn`) closes the top panel.
   useEffect(() => {
     const frame = requestAnimationFrame(() => openModal(slug));
     return () => {
@@ -59,11 +52,11 @@ export const Panel = ({
     };
   }, [closeModal, openModal, slug]);
 
-  // Closed by Payload's drawer (Escape, the backdrop strip): drop this level and everything above.
   useEffect(() => {
+    const closedByDrawer = !isOpen && hasOpened.current;
     if (isOpen) {
       hasOpened.current = true;
-    } else if (hasOpened.current) {
+    } else if (closedByDrawer) {
       hasOpened.current = false;
       navigateRef.current(depth);
     }

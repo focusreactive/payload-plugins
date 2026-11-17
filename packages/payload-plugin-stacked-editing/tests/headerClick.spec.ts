@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import { OPEN_ICON_SIZE, classifyHeaderClick, openIconRect } from "../src/lib/headerClick.js";
 
-// A row header 40px tall: actions wrap at x 900–970 (open icon 900–924), chevron at 946–970.
 const actionsWrap = { left: 900, right: 970, top: 100, bottom: 140 };
 const chevron = { left: 946, right: 970, top: 108, bottom: 132 };
 const at = (x: number, y = 120) => ({ x, y });
@@ -15,7 +14,6 @@ describe("classifyHeaderClick", () => {
     expect(classifyHeaderClick({ actionsWrap, chevron, mode: "panel", point: at(958) })).toBe(
       "inline"
     );
-    // a few pixels off the chevron still count as the chevron
     expect(classifyHeaderClick({ actionsWrap, chevron, mode: "panel", point: at(942) })).toBe(
       "inline"
     );

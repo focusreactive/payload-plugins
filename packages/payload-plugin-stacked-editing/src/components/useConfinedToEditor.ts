@@ -13,11 +13,6 @@ import { CONFINED_ATTRIBUTE } from "./styles.js";
 
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-/**
- * While Live Preview is open beside the editor, keep the panels inside the editor column so the
- * preview stays visible and clickable. Publishes the column's bounds as CSS variables on <html>
- * (re-measured every frame while open) for the drawers' `--confined` class; returns whether that mode is on.
- */
 export const useConfinedToEditor = ({
   active,
   markerRef,
@@ -35,12 +30,9 @@ export const useConfinedToEditor = ({
     const root = document.documentElement;
     let last = "";
     let frame = 0;
-    // Re-measured every frame while panels are open: the sticky preview moves when the page
-    // scrolls, and other modals (an upload picker) lock and restore the body's scroll, which no
-    // resize or scroll event reports. Two rects per frame; styles change only when they differ.
+    // Every frame: other modals (an upload picker) shift the layout without any resize or scroll event.
     const measure = () => {
       frame = requestAnimationFrame(measure);
-      // Looked up every time: Payload re-mounts the document form (e.g. after a save).
       const form = markerRef.current?.closest("form");
       const editor = form?.querySelector<HTMLElement>(EDITOR_COLUMN_SELECTOR);
       if (!editor) {

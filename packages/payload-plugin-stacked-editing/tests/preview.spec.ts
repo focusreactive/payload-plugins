@@ -59,7 +59,7 @@ const resolve = (
     getRowCount: (path) => (path === "points" ? 2 : undefined),
     getValue: (path) => values[path],
     isImageCollection: (slug) => slug === "media",
-    kindLabel: "Promo",
+    defaultSubtitle: "Promo",
     translate,
     ...extra,
   });
@@ -118,7 +118,7 @@ describe("resolvePreview — defaults", () => {
   });
 
   it("leaves everything empty when the row has nothing", () => {
-    expect(resolve({}, { kindLabel: undefined })).toEqual({});
+    expect(resolve({}, { defaultSubtitle: undefined })).toEqual({});
   });
 });
 

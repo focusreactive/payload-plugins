@@ -1,9 +1,4 @@
-/**
- * Contract with `@focus-reactive/payload-plugin-visual-editing` (no package depends on the other):
- * its admin bridge dispatches this cancelable event on `window` before it expands collapsibles to
- * focus a field the editor clicked in the preview. Stacked editing takes over for fields inside
- * array/blocks rows by cancelling it and opening the panels down to the field.
- */
+// Contract with the visual-editing bridge: it dispatches this cancelable event before focusing a field inline.
 export const OPEN_FIELD_EVENT = "payload:open-field";
 
 export type OpenFieldDetail = {
@@ -16,11 +11,6 @@ export type OpenFieldDetail = {
 
 const ROW_INDEX = /^\d+$/u;
 
-/**
- * Row paths that may contain the field, deepest first: `sections.2.items.0.points.0.text` →
- * `sections.2.items.0.points.0`, `sections.2.items.0`, `sections.2`. The first that resolves to
- * a complete row chain is the panel to open; the rest are its parents.
- */
 export const rowPathCandidates = (path: string): string[] => {
   const segments = path.split(".");
   const candidates: string[] = [];
@@ -32,7 +22,6 @@ export const rowPathCandidates = (path: string): string[] => {
   return candidates;
 };
 
-/** Whether the event is about the document this edit view has open. */
 export const isForDocument = (
   detail: Partial<OpenFieldDetail> | null | undefined,
   document: { collectionSlug?: string; globalSlug?: string; id?: number | string | null }
@@ -48,3 +37,6 @@ export const isForDocument = (
   }
   return detail.docId === undefined || String(document.id ?? "") === String(detail.docId);
 };
+
+export const rowDepthOf = (rowPath: string): number =>
+  rowPath.split(".").filter((segment) => ROW_INDEX.test(segment)).length;

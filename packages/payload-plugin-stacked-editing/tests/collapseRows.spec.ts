@@ -10,8 +10,8 @@ const state = (rows: Record<string, { id: string; collapsed?: boolean }[]>) =>
   ]) as unknown as FormState;
 
 const memory = (expanded: string[] = [], pending: string[] = []) => ({
-  pendingFields: new Set(pending),
-  userExpanded: new Set(expanded),
+  fieldsJustToggledByEditor: new Set(pending),
+  rowsExpandedByEditor: new Set(expanded),
 });
 
 describe("rowsToCollapse", () => {
@@ -63,9 +63,8 @@ describe("rowsToCollapse", () => {
       ],
     });
     expect(rowsToCollapse(toggled, m)).toEqual([]);
-    expect([...m.userExpanded]).toEqual(["a"]);
-    expect(m.pendingFields.size).toBe(0);
-    // next run: "a" stays expanded because the editor expanded it
+    expect([...m.rowsExpandedByEditor]).toEqual(["a"]);
+    expect(m.fieldsJustToggledByEditor.size).toBe(0);
     expect(rowsToCollapse(toggled, m)).toEqual([]);
   });
 
