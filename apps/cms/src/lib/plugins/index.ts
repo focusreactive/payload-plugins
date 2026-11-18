@@ -354,7 +354,8 @@ export const plugins: Plugin[] = [
 
   // After every plugin that adds collections, so the blog editor is kept out of those too.
   roleScopePlugin({
-    collections: ["posts", "categories", "authors", "media", "users"],
+    collections: ["posts", "categories", "authors", "media", "users", "comments", "comment-reads"],
+    hiddenCollections: ["users"],
     role: "author",
   }),
 
