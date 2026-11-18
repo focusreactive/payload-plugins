@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-visual-editing [1.5.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-visual-editing@1.4.0...@focus-reactive/payload-plugin-visual-editing@1.5.0) (2026-11-18)
+
+
+### Features
+
+* **visual-editing:** announce opened fields with a cancelable payload:open-field event ([8a82382](https://github.com/focusreactive/payload-plugins/commit/8a82382b7d876e09a9cf5b7813e7b4f3b54c2bc9))
+
 # @focus-reactive/payload-plugin-visual-editing [1.4.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-visual-editing@1.3.0...@focus-reactive/payload-plugin-visual-editing@1.4.0) (2026-11-17)
 
 
