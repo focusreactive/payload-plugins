@@ -639,7 +639,7 @@ describe("one edit of rich text", () => {
         "title",
         "lead",
         "strong",
-        "em",
+        "ve-rich-text-italic em",
         "link",
         "bullets",
         "item",
@@ -851,6 +851,34 @@ describe("one edit of rich text", () => {
     });
   });
 
+  describe("a block typed the way markdown writes it", () => {
+    const typeAtTheStart = (typed: string, formats: VeRichTextFormats = EVERY_FORMAT) => {
+      start(stateOf(paragraph(text("Title"))), formats);
+      select(0, 0, 0);
+      for (const character of typed) typeOver(character);
+    };
+
+    it.each<[string, string, object]>([
+      ["## ", "heading", { tag: "h2" }],
+      ["- ", "list", { listType: "bullet" }],
+      ["1. ", "list", { listType: "number" }],
+      ["> ", "quote", {}],
+    ])("turns a paragraph that begins with %j into a %s", (typed, type, shape) => {
+      typeAtTheStart(typed);
+
+      expect(latest().root.children).toHaveLength(1);
+      expect(latest().root.children[0]).toMatchObject({ type, ...shape });
+      expect(twin.textContent).toBe("Title");
+    });
+
+    it("leaves the characters as text for a block the field does not allow", () => {
+      typeAtTheStart("## ", { ...EVERY_FORMAT, headings: [] });
+
+      expect(latest().root.children[0]).toMatchObject({ type: "paragraph" });
+      expect(twin.textContent).toBe("## Title");
+    });
+  });
+
   describe("the toolbar", () => {
     beforeEach(() => {
       start(
@@ -862,14 +890,14 @@ describe("one edit of rich text", () => {
       );
     });
 
-    it("is hidden until text is selected, and hidden again when the selection collapses", () => {
-      expect(isToolbarShown()).toBe(false);
+    it("is shown for as long as the edit runs, with and without selected text", () => {
+      expect(isToolbarShown()).toBe(true);
 
       select(0, 0, 5);
       expect(isToolbarShown()).toBe(true);
 
       select(0, 2, 2);
-      expect(isToolbarShown()).toBe(false);
+      expect(isToolbarShown()).toBe(true);
     });
 
     describe("on a narrow screen", () => {
@@ -877,8 +905,8 @@ describe("one edit of rich text", () => {
       const TOOLBAR = { height: 90, width: 300 };
       const real = { innerHeight: window.innerHeight, innerWidth: window.innerWidth };
 
-      const selectAt = (rect: DOMRect) => {
-        vi.spyOn(Range.prototype, "getBoundingClientRect").mockReturnValue(rect);
+      const editAt = (rect: DOMRect) => {
+        vi.spyOn(twin, "getBoundingClientRect").mockReturnValue(rect);
         vi.spyOn(toolbarHost(), "getBoundingClientRect").mockReturnValue(
           new DOMRect(0, 0, TOOLBAR.width, TOOLBAR.height)
         );
@@ -893,19 +921,27 @@ describe("one edit of rich text", () => {
       });
 
       it.each<[string, DOMRect, string]>([
-        ["a selection at the right edge", new DOMRect(380, 300, 10, 20), "translate(82px, 202px)"],
-        ["a selection at the left edge", new DOMRect(0, 300, 10, 20), "translate(8px, 202px)"],
-        ["a selection at the top", new DOMRect(100, 4, 10, 20), "translate(8px, 32px)"],
+        ["text at the right edge", new DOMRect(380, 300, 10, 200), "translate(82px, 202px)"],
+        ["text at the left edge", new DOMRect(0, 300, 300, 200), "translate(8px, 202px)"],
+        ["text at the top", new DOMRect(40, 4, 300, 200), "translate(40px, 8px)"],
         [
-          "a selection that leaves no room above or below",
-          new DOMRect(100, 4, 10, 590),
-          "translate(8px, 502px)",
+          "text that begins above the viewport",
+          new DOMRect(40, -400, 300, 900),
+          "translate(40px, 8px)",
         ],
-      ])("stays inside the viewport for %s", (_name, rect, transform) => {
-        selectAt(rect);
+        [
+          "text that begins below the viewport",
+          new DOMRect(40, 900, 300, 200),
+          "translate(40px, 502px)",
+        ],
+      ])(
+        "sits above the edited text and stays inside the viewport for %s",
+        (_name, rect, transform) => {
+          editAt(rect);
 
-        expect(toolbarHost().style.transform).toBe(transform);
-      });
+          expect(toolbarHost().style.transform).toBe(transform);
+        }
+      );
 
       it("is never wider than the viewport less its margin, and wraps its buttons", () => {
         const styles = toolbar().querySelector("style")?.textContent ?? "";
@@ -1040,7 +1076,6 @@ describe("one edit of rich text", () => {
         pressInTwin("k", { ctrlKey: true });
 
         expect(linkInput().hidden).toBe(true);
-        expect(isToolbarShown()).toBe(false);
         expect(changes).toEqual([]);
       });
 

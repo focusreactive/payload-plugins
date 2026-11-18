@@ -18,8 +18,11 @@ import {
   ListNode,
   registerList,
 } from "@lexical/list";
+import type { HeadingTagType } from "@lexical/rich-text";
+
 import {
   $createHeadingNode,
+  $createQuoteNode,
   $isHeadingNode,
   HeadingNode,
   QuoteNode,
@@ -38,6 +41,7 @@ import {
   $isElementNode,
   $isLineBreakNode,
   $isNodeSelection,
+  $isParagraphNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
@@ -73,6 +77,7 @@ import type { TextPosition } from "../caret.js";
 
 import { forEachEditableNode } from "../../../shared/richText/editableNodes.js";
 import { rootOf } from "../../../shared/richText/editorNodes.js";
+import { BULLET_LIST, NUMBERED_LIST } from "../../../shared/richText/formats.js";
 import { stateForEditor, stateOfEditor } from "./editableState.js";
 import {
   $isOpaqueNode,
@@ -111,14 +116,17 @@ export interface PageEditor {
   setLink(url: string | null): void;
   placeCaret(position: TextPosition | null): void;
   restoreSelection(): void;
+  shownFormats(): ShownFormats;
   destroy(): void;
 }
 
 export type RenderedLook = {
   theme: EditorThemeClasses;
+  style?: string;
   fixedNodes: readonly (HTMLElement | null)[] | null;
 };
 
+export const ITALIC_CLASS = "ve-rich-text-italic";
 export const UNDERLINE_CLASS = "ve-rich-text-underline";
 export const STRIKETHROUGH_CLASS = "ve-rich-text-strikethrough";
 export const UNDERLINE_STRIKETHROUGH_CLASS = "ve-rich-text-underline-strikethrough";
@@ -442,6 +450,68 @@ const loadState = (editor: LexicalEditor, state: VeEditorState): void => {
   editor.update($startParagraphIfEmpty, { discrete: true });
 };
 
+type BlockShortcut = {
+  typed: RegExp;
+  isAllowed(formats: VeRichTextFormats, typed: string): boolean;
+  $apply(selection: RangeSelection, typed: string): void;
+};
+
+const headingTagOf = (typed: string): HeadingTagType => `h${typed.trim().length}` as HeadingTagType;
+
+const BLOCK_SHORTCUTS: readonly BlockShortcut[] = [
+  {
+    $apply: (selection, typed) =>
+      $setBlocksType(selection, () => $createHeadingNode(headingTagOf(typed))),
+    isAllowed: ({ headings }, typed) => headings.includes(headingTagOf(typed)),
+    typed: /^#{1,6} $/u,
+  },
+  {
+    $apply: () => $insertList(BULLET_LIST),
+    isAllowed: ({ lists }) => lists.includes(BULLET_LIST),
+    typed: /^[-*+] $/u,
+  },
+  {
+    $apply: () => $insertList(NUMBERED_LIST),
+    isAllowed: ({ lists }) => lists.includes(NUMBERED_LIST),
+    typed: /^1\. $/u,
+  },
+  {
+    $apply: (selection) => $setBlocksType(selection, () => $createQuoteNode()),
+    isAllowed: ({ hasQuotes }) => hasQuotes,
+    typed: /^> $/u,
+  },
+];
+
+const $typedAtTheStartOfAParagraph = (text: TextNodeOfLexical): string | null => {
+  const paragraph = text.getParent();
+  if (!$isParagraphNode(paragraph) || text.getPreviousSibling() !== null) return null;
+  if (!$isRootOrShadowRoot(paragraph.getParent())) return null;
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection) || !selection.isCollapsed()) return null;
+  if (selection.anchor.key !== text.getKey()) return null;
+  return text.getTextContent().slice(0, selection.anchor.offset);
+};
+
+const $applyBlockShortcut = (text: TextNodeOfLexical, formats: VeRichTextFormats): void => {
+  const typed = $typedAtTheStartOfAParagraph(text);
+  const shortcut =
+    typed === null
+      ? undefined
+      : BLOCK_SHORTCUTS.find((known) => known.typed.test(typed) && known.isAllowed(formats, typed));
+  if (typed === null || !shortcut) return;
+  const rest = text.getTextContent().slice(typed.length);
+  const paragraph = text.getParentOrThrow();
+  if (rest === "") {
+    text.remove();
+    paragraph.select(0, 0);
+  } else {
+    text.setTextContent(rest);
+    text.select(0, 0);
+  }
+  const selection = $getSelection();
+  if ($isRangeSelection(selection)) shortcut.$apply(selection, typed);
+};
+
 const registerAllowedFormats = (
   editor: LexicalEditor,
   formats: VeRichTextFormats,
@@ -457,6 +527,7 @@ const registerAllowedFormats = (
   };
 
   return mergeRegister(
+    editor.registerNodeTransform(TextNode, (text) => $applyBlockShortcut(text, formats)),
     editor.registerNodeTransform(TextNode, (text) => {
       const allowed = text.getFormat() & formats.textFormats;
       if (allowed !== text.getFormat()) text.setFormat(allowed);
@@ -695,6 +766,7 @@ export function createPageEditor(
     restoreSelection() {
       editor.update($restoreSelection, { discrete: true });
     },
+    shownFormats: () => editor.getEditorState().read($shownSelection).formats,
     setLink(url) {
       updateSelection((selection) => {
         if (selection.isCollapsed()) return;

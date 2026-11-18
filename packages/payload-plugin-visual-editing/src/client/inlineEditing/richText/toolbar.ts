@@ -19,8 +19,8 @@ export type ToolbarEvents = {
 export interface Toolbar {
   readonly host: HTMLElement;
   readonly hasControls: boolean;
-  show(formats: ShownFormats, selection: DOMRect): void;
-  follow(selection: DOMRect): void;
+  show(formats: ShownFormats, edited: DOMRect): void;
+  follow(edited: DOMRect): void;
   hide(): void;
   editLink(): void;
   isEditingLink(): boolean;
@@ -195,14 +195,15 @@ const isToggle = (action: string | null): action is ToolbarAction =>
 const within = (value: number, min: number, max: number): number =>
   Math.max(min, Math.min(value, max));
 
-const positionOf = (host: HTMLElement, selection: DOMRect, win: Window) => {
+const positionOf = (host: HTMLElement, edited: DOMRect, win: Window) => {
   const { height, width } = host.getBoundingClientRect();
-  const above = selection.top - height - GAP_PX;
-  const besideSelection = above >= VIEWPORT_MARGIN_PX ? above : selection.bottom + GAP_PX;
-  const centred = selection.left + selection.width / 2 - width / 2;
   return {
-    left: within(centred, VIEWPORT_MARGIN_PX, win.innerWidth - width - VIEWPORT_MARGIN_PX),
-    top: within(besideSelection, VIEWPORT_MARGIN_PX, win.innerHeight - height - VIEWPORT_MARGIN_PX),
+    left: within(edited.left, VIEWPORT_MARGIN_PX, win.innerWidth - width - VIEWPORT_MARGIN_PX),
+    top: within(
+      edited.top - height - GAP_PX,
+      VIEWPORT_MARGIN_PX,
+      win.innerHeight - height - VIEWPORT_MARGIN_PX
+    ),
   };
 };
 

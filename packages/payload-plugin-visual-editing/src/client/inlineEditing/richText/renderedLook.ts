@@ -6,8 +6,11 @@ import type { RenderedLook } from "./pageEditor.js";
 import { isEditableNode } from "../../../shared/richText/editableNodes.js";
 import { childrenOf, rootOf } from "../../../shared/richText/editorNodes.js";
 import { hasMarker, withoutMarker } from "../../../shared/stegaText.js";
+import { DATA_VE_EDITED_ATTR } from "../richTextTwin.js";
+import { DATA_VE_EDITING_ATTR } from "../textEditing.js";
 import { DATA_VE_OPAQUE_ATTR } from "./opaqueNode.js";
 import {
+  ITALIC_CLASS,
   STRIKETHROUGH_CLASS,
   UNDERLINE_CLASS,
   UNDERLINE_STRIKETHROUGH_CLASS,
@@ -31,6 +34,7 @@ const CODE = "code";
 const UNDERLINE = `u, .${UNDERLINE_CLASS}`;
 const STRIKETHROUGH = `s, del, .${STRIKETHROUGH_CLASS}`;
 const CLASSES_OF_THE_EDITOR: ReadonlySet<string> = new Set([
+  ITALIC_CLASS,
   UNDERLINE_CLASS,
   STRIKETHROUGH_CLASS,
   UNDERLINE_STRIKETHROUGH_CLASS,
@@ -40,6 +44,7 @@ const NOTHING_RENDERED: RenderedLook = {
   fixedNodes: null,
   theme: {
     text: {
+      italic: ITALIC_CLASS,
       strikethrough: STRIKETHROUGH_CLASS,
       underline: UNDERLINE_CLASS,
       underlineStrikethrough: UNDERLINE_STRIKETHROUGH_CLASS,
@@ -103,14 +108,84 @@ const themeOf = (rendered: Rendered): EditorThemeClasses => {
       ...withoutEmpty({
         bold: classOf(rendered, BOLD),
         code: classOf(rendered, CODE),
-        italic: classOf(rendered, ITALIC),
       }),
+      italic: joined(ITALIC_CLASS, classOf(rendered, ITALIC)),
       strikethrough: joined(STRIKETHROUGH_CLASS, strikethrough),
       underline: joined(UNDERLINE_CLASS, underline),
       underlineStrikethrough: joined(UNDERLINE_STRIKETHROUGH_CLASS, underline, strikethrough),
     },
   };
 };
+
+const DECORATION = 'svg, img, [aria-hidden="true"]';
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+const CURRENT_COLOR = /currentColor/giu;
+const INLINE = "inline";
+const INLINE_BLOCK = "inline-block";
+const COPIED_FROM_A_DECORATION = [
+  "position",
+  "float",
+  "top",
+  "right",
+  "bottom",
+  "left",
+  "box-sizing",
+  "width",
+  "height",
+  "margin",
+  "padding",
+  "border",
+  "border-radius",
+  "background-color",
+  "vertical-align",
+  "transform",
+  "opacity",
+] as const;
+
+const decorationOf = (rendered: Rendered, list: string): Element | null => {
+  const item = firstOf(rendered, `${list} > ${LIST_ITEM}`);
+  const first = item?.firstElementChild;
+  if (!item || !first || item.firstChild !== first || !first.matches(DECORATION)) return null;
+  return (first.textContent ?? "").trim() === "" ? first : null;
+};
+
+const drawingOf = (decoration: Element, color: string): string | null => {
+  if (decoration instanceof HTMLImageElement) return decoration.currentSrc || decoration.src;
+  if (decoration.namespaceURI !== SVG_NAMESPACE || typeof XMLSerializer === "undefined") {
+    return null;
+  }
+  const copy = decoration.cloneNode(true) as Element;
+  copy.setAttribute("xmlns", SVG_NAMESPACE);
+  copy.removeAttribute("class");
+  copy.removeAttribute("style");
+  const drawn = new XMLSerializer().serializeToString(copy).replace(CURRENT_COLOR, color);
+  return `data:image/svg+xml,${encodeURIComponent(drawn)}`;
+};
+
+const markerRuleOf = (rendered: Rendered, list: string): string => {
+  const decoration = decorationOf(rendered, list);
+  const shown = decoration?.ownerDocument.defaultView?.getComputedStyle(decoration);
+  const drawing = decoration && shown && drawingOf(decoration, shown.color);
+  if (!shown || !drawing) return "";
+  const copied = COPIED_FROM_A_DECORATION.map(
+    (property) => `${property}:${shown.getPropertyValue(property)}`
+  );
+  const declarations = [
+    'content:""',
+    `display:${shown.display === INLINE ? INLINE_BLOCK : shown.display}`,
+    ...copied,
+    `background-image:url("${drawing}")`,
+    "background-repeat:no-repeat",
+    "background-position:center",
+    "background-size:contain",
+    "background-origin:content-box",
+  ];
+  const item = `:is([${DATA_VE_EDITING_ATTR}], [${DATA_VE_EDITED_ATTR}]) ${list} > ${LIST_ITEM}:not(:has(> ${BULLET_LIST}, > ${NUMBERED_LIST}))`;
+  return `${item}::before{${declarations.join(";")}}`;
+};
+
+const styleOf = (rendered: Rendered): string =>
+  [BULLET_LIST, NUMBERED_LIST].map((list) => markerRuleOf(rendered, list)).join("");
 
 const cleanAttributes = (element: Element): void => {
   for (const name of element.getAttributeNames()) {
@@ -153,8 +228,10 @@ export const lookOf = (rendered: Element | null, state: VeEditorState): Rendered
   if (!rendered) return NOTHING_RENDERED;
   const fixedElements = fixedElementsOf(rendered, state);
   const fixed = (fixedElements ?? []).flatMap((element) => element ?? []);
+  const site = { element: rendered, fixed };
   return {
     fixedNodes: fixedElements && fixedElements.map((element) => element && shownFor(element)),
-    theme: themeOf({ element: rendered, fixed }),
+    style: styleOf(site),
+    theme: themeOf(site),
   };
 };
