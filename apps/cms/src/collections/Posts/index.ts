@@ -14,6 +14,7 @@ import {
 } from "@/lib/config/livePreview";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { anyone, author, authorDraft, or, user, superAdmin } from "@/lib/access";
+import { authorUpdate, restorePublishedOnRevert } from "@/lib/review/authorPublish";
 import {
   createLocalizedDefault,
   createLocalizedRichText,
@@ -33,18 +34,21 @@ import { ArticleButtonBlock } from "./ArticleButtonBlock";
 import { computeReadingTime } from "./hooks/computeReadingTime";
 import { revalidateDelete, revalidatePost } from "./hooks/revalidatePost";
 
+const authorPostUpdate = authorUpdate(BLOG_CONFIG.collection);
+
 export const Posts: CollectionConfig<"posts"> = {
   access: {
     create: or(superAdmin, user, authorDraft),
     delete: or(superAdmin, user, author),
     read: anyone,
-    update: or(superAdmin, user, authorDraft),
+    update: (args) => (or(superAdmin, user)(args) === true ? true : authorPostUpdate(args)),
   },
   admin: {
     components: {
       edit: {
         beforeDocumentControls: createLiveBeforeDocumentControls(),
         PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
+        SaveDraftButton: "/components/admin/AuthorSaveDraftButton#AuthorSaveDraftButton",
       },
     },
     defaultColumns: ["title", "categories", "publishedAt", "_status"],
@@ -384,7 +388,7 @@ export const Posts: CollectionConfig<"posts"> = {
     },
   ],
   hooks: {
-    beforeChange: [computeReadingTime, enforceReviewRules],
+    beforeChange: [restorePublishedOnRevert, computeReadingTime, enforceReviewRules],
     afterChange: [revalidatePost, notifyReviewChange],
     afterDelete: [revalidateDelete],
   },
@@ -399,5 +403,5 @@ export const Posts: CollectionConfig<"posts"> = {
     },
   },
   slug: BLOG_CONFIG.collection,
-  versions: createLivePreviewVersions(),
+  versions: createLivePreviewVersions({ showSaveDraftButton: true }),
 };

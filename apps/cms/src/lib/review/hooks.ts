@@ -34,6 +34,7 @@ const languageOf = (req: PayloadRequest): Language => (req.i18n?.language === "e
 /**
  * Enforced here rather than in field `validate`, because draft saves (and so every autosave) skip
  * field validation. A plain APIError, because the autosave toast shows its message as written.
+ * Publishing an approved document sets it back to In progress, so the next change is reviewed again.
  */
 export const enforceReviewRules: CollectionBeforeChangeHook = ({ data, originalDoc, req }) => {
   const status = data.reviewStatus ?? originalDoc?.reviewStatus;
@@ -59,6 +60,10 @@ export const enforceReviewRules: CollectionBeforeChangeHook = ({ data, originalD
     req.user
   ) {
     data.reviewRequestedBy = req.user.id;
+  }
+
+  if (data._status === "published" && status === REVIEW_STATUS.approved) {
+    data.reviewStatus = REVIEW_STATUS.inProgress;
   }
 
   return data;

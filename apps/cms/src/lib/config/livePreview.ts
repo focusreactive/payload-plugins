@@ -5,9 +5,10 @@ import {
   PRESERVE_AUTOSAVE_EDITS,
 } from "@/lib/constants/livePreview";
 
-export const createLivePreviewVersions = () =>
+// `showSaveDraftButton` only renders the collection's SaveDraftButton slot; it does not touch the versions schema.
+export const createLivePreviewVersions = ({ showSaveDraftButton = false } = {}) =>
   ({
-    drafts: { autosave: { interval: LIVE_PREVIEW_AUTOSAVE_INTERVAL_MS } },
+    drafts: { autosave: { interval: LIVE_PREVIEW_AUTOSAVE_INTERVAL_MS, showSaveDraftButton } },
     maxPerDoc: 50,
   }) satisfies CollectionConfig["versions"];
 
