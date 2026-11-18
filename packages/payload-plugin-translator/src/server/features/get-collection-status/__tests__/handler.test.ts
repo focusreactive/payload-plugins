@@ -99,7 +99,7 @@ describe("GetCollectionStatusHandler", () => {
       expect(body.data).toEqual({ docs: [], failed_window_ms: THREE_DAYS });
     });
 
-    it("names the run, the document and the locale, one entry per locale", async () => {
+    it("names the document and the locale, one entry per locale", async () => {
       runs.findLiveInCollection.mockResolvedValue([
         runRow({ handle: "run-1", targetLng: "de", startedAt: "2026-10-27T10:01:00.000Z" }),
         runRow({ handle: "run-1", targetLng: "fr" }),
@@ -108,14 +108,13 @@ describe("GetCollectionStatusHandler", () => {
 
       const { body } = await answered(request({ collection_slug: "posts" }));
 
-      expect(
-        body.data.docs,
-        "two of these share a run, so the handle alone cannot tell them apart"
-      ).toEqual([
-        { id: "run-1", status: "running", collection_id: "doc-1", target_lng: "de" },
-        { id: "run-1", status: "pending", collection_id: "doc-1", target_lng: "fr" },
-        { id: "run-2", status: "pending", collection_id: "doc-9", target_lng: "de" },
-      ]);
+      expect(body.data.docs, "the document and the locale are what tell two entries apart").toEqual(
+        [
+          { status: "running", collection_id: "doc-1", target_lng: "de" },
+          { status: "pending", collection_id: "doc-1", target_lng: "fr" },
+          { status: "pending", collection_id: "doc-9", target_lng: "de" },
+        ]
+      );
     });
 
     it("lists a recent failure beside the work in flight", async () => {

@@ -7,8 +7,7 @@ export const ENDPOINTS = {
   listState: { method: "get", path: "/list-state/:collection_slug" },
   enqueue: { method: "post", path: "/enqueue" },
   cancel: { method: "delete", path: "/cancel" },
-  cancelByCollection: { method: "delete", path: "/cancel-by-collection/:collection_slug" },
-  runNow: { method: "post", path: "/run/:id" },
+  runNow: { method: "post", path: "/run/:collection_slug/:collection_id" },
   dismissStaleness: { method: "post", path: "/stale/dismiss" },
   translateField: { method: "post", path: "/field" },
 } as const;

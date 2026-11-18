@@ -2,7 +2,6 @@ import { ServerResponse } from "../../../shared/index.js";
 import type { RouteHandler } from "../../../shared/http/withErrorHandler.js";
 import { EnqueueInputSchema } from "../../../features/enqueue-translation/model.js";
 import { CancelInputSchema } from "../../../features/cancel/model.js";
-import { CancelByCollectionInputSchema } from "../../../features/cancel-by-collection/model.js";
 import { RunInputSchema } from "../../../features/run-translation/model.js";
 import { DismissStalenessInputSchema } from "../../../features/staleness/model.js";
 import type { EnqueueResponse } from "../../../../types/wire/ActionBodies.js";
@@ -56,36 +55,30 @@ export function enqueue({ world, managed }: StubDeps): RouteHandler {
   };
 }
 
-export function cancel({ world }: StubDeps): RouteHandler {
+export function cancel({ world, managed }: StubDeps): RouteHandler {
   return async (req) => {
     const parsed = CancelInputSchema.safeParse(await req.json?.());
     if (parsed.error) return ServerResponse.validationError(parsed.error.issues);
 
-    world.cancel(parsed.data.ids);
-    return ServerResponse.noContent();
-  };
-}
-
-export function cancelByCollection({ world, managed }: StubDeps): RouteHandler {
-  return async (req) => {
-    const parsed = CancelByCollectionInputSchema.safeParse(req.routeParams);
-    if (parsed.error) return ServerResponse.validationError(parsed.error.issues);
-
-    const { collection_slug } = parsed.data;
+    const { collection_slug, collection_id, select_all } = parsed.data;
     if (!managed.has(collection_slug)) return ServerResponse.badRequest(NOT_MANAGED);
 
-    world.cancelCollection(collection_slug);
+    if (select_all === true) world.cancelCollection(collection_slug);
+    else world.cancel(collection_id.map((id) => ({ collection: collection_slug, id })));
     return ServerResponse.noContent();
   };
 }
 
-export function runNow({ world }: StubDeps): RouteHandler {
+export function runNow({ world, managed }: StubDeps): RouteHandler {
   return async (req) => {
     const parsed = RunInputSchema.safeParse(req.routeParams);
     if (parsed.error) return ServerResponse.validationError(parsed.error.issues);
 
-    const outcome = world.runNow(parsed.data.id);
-    if (outcome === "unknown") return ServerResponse.notFound("Queued task not found");
+    const { collection_slug, collection_id } = parsed.data;
+    if (!managed.has(collection_slug)) return ServerResponse.badRequest(NOT_MANAGED);
+
+    const outcome = world.runNow({ collection: collection_slug, id: collection_id });
+    if (outcome === "unknown") return ServerResponse.notFound("No run found for this document");
     if (outcome === "already-running") {
       return ServerResponse.tooManyRequests("Translation task is already in progress");
     }

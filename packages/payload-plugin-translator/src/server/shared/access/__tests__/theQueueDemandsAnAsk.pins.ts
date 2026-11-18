@@ -16,7 +16,7 @@ runner.enqueue(work);
 // @ts-expect-error work is stopped only once the rules have been asked about its document
 runner.stop?.([handle]);
 
-// @ts-expect-error a job is run only once the rules have been asked about its document
+// @ts-expect-error a run is started only once the rules have been asked about its document
 runner.run?.(handle);
 
 declare const unnameable: { kind: "unnameable" };

@@ -5,7 +5,7 @@ import type { RunState } from "../../../../../types/wire/RunState.js";
 import { listChipOf } from "../listChip.js";
 
 const AT = "2026-11-01T09:00:00.000Z";
-const run = { handle: "h1", locales: ["de"], queuedAt: AT };
+const run = { locales: ["de"], queuedAt: AT };
 const filled = { kind: "filled", translatedAt: AT } as const;
 const empty = { kind: "empty" } as const;
 

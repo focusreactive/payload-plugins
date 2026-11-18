@@ -7,7 +7,7 @@ import { visibleIds } from "../../shared/payload/collections.js";
 
 import { reportedRuns } from "../../modules/runs/index.js";
 
-import { GetDocumentStatusInputSchema, latestPerTargetLocale, runToJobStatus } from "./model.js";
+import { GetDocumentStatusInputSchema, latestPerTargetLocale, runToStatusItem } from "./model.js";
 import type { GetDocumentStatusConfig } from "./model.js";
 
 /** What each locale of a document is doing. */
@@ -41,6 +41,6 @@ export class GetDocumentStatusHandler {
       collectionId: collection_id,
     });
 
-    return ServerResponse.success(latestPerTargetLocale(reportedRuns(rows)).map(runToJobStatus));
+    return ServerResponse.success(latestPerTargetLocale(reportedRuns(rows)).map(runToStatusItem));
   }
 }

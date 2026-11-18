@@ -3,10 +3,10 @@ import type {
   LeafVerdict,
   LocaleState,
 } from "../../../../types/wire/DocumentTranslationState.js";
-import type { IsoDateTime, LocaleCode, RunHandle } from "../../../../types/wire/primitives.js";
+import type { IsoDateTime, LocaleCode } from "../../../../types/wire/primitives.js";
 import type { RunState } from "../../../../types/wire/RunState.js";
 
-type RunControls = { handle: RunHandle; locales: readonly LocaleCode[] };
+type RunControls = { locales: readonly LocaleCode[] };
 
 /** What one target locale's row says, and what it needs to offer its action. */
 export type LocaleRow =
@@ -31,7 +31,7 @@ const countOf = (
 ) => Object.values(verdicts).filter(wanted).length;
 
 function runRowOf(run: RunState): LocaleRow {
-  const controls = { handle: run.handle, locales: run.locales };
+  const controls = { locales: run.locales };
   switch (run.status) {
     case "queued":
       return { kind: "queued", ...controls };

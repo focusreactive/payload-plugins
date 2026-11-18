@@ -5,7 +5,7 @@ import type { RunState } from "../../../../../types/wire/RunState.js";
 import { localeRowOf, treeModeOf } from "../localeRow.js";
 
 const AT = "2026-11-01T09:00:00.000Z";
-const base = { handle: "run-1", locales: ["de", "fr"], queuedAt: AT };
+const base = { locales: ["de", "fr"], queuedAt: AT };
 
 const tracked = (
   verdicts: Record<string, "current" | "drifted" | "unanswered" | "unrecorded">,
@@ -27,15 +27,15 @@ describe("a locale's row state", () => {
   it("carries what the run controls need", () => {
     expect(localeRowOf({ content: empty, run: { ...base, status: "queued" } })).toEqual({
       kind: "queued",
-      handle: "run-1",
+
       locales: ["de", "fr"],
     });
     expect(
       localeRowOf({ content: empty, run: { ...base, status: "failed", message: "no answer" } })
-    ).toEqual({ kind: "failed", handle: "run-1", locales: ["de", "fr"], message: "no answer" });
+    ).toEqual({ kind: "failed", locales: ["de", "fr"], message: "no answer" });
     expect(
       localeRowOf({ content: empty, run: { ...base, status: "not-started", failedLocale: "de" } })
-    ).toEqual({ kind: "not-started", handle: "run-1", locales: ["de", "fr"], failedLocale: "de" });
+    ).toEqual({ kind: "not-started", locales: ["de", "fr"], failedLocale: "de" });
     expect(localeRowOf({ content: empty, run: { ...base, status: "running" } })).toEqual({
       kind: "translating",
       startedAt: AT,
@@ -104,7 +104,7 @@ describe("which rows open, and how", () => {
     { kind: "written-by-hand" as const },
     { kind: "translated" as const },
     { kind: "translating" as const, startedAt: AT },
-    { kind: "queued" as const, handle: "h", locales: ["de"] },
+    { kind: "queued" as const, locales: ["de"] },
   ])("does not open a $kind row", (row) => {
     expect(treeModeOf(row, true)).toBeNull();
   });

@@ -160,6 +160,65 @@ describe("PayloadJobsRunnerProvider", () => {
       ]);
     });
   });
+  describe("when a job row names no run", () => {
+    const TASK = "translate_document";
+    const WORKFLOW = "translate_document_locales";
+
+    const QUEUED_BEFORE_THE_POINTER = {
+      collection_slug: "posts",
+      collection_id: "42",
+      source_lng: "en",
+      target_lngs: ["de", "fr"],
+    };
+
+    const meet = async (input: unknown) => {
+      const ranLocales: string[] = [];
+      const told: { state: string }[] = [];
+      const context = {
+        handler: vi.fn(),
+        report: vi.fn(async (_payload: unknown, _run: unknown, event: { state: string }) => {
+          told.push(event);
+        }),
+      } as unknown as TaskRunnerContext;
+
+      const config = createPayloadJobsRunner().configure(context)(makeConfig());
+      const registered = config.jobs as unknown as {
+        workflows: { slug: string; handler: (a: unknown) => Promise<unknown> }[];
+      };
+      const workflow = registered.workflows.find((w) => w.slug === WORKFLOW)!;
+
+      const job = { id: "job-77", input };
+      const payload = makePayload();
+      const tasks = {
+        [TASK]: async (locale: string) => {
+          ranLocales.push(locale);
+        },
+      };
+
+      await workflow.handler({ job, req: { payload }, tasks });
+      return { logged: payload.logger.error, ranLocales, told };
+    };
+
+    it("says so against the job's id, so the lost work can be found", async () => {
+      const { logged } = await meet(QUEUED_BEFORE_THE_POINTER);
+
+      expect(logged).toHaveBeenCalledTimes(1);
+      expect(logged.mock.calls[0][0]).toMatchObject({ jobId: "job-77" });
+    });
+
+    it("translates no locale, having no run to translate", async () => {
+      const { ranLocales } = await meet(QUEUED_BEFORE_THE_POINTER);
+
+      expect(ranLocales).toEqual([]);
+    });
+
+    it("settles nothing — a locale it never attempted is not reported delivered", async () => {
+      const { told } = await meet(QUEUED_BEFORE_THE_POINTER);
+
+      expect(told).toEqual([]);
+    });
+  });
+
   describe("when the run gives up part-way down its locale list", () => {
     const TASK = "translate_document";
     const WORKFLOW = "translate_document_locales";

@@ -7,7 +7,7 @@ import { ENDPOINTS } from "../../../../types/wire/endpoints.js";
 import type { EndpointName } from "../../../../types/wire/endpoints.js";
 import type { TranslatorAction } from "../../../../types/TranslatorAction.js";
 
-import { cancel, cancelByCollection, dismissStaleness, enqueue, runNow } from "./actions.js";
+import { cancel, dismissStaleness, enqueue, runNow } from "./actions.js";
 import { readDocumentState, readListState } from "./reads.js";
 import { translateField } from "./translateField.js";
 import { delayed } from "./delayed.js";
@@ -36,7 +36,6 @@ const ALWAYS: readonly StubRoute[] = [
 
 const STOP_AND_RUN: readonly StubRoute[] = [
   { name: "cancel", action: "cancel", handler: cancel },
-  { name: "cancelByCollection", action: "cancel-by-collection", handler: cancelByCollection },
   { name: "runNow", action: "run", handler: runNow },
 ];
 

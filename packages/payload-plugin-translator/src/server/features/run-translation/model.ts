@@ -1,14 +1,14 @@
 import { z } from "zod";
+import type { CollectionSlug } from "payload";
 
-import { JobIdSchema } from "../../shared/index.js";
+import { DocumentIdSchema } from "../../shared/index.js";
 
-/**
- * Input validation schema.
- *
- * `id` comes from the URL route param (always a string at the HTTP edge),
- * but we reuse the canonical JobIdSchema so the contract stays consistent
- * with batch cancel.
- */
+/** The document whose queued run to start now, read from the route params. */
 export const RunInputSchema = z.object({
-  id: JobIdSchema,
+  collection_slug: z.string().nonempty(),
+  collection_id: DocumentIdSchema,
 });
+
+export type RunConfig = {
+  availableCollections: Set<CollectionSlug>;
+};

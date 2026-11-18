@@ -1,8 +1,7 @@
-import type { IsoDateTime, LocaleCode, RunHandle } from "./primitives.js";
+import type { IsoDateTime, LocaleCode } from "./primitives.js";
 
 type RunOf<Status extends string> = {
   status: Status;
-  handle: RunHandle;
   /** Every locale the run covers. Cancel and retry act on the run, so on all of these at once. */
   locales: readonly LocaleCode[];
   queuedAt: IsoDateTime;

@@ -8,7 +8,7 @@ describe("deriveAbilities", () => {
       [
         { method: "post", path: "/i18n/enqueue" },
         { method: "delete", path: "/i18n/cancel" },
-        { method: "post", path: "/i18n/run/:id" },
+        { method: "post", path: "/i18n/run/:collection_slug/:collection_id" },
         { method: "post", path: "/i18n/stale/dismiss" },
         { method: "post", path: "/i18n/field" },
       ],
@@ -43,14 +43,5 @@ describe("deriveAbilities", () => {
     );
 
     expect(abilities.staleness).toBe(false);
-  });
-
-  it("reads cancel from the single cancel, not the cancel by collection", () => {
-    const abilities = deriveAbilities(
-      [{ method: "delete", path: "/i18n/cancel-by-collection/:collection_slug" }],
-      "/i18n"
-    );
-
-    expect(abilities.cancel).toBe(false);
   });
 });

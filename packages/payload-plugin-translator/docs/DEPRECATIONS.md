@@ -41,17 +41,23 @@ the single source of truth — code annotations link here by anchor instead of d
 ### jobs-input-collection-field
 
 - **What:** the `collection` field (Payload `relationship`) in the translate task `inputSchema`.
-- **Status:** live
+- **Status:** removed
 - **Deprecated:** 2026-06-05 / PR #18 (shipped in 0.3.0)
+- **Removed:** 2026-11-17 / PR #TBD
 - **Replacement:** flat text reference — `collection_slug` + `collection_id`.
-- **Remove in:** next major
-- **What removal takes with it:** the flag is also the only way to turn the behaviour off, so an
+- ~~**What removal takes with it:** the flag is also the only way to turn the behaviour off, so an
   install that adopted it to guard against a misbehaving provider has no code-level guard after the
   next major — pinning the previous major is the only remaining step-back. Say so before an install
-  relies on the flag as a safety valve.
-- **What turning it back off does not undo:** it stops future translations from splitting wrappers;
+  relies on the flag as a safety valve.~~
+- ~~**What turning it back off does not undo:** it stops future translations from splitting wrappers;
   documents already translated under it stay split. The one-way door is the first translated
-  document, not the flag.
+  document, not the flag.~~
+- **Struck above, 2026-11-17:** both paragraphs describe a flag that turns a behaviour off and
+  translations that split wrappers — the container-mode deprecation, not this relationship field,
+  which no flag ever governed. They were never true of this entry. Kept struck rather than deleted
+  so a reader who acted on them can see what happened.
+- **What removal takes with it:** nothing a host configures. The field stopped being written when
+  the job row became a pointer, and what went now is the last code that could still *read* it.
 - **Why:** the relationship field validates the stored value's type against the target collection's
   ID type, so a string id for a number-id collection silently fails validation and the job hangs in
   `processing`. Flat text fields make the job input ID-agnostic. See
@@ -59,41 +65,40 @@ the single source of truth — code annotations link here by anchor instead of d
 - **Migration:** expand/contract. New jobs write text fields; the relationship field stays as a
   read-only fallback (`required: false`, `admin.readOnly: true`) so jobs queued before the change
   remain readable. Removed (along with the fallback read path) in the next major.
-- **Where the fallback lives now:** one folder —
-  `src/server/modules/task-runner/payload-jobs-runner/legacy/` — reached from two call sites, the
-  boot backfill and the workflow handler. A job carrying any pre-1.0 shape is **adopted** on first
-  encounter: its rows are written into `translator-runs` from what the old row said, its input is
-  replaced by the pointer a job carries now, and nothing downstream learns the old shape existed.
-  Deleting that folder, its two call sites and the `withoutAHandle()` query drops the compatibility
-  outright — the cost is that a job queued before the upgrade and never adopted stops running.
-- **Code refs:**
-  - `src/server/modules/task-runner/payload-jobs-runner/legacy/legacyInput.ts` (the only reader)
-  - `src/server/modules/task-runner/payload-jobs-runner/legacy/adoptLegacyJob.ts`
+- **Where the fallback lived:** one folder,
+  `src/server/modules/task-runner/payload-jobs-runner/legacy/`, reached from two call sites — the
+  boot backfill and the workflow handler. A job carrying any pre-1.0 shape was **adopted** on first
+  encounter: its rows were written into `translator-runs` from what the old row said, its input was
+  replaced by the pointer a job carries now, and nothing downstream learned the old shape existed.
+  That folder, both call sites and the `withoutAHandle()` query are gone.
+- **What a host must do:** let the queue drain before upgrading to 1.0. A job queued on an earlier
+  version and still unfinished will not run; the workflow handler logs it against its job id and
+  skips it rather than completing it silently.
+- **Code refs:** none — `PayloadJob.input` is now typed as the pointer
+  (`payload-jobs-runner/store/types.ts`), and `pointerOf` is the one place a row is read.
 
 ### jobs-per-locale-task-shape
 
 - **What:** jobs queued as a bare task (`taskSlug: 'translate_document'`, one `target_lng` in the
   input) rather than as the locale-walking workflow.
-- **Status:** live
+- **Status:** removed
 - **Deprecated:** 2026-09-04 / PR #133
+- **Removed:** 2026-11-17 / PR #TBD
 - **Replacement:** one workflow job per document (`workflowSlug: 'translate_document_locales'`,
   `target_lngs` list).
-- **Remove in:** next major
 - **Why:** a job per locale meant Payload ran a document's locales through `Promise.all`, and every
   write it makes is a whole-document version snapshot — so the second locale's snapshot dropped the
   first's work. See [locale workflow](./plans/2026-09-04-locale-workflow.task.md).
-- **Migration:** expand/contract. Nothing writes the task shape any more, and a row queued before the
-  upgrade is adopted rather than read in parallel — see the entry above for where that lives.
-- **Where the fallback lives now:** one folder —
-  `src/server/modules/task-runner/payload-jobs-runner/legacy/` — reached from two call sites, the
-  boot backfill and the workflow handler. A job carrying any pre-1.0 shape is **adopted** on first
-  encounter: its rows are written into `translator-runs` from what the old row said, its input is
-  replaced by the pointer a job carries now, and nothing downstream learns the old shape existed.
-  Deleting that folder, its two call sites and the `withoutAHandle()` query drops the compatibility
-  outright — the cost is that a job queued before the upgrade and never adopted stops running.
-- **Code refs:**
-  - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsTaskRunner.ts` (`ownJobs()`)
-  - `src/server/modules/task-runner/payload-jobs-runner/legacy/legacyInput.ts`
+- **Migration:** expand/contract. Nothing has written the task shape since 1.0, and a row queued
+  before the upgrade used to be adopted rather than read in parallel — see the entry above.
+- **What went with it:** the adoption folder (shared with the entry above), and the `taskSlug` half
+  of `ownJobs()`. Payload gives a row either a `workflowSlug` or a `taskSlug` and never both, and
+  tasks run inside a workflow get no row of their own, so that half could only ever match a
+  standalone task job — which this plugin last queued before 1.0.
+- **What a host must do:** as above, let the queue drain before upgrading. A standalone task row
+  left behind is no longer claimed by `stop`, `run` or the stale-job sweep; if Payload runs one, the
+  per-locale path reports it as a run it cannot find rather than translating anything.
+- **Code refs:** none.
 
 ### the-runner-only-accepts-work
 
@@ -177,16 +182,34 @@ the single source of truth — code annotations link here by anchor instead of d
 
 ### cancel-by-collection-route
 
-- **What:** `POST {basePath}/cancel-by-collection` endpoint.
-- **Status:** planned
+- **What:** the `cancel-by-collection` endpoint.
+- ~~**What:** `POST {basePath}/cancel-by-collection` endpoint.~~
+- **Status:** removed
 - **Deprecated:** 2026-06-05 / PR #TBD
-- **Replacement:** unified `POST {basePath}/cancel` accepting `{ ids: string[] } | { collection: slug }`.
-- **Remove in:** next major
-- **Why:** two routes differing only in the where-clause shape. After unification the old route
-  becomes a thin alias delegating to the same handler.
-- **Code refs:**
-  - `src/server/features/cancel-by-collection/`
-  - `src/server/features/cancel/`
+- **Removed:** 2026-11-17 / PR #TBD
+- **Replacement:** `DELETE {basePath}/cancel`, taking
+  `{ collection_slug, collection_id, select_all? }` — the field names the enqueue route already
+  uses. `select_all` is how a caller says "everything queued here" without listing what it cannot
+  see.
+- ~~**Replacement:** unified `POST {basePath}/cancel` accepting `{ ids: string[] } | { collection: slug }`.~~
+- ~~**Why:** two routes differing only in the where-clause shape. After unification the old route
+  becomes a thin alias delegating to the same handler.~~
+- **Struck above, 2026-11-17 — three things that entry got wrong:**
+  - **the method.** Both routes were `DELETE`, never `POST`.
+  - **the reason.** They did not differ only in the where-clause shape. `/cancel` stopped whatever
+    the caller named, started or not, and answered with the runs it had refused;
+    `/cancel-by-collection` skipped any run with a started locale and answered `204` whichever way
+    it went. Unifying them meant deciding both of those, not merging a query.
+  - **the replacement shape.** It is one body carrying both values plus `select_all`, not a choice
+    between `{ ids }` and `{ collection }`.
+- **What the unification settled:** a run whose locale has already started is no longer skipped —
+  cancelling never stopped work in flight anyway, so skipping it only withheld the record; and
+  refusals are now named on both paths, because losing them told the caller less for no gain.
+- **What stayed:** the `cancel-by-collection` member of the published `TranslatorAction` union. It
+  ships `@since 1.0.0`, and a guard that has not answered for an action refuses it, so removing the
+  member would break a host guard already written against 1.0. It goes in the next major after this
+  one; nothing dispatches it in the meantime.
+- **Code refs:** `src/server/features/cancel/`
 
 ### translate-collection-plugin-class
 
@@ -617,27 +640,38 @@ keeps flagging until the source has text again.
 ### the-strategy-leaves-the-stored-run
 
 - **What:** reading `target_lngs` and `strategy` off a run row written before 1.0.
-- **Status:** read-only shim, written nowhere, and since 2026-10-27 confined to
+- **Status:** removed
+- ~~**Status:** read-only shim, written nowhere, and since 2026-10-27 confined to
   `payload-jobs-runner/legacy/` — a row carrying this shape is adopted on first encounter and is a
-  pointer from that moment on.
+  pointer from that moment on.~~
 - **Changed:** 2026-10-23 / #208
-- **Replacement:** `targets: [{ lng, filters }]`. A legacy row is read as one target per listed
-  locale, and a row that named `skip_existing` is read as carrying one `rule` filter named `stale`.
-- **That is the nearest meaning, not the same one.** `skip_existing` promised two things and `stale`
-  keeps one. A queued row therefore behaves differently in three cases, all of them confined to the
-  rows already in flight when this ships:
+- **Removed:** 2026-11-17 / PR #TBD — the shim lived inside the adoption folder and went with it.
+- **Replacement:** `targets: [{ lng, filters }]`.
+- **What happens to such a row now:** nothing reads it. `pointerOf` finds no pointer, the workflow
+  handler logs the row against its job id and skips it, and the job completes without translating
+  anything. A host that upgrades to 1.0 with pre-1.0 rows still queued loses that queued work,
+  which is why the upgrade note says to let the queue drain first.
+- **How it was read between 2026-10-23 and 2026-11-17**, kept as the record of what shipped in that
+  window: a legacy row was read as one target per listed locale, and a row that named
+  `skip_existing` was read as carrying one `rule` filter named `stale`. That was the nearest
+  meaning, not the same one — `skip_existing` promised two things and `stale` kept one — so a
+  queued row behaved differently in three cases:
 
-  | The queued row | What it did | What it does now |
+  | The queued row | What it did before 2026-10-23 | What it did in that window |
   | --- | --- | --- |
-  | with `provenance` on and a per-leaf receipt | filled empty targets, refreshed what drifted | refreshes what drifted; an empty target whose source stands still is left empty |
-  | with `provenance` on and no per-leaf receipt for that locale | left a filled target alone | translates every leaf, reviewed text included |
-  | with `provenance` **off** | filled empty targets only | **fails**: nothing answers `stale`, so the run throws and spends its retries |
+  | with `provenance` on and a per-leaf receipt | filled empty targets, refreshed what drifted | refreshed what drifted; an empty target whose source stood still was left empty |
+  | with `provenance` on and no per-leaf receipt for that locale | left a filled target alone | translated every leaf, reviewed text included |
+  | with `provenance` **off** | filled empty targets only | **failed**: nothing answered `stale`, so the run threw and spent its retries |
 
-  The last one is deliberate. Translating the whole document instead would overwrite text the row
-  was queued to protect, and a run that fails loudly can be queued again.
-- **Removal condition, not a version:** drop the legacy branch of `store/runTargets.ts` once no row
+  The last one was deliberate. Translating the whole document instead would have overwritten text
+  the row was queued to protect, and a run that fails loudly can be queued again.
+- ~~**Removal condition, not a version:** drop the legacy branch of `store/runTargets.ts` once no row
   written before 1.0 can still be in flight. That is the queue's drain time — hours — not a release
-  cycle, so it does not need to wait for the next major.
+  cycle, so it does not need to wait for the next major.~~
+- **Struck above, 2026-11-17:** `store/runTargets.ts` had already stopped existing when that line
+  was written — the reader it names moved into `payload-jobs-runner/legacy/legacyInput.ts` on
+  2026-10-27. The condition itself was also overtaken: rather than wait for the queue to drain, 1.0
+  drops the reader outright and tells hosts to drain before upgrading.
 
 ## 2026-10-24 — hiding the out-of-date mark writes the receipt
 

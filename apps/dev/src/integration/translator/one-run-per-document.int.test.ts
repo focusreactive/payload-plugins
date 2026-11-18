@@ -105,10 +105,11 @@ describe("one run per document at a time", () => {
 
   it("frees the document again after its run is cancelled", async () => {
     const id = await create("Cancelled, then asked again");
-    const first = await enqueue([id], ["de"]);
-    const handle = first.assignments?.[0]?.handle;
+    await enqueue([id], ["de"]);
 
-    await callEndpoint(ctx.payload, "delete", "/translate/cancel", { body: { ids: [handle] } });
+    await callEndpoint(ctx.payload, "delete", "/translate/cancel", {
+      body: { collection_slug: "docs", collection_id: [String(id)] },
+    });
     const again = await enqueue([id], ["de"]);
 
     expect(again.queued, "cancelling is the way out of a run that will not finish").toBe(1);

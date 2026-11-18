@@ -92,7 +92,7 @@ export { withFieldTranslation } from "./field-config.js";
 export type { FieldTranslationConfig } from "./field-config.js";
 
 // Auto-translate — opt-in, per-collection auto-translation on source-locale change (#51). Wrap a
-// collection with `withAutoTranslate`; requires a working job runner/autorun to execute (see the
+// collection with `withAutoTranslate`; requires a working task runner/autorun to execute (see the
 // JSDoc for the Vercel/serverless caveat). Since v0.9.0.
 export { withAutoTranslate } from "./auto-translate-config.js";
 export type { AutoTranslateConfig } from "./auto-translate-config.js";

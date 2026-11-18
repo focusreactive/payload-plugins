@@ -4,7 +4,7 @@ import type { LocaleState } from "../../../../../types/wire/DocumentTranslationS
 import { documentPanelStatus, hasLiveRun } from "../documentPanelStatus.js";
 
 const AT = "2026-11-01T09:00:00.000Z";
-const run = { handle: "run-1", locales: ["de"], queuedAt: AT };
+const run = { locales: ["de"], queuedAt: AT };
 
 const locale = (overrides: Partial<LocaleState>): LocaleState => ({
   locale: "de",

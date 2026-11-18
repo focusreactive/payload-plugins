@@ -37,7 +37,7 @@ describe("normalizeAutoTranslateConfig", () => {
   });
 
   // Guards the call site (not just the shared primitive): a duplicate in config.targets must collapse
-  // so one misconfigured [de, de] never enqueues two racing jobs for the same (doc, locale).
+  // so one misconfigured [de, de] never enqueues two racing runs for the same (doc, locale).
   it("de-duplicates config targets", () => {
     expect(normalizeAutoTranslateConfig({ targets: ["de", "de", "fr"] }).targets).toEqual([
       "de",

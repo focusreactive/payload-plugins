@@ -250,12 +250,7 @@ describe("PayloadJobsTaskRunner", () => {
       expect(mockPayload.jobs.cancel).toHaveBeenCalledWith({
         where: {
           and: [
-            {
-              or: [
-                { workflowSlug: { equals: "translate_document_locales" } },
-                { taskSlug: { equals: "translate_document" } },
-              ],
-            },
+            { workflowSlug: { equals: "translate_document_locales" } },
             { id: { in: ["job-1", "job-2"] } },
           ],
         },
@@ -265,12 +260,7 @@ describe("PayloadJobsTaskRunner", () => {
         collection: "payload-jobs",
         where: {
           and: [
-            {
-              or: [
-                { workflowSlug: { equals: "translate_document_locales" } },
-                { taskSlug: { equals: "translate_document" } },
-              ],
-            },
+            { workflowSlug: { equals: "translate_document_locales" } },
             { id: { in: ["job-1", "job-2"] } },
           ],
         },
@@ -286,10 +276,7 @@ describe("PayloadJobsTaskRunner", () => {
 
       const where = mockPayload.delete.mock.calls[0][0].where as { and?: unknown[] };
       expect(where.and?.[0]).toEqual({
-        or: [
-          { workflowSlug: { equals: "translate_document_locales" } },
-          { taskSlug: { equals: "translate_document" } },
-        ],
+        workflowSlug: { equals: "translate_document_locales" },
       });
     });
 
@@ -332,15 +319,7 @@ describe("PayloadJobsTaskRunner", () => {
 
     it("retries a workflow whose locales are logged but whose run failed", async () => {
       const partiallyFailed = createJob({
-        input: {
-          collection_slug: "posts",
-          collection_id: "doc-123",
-          source_lng: "en",
-          targets: [
-            { lng: "de", filters: [] },
-            { lng: "fr", filters: [] },
-          ],
-        },
+        input: { handle: "run-1", locales: ["de", "fr"] },
         log: [
           { state: "succeeded", completedAt: "2024-01-01T00:01:00Z", input: { target_lng: "de" } },
           { state: "failed", completedAt: "2024-01-01T00:02:00Z", input: { target_lng: "fr" } },
@@ -470,12 +449,7 @@ describe("PayloadJobsTaskRunner", () => {
         expect.objectContaining({
           where: {
             and: [
-              {
-                or: [
-                  { workflowSlug: { equals: "translate_document_locales" } },
-                  { taskSlug: { equals: "translate_document" } },
-                ],
-              },
+              { workflowSlug: { equals: "translate_document_locales" } },
               { "input.handle": { in: ["run-1"] } },
             ],
           },
@@ -532,12 +506,7 @@ describe("PayloadJobsTaskRunner", () => {
       ).toISOString();
       expect(arg.where).toEqual({
         and: [
-          {
-            or: [
-              { workflowSlug: { equals: "translate_document_locales" } },
-              { taskSlug: { equals: "translate_document" } },
-            ],
-          },
+          { workflowSlug: { equals: "translate_document_locales" } },
           { processing: { equals: true } },
           { completedAt: { exists: false } },
           { updatedAt: { less_than: expectedCutoff } },

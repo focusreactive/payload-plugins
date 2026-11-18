@@ -8,6 +8,6 @@ export type {
 export { TaskInputSchema, WorkflowInputSchema } from "./jobInput.schema.js";
 export { toPayloadFields } from "./toPayloadFields.js";
 export { handleOf } from "./handleOf.js";
-export { ofHandles, withoutAHandle } from "./jobsWhere.js";
+export { ofHandles } from "./jobsWhere.js";
 export { latestLogByLocale } from "./jobLog.js";
 export { pointerOf } from "./pointerOf.js";

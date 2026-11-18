@@ -66,7 +66,6 @@ const adminConfigOf = (config: Config): TranslateKitConfig => {
 const ACTIONS = [
   "enqueue",
   "cancel",
-  "cancelByCollection",
   "runNow",
   "dismissStaleness",
   "translateField",

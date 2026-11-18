@@ -8,10 +8,9 @@ export type {
 export type {
   EnqueueAssignment,
   ID,
-  JobAssignment,
+  RunAssignment,
   QueuedWork,
   RunRef,
-  Task,
   TaskInput,
   TaskStatus,
 } from "./types.js";

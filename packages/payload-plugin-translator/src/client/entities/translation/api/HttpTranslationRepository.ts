@@ -12,7 +12,6 @@ import { ENDPOINTS } from "../../../../types/wire/endpoints.js";
 import type { EndpointName } from "../../../../types/wire/endpoints.js";
 import type { FieldTranslationResult } from "../../../../types/wire/field-translation.js";
 import type { ListTranslationState } from "../../../../types/wire/ListTranslationState.js";
-import type { RunHandle } from "../../../../types/wire/primitives.js";
 import type { ApiRequest } from "../../../shared/api/createRequest.js";
 import { rejectBusyEnqueue } from "../model/rejectBusyEnqueue.js";
 import type {
@@ -79,30 +78,32 @@ export class HttpTranslationRepository implements TranslationRepository {
     return rejectBusyEnqueue(answer.data);
   }
 
-  /** The route answers 204 when every handle was stopped. */
-  async cancel(handles: readonly RunHandle[]): Promise<CancelResponse> {
-    const { method, path } = route("cancel", {});
-    const body: CancelRequest = { ids: [...handles] };
-    const answer = await this.request<WireEnvelope<CancelResponse> | undefined>(path, {
-      method,
-      body,
-    });
-    return answer?.data ?? { refused: [] };
+  /** The route answers 204 when every run was stopped. */
+  async cancel({ collection, id }: DocumentAddress): Promise<CancelResponse> {
+    return this.sendCancel({ collection_slug: collection, collection_id: [id] });
   }
 
   async cancelByCollection(collection: CollectionSlug): Promise<void> {
-    const { method, path } = route("cancelByCollection", { collection_slug: collection });
-    await this.request(path, { method });
+    await this.sendCancel({ collection_slug: collection, select_all: true });
   }
 
-  async runNow(handle: RunHandle): Promise<void> {
-    const { method, path } = route("runNow", { id: handle });
+  async runNow({ collection, id }: DocumentAddress): Promise<void> {
+    const { method, path } = route("runNow", { collection_slug: collection, collection_id: id });
     await this.request(path, { method });
   }
 
   async dismissStaleness(request: DismissStalenessRequest): Promise<void> {
     const { method, path } = route("dismissStaleness", {});
     await this.request(path, { method, body: request });
+  }
+
+  private async sendCancel(body: CancelRequest): Promise<CancelResponse> {
+    const { method, path } = route("cancel", {});
+    const answer = await this.request<WireEnvelope<CancelResponse> | undefined>(path, {
+      method,
+      body,
+    });
+    return answer?.data ?? { refused: [] };
   }
 
   async translateField(request: FieldTranslationRequest): Promise<FieldTranslationResult> {

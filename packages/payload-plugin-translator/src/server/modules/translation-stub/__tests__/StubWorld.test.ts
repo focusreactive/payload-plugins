@@ -36,14 +36,13 @@ const statusesOf = (world: StubWorld): Array<string | null> =>
   world.documentState(POST, LOCALES).locales.map((l) => l.run?.status ?? null);
 
 describe("admission", () => {
-  it("queues one run covering every asked locale and names its handle per locale", () => {
+  it("queues one run covering every asked locale, one assignment per locale", () => {
     const world = worldOf();
 
     const outcome = world.enqueue("posts", ["1"], ["de", "fr"], LOCALES);
 
     expect(outcome.queued).toBe(2);
     expect(outcome.busy).toEqual([]);
-    expect(new Set(outcome.assignments.map((a) => a.handle)).size).toBe(1);
     expect(outcome.assignments.map((a) => a.target_lng)).toEqual(["de", "fr"]);
   });
 
@@ -61,9 +60,9 @@ describe("admission", () => {
 
   it("cancel removes the whole run, every locale it covered", () => {
     const world = worldOf();
-    const { assignments } = world.enqueue("posts", ["1"], ["de", "fr"], LOCALES);
+    world.enqueue("posts", ["1"], ["de", "fr"], LOCALES);
 
-    world.cancel([assignments[0].handle]);
+    world.cancel([POST]);
 
     expect(statusesOf(world)).toEqual([null, null]);
     expect(world.enqueue("posts", ["1"], ["de"], LOCALES).busy).toEqual([]);
@@ -80,24 +79,23 @@ describe("admission", () => {
     expect(world.enqueue("pages", ["1"], ["de"], LOCALES).busy).toEqual(["1"]);
   });
 
-  it("runs a queued run now, refuses a running one, and does not know a made-up handle", () => {
+  it("runs a queued run now, refuses a running one, and knows no run for an untouched document", () => {
     const world = worldOf();
-    const { assignments } = world.enqueue("posts", ["1"], ["de"], LOCALES);
-    const { handle } = assignments[0];
+    world.enqueue("posts", ["1"], ["de"], LOCALES);
 
-    expect(world.runNow(handle)).toBe("started");
-    expect(world.runNow(handle)).toBe("already-running");
-    expect(world.runNow("nobody")).toBe("unknown");
+    expect(world.runNow(POST)).toBe("started");
+    expect(world.runNow(POST)).toBe("already-running");
+    expect(world.runNow({ collection: "posts", id: "nobody" })).toBe("unknown");
   });
 
   it("re-runs a failed run", () => {
     const world = worldOf({ runsFail: true });
-    const { assignments } = world.enqueue("posts", ["1"], ["de"], LOCALES);
+    world.enqueue("posts", ["1"], ["de"], LOCALES);
     world.documentState(POST, LOCALES);
     world.documentState(POST, LOCALES);
     expect(localeOf(world, "de").run?.status).toBe("failed");
 
-    expect(world.runNow(assignments[0].handle)).toBe("started");
+    expect(world.runNow(POST)).toBe("started");
     expect(localeOf(world, "de").run?.status).toBe("running");
   });
 });
@@ -221,12 +219,11 @@ describe("what a document reports", () => {
     expect(localeOf(world, "de").content).toMatchObject({ kind: "tracked", dismissed: true });
   });
 
-  it("shows a seeded run with a handle the actions accept", () => {
+  it("shows a seeded run the actions reach by its document", () => {
     const world = worldOf({}, { ...quiet, run: { status: "queued", locales: ["de", "fr"] } });
 
-    const handle = localeOf(world, "de").run?.handle;
-    if (handle === undefined) throw new Error("the seeded run must show");
-    world.cancel([handle]);
+    if (!localeOf(world, "de").run) throw new Error("the seeded run must show");
+    world.cancel([POST]);
 
     expect(statusesOf(world)).toEqual([null, null]);
   });

@@ -23,7 +23,7 @@ export const storeDouble = (over: Partial<RunRecordStoreDouble> = {}): RunRecord
 });
 
 export const runRow = (over: Partial<RunRecord> = {}): RunRecord => ({
-  handle: "job-1",
+  handle: "run-1",
   collectionSlug: "posts" as CollectionSlug,
   collectionId: "doc-1",
   sourceLng: "en",

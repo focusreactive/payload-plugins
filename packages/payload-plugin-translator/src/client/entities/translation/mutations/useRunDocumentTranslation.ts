@@ -1,17 +1,17 @@
 import { useMutation } from "@tanstack/react-query";
 
-import type { RunHandle } from "../../../../types/wire/primitives.js";
+import type { DocumentAddress } from "../model/TranslationRepository.js";
 import { useTranslationRepository } from "../api/TranslationRepositoryContext.js";
 import { useRefreshTranslation } from "../queries/useRefreshTranslation.js";
 
-type Variables = { id: RunHandle };
+type Variables = { document: DocumentAddress };
 
 export function useRunDocumentTranslation() {
   const repository = useTranslationRepository();
   const refresh = useRefreshTranslation();
 
   return useMutation({
-    mutationFn: ({ id }: Variables): Promise<void> => repository.runNow(id),
+    mutationFn: ({ document }: Variables): Promise<void> => repository.runNow(document),
     onSettled: () => refresh(),
   });
 }

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { RunState } from "../../../../types/wire/RunState.js";
 import { POLL_INTERVAL_MS, pollWhileRunning } from "../queries/polling.js";
 
-const base = { handle: "run-1", locales: ["de"], queuedAt: "2026-11-13T00:00:00.000Z" };
+const base = { locales: ["de"], queuedAt: "2026-11-13T00:00:00.000Z" };
 const queued: RunState = { ...base, status: "queued" };
 const running: RunState = { ...base, status: "running" };
 const failed: RunState = { ...base, status: "failed", message: "boom" };

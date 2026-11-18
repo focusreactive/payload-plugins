@@ -94,7 +94,7 @@ export function describeTranslationRepositoryContract(
       expect(refusal).toBeInstanceOf(ApiRequestError);
       expect(refusal).toMatchObject({ reason: "busy" });
       const after = runsByLocale((await read(repository, KNOWN[0])).locales);
-      expect(after[first]?.handle).toBe(before[first]?.handle);
+      expect(after[first]?.queuedAt).toBe(before[first]?.queuedAt);
       expect(after[first]?.locales).toEqual([first]);
       expect(after[second]).toBeNull();
     });
@@ -107,10 +107,10 @@ export function describeTranslationRepositoryContract(
         collection_slug: COLLECTION,
         collection_id: [KNOWN[0]],
       });
-      const handle = runsByLocale((await read(repository, KNOWN[0])).locales)[first]?.handle;
-      if (handle === undefined) throw new Error("the enqueued run is not visible to a read");
+      const queued = runsByLocale((await read(repository, KNOWN[0])).locales)[first];
+      if (!queued) throw new Error("the enqueued run is not visible to a read");
 
-      await repository.cancel([handle]);
+      await repository.cancel({ collection: COLLECTION, id: KNOWN[0] });
 
       const runs = runsByLocale((await read(repository, KNOWN[0])).locales);
       expect(runs[first]).toBeNull();

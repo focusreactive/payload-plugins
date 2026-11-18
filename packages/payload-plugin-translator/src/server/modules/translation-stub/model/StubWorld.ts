@@ -15,7 +15,6 @@ import type {
   IsoDateTime,
   LeafAddress,
   LocaleCode,
-  RunHandle,
 } from "../../../../types/wire/primitives.js";
 import type { RunState } from "../../../../types/wire/RunState.js";
 
@@ -54,6 +53,9 @@ export type RunNowOutcome = "started" | "already-running" | "unknown";
 
 type DocumentKey = string;
 
+/** The stub's own name for a run; it never leaves the stub. */
+type RunHandle = string;
+
 type Run = {
   handle: RunHandle;
   collection: string;
@@ -70,14 +72,14 @@ const keyOf = ({ collection, id }: DocumentRef): DocumentKey => `${collection}:$
 const isLive = (run: Run): boolean => run.status === "queued" || run.status === "running";
 
 function runStateFor(run: Run, locale: LocaleCode): RunState {
-  const { handle, locales, queuedAt } = run;
-  if (run.status !== "failed") return { status: run.status, handle, locales, queuedAt };
+  const { locales, queuedAt } = run;
+  if (run.status !== "failed") return { status: run.status, locales, queuedAt };
 
   const [failedLocale] = locales;
   if (locale === failedLocale) {
-    return { status: "failed", handle, locales, queuedAt, message: FAILURE_MESSAGE };
+    return { status: "failed", locales, queuedAt, message: FAILURE_MESSAGE };
   }
-  return { status: "not-started", handle, locales, queuedAt, failedLocale };
+  return { status: "not-started", locales, queuedAt, failedLocale };
 }
 
 function listContentOf(content: ContentState): ListLocaleState["content"] {
@@ -162,15 +164,19 @@ export class StubWorld {
           collection_slug: collection,
           collection_id: id,
           target_lng: target,
-          handle: run.handle,
         }))
       );
     }
     return outcome;
   }
 
-  cancel(handles: readonly RunHandle[]): void {
-    for (const handle of handles) this.runs.delete(handle);
+  /** Removes each document's live run, on every locale it covers. */
+  cancel(documents: readonly DocumentRef[]): void {
+    for (const document of documents) {
+      for (const run of this.runsOf(keyOf(document))) {
+        if (isLive(run)) this.runs.delete(run.handle);
+      }
+    }
   }
 
   cancelCollection(collection: string): void {
@@ -179,8 +185,9 @@ export class StubWorld {
     }
   }
 
-  runNow(handle: RunHandle): RunNowOutcome {
-    const run = this.runs.get(handle);
+  /** Starts the document's latest run; a failed one starts again, as Retry. */
+  runNow(document: DocumentRef): RunNowOutcome {
+    const run = this.runsOf(keyOf(document)).at(-1);
     if (!run) return "unknown";
     if (run.status === "running") return "already-running";
     run.status = "running";

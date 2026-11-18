@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { JobIdSchema } from "../../shared/index.js";
+import { DocumentIdSchema } from "../../shared/index.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
 import type { LanguageTable } from "../../../traversal/index.js";
@@ -19,7 +19,7 @@ export const MAX_FIELD_VALUE_BYTES = 256 * 1024;
  *
  * Single mode — **from locale**: the server reads the saved document (`doc_id`) in `source_lng`,
  * takes its value at `field_path`, and translates it into `target_lng`. Both `source_lng` and
- * `doc_id` are therefore required (a saved document). `doc_id` reuses {@link JobIdSchema} — the
+ * `doc_id` are therefore required (a saved document). `doc_id` reuses {@link DocumentIdSchema} — the
  * canonical id guard, ID-format-agnostic (string UUID/ObjectId or numeric autoincrement),
  * normalized to a string.
  */
@@ -28,7 +28,7 @@ export const FieldTranslationInputSchema = z.object({
   field_path: z.string().nonempty(),
   target_lng: z.string().nonempty(),
   source_lng: z.string().nonempty(),
-  doc_id: JobIdSchema,
+  doc_id: DocumentIdSchema,
 });
 
 export type FieldTranslationInput = z.infer<typeof FieldTranslationInputSchema>;

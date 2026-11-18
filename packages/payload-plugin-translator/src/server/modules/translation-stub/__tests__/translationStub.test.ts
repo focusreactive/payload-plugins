@@ -159,31 +159,34 @@ describe("the stub's actions answer as the real routes do", () => {
 
   it("cancel answers 204 and the whole run is gone", async () => {
     const call = stubbed();
-    const { body } = await call("enqueue", enqueueOf(["1"]));
+    await call("enqueue", enqueueOf(["1"]));
 
-    const { status } = await call("cancel", { body: { ids: [body.data.assignments[0].handle] } });
+    const { status } = await call("cancel", {
+      body: { collection_slug: "posts", collection_id: ["1"] },
+    });
 
     expect(status).toBe(204);
     const { locales } = (await call("documentState", { params: POST_1 })).body.data;
     expect(locales.map((l: { run: unknown }) => l.run)).toEqual([null, null]);
   });
 
-  it("cancel by collection answers 204", async () => {
-    const { status } = await stubbed()("cancelByCollection", {
-      params: { collection_slug: "posts" },
+  it("cancel for the whole collection answers 204", async () => {
+    const { status } = await stubbed()("cancel", {
+      body: { collection_slug: "posts", select_all: true },
     });
 
     expect(status).toBe(204);
   });
 
-  it("run answers 204 for a queued run and 404 for a handle nobody knows", async () => {
+  it("run answers 204 for a queued run and 404 for a document with no run", async () => {
     const call = stubbed();
-    const { body } = await call("enqueue", enqueueOf(["1"]));
+    await call("enqueue", enqueueOf(["1"]));
 
-    expect((await call("runNow", { params: { id: body.data.assignments[0].handle } })).status).toBe(
-      204
-    );
-    expect((await call("runNow", { params: { id: "nobody" } })).status).toBe(404);
+    expect((await call("runNow", { params: POST_1 })).status).toBe(204);
+    expect(
+      (await call("runNow", { params: { collection_slug: "posts", collection_id: "nobody" } }))
+        .status
+    ).toBe(404);
   });
 
   it("dismiss answers 200 with success, like the real route", async () => {

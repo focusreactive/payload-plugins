@@ -82,7 +82,9 @@ describe("an action refreshes the translation reads when it settles", () => {
     await waitFor(() => expect(read).toHaveBeenCalledTimes(1));
 
     const failure = await act(() =>
-      rejectionOf(() => result.current.runNow.mutateAsync({ id: "no-such-run" }))
+      rejectionOf(() =>
+        result.current.runNow.mutateAsync({ document: { collection: "pages", id: "no-run" } })
+      )
     );
 
     expect(failure).toMatchObject({ reason: "not-found" });

@@ -4,7 +4,7 @@ import type { ListTranslationState } from "../../../../../types/wire/ListTransla
 import { batchOf, batchSummary, collectionEnqueue, liveDocumentsOf } from "../collectionBatch.js";
 
 const AT = "2026-11-01T09:00:00.000Z";
-const run = { handle: "h", locales: ["de"], queuedAt: AT };
+const run = { locales: ["de"], queuedAt: AT };
 const empty = { kind: "empty" } as const;
 
 const LIST: ListTranslationState = {

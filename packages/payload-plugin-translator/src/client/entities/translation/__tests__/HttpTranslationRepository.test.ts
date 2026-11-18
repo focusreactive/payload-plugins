@@ -60,25 +60,24 @@ describe("HttpTranslationRepository", () => {
       collection_slug: "pages",
       collection_id: ["1"],
     });
-    const state = await repository.getDocumentState({ collection: "pages", id: "1" });
-    const handle = state.locales[0]?.run?.handle ?? "";
-
-    expect(await repository.cancel([handle])).toEqual({ refused: [] });
+    expect(await repository.cancel({ collection: "pages", id: "1" })).toEqual({ refused: [] });
   });
 
-  it("rejects running a run that is already running as busy, and an unknown one as not found", async () => {
+  it("rejects running a run that is already running as busy, and a document with no run as not found", async () => {
     const repository = overStub();
-    const { assignments = [] } = await repository.enqueue({
+    await repository.enqueue({
       source_lng: "en",
       target_lng: ["de"],
       collection_slug: "pages",
       collection_id: ["1"],
     });
-    const handle = assignments[0]?.handle ?? "";
-    await repository.runNow(handle);
+    const document = { collection: "pages", id: "1" };
+    await repository.runNow(document);
 
-    expect(await refusalOf(repository.runNow(handle))).toMatchObject({ reason: "busy" });
-    expect(await refusalOf(repository.runNow("nobody"))).toMatchObject({ reason: "not-found" });
+    expect(await refusalOf(repository.runNow(document))).toMatchObject({ reason: "busy" });
+    expect(await refusalOf(repository.runNow({ collection: "pages", id: "nobody" }))).toMatchObject(
+      { reason: "not-found" }
+    );
   });
 
   it("waits longer for a field translation than for any other request", async () => {

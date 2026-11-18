@@ -27,8 +27,7 @@ describe("a runner that only accepts work", () => {
 
   it("registers no route it cannot serve", () => {
     expect(paths()).not.toContain("/translate/cancel");
-    expect(paths()).not.toContain("/translate/cancel-by-collection/:collection_slug");
-    expect(paths()).not.toContain("/translate/run/:id");
+    expect(paths()).not.toContain("/translate/run/:collection_slug/:collection_id");
   });
 
   it("still registers the routes that rest on the plugin's own record", () => {

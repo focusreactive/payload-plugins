@@ -2,7 +2,7 @@ import { TranslatorError } from "../../../core/errors/index.js";
 import { markFailureReason } from "../../../core/errors/failureReason.js";
 
 /**
- * The requester recorded on a job no longer resolves to a user. `mustPropagate` is `false` even
+ * The requester recorded on a run no longer resolves to a user. `mustPropagate` is `false` even
  * though a Payload lookup failed: `findRequester` queries outside the caller's transaction, so
  * nothing of theirs was rolled back.
  */

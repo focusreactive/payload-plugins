@@ -1,4 +1,4 @@
-import type { DocumentId, LeafAddress, LocaleCode, RunHandle } from "./primitives.js";
+import type { DocumentId, LeafAddress, LocaleCode } from "./primitives.js";
 
 /** Every 200 answer of the translator's routes wraps its body in `data`. */
 export type WireEnvelope<Body> = { data: Body };
@@ -22,7 +22,6 @@ export type EnqueueAssignmentBody = {
   collection_slug: string;
   collection_id: DocumentId;
   target_lng: LocaleCode;
-  handle: RunHandle;
 };
 
 export type EnqueueResponse = {
@@ -35,9 +34,14 @@ export type EnqueueResponse = {
   assignments?: readonly EnqueueAssignmentBody[];
 };
 
-/** `DELETE {basePath}/cancel` — answers 204, or 200 with the handles the caller may not stop. */
-export type CancelRequest = { ids: RunHandle[] };
-export type CancelResponse = { refused: readonly RunHandle[] };
+/**
+ * `DELETE {basePath}/cancel` — answers 204, or 200 with the documents whose runs the caller may not
+ * stop. `select_all` cancels every queued run in the collection.
+ */
+export type CancelRequest =
+  | { collection_slug: string; collection_id: [DocumentId, ...DocumentId[]] }
+  | { collection_slug: string; select_all: true };
+export type CancelResponse = { refused: readonly DocumentId[] };
 
 /** `POST {basePath}/stale/dismiss` — answers 200 `{ success: true }`. */
 export type DismissStalenessRequest = {

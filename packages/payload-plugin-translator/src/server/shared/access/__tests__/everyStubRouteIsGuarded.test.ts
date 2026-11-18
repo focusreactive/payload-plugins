@@ -65,12 +65,11 @@ describe("every route the stub registers is behind the guard", () => {
 
     expect(paths).toEqual([
       "delete /translate/cancel",
-      "delete /translate/cancel-by-collection/:collection_slug",
       "get /translate/document-state/:collection_slug/:collection_id",
       "get /translate/list-state/:collection_slug",
       "post /translate/enqueue",
       "post /translate/field",
-      "post /translate/run/:id",
+      "post /translate/run/:collection_slug/:collection_id",
       "post /translate/stale/dismiss",
     ]);
   });

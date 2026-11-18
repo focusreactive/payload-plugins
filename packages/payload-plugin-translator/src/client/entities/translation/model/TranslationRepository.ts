@@ -8,7 +8,7 @@ import type {
 import type { DocumentTranslationState } from "../../../../types/wire/DocumentTranslationState.js";
 import type { FieldTranslationResult } from "../../../../types/wire/field-translation.js";
 import type { ListTranslationState } from "../../../../types/wire/ListTranslationState.js";
-import type { DocumentId, RunHandle } from "../../../../types/wire/primitives.js";
+import type { DocumentId } from "../../../../types/wire/primitives.js";
 
 export type CollectionSlug = string;
 
@@ -30,13 +30,14 @@ export interface TranslationRepository {
   /** Rejects with reason `busy` when any requested document already has a live run. */
   enqueue(request: EnqueueRequest): Promise<EnqueueResponse>;
 
-  /** Stops each whole run, on every locale it covers; answers the handles the caller may not stop. */
-  cancel(handles: readonly RunHandle[]): Promise<CancelResponse>;
+  /** Stops the document's whole run, on every locale it covers. */
+  cancel(document: DocumentAddress): Promise<CancelResponse>;
 
+  /** Stops every queued run in the collection, including runs queued after the list was read. */
   cancelByCollection(collection: CollectionSlug): Promise<void>;
 
-  /** Starts the whole run now, on every locale it covers. */
-  runNow(handle: RunHandle): Promise<void>;
+  /** Starts the document's whole run now, on every locale it covers; also retries a failed one. */
+  runNow(document: DocumentAddress): Promise<void>;
 
   dismissStaleness(request: DismissStalenessRequest): Promise<void>;
 

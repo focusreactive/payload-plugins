@@ -10,7 +10,7 @@ export type TranslatorSettingsOptions = {
   /**
    * Base path for all translation API endpoints.
    * Useful to avoid conflicts with existing routes.
-   * @example '/my-translate' results in '/my-translate/enqueue', '/my-translate/run/:id', etc.
+   * @example '/my-translate' results in '/my-translate/enqueue', '/my-translate/cancel', etc.
    * @default '/translate'
    */
   basePath?: string;

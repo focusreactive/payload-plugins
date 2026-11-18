@@ -94,7 +94,7 @@ export function LocaleActions({
       </Button>
     );
 
-  const runControls = (handle: string, locales: readonly LocaleCode[], retry: boolean) => {
+  const runControls = (locales: readonly LocaleCode[], retry: boolean) => {
     const covers = locales.join(", ");
     return (
       <>
@@ -105,7 +105,7 @@ export function LocaleActions({
             title={`Acts on the whole run: ${covers}`}
             aria-label={`${retry ? "Retry" : "Run now"} the run for ${covers}`}
             disabled={pending || (retry && startBlocked)}
-            onClick={() => run(() => runNow.mutateAsync({ id: handle }))}
+            onClick={() => run(() => runNow.mutateAsync({ document }))}
           >
             {retry ? "Retry" : "Run now"}
           </Button>
@@ -117,7 +117,7 @@ export function LocaleActions({
             title={`Acts on the whole run: ${covers}`}
             aria-label={`Cancel the run for ${covers}`}
             disabled={pending}
-            onClick={() => run(() => cancel.mutateAsync({ id: handle }))}
+            onClick={() => run(() => cancel.mutateAsync({ document }))}
           >
             Cancel
           </Button>
@@ -148,10 +148,10 @@ export function LocaleActions({
       case "translated":
         return startButton("Translate again", { kind: "whole" });
       case "queued":
-        return runControls(row.handle, row.locales, false);
+        return runControls(row.locales, false);
       case "failed":
       case "not-started":
-        return runControls(row.handle, row.locales, true);
+        return runControls(row.locales, true);
       default:
         return null;
     }

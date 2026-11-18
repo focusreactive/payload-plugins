@@ -14,7 +14,6 @@ import type {
 import type { DocumentTranslationState } from "../../../../types/wire/DocumentTranslationState.js";
 import type { FieldTranslationResult } from "../../../../types/wire/field-translation.js";
 import type { ListTranslationState } from "../../../../types/wire/ListTranslationState.js";
-import type { RunHandle } from "../../../../types/wire/primitives.js";
 import { ApiRequestError } from "../../../shared/api/errors/ApiRequestError.js";
 import { rejectBusyEnqueue } from "../model/rejectBusyEnqueue.js";
 import type {
@@ -68,8 +67,8 @@ export class InMemoryTranslationRepository implements TranslationRepository {
     return rejectBusyEnqueue(answer);
   }
 
-  async cancel(handles: readonly RunHandle[]): Promise<CancelResponse> {
-    this.world.cancel(handles);
+  async cancel(document: DocumentAddress): Promise<CancelResponse> {
+    this.world.cancel([document]);
     return { refused: [] };
   }
 
@@ -77,9 +76,11 @@ export class InMemoryTranslationRepository implements TranslationRepository {
     this.world.cancelCollection(collection);
   }
 
-  async runNow(handle: RunHandle): Promise<void> {
-    const outcome = this.world.runNow(handle);
-    if (outcome === "unknown") throw new ApiRequestError("not-found", "Queued task not found");
+  async runNow(document: DocumentAddress): Promise<void> {
+    const outcome = this.world.runNow(document);
+    if (outcome === "unknown") {
+      throw new ApiRequestError("not-found", "No run found for this document");
+    }
     if (outcome === "already-running") {
       throw new ApiRequestError("busy", "Translation task is already in progress");
     }
