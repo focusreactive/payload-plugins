@@ -64,12 +64,12 @@ export const Header: CollectionConfig<"header"> = {
       },
       defaultValue: createLocalizedDefault({
         en: [
-          { type: "link", link: { label: "Blog", newTab: false, type: "custom", url: "/blog" } },
-          { type: "link", link: { label: "Pricing", newTab: false, type: "custom", url: "#" } },
+          { label: "Blog", link: { newTab: false, type: "custom", url: "/blog" }, type: "link" },
+          { label: "Pricing", link: { newTab: false, type: "custom", url: "#" }, type: "link" },
         ],
         es: [
-          { type: "link", link: { label: "Blog", newTab: false, type: "custom", url: "/blog" } },
-          { type: "link", link: { label: "Pricing", newTab: false, type: "custom", url: "#" } },
+          { label: "Blog", link: { newTab: false, type: "custom", url: "/blog" }, type: "link" },
+          { label: "Precios", link: { newTab: false, type: "custom", url: "#" }, type: "link" },
         ],
       }),
       fields: [
