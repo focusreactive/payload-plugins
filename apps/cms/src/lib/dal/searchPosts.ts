@@ -1,4 +1,3 @@
-import type { Pool } from "pg";
 import { cache } from "react";
 
 import { BLOG_CONFIG } from "@/lib/config/blog";
@@ -6,12 +5,9 @@ import { cacheTag } from "@/lib/utils/cacheTags";
 import { scopedCache } from "@/lib/utils/scopedCache";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { Locale } from "@/lib/types";
-import { orderDocsByIds } from "@/lib/utils/orderDocsByIds";
-import { generateEmbedding } from "@/lib/search/generateEmbedding";
 
 import type { getPosts } from "./getPosts";
 import { getPayloadClient } from "./payload-client";
-import { runPostSemanticSearch } from "./runPostSemanticSearch";
 
 type PostsResult = Awaited<ReturnType<typeof getPosts>>;
 
@@ -46,29 +42,14 @@ async function searchPostsQuery(
   category: string | undefined
 ): Promise<PostsResult> {
   const payload = await getPayloadClient();
-  const embedding = await generateEmbedding(query);
-  const pool = payload.db.pool as unknown as Pool;
 
-  const { ids, total } = await runPostSemanticSearch({
-    category,
-    embedding,
-    limit,
-    locale,
-    offset: (page - 1) * limit,
-    pool,
-  });
-
-  if (ids.length === 0) {
-    return emptyResult(page, limit);
-  }
-
-  const { docs } = await payload.find({
+  return await payload.find({
     collection: BLOG_CONFIG.collection,
     depth: 2,
-    limit: ids.length,
+    limit,
     locale,
     overrideAccess: true,
-    pagination: false,
+    page,
     select: {
       authors: true,
       categories: true,
@@ -81,24 +62,15 @@ async function searchPostsQuery(
       title: true,
       updatedAt: true,
     },
-    where: { id: { in: ids } },
+    sort: "-publishedAt",
+    where: {
+      _status: { equals: "published" },
+      title: { like: query },
+      ...(category && {
+        "categories.slug": { equals: category },
+      }),
+    },
   });
-
-  const ordered = orderDocsByIds(docs, ids);
-  const totalPages = Math.ceil(total / limit);
-
-  return {
-    docs: ordered,
-    hasNextPage: page < totalPages,
-    hasPrevPage: page > 1,
-    limit,
-    nextPage: page < totalPages ? page + 1 : null,
-    page,
-    pagingCounter: (page - 1) * limit + 1,
-    prevPage: page > 1 ? page - 1 : null,
-    totalDocs: total,
-    totalPages,
-  };
 }
 
 const searchPostsCached = cache(

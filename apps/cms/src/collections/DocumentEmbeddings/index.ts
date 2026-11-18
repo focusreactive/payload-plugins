@@ -11,6 +11,8 @@ export const DocumentEmbeddings: CollectionConfig = {
   },
   admin: {
     group: "System",
+    // Semantic search is off in this sandbox; the collection stays so the schema does not change.
+    hidden: true,
   },
   fields: [
     {

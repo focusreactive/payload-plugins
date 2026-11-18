@@ -31,7 +31,6 @@ import { enforceReviewRules, notifyReviewChange } from "@/lib/review/hooks";
 
 import { ArticleButtonBlock } from "./ArticleButtonBlock";
 import { computeReadingTime } from "./hooks/computeReadingTime";
-import { indexPostEmbedding, deletePostEmbedding } from "./hooks/indexEmbedding";
 import { revalidateDelete, revalidatePost } from "./hooks/revalidatePost";
 
 export const Posts: CollectionConfig<"posts"> = {
@@ -392,8 +391,8 @@ export const Posts: CollectionConfig<"posts"> = {
   ],
   hooks: {
     beforeChange: [computeReadingTime, enforceReviewRules],
-    afterChange: [revalidatePost, indexPostEmbedding, notifyReviewChange],
-    afterDelete: [revalidateDelete, deletePostEmbedding],
+    afterChange: [revalidatePost, notifyReviewChange],
+    afterDelete: [revalidateDelete],
   },
   labels: {
     plural: {

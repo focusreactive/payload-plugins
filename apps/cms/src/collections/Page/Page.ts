@@ -16,7 +16,6 @@ import type { Page as PageType } from "@/payload-types";
 
 import { createBasePageFields, createPageChromeFields } from "./basePageFields";
 import { fixBreadcrumbDocIds } from "./hooks/fixBreadcrumbDocIds";
-import { indexPageEmbedding, deletePageEmbedding } from "./hooks/indexEmbedding";
 import { revalidateDelete, revalidatePage } from "./hooks/revalidatePage";
 import { validateReservedSlug, validateReservedPath } from "./hooks/validateReservedSlug";
 
@@ -117,8 +116,8 @@ export const Page: CollectionConfig<"page"> = {
   ],
   folders: true,
   hooks: {
-    afterChange: [revalidatePage, indexPageEmbedding, notifyReviewChange],
-    afterDelete: [revalidateDelete, deletePageEmbedding],
+    afterChange: [revalidatePage, notifyReviewChange],
+    afterDelete: [revalidateDelete],
     beforeChange: [
       fixBreadcrumbDocIds,
       validateReservedSlug,
