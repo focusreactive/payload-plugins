@@ -38,6 +38,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
   $isNodeSelection,
@@ -57,6 +58,7 @@ import {
   DELETE_WORD_COMMAND,
   FORMAT_TEXT_COMMAND,
   HISTORIC_TAG,
+  HISTORY_MERGE_TAG,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   KEY_BACKSPACE_COMMAND,
@@ -120,9 +122,15 @@ export interface PageEditor {
   destroy(): void;
 }
 
+export type RenderedLines = {
+  collapsesSpaces: boolean;
+  breaking: ReadonlyMap<string, string>;
+};
+
 export type RenderedLook = {
   theme: EditorThemeClasses;
   style?: string;
+  lines?: RenderedLines;
   fixedNodes: readonly (HTMLElement | null)[] | null;
 };
 
@@ -443,6 +451,95 @@ const $showFixedNodesAs = (elements: readonly (HTMLElement | null)[]): void => {
   }
 };
 
+const COLLAPSIBLE_SPACE = /[\t\n\f\r ]/u;
+const CODE_FORMAT = "code";
+
+type ShownText = { node: TextNodeOfLexical; kept: boolean[] };
+
+const $shownTexts = (): ShownText[] => {
+  const shown: ShownText[] = [];
+  let isAfterSpace = true;
+  let trailing: ShownText | null = null;
+  const endLine = () => {
+    if (trailing) trailing.kept[trailing.kept.lastIndexOf(true)] = false;
+    trailing = null;
+    isAfterSpace = true;
+  };
+  const showContent = () => {
+    trailing = null;
+    isAfterSpace = false;
+  };
+  const showText = (node: TextNodeOfLexical) => {
+    const text = node.getTextContent();
+    const entry: ShownText = { kept: [], node };
+    shown.push(entry);
+    if (node.hasFormat(CODE_FORMAT)) {
+      entry.kept = Array.from({ length: text.length }, () => true);
+      if (text.length > 0) showContent();
+      return;
+    }
+    for (const char of text.split("")) {
+      const isSpace = COLLAPSIBLE_SPACE.test(char);
+      const isKept = !isSpace || !isAfterSpace;
+      entry.kept.push(isKept);
+      if (isKept && isSpace) {
+        trailing = entry;
+        isAfterSpace = true;
+      } else if (isKept) {
+        showContent();
+      }
+    }
+  };
+  const walk = (parent: ElementNode) => {
+    for (const child of parent.getChildren()) {
+      if ($isTextNode(child)) showText(child);
+      else if ($isLineBreakNode(child)) endLine();
+      else if ($isElementNode(child) && child.isInline()) walk(child);
+      else if ($isElementNode(child)) {
+        endLine();
+        walk(child);
+        endLine();
+      } else if ($isDecoratorNode(child)) showContent();
+    }
+  };
+  walk($getRoot());
+  endLine();
+  return shown;
+};
+
+const $collapseSpaces = (): ShownText[] => {
+  const shown = $shownTexts();
+  for (const { kept, node } of shown) {
+    if (kept.includes(false)) {
+      const text = node.getTextContent();
+      node.setTextContent(
+        text
+          .split("")
+          .filter((_, index) => kept[index])
+          .join("")
+      );
+    }
+  }
+  return shown;
+};
+
+const shownOffsetOf = (shown: readonly ShownText[], offset: number): number => {
+  let before = 0;
+  let shownBefore = 0;
+  for (const { kept } of shown) {
+    if (offset <= before + kept.length) {
+      return shownBefore + kept.slice(0, offset - before).filter(Boolean).length;
+    }
+    before += kept.length;
+    shownBefore += kept.filter(Boolean).length;
+  }
+  return shown.length === 0 ? offset : shownBefore;
+};
+
+const showLinesAsRendered = (twin: HTMLElement, lines: RenderedLines | undefined): void => {
+  for (const [name, value] of lines?.breaking ?? []) twin.style.setProperty(name, value);
+};
+
 const loadState = (editor: LexicalEditor, state: VeEditorState): void => {
   if (hasContent(state)) {
     editor.setEditorState(editor.parseEditorState(JSON.stringify(stateForEditor(state))));
@@ -641,9 +738,21 @@ export function createPageEditor(
     theme: look.theme,
   });
   loadState(editor, state);
+  let shownTexts: ShownText[] = [];
+  if (look.lines?.collapsesSpaces) {
+    editor.update(
+      () => {
+        shownTexts = $collapseSpaces();
+      },
+      { discrete: true, tag: HISTORY_MERGE_TAG }
+    );
+  }
   const { fixedNodes } = look;
   if (fixedNodes) editor.getEditorState().read(() => $showFixedNodesAs(fixedNodes));
-  if (!hasFailedToLoad) editor.setRootElement(twin);
+  if (!hasFailedToLoad) {
+    editor.setRootElement(twin);
+    showLinesAsRendered(twin, look.lines);
+  }
   if (hasFailedToLoad) {
     editor.setRootElement(null);
     return null;
@@ -676,6 +785,7 @@ export function createPageEditor(
     const serialized = JSON.stringify(changed);
     if (serialized === reported) return;
     reported = serialized;
+    shownTexts = [];
     events.onChange(changed);
   };
 
@@ -761,7 +871,8 @@ export function createPageEditor(
       editor.setRootElement(null);
     },
     placeCaret(position) {
-      editor.update(() => $placeCaret(position), { discrete: true });
+      const shown = position && { ...position, offset: shownOffsetOf(shownTexts, position.offset) };
+      editor.update(() => $placeCaret(shown), { discrete: true });
     },
     restoreSelection() {
       editor.update($restoreSelection, { discrete: true });

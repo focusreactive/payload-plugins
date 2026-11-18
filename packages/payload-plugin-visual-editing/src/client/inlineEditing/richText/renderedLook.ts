@@ -17,6 +17,11 @@ import {
 } from "./pageEditor.js";
 
 const PLACEHOLDER = `[${DATA_VE_OPAQUE_ATTR}]`;
+const LINE_BREAKING_PROPERTIES = ["word-break", "overflow-wrap", "line-break"] as const;
+const WHITE_SPACE_COLLAPSE = "white-space-collapse";
+const WHITE_SPACE = "white-space";
+const COLLAPSED = "collapse";
+const COLLAPSING_WHITE_SPACE: ReadonlySet<string> = new Set(["", "normal", "nowrap"]);
 const ID_ATTR = "id";
 const ATTRS_OF_THE_OVERLAY = "data-ve-";
 const HEADING_TAGS = ["h1", "h2", "h3", "h4", "h5", "h6"] as const;
@@ -224,6 +229,23 @@ const fixedElementsOf = (rendered: Element, state: VeEditorState): (Element | nu
   );
 };
 
+const collapsesSpaces = (shown: CSSStyleDeclaration): boolean => {
+  const collapse = shown.getPropertyValue(WHITE_SPACE_COLLAPSE);
+  if (collapse !== "") return collapse === COLLAPSED;
+  return COLLAPSING_WHITE_SPACE.has(shown.getPropertyValue(WHITE_SPACE));
+};
+
+const linesOf = (rendered: Element): RenderedLook["lines"] => {
+  const block = rendered.firstElementChild ?? rendered;
+  const shown = rendered.ownerDocument.defaultView?.getComputedStyle(block);
+  if (!shown) return undefined;
+  const breaking = LINE_BREAKING_PROPERTIES.flatMap((name) => {
+    const value = shown.getPropertyValue(name);
+    return value === "" ? [] : [[name, value] as const];
+  });
+  return { breaking: new Map(breaking), collapsesSpaces: collapsesSpaces(shown) };
+};
+
 export const lookOf = (rendered: Element | null, state: VeEditorState): RenderedLook => {
   if (!rendered) return NOTHING_RENDERED;
   const fixedElements = fixedElementsOf(rendered, state);
@@ -231,6 +253,7 @@ export const lookOf = (rendered: Element | null, state: VeEditorState): Rendered
   const site = { element: rendered, fixed };
   return {
     fixedNodes: fixedElements && fixedElements.map((element) => element && shownFor(element)),
+    lines: linesOf(rendered),
     style: styleOf(site),
     theme: themeOf(site),
   };

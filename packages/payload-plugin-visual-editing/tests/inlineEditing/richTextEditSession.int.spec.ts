@@ -587,6 +587,60 @@ describe("one edit of rich text", () => {
     });
   });
 
+  describe("spaces the site collapses", () => {
+    const CODE = 16;
+    const SPACED = stateOf(
+      paragraph(text("  RT1    pop"), text("  end  ", BOLD)),
+      paragraph(text("before "), { type: "linebreak", version: 1 }, text(" after")),
+      paragraph(text("a  b", CODE))
+    );
+
+    const shownTexts = () => lexicalStateOf().root.children.map(textsOf);
+
+    it("are shown collapsed, as the site shows them", () => {
+      start(SPACED, EVERY_FORMAT, { rendered: renderedBy("<p>spaced</p>") });
+
+      expect(shownTexts()).toEqual([["RT1 pop", " end"], ["before", undefined, "after"], ["a  b"]]);
+    });
+
+    it("are not reported as a change", () => {
+      start(SPACED, EVERY_FORMAT, { rendered: renderedBy("<p>spaced</p>") });
+
+      expect(changes).toEqual([]);
+    });
+
+    it("move the caret to the same place among the shown characters", () => {
+      start(SPACED, EVERY_FORMAT, {
+        caret: { isAtStart: false, offset: 12 },
+        rendered: renderedBy("<p>spaced</p>"),
+      });
+
+      expect(caret()).toEqual(["RT1 pop", 7]);
+    });
+
+    it("are kept where the site keeps them", () => {
+      start(SPACED, EVERY_FORMAT, {
+        rendered: renderedBy('<p style="white-space: pre-wrap">spaced</p>'),
+      });
+
+      expect(shownTexts()[0]).toEqual(["  RT1    pop", "  end  "]);
+    });
+
+    it("are kept when nothing rendered tells how the site shows them", () => {
+      start(SPACED);
+
+      expect(shownTexts()[0]).toEqual(["  RT1    pop", "  end  "]);
+    });
+
+    it("break lines as the site breaks them", () => {
+      start(SPACED, EVERY_FORMAT, {
+        rendered: renderedBy('<p style="word-break: keep-all">spaced</p>'),
+      });
+
+      expect(twin.style.getPropertyValue("word-break")).toBe("keep-all");
+    });
+  });
+
   describe("the look of what the site rendered", () => {
     const RENDERED = `
       <h2 class="title">A heading</h2>
