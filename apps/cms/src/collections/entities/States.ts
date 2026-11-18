@@ -25,43 +25,38 @@ export const States: CollectionConfig<"states"> = {
   }),
   fields: [
     {
+      admin: {
+        description: {
+          en: "The state's name as visitors read it in this language, for example Texas or Nueva York.",
+          es: "El nombre del estado tal como lo leen los visitantes en este idioma, por ejemplo Texas o Nueva York.",
+        },
+        position: "sidebar",
+      },
+      label: { en: "Name", es: "Nombre" },
+      localized: true,
+      name: "name",
+      required: true,
+      type: "text",
+    },
+    {
+      admin: {
+        description: {
+          en: "Two letters, used in addresses and the map, for example TX.",
+          es: "Dos letras, usadas en direcciones y en el mapa, por ejemplo TX.",
+        },
+        position: "sidebar",
+      },
+      label: { en: "Abbreviation", es: "Abreviatura" },
+      maxLength: 2,
+      name: "abbreviation",
+      type: "text",
+    },
+    {
       tabs: [
         {
           fields: [
             {
-              fields: [
-                {
-                  admin: {
-                    description: {
-                      en: "The state's name as visitors read it in this language, for example Texas or Nueva York.",
-                      es: "El nombre del estado tal como lo leen los visitantes en este idioma, por ejemplo Texas o Nueva York.",
-                    },
-                    width: "70%",
-                  },
-                  label: { en: "Name", es: "Nombre" },
-                  localized: true,
-                  name: "name",
-                  required: true,
-                  type: "text",
-                },
-                {
-                  admin: {
-                    description: {
-                      en: "Two letters, used in addresses and the map, for example TX.",
-                      es: "Dos letras, usadas en direcciones y en el mapa, por ejemplo TX.",
-                    },
-                    width: "30%",
-                  },
-                  label: { en: "Abbreviation", es: "Abreviatura" },
-                  maxLength: 2,
-                  name: "abbreviation",
-                  type: "text",
-                },
-              ],
-              type: "row",
-            },
-            {
-              admin: { initCollapsed: false },
+              admin: { initCollapsed: true },
               fields: [
                 bilingual(
                   headingRichText({
@@ -154,7 +149,7 @@ export const States: CollectionConfig<"states"> = {
                   type: "upload",
                 },
               ],
-              label: { en: "Top of the page", es: "Parte superior de la página" },
+              label: { en: "Hero", es: "Cabecera" },
               type: "collapsible",
             },
             entitySectionsField(

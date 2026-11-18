@@ -40,7 +40,7 @@ export const Treatments: CollectionConfig<"treatments"> = {
               type: "text",
             },
             {
-              admin: { initCollapsed: false },
+              admin: { initCollapsed: true },
               fields: [
                 {
                   admin: {
@@ -80,7 +80,7 @@ export const Treatments: CollectionConfig<"treatments"> = {
                   type: "upload",
                 },
               ],
-              label: { en: "Top of the page", es: "Parte superior de la página" },
+              label: { en: "Hero", es: "Cabecera" },
               type: "collapsible",
             },
             {
@@ -94,7 +94,7 @@ export const Treatments: CollectionConfig<"treatments"> = {
                           en: "One line under the name on treatment cards, for example A vein treatment using an injectable medicine.",
                           es: "Una línea bajo el nombre en las tarjetas, por ejemplo Un tratamiento de venas con un medicamento inyectable.",
                         },
-                        width: "60%",
+                        width: "50%",
                       },
                       label: { en: "Card text", es: "Texto de la tarjeta" },
                       localized: true,
@@ -107,7 +107,7 @@ export const Treatments: CollectionConfig<"treatments"> = {
                           en: "The picture on the treatment's card in sliders and lists.",
                           es: "La imagen de la tarjeta del tratamiento en carruseles y listas.",
                         },
-                        width: "40%",
+                        width: "50%",
                       },
                       label: { en: "Card image", es: "Imagen de la tarjeta" },
                       name: "cardImage",

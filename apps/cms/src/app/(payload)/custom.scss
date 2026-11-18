@@ -18,3 +18,48 @@
 .field-description {
   display: none;
 }
+
+// A flex item will not shrink below its content, so an upload card with a long file name pushed its
+// row partner onto the next line; let row fields shrink and cut the name instead.
+.row__fields > .field-type {
+  min-width: 0;
+}
+
+.upload-relationship-details__filename {
+  text-overflow: ellipsis;
+}
+
+.rating-field__stars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+}
+
+.rating-field__star {
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--theme-elevation-250);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+
+  &--on {
+    color: #f5a623;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--theme-success-500);
+    border-radius: var(--style-radius-s);
+  }
+}
+
+.rating-field__value {
+  margin-left: 8px;
+  color: var(--theme-elevation-600);
+}

@@ -84,7 +84,7 @@ export const Clinics: CollectionConfig<"clinics"> = {
               type: "text",
             },
             {
-              admin: { initCollapsed: false },
+              admin: { initCollapsed: true },
               fields: [
                 {
                   fields: [
@@ -158,13 +158,13 @@ export const Clinics: CollectionConfig<"clinics"> = {
                       type: "text",
                     },
                   ],
-                  label: { en: "Page top", es: "Parte superior de la página" },
+                  label: { en: "Button and phone line", es: "Botón y línea del teléfono" },
                   localized: true,
                   name: "hero",
                   type: "group",
                 },
               ],
-              label: { en: "Top of the page", es: "Parte superior de la página" },
+              label: { en: "Hero", es: "Cabecera" },
               type: "collapsible",
             },
             {
