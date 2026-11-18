@@ -5,12 +5,6 @@ blocks row opens it in a **panel layered on top of the previous one**, with **br
 top to jump between levels. Page-builder blocks, arrays, blocks inside arrays and blocks inside
 blocks all work the same way, at any depth.
 
-> **Status: not published yet.** The package is marked `"private": true`, so the release workflow
-> (`multi-semantic-release --ignore-private-packages`) skips it. A publishable package without npm
-> Trusted Publishing fails the release job. To publish, follow
-> `.agents/skills/payload-plugins-add-package`: set `"private": false`, publish `1.0.0` manually,
-> add the trusted publisher on npm, and create the git tag.
-
 ```
 Deep nest sample  /  Layout  /  Deep Nest 01  /  Items  /  Item one label  /  Callouts  /  Callout 01
 ```
