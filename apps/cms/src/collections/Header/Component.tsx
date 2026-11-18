@@ -9,6 +9,7 @@ import type {
 import React from "react";
 
 import { resolveLocale } from "@/lib/utils/resolveLocale";
+import { withoutVisualEditing } from "@/lib/utils/withoutVisualEditing";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { Header as HeaderType, Media } from "@/payload-types";
@@ -17,6 +18,7 @@ import { HeaderClient } from "./HeaderClient";
 
 interface Props {
   data: HeaderType;
+  editable?: boolean;
   disableActive?: boolean;
 }
 
@@ -116,10 +118,12 @@ function mapAction(action: PayloadAction, locale: string): HeaderAction | null {
   };
 }
 
-export async function Header({ data, disableActive }: Props) {
-  if (!data) {
+export async function Header({ data: rawData, disableActive, editable = false }: Props) {
+  if (!rawData) {
     return null;
   }
+
+  const data = editable ? rawData : withoutVisualEditing(rawData);
 
   const locale = await resolveLocale();
 

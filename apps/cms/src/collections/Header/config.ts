@@ -5,6 +5,11 @@ import { anyone, or, user, superAdmin } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
+import {
+  createLivePreviewEditComponents,
+  createLivePreviewVersions,
+} from "@/lib/config/livePreview";
+import { createStandalonePreview } from "@/lib/utils/standalonePreview";
 
 import { revalidateResourcesUsingHeader } from "./hooks/revalidateResourcesUsingHeader";
 
@@ -16,9 +21,13 @@ export const Header: CollectionConfig<"header"> = {
     update: or(superAdmin, user),
   },
   admin: {
+    components: {
+      edit: createLivePreviewEditComponents(),
+    },
     defaultColumns: ["name", "logo"],
     group: "Global Components",
     useAsTitle: "name",
+    ...createStandalonePreview("header"),
   },
   fields: [
     {
@@ -55,12 +64,12 @@ export const Header: CollectionConfig<"header"> = {
       },
       defaultValue: createLocalizedDefault({
         en: [
-          { type: "link", link: { label: "Blog", newTab: false, type: "custom", url: "/blog" } },
-          { type: "link", link: { label: "Pricing", newTab: false, type: "custom", url: "#" } },
+          { label: "Blog", link: { newTab: false, type: "custom", url: "/blog" }, type: "link" },
+          { label: "Pricing", link: { newTab: false, type: "custom", url: "#" }, type: "link" },
         ],
         es: [
-          { type: "link", link: { label: "Blog", newTab: false, type: "custom", url: "/blog" } },
-          { type: "link", link: { label: "Pricing", newTab: false, type: "custom", url: "#" } },
+          { label: "Blog", link: { newTab: false, type: "custom", url: "/blog" }, type: "link" },
+          { label: "Precios", link: { newTab: false, type: "custom", url: "#" }, type: "link" },
         ],
       }),
       fields: [
@@ -216,8 +225,5 @@ export const Header: CollectionConfig<"header"> = {
     },
   },
   slug: "header",
-  versions: {
-    drafts: true,
-    maxPerDoc: 50,
-  },
+  versions: createLivePreviewVersions(),
 };

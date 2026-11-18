@@ -2,7 +2,7 @@ import { createParentField, createBreadcrumbsField } from "@payloadcms/plugin-ne
 import type { CollectionConfig } from "payload";
 
 import {
-  LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
+  createLivePreviewEditComponents,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
@@ -15,6 +15,7 @@ import { createBasePageFields } from "./basePageFields";
 import { fixBreadcrumbDocIds } from "./hooks/fixBreadcrumbDocIds";
 import { syncCurrentBreadcrumbUrl } from "./hooks/syncCurrentBreadcrumbUrl";
 import { indexPageEmbedding, deletePageEmbedding } from "./hooks/indexEmbedding";
+import { rememberPublishedPath } from "./hooks/publishedPath";
 import { revalidateDelete, revalidatePage } from "./hooks/revalidatePage";
 import { validateReservedSlug, validateReservedPath } from "./hooks/validateReservedSlug";
 
@@ -27,10 +28,7 @@ export const Page: CollectionConfig<"page"> = {
   },
   admin: {
     components: {
-      edit: {
-        beforeDocumentControls: LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
-        PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
-      },
+      edit: createLivePreviewEditComponents(),
     },
     defaultColumns: ["title", "slug", "updatedAt"],
     group: "Content",
@@ -59,6 +57,11 @@ export const Page: CollectionConfig<"page"> = {
         slug: data?.slug as string,
       }),
     useAsTitle: "title",
+  },
+  defaultPopulate: {
+    breadcrumbs: true,
+    slug: true,
+    title: true,
   },
   fields: [
     {
@@ -101,7 +104,12 @@ export const Page: CollectionConfig<"page"> = {
   hooks: {
     afterChange: [revalidatePage, indexPageEmbedding],
     afterDelete: [revalidateDelete, deletePageEmbedding],
-    beforeChange: [fixBreadcrumbDocIds, validateReservedSlug, validateReservedPath],
+    beforeChange: [
+      fixBreadcrumbDocIds,
+      validateReservedSlug,
+      validateReservedPath,
+      rememberPublishedPath,
+    ],
   },
   labels: {
     plural: {

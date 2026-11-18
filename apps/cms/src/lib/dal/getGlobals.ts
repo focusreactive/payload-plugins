@@ -1,3 +1,4 @@
+import { cacheTag } from "@/lib/utils/cacheTags";
 import { revalidateScopedTag, scopedCache } from "@/lib/utils/scopedCache";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { Locale } from "@/lib/types";
@@ -46,7 +47,7 @@ export const getCachedGlobal = (
     },
     [collection, String(depth), locale || ""],
     {
-      tags: [formatGlobalCacheTag(collection, locale)],
+      tags: [formatGlobalCacheTag(collection, locale), cacheTag({ type: "pagePaths" })],
     }
   );
 };
