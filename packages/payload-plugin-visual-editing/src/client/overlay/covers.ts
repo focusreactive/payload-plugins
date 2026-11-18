@@ -2,7 +2,6 @@ export const DATA_VE_COVER_ATTR = "data-ve-cover";
 
 type Point = { x: number; y: number };
 
-/** The elements the page marked with `data-ve-cover`, such as a sticky header, measured once per pass. */
 export const measureCovers = (): ReadonlyMap<Element, DOMRect> => {
   const covers = new Map<Element, DOMRect>();
   for (const cover of document.querySelectorAll(`[${DATA_VE_COVER_ATTR}]`)) {
@@ -20,21 +19,17 @@ const rectPath = (left: number, top: number, right: number, bottom: number, orig
   return `${x1}px ${y1}px, ${x2}px ${y1}px, ${x2}px ${y2}px, ${x1}px ${y2}px, ${x1}px ${y1}px`;
 };
 
-/**
- * Hides the part of an overlay box, and of anything it holds, that lies under a cover. A cover
- * that holds the target, or that the target holds, hides nothing: its own content stays editable.
- * `origin` is the viewport position of the box's top left corner.
- */
 export const clipUnderCovers = (
   box: HTMLElement,
   target: HTMLElement,
-  origin: Point,
+  boxOriginInViewport: Point,
   covers: ReadonlyMap<Element, DOMRect>
 ): void => {
   const holes: string[] = [];
   for (const [cover, rect] of covers) {
-    if (cover.contains(target) || target.contains(cover)) continue;
-    holes.push(rectPath(rect.left, rect.top, rect.right, rect.bottom, origin));
+    const isPartOfTarget = cover.contains(target) || target.contains(cover);
+    if (isPartOfTarget) continue;
+    holes.push(rectPath(rect.left, rect.top, rect.right, rect.bottom, boxOriginInViewport));
   }
 
   if (holes.length === 0) {
@@ -42,7 +37,7 @@ export const clipUnderCovers = (
     return;
   }
 
-  const viewport = rectPath(0, 0, window.innerWidth, window.innerHeight, origin);
-  const backToStart = `${-origin.x}px ${-origin.y}px`;
+  const viewport = rectPath(0, 0, window.innerWidth, window.innerHeight, boxOriginInViewport);
+  const backToStart = `${-boxOriginInViewport.x}px ${-boxOriginInViewport.y}px`;
   box.style.clipPath = `polygon(evenodd, ${[viewport, ...holes].join(`, ${backToStart}, `)})`;
 };
