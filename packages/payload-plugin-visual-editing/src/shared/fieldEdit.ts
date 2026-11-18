@@ -32,7 +32,7 @@ export const readSaveRefusal = (answer: unknown): SaveRefusal => {
   return SAVE_REFUSALS.find((refusal) => refusal === reason) ?? SAVE_FAILED;
 };
 
-const LINE_BREAKS = /\s*[\n\r]+\s*/gu;
+const LINE_BREAKS = /\s*[\n\r\v\f\u0085\u2028\u2029]+\s*/gu;
 
 export const editedTextOf = (fieldType: string, value: string): string => {
   const text = withoutMarker(value);

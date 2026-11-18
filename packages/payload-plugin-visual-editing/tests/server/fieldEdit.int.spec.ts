@@ -59,6 +59,16 @@ describe("editedTextOf", () => {
     expect(editedTextOf("email", "a@b.c\n")).toBe("a@b.c ");
   });
 
+  it.each([
+    ["a line separator", "\u2028"],
+    ["a paragraph separator", "\u2029"],
+    ["a next line", "\u0085"],
+    ["a vertical tab, a soft break pasted from a word processor", "\v"],
+    ["a form feed", "\f"],
+  ])("joins the lines of a single-line field broken by %s", (_name, lineBreak) => {
+    expect(editedTextOf("text", `One${lineBreak}Two`)).toBe("One Two");
+  });
+
   it("drops a marker the page left in the text", () => {
     const marked = withMarker("Hello", { path: "title" });
 

@@ -261,6 +261,14 @@ describe("the field edit endpoint", () => {
     expect(draft.seo).toEqual({ description: "One\nTwo" });
   });
 
+  it("joins the lines of a single-line field pasted with a line separator", async () => {
+    const docId = await publish({ label: "Old" });
+
+    await edit({ ...page(docId), key: "label", value: "One\u2028Two" });
+
+    expect((await read(docId, true)).label).toBe("One Two");
+  });
+
   it("saves the text without the marker the page read it with", async () => {
     const docId = await publish({ label: "Old" });
 
