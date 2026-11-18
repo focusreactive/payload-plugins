@@ -68,7 +68,9 @@ export const LABEL_STYLES: Partial<CSSStyleDeclaration> = {
 
 export const DATA_VE_ACTION_ATTR = "data-ve-action";
 
-const ACTION_INSET = "8px";
+export const ACTION_INSET_PX = 8;
+
+const ACTION_INSET = `${ACTION_INSET_PX}px`;
 
 export const ACTION_SHOWN_DISPLAY = "inline-flex";
 export const ACTION_HIDDEN_DISPLAY = "none";

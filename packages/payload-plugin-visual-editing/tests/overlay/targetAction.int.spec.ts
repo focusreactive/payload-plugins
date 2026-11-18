@@ -77,6 +77,39 @@ describe("the action the overlay offers for a target", () => {
     expect(actionButton().type).toBe("button");
   });
 
+  describe("on an image larger than the window", () => {
+    const placeImage = (left: number, top: number) =>
+      vi
+        .spyOn(photo, "getBoundingClientRect")
+        .mockReturnValue(new DOMRect(left, top, window.innerWidth * 2, window.innerHeight * 3));
+
+    it("sits at the top left corner of an image whose corner is in view", () => {
+      placeImage(40, 60);
+
+      pointerOver(photo);
+
+      expect([actionButton().style.left, actionButton().style.top]).toEqual(["8px", "8px"]);
+    });
+
+    it("stays in the visible part of an image scrolled past its top and its left", () => {
+      placeImage(-300, -500);
+
+      pointerOver(photo);
+
+      expect([actionButton().style.left, actionButton().style.top]).toEqual(["308px", "508px"]);
+    });
+
+    it("follows the page as it scrolls", () => {
+      const placed = placeImage(40, 60);
+      pointerOver(photo);
+
+      placed.mockReturnValue(new DOMRect(40, -900, window.innerWidth * 2, window.innerHeight * 3));
+      window.dispatchEvent(new Event("scroll"));
+
+      expect(actionButton().style.top).toBe("908px");
+    });
+  });
+
   it("lives in the layer of the overlay, not in the element of the page", () => {
     pointerOver(photo);
 

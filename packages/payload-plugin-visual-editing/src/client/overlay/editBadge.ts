@@ -1,5 +1,6 @@
 import {
   ACTION_HIDDEN_DISPLAY,
+  ACTION_INSET_PX,
   ACTION_SHOWN_DISPLAY,
   ACTION_STYLES,
   DATA_VE_ACTION_ATTR,
@@ -35,6 +36,12 @@ export interface EditBadge {
   reposition(target: HTMLElement): void;
   dispose(): void;
 }
+
+const insetInView = (start: number, size: number, actionSize: number): number => {
+  const hiddenBeforeTheView = Math.max(0, -start);
+  const lastInset = size - actionSize - ACTION_INSET_PX;
+  return Math.max(ACTION_INSET_PX, Math.min(hiddenBeforeTheView + ACTION_INSET_PX, lastInset));
+};
 
 export function createEditBadge(): EditBadge {
   const layer = document.createElement("div");
@@ -100,8 +107,15 @@ export function createEditBadge(): EditBadge {
   };
   action.addEventListener("click", runOfferedAction);
 
+  const keepActionInView = ({ height, left, top, width }: DOMRect) => {
+    action.style.left = `${insetInView(left, width, action.offsetWidth)}px`;
+    action.style.top = `${insetInView(top, height, action.offsetHeight)}px`;
+  };
+
   const reposition = (target: HTMLElement) => {
-    placeFrame(anchor, rectOf(target), FRAME_ACTIVE_WIDTH);
+    const rect = rectOf(target);
+    placeFrame(anchor, rect, FRAME_ACTIVE_WIDTH);
+    keepActionInView(rect);
   };
 
   return {
@@ -112,8 +126,8 @@ export function createEditBadge(): EditBadge {
       return action;
     },
     show(target, config, offered = null) {
-      reposition(target);
       offer(offered);
+      reposition(target);
       openFieldOfTarget = config.clickHandler;
       label.href = config.href;
       label.setAttribute(DATA_VE_FOR_ATTR, target.getAttribute(DATA_VE_TARGET_ATTR) ?? "");
