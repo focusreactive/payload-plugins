@@ -1230,23 +1230,14 @@ describe("editing rich text on the page", () => {
       expect(statusLabel()).toBe("Unsaved changes");
     });
 
-    it("edits once the state arrived and shows the field in the form without taking the focus", async () => {
+    it("edits once the state arrived and leaves the form where it is, so the frame of the page never moves", async () => {
       await hoverUntilReady();
       answerState();
 
       click(wrapper);
 
       expect(twinOf(wrapper).hasAttribute(DATA_VE_EDITING_ATTR)).toBe(true);
-      expect(messagesOfType(postToAdmin, VE_MESSAGE_TYPE)).toEqual([
-        {
-          ...PAGE,
-          focus: false,
-          key: undefined,
-          locale: "en",
-          path: "body",
-          type: VE_MESSAGE_TYPE,
-        },
-      ]);
+      expect(messagesOfType(postToAdmin, VE_MESSAGE_TYPE)).toEqual([]);
     });
 
     it("posts the edited state to the form once the typing pauses", async () => {

@@ -7,7 +7,6 @@ import type {
   VeRichTextStateRequestMessage,
 } from "../../shared/protocol.js";
 import type { VeRichTextFormats } from "../../shared/richText/formats.js";
-import type { VeIdentity } from "../../shared/shared.js";
 import type { FieldTracker } from "../overlay/fieldTracker.js";
 import type { Point, TextPosition } from "./caret.js";
 import type { EditSession, RichTextEditor, RichTextEditorLoader } from "./richTextEditor.js";
@@ -70,7 +69,6 @@ export type RichTextEditingDeps = {
   dropUnsaved(field: VeEditedField): void;
   isUnsaved(field: VeEditedField): boolean;
   flush(): void;
-  showInForm(field: VeIdentity): void;
   endOtherEdits(): void;
   findAdmin?: FindAdminWindow;
 };
@@ -170,7 +168,6 @@ export function createRichTextEditing({
   holdsFormOf,
   isUnsaved,
   send,
-  showInForm,
   tracker,
 }: RichTextEditingDeps): RichTextEditing {
   const richTextLeaves = new Set<Text>();
@@ -406,7 +403,6 @@ export function createRichTextEditing({
       wasDelivered: false,
       wrapper,
     };
-    showInForm({ ...marker, locale: marker.locale ?? getCtx().locale });
     return true;
   };
 

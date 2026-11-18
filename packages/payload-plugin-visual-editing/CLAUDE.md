@@ -93,7 +93,7 @@ Payload v3 plugin: click-to-edit overlays on server-rendered draft content throu
 - **A link address reaches the DOM only through `isAllowedLinkUrl`.** `PageLinkNode` sets `href` for an allowed address of a custom link and removes it otherwise, the toolbar refuses any other address, and nothing of the stored state is written with `innerHTML`: a placeholder shows its type through `textContent`.
 - **One edit at a time.** `inlineEditing.ts` commits the rich text edit before a text edit begins, the text edit when a rich text edit begins (which may be after the click, once its state arrived), and both before the action of an image runs. `imageReplacement.ts` offers no button for a target inside rich text (`isInsideRichText`).
 - **A keepalive request has a body limit.** `editTransport.ts` asks for `keepalive` only below `KEEPALIVE_BODY_LIMIT` UTF-8 bytes of the body, not characters; a browser rejects a longer one outright, and a rich text state is often longer.
-- **`ve:open-field` with `focus: false` never opens a tab and never takes the focus.** The page posts it when an edit begins, so the form scrolls to the field while the caret stays on the page.
+- **An edit on the page leaves the form of the admin where it is.** The page posts no `ve:open-field` when a text or rich text edit begins: in Live Preview the frame of the page sticks inside the scrolling admin, so a form scrolled to the field moved the frame under the pointer and the next click landed on another field. `ve:open-field` is posted only by a click that opens the field in the admin. The admin still takes `focus: false` (expand and show the field, no tab, no focus) from a page of an earlier version.
 
 ## Commands
 

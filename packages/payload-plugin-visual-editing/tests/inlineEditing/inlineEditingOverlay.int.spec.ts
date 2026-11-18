@@ -596,6 +596,15 @@ describe("editing text on the page", () => {
       expect(messagesOfType(postToAdmin, VE_MESSAGE_TYPE)).toHaveLength(1);
     });
 
+    it("leaves the form where it is when an edit begins, so the frame of the page never moves", () => {
+      postFromAdmin(snapshot("Hello"));
+
+      click(heading);
+
+      expect(heading.getAttribute("contenteditable")).toBe("true");
+      expect(messagesOfType(postToAdmin, VE_MESSAGE_TYPE)).toEqual([]);
+    });
+
     it("posts what the editor typed to the form of the admin", async () => {
       postFromAdmin(snapshot("Hello"));
       click(heading);
@@ -605,16 +614,6 @@ describe("editing text on the page", () => {
 
       expect(messagesOfType(postToAdmin, VE_FIELD_EDIT_TYPE)).toEqual([
         { ...PAGE, key: "title", locale: "en", type: VE_FIELD_EDIT_TYPE, value: "Hello world" },
-      ]);
-      expect(messagesOfType(postToAdmin, VE_MESSAGE_TYPE)).toEqual([
-        {
-          ...PAGE,
-          focus: false,
-          key: undefined,
-          locale: "en",
-          path: "title",
-          type: VE_MESSAGE_TYPE,
-        },
       ]);
       expect(fetchEndpoint).not.toHaveBeenCalled();
     });

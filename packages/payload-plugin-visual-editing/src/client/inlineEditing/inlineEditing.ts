@@ -1,6 +1,5 @@
 import type { SaveRefusal } from "../../shared/fieldEdit.js";
-import type { VeDocument, VeOpenFieldMessage } from "../../shared/protocol.js";
-import type { VeIdentity } from "../../shared/shared.js";
+import type { VeDocument } from "../../shared/protocol.js";
 import type { BadgeAction } from "../overlay/editBadge.js";
 import type { FieldMatch, FieldTracker } from "../overlay/fieldTracker.js";
 import type { ClickTaken } from "../overlay/targetRegistry.js";
@@ -12,8 +11,7 @@ import { fieldKeyOfMarker } from "../../shared/fieldKey.js";
 import { readEditedField } from "../../shared/fieldEdit.js";
 import { isMessageFrom } from "../../shared/messageSource.js";
 import { isPlainObject } from "../../shared/plainObject.js";
-import { VE_FIELD_EDIT_REFUSED_TYPE, VE_MESSAGE_TYPE } from "../../shared/protocol.js";
-import { veIdentityOf } from "../../shared/shared.js";
+import { VE_FIELD_EDIT_REFUSED_TYPE } from "../../shared/protocol.js";
 import { veDocumentOf } from "../../shared/veDocument.js";
 import { adminOriginOf, findAdminWindow, isFramedByAdmin } from "../adminWindow.js";
 import { listenToSaves } from "../saveEvents.js";
@@ -84,16 +82,6 @@ export function createInlineEditing(
   const transport = createEditTransport(getCtx, showStatus, window, findAdmin);
   const holdsFormOf = openForms && ((document: VeDocument) => openForms.holdsFormOf(document));
 
-  const showInForm = (field: VeIdentity) => {
-    const { adminOrigin, locale } = getCtx();
-    const message: VeOpenFieldMessage = {
-      ...veIdentityOf({ ...field, locale: field.locale ?? locale }),
-      focus: false,
-      type: VE_MESSAGE_TYPE,
-    };
-    findAdminWindow(window)?.postMessage(message, adminOriginOf(adminOrigin));
-  };
-
   const editedFieldOf = (match: FieldMatch) => {
     const key = fieldKeyOfMarker(match);
     const { locale } = getCtx();
@@ -129,7 +117,6 @@ export function createInlineEditing(
     holdsFormOf,
     isUnsaved: transport.isUnsaved,
     send: transport.send,
-    showInForm,
     tracker,
   });
   const imageReplacement = createImageReplacement({
@@ -198,9 +185,7 @@ export function createInlineEditing(
 
   const editTextInPlace = (match: FieldMatch, event: MouseEvent): boolean => {
     richTextEditing.commit();
-    const isEditing = textEditing.begin(match, { x: event.clientX, y: event.clientY });
-    if (isEditing) showInForm(match);
-    return isEditing;
+    return textEditing.begin(match, { x: event.clientX, y: event.clientY });
   };
 
   return {
