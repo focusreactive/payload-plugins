@@ -19,7 +19,7 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
     {
       fields: [
         {
-          admin: { width: "60%" },
+          admin: { width: "50%" },
           label: {
             en: "Author",
             es: "Autor",
@@ -29,7 +29,10 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
           type: "text",
         },
         {
-          admin: { width: "40%" },
+          admin: {
+            components: { Field: "/components/admin/RatingField#RatingField" },
+            width: "50%",
+          },
           defaultValue: 5,
           label: {
             en: "Rating (1-5)",
