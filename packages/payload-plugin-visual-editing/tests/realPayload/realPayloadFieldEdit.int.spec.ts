@@ -21,11 +21,13 @@ describe("the field edit endpoint", () => {
   let editor: Headers;
   let outsider: Headers;
 
-  const post = async (body: unknown, headers: Headers) => {
+  const post = async (body: unknown, headers: Headers, contentType = "application/json") => {
     const endpoint = payload.config.endpoints.find(({ path }) => path === VE_FIELD_EDIT_PATH);
     const { user } = await payload.auth({ headers });
+    const sent = new Headers(headers);
+    sent.set("Content-Type", contentType);
     const req = await createLocalReq(
-      { req: { headers } as Partial<PayloadRequest>, user: user ?? undefined },
+      { req: { headers: sent } as Partial<PayloadRequest>, user: user ?? undefined },
       payload
     );
     req.text = async () => JSON.stringify({ locale: "en", ...(body as object) });
@@ -309,6 +311,21 @@ describe("the field edit endpoint", () => {
         expect(await reasonOf({ ...page(docId), key: "label", value: "Kept" })).toBeUndefined();
       });
     });
+
+    it.each([["text/plain"], ["application/x-www-form-urlencoded"], ["multipart/form-data"]])(
+      "for a body sent as %s, which another site can send without asking",
+      async (contentType) => {
+        const answer = await post(
+          { ...page(docId), key: "label", value: "Changed" },
+          editor,
+          contentType
+        );
+        const draft = await read(docId, true);
+
+        expect(answer).toEqual({ reason: "unreadable", saved: false, status: 400 });
+        expect(draft.label).toBe("Kept");
+      }
+    );
 
     it("for a locale the project does not have", async () => {
       expect(await refused({ key: "label", locale: "fr" })).toEqual({ saved: false, status: 400 });

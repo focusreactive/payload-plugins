@@ -14,7 +14,7 @@ import { editOfDocument, formEditOf } from "./formEdit.js";
 
 export function InlineEditReceiver({ excludeFieldNames }: { excludeFieldNames?: string[] }) {
   const { disabled: isFormDisabled, dispatchFields, getFields, setModified } = useForm();
-  const { id, collectionSlug, globalSlug } = useDocumentInfo();
+  const { id, collectionSlug, docPermissions, globalSlug } = useDocumentInfo();
   const editableSchema = useEditableSchema({ collectionSlug, globalSlug }, excludeFieldNames);
   const { code: locale } = useLocale();
   const { getWindow, origin } = usePreviewWindow();
@@ -30,7 +30,12 @@ export function InlineEditReceiver({ excludeFieldNames }: { excludeFieldNames?: 
       if (!edit) return;
       const formEdit = isFormDisabled
         ? null
-        : formEditOf(edit, { document: openDocument, editableSchema, formState: getFields() });
+        : formEditOf(edit, {
+            document: openDocument,
+            editableSchema,
+            formState: getFields(),
+            permissions: docPermissions,
+          });
       if (!formEdit) {
         const { value: _value, ...refused } = edit;
         const message: VeFieldEditRefusedMessage = { ...refused, type: VE_FIELD_EDIT_REFUSED_TYPE };
@@ -46,6 +51,7 @@ export function InlineEditReceiver({ excludeFieldNames }: { excludeFieldNames?: 
   }, [
     collectionSlug,
     dispatchFields,
+    docPermissions,
     editableSchema,
     getFields,
     getWindow,

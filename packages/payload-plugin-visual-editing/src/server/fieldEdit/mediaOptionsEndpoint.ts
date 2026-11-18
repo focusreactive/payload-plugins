@@ -9,7 +9,7 @@ import { readEditedField } from "../../shared/fieldEdit.js";
 import { mediaOptionOf } from "../../shared/mediaOption.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import { VE_MEDIA_OPTIONS_PATH } from "../../shared/protocol.js";
-import { bodyOf } from "../endpointJson.js";
+import { jsonBodyOf } from "../endpointJson.js";
 import {
   ANSWERED,
   draftFieldOf,
@@ -96,17 +96,17 @@ export const mediaOptionsEndpoint: Endpoint = {
     const { payload, user } = req;
     if (!user) return answer(NOTHING_LISTED, SIGNED_OUT, req);
 
-    const posted = readRequest(await bodyOf(req));
+    const posted = readRequest(await jsonBodyOf(req));
     if (!posted) return answer(NOTHING_LISTED, UNREADABLE_REQUEST, req);
     const request = inLocaleOfProject(payload, posted);
 
-    const field = await draftFieldOf(payload, user, request);
-    if (isRefusal(field)) return answer(NOTHING_LISTED, field.status, req);
-
-    const collection = shownUploadCollectionOf(field.shown, field.schema, request.key);
-    if (collection === null) return answer(NOTHING_LISTED, FIELD_NOT_EDITABLE, req);
-
     try {
+      const field = await draftFieldOf(payload, user, request);
+      if (isRefusal(field)) return answer(NOTHING_LISTED, field.status, req);
+
+      const collection = shownUploadCollectionOf(field.shown, field.schema, request.key);
+      if (collection === null) return answer(NOTHING_LISTED, FIELD_NOT_EDITABLE, req);
+
       return answer(await listMedia(payload, user, collection, request), ANSWERED, req);
     } catch (error) {
       return answer(NOTHING_LISTED, statusOfFailure(error), req);

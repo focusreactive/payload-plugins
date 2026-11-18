@@ -1267,6 +1267,19 @@ describe("one edit of rich text", () => {
       expect(onCommit).not.toHaveBeenCalled();
     });
 
+    it("asks to commit, never to cancel, when the editor fails after it started", () => {
+      select(0, 6, 11);
+      typeOver("there");
+
+      update(() => {
+        throw new Error("broken");
+      });
+
+      expect(onCommit).toHaveBeenCalledTimes(1);
+      expect(onCancel).not.toHaveBeenCalled();
+      expect(latest().root.children).toEqual([paragraph(text("Hello there"))]);
+    });
+
     it("asks to commit on a press outside the twin and the toolbar", () => {
       twin.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
       toolbarHost().dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));

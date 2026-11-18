@@ -736,6 +736,41 @@ describe("editing rich text on the page", () => {
       expect(requestsTo(VE_FIELD_EDIT_PATH)).toHaveLength(1);
     });
 
+    it("saves the last state at once when the page is left while an earlier save is on the way", async () => {
+      const twin = await beginEdit();
+      fetchApi.mockImplementationOnce(() => new Promise(() => undefined));
+      typeInto(twin, "Hello there");
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+      typeInto(twin, "Hello again");
+
+      window.dispatchEvent(new Event("pagehide"));
+      await settle();
+
+      expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([
+        { ...BODY, state: stateOf(paragraph(text("Hello there")), CALLOUT) },
+        { ...BODY, state: stateOf(paragraph(text("Hello again")), CALLOUT) },
+      ]);
+    });
+
+    it("ends the edit and keeps what was saved when the editor fails during the edit", async () => {
+      const twin = await beginEdit();
+      typeInto(twin, "Hello there");
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+
+      lexicalOf(twin).update(
+        () => {
+          throw new Error("broken");
+        },
+        { discrete: true }
+      );
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+
+      expect(twin.isConnected).toBe(false);
+      expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([
+        { ...BODY, state: stateOf(paragraph(text("Hello there")), CALLOUT) },
+      ]);
+    });
+
     describe("with a node the page cannot edit", () => {
       const removeTheBlock = (twin: HTMLElement) => {
         selectTheBlock(twin);

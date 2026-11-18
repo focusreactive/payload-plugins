@@ -179,6 +179,16 @@ describe("the transport of an edit", () => {
       expect(statuses).toEqual(["unsaved"]);
     });
 
+    it("keeps saying changes are unsaved after a save of the admin while the editor still types", () => {
+      transport.send({ ...TITLE, value: "Hello" });
+      vi.advanceTimersByTime(EDIT_SEND_PAUSE_MS);
+      transport.send({ ...TITLE, value: "Hello world" });
+
+      transport.settle(null);
+
+      expect(statuses.at(-1)).toBe("unsaved");
+    });
+
     it("counts a save that names no document as a save of every edit", () => {
       transport.send({ ...TITLE, value: "Hello" });
       vi.advanceTimersByTime(EDIT_SEND_PAUSE_MS);
@@ -256,6 +266,16 @@ describe("the transport of an edit", () => {
       expect(init.keepalive).toBe(false);
     });
 
+    it("measures the body in bytes, as the browser does, before it asks to keep a request alive", async () => {
+      const cyrillic = editorState(paragraph(textNode("я".repeat(KEEPALIVE_BODY_LIMIT / 2))));
+
+      transport.sendNow({ ...BODY, state: cyrillic });
+      await settle();
+
+      const [, init] = fetchEndpoint.mock.calls[0] as [string, RequestInit];
+      expect(init.keepalive).toBe(false);
+    });
+
     it("counts an edit the endpoint refused as unsaved and tells no one that it was saved", async () => {
       fetchEndpoint.mockImplementationOnce(() => Promise.resolve(answerOf(false)));
 
@@ -282,6 +302,82 @@ describe("the transport of an edit", () => {
       await settle();
 
       expect(fetchEndpoint).toHaveBeenCalledTimes(2);
+    });
+
+    it("starts every save at once when the page is left, without waiting for the one on the way", async () => {
+      fetchEndpoint.mockImplementationOnce(() => new Promise<Response>(() => {}));
+      transport.send({ ...TITLE, value: "First" });
+      transport.flush();
+      transport.hold({ ...BODY, state: STATE });
+      transport.flush();
+      transport.send({ ...TITLE, key: "lead", value: "Lead" });
+      await settle();
+      expect(fetchEndpoint).toHaveBeenCalledTimes(1);
+
+      transport.flushBeforeLeaving();
+      await settle();
+
+      expect(fetchEndpoint).toHaveBeenCalledTimes(3);
+      expect(
+        fetchEndpoint.mock.calls.map(
+          ([, init]) => (JSON.parse(init.body as string) as { key: string }).key
+        )
+      ).toEqual(["title", "body", "lead"]);
+    });
+
+    it("saves one edit after the other again once the page is shown after it was left", async () => {
+      const answers: ((answer: Response) => void)[] = [];
+      fetchEndpoint.mockImplementation(
+        () => new Promise<Response>((resolve) => answers.push(resolve))
+      );
+      transport.send({ ...TITLE, value: "First" });
+      transport.flushBeforeLeaving();
+      await settle();
+
+      transport.send({ ...TITLE, value: "Second" });
+      transport.flush();
+      await settle();
+
+      expect(fetchEndpoint).toHaveBeenCalledTimes(1);
+    });
+
+    it("says the edits are saved only once nothing waits and nothing is on the way", async () => {
+      const answers: ((answer: Response) => void)[] = [];
+      fetchEndpoint.mockImplementation(
+        () => new Promise<Response>((resolve) => answers.push(resolve))
+      );
+      transport.sendNow({ ...TITLE, key: "image", value: "9" });
+      transport.send({ ...TITLE, value: "Hello" });
+      await settle();
+
+      answers[0]?.(answerOf(true));
+      await settle();
+      expect(statuses.at(-1)).toBe("unsaved");
+
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+      expect(statuses.at(-1)).toBe("saving");
+
+      answers[1]?.(answerOf(true));
+      await settle();
+      expect(statuses.at(-1)).toBe("saved");
+    });
+
+    it("keeps saying it saves while a later save is still on the way", async () => {
+      const answers: ((answer: Response) => void)[] = [];
+      fetchEndpoint.mockImplementation(
+        () => new Promise<Response>((resolve) => answers.push(resolve))
+      );
+      transport.sendNow({ ...TITLE, key: "image", value: "9" });
+      transport.sendNow({ ...TITLE, value: "Hello" });
+      await settle();
+
+      answers[0]?.(answerOf(true));
+      await settle();
+      expect(statuses).not.toContain("saved");
+
+      answers[1]?.(answerOf(true));
+      await settle();
+      expect(statuses.at(-1)).toBe("saved");
     });
 
     it.each([

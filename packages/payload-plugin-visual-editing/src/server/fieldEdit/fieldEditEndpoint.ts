@@ -19,7 +19,7 @@ import { VE_FIELD_EDIT_PATH } from "../../shared/protocol.js";
 import { rootOf } from "../../shared/richText/editorNodes.js";
 import { NO_FORMATS } from "../../shared/richText/formats.js";
 import { isSameValue } from "../../shared/sameValue.js";
-import { bodyOf } from "../endpointJson.js";
+import { jsonBodyOf } from "../endpointJson.js";
 import {
   ANSWERED,
   AS_IT_IS_STORED,
@@ -129,42 +129,50 @@ const editedOf = async (
   return mediaId === null ? null : (stored) => replacedUploadOf(stored, schema, key, mediaId);
 };
 
+const savedEdit = async (
+  payload: Payload,
+  user: User,
+  edit: VeEdit,
+  req: PayloadRequest
+): Promise<Response> => {
+  const field = await draftFieldOf(payload, user, edit);
+  if (isRefusal(field)) return answer(false, field.status, req);
+
+  const editedIn = await editedOf(payload, user, field, edit);
+  if (!editedIn) return answer(false, FIELD_NOT_EDITABLE, req);
+
+  const stored = await readDraft(payload, field.document, edit, { ...AS_IT_IS_STORED, user });
+  const edited = editedIn(stored);
+  if (!edited) return answer(false, FIELD_NOT_EDITABLE, req);
+
+  const data = { [edited.name]: edited.value };
+  const saved = await saveDraft(payload, field.document, data, {
+    autosave: field.drafts.autosave,
+    locale: edit.locale,
+    user,
+  });
+  const written = isRichTextEdit(edit)
+    ? await readDraft(payload, field.document, edit, { ...AS_IT_IS_STORED, user })
+    : saved;
+  if (isLeftAsItWas(stored, written, data, edit.key)) {
+    return answer(false, FIELD_NOT_EDITABLE, req);
+  }
+  return answer(true, ANSWERED, req);
+};
+
 export const fieldEditEndpoint: Endpoint = {
   handler: async (req) => {
     const { payload, user } = req;
     if (!user) return answer(false, SIGNED_OUT, req);
 
-    const posted = readEdit(await bodyOf(req));
+    const posted = readEdit(await jsonBodyOf(req));
     if (!posted) return answer(false, UNREADABLE_REQUEST, req, REQUEST_UNREADABLE);
-    const edit = inLocaleOfProject(payload, posted);
 
-    const field = await draftFieldOf(payload, user, edit);
-    if (isRefusal(field)) return answer(false, field.status, req);
-
-    const editedIn = await editedOf(payload, user, field, edit);
-    if (!editedIn) return answer(false, FIELD_NOT_EDITABLE, req);
-
-    const stored = await readDraft(payload, field.document, edit, { ...AS_IT_IS_STORED, user });
-    const edited = editedIn(stored);
-    if (!edited) return answer(false, FIELD_NOT_EDITABLE, req);
-
-    const data = { [edited.name]: edited.value };
     try {
-      const saved = await saveDraft(payload, field.document, data, {
-        autosave: field.drafts.autosave,
-        locale: edit.locale,
-        user,
-      });
-      const written = isRichTextEdit(edit)
-        ? await readDraft(payload, field.document, edit, { ...AS_IT_IS_STORED, user })
-        : saved;
-      if (isLeftAsItWas(stored, written, data, edit.key)) {
-        return answer(false, FIELD_NOT_EDITABLE, req);
-      }
+      return await savedEdit(payload, user, inLocaleOfProject(payload, posted), req);
     } catch (error) {
       return answer(false, statusOfFailure(error), req);
     }
-    return answer(true, ANSWERED, req);
   },
   method: "post",
   path: VE_FIELD_EDIT_PATH,

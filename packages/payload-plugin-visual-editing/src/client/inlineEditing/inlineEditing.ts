@@ -173,7 +173,7 @@ export function createInlineEditing(
 
   const saveBeforeThePageIsLeft = () => {
     richTextEditing.commitBeforeThePageIsHidden();
-    transport.flush();
+    transport.flushBeforeLeaving();
   };
   const saveBeforeThePageIsHidden = () => {
     if (document.visibilityState === HIDDEN) saveBeforeThePageIsLeft();

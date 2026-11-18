@@ -21,6 +21,10 @@ type DrawerProps = {
   onSelect: (selected: { collectionSlug: string; doc: Record<string, unknown> }) => void;
 };
 
+const EVERY_FIELD = vi.hoisted(() => ({ fields: true, read: true, update: true }));
+
+const IMAGE_READ_ONLY = { fields: { image: { read: true } }, read: true, update: true };
+
 const admin = vi.hoisted(() => {
   const postMessage = vi.fn();
   const frame = { contentWindow: { postMessage } };
@@ -37,6 +41,7 @@ const admin = vi.hoisted(() => {
     frame,
     iframeRef: { current: frame },
     openDrawer: vi.fn(),
+    permissions: EVERY_FIELD as object,
     postToPreview: postMessage,
     setModified: vi.fn(),
   };
@@ -54,7 +59,7 @@ vi.mock("@payloadcms/ui", async () => {
         ],
       }),
     }),
-    useDocumentInfo: () => ({ collectionSlug: "page", id: 7 }),
+    useDocumentInfo: () => ({ collectionSlug: "page", docPermissions: admin.permissions, id: 7 }),
     useForm: () => ({
       dispatchFields: admin.dispatchFields,
       getFields: () => admin.fields,
@@ -138,6 +143,7 @@ describe("MediaPickReceiver", () => {
 
   afterEach(() => {
     act(() => root.unmount());
+    admin.permissions = EVERY_FIELD;
     container.remove();
     admin.drawer = null;
     vi.unstubAllGlobals();
@@ -296,6 +302,19 @@ describe("MediaPickReceiver", () => {
     expect(admin.openDrawer).not.toHaveBeenCalled();
     expect(admin.postToPreview).toHaveBeenCalledWith(
       { ...FIELD, key: "title", type: VE_FIELD_EDIT_REFUSED_TYPE },
+      PREVIEW_ORIGIN
+    );
+  });
+
+  it("tells the preview page when the user may read the field and not update it", () => {
+    admin.permissions = IMAGE_READ_ONLY;
+    act(() => root.render(<MediaPickReceiver />));
+
+    postRequest();
+
+    expect(admin.openDrawer).not.toHaveBeenCalled();
+    expect(admin.postToPreview).toHaveBeenCalledWith(
+      { ...FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE },
       PREVIEW_ORIGIN
     );
   });

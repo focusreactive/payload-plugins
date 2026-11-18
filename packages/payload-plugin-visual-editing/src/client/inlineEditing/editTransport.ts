@@ -39,6 +39,7 @@ export interface EditTransport {
   holdInForm(field: EditedField): void;
   isUnsaved(field: EditedField): boolean;
   flush(): void;
+  flushBeforeLeaving(): void;
   refuse(field: EditedField): void;
   settle(saved: VeLiveDocument | null): void;
   retry(): void;
@@ -57,6 +58,16 @@ type WaitingEdit = {
 
 type FailedEdit = { edit: VeEdit; refusal: SaveRefusal };
 
+type PageLeave = { left: Promise<void>; leave: () => void };
+
+const nextPageLeave = (): PageLeave => {
+  let leave: PageLeave["leave"] | undefined;
+  const left = new Promise<void>((resolve) => {
+    leave = resolve;
+  });
+  return { leave: () => leave?.(), left };
+};
+
 const addressOf = (field: EditedField): string =>
   JSON.stringify([keyedFieldAddressOf(field), field.locale ?? null]);
 
@@ -65,6 +76,8 @@ const isSavedWith = (edit: EditedField, saved: VeLiveDocument): boolean =>
   (!edit.locale || !saved.locale || edit.locale === saved.locale);
 
 export const KEEPALIVE_BODY_LIMIT = 60_000;
+
+const bytesOf = (body: string): number => new TextEncoder().encode(body).length;
 
 const messageOf = (edit: VeEdit): VeFieldEditMessage | VeRichTextEditMessage =>
   isRichTextEdit(edit)
@@ -85,7 +98,7 @@ const postToEndpoint = async (
       body,
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      keepalive: body.length <= KEEPALIVE_BODY_LIMIT,
+      keepalive: bytesOf(body) <= KEEPALIVE_BODY_LIMIT,
       method: "POST",
     });
     const answer: unknown = await response.json();
@@ -108,6 +121,7 @@ export function createEditTransport(
   const watchedSaves = new Map<string, OnSaveEnded>();
   const savesOnTheWay = new Map<string, number>();
   let saves: Promise<void> = Promise.resolve();
+  let pageLeave = nextPageLeave();
   let isDisposed = false;
 
   const latestRefusal = (): SaveRefusal | undefined => [...failed.values()].at(-1)?.refusal;
@@ -120,6 +134,12 @@ export function createEditTransport(
   };
 
   const settle = () => report("saved");
+
+  const statusAfterASave = (): EditStatus => {
+    if (waiting.size > 0 || unsavedInForm.size > 0) return "unsaved";
+    if (savesOnTheWay.size > 0) return "saving";
+    return "saved";
+  };
 
   const fail = (edit: VeEdit, refusal: SaveRefusal) => {
     failed.delete(addressOf(edit));
@@ -140,7 +160,7 @@ export function createEditTransport(
     countSaveOnTheWay(addressOf(edit), -1);
     if (isSaved) failed.delete(addressOf(edit));
     else fail(edit, refusal);
-    settle();
+    report(statusAfterASave());
     if (isDisposed) return;
     watchedSaves.get(addressOf(edit))?.(isSaved);
     if (isSaved) getCtx().onEdited?.();
@@ -148,7 +168,7 @@ export function createEditTransport(
 
   const saveAfter = async (earlierSaves: Promise<void>, edit: VeEdit) => {
     countSaveOnTheWay(addressOf(edit), 1);
-    await earlierSaves;
+    await Promise.race([earlierSaves, pageLeave.left]);
     countSaveOnTheWay(addressOf(edit), -1);
     await saveThroughEndpoint(edit);
   };
@@ -207,6 +227,11 @@ export function createEditTransport(
       report("unsaved");
     },
     flush,
+    flushBeforeLeaving() {
+      flush();
+      pageLeave.leave();
+      pageLeave = nextPageLeave();
+    },
     refuse(field) {
       const edit = postedToAdmin.get(addressOf(field));
       if (!edit) return;
@@ -251,7 +276,7 @@ export function createEditTransport(
         unsavedInForm.delete(address);
         postedToAdmin.delete(address);
       }
-      if (unsavedInForm.size === 0) settle();
+      if (unsavedInForm.size === 0) report(statusAfterASave());
     },
   };
 }

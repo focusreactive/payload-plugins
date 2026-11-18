@@ -1,4 +1,4 @@
-import type { Field, FormState } from "payload";
+import type { Field, FormState, SanitizedDocumentPermissions } from "payload";
 
 import { describe, expect, it, vi } from "vitest";
 
@@ -42,7 +42,14 @@ const formState = {
 
 const PAGE = { collectionSlug: "page", docId: "7", kind: "collection" } as const;
 
-const openForm = { document: { ...PAGE, locale: "en" }, editableSchema, formState };
+const EVERY_FIELD = { fields: true, read: true, update: true } as SanitizedDocumentPermissions;
+
+const openForm = {
+  document: { ...PAGE, locale: "en" },
+  editableSchema,
+  formState,
+  permissions: EVERY_FIELD,
+};
 
 const request = (overrides: Record<string, unknown> = {}) => ({
   ...PAGE,
@@ -91,6 +98,17 @@ describe("a request of the preview page to pick media", () => {
     const field = pickOfDocument(request(), openForm.document);
 
     expect(field && mediaPickOf(field, { ...openForm, formState: filtered })).toBeNull();
+  });
+
+  it("takes no request for a field the user may read and not update", () => {
+    const permissions = {
+      fields: { image: { read: true } },
+      read: true,
+      update: true,
+    } as unknown as SanitizedDocumentPermissions;
+    const field = pickOfDocument(request(), openForm.document);
+
+    expect(field && mediaPickOf(field, { ...openForm, permissions })).toBeNull();
   });
 
   it("takes no request of another locale than the form is in", () => {

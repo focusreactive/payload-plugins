@@ -67,7 +67,7 @@ function MediaDrawer({ collection, onClosed, onDismissed, onPicked }: MediaDrawe
 
 export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: string[] }) {
   const { disabled: isFormDisabled, dispatchFields, getFields, setModified } = useForm();
-  const { id, collectionSlug, globalSlug } = useDocumentInfo();
+  const { id, collectionSlug, docPermissions, globalSlug } = useDocumentInfo();
   const editableSchema = useEditableSchema({ collectionSlug, globalSlug }, excludeFieldNames);
   const { code: locale } = useLocale();
   const { getWindow, origin } = usePreviewWindow();
@@ -144,7 +144,12 @@ export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: s
       const pick =
         isFormDisabled || isDrawerOpen
           ? null
-          : mediaPickOf(field, { document: openDocument, editableSchema, formState: getFields() });
+          : mediaPickOf(field, {
+              document: openDocument,
+              editableSchema,
+              formState: getFields(),
+              permissions: docPermissions,
+            });
       if (!pick) {
         refusePick(field);
         return;
@@ -162,6 +167,7 @@ export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: s
     return () => window.removeEventListener("message", openDrawerForPick);
   }, [
     collectionSlug,
+    docPermissions,
     editableSchema,
     getFields,
     getWindow,

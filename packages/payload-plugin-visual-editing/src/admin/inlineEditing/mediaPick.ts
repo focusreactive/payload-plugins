@@ -9,7 +9,7 @@ import { isPlainObject } from "../../shared/plainObject.js";
 import { VE_PICK_MEDIA_TYPE } from "../../shared/protocol.js";
 import { documentAddressOf, idOf } from "../../shared/veDocument.js";
 import { readFormFields } from "../instantPreview/formFields.js";
-import { isOfAnotherLocale } from "./formEdit.js";
+import { isOfAnotherLocale, updatableFormFieldOf } from "./formEdit.js";
 
 export type MediaPick = { collection: string; field: VeEditedField; path: string };
 
@@ -29,19 +29,16 @@ export const chosenMediaOf = (data: unknown): number | string | null =>
 const filtersWhatItTakes = (formState: FormState, formPath: string): boolean =>
   formState[formPath]?.filterOptions !== undefined;
 
-export function mediaPickOf(
-  field: VeEditedField,
-  { document, editableSchema, formState }: OpenForm
-): MediaPick | null {
-  if (isOfAnotherLocale(field.locale, document.locale)) return null;
+export function mediaPickOf(field: VeEditedField, openForm: OpenForm): MediaPick | null {
+  if (isOfAnotherLocale(field.locale, openForm.document.locale)) return null;
 
   const takesOneUpload: Parameters<typeof readFormFields>[2] = (schema, steps) =>
     uploadCollectionAt(schema, steps) !== null;
-  const formField = readFormFields(formState, editableSchema, takesOneUpload).find(
-    ({ key }) => key === field.key
-  );
-  const collection = formField && uploadCollectionAt(editableSchema, formField.steps);
-  if (!formField || !collection || filtersWhatItTakes(formState, formField.formPath)) return null;
+  const formField = updatableFormFieldOf(field.key, openForm, takesOneUpload);
+  const collection = formField && uploadCollectionAt(openForm.editableSchema, formField.steps);
+  if (!formField || !collection || filtersWhatItTakes(openForm.formState, formField.formPath)) {
+    return null;
+  }
   return { collection, field, path: formField.formPath };
 }
 

@@ -1,4 +1,4 @@
-import type { Field, FormState } from "payload";
+import type { Field, FormState, SanitizedDocumentPermissions } from "payload";
 
 import { describe, expect, it } from "vitest";
 
@@ -37,7 +37,14 @@ const formState = {
 
 const PAGE = { collectionSlug: "page", docId: "7", kind: "collection" } as const;
 
-const openForm = { document: { ...PAGE, locale: "en" }, editableSchema, formState };
+const EVERY_FIELD = { fields: true, read: true, update: true } as SanitizedDocumentPermissions;
+
+const openForm = {
+  document: { ...PAGE, locale: "en" },
+  editableSchema,
+  formState,
+  permissions: EVERY_FIELD,
+};
 
 const edit = (overrides: Record<string, unknown> = {}) => ({
   ...PAGE,
@@ -90,6 +97,31 @@ describe("an edit of the preview page, written into the form", () => {
 
     expect(edited).not.toBeNull();
     expect(edited && formEditOf(edited, openForm)).toBeNull();
+  });
+
+  it.each([
+    ["a field the user may read and not update", "title", { title: { read: true } }],
+    [
+      "a field of a block the user may read and not update",
+      "layout.row-b.heading",
+      { layout: { blocks: { hero: { fields: { heading: { read: true } } } }, update: true } },
+    ],
+  ])("writes nothing for %s", (_name, key, fields) => {
+    const permissions = {
+      fields,
+      read: true,
+      update: true,
+    } as unknown as SanitizedDocumentPermissions;
+    const edited = editOfDocument(edit({ key, locale: "en" }), PAGE);
+
+    expect(edited && formEditOf(edited, { ...openForm, permissions })).toBeNull();
+  });
+
+  it("writes nothing while the user may not update the document", () => {
+    const permissions = { fields: true, read: true } as unknown as SanitizedDocumentPermissions;
+    const edited = editOfDocument(edit({ locale: "en" }), PAGE);
+
+    expect(edited && formEditOf(edited, { ...openForm, permissions })).toBeNull();
   });
 
   it.each([

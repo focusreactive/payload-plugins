@@ -89,8 +89,10 @@ describe("editing rich text through the endpoints", () => {
   const post = async (path: string, body: unknown, headers: Headers): Promise<Response> => {
     const endpoint = payload.config.endpoints.find((candidate) => candidate.path === path);
     const { user } = await payload.auth({ headers });
+    const sent = new Headers(headers);
+    sent.set("Content-Type", "application/json");
     const req = await createLocalReq(
-      { req: { headers } as Partial<PayloadRequest>, user: user ?? undefined },
+      { req: { headers: sent } as Partial<PayloadRequest>, user: user ?? undefined },
       payload
     );
     req.text = async () => JSON.stringify({ locale: "en", ...(body as object) });

@@ -43,8 +43,10 @@ describe("the key of an upload in a draft read with instantPreview", () => {
   const post = async <Body>(path: string, body: object) => {
     const endpoint = payload.config.endpoints.find((candidate) => candidate.path === path);
     const { user } = await payload.auth({ headers: editor });
+    const sent = new Headers(editor);
+    sent.set("Content-Type", "application/json");
     const req = await createLocalReq(
-      { req: { headers: editor } as Partial<PayloadRequest>, user: user ?? undefined },
+      { req: { headers: sent } as Partial<PayloadRequest>, user: user ?? undefined },
       payload
     );
     req.text = async () => JSON.stringify({ ...page(docId), locale: "en", ...body });

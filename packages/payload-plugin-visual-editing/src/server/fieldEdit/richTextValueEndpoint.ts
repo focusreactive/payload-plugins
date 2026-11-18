@@ -7,7 +7,7 @@ import type { VeRichTextValue } from "../../shared/protocol.js";
 import { readEditedField } from "../../shared/fieldEdit.js";
 import { VE_RICH_TEXT_VALUE_PATH } from "../../shared/protocol.js";
 import { formatsIn, NO_FORMATS, withFormats } from "../../shared/richText/formats.js";
-import { bodyOf } from "../endpointJson.js";
+import { jsonBodyOf } from "../endpointJson.js";
 import {
   ANSWERED,
   draftFieldOf,
@@ -35,7 +35,7 @@ export const richTextValueEndpoint: Endpoint = {
     const { payload, user } = req;
     if (!user) return answer(NOTHING_TO_EDIT, SIGNED_OUT, req);
 
-    const posted = readEditedField(await bodyOf(req));
+    const posted = readEditedField(await jsonBodyOf(req));
     if (!posted) return answer(NOTHING_TO_EDIT, UNREADABLE_REQUEST, req);
     const asked = inLocaleOfProject(payload, posted);
 

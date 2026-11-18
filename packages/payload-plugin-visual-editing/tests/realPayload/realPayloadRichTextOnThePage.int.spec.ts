@@ -90,7 +90,8 @@ describe("rich text edited on a page that saves through Payload", () => {
 
   const askEndpoint = async (path: string, init: RequestInit) => {
     const endpoint = payload.config.endpoints.find((candidate) => candidate.path === path);
-    const headers = new Headers({ Origin: SITE_ORIGIN });
+    const headers = new Headers(init.headers);
+    headers.set("Origin", SITE_ORIGIN);
     const req = await createLocalReq(
       { req: { headers } as Partial<PayloadRequest>, user: editor ?? undefined },
       payload

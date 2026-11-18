@@ -8,6 +8,7 @@ import {
   VE_RICH_TEXT_EDIT_ENDED_TYPE,
   VE_RICH_TEXT_EDIT_TYPE,
   VE_RICH_TEXT_STATE_REQUEST_TYPE,
+  VE_RICH_TEXT_VALUE_PATH,
 } from "../../shared/protocol.js";
 import type { VeRichTextFormats } from "../../shared/richText/formats.js";
 
@@ -15,14 +16,17 @@ import { withoutBlockFields } from "../../shared/richText/blockNodes.js";
 import { fixedNodesOf } from "../../shared/richText/editableNodes.js";
 import { editedStateOf } from "../../shared/richText/editedState.js";
 import { isEditorStateTree } from "../../shared/richText/editorStateTree.js";
-import { formatsIn } from "../../shared/richText/formats.js";
+import { formatsIn, NO_FORMATS, readFormats, withFormats } from "../../shared/richText/formats.js";
 import { documentAddressOf, keyedFieldAddressOf } from "../../shared/veDocument.js";
-import { readFormFields } from "../instantPreview/formFields.js";
-import { isOfAnotherLocale } from "./formEdit.js";
+import { isOfAnotherLocale, updatableFormFieldOf } from "./formEdit.js";
 
 export type RichTextOfForm = { path: string; value: VeEditorState };
 
 export type PostedRichTextEdit = { field: VeEditedField; state: VeEditorState | null };
+
+export type BegunEdit = { formats: VeRichTextFormats; state: VeEditorState };
+
+export type FetchEditorFormats = (field: VeEditedField) => Promise<VeRichTextFormats | null>;
 
 const fieldOfDocument = (
   data: unknown,
@@ -52,15 +56,10 @@ export function richTextEditOfDocument(
   return field && { field, state: readRichTextEdit(data)?.state ?? null };
 }
 
-export function richTextOfForm(
-  field: VeEditedField,
-  { document, editableSchema, formState }: OpenForm
-): RichTextOfForm | null {
-  if (isOfAnotherLocale(field.locale, document.locale)) return null;
+export function richTextOfForm(field: VeEditedField, openForm: OpenForm): RichTextOfForm | null {
+  if (isOfAnotherLocale(field.locale, openForm.document.locale)) return null;
 
-  const formField = readFormFields(formState, editableSchema, isRichTextAt).find(
-    ({ key }) => key === field.key
-  );
+  const formField = updatableFormFieldOf(field.key, openForm, isRichTextAt);
   if (!formField || !isEditorStateTree(formField.value)) return null;
   return { path: formField.formPath, value: formField.value };
 }
@@ -68,27 +67,49 @@ export function richTextOfForm(
 export const stateForThePage = ({ value }: RichTextOfForm): VeEditorState =>
   withoutBlockFields(value);
 
-export const formatsForThePage = ({ value }: RichTextOfForm): VeRichTextFormats => formatsIn(value);
+export const allowedFormatsOf = (
+  { value }: RichTextOfForm,
+  ofEditor: VeRichTextFormats | null
+): VeRichTextFormats => withFormats(ofEditor ?? NO_FORMATS, formatsIn(value));
+
+const formatsOfAnswer = (answer: unknown): VeRichTextFormats | null =>
+  isPlainObject(answer) ? readFormats(answer.formats) : null;
+
+export const fetchEditorFormatsFrom =
+  (apiUrl: string): FetchEditorFormats =>
+  async (field) => {
+    try {
+      const response = await fetch(`${apiUrl}${VE_RICH_TEXT_VALUE_PATH}`, {
+        body: JSON.stringify(field),
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      return response.ok ? formatsOfAnswer(await response.json()) : null;
+    } catch {
+      return null;
+    }
+  };
 
 export function richTextFormEditOf(
   { field, state }: PostedRichTextEdit,
   openForm: OpenForm,
-  begunWith: VeEditorState | null = null
+  begun: BegunEdit | null = null
 ): RichTextOfForm | null {
   const held = richTextOfForm(field, openForm);
   if (!held || !state) return null;
   const value = editedStateOf(state, {
-    formats: formatsIn(held.value),
-    shown: begunWith ?? held.value,
+    formats: allowedFormatsOf(held, begun?.formats ?? null),
+    shown: begun?.state ?? held.value,
     stored: held.value,
-    ...(begunWith && { remembered: fixedNodesOf(begunWith) }),
+    ...(begun && { remembered: fixedNodesOf(begun.state) }),
   });
   return value && { path: held.path, value };
 }
 
 export type RunningEdits = {
-  answered(field: VeEditedField, state: VeEditorState): void;
-  stateAtTheBeginningOf(field: VeEditedField): VeEditorState | null;
+  answered(field: VeEditedField, begun: BegunEdit): void;
+  beginningOf(field: VeEditedField): BegunEdit | null;
   ended(field: VeEditedField): void;
   forget(): void;
 };
@@ -97,17 +118,17 @@ const addressOf = (field: VeEditedField): string =>
   JSON.stringify([keyedFieldAddressOf(field), field.locale ?? null]);
 
 export function createRunningEdits(): RunningEdits {
-  const answeredStates = new Map<string, VeEditorState>();
+  const begunEdits = new Map<string, BegunEdit>();
   return {
-    answered(field, state) {
-      answeredStates.set(addressOf(field), state);
+    answered(field, begun) {
+      begunEdits.set(addressOf(field), begun);
     },
+    beginningOf: (field) => begunEdits.get(addressOf(field)) ?? null,
     ended(field) {
-      answeredStates.delete(addressOf(field));
+      begunEdits.delete(addressOf(field));
     },
     forget() {
-      answeredStates.clear();
+      begunEdits.clear();
     },
-    stateAtTheBeginningOf: (field) => answeredStates.get(addressOf(field)) ?? null,
   };
 }

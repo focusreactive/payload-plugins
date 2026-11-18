@@ -4,7 +4,7 @@ import type { LiveRichTextField } from "../shared/protocol.js";
 import type { UnsavedRichTextDepth } from "./unsavedRichText/readAsUser.js";
 
 import { readUnsavedRichTextFor } from "../readUnsavedRichText.js";
-import { bodyOf, json } from "./endpointJson.js";
+import { bodyOf, json, jsonBodyOf } from "./endpointJson.js";
 import { fieldEditEndpoint } from "./fieldEdit/fieldEditEndpoint.js";
 import { mediaOptionsEndpoint } from "./fieldEdit/mediaOptionsEndpoint.js";
 import { richTextValueEndpoint } from "./fieldEdit/richTextValueEndpoint.js";
@@ -41,7 +41,7 @@ const grantEndpoint: Endpoint = {
   handler: async (req) => {
     const { user } = req;
     if (!user) return json({ grant: null }, 401);
-    const body = await bodyOf(req);
+    const body = await jsonBodyOf(req);
     if (!isPlainObject(body) || !isVeDocument(body)) return json({ grant: null }, 400);
 
     const expiresAt = Date.now() + PREVIEW_GRANT_TTL_MS;

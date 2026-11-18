@@ -88,7 +88,7 @@ export function startEditSession({
     {
       onCancel,
       onChange,
-      onError: onCancel,
+      onError: onCommit,
       onLinkKey: editLink,
       onSelection: showSelection,
     },

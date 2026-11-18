@@ -586,7 +586,7 @@ The toggle then shows an **Edit on page** switch next to its modes, with a dot i
 
 In the pop-up window of Live Preview **Replace image** opens the list on the page, not the drawer of the admin behind it, and the admin writes the picked document into the form after it read it with the editor's access.
 
-The endpoint takes `{ collectionSlug, kind, docId, key, locale, value }` for text and for an image, and `{ …, state }` with a serialised Lexical editor state for rich text. It reads the latest draft with the user's access, changes the one field and saves a draft with `overrideAccess: false`. It answers `{ saved: true }`, or `{ saved: false, reason }` with a status: `401` and `signed-out` without a user, `409` and `no-drafts` for a collection or global without `versions.drafts`, `422` and `not-editable` for a field the editor cannot reach (also `403` and `404`), `423` and `locked` for a document another editor holds a lock on, `400` and `unreadable` for a body it cannot read (a `state` sent as a JSON string, for example), and `failed` for everything else. It never publishes. For an upload field the value is the id of a media document; the endpoint takes it only when the user can read that document in the collection of the field.
+The endpoint takes `{ collectionSlug, kind, docId, key, locale, value }` for text and for an image, and `{ …, state }` with a serialised Lexical editor state for rich text. It reads the latest draft with the user's access, changes the one field and saves a draft with `overrideAccess: false`. It answers `{ saved: true }`, or `{ saved: false, reason }` with a status: `401` and `signed-out` without a user, `409` and `no-drafts` for a collection or global without `versions.drafts`, `422` and `not-editable` for a field the editor cannot reach (also `403` and `404`), `423` and `locked` for a document another editor holds a lock on, `400` and `unreadable` for a body it cannot read (a `state` sent as a JSON string, or a body sent with another `Content-Type` than `application/json`, for example), and `failed` for everything else, also a read or save that throws. It never publishes. For an upload field the value is the id of a media document; the endpoint takes it only when the user can read that document in the collection of the field.
 
 Rich text needs the stored state of the field before it can be edited, and where it comes from depends on the page as well:
 
@@ -595,7 +595,7 @@ Rich text needs the stored state of the field before it can be edited, and where
 | in Live Preview, and the form of the document is open | the form: the page posts `ve:rich-text-state-request`, the admin answers `ve:rich-text-state` | the fields of blocks left out, as in [what is sent to the preview](#what-is-sent-to-the-preview) |
 | in a tab of its own, in draft mode | `POST <payloadApi>/visual-editing/rich-text-value` with the editor's session | the value of the draft, read with the user's access at depth 0 |
 
-`rich-text-value` takes the document, the field and the locale, runs the checks of `field-edit` and answers `{ value, formats }`, or `{ value: null, formats: null }` with the status `field-edit` would answer. `formats` are the formats the editor of the field allows (`textFormats` as Lexical's bit mask, `headings`, `lists`, `hasLinks`, `hasQuotes`), read from the field's Lexical editor config, plus every format the stored value already holds. The form answers the formats its state already holds: the admin does not get the editor config of a field, so in Live Preview the toolbar offers a format only once the field uses it somewhere; set the first heading or list of a field in the admin. A request the form cannot answer gets `ve:rich-text-state-refused`.
+`rich-text-value` takes the document, the field and the locale, runs the checks of `field-edit` and answers `{ value, formats }`, or `{ value: null, formats: null }` with the status `field-edit` would answer. `formats` are the formats the editor of the field allows (`textFormats` as Lexical's bit mask, `headings`, `lists`, `hasLinks`, `hasQuotes`), read from the field's Lexical editor config, plus every format the stored value already holds. The form answers the same formats: the admin asks `rich-text-value` for them when the page asks for the state, and adds every format the form holds. When the endpoint cannot answer, for a field of a row that is not saved yet for example, the form offers only the formats its state holds. A request the form cannot answer, also for a field whose `access.update` refuses the user, gets `ve:rich-text-state-refused`.
 
 Neither path trusts what the page sends back; the endpoint and the form apply the same rules, and an edit that breaks one is refused whole (`422`, or `ve:field-edit-refused`):
 
@@ -642,9 +642,9 @@ In a tab of its own a text edit is saved two seconds after the last keystroke, w
 
 On a project with locales the page must name its locale: pass `locale` to `VisualEditing.Overlay` or `mountVisualEditing`. An edit without a locale is refused, by the form and by the endpoint, so it never lands in the default locale by accident. Text shown from a fallback locale is saved into the locale of the page.
 
-When the form cannot take an edit, for example because the row was removed in the admin meanwhile, the status says **Not saved**.
+When the form cannot take an edit, for example because the row was removed in the admin meanwhile or the `access.update` of the field refuses the editor, the status says **Not saved**.
 
-In a tab of its own the request carries the editor's cookie. When the site and Payload are on different origins, list the origin of the site in `cors` and `csrf` of the Payload config, and the cookie must be sent cross-site.
+In a tab of its own the request carries the editor's cookie. When the site and Payload are on different origins, list the origin of the site in `cors` and `csrf` of the Payload config, and the cookie must be sent cross-site. The endpoints read only a body sent as `application/json`, which another site cannot post without a CORS preflight.
 
 ### What can be edited on the page
 
@@ -671,7 +671,7 @@ Rich text is not edited on the page, and a click on it opens the field in the ad
 Known limits of an edit that does run:
 
 - In Live Preview every pause in the typing writes the state into the form, and Payload's rich text editor in the admin mounts again each time, so a caret or an open drawer inside that field of the admin is lost while the page is typed into.
-- In Live Preview the toolbar offers only formats the field already uses, see above.
+- In Live Preview a field of a row that is not saved yet offers only the formats it already uses, see above.
 - The edited rich text takes the class of each kind of element from the first one of that kind the site rendered, so two paragraphs the site gave different classes look alike while they are edited.
 - A rich text that holds nothing but blocks has no place for the caret.
 - Clicking the box of a check list item does not tick it.

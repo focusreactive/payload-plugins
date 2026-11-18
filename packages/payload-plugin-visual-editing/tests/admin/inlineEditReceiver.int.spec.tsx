@@ -9,10 +9,15 @@ import { VE_FIELD_EDIT_REFUSED_TYPE, VE_FIELD_EDIT_TYPE } from "../../src/shared
 
 const PREVIEW_ORIGIN = "http://localhost:3333";
 
+const EVERY_FIELD = vi.hoisted(() => ({ fields: true, read: true, update: true }));
+
+const TITLE_READ_ONLY = { fields: { title: { read: true } }, read: true, update: true };
+
 const admin = vi.hoisted(() => {
   const postMessage = vi.fn();
   const frame = { contentWindow: { postMessage } };
   return {
+    permissions: EVERY_FIELD as object,
     postToPreview: postMessage,
     dispatchFields: vi.fn(),
     isFormDisabled: false,
@@ -28,7 +33,7 @@ vi.mock("@payloadcms/ui", () => ({
     config: { blocksMap: {} },
     getEntityConfig: () => ({ fields: [{ name: "title", type: "text" }] }),
   }),
-  useDocumentInfo: () => ({ collectionSlug: "page", id: 7 }),
+  useDocumentInfo: () => ({ collectionSlug: "page", docPermissions: admin.permissions, id: 7 }),
   useForm: () => ({
     disabled: admin.isFormDisabled,
     dispatchFields: admin.dispatchFields,
@@ -82,6 +87,7 @@ describe("InlineEditReceiver", () => {
   afterEach(() => {
     act(() => root.unmount());
     container.remove();
+    admin.permissions = EVERY_FIELD;
     vi.clearAllMocks();
   });
 
@@ -122,6 +128,20 @@ describe("InlineEditReceiver", () => {
         locale: "en",
         type: VE_FIELD_EDIT_REFUSED_TYPE,
       },
+      PREVIEW_ORIGIN
+    );
+  });
+
+  it("refuses an edit of a field the user may read and not update", () => {
+    admin.permissions = TITLE_READ_ONLY;
+    act(() => root.render(<InlineEditReceiver />));
+
+    postEdit();
+
+    expect(admin.dispatchFields).not.toHaveBeenCalled();
+    expect(admin.setModified).not.toHaveBeenCalled();
+    expect(admin.postToPreview).toHaveBeenCalledWith(
+      expect.objectContaining({ key: "title", type: VE_FIELD_EDIT_REFUSED_TYPE }),
       PREVIEW_ORIGIN
     );
   });

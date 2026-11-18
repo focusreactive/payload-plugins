@@ -10,7 +10,7 @@ import { VE_FIELD_EDIT_PATH, VE_MEDIA_OPTIONS_PATH } from "../../src/shared/prot
 
 import { START_TIMEOUT_MS, startRealPayload } from "../support/realPayload";
 import { page } from "../support/richTextPages";
-import { EDITOR, OUTSIDER, signIn } from "../support/unsavedRichTextRequests";
+import { EDITOR, OUTSIDER, signIn, WRITER } from "../support/unsavedRichTextRequests";
 
 type Answered<Body> = { body: Body; status: number };
 
@@ -20,14 +20,32 @@ const PRIVATE_ALT = "Private";
 
 const NOTHING_LISTED: VeMediaOptions = { collection: null, documents: [], hasNextPage: false };
 
-const everyoneButTheOutsider: Access = ({ req }) => req.user?.email !== OUTSIDER.email;
+const LIBRARIAN = { email: "librarian@example.com", password: "librarian-password" };
 
-const whatIsNotPrivate: Access = () => ({ alt: { not_equals: PRIVATE_ALT } });
+const failsToReadADocumentFor =
+  (email: string, access: Access): Access =>
+  (args) => {
+    if (args.id !== undefined && args.req.user?.email === email) {
+      throw new Error("The database is unreachable");
+    }
+    return access(args);
+  };
+
+const everyoneButTheOutsider = failsToReadADocumentFor(
+  WRITER.email,
+  ({ req }) => req.user?.email !== OUTSIDER.email
+);
+
+const whatIsNotPrivate = failsToReadADocumentFor(LIBRARIAN.email, () => ({
+  alt: { not_equals: PRIVATE_ALT },
+}));
 
 describe("replacing an image through the endpoints", () => {
   let payload: Payload;
   let editor: Headers;
   let outsider: Headers;
+  let writer: Headers;
+  let librarian: Headers;
   let harbour: string;
   let lighthouse: string;
   let secretPhoto: string;
@@ -36,8 +54,10 @@ describe("replacing an image through the endpoints", () => {
   const post = async <Body>(path: string, body: object, headers: Headers) => {
     const endpoint = payload.config.endpoints.find((candidate) => candidate.path === path);
     const { user } = await payload.auth({ headers });
+    const sent = new Headers(headers);
+    sent.set("Content-Type", "application/json");
     const req = await createLocalReq(
-      { req: { headers } as Partial<PayloadRequest>, user: user ?? undefined },
+      { req: { headers: sent } as Partial<PayloadRequest>, user: user ?? undefined },
       payload
     );
     req.text = async () => JSON.stringify({ locale: "en", ...body });
@@ -91,6 +111,8 @@ describe("replacing an image through the endpoints", () => {
     });
     editor = await signIn(payload, EDITOR);
     outsider = await signIn(payload, OUTSIDER);
+    writer = await signIn(payload, WRITER);
+    librarian = await signIn(payload, LIBRARIAN);
     harbour = await upload("media", "harbour.txt", "A harbour");
     lighthouse = await upload("media", "lighthouse.txt", "A lighthouse");
     secretPhoto = await upload("media", "secret.txt", PRIVATE_ALT);
@@ -202,6 +224,22 @@ describe("replacing an image through the endpoints", () => {
         expect(await refused({ key: "image" }, outsider)).toEqual({ saved: false, status: 422 });
       });
 
+      it("and says why when the draft cannot be read", async () => {
+        const body = { ...page(docId), key: "image", value: lighthouse };
+
+        const answer = await post(VE_FIELD_EDIT_PATH, body, writer);
+
+        expect(answer).toEqual({ body: { reason: "failed", saved: false }, status: 500 });
+      });
+
+      it("and says why when the media document cannot be read", async () => {
+        const body = { ...page(docId), key: "image", value: lighthouse };
+
+        const answer = await post(VE_FIELD_EDIT_PATH, body, librarian);
+
+        expect(answer).toEqual({ body: { reason: "failed", saved: false }, status: 500 });
+      });
+
       it("for a collection without drafts", async () => {
         const author = await payload.create({ collection: "authors", data: { name: "Ada" } });
 
@@ -309,6 +347,13 @@ describe("replacing an image through the endpoints", () => {
         expect(await options({ ...page(docId), key: "image" }, outsider)).toEqual({
           body: NOTHING_LISTED,
           status: 422,
+        });
+      });
+
+      it("for a draft that cannot be read", async () => {
+        expect(await options({ ...page(docId), key: "image" }, writer)).toEqual({
+          body: NOTHING_LISTED,
+          status: 500,
         });
       });
 
