@@ -12,8 +12,7 @@ export function translateDocumentControl(): TranslationComponent {
     attach(ctx) {
       ctx.addCollectionComponent(
         "beforeDocumentControls",
-        (collection) =>
-          new TranslateDocumentExport(collection, ctx.access, ctx.settings.targetSelection)
+        (collection) => new TranslateDocumentExport(collection, ctx.access)
       );
     },
   };

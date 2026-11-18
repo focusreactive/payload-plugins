@@ -1,127 +1,135 @@
 "use client";
 
-import { toast, useLocale, useSelection } from "@payloadcms/ui";
+import { useSelection } from "@payloadcms/ui";
 import { SelectAllStatus } from "@payloadcms/ui/providers/Selection";
-import { useEffect, useMemo } from "react";
+import { useId, useMemo, useState } from "react";
 
+import type { LocaleCode } from "../../../../types/wire/primitives.js";
+import type { LocaleChoice } from "../../../entities/translation/index.js";
 import {
-  AutoTranslateMarker,
-  deriveCollectionPanelStatus,
-  TranslationsApi,
+  useCancelCollectionTranslations,
+  useListTranslationState,
 } from "../../../entities/translation/index.js";
-import type { AutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary.js";
-import type { TargetSelectionMode } from "../../../../types/TargetSelection.js";
-import {
-  CollectionTranslationForm,
-  FORM_FIELDS,
-} from "../../../features/collection-translation-form/index.js";
-import type { FormValues } from "../../../features/collection-translation-form/index.js";
-import { CollectionTranslationFormModel } from "../../../features/collection-translation-form/index.client.js";
-import CollectionTranslationPopup from "../../../features/collection-translation-popup/index.js";
-import { CollectionTranslationProgress } from "../../../features/collection-translation-progress/index.js";
-import { handleFormError } from "../../../shared/lib/forms/handle-form-error.js";
-import { useCollectionDashboardUrlParams } from "../../../shared/lib/payload/hooks/useCollectionDashboardUrlParams.js";
+import { useTranslateKitConfig } from "../../../shared/config/index.js";
+import { useListView } from "../../../shared/lib/payload/hooks/useListView.js";
+import { useActionError } from "../../../shared/lib/utils/react/useActionError.js";
+import Button from "../../../shared/ui/Button/index.js";
+import SideDrawer from "../../../shared/ui/SideDrawer/index.js";
+import { CollectionPanel } from "./CollectionPanel.js";
+import { NothingSelected, ViewCountError } from "./NothingSelected.js";
+import { useViewIds } from "./useViewIds.js";
 
 import styles from "./styles.module.scss";
 
 type BulkTranslationDashboardProps = {
-  hasDrafts: boolean;
-  autoTranslate: AutoTranslateSummary | null;
-  targetSelection: TargetSelectionMode;
-  canStop: boolean;
+  collection: string;
+  /** The host's locales, source and targets alike. */
+  locales: readonly LocaleChoice[];
+  defaultLocale: LocaleCode | undefined;
 };
 
+/** `view`: every document the list's search and filters match, not only the ticked rows. */
+type Stage = "closed" | "nothing-selected" | "selection" | "view";
+
+function CancelQueued({ collection }: { collection: string }) {
+  const cancel = useCancelCollectionTranslations();
+  const { error, run } = useActionError();
+  return (
+    <>
+      {error && (
+        <span role="alert" className={styles.error}>
+          {error.message}
+        </span>
+      )}
+      <Button
+        type="button"
+        $variant="outlined-light"
+        disabled={cancel.isPending}
+        onClick={() => run(() => cancel.mutateAsync({ collection }))}
+      >
+        Cancel queued
+      </Button>
+    </>
+  );
+}
+
+/** Above the list: Translate the ticked rows (or what the view shows), and Cancel queued. */
 export default function BulkTranslationDashboard({
-  hasDrafts,
-  autoTranslate,
-  targetSelection,
-  canStop,
+  collection,
+  locales,
+  defaultLocale,
 }: BulkTranslationDashboardProps) {
-  const locale = useLocale();
-  const { collection } = useCollectionDashboardUrlParams();
-  const documentsSelection = useSelection();
+  const { abilities } = useTranslateKitConfig();
+  const selection = useSelection();
+  const view = useListView();
+  const pageIds = useMemo(() => view.rows.map(({ id }) => id), [view.rows]);
+  const list = useListTranslationState({ collection, ids: pageIds });
 
-  const queueTranslationApi = TranslationsApi.useQueueDocumentTranslation();
-  const collectionTranslationApi = TranslationsApi.useCollectionTranslationStatus({ collection });
-
-  useEffect(() => {
-    if (collectionTranslationApi.error) {
-      toast.error(collectionTranslationApi.error.message);
-    }
-  }, [collectionTranslationApi.error]);
-
-  const initialValues = useMemo(
-    () => ({
-      [FORM_FIELDS.SOURCE_LNG]: locale.code,
-      // Multi mode binds an array; single mode a string. Seed the matching empty value so the field
-      // starts with the right shape (and invalid until a target is chosen).
-      [FORM_FIELDS.TARGET_LNG]: targetSelection === "multi" ? [] : "",
-      [FORM_FIELDS.HIDDEN_COLLECTION_SLUG]: collection,
-    }),
-    [locale.code, collection, targetSelection]
+  const [stage, setStage] = useState<Stage>("closed");
+  const viewIds = useViewIds(
+    collection,
+    view.where,
+    stage === "nothing-selected" || stage === "view"
   );
+  const headingId = useId();
+  const close = () => setStage("closed");
 
-  const { form } = CollectionTranslationFormModel.useForm({
-    initialValues,
-    disabled: collectionTranslationApi.isLoading,
-  });
+  if (!abilities.translate && !abilities.cancel) return null;
 
-  const selectAll = documentsSelection.selectAll === SelectAllStatus.AllAvailable;
-  const selectedCount = selectAll ? documentsSelection.totalDocs : documentsSelection.count;
-
-  const status = collectionTranslationApi.data;
-  const panelStatus = deriveCollectionPanelStatus(status);
-  const hasAnyCount = !!(
-    status &&
-    (status.counts.failed || status.counts.running || status.counts.pending)
-  );
-  const showStatus = collectionTranslationApi.isPending || hasAnyCount;
-
-  const handleSubmit = async (formData: FormValues) => {
-    try {
-      await queueTranslationApi.mutateAsync({
-        ...formData,
-        collection_id: documentsSelection.selectedIDs,
-        select_all: selectAll,
-      });
-    } catch (e) {
-      handleFormError(e, form);
-    }
+  const allAvailable = selection.selectAll === SelectAllStatus.AllAvailable;
+  const open = () => {
+    if (allAvailable) setStage("view");
+    else setStage(selection.count === 0 ? "nothing-selected" : "selection");
   };
+  const viewFailed = stage === "view" && viewIds.isError && !viewIds.data;
+  const selectedIds = selection.selectedIDs.map(String);
 
   return (
-    <CollectionTranslationPopup status={panelStatus} selectedCount={selectedCount}>
-      <div className={styles.header}>
-        <h4 className={styles.title}>Translate documents</h4>
-        {autoTranslate && (
-          <AutoTranslateMarker
-            targets={autoTranslate.targets}
-            sourceLocale={autoTranslate.sourceLocale}
+    <div className={styles.toolbar}>
+      {abilities.cancel && <CancelQueued collection={collection} />}
+      {abilities.translate && (
+        <Button
+          type="button"
+          $variant="filled"
+          aria-haspopup="dialog"
+          aria-expanded={stage !== "closed"}
+          onClick={open}
+        >
+          {selection.count > 0 ? `Translate · ${selection.count}` : "Translate"}
+        </Button>
+      )}
+      <SideDrawer open={stage !== "closed"} onClose={close} labelledBy={headingId}>
+        {stage === "nothing-selected" && (
+          <NothingSelected
+            headingId={headingId}
+            collection={collection}
+            viewIds={viewIds}
+            onContinue={() => setStage("view")}
+            onClose={close}
           />
         )}
-      </div>
-
-      <section className={styles.section}>
-        <CollectionTranslationForm
-          form={form}
-          onSubmit={handleSubmit}
-          selectedCount={selectedCount}
-          hasDrafts={hasDrafts}
-          targetSelection={targetSelection}
-        />
-      </section>
-
-      {showStatus && (
-        <section className={`${styles.section} ${styles["section--status"]}`}>
-          <h5 className={styles.eyebrow}>Status</h5>
-          <CollectionTranslationProgress
+        {viewFailed && (
+          <div className={styles.body}>
+            <h2 id={headingId} className={styles.heading}>
+              Translate {collection}
+            </h2>
+            <ViewCountError viewIds={viewIds} />
+          </div>
+        )}
+        {(stage === "selection" || (stage === "view" && !viewFailed)) && (
+          <CollectionPanel
+            headingId={headingId}
             collection={collection}
-            data={collectionTranslationApi.data}
-            isPending={collectionTranslationApi.isPending}
-            canStop={canStop}
+            locales={locales}
+            defaultLocale={defaultLocale}
+            documents={stage === "selection" ? selectedIds : viewIds.data}
+            rows={stage === "selection" ? view.rows : []}
+            list={list.data}
+            onDone={close}
+            onClose={close}
           />
-        </section>
-      )}
-    </CollectionTranslationPopup>
+        )}
+      </SideDrawer>
+    </div>
   );
 }

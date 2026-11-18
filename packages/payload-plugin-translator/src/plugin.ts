@@ -1,6 +1,7 @@
 import type { Block, CollectionConfig, Config } from "payload";
 
 import { CacheProviderExport } from "./client/app/cache/CacheProvider.export.js";
+import { collectionFacts } from "./client/app/cache/collectionFacts.js";
 import { configureAutoTranslate } from "./server/modules/auto-translate/index.js";
 import { configureProvenance } from "./server/modules/provenance/index.js";
 import { translationLanguages } from "./server/features/_lib/index.js";
@@ -19,6 +20,7 @@ import type {
   TranslationModule,
 } from "./server/modules/plugin-config/index.js";
 import { PluginConfigBuilder } from "./server/modules/plugin-config/PluginConfigBuilder.js";
+import { deriveAbilities } from "./server/modules/plugin-config/index.js";
 import { resolveSettings } from "./settings.js";
 import type { TranslatorSettingsOptions } from "./settings.js";
 
@@ -285,7 +287,17 @@ export function translatorPlugin(
     builder.addConfigModifier(runRecord.refuseACollidingSlug);
     builder.addConfigModifier(runRecord.addTheCollection);
     builder.addConfigModifier(runRecord.cleanUpOnDelete(collectionSlugs));
-    builder.addAdminProvider(new CacheProviderExport(settings.basePath));
+    builder.addAdminProvider(
+      ({ config, endpoints }) =>
+        new CacheProviderExport({
+          basePath: settings.basePath,
+          abilities: deriveAbilities(endpoints, settings.basePath),
+          collections: collectionFacts(
+            (config.collections ?? []).filter((collection) => collectionSlugs.has(collection.slug)),
+            config.localization ? config.localization.defaultLocale : undefined
+          ),
+        })
+    );
 
     return builder.applyTo(payloadConfig);
   };

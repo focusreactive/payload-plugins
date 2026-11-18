@@ -1,8 +1,6 @@
 import { TranslatorConfigError } from "./core/errors/index.js";
 import { normalizePath } from "./server/shared/index.js";
 
-import type { TargetSelectionMode } from "./types/TargetSelection.js";
-
 /**
  * The plugin options that resolve to a value rather than wire a dependency. They are declared here,
  * beside the resolved shape and the defaults, so one setting is one place to edit.
@@ -23,15 +21,6 @@ export type TranslatorSettingsOptions = {
    * @since 0.17.0
    */
   failedWindowMs?: number;
-  /**
-   * How the target-language field behaves in the translation forms. `'single'` (default) keeps
-   * today's one-locale-per-run behaviour, byte-identical. `'multi'` renders a compact multi-select so
-   * an editor can queue several target locales in one run — the run fans out one translation per
-   * `(document × target locale)`. Opt-in and fully backward-compatible; no schema, no migration.
-   * @default 'single'
-   * @since 0.10.0
-   */
-  targetSelection?: TargetSelectionMode;
 };
 
 /**
@@ -42,12 +31,10 @@ export type TranslatorSettingsOptions = {
 export type TranslatorSettings = {
   basePath: string;
   failedWindowMs: number;
-  targetSelection: TargetSelectionMode;
 };
 
 export const DEFAULT_BASE_PATH = "/translate";
 export const DEFAULT_FAILED_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
-export const DEFAULT_TARGET_SELECTION: TargetSelectionMode = "single";
 
 const failedWindowOf = (failedWindowMs: number | undefined): number => {
   const resolved = failedWindowMs ?? DEFAULT_FAILED_WINDOW_MS;
@@ -62,5 +49,4 @@ const failedWindowOf = (failedWindowMs: number | undefined): number => {
 export const resolveSettings = (options: TranslatorSettingsOptions): TranslatorSettings => ({
   basePath: normalizePath(options.basePath ?? DEFAULT_BASE_PATH),
   failedWindowMs: failedWindowOf(options.failedWindowMs),
-  targetSelection: options.targetSelection ?? DEFAULT_TARGET_SELECTION,
 });

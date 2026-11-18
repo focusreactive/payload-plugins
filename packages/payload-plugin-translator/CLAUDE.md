@@ -155,3 +155,25 @@ only the fields you touch — the real Payload type is assignable to it (structu
 `plugin.ts`, `PluginConfigBuilder.applyTo`, the `ConfigModifier` contract (`types/ConfigModifier.ts`),
 and HTTP route boundaries (`PayloadRequest`) — not in leaf helpers. See
 `server/modules/provenance/Provenance.shapes.ts`.
+
+## Client layers
+
+`src/client` is layered `app > widgets > features > entities > shared`. The rules, enforced by the
+client zones in the repo's `oxlint.config.ts` and by `src/client/__tests__/layersHold.test.ts`:
+
+- **Imports go strictly down.** No feature imports another feature, no widget another widget. An
+  entity takes only types from another entity.
+- **Outside the client,** a file may `import type` from `src/types/**` and import values only from
+  `src/types/wire/**`. It never imports `src/core`, `src/server` or `src/composition`.
+- **Boundary files** (`*.server.ts(x)`, `*.export.ts(x)`) are the exception: they run on the server
+  and may also import `src/server/shared` and `src/core/domain`.
+- **An entity's `model/`, `api/`, `queries/` and `mutations/`** take only types from `payload` and
+  `@payloadcms/*`, so their tests need no Payload mock.
+- **`ofetch` is imported only in `client/shared/api/`.**
+- **Tests** under `__tests__/` are outside the zones.
+
+The admin config comes from `useTranslateKitConfig()` (`client/shared/config/`), which throws
+outside `CacheProvider`: a component test renders under `TranslateKitConfigProvider`.
+
+Every `*.export` class's component path is checked by `widgets/__tests__/componentPaths.test.ts`;
+these paths are public, since a host's import map names them.

@@ -917,3 +917,92 @@ hashed prose plus block, and no run could settle it.
 
 `POST {basePath}/field` is given the same resolved embed table as a document run, so translating one
 rich-text field reaches the blocks inside it.
+
+## 2026-11-13 — the 1.0 admin
+
+The admin screens were rebuilt on one client that reads a document's and a list page's translation
+state from two new routes. The document popover, the bulk form and the target-selection setting
+went with the old screens.
+
+### manual-translations-are-saved-as-drafts
+
+- **Status:** removed (behaviour change)
+- **What:** the "publish on translation" checkbox in the document and bulk forms.
+- **Now:** a translation started from the admin always writes drafts. The editor publishes with
+  Payload's own Publish button.
+- **The route still accepts it.** `POST {basePath}/enqueue` keeps `publish_on_translation`; only
+  the admin stopped sending it. A host that scripts the route is unaffected.
+- **Auto-translate is unaffected.** It publishes what it translated when the source is published,
+  as before.
+
+### target-selection-removed
+
+- **Status:** removed
+- **What:** the `targetSelection` plugin option (`'single' | 'multi'`), the exported
+  `TargetSelectionMode` type, and the third constructor argument of `TranslateDocumentExport` and
+  the second and third (`targetSelection`, `canStop`) of `BulkDocumentTranslationDashboard`.
+- **Why:** the new panels have no single/multi target control. Every target locale is a row with
+  its own state, and a run can cover any number of them.
+- **Migration:** delete `targetSelection` from the plugin options and stop importing
+  `TargetSelectionMode`. A config that still passes `targetSelection` fails to type-check;
+  JavaScript configs that pass it are unaffected, since the value is ignored.
+- **Whether the bulk panel offers Cancel** is now read from the routes that registered, as every
+  other control is, not passed in as `canStop`.
+
+### admin-config-travels-in-client-props
+
+- **Status:** removed (the old shape)
+- **What:** the admin provider (`client/app/cache/CacheProvider`) receives the admin config —
+  `basePath`, `abilities` and per-collection facts — as its `clientProps`. Before,
+  `CacheProviderExport` put `basePath` in `serverProps`, which Payload hands only to server
+  components, so the client provider never saw it and assumed `/translate`.
+- **`CacheProviderExport` takes the whole admin config** instead of a `basePath` string.
+- **Who notices:** a host that renders `CacheProvider` itself rather than through the plugin's
+  registration must now pass those props. The plugin's own registration does it for you.
+- **The hooks throw outside their providers.** `useTranslateKitConfig()` throws
+  `TranslateKitConfigMissingError` and `useTranslationRepository()` throws
+  `TranslationRepositoryMissingError` when no provider is above them, where the config hook used to
+  fall back to `/translate`. A host component that called the config hook outside the admin
+  provider fails loudly instead of talking to the wrong path.
+- **A custom `basePath` now reaches the browser.** It never did before, so an install with a
+  non-default `basePath` had admin requests going to `/translate`.
+
+### duplicate-plugin-routes-refused-at-boot
+
+- **Status:** removed (behaviour change)
+- **What:** two of the plugin's own modules registering the same method and path used to be
+  deduplicated in silence, the first one winning. Boot now fails with `DuplicateEndpointError`
+  naming the route.
+- **Who notices:** a host that lists two modules serving one route — for example the same module
+  twice. List it once.
+- **A host route still wins.** A route in the host's own `config.endpoints` with the same method and
+  path is kept and the plugin's is skipped, as before.
+
+### document-popover-becomes-a-side-panel
+
+- **Status:** removed (UI)
+- **What:** the per-document "Translate" button opened a popover with a form and a status list. It
+  now opens a side panel with one row per target locale, its state and its actions. The public
+  component path (`widgets/translate-document/ui/TranslateDocument.server`) is unchanged, so the
+  host's import map needs no edit.
+- **The bulk dashboard** became a panel on the list's selection, at the same component path.
+
+### admin-read-routes
+
+- **Status:** live (added)
+- **What:** `GET {basePath}/document-state/:collection_slug/:collection_id` and
+  `GET {basePath}/list-state/:collection_slug?ids=…` answer what the panels show.
+- **Access:** they are guarded by the existing actions — `document-status` for the document read,
+  `collection-status` for the list read. No new `TranslatorAction` member; a guard that already
+  answers those two needs no change.
+- **Not served yet by the real modules.** On this branch only the in-memory stub answers them. The
+  real read modules land before 1.0.0 is published.
+
+### translation-status-column
+
+- **Status:** live (added)
+- **What:** `translationStatusColumn()`, a new component for `components`, adds a "Translations"
+  column to every managed collection's list, showing per locale whether it is translated, queued,
+  translating or failed. It is a `ui` field named `translatorStatus`, so it stores nothing; a
+  collection that already has a field by that name is refused at boot.
+- **Additive.** Nothing changes unless a host lists it.

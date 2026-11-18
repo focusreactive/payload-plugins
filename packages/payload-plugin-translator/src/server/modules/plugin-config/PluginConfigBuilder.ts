@@ -1,4 +1,4 @@
-import type { CollectionConfig, Config, Endpoint } from "payload";
+import type { CollectionConfig, Config, Endpoint, Field } from "payload";
 
 import type { AccessGuard } from "../../../types/AccessGuard.js";
 import type { RawPayloadComponentExport } from "../../../types/PayloadComponentExport.js";
@@ -10,6 +10,10 @@ import type { TaskRunnerFactory } from "../task-runner/index.js";
 import type { RunRecordStoreFactory } from "../runs/index.js";
 import type { TranslatorSettings } from "../../../settings.js";
 
+import { CollectionFieldClashError } from "./errors/CollectionFieldClashError.js";
+import { DuplicateEndpointError } from "./errors/DuplicateEndpointError.js";
+import { routeKey } from "./routeKey.js";
+import type { RouteKey } from "./routeKey.js";
 import type {
   CollectionAdminSlot,
   ComponentContext,
@@ -17,14 +21,20 @@ import type {
   ConfigTimeContext,
 } from "./types.js";
 
+/** What a provider made last may read: the config every modifier has written, and the plugin's own routes. */
+type AppliedConfig = {
+  config: Config;
+  endpoints: readonly Endpoint[];
+};
+
+type MakeAdminProvider = (applied: AppliedConfig) => RawPayloadComponentExport;
+
 type CollectionComponent = {
   slot: CollectionAdminSlot;
   make: (collection: CollectionConfig) => RawPayloadComponentExport;
 };
 
 export type PluginConfigBuilderDeps = ConfigTimeContext;
-
-const endpointKey = (endpoint: Endpoint): string => `${endpoint.method} ${endpoint.path}`;
 
 /** `serverProps` is left out, so the same control registered twice collapses to one. */
 const componentKey = (slot: CollectionAdminSlot, component: RawPayloadComponentExport): string =>
@@ -55,6 +65,18 @@ function attachToSlot(
   slot satisfies never;
 }
 
+/** Top level only: a clash inside a row or an unnamed tab is refused by Payload's own sanitizing. */
+const hasFieldNamed = (collection: CollectionConfig, name: string): boolean =>
+  collection.fields.some((field) => "name" in field && field.name === name);
+
+/** Stamped on every field the plugin adds, so a second application to the same collection objects recognises its own. */
+const PLUGIN_FIELD_MARK = "translatorKitField";
+
+const isPluginField = (collection: CollectionConfig, name: string): boolean =>
+  collection.fields.some(
+    (field) => "name" in field && field.name === name && field.custom?.[PLUGIN_FIELD_MARK] === true
+  );
+
 /** The only place that mutates the Payload `config`; modules and components merely describe contributions. */
 export class PluginConfigBuilder implements ComponentContext, ModuleContext {
   readonly collections: CollectionConfig[];
@@ -67,8 +89,10 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
   readonly walk: LanguageTable;
 
   private readonly endpoints: Endpoint[] = [];
+  private readonly endpointKeys = new Set<RouteKey>();
   private readonly collectionComponents: CollectionComponent[] = [];
-  private readonly adminProviders: RawPayloadComponentExport[] = [];
+  private readonly collectionFields: (() => Field)[] = [];
+  private readonly adminProviders: MakeAdminProvider[] = [];
   private readonly configModifiers: ConfigModifier[] = [];
 
   constructor(deps: PluginConfigBuilderDeps) {
@@ -83,7 +107,12 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
   }
 
   addEndpoints(endpoints: Endpoint[]): void {
-    this.endpoints.push(...endpoints);
+    for (const endpoint of endpoints) {
+      const key = routeKey(endpoint);
+      if (this.endpointKeys.has(key)) throw new DuplicateEndpointError(key);
+      this.endpointKeys.add(key);
+      this.endpoints.push(endpoint);
+    }
   }
 
   addCollectionComponent(
@@ -93,9 +122,13 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
     this.collectionComponents.push({ slot, make });
   }
 
+  addCollectionField(make: () => Field): void {
+    this.collectionFields.push(make);
+  }
+
   /** Register a global admin provider (e.g. the client cache provider). */
-  addAdminProvider(provider: RawPayloadComponentExport): void {
-    this.adminProviders.push(provider);
+  addAdminProvider(make: MakeAdminProvider): void {
+    this.adminProviders.push(make);
   }
 
   /** Register a config modifier (e.g. the runner's jobs/autorun/onInit setup). */
@@ -110,6 +143,7 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
 
     this.attachAdminProviders(result);
     this.attachCollectionComponents(result);
+    this.attachCollectionFields(result);
     this.registerEndpoints(result);
     return result;
   }
@@ -119,7 +153,8 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
     if (!config.admin) config.admin = {};
     if (!config.admin.components) config.admin.components = {};
     if (!config.admin.components.providers) config.admin.components.providers = [];
-    config.admin.components.providers.push(...this.adminProviders);
+    const applied: AppliedConfig = { config, endpoints: this.endpoints };
+    config.admin.components.providers.push(...this.adminProviders.map((make) => make(applied)));
   }
 
   private attachCollectionComponents(config: Config): void {
@@ -138,15 +173,32 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
     });
   }
 
+  private attachCollectionFields(config: Config): void {
+    if (this.collectionFields.length === 0) return;
+    const managed = new Set(this.collections.map((collection) => collection.slug));
+    config.collections?.forEach((collection) => {
+      if (!managed.has(collection.slug)) return;
+      for (const make of this.collectionFields) {
+        const field = make();
+        if ("name" in field && isPluginField(collection, field.name)) continue;
+        if ("name" in field && hasFieldNamed(collection, field.name)) {
+          throw new CollectionFieldClashError(collection.slug, field.name);
+        }
+        collection.fields.push({
+          ...field,
+          custom: { ...field.custom, [PLUGIN_FIELD_MARK]: true },
+        });
+      }
+    });
+  }
+
   private registerEndpoints(config: Config): void {
     if (this.endpoints.length === 0) return;
     if (!config.endpoints) config.endpoints = [];
 
-    const seen = new Set(config.endpoints.map(endpointKey));
+    const hostRoutes = new Set(config.endpoints.map(routeKey));
     for (const endpoint of this.endpoints) {
-      const key = endpointKey(endpoint);
-      if (seen.has(key)) continue;
-      seen.add(key);
+      if (hostRoutes.has(routeKey(endpoint))) continue;
       config.endpoints.push(endpoint);
     }
   }

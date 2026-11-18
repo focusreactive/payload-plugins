@@ -1,4 +1,4 @@
-import type { CollectionConfig, Endpoint } from "payload";
+import type { CollectionConfig, Endpoint, Field } from "payload";
 
 import type { AccessGuard } from "../../../types/AccessGuard.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
@@ -29,13 +29,17 @@ export type ConfigTimeContext = {
  * @internal
  */
 export interface ModuleContext extends ConfigTimeContext {
-  /** Deduplicated by method + path when applied. */
+  /**
+   * A method + path another of the plugin's contributions already claimed throws
+   * `DuplicateEndpointError`; one the host's own config already holds stays the host's.
+   */
   addEndpoints(endpoints: Endpoint[]): void;
   addConfigModifier(modifier: ConfigModifier): void;
 }
 
 /**
- * What an admin component may contribute: a slot on each managed collection, nothing on the server.
+ * What an admin component may contribute: a slot or a field on each managed collection, nothing on
+ * the server.
  * @internal
  */
 export interface ComponentContext extends ConfigTimeContext {
@@ -43,6 +47,11 @@ export interface ComponentContext extends ConfigTimeContext {
     slot: CollectionAdminSlot,
     make: (collection: CollectionConfig) => RawPayloadComponentExport
   ): void;
+  /**
+   * A list column is a field. Called once per collection, because Payload writes into the field
+   * configs it sanitizes. A name the collection already has throws `CollectionFieldClashError`.
+   */
+  addCollectionField(make: () => Field): void;
 }
 
 /**
