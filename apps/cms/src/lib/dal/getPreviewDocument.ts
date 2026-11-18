@@ -9,10 +9,12 @@ import type { Config } from "@/payload-types";
 import { PAGE_RENDER_DEPTH } from "./getPageBySlug";
 
 const PREVIEW_DEPTH: Record<StandalonePreviewCollection, number> = {
-  footer: 2,
+  footer: 1,
   globalBlock: PAGE_RENDER_DEPTH,
-  header: 2,
+  header: 1,
 };
+
+const LINKED_PAGE_FIELDS = { breadcrumbs: true, slug: true } as const;
 
 export async function getPreviewDocument<TCollection extends StandalonePreviewCollection>({
   collection,
@@ -39,6 +41,7 @@ export async function getPreviewDocument<TCollection extends StandalonePreviewCo
     id,
     locale: await resolveLocale(locale),
     overrideAccess: false,
+    populate: { page: LINKED_PAGE_FIELDS },
     user,
   });
 
