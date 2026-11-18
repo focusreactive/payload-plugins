@@ -8,13 +8,12 @@ import type { Config } from "@/payload-types";
 
 import { PAGE_RENDER_DEPTH } from "./getPageBySlug";
 
-/**
- * Reads the latest draft of a header, footer or global block for its standalone preview page.
- *
- * Only an editor gets it: the request must be in draft mode (entered through `/next/preview`,
- * which checks the preview secret and the admin session) and carry a signed-in user, whose
- * access the read goes through. Anyone else gets `null`, so the preview URL is a 404 to them.
- */
+const PREVIEW_DEPTH: Record<StandalonePreviewCollection, number> = {
+  footer: 2,
+  globalBlock: PAGE_RENDER_DEPTH,
+  header: 2,
+};
+
 export async function getPreviewDocument<TCollection extends StandalonePreviewCollection>({
   collection,
   id,
@@ -34,7 +33,7 @@ export async function getPreviewDocument<TCollection extends StandalonePreviewCo
   const doc = await payload.findByID({
     collection,
     context: { visualEditing: true },
-    depth: collection === "globalBlock" ? PAGE_RENDER_DEPTH : 2,
+    depth: PREVIEW_DEPTH[collection],
     disableErrors: true,
     draft: true,
     id,

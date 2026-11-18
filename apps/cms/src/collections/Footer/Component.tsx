@@ -10,10 +10,6 @@ import type { Footer as FooterType, Media } from "@/payload-types";
 
 interface Props {
   data: FooterType;
-  /**
-   * Keeps the visual editing markers of a draft read. Only the footer's own preview sets it:
-   * on a page the footer is a separate document, so only the page's own fields stay editable.
-   */
   editable?: boolean;
 }
 

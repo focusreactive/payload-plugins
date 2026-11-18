@@ -24,10 +24,8 @@ interface Args {
   }>;
 }
 
-/**
- * Preview of a document that has no URL of its own: a header, a footer or a global block.
- * Only editors in draft mode get a document; everyone else gets a 404, see `getPreviewDocument`.
- */
+const SpaceForDropdownMenus = () => <main className="min-h-[70vh]" />;
+
 export default async function StandalonePreviewPage({ params }: Args) {
   const { collection: segment, id, locale } = await params;
   const docId = Number(id);
@@ -46,8 +44,7 @@ export default async function StandalonePreviewPage({ params }: Args) {
       return (
         <>
           <Header data={header} disableActive editable />
-          {/* Room below the header so its dropdown menus open over a page-like canvas. */}
-          <main className="min-h-[70vh]" />
+          <SpaceForDropdownMenus />
         </>
       );
     }

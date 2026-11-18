@@ -1,7 +1,5 @@
 import { stripMarkers } from "@focus-reactive/payload-plugin-visual-editing";
 
-// The plugin keeps the identity of uploads, relationships and rich text in `_meta`, which
-// `stripMarkers` leaves in place on purpose.
 const VISUAL_EDITING_META_KEY = "_meta";
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {
@@ -21,10 +19,5 @@ const withoutMeta = (value: unknown): unknown => {
   );
 };
 
-/**
- * Returns a copy of a draft read with nothing left for visual editing to target: no text markers
- * and no `_meta`. Use it where a separate document (a header, a footer) is rendered inside the
- * document being edited, so only the edited document's own fields are editable in its preview.
- */
 export const withoutVisualEditing = <Value>(value: Value): Value =>
   withoutMeta(stripMarkers(value)) as Value;

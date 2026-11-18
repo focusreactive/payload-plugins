@@ -3,10 +3,6 @@ import type { CollectionConfig } from "payload";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 
-/**
- * Documents that have no URL of their own and are previewed on
- * `/[locale]/preview/<segment>/<id>`, keyed by that URL segment.
- */
 export const STANDALONE_PREVIEW_COLLECTIONS = {
   footer: "footer",
   "global-block": "globalBlock",
@@ -41,7 +37,6 @@ const standalonePreviewPath = (
 
 type AdminConfig = NonNullable<CollectionConfig["admin"]>;
 
-/** Live preview + preview button config for a standalone preview collection. */
 export const createStandalonePreview = (
   collection: StandalonePreviewCollection
 ): Required<Pick<AdminConfig, "livePreview" | "preview">> => ({

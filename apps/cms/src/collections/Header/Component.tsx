@@ -18,10 +18,6 @@ import { HeaderClient } from "./HeaderClient";
 
 interface Props {
   data: HeaderType;
-  /**
-   * Keeps the visual editing markers of a draft read. Only the header's own preview sets it:
-   * on a page the header is a separate document, so only the page's own fields stay editable.
-   */
   editable?: boolean;
   disableActive?: boolean;
 }

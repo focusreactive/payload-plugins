@@ -16,8 +16,6 @@ export const GlobalBlockContent = ({ globalBlock }: { globalBlock: GlobalBlock }
 };
 
 // Re-fetched because the page query spends one depth level on the slot, and inner blocks need the full depth.
-// Read without visual editing markers: on a page the global block is a separate document, so only
-// the page's own fields are editable. Its own preview reads it through `getPreviewDocument`.
 export const GlobalBlockRenderer = async ({
   locale,
   referenceId,
