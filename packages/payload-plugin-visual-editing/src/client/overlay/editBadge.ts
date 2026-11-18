@@ -67,7 +67,7 @@ export function createEditBadge(): EditBadge {
   let currentClickHandler: ((event: MouseEvent) => void) | null = null;
 
   const reposition = (target: HTMLElement) => {
-    placeFrame(anchor, target.getBoundingClientRect(), FRAME_ACTIVE_WIDTH);
+    placeFrame(anchor, target, FRAME_ACTIVE_WIDTH);
   };
 
   return {

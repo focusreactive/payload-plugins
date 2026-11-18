@@ -161,6 +161,14 @@ Open a document in the admin, open **Live Preview** and set the toggle to **Alwa
 
 To leave draft mode in a normal browser tab, open `/next/exit-preview`.
 
+Frames and the badge are drawn above the whole page, so they would also cross a sticky header or another bar that stays over the content while it scrolls. Mark such an element with `data-ve-cover` and the part of every frame and badge that lies under it is hidden:
+
+```tsx
+<header className="sticky top-0" data-ve-cover>
+```
+
+The cover hides nothing of its own content: a field rendered inside it keeps its whole frame.
+
 On a draft page where the overlay does not run (the toggle is **Off** and the page passes `instantPreview={false}`, or `framedOnly` outside the Live Preview), the markers are still removed from the text, every attribute, the title and the meta tags of `<head>`, also from content rendered later. There are no outlines and no instant preview there.
 
 ### Handing the field to another admin component

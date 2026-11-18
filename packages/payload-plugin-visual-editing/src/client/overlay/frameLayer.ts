@@ -4,15 +4,23 @@ import {
   FRAME_IDLE_WIDTH,
   FRAME_RADIUS,
 } from "./constants.js";
+import { clipUnderCovers, measureCovers } from "./covers.js";
 
-/** Places a box so its border lies just outside `rect`. */
-export const placeFrame = (box: HTMLElement, rect: DOMRect, borderWidth: number): void => {
+export const placeFrame = (
+  box: HTMLElement,
+  target: HTMLElement,
+  borderWidth: number,
+  covers: ReadonlyMap<Element, DOMRect> = measureCovers()
+): void => {
+  const rect = target.getBoundingClientRect();
   const hidden = rect.width === 0 && rect.height === 0;
   box.style.display = hidden ? "none" : "block";
   if (hidden) return;
-  box.style.transform = `translate(${rect.left - borderWidth}px, ${rect.top - borderWidth}px)`;
+  const origin = { x: rect.left - borderWidth, y: rect.top - borderWidth };
+  box.style.transform = `translate(${origin.x}px, ${origin.y}px)`;
   box.style.width = `${rect.width + borderWidth * 2}px`;
   box.style.height = `${rect.height + borderWidth * 2}px`;
+  clipUnderCovers(box, target, origin, covers);
 };
 
 export interface FrameLayer {
@@ -44,8 +52,9 @@ export function createFrameLayer(): FrameLayer {
 
   const repositionAll = () => {
     frameRequest = 0;
+    const covers = measureCovers();
     for (const [target, frame] of frames) {
-      placeFrame(frame, target.getBoundingClientRect(), FRAME_IDLE_WIDTH);
+      placeFrame(frame, target, FRAME_IDLE_WIDTH, covers);
     }
   };
 
@@ -73,7 +82,7 @@ export function createFrameLayer(): FrameLayer {
         borderRadius: FRAME_RADIUS,
         pointerEvents: "none",
       } as Partial<CSSStyleDeclaration>);
-      placeFrame(frame, target.getBoundingClientRect(), FRAME_IDLE_WIDTH);
+      placeFrame(frame, target, FRAME_IDLE_WIDTH);
       layer.append(frame);
       frames.set(target, frame);
       resizes?.observe(target);
