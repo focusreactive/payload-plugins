@@ -13,7 +13,7 @@ import {
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
-import { anyone, author, or, user, superAdmin } from "@/lib/access";
+import { anyone, author, authorDraft, or, user, superAdmin } from "@/lib/access";
 import {
   createLocalizedDefault,
   createLocalizedRichText,
@@ -34,10 +34,10 @@ import { revalidateDelete, revalidatePost } from "./hooks/revalidatePost";
 
 export const Posts: CollectionConfig<"posts"> = {
   access: {
-    create: or(superAdmin, user, author),
+    create: or(superAdmin, user, authorDraft),
     delete: or(superAdmin, user, author),
     read: anyone,
-    update: or(superAdmin, user, author),
+    update: or(superAdmin, user, authorDraft),
   },
   admin: {
     components: {
