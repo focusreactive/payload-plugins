@@ -3,6 +3,7 @@ import type { VeDocument, VeOpenFieldMessage } from "../../shared/protocol.js";
 import type { VeIdentity } from "../../shared/shared.js";
 import type { BadgeAction } from "../overlay/editBadge.js";
 import type { FieldMatch, FieldTracker } from "../overlay/fieldTracker.js";
+import type { ClickTaken } from "../overlay/targetRegistry.js";
 import type { EditStatus, OnDelivered } from "./editTransport.js";
 import type { RichTextEditorLoader } from "./richTextEditor.js";
 import type { SaveStatus } from "./saveStatus.js";
@@ -14,8 +15,9 @@ import { isPlainObject } from "../../shared/plainObject.js";
 import { VE_FIELD_EDIT_REFUSED_TYPE, VE_MESSAGE_TYPE } from "../../shared/protocol.js";
 import { veIdentityOf } from "../../shared/shared.js";
 import { veDocumentOf } from "../../shared/veDocument.js";
-import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
+import { adminOriginOf, findAdminWindow, isFramedByAdmin } from "../adminWindow.js";
 import { listenToSaves } from "../saveEvents.js";
+import { CLICK_LEFT_TO_THE_PAGE } from "../overlay/targetRegistry.js";
 import { createEditTransport } from "./editTransport.js";
 import { createImageReplacement } from "./imageReplacement.js";
 import { createRichTextEditing } from "./richTextEditing.js";
@@ -34,6 +36,7 @@ export type InlineEditingCtx = {
 export type OpenForms = {
   holdsValueOf(document: VeDocument, key: string): boolean;
   holdsFormOf(document: VeDocument): boolean;
+  holdsAnyForm(): boolean;
 };
 
 const PAGE_LEFT_EVENT = "pagehide";
@@ -41,11 +44,20 @@ const VISIBILITY_EVENT = "visibilitychange";
 const HIDDEN = "hidden";
 
 export interface InlineEditing {
-  editInPlace(target: HTMLElement, event: MouseEvent, openField: () => void): boolean;
+  editInPlace(target: HTMLElement, event: MouseEvent, openField: () => void): ClickTaken;
   actionOf(target: HTMLElement): BadgeAction | null;
   sync(): void;
   dispose(): void;
 }
+
+const CONTROL = "a, button";
+
+const isBesideTheTextOfAControl = ({ textNode }: FieldMatch, event: MouseEvent): boolean => {
+  const textElement = textNode.parentElement;
+  const control = textElement?.closest(CONTROL);
+  if (!textElement || !control || control === textElement) return false;
+  return !(event.target instanceof Node && textElement.contains(event.target));
+};
 
 const isPlainTextOfOneLocale = ({ holder, locale, richText }: FieldMatch): boolean =>
   holder !== undefined && richText === undefined && locale === undefined;
@@ -62,7 +74,14 @@ export function createInlineEditing(
     saveStatus?.show(status, refusal);
   };
 
-  const transport = createEditTransport(getCtx, showStatus);
+  const findAdmin = (): Window | null => {
+    const adminWindow = findAdminWindow(window);
+    if (!adminWindow) return null;
+    const isTold = isFramedByAdmin(window) || (openForms?.holdsAnyForm() ?? false);
+    return isTold ? adminWindow : null;
+  };
+
+  const transport = createEditTransport(getCtx, showStatus, window, findAdmin);
   const holdsFormOf = openForms && ((document: VeDocument) => openForms.holdsFormOf(document));
 
   const showInForm = (field: VeIdentity) => {
@@ -98,6 +117,7 @@ export function createInlineEditing(
   const richTextEditing = createRichTextEditing({
     dropUnsaved: transport.drop,
     endOtherEdits: () => textEditing.commit(),
+    findAdmin,
     flush: transport.flush,
     getCtx,
     holdUnsaved: transport.hold,
@@ -108,6 +128,7 @@ export function createInlineEditing(
     tracker,
   });
   const imageReplacement = createImageReplacement({
+    findAdmin,
     getCtx,
     holdsFormOf,
     isInsideRichText: richTextEditing.isInsideRichText,
@@ -119,7 +140,7 @@ export function createInlineEditing(
   saveStatus = createSaveStatus(document, transport.retry);
 
   const isWrittenSomewhere = (match: FieldMatch, key: string): boolean => {
-    if (!findAdminWindow(window)) return true;
+    if (!findAdmin()) return true;
     return openForms?.holdsValueOf(veDocumentOf(match), key) ?? false;
   };
 
@@ -204,10 +225,12 @@ export function createInlineEditing(
     },
     editInPlace(target, event, openField) {
       if (!getCtx().inlineEditing) return false;
-      if (textEditing.isEditing(target)) return true;
       const match = fields.get(target);
       const key = match && fieldKeyOfMarker(match);
-      if (match && key && isWrittenSomewhere(match, key)) return editTextInPlace(match, event);
+      const isEditedHere = match && key && isWrittenSomewhere(match, key);
+      if (isEditedHere && isBesideTheTextOfAControl(match, event)) return CLICK_LEFT_TO_THE_PAGE;
+      if (textEditing.isEditing(target)) return true;
+      if (isEditedHere) return editTextInPlace(match, event);
       return richTextEditing.editInPlace(target, event, openField);
     },
     sync() {

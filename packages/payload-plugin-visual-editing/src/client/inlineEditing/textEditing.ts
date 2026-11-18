@@ -1,8 +1,8 @@
 import type { FieldMatch, FieldTracker } from "../overlay/fieldTracker.js";
 import type { Point } from "./caret.js";
 
-import { ACCENT_VAR, DEFAULT_ACCENT } from "../overlay/constants.js";
 import { caretOffsetIn, placeCaret, placeCaretAtPoint } from "./caret.js";
+import { showEditingFrame } from "./editingFrame.js";
 
 export const DATA_VE_EDITING_ATTR = "data-ve-editing";
 
@@ -29,6 +29,9 @@ type Edit = {
   caret: number;
   wasDelivered: boolean;
   restored: ReadonlyMap<string, string | null>;
+  breakLinesAsThePageDid(): void;
+  hideFrame(): void;
+  breakLinesAsTyped(): void;
   stopListening(): void;
 };
 
@@ -44,8 +47,19 @@ const INSERT_TEXT_COMMAND = "insertText";
 const PLAIN_TEXT_FORMAT = "text/plain";
 const EDITING_ATTRS = [EDITABLE_ATTR, SPELLCHECK_ATTR, DATA_VE_EDITING_ATTR];
 const LINE_BREAK_TAG = "BR";
+const STYLE_ATTR = "style";
+const LINE_BREAKING_PROPERTIES = ["overflow-wrap", "line-break"] as const;
 const STYLE_ID = "ve-inline-editing-style";
-const EDITING_STYLE = `[${DATA_VE_EDITING_ATTR}]{cursor:text !important}[${DATA_VE_EDITING_ATTR}]:not(:hover){outline:2px solid var(${ACCENT_VAR}, ${DEFAULT_ACCENT}) !important;outline-offset:2px !important}`;
+const EDITING_STYLE = `[${DATA_VE_EDITING_ATTR}]{cursor:text !important;outline:none !important}`;
+const INSERT_TEXT_INPUT = "insertText";
+const FIRST_INPUT_EVENT = "beforeinput";
+const EVENTS_BEFORE_THE_FIRST_INPUT = [
+  "keydown",
+  "paste",
+  "cut",
+  "drop",
+  "compositionstart",
+] as const;
 
 const takesPlainTextOnly = (doc: Document): boolean => {
   const probe = doc.createElement("div");
@@ -72,6 +86,44 @@ const insertText = (doc: Document, text: string): void => {
 
 const isInsideButton = (editedElement: Element): boolean =>
   editedElement.closest("button") !== null;
+
+const keepLineBreaking = (element: HTMLElement): (() => void) => {
+  const computed = element.ownerDocument.defaultView?.getComputedStyle(element);
+  const kept = LINE_BREAKING_PROPERTIES.map((name) => ({
+    inline: element.style.getPropertyValue(name),
+    name,
+    onThePage: computed?.getPropertyValue(name) ?? "",
+    priority: element.style.getPropertyPriority(name),
+  }));
+  for (const { name, onThePage } of kept) {
+    if (onThePage) element.style.setProperty(name, onThePage);
+  }
+  return () => {
+    for (const { inline, name, priority } of kept)
+      element.style.setProperty(name, inline, priority);
+    if (element.getAttribute(STYLE_ATTR) === "") element.removeAttribute(STYLE_ATTR);
+  };
+};
+
+const keepLinesUntilTheFirstChange = (element: HTMLElement): (() => void) => {
+  const firstChange = new AbortController();
+  const untilTheFirstChange = { signal: firstChange.signal };
+  const breakLinesAsTyped = () => {
+    if (firstChange.signal.aborted) return;
+    firstChange.abort();
+    if (element.hasAttribute(EDITABLE_ATTR)) element.setAttribute(EDITABLE_ATTR, PLAIN_TEXT_ONLY);
+  };
+  const typeOnceLinesBreak = (event: InputEvent) => {
+    breakLinesAsTyped();
+    if (event.inputType !== INSERT_TEXT_INPUT || typeof event.data !== "string") return;
+    event.preventDefault();
+    insertText(element.ownerDocument, event.data);
+  };
+  for (const name of EVENTS_BEFORE_THE_FIRST_INPUT)
+    element.addEventListener(name, breakLinesAsTyped, untilTheFirstChange);
+  element.addEventListener(FIRST_INPUT_EVENT, typeOnceLinesBreak, untilTheFirstChange);
+  return breakLinesAsTyped;
+};
 
 export const addEditingStyle = (doc: Document): void => {
   if (doc.querySelector(`#${STYLE_ID}`)) return;
@@ -104,7 +156,10 @@ export function createTextEditing({
     if (!ended) return;
     editing = null;
     ended.stopListening();
+    ended.hideFrame();
+    ended.breakLinesAsTyped();
     setAttributes(ended.editedElement, ended.restored);
+    ended.breakLinesAsThePageDid();
     tracker.endEdit(ended.match, text);
     flush();
     if (ended.editedElement.ownerDocument.activeElement === ended.editedElement)
@@ -195,7 +250,10 @@ export function createTextEditing({
       const text = textOf(editedElement);
       const edit: Edit = {
         caret: text.length,
+        breakLinesAsThePageDid: keepLineBreaking(editedElement),
+        breakLinesAsTyped: () => undefined,
         editedElement,
+        hideFrame: () => undefined,
         initialText: text,
         match,
         restored: new Map(EDITING_ATTRS.map((name) => [name, editedElement.getAttribute(name)])),
@@ -204,10 +262,12 @@ export function createTextEditing({
         wasDelivered: false,
       };
       addEditingStyle(doc);
-      editedElement.setAttribute(EDITABLE_ATTR, isPlainTextOnly ? PLAIN_TEXT_ONLY : RICH_TEXT);
+      editedElement.setAttribute(EDITABLE_ATTR, RICH_TEXT);
+      if (isPlainTextOnly) edit.breakLinesAsTyped = keepLinesUntilTheFirstChange(editedElement);
       editedElement.setAttribute(SPELLCHECK_ATTR, SPELLCHECK_OFF);
       editedElement.setAttribute(DATA_VE_EDITING_ATTR, "");
       edit.stopListening = listen(edit, isPlainTextOnly);
+      edit.hideFrame = showEditingFrame(editedElement);
       editing = edit;
       editedElement.focus();
       placeCaretAtPoint(editedElement, point);

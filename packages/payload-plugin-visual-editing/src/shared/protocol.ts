@@ -173,6 +173,7 @@ export const VE_PICK_MEDIA_TYPE = "ve:pick-media";
 
 export type VePickMediaMessage = VeEditedField & {
   type: typeof VE_PICK_MEDIA_TYPE;
+  mediaId?: number | string;
 };
 
 export const VE_MEDIA_PICK_CANCELLED_TYPE = "ve:media-pick-cancelled";

@@ -697,14 +697,15 @@ describe("editing rich text on the page", () => {
       expect(open).not.toHaveBeenCalled();
     });
 
-    it("saves nothing while the edit runs and says that the changes are unsaved", async () => {
+    it("saves what was typed after a pause, while the edit runs", async () => {
       const twin = await beginEdit();
 
       typeInto(twin, "Hello there");
-      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS * 2);
-
-      expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([]);
       expect(statusLabel()).toBe("Unsaved changes");
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+
+      expect(requestsTo(VE_FIELD_EDIT_PATH)).toHaveLength(1);
+      expect(statusLabel()).toBe("Saved");
       expect(twin.hasAttribute(DATA_VE_EDITING_ATTR)).toBe(true);
     });
 

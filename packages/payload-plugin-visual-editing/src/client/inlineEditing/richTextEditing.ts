@@ -29,6 +29,7 @@ import {
   VE_RICH_TEXT_STRUCTURE_TYPE,
   VE_RICH_TEXT_VALUE_PATH,
 } from "../../shared/protocol.js";
+import { fixedNodesOf } from "../../shared/richText/editableNodes.js";
 import { readFormats } from "../../shared/richText/formats.js";
 import { isRichTextNodeKey } from "../../shared/richText/nodeKey.js";
 import { readPostedEditorState } from "../../shared/richText/postedEditorState.js";
@@ -38,6 +39,8 @@ import {
   keyedFieldAddressOf,
   veDocumentOf,
 } from "../../shared/veDocument.js";
+import type { FindAdminWindow } from "../adminWindow.js";
+
 import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 import { readMarkerFromAttrs } from "../overlay/markerExtractor.js";
 import { textPositionAtPoint } from "./caret.js";
@@ -62,13 +65,14 @@ export type RichTextEditingDeps = {
   tracker: FieldTracker;
   getCtx: () => RichTextEditingCtx;
   holdsFormOf: ((document: VeDocument) => boolean) | null;
-  send(edit: VeRichTextEdit): void;
+  send(edit: VeRichTextEdit, onDelivered?: () => void): void;
   holdUnsaved(edit: VeRichTextEdit): void;
   dropUnsaved(field: VeEditedField): void;
   isUnsaved(field: VeEditedField): boolean;
   flush(): void;
   showInForm(field: VeIdentity): void;
   endOtherEdits(): void;
+  findAdmin?: FindAdminWindow;
 };
 
 export interface RichTextEditing {
@@ -99,6 +103,9 @@ type Edit = {
   held: Held;
   latest: VeEditorState;
   wasChanged: boolean;
+  wasDelivered: boolean;
+  showsWhatWasSaved: boolean;
+  stopWatchingWrapper(): void;
   previous: ReadOnlyTwin | null;
   session: EditSession;
   showAgain(): void;
@@ -142,6 +149,9 @@ const heldOf = (field: VeEditedField, answer: unknown): Held | null => {
   return state && formats ? { field, formats, state } : null;
 };
 
+const holdsEveryFixedNode = ({ held }: Edit, state: VeEditorState): boolean =>
+  fixedNodesOf(state).length === fixedNodesOf(held.state).length;
+
 const clickWrapperInstead = (wrapper: HTMLElement, event: MouseEvent) => {
   const { clientX, clientY } = event;
   const click = new MouseEvent("click", { bubbles: true, cancelable: true, clientX, clientY });
@@ -151,6 +161,7 @@ const clickWrapperInstead = (wrapper: HTMLElement, event: MouseEvent) => {
 export function createRichTextEditing({
   dropUnsaved,
   endOtherEdits,
+  findAdmin = () => findAdminWindow(window),
   flush,
   getCtx,
   holdUnsaved,
@@ -192,7 +203,7 @@ export function createRichTextEditing({
   };
 
   const isWrittenSomewhere = (field: VeEditedField): boolean =>
-    !findAdminWindow(window) || (holdsFormOf?.(veDocumentOf(field)) ?? false);
+    !findAdmin() || (holdsFormOf?.(veDocumentOf(field)) ?? false);
 
   const fieldOf = (wrapper: HTMLElement): VeEditedField | null => {
     const marker = readMarkerFromAttrs(wrapper);
@@ -260,14 +271,20 @@ export function createRichTextEditing({
   const followTyping = (edit: Edit, state: VeEditorState) => {
     edit.latest = state;
     edit.wasChanged = true;
+    edit.showsWhatWasSaved = false;
     const change = { ...edit.held.field, state };
-    if (findAdminWindow(window)) send(change);
-    else holdUnsaved(change);
+    if (findAdmin() || holdsEveryFixedNode(edit, state)) {
+      send(change, () => {
+        edit.wasDelivered = true;
+      });
+    } else {
+      holdUnsaved(change);
+    }
   };
 
   const tellAdminTheEditEnded = (field: VeEditedField) => {
     const message: VeRichTextEditEndedMessage = { ...field, type: VE_RICH_TEXT_EDIT_ENDED_TYPE };
-    findAdminWindow(window)?.postMessage(message, adminOriginOf(getCtx().adminOrigin));
+    findAdmin()?.postMessage(message, adminOriginOf(getCtx().adminOrigin));
   };
 
   const end = (keepsWhatWasTyped: boolean) => {
@@ -276,8 +293,13 @@ export function createRichTextEditing({
     editing = null;
     forget(addressOf(ended.held.field));
     const isOnThePage = ended.twin.isConnected && ended.wrapper.isConnected;
+    ended.stopWatchingWrapper();
     const keepsTwin =
-      keepsWhatWasTyped && isOnThePage && ended.wasChanged && !findAdminWindow(window);
+      keepsWhatWasTyped &&
+      isOnThePage &&
+      ended.wasChanged &&
+      !ended.showsWhatWasSaved &&
+      !findAdmin();
     const copy = keepsTwin ? readOnlyCopyOf(ended.twin) : null;
     ended.session.end();
     if (copy) {
@@ -286,6 +308,7 @@ export function createRichTextEditing({
     } else {
       ended.twin.remove();
       ended.showAgain();
+      if (ended.showsWhatWasSaved) dropReadOnlyTwin(ended.wrapper);
     }
     flush();
     tellAdminTheEditEnded(ended.held.field);
@@ -293,9 +316,9 @@ export function createRichTextEditing({
 
   const commit = () => end(true);
 
-  const takeBack = ({ held: { field, state } }: Edit) => {
-    if (findAdminWindow(window)) send({ ...field, state });
-    else dropUnsaved(field);
+  const takeBack = ({ held: { field, state }, wasDelivered }: Edit) => {
+    dropUnsaved(field);
+    if (findAdmin() || wasDelivered) send({ ...field, state });
   };
 
   const cancel = () => {
@@ -355,14 +378,21 @@ export function createRichTextEditing({
       showAgain();
       return false;
     }
+    const rendersOfTheSite = new MutationObserver(() => {
+      if (editing?.wrapper === wrapper) editing.showsWhatWasSaved = !isUnsaved(ready.field);
+    });
+    rendersOfTheSite.observe(wrapper, WRAPPER_CONTENT);
     editing = {
       held: ready,
       latest: ready.state,
       previous,
       session,
       showAgain,
+      showsWhatWasSaved: false,
+      stopWatchingWrapper: () => rendersOfTheSite.disconnect(),
       twin,
       wasChanged: false,
+      wasDelivered: false,
       wrapper,
     };
     showInForm({ ...marker, locale: marker.locale ?? getCtx().locale });
@@ -429,7 +459,7 @@ export function createRichTextEditing({
   const ask = (field: VeEditedField) => {
     askedAt.set(addressOf(field), Date.now());
     loadEditor();
-    const adminWindow = findAdminWindow(window);
+    const adminWindow = findAdmin();
     if (adminWindow) askAdmin(adminWindow, field);
     else void askEndpoint(field);
   };
@@ -545,7 +575,7 @@ export function createRichTextEditing({
   return {
     commit,
     commitBeforeThePageIsHidden() {
-      if (!findAdminWindow(window)) commit();
+      if (!findAdmin()) commit();
     },
     dispose() {
       commit();

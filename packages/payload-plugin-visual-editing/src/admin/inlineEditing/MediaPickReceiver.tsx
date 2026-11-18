@@ -22,7 +22,7 @@ import { idOf } from "../../shared/veDocument.js";
 import { useEditableSchema } from "../instantPreview/useEditableSchema.js";
 import { usePreviewWindow } from "../instantPreview/usePreviewWindow.js";
 import { openDocumentOf } from "../openField/openDocument.js";
-import { fetchPickedMedia, mediaPickOf, pickOfDocument } from "./mediaPick.js";
+import { chosenMediaOf, fetchPickedMedia, mediaPickOf, pickOfDocument } from "./mediaPick.js";
 
 type AskedPick = MediaPick & { request: number };
 
@@ -77,6 +77,61 @@ export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: s
   const isDrawerOpen = asked !== null;
   const requests = useRef(0);
 
+  const forgetPick = useCallback(() => setAsked(null), []);
+
+  const tellPickCancelled = useCallback(
+    (field: VeEditedField) => {
+      if (!origin) return;
+      const message: VeMediaPickCancelledMessage = { ...field, type: VE_MEDIA_PICK_CANCELLED_TYPE };
+      getWindow()?.postMessage(message, origin);
+    },
+    [getWindow, origin]
+  );
+
+  const refusePick = useCallback(
+    (field: VeEditedField) => {
+      if (!origin) return;
+      const message: VeFieldEditRefusedMessage = { ...field, type: VE_FIELD_EDIT_REFUSED_TYPE };
+      getWindow()?.postMessage(message, origin);
+    },
+    [getWindow, origin]
+  );
+
+  const writePicked = useCallback(
+    ({ field, path }: MediaPick, mediaId: number | string, media: unknown) => {
+      if (!origin) return;
+      dispatchFields({ path, type: "UPDATE", value: mediaId });
+      setModified(true);
+      const shown = shownMediaOf(media);
+      if (!shown) {
+        tellPickCancelled(field);
+        return;
+      }
+      const message: VeMediaPickedMessage = { ...field, ...shown, type: VE_MEDIA_PICKED_TYPE };
+      getWindow()?.postMessage(message, origin);
+    },
+    [dispatchFields, getWindow, origin, setModified, tellPickCancelled]
+  );
+
+  const takePicked = useCallback(
+    async (pick: MediaPick, listed: unknown) => {
+      const mediaId = idOf((listed as { id?: unknown } | null)?.id);
+      if (mediaId === null) return;
+      const media = await fetchPickedMedia(apiUrl, pick.collection, mediaId);
+      writePicked(pick, mediaId, media ?? listed);
+    },
+    [apiUrl, writePicked]
+  );
+
+  const takeChosenOnThePage = useCallback(
+    async (pick: MediaPick, mediaId: number | string) => {
+      const media = await fetchPickedMedia(apiUrl, pick.collection, mediaId);
+      if (media === null) refusePick(pick.field);
+      else writePicked(pick, mediaId, media);
+    },
+    [apiUrl, refusePick, writePicked]
+  );
+
   useEffect(() => {
     const document = openDocumentOf({ collectionSlug, globalSlug, id });
     if (!document || !origin) return;
@@ -91,8 +146,12 @@ export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: s
           ? null
           : mediaPickOf(field, { document: openDocument, editableSchema, formState: getFields() });
       if (!pick) {
-        const message: VeFieldEditRefusedMessage = { ...field, type: VE_FIELD_EDIT_REFUSED_TYPE };
-        getWindow()?.postMessage(message, origin);
+        refusePick(field);
+        return;
+      }
+      const chosenOnThePage = chosenMediaOf(event.data);
+      if (chosenOnThePage !== null) {
+        void takeChosenOnThePage(pick, chosenOnThePage);
         return;
       }
       requests.current += 1;
@@ -112,36 +171,9 @@ export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: s
     isFormDisabled,
     locale,
     origin,
+    refusePick,
+    takeChosenOnThePage,
   ]);
-
-  const forgetPick = useCallback(() => setAsked(null), []);
-
-  const tellPickCancelled = useCallback(
-    (field: VeEditedField) => {
-      if (!origin) return;
-      const message: VeMediaPickCancelledMessage = { ...field, type: VE_MEDIA_PICK_CANCELLED_TYPE };
-      getWindow()?.postMessage(message, origin);
-    },
-    [getWindow, origin]
-  );
-
-  const takePicked = useCallback(
-    async ({ collection, field, path }: MediaPick, listed: unknown) => {
-      const mediaId = idOf((listed as { id?: unknown } | null)?.id);
-      if (mediaId === null || !origin) return;
-      dispatchFields({ path, type: "UPDATE", value: mediaId });
-      setModified(true);
-      const media = (await fetchPickedMedia(apiUrl, collection, mediaId)) ?? listed;
-      const shown = shownMediaOf(media);
-      if (!shown) {
-        tellPickCancelled(field);
-        return;
-      }
-      const message: VeMediaPickedMessage = { ...field, ...shown, type: VE_MEDIA_PICKED_TYPE };
-      getWindow()?.postMessage(message, origin);
-    },
-    [apiUrl, dispatchFields, getWindow, origin, setModified, tellPickCancelled]
-  );
 
   if (!asked) return null;
   return (

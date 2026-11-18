@@ -2,6 +2,7 @@ import type { ActionOf, EditBadge } from "./editBadge.js";
 import type { TargetRegistry } from "./targetRegistry.js";
 
 import { DATA_VE_HOVERING_ATTR } from "./constants.js";
+import { areaOf } from "./targetArea.js";
 import { findTargetAncestor } from "./targetSelector.js";
 
 export interface HoverController {
@@ -34,7 +35,7 @@ export function createHoverController(
   let pendingClear: ReturnType<typeof setTimeout> | null = null;
   const targetListeners = new Map<
     HTMLElement,
-    { enter: () => void; leave: (event: MouseEvent) => void }
+    { area: HTMLElement; enter: () => void; leave: (event: MouseEvent) => void }
   >();
 
   const cancelPendingClear = (): void => {
@@ -66,7 +67,7 @@ export function createHoverController(
   const onBadgeLeave = (event: MouseEvent) => {
     if (!activeTarget) return;
     const related = event.relatedTarget as Element | null;
-    if (related && (related === activeTarget || activeTarget.contains(related))) return;
+    if (related && areaOf(activeTarget).contains(related)) return;
     if (related && isOfBadge(related)) return;
     const nextTarget = related ? findTargetAncestor(related) : null;
     if (nextTarget) setActive(nextTarget);
@@ -102,15 +103,16 @@ export function createHoverController(
         if (nextTarget) setActive(nextTarget);
         else scheduleClear();
       };
-      target.addEventListener("mouseenter", enter);
-      target.addEventListener("mouseleave", leave);
-      targetListeners.set(target, { enter, leave });
+      const area = areaOf(target);
+      area.addEventListener("mouseenter", enter);
+      area.addEventListener("mouseleave", leave);
+      targetListeners.set(target, { area, enter, leave });
     },
     detach(target) {
       const listeners = targetListeners.get(target);
       if (!listeners) return;
-      target.removeEventListener("mouseenter", listeners.enter);
-      target.removeEventListener("mouseleave", listeners.leave);
+      listeners.area.removeEventListener("mouseenter", listeners.enter);
+      listeners.area.removeEventListener("mouseleave", listeners.leave);
       targetListeners.delete(target);
       if (activeTarget === target) {
         cancelPendingClear();
@@ -133,9 +135,9 @@ export function createHoverController(
         part.removeEventListener("mouseleave", onBadgeLeave);
         part.removeEventListener("mouseenter", onBadgeEnter);
       }
-      for (const [target, listeners] of targetListeners) {
-        target.removeEventListener("mouseenter", listeners.enter);
-        target.removeEventListener("mouseleave", listeners.leave);
+      for (const listeners of targetListeners.values()) {
+        listeners.area.removeEventListener("mouseenter", listeners.enter);
+        listeners.area.removeEventListener("mouseleave", listeners.leave);
       }
       targetListeners.clear();
       if (activeTarget) {

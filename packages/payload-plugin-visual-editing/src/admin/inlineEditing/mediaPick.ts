@@ -7,7 +7,7 @@ import { uploadCollectionAt } from "../../shared/editableSchema/editableSchema.j
 import { readEditedField } from "../../shared/fieldEdit.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import { VE_PICK_MEDIA_TYPE } from "../../shared/protocol.js";
-import { documentAddressOf } from "../../shared/veDocument.js";
+import { documentAddressOf, idOf } from "../../shared/veDocument.js";
 import { readFormFields } from "../instantPreview/formFields.js";
 import { isOfAnotherLocale } from "./formEdit.js";
 
@@ -22,6 +22,9 @@ export function pickOfDocument(data: unknown, document: VeLiveDocument): VeEdite
   const field = readEditedField(data);
   return field && documentAddressOf(field) === documentAddressOf(document) ? field : null;
 }
+
+export const chosenMediaOf = (data: unknown): number | string | null =>
+  isPlainObject(data) ? idOf(data.mediaId) : null;
 
 const filtersWhatItTakes = (formState: FormState, formPath: string): boolean =>
   formState[formPath]?.filterOptions !== undefined;

@@ -28,6 +28,7 @@ export interface LiveFields {
   takeAllRendered(): VeRenderedFields[];
   holdsValueOf(document: VeDocument, key: string): boolean;
   holdsFormOf(document: VeDocument): boolean;
+  holdsAnyForm(): boolean;
 }
 
 type KnownValues = { unsaved: string; saved: readonly string[] };
@@ -227,6 +228,9 @@ export function createLiveFields(
     },
     holdsFormOf(document) {
       return documentsWithValues.has(documentAddressOf(document));
+    },
+    holdsAnyForm() {
+      return documentsWithValues.size > 0;
     },
   };
 }

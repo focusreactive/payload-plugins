@@ -15,6 +15,8 @@ import {
   VE_RICH_TEXT_EDIT_TYPE,
 } from "../../shared/protocol.js";
 import { documentAddressOf, keyedFieldAddressOf } from "../../shared/veDocument.js";
+import type { FindAdminWindow } from "../adminWindow.js";
+
 import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 
 export type EditStatus = "failed" | "saved" | "saving" | "unsaved";
@@ -96,7 +98,8 @@ const postToEndpoint = async (
 export function createEditTransport(
   getCtx: () => EditTransportCtx,
   onStatus: OnStatus,
-  win: Window = window
+  win: Window = window,
+  findAdmin: FindAdminWindow = () => findAdminWindow(win)
 ): EditTransport {
   const waiting = new Map<string, WaitingEdit>();
   const failed = new Map<string, FailedEdit>();
@@ -151,7 +154,7 @@ export function createEditTransport(
   };
 
   const deliver = (edit: VeEdit) => {
-    const adminWindow = findAdminWindow(win);
+    const adminWindow = findAdmin();
     if (!adminWindow) {
       saves = saveAfter(saves, edit);
       return;
@@ -220,7 +223,7 @@ export function createEditTransport(
       const address = addressOf(edit);
       supersede(address);
       watchedSaves.delete(address);
-      const pause = findAdminWindow(win) ? EDIT_SEND_PAUSE_MS : EDIT_SAVE_PAUSE_MS;
+      const pause = findAdmin() ? EDIT_SEND_PAUSE_MS : EDIT_SAVE_PAUSE_MS;
       const timer = setTimeout(deliverWaiting, pause, address);
       waiting.set(address, { edit, onDelivered, timer });
       report("unsaved");
