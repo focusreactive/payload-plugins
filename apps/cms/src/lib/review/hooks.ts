@@ -1,5 +1,5 @@
 import { createComment } from "@focus-reactive/payload-plugin-comments";
-import { ValidationError } from "payload";
+import { APIError } from "payload";
 import type {
   CollectionAfterChangeHook,
   CollectionBeforeChangeHook,
@@ -33,14 +33,9 @@ const languageOf = (req: PayloadRequest): Language => (req.i18n?.language === "e
 
 /**
  * Enforced here rather than in field `validate`, because draft saves (and so every autosave) skip
- * field validation.
+ * field validation. A plain APIError, because the autosave toast shows its message as written.
  */
-export const enforceReviewRules: CollectionBeforeChangeHook = ({
-  collection,
-  data,
-  originalDoc,
-  req,
-}) => {
+export const enforceReviewRules: CollectionBeforeChangeHook = ({ data, originalDoc, req }) => {
   const status = data.reviewStatus ?? originalDoc?.reviewStatus;
   const previousStatus = originalDoc?.reviewStatus;
   const reviewer = relationId("reviewer" in data ? data.reviewer : originalDoc?.reviewer);
@@ -51,19 +46,11 @@ export const enforceReviewRules: CollectionBeforeChangeHook = ({
     previousStatus !== REVIEW_STATUS.approved &&
     isAuthor(req.user)
   ) {
-    throw new ValidationError({
-      collection: collection.slug,
-      errors: [{ message: MESSAGES.approvedByAuthor[language], path: "reviewStatus" }],
-      req,
-    });
+    throw new APIError(MESSAGES.approvedByAuthor[language], 400, undefined, true);
   }
 
   if (status === REVIEW_STATUS.readyForReview && !reviewer) {
-    throw new ValidationError({
-      collection: collection.slug,
-      errors: [{ message: MESSAGES.reviewerRequired[language], path: "reviewer" }],
-      req,
-    });
+    throw new APIError(MESSAGES.reviewerRequired[language], 400, undefined, true);
   }
 
   if (
