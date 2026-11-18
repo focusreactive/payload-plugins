@@ -7,7 +7,11 @@ import type {
 } from "payload";
 import { getFieldPaths, getFieldPermissions } from "payload/shared";
 
-export type FieldsPermissions = SanitizedFieldsPermissions | undefined;
+import { findBlock } from "./blocks.js";
+import { blockRowPermissions, childPermissions, namedTabPermissions } from "./rowPermissions.js";
+import type { FieldsPermissions } from "./rowPermissions.js";
+
+export type { FieldsPermissions } from "./rowPermissions.js";
 
 export type CollectionField = ArrayFieldClient | BlocksFieldClient;
 
@@ -51,108 +55,56 @@ type Scope = {
   readonly readOnly: boolean;
 };
 
-const ROW_INDEX = /^\d+$/u;
+type FieldPaths = ReturnType<typeof getFieldPaths>;
 
-const lastSegment = (path: string): string => {
-  const segments = path.split(".");
-  return segments.at(-1) ?? "";
+type Visit = {
+  readonly args: ResolveRowChainArgs;
+  readonly descend: (scope: Scope) => Found;
+  readonly scope: Scope;
+  readonly paths: FieldPaths;
+  readonly fieldPermissions: unknown;
+  readonly canOperate: boolean;
 };
-
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
-
-const childPermissions = (permissions: unknown): FieldsPermissions => {
-  if (permissions === true) {
-    return true;
-  }
-  return isObject(permissions) ? (permissions.fields as FieldsPermissions) : undefined;
-};
-
-export const blockRowPermissions = (permissions: unknown, blockSlug: string): FieldsPermissions => {
-  if (permissions === true) {
-    return true;
-  }
-  if (!isObject(permissions)) {
-    return undefined;
-  }
-  const blocks = permissions.blocks as unknown;
-  const specific = isObject(blocks) ? (blocks[blockSlug] ?? blocks) : blocks;
-  if (specific === true) {
-    return true;
-  }
-  if (isObject(specific) && specific.fields) {
-    return specific.fields as FieldsPermissions;
-  }
-  if (!specific) {
-    const hasRead = permissions.read === true;
-    const missingCreateOrUpdate = !permissions.create || !permissions.update;
-    const onlyRead = Object.keys(permissions).length === 1 && permissions.read;
-    if (hasRead && (missingCreateOrUpdate || onlyRead)) {
-      return { read: true } as unknown as FieldsPermissions;
-    }
-  }
-  return isObject(specific) ? (specific.fields as FieldsPermissions) : undefined;
-};
-
-export const blocksOf = (
-  field: BlocksFieldClient,
-  blocksMap: Record<string, ClientBlock> = {}
-): ClientBlock[] => {
-  if (!field.blockReferences) {
-    return field.blocks ?? [];
-  }
-  const resolved: ClientBlock[] = [];
-  for (const reference of field.blockReferences) {
-    const block = typeof reference === "string" ? blocksMap[reference] : reference;
-    if (block) {
-      resolved.push(block as ClientBlock);
-    }
-  }
-  return resolved;
-};
-
-export const findBlock = (
-  field: BlocksFieldClient,
-  blockType: string,
-  blocksMap: Record<string, ClientBlock> = {}
-): ClientBlock | undefined =>
-  blocksMap[blockType] ?? blocksOf(field, blocksMap).find((block) => block.slug === blockType);
 
 type Found = { kind: "found"; level: RowLevel } | { kind: "abort" } | { kind: "none" };
 
 const NONE: Found = { kind: "none" };
+const ROW_INDEX = /^\d+$/u;
 
-const rowLevelOf = (
-  args: ResolveRowChainArgs,
-  scope: Scope,
-  field: CollectionField,
-  paths: { path: string; schemaPath: string },
-  fieldPermissions: unknown,
-  canOperate: boolean
-): Found => {
-  const rest = args.rowPath.slice(paths.path.length + 1);
-  const [indexSegment = ""] = rest.split(".");
-  if (!ROW_INDEX.test(indexSegment)) {
+const lastSegment = (path: string): string => path.split(".").at(-1) ?? "";
+
+const leadsInto = (targetPath: string, path: string): boolean => targetPath.startsWith(`${path}.`);
+
+const rowIndexAfter = (targetPath: string, fieldPath: string): number | undefined => {
+  const [indexSegment = ""] = targetPath.slice(fieldPath.length + 1).split(".");
+  return ROW_INDEX.test(indexSegment) ? Number(indexSegment) : undefined;
+};
+
+const sameLevelScope = (scope: Scope, fields: ClientField[], paths: FieldPaths): Scope => ({
+  ...scope,
+  fields,
+  parentIndexPath: paths.indexPath,
+});
+
+const rowLevelIn = (field: CollectionField, visit: Visit): Found => {
+  const { args, scope, paths } = visit;
+  const rowIndex = rowIndexAfter(args.rowPath, paths.path);
+  if (rowIndex === undefined) {
     return NONE;
   }
-  const rowIndex = Number(indexSegment);
   const rowPath = `${paths.path}.${rowIndex}`;
-  const readOnly = scope.readOnly || !canOperate || Boolean(field.admin?.readOnly);
+  const base = {
+    field,
+    fieldPath: paths.path,
+    rowIndex,
+    rowPath,
+    readOnly: scope.readOnly || !visit.canOperate || Boolean(field.admin?.readOnly),
+  };
 
   if (field.type === "array") {
-    return {
-      kind: "found",
-      level: {
-        field,
-        fieldPath: paths.path,
-        rowIndex,
-        rowPath,
-        fields: field.fields,
-        schemaPath: paths.schemaPath,
-        permissions: childPermissions(fieldPermissions) ?? true,
-        readOnly,
-      },
-    };
+    const permissions = childPermissions(visit.fieldPermissions) ?? true;
+    const level = { ...base, fields: field.fields, schemaPath: paths.schemaPath, permissions };
+    return { kind: "found", level };
   }
 
   const blockType = args.getBlockType({ fieldPath: paths.path, rowIndex, rowPath });
@@ -160,27 +112,90 @@ const rowLevelOf = (
   if (!block) {
     return { kind: "abort" };
   }
-  return {
-    kind: "found",
-    level: {
-      field,
-      fieldPath: paths.path,
-      rowIndex,
-      rowPath,
-      block,
-      fields: block.fields,
-      // Payload's Blocks field joins these without a dot; mirrored so panel rows match inline rows.
-      schemaPath: `${paths.schemaPath}${block.slug}`,
-      permissions: blockRowPermissions(fieldPermissions, block.slug) ?? true,
-      readOnly,
-    },
+  const level = {
+    ...base,
+    block,
+    fields: block.fields,
+    // Payload's Blocks field joins these without a dot; mirrored so panel rows match inline rows.
+    schemaPath: `${paths.schemaPath}${block.slug}`,
+    permissions: blockRowPermissions(visit.fieldPermissions, block.slug) ?? true,
   };
+  return { kind: "found", level };
+};
+
+const findInGroup = (field: Extract<ClientField, { type: "group" }>, visit: Visit): Found => {
+  const { args, scope, paths } = visit;
+  if (!("name" in field) || !field.name) {
+    return visit.descend(sameLevelScope(scope, field.fields, paths));
+  }
+  if (!leadsInto(args.rowPath, paths.path)) {
+    return NONE;
+  }
+  return visit.descend({
+    fields: field.fields,
+    parentPath: paths.path,
+    parentSchemaPath: paths.schemaPath,
+    parentIndexPath: "",
+    permissions: childPermissions(visit.fieldPermissions),
+    readOnly: scope.readOnly || Boolean(field.admin?.readOnly),
+  });
+};
+
+const findInTabs = (field: Extract<ClientField, { type: "tabs" }>, visit: Visit): Found => {
+  const { args, scope, paths } = visit;
+  for (const [tabIndex, tab] of field.tabs.entries()) {
+    const tabPaths = getFieldPaths({
+      field: tab as unknown as ClientField,
+      index: tabIndex,
+      parentIndexPath: paths.indexPath,
+      parentPath: paths.path,
+      parentSchemaPath: paths.schemaPath,
+    });
+    const tabName = "name" in tab && tab.name ? tab.name : undefined;
+    if (tabName && !leadsInto(args.rowPath, tabPaths.path)) {
+      continue;
+    }
+    const found = visit.descend({
+      fields: tab.fields,
+      parentPath: tabPaths.path,
+      parentSchemaPath: tabPaths.schemaPath,
+      parentIndexPath: tabPaths.indexPath,
+      permissions: (tabName
+        ? namedTabPermissions(visit.fieldPermissions, tabName)
+        : visit.fieldPermissions) as FieldsPermissions,
+      readOnly: scope.readOnly,
+    });
+    if (found.kind !== "none") {
+      return found;
+    }
+  }
+  return NONE;
+};
+
+const findInField = (field: ClientField, visit: Visit): Found => {
+  switch (field.type) {
+    case "row":
+    case "collapsible": {
+      return visit.descend(sameLevelScope(visit.scope, field.fields, visit.paths));
+    }
+    case "group": {
+      return findInGroup(field, visit);
+    }
+    case "tabs": {
+      return findInTabs(field, visit);
+    }
+    case "array":
+    case "blocks": {
+      return leadsInto(visit.args.rowPath, visit.paths.path) ? rowLevelIn(field, visit) : NONE;
+    }
+    default: {
+      return NONE;
+    }
+  }
 };
 
 const findRowIn = (args: ResolveRowChainArgs, scope: Scope): Found => {
-  const target = args.rowPath;
-  const operation = args.operation ?? "update";
-
+  const descend = (inner: Scope) => findRowIn(args, inner);
   for (const [index, field] of scope.fields.entries()) {
     const paths = getFieldPaths({
       field,
@@ -191,93 +206,26 @@ const findRowIn = (args: ResolveRowChainArgs, scope: Scope): Found => {
     });
     const { operation: canOperate, permissions: fieldPermissions } = getFieldPermissions({
       field,
-      operation,
+      operation: args.operation ?? "update",
       parentName: lastSegment(scope.parentPath),
       permissions: scope.permissions as SanitizedFieldsPermissions,
     });
-
-    let found: Found = NONE;
-    switch (field.type) {
-      case "row":
-      case "collapsible": {
-        found = findRowIn(args, {
-          ...scope,
-          fields: field.fields,
-          parentIndexPath: paths.indexPath,
-        });
-        break;
-      }
-      case "group": {
-        if ("name" in field && field.name) {
-          if (target.startsWith(`${paths.path}.`)) {
-            found = findRowIn(args, {
-              fields: field.fields,
-              parentPath: paths.path,
-              parentSchemaPath: paths.schemaPath,
-              parentIndexPath: "",
-              permissions: childPermissions(fieldPermissions),
-              readOnly: scope.readOnly || Boolean(field.admin?.readOnly),
-            });
-          }
-        } else {
-          found = findRowIn(args, {
-            ...scope,
-            fields: field.fields,
-            parentIndexPath: paths.indexPath,
-          });
-        }
-        break;
-      }
-      case "tabs": {
-        for (const [tabIndex, tab] of field.tabs.entries()) {
-          const tabPaths = getFieldPaths({
-            field: tab as unknown as ClientField,
-            index: tabIndex,
-            parentIndexPath: paths.indexPath,
-            parentPath: paths.path,
-            parentSchemaPath: paths.schemaPath,
-          });
-          const named = "name" in tab && Boolean(tab.name);
-          if (named && !target.startsWith(`${tabPaths.path}.`)) {
-            continue;
-          }
-          let tabPermissions: unknown = fieldPermissions;
-          const tabsPermissions: unknown = fieldPermissions;
-          if (named && isObject(tabsPermissions)) {
-            const entry = tabsPermissions[(tab as { name: string }).name];
-            tabPermissions = isObject(entry) && "fields" in entry ? entry.fields : entry;
-          }
-          found = findRowIn(args, {
-            fields: tab.fields,
-            parentPath: tabPaths.path,
-            parentSchemaPath: tabPaths.schemaPath,
-            parentIndexPath: tabPaths.indexPath,
-            permissions: tabPermissions as FieldsPermissions,
-            readOnly: scope.readOnly,
-          });
-          if (found.kind !== "none") {
-            break;
-          }
-        }
-        break;
-      }
-      case "array":
-      case "blocks": {
-        if (target.startsWith(`${paths.path}.`)) {
-          found = rowLevelOf(args, scope, field, paths, fieldPermissions, canOperate);
-        }
-        break;
-      }
-      default: {
-        break;
-      }
-    }
+    const found = findInField(field, { args, descend, scope, paths, fieldPermissions, canOperate });
     if (found.kind !== "none") {
       return found;
     }
   }
   return NONE;
 };
+
+const scopeInsideRow = (level: RowLevel): Scope => ({
+  fields: level.fields,
+  parentPath: level.rowPath,
+  parentSchemaPath: level.schemaPath,
+  parentIndexPath: "",
+  permissions: level.permissions,
+  readOnly: level.readOnly,
+});
 
 export const resolveRowChain = (args: ResolveRowChainArgs): RowChain => {
   const levels: RowLevel[] = [];
@@ -300,14 +248,7 @@ export const resolveRowChain = (args: ResolveRowChainArgs): RowChain => {
     if (found.level.rowPath === args.rowPath) {
       return { levels, complete: true };
     }
-    scope = {
-      fields: found.level.fields,
-      parentPath: found.level.rowPath,
-      parentSchemaPath: found.level.schemaPath,
-      parentIndexPath: "",
-      permissions: found.level.permissions,
-      readOnly: found.level.readOnly,
-    };
+    scope = scopeInsideRow(found.level);
   }
   return { levels, complete: false };
 };

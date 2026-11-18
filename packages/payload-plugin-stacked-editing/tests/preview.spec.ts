@@ -1,15 +1,10 @@
 import type { ClientField } from "payload";
 import { describe, expect, it } from "vitest";
 
-import { createTranslate } from "../src/lib/breadcrumbs.js";
-import {
-  definePreview,
-  fieldAtPath,
-  mediaOf,
-  previewConfigOf,
-  resolvePreview,
-  richTextToPlain,
-} from "../src/lib/preview.js";
+import { createTranslate } from "../src/lib/labels.js";
+import { fieldAtPath } from "../src/lib/fieldLookup.js";
+import { definePreview, previewConfigOf, resolvePreview } from "../src/lib/preview.js";
+import { mediaOf, richTextToPlain } from "../src/lib/previewValues.js";
 
 const translate = createTranslate({ language: "en" });
 

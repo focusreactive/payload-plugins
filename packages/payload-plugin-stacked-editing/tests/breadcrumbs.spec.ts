@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  buildBreadcrumbs,
-  createTranslate,
-  fieldLabelOf,
-  humanize,
-  rowLabelOf,
-} from "../src/lib/breadcrumbs.js";
+import { buildBreadcrumbs } from "../src/lib/breadcrumbs.js";
+import { createTranslate, fieldLabelOf, humanize, rowLabelOf } from "../src/lib/labels.js";
 import { resolveRowChain } from "../src/lib/resolveRowChain.js";
 import { blocksMap, documentFields, getBlockType } from "./fixtures.js";
 

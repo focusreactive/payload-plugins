@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { blockRowPermissions, resolveRowChain } from "../src/lib/resolveRowChain.js";
+import { resolveRowChain } from "../src/lib/resolveRowChain.js";
+import { blockRowPermissions, namedTabPermissions } from "../src/lib/rowPermissions.js";
 import { blocksMap, documentFields, getBlockType } from "./fixtures.js";
 
 const resolve = (rowPath: string, extra: Partial<Parameters<typeof resolveRowChain>[0]> = {}) =>
@@ -125,5 +126,15 @@ describe("blockRowPermissions", () => {
     });
     expect(blockRowPermissions({ read: true }, "hero")).toEqual({ read: true });
     expect(blockRowPermissions(undefined, "hero")).toBeUndefined();
+  });
+});
+
+describe("namedTabPermissions", () => {
+  it("reads a named tab's fields, or passes other shapes through", () => {
+    expect(namedTabPermissions({ meta: { fields: { title: true } } }, "meta")).toEqual({
+      title: true,
+    });
+    expect(namedTabPermissions({ meta: true }, "meta")).toBe(true);
+    expect(namedTabPermissions(true, "meta")).toBe(true);
   });
 });

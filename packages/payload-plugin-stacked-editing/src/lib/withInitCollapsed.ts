@@ -1,51 +1,19 @@
 import type { Block, Field } from "payload";
 
-type Tab = { fields: Field[] };
+import { mapBlockTree, mapFieldTree } from "./mapFieldTree.js";
+import type { FieldTreeTransform } from "./mapFieldTree.js";
 
-const initCollapsedTransform = {
-  block(block: Block): Block {
-    return { ...block, fields: initCollapsedTransform.fields(block.fields) };
-  },
-  fields(fields: Field[]): Field[] {
-    return fields.map((field) => initCollapsedTransform.field(field));
-  },
-  field(field: Field): Field {
-    switch (field.type) {
-      case "array": {
-        return {
-          ...field,
-          fields: initCollapsedTransform.fields(field.fields),
-          admin: { ...field.admin, initCollapsed: field.admin?.initCollapsed ?? true },
-        };
-      }
-      case "blocks": {
-        return {
-          ...field,
-          blocks: field.blocks.map((block) => initCollapsedTransform.block(block)),
-          admin: { ...field.admin, initCollapsed: field.admin?.initCollapsed ?? true },
-        };
-      }
-      case "tabs": {
-        return {
-          ...field,
-          tabs: field.tabs.map((tab) => ({
-            ...tab,
-            fields: initCollapsedTransform.fields((tab as Tab).fields),
-          })),
-        };
-      }
-      case "group":
-      case "row":
-      case "collapsible": {
-        return { ...field, fields: initCollapsedTransform.fields(field.fields) } as Field;
-      }
-      default: {
-        return field;
-      }
-    }
-  },
+const initCollapsed: FieldTreeTransform = {
+  array: (field) => ({
+    ...field,
+    admin: { ...field.admin, initCollapsed: field.admin?.initCollapsed ?? true },
+  }),
+  blocks: (field) => ({
+    ...field,
+    admin: { ...field.admin, initCollapsed: field.admin?.initCollapsed ?? true },
+  }),
 };
 
 export const withInitCollapsedFields = (fields: Field[]): Field[] =>
-  initCollapsedTransform.fields(fields);
-export const withInitCollapsedBlock = (block: Block): Block => initCollapsedTransform.block(block);
+  mapFieldTree(fields, initCollapsed);
+export const withInitCollapsedBlock = (block: Block): Block => mapBlockTree(block, initCollapsed);

@@ -13,6 +13,7 @@ const outletFor = (options: StackedEditingOptions) => ({
 const includes = (allowList: string[] | undefined, slug: string): boolean =>
   allowList === undefined || allowList.includes(slug);
 
+// Mounted in `beforeDocumentControls` because it renders inside the document <Form>; a root provider would not.
 const withCollectionOutlet = (
   collection: CollectionConfig,
   outlet: ReturnType<typeof outletFor>

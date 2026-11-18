@@ -1,6 +1,12 @@
 import type { ClientField } from "payload";
 
-import type { Translate } from "./breadcrumbs.js";
+import { fieldAtPath, visibleTopLevelFields } from "./fieldLookup.js";
+import type { AnyField } from "./fieldLookup.js";
+import type { Translate } from "./labels.js";
+import { mediaOf, valueToText } from "./previewValues.js";
+import type { PreviewMedia } from "./previewValues.js";
+
+export type { PreviewMedia } from "./previewValues.js";
 
 export type PreviewSelect = {
   title?: string;
@@ -24,10 +30,6 @@ export const previewConfigOf = (owner: {
   return select && typeof select === "object" ? { select } : undefined;
 };
 
-export type PreviewMedia =
-  | { kind: "doc"; relationTo: string; id: number | string }
-  | { kind: "url"; url: string };
-
 export type Preview = {
   title?: string;
   subtitle?: string;
@@ -45,247 +47,73 @@ export type PreviewInput = {
   withBlockName?: boolean;
 };
 
-const MAX_PREVIEW_TEXT_LENGTH = 120;
 const DEFAULT_TITLE_FIELD_TYPES = new Set(["text", "textarea", "email", "select", "radio"]);
-
-type AnyField = {
-  name?: string;
-  type: string;
-  fields?: ClientField[];
-  tabs?: { name?: string; fields: ClientField[] }[];
-  options?: (string | { label: unknown; value: string })[];
-  labels?: { singular?: unknown; plural?: unknown };
-  label?: unknown;
-  relationTo?: string | string[];
-  admin?: { hidden?: boolean };
-  hidden?: boolean;
-};
-
-const truncateText = (text: string): string =>
-  text.length > MAX_PREVIEW_TEXT_LENGTH
-    ? `${text.slice(0, MAX_PREVIEW_TEXT_LENGTH - 1).trimEnd()}…`
-    : text;
-
-type LexicalNode = { text?: unknown; children?: unknown; type?: unknown };
-
-export const richTextToPlain = (value: unknown): string | undefined => {
-  const root = (value as { root?: LexicalNode } | null | undefined)?.root;
-  if (!root || !Array.isArray(root.children)) {
-    return undefined;
-  }
-  const collect = (node: LexicalNode): string => {
-    if (typeof node.text === "string") {
-      return node.text;
-    }
-    if (node.type === "linebreak") {
-      return " ";
-    }
-    return Array.isArray(node.children)
-      ? (node.children as LexicalNode[]).map(collect).join("")
-      : "";
-  };
-  for (const block of root.children as LexicalNode[]) {
-    const text = collect(block).replaceAll(/\s+/gu, " ").trim();
-    if (text) {
-      return truncateText(text);
-    }
-  }
-  return undefined;
-};
-
-const isEditorState = (value: unknown): boolean =>
-  typeof value === "object" && value !== null && "root" in value;
-
-const childrenAtSameDataLevel = (field: AnyField): readonly ClientField[] | null => {
-  if (field.type === "row" || field.type === "collapsible") {
-    return field.fields ?? [];
-  }
-  if (field.type === "group" && !field.name) {
-    return field.fields ?? [];
-  }
-  if (field.type === "tabs") {
-    return (field.tabs ?? []).filter((tab) => !tab.name).flatMap((tab) => tab.fields);
-  }
-  return null;
-};
-
-export const topLevelFields = (fields: readonly ClientField[]): AnyField[] => {
-  const result: AnyField[] = [];
-  for (const field of fields as unknown as AnyField[]) {
-    const children = childrenAtSameDataLevel(field);
-    if (children) {
-      result.push(...topLevelFields(children));
-    } else if (field.name) {
-      result.push(field);
-    }
-  }
-  return result;
-};
-
-export const fieldAtPath = (fields: readonly ClientField[], path: string): AnyField | undefined => {
-  const [head, ...rest] = path.split(".").filter((segment) => !/^\d+$/u.test(segment));
-  const field = topLevelFields(fields).find((candidate) => candidate.name === head);
-  if (!field || rest.length === 0) {
-    return field;
-  }
-  if (field.type === "group" || field.type === "array") {
-    return fieldAtPath(field.fields ?? [], rest.join("."));
-  }
-  if (field.type === "tabs") {
-    const tab = (field.tabs ?? []).find((candidate) => candidate.name === rest[0]);
-    return tab ? fieldAtPath(tab.fields, rest.slice(1).join(".")) : undefined;
-  }
-  return undefined;
-};
-
-const optionLabel = (field: AnyField | undefined, value: string, translate: Translate): string => {
-  const option = field?.options?.find((candidate) =>
-    typeof candidate === "string" ? candidate === value : candidate.value === value
-  );
-  if (option && typeof option === "object") {
-    return translate(option.label) || value;
-  }
-  return value;
-};
-
-export const valueToText = (
-  value: unknown,
-  field: AnyField | undefined,
-  translate: Translate
-): string | undefined => {
-  if (value === null || value === undefined) {
-    return undefined;
-  }
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (!trimmed) {
-      return undefined;
-    }
-    if (field?.type === "select" || field?.type === "radio") {
-      return truncateText(optionLabel(field, trimmed, translate));
-    }
-    if (field?.type === "date") {
-      const date = new Date(trimmed);
-      return Number.isNaN(date.getTime()) ? trimmed : date.toLocaleDateString();
-    }
-    return truncateText(trimmed);
-  }
-  if (typeof value === "number") {
-    return String(value);
-  }
-  if (Array.isArray(value) && value.every((item) => typeof item === "string")) {
-    const labels = (value as string[]).map((item) => optionLabel(field, item, translate));
-    return labels.length > 0 ? truncateText(labels.join(", ")) : undefined;
-  }
-  if (isEditorState(value)) {
-    return richTextToPlain(value);
-  }
-  return undefined;
-};
-
+const FALLBACK_TITLE_FIELD_TYPES = new Set(["richText"]);
 const LENGTH_SUFFIX = ".length";
 
-const selectedText = (input: PreviewInput, path: string): string | undefined => {
-  if (path.endsWith(LENGTH_SUFFIX)) {
-    const base = path.slice(0, -LENGTH_SUFFIX.length);
-    const count = input.getRowCount?.(base);
-    if (count === undefined) {
-      return undefined;
-    }
-    const field = fieldAtPath(input.fields, base);
-    const noun = input.translate(count === 1 ? field?.labels?.singular : field?.labels?.plural);
-    return noun ? `${count} ${noun}` : String(count);
+const rowCountText = (input: PreviewInput, arrayPath: string): string | undefined => {
+  const count = input.getRowCount?.(arrayPath);
+  if (count === undefined) {
+    return undefined;
   }
-  return valueToText(input.getValue(path), fieldAtPath(input.fields, path), input.translate);
+  const field = fieldAtPath(input.fields, arrayPath);
+  const noun = input.translate(count === 1 ? field?.labels?.singular : field?.labels?.plural);
+  return noun ? `${count} ${noun}` : String(count);
 };
 
-const idOf = (value: unknown): number | string | undefined => {
-  if (typeof value === "string" || typeof value === "number") {
-    return value;
-  }
-  if (value && typeof value === "object" && "id" in value) {
-    const { id } = value as { id: unknown };
-    return typeof id === "string" || typeof id === "number" ? id : undefined;
+const selectedText = (input: PreviewInput, path: string): string | undefined =>
+  path.endsWith(LENGTH_SUFFIX)
+    ? rowCountText(input, path.slice(0, -LENGTH_SUFFIX.length))
+    : valueToText(input.getValue(path), fieldAtPath(input.fields, path), input.translate);
+
+const firstTextOfType = (
+  input: PreviewInput,
+  fields: AnyField[],
+  types: Set<string>
+): string | undefined => {
+  for (const field of fields) {
+    if (!field.name || !types.has(field.type)) {
+      continue;
+    }
+    const text = valueToText(input.getValue(field.name), field, input.translate);
+    if (text) {
+      return text;
+    }
   }
   return undefined;
 };
 
-export const mediaOf = (value: unknown, field: AnyField | undefined): PreviewMedia | undefined => {
-  if (value === null || value === undefined || value === "") {
-    return undefined;
+const resolveTitle = (input: PreviewInput, fields: AnyField[]): string | undefined =>
+  (input.withBlockName
+    ? valueToText(input.getValue("blockName"), undefined, input.translate)
+    : undefined) ||
+  (input.select?.title ? selectedText(input, input.select.title) : undefined) ||
+  firstTextOfType(input, fields, DEFAULT_TITLE_FIELD_TYPES) ||
+  firstTextOfType(input, fields, FALLBACK_TITLE_FIELD_TYPES);
+
+const resolveSubtitle = (input: PreviewInput): string | undefined =>
+  (input.select?.subtitle ? selectedText(input, input.select.subtitle) : undefined) ??
+  input.defaultSubtitle;
+
+const resolveMedia = (input: PreviewInput, fields: AnyField[]): PreviewMedia | undefined => {
+  const mediaPath = input.select?.media;
+  if (mediaPath) {
+    return mediaOf(input.getValue(mediaPath), fieldAtPath(input.fields, mediaPath));
   }
-  const relationTo = field?.relationTo;
-  if (typeof value === "object" && value !== null && "relationTo" in value && "value" in value) {
-    const poly = value as { relationTo: string; value: unknown };
-    const id = idOf(poly.value);
-    return id === undefined ? undefined : { kind: "doc", relationTo: poly.relationTo, id };
-  }
-  if (typeof value === "object" && value !== null && "url" in value) {
-    const doc = value as { url?: unknown; sizes?: { thumbnail?: { url?: unknown } } };
-    const url = doc.sizes?.thumbnail?.url ?? doc.url;
-    if (typeof url === "string" && url) {
-      return { kind: "url", url };
-    }
-  }
-  const id = idOf(value);
-  if (id === undefined || typeof relationTo !== "string") {
-    return undefined;
-  }
-  return { kind: "doc", relationTo, id };
+  const upload = fields.find(
+    (field) =>
+      field.type === "upload" &&
+      typeof field.relationTo === "string" &&
+      (input.isImageCollection?.(field.relationTo) ?? true)
+  );
+  return upload?.name ? mediaOf(input.getValue(upload.name), upload) : undefined;
 };
 
-const FALLBACK_TITLE_FIELD_TYPES = new Set(["richText"]);
-
 export const resolvePreview = (input: PreviewInput): Preview => {
-  const { fields, select = {}, translate } = input;
-  const named = topLevelFields(fields).filter((field) => !(field.admin?.hidden || field.hidden));
-
-  let title: string | undefined;
-  if (input.withBlockName) {
-    title = valueToText(input.getValue("blockName"), undefined, translate);
-  }
-  if (!title && select.title) {
-    title = selectedText(input, select.title);
-  }
-  if (!title) {
-    for (const field of named) {
-      if (DEFAULT_TITLE_FIELD_TYPES.has(field.type) && field.name) {
-        title = valueToText(input.getValue(field.name), field, translate);
-        if (title) {
-          break;
-        }
-      }
-    }
-  }
-  if (!title) {
-    for (const field of named) {
-      if (FALLBACK_TITLE_FIELD_TYPES.has(field.type) && field.name) {
-        title = valueToText(input.getValue(field.name), field, translate);
-        if (title) {
-          break;
-        }
-      }
-    }
-  }
-
-  const subtitle =
-    (select.subtitle ? selectedText(input, select.subtitle) : undefined) ?? input.defaultSubtitle;
-
-  let media: PreviewMedia | undefined;
-  if (select.media) {
-    media = mediaOf(input.getValue(select.media), fieldAtPath(fields, select.media));
-  } else {
-    const upload = named.find(
-      (field) =>
-        field.type === "upload" &&
-        typeof field.relationTo === "string" &&
-        (input.isImageCollection?.(field.relationTo) ?? true)
-    );
-    if (upload?.name) {
-      media = mediaOf(input.getValue(upload.name), upload);
-    }
-  }
-
+  const fields = visibleTopLevelFields(input.fields);
+  const title = resolveTitle(input, fields);
+  const subtitle = resolveSubtitle(input);
+  const media = resolveMedia(input, fields);
   return {
     ...(title ? { title } : {}),
     ...(subtitle ? { subtitle } : {}),

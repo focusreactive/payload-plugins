@@ -1,150 +1,51 @@
 "use client";
 
-import {
-  useConfig,
-  useDocumentInfo,
-  useForm,
-  useFormFields,
-  useRowLabel,
-  useTranslation,
-} from "@payloadcms/ui";
-import type { ClientField } from "payload";
+import { useRowLabel } from "@payloadcms/ui";
 import { useMemo } from "react";
 
-import { createTranslate, rowTypeLabelOf } from "../lib/breadcrumbs.js";
-import { previewConfigOf, resolvePreview } from "../lib/preview.js";
-import type { Preview } from "../lib/preview.js";
-import { resolveRowChain } from "../lib/resolveRowChain.js";
-import { STACKED_EDITING_CSS } from "./styles.js";
-import { useThumbnail } from "./useThumbnail.js";
+import { useRowChainResolver } from "../hooks/useRowChainResolver.js";
+import { useRowPreview } from "../hooks/useRowPreview.js";
+import { useTranslate } from "../hooks/useTranslate.js";
+import { STYLE_HREF } from "../lib/constants.js";
+import { padRowNumber, rowTypeLabelOf } from "../lib/labels.js";
+import { STACKED_EDITING_CSS } from "../styles/index.js";
+import { CardThumbnail } from "./CardThumbnail.js";
 
 const BASE = "stacked-editing-card";
-
-const ICON_PATH = {
-  blocks: "M2.5 3.5h4.5v4.5H2.5zM9 3.5h4.5v4.5H9zM2.5 10h4.5v2.5H2.5zM9 10h4.5v2.5H9z",
-  array: "M3 4.5h10M3 8h10M3 11.5h10",
-} as const;
-
-const Thumbnail = ({
-  fallbackImage,
-  kind,
-  preview,
-}: {
-  fallbackImage?: string | undefined;
-  kind: "blocks" | "array";
-  preview: Preview;
-}) => {
-  const url = useThumbnail(preview.media);
-  if (url === undefined) {
-    return <span aria-hidden className={`${BASE}__thumb ${BASE}__thumb--loading`} />;
-  }
-  const src = url ?? fallbackImage;
-  if (src) {
-    return (
-      <span aria-hidden className={`${BASE}__thumb`}>
-        {/* oxlint-disable-next-line next/no-img-element -- a 34px admin thumbnail, next/image adds nothing */}
-        <img alt="" className={`${BASE}__image`} loading="lazy" src={src} />
-      </span>
-    );
-  }
-  return (
-    <span aria-hidden className={`${BASE}__thumb ${BASE}__thumb--icon`}>
-      <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
-        <path
-          d={ICON_PATH[kind]}
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.3"
-        />
-      </svg>
-    </span>
-  );
-};
-
-const pad = (index: number): string => String(index + 1).padStart(2, "0");
 
 // Reads Payload's row-label context, not props: label wrappers (e.g. the presets plugin) drop field props.
 export const CardLabel = () => {
   const { data, path: rowPath, rowNumber } = useRowLabel<{ blockType?: string }>();
-  const { config, getEntityConfig } = useConfig();
-  const { collectionSlug, globalSlug } = useDocumentInfo();
-  const { getFields } = useForm();
-  const { i18n, t } = useTranslation();
-
-  const translate = useMemo(
-    () =>
-      createTranslate({
-        fallbackLanguage: i18n.fallbackLanguage,
-        language: i18n.language,
-        t: t as (key: string) => string,
-      }),
-    [i18n.fallbackLanguage, i18n.language, t]
-  );
-
-  const entity = getEntityConfig({ collectionSlug, globalSlug });
+  const translate = useTranslate();
+  const resolve = useRowChainResolver();
   const blockType = data?.blockType;
   const level = useMemo(() => {
-    if (!rowPath || !entity) {
-      return undefined;
-    }
-    const chain = resolveRowChain({
-      blocksMap: config.blocksMap,
-      fields: entity.fields as ClientField[],
-      getBlockType: ({ fieldPath, rowIndex, rowPath: path }) => {
-        if (path === rowPath && blockType) {
-          return blockType;
-        }
-        const rows = getFields()[fieldPath]?.rows as { blockType?: string }[] | undefined;
-        return rows?.[rowIndex]?.blockType;
-      },
-      permissions: true,
-      rowPath,
-    });
-    return chain.complete ? chain.levels.at(-1) : undefined;
-  }, [blockType, config.blocksMap, entity, getFields, rowPath]);
+    const chain = rowPath ? resolve(rowPath) : undefined;
+    return chain?.complete ? chain.levels.at(-1) : undefined;
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- `blockType` re-resolves the row when its block changes
+  }, [blockType, resolve, rowPath]);
+  const preview = useRowPreview(level, translate);
 
-  const imageCollections = useMemo(
-    () => new Set(config.collections.filter((c) => Boolean(c.upload)).map((c) => c.slug)),
-    [config.collections]
-  );
-
-  const serialized = useFormFields(([fields]) => {
-    if (!level) {
-      return "";
-    }
-    const preview = resolvePreview({
-      fields: level.fields,
-      getRowCount: (relative) =>
-        (fields[`${rowPath}.${relative}`]?.rows as unknown[] | undefined)?.length,
-      getValue: (relative) => fields[`${rowPath}.${relative}`]?.value,
-      isImageCollection: (slug) => imageCollections.has(slug),
-      defaultSubtitle: rowTypeLabelOf(level, translate),
-      translate,
-      withBlockName: Boolean(level.block),
-      ...(previewConfigOf(level) ? { select: previewConfigOf(level)?.select } : {}),
-    });
-    return JSON.stringify(preview);
-  });
-
-  const preview: Preview = serialized ? (JSON.parse(serialized) as Preview) : {};
-  const index = typeof rowNumber === "number" ? rowNumber : (level?.rowIndex ?? 0);
-  const fallback = level ? `${rowTypeLabelOf(level, translate)} ${pad(index)}` : pad(index);
+  const rowIndex = typeof rowNumber === "number" ? rowNumber : (level?.rowIndex ?? 0);
+  const rowNumberLabel = padRowNumber(rowIndex);
+  const fallbackTitle = level
+    ? `${rowTypeLabelOf(level, translate)} ${rowNumberLabel}`
+    : rowNumberLabel;
 
   return (
     <span className={BASE}>
-      <style href="focus-reactive-stacked-editing" precedence="default">
+      <style href={STYLE_HREF} precedence="default">
         {STACKED_EDITING_CSS}
       </style>
-      <span className={`${BASE}__number`}>{pad(index)}</span>
-      <Thumbnail
+      <span className={`${BASE}__number`}>{rowNumberLabel}</span>
+      <CardThumbnail
         fallbackImage={level?.block?.imageURL}
         kind={level?.block ? "blocks" : "array"}
-        preview={preview}
+        media={preview.media}
       />
       <span className={`${BASE}__text`}>
         <span className={`${BASE}__title${preview.title ? "" : ` ${BASE}__title--empty`}`}>
-          {preview.title ?? fallback}
+          {preview.title ?? fallbackTitle}
         </span>
         {preview.subtitle ? <span className={`${BASE}__subtitle`}>{preview.subtitle}</span> : null}
       </span>

@@ -1,15 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useId } from "react";
+import type { RefObject } from "react";
 
-import { fitCrumbs } from "../lib/breadcrumbs.js";
-import type { Crumb, CrumbFit } from "../lib/breadcrumbs.js";
+import { useCrumbFit } from "../hooks/useCrumbFit.js";
+import { useHiddenLevelsMenu } from "../hooks/useHiddenLevelsMenu.js";
+import type { Crumb } from "../lib/breadcrumbs.js";
 
 const BASE = "stacked-editing";
-const OPEN_DELAY_MS = 150;
-const CLOSE_DELAY_MS = 250;
+const MENU_INDENT_PX = 12;
 
-const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
+const crumbClassName = (crumb: Crumb) =>
+  [`${BASE}__crumb`, `${BASE}__crumb--${crumb.kind}`, crumb.current && `${BASE}__crumb--is-current`]
+    .filter(Boolean)
+    .join(" ");
 
 const CrumbContent = ({
   crumb,
@@ -33,6 +37,95 @@ const CrumbContent = ({
     </button>
   );
 
+const HiddenLevelsMenu = ({
+  crumbs,
+  id,
+  menu,
+  onNavigate,
+}: {
+  crumbs: Crumb[];
+  id: string;
+  menu: ReturnType<typeof useHiddenLevelsMenu>;
+  onNavigate: (keep: number) => void;
+}) => {
+  const firstLevel = crumbs[0]?.level ?? 0;
+  return (
+    <div
+      className={`${BASE}__menu`}
+      id={id}
+      onMouseEnter={menu.hoverKeepOpen}
+      onMouseLeave={menu.hoverClose}
+      ref={menu.menuRef}
+      role="menu"
+      style={{ left: menu.toggleRef.current?.parentElement?.offsetLeft ?? 0 }}
+    >
+      {crumbs.map((crumb) => (
+        <button
+          className={`${BASE}__menu-item ${BASE}__menu-item--${crumb.kind}`}
+          key={crumb.key}
+          onClick={() => onNavigate(crumb.keep)}
+          role="menuitem"
+          style={{ paddingInlineStart: `${MENU_INDENT_PX * (1 + crumb.level - firstLevel)}px` }}
+          type="button"
+        >
+          <span className={`${BASE}__menu-label`}>{crumb.label}</span>
+          {crumb.hint ? <span className={`${BASE}__menu-hint`}>{crumb.hint}</span> : null}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+const MoreCrumb = ({
+  menu,
+  menuId,
+}: {
+  menu: ReturnType<typeof useHiddenLevelsMenu>;
+  menuId: string;
+}) => (
+  <li
+    className={`${BASE}__crumb ${BASE}__crumb--more`}
+    onMouseEnter={menu.hoverOpen}
+    onMouseLeave={menu.hoverClose}
+  >
+    <button
+      aria-controls={menuId}
+      aria-expanded={menu.isOpen}
+      aria-haspopup="menu"
+      aria-label="Show hidden levels"
+      className={`${BASE}__crumb-button ${BASE}__crumb-more`}
+      onClick={menu.toggle}
+      ref={menu.toggleRef}
+      type="button"
+    >
+      …
+    </button>
+  </li>
+);
+
+const MeasuringTrail = ({
+  crumbs,
+  ellipsisRef,
+  listRef,
+}: {
+  crumbs: readonly Crumb[];
+  ellipsisRef: RefObject<HTMLLIElement | null>;
+  listRef: RefObject<HTMLOListElement | null>;
+}) => (
+  <ol aria-hidden className={`${BASE}__crumbs ${BASE}__crumbs--measure`} ref={listRef}>
+    {crumbs.map((crumb) => (
+      <li className={`${BASE}__crumb ${BASE}__crumb--${crumb.kind}`} key={crumb.key}>
+        <span className={crumb.current ? `${BASE}__crumb-current` : `${BASE}__crumb-button`}>
+          {crumb.label}
+        </span>
+      </li>
+    ))}
+    <li className={`${BASE}__crumb ${BASE}__crumb--more`} ref={ellipsisRef}>
+      <span className={`${BASE}__crumb-button ${BASE}__crumb-more`}>…</span>
+    </li>
+  </ol>
+);
+
 export const Breadcrumbs = ({
   crumbs,
   onNavigate,
@@ -40,182 +133,34 @@ export const Breadcrumbs = ({
   crumbs: readonly Crumb[];
   onNavigate: (keep: number) => void;
 }) => {
-  const navRef = useRef<HTMLElement>(null);
-  const measureRef = useRef<HTMLOListElement>(null);
-  const ellipsisMeasureRef = useRef<HTMLLIElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const toggleRef = useRef<HTMLButtonElement>(null);
-  const timer = useRef(0);
-  const menuId = useId();
-  const [fit, setFit] = useState<CrumbFit>(() => ({
-    visible: crumbs.map((_, index) => index),
-    hidden: [],
-  }));
-  const [open, setOpen] = useState(false);
-  const labels = crumbs.map((crumb) => crumb.label).join("\u0000");
-
-  useIsomorphicLayoutEffect(() => {
-    const nav = navRef.current;
-    const measure = () => {
-      const items = measureRef.current?.children;
-      if (!nav || !items) {
-        return;
-      }
-      const widths = [...items]
-        .filter((item) => item !== ellipsisMeasureRef.current)
-        .map((item) => item.getBoundingClientRect().width);
-      const next = fitCrumbs({
-        available: nav.clientWidth,
-        ellipsisWidth: ellipsisMeasureRef.current?.getBoundingClientRect().width ?? 0,
-        widths,
-      });
-      setFit((previous) =>
-        previous.visible.join(",") === next.visible.join(",") ? previous : next
-      );
-    };
-    measure();
-    if (!nav) {
-      return;
-    }
-    const observer = new ResizeObserver(measure);
-    observer.observe(nav);
-    return () => observer.disconnect();
-  }, [labels]);
-
+  const { fit, navRef, measureRef, ellipsisMeasureRef } = useCrumbFit(crumbs);
   const hidden = fit.hidden.map((index) => crumbs[index]).filter((crumb) => crumb !== undefined);
-
-  useEffect(() => {
-    if (hidden.length === 0) {
-      setOpen(false);
-    }
-  }, [hidden.length]);
-
-  const schedule = useCallback((next: boolean, delay: number) => {
-    window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => setOpen(next), delay);
-  }, []);
-
-  useEffect(() => () => window.clearTimeout(timer.current), []);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        event.stopPropagation();
-        setOpen(false);
-        toggleRef.current?.focus();
-      }
-    };
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (!menuRef.current?.contains(target) && !toggleRef.current?.contains(target)) {
-        setOpen(false);
-      }
-    };
-    // Capture phase on window, ahead of faceless-ui's document listener that would close the panel.
-    window.addEventListener("keydown", onKeyDown, true);
-    document.addEventListener("pointerdown", onPointerDown, true);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown, true);
-      document.removeEventListener("pointerdown", onPointerDown, true);
-    };
-  }, [open]);
+  const menu = useHiddenLevelsMenu(hidden.length > 0);
+  const menuId = useId();
 
   const navigate = (keep: number) => {
-    setOpen(false);
+    menu.close();
     onNavigate(keep);
   };
 
-  const firstHiddenLevel = hidden[0]?.level ?? 0;
+  const visible = fit.visible.map((index) => crumbs[index]).filter((crumb) => crumb !== undefined);
 
   return (
     <nav aria-label="Breadcrumbs" className={`${BASE}__breadcrumbs`} ref={navRef}>
       <ol className={`${BASE}__crumbs`}>
-        {fit.visible.map((index, position) => {
-          const crumb = crumbs[index];
-          if (!crumb) {
-            return null;
-          }
-          return [
-            <li
-              className={[
-                `${BASE}__crumb`,
-                `${BASE}__crumb--${crumb.kind}`,
-                crumb.current && `${BASE}__crumb--is-current`,
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              key={crumb.key}
-            >
-              <CrumbContent crumb={crumb} onNavigate={navigate} />
-            </li>,
-            position === 0 && hidden.length > 0 ? (
-              <li
-                className={`${BASE}__crumb ${BASE}__crumb--more`}
-                key="more"
-                onMouseEnter={() => schedule(true, OPEN_DELAY_MS)}
-                onMouseLeave={() => schedule(false, CLOSE_DELAY_MS)}
-              >
-                <button
-                  aria-controls={menuId}
-                  aria-expanded={open}
-                  aria-haspopup="menu"
-                  aria-label="Show hidden levels"
-                  className={`${BASE}__crumb-button ${BASE}__crumb-more`}
-                  onClick={() => {
-                    window.clearTimeout(timer.current);
-                    setOpen((previous) => !previous);
-                  }}
-                  ref={toggleRef}
-                  type="button"
-                >
-                  …
-                </button>
-              </li>
-            ) : null,
-          ];
-        })}
+        {visible.map((crumb, position) => [
+          <li className={crumbClassName(crumb)} key={crumb.key}>
+            <CrumbContent crumb={crumb} onNavigate={navigate} />
+          </li>,
+          position === 0 && hidden.length > 0 ? (
+            <MoreCrumb key="more" menu={menu} menuId={menuId} />
+          ) : null,
+        ])}
       </ol>
-      {open && hidden.length > 0 ? (
-        <div
-          className={`${BASE}__menu`}
-          id={menuId}
-          onMouseEnter={() => schedule(true, 0)}
-          onMouseLeave={() => schedule(false, CLOSE_DELAY_MS)}
-          ref={menuRef}
-          role="menu"
-          style={{ left: toggleRef.current?.parentElement?.offsetLeft ?? 0 }}
-        >
-          {hidden.map((crumb) => (
-            <button
-              className={`${BASE}__menu-item ${BASE}__menu-item--${crumb.kind}`}
-              key={crumb.key}
-              onClick={() => navigate(crumb.keep)}
-              role="menuitem"
-              style={{ paddingInlineStart: `${12 + (crumb.level - firstHiddenLevel) * 12}px` }}
-              type="button"
-            >
-              <span className={`${BASE}__menu-label`}>{crumb.label}</span>
-              {crumb.hint ? <span className={`${BASE}__menu-hint`}>{crumb.hint}</span> : null}
-            </button>
-          ))}
-        </div>
+      {menu.isOpen && hidden.length > 0 ? (
+        <HiddenLevelsMenu crumbs={hidden} id={menuId} menu={menu} onNavigate={navigate} />
       ) : null}
-      <ol aria-hidden className={`${BASE}__crumbs ${BASE}__crumbs--measure`} ref={measureRef}>
-        {crumbs.map((crumb) => (
-          <li className={`${BASE}__crumb ${BASE}__crumb--${crumb.kind}`} key={crumb.key}>
-            <span className={crumb.current ? `${BASE}__crumb-current` : `${BASE}__crumb-button`}>
-              {crumb.label}
-            </span>
-          </li>
-        ))}
-        <li className={`${BASE}__crumb ${BASE}__crumb--more`} ref={ellipsisMeasureRef}>
-          <span className={`${BASE}__crumb-button ${BASE}__crumb-more`}>…</span>
-        </li>
-      </ol>
+      <MeasuringTrail crumbs={crumbs} ellipsisRef={ellipsisMeasureRef} listRef={measureRef} />
     </nav>
   );
 };

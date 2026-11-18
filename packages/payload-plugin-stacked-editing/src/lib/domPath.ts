@@ -1,3 +1,5 @@
+import { OWNER_ATTRIBUTE } from "./constants.js";
+
 export const FIELD_ID_PREFIX = "field-";
 const FIELD_ID_SEPARATOR = "__";
 const ROW_INFIX = "-row-";
@@ -65,3 +67,29 @@ export const rowPathFromToggle = (toggle: Element): string | null => {
   }
   return rowPathFromIds({ fieldWrapperId: fieldWrapper.id, rowContainerId: rowContainer.id });
 };
+
+export const isOwnedBy = (element: Element, ownerId: string): boolean => {
+  const scope = element.closest(`form, [${OWNER_ATTRIBUTE}]`);
+  return scope !== null && scope.getAttribute(OWNER_ATTRIBUTE) === ownerId;
+};
+
+// The row's hidden inline copy comes first in the DOM, so a panel label would focus that twin.
+export const panelInputOfLabel = (target: Element, ownerId: string): HTMLElement | null => {
+  const label = target.closest("label[for]");
+  const panel = label?.closest(`[${OWNER_ATTRIBUTE}="${ownerId}"]`);
+  if (!(label instanceof HTMLLabelElement) || !panel || panel.tagName === "FORM") {
+    return null;
+  }
+  const selector = `#${CSS.escape(label.htmlFor)}`;
+  const own = panel.querySelector<HTMLElement>(selector);
+  return own && document.querySelector(selector) !== own ? own : null;
+};
+
+export const fieldPathOfHeaderAction = (target: Element): string | null => {
+  const action = target.closest(".blocks-field__header-actions, .array-field__header-actions");
+  const wrapper = action?.closest(`.field-type[id^="${FIELD_ID_PREFIX}"]`);
+  return wrapper ? fieldPathFromDomId(wrapper.id) : null;
+};
+
+export const parentFieldPathOf = (rowPath: string): string =>
+  rowPath.slice(0, rowPath.lastIndexOf("."));
