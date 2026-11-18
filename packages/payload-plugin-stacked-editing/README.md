@@ -18,6 +18,13 @@ shown.
 
 ## Install
 
+```bash
+npm install @focus-reactive/payload-plugin-stacked-editing
+yarn add @focus-reactive/payload-plugin-stacked-editing
+pnpm add @focus-reactive/payload-plugin-stacked-editing
+bun add @focus-reactive/payload-plugin-stacked-editing
+```
+
 ```ts
 // payload.config.ts
 import { stackedEditing } from "@focus-reactive/payload-plugin-stacked-editing";

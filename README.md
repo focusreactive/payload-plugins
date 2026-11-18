@@ -32,6 +32,7 @@ To add an individual plugin to an existing Payload project, see the install comm
 | [`@focus-reactive/payload-plugin-html-preview`](./packages/payload-plugin-html-preview) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-html-preview)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-html-preview) | HTML preview plugin — live preview and click-to-edit for static and template-rendered sites |
 | [`@focus-reactive/payload-plugin-netlify-deploy`](./packages/payload-plugin-netlify-deploy) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-netlify-deploy)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-netlify-deploy) | Netlify deploy plugin — build, preview and publish Netlify sites from the admin, with the live build log |
 | [`@focus-reactive/payload-plugin-visual-editing`](./packages/payload-plugin-visual-editing) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-visual-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-visual-editing) | Visual editing plugin — click-to-edit overlays on your Next.js frontend that deep-link into the admin field |
+| [`@focus-reactive/payload-plugin-stacked-editing`](./packages/payload-plugin-stacked-editing) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-stacked-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-stacked-editing) | Stacked editing plugin - nested blocks and arrays open in layered panels with breadcrumbs, built on Payload drawers |
 
 
 ## A/B Testing Plugin for Payload CMS
@@ -183,6 +184,20 @@ bun add @focus-reactive/payload-plugin-visual-editing
 
 - Package: [`@focus-reactive/payload-plugin-visual-editing`](./packages/payload-plugin-visual-editing)
 - [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-visual-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-visual-editing)
+
+## Stacked Editing Plugin for Payload CMS
+
+Nested content without endless accordions. Clicking an array or blocks row opens it in a panel layered on top of the previous one, with breadcrumbs to jump between levels, at any depth. Payload's own fields, validation, permissions and drawers stay as they are; only where a row's fields are shown changes.
+
+```bash
+npm install @focus-reactive/payload-plugin-stacked-editing
+yarn add @focus-reactive/payload-plugin-stacked-editing
+pnpm add @focus-reactive/payload-plugin-stacked-editing
+bun add @focus-reactive/payload-plugin-stacked-editing
+```
+
+- Package: [`@focus-reactive/payload-plugin-stacked-editing`](./packages/payload-plugin-stacked-editing)
+- [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-stacked-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-stacked-editing)
 
 ## Run Demo Locally
 
