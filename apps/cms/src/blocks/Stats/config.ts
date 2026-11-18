@@ -1,3 +1,4 @@
+import { definePreview } from "@focus-reactive/payload-plugin-stacked-editing";
 import type { Block, Field } from "payload";
 
 import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
@@ -6,7 +7,10 @@ import { injectSection } from "@/lib/fields/section/injectSection";
 
 const fields: Field[] = [
   {
-    admin: { initCollapsed: true },
+    admin: {
+      custom: { preview: definePreview({ title: "label", subtitle: "value" }) },
+      initCollapsed: true,
+    },
     defaultValue: createLocalizedDefault({
       en: [
         { label: "fewer status meetings", value: "70%" },

@@ -1,3 +1,4 @@
+import { definePreview } from "@focus-reactive/payload-plugin-stacked-editing";
 import type { Field } from "payload";
 
 import { imageField } from "@/lib/fields/imageField";
@@ -15,7 +16,12 @@ export const cardsGridFields: Field[] = [
     type: "number",
   },
   {
-    admin: { initCollapsed: true },
+    admin: {
+      custom: {
+        preview: definePreview({ title: "title", subtitle: "description", media: "image" }),
+      },
+      initCollapsed: true,
+    },
     fields: [
       {
         type: "row",
