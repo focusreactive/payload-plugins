@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import type { PayloadRequest } from "payload";
+import type { CollectionSlug, PayloadRequest } from "payload";
 
 import type { AccessGuard } from "../../../shared/index.js";
 import type { TaskRunnerFactory } from "../../../modules/task-runner/index.js";
@@ -7,6 +7,8 @@ import type { TaskRunnerFactory } from "../../../modules/task-runner/index.js";
 import { createCancelRoute } from "../route.js";
 import { AnyAccessGuard } from "../../../shared/access/AnyAccessGuard.js";
 import { storeDouble } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
+
+const AVAILABLE = { availableCollections: new Set<CollectionSlug>() };
 
 const OPEN_ON_PURPOSE = new AnyAccessGuard();
 // Route-contract test: pin path + method + access-guard wiring so the Phase 1
@@ -19,6 +21,7 @@ const noRuns = () => storeDouble();
 describe("createCancelRoute (contract)", () => {
   it("registers DELETE at {basePath}/cancel with the default basePath", () => {
     const endpoint = createCancelRoute(
+      AVAILABLE,
       { create: vi.fn(), capabilities: { stop: true, run: true } },
       noRuns,
       OPEN_ON_PURPOSE
@@ -29,6 +32,7 @@ describe("createCancelRoute (contract)", () => {
 
   it("honors a custom basePath", () => {
     const endpoint = createCancelRoute(
+      AVAILABLE,
       { create: vi.fn(), capabilities: { stop: true, run: true } },
       noRuns,
       OPEN_ON_PURPOSE,
@@ -42,7 +46,7 @@ describe("createCancelRoute (contract)", () => {
       create: vi.fn(),
       capabilities: { stop: true, run: true },
     };
-    const endpoint = createCancelRoute(taskRunnerFactory, noRuns, denyAccess);
+    const endpoint = createCancelRoute(AVAILABLE, taskRunnerFactory, noRuns, denyAccess);
 
     const response = await endpoint.handler({} as PayloadRequest);
 

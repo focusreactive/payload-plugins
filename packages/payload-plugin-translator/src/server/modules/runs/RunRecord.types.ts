@@ -1,11 +1,11 @@
 import type { CollectionSlug } from "payload";
 
-import type { ID, JobHandle, TaskEvent } from "../task-runner/types.js";
+import type { ID, RunHandle, TaskEvent } from "../task-runner/types.js";
 
 export type RunOutcome = Exclude<TaskEvent["state"], "queued">;
 
 export type RunIdentity = {
-  handle: JobHandle;
+  handle: RunHandle;
   collectionSlug: CollectionSlug;
   collectionId: ID;
   sourceLng: string;

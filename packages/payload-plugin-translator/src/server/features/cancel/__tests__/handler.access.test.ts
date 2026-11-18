@@ -1,7 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { Payload, PayloadRequest } from "payload";
-
-import type { CollectionSlug } from "payload";
+import type { CollectionSlug, Payload, PayloadRequest } from "payload";
 
 import type { TaskRunner } from "../../../modules/task-runner/index.js";
 import type { RunRecord } from "../../../modules/runs/index.js";
@@ -16,6 +14,10 @@ const { CancelHandler } = await import("../handler.js");
 const { refusedTargets } = await import("../../../shared/access/refusedTargets.js");
 
 const ANNA = { id: "anna", collection: "users" };
+const AVAILABLE = { availableCollections: new Set<CollectionSlug>(["posts" as CollectionSlug]) };
+
+const refuse = (documentIds: string[]) =>
+  (refusedTargets as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(new Set(documentIds));
 
 const rowFor = (handle: string, collectionId: string): RunRecord =>
   runRow({
@@ -26,76 +28,99 @@ const rowFor = (handle: string, collectionId: string): RunRecord =>
     requesterCollection: "users",
   });
 
-describe("DELETE /cancel asks about the documents behind the handles", () => {
+describe("DELETE /cancel asks about every document behind the runs it would stop", () => {
   let runner: TaskRunner;
   let runs: RunRecordStoreDouble;
   let handler: InstanceType<typeof CancelHandler>;
 
-  const request = (ids: string[]): PayloadRequest =>
+  const request = (body: Record<string, unknown>): PayloadRequest =>
     ({
       payload: {} as Payload,
       user: ANNA,
-      json: vi.fn().mockResolvedValue({ ids }),
+      json: vi.fn().mockResolvedValue({ collection_slug: "posts", ...body }),
     }) as unknown as PayloadRequest;
+
+  const named = (collection_id: string[]) => request({ collection_id });
+  const wholeCollection = () => request({ select_all: true });
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (refusedTargets as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(new Set<string>());
+    refuse([]);
     runner = {
       enqueue: vi.fn(),
       stop: vi.fn().mockResolvedValue(undefined),
       run: vi.fn(),
     } as unknown as TaskRunner;
     runs = storeDouble({
-      findByHandles: vi.fn().mockResolvedValue([rowFor("mine", "d1"), rowFor("theirs", "d2")]),
+      findLiveForDocuments: vi
+        .fn()
+        .mockResolvedValue([rowFor("mine", "d1"), rowFor("theirs", "d2")]),
+      findLiveInCollection: vi
+        .fn()
+        .mockResolvedValue([rowFor("mine", "d1"), rowFor("theirs", "d2")]),
     });
     handler = new CancelHandler(
+      AVAILABLE,
       { create: vi.fn().mockReturnValue(runner), capabilities: { stop: true, run: true } },
       () => runs
     );
   });
 
-  it("cancels only the handles whose document the caller may change", async () => {
-    (refusedTargets as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(new Set(["d2"]));
+  it("stops only the runs whose document the caller may change", async () => {
+    refuse(["d2"]);
 
-    await handler.handle(request(["mine", "theirs"]));
+    await handler.handle(named(["d1", "d2"]));
 
     expect(runner.stop).toHaveBeenCalledWith(["mine"]);
   });
 
-  it("names the refused handles", async () => {
-    (refusedTargets as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(new Set(["d2"]));
+  it("asks per document on the whole-collection path too — the run record carries no rule about the documents behind it", async () => {
+    refuse(["d2"]);
 
-    const body = await (await handler.handle(request(["mine", "theirs"]))).json();
+    await handler.handle(wholeCollection());
 
-    expect(body).toMatchObject({ data: { refused: ["theirs"] } });
+    expect(runner.stop).toHaveBeenCalledWith(["mine"]);
+  });
+
+  it("names the refused runs", async () => {
+    refuse(["d2"]);
+
+    const body = await (await handler.handle(named(["d1", "d2"]))).json();
+
+    expect(body, "the caller is told which document was refused, not which run").toMatchObject({
+      data: { refused: ["d2"] },
+    });
+  });
+
+  it("names the refused runs on the whole-collection path as well, rather than answering in silence", async () => {
+    refuse(["d2"]);
+
+    const response = await handler.handle(wholeCollection());
+
+    expect(response.status).toBe(200);
+    expect(
+      await response.json(),
+      "a run the caller never named must not come back named"
+    ).toMatchObject({ data: { refused: ["d2"] } });
   });
 
   it("answers 204 with no body when nothing was refused", async () => {
-    const response = await handler.handle(request(["mine", "theirs"]));
+    const response = await handler.handle(named(["d1", "d2"]));
 
     expect(response.status).toBe(204);
     expect(runner.stop).toHaveBeenCalledWith(["mine", "theirs"]);
   });
 
-  it("never cancels a handle the record could not place", async () => {
-    runs.findByHandles.mockResolvedValue([rowFor("mine", "d1")]);
+  it("stops nothing when the record cannot answer what is live", async () => {
+    runs.findLiveForDocuments.mockRejectedValue(new Error("store is down"));
 
-    await handler.handle(request(["mine", "unplaceable"]));
-
-    expect(runner.stop).toHaveBeenCalledWith(["mine"]);
-  });
-
-  it("cancels nothing when the record cannot answer what the handles stand for", async () => {
-    runs.findByHandles.mockRejectedValue(new Error("store is down"));
-
-    await expect(handler.handle(request(["mine", "theirs"]))).rejects.toThrow("store is down");
+    await expect(handler.handle(named(["d1"]))).rejects.toThrow("store is down");
 
     expect(runner.stop).not.toHaveBeenCalled();
   });
 
   it("keeps two collections apart when they hold the same document id", async () => {
-    runs.findByHandles.mockResolvedValue([
+    runs.findLiveForDocuments.mockResolvedValue([
       rowFor("in-posts", "shared"),
       { ...rowFor("in-pages", "shared"), collectionSlug: "pages" as CollectionSlug },
     ]);
@@ -104,7 +129,7 @@ describe("DELETE /cancel asks about the documents behind the handles", () => {
         Promise.resolve(collection === "pages" ? new Set(["shared"]) : new Set<string>())
     );
 
-    await handler.handle(request(["in-posts", "in-pages"]));
+    await handler.handle(named(["shared"]));
 
     expect(runner.stop).toHaveBeenCalledWith(["in-posts"]);
   });

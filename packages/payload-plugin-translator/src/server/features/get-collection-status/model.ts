@@ -13,11 +13,10 @@ export const GetCollectionStatusInputSchema = z.object({
 export type GetCollectionStatusInput = z.infer<typeof GetCollectionStatusInputSchema>;
 
 /**
- * One translation in flight. `id` is the run's handle and a run covers a document's whole locale
- * list, so it repeats — the document and locale are what tell two entries apart.
+ * One run of one locale — in flight, or failed inside the window the panel counts. Two entries can
+ * share a document and a locale: a failure and the run queued after it are both reported.
  */
 export type CollectionStatusItem = {
-  id: string;
   status: TaskStatus;
   collection_id: string;
   target_lng: string;

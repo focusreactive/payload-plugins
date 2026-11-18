@@ -79,7 +79,7 @@ function hookArgs(over: Record<string, unknown> = {}) {
 describe("makeAutoTranslateHook", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("enqueues one job per target on a published source-locale change (R2)", async () => {
+  it("enqueues one run per target on a published source-locale change (R2)", async () => {
     const { hook, enqueue } = setup();
     await hook(hookArgs());
     expect(enqueue).toHaveBeenCalledTimes(1);

@@ -26,7 +26,7 @@ describe("AuthorisedHandle", () => {
     expectTypeOf<string & { __brand: "AuthorisedHandle" }>().not.toExtend<AuthorisedHandle>();
   });
 
-  it("is not authorised work: a job's name is not the work itself", () => {
+  it("is not authorised work: a run's name is not the work itself", () => {
     expectTypeOf<AuthorisedHandle>().not.toExtend<AuthorisedWork>();
   });
 });

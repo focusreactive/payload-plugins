@@ -67,12 +67,11 @@ describe("every route the plugin registers is behind the guard", () => {
 
     expect(paths).toEqual([
       "/translate/cancel",
-      "/translate/cancel-by-collection/:collection_slug",
       "/translate/collection/:collection_slug",
       "/translate/document/:collection_slug/:collection_id",
       "/translate/enqueue",
       "/translate/field",
-      "/translate/run/:id",
+      "/translate/run/:collection_slug/:collection_id",
       "/translate/stale/:collection_slug/:collection_id",
       "/translate/stale/dismiss",
     ]);

@@ -84,10 +84,10 @@ describe("GetDocumentStatusHandler", () => {
   });
 
   describe("what it answers", () => {
-    it("names the run, the document and the locale", async () => {
+    it("names the document and the locale", async () => {
       runs.findByDocument.mockResolvedValue([
         runRow({
-          handle: "job-7",
+          handle: "run-7",
           settledAt: "2026-10-27T10:05:00.000Z",
           startedAt: "2026-10-27T10:01:00.000Z",
           outcome: "delivered",
@@ -98,7 +98,6 @@ describe("GetDocumentStatusHandler", () => {
 
       expect(body.data).toHaveLength(1);
       expect(body.data[0]).toMatchObject({
-        id: "job-7",
         status: "completed",
         completed_at: "2026-10-27T10:05:00.000Z",
         input: {
@@ -145,13 +144,20 @@ describe("GetDocumentStatusHandler", () => {
       const { body } = await answered(aboutDoc123());
 
       const byLocale = Object.fromEntries(
-        (body.data as Array<{ id: string; status: string; input: { target_lng: string } }>).map(
-          (entry) => [entry.input.target_lng, entry]
-        )
+        (
+          body.data as Array<{ status: string; created_at: string; input: { target_lng: string } }>
+        ).map((entry) => [entry.input.target_lng, entry])
       );
       expect(Object.keys(byLocale).sort()).toEqual(["de", "fr"]);
-      expect(byLocale.de).toMatchObject({ id: "de-new", status: "running" });
-      expect(byLocale.fr).toMatchObject({ id: "fr-1", status: "pending" });
+      // The newest de run was queued on the 2nd and is running; the one it replaced failed on the 1st.
+      expect(byLocale.de).toMatchObject({
+        status: "running",
+        created_at: "2026-10-02T00:00:00.000Z",
+      });
+      expect(byLocale.fr).toMatchObject({
+        status: "pending",
+        created_at: "2026-10-01T12:00:00.000Z",
+      });
     });
 
     it("says nothing about a locale whose only run was cancelled", async () => {
@@ -186,7 +192,10 @@ describe("GetDocumentStatusHandler", () => {
 
       const { body } = await answered(aboutDoc123());
 
-      expect(body.data[0]).toMatchObject({ id: "delivered-first", status: "completed" });
+      expect(body.data[0]).toMatchObject({
+        status: "completed",
+        completed_at: "2026-10-01T00:02:00.000Z",
+      });
     });
 
     it("hands the stored failure text on as it was stored, with no second cleaning", async () => {

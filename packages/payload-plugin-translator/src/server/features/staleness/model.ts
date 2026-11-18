@@ -1,22 +1,22 @@
 import { z } from "zod";
 import type { CollectionSlug } from "payload";
 
-import { JobIdSchema } from "../../shared/index.js";
+import { DocumentIdSchema } from "../../shared/index.js";
 import type { LeafAddress } from "../../../core/domain/content-projection/idPath.js";
 import type { DocumentStalenessFactory, LocaleStaleness } from "../../modules/provenance/index.js";
 
 /**
  * Route params for reading a document's per-locale staleness.
  *
- * `collection_id` accepts any shape Payload allows as a document id — see {@link JobIdSchema}.
+ * `collection_id` accepts any shape Payload allows as a document id — see {@link DocumentIdSchema}.
  */
 export const GetDocumentStalenessInputSchema = z.object({
-  collection_id: JobIdSchema,
+  collection_id: DocumentIdSchema,
   collection_slug: z.string().nonempty(),
 });
 
 export const DismissStalenessInputSchema = z.object({
-  collection_id: JobIdSchema,
+  collection_id: DocumentIdSchema,
   collection_slug: z.string().nonempty(),
   target_lng: z.string().nonempty(),
 });

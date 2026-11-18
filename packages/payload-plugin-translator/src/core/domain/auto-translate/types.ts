@@ -8,7 +8,7 @@ export type AutoTranslateConfig = {
   /** The source locale is always excluded. */
   targets: string[];
   /**
-   * Delay (ms) before the queued job runs, coalescing rapid edits via the job runner's
+   * Delay (ms) before the queued run starts, coalescing rapid edits via the task runner's
    * per-(document, locale) supersession. `0`/omitted = enqueue immediately.
    */
   debounceMs?: number;

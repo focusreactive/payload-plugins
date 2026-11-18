@@ -14,7 +14,7 @@ const { translateDocument } = vi.hoisted(() => ({
 }));
 vi.mock("../translateDocument.js", () => ({ translateDocument }));
 
-const pointer = { handle: "job-7", targetLng: "de", previousAttempts: 0 };
+const pointer = { handle: "run-7", targetLng: "de", previousAttempts: 0 };
 
 const idleRunner = (keep: (context: TaskRunnerContext) => void): TaskRunnerProvider => ({
   capabilities: { stop: false, run: false },
@@ -38,7 +38,7 @@ describe("a runner names a run and a locale; the record says what that is", () =
 
   beforeEach(() => {
     vi.clearAllMocks();
-    store = storeDouble({ find: vi.fn().mockResolvedValue(runRow({ handle: "job-7" })) });
+    store = storeDouble({ find: vi.fn().mockResolvedValue(runRow({ handle: "run-7" })) });
     payload = { logger: { error: vi.fn() } } as unknown as Payload;
 
     let captured: TaskRunnerContext | undefined;
@@ -61,12 +61,12 @@ describe("a runner names a run and a locale; the record says what that is", () =
   it("asks the record about the locale the runner named", async () => {
     await context.handler(payload, pointer, {});
 
-    expect(store.find).toHaveBeenCalledWith({ handle: "job-7", targetLng: "de" });
+    expect(store.find).toHaveBeenCalledWith({ handle: "run-7", targetLng: "de" });
   });
 
   it("translates the document the record names, not one the runner carried", async () => {
     store.find.mockResolvedValue(
-      runRow({ handle: "job-7", collectionId: "doc-9", sourceLng: "fr", targetLng: "de" })
+      runRow({ handle: "run-7", collectionId: "doc-9", sourceLng: "fr", targetLng: "de" })
     );
 
     await context.handler(payload, pointer, {});
@@ -81,7 +81,7 @@ describe("a runner names a run and a locale; the record says what that is", () =
 
   it("reads back the filters the run was queued with", async () => {
     store.find.mockResolvedValue(
-      runRow({ handle: "job-7", filters: JSON.stringify([{ kind: "rule", name: "stale" }]) })
+      runRow({ handle: "run-7", filters: JSON.stringify([{ kind: "rule", name: "stale" }]) })
     );
 
     await context.handler(payload, pointer, {});
@@ -91,7 +91,7 @@ describe("a runner names a run and a locale; the record says what that is", () =
 
   it("drops a filter entry the parser rejects rather than translating the whole document", async () => {
     store.find.mockResolvedValue(
-      runRow({ handle: "job-7", filters: JSON.stringify([{ nonsense: true }]) })
+      runRow({ handle: "run-7", filters: JSON.stringify([{ nonsense: true }]) })
     );
 
     await context.handler(payload, pointer, {});
@@ -103,7 +103,7 @@ describe("a runner names a run and a locale; the record says what that is", () =
   });
 
   it("carries the publish flag the run was queued with", async () => {
-    store.find.mockResolvedValue(runRow({ handle: "job-7", publishOnTranslation: true }));
+    store.find.mockResolvedValue(runRow({ handle: "run-7", publishOnTranslation: true }));
 
     await context.handler(payload, pointer, {});
 
@@ -112,7 +112,7 @@ describe("a runner names a run and a locale; the record says what that is", () =
 
   it("writes under the rights of whoever asked, which the record remembers", async () => {
     store.find.mockResolvedValue(
-      runRow({ handle: "job-7", requesterId: "anna", requesterCollection: "users" })
+      runRow({ handle: "run-7", requesterId: "anna", requesterCollection: "users" })
     );
 
     await context.handler(payload, pointer, {});
@@ -138,7 +138,7 @@ describe("a runner names a run and a locale; the record says what that is", () =
     await context.handler(payload, pointer, {});
 
     expect(store.recordStarted).toHaveBeenCalledWith(
-      { handle: "job-7", targetLng: "de" },
+      { handle: "run-7", targetLng: "de" },
       expect.objectContaining({ attempts: 1 })
     );
     expect(store.recordStarted.mock.invocationCallOrder[0]).toBeLessThan(

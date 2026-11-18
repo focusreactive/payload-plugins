@@ -54,7 +54,6 @@ export class GetCollectionStatusHandler {
       docs: shown
         .filter(({ row }) => visible.has(row.collectionId))
         .map(({ row, status }) => ({
-          id: row.handle,
           status,
           collection_id: row.collectionId,
           target_lng: row.targetLng,

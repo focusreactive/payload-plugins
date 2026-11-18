@@ -15,15 +15,16 @@ const { RunTranslationHandler } = await import("../handler.js");
 const { refusedTargets } = await import("../../../shared/access/refusedTargets.js");
 
 const ANNA = { id: "anna", collection: "users" };
+const AVAILABLE = { availableCollections: new Set<CollectionSlug>(["posts" as CollectionSlug]) };
 const MINE: RunRecord = runRow({
-  handle: "job-1",
+  handle: "run-1",
   collectionSlug: "posts" as CollectionSlug,
   collectionId: "d1",
   requesterId: "anna",
   requesterCollection: "users",
 });
 
-describe("POST /run/:id asks about the document behind the job", () => {
+describe("POST /run asks about the document it was given", () => {
   let runner: TaskRunner;
   let handler: InstanceType<typeof RunTranslationHandler>;
 
@@ -31,7 +32,7 @@ describe("POST /run/:id asks about the document behind the job", () => {
     ({
       payload: {} as Payload,
       user: ANNA,
-      routeParams: { id: "job-1" },
+      routeParams: { collection_slug: "posts", collection_id: "d1" },
     }) as unknown as PayloadRequest;
 
   const answering = (rows: RunRecord[]) => {
@@ -40,8 +41,9 @@ describe("POST /run/:id asks about the document behind the job", () => {
       stop: vi.fn(),
       run: vi.fn().mockResolvedValue({ success: true }),
     } as unknown as TaskRunner;
-    const runs = storeDouble({ findByHandles: vi.fn().mockResolvedValue(rows) });
+    const runs = storeDouble({ findByDocument: vi.fn().mockResolvedValue(rows) });
     handler = new RunTranslationHandler(
+      AVAILABLE,
       { create: vi.fn().mockReturnValue(runner), capabilities: { stop: true, run: true } },
       () => runs
     );
@@ -52,7 +54,7 @@ describe("POST /run/:id asks about the document behind the job", () => {
     (refusedTargets as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(new Set<string>());
   });
 
-  it("refuses when the caller may not change the job's document", async () => {
+  it("refuses when the caller may not change the run's document", async () => {
     answering([MINE]);
     (refusedTargets as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(new Set(["d1"]));
 
@@ -62,7 +64,7 @@ describe("POST /run/:id asks about the document behind the job", () => {
     expect(runner.run).not.toHaveBeenCalled();
   });
 
-  it("refuses a job nobody is recorded as having started", async () => {
+  it("refuses a run nobody is recorded as having started", async () => {
     answering([{ ...MINE, requesterId: null, requesterCollection: null }]);
 
     const response = await handler.handle(request());
@@ -71,7 +73,7 @@ describe("POST /run/:id asks about the document behind the job", () => {
     expect(runner.run).not.toHaveBeenCalled();
   });
 
-  it("still answers 404 when the handle resolves to nothing", async () => {
+  it("still answers 404 when the document has no live run", async () => {
     answering([]);
 
     const response = await handler.handle(request());
@@ -79,12 +81,12 @@ describe("POST /run/:id asks about the document behind the job", () => {
     expect(response.status).toBe(404);
   });
 
-  it("runs the job for a caller the rule allows", async () => {
+  it("runs the translation for a caller the rule allows", async () => {
     answering([MINE]);
 
     const response = await handler.handle(request());
 
-    expect(runner.run).toHaveBeenCalledWith("job-1");
+    expect(runner.run).toHaveBeenCalledWith("run-1");
     expect(response.status).toBe(204);
   });
 });

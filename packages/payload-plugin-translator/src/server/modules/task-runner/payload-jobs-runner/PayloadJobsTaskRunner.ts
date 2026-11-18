@@ -229,12 +229,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   }
 
   private ownJobs(): Where {
-    return {
-      or: [
-        { workflowSlug: { equals: this.config.workflowName } },
-        { taskSlug: { equals: this.config.taskName } },
-      ],
-    };
+    return { workflowSlug: { equals: this.config.workflowName } };
   }
 
   private async findJobByHandle(handle: string): Promise<PayloadJob | undefined> {

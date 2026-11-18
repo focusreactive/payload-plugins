@@ -1,6 +1,6 @@
 import type { CollectionSlug, Payload, Where } from "payload";
 
-import type { ID, JobHandle } from "../task-runner/types.js";
+import type { ID, RunHandle } from "../task-runner/types.js";
 
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import { freshReq } from "../../shared/payload/RequestScope.shapes.js";
@@ -32,7 +32,7 @@ export interface RunRecordStore {
   recordSettled(key: RunRecordKey, settlement: RunSettlement): Promise<void>;
   find(key: RunRecordKey): Promise<RunRecord | null>;
   findByDocument(document: RunDocument): Promise<RunRecord[]>;
-  findByHandles(handles: readonly JobHandle[]): Promise<RunRecord[]>;
+  findByHandles(handles: readonly RunHandle[]): Promise<RunRecord[]>;
   /** Live means queued or running: `settledAt` is empty. */
   findLiveInCollection(collectionSlug: CollectionSlug): Promise<RunRecord[]>;
   findLiveForDocuments(collectionSlug: CollectionSlug, ids: readonly ID[]): Promise<RunRecord[]>;
@@ -126,7 +126,7 @@ export class PayloadRunRecordStore implements RunRecordStore {
     const existing = await this.findDoc(identity);
     if (existing !== null) {
       if (isAbout(existing, identity)) return;
-      // A SQL store reissues a deleted job's id, so a handle can come round again naming a different
+      // A SQL store reissues a deleted row's id, so a handle can come round again naming a different
       // document; the row found here belongs to a run that no longer exists.
       await this.payload.update({
         req: this.req(),
@@ -165,7 +165,7 @@ export class PayloadRunRecordStore implements RunRecordStore {
     return this.rows(documentWhere(document));
   }
 
-  async findByHandles(handles: readonly JobHandle[]): Promise<RunRecord[]> {
+  async findByHandles(handles: readonly RunHandle[]): Promise<RunRecord[]> {
     if (handles.length === 0) return [];
     return await this.rows({ handle: { in: [...handles] } });
   }

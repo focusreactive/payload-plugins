@@ -41,7 +41,7 @@ export type RunContribution = {
   readonly moduleState?: ModuleState;
 };
 
-/** A module must survive a replay: a retried job runs `beforeTranslation` again. */
+/** A module must survive a replay: a retried run calls `beforeTranslation` again. */
 export type ChainMember = {
   /** Names this module's slot in {@link ModuleState}; unique across the chain. */
   readonly name: string;

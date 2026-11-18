@@ -6,6 +6,7 @@ import { handleNextApiError } from "../../../../shared/lib/errors/handleApiError
 import { DOCUMENT_STALENESS_QUERY_KEY } from "../queries/useDocumentStaleness.js";
 
 type Variables = {
+  collection: string;
   id: string;
 };
 
@@ -17,7 +18,7 @@ export function useRunDocumentTranslation() {
     mutationKey: ["run-document-translation"],
     mutationFn: async (variables: Variables): Promise<void> => {
       await handleNextApiError(() =>
-        ofetch<{ data: null }>(`/api${basePath}/run/${variables.id}`, {
+        ofetch<{ data: null }>(`/api${basePath}/run/${variables.collection}/${variables.id}`, {
           method: "post",
         })
       );

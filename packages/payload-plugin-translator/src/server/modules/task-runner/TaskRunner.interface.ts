@@ -18,9 +18,8 @@ import type { AuthorisedHandle, AuthorisedWork } from "../../shared/access/autho
  * name exists: SQLite reuses a deleted row's id, so a handle kept across a cancellation can later
  * name another run — drop a handle once you are told the work settled.
  *
- * And a store may reject a value it could never have produced: on SQL the job id is an integer, so
- * a non-numeric handle fails inside the query rather than finding nothing. `DELETE /translate/cancel`
- * passes such a value straight through and answers with a server error.
+ * And a store may reject a value it could never have produced: on SQL the stored row's id is an
+ * integer, so a non-numeric handle fails inside the query rather than finding nothing.
  * @since 1.0.0 — the port narrowed; see docs/DEPRECATIONS.md#the-runner-only-accepts-work.
  */
 export interface TaskRunner {
@@ -47,7 +46,7 @@ export interface TaskRunner {
   stop?(handles: AuthorisedHandle[]): Promise<void>;
 
   /**
-   * Process a queued job now rather than waiting for a schedule.
+   * Process a queued run now rather than waiting for a schedule.
    *
    * On a host with no cron this is the only thing that moves the queue.
    */

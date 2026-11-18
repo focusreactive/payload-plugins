@@ -21,8 +21,8 @@ export type AutoTranslatePolicyResolver = (
   doc: Record<string, unknown>
 ) => NormalizedAutoTranslatePolicy | null;
 
-/** De-duplicates `targets`: a misconfigured `["de","de"]` would enqueue two racing jobs for one
- * (document, locale) — the runner's supersession only dedupes against already-stored jobs. */
+/** De-duplicates `targets`: a misconfigured `["de","de"]` would enqueue two racing runs for one
+ * (document, locale) — the runner's supersession only dedupes against work already stored. */
 export function normalizeAutoTranslateConfig(
   config: AutoTranslateConfig
 ): NormalizedAutoTranslatePolicy {

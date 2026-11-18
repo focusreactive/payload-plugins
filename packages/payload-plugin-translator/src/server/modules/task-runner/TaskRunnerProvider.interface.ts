@@ -1,7 +1,7 @@
 import type { Config, Payload } from "payload";
 import type { TaskRunner } from "./TaskRunner.interface.js";
 import type { RunnerCapabilities } from "./RunnerCapabilities.js";
-import type { JobHandle, RunRef, TaskEvent } from "./types.js";
+import type { RunHandle, RunRef, TaskEvent } from "./types.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 
 /**
@@ -13,7 +13,7 @@ import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
  * @since 1.0.0
  */
 export type TaskHandlerInput = {
-  handle: JobHandle;
+  handle: RunHandle;
   targetLng: string;
   /** Zero on the first attempt, and on any runner that does not retry. */
   previousAttempts: number;
