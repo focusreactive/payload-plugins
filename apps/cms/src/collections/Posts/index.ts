@@ -149,14 +149,6 @@ export const Posts: CollectionConfig<"posts"> = {
               required: true,
               type: "richText",
             },
-          ],
-          label: {
-            en: "Content",
-            es: "Contenido",
-          },
-        },
-        {
-          fields: [
             {
               admin: {
                 description: {
@@ -200,6 +192,8 @@ export const Posts: CollectionConfig<"posts"> = {
                   en: "Optional CTA band shown at the end of the post. Hidden when the heading is empty.",
                   es: "Banda CTA opcional al final de la publicación. Oculta si el encabezado está vacío.",
                 },
+                // The site's article template never renders this band; the Sections field holds the real one.
+                hidden: true,
               },
               fields: [
                 sectionHeadingField(),
@@ -237,8 +231,8 @@ export const Posts: CollectionConfig<"posts"> = {
             },
           ],
           label: {
-            en: "Below the article",
-            es: "Bajo el artículo",
+            en: "Content",
+            es: "Contenido",
           },
         },
         {
