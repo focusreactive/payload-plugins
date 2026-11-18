@@ -15,6 +15,7 @@ import { createBasePageFields } from "./basePageFields";
 import { fixBreadcrumbDocIds } from "./hooks/fixBreadcrumbDocIds";
 import { syncCurrentBreadcrumbUrl } from "./hooks/syncCurrentBreadcrumbUrl";
 import { indexPageEmbedding, deletePageEmbedding } from "./hooks/indexEmbedding";
+import { rememberPublishedPath } from "./hooks/publishedPath";
 import { revalidateDelete, revalidatePage } from "./hooks/revalidatePage";
 import { validateReservedSlug, validateReservedPath } from "./hooks/validateReservedSlug";
 
@@ -103,7 +104,12 @@ export const Page: CollectionConfig<"page"> = {
   hooks: {
     afterChange: [revalidatePage, indexPageEmbedding],
     afterDelete: [revalidateDelete, deletePageEmbedding],
-    beforeChange: [fixBreadcrumbDocIds, validateReservedSlug, validateReservedPath],
+    beforeChange: [
+      fixBreadcrumbDocIds,
+      validateReservedSlug,
+      validateReservedPath,
+      rememberPublishedPath,
+    ],
   },
   labels: {
     plural: {
