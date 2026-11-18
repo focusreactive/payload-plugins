@@ -173,6 +173,7 @@ export const VE_PICK_MEDIA_TYPE = "ve:pick-media";
 
 export type VePickMediaMessage = VeEditedField & {
   type: typeof VE_PICK_MEDIA_TYPE;
+  mediaId?: number | string;
 };
 
 export const VE_MEDIA_PICK_CANCELLED_TYPE = "ve:media-pick-cancelled";
@@ -191,6 +192,58 @@ export type VeMediaPickedMessage = VeEditedField &
 export const VE_RICH_TEXT_STRUCTURE_TYPE = "ve:rich-text-structure";
 
 export type VeEditorState = Record<string, unknown>;
+
+export type VeRichTextFormats = {
+  textFormats: number;
+  headings: string[];
+  lists: string[];
+  hasLinks: boolean;
+  hasQuotes: boolean;
+};
+
+export const VE_RICH_TEXT_VALUE_PATH = "/visual-editing/rich-text-value";
+
+export type VeRichTextValue = {
+  value: VeEditorState | null;
+  formats: VeRichTextFormats | null;
+};
+
+export type VeRichTextEdit = VeEditedField & {
+  state: VeEditorState;
+};
+
+export type VeEdit = VeFieldEdit | VeRichTextEdit;
+
+export const VE_RICH_TEXT_STATE_REQUEST_TYPE = "ve:rich-text-state-request";
+
+export type VeRichTextStateRequestMessage = VeEditedField & {
+  type: typeof VE_RICH_TEXT_STATE_REQUEST_TYPE;
+};
+
+export const VE_RICH_TEXT_STATE_TYPE = "ve:rich-text-state";
+
+export type VeRichTextStateMessage = VeRichTextEdit & {
+  type: typeof VE_RICH_TEXT_STATE_TYPE;
+  formats: VeRichTextFormats;
+};
+
+export const VE_RICH_TEXT_STATE_REFUSED_TYPE = "ve:rich-text-state-refused";
+
+export type VeRichTextStateRefusedMessage = VeEditedField & {
+  type: typeof VE_RICH_TEXT_STATE_REFUSED_TYPE;
+};
+
+export const VE_RICH_TEXT_EDIT_TYPE = "ve:rich-text-edit";
+
+export type VeRichTextEditMessage = VeRichTextEdit & {
+  type: typeof VE_RICH_TEXT_EDIT_TYPE;
+};
+
+export const VE_RICH_TEXT_EDIT_ENDED_TYPE = "ve:rich-text-edit-ended";
+
+export type VeRichTextEditEndedMessage = VeEditedField & {
+  type: typeof VE_RICH_TEXT_EDIT_ENDED_TYPE;
+};
 
 export type VeRichTextStructureMessage = VeLiveDocument & {
   type: typeof VE_RICH_TEXT_STRUCTURE_TYPE;

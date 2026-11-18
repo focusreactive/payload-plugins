@@ -21,7 +21,7 @@ describe("the field edit endpoint", () => {
   let editor: Headers;
   let outsider: Headers;
 
-  const edit = async (body: unknown, headers = editor): Promise<Answer> => {
+  const post = async (body: unknown, headers: Headers) => {
     const endpoint = payload.config.endpoints.find(({ path }) => path === VE_FIELD_EDIT_PATH);
     const { user } = await payload.auth({ headers });
     const req = await createLocalReq(
@@ -30,9 +30,17 @@ describe("the field edit endpoint", () => {
     );
     req.text = async () => JSON.stringify({ locale: "en", ...(body as object) });
     const response = (await endpoint!.handler(req)) as Response;
-    const { saved } = (await response.json()) as { saved: unknown };
-    return { saved, status: response.status };
+    const answered = (await response.json()) as { reason?: unknown; saved: unknown };
+    return { ...answered, status: response.status };
   };
+
+  const edit = async (body: unknown, headers = editor): Promise<Answer> => {
+    const { saved, status } = await post(body, headers);
+    return { saved, status };
+  };
+
+  const reasonOf = async (body: unknown, headers = editor): Promise<unknown> =>
+    (await post(body, headers)).reason;
 
   const publish = async (data: Record<string, unknown>) => {
     const created = await payload.create({
@@ -244,6 +252,62 @@ describe("the field edit endpoint", () => {
 
       expect(answer.saved).toBe(false);
       expect(locks.docs.map(({ id }) => id)).toEqual([lock.id]);
+    });
+
+    describe("and says why", () => {
+      it("for a document another editor has open", async () => {
+        const [other] = (
+          await payload.find({ collection: "users", where: { email: { equals: OUTSIDER.email } } })
+        ).docs;
+        const lock = await payload.create({
+          collection: "payload-locked-documents",
+          data: {
+            document: { relationTo: "pages", value: Number(docId) },
+            user: { relationTo: "users", value: other!.id },
+          },
+        });
+
+        const reason = await reasonOf({ ...page(docId), key: "label", value: "Changed" });
+        await payload.delete({ collection: "payload-locked-documents", id: lock.id });
+
+        expect(reason).toBe("locked");
+      });
+
+      it("for a request without a user", async () => {
+        const reason = await reasonOf(
+          { ...page(docId), key: "label", value: "Changed" },
+          new Headers()
+        );
+
+        expect(reason).toBe("signed-out");
+      });
+
+      it("for a field the page cannot edit", async () => {
+        expect(await reasonOf({ ...page(docId), key: "secret", value: "Changed" })).toBe(
+          "not-editable"
+        );
+      });
+
+      it("for a collection without drafts", async () => {
+        const author = await payload.create({ collection: "authors", data: { name: "Ada" } });
+        const edited = {
+          collectionSlug: "authors",
+          docId: String(author.id),
+          key: "name",
+          kind: "collection",
+          value: "Changed",
+        };
+
+        expect(await reasonOf(edited)).toBe("no-drafts");
+      });
+
+      it("for a request it cannot read", async () => {
+        expect(await reasonOf({ ...page(docId), key: "label" })).toBe("unreadable");
+      });
+
+      it("and names no reason when the text the field holds is saved", async () => {
+        expect(await reasonOf({ ...page(docId), key: "label", value: "Kept" })).toBeUndefined();
+      });
     });
 
     it("for a locale the project does not have", async () => {

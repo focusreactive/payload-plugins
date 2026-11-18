@@ -1,4 +1,5 @@
 import type { Overlay } from "./createOverlay.js";
+import type { RichTextEditorLoader } from "./inlineEditing/richTextEditor.js";
 import type { MarkerCleaner } from "./overlay/markerCleaner.js";
 import type { OverlayScope, ScopedOverlayCtx } from "./overlayScope.js";
 import type { Session } from "./session.js";
@@ -14,9 +15,17 @@ export interface FollowingSession {
   dispose(): void;
 }
 
+const NO_PAGE_EDITING: PageEditing = {};
+
 type RunningOverlay = { overlay: Overlay; hasInstantPreview: boolean };
 
-const overlayCtxOf = (session: Session): ScopedOverlayCtx => ({
+export type PageEditing = {
+  onEdited?: () => void;
+  richTextEditor?: RichTextEditorLoader;
+};
+
+const overlayCtxOf = (session: Session, pageEditing: PageEditing): ScopedOverlayCtx => ({
+  ...pageEditing,
   adminBasePath: session.adminBasePath,
   adminOrigin: session.adminOrigin,
   buildAdminEditUrl: session.buildAdminEditUrl,
@@ -29,7 +38,8 @@ const overlayCtxOf = (session: Session): ScopedOverlayCtx => ({
 export function startSessionOverlay(
   root: HTMLElement,
   scope: () => OverlayScope,
-  session: () => Session
+  session: () => Session,
+  pageEditing: () => PageEditing = () => NO_PAGE_EDITING
 ): FollowingSession {
   let running: RunningOverlay | null = null;
   let cleaner: MarkerCleaner | null = null;
@@ -48,7 +58,7 @@ export function startSessionOverlay(
     if (running?.hasInstantPreview === hasInstantPreview) return;
     stopCleaner();
     stopOverlay();
-    const overlay = startOverlay(scope, root, () => overlayCtxOf(session()));
+    const overlay = startOverlay(scope, root, () => overlayCtxOf(session(), pageEditing()));
     running = { hasInstantPreview, overlay };
   };
 

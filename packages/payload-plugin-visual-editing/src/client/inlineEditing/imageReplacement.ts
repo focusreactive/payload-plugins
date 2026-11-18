@@ -23,7 +23,9 @@ import {
   VE_PICK_MEDIA_TYPE,
 } from "../../shared/protocol.js";
 import { keyedFieldAddressOf, veDocumentOf } from "../../shared/veDocument.js";
-import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
+import type { FindAdminWindow } from "../adminWindow.js";
+
+import { adminOriginOf, findAdminWindow, isFramedByAdmin } from "../adminWindow.js";
 import { readMarkerFromAttrs } from "../overlay/markerExtractor.js";
 import { createMediaLibrary } from "./mediaLibrary.js";
 import { createMediaPicker } from "./mediaPicker.js";
@@ -40,9 +42,11 @@ export type ImageReplacementOptions = {
   tracker: FieldTracker;
   getCtx: () => ImageReplacementCtx;
   holdsFormOf: ((document: VeDocument) => boolean) | null;
+  isInsideRichText: (target: Element) => boolean;
   save: (edit: VeFieldEdit, onSaveEnded: OnSaveEnded) => void;
   holdInForm: (field: VeEditedField) => void;
   showStatus: (status: EditStatus) => void;
+  findAdmin?: FindAdminWindow;
 };
 
 export interface ImageReplacement {
@@ -70,9 +74,11 @@ const onlyImageOf = (target: HTMLElement): HTMLImageElement | null => {
 };
 
 export function createImageReplacement({
+  findAdmin = () => findAdminWindow(window),
   getCtx,
   holdInForm,
   holdsFormOf,
+  isInsideRichText,
   save,
   showStatus,
   tracker,
@@ -103,7 +109,7 @@ export function createImageReplacement({
     const key = marker && fieldKeyOfMarker(marker);
     if (!marker || !key || marker.locale !== undefined) return null;
     if (!tracker.isIdentifiedByThePage(target)) return null;
-    if (target.hasAttribute(DATA_VE_LIVE_RICH_TEXT_ATTR)) return null;
+    if (target.hasAttribute(DATA_VE_LIVE_RICH_TEXT_ATTR) || isInsideRichText(target)) return null;
     const image = onlyImageOf(target);
     if (!image || showsTrackedText(target)) return null;
     const { locale } = getCtx();
@@ -116,9 +122,13 @@ export function createImageReplacement({
   const show = ({ image }: ReplaceableImage, media: VeShownMedia): (() => void) | null =>
     image.isConnected ? showMedia(image, media, urlOf(media.url)) : null;
 
-  const askAdmin = (adminWindow: Window, asked: AskedOfAdmin) => {
+  const askAdmin = (adminWindow: Window, asked: AskedOfAdmin, chosen?: VeMediaOption) => {
     if (askedOfAdmin.has(addressOf(asked.field))) return;
-    const message: VePickMediaMessage = { ...asked.field, type: VE_PICK_MEDIA_TYPE };
+    const message: VePickMediaMessage = {
+      ...asked.field,
+      ...(chosen && { mediaId: chosen.id }),
+      type: VE_PICK_MEDIA_TYPE,
+    };
     askedOfAdmin.set(addressOf(asked.field), asked);
     adminWindow.postMessage(message, adminOriginOf(getCtx().adminOrigin));
   };
@@ -134,17 +144,21 @@ export function createImageReplacement({
   };
 
   const replace = (replaceable: ReplaceableImage, openField: () => void) => {
-    const adminWindow = findAdminWindow(window);
-    if (adminWindow) {
+    const adminWindow = findAdmin();
+    if (adminWindow && isFramedByAdmin(window)) {
       askAdmin(adminWindow, { ...replaceable, openField });
       return;
     }
-    picker.open(replaceable.field, (media) => saveThroughEndpoint(replaceable, media), openField);
+    const take = (media: VeMediaOption) => {
+      if (adminWindow) askAdmin(adminWindow, { ...replaceable, openField }, media);
+      else saveThroughEndpoint(replaceable, media);
+    };
+    picker.open(replaceable.field, take, openField);
   };
 
   const isOffered = ({ field }: ReplaceableImage): boolean => {
     if (!getCtx().inlineEditing) return false;
-    if (!findAdminWindow(window)) return true;
+    if (!findAdmin()) return true;
     return holdsFormOf?.(veDocumentOf(field)) ?? false;
   };
 

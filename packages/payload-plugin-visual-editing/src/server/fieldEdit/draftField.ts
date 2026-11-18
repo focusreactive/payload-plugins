@@ -1,9 +1,11 @@
 import type { Payload, PayloadRequest, SelectType } from "payload";
 
 import type { EditableSchema } from "../../shared/editableSchema/editableSchema.js";
+import type { SaveRefusal } from "../../shared/fieldEdit.js";
 import type { VeEditedField } from "../../shared/protocol.js";
 import type { DocumentToRead } from "../unsavedRichText/postedRequest.js";
 
+import { SAVE_FAILED } from "../../shared/fieldEdit.js";
 import { FIELD_PATH_SEPARATOR } from "../../shared/fieldKey.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import { isLocaleOf } from "../localeCodesKeyingValues.js";
@@ -32,11 +34,25 @@ export type Refusal = { status: number };
 
 export const SIGNED_OUT = 401;
 export const UNREADABLE_REQUEST = 400;
+export const FORBIDDEN = 403;
 export const UNKNOWN_DOCUMENT = 404;
 export const WITHOUT_DRAFTS = 409;
 export const FIELD_NOT_EDITABLE = 422;
+export const LOCKED = 423;
 export const FAILED = 500;
 export const ANSWERED = 200;
+
+const REFUSAL_OF_STATUS: ReadonlyMap<number, SaveRefusal> = new Map([
+  [SIGNED_OUT, "signed-out"],
+  [FORBIDDEN, "not-editable"],
+  [UNKNOWN_DOCUMENT, "not-editable"],
+  [WITHOUT_DRAFTS, "no-drafts"],
+  [FIELD_NOT_EDITABLE, "not-editable"],
+  [LOCKED, "locked"],
+]);
+
+export const refusalOfStatus = (status: number): SaveRefusal =>
+  REFUSAL_OF_STATUS.get(status) ?? SAVE_FAILED;
 
 export const AS_THE_EDITOR_SEES_IT = { overrideAccess: false, showHiddenFields: false };
 
@@ -64,9 +80,8 @@ const namesLocaleOf = (payload: Payload, locale: string | undefined): boolean =>
 
 export const inLocaleOfProject = <Field extends VeEditedField>(
   payload: Payload,
-  { locale, ...field }: Field
-): Omit<Field, "locale"> & { locale?: string } =>
-  payload.config.localization && locale !== undefined ? { ...field, locale } : field;
+  field: Field
+): Field => (payload.config.localization ? field : { ...field, locale: undefined });
 
 const selectOf = (key: string): SelectType => ({
   [key.split(FIELD_PATH_SEPARATOR)[0] ?? key]: true,

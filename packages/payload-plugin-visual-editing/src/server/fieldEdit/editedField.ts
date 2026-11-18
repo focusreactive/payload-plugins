@@ -1,11 +1,21 @@
 import type { EditableSchema } from "../../shared/editableSchema/editableSchema.js";
 import type { FieldStep } from "../../shared/fieldKey.js";
 import type { PlainObject } from "../../shared/plainObject.js";
+import type { VeEditorState } from "../../shared/protocol.js";
 
-import { textFieldTypeAt, uploadCollectionAt } from "../../shared/editableSchema/editableSchema.js";
+import {
+  isRichTextAt,
+  textFieldTypeAt,
+  uploadCollectionAt,
+} from "../../shared/editableSchema/editableSchema.js";
 import { editedTextOf } from "../../shared/fieldEdit.js";
 import { FIELD_PATH_SEPARATOR } from "../../shared/fieldKey.js";
 import { isPlainObject } from "../../shared/plainObject.js";
+import type { VeRichTextFormats } from "../../shared/richText/formats.js";
+
+import { editedStateOf } from "../../shared/richText/editedState.js";
+import { rootOf } from "../../shared/richText/editorNodes.js";
+import { isEditorStateTree } from "../../shared/richText/editorStateTree.js";
 import { idOf } from "../../shared/veDocument.js";
 
 export type EditedField = { name: string; value: unknown };
@@ -109,4 +119,37 @@ export const replacedUploadOf = (
   const collection = walked && uploadCollectionAt(schema, walked.steps);
   if (!walked || !collection || !mayHoldOneDocument(walked.value)) return null;
   return fieldWith(document, walked, mediaId);
+};
+
+const mayHoldRichText = (value: unknown): boolean =>
+  rootOf(value) !== null || value === null || value === undefined;
+
+export type ShownRichText = { steps: readonly FieldStep[]; value: VeEditorState };
+
+export const shownRichTextOf = (
+  document: unknown,
+  schema: EditableSchema,
+  key: string
+): ShownRichText | null => {
+  const walked = walkTo(document, key);
+  if (!walked || !isRichTextAt(schema, walked.steps)) return null;
+  return isEditorStateTree(walked.value) ? { steps: walked.steps, value: walked.value } : null;
+};
+
+export type RichTextEdit = {
+  key: string;
+  state: VeEditorState;
+  shown: VeEditorState;
+  formats: VeRichTextFormats;
+};
+
+export const editedRichTextOf = (
+  document: unknown,
+  schema: EditableSchema,
+  { formats, key, shown, state }: RichTextEdit
+): EditedField | null => {
+  const walked = walkTo(document, key);
+  if (!walked || !isRichTextAt(schema, walked.steps) || !mayHoldRichText(walked.value)) return null;
+  const edited = editedStateOf(state, { formats, shown, stored: walked.value });
+  return edited && fieldWith(document, walked, edited);
 };

@@ -1,22 +1,43 @@
-import type { VeFieldEdit, VeFieldEditMessage, VeLiveDocument } from "../../shared/protocol.js";
+import type { SaveRefusal } from "../../shared/fieldEdit.js";
+import type {
+  VeEdit,
+  VeEditedField,
+  VeFieldEditMessage,
+  VeLiveDocument,
+  VeRichTextEditMessage,
+} from "../../shared/protocol.js";
 
+import { isRichTextEdit, readSaveRefusal, SAVE_FAILED } from "../../shared/fieldEdit.js";
 import { isPlainObject } from "../../shared/plainObject.js";
-import { VE_FIELD_EDIT_PATH, VE_FIELD_EDIT_TYPE } from "../../shared/protocol.js";
+import {
+  VE_FIELD_EDIT_PATH,
+  VE_FIELD_EDIT_TYPE,
+  VE_RICH_TEXT_EDIT_TYPE,
+} from "../../shared/protocol.js";
 import { documentAddressOf, keyedFieldAddressOf } from "../../shared/veDocument.js";
+import type { FindAdminWindow } from "../adminWindow.js";
+
 import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 
 export type EditStatus = "failed" | "saved" | "saving" | "unsaved";
 
-export type EditTransportCtx = { adminOrigin: string; payloadApi: string };
+export type EditTransportCtx = { adminOrigin: string; payloadApi: string; onEdited?: () => void };
 
-export type EditedField = Omit<VeFieldEdit, "value">;
+export type EditedField = VeEditedField;
 
 export type OnSaveEnded = (isSaved: boolean) => void;
 
+export type OnStatus = (status: EditStatus, refusal?: SaveRefusal) => void;
+
+export type OnDelivered = () => void;
+
 export interface EditTransport {
-  send(edit: VeFieldEdit): void;
-  sendNow(edit: VeFieldEdit, onSaveEnded?: OnSaveEnded): void;
+  send(edit: VeEdit, onDelivered?: OnDelivered): void;
+  hold(edit: VeEdit): void;
+  drop(field: EditedField): void;
+  sendNow(edit: VeEdit, onSaveEnded?: OnSaveEnded): void;
   holdInForm(field: EditedField): void;
+  isUnsaved(field: EditedField): boolean;
   flush(): void;
   refuse(field: EditedField): void;
   settle(saved: VeLiveDocument | null): void;
@@ -28,7 +49,13 @@ export const EDIT_SEND_PAUSE_MS = 400;
 
 export const EDIT_SAVE_PAUSE_MS = 2000;
 
-type WaitingEdit = { edit: VeFieldEdit; timer: ReturnType<typeof setTimeout> };
+type WaitingEdit = {
+  edit: VeEdit;
+  timer: ReturnType<typeof setTimeout> | null;
+  onDelivered?: OnDelivered;
+};
+
+type FailedEdit = { edit: VeEdit; refusal: SaveRefusal };
 
 const addressOf = (field: EditedField): string =>
   JSON.stringify([keyedFieldAddressOf(field), field.locale ?? null]);
@@ -37,74 +64,127 @@ const isSavedWith = (edit: EditedField, saved: VeLiveDocument): boolean =>
   documentAddressOf(edit) === documentAddressOf(saved) &&
   (!edit.locale || !saved.locale || edit.locale === saved.locale);
 
-const postToEndpoint = async (win: Window, url: string, edit: VeFieldEdit): Promise<boolean> => {
+export const KEEPALIVE_BODY_LIMIT = 60_000;
+
+const messageOf = (edit: VeEdit): VeFieldEditMessage | VeRichTextEditMessage =>
+  isRichTextEdit(edit)
+    ? { ...edit, type: VE_RICH_TEXT_EDIT_TYPE }
+    : { ...edit, type: VE_FIELD_EDIT_TYPE };
+
+const isSavedBy = (response: Response, answer: unknown): boolean =>
+  response.ok && isPlainObject(answer) && answer.saved === true;
+
+const postToEndpoint = async (
+  win: Window,
+  url: string,
+  edit: VeEdit
+): Promise<SaveRefusal | null> => {
   try {
+    const body = JSON.stringify(edit);
     const response = await win.fetch(url, {
-      body: JSON.stringify(edit),
+      body,
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      keepalive: true,
+      keepalive: body.length <= KEEPALIVE_BODY_LIMIT,
       method: "POST",
     });
-    const answer: unknown = response.ok ? await response.json() : null;
-    return isPlainObject(answer) && answer.saved === true;
+    const answer: unknown = await response.json();
+    return isSavedBy(response, answer) ? null : readSaveRefusal(answer);
   } catch {
-    return false;
+    return SAVE_FAILED;
   }
 };
 
 export function createEditTransport(
   getCtx: () => EditTransportCtx,
-  onStatus: (status: EditStatus) => void,
-  win: Window = window
+  onStatus: OnStatus,
+  win: Window = window,
+  findAdmin: FindAdminWindow = () => findAdminWindow(win)
 ): EditTransport {
   const waiting = new Map<string, WaitingEdit>();
-  const failed = new Map<string, VeFieldEdit>();
-  const postedToAdmin = new Map<string, VeFieldEdit>();
+  const failed = new Map<string, FailedEdit>();
+  const postedToAdmin = new Map<string, VeEdit>();
   const unsavedInForm = new Map<string, EditedField>();
   const watchedSaves = new Map<string, OnSaveEnded>();
+  const savesOnTheWay = new Map<string, number>();
   let saves: Promise<void> = Promise.resolve();
   let isDisposed = false;
 
+  const latestRefusal = (): SaveRefusal | undefined => [...failed.values()].at(-1)?.refusal;
+
   const report = (status: EditStatus) => {
-    if (!isDisposed) onStatus(status);
+    if (isDisposed) return;
+    const refusal = latestRefusal();
+    if (refusal === undefined) onStatus(status);
+    else onStatus("failed", refusal);
   };
 
-  const settle = () => report(failed.size > 0 ? "failed" : "saved");
+  const settle = () => report("saved");
 
-  const saveThroughEndpoint = async (edit: VeFieldEdit) => {
+  const fail = (edit: VeEdit, refusal: SaveRefusal) => {
+    failed.delete(addressOf(edit));
+    failed.set(addressOf(edit), { edit, refusal });
+  };
+
+  const countSaveOnTheWay = (address: string, change: number) => {
+    const onTheWay = (savesOnTheWay.get(address) ?? 0) + change;
+    if (onTheWay > 0) savesOnTheWay.set(address, onTheWay);
+    else savesOnTheWay.delete(address);
+  };
+
+  const saveThroughEndpoint = async (edit: VeEdit) => {
     report("saving");
-    const isSaved = await postToEndpoint(win, `${getCtx().payloadApi}${VE_FIELD_EDIT_PATH}`, edit);
+    countSaveOnTheWay(addressOf(edit), 1);
+    const refusal = await postToEndpoint(win, `${getCtx().payloadApi}${VE_FIELD_EDIT_PATH}`, edit);
+    const isSaved = refusal === null;
+    countSaveOnTheWay(addressOf(edit), -1);
     if (isSaved) failed.delete(addressOf(edit));
-    else failed.set(addressOf(edit), edit);
+    else fail(edit, refusal);
     settle();
-    if (!isDisposed) watchedSaves.get(addressOf(edit))?.(isSaved);
+    if (isDisposed) return;
+    watchedSaves.get(addressOf(edit))?.(isSaved);
+    if (isSaved) getCtx().onEdited?.();
   };
 
-  const saveAfter = async (earlierSaves: Promise<void>, edit: VeFieldEdit) => {
+  const saveAfter = async (earlierSaves: Promise<void>, edit: VeEdit) => {
+    countSaveOnTheWay(addressOf(edit), 1);
     await earlierSaves;
+    countSaveOnTheWay(addressOf(edit), -1);
     await saveThroughEndpoint(edit);
   };
 
-  const deliver = (edit: VeFieldEdit) => {
-    const adminWindow = findAdminWindow(win);
+  const deliver = (edit: VeEdit) => {
+    const adminWindow = findAdmin();
     if (!adminWindow) {
       saves = saveAfter(saves, edit);
       return;
     }
-    const message: VeFieldEditMessage = { ...edit, type: VE_FIELD_EDIT_TYPE };
     failed.delete(addressOf(edit));
     postedToAdmin.set(addressOf(edit), edit);
     unsavedInForm.set(addressOf(edit), edit);
-    adminWindow.postMessage(message, adminOriginOf(getCtx().adminOrigin));
+    adminWindow.postMessage(messageOf(edit), adminOriginOf(getCtx().adminOrigin));
   };
 
-  const deliverWaiting = (address: string) => {
-    const held = waiting.get(address);
-    if (!held) return;
-    clearTimeout(held.timer);
+  const stopWaiting = (address: string): WaitingEdit | null => {
+    const held = waiting.get(address) ?? null;
+    if (held?.timer) clearTimeout(held.timer);
     waiting.delete(address);
+    return held;
+  };
+
+  const isIdle = (): boolean =>
+    waiting.size === 0 && savesOnTheWay.size === 0 && unsavedInForm.size === 0;
+
+  const deliverWaiting = (address: string) => {
+    const held = stopWaiting(address);
+    if (!held) return;
+    held.onDelivered?.();
     deliver(held.edit);
+  };
+
+  const supersede = (address: string) => {
+    stopWaiting(address);
+    failed.delete(address);
   };
 
   const flush = () => {
@@ -116,43 +196,56 @@ export function createEditTransport(
       flush();
       isDisposed = true;
     },
+    drop(field) {
+      if (stopWaiting(addressOf(field)) && isIdle()) settle();
+    },
+    hold(edit) {
+      const address = addressOf(edit);
+      supersede(address);
+      watchedSaves.delete(address);
+      waiting.set(address, { edit, timer: null });
+      report("unsaved");
+    },
     flush,
     refuse(field) {
       const edit = postedToAdmin.get(addressOf(field));
       if (!edit) return;
-      failed.set(addressOf(field), edit);
+      fail(edit, SAVE_FAILED);
       report("failed");
     },
     retry() {
       const edits = [...failed.values()];
       failed.clear();
-      for (const edit of edits) deliver(edit);
+      for (const { edit } of edits) deliver(edit);
+      if (unsavedInForm.size > 0) report("unsaved");
     },
-    send(edit) {
+    send(edit, onDelivered) {
       const address = addressOf(edit);
-      const held = waiting.get(address);
-      if (held) clearTimeout(held.timer);
+      supersede(address);
       watchedSaves.delete(address);
-      const pause = findAdminWindow(win) ? EDIT_SEND_PAUSE_MS : EDIT_SAVE_PAUSE_MS;
+      const pause = findAdmin() ? EDIT_SEND_PAUSE_MS : EDIT_SAVE_PAUSE_MS;
       const timer = setTimeout(deliverWaiting, pause, address);
-      waiting.set(address, { edit, timer });
+      waiting.set(address, { edit, onDelivered, timer });
       report("unsaved");
     },
     sendNow(edit, onSaveEnded) {
       const address = addressOf(edit);
-      const held = waiting.get(address);
-      if (held) clearTimeout(held.timer);
-      waiting.delete(address);
+      supersede(address);
       if (onSaveEnded) watchedSaves.set(address, onSaveEnded);
       else watchedSaves.delete(address);
       report("unsaved");
       deliver(edit);
+    },
+    isUnsaved(field) {
+      const address = addressOf(field);
+      return waiting.has(address) || savesOnTheWay.has(address) || failed.has(address);
     },
     holdInForm(field) {
       unsavedInForm.set(addressOf(field), field);
       report("unsaved");
     },
     settle(saved) {
+      if (unsavedInForm.size === 0) return;
       for (const [address, field] of unsavedInForm) {
         if (saved && !isSavedWith(field, saved)) continue;
         unsavedInForm.delete(address);

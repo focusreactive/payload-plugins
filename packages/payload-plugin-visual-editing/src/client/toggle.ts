@@ -83,8 +83,11 @@ const TEMPLATE = `
   }
   .card {
     display: inline-flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
+    box-sizing: border-box;
+    max-width: calc(100vw - ${2 * EDGE_GAP}px);
     padding: 4px;
     background: var(--ve-surface);
     border: 1px solid var(--ve-border);
@@ -141,11 +144,24 @@ const TEMPLATE = `
     border-radius: 6px;
   }
   [role="switch"] {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     background: var(--ve-track);
     white-space: nowrap;
   }
-  [role="switch"][aria-checked="true"] {
-    color: var(--ve-on);
+  [role="switch"]::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.45;
+    transition: background-color 160ms ease, opacity 160ms ease;
+  }
+  [role="switch"][aria-checked="true"]::before {
+    background: var(--ve-on);
+    opacity: 1;
   }
   button {
     appearance: none;
@@ -172,7 +188,7 @@ const TEMPLATE = `
     outline-offset: 1px;
   }
   @media (prefers-reduced-motion: reduce) {
-    :host, .card, button, .dot { transition: none; }
+    :host, .card, button, .dot, [role="switch"]::before { transition: none; }
   }
 </style>
 <div class="card" title="Drag to move">

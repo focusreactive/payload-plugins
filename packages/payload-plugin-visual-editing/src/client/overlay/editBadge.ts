@@ -13,6 +13,7 @@ import {
   FRAME_RADIUS,
 } from "./constants.js";
 import { placeFrame } from "./frameLayer.js";
+import { rectOf } from "./targetArea.js";
 
 type EditBadgeConfig = {
   href: string;
@@ -100,7 +101,7 @@ export function createEditBadge(): EditBadge {
   action.addEventListener("click", runOfferedAction);
 
   const reposition = (target: HTMLElement) => {
-    placeFrame(anchor, target.getBoundingClientRect(), FRAME_ACTIVE_WIDTH);
+    placeFrame(anchor, rectOf(target), FRAME_ACTIVE_WIDTH);
   };
 
   return {

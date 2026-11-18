@@ -9,7 +9,7 @@ import { createEditBadge } from "./editBadge.js";
 import { createFrameLayer } from "./frameLayer.js";
 import { createHoverController } from "./hoverController.js";
 import { groupNodesByPath, readMarkerFromAttrs } from "./markerExtractor.js";
-import { createTargetRegistry } from "./targetRegistry.js";
+import { CLICK_LEFT_TO_THE_PAGE, createTargetRegistry } from "./targetRegistry.js";
 import { findTargetAncestor, pickTargetForGroup } from "./targetSelector.js";
 
 const isPlainPrimaryClick = (event: MouseEvent) =>
@@ -111,7 +111,9 @@ export function createEditTargets(
     const target = findTargetAncestor(event.target instanceof Element ? event.target : null);
     const config = target ? registry.get(target) : undefined;
     if (!target || !config) return;
-    if (getCtx().editInPlace?.(target, event)) {
+    const taken = getCtx().editInPlace?.(target, event, () => config.clickHandler(event));
+    if (taken === CLICK_LEFT_TO_THE_PAGE) return;
+    if (taken) {
       event.preventDefault();
       event.stopPropagation();
       return;

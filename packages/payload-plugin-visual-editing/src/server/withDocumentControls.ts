@@ -6,6 +6,7 @@ const PREVIEW_PAGE_BRIDGE_PATH = `${PACKAGE_NAME}/admin#PreviewPageBridge`;
 const INSTANT_PREVIEW_COMPONENT_PATH = `${PACKAGE_NAME}/admin#InstantPreviewBroadcaster`;
 const INLINE_EDIT_RECEIVER_PATH = `${PACKAGE_NAME}/admin#InlineEditReceiver`;
 const MEDIA_PICK_RECEIVER_PATH = `${PACKAGE_NAME}/admin#MediaPickReceiver`;
+const RICH_TEXT_EDIT_RECEIVER_PATH = `${PACKAGE_NAME}/admin#RichTextEditReceiver`;
 const OPEN_FORM_ANNOUNCER_PATH = `${PACKAGE_NAME}/admin#OpenFormAnnouncer`;
 
 type RootLivePreview = NonNullable<Config["admin"]>["livePreview"];
@@ -48,6 +49,7 @@ const documentControlsOf = (
       ? [
           { clientProps, path: INLINE_EDIT_RECEIVER_PATH },
           { clientProps, path: MEDIA_PICK_RECEIVER_PATH },
+          { clientProps, path: RICH_TEXT_EDIT_RECEIVER_PATH },
         ]
       : []),
   ];

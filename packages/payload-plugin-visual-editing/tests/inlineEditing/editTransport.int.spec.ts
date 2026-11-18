@@ -6,8 +6,11 @@ import {
   createEditTransport,
   EDIT_SAVE_PAUSE_MS,
   EDIT_SEND_PAUSE_MS,
+  KEEPALIVE_BODY_LIMIT,
 } from "../../src/client/inlineEditing/editTransport";
-import { VE_FIELD_EDIT_TYPE } from "../../src/shared/protocol";
+import { VE_FIELD_EDIT_TYPE, VE_RICH_TEXT_EDIT_TYPE } from "../../src/shared/protocol";
+
+import { editorState, paragraph, textNode } from "../support/editorState";
 
 import { ADMIN_ORIGIN, restorePreviewWindow, stubAdminWindow } from "../support/previewWindow";
 
@@ -15,20 +18,33 @@ const PAYLOAD_API = "https://cms.example.com/api";
 
 const TITLE = { collectionSlug: "page", docId: "1", key: "title", kind: "collection" } as const;
 
-const ctx = { adminOrigin: ADMIN_ORIGIN, payloadApi: PAYLOAD_API };
+const BODY = { ...TITLE, key: "body" };
+
+const STATE = editorState(paragraph(textNode("Hello")));
+
+const onEdited = vi.fn();
+
+const ctx = { adminOrigin: ADMIN_ORIGIN, onEdited, payloadApi: PAYLOAD_API };
 
 const answerOf = (saved: boolean, ok = true) =>
   ({ json: () => Promise.resolve({ saved }), ok }) as Response;
 
+const refusalOf = (reason: unknown) =>
+  ({ json: () => Promise.resolve({ reason, saved: false }), ok: false }) as Response;
+
 describe("the transport of an edit", () => {
   let transport: EditTransport;
   let statuses: string[];
+  let refusals: (string | undefined)[];
   let fetchEndpoint: ReturnType<typeof vi.fn>;
 
   const start = () => {
     transport = createEditTransport(
       () => ctx,
-      (status) => statuses.push(status)
+      (status, refusal) => {
+        statuses.push(status);
+        refusals.push(refusal);
+      }
     );
   };
 
@@ -37,6 +53,8 @@ describe("the transport of an edit", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     statuses = [];
+    refusals = [];
+    onEdited.mockClear();
     fetchEndpoint = vi.fn(() => Promise.resolve(answerOf(true)));
     vi.stubGlobal("fetch", fetchEndpoint);
   });
@@ -73,6 +91,17 @@ describe("the transport of an edit", () => {
       expect(fetchEndpoint).not.toHaveBeenCalled();
     });
 
+    it("posts an edited rich text state as a message of its own", () => {
+      transport.send({ ...BODY, state: STATE });
+      vi.advanceTimersByTime(EDIT_SEND_PAUSE_MS);
+
+      expect(postToAdmin).toHaveBeenCalledWith(
+        { ...BODY, state: STATE, type: VE_RICH_TEXT_EDIT_TYPE },
+        ADMIN_ORIGIN
+      );
+      expect(onEdited).not.toHaveBeenCalled();
+    });
+
     it("keeps the edits of two fields apart", () => {
       transport.send({ ...TITLE, value: "Title" });
       transport.send({ ...TITLE, key: "lead", value: "Lead" });
@@ -102,8 +131,34 @@ describe("the transport of an edit", () => {
       transport.refuse(TITLE);
       transport.retry();
 
-      expect(statuses).toEqual(["unsaved", "failed"]);
+      expect(statuses).toEqual(["unsaved", "failed", "unsaved"]);
       expect(postToAdmin).toHaveBeenCalledTimes(2);
+    });
+
+    it("gives a refusal of the form no reason of its own", () => {
+      transport.send({ ...TITLE, value: "Hello" });
+      vi.advanceTimersByTime(EDIT_SEND_PAUSE_MS);
+
+      transport.refuse(TITLE);
+
+      expect(refusals.at(-1)).toBe("failed");
+    });
+
+    it("keeps saying an edit the form refused is not saved when the admin saved the document", () => {
+      transport.send({ ...TITLE, value: "Title" });
+      transport.send({ ...TITLE, key: "lead", value: "Lead" });
+      vi.advanceTimersByTime(EDIT_SEND_PAUSE_MS);
+      transport.refuse(TITLE);
+
+      transport.settle(TITLE);
+
+      expect(statuses.at(-1)).toBe("failed");
+    });
+
+    it("says nothing about a save of the admin while the form holds no edit of the page", () => {
+      transport.settle(TITLE);
+
+      expect(statuses).toEqual([]);
     });
 
     it("says the edits are saved when the admin saved the document", () => {
@@ -177,6 +232,40 @@ describe("the transport of an edit", () => {
       expect(statuses).toEqual(["unsaved", "saving", "saved"]);
     });
 
+    it("posts an edited rich text state to the same endpoint and says when it is saved", async () => {
+      transport.send({ ...BODY, state: STATE });
+      expect(transport.isUnsaved(BODY)).toBe(true);
+
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+
+      const [url, init] = fetchEndpoint.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${PAYLOAD_API}/visual-editing/field-edit`);
+      expect(JSON.parse(init.body as string)).toEqual({ ...BODY, state: STATE });
+      expect(init.keepalive).toBe(true);
+      expect(onEdited).toHaveBeenCalledTimes(1);
+      expect(transport.isUnsaved(BODY)).toBe(false);
+    });
+
+    it("does not ask the browser to keep a request alive that is too long for it", async () => {
+      const long = editorState(paragraph(textNode("a".repeat(KEEPALIVE_BODY_LIMIT))));
+
+      transport.sendNow({ ...BODY, state: long });
+      await settle();
+
+      const [, init] = fetchEndpoint.mock.calls[0] as [string, RequestInit];
+      expect(init.keepalive).toBe(false);
+    });
+
+    it("counts an edit the endpoint refused as unsaved and tells no one that it was saved", async () => {
+      fetchEndpoint.mockImplementationOnce(() => Promise.resolve(answerOf(false)));
+
+      transport.sendNow({ ...BODY, state: STATE });
+      await settle();
+
+      expect(transport.isUnsaved(BODY)).toBe(true);
+      expect(onEdited).not.toHaveBeenCalled();
+    });
+
     it("saves one edit after the other", async () => {
       const answers: ((answer: Response) => void)[] = [];
       fetchEndpoint.mockImplementationOnce(
@@ -231,6 +320,69 @@ describe("the transport of an edit", () => {
       expect(statuses.at(-1)).toBe("failed");
     });
 
+    it("keeps saying an edit is not saved while the editor types in another field", async () => {
+      fetchEndpoint.mockImplementationOnce(() => Promise.resolve(refusalOf("locked")));
+      transport.send({ ...TITLE, value: "Title" });
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+
+      transport.send({ ...TITLE, key: "lead", value: "Lead" });
+
+      expect(statuses.at(-1)).toBe("failed");
+      expect(refusals.at(-1)).toBe("locked");
+    });
+
+    it("says changes are unsaved as soon as the editor types in the field that failed", async () => {
+      fetchEndpoint.mockImplementationOnce(() => Promise.resolve(answerOf(false)));
+      transport.send({ ...TITLE, value: "First" });
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+
+      transport.send({ ...TITLE, value: "Second" });
+
+      expect(statuses.at(-1)).toBe("unsaved");
+      expect(refusals.at(-1)).toBeUndefined();
+    });
+
+    it.each(["locked", "no-drafts", "not-editable", "signed-out", "failed"])(
+      "tells why the endpoint refused an edit: %s",
+      async (reason) => {
+        fetchEndpoint.mockImplementationOnce(() => Promise.resolve(refusalOf(reason)));
+
+        transport.sendNow({ ...TITLE, value: "Hello" });
+        await settle();
+
+        expect(statuses.at(-1)).toBe("failed");
+        expect(refusals.at(-1)).toBe(reason);
+      }
+    );
+
+    it.each([
+      ["a reason it does not know", () => Promise.resolve(refusalOf("on-fire"))],
+      ["no reason", () => Promise.resolve(answerOf(false))],
+      ["no answer", () => Promise.reject(new Error("offline"))],
+    ])("says no more than that the edit is not saved for %s", async (_name, answer) => {
+      fetchEndpoint.mockImplementationOnce(answer);
+
+      transport.sendNow({ ...TITLE, value: "Hello" });
+      await settle();
+
+      expect(statuses.at(-1)).toBe("failed");
+      expect(refusals.at(-1)).toBe("failed");
+    });
+
+    it("tells the sender of a waiting value when it is delivered, and not when it is dropped", async () => {
+      const onDelivered = vi.fn();
+      transport.send({ ...TITLE, value: "Dropped" }, onDelivered);
+      transport.drop(TITLE);
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+      expect(onDelivered).not.toHaveBeenCalled();
+
+      transport.send({ ...TITLE, value: "Delivered" }, onDelivered);
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+
+      expect(onDelivered).toHaveBeenCalledTimes(1);
+      expect(fetchEndpoint).toHaveBeenCalledTimes(1);
+    });
+
     it("sends every edit that failed again", async () => {
       fetchEndpoint.mockImplementation(() => Promise.resolve(answerOf(false)));
       transport.send({ ...TITLE, value: "Title" });
@@ -265,6 +417,43 @@ describe("the transport of an edit", () => {
       await settle();
 
       expect(fetchEndpoint).toHaveBeenCalledTimes(1);
+    });
+
+    it("holds an edit unsaved for as long as it takes, and saves it when the edit ends", async () => {
+      transport.hold({ ...BODY, state: STATE });
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS * 10);
+
+      expect(fetchEndpoint).not.toHaveBeenCalled();
+      expect(statuses).toEqual(["unsaved"]);
+      expect(transport.isUnsaved(BODY)).toBe(true);
+
+      transport.flush();
+      await settle();
+
+      expect(fetchEndpoint).toHaveBeenCalledTimes(1);
+      expect(statuses.at(-1)).toBe("saved");
+      expect(transport.isUnsaved(BODY)).toBe(false);
+    });
+
+    it("drops an edit it holds without saving it", async () => {
+      transport.hold({ ...BODY, state: STATE });
+
+      transport.drop(BODY);
+      transport.flush();
+      await settle();
+
+      expect(fetchEndpoint).not.toHaveBeenCalled();
+      expect(statuses).toEqual(["unsaved", "saved"]);
+      expect(transport.isUnsaved(BODY)).toBe(false);
+    });
+
+    it("keeps saying that changes are unsaved when it drops one edit while another waits", () => {
+      transport.send({ ...TITLE, value: "Hello" });
+      transport.hold({ ...BODY, state: STATE });
+
+      transport.drop(BODY);
+
+      expect(statuses.at(-1)).toBe("unsaved");
     });
 
     it("delivers one edit at once and leaves the waiting ones waiting", async () => {

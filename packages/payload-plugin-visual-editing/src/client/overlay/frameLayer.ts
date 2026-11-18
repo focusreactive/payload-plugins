@@ -4,6 +4,7 @@ import {
   FRAME_IDLE_WIDTH,
   FRAME_RADIUS,
 } from "./constants.js";
+import { areaOf, rectOf } from "./targetArea.js";
 
 /** Places a box so its border lies just outside `rect`. */
 export const placeFrame = (box: HTMLElement, rect: DOMRect, borderWidth: number): void => {
@@ -45,7 +46,7 @@ export function createFrameLayer(): FrameLayer {
   const repositionAll = () => {
     frameRequest = 0;
     for (const [target, frame] of frames) {
-      placeFrame(frame, target.getBoundingClientRect(), FRAME_IDLE_WIDTH);
+      placeFrame(frame, rectOf(target), FRAME_IDLE_WIDTH);
     }
   };
 
@@ -73,17 +74,17 @@ export function createFrameLayer(): FrameLayer {
         borderRadius: FRAME_RADIUS,
         pointerEvents: "none",
       } as Partial<CSSStyleDeclaration>);
-      placeFrame(frame, target.getBoundingClientRect(), FRAME_IDLE_WIDTH);
+      placeFrame(frame, rectOf(target), FRAME_IDLE_WIDTH);
       layer.append(frame);
       frames.set(target, frame);
-      resizes?.observe(target);
+      resizes?.observe(areaOf(target));
     },
     remove(target) {
       const frame = frames.get(target);
       if (!frame) return;
       frame.remove();
       frames.delete(target);
-      resizes?.unobserve(target);
+      resizes?.unobserve(areaOf(target));
     },
     dispose() {
       if (frameRequest !== 0) cancelAnimationFrame(frameRequest);

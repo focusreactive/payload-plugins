@@ -2,14 +2,23 @@ import type { Endpoint, Payload, PayloadRequest } from "payload";
 
 import { headersWithCors } from "payload";
 
-import type { VeFieldEdit } from "../../shared/protocol.js";
+import type { SaveRefusal } from "../../shared/fieldEdit.js";
+import type { VeEdit } from "../../shared/protocol.js";
 import type { DocumentToRead } from "../unsavedRichText/postedRequest.js";
 import type { DraftField, User } from "./draftField.js";
 import type { EditedField } from "./editedField.js";
 
-import { readFieldEdit } from "../../shared/fieldEdit.js";
+import {
+  isRichTextEdit,
+  readFieldEdit,
+  readRichTextEdit,
+  REQUEST_UNREADABLE,
+} from "../../shared/fieldEdit.js";
 import { valueAtKey } from "../../shared/fieldKey.js";
 import { VE_FIELD_EDIT_PATH } from "../../shared/protocol.js";
+import { rootOf } from "../../shared/richText/editorNodes.js";
+import { NO_FORMATS } from "../../shared/richText/formats.js";
+import { isSameValue } from "../../shared/sameValue.js";
 import { bodyOf } from "../endpointJson.js";
 import {
   ANSWERED,
@@ -19,28 +28,34 @@ import {
   inLocaleOfProject,
   isRefusal,
   readDraft,
+  refusalOfStatus,
   SIGNED_OUT,
   statusOfFailure,
   UNREADABLE_REQUEST,
 } from "./draftField.js";
 import {
   editedFieldOf,
+  editedRichTextOf,
   replacedUploadOf,
   showsText,
+  shownRichTextOf,
   shownUploadCollectionOf,
 } from "./editedField.js";
 import { readableMediaIdOf } from "./readableMedia.js";
+import { formatsOfField } from "./richTextFormats.js";
 
 type Edited = (stored: unknown) => EditedField | null;
 
-const answer = (saved: boolean, status: number, req: PayloadRequest): Response =>
-  Response.json(
-    { saved },
-    {
-      headers: headersWithCors({ headers: new Headers({ "Cache-Control": "no-store" }), req }),
-      status,
-    }
-  );
+const answer = (
+  saved: boolean,
+  status: number,
+  req: PayloadRequest,
+  reason: SaveRefusal = refusalOfStatus(status)
+): Response =>
+  Response.json(saved ? { saved } : { reason, saved }, {
+    headers: headersWithCors({ headers: new Headers({ "Cache-Control": "no-store" }), req }),
+    status,
+  });
 
 const saveDraft = (
   payload: Payload,
@@ -65,22 +80,45 @@ const saveDraft = (
     : payload.update({ ...options, collection: document.collection, id: document.id });
 };
 
-const comparableAt = (document: unknown, key: string): string | null => {
+const comparableAt = (document: unknown, key: string): unknown => {
   const value = valueAtKey(document, key)?.value;
-  return typeof value === "string" || typeof value === "number" ? String(value) : null;
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  return rootOf(value) ? value : null;
 };
 
-const isLeftAsItWas = (stored: unknown, saved: unknown, sent: unknown, key: string): boolean => {
+export const isLeftAsItWas = (
+  stored: unknown,
+  saved: unknown,
+  sent: unknown,
+  key: string
+): boolean => {
   const before = comparableAt(stored, key);
-  return comparableAt(saved, key) === before && comparableAt(sent, key) !== before;
+  return (
+    isSameValue(comparableAt(saved, key), before) && !isSameValue(comparableAt(sent, key), before)
+  );
 };
+
+const readEdit = (body: unknown): VeEdit | null => readFieldEdit(body) ?? readRichTextEdit(body);
 
 const editedOf = async (
   payload: Payload,
   user: User,
-  { schema, shown }: DraftField,
-  { key, value }: VeFieldEdit
+  { document, schema, shown }: DraftField,
+  edit: VeEdit
 ): Promise<Edited | null> => {
+  const { key } = edit;
+  if (isRichTextEdit(edit)) {
+    const shownRichText = shownRichTextOf(shown, schema, key);
+    if (!shownRichText) return null;
+    const richTextEdit = {
+      formats: formatsOfField(payload, document, shownRichText.steps) ?? NO_FORMATS,
+      key,
+      shown: shownRichText.value,
+      state: edit.state,
+    };
+    return (stored) => editedRichTextOf(stored, schema, richTextEdit);
+  }
+  const { value } = edit;
   const uploadCollection = shownUploadCollectionOf(shown, schema, key);
   if (uploadCollection === null) {
     return showsText(shown, schema, key)
@@ -96,8 +134,8 @@ export const fieldEditEndpoint: Endpoint = {
     const { payload, user } = req;
     if (!user) return answer(false, SIGNED_OUT, req);
 
-    const posted = readFieldEdit(await bodyOf(req));
-    if (!posted) return answer(false, UNREADABLE_REQUEST, req);
+    const posted = readEdit(await bodyOf(req));
+    if (!posted) return answer(false, UNREADABLE_REQUEST, req, REQUEST_UNREADABLE);
     const edit = inLocaleOfProject(payload, posted);
 
     const field = await draftFieldOf(payload, user, edit);
@@ -117,7 +155,10 @@ export const fieldEditEndpoint: Endpoint = {
         locale: edit.locale,
         user,
       });
-      if (isLeftAsItWas(stored, saved, data, edit.key)) {
+      const written = isRichTextEdit(edit)
+        ? await readDraft(payload, field.document, edit, { ...AS_IT_IS_STORED, user })
+        : saved;
+      if (isLeftAsItWas(stored, written, data, edit.key)) {
         return answer(false, FIELD_NOT_EDITABLE, req);
       }
     } catch (error) {

@@ -44,6 +44,26 @@ describe("the save status", () => {
     expect(label()).toBe(words);
   });
 
+  it.each([
+    ["locked", "Locked by another editor"],
+    ["no-drafts", "This content has no drafts"],
+    ["not-editable", "This field cannot be edited here"],
+    ["signed-out", "Sign in to the admin to edit"],
+    ["unreadable", "Not saved"],
+    ["failed", "Not saved"],
+  ] as const)("says why a save was refused: %s", (refusal, words) => {
+    saveStatus.show("failed", refusal);
+
+    expect(label()).toBe(words);
+    expect(retryButton()?.hidden).toBe(false);
+  });
+
+  it("says a reason only for a save that failed", () => {
+    saveStatus.show("unsaved", "locked");
+
+    expect(label()).toBe("Unsaved changes");
+  });
+
   it("leaves the page a moment after a save", () => {
     saveStatus.show("saved");
 

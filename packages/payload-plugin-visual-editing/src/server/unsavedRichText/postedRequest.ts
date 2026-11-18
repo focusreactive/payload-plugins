@@ -9,7 +9,7 @@ import { isVeDocument, veDocumentOf } from "../../shared/veDocument.js";
 import { isLocaleOf } from "../localeCodesKeyingValues.js";
 import { schemaCacheOf } from "../schemaCache.js";
 import { readJsonBody } from "./jsonBody.js";
-import { readPostedEditorState } from "./postedEditorState.js";
+import { readPostedEditorState } from "../../shared/richText/postedEditorState.js";
 
 const MAX_BYTES_PER_CHARACTER = 3;
 const MAX_REQUEST_ENVELOPE_BYTES = 4096;

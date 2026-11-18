@@ -1,7 +1,10 @@
+import type { SaveRefusal } from "../../shared/fieldEdit.js";
 import type { EditStatus } from "./editTransport.js";
 
+import { SAVE_FAILED } from "../../shared/fieldEdit.js";
+
 export interface SaveStatus {
-  show(status: EditStatus): void;
+  show(status: EditStatus, refusal?: SaveRefusal): void;
   remove(): void;
 }
 
@@ -15,6 +18,18 @@ const LABELS: Record<EditStatus, string> = {
   saving: "Saving…",
   unsaved: "Unsaved changes",
 };
+
+export const REFUSAL_LABELS: Record<SaveRefusal, string> = {
+  failed: LABELS.failed,
+  locked: "Locked by another editor",
+  "no-drafts": "This content has no drafts",
+  "not-editable": "This field cannot be edited here",
+  "signed-out": "Sign in to the admin to edit",
+  unreadable: LABELS.failed,
+};
+
+const labelOf = (status: EditStatus, refusal: SaveRefusal): string =>
+  status === "failed" ? REFUSAL_LABELS[refusal] : LABELS[status];
 
 const TEMPLATE = `
 <style>
@@ -97,14 +112,14 @@ export function createSaveStatus(doc: Document, onRetry: () => void): SaveStatus
 
   return {
     remove,
-    show(status) {
+    show(status, refusal = SAVE_FAILED) {
       stopHiding();
       host ??= mount();
       const shadow = host.shadowRoot;
       const label = shadow?.querySelector("span");
       const retry = shadow?.querySelector("button");
       shadow?.querySelector('[role="status"]')?.setAttribute("data-status", status);
-      if (label) label.textContent = LABELS[status];
+      if (label) label.textContent = labelOf(status, refusal);
       if (retry) retry.hidden = status !== "failed";
       if (status === "saved") hiding = setTimeout(remove, SAVED_SHOWN_MS);
     },

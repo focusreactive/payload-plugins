@@ -17,7 +17,12 @@ import {
 
 import { markedText, markedTextNode } from "../support/markedData";
 import { click, overlayCtx } from "../support/overlay";
-import { postFromAdmin, restorePreviewWindow, stubAdminWindow } from "../support/previewWindow";
+import {
+  postFromAdmin,
+  restorePreviewWindow,
+  stubAdminWindow,
+  stubOpenerWindow,
+} from "../support/previewWindow";
 
 const PAYLOAD_API = "https://cms.example.com/api";
 
@@ -106,11 +111,123 @@ describe("editing text on the page", () => {
     it("lets the editor type into the text a click lands on", () => {
       const event = click(heading);
 
-      expect(heading.getAttribute("contenteditable")).toBe("plaintext-only");
+      expect(heading.getAttribute("contenteditable")).toBe("true");
       expect(heading.hasAttribute(DATA_VE_EDITING_ATTR)).toBe(true);
       expect(heading.getAttribute("spellcheck")).toBe("false");
       expect(event.defaultPrevented).toBe(true);
       expect(open).not.toHaveBeenCalled();
+    });
+
+    it("edits a line of text on a click anywhere in the block it fills", () => {
+      const block = document.createElement("h2");
+      const line = document.createElement("span");
+      line.style.display = "inline";
+      line.textContent = stega("Title", "subtitle");
+      block.append(line);
+      main.append(block);
+      overlay.dispose();
+      start();
+
+      const event = click(block);
+
+      expect(line.getAttribute("contenteditable")).toBe("true");
+      expect(event.defaultPrevented).toBe(true);
+    });
+
+    it("leaves a click beside the text of a button to the page, and edits on a click on the text", () => {
+      const control = document.createElement("button");
+      const label = document.createElement("span");
+      const icon = document.createElement("i");
+      label.textContent = stega("Question", "question");
+      control.append(label, icon);
+      main.append(control);
+      overlay.dispose();
+      start();
+
+      const beside = click(icon);
+
+      expect(beside.defaultPrevented).toBe(false);
+      expect(label.hasAttribute("contenteditable")).toBe(false);
+      expect(open).not.toHaveBeenCalled();
+
+      const onTheText = click(label);
+
+      expect(onTheText.defaultPrevented).toBe(true);
+      expect(label.getAttribute("contenteditable")).toBe("true");
+    });
+
+    it("keeps the lines of the text as the page broke them until the editor types", () => {
+      click(heading);
+
+      expect(heading.getAttribute("contenteditable")).toBe("true");
+
+      heading.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "a" }));
+
+      expect(heading.getAttribute("contenteditable")).toBe("plaintext-only");
+    });
+
+    it("breaks a long word as the page did while the text is edited, and leaves no style behind", () => {
+      const pageStyle = document.createElement("style");
+      pageStyle.textContent = "h1{overflow-wrap:normal;line-break:auto}";
+      document.head.append(pageStyle);
+
+      click(heading);
+
+      expect(heading.style.getPropertyValue("overflow-wrap")).toBe("normal");
+      expect(heading.style.getPropertyValue("line-break")).toBe("auto");
+
+      press(heading, "Enter");
+
+      expect(heading.hasAttribute("style")).toBe(false);
+      pageStyle.remove();
+    });
+
+    it("types the first text itself when no key came before it, so the caret follows the text", () => {
+      const execCommand = vi.fn();
+      Object.assign(document, { execCommand });
+      click(heading);
+
+      const input = new InputEvent("beforeinput", {
+        bubbles: true,
+        cancelable: true,
+        data: "a",
+        inputType: "insertText",
+      });
+      heading.dispatchEvent(input);
+
+      expect(heading.getAttribute("contenteditable")).toBe("plaintext-only");
+      expect(input.defaultPrevented).toBe(true);
+      expect(execCommand).toHaveBeenCalledWith("insertText", false, "a");
+      Reflect.deleteProperty(document, "execCommand");
+    });
+
+    it.each(["beforeinput", "paste", "cut", "drop", "compositionstart"])(
+      "takes plain text only from the first %s on",
+      (name) => {
+        click(heading);
+
+        heading.dispatchEvent(new Event(name, { bubbles: true }));
+
+        expect(heading.getAttribute("contenteditable")).toBe("plaintext-only");
+      }
+    );
+
+    it("leaves the text as the page had it when the edit ends before the editor types", () => {
+      click(heading);
+      heading.blur();
+      heading.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "a" }));
+
+      expect(heading.hasAttribute("contenteditable")).toBe(false);
+    });
+
+    it("draws one frame around the edited text and removes it when the edit ends", () => {
+      click(heading);
+
+      expect(document.querySelectorAll("[data-ve-editing-frame]")).toHaveLength(1);
+
+      press(heading, "Enter");
+
+      expect(document.querySelectorAll("[data-ve-editing-frame]")).toHaveLength(0);
     });
 
     it("saves what the editor typed once the typing pauses", async () => {
@@ -200,7 +317,7 @@ describe("editing text on the page", () => {
       expect(sentToEndpoint()).toHaveLength(1);
     });
 
-    it("shows the text the edit began with on Escape and saves nothing", async () => {
+    it("shows the text the edit began with on Escape and sends nothing when nothing was sent yet", async () => {
       click(heading);
       type(heading, "Changed");
 
@@ -209,7 +326,35 @@ describe("editing text on the page", () => {
 
       expect(heading.textContent).toBe("Hello");
       expect(heading.hasAttribute("contenteditable")).toBe(false);
-      expect(sentToEndpoint().at(-1)).toMatchObject({ value: "Hello" });
+      expect(fetchEndpoint).not.toHaveBeenCalled();
+    });
+
+    it("sends the text the edit began with on Escape once a typed text was sent", async () => {
+      click(heading);
+      type(heading, "Changed");
+      await pause();
+      type(heading, "Changed again");
+
+      press(heading, "Escape");
+      await pause();
+
+      expect(heading.textContent).toBe("Hello");
+      expect(sentToEndpoint().map(({ value }) => value)).toEqual(["Changed", "Hello"]);
+    });
+
+    it("says why the endpoint refused the edit", async () => {
+      fetchEndpoint.mockImplementationOnce(() =>
+        Promise.resolve({
+          json: () => Promise.resolve({ reason: "locked", saved: false }),
+          ok: false,
+        } as Response)
+      );
+      click(heading);
+      type(heading, "Changed");
+
+      await pause();
+
+      expect(statusLabel()).toBe("Locked by another editor");
     });
 
     it("sends nothing on Escape when the editor typed nothing", async () => {
@@ -374,6 +519,47 @@ describe("editing text on the page", () => {
 
       expect(heading.hasAttribute("contenteditable")).toBe(false);
       expect(open).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("on a page a window of the admin opened", () => {
+    const postToOpener = vi.fn();
+
+    beforeEach(() => {
+      postToOpener.mockClear();
+      stubOpenerWindow({ closed: false, postMessage: postToOpener });
+      start();
+    });
+
+    it("saves through the endpoint while the admin told it nothing of a form", async () => {
+      click(heading);
+      type(heading, "Hello world");
+      await pause();
+
+      expect(sentToEndpoint()).toEqual([
+        { ...PAGE, key: "title", locale: "en", value: "Hello world" },
+      ]);
+      expect(messagesOfType(postToOpener, VE_FIELD_EDIT_TYPE)).toEqual([]);
+    });
+
+    it("posts to the form once the admin sent the values of one", async () => {
+      postFromAdmin(
+        {
+          ...PAGE,
+          fields: [{ key: "title", saved: "Hello", value: "Hello" }],
+          locale: "en",
+          type: VE_FIELD_SNAPSHOT_TYPE,
+        },
+        { source: window.opener }
+      );
+      await flushMutations();
+
+      click(heading);
+      type(heading, "Hello world");
+      await pause();
+
+      expect(sentToEndpoint()).toEqual([]);
+      expect(messagesOfType(postToOpener, VE_FIELD_EDIT_TYPE)).toHaveLength(1);
     });
   });
 
