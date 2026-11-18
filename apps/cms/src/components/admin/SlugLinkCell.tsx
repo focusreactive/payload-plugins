@@ -33,7 +33,7 @@ function publicPath(
   return url === "/home" ? "/" : url;
 }
 
-/** The slug as a link to the live page, opened in a new tab, so an editor checks a page in one click. */
+/** The page's public path as a link to the live page, opened in a new tab, so an editor checks a page in one click. */
 export function SlugLinkCell({ cellData, rowData, routeKind }: Props) {
   const locale = useLocale();
   const path = publicPath(routeKind, rowData as Record<string, unknown>);
@@ -53,7 +53,7 @@ export function SlugLinkCell({ cellData, rowData, routeKind }: Props) {
       style={{ color: "#2563eb", textDecoration: "underline" }}
       target="_blank"
     >
-      {String(cellData ?? "")}
+      {path}
     </a>
   );
 }
