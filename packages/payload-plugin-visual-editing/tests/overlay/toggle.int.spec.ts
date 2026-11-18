@@ -168,4 +168,69 @@ describe("toggle", () => {
 
     expect(host()).toBeNull();
   });
+  describe("the switch of editing on the page", () => {
+    const editsInPlaceSwitch = () =>
+      host()?.shadowRoot?.querySelector<HTMLButtonElement>('[role="switch"]') ?? null;
+
+    it("is not there unless the site offers editing on the page", () => {
+      toggle = createToggle(document, vi.fn(), vi.fn());
+
+      toggle.show("hover");
+
+      expect(editsInPlaceSwitch()).toBeNull();
+    });
+
+    it("shows whether the editor turned editing on the page on", () => {
+      toggle = createToggle(document, vi.fn(), vi.fn());
+
+      toggle.show("hover", false);
+      expect(editsInPlaceSwitch()?.getAttribute("aria-checked")).toBe("false");
+
+      toggle.show("hover", true);
+      expect(editsInPlaceSwitch()?.getAttribute("aria-checked")).toBe("true");
+    });
+
+    it("reports the opposite of what it shows when the editor clicks it", () => {
+      const onEditsInPlace = vi.fn();
+      toggle = createToggle(document, vi.fn(), onEditsInPlace);
+      toggle.show("hover", false);
+
+      editsInPlaceSwitch()?.click();
+      toggle.show("hover", true);
+      editsInPlaceSwitch()?.click();
+
+      expect(onEditsInPlace.mock.calls).toEqual([[true], [false]]);
+    });
+
+    it("picks no mode when the editor clicks it", () => {
+      const onSelect = vi.fn();
+      toggle = createToggle(document, onSelect, vi.fn());
+      toggle.show("hover", false);
+
+      editsInPlaceSwitch()?.click();
+
+      expect(onSelect).not.toHaveBeenCalled();
+    });
+
+    it("leaves when the site stops offering editing on the page", () => {
+      toggle = createToggle(document, vi.fn(), vi.fn());
+      toggle.show("hover", true);
+
+      toggle.show("hover");
+
+      expect(editsInPlaceSwitch()).toBeNull();
+    });
+
+    it("stays out of the arrow keys of the modes", () => {
+      const onSelect = vi.fn();
+      toggle = createToggle(document, onSelect, vi.fn());
+      toggle.show("hover", true);
+
+      editsInPlaceSwitch()?.dispatchEvent(
+        new KeyboardEvent("keydown", { bubbles: true, key: "ArrowRight" })
+      );
+
+      expect(onSelect).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -3,15 +3,17 @@ import type { VisualEditingMode } from "./visualEditingMode.js";
 
 import { defaultBuildAdminEditUrl } from "../shared/buildAdminEditUrl.js";
 import { findAdminWindow } from "./adminWindow.js";
-import { STORAGE_KEY } from "./visualEditingMode.js";
+import { EDITS_IN_PLACE_STORAGE_KEY, STORAGE_KEY } from "./visualEditingMode.js";
 
 export type SessionOptions = {
   available?: boolean;
   framedOnly?: boolean;
   instantPreview?: boolean;
+  inlineEditing?: boolean;
   buildAdminEditUrl?: BuildAdminEditUrl;
   adminOrigin?: string;
   adminBasePath?: string;
+  payloadApi?: string;
 };
 
 export type Session = {
@@ -20,22 +22,40 @@ export type Session = {
   enabled: boolean;
   instantPreview: boolean;
   isInstantPreviewOn: boolean;
+  inlineEditing: boolean;
+  editsInPlace: boolean;
+  isInlineEditingOn: boolean;
   mode: VisualEditingMode;
   buildAdminEditUrl: BuildAdminEditUrl;
   adminOrigin: string;
   adminBasePath: string;
+  payloadApi: string;
 };
 
-export type PageState = { mode: VisualEditingMode; isFramed: boolean; pageOrigin: string };
+export type PageState = {
+  mode: VisualEditingMode;
+  editsInPlace: boolean;
+  isFramed: boolean;
+  pageOrigin: string;
+};
 
 export interface PageStore {
   read(): PageState;
   subscribe(listener: () => void): () => void;
   attach(win: Window): void;
   setMode(mode: VisualEditingMode): void;
+  setEditsInPlace(editsInPlace: boolean): void;
 }
 
-export const DETACHED_PAGE: PageState = { isFramed: false, mode: "off", pageOrigin: "" };
+export const DETACHED_PAGE: PageState = {
+  editsInPlace: false,
+  isFramed: false,
+  mode: "off",
+  pageOrigin: "",
+};
+
+const STORED_ON = "true";
+const STORED_OFF = "false";
 
 const DEFAULT_ADMIN_BASE_PATH = "/admin";
 
@@ -65,28 +85,30 @@ export const payloadApiOf = ({
   return origin && new URL(DEFAULT_API_PATH, origin).href;
 };
 
-const storedModeOf = (win: Window): string | null => {
+const storedUnder = (win: Window, key: string): string | null => {
   try {
-    return win.localStorage.getItem(STORAGE_KEY);
+    return win.localStorage.getItem(key);
   } catch {
     return null;
   }
 };
 
+const store = (win: Window, key: string, value: string): void => {
+  try {
+    win.localStorage.setItem(key, value);
+  } catch {
+    return;
+  }
+};
+
 const readStoredMode = (win: Window): VisualEditingMode => {
-  const stored = storedModeOf(win);
+  const stored = storedUnder(win, STORAGE_KEY);
   if (stored === "always" || stored === "hover" || stored === "off") return stored;
   if (stored === "true") return "always";
   return "off";
 };
 
-const storeMode = (win: Window, mode: VisualEditingMode): void => {
-  try {
-    win.localStorage.setItem(STORAGE_KEY, mode);
-  } catch {
-    return;
-  }
-};
+const MODE_THAT_SHOWS_WHAT_IS_EDITED: VisualEditingMode = "hover";
 
 export const toggledMode = (mode: VisualEditingMode): VisualEditingMode =>
   mode === "off" ? "always" : "off";
@@ -112,6 +134,7 @@ export function createPageStore(): PageStore {
     attach(win) {
       attachedWindow = win;
       change({
+        editsInPlace: storedUnder(win, EDITS_IN_PLACE_STORAGE_KEY) === STORED_ON,
         isFramed: win.self !== win.top || findAdminWindow(win) !== null,
         mode: readStoredMode(win),
         pageOrigin: win.location.origin,
@@ -119,7 +142,15 @@ export function createPageStore(): PageStore {
     },
     setMode(mode) {
       change({ ...state, mode });
-      if (attachedWindow) storeMode(attachedWindow, mode);
+      if (attachedWindow) store(attachedWindow, STORAGE_KEY, mode);
+    },
+    setEditsInPlace(editsInPlace) {
+      const mode =
+        editsInPlace && state.mode === "off" ? MODE_THAT_SHOWS_WHAT_IS_EDITED : state.mode;
+      change({ ...state, editsInPlace, mode });
+      if (!attachedWindow) return;
+      store(attachedWindow, EDITS_IN_PLACE_STORAGE_KEY, editsInPlace ? STORED_ON : STORED_OFF);
+      store(attachedWindow, STORAGE_KEY, mode);
     },
   };
 }
@@ -128,15 +159,22 @@ export const sessionOf = (options: SessionOptions, page: PageState): Session => 
   const isDraft = Boolean(options.available);
   const available = isDraft && (!options.framedOnly || page.isFramed);
   const instantPreview = options.instantPreview ?? true;
+  const adminOrigin = originOf(options.adminOrigin) ?? page.pageOrigin;
+  const enabled = available && page.mode !== "off";
+  const inlineEditing = available && Boolean(options.inlineEditing);
   return {
     adminBasePath: options.adminBasePath ?? DEFAULT_ADMIN_BASE_PATH,
-    adminOrigin: originOf(options.adminOrigin) ?? page.pageOrigin,
+    adminOrigin,
     available,
     buildAdminEditUrl: options.buildAdminEditUrl ?? defaultBuildAdminEditUrl,
-    enabled: available && page.mode !== "off",
+    editsInPlace: page.editsInPlace,
+    enabled,
+    inlineEditing,
     instantPreview,
     isDraft,
+    isInlineEditingOn: enabled && inlineEditing && page.editsInPlace,
     isInstantPreviewOn: available && instantPreview,
     mode: page.mode,
+    payloadApi: options.payloadApi ?? `${adminOrigin}${DEFAULT_API_PATH}`,
   };
 };

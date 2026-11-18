@@ -6,7 +6,12 @@ import type { FieldStep } from "../../shared/fieldKey.js";
 import { isMarkable } from "../../shared/editableSchema/editableSchema.js";
 import { FIELD_PATH_SEPARATOR, fieldKeyOf } from "../../shared/fieldKey.js";
 
-export type FormField = { key: string; steps: readonly FieldStep[]; value: unknown };
+export type FormField = {
+  formPath: string;
+  key: string;
+  steps: readonly FieldStep[];
+  value: unknown;
+};
 
 type FormEntry = FormState[string] | undefined;
 
@@ -43,6 +48,13 @@ export function readFormFields(formState: FormState, editableSchema: EditableSch
     const walked = walk(formPath);
     if (!walked?.entry || walked.entry.rows !== undefined) return [];
     if (!isMarkable(editableSchema, walked.steps)) return [];
-    return [{ key: fieldKeyOf(walked.steps), steps: walked.steps, value: walked.entry.value }];
+    return [
+      {
+        formPath,
+        key: fieldKeyOf(walked.steps),
+        steps: walked.steps,
+        value: walked.entry.value,
+      },
+    ];
   });
 }

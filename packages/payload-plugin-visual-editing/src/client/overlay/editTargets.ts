@@ -106,7 +106,12 @@ export function createEditTargets(
     if (!isPlainPrimaryClick(event)) return;
     const target = findTargetAncestor(event.target instanceof Element ? event.target : null);
     const config = target ? registry.get(target) : undefined;
-    if (!config) return;
+    if (!target || !config) return;
+    if (getCtx().editInPlace?.(target, event)) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     if (isRepeatedClick(event)) {
       event.preventDefault();
       event.stopPropagation();

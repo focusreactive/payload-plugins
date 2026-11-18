@@ -1,0 +1,26 @@
+import type { PayloadRequest } from "payload";
+
+import { readJsonBody } from "./unsavedRichText/jsonBody.js";
+
+const MAX_BODY_BYTES = 4 * 1024 * 1024;
+const BODY_TIME_LIMIT_MS = 10_000;
+
+export const json = (body: unknown, status: number): Response =>
+  Response.json(body, { headers: { "Cache-Control": "no-store" }, status });
+
+const parsed = (text: string): unknown => {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+};
+
+export const bodyOf = async (req: PayloadRequest): Promise<unknown> => {
+  if (Number(req.headers.get("Content-Length") ?? 0) > MAX_BODY_BYTES) return null;
+  if (req.body instanceof ReadableStream) {
+    return readJsonBody(req as Request, MAX_BODY_BYTES, AbortSignal.timeout(BODY_TIME_LIMIT_MS));
+  }
+  const text = req.text ? await req.text() : "";
+  return text.length > MAX_BODY_BYTES ? null : parsed(text);
+};

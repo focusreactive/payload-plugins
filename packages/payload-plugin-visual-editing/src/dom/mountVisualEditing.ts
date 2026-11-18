@@ -47,7 +47,11 @@ export function mountVisualEditing({
   });
   const pageStore = createPageStore();
   pageStore.attach(window);
-  const session = () => sessionOf({ available: true, ...sessionOptions }, pageStore.read());
+  const session = () =>
+    sessionOf(
+      { available: true, ...sessionOptions, payloadApi: namedPayloadApi },
+      pageStore.read()
+    );
   const adminOrigin = () => session().adminOrigin;
   const scope: OverlayScope = { locale, savedShapes: savedShapesWithin(null) };
 
@@ -62,7 +66,12 @@ export function mountVisualEditing({
     });
 
   const overlay = startSessionOverlay(root, () => scope, session);
-  const toggle = showsToggle ? startSessionToggle(document, session, pageStore.setMode) : null;
+  const toggle = showsToggle
+    ? startSessionToggle(document, session, {
+        setEditsInPlace: pageStore.setEditsInPlace,
+        setMode: pageStore.setMode,
+      })
+    : null;
   const followSession = () => {
     overlay.sync();
     toggle?.sync();

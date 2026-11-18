@@ -77,6 +77,7 @@ export function createHoverController(badge: EditBadge, registry: TargetRegistry
   };
   window.addEventListener("scroll", repositionIfActive, { capture: true, passive: true });
   window.addEventListener("resize", repositionIfActive, { passive: true });
+  window.addEventListener("input", repositionIfActive, { capture: true, passive: true });
 
   return {
     attach(target) {
@@ -116,6 +117,7 @@ export function createHoverController(badge: EditBadge, registry: TargetRegistry
       cancelPendingClear();
       window.removeEventListener("scroll", repositionIfActive, true);
       window.removeEventListener("resize", repositionIfActive);
+      window.removeEventListener("input", repositionIfActive, true);
       label.removeEventListener("mouseleave", onLabelLeave);
       label.removeEventListener("mouseenter", onLabelEnter);
       for (const [target, listeners] of targetListeners) {

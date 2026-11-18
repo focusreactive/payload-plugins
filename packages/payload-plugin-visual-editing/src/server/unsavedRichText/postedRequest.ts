@@ -1,6 +1,6 @@
 import type { Payload } from "payload";
 
-import type { LiveRichTextField, VeEditorState } from "../../shared/protocol.js";
+import type { LiveRichTextField, VeDocument, VeEditorState } from "../../shared/protocol.js";
 
 import { schemaPathOfRichText } from "../../shared/editableSchema/editableSchema.js";
 import { isPlainObject } from "../../shared/plainObject.js";
@@ -20,7 +20,7 @@ export type PostedRequest =
   | { headers: Headers; request: unknown }
   | { headers?: never; request: Request };
 
-type DocumentToRead =
+export type DocumentToRead =
   | { collection: string; id: number | string; kind: "collection" }
   | { kind: "global"; slug: string };
 
@@ -53,9 +53,9 @@ const idOfCollection = (payload: Payload, collection: string, docId: string) => 
   return Number.isSafeInteger(id) && String(id) === docId ? id : null;
 };
 
-const documentOf = (
+export const documentOf = (
   payload: Payload,
-  { collectionSlug, docId, kind }: LiveRichTextField
+  { collectionSlug, docId, kind }: VeDocument
 ): DocumentToRead | null => {
   if (kind === "global") {
     const isGlobal = payload.config.globals.some(({ slug }) => slug === collectionSlug);

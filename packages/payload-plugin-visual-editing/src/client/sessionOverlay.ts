@@ -20,8 +20,10 @@ const overlayCtxOf = (session: Session): ScopedOverlayCtx => ({
   adminBasePath: session.adminBasePath,
   adminOrigin: session.adminOrigin,
   buildAdminEditUrl: session.buildAdminEditUrl,
+  inlineEditing: session.isInlineEditingOn,
   instantPreview: session.isInstantPreviewOn,
   mode: session.enabled ? session.mode : "off",
+  payloadApi: session.payloadApi,
 });
 
 export function startSessionOverlay(
@@ -73,10 +75,15 @@ export function startSessionOverlay(
   };
 }
 
+export type ToggleActions = {
+  setMode: (mode: VisualEditingMode) => void;
+  setEditsInPlace: (editsInPlace: boolean) => void;
+};
+
 export function startSessionToggle(
   doc: Document,
   session: () => Session,
-  setMode: (mode: VisualEditingMode) => void
+  { setEditsInPlace, setMode }: ToggleActions
 ): FollowingSession {
   let toggle: Toggle | null = null;
 
@@ -86,13 +93,13 @@ export function startSessionToggle(
   };
 
   const sync = () => {
-    const { available, mode } = session();
+    const { available, editsInPlace, inlineEditing, mode } = session();
     if (!available) {
       remove();
       return;
     }
-    toggle ??= createToggle(doc, setMode);
-    toggle.show(mode);
+    toggle ??= createToggle(doc, setMode, setEditsInPlace);
+    toggle.show(mode, inlineEditing ? editsInPlace : undefined);
   };
   sync();
 

@@ -32,6 +32,7 @@ import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect.js";
 
 type VisualEditingContextType = Session & {
   setMode: (mode: VisualEditingMode) => void;
+  setEditsInPlace: (editsInPlace: boolean) => void;
   toggleEnabled: () => void;
 };
 
@@ -39,6 +40,7 @@ const noop = (): void => undefined;
 
 const VisualEditingContext = createContext<VisualEditingContextType>({
   ...sessionOf({}, DETACHED_PAGE),
+  setEditsInPlace: noop,
   setMode: noop,
   toggleEnabled: noop,
 });
@@ -51,6 +53,7 @@ export function VisualEditingProvider({
   available = false,
   framedOnly = false,
   instantPreview = true,
+  inlineEditing = false,
   buildAdminEditUrl,
   adminOrigin,
   adminBasePath,
@@ -62,6 +65,7 @@ export function VisualEditingProvider({
   available?: boolean;
   framedOnly?: boolean;
   instantPreview?: boolean;
+  inlineEditing?: boolean;
   buildAdminEditUrl?: BuildAdminEditUrl;
   adminOrigin?: string;
   adminBasePath?: string;
@@ -82,11 +86,21 @@ export function VisualEditingProvider({
 
   const value = useMemo((): VisualEditingContextType => {
     const session = sessionOf(
-      { adminBasePath, adminOrigin, available, buildAdminEditUrl, framedOnly, instantPreview },
+      {
+        adminBasePath,
+        adminOrigin,
+        available,
+        buildAdminEditUrl,
+        framedOnly,
+        inlineEditing,
+        instantPreview,
+        payloadApi: namedPayloadApi,
+      },
       page
     );
     return {
       ...session,
+      setEditsInPlace: pageStore.setEditsInPlace,
       setMode: pageStore.setMode,
       toggleEnabled: () => pageStore.setMode(toggledMode(session.mode)),
     };
@@ -96,7 +110,9 @@ export function VisualEditingProvider({
     available,
     buildAdminEditUrl,
     framedOnly,
+    inlineEditing,
     instantPreview,
+    namedPayloadApi,
     page,
     pageStore,
   ]);

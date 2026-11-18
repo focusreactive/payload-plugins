@@ -4,6 +4,7 @@ import { PACKAGE_NAME } from "../shared/packageName.js";
 
 const PREVIEW_PAGE_BRIDGE_PATH = `${PACKAGE_NAME}/admin#PreviewPageBridge`;
 const INSTANT_PREVIEW_COMPONENT_PATH = `${PACKAGE_NAME}/admin#InstantPreviewBroadcaster`;
+const INLINE_EDIT_RECEIVER_PATH = `${PACKAGE_NAME}/admin#InlineEditReceiver`;
 const OPEN_FORM_ANNOUNCER_PATH = `${PACKAGE_NAME}/admin#OpenFormAnnouncer`;
 
 type RootLivePreview = NonNullable<Config["admin"]>["livePreview"];
@@ -11,6 +12,7 @@ type RootLivePreview = NonNullable<Config["admin"]>["livePreview"];
 export type DocumentControlsOptions = {
   rootLivePreview: RootLivePreview;
   excludeFieldNames: string[];
+  inlineEditing: boolean;
   instantPreview: boolean;
 };
 
@@ -31,15 +33,17 @@ const hasLivePreview = (
 const documentControlsOf = (
   entity: PreviewableEntity,
   slugsPreviewedByRoot: readonly string[] | undefined,
-  { excludeFieldNames, instantPreview }: DocumentControlsOptions
+  { excludeFieldNames, inlineEditing, instantPreview }: DocumentControlsOptions
 ): CustomComponent[] => {
   const isPreviewed = hasLivePreview(entity, slugsPreviewedByRoot);
+  const clientProps = { excludeFieldNames };
   return [
     ...(isPreviewed ? [{ path: PREVIEW_PAGE_BRIDGE_PATH }] : []),
     { path: OPEN_FORM_ANNOUNCER_PATH },
     ...(instantPreview && isPreviewed
-      ? [{ clientProps: { excludeFieldNames }, path: INSTANT_PREVIEW_COMPONENT_PATH }]
+      ? [{ clientProps, path: INSTANT_PREVIEW_COMPONENT_PATH }]
       : []),
+    ...(inlineEditing && isPreviewed ? [{ clientProps, path: INLINE_EDIT_RECEIVER_PATH }] : []),
   ];
 };
 

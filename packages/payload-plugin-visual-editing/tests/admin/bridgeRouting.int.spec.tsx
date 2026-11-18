@@ -94,6 +94,21 @@ describe("VisualEditingBridgeProvider — collection routing", () => {
     expect(assignSpy).not.toHaveBeenCalled();
   });
 
+  it("opens no tab for a field the editor edits on the page of another document", () => {
+    setLocation("/admin/collections/pages/1");
+    mountBridge();
+    postMessageAct({
+      type: VE_MESSAGE_TYPE,
+      path: "content",
+      docId: "2",
+      collectionSlug: "pages",
+      kind: "collection",
+      focus: false,
+    });
+    expect(openSpy).not.toHaveBeenCalled();
+    expect(assignSpy).not.toHaveBeenCalled();
+  });
+
   it("does not navigate when collection and docId both match", () => {
     setLocation("/admin/collections/pages/1");
     document.body.innerHTML = '<div id="field-title"></div>';
