@@ -70,7 +70,7 @@ type EditValue = string | VeEditorState;
 
 type SavedEdit = { startedFrom: EditValue; sent: EditValue; stored: EditValue };
 
-type EndpointAnswer = { refusal: SaveRefusal | null; stored: unknown };
+type EndpointAnswer = { refusal: SaveRefusal | null; stored: unknown; autosaves: boolean };
 
 type PostedAnswer = { refusal: SaveRefusal | null; isLatest: boolean };
 
@@ -137,11 +137,12 @@ const postToEndpoint = async (win: Window, url: string, edit: VeEdit): Promise<E
       method: "POST",
     });
     const answer: unknown = await response.json();
-    return isSavedBy(response, answer)
-      ? { refusal: null, stored: isPlainObject(answer) ? answer.value : undefined }
-      : { refusal: readSaveRefusal(answer), stored: undefined };
+    if (!isSavedBy(response, answer) || !isPlainObject(answer)) {
+      return { autosaves: true, refusal: readSaveRefusal(answer), stored: undefined };
+    }
+    return { autosaves: answer.autosave !== false, refusal: null, stored: answer.value };
   } catch {
-    return { refusal: SAVE_FAILED, stored: undefined };
+    return { autosaves: true, refusal: SAVE_FAILED, stored: undefined };
   }
 };
 
@@ -160,6 +161,7 @@ export function createEditTransport(
   const savedEdits = new Map<string, SavedEdit>();
   const latestPosted = new Map<string, VeEdit>();
   const latestQueued = new Map<string, VeEdit>();
+  const savedWhenEditsEnd = new Set<string>();
   let saves: Promise<void> = Promise.resolve();
   let pageLeave = nextPageLeave();
   let isDisposed = false;
@@ -219,11 +221,12 @@ export function createEditTransport(
     const continued = continuesSaved(edit, saved) ? saved : null;
     const posted = startingValuesOf(edit, continued);
     latestPosted.set(address, edit);
-    const { refusal, stored } = await postToEndpoint(
+    const { autosaves, refusal, stored } = await postToEndpoint(
       win,
       `${getCtx().payloadApi}${VE_FIELD_EDIT_PATH}`,
       posted
     );
+    if (!autosaves) savedWhenEditsEnd.add(documentAddressOf(edit));
     const isLatest = latestPosted.get(address) === edit;
     if (isLatest) latestPosted.delete(address);
     if (isLatest && refusal === null) rememberSaved(edit, continued, stored);
@@ -273,6 +276,11 @@ export function createEditTransport(
     waiting.delete(address);
     return held;
   };
+
+  const pauseBeforeSending = (): number => (findAdmin() ? EDIT_SEND_PAUSE_MS : EDIT_SAVE_PAUSE_MS);
+
+  const isSavedWhenTheEditEnds = (edit: VeEdit): boolean =>
+    !findAdmin() && savedWhenEditsEnd.has(documentAddressOf(edit));
 
   const isIdle = (): boolean =>
     waiting.size === 0 && savesOnTheWay.size === 0 && unsavedInForm.size === 0;
@@ -330,8 +338,9 @@ export function createEditTransport(
       const address = addressOf(edit);
       supersede(address);
       watchedSaves.delete(address);
-      const pause = findAdmin() ? EDIT_SEND_PAUSE_MS : EDIT_SAVE_PAUSE_MS;
-      const timer = setTimeout(deliverWaiting, pause, address);
+      const timer = isSavedWhenTheEditEnds(edit)
+        ? null
+        : setTimeout(deliverWaiting, pauseBeforeSending(), address);
       waiting.set(address, { edit, onDelivered, timer });
       report("unsaved");
     },

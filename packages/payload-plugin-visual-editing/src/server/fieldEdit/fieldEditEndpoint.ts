@@ -175,7 +175,7 @@ const savedEdit = async (
     return refuse(FIELD_NOT_EDITABLE, req);
   }
   const value = edit.base === undefined ? {} : { value: valueAtKey(saved, edit.key)?.value };
-  return answer({ saved: true, ...value }, ANSWERED, req);
+  return answer({ autosave: field.drafts.autosave, saved: true, ...value }, ANSWERED, req);
 };
 
 export const fieldEditEndpoint: Endpoint = {

@@ -198,7 +198,7 @@ describe("the key of an upload in a draft read with instantPreview", () => {
 
     expect(listed.status).toBe(200);
     expect(listed.body.collection).toBe("media");
-    expect(saved).toEqual({ body: { saved: true }, status: 200 });
+    expect(saved).toEqual({ body: { autosave: false, saved: true }, status: 200 });
     expect(await savedAt(dataPath)).toBe(lighthouse);
   });
 

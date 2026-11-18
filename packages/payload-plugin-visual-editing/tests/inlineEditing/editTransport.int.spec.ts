@@ -34,6 +34,9 @@ const answerOf = (saved: boolean, ok = true) =>
 const storedAnswerOf = (value: unknown) =>
   ({ json: () => Promise.resolve({ saved: true, value }), ok: true }) as Response;
 
+const withoutAutosave = () =>
+  ({ json: () => Promise.resolve({ autosave: false, saved: true }), ok: true }) as Response;
+
 const refusalOf = (reason: unknown) =>
   ({ json: () => Promise.resolve({ reason, saved: false }), ok: false }) as Response;
 
@@ -325,6 +328,46 @@ describe("the transport of an edit", () => {
         await settle();
 
         expect(basesSent()).toEqual([STATE, CHANGED_STATE]);
+      });
+    });
+
+    describe("of a document whose drafts do not autosave", () => {
+      beforeEach(async () => {
+        fetchEndpoint.mockImplementation(() => Promise.resolve(withoutAutosave()));
+        transport.send({ ...TITLE, value: "First" });
+        await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+      });
+
+      afterEach(async () => {
+        transport.flush();
+        await settle();
+      });
+
+      it("saves nothing more on a pause, so every pause adds no version", async () => {
+        transport.send({ ...TITLE, value: "Second" });
+        transport.send({ ...TITLE, key: "lead", value: "Lead" });
+        await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS * 10);
+
+        expect(fetchEndpoint).toHaveBeenCalledTimes(1);
+        expect(statuses.at(-1)).toBe("unsaved");
+      });
+
+      it("saves the latest value once when the edit ends", async () => {
+        transport.send({ ...TITLE, value: "Second" });
+        transport.send({ ...TITLE, value: "Third" });
+
+        transport.flush();
+        await settle();
+
+        expect(fetchEndpoint).toHaveBeenCalledTimes(2);
+        expect(statuses.at(-1)).toBe("saved");
+      });
+
+      it("keeps saving on a pause the edits of another document", async () => {
+        transport.send({ ...TITLE, docId: "2", value: "Other" });
+        await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+
+        expect(fetchEndpoint).toHaveBeenCalledTimes(2);
       });
     });
 
