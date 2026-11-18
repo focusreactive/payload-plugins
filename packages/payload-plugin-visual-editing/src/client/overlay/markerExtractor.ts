@@ -18,7 +18,7 @@ export function readMarkerFromAttrs(target: HTMLElement): Marker | null {
   const collectionSlug = target.getAttribute(DATA_VE_COLLECTION_ATTR) ?? "";
   if (rawPath === null || !collectionSlug) return null;
   return veIdentityOf({
-    collectionSlug: collectionSlug as Marker["collectionSlug"],
+    collectionSlug,
     docId: target.getAttribute(DATA_VE_DOC_ID_ATTR) ?? undefined,
     key: target.getAttribute(DATA_VE_KEY_ATTR) ?? undefined,
     kind: (target.getAttribute(DATA_VE_KIND_ATTR) as DocKind | null) ?? "collection",

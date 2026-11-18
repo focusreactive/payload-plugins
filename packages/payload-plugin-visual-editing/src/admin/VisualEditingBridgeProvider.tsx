@@ -3,26 +3,35 @@
 import { useConfig } from "@payloadcms/ui";
 import { useCallback, useEffect, useState } from "react";
 
-import { defaultBuildAdminEditUrl } from "../shared/buildAdminEditUrl.js";
+import type { VeDocument } from "../shared/protocol.js";
+
+import { adminBaseOf, defaultBuildAdminEditUrl } from "../shared/buildAdminEditUrl.js";
+import { announceOpenField } from "../shared/openFieldEvent.js";
 import { VE_FOCUS_PARAM, VE_MESSAGE_TYPE } from "../shared/protocol.js";
 import type { DocKind } from "../shared/protocol.js";
 import type { VeOpenFieldMessage } from "../shared/protocol.js";
 import { expandAndFocus } from "./expandAndFocus.js";
-import { currentFormPathOf, OpenFormsContext } from "./openField/openForms.js";
-import type { AnnounceOpenForm, OpenForm } from "./openField/openForms.js";
+import { openDocumentOf } from "./openField/openDocument.js";
+import { createOpenForms, currentFormPathOf, OpenFormsContext } from "./openField/openForms.js";
+import type { OpenForms } from "./openField/openForms.js";
 import { parseFieldPath } from "./parseFieldPath.js";
+import { isFromAdminOrPreviewPage, PreviewPagesContext } from "./previewPages.js";
+import type { AnnouncePreviewPage, PreviewPage } from "./previewPages.js";
 import { resolveContainerChain } from "./resolveContainerChain.js";
 import type { ContainerInstruction, ResolverField } from "./resolveContainerChain.js";
 
 const escapeRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const isSameOrigin = (eventOrigin: string): boolean => {
-  if (typeof window === "undefined") return false;
-  return eventOrigin === window.location.origin;
+const decoded = (segment: string): string => {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
 };
 
 const makeLocators = (adminBasePath: string) => {
-  const base = escapeRegex(adminBasePath);
+  const base = escapeRegex(adminBaseOf(adminBasePath));
   const collectionRe = new RegExp(`^${base}/collections/([^/]+)/([^/?#]+)`);
   const globalRe = new RegExp(`^${base}/globals/([^/?#]+)`);
 
@@ -31,12 +40,12 @@ const makeLocators = (adminBasePath: string) => {
     if (!match) return null;
     const [, slug, id] = match;
     if (!slug || !id) return null;
-    return { slug, id };
+    return { id: decoded(id), slug: decoded(slug) };
   };
 
   const currentGlobalSlug = (): string | null => {
     const match = window.location.pathname.match(globalRe);
-    return match?.[1] ?? null;
+    return match?.[1] ? decoded(match[1]) : null;
   };
 
   const navigateAndFocus = (message: VeOpenFieldMessage): void => {
@@ -67,16 +76,49 @@ const fallbackResolution = (
 
 type EntityFieldsLookup = (kind: DocKind, slug: string) => ResolverField[] | null;
 
+type FocusTarget = { docId?: string; locale?: string };
+
 const focusFieldPath = async (
   path: string,
   kind: DocKind,
   slug: string,
-  getFields: EntityFieldsLookup
+  getFields: EntityFieldsLookup,
+  target: FocusTarget = {}
 ): Promise<void> => {
+  const openedByAnotherComponent = announceOpenField({
+    path,
+    ...(kind === "collection" ? { collectionSlug: slug } : { globalSlug: slug }),
+    ...(target.docId === undefined ? {} : { docId: target.docId }),
+    ...(target.locale === undefined ? {} : { locale: target.locale }),
+  });
+  if (openedByAnotherComponent) return;
   const fields = getFields(kind, slug);
   const chainResult = fields !== null ? resolveContainerChain(path, fields) : null;
   const resolved = chainResult ?? fallbackResolution(path);
   await expandAndFocus(resolved.chain, resolved.fieldId);
+};
+
+const forgetFocusParam = (): void => {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(VE_FOCUS_PARAM)) return;
+  url.searchParams.delete(VE_FOCUS_PARAM);
+  window.history.replaceState(null, "", url.toString());
+};
+
+const focusFieldOnceFormIsOpen = async (
+  openForms: OpenForms,
+  document: VeDocument,
+  path: string,
+  getFields: EntityFieldsLookup
+): Promise<void> => {
+  try {
+    await openForms.whenOpen(document);
+    await focusFieldPath(path, document.kind, document.collectionSlug, getFields, {
+      ...(document.docId === undefined ? {} : { docId: document.docId }),
+    });
+  } finally {
+    forgetFocusParam();
+  }
 };
 
 export function VisualEditingBridgeProvider({
@@ -87,21 +129,30 @@ export function VisualEditingBridgeProvider({
   children: React.ReactNode;
 }) {
   const { getEntityConfig } = useConfig();
-  const [openForms] = useState(() => new Set<OpenForm>());
+  const [openForms] = useState(createOpenForms);
+  const [previewPages] = useState(() => new Set<PreviewPage>());
+  const [linkedFocus] = useState(() => ({ started: false }));
 
-  const announceOpenForm = useCallback<AnnounceOpenForm>(
-    (form) => {
-      openForms.add(form);
+  const announcePreviewPage = useCallback<AnnouncePreviewPage>(
+    (page) => {
+      previewPages.add(page);
       return () => {
-        openForms.delete(form);
+        previewPages.delete(page);
       };
     },
-    [openForms]
+    [previewPages]
   );
 
   useEffect(() => {
     const { currentCollectionLocation, currentGlobalSlug, navigateAndFocus } =
       makeLocators(adminBasePath);
+
+    const documentOfLocation = (): VeDocument | null =>
+      openDocumentOf({
+        collectionSlug: currentCollectionLocation()?.slug,
+        globalSlug: currentGlobalSlug() ?? undefined,
+        id: currentCollectionLocation()?.id,
+      });
 
     const getFields: EntityFieldsLookup = (kind, slug) => {
       try {
@@ -115,24 +166,16 @@ export function VisualEditingBridgeProvider({
       }
     };
 
-    const url = new URL(window.location.href);
-    const focusPath = url.searchParams.get(VE_FOCUS_PARAM);
-    if (focusPath) {
-      url.searchParams.delete(VE_FOCUS_PARAM);
-      window.history.replaceState(null, "", url.toString());
-      const collection = currentCollectionLocation();
-      const globalSlug = currentGlobalSlug();
-      setTimeout(() => {
-        if (collection) {
-          void focusFieldPath(focusPath, "collection", collection.slug, getFields);
-        } else if (globalSlug) {
-          void focusFieldPath(focusPath, "global", globalSlug, getFields);
-        }
-      }, 500);
+    const focusPath = new URL(window.location.href).searchParams.get(VE_FOCUS_PARAM);
+    const linked = documentOfLocation();
+    if (focusPath && !linked) forgetFocusParam();
+    if (focusPath && linked && !linkedFocus.started) {
+      linkedFocus.started = true;
+      void focusFieldOnceFormIsOpen(openForms, linked, focusPath, getFields);
     }
 
     const handle = (event: MessageEvent) => {
-      if (!isSameOrigin(event.origin)) return;
+      if (!isFromAdminOrPreviewPage(event, window.location.origin, previewPages)) return;
       const data = event.data as VeOpenFieldMessage | undefined;
       if (!data || data.type !== VE_MESSAGE_TYPE) return;
 
@@ -145,10 +188,11 @@ export function VisualEditingBridgeProvider({
           return;
         }
         void focusFieldPath(
-          currentFormPathOf(data, openForms),
+          currentFormPathOf(data, openForms.forms),
           "collection",
           data.collectionSlug,
-          getFields
+          getFields,
+          { docId: current.id, locale: data.locale }
         );
         return;
       }
@@ -160,17 +204,22 @@ export function VisualEditingBridgeProvider({
           return;
         }
         void focusFieldPath(
-          currentFormPathOf(data, openForms),
+          currentFormPathOf(data, openForms.forms),
           "global",
           data.collectionSlug,
-          getFields
+          getFields,
+          { locale: data.locale }
         );
       }
     };
 
     window.addEventListener("message", handle);
     return () => window.removeEventListener("message", handle);
-  }, [getEntityConfig, adminBasePath, openForms]);
+  }, [getEntityConfig, adminBasePath, openForms, previewPages, linkedFocus]);
 
-  return <OpenFormsContext.Provider value={announceOpenForm}>{children}</OpenFormsContext.Provider>;
+  return (
+    <PreviewPagesContext.Provider value={announcePreviewPage}>
+      <OpenFormsContext.Provider value={openForms.announce}>{children}</OpenFormsContext.Provider>
+    </PreviewPagesContext.Provider>
+  );
 }

@@ -92,7 +92,7 @@ export default function BulkTranslationDashboard({
   return (
     <CollectionTranslationPopup status={panelStatus} selectedCount={selectedCount}>
       <div className={styles.header}>
-        <h4 className={styles.title}>Bulk translation</h4>
+        <h4 className={styles.title}>Translate documents</h4>
         {autoTranslate && (
           <AutoTranslateMarker
             targets={autoTranslate.targets}
@@ -102,7 +102,6 @@ export default function BulkTranslationDashboard({
       </div>
 
       <section className={styles.section}>
-        <h5 className={styles.eyebrow}>Translate</h5>
         <CollectionTranslationForm
           form={form}
           onSubmit={handleSubmit}

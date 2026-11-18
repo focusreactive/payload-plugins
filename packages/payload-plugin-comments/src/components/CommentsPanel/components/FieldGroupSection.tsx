@@ -69,6 +69,7 @@ export function FieldGroupSection({
           fieldPath: null,
         })}
         label={t("comments:general" as never)}
+        count={generalComments.length}
         level="field"
       >
         <div className="flex flex-col gap-3">
@@ -77,6 +78,12 @@ export function FieldGroupSection({
           ))}
 
           <CommentEditor
+            className={
+              generalComments.length > 0
+                ? "pt-3 border-t border-(--theme-elevation-100)"
+                : undefined
+            }
+            placeholder={generalComments.length > 0 ? t("comments:reply" as never) : undefined}
             fieldPath={null}
             collectionSlug={collectionSlug}
             documentId={documentId}
@@ -110,6 +117,7 @@ export function FieldGroupSection({
                     fieldPath,
                   })
             }
+            count={fieldComments.length}
             level="field"
           >
             <div className="flex flex-col gap-3">
@@ -118,6 +126,12 @@ export function FieldGroupSection({
               ))}
 
               <CommentEditor
+                className={
+                  fieldComments.length > 0
+                    ? "pt-3 border-t border-(--theme-elevation-100)"
+                    : undefined
+                }
+                placeholder={fieldComments.length > 0 ? t("comments:reply" as never) : undefined}
                 ref={isPending ? editorRef : undefined}
                 fieldPath={fieldPath}
                 collectionSlug={collectionSlug}

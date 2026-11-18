@@ -1,5 +1,7 @@
 import type { Config } from "payload";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { getResolvedThresholds } from "../src/config";
+import { DEFAULT_SEO_THRESHOLDS } from "../src/constants";
 import { seoPlugin } from "../src/plugin";
 import type { SeoPluginConfig } from "../src/types/config";
 
@@ -51,5 +53,25 @@ describe("seoPlugin config validation", () => {
     } as unknown as SeoPluginConfig)(incoming);
     expect(result).toBe(incoming);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("valid extractContentPath"));
+  });
+
+  it("throws at init for invalid thresholds", () => {
+    const init = () =>
+      seoPlugin({
+        collections: [{ slug: "page", extractContentPath: "@/page#default" }],
+        thresholds: { keyphraseDensity: { min: 4, max: 3 } },
+      })(incoming);
+
+    expect(init).toThrow(/thresholds\.keyphraseDensity\.min \(4\) must be lower than/u);
+  });
+
+  it("keeps the thresholds it resolved at init for the publish hooks", () => {
+    seoPlugin({
+      collections: [{ slug: "page", extractContentPath: "@/page#default" }],
+      thresholds: { titleWidth: { max: 650 } },
+    })(incoming);
+
+    expect(getResolvedThresholds().titleWidth).toEqual({ max: 650 });
+    expect(getResolvedThresholds().textLength).toEqual(DEFAULT_SEO_THRESHOLDS.textLength);
   });
 });

@@ -89,8 +89,11 @@ const TRANSLATOR_CORE_PATTERNS = [
 
 const VISUAL_EDITING = "packages/payload-plugin-visual-editing/src";
 const REACT_FREE = {
+  message: "The server of visual editing stays free of React.",
+};
+const PAGE_CORE = {
   message:
-    "The protocol, the server and the page core of visual editing stay free of React; only its React adapters import it.",
+    "The protocol, the page core and the DOM adapter of visual editing run on a site without React, Next and @payloadcms packages; only src/client/react imports them.",
 };
 
 export default defineConfig({
@@ -479,12 +482,7 @@ export default defineConfig({
       rules: { "no-restricted-imports": "off" },
     },
     {
-      files: [
-        `${VISUAL_EDITING}/shared/**`,
-        `${VISUAL_EDITING}/server/**`,
-        `${VISUAL_EDITING}/client/overlay/**`,
-        `${VISUAL_EDITING}/client/instantPreview/**`,
-      ],
+      files: [`${VISUAL_EDITING}/server/**`],
       rules: {
         "no-restricted-imports": [
           "error",
@@ -500,10 +498,25 @@ export default defineConfig({
     },
     {
       files: [
-        `${VISUAL_EDITING}/client/instantPreview/LiveRichText.tsx`,
-        `${VISUAL_EDITING}/client/instantPreview/unsavedRender/useUnsavedRender.ts`,
-        `${VISUAL_EDITING}/client/instantPreview/unsavedRender/UnsavedRenderBoundary.tsx`,
+        `${VISUAL_EDITING}/client/**`,
+        `${VISUAL_EDITING}/shared/**`,
+        `${VISUAL_EDITING}/dom/**`,
+        `${VISUAL_EDITING}/stripMarkers.ts`,
       ],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            paths: ["react", "react-dom", "next"].map((name) => ({ name, ...PAGE_CORE })),
+            patterns: [
+              { group: ["react/**", "react-dom/**", "next/**", "@payloadcms/**"], ...PAGE_CORE },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      files: [`${VISUAL_EDITING}/client/react/**`],
       rules: { "no-restricted-imports": "off" },
     },
   ],

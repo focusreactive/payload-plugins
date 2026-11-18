@@ -1,5 +1,7 @@
 import type { PayloadRequest } from "payload";
 
+import { VE_READ_HEADER } from "../shared/protocol.js";
+
 export type Enrichment = "auto" | "explicit";
 
 export type MarkedReadsOptions = {
@@ -7,7 +9,10 @@ export type MarkedReadsOptions = {
   enrichment: Enrichment;
 };
 
-export type MarkedReadRequest = Pick<PayloadRequest, "context" | "pathname" | "payloadAPI">;
+export type MarkedReadRequest = Pick<
+  PayloadRequest,
+  "context" | "headers" | "pathname" | "payloadAPI" | "user"
+>;
 
 type Operation = { operation: string; args: unknown; req: MarkedReadRequest };
 
@@ -56,8 +61,9 @@ export const createMarkedReads = ({ adminBasePath, enrichment }: MarkedReadsOpti
   const isMarked = (req: MarkedReadRequest, isDraftRead: boolean): boolean => {
     const override = req.context?.visualEditing;
     if (typeof override === "boolean") return override;
-    if (enrichment === "explicit") return false;
-    return isDraftRead && req.payloadAPI === "local" && !isUnderAdmin(req, adminBasePath);
+    if (!isDraftRead || isUnderAdmin(req, adminBasePath)) return false;
+    if (req.payloadAPI === "local") return enrichment === "auto";
+    return req.headers.has(VE_READ_HEADER) && req.user !== null;
   };
 
   return {

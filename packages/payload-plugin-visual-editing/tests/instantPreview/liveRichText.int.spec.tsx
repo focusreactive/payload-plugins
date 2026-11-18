@@ -5,15 +5,15 @@ import { act, startTransition, use, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { LiveRichTextRender } from "../../src/client/instantPreview/unsavedRender/useUnsavedRender";
+import type { LiveRichTextRender } from "../../src/client/react/useUnsavedRender";
 import type { LiveRichTextField, LiveRichTextRequest } from "../../src/shared/protocol";
 
-import { LiveRichText } from "../../src/client/instantPreview/LiveRichText";
+import { LiveRichText } from "../../src/client/react/LiveRichText";
 import { createSavedRichTextShapes } from "../../src/client/instantPreview/unsavedRender/savedShapes";
 import { COMMIT_WAIT_MS } from "../../src/client/instantPreview/unsavedRender/unsavedRender";
-import { SavedRichTextShapesContext } from "../../src/client/overlayContext";
-import { VisualEditingOverlay } from "../../src/client/VisualEditingOverlay";
-import { VisualEditingProvider } from "../../src/client/VisualEditingProvider";
+import { OverlayScopeContext } from "../../src/client/react/overlayContext";
+import { VisualEditingOverlay } from "../../src/client/react/VisualEditingOverlay";
+import { VisualEditingProvider } from "../../src/client/react/VisualEditingProvider";
 import {
   VE_ANNOUNCE_REQUEST_TYPE,
   VE_RICH_TEXT_RENDERED_TYPE,
@@ -29,7 +29,7 @@ import {
   restorePreviewWindow,
   stubAdminWindow,
 } from "../support/previewWindow";
-import { flushMutations } from "../support/time";
+import { flushMutations, settleStructure } from "../support/time";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -106,8 +106,12 @@ describe("LiveRichText", () => {
   const renderPage = ({ locale = "en", ...props }: PageProps = {}) =>
     renderLive(<VisualEditingOverlay locale={locale}>{liveBody()}</VisualEditingOverlay>, props);
 
-  const postFromAdmin = (data: unknown, options?: AdminMessageOptions) =>
-    act(() => dispatchFromAdmin(data, options));
+  const tellFromAdmin = (data: unknown) => act(() => dispatchFromAdmin(data));
+
+  const postFromAdmin = async (data: unknown, options?: AdminMessageOptions) => {
+    await act(() => dispatchFromAdmin(data, options));
+    await act(settleStructure);
+  };
 
   const liveRichTextAnnouncements = () =>
     postToAdmin.mock.calls
@@ -148,13 +152,13 @@ describe("LiveRichText", () => {
     const savedShapes = createSavedRichTextShapes();
     const renderInOverlay = (shape: string) =>
       renderLive(
-        <SavedRichTextShapesContext.Provider value={savedShapes}>
+        <OverlayScopeContext.Provider value={{ locale: "en", savedShapes }}>
           <VisualEditingOverlay locale="en">
             <LiveRichText field={BODY} render={render} shape={shape}>
               <p>{SAVED_RENDER}</p>
             </LiveRichText>
           </VisualEditingOverlay>
-        </SavedRichTextShapesContext.Provider>
+        </OverlayScopeContext.Provider>
       );
     const namesShape = (shape: string) => savedShapes.keeps(keyedFieldAddressOf(BODY), shape);
 
@@ -324,7 +328,7 @@ describe("LiveRichText", () => {
 
       expect(shownText()).toBe(SAVED_RENDER);
 
-      await postFromAdmin(structureOf("second", "Two"));
+      await tellFromAdmin(structureOf("second", "Two"));
       await act(() => vi.advanceTimersByTimeAsync(COMMIT_WAIT_MS));
       await renders[1]?.finishWith(<p>Second render</p>);
 
@@ -334,9 +338,9 @@ describe("LiveRichText", () => {
     it("shows a render of a structure the editor left while its own one never got ready", async () => {
       vi.useFakeTimers();
       await renders[0]?.finishWith(<NeverReady />);
-      await postFromAdmin(structureOf("second", "Two"));
+      await tellFromAdmin(structureOf("second", "Two"));
       await act(() => vi.advanceTimersByTimeAsync(COMMIT_WAIT_MS));
-      await postFromAdmin(structureOf("first", "One again"));
+      await tellFromAdmin(structureOf("first", "One again"));
       await renders[1]?.finishWith(<p>Second render</p>);
 
       expect(shownText()).toBe("Second render");

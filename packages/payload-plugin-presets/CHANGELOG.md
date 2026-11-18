@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-presets [0.13.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.12.1...@focus-reactive/payload-plugin-presets@0.13.0) (2026-11-17)
+
+
+### Features
+
+* **presets:** open a preset list only for blocks that have presets ([f0964d7](https://github.com/focusreactive/payload-plugins/commit/f0964d78b13c4f652428299b26221b20f8a0428e))
+
 ## @focus-reactive/payload-plugin-presets [0.12.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.12.0...@focus-reactive/payload-plugin-presets@0.12.1) (2026-09-28)
 
 

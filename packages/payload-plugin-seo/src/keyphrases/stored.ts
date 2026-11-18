@@ -21,10 +21,19 @@ function hasText(value: unknown): value is { text: string; synonyms?: unknown } 
 function sanitizeSynonyms(input: unknown): string[] {
   if (!Array.isArray(input)) return [];
 
+  const seen = new Set<string>();
+
   return input
     .filter((s): s is string => typeof s === "string")
-    .slice(0, MAX_SYNONYMS)
-    .map((s) => s.slice(0, MAX_SYNONYM_LENGTH));
+    .map((s) => s.trim().slice(0, MAX_SYNONYM_LENGTH))
+    .filter((s) => {
+      const key = s.toLowerCase();
+      if (!s || seen.has(key)) return false;
+
+      seen.add(key);
+      return true;
+    })
+    .slice(0, MAX_SYNONYMS);
 }
 
 export function sanitizeStoredKeyphrases(input: unknown): StoredKeyphrase[] {

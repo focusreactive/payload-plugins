@@ -4,6 +4,7 @@ import { useConfig, useForm } from "@payloadcms/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LINK_SUGGESTIONS_ENDPOINT_PATH } from "../../../constants";
 import type { AnalysisInput } from "../../../engine/types/analysis";
+import type { UsageDoc } from "../../../keyphrases/usage";
 import type { LinkSuggestion } from "../../../links/types";
 import { readContent } from "./readContent";
 import { readInternalLinks } from "./readInternalLinks";
@@ -12,7 +13,7 @@ export type LinkSuggestionsState =
   | { status: "idle" }
   | { status: "loading" }
   | { status: "error" }
-  | { status: "done"; suggestions: LinkSuggestion[] };
+  | { status: "done"; suggestions: LinkSuggestion[]; linked: UsageDoc[] };
 
 interface UseLinkSuggestionsOptions {
   collectionSlug: string;
@@ -28,6 +29,7 @@ export interface LinkSuggestions {
 
 interface LinkSuggestionsResponse {
   suggestions?: LinkSuggestion[];
+  linked?: UsageDoc[];
 }
 
 export function useLinkSuggestions({
@@ -68,7 +70,7 @@ export function useLinkSuggestions({
 
         const body = (await res.json()) as LinkSuggestionsResponse;
 
-        return { status: "done", suggestions: body.suggestions ?? [] };
+        return { status: "done", suggestions: body.suggestions ?? [], linked: body.linked ?? [] };
       } catch {
         return { status: "error" };
       }

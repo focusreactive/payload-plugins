@@ -26,8 +26,8 @@ const sizes = {
     paddingInline: "0.5rem",
   },
   lg: {
-    height: "40px",
-    paddingInline: "0.75rem",
+    height: "36px",
+    paddingInline: "12px",
   },
 };
 

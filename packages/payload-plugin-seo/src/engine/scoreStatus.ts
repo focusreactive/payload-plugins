@@ -1,3 +1,4 @@
+import type { ResolvedSeoThresholds } from "../types/config";
 import type { Status } from "./types/analysis";
 
 export function scoreToStatus(score: number): Status {
@@ -7,9 +8,12 @@ export function scoreToStatus(score: number): Status {
   return "bad";
 }
 
-export function fleschToStatus(score: number): Status {
-  if (score >= 60) return "good";
-  if (score >= 50) return "warn";
+export function fleschToStatus(
+  score: number,
+  { min, acceptableMin }: ResolvedSeoThresholds["fleschReadingEase"]
+): Status {
+  if (score >= min) return "good";
+  if (score >= acceptableMin) return "warn";
 
   return "bad";
 }

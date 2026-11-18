@@ -2,7 +2,7 @@ import { vercelStegaClean } from "@vercel/stega";
 import { describe, expect, it } from "vitest";
 
 import { stripMarkers } from "../../src/index";
-import { markTextLeaves } from "../../src/server/richText/markTextLeaves";
+import { markTextLeaves } from "../../src/shared/richText/markTextLeaves";
 
 import { markedText } from "../support/markedData";
 import { paragraphsOf } from "../support/editorState";

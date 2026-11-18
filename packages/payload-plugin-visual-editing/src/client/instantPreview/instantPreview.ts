@@ -18,7 +18,11 @@ export function createInstantPreview(
   tracker: FieldTracker,
   getCtx: () => InstantPreviewCtx
 ): () => void {
-  const liveFields = createLiveFields(tracker.showText, getCtx().keepsRichTextShape);
+  const liveFields = createLiveFields(
+    tracker.showText,
+    getCtx().keepsRichTextShape,
+    tracker.showTextInHolder
+  );
   const adminPage = () => {
     const { adminOrigin, locale } = getCtx();
     return { adminOrigin: adminOriginOf(adminOrigin), locale };

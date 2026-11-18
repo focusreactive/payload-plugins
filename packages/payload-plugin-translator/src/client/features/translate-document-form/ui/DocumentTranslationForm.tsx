@@ -48,26 +48,26 @@ export function DocumentTranslationForm({
       <fieldset className={styles.fieldset}>
         <div className={styles.row}>
           <FormSelect
-            size="sm"
+            size="md"
             label="From"
             name={FORM_FIELDS.SOURCE_LNG}
             options={localeOptions}
-            placeholder="-"
+            placeholder="Select…"
           />
           {targetSelection === "multi" ? (
             <FormMultiSelect
-              size="sm"
+              size="md"
               label="To"
               name={FORM_FIELDS.TARGET_LNG}
               options={targetOptions}
             />
           ) : (
             <FormSelect
-              size="sm"
+              size="md"
               label="To"
               name={FORM_FIELDS.TARGET_LNG}
               options={targetOptions}
-              placeholder="-"
+              placeholder="Select…"
             />
           )}
         </div>
@@ -80,7 +80,7 @@ export function DocumentTranslationForm({
           className={styles["submit-button"]}
           onClick={form.handleSubmit(onSubmit)}
           type="submit"
-          $size="sm"
+          $size="md"
           $isLoading={form.formState.isSubmitting}
           $startContent={<SendIcon />}
         >

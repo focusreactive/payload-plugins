@@ -14,11 +14,13 @@ import { CardsGridInlineComponent } from "@/blocks/CardsGrid/InlineComponent";
 import { CodeInlineComponent } from "@/blocks/Code/InlineComponent";
 import { CtaBannerInlineComponent } from "@/blocks/CtaBanner/InlineComponent";
 import { LogosInlineComponent } from "@/blocks/Logos/InlineComponent";
-import { BLOG_CONFIG } from "@/lib/config/blog";
 import { cn } from "@/components/utils";
 import { proseVariants } from "@/components/richText/proseVariants";
 import type { ProseVariant } from "@/components/richText/proseVariants";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
+import type { Locale } from "@/lib/types";
+import { getDocumentPath } from "@/lib/utils/path/getDocumentPath";
+import { localizePath } from "@/lib/utils/path/localizePath";
 import type { Media as MediaDoc } from "@/payload-types";
 
 type UploadNodeWithAspectRatio = DefaultNodeTypes & {
@@ -29,20 +31,22 @@ type UploadNodeWithAspectRatio = DefaultNodeTypes & {
 
 type NodeTypes = DefaultNodeTypes | UploadNodeWithAspectRatio;
 
-const internalDocToHref = ({ linkNode }: { linkNode: SerializedLinkNode }): string => {
-  const { value, relationTo } = linkNode.fields.doc!;
-  if (typeof value !== "object") {
-    throw new TypeError("Expected value to be an object");
-  }
-  const { slug } = value;
-  return relationTo === "posts" ? `${BLOG_CONFIG.basePath}/${slug}` : `/${slug}`;
-};
+const createInternalDocToHref =
+  (locale: Locale) =>
+  ({ linkNode }: { linkNode: SerializedLinkNode }): string => {
+    const path = getDocumentPath(linkNode.fields.doc!);
+    if (!path) {
+      throw new TypeError("Expected a populated document");
+    }
+
+    return localizePath(path, locale);
+  };
 
 const createJsxConverters =
-  (variant?: ProseVariant): JSXConvertersFunction<NodeTypes> =>
+  (locale: Locale, variant?: ProseVariant): JSXConvertersFunction<NodeTypes> =>
   ({ defaultConverters }) => ({
     ...defaultConverters,
-    ...LinkJSXConverter({ internalDocToHref }),
+    ...LinkJSXConverter({ internalDocToHref: createInternalDocToHref(locale) }),
     ...(variant === "content"
       ? {
           listitem: (args: JSXConverterArgs<Extract<DefaultNodeTypes, { type: "listitem" }>>) => {
@@ -100,15 +104,23 @@ export type RichTextStyle = {
   variant?: ProseVariant;
 };
 
-export type RichTextBodyProps = RichTextStyle & {
+export type RichTextRenderOptions = RichTextStyle & {
+  locale: Locale;
+};
+
+export type RichTextProps = RichTextStyle & {
   content: SerializedEditorState;
 };
 
-export const RichTextBody = ({ content, className, variant }: RichTextBodyProps) => (
+type RichTextBodyProps = RichTextRenderOptions & {
+  content: SerializedEditorState;
+};
+
+export const RichTextBody = ({ content, className, locale, variant }: RichTextBodyProps) => (
   <div {...withVisualEditingPath(content)}>
     <RichTextReact
       className={cn(proseVariants({ variant }), className)}
-      converters={createJsxConverters(variant)}
+      converters={createJsxConverters(locale, variant)}
       data={content}
     />
   </div>

@@ -11,7 +11,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
-  font-size: 0.8125rem;
+  font-size: 13px;
 }
 
 // The count line: [dot + label] left, count (+ action) right.
@@ -27,7 +27,7 @@
 .meta {
   margin: 0;
   padding-left: calc(8px + 0.5rem); // align under the label, like the document meta line
-  font-size: 0.6875rem;
+  font-size: 12px;
   color: var(--theme-elevation-500, #8c8c8c);
 }
 
@@ -51,7 +51,7 @@
 }
 
 .count {
-  font-size: 0.8125rem;
+  font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }

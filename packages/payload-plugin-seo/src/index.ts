@@ -8,6 +8,7 @@ export type {
   SeoFieldPaths,
   SeoSiteConfig,
   SeoGenerationConfig,
+  SeoThresholds,
   ResolveUrl,
   ResolveUrlArgs,
 } from "./types/config";

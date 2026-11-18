@@ -9,6 +9,7 @@ export const en: { comments: CommentsTranslations } = {
     unreadMentionsAria_other: "{{count}} unread mentions",
     add: "Add comment",
     writeComment: "Write a comment",
+    reply: "Reply…",
     comment: "Comment",
     cancel: "Cancel",
     posting: "Posting…",

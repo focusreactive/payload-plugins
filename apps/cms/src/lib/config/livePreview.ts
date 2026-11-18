@@ -11,6 +11,14 @@ export const createLivePreviewVersions = () =>
     maxPerDoc: 50,
   }) satisfies CollectionConfig["versions"];
 
-export const LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS = PRESERVE_AUTOSAVE_EDITS
-  ? ["/components/admin/PreserveAutosaveEdits#PreserveAutosaveEdits"]
-  : [];
+type EditViewComponents = NonNullable<
+  NonNullable<NonNullable<CollectionConfig["admin"]>["components"]>["edit"]
+>;
+
+export const createLivePreviewEditComponents = () =>
+  ({
+    beforeDocumentControls: PRESERVE_AUTOSAVE_EDITS
+      ? ["/components/admin/PreserveAutosaveEdits#PreserveAutosaveEdits"]
+      : [],
+    PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
+  }) satisfies EditViewComponents;

@@ -8,6 +8,7 @@ import { SeoDrawer } from "../../src/components/SeoDrawer";
 vi.mock("@payloadcms/ui", () => ({
   Drawer: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   useConfig: () => ({ config: { routes: { api: "/api", admin: "/admin" } } }),
+  useLocale: () => ({ code: "en" }),
   useModal: () => ({ closeModal: () => undefined }),
   XIcon: () => null,
 }));
@@ -66,7 +67,7 @@ describe("SeoDrawer internal links tab", () => {
     render(
       <SeoDrawer
         {...props}
-        links={{ state: { status: "done", suggestions: [suggestion] }, find }}
+        links={{ state: { status: "done", suggestions: [suggestion], linked: [] }, find }}
       />
     );
 

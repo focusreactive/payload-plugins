@@ -3,6 +3,8 @@ import type { MessageVars, TranslationKey } from "./types";
 
 export const TRANSLATION_NAMESPACE = "seo";
 
+export const FALLBACK_LANGUAGE = "en";
+
 export type Messages = Readonly<Record<string, string>>;
 
 export type Translate = (key: TranslationKey, vars?: MessageVars) => string;
@@ -11,15 +13,29 @@ function pluralRules(language: string): Intl.PluralRules {
   try {
     return new Intl.PluralRules(language);
   } catch {
-    return new Intl.PluralRules("en");
+    return new Intl.PluralRules(FALLBACK_LANGUAGE);
   }
 }
 
-function interpolate(template: string, vars: MessageVars | undefined): string {
+function numberFormat(language: string): Intl.NumberFormat {
+  try {
+    return new Intl.NumberFormat(language, { useGrouping: false });
+  } catch {
+    return new Intl.NumberFormat(FALLBACK_LANGUAGE, { useGrouping: false });
+  }
+}
+
+function interpolate(
+  template: string,
+  vars: MessageVars | undefined,
+  numbers: Intl.NumberFormat
+): string {
   if (!vars) return template;
   return template.replace(/\{\{\s*(\w+)\s*\}\}/gu, (match, name: string) => {
     const value = vars[name];
-    return value === undefined ? match : String(value);
+    if (value === undefined) return match;
+
+    return typeof value === "number" ? numbers.format(value) : value;
   });
 }
 
@@ -40,7 +56,8 @@ export function createTranslator(
   fallback: Messages = en
 ): Translate {
   const rules = pluralRules(language);
-  const fallbackRules = pluralRules("en");
+  const fallbackRules = pluralRules(FALLBACK_LANGUAGE);
+  const numbers = numberFormat(language);
 
   return (key, vars) => {
     const count = vars?.count;
@@ -53,7 +70,7 @@ export function createTranslator(
       fallback[key] ??
       key;
 
-    return interpolate(template, vars);
+    return interpolate(template, vars, numbers);
   };
 }
 

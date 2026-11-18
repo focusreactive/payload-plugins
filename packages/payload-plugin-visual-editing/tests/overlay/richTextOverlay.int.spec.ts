@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Overlay, OverlayCtx } from "../../src/client/createOverlay";
 import type { VeFieldPatchMessage, VeFieldSnapshotMessage } from "../../src/shared/protocol";
 
-import { DATA_VE_TARGET_ATTR, STEGA_PREFILTER } from "../../src/client/overlay/constants";
+import { DATA_VE_TARGET_ATTR } from "../../src/client/overlay/constants";
+import { hasMarker } from "../../src/shared/stegaText";
 import { createOverlay } from "../../src/client/createOverlay";
 import {
   DATA_VE_COLLECTION_ATTR,
@@ -136,7 +137,7 @@ describe("the text nodes of rich text in the overlay", () => {
       [announcementOf(nodeKey("0.0"), nodeKey("0.1")), ADMIN_ORIGIN],
     ]);
     expect(textsOf(content)).toEqual(["Hello ", "world"]);
-    expect(STEGA_PREFILTER.test(content.textContent ?? "")).toBe(false);
+    expect(hasMarker(content.textContent ?? "")).toBe(false);
   });
 
   it("uses the stable key of the wrapper when it has one", () => {

@@ -20,6 +20,8 @@ describe("liveRichTextOf", () => {
 
     expect(liveRichTextOf(content)).toEqual({
       field: { ...PAGE, key: "body" },
+      hasReferences: false,
+      meta: content._meta,
       shape: shapeOf(content, fieldAddressOf(PAGE, "body")),
     });
   });
@@ -29,8 +31,19 @@ describe("liveRichTextOf", () => {
 
     expect(liveRichTextOf(content)).toEqual({
       field: { ...PAGE, key: "layout.row-a.body" },
+      hasReferences: false,
+      meta: content._meta,
       shape: shapeOf(content, fieldAddressOf(PAGE, "layout.row-a.body")),
     });
+  });
+
+  it("tells whether the saved value has blocks, uploads, relationships or links to documents", () => {
+    const content = {
+      ...editorState({ fields: { blockType: "callout", id: "b" }, type: "block" }),
+      _meta: { ...PAGE, path: "body", terminal: true },
+    };
+
+    expect(liveRichTextOf(content)?.hasReferences).toBe(true);
   });
 
   it("names the field of a global without a document id", () => {
