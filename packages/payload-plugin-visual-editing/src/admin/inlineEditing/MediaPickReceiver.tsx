@@ -181,6 +181,11 @@ export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: s
     takeChosenOnThePage,
   ]);
 
+  const cancelOpenPick = useRef<(() => void) | null>(null);
+  cancelOpenPick.current = asked && (() => tellPickCancelled(asked.field));
+
+  useEffect(() => () => cancelOpenPick.current?.(), []);
+
   if (!asked) return null;
   return (
     <MediaDrawer

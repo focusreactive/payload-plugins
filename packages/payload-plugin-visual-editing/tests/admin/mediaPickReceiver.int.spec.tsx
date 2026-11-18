@@ -236,6 +236,23 @@ describe("MediaPickReceiver", () => {
     );
   });
 
+  it("tells the preview page the pick is cancelled when it unmounts while the drawer is open", () => {
+    postRequest();
+
+    act(() => root.render(null));
+
+    expect(admin.postToPreview).toHaveBeenCalledWith(
+      { ...FIELD, type: VE_MEDIA_PICK_CANCELLED_TYPE },
+      PREVIEW_ORIGIN
+    );
+  });
+
+  it("tells the preview page nothing when it unmounts without an open drawer", () => {
+    act(() => root.render(null));
+
+    expect(admin.postToPreview).not.toHaveBeenCalled();
+  });
+
   it("calls a pick that was made no cancelled one", async () => {
     postRequest();
 

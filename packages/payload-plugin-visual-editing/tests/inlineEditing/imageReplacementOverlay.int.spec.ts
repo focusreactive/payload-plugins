@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Overlay, OverlayCtx } from "../../src/client/createOverlay";
 
 import { createOverlay } from "../../src/client/createOverlay";
+import { MEDIA_PICK_TIME_LIMIT_MS } from "../../src/client/inlineEditing/imageReplacement";
 import { DATA_VE_MEDIA_PICKER_ATTR } from "../../src/client/inlineEditing/mediaPicker";
 import { DATA_VE_SAVE_STATUS_ATTR } from "../../src/client/inlineEditing/saveStatus";
 import { DATA_VE_ACTION_ATTR } from "../../src/client/overlay/constants";
@@ -425,6 +426,43 @@ describe("replacing an image on the page", () => {
 
       expect(messagesOfType(postToAdmin, VE_PICK_MEDIA_TYPE)).toHaveLength(1);
       expect(image.getAttribute("src")).toBe(`${CMS}/api/media/file/lighthouse.jpg`);
+    });
+
+    it("asks again once a pick the admin never answered is older than the time limit", () => {
+      formOfThePage();
+      const now = vi.spyOn(Date, "now").mockReturnValue(0);
+      ask();
+
+      now.mockReturnValue(MEDIA_PICK_TIME_LIMIT_MS);
+      ask();
+      postFromAdmin(picked());
+
+      expect(messagesOfType(postToAdmin, VE_PICK_MEDIA_TYPE)).toHaveLength(2);
+      expect(image.getAttribute("src")).toBe(`${CMS}/api/media/file/lighthouse.jpg`);
+      vi.restoreAllMocks();
+    });
+
+    it("asks a new admin window again, whatever the window that was asked first never answered", () => {
+      formOfThePage();
+      ask();
+      const otherAdmin = vi.fn();
+      stubAdminWindow({ postMessage: otherAdmin });
+
+      ask();
+
+      expect(messagesOfType(otherAdmin, VE_PICK_MEDIA_TYPE)).toHaveLength(1);
+    });
+
+    it("asks again once the admin window that was asked is closed", () => {
+      const closing = { closed: false, postMessage: postToAdmin };
+      stubAdminWindow(closing);
+      formOfThePage();
+      ask();
+
+      closing.closed = true;
+      ask();
+
+      expect(messagesOfType(postToAdmin, VE_PICK_MEDIA_TYPE)).toHaveLength(2);
     });
 
     it("keeps saying unsaved when the admin saved another document", () => {

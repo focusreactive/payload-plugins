@@ -58,7 +58,13 @@ export const REPLACE_IMAGE_LABEL = "Replace image";
 
 type ReplaceableImage = { field: VeEditedField; image: HTMLImageElement };
 
-type AskedOfAdmin = ReplaceableImage & { openField: () => void };
+type AskedOfAdmin = ReplaceableImage & {
+  openField: () => void;
+  adminWindow: Window;
+  askedAt: number;
+};
+
+export const MEDIA_PICK_TIME_LIMIT_MS = 60_000;
 
 const NOT_SAVED: EditStatus = "failed";
 
@@ -122,14 +128,26 @@ export function createImageReplacement({
   const show = ({ image }: ReplaceableImage, media: VeShownMedia): (() => void) | null =>
     image.isConnected ? showMedia(image, media, urlOf(media.url)) : null;
 
-  const askAdmin = (adminWindow: Window, asked: AskedOfAdmin, chosen?: VeMediaOption) => {
-    if (askedOfAdmin.has(addressOf(asked.field))) return;
+  const isStillOpen = (asked: AskedOfAdmin | undefined, adminWindow: Window): boolean =>
+    asked !== undefined &&
+    asked.adminWindow === adminWindow &&
+    !adminWindow.closed &&
+    Date.now() - asked.askedAt < MEDIA_PICK_TIME_LIMIT_MS;
+
+  const askAdmin = (
+    adminWindow: Window,
+    replaceable: ReplaceableImage,
+    openField: () => void,
+    chosen?: VeMediaOption
+  ) => {
+    const address = addressOf(replaceable.field);
+    if (isStillOpen(askedOfAdmin.get(address), adminWindow)) return;
     const message: VePickMediaMessage = {
-      ...asked.field,
+      ...replaceable.field,
       ...(chosen && { mediaId: chosen.id }),
       type: VE_PICK_MEDIA_TYPE,
     };
-    askedOfAdmin.set(addressOf(asked.field), asked);
+    askedOfAdmin.set(address, { ...replaceable, adminWindow, askedAt: Date.now(), openField });
     adminWindow.postMessage(message, adminOriginOf(getCtx().adminOrigin));
   };
 
@@ -146,11 +164,11 @@ export function createImageReplacement({
   const replace = (replaceable: ReplaceableImage, openField: () => void) => {
     const adminWindow = findAdmin();
     if (adminWindow && isFramedByAdmin(window)) {
-      askAdmin(adminWindow, { ...replaceable, openField });
+      askAdmin(adminWindow, replaceable, openField);
       return;
     }
     const take = (media: VeMediaOption) => {
-      if (adminWindow) askAdmin(adminWindow, { ...replaceable, openField }, media);
+      if (adminWindow) askAdmin(adminWindow, replaceable, openField, media);
       else saveThroughEndpoint(replaceable, media);
     };
     picker.open(replaceable.field, take, openField);
