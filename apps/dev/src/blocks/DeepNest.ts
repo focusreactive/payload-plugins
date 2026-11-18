@@ -41,15 +41,6 @@ const InnerBlock: Block = {
   ],
 };
 
-const CalloutBlock: Block = {
-  slug: "callout",
-  labels: { plural: "Callouts", singular: "Callout" },
-  fields: [
-    withFieldTranslation({ localized: true, name: "title", type: "text" }),
-    withFieldTranslation({ localized: true, name: "body", type: "richText" }),
-  ],
-};
-
 const deepNestFields: Field[] = [
   // Named group → contributes `panel.` to the path.
   {
@@ -104,11 +95,6 @@ const deepNestFields: Field[] = [
         type: "collapsible",
         label: "Item body",
         fields: [withFieldTranslation({ localized: true, name: "richBody", type: "richText" })],
-      },
-      {
-        blocks: [CalloutBlock],
-        name: "callouts",
-        type: "blocks",
       },
     ],
   },

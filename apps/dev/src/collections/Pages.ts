@@ -2,14 +2,12 @@ import type { CollectionConfig } from "payload";
 import { withFieldTranslation } from "@focus-reactive/payload-plugin-translator";
 
 import { ContentBlock } from "../blocks/Content";
-import { FeaturesBlock } from "../blocks/Features";
 import { HeroBlock } from "../blocks/Hero";
 
 export const Pages: CollectionConfig = {
   admin: {
     livePreview: {
-      url: ({ data }) =>
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/next/preview?path=${encodeURIComponent(`/${data.slug}`)}`,
+      url: ({ data }) => `${process.env.NEXT_PUBLIC_SERVER_URL}/${data.slug}`,
     },
     useAsTitle: "title",
   },
@@ -29,7 +27,7 @@ export const Pages: CollectionConfig = {
     { name: "seoTitle", type: "text", localized: true },
     { name: "metaDescription", type: "textarea", localized: true },
     {
-      blocks: [HeroBlock, ContentBlock, FeaturesBlock],
+      blocks: [HeroBlock, ContentBlock],
       localized: true,
       name: "sections",
       type: "blocks",

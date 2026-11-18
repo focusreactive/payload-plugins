@@ -256,6 +256,4 @@ bun run check-types
 bun run lint
 ```
 
-`apps/dev` uses the plugin on `pages` and `playground`. The seeded playground document goes
-`layout → Deep Nest → items[0] → callouts[0]` (blocks → array → blocks, with rich text at the
-bottom) and `layout → nested → leaves` (blocks three deep).
+`apps/cms` uses the plugin on `page` and `posts`.

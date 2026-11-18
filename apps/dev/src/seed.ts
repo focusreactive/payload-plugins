@@ -1,5 +1,4 @@
 import { getPayload } from "payload";
-import sharp from "sharp";
 
 import config from "./payload.config";
 
@@ -115,28 +114,12 @@ const doc = (...children: LexNode[]) => ({
 
 // hero + content blocks both pass through withSectionVisibility, which only adds an optional
 // hidden checkbox — no extra required data needed here.
-const heroBlock = (title: string, description: string, ctaLabel: string, image?: number) => ({
+const heroBlock = (title: string, description: string, ctaLabel: string) => ({
   blockType: "hero" as const,
   title,
   description,
-  ...(image === undefined ? {} : { image }),
   cta: [{ label: ctaLabel, url: "#" }],
 });
-
-const artwork = (from: string, to: string, accent: string) =>
-  sharp(
-    Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400">
-      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="${to}"/>
-      </linearGradient></defs>
-      <rect width="640" height="400" fill="url(#g)"/>
-      <circle cx="470" cy="130" r="90" fill="${accent}" fill-opacity="0.85"/>
-      <rect x="70" y="230" width="260" height="110" rx="18" fill="#ffffff" fill-opacity="0.75"/>
-      <rect x="70" y="80" width="180" height="22" rx="11" fill="#ffffff" fill-opacity="0.9"/>
-    </svg>`)
-  )
-    .png()
-    .toBuffer();
 
 const contentBlock = (content: ReturnType<typeof doc>) => ({
   blockType: "content" as const,
@@ -167,22 +150,6 @@ const run = async () => {
   // --- Header global (upsert) ----------------------------------------------------------------
   await payload.updateGlobal({ slug: "header", data: { name: "Dev Site" } });
 
-  await payload.delete({ collection: "media", where: { id: { exists: true } } });
-  const images: Record<string, number> = {};
-  for (const [name, from, to, accent, alt] of [
-    ["sunrise", "#ff9a62", "#ff4f81", "#ffd23f", "Sunrise gradient"],
-    ["lagoon", "#2bc0e4", "#1d6fa3", "#eaffd0", "Lagoon gradient"],
-    ["forest", "#56ab2f", "#1e5631", "#f9f871", "Forest gradient"],
-  ] as const) {
-    const data = await artwork(from, to, accent);
-    const created = await payload.create({
-      collection: "media",
-      data: { alt },
-      file: { data, mimetype: "image/png", name: `${name}.png`, size: data.length },
-    });
-    images[name] = created.id as number;
-  }
-
   // --- Pages (wipe + recreate) ---------------------------------------------------------------
   await wipe("pages");
   const pages = [
@@ -195,8 +162,7 @@ const run = async () => {
         heroBlock(
           "Welcome to the Dev Site",
           "A sandbox for exercising the Payload plugins.",
-          "Get started",
-          images.sunrise
+          "Get started"
         ),
         contentBlock(
           doc(
@@ -225,25 +191,6 @@ const run = async () => {
             )
           )
         ),
-        {
-          blockType: "features" as const,
-          heading: "Why editors like it",
-          items: [
-            {
-              title: "Stacked panels",
-              image: images.lagoon,
-              points: [
-                { blockType: "point" as const, text: "Open a block, then a row inside it" },
-                { blockType: "point" as const, text: "Breadcrumbs jump between levels" },
-              ],
-            },
-            {
-              title: "Live preview",
-              image: images.forest,
-              points: [{ blockType: "point" as const, text: "Changes show up as you type" }],
-            },
-          ],
-        },
       ],
     },
     {
@@ -277,12 +224,7 @@ const run = async () => {
     },
   ];
   for (const data of pages) {
-    // The frontend route serves published pages only.
-    const created = await payload.create({
-      collection: "pages",
-      locale: "en",
-      data: { ...data, _status: "published" },
-    });
+    const created = await payload.create({ collection: "pages", locale: "en", data });
     payload.logger.info(`Seeded page "${data.title}" id=${created.id}`);
   }
 
@@ -475,24 +417,6 @@ const run = async () => {
                   "Point B (en)"
                 )
               ),
-              callouts: [
-                {
-                  blockType: "callout",
-                  title: "Callout inside item one (en)",
-                  body: doc(
-                    para(
-                      txt("A callout block nested in an "),
-                      txt("array row", BOLD),
-                      txt(" of a block (en).")
-                    )
-                  ),
-                },
-                {
-                  blockType: "callout",
-                  title: "Second callout (en)",
-                  body: doc(para(txt("Another nested callout (en)."))),
-                },
-              ],
             },
             {
               label: "Item two label (en)",

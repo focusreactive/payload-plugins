@@ -1,4 +1,3 @@
-import { definePreview } from "@focus-reactive/payload-plugin-stacked-editing";
 import type { Block, Field } from "payload";
 import { withSectionVisibility } from "../lib/section-visibility/withSectionVisibility";
 
@@ -41,7 +40,6 @@ const heroFields: Field[] = [
 ];
 
 export const HeroBlock: Block = withSectionVisibility({
-  admin: { custom: { preview: definePreview({ subtitle: "description" }) } },
   fields: heroFields,
   labels: { plural: "Heroes", singular: "Hero" },
   slug: "hero",

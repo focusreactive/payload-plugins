@@ -14,8 +14,6 @@ import {
 } from "@focus-reactive/payload-plugin-translator";
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { seoPlugin } from "@focus-reactive/payload-plugin-seo";
-import { stackedEditing } from "@focus-reactive/payload-plugin-stacked-editing";
-import { visualEditingPlugin } from "@focus-reactive/payload-plugin-visual-editing";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { buildConfig } from "payload";
 import sharp from "sharp";
@@ -82,15 +80,7 @@ export default buildConfig({
       },
       storage: abAdapter,
     }),
-    // Before presetsPlugin, which wraps existing row labels.
-    stackedEditing({ collections: ["pages", "playground"] }),
     presetsPlugin(),
-    visualEditingPlugin({
-      enrichment: "explicit",
-      instantPreview: true,
-      skipCollections: ["users", "media", "articles", "playground"],
-      skipGlobals: ["header"],
-    }),
     schedulePublicationPlugin({
       collections: ["pages", "users"],
       secret: "secret",

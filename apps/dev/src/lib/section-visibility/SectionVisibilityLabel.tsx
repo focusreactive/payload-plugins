@@ -1,11 +1,12 @@
 "use client";
 
-import { CardLabel } from "@focus-reactive/payload-plugin-stacked-editing/client";
-import { PopupList, useField, useRowLabel } from "@payloadcms/ui";
+import { Pill, PopupList, SectionTitle, useField, useRowLabel } from "@payloadcms/ui";
 import { EyeIcon } from "@payloadcms/ui/icons/Eye";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { HIDDEN_FIELD_NAME } from "./constants";
+
+const baseClass = "blocks-field";
 
 interface RowData {
   blockType?: string;
@@ -13,8 +14,16 @@ interface RowData {
   [key: string]: unknown;
 }
 
+function titleCase(input: string | undefined): string {
+  if (!input) {
+    return "Section";
+  }
+
+  return input.charAt(0).toUpperCase() + input.slice(1);
+}
+
 export function SectionVisibilityLabel() {
-  const { path } = useRowLabel<RowData>();
+  const { data, path, rowNumber } = useRowLabel<RowData>();
   const { value, setValue } = useField<boolean>({
     path: `${path}.${HIDDEN_FIELD_NAME}`,
   });
@@ -120,7 +129,19 @@ export function SectionVisibilityLabel() {
 
   return (
     <span ref={anchorRef} style={{ display: "contents" }}>
-      <CardLabel />
+      <span className={`${baseClass}__block-number`}>
+        {String((rowNumber ?? 0) + 1).padStart(2, "0")}
+      </span>
+
+      <Pill
+        className={`${baseClass}__block-pill ${baseClass}__block-pill-${data?.blockType ?? ""}`}
+        pillStyle="white"
+        size="small"
+      >
+        {titleCase(data?.blockType)}
+      </Pill>
+
+      <SectionTitle path={`${path}.blockName`} readOnly={false} />
 
       {portalContainer &&
         createPortal(
