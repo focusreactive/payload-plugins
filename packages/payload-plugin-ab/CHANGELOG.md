@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-ab [2.11.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.10.1...@focus-reactive/payload-plugin-ab@2.11.0) (2026-11-17)
+
+
+### Features
+
+* **ab:** show the traffic split and manage variants from one panel ([a5d6691](https://github.com/focusreactive/payload-plugins/commit/a5d6691417897c795d765880ca1a514342fe2ba4))
+
 ## @focus-reactive/payload-plugin-ab [2.10.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.10.0...@focus-reactive/payload-plugin-ab@2.10.1) (2026-10-06)
 
 

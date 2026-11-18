@@ -1,4 +1,4 @@
-import { vercelStegaDecode, vercelStegaSplit } from "@vercel/stega";
+import { vercelStegaSplit } from "@vercel/stega";
 import { describe, expect, it } from "vitest";
 
 import type { Field } from "payload";
@@ -12,6 +12,7 @@ import { META_KEY } from "../../src/shared/shared";
 import { editorState } from "../support/editorState";
 import { configOf } from "../support/payloadConfig";
 import { draftReadRequest, readThroughPlugin } from "../support/pluginHooks";
+import { markerIn } from "../support/markedData";
 
 const LOCALE_CODES = ["en", "de"];
 
@@ -94,7 +95,7 @@ const markEveryLocale = <T extends object>(page: T) => readAsDraft(page, LOCALE_
 
 const markOneLocale = <T extends object>(page: T) => readAsDraft(page, []);
 
-const markerOf = (text: unknown) => vercelStegaDecode(String(text));
+const markerOf = (text: unknown) => markerIn(String(text));
 
 const textOf = (text: unknown) => vercelStegaSplit(String(text)).cleaned;
 

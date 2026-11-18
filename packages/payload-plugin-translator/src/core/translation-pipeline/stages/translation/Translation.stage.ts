@@ -3,7 +3,7 @@ import { isFailureCode, TranslationFailed } from "./TranslationFailed.js";
 import { isObject } from "../../../kernel/utils/isObject.js";
 import { readFailureReason } from "../../../errors/failureReason.js";
 import type { PipelineContext, PipelineStage, SettledAnswer } from "../../types/index.js";
-import type { TranslationTarget } from "../../../traversal/index.js";
+import type { TranslationTarget } from "../../../../traversal/index.js";
 import type {
   TranslatedValue,
   TranslationProvider,

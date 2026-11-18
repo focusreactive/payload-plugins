@@ -8,6 +8,7 @@ interface FindArgs {
   where: Where;
   page?: number;
   limit?: number;
+  select?: Record<string, boolean>;
 }
 
 interface FakeIndexPayloadOptions {

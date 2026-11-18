@@ -6,6 +6,7 @@ import {
 } from "../../constants";
 import { siteOf, toPath } from "../../links/toPath";
 import { docTargetKey } from "../../keyphrases/docTarget";
+import type { DocTarget } from "../../keyphrases/docTarget";
 import { readDocTarget } from "../keyphrases/docRef";
 
 export interface LinkedHref {
@@ -16,7 +17,7 @@ export interface LinkedHref {
 export interface LinkRequest {
   text: string;
   linkedHrefs: LinkedHref[];
-  linkedDocs: Set<string>;
+  linkedDocs: DocTarget[];
 }
 
 function isCappedList(value: unknown, cap: number): value is unknown[] {
@@ -34,16 +35,18 @@ function readHrefs(value: unknown): string[] | null {
   return hrefs.length === value.length ? hrefs : null;
 }
 
-function readLinkedDocs(value: unknown, collections: string[]): Set<string> | null {
-  if (value === undefined) return new Set();
+function readLinkedDocs(value: unknown, collections: string[]): DocTarget[] | null {
+  if (value === undefined) return [];
   if (!isCappedList(value, MAX_LINKED_DOCS)) return null;
 
-  return new Set(
-    value.flatMap((item) => {
-      const target = readDocTarget(item, collections);
-      return target ? [docTargetKey(target.collection, target.docId)] : [];
-    })
-  );
+  const targets = new Map<string, DocTarget>();
+
+  for (const item of value) {
+    const target = readDocTarget(item, collections);
+    if (target) targets.set(docTargetKey(target.collection, target.docId), target);
+  }
+
+  return [...targets.values()];
 }
 
 function toLinkedHrefs(hrefs: string[]): LinkedHref[] {

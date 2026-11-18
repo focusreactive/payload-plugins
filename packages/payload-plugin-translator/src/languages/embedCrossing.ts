@@ -2,7 +2,7 @@
  * Owned by neither host nor format, so neither imports the other.
  */
 
-import type { Crossing } from "../core/traversal/index.js";
+import type { Crossing } from "../traversal/index.js";
 
 /**
  * @public

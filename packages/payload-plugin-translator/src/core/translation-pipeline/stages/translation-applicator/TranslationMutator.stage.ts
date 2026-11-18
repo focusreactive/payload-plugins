@@ -1,6 +1,6 @@
 import { TranslatorBug } from "../../../errors/index.js";
-import { applyTranslations } from "../../../traversal/index.js";
-import type { TranslationAnswer } from "../../../traversal/index.js";
+import { applyTranslations } from "../../../../traversal/index.js";
+import type { TranslationAnswer } from "../../../../traversal/index.js";
 import type { PipelineContext, PipelineStage, SettledAnswer } from "../../types/index.js";
 
 const answerFor = (settled: SettledAnswer | undefined): TranslationAnswer | undefined => {

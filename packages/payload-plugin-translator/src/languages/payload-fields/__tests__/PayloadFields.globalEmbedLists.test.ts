@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { BlockLike, FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { projectFieldsToFieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { block, paragraph, text, tree, walkDocument } from "../../__tests__/fixtures/lexical.js";
-import { sentTextsOf } from "../../../core/traversal/__tests__/fixtures/sentText.js";
+import { sentTextsOf } from "../../../traversal/__tests__/fixtures/sentText.js";
 
 const cta: BlockLike = {
   slug: "cta",

@@ -6,6 +6,7 @@ import { DATA_VE_PATH_ATTR } from "../../shared/protocol.js";
 import { documentAddressOf } from "../../shared/veDocument.js";
 import { LABEL_CLASS } from "./constants.js";
 import { createEditBadge } from "./editBadge.js";
+import { createFrameLayer } from "./frameLayer.js";
 import { createHoverController } from "./hoverController.js";
 import { groupNodesByPath, readMarkerFromAttrs } from "./markerExtractor.js";
 import { createTargetRegistry } from "./targetRegistry.js";
@@ -45,6 +46,7 @@ export function createEditTargets(
   const registry = createTargetRegistry();
   const badge = createEditBadge();
   const hover = createHoverController(badge, registry);
+  const frames = getCtx().mode === "always" ? createFrameLayer() : null;
   const wrapperTargets = new Set<HTMLElement>();
 
   const registerTarget = (target: HTMLElement, marker: Marker) => {
@@ -55,11 +57,13 @@ export function createEditTargets(
       hover.refresh(target);
     } else {
       hover.attach(target);
+      frames?.add(target);
     }
   };
 
   const releaseTarget = (target: HTMLElement) => {
     hover.detach(target);
+    frames?.remove(target);
     registry.remove(target);
     wrapperTargets.delete(target);
   };
@@ -118,6 +122,7 @@ export function createEditTargets(
     main.removeEventListener("click", openFieldOnTargetClick, true);
     stopTracking();
     hover.dispose();
+    frames?.dispose();
     registry.disposeAll();
     badge.dispose();
   };

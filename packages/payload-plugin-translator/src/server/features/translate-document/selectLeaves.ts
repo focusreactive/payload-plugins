@@ -2,7 +2,7 @@ import type { SelectionEmptyBecause } from "../_lib/index.js";
 import { TranslatorConfigError } from "../../../core/errors/index.js";
 import type { LeafAddress } from "../../../core/domain/content-projection/idPath.js";
 import { translatableFields } from "../../../core/domain/content-projection/translatableFields.js";
-import type { LanguageTable } from "../../../core/traversal/index.js";
+import type { LanguageTable } from "../../../traversal/index.js";
 import { narrowSelection } from "../../../core/domain/selection/index.js";
 import type { LeafAnswer, TranslationFilter } from "../../../core/domain/selection/index.js";
 import type { RuleName } from "../../../core/domain/selection/TranslationFilter.js";

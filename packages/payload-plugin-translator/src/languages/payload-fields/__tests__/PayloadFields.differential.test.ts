@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import baseline from "./fixtures/fields.baseline.json" with { type: "json" };
 
-import { applyTranslations, collectTranslationTargets } from "../../../core/traversal/index.js";
+import { applyTranslations, collectTranslationTargets } from "../../../traversal/index.js";
 import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { addressesOf, addressOf } from "../../__tests__/addresses.js";
 import { DataReconciler } from "../../../core/translation-pipeline/stages/data-reconciler/index.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
-import { sentTextOf, sentTextsOf } from "../../../core/traversal/__tests__/fixtures/sentText.js";
+import { sentTextOf, sentTextsOf } from "../../../traversal/__tests__/fixtures/sentText.js";
 
 type Doc = Record<string, unknown>;
 type Walked = { texts: unknown[]; addresses: string[]; document: Doc };

@@ -165,6 +165,20 @@ describe("reads of unsaved rich text states for one field", () => {
 
       expect(mostReadsInFlight).toBe(4);
     });
+
+    it("reads the saved value of the same field at the same time, and no newer state replaces it", async () => {
+      const running = startSlowRead();
+      await vi.waitFor(() => expect(pageReads()).toBe(1));
+      const { state: _state, ...savedRequest } = bodyOf();
+
+      const saved = read(savedRequest);
+      const newest = read(bodyOf(richText("Third")));
+
+      expect(topLevelTypesOf(await saved)).toEqual(["paragraph"]);
+      expect(topLevelTypesOf(await newest)).toEqual(["paragraph"]);
+      await running;
+      expect(mostReadsInFlight).toBe(2);
+    });
   });
 
   it("reads again once a read that does not finish is stale", async () => {

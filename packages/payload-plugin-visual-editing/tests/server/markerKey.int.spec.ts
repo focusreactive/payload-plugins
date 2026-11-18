@@ -9,7 +9,7 @@ import type { PlainObject } from "../../src/shared/plainObject";
 import { createPreviewSession } from "../../src/admin/instantPreview/previewSession";
 import { markRead } from "../../src/server/markRead";
 import { VE_FIELD_SNAPSHOT_TYPE, VE_FIELDS_RENDERED_TYPE } from "../../src/shared/protocol";
-import { fromStegaPayload, META_KEY } from "../../src/shared/shared";
+import { fromStegaPayload, META_KEY, toStegaPayload } from "../../src/shared/shared";
 
 const pagesSchema = {
   body: "richText",
@@ -43,7 +43,7 @@ describe("the stable key in a marker", () => {
   it("is left out for a field outside any row, where the path is the key", () => {
     const page = markDraftRead({ title: "Home" });
 
-    expect(vercelStegaDecode(page.title)).toEqual({ ...pageInfo, path: "title" });
+    expect(markerOf(page.title)).toEqual({ ...pageInfo, path: "title" });
   });
 
   it("replaces the index of a block with its row id", () => {
@@ -114,7 +114,7 @@ describe("the stable key in a marker", () => {
   it("is left out when a row has no id to be known by", () => {
     const page = markDraftRead({ layout: [{ blockType: "hero", heading: "First" }] });
 
-    expect(vercelStegaDecode(page.layout[0]?.heading ?? "")).toEqual({
+    expect(markerOf(page.layout[0]?.heading)).toEqual({
       ...pageInfo,
       path: "layout.0.heading",
     });
@@ -193,6 +193,12 @@ describe("fromStegaPayload", () => {
   const decode = (payload: object) =>
     fromStegaPayload(vercelStegaDecode(vercelStegaCombine("Text", payload, false)));
 
+  it("reads a marker written with the names of its properties", () => {
+    const identity = { ...pageInfo, key: "layout.row-a.heading", path: "layout.0.heading" };
+
+    expect(decode(identity)).toEqual(identity);
+  });
+
   it("reads a marker written before markers had a key", () => {
     expect(decode({ ...pageInfo, path: "layout.0.heading" })).toEqual({
       ...pageInfo,
@@ -205,11 +211,83 @@ describe("fromStegaPayload", () => {
   });
 });
 
+const lengthOf = (payload: unknown) => JSON.stringify(payload).length;
+
+describe("the payload of a marker", () => {
+  const ROW_ID = "6a20bc9034cce4ea2150357d";
+  const NESTED_ROW_ID = "6acf5454aa3fbd18af4f5db8";
+
+  const fieldInRows: VeIdentity = {
+    ...pageInfo,
+    key: `layout.${ROW_ID}.items.${NESTED_ROW_ID}.caption`,
+    path: "layout.0.items.3.caption",
+  };
+
+  it.each<[string, VeIdentity]>([
+    ["a field outside any row", { ...pageInfo, path: "title" }],
+    ["a field in nested rows", fieldInRows],
+    ["a field of a global", { collectionSlug: "settings", kind: "global", path: "title" }],
+    [
+      "a row of a global",
+      {
+        collectionSlug: "settings",
+        key: "links.row-a.label",
+        kind: "global",
+        path: "links.0.label",
+      },
+    ],
+    ["a value of one locale", { ...pageInfo, locale: "de", path: "title" }],
+    [
+      "a row whose id reads like its index",
+      { ...pageInfo, key: "layout.0.heading", path: "layout.0.heading" },
+    ],
+    [
+      "a key that names other fields than the path",
+      { ...pageInfo, key: "layout.row-a", path: "layout.0.heading" },
+    ],
+    ["a field named like an index", { ...pageInfo, key: "layout.row-a.0", path: "layout.0.0" }],
+  ])("is read back as the identity it was written from for %s", (_name, identity) => {
+    expect(fromStegaPayload(toStegaPayload(identity))).toEqual(identity);
+  });
+
+  it("states the row ids once and the names of the document properties never", () => {
+    const payload = toStegaPayload(fieldInRows);
+
+    expect(payload).toEqual([
+      0,
+      "pages",
+      "page-1",
+      "layout.0.items.3.caption",
+      [ROW_ID, NESTED_ROW_ID],
+    ]);
+    expect(lengthOf(payload)).toBeLessThan(lengthOf(fieldInRows) * (2 / 3));
+  });
+
+  it("ends at the path for a field outside any row", () => {
+    expect(toStegaPayload({ ...pageInfo, path: "title" })).toEqual([0, "pages", "page-1", "title"]);
+  });
+
+  it("is written into the text of a draft read", () => {
+    const page = markDraftRead({ layout: [hero("row-a", "First")] });
+
+    expect(vercelStegaDecode(page.layout[0]?.heading ?? "")).toEqual(
+      toStegaPayload({ ...pageInfo, key: "layout.row-a.heading", path: "layout.0.heading" })
+    );
+  });
+
+  it.each([[[]], [[0, "pages"]], [[7, "pages", "page-1", "title"]], [[0, "pages", "page-1", 7]]])(
+    "is no marker of a field when it is %j",
+    (payload) => {
+      expect(fromStegaPayload(payload)).toBeNull();
+    }
+  );
+});
+
 describe("a draft read without instant preview", () => {
   it("marks a field in a row with its path alone", () => {
     const page = markDraftRead({ layout: [hero("row-a", "First")] }, pageInfo, false);
 
-    expect(vercelStegaDecode(page.layout[0]?.heading ?? "")).toEqual({
+    expect(markerOf(page.layout[0]?.heading)).toEqual({
       ...pageInfo,
       path: "layout.0.heading",
     });

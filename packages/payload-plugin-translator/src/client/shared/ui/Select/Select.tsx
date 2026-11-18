@@ -21,14 +21,14 @@ const sizes = {
     fontSize: "0.875rem",
   },
   md: {
-    height: "32px",
-    paddingInline: "0.5rem",
-    fontSize: "1rem",
+    height: "36px",
+    paddingInline: "10px",
+    fontSize: "13px",
   },
   lg: {
     height: "40px",
-    paddingInline: "0.75rem",
-    fontSize: "1rem",
+    paddingInline: "15px",
+    fontSize: "13px",
   },
 };
 type SelectOptionProps = ComponentPropsWithoutRef<"option">;

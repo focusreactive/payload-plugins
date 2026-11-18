@@ -29,6 +29,18 @@ describe("readInternalLinks", () => {
     ]);
   });
 
+  it("reads links from a top-level list of blocks in order", () => {
+    const values = [
+      { body: richText(internalLink("posts", "1")) },
+      [{ body: richText(internalLink("pages", "2")) }],
+    ];
+
+    expect(readInternalLinks(values)).toEqual([
+      { collection: "posts", docId: "1" },
+      { collection: "pages", docId: "2" },
+    ]);
+  });
+
   it("does not read links inside a populated linked document", () => {
     const linked = { id: 7, content: richText(internalLink("posts", "9")) };
 

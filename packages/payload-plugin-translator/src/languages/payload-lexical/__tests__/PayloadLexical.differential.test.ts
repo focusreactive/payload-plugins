@@ -7,9 +7,9 @@ import {
   answerInKind,
   sentOf,
   sentTextOf,
-} from "../../../core/traversal/__tests__/fixtures/sentText.js";
-import { applyTranslations } from "../../../core/traversal/index.js";
-import type { TranslationTarget } from "../../../core/traversal/index.js";
+} from "../../../traversal/__tests__/fixtures/sentText.js";
+import { applyTranslations } from "../../../traversal/index.js";
+import type { TranslationTarget } from "../../../traversal/index.js";
 import type { BlockLike, FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { addressesOf } from "../../__tests__/addresses.js";
 import type { Doc } from "../../__tests__/fixtures/lexical.js";

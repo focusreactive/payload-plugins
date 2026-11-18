@@ -3,25 +3,14 @@ import type { CollectionConfig } from "payload";
 import { contentBlocks } from "@/blocks/contentBlocks";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import {
-  LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS,
+  createLivePreviewEditComponents,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
-import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
-import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
+import { createStandalonePreview } from "@/lib/utils/standalonePreview";
 
 import { preventDeleteIfReferenced } from "./hooks/preventDeleteIfReferenced";
 import { revalidatePagesUsingGlobalBlock } from "./hooks/revalidatePagesUsingGlobalBlock";
-
-const globalBlockPreviewPath = (id: unknown, locale: string): string => {
-  const prefix = shouldIncludeLocalePrefix(locale) ? `/${locale}` : "";
-
-  return generatePreviewPath({
-    collection: "globalBlock",
-    path: `${prefix}/preview/global-block/${id}`,
-    slug: String(id ?? ""),
-  });
-};
 
 export const GlobalBlock: CollectionConfig<"globalBlock"> = {
   access: {
@@ -32,15 +21,11 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
   },
   admin: {
     components: {
-      edit: { beforeDocumentControls: LIVE_PREVIEW_BEFORE_DOCUMENT_CONTROLS },
+      edit: createLivePreviewEditComponents(),
     },
     defaultColumns: ["title", "block", "updatedAt"],
     group: "Global Components",
-    livePreview: {
-      url: ({ data, locale }) =>
-        globalBlockPreviewPath(data?.id, locale.code ?? locale.fallbackLocale),
-    },
-    preview: (data, { locale }) => globalBlockPreviewPath(data?.id, locale),
+    ...createStandalonePreview("globalBlock"),
     useAsTitle: "title",
   },
   dbName: "gsec",

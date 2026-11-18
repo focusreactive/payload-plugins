@@ -19,5 +19,5 @@ export function resolveFieldLabel({
 
   if (!segments) return fieldPath;
 
-  return segments.map((s) => (s.type === "field" ? s.label : `#${s.position + 1}`)).join(" > ");
+  return segments.map((s) => (s.type === "field" ? s.label : `#${s.position + 1}`)).join(" › ");
 }

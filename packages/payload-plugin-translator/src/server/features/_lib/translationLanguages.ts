@@ -1,5 +1,5 @@
 import type { BlockLike } from "../../../core/kernel/field-traversal/index.js";
-import type { LanguageTable } from "../../../core/traversal/index.js";
+import type { LanguageTable } from "../../../traversal/index.js";
 import {
   PAYLOAD_FIELDS_ID,
   payloadFieldsLanguage,

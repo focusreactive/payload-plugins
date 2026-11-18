@@ -1,5 +1,5 @@
-import { collectTranslationTargets } from "../../traversal/index.js";
-import type { CollectOptions, TranslationTarget } from "../../traversal/index.js";
+import { collectTranslationTargets } from "../../../traversal/index.js";
+import type { CollectOptions, TranslationTarget } from "../../../traversal/index.js";
 import type { IdPath } from "./idPath.js";
 import { walkAddress } from "./walkAddress.js";
 

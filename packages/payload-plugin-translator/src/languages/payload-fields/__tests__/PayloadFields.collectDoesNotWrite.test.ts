@@ -1,19 +1,19 @@
 import { describe, expect, it } from "vitest";
 
 import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
-import type { Language } from "../../../core/traversal/index.js";
+import type { Language } from "../../../traversal/index.js";
 import {
   CannotEnterLanguageError,
   TooManyCrossingsError,
   applyTranslations,
   collectTranslationTargets,
-} from "../../../core/traversal/index.js";
+} from "../../../traversal/index.js";
 import type { ContentCrossing } from "../../contentCrossing.js";
 import { payloadLexicalContent, payloadLexicalLanguage } from "../../payload-lexical/index.js";
 import { PAYLOAD_FIELDS_ID, payloadFieldsLanguage } from "../PayloadFields.language.js";
 import type { Tree } from "../../__tests__/fixtures/lexical.js";
 import { dig, text, tree } from "../../__tests__/fixtures/lexical.js";
-import { sentTextsOf } from "../../../core/traversal/__tests__/fixtures/sentText.js";
+import { sentTextsOf } from "../../../traversal/__tests__/fixtures/sentText.js";
 
 type Body = { body: Tree };
 

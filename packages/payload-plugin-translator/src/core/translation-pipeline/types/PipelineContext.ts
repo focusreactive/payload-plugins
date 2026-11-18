@@ -1,7 +1,7 @@
 import type { IdPath, LeafAddress } from "../../domain/content-projection/idPath.js";
 import type { DocumentRef, TranslatableValue } from "../../domain/translation-providers/index.js";
 import type { FieldLike } from "../../kernel/field-traversal/index.js";
-import type { CollectedContent, RegisteredLanguage } from "../../traversal/index.js";
+import type { CollectedContent, RegisteredLanguage } from "../../../traversal/index.js";
 import type { SettledAnswer } from "./Pipeline.js";
 
 export type PipelineContext = {

@@ -304,6 +304,7 @@ describe("instant preview in the overlay", () => {
     const tracker: FieldTracker = {
       dispose: vi.fn(),
       showText: vi.fn(),
+      showTextInHolder: vi.fn(() => false),
       subscribe: (listener) => {
         fieldListener = listener;
         return vi.fn();

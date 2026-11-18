@@ -1,4 +1,5 @@
 import { Paper } from "yoastseo";
+import { getTitleProgressGuarded } from "./helpers/title-progress";
 import type { AnalysisInput, KeyphraseInput } from "./types/analysis";
 import type { PaperData } from "./types/paper";
 
@@ -10,7 +11,7 @@ export function buildPaper(input: AnalysisInput, keyphrase?: KeyphraseInput): Pa
     keyword: focus.text,
     synonyms: focus.synonyms.join(", "),
     title: input.title,
-    titleWidth: 0,
+    titleWidth: getTitleProgressGuarded(input.title).actual,
     description: input.description,
     slug: input.slug,
     permalink: input.site.baseUrl ? `${input.site.baseUrl}/${input.slug}` : input.slug,

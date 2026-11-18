@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { Overlay } from "../../src/client/createOverlay";
 
-import { DATA_VE_TARGET_ATTR } from "../../src/client/overlay/constants";
+import { DATA_VE_FRAME_ATTR, DATA_VE_TARGET_ATTR } from "../../src/client/overlay/constants";
 import { createOverlay } from "../../src/client/createOverlay";
 import { DATA_VE_COLLECTION_ATTR, DATA_VE_PATH_ATTR } from "../../src/shared/protocol";
 
@@ -45,9 +45,10 @@ describe("an edit target that is moved out of the overlay element", () => {
     overlay.dispose();
   });
 
-  it("is an outlined target while it is inside", () => {
+  it("is a framed target while it is inside, and the page's own outline is left alone", () => {
     expect(heading.getAttribute(DATA_VE_TARGET_ATTR)).toBe("title");
-    expect(heading.style.outline).not.toBe(OUTLINE_OF_THE_PAGE);
+    expect(document.querySelectorAll(`[${DATA_VE_FRAME_ATTR}]`)).toHaveLength(2);
+    expect(heading.style.outline).toBe(OUTLINE_OF_THE_PAGE);
     expect(richText.getAttribute(DATA_VE_TARGET_ATTR)).toBe("content");
   });
 
@@ -57,6 +58,7 @@ describe("an edit target that is moved out of the overlay element", () => {
 
     expect(heading.hasAttribute(DATA_VE_TARGET_ATTR)).toBe(false);
     expect(heading.style.outline).toBe(OUTLINE_OF_THE_PAGE);
+    expect(document.querySelectorAll(`[${DATA_VE_FRAME_ATTR}]`)).toHaveLength(1);
   });
 
   it("stops a wrapper from being a target", async () => {

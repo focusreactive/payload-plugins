@@ -1,7 +1,6 @@
 import type { FieldHook } from "payload";
-import { getPluginConfig } from "../config";
+import { getPluginConfig, getResolvedThresholds } from "../config";
 import { PLUGIN_NAME } from "../constants";
-import { DESCRIPTION_RANGE, TITLE_RANGE } from "../constants/generation";
 import {
   compact,
   heading,
@@ -14,6 +13,7 @@ import {
 } from "../content/schema/helpers";
 import { serialize } from "../content/schema/serialize";
 import type { ContentHelpers, ExtractToolkit, SeoCollectionConfig } from "../types/config";
+import { fieldRangeOf, fieldRangesFor } from "../measure/fieldRanges";
 import type { RangeOverride } from "../measure/measure";
 import { resolveApiKey } from "../server/generate/apiKey";
 import { createServerResolveDocs } from "../server/generate/serverResolveDocs";
@@ -38,11 +38,10 @@ function isEmpty(v: unknown): boolean {
 }
 
 function rangeFor(kind: SeoFieldKind, override: RangeOverride | undefined) {
-  const base = kind === "title" ? TITLE_RANGE : DESCRIPTION_RANGE;
+  const base = fieldRangesFor(getResolvedThresholds())[kind];
 
   return {
-    min: override?.min ?? base.min,
-    max: override?.max ?? base.max,
+    ...fieldRangeOf(base, override),
     unit: (kind === "title" ? "px" : "char") as "px" | "char",
   };
 }

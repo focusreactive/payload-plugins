@@ -4,7 +4,7 @@ import type { CollectionSlug } from "payload";
 import { sourceFingerprinter } from "../../core/domain/content-projection/sourceFingerprinter.js";
 import { translationLanguages } from "../../server/features/_lib/index.js";
 import type { BlockLike, FieldLike } from "../../core/kernel/field-traversal/index.js";
-import type { LanguageTable } from "../../core/traversal/index.js";
+import type { LanguageTable } from "../../traversal/index.js";
 import type { Node } from "../../languages/__tests__/fixtures/lexical.js";
 import { block, paragraph, text, tree } from "../../languages/__tests__/fixtures/lexical.js";
 import recorded from "./fixtures/embedFreeHashes.baseline.json" with { type: "json" };

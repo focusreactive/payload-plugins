@@ -173,6 +173,17 @@ describe("richTextToContent", () => {
     expect(htmlOf(out[0])).toContain('<a href="https://auto.example">auto.example</a>');
   });
 
+  it.each([
+    ["ctaBannerInline", { heading: "Join us", actions: 0 }],
+    ["cardsGridInline", { items: 0 }],
+    ["logosInline", { label: "Partners", items: 0 }],
+  ])("expands a %s block whose array field holds a form-state row count", (blockType, fields) => {
+    const expand = () =>
+      richTextToContent(root([{ type: "block", fields: { blockType, ...fields } }]), ctx());
+
+    expect(expand).not.toThrow();
+  });
+
   it("returns [] for empty / non-lexical values", () => {
     expect(richTextToContent(null, ctx())).toEqual([]);
     expect(richTextToContent({ root: { children: [] } }, ctx())).toEqual([]);

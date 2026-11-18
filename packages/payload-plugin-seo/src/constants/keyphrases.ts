@@ -5,3 +5,4 @@ export const KEYPHRASE_SAVE_DELAY_MS = 800;
 export const MAX_KEYPHRASE_LENGTH = 100;
 export const MAX_SYNONYMS = 10;
 export const MAX_SYNONYM_LENGTH = 100;
+export const DEFAULT_KEYPHRASE_INDEX = true;

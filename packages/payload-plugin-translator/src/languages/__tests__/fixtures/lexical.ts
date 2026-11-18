@@ -1,14 +1,7 @@
 import type { BlockLike, FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { isObject } from "../../../core/kernel/utils/isObject.js";
-import type {
-  CollectedContent,
-  IdPath,
-  RegisteredLanguage,
-} from "../../../core/traversal/index.js";
-import {
-  CannotEnterLanguageError,
-  collectTranslationTargets,
-} from "../../../core/traversal/index.js";
+import type { CollectedContent, IdPath, RegisteredLanguage } from "../../../traversal/index.js";
+import { CannotEnterLanguageError, collectTranslationTargets } from "../../../traversal/index.js";
 import type { EmbedResolver } from "../../embedCrossing.js";
 import {
   PAYLOAD_LEXICAL_ID,

@@ -1,25 +1,27 @@
 import type { VariantData } from "./VariantsField";
 
-import { useDocumentDrawer, EditIcon } from "@payloadcms/ui";
-import { TrashIcon } from "@payloadcms/ui/icons/Trash";
-import { AB_MAX_VARIANT_TOTAL } from "../../constants";
+import { ConfirmationModal, Popup, PopupList, useDocumentDrawer, useModal } from "@payloadcms/ui";
+
+import { useState } from "react";
+
+import { PercentInput } from "./PercentInput";
 
 interface VariantRowProps {
   variant: VariantData;
+  series: number;
   collectionSlug: string;
-  maxPercentage: number;
-  onPercentageChange: (value: string) => void;
-  onPercentageBlur: () => void;
+  max: number;
+  onPercentageChange: (value: number) => void;
   onDelete: () => void;
   onSaved: () => void;
 }
 
 export function VariantRow({
   variant,
+  series,
   collectionSlug,
-  maxPercentage,
+  max,
   onPercentageChange,
-  onPercentageBlur,
   onDelete,
   onSaved,
 }: VariantRowProps) {
@@ -27,62 +29,80 @@ export function VariantRow({
     collectionSlug,
     id: variant.id,
   });
+  const { openModal } = useModal();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const deleteModalSlug = `ab-delete-variant-${variant.id}`;
+  const name = variant.title ?? variant.id;
 
-  const handleAfterAction = () => {
+  const afterDrawerAction = () => {
     closeDrawer();
     onSaved();
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "8px 12px",
-        border: "1px solid var(--theme-elevation-150)",
-        borderRadius: 4,
-        marginBottom: 6,
-        background: "var(--theme-elevation-50)",
-      }}
-    >
-      <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: "var(--theme-elevation-800)" }}>
-        {variant.title}
-      </span>
-
-      <div className="ab-percent-input-wrapper">
-        <input
-          type="number"
-          min={1}
-          max={maxPercentage}
-          value={variant.passPercentage ?? ""}
-          onChange={(e) => onPercentageChange(e.target.value)}
-          onBlur={onPercentageBlur}
-          className="ab-percent-input"
-          title={`Traffic percentage (1–${AB_MAX_VARIANT_TOTAL})`}
-        />
-        <span className="ab-percent-suffix">%</span>
-      </div>
-
-      <button
-        type="button"
-        onClick={openDrawer}
-        className="ab-variant-icon-btn"
-        title="Edit variant"
-      >
-        <EditIcon />
+    <li className="ab-row">
+      <span className="ab-row__swatch" data-series={series} aria-hidden="true" />
+      <button type="button" className="ab-row__name ab-row__name--link" onClick={openDrawer}>
+        {name}
       </button>
 
-      <button
-        type="button"
-        onClick={onDelete}
-        className="ab-variant-icon-btn ab-variant-icon-btn--danger"
-        title="Remove variant"
-      >
-        <TrashIcon />
-      </button>
+      <PercentInput
+        value={variant.passPercentage}
+        min={1}
+        max={max}
+        label={name}
+        onChange={onPercentageChange}
+      />
 
-      <DocumentDrawer onSave={handleAfterAction} onDelete={handleAfterAction} />
-    </div>
+      <Popup
+        className={menuOpen ? "ab-row__menu ab-row__menu--open" : "ab-row__menu"}
+        onToggleOpen={setMenuOpen}
+        buttonClassName="ab-row__menu-trigger"
+        horizontalAlign="right"
+        verticalAlign="bottom"
+        size="fit-content"
+        caret={false}
+        button={
+          <>
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="3.5" cy="8" r="1.25" />
+              <circle cx="8" cy="8" r="1.25" />
+              <circle cx="12.5" cy="8" r="1.25" />
+            </svg>
+            <span className="ab-sr-only">Actions for {name}</span>
+          </>
+        }
+        render={({ close }) => (
+          <PopupList.ButtonGroup>
+            <PopupList.Button
+              onClick={() => {
+                close();
+                openDrawer();
+              }}
+            >
+              Edit variant
+            </PopupList.Button>
+            <PopupList.Button
+              className="ab-menu__item--danger"
+              onClick={() => {
+                close();
+                openModal(deleteModalSlug);
+              }}
+            >
+              Delete variant
+            </PopupList.Button>
+          </PopupList.ButtonGroup>
+        )}
+      />
+
+      <ConfirmationModal
+        modalSlug={deleteModalSlug}
+        heading={`Delete “${name}”?`}
+        body="This deletes the variant and its content. Its share of traffic goes back to the original."
+        confirmLabel="Delete variant"
+        onConfirm={onDelete}
+      />
+      <DocumentDrawer onSave={afterDrawerAction} onDelete={afterDrawerAction} />
+    </li>
   );
 }
