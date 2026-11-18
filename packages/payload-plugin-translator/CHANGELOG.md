@@ -1,3 +1,26 @@
+# @focus-reactive/payload-plugin-translator [1.0.0-next.11](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.10...@focus-reactive/payload-plugin-translator@1.0.0-next.11) (2026-11-18)
+
+
+### Features
+
+* **translator:** the admin stops naming the run ([0ebed65](https://github.com/focusreactive/payload-plugins/commit/0ebed6594d609418f692db39ce1172bc199466bd))
+* **translator:** the job row carries only a pointer ([a8c66cd](https://github.com/focusreactive/payload-plugins/commit/a8c66cd5f22c74f9c89ad21d3bdb57056e362f45))
+
+
+### BREAKING CHANGES
+
+* **translator:** `DELETE {basePath}/cancel` no longer accepts `{ ids }`;
+it takes `{ collection_slug, collection_id, select_all? }`.
+`DELETE {basePath}/cancel-by-collection/:collection_slug` is removed --
+send `select_all: true` to `/cancel` instead. `POST {basePath}/run/:id`
+is now `POST {basePath}/run/:collection_slug/:collection_id`. The status
+payloads no longer carry the run's `id`. The `cancel-by-collection`
+action stays in `TranslatorAction` so existing guards keep working.
+* **translator:** a translation job queued before 1.0 will not run after
+upgrading. Let the queue drain before upgrading to 1.0. Such a job is
+logged against its job id and skipped; it is not retried, and nothing is
+translated for it.
+
 # @focus-reactive/payload-plugin-translator [1.0.0-next.10](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@1.0.0-next.9...@focus-reactive/payload-plugin-translator@1.0.0-next.10) (2026-11-18)
 
 
