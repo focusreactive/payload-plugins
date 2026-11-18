@@ -10,6 +10,9 @@ import {
 } from "../../src/client/toggle";
 import { declarationsFor } from "../support/shadowStyles";
 import { flushMutations } from "../support/time";
+import { zoomEveryElement, zoomNoElement } from "../support/zoom";
+
+const PAGE_ZOOM = 1.25;
 
 const host = () => document.querySelector<HTMLElement>(`[${DATA_VE_TOGGLE_ATTR}]`);
 
@@ -150,6 +153,17 @@ describe("toggle", () => {
     expect(host()?.style.top).toBe("60px");
     expect(host()?.style.right).toBe("40px");
     localStorage.removeItem(TOGGLE_POSITION_STORAGE_KEY);
+  });
+
+  it("comes back where it was dropped on a page the site zoomed", () => {
+    zoomEveryElement(PAGE_ZOOM);
+    localStorage.setItem(TOGGLE_POSITION_STORAGE_KEY, JSON.stringify({ right: 50, top: 75 }));
+
+    toggle = createToggle(document, vi.fn());
+
+    expect([host()?.style.right, host()?.style.top]).toEqual(["40px", "60px"]);
+    localStorage.removeItem(TOGGLE_POSITION_STORAGE_KEY);
+    zoomNoElement();
   });
 
   it("lights its dot while visual editing is on", () => {

@@ -9,6 +9,7 @@ import {
   UNDERLINE_FORMAT,
 } from "../../../shared/richText/formats.js";
 import { isAllowedLinkUrl, linkUrlOf } from "../../../shared/richText/linkUrls.js";
+import { zoomOf } from "../../overlay/zoom.js";
 
 export type ToolbarEvents = {
   onToggle(action: ToolbarAction): void;
@@ -232,7 +233,8 @@ export function createToolbar(
   const place = (selection: DOMRect) => {
     placedAt = selection;
     const { left, top } = positionOf(host, selection, doc.defaultView ?? window);
-    host.style.transform = `translate(${left}px, ${top}px)`;
+    const zoom = zoomOf(host);
+    host.style.transform = `translate(${left / zoom}px, ${top / zoom}px)`;
   };
 
   const placeAgain = () => {

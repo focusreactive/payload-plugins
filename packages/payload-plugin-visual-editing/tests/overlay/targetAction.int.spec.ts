@@ -11,6 +11,7 @@ import { DATA_VE_COLLECTION_ATTR, DATA_VE_PATH_ATTR } from "../../src/shared/pro
 import { click, overlayCtx } from "../support/overlay";
 import { restorePreviewWindow, stubAdminWindow } from "../support/previewWindow";
 import { waitFor } from "../support/time";
+import { zoomEveryElement, zoomNoElement } from "../support/zoom";
 
 const CLEAR_GRACE_MS = 250;
 
@@ -22,6 +23,8 @@ const editLabel = () => document.querySelector<HTMLElement>(`.${LABEL_CLASS}`) a
 const isShown = (element: HTMLElement) =>
   element.style.display !== "none" &&
   element.parentElement?.parentElement?.style.visibility === "visible";
+
+const frameOf = (button: HTMLElement) => button.parentElement as HTMLElement;
 
 const pointerOver = (element: Element) => element.dispatchEvent(new MouseEvent("mouseenter"));
 
@@ -107,6 +110,41 @@ describe("the action the overlay offers for a target", () => {
       window.dispatchEvent(new Event("scroll"));
 
       expect(actionButton().style.top).toBe("908px");
+    });
+  });
+
+  describe("on a page the site zoomed", () => {
+    const PAGE_ZOOM = 1.25;
+
+    const placePhoto = (rect: DOMRect) =>
+      vi.spyOn(photo, "getBoundingClientRect").mockReturnValue(rect);
+
+    beforeEach(() => zoomEveryElement(PAGE_ZOOM));
+
+    afterEach(() => {
+      zoomNoElement();
+      vi.restoreAllMocks();
+    });
+
+    it("frames the target where it is drawn, not where the zoom would move the frame again", () => {
+      placePhoto(new DOMRect(500, 250, 400, 200));
+
+      pointerOver(photo);
+
+      const frame = frameOf(actionButton());
+      expect([frame.style.transform, frame.style.width, frame.style.height]).toEqual([
+        "translate(398px, 198px)",
+        "324px",
+        "164px",
+      ]);
+    });
+
+    it("keeps the button in the visible part of an image scrolled past its top and its left", () => {
+      placePhoto(new DOMRect(-500, -250, window.innerWidth * 2, window.innerHeight * 3));
+
+      pointerOver(photo);
+
+      expect([actionButton().style.left, actionButton().style.top]).toEqual(["408px", "208px"]);
     });
   });
 

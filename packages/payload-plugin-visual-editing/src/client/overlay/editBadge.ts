@@ -15,6 +15,7 @@ import {
 } from "./constants.js";
 import { placeFrame } from "./frameLayer.js";
 import { rectOf } from "./targetArea.js";
+import { rectInZoomOf } from "./zoom.js";
 
 type EditBadgeConfig = {
   href: string;
@@ -115,7 +116,7 @@ export function createEditBadge(): EditBadge {
   const reposition = (target: HTMLElement) => {
     const rect = rectOf(target);
     placeFrame(anchor, rect, FRAME_ACTIVE_WIDTH);
-    keepActionInView(rect);
+    keepActionInView(rectInZoomOf(anchor, rect));
   };
 
   return {

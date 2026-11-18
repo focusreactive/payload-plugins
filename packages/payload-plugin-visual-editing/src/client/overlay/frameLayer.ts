@@ -5,15 +5,17 @@ import {
   FRAME_RADIUS,
 } from "./constants.js";
 import { areaOf, rectOf } from "./targetArea.js";
+import { rectInZoomOf } from "./zoom.js";
 
 /** Places a box so its border lies just outside `rect`. */
 export const placeFrame = (box: HTMLElement, rect: DOMRect, borderWidth: number): void => {
   const hidden = rect.width === 0 && rect.height === 0;
   box.style.display = hidden ? "none" : "block";
   if (hidden) return;
-  box.style.transform = `translate(${rect.left - borderWidth}px, ${rect.top - borderWidth}px)`;
-  box.style.width = `${rect.width + borderWidth * 2}px`;
-  box.style.height = `${rect.height + borderWidth * 2}px`;
+  const { height, left, top, width } = rectInZoomOf(box, rect);
+  box.style.transform = `translate(${left - borderWidth}px, ${top - borderWidth}px)`;
+  box.style.width = `${width + borderWidth * 2}px`;
+  box.style.height = `${height + borderWidth * 2}px`;
 };
 
 export interface FrameLayer {
@@ -74,8 +76,8 @@ export function createFrameLayer(): FrameLayer {
         borderRadius: FRAME_RADIUS,
         pointerEvents: "none",
       } as Partial<CSSStyleDeclaration>);
-      placeFrame(frame, rectOf(target), FRAME_IDLE_WIDTH);
       layer.append(frame);
+      placeFrame(frame, rectOf(target), FRAME_IDLE_WIDTH);
       frames.set(target, frame);
       resizes?.observe(areaOf(target));
     },

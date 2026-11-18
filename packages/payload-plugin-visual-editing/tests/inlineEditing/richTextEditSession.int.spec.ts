@@ -37,6 +37,7 @@ import { DATA_VE_RICH_TEXT_TOOLBAR_ATTR } from "../../src/client/inlineEditing/r
 
 import { measureSelectionsAsEmpty } from "../support/selectionRects";
 import { flushMutations } from "../support/time";
+import { zoomEveryElement, zoomNoElement } from "../support/zoom";
 
 type Node = Record<string, unknown> & { children?: Node[] };
 
@@ -1061,6 +1062,27 @@ describe("one edit of rich text", () => {
         expect(styles).toContain("flex-wrap: wrap");
         expect(linkInput().parentElement?.getAttribute("role")).toBe("toolbar");
         expect(button("bold").parentElement?.getAttribute("role")).toBe("group");
+      });
+
+      describe("on a page the site zoomed", () => {
+        const PAGE_ZOOM = 1.25;
+
+        beforeEach(() => zoomEveryElement(PAGE_ZOOM));
+
+        afterEach(zoomNoElement);
+
+        it.each<[string, DOMRect, string]>([
+          ["text in the middle", new DOMRect(50, 348, 300, 200), "translate(40px, 200px)"],
+          ["text at the right edge", new DOMRect(380, 348, 10, 200), "translate(65.6px, 200px)"],
+          ["text at the top", new DOMRect(50, 4, 300, 200), "translate(40px, 6.4px)"],
+        ])(
+          "sits above the edited text where it is drawn, not where the zoom would move it again, for %s",
+          (_name, rect, transform) => {
+            editAt(rect);
+
+            expect(toolbarHost().style.transform).toBe(transform);
+          }
+        );
       });
     });
 
