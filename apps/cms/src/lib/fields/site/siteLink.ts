@@ -72,12 +72,12 @@ export function siteLink({
           {
             admin: { layout: "horizontal", width: "75%" },
             defaultValue: defaultKind,
-            label: "Where it goes",
+            label: "Link type",
             name: "kind",
             options: [
-              { label: "A page in the CMS", value: "internal" },
-              { label: "A URL on this site", value: "relative" },
-              { label: "Another website, an email or a phone", value: "external" },
+              { label: "Internal page", value: "internal" },
+              { label: "Internal URL", value: "relative" },
+              { label: "External link", value: "external" },
             ],
             required,
             type: "radio",
@@ -107,7 +107,7 @@ export function siteLink({
           description:
             "For pages that are not in the CMS. Starts with a slash, for example /contact.",
         },
-        label: "URL on this site",
+        label: "URL",
         name: "path",
         type: "text",
         validate: validatePath,
@@ -118,7 +118,7 @@ export function siteLink({
           description:
             "A full URL (https://example.com), an email (mailto:hello@example.com) or a phone number (tel:+18005550100).",
         },
-        label: "URL, email or phone",
+        label: "External URL",
         name: "url",
         type: "text",
         validate: validateUrl,
