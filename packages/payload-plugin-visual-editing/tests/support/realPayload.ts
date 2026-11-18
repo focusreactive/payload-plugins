@@ -173,6 +173,7 @@ export type RealPayloadOptions = {
   plugin?: VisualEditingPluginConfig;
   onPageReadBeforeThePlugin?: ReadPage;
   canRead?: Access;
+  canUpdate?: Access;
   canReadMedia?: Access;
   canReadGuardedBody?: FieldAccess;
   userDepth?: number;
@@ -185,11 +186,15 @@ export async function startRealPayload({
   canRead,
   canReadGuardedBody,
   canReadMedia,
+  canUpdate,
   onPageReadBeforeThePlugin = ignoreReadPage,
   plugin = {},
   userDepth,
 }: RealPayloadOptions): Promise<Payload> {
-  const access = canRead && { read: canRead };
+  const access = (canRead || canUpdate) && {
+    ...(canRead && { read: canRead }),
+    ...(canUpdate && { update: canUpdate }),
+  };
   const mediaAccess = canReadMedia && { read: canReadMedia };
   const guardedBody: Field[] = canReadGuardedBody
     ? [

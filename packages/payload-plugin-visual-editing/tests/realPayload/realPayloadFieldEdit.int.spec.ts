@@ -8,18 +8,24 @@ import { withMarker } from "../../src/shared/stegaText";
 
 import { START_TIMEOUT_MS, richText, startRealPayload } from "../support/realPayload";
 import { page } from "../support/richTextPages";
-import { EDITOR, OUTSIDER, signIn } from "../support/unsavedRichTextRequests";
+import { EDITOR, OUTSIDER, READER, signIn } from "../support/unsavedRichTextRequests";
 
 type Answer = { status: number; saved: unknown };
 
 type Row = { id: string; [field: string]: unknown };
 
+type Stored = Record<string, unknown>;
+
 const everyoneButTheOutsider: Access = ({ req }) => req.user?.email !== OUTSIDER.email;
+const everyoneButTheReader: Access = ({ req }) => req.user?.email !== READER.email;
+
+const withoutUpdatedAt = ({ updatedAt: _updatedAt, ...rest }: Stored): Stored => rest;
 
 describe("the field edit endpoint", () => {
   let payload: Payload;
   let editor: Headers;
   let outsider: Headers;
+  let reader: Headers;
 
   const post = async (body: unknown, headers: Headers, contentType = "application/json") => {
     const endpoint = payload.config.endpoints.find(({ path }) => path === VE_FIELD_EDIT_PATH);
@@ -53,6 +59,11 @@ describe("the field edit endpoint", () => {
     return String(created.id);
   };
 
+  const createDraft = async (data: Record<string, unknown>) => {
+    const created = await payload.create({ collection: "pages", data, draft: true, locale: "en" });
+    return String(created.id);
+  };
+
   const read = (docId: string, draft: boolean, locale = "en") =>
     payload.findByID({
       collection: "pages",
@@ -66,11 +77,13 @@ describe("the field edit endpoint", () => {
   beforeAll(async () => {
     payload = await startRealPayload({
       canRead: everyoneButTheOutsider,
+      canUpdate: everyoneButTheReader,
       name: "field-edit",
       plugin: { inlineEditing: true, instantPreview: true },
     });
     editor = await signIn(payload, EDITOR);
     outsider = await signIn(payload, OUTSIDER);
+    reader = await signIn(payload, READER);
   }, START_TIMEOUT_MS);
 
   afterAll(async () => {
@@ -120,6 +133,95 @@ describe("the field edit endpoint", () => {
 
     expect((await read(docId, true, "de")).title).toBe("Deutsch");
     expect((await read(docId, true, "en")).title).toBe("English");
+  });
+
+  it("writes the edited locale alone and leaves every other field and locale as it was", async () => {
+    const docId = await publish({
+      label: "Plain",
+      localizedBody: richText("English body"),
+      localizedList: [{ label: "English row" }],
+      title: "English",
+    });
+    await payload.update({
+      collection: "pages",
+      data: {
+        localizedBody: richText("Deutscher Text"),
+        localizedList: [{ label: "Deutsche Zeile" }],
+        title: "Deutsch",
+      },
+      draft: true,
+      id: docId,
+      locale: "de",
+    });
+    const english = await read(docId, true, "en");
+    const german = await read(docId, true, "de");
+    const published = await read(docId, false, "en");
+
+    const answer = await edit({ ...page(docId), key: "title", locale: "de", value: "Neu" });
+
+    expect(answer).toEqual({ saved: true, status: 200 });
+    expect(withoutUpdatedAt(await read(docId, true, "en"))).toEqual(withoutUpdatedAt(english));
+    expect(withoutUpdatedAt(await read(docId, true, "de"))).toEqual(
+      withoutUpdatedAt({ ...german, title: "Neu" })
+    );
+    expect(await read(docId, false, "en")).toEqual(published);
+  });
+
+  it("writes one row of a localized list in the locale of the edit and keeps the rows of the other locale", async () => {
+    const docId = await publish({ localizedList: [{ label: "English row" }] });
+    await payload.update({
+      collection: "pages",
+      data: { localizedList: [{ label: "Erste" }, { label: "Zweite" }] },
+      draft: true,
+      id: docId,
+      locale: "de",
+    });
+    const english = await read(docId, true, "en");
+    const german = await read(docId, true, "de");
+    const [, second] = german.localizedList as Row[];
+    const expected = structuredClone(german);
+    (expected.localizedList as Row[])[1]!.label = "Geändert";
+
+    await edit({
+      ...page(docId),
+      key: `localizedList.${second!.id}.label`,
+      locale: "de",
+      value: "Geändert",
+    });
+
+    expect(withoutUpdatedAt(await read(docId, true, "de"))).toEqual(withoutUpdatedAt(expected));
+    expect(withoutUpdatedAt(await read(docId, true, "en"))).toEqual(withoutUpdatedAt(english));
+  });
+
+  it("writes the field of one block row and leaves every other row and field as it was", async () => {
+    const pickedId = await publish({ label: "Picked" });
+    const docId = await createDraft({
+      label: "Kept",
+      layout: [
+        {
+          blockType: "hero",
+          body: richText("First body"),
+          heading: "First",
+          picked: Number(pickedId),
+        },
+        { blockType: "hero", body: richText("Second body"), heading: "Second" },
+        { blockType: "hero", body: richText("Third body"), heading: "Third" },
+      ],
+      list: [{ label: "Row" }],
+    });
+    const before = await read(docId, true);
+    const [, second] = before.layout as Row[];
+    const expected = structuredClone(before);
+    (expected.layout as Row[])[1]!.heading = "Changed";
+
+    const answer = await edit({
+      ...page(docId),
+      key: `layout.${second!.id}.heading`,
+      value: "Changed",
+    });
+
+    expect(answer).toEqual({ saved: true, status: 200 });
+    expect(withoutUpdatedAt(await read(docId, true))).toEqual(withoutUpdatedAt(expected));
   });
 
   it("writes a field of a global and leaves its other fields empty in that locale", async () => {
@@ -354,6 +456,22 @@ describe("the field edit endpoint", () => {
       ["a field that holds no text yet", "seo.description"],
     ])("for %s", async (_name, key) => {
       expect(await refused({ key })).toEqual({ saved: false, status: 422 });
+    });
+
+    it("for a user who may read the document and not update it, text and rich text alike", async () => {
+      const draft = await read(docId, true);
+      const published = await read(docId, false);
+
+      const text = await post({ ...page(docId), key: "label", value: "Changed" }, reader);
+      const richTextEdit = await post(
+        { ...page(docId), key: "body", state: richText("Changed") },
+        reader
+      );
+
+      expect(text).toEqual({ reason: "not-editable", saved: false, status: 403 });
+      expect(richTextEdit).toEqual({ reason: "not-editable", saved: false, status: 403 });
+      expect(await read(docId, true)).toEqual(draft);
+      expect(await read(docId, false)).toEqual(published);
     });
 
     it("for a field the user may read and not update", async () => {

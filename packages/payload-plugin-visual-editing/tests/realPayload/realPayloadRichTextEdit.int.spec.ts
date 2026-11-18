@@ -20,6 +20,10 @@ type State = { root: Node & { children: Node[] } };
 
 type Row = { id: string; [field: string]: unknown };
 
+type Stored = Record<string, unknown>;
+
+const withoutUpdatedAt = ({ updatedAt: _updatedAt, ...rest }: Stored): Stored => rest;
+
 const BOLD = 1;
 
 const SCRIPT = "javascript";
@@ -541,6 +545,67 @@ describe("editing rich text through the endpoints", () => {
       expect(answer).toEqual({ saved: true, status: 200 });
       expect((await read(docId, true, "de")).localizedBody).toEqual(richText("Deutsch"));
       expect((await read(docId, true, "en")).localizedBody).toEqual(richText("English"));
+    });
+
+    it("writes the rich text of one block row and leaves every other row and field as it was", async () => {
+      const created = await payload.create({
+        collection: "pages",
+        data: {
+          label: "Kept",
+          layout: [
+            { blockType: "hero", body: article(), heading: "First" },
+            { blockType: "hero", body: richText("Second body"), heading: "Second" },
+            { blockType: "hero", body: article(), heading: "Third" },
+          ],
+        },
+        draft: true,
+      });
+      const docId = String(created.id);
+      const before = await read(docId);
+      const [, second] = before.layout as Row[];
+      const expected = structuredClone(before);
+      (expected.layout as Row[])[1]!.body = richText("Changed");
+
+      const answer = await edit({
+        ...page(docId),
+        key: `layout.${second!.id}.body`,
+        state: richText("Changed"),
+      });
+
+      expect(answer).toEqual({ saved: true, status: 200 });
+      expect(withoutUpdatedAt(await read(docId))).toEqual(withoutUpdatedAt(expected));
+    });
+
+    it("leaves every field of the other locale and every other field of the edited locale as it was", async () => {
+      const created = await payload.create({
+        collection: "pages",
+        data: { localizedBody: richText("English"), story: story(), title: "English" },
+        draft: true,
+        locale: "en",
+      });
+      const docId = String(created.id);
+      await payload.update({
+        collection: "pages",
+        data: { localizedBody: richText("Deutsch"), title: "Deutsch" },
+        draft: true,
+        id: docId,
+        locale: "de",
+      });
+      const english = await read(docId, true, "en");
+      const german = await read(docId, true, "de");
+
+      const answer = await edit({
+        ...page(docId),
+        key: "localizedBody",
+        locale: "de",
+        state: richText("Neu"),
+      });
+
+      expect(answer).toEqual({ saved: true, status: 200 });
+      expect(withoutUpdatedAt(await read(docId, true, "en"))).toEqual(withoutUpdatedAt(english));
+      expect(withoutUpdatedAt(await read(docId, true, "de"))).toEqual(
+        withoutUpdatedAt({ ...german, localizedBody: richText("Neu") })
+      );
     });
 
     it("counts an edit that sends the state the field holds as saved", async () => {

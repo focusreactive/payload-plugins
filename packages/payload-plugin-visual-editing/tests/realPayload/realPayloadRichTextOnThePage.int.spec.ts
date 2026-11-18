@@ -15,12 +15,13 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import type { VisualEditing } from "../../src/dom";
 import type { EditorNode } from "../../src/shared/richText/editorNodes";
 
+import { EDIT_SAVE_PAUSE_MS } from "../../src/client/inlineEditing/editTransport";
 import { DATA_VE_OPAQUE_ATTR } from "../../src/client/inlineEditing/richText/opaqueNode";
 import { DATA_VE_EDITED_ATTR } from "../../src/client/inlineEditing/richTextTwin";
 import { DATA_VE_EDITING_ATTR } from "../../src/client/inlineEditing/textEditing";
 import { EDITS_IN_PLACE_STORAGE_KEY, STORAGE_KEY } from "../../src/client/visualEditingMode";
 import { mountVisualEditing, richTextAttributes } from "../../src/dom";
-import { VE_READ_HEADER } from "../../src/shared/protocol";
+import { VE_FIELD_EDIT_PATH, VE_READ_HEADER } from "../../src/shared/protocol";
 import { childrenOf, rootOf } from "../../src/shared/richText/editorNodes";
 import { isTextLeaf } from "../../src/shared/richText/textLeaves";
 
@@ -80,6 +81,20 @@ const until = async (isReached: () => boolean) => {
   for (let step = 0; step < WAIT_STEPS && !isReached(); step += 1) await waitFor(WAIT_STEP_MS);
 };
 
+type Stored = Record<string, unknown>;
+
+const withoutUpdatedAt = ({ updatedAt: _updatedAt, ...rest }: Stored): Stored => rest;
+
+const pressEscape = (twin: HTMLElement) =>
+  twin.dispatchEvent(
+    new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Escape" })
+  );
+
+const pressOutside = () =>
+  document.body.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
+
+const waitPastTheSavePause = () => waitFor(EDIT_SAVE_PAUSE_MS + WAIT_STEP_MS);
+
 describe("rich text edited on a page that saves through Payload", () => {
   let payload: Payload;
   let editor: PayloadRequest["user"];
@@ -87,8 +102,11 @@ describe("rich text edited on a page that saves through Payload", () => {
   let photoId: number;
   let relatedId: number;
   let saves: number;
+  let fieldEdits: number;
+  let linkedPageId: number;
 
   const askEndpoint = async (path: string, init: RequestInit) => {
+    if (path === VE_FIELD_EDIT_PATH) fieldEdits += 1;
     const endpoint = payload.config.endpoints.find((candidate) => candidate.path === path);
     const headers = new Headers(init.headers);
     headers.set("Origin", SITE_ORIGIN);
@@ -201,8 +219,14 @@ describe("rich text edited on a page that saves through Payload", () => {
       file: { data: Buffer.from("photo"), mimetype: "text/plain", name: "photo.txt", size: 5 },
     });
     const author = await payload.create({ collection: "authors", data: { name: "Ada" } });
+    const linkedPage = await payload.create({
+      collection: "pages",
+      data: { title: "Linked" },
+      draft: true,
+    });
     photoId = Number(photo.id);
     relatedId = Number(author.id);
+    linkedPageId = Number(linkedPage.id);
   }, START_TIMEOUT_MS);
 
   afterAll(() => payload.destroy());
@@ -210,6 +234,7 @@ describe("rich text edited on a page that saves through Payload", () => {
   beforeEach(() => {
     measureSelectionsAsEmpty();
     saves = 0;
+    fieldEdits = 0;
     window.localStorage.setItem(STORAGE_KEY, "hover");
     window.localStorage.setItem(EDITS_IN_PLACE_STORAGE_KEY, "true");
     vi.spyOn(window, "open").mockImplementation(() => null);
@@ -392,5 +417,174 @@ describe("rich text edited on a page that saves through Payload", () => {
     expect(after.root.children).toHaveLength(before.root.children.length);
     expect(saves).toBe(1);
     expect(wrapper.nextElementSibling?.hasAttribute(DATA_VE_EDITED_ATTR)).toBe(true);
+  });
+
+  describe("an edit of one paragraph beside every kind of node Payload keeps", () => {
+    const CODE = 16;
+    const EDITED_TEXT = "Goodbye ";
+    const ADDED_TEXT = "!";
+    const AUTO_LINK_URL = "https://auto.example";
+
+    const paragraph = (...children: Node[]): Node =>
+      element("paragraph", children, { textFormat: 0, textStyle: "" });
+
+    const keptNodes = (): Node[] => [
+      {
+        fields: { blockType: "callout", id: "callout-kept", note: "Internal", text: "Kept" },
+        format: "",
+        type: "block",
+        version: 2,
+      },
+      {
+        fields: { credit: relatedId },
+        format: "",
+        id: "upload-kept",
+        relationTo: "media",
+        type: "upload",
+        value: photoId,
+        version: 3,
+      },
+      { format: "", relationTo: "pages", type: "relationship", value: linkedPageId, version: 2 },
+      paragraph(
+        text("See "),
+        element("link", [text("the linked page")], {
+          fields: {
+            doc: { relationTo: "pages", value: linkedPageId },
+            linkType: "internal",
+            newTab: false,
+          },
+          id: "link-internal",
+          version: 3,
+        })
+      ),
+      paragraph(
+        text("Visit "),
+        element("autolink", [text(AUTO_LINK_URL)], {
+          fields: { linkType: "custom", url: AUTO_LINK_URL },
+          version: 2,
+        })
+      ),
+    ];
+
+    const storyOf = (...children: Node[]): State => ({
+      root: { ...element("root", []), children },
+    });
+
+    const mixedStory = () =>
+      storyOf(paragraph(text("Hello "), text("world", BOLD)), ...keptNodes());
+
+    const spacedStory = () =>
+      storyOf(
+        paragraph(text("Hello  world")),
+        paragraph(text("Two  spaces  here")),
+        element("paragraph", [text("keep  this", CODE)], { textFormat: CODE, textStyle: "" }),
+        ...keptNodes()
+      );
+
+    const createWith = async (stored: State) => {
+      const created = await payload.create({
+        collection: "pages",
+        data: { story: stored, title: "Kept" },
+        draft: true,
+      });
+      return String(created.id);
+    };
+
+    const readDocument = (docId: string) =>
+      payload.findByID({
+        collection: "pages",
+        context: { visualEditing: false },
+        depth: 0,
+        draft: true,
+        id: docId,
+      }) as Promise<Stored>;
+
+    const versionsOf = async (docId: string) =>
+      (await payload.countVersions({ collection: "pages", where: { parent: { equals: docId } } }))
+        .totalDocs;
+
+    const textsOf = (stored: Stored) =>
+      (stored.story as State).root.children.map((node) =>
+        node.children?.map((child) => child.text)
+      );
+
+    const changeFirstText = (twin: HTMLElement, change: (shown: string) => string) =>
+      lexicalOf(twin).update(
+        () => {
+          const first = $getRoot().getFirstDescendant();
+          if ($isTextNode(first)) first.setTextContent(change(first.getTextContent()));
+        },
+        { discrete: true }
+      );
+
+    it("saves the edited text alone and leaves the rest of the document deep-equal to what was stored", async () => {
+      const docId = await createWith(mixedStory());
+      const before = await readDocument(docId);
+      const expected = structuredClone(before);
+      (expected.story as State).root.children[0]!.children![0]!.text = EDITED_TEXT;
+      const twin = await beginEditOf(docId);
+
+      changeFirstText(twin, () => EDITED_TEXT);
+      await commit();
+
+      const after = await readDocument(docId);
+      expect(saves).toBe(1);
+      expect(withoutUpdatedAt(after)).toEqual(withoutUpdatedAt(expected));
+    });
+
+    it("saves nothing and changes nothing when the edit is opened and left with Escape", async () => {
+      const docId = await createWith(spacedStory());
+      const before = await readDocument(docId);
+      const versions = await versionsOf(docId);
+      const twin = await beginEditOf(docId);
+
+      pressEscape(twin);
+      await waitPastTheSavePause();
+
+      expect(twin.isConnected).toBe(false);
+      expect(fieldEdits).toBe(0);
+      expect(saves).toBe(0);
+      expect(await readDocument(docId)).toEqual(before);
+      expect(await versionsOf(docId)).toBe(versions);
+    });
+
+    it("saves nothing and changes nothing when the edit is opened and closed by a press outside", async () => {
+      const docId = await createWith(spacedStory());
+      const before = await readDocument(docId);
+      const versions = await versionsOf(docId);
+      const twin = await beginEditOf(docId);
+
+      pressOutside();
+      await waitPastTheSavePause();
+
+      expect(twin.isConnected).toBe(false);
+      expect(fieldEdits).toBe(0);
+      expect(saves).toBe(0);
+      expect(await readDocument(docId)).toEqual(before);
+      expect(await versionsOf(docId)).toBe(versions);
+    });
+
+    it("drops the spaces the site collapses once a real change is saved and keeps the spaces of code", async () => {
+      const docId = await createWith(spacedStory());
+      const before = await readDocument(docId);
+      const twin = await beginEditOf(docId);
+
+      changeFirstText(twin, (shown) => `${shown}${ADDED_TEXT}`);
+      await commit();
+
+      const after = await readDocument(docId);
+      const keptCount = keptNodes().length;
+      expect(textsOf(after).slice(0, -keptCount)).toEqual([
+        ["Hello world!"],
+        ["Two spaces here"],
+        ["keep  this"],
+      ]);
+      expect((after.story as State).root.children.slice(-keptCount)).toEqual(
+        (before.story as State).root.children.slice(-keptCount)
+      );
+      expect(withoutUpdatedAt({ ...after, story: null })).toEqual(
+        withoutUpdatedAt({ ...before, story: null })
+      );
+    });
   });
 });
