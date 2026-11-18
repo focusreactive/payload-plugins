@@ -14,8 +14,6 @@ const PREVIEW_DEPTH: Record<StandalonePreviewCollection, number> = {
   header: 1,
 };
 
-const LINKED_PAGE_FIELDS = { breadcrumbs: true, slug: true } as const;
-
 export async function getPreviewDocument<TCollection extends StandalonePreviewCollection>({
   collection,
   id,
@@ -41,7 +39,6 @@ export async function getPreviewDocument<TCollection extends StandalonePreviewCo
     id,
     locale: await resolveLocale(locale),
     overrideAccess: false,
-    populate: { page: LINKED_PAGE_FIELDS },
     user,
   });
 

@@ -57,6 +57,11 @@ export const Page: CollectionConfig<"page"> = {
       }),
     useAsTitle: "title",
   },
+  defaultPopulate: {
+    breadcrumbs: true,
+    slug: true,
+    title: true,
+  },
   fields: [
     {
       admin: {
