@@ -145,6 +145,8 @@ const NAMESPACE = "visual-editing";
 const HISTORY_MERGE_PAUSE_MS = 1000;
 const OPAQUE_REMOVAL_TAG = "ve-opaque-removal";
 const PLACEHOLDER = `[${DATA_VE_OPAQUE_ATTR}]`;
+const DIRECTION_ATTR = "dir";
+const WITH_A_DIRECTION = `[${DIRECTION_ATTR}]`;
 const LINK_KEY = "k";
 const PLAIN_TEXT = "text/plain";
 const TEXT_FORMATS: readonly TextFormat[] = ["bold", "italic", "underline"];
@@ -542,6 +544,19 @@ const showLinesAsRendered = (twin: HTMLElement, lines: RenderedLines | undefined
   for (const [name, value] of lines?.breaking ?? []) twin.style.setProperty(name, value);
 };
 
+const isCopyOfTheSite = (element: Element): boolean => element.closest(PLACEHOLDER) !== null;
+
+const keepDirectionOfTheSite = (twin: HTMLElement): (() => void) => {
+  const direction = twin.getAttribute(DIRECTION_ATTR);
+  return () => {
+    if (direction === null) twin.removeAttribute(DIRECTION_ATTR);
+    else twin.setAttribute(DIRECTION_ATTR, direction);
+    for (const element of twin.querySelectorAll(WITH_A_DIRECTION)) {
+      if (!isCopyOfTheSite(element)) element.removeAttribute(DIRECTION_ATTR);
+    }
+  };
+};
+
 const loadState = (editor: LexicalEditor, state: VeEditorState): void => {
   if (hasContent(state)) {
     editor.setEditorState(editor.parseEditorState(JSON.stringify(stateForEditor(state))));
@@ -762,8 +777,10 @@ export function createPageEditor(
   }
   const { fixedNodes } = look;
   if (fixedNodes) editor.getEditorState().read(() => $showFixedNodesAs(fixedNodes));
+  const showDirectionOfTheSite = keepDirectionOfTheSite(twin);
   if (!hasFailedToLoad) {
     editor.setRootElement(twin);
+    showDirectionOfTheSite();
     showLinesAsRendered(twin, look.lines);
   }
   if (hasFailedToLoad) {
@@ -854,6 +871,7 @@ export function createPageEditor(
     registerHistory(editor, createEmptyHistoryState(), HISTORY_MERGE_PAUSE_MS),
     editor.registerUpdateListener(
       ({ dirtyElements, dirtyLeaves, editorState, prevEditorState, tags }) => {
+        showDirectionOfTheSite();
         if (!holdsItsOpaqueNodes(editorState, prevEditorState, tags)) {
           editor.setEditorState(prevEditorState);
           return;

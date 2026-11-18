@@ -645,6 +645,64 @@ describe("one edit of rich text", () => {
     });
   });
 
+  describe("the direction of the text", () => {
+    const LEFT_TO_RIGHT = { direction: "ltr" };
+    const STORED_BLOCKS = [
+      element(
+        "paragraph",
+        [
+          text("ADMINW2 First paragraph with "),
+          { ...storedLink("/docs", text("bold words")), ...LEFT_TO_RIGHT },
+        ],
+        { ...LEFT_TO_RIGHT, textFormat: 0, textStyle: "" }
+      ),
+      element("heading", [text("A heading")], { ...LEFT_TO_RIGHT, tag: "h2" }),
+    ];
+    const STORED_LEFT_TO_RIGHT: State = {
+      root: { ...element("root", STORED_BLOCKS, LEFT_TO_RIGHT), children: STORED_BLOCKS },
+    };
+
+    const withDirection = () =>
+      [twin, ...twin.querySelectorAll("[dir]")].filter((shown) => shown.hasAttribute("dir"));
+
+    it("is left to the site: no element of the editor carries the direction the state stores", () => {
+      start(STORED_LEFT_TO_RIGHT);
+
+      expect(withDirection()).toEqual([]);
+    });
+
+    it("stays the site's in a block the editor adds and in text it changes", () => {
+      start(STORED_LEFT_TO_RIGHT);
+
+      select(0, 3, 3);
+      update(() => lexicalOf(twin).dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined));
+      typeOver("new ");
+
+      expect(lexicalStateOf().root.children).toHaveLength(3);
+      expect(withDirection()).toEqual([]);
+    });
+
+    it("is saved as the state stores it, as the admin saves it", () => {
+      start(STORED_LEFT_TO_RIGHT);
+
+      select(2, 0, 0);
+      typeOver("Changed ");
+
+      expect(latest().root.direction).toBe("ltr");
+      expect(latest().root.children.map(({ direction }) => direction)).toEqual(["ltr", "ltr"]);
+      expect(latest().root.children[0]?.children?.[1]?.direction).toBe("ltr");
+    });
+
+    it("keeps the direction of a copy of what the site rendered for a node the page cannot edit", () => {
+      start(stateOf(OPAQUE_BLOCKS[0]![1], paragraph(text("Next"))), EVERY_FORMAT, {
+        rendered: renderedBy('<aside dir="rtl"><p dir="rtl">Block</p></aside><p>Next</p>'),
+      });
+
+      const copy = twin.querySelector(`[${DATA_VE_OPAQUE_ATTR}] aside`) as HTMLElement;
+      expect([copy.dir, copy.querySelector("p")?.dir]).toEqual(["rtl", "rtl"]);
+    });
+  });
+
   describe("spaces the site collapses", () => {
     const CODE = 16;
     const SPACED = stateOf(

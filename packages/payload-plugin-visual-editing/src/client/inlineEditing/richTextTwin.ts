@@ -23,6 +23,7 @@ const STARTING_STYLE_ID = "ve-rich-text-starting-style";
 const STARTING_STYLE = `[${DATA_VE_EDIT_STARTING_ATTR}]{outline:2px dashed var(${ACCENT_VAR}, ${DEFAULT_ACCENT}) !important;outline-offset:2px !important;cursor:progress !important}`;
 
 const STYLE_ATTR = "style";
+const DIRECTION_ATTR = "dir";
 const DISPLAY = "display";
 const NOT_DISPLAYED = "none";
 const IMPORTANT = "important";
@@ -93,6 +94,8 @@ export const contentOf = (shown: HTMLElement, state: VeEditorState): HTMLElement
 const emptyCopyOf = (element: HTMLElement): HTMLElement => {
   const copy = element.ownerDocument.createElement(element.tagName);
   copy.className = element.className;
+  const direction = element.getAttribute(DIRECTION_ATTR);
+  if (direction !== null) copy.setAttribute(DIRECTION_ATTR, direction);
   return copy;
 };
 

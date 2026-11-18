@@ -566,6 +566,15 @@ describe("editing rich text on the page", () => {
         expect(isShown(wrapper)).toBe(false);
       });
 
+      it("takes the direction the site wrote on the elements of the chain", async () => {
+        const prose = await renderNestedStory();
+        wrapper.dir = "rtl";
+        prose.dir = "rtl";
+        const twin = await beginEdit();
+
+        expect([twin.dir, (twin.firstElementChild as HTMLElement).dir]).toEqual(["rtl", "rtl"]);
+      });
+
       it("takes the classes of the nodes and the copy of a node it cannot edit from that element", async () => {
         await renderNestedStory();
         const twin = await beginEdit();
