@@ -3,32 +3,14 @@ import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
 import { seoPlugin as seoAnalysisPlugin } from "@focus-reactive/payload-plugin-seo";
-import {
-  translatorPlugin,
-  createOpenAIProvider,
-  createSyncRunner,
-} from "@focus-reactive/payload-plugin-translator";
 import { visualEditingPlugin } from "@focus-reactive/payload-plugin-visual-editing";
 import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
 import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";
 import type { Field, Plugin } from "payload";
 
-import { Authors } from "@/collections/Authors";
-import { Categories } from "@/collections/Categories";
-import { Clinics } from "@/collections/entities/Clinics";
-import { Conditions } from "@/collections/entities/Conditions";
-import { Doctors } from "@/collections/entities/Doctors";
-import { States } from "@/collections/entities/States";
-import { Treatments } from "@/collections/entities/Treatments";
-import { Footer } from "@/collections/Footer/config";
-import { GlobalBlock } from "@/collections/GlobalBlock/config";
-import { Header } from "@/collections/Header/config";
-import { Page as PageCollection } from "@/collections/Page/Page";
 import serverExtractPageContent from "@/collections/Page/serverExtractPageContent";
-import { Posts } from "@/collections/Posts";
 import serverExtractPostContent from "@/collections/Posts/serverExtractPostContent";
-import { Testimonials } from "@/collections/Testimonials";
 import { resolveDocUrl } from "@/lib/contentExtraction/links";
 import { getMediaStoragePrefix } from "@/lib/storage/mediaStoragePrefix";
 import { I18N_CONFIG } from "@/lib/config/i18n";
@@ -294,35 +276,6 @@ export const plugins: Plugin[] = [
       timeIntervals: 60,
     },
     secret: process.env.CRON_SECRET!,
-  }),
-
-  translatorPlugin({
-    collections: [
-      PageCollection,
-      Posts,
-      Categories,
-      Authors,
-      Testimonials,
-      Header,
-      Footer,
-      GlobalBlock,
-      States,
-      Clinics,
-      Doctors,
-      Treatments,
-      Conditions,
-    ].map((col) =>
-      JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
-    ),
-    access: { check: ({ req }) => Boolean(req.user) },
-    runner: createSyncRunner(),
-    translationProvider: createOpenAIProvider({
-      apiKey: process.env.OPENAI_API_KEY!,
-      dryRun: false,
-      model: "gpt-4o-mini",
-      systemPrompt: ({ defaultPrompt }) =>
-        `${defaultPrompt}\nUse formal language. Keep brand names unchanged.`,
-    }),
   }),
 
   visualEditingPlugin({
