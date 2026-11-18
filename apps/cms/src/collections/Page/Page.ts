@@ -10,6 +10,8 @@ import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { createSharedSlugField } from "@/lib/fields/slugField";
+import { reviewFields } from "@/lib/review/fields";
+import { enforceReviewRules, notifyReviewChange } from "@/lib/review/hooks";
 import type { Page as PageType } from "@/payload-types";
 
 import { createBasePageFields, createPageChromeFields } from "./basePageFields";
@@ -76,6 +78,7 @@ export const Page: CollectionConfig<"page"> = {
     },
     ...createBasePageFields({ withBlocksDefaultValue: true }),
     createSharedSlugField("page"),
+    ...reviewFields(),
     createParentField("page", {
       admin: {
         position: "sidebar",
@@ -114,9 +117,14 @@ export const Page: CollectionConfig<"page"> = {
   ],
   folders: true,
   hooks: {
-    afterChange: [revalidatePage, indexPageEmbedding],
+    afterChange: [revalidatePage, indexPageEmbedding, notifyReviewChange],
     afterDelete: [revalidateDelete, deletePageEmbedding],
-    beforeChange: [fixBreadcrumbDocIds, validateReservedSlug, validateReservedPath],
+    beforeChange: [
+      fixBreadcrumbDocIds,
+      validateReservedSlug,
+      validateReservedPath,
+      enforceReviewRules,
+    ],
   },
   labels: {
     plural: {

@@ -46,6 +46,7 @@ import * as migration_20261116_154652_state_hero_button_localized from './202611
 import * as migration_20261116_160051_mcp_record_collections from './20261116_160051_mcp_record_collections';
 import * as migration_20261116_163741_admin_polish from './20261116_163741_admin_polish';
 import * as migration_20261116_171431_remove_ab_testing from './20261116_171431_remove_ab_testing';
+import * as migration_20261118_173100_review_workflow from './20261118_173100_review_workflow';
 
 export const migrations = [
   {
@@ -286,6 +287,11 @@ export const migrations = [
   {
     up: migration_20261116_171431_remove_ab_testing.up,
     down: migration_20261116_171431_remove_ab_testing.down,
-    name: '20261116_171431_remove_ab_testing'
+    name: '20261116_171431_remove_ab_testing',
+  },
+  {
+    up: migration_20261118_173100_review_workflow.up,
+    down: migration_20261118_173100_review_workflow.down,
+    name: '20261118_173100_review_workflow'
   },
 ];

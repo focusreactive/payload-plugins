@@ -26,6 +26,8 @@ import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
 import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 import { createSharedSlugField } from "@/lib/fields/slugField";
+import { reviewFields } from "@/lib/review/fields";
+import { enforceReviewRules, notifyReviewChange } from "@/lib/review/hooks";
 
 import { ArticleButtonBlock } from "./ArticleButtonBlock";
 import { computeReadingTime } from "./hooks/computeReadingTime";
@@ -256,6 +258,7 @@ export const Posts: CollectionConfig<"posts"> = {
       type: "tabs",
     },
     createSharedSlugField("posts"),
+    ...reviewFields(),
     {
       admin: {
         position: "sidebar",
@@ -388,8 +391,8 @@ export const Posts: CollectionConfig<"posts"> = {
     },
   ],
   hooks: {
-    beforeChange: [computeReadingTime],
-    afterChange: [revalidatePost, indexPostEmbedding],
+    beforeChange: [computeReadingTime, enforceReviewRules],
+    afterChange: [revalidatePost, indexPostEmbedding, notifyReviewChange],
     afterDelete: [revalidateDelete, deletePostEmbedding],
   },
   labels: {

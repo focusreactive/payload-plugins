@@ -435,6 +435,12 @@ export interface Page {
    */
   generateSlug?: boolean | null;
   slug: string;
+  /**
+   * Set Ready for review and choose a reviewer to ask for a review. The reviewer is notified in the comments.
+   */
+  reviewStatus?: ('in_progress' | 'ready_for_review' | 'approved') | null;
+  reviewer?: (number | null) | User;
+  reviewRequestedBy?: (number | null) | User;
   parent?: (number | null) | Page;
   /**
    * The page design: which of the site's stylesheets the page loads.
@@ -703,6 +709,12 @@ export interface Post {
    */
   generateSlug?: boolean | null;
   slug: string;
+  /**
+   * Set Ready for review and choose a reviewer to ask for a review. The reviewer is notified in the comments.
+   */
+  reviewStatus?: ('in_progress' | 'ready_for_review' | 'approved') | null;
+  reviewer?: (number | null) | User;
+  reviewRequestedBy?: (number | null) | User;
   categories: (number | Category)[];
   authors: (number | Author)[];
   /**
@@ -8932,6 +8944,9 @@ export interface PageSelect<T extends boolean = true> {
       };
   generateSlug?: T;
   slug?: T;
+  reviewStatus?: T;
+  reviewer?: T;
+  reviewRequestedBy?: T;
   parent?: T;
   template?: T;
   header?: T;
@@ -10573,6 +10588,9 @@ export interface PostsSelect<T extends boolean = true> {
       };
   generateSlug?: T;
   slug?: T;
+  reviewStatus?: T;
+  reviewer?: T;
+  reviewRequestedBy?: T;
   categories?: T;
   authors?: T;
   reviewedBy?: T;
