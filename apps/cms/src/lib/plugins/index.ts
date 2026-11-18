@@ -352,7 +352,7 @@ export const plugins: Plugin[] = [
 
   mcpPluginConfig,
 
-  // After every plugin that adds collections, so the blog editor is kept out of those too.
+  // Orders itself after every plugin that adds collections, so the blog editor is kept out of those too.
   roleScopePlugin({
     collections: ["posts", "categories", "authors", "media", "users", "comments", "comment-reads"],
     hiddenCollections: ["users"],

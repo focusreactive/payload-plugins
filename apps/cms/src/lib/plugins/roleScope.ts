@@ -153,12 +153,15 @@ function scopeCommentPanelEndpoint(
  * Limits one role to a set of collections: everything else disappears from its admin and cannot be
  * changed by it, and the comments panel shows it only comments on those collections. Reading stays
  * as configured, because the public site and relationship pickers read those documents. Payload's
- * own bookkeeping collections are left alone. Add it last, after every plugin that adds
- * collections.
+ * own bookkeeping collections are left alone. It runs after every other plugin whatever its place
+ * in the list, so collections those plugins add are covered too.
  */
-export const roleScopePlugin =
-  ({ role, collections, hiddenCollections = [] }: RoleScopeOptions): Plugin =>
-  (config) => ({
+export const roleScopePlugin = ({
+  role,
+  collections,
+  hiddenCollections = [],
+}: RoleScopeOptions): Plugin => {
+  const plugin: Plugin = (config) => ({
     ...config,
     collections: config.collections?.map((collection) => {
       if (PAYLOAD_CORE_COLLECTIONS.has(collection.slug)) {
@@ -180,3 +183,9 @@ export const roleScopePlugin =
     ),
     globals: config.globals?.map((global) => scopeGlobal(role, global)),
   });
+
+  // Payload sorts plugins by `order` before running them, and plugin-mcp declares 10.
+  plugin.order = Number.MAX_SAFE_INTEGER;
+
+  return plugin;
+};
