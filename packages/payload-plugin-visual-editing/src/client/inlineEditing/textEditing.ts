@@ -1,6 +1,7 @@
 import type { FieldMatch, FieldTracker } from "../overlay/fieldTracker.js";
 import type { Point } from "./caret.js";
 
+import { holdsLineBreak, oneLineOf } from "../../shared/fieldEdit.js";
 import { caretOffsetIn, placeCaret, placeCaretAtPoint } from "./caret.js";
 import { showEditingFrame } from "./editingFrame.js";
 
@@ -20,6 +21,8 @@ export interface TextEditing {
   endIfRemoved(): void;
   dispose(): void;
 }
+
+type TypedText = (text: string) => string;
 
 type Edit = {
   match: FieldMatch;
@@ -53,6 +56,7 @@ const STYLE_ID = "ve-inline-editing-style";
 const EDITING_STYLE = `[${DATA_VE_EDITING_ATTR}]{cursor:text !important;outline:none !important}`;
 const INSERT_TEXT_INPUT = "insertText";
 const FIRST_INPUT_EVENT = "beforeinput";
+const LINE_INPUTS: ReadonlySet<string> = new Set(["insertLineBreak", "insertParagraph"]);
 const EVENTS_BEFORE_THE_FIRST_INPUT = [
   "keydown",
   "paste",
@@ -105,7 +109,40 @@ const keepLineBreaking = (element: HTMLElement): (() => void) => {
   };
 };
 
-const keepLinesUntilTheFirstChange = (element: HTMLElement): (() => void) => {
+const isOneLine = (match: FieldMatch): boolean => match.multiline !== true;
+
+const typedTextOf = (match: FieldMatch): TypedText =>
+  isOneLine(match) ? oneLineOf : (text) => text;
+
+const textOfInput = (event: InputEvent): string =>
+  event.data ?? event.dataTransfer?.getData(PLAIN_TEXT_FORMAT) ?? "";
+
+const selectTargetOf = (event: InputEvent, doc: Document): void => {
+  const [target] = event.getTargetRanges?.() ?? [];
+  const selection = doc.getSelection();
+  if (!target || !selection) return;
+  const range = doc.createRange();
+  range.setStart(target.startContainer, target.startOffset);
+  range.setEnd(target.endContainer, target.endOffset);
+  selection.removeAllRanges();
+  selection.addRange(range);
+};
+
+const keepOneLine = (event: InputEvent): void => {
+  if (event.defaultPrevented || !(event.target instanceof HTMLElement)) return;
+  if (LINE_INPUTS.has(event.inputType)) {
+    event.preventDefault();
+    return;
+  }
+  const text = textOfInput(event);
+  if (!holdsLineBreak(text)) return;
+  event.preventDefault();
+  const doc = event.target.ownerDocument;
+  selectTargetOf(event, doc);
+  insertText(doc, oneLineOf(text));
+};
+
+const keepLinesUntilTheFirstChange = (element: HTMLElement, typedText: TypedText): (() => void) => {
   const firstChange = new AbortController();
   const untilTheFirstChange = { signal: firstChange.signal };
   const breakLinesAsTyped = () => {
@@ -117,7 +154,7 @@ const keepLinesUntilTheFirstChange = (element: HTMLElement): (() => void) => {
     breakLinesAsTyped();
     if (event.inputType !== INSERT_TEXT_INPUT || typeof event.data !== "string") return;
     event.preventDefault();
-    insertText(element.ownerDocument, event.data);
+    insertText(element.ownerDocument, typedText(event.data));
   };
   for (const name of EVENTS_BEFORE_THE_FIRST_INPUT)
     element.addEventListener(name, breakLinesAsTyped, untilTheFirstChange);
@@ -194,7 +231,10 @@ export function createTextEditing({
     if (event.key === CANCEL_KEY) {
       event.preventDefault();
       cancel();
-    } else if (event.key === COMMIT_KEY && (!event.shiftKey || !isPlainTextOnly)) {
+    } else if (
+      event.key === COMMIT_KEY &&
+      (!event.shiftKey || !isPlainTextOnly || isOneLine(edit.match))
+    ) {
       event.preventDefault();
       commit();
     } else if (event.key === SPACE_KEY && isInsideButton(edit.editedElement)) {
@@ -207,7 +247,7 @@ export function createTextEditing({
     event.preventDefault();
     insertText(
       edit.editedElement.ownerDocument,
-      event.clipboardData?.getData(PLAIN_TEXT_FORMAT) ?? ""
+      typedTextOf(edit.match)(event.clipboardData?.getData(PLAIN_TEXT_FORMAT) ?? "")
     );
   };
 
@@ -221,13 +261,15 @@ export function createTextEditing({
     editedElement.addEventListener("input", onInput);
     editedElement.addEventListener("keydown", onKey);
     editedElement.addEventListener("blur", commit);
-    if (!isPlainTextOnly) editedElement.addEventListener("paste", onPaste);
+    if (!isPlainTextOnly || isOneLine(edit.match)) editedElement.addEventListener("paste", onPaste);
+    if (isOneLine(edit.match)) editedElement.addEventListener(FIRST_INPUT_EVENT, keepOneLine);
     doc.addEventListener("selectionchange", onSelection);
     return () => {
       editedElement.removeEventListener("input", onInput);
       editedElement.removeEventListener("keydown", onKey);
       editedElement.removeEventListener("blur", commit);
       editedElement.removeEventListener("paste", onPaste);
+      editedElement.removeEventListener(FIRST_INPUT_EVENT, keepOneLine);
       doc.removeEventListener("selectionchange", onSelection);
     };
   };
@@ -263,7 +305,9 @@ export function createTextEditing({
       };
       addEditingStyle(doc);
       editedElement.setAttribute(EDITABLE_ATTR, RICH_TEXT);
-      if (isPlainTextOnly) edit.breakLinesAsTyped = keepLinesUntilTheFirstChange(editedElement);
+      if (isPlainTextOnly) {
+        edit.breakLinesAsTyped = keepLinesUntilTheFirstChange(editedElement, typedTextOf(match));
+      }
       editedElement.setAttribute(SPELLCHECK_ATTR, SPELLCHECK_OFF);
       editedElement.setAttribute(DATA_VE_EDITING_ATTR, "");
       edit.stopListening = listen(edit, isPlainTextOnly);

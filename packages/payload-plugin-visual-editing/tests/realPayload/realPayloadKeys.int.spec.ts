@@ -50,7 +50,7 @@ describe("a draft read through Payload with instantPreview", () => {
   it("states no key for a field outside any row", () => {
     expect(markersAt(home, "title")).toEqual([{ ...page(site.home), path: "title" }]);
     expect(markersAt(home, "seo.description")).toEqual([
-      { ...page(site.home), path: "seo.description" },
+      { ...page(site.home), multiline: true, path: "seo.description" },
     ]);
   });
 

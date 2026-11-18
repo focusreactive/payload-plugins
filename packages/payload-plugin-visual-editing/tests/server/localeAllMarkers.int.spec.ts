@@ -18,6 +18,7 @@ const LOCALE_CODES = ["en", "de"];
 
 const pageFields = [
   { localized: true, name: "title", type: "text" },
+  { localized: true, name: "summary", type: "textarea" },
   { name: "note", type: "text" },
   {
     fields: [
@@ -107,6 +108,17 @@ describe("a document read with every locale", () => {
     expect(markerOf(page.title.de)).toEqual({ ...inPageA, locale: "de", path: "title" });
     expect(textOf(page.title.de)).toBe("Start");
     expect(page.title).not.toHaveProperty(META_KEY);
+  });
+
+  it("says that a textarea keyed by locale holds several lines", () => {
+    const page = markEveryLocale({ summary: { de: "Zwei\nZeilen", en: "Two\nlines" } });
+
+    expect(markerOf(page.summary.de)).toEqual({
+      ...inPageA,
+      locale: "de",
+      multiline: true,
+      path: "summary",
+    });
   });
 
   it("marks the text of a group keyed by locale without the locale in its path", () => {

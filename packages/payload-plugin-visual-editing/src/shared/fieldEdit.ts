@@ -32,11 +32,21 @@ export const readSaveRefusal = (answer: unknown): SaveRefusal => {
   return SAVE_REFUSALS.find((refusal) => refusal === reason) ?? SAVE_FAILED;
 };
 
-const LINE_BREAKS = /\s*[\n\r\v\f\u0085\u2028\u2029]+\s*/gu;
+const LINE_BREAK_CHARACTERS = String.raw`\n\r\v\f\u0085\u2028\u2029`;
+
+const LINE_BREAKS = new RegExp(String.raw`\s*[${LINE_BREAK_CHARACTERS}]+\s*`, "gu");
+
+const LINE_BREAK = new RegExp(`[${LINE_BREAK_CHARACTERS}]`, "u");
+
+const JOINED_LINES = " ";
+
+export const holdsLineBreak = (text: string): boolean => LINE_BREAK.test(text);
+
+export const oneLineOf = (text: string): string => text.replaceAll(LINE_BREAKS, JOINED_LINES);
 
 export const editedTextOf = (fieldType: string, value: string): string => {
   const text = withoutMarker(value);
-  return fieldType === MULTILINE_FIELD_TYPE ? text : text.replaceAll(LINE_BREAKS, " ");
+  return fieldType === MULTILINE_FIELD_TYPE ? text : oneLineOf(text);
 };
 
 export const readEditedField = (data: unknown): VeEditedField | null => {

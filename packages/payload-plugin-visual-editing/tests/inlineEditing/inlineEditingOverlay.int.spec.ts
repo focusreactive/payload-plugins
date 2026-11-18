@@ -49,6 +49,21 @@ const press = (element: HTMLElement, key: string, init: KeyboardEventInit = {}) 
   return event;
 };
 
+const paste = (element: HTMLElement, text: string) => {
+  const event = new Event("paste", { bubbles: true, cancelable: true });
+  Object.defineProperty(event, "clipboardData", {
+    value: { getData: (format: string) => (format === "text/plain" ? text : "") },
+  });
+  element.dispatchEvent(event);
+  return event;
+};
+
+const inputBefore = (element: HTMLElement, init: InputEventInit) => {
+  const event = new InputEvent("beforeinput", { bubbles: true, cancelable: true, ...init });
+  element.dispatchEvent(event);
+  return event;
+};
+
 const flushMutations = () => vi.advanceTimersByTimeAsync(0);
 
 const pause = () => vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
@@ -307,13 +322,85 @@ describe("editing text on the page", () => {
       expect(sentToEndpoint()).toHaveLength(1);
     });
 
-    it("leaves a line break to the page on Shift and Enter", () => {
-      click(heading);
+    describe("line breaks", () => {
+      const LINES = "One\r\nTwo\u2028Three\vFour";
+      let execCommand: ReturnType<typeof vi.fn>;
+      let summary: HTMLElement;
 
-      const enter = press(heading, "Enter", { shiftKey: true });
+      beforeEach(() => {
+        execCommand = vi.fn();
+        Object.assign(document, { execCommand });
+        summary = render(stega("Lines", "summary", { multiline: true }));
+        overlay.dispose();
+        start();
+      });
 
-      expect(enter.defaultPrevented).toBe(false);
-      expect(heading.hasAttribute(DATA_VE_EDITING_ATTR)).toBe(true);
+      afterEach(() => Reflect.deleteProperty(document, "execCommand"));
+
+      it("are left to the page on Shift and Enter in a field of several lines", () => {
+        click(summary);
+
+        const enter = press(summary, "Enter", { shiftKey: true });
+
+        expect(enter.defaultPrevented).toBe(false);
+        expect(summary.hasAttribute(DATA_VE_EDITING_ATTR)).toBe(true);
+      });
+
+      it("end the edit on Shift and Enter in a field of one line, as Enter does", () => {
+        click(heading);
+
+        const enter = press(heading, "Enter", { shiftKey: true });
+
+        expect(enter.defaultPrevented).toBe(true);
+        expect(heading.hasAttribute(DATA_VE_EDITING_ATTR)).toBe(false);
+      });
+
+      it("of a pasted text become spaces in a field of one line", () => {
+        click(heading);
+
+        const pasted = paste(heading, LINES);
+
+        expect(pasted.defaultPrevented).toBe(true);
+        expect(execCommand).toHaveBeenCalledWith("insertText", false, "One Two Three Four");
+      });
+
+      it("of a pasted text are kept in a field of several lines", () => {
+        click(summary);
+
+        const pasted = paste(summary, LINES);
+
+        expect(pasted.defaultPrevented).toBe(false);
+        expect(execCommand).not.toHaveBeenCalled();
+      });
+
+      it("of text that arrives without a key become spaces in a field of one line", () => {
+        click(heading);
+
+        const typed = inputBefore(heading, { data: "a\nb", inputType: "insertText" });
+
+        expect(typed.defaultPrevented).toBe(true);
+        expect(execCommand).toHaveBeenCalledWith("insertText", false, "a b");
+      });
+
+      it.each(["insertLineBreak", "insertParagraph"])(
+        "are never inserted by %s in a field of one line",
+        (inputType) => {
+          click(heading);
+          inputBefore(heading, { data: "x", inputType: "insertText" });
+
+          expect(inputBefore(heading, { inputType }).defaultPrevented).toBe(true);
+        }
+      );
+
+      it.each(["insertLineBreak", "insertParagraph"])(
+        "are left to the page on %s in a field of several lines",
+        (inputType) => {
+          click(summary);
+          inputBefore(summary, { data: "x", inputType: "insertText" });
+
+          expect(inputBefore(summary, { inputType }).defaultPrevented).toBe(false);
+        }
+      );
     });
 
     it("ends the edit when the text loses the focus", async () => {

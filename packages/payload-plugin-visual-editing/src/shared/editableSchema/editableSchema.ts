@@ -26,6 +26,7 @@ type FieldKind = "fields" | "richText" | "text" | "value";
 export type HolderField = {
   kind: FieldKind;
   textFieldNames: () => readonly string[];
+  isMultiline: (name?: string) => boolean;
   holdsValuePerLocale: boolean;
   locale?: string;
   localeSegmentIndexes: readonly number[];
@@ -40,6 +41,8 @@ type Position = { data: unknown; schema: unknown };
 const TEXT_FIELD_TYPES: ReadonlySet<unknown> = new Set(["text", "textarea", "email"]);
 
 const RICH_TEXT_FIELD_TYPE = "richText";
+
+const MULTILINE_FIELD_TYPE = "textarea";
 
 const isText = (schemaNode: unknown): boolean => TEXT_FIELD_TYPES.has(schemaNode);
 
@@ -58,6 +61,12 @@ const textFieldNamesOf = (schemaNode: SchemaNode): string[] =>
 
 const ownField = (schema: PlainObject, name: string): unknown =>
   Object.hasOwn(schema, name) ? schema[name] : undefined;
+
+const isMultilineAt = (schemaNode: SchemaNode, name?: string): boolean => {
+  const field =
+    name === undefined || !isPlainObject(schemaNode) ? schemaNode : ownField(schemaNode, name);
+  return field === MULTILINE_FIELD_TYPE;
+};
 
 const schemaOfRow = (schema: unknown, row: PlainObject): unknown => {
   const { blockType } = row;
@@ -154,6 +163,7 @@ export const holderFieldAt = (
 
   return {
     holdsValuePerLocale,
+    isMultiline: (name) => isMultilineAt(schemaNode, name),
     kind: kindOf(schemaNode),
     locale,
     localeSegmentIndexes,

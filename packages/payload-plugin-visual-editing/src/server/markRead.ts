@@ -144,7 +144,12 @@ const markedPropertiesOf = (
   const keySteps = withoutIndexes(steps, field.localeSegmentIndexes);
 
   if (field.holdsValuePerLocale && field.kind === "text") {
-    const marker = { ...identity, key: keyOf(keySteps), path: pathOf(pathSegments) };
+    const marker = {
+      ...identity,
+      key: keyOf(keySteps),
+      path: pathOf(pathSegments),
+      ...(field.isMultiline() && { multiline: true as const }),
+    };
     return Object.keys(object)
       .filter((property) => localeKeys.has(property))
       .map((locale) => ({ marker: { ...marker, locale }, property: locale }));
@@ -156,6 +161,7 @@ const markedPropertiesOf = (
       key: keyOf([...keySteps, { name }]),
       locale: field.locale,
       path: pathOf([...pathSegments, name]),
+      ...(field.isMultiline(name) && { multiline: true as const }),
     },
     property: name,
   }));
