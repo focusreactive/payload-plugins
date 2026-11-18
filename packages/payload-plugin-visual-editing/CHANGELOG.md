@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-visual-editing [1.6.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-visual-editing@1.5.0...@focus-reactive/payload-plugin-visual-editing@1.6.0) (2026-11-18)
+
+
+### Features
+
+* **visual-editing:** keep frames and the edit badge under elements marked data-ve-cover ([d8b1ab9](https://github.com/focusreactive/payload-plugins/commit/d8b1ab930aeacadf2579ff29c53c577299ccc22c))
+
 # @focus-reactive/payload-plugin-visual-editing [1.5.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-visual-editing@1.4.0...@focus-reactive/payload-plugin-visual-editing@1.5.0) (2026-11-18)
 
 
