@@ -6,7 +6,6 @@ import {
 } from "./constants.js";
 import { clipUnderCovers, measureCovers } from "./covers.js";
 
-/** Places a box so its border lies just outside the target. */
 export const placeFrame = (
   box: HTMLElement,
   target: HTMLElement,
