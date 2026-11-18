@@ -8,6 +8,7 @@ import { isVeDocument, veDocumentOf } from "./veDocument.js";
 const MULTILINE_FIELD_TYPE = "textarea";
 
 export const SAVE_REFUSALS = [
+  "changed",
   "locked",
   "no-drafts",
   "not-editable",
@@ -21,6 +22,8 @@ export type SaveRefusal = (typeof SAVE_REFUSALS)[number];
 export const SAVE_FAILED: SaveRefusal = "failed";
 
 export const REQUEST_UNREADABLE: SaveRefusal = "unreadable";
+
+export const CHANGED_ELSEWHERE: SaveRefusal = "changed";
 
 export const readSaveRefusal = (answer: unknown): SaveRefusal => {
   const reason = isPlainObject(answer) ? answer.reason : undefined;
@@ -44,14 +47,19 @@ export const readEditedField = (data: unknown): VeEditedField | null => {
 
 export const readFieldEdit = (data: unknown): VeFieldEdit | null => {
   const field = readEditedField(data);
-  const value = isPlainObject(data) ? data.value : undefined;
-  return field && typeof value === "string" ? { ...field, value } : null;
+  if (!field || !isPlainObject(data) || typeof data.value !== "string") return null;
+  const { base, value } = data;
+  if (base !== undefined && typeof base !== "string") return null;
+  return { ...field, value, ...(base !== undefined && { base }) };
 };
 
 export const readRichTextEdit = (data: unknown): VeRichTextEdit | null => {
   const field = readEditedField(data);
   const state = isPlainObject(data) ? readPostedEditorState(data.state) : null;
-  return field && state ? { ...field, state } : null;
+  if (!field || !state || !isPlainObject(data)) return null;
+  if (data.base === undefined) return { ...field, state };
+  const base = readPostedEditorState(data.base);
+  return base ? { ...field, base, state } : null;
 };
 
 export const isRichTextEdit = (edit: VeEdit): edit is VeRichTextEdit => "state" in edit;

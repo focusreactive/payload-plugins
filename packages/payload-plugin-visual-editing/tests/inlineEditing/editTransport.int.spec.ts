@@ -22,12 +22,17 @@ const BODY = { ...TITLE, key: "body" };
 
 const STATE = editorState(paragraph(textNode("Hello")));
 
+const CHANGED_STATE = editorState(paragraph(textNode("Hello world")));
+
 const onEdited = vi.fn();
 
 const ctx = { adminOrigin: ADMIN_ORIGIN, onEdited, payloadApi: PAYLOAD_API };
 
 const answerOf = (saved: boolean, ok = true) =>
   ({ json: () => Promise.resolve({ saved }), ok }) as Response;
+
+const storedAnswerOf = (value: unknown) =>
+  ({ json: () => Promise.resolve({ saved: true, value }), ok: true }) as Response;
 
 const refusalOf = (reason: unknown) =>
   ({ json: () => Promise.resolve({ reason, saved: false }), ok: false }) as Response;
@@ -89,6 +94,16 @@ describe("the transport of an edit", () => {
         ADMIN_ORIGIN
       );
       expect(fetchEndpoint).not.toHaveBeenCalled();
+    });
+
+    it("posts no base to the admin, whose form holds the value", () => {
+      transport.send({ ...TITLE, base: "Shown", value: "Hello" });
+      vi.advanceTimersByTime(EDIT_SEND_PAUSE_MS);
+
+      expect(postToAdmin).toHaveBeenCalledWith(
+        { ...TITLE, type: VE_FIELD_EDIT_TYPE, value: "Hello" },
+        ADMIN_ORIGIN
+      );
     });
 
     it("posts an edited rich text state as a message of its own", () => {
@@ -254,6 +269,94 @@ describe("the transport of an edit", () => {
       expect(init.keepalive).toBe(true);
       expect(onEdited).toHaveBeenCalledTimes(1);
       expect(transport.isUnsaved(BODY)).toBe(false);
+    });
+
+    describe("the base of an edit", () => {
+      const basesSent = () =>
+        fetchEndpoint.mock.calls.map(
+          ([, init]) =>
+            (JSON.parse((init as RequestInit).body as string) as { base?: unknown }).base
+        );
+
+      it("is the value the edit began from for its first save", async () => {
+        transport.sendNow({ ...TITLE, base: "Shown", value: "Typed" });
+        await settle();
+
+        expect(basesSent()).toEqual(["Shown"]);
+      });
+
+      it("is the value the field holds after the last save of the same edit", async () => {
+        fetchEndpoint.mockImplementationOnce(() => Promise.resolve(storedAnswerOf("Typed")));
+        transport.sendNow({ ...TITLE, base: "Shown", value: " Typed " });
+        await settle();
+
+        transport.sendNow({ ...TITLE, base: "Shown", value: "Typed more" });
+        await settle();
+
+        expect(basesSent()).toEqual(["Shown", "Typed"]);
+      });
+
+      it("is the value the field holds after the last save when an edit begins from what it sent", async () => {
+        fetchEndpoint.mockImplementationOnce(() => Promise.resolve(storedAnswerOf("Typed")));
+        transport.sendNow({ ...TITLE, base: "Shown", value: " Typed " });
+        await settle();
+
+        transport.sendNow({ ...TITLE, base: " Typed ", value: "Again" });
+        await settle();
+
+        expect(basesSent()).toEqual(["Shown", "Typed"]);
+      });
+
+      it("is the value an edit began from when it began from something this page did not save", async () => {
+        transport.sendNow({ ...TITLE, base: "Shown", value: "Typed" });
+        await settle();
+
+        transport.sendNow({ ...TITLE, base: "Rendered again", value: "Again" });
+        await settle();
+
+        expect(basesSent()).toEqual(["Shown", "Rendered again"]);
+      });
+
+      it("is the value the edit sent when the endpoint answers no value", async () => {
+        transport.sendNow({ ...BODY, base: STATE, state: CHANGED_STATE });
+        await settle();
+
+        transport.sendNow({ ...BODY, base: STATE, state: STATE });
+        await settle();
+
+        expect(basesSent()).toEqual([STATE, CHANGED_STATE]);
+      });
+    });
+
+    describe("a field changed elsewhere", () => {
+      beforeEach(async () => {
+        fetchEndpoint.mockImplementationOnce(() => Promise.resolve(refusalOf("changed")));
+        transport.sendNow({ ...TITLE, base: "Shown", value: "Typed" });
+        await settle();
+      });
+
+      it("says so", () => {
+        expect(statuses.at(-1)).toBe("failed");
+        expect(refusals.at(-1)).toBe("changed");
+      });
+
+      it("keeps saying so and sends nothing more while the editor types on", async () => {
+        transport.send({ ...TITLE, base: "Shown", value: "Typed on" });
+        await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+
+        expect(fetchEndpoint).toHaveBeenCalledTimes(1);
+        expect(statuses.at(-1)).toBe("failed");
+        expect(refusals.at(-1)).toBe("changed");
+        expect(transport.isUnsaved(TITLE)).toBe(true);
+      });
+
+      it("keeps other fields saving", async () => {
+        transport.sendNow({ ...TITLE, key: "lead", value: "Lead" });
+        await settle();
+
+        expect(fetchEndpoint).toHaveBeenCalledTimes(2);
+        expect(refusals.at(-1)).toBe("changed");
+      });
     });
 
     it("does not ask the browser to keep a request alive that is too long for it", async () => {

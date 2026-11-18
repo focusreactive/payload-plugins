@@ -102,9 +102,14 @@ export function createInlineEditing(
       : { ...veDocumentOf(match), key, ...(locale !== undefined && { locale }) };
   };
 
-  const send = (match: FieldMatch, value: string, onDelivered?: OnDelivered) => {
+  const send = (
+    match: FieldMatch,
+    value: string,
+    startedFrom: string,
+    onDelivered?: OnDelivered
+  ) => {
     const field = editedFieldOf(match);
-    if (field) transport.send({ ...field, value }, onDelivered);
+    if (field) transport.send({ ...field, base: startedFrom, value }, onDelivered);
   };
 
   const dropWaiting = (match: FieldMatch) => {

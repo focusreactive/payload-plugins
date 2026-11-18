@@ -19,10 +19,12 @@ import { VE_FIELD_EDIT_PATH } from "../../shared/protocol.js";
 import { rootOf } from "../../shared/richText/editorNodes.js";
 import { NO_FORMATS } from "../../shared/richText/formats.js";
 import { isSameValue } from "../../shared/sameValue.js";
+import { withoutMarker } from "../../shared/stegaText.js";
 import { jsonBodyOf } from "../endpointJson.js";
 import {
   ANSWERED,
   AS_IT_IS_STORED,
+  CHANGED_SINCE_SHOWN,
   draftFieldOf,
   FIELD_NOT_EDITABLE,
   inLocaleOfProject,
@@ -46,16 +48,17 @@ import { formatsOfField } from "./richTextFormats.js";
 
 type Edited = (stored: unknown) => EditedField | null;
 
-const answer = (
-  saved: boolean,
-  status: number,
-  req: PayloadRequest,
-  reason: SaveRefusal = refusalOfStatus(status)
-): Response =>
-  Response.json(saved ? { saved } : { reason, saved }, {
+const answer = (body: object, status: number, req: PayloadRequest): Response =>
+  Response.json(body, {
     headers: headersWithCors({ headers: new Headers({ "Cache-Control": "no-store" }), req }),
     status,
   });
+
+const refuse = (
+  status: number,
+  req: PayloadRequest,
+  reason: SaveRefusal = refusalOfStatus(status)
+): Response => answer({ reason, saved: false }, status, req);
 
 const saveDraft = (
   payload: Payload,
@@ -98,6 +101,19 @@ export const isLeftAsItWas = (
   );
 };
 
+const shownAs = (value: unknown): unknown =>
+  typeof value === "string" ? withoutMarker(value) : value;
+
+const holdsTheBaseOf = (edit: VeEdit, documents: readonly unknown[]): boolean => {
+  const { base, key } = edit;
+  return (
+    base === undefined ||
+    documents.some((document) =>
+      isSameValue(shownAs(valueAtKey(document, key)?.value), shownAs(base))
+    )
+  );
+};
+
 const readEdit = (body: unknown): VeEdit | null => readFieldEdit(body) ?? readRichTextEdit(body);
 
 const editedOf = async (
@@ -136,14 +152,15 @@ const savedEdit = async (
   req: PayloadRequest
 ): Promise<Response> => {
   const field = await draftFieldOf(payload, user, edit);
-  if (isRefusal(field)) return answer(false, field.status, req);
+  if (isRefusal(field)) return refuse(field.status, req);
 
   const editedIn = await editedOf(payload, user, field, edit);
-  if (!editedIn) return answer(false, FIELD_NOT_EDITABLE, req);
+  if (!editedIn) return refuse(FIELD_NOT_EDITABLE, req);
 
   const stored = await readDraft(payload, field.document, edit, { ...AS_IT_IS_STORED, user });
   const edited = editedIn(stored);
-  if (!edited) return answer(false, FIELD_NOT_EDITABLE, req);
+  if (!edited) return refuse(FIELD_NOT_EDITABLE, req);
+  if (!holdsTheBaseOf(edit, [field.shown, stored])) return refuse(CHANGED_SINCE_SHOWN, req);
 
   const data = { [edited.name]: edited.value };
   const saved = await saveDraft(payload, field.document, data, {
@@ -155,23 +172,24 @@ const savedEdit = async (
     ? await readDraft(payload, field.document, edit, { ...AS_IT_IS_STORED, user })
     : saved;
   if (isLeftAsItWas(stored, written, data, edit.key)) {
-    return answer(false, FIELD_NOT_EDITABLE, req);
+    return refuse(FIELD_NOT_EDITABLE, req);
   }
-  return answer(true, ANSWERED, req);
+  const value = edit.base === undefined ? {} : { value: valueAtKey(saved, edit.key)?.value };
+  return answer({ saved: true, ...value }, ANSWERED, req);
 };
 
 export const fieldEditEndpoint: Endpoint = {
   handler: async (req) => {
     const { payload, user } = req;
-    if (!user) return answer(false, SIGNED_OUT, req);
+    if (!user) return refuse(SIGNED_OUT, req);
 
     const posted = readEdit(await jsonBodyOf(req));
-    if (!posted) return answer(false, UNREADABLE_REQUEST, req, REQUEST_UNREADABLE);
+    if (!posted) return refuse(UNREADABLE_REQUEST, req, REQUEST_UNREADABLE);
 
     try {
       return await savedEdit(payload, user, inLocaleOfProject(payload, posted), req);
     } catch (error) {
-      return answer(false, statusOfFailure(error), req);
+      return refuse(statusOfFailure(error), req);
     }
   },
   method: "post",

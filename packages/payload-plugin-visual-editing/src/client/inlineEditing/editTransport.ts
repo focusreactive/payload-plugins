@@ -2,18 +2,26 @@ import type { SaveRefusal } from "../../shared/fieldEdit.js";
 import type {
   VeEdit,
   VeEditedField,
+  VeEditorState,
   VeFieldEditMessage,
   VeLiveDocument,
   VeRichTextEditMessage,
 } from "../../shared/protocol.js";
 
-import { isRichTextEdit, readSaveRefusal, SAVE_FAILED } from "../../shared/fieldEdit.js";
+import {
+  CHANGED_ELSEWHERE,
+  isRichTextEdit,
+  readSaveRefusal,
+  SAVE_FAILED,
+} from "../../shared/fieldEdit.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import {
   VE_FIELD_EDIT_PATH,
   VE_FIELD_EDIT_TYPE,
   VE_RICH_TEXT_EDIT_TYPE,
 } from "../../shared/protocol.js";
+import { readPostedEditorState } from "../../shared/richText/postedEditorState.js";
+import { isSameValue } from "../../shared/sameValue.js";
 import { documentAddressOf, keyedFieldAddressOf } from "../../shared/veDocument.js";
 import type { FindAdminWindow } from "../adminWindow.js";
 
@@ -58,6 +66,12 @@ type WaitingEdit = {
 
 type FailedEdit = { edit: VeEdit; refusal: SaveRefusal };
 
+type EditValue = string | VeEditorState;
+
+type SavedEdit = { startedFrom: EditValue; sent: EditValue; stored: EditValue };
+
+type EndpointAnswer = { refusal: SaveRefusal | null; stored: unknown };
+
 type PageLeave = { left: Promise<void>; leave: () => void };
 
 const nextPageLeave = (): PageLeave => {
@@ -79,19 +93,32 @@ export const KEEPALIVE_BODY_LIMIT = 60_000;
 
 const bytesOf = (body: string): number => new TextEncoder().encode(body).length;
 
-const messageOf = (edit: VeEdit): VeFieldEditMessage | VeRichTextEditMessage =>
-  isRichTextEdit(edit)
+const messageOf = ({ base: _base, ...edit }: VeEdit): VeFieldEditMessage | VeRichTextEditMessage =>
+  "state" in edit
     ? { ...edit, type: VE_RICH_TEXT_EDIT_TYPE }
     : { ...edit, type: VE_FIELD_EDIT_TYPE };
+
+const valueOf = (edit: VeEdit): EditValue => (isRichTextEdit(edit) ? edit.state : edit.value);
+
+const storedValueOf = (edit: VeEdit, stored: unknown): EditValue => {
+  if (isRichTextEdit(edit)) return readPostedEditorState(stored) ?? edit.state;
+  return typeof stored === "string" ? stored : edit.value;
+};
+
+const withBase = (edit: VeEdit, base: EditValue): VeEdit => {
+  if (isRichTextEdit(edit)) return typeof base === "string" ? edit : { ...edit, base };
+  return typeof base === "string" ? { ...edit, base } : edit;
+};
+
+const continuesSaved = (edit: VeEdit, saved: SavedEdit | undefined): saved is SavedEdit =>
+  saved !== undefined &&
+  edit.base !== undefined &&
+  (isSameValue(edit.base, saved.startedFrom) || isSameValue(edit.base, saved.sent));
 
 const isSavedBy = (response: Response, answer: unknown): boolean =>
   response.ok && isPlainObject(answer) && answer.saved === true;
 
-const postToEndpoint = async (
-  win: Window,
-  url: string,
-  edit: VeEdit
-): Promise<SaveRefusal | null> => {
+const postToEndpoint = async (win: Window, url: string, edit: VeEdit): Promise<EndpointAnswer> => {
   try {
     const body = JSON.stringify(edit);
     const response = await win.fetch(url, {
@@ -102,9 +129,11 @@ const postToEndpoint = async (
       method: "POST",
     });
     const answer: unknown = await response.json();
-    return isSavedBy(response, answer) ? null : readSaveRefusal(answer);
+    return isSavedBy(response, answer)
+      ? { refusal: null, stored: isPlainObject(answer) ? answer.value : undefined }
+      : { refusal: readSaveRefusal(answer), stored: undefined };
   } catch {
-    return SAVE_FAILED;
+    return { refusal: SAVE_FAILED, stored: undefined };
   }
 };
 
@@ -120,6 +149,7 @@ export function createEditTransport(
   const unsavedInForm = new Map<string, EditedField>();
   const watchedSaves = new Map<string, OnSaveEnded>();
   const savesOnTheWay = new Map<string, number>();
+  const savedEdits = new Map<string, SavedEdit>();
   let saves: Promise<void> = Promise.resolve();
   let pageLeave = nextPageLeave();
   let isDisposed = false;
@@ -152,10 +182,36 @@ export function createEditTransport(
     else savesOnTheWay.delete(address);
   };
 
+  const isChangedElsewhere = (address: string): boolean =>
+    failed.get(address)?.refusal === CHANGED_ELSEWHERE;
+
+  const rememberSaved = (edit: VeEdit, continued: SavedEdit | null, stored: unknown) => {
+    if (edit.base === undefined) return;
+    savedEdits.set(addressOf(edit), {
+      sent: valueOf(edit),
+      startedFrom: continued?.startedFrom ?? edit.base,
+      stored: storedValueOf(edit, stored),
+    });
+  };
+
+  const post = async (edit: VeEdit): Promise<SaveRefusal | null> => {
+    if (isChangedElsewhere(addressOf(edit))) return CHANGED_ELSEWHERE;
+    const saved = savedEdits.get(addressOf(edit));
+    const continued = continuesSaved(edit, saved) ? saved : null;
+    const posted = continued ? withBase(edit, continued.stored) : edit;
+    const { refusal, stored } = await postToEndpoint(
+      win,
+      `${getCtx().payloadApi}${VE_FIELD_EDIT_PATH}`,
+      posted
+    );
+    if (refusal === null) rememberSaved(edit, continued, stored);
+    return refusal;
+  };
+
   const saveThroughEndpoint = async (edit: VeEdit) => {
     report("saving");
     countSaveOnTheWay(addressOf(edit), 1);
-    const refusal = await postToEndpoint(win, `${getCtx().payloadApi}${VE_FIELD_EDIT_PATH}`, edit);
+    const refusal = await post(edit);
     const isSaved = refusal === null;
     countSaveOnTheWay(addressOf(edit), -1);
     if (isSaved) failed.delete(addressOf(edit));
@@ -204,7 +260,7 @@ export function createEditTransport(
 
   const supersede = (address: string) => {
     stopWaiting(address);
-    failed.delete(address);
+    if (!isChangedElsewhere(address)) failed.delete(address);
   };
 
   const flush = () => {

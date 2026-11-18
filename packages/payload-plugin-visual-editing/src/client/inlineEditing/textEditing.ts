@@ -8,7 +8,7 @@ export const DATA_VE_EDITING_ATTR = "data-ve-editing";
 
 export type TextEditingDeps = {
   tracker: FieldTracker;
-  send(match: FieldMatch, text: string, onDelivered?: () => void): void;
+  send(match: FieldMatch, text: string, startedFrom: string, onDelivered?: () => void): void;
   dropWaiting(match: FieldMatch): void;
   flush(): void;
 };
@@ -173,14 +173,14 @@ export function createTextEditing({
   const cancel = () => {
     if (!editing) return;
     dropWaiting(editing.match);
-    if (editing.wasDelivered) send(editing.match, editing.initialText);
+    if (editing.wasDelivered) send(editing.match, editing.initialText, editing.initialText);
     end(editing.initialText);
   };
 
   const followTyping = (edit: Edit) => {
     edit.text = textOf(edit.editedElement);
     edit.caret = caretOffsetIn(edit.editedElement) ?? edit.caret;
-    send(edit.match, edit.text, () => {
+    send(edit.match, edit.text, edit.initialText, () => {
       edit.wasDelivered = true;
     });
   };

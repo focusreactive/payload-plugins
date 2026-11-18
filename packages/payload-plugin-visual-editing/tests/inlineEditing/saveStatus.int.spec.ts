@@ -17,11 +17,13 @@ const retryButton = () => host()?.shadowRoot?.querySelector("button");
 describe("the save status", () => {
   let saveStatus: SaveStatus;
   const onRetry = vi.fn();
+  const onReload = vi.fn();
 
   beforeEach(() => {
     vi.useFakeTimers();
     onRetry.mockClear();
-    saveStatus = createSaveStatus(document, onRetry);
+    onReload.mockClear();
+    saveStatus = createSaveStatus(document, onRetry, onReload);
   });
 
   afterEach(() => {
@@ -56,6 +58,28 @@ describe("the save status", () => {
 
     expect(label()).toBe(words);
     expect(retryButton()?.hidden).toBe(false);
+  });
+
+  it("asks to reload the page when the field was changed elsewhere, and does not try again", () => {
+    saveStatus.show("failed", "changed");
+
+    expect(label()).toBe("Changed elsewhere, reload the page");
+    expect(retryButton()?.textContent).toBe("Reload");
+    retryButton()?.click();
+
+    expect(onReload).toHaveBeenCalledTimes(1);
+    expect(onRetry).not.toHaveBeenCalled();
+  });
+
+  it("offers to try again once a failure of another kind follows", () => {
+    saveStatus.show("failed", "changed");
+    saveStatus.show("failed", "locked");
+
+    retryButton()?.click();
+
+    expect(retryButton()?.textContent).toBe("Retry");
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(onReload).not.toHaveBeenCalled();
   });
 
   it("says a reason only for a save that failed", () => {

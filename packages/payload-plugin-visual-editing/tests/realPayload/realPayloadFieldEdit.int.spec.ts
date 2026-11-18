@@ -38,7 +38,11 @@ describe("the field edit endpoint", () => {
     );
     req.text = async () => JSON.stringify({ locale: "en", ...(body as object) });
     const response = (await endpoint!.handler(req)) as Response;
-    const answered = (await response.json()) as { reason?: unknown; saved: unknown };
+    const answered = (await response.json()) as {
+      reason?: unknown;
+      saved: unknown;
+      value?: unknown;
+    };
     return { ...answered, status: response.status };
   };
 
@@ -280,6 +284,82 @@ describe("the field edit endpoint", () => {
     expect(await edit({ ...page(docId), key: "label", value: "Same" })).toEqual({
       saved: true,
       status: 200,
+    });
+  });
+
+  describe("an edit that names the text it began from", () => {
+    const changeInTheAdmin = (docId: string, data: Record<string, unknown>) =>
+      payload.update({ collection: "pages", data, draft: true, id: docId, locale: "en" });
+
+    it("is refused when the admin changed the field after the page showed it, and the change of the admin stays", async () => {
+      const docId = await publish({ label: "Shown" });
+      await changeInTheAdmin(docId, { label: "Admin" });
+
+      const answer = await post(
+        { ...page(docId), base: "Shown", key: "label", value: "Page" },
+        editor
+      );
+
+      expect(answer).toMatchObject({ reason: "changed", saved: false, status: 412 });
+      expect((await read(docId, true)).label).toBe("Admin");
+    });
+
+    it("is saved when the draft holds the text it began from", async () => {
+      const docId = await publish({ label: "Shown" });
+
+      const answer = await edit({ ...page(docId), base: "Shown", key: "label", value: "Page" });
+
+      expect(answer).toEqual({ saved: true, status: 200 });
+      expect((await read(docId, true)).label).toBe("Page");
+    });
+
+    it("compares the text without the marker the page read it with", async () => {
+      const docId = await publish({ label: "Shown" });
+
+      const answer = await edit({
+        ...page(docId),
+        base: withMarker("Shown", { path: "label" }),
+        key: "label",
+        value: "Page",
+      });
+
+      expect(answer).toEqual({ saved: true, status: 200 });
+    });
+
+    it("answers the text the field holds after the save, for the next save to begin from", async () => {
+      const docId = await publish({ trimmed: "Shown" });
+
+      const first = await post(
+        { ...page(docId), base: "Shown", key: "trimmed", value: " New " },
+        editor
+      );
+      const second = await post(
+        { ...page(docId), base: first.value, key: "trimmed", value: "Newer" },
+        editor
+      );
+
+      expect(first).toMatchObject({ saved: true, value: "New" });
+      expect(second).toMatchObject({ saved: true, value: "Newer" });
+    });
+
+    it("is refused when the row it edits was changed in the admin, and the other rows stay", async () => {
+      const docId = await publish({ list: [{ label: "First" }, { label: "Second" }] });
+      const [first, second] = (await read(docId, true)).list as Row[];
+      await changeInTheAdmin(docId, {
+        list: [
+          { id: first!.id, label: "First" },
+          { id: second!.id, label: "Admin" },
+        ],
+      });
+
+      const answer = await post(
+        { ...page(docId), base: "Second", key: `list.${second!.id}.label`, value: "Page" },
+        editor
+      );
+
+      expect(answer).toMatchObject({ reason: "changed", saved: false, status: 412 });
+      const rows = (await read(docId, true)).list as Row[];
+      expect(rows.map(({ label }) => label)).toEqual(["First", "Admin"]);
     });
   });
 

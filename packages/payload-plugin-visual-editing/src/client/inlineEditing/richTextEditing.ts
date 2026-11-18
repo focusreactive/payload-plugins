@@ -88,6 +88,8 @@ export const RICH_TEXT_STATE_TIME_LIMIT_MS = 4000;
 
 export const RICH_TEXT_CHECK_PAUSE_MS = 200;
 
+export const RICH_TEXT_STATE_FRESH_MS = 2000;
+
 type Held = { field: VeEditedField; state: VeEditorState; formats: VeRichTextFormats };
 
 type ReadOnlyTwin = {
@@ -173,6 +175,7 @@ export function createRichTextEditing({
 }: RichTextEditingDeps): RichTextEditing {
   const richTextLeaves = new Set<Text>();
   const held = new Map<string, Held>();
+  const heldAt = new Map<string, number>();
   const askedAt = new Map<string, number>();
   const checkedAt = new WeakMap<HTMLElement, number>();
   const readOnlyTwins = new Map<HTMLElement, ReadOnlyTwin>();
@@ -235,7 +238,15 @@ export function createRichTextEditing({
 
   const forget = (address: string) => {
     held.delete(address);
+    heldAt.delete(address);
     askedAt.delete(address);
+  };
+
+  const freshlyHeld = (address: string): Held | null => {
+    const at = heldAt.get(address);
+    const isFresh =
+      findAdmin() !== null || (at !== undefined && Date.now() - at < RICH_TEXT_STATE_FRESH_MS);
+    return isFresh ? (held.get(address) ?? null) : null;
   };
 
   const refuse = (address: string) => {
@@ -272,7 +283,7 @@ export function createRichTextEditing({
     edit.latest = state;
     edit.wasChanged = true;
     edit.showsWhatWasSaved = false;
-    const change = { ...edit.held.field, state };
+    const change = { ...edit.held.field, base: edit.held.state, state };
     if (findAdmin() || holdsEveryFixedNode(edit, state)) {
       send(change, () => {
         edit.wasDelivered = true;
@@ -318,7 +329,7 @@ export function createRichTextEditing({
 
   const takeBack = ({ held: { field, state }, wasDelivered }: Edit) => {
     dropUnsaved(field);
-    if (findAdmin() || wasDelivered) send({ ...field, state });
+    if (findAdmin() || wasDelivered) send({ ...field, base: state, state });
   };
 
   const cancel = () => {
@@ -430,6 +441,7 @@ export function createRichTextEditing({
     }
     askedAt.delete(address);
     held.set(address, answer);
+    heldAt.set(address, Date.now());
     beginWaitingEdit();
   };
 
@@ -596,8 +608,9 @@ export function createRichTextEditing({
       const field = isOffered() ? fieldOf(target) : null;
       if (!field) return false;
       if (waitingClick) return true;
-      const ready = held.get(addressOf(field));
+      const ready = freshlyHeld(addressOf(field));
       if (ready && editor) return begin(target, ready, caretAt(target, pointOf(event)), null);
+      if (!ready) forget(addressOf(field));
       waitForState(target, field, event, openField);
       return true;
     },

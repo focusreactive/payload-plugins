@@ -5,7 +5,7 @@ import type { SaveRefusal } from "../../shared/fieldEdit.js";
 import type { VeEditedField } from "../../shared/protocol.js";
 import type { DocumentToRead } from "../unsavedRichText/postedRequest.js";
 
-import { SAVE_FAILED } from "../../shared/fieldEdit.js";
+import { CHANGED_ELSEWHERE, SAVE_FAILED } from "../../shared/fieldEdit.js";
 import { FIELD_PATH_SEPARATOR } from "../../shared/fieldKey.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import { isLocaleOf } from "../localeCodesKeyingValues.js";
@@ -37,6 +37,7 @@ export const UNREADABLE_REQUEST = 400;
 export const FORBIDDEN = 403;
 export const UNKNOWN_DOCUMENT = 404;
 export const WITHOUT_DRAFTS = 409;
+export const CHANGED_SINCE_SHOWN = 412;
 export const FIELD_NOT_EDITABLE = 422;
 export const LOCKED = 423;
 export const FAILED = 500;
@@ -47,6 +48,7 @@ const REFUSAL_OF_STATUS: ReadonlyMap<number, SaveRefusal> = new Map([
   [FORBIDDEN, "not-editable"],
   [UNKNOWN_DOCUMENT, "not-editable"],
   [WITHOUT_DRAFTS, "no-drafts"],
+  [CHANGED_SINCE_SHOWN, CHANGED_ELSEWHERE],
   [FIELD_NOT_EDITABLE, "not-editable"],
   [LOCKED, "locked"],
 ]);

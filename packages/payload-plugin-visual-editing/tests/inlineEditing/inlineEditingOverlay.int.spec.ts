@@ -230,6 +230,16 @@ describe("editing text on the page", () => {
       expect(document.querySelectorAll("[data-ve-editing-frame]")).toHaveLength(0);
     });
 
+    it("sends the text the edit began from with every save of it", async () => {
+      click(heading);
+      type(heading, "Hello w");
+      await pause();
+      type(heading, "Hello world");
+      await pause();
+
+      expect(sentToEndpoint().map(({ base }) => base)).toEqual(["Hello", "Hello w"]);
+    });
+
     it("saves what the editor typed once the typing pauses", async () => {
       click(heading);
       type(heading, "Hello w");
@@ -238,7 +248,7 @@ describe("editing text on the page", () => {
       await pause();
 
       expect(sentToEndpoint()).toEqual([
-        { ...PAGE, key: "title", locale: "en", value: "Hello world" },
+        { ...PAGE, base: "Hello", key: "title", locale: "en", value: "Hello world" },
       ]);
       expect(heading.textContent).toBe("Hello world");
     });
@@ -537,7 +547,7 @@ describe("editing text on the page", () => {
       await pause();
 
       expect(sentToEndpoint()).toEqual([
-        { ...PAGE, key: "title", locale: "en", value: "Hello world" },
+        { ...PAGE, base: "Hello", key: "title", locale: "en", value: "Hello world" },
       ]);
       expect(messagesOfType(postToOpener, VE_FIELD_EDIT_TYPE)).toEqual([]);
     });

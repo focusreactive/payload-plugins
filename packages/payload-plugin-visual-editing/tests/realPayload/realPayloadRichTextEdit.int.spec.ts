@@ -434,6 +434,54 @@ describe("editing rich text through the endpoints", () => {
       expect((await read(docId, false)).body).toEqual(richText("Published"));
     });
 
+    describe("that names the state it began from", () => {
+      const answerOf = async (body: unknown, headers = editor) => {
+        const response = await post(VE_FIELD_EDIT_PATH, body, headers);
+        const answered = (await response.json()) as { value?: unknown };
+        return { ...answered, status: response.status };
+      };
+
+      it("is refused when the admin changed the field after the page was given its state, and the change of the admin stays", async () => {
+        const docId = await create({ body: richText("Shown") });
+        const shown = (await valueOf({ ...page(docId), key: "body" })).value;
+        await payload.update({
+          collection: "pages",
+          data: { body: richText("Admin") },
+          draft: true,
+          id: docId,
+        });
+
+        const answer = await answerOf({
+          ...page(docId),
+          base: shown,
+          key: "body",
+          state: richText("Shown and typed"),
+        });
+
+        expect(answer).toMatchObject({ reason: "changed", saved: false, status: 412 });
+        expect((await read(docId)).body).toEqual(richText("Admin"));
+      });
+
+      it("is saved when the draft holds the state it began from, and answers the state it saved", async () => {
+        const docId = await create({ story: story() });
+        const shown = (await valueOf({ ...page(docId), key: "story" }, writer)).value as State;
+        const state = structuredClone(shown);
+        state.root.children[0] = element("paragraph", [text("Rewritten")]);
+
+        const answer = await answerOf({ ...page(docId), base: shown, key: "story", state }, writer);
+        const next = await answerOf(
+          { ...page(docId), base: answer.value, key: "story", state },
+          writer
+        );
+
+        expect(answer).toMatchObject({ saved: true, status: 200 });
+        expect(next).toMatchObject({ saved: true, status: 200 });
+        const answered = answer.value as State;
+        expect(answered.root.children[0]!.children).toMatchObject([{ text: "Rewritten" }]);
+        expect(answered.root.children[3]!.fields).not.toHaveProperty("note");
+      });
+    });
+
     it("takes the fields of a block from the draft when the page sends none", async () => {
       const docId = await create({ story: story() });
       const state = await storedStory(docId);

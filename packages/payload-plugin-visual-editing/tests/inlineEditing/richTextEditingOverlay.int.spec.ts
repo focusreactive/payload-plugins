@@ -24,6 +24,7 @@ import { DATA_VE_OPAQUE_ATTR } from "../../src/client/inlineEditing/richText/opa
 import { DATA_VE_RICH_TEXT_TOOLBAR_ATTR } from "../../src/client/inlineEditing/richText/toolbar";
 import {
   RICH_TEXT_CHECK_PAUSE_MS,
+  RICH_TEXT_STATE_FRESH_MS,
   RICH_TEXT_STATE_TIME_LIMIT_MS,
 } from "../../src/client/inlineEditing/richTextEditing";
 import {
@@ -718,7 +719,7 @@ describe("editing rich text on the page", () => {
       await settle();
 
       expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([
-        { ...BODY, state: stateOf(paragraph(text("Hello there")), CALLOUT) },
+        { ...BODY, base: STATE, state: stateOf(paragraph(text("Hello there")), CALLOUT) },
       ]);
       expect(onEdited).toHaveBeenCalledTimes(1);
     });
@@ -747,8 +748,8 @@ describe("editing rich text on the page", () => {
       await settle();
 
       expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([
-        { ...BODY, state: stateOf(paragraph(text("Hello there")), CALLOUT) },
-        { ...BODY, state: stateOf(paragraph(text("Hello again")), CALLOUT) },
+        { ...BODY, base: STATE, state: stateOf(paragraph(text("Hello there")), CALLOUT) },
+        { ...BODY, base: STATE, state: stateOf(paragraph(text("Hello again")), CALLOUT) },
       ]);
     });
 
@@ -767,7 +768,7 @@ describe("editing rich text on the page", () => {
 
       expect(twin.isConnected).toBe(false);
       expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([
-        { ...BODY, state: stateOf(paragraph(text("Hello there")), CALLOUT) },
+        { ...BODY, base: STATE, state: stateOf(paragraph(text("Hello there")), CALLOUT) },
       ]);
     });
 
@@ -787,7 +788,7 @@ describe("editing rich text on the page", () => {
         await settle();
 
         expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([
-          { ...BODY, state: stateOf(paragraph(text("Hello world"))) },
+          { ...BODY, base: STATE, state: stateOf(paragraph(text("Hello world"))) },
         ]);
       });
 
@@ -801,7 +802,7 @@ describe("editing rich text on the page", () => {
         pressOutside();
         await settle();
 
-        expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([{ ...BODY, state: STATE }]);
+        expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([{ ...BODY, base: STATE, state: STATE }]);
       });
 
       it("saves nothing and shows the wrapper when Escape follows the removal", async () => {
@@ -945,8 +946,31 @@ describe("editing rich text on the page", () => {
 
       expect(requestsTo(VE_FIELD_EDIT_PATH).at(-1)).toEqual({
         ...BODY,
+        base: stateOf(paragraph(text("Hello there")), CALLOUT),
         state: stateOf(paragraph(text("Hello again")), CALLOUT),
       });
+    });
+
+    it("asks for the state again when the edit begins from a state it held too long", async () => {
+      await hoverUntilReady();
+      storedState = stateOf(paragraph(text("Changed in the admin")));
+      await vi.advanceTimersByTimeAsync(RICH_TEXT_STATE_FRESH_MS);
+
+      click(wrapper);
+      await settle();
+
+      expect(requestsTo(VE_RICH_TEXT_VALUE_PATH)).toHaveLength(2);
+      expect(twinOf(wrapper).textContent).toBe("Changed in the admin");
+    });
+
+    it("begins at once from a state it was given a moment ago", async () => {
+      await hoverUntilReady();
+      await vi.advanceTimersByTimeAsync(RICH_TEXT_STATE_FRESH_MS - 1);
+
+      click(wrapper);
+
+      expect(twinOf(wrapper).hasAttribute(DATA_VE_EDITING_ATTR)).toBe(true);
+      expect(requestsTo(VE_RICH_TEXT_VALUE_PATH)).toHaveLength(1);
     });
 
     it("shows the saved twin again when a second edit is cancelled", async () => {

@@ -1,7 +1,7 @@
 import type { SaveRefusal } from "../../shared/fieldEdit.js";
 import type { EditStatus } from "./editTransport.js";
 
-import { SAVE_FAILED } from "../../shared/fieldEdit.js";
+import { CHANGED_ELSEWHERE, SAVE_FAILED } from "../../shared/fieldEdit.js";
 
 export interface SaveStatus {
   show(status: EditStatus, refusal?: SaveRefusal): void;
@@ -20,6 +20,7 @@ const LABELS: Record<EditStatus, string> = {
 };
 
 export const REFUSAL_LABELS: Record<SaveRefusal, string> = {
+  changed: "Changed elsewhere, reload the page",
   failed: LABELS.failed,
   locked: "Locked by another editor",
   "no-drafts": "This content has no drafts",
@@ -28,8 +29,15 @@ export const REFUSAL_LABELS: Record<SaveRefusal, string> = {
   unreadable: LABELS.failed,
 };
 
+const RETRY_LABEL = "Retry";
+
+const RELOAD_LABEL = "Reload";
+
 const labelOf = (status: EditStatus, refusal: SaveRefusal): string =>
   status === "failed" ? REFUSAL_LABELS[refusal] : LABELS[status];
+
+const asksToReload = (status: EditStatus, refusal: SaveRefusal): boolean =>
+  status === "failed" && refusal === CHANGED_ELSEWHERE;
 
 const TEMPLATE = `
 <style>
@@ -82,12 +90,19 @@ const TEMPLATE = `
     outline-offset: 1px;
   }
 </style>
-<div role="status"><span></span><button type="button" hidden>Retry</button></div>
+<div role="status"><span></span><button type="button" hidden></button></div>
 `;
 
-export function createSaveStatus(doc: Document, onRetry: () => void): SaveStatus {
+const reloadThePage = (doc: Document) => () => doc.defaultView?.location.reload();
+
+export function createSaveStatus(
+  doc: Document,
+  onRetry: () => void,
+  onReload: () => void = reloadThePage(doc)
+): SaveStatus {
   let host: HTMLElement | null = null;
   let hiding: ReturnType<typeof setTimeout> | null = null;
+  let isReloadAsked = false;
 
   const stopHiding = () => {
     if (hiding !== null) clearTimeout(hiding);
@@ -105,7 +120,10 @@ export function createSaveStatus(doc: Document, onRetry: () => void): SaveStatus
     mounted.setAttribute(DATA_VE_SAVE_STATUS_ATTR, "");
     const shadow = mounted.attachShadow({ mode: "open" });
     shadow.innerHTML = TEMPLATE;
-    shadow.querySelector("button")?.addEventListener("click", onRetry);
+    shadow.querySelector("button")?.addEventListener("click", () => {
+      if (isReloadAsked) onReload();
+      else onRetry();
+    });
     doc.body.append(mounted);
     return mounted;
   };
@@ -120,7 +138,11 @@ export function createSaveStatus(doc: Document, onRetry: () => void): SaveStatus
       const retry = shadow?.querySelector("button");
       shadow?.querySelector('[role="status"]')?.setAttribute("data-status", status);
       if (label) label.textContent = labelOf(status, refusal);
-      if (retry) retry.hidden = status !== "failed";
+      isReloadAsked = asksToReload(status, refusal);
+      if (retry) {
+        retry.hidden = status !== "failed";
+        retry.textContent = isReloadAsked ? RELOAD_LABEL : RETRY_LABEL;
+      }
       if (status === "saved") hiding = setTimeout(remove, SAVED_SHOWN_MS);
     },
   };
