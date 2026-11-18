@@ -132,6 +132,7 @@ export type VeEditedField = VeLiveDocument & {
 export type VeFieldEdit = VeEditedField & {
   value: string;
   base?: string;
+  sentBefore?: string;
 };
 
 export type VeFieldEditMessage = VeFieldEdit & {
@@ -212,6 +213,7 @@ export type VeRichTextValue = {
 export type VeRichTextEdit = VeEditedField & {
   state: VeEditorState;
   base?: VeEditorState;
+  sentBefore?: VeEditorState;
 };
 
 export type VeEdit = VeFieldEdit | VeRichTextEdit;

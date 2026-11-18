@@ -749,7 +749,12 @@ describe("editing rich text on the page", () => {
 
       expect(requestsTo(VE_FIELD_EDIT_PATH)).toEqual([
         { ...BODY, base: STATE, state: stateOf(paragraph(text("Hello there")), CALLOUT) },
-        { ...BODY, base: STATE, state: stateOf(paragraph(text("Hello again")), CALLOUT) },
+        {
+          ...BODY,
+          base: STATE,
+          sentBefore: stateOf(paragraph(text("Hello there")), CALLOUT),
+          state: stateOf(paragraph(text("Hello again")), CALLOUT),
+        },
       ]);
     });
 

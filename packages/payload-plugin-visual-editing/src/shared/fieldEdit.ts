@@ -1,5 +1,7 @@
 import type { VeEdit, VeEditedField, VeFieldEdit, VeRichTextEdit } from "./protocol.js";
 
+import type { PlainObject } from "./plainObject.js";
+
 import { isPlainObject } from "./plainObject.js";
 import { readPostedEditorState } from "./richText/postedEditorState.js";
 import { withoutMarker } from "./stegaText.js";
@@ -45,21 +47,39 @@ export const readEditedField = (data: unknown): VeEditedField | null => {
   return { ...veDocumentOf(data), key, ...(locale !== undefined && { locale }) };
 };
 
+const STARTING_VALUES = ["base", "sentBefore"] as const;
+
+type StartingValues<Value> = { base?: Value; sentBefore?: Value };
+
+const readStartingValues = <Value>(
+  data: PlainObject,
+  read: (posted: unknown) => Value | null
+): StartingValues<Value> | null => {
+  const values: StartingValues<Value> = {};
+  for (const name of STARTING_VALUES) {
+    if (data[name] === undefined) continue;
+    const value = read(data[name]);
+    if (value === null) return null;
+    values[name] = value;
+  }
+  return values;
+};
+
+const readText = (posted: unknown): string | null => (typeof posted === "string" ? posted : null);
+
 export const readFieldEdit = (data: unknown): VeFieldEdit | null => {
   const field = readEditedField(data);
   if (!field || !isPlainObject(data) || typeof data.value !== "string") return null;
-  const { base, value } = data;
-  if (base !== undefined && typeof base !== "string") return null;
-  return { ...field, value, ...(base !== undefined && { base }) };
+  const startingValues = readStartingValues(data, readText);
+  return startingValues && { ...field, ...startingValues, value: data.value };
 };
 
 export const readRichTextEdit = (data: unknown): VeRichTextEdit | null => {
   const field = readEditedField(data);
   const state = isPlainObject(data) ? readPostedEditorState(data.state) : null;
   if (!field || !state || !isPlainObject(data)) return null;
-  if (data.base === undefined) return { ...field, state };
-  const base = readPostedEditorState(data.base);
-  return base ? { ...field, base, state } : null;
+  const startingValues = readStartingValues(data, (posted) => readPostedEditorState(posted));
+  return startingValues && { ...field, ...startingValues, state };
 };
 
 export const isRichTextEdit = (edit: VeEdit): edit is VeRichTextEdit => "state" in edit;

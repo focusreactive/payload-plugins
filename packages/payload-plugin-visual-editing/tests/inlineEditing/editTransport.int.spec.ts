@@ -396,6 +396,7 @@ describe("the transport of an edit", () => {
       );
       transport.send({ ...TITLE, value: "First" });
       transport.flush();
+      await settle();
       transport.send({ ...TITLE, value: "Second" });
       transport.flush();
       await settle();
@@ -426,6 +427,71 @@ describe("the transport of an edit", () => {
           ([, init]) => (JSON.parse(init.body as string) as { key: string }).key
         )
       ).toEqual(["title", "body", "lead"]);
+    });
+
+    describe("a save of a field whose earlier save is still on the way when the page is left", () => {
+      let answers: ((answer: Response) => void)[];
+
+      const sentBodies = () =>
+        fetchEndpoint.mock.calls.map(
+          ([, init]) => JSON.parse((init as RequestInit).body as string) as Record<string, unknown>
+        );
+
+      beforeEach(async () => {
+        answers = [];
+        fetchEndpoint.mockImplementation(
+          () => new Promise<Response>((resolve) => answers.push(resolve))
+        );
+        transport.send({ ...TITLE, base: "Shown", value: "First" });
+        transport.flush();
+        await settle();
+        transport.send({ ...TITLE, base: "Shown", value: "Second" });
+        transport.flushBeforeLeaving();
+        await settle();
+      });
+
+      it("is sent at once and names the value of the earlier one, which may land first", () => {
+        expect(sentBodies()).toEqual([
+          { ...TITLE, base: "Shown", value: "First" },
+          { ...TITLE, base: "Shown", sentBefore: "First", value: "Second" },
+        ]);
+      });
+
+      it("decides the status alone, whatever the earlier one is answered", async () => {
+        answers[1]?.(answerOf(true));
+        await settle();
+        answers[0]?.(refusalOf("changed"));
+        await settle();
+
+        expect(statuses.at(-1)).toBe("saved");
+        expect(transport.isUnsaved(TITLE)).toBe(false);
+      });
+    });
+
+    it("skips a save that a newer save of the same field replaced before its turn came", async () => {
+      const answers: ((answer: Response) => void)[] = [];
+      fetchEndpoint.mockImplementation(
+        () => new Promise<Response>((resolve) => answers.push(resolve))
+      );
+      transport.sendNow({ ...TITLE, key: "lead", value: "Lead" });
+      transport.send({ ...TITLE, value: "First" });
+      transport.flush();
+      transport.send({ ...TITLE, value: "Second" });
+      transport.flush();
+      await settle();
+
+      answers[0]?.(answerOf(true));
+      await settle();
+      answers[1]?.(answerOf(true));
+      await settle();
+
+      expect(
+        fetchEndpoint.mock.calls.map(
+          ([, init]) =>
+            (JSON.parse((init as RequestInit).body as string) as { value: string }).value
+        )
+      ).toEqual(["Lead", "Second"]);
+      expect(statuses.at(-1)).toBe("saved");
     });
 
     it("saves one edit after the other again once the page is shown after it was left", async () => {

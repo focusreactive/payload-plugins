@@ -72,6 +72,8 @@ type SavedEdit = { startedFrom: EditValue; sent: EditValue; stored: EditValue };
 
 type EndpointAnswer = { refusal: SaveRefusal | null; stored: unknown };
 
+type PostedAnswer = { refusal: SaveRefusal | null; isLatest: boolean };
+
 type PageLeave = { left: Promise<void>; leave: () => void };
 
 const nextPageLeave = (): PageLeave => {
@@ -93,7 +95,11 @@ export const KEEPALIVE_BODY_LIMIT = 60_000;
 
 const bytesOf = (body: string): number => new TextEncoder().encode(body).length;
 
-const messageOf = ({ base: _base, ...edit }: VeEdit): VeFieldEditMessage | VeRichTextEditMessage =>
+const messageOf = ({
+  base: _base,
+  sentBefore: _sentBefore,
+  ...edit
+}: VeEdit): VeFieldEditMessage | VeRichTextEditMessage =>
   "state" in edit
     ? { ...edit, type: VE_RICH_TEXT_EDIT_TYPE }
     : { ...edit, type: VE_FIELD_EDIT_TYPE };
@@ -105,9 +111,11 @@ const storedValueOf = (edit: VeEdit, stored: unknown): EditValue => {
   return typeof stored === "string" ? stored : edit.value;
 };
 
-const withBase = (edit: VeEdit, base: EditValue): VeEdit => {
-  if (isRichTextEdit(edit)) return typeof base === "string" ? edit : { ...edit, base };
-  return typeof base === "string" ? { ...edit, base } : edit;
+type StartingValue = "base" | "sentBefore";
+
+const withStartingValue = (edit: VeEdit, name: StartingValue, value: EditValue): VeEdit => {
+  if (isRichTextEdit(edit)) return typeof value === "string" ? edit : { ...edit, [name]: value };
+  return typeof value === "string" ? { ...edit, [name]: value } : edit;
 };
 
 const continuesSaved = (edit: VeEdit, saved: SavedEdit | undefined): saved is SavedEdit =>
@@ -150,6 +158,8 @@ export function createEditTransport(
   const watchedSaves = new Map<string, OnSaveEnded>();
   const savesOnTheWay = new Map<string, number>();
   const savedEdits = new Map<string, SavedEdit>();
+  const latestPosted = new Map<string, VeEdit>();
+  const latestQueued = new Map<string, VeEdit>();
   let saves: Promise<void> = Promise.resolve();
   let pageLeave = nextPageLeave();
   let isDisposed = false;
@@ -194,38 +204,54 @@ export function createEditTransport(
     });
   };
 
-  const post = async (edit: VeEdit): Promise<SaveRefusal | null> => {
-    if (isChangedElsewhere(addressOf(edit))) return CHANGED_ELSEWHERE;
-    const saved = savedEdits.get(addressOf(edit));
+  const startingValuesOf = (edit: VeEdit, continued: SavedEdit | null): VeEdit => {
+    const rebased = continued ? withStartingValue(edit, "base", continued.stored) : edit;
+    const earlier = latestPosted.get(addressOf(edit));
+    return earlier && edit.base !== undefined
+      ? withStartingValue(rebased, "sentBefore", valueOf(earlier))
+      : rebased;
+  };
+
+  const post = async (edit: VeEdit): Promise<PostedAnswer> => {
+    const address = addressOf(edit);
+    if (isChangedElsewhere(address)) return { isLatest: true, refusal: CHANGED_ELSEWHERE };
+    const saved = savedEdits.get(address);
     const continued = continuesSaved(edit, saved) ? saved : null;
-    const posted = continued ? withBase(edit, continued.stored) : edit;
+    const posted = startingValuesOf(edit, continued);
+    latestPosted.set(address, edit);
     const { refusal, stored } = await postToEndpoint(
       win,
       `${getCtx().payloadApi}${VE_FIELD_EDIT_PATH}`,
       posted
     );
-    if (refusal === null) rememberSaved(edit, continued, stored);
-    return refusal;
+    const isLatest = latestPosted.get(address) === edit;
+    if (isLatest) latestPosted.delete(address);
+    if (isLatest && refusal === null) rememberSaved(edit, continued, stored);
+    return { isLatest, refusal };
   };
 
   const saveThroughEndpoint = async (edit: VeEdit) => {
     report("saving");
     countSaveOnTheWay(addressOf(edit), 1);
-    const refusal = await post(edit);
+    const { isLatest, refusal } = await post(edit);
     const isSaved = refusal === null;
     countSaveOnTheWay(addressOf(edit), -1);
-    if (isSaved) failed.delete(addressOf(edit));
-    else fail(edit, refusal);
+    if (isLatest && isSaved) failed.delete(addressOf(edit));
+    else if (isLatest && refusal) fail(edit, refusal);
     report(statusAfterASave());
-    if (isDisposed) return;
+    if (isDisposed || !isLatest) return;
     watchedSaves.get(addressOf(edit))?.(isSaved);
     if (isSaved) getCtx().onEdited?.();
   };
 
   const saveAfter = async (earlierSaves: Promise<void>, edit: VeEdit) => {
-    countSaveOnTheWay(addressOf(edit), 1);
+    const address = addressOf(edit);
+    latestQueued.set(address, edit);
+    countSaveOnTheWay(address, 1);
     await Promise.race([earlierSaves, pageLeave.left]);
-    countSaveOnTheWay(addressOf(edit), -1);
+    countSaveOnTheWay(address, -1);
+    if (latestQueued.get(address) !== edit) return;
+    latestQueued.delete(address);
     await saveThroughEndpoint(edit);
   };
 

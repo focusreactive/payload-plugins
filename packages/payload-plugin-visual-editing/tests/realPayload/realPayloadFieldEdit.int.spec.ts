@@ -342,6 +342,30 @@ describe("the field edit endpoint", () => {
       expect(second).toMatchObject({ saved: true, value: "Newer" });
     });
 
+    it.each([
+      ["the earlier one lands first", ["earlier", "later"]],
+      ["the later one lands first", ["later", "earlier"]],
+    ] as const)(
+      "saves the later of two saves of one edit sent together when %s",
+      async (_name, order) => {
+        const docId = await publish({ label: "Shown" });
+        const saves = {
+          earlier: { ...page(docId), base: "Shown", key: "label", value: "First" },
+          later: {
+            ...page(docId),
+            base: "Shown",
+            key: "label",
+            sentBefore: "First",
+            value: "Second",
+          },
+        };
+
+        for (const save of order) await post(saves[save], editor);
+
+        expect((await read(docId, true)).label).toBe("Second");
+      }
+    );
+
     it("is refused when the row it edits was changed in the admin, and the other rows stay", async () => {
       const docId = await publish({ list: [{ label: "First" }, { label: "Second" }] });
       const [first, second] = (await read(docId, true)).list as Row[];

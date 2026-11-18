@@ -105,13 +105,13 @@ const shownAs = (value: unknown): unknown =>
   typeof value === "string" ? withoutMarker(value) : value;
 
 const holdsTheBaseOf = (edit: VeEdit, documents: readonly unknown[]): boolean => {
-  const { base, key } = edit;
-  return (
-    base === undefined ||
-    documents.some((document) =>
-      isSameValue(shownAs(valueAtKey(document, key)?.value), shownAs(base))
-    )
-  );
+  const { base, key, sentBefore } = edit;
+  if (base === undefined) return true;
+  const startingValues = sentBefore === undefined ? [base] : [base, sentBefore];
+  return documents.some((document) => {
+    const current = shownAs(valueAtKey(document, key)?.value);
+    return startingValues.some((value) => isSameValue(current, shownAs(value)));
+  });
 };
 
 const readEdit = (body: unknown): VeEdit | null => readFieldEdit(body) ?? readRichTextEdit(body);
