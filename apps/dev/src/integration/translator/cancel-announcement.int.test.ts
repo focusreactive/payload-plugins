@@ -62,7 +62,9 @@ describe("cancelling announces what it stopped, to a host that registered nothin
       [])[0]?.handle;
     await ctx.payload.jobs.run({ queue: "translations" });
 
-    await callEndpoint(ctx.payload, "delete", "/translate/cancel", { body: { ids: [handle] } });
+    await callEndpoint(ctx.payload, "delete", "/translate/cancel", {
+      body: { collection_slug: "docs", collection_id: [String(made.id)] },
+    });
 
     expect(onCancelled.mock.calls.map(([task]) => task.targetLng).sort()).toEqual(["es", "fr"]);
     expect(

@@ -32,8 +32,8 @@ describe("when one locale's provider fails", () => {
     });
     const id = String(doc.id);
 
-    // The run endpoint refuses a job nobody is recorded as having asked for, because running one
-    // writes with the host's rules off. Attribute this job so the retry under test is reachable.
+    // The run endpoint refuses a run nobody is recorded as having asked for, because starting one
+    // writes with the host's rules off. Attribute this run so the retry under test is reachable.
     const editor = {
       ...(await failing.payload.create({
         collection: "users",
@@ -110,10 +110,15 @@ describe("when one locale's provider fails", () => {
     // Payload backs a failed job off exponentially; only the manual-run endpoint lifts that, so the
     // retry has to go through it.
     const before = failing.translateCount();
-    const retry = await callEndpoint(failing.payload, "post", "/translate/run/:id", {
-      user: editor as never,
-      routeParams: { id: (docs[0] as { input?: { handle?: string } }).input?.handle },
-    });
+    const retry = await callEndpoint(
+      failing.payload,
+      "post",
+      "/translate/run/:collection_slug/:collection_id",
+      {
+        user: editor as never,
+        routeParams: { collection_slug: "docs", collection_id: id },
+      }
+    );
     expect(retry.status, "the retry endpoint did not accept the job").toBe(204);
 
     expect(

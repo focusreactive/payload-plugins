@@ -103,14 +103,12 @@ describe("the panels read the plugin's own record", () => {
     expect(entries.some((e) => e.collection_id === id)).toBe(false);
   });
 
-  it("stops a queued run named by its handle, and says nothing was refused", async () => {
-    const id = await create("A document whose run is cancelled by handle");
-    const answer = await enqueue(id, ["de"]);
-    const [assignment] = (answer.data as { data: { assignments: Array<{ handle: string }> } }).data
-      .assignments;
+  it("stops the queued run of the document named, and says nothing was refused", async () => {
+    const id = await create("A document whose run is cancelled by its own address");
+    await enqueue(id, ["de"]);
 
     const cancelled = await callEndpoint(ctx.payload, "delete", "/translate/cancel", {
-      body: { ids: [assignment.handle] },
+      body: { collection_slug: "docs", collection_id: [String(id)] },
     });
 
     expect(cancelled.status).toBe(204);
@@ -123,22 +121,22 @@ describe("the panels read the plugin's own record", () => {
     await enqueue(first, ["de"]);
     await enqueue(second, ["fr"]);
 
-    const response = await callEndpoint(
-      ctx.payload,
-      "delete",
-      "/translate/cancel-by-collection/:collection_slug",
-      { routeParams: { collection_slug: "docs" } }
-    );
+    const response = await callEndpoint(ctx.payload, "delete", "/translate/cancel", {
+      body: { collection_slug: "docs", collection_id: [String(first)], select_all: true },
+    });
 
     expect(response.status).toBe(204);
     expect(await documentStatus(first)).toEqual([]);
     expect(await documentStatus(second)).toEqual([]);
   });
 
-  it("answers 404 for a handle the record does not name", async () => {
-    const response = await callEndpoint(ctx.payload, "post", "/translate/run/:id", {
-      routeParams: { id: "999999" },
-    });
+  it("answers 404 for a document with no run of its own", async () => {
+    const response = await callEndpoint(
+      ctx.payload,
+      "post",
+      "/translate/run/:collection_slug/:collection_id",
+      { routeParams: { collection_slug: "docs", collection_id: "999999" } }
+    );
 
     expect(response.status).toBe(404);
   });

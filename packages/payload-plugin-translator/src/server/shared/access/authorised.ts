@@ -1,11 +1,11 @@
 import type { CollectionSlug, PayloadRequest } from "payload";
 
-import type { ID, JobHandle, TaskInput } from "../../modules/task-runner/types.js";
+import type { ID, RunHandle, TaskInput } from "../../modules/task-runner/types.js";
 
 import { refusedTargets } from "./refusedTargets.js";
 
 declare const workWasAskedAbout: unique symbol;
-declare const jobWasAskedAbout: unique symbol;
+declare const handleWasAskedAbout: unique symbol;
 
 /**
  * A `TaskInput` something asked about. A cast still forges one, so this catches a forgotten ask,
@@ -13,11 +13,11 @@ declare const jobWasAskedAbout: unique symbol;
  */
 export type AuthorisedWork = TaskInput & { readonly [workWasAskedAbout]: true };
 
-/** A `JobHandle` something asked about. */
-export type AuthorisedHandle = JobHandle & { readonly [jobWasAskedAbout]: true };
+/** A `RunHandle` something asked about. */
+export type AuthorisedHandle = RunHandle & { readonly [handleWasAskedAbout]: true };
 
 const asWork = (tasks: readonly TaskInput[]): AuthorisedWork[] => tasks as AuthorisedWork[];
-const asHandles = (handles: readonly JobHandle[]): AuthorisedHandle[] =>
+const asHandles = (handles: readonly RunHandle[]): AuthorisedHandle[] =>
   handles as AuthorisedHandle[];
 
 type Split<Authorised, Refused> = { authorised: Authorised[]; refused: Refused[] };
@@ -65,19 +65,19 @@ export async function authorisedWork(query: {
   };
 }
 
-/** Splits jobs by whether the caller may update each job's document. */
+/** Splits runs by whether the caller may update each run's document. */
 export async function authorisedHandles(query: {
   payload: PayloadRequest["payload"];
   user: PayloadRequest["user"];
-  jobs: readonly (OnADocument & { handle: JobHandle })[];
-}): Promise<Split<AuthorisedHandle, JobHandle>> {
-  const { payload, user, jobs } = query;
-  const isRefused = await refusedPerCollection(payload, user, jobs);
+  runs: readonly (OnADocument & { handle: RunHandle })[];
+}): Promise<Split<AuthorisedHandle, RunHandle>> {
+  const { payload, user, runs } = query;
+  const isRefused = await refusedPerCollection(payload, user, runs);
 
-  const authorised: JobHandle[] = [];
-  const refused: JobHandle[] = [];
-  for (const job of jobs) {
-    (isRefused(job) ? refused : authorised).push(job.handle);
+  const authorised: RunHandle[] = [];
+  const refused: RunHandle[] = [];
+  for (const run of runs) {
+    (isRefused(run) ? refused : authorised).push(run.handle);
   }
   return { authorised: asHandles(authorised), refused };
 }

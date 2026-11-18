@@ -5,7 +5,6 @@ import type { ConfigTimeContext } from "../modules/plugin-config/index.js";
 import { createEnqueueRoute } from "./enqueue-translation/index.js";
 import { createRunRoute } from "./run-translation/index.js";
 import { createCancelRoute } from "./cancel/index.js";
-import { createCancelByCollectionRoute } from "./cancel-by-collection/index.js";
 import { createGetDocumentStatusRoute } from "./get-document-status/index.js";
 import { createGetCollectionStatusRoute } from "./get-collection-status/index.js";
 
@@ -35,13 +34,20 @@ export function createTranslationRoutes({
       access,
       basePath
     ),
-    ...(run ? [createRunRoute(taskRunnerFactory, runRecordStoreFactory, access, basePath)] : []),
-    ...(stop
-      ? [createCancelRoute(taskRunnerFactory, runRecordStoreFactory, access, basePath)]
+    ...(run
+      ? [
+          createRunRoute(
+            collectionConfig,
+            taskRunnerFactory,
+            runRecordStoreFactory,
+            access,
+            basePath
+          ),
+        ]
       : []),
     ...(stop
       ? [
-          createCancelByCollectionRoute(
+          createCancelRoute(
             collectionConfig,
             taskRunnerFactory,
             runRecordStoreFactory,

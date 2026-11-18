@@ -17,7 +17,7 @@ const { translateDocument } = vi.hoisted(() => ({
 }));
 vi.mock("../translateDocument.js", () => ({ translateDocument }));
 
-const theRun = { handle: "job-7", targetLng: "de" };
+const theRun = { handle: "run-7", targetLng: "de" };
 
 const work = (over: Partial<QueuedWork> = {}): QueuedWork => ({
   collectionSlug: "posts" as CollectionSlug,
@@ -49,7 +49,7 @@ describe("the plugin's own record of a run", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
-    store = storeDouble({ find: vi.fn().mockResolvedValue(runRow({ handle: "job-7" })) });
+    store = storeDouble({ find: vi.fn().mockResolvedValue(runRow({ handle: "run-7" })) });
     openedWith = [];
     logged = vi.fn();
     payload = { logger: { error: logged } } as unknown as Payload;
@@ -86,7 +86,7 @@ describe("the plugin's own record of a run", () => {
       expect(store.recordQueued).toHaveBeenCalledTimes(1);
       expect(store.recordQueued).toHaveBeenCalledWith(
         expect.objectContaining({
-          handle: "job-7",
+          handle: "run-7",
           targetLng: "de",
           collectionSlug: "posts",
           collectionId: "doc-1",
@@ -246,7 +246,7 @@ describe("a locale the run never attempted", () => {
   const payload = { logger: { error: vi.fn() } } as unknown as Payload;
 
   it("settles the row with no reason at all", async () => {
-    const store = storeDouble({ find: vi.fn().mockResolvedValue(runRow({ handle: "job-7" })) });
+    const store = storeDouble({ find: vi.fn().mockResolvedValue(runRow({ handle: "run-7" })) });
 
     await wire({}, store).report(payload, theRun, { state: "abandoned" });
 
@@ -257,7 +257,7 @@ describe("a locale the run never attempted", () => {
   });
 
   it("tells the host through onAbandoned, and not through onFailed", async () => {
-    const store = storeDouble({ find: vi.fn().mockResolvedValue(runRow({ handle: "job-7" })) });
+    const store = storeDouble({ find: vi.fn().mockResolvedValue(runRow({ handle: "run-7" })) });
     const onAbandoned = vi.fn();
     const onFailed = vi.fn();
 
@@ -268,7 +268,7 @@ describe("a locale the run never attempted", () => {
   });
 
   it("still tells the host about a locale that really failed", async () => {
-    const store = storeDouble({ find: vi.fn().mockResolvedValue(runRow({ handle: "job-7" })) });
+    const store = storeDouble({ find: vi.fn().mockResolvedValue(runRow({ handle: "run-7" })) });
     const onAbandoned = vi.fn();
     const onFailed = vi.fn();
 

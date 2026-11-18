@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { Payload, PayloadRequest } from "payload";
+import type { CollectionSlug, Payload, PayloadRequest } from "payload";
 
 import type { TaskRunner, TaskRunnerFactory } from "../../../modules/task-runner/index.js";
 import { runRow, storeDouble } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
@@ -10,6 +10,17 @@ vi.mock("../../../shared/access/refusedTargets.js", () => ({
 }));
 
 const { CancelHandler } = await import("../handler.js");
+
+const AVAILABLE = { availableCollections: new Set<CollectionSlug>(["posts" as CollectionSlug]) };
+
+const liveRun = (collectionId: string, handle: string) =>
+  runRow({
+    handle,
+    collectionSlug: "posts",
+    collectionId,
+    requesterId: "anna",
+    requesterCollection: "users",
+  });
 
 describe("CancelHandler", () => {
   let handler: InstanceType<typeof CancelHandler>;
@@ -36,120 +47,149 @@ describe("CancelHandler", () => {
     };
 
     runs = storeDouble({
-      findByHandles: vi.fn(async (handles: string[]) =>
-        handles.map((handle) =>
-          runRow({ handle, requesterId: "anna", requesterCollection: "users" })
-        )
+      findLiveForDocuments: vi.fn(async (_slug: string, ids: readonly string[]) =>
+        ids.map((id) => liveRun(id, `run-for-${id}`))
       ),
+      findLiveInCollection: vi.fn(async () => [
+        liveRun("1", "run-for-1"),
+        liveRun("2", "run-for-2"),
+        liveRun("3", "run-for-3"),
+      ]),
     });
 
-    handler = new CancelHandler(mockTaskRunnerFactory, () => runs);
+    handler = new CancelHandler(AVAILABLE, mockTaskRunnerFactory, () => runs);
   });
 
-  describe("validation", () => {
-    it("returns validation error for missing ids", async () => {
-      const req = createMockRequest({});
-
-      const response = await handler.handle(req);
+  describe("what a request must name", () => {
+    it("refuses a body naming no collection", async () => {
+      const response = await handler.handle(createMockRequest({ collection_id: ["1"] }));
 
       expect(response.status).toBe(400);
       const body = await response.json();
       expect(body.message).toBe("Validation error");
     });
 
-    it("returns validation error for non-array ids", async () => {
-      const req = createMockRequest({ ids: "not-an-array" });
-
-      const response = await handler.handle(req);
+    it("refuses a body naming neither documents nor the whole collection", async () => {
+      const response = await handler.handle(createMockRequest({ collection_slug: "posts" }));
 
       expect(response.status).toBe(400);
     });
 
-    it("returns validation error for empty ids array", async () => {
-      const req = createMockRequest({ ids: [] });
-
-      const response = await handler.handle(req);
+    it("refuses an empty document list, because it names nothing to stop", async () => {
+      const response = await handler.handle(
+        createMockRequest({ collection_slug: "posts", collection_id: [] })
+      );
 
       expect(response.status).toBe(400);
+    });
+
+    it("refuses a document list that is not a list", async () => {
+      const response = await handler.handle(
+        createMockRequest({ collection_slug: "posts", collection_id: "not-a-list" })
+      );
+
+      expect(response.status).toBe(400);
+    });
+
+    it("refuses a collection the plugin does not translate", async () => {
+      const response = await handler.handle(
+        createMockRequest({ collection_slug: "invoices", collection_id: ["1"] })
+      );
+
+      expect(response.status).toBe(400);
+      expect(mockTaskRunner.stop).not.toHaveBeenCalled();
     });
   });
 
-  describe("success responses", () => {
-    it("cancels tasks and returns 204", async () => {
-      const req = createMockRequest({ ids: ["task-1", "task-2"] });
-
-      const response = await handler.handle(req);
-
-      expect(response.status).toBe(204);
-      expect(response.body).toBeNull();
-    });
-
-    it("calls runner.stop with provided ids", async () => {
-      const req = createMockRequest({ ids: ["task-1", "task-2", "task-3"] });
-
-      await handler.handle(req);
-
-      expect(mockTaskRunner.stop).toHaveBeenCalledWith(["task-1", "task-2", "task-3"]);
-    });
-
-    it("coerces numeric ids to strings (autoincrement DB ids)", async () => {
-      // Admin client sends `{ ids: [1, 2] }` when the underlying DB uses
-      // integer autoincrement (SQLite default). Schema must accept and
-      // coerce, not reject with 400.
-      const req = createMockRequest({ ids: [1, 2] });
-
-      const response = await handler.handle(req);
+  describe("cancelling the documents a request names", () => {
+    it("stops the live runs of exactly those documents", async () => {
+      const response = await handler.handle(
+        createMockRequest({ collection_slug: "posts", collection_id: ["42", "43"] })
+      );
 
       expect(response.status).toBe(204);
-      expect(mockTaskRunner.stop).toHaveBeenCalledWith(["1", "2"]);
+      expect(runs.findLiveForDocuments).toHaveBeenCalledWith("posts", ["42", "43"]);
+      expect(mockTaskRunner.stop).toHaveBeenCalledWith(["run-for-42", "run-for-43"]);
     });
 
-    it("accepts a mix of numeric and string ids", async () => {
-      const req = createMockRequest({ ids: [1, "uuid-abc"] });
+    it("reads the live runs of those documents, never the whole collection", async () => {
+      await handler.handle(createMockRequest({ collection_slug: "posts", collection_id: ["42"] }));
 
-      const response = await handler.handle(req);
+      expect(runs.findLiveInCollection).not.toHaveBeenCalled();
+    });
+
+    it("coerces a numeric document id, which is what an autoincrement database hands the admin", async () => {
+      const response = await handler.handle(
+        createMockRequest({ collection_slug: "posts", collection_id: [1, 2] })
+      );
 
       expect(response.status).toBe(204);
-      expect(mockTaskRunner.stop).toHaveBeenCalledWith(["1", "uuid-abc"]);
+      expect(runs.findLiveForDocuments).toHaveBeenCalledWith("posts", ["1", "2"]);
     });
 
-    it("creates task runner with request payload", async () => {
+    it("answers 204 and stops nothing when no document named has a live run", async () => {
+      runs.findLiveForDocuments.mockResolvedValue([]);
+
+      const response = await handler.handle(
+        createMockRequest({ collection_slug: "posts", collection_id: ["42"] })
+      );
+
+      expect(response.status).toBe(204);
+      expect(mockTaskRunner.stop).toHaveBeenCalledWith([]);
+    });
+
+    it("builds the runner from the request's own payload", async () => {
       const mockPayload = { collections: {} } as Payload;
-      const req = createMockRequest({ ids: ["task-1"] });
-      (req as any).payload = mockPayload;
+      const req = createMockRequest({ collection_slug: "posts", collection_id: ["42"] });
+      (req as unknown as { payload: Payload }).payload = mockPayload;
 
       await handler.handle(req);
 
       expect(mockTaskRunnerFactory.create).toHaveBeenCalledWith(mockPayload);
     });
+  });
 
-    it("places each handle through the run record, not through the runner", async () => {
-      await handler.handle(createMockRequest({ ids: ["task-1", "task-2"] }));
-
-      expect(
-        runs.findByHandles,
-        "the runner is asked to stop work, never asked what it holds"
-      ).toHaveBeenCalledWith(["task-1", "task-2"]);
-    });
-
-    it("cancels nothing for a handle the record does not name", async () => {
-      runs.findByHandles.mockResolvedValue([]);
-
-      const response = await handler.handle(createMockRequest({ ids: ["a-stranger"] }));
+  describe("cancelling the whole collection", () => {
+    it("stops every live run in it", async () => {
+      const response = await handler.handle(
+        createMockRequest({ collection_slug: "posts", collection_id: ["42"], select_all: true })
+      );
 
       expect(response.status).toBe(204);
-      expect(mockTaskRunner.stop).toHaveBeenCalledWith([]);
+      expect(runs.findLiveInCollection).toHaveBeenCalledWith("posts");
+      expect(mockTaskRunner.stop).toHaveBeenCalledWith(["run-for-1", "run-for-2", "run-for-3"]);
+    });
+
+    it("ignores the documents the request listed, which are only what the caller could see", async () => {
+      await handler.handle(
+        createMockRequest({ collection_slug: "posts", collection_id: ["42"], select_all: true })
+      );
+
+      expect(runs.findLiveForDocuments).not.toHaveBeenCalled();
+    });
+
+    it("needs no document list at all, which is how the collection panel asks", async () => {
+      const response = await handler.handle(
+        createMockRequest({ collection_slug: "posts", select_all: true })
+      );
+
+      expect(response.status).toBe(204);
+      expect(runs.findLiveInCollection).toHaveBeenCalledWith("posts");
     });
   });
+
   describe("a runner that cannot stop work", () => {
     it("is answered rather than called, although this route is not registered for one", async () => {
       const cannotStop = { enqueue: vi.fn() } as unknown as TaskRunner;
-      const handler = new CancelHandler(
+      const cannotStopHandler = new CancelHandler(
+        AVAILABLE,
         { create: vi.fn().mockReturnValue(cannotStop), capabilities: { stop: false, run: false } },
         () => runs
       );
 
-      const response = await handler.handle(createMockRequest({ ids: ["task-1"] }));
+      const response = await cannotStopHandler.handle(
+        createMockRequest({ collection_slug: "posts", collection_id: ["42"] })
+      );
 
       expect(response.status).toBe(501);
     });

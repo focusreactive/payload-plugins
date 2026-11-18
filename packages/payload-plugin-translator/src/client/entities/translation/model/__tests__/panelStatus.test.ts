@@ -33,7 +33,7 @@ describe("derivePanelStatus", () => {
     ).toEqual({ kind: "running" });
   });
 
-  it("stale when the source drifted and no job is failed/in-flight", () => {
+  it("stale when the source drifted and no run is failed/in-flight", () => {
     expect(
       derivePanelStatus({
         runStatus: DocumentTranslationStatus.COMPLETED,
@@ -60,9 +60,8 @@ describe("derivePanelStatus", () => {
 });
 
 describe("deriveDocumentRunStatus", () => {
-  const jobWith = (status: DocumentTranslationStatus, target: string): DocumentTranslation =>
+  const runWith = (status: DocumentTranslationStatus, target: string): DocumentTranslation =>
     ({
-      id: `job-${target}`,
       status,
       created_at: "2026-07-14T00:00:00.000Z",
       updated_at: "2026-07-14T00:00:00.000Z",
@@ -73,7 +72,7 @@ describe("deriveDocumentRunStatus", () => {
         : {}),
     }) as DocumentTranslation;
 
-  it("returns undefined when there are no jobs", () => {
+  it("returns undefined when there are no runs", () => {
     expect(deriveDocumentRunStatus(undefined)).toBeUndefined();
     expect(deriveDocumentRunStatus([])).toBeUndefined();
   });
@@ -81,17 +80,17 @@ describe("deriveDocumentRunStatus", () => {
   it("an abandoned locale outranks a delivered one", () => {
     expect(
       deriveDocumentRunStatus([
-        jobWith(DocumentTranslationStatus.COMPLETED, "de"),
-        jobWith(DocumentTranslationStatus.ABANDONED, "es"),
+        runWith(DocumentTranslationStatus.COMPLETED, "de"),
+        runWith(DocumentTranslationStatus.ABANDONED, "es"),
       ])
     ).toBe(DocumentTranslationStatus.ABANDONED);
   });
 
   it("never reports a document as up to date while a locale was left untried", () => {
     const runStatus = deriveDocumentRunStatus([
-      jobWith(DocumentTranslationStatus.COMPLETED, "de"),
-      jobWith(DocumentTranslationStatus.COMPLETED, "fr"),
-      jobWith(DocumentTranslationStatus.ABANDONED, "es"),
+      runWith(DocumentTranslationStatus.COMPLETED, "de"),
+      runWith(DocumentTranslationStatus.COMPLETED, "fr"),
+      runWith(DocumentTranslationStatus.ABANDONED, "es"),
     ]);
     expect(derivePanelStatus({ runStatus, staleLocales: [] })).toEqual({ kind: "failed" });
   });
@@ -99,21 +98,21 @@ describe("deriveDocumentRunStatus", () => {
   it("picks the most urgent status across locales: failed > running > pending > completed", () => {
     expect(
       deriveDocumentRunStatus([
-        jobWith(DocumentTranslationStatus.COMPLETED, "de"),
-        jobWith(DocumentTranslationStatus.RUNNING, "fr"),
-        jobWith(DocumentTranslationStatus.FAILED, "it"),
+        runWith(DocumentTranslationStatus.COMPLETED, "de"),
+        runWith(DocumentTranslationStatus.RUNNING, "fr"),
+        runWith(DocumentTranslationStatus.FAILED, "it"),
       ])
     ).toBe(DocumentTranslationStatus.FAILED);
 
     expect(
       deriveDocumentRunStatus([
-        jobWith(DocumentTranslationStatus.COMPLETED, "de"),
-        jobWith(DocumentTranslationStatus.PENDING, "fr"),
-        jobWith(DocumentTranslationStatus.RUNNING, "it"),
+        runWith(DocumentTranslationStatus.COMPLETED, "de"),
+        runWith(DocumentTranslationStatus.PENDING, "fr"),
+        runWith(DocumentTranslationStatus.RUNNING, "it"),
       ])
     ).toBe(DocumentTranslationStatus.RUNNING);
 
-    expect(deriveDocumentRunStatus([jobWith(DocumentTranslationStatus.COMPLETED, "de")])).toBe(
+    expect(deriveDocumentRunStatus([runWith(DocumentTranslationStatus.COMPLETED, "de")])).toBe(
       DocumentTranslationStatus.COMPLETED
     );
   });

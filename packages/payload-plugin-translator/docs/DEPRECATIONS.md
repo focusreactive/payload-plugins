@@ -182,16 +182,34 @@ the single source of truth — code annotations link here by anchor instead of d
 
 ### cancel-by-collection-route
 
-- **What:** `POST {basePath}/cancel-by-collection` endpoint.
-- **Status:** planned
+- **What:** the `cancel-by-collection` endpoint.
+- ~~**What:** `POST {basePath}/cancel-by-collection` endpoint.~~
+- **Status:** removed
 - **Deprecated:** 2026-06-05 / PR #TBD
-- **Replacement:** unified `POST {basePath}/cancel` accepting `{ ids: string[] } | { collection: slug }`.
-- **Remove in:** next major
-- **Why:** two routes differing only in the where-clause shape. After unification the old route
-  becomes a thin alias delegating to the same handler.
-- **Code refs:**
-  - `src/server/features/cancel-by-collection/`
-  - `src/server/features/cancel/`
+- **Removed:** 2026-11-17 / PR #TBD
+- **Replacement:** `DELETE {basePath}/cancel`, taking
+  `{ collection_slug, collection_id, select_all? }` — the field names the enqueue route already
+  uses. `select_all` is how a caller says "everything queued here" without listing what it cannot
+  see.
+- ~~**Replacement:** unified `POST {basePath}/cancel` accepting `{ ids: string[] } | { collection: slug }`.~~
+- ~~**Why:** two routes differing only in the where-clause shape. After unification the old route
+  becomes a thin alias delegating to the same handler.~~
+- **Struck above, 2026-11-17 — three things that entry got wrong:**
+  - **the method.** Both routes were `DELETE`, never `POST`.
+  - **the reason.** They did not differ only in the where-clause shape. `/cancel` stopped whatever
+    the caller named, started or not, and answered with the runs it had refused;
+    `/cancel-by-collection` skipped any run with a started locale and answered `204` whichever way
+    it went. Unifying them meant deciding both of those, not merging a query.
+  - **the replacement shape.** It is one body carrying both values plus `select_all`, not a choice
+    between `{ ids }` and `{ collection }`.
+- **What the unification settled:** a run whose locale has already started is no longer skipped —
+  cancelling never stopped work in flight anyway, so skipping it only withheld the record; and
+  refusals are now named on both paths, because losing them told the caller less for no gain.
+- **What stayed:** the `cancel-by-collection` member of the published `TranslatorAction` union. It
+  ships `@since 1.0.0`, and a guard that has not answered for an action refuses it, so removing the
+  member would break a host guard already written against 1.0. It goes in the next major after this
+  one; nothing dispatches it in the meantime.
+- **Code refs:** `src/server/features/cancel/`
 
 ### translate-collection-plugin-class
 

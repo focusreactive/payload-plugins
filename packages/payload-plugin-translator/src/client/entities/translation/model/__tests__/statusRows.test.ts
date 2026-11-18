@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import { DocumentTranslationStatus } from "../enums.js";
-import { buildTranslationStatusRows, STATE_DOT } from "../statusRows.js";
+import { buildTranslationStatusRows, isRunOwned, STATE_DOT } from "../statusRows.js";
 import type { DocumentStaleness, DocumentTranslation } from "../types.js";
 
 const staleness = (
@@ -15,13 +15,12 @@ const staleness = (
   })),
 });
 
-const job = (
+const run = (
   status: DocumentTranslationStatus,
   target: string,
   updated_at = "2026-07-07T00:00:00.000Z"
 ): DocumentTranslation =>
   ({
-    id: `job-${target}`,
     status,
     created_at: "2026-07-06T00:00:00.000Z",
     updated_at,
@@ -46,19 +45,19 @@ describe("buildTranslationStatusRows", () => {
     expect(rows[0].sourceLocale).toBe("en");
   });
 
-  it("overlays a transient job (running) over the durable state and sets jobId", () => {
+  it("overlays a transient run (running) over the durable state", () => {
     const rows = buildTranslationStatusRows({
       staleness: staleness([{ target: "de", stale: true }]),
-      runs: [job(DocumentTranslationStatus.RUNNING, "de")],
+      runs: [run(DocumentTranslationStatus.RUNNING, "de")],
     });
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ targetLocale: "de", state: "running", jobId: "job-de" });
+    expect(rows[0]).toMatchObject({ targetLocale: "de", state: "running" });
   });
 
-  it("adds a row for a job whose target has no provenance record yet, carrying the failure reason", () => {
+  it("adds a row for a run whose target has no provenance record yet, carrying the failure reason", () => {
     const rows = buildTranslationStatusRows({
       staleness: staleness([{ target: "de", stale: false }]),
-      runs: [job(DocumentTranslationStatus.FAILED, "it")],
+      runs: [run(DocumentTranslationStatus.FAILED, "it")],
     });
     // Ordered by locale pair (de before it), regardless of state.
     expect(rows.map((r) => [r.targetLocale, r.state])).toEqual([
@@ -66,21 +65,19 @@ describe("buildTranslationStatusRows", () => {
       ["it", "failed"],
     ]);
     const failed = rows.find((r) => r.targetLocale === "it");
-    expect(failed?.jobId).toBe("job-it");
     expect(failed?.error).toBe("x");
   });
 
-  it("does not override a durable row with a completed job (no duplicate, keeps provenance state)", () => {
+  it("does not override a durable row with a completed run (no duplicate, keeps provenance state)", () => {
     const rows = buildTranslationStatusRows({
       staleness: staleness([{ target: "de", stale: true }]),
-      runs: [job(DocumentTranslationStatus.COMPLETED, "de")],
+      runs: [run(DocumentTranslationStatus.COMPLETED, "de")],
     });
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ targetLocale: "de", state: "stale" });
-    expect(rows[0].jobId).toBeUndefined();
   });
 
-  it("overlays every concurrent job onto its own locale — no job overwrites another", () => {
+  it("overlays every concurrent run onto its own locale — no run overwrites another", () => {
     // Three locales stale; two are being re-translated concurrently, one still just stale.
     const rows = buildTranslationStatusRows({
       staleness: staleness([
@@ -89,16 +86,14 @@ describe("buildTranslationStatusRows", () => {
         { target: "it", stale: true },
       ]),
       runs: [
-        job(DocumentTranslationStatus.RUNNING, "de"),
-        job(DocumentTranslationStatus.PENDING, "fr"),
+        run(DocumentTranslationStatus.RUNNING, "de"),
+        run(DocumentTranslationStatus.PENDING, "fr"),
       ],
     });
     const byLocale = Object.fromEntries(rows.map((r) => [r.targetLocale, r]));
-    expect(byLocale.de).toMatchObject({ state: "running", jobId: "job-de" });
-    expect(byLocale.fr).toMatchObject({ state: "pending", jobId: "job-fr" });
-    // The untouched locale keeps its durable stale state — it is not clobbered by the other jobs.
+    expect(byLocale.de).toMatchObject({ state: "running" });
+    expect(byLocale.fr).toMatchObject({ state: "pending" });
     expect(byLocale.it).toMatchObject({ state: "stale" });
-    expect(byLocale.it.jobId).toBeUndefined();
   });
 
   it("keeps a row in the same position when its state changes (re-translate does not reorder)", () => {
@@ -112,7 +107,7 @@ describe("buildTranslationStatusRows", () => {
     // Re-translate `it` → its state flips stale → running; the order must be unchanged.
     const orderAfter = buildTranslationStatusRows({
       staleness: base,
-      runs: [job(DocumentTranslationStatus.RUNNING, "it")],
+      runs: [run(DocumentTranslationStatus.RUNNING, "it")],
     }).map((r) => r.targetLocale);
 
     expect(orderBefore).toEqual(["de", "fr", "it"]);
@@ -123,9 +118,8 @@ describe("buildTranslationStatusRows", () => {
     expect(buildTranslationStatusRows({})).toEqual([]);
     expect(buildTranslationStatusRows({ staleness: { locales: [] }, runs: [] })).toEqual([]);
   });
-  it("renders a failed locale whose job carries no error yet", () => {
+  it("renders a failed locale whose run carries no error yet", () => {
     const failedWithoutError = {
-      id: "job-de",
       status: DocumentTranslationStatus.FAILED,
       created_at: "2026-07-06T00:00:00.000Z",
       updated_at: "2026-07-07T00:00:00.000Z",
@@ -158,18 +152,19 @@ describe("STATE_DOT", () => {
 describe("a locale the run never attempted", () => {
   it("is its own row state, not translated", () => {
     const rows = buildTranslationStatusRows({
-      runs: [job(DocumentTranslationStatus.ABANDONED, "es")],
+      runs: [run(DocumentTranslationStatus.ABANDONED, "es")],
     });
 
     expect(rows[0].state).toBe("abandoned");
   });
 
-  it("carries the run id, so the row can offer a retry", () => {
+  it("is a state the run owns, so the row offers a retry", () => {
     const rows = buildTranslationStatusRows({
-      runs: [job(DocumentTranslationStatus.ABANDONED, "es")],
+      runs: [run(DocumentTranslationStatus.ABANDONED, "es")],
     });
 
-    expect(rows[0].jobId).toBe("job-es");
+    expect(rows[0].state).toBe("abandoned");
+    expect(isRunOwned("abandoned")).toBe(true);
   });
 
   it("has a dot of its own", () => {

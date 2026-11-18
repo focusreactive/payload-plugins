@@ -7,7 +7,7 @@ import type { RunIdentity, RunRecord } from "../RunRecord.types.js";
 const SLUG = "translator-runs";
 
 const identity = (over: Partial<RunIdentity> = {}): RunIdentity => ({
-  handle: "job-1",
+  handle: "run-1",
   collectionSlug: "posts" as RunRecord["collectionSlug"],
   collectionId: "d1",
   sourceLng: "en",
@@ -30,8 +30,8 @@ const record = (over: Partial<RunRecord> = {}): RunRecord => ({
   ...over,
 });
 
-const theKey = { handle: "job-1", targetLng: "de" };
-const KEY_WHERE = { and: [{ handle: { equals: "job-1" } }, { targetLng: { equals: "de" } }] };
+const theKey = { handle: "run-1", targetLng: "de" };
+const KEY_WHERE = { and: [{ handle: { equals: "run-1" } }, { targetLng: { equals: "de" } }] };
 
 const payloadWith = (over: Partial<Record<"find" | "create" | "update" | "delete", unknown>>) => {
   const spies = {
@@ -55,7 +55,7 @@ describe("the run record store", () => {
       expect(spies.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            handle: "job-1",
+            handle: "run-1",
             startedAt: null,
             settledAt: null,
             outcome: null,
@@ -251,7 +251,7 @@ describe("the run record store", () => {
         collectionId: "d1",
       });
 
-      expect(found).toMatchObject({ handle: "job-1", targetLng: "de", outcome: "delivered" });
+      expect(found).toMatchObject({ handle: "run-1", targetLng: "de", outcome: "delivered" });
     });
   });
 

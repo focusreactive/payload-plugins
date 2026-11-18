@@ -18,11 +18,11 @@ export type { AutoTranslateConfig };
  * writes; and never fails the editor's save (best-effort). An automatic run translates the whole
  * document — there is no way to narrow it.
  *
- * **Requires a working job runner.** Auto-translate only ENQUEUES jobs — they run via the plugin's
+ * **Requires a working task runner.** Auto-translate only ENQUEUES work — it runs via the plugin's
  * task runner (`createPayloadJobsRunner`) and its autorun loop. On serverless platforms such as
  * **Vercel**, cron-based autorun may not run automatically, so enqueued translations can sit
  * unexecuted until triggered — e.g. an external cron hitting the run-translation endpoint, or a
- * self-hosted worker. Ensure your deployment actually executes queued jobs before relying on this.
+ * self-hosted worker. Ensure your deployment actually executes queued work before relying on this.
  *
  * @param collection - The collection to opt in.
  * @param config - The rule to stamp; see {@link AutoTranslateConfig}.

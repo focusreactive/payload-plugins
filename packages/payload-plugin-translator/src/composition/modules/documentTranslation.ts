@@ -2,7 +2,7 @@ import { createTranslationRoutes } from "../../server/features/createTranslation
 import type { TranslationModule } from "../../server/modules/plugin-config/index.js";
 
 /**
- * The document-translation job API — queue a run, run it now, cancel it, read its status.
+ * The document-translation API — queue a run, start it now, cancel it, read its status.
  *
  * @since 1.0.0
  */

@@ -29,11 +29,7 @@ const withToast = async (run: () => Promise<unknown>, fallback: string) => {
   }
 };
 
-/**
- * The one place a row's state decides what may be done to it. A row with no job behind it offers a
- * button that does nothing rather than no button: the state, not the bookkeeping, is what a person
- * is told about.
- */
+/** The one place a row's state decides what may be done to it. */
 export function useRowActions({
   collection,
   id,
@@ -56,21 +52,18 @@ export function useRowActions({
     });
   };
 
-  const clickJob =
-    (jobId: string | undefined, act: (jobId: string) => Promise<unknown>, fallback: string) =>
-    () => {
-      if (jobId === undefined) return;
-      void withToast(() => act(jobId), fallback);
-    };
+  const click = (act: () => Promise<unknown>, fallback: string) => () => {
+    void withToast(act, fallback);
+  };
 
-  const runJob = (jobId: string) => runApi.mutateAsync({ id: jobId });
-  const cancelJob = (jobId: string) => cancelApi.mutateAsync({ id: jobId });
+  const runNow = () => runApi.mutateAsync({ collection, id });
+  const cancelRun = () => cancelApi.mutateAsync({ collection, id });
 
   return (row) => {
     const cancel: RowAction = {
       icon: <CloseIcon />,
       title: "Cancel",
-      onClick: clickJob(row.jobId, cancelJob, "Error cancelling"),
+      onClick: click(cancelRun, "Error cancelling"),
       loading: cancelApi.isPending,
     };
 
@@ -81,7 +74,7 @@ export function useRowActions({
           {
             icon: <ReloadIcon />,
             title: "Retry",
-            onClick: clickJob(row.jobId, runJob, "Error retrying"),
+            onClick: click(runNow, "Error retrying"),
             loading: runApi.isPending,
           },
         ];
@@ -92,7 +85,7 @@ export function useRowActions({
           {
             icon: <ReloadIcon />,
             title: "Run now",
-            onClick: clickJob(row.jobId, runJob, "Error running"),
+            onClick: click(runNow, "Error running"),
             loading: runApi.isPending,
           },
           cancel,

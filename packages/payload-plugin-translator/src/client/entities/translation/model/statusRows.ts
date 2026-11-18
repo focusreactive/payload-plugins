@@ -7,7 +7,7 @@ type RunOwnedState = (typeof RUN_OWNED_STATES)[number];
 
 const RUN_OWNED: ReadonlySet<string> = new Set(RUN_OWNED_STATES);
 
-const isRunOwned = (state: string): state is RunOwnedState => RUN_OWNED.has(state);
+export const isRunOwned = (state: string): state is RunOwnedState => RUN_OWNED.has(state);
 
 export type TranslationRowState = RunOwnedState | "stale" | "translated";
 
@@ -16,10 +16,8 @@ export type TranslationStatusRow = {
   targetLocale: string;
   sourceLocale: string;
   state: TranslationRowState;
-  /** ISO timestamp for the row's caption (translation time, or the job's last update). */
+  /** ISO timestamp for the row's caption (translation time, or the run's last update). */
   at?: string;
-  /** Present only while the run owns the row's state. */
-  jobId?: string;
   /** Failure reason, present only for `state === "failed"`, so the row can surface why it failed. */
   error?: string;
 };
@@ -88,7 +86,6 @@ export function buildTranslationStatusRows(input: {
         sourceLocale: run.input.source_lng,
         state,
         at: run.updated_at,
-        jobId: runOwned ? run.id : undefined,
         error: run.status === "failed" ? run.error?.message : undefined,
       });
     }

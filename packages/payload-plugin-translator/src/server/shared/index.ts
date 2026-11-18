@@ -40,4 +40,4 @@ export {
 export type { SerializedTextNodeRef } from "../../core/kernel/lexical/index.js";
 
 // Validation primitives
-export { JobIdSchema } from "./validation/index.js";
+export { DocumentIdSchema } from "./validation/index.js";

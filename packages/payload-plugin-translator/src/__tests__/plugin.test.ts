@@ -61,14 +61,14 @@ async function build(overrides: Partial<TranslatorPluginConfig> = {}) {
 }
 
 describe("translatorPlugin — the listed surfaces", () => {
-  it("registers the job-API bundle, and no staleness routes without provenance", async () => {
+  it("registers the translation routes, and no staleness routes without provenance", async () => {
     const { result } = await build();
     const paths = result.endpoints?.map((endpoint) => endpoint.path);
 
     expect(paths).toContain("/translate/enqueue");
     expect(paths).not.toContain(STALENESS_PATH);
     expect(paths).not.toContain(DISMISS_PATH);
-    expect(result.endpoints).toHaveLength(6);
+    expect(result.endpoints).toHaveLength(5);
   });
 
   it("registers the staleness routes once provenance is switched on", async () => {
@@ -77,7 +77,7 @@ describe("translatorPlugin — the listed surfaces", () => {
 
     expect(paths).toContain(STALENESS_PATH);
     expect(paths).toContain(DISMISS_PATH);
-    expect(result.endpoints).toHaveLength(8);
+    expect(result.endpoints).toHaveLength(7);
   });
 
   it("refuses to start when the surfaces are not listed at all", async () => {
@@ -107,7 +107,7 @@ describe("translatorPlugin — the listed surfaces", () => {
   it("boots a chain whose modules all differ", async () => {
     const { result } = await build({ modules: [documentTranslation(), fieldTranslation()] });
 
-    expect(result.endpoints).toHaveLength(7);
+    expect(result.endpoints).toHaveLength(6);
   });
 
   it("names the replacement for each level it removed", async () => {
@@ -133,7 +133,7 @@ describe("translatorPlugin — the listed surfaces", () => {
     } as unknown as Config);
     const twice = await translatorPlugin(pluginConfig)(once);
 
-    expect(twice.endpoints).toHaveLength(6);
+    expect(twice.endpoints).toHaveLength(5);
   });
 
   it("adds the cache provider and configures the runner once", async () => {
@@ -186,7 +186,7 @@ describe("translatorPlugin — listing the surfaces one at a time", () => {
       modules: [documentTranslation()],
       components: [translateDocumentControl()],
     });
-    expect(result.endpoints).toHaveLength(6);
+    expect(result.endpoints).toHaveLength(5);
     expect(posts.admin.components.edit.beforeDocumentControls).toHaveLength(1);
     expect(posts.admin.components.beforeListTable).toBeUndefined();
   });

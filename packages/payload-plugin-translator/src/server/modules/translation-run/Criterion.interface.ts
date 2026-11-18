@@ -20,5 +20,5 @@ export type CriterionQuestion = {
  */
 export type Criterion = (question: CriterionQuestion) => Promise<LeafAnswer>;
 
-/** Keyed by the name stored in job rows — renaming a key strands every queued run that names it. */
+/** Keyed by the name stored in run records — renaming a key strands every queued run that names it. */
 export type Criteria = Readonly<Record<RuleName, Criterion>>;

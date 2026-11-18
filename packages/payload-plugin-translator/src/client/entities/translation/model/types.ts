@@ -6,7 +6,6 @@ type InputData = {
 };
 
 export type DocumentTranslationPending = {
-  id: string;
   status: DocumentTranslationStatus.PENDING;
   created_at: string;
   updated_at: string;
@@ -14,19 +13,17 @@ export type DocumentTranslationPending = {
 };
 
 export type DocumentTranslationFailed = {
-  id: string;
   status: DocumentTranslationStatus.FAILED;
   created_at: string;
   updated_at: string;
   input: InputData;
-  /** Unset until the job stops retrying, so a row can read `failed` with nothing to show. */
+  /** Unset until the run stops retrying, so a row can read `failed` with nothing to show. */
   error?: {
     message: string;
   };
 };
 
 export type DocumentTranslationRunning = {
-  id: string;
   status: DocumentTranslationStatus.RUNNING;
   created_at: string;
   updated_at: string;
@@ -34,7 +31,6 @@ export type DocumentTranslationRunning = {
 };
 
 export type DocumentTranslationCompleted = {
-  id: string;
   status: DocumentTranslationStatus.COMPLETED;
   created_at: string;
   updated_at: string;
@@ -44,17 +40,13 @@ export type DocumentTranslationCompleted = {
 
 /** A locale the run never reached, because another locale's failure ended it. */
 export type DocumentTranslationAbandoned = {
-  id: string;
   status: DocumentTranslationStatus.ABANDONED;
   created_at: string;
   updated_at: string;
   input: InputData;
 };
 
-/**
- * One row per target locale in the document status feed. Several rows can share one job id — a job
- * carries all of a document's locales.
- */
+/** One row per target locale in the document status feed. */
 export type DocumentTranslation =
   | DocumentTranslationCompleted
   | DocumentTranslationRunning
@@ -62,7 +54,7 @@ export type DocumentTranslation =
   | DocumentTranslationAbandoned
   | DocumentTranslationPending;
 
-export type CollectionTranslationStatusItem = { id: string; status: DocumentTranslationStatus };
+export type CollectionTranslationStatusItem = { status: DocumentTranslationStatus };
 
 export type CollectionTranslationStatus = {
   docs: Array<CollectionTranslationStatusItem>;

@@ -139,10 +139,12 @@ describe("a queued translation is decided by whoever asked for it", () => {
     const [assignment] = await enqueueAs(id, null);
     expect(assignment, "nothing was queued, so the run route was never reached").toBeDefined();
 
-    const res = await callEndpoint(ctx.payload, "post", "/translate/run/:id", {
-      user: editor,
-      routeParams: { id: String(assignment?.handle) },
-    });
+    const res = await callEndpoint(
+      ctx.payload,
+      "post",
+      "/translate/run/:collection_slug/:collection_id",
+      { user: editor, routeParams: { collection_slug: "docs", collection_id: String(id) } }
+    );
 
     expect(res.status).toBe(403);
   });

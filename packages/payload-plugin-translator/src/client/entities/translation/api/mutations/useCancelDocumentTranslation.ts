@@ -5,6 +5,7 @@ import { useTranslateKitConfig } from "../../../../app/config/index.js";
 import { handleNextApiError } from "../../../../shared/lib/errors/handleApiError.js";
 
 type Variables = {
+  collection: string;
   id: string;
 };
 
@@ -18,7 +19,7 @@ export function useCancelDocumentTranslation() {
       await handleNextApiError(() => {
         return ofetch<{ data: null }>(`/api${basePath}/cancel`, {
           method: "delete",
-          body: { ids: [variables.id] },
+          body: { collection_slug: variables.collection, collection_id: [variables.id] },
         });
       });
     },

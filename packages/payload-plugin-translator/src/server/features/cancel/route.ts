@@ -6,17 +6,19 @@ import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 import type { RunRecordStoreFactory } from "../../modules/runs/index.js";
 
 import { CancelHandler } from "./handler.js";
+import type { CancelConfig } from "./model.js";
 
 /**
- * Creates the batch cancel endpoint
+ * Creates the cancel endpoint
  */
 export function createCancelRoute(
+  config: CancelConfig,
   taskRunnerFactory: TaskRunnerFactory,
   runRecordStoreFactory: RunRecordStoreFactory,
   access: AccessGuard,
   basePath = "/translate"
 ): Endpoint {
-  const handler = new CancelHandler(taskRunnerFactory, runRecordStoreFactory);
+  const handler = new CancelHandler(config, taskRunnerFactory, runRecordStoreFactory);
 
   return {
     path: `${basePath}/cancel`,

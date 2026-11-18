@@ -37,7 +37,7 @@ const DEBUG_ENVS = new Set(["development", "test"]);
  *
  * Provider/runtime errors (e.g. `401 Incorrect API key provided: sk-proj-…`) leak implementation
  * detail — and sometimes secrets — so the client must not see them in production. The full error
- * still lives in the job record and server logs for debugging. Fail-safe: outside
+ * still lives in the run record and server logs for debugging. Fail-safe: outside
  * `development`/`test` (including an unset `NODE_ENV`) the raw message never leaves this function.
  * A message carrying a failure reason is answered from this file's own catalogue instead, in every
  * environment, and its tail is never shown.

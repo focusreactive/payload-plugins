@@ -2,7 +2,6 @@ import { describe, it, expect, vi } from "vitest";
 import type { CollectionSlug, Endpoint, PayloadRequest } from "payload";
 
 import { createCancelRoute } from "../../../features/cancel/route.js";
-import { createCancelByCollectionRoute } from "../../../features/cancel-by-collection/route.js";
 import { createEnqueueRoute } from "../../../features/enqueue-translation/route.js";
 import { createGetCollectionStatusRoute } from "../../../features/get-collection-status/route.js";
 import { createGetDocumentStatusRoute } from "../../../features/get-document-status/route.js";
@@ -40,7 +39,11 @@ type RouteUnderTest = {
   readonly build: (access: AccessGuard) => Endpoint;
 };
 
-const routeForEveryAction: Record<TranslatorAction, RouteUnderTest> = {
+/**
+ * Total by type, so adding an action to the published union without deciding its route stops the
+ * compiler. `null` is that decision, not an omission.
+ */
+const routeForEveryAction: Record<TranslatorAction, RouteUnderTest | null> = {
   enqueue: {
     factory: "createEnqueueRoute",
     build: (access) =>
@@ -53,21 +56,13 @@ const routeForEveryAction: Record<TranslatorAction, RouteUnderTest> = {
   },
   run: {
     factory: "createRunRoute",
-    build: (access) => createRunRoute(taskRunnerFactory, runRecordStoreFactory, access),
+    build: (access) =>
+      createRunRoute({ availableCollections }, taskRunnerFactory, runRecordStoreFactory, access),
   },
   cancel: {
     factory: "createCancelRoute",
-    build: (access) => createCancelRoute(taskRunnerFactory, runRecordStoreFactory, access),
-  },
-  "cancel-by-collection": {
-    factory: "createCancelByCollectionRoute",
     build: (access) =>
-      createCancelByCollectionRoute(
-        { availableCollections },
-        taskRunnerFactory,
-        runRecordStoreFactory,
-        access
-      ),
+      createCancelRoute({ availableCollections }, taskRunnerFactory, runRecordStoreFactory, access),
   },
   "document-status": {
     factory: "createGetDocumentStatusRoute",
@@ -93,6 +88,9 @@ const routeForEveryAction: Record<TranslatorAction, RouteUnderTest> = {
     build: (access) =>
       createDismissStalenessRoute({ availableCollections, stalenessFactory }, access),
   },
+  /** Its route folded into `cancel`; the action stays published until the next major so that a host
+   * guard already answering for it keeps working. */
+  "cancel-by-collection": null,
   "translate-field": {
     factory: "createFieldRoute",
     build: (access) =>
@@ -108,9 +106,19 @@ const callIt = async (endpoint: Endpoint): Promise<void> => {
 };
 
 describe("every route names its own action", () => {
-  for (const [action, route] of Object.entries(routeForEveryAction) as Array<
-    [TranslatorAction, RouteUnderTest]
-  >) {
+  const routed = Object.entries(routeForEveryAction).filter(
+    (entry): entry is [TranslatorAction, RouteUnderTest] => entry[1] !== null
+  );
+
+  it("leaves exactly one published action without a route of its own", () => {
+    const unrouted = Object.entries(routeForEveryAction)
+      .filter(([, route]) => route === null)
+      .map(([action]) => action);
+
+    expect(unrouted).toEqual(["cancel-by-collection"]);
+  });
+
+  for (const [action, route] of routed) {
     it(`${route.factory} asks about "${action}"`, async () => {
       const access = refusingGuard();
 
