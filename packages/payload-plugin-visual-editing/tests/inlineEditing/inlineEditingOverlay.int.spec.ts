@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Overlay, OverlayCtx } from "../../src/client/createOverlay";
 
 import { createOverlay } from "../../src/client/createOverlay";
-import { EDIT_SEND_PAUSE_MS } from "../../src/client/inlineEditing/editTransport";
+import { EDIT_SAVE_PAUSE_MS } from "../../src/client/inlineEditing/editTransport";
 import { DATA_VE_SAVE_STATUS_ATTR } from "../../src/client/inlineEditing/saveStatus";
 import { DATA_VE_EDITING_ATTR } from "../../src/client/inlineEditing/textEditing";
 import {
@@ -18,7 +18,6 @@ import {
 import { markedText, markedTextNode } from "../support/markedData";
 import { click, overlayCtx } from "../support/overlay";
 import { postFromAdmin, restorePreviewWindow, stubAdminWindow } from "../support/previewWindow";
-import { flushMutations, waitFor } from "../support/time";
 
 const PAYLOAD_API = "https://cms.example.com/api";
 
@@ -44,6 +43,10 @@ const press = (element: HTMLElement, key: string, init: KeyboardEventInit = {}) 
   element.dispatchEvent(event);
   return event;
 };
+
+const flushMutations = () => vi.advanceTimersByTimeAsync(0);
+
+const pause = () => vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
 
 describe("editing text on the page", () => {
   let main: HTMLElement;
@@ -75,9 +78,8 @@ describe("editing text on the page", () => {
   const sentToEndpoint = () =>
     fetchEndpoint.mock.calls.map(([, init]) => JSON.parse((init as RequestInit).body as string));
 
-  const pause = () => waitFor(EDIT_SEND_PAUSE_MS + 20);
-
   beforeEach(() => {
+    vi.useFakeTimers();
     document.body.innerHTML = "";
     main = document.createElement("main");
     document.body.append(main);
@@ -95,6 +97,7 @@ describe("editing text on the page", () => {
     vi.unstubAllGlobals();
     open.mockRestore();
     document.getSelection()?.removeAllRanges();
+    vi.useRealTimers();
   });
 
   describe("on a page of its own", () => {
@@ -121,6 +124,46 @@ describe("editing text on the page", () => {
         { ...PAGE, key: "title", locale: "en", value: "Hello world" },
       ]);
       expect(heading.textContent).toBe("Hello world");
+    });
+
+    it("saves at once when the page is left before the pause ends", async () => {
+      click(heading);
+      type(heading, "Hello world");
+
+      window.dispatchEvent(new Event("pagehide"));
+      await flushMutations();
+
+      expect(sentToEndpoint()).toHaveLength(1);
+    });
+
+    it("saves at once when the tab is hidden, and not when it is shown", async () => {
+      const visibility = vi.spyOn(document, "visibilityState", "get");
+      click(heading);
+      type(heading, "Hello world");
+
+      visibility.mockReturnValue("visible");
+      document.dispatchEvent(new Event("visibilitychange"));
+      await flushMutations();
+      expect(sentToEndpoint()).toHaveLength(0);
+
+      visibility.mockReturnValue("hidden");
+      document.dispatchEvent(new Event("visibilitychange"));
+      await flushMutations();
+      visibility.mockRestore();
+
+      expect(sentToEndpoint()).toHaveLength(1);
+    });
+
+    it("stops watching the page being left when the overlay stops", async () => {
+      overlay.dispose();
+      const removed = vi.spyOn(window, "removeEventListener");
+      start();
+
+      overlay.dispose();
+
+      expect(removed.mock.calls.map(([name]) => name)).toContain("pagehide");
+      removed.mockRestore();
+      start();
     });
 
     it("ends the edit and saves at once on Enter", async () => {

@@ -112,6 +112,28 @@ describe("the field edit endpoint", () => {
     expect((await read(docId, true, "en")).title).toBe("English");
   });
 
+  it("writes a field of a global and leaves its other fields empty in that locale", async () => {
+    await payload.updateGlobal({
+      data: { banner: { subtitle: "Subtitle", title: "Title" } },
+      locale: "en",
+      slug: "notice",
+    });
+    const notice = { collectionSlug: "notice", kind: "global" };
+
+    const answer = await edit({ ...notice, key: "banner.title", locale: "de", value: "Titel" });
+
+    const german = await payload.findGlobal({
+      context: { visualEditing: false },
+      draft: true,
+      fallbackLocale: false,
+      locale: "de",
+      slug: "notice",
+    });
+    expect(answer).toEqual({ saved: true, status: 200 });
+    expect(german.banner).toMatchObject({ title: "Titel" });
+    expect((german.banner as { subtitle?: string | null }).subtitle ?? null).toBeNull();
+  });
+
   it("joins the lines of a single-line field and keeps those of a textarea", async () => {
     const docId = await publish({ label: "Old", seo: { description: "Old" } });
 
@@ -129,6 +151,24 @@ describe("the field edit endpoint", () => {
     await edit({ ...page(docId), key: "label", value: withMarker("New", { path: "label" }) });
 
     expect((await read(docId, true)).label).toBe("New");
+  });
+
+  it("counts a text a hook of the field changed on the way in as saved", async () => {
+    const docId = await publish({ trimmed: "Old" });
+
+    const answer = await edit({ ...page(docId), key: "trimmed", value: "  New  " });
+
+    expect(answer).toEqual({ saved: true, status: 200 });
+    expect((await read(docId, true)).trimmed).toBe("New");
+  });
+
+  it("counts an edit that sends the text the field holds as saved", async () => {
+    const docId = await publish({ label: "Same" });
+
+    expect(await edit({ ...page(docId), key: "label", value: "Same" })).toEqual({
+      saved: true,
+      status: 200,
+    });
   });
 
   describe("saves nothing", () => {
@@ -233,6 +273,15 @@ describe("the field edit endpoint", () => {
       ["a field that holds no text yet", "seo.description"],
     ])("for %s", async (_name, key) => {
       expect(await refused({ key })).toEqual({ saved: false, status: 422 });
+    });
+
+    it("for a field the user may read and not update", async () => {
+      const sealedId = await publish({ sealed: "Sealed" });
+
+      const answer = await edit({ ...page(sealedId), key: "sealed", value: "Changed" });
+
+      expect(answer).toEqual({ saved: false, status: 422 });
+      expect((await read(sealedId, true)).sealed).toBe("Sealed");
     });
 
     it("for a collection without drafts", async () => {

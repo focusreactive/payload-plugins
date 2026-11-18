@@ -15,6 +15,7 @@ const admin = vi.hoisted(() => {
   return {
     postToPreview: postMessage,
     dispatchFields: vi.fn(),
+    isFormDisabled: false,
     fields: { title: { value: "Title" } } as Record<string, { value: unknown }>,
     frame,
     iframeRef: { current: frame },
@@ -29,6 +30,7 @@ vi.mock("@payloadcms/ui", () => ({
   }),
   useDocumentInfo: () => ({ collectionSlug: "page", id: 7 }),
   useForm: () => ({
+    disabled: admin.isFormDisabled,
     dispatchFields: admin.dispatchFields,
     getFields: () => admin.fields,
     setModified: admin.setModified,
@@ -120,6 +122,20 @@ describe("InlineEditReceiver", () => {
         locale: "en",
         type: VE_FIELD_EDIT_REFUSED_TYPE,
       },
+      PREVIEW_ORIGIN
+    );
+  });
+
+  it("refuses an edit while the form cannot be changed", () => {
+    admin.isFormDisabled = true;
+    act(() => root.render(<InlineEditReceiver />));
+
+    postEdit();
+    admin.isFormDisabled = false;
+
+    expect(admin.dispatchFields).not.toHaveBeenCalled();
+    expect(admin.postToPreview).toHaveBeenCalledWith(
+      expect.objectContaining({ key: "title", type: VE_FIELD_EDIT_REFUSED_TYPE }),
       PREVIEW_ORIGIN
     );
   });

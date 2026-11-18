@@ -7,6 +7,7 @@ import {
   DEFAULT_INTERNAL_FIELD_NAMES,
   isLocalizedField,
   schemaOfFields,
+  uploadCollectionOf,
 } from "./schemaOfFields.js";
 import { isPlainObject } from "../plainObject.js";
 import { rowWithId } from "../rowWithId.js";
@@ -98,6 +99,16 @@ export const textFieldTypeAt = (
 ): string | null => {
   const schemaNode = schemaNodeAt(schema, steps);
   return typeof schemaNode === "string" && isText(schemaNode) ? schemaNode : null;
+};
+
+export const uploadCollectionAt = (
+  schema: EditableSchema,
+  steps: readonly FieldStep[]
+): string | null => {
+  const field = steps.at(-1);
+  const holder = schemaNodeAt(schema, steps.slice(0, -1));
+  if (!field || !("name" in field) || !isPlainObject(holder)) return null;
+  return uploadCollectionOf(holder, field.name);
 };
 
 export const holderFieldAt = (

@@ -1,4 +1,5 @@
 import type { VeDocument, VeOpenFieldMessage } from "../../shared/protocol.js";
+import type { BadgeAction } from "../overlay/editBadge.js";
 import type { FieldMatch, FieldTracker } from "../overlay/fieldTracker.js";
 import type { EditStatus } from "./editTransport.js";
 import type { SaveStatus } from "./saveStatus.js";
@@ -13,6 +14,7 @@ import { veDocumentOf } from "../../shared/veDocument.js";
 import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 import { listenToSaves } from "../saveEvents.js";
 import { createEditTransport } from "./editTransport.js";
+import { createImageReplacement } from "./imageReplacement.js";
 import { createSaveStatus } from "./saveStatus.js";
 import { createTextEditing } from "./textEditing.js";
 
@@ -23,10 +25,19 @@ export type InlineEditingCtx = {
   inlineEditing: boolean;
 };
 
-export type HoldsValueOf = (document: VeDocument, key: string) => boolean;
+export type OpenForms = {
+  holdsValueOf(document: VeDocument, key: string): boolean;
+  holdsFormOf(document: VeDocument): boolean;
+};
+
+const UNSAVED: EditStatus = "unsaved";
+const PAGE_LEFT_EVENT = "pagehide";
+const VISIBILITY_EVENT = "visibilitychange";
+const HIDDEN = "hidden";
 
 export interface InlineEditing {
   editInPlace(target: HTMLElement, event: MouseEvent): boolean;
+  actionOf(target: HTMLElement): BadgeAction | null;
   sync(): void;
   dispose(): void;
 }
@@ -37,7 +48,7 @@ const isPlainTextOfOneLocale = ({ holder, locale, richText }: FieldMatch): boole
 export function createInlineEditing(
   tracker: FieldTracker,
   getCtx: () => InlineEditingCtx,
-  holdsValueOf: HoldsValueOf | null
+  openForms: OpenForms | null
 ): InlineEditing {
   const fields = new Map<Element, FieldMatch>();
   let shownStatus: EditStatus | null = null;
@@ -49,6 +60,14 @@ export function createInlineEditing(
   };
 
   const transport = createEditTransport(getCtx, showStatus);
+  const imageReplacement = createImageReplacement({
+    getCtx,
+    holdsFormOf: openForms && ((document) => openForms.holdsFormOf(document)),
+    holdInForm: transport.holdInForm,
+    save: transport.sendNow,
+    showStatus,
+    tracker,
+  });
   saveStatus = createSaveStatus(document, transport.retry);
 
   const send = (match: FieldMatch, value: string) => {
@@ -72,7 +91,7 @@ export function createInlineEditing(
 
   const isWrittenSomewhere = (match: FieldMatch, key: string): boolean => {
     if (!findAdminWindow(window)) return true;
-    return holdsValueOf?.(veDocumentOf(match), key) ?? false;
+    return openForms?.holdsValueOf(veDocumentOf(match), key) ?? false;
   };
 
   const stopTracking = tracker.subscribe({
@@ -99,19 +118,29 @@ export function createInlineEditing(
   };
   window.addEventListener("message", refuseEditTheFormDidNotTake);
 
+  const saveBeforeThePageIsHidden = () => {
+    if (document.visibilityState === HIDDEN) transport.flush();
+  };
+  window.addEventListener(PAGE_LEFT_EVENT, transport.flush);
+  document.addEventListener(VISIBILITY_EVENT, saveBeforeThePageIsHidden);
+
   const stopListeningToSaves = listenToSaves(
     () => getCtx().adminOrigin,
-    () => {
-      if (shownStatus === "unsaved") transport.settle();
+    (saved) => {
+      if (shownStatus === UNSAVED) transport.settle(saved);
     }
   );
 
   return {
+    actionOf: imageReplacement.actionOf,
     dispose() {
+      imageReplacement.dispose();
       textEditing.dispose();
       transport.dispose();
       stopListeningToSaves();
       window.removeEventListener("message", refuseEditTheFormDidNotTake);
+      window.removeEventListener(PAGE_LEFT_EVENT, transport.flush);
+      document.removeEventListener(VISIBILITY_EVENT, saveBeforeThePageIsHidden);
       stopTracking();
       saveStatus?.remove();
     },

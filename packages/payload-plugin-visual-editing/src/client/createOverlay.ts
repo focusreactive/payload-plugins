@@ -35,7 +35,7 @@ export function createOverlay(main: HTMLElement, getCtx: () => OverlayCtx): Over
       const { adminOrigin, inlineEditing: isOn = false, locale, payloadApi = "" } = getCtx();
       return { adminOrigin, inlineEditing: isOn, locale, payloadApi };
     },
-    instantPreview?.holdsValueOf ?? null
+    instantPreview
   );
 
   let appliedMode: VisualEditingMode = "off";
@@ -52,6 +52,7 @@ export function createOverlay(main: HTMLElement, getCtx: () => OverlayCtx): Over
         ? null
         : createEditTargets(main, tracker, () => ({
             ...getCtx(),
+            actionOf: inlineEditing.actionOf,
             editInPlace: inlineEditing.editInPlace,
             mode,
           }));

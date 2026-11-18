@@ -520,7 +520,7 @@ A render can transform a value and still output the stored text for some inputs,
 
 ## Editing on the page
 
-With it the editor types into plain text on the page itself. The text goes into the draft; the published document changes only on publish. It needs [instant preview](#instant-preview) and is off by default.
+With it the editor types into plain text on the page itself and replaces an image from the page. The text and the image go into the draft; the published document changes only on publish. It needs [instant preview](#instant-preview) and is off by default.
 
 Turn it on in the plugin, regenerate the import map, and offer it on the page:
 
@@ -539,19 +539,33 @@ The toggle then shows an **Edit on page** switch next to its modes. It starts of
 
 ### Using it
 
-- A click on plain text puts the caret into it. Enter ends the edit, Shift+Enter starts a new line, Escape brings back the text the edit began with. A click elsewhere ends the edit.
+- A click on plain text puts the caret into it. Enter ends the edit, Escape brings back the text the edit began with, and a click elsewhere ends the edit. Shift+Enter starts a new line in a browser that supports `contenteditable="plaintext-only"`; elsewhere it ends the edit.
 - The **Edit** badge still opens the field in the admin form.
 - A pasted text arrives without its formatting.
+- An image that names a single upload field shows a **Replace image** button while the pointer is over it. The button opens a list of the media of that field's collection, where a new file can be uploaded too. The picked image shows on the page at once; when its save fails, the page shows the image it had again, and a **Retry** that saves shows the picked one. A click on the image itself still opens the field in the admin form, and so does the button when the field turns out to take no media from the page.
 - A status in the bottom right corner says **Unsaved changes**, **Saving…**, **Saved** or **Not saved** with a **Retry** button.
 
-### Where the text is saved
+### Where an edit is saved
 
 | The page is | The edit goes to | Saved by |
 |---|---|---|
-| in Live Preview, and the form of the document is open | the admin form, as if the editor had typed there | Payload: autosave, or the editor's own save |
+| in Live Preview, and the form of the document is open | the admin form, as if the editor had typed there or picked the image there | Payload: autosave, or the editor's own save |
 | in a tab of its own, in draft mode | `POST <payloadApi>/visual-editing/field-edit` with the editor's session | the endpoint, into the latest draft |
 
-The endpoint reads the latest draft with the user's access, changes the one field and saves a draft with `overrideAccess: false`. It answers `409` for a collection or global without `versions.drafts`, and `422` for a field the editor cannot reach. It never publishes, and it refuses a document another editor holds a lock on.
+The endpoint reads the latest draft with the user's access, changes the one field and saves a draft with `overrideAccess: false`. It answers `409` for a collection or global without `versions.drafts`, and `422` for a field the editor cannot reach. It never publishes, and it refuses a document another editor holds a lock on. For an upload field the value is the id of a media document; the endpoint takes it only when the user can read that document in the collection of the field.
+
+Where the image is picked depends on the page too:
+
+| The page is | The media is picked in | Listed by |
+|---|---|---|
+| in Live Preview, and the form of the document is open | Payload's own list drawer of the collection, opened in the admin | Payload |
+| in a tab of its own, in draft mode | a picker the plugin draws on the page: thumbnails, a search by file name, **Upload new** | `POST <payloadApi>/visual-editing/media-options` with the editor's session |
+
+In Live Preview one drawer is open at a time: a request for another image while it is open is refused. A drawer closed without a pick changes nothing on the page. A pick written into the form counts as unsaved until the admin saves that document; a save of another document does not settle it.
+
+`media-options` takes the document, the field, the locale, a search and a page number. It checks the field as `field-edit` does, lists the collection of the field with the user's access (`overrideAccess: false`), 24 documents a page, and answers `{ collection, documents, hasNextPage }`; a document is `{ id, filename, url, thumbnailUrl, width, height, alt }`, with `alt` only when the collection has a text field of that name. It answers the same statuses as `field-edit`. **Upload new** posts the file to Payload's own REST API, `POST <payloadApi>/<collection>`, so the access, the hooks and the validation of the collection apply; when Payload refuses the file, for example because the collection requires an `alt`, the picker shows its message and the file is uploaded in the admin instead.
+
+In a tab of its own an edit is saved two seconds after the last keystroke, when the edit ends, and when the tab is hidden, closed or navigated away before that. A picked image is saved at once, without the text edits that still wait. Each save of a collection or global without `versions.drafts.autosave` adds a version, as a save in the admin does; turn autosave on to keep one version per editing session. A field whose `access.update` refuses the user is answered `422`: the endpoint refuses a save that left the stored value as it was although another one was sent. A value a field hook trims or reformats on the way in counts as saved. The value of the top-level field is read through its `afterRead` hooks and written back, so a hook that masks or reformats a sibling value there has that result saved.
 
 On a project with locales the page must name its locale: pass `locale` to `VisualEditing.Overlay` or `mountVisualEditing`. An edit without a locale is refused, by the form and by the endpoint, so it never lands in the default locale by accident. Text shown from a fallback locale is saved into the locale of the page.
 
@@ -562,10 +576,13 @@ In a tab of its own the request carries the editor's cookie. When the site and P
 ### What can be edited on the page
 
 - `text`, `textarea` and `email` fields, also in arrays, groups, tabs and blocks. A line break in a `text` or `email` field is saved as a space.
-- Only text that fills its element. Text rendered next to other text in the same element opens the field in the admin.
-- In Live Preview, only fields of the document whose form is open. Text of another document, such as a header or a related page, opens that document as before.
+- Only text that fills its element. Text rendered next to other text or next to an icon in the same element opens the field in the admin; wrap the text in its own element to edit it in place.
+- An `upload` field of one collection that holds one document, also in arrays, groups, tabs and blocks, where the page marks its image: an `<img>` or a `<picture>` that carries `withVisualEditingPath(value)`, or an element that carries it around exactly one `<img>` and no marked text. The field must hold a document already.
+- In Live Preview, only fields of the document whose form is open. Text or an image of another document, such as a header or a related page, opens that document as before.
 
-Rich text, uploads, relationships, numbers and selects open the field in the admin. So do values read with `locale: 'all'`. An empty field has no element on the page and is filled in the form.
+The new image is shown by its `url`, resolved against the origin of `payloadApi`. The page sets `src`, removes `srcset` and `sizes` from the `<img>` and points every `<source>` of a `<picture>` around it at the same file, so the browser cannot keep an old variant; when the `<img>` has `width` and `height` attributes, `height` follows the proportions of the new file. The variants of the site and the `alt` of the new document come with the next render of the page from the server: after a save in Live Preview where the site reloads on it, or on a reload.
+
+Rich text, uploads with `hasMany` or several collections, uploads with `filterOptions`, uploads inside rich text, relationships, numbers and selects open the field in the admin. A draft save runs no validation, so an image picked on the page for a field with `filterOptions` could be one the field forbids, and publishing would fail. So do values read with `locale: 'all'`. An empty field has no element on the page and is filled in the form.
 
 While a field is edited the page sets `contenteditable`, `spellcheck` and `data-ve-editing` on its element and removes them when the edit ends. `[data-ve-editing]` gets an outline in the accent colour while the pointer is not over it.
 
@@ -739,7 +756,7 @@ A `beforeChange` hook removes intact markers from every write. It cannot recogni
 | `adminBasePath` | `string` | `/admin` | Admin base path. Reads from below it are not marked; the bridge uses it to recognise the open document. A slash at its end is ignored. |
 | `enrichment` | `'auto' \| 'explicit'` | `'auto'` | See [Enrichment modes](#enrichment-modes). |
 | `instantPreview` | `boolean` | `false` | See [Instant preview](#instant-preview). |
-| `inlineEditing` | `boolean` | `false` | Adds the receiver of edits to the admin and the `field-edit` endpoint, see [Editing on the page](#editing-on-the-page). Needs `instantPreview`. |
+| `inlineEditing` | `boolean` | `false` | Adds the receivers of edits and of media picks to the admin and the `field-edit` and `media-options` endpoints, see [Editing on the page](#editing-on-the-page). Needs `instantPreview`. |
 | `renderHtml` | `({ value, field, locale, req }) => string \| Promise<string>` | none | Renders unsaved rich text to HTML for a page without React, see [Pages without React](#unsaved-rich-text-on-a-page-without-react). |
 | `readWholeDocument` | `boolean` | `false` | The `unsaved-rich-text` endpoint reads every field of the document instead of the top-level field that holds the rich text. For `afterRead` hooks that need other fields, see [Upgrading from 1.2.0](#upgrading-from-120). |
 

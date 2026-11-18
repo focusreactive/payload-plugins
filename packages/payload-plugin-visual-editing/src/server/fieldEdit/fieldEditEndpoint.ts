@@ -1,31 +1,37 @@
-import type { Endpoint, Payload, PayloadRequest, SelectType } from "payload";
+import type { Endpoint, Payload, PayloadRequest } from "payload";
 
 import { headersWithCors } from "payload";
 
 import type { VeFieldEdit } from "../../shared/protocol.js";
 import type { DocumentToRead } from "../unsavedRichText/postedRequest.js";
+import type { DraftField, User } from "./draftField.js";
+import type { EditedField } from "./editedField.js";
 
 import { readFieldEdit } from "../../shared/fieldEdit.js";
-import { FIELD_PATH_SEPARATOR } from "../../shared/fieldKey.js";
-import { isPlainObject } from "../../shared/plainObject.js";
+import { valueAtKey } from "../../shared/fieldKey.js";
 import { VE_FIELD_EDIT_PATH } from "../../shared/protocol.js";
 import { bodyOf } from "../endpointJson.js";
-import { isLocaleOf } from "../localeCodesKeyingValues.js";
-import { schemaCacheOf } from "../schemaCache.js";
-import { documentOf } from "../unsavedRichText/postedRequest.js";
-import { editedFieldOf, showsText } from "./editedField.js";
+import {
+  ANSWERED,
+  AS_IT_IS_STORED,
+  draftFieldOf,
+  FIELD_NOT_EDITABLE,
+  inLocaleOfProject,
+  isRefusal,
+  readDraft,
+  SIGNED_OUT,
+  statusOfFailure,
+  UNREADABLE_REQUEST,
+} from "./draftField.js";
+import {
+  editedFieldOf,
+  replacedUploadOf,
+  showsText,
+  shownUploadCollectionOf,
+} from "./editedField.js";
+import { readableMediaIdOf } from "./readableMedia.js";
 
-type User = NonNullable<PayloadRequest["user"]>;
-
-type Drafts = { autosave: boolean };
-
-const SIGNED_OUT = 401;
-const UNREADABLE_EDIT = 400;
-const UNKNOWN_DOCUMENT = 404;
-const WITHOUT_DRAFTS = 409;
-const FIELD_NOT_EDITABLE = 422;
-const FAILED = 500;
-const SAVED = 200;
+type Edited = (stored: unknown) => EditedField | null;
 
 const answer = (saved: boolean, status: number, req: PayloadRequest): Response =>
   Response.json(
@@ -35,61 +41,6 @@ const answer = (saved: boolean, status: number, req: PayloadRequest): Response =
       status,
     }
   );
-
-const entityOf = (payload: Payload, document: DocumentToRead) =>
-  document.kind === "global"
-    ? payload.config.globals.find(({ slug }) => slug === document.slug)
-    : payload.collections[document.collection]?.config;
-
-const draftsOf = (payload: Payload, document: DocumentToRead): Drafts | null => {
-  const entity = entityOf(payload, document);
-  if (!entity || ("auth" in entity && entity.auth)) return null;
-  const drafts = entity.versions ? entity.versions.drafts : undefined;
-  if (!drafts) return null;
-  return { autosave: isPlainObject(drafts) && Boolean(drafts.autosave) };
-};
-
-const namesLocaleOf = (payload: Payload, locale: string | undefined): boolean =>
-  isLocaleOf(payload, locale) && (locale !== undefined || !payload.config.localization);
-
-const selectOf = (key: string): SelectType => ({
-  [key.split(FIELD_PATH_SEPARATOR)[0] ?? key]: true,
-});
-
-type DraftRead = {
-  fallbackLocale?: false;
-  overrideAccess: boolean;
-  showHiddenFields: boolean;
-  user: User;
-};
-
-const AS_THE_EDITOR_SEES_IT = { overrideAccess: false, showHiddenFields: false };
-
-const AS_IT_IS_STORED = {
-  fallbackLocale: false,
-  overrideAccess: true,
-  showHiddenFields: true,
-} as const;
-
-const readDraft = (
-  payload: Payload,
-  document: DocumentToRead,
-  { key, locale }: VeFieldEdit,
-  read: DraftRead
-): Promise<unknown> => {
-  const options = {
-    ...read,
-    context: { visualEditing: false },
-    depth: 0,
-    disableErrors: true,
-    draft: true,
-    locale,
-    select: selectOf(key),
-  };
-  return document.kind === "global"
-    ? payload.findGlobal({ ...options, slug: document.slug })
-    : payload.findByID({ ...options, collection: document.collection, id: document.id });
-};
 
 const saveDraft = (
   payload: Payload,
@@ -103,6 +54,7 @@ const saveDraft = (
     data,
     depth: 0,
     draft: true,
+    fallbackLocale: false as const,
     locale,
     overrideAccess: false,
     overrideLock: false,
@@ -113,9 +65,30 @@ const saveDraft = (
     : payload.update({ ...options, collection: document.collection, id: document.id });
 };
 
-const statusOfFailure = (error: unknown): number => {
-  const status = error instanceof Error && "status" in error ? error.status : undefined;
-  return typeof status === "number" ? status : FAILED;
+const comparableAt = (document: unknown, key: string): string | null => {
+  const value = valueAtKey(document, key)?.value;
+  return typeof value === "string" || typeof value === "number" ? String(value) : null;
+};
+
+const isLeftAsItWas = (stored: unknown, saved: unknown, sent: unknown, key: string): boolean => {
+  const before = comparableAt(stored, key);
+  return comparableAt(saved, key) === before && comparableAt(sent, key) !== before;
+};
+
+const editedOf = async (
+  payload: Payload,
+  user: User,
+  { schema, shown }: DraftField,
+  { key, value }: VeFieldEdit
+): Promise<Edited | null> => {
+  const uploadCollection = shownUploadCollectionOf(shown, schema, key);
+  if (uploadCollection === null) {
+    return showsText(shown, schema, key)
+      ? (stored) => editedFieldOf(stored, schema, key, value)
+      : null;
+  }
+  const mediaId = await readableMediaIdOf(payload, user, uploadCollection, value);
+  return mediaId === null ? null : (stored) => replacedUploadOf(stored, schema, key, mediaId);
 };
 
 export const fieldEditEndpoint: Endpoint = {
@@ -123,40 +96,34 @@ export const fieldEditEndpoint: Endpoint = {
     const { payload, user } = req;
     if (!user) return answer(false, SIGNED_OUT, req);
 
-    const edit = readFieldEdit(await bodyOf(req));
-    if (!edit || !namesLocaleOf(payload, edit.locale)) return answer(false, UNREADABLE_EDIT, req);
+    const posted = readFieldEdit(await bodyOf(req));
+    if (!posted) return answer(false, UNREADABLE_REQUEST, req);
+    const edit = inLocaleOfProject(payload, posted);
 
-    const document = documentOf(payload, edit);
-    if (!document) return answer(false, UNKNOWN_DOCUMENT, req);
+    const field = await draftFieldOf(payload, user, edit);
+    if (isRefusal(field)) return answer(false, field.status, req);
 
-    const drafts = draftsOf(payload, document);
-    if (!drafts) return answer(false, WITHOUT_DRAFTS, req);
+    const editedIn = await editedOf(payload, user, field, edit);
+    if (!editedIn) return answer(false, FIELD_NOT_EDITABLE, req);
 
-    const schema = schemaCacheOf(payload)?.get(edit.collectionSlug, payload);
-    const shown = await readDraft(payload, document, edit, { ...AS_THE_EDITOR_SEES_IT, user });
-    if (!schema || !showsText(shown, schema, edit.key)) {
-      return answer(false, FIELD_NOT_EDITABLE, req);
-    }
-
-    const stored = await readDraft(payload, document, edit, { ...AS_IT_IS_STORED, user });
-    const edited = editedFieldOf(stored, schema, edit.key, edit.value);
+    const stored = await readDraft(payload, field.document, edit, { ...AS_IT_IS_STORED, user });
+    const edited = editedIn(stored);
     if (!edited) return answer(false, FIELD_NOT_EDITABLE, req);
 
+    const data = { [edited.name]: edited.value };
     try {
-      await saveDraft(
-        payload,
-        document,
-        { [edited.name]: edited.value },
-        {
-          autosave: drafts.autosave,
-          locale: edit.locale,
-          user,
-        }
-      );
+      const saved = await saveDraft(payload, field.document, data, {
+        autosave: field.drafts.autosave,
+        locale: edit.locale,
+        user,
+      });
+      if (isLeftAsItWas(stored, saved, data, edit.key)) {
+        return answer(false, FIELD_NOT_EDITABLE, req);
+      }
     } catch (error) {
       return answer(false, statusOfFailure(error), req);
     }
-    return answer(true, SAVED, req);
+    return answer(true, ANSWERED, req);
   },
   method: "post",
   path: VE_FIELD_EDIT_PATH,

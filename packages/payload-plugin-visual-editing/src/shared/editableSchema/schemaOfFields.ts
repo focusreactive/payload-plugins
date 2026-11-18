@@ -41,6 +41,33 @@ const rememberLocalizedField = (schema: PlainObject, fieldName: string): void =>
   localizedNamesBySchema.set(schema, localizedNames);
 };
 
+const UPLOAD_FIELD_TYPE = "upload";
+
+const uploadCollectionsBySchema = new WeakMap<PlainObject, Map<string, string>>();
+
+export const uploadCollectionOf = (schema: PlainObject, fieldName: string): string | null =>
+  uploadCollectionsBySchema.get(schema)?.get(fieldName) ?? null;
+
+const rememberUploadCollection = (
+  schema: PlainObject,
+  fieldName: string,
+  collection: string
+): void => {
+  const collections = uploadCollectionsBySchema.get(schema) ?? new Map<string, string>();
+  collections.set(fieldName, collection);
+  uploadCollectionsBySchema.set(schema, collections);
+};
+
+const takesEveryDocument = ({ filterOptions }: PlainObject): boolean =>
+  filterOptions === undefined || filterOptions === null;
+
+const collectionOfSingleUpload = (field: PlainObject): string | null => {
+  const { hasMany, relationTo, type } = field;
+  const holdsOneOfOneCollection =
+    type === UPLOAD_FIELD_TYPE && typeof relationTo === "string" && hasMany !== true;
+  return holdsOneOfOneCollection && takesEveryDocument(field) ? (relationTo as string) : null;
+};
+
 const listOf = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
 
 const stringOf = (value: unknown): string | undefined =>
@@ -92,10 +119,12 @@ const addNamedField = (
   schema: PlainObject,
   name: string,
   value: unknown,
-  { localized }: PlainObject
+  field: PlainObject
 ): void => {
   schema[name] = value;
-  if (localized === true) rememberLocalizedField(schema, name);
+  if (field.localized === true) rememberLocalizedField(schema, name);
+  const uploadCollection = collectionOfSingleUpload(field);
+  if (uploadCollection !== null) rememberUploadCollection(schema, name, uploadCollection);
 };
 
 const mergeFields = (

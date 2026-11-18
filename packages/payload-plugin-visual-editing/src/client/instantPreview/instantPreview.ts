@@ -16,6 +16,7 @@ export type InstantPreviewCtx = {
 
 export interface InstantPreview {
   holdsValueOf(document: VeDocument, key: string): boolean;
+  holdsFormOf(document: VeDocument): boolean;
   stop(): void;
 }
 
@@ -68,6 +69,7 @@ export function createInstantPreview(
   });
 
   return {
+    holdsFormOf: liveFields.holdsFormOf,
     holdsValueOf: liveFields.holdsValueOf,
     stop() {
       isStopped = true;

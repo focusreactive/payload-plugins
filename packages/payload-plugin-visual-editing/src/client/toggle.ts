@@ -22,6 +22,8 @@ const MODES: Record<VisualEditingMode, { label: string; description: string }> =
 
 const EDITS_IN_PLACE_DESCRIPTION = "Edit text on the page";
 
+const EDITS_IN_PLACE_LABEL = "Edit on page";
+
 const MODE_BUTTONS = '[role="radio"]';
 
 const EDITS_IN_PLACE_SWITCH = '[role="switch"]';
@@ -248,7 +250,7 @@ const editsInPlaceSwitchIn = (doc: Document): HTMLButtonElement => {
   editsInPlaceSwitch.setAttribute("role", "switch");
   editsInPlaceSwitch.title = EDITS_IN_PLACE_DESCRIPTION;
   editsInPlaceSwitch.setAttribute("aria-label", EDITS_IN_PLACE_DESCRIPTION);
-  editsInPlaceSwitch.textContent = "Edit on page";
+  editsInPlaceSwitch.textContent = EDITS_IN_PLACE_LABEL;
   return editsInPlaceSwitch;
 };
 

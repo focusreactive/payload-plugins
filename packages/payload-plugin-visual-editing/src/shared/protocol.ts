@@ -52,6 +52,8 @@ export type VeOpenFieldMessage = {
   focus?: false;
 };
 
+export const DATA_VE_LIVE_RICH_TEXT_ATTR = "data-ve-live-rich-text";
+
 export const DATA_VE_LIVE_ATTR = "data-ve-live";
 export const VE_LIVE_OFF = "off";
 
@@ -123,8 +125,11 @@ export const VE_FIELD_EDIT_PATH = "/visual-editing/field-edit";
 
 export const VE_FIELD_EDIT_TYPE = "ve:field-edit";
 
-export type VeFieldEdit = VeLiveDocument & {
+export type VeEditedField = VeLiveDocument & {
   key: string;
+};
+
+export type VeFieldEdit = VeEditedField & {
   value: string;
 };
 
@@ -134,10 +139,54 @@ export type VeFieldEditMessage = VeFieldEdit & {
 
 export const VE_FIELD_EDIT_REFUSED_TYPE = "ve:field-edit-refused";
 
-export type VeFieldEditRefusedMessage = VeLiveDocument & {
+export type VeFieldEditRefusedMessage = VeEditedField & {
   type: typeof VE_FIELD_EDIT_REFUSED_TYPE;
-  key: string;
 };
+
+export const VE_MEDIA_OPTIONS_PATH = "/visual-editing/media-options";
+
+export type VeMediaOptionsRequest = VeEditedField & {
+  search: string;
+  page: number;
+};
+
+export type VeShownMedia = {
+  url: string;
+  width?: number;
+  height?: number;
+};
+
+export type VeMediaOption = VeShownMedia & {
+  id: number | string;
+  filename: string;
+  thumbnailUrl: string;
+  alt?: string;
+};
+
+export type VeMediaOptions = {
+  collection: string | null;
+  documents: VeMediaOption[];
+  hasNextPage: boolean;
+};
+
+export const VE_PICK_MEDIA_TYPE = "ve:pick-media";
+
+export type VePickMediaMessage = VeEditedField & {
+  type: typeof VE_PICK_MEDIA_TYPE;
+};
+
+export const VE_MEDIA_PICK_CANCELLED_TYPE = "ve:media-pick-cancelled";
+
+export type VeMediaPickCancelledMessage = VeEditedField & {
+  type: typeof VE_MEDIA_PICK_CANCELLED_TYPE;
+};
+
+export const VE_MEDIA_PICKED_TYPE = "ve:media-picked";
+
+export type VeMediaPickedMessage = VeEditedField &
+  VeShownMedia & {
+    type: typeof VE_MEDIA_PICKED_TYPE;
+  };
 
 export const VE_RICH_TEXT_STRUCTURE_TYPE = "ve:rich-text-structure";
 

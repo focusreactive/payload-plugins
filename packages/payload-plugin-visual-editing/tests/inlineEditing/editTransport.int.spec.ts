@@ -4,6 +4,7 @@ import type { EditTransport } from "../../src/client/inlineEditing/editTransport
 
 import {
   createEditTransport,
+  EDIT_SAVE_PAUSE_MS,
   EDIT_SEND_PAUSE_MS,
 } from "../../src/client/inlineEditing/editTransport";
 import { VE_FIELD_EDIT_TYPE } from "../../src/shared/protocol";
@@ -109,9 +110,39 @@ describe("the transport of an edit", () => {
       transport.send({ ...TITLE, value: "Hello" });
       vi.advanceTimersByTime(EDIT_SEND_PAUSE_MS);
 
-      transport.settle();
+      transport.settle({ ...TITLE, locale: "en" });
 
       expect(statuses).toEqual(["unsaved", "saved"]);
+    });
+
+    it("stays unsaved when the admin saved another document", () => {
+      transport.send({ ...TITLE, value: "Hello" });
+      vi.advanceTimersByTime(EDIT_SEND_PAUSE_MS);
+
+      transport.settle({ ...TITLE, docId: "2" });
+
+      expect(statuses).toEqual(["unsaved"]);
+    });
+
+    it("counts a save that names no document as a save of every edit", () => {
+      transport.send({ ...TITLE, value: "Hello" });
+      vi.advanceTimersByTime(EDIT_SEND_PAUSE_MS);
+
+      transport.settle(null);
+
+      expect(statuses).toEqual(["unsaved", "saved"]);
+    });
+
+    it("counts a pick the form holds as unsaved until the admin saved its document", () => {
+      transport.holdInForm({ ...TITLE, key: "image" });
+      expect(statuses).toEqual(["unsaved"]);
+
+      transport.settle({ ...TITLE, docId: "2" });
+      expect(statuses).toEqual(["unsaved"]);
+
+      transport.settle({ ...TITLE });
+      expect(statuses).toEqual(["unsaved", "saved"]);
+      expect(postToAdmin).not.toHaveBeenCalled();
     });
 
     it("ignores a refusal of an edit it did not post", () => {
@@ -134,7 +165,7 @@ describe("the transport of an edit", () => {
     it("posts the value to the endpoint with the session of the editor", async () => {
       transport.send({ ...TITLE, locale: "en", value: "Hello" });
 
-      await vi.advanceTimersByTimeAsync(EDIT_SEND_PAUSE_MS);
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
 
       expect(fetchEndpoint).toHaveBeenCalledWith(`${PAYLOAD_API}/visual-editing/field-edit`, {
         body: JSON.stringify({ ...TITLE, locale: "en", value: "Hello" }),
@@ -172,7 +203,7 @@ describe("the transport of an edit", () => {
       fetchEndpoint.mockImplementationOnce(answer);
       transport.send({ ...TITLE, value: "Hello" });
 
-      await vi.advanceTimersByTimeAsync(EDIT_SEND_PAUSE_MS);
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
 
       expect(statuses).toEqual(["unsaved", "saving", "failed"]);
     });
@@ -180,7 +211,7 @@ describe("the transport of an edit", () => {
     it("sends the edit that failed again when asked to", async () => {
       fetchEndpoint.mockImplementationOnce(() => Promise.resolve(answerOf(false)));
       transport.send({ ...TITLE, value: "Hello" });
-      await vi.advanceTimersByTimeAsync(EDIT_SEND_PAUSE_MS);
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
 
       transport.retry();
       await settle();
@@ -192,10 +223,10 @@ describe("the transport of an edit", () => {
     it("keeps saying an edit is not saved while another field saves", async () => {
       fetchEndpoint.mockImplementationOnce(() => Promise.resolve(answerOf(false)));
       transport.send({ ...TITLE, value: "Title" });
-      await vi.advanceTimersByTimeAsync(EDIT_SEND_PAUSE_MS);
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
 
       transport.send({ ...TITLE, key: "lead", value: "Lead" });
-      await vi.advanceTimersByTimeAsync(EDIT_SEND_PAUSE_MS);
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
 
       expect(statuses.at(-1)).toBe("failed");
     });
@@ -204,7 +235,7 @@ describe("the transport of an edit", () => {
       fetchEndpoint.mockImplementation(() => Promise.resolve(answerOf(false)));
       transport.send({ ...TITLE, value: "Title" });
       transport.send({ ...TITLE, key: "lead", value: "Lead" });
-      await vi.advanceTimersByTimeAsync(EDIT_SEND_PAUSE_MS);
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
       fetchEndpoint.mockClear();
       fetchEndpoint.mockImplementation(() => Promise.resolve(answerOf(true)));
 
@@ -218,22 +249,52 @@ describe("the transport of an edit", () => {
     it("forgets a failure of a field once a newer edit of it saves", async () => {
       fetchEndpoint.mockImplementationOnce(() => Promise.resolve(answerOf(false)));
       transport.send({ ...TITLE, value: "First" });
-      await vi.advanceTimersByTimeAsync(EDIT_SEND_PAUSE_MS);
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
 
       transport.send({ ...TITLE, value: "Second" });
-      await vi.advanceTimersByTimeAsync(EDIT_SEND_PAUSE_MS);
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
 
       expect(statuses.at(-1)).toBe("saved");
     });
 
     it("has nothing to send again after a save", async () => {
       transport.send({ ...TITLE, value: "Hello" });
-      await vi.advanceTimersByTimeAsync(EDIT_SEND_PAUSE_MS);
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
 
       transport.retry();
       await settle();
 
       expect(fetchEndpoint).toHaveBeenCalledTimes(1);
+    });
+
+    it("delivers one edit at once and leaves the waiting ones waiting", async () => {
+      transport.send({ ...TITLE, value: "Hello" });
+
+      transport.sendNow({ ...TITLE, key: "image", value: "9" });
+      await settle();
+
+      expect(fetchEndpoint).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(fetchEndpoint.mock.calls[0]![1].body as string)).toMatchObject({
+        key: "image",
+      });
+
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+      expect(fetchEndpoint).toHaveBeenCalledTimes(2);
+    });
+
+    it("tells the sender of an edit delivered at once how each save of it ended", async () => {
+      const outcomes: boolean[] = [];
+      fetchEndpoint.mockImplementationOnce(() => Promise.resolve(answerOf(false)));
+
+      transport.sendNow({ ...TITLE, key: "image", value: "9" }, (isSaved) =>
+        outcomes.push(isSaved)
+      );
+      await settle();
+      expect(outcomes).toEqual([false]);
+
+      transport.retry();
+      await settle();
+      expect(outcomes).toEqual([false, true]);
     });
 
     it("sends what is waiting when it is disposed and reports nothing after", async () => {

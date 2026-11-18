@@ -177,13 +177,21 @@ describe("inline editing", () => {
     clientProps: { excludeFieldNames: ["tenant"] },
     path: "@focus-reactive/payload-plugin-visual-editing/admin#InlineEditReceiver",
   };
+  const MEDIA_PICK_RECEIVER = {
+    clientProps: { excludeFieldNames: ["tenant"] },
+    path: "@focus-reactive/payload-plugin-visual-editing/admin#MediaPickReceiver",
+  };
   const FIELD_EDIT_PATH = "/visual-editing/field-edit";
+  const MEDIA_OPTIONS_PATH = "/visual-editing/media-options";
 
   const buildWith = (options: { inlineEditing?: boolean; instantPreview?: boolean }) =>
     visualEditingPlugin({ excludeFieldNames: ["tenant"], ...options })(baseConfig) as Config;
 
   const hasFieldEditEndpoint = (config: Config) =>
     (config.endpoints ?? []).some(({ path }) => path === FIELD_EDIT_PATH);
+
+  const hasMediaOptionsEndpoint = (config: Config) =>
+    (config.endpoints ?? []).some(({ path }) => path === MEDIA_OPTIONS_PATH);
 
   it("adds the receiver of edits and the endpoint where live preview is configured", () => {
     const config = buildWith({ inlineEditing: true, instantPreview: true });
@@ -193,16 +201,25 @@ describe("inline editing", () => {
       OPEN_FORM_ANNOUNCER,
       BROADCASTER,
       RECEIVER,
+      MEDIA_PICK_RECEIVER,
     ]);
     expect(collectionControls(config, "category")).toEqual([OPEN_FORM_ANNOUNCER]);
     expect(hasFieldEditEndpoint(config)).toBe(true);
+  });
+
+  it("adds the endpoint that lists the media an upload field can take", () => {
+    expect(hasMediaOptionsEndpoint(buildWith({ inlineEditing: true, instantPreview: true }))).toBe(
+      true
+    );
   });
 
   it("stays off unless the project turns it on", () => {
     const config = buildWith({ instantPreview: true });
 
     expect(collectionControls(config, "page")).not.toContainEqual(RECEIVER);
+    expect(collectionControls(config, "page")).not.toContainEqual(MEDIA_PICK_RECEIVER);
     expect(hasFieldEditEndpoint(config)).toBe(false);
+    expect(hasMediaOptionsEndpoint(config)).toBe(false);
   });
 
   it("stays off without instant preview", () => {

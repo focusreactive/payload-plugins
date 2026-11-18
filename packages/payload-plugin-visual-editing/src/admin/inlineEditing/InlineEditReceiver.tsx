@@ -13,7 +13,7 @@ import { openDocumentOf } from "../openField/openDocument.js";
 import { editOfDocument, formEditOf } from "./formEdit.js";
 
 export function InlineEditReceiver({ excludeFieldNames }: { excludeFieldNames?: string[] }) {
-  const { dispatchFields, getFields, setModified } = useForm();
+  const { disabled: isFormDisabled, dispatchFields, getFields, setModified } = useForm();
   const { id, collectionSlug, globalSlug } = useDocumentInfo();
   const editableSchema = useEditableSchema({ collectionSlug, globalSlug }, excludeFieldNames);
   const { code: locale } = useLocale();
@@ -28,11 +28,9 @@ export function InlineEditReceiver({ excludeFieldNames }: { excludeFieldNames?: 
       const openDocument = { ...document, locale };
       const edit = editOfDocument(event.data, openDocument);
       if (!edit) return;
-      const formEdit = formEditOf(edit, {
-        document: openDocument,
-        editableSchema,
-        formState: getFields(),
-      });
+      const formEdit = isFormDisabled
+        ? null
+        : formEditOf(edit, { document: openDocument, editableSchema, formState: getFields() });
       if (!formEdit) {
         const { value: _value, ...refused } = edit;
         const message: VeFieldEditRefusedMessage = { ...refused, type: VE_FIELD_EDIT_REFUSED_TYPE };
@@ -53,6 +51,7 @@ export function InlineEditReceiver({ excludeFieldNames }: { excludeFieldNames?: 
     getWindow,
     globalSlug,
     id,
+    isFormDisabled,
     locale,
     origin,
     setModified,

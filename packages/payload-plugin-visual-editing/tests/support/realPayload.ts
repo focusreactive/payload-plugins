@@ -68,6 +68,7 @@ const uploadFields: Field[] = [
 const pageFields: Field[] = [
   { name: "title", type: "text", localized: true },
   { name: "label", type: "text" },
+  { access: { update: () => false }, name: "sealed", type: "text" },
   { name: "secret", type: "text", hidden: true },
   { name: "reference", type: "text", admin: { readOnly: true } },
   { name: "legacy", type: "text", admin: { disabled: true } },
@@ -106,6 +107,18 @@ const pageFields: Field[] = [
   { name: "eitherFile", type: "upload", relationTo: ["media", "documents"] },
   { name: "brochure", type: "upload", relationTo: "documents" },
   { name: "localizedImage", type: "upload", relationTo: "media", localized: true },
+  { name: "hiddenImage", type: "upload", relationTo: "media", hidden: true },
+  {
+    filterOptions: { alt: { not_equals: "Forbidden" } },
+    name: "filteredImage",
+    relationTo: "media",
+    type: "upload",
+  },
+  {
+    hooks: { beforeChange: [({ value }) => (typeof value === "string" ? value.trim() : value)] },
+    name: "trimmed",
+    type: "text",
+  },
 ];
 
 const settings: GlobalConfig = {
@@ -122,6 +135,21 @@ const settings: GlobalConfig = {
       ],
     },
   ],
+};
+
+const notice: GlobalConfig = {
+  slug: "notice",
+  fields: [
+    {
+      name: "banner",
+      type: "group",
+      fields: [
+        { localized: true, name: "title", type: "text" },
+        { localized: true, name: "subtitle", type: "text" },
+      ],
+    },
+  ],
+  versions: { drafts: true },
 };
 
 type ReadPage = (page: Record<string, unknown>) => void;
@@ -206,7 +234,7 @@ export async function startRealPayload({
     ],
     db: sqliteAdapter({ client: { url: IN_MEMORY_DATABASE } }),
     editor: lexicalEditor(),
-    globals: [{ ...settings, access }],
+    globals: [{ ...settings, access }, notice],
     localization: { defaultLocale: "en", fallback: true, locales: ["en", "de"] },
     plugins: [
       visualEditingPlugin({

@@ -1,4 +1,8 @@
 import {
+  ACTION_HIDDEN_DISPLAY,
+  ACTION_SHOWN_DISPLAY,
+  ACTION_STYLES,
+  DATA_VE_ACTION_ATTR,
   DATA_VE_FOR_ATTR,
   DATA_VE_TARGET_ATTR,
   LABEL_CLASS,
@@ -15,9 +19,17 @@ type EditBadgeConfig = {
   clickHandler: (event: MouseEvent) => void;
 };
 
+export type BadgeAction = {
+  label: string;
+  run: (openField: () => void) => void;
+};
+
+export type ActionOf = (target: HTMLElement) => BadgeAction | null;
+
 export interface EditBadge {
   readonly labelElement: HTMLAnchorElement;
-  show(target: HTMLElement, config: EditBadgeConfig): void;
+  readonly actionElement: HTMLButtonElement;
+  show(target: HTMLElement, config: EditBadgeConfig, action?: BadgeAction | null): void;
   hide(): void;
   reposition(target: HTMLElement): void;
   dispose(): void;
@@ -60,11 +72,32 @@ export function createEditBadge(): EditBadge {
   label.rel = "noopener noreferrer";
   Object.assign(label.style, LABEL_STYLES, { right: `-${FRAME_ACTIVE_WIDTH}px` });
 
-  anchor.append(label);
+  const action = document.createElement("button");
+  action.type = "button";
+  action.setAttribute(DATA_VE_ACTION_ATTR, "");
+  Object.assign(action.style, ACTION_STYLES);
+
+  anchor.append(label, action);
   layer.append(anchor);
   document.body.append(layer);
 
   let currentClickHandler: ((event: MouseEvent) => void) | null = null;
+  let offeredAction: BadgeAction | null = null;
+  let openFieldOfTarget: ((event: MouseEvent) => void) | null = null;
+
+  const offer = (offered: BadgeAction | null) => {
+    offeredAction = offered;
+    action.textContent = offered?.label ?? "";
+    action.style.display = offered ? ACTION_SHOWN_DISPLAY : ACTION_HIDDEN_DISPLAY;
+  };
+
+  const runOfferedAction = (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const openField = openFieldOfTarget;
+    offeredAction?.run(() => openField?.(event));
+  };
+  action.addEventListener("click", runOfferedAction);
 
   const reposition = (target: HTMLElement) => {
     placeFrame(anchor, target.getBoundingClientRect(), FRAME_ACTIVE_WIDTH);
@@ -74,8 +107,13 @@ export function createEditBadge(): EditBadge {
     get labelElement() {
       return label;
     },
-    show(target, config) {
+    get actionElement() {
+      return action;
+    },
+    show(target, config, offered = null) {
       reposition(target);
+      offer(offered);
+      openFieldOfTarget = config.clickHandler;
       label.href = config.href;
       label.setAttribute(DATA_VE_FOR_ATTR, target.getAttribute(DATA_VE_TARGET_ATTR) ?? "");
       if (currentClickHandler) label.removeEventListener("click", currentClickHandler);
@@ -85,6 +123,8 @@ export function createEditBadge(): EditBadge {
     },
     hide() {
       layer.style.visibility = "hidden";
+      offer(null);
+      openFieldOfTarget = null;
       if (currentClickHandler) {
         label.removeEventListener("click", currentClickHandler);
         currentClickHandler = null;
@@ -96,6 +136,7 @@ export function createEditBadge(): EditBadge {
         label.removeEventListener("click", currentClickHandler);
         currentClickHandler = null;
       }
+      action.removeEventListener("click", runOfferedAction);
       layer.remove();
     },
   };

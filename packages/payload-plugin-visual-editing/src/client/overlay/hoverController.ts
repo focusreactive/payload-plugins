@@ -1,4 +1,4 @@
-import type { EditBadge } from "./editBadge.js";
+import type { ActionOf, EditBadge } from "./editBadge.js";
 import type { TargetRegistry } from "./targetRegistry.js";
 
 import { DATA_VE_HOVERING_ATTR } from "./constants.js";
@@ -20,8 +20,16 @@ const setHoverFlag = (on: boolean): void => {
 
 const CLEAR_GRACE_MS = 250;
 
-export function createHoverController(badge: EditBadge, registry: TargetRegistry): HoverController {
-  const label = badge.labelElement;
+const offersNoAction: ActionOf = () => null;
+
+export function createHoverController(
+  badge: EditBadge,
+  registry: TargetRegistry,
+  actionOf: ActionOf = offersNoAction
+): HoverController {
+  const badgeElements: HTMLElement[] = [badge.labelElement, badge.actionElement];
+  const isOfBadge = (element: Element): boolean =>
+    badgeElements.some((part) => part === element || part.contains(element));
   let activeTarget: HTMLElement | null = null;
   let pendingClear: ReturnType<typeof setTimeout> | null = null;
   const targetListeners = new Map<
@@ -41,7 +49,7 @@ export function createHoverController(badge: EditBadge, registry: TargetRegistry
     if (activeTarget) badge.hide();
     if (next) {
       const config = registry.get(next);
-      if (config) badge.show(next, config);
+      if (config) badge.show(next, config, actionOf(next));
     }
     activeTarget = next;
     setHoverFlag(next !== null);
@@ -55,17 +63,20 @@ export function createHoverController(badge: EditBadge, registry: TargetRegistry
     }, CLEAR_GRACE_MS);
   };
 
-  const onLabelLeave = (event: MouseEvent) => {
+  const onBadgeLeave = (event: MouseEvent) => {
     if (!activeTarget) return;
     const related = event.relatedTarget as Element | null;
     if (related && (related === activeTarget || activeTarget.contains(related))) return;
+    if (related && isOfBadge(related)) return;
     const nextTarget = related ? findTargetAncestor(related) : null;
     if (nextTarget) setActive(nextTarget);
     else scheduleClear();
   };
-  label.addEventListener("mouseleave", onLabelLeave);
-  const onLabelEnter = () => cancelPendingClear();
-  label.addEventListener("mouseenter", onLabelEnter);
+  const onBadgeEnter = () => cancelPendingClear();
+  for (const part of badgeElements) {
+    part.addEventListener("mouseleave", onBadgeLeave);
+    part.addEventListener("mouseenter", onBadgeEnter);
+  }
 
   const repositionIfActive = () => {
     if (!activeTarget) return;
@@ -86,7 +97,7 @@ export function createHoverController(badge: EditBadge, registry: TargetRegistry
       const leave = (event: MouseEvent) => {
         if (activeTarget !== target) return;
         const related = event.relatedTarget as Element | null;
-        if (related && (related === label || label.contains(related))) return;
+        if (related && isOfBadge(related)) return;
         const nextTarget = related ? findTargetAncestor(related) : null;
         if (nextTarget) setActive(nextTarget);
         else scheduleClear();
@@ -111,15 +122,17 @@ export function createHoverController(badge: EditBadge, registry: TargetRegistry
     refresh(target) {
       if (activeTarget !== target) return;
       const config = registry.get(target);
-      if (config) badge.show(target, config);
+      if (config) badge.show(target, config, actionOf(target));
     },
     dispose() {
       cancelPendingClear();
       window.removeEventListener("scroll", repositionIfActive, true);
       window.removeEventListener("resize", repositionIfActive);
       window.removeEventListener("input", repositionIfActive, true);
-      label.removeEventListener("mouseleave", onLabelLeave);
-      label.removeEventListener("mouseenter", onLabelEnter);
+      for (const part of badgeElements) {
+        part.removeEventListener("mouseleave", onBadgeLeave);
+        part.removeEventListener("mouseenter", onBadgeEnter);
+      }
       for (const [target, listeners] of targetListeners) {
         target.removeEventListener("mouseenter", listeners.enter);
         target.removeEventListener("mouseleave", listeners.leave);

@@ -5,6 +5,7 @@ import { PACKAGE_NAME } from "../shared/packageName.js";
 const PREVIEW_PAGE_BRIDGE_PATH = `${PACKAGE_NAME}/admin#PreviewPageBridge`;
 const INSTANT_PREVIEW_COMPONENT_PATH = `${PACKAGE_NAME}/admin#InstantPreviewBroadcaster`;
 const INLINE_EDIT_RECEIVER_PATH = `${PACKAGE_NAME}/admin#InlineEditReceiver`;
+const MEDIA_PICK_RECEIVER_PATH = `${PACKAGE_NAME}/admin#MediaPickReceiver`;
 const OPEN_FORM_ANNOUNCER_PATH = `${PACKAGE_NAME}/admin#OpenFormAnnouncer`;
 
 type RootLivePreview = NonNullable<Config["admin"]>["livePreview"];
@@ -43,7 +44,12 @@ const documentControlsOf = (
     ...(instantPreview && isPreviewed
       ? [{ clientProps, path: INSTANT_PREVIEW_COMPONENT_PATH }]
       : []),
-    ...(inlineEditing && isPreviewed ? [{ clientProps, path: INLINE_EDIT_RECEIVER_PATH }] : []),
+    ...(inlineEditing && isPreviewed
+      ? [
+          { clientProps, path: INLINE_EDIT_RECEIVER_PATH },
+          { clientProps, path: MEDIA_PICK_RECEIVER_PATH },
+        ]
+      : []),
   ];
 };
 
