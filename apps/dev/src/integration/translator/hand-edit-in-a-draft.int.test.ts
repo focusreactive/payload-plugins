@@ -6,18 +6,16 @@ import { callEndpoint } from "./callEndpoint";
 
 let ctx: TestPayload;
 
-const translate = (
-  id: string,
-  strategy: "overwrite" | "skip_existing",
-  { publish }: { publish: boolean }
-) =>
+const ruleFilters = (rules?: string[]) => rules?.map((name) => ({ kind: "rule", name }));
+
+const translate = (id: string, { publish, rules }: { publish: boolean; rules?: string[] }) =>
   callEndpoint(ctx.payload, "post", "/translate/enqueue", {
     body: {
       source_lng: "en",
       target_lng: "de",
       collection_slug: "docs",
       collection_id: [id],
-      strategy,
+      filters: ruleFilters(rules),
       publish_on_translation: publish,
     },
   });
@@ -46,7 +44,7 @@ describe("a hand edit saved as a draft, then re-translated with skip_existing", 
     });
     const id = String(made.id);
 
-    await translate(id, "overwrite", { publish: true });
+    await translate(id, { publish: true });
     await ctx.payload.update({
       collection: "docs",
       id,
@@ -55,7 +53,7 @@ describe("a hand edit saved as a draft, then re-translated with skip_existing", 
       draft: true,
     });
 
-    await translate(id, "skip_existing", { publish: false });
+    await translate(id, { publish: false, rules: ["stale"] });
 
     expect((await germanDraft(id)).title).toBe("de:Source title — PLUS MEINE WORTE");
   });
@@ -68,7 +66,7 @@ describe("a hand edit saved as a draft, then re-translated with skip_existing", 
     });
     const id = String(made.id);
 
-    await translate(id, "overwrite", { publish: false });
+    await translate(id, { publish: false });
     await ctx.payload.update({
       collection: "docs",
       id,
@@ -77,7 +75,7 @@ describe("a hand edit saved as a draft, then re-translated with skip_existing", 
       draft: true,
     });
 
-    await translate(id, "skip_existing", { publish: false });
+    await translate(id, { publish: false, rules: ["stale"] });
 
     expect((await germanDraft(id)).title).toBe("de:Draft title — PLUS MEINE WORTE");
   });
@@ -90,7 +88,7 @@ describe("a hand edit saved as a draft, then re-translated with skip_existing", 
     });
     const id = String(made.id);
 
-    await translate(id, "overwrite", { publish: false });
+    await translate(id, { publish: false });
 
     await ctx.payload.update({
       collection: "docs",
@@ -107,7 +105,7 @@ describe("a hand edit saved as a draft, then re-translated with skip_existing", 
       data: { _status: "published", title: "Stale title", note: "Stale note, rewritten" },
     });
 
-    await translate(id, "skip_existing", { publish: false });
+    await translate(id, { publish: false, rules: ["stale"] });
 
     const de = await germanDraft(id);
     expect(de.note, "its source moved").toBe("de:Stale note, rewritten");

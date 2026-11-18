@@ -16,8 +16,9 @@ export function useCancelCollectionTranslations() {
     mutationKey: ["cancel-collection-translations"],
     mutationFn: async (variables: Variables): Promise<void> => {
       await handleNextApiError(() =>
-        ofetch(`/api${basePath}/cancel-by-collection/${variables.collection}`, {
+        ofetch(`/api${basePath}/cancel`, {
           method: "delete",
+          body: { collection_slug: variables.collection, select_all: true },
         })
       );
     },

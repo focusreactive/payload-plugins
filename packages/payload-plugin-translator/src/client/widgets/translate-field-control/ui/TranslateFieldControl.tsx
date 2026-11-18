@@ -58,34 +58,21 @@ const TranslateFieldControl = () => {
   const localeOptions = useLocaleOptions();
   const { mutateAsync, isPending } = useTranslateField();
 
-  // `config.localization` is `false | {…}`, so the truthy check is load-bearing (not just a nil guard).
   const defaultLocale = config.localization ? config.localization.defaultLocale : undefined;
 
-  // `useLocale()` is typed `Locale` but actually returns `false | {} | Locale` until the admin's
-  // locale provider resolves (see the V4 TODO on the hook in @payloadcms/ui), so `code` can be absent.
   const targetCode = locale?.code ?? "";
 
   const [isOpen, popup] = useToggle();
   const [sourceLng, setSourceLng] = useState(() =>
     defaultLocale && defaultLocale !== targetCode ? defaultLocale : ""
   );
-  // `null` = no undo available; an object wraps the value so a legitimately `undefined` field value
-  // (a real pre-translation state) stays distinguishable from "nothing to undo".
-  const [undo, setUndo] = useState<{ value: unknown } | null>(null);
 
-  // fieldLevel is off while creating a document: from-locale reads the *saved* document's value,
-  // which doesn't exist yet — so the control is hidden entirely on a new/unsaved doc. (Re-enable
-  // once translating the unsaved value in place is supported.) All hooks above run unconditionally.
+  const [undo, setUndo] = useState<{ value: unknown } | null>(null);
   if (id === undefined || id === null) return null;
 
-  // Source options: every locale except the one being edited (it's the fixed target).
   const sourceLocaleOptions = localeOptions.filter((option) => option.value !== targetCode);
   const canTranslate = sourceLng !== "" && !isPending;
 
-  // One write path for every supported field type: a form UPDATE bumping value AND initialValue.
-  // A Lexical (richText) editor re-mounts on the initialValue change so it shows the new content;
-  // text/textarea inputs just re-render from value. setModified keeps the form dirty/savable, since
-  // value === initialValue would otherwise read as unchanged.
   const writeFieldValue = (next: unknown) => {
     dispatchFields({ type: "UPDATE", path, value: next, initialValue: next });
     setModified(true);
@@ -99,9 +86,9 @@ const TranslateFieldControl = () => {
       const { data } = await mutateAsync({
         collectionSlug,
         fieldPath: path,
-        targetLng: targetCode, // always the current edit locale — never derived from the source picker
+        targetLng: targetCode,
         sourceLng,
-        docId: id, // non-null here: the control early-returns on create (no document id)
+        docId: id,
       });
 
       if (data.status === "translated") {
@@ -130,8 +117,6 @@ const TranslateFieldControl = () => {
       $side="right"
       open={isOpen}
       onOpenChange={popup.setValue}
-      // Don't auto-focus the first button on open — it's a Tooltip trigger, and Radix tooltips
-      // open on focus, so autofocus would flash the Translate button's tooltip immediately.
       onOpenAutoFocus={(event) => event.preventDefault()}
       $trigger={
         <div className={styles.trigger}>
@@ -153,8 +138,6 @@ const TranslateFieldControl = () => {
     >
       <div className={styles.popup}>
         <div className={styles.row}>
-          {/* The from → to pair as one labeled unit, so a screen reader announces the direction
-              together (mirrors the TranslationDirection entity used at the doc/collection level). */}
           <div
             aria-label={`Translation direction: from ${sourceLng || "a source locale"} into ${targetCode}`}
             className={styles.direction}

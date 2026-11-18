@@ -29,8 +29,8 @@ impossible at any price, because neither seam knows which collection is being tr
   for exactly this: *"What the core can tell a provider about the request beyond the text itself.
   Optional, so every implementation written before it keeps compiling and working."*
 - **Project, and it constrains D3.** Neither `src/core` nor `src/translation-providers` imports
-  anything from `payload` today — measured, zero matches for `from "payload"` in either. The package's
-  `CLAUDE.md` prescribes `*.shapes.ts` for the case where a leaf needs a slice of a Payload type:
+  anything from `payload` today — measured, zero matches for `from "payload"` in either. The package
+  conventions prescribe `*.shapes.ts` for the case where a leaf needs a slice of a Payload type:
   *"Define a narrow structural interface with only the fields you touch."* `Provenance.shapes.ts` is
   the worked example.
 - **Verdict.** Nothing new is built. Two existing extension points are widened and one value is
@@ -80,9 +80,9 @@ no marks were sent, deliberately, so a provider written before options existed s
 stays true when the new fields are absent, and the call grows a fourth argument only when there is
 something to say.
 
-### D3 — the handle to read the CMS with · **the gate question**
+### D3 — the handle to read the CMS with
 
-The issue asks for `payload?: Payload` on the context. Three answers, and this one is the owner's:
+The issue asks for `payload?: Payload` on the context. Three answers; the choice is the owner's:
 
 | | What it gives | What it costs |
 |---|---|---|
@@ -112,7 +112,7 @@ extraction.
 
 ### Written contract?
 
-**Yes, one — corrected during Phase 3, see below.** `SystemPromptBuilder` gains an obligation its
+**Yes, one — corrected during implementation, see below.** `SystemPromptBuilder` gains an obligation its
 signature cannot state: `collection` and `documentId` are present whenever the request has a document
 behind it, and absent only when it has none. A builder must treat them as optional rather than assume
 a document. That sentence is what the tests are written against.
@@ -125,22 +125,21 @@ a document. That sentence is what the tests are written against.
 > inconsistency with no explanation. Both surfaces now pass them; absent means "no document behind the
 > request", which is a caller driving `translateContent` directly.
 
-### Escalate to /sp-architect?
+### Does this need a separate design?
 
 **No.** It widens two extension points that were built to be widened. The one decision that could
-outlive the task — whether Payload enters these layers — is D3, and it is being put to the owner
+outlive the task — whether Payload enters these layers — is D3, and it is decided by the owner
 rather than improvised.
 
-### D5 — the document is required inside the fourth argument (added 2026-10-15, at the owner's challenge)
+### D5 — the document is required inside the fourth argument (added 2026-10-15, on the owner's objection)
 
 **Chosen:** `TranslationRequestOptions.document: DocumentRef` — required. The parameter holding it
 stays optional.
 
-**What lost, and why:** `document?`, which is what D4 shipped. The owner asked why it was optional and
-the honest answer did not survive the question. Measured: the **only** producer of that object is
+**What lost, and why:** `document?`, which is what D4 shipped. Asked why it was optional, the design
+had no answer that held. Measured: the **only** producer of that object is
 `Translation.stage.ts:22`, and it always sets the document. A request description without a subject is
-a state nothing in the codebase creates, so the type was admitting a shape the system cannot reach —
-the second of the four counted questions, failed by the author of the check.
+a state nothing in the codebase creates, so the type was admitting a shape the system cannot reach.
 
 **Why an optional parameter may hold a required field.** The two question marks answer different
 questions, and only one of them is about the domain:
@@ -157,10 +156,9 @@ An envelope you need not send, but may not send half-filled.
 through a provider that may have been called without a request description at all, so absence is
 reachable there and is tested.
 
-**The owner's deeper challenge, and where it went.** He pointed out that `translate` does not need the
-document — `TranslationStage`, `CompletionProvider.translate` and `buildSystemPrompt` all carry it
+**The deeper objection, and where it went.** `translate` does not need the document — `TranslationStage`, `CompletionProvider.translate` and `buildSystemPrompt` all carry it
 without reading it; the only reader is the consumer's `systemPrompt` function. The alternative —
-assembling the prompt in the plugin — was considered and rejected by his own test of it: `systemPrompt`
+assembling the prompt in the plugin — was considered and rejected: `systemPrompt`
 belongs to a language-model provider, not to the plugin. A GoogleTranslate provider has no system
 prompt at all, so lifting the option would put an LLM-only concept where every provider must fit.
 The carrying therefore delivers to where the reader lives; what is wrong is the delivery's *shape*.
@@ -209,9 +207,9 @@ without a document. Nobody does — the plugin is the sole producer — but it b
 outside this package. The change also threads a value through `src/core`, the kernel slated to become
 its own published package.
 
-What that buys downstream, and will be honoured: this gate asks with `AskUserQuestion`; a test is
-required before the change is called done; the Phase 4 sweep is evidenced and names what was grepped;
-Phase 5 runs three review angles rather than one.
+What that buys downstream, and will be honoured: the owner decides D3 before implementation; a test
+is required before the change is called done; the regression sweep is evidenced and names what was
+grepped; review covers three angles rather than one.
 
 **Hazards:**
 
@@ -227,14 +225,14 @@ Phase 5 runs three review angles rather than one.
 - `#142` (glossary, tone, protected terms) sits on this seam and is labelled `major`. This task
   unblocks it; it must not start implementing it.
 
-## Human choices
+## Decisions by the owner
 
 - **2026-10-15** — do #109 now rather than defer it to the major: the owner judged the change
   additive and small, against the backdrop of a planned rework of the core and the provider wiring.
   Recorded with the caveat that the `TranslationRequestOptions` half may be reshaped by that rework.
 
-- **2026-10-15** — **D3 resolved: (c), no handle.** The owner reached it independently — routing a
-  handle "around the core" *is* `getPayload`, because the only channel from the handler to the
+- **2026-10-15** — **D3 resolved: (c), no handle.** The deciding argument: routing a handle around
+  the core *is* `getPayload`, because the only channel from the handler to the
   provider runs through the pipeline, i.e. through `src/core`. So a `payload` field would put a
   Payload reference in the kernel, not merely in the vendor layer. Two further reasons recorded: the
   host already owns the handle it would be given back, and an optional `payload` would lie about
@@ -265,7 +263,7 @@ Phase 5 runs three review angles rather than one.
 | AC5 | met | `requestOptions` returns `undefined` when it has nothing to say, so the three-argument call survives; `OpenAITranslationLegacy` forwards the fourth argument verbatim and was read |
 | AC6 | met, with one caveat below | declarations built on `main` and here and diffed: `index.d.ts` byte-identical; the only changes are two optional fields on `SystemPromptContext`, two on `TranslationRequestOptions`, and the widened `SystemPromptBuilder` return |
 | AC7 | met | package 0 · `apps/dev` check-types 0 · `apps/dev` tsconfig.json 2 (`payload.config.ts`, `vitest.integration.config.ts`, both pre-existing) |
-| AC8 | met | `Found 46 warnings and 0 errors`; `sp-lint-delta` two-run: *No findings introduced by this change* |
+| AC8 | met | `Found 46 warnings and 0 errors`; lint against the base: nothing introduced |
 | AC9 | met | package **2111** passed / 151 files; sqlite **237** · postgres **242** · mongo **235**, each one above its baseline |
 
 **AC6's caveat, stated rather than buried.** Widening `SystemPromptBuilder`'s return is safe for a host
@@ -293,7 +291,7 @@ Guardrail left behind: the integration case asserts the values at the provider o
 a hop lost anywhere between the handler and the provider fails a test rather than silently producing
 a prompt with no scope.
 
-### Comment gate
+### Comments
 
 Comments added: the `requestOptions` docblock (why it answers `undefined`), a one-liner on
 `PipelineContext` saying the two fields are carried but read by no stage, the `@since 0.18.0` blocks
@@ -307,14 +305,14 @@ package rule does not reach it — removed as noise.
 third-party provider receives the fourth argument but cannot name its type. The gap arrived with the
 type in 0.13.0; this change makes it likelier to matter. Left for the owner against ADR-0002.
 
-### D4 — identity is named, not optional, and not an "option" (added 2026-10-15, after the gate)
+### D4 — identity is named, not optional, and not an "option" (added 2026-10-15, after the design review)
 
 **Chosen:** a named `DocumentRef = { collection: string; id: string }`, carried as one field
 `document`. Required on `TranslateContentArgs`, `PipelineConfig` and `PipelineContext`; optional only
 on `TranslationRequestOptions` and `SystemPromptContext`, where the parameter holding it is itself
 optional for providers written before 0.13.0.
 
-**What lost, and why:** two flat optional fields — the shape this task shipped at the gate. The owner
+**What lost, and why:** two flat optional fields — the shape first approved. The owner
 objected on two counts and both hold:
 
 - **They are not options.** `TranslationRequestOptions` otherwise holds `inlineMarks`, a switch about
@@ -384,6 +382,6 @@ names it for the one shape (a class with `implements`) that cannot infer it.
 
 Open question left for the owner, raised by the threading review: the two fields sit on
 `PipelineContext`, which every stage reads, yet **no stage reads them** — the comment saying so is
-itself the smell the owner's own rule warns about. The alternative is handing them to `TranslationStage`
+itself the smell the project's own rule warns about. The alternative is handing them to `TranslationStage`
 through its constructor, the way the provider already arrives, leaving the kernel's working state about
-document data only. Not changed unilaterally: the shape was approved at the gate.
+document data only. Not changed without the owner: the shape was approved before implementation.

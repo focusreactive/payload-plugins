@@ -5,7 +5,7 @@
 [2026-08-28-provider-review-findings.md](./2026-08-28-provider-review-findings.md); only the items
 that live entirely inside `src/translation-providers/**` were taken.
 
-**Off-limits this run:** `src/core/**` (another session is extracting it into its own package) and
+**Off-limits for this task:** `src/core/**` (being extracted into its own package in parallel) and
 `apps/**`. That rules out widening the port, renaming `core/domain/translation-providers/`, and the
 stale comment inside it.
 
@@ -60,8 +60,8 @@ from outside the package.
    for the ceiling.
 2. `README.md` carries the same substance next to the options table.
 3. `createTranslationProvider`'s `@example` no longer shows `signal` wired into a service call.
-4. Every code ref in `docs/DEPRECATIONS.md` resolves to a path that exists (checked by script:
-   `scratchpad/check_refs.sh`; one is dangling today).
+4. Every code ref in `docs/DEPRECATIONS.md` resolves to a path that exists (checked by a script;
+   one is dangling today).
 5. The deprecated `OpenAITranslationProvider` class lives in its own file with its tests beside it;
    `src/index.ts`, `translation-providers/index.ts` and `openai/index.ts` export exactly what they
    export today.

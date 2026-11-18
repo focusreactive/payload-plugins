@@ -1,14 +1,14 @@
 # #50 — Detect & surface out-of-sync (stale) translations
 
-Research / task definition. Feeds `/sp-task`. Builds directly on #47 provenance
+Research / task definition. Input to the #50 implementation. Builds directly on #47 provenance
 (v0.7.0). Package: `packages/payload-plugin-translator`.
 
-> Status: **research complete — proceeding on recommended defaults** (user away at
-> Phase 4; see Clarifications). Fingerprint primitive + data model already shipped in #47.
+> Status: **research complete — proceeding on recommended defaults** (not yet confirmed by
+> the owner; see Clarifications). Fingerprint primitive + data model already shipped in #47.
 
-## Clarifications (working defaults — confirm before/at `/sp-task`)
+## Clarifications (working defaults — confirm before implementation)
 
-Both blocking questions were posed; the user was away, so v1 proceeds on the
+Both blocking questions are still open with the owner, so v1 proceeds on the
 **recommended** answers. Either can be revisited without re-doing research.
 
 1. **Scope → Doc-panel only.** New dedicated `staleness read` endpoint + `dismiss`
@@ -140,13 +140,9 @@ surfaced in the admin UI and **dismissable** (acknowledge without re-translating
 - Version bump: `feat` → **0.8.0** (from 0.7.x). Confirm at implementation via
   `bun run multi-semantic-release --dry-run`; any new public export gets `@since 0.8.0`.
 
-## Comprehension
+## Readiness
 
-**9/10** — data model, fingerprint primitive, write path, and UI surface are fully mapped;
-the two scope/architecture choices are resolved via recommended defaults (revisitable). No
-unknowns remain that block implementation.
-
-## Suggested next step
-
-**Ready for `/sp-task`** on the defaulted scope (doc-panel only, lazy on-read). Worth a
-one-line confirm from the user on Q1/Q2 before executing, since they were auto-defaulted.
+Data model, fingerprint primitive, write path, and UI surface are fully mapped; the two
+scope/architecture choices are resolved via recommended defaults (revisitable). No unknowns
+remain that block implementation on the defaulted scope (doc-panel only, lazy on-read). Q1/Q2
+should be confirmed by the owner before implementation, since they were defaulted.

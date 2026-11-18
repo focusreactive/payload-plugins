@@ -45,10 +45,10 @@ export function useDocumentTranslation({ collection, id }: Props, options?: Opti
       });
     },
     enabled: options?.enabled,
-    // Keep polling while any locale's job is still in flight; stop once every job is terminal.
+    // Keep polling while any locale is still in flight; stop once every one of them is terminal.
     refetchInterval: (query) => {
       const active = (query.state.data ?? []).some(
-        (job) => job.status === "pending" || job.status === "running"
+        (locale) => locale.status === "pending" || locale.status === "running"
       );
       return active ? POLLING_INTERVAL_MILLISECONDS : false;
     },
@@ -70,10 +70,10 @@ export function useDocumentTranslation({ collection, id }: Props, options?: Opti
     undefined
   );
   useEffect(() => {
-    const jobs = query.data;
-    if (!jobs) return;
+    const reported = query.data;
+    if (!reported) return;
     const completed = new Set(
-      jobs.filter((job) => job.status === "completed").map((job) => job.input.target_lng)
+      reported.filter((it) => it.status === "completed").map((it) => it.input.target_lng)
     );
     const previous = previousCompletedRef.current;
     const sameDoc = previous?.docKey === docKey;

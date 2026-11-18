@@ -1,5 +1,6 @@
 export type {
   TranslationProvider,
+  TranslationRequest,
   TranslationInput,
   TranslationOutput,
 } from "../core/domain/translation-providers/index.js";

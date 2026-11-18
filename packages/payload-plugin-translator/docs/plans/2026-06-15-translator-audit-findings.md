@@ -1,7 +1,7 @@
 # Translator plugin — audit findings & roadmap
 
 **Date:** 2026-06-15
-**Status:** Research / findings (no code). Feeds a set of follow-up `/task`s (reliability) and `/feature`s (block correlation key, growth features).
+**Status:** Research / findings (no code). Feeds a set of follow-up tasks (reliability) and features (block correlation key, growth features).
 **Method:** Six parallel subsystem audits (block reconciliation, field-traversal, async jobs/runner, provider + rich-text pipeline, field-level + client, test/DX) followed by a manual verification pass over every actionable claim. Confidence legend below; only **[verified]** items have been read directly in this pass.
 
 > **Confidence:** **[verified]** = read directly here / confirmed in a committed design doc · **[likely]** = single-audit read of code, plausible · **[needs-check]** = depends on Payload internals not yet confirmed.
@@ -97,7 +97,7 @@ The case **"different block layout per locale AND translate between them"** is a
 - How do reconciler + field-level consume it (replace/augment `matchElementById`)?
 - Migration/back-compat for existing localized-blocks content with no keys.
 
-→ **This is the single largest piece of work surfaced by the audit. Treat as a separate `/feature` with its own design doc.**
+→ **This is the single largest piece of work surfaced by the audit. Treat as a separate feature with its own design doc.**
 
 ---
 
@@ -126,12 +126,12 @@ The case **"different block layout per locale AND translate between them"** is a
 
 ## 6. Recommended breakdown
 
-- `**/task` — Reliability pass (P1–P2):** provider response validation + "incomplete" surfacing, `deleteJobOnComplete` default/warning. High value, low blast radius. *(P3 already done — `choices[0]` guard + configurable `timeout`/`maxRetries`, 2026-06-15.)*
-- `**/task` — `skip_existing` retry idempotency (P4):** after a quick Payload Jobs retry-semantics check.
-- `**/task` — Field-level UX:** unsaved-source handling + warning, i18n of control strings, undo polish.
-- `**/task` — Schema validation (P5)** and **block notices** (duplicate-id guard, blockType-mismatch notice).
-- `**/feature` (largest) — Author-managed cross-locale correlation key:** needs its own design doc; unblocks the "different layout per locale + translate between them" requirement.
-- `**/feature` — Auto-translate on source change**, then **glossary/tone**, then **translation memory**.
+- **Task — Reliability pass (P1–P2):** provider response validation + "incomplete" surfacing, `deleteJobOnComplete` default/warning. High value, low blast radius. *(P3 already done — `choices[0]` guard + configurable `timeout`/`maxRetries`, 2026-06-15.)*
+- **Task — `skip_existing` retry idempotency (P4):** after a quick Payload Jobs retry-semantics check.
+- **Task — Field-level UX:** unsaved-source handling + warning, i18n of control strings, undo polish.
+- **Task — Schema validation (P5)** and **block notices** (duplicate-id guard, blockType-mismatch notice).
+- **Feature (largest) — Author-managed cross-locale correlation key:** needs its own design doc; unblocks the "different layout per locale + translate between them" requirement.
+- **Feature — Auto-translate on source change**, then **glossary/tone**, then **translation memory**.
 
 ---
 

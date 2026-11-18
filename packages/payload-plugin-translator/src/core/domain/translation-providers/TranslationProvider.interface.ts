@@ -5,32 +5,73 @@
 export type TranslationIndex = number;
 
 /**
- * Input map of text content for translation.
- * Keys are numeric indices that must be preserved in the output.
- * Values are the text strings to translate.
- *
- * @example
- * { 0: "Hello", 1: "World", 2: "Welcome to our site" }
+ * Identifies one segment of a rich-text paragraph, unique within its value.
  */
-export type TranslationInput = Record<TranslationIndex, string>;
+export type SegmentId = number;
 
 /**
- * Output of translation operation.
- * Must have the same keys as input, with translated values.
- *
- * @example
- * // Input: { 0: "Hello", 1: "World" }
- * // Output: { 0: "Привет", 1: "Мир" }
+ * One piece of a rich-text paragraph, carrying one run of formatting. `text: null` is a line break
+ * or an inline block: it holds a position and may move, but has nothing to translate.
  */
-export type TranslationOutput = Record<TranslationIndex, string>;
+export type Segment = { id: SegmentId; text: string | null };
 
 /**
- * What the core can tell a provider about the request beyond the text itself.
- *
- * Optional, so every implementation written before it keeps compiling and working.
- *
- * @since 0.13.0
+ * One value to translate: `segments` (in source order) for a rich-text paragraph whose pieces may
+ * reorder, `text` for everything else.
  */
+export type TranslatableValue =
+  | { kind: "text"; text: string }
+  | { kind: "segments"; segments: readonly Segment[] };
+
+export type TranslationInput = Readonly<Record<TranslationIndex, TranslatableValue>>;
+
+/** What a provider answers when it will not, or cannot, translate one value. */
+export type ProviderValueFailureCode = "malformed" | "refused" | "untranslatable";
+
+/** What the plugin's own check of an answer concludes. */
+export type PluginValueFailureCode =
+  | "missing-segment"
+  | "unknown-segment"
+  | "repeated-segment"
+  | "no-text"
+  | "wrong-kind";
+
+/** Why one value was not translated. A failure of the whole call is a throw instead. */
+export type ValueFailureCode = ProviderValueFailureCode | PluginValueFailureCode;
+
+/**
+ * The answer to one value, in the kind it was asked in, or `failed` — the value keeps its source text,
+ * and `message` goes to the server log.
+ *
+ * `segments` carries every id of the value exactly once, in target-language order. An empty `text`
+ * merges the segment into a neighbour; text answered for a `null` segment is ignored.
+ */
+export type TranslatedValue =
+  | { kind: "text"; text: string }
+  | { kind: "segments"; segments: readonly { id: SegmentId; text: string }[] }
+  | { kind: "failed"; code: ValueFailureCode; message?: string };
+
+/**
+ * Output of a translation request.
+ *
+ * Keys are a **subset** of the input's: a key that is absent was not translated, and the plugin
+ * keeps the source text for it. An absent key never means "translated to nothing" — to blank a
+ * value, answer `{ kind: "text", text: "" }`; a segments answer with no text fails as `no-text`.
+ */
+export type TranslationOutput = Record<TranslationIndex, TranslatedValue>;
+
+/**
+ * Failure causes a translation provider can report.
+ *
+ * @since 0.11.0
+ */
+export type TranslationFailureCode =
+  | "no-content"
+  | "unparseable-reply"
+  | "key-set-mismatch"
+  | "transport"
+  | "config";
+
 /**
  * Which document is being translated. Identity, not a switch — the two halves never arrive apart,
  * and neither tells a provider *how* to translate.
@@ -42,76 +83,26 @@ export type DocumentRef = {
   id: string;
 };
 
-export type TranslationRequestOptions = {
-  /**
-   * Required: describing a request without saying what it is about is not a state the core ever
-   * produces. The *parameter* stays optional — a provider called on its own is asked only to
-   * translate strings — but a half-description is not allowed.
-   *
-   * @since 0.18.0
-   */
+/**
+ * A language code, e.g. 'en'. Never empty.
+ */
+export type LanguageCode = string;
+
+/**
+ * What the plugin tells a provider about one translation request, beyond the text itself.
+ *
+ * @since 1.0.0
+ */
+export type TranslationRequest = {
+  sourceLng: LanguageCode;
+  targetLng: LanguageCode;
   document: DocumentRef;
-  /**
-   * The values carry numbered inline marks the provider must preserve.
-   *
-   * Stated rather than sniffed: customer text can legitimately contain `<1>` — a footnote
-   * reference, a template placeholder, an article about markup — and inferring from content
-   * would change the prompt for documents that opted into nothing.
-   */
-  inlineMarks?: boolean;
 };
 
 /**
- * Interface for translation service providers.
- *
- * Implementations must:
- * - Preserve all numeric keys from input
- * - Return translated text values for each key
- * - Return null on translation failure
- * - Handle empty input gracefully
- *
- * @example
- * ```typescript
- * class MyProvider implements TranslationProvider {
- *   async translate(input, sourceLng, targetLng) {
- *     // Input:  { 0: "Hello", 1: "World" }
- *     // Output: { 0: "Bonjour", 1: "Monde" }
- *     const output = await myTranslationAPI.translate(input, targetLng)
- *     return output
- *   }
- * }
- * ```
+ * A thrown error that is not one of this package's provider errors is re-wrapped and its `code`
+ * replaced, so only those classes carry a {@link TranslationFailureCode} through.
  */
 export interface TranslationProvider {
-  /**
-   * What this provider can be asked to do beyond plain translation. Absent means "nothing extra" —
-   * every provider written before a capability existed keeps working unchanged.
-   *
-   * @since 0.13.0
-   */
-  capabilities?: {
-    /**
-     * The provider preserves numbered inline marks (`<1>text</1>`) in the values it returns,
-     * keeping every number exactly once and moving them where the target language needs them.
-     *
-     * Declare it only for a language model that was instructed accordingly. A machine-translation
-     * API would translate or strip the marks, so without this declaration the core keeps
-     * translating rich text node by node whatever the plugin config says.
-     */
-    inlineMarks?: boolean;
-  };
-  /**
-   * Translates indexed text content from source to target language.
-   *
-   * @param input - Map of index to text string. Keys must be preserved in output.
-   * @param sourceLng - Source language code (e.g., 'en', 'de'). May be empty for auto-detect.
-   * @param targetLng - Target language code (e.g., 'fr', 'es').
-   * @returns Translated output with same keys, or null on failure.
-   */
-  translate(
-    input: TranslationInput,
-    sourceLng: string,
-    targetLng: string,
-    options?: TranslationRequestOptions
-  ): Promise<TranslationOutput | null>;
+  translate(input: TranslationInput, request: TranslationRequest): Promise<TranslationOutput>;
 }

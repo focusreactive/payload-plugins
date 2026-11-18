@@ -1,11 +1,11 @@
 # Translator core — flexibility & reuse review
 
 **Date:** 2026-06-30
-**Status:** Review report (read-only analysis; roadmap for follow-up `/sp-task`s — no code changed).
+**Status:** Review report (read-only analysis; roadmap for follow-up tasks — no code changed).
 **Scope:** the framework-agnostic core at `src/core/**` and its provider adapter `src/translation-providers/**`.
-**Method:** `/sp-architecture-review` (cartographer → 4 lenses: layers-boundaries, coupling-dependencies,
-abstractions-models, dataflow-state → opus synthesis) + a parallel research agent on reusing the core
-outside Payload.
+**Method:** architecture review (module map → 4 lenses: layers-boundaries, coupling-dependencies,
+abstractions-models, dataflow-state → combined synthesis) + a separate research pass on reusing the
+core outside Payload.
 **Part of:** the `@repo/translator-core` extraction (issue #59, branch `feat/translator-core`).
 
 ---
@@ -63,7 +63,6 @@ Tag `[reuse]` = also unlocks non-Payload reuse.
   the one public surface; add a lint rule that consumers import via barrels. Renaming the in-core
   provider dir to `core/ports/` also resolves the `translation-providers` naming echo.
 - **Sequencing:** keystone enabler — cheap, low-risk, defines where 2–4 land. Do first. Safe incremental.
-- **Execute via:** `/sp-task`
 
 ### 2. Single translatable-field vocabulary + exclusion-predicate port — `[M · L · S]` `[reuse]`
 - **Problem:** the translatable-type set (`text|textarea|richText`) is hand-mirrored in two places
@@ -79,7 +78,6 @@ Tag `[reuse]` = also unlocks non-Payload reuse.
   `isExcluded(field)` predicate), defaulting to today's Payload behavior in the adapter. The core stops
   naming `custom.translateKit`.
 - **Sequencing:** cheap high-value; cleaner after theme 1. Safe incremental (default preserves behavior).
-- **Execute via:** `/sp-task`
 
 ### 3. Content codec port — unify all format/Lexical knowledge — `[H · M · L]` `[reuse]` — HEADLINE
 - **Problem:** rich-text/Lexical format knowledge is reimplemented in four independent sites that agree
@@ -102,7 +100,7 @@ Tag `[reuse]` = also unlocks non-Payload reuse.
 - **Sequencing:** depends on theme 1. Highest impact, largest effort, touches the pipeline hot path —
   its own designed migration, staged: land the port + registry with the existing Plain/Lexical codecs
   (behavior-preserving), then collapse the four call sites one at a time. Existing per-stage tests de-risk it.
-- **Execute via:** `/sp-task` (with a short design pass first).
+- **Execute via:** a short design pass first, then implementation.
 
 ### 4. Strategy registry — one open taxonomy end to end — `[M · M · M]`
 - **Problem:** the pipeline accepts an open `TranslationStrategy` object, but selection is closed and
@@ -123,7 +121,6 @@ Tag `[reuse]` = also unlocks non-Payload reuse.
 - **Sequencing:** after theme 1 (registry lives in the ports home); prerequisite for the provenance
   strategy. **Risk M — touches the persisted job payload**; validate back-compat / migration for
   in-flight jobs.
-- **Execute via:** `/sp-task`
 
 ### 5. Typed per-stage contracts — `[M · L · M]`
 - **Problem:** `PipelineContext` is an all-optional mutable bag; stage preconditions are enforced by
@@ -136,7 +133,6 @@ Tag `[reuse]` = also unlocks non-Payload reuse.
 - **Direction:** typed per-stage input/output (progressive context typing or explicit stage I/O types) so a
   new stage is type-checkable, not throw-checked.
 - **Sequencing:** lowest; do alongside/just before the provenance work; benefits from theme 3's writer seam.
-- **Execute via:** `/sp-task`
 
 ---
 
@@ -184,6 +180,6 @@ strategy but carries persisted-job-payload risk to validate. **Theme 5** is the 
 - Option C (internal `src/core`, package deferred); provider port in core / impls outside; no zod in core;
   `openai` optional; `FieldChunkCollector` read/write split; dead `filterLocalizedFields`.
 
-## Deferred to /simplify (local, not architectural)
+## Deferred to local cleanup (not architectural)
 - `core/field-config/getFieldConfig.ts` — deprecated `getTranslateKitFieldConfig` alias; remove per
   `docs/DEPRECATIONS.md` once callers are gone.

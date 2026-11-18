@@ -1,20 +1,11 @@
-import { toast } from "@payloadcms/ui";
 import type { CollectionSlug } from "payload";
 
-import { useState } from "react";
-
-import { CheckIcon } from "../../../../shared/lib/assets/icons/CheckIcon.js";
-import { CloseIcon } from "../../../../shared/lib/assets/icons/CloseIcon.js";
-import { ReloadIcon } from "../../../../shared/lib/assets/icons/ReloadIcon.js";
-import { useCancelDocumentTranslation } from "../../api/mutations/useCancelDocumentTranslation.js";
-import { useDismissStaleness } from "../../api/mutations/useDismissStaleness.js";
-import { useQueueDocumentTranslation } from "../../api/mutations/useQueueDocumentTranslation.js";
-import { useRunDocumentTranslation } from "../../api/mutations/useRunDocumentTranslation.js";
 import type { TranslationStatusRow } from "../../model/statusRows.js";
 import { ActionButton } from "../ActionButton/index.js";
 import { TranslationDirection } from "../TranslationDirection/index.js";
 
 import { STATE_LABEL, StatusBadge } from "./StatusBadge.js";
+import { useRowActions } from "./rowActions.js";
 import styles from "./styles.module.scss";
 
 type TranslationStatusListProps = {
@@ -35,164 +26,62 @@ const fullDate = (iso: string) =>
     minute: "2-digit",
   });
 
-const withToast = async (run: () => Promise<unknown>, fallback: string) => {
-  try {
-    await run();
-  } catch (e) {
-    toast.error(e instanceof Error ? e.message : fallback);
-  }
-};
-
 /**
  * The unified per-locale status list: one consistent row per target locale
  * (`[badge] [en→fr] [when] [action]`). Replaces the old corner chip, the "out of date" column, and
- * the separate running/pending/failed chips. Row actions reuse the existing mutation hooks.
+ * the separate running/pending/failed chips.
  */
 export function TranslationStatusList({ rows, collection, id }: TranslationStatusListProps) {
-  const runApi = useRunDocumentTranslation();
-  const cancelApi = useCancelDocumentTranslation();
-  const dismissApi = useDismissStaleness();
-  const queueApi = useQueueDocumentTranslation();
-  const [dismissing, setDismissing] = useState<Set<string>>(new Set());
-
-  const dismiss = async (targetLocale: string) => {
-    setDismissing((prev) => new Set(prev).add(targetLocale));
-    await withToast(
-      () => dismissApi.mutateAsync({ collection, id, target_lng: targetLocale }),
-      "Failed to dismiss out-of-date notice"
-    );
-    setDismissing((prev) => {
-      const next = new Set(prev);
-      next.delete(targetLocale);
-      return next;
-    });
-  };
-
-  // `skip_existing`, not `overwrite`: this button sits under the "out of date" badge, so switching it
-  // back would silently discard a reviewer's edit to a leaf whose source never moved.
-  const reTranslate = (row: TranslationStatusRow) =>
-    withToast(
-      () =>
-        queueApi.mutateAsync({
-          source_lng: row.sourceLocale,
-          target_lng: row.targetLocale,
-          collection_slug: collection,
-          collection_id: [id],
-          strategy: "skip_existing",
-        }),
-      "Failed to queue translation"
-    );
-
-  const retry = (row: TranslationStatusRow) =>
-    row.jobId && withToast(() => runApi.mutateAsync({ id: row.jobId! }), "Error retrying");
-  const runNow = (row: TranslationStatusRow) =>
-    row.jobId && withToast(() => runApi.mutateAsync({ id: row.jobId! }), "Error running");
-  const cancel = (row: TranslationStatusRow) =>
-    row.jobId && withToast(() => cancelApi.mutateAsync({ id: row.jobId! }), "Error cancelling");
-
-  const renderAction = (row: TranslationStatusRow) => {
-    switch (row.state) {
-      case "failed":
-        return (
-          <span className={styles.actions}>
-            <ActionButton
-              icon={<ReloadIcon />}
-              title="Retry"
-              onClick={() => retry(row)}
-              loading={runApi.isPending}
-            />
-          </span>
-        );
-      case "running":
-        return (
-          <span className={styles.actions}>
-            <ActionButton
-              icon={<CloseIcon />}
-              title="Cancel"
-              onClick={() => cancel(row)}
-              loading={cancelApi.isPending}
-            />
-          </span>
-        );
-      case "pending":
-        return (
-          <span className={styles.actions}>
-            <ActionButton
-              icon={<ReloadIcon />}
-              title="Run now"
-              onClick={() => runNow(row)}
-              loading={runApi.isPending}
-            />
-            <ActionButton
-              icon={<CloseIcon />}
-              title="Cancel"
-              onClick={() => cancel(row)}
-              loading={cancelApi.isPending}
-            />
-          </span>
-        );
-      case "stale":
-        return (
-          <span className={styles.actions}>
-            <ActionButton
-              icon={<ReloadIcon />}
-              title={`Re-translate from ${row.sourceLocale}`}
-              onClick={() => reTranslate(row)}
-              loading={queueApi.isPending}
-            />
-            <ActionButton
-              icon={<CheckIcon />}
-              title="Keep as is — hide until the source changes again"
-              onClick={() => dismiss(row.targetLocale)}
-              disabled={dismissing.has(row.targetLocale)}
-              loading={dismissing.has(row.targetLocale)}
-            />
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
+  const actionsFor = useRowActions({ collection, id });
 
   return (
     <ul className={styles.list}>
-      {rows.map((row) => (
-        <li
-          key={row.targetLocale}
-          className={styles.row}
-          aria-label={
-            `${STATE_LABEL[row.state]}: ${row.sourceLocale} to ${row.targetLocale}` +
-            (row.error ? ` — ${row.error}` : "")
-          }
-        >
-          <div className={styles.top}>
-            <div className={styles.lead}>
-              <StatusBadge state={row.state} />
-              <TranslationDirection
-                sourceLocale={row.sourceLocale}
-                targetLocale={row.targetLocale}
-              />
+      {rows.map((row) => {
+        const actions = actionsFor(row);
+        return (
+          <li
+            key={row.targetLocale}
+            className={styles.row}
+            aria-label={
+              `${STATE_LABEL[row.state]}: ${row.sourceLocale} to ${row.targetLocale}` +
+              (row.error ? ` — ${row.error}` : "")
+            }
+          >
+            <div className={styles.top}>
+              <div className={styles.lead}>
+                <StatusBadge state={row.state} />
+                <TranslationDirection
+                  sourceLocale={row.sourceLocale}
+                  targetLocale={row.targetLocale}
+                />
+              </div>
+              {actions.length > 0 && (
+                <span className={styles.actions}>
+                  {actions.map((action) => (
+                    <ActionButton key={action.title} {...action} />
+                  ))}
+                </span>
+              )}
             </div>
-            {renderAction(row)}
-          </div>
-          <div className={styles.meta}>
-            <span>{STATE_LABEL[row.state]}</span>
-            {row.at && (
-              <>
-                <span aria-hidden="true">·</span>
-                <time dateTime={row.at} title={fullDate(row.at)}>
-                  {shortDate(row.at)}
-                </time>
-              </>
+            <div className={styles.meta}>
+              <span>{STATE_LABEL[row.state]}</span>
+              {row.at && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <time dateTime={row.at} title={fullDate(row.at)}>
+                    {shortDate(row.at)}
+                  </time>
+                </>
+              )}
+            </div>
+            {row.state === "failed" && row.error && (
+              <p className={styles.error} title={row.error}>
+                {row.error}
+              </p>
             )}
-          </div>
-          {row.state === "failed" && row.error && (
-            <p className={styles.error} title={row.error}>
-              {row.error}
-            </p>
-          )}
-        </li>
-      ))}
+          </li>
+        );
+      })}
     </ul>
   );
 }

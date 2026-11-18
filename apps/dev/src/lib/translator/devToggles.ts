@@ -1,53 +1,71 @@
 import {
-  createOpenAIProvider,
   createPayloadJobsRunner,
   createSyncRunner,
   createTranslationProvider,
+  askOpenAI,
 } from "@focus-reactive/payload-plugin-translator";
 import type {
+  AskModel,
   TaskRunnerProvider,
   TranslationProvider,
 } from "@focus-reactive/payload-plugin-translator";
 
-import { fakeComplete, failingComplete } from "./fakeComplete";
+import { fakeAsk, failingAsk } from "./fakeAsk";
 
 // See apps/dev/docs/multi-db-verification.md.
 
+let openAIAsk: Promise<AskModel> | undefined;
+
 /**
- * `TRANSLATOR_SYNC=1` → the sync runner: translations run inline on enqueue, so lifecycle callbacks
- * (onQueued/onCompleted/onFailed) fire deterministically without a jobs autorun. Otherwise the Payload
- * Jobs runner (the normal async flow).
+ * The SDK's own default is ten minutes, which would hold a live editor request that long.
+ */
+const OPENAI_TIMEOUT_MS = 60_000;
+
+const buildOpenAIAsk = async (): Promise<AskModel> => {
+  const { default: OpenAI } = await import("openai");
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: OPENAI_TIMEOUT_MS });
+
+  return askOpenAI({ client, params: { model: "gpt-5.4-mini" } });
+};
+
+/**
+ * Loaded on the first translation, not at module load, so the dry-run branches below never pay the
+ * ~55ms / ~7MB of evaluating the `openai` module (openai@4.104.0, measured 2026-11).
+ */
+const askOpenAIOnFirstUse: AskModel = async (request) => {
+  openAIAsk ??= buildOpenAIAsk();
+
+  let ask: AskModel;
+  try {
+    ask = await openAIAsk;
+  } catch (cause) {
+    openAIAsk = undefined;
+    throw cause;
+  }
+
+  return await ask(request);
+};
+
+/**
+ * `TRANSLATOR_SYNC=1` picks the sync runner, which translates inline on enqueue, so lifecycle
+ * callbacks fire without a jobs autorun; anything else gets the Payload Jobs runner.
  */
 export function resolveTranslatorRunner(): TaskRunnerProvider {
   return process.env.TRANSLATOR_SYNC === "1" ? createSyncRunner() : createPayloadJobsRunner();
 }
 
 /**
- * The provider this sandbox runs on, driven by `TRANSLATOR_DRY_RUN`: `"1"` → a local fake, no API
- * spend; `"fail"` → a fake that throws, so the translation fails and `onFailed` fires. The fake is
- * also the default when no `OPENAI_API_KEY` is set.
+ * `TRANSLATOR_DRY_RUN=1`, `TRANSLATOR_DRY_RUN=fail`, or no `OPENAI_API_KEY` — each keeps this
+ * sandbox on a local fake and off the paid API.
  */
 export function resolveTranslationProvider(): TranslationProvider {
   if (process.env.TRANSLATOR_DRY_RUN === "fail") {
-    return createTranslationProvider({ complete: failingComplete });
+    return createTranslationProvider({ askModel: failingAsk });
   }
 
   if (process.env.TRANSLATOR_DRY_RUN === "1" || !process.env.OPENAI_API_KEY) {
-    return createTranslationProvider({
-      capabilities: { inlineMarks: true },
-      complete: fakeComplete(),
-    });
+    return createTranslationProvider({ askModel: fakeAsk() });
   }
 
-  return createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY });
-}
-
-/**
- * Rich text is translated one container at a time, with numbered inline marks, so the translation
- * may reorder the pieces. On by default here, unlike the plugin itself: this sandbox exists to
- * exercise the current behaviour, and a run that silently used the old path would look like a
- * feature that does not work. `TRANSLATOR_INLINE_MARKS=0` returns to translating node by node.
- */
-export function resolveInlineMarks(): boolean {
-  return process.env.TRANSLATOR_INLINE_MARKS !== "0";
+  return createTranslationProvider({ askModel: askOpenAIOnFirstUse });
 }

@@ -12,9 +12,9 @@ field opted out of translation".
 
 Give the notice a machine-readable `reason` alongside its human `message`.
 
-## What Phase 1 found, including a correction
+## What the investigation found, including a correction
 
-**There are five noop branches, not the six the brief assumed.** "The field is empty in
+**There are five noop branches, not the six first assumed.** "The field is empty in
 the source locale" is not its own branch: an empty value resolves normally,
 `translateContent` returns `null`, and it lands in the same branch as "the subtree held
 nothing translatable".
@@ -35,7 +35,7 @@ the intent: `excluded` is *"Kept distinct from `not-translatable` so the notice 
 **why** (a deliberate opt-out, not a wrong type)"*. The handler then collapses five names
 into two levels and four strings. This task finishes a job the code started.
 
-**The "non-localized translatable field" gap the brief asked about is not a defect.**
+**The "non-localized translatable field" gap raised in the request is not a defect.**
 `resolveFieldSubtree` judges translatability by type alone, so such a field resolves; the
 core's `isTranslatableLeaf` then rejects it because it is not localized, `translateContent`
 returns `null`, and it lands in branch 5. Nothing is translated and nothing is overwritten.
@@ -51,7 +51,7 @@ five branches in `handler.ts`, one consumer (`TranslateFieldControl.tsx`, which 
 `level` and `message` and nothing else), 7 unit assertions and 18 integration checks.
 
 **Risk: low** — one module, no data at stake, no public surface, strong existing coverage.
-Consequences: one reviewer in Phase 5b rather than three; the regression sweep is done but
+Consequences: one reviewer rather than three; the regression sweep is done but
 not ceremonially evidenced; a test is still required, because observability is the whole
 deliverable.
 
@@ -89,7 +89,7 @@ behaviour changes: the same request gets the same status, the same `level` and t
 both predicates already exist (`isEmpty` in `src/core/kernel/utils/isEmpty.ts`,
 `isLocalizedField` in `src/server/shared/guards/field-guards.ts`), so it is cheap. But it
 is *new behaviour*, not observability: today the code does not make those distinctions, and
-making them is a separate decision about what an editor should be told. Raised at the gate
+making them is a separate decision about what an editor should be told. Raised with the owner
 as its own question rather than folded in silently.
 
 **Constraint cited:** the stated problem is "five of six are indistinguishable", and five
@@ -126,7 +126,7 @@ above `TranslateFieldHandler`. **It must be corrected here**: its table lists si
 situations where the code has five, and it names "the field holds nothing in the source
 locale" as its own row. That correction ships with this change.
 
-### Escalate to architecture?
+### Does this need a separate design?
 
 No. One module, one file pair, no new pattern, no data-model change.
 
@@ -166,47 +166,40 @@ Run against the untouched tree, 2026-09-12, before any edit.
   rewritten from them again. If it is wrong twice, the table is the wrong instrument and
   the branches should carry the documentation directly.
 - **Uncommitted work from the previous task shares this tree** — the behavioural contract
-  and three integration spec files. Whether it is committed first is a gate question.
+  and three integration spec files. Whether it is committed first is decided below.
 
-## Human choices
+## Decisions by the owner
 
-- **2026-09-12** — the owner approved adding a machine-readable reason and asked for it to
-  follow the existing code-taxonomy precedent rather than a fourth mechanism.
-- **2026-09-12, at the gate** — asked whether to split branch 5 into three (empty source /
+- **2026-09-12** — the owner approved adding a machine-readable reason, following the existing
+  code-taxonomy precedent rather than a fourth mechanism.
+- **2026-09-12, before implementation** — on whether to split branch 5 into three (empty source /
   not localized / nothing translatable inside): **codes only, branches untouched**. The
   split is a separate task; this one changes no behaviour.
-- **2026-09-12, at the gate** — the previous task's work (the behavioural contract and three
+- **2026-09-12, before implementation** — the previous task's work (the behavioural contract and three
   integration spec files) is committed on its own **before** this change, so the two diffs
   do not mix. The contract is committed as it stands, with its six-row table; correcting it
   to five is criterion 7 of this task.
 
 ## Review log
 
-### 2026-09-12 · phase 5
+### 2026-09-12 · verification and review
 
-- **Checks:** `bunx vitest run` → 1492 passed (was 1491; one new case) · `bun run test:integration`
-  → 130 passed, 29 files · `bun run check-types` → 5 tasks successful ·
-  `bunx ultracite check` over the package and the integration suite → 58 warnings, 0 errors, the
-  main branch's level · `bunx turbo run build --filter='./packages/*'` → 8 tasks successful.
-- **Gates:** sp-diff-checks clean (5 checks, no findings); sp-lint-delta mode=two-run, **no findings
-  introduced**.
-- **Reviewers:** one (`full`), the count Phase 1's low-risk classification calls for. One minor
-  finding, fixed: the integration spec's header comment and `describe` title still said "six" while
+- **Review:** one minor finding, fixed: the integration spec's header comment and `describe` title still said "six" while
   the same diff corrected that count in the handler's docblock — two disagreeing counts one file
   apart is exactly what criterion 7 exists to prevent.
-- **Criteria:** 7 met · 0 partial · 0 not-run · 0 not met.
+- **Criteria:** all 7 met.
 - **Left open:** splitting branch 5 into three (empty source / not localized / nothing translatable
-  inside), declined at the gate as new behaviour rather than observability. Both predicates already
+  inside), declined before implementation as new behaviour rather than observability. Both predicates already
   exist, so it stays cheap whenever it is wanted.
 - **Pin:** `e66925f8d789`.
 
-#### What the green run turned up
+#### What the first test run turned up
 
 One integration check failed on correct code, and it was a finding rather than a defect. Its
 fixture named a `group` whose only leaf is excluded and expected `nothing-translatable`; the code
 answered `not-translatable`, because `resolveFieldSubtree` judges a container by its own type
-before anything walks inside it. The blind author of that spec had predicted exactly this
-ambiguity and reported it as a place the contract was silent. The reason codes made it visible on
+before anything walks inside it. The spec, written from the contract alone, had flagged exactly
+this ambiguity as a place the contract was silent. The reason codes made it visible on
 the first run. The check was renamed to say what it actually pins, its expectation corrected, and
 the rule written into the contract — the resolver was not touched, and a reviewer confirmed that
 independently from the file's history.

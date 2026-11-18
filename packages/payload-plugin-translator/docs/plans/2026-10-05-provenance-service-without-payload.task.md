@@ -4,12 +4,12 @@
 lives in already has 72 passing tests over it.
 
 **Separate from** the per-field fingerprints work sitting in the same tree
-(`docs/plans/2026-10-02-per-field-fingerprints.task.md`). That contract's D1–D7, `## Human choices`
+(`docs/plans/2026-10-02-per-field-fingerprints.task.md`). That contract's D1–D7, `## Decisions by the owner`
 and `## Review log` are settled and not reopened here. This earns its own commit.
 
 ---
 
-## Phase 1 — what was found
+## What was found
 
 **What `payload` actually buys the service: two things.**
 
@@ -30,7 +30,7 @@ function makePayload(findByID): Payload {
 
 A double cast to forge a type with a hundred members, for two of them.
 
-**Precedent: the project already has the answer, in this very module.** The package's `CLAUDE.md`
+**Precedent: the project already has the answer, in this very module.** The package's conventions
 states it as a rule — *"Functions/classes must not depend on Payload's god types … Define a narrow
 structural interface with only the fields you touch — the real Payload type is assignable to it, so it
 plugs in with no adapter and tests pass a tiny literal."* — and `Provenance.shapes.ts` already holds
@@ -76,7 +76,7 @@ task is explicitly forbidden to touch — that function is the one place two ear
 **D2 — the types live in `Provenance.shapes.ts`.** The module's existing shapes file, holding the same
 kind of slice, with a docblock that already states the principle. Prefer editing an existing file.
 
-**D4 — corrected at the start of Phase 3: `CollectionSlug` stays, and the factory type moves.**
+**D4 — corrected at the start of implementation: `CollectionSlug` stays, and the factory type moves.**
 
 The criterion first read "imports no type from `payload`". Two things make that the wrong target, and
 saying so now is cheaper than discovering it at grading:
@@ -153,28 +153,25 @@ run is recorded `not-verified`, never `met` via a weaker proxy.
   the existing 72 may change — only how the service is constructed. A diff that rewrites assertions is
   the failure mode here, and criterion 3 names it.
 
-## Human choices
+## Decisions by the owner
 
-- **`fetchSourceDocument` is not removed, and not narrowed.** The owner asked whether to drop it; the
-  answer is no. Three callers, and it holds two settled decisions (`enforcedAtTheRead` from the
+- **`fetchSourceDocument` is not removed, and not narrowed.** Dropping it was considered and
+  rejected. Three callers, and it holds two settled decisions (`enforcedAtTheRead` from the
   read-rules work; `{ draft: true, fallbackLocale: false }` from "take the source from the locale's own
   current version"). Its own docblock states why it must be the single read: *"or the fingerprints they
   compare drift apart."* Inlining it would copy both decisions into three places and remove the guard
   against exactly the drift the previous task spent a day chasing.
 - **The service is not moved to `core`.** This refactor opens that seam — once Payload is gone, the
   class is portable, and the rest of the fingerprint policy (`staleness.ts`, `SourceFingerprint.ts`)
-  already lives there. Deliberately out of scope; a separate conversation.
+  already lives there. Deliberately out of scope; a separate task.
 - **The 35 dead re-exports in `core/index.ts` stay.** They are the surface of the unfinished
   `@repo/translator-core` extraction, not carelessness. Untouched by decision.
 
 ## Review log
 
-(appended by review passes)
+### Comment review — 2026-10-05
 
-### Comment audit — 2026-10-05
-
-This work's eight files were judged in the pipeline-and-server slice. The audit's payload here was
-structural, not prose:
+The changes here were structural, not prose:
 
 - `ProvenanceService.readFingerprint` → `readFingerprintOrThrow`. The class carried three separate
   docblocks circling one rule — that only `record` may see a read failure rather than a `null`. Two
@@ -183,7 +180,7 @@ structural, not prose:
   deliberate and preserved from before this refactor, but a five-key destructure against a six-key
   target is the shape a reader silently "fixes".
 - `Provenance.shapes.ts` lost two restatements of the structural-typing convention; it is stated
-  once, at the top of the file, and the package `CLAUDE.md` already rules on it. The paragraph
+  once, at the top of the file, and the package conventions already rule on it. The paragraph
   defending `CollectionSlug` was an answer to a reviewer and is gone.
 
 Rejected: widening `lastTranslatedFrom`'s return so the swallow's `undefined` stays distinct from

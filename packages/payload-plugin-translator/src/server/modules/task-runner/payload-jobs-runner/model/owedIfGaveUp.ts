@@ -1,12 +1,10 @@
-import { stillOwed } from "./stillOwed.js";
-import type { Task } from "../../types.js";
 import { isLastAttempt } from "./isLastAttempt.js";
-import { normalizeJobLocales } from "../store/index.js";
 import type { PayloadJob } from "../store/index.js";
 
+import { stillOwed } from "./stillOwed.js";
+
 /**
- * Which locales a run will never deliver, given that `target` has just thrown — nothing while the
- * run still has an attempt left.
+ * Which locales a run will never deliver, given that `target` has just thrown.
  *
  * Only the loop walking a run's locales can answer it: it stops at the locale that threw, so the
  * ones after it never start and nothing else ever sees them.
@@ -19,10 +17,11 @@ export function owedIfGaveUp(
   job: PayloadJob,
   taskName: string,
   target: string,
-  retryLimit: number
-): Task[] {
+  retryLimit: number,
+  locales: readonly string[]
+): string[] {
   const spentOnThisLocale = isLastAttempt(job.taskStatus?.[taskName]?.[target], retryLimit);
   const spentOnTheRun = isLastAttempt(job, retryLimit);
   if (!spentOnThisLocale && !spentOnTheRun) return [];
-  return stillOwed(normalizeJobLocales(job));
+  return stillOwed(job, locales);
 }

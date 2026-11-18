@@ -1,8 +1,8 @@
 # Architecture Review — `payload-plugin-translator` (plugin.ts growth + provenance spread)
 
 **Date:** 2026-07-07
-**Method:** `/sp-architecture-review` — cartographer map → 4 lens reviewers
-(layers-boundaries, coupling-dependencies, abstractions-models, dataflow-state) → opus synthesis.
+**Method:** architecture review — module map, then four lenses (layers-boundaries,
+coupling-dependencies, abstractions-models, dataflow-state), then a combined synthesis.
 **Focus (operator concerns):** (1) `TranslateCollectionPlugin.init()` / `plugin.ts` is growing
 (264 LOC); (2) provenance/staleness logic is spread across ~18 files.
 **Precondition:** the #50 staleness feature is staged/uncommitted; the roadmap below is to be
@@ -52,13 +52,13 @@ Layered ports/adapters + FSD.
   `server/features/_lib`, `composition/levels`, `client/entities/translation`, `client/widgets`.
   `schemaMap` + `provenanceStoreFactory` are threaded through 6 layers with no carrier type.
 
-### Conflicts resolved during synthesis
+### Smaller confirmed findings
 - **`server/shared` core re-export** — the façade is heavily used, but the *core re-export block*
   specifically (`index.ts:22-38`) has **zero importers** (everyone imports from `core/*`). → dead
-  code (`/simplify`), not a theme.
+  code (local cleanup), not a theme.
 - **`TranslateDocumentDependencies` drift — confirmed** (`translate-document/handler.ts:14-17`): the
   type declares `{translationProvider, schemaMap}` but the constructor also takes
-  `provenanceStoreFactory`; the type is unused. → dead + drifted (`/simplify`).
+  `provenanceStoreFactory`; the type is unused. → dead + drifted (local cleanup).
 
 ---
 
@@ -87,7 +87,6 @@ independent.
   `builder.addConfigModifier(provenance.configure(...))`.
 - **Sequencing:** no prereq; unblocks Themes 2 & 3. Safe incremental (config-time only, mirrors a
   tested pattern; covered by `plugin.test.ts` + provenance module tests). Pure internal.
-- **Execute via:** `/sp-task`
 
 ### 2. Introduce a `ProvenanceService` seam (unify write & read policy)  [impact: H · risk: M · effort: M]
 - **Problem:** the port is CRUD-only (`upsert`/`find`/`findByDocument`/`dismiss`/`deleteByDocument`).
@@ -105,7 +104,6 @@ independent.
   service become thin adapters. Port stays CRUD; policy moves up one layer.
 - **Sequencing:** prereq Theme 1. Risk M — a hashing-parity regression silently breaks staleness; do
   it behind `translate-document/handler.test.ts` + `staleness/*` tests. Pure internal.
-- **Execute via:** `/sp-task`
 
 ### 3. Single carrier for the plugin dependency context  [impact: M · risk: L · effort: M]
 - **Problem:** the same internal dep set (`collections`, `basePath`, `access?`, `taskRunnerFactory`,
@@ -122,7 +120,6 @@ independent.
   single object. Cleaner after Themes 1–2 encapsulate `provenanceStoreFactory` inside the module.
 - **Sequencing:** best after Themes 1–2 (fewer fields to unify). Safe incremental (internal types;
   `tsgo` catches breakage; `LevelContext` is sanctioned-internal). Pure internal.
-- **Execute via:** `/sp-task`
 
 ### 4. Single owner for staleness cache invalidation  [impact: M · risk: L-M · effort: S-M]
 - **Problem:** four uncoordinated client sites decide when the staleness query refetches; two are
@@ -138,11 +135,10 @@ independent.
   with a correctly-seeded ref; drop the premature enqueue/run invalidations.
 - **Sequencing:** independent (parallelizable); pull forward if the two UX bugs are urgent. Client-only;
   risk L-M (thinner client test coverage). No public API change.
-- **Execute via:** `/sp-task`
 
 ---
 
-## Deferred to `/simplify` (local, not architectural)
+## Deferred to local cleanup (not architectural)
 - `server/shared/index.ts:22-38` — dead core re-export block (0 importers). Delete.
 - `translate-document/handler.ts:14-17` — dead + drifted `TranslateDocumentDependencies`. Delete.
 - `client/shared/types/AccessGuard.ts` — byte-dup of `types/AccessGuard.ts` (pulls Payload into the
@@ -161,7 +157,7 @@ independent.
   internal `PluginConfigBuilder` sink.
 - Client widgets reaching into `server/shared` for `AnyAccessGuard` + `collectionHasDrafts` — genuine
   FSD boundary crossing, but these are the server-rendered halves (`.server.tsx`/`.export`) that
-  legitimately need server config; near-zero cost today (the duplicated default is in the /simplify
+  legitimately need server config; near-zero cost today (the duplicated default is in the local-cleanup
   list).
 
 ---

@@ -1,4 +1,5 @@
-import type { TranslationInput } from "../../core/domain/translation-providers/index.js";
+import { SECTION_NAMES } from "./wire/index.js";
+import type { Sections } from "./wire/index.js";
 
 /**
  * A JSON Schema document, as a plain object — deliberately untyped beyond that, so it can be dropped
@@ -8,24 +9,23 @@ import type { TranslationInput } from "../../core/domain/translation-providers/i
  */
 export type JsonSchemaObject = Record<string, unknown>;
 
-/**
- * Builds the response schema for a translation request: exactly the input's keys, all required, no
- * extras.
- */
-export function buildResponseSchema(input: TranslationInput): JsonSchemaObject {
-  const keys = Object.keys(input);
+const strictObject = (properties: Record<string, JsonSchemaObject>): JsonSchemaObject => ({
+  type: "object",
+  properties,
+  required: Object.keys(properties),
+  additionalProperties: false,
+});
 
-  const properties: Record<string, JsonSchemaObject> = {};
-  for (const key of keys) {
-    properties[key] = { type: "string" };
+export function buildResponseSchema(sections: Sections): JsonSchemaObject {
+  const sectionSchemas: Record<string, JsonSchemaObject> = {};
+
+  for (const name of SECTION_NAMES) {
+    const valueSchemas: Record<string, JsonSchemaObject> = {};
+    for (const key of Object.keys(sections[name])) {
+      valueSchemas[key] = { type: "string" };
+    }
+    sectionSchemas[name] = strictObject(valueSchemas);
   }
 
-  // Strict structured-output modes reject a schema unless every property is listed in `required`
-  // and extras are forbidden.
-  return {
-    type: "object",
-    properties,
-    required: keys,
-    additionalProperties: false,
-  };
+  return strictObject(sectionSchemas);
 }

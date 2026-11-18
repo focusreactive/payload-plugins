@@ -41,7 +41,7 @@ const enqueue = (ctx: TestPayload, ids: string[], targetLng: string | string[], 
       target_lng: targetLng,
       collection_slug: "docs",
       collection_id: ids,
-      strategy: "overwrite",
+
       publish_on_translation: true,
     },
   });

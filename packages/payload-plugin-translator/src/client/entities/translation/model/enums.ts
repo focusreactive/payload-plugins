@@ -3,4 +3,5 @@ export enum DocumentTranslationStatus {
   FAILED = "failed",
   RUNNING = "running",
   COMPLETED = "completed",
+  ABANDONED = "abandoned",
 }

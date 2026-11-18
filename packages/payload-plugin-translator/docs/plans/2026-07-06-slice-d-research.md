@@ -1,7 +1,7 @@
 # Slice D — pre-implementation research (#47)
 
 Research date: 2026-07-06. Payload **3.84.1**. Branch `feat/translator-provenance`, PR #61.
-Feeds `/sp-task` for Slice D. Companion to the design doc
+Input to the Slice D implementation. Companion to the design doc
 `2026-06-26-translation-provenance-and-lifecycle-design.md` (§ "Slice D … (detailed)").
 
 ## Problem statement
@@ -99,10 +99,7 @@ dashboard/indicator merge (#49/#50).
 - Do **not** thread `req` into `deleteByDocument` — separate tx is what makes cleanup best-effort.
 - D.4 needs a real Postgres instance (`apps/dev`/`apps/cms`); Mongo for the null round-trip.
 
-## Comprehension: 9/10
+## Status
 
-Every implementation fact is source-verified. The transaction/hook strategy is resolved (Option B).
-
-## Suggested next step
-
-**Ready for `/sp-task`** (done — implemented via Option B).
+Every implementation fact is source-verified. The transaction/hook strategy is resolved (Option B),
+and Slice D is implemented that way.

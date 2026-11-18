@@ -13,7 +13,11 @@ const ONE_ATTEMPT_SO_THE_RUN_GIVES_UP_AT_ONCE = 1;
 const DRAIN = 8;
 
 const onFailed = vi.fn<(task: Seen, error: unknown) => void>();
+const onAbandoned = vi.fn<(task: Seen) => void>();
 const onCancelled = vi.fn<(task: Seen) => void>();
+
+const localesOf = (fn: typeof onFailed | typeof onAbandoned) =>
+  fn.mock.calls.map(([task]) => task.targetLng).sort();
 
 let ctx: TestPayload;
 
@@ -27,7 +31,7 @@ describe("cancelling a run that has already given up", () => {
           backoff: { type: "fixed", delay: 0 },
         },
       }),
-      lifecycle: { onFailed, onCancelled },
+      lifecycle: { onFailed, onAbandoned, onCancelled },
       onTranslate: () => {
         throw new Error("provider down");
       },
@@ -37,45 +41,11 @@ describe("cancelling a run that has already given up", () => {
     await ctx?.cleanup();
   });
 
-  it("announces nothing: every locale was settled when the run gave up", async () => {
+  it("has nothing left to cancel: every locale settled when the run gave up", async () => {
     const made = await ctx.payload.create({
       collection: "docs",
       locale: "en",
       data: { _status: "published", title: "Spent", note: "A note" },
-    });
-    const res = await callEndpoint(ctx.payload, "post", "/translate/enqueue", {
-      body: {
-        source_lng: "en",
-        target_lng: ["de", "fr"],
-        collection_slug: "docs",
-        collection_id: [String(made.id)],
-        strategy: "overwrite",
-        publish_on_translation: false,
-      },
-    });
-    const handle = ((res.data as { data: { assignments?: Assignment[] } }).data.assignments ??
-      [])[0]?.handle;
-    for (let pass = 0; pass < DRAIN; pass++) {
-      await ctx.payload.jobs.run({ queue: "translations" });
-    }
-    expect(
-      onFailed.mock.calls.map(([task]) => task.targetLng).sort(),
-      "the run must be spent before the cancellation this check is about"
-    ).toEqual(["de", "fr"]);
-
-    await callEndpoint(ctx.payload, "delete", "/translate/cancel", { body: { ids: [handle] } });
-
-    expect(
-      onCancelled.mock.calls.map(([task]) => task.targetLng),
-      "a locale already told it failed is settled; telling it again is a second ending"
-    ).toEqual([]);
-  });
-
-  it("announces nothing when the whole collection is cancelled either", async () => {
-    const made = await ctx.payload.create({
-      collection: "docs",
-      locale: "en",
-      data: { _status: "published", title: "Spent too", note: "A note" },
     });
     await callEndpoint(ctx.payload, "post", "/translate/enqueue", {
       body: {
@@ -83,22 +53,32 @@ describe("cancelling a run that has already given up", () => {
         target_lng: ["de", "fr"],
         collection_slug: "docs",
         collection_id: [String(made.id)],
-        strategy: "overwrite",
+
         publish_on_translation: false,
       },
     });
     for (let pass = 0; pass < DRAIN; pass++) {
       await ctx.payload.jobs.run({ queue: "translations" });
     }
+    expect(
+      localesOf(onFailed),
+      "the run must be spent before the cancellation this check is about: de is what it tried"
+    ).toEqual(["de"]);
+    expect(
+      localesOf(onAbandoned),
+      "...and fr is what it never reached, so both are settled and neither is owed"
+    ).toEqual(["fr"]);
     onCancelled.mockClear();
 
-    await callEndpoint(ctx.payload, "delete", "/translate/cancel-by-collection/:collection_slug", {
-      routeParams: { collection_slug: "docs" },
+    // A settled run is not live, so neither shape of the route reaches it. Whether a run that IS
+    // reached re-announces a settled locale is `owedOnCancel`'s rule, and has its own unit test.
+    await callEndpoint(ctx.payload, "delete", "/translate/cancel", {
+      body: { collection_slug: "docs", collection_id: [String(made.id)] },
+    });
+    await callEndpoint(ctx.payload, "delete", "/translate/cancel", {
+      body: { collection_slug: "docs", select_all: true },
     });
 
-    expect(
-      onCancelled.mock.calls.map(([task]) => task.targetLng),
-      "a spent run is neither completed nor running, so this sweep reaches it"
-    ).toEqual([]);
+    expect(onCancelled.mock.calls.map(([task]) => task.targetLng)).toEqual([]);
   });
 });

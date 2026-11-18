@@ -6,7 +6,6 @@ import type { PayloadJobsRunnerConfig } from "../config.js";
 
 const testContext = {
   handler: vi.fn().mockResolvedValue(undefined),
-  collections: [],
   report: vi.fn().mockResolvedValue(undefined),
 };
 
@@ -16,7 +15,12 @@ describe("PayloadJobsTaskRunner — cancel reaches only the plugin's own jobs", 
 
   beforeEach(() => {
     payload = {
-      find: vi.fn().mockResolvedValue({ docs: [] }),
+      find: vi.fn().mockResolvedValue({
+        docs: [
+          { id: "job-1", input: { handle: "run-1", locales: ["de"] } },
+          { id: "job-2", input: { handle: "run-2", locales: ["de"] } },
+        ],
+      }),
       delete: vi.fn().mockResolvedValue(undefined),
       jobs: { cancel: vi.fn().mockResolvedValue(undefined) },
     } as unknown as Payload & { jobs: { cancel: ReturnType<typeof vi.fn> } };
@@ -35,14 +39,14 @@ describe("PayloadJobsTaskRunner — cancel reaches only the plugin's own jobs", 
   // The delete that follows is already scoped by `ownJobs()`. The cancel is not — it narrows by id
   // and queue only, so an id belonging to a host's own job on the same queue is marked cancelled.
   it("narrows the cancel by the plugin's own slugs, not by queue alone", async () => {
-    await runner.cancel(["job-1"]);
+    await runner.stop(["run-1"]);
 
     const [args] = payload.jobs.cancel.mock.calls[0] as [{ where: unknown }];
     expect(JSON.stringify(args.where)).toContain("translate_document_locales");
   });
 
-  it("still narrows it by the ids it was given", async () => {
-    await runner.cancel(["job-1", "job-2"]);
+  it("still narrows it by the jobs those handles named", async () => {
+    await runner.stop(["run-1", "run-2"]);
 
     const [args] = payload.jobs.cancel.mock.calls[0] as [{ where: unknown }];
     expect(JSON.stringify(args.where)).toContain("job-1");

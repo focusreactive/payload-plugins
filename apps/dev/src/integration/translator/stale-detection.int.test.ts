@@ -18,7 +18,7 @@ const enqueue = (ctx: TestPayload, id: string, opts: { publish: boolean; slug?: 
       target_lng: "de",
       collection_slug: opts.slug ?? "docs",
       collection_id: [id],
-      strategy: "overwrite",
+
       publish_on_translation: opts.publish,
     },
   });

@@ -6,7 +6,6 @@ type InputData = {
 };
 
 export type DocumentTranslationPending = {
-  id: string;
   status: DocumentTranslationStatus.PENDING;
   created_at: string;
   updated_at: string;
@@ -14,19 +13,17 @@ export type DocumentTranslationPending = {
 };
 
 export type DocumentTranslationFailed = {
-  id: string;
   status: DocumentTranslationStatus.FAILED;
   created_at: string;
   updated_at: string;
   input: InputData;
-  /** Unset until the job stops retrying, so a row can read `failed` with nothing to show. */
+  /** Unset until the run stops retrying, so a row can read `failed` with nothing to show. */
   error?: {
     message: string;
   };
 };
 
 export type DocumentTranslationRunning = {
-  id: string;
   status: DocumentTranslationStatus.RUNNING;
   created_at: string;
   updated_at: string;
@@ -34,7 +31,6 @@ export type DocumentTranslationRunning = {
 };
 
 export type DocumentTranslationCompleted = {
-  id: string;
   status: DocumentTranslationStatus.COMPLETED;
   created_at: string;
   updated_at: string;
@@ -42,28 +38,37 @@ export type DocumentTranslationCompleted = {
   input: InputData;
 };
 
-/**
- * One row per target locale in the document status feed. Several rows can share one job id — a job
- * carries all of a document's locales.
- */
+/** A locale the run never reached, because another locale's failure ended it. */
+export type DocumentTranslationAbandoned = {
+  status: DocumentTranslationStatus.ABANDONED;
+  created_at: string;
+  updated_at: string;
+  input: InputData;
+};
+
+/** One row per target locale in the document status feed. */
 export type DocumentTranslation =
   | DocumentTranslationCompleted
   | DocumentTranslationRunning
   | DocumentTranslationFailed
+  | DocumentTranslationAbandoned
   | DocumentTranslationPending;
 
-export type CollectionTranslationStatusItem = { id: string; status: DocumentTranslationStatus };
+export type CollectionTranslationStatusItem = { status: DocumentTranslationStatus };
 
 export type CollectionTranslationStatus = {
   docs: Array<CollectionTranslationStatusItem>;
   failed_window_ms: number;
 };
 
-/** What the collection panel reports on: work under way, never work already finished. */
-export type ReportedStatus = Exclude<
-  DocumentTranslationStatus,
-  DocumentTranslationStatus.COMPLETED
->;
+/**
+ * What the collection panel reports on. `get-collection-status` reads only live and
+ * recently-failed runs, so a completed or abandoned row never reaches it.
+ */
+export type ReportedStatus =
+  | DocumentTranslationStatus.PENDING
+  | DocumentTranslationStatus.RUNNING
+  | DocumentTranslationStatus.FAILED;
 
 /** `counts.failed` reaches back only `failedWindowMs`, not over all time. */
 export type CollectionTranslationPanel = {
@@ -77,6 +82,7 @@ export type StalenessLocale = {
   source_lng: string;
   is_stale: boolean;
   translated_at: string;
+  changed_leaves?: string[];
 };
 
 /** Per-locale staleness for a single document. */

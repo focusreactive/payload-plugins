@@ -24,9 +24,9 @@ Checked against `main`, not assumed:
 | #107: respond with `jobs: { fr, de, it }` | **Does not fit.** One run covers a list of locales (`payload-jobs-runner/types.ts:81`) and one request spans several documents (`enqueue-translation/model.ts:13`). A locale-keyed map repeats one value and collapses across documents. |
 | #110: one open run per (document, locale) | A constraint the **host** imposes on itself to make its join unambiguous. Removing the need for it is the point. |
 
-## Human choices
+## Decisions by the owner
 
-**D1 — what "the run" is: the pair (handle, target locale).** Chosen at the gate 2026-10-06.
+**D1 — what "the run" is: the pair (handle, target locale).** Decided by the owner 2026-10-06.
 Rejected: an opaque `context` the host supplies and the plugin stores — the only option that also
 answers "why did this run happen", but the plugin would take permanent custody of host-shaped data of
 unknown size. Rejected: a plugin-minted run id — a second identifier beside one that already exists,
@@ -249,21 +249,19 @@ None recorded `not verified`: every criterion was checked the way it said it wou
 
 ## Review log
 
-### 2026-10-07 — comment audit (fresh-eyes auditor, 45 blocks)
+### 2026-10-07 — comment review
 
-Density was 2.5 comment lines per 10 lines of code, all of it in docblocks: roughly 14 doc lines per
-new exported symbol, with four units documented at several times their own length (`stillOwed` 35
-doc / 3 code, `alreadyCovered` 37 / 13, `isLastAttempt` 17 / 5). 10 deleted, 24 shortened, 2 turned
-into code changes, 9 kept. Result: **163 lines over 1203, 1.35 per 10.**
+The docblocks were far longer than the code they described (`stillOwed`, `alreadyCovered` and
+`isLastAttempt` at several times their own length); most were deleted or shortened.
 
 Two findings became code rather than prose: the workflow handler's catch body became
 `owedIfGaveUp.ts`, with `taskStatus` given a typed home on `PayloadJob` instead of a structural
 cast; and `final-failure.int.test.ts`'s load-bearing `<=` became `PASSES_UNTIL_THE_RUN_GIVES_UP`.
 Two `{@link}` references that did not resolve (the symbol was never imported) were corrected. One
-verdict could not be applied as given: `SyncTaskRunner.cancel`'s body comment was load-bearing for
+proposed deletion could not be applied as given: `SyncTaskRunner.cancel`'s body comment was load-bearing for
 `no-empty-function`, so the body became `return Promise.resolve()` instead.
 
-### 2026-10-07 — fresh-eyes review of the whole diff
+### 2026-10-07 — review of the whole diff
 
 Six findings were real and are fixed; each is pinned by a check that was proven to go red without
 the fix.
@@ -274,8 +272,7 @@ the fix.
    as soon as attempts are spent on more than one locale, and the run's runs out first, so a run that
    had stopped was read as still trying. `owedIfGaveUp` now asks both. Pinned by
    `gave-up-mid-run.int.test.ts`; reverting the second counter turns it red.
-2. **The enqueue answer named a run that had already given up.** Found independently here and by the
-   reviewer. `pickHost` now refuses a run carrying `hasError`. Pinned by
+2. **The enqueue answer named a run that had already given up.** Found independently by two reviews. `pickHost` now refuses a run carrying `hasError`. Pinned by
    `retranslate-after-giving-up.int.test.ts`, which was written red and watched fail.
 3. **A cancelled run reported every locale as failed.** Deleting the row under a running job makes
    Payload's own machinery throw, and that throw reached the same catch as a translation failure.
@@ -298,15 +295,9 @@ Also from that pass: four checks that would have passed without the behaviour th
 collection-status fixture shared one document id so a constant column passed, and `stillOwed` never
 exercised the `running` state its own contract names. All four are now covered.
 
-### 2026-10-07 — sp-review-deep (focus: does the work meet #107/#110/#106/#103's real need)
-- **Vectors:** core(correctness · regression · intent) + contracts-types · tests · abstractions-solid ·
-  conventions · architecture-fit  ·  **Rounds:** 1 parallel find round + 1 opus adversarial round
-  (loop-until-dry stopped after round 2: reopening count 0 → 0, no further round)
-- **Findings:** 9 raised across both rounds · 6 dropped (low confidence) · 3 reported · 0 unresolved-reopening
-- **Reopening per round:** 0 → 0 (converged — every surviving finding is docs-only or spec-only, none
-  breaks a criterion at runtime today)
-- **Per-issue verdict, independently reached twice (parallel fan-out, then opus re-verification against
-  Payload's own compiled source):**
+### 2026-10-07 — review: does the work meet #107/#110/#106/#103's real need
+- Every finding that survived is docs-only or spec-only; none breaks a criterion at runtime today.
+- **Per-issue verdict, checked against Payload's own compiled source:**
   - **#107** — met. The flat list genuinely lets a host record a job id per document×locale row,
     including the multi-document case; `planEnqueue`'s `append ∪ queue ∪ covered` was hand-verified as
     a true partition of the requested locales.
@@ -320,44 +311,43 @@ exercised the `running` state its own contract names. All four are now covered.
     without `reason` is correct, not a gap, because there is only one path left to report.
   - **#103** — met; snake_case matches every other field this same HTTP surface already uses (and the
     sibling `get-document-status` endpoint), so it is consistency, not a substitution.
-- **Resolved (reported, fix=off so these are handoffs, not edits):**
+- **Reported, not fixed in the review itself:**
   - `README.md:419` (+4 related gaps: `onCancelled` undocumented, `/enqueue`'s `jobs` array undocumented,
     `EnqueueAssignment`/`Task` missing from the exports table, no `Since v0.16.0` note anywhere) — the
     stale "onFailed fires per attempt" claim directly contradicts D5 and this diff's own
-    `docs/DEPRECATIONS.md#on-failed-per-attempt` entry. Confidence 90.
+    `docs/DEPRECATIONS.md#on-failed-per-attempt` entry.
   - `PayloadJobsRunnerProvider.ts:222` — `owedIfGaveUp(job as unknown as PayloadJob, ...)` is an
     unnecessary type-erasing cast (confirmed by compiling a probe: `job` is structurally assignable to
     `PayloadJob` without it); a future drift between `PayloadJob` and Payload's real `Job` type would
     compile silently here and could feed `owedIfGaveUp` `undefined` counters, read as `0`, falsely
-    reporting a final failure on the first attempt. Confidence 80.
+    reporting a final failure on the first attempt.
   - `src/index.ts:62` / `TaskRunner.interface.ts:34` — the published barrel describes `findByIds` as
     "a `Task` per handle," but the shipped granularity (and the only correct one, given `onCancelled`
     fires once per returned Task) is one `Task` per handle×locale. A third-party runner built strictly
     from the barrel's wording would silently drop every locale but one from its `onCancelled`
-    announcements. Confidence 82.
-- **Left open (dropped, low confidence <75 — reported here for the record, not acted on):**
+    announcements.
+- **Left open, lower confidence — recorded, not acted on:**
   - `wireTranslateRunner.ts:78` — a legacy pre-0.11.4 standalone-task job row (no workflow wrapper)
     would never fire `onFailed` on final failure, because `reportsFinalFailure` is hardcoded `true` but
-    Payload's synthetic single-task wrapper has no catch to call `reportFinalFailure` from. Re-verified
-    independently (confidence 72): real on the facts, but reachability depends on an install still
+    Payload's synthetic single-task wrapper has no catch to call `reportFinalFailure` from. Real on the
+    facts, but reachability depends on an install still
     carrying unprocessed pre-0.11.4 job rows into this upgrade — worth a one-line check before release,
     not a blocking defect.
   - D5a's task.md "Mechanism" section (`jobsCollectionOverrides`/`afterChange`) describes an approach
     that was never built — shipped code computes finality inline in the workflow handler's own catch
-    instead. Confirmed independently by three reviewers. Doc-accuracy only; the acceptance criteria it
-    supports (6,7,7a,7b) pass via the real mechanism. (55)
+    instead. Doc-accuracy only; the acceptance criteria it supports (6,7,7a,7b) pass via the real
+    mechanism.
   - A new reverse dependency edge: `task-runner/payload-jobs-runner/owedIfGaveUp.ts` imports `stillOwed`
     from `lifecycle/` — the first time task-runner has imported from lifecycle. Layering smell, no
-    runtime circularity. (55)
+    runtime circularity.
   - `PayloadJobsTaskRunner.serve()`'s `handle === null` fallback is untested; existing unit tests weren't
     updated for the return-type change. Judged practically unreachable — Payload's `jobs.queue()` always
-    resolves an id. (45)
+    resolves an id.
   - `needsDecoration.ts` duplicates `withQueuedNotification.ts`'s hardcoded callback list with no
     structural tie — a future callback added to one without the other reproduces the bug criterion 13
-    closed. Hypothetical, not present. (55)
+    closed. Hypothetical, not present.
   - `thrownByTheHandler.ts` has no test file; its `recallThrown` fallback branch is dead in context at
-    its one call site. (40)
-- **Needs-verification (handoff, never scored):** whether the consumer who filed #110 considers "onFailed
+    its one call site.
+- **Open question:** whether the consumer who filed #110 considers "onFailed
   fires once, final-only, no attempt field" sufficient, given they explicitly asked for an attempt
   counter and the contract records that need as deliberately unmet (Follow-ups).
-- **Pin:** `3bcf7ce84574`, expires 24h

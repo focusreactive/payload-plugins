@@ -17,7 +17,7 @@ const runStillOnRecordWhenAnnounced: boolean[] = [];
 const onCancelled = vi.fn(async (task: Seen) => {
   const row = await ctx.payload.find({
     collection: "payload-jobs" as "docs",
-    where: { id: { equals: task.handle } } as never,
+    where: { "input.handle": { equals: task.handle } } as never,
   });
   runStillOnRecordWhenAnnounced.push(row.docs.length === 1);
 });
@@ -54,7 +54,7 @@ describe("cancelling announces what it stopped, to a host that registered nothin
         target_lng: ["de", "fr", "es"],
         collection_slug: "docs",
         collection_id: [String(made.id)],
-        strategy: "overwrite",
+
         publish_on_translation: false,
       },
     });
@@ -62,7 +62,9 @@ describe("cancelling announces what it stopped, to a host that registered nothin
       [])[0]?.handle;
     await ctx.payload.jobs.run({ queue: "translations" });
 
-    await callEndpoint(ctx.payload, "delete", "/translate/cancel", { body: { ids: [handle] } });
+    await callEndpoint(ctx.payload, "delete", "/translate/cancel", {
+      body: { collection_slug: "docs", collection_id: [String(made.id)] },
+    });
 
     expect(onCancelled.mock.calls.map(([task]) => task.targetLng).sort()).toEqual(["es", "fr"]);
     expect(

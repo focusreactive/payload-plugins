@@ -42,9 +42,9 @@ speculative seam.
 `top` may be a prepared copy rather than a node from the tree · whitespace-only nodes are
 already glued into a neighbouring fragment and never appear as their own fragment · the
 parser tolerates stray whitespace inside a mark · a corrupt reply returns a reason and
-never partial fragments. This is what puts Phase 3 on the `/sp-red-test` path.
+never partial fragments. This is why the tests are written from the contract before the code.
 
-**Escalate to /sp-architect?** No. The design is already decided in the companion document;
+**Does this need a separate design?** No. The design is already decided in the companion document;
 this step is two leaf modules inside one existing directory.
 
 ## Acceptance criteria
@@ -86,7 +86,7 @@ this step is two leaf modules inside one existing directory.
   run *after* this step. If the answer is bad, D13 changes and the parser changes with it —
   which is why nothing above this layer is built yet.
 
-## Human choices
+## Decisions by the owner
 
 | Decision | Chosen | Why |
 | --- | --- | --- |
@@ -96,27 +96,21 @@ this step is two leaf modules inside one existing directory.
 
 ## Review log
 
-### 2026-09-09 · sp-task step 1 (the two pure modules)
+### 2026-09-09 · step 1 (the two pure modules)
 
-- **Contract tests, blind author.** 79 checks written from the contract against throwing stubs, by
-  an agent with no implementation to read — none existed yet. Red run: 79 failed, 0 passed, 0
-  module-resolution errors, every failure the stub's own error. Artifact: scratchpad `red-run.txt`.
-- **Contract gaps the author surfaced: 23.** Twenty closed in the contract before implementing —
-  serializer on empty input, reason precedence, `unclosed-mark` as its own reason, text outside a
+- **Contract tests first.** Checks were written from the contract against throwing stubs, before any
+  implementation existed, and all failed on the stubs.
+- **Contract gaps closed before implementing:** serializer on empty input, reason precedence, `unclosed-mark` as its own reason, text outside a
   mark appended rather than dropped, `no-text` judged on non-blank content, edge restoration using
   the source's own characters, text-free fragment returned with text, tolerated liberties, mark
   numbers need not be contiguous, whitespace/empty leaves, root without children, copy depth.
-  Three went to the owner (see `## Human choices`).
-- **Anti-tautology pass caught two weak checks.** Both "the tree is not mutated" checks would have
+  Three went to the owner (see `## Decisions by the owner`).
+- **Two weak checks caught.** Both "the tree is not mutated" checks would have
   passed on an empty implementation, and the unclosed-mark check asserted only "not ok". All three
   strengthened before the implementation was written.
-- **Green run:** 34/34 and 45/45. Two checks failed on first implementation and the *tests* were
-  right: edge restoration after a reorder produced `une  voiture`, and after a merge a space
+- Two checks failed on the first implementation and the *tests* were right: edge restoration after a reorder produced `une  voiture`, and after a merge a space
   trailing the paragraph. D16 was narrowed to same-shape replies only.
-- **Mutations: 10, each red on exactly its own checks** — reply order, edge restoration,
-  missing/repeated/nested verdicts, whitespace glue, wrapper copy, mark-shaped source, single leaf,
-  and the backwards glue search. All reverted, suite green after each.
-- **Fresh-eyes review (sp-review-iteration): one major finding, confirmed and fixed.**
+- **Review found one major defect, fixed.**
   `glueWhitespace` searched only the last produced fragment, so whitespace after a line break was
   glued forwards instead of backwards and, at the end of a container, silently dropped. Two red
   tests first, then the fix, then a mutation proving they guard it. `inlineMarks` held up:
@@ -125,8 +119,6 @@ this step is two leaf modules inside one existing directory.
   French/German/Japanese × 4 models = 396 translations. Fallback rate ≈1% on gpt-4o and
   gpt-4o-mini (one `missing-mark` each), 0% on gpt-5.4-mini and gpt-5.5. Models do return the
   empty mark rather than omitting it. Total spend 17.2 ¢.
-- **Gates:** `sp-diff-checks` clean (5 checks); `sp-lint-delta` no findings introduced; lint 58
-  warnings / 0 errors — the recorded baseline; `check-types` clean; full suite 1442 passed.
-- **All 12 acceptance criteria met** by their declared checks, none substituted.
+- **All 12 acceptance criteria met** by their declared checks.
 - **Not in this step, by design:** the applicator branch, the expander, the transitional flag,
   provider capability, the prompt instruction, the retranslation pass, the circuit breaker.

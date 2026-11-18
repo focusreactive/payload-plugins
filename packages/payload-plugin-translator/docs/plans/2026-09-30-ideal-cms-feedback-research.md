@@ -181,7 +181,7 @@ Restate check:
 - Existing tests assert the block skip; they are contract tests to be rewritten, not bugs.
 - Any change to `/enqueue` body shape is a public API change (README documents it).
 
-## Consistency self-check
+## Consistency check
 
 - Every IN item has criteria: A → 1-3, B → 4-6, C → 7-9.
 - Criterion 3 is marked inferred.
@@ -191,12 +191,12 @@ Restate check:
 
 - Unresolved blocking questions: 3 (Q1, Q2, Q3).
 - IN-scope items without criteria: 0.
-- Verdict: **Needs answers first** for A and B1. C and B2/B3 can proceed independently.
+- Status: **Needs answers first** for A and B1. C and B2/B3 can proceed independently.
 
 ## Suggested next step
 
-- A → after Q1/Q2: `/sp-architect`, vector `contract` (boundary between the translator's reads and
-  other plugins' hooks on the same local API).
-- B2/B3 → `/sp-task`.
-- C → `/sp-task` on phase 5 of `2026-08-21-translation-mechanism-kernel-extraction.md` (design exists),
-  vectors `data-model` + `evolution` because of the fingerprint migration.
+- A → after Q1/Q2: a separate design of the integration contract (the boundary between the
+  translator's reads and other plugins' hooks on the same local API).
+- B2/B3 → implementation tasks.
+- C → implementation of phase 5 of `2026-08-21-translation-mechanism-kernel-extraction.md` (design
+  exists), with the data model and the fingerprint migration as the main concerns.

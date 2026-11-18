@@ -4,10 +4,15 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const SRC = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const ROOTS = ["server", "core"];
+const ROOTS = ["server", "core", "traversal"];
 
+/**
+ * Four roots, not one: the traversal engine keeps its own family because it depends on nothing,
+ * and that family reaching into this package is the first thing that would have to be unpicked to
+ * move the engine out of it.
+ */
 const DECLARES =
-  /class ([A-Za-z_][A-Za-z0-9_]*) extends (TranslatorError|TranslationProviderError)\b/gu;
+  /class ([A-Za-z_][A-Za-z0-9_]*) extends (TranslatorError|TranslationProviderError|TraversalError)\b/gu;
 
 /** Matches literal `throw new X(...)` only. A thrown variable or a rethrow is out of reach here. */
 const THROW = /throw new ([A-Za-z_][A-Za-z0-9_]*)\(/gu;

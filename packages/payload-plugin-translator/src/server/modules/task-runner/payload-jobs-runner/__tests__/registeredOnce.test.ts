@@ -7,7 +7,6 @@ import type { TaskRunnerContext } from "../../TaskRunnerProvider.interface.js";
 const context: TaskRunnerContext = {
   handler: vi.fn(),
   report: vi.fn().mockResolvedValue(undefined),
-  collections: ["posts"],
 };
 
 const configuredTwice = (): Config => {

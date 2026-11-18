@@ -4,10 +4,10 @@ Source: 2026-10-12-bound-the-status-reads.source.md
 
 ## Parsing summary
 
-- Source: the owner's question in chat, plus issue #123 filed 2026-09-03.
+- Source: a question from the owner, plus issue #123 filed 2026-09-03.
 - Ask: stop the two status endpoints loading every job row, and have the fix work on SQLite,
   PostgreSQL and MongoDB alike.
-- The owner half-remembers a narrowing already landing and asks for that to be checked first.
+- The owner recalled a narrowing already landing; that is checked first.
 - #123 measured the problem, listed three options, and set its own priority to Low. That stands.
 - Contradiction worth naming: #123's table shows a "narrowed to one collection" column as if it
   shipped. It did not — the commit that would have carried it says narrowing was rejected.
@@ -57,7 +57,7 @@ Readings:
 3. **Payload gives `limit`, `sort` and `totalDocs` on this collection**, so bounding is mechanically
    available.
 
-The probe row that reads `всего=0` is incidental and worth recording: filtering by
+The probe row that reads `total=0` is incidental and worth recording: filtering by
 `taskSlug: translate_document` alone returns nothing, because the row is a *workflow* job whose
 `taskSlug` is null. That is why `ownJobs()` is an `or` — and it is the trap any future narrowing
 must not walk into.
@@ -157,33 +157,27 @@ bug on SQLite, and two storage shapes for a document reference — no longer for
 ## Requirements
 
 - R1 (in) The two status endpoints must stop reading rows that belong to other collections.
-  > "как мы можем исправить это? Так чтобы и не доставать все записи сразу"
 - R2 (in) Whatever is done must behave the same on SQLite, PostgreSQL and MongoDB.
-  > "и при этом чтобы работало на всех бд?"
 - R3 (out) Checking the owner's recollection about an existing narrowing — answered by this research
   under "The owner's premise, checked first", so an implementation inherits the answer rather than
   the task.
-  > "ПЛюс ко всему я что-то припоминаю, мы вроде сузили окно поиска. Это не должно возвращат ьвсе записи теперь."
 - R4 (in) A document's status must not lose a locale whose most recent run is older than other
   locales' runs.
-  > "`get-document-status` keeps the latest job **per target locale**, so if one locale's most recent job is older than N others, that locale's row silently disappears. A count bound trades a slow correct answer for a fast wrong one"
+  > "`get-document-status` keeps the latest job **per target locale**, so if one locale's most recent job is older than N others, that locale's row silently disappears. A count bound trades a slow correct answer for a fast wrong one" (#123)
 - R5 (in) A document translated long ago must still report that it was translated.
-  > "A document translated three months ago stops reporting a status, and the editor cannot tell "never translated" from "translated long ago""
+  > "A document translated three months ago stops reporting a status, and the editor cannot tell "never translated" from "translated long ago"" (#123)
 - R6 (out) Bounding by count alone.
-  > "A count bound trades a slow correct answer for a fast wrong one, which is the same failure the unpaginated read was avoiding."
+  > "A count bound trades a slow correct answer for a fast wrong one, which is the same failure the unpaginated read was avoiding." (#123)
 - R7 (in) [inferred] Rows written before the ID-agnostic migration must keep being found — rests on:
   `readCollectionRef` reads both shapes today, and `docs/DEPRECATIONS.md#jobs-input-collection-field`
   keeps the legacy shape until the next major.
 - R8 (out) Deferred with the batch, see the task contract's "Why Stage B was withdrawn". The collection panel keeps reporting on the **whole collection**, not on the documents the
-  admin list happens to be showing.
-  > "Я всё еще хочу показывать статус по всей коллекции а не тольк по дументам на странице, это буде твводить в заблужение."
+  admin list happens to be showing; a page-only figure would mislead (decided by the owner).
 - R9 (out) Deferred with the batch. The panel's own needs are counts per status; the endpoint must not read rows it only counts.
-  > "Нам же по сути надо просто посчитать количество сколько задач в каком статусе, для этого нам не нужно делать выборку ВСЕХ записей."
 - R10 (out) Moot: the response shape is unchanged. `get-collection-status` may be narrowed but not broken outright: the document id and the
   target locale stay on whatever rows it still returns. The HTTP contract is **not public surface** —
   nothing in `src/index.ts` or the README describes it — so the host that filed #103 is a fact to weigh,
   not a constraint that binds the design.
-  > "контракт эндпоинтов не публичный. То, что кто-то строит на нем свою админку его проблемы. Мы его полностью ломать не будем, но учитывать этот факт стоит." 
 
 **Non-functional scan.** Performance — the point of the work. Security/access control — relevant:
 `get-collection-status` filters results through `visibleIds` after the read, so narrowing the query
@@ -285,17 +279,14 @@ nobody is pruning.
    whether it may fall back to "what is still in flight for this collection" — which is bounded too,
    but whose denominator shrinks as runs finish, so a reload during a 10-document batch could read
    "3 of 3" where the person expects "7 of 10".
-8. **Restate check** — "narrow the search window" was the owner's phrase and could mean either
+8. **Restate check** — the owner's recollection of a narrowed search window could mean either
    "fewer rows per query" or "a shorter period of history". This research reads it as the first.
 
 ## Clarifications
 
 **What `Translated — N` counts: the current run, not all history.** The owner's decision, and it
-reframes the whole task — the figure was never meant to be a lifetime total:
-
-> "translated по идее должен показывать количество переведенных записей не вообще за всё время, а за
-> текущий run… если пользователь выбрал 10 записей и нажал перевести, то надо показывать сколько
-> записей из этих 10 переведено"
+reframes the whole task — the figure was never meant to be a lifetime total. If an editor selects
+ten documents and starts a translation, the row shows how many of those ten are translated.
 
 **The batch is already identified, on the wire, today.** `POST /api/translate/enqueue` answers with
 `assignments: [{ collection_slug, collection_id, target_lng, handle }]` — one entry per document and
@@ -355,4 +346,3 @@ Needs answers first — one question, and a narrow one. Everything else is settl
 and measured, C is rejected by the owner, F is not this plugin's to exercise, and H follows from the
 consumers. What is soft is only what the `Translated` figure should mean.
 
-Next: needs-answers

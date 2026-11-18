@@ -67,3 +67,13 @@ describe("withFieldTranslation", () => {
     expect((field.custom as Record<string, unknown>).translateKit).toBeUndefined(); // original untouched
   });
 });
+
+describe("composing two calls", () => {
+  it("keeps a key the second call does not name, so an exclusion survives a rewrap", () => {
+    const excluded = withFieldTranslation(richTextField(), { exclude: true });
+    const rewrapped = withFieldTranslation(excluded);
+
+    expect(kit(rewrapped)).toEqual({ exclude: true });
+    expect(beforeInput(rewrapped)).toBeUndefined();
+  });
+});

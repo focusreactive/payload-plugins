@@ -296,7 +296,7 @@ Each numbered item is the former open question, now answered.
 
 ## Implementation slices
 
-TDD (red tests first), each slice run through `/sp-finalize` (simplify + iterative-review + gate)
+TDD (red tests first), each slice simplified and reviewed
 before its commit; tests are type-checked (tsconfig.check.json) and lint is run. New branch
 `feat/translator-provenance` off updated `main`. The `ProvenanceStore` **port** + record type are
 payload-free → they live in `@core`; only the Payload-backed store impl and hooks are adapter code.

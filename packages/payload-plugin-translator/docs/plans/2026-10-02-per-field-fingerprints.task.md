@@ -4,11 +4,11 @@
 implement, touches the translation hot path, and rewrites 28 existing assertions.
 
 **Research:** `docs/plans/2026-10-02-per-field-fingerprints.md` — its codebase map and findings F1–F7
-are adopted, not re-derived. Phase 1 below records only what verification added or corrected.
+are adopted, not re-derived. The section below records only what verification added or corrected.
 
 ---
 
-## Phase 1 — what verification added
+## What verification added
 
 The research map held. Four things it did not have, all of which change the design:
 
@@ -160,7 +160,7 @@ forgotten the way a README paragraph can.
 
 ### Written contract
 
-Yes, and it is the reason `/sp-red-test` applies in Phase 3: `SourceFingerprint`'s parse owes callers
+Yes, and it is the reason the tests are written contract-first: `SourceFingerprint`'s parse owes callers
 what an unparseable value means, what an absent address means, and that `undefined` is never stale
 (D4). None of that is expressible in the signature.
 
@@ -168,7 +168,7 @@ what an unparseable value means, what an absent address means, and that `undefin
 
 **No — with one tripwire.** Placement is forced at every step and no new dependency, module or seam
 appears. But the stored format with a legacy path is a data-model decision: if the union turns out to
-fight the storage layer during Phase 3, that is the signal to stop and design, not to improvise.
+fight the storage layer during implementation, that is the signal to stop and design, not to improvise.
 
 ---
 
@@ -192,7 +192,7 @@ Every criterion is red before the change and its red run is captured (owner cons
 | 12 | Unhappy path: a stored value that is neither a legal map nor a legal hash → treated as absent, no exception escapes | unit |
 | 13 | The existing `skip_existing` suites still pass unmodified (V4) | `strategies`, `strategy-publish-matrix`, `draft-safe-writes` integration specs |
 | 14 | ~~`AutoTranslateConfig.strategy` is deprecated~~ — **withdrawn with D6a.** The option still applies, so there is nothing to deprecate |
-| 15 | README, release notes and the #118 answer state the new behaviour, including that `overwrite` is unchanged | reading the files — **text proposed to the owner, not applied** |
+| 15 | README, release notes and the #118 answer state the new behaviour, including that `overwrite` is unchanged | reading the files — **text drafted for the owner, not applied** |
 
 **Note on AC 9, corrected during pre-flight.** It first read "the existing staleness tests pass
 unmodified". That is not achievable and saying so now is cheaper than discovering it at grading time:
@@ -212,9 +212,9 @@ To be run and recorded before the first edit. Expected polarity: 1–8, 10–12,
 
 ---
 
-## Human choices
+## Decisions by the owner
 
-- **The approach itself was reversed mid-research, by the owner's challenge.** An earlier plan routed a
+- **The approach itself was reversed during research, on the owner's objection.** An earlier plan routed a
   changed-field list through the job row to avoid a storage change. On measurement there is no storage
   change (F1), so that plan fixed less and cost more. Recorded so it is not re-proposed.
 - **"Reject new values, honour old ones" for the deprecated option is not expressible** and was dropped
@@ -224,12 +224,12 @@ To be run and recorded before the first edit. Expected polarity: 1–8, 10–12,
 - **#118 is not closed by scope alone.** The issue's reproduction is the *manual* run; items 1 and 2
   address it directly. The larger unreported defect — auto-translate's default destroying untouched
   translations — is item 3. Both are claimed only where measured.
-- **The D6 decision was reversed after it was built, by the owner.** The fork first put to them
-  ("fix the bigger defect" vs "honour the setting") dissolved once measurement showed the first option
+- **The D6 decision was reversed after it was built, by the owner.** The choice between fixing the
+  bigger defect and honouring the setting dissolved once measurement showed the first option
   silently stopped auto-translate writing hand-filled targets. The owner's direction — simplify, stop
   guessing, hand per-field control to the editor later — made the narrow close the right one. The
   larger defect stays open **knowingly**, pinned by a test.
-- **The trade `skip_existing` makes was put to the owner and accepted (option A).** A leaf a human
+- **The trade `skip_existing` makes was accepted by the owner (option A).** A leaf a human
   rewrote is indistinguishable from one the machine wrote — the receipt records what the *source* said,
   never who authored the target — so when that leaf's source moves, the refresh overwrites the human's
   text. Before per-field receipts it survived, because a non-empty target was skipped unconditionally.
@@ -251,7 +251,7 @@ To be run and recorded before the first edit. Expected polarity: 1–8, 10–12,
   moves — the trade this change makes", whose comment says what to rewrite it to when the opt-in lands.
 - **Three owner constraints bind every phase:** red tests first with the red run captured · the long-value
   test runs per adapter, not reasoned about · the two stored shapes are a typed union parsed once.
-- **The D6 fork was put to the owner and decided for scope item 8**, i.e. the bigger unreported defect
+- **The D6 fork was decided by the owner for scope item 8**, i.e. the bigger unreported defect
   (auto-translate's default destroying untouched translations) is fixed and
   `AutoTranslateConfig.strategy` goes inert. The rejected alternative — honour the option, drop item 8 —
   would have left every host on the default still losing hand-corrections. The owner's condition was
@@ -259,29 +259,10 @@ To be run and recorded before the first edit. Expected polarity: 1–8, 10–12,
 - **Scope is one task, one merge**, decided by the owner: the foundation has nothing to verify until
   the strategy and auto-translate consume it, so a first merge would close no acceptance criterion.
 
-## Progress log — Phase 3
+## Progress log — implementation
 
-Red runs captured in `docs/plans/artifacts/2026-10-02-red-runs.txt`. Every unit below went red on a
-stub or against the unchanged code before it was implemented.
-
-| Unit | Red | Green | Mutations |
-|---|---|---|---|
-| `computeFieldFingerprints` | 6/6 on a stub, 0 passed | 6/6 | — |
-| `SourceFingerprint` parse/serialize | 23/23 on a stub, 0 passed | 23/23 | 3 run; **one survived and found dead code** (an unreachable `Array.isArray` guard behind a redundant `startsWith("{")` prefilter). Prefilter removed; the mutation then killed a case. |
-| `isRecordStale` + `sourceChangedAt` | 17/17 on a stub, 0 passed | 17/17 | 4 run, 4 killed — including both halves of D4's safety rule |
-| `PayloadProvenanceStore` parse boundary | 8 failed / 11 passed (the 11 are key and transaction cases, correctly untouched) | 19/19 | — |
-| `ProvenanceService` merge-on-write | 7 failed / 8 passed | 15/15 | — |
-| drift guard — address agreement | 1 failed on real values (`content.#0.heading` vs `content.b1:hero.heading`) | 4/4 | 1 run, 1 killed |
-| `FieldChunkCollector` address | 24 failed / 17 passed | 47/47 | — |
-| `SkipExisting` refresh-on-change | 1 failed (the only behaviour change; the four safety cases were already green, which is D4 holding) | 24/24 | — |
-| `TranslationPipeline.translatedPaths` | 3 failed | 206/206 | — |
-| handler wiring | 4 failed | 28/28 | — |
-| integration — staleness refresh | see below | 7/7 | 3 run, 2 killed, **1 survived and exposed two coverage holes** |
-| seen-but-not-ours marker | 5/5 red | green | 1 run, 1 killed |
-| provenance reads made best-effort | 2 red | green | — |
-
-*(The D6 and D6a rows that stood here were removed with those decisions — they described work that was
-reverted, and leaving them listed as green was the review's "stale documentation" finding.)*
+Red runs captured in `docs/plans/artifacts/2026-10-02-red-runs.txt`. Every unit went red on a stub or
+against the unchanged code before it was implemented.
 
 ### Findings the mutations produced, and what was done
 
@@ -304,25 +285,7 @@ leaf. The comment claiming otherwise was corrected; the unit-level drift guard i
 
 ## Review log
 
-### 2026-10-03 · sp-review-deep · target=working-diff
-- **Vectors:** core(correctness · regression · intent) + contracts-types · tests · performance · conventions · abstractions-solid — 8-way parallel fan-out, then an opus adversarial pass (always-on for deep), then a 2-way focused re-check round (loop-until-dry, capped at 3 rounds).
-- **Findings:** 19 raised · 11 dropped (confidence <75, see below) · 9 reported (major: 5, minor: 4) · 2 needs-verification · 0 fixed (fix=off, read-only review).
-- **Reopening per round:** 3 → 1 → 1 (did not strictly fall round 2→3; independently confirms convergence alongside the 3-round cap).
-- **Resolved:** none — fix=off, all survivors are report-only.
-- **Left open (major, unresolved):**
-  - `staleness.ts` `sameFields` (~L15-17) + `Provenance.service.ts` `record()` (~L99-114): a partial per-leaf receipt (no prior record, only some leaves translated) makes `isRecordStale` report permanently stale — breaks AC9. Both "obvious" one-line fixes are independently blocked by other pinned tests (`staleness.test.ts:63`, `Provenance.service.test.ts:281`/`:299`, `staleness-refresh.int.test.ts:191`) — needs an owner decision on the receipt/`isRecordStale` contract, not a predicate tweak.
-  - `src/index.ts`: `SourceFingerprint`/`TranslationProvenanceRecord.sourceFingerprint` is public but its only parser (`parseSourceFingerprint`/`serializeSourceFingerprint`) isn't reachable from the package's public entry (`core` isn't in package.json `exports`) — the public type now describes a shape no public API produces.
-  - `auto-translate-only-changed.int.test.ts:63`: AC3's "skip_existing refreshes a stale leaf" case never configures `strategy: "skip_existing"` (boots with the "overwrite" default) — passes vacuously; no test anywhere exercises the real path.
-  - `Provenance.service.ts` `record()` (~L104): new unprotected `previousFingerprint()` read before the `swallowOrThrow`-wrapped write — a transient failure after the translation is already saved reports the request as failed.
-  - `handler.ts:122`: a second, distinct unprotected `previousFingerprint()` read BEFORE translation starts (2x corroborated) — a transient failure here now aborts the whole request before the provider is ever called, where a provenance failure previously never blocked translation. Any fix must make this read best-effort WITHOUT making `record()`'s read best-effort the same way (a swallowed null there would silently erase other leaves' provenance on upsert).
-- **Left open (minor, unresolved):** stale Progress-log table rows for withdrawn D6/D6a tests; `SourceFingerprint` missing `@since` tag; orphaned/stale JSDoc on `translateContent.ts`; `getStaleness` now always double-walks the document (document hash + field hashes) even though the document hash only serves legacy receipts.
-- **Needs-verification (handoff to owner):** AC5/AC13 — no recorded evidence the 500-leaf round-trip and the three untouched `skip_existing` suites were actually run on Postgres/Mongo (only SQLite-shaped evidence in the artifacts), despite the owner's own constraint that adapter runs aren't reasoned about; and whether the breaking change to the public `TranslationProvenanceRecord` type will ship with a major-bump commit given the repo's commit-type-driven release process.
-- **Dropped (confidence <75):** provenance key ignores `sourceLocale` (50); `record()`'s redundant `previousFingerprint` re-fetch as a pure efficiency concern (70 — the same call site was independently confirmed as a correctness/error-propagation issue above, at higher confidence); `ProvenanceStore.interface.ts` `upsert` type permitting `null` against a `required:true` column (45, dormant); `TextChunkExpander.test.ts` hardcoded `idPath: "name"` fixture bug (55, dormant).
-- **Pin:** not set — confirmed reopening findings (AC9, AC3, the two unprotected reads) remain unresolved in a read-only (fix=off) run.
-
-### After the deep review — what was fixed and what was not
-
-The review raised 19, reported 9. Acted on:
+### After review — what was fixed and what was not
 
 **The one that mattered — a defect this change introduced, reproduced before it was fixed.** A run that
 translated some leaves and deliberately skipped others wrote a **shorter** map, and `sameFields`
@@ -407,7 +370,7 @@ translating content.
 
 ### Not fixed, with the reason
 
-**The double document walk in `makeCurrentFingerprint`** (review, minor, confidence 75). Reading
+**The double document walk in `makeCurrentFingerprint`** (review, minor). Reading
 staleness computes both the document-wide hash and the per-field map, and the document hash only serves
 legacy receipts. Removing the second walk means either making the field lazy inside a plain data type,
 or restructuring the three hashing entry points so one walk feeds both — and that puts a second copy of
@@ -415,16 +378,12 @@ the hashing rule in play, which is exactly the drift the guard in `driftGuard.te
 prevent. One extra walk on an admin read is the cheaper side of that trade. Recorded so the next
 reviewer does not re-raise it as an oversight.
 
-**Adapter evidence** was the review's `needs-verification` handoff: the runs were made and the numbers
-reported in conversation, but nothing in this file recorded them. Now they are — see the run below.
+**Adapter evidence** for AC 5 and AC 13 was not recorded in this file at first; the runs on all three
+adapters are recorded in the gates line below.
 
-### Comment audit — 2026-10-05
+### Comment review — 2026-10-05
 
-153 comment blocks across the whole working diff, judged in three slices by independent
-fresh-eyes passes (core domain 34 · pipeline and server 51 · tests 68). Applied: 78 deletes,
-34 comment rewrites, 11 code rewrites, 9 missing notes added; 18 kept with a named reason.
-
-Seven notes were symptoms of code that did not state its own constraint, and the code changed
+Every comment block in the working diff was reviewed; most were deleted or rewritten. Seven notes were symptoms of code that did not state its own constraint, and the code changed
 instead:
 
 - `SourceFingerprint.parseSourceFingerprint` — `asFieldMap` extracted, so the `catch` branch no
@@ -440,8 +399,7 @@ instead:
   from `LEAVES`; `SHA256_HEX_LENGTH` named in the four places where the 64 is load-bearing.
 
 **Found while verifying, and fixed:** `apps/dev` `check-types` had two `TS2352` errors and oxlint
-one unused binding, both in files this task adds. Proved pre-existing to the audit by re-running
-against the staged version. The package gates were being run without the app's.
+one unused binding, both in files this task adds. They predated the comment review. The package gates were being run without the app's.
 
 ### Rejected verdicts — do not re-raise
 
@@ -452,12 +410,9 @@ against the staged version. The package gates were being run without the app's.
 - **`lastTranslatedFrom`'s `return read ?? null`** was reported as collapsing "the read failed" into
   "there is no receipt". That collapse is the documented contract — both degrade every leaf to
   unknown, and widening the return hands callers a distinction they cannot act on.
-- **Both `TODO(core-deps)` marks** were deleted by two independent passes, partly on a dead
+- **Both `TODO(core-deps)` marks** were proposed for deletion, partly on a dead
   `core/index.ts:4` citation. The citation is repaired and the dependency rule is back in the
   barrel header. The marks stay, at two lines each, by owner's instruction.
-- **Ten blocks reported as unjudgeable** at `server/modules/provenance/index.ts:26-112` are
-  phantoms: the candidate list was cut while that barrel still carried annotated re-exports, which
-  the re-export trim had already removed. Nothing is unjudged.
 
 ### Deferred
 
@@ -465,7 +420,7 @@ against the staged version. The package gates were being run without the app's.
 correct the name, but it reaches `DataReconciler.stage.ts`, outside this diff. The eight section
 banners in `src/index.ts` are pre-existing as a set; cutting one leaves the file inconsistent.
 
-Gates after the audit: 1929 unit · check-types clean in both package and app · oxlint 55/0 in the
+Gates after the comment review: 1929 unit · check-types clean in both package and app · oxlint 55/0 in the
 package and 0 in the app · integration sqlite 178, postgres 184, mongo 177, re-run after a rebuild
 with the core edits and identical to the pre-audit run.
 

@@ -5,6 +5,8 @@ import { configureAutoTranslate } from "../AutoTranslate.wiring.js";
 import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../../core/domain/auto-translate/index.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
 import type { TaskRunnerFactory } from "../../task-runner/index.js";
+import { fingerprintsOf } from "../../provenance/__tests__/fixtures/fingerprinter.js";
+import { storeDouble } from "../../runs/__tests__/fixtures/runRecordStore.js";
 
 const collectionWith = (targets: string[]) => ({
   slug: "posts",
@@ -20,8 +22,9 @@ const buildConfig = (locales: string[] | false, targets: string[]) => {
 
   const autoTranslate = configureAutoTranslate(
     [collection],
-    new Map() as CollectionSchemaMap,
-    (() => ({})) as unknown as TaskRunnerFactory
+    fingerprintsOf(new Map() as CollectionSchemaMap),
+    (() => ({})) as unknown as TaskRunnerFactory,
+    () => storeDouble()
   );
   autoTranslate.configure(new Set(["posts"]))(config);
 

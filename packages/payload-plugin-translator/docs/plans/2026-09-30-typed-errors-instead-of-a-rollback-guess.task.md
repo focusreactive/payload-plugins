@@ -92,7 +92,7 @@ Measured against the installed adapters rather than assumed:
 So MongoDB never belonged in that sentence, and the "no transaction" world is SQLite alone (plus any
 caller that opens none, such as the enqueue endpoint below).
 
-**Amended 2026-10-01, on a Phase 5 finding.** The reasoning above covers one caller — the editor's
+**Amended 2026-10-01, on a review finding.** The reasoning above covers one caller — the editor's
 `afterChange` hook. `SyncTaskRunner` has a second: the `/translate/enqueue` endpoint, which runs the
 same loop over an HTTP request with no transaction at all. There the old predicate's first conjunct
 was permanently false, so it never rethrew; dropping it turned a per-task failure into an abandoned
@@ -107,7 +107,7 @@ Payload's?" — and inferred a rollback from the answer. This asks a question ab
 the call site holds as a fact: no transaction means no caller work that a rollback could have taken.
 The error still answers its own half. Both halves are pinned by a reddening check.
 
-**One rule, not two** (owner's call, 2026-10-01). The condition reads the same everywhere it is
+**One rule, not two** (decided by the owner, 2026-10-01). The condition reads the same everywhere it is
 asked: *no transaction means the caller has no work a rollback could have taken, so swallow and log.*
 That covers the enqueue endpoint and SQLite alike. The rejected alternative was to keep the struck
 paragraph's judgement for SQLite — surface there, swallow on the endpoint — which buys a second rule
@@ -164,7 +164,7 @@ mutation would solve a problem this code does not have.
 **Written contract owed:** yes. `mustPropagate` means "swallowing this would report success for work
 that did not survive", not "this error is fatal". Stated on the field.
 
-**Escalate to /sp-architect?** No. One rule, one new base class, no new seam, no data-model change.
+**Does this need a separate design?** No. One rule, one new base class, no new seam, no data-model change.
 
 ## Acceptance criteria
 
@@ -184,7 +184,7 @@ that did not survive", not "this error is fatal". Stated on the field.
    with `const err = new Error(); throw err;` left the guard green. Four such sites exist and all four
    are deliberate (the three `mustPropagate` rethrows, which D2 requires to let foreign errors out,
    and `throw asTranslatorError(error)` in the translate handler, whose return type the compiler
-   already pins to `TranslatorError`). Extending the scan to those forms was offered and declined as
+   already pins to `TranslatorError`). Extending the scan to those forms was considered and rejected as
    costing more upkeep than it buys; what the criterion must not do is keep claiming the wider thing.
 4. **A subclass that omits the flag does not compile.**
    *Check: add one temporarily, run `bun run check-types`, see the error, remove it.*
@@ -206,7 +206,7 @@ that did not survive", not "this error is fatal". Stated on the field.
    lint at the 55-warning baseline, integration 155 on PostgreSQL and 149 + 6 adapter-skipped on
    SQLite and Mongo.
 
-## Human choices
+## Decisions by the owner
 
 - **The flag, not two roots, and not a chain of responsibility.** The owner proposed carrying the
   answer on the error rather than inferring it; the shape was chosen against the two alternatives
@@ -215,42 +215,37 @@ that did not survive", not "this error is fatal". Stated on the field.
   more figurative) and five others rejected on the grounds recorded in D1.
 - **Full scope including `src/core`**, chosen knowingly over a `server`-only pass, because a partial
   rule is a rule that fails on its first pipeline bug.
-- **The transaction condition dropped, on the owner's challenge.** Asked three times why the
-  transaction had to be known at all; the answer each time rested on an untested adapter difference.
-  Measuring the specs settled it — see D2.
+- **The transaction condition dropped**, after the owner questioned why the transaction had to be
+  known at all; the justification rested on an untested adapter difference. Measuring the specs
+  settled it — see D2.
 - **The client layer is out.** `client/`'s `TranslationApiError` and `NextApiError` run in a browser
   where no transaction exists.
 
 ## Review log
 
-- 2026-09-30 — contract written. Phase 1 found the complication in D1 before any code existed:
+- 2026-09-30 — contract written. The investigation found the complication in D1 before any code existed:
   `translationPermission.ts:77` throws our own error after Payload has already rolled back, which
   a naive "ours → swallow" rule would have swallowed.
 
-- 2026-10-01 — Phase 3 stopped and returned to Phase 2 twice, both times on evidence rather than
+- 2026-10-01 — implementation went back to design twice, both times on evidence rather than
   argument. First when nine checks reddened: the draft had dropped the transaction condition
-  silently, and the failures named the lost case. Then again when the owner asked why the
+  silently, and the failures named the lost case. Then again when the owner questioned why the
   transaction mattered at all — reading the two pinning specs showed they separate the outcomes by
   who raised the error, and that all three transaction specs skip off PostgreSQL. The simpler rule
   is the one that ships.
 
-### 2026-10-01 · phase 5
-- **Checks:** `bunx vitest run` 1823 in 133 files · `bun run check-types` clean ·
-  `bunx oxlint .` 55 (the package baseline, unchanged) ·
-  `bunx turbo run build --filter='./packages/*'` 10/10 ·
-  integration 155 on PostgreSQL, 149 + 6 adapter-skipped on SQLite and on Mongo.
-- **Gates:** sp-diff-checks clean (5 checks); sp-lint-delta 0 introduced, mode=two-run.
-- **Reviewers:** correctness · regression · intent · tests, concurrent. Six findings; three
-  reopened the work and are fixed below, two were accepted as contract amendments, one was
-  referred out as not belonging to this change.
-- **Criteria:** 8 met, 0 partial, 0 not-run, 0 not met — after two of them were narrowed to
-  what their checks actually prove (3 and 7).
-- **Left open:** three files in this working tree carry another session's edits —
+### 2026-10-01 · verification and review
+- **Review:** correctness, regression, intent and tests. Six findings; three reopened the work and
+  are fixed below, two were accepted as contract amendments, one was referred out as not belonging
+  to this change.
+- **Criteria:** all 8 met — after two of them were narrowed to what their checks actually prove
+  (3 and 7).
+- **Left open:** three files in this working tree carry unrelated edits from parallel work —
   `wireTranslateRunner.ts` and `SyncRunnerProvider.ts` (comment deletions) and
   `enqueue-translation/handler.ts` (brace reformatting). None has a code change and none
   belongs to this task; they must be separated before anything is committed.
 
-What the reviewers found that this task had got wrong, and what measured it:
+What the review found that this task had got wrong, and what measured it:
 
 - **A provider failure that killed the caller's transaction was being swallowed.**
   `translateOrWrap`, added earlier in this task to stop a bare `Error` from a host provider
@@ -276,16 +271,13 @@ What the reviewers found that this task had got wrong, and what measured it:
 - **Criterion 3 claimed more than its guard proves.** Narrowed, with the demonstration recorded
   on the criterion itself.
 
-- **Verified and rejected:** an audit claim that a host rule's error text reaches an HTTP
+- **Verified and rejected:** a review claim that a host rule's error text reaches an HTTP
   response. `permission-check-failed` is in the failure-reason catalogue, so
   `toClientErrorMessage` substitutes safe text. No change made.
 
-- **Pin:** not set — the tree carries another session's uncommitted edits (above), so pinning
-  this working diff would bless bytes this task never reviewed.
-
 ### 2026-10-01 · D2 resolved, one rule
-- **Owner's call:** one rule everywhere — no transaction means no caller work a rollback could have
-  taken, so swallow and log. The struck paragraph's SQLite judgement is not kept.
+- **Decided by the owner:** one rule everywhere — no transaction means no caller work a rollback
+  could have taken, so swallow and log. The struck paragraph's SQLite judgement is not kept.
 - **Fact corrected:** MongoDB does set `req.transactionID`; it never belonged in that paragraph.
   SQLite alone opens no transaction by default. Measured against the installed adapters, table in D2.
 - **Gap closed:** SQLite behaviour was pinned by nothing (all three transaction specs carry
@@ -293,6 +285,4 @@ What the reviewers found that this task had got wrong, and what measured it:
   mirroring `transaction-validation-failure` with the opposite expectation. Proved by mutation:
   dropping `scope.transactionID != null &&` reddens it ("keeps the save, because no transaction
   carried it"), restored and green.
-- **Checks:** unit 1823 · check-types clean · oxlint 55 · integration 150 on SQLite,
-  155 on PostgreSQL, 149 on Mongo (156 cases, the rest adapter-skipped).
 

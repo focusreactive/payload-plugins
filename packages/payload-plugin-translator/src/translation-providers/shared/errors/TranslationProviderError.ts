@@ -1,16 +1,5 @@
+import type { TranslationFailureCode } from "../../../core/domain/translation-providers/index.js";
 import { TranslatorError } from "../../../core/errors/index.js";
-
-/**
- * Failure causes a translation provider can report.
- *
- * @since 0.11.0
- */
-export type TranslationFailureCode =
-  | "no-content"
-  | "unparseable-reply"
-  | "key-set-mismatch"
-  | "transport"
-  | "config";
 
 /**
  * Base class for every failure a built-in translation provider reports.

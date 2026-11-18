@@ -12,7 +12,7 @@ import Popup from "../../../shared/ui/Popup/index.js";
 import styles from "./styles.module.scss";
 
 type CollectionTranslationPopupProps = PropsWithChildren<{
-  /** Aggregate status across the collection's jobs → the corner marker (same as the document trigger). */
+  /** Aggregate status across the collection's runs → the corner marker (same as the document trigger). */
   status?: PanelStatus;
   selectedCount: number;
 }>;

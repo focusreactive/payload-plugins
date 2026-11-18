@@ -1,34 +1,62 @@
-import { TranslatorBug } from "../../../errors/index.js";
-import { parseInlineMarks } from "../../../kernel/lexical/inlineMarks.js";
-import type { PipelineContext, PipelineStage } from "../../types/index.js";
-import { isRichContainerChunk } from "../../types/index.js";
+import { checkSegments } from "../../../kernel/lexical/checkSegments.js";
+import { isFailureCode, TranslationFailed } from "./TranslationFailed.js";
+import { isObject } from "../../../kernel/utils/isObject.js";
+import { readFailureReason } from "../../../errors/failureReason.js";
+import type { PipelineContext, PipelineStage, SettledAnswer } from "../../types/index.js";
+import type { TranslationTarget } from "../../../../traversal/index.js";
 import type {
+  TranslatedValue,
   TranslationProvider,
-  TranslationRequestOptions,
+  TranslationRequest,
 } from "../../../domain/translation-providers/index.js";
 
-/** Writes onto chunks the expander created, rather than returning — see `RichContainerChunk.reply`. */
-function parseContainerReplies(ctx: PipelineContext, translations: Record<number, string>): void {
-  for (const chunk of (ctx.textChunks ?? []).filter(isRichContainerChunk)) {
-    const reply = translations[chunk.index];
-    if (reply === undefined) continue;
+const alreadyNamesItsReason = (thrown: unknown): boolean =>
+  thrown instanceof Error && readFailureReason(thrown.message) !== null;
 
-    const result = parseInlineMarks(reply, chunk.fragments);
-    if (result.ok) chunk.reply = result.fragments;
-  }
+function asUserFacingFailure(thrown: unknown): unknown {
+  if (alreadyNamesItsReason(thrown)) return thrown;
+  if (!isObject(thrown)) return thrown;
+
+  const { code } = thrown;
+  return isFailureCode(code) ? new TranslationFailed(code, thrown) : thrown;
 }
 
-function requestOptions(ctx: PipelineContext): TranslationRequestOptions {
-  const options: TranslationRequestOptions = { document: ctx.document };
-
-  if ((ctx.textChunks ?? []).some(isRichContainerChunk)) options.inlineMarks = true;
-
-  return options;
+function translationRequest(ctx: PipelineContext): TranslationRequest {
+  return { sourceLng: ctx.sourceLng, targetLng: ctx.targetLng, document: ctx.document };
 }
 
 /**
- * Calls translation provider to translate text.
+ * Judged against the target the walk recorded, never `ctx.textMap`: the provider is handed a
+ * shallow copy and nothing stops it writing through.
  */
+function settleTarget(
+  target: TranslationTarget,
+  answer: TranslatedValue | undefined
+): SettledAnswer {
+  if (answer === undefined) {
+    return { kind: "failed", failure: { code: "not-answered" } };
+  }
+
+  if (answer.kind === "failed") {
+    return { kind: "failed", failure: { code: answer.code, message: answer.message } };
+  }
+
+  if (target.kind === "text") {
+    return answer.kind === "text"
+      ? { kind: "text", text: answer.text }
+      : { kind: "failed", failure: { code: "wrong-kind" } };
+  }
+
+  if (answer.kind !== "segments") {
+    return { kind: "failed", failure: { code: "wrong-kind" } };
+  }
+
+  const checked = checkSegments(answer.segments, target.pieces);
+  return checked.ok
+    ? { kind: "segments", segments: checked.segments }
+    : { kind: "failed", failure: { code: checked.reason } };
+}
+
 export class TranslationStage implements PipelineStage {
   private readonly provider: TranslationProvider;
   constructor(provider: TranslationProvider) {
@@ -40,19 +68,17 @@ export class TranslationStage implements PipelineStage {
       return ctx;
     }
 
-    const translations = await this.provider.translate(
-      ctx.textMap,
-      ctx.sourceLng,
-      ctx.targetLng,
-      requestOptions(ctx)
-    );
+    const answers = await this.provider
+      .translate({ ...ctx.textMap }, translationRequest(ctx))
+      .catch((thrown: unknown): never => {
+        throw asUserFacingFailure(thrown);
+      });
 
-    if (!translations) {
-      throw new TranslatorBug("Translation provider returned null");
+    const settled: Record<number, SettledAnswer> = {};
+    for (const [index, target] of (ctx.collected?.targets ?? []).entries()) {
+      settled[index] = settleTarget(target, answers[index]);
     }
 
-    parseContainerReplies(ctx, translations);
-
-    return { ...ctx, translations };
+    return { ...ctx, answers: settled };
   }
 }

@@ -1,14 +1,22 @@
 import type { Payload } from "payload";
+import type { Criteria } from "../translation-run/index.js";
+import { DRIFT_CRITERION, driftedLeaves } from "./Provenance.criterion.js";
 
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
+import type { TranslationModule } from "../plugin-config/index.js";
 
-import { ProvenanceService } from "./Provenance.service.js";
+import { provenanceModule } from "./Provenance.module.js";
+
+import { ProvenanceRecorder } from "./ProvenanceRecorder.service.js";
+import type { RecorderIo } from "./ProvenanceRecorder.service.js";
+import { DocumentStaleness } from "./DocumentStaleness.service.js";
+import type { DocumentStalenessIo } from "./DocumentStaleness.service.js";
 import { PayloadProvenanceStore } from "./Provenance.store.js";
 import type { ProvenanceStoreFactory } from "./Provenance.store.js";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import type { SourceDocumentReader } from "./Provenance.shapes.js";
+import type { SourceFingerprinter } from "../../../core/domain/content-projection/sourceFingerprinter.js";
 import {
   DEFAULT_PROVENANCE_SLUG,
   ensureProvenanceCollectionRegistered,
@@ -30,23 +38,18 @@ function resolveProvenanceSlug(option: ProvenanceOption): string | null {
   return option.slug || DEFAULT_PROVENANCE_SLUG;
 }
 
-/**
- * Everything the provenance module contributes at config time, in one object (mirrors
- * `TaskRunnerProvider.configure`): the request-scoped {@link ProvenanceService} factory used by the
- * handlers/routes, and the single {@link ConfigModifier} that registers the sidecar collection and
- * the cleanup hook. When provenance is disabled, `serviceFactory` is absent and `configure` is a no-op.
- */
-export type ProvenanceModule = {
-  serviceFactory?: ProvenanceServiceFactory;
-  configure(managedSlugs: Set<string>): ConfigModifier;
-};
-
-const NOOP: ConfigModifier = (config) => config;
-
 const OUTSIDE_THE_CALLERS_TRANSACTION = undefined;
 
-/** The two things {@link ProvenanceService} needs from Payload, bound to one instance. */
-export const provenanceIo = (payload: Payload) => ({
+export const recorderIo = (payload: Payload, fingerprintOf: SourceFingerprinter): RecorderIo => ({
+  fingerprintOf,
+  logger: payload.logger,
+});
+
+export const documentStalenessIo = (
+  payload: Payload,
+  fingerprintOf: SourceFingerprinter
+): DocumentStalenessIo => ({
+  fingerprintOf,
   logger: payload.logger,
   readSource: ({ collection, id, locale, user }: Parameters<SourceDocumentReader>[0]) =>
     fetchSourceDocument({
@@ -59,40 +62,76 @@ export const provenanceIo = (payload: Payload) => ({
     }),
 });
 
-export type ProvenanceServiceFactory = (
+export type ProvenanceRecorderFactory = (
   payload: Payload,
   scope?: RequestScope
-) => ProvenanceService;
+) => ProvenanceRecorder;
 
-/**
- * Turn the opt-in `provenance` option into a self-contained {@link ProvenanceModule}. This is the one
- * place provenance's config-time wiring lives — `plugin.ts` only calls `configureProvenance(...)` and
- * registers the returned modifier through the shared builder (no raw `config.collections` mutation).
- */
+export type DocumentStalenessFactory = (
+  payload: Payload,
+  scope?: RequestScope
+) => DocumentStaleness;
+
+export type ProvenanceContribution = {
+  module: TranslationModule;
+  criteria: Criteria;
+};
+
 export function configureProvenance(
   option: ProvenanceOption,
-  schemaMap: CollectionSchemaMap
-): ProvenanceModule {
+  fingerprintOf: SourceFingerprinter
+): ProvenanceContribution | undefined {
   const slug = resolveProvenanceSlug(option);
-  if (!slug) return { configure: () => NOOP };
+  if (!slug) return undefined;
 
-  const storeFactory: ProvenanceStoreFactory = (payload, scope) =>
-    new PayloadProvenanceStore(payload, slug, scope);
+  const storeFactory: ProvenanceStoreFactory = (payload, scope) => {
+    return new PayloadProvenanceStore(payload, slug, scope);
+  };
 
-  const serviceFactory: ProvenanceServiceFactory = (payload, scope = {}) =>
-    new ProvenanceService(storeFactory(payload, scope), schemaMap, scope, provenanceIo(payload));
+  const recorderFactory: ProvenanceRecorderFactory = (payload, scope = {}) => {
+    return new ProvenanceRecorder(
+      storeFactory(payload, scope),
+      scope,
+      recorderIo(payload, fingerprintOf)
+    );
+  };
 
-  const configure =
+  const stalenessFactory: DocumentStalenessFactory = (payload, scope = {}) => {
+    return new DocumentStaleness(
+      storeFactory(payload, scope),
+      scope,
+      documentStalenessIo(payload, fingerprintOf)
+    );
+  };
+
+  const refuseACollidingSlug: ConfigModifier = (config) => {
+    const theHostsOwn = (config.collections ?? []).filter(
+      (collection) => !isProvenanceCollection(collection)
+    );
+    assertProvenanceSlugFree(slug, theHostsOwn);
+    return config;
+  };
+
+  const addTheCollection: ConfigModifier = (config) => {
+    ensureProvenanceCollectionRegistered(config, slug);
+    return config;
+  };
+
+  const cleanUpOnDelete =
     (managedSlugs: Set<string>): ConfigModifier =>
     (config) => {
-      assertProvenanceSlugFree(
-        slug,
-        (config.collections ?? []).filter((collection) => !isProvenanceCollection(collection))
-      );
-      ensureProvenanceCollectionRegistered(config, slug);
       injectProvenanceCleanup(config, managedSlugs, storeFactory, slug);
       return config;
     };
 
-  return { serviceFactory, configure };
+  return {
+    module: provenanceModule({
+      recorderFactory,
+      stalenessFactory,
+      refuseACollidingSlug,
+      addTheCollection,
+      cleanUpOnDelete,
+    }),
+    criteria: { [DRIFT_CRITERION]: driftedLeaves(recorderFactory) },
+  };
 }

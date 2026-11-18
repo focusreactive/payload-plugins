@@ -13,7 +13,7 @@ const PUBLISHED_NOTE = "PUBLISHED NOTE";
 const PUBLISHED_PRICE = 200;
 const DRAFT_PRICE = 999;
 const FOREIGN_DRAFT = "FR SECRET DRAFT";
-const CLEARED_TO_GIVE_THE_RERUN_WORK = "";
+const CLEARED_BY_A_PERSON = "";
 
 type Slug = "docs" | "plain" | "auto";
 type Locale = "en" | "de" | "fr";
@@ -58,10 +58,12 @@ const readAt = (draft: boolean) => (collection: Slug, id: string, locale: Locale
 const live = readAt(false);
 const asDraft = readAt(true);
 
+const ruleFilters = (rules?: string[]) => rules?.map((name) => ({ kind: "rule", name }));
+
 async function translate(
   collection: Slug,
   id: string,
-  opts: { publish: boolean; strategy?: "overwrite" | "skip_existing" }
+  opts: { publish: boolean; rules?: string[] }
 ): Promise<void> {
   const res = await callEndpoint(payload, "post", "/translate/enqueue", {
     body: {
@@ -69,7 +71,7 @@ async function translate(
       target_lng: "de",
       collection_slug: collection,
       collection_id: [id],
-      strategy: opts.strategy ?? "overwrite",
+      filters: ruleFilters(opts.rules),
       publish_on_translation: opts.publish,
     },
   });
@@ -159,7 +161,7 @@ describe("draft-safe and per-locale-safe writes (#102)", () => {
     expect((await live("auto", id, "de")).title).toBe(TRANSLATED);
   });
 
-  it("skip_existing preserves a human's correction to a draft translation", async () => {
+  it("leaves a draft translation alone when the source behind it did not move", async () => {
     const id = await create("docs", "published");
     await translate("docs", id, { publish: false });
 
@@ -168,14 +170,16 @@ describe("draft-safe and per-locale-safe writes (#102)", () => {
       id,
       locale: "de",
       draft: true,
-      data: { title: "HUMAN FIX", subtitle: CLEARED_TO_GIVE_THE_RERUN_WORK },
+      data: { title: "HUMAN FIX", subtitle: CLEARED_BY_A_PERSON },
     });
 
-    await translate("docs", id, { publish: false, strategy: "skip_existing" });
+    await translate("docs", id, { publish: false, rules: ["stale"] });
 
     const de = await asDraft("docs", id, "de");
-    expect(de.title).toBe("HUMAN FIX");
-    expect(de.subtitle).toBe(tr("de", SUBTITLE));
+    expect(de.title, "the correction stands: its source did not move").toBe("HUMAN FIX");
+    expect(de.subtitle, "a cleared leaf is not refilled: its source did not move").toBe(
+      CLEARED_BY_A_PERSON
+    );
   });
 
   it("publish mode takes the current draft live, including edits the translation did not touch", async () => {
@@ -215,11 +219,11 @@ describe("draft-safe and per-locale-safe writes (#102)", () => {
     expect((await live("docs", id, "en")).nonLocalizedNote).toBe(PUBLISHED_NOTE);
   });
 
-  it("publish mode with skip_existing actually publishes", async () => {
+  it("publish mode publishes a run narrowed to what moved", async () => {
     const id = await create("docs", "published");
     await translate("docs", id, { publish: false });
 
-    await translate("docs", id, { publish: true, strategy: "skip_existing" });
+    await translate("docs", id, { publish: true, rules: ["stale"] });
 
     const de = await live("docs", id, "de");
     expect(de.title).toBe(TRANSLATED);

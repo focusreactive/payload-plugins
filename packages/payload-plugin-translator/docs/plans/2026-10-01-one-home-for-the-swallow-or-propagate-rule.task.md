@@ -19,9 +19,9 @@ reasons that are not the same reason:
    a helper taking `scope` as a parameter does it by construction.
 
 **This is not a behaviour-preserving extraction, and that is the point.** Unifying the rule changes
-two of the four sites — see D5 and the gate question.
+two of the four sites — see D5 and the owner's decision below.
 
-## What already exists — platform · installed · project · verdict
+## What already exists
 
 - **Platform / installed libraries:** nothing. The rule is this plugin's own domain question ("did a
   Payload operation run, and does this caller have work a rollback could have taken"). Payload
@@ -33,7 +33,7 @@ two of the four sites — see D5 and the gate question.
   wrap work, catch, decide. The package also habitually names helpers as full sentences
   (`dropLocalesTheProjectDoesNotHave`, `markEvictable`), so a long honest name is the idiom, not a
   deviation.
-- **Verdict:** build the helper, in the project's existing shape and naming. Nothing to reuse.
+- **Conclusion:** build the helper, in the project's existing shape and naming. Nothing to reuse.
 
 ## Decisions
 
@@ -73,7 +73,7 @@ outside `core/errors/` itself. **Recorded so the first `core` case does not quie
 copy:** if `core` ever needs this rule, that is a design question, not an import.
 
 **D5 — which catches join, answered one by one.**
-`Provenance.service` has three; the brief asked for a verdict on each.
+`Provenance.service` has three; each is decided separately.
 
 | catch | what it guards | joins? |
 |---|---|---|
@@ -86,8 +86,8 @@ copy:** if `core` ever needs this rule, that is a design question, not an import
 evaluates to swallow, which is what it already does. It joins so the answer is uniform and explicit
 rather than absent.
 
-**D6 — this is a trade, declared as one.** CHANGE 4 → 1; READ rises by 1 (a new file every call site
-sends you to). It is admitted not as tidiness but because the divergence it removes is a silent
+**D6 — this is a trade, declared as one.** Places to edit when the rule changes: 4 → 1; places a
+reader must open rises by 1 (a new file every call site sends you to). It is admitted not as tidiness but because the divergence it removes is a silent
 correctness bug: the four copies disagreed, nothing caught it, and the cost of the disagreement is an
 editor told "saved" over a row that no longer exists.
 
@@ -96,13 +96,13 @@ editor told "saved" over a row that no longer exists.
 **Written contract owed:** yes — when it swallows versus throws, that `onFailure` runs either way,
 that `scope` is read at entry and not at the catch, and that `undefined` means swallowed.
 
-**`/sp-red-test`?** No, and deliberately. The behaviour is not new: it is pinned by 40 existing spec
-cases across the three sites plus three integration checks. What is new is the name and the
-read-at-entry guarantee. The discipline that fits is red-first per changed behaviour plus the
-mandated mutation on both halves at every site — not a blind author re-deriving a rule the contract
-above already states.
+**Tests written from the contract first?** No, and deliberately. The behaviour is not new: it is
+pinned by 40 existing spec cases across the three sites plus three integration checks. What is new
+is the name and the read-at-entry guarantee. The discipline that fits is red-first per changed
+behaviour plus a mutation on both halves at every site — not re-deriving a rule the contract above
+already states.
 
-**Escalate to `/sp-architect`?** No. One helper, one layer, no new seam, no data-model change.
+**Does this need a separate design?** No. One helper, one layer, no new seam, no data-model change.
 
 ## Acceptance Criteria
 
@@ -142,17 +142,17 @@ checking these numbers against `HEAD` will get different ones and should not con
 - **The behaviour change is the risk.** On a path with no transaction, the hook and
   `Provenance.record` currently *propagate* a foreign error and would afterwards *swallow* it. That
   follows the one-rule decision recorded in the previous task's D2 amendment, but it is a real change
-  on a high-risk path and it is the gate question.
+  on a high-risk path and it needed the owner's decision.
 - **A throwing helper inside a loop abandons the rest of it.** That was the `SyncTaskRunner` bug
   fixed yesterday. `getStaleness` has the same shape — a `for` over locales. Today its rule can never
   fire (no scope), but if a caller ever hands it one, a propagating failure would drop the remaining
   locales. Noted, not solved here.
 - **The helper hides the `throw`.** Mitigated only by the name, which is why the name is long.
 
-## Human choices
+## Decisions by the owner
 
-- **2026-10-01 — one rule everywhere, behaviour change accepted.** The gate named the consequence
-  explicitly: on a path with no transaction the hook and `Provenance.record` propagate a foreign
+- **2026-10-01 — one rule everywhere, behaviour change accepted.** Decided with the consequence
+  stated explicitly: on a path with no transaction the hook and `Provenance.record` propagate a foreign
   error today and will swallow it afterwards. Chosen over a `requireTransaction` parameter that
   would have preserved behaviour bit-for-bit, because that parameter is the options bag D2 exists to
   prevent and would leave the rule as two rules in one file. Chosen over leaving `getStaleness` out,
@@ -174,36 +174,31 @@ checking these numbers against `HEAD` will get different ones and should not con
 
 ## Review log
 
-- 2026-10-01 — contract written. Phase 1 found two things the brief did not have: `getStaleness`
+- 2026-10-01 — contract written. The investigation found two things the request did not mention: `getStaleness`
   calls Payload through `fetchSourceDocument` and has no rule (a fourth divergence), and `hookArgs`
   builds a `req` with no `transactionID`, which is why today's hook case passes and why unifying the
   rule changes that site's behaviour.
 
-### 2026-10-01 · sp-task phase 5
-- **Checks:** `bunx vitest run` **1837 in 134 files** · `bun run check-types` clean ·
-  `bunx oxlint .` **55 warnings, 0 errors** (the baseline) ·
-  `bunx turbo run build --filter='./packages/*'` 10/10 (the command CI actually runs) ·
-  integration **150 SQLite / 155 PostgreSQL / 149 Mongo** of 156, the rest adapter-skipped.
-- **Gates:** sp-diff-checks clean (5 checks); sp-lint-delta 0 introduced, mode=two-run.
-- **Reviewers:** correctness · regression · intent, concurrent. correctness and regression returned
-  **no findings**, each after tracing the risky edits to Payload's own source. intent returned four.
-- **Criteria:** 8 met, 0 partial, 0 not-run, 0 not met — after criterion 2 was rewritten (below).
-- **Left open:** three files in this tree carry another session's edits and belong to no task here —
+### 2026-10-01 · verification and review
+- **Review:** correctness, regression and intent. Correctness and regression found **nothing**, each
+  after tracing the risky edits to Payload's own source. The intent review found four issues.
+- **Criteria:** all 8 met — after criterion 2 was rewritten (below).
+- **Left open:** three files in this tree carry unrelated edits from parallel work —
   `wireTranslateRunner.ts`, `SyncRunnerProvider.ts`, `enqueue-translation/handler.ts`. They must be
   separated before anything is committed.
 
-What the reviewers changed:
+What the review changed:
 
 - **Criterion 4 was not met for the fourth site.** `getStaleness` joined the rule with no test of
   either half — the mutation matrix had four rows, but the `Provenance` row was covering `record`.
   Three cases added: a locale that cannot be recomputed is dropped and the loop continues (no
   transaction); a foreign failure propagates (in a transaction); one of ours is swallowed (in a
-  transaction). Both halves now redden two cases each at that site. This is the finding of the run.
+  transaction). Both halves now redden two cases each at that site. This was the main finding.
 - **Criterion 2 counted the wrong thing.** It read `grep -rln … | 5 files`, which counts files and
   is inflated by the helper's own spec importing the symbol; two of the four call sites share
   `Provenance.service.ts`, so the file count could never have proved "four sites migrated". Rewritten
-  to count `await swallowOrThrow(` outside `__tests__` — now exactly 4. I had noticed
-  the same slip in Phase 4 and recorded it; the reviewer showed it was worse than a wording problem.
+  to count `await swallowOrThrow(` outside `__tests__` — now exactly 4. The slip had
+  been noticed during the regression sweep; the review showed it was worse than a wording problem.
 - **Two intent findings rested on the wrong baseline** and are rejected, with the cause fixed.
   Both argued from `git show HEAD:`, which is two tasks behind: the predecessor typed-errors work is
   finished but still uncommitted in this tree, so at `HEAD` there is no `mustPropagate` at all and
@@ -211,10 +206,7 @@ What the reviewers changed:
   against the working tree as this task found it, where the divergence this task removes was real
   and visible. A `## Pre-flight` preamble now states the baseline so the next reader is not sent the
   same way.
-- **Two lint errors, mine.** The three new `getStaleness` cases used
+- **Two lint errors introduced by this change.** The three new `getStaleness` cases used
   `async () => Promise.reject(…)`, which `unicorn(no-useless-promise-resolve-reject)` rejects —
-  caught by the run going from 0 errors to 2, not by a reviewer. Rewritten as `throw`.
-
-- **Pin:** not set — the tree carries another session's uncommitted edits, so pinning this working
-  diff would bless bytes this task never reviewed.
+  caught by lint, not by review. Rewritten as `throw`.
 

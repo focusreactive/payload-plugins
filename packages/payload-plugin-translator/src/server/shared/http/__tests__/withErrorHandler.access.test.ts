@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { APIError } from "payload";
 
+import type { PayloadRequest } from "payload";
+
 import { withErrorHandler } from "../withErrorHandler.js";
+
+const req = { headers: new Headers() } as unknown as PayloadRequest;
 
 // A provider error can carry the API key — the sanitizer's own docblock names
 // `401 Incorrect API key provided: sk-proj-…` as the case. Production is the environment that matters;
@@ -16,7 +20,7 @@ describe("withErrorHandler — what reaches the caller in production", () => {
   });
 
   const body = async (error: unknown) => {
-    const result = await withErrorHandler(vi.fn().mockRejectedValue(error))();
+    const result = await withErrorHandler(vi.fn().mockRejectedValue(error))(req);
     return (await result.json()) as { message: string };
   };
 
@@ -39,9 +43,9 @@ describe("withErrorHandler — what reaches the caller in production", () => {
   });
 
   it("still answers with a status the caller can act on", async () => {
-    const result = await withErrorHandler(
-      vi.fn().mockRejectedValue(new APIError("whatever", 404))
-    )();
+    const result = await withErrorHandler(vi.fn().mockRejectedValue(new APIError("whatever", 404)))(
+      req
+    );
 
     expect(result.status).toBe(404);
   });

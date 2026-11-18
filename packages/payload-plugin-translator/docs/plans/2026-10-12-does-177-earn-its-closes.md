@@ -15,7 +15,7 @@ and the decision is written down with its alternative), **skipped** (not met and
 
 - The four issues in full, with their bodies as filed (all four say "Read against **0.10.1**").
 - `docs/plans/2026-10-06-lifecycle-run-context.task.md` — the contract for the original work, whose
-  `## Human choices` carries D1–D10 and whose `## Review log` carries an earlier deep review of this
+  `## Decisions by the owner` carries D1–D10 and whose `## Review log` carries an earlier deep review of this
   same question.
 - The code on `feat/translator-lifecycle-run-context`, read on disk (byte-identical to the branch).
 - The tests named below, each opened rather than cited from the contract.
@@ -107,7 +107,7 @@ relative to the branch, and saying `reason` is missing would be scoring the lett
 ## Is any of the four skipped?
 
 **No.** Every requirement is either met, or declined with its reason and its rejected alternative
-recorded in `2026-10-06-lifecycle-run-context.task.md` under `## Human choices`.
+recorded in `2026-10-06-lifecycle-run-context.task.md` under `## Decisions by the owner`.
 
 ## The one thing that should block a clean conscience at merge
 
