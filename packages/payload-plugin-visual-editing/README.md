@@ -13,7 +13,7 @@ Peer dependencies, all optional: `payload ^3.79`, `@payloadcms/ui ^3.79`, `react
 - The Payload app (the plugin and its admin components) needs `payload`, `@payloadcms/ui` and React 19, which Payload 3 requires anyway.
 - A React frontend that imports `./client` needs `react` and `react-dom` 18.2 or newer.
 - A site that imports only `./dom` needs none of them.
-- A site that lets its editors write rich text on the page imports `./rich-text` and needs Lexical: `lexical`, `@lexical/rich-text`, `@lexical/list`, `@lexical/history`, `@lexical/selection` and `@lexical/utils`, all `0.50.0`, the version `@payloadcms/richtext-lexical` 3.90 uses. No other entry of the package imports them, see [The Lexical packages](#the-lexical-packages).
+- A site that lets its editors write rich text on the page imports `./rich-text` and needs Lexical: `lexical`, `@lexical/rich-text`, `@lexical/list`, `@lexical/history`, `@lexical/selection` and `@lexical/utils`, all `0.50.0`, the version `@payloadcms/richtext-lexical` 3.90 uses. Before 3.90 it uses Lexical 0.41, so a site on Payload 3.79 to 3.89 installs 0.50 next to it. No other entry of the package imports them, see [The Lexical packages](#the-lexical-packages).
 
 The plugin does not import `next`; the setup below uses Next.js because the Payload admin runs on it. It is built and tested against Payload `3.90.1`.
 
@@ -691,13 +691,15 @@ Rich text is never edited in the element the site rendered, which React or your 
 
 ### The Lexical packages
 
-The editor is Lexical without React, the same version Payload's own rich text field uses, so the state is edited in the format it is stored in. It lives in its own entry, `@focus-reactive/payload-plugin-visual-editing/rich-text`, and no other entry imports it or Lexical, statically or dynamically: a site that does not pass `richTextEditor` bundles none of it and needs none of the packages.
+The editor is Lexical 0.50 without React, the version Payload's own rich text field uses from 3.90 on, so the state is edited in the format it is stored in. It lives in its own entry, `@focus-reactive/payload-plugin-visual-editing/rich-text`, and no other entry imports it or Lexical, statically or dynamically: a site that does not pass `richTextEditor` bundles none of it and needs none of the packages.
 
-A site that passes `richTextEditor` needs the six packages where its bundler can resolve them. A frontend in the same project as Payload usually has them through `@payloadcms/richtext-lexical`; a frontend of its own, or a package manager that does not hoist, installs them:
+A site that passes `richTextEditor` needs the six packages where its bundler can resolve them. A frontend in the same project as Payload 3.90 or newer usually has them through `@payloadcms/richtext-lexical`; a frontend of its own, or a package manager that does not hoist, installs them:
 
 ```bash
 bun add lexical@0.50.0 @lexical/rich-text@0.50.0 @lexical/list@0.50.0 @lexical/history@0.50.0 @lexical/selection@0.50.0 @lexical/utils@0.50.0
 ```
+
+`@payloadcms/richtext-lexical` before 3.90 uses Lexical 0.41. A site on Payload 3.79 to 3.89 that imports `./rich-text` installs Lexical 0.50 next to it: a second copy, used only by the chunk of the page that edits rich text, while the admin keeps its own. A site that does not import `./rich-text` is not affected.
 
 Written as `() => import(…)`, the entry becomes a chunk of its own that the page loads on the first pointer move over rich text that can be edited: about 83 kB gzipped (255 kB minified), once.
 
