@@ -11,6 +11,14 @@ export const DATA_VE_OPAQUE_ATTR = "data-ve-opaque";
 
 export const DATA_VE_EDIT_STARTING_ATTR = "data-ve-edit-starting";
 
+export const DATA_VE_CARET_ON_ADDED_LINE_ATTR = "data-ve-caret-on-added-line";
+
+const ADDED_LINE_BREAK_ATTR = "data-lexical-managed-linebreak";
+
+const HIDDEN_ADDED_LINE = `:not([${DATA_VE_CARET_ON_ADDED_LINE_ATTR}]) > br:not([${ADDED_LINE_BREAK_ATTR}]) + br[${ADDED_LINE_BREAK_ATTR}]`;
+
+export const ADDED_LINE_STYLE = `[${DATA_VE_EDITING_ATTR}] ${HIDDEN_ADDED_LINE},[${DATA_VE_EDITED_ATTR}] ${HIDDEN_ADDED_LINE}{display:none !important}`;
+
 const STARTING_STYLE_ID = "ve-rich-text-starting-style";
 const STARTING_STYLE = `[${DATA_VE_EDIT_STARTING_ATTR}]{outline:2px dashed var(${ACCENT_VAR}, ${DEFAULT_ACCENT}) !important;outline-offset:2px !important;cursor:progress !important}`;
 
@@ -143,6 +151,9 @@ export const readOnlyCopyOf = (twin: HTMLElement): HTMLElement => {
     : (copy.querySelector<HTMLElement>(EDITED_ELEMENT) ?? copy);
   for (const attr of ATTRS_OF_AN_EDITOR) edited.removeAttribute(attr);
   for (const caret of copy.querySelectorAll(CARETS_OF_THE_EDITOR)) caret.remove();
+  for (const block of copy.querySelectorAll(`[${DATA_VE_CARET_ON_ADDED_LINE_ATTR}]`)) {
+    block.removeAttribute(DATA_VE_CARET_ON_ADDED_LINE_ATTR);
+  }
   copy.setAttribute(DATA_VE_EDITED_ATTR, "");
   return copy;
 };

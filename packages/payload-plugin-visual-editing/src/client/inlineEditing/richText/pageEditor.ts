@@ -77,6 +77,8 @@ import type { EditorNode } from "../../../shared/richText/editorNodes.js";
 import type { VeRichTextFormats } from "../../../shared/richText/formats.js";
 import type { TextPosition } from "../caret.js";
 
+import { DATA_VE_CARET_ON_ADDED_LINE_ATTR } from "../richTextTwin.js";
+
 import { forEachEditableNode } from "../../../shared/richText/editableNodes.js";
 import { rootOf } from "../../../shared/richText/editorNodes.js";
 import { BULLET_LIST, NUMBERED_LIST } from "../../../shared/richText/formats.js";
@@ -710,6 +712,17 @@ const registerKeptOpaqueNodes = (editor: LexicalEditor, kept: readonly EditorNod
   );
 };
 
+const $blockWithTheCaretOnItsAddedLine = (): string | null => {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection) || !selection.isCollapsed()) return null;
+  const { anchor } = selection;
+  const block = anchor.getNode();
+  if (anchor.type !== "element" || !$isElementNode(block)) return null;
+  const isAfterAnEndingBreak =
+    anchor.offset === block.getChildrenSize() && $isLineBreakNode(block.getLastChild());
+  return isAfterAnEndingBreak ? block.getKey() : null;
+};
+
 export function createPageEditor(
   twin: HTMLElement,
   state: VeEditorState,
@@ -779,6 +792,13 @@ export function createPageEditor(
 
   let reported = JSON.stringify(stateNow());
   let selectedPlaceholders: HTMLElement[] = [];
+  let blockWithTheCaretOnItsAddedLine: HTMLElement | null = null;
+
+  const showTheAddedLineOf = (key: string | null) => {
+    blockWithTheCaretOnItsAddedLine?.removeAttribute(DATA_VE_CARET_ON_ADDED_LINE_ATTR);
+    blockWithTheCaretOnItsAddedLine = key === null ? null : editor.getElementByKey(key);
+    blockWithTheCaretOnItsAddedLine?.setAttribute(DATA_VE_CARET_ON_ADDED_LINE_ATTR, "");
+  };
 
   const reportChange = () => {
     const changed = stateNow();
@@ -841,6 +861,7 @@ export function createPageEditor(
         if (dirtyElements.size > 0 || dirtyLeaves.size > 0) reportChange();
         editorState.read($rememberRange);
         showSelectedPlaceholders(editorState.read($selectedOpaqueKeys));
+        showTheAddedLineOf(editorState.read($blockWithTheCaretOnItsAddedLine));
         events.onSelection(editorState.read($shownSelection));
       }
     ),

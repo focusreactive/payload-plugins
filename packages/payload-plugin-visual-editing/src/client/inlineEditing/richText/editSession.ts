@@ -3,7 +3,7 @@ import type { EditorSelection } from "./pageEditor.js";
 import type { Toolbar } from "./toolbar.js";
 
 import { ACCENT_VAR, DEFAULT_ACCENT } from "../../overlay/constants.js";
-import { DATA_VE_EDITED_ATTR } from "../richTextTwin.js";
+import { ADDED_LINE_STYLE, DATA_VE_EDITED_ATTR } from "../richTextTwin.js";
 import { addEditingStyle, DATA_VE_EDITING_ATTR } from "../textEditing.js";
 import {
   createPageEditor,
@@ -35,7 +35,7 @@ const addFormatStyle = (doc: Document): void => {
   if (doc.querySelector(`#${STYLE_ID}`)) return;
   const style = doc.createElement("style");
   style.id = STYLE_ID;
-  style.textContent = `${TWIN_STYLE}${FORMAT_STYLE}${SELECTED_PLACEHOLDER_STYLE}`;
+  style.textContent = `${TWIN_STYLE}${FORMAT_STYLE}${SELECTED_PLACEHOLDER_STYLE}${ADDED_LINE_STYLE}`;
   doc.head.append(style);
 };
 

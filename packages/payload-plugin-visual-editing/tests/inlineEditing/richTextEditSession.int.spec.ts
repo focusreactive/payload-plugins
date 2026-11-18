@@ -157,6 +157,8 @@ const textNodesIn = (node: LexicalNode): LexicalNode[] => {
   return $isElementNode(node) ? node.getChildren().flatMap(textNodesIn) : [];
 };
 
+const isShown = (shown: Element) => getComputedStyle(shown).display !== "none";
+
 const renderedBy = (html: string) => {
   const rendered = document.createElement("section");
   rendered.innerHTML = html;
@@ -584,6 +586,61 @@ describe("one edit of rich text", () => {
       start(TWO_PARAGRAPHS);
 
       expect(caret()).toEqual(["After", 5]);
+    });
+  });
+
+  describe("a line break that ends a block", () => {
+    const LINE_BREAK = { type: "linebreak", version: 1 };
+    const ENDING_IN_A_BREAK = stateOf(
+      element("list", [element("listitem", [text("Item"), LINE_BREAK], { value: 1 })], {
+        listType: "bullet",
+        start: 1,
+        tag: "ul",
+      }),
+      paragraph(text("After"))
+    );
+
+    const addedLine = () =>
+      twin.querySelector<HTMLElement>("li br[data-lexical-managed-linebreak]") as HTMLElement;
+
+    const placeCaretAfterTheBreak = () =>
+      update(() => {
+        const item = $getRoot().getFirstDescendant()?.getParent();
+        if ($isElementNode(item)) item.select(item.getChildrenSize(), item.getChildrenSize());
+      });
+
+    it("adds no line the site does not show", () => {
+      start(ENDING_IN_A_BREAK);
+
+      expect(addedLine()).not.toBeNull();
+      expect(isShown(addedLine())).toBe(false);
+      expect(isShown(twin.querySelector("li br:not([data-lexical-managed-linebreak])")!)).toBe(
+        true
+      );
+    });
+
+    it("shows the line once the caret is on it, so the editor sees where it types", () => {
+      start(ENDING_IN_A_BREAK);
+
+      placeCaretAfterTheBreak();
+
+      expect(isShown(addedLine())).toBe(true);
+    });
+
+    it("hides the line again when the caret leaves it", () => {
+      start(ENDING_IN_A_BREAK);
+      placeCaretAfterTheBreak();
+
+      select(1, 0, 0);
+
+      expect(isShown(addedLine())).toBe(false);
+    });
+
+    it("keeps a line break inside a block as it is", () => {
+      start(stateOf(paragraph(text("One"), LINE_BREAK, text("Two"))));
+
+      expect(twin.querySelector("br[data-lexical-managed-linebreak]")).toBeNull();
+      expect(isShown(twin.querySelector("br")!)).toBe(true);
     });
   });
 
