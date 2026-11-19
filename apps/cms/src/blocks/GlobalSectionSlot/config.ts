@@ -8,8 +8,8 @@ export const GlobalSectionSlotBlock: Block = withSectionVisibility({
   interfaceName: "GlobalSectionSlotBlock",
   ...getBlockPreviewImage("Global Block"),
   labels: {
-    plural: { en: "Global Blocks", es: "Bloques Globales" },
-    singular: { en: "Global Block", es: "Bloque Global" },
+    plural: { en: "Global sections", es: "Secciones globales" },
+    singular: { en: "Global section", es: "Sección global" },
   },
   fields: [
     {

@@ -75,8 +75,8 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
                 initCollapsed: true,
               },
               blocks: [...siteBlocks, ...contentBlocks, GlobalSectionSlotBlock],
-              // The site renders with its own stylesheet, so only the site's own sections are offered.
-              filterOptions: siteBlockSlugs,
+              // The site renders with its own stylesheet, so only the site's own sections and global sections are offered.
+              filterOptions: [...siteBlockSlugs, GlobalSectionSlotBlock.slug],
               label: { en: "Sections", es: "Secciones" },
               localized: true,
               name: "blocks",

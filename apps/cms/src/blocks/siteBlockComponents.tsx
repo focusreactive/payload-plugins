@@ -28,6 +28,7 @@ import { doctorBlockComponents } from "./site/templates/doctor";
 import { stateBlockComponents } from "./site/templates/state";
 import { treatmentBlockComponents } from "./site/templates/treatment";
 import type { SiteBlockComponents, SiteBlockContext } from "./site/types";
+import { SiteGlobalSection } from "./GlobalSectionSlot/SiteGlobalSection";
 
 /** Block slug to the component that renders it with the site's own markup. */
 export const siteBlockComponents: SiteBlockComponents = {
@@ -55,6 +56,7 @@ export const siteBlockComponents: SiteBlockComponents = {
   ...conditionBlockComponents,
   ...doctorBlockComponents,
   ...blogBlockComponents,
+  globalSectionSlot: SiteGlobalSection,
 };
 
 export const isSiteBlock = (blockType: string | null | undefined): boolean =>

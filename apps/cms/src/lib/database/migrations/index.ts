@@ -49,6 +49,7 @@ import * as migration_20261116_171431_remove_ab_testing from './20261116_171431_
 import * as migration_20261117_123529_add_autosave_to_header_footer from './20261117_123529_add_autosave_to_header_footer';
 import * as migration_20261118_173100_review_workflow from './20261118_173100_review_workflow';
 import * as migration_20261119_124217_restore_ab_testing from './20261119_124217_restore_ab_testing';
+import * as migration_20261119_160100_global_sections_hold_site_blocks from './20261119_160100_global_sections_hold_site_blocks';
 
 export const migrations = [
   {
@@ -305,5 +306,10 @@ export const migrations = [
     up: migration_20261119_124217_restore_ab_testing.up,
     down: migration_20261119_124217_restore_ab_testing.down,
     name: '20261119_124217_restore_ab_testing',
+  },
+  {
+    up: migration_20261119_160100_global_sections_hold_site_blocks.up,
+    down: migration_20261119_160100_global_sections_hold_site_blocks.down,
+    name: '20261119_160100_global_sections_hold_site_blocks',
   },
 ];

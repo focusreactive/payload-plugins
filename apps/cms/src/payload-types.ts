@@ -4666,6 +4666,27 @@ export interface GlobalBlock {
    * The single block this global represents. Edit once, reuse on any page.
    */
   block: (
+    | LogoStripBlock
+    | IconListBlock
+    | MediaTextBlock
+    | InsuranceBlock
+    | DoctorSliderBlock
+    | ReviewSliderBlock
+    | ConditionGridBlock
+    | BeforeAfterBlock
+    | TreatmentCardsBlock
+    | PostSliderBlock
+    | SiteCtaBlock
+    | CenterTextBlock
+    | StickyMediaBlock
+    | ResultsSliderBlock
+    | StateSitesBlock
+    | StateDoctorsBlock
+    | LocationsAccordionBlock
+    | ClinicInfoBlock
+    | QuizDemoBlock
+    | TrendingBlock
+    | BlogListBlock
     | ContentBlock
     | FaqBlock
     | TestimonialsListBlock
@@ -10870,6 +10891,27 @@ export interface GlobalBlockSelect<T extends boolean = true> {
   block?:
     | T
     | {
+        logoStrip?: T | LogoStripBlockSelect<T>;
+        iconList?: T | IconListBlockSelect<T>;
+        mediaText?: T | MediaTextBlockSelect<T>;
+        insurance?: T | InsuranceBlockSelect<T>;
+        docSlider?: T | DoctorSliderBlockSelect<T>;
+        revSlider?: T | ReviewSliderBlockSelect<T>;
+        condGrid?: T | ConditionGridBlockSelect<T>;
+        beforeAfter?: T | BeforeAfterBlockSelect<T>;
+        treatCards?: T | TreatmentCardsBlockSelect<T>;
+        postSlider?: T | PostSliderBlockSelect<T>;
+        siteCta?: T | SiteCtaBlockSelect<T>;
+        centerText?: T | CenterTextBlockSelect<T>;
+        stickyMedia?: T | StickyMediaBlockSelect<T>;
+        results?: T | ResultsSliderBlockSelect<T>;
+        stateSites?: T | StateSitesBlockSelect<T>;
+        stateDocs?: T | StateDoctorsBlockSelect<T>;
+        locAccord?: T | LocationsAccordionBlockSelect<T>;
+        clinicInfo?: T | ClinicInfoBlockSelect<T>;
+        quizDemo?: T | QuizDemoBlockSelect<T>;
+        trending?: T | TrendingBlockSelect<T>;
+        blogList?: T | BlogListBlockSelect<T>;
         content?: T | ContentBlockSelect<T>;
         faq?: T | FaqBlockSelect<T>;
         testimonialsList?: T | TestimonialsListBlockSelect<T>;

@@ -2,6 +2,7 @@ import { VISUAL_SECTIONS_GROUP } from "@/lib/config/adminGroups";
 import type { CollectionConfig } from "payload";
 
 import { contentBlocks } from "@/blocks/contentBlocks";
+import { siteBlocks, siteBlockSlugs } from "@/blocks/siteBlocks";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import {
   createLivePreviewEditComponents,
@@ -56,7 +57,9 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
         },
         initCollapsed: true,
       },
-      blocks: contentBlocks,
+      blocks: [...siteBlocks, ...contentBlocks],
+      // Stock blocks stay in the schema so older global sections still load; only site sections are offered.
+      filterOptions: siteBlockSlugs,
       localized: true,
       maxRows: 1,
       minRows: 1,

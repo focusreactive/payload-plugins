@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { GlobalBlockContent } from "@/blocks/GlobalSectionSlot/GlobalBlockRenderer";
+import { SiteGlobalSectionContent } from "@/blocks/GlobalSectionSlot/SiteGlobalSection";
 import { SitePage } from "@/components/site/layout/SitePage";
 import { getPreviewDocument } from "@/dal";
 import { getSiteChrome } from "@/dal/entities";
@@ -61,13 +61,23 @@ export default async function StandalonePreviewPage({ params }: Args) {
       );
     }
     case "globalBlock": {
-      const globalBlock = await getPreviewDocument({ ...read, collection: "globalBlock" });
+      const [globalBlock, chrome] = await Promise.all([
+        getPreviewDocument({ ...read, collection: "globalBlock" }),
+        getSiteChrome(locale),
+      ]);
       if (!globalBlock) notFound();
 
       return (
-        <main>
-          <GlobalBlockContent globalBlock={globalBlock} />
-        </main>
+        <SitePage
+          bodyId="global-section-preview"
+          footer={chrome.footer}
+          header={chrome.header}
+          locale={locale}
+          path="/"
+          template="default"
+        >
+          <SiteGlobalSectionContent globalBlock={globalBlock} locale={locale} />
+        </SitePage>
       );
     }
   }
