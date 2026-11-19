@@ -291,9 +291,6 @@ export const plugins: Plugin[] = [
       "categories",
       "authors",
       "testimonials",
-      // The site header and footer render through the site chrome, which has no standalone preview here.
-      "header",
-      "footer",
       "document-embeddings",
       "redirects",
       "presets",

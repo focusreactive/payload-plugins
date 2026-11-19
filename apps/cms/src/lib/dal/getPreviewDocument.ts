@@ -8,10 +8,11 @@ import type { Config } from "@/payload-types";
 
 import { PAGE_RENDER_DEPTH } from "./getPageBySlug";
 
+// Header and footer at the depth the site chrome reads them with (getSiteChrome).
 const PREVIEW_DEPTH: Record<StandalonePreviewCollection, number> = {
-  footer: 1,
+  footer: 2,
   globalBlock: PAGE_RENDER_DEPTH,
-  header: 1,
+  header: 2,
 };
 
 export async function getPreviewDocument<TCollection extends StandalonePreviewCollection>({

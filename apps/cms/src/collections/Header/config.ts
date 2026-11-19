@@ -10,9 +10,10 @@ import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
 import { rowTitle } from "@/blocks/site/shared";
 import {
-  createLiveBeforeDocumentControls,
+  createLivePreviewEditComponents,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
+import { createStandalonePreview } from "@/lib/utils/standalonePreview";
 
 import { revalidateResourcesUsingHeader } from "./hooks/revalidateResourcesUsingHeader";
 
@@ -42,12 +43,13 @@ export const Header: CollectionConfig<"header"> = {
   },
   admin: {
     components: {
-      edit: { beforeDocumentControls: createLiveBeforeDocumentControls() },
+      edit: createLivePreviewEditComponents(),
     },
     defaultColumns: ["name", "logo", "_status", "updatedAt"],
     group: VISUAL_SECTIONS_GROUP,
     listSearchableFields: ["name"],
     useAsTitle: "name",
+    ...createStandalonePreview("header"),
   },
   fields: [
     {
