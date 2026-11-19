@@ -235,6 +235,8 @@ export function createEditTransport(
     if (isLatest) latestPosted.delete(address);
     if (isLatest && refusal === null) {
       givenToForm.delete(address);
+      unsavedInForm.delete(address);
+      postedToAdmin.delete(address);
       rememberSaved(edit, continued, stored);
     }
     return { isLatest, refusal };

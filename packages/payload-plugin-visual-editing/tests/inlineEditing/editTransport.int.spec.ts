@@ -367,6 +367,25 @@ describe("the transport of an edit", () => {
         expect(body).toMatchObject({ base: "Shown", sentBefore: "Shown c", value: "Shown cd" });
       });
 
+      it("says saved once the endpoint saved a field the closed admin never saved", async () => {
+        let adminWindow: Window | null = { postMessage: vi.fn() } as unknown as Window;
+        transport.dispose();
+        transport = createEditTransport(
+          () => ctx,
+          (status) => {
+            statuses.push(status);
+          },
+          window,
+          () => adminWindow
+        );
+        transport.sendNow({ ...TITLE, base: "Shown", value: "Shown c" });
+        adminWindow = null;
+        transport.sendNow({ ...TITLE, base: "Shown", value: "Shown cd" });
+        await settle();
+
+        expect(statuses.at(-1)).toBe("saved");
+      });
+
       it("forgets the value the form was given once the endpoint saved the field", async () => {
         let adminWindow: Window | null = { postMessage: vi.fn() } as unknown as Window;
         transport.dispose();
