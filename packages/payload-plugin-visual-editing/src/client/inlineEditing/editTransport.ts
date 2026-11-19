@@ -39,6 +39,8 @@ export type OnStatus = (status: EditStatus, refusal?: SaveRefusal) => void;
 
 export type OnDelivered = () => void;
 
+export type RetryRefused = () => void;
+
 export interface EditTransport {
   send(edit: VeEdit, onDelivered?: OnDelivered): void;
   hold(edit: VeEdit): void;
@@ -49,6 +51,7 @@ export interface EditTransport {
   flush(): void;
   flushBeforeLeaving(): void;
   refuse(field: EditedField): void;
+  refuseAsked(field: EditedField, refusal: SaveRefusal, askAgain: RetryRefused): void;
   settle(saved: VeLiveDocument | null): void;
   retry(): void;
   dispose(): void;
@@ -64,7 +67,7 @@ type WaitingEdit = {
   onDelivered?: OnDelivered;
 };
 
-type FailedEdit = { edit: VeEdit; refusal: SaveRefusal };
+type FailedEdit = { refusal: SaveRefusal } & ({ edit: VeEdit } | { askAgain: RetryRefused });
 
 type EditValue = string | VeEditorState;
 
@@ -180,9 +183,9 @@ export function createEditTransport(
     return "saved";
   };
 
-  const fail = (edit: VeEdit, refusal: SaveRefusal) => {
-    failed.delete(editedFieldAddressOf(edit));
-    failed.set(editedFieldAddressOf(edit), { edit, refusal });
+  const fail = (field: EditedField, failure: FailedEdit) => {
+    failed.delete(editedFieldAddressOf(field));
+    failed.set(editedFieldAddressOf(field), failure);
   };
 
   const countSaveOnTheWay = (address: string, change: number) => {
@@ -237,7 +240,7 @@ export function createEditTransport(
     const isSaved = refusal === null;
     countSaveOnTheWay(editedFieldAddressOf(edit), -1);
     if (isLatest && isSaved) failed.delete(editedFieldAddressOf(edit));
-    else if (isLatest && refusal) fail(edit, refusal);
+    else if (isLatest && refusal) fail(edit, { edit, refusal });
     report(statusAfterASave());
     if (isDisposed || !isLatest) return;
     watchedSaves.get(editedFieldAddressOf(edit))?.(isSaved);
@@ -322,13 +325,20 @@ export function createEditTransport(
     refuse(field) {
       const edit = postedToAdmin.get(editedFieldAddressOf(field));
       if (!edit) return;
-      fail(edit, SAVE_FAILED);
+      fail(edit, { edit, refusal: SAVE_FAILED });
+      report("failed");
+    },
+    refuseAsked(field, refusal, askAgain) {
+      fail(field, { askAgain, refusal });
       report("failed");
     },
     retry() {
-      const edits = [...failed.values()];
+      const refused = [...failed.values()];
       failed.clear();
-      for (const { edit } of edits) deliver(edit);
+      for (const failure of refused) {
+        if ("edit" in failure) deliver(failure.edit);
+        else failure.askAgain();
+      }
       if (unsavedInForm.size > 0) report("unsaved");
     },
     send(edit, onDelivered) {
@@ -354,6 +364,7 @@ export function createEditTransport(
       return waiting.has(address) || savesOnTheWay.has(address) || failed.has(address);
     },
     holdInForm(field) {
+      failed.delete(editedFieldAddressOf(field));
       unsavedInForm.set(editedFieldAddressOf(field), field);
       report("unsaved");
     },

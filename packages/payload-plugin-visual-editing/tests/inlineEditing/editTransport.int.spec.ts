@@ -228,6 +228,30 @@ describe("the transport of an edit", () => {
       expect(postToAdmin).not.toHaveBeenCalled();
     });
 
+    it("says a pick the form refused is not saved, and asks for it again on Retry", () => {
+      const image = { ...TITLE, key: "image" };
+      const askAgain = vi.fn(() => transport.holdInForm(image));
+
+      transport.refuseAsked(image, "not-editable", askAgain);
+      transport.retry();
+
+      expect(askAgain).toHaveBeenCalledTimes(1);
+      expect(statuses).toEqual(["failed", "unsaved", "unsaved"]);
+      expect(refusals[0]).toBe("not-editable");
+    });
+
+    it("forgets a refused pick once the form holds a newer pick of the field", () => {
+      const image = { ...TITLE, key: "image" };
+      const askAgain = vi.fn();
+      transport.refuseAsked(image, "failed", askAgain);
+
+      transport.holdInForm(image);
+      transport.retry();
+
+      expect(statuses.at(-1)).toBe("unsaved");
+      expect(askAgain).not.toHaveBeenCalled();
+    });
+
     it("ignores a refusal of an edit it did not post", () => {
       transport.refuse(TITLE);
 

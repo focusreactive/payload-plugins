@@ -125,8 +125,8 @@ export function createInlineEditing(
     holdsFormOf,
     isInsideRichText: richTextEditing.isInsideRichText,
     holdInForm: transport.holdInForm,
+    refuseAsked: transport.refuseAsked,
     save: transport.sendNow,
-    showStatus,
     tracker,
   });
   saveStatus = createSaveStatus(document, transport.retry);

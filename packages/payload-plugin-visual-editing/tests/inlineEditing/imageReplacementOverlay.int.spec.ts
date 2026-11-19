@@ -33,6 +33,7 @@ import {
   postFromAdmin,
   restorePreviewWindow,
   stubAdminWindow,
+  stubOpenerWindow,
 } from "../support/previewWindow";
 import { flushMutations } from "../support/time";
 
@@ -69,11 +70,11 @@ const statusLabel = () =>
   document.querySelector(`[${DATA_VE_SAVE_STATUS_ATTR}]`)?.shadowRoot?.querySelector("span")
     ?.textContent;
 
-const retry = () =>
-  document
-    .querySelector(`[${DATA_VE_SAVE_STATUS_ATTR}]`)
-    ?.shadowRoot?.querySelector("button")
-    ?.click();
+const retryButton = () =>
+  document.querySelector(`[${DATA_VE_SAVE_STATUS_ATTR}]`)?.shadowRoot?.querySelector("button") ??
+  null;
+
+const retry = () => retryButton()?.click();
 
 const messagesOfType = (post: ReturnType<typeof vi.fn>, type: string) =>
   post.mock.calls.map(([message]) => message as { type: string }).filter((m) => m.type === type);
@@ -290,6 +291,27 @@ describe("replacing an image on the page", () => {
 
       expect(requestsTo("/visual-editing/field-edit")).toHaveLength(2);
       expect(statusLabel()).toBe("Saved");
+    });
+
+    it("saves the picked image again on Retry after the endpoint could not be reached", async () => {
+      const answer = fetchApi.getMockImplementation() as (url: string) => Promise<Response>;
+      let isOffline = true;
+      fetchApi.mockImplementation((url: string) =>
+        isOffline && url.endsWith("/field-edit")
+          ? Promise.reject(new Error("offline"))
+          : answer(url)
+      );
+      await useLighthouse();
+      expect(statusLabel()).toBe("Not saved");
+      expect(image.getAttribute("src")).toBe("/old.jpg");
+      isOffline = false;
+
+      retry();
+      await flushMutations();
+
+      expect(requestsTo("/visual-editing/field-edit")).toHaveLength(2);
+      expect(statusLabel()).toBe("Saved");
+      expect(image.getAttribute("src")).toBe(`${CMS}/api/media/file/lighthouse.jpg`);
     });
 
     it("puts the image of the page back when the save is refused", async () => {
@@ -534,18 +556,19 @@ describe("replacing an image on the page", () => {
       expect(image.getAttribute("src")).toBe(`${CMS}/api/media/file/lighthouse.jpg`);
     });
 
-    it("says so when the form cannot take the request, and opens the field instead", () => {
+    it("opens the field instead when the form cannot take the request, and offers no Retry, as the endpoint does", () => {
       formOfThePage();
       ask();
 
       postFromAdmin({ ...IMAGE_FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE });
 
-      expect(statusLabel()).toBe("Not saved");
+      expect(statusLabel()).toBeUndefined();
+      expect(retryButton()).toBeNull();
       expect(image.getAttribute("src")).toBe("/old.jpg");
       expect(messagesOfType(postToAdmin, VE_MESSAGE_TYPE)).toMatchObject([{ path: "image" }]);
     });
 
-    it("asks the admin for no drawer again on Retry after a refusal", () => {
+    it("asks the admin for no drawer again after a refusal", () => {
       formOfThePage();
       ask();
       postFromAdmin({ ...IMAGE_FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE });
@@ -555,6 +578,86 @@ describe("replacing an image on the page", () => {
 
       expect(messagesOfType(postToAdmin, VE_PICK_MEDIA_TYPE)).toHaveLength(1);
       expect(messagesOfType(postToAdmin, VE_MESSAGE_TYPE)).toHaveLength(1);
+    });
+  });
+
+  describe("in the pop-up window of Live Preview", () => {
+    const postToOpener = vi.fn();
+
+    const fromOpener = (data: unknown) => postFromAdmin(data, { source: window.opener });
+
+    const refused = () => fromOpener({ ...IMAGE_FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE });
+
+    const picks = () => messagesOfType(postToOpener, VE_PICK_MEDIA_TYPE);
+
+    beforeEach(() => {
+      postToOpener.mockClear();
+      stubOpenerWindow({ closed: false, postMessage: postToOpener });
+      start();
+      fromOpener({
+        ...PAGE,
+        fields: [{ key: "title", saved: "Hello", value: "Hello" }],
+        locale: "en",
+        type: VE_FIELD_SNAPSHOT_TYPE,
+      });
+    });
+
+    it("asks the admin to write the media picked on the page", async () => {
+      await useLighthouse();
+
+      expect(picks()).toEqual([{ ...IMAGE_FIELD, mediaId: 9, type: VE_PICK_MEDIA_TYPE }]);
+      expect(requestsTo("/visual-editing/field-edit")).toEqual([]);
+    });
+
+    it("says the pick was not saved when the form refuses it, and opens the field", async () => {
+      await useLighthouse();
+
+      refused();
+
+      expect(statusLabel()).toBe("Not saved");
+      expect(image.getAttribute("src")).toBe("/old.jpg");
+      expect(messagesOfType(postToOpener, VE_MESSAGE_TYPE)).toMatchObject([{ path: "image" }]);
+    });
+
+    it("asks the admin again for the same media on Retry, without a drawer", async () => {
+      await useLighthouse();
+      refused();
+
+      retry();
+
+      expect(picks()).toEqual([
+        { ...IMAGE_FIELD, mediaId: 9, type: VE_PICK_MEDIA_TYPE },
+        { ...IMAGE_FIELD, mediaId: 9, type: VE_PICK_MEDIA_TYPE },
+      ]);
+      expect(statusLabel()).toBe("Unsaved changes");
+    });
+
+    it("shows the media once the admin wrote the pick it was asked again", async () => {
+      await useLighthouse();
+      refused();
+      retry();
+
+      fromOpener({
+        ...IMAGE_FIELD,
+        height: 600,
+        type: VE_MEDIA_PICKED_TYPE,
+        url: "/api/media/file/lighthouse.jpg",
+        width: 800,
+      });
+
+      expect(image.getAttribute("src")).toBe(`${CMS}/api/media/file/lighthouse.jpg`);
+      expect(statusLabel()).toBe("Unsaved changes");
+    });
+
+    it("says so again when the form refuses the pick it was asked again", async () => {
+      await useLighthouse();
+      refused();
+      retry();
+
+      refused();
+
+      expect(statusLabel()).toBe("Not saved");
+      expect(retryButton()?.hidden).toBe(false);
     });
   });
 });

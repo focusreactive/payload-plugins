@@ -8,9 +8,10 @@ import type {
 } from "../../shared/protocol.js";
 import type { BadgeAction } from "../overlay/editBadge.js";
 import type { FieldTracker } from "../overlay/fieldTracker.js";
-import type { EditStatus, OnSaveEnded } from "./editTransport.js";
+import type { SaveRefusal } from "../../shared/fieldEdit.js";
+import type { OnSaveEnded, RetryRefused } from "./editTransport.js";
 
-import { readEditedField } from "../../shared/fieldEdit.js";
+import { readEditedField, SAVE_FAILED } from "../../shared/fieldEdit.js";
 import { fieldKeyOfMarker } from "../../shared/fieldKey.js";
 import { readPickedMedia } from "../../shared/mediaOption.js";
 import { isMessageFrom } from "../../shared/messageSource.js";
@@ -45,7 +46,7 @@ export type ImageReplacementOptions = {
   isInsideRichText: (target: Element) => boolean;
   save: (edit: VeFieldEdit, onSaveEnded: OnSaveEnded) => void;
   holdInForm: (field: VeEditedField) => void;
-  showStatus: (status: EditStatus) => void;
+  refuseAsked: (field: VeEditedField, refusal: SaveRefusal, askAgain: RetryRefused) => void;
   findAdmin?: FindAdminWindow;
 };
 
@@ -62,11 +63,10 @@ type AskedOfAdmin = ReplaceableImage & {
   openField: () => void;
   adminWindow: Window;
   askedAt: number;
+  chosen?: VeMediaOption;
 };
 
 export const MEDIA_PICK_TIME_LIMIT_MS = 60_000;
-
-const NOT_SAVED: EditStatus = "failed";
 
 const IMAGES = "img";
 
@@ -82,8 +82,8 @@ export function createImageReplacement({
   holdInForm,
   holdsFormOf,
   isInsideRichText,
+  refuseAsked,
   save,
-  showStatus,
   tracker,
 }: ImageReplacementOptions): ImageReplacement {
   const trackedTexts = new Set<Text>();
@@ -144,8 +144,15 @@ export function createImageReplacement({
       ...(chosen && { mediaId: chosen.id }),
       type: VE_PICK_MEDIA_TYPE,
     };
-    askedOfAdmin.set(address, { ...replaceable, adminWindow, askedAt: Date.now(), openField });
+    askedOfAdmin.set(address, {
+      ...replaceable,
+      adminWindow,
+      askedAt: Date.now(),
+      openField,
+      ...(chosen && { chosen }),
+    });
     adminWindow.postMessage(message, adminOriginOf(getCtx().adminOrigin));
+    if (chosen) holdInForm(replaceable.field);
   };
 
   const saveThroughEndpoint = (replaceable: ReplaceableImage, media: VeMediaOption) => {
@@ -158,17 +165,23 @@ export function createImageReplacement({
     save({ ...replaceable.field, value: String(media.id) }, followTheSave);
   };
 
+  const takeChosen = (
+    replaceable: ReplaceableImage,
+    openField: () => void,
+    media: VeMediaOption
+  ) => {
+    const adminWindow = findAdmin();
+    if (adminWindow) askAdmin(adminWindow, replaceable, openField, media);
+    else saveThroughEndpoint(replaceable, media);
+  };
+
   const replace = (replaceable: ReplaceableImage, openField: () => void) => {
     const adminWindow = findAdmin();
     if (adminWindow && isFramedByAdmin(window)) {
       askAdmin(adminWindow, replaceable, openField);
       return;
     }
-    const take = (media: VeMediaOption) => {
-      if (adminWindow) askAdmin(adminWindow, replaceable, openField, media);
-      else saveThroughEndpoint(replaceable, media);
-    };
-    picker.open(replaceable.field, take, openField);
+    picker.open(replaceable.field, (media) => takeChosen(replaceable, openField, media), openField);
   };
 
   const isOffered = ({ field }: ReplaceableImage): boolean => {
@@ -195,8 +208,9 @@ export function createImageReplacement({
   const showRefusalAndOpenField = (data: unknown) => {
     const asked = takeAsked(readEditedField(data));
     if (!asked) return;
-    showStatus(NOT_SAVED);
-    asked.openField();
+    const { chosen, openField } = asked;
+    if (chosen) refuseAsked(asked.field, SAVE_FAILED, () => takeChosen(asked, openField, chosen));
+    openField();
   };
 
   const forgetCancelledPick = (data: unknown) => {
