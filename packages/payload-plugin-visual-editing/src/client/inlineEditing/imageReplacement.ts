@@ -11,7 +11,7 @@ import type { FieldTracker } from "../overlay/fieldTracker.js";
 import type { SaveRefusal } from "../../shared/fieldEdit.js";
 import type { OnSaveEnded, RetryRefused } from "./editTransport.js";
 
-import { readEditedField, SAVE_FAILED } from "../../shared/fieldEdit.js";
+import { readEditedField, readSaveRefusal } from "../../shared/fieldEdit.js";
 import { fieldKeyOfMarker } from "../../shared/fieldKey.js";
 import { readPickedMedia } from "../../shared/mediaOption.js";
 import { isMessageFrom } from "../../shared/messageSource.js";
@@ -209,7 +209,8 @@ export function createImageReplacement({
     const asked = takeAsked(readEditedField(data));
     if (!asked) return;
     const { chosen, openField } = asked;
-    if (chosen) refuseAsked(asked.field, SAVE_FAILED, () => takeChosen(asked, openField, chosen));
+    const refusal = readSaveRefusal(data);
+    if (chosen) refuseAsked(asked.field, refusal, () => takeChosen(asked, openField, chosen));
     openField();
   };
 

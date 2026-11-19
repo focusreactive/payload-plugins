@@ -3,6 +3,7 @@
 import { useConfig, useDocumentInfo, useForm, useListDrawer, useLocale } from "@payloadcms/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { SaveRefusal } from "../../shared/fieldEdit.js";
 import type {
   VeEditedField,
   VeFieldEditRefusedMessage,
@@ -11,6 +12,7 @@ import type {
 } from "../../shared/protocol.js";
 import type { MediaPick } from "./mediaPick.js";
 
+import { NOT_EDITABLE, SAVE_FAILED } from "../../shared/fieldEdit.js";
 import { shownMediaOf } from "../../shared/mediaOption.js";
 import { isMessageFrom } from "../../shared/messageSource.js";
 import {
@@ -89,9 +91,13 @@ export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: s
   );
 
   const refusePick = useCallback(
-    (field: VeEditedField) => {
+    (field: VeEditedField, reason: SaveRefusal) => {
       if (!origin) return;
-      const message: VeFieldEditRefusedMessage = { ...field, type: VE_FIELD_EDIT_REFUSED_TYPE };
+      const message: VeFieldEditRefusedMessage = {
+        ...field,
+        reason,
+        type: VE_FIELD_EDIT_REFUSED_TYPE,
+      };
       getWindow()?.postMessage(message, origin);
     },
     [getWindow, origin]
@@ -126,7 +132,7 @@ export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: s
   const takeChosenOnThePage = useCallback(
     async (pick: MediaPick, mediaId: number | string) => {
       const media = await fetchPickedMedia(apiUrl, pick.collection, mediaId);
-      if (media === null) refusePick(pick.field);
+      if (media === null) refusePick(pick.field, SAVE_FAILED);
       else writePicked(pick, mediaId, media);
     },
     [apiUrl, refusePick, writePicked]
@@ -141,17 +147,20 @@ export function MediaPickReceiver({ excludeFieldNames }: { excludeFieldNames?: s
       const openDocument = { ...document, locale };
       const field = pickOfDocument(event.data, openDocument);
       if (!field) return;
-      const pick =
-        isFormDisabled || isDrawerOpen
-          ? null
-          : mediaPickOf(field, {
-              document: openDocument,
-              editableSchema,
-              formState: getFields(),
-              permissions: docPermissions,
-            });
+      if (isDrawerOpen) {
+        refusePick(field, SAVE_FAILED);
+        return;
+      }
+      const pick = isFormDisabled
+        ? null
+        : mediaPickOf(field, {
+            document: openDocument,
+            editableSchema,
+            formState: getFields(),
+            permissions: docPermissions,
+          });
       if (!pick) {
-        refusePick(field);
+        refusePick(field, NOT_EDITABLE);
         return;
       }
       const chosenOnThePage = chosenMediaOf(event.data);

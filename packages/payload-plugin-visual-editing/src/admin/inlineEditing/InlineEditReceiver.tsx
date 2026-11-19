@@ -5,6 +5,7 @@ import { useEffect } from "react";
 
 import type { VeFieldEditRefusedMessage } from "../../shared/protocol.js";
 
+import { NOT_EDITABLE } from "../../shared/fieldEdit.js";
 import { isMessageFrom } from "../../shared/messageSource.js";
 import { VE_FIELD_EDIT_REFUSED_TYPE } from "../../shared/protocol.js";
 import { useEditableSchema } from "../instantPreview/useEditableSchema.js";
@@ -38,7 +39,11 @@ export function InlineEditReceiver({ excludeFieldNames }: { excludeFieldNames?: 
           });
       if (!formEdit) {
         const { value: _value, ...refused } = edit;
-        const message: VeFieldEditRefusedMessage = { ...refused, type: VE_FIELD_EDIT_REFUSED_TYPE };
+        const message: VeFieldEditRefusedMessage = {
+          ...refused,
+          reason: NOT_EDITABLE,
+          type: VE_FIELD_EDIT_REFUSED_TYPE,
+        };
         getWindow()?.postMessage(message, origin);
         return;
       }

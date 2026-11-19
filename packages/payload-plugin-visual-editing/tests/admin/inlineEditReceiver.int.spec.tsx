@@ -126,6 +126,7 @@ describe("InlineEditReceiver", () => {
         key: "missing",
         kind: "collection",
         locale: "en",
+        reason: "not-editable",
         type: VE_FIELD_EDIT_REFUSED_TYPE,
       },
       PREVIEW_ORIGIN
@@ -141,7 +142,11 @@ describe("InlineEditReceiver", () => {
     expect(admin.dispatchFields).not.toHaveBeenCalled();
     expect(admin.setModified).not.toHaveBeenCalled();
     expect(admin.postToPreview).toHaveBeenCalledWith(
-      expect.objectContaining({ key: "title", type: VE_FIELD_EDIT_REFUSED_TYPE }),
+      expect.objectContaining({
+        key: "title",
+        reason: "not-editable",
+        type: VE_FIELD_EDIT_REFUSED_TYPE,
+      }),
       PREVIEW_ORIGIN
     );
   });
@@ -155,7 +160,11 @@ describe("InlineEditReceiver", () => {
 
     expect(admin.dispatchFields).not.toHaveBeenCalled();
     expect(admin.postToPreview).toHaveBeenCalledWith(
-      expect.objectContaining({ key: "title", type: VE_FIELD_EDIT_REFUSED_TYPE }),
+      expect.objectContaining({
+        key: "title",
+        reason: "not-editable",
+        type: VE_FIELD_EDIT_REFUSED_TYPE,
+      }),
       PREVIEW_ORIGIN
     );
   });

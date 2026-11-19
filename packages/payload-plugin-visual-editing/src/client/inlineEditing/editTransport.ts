@@ -50,7 +50,7 @@ export interface EditTransport {
   isUnsaved(field: EditedField): boolean;
   flush(): void;
   flushBeforeLeaving(): void;
-  refuse(field: EditedField): void;
+  refuse(field: EditedField, refusal?: SaveRefusal): void;
   refuseAsked(field: EditedField, refusal: SaveRefusal, askAgain: RetryRefused): void;
   settle(saved: VeLiveDocument | null): void;
   retry(): void;
@@ -322,10 +322,10 @@ export function createEditTransport(
       pageLeave.leave();
       pageLeave = nextPageLeave();
     },
-    refuse(field) {
+    refuse(field, refusal = SAVE_FAILED) {
       const edit = postedToAdmin.get(editedFieldAddressOf(field));
       if (!edit) return;
-      fail(edit, { edit, refusal: SAVE_FAILED });
+      fail(edit, { edit, refusal });
       report("failed");
     },
     refuseAsked(field, refusal, askAgain) {

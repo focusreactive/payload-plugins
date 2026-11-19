@@ -659,5 +659,13 @@ describe("replacing an image on the page", () => {
       expect(statusLabel()).toBe("Not saved");
       expect(retryButton()?.hidden).toBe(false);
     });
+
+    it("says why the form refused the pick", async () => {
+      await useLighthouse();
+
+      fromOpener({ ...IMAGE_FIELD, reason: "not-editable", type: VE_FIELD_EDIT_REFUSED_TYPE });
+
+      expect(statusLabel()).toBe("This field cannot be edited here");
+    });
   });
 });

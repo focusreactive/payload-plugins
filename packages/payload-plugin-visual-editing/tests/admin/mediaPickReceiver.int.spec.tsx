@@ -196,6 +196,27 @@ describe("MediaPickReceiver", () => {
     );
   });
 
+  it("writes media chosen on the page into the form without a drawer", async () => {
+    postRequest({ data: { ...REQUEST, mediaId: 9 } });
+    await act(() => flushMutations());
+
+    expect(admin.openDrawer).not.toHaveBeenCalled();
+    expect(admin.dispatchFields).toHaveBeenCalledWith({ path: "image", type: "UPDATE", value: 9 });
+  });
+
+  it("refuses media chosen on the page that it cannot read, as a save that failed", async () => {
+    fetchMedia.mockRejectedValue(new Error("offline"));
+
+    postRequest({ data: { ...REQUEST, mediaId: 9 } });
+    await act(() => flushMutations());
+
+    expect(admin.dispatchFields).not.toHaveBeenCalled();
+    expect(admin.postToPreview).toHaveBeenCalledWith(
+      { ...FIELD, reason: "failed", type: VE_FIELD_EDIT_REFUSED_TYPE },
+      PREVIEW_ORIGIN
+    );
+  });
+
   it("tells the page what the list knew of the document when the API does not answer", async () => {
     fetchMedia.mockRejectedValue(new Error("offline"));
     postRequest();
@@ -286,7 +307,7 @@ describe("MediaPickReceiver", () => {
     expect(admin.openDrawer).toHaveBeenCalledTimes(1);
     expect(admin.drawer).toBe(openDrawer);
     expect(admin.postToPreview).toHaveBeenCalledWith(
-      { ...FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE },
+      { ...FIELD, reason: "failed", type: VE_FIELD_EDIT_REFUSED_TYPE },
       PREVIEW_ORIGIN
     );
   });
@@ -318,7 +339,7 @@ describe("MediaPickReceiver", () => {
 
     expect(admin.openDrawer).not.toHaveBeenCalled();
     expect(admin.postToPreview).toHaveBeenCalledWith(
-      { ...FIELD, key: "title", type: VE_FIELD_EDIT_REFUSED_TYPE },
+      { ...FIELD, key: "title", reason: "not-editable", type: VE_FIELD_EDIT_REFUSED_TYPE },
       PREVIEW_ORIGIN
     );
   });
@@ -331,7 +352,7 @@ describe("MediaPickReceiver", () => {
 
     expect(admin.openDrawer).not.toHaveBeenCalled();
     expect(admin.postToPreview).toHaveBeenCalledWith(
-      { ...FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE },
+      { ...FIELD, reason: "not-editable", type: VE_FIELD_EDIT_REFUSED_TYPE },
       PREVIEW_ORIGIN
     );
   });

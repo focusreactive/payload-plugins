@@ -8,7 +8,7 @@ import type { RichTextEditorLoader } from "./richTextEditor.js";
 import type { SaveStatus } from "./saveStatus.js";
 
 import { fieldKeyOfMarker } from "../../shared/fieldKey.js";
-import { readEditedField } from "../../shared/fieldEdit.js";
+import { readEditedField, readSaveRefusal } from "../../shared/fieldEdit.js";
 import { isMessageFrom } from "../../shared/messageSource.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import { VE_FIELD_EDIT_REFUSED_TYPE } from "../../shared/protocol.js";
@@ -159,7 +159,7 @@ export function createInlineEditing(
     const { data } = event;
     if (!isPlainObject(data) || data.type !== VE_FIELD_EDIT_REFUSED_TYPE) return;
     const refused = readEditedField(data);
-    if (refused) transport.refuse(refused);
+    if (refused) transport.refuse(refused, readSaveRefusal(data));
   };
   window.addEventListener("message", refuseEditTheFormDidNotTake);
 

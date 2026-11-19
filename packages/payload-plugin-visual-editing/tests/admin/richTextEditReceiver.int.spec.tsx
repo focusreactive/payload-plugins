@@ -165,7 +165,7 @@ const FIELD = {
 
 const REQUEST = { ...FIELD, type: VE_RICH_TEXT_STATE_REQUEST_TYPE };
 
-const REFUSED = { ...FIELD, type: VE_FIELD_EDIT_REFUSED_TYPE };
+const REFUSED = { ...FIELD, reason: "not-editable", type: VE_FIELD_EDIT_REFUSED_TYPE };
 
 const REQUEST_REFUSED = { ...FIELD, type: VE_RICH_TEXT_STATE_REFUSED_TYPE };
 

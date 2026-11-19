@@ -13,6 +13,7 @@ import type {
 } from "../../shared/protocol.js";
 import type { OpenForm } from "./formEdit.js";
 
+import { NOT_EDITABLE } from "../../shared/fieldEdit.js";
 import { isMessageFrom } from "../../shared/messageSource.js";
 import {
   VE_FIELD_EDIT_REFUSED_TYPE,
@@ -70,7 +71,11 @@ export function RichTextEditReceiver({ excludeFieldNames }: { excludeFieldNames?
           };
 
     const refuseEdit = (field: VeEditedField) => {
-      const message: VeFieldEditRefusedMessage = { ...field, type: VE_FIELD_EDIT_REFUSED_TYPE };
+      const message: VeFieldEditRefusedMessage = {
+        ...field,
+        reason: NOT_EDITABLE,
+        type: VE_FIELD_EDIT_REFUSED_TYPE,
+      };
       getWindow()?.postMessage(message, origin);
     };
 

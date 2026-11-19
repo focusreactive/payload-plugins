@@ -757,6 +757,23 @@ describe("editing text on the page", () => {
       expect(statusLabel()).toBe("Not saved");
     });
 
+    it("says why the form did not take the edit, as the endpoint says it", async () => {
+      postFromAdmin(snapshot("Hello"));
+      click(heading);
+      type(heading, "Hello world");
+      await pause();
+
+      postFromAdmin({
+        ...PAGE,
+        key: "title",
+        locale: "en",
+        reason: "not-editable",
+        type: "ve:field-edit-refused",
+      });
+
+      expect(statusLabel()).toBe("This field cannot be edited here");
+    });
+
     it("says the edit is saved when the admin saved the document", async () => {
       postFromAdmin(snapshot("Hello"));
       click(heading);

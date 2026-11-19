@@ -27,6 +27,8 @@ export const REQUEST_UNREADABLE: SaveRefusal = "unreadable";
 
 export const CHANGED_ELSEWHERE: SaveRefusal = "changed";
 
+export const NOT_EDITABLE: SaveRefusal = "not-editable";
+
 export const readSaveRefusal = (answer: unknown): SaveRefusal => {
   const reason = isPlainObject(answer) ? answer.reason : undefined;
   return SAVE_REFUSALS.find((refusal) => refusal === reason) ?? SAVE_FAILED;

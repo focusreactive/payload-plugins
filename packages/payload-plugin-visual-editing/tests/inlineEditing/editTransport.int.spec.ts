@@ -153,13 +153,13 @@ describe("the transport of an edit", () => {
       expect(postToAdmin).toHaveBeenCalledTimes(2);
     });
 
-    it("gives a refusal of the form no reason of its own", () => {
+    it("gives a refusal of the form the reason the form gave", () => {
       transport.send({ ...TITLE, value: "Hello" });
       vi.advanceTimersByTime(EDIT_SEND_PAUSE_MS);
 
-      transport.refuse(TITLE);
+      transport.refuse(TITLE, "not-editable");
 
-      expect(refusals.at(-1)).toBe("failed");
+      expect(refusals.at(-1)).toBe("not-editable");
     });
 
     it("keeps saying an edit the form refused is not saved when the admin saved the document", () => {

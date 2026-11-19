@@ -1,3 +1,5 @@
+import type { SaveRefusal } from "./fieldEdit.js";
+
 export const DATA_VE_PATH_ATTR = "data-ve-path";
 export const DATA_VE_DOC_ID_ATTR = "data-ve-doc-id";
 export const DATA_VE_COLLECTION_ATTR = "data-ve-collection";
@@ -143,6 +145,7 @@ export const VE_FIELD_EDIT_REFUSED_TYPE = "ve:field-edit-refused";
 
 export type VeFieldEditRefusedMessage = VeEditedField & {
   type: typeof VE_FIELD_EDIT_REFUSED_TYPE;
+  reason: SaveRefusal;
 };
 
 export const VE_MEDIA_OPTIONS_PATH = "/visual-editing/media-options";
