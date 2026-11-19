@@ -4,6 +4,7 @@ import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
 import { seoPlugin as seoAnalysisPlugin } from "@focus-reactive/payload-plugin-seo";
+import { stackedEditing } from "@focus-reactive/payload-plugin-stacked-editing";
 import {
   translatorPlugin,
   createOpenAIProvider,
@@ -273,6 +274,9 @@ export const plugins: Plugin[] = [
     generateURL: (docs) => docs.reduce((url, doc) => `${url}/${doc.slug}`, ""),
   }),
 
+  // Before presetsPlugin, which wraps existing row labels.
+  stackedEditing({ collections: ["page", "posts"], globals: [] }),
+
   presetsPlugin({
     labels: {
       plural: { en: "Presets", es: "Presets" },
@@ -426,8 +430,6 @@ export const plugins: Plugin[] = [
       "categories",
       "authors",
       "testimonials",
-      "header",
-      "footer",
       "document-embeddings",
       "redirects",
       "presets",

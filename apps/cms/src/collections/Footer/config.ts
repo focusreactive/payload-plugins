@@ -5,6 +5,11 @@ import { anyone, or, user, superAdmin } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
+import {
+  createLivePreviewEditComponents,
+  createLivePreviewVersions,
+} from "@/lib/config/livePreview";
+import { createStandalonePreview } from "@/lib/utils/standalonePreview";
 
 import { revalidateResourcesUsingFooter } from "./hooks/revalidateResourcesUsingFooter";
 
@@ -16,9 +21,13 @@ export const Footer: CollectionConfig<"footer"> = {
     update: or(superAdmin, user),
   },
   admin: {
+    components: {
+      edit: createLivePreviewEditComponents(),
+    },
     defaultColumns: ["name", "logo"],
     group: "Global Components",
     useAsTitle: "name",
+    ...createStandalonePreview("footer"),
   },
   fields: [
     {
@@ -181,8 +190,5 @@ export const Footer: CollectionConfig<"footer"> = {
     },
   },
   slug: "footer",
-  versions: {
-    drafts: true,
-    maxPerDoc: 50,
-  },
+  versions: createLivePreviewVersions(),
 };

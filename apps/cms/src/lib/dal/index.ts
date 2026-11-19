@@ -13,6 +13,7 @@ export type { SearchPostsOptions } from "./searchPosts";
 
 export { getCachedDocument, getCachedDocumentByID } from "./getDocument";
 export { getAllDocuments } from "./getAllDocuments";
+export { getPreviewDocument } from "./getPreviewDocument";
 
 export { getCachedGlobal, formatGlobalCacheTag, revalidateGlobalTags } from "./getGlobals";
 export { getSiteSettings } from "./getSiteSettings";

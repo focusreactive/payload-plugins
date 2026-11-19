@@ -4,6 +4,8 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { VisualEditingBridgeProvider } from "../../src/admin/VisualEditingBridgeProvider";
+import { OPEN_FIELD_EVENT } from "../../src/shared/openFieldEvent";
+import type { OpenFieldEventDetail } from "../../src/shared/openFieldEvent";
 import { VE_MESSAGE_TYPE } from "../../src/shared/protocol";
 import type { VeOpenFieldMessage } from "../../src/shared/protocol";
 
@@ -194,5 +196,74 @@ describe("VisualEditingBridgeProvider — collection routing", () => {
     expect(openSpy).toHaveBeenCalledTimes(1);
     expect(assignSpy).toHaveBeenCalledTimes(1);
     expect(assignSpy.mock.calls[0]![0]).toContain("/admin/collections/pages/2");
+  });
+});
+
+describe("VisualEditingBridgeProvider — payload:open-field", () => {
+  const listen = (cancel: boolean) => {
+    const seen: OpenFieldEventDetail[] = [];
+    const listener = (event: Event) => {
+      seen.push((event as CustomEvent<OpenFieldEventDetail>).detail);
+      if (cancel) event.preventDefault();
+    };
+    window.addEventListener(OPEN_FIELD_EVENT, listener);
+    return { seen, stop: () => window.removeEventListener(OPEN_FIELD_EVENT, listener) };
+  };
+
+  it("announces the field of the open document before focusing it", async () => {
+    setLocation("/admin/collections/pages/1");
+    const { seen, stop } = listen(false);
+    mountBridge();
+    postMessageAct({
+      type: VE_MESSAGE_TYPE,
+      path: "layout.0.items.1.title",
+      docId: "1",
+      collectionSlug: "pages",
+      kind: "collection",
+      locale: "en",
+    });
+    await act(async () => {});
+    stop();
+    expect(seen).toEqual([
+      { path: "layout.0.items.1.title", collectionSlug: "pages", docId: "1", locale: "en" },
+    ]);
+  });
+
+  it("leaves the field to the listener that cancels the event", async () => {
+    setLocation("/admin/collections/pages/1");
+    document.body.innerHTML =
+      '<div id="layout-row-0"><button class="collapsible__toggle collapsible__toggle--collapsed"></button></div>';
+    const toggle = document.querySelector("button")!;
+    const clicks = vi.fn();
+    toggle.addEventListener("click", clicks);
+    const { seen, stop } = listen(true);
+    mountBridge();
+    postMessageAct({
+      type: VE_MESSAGE_TYPE,
+      path: "layout.0.title",
+      docId: "1",
+      collectionSlug: "pages",
+      kind: "collection",
+    });
+    await act(async () => {});
+    stop();
+    expect(seen).toHaveLength(1);
+    expect(clicks).not.toHaveBeenCalled();
+  });
+
+  it("does not announce fields of another document (that one opens in a new tab)", () => {
+    setLocation("/admin/collections/pages/1");
+    const { seen, stop } = listen(true);
+    mountBridge();
+    postMessageAct({
+      type: VE_MESSAGE_TYPE,
+      path: "title",
+      docId: "2",
+      collectionSlug: "pages",
+      kind: "collection",
+    });
+    stop();
+    expect(seen).toEqual([]);
+    expect(openSpy).toHaveBeenCalledTimes(1);
   });
 });

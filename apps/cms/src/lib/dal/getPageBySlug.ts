@@ -63,7 +63,7 @@ const getPageBySlugCached = cache(
       () => getPageBySlugQuery(payload, pathSegmentsNorm, resolvedLocale, false),
       [pathKey, resolvedLocale],
       {
-        tags: [res],
+        tags: [res, cacheTag({ type: "pagePaths" })],
       }
     )();
   }

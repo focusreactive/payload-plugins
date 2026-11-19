@@ -114,9 +114,8 @@ export function createEditBadge(): EditBadge {
   };
 
   const reposition = (target: HTMLElement) => {
-    const rect = rectOf(target);
-    placeFrame(anchor, rect, FRAME_ACTIVE_WIDTH);
-    keepActionInView(rectInZoomOf(anchor, rect));
+    placeFrame(anchor, target, FRAME_ACTIVE_WIDTH);
+    keepActionInView(rectInZoomOf(anchor, rectOf(target)));
   };
 
   return {

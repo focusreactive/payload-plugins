@@ -162,7 +162,34 @@ Open a document in the admin, open **Live Preview** and set the toggle to **Alwa
 
 To leave draft mode in a normal browser tab, open `/next/exit-preview`.
 
+Frames and the badge are drawn above the whole page, so they would also cross a sticky header or another bar that stays over the content while it scrolls. Mark such an element with `data-ve-cover` and the part of every frame and badge that lies under it is hidden:
+
+```tsx
+<header className="sticky top-0" data-ve-cover>
+```
+
+The cover hides nothing of its own content: a field rendered inside it keeps its whole frame.
+
 On a draft page where the overlay does not run (the toggle is **Off** and the page passes `instantPreview={false}`, or `framedOnly` outside the Live Preview), the markers are still removed from the text, every attribute, the title and the meta tags of `<head>`, also from content rendered later. There are no outlines and no instant preview there.
+
+### Handing the field to another admin component
+
+Before the bridge expands collapsibles and focuses a field the editor clicked in the preview, it
+dispatches a cancelable `payload:open-field` event on `window` (`OPEN_FIELD_EVENT`). This happens
+only when the clicked field belongs to the document that is open in the admin:
+
+```ts
+window.addEventListener('payload:open-field', (event) => {
+  const { path, collectionSlug, globalSlug, docId, locale } = (event as CustomEvent).detail
+  // e.g. path: 'layout.0.items.1.title'
+  event.preventDefault() // take over: the bridge does nothing else
+})
+```
+
+Admin UI that shows nested fields its own way uses the event to open the field there. One example
+is `@focus-reactive/payload-plugin-stacked-editing`, which opens array and blocks rows in stacked
+panels. If no listener cancels the event, the bridge behaves as before. `announceOpenField(detail)`
+and the `OpenFieldEventDetail` type are exported for components that want to raise the same event.
 
 ## What gets a marker
 

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { VeDocument } from "../shared/protocol.js";
 
 import { adminBaseOf, defaultBuildAdminEditUrl } from "../shared/buildAdminEditUrl.js";
+import { announceOpenField } from "../shared/openFieldEvent.js";
 import { VE_FOCUS_PARAM, VE_MESSAGE_TYPE } from "../shared/protocol.js";
 import type { DocKind } from "../shared/protocol.js";
 import type { VeOpenFieldMessage } from "../shared/protocol.js";
@@ -75,17 +76,26 @@ const fallbackResolution = (
 
 type EntityFieldsLookup = (kind: DocKind, slug: string) => ResolverField[] | null;
 
+type FocusTarget = { docId?: string; locale?: string; takesFocus?: boolean };
+
 const focusFieldPath = async (
   path: string,
   kind: DocKind,
   slug: string,
   getFields: EntityFieldsLookup,
-  takesFocus = true
+  target: FocusTarget = {}
 ): Promise<void> => {
+  const openedByAnotherComponent = announceOpenField({
+    path,
+    ...(kind === "collection" ? { collectionSlug: slug } : { globalSlug: slug }),
+    ...(target.docId === undefined ? {} : { docId: target.docId }),
+    ...(target.locale === undefined ? {} : { locale: target.locale }),
+  });
+  if (openedByAnotherComponent) return;
   const fields = getFields(kind, slug);
   const chainResult = fields !== null ? resolveContainerChain(path, fields) : null;
   const resolved = chainResult ?? fallbackResolution(path);
-  const reveal = takesFocus ? expandAndFocus : expandAndShow;
+  const reveal = target.takesFocus === false ? expandAndShow : expandAndFocus;
   await reveal(resolved.chain, resolved.fieldId);
 };
 
@@ -104,7 +114,9 @@ const focusFieldOnceFormIsOpen = async (
 ): Promise<void> => {
   try {
     await openForms.whenOpen(document);
-    await focusFieldPath(path, document.kind, document.collectionSlug, getFields);
+    await focusFieldPath(path, document.kind, document.collectionSlug, getFields, {
+      ...(document.docId === undefined ? {} : { docId: document.docId }),
+    });
   } finally {
     forgetFocusParam();
   }
@@ -185,7 +197,7 @@ export function VisualEditingBridgeProvider({
           "collection",
           data.collectionSlug,
           getFields,
-          takesFocus
+          { docId: current.id, locale: data.locale, takesFocus }
         );
         return;
       }
@@ -201,7 +213,7 @@ export function VisualEditingBridgeProvider({
           "global",
           data.collectionSlug,
           getFields,
-          takesFocus
+          { locale: data.locale, takesFocus }
         );
       }
     };

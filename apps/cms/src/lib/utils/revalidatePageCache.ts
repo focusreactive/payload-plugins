@@ -15,7 +15,13 @@ export function revalidatePageCache(params: {
   const path = getPathFromBreadcrumbs(params.doc.breadcrumbs) ?? "home";
   params.payload.logger?.info?.(`Revalidating page with slug: ${params.doc.slug}`);
   for (const locale of params.locales) {
-    revalidateScopedTag(cacheTag({ locale, path, type: "page" }), "max");
+    revalidateScopedTag(cacheTag({ locale, path, type: "page" }), { expire: 0 });
   }
+  revalidateScopedTag(cacheTag({ type: "sitemap" }), "max");
+}
+
+export function revalidateAllPagePaths(payload: Payload): void {
+  payload.logger?.info?.("Revalidating every cached page path");
+  revalidateScopedTag(cacheTag({ type: "pagePaths" }), { expire: 0 });
   revalidateScopedTag(cacheTag({ type: "sitemap" }), "max");
 }

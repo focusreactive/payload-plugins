@@ -3,12 +3,14 @@ import type { FooterLink, FooterLinkGroup, IFooterProps } from "./ui/types";
 import React from "react";
 
 import { resolveLocale } from "@/lib/utils/resolveLocale";
+import { withoutVisualEditing } from "@/lib/utils/withoutVisualEditing";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { Footer as FooterType, Media } from "@/payload-types";
 
 interface Props {
   data: FooterType;
+  editable?: boolean;
 }
 
 type PayloadLink = NonNullable<NonNullable<FooterType["legalLinks"]>[number]["link"]>;
@@ -34,10 +36,12 @@ function resolveFooterLink(
   };
 }
 
-export async function Footer({ data }: Props) {
-  if (!data) {
+export async function Footer({ data: rawData, editable = false }: Props) {
+  if (!rawData) {
     return null;
   }
+
+  const data = editable ? rawData : withoutVisualEditing(rawData);
 
   const locale = await resolveLocale();
 

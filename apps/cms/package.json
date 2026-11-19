@@ -35,6 +35,7 @@
     "@focus-reactive/payload-plugin-presets": "workspace:*",
     "@focus-reactive/payload-plugin-scheduling": "workspace:*",
     "@focus-reactive/payload-plugin-seo": "workspace:*",
+    "@focus-reactive/payload-plugin-stacked-editing": "workspace:*",
     "@focus-reactive/payload-plugin-translator": "workspace:*",
     "@focus-reactive/payload-plugin-visual-editing": "workspace:*",
     "@lexical/history": "0.50.0",

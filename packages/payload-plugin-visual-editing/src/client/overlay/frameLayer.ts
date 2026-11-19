@@ -4,18 +4,26 @@ import {
   FRAME_IDLE_WIDTH,
   FRAME_RADIUS,
 } from "./constants.js";
+import { clipUnderCovers, measureCovers } from "./covers.js";
 import { areaOf, rectOf } from "./targetArea.js";
 import { rectInZoomOf } from "./zoom.js";
 
-/** Places a box so its border lies just outside `rect`. */
-export const placeFrame = (box: HTMLElement, rect: DOMRect, borderWidth: number): void => {
+export const placeFrame = (
+  box: HTMLElement,
+  target: HTMLElement,
+  borderWidth: number,
+  covers: ReadonlyMap<Element, DOMRect> = measureCovers()
+): void => {
+  const rect = rectOf(target);
   const hidden = rect.width === 0 && rect.height === 0;
   box.style.display = hidden ? "none" : "block";
   if (hidden) return;
   const { height, left, top, width } = rectInZoomOf(box, rect);
-  box.style.transform = `translate(${left - borderWidth}px, ${top - borderWidth}px)`;
+  const origin = { x: left - borderWidth, y: top - borderWidth };
+  box.style.transform = `translate(${origin.x}px, ${origin.y}px)`;
   box.style.width = `${width + borderWidth * 2}px`;
   box.style.height = `${height + borderWidth * 2}px`;
+  clipUnderCovers(box, target, origin, covers);
 };
 
 export interface FrameLayer {
@@ -47,8 +55,9 @@ export function createFrameLayer(): FrameLayer {
 
   const repositionAll = () => {
     frameRequest = 0;
+    const covers = measureCovers();
     for (const [target, frame] of frames) {
-      placeFrame(frame, rectOf(target), FRAME_IDLE_WIDTH);
+      placeFrame(frame, target, FRAME_IDLE_WIDTH, covers);
     }
   };
 
@@ -77,7 +86,7 @@ export function createFrameLayer(): FrameLayer {
         pointerEvents: "none",
       } as Partial<CSSStyleDeclaration>);
       layer.append(frame);
-      placeFrame(frame, rectOf(target), FRAME_IDLE_WIDTH);
+      placeFrame(frame, target, FRAME_IDLE_WIDTH);
       frames.set(target, frame);
       resizes?.observe(areaOf(target));
     },

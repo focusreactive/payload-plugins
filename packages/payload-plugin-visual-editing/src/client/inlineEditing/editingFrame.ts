@@ -24,7 +24,7 @@ export const showEditingFrame = (edited: HTMLElement): (() => void) => {
   } as Partial<CSSStyleDeclaration>);
 
   const place = () => {
-    placeFrame(frame, areaOf(edited).getBoundingClientRect(), FRAME_ACTIVE_WIDTH);
+    placeFrame(frame, edited, FRAME_ACTIVE_WIDTH);
   };
   const resizes = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(place);
   resizes?.observe(areaOf(edited));
