@@ -161,6 +161,7 @@ export function createEditTransport(
   const savesOnTheWay = new Map<string, number>();
   const savedEdits = new Map<string, SavedEdit>();
   const latestPosted = new Map<string, VeEdit>();
+  const givenToForm = new Map<string, EditValue>();
   const latestQueued = new Map<string, VeEdit>();
   const savedWhenEditsEnd = new Set<string>();
   let saves: Promise<void> = Promise.resolve();
@@ -208,10 +209,12 @@ export function createEditTransport(
   };
 
   const startingValuesOf = (edit: VeEdit, continued: SavedEdit | null): VeEdit => {
+    const address = editedFieldAddressOf(edit);
     const rebased = continued ? withStartingValue(edit, "base", continued.stored) : edit;
-    const earlier = latestPosted.get(editedFieldAddressOf(edit));
-    return earlier && edit.base !== undefined
-      ? withStartingValue(rebased, "sentBefore", valueOf(earlier))
+    const earlier = latestPosted.get(address);
+    const sentBefore = earlier ? valueOf(earlier) : givenToForm.get(address);
+    return sentBefore !== undefined && edit.base !== undefined
+      ? withStartingValue(rebased, "sentBefore", sentBefore)
       : rebased;
   };
 
@@ -230,7 +233,10 @@ export function createEditTransport(
     if (!autosaves) savedWhenEditsEnd.add(documentAddressOf(edit));
     const isLatest = latestPosted.get(address) === edit;
     if (isLatest) latestPosted.delete(address);
-    if (isLatest && refusal === null) rememberSaved(edit, continued, stored);
+    if (isLatest && refusal === null) {
+      givenToForm.delete(address);
+      rememberSaved(edit, continued, stored);
+    }
     return { isLatest, refusal };
   };
 
@@ -266,6 +272,7 @@ export function createEditTransport(
       return;
     }
     savedEdits.delete(editedFieldAddressOf(edit));
+    givenToForm.set(editedFieldAddressOf(edit), valueOf(edit));
     failed.delete(editedFieldAddressOf(edit));
     postedToAdmin.set(editedFieldAddressOf(edit), edit);
     unsavedInForm.set(editedFieldAddressOf(edit), edit);

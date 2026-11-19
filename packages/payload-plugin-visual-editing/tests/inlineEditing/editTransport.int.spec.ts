@@ -347,6 +347,48 @@ describe("the transport of an edit", () => {
         expect(basesSent()).toEqual(["Shown", "Shown"]);
       });
 
+      it("names the value the form was given as sent before when the admin window closed during the edit", async () => {
+        let adminWindow: Window | null = { postMessage: vi.fn() } as unknown as Window;
+        transport.dispose();
+        transport = createEditTransport(
+          () => ctx,
+          () => undefined,
+          window,
+          () => adminWindow
+        );
+        transport.sendNow({ ...TITLE, base: "Shown", value: "Shown c" });
+        adminWindow = null;
+        transport.sendNow({ ...TITLE, base: "Shown", value: "Shown cd" });
+        await settle();
+
+        const [body] = fetchEndpoint.mock.calls.map(
+          ([, init]) => JSON.parse((init as RequestInit).body as string) as Record<string, unknown>
+        );
+        expect(body).toMatchObject({ base: "Shown", sentBefore: "Shown c", value: "Shown cd" });
+      });
+
+      it("forgets the value the form was given once the endpoint saved the field", async () => {
+        let adminWindow: Window | null = { postMessage: vi.fn() } as unknown as Window;
+        transport.dispose();
+        transport = createEditTransport(
+          () => ctx,
+          () => undefined,
+          window,
+          () => adminWindow
+        );
+        transport.sendNow({ ...TITLE, base: "Shown", value: "Shown c" });
+        adminWindow = null;
+        transport.sendNow({ ...TITLE, base: "Shown", value: "Shown cd" });
+        await settle();
+        transport.sendNow({ ...TITLE, base: "Other", value: "Other e" });
+        await settle();
+
+        const [, second] = fetchEndpoint.mock.calls.map(
+          ([, init]) => JSON.parse((init as RequestInit).body as string) as Record<string, unknown>
+        );
+        expect(second).not.toHaveProperty("sentBefore");
+      });
+
       it("is the value the field holds after the last save when an edit begins from what it sent", async () => {
         fetchEndpoint.mockImplementationOnce(() => Promise.resolve(storedAnswerOf("Typed")));
         transport.sendNow({ ...TITLE, base: "Shown", value: " Typed " });
