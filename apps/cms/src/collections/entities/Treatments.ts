@@ -83,49 +83,51 @@ export const Treatments: CollectionConfig<"treatments"> = {
               label: { en: "Hero", es: "Cabecera" },
               type: "collapsible",
             },
-            {
-              admin: { initCollapsed: true },
-              fields: [
-                {
-                  fields: [
-                    {
-                      admin: {
-                        description: {
-                          en: "One line under the name on treatment cards, for example A vein treatment using an injectable medicine.",
-                          es: "Una línea bajo el nombre en las tarjetas, por ejemplo Un tratamiento de venas con un medicamento inyectable.",
-                        },
-                        width: "50%",
-                      },
-                      label: { en: "Card text", es: "Texto de la tarjeta" },
-                      localized: true,
-                      name: "summary",
-                      type: "text",
-                    },
-                    {
-                      admin: {
-                        description: {
-                          en: "The picture on the treatment's card in sliders and lists.",
-                          es: "La imagen de la tarjeta del tratamiento en carruseles y listas.",
-                        },
-                        width: "50%",
-                      },
-                      label: { en: "Card image", es: "Imagen de la tarjeta" },
-                      name: "cardImage",
-                      relationTo: "media",
-                      type: "upload",
-                    },
-                  ],
-                  type: "row",
-                },
-              ],
-              label: { en: "Card in lists", es: "Tarjeta en listas" },
-              type: "collapsible",
-            },
             entitySectionsField(
               "The sections of the treatment's page under its heading, top to bottom. A conditions grid with no conditions picked shows the ones set under Treats."
             ),
           ],
           label: { en: "Content", es: "Contenido" },
+        },
+        {
+          description: {
+            en: "The card that stands for this treatment in sliders and lists on other pages.",
+            es: "La tarjeta que representa este tratamiento en carruseles y listas de otras páginas.",
+          },
+          fields: [
+            {
+              fields: [
+                {
+                  admin: {
+                    description: {
+                      en: "One line under the name on treatment cards, for example A vein treatment using an injectable medicine.",
+                      es: "Una línea bajo el nombre en las tarjetas, por ejemplo Un tratamiento de venas con un medicamento inyectable.",
+                    },
+                    width: "50%",
+                  },
+                  label: { en: "Card text", es: "Texto de la tarjeta" },
+                  localized: true,
+                  name: "summary",
+                  type: "text",
+                },
+                {
+                  admin: {
+                    description: {
+                      en: "The picture on the treatment's card in sliders and lists.",
+                      es: "La imagen de la tarjeta del tratamiento en carruseles y listas.",
+                    },
+                    width: "50%",
+                  },
+                  label: { en: "Card image", es: "Imagen de la tarjeta" },
+                  name: "cardImage",
+                  relationTo: "media",
+                  type: "upload",
+                },
+              ],
+              type: "row",
+            },
+          ],
+          label: { en: "Card", es: "Tarjeta" },
         },
         entitySeoTab,
       ],

@@ -117,7 +117,10 @@ export const Conditions: CollectionConfig<"conditions"> = {
                         },
                         width: "50%",
                       },
-                      label: { en: "Picture on phones", es: "Imagen en teléfonos" },
+                      label: {
+                        en: "Picture on phones",
+                        es: "Imagen en teléfonos",
+                      },
                       name: "heroMobileImage",
                       relationTo: "media",
                       type: "upload",
@@ -141,6 +144,14 @@ export const Conditions: CollectionConfig<"conditions"> = {
               label: { en: "Hero", es: "Cabecera" },
               type: "collapsible",
             },
+            entitySectionsField(
+              "The sections of the condition's page under the top band, top to bottom. The first section opens with the page's main heading."
+            ),
+          ],
+          label: { en: "Content", es: "Contenido" },
+        },
+        {
+          fields: [
             {
               admin: {
                 allowCreate: false,
@@ -158,11 +169,8 @@ export const Conditions: CollectionConfig<"conditions"> = {
               on: "conditions",
               type: "join",
             },
-            entitySectionsField(
-              "The sections of the condition's page under the top band, top to bottom. The first section opens with the page's main heading."
-            ),
           ],
-          label: { en: "Content", es: "Contenido" },
+          label: { en: "Treatments", es: "Tratamientos" },
         },
         entitySeoTab,
       ],
