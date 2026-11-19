@@ -1,32 +1,18 @@
+import { VISUAL_SECTIONS_GROUP } from "@/lib/config/adminGroups";
 import { abTestingPlugin } from "@focus-reactive/payload-plugin-ab";
-import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
 import { seoPlugin as seoAnalysisPlugin } from "@focus-reactive/payload-plugin-seo";
 import { stackedEditing } from "@focus-reactive/payload-plugin-stacked-editing";
-import {
-  translatorPlugin,
-  createOpenAIProvider,
-  createSyncRunner,
-} from "@focus-reactive/payload-plugin-translator";
 import { visualEditingPlugin } from "@focus-reactive/payload-plugin-visual-editing";
 import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
 import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";
-import type { Field, PayloadRequest, Plugin } from "payload";
+import type { Field, Plugin } from "payload";
 
-import { Authors } from "@/collections/Authors";
-import { Categories } from "@/collections/Categories";
-import { Footer } from "@/collections/Footer/config";
-import { GlobalBlock } from "@/collections/GlobalBlock/config";
-import { Header } from "@/collections/Header/config";
-import { Page as PageCollection } from "@/collections/Page/Page";
 import serverExtractPageContent from "@/collections/Page/serverExtractPageContent";
-import { Posts } from "@/collections/Posts";
 import serverExtractPostContent from "@/collections/Posts/serverExtractPostContent";
-import { Testimonials } from "@/collections/Testimonials";
-import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
 import { resolveDocUrl } from "@/lib/contentExtraction/links";
 import { getMediaStoragePrefix } from "@/lib/storage/mediaStoragePrefix";
 import { I18N_CONFIG } from "@/lib/config/i18n";
@@ -34,11 +20,11 @@ import { abAdapter } from "@/lib/plugins/ab/abAdapter";
 import { buildVariantData } from "@/lib/plugins/ab/buildVariantData";
 import type { ABVariantData } from "@/lib/plugins/ab/types";
 import { superAdmin, or, authenticated, user } from "@/lib/access";
+import { roleScopePlugin } from "@/lib/plugins/roleScope";
 import { getServerSideURL } from "@/lib/utils/getURL";
 import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 import { validateRedirectPath } from "@/lib/utils/redirectUrl";
 import { isDev } from "@/lib/utils/isDev";
-import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { normalizeRedirectFields } from "@/lib/hooks/normalizeRedirectFields";
 import { revalidateRedirects } from "@/lib/hooks/revalidateRedirects";
 import type { Page } from "@/payload-types";
@@ -63,60 +49,6 @@ const withBlockNameCell = (field: Field): Field => {
       es: "Bloque",
     },
   };
-};
-
-const resolveAnalyticsPagePath = async (ref: string, req: PayloadRequest): Promise<string> => {
-  const { defaultLocale } = I18N_CONFIG;
-
-  if (ref === "__home") return "/";
-  if (ref === "__blog-index") return CUSTOM_PAGES_CONFIG.blog.resolver(defaultLocale);
-  if (ref === "__search") return CUSTOM_PAGES_CONFIG.search.resolver(defaultLocale);
-
-  const idx = ref.indexOf(":");
-  if (idx <= 0) return "";
-
-  const collection = ref.slice(0, idx);
-  const id = ref.slice(idx + 1);
-
-  if (collection === "page") {
-    const doc = await req.payload
-      .findByID({
-        collection: "page",
-        id,
-        depth: 0,
-        overrideAccess: true,
-      })
-      .catch(() => null);
-
-    return (
-      buildUrl({
-        collection: "page",
-        breadcrumbs: doc?.breadcrumbs,
-        absolute: false,
-        locale: defaultLocale,
-      }) || "/"
-    );
-  }
-
-  if (collection === "posts") {
-    const doc = await req.payload
-      .findByID({
-        collection: "posts",
-        id,
-        depth: 0,
-        overrideAccess: true,
-      })
-      .catch(() => null);
-
-    return buildUrl({
-      collection: "posts",
-      slug: doc?.slug,
-      absolute: false,
-      locale: defaultLocale,
-    });
-  }
-
-  return "";
 };
 
 const ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
@@ -275,7 +207,10 @@ export const plugins: Plugin[] = [
   }),
 
   // Before presetsPlugin, which wraps existing row labels.
-  stackedEditing({ collections: ["page", "posts"], globals: [] }),
+  stackedEditing({
+    collections: ["page", "posts", "states", "clinics", "doctors", "treatments", "conditions"],
+    globals: [],
+  }),
 
   presetsPlugin({
     labels: {
@@ -291,7 +226,7 @@ export const plugins: Plugin[] = [
       },
       admin: {
         defaultColumns: ["name", "preview", "presetBlock", "updatedAt"],
-        group: "Settings",
+        group: VISUAL_SECTIONS_GROUP,
       },
       fields: (defaultFields: Field[]) => defaultFields.map(withBlockNameCell),
     },
@@ -308,6 +243,11 @@ export const plugins: Plugin[] = [
       { slug: "header", titleField: "name" },
       { slug: "footer", titleField: "name" },
       { slug: "globalBlock", titleField: "title" },
+      { slug: "states", titleField: "name" },
+      { slug: "clinics", titleField: "name" },
+      { slug: "doctors", titleField: "name" },
+      { slug: "treatments", titleField: "title" },
+      { slug: "conditions", titleField: "title" },
     ],
 
     translations: {
@@ -350,30 +290,6 @@ export const plugins: Plugin[] = [
     secret: process.env.CRON_SECRET!,
   }),
 
-  translatorPlugin({
-    collections: [
-      PageCollection,
-      Posts,
-      Categories,
-      Authors,
-      Testimonials,
-      Header,
-      Footer,
-      GlobalBlock,
-    ].map((col) =>
-      JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
-    ),
-    access: { check: ({ req }) => Boolean(req.user) },
-    runner: createSyncRunner(),
-    translationProvider: createOpenAIProvider({
-      apiKey: process.env.OPENAI_API_KEY!,
-      dryRun: false,
-      model: "gpt-4o-mini",
-      systemPrompt: ({ defaultPrompt }) =>
-        `${defaultPrompt}\nUse formal language. Keep brand names unchanged.`,
-    }),
-  }),
-
   abTestingPlugin<ABVariantData>({
     collections: {
       page: {
@@ -397,32 +313,12 @@ export const plugins: Plugin[] = [
     storage: abAdapter,
   }),
 
-  analyticsPlugin({
-    ga4: {
-      measurementId: process.env.GA4_MEASUREMENT_ID!,
-      propertyId: process.env.GA4_PROPERTY_ID!,
-      serviceAccount: {
-        clientEmail: process.env.GA4_CLIENT_EMAIL!,
-        privateKey: (process.env.GA4_PRIVATE_KEY ?? "").replace(/\\n/gu, "\n"),
-      },
-    },
-    leadActions: {
-      types: ["cta_click", "newsletter_signup"],
-    },
-    ab: {
-      experimentsCollectionSlug: "ab-experiments",
-    },
-    pages: {
-      collections: ["page", "posts"],
-      syntheticRefs: ["__home", "__blog-index", "__search"],
-      resolvePagePath: resolveAnalyticsPagePath,
-    },
-  }),
-
   visualEditingPlugin({
     adminBasePath: "/admin",
     enrichment: "explicit",
     instantPreview: true,
+    // Values the site puts into an href, a src or a tel: link, where a marker would break them.
+    excludeFieldNames: ["path", "url", "videoUrl", "mapUrl", "phone", "profiles", "npi", "anchor"],
     skipCollections: [
       "users",
       "media",
@@ -442,6 +338,13 @@ export const plugins: Plugin[] = [
   }),
 
   mcpPluginConfig,
+
+  // Orders itself after every plugin that adds collections, so the blog editor is kept out of those too.
+  roleScopePlugin({
+    collections: ["posts", "categories", "authors", "media", "users", "comments", "comment-reads"],
+    hiddenCollections: ["users"],
+    role: "author",
+  }),
 
   // Must stay last so it also protects collections and globals added by the plugins above.
   restrictApiAccess({

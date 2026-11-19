@@ -1,4 +1,5 @@
 import { createParentField, createBreadcrumbsField } from "@payloadcms/plugin-nested-docs";
+import { SITE_TEMPLATES } from "@/lib/site/templates";
 import type { CollectionConfig } from "payload";
 
 import {
@@ -9,12 +10,13 @@ import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { createSharedSlugField } from "@/lib/fields/slugField";
+import { reviewFields } from "@/lib/review/fields";
+import { enforceReviewRules, notifyReviewChange } from "@/lib/review/hooks";
 import type { Page as PageType } from "@/payload-types";
 
-import { createBasePageFields } from "./basePageFields";
+import { createBasePageFields, createPageChromeFields } from "./basePageFields";
 import { fixBreadcrumbDocIds } from "./hooks/fixBreadcrumbDocIds";
 import { syncCurrentBreadcrumbUrl } from "./hooks/syncCurrentBreadcrumbUrl";
-import { indexPageEmbedding, deletePageEmbedding } from "./hooks/indexEmbedding";
 import { rememberPublishedPath } from "./hooks/publishedPath";
 import { revalidateDelete, revalidatePage } from "./hooks/revalidatePage";
 import { validateReservedSlug, validateReservedPath } from "./hooks/validateReservedSlug";
@@ -30,7 +32,7 @@ export const Page: CollectionConfig<"page"> = {
     components: {
       edit: createLivePreviewEditComponents(),
     },
-    defaultColumns: ["title", "slug", "updatedAt"],
+    defaultColumns: ["title", "slug", "_status", "updatedAt"],
     group: "Content",
     livePreview: {
       url: ({ data, locale }) =>
@@ -56,6 +58,7 @@ export const Page: CollectionConfig<"page"> = {
         }),
         slug: data?.slug as string,
       }),
+    listSearchableFields: ["title", "slug"],
     useAsTitle: "title",
   },
   defaultPopulate: {
@@ -78,6 +81,7 @@ export const Page: CollectionConfig<"page"> = {
     },
     ...createBasePageFields({ withBlocksDefaultValue: true }),
     createSharedSlugField("page"),
+    ...reviewFields(),
     createParentField("page", {
       admin: {
         position: "sidebar",
@@ -87,8 +91,25 @@ export const Page: CollectionConfig<"page"> = {
         slug: { not_equals: "home" },
       }),
     }),
-    createBreadcrumbsField("page", {
+    {
       admin: {
+        description: {
+          en: "The page design: which of the site's stylesheets the page loads.",
+          es: "El diseño de la página: qué hojas de estilo del sitio carga.",
+        },
+        position: "sidebar",
+      },
+      defaultValue: "default",
+      label: { en: "Page design", es: "Diseño de página" },
+      name: "template",
+      options: SITE_TEMPLATES.map((template) => ({ label: template, value: template })),
+      type: "select",
+    },
+    ...createPageChromeFields(),
+    createBreadcrumbsField("page", {
+      // Filled from the parent pages on save; the editor sets the parent, never the trail.
+      admin: {
+        hidden: true,
         position: "sidebar",
       },
       hooks: {
@@ -102,12 +123,13 @@ export const Page: CollectionConfig<"page"> = {
   ],
   folders: true,
   hooks: {
-    afterChange: [revalidatePage, indexPageEmbedding],
-    afterDelete: [revalidateDelete, deletePageEmbedding],
+    afterChange: [revalidatePage, notifyReviewChange],
+    afterDelete: [revalidateDelete],
     beforeChange: [
       fixBreadcrumbDocIds,
       validateReservedSlug,
       validateReservedPath,
+      enforceReviewRules,
       rememberPublishedPath,
     ],
   },

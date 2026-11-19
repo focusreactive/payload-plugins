@@ -4,6 +4,8 @@ import { CardsGridInlineBlock } from "@/blocks/CardsGrid/inlineConfig";
 import { CodeInlineBlock } from "@/blocks/Code/inlineConfig";
 import { CtaBannerInlineBlock } from "@/blocks/CtaBanner/inlineConfig";
 import { LogosInlineBlock } from "@/blocks/Logos/inlineConfig";
+import { rowTitle } from "@/blocks/site/shared";
+import { siteBlocks } from "@/blocks/siteBlocks";
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
 import {
@@ -11,7 +13,8 @@ import {
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
-import { anyone, author, or, user, superAdmin } from "@/lib/access";
+import { anyone, author, authorDraft, or, user, superAdmin } from "@/lib/access";
+import { authorUpdate, restorePublishedOnRevert } from "@/lib/review/authorPublish";
 import {
   createLocalizedDefault,
   createLocalizedRichText,
@@ -24,23 +27,30 @@ import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
 import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 import { createSharedSlugField } from "@/lib/fields/slugField";
+import { reviewFields } from "@/lib/review/fields";
+import { enforceReviewRules, notifyReviewChange } from "@/lib/review/hooks";
 
+import { ArticleButtonBlock } from "./ArticleButtonBlock";
 import { computeReadingTime } from "./hooks/computeReadingTime";
-import { indexPostEmbedding, deletePostEmbedding } from "./hooks/indexEmbedding";
 import { revalidateDelete, revalidatePost } from "./hooks/revalidatePost";
+
+const authorPostUpdate = authorUpdate(BLOG_CONFIG.collection);
 
 export const Posts: CollectionConfig<"posts"> = {
   access: {
-    create: or(superAdmin, user, author),
+    create: or(superAdmin, user, authorDraft),
     delete: or(superAdmin, user, author),
     read: anyone,
-    update: or(superAdmin, user, author),
+    update: (args) => (or(superAdmin, user)(args) === true ? true : authorPostUpdate(args)),
   },
   admin: {
     components: {
-      edit: createLivePreviewEditComponents(),
+      edit: {
+        ...createLivePreviewEditComponents(),
+        SaveDraftButton: "/components/admin/AuthorSaveDraftButton#AuthorSaveDraftButton",
+      },
     },
-    defaultColumns: ["title", "slug", "heroImage", "updatedAt"],
+    defaultColumns: ["title", "categories", "publishedAt", "_status"],
     group: "Blog",
     livePreview: {
       url: ({ data, locale: localeProp }) => {
@@ -58,6 +68,7 @@ export const Posts: CollectionConfig<"posts"> = {
         });
       },
     },
+    listSearchableFields: ["title", "slug"],
     pagination: {
       limits: [20, 50, 100],
     },
@@ -129,6 +140,7 @@ export const Posts: CollectionConfig<"posts"> = {
                   LogosInlineBlock,
                   CodeInlineBlock,
                   CtaBannerInlineBlock,
+                  ArticleButtonBlock,
                 ],
               }),
               label: {
@@ -150,7 +162,7 @@ export const Posts: CollectionConfig<"posts"> = {
               fields: [
                 sectionHeadingField(),
                 {
-                  admin: { initCollapsed: true },
+                  admin: rowTitle("question", "Question"),
                   fields: [
                     {
                       label: { en: "Question", es: "Pregunta" },
@@ -183,11 +195,13 @@ export const Posts: CollectionConfig<"posts"> = {
                   en: "Optional CTA band shown at the end of the post. Hidden when the heading is empty.",
                   es: "Banda CTA opcional al final de la publicación. Oculta si el encabezado está vacío.",
                 },
+                // The site's article template never renders this band; the Sections field holds the real one.
+                hidden: true,
               },
               fields: [
                 sectionHeadingField(),
                 {
-                  admin: { initCollapsed: true },
+                  admin: rowTitle("label", "Button"),
                   fields: (link() as GroupField).fields,
                   label: { en: "Actions", es: "Acciones" },
                   localized: true,
@@ -199,6 +213,24 @@ export const Posts: CollectionConfig<"posts"> = {
               label: { en: "CTA", es: "CTA" },
               name: "cta",
               type: "group",
+            },
+            {
+              admin: {
+                description: {
+                  en: "The sections under the article, top to bottom, for example a call to action band or an articles slider.",
+                  es: "Las secciones bajo el artículo, de arriba abajo, por ejemplo una banda de llamada a la acción o un carrusel de artículos.",
+                },
+                initCollapsed: true,
+              },
+              blocks: siteBlocks,
+              label: { en: "Sections", es: "Secciones" },
+              labels: {
+                plural: { en: "Sections", es: "Secciones" },
+                singular: { en: "Section", es: "Sección" },
+              },
+              localized: true,
+              name: "blocks",
+              type: "blocks",
             },
           ],
           label: {
@@ -222,48 +254,7 @@ export const Posts: CollectionConfig<"posts"> = {
       type: "tabs",
     },
     createSharedSlugField("posts"),
-    {
-      admin: {
-        date: {
-          pickerAppearance: "dayAndTime",
-        },
-        position: "sidebar",
-      },
-      hooks: {
-        beforeChange: [
-          ({ siblingData, value }) => {
-            if (siblingData._status === "published" && !value) {
-              return new Date();
-            }
-            return value;
-          },
-        ],
-      },
-      index: true,
-      label: {
-        en: "Published At",
-        es: "Publicado el",
-      },
-      name: "publishedAt",
-      type: "date",
-    },
-    {
-      admin: {
-        position: "sidebar",
-        readOnly: true,
-        description: {
-          en: "Estimated reading time in minutes. Auto-calculated from the content on save.",
-          es: "Tiempo de lectura estimado en minutos. Se calcula automáticamente al guardar.",
-        },
-      },
-      label: {
-        en: "Reading Time (min)",
-        es: "Tiempo de lectura (min)",
-      },
-      localized: true,
-      name: "readingTime",
-      type: "number",
-    },
+    ...reviewFields(),
     {
       admin: {
         position: "sidebar",
@@ -294,6 +285,86 @@ export const Posts: CollectionConfig<"posts"> = {
     },
     {
       admin: {
+        description:
+          "The doctor who medically reviewed the article. Shown with the doctor's photo on the article and its cards.",
+        position: "sidebar",
+      },
+      label: "Medically reviewed by",
+      name: "reviewedBy",
+      relationTo: "doctors",
+      type: "relationship",
+    },
+    {
+      admin: {
+        date: {
+          pickerAppearance: "dayAndTime",
+        },
+        position: "sidebar",
+      },
+      hooks: {
+        beforeChange: [
+          ({ siblingData, value }) => {
+            if (siblingData._status === "published" && !value) {
+              return new Date();
+            }
+            return value;
+          },
+        ],
+      },
+      index: true,
+      label: {
+        en: "Published At",
+        es: "Publicado el",
+      },
+      name: "publishedAt",
+      type: "date",
+    },
+    {
+      admin: {
+        date: { pickerAppearance: "dayOnly" },
+        description: {
+          en: "The date of the last review of the article. When set, the article shows Updated with this date instead of the publish date.",
+          es: "La fecha de la última revisión del artículo. Si se indica, el artículo muestra Actualizado con esta fecha en lugar de la fecha de publicación.",
+        },
+        position: "sidebar",
+      },
+      label: { en: "Updated on", es: "Actualizado el" },
+      name: "updatedDate",
+      type: "date",
+    },
+    {
+      admin: {
+        position: "sidebar",
+        readOnly: true,
+        description: {
+          en: "Estimated reading time in minutes. Auto-calculated from the content on save.",
+          es: "Tiempo de lectura estimado en minutos. Se calcula automáticamente al guardar.",
+        },
+      },
+      label: {
+        en: "Reading Time (min)",
+        es: "Tiempo de lectura (min)",
+      },
+      localized: true,
+      name: "readingTime",
+      type: "number",
+    },
+    {
+      admin: {
+        description: {
+          en: "The reading time shown on the article and its cards, in minutes. Empty shows the estimate above.",
+          es: "El tiempo de lectura que se muestra en el artículo y sus tarjetas, en minutos. Vacío muestra la estimación de arriba.",
+        },
+        position: "sidebar",
+      },
+      label: { en: "Reading time shown (min)", es: "Tiempo de lectura mostrado (min)" },
+      localized: true,
+      min: 1,
+      name: "readingTimeOverride",
+      type: "number",
+    },
+    {
+      admin: {
         description: {
           en: "Select up to 3 related posts. If fewer than 3 are selected, additional posts from the same categories will be shown automatically based on publish date.",
           es: "Selecciona hasta 3 publicaciones relacionadas. Si se seleccionan menos de 3, se mostrarán automáticamente publicaciones adicionales de las mismas categorías según la fecha de publicación.",
@@ -316,9 +387,9 @@ export const Posts: CollectionConfig<"posts"> = {
     },
   ],
   hooks: {
-    beforeChange: [computeReadingTime],
-    afterChange: [revalidatePost, indexPostEmbedding],
-    afterDelete: [revalidateDelete, deletePostEmbedding],
+    beforeChange: [restorePublishedOnRevert, computeReadingTime, enforceReviewRules],
+    afterChange: [revalidatePost, notifyReviewChange],
+    afterDelete: [revalidateDelete],
   },
   labels: {
     plural: {
@@ -331,5 +402,5 @@ export const Posts: CollectionConfig<"posts"> = {
     },
   },
   slug: BLOG_CONFIG.collection,
-  versions: createLivePreviewVersions(),
+  versions: createLivePreviewVersions({ showSaveDraftButton: true }),
 };

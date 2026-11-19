@@ -6,11 +6,16 @@ export type CacheTagParams =
   | { type: "page"; path: string; locale: Locale }
   | { type: "redirect"; locale: Locale }
   | { type: "pagePaths" }
-  | { type: "sitemap" };
+  | { type: "sitemap" }
+  | { type: "entities" };
 
 export function cacheTag(params: CacheTagParams): string {
   if (params.type === "sitemap") {
     return "sitemap";
+  }
+
+  if (params.type === "entities") {
+    return "entities";
   }
 
   if (params.type === "pagePaths") {

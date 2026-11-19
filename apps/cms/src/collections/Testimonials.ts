@@ -10,13 +10,13 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
     update: or(superAdmin, user),
   },
   admin: {
-    defaultColumns: ["author", "company", "rating", "createdAt"],
+    defaultColumns: ["author", "rating", "clinic", "doctor", "updatedAt"],
     group: "Content",
+    listSearchableFields: ["author", "place", "content"],
     useAsTitle: "author",
   },
   fields: [
     {
-      type: "row",
       fields: [
         {
           admin: { width: "50%" },
@@ -29,31 +29,10 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
           type: "text",
         },
         {
-          admin: { width: "50%" },
-          label: {
-            en: "Company",
-            es: "Empresa",
+          admin: {
+            components: { Field: "/components/admin/RatingField#RatingField" },
+            width: "50%",
           },
-          name: "company",
-          type: "text",
-        },
-      ],
-    },
-    {
-      type: "row",
-      fields: [
-        {
-          admin: { width: "50%" },
-          label: {
-            en: "Position",
-            es: "Posición",
-          },
-          localized: true,
-          name: "position",
-          type: "text",
-        },
-        {
-          admin: { width: "50%" },
           defaultValue: 5,
           label: {
             en: "Rating (1-5)",
@@ -65,15 +44,7 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
           type: "number",
         },
       ],
-    },
-    {
-      label: {
-        en: "Avatar",
-        es: "Avatar",
-      },
-      name: "avatar",
-      relationTo: "media",
-      type: "upload",
+      type: "row",
     },
     {
       label: {
@@ -84,6 +55,94 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
       name: "content",
       required: true,
       type: "textarea",
+    },
+    {
+      fields: [
+        {
+          admin: {
+            description:
+              "The clinic or place shown under the reviewer's name, for example Downtown. Empty uses the clinic this review is about.",
+            width: "50%",
+          },
+          label: "Place",
+          name: "place",
+          type: "text",
+        },
+        {
+          admin: {
+            description:
+              "The logo of the site the review was left on, for example Google. Empty shows no logo.",
+            width: "50%",
+          },
+          label: "Review site logo",
+          name: "sourceLogo",
+          relationTo: "media",
+          type: "upload",
+        },
+      ],
+      type: "row",
+    },
+    {
+      admin: { initCollapsed: true },
+      fields: [
+        {
+          fields: [
+            {
+              admin: { width: "50%" },
+              label: {
+                en: "Company",
+                es: "Empresa",
+              },
+              name: "company",
+              type: "text",
+            },
+            {
+              admin: { width: "50%" },
+              label: {
+                en: "Position",
+                es: "Posición",
+              },
+              localized: true,
+              name: "position",
+              type: "text",
+            },
+          ],
+          type: "row",
+        },
+        {
+          label: {
+            en: "Avatar",
+            es: "Avatar",
+          },
+          name: "avatar",
+          relationTo: "media",
+          type: "upload",
+        },
+      ],
+      label: { en: "More about the reviewer", es: "Más sobre quien opina" },
+      type: "collapsible",
+    },
+    {
+      admin: {
+        position: "sidebar",
+        description: "The clinic this review is about. The clinic's page shows its own reviews.",
+      },
+      index: true,
+      label: "Clinic",
+      name: "clinic",
+      relationTo: "clinics",
+      type: "relationship",
+    },
+    {
+      admin: {
+        position: "sidebar",
+        description: "The doctor this review is about. The doctor's page shows their own reviews.",
+      },
+      index: true,
+      label: "Doctor",
+      name: "doctor",
+      relationTo: "doctors",
+      type: "relationship",
     },
   ],
   labels: {

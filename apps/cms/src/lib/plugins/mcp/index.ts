@@ -1,6 +1,9 @@
 import { mcpPlugin } from "@payloadcms/plugin-mcp";
 import type { PayloadRequest } from "payload";
 
+import { entityPath, withLocalePrefix } from "@/lib/config/entityRoutes";
+import type { EntityCollection } from "@/lib/config/entityRoutes";
+import type { Locale } from "@/lib/types";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
 import type { Page } from "@/payload-types";
 
@@ -35,6 +38,14 @@ function isLocalDevMcpRequest(req: PayloadRequest) {
 
     return LOCAL_HOSTS.includes(host);
   }
+}
+
+function recordUrl(collection: EntityCollection, doc: Record<string, unknown>, locale?: string) {
+  const state = doc.state as { slug?: string } | number | null | undefined;
+  const stateSlug = typeof state === "object" && state ? (state.slug ?? null) : null;
+  const path = entityPath({ collection, slug: doc.slug as string, stateSlug });
+
+  return path ? withLocalePrefix(path, (locale ?? "en") as Locale) : null;
 }
 
 const registry: McpToolsRegistry = {
@@ -99,6 +110,36 @@ const registry: McpToolsRegistry = {
       skipKeys: ["id"],
       tableFields: ["company", "rating"],
       titleField: "author",
+    },
+    clinics: {
+      buildUrl: (doc, locale) => recordUrl("clinics", doc, locale),
+      skipKeys: ["id", "blocks"],
+      tableFields: ["slug", "_status", "phone"],
+      titleField: "name",
+    },
+    conditions: {
+      buildUrl: (doc, locale) => recordUrl("conditions", doc, locale),
+      skipKeys: ["id"],
+      tableFields: ["slug", "_status"],
+      titleField: "title",
+    },
+    doctors: {
+      buildUrl: (doc, locale) => recordUrl("doctors", doc, locale),
+      skipKeys: ["id"],
+      tableFields: ["slug", "_status", "jobTitle"],
+      titleField: "name",
+    },
+    states: {
+      buildUrl: (doc, locale) => recordUrl("states", doc, locale),
+      skipKeys: ["id"],
+      tableFields: ["slug", "_status", "abbreviation"],
+      titleField: "name",
+    },
+    treatments: {
+      buildUrl: (doc, locale) => recordUrl("treatments", doc, locale),
+      skipKeys: ["id"],
+      tableFields: ["slug", "_status"],
+      titleField: "title",
     },
     users: {
       skipKeys: ["id"],
@@ -185,6 +226,56 @@ export const mcpPluginConfig = mcpPlugin({
         update: true,
       },
     },
+    clinics: {
+      description:
+        "Clinic records: name, address, phone, opening hours, map position, photo, rating, nearby areas, the state it belongs to and its doctors. One clinic record feeds its own page, its state page, the footer and the doctors' pages. Localized (en/es), draft/publish. The page sections below the top live in `blocks`. Use this collection to read, create, update or delete clinics.",
+      enabled: {
+        create: true,
+        delete: true,
+        find: false,
+        update: true,
+      },
+    },
+    conditions: {
+      description:
+        "Vein condition records (for example spider veins): title, top image, menu labels and the page sections in `blocks`. Treatments link to the conditions they treat. Localized (en/es), draft/publish. Use this collection to read, create, update or delete conditions.",
+      enabled: {
+        create: true,
+        delete: true,
+        find: false,
+        update: true,
+      },
+    },
+    doctors: {
+      description:
+        "Doctor records: name, job title, credentials, photo, the clinics they work at, and the page sections in `blocks`. Localized (en/es), draft/publish. Use this collection to read, create, update or delete doctors.",
+      enabled: {
+        create: true,
+        delete: true,
+        find: false,
+        update: true,
+      },
+    },
+    states: {
+      description:
+        "State records: name, abbreviation, phone, rating, top section fields and the page sections in `blocks`. A state page lists its clinics from clinic records. Localized (en/es), draft/publish. Use this collection to read, create, update or delete states.",
+      enabled: {
+        create: true,
+        delete: true,
+        find: false,
+        update: true,
+      },
+    },
+    treatments: {
+      description:
+        "Treatment records: title, top section, the conditions it treats, and the page sections in `blocks`. Localized (en/es), draft/publish. Use this collection to read, create, update or delete treatments.",
+      enabled: {
+        create: true,
+        delete: true,
+        find: false,
+        update: true,
+      },
+    },
     testimonials: {
       description:
         "Customer testimonials. Each testimonial has an author, company, position, avatar, localized review content, and a 1–5 rating. Supports localization (en/es). Use this collection to read, create, update or delete testimonials.",
@@ -244,7 +335,12 @@ export const mcpPluginConfig = mcpPlugin({
       },
       posts: { create: true, delete: true, find: false, update: true },
       siteSettings: { find: false, update: true },
+      clinics: { create: true, delete: true, find: false, update: true },
+      conditions: { create: true, delete: true, find: false, update: true },
+      doctors: { create: true, delete: true, find: false, update: true },
+      states: { create: true, delete: true, find: false, update: true },
       testimonials: { create: true, delete: true, find: false, update: true },
+      treatments: { create: true, delete: true, find: false, update: true },
       users: { create: true, delete: true, find: false, update: true },
       user: LOCAL_DEV_MCP_USER,
     };

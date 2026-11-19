@@ -13,3 +13,65 @@
 .LexicalEditorTheme__table {
   width: 100%;
 }
+
+// Field help text stays in the config, where MCP reads it, but is not shown to editors.
+.field-description {
+  display: none;
+}
+
+// A flex item will not shrink below its content, so an upload card with a long file name pushed its
+// row partner onto the next line; let row fields shrink and cut the name instead.
+.row__fields > .field-type {
+  min-width: 0;
+}
+
+.upload-relationship-details__filename {
+  text-overflow: ellipsis;
+}
+
+.rating-field__stars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+}
+
+.rating-field__star {
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--theme-elevation-250);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+
+  &--on {
+    color: #f5a623;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--theme-success-500);
+    border-radius: var(--style-radius-s);
+  }
+}
+
+.rating-field__value {
+  margin-left: 8px;
+  color: var(--theme-elevation-600);
+}
+
+// Stacked editing beside Live Preview: Payload's drawer keeps `min-height: 100%`, which beats the
+// plugin's confined height, so the panel runs past the viewport by its top offset and the bottom
+// fields are cut. Remove once the plugin resets min-height itself.
+.stacked-editing__drawer--confined {
+  min-height: 0 !important;
+}
+
+// The A/B test panel in the sidebar is not a `.field-type`, so it gets none of Payload's field spacing.
+.ab-test {
+  margin-top: var(--spacing-field);
+}

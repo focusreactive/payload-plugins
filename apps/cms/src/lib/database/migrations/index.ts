@@ -39,7 +39,17 @@ import * as migration_20261028_134213_section_heading_group from './20261028_134
 import * as migration_20261028_134825_dedicated_page_hero from './20261028_134825_dedicated_page_hero';
 import * as migration_20261106_113418_add_seo_keyphrases from './20261106_113418_add_seo_keyphrases';
 import * as migration_20261112_171504_add_autosave_to_live_preview_collections from './20261112_171504_add_autosave_to_live_preview_collections';
+import * as migration_20261113_185135_site_directory_and_sections from './20261113_185135_site_directory_and_sections';
+import * as migration_20261116_123706_site_page_types from './20261116_123706_site_page_types';
+import * as migration_20261116_141546_sticky_media_tables from './20261116_141546_sticky_media_tables';
+import * as migration_20261116_154652_state_hero_button_localized from './20261116_154652_state_hero_button_localized';
+import * as migration_20261116_160051_mcp_record_collections from './20261116_160051_mcp_record_collections';
+import * as migration_20261116_163741_admin_polish from './20261116_163741_admin_polish';
+import * as migration_20261116_171431_remove_ab_testing from './20261116_171431_remove_ab_testing';
 import * as migration_20261117_123529_add_autosave_to_header_footer from './20261117_123529_add_autosave_to_header_footer';
+import * as migration_20261118_173100_review_workflow from './20261118_173100_review_workflow';
+import * as migration_20261119_124217_restore_ab_testing from './20261119_124217_restore_ab_testing';
+import * as migration_20261119_160100_global_sections_hold_site_blocks from './20261119_160100_global_sections_hold_site_blocks';
 
 export const migrations = [
   {
@@ -248,8 +258,58 @@ export const migrations = [
     name: '20261112_171504_add_autosave_to_live_preview_collections',
   },
   {
+    up: migration_20261113_185135_site_directory_and_sections.up,
+    down: migration_20261113_185135_site_directory_and_sections.down,
+    name: '20261113_185135_site_directory_and_sections',
+  },
+  {
+    up: migration_20261116_123706_site_page_types.up,
+    down: migration_20261116_123706_site_page_types.down,
+    name: '20261116_123706_site_page_types',
+  },
+  {
+    up: migration_20261116_141546_sticky_media_tables.up,
+    down: migration_20261116_141546_sticky_media_tables.down,
+    name: '20261116_141546_sticky_media_tables',
+  },
+  {
+    up: migration_20261116_154652_state_hero_button_localized.up,
+    down: migration_20261116_154652_state_hero_button_localized.down,
+    name: '20261116_154652_state_hero_button_localized',
+  },
+  {
+    up: migration_20261116_160051_mcp_record_collections.up,
+    down: migration_20261116_160051_mcp_record_collections.down,
+    name: '20261116_160051_mcp_record_collections',
+  },
+  {
+    up: migration_20261116_163741_admin_polish.up,
+    down: migration_20261116_163741_admin_polish.down,
+    name: '20261116_163741_admin_polish',
+  },
+  {
+    up: migration_20261116_171431_remove_ab_testing.up,
+    down: migration_20261116_171431_remove_ab_testing.down,
+    name: '20261116_171431_remove_ab_testing',
+  },
+  {
     up: migration_20261117_123529_add_autosave_to_header_footer.up,
     down: migration_20261117_123529_add_autosave_to_header_footer.down,
     name: '20261117_123529_add_autosave_to_header_footer',
+  },
+  {
+    up: migration_20261118_173100_review_workflow.up,
+    down: migration_20261118_173100_review_workflow.down,
+    name: '20261118_173100_review_workflow',
+  },
+  {
+    up: migration_20261119_124217_restore_ab_testing.up,
+    down: migration_20261119_124217_restore_ab_testing.down,
+    name: '20261119_124217_restore_ab_testing',
+  },
+  {
+    up: migration_20261119_160100_global_sections_hold_site_blocks.up,
+    down: migration_20261119_160100_global_sections_hold_site_blocks.down,
+    name: '20261119_160100_global_sections_hold_site_blocks',
   },
 ];

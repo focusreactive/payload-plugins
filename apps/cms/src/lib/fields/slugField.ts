@@ -53,6 +53,16 @@ export const createSharedSlugField = (currentCollection: "page" | "posts") => {
       }
 
       if (slugInput) {
+        slugInput.admin = {
+          ...slugInput.admin,
+          components: {
+            ...slugInput.admin?.components,
+            Cell: {
+              clientProps: { routeKind: currentCollection === "page" ? "page" : "post" },
+              path: "/components/admin/SlugLinkCell#SlugLinkCell",
+            },
+          },
+        };
         slugInput.unique = true;
         slugInput.validate = async (
           value: string | null | undefined,

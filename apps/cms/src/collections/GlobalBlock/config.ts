@@ -1,6 +1,8 @@
+import { VISUAL_SECTIONS_GROUP } from "@/lib/config/adminGroups";
 import type { CollectionConfig } from "payload";
 
 import { contentBlocks } from "@/blocks/contentBlocks";
+import { siteBlocks, siteBlockSlugs } from "@/blocks/siteBlocks";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import {
   createLivePreviewEditComponents,
@@ -23,8 +25,9 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
     components: {
       edit: createLivePreviewEditComponents(),
     },
-    defaultColumns: ["title", "block", "updatedAt"],
-    group: "Global Components",
+    defaultColumns: ["title", "block", "_status", "updatedAt"],
+    group: VISUAL_SECTIONS_GROUP,
+    listSearchableFields: ["title"],
     ...createStandalonePreview("globalBlock"),
     useAsTitle: "title",
   },
@@ -54,7 +57,9 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
         },
         initCollapsed: true,
       },
-      blocks: contentBlocks,
+      blocks: [...siteBlocks, ...contentBlocks],
+      // Stock blocks stay in the schema so older global sections still load; only site sections are offered.
+      filterOptions: siteBlockSlugs,
       localized: true,
       maxRows: 1,
       minRows: 1,
@@ -68,8 +73,8 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
     beforeDelete: [preventDeleteIfReferenced],
   },
   labels: {
-    plural: { en: "Global Blocks", es: "Bloques Globales" },
-    singular: { en: "Global Block", es: "Bloque Global" },
+    plural: { en: "Global sections", es: "Secciones globales" },
+    singular: { en: "Global section", es: "Sección global" },
   },
   slug: "globalBlock",
   versions: createLivePreviewVersions(),

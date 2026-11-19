@@ -1,0 +1,51 @@
+/* Additions for the CMS build of the site. Loaded after styles.css. */
+
+/* Carousel slide widths, set by the slider component through custom properties. */
+.site-slider {
+  --slides: var(--slides-desktop);
+}
+@media (max-width: 1199px) {
+  .site-slider {
+    --slides: var(--slides-medium);
+  }
+}
+@media (max-width: 1023px) {
+  .site-slider {
+    --slides: var(--slides-small);
+  }
+}
+@media (max-width: 767px) {
+  .site-slider {
+    --slides: var(--slides-mobile);
+  }
+}
+.site-slider .slick-track .slick-slide {
+  flex: 0 0 calc(100% / var(--slides));
+  float: none;
+  min-width: 0;
+}
+.site-slider .slick-arrow {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Images that the original site fills in from data attributes after load. */
+.bg-container[style*="background-image"] {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* The original site reveals lazy images and backgrounds by adding .loaded from its own script, which this build does not ship. */
+footer img:not(.not-lazy):not(.first),
+main img:not(.not-lazy):not(.first),
+.bg-container:not(.first) {
+  opacity: 1;
+}
+
+/* The visual-editing toggle fades out while the cursor is over an editable element; editors asked for it to stay visible. An outer rule on the host beats the shadow root's :host rule. */
+[data-ve-toggle][data-hidden] {
+  opacity: 1 !important;
+  transform: none !important;
+  pointer-events: auto !important;
+}

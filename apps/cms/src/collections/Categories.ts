@@ -13,8 +13,9 @@ export const Categories: CollectionConfig<"categories"> = {
     update: or(superAdmin, user, author),
   },
   admin: {
-    defaultColumns: ["title"],
+    defaultColumns: ["title", "slug", "updatedAt"],
     group: "Blog",
+    listSearchableFields: ["title", "slug"],
     useAsTitle: "title",
   },
   fields: [

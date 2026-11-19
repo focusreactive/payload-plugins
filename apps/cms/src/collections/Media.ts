@@ -35,11 +35,13 @@ export const Media: CollectionConfig<"media"> = {
     update: or(superAdmin, user, author),
   },
   admin: {
-    defaultColumns: ["filename", "alt"],
+    defaultColumns: ["filename", "alt", "updatedAt"],
     group: "Content",
+    listSearchableFields: ["filename", "alt"],
     pagination: {
       limits: [20, 50, 100],
     },
+    useAsTitle: "filename",
   },
   fields: [
     {
@@ -68,6 +70,7 @@ export const Media: CollectionConfig<"media"> = {
           en: "Use this file as default when no image is selected.",
           es: "Usar este archivo por defecto cuando no se seleccione ninguna imagen.",
         },
+        position: "sidebar",
       },
       hasMany: true,
       name: "defaultFor",

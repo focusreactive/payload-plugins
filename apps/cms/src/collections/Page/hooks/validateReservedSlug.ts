@@ -1,12 +1,12 @@
 import { APIError } from "payload";
 import type { CollectionBeforeChangeHook } from "payload";
 
-import { BLOG_CONFIG } from "@/lib/config/blog";
 import { getLocaleFromRequest } from "@/lib/utils/getLocaleFromRequest";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
 import type { Page } from "@/payload-types";
 
-const RESERVED_SLUGS: readonly string[] = [BLOG_CONFIG.slug];
+// The blog index is a normal page now; articles keep their own route under it.
+const RESERVED_SLUGS: readonly string[] = [];
 
 const generateErrorMessage = (slug: string) =>
   `Slug "${slug}" is reserved and cannot be used for pages`;

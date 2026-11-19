@@ -113,8 +113,8 @@ export const Users: CollectionConfig<"users"> = {
         },
         {
           label: {
-            en: "Author",
-            es: "Autor",
+            en: "Blog editor",
+            es: "Editor del blog",
           },
           value: "author",
         },

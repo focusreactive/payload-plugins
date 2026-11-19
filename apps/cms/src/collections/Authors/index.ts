@@ -10,8 +10,9 @@ export const Authors: CollectionConfig<"authors"> = {
     update: or(superAdmin, user, author, user),
   },
   admin: {
-    defaultColumns: ["name", "updatedAt"],
+    defaultColumns: ["name", "avatar", "updatedAt"],
     group: "Blog",
+    listSearchableFields: ["name", "bylineName"],
     pagination: {
       limits: [20, 50, 100],
     },
@@ -19,19 +20,38 @@ export const Authors: CollectionConfig<"authors"> = {
   },
   fields: [
     {
-      admin: {
-        description: {
-          en: "The name of the author",
-          es: "El nombre del autor",
+      fields: [
+        {
+          admin: {
+            description: {
+              en: "The name of the author",
+              es: "El nombre del autor",
+            },
+            width: "50%",
+          },
+          label: {
+            en: "Name",
+            es: "Nombre",
+          },
+          name: "name",
+          required: true,
+          type: "text",
         },
-      },
-      label: {
-        en: "Name",
-        es: "Nombre",
-      },
-      name: "name",
-      required: true,
-      type: "text",
+        {
+          admin: {
+            description: {
+              en: "The name printed after Written by on articles and cards, per language. Empty uses the name above.",
+              es: "El nombre que aparece tras Escrito por en artículos y tarjetas, por idioma. Vacío usa el nombre de arriba.",
+            },
+            width: "50%",
+          },
+          label: { en: "Byline name", es: "Nombre en la firma" },
+          localized: true,
+          name: "bylineName",
+          type: "text",
+        },
+      ],
+      type: "row",
     },
     {
       label: { en: "Avatar", es: "Avatar" },

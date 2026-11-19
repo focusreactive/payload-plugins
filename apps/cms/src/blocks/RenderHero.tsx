@@ -7,7 +7,7 @@ import { HeroBlockComponent } from "./Hero/Component";
 export function RenderHero({ hero }: { hero: Page["hero"] }) {
   const [visibleHero] = filterHiddenBlocks(hero);
 
-  if (!visibleHero) {
+  if (!visibleHero || visibleHero.blockType !== "hero") {
     return null;
   }
 

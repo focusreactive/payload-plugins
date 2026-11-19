@@ -10,6 +10,11 @@ import sharp from "sharp";
 import { Authors } from "@/collections/Authors";
 import { Categories } from "@/collections/Categories";
 import { DocumentEmbeddings } from "@/collections/DocumentEmbeddings";
+import { Clinics } from "@/collections/entities/Clinics";
+import { Conditions } from "@/collections/entities/Conditions";
+import { Doctors } from "@/collections/entities/Doctors";
+import { States } from "@/collections/entities/States";
+import { Treatments } from "@/collections/entities/Treatments";
 import { Footer } from "@/collections/Footer/config";
 import { GlobalBlock } from "@/collections/GlobalBlock/config";
 import { Header } from "@/collections/Header/config";
@@ -28,6 +33,10 @@ const baseDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default buildConfig({
   admin: {
+    meta: {
+      // The tab icon follows the admin icon set in Site Settings.
+      icons: [{ rel: "icon", url: "/api/site/admin-icon" }],
+    },
     components: {
       afterLogin: ["/components/admin/SSOButtons"],
       graphics: {
@@ -67,6 +76,11 @@ export default buildConfig({
     Users,
     Media,
     Page,
+    States,
+    Clinics,
+    Doctors,
+    Treatments,
+    Conditions,
     Categories,
     Authors,
     Posts,

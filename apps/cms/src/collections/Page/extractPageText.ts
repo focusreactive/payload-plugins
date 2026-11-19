@@ -60,7 +60,9 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
 export function extractPageText(page: Pick<Page, "title" | "hero" | "blocks">): string {
   return joinText([
     page.title,
-    ...(page.hero ?? []).map(extractHeroText),
+    ...(page.hero ?? []).flatMap((block) =>
+      block.blockType === "hero" ? [extractHeroText(block)] : []
+    ),
     ...(page.blocks ?? []).map(extractPageBlockText),
   ]);
 }

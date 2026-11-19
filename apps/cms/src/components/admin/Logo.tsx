@@ -14,7 +14,7 @@ export default async function Logo() {
   if (logo) {
     const media = prepareMediaProps({ image: logo });
     return (
-      <div style={{ maxWidth: "150px", padding: "20px 0" }}>
+      <div style={{ maxWidth: "280px", padding: "20px 0", width: "100%" }}>
         <Media
           {...media.data}
           imageProps={{ ...media.imageProps, className: "object-contain w-full h-auto" }}
