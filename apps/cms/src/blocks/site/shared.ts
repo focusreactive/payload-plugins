@@ -2,7 +2,7 @@ import type { ArrayField, Block, Field } from "payload";
 
 import { withSectionVisibility } from "@/lib/fields/section/withSectionVisibility";
 import { headingRichText } from "@/lib/fields/site/richText";
-import { getSiteBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
+import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 
 interface SiteBlockOptions {
   slug: string;
@@ -19,7 +19,7 @@ export function siteBlock({ slug, interfaceName, label, fields }: SiteBlockOptio
     interfaceName,
     labels: { plural: label, singular: label },
     slug,
-    ...getSiteBlockPreviewImage(slug, label),
+    ...getBlockPreviewImage(label),
   });
 }
 

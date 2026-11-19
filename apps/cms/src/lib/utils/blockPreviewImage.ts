@@ -14,37 +14,42 @@ const PREVIEW_IMAGES: Record<string, string> = {
   Testimonials: "/block-preview-images/preview-testimonials.png",
   Newsletter: "/block-preview-images/preview-newsletter.png",
   Stats: "/block-preview-images/preview-stats.png",
+  "Hero with video": "/block-preview-images/site-heroVideo.png",
+  "Hero with side picture": "/block-preview-images/site-imageHero.png",
+  "Hero, centred text": "/block-preview-images/site-simpleHero.png",
+  "Blog top section": "/block-preview-images/site-blogHero.png",
+  "Logo strip": "/block-preview-images/site-logoStrip.png",
+  "Icon list": "/block-preview-images/site-iconList.png",
+  "Media and text": "/block-preview-images/site-mediaText.png",
+  "Insurance plans": "/block-preview-images/site-insurance.png",
+  "Doctors slider": "/block-preview-images/site-docSlider.png",
+  "Reviews slider": "/block-preview-images/site-revSlider.png",
+  "Conditions grid": "/block-preview-images/site-condGrid.png",
+  "Before and after slider": "/block-preview-images/site-beforeAfter.png",
+  "Treatment cards": "/block-preview-images/site-treatCards.png",
+  "Articles slider": "/block-preview-images/site-postSlider.png",
+  "Call to action band": "/block-preview-images/site-siteCta.png",
+  "Centred text": "/block-preview-images/site-centerText.png",
+  "Article with sticky pictures": "/block-preview-images/site-stickyMedia.png",
+  "Patient results slider": "/block-preview-images/site-results.png",
+  "Trending articles": "/block-preview-images/site-trending.png",
+  "Articles list with tags": "/block-preview-images/site-blogList.png",
+  "Clinic details and map": "/block-preview-images/site-clinicInfo.png",
+  "Quiz teaser": "/block-preview-images/site-quizDemo.png",
+  "State clinics and map": "/block-preview-images/site-stateSites.png",
+  "State doctors": "/block-preview-images/site-stateDocs.png",
+  "Locations by state": "/block-preview-images/site-locAccord.png",
 };
-
-export const SITE_BLOCK_PREVIEW_ROUTE = "/api/site/block-preview";
-
-/** The Media filename that holds a site section's preview screenshot. */
-export const siteBlockPreviewFilename = (slug: string): string => `block-preview-${slug}.png`;
-
-export function placeholderPreviewURL(label: string): string {
-  return `https://placehold.co/${SIZE}/${BG}/${FG}?text=${encodeURIComponent(label).replaceAll("%20", "+")}`;
-}
 
 export function getBlockPreviewImage(label: string): {
   imageURL: string;
   imageAltText: string;
 } {
+  const imageURL =
+    PREVIEW_IMAGES[label] ??
+    `https://placehold.co/${SIZE}/${BG}/${FG}?text=${label.replaceAll(/\s+/g, "+")}`;
   return {
     imageAltText: `${label} block preview`,
-    imageURL: PREVIEW_IMAGES[label] ?? placeholderPreviewURL(label),
-  };
-}
-
-/**
- * A site section's preview is a screenshot of the live site, which stays out of the repo: it is an
- * upload in Media, resolved per request by the block preview route, with the placeholder as fallback.
- */
-export function getSiteBlockPreviewImage(
-  slug: string,
-  label: string
-): { imageURL: string; imageAltText: string } {
-  return {
-    imageAltText: `${label} block preview`,
-    imageURL: `${SITE_BLOCK_PREVIEW_ROUTE}/${slug}?label=${encodeURIComponent(label)}`,
+    imageURL,
   };
 }
