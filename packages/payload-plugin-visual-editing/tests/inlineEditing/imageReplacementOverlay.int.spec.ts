@@ -93,6 +93,7 @@ describe("replacing an image on the page", () => {
   let fetchApi: ReturnType<typeof vi.fn>;
   let isSaved: boolean;
   let optionsStatus: number;
+  let optionsRefusal: string | undefined;
   let open: MockInstance<typeof window.open>;
 
   const mark = <Target extends HTMLElement>(target: Target, path = "image", key?: string) => {
@@ -146,10 +147,16 @@ describe("replacing an image on the page", () => {
     main.append(heading, image);
     isSaved = true;
     optionsStatus = 200;
+    optionsRefusal = undefined;
     fetchApi = vi.fn((url: string) => {
       const isListing = url.endsWith("/media-options");
       const body = isListing
-        ? { collection: "media", documents: [LIGHTHOUSE], hasNextPage: false }
+        ? {
+            collection: "media",
+            documents: [LIGHTHOUSE],
+            hasNextPage: false,
+            reason: optionsRefusal,
+          }
         : { saved: isSaved };
       const status = isListing ? optionsStatus : 200;
       const response = { json: () => Promise.resolve(body), ok: status === 200, status };
@@ -308,6 +315,7 @@ describe("replacing an image on the page", () => {
 
     it("opens the field in the admin when the endpoint says the field takes no media from the page", async () => {
       optionsStatus = 422;
+      optionsRefusal = "not-editable";
       offersReplacement(image);
 
       click(actionButton());

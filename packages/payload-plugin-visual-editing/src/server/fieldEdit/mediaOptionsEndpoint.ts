@@ -2,10 +2,11 @@ import type { Endpoint, Payload, PayloadRequest, Where } from "payload";
 
 import { headersWithCors } from "payload";
 
+import type { SaveRefusal } from "../../shared/fieldEdit.js";
 import type { VeMediaOptions, VeMediaOptionsRequest } from "../../shared/protocol.js";
 import type { User } from "./draftField.js";
 
-import { readEditedField } from "../../shared/fieldEdit.js";
+import { readEditedField, REQUEST_UNREADABLE } from "../../shared/fieldEdit.js";
 import { mediaOptionOf } from "../../shared/mediaOption.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import { VE_MEDIA_OPTIONS_PATH } from "../../shared/protocol.js";
@@ -16,6 +17,7 @@ import {
   inLocaleOfProject,
   FIELD_NOT_EDITABLE,
   isRefusal,
+  refusalOfStatus,
   SIGNED_OUT,
   statusOfFailure,
   UNREADABLE_REQUEST,
@@ -33,11 +35,17 @@ const DESCRIPTION_FIELD_TYPE = "text";
 
 const NOTHING_LISTED: VeMediaOptions = { collection: null, documents: [], hasNextPage: false };
 
-const answer = (options: VeMediaOptions, status: number, req: PayloadRequest): Response =>
+const answer = (options: object, status: number, req: PayloadRequest): Response =>
   Response.json(options, {
     headers: headersWithCors({ headers: new Headers({ "Cache-Control": "no-store" }), req }),
     status,
   });
+
+const refuse = (
+  status: number,
+  req: PayloadRequest,
+  reason: SaveRefusal = refusalOfStatus(status)
+): Response => answer({ ...NOTHING_LISTED, reason }, status, req);
 
 const isPageNumber = (page: unknown): page is number =>
   typeof page === "number" && Number.isSafeInteger(page) && page >= FIRST_PAGE;
@@ -94,22 +102,22 @@ const listMedia = async (
 export const mediaOptionsEndpoint: Endpoint = {
   handler: async (req) => {
     const { payload, user } = req;
-    if (!user) return answer(NOTHING_LISTED, SIGNED_OUT, req);
+    if (!user) return refuse(SIGNED_OUT, req);
 
     const posted = readRequest(await jsonBodyOf(req));
-    if (!posted) return answer(NOTHING_LISTED, UNREADABLE_REQUEST, req);
+    if (!posted) return refuse(UNREADABLE_REQUEST, req, REQUEST_UNREADABLE);
     const request = inLocaleOfProject(payload, posted);
 
     try {
       const field = await draftFieldOf(payload, user, request);
-      if (isRefusal(field)) return answer(NOTHING_LISTED, field.status, req);
+      if (isRefusal(field)) return refuse(field.status, req);
 
       const collection = shownUploadCollectionOf(field.shown, field.schema, request.key);
-      if (collection === null) return answer(NOTHING_LISTED, FIELD_NOT_EDITABLE, req);
+      if (collection === null) return refuse(FIELD_NOT_EDITABLE, req);
 
       return answer(await listMedia(payload, user, collection, request), ANSWERED, req);
     } catch (error) {
-      return answer(NOTHING_LISTED, statusOfFailure(error), req);
+      return refuse(statusOfFailure(error), req);
     }
   },
   method: "post",

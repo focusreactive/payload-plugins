@@ -4,6 +4,9 @@ import type {
   VeMediaOptionsRequest,
 } from "../../shared/protocol.js";
 
+import type { SaveRefusal } from "../../shared/fieldEdit.js";
+
+import { readSaveRefusal } from "../../shared/fieldEdit.js";
 import { mediaOptionOf, readMediaOptions } from "../../shared/mediaOption.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import { VE_MEDIA_OPTIONS_PATH } from "../../shared/protocol.js";
@@ -21,7 +24,7 @@ export interface MediaLibrary {
 
 export const UPLOAD_REFUSED = "The file could not be uploaded";
 
-const FIELD_NOT_EDITABLE = 422;
+const FIELD_NOT_EDITABLE: SaveRefusal = "not-editable";
 const UPLOADED_FILE_FIELD = "file";
 const WITHOUT_RELATED_DOCUMENTS = "depth=0";
 
@@ -55,8 +58,9 @@ export function createMediaLibrary(
           headers: { "Content-Type": "application/json" },
           method: "POST",
         });
-        if (response.status === FIELD_NOT_EDITABLE) return FIELD_REFUSED;
-        return response.ok ? readMediaOptions(await jsonOf(response)) : null;
+        const answer = await jsonOf(response);
+        if (response.ok) return readMediaOptions(answer);
+        return readSaveRefusal(answer) === FIELD_NOT_EDITABLE ? FIELD_REFUSED : null;
       } catch {
         return null;
       }

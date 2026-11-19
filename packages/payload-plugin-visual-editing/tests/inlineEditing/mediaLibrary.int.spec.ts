@@ -77,9 +77,21 @@ describe("the media library of a page of its own", () => {
     });
 
     it("says so when the endpoint answers that the field takes no media from the page", async () => {
-      fetchApi.mockReturnValue(answerOf({ collection: null, documents: [] }, false, 422));
+      fetchApi.mockReturnValue(
+        answerOf({ collection: null, documents: [], reason: "not-editable" }, false, 404)
+      );
 
       expect(await library.list(REQUEST)).toBe(FIELD_REFUSED);
+    });
+
+    it("answers nothing for a refusal of another reason, whatever its status", async () => {
+      fetchApi.mockReturnValueOnce(
+        answerOf({ collection: null, documents: [], reason: "signed-out" }, false, 422)
+      );
+      expect(await library.list(REQUEST)).toBeNull();
+
+      fetchApi.mockReturnValueOnce(answerOf({ collection: null, documents: [] }, false, 422));
+      expect(await library.list(REQUEST)).toBeNull();
     });
 
     it("answers nothing when the endpoint refuses, answers no list or cannot be reached", async () => {

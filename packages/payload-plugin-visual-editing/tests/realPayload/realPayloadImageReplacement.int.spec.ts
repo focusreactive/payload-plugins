@@ -331,35 +331,35 @@ describe("replacing an image through the endpoints", () => {
         ["a field the schema does not have", "missing"],
       ])("for %s", async (_name, key) => {
         expect(await options({ ...page(docId), key })).toEqual({
-          body: NOTHING_LISTED,
+          body: { ...NOTHING_LISTED, reason: "not-editable" },
           status: 422,
         });
       });
 
       it("for a request without a user", async () => {
         expect(await options({ ...page(docId), key: "image" }, new Headers())).toEqual({
-          body: NOTHING_LISTED,
+          body: { ...NOTHING_LISTED, reason: "signed-out" },
           status: 401,
         });
       });
 
       it("for a user who cannot read the document", async () => {
         expect(await options({ ...page(docId), key: "image" }, outsider)).toEqual({
-          body: NOTHING_LISTED,
+          body: { ...NOTHING_LISTED, reason: "not-editable" },
           status: 422,
         });
       });
 
       it("for a draft that cannot be read", async () => {
         expect(await options({ ...page(docId), key: "image" }, writer)).toEqual({
-          body: NOTHING_LISTED,
+          body: { ...NOTHING_LISTED, reason: "failed" },
           status: 500,
         });
       });
 
       it("for a request that names no locale, in a project with locales", async () => {
         expect(await options({ ...page(docId), key: "image", locale: undefined })).toEqual({
-          body: NOTHING_LISTED,
+          body: { ...NOTHING_LISTED, reason: "failed" },
           status: 400,
         });
       });
@@ -370,7 +370,7 @@ describe("replacing an image through the endpoints", () => {
         ["no search", { search: undefined }],
       ])("for a request with %s", async (_name, body) => {
         expect(await options({ ...page(docId), key: "image", ...body })).toEqual({
-          body: NOTHING_LISTED,
+          body: { ...NOTHING_LISTED, reason: "unreadable" },
           status: 400,
         });
       });
@@ -383,7 +383,10 @@ describe("replacing an image through the endpoints", () => {
           kind: "collection",
         });
 
-        expect(answer).toEqual({ body: NOTHING_LISTED, status: 404 });
+        expect(answer).toEqual({
+          body: { ...NOTHING_LISTED, reason: "not-editable" },
+          status: 404,
+        });
       });
 
       it("for a collection without drafts", async () => {
@@ -396,7 +399,7 @@ describe("replacing an image through the endpoints", () => {
           kind: "collection",
         });
 
-        expect(answer).toEqual({ body: NOTHING_LISTED, status: 409 });
+        expect(answer).toEqual({ body: { ...NOTHING_LISTED, reason: "no-drafts" }, status: 409 });
       });
     });
   });
