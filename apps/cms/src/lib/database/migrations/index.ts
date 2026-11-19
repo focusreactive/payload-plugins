@@ -48,6 +48,7 @@ import * as migration_20261116_163741_admin_polish from './20261116_163741_admin
 import * as migration_20261116_171431_remove_ab_testing from './20261116_171431_remove_ab_testing';
 import * as migration_20261117_123529_add_autosave_to_header_footer from './20261117_123529_add_autosave_to_header_footer';
 import * as migration_20261118_173100_review_workflow from './20261118_173100_review_workflow';
+import * as migration_20261119_124217_restore_ab_testing from './20261119_124217_restore_ab_testing';
 
 export const migrations = [
   {
@@ -299,5 +300,10 @@ export const migrations = [
     up: migration_20261118_173100_review_workflow.up,
     down: migration_20261118_173100_review_workflow.down,
     name: '20261118_173100_review_workflow',
+  },
+  {
+    up: migration_20261119_124217_restore_ab_testing.up,
+    down: migration_20261119_124217_restore_ab_testing.down,
+    name: '20261119_124217_restore_ab_testing',
   },
 ];

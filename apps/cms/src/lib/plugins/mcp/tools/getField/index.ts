@@ -81,7 +81,7 @@ export function createGetFieldTool(
           overrideAccess: false,
           req,
           slug: globalSlug,
-        })) as unknown as BaseDocument;
+        })) as BaseDocument;
 
         const resolved = resolvePath(doc, fieldPath);
         if ("error" in resolved) {

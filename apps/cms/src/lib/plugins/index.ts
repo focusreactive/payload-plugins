@@ -1,4 +1,5 @@
 import { VISUAL_SECTIONS_GROUP } from "@/lib/config/adminGroups";
+import { abTestingPlugin } from "@focus-reactive/payload-plugin-ab";
 import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
@@ -15,10 +16,15 @@ import serverExtractPostContent from "@/collections/Posts/serverExtractPostConte
 import { resolveDocUrl } from "@/lib/contentExtraction/links";
 import { getMediaStoragePrefix } from "@/lib/storage/mediaStoragePrefix";
 import { I18N_CONFIG } from "@/lib/config/i18n";
+import { abAdapter } from "@/lib/plugins/ab/abAdapter";
+import { buildVariantData } from "@/lib/plugins/ab/buildVariantData";
+import type { ABVariantData } from "@/lib/plugins/ab/types";
 import { superAdmin, or, authenticated, user } from "@/lib/access";
 import { roleScopePlugin } from "@/lib/plugins/roleScope";
 import { getServerSideURL } from "@/lib/utils/getURL";
+import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 import { validateRedirectPath } from "@/lib/utils/redirectUrl";
+import { isDev } from "@/lib/utils/isDev";
 import { normalizeRedirectFields } from "@/lib/hooks/normalizeRedirectFields";
 import { revalidateRedirects } from "@/lib/hooks/revalidateRedirects";
 import type { Page } from "@/payload-types";
@@ -284,6 +290,29 @@ export const plugins: Plugin[] = [
     secret: process.env.CRON_SECRET!,
   }),
 
+  abTestingPlugin<ABVariantData>({
+    collections: {
+      page: {
+        generatePath: ({ doc: docProp, locale }) => {
+          const doc = docProp as unknown as Page;
+
+          const breadcrumbs = doc.breadcrumbs ?? [];
+          const lastUrl = breadcrumbs.at(-1)?.url ?? "";
+          const restPath = !lastUrl || lastUrl === "/home" ? "" : lastUrl;
+
+          const resolvedLocale = locale ?? I18N_CONFIG.defaultLocale;
+          return shouldIncludeLocalePrefix(resolvedLocale)
+            ? `/${resolvedLocale}${restPath}`
+            : restPath || "/";
+        },
+        generateVariantData: ({ variantDoc, locale }) =>
+          buildVariantData(variantDoc as unknown as Page & { _abPassPercentage?: number }, locale),
+      },
+    },
+    debug: isDev(),
+    storage: abAdapter,
+  }),
+
   visualEditingPlugin({
     adminBasePath: "/admin",
     enrichment: "explicit",
@@ -301,6 +330,7 @@ export const plugins: Plugin[] = [
       "presets",
       "comments",
       "comment-reads",
+      "ab-experiments",
       "payload-mcp-api-keys",
       "seo-keyphrases",
     ],
@@ -319,6 +349,6 @@ export const plugins: Plugin[] = [
   // Must stay last so it also protects collections and globals added by the plugins above.
   restrictApiAccess({
     collectionsWithPublicFiles: ["media"],
-    globalsWithPublicRead: [],
+    globalsWithPublicRead: abAdapter.createGlobal ? [abAdapter.createGlobal(false).slug] : [],
   }),
 ];
