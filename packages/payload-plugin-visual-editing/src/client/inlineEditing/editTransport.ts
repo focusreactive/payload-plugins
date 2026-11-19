@@ -22,7 +22,7 @@ import {
 } from "../../shared/protocol.js";
 import { readPostedEditorState } from "../../shared/richText/postedEditorState.js";
 import { isSameValue } from "../../shared/sameValue.js";
-import { documentAddressOf, keyedFieldAddressOf } from "../../shared/veDocument.js";
+import { documentAddressOf, editedFieldAddressOf } from "../../shared/veDocument.js";
 import type { FindAdminWindow } from "../adminWindow.js";
 
 import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
@@ -83,9 +83,6 @@ const nextPageLeave = (): PageLeave => {
   });
   return { leave: () => leave?.(), left };
 };
-
-const addressOf = (field: EditedField): string =>
-  JSON.stringify([keyedFieldAddressOf(field), field.locale ?? null]);
 
 const isSavedWith = (edit: EditedField, saved: VeLiveDocument): boolean =>
   documentAddressOf(edit) === documentAddressOf(saved) &&
@@ -184,8 +181,8 @@ export function createEditTransport(
   };
 
   const fail = (edit: VeEdit, refusal: SaveRefusal) => {
-    failed.delete(addressOf(edit));
-    failed.set(addressOf(edit), { edit, refusal });
+    failed.delete(editedFieldAddressOf(edit));
+    failed.set(editedFieldAddressOf(edit), { edit, refusal });
   };
 
   const countSaveOnTheWay = (address: string, change: number) => {
@@ -199,7 +196,7 @@ export function createEditTransport(
 
   const rememberSaved = (edit: VeEdit, continued: SavedEdit | null, stored: unknown) => {
     if (edit.base === undefined) return;
-    savedEdits.set(addressOf(edit), {
+    savedEdits.set(editedFieldAddressOf(edit), {
       sent: valueOf(edit),
       startedFrom: continued?.startedFrom ?? edit.base,
       stored: storedValueOf(edit, stored),
@@ -208,14 +205,14 @@ export function createEditTransport(
 
   const startingValuesOf = (edit: VeEdit, continued: SavedEdit | null): VeEdit => {
     const rebased = continued ? withStartingValue(edit, "base", continued.stored) : edit;
-    const earlier = latestPosted.get(addressOf(edit));
+    const earlier = latestPosted.get(editedFieldAddressOf(edit));
     return earlier && edit.base !== undefined
       ? withStartingValue(rebased, "sentBefore", valueOf(earlier))
       : rebased;
   };
 
   const post = async (edit: VeEdit): Promise<PostedAnswer> => {
-    const address = addressOf(edit);
+    const address = editedFieldAddressOf(edit);
     if (isChangedElsewhere(address)) return { isLatest: true, refusal: CHANGED_ELSEWHERE };
     const saved = savedEdits.get(address);
     const continued = continuesSaved(edit, saved) ? saved : null;
@@ -235,20 +232,20 @@ export function createEditTransport(
 
   const saveThroughEndpoint = async (edit: VeEdit) => {
     report("saving");
-    countSaveOnTheWay(addressOf(edit), 1);
+    countSaveOnTheWay(editedFieldAddressOf(edit), 1);
     const { isLatest, refusal } = await post(edit);
     const isSaved = refusal === null;
-    countSaveOnTheWay(addressOf(edit), -1);
-    if (isLatest && isSaved) failed.delete(addressOf(edit));
+    countSaveOnTheWay(editedFieldAddressOf(edit), -1);
+    if (isLatest && isSaved) failed.delete(editedFieldAddressOf(edit));
     else if (isLatest && refusal) fail(edit, refusal);
     report(statusAfterASave());
     if (isDisposed || !isLatest) return;
-    watchedSaves.get(addressOf(edit))?.(isSaved);
+    watchedSaves.get(editedFieldAddressOf(edit))?.(isSaved);
     if (isSaved) getCtx().onEdited?.();
   };
 
   const saveAfter = async (earlierSaves: Promise<void>, edit: VeEdit) => {
-    const address = addressOf(edit);
+    const address = editedFieldAddressOf(edit);
     latestQueued.set(address, edit);
     countSaveOnTheWay(address, 1);
     await Promise.race([earlierSaves, pageLeave.left]);
@@ -264,9 +261,9 @@ export function createEditTransport(
       saves = saveAfter(saves, edit);
       return;
     }
-    failed.delete(addressOf(edit));
-    postedToAdmin.set(addressOf(edit), edit);
-    unsavedInForm.set(addressOf(edit), edit);
+    failed.delete(editedFieldAddressOf(edit));
+    postedToAdmin.set(editedFieldAddressOf(edit), edit);
+    unsavedInForm.set(editedFieldAddressOf(edit), edit);
     adminWindow.postMessage(messageOf(edit), adminOriginOf(getCtx().adminOrigin));
   };
 
@@ -307,10 +304,10 @@ export function createEditTransport(
       isDisposed = true;
     },
     drop(field) {
-      if (stopWaiting(addressOf(field)) && isIdle()) settle();
+      if (stopWaiting(editedFieldAddressOf(field)) && isIdle()) settle();
     },
     hold(edit) {
-      const address = addressOf(edit);
+      const address = editedFieldAddressOf(edit);
       supersede(address);
       watchedSaves.delete(address);
       waiting.set(address, { edit, timer: null });
@@ -323,7 +320,7 @@ export function createEditTransport(
       pageLeave = nextPageLeave();
     },
     refuse(field) {
-      const edit = postedToAdmin.get(addressOf(field));
+      const edit = postedToAdmin.get(editedFieldAddressOf(field));
       if (!edit) return;
       fail(edit, SAVE_FAILED);
       report("failed");
@@ -335,7 +332,7 @@ export function createEditTransport(
       if (unsavedInForm.size > 0) report("unsaved");
     },
     send(edit, onDelivered) {
-      const address = addressOf(edit);
+      const address = editedFieldAddressOf(edit);
       supersede(address);
       watchedSaves.delete(address);
       const timer = isSavedWhenTheEditEnds(edit)
@@ -345,7 +342,7 @@ export function createEditTransport(
       report("unsaved");
     },
     sendNow(edit, onSaveEnded) {
-      const address = addressOf(edit);
+      const address = editedFieldAddressOf(edit);
       supersede(address);
       if (onSaveEnded) watchedSaves.set(address, onSaveEnded);
       else watchedSaves.delete(address);
@@ -353,11 +350,11 @@ export function createEditTransport(
       deliver(edit);
     },
     isUnsaved(field) {
-      const address = addressOf(field);
+      const address = editedFieldAddressOf(field);
       return waiting.has(address) || savesOnTheWay.has(address) || failed.has(address);
     },
     holdInForm(field) {
-      unsavedInForm.set(addressOf(field), field);
+      unsavedInForm.set(editedFieldAddressOf(field), field);
       report("unsaved");
     },
     settle(saved) {

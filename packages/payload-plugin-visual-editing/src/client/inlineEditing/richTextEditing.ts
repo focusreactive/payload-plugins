@@ -35,7 +35,7 @@ import { readPostedEditorState } from "../../shared/richText/postedEditorState.j
 import {
   documentAddressOf,
   isVeDocument,
-  keyedFieldAddressOf,
+  editedFieldAddressOf,
   veDocumentOf,
 } from "../../shared/veDocument.js";
 import type { FindAdminWindow } from "../adminWindow.js";
@@ -130,9 +130,6 @@ const NEWS_OF_A_DOCUMENT: ReadonlySet<unknown> = new Set([
   VE_FIELD_SNAPSHOT_TYPE,
   VE_DOCUMENT_SAVED_TYPE,
 ]);
-
-const addressOf = (field: VeEditedField): string =>
-  JSON.stringify([keyedFieldAddressOf(field), field.locale ?? null]);
 
 const isPlainPrimaryClick = (event: MouseEvent): boolean =>
   event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
@@ -299,7 +296,7 @@ export function createRichTextEditing({
     const ended = editing;
     if (!ended) return;
     editing = null;
-    forget(addressOf(ended.held.field));
+    forget(editedFieldAddressOf(ended.held.field));
     const isOnThePage = ended.twin.isConnected && ended.wrapper.isConnected;
     ended.stopWatchingWrapper();
     const keepsTwin =
@@ -374,7 +371,7 @@ export function createRichTextEditing({
     if (!marker) return false;
     endOtherEdits();
     commit();
-    forget(addressOf(ready.field));
+    forget(editedFieldAddressOf(ready.field));
 
     const shown = previous?.twin ?? wrapper;
     const { content, root: twin } = twinOf(wrapper, ready.state);
@@ -458,14 +455,14 @@ export function createRichTextEditing({
         method: "POST",
       });
       const answer: unknown = response.ok ? await response.json() : null;
-      hold(addressOf(field), heldOf(field, answer));
+      hold(editedFieldAddressOf(field), heldOf(field, answer));
     } catch {
-      hold(addressOf(field), null);
+      hold(editedFieldAddressOf(field), null);
     }
   };
 
   const ask = (field: VeEditedField) => {
-    askedAt.set(addressOf(field), Date.now());
+    askedAt.set(editedFieldAddressOf(field), Date.now());
     loadEditor();
     const adminWindow = findAdmin();
     if (adminWindow) askAdmin(adminWindow, field);
@@ -473,7 +470,7 @@ export function createRichTextEditing({
   };
 
   const askUnlessHeld = (field: VeEditedField) => {
-    const address = addressOf(field);
+    const address = editedFieldAddressOf(field);
     if (!held.has(address) && !isBeingAsked(address)) ask(field);
   };
 
@@ -485,7 +482,7 @@ export function createRichTextEditing({
   };
 
   const isEdited = (field: VeEditedField): boolean =>
-    editing !== null && addressOf(editing.held.field) === addressOf(field);
+    editing !== null && editedFieldAddressOf(editing.held.field) === editedFieldAddressOf(field);
 
   const isCheckedLately = (wrapper: HTMLElement): boolean => {
     const checked = checkedAt.get(wrapper);
@@ -513,9 +510,9 @@ export function createRichTextEditing({
     if (!isPlainObject(data)) return;
     const field = readEditedField(data);
     if (data.type === VE_RICH_TEXT_STATE_TYPE && field) {
-      hold(addressOf(field), readRichTextEdit(data) && heldOf(field, data));
+      hold(editedFieldAddressOf(field), readRichTextEdit(data) && heldOf(field, data));
     } else if (data.type === VE_RICH_TEXT_STATE_REFUSED_TYPE && field) {
-      refuse(addressOf(field));
+      refuse(editedFieldAddressOf(field));
     } else if (NEWS_OF_A_DOCUMENT.has(data.type)) {
       forgetDocument(isVeDocument(data) ? veDocumentOf(data) : null);
     }
@@ -542,7 +539,7 @@ export function createRichTextEditing({
     openField: () => void
   ) => {
     waitingClick = {
-      address: addressOf(field),
+      address: editedFieldAddressOf(field),
       caret: caretAt(wrapper, pointOf(event)),
       field,
       openField,
@@ -604,9 +601,9 @@ export function createRichTextEditing({
       const field = isOffered() ? fieldOf(target) : null;
       if (!field) return false;
       if (waitingClick) return true;
-      const ready = freshlyHeld(addressOf(field));
+      const ready = freshlyHeld(editedFieldAddressOf(field));
       if (ready && editor) return begin(target, ready, caretAt(target, pointOf(event)), null);
-      if (!ready) forget(addressOf(field));
+      if (!ready) forget(editedFieldAddressOf(field));
       waitForState(target, field, event, openField);
       return true;
     },

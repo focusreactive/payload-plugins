@@ -22,7 +22,7 @@ import {
   VE_MEDIA_PICKED_TYPE,
   VE_PICK_MEDIA_TYPE,
 } from "../../shared/protocol.js";
-import { keyedFieldAddressOf, veDocumentOf } from "../../shared/veDocument.js";
+import { editedFieldAddressOf, veDocumentOf } from "../../shared/veDocument.js";
 import type { FindAdminWindow } from "../adminWindow.js";
 
 import { adminOriginOf, findAdminWindow, isFramedByAdmin } from "../adminWindow.js";
@@ -69,9 +69,6 @@ export const MEDIA_PICK_TIME_LIMIT_MS = 60_000;
 const NOT_SAVED: EditStatus = "failed";
 
 const IMAGES = "img";
-
-const addressOf = (field: VeEditedField): string =>
-  JSON.stringify([keyedFieldAddressOf(field), field.locale ?? null]);
 
 const onlyImageOf = (target: HTMLElement): HTMLImageElement | null => {
   if (target instanceof HTMLImageElement) return target;
@@ -140,7 +137,7 @@ export function createImageReplacement({
     openField: () => void,
     chosen?: VeMediaOption
   ) => {
-    const address = addressOf(replaceable.field);
+    const address = editedFieldAddressOf(replaceable.field);
     if (isStillOpen(askedOfAdmin.get(address), adminWindow)) return;
     const message: VePickMediaMessage = {
       ...replaceable.field,
@@ -181,9 +178,9 @@ export function createImageReplacement({
   };
 
   const takeAsked = (field: VeEditedField | null): AskedOfAdmin | null => {
-    const asked = field && askedOfAdmin.get(addressOf(field));
+    const asked = field && askedOfAdmin.get(editedFieldAddressOf(field));
     if (!field || !asked) return null;
-    askedOfAdmin.delete(addressOf(field));
+    askedOfAdmin.delete(editedFieldAddressOf(field));
     return asked;
   };
 

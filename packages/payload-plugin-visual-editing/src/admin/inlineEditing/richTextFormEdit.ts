@@ -17,7 +17,7 @@ import { fixedNodesOf } from "../../shared/richText/editableNodes.js";
 import { editedStateOf } from "../../shared/richText/editedState.js";
 import { isEditorStateTree } from "../../shared/richText/editorStateTree.js";
 import { formatsIn, NO_FORMATS, readFormats, withFormats } from "../../shared/richText/formats.js";
-import { documentAddressOf, keyedFieldAddressOf } from "../../shared/veDocument.js";
+import { documentAddressOf, editedFieldAddressOf } from "../../shared/veDocument.js";
 import { isOfAnotherLocale, updatableFormFieldOf } from "./formEdit.js";
 
 export type RichTextOfForm = { path: string; value: VeEditorState };
@@ -114,18 +114,15 @@ export type RunningEdits = {
   forget(): void;
 };
 
-const addressOf = (field: VeEditedField): string =>
-  JSON.stringify([keyedFieldAddressOf(field), field.locale ?? null]);
-
 export function createRunningEdits(): RunningEdits {
   const begunEdits = new Map<string, BegunEdit>();
   return {
     answered(field, begun) {
-      begunEdits.set(addressOf(field), begun);
+      begunEdits.set(editedFieldAddressOf(field), begun);
     },
-    beginningOf: (field) => begunEdits.get(addressOf(field)) ?? null,
+    beginningOf: (field) => begunEdits.get(editedFieldAddressOf(field)) ?? null,
     ended(field) {
-      begunEdits.delete(addressOf(field));
+      begunEdits.delete(editedFieldAddressOf(field));
     },
     forget() {
       begunEdits.clear();

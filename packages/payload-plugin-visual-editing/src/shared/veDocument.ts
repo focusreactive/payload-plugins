@@ -10,6 +10,10 @@ export const fieldAddressOf = (document: VeDocument, key: string): string =>
 export const keyedFieldAddressOf = (field: VeDocument & { key: string }): string =>
   fieldAddressOf(field, field.key);
 
+export const editedFieldAddressOf = (
+  field: VeDocument & { key: string; locale?: string }
+): string => JSON.stringify([keyedFieldAddressOf(field), field.locale ?? null]);
+
 export const isVeDocument = (value: PlainObject): value is PlainObject & VeDocument =>
   typeof value.collectionSlug === "string" &&
   (value.kind === "collection" || value.kind === "global") &&
