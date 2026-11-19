@@ -63,3 +63,10 @@
   margin-left: 8px;
   color: var(--theme-elevation-600);
 }
+
+// Stacked editing beside Live Preview: Payload's drawer keeps `min-height: 100%`, which beats the
+// plugin's confined height, so the panel runs past the viewport by its top offset and the bottom
+// fields are cut. Remove once the plugin resets min-height itself.
+.stacked-editing__drawer--confined {
+  min-height: 0 !important;
+}
