@@ -47,7 +47,7 @@ export function getBlockPreviewImage(label: string): {
 } {
   const imageURL =
     PREVIEW_IMAGES[label] ??
-    `https://placehold.co/${SIZE}/${BG}/${FG}?text=${label.replaceAll(/\s+/g, "+")}`;
+    `https://placehold.co/${SIZE}/${BG}/${FG}?text=${label.replaceAll(/\s+/gu, "+")}`;
   return {
     imageAltText: `${label} block preview`,
     imageURL,
