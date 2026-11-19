@@ -1,5 +1,4 @@
 import type { BuildAdminEditUrl } from "../../shared/buildAdminEditUrl.js";
-import type { ActionOf } from "./editBadge.js";
 import type { Marker } from "./markerExtractor.js";
 
 import { spreadVeIdentity } from "../../shared/shared.js";
@@ -16,18 +15,11 @@ export type TargetConfig = {
   clickHandler: (event: MouseEvent) => void;
 };
 
-export const CLICK_LEFT_TO_THE_PAGE = "page";
-
-export type ClickTaken = boolean | typeof CLICK_LEFT_TO_THE_PAGE;
-
 export type TargetRegistryCtx = {
   buildAdminEditUrl: BuildAdminEditUrl;
   adminOrigin: string;
   adminBasePath: string;
   locale?: string;
-  mode: "always" | "hover";
-  editInPlace?: (target: HTMLElement, event: MouseEvent, openField: () => void) => ClickTaken;
-  actionOf?: ActionOf;
 };
 
 export interface TargetRegistry {
