@@ -167,38 +167,6 @@ export const Clinics: CollectionConfig<"clinics"> = {
               label: { en: "Hero", es: "Cabecera" },
               type: "collapsible",
             },
-            {
-              admin: { initCollapsed: true },
-              fields: [
-                {
-                  admin: {
-                    description: {
-                      en: "A paragraph about this clinic, sent to search engines with the page.",
-                      es: "Un párrafo sobre esta clínica, que se envía a los buscadores con la página.",
-                    },
-                  },
-                  label: { en: "About this clinic", es: "Sobre esta clínica" },
-                  localized: true,
-                  name: "description",
-                  type: "textarea",
-                },
-                {
-                  admin: {
-                    description: {
-                      en: "Neighbourhoods and towns this clinic serves, one per entry, for example Plano. Shown under Located Near on the clinic's page.",
-                      es: "Barrios y ciudades que atiende esta clínica, uno por entrada, por ejemplo Plano. Se muestran en Ubicado cerca de en la página de la clínica.",
-                    },
-                  },
-                  hasMany: true,
-                  label: { en: "Located near", es: "Ubicado cerca de" },
-                  localized: true,
-                  name: "locatedNear",
-                  type: "text",
-                },
-              ],
-              label: { en: "About and nearby areas", es: "Sobre la clínica y zonas cercanas" },
-              type: "collapsible",
-            },
             bilingual(
               entitySectionsField(
                 "The sections of the clinic's page under its heading, top to bottom."
@@ -339,6 +307,37 @@ export const Clinics: CollectionConfig<"clinics"> = {
               ],
               label: { en: "Map position", es: "Posición en el mapa" },
               name: "geo",
+              type: "group",
+            },
+            {
+              fields: [
+                {
+                  admin: {
+                    description: {
+                      en: "A paragraph about this clinic, sent to search engines with the page.",
+                      es: "Un párrafo sobre esta clínica, que se envía a los buscadores con la página.",
+                    },
+                  },
+                  label: { en: "About this clinic", es: "Sobre esta clínica" },
+                  localized: true,
+                  name: "description",
+                  type: "textarea",
+                },
+                {
+                  admin: {
+                    description: {
+                      en: "Neighbourhoods and towns this clinic serves, one per entry, for example Plano. Shown under Located Near on the clinic's page.",
+                      es: "Barrios y ciudades que atiende esta clínica, uno por entrada, por ejemplo Plano. Se muestran en Ubicado cerca de en la página de la clínica.",
+                    },
+                  },
+                  hasMany: true,
+                  label: { en: "Located near", es: "Ubicado cerca de" },
+                  localized: true,
+                  name: "locatedNear",
+                  type: "text",
+                },
+              ],
+              label: { en: "About and nearby areas", es: "Sobre la clínica y zonas cercanas" },
               type: "group",
             },
             {
