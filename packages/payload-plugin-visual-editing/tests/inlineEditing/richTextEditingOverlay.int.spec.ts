@@ -55,7 +55,12 @@ import {
 
 import { markedText, markedTextNode } from "../support/markedData";
 import { click, overlayCtx } from "../support/overlay";
-import { postFromAdmin, restorePreviewWindow, stubAdminWindow } from "../support/previewWindow";
+import {
+  postFromAdmin,
+  restorePreviewWindow,
+  stubAdminWindow,
+  stubOpenerWindow,
+} from "../support/previewWindow";
 import { measureSelectionsAsEmpty } from "../support/selectionRects";
 
 const PAYLOAD_API = "https://cms.example.com/api";
@@ -1100,6 +1105,56 @@ describe("editing rich text on the page", () => {
 
       const button = document.querySelector<HTMLButtonElement>(`[${DATA_VE_ACTION_ATTR}]`);
       expect(button?.style.display).toBe("none");
+    });
+  });
+
+  describe("on a page a window of the admin opened", () => {
+    const postToOpener = vi.fn();
+
+    const formOfTheDocument = () =>
+      postFromAdmin(
+        {
+          ...PAGE,
+          fields: [{ key: "title", saved: "Title", value: "Title" }],
+          locale: "en",
+          type: VE_FIELD_SNAPSHOT_TYPE,
+        },
+        { source: window.opener }
+      );
+
+    beforeEach(async () => {
+      postToOpener.mockClear();
+      stubOpenerWindow({ closed: false, postMessage: postToOpener });
+      const title = document.createElement("h1");
+      title.textContent = markedText("Title", { ...PAGE, path: "title" });
+      main.prepend(title);
+      start();
+      await settle();
+    });
+
+    it("keeps saving an edit through the endpoint when the admin sends the values of a form while it runs", async () => {
+      const twin = await beginEdit();
+      typeInto(twin, "Hello there");
+
+      formOfTheDocument();
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+
+      expect(requestsTo(VE_FIELD_EDIT_PATH)).toHaveLength(1);
+      expect(messagesOfType(postToOpener, VE_RICH_TEXT_EDIT_TYPE)).toEqual([]);
+    });
+
+    it("keeps a read-only twin of what it saved through the endpoint when the admin sent the values of a form during the edit", async () => {
+      const twin = await beginEdit();
+      typeInto(twin, "Hello there");
+      await vi.advanceTimersByTimeAsync(EDIT_SAVE_PAUSE_MS);
+
+      formOfTheDocument();
+      pressOutside();
+      await settle();
+
+      expect(twinOf(wrapper)?.hasAttribute(DATA_VE_EDITED_ATTR)).toBe(true);
+      expect(isShown(wrapper)).toBe(false);
+      expect(messagesOfType(postToOpener, VE_RICH_TEXT_EDIT_ENDED_TYPE)).toEqual([]);
     });
   });
 

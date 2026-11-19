@@ -23,7 +23,6 @@ import {
 import { readPostedEditorState } from "../../shared/richText/postedEditorState.js";
 import { isSameValue } from "../../shared/sameValue.js";
 import { documentAddressOf, editedFieldAddressOf } from "../../shared/veDocument.js";
-import type { FindAdminWindow } from "../adminWindow.js";
 
 import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 
@@ -40,6 +39,8 @@ export type OnStatus = (status: EditStatus, refusal?: SaveRefusal) => void;
 export type OnDelivered = () => void;
 
 export type RetryRefused = () => void;
+
+export type FindAdminOf = (field: EditedField) => Window | null;
 
 export interface EditTransport {
   send(edit: VeEdit, onDelivered?: OnDelivered): void;
@@ -150,7 +151,7 @@ export function createEditTransport(
   getCtx: () => EditTransportCtx,
   onStatus: OnStatus,
   win: Window = window,
-  findAdmin: FindAdminWindow = () => findAdminWindow(win)
+  findAdmin: FindAdminOf = () => findAdminWindow(win)
 ): EditTransport {
   const waiting = new Map<string, WaitingEdit>();
   const failed = new Map<string, FailedEdit>();
@@ -259,11 +260,12 @@ export function createEditTransport(
   };
 
   const deliver = (edit: VeEdit) => {
-    const adminWindow = findAdmin();
+    const adminWindow = findAdmin(edit);
     if (!adminWindow) {
       saves = saveAfter(saves, edit);
       return;
     }
+    savedEdits.delete(editedFieldAddressOf(edit));
     failed.delete(editedFieldAddressOf(edit));
     postedToAdmin.set(editedFieldAddressOf(edit), edit);
     unsavedInForm.set(editedFieldAddressOf(edit), edit);
@@ -277,10 +279,11 @@ export function createEditTransport(
     return held;
   };
 
-  const pauseBeforeSending = (): number => (findAdmin() ? EDIT_SEND_PAUSE_MS : EDIT_SAVE_PAUSE_MS);
+  const pauseBeforeSending = (edit: VeEdit): number =>
+    findAdmin(edit) ? EDIT_SEND_PAUSE_MS : EDIT_SAVE_PAUSE_MS;
 
   const isSavedWhenTheEditEnds = (edit: VeEdit): boolean =>
-    !findAdmin() && savedWhenEditsEnd.has(documentAddressOf(edit));
+    !findAdmin(edit) && savedWhenEditsEnd.has(documentAddressOf(edit));
 
   const isIdle = (): boolean =>
     waiting.size === 0 && savesOnTheWay.size === 0 && unsavedInForm.size === 0;
@@ -347,7 +350,7 @@ export function createEditTransport(
       watchedSaves.delete(address);
       const timer = isSavedWhenTheEditEnds(edit)
         ? null
-        : setTimeout(deliverWaiting, pauseBeforeSending(), address);
+        : setTimeout(deliverWaiting, pauseBeforeSending(edit), address);
       waiting.set(address, { edit, onDelivered, timer });
       report("unsaved");
     },

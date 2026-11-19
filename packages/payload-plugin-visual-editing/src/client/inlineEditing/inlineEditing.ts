@@ -1,6 +1,7 @@
 import type { SaveRefusal } from "../../shared/fieldEdit.js";
 import type { VeDocument } from "../../shared/protocol.js";
 import type { BadgeAction } from "../overlay/editBadge.js";
+import type { VeEditedField } from "../../shared/protocol.js";
 import type { FieldMatch, FieldTracker } from "../overlay/fieldTracker.js";
 import type { ClickTaken } from "../overlay/editTargets.js";
 import type { EditStatus, OnDelivered } from "./editTransport.js";
@@ -12,7 +13,7 @@ import { readEditedField, readSaveRefusal } from "../../shared/fieldEdit.js";
 import { isMessageFrom } from "../../shared/messageSource.js";
 import { isPlainObject } from "../../shared/plainObject.js";
 import { VE_FIELD_EDIT_REFUSED_TYPE } from "../../shared/protocol.js";
-import { veDocumentOf } from "../../shared/veDocument.js";
+import { editedFieldAddressOf, veDocumentOf } from "../../shared/veDocument.js";
 import { adminOriginOf, findAdminWindow, isFramedByAdmin } from "../adminWindow.js";
 import { listenToSaves } from "../saveEvents.js";
 import { CLICK_LEFT_TO_THE_PAGE } from "../overlay/editTargets.js";
@@ -79,7 +80,20 @@ export function createInlineEditing(
     return isTold ? adminWindow : null;
   };
 
-  const transport = createEditTransport(getCtx, showStatus, window, findAdmin);
+  const pinnedAdmins = new Map<string, Window | null>();
+
+  const pinAdmin = (field: VeEditedField) => {
+    pinnedAdmins.set(editedFieldAddressOf(field), findAdmin());
+  };
+
+  const adminOf = (field: VeEditedField): Window | null => {
+    const address = editedFieldAddressOf(field);
+    if (!pinnedAdmins.has(address)) return findAdmin();
+    const pinned = pinnedAdmins.get(address) ?? null;
+    return pinned && pinned === findAdmin() ? pinned : null;
+  };
+
+  const transport = createEditTransport(getCtx, showStatus, window, adminOf);
   const holdsFormOf = openForms && ((document: VeDocument) => openForms.holdsFormOf(document));
 
   const editedFieldOf = (match: FieldMatch) => {
@@ -108,6 +122,7 @@ export function createInlineEditing(
   const textEditing = createTextEditing({ dropWaiting, flush: transport.flush, send, tracker });
 
   const richTextEditing = createRichTextEditing({
+    adminOf,
     dropUnsaved: transport.drop,
     endOtherEdits: () => textEditing.commit(),
     findAdmin,
@@ -116,6 +131,7 @@ export function createInlineEditing(
     holdUnsaved: transport.hold,
     holdsFormOf,
     isUnsaved: transport.isUnsaved,
+    pinAdmin,
     send: transport.send,
     tracker,
   });
@@ -185,6 +201,8 @@ export function createInlineEditing(
 
   const editTextInPlace = (match: FieldMatch, event: MouseEvent): boolean => {
     richTextEditing.commit();
+    const field = editedFieldOf(match);
+    if (field) pinAdmin(field);
     return textEditing.begin(match, { x: event.clientX, y: event.clientY });
   };
 

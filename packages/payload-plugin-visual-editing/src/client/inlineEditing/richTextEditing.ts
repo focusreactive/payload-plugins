@@ -71,6 +71,8 @@ export type RichTextEditingDeps = {
   flush(): void;
   endOtherEdits(): void;
   findAdmin?: FindAdminWindow;
+  adminOf(field: VeEditedField): Window | null;
+  pinAdmin(field: VeEditedField): void;
 };
 
 export interface RichTextEditing {
@@ -156,6 +158,7 @@ const clickWrapperInstead = (wrapper: HTMLElement, event: MouseEvent) => {
 };
 
 export function createRichTextEditing({
+  adminOf,
   dropUnsaved,
   endOtherEdits,
   findAdmin = () => findAdminWindow(window),
@@ -164,6 +167,7 @@ export function createRichTextEditing({
   holdUnsaved,
   holdsFormOf,
   isUnsaved,
+  pinAdmin,
   send,
   tracker,
 }: RichTextEditingDeps): RichTextEditing {
@@ -278,7 +282,7 @@ export function createRichTextEditing({
     edit.wasChanged = true;
     edit.showsWhatWasSaved = false;
     const change = { ...edit.held.field, base: edit.held.state, state };
-    if (findAdmin() || holdsEveryFixedNode(edit, state)) {
+    if (adminOf(edit.held.field) || holdsEveryFixedNode(edit, state)) {
       send(change, () => {
         edit.wasDelivered = true;
       });
@@ -289,7 +293,7 @@ export function createRichTextEditing({
 
   const tellAdminTheEditEnded = (field: VeEditedField) => {
     const message: VeRichTextEditEndedMessage = { ...field, type: VE_RICH_TEXT_EDIT_ENDED_TYPE };
-    findAdmin()?.postMessage(message, adminOriginOf(getCtx().adminOrigin));
+    adminOf(field)?.postMessage(message, adminOriginOf(getCtx().adminOrigin));
   };
 
   const end = (keepsWhatWasTyped: boolean) => {
@@ -304,7 +308,7 @@ export function createRichTextEditing({
       isOnThePage &&
       ended.wasChanged &&
       !ended.showsWhatWasSaved &&
-      !findAdmin();
+      !adminOf(ended.held.field);
     const copy = keepsTwin ? readOnlyCopyOf(ended.twin) : null;
     ended.session.end();
     if (copy) {
@@ -323,7 +327,7 @@ export function createRichTextEditing({
 
   const takeBack = ({ held: { field, state }, wasDelivered }: Edit) => {
     dropUnsaved(field);
-    if (findAdmin() || wasDelivered) send({ ...field, base: state, state });
+    if (adminOf(field) || wasDelivered) send({ ...field, base: state, state });
   };
 
   const cancel = () => {
@@ -372,6 +376,7 @@ export function createRichTextEditing({
     endOtherEdits();
     commit();
     forget(editedFieldAddressOf(ready.field));
+    pinAdmin(ready.field);
 
     const shown = previous?.twin ?? wrapper;
     const { content, root: twin } = twinOf(wrapper, ready.state);
@@ -580,7 +585,7 @@ export function createRichTextEditing({
   return {
     commit,
     commitBeforeThePageIsHidden() {
-      if (!findAdmin()) commit();
+      if (editing && !adminOf(editing.held.field)) commit();
     },
     dispose() {
       commit();

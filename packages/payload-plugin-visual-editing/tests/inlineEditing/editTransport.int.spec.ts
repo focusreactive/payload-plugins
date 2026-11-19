@@ -323,6 +323,30 @@ describe("the transport of an edit", () => {
         expect(basesSent()).toEqual(["Shown", "Typed"]);
       });
 
+      it("is the value the edit began from once an edit of the field went to the admin in between", async () => {
+        const postToAdmin = vi.fn();
+        let adminWindow: Window | null = null;
+        transport.dispose();
+        transport = createEditTransport(
+          () => ctx,
+          () => undefined,
+          window,
+          () => adminWindow
+        );
+        fetchEndpoint.mockImplementationOnce(() => Promise.resolve(storedAnswerOf("Typed")));
+        transport.sendNow({ ...TITLE, base: "Shown", value: " Typed " });
+        await settle();
+
+        adminWindow = { postMessage: postToAdmin } as unknown as Window;
+        transport.sendNow({ ...TITLE, base: "Typed", value: "Shown" });
+        adminWindow = null;
+        transport.sendNow({ ...TITLE, base: "Shown", value: "Again" });
+        await settle();
+
+        expect(postToAdmin).toHaveBeenCalledTimes(1);
+        expect(basesSent()).toEqual(["Shown", "Shown"]);
+      });
+
       it("is the value the field holds after the last save when an edit begins from what it sent", async () => {
         fetchEndpoint.mockImplementationOnce(() => Promise.resolve(storedAnswerOf("Typed")));
         transport.sendNow({ ...TITLE, base: "Shown", value: " Typed " });

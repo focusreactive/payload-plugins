@@ -658,6 +658,51 @@ describe("editing text on the page", () => {
       expect(sentToEndpoint()).toEqual([]);
       expect(messagesOfType(postToOpener, VE_FIELD_EDIT_TYPE)).toHaveLength(1);
     });
+
+    it("keeps saving an edit through the endpoint when the admin sends the values of a form while it runs", async () => {
+      click(heading);
+      type(heading, "Hello");
+
+      postFromAdmin(
+        {
+          ...PAGE,
+          fields: [{ key: "title", saved: "Hello", value: "Hello" }],
+          locale: "en",
+          type: VE_FIELD_SNAPSHOT_TYPE,
+        },
+        { source: window.opener }
+      );
+      type(heading, "Hello world");
+      await pause();
+
+      expect(sentToEndpoint()).toEqual([
+        { ...PAGE, base: "Hello", key: "title", locale: "en", value: "Hello world" },
+      ]);
+      expect(messagesOfType(postToOpener, VE_FIELD_EDIT_TYPE)).toEqual([]);
+    });
+
+    it("saves an edit begun in the form through the endpoint once the window of the admin is closed", async () => {
+      const opener = { closed: false, postMessage: postToOpener };
+      stubOpenerWindow(opener);
+      postFromAdmin(
+        {
+          ...PAGE,
+          fields: [{ key: "title", saved: "Hello", value: "Hello" }],
+          locale: "en",
+          type: VE_FIELD_SNAPSHOT_TYPE,
+        },
+        { source: opener }
+      );
+      await flushMutations();
+      click(heading);
+
+      opener.closed = true;
+      type(heading, "Hello world");
+      await pause();
+
+      expect(messagesOfType(postToOpener, VE_FIELD_EDIT_TYPE)).toEqual([]);
+      expect(sentToEndpoint()).toMatchObject([{ key: "title", value: "Hello world" }]);
+    });
   });
 
   describe("on a page next to the admin", () => {

@@ -611,7 +611,7 @@ The toggle then shows an **Edit on page** switch next to its modes, with a dot i
 |---|---|---|
 | in Live Preview, and the form of the document is open | the admin form, as if the editor had typed there or picked the image there | Payload: autosave, or the editor's own save |
 | in a tab of its own, in draft mode | `POST <payloadApi>/visual-editing/field-edit` with the editor's session | the endpoint, into the latest draft |
-| in a window the admin opened, such as the tab of Payload's **Preview** button | the endpoint, as in a tab of its own, until the admin sends that window the values of a form; the pop-up window of Live Preview gets them and writes into the form | as in the row that applies |
+| in a window the admin opened, such as the tab of Payload's **Preview** button | the endpoint, as in a tab of its own, until the admin sends that window the values of a form; the pop-up window of Live Preview gets them and writes into the form. An edit keeps the route it began with: one begun before the values arrived is saved through the endpoint to its end, and one begun in the form is saved through the endpoint once the window of the admin is closed | as in the row that applies |
 
 In the pop-up window of Live Preview **Replace image** opens the list on the page, not the drawer of the admin behind it, and the admin writes the picked document into the form after it read it with the editor's access.
 
