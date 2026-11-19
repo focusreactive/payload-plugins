@@ -24,7 +24,7 @@ export async function GET(
     depth: 0,
     limit: 1,
     pagination: false,
-    select: { url: true },
+    select: { filename: true, prefix: true, url: true },
     where: { filename: { equals: siteBlockPreviewFilename(slug) } },
   });
   const target = new URL(docs[0]?.url ?? placeholderPreviewURL(label), request.url);
