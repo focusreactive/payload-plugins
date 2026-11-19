@@ -1,10 +1,11 @@
 import type { VisualEditingMode } from "./visualEditingMode.js";
 
 import { DATA_VE_HOVERING_ATTR } from "./overlay/constants.js";
+import { zoomOf } from "./overlay/zoom.js";
 import { VISUAL_EDITING_MODES } from "./visualEditingMode.js";
 
 export interface Toggle {
-  show(mode: VisualEditingMode): void;
+  show(mode: VisualEditingMode, editsInPlace?: boolean): void;
   remove(): void;
 }
 
@@ -19,6 +20,14 @@ const MODES: Record<VisualEditingMode, { label: string; description: string }> =
   hover: { description: "Outline editable content on hover", label: "Hover" },
   off: { description: "Hide edit outlines", label: "Off" },
 };
+
+const EDITS_IN_PLACE_DESCRIPTION = "Edit text on the page";
+
+const EDITS_IN_PLACE_LABEL = "Edit on page";
+
+const MODE_BUTTONS = '[role="radio"]';
+
+const EDITS_IN_PLACE_SWITCH = '[role="switch"]';
 
 const modeButton = (mode: VisualEditingMode) =>
   `<button type="button" role="radio" tabindex="-1" data-mode="${mode}" title="${MODES[mode].description}" aria-label="${MODES[mode].description}">${MODES[mode].label}</button>`;
@@ -75,8 +84,11 @@ const TEMPLATE = `
   }
   .card {
     display: inline-flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
+    box-sizing: border-box;
+    max-width: calc(100vw - ${2 * EDGE_GAP}px);
     padding: 4px;
     background: var(--ve-surface);
     border: 1px solid var(--ve-border);
@@ -132,6 +144,26 @@ const TEMPLATE = `
     background: var(--ve-track);
     border-radius: 6px;
   }
+  [role="switch"] {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--ve-track);
+    white-space: nowrap;
+  }
+  [role="switch"]::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.45;
+    transition: background-color 160ms ease, opacity 160ms ease;
+  }
+  [role="switch"][aria-checked="true"]::before {
+    background: var(--ve-on);
+    opacity: 1;
+  }
   button {
     appearance: none;
     margin: 0;
@@ -157,7 +189,7 @@ const TEMPLATE = `
     outline-offset: 1px;
   }
   @media (prefers-reduced-motion: reduce) {
-    :host, .card, button, .dot { transition: none; }
+    :host, .card, button, .dot, [role="switch"]::before { transition: none; }
   }
 </style>
 <div class="card" title="Drag to move">
@@ -204,8 +236,9 @@ const storePosition = (win: Window, position: TogglePosition): void => {
 
 /** Keeps the whole control inside the viewport. */
 const clampPosition = (win: Window, position: TogglePosition, el: HTMLElement): TogglePosition => {
-  const maxRight = Math.max(EDGE_GAP, win.innerWidth - el.offsetWidth - EDGE_GAP);
-  const maxTop = Math.max(EDGE_GAP, win.innerHeight - el.offsetHeight - EDGE_GAP);
+  const zoom = zoomOf(el);
+  const maxRight = Math.max(EDGE_GAP, win.innerWidth - el.offsetWidth * zoom - EDGE_GAP);
+  const maxTop = Math.max(EDGE_GAP, win.innerHeight - el.offsetHeight * zoom - EDGE_GAP);
   return {
     right: Math.min(maxRight, Math.max(EDGE_GAP, position.right)),
     top: Math.min(maxTop, Math.max(EDGE_GAP, position.top)),
@@ -229,15 +262,52 @@ const STEP_OF_KEY: Readonly<Record<string, Step | undefined>> = {
 const isMode = (value: string | undefined): value is VisualEditingMode =>
   VISUAL_EDITING_MODES.some((mode) => mode === value);
 
-export function createToggle(doc: Document, onSelect: (mode: VisualEditingMode) => void): Toggle {
+const editsInPlaceSwitchIn = (doc: Document): HTMLButtonElement => {
+  const editsInPlaceSwitch = doc.createElement("button");
+  editsInPlaceSwitch.type = "button";
+  editsInPlaceSwitch.setAttribute("role", "switch");
+  editsInPlaceSwitch.title = EDITS_IN_PLACE_DESCRIPTION;
+  editsInPlaceSwitch.setAttribute("aria-label", EDITS_IN_PLACE_DESCRIPTION);
+  editsInPlaceSwitch.textContent = EDITS_IN_PLACE_LABEL;
+  return editsInPlaceSwitch;
+};
+
+const isOn = (editsInPlaceSwitch: Element): boolean =>
+  editsInPlaceSwitch.getAttribute("aria-checked") === "true";
+
+const ignoreEditsInPlace = (): void => undefined;
+
+export function createToggle(
+  doc: Document,
+  onSelect: (mode: VisualEditingMode) => void,
+  onEditsInPlace: (editsInPlace: boolean) => void = ignoreEditsInPlace
+): Toggle {
   const host = doc.createElement("div");
   host.setAttribute(DATA_VE_TOGGLE_ATTR, "");
   const shadow = host.attachShadow({ mode: "open" });
   shadow.innerHTML = TEMPLATE;
-  const buttons = [...shadow.querySelectorAll<HTMLButtonElement>("button")];
+  const buttons = [...shadow.querySelectorAll<HTMLButtonElement>(MODE_BUTTONS)];
+  let editsInPlaceSwitch: HTMLButtonElement | null = null;
+
+  const showEditsInPlace = (editsInPlace: boolean | undefined) => {
+    if (editsInPlace === undefined) {
+      editsInPlaceSwitch?.remove();
+      editsInPlaceSwitch = null;
+      return;
+    }
+    if (!editsInPlaceSwitch) {
+      editsInPlaceSwitch = editsInPlaceSwitchIn(doc);
+      shadow.querySelector(".card")?.append(editsInPlaceSwitch);
+    }
+    editsInPlaceSwitch.setAttribute("aria-checked", String(editsInPlace));
+  };
 
   shadow.addEventListener("click", (event) => {
     const button = event.target instanceof Element ? event.target.closest("button") : null;
+    if (button?.matches(EDITS_IN_PLACE_SWITCH)) {
+      onEditsInPlace(!isOn(button));
+      return;
+    }
     const mode = button?.dataset.mode;
     if (isMode(mode)) onSelect(mode);
   });
@@ -256,8 +326,9 @@ export function createToggle(doc: Document, onSelect: (mode: VisualEditingMode) 
 
   const win = doc.defaultView ?? window;
   const place = (position: TogglePosition) => {
-    host.style.top = `${position.top}px`;
-    host.style.right = `${position.right}px`;
+    const zoom = zoomOf(host);
+    host.style.top = `${position.top / zoom}px`;
+    host.style.right = `${position.right / zoom}px`;
   };
 
   const card = shadow.querySelector<HTMLElement>(".card");
@@ -311,7 +382,8 @@ export function createToggle(doc: Document, onSelect: (mode: VisualEditingMode) 
       win.removeEventListener("resize", keepInView);
       host.remove();
     },
-    show(shownMode) {
+    show(shownMode, editsInPlace) {
+      showEditsInPlace(editsInPlace);
       host.toggleAttribute(ON_ATTR, shownMode !== "off");
       for (const button of buttons) {
         const isShown = button.dataset.mode === shownMode;

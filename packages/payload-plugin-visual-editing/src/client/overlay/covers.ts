@@ -1,3 +1,5 @@
+import { rectInZoomOf, zoomOf } from "./zoom.js";
+
 export const DATA_VE_COVER_ATTR = "data-ve-cover";
 
 type Point = { x: number; y: number };
@@ -29,7 +31,8 @@ export const clipUnderCovers = (
   for (const [cover, rect] of covers) {
     const isPartOfTarget = cover.contains(target) || target.contains(cover);
     if (isPartOfTarget) continue;
-    holes.push(rectPath(rect.left, rect.top, rect.right, rect.bottom, boxOriginInViewport));
+    const { bottom, left, right, top } = rectInZoomOf(box, rect);
+    holes.push(rectPath(left, top, right, bottom, boxOriginInViewport));
   }
 
   if (holes.length === 0) {
@@ -37,7 +40,14 @@ export const clipUnderCovers = (
     return;
   }
 
-  const viewport = rectPath(0, 0, window.innerWidth, window.innerHeight, boxOriginInViewport);
+  const zoom = zoomOf(box);
+  const viewport = rectPath(
+    0,
+    0,
+    window.innerWidth / zoom,
+    window.innerHeight / zoom,
+    boxOriginInViewport
+  );
   const backToStart = `${-boxOriginInViewport.x}px ${-boxOriginInViewport.y}px`;
   box.style.clipPath = `polygon(evenodd, ${[viewport, ...holes].join(`, ${backToStart}, `)})`;
 };

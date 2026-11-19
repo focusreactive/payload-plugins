@@ -1,0 +1,149 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { MediaLibrary } from "../../src/client/inlineEditing/mediaLibrary";
+
+import {
+  createMediaLibrary,
+  FIELD_REFUSED,
+  UPLOAD_REFUSED,
+} from "../../src/client/inlineEditing/mediaLibrary";
+
+const PAYLOAD_API = "https://cms.example.com/api";
+
+const REQUEST = {
+  collectionSlug: "page",
+  docId: "1",
+  key: "image",
+  kind: "collection",
+  locale: "en",
+  page: 2,
+  search: "light",
+} as const;
+
+const LIGHTHOUSE = {
+  alt: "A lighthouse",
+  filename: "lighthouse.jpg",
+  height: 600,
+  id: 9,
+  thumbnailUrl: "/api/media/file/lighthouse-small.jpg",
+  url: "/api/media/file/lighthouse.jpg",
+  width: 800,
+};
+
+const answerOf = (body: unknown, ok = true, status = ok ? 200 : 500) =>
+  Promise.resolve({ json: () => Promise.resolve(body), ok, status } as Response);
+
+describe("the media library of a page of its own", () => {
+  let fetchApi: ReturnType<typeof vi.fn>;
+  let library: MediaLibrary;
+
+  beforeEach(() => {
+    fetchApi = vi.fn();
+    library = createMediaLibrary(() => PAYLOAD_API, { fetch: fetchApi } as unknown as Window);
+  });
+
+  describe("listing", () => {
+    it("asks the endpoint with the session of the editor", async () => {
+      fetchApi.mockReturnValue(
+        answerOf({ collection: "media", documents: [], hasNextPage: false })
+      );
+
+      await library.list(REQUEST);
+
+      const [url, init] = fetchApi.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${PAYLOAD_API}/visual-editing/media-options`);
+      expect(init).toMatchObject({ credentials: "include", method: "POST" });
+      expect(JSON.parse(init.body as string)).toEqual(REQUEST);
+    });
+
+    it("answers the collection, its documents and whether more follow", async () => {
+      fetchApi.mockReturnValue(
+        answerOf({ collection: "media", documents: [LIGHTHOUSE], hasNextPage: true })
+      );
+
+      expect(await library.list(REQUEST)).toEqual({
+        collection: "media",
+        documents: [LIGHTHOUSE],
+        hasNextPage: true,
+      });
+    });
+
+    it("leaves out a document it cannot show", async () => {
+      fetchApi.mockReturnValue(
+        answerOf({ collection: "media", documents: [{ id: 1 }, LIGHTHOUSE, null] })
+      );
+
+      expect(await library.list(REQUEST)).toMatchObject({ documents: [LIGHTHOUSE] });
+    });
+
+    it("says so when the endpoint answers that the field takes no media from the page", async () => {
+      fetchApi.mockReturnValue(
+        answerOf({ collection: null, documents: [], reason: "not-editable" }, false, 404)
+      );
+
+      expect(await library.list(REQUEST)).toBe(FIELD_REFUSED);
+    });
+
+    it("answers nothing for a refusal of another reason, whatever its status", async () => {
+      fetchApi.mockReturnValueOnce(
+        answerOf({ collection: null, documents: [], reason: "signed-out" }, false, 422)
+      );
+      expect(await library.list(REQUEST)).toBeNull();
+
+      fetchApi.mockReturnValueOnce(answerOf({ collection: null, documents: [] }, false, 422));
+      expect(await library.list(REQUEST)).toBeNull();
+    });
+
+    it("answers nothing when the endpoint refuses, answers no list or cannot be reached", async () => {
+      fetchApi.mockReturnValueOnce(answerOf({ collection: null, documents: [] }, false));
+      expect(await library.list(REQUEST)).toBeNull();
+
+      fetchApi.mockReturnValueOnce(answerOf("<html>"));
+      expect(await library.list(REQUEST)).toBeNull();
+
+      fetchApi.mockRejectedValueOnce(new Error("offline"));
+      expect(await library.list(REQUEST)).toBeNull();
+    });
+  });
+
+  describe("uploading", () => {
+    const file = new File(["pixels"], "lighthouse.jpg", { type: "image/jpeg" });
+
+    it("posts the file to the collection with the session of the editor", async () => {
+      fetchApi.mockReturnValue(answerOf({ doc: LIGHTHOUSE }));
+
+      await library.upload("media", file);
+
+      const [url, init] = fetchApi.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${PAYLOAD_API}/media?depth=0`);
+      expect(init).toMatchObject({ credentials: "include", method: "POST" });
+      expect((init.body as FormData).get("file")).toBe(file);
+      expect(init.headers).toBeUndefined();
+    });
+
+    it("answers the created document, with the address Payload gave its thumbnail", async () => {
+      const { thumbnailUrl, ...created } = LIGHTHOUSE;
+      fetchApi.mockReturnValue(answerOf({ doc: { ...created, thumbnailURL: thumbnailUrl } }));
+
+      expect(await library.upload("media", file)).toEqual({ media: LIGHTHOUSE });
+    });
+
+    it("answers the message of the server when it refuses the file", async () => {
+      fetchApi.mockReturnValue(
+        answerOf({ errors: [{ message: "The following field is invalid: alt" }] }, false)
+      );
+
+      expect(await library.upload("media", file)).toEqual({
+        error: "The following field is invalid: alt",
+      });
+    });
+
+    it("answers a message of its own when the server gives none or cannot be reached", async () => {
+      fetchApi.mockReturnValueOnce(answerOf(null, false));
+      expect(await library.upload("media", file)).toEqual({ error: UPLOAD_REFUSED });
+
+      fetchApi.mockRejectedValueOnce(new Error("offline"));
+      expect(await library.upload("media", file)).toEqual({ error: UPLOAD_REFUSED });
+    });
+  });
+});

@@ -12,6 +12,7 @@ import {
 
 import type { BuildAdminEditUrl } from "../../shared/buildAdminEditUrl.js";
 import type { AccentOptions } from "../accent.js";
+import type { RichTextEditorLoader } from "../inlineEditing/richTextEditor.js";
 import type { RenderSources } from "../instantPreview/unsavedRender/renderSources.js";
 import type { Session } from "../session.js";
 import type { VisualEditingMode } from "../visualEditingMode.js";
@@ -32,13 +33,19 @@ import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect.js";
 
 type VisualEditingContextType = Session & {
   setMode: (mode: VisualEditingMode) => void;
+  setEditsInPlace: (editsInPlace: boolean) => void;
   toggleEnabled: () => void;
+  onEdited?: () => void;
+  richTextEditor?: RichTextEditorLoader;
 };
 
 const noop = (): void => undefined;
 
+const NO_EDITOR = "The rich text editor of the page was taken away";
+
 const VisualEditingContext = createContext<VisualEditingContextType>({
   ...sessionOf({}, DETACHED_PAGE),
+  setEditsInPlace: noop,
   setMode: noop,
   toggleEnabled: noop,
 });
@@ -51,21 +58,27 @@ export function VisualEditingProvider({
   available = false,
   framedOnly = false,
   instantPreview = true,
+  inlineEditing = false,
   buildAdminEditUrl,
   adminOrigin,
   adminBasePath,
   payloadApi: namedPayloadApi,
   accentColor,
   accentTextColor,
+  onEdited,
+  richTextEditor,
   children,
 }: AccentOptions & {
   available?: boolean;
   framedOnly?: boolean;
   instantPreview?: boolean;
+  inlineEditing?: boolean;
   buildAdminEditUrl?: BuildAdminEditUrl;
   adminOrigin?: string;
   adminBasePath?: string;
   payloadApi?: string;
+  onEdited?: () => void;
+  richTextEditor?: RichTextEditorLoader;
   children: React.ReactNode;
 }) {
   const [pageStore] = useState(createPageStore);
@@ -80,13 +93,36 @@ export function VisualEditingProvider({
     [accentColor, accentTextColor]
   );
 
+  const latestOnEdited = useRef(onEdited);
+  const latestRichTextEditor = useRef(richTextEditor);
+  const hasRichTextEditor = richTextEditor !== undefined;
+
+  useIsomorphicLayoutEffect(() => {
+    latestOnEdited.current = onEdited;
+    latestRichTextEditor.current = richTextEditor;
+  });
+
   const value = useMemo((): VisualEditingContextType => {
     const session = sessionOf(
-      { adminBasePath, adminOrigin, available, buildAdminEditUrl, framedOnly, instantPreview },
+      {
+        adminBasePath,
+        adminOrigin,
+        available,
+        buildAdminEditUrl,
+        framedOnly,
+        inlineEditing,
+        instantPreview,
+        payloadApi: namedPayloadApi,
+      },
       page
     );
     return {
       ...session,
+      onEdited: () => latestOnEdited.current?.(),
+      richTextEditor: hasRichTextEditor
+        ? () => latestRichTextEditor.current?.() ?? Promise.reject(new Error(NO_EDITOR))
+        : undefined,
+      setEditsInPlace: pageStore.setEditsInPlace,
       setMode: pageStore.setMode,
       toggleEnabled: () => pageStore.setMode(toggledMode(session.mode)),
     };
@@ -96,7 +132,10 @@ export function VisualEditingProvider({
     available,
     buildAdminEditUrl,
     framedOnly,
+    inlineEditing,
     instantPreview,
+    hasRichTextEditor,
+    namedPayloadApi,
     page,
     pageStore,
   ]);

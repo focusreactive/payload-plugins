@@ -10,7 +10,7 @@ import { announceOpenField } from "../shared/openFieldEvent.js";
 import { VE_FOCUS_PARAM, VE_MESSAGE_TYPE } from "../shared/protocol.js";
 import type { DocKind } from "../shared/protocol.js";
 import type { VeOpenFieldMessage } from "../shared/protocol.js";
-import { expandAndFocus } from "./expandAndFocus.js";
+import { expandAndFocus, expandAndShow } from "./expandAndFocus.js";
 import { openDocumentOf } from "./openField/openDocument.js";
 import { createOpenForms, currentFormPathOf, OpenFormsContext } from "./openField/openForms.js";
 import type { OpenForms } from "./openField/openForms.js";
@@ -76,7 +76,7 @@ const fallbackResolution = (
 
 type EntityFieldsLookup = (kind: DocKind, slug: string) => ResolverField[] | null;
 
-type FocusTarget = { docId?: string; locale?: string };
+type FocusTarget = { docId?: string; locale?: string; takesFocus?: boolean };
 
 const focusFieldPath = async (
   path: string,
@@ -95,7 +95,8 @@ const focusFieldPath = async (
   const fields = getFields(kind, slug);
   const chainResult = fields !== null ? resolveContainerChain(path, fields) : null;
   const resolved = chainResult ?? fallbackResolution(path);
-  await expandAndFocus(resolved.chain, resolved.fieldId);
+  const reveal = target.takesFocus === false ? expandAndShow : expandAndFocus;
+  await reveal(resolved.chain, resolved.fieldId);
 };
 
 const forgetFocusParam = (): void => {
@@ -178,13 +179,17 @@ export function VisualEditingBridgeProvider({
       if (!isFromAdminOrPreviewPage(event, window.location.origin, previewPages)) return;
       const data = event.data as VeOpenFieldMessage | undefined;
       if (!data || data.type !== VE_MESSAGE_TYPE) return;
+      const takesFocus = data.focus !== false;
+      const openElsewhere = () => {
+        if (takesFocus) navigateAndFocus(data);
+      };
 
       if (data.kind === "collection") {
         const current = currentCollectionLocation();
         const wrongCollection = current?.slug !== data.collectionSlug;
         const wrongDoc = data.docId !== undefined && current?.id !== data.docId;
         if (!current || wrongCollection || wrongDoc) {
-          navigateAndFocus(data);
+          openElsewhere();
           return;
         }
         void focusFieldPath(
@@ -192,7 +197,7 @@ export function VisualEditingBridgeProvider({
           "collection",
           data.collectionSlug,
           getFields,
-          { docId: current.id, locale: data.locale }
+          { docId: current.id, locale: data.locale, takesFocus }
         );
         return;
       }
@@ -200,7 +205,7 @@ export function VisualEditingBridgeProvider({
       if (data.kind === "global") {
         const slug = currentGlobalSlug();
         if (slug !== data.collectionSlug) {
-          navigateAndFocus(data);
+          openElsewhere();
           return;
         }
         void focusFieldPath(
@@ -208,7 +213,7 @@ export function VisualEditingBridgeProvider({
           "global",
           data.collectionSlug,
           getFields,
-          { locale: data.locale }
+          { locale: data.locale, takesFocus }
         );
       }
     };

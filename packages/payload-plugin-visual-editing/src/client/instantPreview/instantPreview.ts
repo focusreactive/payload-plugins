@@ -1,4 +1,4 @@
-import type { VeRenderedFields } from "../../shared/protocol.js";
+import type { VeDocument, VeRenderedFields } from "../../shared/protocol.js";
 import type { FieldTracker } from "../overlay/fieldTracker.js";
 import type { KeepsShape } from "./liveFields.js";
 
@@ -14,10 +14,17 @@ export type InstantPreviewCtx = {
   keepsRichTextShape?: KeepsShape;
 };
 
+export interface InstantPreview {
+  holdsValueOf(document: VeDocument, key: string): boolean;
+  holdsFormOf(document: VeDocument): boolean;
+  holdsAnyForm(): boolean;
+  stop(): void;
+}
+
 export function createInstantPreview(
   tracker: FieldTracker,
   getCtx: () => InstantPreviewCtx
-): () => void {
+): InstantPreview {
   const liveFields = createLiveFields(
     tracker.showText,
     getCtx().keepsRichTextShape,
@@ -62,9 +69,14 @@ export function createInstantPreview(
     read: (data) => readFieldSnapshot(data) ?? readFieldPatches(data),
   });
 
-  return () => {
-    isStopped = true;
-    stopListening();
-    stopTracking();
+  return {
+    holdsAnyForm: liveFields.holdsAnyForm,
+    holdsFormOf: liveFields.holdsFormOf,
+    holdsValueOf: liveFields.holdsValueOf,
+    stop() {
+      isStopped = true;
+      stopListening();
+      stopTracking();
+    },
   };
 }

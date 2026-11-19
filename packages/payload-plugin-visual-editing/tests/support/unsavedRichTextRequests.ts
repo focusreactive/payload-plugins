@@ -8,6 +8,7 @@ export const OUTSIDER: Credentials = {
   password: "outsider-password",
 };
 export const WRITER: Credentials = { email: "writer@example.com", password: "writer-password" };
+export const READER: Credentials = { email: "reader@example.com", password: "reader-password" };
 
 export const signIn = async (payload: Payload, credentials: Credentials): Promise<Headers> => {
   await payload.create({ collection: "users", data: credentials });

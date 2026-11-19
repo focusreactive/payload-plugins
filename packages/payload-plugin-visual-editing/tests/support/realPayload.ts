@@ -11,7 +11,10 @@ import type {
 import { sqliteAdapter } from "@payloadcms/db-sqlite";
 import {
   BlocksFeature,
+  BoldFeature,
+  HeadingFeature,
   LinkFeature,
+  ParagraphFeature,
   UploadFeature,
   lexicalEditor,
 } from "@payloadcms/richtext-lexical";
@@ -68,6 +71,7 @@ const uploadFields: Field[] = [
 const pageFields: Field[] = [
   { name: "title", type: "text", localized: true },
   { name: "label", type: "text" },
+  { access: { update: () => false }, name: "sealed", type: "text" },
   { name: "secret", type: "text", hidden: true },
   { name: "reference", type: "text", admin: { readOnly: true } },
   { name: "legacy", type: "text", admin: { disabled: true } },
@@ -106,6 +110,29 @@ const pageFields: Field[] = [
   { name: "eitherFile", type: "upload", relationTo: ["media", "documents"] },
   { name: "brochure", type: "upload", relationTo: "documents" },
   { name: "localizedImage", type: "upload", relationTo: "media", localized: true },
+  { name: "card", type: "group", fields: [{ name: "image", type: "upload", relationTo: "media" }] },
+  {
+    name: "slides",
+    type: "array",
+    fields: [
+      { name: "image", type: "upload", relationTo: "media" },
+      { name: "files", type: "upload", relationTo: "media", hasMany: true },
+      { name: "eitherFile", type: "upload", relationTo: ["media", "documents"] },
+      { name: "author", type: "relationship", relationTo: "authors" },
+    ],
+  },
+  { name: "hiddenImage", type: "upload", relationTo: "media", hidden: true },
+  {
+    filterOptions: { alt: { not_equals: "Forbidden" } },
+    name: "filteredImage",
+    relationTo: "media",
+    type: "upload",
+  },
+  {
+    hooks: { beforeChange: [({ value }) => (typeof value === "string" ? value.trim() : value)] },
+    name: "trimmed",
+    type: "text",
+  },
 ];
 
 const settings: GlobalConfig = {
@@ -124,6 +151,21 @@ const settings: GlobalConfig = {
   ],
 };
 
+const notice: GlobalConfig = {
+  slug: "notice",
+  fields: [
+    {
+      name: "banner",
+      type: "group",
+      fields: [
+        { localized: true, name: "title", type: "text" },
+        { localized: true, name: "subtitle", type: "text" },
+      ],
+    },
+  ],
+  versions: { drafts: true },
+};
+
 type ReadPage = (page: Record<string, unknown>) => void;
 
 export type RealPayloadOptions = {
@@ -131,6 +173,7 @@ export type RealPayloadOptions = {
   plugin?: VisualEditingPluginConfig;
   onPageReadBeforeThePlugin?: ReadPage;
   canRead?: Access;
+  canUpdate?: Access;
   canReadMedia?: Access;
   canReadGuardedBody?: FieldAccess;
   userDepth?: number;
@@ -143,11 +186,15 @@ export async function startRealPayload({
   canRead,
   canReadGuardedBody,
   canReadMedia,
+  canUpdate,
   onPageReadBeforeThePlugin = ignoreReadPage,
   plugin = {},
   userDepth,
 }: RealPayloadOptions): Promise<Payload> {
-  const access = canRead && { read: canRead };
+  const access = (canRead || canUpdate) && {
+    ...(canRead && { read: canRead }),
+    ...(canUpdate && { update: canUpdate }),
+  };
   const mediaAccess = canReadMedia && { read: canReadMedia };
   const guardedBody: Field[] = canReadGuardedBody
     ? [
@@ -164,6 +211,17 @@ export async function startRealPayload({
             ],
           }),
           name: "story",
+          type: "richText",
+        },
+        {
+          editor: lexicalEditor({
+            features: [
+              ParagraphFeature(),
+              BoldFeature(),
+              HeadingFeature({ enabledHeadingSizes: ["h2"] }),
+            ],
+          }),
+          name: "plainStory",
           type: "richText",
         },
       ]
@@ -206,7 +264,7 @@ export async function startRealPayload({
     ],
     db: sqliteAdapter({ client: { url: IN_MEMORY_DATABASE } }),
     editor: lexicalEditor(),
-    globals: [{ ...settings, access }],
+    globals: [{ ...settings, access }, notice],
     localization: { defaultLocale: "en", fallback: true, locales: ["en", "de"] },
     plugins: [
       visualEditingPlugin({

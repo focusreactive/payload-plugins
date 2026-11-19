@@ -46,11 +46,25 @@ describe("a marked read", () => {
     });
 
     expect(markerOf(page.title)).toEqual({ ...inPage, path: "title" });
-    expect(markerOf(page.description)).toEqual({ ...inPage, path: "description" });
+    expect(markerOf(page.description)).toEqual({ ...inPage, multiline: true, path: "description" });
     expect(markerOf(page.contact)).toEqual({ ...inPage, path: "contact" });
     expect(markerOf(page.hero.heading)).toEqual({ ...inPage, path: "hero.heading" });
     expect(fieldReferenceOf(page)).toBeUndefined();
     expect(fieldReferenceOf(page.hero)).toBeUndefined();
+  });
+
+  it("says of a textarea alone that it holds several lines", () => {
+    const page = markPage({
+      contact: "hello@example.com",
+      description: "Two\nlines",
+      sections: [{ blockType: "copy", id: "d", text: "Body" }],
+      title: "Hi",
+    });
+
+    expect(markerOf(page.description)).toHaveProperty("multiline", true);
+    expect(
+      [page.title, page.contact, page.sections[0]?.text].map((text) => markerOf(text))
+    ).not.toContainEqual(expect.objectContaining({ multiline: true }));
   });
 
   it("leaves blank text without a marker", () => {

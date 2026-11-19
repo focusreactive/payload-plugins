@@ -8,7 +8,11 @@ import {
   DATA_VE_TOGGLE_ATTR,
   TOGGLE_POSITION_STORAGE_KEY,
 } from "../../src/client/toggle";
+import { declarationsFor } from "../support/shadowStyles";
 import { flushMutations } from "../support/time";
+import { zoomEveryElement, zoomNoElement } from "../support/zoom";
+
+const PAGE_ZOOM = 1.25;
 
 const host = () => document.querySelector<HTMLElement>(`[${DATA_VE_TOGGLE_ATTR}]`);
 
@@ -151,6 +155,17 @@ describe("toggle", () => {
     localStorage.removeItem(TOGGLE_POSITION_STORAGE_KEY);
   });
 
+  it("comes back where it was dropped on a page the site zoomed", () => {
+    zoomEveryElement(PAGE_ZOOM);
+    localStorage.setItem(TOGGLE_POSITION_STORAGE_KEY, JSON.stringify({ right: 50, top: 75 }));
+
+    toggle = createToggle(document, vi.fn());
+
+    expect([host()?.style.right, host()?.style.top]).toEqual(["40px", "60px"]);
+    localStorage.removeItem(TOGGLE_POSITION_STORAGE_KEY);
+    zoomNoElement();
+  });
+
   it("lights its dot while visual editing is on", () => {
     toggle = createToggle(document, vi.fn());
 
@@ -167,5 +182,91 @@ describe("toggle", () => {
     toggle.remove();
 
     expect(host()).toBeNull();
+  });
+  describe("the switch of editing on the page", () => {
+    const editsInPlaceSwitch = () =>
+      host()?.shadowRoot?.querySelector<HTMLButtonElement>('[role="switch"]') ?? null;
+
+    it("is not there unless the site offers editing on the page", () => {
+      toggle = createToggle(document, vi.fn(), vi.fn());
+
+      toggle.show("hover");
+
+      expect(editsInPlaceSwitch()).toBeNull();
+    });
+
+    it("shows whether the editor turned editing on the page on", () => {
+      toggle = createToggle(document, vi.fn(), vi.fn());
+
+      toggle.show("hover", false);
+      expect(editsInPlaceSwitch()?.getAttribute("aria-checked")).toBe("false");
+
+      toggle.show("hover", true);
+      expect(editsInPlaceSwitch()?.getAttribute("aria-checked")).toBe("true");
+    });
+
+    it("reports the opposite of what it shows when the editor clicks it", () => {
+      const onEditsInPlace = vi.fn();
+      toggle = createToggle(document, vi.fn(), onEditsInPlace);
+      toggle.show("hover", false);
+
+      editsInPlaceSwitch()?.click();
+      toggle.show("hover", true);
+      editsInPlaceSwitch()?.click();
+
+      expect(onEditsInPlace.mock.calls).toEqual([[true], [false]]);
+    });
+
+    it("picks no mode when the editor clicks it", () => {
+      const onSelect = vi.fn();
+      toggle = createToggle(document, onSelect, vi.fn());
+      toggle.show("hover", false);
+
+      editsInPlaceSwitch()?.click();
+
+      expect(onSelect).not.toHaveBeenCalled();
+    });
+
+    it("leaves when the site stops offering editing on the page", () => {
+      toggle = createToggle(document, vi.fn(), vi.fn());
+      toggle.show("hover", true);
+
+      toggle.show("hover");
+
+      expect(editsInPlaceSwitch()).toBeNull();
+    });
+
+    it("moves to a row of its own where the window is too narrow for one row", () => {
+      toggle = createToggle(document, vi.fn(), vi.fn());
+      toggle.show("hover", true);
+
+      const card = declarationsFor(host(), ".card");
+
+      expect(card).toContain("flex-wrap: wrap");
+      expect(card).toContain("max-width: calc(100vw - 24px)");
+    });
+
+    it("shows that it is on by a dot in the accent colour, and keeps the colour of its text", () => {
+      toggle = createToggle(document, vi.fn(), vi.fn());
+      toggle.show("hover", true);
+
+      const whenOn = declarationsFor(host(), '[role="switch"][aria-checked="true"]');
+      const dotWhenOn = declarationsFor(host(), '[role="switch"][aria-checked="true"]::before');
+
+      expect(whenOn.filter((declaration) => declaration.startsWith("color:"))).toEqual([]);
+      expect(dotWhenOn).toContain("background: var(--ve-on)");
+    });
+
+    it("stays out of the arrow keys of the modes", () => {
+      const onSelect = vi.fn();
+      toggle = createToggle(document, onSelect, vi.fn());
+      toggle.show("hover", true);
+
+      editsInPlaceSwitch()?.dispatchEvent(
+        new KeyboardEvent("keydown", { bubbles: true, key: "ArrowRight" })
+      );
+
+      expect(onSelect).not.toHaveBeenCalled();
+    });
   });
 });

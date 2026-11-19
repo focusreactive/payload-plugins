@@ -1,3 +1,4 @@
+import type { ActionOf } from "./editBadge.js";
 import type { FieldMatch, FieldTracker } from "./fieldTracker.js";
 import type { Marker } from "./markerExtractor.js";
 import type { TargetConfig, TargetRegistryCtx } from "./targetRegistry.js";
@@ -11,6 +12,16 @@ import { createHoverController } from "./hoverController.js";
 import { groupNodesByPath, readMarkerFromAttrs } from "./markerExtractor.js";
 import { createTargetRegistry } from "./targetRegistry.js";
 import { findTargetAncestor, pickTargetForGroup } from "./targetSelector.js";
+
+export const CLICK_LEFT_TO_THE_PAGE = "page";
+
+export type ClickTaken = boolean | typeof CLICK_LEFT_TO_THE_PAGE;
+
+export type EditTargetsCtx = TargetRegistryCtx & {
+  mode: "always" | "hover";
+  editInPlace?: (target: HTMLElement, event: MouseEvent, openField: () => void) => ClickTaken;
+  actionOf?: ActionOf;
+};
 
 const isPlainPrimaryClick = (event: MouseEvent) =>
   event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
@@ -39,13 +50,17 @@ const removeLabelsLeftBySkippedCleanup = () => {
 export function createEditTargets(
   main: HTMLElement,
   tracker: FieldTracker,
-  getCtx: () => TargetRegistryCtx
+  getCtx: () => EditTargetsCtx
 ): () => void {
   removeLabelsLeftBySkippedCleanup();
 
   const registry = createTargetRegistry();
   const badge = createEditBadge();
-  const hover = createHoverController(badge, registry);
+  const hover = createHoverController(
+    badge,
+    registry,
+    (target) => getCtx().actionOf?.(target) ?? null
+  );
   const frames = getCtx().mode === "always" ? createFrameLayer() : null;
   const wrapperTargets = new Set<HTMLElement>();
 
@@ -106,7 +121,14 @@ export function createEditTargets(
     if (!isPlainPrimaryClick(event)) return;
     const target = findTargetAncestor(event.target instanceof Element ? event.target : null);
     const config = target ? registry.get(target) : undefined;
-    if (!config) return;
+    if (!target || !config) return;
+    const taken = getCtx().editInPlace?.(target, event, () => config.clickHandler(event));
+    if (taken === CLICK_LEFT_TO_THE_PAGE) return;
+    if (taken) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     if (isRepeatedClick(event)) {
       event.preventDefault();
       event.stopPropagation();
