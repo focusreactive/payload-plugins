@@ -3,7 +3,12 @@ import React from "react";
 
 import type { SiteBlockProps } from "@/blocks/site/types";
 import { SiteImage } from "@/components/site/SiteImage";
-import { InlineRichText, SiteRichText, hasRichText } from "@/components/site/SiteRichText";
+import {
+  InlineRichText,
+  SiteRichText,
+  hasRichText,
+  richTextTarget,
+} from "@/components/site/SiteRichText";
 import { findEntities } from "@/dal/entities";
 import { withLocalePrefix } from "@/lib/config/entityRoutes";
 import { entityDocPath } from "@/lib/site/links";
@@ -126,7 +131,7 @@ export async function ClinicSidebarComponent({
               <div className="container">
                 <div className="text-container">
                   {hasRichText(accredit?.heading) && (
-                    <h2>
+                    <h2 {...richTextTarget(accredit?.heading)}>
                       <InlineRichText data={accredit?.heading} />
                     </h2>
                   )}

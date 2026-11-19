@@ -2,6 +2,7 @@ import type {
   SerializedEditorState,
   SerializedLexicalNode,
 } from "@payloadcms/richtext-lexical/lexical";
+import { withVisualEditingPath } from "@focus-reactive/payload-plugin-visual-editing/client";
 import { LinkJSXConverter, RichText } from "@payloadcms/richtext-lexical/react";
 import type { JSXConverters, JSXConvertersFunction } from "@payloadcms/richtext-lexical/react";
 import React from "react";
@@ -115,6 +116,49 @@ const buildConverters =
     };
   };
 
+/**
+ * The visual-editing attributes of a rich text field, for the element that already holds its
+ * text, such as the heading around `InlineRichText`. Empty outside a draft preview.
+ */
+export const richTextTarget = (data: unknown) => withVisualEditingPath(data);
+
+/**
+ * The overlay frames rich text only inside an element carrying the field's attributes, and the
+ * site's stylesheet allows no wrapper, so each top-level element the converters already emit
+ * carries them instead.
+ */
+export function withTopLevelTarget(
+  converters: JSXConvertersFunction,
+  data: unknown
+): JSXConvertersFunction {
+  const attributes = richTextTarget(data);
+
+  if (Object.keys(attributes).length === 0) {
+    return converters;
+  }
+
+  return (args) => {
+    const built = converters(args);
+    const targeted: JSXConverters = { ...built };
+
+    for (const [type, converter] of Object.entries(built)) {
+      if (typeof converter !== "function") {
+        continue;
+      }
+
+      targeted[type] = ((converterArgs: ConverterArgs) => {
+        const element = (converter as (input: ConverterArgs) => React.ReactNode)(converterArgs);
+
+        return converterArgs.parent?.type === "root" && React.isValidElement(element)
+          ? React.cloneElement(element, attributes)
+          : element;
+      }) as Converter;
+    }
+
+    return targeted;
+  };
+}
+
 export function hasRichText(data: RichTextValue): data is SerializedEditorState {
   const root = (data as SerializedEditorState | null | undefined)?.root;
 
@@ -140,7 +184,13 @@ export function SiteRichText({ data, locale }: Props) {
     return null;
   }
 
-  return <RichText converters={buildConverters(locale)} data={data} disableContainer />;
+  return (
+    <RichText
+      converters={withTopLevelTarget(buildConverters(locale), data)}
+      data={data}
+      disableContainer
+    />
+  );
 }
 
 /** The first paragraph's content with no block element around it, for use inside a heading. */

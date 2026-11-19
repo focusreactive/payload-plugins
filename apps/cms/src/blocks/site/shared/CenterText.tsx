@@ -15,6 +15,7 @@ import type { CenterTextKind } from "./centerTextConfig";
 import { FaqAccordion, LinkCard } from "./CenterTextClient";
 import { BodyText, HeadingText, hasText } from "./content";
 import type { RichTextData, SiteButtonValue, TextOrRichText } from "./content";
+import { richTextTarget } from "@/components/site/SiteRichText";
 
 type RelationValue<TDoc> = number | TDoc;
 
@@ -365,7 +366,7 @@ export function CenterText({
       <div className="container">
         {eyebrow && <h2 className="small">{eyebrow}</h2>}
         {hasText(heading) && (
-          <HeadingTag>
+          <HeadingTag {...richTextTarget(heading)}>
             <HeadingText value={heading} />
           </HeadingTag>
         )}

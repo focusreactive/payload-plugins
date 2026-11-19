@@ -19,7 +19,7 @@ import React from "react";
 
 import { SiteButton } from "@/components/site/SiteButton";
 import { SiteImage } from "@/components/site/SiteImage";
-import { hasRichText } from "@/components/site/SiteRichText";
+import { hasRichText, withTopLevelTarget } from "@/components/site/SiteRichText";
 import { withLocalePrefix } from "@/lib/config/entityRoutes";
 import { localizeHref, routedDocPath } from "@/lib/site/links";
 import type { RoutedDocRef } from "@/lib/site/links";
@@ -213,7 +213,7 @@ export function ArticleRichText({ data, locale }: Props) {
 
   return (
     <RichText
-      converters={buildConverters(locale, topHeadings(data))}
+      converters={withTopLevelTarget(buildConverters(locale, topHeadings(data)), data)}
       data={data as SerializedEditorState}
       disableContainer
     />

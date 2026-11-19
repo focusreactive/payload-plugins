@@ -2,7 +2,7 @@ import React from "react";
 
 import { SiteButton } from "@/components/site/SiteButton";
 import { SiteImage, mediaOf } from "@/components/site/SiteImage";
-import { SiteRichText, hasRichText } from "@/components/site/SiteRichText";
+import { SiteRichText, hasRichText, richTextTarget } from "@/components/site/SiteRichText";
 import { siteLinkHref, siteLinkTarget, telHref } from "@/lib/site/links";
 import type { SiteLinkValue } from "@/lib/site/links";
 import type { Locale } from "@/lib/types";
@@ -110,7 +110,7 @@ export function ImageHero({
       <div className="container">
         <div className="text-container">
           {visibleCrumbs.length > 0 && <Breadcrumbs crumbs={visibleCrumbs} locale={locale} />}
-          <h1>
+          <h1 {...richTextTarget(heading)}>
             <HeadingText value={heading} />
           </h1>
           {subheading && <h2>{subheading}</h2>}

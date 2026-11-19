@@ -7,8 +7,19 @@ import { SiteButton } from "@/components/site/SiteButton";
 import { ShowMoreButton } from "@/components/site/condition/ShowMoreButton";
 import { YouTubeCover, YouTubeFrame } from "@/components/site/condition/YouTubeVideo";
 import { youTubeEmbedUrl } from "@/components/site/condition/youTubeEmbed";
-import { SiteBackground, SiteImage, mediaOf, mediaUrl } from "@/components/site/SiteImage";
-import { InlineRichText, SiteRichText, hasRichText } from "@/components/site/SiteRichText";
+import {
+  SiteBackground,
+  SiteImage,
+  mediaOf,
+  mediaTarget,
+  mediaUrl,
+} from "@/components/site/SiteImage";
+import {
+  InlineRichText,
+  SiteRichText,
+  hasRichText,
+  richTextTarget,
+} from "@/components/site/SiteRichText";
 import { SiteSlider } from "@/components/site/SiteSlider";
 import { SiteVideo } from "@/components/site/SiteVideo";
 import { findEntities, idOf, orderByIds } from "@/dal/entities";
@@ -152,7 +163,7 @@ function IconListImageLayout({
         <div className="right">
           {eyebrow && <h2 className="small">{eyebrow}</h2>}
           {hasRichText(heading) && (
-            <h2>
+            <h2 {...richTextTarget(heading)}>
               <InlineRichText data={heading} />
             </h2>
           )}
@@ -201,7 +212,7 @@ export function IconListComponent(props: SiteBlockProps<IconListBlock>) {
         <div className="left">
           {eyebrow && <h2 className="small">{eyebrow}</h2>}
           {hasRichText(heading) && (
-            <h3>
+            <h3 {...richTextTarget(heading)}>
               <InlineRichText data={heading} />
             </h3>
           )}
@@ -282,7 +293,7 @@ export function MediaTextComponent({
             </h6>
           )}
           {hasRichText(heading) && (
-            <h2>
+            <h2 {...richTextTarget(heading)}>
               <InlineRichText data={heading} />
             </h2>
           )}
@@ -299,7 +310,7 @@ export function MediaTextComponent({
         </div>
         {video ? (
           <div className="video-container">
-            <SiteVideo poster={mediaUrl(image)} src={video} />
+            <SiteVideo poster={mediaUrl(image)} src={video} target={mediaTarget(image)} />
           </div>
         ) : (
           <MediaTextPicture image={image} imageStyle={imageStyle} />
@@ -322,7 +333,7 @@ export function InsuranceComponent({
       <div className="container">
         <div className="text-container">
           {hasRichText(heading) && (
-            <h2>
+            <h2 {...richTextTarget(heading)}>
               <InlineRichText data={heading} />
             </h2>
           )}
@@ -431,7 +442,7 @@ export async function DoctorSliderComponent({
       <div className="container">
         <div className="text-container">
           {hasRichText(heading) && (
-            <h2>
+            <h2 {...richTextTarget(heading)}>
               <InlineRichText data={heading} />
             </h2>
           )}
@@ -536,7 +547,7 @@ export async function ReviewSliderComponent({
         <div className="text-container">
           {eyebrow && <h2 className="small">{eyebrow}</h2>}
           {hasRichText(heading) && (
-            <HeadingTag>
+            <HeadingTag {...richTextTarget(heading)}>
               <InlineRichText data={heading} />
             </HeadingTag>
           )}
@@ -615,7 +626,7 @@ export async function ConditionGridComponent({
     <section className={classNames("center_text", backgroundClass(background))}>
       <div className="container">
         {hasRichText(heading) && (
-          <h2>
+          <h2 {...richTextTarget(heading)}>
             <InlineRichText data={heading} />
           </h2>
         )}
@@ -623,7 +634,11 @@ export async function ConditionGridComponent({
         {embedUrl && !videoAfterList && (
           <>
             {videoHeading && <h2 className="small">{videoHeading}</h2>}
-            <YouTubeCover cover={mediaUrl(videoCover)} embedUrl={embedUrl} />
+            <YouTubeCover
+              cover={mediaUrl(videoCover)}
+              embedUrl={embedUrl}
+              target={mediaTarget(videoCover)}
+            />
           </>
         )}
         {listHeading && (
@@ -682,7 +697,7 @@ export function BeforeAfterComponent({
       <div className="container">
         <div className="text-container">
           {hasRichText(heading) && (
-            <h2>
+            <h2 {...richTextTarget(heading)}>
               <InlineRichText data={heading} />
             </h2>
           )}
@@ -737,7 +752,10 @@ export async function TreatmentCardsComponent({
     <section className="treatment_cards">
       <div className="container">
         {hasRichText(heading) && (
-          <h2 className={headingAlign === "center" ? undefined : "left"}>
+          <h2
+            className={headingAlign === "center" ? undefined : "left"}
+            {...richTextTarget(heading)}
+          >
             <InlineRichText data={heading} />
           </h2>
         )}
@@ -823,7 +841,7 @@ export async function PostSliderComponent({
             </figure>
           )}
           {hasRichText(heading) && (
-            <h2>
+            <h2 {...richTextTarget(heading)}>
               <InlineRichText data={heading} />
             </h2>
           )}

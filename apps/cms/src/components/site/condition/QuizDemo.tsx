@@ -2,7 +2,7 @@ import React from "react";
 
 import type { SiteBlockProps } from "@/blocks/site/types";
 import { SiteButton } from "@/components/site/SiteButton";
-import { InlineRichText, hasRichText } from "@/components/site/SiteRichText";
+import { InlineRichText, hasRichText, richTextTarget } from "@/components/site/SiteRichText";
 import type { QuizDemoBlock } from "@/payload-types";
 
 // The original names the answer inputs this way; the quiz page itself is a separate form.
@@ -25,7 +25,7 @@ export function QuizDemo({
         <div className="quiz-demo-container">
           {eyebrow && <h2 className="small">{eyebrow}</h2>}
           {hasRichText(heading) && (
-            <h2>
+            <h2 {...richTextTarget(heading)}>
               <InlineRichText data={heading} />
             </h2>
           )}

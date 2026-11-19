@@ -2,7 +2,7 @@ import React from "react";
 
 import { SiteButton } from "@/components/site/SiteButton";
 import { SiteBackground, SiteImage, mediaOf } from "@/components/site/SiteImage";
-import { InlineRichText, hasRichText } from "@/components/site/SiteRichText";
+import { InlineRichText, hasRichText, richTextTarget } from "@/components/site/SiteRichText";
 import { SiteSlider } from "@/components/site/SiteSlider";
 import { stripMarkers } from "@focus-reactive/payload-plugin-visual-editing";
 import type { ResultsSliderBlock } from "@/payload-types";
@@ -96,7 +96,7 @@ export function ResultsSliderComponent({
         <div className="text-container">
           {eyebrow && <h2 className="small">{eyebrow}</h2>}
           {hasRichText(heading) && (
-            <h2>
+            <h2 {...richTextTarget(heading)}>
               <InlineRichText data={heading} />
             </h2>
           )}

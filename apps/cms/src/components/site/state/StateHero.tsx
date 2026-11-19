@@ -3,7 +3,7 @@ import React from "react";
 import { HeadingText, hasText } from "@/blocks/site/shared/content";
 import { SiteButton } from "@/components/site/SiteButton";
 import { SiteBackground, SiteImage, mediaOf } from "@/components/site/SiteImage";
-import { SiteRichText } from "@/components/site/SiteRichText";
+import { SiteRichText, richTextTarget } from "@/components/site/SiteRichText";
 import { siteLinkHref } from "@/lib/site/links";
 import type { Locale } from "@/lib/types";
 import type { State } from "@/payload-types";
@@ -22,7 +22,7 @@ export function StateHero({ doc, locale }: { doc: State; locale: Locale }) {
       )}
       <div className="container">
         {hasText(doc.heroTagline) && (
-          <p>
+          <p {...richTextTarget(doc.heroTagline)}>
             <HeadingText value={doc.heroTagline} />
           </p>
         )}

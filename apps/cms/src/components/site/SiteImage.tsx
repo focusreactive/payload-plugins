@@ -1,3 +1,4 @@
+import { withVisualEditingPath } from "@focus-reactive/payload-plugin-visual-editing/client";
 import React from "react";
 
 import type { Media } from "@/payload-types";
@@ -7,6 +8,9 @@ type MediaValue = number | Media | null | undefined;
 export function mediaOf(value: MediaValue): Media | null {
   return value && typeof value === "object" ? value : null;
 }
+
+/** The visual-editing attributes of the upload field holding this image; empty outside a draft preview. */
+export const mediaTarget = (value: MediaValue) => withVisualEditingPath(mediaOf(value));
 
 export function mediaUrl(value: MediaValue): string | undefined {
   return mediaOf(value)?.url ?? undefined;
@@ -42,6 +46,7 @@ export function SiteImage({ media, alt, className, width, height, eager = false 
       loading={eager ? "eager" : "lazy"}
       src={image.url}
       width={width ?? image.width ?? undefined}
+      {...withVisualEditingPath(image)}
     />
   );
 }
@@ -54,6 +59,10 @@ export function SiteBackground({
   const url = mediaUrl(media);
 
   return (
-    <div className={className} style={url ? { backgroundImage: `url("${url}")` } : undefined} />
+    <div
+      className={className}
+      style={url ? { backgroundImage: `url("${url}")` } : undefined}
+      {...mediaTarget(media)}
+    />
   );
 }

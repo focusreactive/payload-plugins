@@ -22,10 +22,12 @@ export function YouTubeFrame({ embedUrl }: { embedUrl: string }) {
 interface YouTubeCoverProps {
   embedUrl: string;
   cover?: string;
+  /** Visual-editing attributes of the field holding the still. */
+  target?: Record<string, string>;
 }
 
 /** `div.video-container`: a still that, once pressed, gives way to the playing YouTube player. */
-export function YouTubeCover({ embedUrl, cover }: YouTubeCoverProps) {
+export function YouTubeCover({ embedUrl, cover, target }: YouTubeCoverProps) {
   const [playing, setPlaying] = useState(false);
 
   return (
@@ -37,6 +39,7 @@ export function YouTubeCover({ embedUrl, cover }: YouTubeCoverProps) {
             className="thumbnail"
             onClick={() => setPlaying(true)}
             style={cover ? { backgroundImage: `url("${cover}")` } : undefined}
+            {...target}
             type="button"
           />
         )}

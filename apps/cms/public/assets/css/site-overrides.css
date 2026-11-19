@@ -42,3 +42,10 @@ main img:not(.not-lazy):not(.first),
 .bg-container:not(.first) {
   opacity: 1;
 }
+
+/* The visual-editing toggle fades out while the cursor is over an editable element; editors asked for it to stay visible. An outer rule on the host beats the shadow root's :host rule. */
+[data-ve-toggle][data-hidden] {
+  opacity: 1 !important;
+  transform: none !important;
+  pointer-events: auto !important;
+}

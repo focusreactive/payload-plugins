@@ -2,7 +2,12 @@ import React from "react";
 
 import { SiteButton } from "@/components/site/SiteButton";
 import { SiteImage, mediaOf } from "@/components/site/SiteImage";
-import { InlineRichText, SiteRichText, hasRichText } from "@/components/site/SiteRichText";
+import {
+  InlineRichText,
+  SiteRichText,
+  hasRichText,
+  richTextTarget,
+} from "@/components/site/SiteRichText";
 import { siteLinkHref } from "@/lib/site/links";
 import type { StickyMediaBlock } from "@/payload-types";
 
@@ -19,7 +24,11 @@ function ChapterNote({ note, size }: Pick<Chapter, "note"> & { size: Chapter["no
 
   const line = <InlineRichText data={note} />;
 
-  return size === "small" ? <SmallPrint>{line}</SmallPrint> : <p>{line}</p>;
+  return size === "small" ? (
+    <SmallPrint target={richTextTarget(note)}>{line}</SmallPrint>
+  ) : (
+    <p {...richTextTarget(note)}>{line}</p>
+  );
 }
 
 export function StickyMediaComponent({ chapters, locale }: SiteBlockProps<StickyMediaBlock>) {

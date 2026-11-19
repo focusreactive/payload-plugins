@@ -1,7 +1,12 @@
 import React from "react";
 
 import { SiteBackground, SiteImage, mediaUrl } from "@/components/site/SiteImage";
-import { InlineRichText, SiteRichText, hasRichText } from "@/components/site/SiteRichText";
+import {
+  InlineRichText,
+  SiteRichText,
+  hasRichText,
+  richTextTarget,
+} from "@/components/site/SiteRichText";
 import { withLocalePrefix } from "@/lib/config/entityRoutes";
 import { telHref } from "@/lib/site/links";
 import type { Locale } from "@/lib/types";
@@ -73,7 +78,7 @@ export function SiteNewsletter({ footer }: Pick<Props, "footer">) {
         <style>{`@media (max-width: 767px) { #newsletter .bg-container { background-image: url("${mobileImage}") !important; } }`}</style>
       )}
       <div className="container">
-        <div className="title">
+        <div className="title" {...richTextTarget(newsletter?.title)}>
           <InlineRichText data={newsletter?.title} />
         </div>
         {newsletter?.text && <p>{newsletter.text}</p>}

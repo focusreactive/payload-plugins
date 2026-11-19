@@ -5,10 +5,12 @@ import React, { useRef, useState } from "react";
 interface Props {
   src: string;
   poster?: string;
+  /** Visual-editing attributes of the field holding the still. */
+  target?: Record<string, string>;
 }
 
 /** A video behind a still: the still is a button, and a click swaps it for the playing video. */
-export function SiteVideo({ src, poster }: Props) {
+export function SiteVideo({ src, poster, target }: Props) {
   const [playing, setPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -25,6 +27,7 @@ export function SiteVideo({ src, poster }: Props) {
           className="thumbnail"
           onClick={play}
           style={poster ? { backgroundImage: `url("${poster}")` } : undefined}
+          {...target}
           type="button"
         />
       )}

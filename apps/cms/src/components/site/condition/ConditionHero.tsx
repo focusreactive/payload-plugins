@@ -1,6 +1,6 @@
 import React from "react";
 
-import { mediaUrl } from "@/components/site/SiteImage";
+import { mediaTarget, mediaUrl } from "@/components/site/SiteImage";
 import type { Locale } from "@/lib/types";
 import type { Condition } from "@/payload-types";
 import { stripMarkers } from "@focus-reactive/payload-plugin-visual-editing";
@@ -42,6 +42,7 @@ export function ConditionHero({ condition, conditions, locale }: ConditionHeroPr
       <div
         className="bg-container"
         style={desktopUrl ? { backgroundImage: `url("${desktopUrl}")` } : undefined}
+        {...mediaTarget(condition.heroImage)}
       />
       <div className="container">
         {hasHeading && (

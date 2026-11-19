@@ -4,7 +4,12 @@ import { LinkCard } from "@/blocks/site/shared/CenterTextClient";
 import type { SiteBlockProps } from "@/blocks/site/types";
 import { SiteButton } from "@/components/site/SiteButton";
 import { SiteImage } from "@/components/site/SiteImage";
-import { InlineRichText, SiteRichText, hasRichText } from "@/components/site/SiteRichText";
+import {
+  InlineRichText,
+  SiteRichText,
+  hasRichText,
+  richTextTarget,
+} from "@/components/site/SiteRichText";
 import { SiteSlider } from "@/components/site/SiteSlider";
 import { idOf } from "@/dal/entities";
 import { withLocalePrefix } from "@/lib/config/entityRoutes";
@@ -127,7 +132,7 @@ export async function StateDoctorsComponent({
     <section className="experts_alt mobile-slider">
       <div className="container">
         {hasRichText(heading) && (
-          <h2>
+          <h2 {...richTextTarget(heading)}>
             <InlineRichText data={heading} />
           </h2>
         )}

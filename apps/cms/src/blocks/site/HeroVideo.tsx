@@ -3,7 +3,7 @@ import React from "react";
 
 import { SiteButton } from "@/components/site/SiteButton";
 import { SiteImage, mediaUrl } from "@/components/site/SiteImage";
-import { InlineRichText, SiteRichText } from "@/components/site/SiteRichText";
+import { InlineRichText, SiteRichText, richTextTarget } from "@/components/site/SiteRichText";
 import { telHref } from "@/lib/site/links";
 import type { HeroBannerBlock, HeroVideoBlock } from "@/payload-types";
 
@@ -24,7 +24,7 @@ export function HeroVideoComponent({
   return (
     <section className="has-video" id="hero">
       <div className="container">
-        <h1 className="hero-title">
+        <h1 className="hero-title" {...richTextTarget(heading)}>
           <InlineRichText data={heading} />
         </h1>
         <SiteRichText data={text} locale={locale} />
@@ -76,7 +76,7 @@ export function HeroBannerComponent({
     <section className={hasImage ? "has-image " : "simple"} id="hero">
       <div className="container">
         <div className="text-container">
-          <h1>
+          <h1 {...richTextTarget(heading)}>
             <InlineRichText data={heading} />
           </h1>
           {subheading && <h2>{subheading}</h2>}
