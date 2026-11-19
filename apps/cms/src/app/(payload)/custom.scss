@@ -70,3 +70,8 @@
 .stacked-editing__drawer--confined {
   min-height: 0 !important;
 }
+
+// The A/B test panel in the sidebar is not a `.field-type`, so it gets none of Payload's field spacing.
+.ab-test {
+  margin-top: var(--spacing-field);
+}
