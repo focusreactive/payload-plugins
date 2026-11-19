@@ -33,6 +33,7 @@ import { SlugLinkCell as SlugLinkCell_552f6ec77eb68c261b62502dbf62342a } from '.
 import { SlugField as SlugField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
 import { PreserveAutosaveEdits as PreserveAutosaveEdits_39eb0920977e9164f764a165b8c797cc } from '../../../components/admin/PreserveAutosaveEdits'
 import { SeoButton as SeoButton_0275c4dc7702e5d88e7eb977a6a3d442 } from '@focus-reactive/payload-plugin-seo/components/SeoButton'
+import { StackedEditing as StackedEditing_b0003c36efb35c4a253ed9ddf319648b } from '@focus-reactive/payload-plugin-stacked-editing/client'
 import { PreviewPageBridge as PreviewPageBridge_ec3bc0b0b5b9a6c0c60998da34f40f5d } from '@focus-reactive/payload-plugin-visual-editing/admin'
 import { OpenFormAnnouncer as OpenFormAnnouncer_ec3bc0b0b5b9a6c0c60998da34f40f5d } from '@focus-reactive/payload-plugin-visual-editing/admin'
 import { InstantPreviewBroadcaster as InstantPreviewBroadcaster_ec3bc0b0b5b9a6c0c60998da34f40f5d } from '@focus-reactive/payload-plugin-visual-editing/admin'
@@ -94,6 +95,7 @@ export const importMap = {
   "@payloadcms/next/client#SlugField": SlugField_2b8867833a34864a02ddf429b0728a40,
   "/components/admin/PreserveAutosaveEdits#PreserveAutosaveEdits": PreserveAutosaveEdits_39eb0920977e9164f764a165b8c797cc,
   "@focus-reactive/payload-plugin-seo/components/SeoButton#SeoButton": SeoButton_0275c4dc7702e5d88e7eb977a6a3d442,
+  "@focus-reactive/payload-plugin-stacked-editing/client#StackedEditing": StackedEditing_b0003c36efb35c4a253ed9ddf319648b,
   "@focus-reactive/payload-plugin-visual-editing/admin#PreviewPageBridge": PreviewPageBridge_ec3bc0b0b5b9a6c0c60998da34f40f5d,
   "@focus-reactive/payload-plugin-visual-editing/admin#OpenFormAnnouncer": OpenFormAnnouncer_ec3bc0b0b5b9a6c0c60998da34f40f5d,
   "@focus-reactive/payload-plugin-visual-editing/admin#InstantPreviewBroadcaster": InstantPreviewBroadcaster_ec3bc0b0b5b9a6c0c60998da34f40f5d,

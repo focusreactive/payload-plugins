@@ -3,6 +3,7 @@ import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
 import { seoPlugin as seoAnalysisPlugin } from "@focus-reactive/payload-plugin-seo";
+import { stackedEditing } from "@focus-reactive/payload-plugin-stacked-editing";
 import { visualEditingPlugin } from "@focus-reactive/payload-plugin-visual-editing";
 import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
@@ -199,7 +200,11 @@ export const plugins: Plugin[] = [
     generateURL: (docs) => docs.reduce((url, doc) => `${url}/${doc.slug}`, ""),
   }),
 
-  // stackedEditing stays off on this branch until the other plugin upgrades are verified here.
+  // Before presetsPlugin, which wraps existing row labels.
+  stackedEditing({
+    collections: ["page", "posts", "states", "clinics", "doctors", "treatments", "conditions"],
+    globals: [],
+  }),
 
   presetsPlugin({
     labels: {
