@@ -179,7 +179,7 @@ describe("POST /seo/link-suggestions", () => {
           snippetMatch: { start: 0, end: 11 },
         },
       ],
-      linked: [],
+      linked: [{ collection: "posts", id: "3", title: "Post 3" }],
     });
   });
 
@@ -297,6 +297,42 @@ describe("POST /seo/link-suggestions", () => {
           select: { title: true },
         })
       );
+    });
+
+    it("lists documents already linked by their url", async () => {
+      const res = await handler(
+        fakeRequest(body({ text: `${topic(2)} ${topic(3)}`, linkedHrefs: ["/blog/post-2"] }))
+      );
+      const { suggestions, linked } = (await res.json()) as {
+        suggestions: { id: string }[];
+        linked: unknown;
+      };
+      expect(suggestions.map((s) => s.id)).toEqual(["3"]);
+      expect(linked).toEqual([{ collection: "posts", id: "2", title: "Post 2" }]);
+    });
+
+    it("lists a document linked both ways once", async () => {
+      const res = await handler(
+        fakeRequest(
+          body({
+            text: `${topic(2)} ${topic(3)}`,
+            linkedDocs: [{ collection: "posts", docId: "3" }],
+            linkedHrefs: ["/blog/post-2", "/blog/post-3"],
+          })
+        )
+      );
+      expect(await linkedOf(res)).toEqual([
+        { collection: "posts", id: "3", title: "Post 3" },
+        { collection: "posts", id: "2", title: "Post 2" },
+      ]);
+    });
+
+    it("does not list a document linked by url that the caller cannot read", async () => {
+      unreadable = new Set(["2"]);
+      const res = await handler(
+        fakeRequest(body({ text: topic(2), linkedHrefs: ["/blog/post-2"] }))
+      );
+      expect(await linkedOf(res)).toEqual([]);
     });
 
     it("returns none without linked documents", async () => {

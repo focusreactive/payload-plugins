@@ -33,6 +33,7 @@ vi.mock("yoastseo/build/languageProcessing/languages/en/Researcher", () => ({
       getResearch: () => {
         throw new Error("no research in test");
       },
+      addResearch: () => undefined,
     };
   },
 }));

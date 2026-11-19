@@ -18,7 +18,7 @@ export const resolveProportionCount = (
     segment: {
       countLabel: `${matched} / ${total}`,
       filledPct: total ? (matched / total) * 100 : 0,
-      filledStatus: forceWarn ? "warn" : check.status === "good" ? "good" : "warn",
+      filledStatus: forceWarn ? "warn" : check.status,
     },
   };
 };

@@ -110,6 +110,35 @@ describe("resolveVisualization — proportion (links)", () => {
   });
 });
 
+describe("resolveVisualization — proportion status colour", () => {
+  it.each<Status>(["good", "warn", "bad"])(
+    "colours the subheadings bar by a %s status",
+    (status) => {
+      const v = resolveVisualization(
+        check("subheadingsKeyword", status),
+        { total: 13, matched: 2 },
+        DEFAULT_SEO_THRESHOLDS
+      );
+
+      expect(v.type).toBe("proportion");
+      if (v.type !== "proportion") return;
+      expect(v.segment.filledStatus).toBe(status);
+    }
+  );
+
+  it("colours the links bar by a bad status", () => {
+    const v = resolveVisualization(
+      check("internalLinks", "bad"),
+      { total: 4, follow: 0 },
+      DEFAULT_SEO_THRESHOLDS
+    );
+
+    expect(v.type).toBe("proportion");
+    if (v.type !== "proportion") return;
+    expect(v.segment.filledStatus).toBe("bad");
+  });
+});
+
 describe("resolveVisualization — proportion (imageKeyphrase)", () => {
   it("forces warn status regardless of a good check status", () => {
     const v = resolveVisualization(

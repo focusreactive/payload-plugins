@@ -260,6 +260,28 @@ export const cs: LanguageMessages = {
   "reco.textLength.warn": "Přidejte trochu obsahu, ať minimum bezpečně překročíte.",
   "reco.fleschReadingEase.warn": "Zkraťte věty a volte jednodušší slova, text se bude číst snáz.",
   "reco.fleschReadingEase.bad": "Text se čte obtížně — používejte kratší věty a jednodušší slova.",
+  "reco.keyphraseInSEOTitle.warn": "Dejte přesné znění klíčové fráze na začátek SEO titulku.",
+  "reco.keyphraseInSEOTitle.bad": "Přidejte klíčovou frázi do SEO titulku, ideálně na začátek.",
+  "reco.slugKeyword.warn": "Použijte v adrese více slov z klíčové fráze.",
+  "reco.slugKeyword.bad": "Přidejte klíčovou frázi do adresy.",
+  "reco.subheadingsKeyword.warn":
+    "Použijte klíčovou frázi nebo synonymum v některých mezititulcích, ale ne skoro ve všech.",
+  "reco.subheadingsKeyword.bad":
+    "Použijte klíčovou frázi nebo synonymum v některých mezititulcích, ale ne skoro ve všech.",
+  "reco.subheadingsTooLong.warn": "Rozdělte nejdelší oddíl mezititulkem.",
+  "reco.subheadingsTooLong.bad": "Rozdělte dlouhé úseky textu mezititulky.",
+  "reco.textParagraphTooLong.warn": "Rozdělte nejdelší odstavec na kratší.",
+  "reco.textParagraphTooLong.bad": "Rozdělte dlouhé odstavce na kratší.",
+  "reco.textSentenceLength.warn":
+    "Zkraťte několik vět, aby nejvýše {{max}} % z nich mělo víc než {{maxSentenceWords}} slov.",
+  "reco.textSentenceLength.bad":
+    "Příliš mnoho dlouhých vět — zkraťte je, aby nejvýše {{max}} % z nich mělo víc než {{maxSentenceWords}} slov.",
+  "reco.sentenceBeginnings.warn": "Obměňujte začátky po sobě jdoucích vět.",
+  "reco.sentenceBeginnings.bad": "Několik vět za sebou začíná stejným slovem — začínejte je různě.",
+  "reco.textTransitionWords.warn":
+    "Použijte o něco více přechodových slov, například „však“ nebo „proto“.",
+  "reco.textTransitionWords.bad":
+    "Propojte věty přechodovými slovy, například „však“, „protože“ nebo „proto“.",
   "reco.generic.warn": "Tato kontrola si zaslouží pozornost.",
   "reco.generic.bad": "Tato kontrola potřebuje zlepšit.",
 

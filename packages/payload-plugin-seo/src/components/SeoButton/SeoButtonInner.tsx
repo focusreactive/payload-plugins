@@ -1,7 +1,7 @@
 "use client";
 
 import { useDocumentInfo, useLocale, useModal } from "@payloadcms/ui";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ScoreBadge } from "./ScoreBadge";
 import { SeoTriggerButton } from "./SeoTriggerButton";
 import { SeoDrawer } from "../SeoDrawer";
@@ -37,8 +37,9 @@ export function SeoButtonInner({
   thresholds,
   remote,
 }: SeoButtonInnerProps) {
-  const { openModal } = useModal();
-  const { id } = useDocumentInfo();
+  const { isModalOpen, openModal } = useModal();
+  const { id, lastUpdateTime } = useDocumentInfo();
+  const drawerOpen = isModalOpen(DRAWER_SLUG);
   const locale = useLocale();
 
   const docId = id == null ? "" : String(id);
@@ -67,22 +68,27 @@ export function SeoButtonInner({
     },
     keyphrases,
     extractContentPath,
+    enabled: drawerOpen,
   });
   const { result, analyzing, analyzeNow } = useAnalysis({
     getInput,
     signature,
     supportedLocales,
     thresholds,
+    enabled: drawerOpen,
   });
   const links = useLinkSuggestions({ collectionSlug, docId, localeCode, getInput });
 
   const overall = result?.overall ?? null;
 
+  useEffect(() => {
+    analyzeNow();
+  }, [analyzeNow, lastUpdateTime]);
+
   const open = useCallback(() => {
     syncOnOpen();
-    analyzeNow();
     openModal(DRAWER_SLUG);
-  }, [analyzeNow, openModal, syncOnOpen]);
+  }, [openModal, syncOnOpen]);
 
   const handleAddRelated = useCallback(() => {
     const newId = addRelated();

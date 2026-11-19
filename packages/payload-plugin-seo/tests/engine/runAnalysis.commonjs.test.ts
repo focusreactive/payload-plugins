@@ -11,6 +11,11 @@ vi.mock(
   async (importOriginal) => ({ default: await importOriginal() })
 );
 
+vi.mock(
+  "yoastseo/build/languageProcessing/researches/keyphraseDistribution",
+  async (importOriginal) => ({ default: await importOriginal() })
+);
+
 vi.mock("yoastseo/build/scoring/assessors/relatedKeywordAssessor", async (importOriginal) => ({
   default: await importOriginal(),
 }));
