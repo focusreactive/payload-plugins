@@ -43,6 +43,7 @@ import type { FindAdminWindow } from "../adminWindow.js";
 import { adminOriginOf, findAdminWindow } from "../adminWindow.js";
 import { readMarkerFromAttrs } from "../overlay/markerExtractor.js";
 import { textPositionAtPoint } from "./caret.js";
+import { editorOf } from "./richTextEditor.js";
 import {
   contentOf,
   editableTextsIn,
@@ -416,14 +417,22 @@ export function createRichTextEditing({
     if (!wrapper.isConnected || !begin(wrapper, ready, caret, null)) openField();
   };
 
-  const takeLoadedEditor = async (load: RichTextEditorLoader) => {
+  const loadedEditorOf = async (load: RichTextEditorLoader): Promise<RichTextEditor | null> => {
     try {
-      editor = await load();
-      beginWaitingEdit();
+      return editorOf(await load());
     } catch {
-      editorLoad = null;
-      openFieldInstead();
+      return null;
     }
+  };
+
+  const takeLoadedEditor = async (load: RichTextEditorLoader) => {
+    editor = await loadedEditorOf(load);
+    if (editor) {
+      beginWaitingEdit();
+      return;
+    }
+    editorLoad = null;
+    openFieldInstead();
   };
 
   const loadEditor = () => {

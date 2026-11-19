@@ -114,10 +114,12 @@ const FORMATS = {
 };
 
 const BROKEN_EDITOR = {
-  startEditSession: () => {
-    throw new Error("broken");
+  richTextEditor: {
+    startEditSession: () => {
+      throw new Error("broken");
+    },
   },
-};
+} as never;
 
 const lexicalOf = (twin: Element): LexicalEditor =>
   (twin as unknown as { __lexicalEditor: LexicalEditor }).__lexicalEditor;
@@ -368,6 +370,18 @@ describe("editing rich text on the page", () => {
       click(wrapper);
       await settle();
 
+      expect(twinOf(wrapper)).toBeNull();
+      expect(open).toHaveBeenCalledTimes(1);
+    });
+
+    it("opens the field in the admin when the loaded module is not the editor of the plugin", async () => {
+      const startEditSession = vi.fn();
+      ctx = { ...ctx, richTextEditor: () => Promise.resolve({ startEditSession } as never) };
+
+      click(wrapper);
+      await settle();
+
+      expect(startEditSession).not.toHaveBeenCalled();
       expect(twinOf(wrapper)).toBeNull();
       expect(open).toHaveBeenCalledTimes(1);
     });

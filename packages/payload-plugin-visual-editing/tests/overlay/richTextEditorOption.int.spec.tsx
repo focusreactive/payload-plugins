@@ -43,7 +43,7 @@ describe("the rich text editor a site hands the page", () => {
     localStorage.setItem(STORAGE_KEY, "hover");
     localStorage.setItem(EDITS_IN_PLACE_STORAGE_KEY, "true");
     startEditSession = vi.fn(() => ({ end: () => undefined }));
-    richTextEditor = vi.fn(() => Promise.resolve({ startEditSession }));
+    richTextEditor = vi.fn(() => Promise.resolve({ richTextEditor: { startEditSession } }));
     vi.stubGlobal(
       "fetch",
       vi.fn(() =>
