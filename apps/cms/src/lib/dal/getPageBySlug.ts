@@ -65,7 +65,7 @@ const getPageBySlugCached = cache(
       {
         // Sections on a page list clinics, doctors and treatments, so a change to any record
         // must refresh the page as well.
-        tags: [res, cacheTag({ type: "entities" })],
+        tags: [res, cacheTag({ type: "pagePaths" }), cacheTag({ type: "entities" })],
       }
     )();
   }

@@ -15,3 +15,13 @@ export const createLivePreviewVersions = ({ showSaveDraftButton = false } = {}) 
 // A new array per collection: plugins push their own buttons into it, and a shared array shows every collection's button on every document.
 export const createLiveBeforeDocumentControls = (): string[] =>
   PRESERVE_AUTOSAVE_EDITS ? ["/components/admin/PreserveAutosaveEdits#PreserveAutosaveEdits"] : [];
+
+type EditViewComponents = NonNullable<
+  NonNullable<NonNullable<CollectionConfig["admin"]>["components"]>["edit"]
+>;
+
+export const createLivePreviewEditComponents = () =>
+  ({
+    beforeDocumentControls: createLiveBeforeDocumentControls(),
+    PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
+  }) satisfies EditViewComponents;

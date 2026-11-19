@@ -1,4 +1,3 @@
-import { vercelStegaDecode } from "@vercel/stega";
 import { describe, expect, it } from "vitest";
 
 import type { ReadOfDocument } from "../../src/server/markRead";
@@ -10,6 +9,7 @@ import { isPlainObject } from "../../src/shared/plainObject";
 import { META_KEY } from "../../src/shared/shared";
 
 import { paragraphsOf } from "../support/editorState";
+import { markerIn } from "../support/markedData";
 
 const inPage = { collectionSlug: "pages", docId: "p-1", kind: "collection" } as const;
 
@@ -31,7 +31,7 @@ const markPage = <Document extends PlainObject>(
   read: Partial<ReadOfDocument> = {}
 ) => markRead(page, { identity: inPage, schema: pagesSchema, ...read });
 
-const markerOf = (text: unknown) => vercelStegaDecode(String(text));
+const markerOf = (text: unknown) => markerIn(String(text));
 
 const fieldReferenceOf = (value: unknown) => (isPlainObject(value) ? value[META_KEY] : undefined);
 

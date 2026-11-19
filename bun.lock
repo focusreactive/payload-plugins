@@ -31,6 +31,7 @@
         "@focus-reactive/payload-plugin-presets": "workspace:*",
         "@focus-reactive/payload-plugin-scheduling": "workspace:*",
         "@focus-reactive/payload-plugin-seo": "workspace:*",
+        "@focus-reactive/payload-plugin-stacked-editing": "workspace:*",
         "@focus-reactive/payload-plugin-translator": "workspace:*",
         "@focus-reactive/payload-plugin-visual-editing": "workspace:*",
         "@payloadcms/db-postgres": "3.90.1",
@@ -483,6 +484,26 @@
         "react-dom",
       ],
     },
+    "packages/payload-plugin-stacked-editing": {
+      "name": "@focus-reactive/payload-plugin-stacked-editing",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@payloadcms/ui": "3.90.1",
+        "@swc/cli": "0.4.0",
+        "@swc/core": "1.7.0",
+        "@types/react": "19.2.9",
+        "jsdom": "^25.0.0",
+        "payload": "3.90.1",
+        "react": "19.2.1",
+        "typescript": "5.9.2",
+        "vitest": "^2.1.0",
+      },
+      "peerDependencies": {
+        "@payloadcms/ui": "^3.84.0",
+        "payload": "^3.84.0",
+        "react": "^19.0.0",
+      },
+    },
     "packages/payload-plugin-translator": {
       "name": "@focus-reactive/payload-plugin-translator",
       "version": "0.18.1",
@@ -530,6 +551,7 @@
       },
       "devDependencies": {
         "@payloadcms/db-sqlite": "3.90.1",
+        "@payloadcms/graphql": "3.90.1",
         "@payloadcms/richtext-lexical": "3.90.1",
         "@payloadcms/translations": "3.90.1",
         "@payloadcms/ui": "3.90.1",
@@ -551,9 +573,15 @@
       "peerDependencies": {
         "@payloadcms/ui": "^3.79.0",
         "payload": "^3.79.0",
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0",
+        "react": "^18.2.0 || ^19.0.0",
+        "react-dom": "^18.2.0 || ^19.0.0",
       },
+      "optionalPeers": [
+        "@payloadcms/ui",
+        "payload",
+        "react",
+        "react-dom",
+      ],
     },
     "packages/tailwind-config": {
       "name": "@repo/tailwind-config",
@@ -859,6 +887,8 @@
     "@focus-reactive/payload-plugin-scheduling": ["@focus-reactive/payload-plugin-scheduling@workspace:packages/payload-plugin-scheduling"],
 
     "@focus-reactive/payload-plugin-seo": ["@focus-reactive/payload-plugin-seo@workspace:packages/payload-plugin-seo"],
+
+    "@focus-reactive/payload-plugin-stacked-editing": ["@focus-reactive/payload-plugin-stacked-editing@workspace:packages/payload-plugin-stacked-editing"],
 
     "@focus-reactive/payload-plugin-translator": ["@focus-reactive/payload-plugin-translator@workspace:packages/payload-plugin-translator"],
 

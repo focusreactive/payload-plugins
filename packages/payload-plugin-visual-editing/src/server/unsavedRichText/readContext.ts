@@ -19,3 +19,12 @@ export const unsavedRichTextOf = (context: RequestContext): UnsavedRichText | nu
 
 export const isUnsavedRichTextRead = (req: PayloadRequest): boolean =>
   unsavedRichTextOf(req.context) !== null;
+
+export const SAVED_REFERENCES_ONLY_CONTEXT_KEY = "__visualEditingSavedReferencesOnly";
+
+export type SavedReferencesOnly = { field: LiveRichTextField; isApplied: boolean };
+
+export const savedReferencesOnlyOf = (context: RequestContext): SavedReferencesOnly | null => {
+  const restricted = context[SAVED_REFERENCES_ONLY_CONTEXT_KEY];
+  return isPlainObject(restricted) ? (restricted as SavedReferencesOnly) : null;
+};

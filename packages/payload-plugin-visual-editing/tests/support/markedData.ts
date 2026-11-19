@@ -1,10 +1,10 @@
-import { vercelStegaDecodeAll } from "@vercel/stega";
+import { vercelStegaDecode, vercelStegaDecodeAll } from "@vercel/stega";
 
 import type { VeIdentity } from "../../src/shared/shared";
 
 import { isPlainObject } from "../../src/shared/plainObject";
-import { toRichTextNodeMarker } from "../../src/shared/richText/nodeKey";
-import { META_KEY, veIdentityOf } from "../../src/shared/shared";
+import { fromRichTextNodeMarker, toRichTextNodeMarker } from "../../src/shared/richText/nodeKey";
+import { fromStegaPayload, META_KEY, toStegaPayload } from "../../src/shared/shared";
 import { withMarker } from "../../src/shared/stegaText";
 
 const DATA_PATH_SEPARATOR = ".";
@@ -17,9 +17,18 @@ const childOf = (value: unknown, segment: string): unknown => {
 export const valueAt = (data: unknown, dataPath: string): unknown =>
   dataPath.split(DATA_PATH_SEPARATOR).reduce(childOf, data);
 
+const markerOfPayload = (payload: unknown): unknown =>
+  fromStegaPayload(payload) ?? fromRichTextNodeMarker(payload) ?? payload;
+
+export const markerIn = (text: unknown): unknown =>
+  markerOfPayload(vercelStegaDecode(String(text)));
+
+export const markersIn = (text: string): unknown[] =>
+  (vercelStegaDecodeAll(text) ?? []).map(markerOfPayload);
+
 export const markersAt = (data: unknown, dataPath: string): unknown[] => {
   const value = valueAt(data, dataPath);
-  return typeof value === "string" ? (vercelStegaDecodeAll(value) ?? []) : [];
+  return typeof value === "string" ? markersIn(value) : [];
 };
 
 export const metaAt = (data: unknown, dataPath: string): unknown =>
@@ -46,7 +55,7 @@ export const everyMarkedTextIn = (data: unknown): string[] => {
 };
 
 export const markedText = (text: string, identity: VeIdentity): string =>
-  withMarker(text, veIdentityOf(identity));
+  withMarker(text, toStegaPayload(identity));
 
 export const markedTextNode = (text: string, address: string, shape: string): string =>
   withMarker(text, toRichTextNodeMarker(address, shape));

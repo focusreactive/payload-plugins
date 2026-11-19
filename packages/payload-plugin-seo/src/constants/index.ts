@@ -8,3 +8,5 @@ export const MAX_KEYPHRASES = 5;
 export * from "./statuses";
 export * from "./keyphrases";
 export * from "./links";
+export * from "./thresholds";
+export * from "./yoast";

@@ -11,7 +11,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
-  font-size: 0.8125rem;
+  font-size: 13px;
 }
 
 // First line: [dot + direction] on the left, action on the right.
@@ -38,7 +38,7 @@
   gap: 0.35rem;
   // Align under the direction: dot width (8px) + .lead gap (0.5rem).
   padding-left: calc(8px + 0.5rem);
-  font-size: 0.6875rem;
+  font-size: 12px;
   color: var(--theme-elevation-500, #8c8c8c);
 }
 
@@ -49,7 +49,7 @@
   margin: 0.125rem 0 0 calc(8px + 0.5rem);
   padding-left: 0.5rem;
   border-left: 2px solid var(--theme-error-600, #dc2626);
-  font-size: 0.6875rem;
+  font-size: 12px;
   font-weight: 400;
   line-height: 1.35;
   color: var(--theme-elevation-500, #8c8c8c);

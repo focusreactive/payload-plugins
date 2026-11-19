@@ -15,6 +15,53 @@ const ignoreOpenForm: AnnounceOpenForm = () => () => undefined;
 
 export const OpenFormsContext = createContext<AnnounceOpenForm>(ignoreOpenForm);
 
+export const OPEN_FORM_BUDGET_MS = 15_000;
+
+const nothingToStop = (): void => undefined;
+
+export type OpenForms = {
+  announce: AnnounceOpenForm;
+  forms: ReadonlySet<OpenForm>;
+  whenOpen: (document: VeDocument, budgetMs?: number) => Promise<boolean>;
+};
+
+export function createOpenForms(): OpenForms {
+  const forms = new Set<OpenForm>();
+  const watchers = new Set<() => void>();
+
+  const isOpen = (document: VeDocument): boolean => {
+    const documentAddress = documentAddressOf(document);
+    return [...forms].some((form) => documentAddressOf(form.document) === documentAddress);
+  };
+
+  const announce: AnnounceOpenForm = (form) => {
+    forms.add(form);
+    for (const watch of watchers) watch();
+    return () => {
+      forms.delete(form);
+    };
+  };
+
+  const whenOpen: OpenForms["whenOpen"] = (document, budgetMs = OPEN_FORM_BUDGET_MS) => {
+    let stopWaiting = nothingToStop;
+    const opened = new Promise<boolean>((resolve) => {
+      const watch = () => {
+        if (isOpen(document)) resolve(true);
+      };
+      const budget = setTimeout(resolve, budgetMs, false);
+      stopWaiting = () => {
+        clearTimeout(budget);
+        watchers.delete(watch);
+      };
+      watchers.add(watch);
+      watch();
+    });
+    return opened.finally(stopWaiting);
+  };
+
+  return { announce, forms, whenOpen };
+}
+
 export function currentFormPathOf(
   message: VeOpenFieldMessage,
   openForms: ReadonlySet<OpenForm>

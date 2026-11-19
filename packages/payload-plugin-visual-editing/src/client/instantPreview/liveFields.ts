@@ -16,6 +16,8 @@ export type LiveField = { document: VeDocument; key: string };
 
 export type WriteText = (node: Text, text: string) => void;
 
+export type WriteTextInHolder = (match: FieldMatch, text: string) => boolean;
+
 export type KeepsShape = (richTextField: string, shape: string) => boolean;
 
 export interface LiveFields {
@@ -28,7 +30,12 @@ export interface LiveFields {
 
 type KnownValues = { unsaved: string; saved: readonly string[] };
 
-type LiveFieldOnPage = { field: LiveField; nodes: Set<Text>; values: KnownValues | null };
+type LiveFieldOnPage = {
+  field: LiveField;
+  nodes: Set<Text>;
+  emptiedHolders: Set<FieldMatch>;
+  values: KnownValues | null;
+};
 
 type ShapesOfField = { renderedLast: string; fieldsByShape: Map<string, Set<string>> };
 
@@ -48,6 +55,17 @@ const isRawRender = (values: KnownValues, node: Text): boolean => {
   return renderedText === values.unsaved || values.saved.includes(renderedText);
 };
 
+const WHITESPACE_RUN = /\s+/gu;
+
+const collapsedWhitespace = (text: string) => text.replaceAll(WHITESPACE_RUN, " ").trim();
+
+const showsRawRenderIn = (values: KnownValues, holder: Element): boolean => {
+  const shownText = collapsedWhitespace(holder.textContent ?? "");
+  return [values.unsaved, ...values.saved].some(
+    (value) => collapsedWhitespace(value) === shownText
+  );
+};
+
 export const renderedByDocument = (fields: readonly LiveField[]): VeRenderedFields[] => {
   const grouped = new Map<string, VeRenderedFields>();
   for (const { document, key } of fields) {
@@ -61,7 +79,8 @@ export const renderedByDocument = (fields: readonly LiveField[]): VeRenderedFiel
 
 export function createLiveFields(
   writeText: WriteText,
-  keepsShape: KeepsShape = () => false
+  keepsShape: KeepsShape = () => false,
+  writeTextInHolder: WriteTextInHolder = () => false
 ): LiveFields {
   const fieldsOnPage = new Map<string, LiveFieldOnPage>();
   const unannounced = new Set<string>();
@@ -72,9 +91,31 @@ export function createLiveFields(
     if (node.textContent !== value) writeText(node, value);
   };
 
-  const releaseNode = ({ textNode, ...marker }: FieldMatch) => {
-    const key = fieldKeyOfMarker(marker);
-    if (key !== null) fieldsOnPage.get(fieldAddressOf(marker, key))?.nodes.delete(textNode);
+  const releaseNode = (match: FieldMatch) => {
+    const key = fieldKeyOfMarker(match);
+    const onPage = key === null ? undefined : fieldsOnPage.get(fieldAddressOf(match, key));
+    if (!onPage) return;
+    onPage.nodes.delete(match.textNode);
+    if (match.holder) onPage.emptiedHolders.add(match);
+  };
+
+  const showUnsavedInEmptiedHolders = (
+    onPage: LiveFieldOnPage,
+    values: KnownValues,
+    unsaved: string
+  ) => {
+    for (const match of onPage.emptiedHolders) {
+      const { holder } = match;
+      if (!holder?.isConnected) {
+        onPage.emptiedHolders.delete(match);
+        continue;
+      }
+      const isShown =
+        collapsedWhitespace(holder.textContent ?? "") === collapsedWhitespace(unsaved);
+      if (isShown || !showsRawRenderIn(values, holder)) continue;
+      onPage.emptiedHolders.delete(match);
+      writeTextInHolder(match, unsaved);
+    }
   };
 
   const showUnsaved = (onPage: LiveFieldOnPage, values: KnownValues, unsaved: string) => {
@@ -83,6 +124,7 @@ export function createLiveFields(
     );
     onPage.values = { ...values, unsaved };
     for (const node of rawNodes) show(node, unsaved);
+    showUnsavedInEmptiedHolders(onPage, values, unsaved);
   };
 
   const recordShape = ({ field }: LiveFieldOnPage, { fieldKey, shape }: RichTextShape) => {
@@ -99,14 +141,14 @@ export function createLiveFields(
     if (shapes.fieldsByShape.size > 1) richTextsWithEarlierShapes.add(richText);
   };
 
-  const trackNode = ({ textNode, richText, ...marker }: FieldMatch) => {
+  const trackNode = ({ textNode, richText, holder: _holder, ...marker }: FieldMatch) => {
     const key = fieldKeyOfMarker(marker);
     if (key === null || marker.locale !== undefined || optedOutOfLivePatching(textNode)) return;
     const field = { document: veDocumentOf(marker), key };
     const fieldAddress = fieldAddressOf(field.document, key);
     let onPage = fieldsOnPage.get(fieldAddress);
     if (!onPage) {
-      onPage = { field, nodes: new Set(), values: null };
+      onPage = { emptiedHolders: new Set(), field, nodes: new Set(), values: null };
       fieldsOnPage.set(fieldAddress, onPage);
       unannounced.add(fieldAddress);
     }

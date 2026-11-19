@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { richTextNodeKeyOf } from "../../src/shared/richText/nodeKey";
+import {
+  fromRichTextNodeMarker,
+  richTextNodeKeyOf,
+  toRichTextNodeMarker,
+} from "../../src/shared/richText/nodeKey";
 import { shapeOf } from "../../src/shared/richText/shapeOf";
 import { textLeavesOf } from "../../src/shared/richText/textLeaves";
 import { fieldAddressOf } from "../../src/shared/veDocument";
@@ -115,4 +119,31 @@ describe("rich text node keys", () => {
       richTextNodeKeyOf({ address: "1.0.0", fieldKey: "blocks.6a1f.body", shape: "k3f9a1" })
     ).toBe("blocks.6a1f.body#k3f9a1#1.0.0");
   });
+});
+
+describe("the marker of a rich text node", () => {
+  it("is one short text of the shape and the address", () => {
+    expect(toRichTextNodeMarker("1.0.2", "gzxd67")).toBe("gzxd67#1.0.2");
+  });
+
+  it("is read back as the address and the shape it was written from", () => {
+    expect(fromRichTextNodeMarker(toRichTextNodeMarker("1.0.2", "gzxd67"))).toEqual({
+      node: "1.0.2",
+      shape: "gzxd67",
+    });
+  });
+
+  it("is read from a marker written with the names of its properties", () => {
+    expect(fromRichTextNodeMarker({ node: "0.1", shape: "gzxd67" })).toEqual({
+      node: "0.1",
+      shape: "gzxd67",
+    });
+  });
+
+  it.each(["", "gzxd67", "gzxd67#", "#0.1", "gzxd67#0.1#more", 7, null, ["gzxd67", "0.1"]])(
+    "is not read from %j",
+    (payload) => {
+      expect(fromRichTextNodeMarker(payload)).toBeNull();
+    }
+  );
 });

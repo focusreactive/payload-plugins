@@ -23,6 +23,7 @@ function EditPresetButton({
   onDrawerOpenChange?: (isOpen: boolean) => void;
 }) {
   const { slug } = usePresetsConfig();
+  const { t } = useTranslation();
   const [DocumentDrawer, , { openDrawer, closeDrawer, isDrawerOpen }] = useDocumentDrawer({
     collectionSlug: slug,
     id: presetId,
@@ -37,6 +38,8 @@ function EditPresetButton({
       <button
         className="preset-action edit-preset"
         type="button"
+        aria-label={t("general:edit" as never)}
+        title={t("general:edit" as never)}
         onClick={(e) => {
           e.stopPropagation();
           onOpen?.();
@@ -59,6 +62,7 @@ function EditPresetButton({
 
 interface Props {
   preset: Preset | null;
+  fallbackImageURL?: string | null;
   mediaCollection: string;
   label?: string;
   onSelect: (preset: Preset | null) => void;
@@ -71,8 +75,8 @@ interface Props {
 
 export function PresetItem({
   preset,
+  fallbackImageURL,
   mediaCollection,
-  label,
   onSelect,
   onDeleteRequest,
   onPresetUpdate,
@@ -149,54 +153,69 @@ export function PresetItem({
 
   return (
     <Popover.Root open={isOpen && hasPreview}>
-      <Popover.Trigger asChild>
-        <button
-          type="button"
+      <Popover.Anchor asChild>
+        <div
           className="preset-item"
-          onClick={() => onSelect(preset)}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          onFocus={handleButtonFocus}
-          onBlur={() => setIsKeyboardFocused(false)}
-          tabIndex={tabIndex}
         >
-          <div className="preset-item__thumbnail">
-            <PresetAdminComponentCell media={media} isLoading={isLoading} size="md" />
-          </div>
-
-          <div className="preset-item__content">
-            <div className="preset-item__label">
-              {preset ? preset.name : `${t("presetsPlugin:blocksDrawer:empty" as never)} ${label}`}
-            </div>
-
-            <div className="preset-item__actions">
-              {preset?.id && (
-                <EditPresetButton
-                  presetId={preset.id}
-                  onAfterSave={onPresetUpdate}
-                  onOpen={() => {
-                    setIsHovered(false);
-                    setIsKeyboardFocused(false);
-                  }}
-                  onDrawerOpenChange={(isOpen) => {
-                    if (!isOpen) suppressNextFocus.current = true;
-                    setIsEditDrawerOpen(isOpen);
-                  }}
-                />
-              )}
-              {preset?.name && (
-                <button
-                  className="preset-action remove-preset"
-                  type="button"
-                  onClick={handleRemoveButtonClick}
-                >
-                  <TrashIcon className="remove-preset__icon" />
-                </button>
+          <button
+            type="button"
+            className="preset-item__main"
+            onClick={() => onSelect(preset)}
+            onFocus={handleButtonFocus}
+            onBlur={() => setIsKeyboardFocused(false)}
+            tabIndex={tabIndex}
+          >
+            <div className="preset-item__thumbnail" data-blank={preset ? undefined : ""}>
+              {!hasPreview && !isLoading && fallbackImageURL ? (
+                <img className="preset-item__fallback" src={fallbackImageURL} alt="" />
+              ) : (
+                <PresetAdminComponentCell media={media} isLoading={isLoading} size="md" />
               )}
             </div>
+
+            <div className="preset-item__text">
+              <div className="preset-item__label">
+                {preset ? preset.name : t("presetsPlugin:blocksDrawer:blank" as never)}
+              </div>
+              {!preset && (
+                <div className="preset-item__hint">
+                  {t("presetsPlugin:blocksDrawer:blankHint" as never)}
+                </div>
+              )}
+            </div>
+          </button>
+
+          <div className="preset-item__actions">
+            {preset?.id && (
+              <EditPresetButton
+                presetId={preset.id}
+                onAfterSave={onPresetUpdate}
+                onOpen={() => {
+                  setIsHovered(false);
+                  setIsKeyboardFocused(false);
+                }}
+                onDrawerOpenChange={(isOpen) => {
+                  if (!isOpen) suppressNextFocus.current = true;
+                  setIsEditDrawerOpen(isOpen);
+                }}
+              />
+            )}
+            {preset?.name && (
+              <button
+                className="preset-action remove-preset"
+                type="button"
+                aria-label={t("general:delete" as never)}
+                title={t("general:delete" as never)}
+                onClick={handleRemoveButtonClick}
+              >
+                <TrashIcon className="remove-preset__icon" />
+              </button>
+            )}
           </div>
-        </button>
-      </Popover.Trigger>
+        </div>
+      </Popover.Anchor>
 
       {hasPreview && (
         <Popover.Portal>

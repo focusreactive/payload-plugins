@@ -1,6 +1,6 @@
 "use client";
 
-import { useConfig } from "@payloadcms/ui";
+import { useConfig, useLocale } from "@payloadcms/ui";
 import { Loader2 } from "lucide-react";
 import { docTargetKey } from "../../../keyphrases/docTarget";
 import { adminDocHref } from "../../../keyphrases/usage";
@@ -9,12 +9,14 @@ import { cn, OUTLINE_BUTTON_CLASS } from "../../../utils/style";
 import { useSeoTranslation } from "../../../translations/useSeoTranslation";
 import { TabWrapper } from "../components/TabWrapper";
 import type { LinkSuggestionsState } from "../links/useLinkSuggestions";
+import { LinkedDocsCard } from "./links/LinkedDocsCard";
 import { LinkSuggestionRow } from "./links/LinkSuggestionRow";
 
 const MESSAGE_CLASS = cn("px-[15px] py-[12px] text-[12px]");
 
 function SuggestionsBody({ state }: { state: LinkSuggestionsState }) {
   const { config } = useConfig();
+  const locale = useLocale();
   const { t } = useSeoTranslation();
 
   if (state.status === "loading") {
@@ -37,14 +39,16 @@ function SuggestionsBody({ state }: { state: LinkSuggestionsState }) {
   if (state.status === "idle") return null;
 
   if (state.suggestions.length === 0) {
-    return <div className={cn(MESSAGE_CLASS, "text-neutral-500")}>{t("links.empty")}</div>;
+    const message = state.linked.length > 0 ? t("links.allLinked") : t("links.empty");
+
+    return <div className={cn(MESSAGE_CLASS, "text-neutral-500")}>{message}</div>;
   }
 
   return (
     <ul className="m-0 p-0 list-none">
       {state.suggestions.map((suggestion) => (
         <LinkSuggestionRow
-          adminHref={adminDocHref(config.routes.admin, suggestion)}
+          adminHref={adminDocHref(config.routes.admin, suggestion, locale?.code)}
           key={docTargetKey(suggestion.collection, suggestion.id)}
           suggestion={suggestion}
         />
@@ -83,6 +87,9 @@ export function LinksTab({ state, onFind }: LinksTabProps) {
             <SuggestionsBody state={state} />
           </div>
         </SectionCard>
+        {state.status === "done" && state.linked.length > 0 && (
+          <LinkedDocsCard docs={state.linked} />
+        )}
       </section>
     </TabWrapper>
   );

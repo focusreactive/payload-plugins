@@ -48,6 +48,7 @@ const getPostBySlugCached = cache(async (slug: string, locale?: Locale): Promise
       tags: [
         cacheTag({ locale: resolvedLocale, slug, type: "post" }),
         cacheTag({ locale: resolvedLocale, type: "postsList" }),
+        cacheTag({ type: "pagePaths" }),
       ],
     }
   )();

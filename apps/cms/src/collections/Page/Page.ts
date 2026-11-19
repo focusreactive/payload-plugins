@@ -3,7 +3,7 @@ import { SITE_TEMPLATES } from "@/lib/site/templates";
 import type { CollectionConfig } from "payload";
 
 import {
-  createLiveBeforeDocumentControls,
+  createLivePreviewEditComponents,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
@@ -16,6 +16,8 @@ import type { Page as PageType } from "@/payload-types";
 
 import { createBasePageFields, createPageChromeFields } from "./basePageFields";
 import { fixBreadcrumbDocIds } from "./hooks/fixBreadcrumbDocIds";
+import { syncCurrentBreadcrumbUrl } from "./hooks/syncCurrentBreadcrumbUrl";
+import { rememberPublishedPath } from "./hooks/publishedPath";
 import { revalidateDelete, revalidatePage } from "./hooks/revalidatePage";
 import { validateReservedSlug, validateReservedPath } from "./hooks/validateReservedSlug";
 
@@ -28,10 +30,7 @@ export const Page: CollectionConfig<"page"> = {
   },
   admin: {
     components: {
-      edit: {
-        beforeDocumentControls: createLiveBeforeDocumentControls(),
-        PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
-      },
+      edit: createLivePreviewEditComponents(),
     },
     defaultColumns: ["title", "slug", "_status", "updatedAt"],
     group: "Content",
@@ -61,6 +60,11 @@ export const Page: CollectionConfig<"page"> = {
       }),
     listSearchableFields: ["title", "slug"],
     useAsTitle: "title",
+  },
+  defaultPopulate: {
+    breadcrumbs: true,
+    slug: true,
+    title: true,
   },
   fields: [
     {
@@ -108,6 +112,9 @@ export const Page: CollectionConfig<"page"> = {
         hidden: true,
         position: "sidebar",
       },
+      hooks: {
+        beforeChange: [syncCurrentBreadcrumbUrl],
+      },
       label: {
         en: "Page Breadcrumbs",
         es: "Breadcrumbs de la página",
@@ -123,6 +130,7 @@ export const Page: CollectionConfig<"page"> = {
       validateReservedSlug,
       validateReservedPath,
       enforceReviewRules,
+      rememberPublishedPath,
     ],
   },
   labels: {

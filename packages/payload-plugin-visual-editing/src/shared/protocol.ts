@@ -18,6 +18,27 @@ export const VE_FOCUS_PARAM = "veFocus";
 
 export type DocKind = "collection" | "global";
 
+export const VE_READ_HEADER = "x-visual-editing";
+
+export const VE_PREVIEW_GRANT_PATH = "/visual-editing/preview-grant";
+
+export const VE_UNSAVED_RICH_TEXT_PATH = "/visual-editing/unsaved-rich-text";
+
+export const VE_PREVIEW_GRANT_TYPE = "ve:preview-grant";
+
+export type VePreviewGrantMessage = {
+  type: typeof VE_PREVIEW_GRANT_TYPE;
+  grant: string;
+  expiresAt: number;
+};
+
+export const VE_PREVIEW_GRANT_REQUEST_TYPE = "ve:preview-grant-request";
+
+export type VePreviewGrantRequestMessage = {
+  type: typeof VE_PREVIEW_GRANT_REQUEST_TYPE;
+  pageId: string;
+};
+
 export const VE_MESSAGE_TYPE = "ve:open-field";
 
 export type VeOpenFieldMessage = {
@@ -64,6 +85,12 @@ export const VE_ANNOUNCE_REQUEST_TYPE = "ve:announce-request";
 
 export type VeAnnounceRequestMessage = {
   type: typeof VE_ANNOUNCE_REQUEST_TYPE;
+};
+
+export const VE_DOCUMENT_SAVED_TYPE = "ve:document-saved";
+
+export type VeDocumentSavedMessage = Partial<VeLiveDocument> & {
+  type: typeof VE_DOCUMENT_SAVED_TYPE;
 };
 
 export const VE_FIELD_SNAPSHOT_TYPE = "ve:field-snapshot";

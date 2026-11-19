@@ -9,6 +9,10 @@ import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
 import { rowTitle } from "@/blocks/site/shared";
+import {
+  createLiveBeforeDocumentControls,
+  createLivePreviewVersions,
+} from "@/lib/config/livePreview";
 
 import { revalidateResourcesUsingHeader } from "./hooks/revalidateResourcesUsingHeader";
 
@@ -37,6 +41,9 @@ export const Header: CollectionConfig<"header"> = {
     update: or(superAdmin, user),
   },
   admin: {
+    components: {
+      edit: { beforeDocumentControls: createLiveBeforeDocumentControls() },
+    },
     defaultColumns: ["name", "logo", "_status", "updatedAt"],
     group: VISUAL_SECTIONS_GROUP,
     listSearchableFields: ["name"],
@@ -64,22 +71,26 @@ export const Header: CollectionConfig<"header"> = {
               defaultValue: createLocalizedDefault({
                 en: [
                   {
+                    label: "Blog",
+                    link: { newTab: false, type: "custom", url: "/blog" },
                     type: "link",
-                    link: { label: "Blog", newTab: false, type: "custom", url: "/blog" },
                   },
                   {
+                    label: "Pricing",
+                    link: { newTab: false, type: "custom", url: "#" },
                     type: "link",
-                    link: { label: "Pricing", newTab: false, type: "custom", url: "#" },
                   },
                 ],
                 es: [
                   {
+                    label: "Blog",
+                    link: { newTab: false, type: "custom", url: "/blog" },
                     type: "link",
-                    link: { label: "Blog", newTab: false, type: "custom", url: "/blog" },
                   },
                   {
+                    label: "Precios",
+                    link: { newTab: false, type: "custom", url: "#" },
                     type: "link",
-                    link: { label: "Pricing", newTab: false, type: "custom", url: "#" },
                   },
                 ],
               }),
@@ -280,8 +291,5 @@ export const Header: CollectionConfig<"header"> = {
     },
   },
   slug: "header",
-  versions: {
-    drafts: true,
-    maxPerDoc: 50,
-  },
+  versions: createLivePreviewVersions(),
 };

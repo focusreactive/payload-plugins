@@ -1,9 +1,9 @@
 .popup-content {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  width: 18rem; // ~288px — narrow; status rows wrap to 2 lines so the From/To two-up is the width floor
+  gap: 16px;
+  padding: 16px;
+  width: 320px;
   max-width: calc(100vw - 24px);
 }
 

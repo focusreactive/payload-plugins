@@ -1650,14 +1650,6 @@ export interface Treatment {
    */
   heroImage?: (number | null) | Media;
   /**
-   * One line under the name on treatment cards, for example A vein treatment using an injectable medicine.
-   */
-  summary?: string | null;
-  /**
-   * The picture on the treatment's card in sliders and lists.
-   */
-  cardImage?: (number | null) | Media;
-  /**
    * The sections of the treatment's page under its heading, top to bottom. A conditions grid with no conditions picked shows the ones set under Treats.
    */
   blocks?:
@@ -1685,6 +1677,14 @@ export interface Treatment {
         | BlogListBlock
       )[]
     | null;
+  /**
+   * One line under the name on treatment cards, for example A vein treatment using an injectable medicine.
+   */
+  summary?: string | null;
+  /**
+   * The picture on the treatment's card in sliders and lists.
+   */
+  cardImage?: (number | null) | Media;
   meta?: {
     title?: string | null;
     /**
@@ -1859,14 +1859,6 @@ export interface Condition {
    */
   menuHeading?: string | null;
   /**
-   * Every treatment whose Treats list includes this condition. Change it by editing the treatment.
-   */
-  treatments?: {
-    docs?: (number | Treatment)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  /**
    * The sections of the condition's page under the top band, top to bottom. The first section opens with the page's main heading.
    */
   blocks?:
@@ -1894,6 +1886,14 @@ export interface Condition {
         | BlogListBlock
       )[]
     | null;
+  /**
+   * Every treatment whose Treats list includes this condition. Change it by editing the treatment.
+   */
+  treatments?: {
+    docs?: (number | Treatment)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   meta?: {
     title?: string | null;
     /**
@@ -10399,8 +10399,6 @@ export interface TreatmentsSelect<T extends boolean = true> {
   heroTitle?: T;
   heroIntro?: T;
   heroImage?: T;
-  summary?: T;
-  cardImage?: T;
   blocks?:
     | T
     | {
@@ -10426,6 +10424,8 @@ export interface TreatmentsSelect<T extends boolean = true> {
         trending?: T | TrendingBlockSelect<T>;
         blogList?: T | BlogListBlockSelect<T>;
       };
+  summary?: T;
+  cardImage?: T;
   meta?:
     | T
     | {
@@ -10453,7 +10453,6 @@ export interface ConditionsSelect<T extends boolean = true> {
   heroImage?: T;
   heroMobileImage?: T;
   menuHeading?: T;
-  treatments?: T;
   blocks?:
     | T
     | {
@@ -10479,6 +10478,7 @@ export interface ConditionsSelect<T extends boolean = true> {
         trending?: T | TrendingBlockSelect<T>;
         blogList?: T | BlogListBlockSelect<T>;
       };
+  treatments?: T;
   meta?:
     | T
     | {

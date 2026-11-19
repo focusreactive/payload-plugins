@@ -4,6 +4,7 @@ import type { KeepsShape } from "./instantPreview/liveFields.js";
 
 import { createEditTargets } from "./overlay/editTargets.js";
 import { createFieldTracker } from "./overlay/fieldTracker.js";
+import { cleanHeadOutside } from "./overlay/markerCleaner.js";
 import { createInstantPreview } from "./instantPreview/instantPreview.js";
 
 export type OverlayCtx = {
@@ -22,6 +23,7 @@ export interface Overlay {
 }
 
 export function createOverlay(main: HTMLElement, getCtx: () => OverlayCtx): Overlay {
+  const cleanedHead = cleanHeadOutside(main);
   const tracker = createFieldTracker(main);
   const stopInstantPreview = getCtx().instantPreview ? createInstantPreview(tracker, getCtx) : null;
 
@@ -44,6 +46,7 @@ export function createOverlay(main: HTMLElement, getCtx: () => OverlayCtx): Over
       removeEditTargets?.();
       stopInstantPreview?.();
       tracker.dispose();
+      cleanedHead.dispose();
     },
   };
 }

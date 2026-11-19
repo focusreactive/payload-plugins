@@ -1,5 +1,8 @@
 .button {
-  border-radius: var(--style-radius-m);
+  border-radius: var(--style-radius-s);
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 20px;
   appearance: none;
   cursor: pointer;
   display: inline-flex;

@@ -28,6 +28,7 @@ export function Header({ brand, navItems, actions, className }: IHeaderProps) {
         scrolled ? "border-b border-border" : "border-b border-transparent",
         className
       )}
+      data-ve-cover
     >
       <div className="mx-auto flex max-w-containerMaxW items-center justify-between gap-6 px-containerBase py-[15px]">
         <Brand brand={brand} />

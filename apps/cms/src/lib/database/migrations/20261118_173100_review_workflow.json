@@ -110989,6 +110989,12 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": false
+        },
+        "autosave": {
+          "name": "autosave",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -111147,6 +111153,21 @@
           "columns": [
             {
               "expression": "latest",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "_header_v_autosave_idx": {
+          "name": "_header_v_autosave_idx",
+          "columns": [
+            {
+              "expression": "autosave",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -113257,6 +113278,12 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": false
+        },
+        "autosave": {
+          "name": "autosave",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -113430,6 +113457,21 @@
           "columns": [
             {
               "expression": "latest",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "_footer_v_autosave_idx": {
+          "name": "_footer_v_autosave_idx",
+          "columns": [
+            {
+              "expression": "autosave",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

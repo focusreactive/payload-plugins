@@ -1,12 +1,21 @@
 import type { Config } from "payload";
 import { getComponentPath } from "./getComponentPath";
+import { isKeyphraseIndexEnabled } from "./isKeyphraseIndexEnabled";
+import { validateSeoFieldRanges } from "./validateSeoFieldRanges";
+import { fieldRangesFor } from "../../measure/fieldRanges";
 import { resolveApiKey } from "../../server/generate/apiKey";
 import { createGenerateEndpoint } from "../../server/generate/endpoint";
 import type { SeoClientConfig } from "../../client-config/registry";
-import type { SeoPluginConfig, SeoSiteConfig } from "../../types/config";
+import type { ResolvedSeoThresholds, SeoPluginConfig, SeoSiteConfig } from "../../types/config";
 
-export function overrideAdmin(incomingConfig: Config, config: SeoPluginConfig): Config {
+export function overrideAdmin(
+  incomingConfig: Config,
+  config: SeoPluginConfig,
+  resolvedThresholds: ResolvedSeoThresholds
+): Config {
   const bySlug = new Map(config.collections.map((c) => [c.slug, c]));
+  validateSeoFieldRanges(incomingConfig, resolvedThresholds);
+  const thresholds = config.thresholds ?? {};
   const site: SeoSiteConfig = config.site ?? {};
 
   const collections = (incomingConfig.collections ?? []).map((collection) => {
@@ -25,7 +34,8 @@ export function overrideAdmin(incomingConfig: Config, config: SeoPluginConfig): 
           faviconUrl: site.faviconUrl ?? "",
         },
         supportedLocales: config.supportedLocales ?? ["en"],
-        keyphraseIndex: Boolean(config.keyphraseIndex),
+        keyphraseIndex: isKeyphraseIndexEnabled(config),
+        thresholds,
       },
     };
 
@@ -51,6 +61,7 @@ export function overrideAdmin(incomingConfig: Config, config: SeoPluginConfig): 
     extractByCollection: Object.fromEntries(
       config.collections.map((c) => [c.slug, c.extractContentPath])
     ),
+    fieldRanges: fieldRangesFor(resolvedThresholds),
   };
 
   const providerEntry = {

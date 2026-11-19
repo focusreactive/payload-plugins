@@ -12,7 +12,6 @@ import { SitePage } from "@/components/site/layout/SitePage";
 import { getSiteChrome } from "@/dal/entities";
 import { getPostBySlug } from "@/dal/getPostBySlug";
 import { getSiteSettings } from "@/dal/getSiteSettings";
-import { getBlogPostStaticParams } from "@/dal/staticParams/posts";
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import type { Locale } from "@/lib/types";
 import { generateMeta } from "@/lib/utils/generateMeta";
@@ -83,8 +82,4 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   }
 
   return generateMeta({ collection: "posts", doc: post, locale });
-}
-
-export async function generateStaticParams() {
-  return getBlogPostStaticParams();
 }

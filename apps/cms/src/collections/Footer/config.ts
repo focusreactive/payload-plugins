@@ -9,6 +9,10 @@ import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
 import { rowTitle } from "@/blocks/site/shared";
+import {
+  createLiveBeforeDocumentControls,
+  createLivePreviewVersions,
+} from "@/lib/config/livePreview";
 
 import { revalidateResourcesUsingFooter } from "./hooks/revalidateResourcesUsingFooter";
 
@@ -37,6 +41,9 @@ export const Footer: CollectionConfig<"footer"> = {
     update: or(superAdmin, user),
   },
   admin: {
+    components: {
+      edit: { beforeDocumentControls: createLiveBeforeDocumentControls() },
+    },
     defaultColumns: ["name", "logo", "_status", "updatedAt"],
     group: VISUAL_SECTIONS_GROUP,
     listSearchableFields: ["name"],
@@ -238,8 +245,5 @@ export const Footer: CollectionConfig<"footer"> = {
     },
   },
   slug: "footer",
-  versions: {
-    drafts: true,
-    maxPerDoc: 50,
-  },
+  versions: createLivePreviewVersions(),
 };

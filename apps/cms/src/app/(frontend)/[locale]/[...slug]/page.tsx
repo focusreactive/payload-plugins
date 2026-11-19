@@ -13,7 +13,6 @@ import { filterHiddenBlocks } from "@/lib/fields/section/filterHiddenBlocks";
 import type { Locale } from "@/lib/types";
 import { getSiteChrome } from "@/dal/entities";
 import { getPageBySlug } from "@/dal/getPageBySlug";
-import { getMainSitePageStaticParams } from "@/dal/staticParams/pages";
 import { PayloadRedirects } from "@/components/PayloadRedirects";
 import { redirect } from "@/lib/i18n/navigation";
 import type { Page as PageDoc } from "@/payload-types";
@@ -95,8 +94,4 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
     doc: page,
     locale,
   });
-}
-
-export async function generateStaticParams() {
-  return await getMainSitePageStaticParams();
 }

@@ -191,7 +191,6 @@ export const plugins: Plugin[] = [
       faviconUrl: "/favicon.ico",
     },
     supportedLocales: I18N_CONFIG.locales.map((locale) => locale.code),
-    keyphraseIndex: true,
   }),
 
   nestedDocsPlugin({
@@ -199,6 +198,8 @@ export const plugins: Plugin[] = [
     generateLabel: (_, doc: unknown) => (doc as Page).title,
     generateURL: (docs) => docs.reduce((url, doc) => `${url}/${doc.slug}`, ""),
   }),
+
+  // stackedEditing stays off on this branch until the other plugin upgrades are verified here.
 
   presetsPlugin({
     labels: {
@@ -290,6 +291,7 @@ export const plugins: Plugin[] = [
       "categories",
       "authors",
       "testimonials",
+      // The site header and footer render through the site chrome, which has no standalone preview here.
       "header",
       "footer",
       "document-embeddings",

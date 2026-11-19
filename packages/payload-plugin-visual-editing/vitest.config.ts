@@ -15,6 +15,7 @@ const SPECS_WITHOUT_A_DOM = [
 
 const SPECS_THAT_RUN_PAYLOAD_NEXT_TO_A_DOM = [
   "tests/realPayload/realPayloadRichTextLive.int.spec.ts",
+  "tests/realPayload/realPayloadDomPage.int.spec.ts",
 ];
 
 export default defineConfig({

@@ -9,7 +9,7 @@ import { siteBlocks } from "@/blocks/siteBlocks";
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
 import {
-  createLiveBeforeDocumentControls,
+  createLivePreviewEditComponents,
   createLivePreviewVersions,
 } from "@/lib/config/livePreview";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
@@ -46,8 +46,7 @@ export const Posts: CollectionConfig<"posts"> = {
   admin: {
     components: {
       edit: {
-        beforeDocumentControls: createLiveBeforeDocumentControls(),
-        PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
+        ...createLivePreviewEditComponents(),
         SaveDraftButton: "/components/admin/AuthorSaveDraftButton#AuthorSaveDraftButton",
       },
     },

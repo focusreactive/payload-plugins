@@ -1,22 +1,23 @@
 import { VE_IDENTITY_ATTRS } from "../../shared/protocol.js";
-import { isOverlayLabel, STEGA_PREFILTER } from "./constants.js";
+import { hasMarker } from "../../shared/stegaText.js";
+import { isOverlayLabel } from "./constants.js";
 
 export type MutationPipelineCallbacks = {
   onRoots(roots: Element[]): void;
   onTextReset(node: Text): void;
   onPlainTextWritten(node: Text): void;
   onNodesRemoved(): void;
+  isOwnAttributeWrite(element: Element): boolean;
+  onMarkedAttribute(element: Element, attr: Attr): void;
 };
 
 export interface MutationPipeline {
   dispose(): void;
 }
 
-const hasMarkerCharacters = (node: Text) => STEGA_PREFILTER.test(node.data);
-
 const rescanRootOf = (added: Node): Element | null => {
   if (added instanceof Element) return isOverlayLabel(added) ? null : added;
-  if (added instanceof Text && hasMarkerCharacters(added)) return added.parentElement;
+  if (added instanceof Text && hasMarker(added.data)) return added.parentElement;
   return null;
 };
 
@@ -31,7 +32,7 @@ const inDocumentOrder = (a: Element, b: Element) => {
   return 0;
 };
 
-const withoutNestedRoots = (roots: Element[]): Element[] => {
+export const withoutNestedRoots = (roots: Element[]): Element[] => {
   const outermost: Element[] = [];
   for (const root of [...roots].sort(inDocumentOrder)) {
     const lastKept = outermost.at(-1);
@@ -82,7 +83,7 @@ export function createMutationPipeline(
       } else if (mutation.type === "characterData") {
         const textNode = mutation.target;
         if (!(textNode instanceof Text)) continue;
-        if (!hasMarkerCharacters(textNode)) {
+        if (!hasMarker(textNode.data)) {
           callbacks.onPlainTextWritten(textNode);
           continue;
         }
@@ -90,13 +91,21 @@ export function createMutationPipeline(
         const parent = textNode.parentElement;
         if (parent) pending.add(parent);
       } else if (mutation.type === "attributes" && mutation.target instanceof Element) {
-        pending.add(mutation.target);
+        const { attributeName, oldValue, target } = mutation;
+        if (attributeName !== null && !VE_IDENTITY_ATTRS.includes(attributeName)) {
+          const attr = target.getAttributeNode(attributeName);
+          if (attr && attr.value !== oldValue && hasMarker(attr.value)) {
+            callbacks.onMarkedAttribute(target, attr);
+          }
+          continue;
+        }
+        if (!callbacks.isOwnAttributeWrite(target)) pending.add(target);
       }
     }
     if (pending.size > 0 || nodesRemoved) schedule();
   });
   observer.observe(root, {
-    attributeFilter: [...VE_IDENTITY_ATTRS],
+    attributeOldValue: true,
     attributes: true,
     characterData: true,
     childList: true,
