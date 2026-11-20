@@ -1,4 +1,5 @@
 import { getPayload } from "payload";
+import sharp from "sharp";
 
 import config from "./payload.config";
 
@@ -9,6 +10,8 @@ import config from "./payload.config";
 // Idempotent: the content collections (pages, articles, playground) are wiped and recreated on
 // every run, the admin user is find-or-created (never duplicated), and the Header global is
 // upserted. So you always end up with the same known dataset — safe to re-run after `rm dev.db`.
+// The relations-graph demo data (one media file, authors, categories) is find-or-created by
+// name, then linked from the recreated articles, pages, playground doc and Header global.
 
 const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL ?? "dev@example.com";
 const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? "dev123456";
@@ -126,6 +129,200 @@ const contentBlock = (content: ReturnType<typeof doc>) => ({
   content,
 });
 
+// --- Relations-graph demo data ---------------------------------------------------------------
+// Links the content above so the graph, the "where is this used?" drawer and the insights have
+// real data: hasMany, polymorphic, self-reference, uploads, a global, a relation inside localized
+// blocks (en and de differ), one three blocks deep in a drafts collection, and one that exists
+// only in a page's unpublished draft.
+type Payload = Awaited<ReturnType<typeof getPayload>>;
+
+const DEMO_IMAGE_ALT = "Relations demo image";
+
+const findOrCreateMedia = async (payload: Payload): Promise<number> => {
+  const existing = await payload.find({
+    collection: "media",
+    limit: 1,
+    where: { alt: { equals: DEMO_IMAGE_ALT } },
+  });
+  if (existing.docs[0]) {
+    return existing.docs[0].id;
+  }
+  const data = await sharp({
+    create: { background: "#3b82f6", channels: 3, height: 64, width: 64 },
+  })
+    .png()
+    .toBuffer();
+  const created = await payload.create({
+    collection: "media",
+    data: { alt: DEMO_IMAGE_ALT, title: "Demo image" },
+    file: { data, mimetype: "image/png", name: "relations-demo.png", size: data.length },
+  });
+  return created.id;
+};
+
+const findOrCreateCategory = async (
+  payload: Payload,
+  title: string,
+  parent?: number
+): Promise<number> => {
+  const existing = await payload.find({
+    collection: "categories",
+    limit: 1,
+    where: { title: { equals: title } },
+  });
+  if (existing.docs[0]) {
+    return existing.docs[0].id;
+  }
+  return (await payload.create({ collection: "categories", data: { parent, title } })).id;
+};
+
+const findOrCreateAuthor = async (
+  payload: Payload,
+  name: string,
+  avatar?: number
+): Promise<number> => {
+  const existing = await payload.find({
+    collection: "authors",
+    limit: 1,
+    where: { name: { equals: name } },
+  });
+  if (existing.docs[0]) {
+    return existing.docs[0].id;
+  }
+  return (await payload.create({ collection: "authors", data: { avatar, name } })).id;
+};
+
+const seedRelations = async (
+  payload: Payload,
+  ids: {
+    articleIds: Record<string, number>;
+    pageIds: Record<string, number>;
+    playgroundId: number;
+  }
+) => {
+  const { articleIds, pageIds, playgroundId } = ids;
+  const first = articleIds["First article"];
+  const wordOrder = articleIds["Word order"];
+  const second = articleIds["Second article"];
+  const home = pageIds.home;
+  const about = pageIds.about;
+  if (!(first && wordOrder && second && home && about)) {
+    throw new Error("Relations demo: expected seeded articles and pages are missing");
+  }
+
+  const image = await findOrCreateMedia(payload);
+  const news = await findOrCreateCategory(payload, "News");
+  const engineering = await findOrCreateCategory(payload, "Engineering", news);
+  const product = await findOrCreateCategory(payload, "Product", news);
+  const ada = await findOrCreateAuthor(payload, "Ada Lovelace", image);
+  const alan = await findOrCreateAuthor(payload, "Alan Turing");
+
+  const links: { id: number; data: Record<string, unknown> }[] = [
+    { data: { authors: [ada, alan], category: engineering, cover: image }, id: first },
+    {
+      data: {
+        authors: [ada],
+        category: engineering,
+        related: [{ relationTo: "articles", value: first }],
+      },
+      id: wordOrder,
+    },
+    {
+      data: {
+        authors: [alan],
+        category: product,
+        related: [
+          { relationTo: "articles", value: first },
+          { relationTo: "pages", value: home },
+        ],
+      },
+      id: second,
+    },
+  ];
+  for (const { data, id } of links) {
+    await payload.update({ collection: "articles", data, id });
+  }
+
+  // Home: hero image + a content block listing articles; the de locale lists a different one.
+  const homeDoc = await payload.findByID({ collection: "pages", depth: 0, id: home, locale: "en" });
+  const withLinks = (articles: number[]) =>
+    (homeDoc.sections ?? []).map((section) =>
+      section.blockType === "hero" ? { ...section, image } : { ...section, articles }
+    );
+  await payload.update({
+    collection: "pages",
+    data: { sections: withLinks([first, second]) },
+    id: home,
+    locale: "en",
+  });
+  // Localized blocks: row ids are unique across locales, so the de copy needs fresh ones.
+  const freshIds = withLinks([wordOrder]).map(({ id: _id, ...section }) =>
+    "cta" in section
+      ? { ...section, cta: (section.cta ?? []).map(({ id: _ctaId, ...cta }) => cta) }
+      : section
+  );
+  await payload.update({
+    collection: "pages",
+    data: { sections: freshIds, title: "Startseite" },
+    id: home,
+    locale: "de",
+  });
+
+  // About: the reference exists only in an unpublished draft.
+  const aboutDoc = await payload.findByID({
+    collection: "pages",
+    depth: 0,
+    id: about,
+    locale: "en",
+  });
+  await payload.update({
+    collection: "pages",
+    data: {
+      sections: (aboutDoc.sections ?? []).map((section) =>
+        section.blockType === "content" ? { ...section, articles: [second] } : section
+      ),
+    },
+    draft: true,
+    id: about,
+    locale: "en",
+  });
+
+  // Playground: a relation three blocks deep (layout → nested → leaves).
+  const playgroundDoc = await payload.findByID({
+    collection: "playground",
+    depth: 0,
+    id: playgroundId,
+    locale: "en",
+  });
+  await payload.update({
+    collection: "playground",
+    data: {
+      layout: (playgroundDoc.layout ?? []).map((block) => ({
+        ...block,
+        nested: (block.nested ?? []).map((inner) => ({
+          ...inner,
+          leaves: (inner.leaves ?? []).map((leaf) => ({ ...leaf, category: engineering })),
+        })),
+      })),
+    },
+    id: playgroundId,
+    locale: "en",
+  });
+
+  await payload.updateGlobal({
+    data: {
+      featured: first,
+      nav: [
+        { label: "Home", link: { relationTo: "pages", value: home } },
+        { label: "First article", link: { relationTo: "articles", value: first } },
+      ],
+    },
+    slug: "header",
+  });
+
+  payload.logger.info("Seeded relations-graph demo links");
+};
+
 const run = async () => {
   const payload = await getPayload({ config });
   const wipe = (collection: "pages" | "articles" | "playground") =>
@@ -223,8 +420,10 @@ const run = async () => {
       ],
     },
   ];
+  const pageIds: Record<string, number> = {};
   for (const data of pages) {
     const created = await payload.create({ collection: "pages", locale: "en", data });
+    pageIds[data.slug] = created.id;
     payload.logger.info(`Seeded page "${data.title}" id=${created.id}`);
   }
 
@@ -341,8 +540,10 @@ const run = async () => {
       ),
     },
   ];
+  const articleIds: Record<string, number> = {};
   for (const data of articles) {
     const created = await payload.create({ collection: "articles", locale: "en", data });
+    articleIds[data.title] = created.id;
     payload.logger.info(`Seeded article "${data.title}" id=${created.id}`);
   }
 
@@ -487,6 +688,8 @@ const run = async () => {
     },
   });
   payload.logger.info(`Seeded playground doc id=${playground.id} (locale=en)`);
+
+  await seedRelations(payload, { articleIds, pageIds, playgroundId: playground.id });
 
   payload.logger.info("Seed complete.");
 };

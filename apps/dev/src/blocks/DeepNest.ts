@@ -22,6 +22,8 @@ const LeafBlock: Block = {
     withFieldTranslation({ localized: true, name: "deepText", type: "text" }),
     // richText three blocks deep — the hardest data-aware resolution case.
     withFieldTranslation({ localized: true, name: "deepRich", type: "richText" }),
+    // Relations-graph demo: a relationship three blocks deep, in a drafts-enabled collection.
+    { name: "category", relationTo: "categories", type: "relationship" },
   ],
 };
 

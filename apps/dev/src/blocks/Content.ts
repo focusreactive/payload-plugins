@@ -13,6 +13,8 @@ const contentFields: Field[] = [
     relationTo: "media",
     type: "upload",
   },
+  // Relations-graph demo: a hasMany relationship inside a (localized) blocks field.
+  { hasMany: true, name: "articles", relationTo: "articles", type: "relationship" },
 ];
 
 export const ContentBlock: Block = withSectionVisibility({

@@ -257,6 +257,7 @@ export interface Page {
               [k: string]: unknown;
             };
             image?: (number | null) | Media;
+            articles?: (number | Article)[] | null;
             _hidden?: boolean | null;
             id?: string | null;
             blockName?: string | null;
@@ -453,6 +454,7 @@ export interface Playground {
                       };
                       [k: string]: unknown;
                     } | null;
+                    category?: (number | null) | Category;
                     id?: string | null;
                     blockName?: string | null;
                     blockType: 'leaf';
@@ -545,6 +547,7 @@ export interface Preset {
           [k: string]: unknown;
         };
         image?: (number | null) | Media;
+        articles?: (number | Article)[] | null;
         _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
@@ -647,6 +650,7 @@ export interface Preset {
                       };
                       [k: string]: unknown;
                     } | null;
+                    category?: (number | null) | Category;
                     id?: string | null;
                     blockName?: string | null;
                     blockType: 'leaf';
@@ -697,6 +701,7 @@ export interface Preset {
                 };
                 [k: string]: unknown;
               } | null;
+              category?: (number | null) | Category;
               id?: string | null;
               blockName?: string | null;
               blockType: 'leaf';
@@ -723,6 +728,7 @@ export interface Preset {
           };
           [k: string]: unknown;
         } | null;
+        category?: (number | null) | Category;
         id?: string | null;
         blockName?: string | null;
         blockType: 'leaf';
@@ -1087,6 +1093,7 @@ export interface PagesSelect<T extends boolean = true> {
           | {
               content?: T;
               image?: T;
+              articles?: T;
               _hidden?: T;
               id?: T;
               blockName?: T;
@@ -1183,6 +1190,7 @@ export interface PlaygroundSelect<T extends boolean = true> {
                                   | {
                                       deepText?: T;
                                       deepRich?: T;
+                                      category?: T;
                                       id?: T;
                                       blockName?: T;
                                     };
@@ -1244,6 +1252,7 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               content?: T;
               image?: T;
+              articles?: T;
               _hidden?: T;
               id?: T;
               blockName?: T;
@@ -1289,6 +1298,7 @@ export interface PresetsSelect<T extends boolean = true> {
                                   | {
                                       deepText?: T;
                                       deepRich?: T;
+                                      category?: T;
                                       id?: T;
                                       blockName?: T;
                                     };
@@ -1314,6 +1324,7 @@ export interface PresetsSelect<T extends boolean = true> {
                       | {
                           deepText?: T;
                           deepRich?: T;
+                          category?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1326,6 +1337,7 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               deepText?: T;
               deepRich?: T;
+              category?: T;
               id?: T;
               blockName?: T;
             };
@@ -1464,6 +1476,22 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 export interface Header {
   id: number;
   name: string;
+  featured?: (number | null) | Article;
+  nav?:
+    | {
+        label?: string | null;
+        link?:
+          | ({
+              relationTo: 'pages';
+              value: number | Page;
+            } | null)
+          | ({
+              relationTo: 'articles';
+              value: number | Article;
+            } | null);
+        id?: string | null;
+      }[]
+    | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1494,6 +1522,14 @@ export interface _AbManifest {
  */
 export interface HeaderSelect<T extends boolean = true> {
   name?: T;
+  featured?: T;
+  nav?:
+    | T
+    | {
+        label?: T;
+        link?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
