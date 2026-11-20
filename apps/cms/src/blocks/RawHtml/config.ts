@@ -1,4 +1,3 @@
-import { definePreview } from "@focus-reactive/payload-plugin-stacked-editing";
 import type { Block, Field } from "payload";
 
 import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
@@ -32,7 +31,6 @@ const fields: Field[] = [
 export const RawHtmlBlock: Block = injectSection({
   slug: "rawHtml",
   interfaceName: "RawHtmlBlock",
-  admin: { custom: { preview: definePreview({ title: "html" }) } },
   ...getBlockPreviewImage("Custom HTML"),
   labels: {
     plural: { en: "Custom HTML", es: "HTML personalizado" },
