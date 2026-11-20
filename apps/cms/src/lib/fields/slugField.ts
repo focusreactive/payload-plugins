@@ -1,6 +1,8 @@
 import { slugField as payloadSlugField } from "payload";
 import type { CheckboxField, FieldHook, PayloadRequest, TextField } from "payload";
 
+const USE_AS_SLUG = "title";
+
 const isDefaultLocaleRequest = (req: PayloadRequest) => {
   const { localization } = req.payload.config;
 
@@ -53,6 +55,16 @@ export const createSharedSlugField = (currentCollection: "page" | "posts") => {
       }
 
       if (slugInput) {
+        slugInput.admin = {
+          ...slugInput.admin,
+          components: {
+            ...slugInput.admin?.components,
+            Field: {
+              clientProps: { useAsSlug: USE_AS_SLUG },
+              path: "/components/admin/SlugPathField#SlugPathField",
+            },
+          },
+        };
         slugInput.unique = true;
         slugInput.validate = async (
           value: string | null | undefined,
@@ -80,6 +92,6 @@ export const createSharedSlugField = (currentCollection: "page" | "posts") => {
       return field;
     },
     required: true,
-    useAsSlug: "title",
+    useAsSlug: USE_AS_SLUG,
   });
 };

@@ -13,3 +13,38 @@
 .LexicalEditorTheme__table {
   width: 100%;
 }
+
+// "URL" column in the Pages / Posts list views (PublicUrlCell).
+.public-url-cell {
+  color: var(--theme-success-500);
+  text-decoration: none;
+  word-break: break-all;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
+}
+
+// Leading "/" before the slug input (SlugPathField). Visual only.
+.slug-path-field {
+  width: 100%;
+
+  .field-type__wrap::before {
+    content: "/";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    inset-inline-start: calc(var(--base) * 0.75);
+    display: flex;
+    align-items: center;
+    color: var(--theme-elevation-400);
+    font-size: 1rem;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .field-type.text:not(.has-many) input {
+    padding-inline-start: calc(var(--base) * 1.25);
+  }
+}

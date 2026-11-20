@@ -23,6 +23,7 @@ import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
 import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
+import { PUBLIC_URL_FIELD_NAME, publicUrlField } from "@/lib/fields/publicUrlField";
 import { createSharedSlugField } from "@/lib/fields/slugField";
 
 import { computeReadingTime } from "./hooks/computeReadingTime";
@@ -40,7 +41,7 @@ export const Posts: CollectionConfig<"posts"> = {
     components: {
       edit: createLivePreviewEditComponents(),
     },
-    defaultColumns: ["title", "slug", "heroImage", "updatedAt"],
+    defaultColumns: ["title", PUBLIC_URL_FIELD_NAME, "heroImage", "updatedAt"],
     group: "Blog",
     livePreview: {
       url: ({ data, locale: localeProp }) => {
@@ -216,6 +217,7 @@ export const Posts: CollectionConfig<"posts"> = {
       type: "tabs",
     },
     createSharedSlugField("posts"),
+    publicUrlField(),
     {
       admin: {
         date: {
