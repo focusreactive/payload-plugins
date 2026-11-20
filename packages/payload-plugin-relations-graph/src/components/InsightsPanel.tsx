@@ -17,6 +17,13 @@ interface InsightsPanelProps {
   stats: StatsState;
 }
 
+/** Finding texts mark field paths and slugs with backticks; show them as code. */
+const withCode = (text: string) =>
+  text.split("`").map((part, index) =>
+    // oxlint-disable-next-line no-array-index-key -- static text fragments, never reordered
+    index % 2 === 1 ? <code key={index}>{part}</code> : part
+  );
+
 const SECTIONS = [
   { label: "Warnings", severity: "warning" },
   { label: "Worth a look", severity: "info" },
@@ -81,11 +88,13 @@ export const InsightsPanel = ({
                     onClick={() => onActivate(active ? null : finding.id)}
                     type="button"
                   >
-                    <span className="rg__finding-title">{finding.title}</span>
+                    <span className="rg__finding-title">{withCode(finding.title)}</span>
                     {finding.source === "data" ? (
                       <span className="rg__finding-tag">live data</span>
                     ) : null}
-                    {active ? <span className="rg__finding-detail">{finding.detail}</span> : null}
+                    {active ? (
+                      <span className="rg__finding-detail">{withCode(finding.detail)}</span>
+                    ) : null}
                   </button>
                 </li>
               );

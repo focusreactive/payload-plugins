@@ -1,5 +1,6 @@
 import { NODE_HEIGHT, NODE_WIDTH } from "../graph/layout.js";
 import type { Point } from "../graph/layout.js";
+import type { RelationsStats } from "../features/insights/types.js";
 import type { GraphEdge } from "../graph/types.js";
 
 /** Several fields between the same two entities are drawn as one line. */
@@ -91,6 +92,21 @@ export const linkType = (link: VisualLink): GraphEdge["type"] => {
     return "relationship";
   }
   return link.edges.some((edge) => edge.type === "upload") ? "upload" : "join";
+};
+
+/**
+ * Share of source documents in which the link's relation is set (0–1). For a link bundling
+ * several fields, the best-filled one counts. `null` for joins or when nothing is measurable.
+ */
+export const linkFillRate = (link: VisualLink, stats: RelationsStats): number | null => {
+  let best: number | null = null;
+  for (const edge of link.edges) {
+    const entry = edge.type === "join" ? undefined : stats.edges[edge.id];
+    if (entry && entry.filled !== null && entry.total !== null && entry.total > 0) {
+      best = Math.max(best ?? 0, entry.filled / entry.total);
+    }
+  }
+  return best;
 };
 
 export interface Viewport {

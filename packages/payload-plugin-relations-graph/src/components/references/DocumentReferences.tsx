@@ -149,10 +149,10 @@ export const DocumentReferences = ({ limit = 10 }: { limit?: number }) => {
               {state.status === "error" && `Could not load references: ${state.message}`}
               {state.status === "ready" &&
                 (total > 0
-                  ? `${plural(total, "reference", "references")} from ${plural(
+                  ? `${plural(total, "reference", "references")} across ${plural(
                       groupBySource(state.result.groups).length,
-                      "collection or global",
-                      "collections and globals"
+                      "source",
+                      "sources"
                     )}.`
                   : "Nothing references this document.")}
             </p>

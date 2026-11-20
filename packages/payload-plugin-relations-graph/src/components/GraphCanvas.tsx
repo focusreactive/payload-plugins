@@ -3,12 +3,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 
+import { analyzeSchema, sortFindings } from "../features/insights/analyzeSchema.js";
+import { analyzeStats } from "../features/insights/analyzeStats.js";
+import type { Finding, RelationsStats } from "../features/insights/types.js";
 import { NODE_HEIGHT, NODE_WIDTH } from "../graph/layout.js";
 import type { Point } from "../graph/layout.js";
+import { toMarkdown } from "../graph/toMarkdown.js";
 import { toMermaid } from "../graph/toMermaid.js";
 import type { GraphNode, SchemaGraph } from "../graph/types.js";
-import { fitViewport, groupLinks, linkLabel, linkShape, linkType } from "./geometry.js";
+import { ENDPOINT_BASE } from "../lib/constants.js";
+import {
+  fitViewport,
+  groupLinks,
+  linkFillRate,
+  linkLabel,
+  linkShape,
+  linkType,
+} from "./geometry.js";
 import type { Viewport } from "./geometry.js";
+import { InsightsPanel } from "./InsightsPanel.js";
+import type { StatsState } from "./InsightsPanel.js";
 import { NodePanel } from "./NodePanel.js";
 import { GRAPH_CSS } from "./styles.js";
 
@@ -40,10 +54,24 @@ const storePositions = (positions: Record<string, Point> | null): void => {
 const truncate = (text: string, max: number): string =>
   text.length > max ? `${text.slice(0, max - 1)}…` : text;
 
-const nodeMeta = (node: GraphNode, relationCount: number): string =>
-  `${node.kind === "global" ? "global · " : ""}${node.fieldCount} fields · ${relationCount} ${
-    relationCount === 1 ? "relation" : "relations"
-  }`;
+const relationsText = (count: number): string =>
+  `${count} ${count === 1 ? "relation" : "relations"}`;
+
+const nodeMeta = (node: GraphNode, relationCount: number, stats: RelationsStats | null): string => {
+  const entry = stats?.nodes[node.id];
+  if (!entry || node.kind === "global") {
+    return `${node.kind === "global" ? "global · " : ""}${node.fieldCount} fields · ${relationsText(relationCount)}`;
+  }
+  const total =
+    entry.total === null
+      ? "? docs"
+      : `${entry.total.toLocaleString("en-US")} ${node.upload ? "files" : "docs"}`;
+  return entry.unreferenced
+    ? `${total} · ${entry.unreferenced.toLocaleString("en-US")} unreferenced`
+    : `${total} · ${relationsText(relationCount)}`;
+};
+
+const percentText = (rate: number): string => `${Math.round(rate * 100)}%`;
 
 type Drag =
   | { kind: "pan"; origin: Point; start: Viewport }
@@ -59,7 +87,14 @@ export interface GraphCanvasProps {
   title: string;
 }
 
-export const GraphCanvas = ({ adminRoute, graph, initialPositions, title }: GraphCanvasProps) => {
+export const GraphCanvas = ({
+  adminRoute,
+  apiRoute,
+  graph,
+  initialPositions,
+  insights = false,
+  title,
+}: GraphCanvasProps) => {
   const stageRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<Drag | null>(null);
   const fittedRef = useRef(false);
@@ -73,7 +108,60 @@ export const GraphCanvas = ({ adminRoute, graph, initialPositions, title }: Grap
   const [showGlobals, setShowGlobals] = useState(true);
   const [showUploads, setShowUploads] = useState(true);
   const [panning, setPanning] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"ai" | "mermaid" | null>(null);
+  const [insightsOpen, setInsightsOpen] = useState(false);
+  const [activeFinding, setActiveFinding] = useState<string | null>(null);
+  const [dataOn, setDataOn] = useState(false);
+  const [statsState, setStatsState] = useState<StatsState>({ status: "idle" });
+  const [stats, setStats] = useState<RelationsStats | null>(null);
+
+  const loadStats = useCallback(async () => {
+    setDataOn(true);
+    setStatsState({ status: "loading" });
+    try {
+      const response = await fetch(`${apiRoute}${ENDPOINT_BASE}/stats`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`${response.status} ${response.statusText}`.trim());
+      }
+      setStats((await response.json()) as RelationsStats);
+      setStatsState({ status: "ready" });
+    } catch (error) {
+      setStatsState({
+        message: error instanceof Error ? error.message : "request failed",
+        status: "error",
+      });
+    }
+  }, [apiRoute]);
+
+  const toggleData = () => {
+    if (dataOn) {
+      setDataOn(false);
+    } else if (stats) {
+      setDataOn(true);
+    } else {
+      void loadStats();
+    }
+  };
+
+  const findings = useMemo<Finding[]>(() => {
+    if (!insights) {
+      return [];
+    }
+    const schema = analyzeSchema(graph);
+    return stats ? sortFindings([...schema, ...analyzeStats(graph, stats)]) : schema;
+  }, [graph, insights, stats]);
+
+  const finding = insightsOpen ? findings.find((item) => item.id === activeFinding) : undefined;
+  const warningNodes = useMemo(
+    () =>
+      new Set(
+        findings.filter((item) => item.severity === "warning").flatMap((item) => item.nodeIds)
+      ),
+    [findings]
+  );
+  const shownStats = dataOn ? stats : null;
 
   const visible = useMemo<SchemaGraph>(() => {
     const nodes = graph.nodes.filter(
@@ -250,20 +338,28 @@ export const GraphCanvas = ({ adminRoute, graph, initialPositions, title }: Grap
     fit(initialPositions);
   };
 
-  const copyMermaid = async () => {
+  const copy = async (kind: "ai" | "mermaid") => {
     try {
-      await navigator.clipboard.writeText(toMermaid(visible));
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
+      await navigator.clipboard.writeText(kind === "ai" ? toMarkdown(visible) : toMermaid(visible));
+      setCopied(kind);
+      window.setTimeout(() => setCopied(null), 1800);
     } catch {
-      setCopied(false);
+      setCopied(null);
     }
+  };
+
+  const activateFinding = (id: string | null) => {
+    setActiveFinding(id);
+    setSelected(null);
   };
 
   const focus = hovered ?? selected;
   const needle = query.trim().toLowerCase();
 
   const highlighted = useMemo(() => {
+    if (!focus && finding) {
+      return new Set(finding.nodeIds);
+    }
     if (!focus && !needle) {
       return null;
     }
@@ -286,7 +382,9 @@ export const GraphCanvas = ({ adminRoute, graph, initialPositions, title }: Grap
       }
     }
     return ids;
-  }, [focus, needle, visible]);
+  }, [finding, focus, needle, visible]);
+  const findingEdges =
+    !focus && finding && finding.edgeIds.length > 0 ? new Set(finding.edgeIds) : null;
 
   const selectedNode = visible.nodes.find((node) => node.id === selected);
   const collections = visible.nodes.filter((node) => node.kind === "collection").length;
@@ -338,8 +436,48 @@ export const GraphCanvas = ({ adminRoute, graph, initialPositions, title }: Grap
           <button className="rg__btn" onClick={resetLayout} type="button">
             Reset layout
           </button>
-          <button className="rg__btn" onClick={copyMermaid} type="button">
-            {copied ? "Copied" : "Copy as Mermaid"}
+          {insights ? (
+            <>
+              <button
+                aria-busy={statsState.status === "loading"}
+                aria-pressed={dataOn}
+                className="rg__btn"
+                onClick={toggleData}
+                title="Overlay live document counts and how often each relation is set"
+                type="button"
+              >
+                {statsState.status === "loading" ? "Data…" : "Data"}
+              </button>
+              <button
+                aria-pressed={insightsOpen}
+                className="rg__btn"
+                onClick={() => {
+                  setInsightsOpen((value) => !value);
+                  setSelected(null);
+                }}
+                type="button"
+              >
+                Insights
+                {findings.length > 0 ? (
+                  <span
+                    className={`rg__count${findings.some((item) => item.severity === "warning") ? " rg__count--warning" : ""}`}
+                  >
+                    {findings.length}
+                  </span>
+                ) : null}
+              </button>
+            </>
+          ) : null}
+          <button className="rg__btn" onClick={() => copy("mermaid")} type="button">
+            {copied === "mermaid" ? "Copied" : "Copy as Mermaid"}
+          </button>
+          <button
+            className="rg__btn"
+            onClick={() => copy("ai")}
+            title="Copy a markdown brief of the content model for an AI assistant's prompt"
+            type="button"
+          >
+            {copied === "ai" ? "Copied" : "Copy for AI"}
           </button>
         </div>
       </div>
@@ -363,8 +501,9 @@ export const GraphCanvas = ({ adminRoute, graph, initialPositions, title }: Grap
                 <marker
                   id={`rg-arrow-${type}`}
                   key={type}
-                  markerHeight="8"
-                  markerWidth="8"
+                  markerHeight="12"
+                  markerUnits="userSpaceOnUse"
+                  markerWidth="12"
                   orient="auto-start-reverse"
                   refX="7"
                   refY="4"
@@ -388,17 +527,30 @@ export const GraphCanvas = ({ adminRoute, graph, initialPositions, title }: Grap
                 }
                 const shape = linkShape(source, target, link);
                 const type = linkType(link);
-                const dim = focus
-                  ? link.source !== focus && link.target !== focus
-                  : Boolean(
-                      highlighted && !(highlighted.has(link.source) && highlighted.has(link.target))
-                    );
+                let dim = false;
+                if (focus) {
+                  dim = link.source !== focus && link.target !== focus;
+                } else if (findingEdges) {
+                  dim = !link.edges.some((edge) => findingEdges.has(edge.id));
+                } else if (highlighted) {
+                  dim = !(highlighted.has(link.source) && highlighted.has(link.target));
+                }
+                const rate = shownStats ? linkFillRate(link, shownStats) : null;
+                const label =
+                  rate === null || link.edges.length > 1
+                    ? truncate(linkLabel(link), 26)
+                    : `${truncate(linkLabel(link), 20)} · ${percentText(rate)}`;
                 return (
                   <g className={dim ? "rg__dim" : undefined} key={link.id}>
                     <path
-                      className={`rg__edge rg__edge--${type}`}
+                      className={`rg__edge rg__edge--${type}${rate === 0 ? " rg__edge--unused" : ""}`}
                       d={shape.d}
                       markerEnd={`url(#rg-arrow-${type})`}
+                      style={
+                        rate === null
+                          ? undefined
+                          : { strokeOpacity: 0.35 + 0.65 * rate, strokeWidth: 1 + 2.25 * rate }
+                      }
                     />
                     <text
                       className="rg__edge-label"
@@ -406,7 +558,7 @@ export const GraphCanvas = ({ adminRoute, graph, initialPositions, title }: Grap
                       x={shape.label.x}
                       y={shape.label.y - 5}
                     >
-                      {truncate(linkLabel(link), 26)}
+                      {label}
                     </text>
                   </g>
                 );
@@ -422,6 +574,7 @@ export const GraphCanvas = ({ adminRoute, graph, initialPositions, title }: Grap
                   `rg__node--${node.kind}`,
                   node.upload ? "rg__node--upload" : "",
                   node.id === selected ? "rg__node--selected" : "",
+                  finding?.nodeIds.includes(node.id) ? `rg__node--flagged-${finding.severity}` : "",
                   highlighted && !highlighted.has(node.id) ? "rg__dim" : "",
                 ]
                   .filter(Boolean)
@@ -449,13 +602,44 @@ export const GraphCanvas = ({ adminRoute, graph, initialPositions, title }: Grap
                       {truncate(node.label, 19)}
                     </text>
                     <text className="rg__node-meta" x="22" y="43">
-                      {nodeMeta(node, relationCounts.get(node.id) ?? 0)}
+                      {nodeMeta(node, relationCounts.get(node.id) ?? 0, shownStats)}
                     </text>
+                    {insightsOpen && warningNodes.has(node.id) ? (
+                      <circle className="rg__node-warning" cx={NODE_WIDTH - 12} cy="12" r="4">
+                        <title>Has a warning — see Insights</title>
+                      </circle>
+                    ) : null}
                   </g>
                 );
               })}
             </g>
           </svg>
+
+          {insights && dataOn && statsState.status !== "idle" ? (
+            <div
+              className={`rg__status${statsState.status === "error" ? " rg__status--error" : ""}`}
+              role="status"
+            >
+              {statsState.status === "loading" ? "Loading live data…" : null}
+              {statsState.status === "error" ? (
+                <>
+                  Live data could not be loaded: {statsState.message}
+                  <button className="rg__link-btn" onClick={() => void loadStats()} type="button">
+                    Retry
+                  </button>
+                </>
+              ) : null}
+              {statsState.status === "ready" && stats ? (
+                <>
+                  Live data · {new Date(stats.generatedAt).toLocaleTimeString()}
+                  {stats.truncated ? ` · some numbers skipped (over ${stats.scanLimit} docs)` : ""}
+                  <button className="rg__link-btn" onClick={() => void loadStats()} type="button">
+                    Refresh
+                  </button>
+                </>
+              ) : null}
+            </div>
+          ) : null}
 
           {visible.nodes.length === 0 ? (
             <div className="rg__empty">No collections to show.</div>
@@ -472,6 +656,11 @@ export const GraphCanvas = ({ adminRoute, graph, initialPositions, title }: Grap
               <span className="rg__legend-line rg__legend-line--join" /> join (reverse)
             </span>
             <span className="rg__legend-item">[ ] has many</span>
+            {shownStats ? (
+              <span className="rg__legend-item">
+                thicker line · % = share of documents with it set
+              </span>
+            ) : null}
           </div>
 
           <div className="rg__zoom">
@@ -502,7 +691,19 @@ export const GraphCanvas = ({ adminRoute, graph, initialPositions, title }: Grap
             adminRoute={adminRoute}
             graph={visible}
             node={selectedNode}
+            onBack={insightsOpen ? () => setSelected(null) : undefined}
             onSelect={setSelected}
+            stats={shownStats}
+          />
+        ) : null}
+        {!selectedNode && insights && insightsOpen ? (
+          <InsightsPanel
+            activeId={activeFinding}
+            findings={findings}
+            onActivate={activateFinding}
+            onClose={() => setInsightsOpen(false)}
+            onLoadData={() => void loadStats()}
+            stats={stats ? { status: "ready" } : statsState}
           />
         ) : null}
       </div>
