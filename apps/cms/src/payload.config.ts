@@ -18,6 +18,7 @@ import { Page } from "@/collections/Page/Page";
 import { Posts } from "@/collections/Posts";
 import { Testimonials } from "@/collections/Testimonials";
 import { Users } from "@/collections/Users";
+import { superAdmin } from "@/lib/access";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { MAX_UPLOAD_BYTES } from "@/lib/constants/uploadLimits";
 import { createDatabaseAdapter } from "@/lib/database";
@@ -83,6 +84,13 @@ export default buildConfig({
   globals: [SiteSettings],
   graphQL: {
     disable: true,
+  },
+  jobs: {
+    // Payload's default lets any signed-in user (editors included) run or cancel queued jobs over
+    // REST (/api/payload-jobs/run, /handle-schedules). Scheduled publishing does not need that:
+    // the cron calls the scheduling plugin's secret-guarded endpoint, which runs the queue through
+    // the Local API (no access check), and scheduling a publish queues jobs the same way.
+    access: { cancel: superAdmin, run: superAdmin },
   },
   i18n: {
     fallbackLanguage: "en",
