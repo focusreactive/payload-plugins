@@ -16,6 +16,14 @@ const MCP_ENDPOINT_PATH = "/mcp";
 
 const KEY_PLACEHOLDER = "<YOUR_API_KEY>";
 
+const VISIBLE_KEY_CHARS = 5;
+
+/** The key as shown on screen; the copy button still copies the real one. */
+const maskKey = (apiKey: string) => `${apiKey.slice(0, VISIBLE_KEY_CHARS)}***********`;
+
+const buildCommand = (endpoint: string, key: string) =>
+  `claude mcp add --transport http ${SERVER_NAME} ${endpoint} --header "Authorization: Bearer ${key}"`;
+
 type PersistedKeyState =
   /** The stored key was revealed. */
   | { status: "revealed"; apiKey: string }
@@ -63,8 +71,8 @@ async function fetchPersistedKeyState(
  * Right after "Generate new API key" on an unsaved document the plain key lives in
  * form state (`apiKey`). Once saved, Payload stores it encrypted, so the key is read
  * back through Payload's reveal endpoint whenever the document loads or changes
- * (generate / regenerate / revoke bump `lastUpdateTime`). Fetching on mount — not on
- * copy — keeps the displayed command and the copied one identical. The placeholder
+ * (generate / regenerate / revoke bump `lastUpdateTime`). The command is shown
+ * with the key masked; the copy button copies the real one. The placeholder
  * is only used when a stored key exists but the reveal call is refused.
  */
 export const ClaudeCodeMcpCommand: React.FC = () => {
@@ -123,13 +131,14 @@ export const ClaudeCodeMcpCommand: React.FC = () => {
   }
 
   const endpoint = `${origin}${apiRoute}${MCP_ENDPOINT_PATH}`;
-  const command = `claude mcp add --transport http ${SERVER_NAME} ${endpoint} --header "Authorization: Bearer ${apiKey ?? KEY_PLACEHOLDER}"`;
+  const command = buildCommand(endpoint, apiKey ?? KEY_PLACEHOLDER);
+  const displayedCommand = buildCommand(endpoint, apiKey ? maskKey(apiKey) : KEY_PLACEHOLDER);
 
   return (
     <div className="field-type">
       <div
         className="field-label"
-        style={{ alignItems: "center", display: "flex", gap: "0.25rem" }}
+        style={{ alignItems: "center", display: "flex", gap: "0.25rem", marginBottom: "0.5rem" }}
       >
         <span>Add to Claude Code</span>
         <CopyToClipboard value={command} />
@@ -149,7 +158,7 @@ export const ClaudeCodeMcpCommand: React.FC = () => {
           whiteSpace: "pre-wrap",
         }}
       >
-        {command}
+        {displayedCommand}
       </pre>
       {isRefused ? (
         <div className="field-description">
