@@ -131,7 +131,9 @@ The plugin owns the experiment/variant data model. The proxy (`src/proxy.ts`) ca
 
 ### Access Control
 
-Composable helpers exported from `src/lib/access/`: `superAdmin`, `admin`, `author`, `user`, `authenticated`, `anyone`, `nobody`, `onlySelf`, `createdBy`. Combine with `or()` and `and()`.
+Composable helpers exported from `src/lib/access/`: `superAdmin`, `admin`, `author`, `editor`, `user`, `authenticated`, `anyone`, `nobody`, `onlySelf`, `createdBy`. Combine with `or()` and `and()`.
+
+The `editor` role is confined to the Blog group by `restrictEditorAccess` (`src/lib/plugins/restrictEditorAccess.ts`, configured in `src/lib/plugins/index.ts`): every collection/global not on its allow-list is hidden from the editor's admin and denied by access control. When you add a collection an editor needs (e.g. a new relation target of posts), add it to that allow-list **and** grant `editor` in the collection's own access.
 
 ### Custom Admin Components
 

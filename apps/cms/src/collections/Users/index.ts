@@ -1,6 +1,6 @@
 import type { CollectionConfig } from "payload";
 
-import { authenticated, onlySelf, or, superAdmin, user } from "@/lib/access";
+import { EDITOR_ROLE, authenticated, onlySelf, or, superAdmin, user } from "@/lib/access";
 
 export const Users: CollectionConfig<"users"> = {
   access: {
@@ -85,10 +85,6 @@ export const Users: CollectionConfig<"users"> = {
         },
       },
       admin: {
-        description: {
-          en: "The role of the user",
-          es: "El rol del usuario",
-        },
         position: "sidebar",
       },
       defaultValue: "admin",
@@ -111,6 +107,13 @@ export const Users: CollectionConfig<"users"> = {
             es: "Autor",
           },
           value: "author",
+        },
+        {
+          label: {
+            en: "Editor",
+            es: "Editor",
+          },
+          value: EDITOR_ROLE,
         },
         {
           label: {
