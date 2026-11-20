@@ -223,6 +223,23 @@ export const mcpPluginConfig = mcpPlugin({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ] as any,
   },
+  // The auth "API Key" field is rendered by Payload's Auth block right above the
+  // collection fields, so a leading UI field lands directly under it.
+  overrideApiKeyCollection: (collection) => ({
+    ...collection,
+    fields: [
+      {
+        name: "claudeCodeCommand",
+        type: "ui",
+        admin: {
+          components: {
+            Field: "/components/admin/ClaudeCodeMcpCommand#ClaudeCodeMcpCommand",
+          },
+        },
+      },
+      ...collection.fields,
+    ],
+  }),
   overrideAuth: async (req, getDefaultMcpAccessSettings) => {
     if (!isLocalDevMcpRequest(req)) {
       return getDefaultMcpAccessSettings();
