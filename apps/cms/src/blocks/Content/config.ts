@@ -12,30 +12,16 @@ import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 const fields: Field[] = [
   sectionHeadingField({ title: DEFAULT_VALUES.blocks.content.heading }),
   {
-    defaultValue: "image-text",
+    defaultValue: createLocalizedRichText(DEFAULT_VALUES.richText.content),
+    editor: generateRichText(),
     label: {
-      en: "Layout",
-      es: "Diseño",
+      en: "Text",
+      es: "Texto",
     },
-    name: "layout",
-    options: [
-      {
-        label: {
-          en: "50/50 Image + Text",
-          es: "50/50 Imagen + Texto",
-        },
-        value: "image-text",
-      },
-      {
-        label: {
-          en: "50/50 Text + Image",
-          es: "50/50 Texto + Imagen",
-        },
-        value: "text-image",
-      },
-    ],
+    localized: true,
+    name: "content",
     required: true,
-    type: "select",
+    type: "richText",
   },
   {
     defaultValue: async () => getDefaultMediaId(),
@@ -48,34 +34,55 @@ const fields: Field[] = [
     required: true,
     type: "upload",
   },
-  {
-    defaultValue: createLocalizedRichText(DEFAULT_VALUES.richText.content),
-    editor: generateRichText(),
-    label: {
-      en: "Text",
-      es: "Texto",
-    },
-    localized: true,
-    name: "content",
-    required: true,
-    type: "richText",
-  },
   buttonsField({ maxRows: 2 }),
 ];
 
-export const ContentBlock: Block = injectSection({
-  slug: "content",
-  interfaceName: "ContentBlock",
-  ...getBlockPreviewImage("Content Section"),
-  labels: {
-    plural: {
-      en: "Text and image",
-      es: "Texto e imagen",
+/** Which side the image sits on. */
+const lookFields: Field[] = [
+  {
+    defaultValue: "image-text",
+    label: {
+      en: "Image position",
+      es: "Posición de la imagen",
     },
-    singular: {
-      en: "Text and image",
-      es: "Texto e imagen",
-    },
+    name: "layout",
+    options: [
+      {
+        label: {
+          en: "Image left, text right",
+          es: "Imagen a la izquierda, texto a la derecha",
+        },
+        value: "image-text",
+      },
+      {
+        label: {
+          en: "Text left, image right",
+          es: "Texto a la izquierda, imagen a la derecha",
+        },
+        value: "text-image",
+      },
+    ],
+    required: true,
+    type: "select",
   },
-  fields,
-});
+];
+
+export const ContentBlock: Block = injectSection(
+  {
+    slug: "content",
+    interfaceName: "ContentBlock",
+    ...getBlockPreviewImage("Content Section"),
+    labels: {
+      plural: {
+        en: "Text and image",
+        es: "Texto e imagen",
+      },
+      singular: {
+        en: "Text and image",
+        es: "Texto e imagen",
+      },
+    },
+    fields,
+  },
+  { lookFields }
+);

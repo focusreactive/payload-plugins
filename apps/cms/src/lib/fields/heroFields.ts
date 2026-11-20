@@ -17,6 +17,11 @@ const defaultHeroLinkItem = (label: string, appearance: "accent" | "outline") =>
 });
 
 export const heroFields: Field[] = [
+  sectionHeadingField({
+    eyebrow: { en: "New · Cadence 3.0", es: "Nuevo · Cadence 3.0" },
+    title: DEFAULT_VALUES.blocks.hero.title,
+    description: DEFAULT_VALUES.blocks.hero.description,
+  }),
   {
     defaultValue: "showcase",
     label: { en: "Layout", es: "Diseño" },
@@ -31,11 +36,12 @@ export const heroFields: Field[] = [
     required: true,
     type: "select",
   },
-  sectionHeadingField({
-    eyebrow: { en: "New · Cadence 3.0", es: "Nuevo · Cadence 3.0" },
-    title: DEFAULT_VALUES.blocks.hero.title,
-    description: DEFAULT_VALUES.blocks.hero.description,
-  }),
+  {
+    ...imageField("image", { required: false, withDefaultMedia: true }),
+    admin: {
+      condition: (_, siblingData) => siblingData?.variant !== "centered",
+    },
+  },
   buttonsField({
     defaultValue: createLocalizedDefault({
       en: [
@@ -49,10 +55,4 @@ export const heroFields: Field[] = [
     }),
     maxRows: 2,
   }),
-  {
-    ...imageField("image", { required: false, withDefaultMedia: true }),
-    admin: {
-      condition: (_, siblingData) => siblingData?.variant !== "centered",
-    },
-  },
 ];

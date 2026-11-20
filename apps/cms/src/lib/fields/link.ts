@@ -9,9 +9,10 @@ import type { CustomPageKey } from "@/lib/config/customPages";
  * columns) is a `link` group built here, so every link in the admin has the same fields in the
  * same order with the same labels:
  *
- *   Link to (page or post / web address / built-in page) · Open in new tab
- *   Page or post | Web address (URL) | Built-in page      · Link text      (text only where needed)
- *   Button style                                                           (buttons only)
+ *   Link text (only where needed)            · Button style (buttons only)
+ *   Link to: Page or post / Web address (URL) / Built-in page
+ *   the chosen destination (page or post picker, web address or built-in page)
+ *   Open in new tab
  *
  * Stored shape: `{ link: { type, newTab, reference, url, customPage, label?, appearance? } }`.
  * Rows of a "Buttons" list come from `buttonsField()`, which wraps this group in an array.
@@ -70,11 +71,9 @@ export function link({
   required = true,
   withText = true,
 }: LinkFieldOptions = {}): GroupField {
-  const destinationWidth = withText ? { width: "50%" } : {};
-
   const destination: Field[] = [
     {
-      admin: { ...destinationWidth, condition: isType("reference") },
+      admin: { condition: isType("reference") },
       label: { en: "Page or post", es: "Página o publicación" },
       name: "reference",
       relationTo: ["page", BLOG_CONFIG.collection],
@@ -82,14 +81,14 @@ export function link({
       type: "relationship",
     },
     {
-      admin: { ...destinationWidth, condition: isType("custom") },
+      admin: { condition: isType("custom"), placeholder: "https://" },
       label: { en: "Web address (URL)", es: "Dirección web (URL)" },
       name: "url",
       required,
       type: "text",
     },
     {
-      admin: { ...destinationWidth, condition: isType("customPage") },
+      admin: { condition: isType("customPage") },
       ...(customPageDbName ? { dbName: customPageDbName } : {}),
       label: { en: "Built-in page", es: "Página integrada" },
       name: "customPage",
@@ -102,10 +101,12 @@ export function link({
     },
   ];
 
+  const sideBySide = withText && appearances !== false ? { width: "50%" } : {};
+
   const text: Field[] = withText
     ? [
         {
-          admin: { width: "50%" },
+          admin: sideBySide,
           label: { en: "Link text", es: "Texto del enlace" },
           localized: true,
           name: "label",
@@ -120,7 +121,7 @@ export function link({
       ? []
       : [
           {
-            admin: { width: "50%" },
+            admin: sideBySide,
             defaultValue: "default",
             label: { en: "Button style", es: "Estilo del botón" },
             name: "appearance",
@@ -129,40 +130,37 @@ export function link({
           },
         ];
 
+  // What the visitor sees first (text, style), then where it goes.
+  const visible: Field[] =
+    text.length > 0 && style.length > 0
+      ? [{ fields: [...text, ...style], type: "row" }]
+      : [...text, ...style];
+
   const linkTo: Field = {
-    fields: [
-      {
-        admin: { layout: "horizontal", width: "50%" },
-        defaultValue: "reference",
-        label: { en: "Link to", es: "Enlazar a" },
-        name: "type",
-        options: [
-          { label: { en: "Page or post", es: "Página o publicación" }, value: "reference" },
-          { label: { en: "Web address (URL)", es: "Dirección web (URL)" }, value: "custom" },
-          { label: { en: "Built-in page", es: "Página integrada" }, value: "customPage" },
-        ],
-        type: "radio",
-      },
-      {
-        admin: { style: { alignSelf: "flex-end" }, width: "50%" },
-        label: { en: "Open in new tab", es: "Abrir en una nueva pestaña" },
-        name: "newTab",
-        type: "checkbox",
-      },
+    admin: { layout: "horizontal" },
+    defaultValue: "reference",
+    label: { en: "Link to", es: "Enlazar a" },
+    name: "type",
+    options: [
+      { label: { en: "Page or post", es: "Página o publicación" }, value: "reference" },
+      { label: { en: "Web address (URL)", es: "Dirección web (URL)" }, value: "custom" },
+      { label: { en: "Built-in page", es: "Página integrada" }, value: "customPage" },
     ],
-    type: "row",
+    type: "radio",
   };
 
-  const target: Field[] = withText
-    ? [{ fields: [...destination, ...text], type: "row" }]
-    : destination;
+  const newTab: Field = {
+    label: { en: "Open in new tab", es: "Abrir en una nueva pestaña" },
+    name: "newTab",
+    type: "checkbox",
+  };
 
   return {
     admin: {
       hideGutter: true,
       ...(condition ? { condition } : {}),
     },
-    fields: [linkTo, ...target, ...style],
+    fields: [...visible, linkTo, ...destination, newTab],
     label,
     name: "link",
     type: "group",

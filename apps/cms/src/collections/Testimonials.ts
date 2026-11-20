@@ -16,6 +16,16 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
   },
   fields: [
     {
+      label: {
+        en: "Quote",
+        es: "Cita",
+      },
+      localized: true,
+      name: "content",
+      required: true,
+      type: "textarea",
+    },
+    {
       type: "row",
       fields: [
         {
@@ -31,10 +41,11 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
         {
           admin: { width: "50%" },
           label: {
-            en: "Company",
-            es: "Empresa",
+            en: "Job title",
+            es: "Cargo",
           },
-          name: "company",
+          localized: true,
+          name: "position",
           type: "text",
         },
       ],
@@ -45,11 +56,10 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
         {
           admin: { width: "50%" },
           label: {
-            en: "Job title",
-            es: "Cargo",
+            en: "Company",
+            es: "Empresa",
           },
-          localized: true,
-          name: "position",
+          name: "company",
           type: "text",
         },
         {
@@ -77,16 +87,6 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
       name: "avatar",
       relationTo: "media",
       type: "upload",
-    },
-    {
-      label: {
-        en: "Quote",
-        es: "Cita",
-      },
-      localized: true,
-      name: "content",
-      required: true,
-      type: "textarea",
     },
   ],
   labels: {

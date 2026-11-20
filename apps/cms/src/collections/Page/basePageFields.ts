@@ -13,28 +13,6 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
         {
           fields: [
             {
-              // Presentational only: header/footer keep their top-level data paths.
-              fields: [
-                {
-                  admin: { width: "50%" },
-                  defaultValue: async () => getSoleRelationId("header"),
-                  label: { en: "Header", es: "Cabecera" },
-                  name: "header",
-                  relationTo: "header",
-                  type: "relationship",
-                },
-                {
-                  admin: { width: "50%" },
-                  defaultValue: async () => getSoleRelationId("footer"),
-                  label: { en: "Footer", es: "Pie de página" },
-                  name: "footer",
-                  relationTo: "footer",
-                  type: "relationship",
-                },
-              ],
-              type: "row",
-            },
-            {
               admin: { initCollapsed: true },
               blocks: heroBlocks,
               label: { en: "Hero banner", es: "Cabecera" },
@@ -62,6 +40,29 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
                     blockType,
                   })),
               }),
+            },
+            {
+              // Presentational only: header/footer keep their top-level data paths. Set once per
+              // page, so they sit after the page's content.
+              fields: [
+                {
+                  admin: { width: "50%" },
+                  defaultValue: async () => getSoleRelationId("header"),
+                  label: { en: "Header", es: "Cabecera" },
+                  name: "header",
+                  relationTo: "header",
+                  type: "relationship",
+                },
+                {
+                  admin: { width: "50%" },
+                  defaultValue: async () => getSoleRelationId("footer"),
+                  label: { en: "Footer", es: "Pie de página" },
+                  name: "footer",
+                  relationTo: "footer",
+                  type: "relationship",
+                },
+              ],
+              type: "row",
             },
           ],
           label: { en: "Content", es: "Contenido" },

@@ -5,6 +5,7 @@ import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 
 export const ctaBannerFields: Field[] = [
   sectionHeadingField(),
+  buttonsField({ minRows: 1 }),
   {
     defaultValue: "default",
     label: { en: "Color style", es: "Estilo de color" },
@@ -16,5 +17,4 @@ export const ctaBannerFields: Field[] = [
     ],
     type: "select",
   },
-  buttonsField({ minRows: 1 }),
 ];

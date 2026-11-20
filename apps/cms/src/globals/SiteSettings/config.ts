@@ -77,7 +77,7 @@ export const SiteSettings: GlobalConfig = {
             },
           ],
           label: {
-            en: "Admin Panel",
+            en: "Admin panel",
             es: "Panel de administración",
           },
           name: "adminPanel",

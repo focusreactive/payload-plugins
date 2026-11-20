@@ -28,6 +28,10 @@ export const testimonialsListFields: Field[] = [
     name: "testimonialItems",
     type: "array",
   },
+];
+
+/** How the testimonials show: rating, photo, scroll speed. */
+export const testimonialsListLookFields: Field[] = [
   {
     type: "row",
     fields: [
@@ -50,6 +54,7 @@ export const testimonialsListFields: Field[] = [
   {
     admin: {
       placeholder: "60",
+      width: "50%",
     },
     defaultValue: 60,
     label: {

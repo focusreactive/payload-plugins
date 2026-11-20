@@ -9,7 +9,8 @@ import { CARD_ICONS } from "./icons";
 /** Layouts the grid component supports (`ui/index.tsx` maps each to a `lg:grid-cols-*`). */
 export const CARDS_GRID_COLUMNS = ["1", "2", "3", "4"] as const;
 
-export const cardsGridFields: Field[] = [
+/** How the grid looks: cards per row, alignment, corners, card colour. */
+export const cardsGridLookFields: Field[] = [
   {
     type: "row",
     fields: [
@@ -67,52 +68,57 @@ export const cardsGridFields: Field[] = [
       },
     ],
   },
-  {
-    admin: {
-      custom: {
-        preview: definePreview({ title: "title", subtitle: "description", media: "image" }),
-      },
-      initCollapsed: true,
-    },
-    fields: [
-      {
-        type: "row",
-        fields: [
-          {
-            admin: { width: "40%" },
-            label: { en: "Icon", es: "Icono" },
-            name: "icon",
-            options: CARD_ICONS.map((icon) => ({ label: icon, value: icon })),
-            type: "select",
-          },
-          {
-            admin: { width: "60%" },
-            label: { en: "Title", es: "Título" },
-            localized: true,
-            name: "title",
-            required: true,
-            type: "text",
-          },
-        ],
-      },
-      {
-        label: { en: "Description", es: "Descripción" },
-        localized: true,
-        name: "description",
-        type: "text",
-      },
-      imageField("image", { required: false }),
-      link({ appearances: ALL_APPEARANCES, required: false }),
-    ],
-    label: { en: "Cards", es: "Tarjetas" },
-    labels: {
-      plural: { en: "Cards", es: "Tarjetas" },
-      singular: { en: "Card", es: "Tarjeta" },
-    },
-    localized: true,
-    minRows: 1,
-    name: "items",
-    required: true,
-    type: "array",
-  },
 ];
+
+/** The cards themselves: title first, then icon, text, image and link. */
+export const cardsGridItemsField: Field = {
+  admin: {
+    custom: {
+      preview: definePreview({ title: "title", subtitle: "description", media: "image" }),
+    },
+    initCollapsed: true,
+  },
+  fields: [
+    {
+      type: "row",
+      fields: [
+        {
+          admin: { width: "60%" },
+          label: { en: "Title", es: "Título" },
+          localized: true,
+          name: "title",
+          required: true,
+          type: "text",
+        },
+        {
+          admin: { width: "40%" },
+          label: { en: "Icon", es: "Icono" },
+          name: "icon",
+          options: CARD_ICONS.map((icon) => ({ label: icon, value: icon })),
+          type: "select",
+        },
+      ],
+    },
+    {
+      label: { en: "Description", es: "Descripción" },
+      localized: true,
+      name: "description",
+      type: "text",
+    },
+    imageField("image", { required: false }),
+    link({ appearances: ALL_APPEARANCES, required: false }),
+  ],
+  label: { en: "Cards", es: "Tarjetas" },
+  labels: {
+    plural: { en: "Cards", es: "Tarjetas" },
+    singular: { en: "Card", es: "Tarjeta" },
+  },
+  localized: true,
+  minRows: 1,
+  name: "items",
+  required: true,
+  type: "array",
+};
+
+/** Cards inside post text (no tabs there): the cards first, how they look after. */
+export const cardsGridFields: Field[] = [cardsGridItemsField, ...cardsGridLookFields];

@@ -1,5 +1,5 @@
 import { definePreview } from "@focus-reactive/payload-plugin-stacked-editing";
-import type { Block } from "payload";
+import type { Block, Field } from "payload";
 
 import { embedSectionTab } from "./embedSectionTab";
 import { withSectionVisibility } from "./withSectionVisibility";
@@ -28,9 +28,13 @@ const withHeadingPreview = (block: Block): Block =>
         },
       };
 
-export function injectSection(block: Block): Block {
+/** `lookFields`: the section's own layout/style options, shown in its "Look and spacing" tab. */
+export function injectSection(
+  block: Block,
+  { lookFields = [] }: { lookFields?: Field[] } = {}
+): Block {
   return withSectionVisibility({
     ...withHeadingPreview(block),
-    fields: embedSectionTab(block.fields),
+    fields: embedSectionTab(block.fields, lookFields),
   });
 }

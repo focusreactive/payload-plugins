@@ -353,8 +353,6 @@ export interface Page {
   id: number;
   _abPassPercentage?: number | null;
   title: string;
-  header?: (number | null) | Header;
-  footer?: (number | null) | Footer;
   hero: HeroBlock[];
   blocks: (
     | ContentBlock
@@ -370,6 +368,8 @@ export interface Page {
     | RawHtmlBlock
     | GlobalSectionSlotBlock
   )[];
+  header?: (number | null) | Header;
+  footer?: (number | null) | Footer;
   meta?: {
     title?: string | null;
     image?: (number | null) | Media;
@@ -410,88 +410,21 @@ export interface Page {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "header".
+ * via the `definition` "HeroBlock".
  */
-export interface Header {
-  id: number;
-  /**
-   * Internal name, shown only in the admin.
-   */
-  name?: string | null;
-  logo: number | Media;
-  navItems?:
-    | {
-        label: string;
-        type: 'link' | 'dropdown';
-        link?: {
-          type?: ('reference' | 'custom' | 'customPage') | null;
-          newTab?: boolean | null;
-          reference?:
-            | ({
-                relationTo: 'page';
-                value: number | Page;
-              } | null)
-            | ({
-                relationTo: 'posts';
-                value: number | Post;
-              } | null);
-          url?: string | null;
-          customPage?: ('blog' | 'search') | null;
-        };
-        dropdown?: {
-          featured?: {
-            enabled?: boolean | null;
-            eyebrow?: string | null;
-            title?: string | null;
-            description?: string | null;
-            link?: {
-              type?: ('reference' | 'custom' | 'customPage') | null;
-              newTab?: boolean | null;
-              reference?:
-                | ({
-                    relationTo: 'page';
-                    value: number | Page;
-                  } | null)
-                | ({
-                    relationTo: 'posts';
-                    value: number | Post;
-                  } | null);
-              url?: string | null;
-              customPage?: ('blog' | 'search') | null;
-              label?: string | null;
-            };
-          };
-          links?:
-            | {
-                title: string;
-                description?: string | null;
-                link?: {
-                  type?: ('reference' | 'custom' | 'customPage') | null;
-                  newTab?: boolean | null;
-                  reference?:
-                    | ({
-                        relationTo: 'page';
-                        value: number | Page;
-                      } | null)
-                    | ({
-                        relationTo: 'posts';
-                        value: number | Post;
-                      } | null);
-                  url?: string | null;
-                  customPage?: ('blog' | 'search') | null;
-                };
-                id?: string | null;
-              }[]
-            | null;
-        };
-        id?: string | null;
-      }[]
-    | null;
+export interface HeroBlock {
+  heading?: SectionHeadingFields;
+  variant: 'showcase' | 'centered';
+  image?: {
+    image?: (number | null) | Media;
+    aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
+  };
   actions?:
     | {
         link: {
+          label: string;
+          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
           type?: ('reference' | 'custom' | 'customPage') | null;
-          newTab?: boolean | null;
           reference?:
             | ({
                 relationTo: 'page';
@@ -503,15 +436,41 @@ export interface Header {
               } | null);
           url?: string | null;
           customPage?: ('blog' | 'search') | null;
-          label: string;
-          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+          newTab?: boolean | null;
         };
         id?: string | null;
       }[]
     | null;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Pick an image or video from the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'hero';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SectionHeadingFields".
+ */
+export interface SectionHeadingFields {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  title?: string | null;
+  description?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -578,8 +537,6 @@ export interface Post {
  */
 export interface ContentBlock {
   heading?: SectionHeadingFields;
-  layout: 'image-text' | 'text-image';
-  image: number | Media;
   content: {
     root: {
       type: string;
@@ -595,11 +552,13 @@ export interface ContentBlock {
     };
     [k: string]: unknown;
   };
+  image: number | Media;
   actions?:
     | {
         link: {
+          label: string;
+          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
           type?: ('reference' | 'custom' | 'customPage') | null;
-          newTab?: boolean | null;
           reference?:
             | ({
                 relationTo: 'page';
@@ -611,12 +570,12 @@ export interface ContentBlock {
               } | null);
           url?: string | null;
           customPage?: ('blog' | 'search') | null;
-          label: string;
-          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+          newTab?: boolean | null;
         };
         id?: string | null;
       }[]
     | null;
+  layout: 'image-text' | 'text-image';
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
     maxWidth?: ('none' | 'base') | null;
@@ -635,18 +594,6 @@ export interface ContentBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'content';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "SectionHeadingFields".
- */
-export interface SectionHeadingFields {
-  eyebrow?: string | null;
-  /**
-   * Wrap a word in *asterisks* to accent it in the brand colour.
-   */
-  title?: string | null;
-  description?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -732,12 +679,12 @@ export interface TestimonialsListBlock {
  */
 export interface Testimonial {
   id: number;
+  content: string;
   author: string;
-  company?: string | null;
   position?: string | null;
+  company?: string | null;
   rating?: number | null;
   avatar?: (number | null) | Media;
-  content: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -747,14 +694,8 @@ export interface Testimonial {
  */
 export interface CardsGridBlock {
   heading?: SectionHeadingFields;
-  /**
-   * On wide screens. Phones always show one card per row.
-   */
-  columns?: ('1' | '2' | '3' | '4') | null;
-  alignVariant?: ('left' | 'center' | 'right') | null;
-  rounded?: ('none' | 'large') | null;
-  backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
   items: {
+    title: string;
     icon?:
       | (
           | 'map'
@@ -779,15 +720,15 @@ export interface CardsGridBlock {
           | 'wand-2'
         )
       | null;
-    title: string;
     description?: string | null;
     image?: {
       image?: (number | null) | Media;
       aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
     };
     link?: {
+      label?: string | null;
+      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
       type?: ('reference' | 'custom' | 'customPage') | null;
-      newTab?: boolean | null;
       reference?:
         | ({
             relationTo: 'page';
@@ -799,11 +740,17 @@ export interface CardsGridBlock {
           } | null);
       url?: string | null;
       customPage?: ('blog' | 'search') | null;
-      label?: string | null;
-      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+      newTab?: boolean | null;
     };
     id?: string | null;
   }[];
+  /**
+   * On wide screens. Phones always show one card per row.
+   */
+  columns?: ('1' | '2' | '3' | '4') | null;
+  alignVariant?: ('left' | 'center' | 'right') | null;
+  rounded?: ('none' | 'large') | null;
+  backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
     maxWidth?: ('none' | 'base') | null;
@@ -829,7 +776,6 @@ export interface CardsGridBlock {
  */
 export interface CarouselBlock {
   heading?: SectionHeadingFields;
-  effect?: ('slide' | 'fade') | null;
   slides: {
     image: {
       image: number | Media;
@@ -851,6 +797,7 @@ export interface CarouselBlock {
     } | null;
     id?: string | null;
   }[];
+  effect?: ('slide' | 'fade') | null;
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
     maxWidth?: ('none' | 'base') | null;
@@ -876,14 +823,13 @@ export interface CarouselBlock {
  */
 export interface LogosBlock {
   label?: string | null;
-  alignVariant?: ('left' | 'center' | 'right') | null;
   items: {
     image: {
       image: number | Media;
     };
     link: {
+      label: string;
       type?: ('reference' | 'custom' | 'customPage') | null;
-      newTab?: boolean | null;
       reference?:
         | ({
             relationTo: 'page';
@@ -895,10 +841,11 @@ export interface LogosBlock {
           } | null);
       url?: string | null;
       customPage?: ('blog' | 'search') | null;
-      label: string;
+      newTab?: boolean | null;
     };
     id?: string | null;
   }[];
+  alignVariant?: ('left' | 'center' | 'right') | null;
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
     maxWidth?: ('none' | 'base') | null;
@@ -965,8 +912,9 @@ export interface CtaBandBlock {
   heading?: SectionHeadingFields;
   actions: {
     link: {
+      label: string;
+      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
       type?: ('reference' | 'custom' | 'customPage') | null;
-      newTab?: boolean | null;
       reference?:
         | ({
             relationTo: 'page';
@@ -978,8 +926,7 @@ export interface CtaBandBlock {
           } | null);
       url?: string | null;
       customPage?: ('blog' | 'search') | null;
-      label: string;
-      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+      newTab?: boolean | null;
     };
     id?: string | null;
   }[];
@@ -1112,121 +1059,6 @@ export interface Author {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "footer".
- */
-export interface Footer {
-  id: number;
-  /**
-   * Internal name, shown only in the admin.
-   */
-  name: string;
-  logo: number | Media;
-  description?: string | null;
-  linkGroups?:
-    | {
-        label: string;
-        links: {
-          link: {
-            type?: ('reference' | 'custom' | 'customPage') | null;
-            newTab?: boolean | null;
-            reference?:
-              | ({
-                  relationTo: 'page';
-                  value: number | Page;
-                } | null)
-              | ({
-                  relationTo: 'posts';
-                  value: number | Post;
-                } | null);
-            url?: string | null;
-            customPage?: ('blog' | 'search') | null;
-            label: string;
-          };
-          id?: string | null;
-        }[];
-        id?: string | null;
-      }[]
-    | null;
-  legalLinks?:
-    | {
-        link: {
-          type?: ('reference' | 'custom' | 'customPage') | null;
-          newTab?: boolean | null;
-          reference?:
-            | ({
-                relationTo: 'page';
-                value: number | Page;
-              } | null)
-            | ({
-                relationTo: 'posts';
-                value: number | Post;
-              } | null);
-          url?: string | null;
-          customPage?: ('blog' | 'search') | null;
-          label: string;
-        };
-        id?: string | null;
-      }[]
-    | null;
-  copyrightText?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "HeroBlock".
- */
-export interface HeroBlock {
-  variant: 'showcase' | 'centered';
-  heading?: SectionHeadingFields;
-  actions?:
-    | {
-        link: {
-          type?: ('reference' | 'custom' | 'customPage') | null;
-          newTab?: boolean | null;
-          reference?:
-            | ({
-                relationTo: 'page';
-                value: number | Page;
-              } | null)
-            | ({
-                relationTo: 'posts';
-                value: number | Post;
-              } | null);
-          url?: string | null;
-          customPage?: ('blog' | 'search') | null;
-          label: string;
-          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
-        };
-        id?: string | null;
-      }[]
-    | null;
-  image?: {
-    image?: (number | null) | Media;
-    aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
-  };
-  section?: {
-    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
-    maxWidth?: ('none' | 'base') | null;
-    paddingY?: ('none' | 'base' | 'large') | null;
-    paddingX?: ('none' | 'base') | null;
-    background?: {
-      /**
-       * Pick an image or video from the "Background" folder.
-       */
-      media?: (number | null) | Media;
-      overlay?: ('black' | 'white') | null;
-      opacity?: number | null;
-    };
-  };
-  _hidden?: boolean | null;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'hero';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "GlobalSectionSlotBlock".
  */
 export interface GlobalSectionSlotBlock {
@@ -1262,6 +1094,174 @@ export interface GlobalBlock {
     | StatsBlock
     | RawHtmlBlock
   )[];
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header".
+ */
+export interface Header {
+  id: number;
+  /**
+   * Internal name, shown only in the admin.
+   */
+  name?: string | null;
+  logo: number | Media;
+  navItems?:
+    | {
+        label: string;
+        type: 'link' | 'dropdown';
+        link?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          newTab?: boolean | null;
+        };
+        dropdown?: {
+          featured?: {
+            enabled?: boolean | null;
+            eyebrow?: string | null;
+            title?: string | null;
+            description?: string | null;
+            link?: {
+              label?: string | null;
+              type?: ('reference' | 'custom' | 'customPage') | null;
+              reference?:
+                | ({
+                    relationTo: 'page';
+                    value: number | Page;
+                  } | null)
+                | ({
+                    relationTo: 'posts';
+                    value: number | Post;
+                  } | null);
+              url?: string | null;
+              customPage?: ('blog' | 'search') | null;
+              newTab?: boolean | null;
+            };
+          };
+          links?:
+            | {
+                title: string;
+                description?: string | null;
+                link?: {
+                  type?: ('reference' | 'custom' | 'customPage') | null;
+                  reference?:
+                    | ({
+                        relationTo: 'page';
+                        value: number | Page;
+                      } | null)
+                    | ({
+                        relationTo: 'posts';
+                        value: number | Post;
+                      } | null);
+                  url?: string | null;
+                  customPage?: ('blog' | 'search') | null;
+                  newTab?: boolean | null;
+                };
+                id?: string | null;
+              }[]
+            | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  actions?:
+    | {
+        link: {
+          label: string;
+          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          newTab?: boolean | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer".
+ */
+export interface Footer {
+  id: number;
+  /**
+   * Internal name, shown only in the admin.
+   */
+  name: string;
+  logo: number | Media;
+  description?: string | null;
+  linkGroups?:
+    | {
+        label: string;
+        links: {
+          link: {
+            label: string;
+            type?: ('reference' | 'custom' | 'customPage') | null;
+            reference?:
+              | ({
+                  relationTo: 'page';
+                  value: number | Page;
+                } | null)
+              | ({
+                  relationTo: 'posts';
+                  value: number | Post;
+                } | null);
+            url?: string | null;
+            customPage?: ('blog' | 'search') | null;
+            newTab?: boolean | null;
+          };
+          id?: string | null;
+        }[];
+        id?: string | null;
+      }[]
+    | null;
+  legalLinks?:
+    | {
+        link: {
+          label: string;
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          newTab?: boolean | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  copyrightText?: string | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -1349,13 +1349,18 @@ export interface Preset {
   preview?: (number | null) | Media;
   presetBlock: (
     | {
-        variant: 'showcase' | 'centered';
         heading?: SectionHeadingFields;
+        variant: 'showcase' | 'centered';
+        image?: {
+          image?: (number | null) | Media;
+          aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
+        };
         actions?:
           | {
               link: {
+                label: string;
+                appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
                 type?: ('reference' | 'custom' | 'customPage') | null;
-                newTab?: boolean | null;
                 reference?:
                   | ({
                       relationTo: 'page';
@@ -1367,16 +1372,11 @@ export interface Preset {
                     } | null);
                 url?: string | null;
                 customPage?: ('blog' | 'search') | null;
-                label: string;
-                appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+                newTab?: boolean | null;
               };
               id?: string | null;
             }[]
           | null;
-        image?: {
-          image?: (number | null) | Media;
-          aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
-        };
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
           maxWidth?: ('none' | 'base') | null;
@@ -1398,8 +1398,6 @@ export interface Preset {
       }
     | {
         heading?: SectionHeadingFields;
-        layout: 'image-text' | 'text-image';
-        image: number | Media;
         content: {
           root: {
             type: string;
@@ -1415,11 +1413,13 @@ export interface Preset {
           };
           [k: string]: unknown;
         };
+        image: number | Media;
         actions?:
           | {
               link: {
+                label: string;
+                appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
                 type?: ('reference' | 'custom' | 'customPage') | null;
-                newTab?: boolean | null;
                 reference?:
                   | ({
                       relationTo: 'page';
@@ -1431,12 +1431,12 @@ export interface Preset {
                     } | null);
                 url?: string | null;
                 customPage?: ('blog' | 'search') | null;
-                label: string;
-                appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+                newTab?: boolean | null;
               };
               id?: string | null;
             }[]
           | null;
+        layout: 'image-text' | 'text-image';
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
           maxWidth?: ('none' | 'base') | null;
@@ -1528,14 +1528,8 @@ export interface Preset {
       }
     | {
         heading?: SectionHeadingFields;
-        /**
-         * On wide screens. Phones always show one card per row.
-         */
-        columns?: ('1' | '2' | '3' | '4') | null;
-        alignVariant?: ('left' | 'center' | 'right') | null;
-        rounded?: ('none' | 'large') | null;
-        backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
         items: {
+          title: string;
           icon?:
             | (
                 | 'map'
@@ -1560,15 +1554,15 @@ export interface Preset {
                 | 'wand-2'
               )
             | null;
-          title: string;
           description?: string | null;
           image?: {
             image?: (number | null) | Media;
             aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
           };
           link?: {
+            label?: string | null;
+            appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
             type?: ('reference' | 'custom' | 'customPage') | null;
-            newTab?: boolean | null;
             reference?:
               | ({
                   relationTo: 'page';
@@ -1580,11 +1574,17 @@ export interface Preset {
                 } | null);
             url?: string | null;
             customPage?: ('blog' | 'search') | null;
-            label?: string | null;
-            appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+            newTab?: boolean | null;
           };
           id?: string | null;
         }[];
+        /**
+         * On wide screens. Phones always show one card per row.
+         */
+        columns?: ('1' | '2' | '3' | '4') | null;
+        alignVariant?: ('left' | 'center' | 'right') | null;
+        rounded?: ('none' | 'large') | null;
+        backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
           maxWidth?: ('none' | 'base') | null;
@@ -1606,7 +1606,6 @@ export interface Preset {
       }
     | {
         heading?: SectionHeadingFields;
-        effect?: ('slide' | 'fade') | null;
         slides: {
           image: {
             image: number | Media;
@@ -1628,6 +1627,7 @@ export interface Preset {
           } | null;
           id?: string | null;
         }[];
+        effect?: ('slide' | 'fade') | null;
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
           maxWidth?: ('none' | 'base') | null;
@@ -1649,14 +1649,13 @@ export interface Preset {
       }
     | {
         label?: string | null;
-        alignVariant?: ('left' | 'center' | 'right') | null;
         items: {
           image: {
             image: number | Media;
           };
           link: {
+            label: string;
             type?: ('reference' | 'custom' | 'customPage') | null;
-            newTab?: boolean | null;
             reference?:
               | ({
                   relationTo: 'page';
@@ -1668,10 +1667,11 @@ export interface Preset {
                 } | null);
             url?: string | null;
             customPage?: ('blog' | 'search') | null;
-            label: string;
+            newTab?: boolean | null;
           };
           id?: string | null;
         }[];
+        alignVariant?: ('left' | 'center' | 'right') | null;
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
           maxWidth?: ('none' | 'base') | null;
@@ -1730,8 +1730,9 @@ export interface Preset {
         heading?: SectionHeadingFields;
         actions: {
           link: {
+            label: string;
+            appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
             type?: ('reference' | 'custom' | 'customPage') | null;
-            newTab?: boolean | null;
             reference?:
               | ({
                   relationTo: 'page';
@@ -1743,8 +1744,7 @@ export interface Preset {
                 } | null);
             url?: string | null;
             customPage?: ('blog' | 'search') | null;
-            label: string;
-            appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+            newTab?: boolean | null;
           };
           id?: string | null;
         }[];
@@ -2486,8 +2486,6 @@ export interface MediaSelect<T extends boolean = true> {
 export interface PageSelect<T extends boolean = true> {
   _abPassPercentage?: T;
   title?: T;
-  header?: T;
-  footer?: T;
   hero?:
     | T
     | {
@@ -2509,6 +2507,8 @@ export interface PageSelect<T extends boolean = true> {
         rawHtml?: T | RawHtmlBlockSelect<T>;
         globalSectionSlot?: T | GlobalSectionSlotBlockSelect<T>;
       };
+  header?: T;
+  footer?: T;
   meta?:
     | T
     | {
@@ -2540,29 +2540,29 @@ export interface PageSelect<T extends boolean = true> {
  * via the `definition` "HeroBlock_select".
  */
 export interface HeroBlockSelect<T extends boolean = true> {
-  variant?: T;
   heading?: T | SectionHeadingFieldsSelect<T>;
+  variant?: T;
+  image?:
+    | T
+    | {
+        image?: T;
+        aspectRatio?: T;
+      };
   actions?:
     | T
     | {
         link?:
           | T
           | {
+              label?: T;
+              appearance?: T;
               type?: T;
-              newTab?: T;
               reference?: T;
               url?: T;
               customPage?: T;
-              label?: T;
-              appearance?: T;
+              newTab?: T;
             };
         id?: T;
-      };
-  image?:
-    | T
-    | {
-        image?: T;
-        aspectRatio?: T;
       };
   section?:
     | T
@@ -2598,25 +2598,25 @@ export interface SectionHeadingFieldsSelect<T extends boolean = true> {
  */
 export interface ContentBlockSelect<T extends boolean = true> {
   heading?: T | SectionHeadingFieldsSelect<T>;
-  layout?: T;
-  image?: T;
   content?: T;
+  image?: T;
   actions?:
     | T
     | {
         link?:
           | T
           | {
+              label?: T;
+              appearance?: T;
               type?: T;
-              newTab?: T;
               reference?: T;
               url?: T;
               customPage?: T;
-              label?: T;
-              appearance?: T;
+              newTab?: T;
             };
         id?: T;
       };
+  layout?: T;
   section?:
     | T
     | {
@@ -2708,15 +2708,11 @@ export interface TestimonialsListBlockSelect<T extends boolean = true> {
  */
 export interface CardsGridBlockSelect<T extends boolean = true> {
   heading?: T | SectionHeadingFieldsSelect<T>;
-  columns?: T;
-  alignVariant?: T;
-  rounded?: T;
-  backgroundColor?: T;
   items?:
     | T
     | {
-        icon?: T;
         title?: T;
+        icon?: T;
         description?: T;
         image?:
           | T
@@ -2727,16 +2723,20 @@ export interface CardsGridBlockSelect<T extends boolean = true> {
         link?:
           | T
           | {
+              label?: T;
+              appearance?: T;
               type?: T;
-              newTab?: T;
               reference?: T;
               url?: T;
               customPage?: T;
-              label?: T;
-              appearance?: T;
+              newTab?: T;
             };
         id?: T;
       };
+  columns?: T;
+  alignVariant?: T;
+  rounded?: T;
+  backgroundColor?: T;
   section?:
     | T
     | {
@@ -2762,7 +2762,6 @@ export interface CardsGridBlockSelect<T extends boolean = true> {
  */
 export interface CarouselBlockSelect<T extends boolean = true> {
   heading?: T | SectionHeadingFieldsSelect<T>;
-  effect?: T;
   slides?:
     | T
     | {
@@ -2774,6 +2773,7 @@ export interface CarouselBlockSelect<T extends boolean = true> {
         text?: T;
         id?: T;
       };
+  effect?: T;
   section?:
     | T
     | {
@@ -2799,7 +2799,6 @@ export interface CarouselBlockSelect<T extends boolean = true> {
  */
 export interface LogosBlockSelect<T extends boolean = true> {
   label?: T;
-  alignVariant?: T;
   items?:
     | T
     | {
@@ -2811,15 +2810,16 @@ export interface LogosBlockSelect<T extends boolean = true> {
         link?:
           | T
           | {
+              label?: T;
               type?: T;
-              newTab?: T;
               reference?: T;
               url?: T;
               customPage?: T;
-              label?: T;
+              newTab?: T;
             };
         id?: T;
       };
+  alignVariant?: T;
   section?:
     | T
     | {
@@ -2891,13 +2891,13 @@ export interface CtaBandBlockSelect<T extends boolean = true> {
         link?:
           | T
           | {
+              label?: T;
+              appearance?: T;
               type?: T;
-              newTab?: T;
               reference?: T;
               url?: T;
               customPage?: T;
-              label?: T;
-              appearance?: T;
+              newTab?: T;
             };
         id?: T;
       };
@@ -3083,12 +3083,12 @@ export interface PostsSelect<T extends boolean = true> {
  * via the `definition` "testimonials_select".
  */
 export interface TestimonialsSelect<T extends boolean = true> {
+  content?: T;
   author?: T;
-  company?: T;
   position?: T;
+  company?: T;
   rating?: T;
   avatar?: T;
-  content?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -3108,10 +3108,10 @@ export interface HeaderSelect<T extends boolean = true> {
           | T
           | {
               type?: T;
-              newTab?: T;
               reference?: T;
               url?: T;
               customPage?: T;
+              newTab?: T;
             };
         dropdown?:
           | T
@@ -3126,12 +3126,12 @@ export interface HeaderSelect<T extends boolean = true> {
                     link?:
                       | T
                       | {
+                          label?: T;
                           type?: T;
-                          newTab?: T;
                           reference?: T;
                           url?: T;
                           customPage?: T;
-                          label?: T;
+                          newTab?: T;
                         };
                   };
               links?:
@@ -3143,10 +3143,10 @@ export interface HeaderSelect<T extends boolean = true> {
                       | T
                       | {
                           type?: T;
-                          newTab?: T;
                           reference?: T;
                           url?: T;
                           customPage?: T;
+                          newTab?: T;
                         };
                     id?: T;
                   };
@@ -3159,13 +3159,13 @@ export interface HeaderSelect<T extends boolean = true> {
         link?:
           | T
           | {
+              label?: T;
+              appearance?: T;
               type?: T;
-              newTab?: T;
               reference?: T;
               url?: T;
               customPage?: T;
-              label?: T;
-              appearance?: T;
+              newTab?: T;
             };
         id?: T;
       };
@@ -3191,12 +3191,12 @@ export interface FooterSelect<T extends boolean = true> {
               link?:
                 | T
                 | {
+                    label?: T;
                     type?: T;
-                    newTab?: T;
                     reference?: T;
                     url?: T;
                     customPage?: T;
-                    label?: T;
+                    newTab?: T;
                   };
               id?: T;
             };
@@ -3208,12 +3208,12 @@ export interface FooterSelect<T extends boolean = true> {
         link?:
           | T
           | {
+              label?: T;
               type?: T;
-              newTab?: T;
               reference?: T;
               url?: T;
               customPage?: T;
-              label?: T;
+              newTab?: T;
             };
         id?: T;
       };
@@ -3302,29 +3302,29 @@ export interface PresetsSelect<T extends boolean = true> {
         hero?:
           | T
           | {
-              variant?: T;
               heading?: T | SectionHeadingFieldsSelect<T>;
+              variant?: T;
+              image?:
+                | T
+                | {
+                    image?: T;
+                    aspectRatio?: T;
+                  };
               actions?:
                 | T
                 | {
                     link?:
                       | T
                       | {
+                          label?: T;
+                          appearance?: T;
                           type?: T;
-                          newTab?: T;
                           reference?: T;
                           url?: T;
                           customPage?: T;
-                          label?: T;
-                          appearance?: T;
+                          newTab?: T;
                         };
                     id?: T;
-                  };
-              image?:
-                | T
-                | {
-                    image?: T;
-                    aspectRatio?: T;
                   };
               section?:
                 | T
@@ -3349,25 +3349,25 @@ export interface PresetsSelect<T extends boolean = true> {
           | T
           | {
               heading?: T | SectionHeadingFieldsSelect<T>;
-              layout?: T;
-              image?: T;
               content?: T;
+              image?: T;
               actions?:
                 | T
                 | {
                     link?:
                       | T
                       | {
+                          label?: T;
+                          appearance?: T;
                           type?: T;
-                          newTab?: T;
                           reference?: T;
                           url?: T;
                           customPage?: T;
-                          label?: T;
-                          appearance?: T;
+                          newTab?: T;
                         };
                     id?: T;
                   };
+              layout?: T;
               section?:
                 | T
                 | {
@@ -3453,15 +3453,11 @@ export interface PresetsSelect<T extends boolean = true> {
           | T
           | {
               heading?: T | SectionHeadingFieldsSelect<T>;
-              columns?: T;
-              alignVariant?: T;
-              rounded?: T;
-              backgroundColor?: T;
               items?:
                 | T
                 | {
-                    icon?: T;
                     title?: T;
+                    icon?: T;
                     description?: T;
                     image?:
                       | T
@@ -3472,16 +3468,20 @@ export interface PresetsSelect<T extends boolean = true> {
                     link?:
                       | T
                       | {
+                          label?: T;
+                          appearance?: T;
                           type?: T;
-                          newTab?: T;
                           reference?: T;
                           url?: T;
                           customPage?: T;
-                          label?: T;
-                          appearance?: T;
+                          newTab?: T;
                         };
                     id?: T;
                   };
+              columns?: T;
+              alignVariant?: T;
+              rounded?: T;
+              backgroundColor?: T;
               section?:
                 | T
                 | {
@@ -3505,7 +3505,6 @@ export interface PresetsSelect<T extends boolean = true> {
           | T
           | {
               heading?: T | SectionHeadingFieldsSelect<T>;
-              effect?: T;
               slides?:
                 | T
                 | {
@@ -3517,6 +3516,7 @@ export interface PresetsSelect<T extends boolean = true> {
                     text?: T;
                     id?: T;
                   };
+              effect?: T;
               section?:
                 | T
                 | {
@@ -3540,7 +3540,6 @@ export interface PresetsSelect<T extends boolean = true> {
           | T
           | {
               label?: T;
-              alignVariant?: T;
               items?:
                 | T
                 | {
@@ -3552,15 +3551,16 @@ export interface PresetsSelect<T extends boolean = true> {
                     link?:
                       | T
                       | {
+                          label?: T;
                           type?: T;
-                          newTab?: T;
                           reference?: T;
                           url?: T;
                           customPage?: T;
-                          label?: T;
+                          newTab?: T;
                         };
                     id?: T;
                   };
+              alignVariant?: T;
               section?:
                 | T
                 | {
@@ -3628,13 +3628,13 @@ export interface PresetsSelect<T extends boolean = true> {
                     link?:
                       | T
                       | {
+                          label?: T;
+                          appearance?: T;
                           type?: T;
-                          newTab?: T;
                           reference?: T;
                           url?: T;
                           customPage?: T;
-                          label?: T;
-                          appearance?: T;
+                          newTab?: T;
                         };
                     id?: T;
                   };
@@ -4185,14 +4185,8 @@ export interface TaskSchedulePublish {
  * via the `definition` "CardsGridInlineBlock".
  */
 export interface CardsGridInlineBlock {
-  /**
-   * On wide screens. Phones always show one card per row.
-   */
-  columns?: ('1' | '2' | '3' | '4') | null;
-  alignVariant?: ('left' | 'center' | 'right') | null;
-  rounded?: ('none' | 'large') | null;
-  backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
   items: {
+    title: string;
     icon?:
       | (
           | 'map'
@@ -4217,15 +4211,15 @@ export interface CardsGridInlineBlock {
           | 'wand-2'
         )
       | null;
-    title: string;
     description?: string | null;
     image?: {
       image?: (number | null) | Media;
       aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
     };
     link?: {
+      label?: string | null;
+      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
       type?: ('reference' | 'custom' | 'customPage') | null;
-      newTab?: boolean | null;
       reference?:
         | ({
             relationTo: 'page';
@@ -4237,11 +4231,17 @@ export interface CardsGridInlineBlock {
           } | null);
       url?: string | null;
       customPage?: ('blog' | 'search') | null;
-      label?: string | null;
-      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+      newTab?: boolean | null;
     };
     id?: string | null;
   }[];
+  /**
+   * On wide screens. Phones always show one card per row.
+   */
+  columns?: ('1' | '2' | '3' | '4') | null;
+  alignVariant?: ('left' | 'center' | 'right') | null;
+  rounded?: ('none' | 'large') | null;
+  backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'cardsGridInline';
@@ -4252,14 +4252,13 @@ export interface CardsGridInlineBlock {
  */
 export interface LogosInlineBlock {
   label?: string | null;
-  alignVariant?: ('left' | 'center' | 'right') | null;
   items: {
     image: {
       image: number | Media;
     };
     link: {
+      label: string;
       type?: ('reference' | 'custom' | 'customPage') | null;
-      newTab?: boolean | null;
       reference?:
         | ({
             relationTo: 'page';
@@ -4271,10 +4270,11 @@ export interface LogosInlineBlock {
           } | null);
       url?: string | null;
       customPage?: ('blog' | 'search') | null;
-      label: string;
+      newTab?: boolean | null;
     };
     id?: string | null;
   }[];
+  alignVariant?: ('left' | 'center' | 'right') | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'logosInline';
@@ -4312,11 +4312,11 @@ export interface CodeInlineBlock {
  */
 export interface CtaBannerInline {
   heading?: SectionHeadingFields;
-  variant?: ('default' | 'accent' | 'dark') | null;
   actions: {
     link: {
+      label: string;
+      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
       type?: ('reference' | 'custom' | 'customPage') | null;
-      newTab?: boolean | null;
       reference?:
         | ({
             relationTo: 'page';
@@ -4328,11 +4328,11 @@ export interface CtaBannerInline {
           } | null);
       url?: string | null;
       customPage?: ('blog' | 'search') | null;
-      label: string;
-      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+      newTab?: boolean | null;
     };
     id?: string | null;
   }[];
+  variant?: ('default' | 'accent' | 'dark') | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'ctaBannerInline';
