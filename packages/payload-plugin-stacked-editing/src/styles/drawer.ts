@@ -17,6 +17,9 @@ export const DRAWER_CSS = `
   width: var(--stacked-editing-width, 100vw) !important;
   top: var(--stacked-editing-top, 0) !important;
   height: calc(100vh - var(--stacked-editing-top, 0px)) !important;
+  /* Payload's .payload__modal-item sets min-height: 100%, which wins over the height above and
+     pushes the bottom of a panel below the top of the Live Preview out of the window. */
+  min-height: 0 !important;
 }
 .${BASE}__drawer--confined .${BASE}__header {
   margin-top: calc(var(--base) * 1.2);
