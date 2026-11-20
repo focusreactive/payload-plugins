@@ -147,12 +147,12 @@ export function VariantsField({
 
   if (!id) {
     return (
-      <section className="ab-test">
+      <div className="field-type ab-test">
         <div className="field-label ab-test__title">A/B test</div>
         <p className="field-description ab-test__description">
           Save the page first, then create variants to test.
         </p>
-      </section>
+      </div>
     );
   }
 
@@ -162,7 +162,7 @@ export function VariantsField({
   const hasUnsavedSplit = Boolean(pendingPercentages && Object.keys(pendingPercentages).length);
 
   return (
-    <section className="ab-test" aria-busy={busy || loading} data-busy={busy || undefined}>
+    <div className="field-type ab-test" aria-busy={busy || loading} data-busy={busy || undefined}>
       <header className="ab-test__header">
         <div className="field-label ab-test__title">A/B test</div>
         {running && (
@@ -246,25 +246,19 @@ export function VariantsField({
           />
         </>
       ) : (
-        <div className="ab-test__empty">
-          <p className="field-description ab-test__description">
-            Show a changed copy of this page to part of your visitors and compare which one performs
-            better.
-          </p>
-          <Button
-            buttonStyle="secondary"
-            size="small"
-            icon="plus"
-            iconPosition="left"
-            onClick={createVariant}
-            disabled={busy}
-            margin={false}
-          >
-            Create variant
-          </Button>
-        </div>
+        <Button
+          buttonStyle="primary"
+          className="ab-test__create"
+          icon="plus"
+          iconPosition="left"
+          onClick={createVariant}
+          disabled={busy}
+          margin={false}
+        >
+          Create variant
+        </Button>
       )}
-    </section>
+    </div>
   );
 }
 
