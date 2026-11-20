@@ -5,7 +5,8 @@ const FOCUSABLE = '[data-lexical-editor="true"], input:not([type="hidden"]), tex
 // An upload or relationship field with a value has no input, only its buttons.
 const FOCUSABLE_CONTROL = 'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
 const POLL_MS = 60;
-const BUDGET_MS = 3000;
+// The first panel of a page can take a few seconds to render on a slow machine or a cold dev server.
+const BUDGET_MS = 10_000;
 const FLASH_MS = 1800;
 const REFOCUS_MS = 400;
 const HOLD_FOCUS_MS = 1500;
