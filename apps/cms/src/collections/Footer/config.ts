@@ -3,7 +3,7 @@ import type { CollectionConfig } from "payload";
 import { anyone, or, user, superAdmin } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
-import { link } from "@/lib/fields/link";
+import { link, linkListRowLabel } from "@/lib/fields/link";
 import {
   createLivePreviewEditComponents,
   createLivePreviewVersions,
@@ -85,7 +85,7 @@ export const Footer: CollectionConfig<"footer"> = {
             label: "Company",
             links: [
               { link: { label: "About", newTab: false, type: "custom", url: "#" } },
-              { link: { label: "Blog", newTab: false, type: "custom", url: "/blog" } },
+              { link: { customPage: "blog", label: "Blog", newTab: false, type: "customPage" } },
               { link: { label: "Careers", newTab: false, type: "custom", url: "#" } },
               { link: { label: "Contact", newTab: false, type: "custom", url: "#" } },
             ],
@@ -114,7 +114,7 @@ export const Footer: CollectionConfig<"footer"> = {
             label: "Empresa",
             links: [
               { link: { label: "Acerca de", newTab: false, type: "custom", url: "#" } },
-              { link: { label: "Blog", newTab: false, type: "custom", url: "/blog" } },
+              { link: { customPage: "blog", label: "Blog", newTab: false, type: "customPage" } },
               { link: { label: "Empleo", newTab: false, type: "custom", url: "#" } },
               { link: { label: "Contacto", newTab: false, type: "custom", url: "#" } },
             ],
@@ -139,8 +139,8 @@ export const Footer: CollectionConfig<"footer"> = {
           type: "text",
         },
         {
-          admin: { initCollapsed: true },
-          fields: [link({ appearances: false })],
+          admin: { components: { RowLabel: linkListRowLabel }, initCollapsed: true },
+          fields: [link({ label: false })],
           label: { en: "Links", es: "Enlaces" },
           labels: {
             plural: { en: "Links", es: "Enlaces" },
@@ -163,8 +163,8 @@ export const Footer: CollectionConfig<"footer"> = {
       type: "array",
     },
     {
-      admin: { initCollapsed: true },
-      fields: [link({ appearances: false })],
+      admin: { components: { RowLabel: linkListRowLabel }, initCollapsed: true },
+      fields: [link({ label: false })],
       label: { en: "Legal links", es: "Enlaces legales" },
       labels: {
         plural: { en: "Legal links", es: "Enlaces legales" },

@@ -239,7 +239,7 @@ export interface Media {
     [k: string]: unknown;
   } | null;
   /**
-   * Shown wherever an image is needed but none was picked (e.g. a new header logo, hero or post image). Tick it on one image only.
+   * Shown wherever an image is needed but none was picked (e.g. a new header logo, hero or post image). Only one image can be the default: ticking it here unticks the others.
    */
   isDefaultImage?: boolean | null;
   prefix?: string | null;
@@ -489,21 +489,23 @@ export interface Header {
     | null;
   actions?:
     | {
-        type?: ('reference' | 'custom' | 'customPage') | null;
-        newTab?: boolean | null;
-        reference?:
-          | ({
-              relationTo: 'page';
-              value: number | Page;
-            } | null)
-          | ({
-              relationTo: 'posts';
-              value: number | Post;
-            } | null);
-        url?: string | null;
-        customPage?: ('blog' | 'search') | null;
-        label: string;
-        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+        link: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label: string;
+          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+        };
         id?: string | null;
       }[]
     | null;
@@ -595,21 +597,23 @@ export interface ContentBlock {
   };
   actions?:
     | {
-        type?: ('reference' | 'custom' | 'customPage') | null;
-        newTab?: boolean | null;
-        reference?:
-          | ({
-              relationTo: 'page';
-              value: number | Page;
-            } | null)
-          | ({
-              relationTo: 'posts';
-              value: number | Post;
-            } | null);
-        url?: string | null;
-        customPage?: ('blog' | 'search') | null;
-        label: string;
-        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+        link: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label: string;
+          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+        };
         id?: string | null;
       }[]
     | null;
@@ -779,7 +783,7 @@ export interface CardsGridBlock {
     description?: string | null;
     image?: {
       image?: (number | null) | Media;
-      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | 'auto') | null;
+      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
     };
     link?: {
       type?: ('reference' | 'custom' | 'customPage') | null;
@@ -960,21 +964,23 @@ export interface ChartBlock {
 export interface CtaBandBlock {
   heading?: SectionHeadingFields;
   actions: {
-    type?: ('reference' | 'custom' | 'customPage') | null;
-    newTab?: boolean | null;
-    reference?:
-      | ({
-          relationTo: 'page';
-          value: number | Page;
-        } | null)
-      | ({
-          relationTo: 'posts';
-          value: number | Post;
-        } | null);
-    url?: string | null;
-    customPage?: ('blog' | 'search') | null;
-    label: string;
-    appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+    link: {
+      type?: ('reference' | 'custom' | 'customPage') | null;
+      newTab?: boolean | null;
+      reference?:
+        | ({
+            relationTo: 'page';
+            value: number | Page;
+          } | null)
+        | ({
+            relationTo: 'posts';
+            value: number | Post;
+          } | null);
+      url?: string | null;
+      customPage?: ('blog' | 'search') | null;
+      label: string;
+      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+    };
     id?: string | null;
   }[];
   section?: {
@@ -1176,27 +1182,29 @@ export interface HeroBlock {
   heading?: SectionHeadingFields;
   actions?:
     | {
-        type?: ('reference' | 'custom' | 'customPage') | null;
-        newTab?: boolean | null;
-        reference?:
-          | ({
-              relationTo: 'page';
-              value: number | Page;
-            } | null)
-          | ({
-              relationTo: 'posts';
-              value: number | Post;
-            } | null);
-        url?: string | null;
-        customPage?: ('blog' | 'search') | null;
-        label: string;
-        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+        link: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label: string;
+          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+        };
         id?: string | null;
       }[]
     | null;
   image?: {
     image?: (number | null) | Media;
-    aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | 'auto') | null;
+    aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
   };
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
@@ -1345,27 +1353,29 @@ export interface Preset {
         heading?: SectionHeadingFields;
         actions?:
           | {
-              type?: ('reference' | 'custom' | 'customPage') | null;
-              newTab?: boolean | null;
-              reference?:
-                | ({
-                    relationTo: 'page';
-                    value: number | Page;
-                  } | null)
-                | ({
-                    relationTo: 'posts';
-                    value: number | Post;
-                  } | null);
-              url?: string | null;
-              customPage?: ('blog' | 'search') | null;
-              label: string;
-              appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+              link: {
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                newTab?: boolean | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+                label: string;
+                appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+              };
               id?: string | null;
             }[]
           | null;
         image?: {
           image?: (number | null) | Media;
-          aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | 'auto') | null;
+          aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
         };
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
@@ -1407,21 +1417,23 @@ export interface Preset {
         };
         actions?:
           | {
-              type?: ('reference' | 'custom' | 'customPage') | null;
-              newTab?: boolean | null;
-              reference?:
-                | ({
-                    relationTo: 'page';
-                    value: number | Page;
-                  } | null)
-                | ({
-                    relationTo: 'posts';
-                    value: number | Post;
-                  } | null);
-              url?: string | null;
-              customPage?: ('blog' | 'search') | null;
-              label: string;
-              appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+              link: {
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                newTab?: boolean | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+                label: string;
+                appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+              };
               id?: string | null;
             }[]
           | null;
@@ -1552,7 +1564,7 @@ export interface Preset {
           description?: string | null;
           image?: {
             image?: (number | null) | Media;
-            aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | 'auto') | null;
+            aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
           };
           link?: {
             type?: ('reference' | 'custom' | 'customPage') | null;
@@ -1717,21 +1729,23 @@ export interface Preset {
     | {
         heading?: SectionHeadingFields;
         actions: {
-          type?: ('reference' | 'custom' | 'customPage') | null;
-          newTab?: boolean | null;
-          reference?:
-            | ({
-                relationTo: 'page';
-                value: number | Page;
-              } | null)
-            | ({
-                relationTo: 'posts';
-                value: number | Post;
-              } | null);
-          url?: string | null;
-          customPage?: ('blog' | 'search') | null;
-          label: string;
-          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+          link: {
+            type?: ('reference' | 'custom' | 'customPage') | null;
+            newTab?: boolean | null;
+            reference?:
+              | ({
+                  relationTo: 'page';
+                  value: number | Page;
+                } | null)
+              | ({
+                  relationTo: 'posts';
+                  value: number | Post;
+                } | null);
+            url?: string | null;
+            customPage?: ('blog' | 'search') | null;
+            label: string;
+            appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+          };
           id?: string | null;
         }[];
         section?: {
@@ -2531,13 +2545,17 @@ export interface HeroBlockSelect<T extends boolean = true> {
   actions?:
     | T
     | {
-        type?: T;
-        newTab?: T;
-        reference?: T;
-        url?: T;
-        customPage?: T;
-        label?: T;
-        appearance?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              label?: T;
+              appearance?: T;
+            };
         id?: T;
       };
   image?:
@@ -2586,13 +2604,17 @@ export interface ContentBlockSelect<T extends boolean = true> {
   actions?:
     | T
     | {
-        type?: T;
-        newTab?: T;
-        reference?: T;
-        url?: T;
-        customPage?: T;
-        label?: T;
-        appearance?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              label?: T;
+              appearance?: T;
+            };
         id?: T;
       };
   section?:
@@ -2866,13 +2888,17 @@ export interface CtaBandBlockSelect<T extends boolean = true> {
   actions?:
     | T
     | {
-        type?: T;
-        newTab?: T;
-        reference?: T;
-        url?: T;
-        customPage?: T;
-        label?: T;
-        appearance?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              label?: T;
+              appearance?: T;
+            };
         id?: T;
       };
   section?:
@@ -3130,13 +3156,17 @@ export interface HeaderSelect<T extends boolean = true> {
   actions?:
     | T
     | {
-        type?: T;
-        newTab?: T;
-        reference?: T;
-        url?: T;
-        customPage?: T;
-        label?: T;
-        appearance?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              label?: T;
+              appearance?: T;
+            };
         id?: T;
       };
   updatedAt?: T;
@@ -3277,13 +3307,17 @@ export interface PresetsSelect<T extends boolean = true> {
               actions?:
                 | T
                 | {
-                    type?: T;
-                    newTab?: T;
-                    reference?: T;
-                    url?: T;
-                    customPage?: T;
-                    label?: T;
-                    appearance?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          label?: T;
+                          appearance?: T;
+                        };
                     id?: T;
                   };
               image?:
@@ -3321,13 +3355,17 @@ export interface PresetsSelect<T extends boolean = true> {
               actions?:
                 | T
                 | {
-                    type?: T;
-                    newTab?: T;
-                    reference?: T;
-                    url?: T;
-                    customPage?: T;
-                    label?: T;
-                    appearance?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          label?: T;
+                          appearance?: T;
+                        };
                     id?: T;
                   };
               section?:
@@ -3587,13 +3625,17 @@ export interface PresetsSelect<T extends boolean = true> {
               actions?:
                 | T
                 | {
-                    type?: T;
-                    newTab?: T;
-                    reference?: T;
-                    url?: T;
-                    customPage?: T;
-                    label?: T;
-                    appearance?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          label?: T;
+                          appearance?: T;
+                        };
                     id?: T;
                   };
               section?:
@@ -4179,7 +4221,7 @@ export interface CardsGridInlineBlock {
     description?: string | null;
     image?: {
       image?: (number | null) | Media;
-      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | 'auto') | null;
+      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '3/4' | 'auto') | null;
     };
     link?: {
       type?: ('reference' | 'custom' | 'customPage') | null;
@@ -4271,26 +4313,26 @@ export interface CodeInlineBlock {
 export interface CtaBannerInline {
   heading?: SectionHeadingFields;
   variant?: ('default' | 'accent' | 'dark') | null;
-  actions?:
-    | {
-        type?: ('reference' | 'custom' | 'customPage') | null;
-        newTab?: boolean | null;
-        reference?:
-          | ({
-              relationTo: 'page';
-              value: number | Page;
-            } | null)
-          | ({
-              relationTo: 'posts';
-              value: number | Post;
-            } | null);
-        url?: string | null;
-        customPage?: ('blog' | 'search') | null;
-        label: string;
-        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
-        id?: string | null;
-      }[]
-    | null;
+  actions: {
+    link: {
+      type?: ('reference' | 'custom' | 'customPage') | null;
+      newTab?: boolean | null;
+      reference?:
+        | ({
+            relationTo: 'page';
+            value: number | Page;
+          } | null)
+        | ({
+            relationTo: 'posts';
+            value: number | Post;
+          } | null);
+      url?: string | null;
+      customPage?: ('blog' | 'search') | null;
+      label: string;
+      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+    };
+    id?: string | null;
+  }[];
   id?: string | null;
   blockName?: string | null;
   blockType: 'ctaBannerInline';

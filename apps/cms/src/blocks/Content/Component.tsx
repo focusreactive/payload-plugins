@@ -4,7 +4,7 @@ import { ContentSection } from "./ui";
 import { Media } from "@/components/media";
 import { CMSLink, RichText, SectionContainer } from "@/components/shared";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
-import type { ContentBlock as ContentBlockProps, Page, Post } from "@/payload-types";
+import type { ContentBlock as ContentBlockProps } from "@/payload-types";
 
 export const ContentBlockComponent: React.FC<ContentBlockProps> = ({
   heading,
@@ -38,20 +38,8 @@ export const ContentBlockComponent: React.FC<ContentBlockProps> = ({
           actions?.length
             ? actions.map((action) => (
                 <CMSLink
-                  key={action.id ?? action.label}
-                  type={action.type}
-                  reference={
-                    action.reference
-                      ? {
-                          relationTo: action.reference.relationTo as "page" | "posts",
-                          value: action.reference.value as Page | Post | string | number,
-                        }
-                      : null
-                  }
-                  url={action.url}
-                  newTab={action.newTab}
-                  label={action.label}
-                  appearance={action.appearance}
+                  key={action.id ?? action.link.label}
+                  link={action.link}
                   size={ButtonSize.Large}
                 />
               ))

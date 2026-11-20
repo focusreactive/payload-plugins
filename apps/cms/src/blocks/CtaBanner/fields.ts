@@ -1,6 +1,6 @@
-import type { Field, GroupField } from "payload";
+import type { Field } from "payload";
 
-import { link } from "@/lib/fields/link";
+import { buttonsField } from "@/lib/fields/link";
 import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 
 export const ctaBannerFields: Field[] = [
@@ -16,17 +16,5 @@ export const ctaBannerFields: Field[] = [
     ],
     type: "select",
   },
-  {
-    admin: { initCollapsed: true },
-    fields: (link() as GroupField).fields,
-    label: { en: "Buttons", es: "Botones" },
-    labels: {
-      plural: { en: "Buttons", es: "Botones" },
-      singular: { en: "Button", es: "Botón" },
-    },
-    localized: true,
-    minRows: 1,
-    name: "actions",
-    type: "array",
-  },
+  buttonsField({ minRows: 1 }),
 ];

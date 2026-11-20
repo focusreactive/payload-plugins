@@ -1,11 +1,11 @@
-import type { Block, Field, GroupField } from "payload";
+import type { Block, Field } from "payload";
 
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
 import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 import { createLocalizedRichText } from "@/lib/utils/createLocalizedDefault";
 import { generateRichText } from "@/lib/utils/generateRichText";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
-import { link } from "@/lib/fields/link";
+import { buttonsField } from "@/lib/fields/link";
 import { injectSection } from "@/lib/fields/section/injectSection";
 import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 
@@ -60,22 +60,7 @@ const fields: Field[] = [
     required: true,
     type: "richText",
   },
-  {
-    admin: {
-      components: { RowLabel: "@/components/admin/RowLabel#RowLabel" },
-      initCollapsed: true,
-    },
-    fields: (link() as GroupField).fields,
-    label: { en: "Buttons", es: "Botones" },
-    labels: {
-      plural: { en: "Buttons", es: "Botones" },
-      singular: { en: "Button", es: "Botón" },
-    },
-    localized: true,
-    maxRows: 2,
-    name: "actions",
-    type: "array",
-  },
+  buttonsField({ maxRows: 2 }),
 ];
 
 export const ContentBlock: Block = injectSection({

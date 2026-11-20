@@ -6,7 +6,8 @@ import type { CustomPageKey } from "@/lib/config/customPages";
 import { getDocumentPath } from "@/lib/utils/path/getDocumentPath";
 import { localizePath } from "@/lib/utils/path/localizePath";
 
-interface PayloadLink {
+/** The stored value of the standard `link` field (`lib/fields/link.ts`). */
+export interface LinkFieldValue {
   type?: "reference" | "custom" | "customPage" | null;
   url?: string | null;
   reference?: {
@@ -19,7 +20,10 @@ interface PayloadLink {
   newTab?: boolean | null;
 }
 
-export function prepareLinkProps(link: PayloadLink | null | undefined, locale: string): LinkProps {
+export function prepareLinkProps(
+  link: LinkFieldValue | null | undefined,
+  locale: string
+): LinkProps {
   if (!link) {
     return { href: "", text: "" };
   }

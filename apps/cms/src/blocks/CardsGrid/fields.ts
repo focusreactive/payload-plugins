@@ -2,7 +2,7 @@ import { definePreview } from "@focus-reactive/payload-plugin-stacked-editing";
 import type { Field } from "payload";
 
 import { imageField } from "@/lib/fields/imageField";
-import { link } from "@/lib/fields/link";
+import { ALL_APPEARANCES, link } from "@/lib/fields/link";
 
 import { CARD_ICONS } from "./icons";
 
@@ -102,7 +102,7 @@ export const cardsGridFields: Field[] = [
         type: "text",
       },
       imageField("image", { required: false }),
-      link({ required: false }),
+      link({ appearances: ALL_APPEARANCES, required: false }),
     ],
     label: { en: "Cards", es: "Tarjetas" },
     labels: {

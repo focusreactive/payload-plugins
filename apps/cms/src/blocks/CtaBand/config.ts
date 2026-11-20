@@ -1,33 +1,16 @@
-import type { Block, Field, GroupField } from "payload";
+import type { Block, Field } from "payload";
 
 import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 import { injectSection } from "@/lib/fields/section/injectSection";
 import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
-import { link } from "@/lib/fields/link";
+import { buttonsField } from "@/lib/fields/link";
 
 const fields: Field[] = [
   sectionHeadingField({
     eyebrow: { en: "Get started", es: "Empieza ahora" },
     title: { en: "Start shipping in rhythm.", es: "Empieza a publicar con ritmo." },
   }),
-  {
-    admin: {
-      components: { RowLabel: "@/components/admin/RowLabel#RowLabel" },
-      initCollapsed: true,
-    },
-    fields: (link() as GroupField).fields,
-    label: { en: "Buttons", es: "Botones" },
-    labels: {
-      plural: { en: "Buttons", es: "Botones" },
-      singular: { en: "Button", es: "Botón" },
-    },
-    localized: true,
-    maxRows: 2,
-    minRows: 1,
-    name: "actions",
-    required: true,
-    type: "array",
-  },
+  buttonsField({ maxRows: 2, minRows: 1 }),
 ];
 
 export const CtaBandBlock: Block = injectSection({

@@ -11,7 +11,7 @@ async function fetchDefaultMediaId(): Promise<string | number | null> {
     collection: "media",
     depth: 0,
     limit: 1,
-    // Several images may be ticked; the most recently changed one wins, deterministically.
+    // `keepSingleDefaultImage` keeps one ticked; should older data hold several, the newest wins.
     sort: "-updatedAt",
     where: {
       isDefaultImage: { equals: true },

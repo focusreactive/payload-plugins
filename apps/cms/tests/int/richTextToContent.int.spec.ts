@@ -130,7 +130,7 @@ describe("richTextToContent", () => {
           fields: {
             blockType: "ctaBannerInline",
             heading: { eyebrow: "New", title: "Join us", description: "Start today" },
-            actions: [{ type: "custom", url: "/signup", label: "Sign up" }],
+            actions: [{ link: { type: "custom", url: "/signup", label: "Sign up" } }],
           },
         },
       ]),

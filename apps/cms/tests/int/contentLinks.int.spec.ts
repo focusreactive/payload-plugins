@@ -44,7 +44,11 @@ describe("collectLinkRefs", () => {
     const values = {
       blocks: [
         {
-          actions: [{ type: "reference", reference: { relationTo: "page", value: 1 }, label: "a" }],
+          actions: [
+            {
+              link: { type: "reference", reference: { relationTo: "page", value: 1 }, label: "a" },
+            },
+          ],
         },
         {
           items: [
@@ -55,7 +59,13 @@ describe("collectLinkRefs", () => {
         },
         {
           actions: [
-            { type: "reference", reference: { relationTo: "page", value: 1 }, label: "dup" },
+            {
+              link: {
+                type: "reference",
+                reference: { relationTo: "page", value: 1 },
+                label: "dup",
+              },
+            },
           ],
         },
       ],
@@ -217,7 +227,11 @@ describe("buildRefQueries", () => {
       heroImage: 8,
       blocks: [
         {
-          actions: [{ type: "reference", reference: { relationTo: "page", value: 1 }, label: "a" }],
+          actions: [
+            {
+              link: { type: "reference", reference: { relationTo: "page", value: 1 }, label: "a" },
+            },
+          ],
         },
         { testimonialItems: [{ testimonial: 2 }] },
       ],

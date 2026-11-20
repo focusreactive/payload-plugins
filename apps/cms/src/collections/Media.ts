@@ -10,6 +10,7 @@ import {
   protectOtherEnvironmentFilesOnDelete,
   protectOtherEnvironmentFilesOnReplace,
 } from "@/lib/hooks/protectOtherEnvironmentFiles";
+import { keepSingleDefaultImage } from "@/lib/hooks/keepSingleDefaultImage";
 import { validateMediaUpload } from "@/lib/hooks/validateMediaUpload";
 import { generateRichText } from "@/lib/utils/generateRichText";
 import { DEFAULT_MEDIA_CACHE_TAG } from "@/dal/getDefaultMediaId";
@@ -66,8 +67,8 @@ export const Media: CollectionConfig<"media"> = {
     {
       admin: {
         description: {
-          en: "Shown wherever an image is needed but none was picked (e.g. a new header logo, hero or post image). Tick it on one image only.",
-          es: "Se muestra donde hace falta una imagen y no se eligió ninguna (p. ej. el logo de una cabecera nueva, un hero o la imagen de un post). Márcala solo en una imagen.",
+          en: "Shown wherever an image is needed but none was picked (e.g. a new header logo, hero or post image). Only one image can be the default: ticking it here unticks the others.",
+          es: "Se muestra donde hace falta una imagen y no se eligió ninguna (p. ej. el logo de una cabecera nueva, un hero o la imagen de un post). Solo una imagen puede ser la predeterminada: al marcarla aquí se desmarcan las demás.",
         },
         position: "sidebar",
       },
@@ -98,6 +99,7 @@ export const Media: CollectionConfig<"media"> = {
     beforeChange: [protectOtherEnvironmentFilesOnReplace, setDefaultFocalPoint],
     beforeDelete: [protectOtherEnvironmentFilesOnDelete],
     afterChange: [
+      keepSingleDefaultImage,
       ({ req }) => {
         if (req?.context?.disableRevalidate) return;
         try {

@@ -35,7 +35,7 @@ export const logosFields: Field[] = [
   },
   {
     admin: { initCollapsed: true },
-    fields: [imageField("image", { withAspectRatio: false }), link({ appearances: false })],
+    fields: [imageField("image", { withAspectRatio: false }), link()],
     label: { en: "Logos", es: "Logos" },
     labels: {
       plural: { en: "Logos", es: "Logos" },

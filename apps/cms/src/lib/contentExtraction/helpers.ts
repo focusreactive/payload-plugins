@@ -92,12 +92,13 @@ export function collectMediaIds(value: unknown): number[] {
   return [...out];
 }
 
+/** A "Buttons" list: each row holds one standard `link`. */
 export function actionLinks(
-  actions: LinkValue[] | null | undefined,
+  actions: { link?: LinkValue | null }[] | null | undefined,
   ctx: LinkResolveCtx
 ): ContentNode[] {
-  return asArray<LinkValue>(actions)
-    .map((a) => linkToContentNode(a, ctx))
+  return asArray<{ link?: LinkValue | null }>(actions)
+    .map((a) => linkToContentNode(a?.link, ctx))
     .filter((n): n is ContentNode => n !== null);
 }
 

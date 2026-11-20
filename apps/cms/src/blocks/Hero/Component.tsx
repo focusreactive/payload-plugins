@@ -21,7 +21,7 @@ export async function HeroBlockComponent({ variant, heading, actions, image, sec
         heading={heading}
         image={prepareMediaProps(image)}
         links={(actions ?? []).map((action) => ({
-          ...prepareLinkProps(action, locale),
+          ...prepareLinkProps(action.link, locale),
           size: ButtonSize.Large,
         }))}
       />

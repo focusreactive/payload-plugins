@@ -1,17 +1,19 @@
-import type { Field, GroupField } from "payload";
+import type { Field } from "payload";
 
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { imageField } from "@/lib/fields/imageField";
-import { link } from "@/lib/fields/link";
+import { buttonsField } from "@/lib/fields/link";
 import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 
-const defaultHeroLinkItem = (label: string) => ({
-  appearance: "default" as const,
-  label,
-  newTab: false,
-  type: "custom" as const,
-  url: "https://www.google.com",
+const defaultHeroLinkItem = (label: string, appearance: "accent" | "outline") => ({
+  link: {
+    appearance,
+    label,
+    newTab: false,
+    type: "custom" as const,
+    url: "https://www.google.com",
+  },
 });
 
 export const heroFields: Field[] = [
@@ -34,34 +36,19 @@ export const heroFields: Field[] = [
     title: DEFAULT_VALUES.blocks.hero.title,
     description: DEFAULT_VALUES.blocks.hero.description,
   }),
-  {
-    admin: {
-      components: {
-        RowLabel: "@/components/admin/RowLabel#RowLabel",
-      },
-      initCollapsed: true,
-    },
+  buttonsField({
     defaultValue: createLocalizedDefault({
       en: [
-        { ...defaultHeroLinkItem("Start free"), appearance: "accent" as const },
-        { ...defaultHeroLinkItem("Watch the tour"), appearance: "outline" as const },
+        defaultHeroLinkItem("Start free", "accent"),
+        defaultHeroLinkItem("Watch the tour", "outline"),
       ],
       es: [
-        { ...defaultHeroLinkItem("Comenzar gratis"), appearance: "accent" as const },
-        { ...defaultHeroLinkItem("Ver el tour"), appearance: "outline" as const },
+        defaultHeroLinkItem("Comenzar gratis", "accent"),
+        defaultHeroLinkItem("Ver el tour", "outline"),
       ],
     }),
-    fields: (link() as GroupField).fields,
-    label: { en: "Buttons", es: "Botones" },
-    labels: {
-      plural: { en: "Buttons", es: "Botones" },
-      singular: { en: "Button", es: "Botón" },
-    },
-    localized: true,
     maxRows: 2,
-    name: "actions",
-    type: "array",
-  },
+  }),
   {
     ...imageField("image", { required: false, withDefaultMedia: true }),
     admin: {

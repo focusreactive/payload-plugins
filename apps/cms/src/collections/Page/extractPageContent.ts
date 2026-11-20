@@ -35,7 +35,7 @@ function extractHeroContent(
       ...sectionHeadingContent(hero.heading, 1),
       groupImage(hero.image as ImageGroup, docs),
     ]),
-    ...actionLinks(hero.actions as LinkValue[], ctx),
+    ...actionLinks(hero.actions as { link?: LinkValue }[], ctx),
   ];
 }
 
@@ -54,7 +54,7 @@ export function extractPageBlockContent(
           uploadImage(b.image as Upload, docs),
           ...richTextToContent(b.content, ctx),
         ]),
-        ...actionLinks(b.actions as LinkValue[], ctx),
+        ...actionLinks(b.actions as { link?: LinkValue }[], ctx),
       ];
     case "faq":
       return helpers.compact([
@@ -67,7 +67,7 @@ export function extractPageBlockContent(
     case "ctaBand":
       return [
         ...helpers.compact([...sectionHeadingContent(b.heading as SectionHeadingFields, 2)]),
-        ...actionLinks(b.actions as LinkValue[], ctx),
+        ...actionLinks(b.actions as { link?: LinkValue }[], ctx),
       ];
     case "carousel":
       return helpers.compact([

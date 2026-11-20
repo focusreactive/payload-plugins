@@ -1,9 +1,9 @@
-import type { CollectionConfig, GroupField } from "payload";
+import type { CollectionConfig } from "payload";
 
 import { anyone, or, user, superAdmin } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
-import { link } from "@/lib/fields/link";
+import { buttonsField, link } from "@/lib/fields/link";
 import {
   createLivePreviewEditComponents,
   createLivePreviewVersions,
@@ -60,11 +60,19 @@ export const Header: CollectionConfig<"header"> = {
       },
       defaultValue: createLocalizedDefault({
         en: [
-          { label: "Blog", link: { newTab: false, type: "custom", url: "/blog" }, type: "link" },
+          {
+            label: "Blog",
+            link: { customPage: "blog", newTab: false, type: "customPage" },
+            type: "link",
+          },
           { label: "Pricing", link: { newTab: false, type: "custom", url: "#" }, type: "link" },
         ],
         es: [
-          { label: "Blog", link: { newTab: false, type: "custom", url: "/blog" }, type: "link" },
+          {
+            label: "Blog",
+            link: { customPage: "blog", newTab: false, type: "customPage" },
+            type: "link",
+          },
           { label: "Precios", link: { newTab: false, type: "custom", url: "#" }, type: "link" },
         ],
       }),
@@ -95,11 +103,8 @@ export const Header: CollectionConfig<"header"> = {
           ],
         },
         link({
-          appearances: false,
-          disableLabel: true,
-          overrides: {
-            admin: { condition: (_, siblingData) => siblingData?.type === "link" },
-          },
+          condition: (_, siblingData) => siblingData?.type === "link",
+          withText: false,
         }),
         {
           admin: { condition: (_, siblingData) => siblingData?.type === "dropdown" },
@@ -140,12 +145,9 @@ export const Header: CollectionConfig<"header"> = {
                   type: "textarea",
                 },
                 link({
-                  appearances: false,
+                  condition: (_, siblingData) => !!siblingData?.enabled,
                   customPageDbName: "hdr_ni_dd_ft_lnk_cp",
                   required: false,
-                  overrides: {
-                    admin: { condition: (_, siblingData) => !!siblingData?.enabled },
-                  },
                 }),
               ],
               label: { en: "Featured card", es: "Tarjeta destacada" },
@@ -176,9 +178,8 @@ export const Header: CollectionConfig<"header"> = {
                   ],
                 },
                 link({
-                  appearances: false,
                   customPageDbName: "hdr_ni_dd_lnks_lnk_cp",
-                  disableLabel: true,
+                  withText: false,
                 }),
               ],
               label: { en: "Menu links", es: "Enlaces del menú" },
@@ -206,19 +207,7 @@ export const Header: CollectionConfig<"header"> = {
       name: "navItems",
       type: "array",
     },
-    {
-      admin: { initCollapsed: true },
-      fields: (link() as GroupField).fields,
-      label: { en: "Buttons", es: "Botones" },
-      labels: {
-        plural: { en: "Buttons", es: "Botones" },
-        singular: { en: "Button", es: "Botón" },
-      },
-      localized: true,
-      maxRows: 2,
-      name: "actions",
-      type: "array",
-    },
+    buttonsField({ maxRows: 2 }),
   ],
   hooks: {
     afterChange: [revalidateResourcesUsingHeader],

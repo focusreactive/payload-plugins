@@ -177,7 +177,7 @@ function expandBlock(
       ];
 
       for (const action of recordsOf(fields.actions)) {
-        nodes.push(linkToContentNode(action as LinkValue, linkCtx));
+        nodes.push(linkToContentNode(action.link as LinkValue, linkCtx));
       }
 
       return nodes;
