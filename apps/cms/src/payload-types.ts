@@ -606,9 +606,6 @@ export interface Post {
   readingTime?: number | null;
   categories: (number | Category)[];
   authors: (number | Author)[];
-  /**
-   * Pick up to 3. Empty slots are filled with the latest posts from the same categories.
-   */
   relatedPosts?: (number | Post)[] | null;
   updatedAt: string;
   createdAt: string;

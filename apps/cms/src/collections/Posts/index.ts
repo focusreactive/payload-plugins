@@ -245,6 +245,8 @@ export const Posts: CollectionConfig<"posts"> = {
     },
     {
       admin: {
+        // Computed on save (computeReadingTime) and stored for post cards; not an editor concern.
+        hidden: true,
         position: "sidebar",
         readOnly: true,
       },
@@ -286,10 +288,6 @@ export const Posts: CollectionConfig<"posts"> = {
     },
     {
       admin: {
-        description: {
-          en: "Pick up to 3. Empty slots are filled with the latest posts from the same categories.",
-          es: "Elige hasta 3. Los huecos se rellenan con las publicaciones más recientes de las mismas categorías.",
-        },
         position: "sidebar",
       },
       filterOptions: ({ id }) => ({
