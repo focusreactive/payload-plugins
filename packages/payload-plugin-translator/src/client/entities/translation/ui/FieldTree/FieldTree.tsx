@@ -11,7 +11,6 @@ import styles from "./styles.module.scss";
 
 type Picking = {
   selection: FieldSelection;
-  locked: FieldSelection;
   onToggle: (node: TreeNode) => void;
   disabled: boolean;
 };
@@ -42,7 +41,6 @@ function NodeCheckbox({
   label: string;
 }) {
   const state = checkStateOf(node, picking.selection);
-  const isLocked = addressesOf(node).every((address) => picking.locked.has(address));
   return (
     <Checkbox
       aria-label={label}
@@ -50,8 +48,7 @@ function NodeCheckbox({
       ref={(box) => {
         if (box) box.indeterminate = state === "mixed";
       }}
-      disabled={picking.disabled || isLocked}
-      title={isLocked ? "Required in this locale" : undefined}
+      disabled={picking.disabled}
       onChange={() => picking.onToggle(node)}
     />
   );

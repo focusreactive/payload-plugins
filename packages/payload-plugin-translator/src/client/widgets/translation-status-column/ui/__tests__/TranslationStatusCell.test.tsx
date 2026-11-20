@@ -46,7 +46,7 @@ const ABILITIES: Abilities = {
 
 const SEEDS: Record<string, DocumentSeed> = {
   "1": {
-    contents: { de: { kind: "tracked", verdicts: {}, translatedAt: AT, dismissed: false } },
+    contents: { de: { kind: "tracked", verdicts: {}, translatedAt: AT } },
     run: null,
   },
   "2": { contents: { de: { kind: "filled" } }, run: { status: "queued", locales: ["fr", "es"] } },

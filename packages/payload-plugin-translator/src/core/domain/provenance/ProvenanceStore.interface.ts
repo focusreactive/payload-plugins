@@ -93,6 +93,14 @@ export interface ProvenanceStore {
    */
   findByDocument(collectionSlug: string, documentId: string): Promise<ProvenanceReceipt[]>;
   /**
+   * Optional: an implementation outside this package need not have it, and
+   * {@link receiptsByDocument} falls back to one {@link ProvenanceStore.findByDocument} per id.
+   */
+  findByDocuments?(
+    collectionSlug: string,
+    documentIds: readonly string[]
+  ): Promise<ProvenanceReceipt[]>;
+  /**
    * Re-base one record on the source it is now considered current against, touching nothing else.
    * No-op if the key has no record.
    *

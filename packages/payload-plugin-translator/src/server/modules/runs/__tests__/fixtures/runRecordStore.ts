@@ -18,6 +18,7 @@ export const storeDouble = (over: Partial<RunRecordStoreDouble> = {}): RunRecord
   findLiveInCollection: vi.fn().mockResolvedValue([]),
   findLiveForDocuments: vi.fn().mockResolvedValue([]),
   findRecentlyFailedInCollection: vi.fn().mockResolvedValue([]),
+  findRecentlyUndeliveredInCollection: vi.fn().mockResolvedValue([]),
   deleteByDocument: vi.fn().mockResolvedValue(undefined),
   ...over,
 });

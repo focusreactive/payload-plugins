@@ -10,17 +10,16 @@ const locale = (overrides: Partial<LocaleState>): LocaleState => ({
   locale: "de",
   content: { kind: "empty" },
   run: null,
-  mustInclude: [],
   ...overrides,
 });
 
 const upToDate = locale({
   locale: "de",
-  content: { kind: "tracked", verdicts: { a: "current" }, translatedAt: AT, dismissed: false },
+  content: { kind: "tracked", verdicts: { a: "current" }, translatedAt: AT },
 });
 const behind = locale({
   locale: "fr",
-  content: { kind: "tracked", verdicts: { a: "drifted" }, translatedAt: AT, dismissed: false },
+  content: { kind: "tracked", verdicts: { a: "drifted" }, translatedAt: AT },
 });
 const queued = locale({ locale: "es", run: { ...run, status: "queued" } });
 const failed = locale({ locale: "it", run: { ...run, status: "failed", message: "x" } });

@@ -10,7 +10,7 @@ import type { ListTranslationState } from "../../../../types/wire/ListTranslatio
 import type { DocumentId } from "../../../../types/wire/primitives.js";
 
 import { localesOf } from "./localesOf.js";
-import { NOT_MANAGED, NO_LOCALIZATION } from "./refusals.js";
+import { NOT_MANAGED, NO_LOCALIZATION } from "../../../shared/http/readRefusals.js";
 import type { StubDeps } from "./StubDeps.js";
 
 const idsAsked = (req: PayloadRequest): DocumentId[] =>

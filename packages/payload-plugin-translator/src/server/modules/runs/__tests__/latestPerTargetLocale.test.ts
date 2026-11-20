@@ -1,13 +1,13 @@
 import { describe, it, expect } from "vitest";
 
-import { reportedRuns } from "../../../modules/runs/index.js";
-import { runRow } from "../../../modules/runs/__tests__/fixtures/runRecordStore.js";
+import { latestPerTargetLocale } from "../runStateOf.js";
+import { reportedRuns } from "../runStatus.js";
 
-import { latestPerTargetLocale } from "../model.js";
+import { runRow } from "./fixtures/runRecordStore.js";
 
 const runs = (...rows: ReturnType<typeof runRow>[]) => reportedRuns(rows);
 
-describe("latestPerTargetLocale", () => {
+describe("one row per locale, out of every run of a document", () => {
   it("returns one run per target locale", () => {
     const kept = latestPerTargetLocale(
       runs(runRow({ handle: "de", targetLng: "de" }), runRow({ handle: "fr", targetLng: "fr" }))
@@ -25,7 +25,7 @@ describe("latestPerTargetLocale", () => {
     );
 
     expect(kept).toHaveLength(1);
-    expect(kept[0].row.handle).toBe("new");
+    expect(kept[0]?.row.handle).toBe("new");
   });
 
   it("breaks a tie on when the locale was last touched", () => {
@@ -38,10 +38,18 @@ describe("latestPerTargetLocale", () => {
     );
 
     expect(kept).toHaveLength(1);
-    expect(kept[0].row.handle).toBe("fresh");
+    expect(kept[0]?.row.handle).toBe("fresh");
   });
 
   it("answers with nothing when nothing has run", () => {
     expect(latestPerTargetLocale([])).toEqual([]);
+  });
+});
+
+describe("where it lives", () => {
+  it("is no longer the status feature's to hand out, now that three readers need it", async () => {
+    const statusFeature = await import("../../../features/get-document-status/model.js");
+
+    expect(Object.keys(statusFeature)).not.toContain("latestPerTargetLocale");
   });
 });

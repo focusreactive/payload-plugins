@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import type { LeafVerdict, TreeNode } from "../../../../types/wire/DocumentTranslationState.js";
 import type { LeafAddress, LocaleCode } from "../../../../types/wire/primitives.js";
@@ -37,8 +37,6 @@ type Common = {
 type PickingFields = Common & {
   mode: "pick";
   verdicts: Readonly<Record<LeafAddress, LeafVerdict>>;
-  /** Leaves Payload refuses to leave empty: always part of the run. */
-  mustInclude: readonly LeafAddress[];
 };
 
 type WholeDocumentFields = Common & { mode: "whole" };
@@ -68,10 +66,7 @@ function ErrorLine({ error }: { error: Error | null }) {
 function PickFields(props: PickingFields) {
   const { abilities } = useTranslateKitConfig();
   const { translate, error, pending } = useTranslate(props);
-  const locked = useMemo(() => new Set(props.mustInclude), [props.mustInclude]);
-  const [selection, setSelection] = useState(() =>
-    initialSelection(props.tree, props.verdicts, props.mustInclude)
-  );
+  const [selection, setSelection] = useState(() => initialSelection(props.tree, props.verdicts));
   const [query, setQuery] = useState("");
 
   const picked = selectedInTreeOrder(props.tree, selection);
@@ -94,9 +89,8 @@ function PickFields(props: PickingFields) {
         localeLabel={props.localeLabel}
         sourceLabel={props.sourceLabel}
         selection={selection}
-        locked={locked}
         disabled={props.startBlocked}
-        onToggle={(node) => setSelection((current) => toggleNode(node, current, locked))}
+        onToggle={(node) => setSelection((current) => toggleNode(node, current))}
       />
       <div className={styles.footer}>
         <span className={styles.count}>

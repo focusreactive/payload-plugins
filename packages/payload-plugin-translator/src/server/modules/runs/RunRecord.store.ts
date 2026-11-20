@@ -37,6 +37,13 @@ export interface RunRecordStore {
   findLiveInCollection(collectionSlug: CollectionSlug): Promise<RunRecord[]>;
   findLiveForDocuments(collectionSlug: CollectionSlug, ids: readonly ID[]): Promise<RunRecord[]>;
   findRecentlyFailedInCollection(collectionSlug: CollectionSlug, since: Date): Promise<RunRecord[]>;
+  /**
+   * Undelivered means settled without delivering: failed, plus the siblings the run never got to.
+   */
+  findRecentlyUndeliveredInCollection(
+    collectionSlug: CollectionSlug,
+    since: Date
+  ): Promise<RunRecord[]>;
   deleteByDocument(document: RunDocument): Promise<void>;
 }
 
@@ -198,6 +205,19 @@ export class PayloadRunRecordStore implements RunRecordStore {
       and: [
         { collectionSlug: { equals: collectionSlug } },
         { outcome: { equals: "failed" } },
+        { settledAt: { greater_than: since.toISOString() } },
+      ],
+    });
+  }
+
+  findRecentlyUndeliveredInCollection(
+    collectionSlug: CollectionSlug,
+    since: Date
+  ): Promise<RunRecord[]> {
+    return this.rows({
+      and: [
+        { collectionSlug: { equals: collectionSlug } },
+        { outcome: { in: ["failed", "abandoned"] } },
         { settledAt: { greater_than: since.toISOString() } },
       ],
     });

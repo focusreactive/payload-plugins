@@ -75,6 +75,8 @@ export type DocumentStalenessFactory = (
 export type ProvenanceContribution = {
   module: TranslationModule;
   criteria: Criteria;
+  storeFactory: ProvenanceStoreFactory;
+  stalenessFactory: DocumentStalenessFactory;
 };
 
 export function configureProvenance(
@@ -133,5 +135,7 @@ export function configureProvenance(
       cleanUpOnDelete,
     }),
     criteria: { [DRIFT_CRITERION]: driftedLeaves(recorderFactory) },
+    storeFactory,
+    stalenessFactory,
   };
 }

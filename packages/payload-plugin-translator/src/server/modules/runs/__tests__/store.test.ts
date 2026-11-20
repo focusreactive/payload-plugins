@@ -360,6 +360,27 @@ describe("the run record store", () => {
       );
     });
 
+    it("asks for the rows that settled without delivering, so an abandoned locale is not lost", async () => {
+      const { payload, spies } = payloadWith({});
+
+      await new PayloadRunRecordStore(payload, SLUG).findRecentlyUndeliveredInCollection(
+        "posts" as RunRecord["collectionSlug"],
+        new Date("2026-10-20T00:00:00.000Z")
+      );
+
+      expect(spies.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            and: [
+              { collectionSlug: { equals: "posts" } },
+              { outcome: { in: ["failed", "abandoned"] } },
+              { settledAt: { greater_than: "2026-10-20T00:00:00.000Z" } },
+            ],
+          },
+        })
+      );
+    });
+
     it("bounds every read, because nothing prunes the rows", async () => {
       const find = vi.fn().mockResolvedValue({ docs: [] });
       const { payload } = payloadWith({ find });

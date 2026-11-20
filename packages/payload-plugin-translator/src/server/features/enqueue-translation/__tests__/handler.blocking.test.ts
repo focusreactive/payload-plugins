@@ -57,7 +57,11 @@ describe("one run per document, decided before the runner is asked", () => {
       run: vi.fn(),
     } as unknown as TaskRunner;
     runs = storeDouble();
-    config = { availableCollections: new Set(["posts"] as CollectionSlug[]) };
+    config = {
+      availableCollections: new Set(["posts"] as CollectionSlug[]),
+      keepsDrafts: new Set(["posts"] as CollectionSlug[]),
+      translatablePaths: () => ["title"],
+    };
     handler = new EnqueueTranslationHandler(
       config,
       { create: vi.fn().mockReturnValue(runner) } as unknown as TaskRunnerFactory,

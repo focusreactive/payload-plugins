@@ -62,6 +62,8 @@ describe("EnqueueTranslationHandler", () => {
 
     config = {
       availableCollections: new Set(["posts", "pages"] as CollectionSlug[]),
+      keepsDrafts: new Set(["posts", "pages"] as CollectionSlug[]),
+      translatablePaths: () => ["title"],
     };
 
     handler = new EnqueueTranslationHandler(config, mockTaskRunnerFactory, () => storeDouble());
@@ -360,6 +362,95 @@ describe("EnqueueTranslationHandler", () => {
         [expect.objectContaining({ filters: [] })],
         expect.anything()
       );
+    });
+  });
+
+  describe("asking for named fields where the write is live", () => {
+    const requestHolding = (holding: readonly string[], body: Record<string, unknown>) =>
+      ({
+        payload: {
+          config: { localization: { locales: ["en", "de", "fr", "es"] } },
+          logger: { warn },
+          find: vi.fn(async ({ locale }: { locale: string }) => ({
+            docs: holding.includes(locale) ? [{ id: "doc-1" }] : [],
+          })),
+        },
+        json: vi.fn().mockResolvedValue({
+          source_lng: "en",
+          target_lng: "de",
+          collection_slug: "posts",
+          collection_id: ["doc-1"],
+          ...body,
+        }),
+      }) as unknown as PayloadRequest;
+
+    const asked = (
+      holding: readonly string[],
+      body: Record<string, unknown>,
+      keepsDrafts: string[] = []
+    ) =>
+      new EnqueueTranslationHandler(
+        {
+          availableCollections: config.availableCollections,
+          keepsDrafts: new Set(keepsDrafts as CollectionSlug[]),
+          translatablePaths: () => ["title"],
+        },
+        mockTaskRunnerFactory,
+        () => storeDouble()
+      ).handle(requestHolding(holding, body));
+
+    it("refuses a locale holding nothing, which the write would leave with empty required fields", async () => {
+      const response = await asked([], { filters: leaves("title") });
+
+      expect(response.status).toBe(400);
+      expect((await response.json()).message).toContain("Nothing is written yet in de");
+      expect(mockTaskRunner.enqueue).not.toHaveBeenCalled();
+    });
+
+    it("takes a locale that already holds content, whoever wrote it", async () => {
+      const response = await asked(["de"], { filters: leaves("title") });
+
+      expect(response.status).toBe(200);
+      expect(mockTaskRunner.enqueue).toHaveBeenCalled();
+    });
+
+    it("decides per locale, and names only the one that holds nothing", async () => {
+      const response = await asked(["de"], { target_lng: ["de", "fr"], filters: leaves("title") });
+
+      expect(response.status).toBe(400);
+      expect((await response.json()).message).toContain("Nothing is written yet in fr,");
+    });
+
+    it("takes a collection with nothing translatable, where no field could hold anything", async () => {
+      const response = await new EnqueueTranslationHandler(
+        {
+          availableCollections: config.availableCollections,
+          keepsDrafts: new Set<CollectionSlug>(),
+          translatablePaths: () => [],
+        },
+        mockTaskRunnerFactory,
+        () => storeDouble()
+      ).handle(requestHolding([], { filters: leaves("title") }));
+
+      expect(response.status).toBe(200);
+    });
+
+    it("takes an empty locale where the collection keeps drafts, since a draft is not validated", async () => {
+      const response = await asked([], { filters: leaves("title") }, ["posts"]);
+
+      expect(response.status).toBe(200);
+    });
+
+    it("takes a rule into an empty locale, which answers every leaf with no record to read", async () => {
+      const response = await asked([], { filters: [{ kind: "rule", name: "stale" }] });
+
+      expect(response.status).toBe(200);
+    });
+
+    it("takes the whole document", async () => {
+      const response = await asked([], { filters: [] });
+
+      expect(response.status).toBe(200);
     });
   });
 

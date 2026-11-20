@@ -68,7 +68,7 @@ describe("translatorPlugin — the listed surfaces", () => {
     expect(paths).toContain("/translate/enqueue");
     expect(paths).not.toContain(STALENESS_PATH);
     expect(paths).not.toContain(DISMISS_PATH);
-    expect(result.endpoints).toHaveLength(5);
+    expect(result.endpoints).toHaveLength(7);
   });
 
   it("registers the staleness routes once provenance is switched on", async () => {
@@ -77,7 +77,7 @@ describe("translatorPlugin — the listed surfaces", () => {
 
     expect(paths).toContain(STALENESS_PATH);
     expect(paths).toContain(DISMISS_PATH);
-    expect(result.endpoints).toHaveLength(7);
+    expect(result.endpoints).toHaveLength(9);
   });
 
   it("refuses to start when the surfaces are not listed at all", async () => {
@@ -107,7 +107,7 @@ describe("translatorPlugin — the listed surfaces", () => {
   it("boots a chain whose modules all differ", async () => {
     const { result } = await build({ modules: [documentTranslation(), fieldTranslation()] });
 
-    expect(result.endpoints).toHaveLength(6);
+    expect(result.endpoints).toHaveLength(8);
   });
 
   it("names the replacement for each level it removed", async () => {
@@ -133,7 +133,7 @@ describe("translatorPlugin — the listed surfaces", () => {
     } as unknown as Config);
     const twice = await translatorPlugin(pluginConfig)(once);
 
-    expect(twice.endpoints).toHaveLength(5);
+    expect(twice.endpoints).toHaveLength(7);
   });
 
   it("adds the cache provider and configures the runner once", async () => {
@@ -166,7 +166,7 @@ describe("translatorPlugin — listing the surfaces one at a time", () => {
       modules: [documentTranslation()],
       components: [translateDocumentControl()],
     });
-    expect(result.endpoints).toHaveLength(5);
+    expect(result.endpoints).toHaveLength(7);
     expect(posts.admin.components.edit.beforeDocumentControls).toHaveLength(1);
     expect(posts.admin.components.beforeListTable).toBeUndefined();
   });

@@ -19,6 +19,7 @@ import type {
   ComponentContext,
   ModuleContext,
   ConfigTimeContext,
+  ProvenanceAccess,
 } from "./types.js";
 
 /** What a provider made last may read: the config every modifier has written, and the plugin's own routes. */
@@ -84,6 +85,7 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
   readonly access: AccessGuard;
   readonly taskRunnerFactory: TaskRunnerFactory;
   readonly runRecordStoreFactory: RunRecordStoreFactory;
+  readonly provenance?: ProvenanceAccess;
   readonly schemaMap: CollectionSchemaMap;
   readonly translationProvider: TranslationProvider;
   readonly walk: LanguageTable;
@@ -101,6 +103,7 @@ export class PluginConfigBuilder implements ComponentContext, ModuleContext {
     this.access = deps.access;
     this.taskRunnerFactory = deps.taskRunnerFactory;
     this.runRecordStoreFactory = deps.runRecordStoreFactory;
+    this.provenance = deps.provenance;
     this.schemaMap = deps.schemaMap;
     this.translationProvider = deps.translationProvider;
     this.walk = deps.walk;

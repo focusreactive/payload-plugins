@@ -5,9 +5,9 @@ import type { RunRecordStoreFactory } from "../../modules/runs/index.js";
 import { isCollectionAvailable } from "../_lib/collection-utils.js";
 import { visibleIds } from "../../shared/payload/collections.js";
 
-import { reportedRuns } from "../../modules/runs/index.js";
+import { latestPerTargetLocale, reportedRuns } from "../../modules/runs/index.js";
 
-import { GetDocumentStatusInputSchema, latestPerTargetLocale, runToStatusItem } from "./model.js";
+import { GetDocumentStatusInputSchema, runToStatusItem } from "./model.js";
 import type { GetDocumentStatusConfig } from "./model.js";
 
 /** What each locale of a document is doing. */

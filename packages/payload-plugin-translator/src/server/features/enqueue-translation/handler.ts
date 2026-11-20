@@ -1,4 +1,4 @@
-import type { PayloadRequest } from "payload";
+import type { CollectionSlug, PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared/index.js";
 import { authCollectionsOf, identityOf, scopeOf } from "../../shared/payload/identityOf.js";
@@ -11,8 +11,10 @@ import { authorisedByTheReadFilter, authorisedWork } from "../../shared/access/a
 import type { AuthorisedWork } from "../../shared/access/authorised.js";
 
 import { Locales } from "../../../core/domain/locales/index.js";
+import type { TranslationFilter } from "../../../core/domain/selection/index.js";
+import { localesHoldingContent } from "../../shared/payload/localesHoldingContent.js";
 
-import { EnqueueInputSchema, toAssignmentOutputs } from "./model.js";
+import { EnqueueInputSchema, toAssignmentOutputs, wholeDocumentOnly } from "./model.js";
 import type { EnqueueConfig } from "./model.js";
 
 const documentsIn = (work: readonly AuthorisedWork[]): string[] => [
@@ -32,6 +34,39 @@ export class EnqueueTranslationHandler {
     this.config = config;
     this.taskRunnerFactory = taskRunnerFactory;
     this.runRecordStoreFactory = runRecordStoreFactory;
+  }
+
+  /**
+   * The target locales that would be written only in part, and have nothing to be written into.
+   * Empty unless all three of {@link wholeDocumentOnly}'s conditions hold, and no read is made
+   * unless the first two do.
+   *
+   * Asked only of the documents authorisation kept, so a document the caller may not touch cannot
+   * read as an empty locale and refuse the whole request instead of being reported beside the rest.
+   */
+  private async localesHoldingNothing(asking: {
+    req: PayloadRequest;
+    collectionSlug: CollectionSlug;
+    ids: readonly string[];
+    targets: readonly string[];
+    asked: readonly TranslationFilter[];
+  }): Promise<string[]> {
+    const { req, collectionSlug, ids, targets, asked } = asking;
+    const namesAddresses = asked.some((filter) => filter.kind === "leaves");
+    if (!namesAddresses || this.config.keepsDrafts.has(collectionSlug)) return [];
+
+    // Nowhere for text to sit is not the same as nowhere holding text: such a run writes nothing.
+    const paths = this.config.translatablePaths(collectionSlug);
+    if (paths.length === 0) return [];
+
+    const holding = await localesHoldingContent({
+      payload: req.payload,
+      collection: collectionSlug,
+      ids,
+      locales: targets,
+      paths,
+    });
+    return targets.filter((locale) => ids.some((id) => holding.get(locale)?.has(id) !== true));
   }
 
   async handle(req: PayloadRequest): Promise<Response> {
@@ -105,19 +140,23 @@ export class EnqueueTranslationHandler {
     const identity = identityOf(req, authCollectionsOf(req.payload), req.payload.logger);
     if (identity.kind === "unnameable") return ServerResponse.forbidden();
 
+    const ids = select_all
+      ? await getAllCollectionIds(req.payload, collectionSlug, req.user)
+      : collection_id;
+
     const runs = this.runRecordStoreFactory(req.payload);
     const { authorised, refused } = select_all
-      ? {
-          authorised: authorisedByTheReadFilter(
-            workFor(await getAllCollectionIds(req.payload, collectionSlug, req.user))
-          ),
-          refused: [],
-        }
-      : await authorisedWork({
-          payload: req.payload,
-          user: req.user,
-          tasks: workFor(collection_id),
-        });
+      ? { authorised: authorisedByTheReadFilter(workFor(ids)), refused: [] }
+      : await authorisedWork({ payload: req.payload, user: req.user, tasks: workFor(ids) });
+
+    const unwritten = await this.localesHoldingNothing({
+      req,
+      collectionSlug,
+      ids: documentsIn(authorised),
+      targets,
+      asked,
+    });
+    if (unwritten.length > 0) return ServerResponse.badRequest(wholeDocumentOnly(unwritten));
 
     const inFlight = select_all
       ? await runs.findLiveInCollection(collectionSlug)

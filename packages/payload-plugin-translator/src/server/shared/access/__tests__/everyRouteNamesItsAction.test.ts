@@ -4,6 +4,8 @@ import type { CollectionSlug, Endpoint, PayloadRequest } from "payload";
 import { createCancelRoute } from "../../../features/cancel/route.js";
 import { createEnqueueRoute } from "../../../features/enqueue-translation/route.js";
 import { createGetCollectionStatusRoute } from "../../../features/get-collection-status/route.js";
+import { createGetDocumentStateRoute } from "../../../features/get-document-state/route.js";
+import { createGetListStateRoute } from "../../../features/get-list-state/route.js";
 import { createGetDocumentStatusRoute } from "../../../features/get-document-status/route.js";
 import { createRunRoute } from "../../../features/run-translation/route.js";
 import {
@@ -25,6 +27,7 @@ const unreachable = (): never => {
 };
 
 const availableCollections = new Set<CollectionSlug>();
+const keepsDrafts = new Set<CollectionSlug>();
 const taskRunnerFactory: TaskRunnerFactory = {
   create: unreachable,
   capabilities: { stop: true, run: true },
@@ -50,7 +53,7 @@ const routeForEveryAction: Record<TranslatorAction, RouteUnderTest | null> = {
       createEnqueueRoute(
         taskRunnerFactory,
         runRecordStoreFactory,
-        { availableCollections },
+        { availableCollections, keepsDrafts, translatablePaths: () => [] },
         access
       ),
   },
@@ -135,4 +138,38 @@ describe("every route names its own action", () => {
       expect(access.check).toHaveBeenCalledTimes(1);
     });
   }
+});
+
+describe("a read that answers better does not add an action", () => {
+  it("guards the document-state route with the action its panel already asks about", async () => {
+    const access = refusingGuard();
+
+    await callIt(
+      createGetDocumentStateRoute(
+        { availableCollections, schemaMap, fingerprintOf: () => null, translatablePaths: () => [] },
+        runRecordStoreFactory,
+        access
+      )
+    );
+
+    expect(access.check).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "document-status" })
+    );
+  });
+
+  it("guards the list-state route with the action its list already asks about", async () => {
+    const access = refusingGuard();
+
+    await callIt(
+      createGetListStateRoute(
+        { availableCollections, failedWindowMs: 0, translatablePaths: () => [] },
+        runRecordStoreFactory,
+        access
+      )
+    );
+
+    expect(access.check).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "collection-status" })
+    );
+  });
 });

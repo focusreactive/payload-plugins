@@ -13,11 +13,7 @@ const kindsShownBy = (name: ScenarioName) => {
     (id) => world.documentState({ collection: "posts", id }, LOCALES).locales
   );
   return {
-    contents: new Set(
-      locales.map((l) =>
-        l.content.kind === "tracked" && l.content.dismissed ? "dismissed" : l.content.kind
-      )
-    ),
+    contents: new Set(locales.map((l) => l.content.kind)),
     runs: new Set(locales.map((l) => l.run?.status ?? "none")),
   };
 };
@@ -26,7 +22,7 @@ describe("scenarios", () => {
   it("mixed shows every content kind and run status over one page of documents", () => {
     const { contents, runs } = kindsShownBy("mixed");
 
-    expect(contents).toEqual(new Set(["tracked", "dismissed", "empty", "untracked", "filled"]));
+    expect(contents).toEqual(new Set(["tracked", "empty", "untracked", "filled"]));
     expect(runs).toEqual(new Set(["none", "queued", "running", "failed", "not-started"]));
   });
 

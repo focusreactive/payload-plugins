@@ -4,7 +4,7 @@ import { fetchSourceDocument } from "../../../shared/payload/sourceDocument.js";
 import { FieldTranslationInputSchema } from "../../../features/translate-field/model.js";
 import type { FieldTranslationResult } from "../../../../types/wire/field-translation.js";
 
-import { NOT_MANAGED } from "./refusals.js";
+import { NOT_MANAGED } from "../../../shared/http/readRefusals.js";
 import type { StubDeps } from "./StubDeps.js";
 
 /** Reads the saved source value as the real route does, and marks it instead of translating it. */

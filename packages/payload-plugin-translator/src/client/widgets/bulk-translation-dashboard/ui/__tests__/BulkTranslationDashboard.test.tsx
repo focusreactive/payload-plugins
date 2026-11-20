@@ -88,7 +88,13 @@ function show({
   const repository = new InMemoryTranslationRepository(DOCUMENTS, LOCALES, rules);
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <TranslateKitConfigProvider config={{ basePath: "/translate", abilities, collections: {} }}>
+    <TranslateKitConfigProvider
+      config={{
+        basePath: "/translate",
+        abilities,
+        collections: { pages: { autoTranslateTargets: [] } },
+      }}
+    >
       <TranslationRepositoryProvider repository={repository}>
         <QueryClientProvider client={client}>
           <BulkTranslationDashboard collection="pages" locales={CHOICES} defaultLocale="en" />

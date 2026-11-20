@@ -8,7 +8,6 @@ import type { DocumentAddress } from "../../../entities/translation/index.js";
 import { LocaleStatus, localeRowOf, treeModeOf } from "../../../entities/translation/index.js";
 import { LocaleActions } from "../../../features/locale-actions/index.js";
 import { TranslateFields } from "../../../features/translate-fields/index.js";
-import { useTranslateKitConfig } from "../../../shared/config/index.js";
 
 import styles from "./styles.module.scss";
 
@@ -33,10 +32,9 @@ export function LocaleRowView({
   startBlocked,
   now,
 }: LocaleRowViewProps) {
-  const { abilities } = useTranslateKitConfig();
   const [expanded, setExpanded] = useState(false);
   const row = localeRowOf(state);
-  const mode = treeModeOf(row, abilities.staleness);
+  const mode = treeModeOf(row);
   const label = labelOf(state.locale);
   const isOpen = expanded && mode !== null;
 
@@ -84,12 +82,11 @@ export function LocaleRowView({
           startBlocked={startBlocked}
         />
       </div>
-      {isOpen && mode === "pick" && state.content.kind === "tracked" && (
+      {isOpen && mode === "pick" && (
         <TranslateFields
           {...common}
           mode="pick"
-          verdicts={state.content.verdicts}
-          mustInclude={state.mustInclude}
+          verdicts={state.content.kind === "tracked" ? state.content.verdicts : {}}
         />
       )}
       {isOpen && mode === "whole" && <TranslateFields {...common} mode="whole" />}

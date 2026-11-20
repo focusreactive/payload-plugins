@@ -8,7 +8,7 @@ import type { EnqueueResponse } from "../../../../types/wire/ActionBodies.js";
 import type { LocaleCode } from "../../../../types/wire/primitives.js";
 
 import { localesOf } from "./localesOf.js";
-import { NOT_MANAGED, NO_LOCALIZATION } from "./refusals.js";
+import { NOT_MANAGED, NO_LOCALIZATION } from "../../../shared/http/readRefusals.js";
 import type { StubDeps } from "./StubDeps.js";
 
 const asked = (target: LocaleCode | LocaleCode[]): LocaleCode[] =>

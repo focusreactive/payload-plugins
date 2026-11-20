@@ -8,11 +8,3 @@ export function leavesOf(tree: readonly TreeNode[]): LeafAddress[] {
     return [node.address];
   });
 }
-
-export function requiredLeavesOf(tree: readonly TreeNode[]): LeafAddress[] {
-  return tree.flatMap((node) => {
-    if (node.kind === "group") return requiredLeavesOf(node.children);
-    if (node.kind === "leaf" && node.required) return [node.address];
-    return [];
-  });
-}

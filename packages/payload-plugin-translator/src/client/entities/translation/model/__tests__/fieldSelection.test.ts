@@ -40,27 +40,23 @@ describe("the leaves a node stands for", () => {
 });
 
 describe("the first selection of a tracked locale", () => {
-  it("picks the locked leaves and every leaf not current", () => {
-    const selection = initialSelection(
-      TREE,
-      {
-        title: "current",
-        summary: "drifted",
-        "s.b1.heading": "unanswered",
-        "s.b1.lead": "current",
-      },
-      ["title"]
-    );
-    expect(selectedInTreeOrder(TREE, selection)).toEqual(["title", "summary", "s.b1.heading"]);
+  it("picks every leaf that is not current, and no other", () => {
+    const selection = initialSelection(TREE, {
+      title: "current",
+      summary: "drifted",
+      "s.b1.heading": "unanswered",
+      "s.b1.lead": "current",
+    });
+    expect(selectedInTreeOrder(TREE, selection)).toEqual(["summary", "s.b1.heading"]);
   });
 
   it("takes a whole list in whole when any of its leaves is behind", () => {
-    const selection = initialSelection(TREE, { "side.s2.text": "unrecorded" }, []);
+    const selection = initialSelection(TREE, { "side.s2.text": "unrecorded" });
     expect(selectedInTreeOrder(TREE, selection)).toEqual(["side.s1.text", "side.s2.text"]);
   });
 
   it("treats a leaf with no verdict as current", () => {
-    expect(initialSelection(TREE, {}, []).size).toBe(0);
+    expect(initialSelection(TREE, {}).size).toBe(0);
   });
 });
 
@@ -73,26 +69,19 @@ describe("a node's checkbox", () => {
   });
 
   it("selects every leaf below a node that is not fully checked", () => {
-    expect(toggleNode(hero, set("s.b1.lead"), none)).toEqual(set("s.b1.lead", "s.b1.heading"));
-    expect(toggleNode(sections, none, none)).toEqual(set("s.b1.heading", "s.b1.lead"));
+    expect(toggleNode(hero, set("s.b1.lead"))).toEqual(set("s.b1.lead", "s.b1.heading"));
+    expect(toggleNode(sections, none)).toEqual(set("s.b1.heading", "s.b1.lead"));
   });
 
   it("clears every leaf below a fully checked node", () => {
-    expect(toggleNode(hero, set("s.b1.heading", "s.b1.lead", "title"), none)).toEqual(set("title"));
+    expect(toggleNode(hero, set("s.b1.heading", "s.b1.lead", "title"))).toEqual(set("title"));
   });
 
   it("toggles a whole list as one item", () => {
-    const on = toggleNode(sidebar, none, none);
+    const on = toggleNode(sidebar, none);
     expect(on).toEqual(set("side.s1.text", "side.s2.text"));
     expect(checkStateOf(sidebar, on)).toBe("checked");
-    expect(toggleNode(sidebar, on, none)).toEqual(none);
-  });
-
-  it("keeps a locked leaf selected when its parent is cleared", () => {
-    const locked = set("s.b1.heading");
-    const all = set("s.b1.heading", "s.b1.lead");
-    expect(toggleNode(hero, all, locked)).toEqual(set("s.b1.heading"));
-    expect(toggleNode(heading, all, locked)).toEqual(all);
+    expect(toggleNode(sidebar, on)).toEqual(none);
   });
 });
 

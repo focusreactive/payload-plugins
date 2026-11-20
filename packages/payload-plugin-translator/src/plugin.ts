@@ -275,6 +275,14 @@ export function translatorPlugin(
       access,
       taskRunnerFactory,
       runRecordStoreFactory: runRecord.storeFactory,
+      ...(provenanceParts
+        ? {
+            provenance: {
+              storeFactory: provenanceParts.storeFactory,
+              stalenessFactory: provenanceParts.stalenessFactory,
+            },
+          }
+        : {}),
       schemaMap,
       translationProvider,
       walk,

@@ -8,10 +8,16 @@ import type { TranslationProvider } from "../../../core/domain/translation-provi
 import type { LanguageTable } from "../../../traversal/index.js";
 import type { TaskRunnerFactory } from "../task-runner/index.js";
 import type { RunRecordStoreFactory } from "../runs/index.js";
+import type { DocumentStalenessFactory, ProvenanceStoreFactory } from "../provenance/index.js";
 import type { ChainMember } from "../translation-run/index.js";
 import type { TranslatorSettings } from "../../../settings.js";
 
 export type CollectionAdminSlot = "beforeDocumentControls" | "beforeListTable";
+
+export type ProvenanceAccess = {
+  readonly storeFactory: ProvenanceStoreFactory;
+  readonly stalenessFactory: DocumentStalenessFactory;
+};
 
 export type ConfigTimeContext = {
   readonly collections: CollectionConfig[];
@@ -19,6 +25,7 @@ export type ConfigTimeContext = {
   readonly access: AccessGuard;
   readonly taskRunnerFactory: TaskRunnerFactory;
   readonly runRecordStoreFactory: RunRecordStoreFactory;
+  readonly provenance?: ProvenanceAccess;
   readonly schemaMap: CollectionSchemaMap;
   readonly translationProvider: TranslationProvider;
   readonly walk: LanguageTable;

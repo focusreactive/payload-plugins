@@ -25,6 +25,12 @@ function documentWhere(collectionSlug: string, documentId: string): Where {
   };
 }
 
+function documentsWhere(collectionSlug: string, documentIds: readonly string[]): Where {
+  return {
+    and: [{ collectionSlug: { equals: collectionSlug } }, { documentId: { in: [...documentIds] } }],
+  };
+}
+
 function keyWhere(key: ProvenanceKey): Where {
   return {
     and: [
@@ -118,6 +124,21 @@ export class PayloadProvenanceStore implements ProvenanceStore {
       req: this.req(),
       collection: this.collection,
       where: documentWhere(collectionSlug, documentId),
+      depth: 0,
+      pagination: false,
+    });
+    return (result.docs as ProvenanceDoc[]).map(toRecord);
+  }
+
+  async findByDocuments(
+    collectionSlug: string,
+    documentIds: readonly string[]
+  ): Promise<ProvenanceReceipt[]> {
+    if (documentIds.length === 0) return [];
+    const result = await this.payload.find({
+      req: this.req(),
+      collection: this.collection,
+      where: documentsWhere(collectionSlug, documentIds),
       depth: 0,
       pagination: false,
     });

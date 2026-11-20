@@ -19,27 +19,17 @@ export type StubScenario = WorldRules & {
   servesCancelAndRunNow: boolean;
 };
 
-type ContentSeed = "current" | "drifted" | "dismissed" | "empty" | "untracked" | "filled";
+type ContentSeed = "current" | "drifted" | "empty" | "untracked" | "filled";
 type RunSeed = SeededRun["status"] | null;
 
 const SEEDED_AT: IsoDateTime = "2026-11-01T09:00:00.000Z";
 
 function contentOf(seed: ContentSeed): ContentState {
   if (seed === "current") {
-    return {
-      kind: "tracked",
-      verdicts: currentVerdicts(),
-      translatedAt: SEEDED_AT,
-      dismissed: false,
-    };
+    return { kind: "tracked", verdicts: currentVerdicts(), translatedAt: SEEDED_AT };
   }
-  if (seed === "drifted" || seed === "dismissed") {
-    return {
-      kind: "tracked",
-      verdicts: driftedVerdicts(),
-      translatedAt: SEEDED_AT,
-      dismissed: seed === "dismissed",
-    };
+  if (seed === "drifted") {
+    return { kind: "tracked", verdicts: driftedVerdicts(), translatedAt: SEEDED_AT };
   }
   return { kind: seed };
 }
@@ -67,7 +57,6 @@ const EVERY_CONTENT: readonly ContentSeed[] = [
   "empty",
   "untracked",
   "filled",
-  "dismissed",
 ];
 const SOME_RUNS: readonly RunSeed[] = [null, null, null, "queued", "running", "failed"];
 

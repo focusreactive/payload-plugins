@@ -65,7 +65,11 @@ describe("enqueue asks about every document it was named", () => {
     };
     factory = { create: vi.fn().mockReturnValue(runner), capabilities: { stop: true, run: true } };
     handler = new EnqueueTranslationHandler(
-      { availableCollections: new Set(["posts"] as CollectionSlug[]) },
+      {
+        availableCollections: new Set(["posts"] as CollectionSlug[]),
+        keepsDrafts: new Set(["posts"] as CollectionSlug[]),
+        translatablePaths: () => ["title"],
+      },
       factory,
       () => storeDouble()
     );
@@ -129,5 +133,55 @@ describe("enqueue asks about every document it was named", () => {
     const body = await (await handler.handle(request(twoDocuments))).json();
 
     expect(body.data).not.toHaveProperty("refused");
+  });
+});
+
+describe("a document the caller may not read, where the write is live", () => {
+  const requestHolding = (holding: readonly string[], body: unknown): PayloadRequest =>
+    ({
+      payload: {
+        config: { localization: { locales: ["en", "de", "fr"] } },
+        logger: { warn: vi.fn() },
+        find: vi.fn(async ({ locale }: { locale: string }) => ({
+          docs: holding.includes(locale) ? [{ id: "mine" }] : [],
+        })),
+      } as unknown as Payload,
+      user: ANNA,
+      json: vi.fn().mockResolvedValue(body),
+    }) as unknown as PayloadRequest;
+
+  it("is reported beside the work that ran, not read as a locale holding nothing", async () => {
+    (refusedTargets as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(new Set(["theirs"]));
+    const runner = {
+      enqueue: vi.fn().mockResolvedValue(undefined),
+      stop: vi.fn(),
+      run: vi.fn(),
+    } as unknown as TaskRunner;
+    const handler = new EnqueueTranslationHandler(
+      {
+        availableCollections: new Set(["posts"] as CollectionSlug[]),
+        keepsDrafts: new Set<CollectionSlug>(),
+        translatablePaths: () => ["title"],
+      },
+      {
+        create: vi.fn().mockReturnValue(runner),
+        capabilities: { stop: true, run: true },
+      } as unknown as TaskRunnerFactory,
+      () => storeDouble()
+    );
+
+    const response = await handler.handle(
+      requestHolding(["de"], {
+        source_lng: "en",
+        target_lng: ["de"],
+        collection_slug: "posts",
+        collection_id: ["mine", "theirs"],
+        filters: [{ kind: "leaves", addresses: ["title"] }],
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect((await response.json()).data.refused).toEqual(["theirs"]);
+    expect(runner.enqueue).toHaveBeenCalled();
   });
 });

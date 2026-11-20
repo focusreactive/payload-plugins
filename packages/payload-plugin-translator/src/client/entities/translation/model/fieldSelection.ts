@@ -31,10 +31,9 @@ function owedOf(
 
 export function initialSelection(
   tree: readonly TreeNode[],
-  verdicts: Readonly<Record<LeafAddress, LeafVerdict>>,
-  locked: readonly LeafAddress[]
+  verdicts: Readonly<Record<LeafAddress, LeafVerdict>>
 ): FieldSelection {
-  return new Set([...locked, ...tree.flatMap((node) => owedOf(node, verdicts))]);
+  return new Set(tree.flatMap((node) => owedOf(node, verdicts)));
 }
 
 export function checkStateOf(node: TreeNode, selection: FieldSelection): CheckState {
@@ -44,16 +43,11 @@ export function checkStateOf(node: TreeNode, selection: FieldSelection): CheckSt
   return picked === addresses.length ? "checked" : "mixed";
 }
 
-/** A node not fully checked selects all its leaves; a checked one clears them, locked leaves aside. */
-export function toggleNode(
-  node: TreeNode,
-  selection: FieldSelection,
-  locked: FieldSelection
-): FieldSelection {
+export function toggleNode(node: TreeNode, selection: FieldSelection): FieldSelection {
   const addresses = addressesOf(node);
   const next = new Set(selection);
   if (checkStateOf(node, selection) === "checked") {
-    for (const address of addresses) if (!locked.has(address)) next.delete(address);
+    for (const address of addresses) next.delete(address);
   } else {
     for (const address of addresses) next.add(address);
   }

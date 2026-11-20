@@ -97,3 +97,17 @@ export function resolveTargets(args: {
   const { kept: targets, dropped: droppedUnknown } = dropUnknown(withoutSource, knownLocales);
   return { targets, droppedUnknown, droppedSource };
 }
+
+export type SourceLocaleQuestion = {
+  /** The collection's own `sourceLocale`, where it sets one. */
+  configured: string | undefined;
+  localization: { defaultLocale?: string } | false | undefined;
+};
+
+export function resolveSource({
+  configured,
+  localization,
+}: SourceLocaleQuestion): string | undefined {
+  if (configured !== undefined) return configured;
+  return localization ? localization.defaultLocale : undefined;
+}

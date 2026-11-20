@@ -47,26 +47,6 @@ export type GetDocumentStatusConfig = {
   availableCollections: Set<CollectionSlug>;
 };
 
-const isNewer = (candidate: ReportedRun, current: ReportedRun): boolean =>
-  candidate.row.queuedAt !== current.row.queuedAt
-    ? candidate.row.queuedAt > current.row.queuedAt
-    : lastTouched(candidate.row) > lastTouched(current.row);
-
-/**
- * One row per locale, out of the row-per-locale-per-run a document accumulates.
- *
- * The input is already filtered to runs the panel has a word for, so a locale whose newest run was
- * cancelled falls back to what it last actually did.
- */
-export function latestPerTargetLocale(runs: readonly ReportedRun[]): ReportedRun[] {
-  const byLocale = new Map<string, ReportedRun>();
-  for (const run of runs) {
-    const current = byLocale.get(run.row.targetLng);
-    if (!current || isNewer(run, current)) byLocale.set(run.row.targetLng, run);
-  }
-  return [...byLocale.values()];
-}
-
 /**
  * `error` is passed through rather than sanitised: the text is cleaned before it is stored, and a
  * second pass would collapse a named reason's own copy to the generic line.

@@ -51,7 +51,6 @@ const tracked = (overrides: Record<string, "drifted" | "unanswered">): ContentSt
   kind: "tracked",
   verdicts: { ...Object.fromEntries(LEAVES.map((leaf) => [leaf, "current"])), ...overrides },
   translatedAt: AT,
-  dismissed: false,
 });
 
 const CONTENTS: Record<string, ContentState> = {
@@ -165,6 +164,38 @@ describe("the document panel", () => {
           { kind: "leaves", addresses: ["summary", "sections.b2.body", "meta.description"] },
         ],
       })
+    );
+  });
+
+  it("opens the picker for a locale written by hand, with nothing ticked", async () => {
+    show();
+    const dialog = await openPanel();
+
+    fireEvent.click(await within(dialog).findByRole("button", { name: "Show Nederlands fields" }));
+
+    expect(within(dialog).getAllByRole("checkbox").length).toBeGreaterThan(0);
+    expect(within(dialog).getByText(/0 of 8 fields/u)).toBeTruthy();
+    expect(within(dialog).getByRole("button", { name: /Translate 0 fields/u })).toBeTruthy();
+  });
+
+  it("translates only the fields ticked in a locale written by hand", async () => {
+    const { repository } = show();
+    const enqueue = vi.spyOn(repository, "enqueue");
+    const dialog = await openPanel();
+
+    fireEvent.click(await within(dialog).findByRole("button", { name: "Show Nederlands fields" }));
+    fireEvent.click(within(dialog).getByRole("checkbox", { name: "Summary" }));
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Translate 1 fields into Nederlands" })
+    );
+
+    await waitFor(() =>
+      expect(enqueue).toHaveBeenCalledWith(
+        expect.objectContaining({
+          target_lng: ["nl"],
+          filters: [{ kind: "leaves", addresses: ["summary"] }],
+        })
+      )
     );
   });
 

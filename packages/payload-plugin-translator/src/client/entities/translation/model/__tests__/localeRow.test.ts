@@ -8,9 +8,8 @@ const AT = "2026-11-01T09:00:00.000Z";
 const base = { locales: ["de", "fr"], queuedAt: AT };
 
 const tracked = (
-  verdicts: Record<string, "current" | "drifted" | "unanswered" | "unrecorded">,
-  dismissed = false
-): ContentState => ({ kind: "tracked", verdicts, translatedAt: AT, dismissed });
+  verdicts: Record<string, "current" | "drifted" | "unanswered" | "unrecorded">
+): ContentState => ({ kind: "tracked", verdicts, translatedAt: AT });
 
 const empty: ContentState = { kind: "empty" };
 
@@ -78,34 +77,28 @@ describe("a locale's row state", () => {
       translatedAt: AT,
     });
   });
-
-  it("reads a dismissed locale as up to date", () => {
-    expect(localeRowOf({ content: tracked({ a: "drifted" }, true), run: null })).toEqual({
-      kind: "up-to-date",
-      translatedAt: AT,
-    });
-  });
 });
 
 describe("which rows open, and how", () => {
-  it("opens a tracked locale for picking fields", () => {
-    expect(treeModeOf({ kind: "up-to-date", translatedAt: AT }, true)).toBe("pick");
-    expect(
-      treeModeOf({ kind: "behind", behind: 1, cameBackEmpty: 0, translatedAt: AT }, true)
-    ).toBe("pick");
+  it("opens a locale that holds content for picking, whoever wrote it", () => {
+    expect(treeModeOf({ kind: "up-to-date", translatedAt: AT })).toBe("pick");
+    expect(treeModeOf({ kind: "behind", behind: 1, cameBackEmpty: 0, translatedAt: AT })).toBe(
+      "pick"
+    );
+    expect(treeModeOf({ kind: "written-by-hand" })).toBe("pick");
+    expect(treeModeOf({ kind: "translated" })).toBe("pick");
   });
 
-  it("opens an empty locale as a whole, but only where records are kept", () => {
-    expect(treeModeOf({ kind: "not-translated" }, true)).toBe("whole");
-    expect(treeModeOf({ kind: "not-translated" }, false)).toBeNull();
+  it("offers a locale that holds nothing as a whole, since a part of it would not save", () => {
+    expect(treeModeOf({ kind: "not-translated" })).toBe("whole");
   });
 
   it.each([
-    { kind: "written-by-hand" as const },
-    { kind: "translated" as const },
     { kind: "translating" as const, startedAt: AT },
     { kind: "queued" as const, locales: ["de"] },
-  ])("does not open a $kind row", (row) => {
-    expect(treeModeOf(row, true)).toBeNull();
+    { kind: "failed" as const, locales: ["de"], message: "no answer" },
+    { kind: "not-started" as const, locales: ["de"], failedLocale: "de" },
+  ])("does not open a $kind row, which is about its run and not its content", (row) => {
+    expect(treeModeOf(row)).toBeNull();
   });
 });

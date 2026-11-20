@@ -56,7 +56,11 @@ describe("POST /enqueue and an actor the project cannot name", () => {
     } as unknown as TaskRunner;
     factory = { create: vi.fn().mockReturnValue(runner), capabilities: { stop: true, run: true } };
     handler = new EnqueueTranslationHandler(
-      { availableCollections: new Set(["posts"] as CollectionSlug[]) },
+      {
+        availableCollections: new Set(["posts"] as CollectionSlug[]),
+        keepsDrafts: new Set(["posts"] as CollectionSlug[]),
+        translatablePaths: () => ["title"],
+      },
       factory,
       () => storeDouble()
     );

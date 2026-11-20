@@ -56,7 +56,7 @@ function contentRowOf(content: ContentState): LocaleRow {
       const { verdicts, translatedAt } = content;
       const behind = countOf(verdicts, (v) => BEHIND.has(v));
       const cameBackEmpty = countOf(verdicts, (v) => v === "unanswered");
-      if (content.dismissed || behind + cameBackEmpty === 0) {
+      if (behind + cameBackEmpty === 0) {
         return { kind: "up-to-date", translatedAt };
       }
       return { kind: "behind", behind, cameBackEmpty, translatedAt };
@@ -69,9 +69,18 @@ export function localeRowOf({ content, run }: Pick<LocaleState, "content" | "run
   return run ? runRowOf(run) : contentRowOf(content);
 }
 
-/** A row opens only where the tree means something: a tracked locale, or an empty one with records kept. */
-export function treeModeOf(row: LocaleRow, keepsRecords: boolean): TreeMode | null {
-  if (row.kind === "up-to-date" || row.kind === "behind") return "pick";
-  if (row.kind === "not-translated" && keepsRecords) return "whole";
-  return null;
+const HOLDS_CONTENT: ReadonlySet<LocaleRow["kind"]> = new Set([
+  "up-to-date",
+  "behind",
+  "written-by-hand",
+  "translated",
+]);
+
+/**
+ * A locale holding nothing takes the whole document: Payload refuses a partial write that leaves a
+ * required field empty.
+ */
+export function treeModeOf(row: LocaleRow): TreeMode | null {
+  if (HOLDS_CONTENT.has(row.kind)) return "pick";
+  return row.kind === "not-translated" ? "whole" : null;
 }

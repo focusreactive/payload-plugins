@@ -14,7 +14,10 @@ const OPEN_ON_PURPOSE = new AnyAccessGuard();
 const deps = (basePath?: string): TranslationRoutesDeps => ({
   taskRunnerFactory: { create: vi.fn(), capabilities: { stop: true, run: true } },
   runRecordStoreFactory: () => storeDouble(),
-  collectionConfig: { availableCollections: new Set() },
+  collectionConfig: { availableCollections: new Set(), keepsDrafts: new Set() },
+  schemaMap: new Map(),
+  state: { fingerprintOf: () => null },
+  translatablePaths: () => [],
   access: OPEN_ON_PURPOSE,
   settings: resolveSettings({ basePath }),
 });
@@ -28,7 +31,9 @@ describe("createTranslationRoutes (bundle contract)", () => {
       "post /translate/run/:collection_slug/:collection_id",
       "delete /translate/cancel",
       "get /translate/document/:collection_slug/:collection_id",
+      "get /translate/document-state/:collection_slug/:collection_id",
       "get /translate/collection/:collection_slug",
+      "get /translate/list-state/:collection_slug",
     ]);
   });
 

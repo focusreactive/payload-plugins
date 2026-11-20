@@ -13,6 +13,7 @@ import type { SourceFingerprinter } from "../../../core/domain/content-projectio
 import type { TaskRunnerFactory } from "../task-runner/index.js";
 import type { RunRecordStoreFactory } from "../runs/index.js";
 import { admitWork } from "../../../core/domain/runs/index.js";
+import { Locales } from "../../../core/domain/locales/index.js";
 
 import type {
   AutoTranslatePolicyResolver,
@@ -54,8 +55,10 @@ export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAf
         const policy = resolvePolicy(collection.slug, doc);
         if (!policy) return;
 
-        const sourceLocale =
-          policy.sourceLocale ?? (localization ? localization.defaultLocale : undefined);
+        const sourceLocale = Locales.resolveSource({
+          configured: policy.sourceLocale,
+          localization,
+        });
         if (!sourceLocale) {
           return skipBecause(
             "translator: auto-translate skipped — no source locale resolvable (set localization.defaultLocale or a per-collection sourceLocale)"

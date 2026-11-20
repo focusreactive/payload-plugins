@@ -16,6 +16,8 @@ const OPEN_ON_PURPOSE = new AnyAccessGuard();
 // covered by their own unit tests; here we only assert the route is wired.
 const config: EnqueueConfig = {
   availableCollections: new Set(),
+  keepsDrafts: new Set(),
+  translatablePaths: () => ["title"],
 };
 const denyAccess: AccessGuard = { check: vi.fn().mockReturnValue(false) };
 

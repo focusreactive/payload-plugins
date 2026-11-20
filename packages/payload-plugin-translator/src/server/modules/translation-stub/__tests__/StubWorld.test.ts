@@ -120,7 +120,6 @@ describe("progress", () => {
     expect(de.kind).toBe("tracked");
     if (de.kind !== "tracked") return;
     expect(de.translatedAt).toBe(NOW);
-    expect(de.dismissed).toBe(false);
     expect(new Set(Object.values(de.verdicts))).toEqual(new Set(["current"]));
     expect(Object.keys(de.verdicts)).toContain("sidebar.s2.text");
     expect(localeOf(world, "fr").content).toEqual({ kind: "empty" });
@@ -187,13 +186,6 @@ describe("what a document reports", () => {
     });
   });
 
-  it("asks an empty locale for its required leaves, and nothing of a filled one", () => {
-    const world = seeded({ de: { kind: "empty" }, fr: { kind: "untracked" } });
-
-    expect(localeOf(world, "de").mustInclude).toEqual(["title"]);
-    expect(localeOf(world, "fr").mustInclude).toEqual([]);
-  });
-
   it("answers the source locale, the fixture tree and the excluded labels", () => {
     const state = worldOf().documentState(POST, LOCALES);
 
@@ -203,20 +195,18 @@ describe("what a document reports", () => {
     expect(state.locales.map((l) => l.locale)).toEqual(["de", "fr"]);
   });
 
-  it("dismisses a tracked locale's drift", () => {
+  it("hiding the mark rebases the locale's leaves onto the source as it stands", () => {
     const world = seeded({
-      de: {
-        kind: "tracked",
-        verdicts: { summary: "drifted" },
-        translatedAt: NOW,
-        dismissed: false,
-      },
+      de: { kind: "tracked", verdicts: { summary: "drifted" }, translatedAt: NOW },
       fr: { kind: "empty" },
     });
 
     world.dismiss(POST, "de", LOCALES);
 
-    expect(localeOf(world, "de").content).toMatchObject({ kind: "tracked", dismissed: true });
+    expect(localeOf(world, "de").content).toMatchObject({
+      kind: "tracked",
+      verdicts: { summary: "current" },
+    });
   });
 
   it("shows a seeded run the actions reach by its document", () => {

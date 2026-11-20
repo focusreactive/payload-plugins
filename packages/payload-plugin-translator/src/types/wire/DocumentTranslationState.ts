@@ -1,7 +1,11 @@
 import type { DocumentId, IsoDateTime, LeafAddress, LocaleCode } from "./primitives.js";
 import type { RunState } from "./RunState.js";
 
-/** How one leaf of a translated locale stands against its source. */
+/**
+ * How one leaf of a translated locale stands against its source. A wire contract imports nothing
+ * outside itself, so the engine's own union is a second spelling of these four words, pinned to
+ * this one by `core/domain/provenance/__tests__/theVerdictVocabularyIsOne.pins.ts`.
+ */
 export type LeafVerdict = "current" | "drifted" | "unanswered" | "unrecorded";
 
 /**
@@ -16,7 +20,6 @@ export type ContentState =
       kind: "tracked";
       verdicts: Readonly<Record<LeafAddress, LeafVerdict>>;
       translatedAt: IsoDateTime;
-      dismissed: boolean;
     };
 
 export type TreeNode =
@@ -34,8 +37,6 @@ export type LocaleState = {
   content: ContentState;
   /** Independent of `content`: an empty locale can be translating for the first time. */
   run: RunState | null;
-  /** Leaves Payload refuses to leave empty in this locale; a run into it must include them. */
-  mustInclude: readonly LeafAddress[];
 };
 
 /** `GET {basePath}/document-state/:collection_slug/:collection_id` */

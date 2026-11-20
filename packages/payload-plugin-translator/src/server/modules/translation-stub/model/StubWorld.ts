@@ -18,7 +18,7 @@ import type {
 } from "../../../../types/wire/primitives.js";
 import type { RunState } from "../../../../types/wire/RunState.js";
 
-import { leavesOf, requiredLeavesOf } from "./leavesOf.js";
+import { leavesOf } from "./leavesOf.js";
 
 export type DocumentRef = { collection: string; id: DocumentId };
 
@@ -194,18 +194,23 @@ export class StubWorld {
     return "started";
   }
 
+  /**
+   * Modelled as a rebase onto the current source with no flag kept — as the real dismissal is.
+   */
   dismiss(document: DocumentRef, locale: LocaleCode, locales: WorldLocales): void {
     const contents = this.contents.get(this.touched(document, locales));
     const content = contents?.get(locale);
-    if (contents && content?.kind === "tracked")
-      contents.set(locale, { ...content, dismissed: true });
+    if (!contents || content?.kind !== "tracked") return;
+    const rebased = Object.fromEntries(
+      Object.keys(content.verdicts).map((leaf): [LeafAddress, LeafVerdict] => [leaf, "current"])
+    );
+    contents.set(locale, { ...content, verdicts: rebased });
   }
 
   private localeStates(document: DocumentRef, locales: WorldLocales): LocaleState[] {
     const key = this.touched(document, locales);
     const contents = this.contents.get(key);
     const runs = this.runsOf(key);
-    const required = requiredLeavesOf(this.rules.fixture.tree);
 
     return locales.targets.map((locale) => {
       const content = contents?.get(locale) ?? { kind: "empty" };
@@ -214,7 +219,6 @@ export class StubWorld {
         locale,
         content,
         run: run ? runStateFor(run, locale) : null,
-        mustInclude: content.kind === "empty" ? required : [],
       };
     });
   }
@@ -279,6 +283,6 @@ export class StubWorld {
     const verdicts = Object.fromEntries(
       leavesOf(this.rules.fixture.tree).map((leaf): [LeafAddress, LeafVerdict] => [leaf, "current"])
     );
-    return { kind: "tracked", verdicts, translatedAt: this.now(), dismissed: false };
+    return { kind: "tracked", verdicts, translatedAt: this.now() };
   }
 }
