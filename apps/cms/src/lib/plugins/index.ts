@@ -34,7 +34,8 @@ import { I18N_CONFIG } from "@/lib/config/i18n";
 import { abAdapter } from "@/lib/plugins/ab/abAdapter";
 import { buildVariantData } from "@/lib/plugins/ab/buildVariantData";
 import type { ABVariantData } from "@/lib/plugins/ab/types";
-import { superAdmin, or, authenticated, user } from "@/lib/access";
+import { superAdmin, or, authenticated, user, isEditor } from "@/lib/access";
+import { BLOG_CONFIG } from "@/lib/config/blog";
 import { getServerSideURL } from "@/lib/utils/getURL";
 import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 import { validateRedirectPath } from "@/lib/utils/redirectUrl";
@@ -46,6 +47,9 @@ import type { Page } from "@/payload-types";
 
 import { mcpPluginConfig } from "./mcp";
 import { restrictApiAccess } from "./restrictApiAccess";
+import { restrictEditorAccess } from "./restrictEditorAccess";
+
+const ALL_OPERATIONS = ["create", "read", "update", "delete"] as const;
 
 const withBlockNameCell = (field: Field): Field => {
   if (field.type !== "blocks" || field.name !== "presetBlock") return field;
@@ -404,6 +408,8 @@ export const plugins: Plugin[] = [
   }),
 
   analyticsPlugin({
+    // Editors only work on the blog; site analytics stay with the other roles.
+    access: ({ req }) => Boolean(req.user) && !isEditor(req.user),
     ga4: {
       measurementId: process.env.GA4_MEASUREMENT_ID!,
       propertyId: process.env.GA4_PROPERTY_ID!,
@@ -448,6 +454,35 @@ export const plugins: Plugin[] = [
   }),
 
   mcpPluginConfig,
+
+  // Confines the `editor` role to the Blog group. Runs after every other plugin (its own `order`),
+  // so plugin-added collections/globals (redirects, presets, comments, A/B, MCP API keys…) are
+  // covered too.
+  restrictEditorAccess({
+    collections: {
+      [BLOG_CONFIG.collection]: { navigation: true, operations: ALL_OPERATIONS },
+      authors: { navigation: true, operations: ALL_OPERATIONS },
+      categories: { navigation: true, operations: ALL_OPERATIONS },
+      // Not in the editor's sidebar, but usable through a post's upload fields and drawers.
+      media: { operations: ["create", "read", "update"] },
+      // Browse media folders in the upload drawer, without reorganising them.
+      "payload-folders": { operations: ["read"] },
+      // Read-only targets of post fields: link references, testimonial sections, block presets.
+      page: { operations: ["read"] },
+      presets: { operations: ["read"] },
+      testimonials: { operations: ["read"] },
+      // Comment threads on the blog documents the editor works on.
+      "comment-reads": { operations: ALL_OPERATIONS },
+      comments: {
+        operations: ALL_OPERATIONS,
+        where: () => ({
+          collectionSlug: { in: [BLOG_CONFIG.collection, "authors", "categories"] },
+        }),
+      },
+      // Their own account only (sign-in, profile, password).
+      users: { operations: ["read", "update"], where: ({ id }) => ({ id: { equals: id } }) },
+    },
+  }),
 
   // Must stay last so it also protects collections and globals added by the plugins above.
   restrictApiAccess({

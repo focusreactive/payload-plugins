@@ -1,7 +1,7 @@
 import type { CollectionBeforeChangeHook, CollectionConfig } from "payload";
 
 import { revalidateScopedTag } from "@/lib/utils/scopedCache";
-import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import { anyone, author, editor, or, superAdmin, user } from "@/lib/access";
 import {
   deleteFailedClientUpload,
   rememberClientUploadKey,
@@ -29,10 +29,11 @@ const setDefaultFocalPoint: CollectionBeforeChangeHook = ({ data }) => {
 
 export const Media: CollectionConfig<"media"> = {
   access: {
-    create: or(superAdmin, user, author),
+    // Editors upload and caption images from posts; deleting shared media stays with other roles.
+    create: or(superAdmin, user, author, editor),
     delete: or(superAdmin, user, author),
     read: anyone,
-    update: or(superAdmin, user, author),
+    update: or(superAdmin, user, author, editor),
   },
   admin: {
     defaultColumns: ["filename", "alt", "mimeType", "filesize", "updatedAt"],

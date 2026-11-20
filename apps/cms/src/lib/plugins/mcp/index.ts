@@ -177,7 +177,7 @@ export const mcpPluginConfig = mcpPlugin({
     },
     posts: {
       description:
-        "Blog posts. Each post has a title, excerpt, hero image, rich-text body, SEO metadata, categories, authors, and related posts. Supports draft/publish versioning and localization (en/es). Use this collection to read, create, update or delete blog articles.",
+        "Blog posts. Each post has a title, excerpt, hero image, rich-text body, optional sections below the body (`blocks`, the same section blocks as pages, e.g. FAQ and CTA band), SEO metadata, categories, authors, and related posts. Supports draft/publish versioning and localization (en/es). Use this collection to read, create, update or delete blog articles.",
       enabled: {
         create: true,
         delete: true,
@@ -197,7 +197,7 @@ export const mcpPluginConfig = mcpPlugin({
     },
     users: {
       description:
-        "CMS user accounts. Each user has a name, email, and role (admin/author/user). Authentication-enabled. Use this collection to read, create, update or delete users.",
+        "CMS user accounts. Each user has a name, email, and role (admin/author/editor/user). Authentication-enabled. Use this collection to read, create, update or delete users.",
       enabled: {
         create: true,
         delete: true,
