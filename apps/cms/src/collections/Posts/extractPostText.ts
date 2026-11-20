@@ -1,20 +1,15 @@
-import { extractLexicalText, joinText, sectionHeadingText } from "@/lib/utils/text";
+import { extractPageBlockText } from "@/collections/Page/extractPageText";
+import { extractLexicalText, joinText } from "@/lib/utils/text";
 import type { Post } from "@/payload-types";
 
 export function extractPostText(
-  post: Pick<Post, "title" | "excerpt" | "content" | "faq" | "cta">
+  post: Pick<Post, "title" | "excerpt" | "content" | "blocks">
 ): string {
-  const faqItemsText = (post.faq?.items ?? []).flatMap((item) => [
-    item.question,
-    extractLexicalText(item.answer),
-  ]);
-
   return joinText([
     post.title,
     post.excerpt,
     extractLexicalText(post.content),
-    ...sectionHeadingText(post.faq?.heading),
-    ...faqItemsText,
-    ...sectionHeadingText(post.cta?.heading),
+    // Posts offer the page section library, so they share its per-block extractors.
+    ...(post.blocks ?? []).map(extractPageBlockText),
   ]);
 }

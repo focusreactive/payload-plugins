@@ -1,11 +1,10 @@
+import { RenderBlocks } from "@/blocks/RenderBlocks";
 import type { Locale } from "@/lib/types";
 import { PostHero } from "@/components/PostHero";
 import { RichText } from "@/components/shared";
 import { getRelatedPosts } from "@/dal/getRelatedPosts";
 import type { Post } from "@/payload-types";
 
-import { PostCta } from "./components/PostCta";
-import { PostFaq } from "./components/PostFaq";
 import { RelatedPostsSection } from "./components/RelatedPostsSection";
 
 interface PostContentProps {
@@ -21,9 +20,6 @@ export const PostContent: React.FC<PostContentProps> = async ({
 }) => {
   const relatedPosts = await getRelatedPosts({ locale, post });
 
-  const hasFaq = (post.faq?.items?.length ?? 0) > 0;
-  const hasCta = Boolean(post.cta?.heading?.title);
-
   return (
     <article>
       <PostHero post={post} locale={locale} />
@@ -36,13 +32,11 @@ export const PostContent: React.FC<PostContentProps> = async ({
         </div>
       </section>
 
-      {hasFaq && post.faq && <PostFaq faq={post.faq} />}
+      <RenderBlocks blocks={post.blocks ?? []} />
 
       {relatedPosts.length > 0 && (
         <RelatedPostsSection posts={relatedPosts} relatedPostsLabel={relatedPostsLabel} />
       )}
-
-      {hasCta && post.cta && <PostCta cta={post.cta} />}
     </article>
   );
 };

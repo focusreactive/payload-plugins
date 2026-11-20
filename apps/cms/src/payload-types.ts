@@ -538,56 +538,21 @@ export interface Post {
     };
     [k: string]: unknown;
   };
-  faq?: {
-    heading?: SectionHeadingFields;
-    items?:
-      | {
-          question: string;
-          answer: {
-            root: {
-              type: string;
-              children: {
-                type: any;
-                version: number;
-                [k: string]: unknown;
-              }[];
-              direction: ('ltr' | 'rtl') | null;
-              format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-              indent: number;
-              version: number;
-            };
-            [k: string]: unknown;
-          };
-          id?: string | null;
-        }[]
-      | null;
-  };
-  /**
-   * Hidden on the site when the heading title is empty.
-   */
-  cta?: {
-    heading?: SectionHeadingFields;
-    actions?:
-      | {
-          type?: ('reference' | 'custom' | 'customPage') | null;
-          newTab?: boolean | null;
-          reference?:
-            | ({
-                relationTo: 'page';
-                value: number | Page;
-              } | null)
-            | ({
-                relationTo: 'posts';
-                value: number | Post;
-              } | null);
-          url?: string | null;
-          customPage?: ('blog' | 'search') | null;
-          label: string;
-          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
-          id?: string | null;
-        }[]
-      | null;
-  };
+  blocks?:
+    | (
+        | ContentBlock
+        | FaqBlock
+        | TestimonialsListBlock
+        | CardsGridBlock
+        | CarouselBlock
+        | LogosBlock
+        | ChartBlock
+        | CtaBandBlock
+        | NewsletterBlock
+        | StatsBlock
+        | RawHtmlBlock
+      )[]
+    | null;
   meta?: {
     title?: string | null;
     /**
@@ -616,94 +581,6 @@ export interface Post {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "SectionHeadingFields".
- */
-export interface SectionHeadingFields {
-  eyebrow?: string | null;
-  /**
-   * Wrap a word in *asterisks* to accent it in the brand colour.
-   */
-  title?: string | null;
-  description?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "categories".
- */
-export interface Category {
-  id: number;
-  title: string;
-  /**
-   * When enabled, the slug will auto-generate from the title field on save and autosave.
-   */
-  generateSlug?: boolean | null;
-  slug: string;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "authors".
- */
-export interface Author {
-  id: number;
-  name: string;
-  avatar?: (number | null) | Media;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "HeroBlock".
- */
-export interface HeroBlock {
-  variant: 'showcase' | 'centered';
-  heading?: SectionHeadingFields;
-  actions?:
-    | {
-        type?: ('reference' | 'custom' | 'customPage') | null;
-        newTab?: boolean | null;
-        reference?:
-          | ({
-              relationTo: 'page';
-              value: number | Page;
-            } | null)
-          | ({
-              relationTo: 'posts';
-              value: number | Post;
-            } | null);
-        url?: string | null;
-        customPage?: ('blog' | 'search') | null;
-        label: string;
-        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
-        id?: string | null;
-      }[]
-    | null;
-  image?: {
-    image?: (number | null) | Media;
-    aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
-  };
-  section?: {
-    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
-    maxWidth?: ('none' | 'base') | null;
-    paddingY?: ('none' | 'base' | 'large') | null;
-    paddingX?: ('none' | 'base') | null;
-    background?: {
-      /**
-       * Upload an image or video. Use the "Background" folder.
-       */
-      media?: (number | null) | Media;
-      overlay?: ('black' | 'white') | null;
-      opacity?: number | null;
-    };
-  };
-  _hidden?: boolean | null;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'hero';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -766,6 +643,18 @@ export interface ContentBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'content';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SectionHeadingFields".
+ */
+export interface SectionHeadingFields {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  title?: string | null;
+  description?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1197,6 +1086,82 @@ export interface RawHtmlBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'rawHtml';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: number;
+  title: string;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authors".
+ */
+export interface Author {
+  id: number;
+  name: string;
+  avatar?: (number | null) | Media;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock".
+ */
+export interface HeroBlock {
+  variant: 'showcase' | 'centered';
+  heading?: SectionHeadingFields;
+  actions?:
+    | {
+        type?: ('reference' | 'custom' | 'customPage') | null;
+        newTab?: boolean | null;
+        reference?:
+          | ({
+              relationTo: 'page';
+              value: number | Page;
+            } | null)
+          | ({
+              relationTo: 'posts';
+              value: number | Post;
+            } | null);
+        url?: string | null;
+        customPage?: ('blog' | 'search') | null;
+        label: string;
+        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+        id?: string | null;
+      }[]
+    | null;
+  image?: {
+    image?: (number | null) | Media;
+    aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
+  };
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'hero';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3056,34 +3021,20 @@ export interface PostsSelect<T extends boolean = true> {
   excerpt?: T;
   heroImage?: T;
   content?: T;
-  faq?:
+  blocks?:
     | T
     | {
-        heading?: T | SectionHeadingFieldsSelect<T>;
-        items?:
-          | T
-          | {
-              question?: T;
-              answer?: T;
-              id?: T;
-            };
-      };
-  cta?:
-    | T
-    | {
-        heading?: T | SectionHeadingFieldsSelect<T>;
-        actions?:
-          | T
-          | {
-              type?: T;
-              newTab?: T;
-              reference?: T;
-              url?: T;
-              customPage?: T;
-              label?: T;
-              appearance?: T;
-              id?: T;
-            };
+        content?: T | ContentBlockSelect<T>;
+        faq?: T | FaqBlockSelect<T>;
+        testimonialsList?: T | TestimonialsListBlockSelect<T>;
+        cardsGrid?: T | CardsGridBlockSelect<T>;
+        carousel?: T | CarouselBlockSelect<T>;
+        logos?: T | LogosBlockSelect<T>;
+        chart?: T | ChartBlockSelect<T>;
+        ctaBand?: T | CtaBandBlockSelect<T>;
+        newsletter?: T | NewsletterBlockSelect<T>;
+        stats?: T | StatsBlockSelect<T>;
+        rawHtml?: T | RawHtmlBlockSelect<T>;
       };
   meta?:
     | T

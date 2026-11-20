@@ -1,7 +1,8 @@
-import type { CollectionConfig, GroupField } from "payload";
+import type { CollectionConfig } from "payload";
 
 import { CardsGridInlineBlock } from "@/blocks/CardsGrid/inlineConfig";
 import { CodeInlineBlock } from "@/blocks/Code/inlineConfig";
+import { contentBlocks } from "@/blocks/contentBlocks";
 import { CtaBannerInlineBlock } from "@/blocks/CtaBanner/inlineConfig";
 import { LogosInlineBlock } from "@/blocks/Logos/inlineConfig";
 import { BLOG_CONFIG } from "@/lib/config/blog";
@@ -21,8 +22,6 @@ import { generateRichText } from "@/lib/utils/generateRichText";
 import { generateSeoFields } from "@/lib/utils/seoFields";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
-import { link } from "@/lib/fields/link";
-import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 import { PUBLIC_URL_FIELD_NAME, publicUrlField } from "@/lib/fields/publicUrlField";
 import { createSharedSlugField } from "@/lib/fields/slugField";
 
@@ -142,58 +141,15 @@ export const Posts: CollectionConfig<"posts"> = {
               type: "richText",
             },
             {
-              fields: [
-                sectionHeadingField(),
-                {
-                  admin: { initCollapsed: true },
-                  fields: [
-                    {
-                      label: { en: "Question", es: "Pregunta" },
-                      localized: true,
-                      name: "question",
-                      required: true,
-                      type: "text",
-                    },
-                    {
-                      editor: generateRichText(),
-                      label: { en: "Answer", es: "Respuesta" },
-                      localized: true,
-                      name: "answer",
-                      required: true,
-                      type: "richText",
-                    },
-                  ],
-                  localized: true,
-                  name: "items",
-                  type: "array",
-                },
-              ],
-              label: { en: "FAQ", es: "FAQ" },
-              name: "faq",
-              type: "group",
-            },
-            {
-              admin: {
-                description: {
-                  en: "Hidden on the site when the heading title is empty.",
-                  es: "Se oculta en el sitio si el título del encabezado está vacío.",
-                },
-              },
-              fields: [
-                sectionHeadingField(),
-                {
-                  admin: { initCollapsed: true },
-                  fields: (link() as GroupField).fields,
-                  label: { en: "Actions", es: "Acciones" },
-                  localized: true,
-                  maxRows: 2,
-                  name: "actions",
-                  type: "array",
-                },
-              ],
-              label: { en: "CTA", es: "CTA" },
-              name: "cta",
-              type: "group",
+              admin: { initCollapsed: true },
+              // Same section library as pages, minus GlobalSectionSlot: global sections are managed
+              // outside the Blog (editors cannot read them) and their usage tracking/revalidation
+              // only covers pages.
+              blocks: contentBlocks,
+              label: { en: "Sections", es: "Secciones" },
+              localized: true,
+              name: "blocks",
+              type: "blocks",
             },
           ],
           label: {
