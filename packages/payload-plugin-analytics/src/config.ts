@@ -14,6 +14,11 @@ export function setPluginConfig(config: AnalyticsPluginConfig) {
   globalThis.__payloadPluginAnalyticsConfig = config;
 }
 
+/** False while GA4 is not configured: the admin view and header link are registered but hidden. */
+export function isPluginConfigured(): boolean {
+  return globalThis.__payloadPluginAnalyticsConfig !== undefined;
+}
+
 export function getPluginConfig() {
   const config = globalThis.__payloadPluginAnalyticsConfig;
 

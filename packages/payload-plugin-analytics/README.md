@@ -316,7 +316,7 @@ interface AnalyticsPluginConfig {
   /** Auto-attach DOM listeners on the client for common lead actions. */
   autoTrackLeadActions?: AutoTrackLeadActionsConfig;
 
-  /** Gate access to the dashboard endpoints. Receives the Payload request. */
+  /** Who can use the dashboard: its endpoints, admin view and header link. Receives the Payload request. Default: any signed-in user. */
   access?: (args: { req: PayloadRequest }) => boolean | Promise<boolean>;
 
   /** Override / extend i18n strings used by the dashboard. */
@@ -679,7 +679,9 @@ import {
 
 ### Access control
 
-Gate the dashboard endpoints behind your own rule:
+Gate the dashboard behind your own rule. The same rule guards the data endpoints, the
+`/admin/analytics` view (users it refuses get a 404) and the chart icon in the admin header (hidden
+for them):
 
 ```ts
 analyticsPlugin({
@@ -753,6 +755,7 @@ interface AbIntegrationConfig {
 | `@focus-reactive/payload-plugin-analytics/client/blocks`                                | UI primitives for custom blocks: `DataCard`, `KpiCard`, `BarList`, `TopNTable`, `DonutChart`, `TrendChart`, `SkeletonBlock`, `ErrorTile`, `EmptyTile`, `SetupRequiredCard`; hooks `useCustomBlockQuery`, `useSessionsQuery`, `useSessionDetailQuery`                                                                                                                                                                                                      |
 | `@focus-reactive/payload-plugin-analytics/components/AnalyticsView`                     | The dashboard view component (auto-registered by the plugin)                                                                                                                                                                                                                                                                                                                                                                                              |
 | `@focus-reactive/payload-plugin-analytics/components/AnalyticsView/AnalyticsHeaderLink` | The admin header link component (auto-registered by the plugin)                                                                                                                                                                                                                                                                                                                                                                                           |
+| `@focus-reactive/payload-plugin-analytics/components/AnalyticsView/AnalyticsHeaderAction` | Server wrapper that renders the header link for users `access` allows (auto-registered)                                                                                                                                                                                                                                                                                                                                                                                                |
 | `@focus-reactive/payload-plugin-analytics/admin.css`                                    | Dashboard stylesheet (the view imports it itself; exposed for manual control)                                                                                                                                                                                                                                                                                                                                                                             |
 
 ---
