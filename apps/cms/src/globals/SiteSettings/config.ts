@@ -291,9 +291,21 @@ export const SiteSettings: GlobalConfig = {
         {
           fields: [
             {
-              name: "header",
-              type: "relationship",
-              relationTo: "header",
+              type: "row",
+              fields: [
+                {
+                  name: "header",
+                  type: "relationship",
+                  relationTo: "header",
+                  admin: { width: "50%" },
+                },
+                {
+                  name: "footer",
+                  type: "relationship",
+                  relationTo: "footer",
+                  admin: { width: "50%" },
+                },
+              ],
             },
             {
               name: "title",
@@ -319,11 +331,6 @@ export const SiteSettings: GlobalConfig = {
               ),
               localized: true,
             },
-            {
-              name: "footer",
-              type: "relationship",
-              relationTo: "footer",
-            },
           ],
           label: {
             en: "404 Page",
@@ -340,9 +347,21 @@ export const SiteSettings: GlobalConfig = {
                   label: { en: "Content", es: "Contenido" },
                   fields: [
                     {
-                      name: "header",
-                      type: "relationship",
-                      relationTo: "header",
+                      type: "row",
+                      fields: [
+                        {
+                          name: "header",
+                          type: "relationship",
+                          relationTo: "header",
+                          admin: { width: "50%" },
+                        },
+                        {
+                          name: "footer",
+                          type: "relationship",
+                          relationTo: "footer",
+                          admin: { width: "50%" },
+                        },
+                      ],
                     },
                     {
                       type: "row",
@@ -429,11 +448,6 @@ export const SiteSettings: GlobalConfig = {
                       defaultValue: createLocalizedDefault(
                         DEFAULT_VALUES.collections.siteSettings.blog.relatedPostsLabel
                       ),
-                    },
-                    {
-                      name: "footer",
-                      type: "relationship",
-                      relationTo: "footer",
                     },
                   ],
                 },

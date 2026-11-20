@@ -287,8 +287,8 @@ export const Posts: CollectionConfig<"posts"> = {
     {
       admin: {
         description: {
-          en: "Up to 3 are shown. Empty slots are filled with the latest posts from the same categories.",
-          es: "Se muestran hasta 3. Los huecos se rellenan con las publicaciones más recientes de las mismas categorías.",
+          en: "Pick up to 3. Empty slots are filled with the latest posts from the same categories.",
+          es: "Elige hasta 3. Los huecos se rellenan con las publicaciones más recientes de las mismas categorías.",
         },
         position: "sidebar",
       },
@@ -302,6 +302,7 @@ export const Posts: CollectionConfig<"posts"> = {
         en: "Related Posts",
         es: "Publicaciones relacionadas",
       },
+      maxRows: 3,
       name: "relatedPosts",
       relationTo: BLOG_CONFIG.collection,
       type: "relationship",

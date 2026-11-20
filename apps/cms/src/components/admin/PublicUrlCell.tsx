@@ -22,8 +22,15 @@ export const PublicUrlCell = ({ collectionSlug, rowData, siteUrl }: PublicUrlCel
   const publicPath = localizePath(path, locale);
 
   return (
-    <a className="public-url-cell" href={`${siteUrl}${publicPath}`} rel="noopener" target="_blank">
-      {publicPath}
+    <a
+      className="public-url-cell"
+      href={`${siteUrl}${publicPath}`}
+      rel="noopener"
+      target="_blank"
+      title={publicPath}
+    >
+      {/* bdi keeps the path left-to-right inside the rtl box that clips long paths. */}
+      <bdi>{publicPath}</bdi>
     </a>
   );
 };
