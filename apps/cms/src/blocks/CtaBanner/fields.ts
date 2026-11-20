@@ -8,7 +8,7 @@ export const ctaBannerFields: Field[] = [
     fields: [
       {
         admin: { width: "50%" },
-        label: { en: "Eyebrow", es: "Antetítulo" },
+        label: { en: "Label above title", es: "Texto sobre el título" },
         localized: true,
         name: "eyebrow",
         type: "text",
@@ -16,7 +16,7 @@ export const ctaBannerFields: Field[] = [
       {
         admin: { width: "50%" },
         defaultValue: "default",
-        label: { en: "Variant", es: "Variante" },
+        label: { en: "Color style", es: "Estilo de color" },
         name: "variant",
         options: [
           { label: { en: "Default", es: "Predeterminado" }, value: "default" },
@@ -42,7 +42,11 @@ export const ctaBannerFields: Field[] = [
   {
     admin: { initCollapsed: true },
     fields: (link() as GroupField).fields,
-    label: { en: "Actions", es: "Acciones" },
+    label: { en: "Buttons", es: "Botones" },
+    labels: {
+      plural: { en: "Buttons", es: "Botones" },
+      singular: { en: "Button", es: "Botón" },
+    },
     localized: true,
     minRows: 1,
     name: "actions",

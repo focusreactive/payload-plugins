@@ -45,8 +45,8 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
         {
           admin: { width: "50%" },
           label: {
-            en: "Position",
-            es: "Posición",
+            en: "Job title",
+            es: "Cargo",
           },
           localized: true,
           name: "position",
@@ -68,8 +68,8 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
     },
     {
       label: {
-        en: "Avatar",
-        es: "Avatar",
+        en: "Photo",
+        es: "Foto",
       },
       name: "avatar",
       relationTo: "media",
@@ -77,8 +77,8 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
     },
     {
       label: {
-        en: "Review",
-        es: "Reseña",
+        en: "Quote",
+        es: "Cita",
       },
       localized: true,
       name: "content",

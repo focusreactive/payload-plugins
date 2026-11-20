@@ -1,21 +1,22 @@
 "use client";
 
 import type { RowLabelProps } from "@payloadcms/ui";
-import { useRowLabel } from "@payloadcms/ui";
+import { useRowLabel, useTranslation } from "@payloadcms/ui";
 
 import type { Header } from "@/payload-types";
 
 import { readPath } from "../readPath";
 
-const generateRowLabel = (
-  rowNumber: number | undefined,
-  label: string | undefined | null,
-  prefix = "Row"
-) => {
-  if (label) {
-    return `${prefix} ${rowNumber !== undefined ? rowNumber + 1 : ""}: ${label}`;
-  }
-  return `${prefix} ${rowNumber !== undefined ? rowNumber + 1 : ""}`;
+const EMPTY_ROW_TEXT = { en: "Not filled in yet", es: "Aún sin rellenar" } as const;
+
+const padRowNumber = (rowNumber: number | undefined) =>
+  rowNumber === undefined ? "" : `${String(rowNumber + 1).padStart(2, "0")} · `;
+
+/** "01 · Start free": the row's own text, or a muted hint while it is still empty. */
+const useRowText = (label: string | undefined | null, rowNumber: number | undefined) => {
+  const { i18n } = useTranslation();
+  const empty = i18n.language === "es" ? EMPTY_ROW_TEXT.es : EMPTY_ROW_TEXT.en;
+  return `${padRowNumber(rowNumber)}${label?.trim() || empty}`;
 };
 
 interface RowLabelData {
@@ -23,11 +24,10 @@ interface RowLabelData {
 }
 
 type RowLabelExtendedProps = RowLabelProps & {
-  prefix?: string;
   titleField?: string;
 };
 
-export const RowLabel: React.FC<RowLabelExtendedProps> = ({ prefix = "Row", titleField }) => {
+export const RowLabel: React.FC<RowLabelExtendedProps> = ({ titleField }) => {
   const data = useRowLabel<RowLabelData>();
   let label: string | undefined | null;
   if (titleField) {
@@ -36,10 +36,10 @@ export const RowLabel: React.FC<RowLabelExtendedProps> = ({ prefix = "Row", titl
   } else {
     label = data?.data?.label;
   }
-  return generateRowLabel(data.rowNumber, label, prefix);
+  return useRowText(label, data.rowNumber);
 };
 
 export const RowLabelGroupName: React.FC<RowLabelProps> = () => {
   const data = useRowLabel<NonNullable<Header["navItems"]>[number]>();
-  return generateRowLabel(data.rowNumber, data?.data?.label);
+  return useRowText(data?.data?.label, data.rowNumber);
 };

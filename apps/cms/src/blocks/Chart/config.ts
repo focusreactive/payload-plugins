@@ -42,7 +42,7 @@ const fields: Field[] = [
     },
     fields: [
       {
-        label: { en: "Label", es: "Etiqueta" },
+        label: { en: "Tab name", es: "Nombre de la pestaña" },
         localized: true,
         name: "label",
         required: true,
@@ -56,7 +56,7 @@ const fields: Field[] = [
             fields: [
               {
                 admin: { width: "50%" },
-                label: { en: "Label", es: "Etiqueta" },
+                label: { en: "Point name", es: "Nombre del punto" },
                 name: "label",
                 required: true,
                 type: "text",
@@ -71,12 +71,20 @@ const fields: Field[] = [
             ],
           },
         ],
+        labels: {
+          plural: { en: "Data points", es: "Puntos de datos" },
+          singular: { en: "Data point", es: "Punto de datos" },
+        },
         minRows: 2,
         name: "dataPoints",
         required: true,
         type: "array",
       },
     ],
+    labels: {
+      plural: { en: "Time periods", es: "Periodos" },
+      singular: { en: "Time period", es: "Periodo" },
+    },
     minRows: 1,
     name: "ranges",
     required: true,

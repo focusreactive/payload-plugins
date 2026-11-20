@@ -372,9 +372,6 @@ export interface Page {
   )[];
   meta?: {
     title?: string | null;
-    /**
-     * Image used when sharing this page on social media.
-     */
     image?: (number | null) | Media;
     description?: string | null;
     robots?: ('index' | 'noindex') | null;
@@ -552,9 +549,6 @@ export interface Post {
     | null;
   meta?: {
     title?: string | null;
-    /**
-     * Image used when sharing this page on social media.
-     */
     image?: (number | null) | Media;
     description?: string | null;
     robots?: ('index' | 'noindex') | null;
@@ -623,7 +617,7 @@ export interface ContentBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -679,7 +673,7 @@ export interface FaqBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -713,7 +707,7 @@ export interface TestimonialsListBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -807,7 +801,7 @@ export interface CardsGridBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -854,7 +848,7 @@ export interface CarouselBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -902,7 +896,7 @@ export interface LogosBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -941,7 +935,7 @@ export interface ChartBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -984,7 +978,7 @@ export interface CtaBandBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -1012,7 +1006,7 @@ export interface NewsletterBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -1041,7 +1035,7 @@ export interface StatsBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -1066,7 +1060,7 @@ export interface RawHtmlBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -1202,7 +1196,7 @@ export interface HeroBlock {
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
-       * Upload an image or video. Use the "Background" folder.
+       * Pick an image or video from the "Background" folder.
        */
       media?: (number | null) | Media;
       overlay?: ('black' | 'white') | null;
@@ -1220,7 +1214,7 @@ export interface HeroBlock {
  */
 export interface GlobalSectionSlotBlock {
   /**
-   * Editing the global block updates every page that uses it.
+   * Changes to a reusable section show up on every page that uses it.
    */
   reference: number | GlobalBlock;
   _hidden?: boolean | null;
@@ -1274,7 +1268,7 @@ export interface DocumentEmbedding {
 export interface Redirect {
   id: number;
   /**
-   * Latin letters, numbers, / - _ . ~ only. No spaces. Stored as lowercase with leading slash.
+   * The old address, e.g. /old-page. Letters, numbers and / - _ . ~ only, no spaces.
    */
   from: string;
   to?: {
@@ -1291,11 +1285,11 @@ export interface Redirect {
     url?: string | null;
   };
   /**
-   * Choose the redirect type. 307 - temporary, 308 - permanent.
+   * 307 = temporary (the old address comes back later), 308 = permanent (best for SEO when a page has moved for good).
    */
   type: '307' | '308';
   /**
-   * Whether the redirect is active.
+   * Turn off to pause this redirect without deleting it.
    */
   isActive: boolean;
   updatedAt: string;
@@ -1371,7 +1365,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1429,7 +1423,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1469,7 +1463,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1499,7 +1493,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1574,7 +1568,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1617,7 +1611,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1661,7 +1655,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1696,7 +1690,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1735,7 +1729,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1759,7 +1753,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1784,7 +1778,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1805,7 +1799,7 @@ export interface Preset {
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
-             * Upload an image or video. Use the "Background" folder.
+             * Pick an image or video from the "Background" folder.
              */
             media?: (number | null) | Media;
             overlay?: ('black' | 'white') | null;
@@ -1819,7 +1813,7 @@ export interface Preset {
       }
     | {
         /**
-         * Editing the global block updates every page that uses it.
+         * Changes to a reusable section show up on every page that uses it.
          */
         reference: number | GlobalBlock;
         _hidden?: boolean | null;
@@ -3979,9 +3973,6 @@ export interface SiteSetting {
     relatedPostsLabel: string;
     meta?: {
       title?: string | null;
-      /**
-       * Image used when sharing this page on social media.
-       */
       image?: (number | null) | Media;
       description?: string | null;
       robots?: ('index' | 'noindex') | null;

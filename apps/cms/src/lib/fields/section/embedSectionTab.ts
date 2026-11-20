@@ -16,8 +16,8 @@ export function embedSectionTab(contentFields: Field[]): Field[] {
         {
           fields: [sectionFields],
           label: {
-            en: "Section",
-            es: "Sección",
+            en: "Look and spacing",
+            es: "Aspecto y espaciado",
           },
         },
       ],

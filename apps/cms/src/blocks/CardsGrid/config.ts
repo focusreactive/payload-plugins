@@ -11,8 +11,8 @@ export const CardsGridBlock: Block = injectSection({
   interfaceName: "CardsGridBlock",
   ...getBlockPreviewImage("Cards Grid"),
   labels: {
-    plural: { en: "Cards Grids", es: "Cuadrículas de Tarjetas" },
-    singular: { en: "Cards Grid", es: "Cuadrícula de Tarjetas" },
+    plural: { en: "Cards", es: "Tarjetas" },
+    singular: { en: "Cards", es: "Tarjetas" },
   },
   fields: [sectionHeadingField(), ...cardsGridFields],
 });

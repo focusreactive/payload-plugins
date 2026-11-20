@@ -9,7 +9,7 @@ import { CARD_ICONS } from "./icons";
 export const cardsGridFields: Field[] = [
   {
     defaultValue: 3,
-    label: { en: "Columns", es: "Columnas" },
+    label: { en: "Cards per row", es: "Tarjetas por fila" },
     max: 4,
     min: 1,
     name: "columns",
@@ -69,7 +69,7 @@ export const cardsGridFields: Field[] = [
           {
             admin: { width: "33%" },
             defaultValue: "none",
-            label: { en: "Rounded", es: "Bordes redondeados" },
+            label: { en: "Rounded corners", es: "Bordes redondeados" },
             name: "rounded",
             options: [
               { label: { en: "None", es: "Ninguno" }, value: "none" },
@@ -80,17 +80,17 @@ export const cardsGridFields: Field[] = [
           {
             admin: { width: "34%" },
             defaultValue: "none",
-            label: { en: "Background Color", es: "Color de fondo" },
+            label: { en: "Background color", es: "Color de fondo" },
             name: "backgroundColor",
             options: [
               { label: { en: "None", es: "Ninguno" }, value: "none" },
               { label: { en: "Light", es: "Claro" }, value: "light" },
               { label: { en: "Dark", es: "Oscuro" }, value: "dark" },
               {
-                label: { en: "Light Gray", es: "Gris claro" },
+                label: { en: "Light gray", es: "Gris claro" },
                 value: "light-gray",
               },
-              { label: { en: "Dark Gray", es: "Gris oscuro" }, value: "dark-gray" },
+              { label: { en: "Dark gray", es: "Gris oscuro" }, value: "dark-gray" },
               {
                 label: { en: "Gradient", es: "Gradiente" },
                 value: "gradient-2",
@@ -102,6 +102,10 @@ export const cardsGridFields: Field[] = [
       },
     ],
     label: { en: "Cards", es: "Tarjetas" },
+    labels: {
+      plural: { en: "Cards", es: "Tarjetas" },
+      singular: { en: "Card", es: "Tarjeta" },
+    },
     localized: true,
     minRows: 1,
     name: "items",

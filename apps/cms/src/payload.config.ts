@@ -93,11 +93,20 @@ export default buildConfig({
           dividerLabel: "SSO",
           signInWith: "Sign in with {{provider}}",
         },
+        // Payload's own list-length errors read "This field requires at least 1 Rows."
+        validation: {
+          requiresAtLeast: "Add at least {{count}} item(s) here.",
+          requiresNoMoreThan: "Keep this to {{count}} item(s) or fewer.",
+        },
       },
       es: {
         sso: {
           dividerLabel: "SSO",
           signInWith: "Iniciar sesión con {{provider}}",
+        },
+        validation: {
+          requiresAtLeast: "Añade al menos {{count}} elemento(s) aquí.",
+          requiresNoMoreThan: "Deja como máximo {{count}} elemento(s).",
         },
       },
     },

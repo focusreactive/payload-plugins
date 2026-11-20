@@ -9,8 +9,8 @@ export const HeroBlock: Block = injectSection({
   interfaceName: "HeroBlock",
   ...getBlockPreviewImage("Hero"),
   labels: {
-    plural: { en: "Heroes", es: "Héroes" },
-    singular: { en: "Hero", es: "Hero" },
+    plural: { en: "Hero banners", es: "Cabeceras" },
+    singular: { en: "Hero banner", es: "Cabecera" },
   },
   fields: [...heroFields],
 });

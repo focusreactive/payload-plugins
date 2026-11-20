@@ -113,8 +113,8 @@ export const Posts: CollectionConfig<"posts"> = {
             {
               defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
               label: {
-                en: "Hero Image",
-                es: "Imagen de la cabecera",
+                en: "Cover image",
+                es: "Imagen de portada",
               },
               name: "heroImage",
               relationTo: "media",
@@ -193,8 +193,8 @@ export const Posts: CollectionConfig<"posts"> = {
       },
       index: true,
       label: {
-        en: "Published At",
-        es: "Publicado el",
+        en: "Publish date",
+        es: "Fecha de publicación",
       },
       name: "publishedAt",
       type: "date",
@@ -253,7 +253,7 @@ export const Posts: CollectionConfig<"posts"> = {
       }),
       hasMany: true,
       label: {
-        en: "Related Posts",
+        en: "Related posts",
         es: "Publicaciones relacionadas",
       },
       maxRows: 3,

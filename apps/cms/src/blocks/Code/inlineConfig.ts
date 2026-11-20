@@ -11,7 +11,7 @@ export const CodeInlineBlock: Block = {
           es: "Id del lenguaje en minúsculas, p. ej. typescript, bash.",
         },
       },
-      label: { en: "Language", es: "Lenguaje" },
+      label: { en: "Programming language", es: "Lenguaje de programación" },
     },
     {
       name: "code",
@@ -22,8 +22,8 @@ export const CodeInlineBlock: Block = {
   ],
   interfaceName: "CodeInlineBlock",
   labels: {
-    plural: { en: "Code Blocks", es: "Bloques de código" },
-    singular: { en: "Code", es: "Código" },
+    plural: { en: "Code snippets", es: "Fragmentos de código" },
+    singular: { en: "Code snippet", es: "Fragmento de código" },
   },
   slug: "codeInline",
 };

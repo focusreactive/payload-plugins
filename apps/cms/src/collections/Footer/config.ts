@@ -37,6 +37,7 @@ export const Footer: CollectionConfig<"footer"> = {
         en: "Footer",
         es: "Pie de página",
       }),
+      label: { en: "Name", es: "Nombre" },
       name: "name",
       required: true,
       type: "text",
@@ -46,6 +47,7 @@ export const Footer: CollectionConfig<"footer"> = {
         {
           admin: { width: "50%" },
           defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
+          label: { en: "Logo", es: "Logo" },
           name: "logo",
           relationTo: "media",
           required: true,
@@ -128,7 +130,7 @@ export const Footer: CollectionConfig<"footer"> = {
       }),
       fields: [
         {
-          label: { en: "Group label", es: "Etiqueta del grupo" },
+          label: { en: "Column title", es: "Título de la columna" },
           localized: true,
           name: "label",
           required: true,
@@ -137,12 +139,22 @@ export const Footer: CollectionConfig<"footer"> = {
         {
           admin: { initCollapsed: true },
           fields: [link({ appearances: false })],
+          label: { en: "Links", es: "Enlaces" },
+          labels: {
+            plural: { en: "Links", es: "Enlaces" },
+            singular: { en: "Link", es: "Enlace" },
+          },
           minRows: 1,
           name: "links",
           required: true,
           type: "array",
         },
       ],
+      label: { en: "Link columns", es: "Columnas de enlaces" },
+      labels: {
+        plural: { en: "Link columns", es: "Columnas de enlaces" },
+        singular: { en: "Link column", es: "Columna de enlaces" },
+      },
       localized: true,
       maxRows: 4,
       name: "linkGroups",
@@ -152,6 +164,10 @@ export const Footer: CollectionConfig<"footer"> = {
       admin: { initCollapsed: true },
       fields: [link({ appearances: false })],
       label: { en: "Legal links", es: "Enlaces legales" },
+      labels: {
+        plural: { en: "Legal links", es: "Enlaces legales" },
+        singular: { en: "Legal link", es: "Enlace legal" },
+      },
       localized: true,
       maxRows: 4,
       name: "legalLinks",
@@ -162,6 +178,7 @@ export const Footer: CollectionConfig<"footer"> = {
         en: "© 2026 Cadence Labs, Inc.",
         es: "© 2026 Cadence Labs, Inc.",
       }),
+      label: { en: "Copyright line", es: "Texto de copyright" },
       localized: true,
       name: "copyrightText",
       type: "text",
@@ -173,7 +190,7 @@ export const Footer: CollectionConfig<"footer"> = {
   labels: {
     plural: {
       en: "Footers",
-      es: "Pie de página",
+      es: "Pies de página",
     },
     singular: {
       en: "Footer",

@@ -64,8 +64,8 @@ const withBlockNameCell = (field: Field): Field => {
       },
     },
     label: {
-      en: "Block",
-      es: "Bloque",
+      en: "Section",
+      es: "Sección",
     },
   };
 };
@@ -149,8 +149,8 @@ export const plugins: Plugin[] = [
           {
             admin: {
               description: {
-                en: "Whether the redirect is active.",
-                es: "Si la redirección está activa.",
+                en: "Turn off to pause this redirect without deleting it.",
+                es: "Desactívalo para pausar la redirección sin borrarla.",
               },
             },
             defaultValue: true,
@@ -171,8 +171,8 @@ export const plugins: Plugin[] = [
               ...field,
               admin: {
                 description: {
-                  en: "Latin letters, numbers, / - _ . ~ only. No spaces. Stored as lowercase with leading slash.",
-                  es: "Solo letras latinas, números, / - _ . ~. Sin espacios. Se guarda en minúsculas con barra inicial.",
+                  en: "The old address, e.g. /old-page. Letters, numbers and / - _ . ~ only, no spaces.",
+                  es: "La dirección antigua, p. ej. /pagina-antigua. Solo letras, números y / - _ . ~, sin espacios.",
                 },
               },
               unique: false,
@@ -228,8 +228,8 @@ export const plugins: Plugin[] = [
     redirectTypeFieldOverride: {
       admin: {
         description: {
-          en: "Choose the redirect type. 307 - temporary, 308 - permanent.",
-          es: "Elige el tipo de redirección. 307 - temporal, 308 - permanente.",
+          en: "307 = temporary (the old address comes back later), 308 = permanent (best for SEO when a page has moved for good).",
+          es: "307 = temporal (la dirección antigua volverá), 308 = permanente (lo mejor para SEO si la página se ha movido definitivamente).",
         },
       },
       defaultValue: "307",
@@ -285,8 +285,8 @@ export const plugins: Plugin[] = [
 
   presetsPlugin({
     labels: {
-      plural: { en: "Presets", es: "Presets" },
-      singular: { en: "Preset", es: "Preset" },
+      plural: { en: "Section templates", es: "Plantillas de sección" },
+      singular: { en: "Section template", es: "Plantilla de sección" },
     },
     overrides: {
       access: {
